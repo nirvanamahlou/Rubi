@@ -1,0 +1,14 @@
+{
+  "name": "@rubi/typescript-config",
+  "version": "0.0.0",
+  "private": true,
+  "files": [
+    "*.json"
+  ],
+  "exports": {
+    "./base.json": "./base.json",
+    "./library.json": "./library.json",
+    "./nest.json": "./nest.json",
+    "./next.json": "./next.json"
+  }
+}

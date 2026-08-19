@@ -41,14 +41,18 @@ flowchart LR
 apps/web      Persian RTL staff UI; no direct database/provider access
 apps/api      REST/Booking API, auth, orchestration, synchronous domain logic
 apps/worker   Queue consumers: issue/retry/webhook/export/notification/sync
-packages/ui   shared UI primitives and design tokens
 packages/contracts OpenAPI-derived/shared DTO and event contracts
 packages/config validated environment/config packages
-packages/shared deliberately small technical utilities; no domain dumping ground
-prisma        schema, immutable migrations and environment-safe seed
+packages/database Prisma schema/client, immutable migrations after approval
+packages/eslint-config shared flat ESLint configuration
+packages/typescript-config shared strict TypeScript presets
 infrastructure local compose, nginx and deployment assets
 tests         cross-application contract, E2E and smoke suites
 ```
+
+در Technical Bootstrap هنوز `packages/ui` ایجاد نشده و طراحی کامل UI متعلق به کار PC-B است.
+Nginx نیز تا تعیین topology و domainها عمداً اضافه نشده است. Prisma schema در
+`packages/database/prisma` قرار دارد و تا Work Item تاییدشده دامنه، model یا Migration ندارد.
 
 ## معماری داخلی Backend
 

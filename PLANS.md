@@ -26,9 +26,10 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 
 ### مرحله 2 — Foundation (`P0`)
 
-- [ ] Monorepo با `apps/web`، `apps/api`، `apps/worker` و packages مشترک
-- [ ] نسخه‌های Node/package manager، lockfile، lint، format، typecheck و test
-- [ ] Docker Compose برای PostgreSQL، Redis و MinIO؛ health checks
+- [x] Monorepo با `apps/web`، `apps/api`، `apps/worker` و packages مشترک
+- [x] نسخه‌های Node/package manager، lockfile، lint، format، typecheck و test
+- [x] Docker Compose برای PostgreSQL، Redis و MinIO؛ health checks
+- [x] Prisma Client/PostgreSQL datasource بدون مدل یا Migration تجاری
 - [ ] Prisma schema baseline، migration و seed ایمن محیط توسعه
 - [ ] Auth، refresh rotation، 2FA-ready sessions، users، roles و permissions
 - [ ] Audit Log، structured logging، error model و correlation ID

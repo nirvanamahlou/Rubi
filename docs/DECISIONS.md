@@ -16,6 +16,10 @@
 | ADR-010 | Outbox/Inbox و handler idempotent | side effect قابل بازیابی و delivery at-least-once |
 | ADR-011 | Organization مشترک با چند Role | حذف duplicate agency/provider/corporate identity |
 | ADR-012 | اسناد در domain تولید معنایی و در Documents archive/render می‌شوند | منوی صدور مستقل ایجاد نمی‌شود؛ version/access مرکزی |
+| ADR-013 | Toolchain پایه Node 24، pnpm 11، Turborepo 2 و TypeScript 6 است | نسخه‌ها pin و در lockfile ثبت می‌شوند؛ TypeScript 7 تا سازگاری lint ecosystem استفاده نمی‌شود |
+| ADR-014 | Prisma 7 با `prisma.config.ts`، generator جدید `prisma-client` و adapter PostgreSQL استفاده می‌شود | URL فقط از environment می‌آید؛ schema Technical Bootstrap بدون model معتبر می‌ماند |
+| ADR-015 | Worker در این مرحله Nest standalone با BullMQ/ioredis است | فقط اتصال/health queue دارد و هیچ job تجاری یا retry policy حدس‌زده نمی‌شود |
+| ADR-016 | Compose محلی PostgreSQL، Redis و MinIO را فقط روی loopback منتشر می‌کند | network پروژه نام‌دار است؛ Nginx تا تعیین domain/topology اضافه نمی‌شود |
 
 ## تصمیم‌های باز
 

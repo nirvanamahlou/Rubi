@@ -1,0 +1,33 @@
+{
+  "name": "rubi-airline-crm",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Rubi Airline CRM modular monolith monorepo",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=24.0.0 <25",
+    "pnpm": ">=11.19.0 <12"
+  },
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "pnpm db:generate && turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "pnpm db:generate && turbo run typecheck",
+    "test": "pnpm db:generate && turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:format": "pnpm --filter @rubi/database db:format",
+    "db:generate": "pnpm --filter @rubi/database db:generate",
+    "db:validate": "pnpm --filter @rubi/database db:validate",
+    "infra:config": "docker compose --env-file .env.example -f infrastructure/compose.dev.yaml config",
+    "infra:up": "docker compose --env-file .env -f infrastructure/compose.dev.yaml up -d",
+    "infra:down": "docker compose --env-file .env -f infrastructure/compose.dev.yaml down"
+  },
+  "devDependencies": {
+    "@rubi/eslint-config": "workspace:*",
+    "prettier": "3.9.6",
+    "turbo": "2.10.11",
+    "typescript": "6.0.3"
+  }
+}

@@ -1,0 +1,98 @@
+name: rubi
+
+services:
+  postgres:
+    image: postgres:18.1-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-rubi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rubi_local_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-rubi_local}
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - rubi-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - rubi-internal
+
+  redis:
+    image: redis:8.4.0-alpine
+    command:
+      - redis-server
+      - --appendonly
+      - 'yes'
+      - --requirepass
+      - ${REDIS_PASSWORD:-rubi_local_dev}
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-rubi_local_dev}
+    ports:
+      - '127.0.0.1:${REDIS_PORT:-6379}:6379'
+    volumes:
+      - rubi-redis-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" ping | grep PONG']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - rubi-internal
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: server /data --console-address ':9001'
+    environment:
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-rubi_local_dev}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-rubi_local}
+    ports:
+      - '127.0.0.1:${MINIO_API_PORT:-9000}:9000'
+      - '127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001'
+    volumes:
+      - rubi-minio-data:/data
+    healthcheck:
+      test: ['CMD', 'curl', '--fail', 'http://localhost:9000/minio/health/live']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - rubi-internal
+
+  minio-init:
+    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_BUCKET: ${MINIO_BUCKET:-rubi-files}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-rubi_local_dev}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-rubi_local}
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+        mc mb --ignore-existing "local/$$MINIO_BUCKET"
+    restart: 'no'
+    networks:
+      - rubi-internal
+
+networks:
+  rubi-internal:
+    name: rubi-internal
+
+volumes:
+  rubi-minio-data:
+    name: rubi-minio-data
+  rubi-postgres-data:
+    name: rubi-postgres-data
+  rubi-redis-data:
+    name: rubi-redis-data

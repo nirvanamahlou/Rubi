@@ -6,12 +6,12 @@
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
 `DONE`.
 
-| Work ID | مالک | Branch | محدوده/فایل‌های اصلی | وضعیت | وابستگی یا Handoff |
-|---|---|---|---|---|---|
-| BOOT-001 | PC-A | `codex/pc-a-bootstrap-docs` | اسناد Bootstrap، معماری، ERD، workflow و backlog | `READY_FOR_REVIEW` | PC-B باید همه اسناد و تصمیم‌های باز P0 را مرور کند |
-| FOUNDATION-001 | تخصیص‌نیافته | TBD | Monorepo/toolchain skeleton | `PLANNED` | تصمیم‌های باز P0 و پذیرش BOOT-001 |
-| FOUNDATION-002 | تخصیص‌نیافته | TBD | Docker Compose و سرویس‌های محلی | `PLANNED` | FOUNDATION-001 |
-| FOUNDATION-003 | تخصیص‌نیافته | TBD | Prisma baseline و IAM/Audit foundation | `PLANNED` | FOUNDATION-001/002 و تایید مدل اولیه |
+| Work ID        | مالک         | Branch                           | محدوده/فایل‌های اصلی                                                                         | وضعیت              | وابستگی یا Handoff                                                 |
+| -------------- | ------------ | -------------------------------- | -------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------ |
+| BOOT-001       | PC-A         | `codex/pc-a-bootstrap-docs`      | اسناد Bootstrap، معماری، ERD، workflow و backlog                                             | `READY_FOR_REVIEW` | PC-B باید همه اسناد و تصمیم‌های باز P0 را مرور کند                 |
+| FOUNDATION-001 | PC-A         | `codex/pc-a-technical-bootstrap` | Technical Bootstrap: Monorepo، Web/API/Worker، Docker Compose و Prisma Client بدون مدل تجاری | `READY_FOR_REVIEW` | gateها و smoke پاس؛ PC-B می‌تواند UI پایه را پس از review شروع کند |
+| FOUNDATION-002 | تخصیص‌نیافته | TBD                              | سخت‌سازی زیرساخت، CI و استقرار محیط‌های غیرمحلی                                              | `PLANNED`          | FOUNDATION-001 و تصمیم‌های میزبانی/RPO/RTO                         |
+| FOUNDATION-003 | تخصیص‌نیافته | TBD                              | IAM/Audit foundation، schema دامنه و Migration اولیه                                         | `PLANNED`          | FOUNDATION-001 و تایید مدل/تصمیم‌های باز P0                        |
 
 ## قرارداد مالکیت
 

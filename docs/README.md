@@ -17,5 +17,6 @@
 | [DECISIONS.md](DECISIONS.md) | تصمیم‌های پذیرفته و پرسش‌های باز |
 | [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md) | قرارداد توسعه دوکامپیوتری |
 | [PROJECT_STATUS.md](PROJECT_STATUS.md) | وضعیت جاری، handoff و ریسک‌ها |
+| [tasks/PC-A.md](tasks/PC-A.md) | وضعیت واحدهای کار PC-A |
 
 Backlog و تخصیص در فایل‌های ریشه `PLANS.md` و `WORK_ASSIGNMENTS.md` نگهداری می‌شوند.

@@ -1,47 +1,55 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-19 — PC-A
+آخرین به‌روزرسانی: 2026-08-19 — PC-A Technical Bootstrap
 
 ## خلاصه
 
-- مرحله جاری: **مرحله 1 — Bootstrap و طراحی**
-- وضعیت: **Bootstrap مستندات آماده Review؛ بدون کد اجرایی و بدون Migration**
+- مرحله جاری: **مرحله 2 — Foundation / Technical Bootstrap**
+- وضعیت: **اسکلت فنی و زیرساخت Local آماده Review؛ بدون قابلیت یا Migration تجاری**
 - Repository: `Rubi`، Remote با نام `origin`
-- Base: `origin/main` در Commit `bcfce0e` (`Initial commit`)
-- شاخه فعال Bootstrap: `codex/pc-a-bootstrap-docs`
+- Base: Commit `cc0d411` از `codex/pc-a-bootstrap`
+- شاخه فعال: `codex/pc-a-technical-bootstrap`
 - محیط مسئول: `COMPUTER_ID=PC-A`
 
-## تکمیل‌شده در این مرحله
+## تکمیل‌شده در Technical Bootstrap
 
-- اتصال پوشه کاری به Remote موجود، بدون حذف/جایگزینی Remote
-- استخراج نیازمندی‌های پرامپت مادر به PRD دائمی
-- معماری Modular Monolith/Monorepo، مرز ماژول‌ها و جریان‌های حساس
-- ERD، Data Dictionary و KPI Dictionary اولیه
-- API، Security، Reporting، Integration و Deployment conventions
-- قرارداد همکاری PC-A/PC-B، backlog و assignments
+- pnpm 11 workspace و Turborepo با Node 24، TypeScript strict، ESLint flat config و Prettier
+- `apps/web`: Next.js App Router، Tailwind، فارسی/RTL، صفحه اجرا و `/status`
+- `apps/api`: NestJS REST، prefix `/api/v1`، Swagger، ValidationPipe، error envelope، request ID،
+  CORS قابل تنظیم، logging و graceful shutdown
+- endpoint پایه `GET /api/v1/health` با قرارداد مشترک `packages/contracts`
+- `apps/worker`: Nest standalone، BullMQ/ioredis، startup Redis health و graceful shutdown
+- `packages/database`: Prisma 7، PostgreSQL datasource، Client factory و scriptهای
+  format/validate/generate بدون model مصنوعی
+- Compose محلی PostgreSQL 18، Redis 8 و MinIO با health check، volume نام‌دار و ساخت bucket
+- lockfile pin‌شده و scriptهای root برای dev/build/lint/typecheck/test/database/infrastructure
 
-## هنوز انجام نشده
+## عمداً انجام نشده
 
-- هیچ application/package، dependency، lockfile، Docker service یا CI ساخته نشده است.
-- Prisma schema، Migration و Seed وجود ندارد.
-- `develop` هنوز ایجاد نشده و هیچ merge/deploy انجام نشده است.
-- تصمیم‌های P0 بازِ `docs/DECISIONS.md` نیازمند پاسخ مالک محصول هستند.
+- هیچ ماژول تجاری CRM، Authentication، user/role، Dashboard یا Design System ساخته نشده است.
+- Prisma schema عمداً model ندارد؛ هیچ Migration یا Seed ایجاد نشده است.
+- Nginx، CI و deployment محیط غیرمحلی هنوز ساخته نشده‌اند.
+- `develop` ایجاد نشده و هیچ merge/deploy انجام نشده است.
+- تصمیم‌های P0 بازِ `docs/DECISIONS.md` همچنان مانع schema دامنه/مالی و adapter واقعی هستند.
 
-## کنترل کیفیت این مرحله
+## کنترل کیفیت Technical Bootstrap
 
-- `git diff --check`: پاس (بدون خطای whitespace؛ فقط هشدار معمول LF/CRLF ویندوز)
-- وجود همه فایل‌های الزامی: پاس
-- resolution همه لینک‌های محلی Markdown: پاس
-- تعادل code fenceها و بلوک‌های Mermaid: پاس
-- تست نرم‌افزاری/build/migration: قابل اجرا نیست، چون این شاخه فقط مستندات است.
+- نصب dependency و lockfile supply-chain policy: پاس
+- Prisma format، validate و generate روی schema بدون model: پاس
+- peer dependency check، ESLint، TypeScript typecheck و Prettier check: پاس
+- Vitest: ۷ تست در ۶ suite، همگی پاس
+- production build: Web، API، Worker و packageهای buildable پاس؛ routeهای `/` و `/status` static
+- Compose config: پاس؛ PostgreSQL/Redis/MinIO healthy و MinIO init با exit 0
+- smoke: API health، Swagger JSON، Web status/RTL، MinIO live و Worker→Redis/BullMQ پاس
+- `git diff --check` و secret scan در gate نهایی پیش از commit تکرار می‌شوند.
 
 ## Handoff به PC-B
 
-1. `origin` را بررسی و `git fetch --prune origin` اجرا کند.
-2. شاخه `codex/pc-a-bootstrap-docs` و همه اسناد `docs/` را review کند.
-3. تصمیم‌های باز P0 را با مالک محصول نهایی کند؛ حدس در حوزه مالی/Provider نزند.
-4. پیش از Foundation یک Work ID جدا و شاخه `codex/pc-b-<task>` رزرو کند.
-5. برای اصلاحات Review، Work ID مستقل یا هماهنگی صریح با PC-A ثبت کند.
+1. `git fetch --prune origin` اجرا و شاخه `codex/pc-a-technical-bootstrap` را review کند.
+2. پس از تأیید/ادغام مبنا، Work ID و شاخه مستقل `codex/pc-b-<task>` رزرو کند.
+3. کار UI پایه می‌تواند از `apps/web` شروع شود؛ API health و env اتصال Backend آماده‌اند.
+4. Design System کامل، صفحات CRM و قراردادهای تجاری باید در Work Itemهای بعدی ساخته شوند.
+5. تصمیم‌های P0 مالی/Provider حدس زده نشوند و هیچ schema تجاری در این branch اضافه نشود.
 
 ## ریسک‌ها و تصمیم‌های باز
 
@@ -49,3 +57,4 @@
 - Providerها، Payment Gatewayها و مشخصات دو سایت اعلام نشده‌اند.
 - محل میزبانی، RPO/RTO، retention و الزامات حقوقی PII نیازمند تایید هستند.
 - سیاست مالی ارز، rounding، مالیات و شماره‌گذاری اسناد باید قبل از Migration تایید شود.
+- Compose credentialها synthetic و Local هستند و پیش از هر محیط دیگر باید با secret manager جایگزین شوند.
