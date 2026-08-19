@@ -8,12 +8,12 @@ browser/site/provider boundary و deny-by-default در authorization.
 
 ## طبقه‌بندی داده
 
-| سطح | نمونه | کنترل حداقل |
-|---|---|---|
-| Public | محتوای عمومی service | integrity، تغییر فقط مجاز |
-| Internal | تنظیمات غیرحساس، master data | auth، role و audit تغییر |
-| Confidential | قیمت خرید، قرارداد، گزارش مالی | scoped permission، encryption at rest، export audit |
-| Restricted | passport/national ID، credential، token | field encryption/secret manager، masking، دسترسی حداقلی و retention |
+| سطح          | نمونه                                                                                | کنترل حداقل                                                         |
+| ------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| Public       | محتوای عمومی service                                                                 | integrity، تغییر فقط مجاز                                           |
+| Internal     | تنظیمات غیرحساس، master data                                                         | auth، role و audit تغییر                                            |
+| Confidential | قیمت خرید، قرارداد، گزارش مالی                                                       | scoped permission، encryption at rest، export audit                 |
+| Restricted   | passport/national ID، پرونده/قرارداد/ارزیابی پرسنلی، تماس اضطراری، credential، token | field encryption/secret manager، masking، دسترسی حداقلی و retention |
 
 اطلاعات کارت کامل و CVV تحت هیچ شرایط ذخیره یا log نمی‌شود؛ gateway token/reference کافی است.
 
@@ -33,6 +33,11 @@ RBAC با permission عملیاتی و scope `company/branch/team/self/organizat
 لایه اول است؛ application use case resource-level check می‌کند. export sensitive، refund
 approval، payment creation، issue/cancel و master data/user management مجوز جدا دارند.
 جداسازی وظایف برای create/approve/post/refund قابل تنظیم است.
+
+منابع انسانی permissionهای جدا برای مشاهده پرونده، داده حساس، قرارداد، ارزیابی،
+حضور/مرخصی، تایید و export دارد. مدیر سازمانی فقط scope مصوب زیرمجموعه خود را می‌بیند؛
+دسترسی کلی Finance یا مدیر سیستم به محتوای حساس HR به‌صورت پیش‌فرض مجاز نیست. ارسال
+ورودی پرداخت حقوق به Finance نیازمند approval و audit مستقل است.
 
 ## رمزنگاری و Secret
 
@@ -54,6 +59,8 @@ approval، payment creation، issue/cancel و master data/user management مجو
 
 عملیات auth، permission/role، customer merge/PII view-export، price override، booking/issue/
 cancel/refund، payment/journal/check، approval، credential/settings و file download audit می‌شود.
+مشاهده، تغییر و خروجی پرونده پرسنلی، قرارداد، ارزیابی، تماس اضطراری، حضور و payroll input
+نیز audit می‌شود.
 Audit actor/impersonator، action، entity، before/after redacted، reason، IP/user-agent، trace و
 UTC time دارد. لاگ عملیاتی secret/token/document number کامل یا PII غیرضروری ندارد.
 

@@ -86,7 +86,7 @@ Worker برای startup به Redis در دسترس نیاز دارد. Prisma com
 ## اسناد مرجع
 
 - نیازمندی محصول: [docs/PRODUCT_REQUIREMENTS.md](docs/PRODUCT_REQUIREMENTS.md)
-- معماری و مرزها: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) و [docs/MODULE_BOUNDARIES.md](docs/MODULE_BOUNDARIES.md)
+- معماری و مرزها: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)، [docs/MODULE_BOUNDARIES.md](docs/MODULE_BOUNDARIES.md) و [docs/MODULE_OWNERSHIP.md](docs/MODULE_OWNERSHIP.md)
 - مدل داده: [docs/DATA_MODEL.md](docs/DATA_MODEL.md)
 - روش همکاری: [AGENTS.md](AGENTS.md) و [docs/DEVELOPMENT_WORKFLOW.md](docs/DEVELOPMENT_WORKFLOW.md)
 - وضعیت و تخصیص: [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) و [WORK_ASSIGNMENTS.md](WORK_ASSIGNMENTS.md)

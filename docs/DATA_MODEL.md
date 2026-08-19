@@ -22,7 +22,7 @@ erDiagram
   ROLES ||--o{ USER_ROLES : grants
   ROLES ||--o{ ROLE_PERMISSIONS : contains
   PERMISSIONS ||--o{ ROLE_PERMISSIONS : defines
-  BRANCHES ||--o{ USERS : assigned_to
+  BRANCHES ||--o{ USERS : access_scope
   ORGANIZATIONS ||--o{ ORGANIZATION_ROLES : has
   ORGANIZATIONS ||--o{ ORGANIZATION_CONTACTS : has
   CUSTOMERS ||--o{ CUSTOMER_CONTACTS : has
@@ -34,6 +34,33 @@ erDiagram
   OPPORTUNITIES ||--o{ QUOTATIONS : quoted_by
   SALES_CHANNELS ||--o{ LEADS : originates
   CAMPAIGNS o|--o{ LEADS : attributes
+```
+
+## ERD منابع انسانی
+
+این مدل صرفاً مفهومی است و ایجاد Prisma model یا Migration را مجاز نمی‌کند. Employee
+aggregate مستقل است و FK جایگزین به Customer/Passenger ندارد.
+
+```mermaid
+erDiagram
+  USERS o|--o| EMPLOYEES : optional_login
+  BRANCHES ||--o{ EMPLOYEE_ASSIGNMENTS : assigns
+  EMPLOYEES ||--o{ EMPLOYEE_ASSIGNMENTS : has
+  EMPLOYEES o|--o{ EMPLOYEE_ASSIGNMENTS : manages
+  EMPLOYEES ||--o{ EMPLOYMENT_CONTRACTS : signs
+  EMPLOYEES ||--o{ EMPLOYEE_CONTACTS : has
+  EMPLOYEES ||--o{ EMERGENCY_CONTACTS : has
+  EMPLOYEES ||--o{ ATTENDANCE_RECORDS : records
+  EMPLOYEES ||--o{ SHIFT_ASSIGNMENTS : works
+  EMPLOYEES ||--o{ LEAVE_REQUESTS : requests
+  EMPLOYEES ||--o{ MISSION_REQUESTS : requests
+  EMPLOYEES ||--o{ OVERTIME_RECORDS : records
+  EMPLOYEES ||--o{ PERFORMANCE_REVIEWS : receives
+  EMPLOYEES ||--o{ EMPLOYEE_CERTIFICATES : earns
+  EMPLOYEES ||--o{ EMPLOYEE_ASSETS : receives
+  EMPLOYEES ||--o{ HR_DOCUMENT_LINKS : owns
+  EMPLOYEES ||--o{ PAYROLL_INPUT_BATCH_ITEMS : contributes
+  PAYROLL_INPUT_BATCHES ||--|{ PAYROLL_INPUT_BATCH_ITEMS : contains
 ```
 
 ## ERD سفارش، Provider و خرید
@@ -122,11 +149,27 @@ erDiagram
 - profile واحد است و roleها چندگانه؛ Agency/Supplier duplicate organization نمی‌سازند.
 - external mapping بر `(connection_id, entity_type, external_id)` یکتا است.
 
+### Human Resources
+
+- Employee یک هویت دامنه مستقل است؛ Customer، Passenger یا Organization Contact به‌عنوان
+  پرونده کارمند reuse نمی‌شود.
+- اتصال `user_id` اختیاری و یکتا است و فقط حساب ورود را پیوند می‌دهد؛ حذف/غیرفعال‌سازی
+  User تاریخچه استخدام را حذف نمی‌کند.
+- assignment شعبه/واحد/سمت/مدیر و قرارداد کاری بازه زمانی و history دارند؛ هم‌پوشانی
+  فقط مطابق policy مصوب مجاز است.
+- حضور، شیفت، مرخصی، مأموریت و اضافه‌کاری رکورد منبع و approval history دارند و نتیجه
+  تاییدشده با تغییر خام جایگزین نمی‌شود.
+- Payroll Input فقط snapshot حداقلی تاییدشده برای Finance است؛ محاسبه حقوق قانونی، مالیات
+  و لیست قانونی در نسخه اولیه مدل نمی‌شود.
+- مشاهده، تغییر و export اطلاعات تماس اضطراری، قرارداد، ارزیابی و مدارک باید permission
+  جدا و audit داشته باشد.
+
 ## تاریخچه و Audit
 
 جداول state history برای order، reservation، payment، issue، purchase، invoice، check،
-ticket و task شامل `from_status`, `to_status`, `reason_code`, `note`, `changed_by`,
-`changed_at`, `trace_id` هستند. Audit عمومی مکمل history است و جایگزین آن نیست.
+ticket، task، employment contract، leave/mission، overtime و payroll input شامل
+`from_status`, `to_status`, `reason_code`, `note`, `changed_by`, `changed_at`, `trace_id`
+هستند. Audit عمومی مکمل history است و جایگزین آن نیست.
 
 ## ایندکس و Constraint اولیه
 
@@ -151,7 +194,8 @@ ticket و task شامل `from_status`, `to_status`, `reason_code`, `note`, `chan
 Viewهای پیشنهادی: `reporting_order_facts` (یک ردیف/order)،
 `reporting_order_item_facts`, `reporting_reservation_facts`, `reporting_passenger_facts`,
 `reporting_segment_facts`, `reporting_ticket_facts`, `reporting_payment_facts`,
-`reporting_journal_balance_facts`. measureها قبل از join به dimension چندتایی aggregate می‌شوند.
+`reporting_journal_balance_facts`, `reporting_hr_headcount_facts` و
+`reporting_hr_time_facts`. measureها قبل از join به dimension چندتایی aggregate می‌شوند.
 
 واژه‌نامه entityها در [DATA_DICTIONARY.md](DATA_DICTIONARY.md) و KPIها در
 [KPI_DICTIONARY.md](KPI_DICTIONARY.md) است.

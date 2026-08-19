@@ -6,12 +6,13 @@
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
 `DONE`.
 
-| Work ID        | مالک         | Branch                           | محدوده/فایل‌های اصلی                                                                         | وضعیت              | وابستگی یا Handoff                                         |
-| -------------- | ------------ | -------------------------------- | -------------------------------------------------------------------------------------------- | ------------------ | ---------------------------------------------------------- |
-| BOOT-001       | PC-A         | `codex/pc-a-bootstrap-docs`      | اسناد Bootstrap، معماری، ERD، workflow و backlog                                             | `READY_FOR_REVIEW` | PC-B باید همه اسناد و تصمیم‌های باز P0 را مرور کند         |
-| FOUNDATION-001 | PC-A         | `codex/pc-a-technical-bootstrap` | Technical Bootstrap: Monorepo، Web/API/Worker، Docker Compose و Prisma Client بدون مدل تجاری | `DONE`             | Commit `d9a9793` Push شد؛ آماده review و شروع UI پایه PC-B |
-| FOUNDATION-002 | تخصیص‌نیافته | TBD                              | سخت‌سازی زیرساخت، CI و استقرار محیط‌های غیرمحلی                                              | `PLANNED`          | FOUNDATION-001 و تصمیم‌های میزبانی/RPO/RTO                 |
-| FOUNDATION-003 | تخصیص‌نیافته | TBD                              | IAM/Audit foundation، schema دامنه و Migration اولیه                                         | `PLANNED`          | FOUNDATION-001 و تایید مدل/تصمیم‌های باز P0                |
+| Work ID        | مالک         | Branch                           | محدوده/فایل‌های اصلی                                                                         | وضعیت              | وابستگی یا Handoff                                       |
+| -------------- | ------------ | -------------------------------- | -------------------------------------------------------------------------------------------- | ------------------ | -------------------------------------------------------- |
+| BOOT-001       | PC-A         | `codex/pc-a-bootstrap-docs`      | اسناد Bootstrap، معماری، ERD، workflow و backlog                                             | `READY_FOR_REVIEW` | PC-B باید همه اسناد و تصمیم‌های باز P0 را مرور کند       |
+| FOUNDATION-001 | PC-A         | `codex/pc-a-technical-bootstrap` | Technical Bootstrap: Monorepo، Web/API/Worker، Docker Compose و Prisma Client بدون مدل تجاری | `DONE`             | Commit `d9a9793` ادغام شد؛ مبنای Work Itemهای Full-Stack |
+| FOUNDATION-002 | تخصیص‌نیافته | TBD                              | سخت‌سازی زیرساخت، CI و استقرار محیط‌های غیرمحلی                                              | `PLANNED`          | FOUNDATION-001 و تصمیم‌های میزبانی/RPO/RTO               |
+| FOUNDATION-003 | تخصیص‌نیافته | TBD                              | IAM/Audit foundation، schema دامنه و Migration اولیه                                         | `PLANNED`          | FOUNDATION-001 و تایید مدل/تصمیم‌های باز P0              |
+| DOCS-002       | PC-A         | `codex/pc-a-hr-module-ownership` | ثبت ماژول منابع انسانی، مالکیت نهایی ماژول‌ها و قرارداد همکاری Full-Stack                    | `READY_FOR_REVIEW` | فقط مستندات؛ بدون کد، Dependency، Schema یا Migration    |
 
 ## قرارداد مالکیت
 

@@ -38,18 +38,19 @@ Rubi یک پلتفرم وب یکپارچه، ماژولار، امن، تست‌
 
 ## 3. نقش‌ها و مجوزها
 
-حداقل personaها: فروش، رزرو، پشتیبانی، خرید، مالی/خزانه، مارکتینگ، مدیر شعبه، مدیر
-سیستم، مدیر گزارش‌گیر و کاربران سازمانی/API client. مجوزها عملیاتی و deny-by-default
-هستند؛ نمونه:
+حداقل personaها: فروش، رزرو، پشتیبانی، خرید، مالی/خزانه، مارکتینگ، منابع انسانی،
+مدیر شعبه، مدیر سیستم، مدیر گزارش‌گیر و کاربران سازمانی/API client. مجوزها عملیاتی
+و deny-by-default هستند؛ نمونه:
 
 `reservation.read`, `reservation.create`, `reservation.cancel`,
 `reservation.issue`, `finance.read`, `finance.payment.create`,
 `finance.refund.approve`, `finance.export`, `customer.export_sensitive`,
-`master_data.manage`, `user.manage`.
+`hr.employee.read`, `hr.employee.read_sensitive`, `hr.attendance.manage`,
+`hr.leave.approve`, `hr.payroll_input.export`, `master_data.manage`, `user.manage`.
 
 ## 4. ناوبری قطعی
 
-منوی اصلی دقیقاً این ۱۶ بخش را دارد:
+منوی اصلی دقیقاً این ۱۷ بخش را دارد:
 
 1. داشبورد
 2. مشتریان
@@ -60,13 +61,14 @@ Rubi یک پلتفرم وب یکپارچه، ماژولار، امن، تست‌
 7. مالی و خزانه‌داری
 8. مارکتینگ
 9. آژانس‌ها و مشتریان سازمانی
-10. وظایف و اتوماسیون
-11. اسناد و فایل‌ها
-12. گزارش‌ها
-13. یکپارچه‌سازی‌ها
-14. مدیریت کاربران
-15. اطلاعات پایه
-16. تنظیمات سیستم
+10. منابع انسانی
+11. وظایف و اتوماسیون
+12. اسناد و فایل‌ها
+13. گزارش‌ها
+14. یکپارچه‌سازی‌ها
+15. مدیریت کاربران
+16. اطلاعات پایه
+17. تنظیمات سیستم
 
 «جست‌وجو و فروش آنلاین» و «صدور اسناد» منوی مستقل نیستند. جست‌وجو/خرید آنلاین
 در سفارش و Backend سایت‌ها، و صدور در ماژول مربوط انجام می‌شود. لیدر و کارگزار
@@ -168,10 +170,14 @@ commission، due date، invoice، receipt/payment status و documents.
 
 ## 12. مالی و خزانه‌داری
 
-این ماژول Sub-ledger عملیاتی است، نه حسابداری قانونی/مالیات/حقوق. شامل sales/purchase
+این ماژول Sub-ledger عملیاتی است، نه حسابداری قانونی/مالیات/حقوق و دستمزد کامل. شامل sales/purchase
 invoice، receipt، payment، refund، commission، settlement، حساب customer/agency/
 Provider، چند bank/cash account، IRR/foreign currency، transfer، bank reconciliation،
 received/paid check و due reminders است.
+
+مالی فقط ورودی پرداخت حقوق تاییدشده و حداقلی را از قرارداد عمومی منابع انسانی دریافت
+می‌کند. جزئیات حساس پرونده، ارزیابی، حضور یا قرارداد کاری در Finance کپی یا ویرایش
+نمی‌شود.
 
 مانده حساب دستی ذخیره/ویرایش نمی‌شود و از تراکنش‌های posted محاسبه می‌شود. ثبت قابل
 اتکا دوطرفه با `journal_entries` و `journal_entry_lines` الزامی است و entry نامتوازن
@@ -198,20 +204,43 @@ Agency/corporate، representative، organization user، contract، credit limit�
 rate، discount، commission، reservation، invoice، payment، check، settlement، document
 و account manager پشتیبانی می‌شود. Organization مدل مشترک با چند Role است.
 
-## 15. وظایف و اتوماسیون
+## 15. منابع انسانی
+
+منابع انسانی ماژول مستقل با موجودیت اصلی Employee/Personnel Record است. کارمند نباید
+با Customer، Passenger یا Organization Contact در یک موجودیت تجاری ادغام شود. ارتباط
+اختیاری کارمند با `User` فقط برای حساب ورود است و lifecycle استخدام را IAM مالک نمی‌شود.
+
+دامنه نسخه اولیه شامل موارد زیر است:
+
+- پرونده پرسنلی و اطلاعات تماس و اضطراری
+- شعبه، واحد، سمت، مدیر و چارت سازمانی
+- قراردادهای کاری و تاریخچه وضعیت اشتغال
+- حضور و غیاب، شیفت‌ها، مرخصی، مأموریت و اضافه‌کاری
+- ارزیابی عملکرد، آموزش و گواهینامه‌ها
+- تجهیزات تحویلی و اسناد پرسنلی
+- یادآوری پایان قرارداد، گواهینامه و مدارک
+- گزارش‌های منابع انسانی با سطح دسترسی و masking مناسب
+- ارتباط کنترل‌شده با مالی برای ارسال اطلاعات لازم و تاییدشده پرداخت حقوق
+- دسترسی محدود، Audit مشاهده/تغییر/خروجی و retention داده حساس
+
+حقوق و دستمزد قانونی و کامل، مالیات حقوق و ارسال لیست‌های قانونی در نسخه اولیه خارج
+از محدوده است. مدل و قرارداد باید بدون ذخیره محاسبات قانونی فرضی، امکان توسعه ورودی
+پرداخت و اتصال آینده به Finance/Payroll system را حفظ کند.
+
+## 16. وظایف و اتوماسیون
 
 Task، assignee، due date، priority، recurrence، checklist، approval workflow، notification،
 Automation Rule/Run و history لازم است. رویداد پرداخت موفق/صدور ناموفق باید task فوری،
 reservation alert، retry و manager warning تولید کند.
 
-## 16. اسناد و فایل‌ها
+## 17. اسناد و فایل‌ها
 
 این ماژول archive مرکزی است، نه صدور مستقل. فایل‌های customer/identity، ticket، voucher،
-invoice، receipt، contract، Provider/leader، check با version، confidentiality، expiry،
-download permission و view/send history مدیریت می‌شوند. binary در MinIO/S3 و metadata
-در PostgreSQL ذخیره می‌شود؛ دسترسی با signed URL کوتاه و audit است.
+invoice، receipt، contract، Provider/leader، employee/personnel و check با version،
+confidentiality، expiry، download permission و view/send history مدیریت می‌شوند. binary
+در MinIO/S3 و metadata در PostgreSQL ذخیره می‌شود؛ دسترسی با signed URL کوتاه و audit است.
 
-## 17. گزارش و خروجی
+## 18. گزارش و خروجی
 
 هر ماژول خروجی محلی دارد؛ موتور مشترک Backend از PDF، Excel، CSV و API پشتیبانی
 می‌کند. خروجی Permission-aware است، filter snapshot، creator/time و audit دارد، داده
@@ -223,22 +252,23 @@ Passenger، Segment، Ticket و Payment؛ join نباید مبلغ را با ت�
 
 گزارش‌ها: فروش site/service/agent، خرید Provider، سود order/service، balance، due check،
 receivable/payable، manual/API، failed reservation، paid-not-issued، cancellation/refund،
-marketing و customer service.
+marketing، customer service و منابع انسانی.
 
-## 18. یکپارچه‌سازی
+## 19. یکپارچه‌سازی
 
 اتصال به دو سایت، flight/bus/hotel/tour/insurance API، SMS، email، payment gateway،
 accounting و webhook لازم است. برای هر اتصال: credential امن، sandbox/production جدا،
 external mapping، idempotency، retry، timeout، rate limit، health، request/error log،
 webhook history و sync job. Credential/API key نه plain text در Git و نه plain text در DB.
 
-## 19. کاربران و امنیت دسترسی
+## 20. کاربران و امنیت دسترسی
 
-User، role، permission، team، branch، manager، 2FA، session، login history، optional IP
-restriction، disablement، employee substitution و audit لازم است. refresh token rotation
-و revoke، rate limit و separate API access برای Provider/site اجباری است.
+User، role، permission، team، branch access scope، 2FA، session، login history، optional
+IP restriction، disablement، employee substitution و audit لازم است. سمت، مدیر و assignment
+استخدامی در Human Resources مالکیت می‌شود و IAM فقط scope دسترسی را نگه می‌دارد. refresh
+token rotation و revoke، rate limit و separate API access برای Provider/site اجباری است.
 
-## 20. اطلاعات پایه
+## 21. اطلاعات پایه
 
 - جغرافیا: country، province، city، airport، terminal
 - مالی: currency، buy/sell/accounting FX، bank/branch، payment/account/check/commission
@@ -256,27 +286,27 @@ restriction، disablement، employee substitution و audit لازم است. refr
 شناسه‌های متفاوت یک رکورد داخلی در چند API را نگه می‌دارد. Reference data استفاده‌شده
 حذف نمی‌شود و فقط inactive می‌شود.
 
-## 21. تنظیمات
+## 22. تنظیمات
 
 company، branch، domain دو سایت، locale/timezone، نمایش شمسی با ذخیره UTC/Gregorian،
 numbering، markup/pricing، PDF/message template، notification، security/API، log retention،
 finance/refund approval، auto issue، calendar/holiday و SLA قابل تنظیم است. تغییر حساس
 setting versioned و audited است.
 
-## 22. قواعد داده
+## 23. قواعد داده
 
 PostgreSQL سیستم ثبت؛ Redis فقط cache/queue/lock/temp؛ S3/MinIO فایل. PK، FK، Unique،
 Index، Decimal+currency، FX snapshot، UTC، status history، audit fields، soft-delete/inactive،
 transaction، idempotency، optimistic lock و versioned migration الزامی است. Local/Test/
 Staging/Production دیتابیس جدا دارند و تست Production ممنوع است.
 
-## 23. امنیت و حریم خصوصی
+## 24. امنیت و حریم خصوصی
 
-اطلاعات کارت و CVV ذخیره نمی‌شود. PII حساس passenger رمزگذاری، password با الگوریتم
-معتبر hash، secrets خارج Git، RBAC و export permission، input validation، audit، rate
-limit، جداسازی staging/production و backup رمزنگاری‌شده خارج سرور الزامی است.
+اطلاعات کارت و CVV ذخیره نمی‌شود. PII حساس passenger و employee رمزگذاری، password با
+الگوریتم معتبر hash، secrets خارج Git، RBAC و export permission، input validation، audit،
+rate limit، جداسازی staging/production و backup رمزنگاری‌شده خارج سرور الزامی است.
 
-## 24. تجربه کاربری
+## 25. تجربه کاربری
 
 UI فارسی، RTL، responsive، desktop-first و tablet-usable است؛ table حرفه‌ای، advanced
 filter، quick search، saved view، column choice، server pagination و Loading/Empty/Error/
@@ -284,20 +314,20 @@ Permission states دارد. Order form چندمرحله‌ای، عملیات ح
 نمایش میلادی، ارز خوانا و accessibility پایه لازم است. داده مالی بدون permission نمایش
 داده نمی‌شود.
 
-## 25. تست و کنترل کیفیت
+## 26. تست و کنترل کیفیت
 
 بسته به قابلیت: unit، integration، API contract، migration، permission، E2E، adapter
 mock، payment/issue failure، refund و export test. بعد از تغییر lint، typecheck، targeted
 tests، affected build و smoke test اجرا می‌شود. Provider بدون credential واقعی فقط mock/
 sandbox است و هیچ تستی روی Production اجرا نمی‌شود.
 
-## 26. معیار پذیرش قابلیت
+## 27. معیار پذیرش قابلیت
 
 نیازمندی و مدل داده مشخص، Migration و API/validation کامل، permission و audit اعمال، UI
 و stateها پوشش داده، تست‌ها پاس، PDF/Excel لازم کارا، مستندات/status به‌روز و هیچ Secret
 در Git نیست. این معیار با Definition of Done در `PLANS.md` الزام‌آور است.
 
-## 27. فرض‌های کم‌ریسک Bootstrap
+## 28. فرض‌های کم‌ریسک Bootstrap
 
 - زبان canonical داده و enumها انگلیسی و ترجمه فقط در presentation است.
 - تاریخ در DB به UTC و تقویم شمسی فقط نمایش/ورودی تبدیل‌شده است.
@@ -305,7 +335,7 @@ sandbox است و هیچ تستی روی Production اجرا نمی‌شود.
 - UUID برای شناسه‌های عمومی پیشنهاد می‌شود؛ تصمیم نهایی در Foundation ثبت می‌شود.
 - پول با Decimal و minor-unit hardcode نشده مدل می‌شود تا ارزهای مختلف پشتیبانی شوند.
 
-## 28. تصمیم‌های بازِ معماری/مالی
+## 29. تصمیم‌های بازِ معماری/مالی
 
 پرسش‌های نیازمند پاسخ در `DECISIONS.md` ثبت شده‌اند: accounting boundary، Providerهای
 موج اول، gateway و webhook guarantees، دو برند/دامنه و pricing، currency/rounding/tax،

@@ -7,7 +7,7 @@
 ## محرک‌های معماری
 
 - تراکنش اتمیک میان سفارش، خرید و ثبت مالی بدون پیچیدگی microservice زودهنگام
-- توسعه هم‌زمان دو کامپیوتر با مرز و مالکیت فایل/داده روشن
+- توسعه هم‌زمان Full-Stack دو کامپیوتر با مرز ماژول، داده و قفل فایل مشترک روشن
 - اتصال چند Provider ناسازگار از طریق Anti-corruption Layer
 - حفظ پرداخت تاییدشده هنگام شکست booking/issue و پشتیبانی از جبران
 - گزارش دقیق با grain کنترل‌شده و traceability کامل
@@ -50,8 +50,9 @@ infrastructure local compose, nginx and deployment assets
 tests         cross-application contract, E2E and smoke suites
 ```
 
-در Technical Bootstrap هنوز `packages/ui` ایجاد نشده و طراحی کامل UI متعلق به کار PC-B است.
-Nginx نیز تا تعیین topology و domainها عمداً اضافه نشده است. Prisma schema در
+در Technical Bootstrap هنوز `packages/ui` ایجاد نشده و طراحی کامل UI در Work Item مستقل
+و مطابق مالکیت ماژول انجام می‌شود. Nginx نیز تا تعیین topology و domainها عمداً اضافه
+نشده است. Prisma schema در
 `packages/database/prisma` قرار دارد و تا Work Item تاییدشده دامنه، model یا Migration ندارد.
 
 ## معماری داخلی Backend
@@ -71,9 +72,22 @@ PostgreSQL، transaction هماهنگ‌کننده می‌تواند چند publ
 ## ماژول‌ها
 
 ماژول‌های محصول: Dashboard، Customers، Sales، Orders/Reservations، Customer Service،
-Procurement، Finance/Treasury، Marketing، B2B، Tasks/Automation، Documents، Reporting/
-Exports، Integrations، IAM، Master Data و Settings. سرویس‌های افقی: Audit، Notification،
-Idempotency و Observability. مالکیت و dependencyها در `MODULE_BOUNDARIES.md` است.
+Procurement، Finance/Treasury، Marketing، B2B، Human Resources، Tasks/Automation،
+Documents، Reporting/Exports، Integrations، IAM، Master Data و Settings. سرویس‌های افقی:
+Audit، Notification، Idempotency و Observability. مالکیت داده و dependencyها در
+`MODULE_BOUNDARIES.md` و مالکیت توسعه در `MODULE_OWNERSHIP.md` است.
+
+Human Resources مالک Employee و lifecycle استخدام است. Employee به Customer یا Passenger
+تبدیل یا در آن‌ها ادغام نمی‌شود؛ ارتباط اختیاری با IAM User فقط reference حساب ورود است.
+Finance نیز فقط قرارداد کنترل‌شده ورودی پرداخت حقوق را مصرف می‌کند و به جدول یا داده حساس
+HR دسترسی مستقیم ندارد.
+
+## مدل مالکیت توسعه
+
+PC-A و PC-B هر دو Full-Stack هستند و همه لایه‌های ماژول‌های تحت مالکیت خود را توسعه
+می‌دهند. فقط Migration، Dependency/Lockfile، فایل‌های مرکزی و قراردادهای cross-module
+نیازمند رزرو و هماهنگی قبلی هستند. نگاشت نهایی و قواعد قفل در
+[MODULE_OWNERSHIP.md](MODULE_OWNERSHIP.md) ثبت شده است.
 
 ## مدل اجرا و consistency
 
