@@ -8,16 +8,18 @@ Dashboard و گزارش رسمی فقط از Reporting Viewهای تاییدشد
 
 ## Grainهای استاندارد
 
-| View | Grain | measureهای مجاز نمونه |
-|---|---|---|
-| `reporting_order_facts` | یک Travel Order | sale total، paid/refunded allocated، gross profit |
-| `reporting_order_item_facts` | یک Order Item | buy/sell/tax/discount/commission/margin |
-| `reporting_reservation_facts` | یک Reservation | booking/issue counts و durations؛ amount pre-aggregated |
-| `reporting_passenger_facts` | یک passenger در order | passenger count؛ مبلغ order مستقیم جمع نمی‌شود |
-| `reporting_segment_facts` | یک segment | route/carrier count؛ مبلغ order مستقیم جمع نمی‌شود |
-| `reporting_ticket_facts` | یک issued document/passenger | document count/status؛ allocated amount تعریف‌شده |
-| `reporting_payment_facts` | یک payment transaction | verified amount، refund، gateway fee |
-| `reporting_journal_balance_facts` | account/currency/day | posted debit/credit/balance movement |
+| View                              | Grain                                | measureهای مجاز نمونه                                          |
+| --------------------------------- | ------------------------------------ | -------------------------------------------------------------- |
+| `reporting_order_facts`           | یک Travel Order                      | sale total، paid/refunded allocated، gross profit              |
+| `reporting_order_item_facts`      | یک Order Item                        | buy/sell/tax/discount/commission/margin                        |
+| `reporting_reservation_facts`     | یک Reservation                       | booking/issue counts و durations؛ amount pre-aggregated        |
+| `reporting_passenger_facts`       | یک passenger در order                | passenger count؛ مبلغ order مستقیم جمع نمی‌شود                 |
+| `reporting_segment_facts`         | یک segment                           | route/carrier count؛ مبلغ order مستقیم جمع نمی‌شود             |
+| `reporting_ticket_facts`          | یک issued document/passenger         | document count/status؛ allocated amount تعریف‌شده              |
+| `reporting_payment_facts`         | یک payment transaction               | verified amount، refund، gateway fee                           |
+| `reporting_journal_balance_facts` | account/currency/day                 | posted debit/credit/balance movement                           |
+| `reporting_hr_headcount_facts`    | یک employee assignment در بازه معتبر | headcount، join/leave، branch/unit/position؛ بدون PII غیرضروری |
+| `reporting_hr_time_facts`         | یک employee/work date/type تاییدشده  | attendance، leave، mission و overtime duration                 |
 
 در join چند grain، measure ابتدا در grain خودش aggregate و سپس join می‌شود. fixture تست باید
 Order دارای چند passenger و segment داشته باشد تا duplication آشکار شود.
@@ -26,6 +28,8 @@ Order دارای چند passenger و segment داشته باشد تا duplicatio
 
 date range و date basis صریح، site/channel، branch، agent، service type، agency، Provider،
 currency و status. timezone گزارش و FX basis همراه report metadata ثبت می‌شود.
+گزارش HR علاوه بر فیلترهای عمومی می‌تواند واحد، سمت، مدیر، وضعیت استخدام و نوع
+قرارداد/حضور را داشته باشد؛ فیلتر و drill-down آن تابع permission داده حساس است.
 
 ## خروجی
 
@@ -42,6 +46,8 @@ currency و status. timezone گزارش و FX basis همراه report metadata �
 - Provider payable با approved purchase invoice/journal reconciliation می‌شود.
 - balance فقط posted journal lines؛ draft/void خارج.
 - هر KPI owner، grain، فرمول، exclusions، freshness و drill-down دارد.
+- گزارش‌های HR به‌صورت پیش‌فرض aggregated/masked هستند؛ payroll input و پرونده فردی
+  فقط با permission و audit جدا export می‌شود.
 - تغییر View/KPI versioned و با نمونه قبل/بعد review می‌شود.
 
 تعاریف KPI در [KPI_DICTIONARY.md](KPI_DICTIONARY.md) است.

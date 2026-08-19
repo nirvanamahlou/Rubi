@@ -10,6 +10,7 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 - [ ] `DEC-OPEN-003`: Providerهای موج اول و قابلیت واقعی هر API تعیین شوند.
 - [ ] `DEC-OPEN-004`: قواعد نگهداری/رمزنگاری مدارک هویتی و محل میزبانی تصویب شود.
 - [ ] `DEC-OPEN-005`: تقویم کاری، SLA و نقش‌های تایید مالی اولیه مشخص شوند.
+- [ ] `DEC-OPEN-013`: سیاست HR، تقویم/شیفت، payroll input و retention پرسنلی مشخص شوند.
 
 ## مراحل
 
@@ -69,6 +70,9 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 - [ ] Customer Service، SLA، escalation و satisfaction
 - [ ] Marketing، segment، consent، campaign، UTM و attribution
 - [ ] Agency/Corporate contracts، credit، agreed rates و settlement
+- [ ] HR: پرونده مستقل کارمند، ساختار سازمانی، قرارداد، حضور/شیفت، مرخصی/ماموریت و اضافه‌کاری
+- [ ] HR: ارزیابی، آموزش/گواهینامه، تجهیزات/اسناد، یادآوری و گزارش Permission-aware
+- [ ] قرارداد تاییدشده HR → Finance برای ورودی پرداخت؛ payroll قانونی کامل خارج از محدوده
 - [ ] Tasks، approvals، automation rules/runs و notifications
 
 ### مرحله 8 — آمادگی انتشار (`P0/P1`)

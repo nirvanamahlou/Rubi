@@ -1,16 +1,25 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-19 — PC-A Technical Bootstrap
+آخرین به‌روزرسانی: 2026-08-19 — PC-A HR Module Ownership
 
 ## خلاصه
 
-- مرحله جاری: **مرحله 2 — Foundation / Technical Bootstrap**
-- وضعیت: **اسکلت فنی و زیرساخت Local آماده Review؛ بدون قابلیت یا Migration تجاری**
+- مرحله جاری: **مرحله 2 — Foundation / تثبیت مالکیت ماژول‌ها**
+- وضعیت: **Technical Bootstrap روی develop؛ مستندات HR و مالکیت نهایی آماده Review**
 - Repository: `Rubi`، Remote با نام `origin`
-- Base: Commit `cc0d411` از `codex/pc-a-bootstrap`
-- شاخه فعال: `codex/pc-a-technical-bootstrap`
-- Implementation Commit: `d9a9793`، Push موفق به `origin/codex/pc-a-technical-bootstrap`
+- Base: Commit `bdb5461` از `origin/develop`
+- شاخه فعال: `codex/pc-a-hr-module-ownership`
+- Work Item: `DOCS-002`؛ فقط مستندات و بدون تغییر کد/Dependency/Schema/Migration
 - محیط مسئول: `COMPUTER_ID=PC-A`
+
+## تکمیل‌شده در DOCS-002
+
+- مدل همکاری به Full-Stack برای هر دو PC تغییر کرد؛ تقسیم ثابت Backend/Frontend حذف شد.
+- مالکیت نهایی ماژول‌ها و تفکیک Backend/UI گزارش‌ها در `MODULE_OWNERSHIP.md` ثبت شد.
+- قفل هم‌زمان Migration Owner، Dependency/Lockfile Owner، فایل مرکزی و API/Event Contract ثبت شد.
+- منابع انسانی به منوی اصلی ۱۷ بخشی اضافه و دامنه، مرز، مدل مفهومی، امنیت و گزارش آن مستند شد.
+- Employee از Customer/Passenger مستقل و ارتباط HR → Finance به payroll input تاییدشده محدود شد.
+- حقوق و دستمزد قانونی و کامل در نسخه اولیه خارج از محدوده باقی ماند.
 
 ## تکمیل‌شده در Technical Bootstrap
 
@@ -30,7 +39,7 @@
 - هیچ ماژول تجاری CRM، Authentication، user/role، Dashboard یا Design System ساخته نشده است.
 - Prisma schema عمداً model ندارد؛ هیچ Migration یا Seed ایجاد نشده است.
 - Nginx، CI و deployment محیط غیرمحلی هنوز ساخته نشده‌اند.
-- `develop` ایجاد نشده و هیچ merge/deploy انجام نشده است.
+- هیچ قابلیت تجاری، Schema یا Migration در Work Item مستندی `DOCS-002` ایجاد نشده است.
 - تصمیم‌های P0 بازِ `docs/DECISIONS.md` همچنان مانع schema دامنه/مالی و adapter واقعی هستند.
 
 ## کنترل کیفیت Technical Bootstrap
@@ -46,11 +55,11 @@
 
 ## Handoff به PC-B
 
-1. `git fetch --prune origin` اجرا و شاخه `codex/pc-a-technical-bootstrap` را review کند.
-2. پس از تأیید/ادغام مبنا، Work ID و شاخه مستقل `codex/pc-b-<task>` رزرو کند.
-3. کار UI پایه می‌تواند از `apps/web` شروع شود؛ API health و env اتصال Backend آماده‌اند.
-4. Design System کامل، صفحات CRM و قراردادهای تجاری باید در Work Itemهای بعدی ساخته شوند.
-5. تصمیم‌های P0 مالی/Provider حدس زده نشوند و هیچ schema تجاری در این branch اضافه نشود.
+1. PR شاخه `codex/pc-a-hr-module-ownership` به `develop` را review کند.
+2. پس از ادغام، Work Item مستقل PC-B برای HR یا سایر ماژول‌های تحت مالکیت خود رزرو کند.
+3. پیش از هر Schema/Migration، Dependency/Lockfile یا فایل مرکزی، قفل فعال را ثبت کند.
+4. قرارداد HR → Finance و هر API/Event مشترک پیش از پیاده‌سازی هماهنگ و version شود.
+5. تصمیم‌های باز HR و P0 حدس زده نشوند و payroll قانونی کامل وارد نسخه اولیه نشود.
 
 ## ریسک‌ها و تصمیم‌های باز
 
