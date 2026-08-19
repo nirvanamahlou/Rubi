@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-19 — PC-A
+آخرین به‌روزرسانی: 2026-08-19 — PC-B Frontend Foundation
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
@@ -12,6 +12,7 @@
 | FOUNDATION-001 | PC-A         | `codex/pc-a-technical-bootstrap` | Technical Bootstrap: Monorepo، Web/API/Worker، Docker Compose و Prisma Client بدون مدل تجاری | `DONE`             | Commit `d9a9793` ادغام شد؛ مبنای Work Itemهای Full-Stack |
 | FOUNDATION-002 | تخصیص‌نیافته | TBD                              | سخت‌سازی زیرساخت، CI و استقرار محیط‌های غیرمحلی                                              | `PLANNED`          | FOUNDATION-001 و تصمیم‌های میزبانی/RPO/RTO               |
 | FOUNDATION-003 | تخصیص‌نیافته | TBD                              | IAM/Audit foundation، schema دامنه و Migration اولیه                                         | `PLANNED`          | FOUNDATION-001 و تایید مدل/تصمیم‌های باز P0              |
+| FOUNDATION-004 | PC-B         | `codex/pc-b-frontend-foundation` | Frontend Foundation: `apps/web/**`، تست Frontend و `docs/tasks/PC-B.md`                      | `READY_FOR_REVIEW` | Base `b5b7c5d`؛ قفل Dependency/Lockfile آزاد شد          |
 | DOCS-002       | PC-A         | `codex/pc-a-hr-module-ownership` | ثبت ماژول منابع انسانی، مالکیت نهایی ماژول‌ها و قرارداد همکاری Full-Stack                    | `READY_FOR_REVIEW` | فقط مستندات؛ بدون کد، Dependency، Schema یا Migration    |
 
 ## قرارداد مالکیت
