@@ -5,7 +5,7 @@
 - مالک: `PC-A`
 - Branch: `codex/pc-a-technical-bootstrap`
 - Base: Commit `cc0d411` از `codex/pc-a-bootstrap`
-- وضعیت: `READY_FOR_REVIEW`
+- وضعیت: `DONE` — implementation commit `d9a9793` روی `origin` Push شد.
 
 ### محدوده تکمیل‌شده
 
