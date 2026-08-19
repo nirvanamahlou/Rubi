@@ -1,0 +1,15 @@
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "cjs"
+  generatedFileExtension = "ts"
+  importFileExtension    = "ts"
+  engineType             = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Business models are intentionally absent during Technical Bootstrap.
+// Add the first model only with an approved domain work item and migration plan.

@@ -1,0 +1,7 @@
+{
+  "extends": "@rubi/typescript-config/base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "files": []
+}
