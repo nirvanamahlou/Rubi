@@ -7,8 +7,8 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'روبی | مدیریت یکپارچه سفر',
-    template: '%s | روبی',
+    default: 'CRM شرکت نیایش سیر سحر',
+    template: '%s | نیایش سیر سحر',
   },
   description: 'رابط فارسی و یکپارچه مدیریت ارتباط با مشتری و عملیات سفر',
 };
@@ -16,8 +16,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   colorScheme: 'light dark',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f4f7fb' },
-    { media: '(prefers-color-scheme: dark)', color: '#0b1120' },
+    { media: '(prefers-color-scheme: light)', color: '#f3f7fd' },
+    { media: '(prefers-color-scheme: dark)', color: '#08152d' },
   ],
 };
 

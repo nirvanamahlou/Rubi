@@ -15,6 +15,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
@@ -54,20 +55,23 @@ import {
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <Link
-      className="flex min-w-0 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className={cn(
+        'min-w-0 rounded-2xl bg-white p-1.5 shadow-lg shadow-blue-950/20 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
+        compact ? 'grid size-11 place-items-center p-1' : 'block w-full',
+      )}
       href="/dashboard"
     >
-      <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary text-lg font-black text-primary-foreground shadow-md shadow-primary/20">
-        ر
-      </span>
+      <Image
+        alt="لوگوی شرکت نیایش سیر سحر"
+        className={cn('w-full object-contain', compact ? 'h-8' : 'h-[54px]')}
+        height={710}
+        priority
+        src="/brand/niyayesh.png"
+        width={1758}
+      />
       {!compact ? (
-        <span className="min-w-0">
-          <strong className="block truncate text-base font-black">
-            {faMessages.brand.name}
-          </strong>
-          <span className="block truncate text-[11px] text-muted-foreground">
-            {faMessages.brand.product}
-          </span>
+        <span className="block truncate px-2 pb-1 text-center text-[10px] font-black text-[#25247f]">
+          {faMessages.brand.name}
         </span>
       ) : null}
     </Link>
@@ -83,22 +87,43 @@ function Navigation({
 }) {
   const pathname = usePathname();
   return (
-    <nav aria-label="منوی اصلی" className="space-y-1">
+    <nav
+      aria-label="منوی اصلی"
+      className={cn(
+        'grid content-start gap-0.5',
+        mobile
+          ? 'auto-rows-[44px]'
+          : 'h-full grid-rows-[repeat(17,minmax(32px,1fr))]',
+      )}
+    >
       {navigationItems.map(({ href, icon: Icon, title }) => {
         const active = pathname === href;
         const link = (
           <Link
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'group flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
-              active
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              'group flex items-center gap-3 rounded-xl px-3 font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300',
+              mobile
+                ? 'h-11 text-sm'
+                : 'h-full min-h-8 text-[clamp(12px,1.35vh,15px)]',
+              mobile
+                ? active
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                : active
+                  ? 'bg-cyan-300/20 text-white ring-1 ring-inset ring-cyan-100/30 shadow-md shadow-blue-950/20'
+                  : 'text-blue-50/75 hover:bg-white/10 hover:text-white',
               compact && 'justify-center px-0',
             )}
             href={href}
           >
-            <Icon aria-hidden="true" className="size-[18px] shrink-0" />
+            <Icon
+              aria-hidden="true"
+              className={cn(
+                'shrink-0',
+                mobile ? 'size-[18px]' : 'size-[clamp(17px,1.7vh,21px)]',
+              )}
+            />
             {!compact ? (
               <span>{title}</span>
             ) : (
@@ -290,60 +315,59 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen bg-background">
       <aside
         className={cn(
-          'sticky top-0 hidden h-screen shrink-0 flex-col border-s border-border bg-surface p-3 transition-[width] duration-200 lg:flex',
-          collapsed ? 'w-20' : 'w-72',
+          'sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden bg-[linear-gradient(180deg,#123f8c_0%,#0e2f6e_55%,#092354_100%)] p-2.5 text-white shadow-2xl shadow-blue-950/20 transition-[width] duration-200 lg:flex',
+          collapsed ? 'w-[68px]' : 'w-[290px]',
         )}
       >
         <div
           className={cn(
-            'flex h-16 items-center',
-            collapsed ? 'justify-center' : 'justify-between px-2',
+            'flex shrink-0 items-center',
+            collapsed ? 'h-14 justify-center' : 'min-h-[82px]',
           )}
         >
           <Brand compact={collapsed} />
         </div>
-        <div className="mt-3 flex-1 overflow-y-auto pb-4">
+        <div className="mt-1 min-h-0 flex-1 overflow-hidden">
           <Navigation compact={collapsed} />
         </div>
-        <Link
-          className={cn(
-            'flex min-h-10 items-center gap-3 rounded-xl px-3 text-sm text-muted-foreground hover:bg-muted hover:text-foreground',
-            collapsed && 'justify-center px-0',
-          )}
-          href="/status"
-        >
-          <Command aria-hidden="true" className="size-4" />
-          {!collapsed ? (
-            'وضعیت سامانه'
-          ) : (
-            <span className="sr-only">وضعیت سامانه</span>
-          )}
-        </Link>
-        <Button
-          aria-label={
-            collapsed
-              ? faMessages.shell.expandSidebar
-              : faMessages.shell.collapseSidebar
-          }
-          className="mt-2"
-          onClick={() => setCollapsed((value) => !value)}
-          size={collapsed ? 'icon' : 'md'}
-          variant="ghost"
-        >
-          {collapsed ? (
-            <ChevronsLeft aria-hidden="true" className="size-5" />
-          ) : (
-            <>
-              <ChevronsRight aria-hidden="true" className="size-5" />
-              {faMessages.shell.collapseSidebar}
-            </>
-          )}
-        </Button>
+        <div className="mt-1 grid shrink-0 grid-cols-[1fr_auto] gap-1 border-t border-white/10 pt-1">
+          <Link
+            className={cn(
+              'flex h-8 items-center gap-2 rounded-lg px-2 text-[11px] font-semibold text-blue-100/80 hover:bg-white/10 hover:text-white',
+              collapsed && 'justify-center px-0',
+            )}
+            href="/status"
+          >
+            <Command aria-hidden="true" className="size-3.5" />
+            {!collapsed ? (
+              'وضعیت سامانه'
+            ) : (
+              <span className="sr-only">وضعیت سامانه</span>
+            )}
+          </Link>
+          <Button
+            aria-label={
+              collapsed
+                ? faMessages.shell.expandSidebar
+                : faMessages.shell.collapseSidebar
+            }
+            className="size-8 min-h-8 p-0 text-blue-100 hover:bg-white/10 hover:text-white"
+            onClick={() => setCollapsed((value) => !value)}
+            size="icon"
+            variant="ghost"
+          >
+            {collapsed ? (
+              <ChevronsLeft aria-hidden="true" className="size-4" />
+            ) : (
+              <ChevronsRight aria-hidden="true" className="size-4" />
+            )}
+          </Button>
+        </div>
       </aside>
 
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-40 border-b border-border bg-surface/90 backdrop-blur-xl">
-          <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
+        <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-surface/90 shadow-sm shadow-blue-900/5 backdrop-blur-xl dark:border-blue-900/50">
+          <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
             <Drawer>
               <DrawerTrigger asChild>
                 <Button
@@ -402,10 +426,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             <HeaderActions />
           </div>
         </header>
-        <div className="px-4 pt-4 sm:px-6 lg:px-8">
+        <div className="px-4 pt-3 sm:px-6 lg:px-7">
           <Breadcrumb />
         </div>
-        <main className="px-4 pb-10 pt-5 sm:px-6 lg:px-8" id="main-content">
+        <main className="px-4 pb-6 pt-3 sm:px-6 lg:px-7" id="main-content">
           {children}
         </main>
       </div>
