@@ -1,7 +1,7 @@
 export const faMessages = {
   brand: {
-    name: 'روبی',
-    product: 'مدیریت یکپارچه سفر',
+    name: 'CRM شرکت نیایش سیر سحر',
+    product: 'سامانه یکپارچه مدیریت سفر',
   },
   common: {
     demo: 'نمایشی',
@@ -46,7 +46,7 @@ export const faMessages = {
   },
   dashboard: {
     title: 'داشبورد',
-    description: 'نمای کلی شاخص‌ها، فعالیت‌ها و کارهای نزدیک',
+    description: 'نمای یکپارچه فروش، عملیات سفر و کارهای روزانه شرکت',
     period: 'بازه زمانی',
     periods: {
       week: '۷ روز اخیر',
@@ -54,7 +54,7 @@ export const faMessages = {
       quarter: 'سه‌ماهه اخیر',
     },
     kpis: ['فروش خالص', 'مبلغ وصول‌شده', 'سفارش‌های جدید', 'وظایف عقب‌افتاده'],
-    chartTitle: 'روند عملکرد',
+    chartTitle: 'روند عملکرد شرکت',
     recentActivity: 'فعالیت‌های اخیر',
     upcomingTasks: 'وظایف نزدیک',
     mockNotice:
