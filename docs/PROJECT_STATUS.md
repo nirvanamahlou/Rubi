@@ -1,18 +1,30 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-22 — ARCH-001 Approved Travel Workflow
+آخرین به‌روزرسانی: 2026-08-22 — UI-ARCH-001 Approved Workflow Frontend
 
 ## خلاصه
 
 - مرحله جاری: **مرحله 2 — Foundation + تثبیت معماری دامنه سفر**
-- وضعیت: **معماری تاییدشده فروش/رزرواسیون/بلیت/خرید/مالی در ARCH-001 آماده Review است**
+- وضعیت: **معماری و پیاده‌سازی Frontend منطبق با آن در ARCH-001 و UI-ARCH-001 آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Base: Commit `c4f8bdea79b81abc7fc8c518bc83e7f765383bd3` از `origin/develop`
-- شاخه فعال: `codex/pc-a-approved-workflow-architecture`
-- Work Item: `ARCH-001`؛ معماری ۱۷ بخش و جریان فروش تا تحویل مدارک
+- شاخه فعال: `codex/pc-a-approved-workflow-frontend`
+- Work Item: `UI-ARCH-001`؛ منوی ۱۷ بخش و نمای گردش فروش تا تحویل مدارک
 - محیط مسئول: `COMPUTER_ID=PC-A`
 
 ## برنامه Sprint اول
+
+### `UI-ARCH-001` — PC-A — `READY_FOR_REVIEW`
+
+- منوی اصلی مطابق معماری ۱۷ بخشی تاییدشده بازچینی شد؛ Customer Affairs قبل/بعد،
+  Reservation، Ticket Management، Sales و System Management مرز مستقل و روشن دارند.
+- نمای معماری ماژول‌های فروش، رزرواسیون، خرید و مالی همراه زنجیره تحویل اطلاعات ایجاد شد.
+- صفحات مستقل امور مشتریان، تعریف بلیت و مدیریت سیستم افزوده شدند؛ مسیر قدیمی خدمات مشتریان
+  به Customer Affairs هدایت می‌شود.
+- تغییر فقط در Frontend و اسناد Task است؛ Prisma، Migration، Dependency/Lockfile، IAM و
+  فایل‌های `MASTER-001` تغییر نمی‌کنند.
+- ESLint، TypeScript در Build، تست ناوبری (۵ تست)، Production Build با ۲۴ مسیر Static،
+  `git diff --check` و Smoke هفت مسیر اصلی روی پورت ۳۱۰۰ پاس شدند.
 
 ### `ARCH-001` — PC-A — `READY_FOR_REVIEW`
 

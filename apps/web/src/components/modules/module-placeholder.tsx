@@ -2,8 +2,16 @@ import { Alert, EmptyState, PageHeader } from '@/components/ui/surfaces';
 import { getNavigationItem } from '@/lib/navigation';
 import { faMessages, type NavigationHref } from '@/messages/fa';
 
-export function ModulePlaceholder({ href }: { href: NavigationHref }) {
-  const item = getNavigationItem(href);
+type LegacyNavigationHref = '/settings' | '/users';
+
+export function ModulePlaceholder({
+  href,
+}: {
+  href: NavigationHref | LegacyNavigationHref;
+}) {
+  const navigationHref =
+    href === '/settings' || href === '/users' ? '/system' : href;
+  const item = getNavigationItem(navigationHref);
   if (!item) return null;
 
   return (

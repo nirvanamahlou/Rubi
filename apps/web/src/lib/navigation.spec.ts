@@ -5,9 +5,10 @@ import { getNavigationItem, navigationItems } from './navigation';
 const expectedRoutes = [
   '/dashboard',
   '/customers',
-  '/sales',
+  '/customer-affairs',
   '/reservations',
-  '/customer-service',
+  '/ticket-management',
+  '/sales',
   '/purchases',
   '/finance',
   '/marketing',
@@ -17,9 +18,8 @@ const expectedRoutes = [
   '/documents',
   '/reports',
   '/integrations',
-  '/users',
+  '/system',
   '/master-data',
-  '/settings',
 ];
 
 describe('CRM navigation', () => {
@@ -36,5 +36,19 @@ describe('CRM navigation', () => {
     const titles = navigationItems.map((item) => item.title).join(' ');
     expect(titles).not.toContain('جست‌وجو و فروش آنلاین');
     expect(titles).not.toContain('صدور اسناد');
+  });
+
+  it('keeps sales, reservation, and ticket management as separate modules', () => {
+    expect(getNavigationItem('/sales')?.title).toContain('قراردادها');
+    expect(getNavigationItem('/reservations')?.title).toContain('رزرواسیون');
+    expect(getNavigationItem('/ticket-management')?.title).toContain('بلیت');
+  });
+
+  it('combines user administration and settings only at navigation level', () => {
+    const hrefs: readonly string[] = navigationItems.map((item) => item.href);
+
+    expect(getNavigationItem('/system')?.description).toContain('کاربران');
+    expect(hrefs).not.toContain('/users');
+    expect(hrefs).not.toContain('/settings');
   });
 });

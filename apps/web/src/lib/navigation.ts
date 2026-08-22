@@ -8,14 +8,14 @@ import {
   FileStack,
   Gauge,
   Headphones,
+  Handshake,
   HeartHandshake,
   Megaphone,
   PackageSearch,
   Settings,
   SlidersHorizontal,
-  UserRoundCog,
+  Ticket,
   UsersRound,
-  Waypoints,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -24,9 +24,10 @@ import { navigationMessages, type NavigationHref } from '../messages/fa';
 const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/dashboard': Gauge,
   '/customers': UsersRound,
-  '/sales': Waypoints,
+  '/customer-affairs': Headphones,
   '/reservations': CalendarCheck2,
-  '/customer-service': Headphones,
+  '/ticket-management': Ticket,
+  '/sales': Handshake,
   '/purchases': PackageSearch,
   '/finance': CircleDollarSign,
   '/marketing': Megaphone,
@@ -36,9 +37,8 @@ const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/documents': FileStack,
   '/reports': BarChart3,
   '/integrations': SlidersHorizontal,
-  '/users': UserRoundCog,
+  '/system': Settings,
   '/master-data': ClipboardList,
-  '/settings': Settings,
 };
 
 export const navigationItems = navigationMessages.map((item) => ({
