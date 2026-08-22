@@ -1,22 +1,39 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-22 — ARCH-001 پس از ادغام IAM و MASTER-001
+آخرین به‌روزرسانی: 2026-08-22 — UI-ARCH-001 روی معماری ادغام‌شده
 
 ## خلاصه
 
 - مرحله جاری: **مرحله 2 — Foundation + تثبیت معماری دامنه سفر**
-- وضعیت: **معماری تاییدشده فروش/رزرواسیون/بلیت/خرید/مالی در ARCH-001 آماده Review است**
+- وضعیت: **ARCH-001 ادغام شده و UI-ARCH-001 برای Review نهایی آماده می‌شود**
 - Repository: `Rubi`، Remote با نام `origin`
-- Base: Merge Commit `cda0f9a67589974458a4261b753152a796fa1d0b` از آخرین `origin/develop`
-- شاخه فعال: `codex/pc-a-approved-workflow-architecture`
-- Work Item: `ARCH-001`؛ معماری ۱۷ بخش و جریان فروش تا تحویل مدارک
+- Base: Merge Commit `99dd1cff21cff76f0edb101fb8e6033900c8b4a9` از آخرین `origin/develop`
+- شاخه فعال: `codex/pc-a-approved-workflow-frontend`
+- Work Item: `UI-ARCH-001`؛ منوی ۱۷ بخش و نمای گردش فروش تا تحویل مدارک
 - محیط مسئول: `COMPUTER_ID=PC-A`
 
 ## برنامه Sprint اول
 
-### `ARCH-001` — PC-A — `READY_FOR_REVIEW`
+### `UI-ARCH-001` — PC-A — `READY_FOR_REVIEW`
 
-- ساختار منو به ۱۷ بخش جدید شامل «مدیریت و تعریف بلیت‌ها» و «مدیریت سیستم» تغییر می‌کند.
+- منوی اصلی مطابق معماری ۱۷ بخشی تاییدشده بازچینی شد؛ Customer Affairs قبل/بعد،
+  Reservation، Ticket Management، Sales و System Management مرز مستقل و روشن دارند.
+- نمای معماری ماژول‌های فروش، رزرواسیون، خرید و مالی همراه زنجیره تحویل اطلاعات ایجاد شد.
+- صفحات مستقل امور مشتریان، تعریف بلیت و مدیریت سیستم افزوده شدند؛ مسیر قدیمی خدمات مشتریان
+  به Customer Affairs هدایت می‌شود.
+- صفحه مدیریت سیستم اکنون ورودی عملی به رابط موجود IAM در `/users` و تنظیمات در
+  `/settings` دارد؛ هر دو مسیر زیر «مدیریت سیستم» Resolve می‌شوند و منوی اصلی ۱۷ بخشی
+  بدون آیتم مستقل جدید حفظ شده است.
+- تغییر فقط در Frontend و اسناد Task است؛ Prisma، Migration، Dependency/Lockfile، IAM و
+  فایل‌های `MASTER-001` تغییر نمی‌کنند.
+- نصب frozen، ESLint کل Web، Typecheck، نه فایل تست با ۲۶ تست و Production Build پاس شدند.
+- خروجی Build شامل ۲۴ Route قابل اجرا است و Smoke احراز‌شده هر ده مسیر اصلی روی پورت ۳۱۰۰
+  با HTTP 200 و محتوای مورد انتظار پاس شد؛ `git diff --check` نیز پاس است.
+
+### `ARCH-001` — PC-A — `DONE`
+
+- Merge Commit: `99dd1cff21cff76f0edb101fb8e6033900c8b4a9` روی `origin/develop`
+- ساختار ۱۷ بخشی شامل «مدیریت و تعریف بلیت‌ها» و «مدیریت سیستم» ثبت شده است.
 - Customer Affairs مالک Lead/Support؛ Sales مالک قرارداد و تخصیص passenger/service؛
   Reservations مالک استعلام/Hold/صدور/Manifest؛ Procurement مالک خرید و Finance مالک
   financial release است.

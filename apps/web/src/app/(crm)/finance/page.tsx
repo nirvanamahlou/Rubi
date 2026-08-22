@@ -1,9 +1,63 @@
 import type { Metadata } from 'next';
+import { Landmark, ReceiptText, ShieldCheck, WalletCards } from 'lucide-react';
 
-import { ModulePlaceholder } from '@/components/modules/module-placeholder';
+import { ModuleOverview } from '@/components/modules/module-overview';
 
 export const metadata: Metadata = { title: 'مالی و خزانه‌داری' };
 
 export default function Page() {
-  return <ModulePlaceholder href="/finance" />;
+  return (
+    <ModuleOverview
+      description="مرجع دریافت و پرداخت، چک‌ها، حساب‌های شرکت و کنترل مالی قرارداد قبل از آزادسازی مدارک صادرشده است."
+      flow={[
+        'دریافت قرارداد',
+        'ثبت شرایط پرداخت',
+        'وصول یا تضمین',
+        'تایید مالی',
+        'آزادسازی مدارک',
+      ]}
+      note="بلیت، واچر و بیمه ممکن است در رزرواسیون صادر شده باشند، اما تا ثبت تایید مالی برای تیم فروش قابل دریافت و ارسال به مسافر نیستند."
+      sections={[
+        {
+          title: 'دریافت‌ها و شرایط پرداخت',
+          icon: ReceiptText,
+          items: [
+            'نقد، کارت‌خوان، واریز، حواله و پرداخت آنلاین',
+            'اقساط، پیش‌پرداخت، مانده و سررسید قرارداد',
+            'تطبیق دریافت با قرارداد، مشتری و پرداخت‌کننده',
+          ],
+        },
+        {
+          title: 'مدیریت چک',
+          icon: WalletCards,
+          badge: 'یادآوری سررسید',
+          items: [
+            'چک دریافتی و پرداختی با تصویر و مشخصات کامل',
+            'وضعیت نزد صندوق، واگذار، وصول، برگشت یا ابطال',
+            'یادآوری سررسید و پیگیری مسئول هر چک',
+          ],
+        },
+        {
+          title: 'حساب‌ها و خزانه',
+          icon: Landmark,
+          items: [
+            'چند حساب بانکی، صندوق و موجودی هر حساب',
+            'انتقال بین حساب‌ها و گردش روزانه',
+            'پرداخت تامین‌کنندگان و تطبیق صورتحساب',
+          ],
+        },
+        {
+          title: 'کنترل و آزادسازی مالی',
+          icon: ShieldCheck,
+          items: [
+            'تایید تحویل مدارک بر اساس وصول یا شرایط مصوب',
+            'قفل مدارک صادرشده تا زمان Financial Release',
+            'ثبت تاییدکننده، زمان، توضیح و استثناهای مجاز',
+            'اعلان خودکار به فروش پس از آزادسازی',
+          ],
+        },
+      ]}
+      title="مالی و خزانه‌داری"
+    />
+  );
 }

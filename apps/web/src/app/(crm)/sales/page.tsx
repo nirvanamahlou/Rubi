@@ -1,9 +1,56 @@
 import type { Metadata } from 'next';
+import { FileSignature, Send, UserRoundCheck } from 'lucide-react';
 
-import { ModulePlaceholder } from '@/components/modules/module-placeholder';
+import { ModuleOverview } from '@/components/modules/module-overview';
 
-export const metadata: Metadata = { title: 'فروش و سرنخ‌ها' };
+export const metadata: Metadata = { title: 'قراردادها و فروش' };
 
 export default function Page() {
-  return <ModulePlaceholder href="/sales" />;
+  return (
+    <ModuleOverview
+      description="قرارداد جدید در این بخش ساخته می‌شود و تیم فروش مسئول اتصال مشتری، پرداخت‌کننده و مسافران به خدمات قرارداد است."
+      flow={[
+        'انتخاب مشتری',
+        'ثبت قرارداد',
+        'ثبت مسافران',
+        'تخصیص خدمات',
+        'ارسال به مالی و رزرواسیون',
+      ]}
+      note="فروش مالک قرارداد و تخصیص مسافر به بلیت، هتل، اتاق، بیمه، تور و سایر خدمات است؛ صدور واقعی در رزرواسیون انجام می‌شود."
+      sections={[
+        {
+          title: 'قرارداد جدید',
+          icon: FileSignature,
+          badge: 'مالک: فروش',
+          items: [
+            'نوع قرارداد فردی، سازمانی، آژانسی یا تور داخلی شرکت',
+            'مشتری، پرداخت‌کننده، شعبه، کارشناس و کانال فروش',
+            'شرایط قرارداد، ارز، تخفیف فروش و جمع نهایی',
+            'نسخه‌بندی، تاریخچه تغییرات و وضعیت تایید',
+          ],
+        },
+        {
+          title: 'مسافران و تخصیص خدمات',
+          icon: UserRoundCheck,
+          items: [
+            'اتصال مسافر به قرارداد با کنترل مدارک هویتی',
+            'تخصیص هر مسافر به بلیت و مسیر رفت‌وبرگشت',
+            'تخصیص هتل، نوع اتاق، هم‌اتاقی، چک‌این و چک‌اوت',
+            'تخصیص بیمه، تور، ترانسفر و خدمات جانبی',
+          ],
+        },
+        {
+          title: 'تحویل بین واحدها',
+          icon: Send,
+          items: [
+            'ارسال Snapshot تاییدشده قرارداد به مالی و رزرواسیون',
+            'نمایش وضعیت مالی و وضعیت صدور بدون تغییر مالکیت آن‌ها',
+            'دریافت مدارک صادرشده فقط پس از تایید مالی',
+            'ارسال نهایی بلیت، واچر و بیمه برای مسافر',
+          ],
+        },
+      ]}
+      title="قراردادها، فروش و تخصیص خدمات"
+    />
+  );
 }
