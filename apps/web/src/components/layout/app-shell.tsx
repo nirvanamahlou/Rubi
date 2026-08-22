@@ -8,6 +8,7 @@ import {
   ChevronsRight,
   Command,
   Languages,
+  LogOut,
   Menu,
   Moon,
   Search,
@@ -16,7 +17,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { navigationItems } from '@/lib/navigation';
@@ -220,6 +221,18 @@ function SearchDialog() {
 
 function HeaderActions() {
   const { theme, toggleTheme } = useTheme();
+  const router = useRouter();
+  async function signOut() {
+    const api = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '');
+    if (api) {
+      await fetch(`${api}/iam/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      }).catch(() => undefined);
+    }
+    router.replace('/login');
+    router.refresh();
+  }
   return (
     <div className="flex items-center gap-1">
       <DropdownMenu>
@@ -281,7 +294,11 @@ function HeaderActions() {
         <DropdownMenuContent align="end">
           <DropdownMenuItem>{faMessages.shell.profile}</DropdownMenuItem>
           <DropdownMenuItem>{faMessages.shell.preferences}</DropdownMenuItem>
-          <DropdownMenuItem className="text-destructive">
+          <DropdownMenuItem
+            className="text-destructive"
+            onSelect={() => void signOut()}
+          >
+            <LogOut aria-hidden="true" className="size-4" />
             {faMessages.shell.signOut}
           </DropdownMenuItem>
         </DropdownMenuContent>
