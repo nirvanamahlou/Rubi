@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
-import { ModulePlaceholder } from '@/components/modules/module-placeholder';
+import { UserManagement } from './user-management';
 
 export const metadata: Metadata = { title: 'مدیریت کاربران' };
 
 export default function Page() {
-  return <ModulePlaceholder href="/users" />;
+  return <UserManagement />;
 }
