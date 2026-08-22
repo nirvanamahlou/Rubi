@@ -44,9 +44,9 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 `c4f8bdea79b81abc7fc8c518bc83e7f765383bd3`. ثبت این بخش فقط برنامه‌ریزی است و مجوز
 ایجاد کد، Schema، Migration یا Dependency در Branch مستنداتی را نمی‌دهد.
 
-### `IAM-001` — PC-A — `PLANNED`
+### `IAM-001` — PC-A — `IN_PROGRESS`
 
-- Branch آینده: `codex/pc-a-iam-foundation`
+- Branch فعال: `codex/pc-a-iam-foundation` از Base `4342a91`
 - خروجی: ورود/خروج امن، User، Role، Permission، Session، password policy، branch access،
   کنترل دسترسی Backend و Frontend، Audit امنیتی، API، Database، Frontend و Test کامل.
 - قفل‌ها از شروع Sprint برای این Task رزرو هستند: Migration Owner، Dependency/Lockfile

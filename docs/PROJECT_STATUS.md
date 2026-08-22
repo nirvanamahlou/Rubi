@@ -4,17 +4,17 @@
 
 ## خلاصه
 
-- مرحله جاری: **مرحله 2 — Foundation / برنامه‌ریزی Sprint اول**
-- وضعیت: **Baseline فنی و Frontend Foundation روی develop؛ Taskهای Sprint اول آماده Review**
+- مرحله جاری: **مرحله 2 — Foundation / اجرای Sprint اول**
+- وضعیت: **IAM-001 در حال پیاده‌سازی Full-Stack توسط PC-A**
 - Repository: `Rubi`، Remote با نام `origin`
-- Base: Commit `c4f8bdea79b81abc7fc8c518bc83e7f765383bd3` از `origin/develop`
-- شاخه فعال: `codex/pc-a-sprint-1-planning`
-- Work Item: `DOCS-003`؛ فقط برنامه‌ریزی `IAM-001` و `MASTER-001`
+- Base: Commit `4342a91f11c042a97b9553a509c9b585bb48596e` از `origin/develop`
+- شاخه فعال: `codex/pc-a-iam-foundation`
+- Work Item: `IAM-001`؛ IAM، branch access و Audit امنیتی
 - محیط مسئول: `COMPUTER_ID=PC-A`
 
 ## برنامه Sprint اول
 
-### `IAM-001` — PC-A — `PLANNED`
+### `IAM-001` — PC-A — `IN_PROGRESS`
 
 - Branch آینده: `codex/pc-a-iam-foundation`
 - ورود/خروج امن، User، Role، Permission، Session، password policy، branch access،

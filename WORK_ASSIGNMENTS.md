@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-22 — PC-A Sprint 1 Planning
+آخرین به‌روزرسانی: 2026-08-22 — PC-A IAM-001
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
@@ -15,7 +15,7 @@
 | FOUNDATION-004 | PC-B         | `codex/pc-b-frontend-foundation`    | Frontend Foundation: `apps/web/**`، تست Frontend و `docs/tasks/PC-B.md`                      | `READY_FOR_REVIEW` | Base `b5b7c5d`؛ قفل Dependency/Lockfile آزاد شد                                    |
 | DOCS-002       | PC-A         | `codex/pc-a-hr-module-ownership`    | ثبت ماژول منابع انسانی، مالکیت نهایی ماژول‌ها و قرارداد همکاری Full-Stack                    | `READY_FOR_REVIEW` | فقط مستندات؛ بدون کد، Dependency، Schema یا Migration                              |
 | DOCS-003       | PC-A         | `codex/pc-a-sprint-1-planning`      | ثبت برنامه Sprint اول، مرز کار و Handoff دو Task `IAM-001` و `MASTER-001`                    | `READY_FOR_REVIEW` | Base `c4f8bde`؛ فقط اسناد برنامه‌ریزی                                              |
-| IAM-001        | PC-A         | `codex/pc-a-iam-foundation`         | IAM Full-Stack: Database، API، Web، Test، امنیت، شعبه/دسترسی و Audit                         | `PLANNED`          | مالک انحصاری Migration، Dependency/Lockfile و قرارداد مشترک IAM تا Handoff صریح    |
+| IAM-001        | PC-A         | `codex/pc-a-iam-foundation`         | IAM Full-Stack: Database، API، Web، Test، امنیت، شعبه/دسترسی و Audit                         | `IN_PROGRESS`      | Base `4342a91`؛ مالک انحصاری Migration، Dependency/Lockfile و قرارداد مشترک IAM    |
 | MASTER-001     | PC-B         | `codex/pc-b-master-data-foundation` | Master Data: Frontend، API Contract، Test، جست‌وجو/فیلتر و Excel/PDF                         | `PLANNED`          | تا آزادشدن قفل PC-A بدون Prisma Migration و بدون تغییر Dependency/Lockfile پیش رود |
 
 ## Sprint 1 — مرز فایل و Handoff
@@ -25,9 +25,10 @@
 - محدوده مالکیت پیاده‌سازی: مدل و Migrationهای IAM، Backend احراز هویت و authorization،
   Frontend ورود/خروج و مدیریت کاربران/نقش‌ها، تست‌های unit/integration/permission/E2E و
   Audit رخدادهای امنیتی.
-- فایل‌های مورد انتظار: مسیرهای IAM در `apps/api/**` و `apps/web/**`، قراردادهای IAM در
-  `packages/contracts/**`، مدل و Migration تاییدشده در `packages/database/prisma/**` و
-  تست‌ها/اسناد مرتبط. فایل دقیق پیش از شروع در ردیف Task یا Handoff ثبت می‌شود.
+- فایل‌های رزروشده: `apps/api/src/iam/**`، پیکربندی ضروری API، مسیرهای احراز هویت و
+  مدیریت دسترسی در `apps/web/src/**`، `packages/contracts/src/iam/**`،
+  `packages/database/prisma/schema.prisma` و Migration/Seed نخست IAM، manifestهای
+  ضروری، `pnpm-lock.yaml` و اسناد وضعیت/امنیت/Handoff همین Task.
 - قفل رزروشده: **Migration Owner = PC-A**، **Dependency/Lockfile Owner = PC-A** و
   **IAM shared-contract Owner = PC-A**. هیچ Task دیگر تا آزادسازی صریح این قفل‌ها مجاز
   به تغییر همان محدوده نیست.
