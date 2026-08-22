@@ -1,54 +1,75 @@
 import type { Metadata } from 'next';
-import { Building2, KeyRound, Settings2, UsersRound } from 'lucide-react';
+import { ArrowLeft, Settings2, ShieldCheck, UsersRound } from 'lucide-react';
+import Link from 'next/link';
 
-import { ModuleOverview } from '@/components/modules/module-overview';
+import { Card, PageHeader } from '@/components/ui/surfaces';
 
 export const metadata: Metadata = { title: 'مدیریت سیستم' };
 
 export default function Page() {
   return (
-    <ModuleOverview
-      description="ورودی یکپارچه مدیریت کاربران و تنظیمات؛ سرویس‌های IAM و تنظیمات در Backend همچنان مرز مستقل خود را حفظ می‌کنند."
-      note="ادغام این دو مورد فقط در منوی کاربری است و به معنی یکی‌شدن جدول‌ها، قراردادهای API یا مسئولیت امنیتی آن‌ها نیست."
-      sections={[
-        {
-          title: 'کاربران',
-          icon: UsersRound,
-          items: [
-            'ایجاد، ویرایش، فعال‌سازی و غیرفعال‌سازی کاربر',
-            'پروفایل کاری، شعبه اصلی و وضعیت دسترسی',
-            'نشست‌های فعال و تاریخچه ورودهای امنیتی',
-          ],
-        },
-        {
-          title: 'نقش‌ها و مجوزها',
-          icon: KeyRound,
-          items: [
-            'نقش‌های سازمانی و مجوزهای عملیاتی هر بخش',
-            'محدوده شعبه و جداسازی مشاهده از اقدام',
-            'کنترل عملیات حساس و گزارش Audit',
-          ],
-        },
-        {
-          title: 'شعب و ساختار سازمانی',
-          icon: Building2,
-          items: [
-            'تعریف شعبه و انتساب کاربران',
-            'سیاست دسترسی بین شعب و نمای مدیریتی',
-            'مسئولان تایید و زنجیره جانشینی',
-          ],
-        },
-        {
-          title: 'تنظیمات سامانه',
-          icon: Settings2,
-          items: [
-            'شماره‌گذاری، قالب‌ها و تنظیمات هر ماژول',
-            'اعلان‌ها، زمان‌بندی‌ها و ویژگی‌های قابل فعال‌سازی',
-            'تنظیمات امن Providerها بدون نمایش Secret',
-          ],
-        },
-      ]}
-      title="مدیریت سیستم"
-    />
+    <div className="space-y-6">
+      <PageHeader
+        description="درگاه عملی مدیریت دسترسی IAM و تنظیمات سامانه؛ این دو حوزه در Backend مرز مستقل خود را حفظ می‌کنند."
+        eyebrow="مدیریت و امنیت"
+        title="مدیریت سیستم"
+      />
+
+      <section
+        aria-label="گزینه‌های مدیریت سیستم"
+        className="grid gap-4 lg:grid-cols-2"
+      >
+        <Card className="flex h-full flex-col p-6">
+          <span className="grid size-12 place-items-center rounded-2xl bg-secondary text-secondary-foreground">
+            <UsersRound aria-hidden="true" className="size-6" />
+          </span>
+          <h2 className="mt-5 text-lg font-black text-foreground">
+            مدیریت کاربران، نقش‌ها و دسترسی‌ها
+          </h2>
+          <p className="mt-2 flex-1 text-sm leading-7 text-muted-foreground">
+            ورود به رابط عملی IAM برای مدیریت وضعیت کاربران، نقش‌ها، مجوزها و
+            دسترسی شعب.
+          </p>
+          <Link
+            className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            href="/users"
+          >
+            ورود به مدیریت کاربران
+            <ArrowLeft aria-hidden="true" className="size-4" />
+          </Link>
+        </Card>
+
+        <Card className="flex h-full flex-col p-6">
+          <span className="grid size-12 place-items-center rounded-2xl bg-secondary text-secondary-foreground">
+            <Settings2 aria-hidden="true" className="size-6" />
+          </span>
+          <h2 className="mt-5 text-lg font-black text-foreground">
+            تنظیمات سامانه
+          </h2>
+          <p className="mt-2 flex-1 text-sm leading-7 text-muted-foreground">
+            دسترسی به تنظیمات عمومی سامانه، بدون ترکیب مسئولیت‌های Backend
+            تنظیمات با IAM.
+          </p>
+          <Link
+            className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-xl border border-border bg-surface px-4 text-sm font-semibold transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            href="/settings"
+          >
+            ورود به تنظیمات سامانه
+            <ArrowLeft aria-hidden="true" className="size-4" />
+          </Link>
+        </Card>
+      </section>
+
+      <div className="flex items-start gap-3 rounded-xl border border-cyan-500/25 bg-cyan-500/5 px-4 py-3 text-sm leading-7 text-foreground">
+        <ShieldCheck
+          aria-hidden="true"
+          className="mt-1 size-5 shrink-0 text-primary"
+        />
+        <p>
+          این تجمیع فقط در سطح ناوبری است؛ قراردادها، داده‌ها و کنترل‌های امنیتی
+          IAM و تنظیمات مستقل باقی می‌مانند.
+        </p>
+      </div>
+    </div>
   );
 }

@@ -20,7 +20,11 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { navigationItems } from '@/lib/navigation';
+import {
+  getNavigationBreadcrumbs,
+  isNavigationItemActive,
+  navigationItems,
+} from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 import { faMessages } from '@/messages/fa';
 import { useTheme } from '../theme-provider';
@@ -98,7 +102,7 @@ function Navigation({
       )}
     >
       {navigationItems.map(({ href, icon: Icon, title }) => {
-        const active = pathname === href;
+        const active = isNavigationItemActive(href, pathname);
         const link = (
           <Link
             aria-current={active ? 'page' : undefined}
@@ -309,7 +313,7 @@ function HeaderActions() {
 
 function Breadcrumb() {
   const pathname = usePathname();
-  const current = navigationItems.find((item) => item.href === pathname);
+  const breadcrumbs = getNavigationBreadcrumbs(pathname);
   return (
     <nav
       aria-label="مسیر صفحه"
@@ -318,10 +322,35 @@ function Breadcrumb() {
       <Link className="hover:text-foreground" href="/dashboard">
         {faMessages.shell.workspace}
       </Link>
-      <span aria-hidden="true">/</span>
-      <span aria-current="page" className="font-semibold text-foreground">
-        {current?.title ?? faMessages.common.unavailable}
-      </span>
+      {breadcrumbs.length ? (
+        breadcrumbs.map((item, index) => {
+          const current = index === breadcrumbs.length - 1;
+          return (
+            <span className="contents" key={item.href}>
+              <span aria-hidden="true">/</span>
+              {current ? (
+                <span
+                  aria-current="page"
+                  className="font-semibold text-foreground"
+                >
+                  {item.title}
+                </span>
+              ) : (
+                <Link className="hover:text-foreground" href={item.href}>
+                  {item.title}
+                </Link>
+              )}
+            </span>
+          );
+        })
+      ) : (
+        <>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page" className="font-semibold text-foreground">
+            {faMessages.common.unavailable}
+          </span>
+        </>
+      )}
     </nav>
   );
 }

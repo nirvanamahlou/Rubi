@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { getNavigationItem, navigationItems } from './navigation';
+import {
+  getNavigationBreadcrumbs,
+  getNavigationItem,
+  isNavigationItemActive,
+  navigationItems,
+} from './navigation';
 
 const expectedRoutes = [
   '/dashboard',
@@ -50,5 +55,23 @@ describe('CRM navigation', () => {
     expect(getNavigationItem('/system')?.description).toContain('کاربران');
     expect(hrefs).not.toContain('/users');
     expect(hrefs).not.toContain('/settings');
+    expect(getNavigationItem('/users')?.href).toBe('/system');
+    expect(getNavigationItem('/settings')?.href).toBe('/system');
+  });
+
+  it('keeps system navigation active for IAM and settings aliases', () => {
+    expect(isNavigationItemActive('/system', '/system')).toBe(true);
+    expect(isNavigationItemActive('/system', '/users')).toBe(true);
+    expect(isNavigationItemActive('/system', '/settings')).toBe(true);
+    expect(isNavigationItemActive('/dashboard', '/users')).toBe(false);
+  });
+
+  it('identifies users and settings beneath system management', () => {
+    expect(getNavigationBreadcrumbs('/users').map((item) => item.href)).toEqual(
+      ['/system', '/users'],
+    );
+    expect(
+      getNavigationBreadcrumbs('/settings').map((item) => item.href),
+    ).toEqual(['/system', '/settings']);
   });
 });
