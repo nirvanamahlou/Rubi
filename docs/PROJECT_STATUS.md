@@ -1,22 +1,22 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-22 — PC-A IAM-001
+آخرین به‌روزرسانی: 2026-08-22 — PC-B MASTER-001 پس از ادغام IAM
 
 ## خلاصه
 
 - مرحله جاری: **مرحله 2 — Foundation / اجرای Sprint اول**
-- وضعیت: **IAM-001 تکمیل و آماده Draft PR/Review**
+- وضعیت: **MASTER-001 آماده Review روی IAM baseline ادغام‌شده**
 - Repository: `Rubi`، Remote با نام `origin`
-- Base: Commit `4342a91f11c042a97b9553a509c9b585bb48596e` از `origin/develop`
-- شاخه فعال: `codex/pc-a-iam-foundation`
-- Work Item: `IAM-001`؛ IAM، branch access و Audit امنیتی
-- محیط مسئول: `COMPUTER_ID=PC-A`
+- Base جدید: Merge Commit `50eaccaf25b63d2ff584ff928cf05c4ccd4c5eac` از `origin/develop`
+- شاخه فعال: `codex/pc-b-master-data-foundation`
+- Work Item: `MASTER-001`؛ UI، Contract و Test بدون persistence
+- محیط مسئول: `COMPUTER_ID=PC-B`
 
 ## برنامه Sprint اول
 
-### `IAM-001` — PC-A — `READY_FOR_REVIEW`
+### `IAM-001` — PC-A — `DONE`
 
-- Branch فعال: `codex/pc-a-iam-foundation`
+- Merge Commit: `50eaccaf25b63d2ff584ff928cf05c4ccd4c5eac` روی `origin/develop`
 - ورود/خروج امن، User، Role، Permission، Session، password policy، branch access،
   کنترل دسترسی Backend/Frontend و Audit امنیتی را Full-Stack پوشش می‌دهد.
 - PC-A مالک انحصاری Migration، Dependency/Lockfile و قراردادهای مشترک IAM است.
@@ -26,27 +26,28 @@
   متوالی بدون duplicate پاس شد و `prisma migrate status` دیتابیس را up-to-date اعلام کرد.
 - Migration غیرمخرب `20260822150000_username_login` ورود case-insensitive با نام کاربری
   اختصاص‌یافته مدیر و ایمیل اختیاری را اضافه کرد و روی PostgreSQL لوکال پاس شد.
-- قفل‌های سه‌گانه تا Merge PR و Handoff صریح همچنان فعال‌اند.
+- Merge انجام شده است؛ قفل‌های Migration و Dependency/Lockfile تا Handoff صریح PC-A فعال می‌مانند.
 
-### `MASTER-001` — PC-B — `PLANNED`
+### `MASTER-001` — PC-B — `READY_FOR_REVIEW`
 
-- Branch آینده: `codex/pc-b-master-data-foundation`
-- جغرافیا، ارز/نرخ ارز، بانک، بیمه، ایرلاین، هتل، آژانس/شرکت، کارگزار، لیدر،
-  نحوه آشنایی، active/inactive، جست‌وجو/فیلتر، Excel/PDF، Frontend، API Contract و Test
-  را پوشش می‌دهد.
-- PC-B تا آزادشدن Migration و Dependency/Lockfile lock توسط PC-A هیچ Prisma Migration
-  یا تغییر Dependency/Lockfile ایجاد نمی‌کند؛ بخش‌های بدون Migration می‌توانند موازی
-  توسعه یابند.
-- نیاز Master Data به branch access، actor/audit یا permission از قرارداد عمومی IAM
-  مصرف می‌شود و دسترسی مستقیم به داده داخلی IAM ممنوع است.
+- Branch: `codex/pc-b-master-data-foundation`
+- Catalog دوازده‌گانه، UI فارسی/RTL responsive، فرم‌های Create/View/Edit، search/filter/
+  sort/pagination و Stateهای Loading/Empty/Error/Permission/Preview تکمیل شد.
+- Contractهای ماژول‌محلی list/detail/mutation/status و async Excel/PDF همراه validation،
+  error envelope، Permission Matrix و ۲۰ تست آماده Review هستند.
+- Prisma schema/Migration/repository، Backend پایدار، mutation واقعی، نرخ ارز authoritative
+  و export artifact با وضعیت `Blocked by Migration Lock` باقی مانده‌اند.
+- هیچ manifest، lockfile، Prisma، Migration یا فایل IAM تغییر نکرده است.
+- Consumer requirementهای IAM برای permission scope، actor/audit و branch reference در
+  `docs/tasks/MASTER-001.md` ثبت شده و انتقال Contract مشترک هنوز انجام نشده است.
 
 ## وضعیت Baseline مشترک
 
 - Technical Bootstrap با Merge Commit `bdb5461` روی `develop` قرار دارد.
 - مالکیت Full-Stack ماژول‌ها و Human Resources با Merge Commit `b5b7c5d` ثبت شده است.
 - Frontend Foundation و طراحی Dashboard با Merge Commit `c4f8bde` روی `develop` قرار دارد.
-- Prisma baseline اکنون مدل‌های IAM، branch reference، Session و Audit و نخستین Migration
-  غیرمخرب را روی Branch این Task دارد؛ هنوز وارد `develop` نشده است.
+- Prisma baseline شامل مدل‌های IAM، branch reference، Session و Audit و دو Migration غیرمخرب
+  با Merge Commit `50eacca` وارد `develop` شده است.
 
 ## تکمیل‌شده در DOCS-002
 
@@ -100,13 +101,13 @@
 
 ## Handoff Sprint اول
 
-1. Draft PR شاخه `codex/pc-a-iam-foundation` به `develop` Review شود و سازنده آن Merge نکند.
+1. PR شماره ۵ با Merge Commit `50eacca` وارد `develop` شده و قرارداد عمومی IAM در دسترس است.
 2. قرارداد `@rubi/contracts` و جزئیات مصرف در `docs/IAM.md` مبنای PC-B است؛ دسترسی مستقیم
    به جدول‌ها یا repository داخلی IAM ممنوع می‌ماند.
 3. PC-B روی `MASTER-001` فقط
    محدوده بدون Migration و بدون تغییر Dependency/Lockfile را موازی پیش ببرد.
-4. پس از ادغام IAM baseline، PC-A نتیجه Merge را ثبت و قفل‌ها را صریح
-   آزاد کند؛ سپس PC-B پیش از Schema/Dependency احتمالی قفل لازم را جداگانه رزرو کند.
+4. آزادسازی قفل‌های Migration و Dependency/Lockfile همچنان نیازمند Handoff صریح PC-A است؛
+   PC-B تا آن زمان Schema، Migration، manifest یا lockfile را تغییر نمی‌دهد.
 
 ## ریسک‌ها و تصمیم‌های باز
 
