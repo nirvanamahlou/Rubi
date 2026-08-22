@@ -6,6 +6,56 @@ import { LoginForm } from './login-form';
 
 export const metadata: Metadata = { title: 'ورود امن' };
 
+function CompanyLogos({ compact = false }: { compact?: boolean }) {
+  return (
+    <div>
+      <p
+        className={
+          compact
+            ? 'mb-2 text-center text-xs font-bold text-muted-foreground'
+            : 'mb-3 text-center text-xs font-bold text-blue-100'
+        }
+      >
+        شرکت‌های فعال در سامانه
+      </p>
+      <div className="grid grid-cols-2 gap-3">
+        <div
+          className={
+            compact
+              ? 'grid h-24 place-items-center rounded-2xl border bg-white p-2 shadow-sm'
+              : 'grid h-36 place-items-center rounded-2xl bg-white p-3 shadow-lg shadow-blue-950/20'
+          }
+        >
+          <Image
+            alt="لوگوی شرکت نیایش سیر"
+            className="h-full w-full object-contain"
+            height={2199}
+            priority={!compact}
+            src="/brand/niyayesh-seir-full.png"
+            width={2210}
+          />
+        </div>
+        <div
+          className={
+            compact
+              ? 'grid h-24 place-items-center rounded-2xl border bg-white p-2 shadow-sm'
+              : 'grid h-36 place-items-center rounded-2xl bg-white p-3 shadow-lg shadow-blue-950/20'
+          }
+        >
+          <Image
+            alt="لوگوی شرکت جهان باستان"
+            className="h-full w-full object-contain"
+            height={2048}
+            priority={!compact}
+            src="/brand/jahan-bastan.png"
+            width={2048}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   return (
     <main
@@ -14,14 +64,7 @@ export default function LoginPage() {
     >
       <section className="grid w-full max-w-5xl overflow-hidden rounded-3xl border bg-surface shadow-2xl shadow-blue-950/10 lg:grid-cols-[1.1fr_1fr]">
         <div className="hidden bg-[linear-gradient(145deg,#123f8c,#092354)] p-12 text-white lg:flex lg:flex-col lg:justify-between">
-          <Image
-            alt="لوگوی شرکت نیایش سیر سحر"
-            className="h-auto w-72 rounded-2xl bg-white p-3"
-            height={710}
-            priority
-            src="/brand/niyayesh.png"
-            width={1758}
-          />
+          <CompanyLogos />
           <div>
             <h1 className="text-3xl font-black">سامانه یکپارچه آژانس</h1>
             <p className="mt-3 text-blue-100">
@@ -31,13 +74,7 @@ export default function LoginPage() {
         </div>
         <div className="p-7 sm:p-12">
           <div className="mb-8 lg:hidden">
-            <Image
-              alt="لوگوی شرکت"
-              className="h-auto w-56"
-              height={710}
-              src="/brand/niyayesh.png"
-              width={1758}
-            />
+            <CompanyLogos compact />
           </div>
           <h2 className="text-2xl font-black">ورود به سامانه</h2>
           <p className="mt-2 text-sm text-muted-foreground">
