@@ -32,7 +32,7 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 - [x] Docker Compose برای PostgreSQL، Redis و MinIO؛ health checks
 - [x] Prisma Client/PostgreSQL datasource بدون مدل یا Migration تجاری
 - [ ] Prisma schema baseline، migration و seed ایمن محیط توسعه
-- [ ] `IAM-001`: Auth، refresh rotation، 2FA-ready sessions، users، roles، permissions،
+- [x] `IAM-001`: Auth، refresh rotation، 2FA-ready sessions، users، roles، permissions،
       branch access و Audit رخدادهای امنیتی
 - [ ] `MASTER-001`: Master Data پایه، Organization/Organization Role و reference dataهای
       Sprint اول
@@ -44,9 +44,9 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 `c4f8bdea79b81abc7fc8c518bc83e7f765383bd3`. ثبت این بخش فقط برنامه‌ریزی است و مجوز
 ایجاد کد، Schema، Migration یا Dependency در Branch مستنداتی را نمی‌دهد.
 
-### `IAM-001` — PC-A — `PLANNED`
+### `IAM-001` — PC-A — `READY_FOR_REVIEW`
 
-- Branch آینده: `codex/pc-a-iam-foundation`
+- Branch فعال: `codex/pc-a-iam-foundation` از Base `4342a91`
 - خروجی: ورود/خروج امن، User، Role، Permission، Session، password policy، branch access،
   کنترل دسترسی Backend و Frontend، Audit امنیتی، API، Database، Frontend و Test کامل.
 - قفل‌ها از شروع Sprint برای این Task رزرو هستند: Migration Owner، Dependency/Lockfile
