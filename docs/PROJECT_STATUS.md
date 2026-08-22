@@ -1,18 +1,30 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-22 — PC-B MASTER-001 پس از ادغام IAM
+آخرین به‌روزرسانی: 2026-08-22 — ARCH-001 پس از ادغام IAM و MASTER-001
 
 ## خلاصه
 
-- مرحله جاری: **مرحله 2 — Foundation / اجرای Sprint اول**
-- وضعیت: **MASTER-001 آماده Review روی IAM baseline ادغام‌شده**
+- مرحله جاری: **مرحله 2 — Foundation + تثبیت معماری دامنه سفر**
+- وضعیت: **معماری تاییدشده فروش/رزرواسیون/بلیت/خرید/مالی در ARCH-001 آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
-- Base جدید: Merge Commit `50eaccaf25b63d2ff584ff928cf05c4ccd4c5eac` از `origin/develop`
-- شاخه فعال: `codex/pc-b-master-data-foundation`
-- Work Item: `MASTER-001`؛ UI، Contract و Test بدون persistence
-- محیط مسئول: `COMPUTER_ID=PC-B`
+- Base: Merge Commit `cda0f9a67589974458a4261b753152a796fa1d0b` از آخرین `origin/develop`
+- شاخه فعال: `codex/pc-a-approved-workflow-architecture`
+- Work Item: `ARCH-001`؛ معماری ۱۷ بخش و جریان فروش تا تحویل مدارک
+- محیط مسئول: `COMPUTER_ID=PC-A`
 
 ## برنامه Sprint اول
+
+### `ARCH-001` — PC-A — `READY_FOR_REVIEW`
+
+- ساختار منو به ۱۷ بخش جدید شامل «مدیریت و تعریف بلیت‌ها» و «مدیریت سیستم» تغییر می‌کند.
+- Customer Affairs مالک Lead/Support؛ Sales مالک قرارداد و تخصیص passenger/service؛
+  Reservations مالک استعلام/Hold/صدور/Manifest؛ Procurement مالک خرید و Finance مالک
+  financial release است.
+- رزرواسیون Purchase Request را با قرارداد/service/supplier و قیمت/تخفیف کارگزار ایجاد
+  می‌کند؛ Procurement approval/net purchase را مالک و margin از داده approved محاسبه می‌شود.
+- مرجع جزئیات: `docs/TRAVEL_WORKFLOW_ARCHITECTURE.md`.
+- این Work Item فقط اسناد است و هیچ Schema، Migration، Dependency یا Lockfile تغییر نمی‌دهد.
+- Prettier، لینک‌های Markdown، تعادل fenceها، secret/scope scan و `git diff --check` پاس شدند.
 
 ### `IAM-001` — PC-A — `DONE`
 
@@ -28,13 +40,14 @@
   اختصاص‌یافته مدیر و ایمیل اختیاری را اضافه کرد و روی PostgreSQL لوکال پاس شد.
 - Merge انجام شده است؛ قفل‌های Migration و Dependency/Lockfile تا Handoff صریح PC-A فعال می‌مانند.
 
-### `MASTER-001` — PC-B — `READY_FOR_REVIEW`
+### `MASTER-001` — PC-B — `DONE`
 
 - Branch: `codex/pc-b-master-data-foundation`
+- Merge Commit: `cda0f9a67589974458a4261b753152a796fa1d0b` روی `origin/develop`
 - Catalog دوازده‌گانه، UI فارسی/RTL responsive، فرم‌های Create/View/Edit، search/filter/
   sort/pagination و Stateهای Loading/Empty/Error/Permission/Preview تکمیل شد.
 - Contractهای ماژول‌محلی list/detail/mutation/status و async Excel/PDF همراه validation،
-  error envelope، Permission Matrix و ۲۰ تست آماده Review هستند.
+  error envelope، Permission Matrix و ۲۰ تست پاس‌شده در `develop` قرار دارند.
 - Prisma schema/Migration/repository، Backend پایدار، mutation واقعی، نرخ ارز authoritative
   و export artifact با وضعیت `Blocked by Migration Lock` باقی مانده‌اند.
 - هیچ manifest، lockfile، Prisma، Migration یا فایل IAM تغییر نکرده است.
@@ -48,6 +61,7 @@
 - Frontend Foundation و طراحی Dashboard با Merge Commit `c4f8bde` روی `develop` قرار دارد.
 - Prisma baseline شامل مدل‌های IAM، branch reference، Session و Audit و دو Migration غیرمخرب
   با Merge Commit `50eacca` وارد `develop` شده است.
+- Master Data Foundation بدون persistence با Merge Commit `cda0f9a` وارد `develop` شده است.
 
 ## تکمیل‌شده در DOCS-002
 
@@ -71,10 +85,12 @@
 - Compose محلی PostgreSQL 18، Redis 8 و MinIO با health check، volume نام‌دار و ساخت bucket
 - lockfile pin‌شده و scriptهای root برای dev/build/lint/typecheck/test/database/infrastructure
 
-## عمداً انجام نشده در `DOCS-003`
+## وضعیت تاریخی هنگام `DOCS-003`
 
-- هیچ قابلیت IAM یا Master Data پیاده‌سازی نشده و وضعیت هر دو Task `PLANNED` است.
-- هیچ فایل نرم‌افزاری، Prisma schema، Migration، Seed، Dependency یا Lockfile تغییر نکرده است.
+- در زمان آن Task، قابلیت IAM یا Master Data هنوز پیاده‌سازی نشده و وضعیت هر دو `PLANNED` بود؛
+  وضعیت جاری آن‌ها در بخش Sprint اول ثبت شده است.
+- خود Commit مستنداتی `DOCS-003` هیچ فایل نرم‌افزاری، Prisma schema، Migration، Seed،
+  Dependency یا Lockfile را تغییر نداد.
 - Nginx، CI و deployment محیط غیرمحلی هنوز ساخته نشده‌اند.
 - تصمیم‌های P0 بازِ `docs/DECISIONS.md` همچنان مانع schema دامنه/مالی و adapter واقعی هستند.
 
@@ -104,8 +120,8 @@
 1. PR شماره ۵ با Merge Commit `50eacca` وارد `develop` شده و قرارداد عمومی IAM در دسترس است.
 2. قرارداد `@rubi/contracts` و جزئیات مصرف در `docs/IAM.md` مبنای PC-B است؛ دسترسی مستقیم
    به جدول‌ها یا repository داخلی IAM ممنوع می‌ماند.
-3. PC-B روی `MASTER-001` فقط
-   محدوده بدون Migration و بدون تغییر Dependency/Lockfile را موازی پیش ببرد.
+3. PR شماره ۶ با Merge Commit `cda0f9a` وارد `develop` شده است؛ بخش persistence و Backend
+   پایدار MASTER-001 تا Handoff و رزرو مستقل Migration/Dependency همچنان مسدود است.
 4. آزادسازی قفل‌های Migration و Dependency/Lockfile همچنان نیازمند Handoff صریح PC-A است؛
    PC-B تا آن زمان Schema، Migration، manifest یا lockfile را تغییر نمی‌دهد.
 

@@ -1,22 +1,23 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-22 — PC-B MASTER-001 پس از ادغام IAM
+آخرین به‌روزرسانی: 2026-08-22 — ARCH-001 پس از ادغام IAM و MASTER-001
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
 `DONE`.
 
-| Work ID        | مالک         | Branch                              | محدوده/فایل‌های اصلی                                                                         | وضعیت              | وابستگی یا Handoff                                                              |
-| -------------- | ------------ | ----------------------------------- | -------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------- |
-| BOOT-001       | PC-A         | `codex/pc-a-bootstrap-docs`         | اسناد Bootstrap، معماری، ERD، workflow و backlog                                             | `READY_FOR_REVIEW` | PC-B باید همه اسناد و تصمیم‌های باز P0 را مرور کند                              |
-| FOUNDATION-001 | PC-A         | `codex/pc-a-technical-bootstrap`    | Technical Bootstrap: Monorepo، Web/API/Worker، Docker Compose و Prisma Client بدون مدل تجاری | `DONE`             | Commit `d9a9793` ادغام شد؛ مبنای Work Itemهای Full-Stack                        |
-| FOUNDATION-002 | تخصیص‌نیافته | TBD                                 | سخت‌سازی زیرساخت، CI و استقرار محیط‌های غیرمحلی                                              | `PLANNED`          | FOUNDATION-001 و تصمیم‌های میزبانی/RPO/RTO                                      |
-| FOUNDATION-003 | تخصیص‌نیافته | TBD                                 | IAM/Audit foundation، schema دامنه و Migration اولیه                                         | `PLANNED`          | با `IAM-001` جایگزین شده؛ برای جلوگیری از اجرای موازی رزرو جدید نگیرد           |
-| FOUNDATION-004 | PC-B         | `codex/pc-b-frontend-foundation`    | Frontend Foundation: `apps/web/**`، تست Frontend و `docs/tasks/PC-B.md`                      | `READY_FOR_REVIEW` | Base `b5b7c5d`؛ قفل Dependency/Lockfile آزاد شد                                 |
-| DOCS-002       | PC-A         | `codex/pc-a-hr-module-ownership`    | ثبت ماژول منابع انسانی، مالکیت نهایی ماژول‌ها و قرارداد همکاری Full-Stack                    | `READY_FOR_REVIEW` | فقط مستندات؛ بدون کد، Dependency، Schema یا Migration                           |
-| DOCS-003       | PC-A         | `codex/pc-a-sprint-1-planning`      | ثبت برنامه Sprint اول، مرز کار و Handoff دو Task `IAM-001` و `MASTER-001`                    | `READY_FOR_REVIEW` | Base `c4f8bde`؛ فقط اسناد برنامه‌ریزی                                           |
-| IAM-001        | PC-A         | `codex/pc-a-iam-foundation`         | IAM Full-Stack: Database، API، Web، Test، امنیت، شعبه/دسترسی و Audit                         | `DONE`             | Merge `50eacca`؛ قفل‌ها تا Handoff صریح PC-A فعال می‌مانند                      |
-| MASTER-001     | PC-B         | `codex/pc-b-master-data-foundation` | `apps/web/src/modules/master-data/**`، route اطلاعات پایه، تست و `docs/tasks/MASTER-001.md`  | `READY_FOR_REVIEW` | Base `4342a91`؛ persistence، Prisma و Dependency تا Handoff صریح PC-A مسدود است |
+| Work ID        | مالک         | Branch                                      | محدوده/فایل‌های اصلی                                                                         | وضعیت              | وابستگی یا Handoff                                                               |
+| -------------- | ------------ | ------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------ | -------------------------------------------------------------------------------- |
+| BOOT-001       | PC-A         | `codex/pc-a-bootstrap-docs`                 | اسناد Bootstrap، معماری، ERD، workflow و backlog                                             | `READY_FOR_REVIEW` | PC-B باید همه اسناد و تصمیم‌های باز P0 را مرور کند                               |
+| FOUNDATION-001 | PC-A         | `codex/pc-a-technical-bootstrap`            | Technical Bootstrap: Monorepo، Web/API/Worker، Docker Compose و Prisma Client بدون مدل تجاری | `DONE`             | Commit `d9a9793` ادغام شد؛ مبنای Work Itemهای Full-Stack                         |
+| FOUNDATION-002 | تخصیص‌نیافته | TBD                                         | سخت‌سازی زیرساخت، CI و استقرار محیط‌های غیرمحلی                                              | `PLANNED`          | FOUNDATION-001 و تصمیم‌های میزبانی/RPO/RTO                                       |
+| FOUNDATION-003 | تخصیص‌نیافته | TBD                                         | IAM/Audit foundation، schema دامنه و Migration اولیه                                         | `PLANNED`          | با `IAM-001` جایگزین شده؛ برای جلوگیری از اجرای موازی رزرو جدید نگیرد            |
+| FOUNDATION-004 | PC-B         | `codex/pc-b-frontend-foundation`            | Frontend Foundation: `apps/web/**`، تست Frontend و `docs/tasks/PC-B.md`                      | `READY_FOR_REVIEW` | Base `b5b7c5d`؛ قفل Dependency/Lockfile آزاد شد                                  |
+| DOCS-002       | PC-A         | `codex/pc-a-hr-module-ownership`            | ثبت ماژول منابع انسانی، مالکیت نهایی ماژول‌ها و قرارداد همکاری Full-Stack                    | `READY_FOR_REVIEW` | فقط مستندات؛ بدون کد، Dependency، Schema یا Migration                            |
+| DOCS-003       | PC-A         | `codex/pc-a-sprint-1-planning`              | ثبت برنامه Sprint اول، مرز کار و Handoff دو Task `IAM-001` و `MASTER-001`                    | `READY_FOR_REVIEW` | Base `c4f8bde`؛ فقط اسناد برنامه‌ریزی                                            |
+| ARCH-001       | PC-A         | `codex/pc-a-approved-workflow-architecture` | معماری ۱۷ بخش، فروش/تخصیص، رزرواسیون/Manifest، تعریف بلیت، خرید/تخفیف و release مالی         | `READY_FOR_REVIEW` | فقط اسناد؛ بدون Schema/Migration/Dependency و نیازمند Review از PC-B             |
+| IAM-001        | PC-A         | `codex/pc-a-iam-foundation`                 | IAM Full-Stack: Database، API، Web، Test، امنیت، شعبه/دسترسی و Audit                         | `DONE`             | Merge `50eacca`؛ قفل‌ها تا Handoff صریح PC-A فعال می‌مانند                       |
+| MASTER-001     | PC-B         | `codex/pc-b-master-data-foundation`         | `apps/web/src/modules/master-data/**`، route اطلاعات پایه، تست و `docs/tasks/MASTER-001.md`  | `DONE`             | Merge `cda0f9a`؛ persistence، Prisma و Dependency تا Handoff صریح PC-A مسدود است |
 
 ## Sprint 1 — مرز فایل و Handoff
 
@@ -56,11 +57,12 @@
 
 ## قفل‌های فعال Sprint 1
 
-| قفل                       | مالک/Task    | محدوده                                                       | شرط آزادسازی                                                   |
-| ------------------------- | ------------ | ------------------------------------------------------------ | -------------------------------------------------------------- |
-| Migration Owner           | PC-A/IAM-001 | Prisma schema و Migrationهای نخست IAM/Branch                 | ادغام IAM baseline، ثبت نتیجه Migration و Handoff صریح         |
-| Dependency/Lockfile Owner | PC-A/IAM-001 | manifestهای workspace و `pnpm-lock.yaml`                     | تثبیت Dependencyهای IAM، Push/Review و ثبت آزادسازی            |
-| IAM shared-contract Owner | PC-A/IAM-001 | DTO/Event/permission و قرارداد branch access/audit مرتبط IAM | انتشار قرارداد versioned و اعلام compatibility به مصرف‌کنندگان |
+| قفل                       | مالک/Task     | محدوده                                                                  | شرط آزادسازی                                                   |
+| ------------------------- | ------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Migration Owner           | PC-A/IAM-001  | Prisma schema و Migrationهای نخست IAM/Branch                            | ادغام IAM baseline، ثبت نتیجه Migration و Handoff صریح         |
+| Dependency/Lockfile Owner | PC-A/IAM-001  | manifestهای workspace و `pnpm-lock.yaml`                                | تثبیت Dependencyهای IAM، Push/Review و ثبت آزادسازی            |
+| IAM shared-contract Owner | PC-A/IAM-001  | DTO/Event/permission و قرارداد branch access/audit مرتبط IAM            | انتشار قرارداد versioned و اعلام compatibility به مصرف‌کنندگان |
+| Central architecture docs | PC-A/ARCH-001 | PRD، Architecture، Boundaries/Ownership، Data Model، Decisions و برنامه | Push/Review سند تاییدشده و Handoff به PC-B                     |
 
 ## قرارداد مالکیت
 

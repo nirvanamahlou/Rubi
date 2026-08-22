@@ -24,6 +24,7 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 - [x] API conventions، مدل امنیت و integration contracts
 - [x] قرارداد همکاری PC-A/PC-B و backlog
 - [ ] بازبینی و تایید اسناد توسط PC-B/مالک محصول
+- [ ] `ARCH-001`: ادغام معماری تاییدشده فروش/رزرواسیون/بلیت/خرید/مالی در اسناد مرجع
 
 ### مرحله 2 — Foundation (`P0`)
 
@@ -87,15 +88,19 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 ### مرحله 3 — CRM و فروش (`P1`)
 
 - [ ] Customer 360، contacts، addresses، companions، consent و duplicate merge
-- [ ] Leads، sources، pipeline، opportunities، activities و quotations
-- [ ] تبدیل Lead → Customer → Opportunity → Quotation → Travel Order
+- [ ] Customer Affairs: request/lead، qualification، activities و پشتیبانی قبل/بعد فروش
+- [ ] Sales Contract: quotation/version، party/payer/passenger و contract documents
+- [ ] تخصیص passenger به ticket/hotel/room/insurance/tour فقط در Sales
+- [ ] جریان Request → Availability/Hold → Contract → Finance + Reservation Execution
 
-### مرحله 4 — سفارش و رزرو (`P0/P1`)
+### مرحله 4 — تعریف بلیت و عملیات رزرواسیون (`P0/P1`)
 
-- [ ] Travel Order، Order Item، passenger و service-specific reservations
-- [ ] رزرو دستی، state machines، history و optimistic locking
-- [ ] تولید بلیت/واچر داخلی مجاز، نسخه‌بندی، QR و archive
-- [ ] invoice/payment linkage بدون تولید شماره رسمی جعلی e-ticket
+- [ ] Ticket Catalog: flight/fare version، sale window و inventory/Hold بدون صدور passenger
+- [ ] Reservation execution snapshot، availability/Hold و optimistic locking
+- [ ] صدور بلیت API/دستی/ظرفیت شرکت، PNR و lifecycle تغییر/استرداد
+- [ ] Manifest قالب‌محور و زمان‌بندی‌شده با نسخه اصلاحی/الحاقی
+- [ ] فرم هتل/تایید کارگزار/واچر و Adapter بیمه سامان
+- [ ] financial release و delivery state مستقل بدون شماره رسمی جعلی e-ticket
 
 ### مرحله 5 — فروش آنلاین و Providerها (`P0`)
 
@@ -107,10 +112,13 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 
 ### مرحله 6 — خرید و مالی (`P0`)
 
+- [ ] Purchase Request از Reservations با contract/service/passenger/supplier reference
+- [ ] supplier quote/discount، net purchase versioned و margin محاسباتی
 - [ ] خرید سفر خودکار/دستی و زنجیره PR → PO → Receipt → Invoice → Payable
 - [ ] Sales/Purchase invoices، receivable/payable، settlement، refund و commission
 - [ ] Journal Entry/Lines دوطرفه و مانده محاسباتی حساب‌ها
 - [ ] Bank/Cash accounts، transfers، reconciliation و چک/یادآوری سررسید
+- [ ] Financial Release برای تحویل بلیت/واچر/بیمه به فروش
 
 ### مرحله 7 — عملیات ارتباطی (`P1`)
 

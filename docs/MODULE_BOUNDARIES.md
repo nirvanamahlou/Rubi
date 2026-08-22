@@ -17,14 +17,15 @@
 | Master Data       | organization/role, provider profile, geography, service refs, channel                                                                                                              | resolve refs, activate/deactivate                                      | Documents برای metadata اختیاری                                                    |
 | Settings          | tenant/company, numbering, pricing/SLA/approval config                                                                                                                             | get effective setting                                                  | IAM برای audit actor                                                               |
 | Customers         | customer, contact, address, companion, identity ref, consent, merge                                                                                                                | create/update/merge, consent check                                     | Master Data, Documents                                                             |
-| Sales             | lead, opportunity, activity, quotation, target                                                                                                                                     | convert lead, accept quotation                                         | Customers, Master Data                                                             |
-| Orders            | travel order/item, passenger snapshot, reservation, segment, issue state                                                                                                           | create, price, reserve, issue transition                               | Customers, Master Data, Integrations                                               |
-| Integrations      | connection, credential reference, provider mapping, webhook/sync record                                                                                                            | search/recheck/book/issue/refund                                       | Master Data, Orders contract                                                       |
-| Procurement       | request/order/receipt/purchase invoice linkage                                                                                                                                     | create provider purchase, approve                                      | Orders, Master Data, Finance posting port                                          |
-| Finance           | invoice, payment, refund, settlement, account, journal, check                                                                                                                      | verify/post/refund/settle/balance                                      | Orders/Procurement references, IAM approvals                                       |
+| Customer Affairs  | request, lead, activity, qualification, support ticket, SLA/escalation, survey                                                                                                     | qualify/hand off lead, open/assign/escalate/close                      | Customers، Marketing refs و domain reference IDs                                  |
+| Sales Contracts   | sales case, quotation, sales contract/version, contract party/passenger, contract service allocation, contract document intent                                                    | request availability, activate/amend contract, publish execution      | Customers, Ticket Catalog, Master Data, B2B terms                                  |
+| Ticket Catalog    | ticket product, flight departure, fare version, inventory capacity and sale window                                                                                                 | search sellable ticket, hold-capacity command port, publish changes    | Master Data airline/airport refs, Settings pricing                                 |
+| Reservations      | availability/hold, execution case, ticket issuance, hotel booking/voucher, insurance policy reference, manifest/version, operational status                                      | check/hold, execute, issue, manifest, change/cancel/refund             | Sales execution snapshot, Ticket Catalog, Integrations                             |
+| Integrations      | connection, credential reference, provider mapping, webhook/sync record                                                                                                            | search/recheck/book/issue/refund                                       | Master Data, Reservations contract                                                 |
+| Procurement       | purchase request/order/receipt/invoice, supplier quote/discount, net purchase version and payable source                                                                          | accept reservation request, approve/order/receive/cancel               | Sales service reference, Reservations operation, Master Data, Finance posting port |
+| Finance           | financial case, invoice, payment, refund, settlement, account, journal, check, document release authorization                                                                     | verify/post/refund/settle/balance/release document                     | Sales/Procurement references, IAM approvals                                        |
 | Documents         | file metadata, template/version, generated document, access/send history                                                                                                           | generate/archive/sign URL                                              | Object storage; domain references                                                  |
-| Customer Service  | ticket, message, SLA/escalation, survey                                                                                                                                            | open/assign/escalate/close                                             | Customers و reference IDs                                                          |
-| Marketing         | campaign, segment definition, message run, attribution, discount                                                                                                                   | build consented audience, attribute                                    | Customers consent, Sales/Orders events                                             |
+| Marketing         | campaign, segment definition, message run, attribution, discount                                                                                                                   | build consented audience, attribute                                    | Customers consent, Customer Affairs/Sales events                                   |
 | B2B               | contract, org user, credit policy, agreed rate, account manager                                                                                                                    | validate terms/credit                                                  | Master Data org, Finance exposure                                                  |
 | Human Resources   | employee/personnel record, contact/emergency contact, assignment, employment contract, attendance, shift, leave/mission, overtime, performance, training/certificate, issued asset | manage employment lifecycle, approve time/leave, publish payroll input | IAM user reference، Master Data branch refs، Documents، Finance payroll-input port |
 | Tasks/Automation  | task, checklist, rule/run, approval task                                                                                                                                           | create urgent task, evaluate event                                     | IAM assignee، domain events                                                        |
@@ -35,23 +36,38 @@
 
 ## مرزهای حساس
 
-### Orders در برابر Integrations
+### Sales Contracts در برابر Reservations
 
-Orders مالک intent و state داخلی رزرو/صدور است. Integrations مالک protocol، credential،
-mapping و response خام redacted است. Adapter اجازه تغییر مستقیم Order table ندارد؛ نتیجه
-normalized را برمی‌گرداند و Orders transition را اعمال می‌کند.
+Sales Contracts مالک customer/payer/passengerهای قرارداد، service allocation، قیمت فروش،
+quotation و contract version است. Reservations snapshot versioned و فقط‌خواندنی قرارداد را
+اجرا می‌کند. Reservation اجازه ایجاد/تغییر رابطه passenger با ticket/hotel/room/insurance
+ندارد؛ correction request به Sales برمی‌گردد.
 
-### Orders در برابر Procurement
+### Ticket Catalog در برابر Reservations
 
-Order Item فروش را مدل می‌کند. Procurement purchase واقعی Provider را با FK به item ایجاد
-می‌کند. purchase price snapshot می‌تواند در هر دو برای traceability باشد ولی رکورد مرجع
-خرید Purchase Order/Invoice است.
+Ticket Catalog برنامه، fare و ظرفیت قابل فروش را تعریف و version می‌کند و هیچ سندی برای
+مسافر صادر نمی‌کند. Sales محصول بلیت را به passenger قرارداد تخصیص می‌دهد. Reservations
+Hold/consume و صدور واقعی، PNR، تغییر/استرداد و Manifest را مالک است.
 
-### Orders/Procurement در برابر Finance
+### Reservations در برابر Integrations
 
-دامنه فروش/خرید سند تجاری را ایجاد می‌کند؛ Finance invoice/payment/journal و posted state
-را مالک است. هیچ ماژولی journal line را مستقیم درج نمی‌کند و فقط posting command با source
-reference یکتا می‌فرستد.
+Reservations مالک intent و state داخلی رزرو/صدور است. Integrations مالک protocol، credential،
+mapping و response خام redacted است. Adapter اجازه تغییر مستقیم جدول‌های Reservation را
+ندارد؛ نتیجه normalized را برمی‌گرداند و Reservations transition را اعمال می‌کند.
+
+### Reservations در برابر Procurement
+
+Sales Contract Service Item تعهد فروش را مدل می‌کند. Reservations از public command یک
+Purchase Request با reference قرارداد، service item، passenger، supplier و operation ایجاد
+می‌کند و قیمت اولیه/تخفیف مذاکره‌شده را می‌فرستد. Procurement مالک approval، نسخه قیمت خالص،
+Purchase Order/Invoice و payable source است. سود از sale snapshot منهای net purchase approved
+محاسبه می‌شود و فیلد دستی نیست.
+
+### Sales/Reservations/Procurement در برابر Finance
+
+فروش/خرید سند تجاری و رزرواسیون سند عملیاتی را ایجاد می‌کنند؛ Finance invoice/payment/
+journal و `financial_release` را مالک است. هیچ ماژولی journal line را مستقیم درج نمی‌کند.
+صدور سند با تحویل آن یکی نیست؛ Sales فقط پس از release مالی اجازه مشاهده/ارسال فایل را دارد.
 
 ### Customers در برابر Marketing
 
@@ -62,7 +78,7 @@ Customers مالک identity و consent جاری/تاریخچه است. Marketing
 ### Documents در برابر ماژول صادرکننده
 
 ماژول دامنه اجازه و محتوای semantic سند را تعیین می‌کند؛ Documents render/version/archive
-را انجام می‌دهد. شماره رسمی بیرونی از Integrations/Orders می‌آید و template آن را تولید نمی‌کند.
+را انجام می‌دهد. شماره رسمی بیرونی از Integrations/Reservations می‌آید و template آن را تولید نمی‌کند.
 
 ### Master Data در برابر B2B/Procurement
 
@@ -70,7 +86,7 @@ Organization و role در Master Data است. Contract/credit/agreed rates در 
 و بدهی Provider در Procurement/Finance است. یک organization می‌تواند هم Agency و هم Supplier
 باشد بدون duplicate profile.
 
-### Human Resources در برابر Customers/Orders
+### Human Resources در برابر Customers/Sales Contracts
 
 Employee موجودیت و aggregate مستقل Human Resources است. Customer و Passenger برای چرخه
 فروش/سفر هستند و هیچ‌کدام جایگزین پرونده کارمند نمی‌شوند. اگر یک شخص هم‌زمان کارمند و
@@ -91,13 +107,17 @@ classification، retention intent و مجوز semantic سند پرسنلی اس�
 | Event v1                                                    | Publisher        | مصرف‌کنندگان اصلی                     |
 | ----------------------------------------------------------- | ---------------- | ------------------------------------- |
 | `customer.created` / `customer.consent_changed`             | Customers        | Marketing, Audit                      |
-| `lead.converted` / `quotation.accepted`                     | Sales            | Orders, Reporting                     |
-| `order.created` / `order.cancelled`                         | Orders           | Finance, Tasks, Reporting             |
-| `reservation.confirmed`                                     | Orders           | Procurement, Documents                |
-| `payment.confirmed`                                         | Finance          | Orders, Tasks, Reporting              |
-| `issue.requested` / `issue.succeeded` / `issue.failed`      | Orders           | Integrations worker, Documents, Tasks |
+| `customer_request.qualified`                                | Customer Affairs | Sales Contracts, Reporting            |
+| `sales.availability_requested` / `reservation.hold_created` | Sales/Reservations | Sales Contracts, Tasks              |
+| `sales_contract.activated` / `sales_contract.amended`       | Sales Contracts  | Reservations, Finance, Reporting      |
+| `reservation.purchase_requested`                            | Reservations     | Procurement, Audit                    |
+| `reservation.confirmed` / `travel_document.issued`          | Reservations     | Finance, Documents, Tasks             |
+| `manifest.generated` / `manifest.sent`                      | Reservations     | Documents, Notifications, Audit       |
+| `payment.confirmed`                                         | Finance          | Reservations, Tasks, Reporting        |
+| `financial_release.authorized` / `financial_release.blocked` | Finance         | Sales Contracts, Documents, Tasks     |
+| `travel_document.delivered`                                 | Sales Contracts  | Documents, Customer Affairs, Audit    |
 | `purchase.invoice_approved`                                 | Procurement      | Finance                               |
-| `refund.requested` / `refund.completed`                     | Finance          | Orders, Customer Service              |
+| `refund.requested` / `refund.completed`                     | Finance          | Reservations, Customer Affairs        |
 | `ticket.sla_breached`                                       | Customer Service | Tasks, Notifications                  |
 | `check.due_soon`                                            | Finance          | Tasks, Notifications                  |
 | `employee.contract_expiring` / `employee.document_expiring` | Human Resources  | Tasks, Notifications                  |
@@ -111,6 +131,10 @@ Event envelope شامل `eventId`, `eventType`, `version`, `occurredAt`, `traceI
 - architecture test باید importهای ممنوع و دسترسی infrastructure cross-module را رد کند.
 - contract test بین public service/event producer-consumer اجرا شود.
 - permission و transaction test برای transitionهای حساس لازم است.
+- تست مرز باید تغییر contract passenger/service توسط Reservations و صدور passenger document
+  توسط Ticket Catalog را رد کند.
+- تست Procurement باید وجود reference قرارداد/service/supplier و محاسبه net purchase
+  versioned را enforce کند؛ margin دستی مجاز نیست.
 - تست معماری باید ادغام یا استفاده جایگزین Employee با Customer/Passenger و query مستقیم
   Finance روی داده حساس HR را رد کند.
 - reporting queryها با fixture چند passenger/segment از عدم تکثیر مبلغ مطمئن شوند.

@@ -5,6 +5,7 @@
 | [PRODUCT_REQUIREMENTS.md](PRODUCT_REQUIREMENTS.md) | منبع قطعی نیازمندی کسب‌وکار                 |
 | [PRODUCT_SCOPE.md](PRODUCT_SCOPE.md)               | محدوده، بازیگران و خارج از محدوده           |
 | [ARCHITECTURE.md](ARCHITECTURE.md)                 | معماری کلان، runtime و الزامات کیفی         |
+| [TRAVEL_WORKFLOW_ARCHITECTURE.md](TRAVEL_WORKFLOW_ARCHITECTURE.md) | مرجع تاییدشده فروش، رزرواسیون، بلیت، خرید و تحویل |
 | [MODULE_BOUNDARIES.md](MODULE_BOUNDARIES.md)       | مالکیت داده و قرارداد بین ماژول‌ها          |
 | [MODULE_OWNERSHIP.md](MODULE_OWNERSHIP.md)         | مالکیت نهایی PC-A/PC-B و قفل‌های مشترک      |
 | [DATA_MODEL.md](DATA_MODEL.md)                     | ERD اولیه و قواعد مدل‌سازی                  |
