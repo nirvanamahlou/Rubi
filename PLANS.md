@@ -32,10 +32,57 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 - [x] Docker Compose برای PostgreSQL، Redis و MinIO؛ health checks
 - [x] Prisma Client/PostgreSQL datasource بدون مدل یا Migration تجاری
 - [ ] Prisma schema baseline، migration و seed ایمن محیط توسعه
-- [ ] Auth، refresh rotation، 2FA-ready sessions، users، roles و permissions
-- [ ] Audit Log، structured logging، error model و correlation ID
-- [ ] Master Data پایه و مدل Organization/Organization Role
+- [ ] `IAM-001`: Auth، refresh rotation، 2FA-ready sessions، users، roles، permissions،
+      branch access و Audit رخدادهای امنیتی
+- [ ] `MASTER-001`: Master Data پایه، Organization/Organization Role و reference dataهای
+      Sprint اول
 - [ ] CI برای lint/typecheck/test/build و migration check
+
+## Sprint اول — Foundation (`P0`)
+
+مبنای برنامه: `origin/develop` در Commit
+`c4f8bdea79b81abc7fc8c518bc83e7f765383bd3`. ثبت این بخش فقط برنامه‌ریزی است و مجوز
+ایجاد کد، Schema، Migration یا Dependency در Branch مستنداتی را نمی‌دهد.
+
+### `IAM-001` — PC-A — `PLANNED`
+
+- Branch آینده: `codex/pc-a-iam-foundation`
+- خروجی: ورود/خروج امن، User، Role، Permission، Session، password policy، branch access،
+  کنترل دسترسی Backend و Frontend، Audit امنیتی، API، Database، Frontend و Test کامل.
+- قفل‌ها از شروع Sprint برای این Task رزرو هستند: Migration Owner، Dependency/Lockfile
+  Owner و قراردادهای مشترک IAM همگی PC-A.
+- مرز فایل: مسیرهای IAM در API/Web، قراردادهای IAM، Prisma schema/migrations تاییدشده،
+  تست و اسناد همان Task. فهرست دقیق فایل‌های مرکزی پیش از اولین تغییر ثبت می‌شود.
+- Handoff: قرارداد versioned برای branch reference، authorization، actor و audit به
+  `MASTER-001` تحویل می‌شود؛ consumer فقط public contract را مصرف می‌کند.
+- پایان Task: تست permission/security، migration validation، lint/typecheck/test/build،
+  ثبت hash و آزادسازی صریح هر قفل تکمیل‌شده.
+
+### `MASTER-001` — PC-B — `PLANNED`
+
+- Branch آینده: `codex/pc-b-master-data-foundation`
+- خروجی: کشور/شهر، ارز/نرخ ارز، بانک، بیمه، ایرلاین، هتل، آژانس/شرکت، کارگزار،
+  لیدر، نحوه آشنایی، active/inactive، جست‌وجو/فیلتر، Excel/PDF، Frontend، API Contract
+  و Test.
+- مرز فایل اولیه: UI و تست Master Data در `apps/web/**`، مستند/تعریف API Contract و
+  mockهای بدون persistence. فایل مشترک دقیق پیش از تغییر رزرو می‌شود.
+- محدودیت موقت: تا آزادسازی صریح PC-A هیچ Prisma Migration، تغییر Prisma schema،
+  manifest یا `pnpm-lock.yaml` ایجاد نمی‌شود. بخش‌های بدون Migration می‌توانند موازی
+  توسعه یابند.
+- Handoff: نیازهای branch access، actor/audit و permission به PC-A اعلام و فقط از قرارداد
+  عمومی IAM مصرف می‌شوند. نرخ ارز authoritative تا حل `DEC-OPEN-004` نهایی نمی‌شود.
+- پس از آزادسازی: PC-B آخرین `origin/develop` و وضعیت قفل‌ها را بررسی و پیش از Schema یا
+  Dependency احتمالی یک رزرو مستقل ثبت می‌کند.
+
+### ترتیب اجرا و ادغام
+
+1. این برنامه با Draft PR و Review وارد `develop` می‌شود.
+2. هر Task Branch مستقل خود را از آخرین `origin/develop` می‌سازد و ابتدا وضعیت را
+   `IN_PROGRESS` می‌کند.
+3. `IAM-001` مالک یگانه Migration/Dependency است؛ `MASTER-001` فقط مسیر بدون قفل را
+   موازی اجرا می‌کند.
+4. هر PR ابتدا به `develop` می‌رود؛ هیچ‌کدام مجاز به Merge خودکار، Force Push یا تغییر
+   مستقیم `main`/`develop` نیستند.
 
 ### مرحله 3 — CRM و فروش (`P1`)
 
