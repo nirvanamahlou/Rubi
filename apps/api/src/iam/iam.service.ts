@@ -289,7 +289,14 @@ export class IamService {
         where: { isActive: true },
         orderBy: { name: 'asc' },
       }),
-    ]).then(([roles, branches]) => ({ roles, branches }));
+      this.database.client.permission.findMany({
+        orderBy: [{ module: 'asc' }, { code: 'asc' }],
+      }),
+    ]).then(([roles, branches, permissions]) => ({
+      roles,
+      branches,
+      permissions,
+    }));
   }
 
   listSessions(actor: AuthenticatedActor) {
