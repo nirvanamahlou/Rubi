@@ -35,8 +35,9 @@ export function configureApplication(app: INestApplication): void {
   if (config.getOrThrow<boolean>('ENABLE_SWAGGER')) {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('Rubi Airline CRM API')
-      .setDescription('Technical Bootstrap API surface')
+      .setDescription('Rubi API including versioned IAM contracts')
       .setVersion('1.0')
+      .addCookieAuth('rubi_access')
       .build();
     const documentFactory = () =>
       SwaggerModule.createDocument(app, swaggerConfig);

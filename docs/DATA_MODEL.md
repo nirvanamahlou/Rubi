@@ -129,6 +129,17 @@ erDiagram
 
 ## Aggregateها و invariantهای اصلی
 
+### Identity and Access
+
+- User چند Role و چند Branch دارد؛ joinها FK واقعی دارند و Role/Branch حذف‌شده تاریخچه
+  User را cascade نمی‌کنند.
+- password و refresh token فقط Hash هستند؛ Session با family، status و expiry UTC نگهداری
+  و rotation/revoke به‌صورت صریح ثبت می‌شود.
+- Audit رخداد امنیتی append-only و دارای actor اختیاری، outcome و زمان UTC است؛ payload
+  حساس، password و token خام وارد metadata نمی‌شود.
+- reference پایه `Branch` قرارداد مشترک IAM/Master Data است؛ توسعه چرخه عمر آن در مالکیت
+  Master Data و مصرف access mapping در مالکیت IAM باقی می‌ماند.
+
 ### Sales Contract and Service Allocation
 
 - Sales Contract حداقل یک party و یک service item دارد؛ payer/customer و passenger role

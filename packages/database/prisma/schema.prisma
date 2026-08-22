@@ -3,7 +3,7 @@ generator client {
   output                 = "../src/generated/prisma"
   moduleFormat           = "cjs"
   generatedFileExtension = "ts"
-  importFileExtension    = "ts"
+  importFileExtension    = "js"
   engineType             = "client"
 }
 
@@ -11,5 +11,156 @@ datasource db {
   provider = "postgresql"
 }
 
-// Business models are intentionally absent during Technical Bootstrap.
-// Add the first model only with an approved domain work item and migration plan.
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  LOCKED
+}
+
+enum SessionStatus {
+  ACTIVE
+  ROTATED
+  REVOKED
+  EXPIRED
+}
+
+enum AuditOutcome {
+  SUCCESS
+  FAILURE
+}
+
+model User {
+  id                  String       @id @default(uuid()) @db.Uuid
+  username            String       @unique @db.VarChar(80)
+  email               String?      @unique @db.VarChar(320)
+  displayName         String       @db.VarChar(160)
+  passwordHash        String       @db.VarChar(255)
+  status              UserStatus   @default(ACTIVE)
+  failedLoginAttempts Int          @default(0)
+  lockedUntil         DateTime?    @db.Timestamptz(3)
+  passwordChangedAt   DateTime     @default(now()) @db.Timestamptz(3)
+  lastLoginAt         DateTime?    @db.Timestamptz(3)
+  createdAt           DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime     @updatedAt @db.Timestamptz(3)
+  roles               UserRole[]
+  branches            UserBranch[]
+  sessions            Session[]
+  auditEvents         AuditEvent[] @relation("AuditActor")
+
+  @@map("iam_users")
+}
+
+model Role {
+  id          String           @id @default(uuid()) @db.Uuid
+  code        String           @unique @db.VarChar(80)
+  name        String           @db.VarChar(120)
+  description String?          @db.VarChar(500)
+  isSystem    Boolean          @default(false)
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime         @updatedAt @db.Timestamptz(3)
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@map("iam_roles")
+}
+
+model Permission {
+  id          String           @id @default(uuid()) @db.Uuid
+  code        String           @unique @db.VarChar(120)
+  module      String           @db.VarChar(80)
+  name        String           @db.VarChar(160)
+  description String?          @db.VarChar(500)
+  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
+  roles       RolePermission[]
+
+  @@map("iam_permissions")
+}
+
+model UserRole {
+  userId     String   @db.Uuid
+  roleId     String   @db.Uuid
+  assignedAt DateTime @default(now()) @db.Timestamptz(3)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("iam_user_roles")
+}
+
+model RolePermission {
+  roleId       String     @db.Uuid
+  permissionId String     @db.Uuid
+  grantedAt    DateTime   @default(now()) @db.Timestamptz(3)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Restrict)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("iam_role_permissions")
+}
+
+model Branch {
+  id        String       @id @default(uuid()) @db.Uuid
+  code      String       @unique @db.VarChar(40)
+  name      String       @db.VarChar(160)
+  isActive  Boolean      @default(true)
+  createdAt DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime     @updatedAt @db.Timestamptz(3)
+  users     UserBranch[]
+
+  @@map("branches")
+}
+
+model UserBranch {
+  userId    String   @db.Uuid
+  branchId  String   @db.Uuid
+  isPrimary Boolean  @default(false)
+  grantedAt DateTime @default(now()) @db.Timestamptz(3)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch    Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+
+  @@id([userId, branchId])
+  @@index([branchId])
+  @@map("iam_user_branches")
+}
+
+model Session {
+  id               String        @id @default(uuid()) @db.Uuid
+  userId           String        @db.Uuid
+  familyId         String        @db.Uuid
+  refreshTokenHash String        @db.Char(64)
+  status           SessionStatus @default(ACTIVE)
+  expiresAt        DateTime      @db.Timestamptz(3)
+  lastUsedAt       DateTime      @default(now()) @db.Timestamptz(3)
+  revokedAt        DateTime?     @db.Timestamptz(3)
+  revokedReason    String?       @db.VarChar(160)
+  ipAddress        String?       @db.VarChar(64)
+  userAgent        String?       @db.VarChar(500)
+  createdAt        DateTime      @default(now()) @db.Timestamptz(3)
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("iam_sessions")
+}
+
+model AuditEvent {
+  id          String       @id @default(uuid()) @db.Uuid
+  actorUserId String?      @db.Uuid
+  action      String       @db.VarChar(120)
+  entityType  String       @db.VarChar(80)
+  entityId    String?      @db.VarChar(160)
+  outcome     AuditOutcome
+  metadata    Json?
+  ipAddress   String?      @db.VarChar(64)
+  userAgent   String?      @db.VarChar(500)
+  occurredAt  DateTime     @default(now()) @db.Timestamptz(3)
+  actor       User?        @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, occurredAt])
+  @@index([action, occurredAt])
+  @@map("iam_audit_events")
+}

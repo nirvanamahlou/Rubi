@@ -19,6 +19,8 @@ browser/site/provider boundary و deny-by-default در authorization.
 
 ## Identity و Session
 
+پیاده‌سازی baseline و قرارداد عملیاتی IAM در [IAM.md](IAM.md) ثبت شده است.
+
 - password با Argon2id یا الگوریتم تاییدشده و پارامتر versioned؛ policy و breached-password
   check متناسب با محیط
 - access token کوتاه‌عمر، refresh token یک‌بارمصرف/rotation، token hash در DB، family revoke
