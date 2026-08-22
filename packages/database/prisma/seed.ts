@@ -32,6 +32,16 @@ async function seed(): Promise<void> {
         },
         update: { isActive: true, name: 'مدیر سامانه' },
       });
+      await transaction.role.upsert({
+        where: { code: 'staff' },
+        create: {
+          code: 'staff',
+          name: 'کاربر عادی',
+          description: 'دسترسی پایه بدون مجوز مدیریت IAM',
+          isSystem: true,
+        },
+        update: { isActive: true, name: 'کاربر عادی' },
+      });
       await Promise.all(
         seededPermissions.map((permission) =>
           transaction.rolePermission.upsert({

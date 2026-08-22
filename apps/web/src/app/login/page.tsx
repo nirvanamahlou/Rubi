@@ -23,7 +23,7 @@ export default function LoginPage() {
             width={1758}
           />
           <div>
-            <h1 className="text-3xl font-black">سامانه یکپارچه روبی</h1>
+            <h1 className="text-3xl font-black">سامانه یکپارچه آژانس</h1>
             <p className="mt-3 text-blue-100">
               ورود امن کارکنان و مدیریت دسترسی مبتنی بر نقش و شعبه
             </p>
@@ -41,11 +41,17 @@ export default function LoginPage() {
           </div>
           <h2 className="text-2xl font-black">ورود به سامانه</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            ایمیل سازمانی و رمز عبور خود را وارد کنید.
+            نام کاربری اختصاص‌یافته توسط مدیر و رمز عبور خود را وارد کنید.
           </p>
-            <Suspense fallback={<p className="mt-8 text-sm text-muted-foreground">در حال آماده‌سازی فرم ورود…</p>}>
-              <LoginForm />
-            </Suspense>
+          <Suspense
+            fallback={
+              <p className="mt-8 text-sm text-muted-foreground">
+                در حال آماده‌سازی فرم ورود…
+              </p>
+            }
+          >
+            <LoginForm />
+          </Suspense>
         </div>
       </section>
     </main>

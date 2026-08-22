@@ -25,7 +25,8 @@ export interface BranchReference {
 export interface LoginResponse {
   user: {
     id: string;
-    email: string;
+    username: string;
+    email: string | null;
     displayName: string;
     permissions: IamPermissionCode[];
     branches: BranchReference[];

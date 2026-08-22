@@ -4,17 +4,27 @@ import {
   ArrayUnique,
   IsArray,
   IsEmail,
+  IsOptional,
   IsString,
   IsUUID,
+  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
 
 export class CreateUserDto {
-  @ApiProperty()
+  @ApiProperty({ example: 'ramtin' })
+  @IsString()
+  @Matches(/^[a-zA-Z0-9._-]+$/)
+  @MinLength(3)
+  @MaxLength(80)
+  username!: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsEmail()
   @MaxLength(320)
-  email!: string;
+  email?: string;
 
   @ApiProperty()
   @IsString()

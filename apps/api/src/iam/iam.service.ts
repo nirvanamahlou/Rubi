@@ -47,10 +47,14 @@ export class IamService {
     @Inject(JwtService) private readonly jwt: JwtService,
   ) {}
 
-  async login(emailInput: string, password: string, metadata: RequestMetadata) {
-    const email = emailInput.trim().toLowerCase();
+  async login(
+    usernameInput: string,
+    password: string,
+    metadata: RequestMetadata,
+  ) {
+    const username = usernameInput.trim().toLowerCase();
     const user = await this.database.client.user.findUnique({
-      where: { email },
+      where: { username },
       include: this.userAccessInclude(),
     });
     const now = new Date();
@@ -87,7 +91,7 @@ export class IamService {
         AuditOutcome.FAILURE,
         metadata,
       );
-      throw new UnauthorizedException('ایمیل یا رمز عبور صحیح نیست.');
+      throw new UnauthorizedException('نام کاربری یا رمز عبور صحیح نیست.');
     }
 
     const sessionId = randomUUID();
@@ -264,6 +268,7 @@ export class IamService {
       orderBy: { displayName: 'asc' },
       select: {
         id: true,
+        username: true,
         email: true,
         displayName: true,
         status: true,
@@ -386,12 +391,16 @@ export class IamService {
     metadata: RequestMetadata,
   ) {
     assertStrongPassword(dto.password);
-    const email = dto.email.trim().toLowerCase();
-    const exists = await this.database.client.user.findUnique({
-      where: { email },
+    const username = dto.username.trim().toLowerCase();
+    const email = dto.email?.trim().toLowerCase() || null;
+    const exists = await this.database.client.user.findFirst({
+      where: { OR: [{ username }, ...(email ? [{ email }] : [])] },
       select: { id: true },
     });
-    if (exists) throw new ConflictException('کاربری با این ایمیل وجود دارد.');
+    if (exists)
+      throw new ConflictException(
+        'این نام کاربری یا ایمیل قبلاً استفاده شده است.',
+      );
     const passwordHash = await hash(dto.password, {
       type: 2,
       memoryCost: 65_536,
@@ -400,6 +409,7 @@ export class IamService {
     });
     const user = await this.database.client.user.create({
       data: {
+        username,
         email,
         displayName: dto.displayName.trim(),
         passwordHash,
@@ -411,7 +421,13 @@ export class IamService {
           })),
         },
       },
-      select: { id: true, email: true, displayName: true, status: true },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        displayName: true,
+        status: true,
+      },
     });
     await this.audit(
       actor.userId,
@@ -492,12 +508,14 @@ export class IamService {
   }
 
   async bootstrapAdministrator(
-    emailInput: string,
+    usernameInput: string,
+    emailInput: string | undefined,
     password: string,
     displayName: string,
   ): Promise<string> {
     assertStrongPassword(password);
-    const email = emailInput.trim().toLowerCase();
+    const username = usernameInput.trim().toLowerCase();
+    const email = emailInput?.trim().toLowerCase() || null;
     const [role, branch] = await Promise.all([
       this.database.client.role.findUniqueOrThrow({
         where: { code: 'administrator' },
@@ -511,9 +529,10 @@ export class IamService {
       parallelism: 1,
     });
     const user = await this.database.client.user.upsert({
-      where: { email },
-      create: { email, displayName, passwordHash },
+      where: { username },
+      create: { username, email, displayName, passwordHash },
       update: {
+        email,
         displayName,
         passwordHash,
         status: UserStatus.ACTIVE,
@@ -593,7 +612,8 @@ export class IamService {
   }
   private loginResponse(user: {
     id: string;
-    email: string;
+    username: string;
+    email: string | null;
     displayName: string;
     roles: Array<{
       role: {
@@ -606,6 +626,7 @@ export class IamService {
     return {
       user: {
         id: user.id,
+        username: user.username,
         email: user.email,
         displayName: user.displayName,
         permissions: this.permissionCodes(user),

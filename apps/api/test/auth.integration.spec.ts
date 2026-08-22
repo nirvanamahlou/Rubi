@@ -50,7 +50,7 @@ describe('IAM login and refresh HTTP contract', () => {
   it('validates login and writes only HttpOnly cookies', async () => {
     const response = await request(app.getHttpServer())
       .post('/iam/auth/login')
-      .send({ email: 'admin@example.com', password: 'Rubi-Strong-2026!' })
+      .send({ username: 'ramtin', password: 'Rubi-Strong-2026!' })
       .expect(200);
     expect(response.body).toEqual({ user: { id: 'u1' } });
     const cookies = response.headers['set-cookie'] as unknown as string[];
@@ -73,7 +73,7 @@ describe('IAM login and refresh HTTP contract', () => {
   it('rejects invalid login payload before authentication', async () => {
     await request(app.getHttpServer())
       .post('/iam/auth/login')
-      .send({ email: 'invalid', password: 'short' })
+      .send({ username: '?', password: 'short' })
       .expect(400);
     expect(service.login).not.toHaveBeenCalled();
   });

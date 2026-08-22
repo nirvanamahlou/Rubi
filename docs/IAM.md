@@ -13,7 +13,7 @@ Schema جدید تا ادغام IAM و آزادسازی صریح Migration Lock 
 
 ## احراز هویت و نشست
 
-- `POST /api/v1/iam/auth/login` access JWT کوتاه‌عمر و refresh token opaque را فقط در
+- `POST /api/v1/iam/auth/login` با نام کاربری اختصاص‌یافته توسط مدیر، access JWT کوتاه‌عمر و refresh token opaque را فقط در
   Cookieهای `HttpOnly`، `SameSite=Lax` و در Production با `Secure` صادر می‌کند.
 - فقط SHA-256 بخش secret refresh token ذخیره می‌شود. هر refresh، نشست قبلی را `ROTATED`
   و token یک‌بارمصرف جدید صادر می‌کند؛ reuse کل family را revoke می‌کند.
@@ -33,8 +33,8 @@ password یا token خامی در metadata ثبت نمی‌شود.
 
 1. Migration را deploy و `pnpm --filter @rubi/database db:seed` را اجرا کنید؛ Seed قابل
    تکرار فقط permission، نقش سیستمی و reference شعبه مرکزی را می‌سازد.
-2. سه مقدار `IAM_BOOTSTRAP_ADMIN_EMAIL`، `IAM_BOOTSTRAP_ADMIN_PASSWORD` و
-   `IAM_BOOTSTRAP_ADMIN_NAME` و یک `IAM_ACCESS_TOKEN_SECRET` تصادفی حداقل ۳۲ نویسه‌ای را
+2. سه مقدار `IAM_BOOTSTRAP_ADMIN_USERNAME`، `IAM_BOOTSTRAP_ADMIN_PASSWORD` و
+   `IAM_BOOTSTRAP_ADMIN_NAME`، ایمیل اختیاری و یک `IAM_ACCESS_TOKEN_SECRET` تصادفی حداقل ۳۲ نویسه‌ای را
    فقط در Environment تنظیم کنید.
 3. `pnpm --filter @rubi/api iam:bootstrap-admin` را یک‌بار اجرا و بلافاصله مقادیر bootstrap
    را از Environment حذف کنید. فرمان idempotent است و هیچ رمز پیش‌فرضی در Git ندارد.

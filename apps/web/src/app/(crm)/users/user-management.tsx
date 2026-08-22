@@ -26,7 +26,8 @@ interface PermissionOption extends Option {
 interface UserRow {
   id: string;
   displayName: string;
-  email: string;
+  username: string;
+  email: string | null;
   status: string;
   roles: Array<{ role: Option }>;
   branches: Array<{ branch: Option }>;
@@ -176,6 +177,7 @@ export function UserManagement() {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         email: data.get('email'),
+        username: data.get('username'),
         displayName: data.get('displayName'),
         password: data.get('password'),
         roleIds: roleId ? [roleId] : [],
@@ -237,9 +239,14 @@ export function UserManagement() {
                 <tr className="border-b align-top last:border-0" key={user.id}>
                   <td className="p-3">
                     <strong className="block">{user.displayName}</strong>
-                    <span className="text-muted-foreground" dir="ltr">
-                      {user.email}
+                    <span className="block text-muted-foreground" dir="ltr">
+                      @{user.username}
                     </span>
+                    {user.email ? (
+                      <span className="text-xs text-muted-foreground" dir="ltr">
+                        {user.email}
+                      </span>
+                    ) : null}
                   </td>
                   <td className="p-3">
                     {user.status === 'ACTIVE' ? 'فعال' : 'غیرفعال/قفل'}
@@ -276,8 +283,17 @@ export function UserManagement() {
             <FormField label="نام نمایشی">
               <Input name="displayName" required />
             </FormField>
-            <FormField label="ایمیل">
-              <Input dir="ltr" name="email" required type="email" />
+            <FormField label="نام کاربری">
+              <Input
+                dir="ltr"
+                minLength={3}
+                name="username"
+                pattern="[a-zA-Z0-9._-]+"
+                required
+              />
+            </FormField>
+            <FormField label="ایمیل (اختیاری)">
+              <Input dir="ltr" name="email" type="email" />
             </FormField>
             <FormField
               description="حداقل ۱۲ نویسه شامل بزرگ، کوچک، رقم و نویسه ویژه"

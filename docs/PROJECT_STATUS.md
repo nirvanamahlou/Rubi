@@ -24,6 +24,8 @@
   قرارداد عمومی IAM به مصرف‌کنندگان است.
 - Migration `20260822120000_iam_foundation` روی PostgreSQL توسعه اعمال شد؛ Seed دو بار
   متوالی بدون duplicate پاس شد و `prisma migrate status` دیتابیس را up-to-date اعلام کرد.
+- Migration غیرمخرب `20260822150000_username_login` ورود case-insensitive با نام کاربری
+  اختصاص‌یافته مدیر و ایمیل اختیاری را اضافه کرد و روی PostgreSQL لوکال پاس شد.
 - قفل‌های سه‌گانه تا Merge PR و Handoff صریح همچنان فعال‌اند.
 
 ### `MASTER-001` — PC-B — `PLANNED`

@@ -29,12 +29,12 @@ export function LoginForm() {
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          email: values.get('email'),
+          username: values.get('username'),
           password: values.get('password'),
         }),
       });
       if (!response.ok) {
-        setError('ایمیل یا رمز عبور صحیح نیست.');
+        setError('نام کاربری یا رمز عبور صحیح نیست.');
         return;
       }
       const target = search.get('next');
@@ -52,14 +52,15 @@ export function LoginForm() {
   }
   return (
     <form className="mt-8 grid gap-5" onSubmit={submit}>
-      <FormField id="email" label="ایمیل سازمانی" required>
+      <FormField id="username" label="نام کاربری" required>
         <Input
           autoComplete="username"
           dir="ltr"
-          id="email"
-          name="email"
+          id="username"
+          minLength={3}
+          name="username"
+          pattern="[a-zA-Z0-9._-]+"
           required
-          type="email"
         />
       </FormField>
       <FormField id="password" label="رمز عبور" required>
@@ -67,7 +68,6 @@ export function LoginForm() {
           autoComplete="current-password"
           dir="ltr"
           id="password"
-          minLength={12}
           name="password"
           required
           type="password"

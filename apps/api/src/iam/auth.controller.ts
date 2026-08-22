@@ -41,7 +41,7 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const result = await this.iam.login(
-      dto.email,
+      dto.username,
       dto.password,
       requestMetadata(request),
     );
