@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-22 — PC-B MASTER-001 Start
+آخرین به‌روزرسانی: 2026-08-22 — PC-B MASTER-001 Handoff
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
@@ -16,7 +16,7 @@
 | DOCS-002       | PC-A         | `codex/pc-a-hr-module-ownership`    | ثبت ماژول منابع انسانی، مالکیت نهایی ماژول‌ها و قرارداد همکاری Full-Stack                    | `READY_FOR_REVIEW` | فقط مستندات؛ بدون کد، Dependency، Schema یا Migration                           |
 | DOCS-003       | PC-A         | `codex/pc-a-sprint-1-planning`      | ثبت برنامه Sprint اول، مرز کار و Handoff دو Task `IAM-001` و `MASTER-001`                    | `READY_FOR_REVIEW` | Base `c4f8bde`؛ فقط اسناد برنامه‌ریزی                                           |
 | IAM-001        | PC-A         | `codex/pc-a-iam-foundation`         | IAM Full-Stack: Database، API، Web، Test، امنیت، شعبه/دسترسی و Audit                         | `PLANNED`          | مالک انحصاری Migration، Dependency/Lockfile و قرارداد مشترک IAM تا Handoff صریح |
-| MASTER-001     | PC-B         | `codex/pc-b-master-data-foundation` | `apps/web/src/modules/master-data/**`، route اطلاعات پایه، تست و `docs/tasks/MASTER-001.md`  | `IN_PROGRESS`      | Base `4342a91`؛ persistence، Prisma و Dependency تا Handoff صریح PC-A مسدود است |
+| MASTER-001     | PC-B         | `codex/pc-b-master-data-foundation` | `apps/web/src/modules/master-data/**`، route اطلاعات پایه، تست و `docs/tasks/MASTER-001.md`  | `READY_FOR_REVIEW` | Base `4342a91`؛ persistence، Prisma و Dependency تا Handoff صریح PC-A مسدود است |
 
 ## Sprint 1 — مرز فایل و Handoff
 

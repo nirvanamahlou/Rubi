@@ -1,16 +1,16 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-22 — PC-A Sprint 1 Planning
+آخرین به‌روزرسانی: 2026-08-22 — PC-B MASTER-001 Handoff
 
 ## خلاصه
 
-- مرحله جاری: **مرحله 2 — Foundation / برنامه‌ریزی Sprint اول**
-- وضعیت: **Baseline فنی و Frontend Foundation روی develop؛ Taskهای Sprint اول آماده Review**
+- مرحله جاری: **مرحله 2 — Foundation / اجرای Sprint اول**
+- وضعیت: **MASTER-001 non-persistence slice آماده Review؛ Database منتظر Migration Lock**
 - Repository: `Rubi`، Remote با نام `origin`
-- Base: Commit `c4f8bdea79b81abc7fc8c518bc83e7f765383bd3` از `origin/develop`
-- شاخه فعال: `codex/pc-a-sprint-1-planning`
-- Work Item: `DOCS-003`؛ فقط برنامه‌ریزی `IAM-001` و `MASTER-001`
-- محیط مسئول: `COMPUTER_ID=PC-A`
+- Base: Commit `4342a91f11c042a97b9553a509c9b585bb48596e` از `origin/develop`
+- شاخه فعال: `codex/pc-b-master-data-foundation`
+- Work Item: `MASTER-001`؛ UI، Contract و Test بدون persistence
+- محیط مسئول: `COMPUTER_ID=PC-B`
 
 ## برنامه Sprint اول
 
@@ -23,17 +23,18 @@
 - معیار تحویل شامل Database، API، Frontend، تست‌های permission/security و Handoff
   قرارداد عمومی IAM به مصرف‌کنندگان است.
 
-### `MASTER-001` — PC-B — `PLANNED`
+### `MASTER-001` — PC-B — `READY_FOR_REVIEW`
 
-- Branch آینده: `codex/pc-b-master-data-foundation`
-- جغرافیا، ارز/نرخ ارز، بانک، بیمه، ایرلاین، هتل، آژانس/شرکت، کارگزار، لیدر،
-  نحوه آشنایی، active/inactive، جست‌وجو/فیلتر، Excel/PDF، Frontend، API Contract و Test
-  را پوشش می‌دهد.
-- PC-B تا آزادشدن Migration و Dependency/Lockfile lock توسط PC-A هیچ Prisma Migration
-  یا تغییر Dependency/Lockfile ایجاد نمی‌کند؛ بخش‌های بدون Migration می‌توانند موازی
-  توسعه یابند.
-- نیاز Master Data به branch access، actor/audit یا permission از قرارداد عمومی IAM
-  مصرف می‌شود و دسترسی مستقیم به داده داخلی IAM ممنوع است.
+- Branch: `codex/pc-b-master-data-foundation`
+- Catalog دوازده‌گانه، UI فارسی/RTL responsive، فرم‌های Create/View/Edit، search/filter/
+  sort/pagination و Stateهای Loading/Empty/Error/Permission/Preview تکمیل شد.
+- Contractهای ماژول‌محلی list/detail/mutation/status و async Excel/PDF همراه validation،
+  error envelope، Permission Matrix و ۲۰ تست آماده Review هستند.
+- Prisma schema/Migration/repository، Backend پایدار، mutation واقعی، نرخ ارز authoritative
+  و export artifact با وضعیت `Blocked by Migration Lock` باقی مانده‌اند.
+- هیچ manifest، lockfile، Prisma، Migration یا فایل IAM تغییر نکرده است.
+- Consumer requirementهای IAM برای permission scope، actor/audit و branch reference در
+  `docs/tasks/MASTER-001.md` ثبت شده و انتقال Contract مشترک هنوز انجام نشده است.
 
 ## وضعیت Baseline مشترک
 

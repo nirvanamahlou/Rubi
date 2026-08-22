@@ -1,9 +1,9 @@
 # MASTER-001 — Master Data Foundation
 
-وضعیت: `IN_PROGRESS`  
-مالک: `PC-B`  
-Branch: `codex/pc-b-master-data-foundation`  
-Base: `4342a91f11c042a97b9553a509c9b585bb48596e`
+- وضعیت: `READY_FOR_REVIEW`
+- مالک: `PC-B`
+- Branch: `codex/pc-b-master-data-foundation`
+- Base: `4342a91f11c042a97b9553a509c9b585bb48596e`
 
 ## هدف و Scope
 
@@ -79,3 +79,32 @@ Migration و Dependency/Lockfile Owner برابر `PC-A/IAM-001` است؛ موا
 
 lint، typecheck، تست Catalog/validation/permission/contract، build، Prettier scope،
 `git diff --check`، secret scan و کنترل عدم تغییر Prisma/manifest/lockfile.
+## بخش‌های تکمیل‌شده
+
+- Catalog ماژول‌محلی برای ۱۲ resource Sprint اول
+- Contract پیشنهادی list/detail/create/update/status/export و error envelope
+- Validation canonical code، ISO currency، نرخ مثبت و درجه هتل
+- Permission Matrix پیشنهادی با deny-by-default
+- Workspace فارسی، RTL و responsive با search/filter/sort/pagination
+- فرم‌های Create/View/Edit و حالت‌های Loading/Empty/Error/Permission/Preview
+- طراحی async Excel/PDF بدون تولید فایل یا persistence ساختگی
+
+## موارد منتظر Database
+
+تمام Prisma model/schema/Migration/seed، repository، controller/service پایدار، mutation
+واقعی، نرخ ارز authoritative و export artifact با وضعیت `Blocked by Migration Lock`
+باقی مانده‌اند. Dependency/Lockfile و قرارداد مشترک IAM نیز در مالکیت PC-A هستند.
+
+## نتایج اعتبارسنجی
+
+- Web lint: پاس
+- Web typecheck: پاس
+- targeted tests: ۸ فایل و ۲۰ تست پاس
+- Web production build: پاس؛ ۲۱ route static از جمله `/master-data`
+- هیچ Dependency، lockfile، Prisma، Migration یا فایل IAM تغییر نکرده است.
+
+## Commitهای پیاده‌سازی
+
+- `c5ad35f` — شروع Task، Scope و Handoff
+- `6acc4a4` — Catalog، validation، permission و API Contract
+- `c622cda` — Workspace، فرم‌ها، Stateها و Component Contract
