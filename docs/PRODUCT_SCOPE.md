@@ -3,8 +3,9 @@
 ## مسئله
 
 فروش، رزرو، خرید از کارگزار، صدور، دریافت/پرداخت، خدمات مشتری و گزارش باید در یک
-زنجیره قابل‌ردیابی باشند. Rubi یک CRM جدا از عملیات سفر نیست؛ هویت مشتری، Travel
-Order، Reservation، Purchase، Finance و Document را با شناسه و FK معتبر متصل می‌کند.
+زنجیره قابل‌ردیابی باشند. Rubi یک CRM جدا از عملیات سفر نیست؛ هویت مشتری، Sales
+Contract/Service Allocation، Reservation Execution، Purchase، Finance و Document را با
+شناسه و FK معتبر متصل می‌کند.
 
 ## کاربران و طرف‌های سیستم
 
@@ -18,7 +19,8 @@ Order، Reservation، Purchase، Finance و Document را با شناسه و FK 
 
 ## در محدوده
 
-Customer 360، lead-to-order، رزرو دستی و آنلاین، Provider adapters، صدور اسناد مجاز،
+Customer 360، lead-to-contract، تخصیص passenger/service در فروش، تعریف بلیت/ظرفیت،
+رزرو دستی و آنلاین، Manifest، Provider adapters، صدور اسناد مجاز،
 خرید سفر و عمومی، Sub-ledger عملیاتی، خزانه/چک، پشتیبانی، مارکتینگ، B2B، task و
 automation، منابع انسانی، آرشیو فایل، گزارش/خروجی، integrations، IAM، master data و
 تنظیمات. منابع انسانی شامل پرونده مستقل کارمند، ساختار سازمانی، قرارداد، حضور، شیفت،
@@ -35,7 +37,10 @@ automation، منابع انسانی، آرشیو فایل، گزارش/خروج
 - PostgreSQL منبع اصلی، Redis موقت و MinIO/S3 محل فایل باینری است.
 - موجودی مالی و مانده حساب دستی نیست؛ از تراکنش تاییدشده محاسبه می‌شود.
 - دو سایت فقط Booking API مرکزی را فراخوانی می‌کنند.
-- فروش و خرید مدل‌های جدا با پیوند به Order Item دارند.
+- فروش مالک قرارداد و تخصیص مسافر/خدمت است؛ رزرواسیون فقط snapshot تاییدشده را اجرا می‌کند.
+- Ticket Catalog محصول/ظرفیت را تعریف می‌کند؛ صدور passenger document و Manifest در رزرواسیون است.
+- فروش و خرید مدل‌های جدا با پیوند به Contract Service Item دارند؛ درخواست خرید عملیاتی
+  از رزرواسیون ایجاد و در Procurement مالکیت می‌شود.
 - کارمند با مشتری یا مسافر یک موجودیت تجاری مشترک ندارد.
 - Dashboard و گزارش رسمی فقط از reporting view تاییدشده تغذیه می‌شوند.
 - UI فارسی/RTL و کد، schema و API انگلیسی است.

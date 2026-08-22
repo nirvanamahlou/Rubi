@@ -1,6 +1,6 @@
 # مالکیت ماژول‌ها
 
-وضعیت: مالکیت نهایی توسعه — 2026-08-19
+وضعیت: مالکیت نهایی توسعه — 2026-08-22
 
 این سند مرجع تخصیص ماژول‌ها میان `PC-A` و `PC-B` است. مالک هر ماژول مسئول توسعه
 Full-Stack آن، شامل مدل داده، Backend، Frontend و تست‌ها است. مالکیت ماژول به معنی
@@ -10,20 +10,21 @@ Migrationها نیست.
 ## مالکیت PC-A
 
 - مشتریان
-- فروش و سرنخ‌ها
-- سفارش‌ها و رزرواسیون
+- قراردادها، فروش و تخصیص خدمات
+- رزرواسیون و عملیات سفر
+- مدیریت و تعریف بلیت‌ها
 - مالی و خزانه‌داری
 - احراز هویت و مدیریت کاربران
 - نقش‌ها و سطح دسترسی
 - API تأمین‌کنندگان سفر
 - اتصال دو سایت
-- تنظیمات سیستم و امنیت
+- مدیریت سیستم: IAM، تنظیمات و امنیت
 - زیرساخت گزارش‌گیری Backend
 
 ## مالکیت PC-B
 
 - داشبورد
-- خدمات مشتریان و پشتیبانی
+- امور مشتریان، سرنخ‌ها و پشتیبانی
 - خرید و تأمین
 - مارکتینگ
 - آژانس‌ها و مشتریان سازمانی
@@ -37,23 +38,23 @@ Migrationها نیست.
 
 | ردیف | بخش منو                    | مالک اجرا         | توضیح مرز                                                |
 | ---: | -------------------------- | ----------------- | -------------------------------------------------------- |
-|    1 | داشبورد                    | PC-B              | فقط مصرف‌کننده Viewها و APIهای گزارش‌دهی تاییدشده        |
-|    2 | مشتریان                    | PC-A              | Customer 360؛ مستقل از کارمند و مسافر سفارش              |
-|    3 | فروش و سرنخ‌ها             | PC-A              | Lead، Opportunity و Quotation                            |
-|    4 | سفارش‌ها و رزرواسیون       | PC-A              | Travel Order، Reservation و Issue state                  |
-|    5 | خدمات مشتریان              | PC-B              | Ticket، SLA، escalation و satisfaction                   |
-|    6 | خرید و تأمین               | PC-B              | Procurement و خرید Provider/عمومی                        |
-|    7 | مالی و خزانه‌داری          | PC-A              | Sub-ledger، دریافت/پرداخت، Journal و خزانه               |
-|    8 | مارکتینگ                   | PC-B              | Campaign، audience و attribution                         |
-|    9 | آژانس‌ها و مشتریان سازمانی | PC-B              | B2B contract، credit و agreed rate                       |
-|   10 | منابع انسانی               | PC-B              | پرونده کارمند، سازمان، حضور، مرخصی و ارزیابی             |
-|   11 | وظایف و اتوماسیون          | PC-B              | Task، Approval و Automation Rule/Run                     |
-|   12 | اسناد و فایل‌ها            | PC-B              | metadata، archive، version و access history              |
-|   13 | گزارش‌ها                   | مشترک با مرز صریح | PC-A: Backend؛ PC-B: رابط مرکزی                          |
-|   14 | یکپارچه‌سازی‌ها            | PC-A              | Provider APIها و اتصال دو سایت؛ قرارداد مشترک ثبت می‌شود |
-|   15 | مدیریت کاربران             | PC-A              | IAM، User، Role و Permission                             |
-|   16 | اطلاعات پایه               | PC-B              | Reference/Master Data و فعال/غیرفعال‌سازی                |
-|   17 | تنظیمات سیستم              | PC-A              | تنظیمات، کنترل‌های امنیتی و audit تغییر حساس             |
+|    1 | داشبورد                          | PC-B              | فقط مصرف‌کننده Viewها و APIهای گزارش‌دهی تاییدشده                  |
+|    2 | مشتریان و مسافران                | PC-A              | هویت و Customer 360؛ تخصیص قراردادی در Sales است                   |
+|    3 | امور مشتریان، سرنخ‌ها و پشتیبانی | PC-B              | request/lead، qualification، Ticket، SLA و satisfaction            |
+|    4 | رزرواسیون و عملیات سفر           | PC-A              | availability/Hold، صدور، هتل، بیمه سامان و Manifest                |
+|    5 | مدیریت و تعریف بلیت‌ها           | PC-A              | محصول بلیت، fare version و ظرفیت؛ بدون صدور passenger document     |
+|    6 | قراردادها، فروش و تخصیص خدمات    | PC-A              | قرارداد و اتصال customer/passenger به ticket/hotel/service         |
+|    7 | خرید و تأمین                     | PC-B              | Purchase Request/Order/Invoice، تخفیف کارگزار و net purchase       |
+|    8 | مالی و خزانه‌داری                | PC-A              | Sub-ledger، چک، دریافت/پرداخت، Journal و financial release         |
+|    9 | مارکتینگ                         | PC-B              | Campaign، audience و attribution                                   |
+|   10 | آژانس‌ها و مشتریان سازمانی       | PC-B              | B2B contract، credit و agreed rate                                 |
+|   11 | منابع انسانی                     | PC-B              | پرونده کارمند، سازمان، حضور، مرخصی و ارزیابی                       |
+|   12 | وظایف و اتوماسیون                | PC-B              | Task، Approval و Automation Rule/Run                               |
+|   13 | اسناد و فایل‌ها                  | PC-B              | metadata، archive، version و access history                        |
+|   14 | گزارش‌ها                         | مشترک با مرز صریح | PC-A: Backend؛ PC-B: رابط مرکزی                                    |
+|   15 | یکپارچه‌سازی‌ها                  | PC-A              | Provider APIها، بیمه سامان و اتصال دو سایت                         |
+|   16 | مدیریت سیستم                     | PC-A              | UI مشترک IAM/Settings؛ مرز Backend جدا، امنیت و audit              |
+|   17 | اطلاعات پایه                     | PC-B              | Reference/Master Data و فعال/غیرفعال‌سازی                          |
 
 مالک Backend گزارش‌ها مسئول View/Query/Export infrastructure و صحت grain است. مالک
 رابط مرکزی گزارش‌ها مسئول navigation، filter، visualization و stateهای UI است و فقط

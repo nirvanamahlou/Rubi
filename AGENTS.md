@@ -8,10 +8,12 @@
 1. `docs/PRODUCT_REQUIREMENTS.md` — نیازمندی‌های کسب‌وکار و حدود محصول
 2. `docs/ARCHITECTURE.md`، `docs/MODULE_BOUNDARIES.md` و
    `docs/MODULE_OWNERSHIP.md` — معماری، مالکیت داده و مالکیت نهایی ماژول‌ها
-3. `docs/DATA_MODEL.md` — مدل داده و قواعد یکپارچگی
-4. `docs/DEVELOPMENT_WORKFLOW.md` — قرارداد همکاری PC-A و PC-B
-5. `docs/PROJECT_STATUS.md`، `WORK_ASSIGNMENTS.md` و `PLANS.md` — وضعیت و برنامه
-6. Git history و Prisma migrations، پس از ایجاد — واقعیت پیاده‌سازی
+3. `docs/TRAVEL_WORKFLOW_ARCHITECTURE.md` — مرجع تاییدشده فروش، تخصیص مسافر،
+   رزرواسیون، تعریف بلیت، Manifest، خرید و تحویل مالی
+4. `docs/DATA_MODEL.md` — مدل داده و قواعد یکپارچگی
+5. `docs/DEVELOPMENT_WORKFLOW.md` — قرارداد همکاری PC-A و PC-B
+6. `docs/PROJECT_STATUS.md`، `WORK_ASSIGNMENTS.md` و `PLANS.md` — وضعیت و برنامه
+7. Git history و Prisma migrations، پس از ایجاد — واقعیت پیاده‌سازی
 
 در تعارض اسناد، امنیت و یکپارچگی داده مقدم است؛ تعارض را در `docs/DECISIONS.md`
 ثبت و قبل از پیاده‌سازی حل کنید.

@@ -1,18 +1,30 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-22 — PC-A Sprint 1 Planning
+آخرین به‌روزرسانی: 2026-08-22 — ARCH-001 Approved Travel Workflow
 
 ## خلاصه
 
-- مرحله جاری: **مرحله 2 — Foundation / برنامه‌ریزی Sprint اول**
-- وضعیت: **Baseline فنی و Frontend Foundation روی develop؛ Taskهای Sprint اول آماده Review**
+- مرحله جاری: **مرحله 2 — Foundation + تثبیت معماری دامنه سفر**
+- وضعیت: **معماری تاییدشده فروش/رزرواسیون/بلیت/خرید/مالی در ARCH-001 آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Base: Commit `c4f8bdea79b81abc7fc8c518bc83e7f765383bd3` از `origin/develop`
-- شاخه فعال: `codex/pc-a-sprint-1-planning`
-- Work Item: `DOCS-003`؛ فقط برنامه‌ریزی `IAM-001` و `MASTER-001`
+- شاخه فعال: `codex/pc-a-approved-workflow-architecture`
+- Work Item: `ARCH-001`؛ معماری ۱۷ بخش و جریان فروش تا تحویل مدارک
 - محیط مسئول: `COMPUTER_ID=PC-A`
 
 ## برنامه Sprint اول
+
+### `ARCH-001` — PC-A — `READY_FOR_REVIEW`
+
+- ساختار منو به ۱۷ بخش جدید شامل «مدیریت و تعریف بلیت‌ها» و «مدیریت سیستم» تغییر می‌کند.
+- Customer Affairs مالک Lead/Support؛ Sales مالک قرارداد و تخصیص passenger/service؛
+  Reservations مالک استعلام/Hold/صدور/Manifest؛ Procurement مالک خرید و Finance مالک
+  financial release است.
+- رزرواسیون Purchase Request را با قرارداد/service/supplier و قیمت/تخفیف کارگزار ایجاد
+  می‌کند؛ Procurement approval/net purchase را مالک و margin از داده approved محاسبه می‌شود.
+- مرجع جزئیات: `docs/TRAVEL_WORKFLOW_ARCHITECTURE.md`.
+- این Work Item فقط اسناد است و هیچ Schema، Migration، Dependency یا Lockfile تغییر نمی‌دهد.
+- Prettier، لینک‌های Markdown، تعادل fenceها، secret/scope scan و `git diff --check` پاس شدند.
 
 ### `IAM-001` — PC-A — `PLANNED`
 

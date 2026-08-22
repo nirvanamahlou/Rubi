@@ -63,25 +63,37 @@ erDiagram
   PAYROLL_INPUT_BATCHES ||--|{ PAYROLL_INPUT_BATCH_ITEMS : contains
 ```
 
-## ERD سفارش، Provider و خرید
+## ERD فروش، تخصیص خدمات، رزرواسیون و خرید
 
 ```mermaid
 erDiagram
-  CUSTOMERS ||--o{ TRAVEL_ORDERS : places
-  SALES_CHANNELS ||--o{ TRAVEL_ORDERS : receives
-  USERS ||--o{ TRAVEL_ORDERS : owns
-  ORGANIZATIONS o|--o{ TRAVEL_ORDERS : agency
-  TRAVEL_ORDERS ||--|{ ORDER_ITEMS : contains
-  TRAVEL_ORDERS ||--|{ ORDER_PASSENGERS : includes
-  CUSTOMERS o|--o{ ORDER_PASSENGERS : references
-  ORDER_ITEMS ||--o{ RESERVATIONS : fulfills
-  RESERVATIONS ||--o{ TRAVEL_SEGMENTS : contains
-  RESERVATIONS ||--o{ ISSUED_DOCUMENTS : issues
-  ORDER_PASSENGERS ||--o{ ISSUED_DOCUMENTS : holder
+  CUSTOMERS ||--o{ SALES_CONTRACT_PARTIES : party
+  SALES_CONTRACTS ||--|{ SALES_CONTRACT_PARTIES : has
+  SALES_CONTRACTS ||--|{ CONTRACT_PASSENGERS : includes
+  CUSTOMERS o|--o{ CONTRACT_PASSENGERS : references
+  SALES_CONTRACTS ||--|{ CONTRACT_SERVICE_ITEMS : sells
+  CONTRACT_PASSENGERS ||--o{ PASSENGER_SERVICE_ALLOCATIONS : receives
+  CONTRACT_SERVICE_ITEMS ||--o{ PASSENGER_SERVICE_ALLOCATIONS : allocated_to
+  TICKET_PRODUCTS ||--o{ FLIGHT_DEPARTURES : schedules
+  FLIGHT_DEPARTURES ||--|| TICKET_INVENTORIES : owns
+  CONTRACT_SERVICE_ITEMS o|--o| FLIGHT_DEPARTURES : selects
+  SALES_CONTRACTS ||--o{ AVAILABILITY_REQUESTS : requests
+  AVAILABILITY_REQUESTS ||--o{ CAPACITY_HOLDS : creates
+  SALES_CONTRACTS ||--o{ RESERVATION_EXECUTIONS : publishes_snapshot
+  CONTRACT_SERVICE_ITEMS ||--o{ RESERVATION_OPERATIONS : fulfills
+  RESERVATION_EXECUTIONS ||--|{ RESERVATION_OPERATIONS : contains
+  RESERVATION_OPERATIONS ||--o{ ISSUED_TRAVEL_DOCUMENTS : issues
+  CONTRACT_PASSENGERS ||--o{ ISSUED_TRAVEL_DOCUMENTS : holder
+  RESERVATION_OPERATIONS ||--o{ MANIFEST_PASSENGERS : queues
+  MANIFESTS ||--|{ MANIFEST_PASSENGERS : contains
+  MANIFESTS ||--o{ MANIFEST_VERSIONS : versions
   ORGANIZATIONS ||--o{ PROVIDER_CONNECTIONS : provider
   PROVIDER_CONNECTIONS ||--o{ EXTERNAL_MAPPINGS : maps
-  ORDER_ITEMS ||--o{ PROVIDER_OPERATIONS : attempts
-  ORDER_ITEMS ||--o{ PURCHASE_ORDER_ITEMS : procured_by
+  RESERVATION_OPERATIONS ||--o{ PROVIDER_OPERATIONS : attempts
+  RESERVATION_OPERATIONS ||--o{ PURCHASE_REQUESTS : requests
+  CONTRACT_SERVICE_ITEMS ||--o{ PURCHASE_REQUESTS : procures
+  PURCHASE_REQUESTS ||--o{ PURCHASE_PRICE_VERSIONS : prices
+  PURCHASE_REQUESTS ||--o{ PURCHASE_ORDER_ITEMS : approved_as
   PURCHASE_ORDERS ||--|{ PURCHASE_ORDER_ITEMS : contains
   ORGANIZATIONS ||--o{ PURCHASE_ORDERS : supplier
   PURCHASE_ORDER_ITEMS ||--o{ PURCHASE_INVOICE_ITEMS : billed_as
@@ -92,9 +104,9 @@ erDiagram
 
 ```mermaid
 erDiagram
-  TRAVEL_ORDERS ||--o{ SALES_INVOICES : billed_by
+  SALES_CONTRACTS ||--o{ SALES_INVOICES : billed_by
   SALES_INVOICES ||--|{ SALES_INVOICE_ITEMS : contains
-  ORDER_ITEMS ||--o{ SALES_INVOICE_ITEMS : charges
+  CONTRACT_SERVICE_ITEMS ||--o{ SALES_INVOICE_ITEMS : charges
   SALES_INVOICES ||--o{ PAYMENT_ALLOCATIONS : receives
   PAYMENTS ||--o{ PAYMENT_ALLOCATIONS : allocates
   PAYMENTS ||--o{ REFUNDS : refunded_by
@@ -104,8 +116,10 @@ erDiagram
   PAYMENTS ||--o{ JOURNAL_ENTRIES : source
   REFUNDS ||--o{ JOURNAL_ENTRIES : source
   CHECKS o|--o{ PAYMENTS : settles
+  SALES_CONTRACTS ||--o{ FINANCIAL_RELEASES : controls
+  ISSUED_TRAVEL_DOCUMENTS ||--o{ FINANCIAL_RELEASES : releases
   CUSTOMERS ||--o{ SUPPORT_TICKETS : opens
-  TRAVEL_ORDERS o|--o{ SUPPORT_TICKETS : concerns
+  SALES_CONTRACTS o|--o{ SUPPORT_TICKETS : concerns
   SUPPORT_TICKETS ||--o{ TICKET_MESSAGES : contains
   TASKS o|--o{ AUTOMATION_RUNS : generated_by
   FILE_OBJECTS ||--o{ FILE_LINKS : linked_as
@@ -115,24 +129,43 @@ erDiagram
 
 ## Aggregateها و invariantهای اصلی
 
-### Travel Order
+### Sales Contract and Service Allocation
 
-- حداقل یک Order Item و یک ordering customer دارد.
-- مجموع‌ها از item snapshotها با rounding policy سند محاسبه می‌شوند.
-- payment، booking و issue سه state مستقل‌اند؛ یک status مرکب جایگزین آن‌ها نمی‌شود.
-- passenger/segment افزایش‌دهنده grain هستند و amount سفارش را duplicate نمی‌کنند.
-- cancellation/refund transition نیازمند history، reason، actor و optimistic version است.
+- Sales Contract حداقل یک party و یک service item دارد؛ payer/customer و passenger role
+  صریح هستند و لزوماً یک شخص نیستند.
+- `contract_passenger` و `passenger_service_allocation` فقط از command عمومی Sales تغییر
+  می‌کنند؛ Reservations روی این روابط write access ندارد.
+- هر service allocation به passenger و contract service item FK واقعی دارد؛ برای HOTEL
+  room/occupancy snapshot و برای FLIGHT flight departure reference لازم است.
+- قیمت فروش، تخفیف، currency و FX snapshot در contract version immutable می‌شوند.
+- amendment نسخه جدید می‌سازد و executionهای قبلی را بازنویسی نمی‌کند.
+
+### Ticket Catalog and Capacity
+
+- Ticket Catalog مالک محصول/برنامه/fare و capacity است، ولی passenger document صادر نمی‌کند.
+- Hold، confirm و release ظرفیت transaction و idempotency key دارند؛ موجودی منفی و oversell
+  ممنوع است.
+- تغییر زمان/قیمت/ظرفیت پس از فروش versioned است و عملیات متاثر برای Reservations task می‌سازد.
 
 ### Reservation/Issue
 
+- Reservation Execution از contract version تاییدشده snapshot فقط‌خواندنی دارد.
+- هر عملیات صدور به contract service item و passenger allocation معتبر متصل است.
 - هر Provider operation یک `idempotency_key`، request fingerprint، attempt و status دارد.
 - official document number در صورت وجود با source Provider و external reference ذخیره می‌شود.
-- issue success به document version و passenger/order item معتبر متصل است.
+- issue success به document version، contract passenger و contract service item معتبر متصل است.
 - issue failure payment را حذف یا void نمی‌کند.
+- Manifest در Reservations مالکیت می‌شود و `(flight_departure_id, version)` یکتا، snapshot
+  passenger immutable و history ارسال/acknowledgement دارد.
+- صدور عملیاتی، release مالی و delivery state مستقل هستند.
 
 ### Procurement
 
-- Purchase Order Item می‌تواند به Order Item متصل باشد؛ خرید عمومی اتصال order ندارد.
+- Reservation از port عمومی Purchase Request را با contract/service/passenger/supplier و
+  operation reference ایجاد می‌کند؛ Procurement مالک state و approval آن است.
+- Purchase Order Item می‌تواند به Contract Service Item متصل باشد؛ خرید عمومی اتصال قرارداد ندارد.
+- قیمت اولیه، supplier discount، fee/tax و net purchase در نسخه immutable نگه‌داری می‌شوند.
+- net purchase از اجزای approved محاسبه می‌شود و margin فیلد قابل ویرایش نیست.
 - Purchase Invoice پس از approval به payable و journal source یکتا تبدیل می‌شود.
 - یک source document بیش از یک posting فعال ندارد؛ correction با reversal است.
 
@@ -143,6 +176,8 @@ erDiagram
 - balance ذخیره قابل ویرایش نیست و از posted lines به‌دست می‌آید.
 - Payment callback با gateway transaction و merchant scope unique و idempotent است.
 - Allocation جمعاً از مبلغ قابل تخصیص payment/refund تجاوز نمی‌کند.
+- Financial Release به contract/document و policy snapshot متصل است؛ release/revoke نیازمند
+  permission، reason و history است و فایل پیش از release برای Sales/Customer قابل دانلود نیست.
 
 ### Organization
 
@@ -166,8 +201,9 @@ erDiagram
 
 ## تاریخچه و Audit
 
-جداول state history برای order، reservation، payment، issue، purchase، invoice، check،
-ticket، task، employment contract، leave/mission، overtime و payroll input شامل
+جداول state history برای sales contract، service allocation، capacity hold، reservation،
+issue، manifest، financial release، purchase request/price، invoice، payment، check،
+support ticket، task، employment contract، leave/mission، overtime و payroll input شامل
 `from_status`, `to_status`, `reason_code`, `note`, `changed_by`, `changed_at`, `trace_id`
 هستند. Audit عمومی مکمل history است و جایگزین آن نیست.
 
@@ -175,15 +211,17 @@ ticket، task، employment contract، leave/mission، overtime و payroll input 
 
 - unique: normalized customer contact در scope تاییدشده؛ provider mapping؛ payment gateway
   reference؛ idempotency key در client/scope؛ document number در issuer scope
-- index: status+created_at، due_date+status، customer/order foreign keys، external reference،
-  sales_channel+order date، provider+service date
+- index: status+created_at، due_date+status، customer/contract foreign keys، external reference،
+  sales_channel+contract date، provider+service date
 - partial index برای queue-like stateهای active و checkهای نزدیک سررسید
 - check constraint برای amount غیرمنفی در اسناد؛ journal line فقط یک جهت debit/credit
 - exclusion/unique متناسب برای جلوگیری از active duplicate posting/settlement
 
 ## مرز تراکنش
 
-- create order + totals + initial history در یک transaction
+- activate sales contract + immutable version + allocations + outbox در یک transaction
+- hold/confirm/release ticket capacity با optimistic lock در یک transaction
+- create purchase request + initial price version + history در یک transaction
 - verify callback + payment record + allocation intent + outbox در یک transaction
 - posting journal entry + lines + source posting marker در یک transaction
 - merge customer با mapping/history و بدون حذف trace در transaction کنترل‌شده
@@ -191,11 +229,14 @@ ticket، task، employment contract، leave/mission، overtime و payroll input 
 
 ## Reporting model
 
-Viewهای پیشنهادی: `reporting_order_facts` (یک ردیف/order)،
-`reporting_order_item_facts`, `reporting_reservation_facts`, `reporting_passenger_facts`,
-`reporting_segment_facts`, `reporting_ticket_facts`, `reporting_payment_facts`,
+Viewهای پیشنهادی: `reporting_sales_contract_facts` (یک ردیف/قرارداد)،
+`reporting_contract_service_facts`, `reporting_reservation_facts`,
+`reporting_contract_passenger_facts`, `reporting_ticket_inventory_facts`,
+`reporting_manifest_facts`, `reporting_purchase_request_facts`,
+`reporting_supplier_discount_facts`, `reporting_payment_facts`,
 `reporting_journal_balance_facts`, `reporting_hr_headcount_facts` و
-`reporting_hr_time_facts`. measureها قبل از join به dimension چندتایی aggregate می‌شوند.
+`reporting_hr_time_facts`. measureهای فروش/خرید پیش از join به passenger/manifest aggregate
+می‌شوند تا مبلغ و margin تکثیر نشود.
 
 واژه‌نامه entityها در [DATA_DICTIONARY.md](DATA_DICTIONARY.md) و KPIها در
 [KPI_DICTIONARY.md](KPI_DICTIONARY.md) است.

@@ -34,6 +34,12 @@ RBAC با permission عملیاتی و scope `company/branch/team/self/organizat
 approval، payment creation، issue/cancel و master data/user management مجوز جدا دارند.
 جداسازی وظایف برای create/approve/post/refund قابل تنظیم است.
 
+در دامنه سفر، permissionهای مستقل برای تخصیص passenger/service در Sales، Hold/issue/
+Manifest در Reservations، تعریف fare/capacity در Ticket Catalog، مشاهده قیمت خرید و تخفیف
+کارگزار، تایید خرید و `financial_release` لازم است. Reservation حق تغییر contract allocation
+و Ticket Catalog حق صدور سند passenger را ندارد. signed URL بلیت/واچر/بیمه برای Sales یا
+Customer فقط پس از release معتبر مالی صادر می‌شود؛ قبل از آن فقط status قابل مشاهده است.
+
 منابع انسانی permissionهای جدا برای مشاهده پرونده، داده حساس، قرارداد، ارزیابی،
 حضور/مرخصی، تایید و export دارد. مدیر سازمانی فقط scope مصوب زیرمجموعه خود را می‌بیند؛
 دسترسی کلی Finance یا مدیر سیستم به محتوای حساس HR به‌صورت پیش‌فرض مجاز نیست. ارسال
@@ -57,8 +63,10 @@ approval، payment creation، issue/cancel و master data/user management مجو
 
 ## Audit و Logging
 
-عملیات auth، permission/role، customer merge/PII view-export، price override، booking/issue/
-cancel/refund، payment/journal/check، approval، credential/settings و file download audit می‌شود.
+عملیات auth، permission/role، customer merge/PII view-export، contract allocation/amendment،
+fare/capacity/price override، Hold، booking/issue/Manifest/cancel/refund، supplier quote/
+discount، purchase approval، financial release، payment/journal/check، credential/settings و
+file view/download/delivery audit می‌شود.
 مشاهده، تغییر و خروجی پرونده پرسنلی، قرارداد، ارزیابی، تماس اضطراری، حضور و payroll input
 نیز audit می‌شود.
 Audit actor/impersonator، action، entity، before/after redacted، reason، IP/user-agent، trace و

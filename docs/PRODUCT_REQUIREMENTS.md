@@ -16,7 +16,7 @@ Rubi یک پلتفرم وب یکپارچه، ماژولار، امن، تست‌
 اهداف:
 
 - یک منبع عملیاتی معتبر برای دو سایت، فروش دستی و فروش API
-- Customer 360 و Lead-to-Order قابل سنجش
+- Customer 360 و Lead-to-Contract قابل سنجش
 - جلوگیری از گم‌شدن پرداخت و ایجاد workflow جبرانی برای شکست صدور
 - تفکیک روشن فروش، خرید و Sub-ledger با محاسبه معتبر سود و مانده
 - Provider abstraction قابل توسعه بدون آلوده‌کردن دامنه به مدل هر کارگزار
@@ -53,26 +53,29 @@ Rubi یک پلتفرم وب یکپارچه، ماژولار، امن، تست‌
 منوی اصلی دقیقاً این ۱۷ بخش را دارد:
 
 1. داشبورد
-2. مشتریان
-3. فروش و سرنخ‌ها
-4. سفارش‌ها و رزرواسیون
-5. خدمات مشتریان
-6. خرید و تأمین
-7. مالی و خزانه‌داری
-8. مارکتینگ
-9. آژانس‌ها و مشتریان سازمانی
-10. منابع انسانی
-11. وظایف و اتوماسیون
-12. اسناد و فایل‌ها
-13. گزارش‌ها
-14. یکپارچه‌سازی‌ها
-15. مدیریت کاربران
-16. اطلاعات پایه
-17. تنظیمات سیستم
+2. مشتریان و مسافران
+3. امور مشتریان، سرنخ‌ها و پشتیبانی
+4. رزرواسیون و عملیات سفر
+5. مدیریت و تعریف بلیت‌ها
+6. قراردادها، فروش و تخصیص خدمات
+7. خرید و تأمین
+8. مالی و خزانه‌داری
+9. مارکتینگ
+10. آژانس‌ها و مشتریان سازمانی
+11. منابع انسانی
+12. وظایف و اتوماسیون
+13. اسناد و فایل‌ها
+14. گزارش‌ها
+15. یکپارچه‌سازی‌ها
+16. مدیریت سیستم
+17. اطلاعات پایه
 
 «جست‌وجو و فروش آنلاین» و «صدور اسناد» منوی مستقل نیستند. جست‌وجو/خرید آنلاین
 در سفارش و Backend سایت‌ها، و صدور در ماژول مربوط انجام می‌شود. لیدر و کارگزار
 منوی اصلی مستقل ندارند و در اطلاعات پایه تعریف می‌شوند.
+
+شرح قطعی مسئولیت‌ها و جریان‌های فروش، صدور، خرید و تحویل در
+[TRAVEL_WORKFLOW_ARCHITECTURE.md](TRAVEL_WORKFLOW_ARCHITECTURE.md) ثبت شده است.
 
 ## 5. داشبورد
 
@@ -95,38 +98,49 @@ Customer 360 شامل مشخصات فردی، تماس، آدرس، همراه/�
 خروجی‌ها: PDF پرونده، Excel مشتریان و سوابق خرید، PDF صورت‌حساب و audience مجاز
 مارکتینگ. داده حساس فقط با permission جدا export می‌شود.
 
-## 7. فروش و سرنخ
+## 7. امور مشتریان، قراردادها و فروش
 
-ثبت lead، نحوه آشنایی، lead source، سایت/کانال ورودی، تخصیص، pipeline/stage،
-opportunity، مبلغ احتمالی، quotation، follow-up، علت عدم خرید، conversion و اهداف
-فردی/تیمی لازم است.
+امور مشتریان مالک request/lead، منبع و کانال، qualification، follow-up، lost reason،
+پشتیبانی قبل/بعد فروش، Ticket، SLA و satisfaction است. درخواست واجد شرایط به فروش
+تحویل می‌شود.
 
-جریان قطعی: `Lead Source → Lead → Customer → Opportunity → Quotation → Travel Order`.
-خروجی: PDF پیشنهاد، Excel lead، pipeline، conversion، عملکرد کارشناس، lost reasons و
-forecast. Lead Source، Sales Channel و Campaign سه مفهوم مستقل هستند.
+فروش مالک پرونده فروش، quotation، قرارداد، مشتری/پرداخت‌کننده قرارداد، اتصال مسافران
+به قرارداد و تخصیص هر مسافر به بلیت، هتل/اتاق، بیمه، تور و خدمات جانبی است. رزرواسیون
+اجازه ایجاد یا تغییر این ارتباط‌ها را ندارد و فقط snapshot تاییدشده قرارداد را اجرا
+می‌کند.
 
-## 8. سفارش و رزرواسیون
+جریان قطعی:
+`Customer Request → Qualified Lead → Sales Case → Availability/Hold → Quotation →`
+`Sales Contract → Finance Case + Reservation Execution`.
 
-Aggregate اصلی `TravelOrder` با یک یا چند `OrderItem` است. انواع خدمت:
+خروجی محلی شامل PDF پیشنهاد/قرارداد/الحاقیه، Excel pipeline و گزارش conversion،
+عملکرد و lost reason است.
+
+## 8. رزرواسیون، تعریف بلیت و عملیات سفر
+
+مدیریت بلیت مالک تعریف محصول قابل فروش است: ایرلاین، پرواز، مسیر، برنامه، کلاس، قواعد،
+قیمت versioned و ظرفیت کل/Hold/قطعی/فروش‌رفته/باقی‌مانده. این بخش برای مسافر بلیت صادر
+نمی‌کند.
+
+رزرواسیون مالک availability check، Hold، پرونده اجرایی، صدور بلیت، PNR، واچر هتل،
+بیمه سامان، Manifest و عملیات change/reissue/void/cancel/refund است. انواع خدمت:
 `FLIGHT`, `BUS`, `HOTEL`, `TOUR`, `INSURANCE`, `TRANSFER`, `VISA`, `CIP`,
 `CAR_RENTAL`, `OTHER`.
 
-سفارش باید customer، passengerها، site/channel، agent، agency، Provider هر item،
-currency، purchase/sale price، discount، tax، commission، profit و وضعیت‌های payment،
-booking و issue با تاریخچه داشته باشد. زیرنماها: همه، جدید، جست‌وجوی پرواز/اتوبوس/
-هتل/تور، استعلام بیمه، آنلاین/دستی، انتظار پرداخت/صدور، صادرشده، لغو و refund.
+برای ظرفیت شرکت، تاییدیه سفر داخلی صادر و passenger در صف Manifest قرار می‌گیرد؛
+Excel طبق قالب/زمان‌بندی هر ایرلاین ساخته، بازبینی، ارسال و versioned می‌شود. شماره رسمی
+e-ticket فقط از Airline/GDS/Provider معتبر ذخیره می‌شود و Rubi آن را جعل نمی‌کند.
 
-صدور در همان رزرو انجام می‌شود: بلیت پرواز/اتوبوس، واچر هتل/تور/ترانسفر و سند
-بیمه. قالب فارسی/انگلیسی، QR، شماره یکتا داخلی، version، void و send history لازم
-است. شماره رسمی e-ticket فقط از Airline/GDS/Provider معتبر دریافت می‌شود و Rubi آن
-را جعل یا داخلی تولید نمی‌کند.
+در هتل، فروش مسافر/اتاق را تخصیص می‌دهد؛ رزرواسیون فرم کارگزار را می‌سازد، پاسخ و
+Confirmation Number را ثبت و پس از تایید واچر versioned صادر می‌کند. در بیمه، طرح و
+مسافر از قرارداد می‌آید و صدور/cancel/refund از Adapter بیمه سامان idempotent است.
 
 ## 9. فروش آنلاین و Provider Adapter
 
 دو سایت فقط Booking API مرکزی را مصرف می‌کنند:
 
 `Website → Booking API → Provider Adapters → Search → Price Recheck → Passenger →`
-`Payment → Provider Booking → Issue → CRM Order → Finance → Customer Document`.
+`Payment → Provider Booking → Issue → CRM Sales Contract/Service → Finance → Customer Document`.
 
 هر adapter قرارداد `search`, `checkPrice`, `checkAvailability`, `createReservation`,
 `confirmReservation`, `issue`, `cancel`, `refund`, `getStatus` را مطابق capability
@@ -144,12 +158,16 @@ Idempotency، timeout، retry محدود، circuit breaker، rate limit و audit
 - task فوری و alert برای کارشناس/مدیر ساخته می‌شود.
 - refund یا پیگیری دستی با permission و audit ممکن است.
 
-## 10. خدمات مشتریان
+## 10. خدمات مشتریان و تحویل مدارک
 
 Ticket، complaint، change، cancellation، refund، issue follow-up، category، priority،
 SLA، assignment، message، internal note، attachment، referral، escalation و satisfaction
-لازم است. Ticket می‌تواند به customer، order، reservation، ticket/voucher، invoice،
-payment و Provider متصل شود. PDF پرونده، Excel، SLA/agent/satisfaction reports لازم است.
+لازم است. Ticket می‌تواند به customer، sales contract، reservation execution، بلیت/واچر،
+invoice، payment و Provider متصل شود.
+
+صدور عملیاتی و تحویل سند جدا هستند. رزرواسیون می‌تواند مطابق policy سند را صادر کند،
+اما تا `financial_release` فایل برای فروش یا مسافر قابل مشاهده/دانلود نیست. پس از release،
+فروش سند را با send history برای مسافر ارسال می‌کند.
 
 ## 11. خرید و تأمین
 
@@ -158,13 +176,18 @@ payment و Provider متصل شود. PDF پرونده، Excel، SLA/agent/satisf
 `Purchase Request → Approval → Purchase Order → Service Receipt → Purchase Invoice`
 `→ Payable → Payment/Check → Settlement`.
 
-خرید Provider پس از رزرو API به‌صورت خودکار و خرید دستی نیز قابل ثبت است. داده‌ها:
-Provider، service type، Order/Item، purchase price، currency، FX snapshot، tax، discount،
-commission، due date، invoice، receipt/payment status و documents.
+رزرواسیون از قرارداد عمومی Procurement درخواست خرید را با FK واقعی به قرارداد، service
+item، passengerها، supplier و reservation operation ایجاد می‌کند و قیمت اولیه، تخفیف
+مذاکره‌شده، ارز، fee/tax، قیمت نهایی و مدرک تایید را می‌فرستد. Procurement مالک approval،
+Purchase Order/Invoice، تغییر قیمت versioned و payable است.
+
+خرید Provider پس از رزرو API می‌تواند خودکار و خرید دستی نیز قابل ثبت باشد. قیمت خالص
+خرید از قیمت اولیه منهای تخفیف کارگزار به‌علاوه fee/هزینه محاسبه می‌شود؛ سود دستی نیست
+و از قیمت فروش snapshot منهای خرید خالص approved محاسبه می‌شود.
 
 فروش و خرید تفکیک می‌شوند:
-`Travel Order Item → Sales Invoice Item` و
-`Travel Order Item → Purchase Order Item → Purchase Invoice Item`.
+`Contract Service Item → Sales Invoice Item` و
+`Contract Service Item → Purchase Request → Purchase Order Item → Purchase Invoice Item`.
 گزارش خرید Provider/service/manual/API، unpaid invoices، payable، margin و PDF/Excel
 لازم است.
 
@@ -184,7 +207,7 @@ received/paid check و due reminders است.
 قابل Post نیست.
 
 Check: direction، check/Sayad number، bank/branch، amount/currency، issue/due date،
-counterparty، account، invoice/order، image، status/history/reminder. وضعیت‌های نمونه:
+counterparty، account، invoice/contract، image، status/history/reminder. وضعیت‌های نمونه:
 `RECEIVED`, `DEPOSITED`, `CLEARED`, `BOUNCED`, `RETURNED`, `ENDORSED`, `ISSUED`,
 `DELIVERED`, `DUE`, `PAID`, `CANCELLED`. یادآوری قابل تنظیم مانند ۷، ۳ و ۱ روز.
 
@@ -250,7 +273,7 @@ confidentiality، expiry، download permission و view/send history مدیریت
 Passenger، Segment، Ticket و Payment؛ join نباید مبلغ را با تعداد passenger/segment
 تکرار کند.
 
-گزارش‌ها: فروش site/service/agent، خرید Provider، سود order/service، balance، due check،
+گزارش‌ها: فروش site/service/agent، خرید Provider، سود contract/service، balance، due check،
 receivable/payable، manual/API، failed reservation، paid-not-issued، cancellation/refund،
 marketing، customer service و منابع انسانی.
 
@@ -261,7 +284,7 @@ accounting و webhook لازم است. برای هر اتصال: credential ام
 external mapping، idempotency، retry، timeout، rate limit، health، request/error log،
 webhook history و sync job. Credential/API key نه plain text در Git و نه plain text در DB.
 
-## 20. کاربران و امنیت دسترسی
+## 20. مدیریت سیستم — کاربران و امنیت دسترسی
 
 User، role، permission، team، branch access scope، 2FA، session، login history، optional
 IP restriction، disablement، employee substitution و audit لازم است. سمت، مدیر و assignment
@@ -286,12 +309,15 @@ token rotation و revoke، rate limit و separate API access برای Provider/s
 شناسه‌های متفاوت یک رکورد داخلی در چند API را نگه می‌دارد. Reference data استفاده‌شده
 حذف نمی‌شود و فقط inactive می‌شود.
 
-## 22. تنظیمات
+## 22. مدیریت سیستم — تنظیمات
 
 company، branch، domain دو سایت، locale/timezone، نمایش شمسی با ذخیره UTC/Gregorian،
 numbering، markup/pricing، PDF/message template، notification، security/API، log retention،
 finance/refund approval، auto issue، calendar/holiday و SLA قابل تنظیم است. تغییر حساس
 setting versioned و audited است.
+
+کاربران/امنیت و تنظیمات در منوی واحد «مدیریت سیستم» نمایش داده می‌شوند، اما IAM و
+Settings در Backend مالکیت داده و مرز فنی جدا دارند.
 
 ## 23. قواعد داده
 
@@ -310,7 +336,7 @@ rate limit، جداسازی staging/production و backup رمزنگاری‌شد
 
 UI فارسی، RTL، responsive، desktop-first و tablet-usable است؛ table حرفه‌ای، advanced
 filter، quick search، saved view، column choice، server pagination و Loading/Empty/Error/
-Permission states دارد. Order form چندمرحله‌ای، عملیات حساس confirm، تاریخ شمسی با
+Permission states دارد. Contract form چندمرحله‌ای، عملیات حساس confirm، تاریخ شمسی با
 نمایش میلادی، ارز خوانا و accessibility پایه لازم است. داده مالی بدون permission نمایش
 داده نمی‌شود.
 

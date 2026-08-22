@@ -71,11 +71,17 @@ PostgreSQL، transaction هماهنگ‌کننده می‌تواند چند publ
 
 ## ماژول‌ها
 
-ماژول‌های محصول: Dashboard، Customers، Sales، Orders/Reservations، Customer Service،
-Procurement، Finance/Treasury، Marketing، B2B، Human Resources، Tasks/Automation،
-Documents، Reporting/Exports، Integrations، IAM، Master Data و Settings. سرویس‌های افقی:
-Audit، Notification، Idempotency و Observability. مالکیت داده و dependencyها در
-`MODULE_BOUNDARIES.md` و مالکیت توسعه در `MODULE_OWNERSHIP.md` است.
+ماژول‌های محصول: Dashboard، Customers، Customer Affairs، Sales Contracts، Ticket Catalog،
+Reservation Operations، Procurement، Finance/Treasury، Marketing، B2B، Human Resources،
+Tasks/Automation، Documents، Reporting/Exports، Integrations، IAM، Master Data و Settings.
+IAM و Settings در UI زیر منوی واحد «مدیریت سیستم» نمایش داده می‌شوند، ولی مرز Backend
+مستقل دارند. سرویس‌های افقی: Audit، Notification، Idempotency و Observability.
+
+فروش مالک قرارداد و تخصیص customer/passenger به service item است؛ Ticket Catalog فقط
+محصول/قیمت/ظرفیت بلیت را تعریف می‌کند؛ Reservation Operations snapshot تاییدشده فروش
+را اجرا و بلیت/واچر/بیمه و Manifest را صادر می‌کند. شرح قطعی در
+[TRAVEL_WORKFLOW_ARCHITECTURE.md](TRAVEL_WORKFLOW_ARCHITECTURE.md) و مالکیت داده در
+`MODULE_BOUNDARIES.md` است.
 
 Human Resources مالک Employee و lifecycle استخدام است. Employee به Customer یا Passenger
 تبدیل یا در آن‌ها ادغام نمی‌شود؛ ارتباط اختیاری با IAM User فقط reference حساب ورود است.
@@ -97,6 +103,34 @@ PC-A و PC-B هر دو Full-Stack هستند و همه لایه‌های ماژ�
 - Queue پیام را at-least-once تحویل می‌دهد؛ handlerها باید idempotent باشند.
 - cache هرگز source of truth نیست و invalidation/TTL صریح دارد.
 - state transitionهای رزرو/پرداخت/صدور با optimistic version و history ثبت می‌شوند.
+
+### جریان فروش دستی و اجرای سفر
+
+```mermaid
+sequenceDiagram
+  participant C as Customer Affairs
+  participant S as Sales Contracts
+  participant R as Reservation Operations
+  participant P as Procurement
+  participant F as Finance
+  participant D as Documents
+  C->>S: qualified request
+  S->>R: availability/hold request + proposed services
+  R-->>S: availability, price validity, hold
+  S->>S: assign passengers/services + activate contract
+  par execution
+    S->>R: immutable execution snapshot
+    S->>F: financial case + payment terms
+  end
+  R->>P: purchase request(contract/service/supplier, negotiated price)
+  P-->>F: approved purchase/payable source
+  R->>D: issued ticket/voucher/policy + version
+  F-->>S: financial release authorized
+  S->>D: deliver released document to passenger
+```
+
+صدور عملیاتی، release مالی و delivery سه state مستقل هستند. رزرواسیون قرارداد یا
+تخصیص مسافر را ویرایش نمی‌کند؛ نقص ورودی با correction request به فروش برمی‌گردد.
 
 ### جریان رزرو آنلاین
 
@@ -156,7 +190,7 @@ URL کوتاه و audit append-only منطقی. اطلاعات کارت/CVV هر
 ## Reporting
 
 Operational tables برای UI تراکنشی و approved views برای KPI/گزارش. Viewها grain صریح
-دارند و measureهای order/payment پیش از join با passenger/segment aggregate می‌شوند.
+دارند و measureهای contract/payment پیش از join با passenger/segment aggregate می‌شوند.
 Export بزرگ queue-based و snapshot فیلتر/permission دارد. `REPORTING.md` مرجع است.
 
 ## Observability و قابلیت عملیات
