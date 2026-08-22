@@ -6,6 +6,7 @@
     "dev": "nest start --watch",
     "build": "nest build",
     "start": "node dist/main.js",
+    "iam:bootstrap-admin": "tsx src/iam/bootstrap-admin.ts",
     "lint": "eslint src test --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
@@ -14,10 +15,13 @@
     "@nestjs/common": "11.2.1",
     "@nestjs/config": "4.0.4",
     "@nestjs/core": "11.2.1",
+    "@nestjs/jwt": "11.0.2",
     "@nestjs/platform-express": "11.2.1",
     "@nestjs/swagger": "11.4.7",
     "@rubi/config": "workspace:*",
     "@rubi/contracts": "workspace:*",
+    "@rubi/database": "workspace:*",
+    "argon2": "0.44.0",
     "class-transformer": "0.5.1",
     "class-validator": "0.15.1",
     "express": "5.2.1",
@@ -27,11 +31,15 @@
   },
   "devDependencies": {
     "@nestjs/cli": "11.0.24",
+    "@nestjs/testing": "11.2.1",
     "@rubi/eslint-config": "workspace:*",
     "@rubi/typescript-config": "workspace:*",
     "@types/express": "5.0.6",
     "@types/node": "26.2.0",
+    "@types/supertest": "6.0.3",
     "eslint": "9.39.5",
+    "supertest": "7.2.2",
+    "tsx": "4.20.6",
     "typescript": "6.0.3",
     "vitest": "4.1.11"
   }
