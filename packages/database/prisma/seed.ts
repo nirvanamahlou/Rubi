@@ -1,20 +1,12 @@
 import { createDatabaseClient } from '../src/client';
-
-const permissions = [
-  ['iam.users.read', 'iam', 'مشاهده کاربران'],
-  ['iam.users.manage', 'iam', 'مدیریت کاربران'],
-  ['iam.roles.read', 'iam', 'مشاهده نقش‌ها'],
-  ['iam.roles.manage', 'iam', 'مدیریت نقش‌ها و مجوزها'],
-  ['iam.sessions.manage', 'iam', 'مدیریت نشست‌ها'],
-  ['iam.audit.read', 'iam', 'مشاهده رویدادهای امنیتی'],
-] as const;
+import { PERMISSION_SEED_DATA } from '../src/permission-seed-data';
 
 async function seed(): Promise<void> {
   const database = createDatabaseClient();
   try {
     await database.$transaction(async (transaction) => {
       const seededPermissions = await Promise.all(
-        permissions.map(([code, module, name]) =>
+        PERMISSION_SEED_DATA.map(([code, module, name]) =>
           transaction.permission.upsert({
             where: { code },
             create: { code, module, name },
@@ -27,7 +19,7 @@ async function seed(): Promise<void> {
         create: {
           code: 'administrator',
           name: 'مدیر سامانه',
-          description: 'نقش سیستمی با تمام مجوزهای IAM',
+          description: 'نقش سیستمی با تمام مجوزهای سامانه',
           isSystem: true,
         },
         update: { isActive: true, name: 'مدیر سامانه' },

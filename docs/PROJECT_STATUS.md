@@ -1,21 +1,32 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-23 — برنامه‌ریزی Sprint دوم
+آخرین به‌روزرسانی: 2026-08-23 — شروع IAM-002
 
 ## خلاصه
 
 - مرحله جاری: **Sprint دوم — Master Data Persistence و Customer Foundation**
-- وضعیت: **برنامه‌ریزی قفل‌ها و Handoff سه Task آغاز Sprint دوم آماده Review است**
+- وضعیت: **IAM-002 تکمیل و آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
-- Baseline: Merge Commit `9c69124798af43ef2a9f8147576135cd86a8515d` از آخرین `origin/develop`
-- شاخه فعال: `codex/pc-a-sprint-2-planning`
-- Work Item: `SPRINT2-PLANNING-001`؛ ترتیب اجرا، قفل و Handoff Sprint دوم
+- Baseline: Merge Commit `9efb37cdac808d85ca2fa8c340a01435098a9b3e` از آخرین `origin/develop`
+- شاخه فعال: `codex/pc-a-iam-domain-permissions`
+- Work Item: `IAM-002`؛ Permission Contract عمومی Master Data و Customers
 - محیط مسئول: `COMPUTER_ID=PC-A`
 - وضعیت اولیه محیط: Dev Server متوقف، Working Tree تمیز و PR بازی وجود نداشت.
 
+### `IAM-002` — PC-A — `READY_FOR_REVIEW`
+
+- قرارداد عمومی IAM به نسخه ۲ ارتقا یافت و ۵ Permission برای Master Data و ۶ Permission
+  برای Customers منتشر شد؛ ۶ Permission قبلی IAM بدون تغییر حفظ شدند.
+- Seed دو بار متوالی روی PostgreSQL 18 موفق بود؛ هر ۱۷ Permission یکتا و به نقش
+  `administrator` متصل هستند.
+- Prisma validate/generate، lint، typecheck، ۴۳ تست در ۱۹ فایل و build تولیدی کل
+  Monorepo پاس شدند.
+- Schema، Migration، Dependency و Lockfile تغییر نکردند. قفل IAM shared-contract تا
+  Merge و Handoff نهایی این Task فعال می‌ماند.
+
 ## برنامه اجرایی Sprint دوم
 
-### `SPRINT2-PLANNING-001` — PC-A — `READY_FOR_REVIEW`
+### `SPRINT2-PLANNING-001` — PC-A — `DONE`
 
 - سه Task آغاز Sprint شامل `IAM-002`، `MASTER-002` و `CUSTOMER-001` با Branch و مرز فایل
   مستقل ثبت شدند.
@@ -27,6 +38,7 @@
 - نرخ ارز authoritative با `DEC-OPEN-004`، PII حساس با `DEC-OPEN-006` و auto-merge با
   `DEC-OPEN-011` تا تصمیم محصول/امنیت خارج از Scope قطعی هستند.
 - مرجع دقیق: `docs/tasks/SPRINT-2-PLANNING.md`.
+- PR شماره ۱۰ با Merge Commit `9efb37c` وارد `develop` شد.
 - Scoped Prettier، لینک‌های Markdown، تعادل Fence، Scope/Secret scan و
   `git diff --check` پاس شدند؛ هیچ تست یا Build نرم‌افزاری لازم نبود چون Task فقط مستندات است.
 

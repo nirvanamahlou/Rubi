@@ -1,4 +1,9 @@
-# قرارداد IAM-001
+# قرارداد IAM
+
+نسخه عمومی جاری Permission Contract برابر `2` است. نسخه دوم علاوه بر مجوزهای پایه IAM،
+کدهای `master_data.*` و `customers.*` را برای مصرف از `@rubi/contracts` منتشر می‌کند.
+فهرست قطعی در `IAM_PERMISSION_CODES` و گروه‌های دامنه در
+`MASTER_DATA_PERMISSION_CODES` و `CUSTOMER_PERMISSION_CODES` قرار دارند.
 
 ## مرز عمومی
 
@@ -47,3 +52,12 @@ password یا token خامی در metadata ثبت نمی‌شود.
   `iam_*` را مستقیم query نمی‌کند.
 - Migration، Dependency/Lockfile و shared-contract lock تا ادغام این PR فعال می‌ماند؛
   آزادسازی آن پس از Merge در `WORK_ASSIGNMENTS.md` ثبت می‌شود.
+
+### Handoff IAM-002
+
+- `MASTER-002` مجوزهای `master_data.read/create/update/status.manage/export` را فقط از
+  قرارداد عمومی مصرف می‌کند.
+- `CUSTOMER-001` مجوزهای `customers.read/create/update/merge/consent.manage/sensitive.read`
+  را فقط از قرارداد عمومی مصرف می‌کند.
+- Seed همه ۱۷ Permission را به‌صورت upsert ایجاد و به نقش `administrator` متصل می‌کند؛
+  این Handoff هیچ دسترسی مستقیمی به مدل یا Repository داخلی IAM نمی‌دهد.
