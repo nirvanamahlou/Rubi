@@ -1,17 +1,34 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-23 — پایان Sprint اول و Handoff رسمی
+آخرین به‌روزرسانی: 2026-08-23 — برنامه‌ریزی Sprint دوم
 
 ## خلاصه
 
-- مرحله جاری: **مرحله 2 — Foundation تکمیل‌شده**
-- وضعیت بعدی: **برنامه‌ریزی Sprint دوم**
+- مرحله جاری: **Sprint دوم — Master Data Persistence و Customer Foundation**
+- وضعیت: **برنامه‌ریزی قفل‌ها و Handoff سه Task آغاز Sprint دوم آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
-- Baseline: Merge Commit `543f6e2b2f55833a2d1ae02440a9495f1510a112` از آخرین `origin/develop`
-- شاخه فعال: `codex/pc-a-sprint-1-handoff`
-- Work Item: `SPRINT1-HANDOFF-001`؛ بستن Sprint اول و آزادسازی رسمی Handoffها
+- Baseline: Merge Commit `9c69124798af43ef2a9f8147576135cd86a8515d` از آخرین `origin/develop`
+- شاخه فعال: `codex/pc-a-sprint-2-planning`
+- Work Item: `SPRINT2-PLANNING-001`؛ ترتیب اجرا، قفل و Handoff Sprint دوم
 - محیط مسئول: `COMPUTER_ID=PC-A`
-- وضعیت اولیه محیط: Dev Server متوقف و Working Tree روی `develop` کاملاً تمیز بود.
+- وضعیت اولیه محیط: Dev Server متوقف، Working Tree تمیز و PR بازی وجود نداشت.
+
+## برنامه اجرایی Sprint دوم
+
+### `SPRINT2-PLANNING-001` — PC-A — `READY_FOR_REVIEW`
+
+- سه Task آغاز Sprint شامل `IAM-002`، `MASTER-002` و `CUSTOMER-001` با Branch و مرز فایل
+  مستقل ثبت شدند.
+- `IAM-002` پیش‌نیاز کوتاه انتشار Permission Code و Seed عمومی برای دو دامنه است و هیچ
+  Schema، Migration یا Dependency تغییر نمی‌دهد.
+- پس از Handoff IAM-002، `MASTER-002` تنها Migration و Dependency/Lockfile Owner می‌شود.
+- `CUSTOMER-001` فاز A بدون Persistence موازی است؛ فاز B فقط پس از Merge Master و Handoff
+  صریح قفل Migration مجاز خواهد بود.
+- نرخ ارز authoritative با `DEC-OPEN-004`، PII حساس با `DEC-OPEN-006` و auto-merge با
+  `DEC-OPEN-011` تا تصمیم محصول/امنیت خارج از Scope قطعی هستند.
+- مرجع دقیق: `docs/tasks/SPRINT-2-PLANNING.md`.
+- Scoped Prettier، لینک‌های Markdown، تعادل Fence، Scope/Secret scan و
+  `git diff --check` پاس شدند؛ هیچ تست یا Build نرم‌افزاری لازم نبود چون Task فقط مستندات است.
 
 ## نتیجه نهایی Sprint اول
 

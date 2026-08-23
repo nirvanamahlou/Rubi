@@ -94,23 +94,56 @@ Baseline نهایی Sprint اول: `origin/develop` در Commit
 4. هر PR ابتدا به `develop` می‌رود؛ هیچ‌کدام مجاز به Merge خودکار، Force Push یا تغییر
    مستقیم `main`/`develop` نیستند.
 
-## Sprint دوم — برنامه اولیه
+## Sprint دوم — Master Data Persistence و Customer Foundation
 
-Taskهای این بخش فقط `PLANNED` هستند. تخصیص Migration Lock و Dependency/Lockfile Lock
-در این سند انجام نمی‌شود و باید در شروع Task و PR مستقل برنامه‌ریزی Sprint دوم ثبت شود.
+Baseline برنامه: `origin/develop` در Merge Commit
+`9c69124798af43ef2a9f8147576135cd86a8515d`. هیچ قابلیت این Sprint قبل از Merge PR
+مربوط به خود تکمیل‌شده محسوب نمی‌شود.
+
+### `IAM-002` — PC-A — `PLANNED`
+
+- انتشار Permission Codeهای عمومی Master Data و Customers در قرارداد versioned IAM.
+- Seed تکرارپذیر permissionها و تست سازگاری actor/guard بدون تغییر Prisma Schema یا Migration.
+- پیش‌نیاز شروع Backend واقعی `MASTER-002` و انتشار قرارداد بعدی Customers.
+- مالک موقت IAM shared-contract و root export قرارداد تا Merge/Handoff.
 
 ### `MASTER-002` — PC-B — `PLANNED`
 
-- محدوده: Database، Migration، Repository، Backend و اتصال واقعی Frontend اطلاعات پایه.
-- پیش از هر تغییر Prisma، Migration، manifest یا lockfile باید قفل مستقل و یگانه رزرو شود.
+- محدوده: Database، Migration، Repository، Backend، قرارداد عمومی و اتصال واقعی Frontend
+  اطلاعات پایه به‌جز نرخ ارز authoritative مسدودشده با `DEC-OPEN-004`.
+- اولین Migration Owner و Dependency/Lockfile Owner Sprint دوم پس از Merge این برنامه.
+- شروع کدنویسی Backend و Schema فقط پس از Merge و Handoff `IAM-002` مجاز است.
 - قرارداد عمومی IAM از `@rubi/contracts` مصرف می‌شود؛ دسترسی مستقیم به جدول یا Repository
   داخلی IAM ممنوع است.
+- Definition of Done شامل Migration deploy/status، Seed/fixture ایمن، CRUD و status action،
+  permission/audit، contract/integration tests و اتصال UI است. قرارداد async export پایدار
+  می‌شود، اما artifact واقعی تا Handoff Documents/Worker مسدود و فایل ساختگی ممنوع است.
 
 ### `CUSTOMER-001` — PC-A — `PLANNED`
 
-- محدوده: مشتریان و مسافران، Customer 360، مدارک، همراهان و Duplicate Control.
-- هیچ قابلیت این دامنه هنوز تکمیل‌شده نیست و پیش از تغییر Schema یا Dependency باید قفل
-  مستقل و یگانه رزرو شود.
+- محدوده: مشتریان و مسافران، Customer 360، contact/address/consent، همراهان و Duplicate
+  Candidate Control.
+- فاز A می‌تواند پس از Merge `IAM-002` بدون Persistence و بدون فایل مشترک قفل‌شده با
+  `MASTER-002` اجرا شود؛ فاز B منتظر Merge Master و Handoff مستقل Migration می‌ماند.
+- مقدار/فایل حساس هویتی تا حل `DEC-OPEN-006` و auto-merge تا حل `DEC-OPEN-011` خارج از Scope است.
+
+### ترتیب اجرا و ادغام Sprint دوم
+
+1. PR برنامه‌ریزی Sprint دوم وارد `develop` شود.
+2. PC-A، `IAM-002` را تکمیل، Push و پس از Review Merge کند.
+3. PC-B، `MASTER-002` را با قفل یگانه Migration/Dependency آغاز کند.
+4. PC-A، `CUSTOMER-001` فاز A را روی Branch مستقل و بدون Persistence موازی آغاز کند.
+5. ابتدا `MASTER-002` با migration gate ادغام و قفل‌هایش صریح آزاد شود.
+6. Handoff مستقل، Migration Owner را برای فاز B `CUSTOMER-001` رزرو کند.
+7. Customer فقط پس از persistence، permission/audit و migration tests کامل `DONE` می‌شود.
+
+### معیارهای عدم تداخل
+
+- PC-B در MASTER-002 مالک Prisma و Migration است؛ PC-A در این بازه به آن‌ها دست نمی‌زند.
+- PC-A در CUSTOMER-001 فاز A به Master Data، IAM، root contract export، manifest یا lockfile
+  دست نمی‌زند.
+- هر تغییر Contract مشترک producer/consumer، نسخه و برنامه سازگاری ثبت‌شده می‌خواهد.
+- main/develop مستقیم تغییر نمی‌کنند و هر Task PR مستقل به `develop` دارد.
 
 ### مرحله 3 — CRM و فروش (`P1`)
 
