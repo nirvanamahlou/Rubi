@@ -1,10 +1,11 @@
 # IAM002-HANDOFF-001 — آغاز توسعه مستقل Sprint دوم
 
-- وضعیت: `READY_FOR_REVIEW`
+- وضعیت: `DONE`
 - مالک: `PC-A`
 - Branch: `codex/pc-a-iam-002-handoff`
 - Base: `d1f1133801663d651ae02e3570b806acb641dfe8`
 - نوع: فقط مستندات؛ بدون کد، Schema، Migration، Dependency یا Lockfile
+- Merge Commit: `0af31c2ce5d474b5a8826d15673a49f3448e7207`
 
 ## نتیجه IAM-002
 
