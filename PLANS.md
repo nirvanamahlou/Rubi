@@ -137,6 +137,31 @@ Baseline برنامه: `origin/develop` در Merge Commit
   می‌ماند و فقط Candidate Detection و Review دستی مجاز است.
 - نرخ ارز authoritative و تولید واقعی Excel/PDF خارج از این Handoff باقی می‌مانند.
 
+### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
+
+- Branch آینده: `codex/pc-b-customer-affairs-foundation`.
+- Phase A فقط Foundation Frontend فارسی/RTL/Responsive، طراحی Domain/Application،
+  قراردادهای ماژول‌محلی و تست‌های هدفمند را پوشش می‌دهد.
+- قابلیت‌ها: درخواست مشتری، Lead و منبع آشنایی، مرحله‌بندی و Qualification پیش‌فروش،
+  نیاز سفر/بودجه اولیه، تماس/فعالیت/Follow-up، تبدیل کنترل‌شده Lead به Customer یا
+  Sales Request در سطح proposal، پشتیبانی پس از فروش و Ticket lifecycle.
+- Ticket شامل دسته‌بندی، اولویت، وضعیت، SLA، مسئول، Escalation، یادآوری، شکایت،
+  اصلاح، کنسلی/استرداد، رضایت‌سنجی و بستن است. ارتباط آن با مشتری، قرارداد، رزرو و
+  خدمت فقط Contract پیشنهادی ماژول‌محلی است.
+
+- UI باید Loading، Empty، Error، Forbidden و Preview State و جست‌وجو، فیلتر،
+  مرتب‌سازی و صفحه‌بندی داشته باشد و هیچ داده واقعی مشتری یا PII وارد Git نکند.
+- محدوده فایل آینده فقط `apps/web/src/modules/customer-affairs/**`، route موجود
+  `apps/web/src/app/(crm)/customer-affairs/**`،
+  `apps/api/src/customer-affairs/**` بدون Controller فعال/Repository واقعی،
+  `docs/tasks/CUSTOMER-AFFAIRS-001.md` و تست‌های هدفمند همان محدوده است.
+- Persistence، Prisma، Migration، Seed، Dependency، Lockfile و Contract مشترک در
+  Phase A ممنوع‌اند. Backend Persistence فقط پس از Handoff آینده Migration انجام
+  می‌شود.
+- قفل Migration، Customer shared-contract/root export و اسناد مرکزی Sprint نزد
+  PC-A/`CUSTOMER-001` Phase B می‌مانند؛ PC-B فایل‌های Database، IAM، Master Data،
+  Customers داخلی یا اسناد مرکزی را تغییر نمی‌دهد.
+
 ### ترتیب اجرا و ادغام Sprint دوم
 
 1. PR برنامه‌ریزی Sprint دوم وارد `develop` شود.
@@ -146,6 +171,8 @@ Baseline برنامه: `origin/develop` در Merge Commit
 5. `MASTER-002` با migration gate ادغام و چهار قفلش صریح آزاد شد.
 6. Handoff مستقل، قفل‌های لازم را برای فاز B `CUSTOMER-001` رزرو کرد.
 7. Customer فقط پس از persistence، permission/audit و migration tests کامل `DONE` می‌شود.
+8. PC-B می‌تواند `CUSTOMER-AFFAIRS-001` Phase A را بدون قفل مشترک و فقط در مرز
+   فایل ثبت‌شده موازی اجرا کند.
 
 ### معیارهای عدم تداخل
 
@@ -154,6 +181,10 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - قفل Dependency/Lockfile فقط هنگام نیاز واقعی و پس از ثبت dependency و فایل دقیق فعال
   می‌شود.
 - هر تغییر Contract مشترک producer/consumer، نسخه و برنامه سازگاری ثبت‌شده می‌خواهد.
+- PC-B در `CUSTOMER-AFFAIRS-001` فقط proposal اتصال Customers/Sales را داخل ماژول
+  و سند Task خودش ثبت می‌کند؛ Controller فعال، Repository واقعی و Persistence ممنوع‌اند.
+- فایل‌های Database، Prisma/Migration/Seed، manifest/lockfile، IAM، Master Data،
+  Customers داخلی و اسناد مرکزی خارج از Scope PC-B هستند.
 - main/develop مستقیم تغییر نمی‌کنند و هر Task PR مستقل به `develop` دارد.
 
 ### مرحله 3 — CRM و فروش (`P1`)

@@ -5,7 +5,7 @@
 ## خلاصه
 
 - مرحله جاری: **Sprint دوم — Master Data Persistence و Customer Foundation**
-- وضعیت: **MASTER-002 ادغام‌شده؛ CUSTOMER-001 فاز B در حال انجام**
+- وضعیت: **CUSTOMER-001 فاز B در PC-A؛ CUSTOMER-AFFAIRS-001 فاز A برای PC-B برنامه‌ریزی شد**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: Commit `9fb1cb33cef9bfbbb998d4e3ce823688e7700a31` از آخرین `origin/develop`
 - شاخه فعال: `codex/pc-a-master-002-handoff`
@@ -31,6 +31,24 @@
 - ذخیره مدارک هویتی حساس تا تصمیم قطعی PII ممنوع است.
 - Duplicate auto-merge ممنوع است؛ فقط Candidate Detection و Review دستی مجاز است.
 - نرخ ارز authoritative و تولید واقعی Excel/PDF خارج از این Handoff باقی می‌مانند.
+
+### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
+
+- Branch آینده `codex/pc-b-customer-affairs-foundation` و هدف آن Foundation مستقل
+  امور مشتریان برای Lead/پیش‌فروش و پشتیبانی پس از فروش است.
+- فاز A فقط Frontend فارسی/RTL/Responsive، Domain/Application design، قراردادهای
+  ماژول‌محلی و تست‌های هدفمند را شامل می‌شود.
+- محدوده آینده PC-B به ماژول/route `customer-affairs` در Web،
+  `apps/api/src/customer-affairs/**` بدون Controller فعال یا Repository واقعی و
+  `docs/tasks/CUSTOMER-AFFAIRS-001.md` محدود است.
+- درخواست مشتری، Lead source، Qualification، نیاز سفر/بودجه، فعالیت/Follow-up،
+  Ticket/SLA/Escalation، شکایت، اصلاح، کنسلی/استرداد و رضایت‌سنجی در Scope طراحی
+  قرار دارند؛ اتصال Customers/Sales/Reservation فقط proposal ماژول‌محلی است.
+- Persistence، Prisma، Migration، Seed، Dependency/Lockfile، قرارداد مشترک و PII
+  واقعی ممنوع‌اند.
+- Migration Owner، Customer shared-contract/root export و اسناد مرکزی Sprint نزد
+  PC-A/`CUSTOMER-001` Phase B می‌مانند. PC-B حق تغییر Database، IAM، Master Data،
+  Customers داخلی یا اسناد مرکزی را در Task خودش ندارد.
 
 ### `IAM-002` — PC-A — `DONE`
 
@@ -232,6 +250,10 @@
 - `CUSTOMER-001` — PC-A — `IN_PROGRESS`: فاز A با Merge `9fb1cb3` تمام شد؛ فاز B
   با قفل Migration، Customer contract/root export و اسناد مرکزی آغاز می‌شود. قفل
   Dependency/Lockfile فقط در صورت نیاز واقعی فعال است.
+- `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`: Phase A مستقل بدون Persistence؛
+  فقط Frontend، طراحی دامنه/Application، Contract ماژول‌محلی و تست در مسیرهای
+  `customer-affairs`. این Task هیچ قفل مشترکی دریافت نمی‌کند و Backend Persistence
+  آن تا Handoff آینده Migration مسدود است.
 
 ## ریسک‌ها و تصمیم‌های باز
 
