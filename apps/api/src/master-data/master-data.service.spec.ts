@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { ConflictException, ForbiddenException } from '@nestjs/common';
 import type { AuthenticatedActor } from '@rubi/contracts';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -63,6 +63,27 @@ describe('MasterDataService', () => {
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('returns a coded conflict when the atomic version claim loses', async () => {
+    const repository = {
+      update: vi.fn().mockResolvedValue(null),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    const operation = service.update(
+      'countries',
+      row.id,
+      { name: 'ایران جدید' },
+      1,
+      actor,
+    );
+
+    await expect(operation).rejects.toBeInstanceOf(ConflictException);
+    await expect(operation).rejects.toMatchObject({
+      response: { code: 'CONCURRENT_MODIFICATION' },
+      status: 409,
+    });
   });
 
   it('forces exchange rates to draft/non-authoritative persistence', async () => {

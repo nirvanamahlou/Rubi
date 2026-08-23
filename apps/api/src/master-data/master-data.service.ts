@@ -127,7 +127,11 @@ export class MasterDataService {
       actor.userId,
       branchOf(actor, requestedBranch),
     );
-    if (!row) throw new ConflictException('رکورد هم‌زمان تغییر کرده است.');
+    if (!row)
+      throw new ConflictException({
+        code: 'CONCURRENT_MODIFICATION',
+        message: 'رکورد هم‌زمان تغییر کرده است.',
+      });
     return { data: toMasterDataRecord(resource, row) };
   }
 
@@ -148,7 +152,11 @@ export class MasterDataService {
       actor.userId,
       branchOf(actor, requestedBranch),
     );
-    if (!row) throw new ConflictException('رکورد یافت نشد یا هم‌زمان تغییر کرده است.');
+    if (!row)
+      throw new ConflictException({
+        code: 'CONCURRENT_MODIFICATION',
+        message: 'رکورد یافت نشد یا هم‌زمان تغییر کرده است.',
+      });
     return { data: toMasterDataRecord(resource, row) };
   }
 

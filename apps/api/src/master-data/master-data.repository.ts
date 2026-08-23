@@ -22,6 +22,7 @@ interface Delegate {
   count(args: object): Promise<number>;
   create(args: object): Promise<Row>;
   update(args: object): Promise<Row>;
+  updateMany(args: object): Promise<{ count: number }>;
 }
 
 type JsonValue =
@@ -217,12 +218,16 @@ export class MasterDataRepository {
       const model = delegate(transaction, resource);
       const before = await model.findUnique({ where: { id } });
       if (!before || before.version !== expectedVersion) return null;
+      const claimed = await model.updateMany({
+        where: { id, version: expectedVersion },
+        data: { updatedByUserId: actorUserId, version: { increment: 1 } },
+      });
+      if (claimed.count !== 1) return null;
+
       const row = await model.update({
         where: { id },
         data: {
           ...data,
-          updatedByUserId: actorUserId,
-          version: { increment: 1 },
         },
         ...(relations(resource) ? { include: relations(resource) } : {}),
       });
