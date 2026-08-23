@@ -24,66 +24,93 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 - [x] API conventions، مدل امنیت و integration contracts
 - [x] قرارداد همکاری PC-A/PC-B و backlog
 - [ ] بازبینی و تایید اسناد توسط PC-B/مالک محصول
-- [ ] `ARCH-001`: ادغام معماری تاییدشده فروش/رزرواسیون/بلیت/خرید/مالی در اسناد مرجع
+- [x] `ARCH-001`: معماری تاییدشده فروش/رزرواسیون/بلیت/خرید/مالی با Merge `99dd1cf`
+      در اسناد مرجع ادغام شد
 
-### مرحله 2 — Foundation (`P0`)
+### مرحله 2 — Foundation (`P0`) — تکمیل‌شده در Sprint اول
 
 - [x] Monorepo با `apps/web`، `apps/api`، `apps/worker` و packages مشترک
 - [x] نسخه‌های Node/package manager، lockfile، lint، format، typecheck و test
 - [x] Docker Compose برای PostgreSQL، Redis و MinIO؛ health checks
 - [x] Prisma Client/PostgreSQL datasource بدون مدل یا Migration تجاری
-- [ ] Prisma schema baseline، migration و seed ایمن محیط توسعه
+- [x] Prisma schema baseline مربوط به IAM، migration و seed ایمن محیط توسعه
 - [x] `IAM-001`: Auth، refresh rotation، 2FA-ready sessions، users، roles، permissions،
       branch access و Audit رخدادهای امنیتی
-- [ ] `MASTER-001`: Master Data پایه، Organization/Organization Role و reference dataهای
-      Sprint اول
+- [x] `MASTER-001`: Foundation بدون Persistence اطلاعات پایه، UI، قرارداد ماژول‌محلی و
+      تست‌های Sprint اول با Merge `cda0f9a`
 - [ ] CI برای lint/typecheck/test/build و migration check
 
-## Sprint اول — Foundation (`P0`)
+CI و سخت‌سازی محیط غیرمحلی قابلیت تکمیل‌شده Sprint اول محسوب نمی‌شوند و در
+`FOUNDATION-002` باقی می‌مانند. Persistence واقعی Master Data نیز در `MASTER-002`
+انجام خواهد شد.
 
-مبنای برنامه: `origin/develop` در Commit
-`c4f8bdea79b81abc7fc8c518bc83e7f765383bd3`. ثبت این بخش فقط برنامه‌ریزی است و مجوز
-ایجاد کد، Schema، Migration یا Dependency در Branch مستنداتی را نمی‌دهد.
+## Sprint اول — Foundation (`P0`) — تکمیل‌شده
 
-### `IAM-001` — PC-A — `READY_FOR_REVIEW`
+Baseline نهایی Sprint اول: `origin/develop` در Commit
+`543f6e2b2f55833a2d1ae02440a9495f1510a112`. بسته‌شدن این Sprint فقط وضعیت کارهای
+واقعاً ادغام‌شده را ثبت می‌کند و هیچ قابلیت تجاری آینده را تکمیل‌شده اعلام نمی‌کند.
 
-- Branch فعال: `codex/pc-a-iam-foundation` از Base `4342a91`
+### `IAM-001` — PC-A — `DONE`
+
+- Merge Commit: `50eaccaf25b63d2ff584ff928cf05c4ccd4c5eac`
 - خروجی: ورود/خروج امن، User، Role، Permission، Session، password policy، branch access،
   کنترل دسترسی Backend و Frontend، Audit امنیتی، API، Database، Frontend و Test کامل.
-- قفل‌ها از شروع Sprint برای این Task رزرو هستند: Migration Owner، Dependency/Lockfile
-  Owner و قراردادهای مشترک IAM همگی PC-A.
+- قفل‌های Migration Owner، Dependency/Lockfile Owner و قراردادهای مشترک IAM در طول
+  Task متعلق به PC-A بودند و در 2026-08-23 پس از Merge و Handoff رسمی آزاد شدند.
 - مرز فایل: مسیرهای IAM در API/Web، قراردادهای IAM، Prisma schema/migrations تاییدشده،
   تست و اسناد همان Task. فهرست دقیق فایل‌های مرکزی پیش از اولین تغییر ثبت می‌شود.
 - Handoff: قرارداد versioned برای branch reference، authorization، actor و audit به
   `MASTER-001` تحویل می‌شود؛ consumer فقط public contract را مصرف می‌کند.
-- پایان Task: تست permission/security، migration validation، lint/typecheck/test/build،
-  ثبت hash و آزادسازی صریح هر قفل تکمیل‌شده.
+- تست permission/security، migration validation، lint/typecheck/test/build، ثبت Hash و
+  آزادسازی صریح قفل‌ها تکمیل شد.
 
-### `MASTER-001` — PC-B — `PLANNED`
+### `MASTER-001` — PC-B — `DONE`
 
-- Branch آینده: `codex/pc-b-master-data-foundation`
-- خروجی: کشور/شهر، ارز/نرخ ارز، بانک، بیمه، ایرلاین، هتل، آژانس/شرکت، کارگزار،
-  لیدر، نحوه آشنایی، active/inactive، جست‌وجو/فیلتر، Excel/PDF، Frontend، API Contract
-  و Test.
-- مرز فایل اولیه: UI و تست Master Data در `apps/web/**`، مستند/تعریف API Contract و
-  mockهای بدون persistence. فایل مشترک دقیق پیش از تغییر رزرو می‌شود.
-- محدودیت موقت: تا آزادسازی صریح PC-A هیچ Prisma Migration، تغییر Prisma schema،
-  manifest یا `pnpm-lock.yaml` ایجاد نمی‌شود. بخش‌های بدون Migration می‌توانند موازی
-  توسعه یابند.
-- Handoff: نیازهای branch access، actor/audit و permission به PC-A اعلام و فقط از قرارداد
-  عمومی IAM مصرف می‌شوند. نرخ ارز authoritative تا حل `DEC-OPEN-004` نهایی نمی‌شود.
-- پس از آزادسازی: PC-B آخرین `origin/develop` و وضعیت قفل‌ها را بررسی و پیش از Schema یا
-  Dependency احتمالی یک رزرو مستقل ثبت می‌کند.
+- Merge Commit: `cda0f9a67589974458a4261b753152a796fa1d0b`
+- Foundation بدون Persistence شامل UI فارسی/RTL، Catalogها، جست‌وجو/فیلتر، قراردادهای
+  ماژول‌محلی و تست تکمیل شد.
+- Database، Migration، Repository، Backend پایدار و اتصال واقعی Frontend تکمیل نشده‌اند
+  و فقط در Task جدید `MASTER-002` انجام خواهند شد.
+
+### `ARCH-001` — PC-A — `DONE`
+
+- Merge Commit: `99dd1cff21cff76f0edb101fb8e6033900c8b4a9`
+- معماری تاییدشده فروش، تخصیص مسافر، رزرواسیون، تعریف بلیت، Manifest، خرید و تحویل
+  مالی و ساختار منوی ۱۷ بخشی در اسناد مرجع ثبت شد.
+
+### `UI-ARCH-001` — PC-A — `DONE`
+
+- Merge Commit: `543f6e2b2f55833a2d1ae02440a9495f1510a112`
+- Frontend معماری، منوی دقیقاً ۱۷ بخشی و دسترسی عملی `/system` به `/users` و
+  `/settings` تکمیل شد؛ مسیرهای کاربران و تنظیمات آیتم مستقل منوی اصلی نیستند.
 
 ### ترتیب اجرا و ادغام
 
-1. این برنامه با Draft PR و Review وارد `develop` می‌شود.
+1. برنامه Sprint اول با Draft PR و Review وارد `develop` شد.
 2. هر Task Branch مستقل خود را از آخرین `origin/develop` می‌سازد و ابتدا وضعیت را
    `IN_PROGRESS` می‌کند.
-3. `IAM-001` مالک یگانه Migration/Dependency است؛ `MASTER-001` فقط مسیر بدون قفل را
-   موازی اجرا می‌کند.
+3. قفل‌های Sprint اول آزاد شده‌اند، اما هیچ Task جدیدی مالک آن‌ها نیست؛ رزرو مستقل در
+   شروع Task بعدی الزامی است.
 4. هر PR ابتدا به `develop` می‌رود؛ هیچ‌کدام مجاز به Merge خودکار، Force Push یا تغییر
    مستقیم `main`/`develop` نیستند.
+
+## Sprint دوم — برنامه اولیه
+
+Taskهای این بخش فقط `PLANNED` هستند. تخصیص Migration Lock و Dependency/Lockfile Lock
+در این سند انجام نمی‌شود و باید در شروع Task و PR مستقل برنامه‌ریزی Sprint دوم ثبت شود.
+
+### `MASTER-002` — PC-B — `PLANNED`
+
+- محدوده: Database، Migration، Repository، Backend و اتصال واقعی Frontend اطلاعات پایه.
+- پیش از هر تغییر Prisma، Migration، manifest یا lockfile باید قفل مستقل و یگانه رزرو شود.
+- قرارداد عمومی IAM از `@rubi/contracts` مصرف می‌شود؛ دسترسی مستقیم به جدول یا Repository
+  داخلی IAM ممنوع است.
+
+### `CUSTOMER-001` — PC-A — `PLANNED`
+
+- محدوده: مشتریان و مسافران، Customer 360، مدارک، همراهان و Duplicate Control.
+- هیچ قابلیت این دامنه هنوز تکمیل‌شده نیست و پیش از تغییر Schema یا Dependency باید قفل
+  مستقل و یگانه رزرو شود.
 
 ### مرحله 3 — CRM و فروش (`P1`)
 
