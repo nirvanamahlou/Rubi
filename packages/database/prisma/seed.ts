@@ -3,6 +3,7 @@ import { PERMISSION_SEED_DATA } from '../src/permission-seed-data';
 
 async function seed(): Promise<void> {
   const database = createDatabaseClient();
+  const fixtureActorId = '00000000-0000-0000-0000-000000000001';
   try {
     await database.$transaction(async (transaction) => {
       const seededPermissions = await Promise.all(
@@ -55,6 +56,52 @@ async function seed(): Promise<void> {
         where: { code: 'HQ' },
         create: { code: 'HQ', name: 'دفتر مرکزی' },
         update: { isActive: true, name: 'دفتر مرکزی' },
+      });
+      await transaction.masterCountry.upsert({
+        where: { code: 'IR' },
+        create: {
+          code: 'IR',
+          name: 'ایران',
+          englishName: 'Iran',
+          createdByUserId: fixtureActorId,
+          updatedByUserId: fixtureActorId,
+        },
+        update: { name: 'ایران', englishName: 'Iran', isActive: true },
+      });
+      await Promise.all(
+        [
+          ['IRR', 'ریال ایران', '﷼', 0],
+          ['USD', 'دلار آمریکا', '$', 2],
+        ].map(([code, name, symbol, decimalDigits]) =>
+          transaction.masterCurrency.upsert({
+            where: { code: String(code) },
+            create: {
+              code: String(code),
+              name: String(name),
+              symbol: String(symbol),
+              decimalDigits: Number(decimalDigits),
+              createdByUserId: fixtureActorId,
+              updatedByUserId: fixtureActorId,
+            },
+            update: {
+              name: String(name),
+              symbol: String(symbol),
+              decimalDigits: Number(decimalDigits),
+              isActive: true,
+            },
+          }),
+        ),
+      );
+      await transaction.masterAcquaintanceMethod.upsert({
+        where: { code: 'REFERRAL' },
+        create: {
+          code: 'REFERRAL',
+          name: 'معرفی دوستان',
+          description: 'Fixture محلی تکرارپذیر',
+          createdByUserId: fixtureActorId,
+          updatedByUserId: fixtureActorId,
+        },
+        update: { name: 'معرفی دوستان', isActive: true },
       });
     });
   } finally {
