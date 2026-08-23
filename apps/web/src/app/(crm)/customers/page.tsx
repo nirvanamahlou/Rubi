@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
-import { ModulePlaceholder } from '@/components/modules/module-placeholder';
+import { CustomerWorkspace } from '@/modules/customers/components/customer-workspace';
 
-export const metadata: Metadata = { title: 'مشتریان' };
+export const metadata: Metadata = { title: 'مشتریان و مسافران' };
 
 export default function Page() {
-  return <ModulePlaceholder href="/customers" />;
+  return <CustomerWorkspace />;
 }
