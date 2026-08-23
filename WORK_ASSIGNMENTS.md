@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-23 — Handoff نهایی IAM-002
+آخرین به‌روزرسانی: 2026-08-23 — آغاز MASTER-002 روی PC-B
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
@@ -23,7 +23,7 @@
 | SPRINT2-PLANNING-001 | PC-A         | `codex/pc-a-sprint-2-planning`              | ترتیب اجرا، قفل‌ها، مرز فایل و Handoff سه Task آغاز Sprint دوم                                | `DONE`             | Merge `9efb37c`؛ فقط اسناد برنامه‌ریزی و وضعیت                            |
 | IAM-002              | PC-A         | `codex/pc-a-iam-domain-permissions`         | انتشار Permission Codeهای Master Data و Customers، Seed تکرارپذیر و Handoff قرارداد عمومی     | `DONE`             | Merge `d1f1133`؛ ۱۷ Permission و بدون Schema/Migration/Dependency         |
 | IAM002-HANDOFF-001   | PC-A         | `codex/pc-a-iam-002-handoff`                | ثبت Merge، آزادسازی IAM contract lock و مجازکردن شروع دو Task مستقل Sprint دوم                | `DONE`             | Merge `0af31c2`؛ دو Task مستقل مجاز به شروع هستند                         |
-| MASTER-002           | PC-B         | `codex/pc-b-master-data-persistence`        | Database، Migration، Repository، Backend و اتصال واقعی Frontend اطلاعات پایه                  | `PLANNED`          | پس از IAM-002؛ اولین Migration و Dependency/Lockfile Owner Sprint دوم     |
+| MASTER-002           | PC-B         | `codex/pc-b-master-data-persistence`        | Database، Migration، Repository، Backend و اتصال واقعی Frontend اطلاعات پایه                  | `IN_PROGRESS`      | Base `f4381b5`؛ مالک یگانه Migration/Dependency/Master contract/docs      |
 | CUSTOMER-001         | PC-A         | `codex/pc-a-customer-foundation`            | مشتریان و مسافران، Customer 360، consent، همراهان و Duplicate Candidate Control               | `PLANNED`          | فاز A موازی بدون Persistence؛ فاز B پس از Handoff Migration از MASTER-002 |
 
 ## Sprint 1 — مرز فایل و Handoff

@@ -1,16 +1,16 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-23 — Handoff نهایی IAM-002
+آخرین به‌روزرسانی: 2026-08-23 — آغاز MASTER-002 روی PC-B
 
 ## خلاصه
 
 - مرحله جاری: **Sprint دوم — Master Data Persistence و Customer Foundation**
-- وضعیت: **دو Task مستقل MASTER-002 و CUSTOMER-001 فاز A آماده شروع هستند**
+- وضعیت: **MASTER-002 روی PC-B آغاز شده؛ CUSTOMER-001 فقط فاز A بدون Persistence مجاز است**
 - Repository: `Rubi`، Remote با نام `origin`
-- Baseline: Merge Commit `0af31c2ce5d474b5a8826d15673a49f3448e7207` از آخرین `origin/develop`
-- شاخه مبنای شروع Taskهای جدید: `develop`
-- Work Item بسته‌شده: `IAM002-HANDOFF-001`؛ آزادسازی قفل و شروع توسعه مستقل
-- محیط مسئول: `COMPUTER_ID=PC-A`
+- Baseline: Commit `f4381b5c842c962652f6fb168b3a6507177393e4` از آخرین `origin/develop`
+- شاخه فعال: `codex/pc-b-master-data-persistence`
+- Work Item فعال: `MASTER-002`؛ Persistence و اتصال واقعی Full-Stack اطلاعات پایه
+- محیط مسئول: `COMPUTER_ID=PC-B`
 - وضعیت اولیه محیط: Dev Server متوقف، Working Tree تمیز و PR بازی وجود نداشت.
 
 ### `IAM-002` — PC-A — `DONE`

@@ -108,7 +108,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - مالک موقت IAM shared-contract و root export قرارداد تا Merge/Handoff.
 - با Merge `d1f1133` تکمیل و قفل IAM shared-contract برای دو مصرف‌کننده آزاد شد.
 
-### `MASTER-002` — PC-B — `PLANNED`
+### `MASTER-002` — PC-B — `IN_PROGRESS`
 
 - محدوده: Database، Migration، Repository، Backend، قرارداد عمومی و اتصال واقعی Frontend
   اطلاعات پایه به‌جز نرخ ارز authoritative مسدودشده با `DEC-OPEN-004`.
