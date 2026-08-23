@@ -49,6 +49,7 @@ timezone پایدار می‌شود. تا قرارداد عمومی Documents/Wo
 
 پس از Merge، قفل‌های Migration، Dependency/Lockfile، Master contract و اسناد مرکزی باید
 در Handoff مستقل برای فاز B `CUSTOMER-001` آزاد و دوباره رزرو شوند؛ انتقال خودکار نیست.
+
 ## نتیجه پیاده‌سازی
 
 - ۱۲ Resource عمومی با Prisma model، FK/Unique/Index، Repository و Application Service
