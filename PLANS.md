@@ -108,7 +108,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - مالک موقت IAM shared-contract و root export قرارداد تا Merge/Handoff.
 - با Merge `d1f1133` تکمیل و قفل IAM shared-contract برای دو مصرف‌کننده آزاد شد.
 
-### `MASTER-002` — PC-B — `READY_FOR_REVIEW`
+### `MASTER-002` — PC-B — `DONE`
 
 - محدوده: Database، Migration، Repository، Backend، قرارداد عمومی و اتصال واقعی Frontend
   اطلاعات پایه به‌جز نرخ ارز authoritative مسدودشده با `DEC-OPEN-004`.
@@ -122,15 +122,20 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - Migration افزایشی `20260823084001_master_data_foundation`، Fixture تکرارپذیر،
   REST/contract و UI واقعی تکمیل شد؛ Prisma deploy/status، ۵۵ تست در ۲۴ فایل،
   lint/typecheck و build کل Monorepo پاس شدند.
-- چهار قفل MASTER-002 تا Merge و Handoff صریح همچنان فعال‌اند.
+- PR شماره ۱۵ با Merge Commit `ddfebb369de67cb7ff45bd15a06841d3251c945a` ادغام شد؛
+  چهار قفل MASTER-002 در Handoff مستقل آزاد شدند.
 
-### `CUSTOMER-001` — PC-A — `PLANNED`
+### `CUSTOMER-001` — PC-A — `IN_PROGRESS`
 
 - محدوده: مشتریان و مسافران، Customer 360، contact/address/consent، همراهان و Duplicate
   Candidate Control.
-- فاز A می‌تواند پس از Merge `IAM-002` بدون Persistence و بدون فایل مشترک قفل‌شده با
-  `MASTER-002` اجرا شود؛ فاز B منتظر Merge Master و Handoff مستقل Migration می‌ماند.
-- مقدار/فایل حساس هویتی تا حل `DEC-OPEN-006` و auto-merge تا حل `DEC-OPEN-011` خارج از Scope است.
+- فاز A با PR شماره ۱۶ و Merge Commit `9fb1cb33cef9bfbbb998d4e3ce823688e7700a31`
+  به‌صورت `DONE/MERGED` تکمیل شد.
+- فاز B فقط دامنه Customers را پوشش می‌دهد و حق تغییر فایل‌های داخلی IAM یا Master Data
+  را ندارد؛ Master Data فقط از قرارداد عمومی `@rubi/contracts` مصرف می‌شود.
+- ذخیره مدارک هویتی حساس تا تصمیم قطعی PII ممنوع است. Duplicate auto-merge نیز ممنوع
+  می‌ماند و فقط Candidate Detection و Review دستی مجاز است.
+- نرخ ارز authoritative و تولید واقعی Excel/PDF خارج از این Handoff باقی می‌مانند.
 
 ### ترتیب اجرا و ادغام Sprint دوم
 
@@ -138,15 +143,16 @@ Baseline برنامه: `origin/develop` در Merge Commit
 2. PC-A، `IAM-002` را تکمیل، Push و پس از Review Merge کند.
 3. PC-B، `MASTER-002` را با قفل یگانه Migration/Dependency آغاز کند.
 4. PC-A، `CUSTOMER-001` فاز A را روی Branch مستقل و بدون Persistence موازی آغاز کند.
-5. ابتدا `MASTER-002` با migration gate ادغام و قفل‌هایش صریح آزاد شود.
-6. Handoff مستقل، Migration Owner را برای فاز B `CUSTOMER-001` رزرو کند.
+5. `MASTER-002` با migration gate ادغام و چهار قفلش صریح آزاد شد.
+6. Handoff مستقل، قفل‌های لازم را برای فاز B `CUSTOMER-001` رزرو کرد.
 7. Customer فقط پس از persistence، permission/audit و migration tests کامل `DONE` می‌شود.
 
 ### معیارهای عدم تداخل
 
-- PC-B در MASTER-002 مالک Prisma و Migration است؛ PC-A در این بازه به آن‌ها دست نمی‌زند.
-- PC-A در CUSTOMER-001 فاز A به Master Data، IAM، root contract export، manifest یا lockfile
-  دست نمی‌زند.
+- PC-A در CUSTOMER-001 فاز B مالک Prisma/Migration دامنه Customers، قرارداد مشترک Customer
+  و اسناد مرکزی Sprint است و به فایل‌های داخلی Master Data یا IAM دست نمی‌زند.
+- قفل Dependency/Lockfile فقط هنگام نیاز واقعی و پس از ثبت dependency و فایل دقیق فعال
+  می‌شود.
 - هر تغییر Contract مشترک producer/consumer، نسخه و برنامه سازگاری ثبت‌شده می‌خواهد.
 - main/develop مستقیم تغییر نمی‌کنند و هر Task PR مستقل به `develop` دارد.
 
