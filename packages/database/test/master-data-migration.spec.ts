@@ -1,13 +1,11 @@
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-const migrationPath = fileURLToPath(
-  new URL(
-    '../prisma/migrations/20260823084001_master_data_foundation/migration.sql',
-    import.meta.url,
-  ),
+const migrationPath = resolve(
+  process.cwd(),
+  'prisma/migrations/20260823084001_master_data_foundation/migration.sql',
 );
 const sql = readFileSync(migrationPath, 'utf8');
 

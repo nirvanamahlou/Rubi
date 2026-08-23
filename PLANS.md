@@ -108,7 +108,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - مالک موقت IAM shared-contract و root export قرارداد تا Merge/Handoff.
 - با Merge `d1f1133` تکمیل و قفل IAM shared-contract برای دو مصرف‌کننده آزاد شد.
 
-### `MASTER-002` — PC-B — `IN_PROGRESS`
+### `MASTER-002` — PC-B — `READY_FOR_REVIEW`
 
 - محدوده: Database، Migration، Repository، Backend، قرارداد عمومی و اتصال واقعی Frontend
   اطلاعات پایه به‌جز نرخ ارز authoritative مسدودشده با `DEC-OPEN-004`.
@@ -119,6 +119,10 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - Definition of Done شامل Migration deploy/status، Seed/fixture ایمن، CRUD و status action،
   permission/audit، contract/integration tests و اتصال UI است. قرارداد async export پایدار
   می‌شود، اما artifact واقعی تا Handoff Documents/Worker مسدود و فایل ساختگی ممنوع است.
+- Migration افزایشی `20260823084001_master_data_foundation`، Fixture تکرارپذیر،
+  REST/contract و UI واقعی تکمیل شد؛ Prisma deploy/status، ۵۵ تست در ۲۴ فایل،
+  lint/typecheck و build کل Monorepo پاس شدند.
+- چهار قفل MASTER-002 تا Merge و Handoff صریح همچنان فعال‌اند.
 
 ### `CUSTOMER-001` — PC-A — `PLANNED`
 
