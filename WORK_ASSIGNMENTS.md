@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-23 — برنامه‌ریزی Sprint دوم
+آخرین به‌روزرسانی: 2026-08-23 — Handoff نهایی IAM-002
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
@@ -21,7 +21,8 @@
 | MASTER-001           | PC-B         | `codex/pc-b-master-data-foundation`         | Foundation بدون Persistence اطلاعات پایه، UI، قرارداد ماژول‌محلی و تست                        | `DONE`             | Merge `cda0f9a`؛ Persistence واقعی به `MASTER-002` منتقل شد               |
 | SPRINT1-HANDOFF-001  | PC-A         | `codex/pc-a-sprint-1-handoff`               | بستن Sprint اول، ثبت Mergeهای نهایی، آزادسازی قفل‌ها و برنامه اولیه Sprint دوم                | `DONE`             | Merge `9c69124`؛ چهار قفل Sprint اول آزاد شدند                            |
 | SPRINT2-PLANNING-001 | PC-A         | `codex/pc-a-sprint-2-planning`              | ترتیب اجرا، قفل‌ها، مرز فایل و Handoff سه Task آغاز Sprint دوم                                | `DONE`             | Merge `9efb37c`؛ فقط اسناد برنامه‌ریزی و وضعیت                            |
-| IAM-002              | PC-A         | `codex/pc-a-iam-domain-permissions`         | انتشار Permission Codeهای Master Data و Customers، Seed تکرارپذیر و Handoff قرارداد عمومی     | `READY_FOR_REVIEW` | Base `9efb37c`؛ ۱۷ Permission و بدون Schema/Migration/Dependency          |
+| IAM-002              | PC-A         | `codex/pc-a-iam-domain-permissions`         | انتشار Permission Codeهای Master Data و Customers، Seed تکرارپذیر و Handoff قرارداد عمومی     | `DONE`             | Merge `d1f1133`؛ ۱۷ Permission و بدون Schema/Migration/Dependency         |
+| IAM002-HANDOFF-001   | PC-A         | `codex/pc-a-iam-002-handoff`                | ثبت Merge، آزادسازی IAM contract lock و مجازکردن شروع دو Task مستقل Sprint دوم                | `READY_FOR_REVIEW` | فقط مستندات؛ مبنا `d1f1133`                                               |
 | MASTER-002           | PC-B         | `codex/pc-b-master-data-persistence`        | Database، Migration، Repository، Backend و اتصال واقعی Frontend اطلاعات پایه                  | `PLANNED`          | پس از IAM-002؛ اولین Migration و Dependency/Lockfile Owner Sprint دوم     |
 | CUSTOMER-001         | PC-A         | `codex/pc-a-customer-foundation`            | مشتریان و مسافران، Customer 360، consent، همراهان و Duplicate Candidate Control               | `PLANNED`          | فاز A موازی بدون Persistence؛ فاز B پس از Handoff Migration از MASTER-002 |
 
@@ -138,16 +139,22 @@
 
 ## قفل‌های فعال Sprint دوم
 
-| قفل                           | مالک/Task                 | محدوده                                                                 | شرط آزادسازی                                             |
-| ----------------------------- | ------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------- |
-| IAM shared-contract           | PC-A/IAM-002              | Permission codeهای عمومی، IAM contract و Seed مرتبط                    | Merge، contract/seed test و Handoff به دو مصرف‌کننده     |
-| Migration Owner               | PC-B/MASTER-002           | Prisma Master Data و Migrationهای همان Task                            | Merge MASTER-002، migration deploy/status و Handoff صریح |
-| Dependency/Lockfile Owner     | PC-B/MASTER-002           | manifestهای ضروری Master Data و `pnpm-lock.yaml`                       | تثبیت dependency، تست و Handoff صریح                     |
-| Master shared-contract/export | PC-B/MASTER-002           | `packages/contracts/src/master-data/**` و root export پس از IAM-002    | Merge و consumer handoff                                 |
-| Central Sprint planning docs  | PC-A/SPRINT2-PLANNING-001 | `WORK_ASSIGNMENTS.md`، `PLANS.md`، `docs/PROJECT_STATUS.md` و سند Task | Merge PR برنامه‌ریزی Sprint دوم                          |
+| قفل                           | مالک/Task       | محدوده                                                              | شرط آزادسازی                                             |
+| ----------------------------- | --------------- | ------------------------------------------------------------------- | -------------------------------------------------------- |
+| Migration Owner               | PC-B/MASTER-002 | Prisma Master Data و Migrationهای همان Task                         | Merge MASTER-002، migration deploy/status و Handoff صریح |
+| Dependency/Lockfile Owner     | PC-B/MASTER-002 | manifestهای ضروری Master Data و `pnpm-lock.yaml`                    | تثبیت dependency، تست و Handoff صریح                     |
+| Master shared-contract/export | PC-B/MASTER-002 | `packages/contracts/src/master-data/**` و root export پس از IAM-002 | Merge و consumer handoff                                 |
 
-قفل‌های `MASTER-002` با Merge این برنامه رزرو می‌شوند، اما اجرای Task فقط پس از Merge
-`IAM-002` مجاز است. `CUSTOMER-001` تا Handoff صریح حق استفاده از این قفل‌ها را ندارد.
+`MASTER-002` اکنون مجاز به شروع است و مالک یگانه سه قفل جدول بالا محسوب می‌شود.
+`CUSTOMER-001` فقط فاز A بدون Persistence را هم‌زمان شروع می‌کند و تا Handoff صریح حق
+استفاده از این قفل‌ها را ندارد.
+
+## قفل‌های آزادشده Sprint دوم
+
+| قفل                          | مالک پیشین                | مبنای آزادسازی                                     |
+| ---------------------------- | ------------------------- | -------------------------------------------------- |
+| IAM shared-contract          | PC-A/IAM-002              | Merge `d1f1133`، تست Contract/Seed و Handoff عمومی |
+| Central Sprint planning docs | PC-A/SPRINT2-PLANNING-001 | Merge `9efb37c` برنامه Sprint دوم                  |
 
 ## قرارداد مالکیت
 

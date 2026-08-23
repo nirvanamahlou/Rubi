@@ -61,3 +61,5 @@ password یا token خامی در metadata ثبت نمی‌شود.
   را فقط از قرارداد عمومی مصرف می‌کند.
 - Seed همه ۱۷ Permission را به‌صورت upsert ایجاد و به نقش `administrator` متصل می‌کند؛
   این Handoff هیچ دسترسی مستقیمی به مدل یا Repository داخلی IAM نمی‌دهد.
+- IAM-002 با Merge Commit `d1f1133` وارد `develop` شد و قفل قرارداد عمومی آن آزاد است.
+  از این مبنا، `MASTER-002` و فاز A `CUSTOMER-001` می‌توانند روی Branchهای مستقل شروع شوند.
