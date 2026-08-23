@@ -144,10 +144,12 @@
 | Migration Owner               | PC-B/MASTER-002 | Prisma Master Data و Migrationهای همان Task                         | Merge MASTER-002، migration deploy/status و Handoff صریح |
 | Dependency/Lockfile Owner     | PC-B/MASTER-002 | manifestهای ضروری Master Data و `pnpm-lock.yaml`                    | تثبیت dependency، تست و Handoff صریح                     |
 | Master shared-contract/export | PC-B/MASTER-002 | `packages/contracts/src/master-data/**` و root export پس از IAM-002 | Merge و consumer handoff                                 |
+| Central Sprint status docs    | PC-B/MASTER-002 | `WORK_ASSIGNMENTS.md`، `PLANS.md` و `docs/PROJECT_STATUS.md`        | Merge MASTER-002 و Handoff اسناد مرکزی به PC-A           |
 
-`MASTER-002` اکنون مجاز به شروع است و مالک یگانه سه قفل جدول بالا محسوب می‌شود.
+`MASTER-002` اکنون مجاز به شروع است و مالک یگانه چهار قفل جدول بالا محسوب می‌شود.
 `CUSTOMER-001` فقط فاز A بدون Persistence را هم‌زمان شروع می‌کند و تا Handoff صریح حق
-استفاده از این قفل‌ها را ندارد.
+استفاده از این قفل‌ها یا ویرایش اسناد مرکزی جدول را ندارد؛ وضعیت فاز A فقط در سند Task
+اختصاصی آن ثبت می‌شود.
 
 ## قفل‌های آزادشده Sprint دوم
 

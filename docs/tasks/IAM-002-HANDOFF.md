@@ -20,6 +20,7 @@ build آن پاس شده‌اند. قفل `IAM shared-contract` آزاد شد.
 - Branch: `codex/pc-b-master-data-persistence`
 - اجرای Full-Stack اطلاعات پایه مجاز است.
 - PC-B تنها مالک Migration، Dependency/Lockfile و Master shared-contract این موج است.
+- PC-B تا Merge و Handoff MASTER-002 مالک موقت اسناد وضعیت مرکزی Sprint نیز هست.
 - نرخ ارز authoritative و artifact واقعی Excel/PDF همچنان تابع محدودیت‌های ثبت‌شده است.
 
 ### PC-A — CUSTOMER-001 فاز A
@@ -28,6 +29,8 @@ build آن پاس شده‌اند. قفل `IAM shared-contract` آزاد شد.
 - UI، state، DTO/application design و تست دامنه بدون Persistence مجاز است.
 - تغییر Prisma، Migration، Dependency/Lockfile، root contract export و فایل‌های IAM یا
   Master Data ممنوع است.
+- تغییر `WORK_ASSIGNMENTS.md`، `PLANS.md` و `docs/PROJECT_STATUS.md` در فاز موازی ممنوع
+  است؛ پیشرفت فقط در `docs/tasks/CUSTOMER-001.md` ثبت می‌شود.
 - فاز B فقط پس از Merge MASTER-002 و Handoff مستقل Migration آغاز می‌شود.
 
 ## شرط پایان Handoff
