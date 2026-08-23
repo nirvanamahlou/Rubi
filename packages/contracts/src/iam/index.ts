@@ -1,10 +1,35 @@
-export const IAM_PERMISSION_CODES = [
+export const IAM_PERMISSION_CONTRACT_VERSION = 2 as const;
+
+export const IAM_CORE_PERMISSION_CODES = [
   'iam.users.read',
   'iam.users.manage',
   'iam.roles.read',
   'iam.roles.manage',
   'iam.sessions.manage',
   'iam.audit.read',
+] as const;
+
+export const MASTER_DATA_PERMISSION_CODES = [
+  'master_data.read',
+  'master_data.create',
+  'master_data.update',
+  'master_data.status.manage',
+  'master_data.export',
+] as const;
+
+export const CUSTOMER_PERMISSION_CODES = [
+  'customers.read',
+  'customers.create',
+  'customers.update',
+  'customers.merge',
+  'customers.consent.manage',
+  'customers.sensitive.read',
+] as const;
+
+export const IAM_PERMISSION_CODES = [
+  ...IAM_CORE_PERMISSION_CODES,
+  ...MASTER_DATA_PERMISSION_CODES,
+  ...CUSTOMER_PERMISSION_CODES,
 ] as const;
 
 export type IamPermissionCode = (typeof IAM_PERMISSION_CODES)[number];

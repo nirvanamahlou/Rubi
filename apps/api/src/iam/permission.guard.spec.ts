@@ -28,4 +28,28 @@ describe('PermissionGuard', () => {
       'iam.users.manage',
     ]);
   });
+
+  it('accepts a published domain permission through the shared actor contract', () => {
+    const reflector = {
+      getAllAndOverride: vi.fn().mockReturnValue(['master_data.read']),
+    } as unknown as Reflector;
+    const iam = { assertPermissions: vi.fn() } as unknown as IamService;
+    const guard = new PermissionGuard(reflector, iam);
+    const actor = {
+      userId: 'u1',
+      sessionId: 's1',
+      permissions: ['master_data.read'],
+      branchIds: ['hq'],
+    };
+    const context = {
+      getHandler: () => vi.fn(),
+      getClass: () => class MasterDataController {},
+      switchToHttp: () => ({ getRequest: () => ({ actor }) }),
+    } as unknown as ExecutionContext;
+
+    expect(guard.canActivate(context)).toBe(true);
+    expect(iam.assertPermissions).toHaveBeenCalledWith(actor, [
+      'master_data.read',
+    ]);
+  });
 });
