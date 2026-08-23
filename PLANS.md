@@ -100,12 +100,13 @@ Baseline برنامه: `origin/develop` در Merge Commit
 `9c69124798af43ef2a9f8147576135cd86a8515d`. هیچ قابلیت این Sprint قبل از Merge PR
 مربوط به خود تکمیل‌شده محسوب نمی‌شود.
 
-### `IAM-002` — PC-A — `READY_FOR_REVIEW`
+### `IAM-002` — PC-A — `DONE`
 
 - انتشار Permission Codeهای عمومی Master Data و Customers در قرارداد versioned IAM.
 - Seed تکرارپذیر permissionها و تست سازگاری actor/guard بدون تغییر Prisma Schema یا Migration.
 - پیش‌نیاز شروع Backend واقعی `MASTER-002` و انتشار قرارداد بعدی Customers.
 - مالک موقت IAM shared-contract و root export قرارداد تا Merge/Handoff.
+- با Merge `d1f1133` تکمیل و قفل IAM shared-contract برای دو مصرف‌کننده آزاد شد.
 
 ### `MASTER-002` — PC-B — `PLANNED`
 

@@ -1,19 +1,19 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-23 — شروع IAM-002
+آخرین به‌روزرسانی: 2026-08-23 — Handoff نهایی IAM-002
 
 ## خلاصه
 
 - مرحله جاری: **Sprint دوم — Master Data Persistence و Customer Foundation**
-- وضعیت: **IAM-002 تکمیل و آماده Review است**
+- وضعیت: **دو Task مستقل MASTER-002 و CUSTOMER-001 فاز A آماده شروع هستند**
 - Repository: `Rubi`، Remote با نام `origin`
-- Baseline: Merge Commit `9efb37cdac808d85ca2fa8c340a01435098a9b3e` از آخرین `origin/develop`
-- شاخه فعال: `codex/pc-a-iam-domain-permissions`
-- Work Item: `IAM-002`؛ Permission Contract عمومی Master Data و Customers
+- Baseline: Merge Commit `d1f1133801663d651ae02e3570b806acb641dfe8` از آخرین `origin/develop`
+- شاخه فعال: `codex/pc-a-iam-002-handoff`
+- Work Item: `IAM002-HANDOFF-001`؛ آزادسازی قفل و شروع توسعه مستقل
 - محیط مسئول: `COMPUTER_ID=PC-A`
 - وضعیت اولیه محیط: Dev Server متوقف، Working Tree تمیز و PR بازی وجود نداشت.
 
-### `IAM-002` — PC-A — `READY_FOR_REVIEW`
+### `IAM-002` — PC-A — `DONE`
 
 - قرارداد عمومی IAM به نسخه ۲ ارتقا یافت و ۵ Permission برای Master Data و ۶ Permission
   برای Customers منتشر شد؛ ۶ Permission قبلی IAM بدون تغییر حفظ شدند.
@@ -21,8 +21,11 @@
   `administrator` متصل هستند.
 - Prisma validate/generate، lint، typecheck، ۴۳ تست در ۱۹ فایل و build تولیدی کل
   Monorepo پاس شدند.
-- Schema، Migration، Dependency و Lockfile تغییر نکردند. قفل IAM shared-contract تا
-  Merge و Handoff نهایی این Task فعال می‌ماند.
+- Schema، Migration، Dependency و Lockfile تغییر نکردند. PR شماره ۱۱ با Merge Commit
+  `d1f1133` ادغام و قفل IAM shared-contract آزاد شد.
+- PC-B مجاز است `MASTER-002` را Full-Stack آغاز کند و تنها Migration و
+  Dependency/Lockfile Owner باشد. PC-A هم‌زمان فقط فاز A بدون Persistence
+  `CUSTOMER-001` را آغاز می‌کند.
 
 ## برنامه اجرایی Sprint دوم
 
