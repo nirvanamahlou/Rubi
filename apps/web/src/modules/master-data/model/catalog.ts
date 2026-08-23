@@ -83,7 +83,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       nameField,
       {
         key: 'countryId',
-        label: 'شناسه کشور',
+        label: 'کشور',
         type: 'text',
         placeholder: 'country_...',
         required: true,
@@ -167,7 +167,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       nameField,
       {
         key: 'countryId',
-        label: 'شناسه کشور',
+        label: 'کشور',
         type: 'text',
         placeholder: 'country_...',
         required: true,
@@ -191,7 +191,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       nameField,
       {
         key: 'organizationId',
-        label: 'شناسه سازمان',
+        label: 'سازمان بیمه‌گر',
         type: 'text',
         placeholder: 'org_...',
         required: true,
@@ -216,7 +216,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       { key: 'icaoCode', label: 'کد ICAO', type: 'text', placeholder: 'IRM' },
       {
         key: 'organizationId',
-        label: 'شناسه سازمان',
+        label: 'سازمان ایرلاین',
         type: 'text',
         placeholder: 'org_...',
         required: true,
@@ -241,10 +241,16 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       nameField,
       {
         key: 'cityId',
-        label: 'شناسه شهر',
+        label: 'شهر',
         type: 'text',
         placeholder: 'city_...',
         required: true,
+      },
+      {
+        key: 'organizationId',
+        label: 'سازمان هتل (اختیاری)',
+        type: 'text',
+        placeholder: '',
       },
       {
         key: 'starRating',
@@ -310,7 +316,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       nameField,
       {
         key: 'organizationId',
-        label: 'شناسه سازمان',
+        label: 'سازمان کارگزار',
         type: 'text',
         placeholder: 'org_...',
         required: true,

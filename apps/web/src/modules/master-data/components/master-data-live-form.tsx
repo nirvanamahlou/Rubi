@@ -15,6 +15,12 @@ import {
 import { Alert, Badge } from '@/components/ui/surfaces';
 import type { MasterDataCatalogItem } from '../model/catalog';
 import { validateMasterDataDraft } from '../model/validation';
+import { getReferenceFieldConfig } from '../model/reference-fields';
+import {
+  MasterDataReferenceSelector,
+  OrganizationRoleSelector,
+} from './master-data-reference-selector';
+
 
 export type MasterDataFormMode = 'create' | 'view' | 'edit';
 
@@ -100,36 +106,54 @@ export function MasterDataLiveForm({
         <form className="mt-6 space-y-5" onSubmit={(event) => void submit(event)}>
           {definition.fields.map((field) => {
             const error = errors[field.key];
-            const canonical =
-              field.key.toLowerCase().includes('code') ||
-              field.key.toLowerCase().endsWith('id');
+            const controlId = `live-${definition.key}-${field.key}`;
+            const reference = getReferenceFieldConfig(
+              definition.key,
+              field.key,
+            );
+            const updateValue = (value: string) =>
+              setValues((current) => ({ ...current, [field.key]: value }));
+            const control = reference ? (
+              <MasterDataReferenceSelector
+                config={reference}
+                disabled={readonly || saving}
+                id={controlId}
+                onChange={updateValue}
+                value={values[field.key] ?? ''}
+              />
+            ) : field.key === 'roleCodes' ? (
+              <OrganizationRoleSelector
+                disabled={readonly || saving}
+                onChange={updateValue}
+                value={values[field.key] ?? ''}
+              />
+            ) : (
+              <Input
+                aria-invalid={Boolean(error)}
+                disabled={readonly || saving}
+                dir={
+                  field.key.toLowerCase().includes('code') ? 'ltr' : undefined
+                }
+                id={controlId}
+                inputMode={field.type === 'number' ? 'decimal' : undefined}
+                onChange={(event) => updateValue(event.target.value)}
+                placeholder={field.placeholder}
+                readOnly={readonly}
+                step={field.type === 'number' ? 'any' : undefined}
+                type={field.type}
+                value={values[field.key] ?? ''}
+              />
+            );
             return (
               <FormField
                 {...(field.hint ? { description: field.hint } : {})}
                 {...(error ? { error } : {})}
                 {...(field.required ? { required: true } : {})}
-                id={`live-${definition.key}-${field.key}`}
+                id={controlId}
                 key={field.key}
                 label={field.label}
               >
-                <Input
-                  aria-invalid={Boolean(error)}
-                  disabled={readonly || saving}
-                  dir={canonical ? 'ltr' : undefined}
-                  id={`live-${definition.key}-${field.key}`}
-                  inputMode={field.type === 'number' ? 'decimal' : undefined}
-                  onChange={(event) =>
-                    setValues((current) => ({
-                      ...current,
-                      [field.key]: event.target.value,
-                    }))
-                  }
-                  placeholder={field.placeholder}
-                  readOnly={readonly}
-                  step={field.type === 'number' ? 'any' : undefined}
-                  type={field.type}
-                  value={values[field.key] ?? ''}
-                />
+                {control}
               </FormField>
             );
           })}
