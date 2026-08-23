@@ -1,20 +1,38 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-22 — UI-ARCH-001 روی معماری ادغام‌شده
+آخرین به‌روزرسانی: 2026-08-23 — پایان Sprint اول و Handoff رسمی
 
 ## خلاصه
 
-- مرحله جاری: **مرحله 2 — Foundation + تثبیت معماری دامنه سفر**
-- وضعیت: **ARCH-001 ادغام شده و UI-ARCH-001 برای Review نهایی آماده می‌شود**
+- مرحله جاری: **مرحله 2 — Foundation تکمیل‌شده**
+- وضعیت بعدی: **برنامه‌ریزی Sprint دوم**
 - Repository: `Rubi`، Remote با نام `origin`
-- Base: Merge Commit `99dd1cff21cff76f0edb101fb8e6033900c8b4a9` از آخرین `origin/develop`
-- شاخه فعال: `codex/pc-a-approved-workflow-frontend`
-- Work Item: `UI-ARCH-001`؛ منوی ۱۷ بخش و نمای گردش فروش تا تحویل مدارک
+- Baseline: Merge Commit `543f6e2b2f55833a2d1ae02440a9495f1510a112` از آخرین `origin/develop`
+- شاخه فعال: `codex/pc-a-sprint-1-handoff`
+- Work Item: `SPRINT1-HANDOFF-001`؛ بستن Sprint اول و آزادسازی رسمی Handoffها
 - محیط مسئول: `COMPUTER_ID=PC-A`
+- وضعیت اولیه محیط: Dev Server متوقف و Working Tree روی `develop` کاملاً تمیز بود.
+
+## نتیجه نهایی Sprint اول
+
+|  PR | Work Item     | Merge Commit                               | نتیجه                                             |
+| --: | ------------- | ------------------------------------------ | ------------------------------------------------- |
+|  #5 | `IAM-001`     | `50eaccaf25b63d2ff584ff928cf05c4ccd4c5eac` | IAM Full-Stack و قرارداد عمومی ادغام شد           |
+|  #6 | `MASTER-001`  | `cda0f9a67589974458a4261b753152a796fa1d0b` | Foundation بدون Persistence اطلاعات پایه ادغام شد |
+|  #7 | `ARCH-001`    | `99dd1cff21cff76f0edb101fb8e6033900c8b4a9` | معماری تاییدشده گردش سفر و منوی ۱۷ بخشی ادغام شد  |
+|  #8 | `UI-ARCH-001` | `543f6e2b2f55833a2d1ae02440a9495f1510a112` | Frontend معماری و دسترسی عملی IAM ادغام شد        |
+
+- منوی اصلی دقیقاً ۱۷ بخش دارد و «مدیریت سیستم» تنها آیتم اصلی IAM/Settings است.
+- صفحه `/system` دسترسی عملی به رابط موجود `/users` و مسیر `/settings` فراهم می‌کند؛
+  هر دو مسیر زیر «مدیریت سیستم» Resolve می‌شوند.
+- مرحله Foundation بسته شده است؛ Persistence واقعی Master Data قابلیت تکمیل‌شده محسوب
+  نمی‌شود و در `MASTER-002` برنامه‌ریزی خواهد شد.
 
 ## برنامه Sprint اول
 
-### `UI-ARCH-001` — PC-A — `READY_FOR_REVIEW`
+### `UI-ARCH-001` — PC-A — `DONE`
+
+- Merge Commit: `543f6e2b2f55833a2d1ae02440a9495f1510a112` روی `origin/develop`
 
 - منوی اصلی مطابق معماری ۱۷ بخشی تاییدشده بازچینی شد؛ Customer Affairs قبل/بعد،
   Reservation، Ticket Management، Sales و System Management مرز مستقل و روشن دارند.
@@ -48,14 +66,15 @@
 - Merge Commit: `50eaccaf25b63d2ff584ff928cf05c4ccd4c5eac` روی `origin/develop`
 - ورود/خروج امن، User، Role، Permission، Session، password policy، branch access،
   کنترل دسترسی Backend/Frontend و Audit امنیتی را Full-Stack پوشش می‌دهد.
-- PC-A مالک انحصاری Migration، Dependency/Lockfile و قراردادهای مشترک IAM است.
+- PC-A در طول `IAM-001` مالک انحصاری Migration، Dependency/Lockfile و قراردادهای مشترک IAM بود.
 - معیار تحویل شامل Database، API، Frontend، تست‌های permission/security و Handoff
   قرارداد عمومی IAM به مصرف‌کنندگان است.
 - Migration `20260822120000_iam_foundation` روی PostgreSQL توسعه اعمال شد؛ Seed دو بار
   متوالی بدون duplicate پاس شد و `prisma migrate status` دیتابیس را up-to-date اعلام کرد.
 - Migration غیرمخرب `20260822150000_username_login` ورود case-insensitive با نام کاربری
   اختصاص‌یافته مدیر و ایمیل اختیاری را اضافه کرد و روی PostgreSQL لوکال پاس شد.
-- Merge انجام شده است؛ قفل‌های Migration و Dependency/Lockfile تا Handoff صریح PC-A فعال می‌مانند.
+- Merge انجام شده و قفل‌های Migration، Dependency/Lockfile و IAM shared-contract در
+  2026-08-23 با `SPRINT1-HANDOFF-001` رسماً آزاد شدند.
 
 ### `MASTER-001` — PC-B — `DONE`
 
@@ -66,10 +85,12 @@
 - Contractهای ماژول‌محلی list/detail/mutation/status و async Excel/PDF همراه validation،
   error envelope، Permission Matrix و ۲۰ تست پاس‌شده در `develop` قرار دارند.
 - Prisma schema/Migration/repository، Backend پایدار، mutation واقعی، نرخ ارز authoritative
-  و export artifact با وضعیت `Blocked by Migration Lock` باقی مانده‌اند.
+  و export artifact تکمیل نشده‌اند و در `MASTER-002` برنامه‌ریزی شده‌اند؛ هنوز هیچ قفل
+  Migration یا Dependency به آن Task تخصیص ندارد.
 - هیچ manifest، lockfile، Prisma، Migration یا فایل IAM تغییر نکرده است.
-- Consumer requirementهای IAM برای permission scope، actor/audit و branch reference در
-  `docs/tasks/MASTER-001.md` ثبت شده و انتقال Contract مشترک هنوز انجام نشده است.
+- Consumer requirementهای IAM در `docs/tasks/MASTER-001.md` ثبت شده‌اند؛ مصرف
+  `AuthenticatedActor`، `IamPermissionCode` و `BranchReference` اکنون از قرارداد عمومی
+  `@rubi/contracts` انجام می‌شود.
 
 ## وضعیت Baseline مشترک
 
@@ -132,15 +153,31 @@
 - Build تولیدی API، Worker، Web و packageهای مشترک پاس؛ `/login` و `/users` در خروجی Web هستند.
 - `git diff --check`، بررسی Secret و Markdown links در gate نهایی تکرار می‌شوند.
 
-## Handoff Sprint اول
+## Handoff نهایی Sprint اول
 
 1. PR شماره ۵ با Merge Commit `50eacca` وارد `develop` شده و قرارداد عمومی IAM در دسترس است.
 2. قرارداد `@rubi/contracts` و جزئیات مصرف در `docs/IAM.md` مبنای PC-B است؛ دسترسی مستقیم
    به جدول‌ها یا repository داخلی IAM ممنوع می‌ماند.
-3. PR شماره ۶ با Merge Commit `cda0f9a` وارد `develop` شده است؛ بخش persistence و Backend
-   پایدار MASTER-001 تا Handoff و رزرو مستقل Migration/Dependency همچنان مسدود است.
-4. آزادسازی قفل‌های Migration و Dependency/Lockfile همچنان نیازمند Handoff صریح PC-A است؛
-   PC-B تا آن زمان Schema، Migration، manifest یا lockfile را تغییر نمی‌دهد.
+3. PR شماره ۶ با Merge Commit `cda0f9a` وارد `develop` شده است؛ Foundation بدون
+   Persistence تکمیل و Persistence واقعی به `MASTER-002` منتقل شده است.
+4. PRهای شماره ۷ و ۸ با Merge Commitهای `99dd1cf` و `543f6e2` معماری تاییدشده و
+   Frontend منوی ۱۷ بخشی را وارد `develop` کرده‌اند.
+5. قفل‌های Migration، Dependency/Lockfile و shared-contract متعلق به `IAM-001` و قفل
+   اسناد مرکزی متعلق به `ARCH-001` در 2026-08-23 آزاد شدند.
+6. قرارداد عمومی IAM از `@rubi/contracts` مصرف می‌شود؛ `BranchReference`،
+   `AuthenticatedActor` و `IamPermissionCode` (از جمله `iam.audit.read`) عمومی‌اند و
+   Audit با actor context عمومی ثبت می‌شود. مدل/Repository داخلی IAM یا Audit قابل
+   دسترسی مستقیم برای Master Data نیست.
+7. آزادشدن قفل‌ها مجوز اجرای هم‌زمان نیست. `MASTER-002` و `CUSTOMER-001` پیش از هر
+   تغییر Prisma، Migration یا Dependency باید قفل مستقل رزرو کنند و در هر لحظه فقط یک
+   Migration Owner و یک Dependency/Lockfile Owner مجاز است.
+
+## برنامه اولیه Sprint دوم
+
+- `MASTER-002` — PC-B — `PLANNED`: Database، Migration، Repository، Backend و اتصال
+  واقعی Frontend اطلاعات پایه؛ بدون قفل Migration/Dependency تا PR برنامه‌ریزی بعدی.
+- `CUSTOMER-001` — PC-A — `PLANNED`: مشتریان و مسافران، Customer 360، مدارک، همراهان
+  و Duplicate Control؛ بدون قفل Migration/Dependency تا PR برنامه‌ریزی بعدی.
 
 ## ریسک‌ها و تصمیم‌های باز
 
@@ -148,8 +185,8 @@
 - Providerها، Payment Gatewayها و مشخصات دو سایت اعلام نشده‌اند.
 - محل میزبانی، RPO/RTO، retention و الزامات حقوقی PII نیازمند تایید هستند.
 - سیاست مالی ارز، rounding، مالیات و شماره‌گذاری اسناد باید قبل از Migration تایید شود.
-- `MASTER-001` می‌تواند UI و قرارداد نرخ ارز را طراحی کند، اما schema/محاسبه authoritative
-  نرخ ارز تا حل `DEC-OPEN-004` و دریافت Migration lock نهایی نمی‌شود.
+- `MASTER-002` مسئول Persistence واقعی است، اما schema/محاسبه authoritative نرخ ارز تا
+  حل `DEC-OPEN-004` و رزرو مستقل Migration lock نهایی نمی‌شود.
 - اجرای موازی دو Task بدون رعایت قفل‌ها ریسک تعارض Prisma و lockfile دارد؛ ترتیب Handoff
   ثبت‌شده در `WORK_ASSIGNMENTS.md` الزام‌آور است.
 - Compose credentialها synthetic و Local هستند و پیش از هر محیط دیگر باید با secret manager جایگزین شوند.
