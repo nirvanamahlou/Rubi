@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { MasterDataWorkspace } from '@/modules/master-data/components/master-data-workspace';
+import { MasterDataWorkspace } from '@/modules/master-data/components/master-data-live-workspace';
 
 export const metadata: Metadata = { title: 'اطلاعات پایه' };
 
