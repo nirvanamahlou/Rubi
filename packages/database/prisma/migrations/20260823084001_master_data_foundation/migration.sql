@@ -410,3 +410,17 @@ ALTER TABLE "master_hotels" ADD CONSTRAINT "master_hotels_organizationId_fkey" F
 
 -- AddForeignKey
 ALTER TABLE "master_brokers" ADD CONSTRAINT "master_brokers_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "master_organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+-- AddCheckConstraint
+ALTER TABLE "master_draft_exchange_rates" ADD CONSTRAINT "master_draft_exchange_rates_non_authoritative_check" CHECK ("isAuthoritative" = false);
+
+-- AddCheckConstraint
+ALTER TABLE "master_draft_exchange_rates" ADD CONSTRAINT "master_draft_exchange_rates_positive_rate_check" CHECK ("rate" > 0);
+
+-- AddCheckConstraint
+ALTER TABLE "master_draft_exchange_rates" ADD CONSTRAINT "master_draft_exchange_rates_distinct_currencies_check" CHECK ("fromCurrencyId" <> "toCurrencyId");
+
+-- AddCheckConstraint
+ALTER TABLE "master_currencies" ADD CONSTRAINT "master_currencies_decimal_digits_check" CHECK ("decimalDigits" BETWEEN 0 AND 6);
+
+-- AddCheckConstraint
+ALTER TABLE "master_hotels" ADD CONSTRAINT "master_hotels_star_rating_check" CHECK ("starRating" IS NULL OR "starRating" BETWEEN 1 AND 5);
