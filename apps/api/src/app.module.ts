@@ -6,6 +6,7 @@ import { DatabaseModule } from './database/database.module';
 import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
 import { IamModule } from './iam/iam.module';
+import { MasterDataModule } from './master-data/master-data.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { IamModule } from './iam/iam.module';
       validationSchema: environmentValidationSchema,
     }),
     DatabaseModule,
+    MasterDataModule,
     IamModule,
   ],
   controllers: [HealthController],
