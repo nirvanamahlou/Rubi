@@ -86,22 +86,27 @@ export const navigationMessages = [
     description: 'پرونده و تعاملات مشتریان',
   },
   {
-    title: 'فروش و سرنخ‌ها',
-    href: '/sales',
-    description: 'قیف فروش و پیگیری فرصت‌ها',
+    title: 'امور مشتریان و پشتیبانی',
+    href: '/customer-affairs',
+    description: 'سرنخ‌ها، درخواست‌های قبل از فروش و پشتیبانی پس از سفر',
   },
   {
-    title: 'سفارش‌ها و رزرواسیون',
+    title: 'رزرواسیون و عملیات سفر',
     href: '/reservations',
-    description: 'سفارش‌ها، رزروها و وضعیت صدور',
+    description: 'بررسی ظرفیت، صدور خدمات، واچر، بیمه و منیفست',
   },
   {
-    title: 'خدمات مشتریان',
-    href: '/customer-service',
-    description: 'درخواست‌ها، تیکت‌ها و SLA',
+    title: 'تعریف و مدیریت بلیت‌ها',
+    href: '/ticket-management',
+    description: 'تعریف محصول بلیت، برنامه حرکت، نرخ و ظرفیت',
   },
   {
-    title: 'خرید و تأمین',
+    title: 'قراردادها و فروش',
+    href: '/sales',
+    description: 'قرارداد جدید و تخصیص مسافر به خدمات',
+  },
+  {
+    title: 'خرید و تأمین‌کنندگان',
     href: '/purchases',
     description: 'خرید خدمات و تأمین‌کنندگان',
   },
@@ -142,19 +147,14 @@ export const navigationMessages = [
     description: 'اتصال سرویس‌ها و Providerها',
   },
   {
-    title: 'مدیریت کاربران',
-    href: '/users',
-    description: 'کاربران و سطح دسترسی',
+    title: 'مدیریت سیستم',
+    href: '/system',
+    description: 'کاربران، نقش‌ها، دسترسی‌ها و تنظیمات سامانه',
   },
   {
     title: 'اطلاعات پایه',
     href: '/master-data',
     description: 'داده‌های مرجع سامانه',
-  },
-  {
-    title: 'تنظیمات سیستم',
-    href: '/settings',
-    description: 'پیکربندی و ترجیحات سامانه',
   },
 ] as const;
 
