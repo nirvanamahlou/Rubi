@@ -7,9 +7,9 @@
 - مرحله جاری: **Sprint دوم — Master Data Persistence و Customer Foundation**
 - وضعیت: **دو Task مستقل MASTER-002 و CUSTOMER-001 فاز A آماده شروع هستند**
 - Repository: `Rubi`، Remote با نام `origin`
-- Baseline: Merge Commit `d1f1133801663d651ae02e3570b806acb641dfe8` از آخرین `origin/develop`
-- شاخه فعال: `codex/pc-a-iam-002-handoff`
-- Work Item: `IAM002-HANDOFF-001`؛ آزادسازی قفل و شروع توسعه مستقل
+- Baseline: Merge Commit `0af31c2ce5d474b5a8826d15673a49f3448e7207` از آخرین `origin/develop`
+- شاخه مبنای شروع Taskهای جدید: `develop`
+- Work Item بسته‌شده: `IAM002-HANDOFF-001`؛ آزادسازی قفل و شروع توسعه مستقل
 - محیط مسئول: `COMPUTER_ID=PC-A`
 - وضعیت اولیه محیط: Dev Server متوقف، Working Tree تمیز و PR بازی وجود نداشت.
 
@@ -26,6 +26,7 @@
 - PC-B مجاز است `MASTER-002` را Full-Stack آغاز کند و تنها Migration و
   Dependency/Lockfile Owner باشد. PC-A هم‌زمان فقط فاز A بدون Persistence
   `CUSTOMER-001` را آغاز می‌کند.
+- Handoff با PR شماره ۱۲ و Merge Commit `0af31c2` وارد `develop` شد.
 
 ## برنامه اجرایی Sprint دوم
 
