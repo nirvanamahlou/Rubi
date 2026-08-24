@@ -8,9 +8,12 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 - [ ] `DEC-OPEN-001`: دامنه Sub-ledger و مرز اتصال حسابداری قانونی تایید شود.
 - [ ] `DEC-OPEN-002`: دو دامنه سایت، برندها، درگاه‌ها و ارزهای قابل فروش مشخص شوند.
 - [ ] `DEC-OPEN-003`: Providerهای موج اول و قابلیت واقعی هر API تعیین شوند.
-- [ ] `DEC-OPEN-004`: قواعد نگهداری/رمزنگاری مدارک هویتی و محل میزبانی تصویب شود.
-- [ ] `DEC-OPEN-005`: تقویم کاری، SLA و نقش‌های تایید مالی اولیه مشخص شوند.
+- [ ] `DEC-OPEN-004`: ارز، Decimal/rounding، FX source، Tax و Recognition تایید شود.
+- [ ] `DEC-OPEN-005`: Approval Matrix مالی و Maker/Checker تایید شود.
+- [ ] `DEC-OPEN-006`: PII/document retention، residency و key management تایید شود.
+- [ ] `DEC-OPEN-007`: hosting، RPO/RTO، availability و traffic تایید شود.
 - [ ] `DEC-OPEN-013`: سیاست HR، تقویم/شیفت، payroll input و retention پرسنلی مشخص شوند.
+- [ ] `DEC-OPEN-016`: Financial Release، basisها و استثنای مدیر تایید شود.
 
 ## مراحل
 

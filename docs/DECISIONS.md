@@ -50,3 +50,15 @@
 
 هر تصمیم باید Context، گزینه‌ها، انتخاب، دلیل، consequences، owner/date و migration/reversal plan
 داشته باشد. تغییر تصمیم پذیرفته‌شده با ADR جدید supersede می‌شود و تاریخچه حذف نمی‌شود.
+
+## Proposalهای FINANCE-001
+
+چهار Decision Record زیر در 2026-08-24 با وضعیت PROPOSED ثبت شده‌اند. این وضعیت هیچ
+مجوزی برای Prisma، Migration یا workflow اجرایی ایجاد نمی‌کند:
+
+- [DEC-OPEN-001 — مرز Sub-ledger و حسابداری قانونی](decisions/DEC-OPEN-001-finance-ledger-boundary.md)
+- [DEC-OPEN-004 — Money، FX، Tax و Recognition](decisions/DEC-OPEN-004-money-fx-tax-recognition.md)
+- [DEC-OPEN-005 — Approval Matrix و Maker/Checker](decisions/DEC-OPEN-005-finance-approval-matrix.md)
+- [DEC-OPEN-016 — Financial Release](decisions/DEC-OPEN-016-financial-release-policy.md)
+
+مالک مالی و ذی‌نفعان ثبت‌شده باید هر Proposal را تایید یا اصلاح کنند. فقط ADR پذیرفته‌شده
