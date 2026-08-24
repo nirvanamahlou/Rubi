@@ -70,7 +70,7 @@
   optimistic concurrency و idempotency با تست پوشش داده شدند.
 - مسیر /finance اکنون Workspace فارسی/RTL/Responsive با Dashboard، ۳۰ قابلیت قابل جست‌وجو،
   فیلتر، sort، pagination، فرم‌های Preview، stateهای کامل و route خروجی Excel/PDF است.
-- lint، typecheck و build کل Monorepo پاس شدند؛ ۱۷۲ تست در ۵۰ فایل پاس شد و /finance در
+- lint، typecheck و build کل Monorepo پاس شدند؛ ۱۷۲ تست در ۵۱ فایل پاس شد و /finance در
   Production Build تولید شد.
 - Dependency/Lockfile، Prisma، Migration و Seed تغییر نکردند. داده‌ها فقط synthetic هستند.
 - QA مرورگر داخلی به‌دلیل خطای ACL ابزار Windows و redirect احراز هویت انجام نشد؛ HTTP

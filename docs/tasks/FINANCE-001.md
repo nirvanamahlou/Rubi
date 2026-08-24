@@ -109,7 +109,7 @@ Workspace اصلی شامل پنج Tab داشبورد، ۳۰ بخش، عملیا
 
 - lint کل Monorepo: پاس
 - typecheck کل Monorepo: پاس
-- test کل Monorepo: ۱۷۲ تست در ۵۰ فایل، همگی پاس
+- test کل Monorepo: ۱۷۲ تست در ۵۱ فایل، همگی پاس
 - Production Build: پاس؛ route استاتیک /finance تولید شد
 - Markdown links و git diff check: پاس
 - Prisma Model، Migration، Seed، Dependency و Lockfile: بدون تغییر
