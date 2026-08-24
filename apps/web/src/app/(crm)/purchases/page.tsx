@@ -1,55 +1,10 @@
 import type { Metadata } from 'next';
-import { BadgePercent, ClipboardPlus, PackageCheck } from 'lucide-react';
 
-import { ModuleOverview } from '@/components/modules/module-overview';
+import { ModuleFoundationWorkspace } from '@/modules/module-foundation/components/module-foundation-workspace';
+import { foundationModules } from '@/modules/module-foundation/model/foundation';
 
-export const metadata: Metadata = { title: 'خرید و تأمین‌کنندگان' };
+export const metadata: Metadata = { title: 'خرید و تأمین' };
 
 export default function Page() {
-  return (
-    <ModuleOverview
-      description="درخواست خرید از رزرواسیون شروع می‌شود و پس از ثبت قیمت خالص، برای تایید، سفارش و تسویه تامین‌کننده به این بخش می‌آید."
-      flow={[
-        'درخواست رزرواسیون',
-        'قیمت اولیه',
-        'تخفیف تامین‌کننده',
-        'قیمت خالص خرید',
-        'سفارش و تسویه',
-      ]}
-      note="هر درخواست خرید باید به قرارداد، خدمت، مسافر، عملیات و تامین‌کننده مشخص متصل باشد تا سود قرارداد و بدهی تامین‌کننده دقیق بماند."
-      sections={[
-        {
-          title: 'درخواست خرید',
-          icon: ClipboardPlus,
-          badge: 'شروع: رزرواسیون',
-          items: [
-            'انتخاب قرارداد و خدمت مرتبط توسط رزرواسیون',
-            'اتصال مسافران، تامین‌کننده و عملیات صدور',
-            'ثبت مهلت، ارز، قیمت اولیه و مستندات',
-          ],
-        },
-        {
-          title: 'مذاکره و تخفیف خرید',
-          icon: BadgePercent,
-          items: [
-            'ثبت تخفیف گرفته‌شده از کارگزار یا تامین‌کننده',
-            'محاسبه قیمت خالص خرید بدون تغییر مبلغ فروش',
-            'نمایش اثر تخفیف در سود شرکت و سود قرارداد',
-            'ثبت کاربر، زمان و دلیل اصلاح قیمت',
-          ],
-        },
-        {
-          title: 'سفارش و صورتحساب تامین‌کننده',
-          icon: PackageCheck,
-          items: [
-            'گردش تایید درخواست و تبدیل به سفارش خرید',
-            'ثبت صورتحساب، سررسید و اسناد تامین‌کننده',
-            'ارسال بدهی تاییدشده به مالی برای پرداخت',
-            'کنترل مغایرت قیمت، تعداد و خدمت تحویل‌شده',
-          ],
-        },
-      ]}
-      title="خرید و تأمین‌کنندگان"
-    />
-  );
+  return <ModuleFoundationWorkspace config={foundationModules['purchases']} />;
 }
