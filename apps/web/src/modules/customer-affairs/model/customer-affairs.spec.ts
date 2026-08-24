@@ -82,12 +82,18 @@ describe('customer affairs frontend foundation', () => {
   });
 
   it('publishes an explicit local deny-by-default permission proposal', () => {
-    expect(customerAffairsLocalPermissions).toHaveLength(13);
+    expect(customerAffairsLocalPermissions).toHaveLength(14);
     expect(customerAffairsLocalPermissions).toContain(
       'customer_affairs.lead.handoff.propose',
     );
     expect(customerAffairsLocalPermissions).toContain(
       'customer_affairs.ticket.escalate',
+    );
+    expect(customerAffairsLocalPermissions).toContain(
+      'customer_affairs.satisfaction.read',
+    );
+    expect(customerAffairsLocalPermissions).toContain(
+      'customer_affairs.satisfaction.record',
     );
   });
 });

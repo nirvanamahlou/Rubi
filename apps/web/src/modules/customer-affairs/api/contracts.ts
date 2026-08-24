@@ -30,6 +30,7 @@ export const customerAffairsLocalPermissions = [
   'customer_affairs.ticket.close',
   'customer_affairs.sla.manage',
   'customer_affairs.satisfaction.read',
+  'customer_affairs.satisfaction.record',
 ] as const;
 
 export function normalizeCustomerAffairsQuery(
