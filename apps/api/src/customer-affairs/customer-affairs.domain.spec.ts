@@ -30,6 +30,7 @@ const leadDraft: LeadDraft = {
   priority: 'NORMAL',
   assigneeReference: 'preview-assignee-01',
   nextActionAt: '2026-08-25T08:30:00.000Z',
+  customerReference: null,
 };
 
 const ticketDraft: SupportTicketDraft = {
@@ -195,6 +196,7 @@ describe('customer affairs phase A domain', () => {
       'customer_affairs.ticket.assign',
       'customer_affairs.ticket.escalate',
       'customer_affairs.ticket.close',
+      'customer_affairs.ticket.reopen',
       'customer_affairs.sla.manage',
       'customer_affairs.satisfaction.read',
       'customer_affairs.satisfaction.record',

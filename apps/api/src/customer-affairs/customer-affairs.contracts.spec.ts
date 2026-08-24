@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createPaginatedResult,
+  normalizeLeadListQuery,
   normalizeTicketListQuery,
   type TicketListQuery,
 } from './customer-affairs.contracts';
@@ -28,6 +29,21 @@ describe('customer affairs module-local list contracts', () => {
     ).toMatchObject({ page: 1, pageSize: 25 });
   });
 
+  it('normalizes lead pagination and rejects unknown sort fields', () => {
+    expect(
+      normalizeLeadListQuery({
+        search: '  Lead نمونه  ',
+        page: 0,
+        pageSize: 500,
+        sortBy: 'title' as never,
+      }),
+    ).toMatchObject({
+      search: 'Lead نمونه',
+      page: 1,
+      pageSize: 100,
+      sortBy: 'updatedAt',
+    });
+  });
   it('preserves the allowed ticket filters for future server-side queries', () => {
     expect(
       normalizeTicketListQuery({
