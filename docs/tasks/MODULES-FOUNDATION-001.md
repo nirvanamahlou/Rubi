@@ -1,6 +1,6 @@
 # MODULES-FOUNDATION-001 — Foundation رابط تمام ماژول‌ها
 
-وضعیت: `IN_PROGRESS`
+وضعیت: `READY_FOR_REVIEW`
 مالک: `COMPUTER_ID=PC-A`
 Branch: `codex/pc-a-all-modules-foundation`
 Baseline: `origin/develop@45c107e`
@@ -85,5 +85,15 @@ shared contract جدید؛ تصمیم‌های باز Provider، سایت/برن
 
 ## Quality Gate
 
-تست Workspace و ۱۷ route؛ Navigation و Sidebar؛ lint/typecheck/test/build کل Monorepo؛
-HTTP smoke همه routeها؛ Browser QA در صورت عبور ACL؛ `git diff --check` و Secret/PII scan.
+- `pnpm lint`: پاس؛ ۶ workspace اجرایی موفق.
+- `pnpm typecheck`: پاس؛ ۹ task موفق همراه Prisma Client generate بدون تغییر Schema.
+- `pnpm test`: پاس؛ Web برابر ۷۱ تست، API برابر ۱۰۷ تست، Contracts برابر ۱۲ تست،
+  Database برابر ۱۰ تست، Config برابر ۲ تست و Worker برابر ۱ تست.
+- `pnpm build`: پاس؛ ۶ task موفق و هر ۱۷ route اصلی در خروجی production موجود است.
+- HTTP production smoke: هر ۱۷ route با cookie کاملاً ساختگی، status 200 و HTML معتبر.
+- Browser QA داخلی دو بار به خروج ناگهانی trusted browser process برخورد کرد؛ مطابق
+  قرارداد Task، production build و HTTP smoke جایگزین و محدودیت شفاف ثبت شد.
+- Sidebar با تست رگرسیون overflow/truncate پوشش داده شد.
+- هیچ Prisma Schema، Migration، Seed، Dependency، Lockfile، Persistence، Controller
+  ساختگی، فایل PDF/Excel/CSV جعلی، Secret، Credential یا PII واقعی تغییر/ایجاد نشد.
+- `git diff --check` و Secret/PII scan پیش از Push نهایی اجرا می‌شوند.

@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-24 — Decisionهای مالی ACCEPTED و PR #21 آماده Review است
+آخرین به‌روزرسانی: 2026-08-24 — MODULES-FOUNDATION-001 آماده Review است
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
@@ -28,7 +28,7 @@
 | CUSTOMER001-FINANCE-HANDOFF-001 | PC-A         | `codex/pc-a-customer-finance-handoff`       | آزادسازی چهار قفل CUSTOMER-001 و رزرو کنترل‌شده FINANCE-001؛ فقط اسناد مرکزی و سند Handoff    | `DONE`             | PR #20؛ Merge `11fc875`؛ بدون کد، Schema، Migration، Dependency یا Lockfile |
 | FINANCE-001                     | PC-A         | `codex/pc-a-finance-foundation`             | Foundation مالی و چهار Decision پذیرفته‌شده؛ Phase A بدون Persistence و Migration             | `READY_FOR_REVIEW` | PR #21؛ Gate معماری ACCEPTED؛ Phase B مستقل فقط پس از Merge PR مجاز است     |
 | CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket              | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence |
-| MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش در `apps/web/**`، تست Web و اسناد Task؛ مجوز صریح Cross-module UI      | `IN_PROGRESS`      | Base `45c107e`؛ بدون Prisma/Migration/Persistence/Dependency/Lockfile       |
+| MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش در `apps/web/**`، تست Web و اسناد Task؛ مجوز صریح Cross-module UI      | `READY_FOR_REVIEW` | ۱۷ route با build/smoke سبز؛ بدون Prisma/Migration/Dependency/Lockfile      |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                           | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |
 
 ## Sprint 1 — مرز فایل و Handoff
