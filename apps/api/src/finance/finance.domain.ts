@@ -8,7 +8,7 @@ import {
   type FinancialReleaseStatus,
 } from '@rubi/contracts';
 
-import { FinanceDomainError, Money } from './finance.money';
+import { DecimalValue, FinanceDomainError, Money } from './finance.money';
 
 export type AccountType =
   'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
@@ -20,6 +20,16 @@ export type JournalStatus =
   | 'POSTED'
   | 'REVERSED'
   | 'CANCELLED';
+
+const UTC_ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/;
+
+function isValidUtcIsoTimestamp(value: string): boolean {
+  if (!UTC_ISO_TIMESTAMP.test(value)) return false;
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return false;
+  const normalized = value.includes('.') ? value : value.replace('Z', '.000Z');
+  return new Date(timestamp).toISOString() === normalized;
+}
 
 export interface Account {
   id: string;
@@ -60,7 +70,8 @@ export interface ExchangeRateSnapshot {
   rate: string;
   sourceReference: string;
   validAt: string;
-  approvalStatus: 'DRAFT' | 'APPROVED';
+  expiresAt: string;
+  approvalStatus: 'DRAFT' | 'APPROVED' | 'REJECTED';
   approvedByReference: string | null;
 }
 
@@ -162,6 +173,49 @@ export class JournalEntry {
         'JOURNAL_NOT_APPROVED',
         'Only an approved journal can be proposed for posting.',
       );
+    }
+    for (const line of this.lines) {
+      const snapshot = line.exchangeRate;
+      if (!snapshot) continue;
+      if (snapshot.approvalStatus !== 'APPROVED') {
+        throw new FinanceDomainError(
+          'FX_SNAPSHOT_NOT_APPROVED',
+          'Only an approved exchange-rate snapshot can be used for posting.',
+        );
+      }
+
+      let rate: DecimalValue;
+      try {
+        rate = DecimalValue.parse(snapshot.rate);
+      } catch {
+        throw new FinanceDomainError(
+          'FX_SNAPSHOT_INVALID',
+          'Exchange-rate snapshot contains an invalid rate.',
+        );
+      }
+      if (
+        rate.isNegative ||
+        rate.isZero ||
+        !snapshot.sourceReference.trim() ||
+        !snapshot.approvedByReference?.trim() ||
+        snapshot.baseCurrencyCode !== line.transactionAmount.currencyCode ||
+        snapshot.quoteCurrencyCode !== line.baseAmount.currencyCode ||
+        snapshot.baseCurrencyCode === snapshot.quoteCurrencyCode ||
+        !isValidUtcIsoTimestamp(snapshot.validAt) ||
+        !isValidUtcIsoTimestamp(snapshot.expiresAt) ||
+        Date.parse(snapshot.validAt) > Date.parse(this.documentDate)
+      ) {
+        throw new FinanceDomainError(
+          'FX_SNAPSHOT_INVALID',
+          'Exchange-rate snapshot is invalid for this journal line.',
+        );
+      }
+      if (Date.parse(snapshot.expiresAt) <= Date.parse(this.documentDate)) {
+        throw new FinanceDomainError(
+          'FX_SNAPSHOT_EXPIRED',
+          'Exchange-rate snapshot is expired for the journal document time.',
+        );
+      }
     }
     if (!this.balance().balanced) {
       throw new FinanceDomainError(
@@ -369,6 +423,7 @@ export interface FinancialReleaseRequest {
   secondApproverReference: string | null;
   exceptionExpiresAt: string | null;
   now: string;
+  makerPermissions: readonly string[];
 }
 
 export interface FinancialReleaseEvaluation {
@@ -406,26 +461,44 @@ export function evaluateFinancialRelease(
   if (request.basis === 'MANAGER_EXCEPTION') {
     if (request.reason.trim().length < 10)
       reasons.push('Exception requires a detailed reason.');
-    if (!request.secondApproverReference)
+    if (!request.secondApproverReference?.trim())
       reasons.push('Exception requires a second approver.');
-    if (request.secondApproverReference === request.makerReference)
+    if (request.secondApproverReference?.trim() === request.makerReference)
       reasons.push('Second approver must differ from maker.');
     if (
+      !hasFinancePermission(
+        request.makerPermissions,
+        'financial_release.override',
+      )
+    ) {
+      reasons.push('Exception requires financial release override permission.');
+    }
+    if (
       !request.exceptionExpiresAt ||
+      !isValidUtcIsoTimestamp(request.exceptionExpiresAt) ||
+      !isValidUtcIsoTimestamp(request.now) ||
       Date.parse(request.exceptionExpiresAt) <= Date.parse(request.now)
     ) {
-      reasons.push('Exception requires a future UTC expiry.');
+      reasons.push('Exception requires a valid future UTC expiry.');
     }
   } else if (!qualifies[request.basis]) {
     reasons.push('Selected financial basis is not satisfied.');
   }
 
-  if (
-    request.requestedStatus === 'APPROVED' &&
-    request.basis === 'APPROVED_PAYMENT_PLAN'
-  ) {
+  const requiredStatus: Readonly<
+    Record<FinancialReleaseBasis, Exclude<FinancialReleaseStatus, 'BLOCKED'>>
+  > = {
+    FULL_SETTLEMENT: 'APPROVED',
+    APPROVED_CREDIT: 'APPROVED',
+    APPROVED_PAYMENT_PLAN: 'CONDITIONAL',
+    VALID_CHECK: 'CONDITIONAL',
+    MANAGER_EXCEPTION: 'CONDITIONAL',
+  };
+  if (request.requestedStatus !== requiredStatus[request.basis]) {
     reasons.push(
-      'An active payment plan can only produce CONDITIONAL release.',
+      requiredStatus[request.basis] === 'APPROVED'
+        ? 'Selected financial basis requires APPROVED release.'
+        : 'Selected financial basis can only produce CONDITIONAL release.',
     );
   }
 
