@@ -1,17 +1,17 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-24 — اصلاحات امنیتی و کارایی CUSTOMER-001 آماده بازبینی
+آخرین به‌روزرسانی: 2026-08-24 — Handoff CUSTOMER-001 به FINANCE-001 آماده بازبینی
 
 ## خلاصه
 
-- مرحله جاری: **Sprint دوم — Master Data Persistence و Customer Foundation**
-- وضعیت: **CUSTOMER-001 فاز B آماده بازبینی؛ CUSTOMER-AFFAIRS-001 فاز A برای PC-B برنامه‌ریزی‌شده**
+- مرحله جاری: **Handoff مستقل Customer Persistence به Finance Foundation**
+- وضعیت: **CUSTOMER-001 ادغام‌شده؛ FINANCE-001 پس از Merge Handoff آماده شروع Foundation است**
 - Repository: `Rubi`، Remote با نام `origin`
-- Baseline: Commit `9b96f6eabfe8aed8fe3377fd221fed43dd79d2eb` از آخرین `origin/develop`
-- شاخه فعال: `codex/pc-a-customer-persistence`
-- Work Item: `CUSTOMER-001 Phase B`؛ `READY_FOR_REVIEW`
+- Baseline: Merge Commit `7d0a4f42e978b468263efdc83f780fa656fbd613` از `origin/develop`
+- شاخه فعال: `codex/pc-a-customer-finance-handoff`
+- Work Item: `CUSTOMER001-FINANCE-HANDOFF-001`؛ `READY_FOR_REVIEW`
 - محیط مسئول: `COMPUTER_ID=PC-A`؛ dev server پروژه فعال نبود.
-- وضعیت محیط: Volume و داده موجود دست‌نخورده‌اند؛ Migration روی PostgreSQL 18 ایزوله و تازه و تمام gateهای نرم‌افزاری اجرا شدند.
+- نوع تغییر: فقط اسناد؛ بدون کد، Schema، Migration، Dependency یا Lockfile.
 
 ### `MASTER-002` — PC-B — `DONE`
 
@@ -20,8 +20,10 @@
 - Persistence، REST، قرارداد عمومی و UI واقعی Master Data تحویل شدند.
 - چهار قفل Migration، Dependency/Lockfile، Master shared-contract و اسناد مرکزی آزاد شدند.
 
-### `CUSTOMER-001` — PC-A — `READY_FOR_REVIEW`
+### `CUSTOMER-001` — PC-A — `DONE/MERGED`
 
+- PR شماره ۱۹ با Source HEAD `19cb597cd9c4137021bc53e3f85d4cd682de51de` و
+  Merge Commit `7d0a4f42e978b468263efdc83f780fa656fbd613` وارد `develop` شد.
 - فاز A با PR شماره ۱۶ و Merge Commit `9fb1cb33cef9bfbbb998d4e3ce823688e7700a31`
   به‌صورت `DONE/MERGED` وارد `origin/develop` شد.
 - فاز B از baseline قطعی `9b96f6eabfe8aed8fe3377fd221fed43dd79d2eb` روی شاخه
@@ -42,6 +44,18 @@
 - `DEC-OPEN-006` و `DEC-OPEN-011` باز می‌مانند. نگهداری مدرک حساس، auto-merge و
   merge واقعی ممنوع‌اند؛ فقط Candidate Detection و Review دستی ثبت و Audit می‌شوند.
 - نرخ ارز authoritative و تولید واقعی Excel/PDF خارج از این Handoff باقی می‌مانند.
+### `CUSTOMER001-FINANCE-HANDOFF-001` — PC-A — `READY_FOR_REVIEW`
+
+- چهار قفل Migration، Dependency/Lockfile، Customer shared-contract/export و اسناد مرکزی
+  پس از Merge PR #19 از CUSTOMER-001 آزاد می‌شوند.
+- Migration Owner، Dependency/Lockfile Owner مشروط، Finance shared-contract/export و اسناد
+  مرکزی برای PC-A/FINANCE-001 رزرو می‌شوند؛ هیچ قفلی به PC-B منتقل نشده است.
+- `FINANCE-001` با Foundation و حل تصمیم‌ها آغاز می‌شود. `DEC-OPEN-001/004/005/016`
+  Gate قطعی هر Schema، Migration، posting model، FX/tax و approval workflow هستند.
+- Finance فقط قرارداد عمومی ماژول‌های دیگر را مصرف می‌کند؛ query مستقیم جدول‌های Customers،
+  Sales، Reservations، Procurement یا HR ممنوع است.
+- این Handoff فقط مستندات است و هیچ dependency، lockfile، Schema یا Migration تغییر نمی‌دهد.
+
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 
 - Branch آینده `codex/pc-b-customer-affairs-foundation` و هدف آن Foundation مستقل
@@ -56,9 +70,9 @@
   قرار دارند؛ اتصال Customers/Sales/Reservation فقط proposal ماژول‌محلی است.
 - Persistence، Prisma، Migration، Seed، Dependency/Lockfile، قرارداد مشترک و PII
   واقعی ممنوع‌اند.
-- Migration Owner، Customer shared-contract/root export و اسناد مرکزی Sprint نزد
-  PC-A/`CUSTOMER-001` Phase B می‌مانند. PC-B حق تغییر Database، IAM، Master Data،
-  Customers داخلی یا اسناد مرکزی را در Task خودش ندارد.
+- قفل‌های مشترک CUSTOMER-001 با Merge `7d0a4f4` آزاد و برای PC-A/`FINANCE-001`
+  رزرو شده‌اند؛ PC-B حق تغییر Database، IAM، Master Data، Customers داخلی، Finance
+  contract یا اسناد مرکزی را در Task خودش ندارد.
 
 ### `IAM-002` — PC-A — `DONE`
 
@@ -257,9 +271,8 @@
 - `MASTER-002` — PC-B — `DONE`: Merge `ddfebb3`؛ Persistence، REST، قرارداد عمومی،
   UI واقعی و async export request تکمیل و چهار قفل آزاد شدند. نرخ ارز authoritative و
   تولید artifact واقعی Documents/Worker همچنان خارج از Scope است.
-- `CUSTOMER-001` — PC-A — `IN_PROGRESS`: فاز A با Merge `9fb1cb3` تمام شد؛ فاز B
-  با قفل Migration، Customer contract/root export و اسناد مرکزی آغاز می‌شود. قفل
-  Dependency/Lockfile فقط در صورت نیاز واقعی فعال است.
+- `CUSTOMER-001` — PC-A — `DONE/MERGED`: PR #19 با Merge `7d0a4f4` ادغام و چهار قفل آن در Handoff مستقل آزاد شدند.
+- `FINANCE-001` — PC-A — `PLANNED`: Foundation پس از Merge Handoff آغاز می‌شود؛ Migration و قرارداد اجرایی تا Decision Gate مسدود است.
 - `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`: Phase A مستقل بدون Persistence؛
   فقط Frontend، طراحی دامنه/Application، Contract ماژول‌محلی و تست در مسیرهای
   `customer-affairs`. این Task هیچ قفل مشترکی دریافت نمی‌کند و Backend Persistence
@@ -273,7 +286,5 @@
 - سیاست مالی ارز، rounding، مالیات و شماره‌گذاری اسناد باید قبل از Migration تایید شود.
 - schema/محاسبه authoritative نرخ ارز همچنان تا تصمیم قطعی خارج از این Handoff است.
 - ذخیره PII حساس و مدارک هویتی تا تصمیم قطعی retention/رمزنگاری ممنوع می‌ماند.
-- اجرای Phase B بدون رعایت قفل‌ها ریسک تعارض Prisma و lockfile دارد؛ ترتیب Handoff
-  ثبت‌شده در `WORK_ASSIGNMENTS.md` الزام‌آور است و تاریخچه Migration یا داده محلی نباید
-  دستی دست‌کاری شود.
+- اجرای Finance بدون Decision Gate و قفل یگانه Migration/Dependency ممنوع است؛ تاریخچه Migration یا داده محلی نباید دستی دست‌کاری شود.
 - Compose credentialها synthetic و Local هستند و پیش از هر محیط دیگر باید با secret manager جایگزین شوند.
