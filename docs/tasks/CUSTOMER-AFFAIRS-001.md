@@ -1,8 +1,8 @@
 # CUSTOMER-AFFAIRS-001 — Foundation امور مشتریان Phase A
 
-- وضعیت: `DRAFT_REVIEW_FIXES_COMPLETE`
+- وضعیت: `INTEGRATION_READINESS_IMPLEMENTED`
 - مالک: `PC-B`
-- Branch: `codex/pc-b-customer-affairs-foundation`
+- Branch اولیه: `codex/pc-b-customer-affairs-foundation`
 - Base: `9b96f6eabfe8aed8fe3377fd221fed43dd79d2eb`
 - تخصیص رسمی: PR شماره ۱۷
 - نوع: Frontend، Domain Design، Application Port، قرارداد ماژول‌محلی و Test
@@ -140,4 +140,87 @@ Merge این PR و Handoff صریح قفل‌های لازم آغاز می‌ش�
 - `d628302` — تفکیک Permission ثبت رضایت و قراردادهای list/pagination سمت سرور
 - `c4778eb` — هم‌راستایی پیشنهاد Permission محلی Web
 
-PR شماره ۱۸ همچنان Draft است. این Branch Merge نشده و Source Branch حذف نمی‌شود.
+PR شماره ۱۸ در ادامه در `origin/develop` Merge شد؛ Source Branch این ادامه نیز حذف نمی‌شود.
+
+
+## ادامه Integration Readiness — ۱۴۰۵/۰۶/۰۲
+
+- وضعیت: `INTEGRATION_READINESS_IMPLEMENTED`
+- مالک: `PC-B`
+- Branch: `codex/pc-b-customer-affairs-integration`
+- Base: `origin/develop@a1659238b4357bf9fe676f83aceb61aa311ba98b`
+- پیش‌نیازها: Merge شدن PRهای ۱۸، ۱۹ و ۲۰ در `origin/develop` تأیید شد.
+
+### اتصال مجاز Customers
+
+Customer Affairs فقط typeها، version و endpointهای قرارداد عمومی Customers از
+`@rubi/contracts` را مصرف می‌کند. نسخه جاری Repository برابر
+`CUSTOMERS_CONTRACT_VERSION = 2` و prefix عمومی برابر `/api/v1/customers` است؛
+هیچ فایل مشترک یا فایل داخلی Customers تغییر نکرد.
+
+- جست‌وجوی واقعی مشتری فعال و انتخاب CustomerReference با درخواست credentialed و read-only
+- نمایش Customer 360 از endpoint جزئیات عمومی و لینک مستقیم از فرم Lead/Ticket
+- پوشش واقعی Loading، Empty، Error، Unauthorized (401) و Forbidden (403)
+- نمایش فقط contact ماسک‌شده و خلاصه عمومی؛ بدون PII synthetic شبیه داده واقعی
+- بررسی موارد مشابه از مسیر Customer 360؛ duplicate mutation عمداً فراخوانی نمی‌شود
+- Adapter Backend فقط interface است و به Prisma، Repository یا جدول Customers وابسته نیست
+
+### تکمیل تجربه قبل و بعد از فروش
+
+- Dashboard به چهار شاخص Leadهای جدید، پیگیری‌های امروز، Ticketهای باز و SLAهای نزدیک
+  نقض هم‌راستا شد.
+- Pipeline بدون اسکرول افقی و به‌صورت grid واکنش‌گرا ارائه می‌شود.
+- انتخاب مشتری، tracking number، دسته‌های سؤال و مشکل خدمات، رضایت‌سنجی، نتیجه نهایی،
+  علت بسته‌شدن و توضیح بازگشایی کنترل‌شده به فرم‌های Create/View/Edit اضافه شد.
+- Timeline شامل تماس، پیام، یادداشت، تخصیص، تغییر وضعیت، Escalation و رضایت است.
+- Handoff واجدشرایط Sales در UI فقط preview ذخیره‌نشده می‌سازد و هیچ درخواست شبکه،
+  mutation یا event واقعی اجرا نمی‌کند.
+
+### Contractهای integration ماژول‌محلی
+
+Contract پیشنهادی `customer-affairs.integration.v1-proposal` با envelope نسخه ۱ و
+`persisted: false` برای مرزهای زیر تعریف شد:
+
+- `LeadQualified`
+- `SalesHandoffRequested`
+- `CustomerSupportTicketOpened`
+- `ReservationIssueReported`
+- `RefundAssistanceRequested`
+- `CustomerSatisfactionRecorded`
+
+این نام‌ها و mappingها فقط proposal ماژول‌محلی‌اند. انتشار، outbox، EventEmitter،
+Controller یا فراخوانی Sales/Reservations وجود ندارد. پذیرش producer/consumer و
+سازگاری با قراردادهای آینده Sales و Reservations همچنان نیازمند Handoff مالک آن
+ماژول‌هاست.
+
+### Policy و کنترل دامنه
+
+- Permission مستقل `customer_affairs.ticket.reopen` به matrix محلی افزوده شد.
+- بازگشایی فقط از وضعیت terminal، با Permission، optimistic version، علت و یادداشت audit
+  و سقف دفعات مجاز می‌شود.
+- policy پیشنهادی SLA، موعد اولین پاسخ و حل، حالت at-risk/breached و سطح Escalation را
+  بدون persistence محاسبه می‌کند.
+- Timeline interaction، closure، outcome و referenceهای پیشنهادی Ticket/Voucher/Insurance
+  در Contract محلی تکمیل شد.
+- normalization جداگانه Lead برای search/sort/pagination با allowlist و محدودیت page size
+  اضافه شد.
+
+### کنترل‌های این ادامه
+
+- API Customer Affairs: ۶ فایل تست و ۲۲ تست هدفمند پاس
+- Web Customer Affairs: ۳ فایل تست و ۱۴ تست هدفمند پاس
+- typecheck API و Web: پاس پس از build قرارداد عمومی و Prisma Generate با URL synthetic
+- lint API و Web: پاس
+- تست کامل Monorepo: ۹ Task و ۱۵۶ تست پاس
+- Production Build: ۶ Task پاس؛ ۲۵ Route شامل Customer Affairs و Customer 360
+- هیچ Migration، Seed، Controller، Repository، Persistence، manifest، lockfile یا فایل
+  مرکزی تغییر نکرد.
+- هدف عملکرد UI داخلی: LCP حداکثر ۲۵۰۰ms، INP حداکثر ۲۰۰ms، CLS حداکثر ۰٫۱ در p75؛
+  بودجه افزوده JavaScript حداکثر ۸۰KB gzip و امتیاز accessibility حداقل ۹۰.
+
+### موارد مسدود برای Persistence
+
+Persistence همچنان به مدل/قفل Migration، تصمیم Audit/Retention، انتشار Permission در
+IAM، پذیرش Contract مشترک، پیاده‌سازی Controller/Repository و هماهنگی صریح با مالکان
+Customers، Sales و Reservations وابسته است. تا آن زمان هیچ Lead، Ticket، Handoff،
+Satisfaction یا Event واقعی ذخیره یا منتشر نمی‌شود.
