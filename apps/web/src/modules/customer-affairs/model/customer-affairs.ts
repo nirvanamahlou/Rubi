@@ -42,6 +42,7 @@ export interface PreviewLead {
 
 export interface PreviewTicket {
   id: string;
+  trackingNumber: string;
   subject: string;
   category: string;
   priority: Priority;
@@ -63,7 +64,15 @@ export interface PreviewTicket {
 
 export interface ActivityPreview {
   id: string;
-  type: 'تماس' | 'پیام' | 'جلسه' | 'یادداشت' | 'تغییر وضعیت';
+  type:
+    | 'تماس'
+    | 'پیام'
+    | 'جلسه'
+    | 'یادداشت'
+    | 'تغییر وضعیت'
+    | 'تخصیص'
+    | 'Escalation'
+    | 'رضایت';
   title: string;
   at: string;
   actor: string;
@@ -205,6 +214,7 @@ export const previewLeads: readonly PreviewLead[] = [
 export const previewTickets: readonly PreviewTicket[] = [
   {
     id: 'preview-ticket-001',
+    trackingNumber: 'PREVIEW-CA-1405-0001',
     subject: 'پیگیری نمایشی واچر هتل',
     category: 'مشکل هتل یا واچر',
     priority: 'URGENT',
@@ -225,6 +235,7 @@ export const previewTickets: readonly PreviewTicket[] = [
   },
   {
     id: 'preview-ticket-002',
+    trackingNumber: 'PREVIEW-CA-1405-0002',
     subject: 'درخواست نمایشی استرداد',
     category: 'استرداد',
     priority: 'HIGH',
@@ -245,6 +256,7 @@ export const previewTickets: readonly PreviewTicket[] = [
   },
   {
     id: 'preview-ticket-003',
+    trackingNumber: 'PREVIEW-CA-1405-0003',
     subject: 'اصلاح نمایشی مشخصات خدمت',
     category: 'اصلاح مشخصات',
     priority: 'NORMAL',
@@ -265,6 +277,7 @@ export const previewTickets: readonly PreviewTicket[] = [
   },
   {
     id: 'preview-ticket-004',
+    trackingNumber: 'PREVIEW-CA-1405-0004',
     subject: 'مشکل نمایشی بیمه',
     category: 'بیمه',
     priority: 'LOW',
@@ -309,6 +322,30 @@ export const previewTimeline: readonly ActivityPreview[] = [
     at: 'امروز، ۱۰:۰۰',
     actor: 'سامانه Preview',
     internal: true,
+  },
+  {
+    id: 'preview-activity-004',
+    type: 'تخصیص',
+    title: 'Ticket به کارشناس پشتیبانی نمونه تخصیص یافت',
+    at: 'امروز، ۱۰:۱۰',
+    actor: 'سرپرست نمونه',
+    internal: true,
+  },
+  {
+    id: 'preview-activity-005',
+    type: 'Escalation',
+    title: 'نزدیکی نقض SLA به سطح دوم ارجاع شد',
+    at: 'امروز، ۱۰:۲۰',
+    actor: 'SLA Policy Preview',
+    internal: true,
+  },
+  {
+    id: 'preview-activity-006',
+    type: 'رضایت',
+    title: 'امتیاز synthetic پس از حل Ticket ثبت شد',
+    at: 'دیروز، ۱۶:۰۰',
+    actor: 'Customer Survey Preview',
+    internal: false,
   },
 ];
 
@@ -370,6 +407,31 @@ export function paginatePreview<T>(
   return records.slice(start, start + pageSize);
 }
 
+export interface SalesHandoffPreview {
+  contractVersion: 'customer-affairs.sales-handoff.v1-proposal';
+  eventType: 'SalesHandoffRequested';
+  persisted: false;
+  leadId: string;
+  travelNeed: string;
+  destination: string;
+  passengerCount: number;
+  customerReference: null;
+}
+
+export function buildSalesHandoffPreview(
+  lead: PreviewLead,
+): SalesHandoffPreview {
+  return {
+    contractVersion: 'customer-affairs.sales-handoff.v1-proposal',
+    eventType: 'SalesHandoffRequested',
+    persisted: false,
+    leadId: lead.id,
+    travelNeed: lead.travelNeed,
+    destination: lead.destination,
+    passengerCount: lead.passengerCount,
+    customerReference: null,
+  };
+}
 export function validateCustomerAffairsDraft(draft: CustomerAffairsDraft) {
   const errors: Partial<Record<keyof CustomerAffairsDraft, string>> = {};
   if (draft.title.trim().length < 3)

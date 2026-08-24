@@ -1,5 +1,7 @@
 'use client';
 
+import type { CustomerSummary } from '@rubi/contracts';
+
 import {
   AlertTriangle,
   ArrowUpLeft,
@@ -56,6 +58,7 @@ import {
   PaginationShell,
   Skeleton,
 } from '@/components/ui/surfaces';
+import { CustomerPicker } from './customer-picker';
 import {
   CUSTOMER_AFFAIRS_PREVIEW_NOTICE,
   CUSTOMER_AFFAIRS_UI_VERSION,
@@ -64,6 +67,7 @@ import {
   type CustomerAffairsPreviewState,
 } from '../api/contracts';
 import {
+  buildSalesHandoffPreview,
   filterPreviewRecords,
   leadStageLabels,
   paginatePreview,
@@ -233,6 +237,8 @@ function PreviewForm({
     Partial<Record<keyof CustomerAffairsDraft, string>>
   >({});
   const [validated, setValidated] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] =
+    useState<CustomerSummary | null>(null);
   const readonly = mode === 'view';
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -264,6 +270,11 @@ function PreviewForm({
           </Badge>
         </div>
         <form className="mt-6 space-y-4" onSubmit={submit}>
+          <CustomerPicker
+            disabled={readonly}
+            onSelect={setSelectedCustomer}
+            selected={selectedCustomer}
+          />
           <FormField
             {...(errors.title ? { error: errors.title } : {})}
             id="customer-affairs-title"
@@ -368,6 +379,7 @@ function PreviewForm({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="QUESTION">سؤال</SelectItem>
                     <SelectItem value="COMPLAINT">شکایت</SelectItem>
                     <SelectItem value="PROFILE_CORRECTION">
                       اصلاح مشخصات
@@ -380,6 +392,7 @@ function PreviewForm({
                     <SelectItem value="ADDITIONAL_SERVICE">
                       خدمات تکمیلی
                     </SelectItem>
+                    <SelectItem value="SERVICE_ISSUE">مشکل خدمات</SelectItem>
                   </SelectContent>
                 </Select>
               </FormField>
@@ -433,6 +446,10 @@ function PreviewForm({
                   readOnly={readonly}
                 />
               </FormField>
+              <Alert
+                description="Contract، Reservation، Ticket، Voucher و Insurance فقط به‌صورت reference پیشنهادی و بدون Mutation نگهداری می‌شوند."
+                title="ارتباط آینده با فروش و رزرواسیون"
+              />
               <FormField id="ticket-response-due" label="موعد اولین پاسخ">
                 <Input
                   defaultValue={mode === 'create' ? '' : '2026-08-25T09:00'}
@@ -451,6 +468,58 @@ function PreviewForm({
                   type="datetime-local"
                 />
               </FormField>
+              <FormField id="ticket-tracking-number" label="شماره پیگیری">
+                <Input
+                  defaultValue={
+                    mode === 'create'
+                      ? 'پس از ثبت واقعی صادر می‌شود'
+                      : 'PREVIEW-CA-1405-0001'
+                  }
+                  disabled
+                  id="ticket-tracking-number"
+                  readOnly
+                />
+              </FormField>
+              <FormField id="ticket-satisfaction" label="امتیاز رضایت مشتری">
+                <Select defaultValue="NOT_RECORDED" disabled={readonly}>
+                  <SelectTrigger aria-label="امتیاز رضایت مشتری">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NOT_RECORDED">ثبت نشده</SelectItem>
+                    <SelectItem value="1">۱ از ۵</SelectItem>
+                    <SelectItem value="2">۲ از ۵</SelectItem>
+                    <SelectItem value="3">۳ از ۵</SelectItem>
+                    <SelectItem value="4">۴ از ۵</SelectItem>
+                    <SelectItem value="5">۵ از ۵</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormField>
+              <FormField id="ticket-resolution-outcome" label="نتیجه نهایی">
+                <Textarea
+                  defaultValue={
+                    mode === 'create' ? '' : 'نتیجه synthetic برای Preview'
+                  }
+                  disabled={readonly}
+                  id="ticket-resolution-outcome"
+                  readOnly={readonly}
+                />
+              </FormField>
+              <FormField id="ticket-close-reason" label="علت بسته‌شدن">
+                <Input
+                  defaultValue={
+                    mode === 'create' ? '' : 'حل کامل درخواست نمایشی'
+                  }
+                  disabled={readonly}
+                  id="ticket-close-reason"
+                  readOnly={readonly}
+                />
+              </FormField>
+              <Alert
+                description="فقط برای Ticket حل‌شده یا بسته، با Permission مستقل، علت مستند، کنترل نسخه و سقف دفعات مجاز است؛ در Preview هیچ Mutation اجرا نمی‌شود."
+                title="بازگشایی کنترل‌شده Ticket"
+                tone="warning"
+              />
             </div>
           )}
           <FormField
@@ -786,6 +855,10 @@ function LeadWorkspace({
   const [query, setQuery] = useState(() =>
     normalizeCustomerAffairsQuery({ pageSize: 2 }),
   );
+  const [showHandoff, setShowHandoff] = useState(false);
+  const handoffPreview = buildSalesHandoffPreview(
+    previewLeads.find((lead) => lead.stage === 'QUALIFIED') ?? previewLeads[0]!,
+  );
   const results = useMemo(
     () => filterPreviewRecords(previewLeads, query),
     [query],
@@ -811,13 +884,13 @@ function LeadWorkspace({
             Preview
           </Badge>
         </div>
-        <div className="grid gap-3 overflow-x-auto pb-2 sm:grid-cols-2 xl:grid-cols-6">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
           {stages.map(([stage, label]) => {
             const stageLeads = previewLeads.filter(
               (lead) => lead.stage === stage,
             );
             return (
-              <Card className="min-w-52 bg-muted/20 p-3" key={stage}>
+              <Card className="min-w-0 bg-muted/20 p-3" key={stage}>
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-bold">{label}</h3>
                   <Badge>{stageLeads.length.toLocaleString('fa-IR')}</Badge>
@@ -891,10 +964,40 @@ function LeadWorkspace({
             فقط CustomerReference و SalesRequestReference پیشنهادی ساخته می‌شود؛
             Customer، قرارداد یا رزرو خودکار ایجاد نمی‌شود.
           </p>
-          <Button className="mt-5" disabled type="button">
+          <Button
+            aria-expanded={showHandoff}
+            className="mt-5"
+            onClick={() => setShowHandoff((current) => !current)}
+            type="button"
+            variant="outline"
+          >
             <ArrowUpLeft aria-hidden="true" className="size-4" />
-            Persistence/Integration مسدود است
+            ساخت Handoff Contract پیشنهادی
           </Button>
+          {showHandoff ? (
+            <dl className="mt-4 grid gap-2 rounded-xl border border-border bg-muted/30 p-3 text-xs">
+              <div className="flex justify-between gap-3">
+                <dt>Contract</dt>
+                <dd dir="ltr">{handoffPreview.contractVersion}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt>Event</dt>
+                <dd dir="ltr">{handoffPreview.eventType}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt>Lead</dt>
+                <dd dir="ltr">{handoffPreview.leadId}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt>Passenger count</dt>
+                <dd>{handoffPreview.passengerCount.toLocaleString('fa-IR')}</dd>
+              </div>
+              <div className="flex justify-between gap-3 font-bold text-amber-700">
+                <dt>وضعیت</dt>
+                <dd>ذخیره‌نشده · Mutation اجرا نشد</dd>
+              </div>
+            </dl>
+          ) : null}
         </Card>
       </div>
     </div>
@@ -923,7 +1026,10 @@ function TicketCard({
             <Badge>{ticket.category}</Badge>
             <Badge className={slaTone}>{slaLabels[ticket.slaState]}</Badge>
           </div>
-          <h3 className="mt-3 font-bold">{ticket.subject}</h3>
+          <p className="mt-3 font-mono text-xs text-primary" dir="ltr">
+            {ticket.trackingNumber}
+          </p>
+          <h3 className="mt-1 font-bold">{ticket.subject}</h3>
           <p className="mt-1 text-xs text-muted-foreground">
             {ticket.customerReference} · {ticket.salesReference}
           </p>
@@ -1079,8 +1185,12 @@ export function CustomerAffairsWorkspace() {
   const openTickets = previewTickets.filter(
     (ticket) => ticket.status !== 'RESOLVED',
   ).length;
-  const qualifiedLeads = previewLeads.filter(
-    (lead) => lead.stage === 'QUALIFIED',
+  const newLeads = previewLeads.filter((lead) => lead.stage === 'NEW').length;
+  const todayFollowUps = previewLeads.filter((lead) =>
+    lead.nextActionAt.includes('امروز'),
+  ).length;
+  const slaAtRisk = previewTickets.filter(
+    (ticket) => ticket.slaState === 'AT_RISK',
   ).length;
   return (
     <main className="space-y-6" dir="rtl">
@@ -1119,24 +1229,24 @@ export function CustomerAffairsWorkspace() {
       >
         <SummaryCard
           icon={Users}
-          label="Leadهای فعال Preview"
-          value={previewLeads.length.toLocaleString('fa-IR')}
+          label="Leadهای جدید"
+          value={newLeads.toLocaleString('fa-IR')}
         />
         <SummaryCard
           icon={Sparkles}
-          label="واجد شرایط برای پیشنهاد"
-          value={qualifiedLeads.toLocaleString('fa-IR')}
+          label="پیگیری‌های امروز"
+          value={todayFollowUps.toLocaleString('fa-IR')}
         />
         <SummaryCard
           icon={Headphones}
-          label="Ticketهای باز Preview"
+          label="Ticketهای باز"
           value={openTickets.toLocaleString('fa-IR')}
         />
         <SummaryCard
           icon={CalendarClock}
-          label="موارد عقب‌افتاده"
+          label="SLAهای نزدیک نقض"
           tone="danger"
-          value={overdueCount.toLocaleString('fa-IR')}
+          value={slaAtRisk.toLocaleString('fa-IR')}
         />
       </section>
       {overdueCount ? (

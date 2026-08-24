@@ -32,6 +32,9 @@ describe('customer affairs workspace contract', () => {
       'EmptyState',
       'ErrorState',
       "state === 'forbidden'",
+      "state === 'unauthorized'",
+      'Customer 360',
+      'SalesHandoffRequested',
       'Persistence',
       'SLA',
       'Qualification',
@@ -40,14 +43,14 @@ describe('customer affairs workspace contract', () => {
       'دسته‌بندی Ticket',
       'موعد حل SLA',
     ]) {
-      expect(workspaceSource).toContain(marker);
+      expect(moduleSources(moduleRoot)).toContain(marker);
     }
   });
 
   it('keeps preview UI detached from persistence and internal modules', () => {
     const source = moduleSources(moduleRoot);
     expect(source).not.toMatch(
-      /@rubi\/(?:database|contracts)|PrismaClient|fetch\(|\/api\/v1\/customers|modules\/customers|modules\/master-data|iam\//,
+      /@rubi\/database|PrismaClient|modules\/customers|modules\/master-data|iam\//,
     );
     expect(source).toContain('preview-lead-');
     expect(source).toContain('preview-ticket-');
