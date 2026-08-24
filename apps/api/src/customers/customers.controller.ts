@@ -18,6 +18,8 @@ import { AuthGuard } from '../iam/auth.guard';
 import { RequirePermissions } from '../iam/iam.decorators';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { PermissionGuard } from '../iam/permission.guard';
+// Runtime imports are required for Nest emitDecoratorMetadata and ValidationPipe.
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import {
   CustomerAddressDto,
   CustomerCompanionDto,
@@ -96,8 +98,12 @@ export class CustomersController {
 
   @Get(':id')
   @RequirePermissions('customers.read')
-  detail(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
-    return this.service.detail(id, request.actor);
+  detail(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-request-id') traceId?: string,
+  ) {
+    return this.service.detail(id, request.actor, traceId);
   }
 
   @Patch(':id')
@@ -129,8 +135,9 @@ export class CustomersController {
   async contacts(
     @Param('id') id: string,
     @Req() request: AuthenticatedRequest,
+    @Headers('x-request-id') traceId?: string,
   ) {
-    const { data } = await this.service.detail(id, request.actor);
+    const { data } = await this.service.detail(id, request.actor, traceId);
     return { data: data.contacts, version: data.version };
   }
 
@@ -152,7 +159,7 @@ export class CustomersController {
     @Param('id') id: string,
     @Req() request: AuthenticatedRequest,
   ) {
-    const { data } = await this.service.detail(id, request.actor);
+    const { data } = await this.service.maskedDetail(id, request.actor);
     return { data: data.addresses, version: data.version };
   }
 
@@ -174,7 +181,7 @@ export class CustomersController {
     @Param('id') id: string,
     @Req() request: AuthenticatedRequest,
   ) {
-    const { data } = await this.service.detail(id, request.actor);
+    const { data } = await this.service.maskedDetail(id, request.actor);
     return { data: data.companions, version: data.version };
   }
 

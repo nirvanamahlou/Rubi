@@ -1,4 +1,4 @@
-import type { CustomerMutationRequest } from '@rubi/contracts';
+import type { CustomerContact, CustomerMutationRequest } from '@rubi/contracts';
 
 export type CustomerUiState =
   | 'loading'
@@ -40,4 +40,11 @@ export function validateCustomerMutation(input: CustomerMutationRequest) {
     errors.organizationId = 'Organization الزامی است.';
   if (!input.roles.length) errors.roles = 'حداقل یک نقش لازم است.';
   return { valid: Object.keys(errors).length === 0, errors };
+}
+
+export function contactDisplayValue(
+  contact: CustomerContact,
+  revealed: boolean,
+): string {
+  return revealed && contact.value ? contact.value : contact.maskedValue;
 }

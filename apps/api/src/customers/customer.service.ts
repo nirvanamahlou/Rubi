@@ -1,5 +1,3 @@
-import { createHash } from 'node:crypto';
-
 import {
   BadRequestException,
   ConflictException,
@@ -22,7 +20,9 @@ import type {
 } from '@rubi/contracts';
 import { CustomerKind } from '@rubi/database';
 
+import { CustomerContactCrypto } from './customer-contact.crypto';
 import {
+  type CustomerRow,
   CustomerRepository,
   toCustomerDetail,
   toCustomerSummary,
@@ -93,10 +93,7 @@ function normalizeContact(type: 'phone' | 'email', value: string) {
       : normalized.length < 7
         ? '••••'
         : `${normalized.slice(0, 4)}•••${normalized.slice(-3)}`;
-  return {
-    valueHash: createHash('sha256').update(normalized, 'utf8').digest('hex'),
-    maskedValue,
-  };
+  return { normalized, maskedValue };
 }
 
 function duplicateDto(row: {
@@ -133,7 +130,38 @@ function duplicateDto(row: {
 export class CustomerService {
   constructor(
     @Inject(CustomerRepository) private readonly repository: CustomerRepository,
+    @Inject(CustomerContactCrypto)
+    private readonly contactCrypto: CustomerContactCrypto,
   ) {}
+
+  private async present(
+    row: CustomerRow,
+    actor: AuthenticatedActor,
+    traceId?: string,
+  ) {
+    const sensitive = actor.permissions.includes('customers.sensitive.read');
+    const detail = toCustomerDetail(row, sensitive);
+    if (!sensitive) return detail;
+    const contacts = detail.contacts.map((contact, index) => ({
+      ...contact,
+      value: this.contactCrypto.decrypt(
+        row.contacts?.[index] ?? {
+          type: contact.type.toUpperCase() as 'PHONE' | 'EMAIL',
+          encryptedValue: null,
+          encryptionIv: null,
+          encryptionAuthTag: null,
+          encryptionKeyVersion: null,
+        },
+      ),
+    }));
+    await this.repository.auditSensitiveRead(
+      row.id,
+      actor.userId,
+      row.ownerBranchId,
+      traceId,
+    );
+    return { ...detail, contacts };
+  }
 
   async list(query: CustomerListQuery, actor: AuthenticatedActor) {
     const { rows, total } = await this.repository.list(actor.branchIds, query);
@@ -143,21 +171,25 @@ export class CustomerService {
     };
   }
 
-  async detail(id: string, actor: AuthenticatedActor) {
+  async detail(id: string, actor: AuthenticatedActor, traceId?: string) {
     const row = await this.repository.find(id, actor.branchIds);
     if (!row)
       throw new NotFoundException({
         code: 'CUSTOMER_NOT_FOUND',
         message: 'مشتری یافت نشد.',
       });
-    return {
-      data: toCustomerDetail(
-        row,
-        actor.permissions.includes('customers.sensitive.read'),
-      ),
-    };
+    return { data: await this.present(row, actor, traceId) };
   }
 
+  async maskedDetail(id: string, actor: AuthenticatedActor) {
+    const row = await this.repository.find(id, actor.branchIds);
+    if (!row)
+      throw new NotFoundException({
+        code: 'CUSTOMER_NOT_FOUND',
+        message: 'مشتری یافت نشد.',
+      });
+    return { data: toCustomerDetail(row, false) };
+  }
   async create(
     input: CustomerMutationRequest,
     actor: AuthenticatedActor,
@@ -170,12 +202,7 @@ export class CustomerService {
       branchOf(actor, requestedBranch),
       traceId,
     );
-    return {
-      data: toCustomerDetail(
-        row,
-        actor.permissions.includes('customers.sensitive.read'),
-      ),
-    };
+    return { data: await this.present(row, actor, traceId) };
   }
 
   async update(
@@ -197,12 +224,7 @@ export class CustomerService {
       traceId,
     );
     if (!row) throw conflict();
-    return {
-      data: toCustomerDetail(
-        row,
-        actor.permissions.includes('customers.sensitive.read'),
-      ),
-    };
+    return { data: await this.present(row, actor, traceId) };
   }
 
   async status(
@@ -223,12 +245,7 @@ export class CustomerService {
       traceId,
     );
     if (!row) throw conflict();
-    return {
-      data: toCustomerDetail(
-        row,
-        actor.permissions.includes('customers.sensitive.read'),
-      ),
-    };
+    return { data: await this.present(row, actor, traceId) };
   }
 
   async addContact(
@@ -238,6 +255,7 @@ export class CustomerService {
     requestedBranch?: string,
     traceId?: string,
   ) {
+    const normalizedContact = normalizeContact(input.type, input.value);
     const row = await this.repository.addContact(
       id,
       actor.branchIds,
@@ -246,19 +264,18 @@ export class CustomerService {
         label: input.label ?? null,
         isPrimary: input.isPrimary ?? false,
         version: input.version,
-        ...normalizeContact(input.type, input.value),
+        ...this.contactCrypto.protect(
+          input.type,
+          normalizedContact.normalized,
+          normalizedContact.maskedValue,
+        ),
       },
       actor.userId,
       branchOf(actor, requestedBranch),
       traceId,
     );
     if (!row) throw conflict();
-    return {
-      data: toCustomerDetail(
-        row,
-        actor.permissions.includes('customers.sensitive.read'),
-      ),
-    };
+    return { data: await this.present(row, actor, traceId) };
   }
 
   async addAddress(
@@ -277,12 +294,7 @@ export class CustomerService {
       traceId,
     );
     if (!row) throw conflict();
-    return {
-      data: toCustomerDetail(
-        row,
-        actor.permissions.includes('customers.sensitive.read'),
-      ),
-    };
+    return { data: await this.present(row, actor, traceId) };
   }
 
   async addConsent(
@@ -301,12 +313,7 @@ export class CustomerService {
       traceId,
     );
     if (!row) throw conflict();
-    return {
-      data: toCustomerDetail(
-        row,
-        actor.permissions.includes('customers.sensitive.read'),
-      ),
-    };
+    return { data: await this.present(row, actor, traceId) };
   }
 
   async addCompanion(
@@ -339,12 +346,7 @@ export class CustomerService {
       traceId,
     );
     if (!row) throw conflict();
-    return {
-      data: toCustomerDetail(
-        row,
-        actor.permissions.includes('customers.sensitive.read'),
-      ),
-    };
+    return { data: await this.present(row, actor, traceId) };
   }
 
   async detectDuplicates(
@@ -353,10 +355,10 @@ export class CustomerService {
     requestedBranch?: string,
     traceId?: string,
   ) {
-    const inputs = await this.repository.duplicateInputs(
-      sourceCustomerId,
-      actor.branchIds,
-    );
+    const branchId = branchOf(actor, requestedBranch);
+    const inputs = await this.repository.duplicateInputs(sourceCustomerId, [
+      branchId,
+    ]);
     if (!inputs)
       throw new NotFoundException({
         code: 'CUSTOMER_NOT_FOUND',
@@ -365,14 +367,17 @@ export class CustomerService {
     const sourceName =
       `${inputs.source.firstName ?? ''}|${inputs.source.lastName ?? ''}`.toLowerCase();
     const sourceHashes = new Set(
-      inputs.source.contacts.map(({ valueHash }) => valueHash),
+      inputs.source.contacts.map(({ valueFingerprint }) => valueFingerprint),
     );
     const results: DuplicateCandidate[] = [];
     for (const candidate of inputs.candidates) {
       let score = 0;
       const reasons: string[] = [];
       if (
-        candidate.contacts.some(({ valueHash }) => sourceHashes.has(valueHash))
+        candidate.contacts.some(
+          ({ valueFingerprint }) =>
+            Boolean(valueFingerprint) && sourceHashes.has(valueFingerprint),
+        )
       ) {
         score += 60;
         reasons.push('تماس یکسان');
@@ -397,7 +402,7 @@ export class CustomerService {
       const saved = await this.repository.saveDuplicateCandidate(
         { sourceCustomerId, candidateCustomerId: candidate.id, score, reasons },
         actor.userId,
-        branchOf(actor, requestedBranch),
+        branchId,
         traceId,
       );
       results.push(duplicateDto(saved));
@@ -412,14 +417,15 @@ export class CustomerService {
     requestedBranch?: string,
     traceId?: string,
   ) {
+    const branchId = branchOf(actor, requestedBranch);
     const row = await this.repository.reviewDuplicate(
       id,
-      actor.branchIds,
+      [branchId],
       input.status,
       input.reason.trim(),
       input.version,
       actor.userId,
-      branchOf(actor, requestedBranch),
+      branchId,
       traceId,
     );
     if (!row) throw conflict();

@@ -4,6 +4,7 @@ import type {
   CustomerMutationRequest,
 } from '@rubi/contracts';
 import { describe, expect, it, vi } from 'vitest';
+import type { CustomerContactCrypto } from './customer-contact.crypto';
 import type { CustomerRepository } from './customer.repository';
 import { CustomerService } from './customer.service';
 
@@ -20,6 +21,31 @@ const actor: AuthenticatedActor = {
   branchIds: ['33333333-3333-4333-8333-333333333333'],
 };
 
+const protectedContact = {
+  encryptedValue: 'encrypted-contact',
+  encryptionIv: 'iv-base64-value',
+  encryptionAuthTag: 'auth-tag-base64-value',
+  encryptionKeyVersion: 1,
+  maskedValue: '0000•••000',
+  valueFingerprint: 'f'.repeat(64),
+  valueHash: 'f'.repeat(64),
+};
+
+function createService(
+  repository: CustomerRepository,
+  cryptoOverrides: Partial<CustomerContactCrypto> = {},
+) {
+  const contactCrypto = {
+    protect: vi.fn().mockReturnValue(protectedContact),
+    decrypt: vi.fn().mockReturnValue('0000000000'),
+    fingerprint: vi.fn().mockReturnValue('f'.repeat(64)),
+    ...cryptoOverrides,
+  } as unknown as CustomerContactCrypto;
+  return {
+    service: new CustomerService(repository, contactCrypto),
+    contactCrypto,
+  };
+}
 const mutation: CustomerMutationRequest = {
   kind: 'person',
   firstName: 'نمونه',
@@ -54,7 +80,7 @@ const row = {
 describe('CustomerService', () => {
   it('enforces branch context on mutations', async () => {
     const repository = { create: vi.fn() } as unknown as CustomerRepository;
-    const service = new CustomerService(repository);
+    const { service } = createService(repository);
     await expect(
       service.create(mutation, { ...actor, branchIds: [] }),
     ).rejects.toBeInstanceOf(ForbiddenException);
@@ -65,7 +91,7 @@ describe('CustomerService', () => {
     const repository = {
       update: vi.fn().mockResolvedValue(null),
     } as unknown as CustomerRepository;
-    const service = new CustomerService(repository);
+    const { service } = createService(repository);
     const operation = service.update(
       row.id,
       { ...mutation, version: 1 },
@@ -82,7 +108,7 @@ describe('CustomerService', () => {
     const repository = {
       addContact: vi.fn().mockResolvedValue(row),
     } as unknown as CustomerRepository;
-    const service = new CustomerService(repository);
+    const { service } = createService(repository);
     await service.addContact(
       row.id,
       { type: 'phone', value: '0000000000', isPrimary: true, version: 1 },
@@ -90,42 +116,40 @@ describe('CustomerService', () => {
     );
     const persisted = vi.mocked(repository.addContact).mock.calls[0]?.[2];
     expect(persisted).toMatchObject({ maskedValue: '0000•••000' });
+    expect(persisted?.valueFingerprint).toHaveLength(64);
     expect(persisted?.valueHash).toHaveLength(64);
+    expect(persisted?.encryptedValue).toBe('encrypted-contact');
     expect(persisted).not.toHaveProperty('value');
   });
 
   it('masks birth date without sensitive permission and never auto-merges', async () => {
     const repository = {
       find: vi.fn().mockResolvedValue(row),
-      duplicateInputs: vi
-        .fn()
-        .mockResolvedValue({
-          source: { ...row, contacts: [{ valueHash: 'same' }] },
-          candidates: [
-            {
-              ...row,
-              id: '55555555-5555-4555-8555-555555555555',
-              contacts: [{ valueHash: 'same' }],
-            },
-          ],
-        }),
-      saveDuplicateCandidate: vi
-        .fn()
-        .mockResolvedValue({
-          id: '66666666-6666-4666-8666-666666666666',
-          sourceCustomerId: row.id,
-          candidateCustomerId: '55555555-5555-4555-8555-555555555555',
-          score: 100,
-          reasons: ['تماس یکسان'],
-          reviewStatus: 'PENDING',
-          reviewReason: null,
-          version: 1,
-          reviewedAt: null,
-          createdAt: row.createdAt,
-          candidateCustomer: { displayName: 'کاندیدای ساختگی' },
-        }),
+      duplicateInputs: vi.fn().mockResolvedValue({
+        source: { ...row, contacts: [{ valueFingerprint: 'same' }] },
+        candidates: [
+          {
+            ...row,
+            id: '55555555-5555-4555-8555-555555555555',
+            contacts: [{ valueFingerprint: 'same' }],
+          },
+        ],
+      }),
+      saveDuplicateCandidate: vi.fn().mockResolvedValue({
+        id: '66666666-6666-4666-8666-666666666666',
+        sourceCustomerId: row.id,
+        candidateCustomerId: '55555555-5555-4555-8555-555555555555',
+        score: 100,
+        reasons: ['تماس یکسان'],
+        reviewStatus: 'PENDING',
+        reviewReason: null,
+        version: 1,
+        reviewedAt: null,
+        createdAt: row.createdAt,
+        candidateCustomer: { displayName: 'کاندیدای ساختگی' },
+      }),
     } as unknown as CustomerRepository;
-    const service = new CustomerService(repository);
+    const { service } = createService(repository);
     await expect(service.detail(row.id, actor)).resolves.toMatchObject({
       data: { birthDate: null, birthDateMasked: true },
     });
@@ -135,5 +159,52 @@ describe('CustomerService', () => {
       data: [{ score: 100, reviewStatus: 'pending' }],
       meta: { autoMergePerformed: false },
     });
+  });
+  it('decrypts contacts and audits access only with sensitive permission', async () => {
+    const encryptedRow = {
+      ...row,
+      contacts: [
+        {
+          id: '77777777-7777-4777-8777-777777777777',
+          type: 'PHONE',
+          label: null,
+          maskedValue: '0000•••000',
+          encryptedValue: 'encrypted-contact',
+          encryptionIv: 'iv-base64-value',
+          encryptionAuthTag: 'auth-tag-base64-value',
+          encryptionKeyVersion: 1,
+          valueFingerprint: 'f'.repeat(64),
+          isPrimary: true,
+          verifiedAt: null,
+          createdAt: row.createdAt,
+        },
+      ],
+    };
+    const repository = {
+      find: vi.fn().mockResolvedValue(encryptedRow),
+      auditSensitiveRead: vi.fn().mockResolvedValue(undefined),
+    } as unknown as CustomerRepository;
+    const { service, contactCrypto } = createService(repository);
+
+    const masked = await service.detail(row.id, actor);
+    expect(masked.data.contacts[0]).toMatchObject({
+      maskedValue: '0000•••000',
+      value: null,
+    });
+    expect(contactCrypto.decrypt).not.toHaveBeenCalled();
+    expect(repository.auditSensitiveRead).not.toHaveBeenCalled();
+
+    const sensitive = await service.detail(row.id, {
+      ...actor,
+      permissions: [...actor.permissions, 'customers.sensitive.read'],
+    });
+    expect(sensitive.data.contacts[0]?.value).toBe('0000000000');
+    expect(contactCrypto.decrypt).toHaveBeenCalledTimes(1);
+    expect(repository.auditSensitiveRead).toHaveBeenCalledWith(
+      row.id,
+      actor.userId,
+      row.ownerBranchId,
+      undefined,
+    );
   });
 });

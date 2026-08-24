@@ -4,6 +4,7 @@ import {
   serializeCustomerListQuery,
 } from '../api/contracts';
 import {
+  contactDisplayValue,
   customerPermissionCodes,
   customerUiStates,
   validateCustomerMutation,
@@ -56,5 +57,22 @@ describe('customer frontend live contract', () => {
         roles: ['customer'],
       }).errors,
     ).toHaveProperty('organizationId');
+  });
+  it('keeps real contacts hidden until an authorized user explicitly reveals them', () => {
+    const contact = {
+      id: 'synthetic-contact',
+      type: 'phone' as const,
+      label: null,
+      maskedValue: '0000•••000',
+      value: '0000000000',
+      isPrimary: true,
+      verifiedAt: null,
+      createdAt: '2026-08-24T00:00:00.000Z',
+    };
+    expect(contactDisplayValue(contact, false)).toBe('0000•••000');
+    expect(contactDisplayValue(contact, true)).toBe('0000000000');
+    expect(contactDisplayValue({ ...contact, value: null }, true)).toBe(
+      '0000•••000',
+    );
   });
 });

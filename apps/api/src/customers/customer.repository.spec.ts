@@ -71,6 +71,11 @@ describe('CustomerRepository', () => {
     ]);
     expect(results.filter(Boolean)).toHaveLength(1);
     expect(audit.create).toHaveBeenCalledTimes(1);
+    const snapshot = JSON.stringify(audit.create.mock.calls[0]?.[0]);
+    expect(snapshot).not.toContain('نمونه');
+    expect(snapshot).not.toContain('آزمایشی');
+    expect(snapshot).not.toContain('1990-01-01');
+    expect(snapshot).toContain('changedFields');
   });
 
   it('masks restricted birth date unless permission was granted upstream', () => {
@@ -79,5 +84,43 @@ describe('CustomerRepository', () => {
       birthDateMasked: true,
     });
     expect(toCustomerDetail(row as never, true).birthDate).toBe('1990-01-01');
+  });
+  it('queries duplicate candidates with branch isolation, indexed fingerprints and a hard limit', async () => {
+    const customer = {
+      findFirst: vi.fn().mockResolvedValue({
+        id: row.id,
+        firstName: row.firstName,
+        lastName: row.lastName,
+        birthDate: row.birthDate,
+        contacts: [{ valueFingerprint: 'f'.repeat(64) }],
+      }),
+      findMany: vi.fn().mockResolvedValue([]),
+    };
+    const database = { client: { customer } } as unknown as DatabaseService;
+    const repository = new CustomerRepository(database);
+    await repository.duplicateInputs(row.id, [row.ownerBranchId]);
+
+    expect(customer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: { not: row.id },
+          ownerBranchId: { in: [row.ownerBranchId] },
+          mergedIntoId: null,
+          OR: expect.arrayContaining([
+            {
+              contacts: {
+                some: { valueFingerprint: { in: ['f'.repeat(64)] } },
+              },
+            },
+          ]),
+        }),
+        take: 50,
+      }),
+    );
+    const query = customer.findMany.mock.calls[0]?.[0];
+    expect(query).not.toHaveProperty('include');
+    expect(query.where).not.toEqual({
+      ownerBranchId: { in: [row.ownerBranchId] },
+    });
   });
 });

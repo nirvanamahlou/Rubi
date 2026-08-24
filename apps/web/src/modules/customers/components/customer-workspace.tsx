@@ -58,6 +58,7 @@ import {
   Skeleton,
 } from '@/components/ui/surfaces';
 import { customersApi, CustomersApiError } from '../api/client';
+import { contactDisplayValue } from '../model/customer';
 
 const pageSize = 25;
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
@@ -94,6 +95,9 @@ function CustomerDrawer({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [contact, setContact] = useState('');
+  const [revealedContacts, setRevealedContacts] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [address, setAddress] = useState('');
   const [companionId, setCompanionId] = useState('');
   const [duplicates, setDuplicates] = useState<readonly DuplicateCandidate[]>(
@@ -412,16 +416,46 @@ function CustomerDrawer({
               <TabsTrigger value="duplicates">موارد مشابه</TabsTrigger>
             </TabsList>
             <TabsContent className="space-y-3" value="contacts">
-              {customer.contacts.map((item) => (
-                <Card className="p-3" key={item.id}>
-                  <p className="font-bold" dir="ltr">
-                    {item.maskedValue}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    مقدار خام در Database ذخیره نشده است.
-                  </p>
-                </Card>
-              ))}
+              {customer.contacts.map((item) => {
+                const revealed = revealedContacts.has(item.id);
+                return (
+                  <Card
+                    className="flex items-center justify-between gap-3 p-3"
+                    key={item.id}
+                  >
+                    <div>
+                      <p className="font-bold" dir="ltr">
+                        {contactDisplayValue(item, revealed)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        مقدار واقعی رمزگذاری شده و نمایش آن نیازمند دسترسی حساس
+                        است.
+                      </p>
+                    </div>
+                    {item.value ? (
+                      <Button
+                        aria-pressed={revealed}
+                        onClick={() =>
+                          setRevealedContacts((current) => {
+                            const next = new Set(current);
+                            if (next.has(item.id)) next.delete(item.id);
+                            else next.add(item.id);
+                            return next;
+                          })
+                        }
+                        size="sm"
+                        type="button"
+                        variant="outline"
+                      >
+                        <Eye className="size-4" />
+                        {revealed ? 'پنهان‌کردن' : 'نمایش کنترل‌شده'}
+                      </Button>
+                    ) : (
+                      <Badge>فقط مقدار ماسک‌شده</Badge>
+                    )}
+                  </Card>
+                );
+              })}
               <div className="flex gap-2">
                 <Input
                   onChange={(event) => setContact(event.target.value)}

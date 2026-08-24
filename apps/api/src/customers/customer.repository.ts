@@ -6,22 +6,28 @@ import type {
   CustomerListQuery,
   CustomerSummary,
 } from '@rubi/contracts';
-import type { Prisma } from '@rubi/database';
 import {
   AuditOutcome,
-  CustomerAddressType,
-  CustomerConsentChannel,
-  CustomerConsentPurpose,
-  CustomerConsentStatus,
-  CustomerContactType,
   CustomerDuplicateReviewStatus,
-  CustomerKind,
-  CustomerRelationshipType,
+  type CustomerAddressType,
+  type CustomerConsentChannel,
+  type CustomerConsentPurpose,
+  type CustomerConsentStatus,
+  type CustomerContactType,
+  type CustomerKind,
+  type CustomerRelationshipType,
+  type Prisma,
 } from '@rubi/database';
 
 import { DatabaseService } from '../database/database.service';
+import {
+  childAuditSnapshot,
+  controlledAuditReason,
+  customerAuditSnapshot,
+  duplicateAuditSnapshot,
+} from './customer-audit';
 
-interface CustomerRow {
+export interface CustomerRow {
   id: string;
   kind: CustomerKind;
   organizationId: string | null;
@@ -42,7 +48,11 @@ interface CustomerRow {
     type: CustomerContactType;
     label: string | null;
     maskedValue: string;
-    valueHash: string;
+    encryptedValue: string | null;
+    encryptionIv: string | null;
+    encryptionAuthTag: string | null;
+    encryptionKeyVersion: number | null;
+    valueFingerprint: string | null;
     isPrimary: boolean;
     verifiedAt: Date | null;
     createdAt: Date;
@@ -137,6 +147,7 @@ export function toCustomerDetail(
       type: lower(contact.type) as 'phone' | 'email',
       label: contact.label,
       maskedValue: contact.maskedValue,
+      value: null,
       isPrimary: contact.isPrimary,
       verifiedAt: contact.verifiedAt?.toISOString() ?? null,
       createdAt: contact.createdAt.toISOString(),
@@ -260,7 +271,7 @@ export class CustomerRepository {
           entityType: 'customer',
           entityId: row.id,
           outcome: AuditOutcome.SUCCESS,
-          afterSnapshot: json(row),
+          afterSnapshot: json(customerAuditSnapshot(row)),
           traceId: traceId ?? null,
         },
       });
@@ -304,8 +315,8 @@ export class CustomerRepository {
           entityType: 'customer',
           entityId: id,
           outcome: AuditOutcome.SUCCESS,
-          beforeSnapshot: json(before),
-          afterSnapshot: json(row),
+          beforeSnapshot: json(customerAuditSnapshot(before)),
+          afterSnapshot: json(customerAuditSnapshot(row, Object.keys(data))),
           traceId: traceId ?? null,
         },
       });
@@ -365,7 +376,7 @@ export class CustomerRepository {
           entityType: 'customer',
           entityId: id,
           outcome: AuditOutcome.SUCCESS,
-          reason,
+          reason: controlledAuditReason('status-reason-provided'),
           beforeSnapshot: json({
             isActive: before.isActive,
             version: before.version,
@@ -383,6 +394,11 @@ export class CustomerRepository {
     branchIds: readonly string[],
     input: Omit<CustomerContactRequest, 'value'> & {
       maskedValue: string;
+      encryptedValue: string;
+      encryptionIv: string;
+      encryptionAuthTag: string;
+      encryptionKeyVersion: number;
+      valueFingerprint: string;
       valueHash: string;
     },
     actorUserId: string,
@@ -412,6 +428,11 @@ export class CustomerRepository {
             type: input.type.toUpperCase() as CustomerContactType,
             label: input.label ?? null,
             maskedValue: input.maskedValue,
+            encryptedValue: input.encryptedValue,
+            encryptionIv: input.encryptionIv,
+            encryptionAuthTag: input.encryptionAuthTag,
+            encryptionKeyVersion: input.encryptionKeyVersion,
+            valueFingerprint: input.valueFingerprint,
             valueHash: input.valueHash,
             isPrimary: input.isPrimary ?? false,
             createdByUserId: actorUserId,
@@ -551,16 +572,55 @@ export class CustomerRepository {
         ownerBranchId: { in: [...branchIds] },
         mergedIntoId: null,
       },
-      include: { contacts: true },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        birthDate: true,
+        contacts: {
+          where: { valueFingerprint: { not: null } },
+          select: { valueFingerprint: true },
+        },
+      },
     });
     if (!source) return null;
+    const fingerprints = source.contacts
+      .map(({ valueFingerprint }) => valueFingerprint)
+      .filter((value): value is string => Boolean(value));
+    const matchRules: Prisma.CustomerWhereInput[] = [];
+    if (fingerprints.length)
+      matchRules.push({
+        contacts: {
+          some: { valueFingerprint: { in: fingerprints } },
+        },
+      });
+    if (source.firstName && source.lastName)
+      matchRules.push({
+        firstName: { equals: source.firstName, mode: 'insensitive' },
+        lastName: { equals: source.lastName, mode: 'insensitive' },
+      });
+    if (source.birthDate) matchRules.push({ birthDate: source.birthDate });
+    if (!matchRules.length) return { source, candidates: [] };
+
     const candidates = await this.database.client.customer.findMany({
       where: {
         id: { not: sourceCustomerId },
         ownerBranchId: { in: [...branchIds] },
         mergedIntoId: null,
+        OR: matchRules,
       },
-      include: { contacts: true },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        birthDate: true,
+        contacts: {
+          where: { valueFingerprint: { in: fingerprints } },
+          select: { valueFingerprint: true },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 50,
     });
     return { source, candidates };
   }
@@ -596,11 +656,14 @@ export class CustomerRepository {
           entityType: 'customer_duplicate_candidate',
           entityId: candidate.id,
           outcome: AuditOutcome.SUCCESS,
-          afterSnapshot: json({
-            score: candidate.score,
-            reasons: candidate.reasons,
-            autoMerged: false,
-          }),
+          afterSnapshot: json(
+            duplicateAuditSnapshot({
+              sourceCustomerId: candidate.sourceCustomerId,
+              candidateCustomerId: candidate.candidateCustomerId,
+              score: candidate.score,
+              reasons: candidate.reasons,
+            }),
+          ),
           traceId: traceId ?? null,
         },
       });
@@ -622,7 +685,14 @@ export class CustomerRepository {
       const before = await transaction.customerDuplicateCandidate.findFirst({
         where: {
           id,
-          sourceCustomer: { ownerBranchId: { in: [...branchIds] } },
+          sourceCustomer: {
+            ownerBranchId: { in: [...branchIds] },
+            mergedIntoId: null,
+          },
+          candidateCustomer: {
+            ownerBranchId: { in: [...branchIds] },
+            mergedIntoId: null,
+          },
         },
       });
       if (!before || before.version !== expectedVersion) return null;
@@ -652,17 +722,51 @@ export class CustomerRepository {
           entityType: 'customer_duplicate_candidate',
           entityId: id,
           outcome: AuditOutcome.SUCCESS,
-          reason,
-          beforeSnapshot: json(before),
-          afterSnapshot: json({
-            reviewStatus: row.reviewStatus,
-            version: row.version,
-            mergeExecuted: false,
-          }),
+          reason: controlledAuditReason('duplicate-review-reason-provided'),
+          beforeSnapshot: json(
+            duplicateAuditSnapshot({
+              sourceCustomerId: before.sourceCustomerId,
+              candidateCustomerId: before.candidateCustomerId,
+              reviewStatus: before.reviewStatus,
+              version: before.version,
+            }),
+          ),
+          afterSnapshot: json(
+            duplicateAuditSnapshot({
+              sourceCustomerId: row.sourceCustomerId,
+              candidateCustomerId: row.candidateCustomerId,
+              reviewStatus: row.reviewStatus,
+              version: row.version,
+            }),
+          ),
           traceId: traceId ?? null,
         },
       });
       return row;
+    });
+  }
+  async auditSensitiveRead(
+    customerId: string,
+    actorUserId: string,
+    actorBranchId: string,
+    traceId?: string,
+  ) {
+    await this.database.client.customerAuditEvent.create({
+      data: {
+        actorUserId,
+        actorBranchId,
+        action: 'customers.sensitive.read',
+        entityType: 'customer',
+        entityId: customerId,
+        outcome: AuditOutcome.SUCCESS,
+        reason: controlledAuditReason('permission-granted'),
+        afterSnapshot: json({
+          customerId,
+          fields: ['birthDate', 'contacts.value'],
+          outcome: 'displayed',
+        }),
+        traceId: traceId ?? null,
+      },
     });
   }
   private async childMutation(
@@ -698,7 +802,9 @@ export class CustomerRepository {
           entityType: 'customer',
           entityId: id,
           outcome: AuditOutcome.SUCCESS,
-          afterSnapshot: json(child),
+          afterSnapshot: json(
+            childAuditSnapshot(action, child as Record<string, unknown> | null),
+          ),
           traceId: traceId ?? null,
         },
       });
