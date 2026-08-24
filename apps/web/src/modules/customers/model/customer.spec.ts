@@ -1,59 +1,78 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeCustomerListQuery } from '../api/contracts';
 import {
+  normalizeCustomerListQuery,
+  serializeCustomerListQuery,
+} from '../api/contracts';
+import {
+  contactDisplayValue,
   customerPermissionCodes,
-  customerStateOptions,
-  filterPreviewCustomers,
-  previewCustomers,
-  validateCustomerDraft,
+  customerUiStates,
+  validateCustomerMutation,
 } from './customer';
 
-describe('customer frontend foundation', () => {
-  it('covers required UI states and published permissions', () => {
-    expect(customerStateOptions.map(([state]) => state)).toEqual([
-      'preview',
+describe('customer frontend live contract', () => {
+  it('covers operational and conflict states with published permissions', () => {
+    expect(customerUiStates).toEqual([
       'loading',
+      'ready',
       'empty',
       'error',
       'forbidden',
+      'success',
+      'conflict',
     ]);
-    expect(customerPermissionCodes).toEqual([
-      'customers.read',
-      'customers.create',
-      'customers.update',
-      'customers.merge',
-      'customers.consent.manage',
-      'customers.sensitive.read',
-    ]);
+    expect(customerPermissionCodes).toContain('customers.sensitive.read');
   });
-  it('normalizes pagination and filters preview records', () => {
+
+  it('normalizes and serializes server pagination and filters', () => {
     const query = normalizeCustomerListQuery({
       search: '  نمونه ۰۱ ',
       page: -3,
       pageSize: 500,
     });
-    expect(query).toMatchObject({ search: 'نمونه ۰۱', page: 1, pageSize: 100 });
-    expect(filterPreviewCustomers(previewCustomers, query)).toHaveLength(1);
+    expect(query).toMatchObject({
+      search: 'نمونه ۰۱',
+      page: 1,
+      pageSize: 100,
+      role: 'all',
+    });
+    expect(serializeCustomerListQuery(query)).toContain('pageSize=100');
   });
-  it('validates forms without submitting data', () => {
+
+  it('validates person, organization and role invariants before network submit', () => {
     expect(
-      validateCustomerDraft({
+      validateCustomerMutation({
+        kind: 'person',
         displayName: '',
         firstName: '',
         lastName: '',
-        primaryPhone: 'invalid',
-        email: 'invalid',
-        addressLabel: '',
+        roles: [],
       }).valid,
     ).toBe(false);
-  });
-  it('uses only synthetic ids and masked contacts', () => {
     expect(
-      previewCustomers.every(
-        (customer) =>
-          customer.id.startsWith('preview-') &&
-          customer.maskedContact.includes('•••'),
-      ),
-    ).toBe(true);
+      validateCustomerMutation({
+        kind: 'organization',
+        displayName: 'سازمان ساختگی',
+        organizationId: null,
+        roles: ['customer'],
+      }).errors,
+    ).toHaveProperty('organizationId');
+  });
+  it('keeps real contacts hidden until an authorized user explicitly reveals them', () => {
+    const contact = {
+      id: 'synthetic-contact',
+      type: 'phone' as const,
+      label: null,
+      maskedValue: '0000•••000',
+      value: '0000000000',
+      isPrimary: true,
+      verifiedAt: null,
+      createdAt: '2026-08-24T00:00:00.000Z',
+    };
+    expect(contactDisplayValue(contact, false)).toBe('0000•••000');
+    expect(contactDisplayValue(contact, true)).toBe('0000000000');
+    expect(contactDisplayValue({ ...contact, value: null }, true)).toBe(
+      '0000•••000',
+    );
   });
 });

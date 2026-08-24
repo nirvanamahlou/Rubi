@@ -125,17 +125,23 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - PR شماره ۱۵ با Merge Commit `ddfebb369de67cb7ff45bd15a06841d3251c945a` ادغام شد؛
   چهار قفل MASTER-002 در Handoff مستقل آزاد شدند.
 
-### `CUSTOMER-001` — PC-A — `IN_PROGRESS`
+### `CUSTOMER-001` — PC-A — `READY_FOR_REVIEW`
 
-- محدوده: مشتریان و مسافران، Customer 360، contact/address/consent، همراهان و Duplicate
-  Candidate Control.
 - فاز A با PR شماره ۱۶ و Merge Commit `9fb1cb33cef9bfbbb998d4e3ce823688e7700a31`
   به‌صورت `DONE/MERGED` تکمیل شد.
-- فاز B فقط دامنه Customers را پوشش می‌دهد و حق تغییر فایل‌های داخلی IAM یا Master Data
-  را ندارد؛ Master Data فقط از قرارداد عمومی `@rubi/contracts` مصرف می‌شود.
-- ذخیره مدارک هویتی حساس تا تصمیم قطعی PII ممنوع است. Duplicate auto-merge نیز ممنوع
-  می‌ماند و فقط Candidate Detection و Review دستی مجاز است.
-- نرخ ارز authoritative و تولید واقعی Excel/PDF خارج از این Handoff باقی می‌مانند.
+- فاز B از `9b96f6eabfe8aed8fe3377fd221fed43dd79d2eb` روی
+  `codex/pc-a-customer-persistence` پیاده‌سازی شد.
+- Migration اصلی Customers بدون تغییر حفظ شد و Migration افزایشی
+  `20260824113000_customer_contact_encryption_hardening` رمزنگاری AES-256-GCM،
+  HMAC-SHA-256 و indexهای fingerprint را اضافه کرد؛ قرارداد عمومی `customers.v2`،
+  permission/audit allowlist و Customer 360 متصل تکمیل شدند.
+- duplicate search به query محدود و branch-scoped با سقف ۵۰ کاندید تبدیل شد و reveal مقدار
+  Contact فقط با `customers.sensitive.read` و Audit مستقل انجام می‌شود.
+- lint، typecheck، build، migration deploy/status و Seed دوگانه پاس شدند؛ ۱۲۰ تست کل
+  Monorepo موفق بود و Dependency/Lockfile تغییر نکرد.
+- به‌دلیل بازبودن `DEC-OPEN-006` هیچ مدرک هویتی حساس ذخیره نمی‌شود. به‌دلیل بازبودن
+  `DEC-OPEN-011` فقط Candidate Detection و Review دستی مجاز است و merge واقعی مسدود است.
+- Task تا Review و Merge PR به `develop` در وضعیت `READY_FOR_REVIEW` می‌ماند.
 
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 

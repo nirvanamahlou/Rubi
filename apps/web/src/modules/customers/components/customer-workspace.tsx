@@ -1,12 +1,20 @@
 'use client';
 
+import type {
+  CustomerDetail,
+  CustomerKind,
+  CustomerListQuery,
+  CustomerMutationRequest,
+  CustomerRole,
+  CustomerSummary,
+  DuplicateCandidate,
+} from '@rubi/contracts';
 import {
   AlertTriangle,
   Ban,
   CheckCircle2,
   Eye,
   FilePenLine,
-  Link2,
   MapPin,
   Plus,
   RefreshCw,
@@ -14,9 +22,8 @@ import {
   ShieldCheck,
   UserRound,
   UsersRound,
-  type LucideIcon,
 } from 'lucide-react';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -27,7 +34,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Textarea,
 } from '@/components/ui/form-controls';
 import {
   DialogDescription,
@@ -51,200 +57,672 @@ import {
   PaginationShell,
   Skeleton,
 } from '@/components/ui/surfaces';
-import {
-  CUSTOMER_API_VERSION,
-  CUSTOMER_PHASE_A_NOTICE,
-  normalizeCustomerListQuery,
-} from '../api/contracts';
-import {
-  customerStateOptions,
-  filterPreviewCustomers,
-  getConsentLabel,
-  previewCustomers,
-  type CustomerDraft,
-  type CustomerPreviewState,
-  validateCustomerDraft,
-} from '../model/customer';
+import { customersApi, CustomersApiError } from '../api/client';
+import { contactDisplayValue } from '../model/customer';
 
+const pageSize = 25;
+type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 type FormMode = 'create' | 'view' | 'edit';
-const emptyDraft: CustomerDraft = {
-  displayName: '',
-  firstName: '',
-  lastName: '',
-  primaryPhone: '',
-  email: '',
-  addressLabel: '',
-};
-const previewDraft: CustomerDraft = {
-  displayName: 'مشتری نمونه ۰۱',
-  firstName: 'نام نمونه',
-  lastName: 'نام خانوادگی نمونه',
-  primaryPhone: '',
-  email: 'preview@example.invalid',
-  addressLabel: 'نشانی نمایشی؛ در سامانه ذخیره نشده',
-};
 
-function CustomerForm({
+function customerDraft(customer?: CustomerDetail): CustomerMutationRequest {
+  return {
+    kind: customer?.kind ?? 'person',
+    organizationId: customer?.organizationId ?? null,
+    firstName: customer?.firstName ?? '',
+    lastName: customer?.lastName ?? '',
+    displayName: customer?.displayName ?? '',
+    birthDate: customer?.birthDate ?? null,
+    roles: customer?.roles ?? ['customer'],
+    acquaintanceMethodId: customer?.acquaintanceMethodId ?? null,
+    ...(customer ? { version: customer.version } : {}),
+  };
+}
+
+function CustomerDrawer({
   mode,
+  customer,
   onClose,
+  onSaved,
 }: {
   mode: FormMode;
+  customer?: CustomerDetail;
   onClose: () => void;
+  onSaved: (message: string) => Promise<void>;
 }) {
-  const [draft, setDraft] = useState<CustomerDraft>(
-    mode === 'create' ? emptyDraft : previewDraft,
+  const [draft, setDraft] = useState<CustomerMutationRequest>(() =>
+    customerDraft(customer),
   );
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof CustomerDraft, string>>
-  >({});
-  const [validated, setValidated] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [contact, setContact] = useState('');
+  const [revealedContacts, setRevealedContacts] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [address, setAddress] = useState('');
+  const [companionId, setCompanionId] = useState('');
+  const [duplicates, setDuplicates] = useState<readonly DuplicateCandidate[]>(
+    [],
+  );
   const readonly = mode === 'view';
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function perform(operation: () => Promise<unknown>, success: string) {
+    setBusy(true);
+    setMessage(null);
+    try {
+      await operation();
+      await onSaved(success);
+    } catch (error) {
+      setMessage(
+        error instanceof CustomersApiError && error.status === 409
+          ? 'نسخه رکورد تغییر کرده است؛ صفحه دوباره بارگذاری شد.'
+          : error instanceof Error
+            ? error.message
+            : 'عملیات ناموفق بود.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const result = validateCustomerDraft(draft);
-    setErrors(result.errors);
-    setValidated(result.valid);
+    if (customer) {
+      await perform(
+        () =>
+          customersApi.update(customer.id, {
+            ...draft,
+            version: customer.version,
+          }),
+        'مشتری با موفقیت ویرایش شد.',
+      );
+    } else {
+      await perform(
+        () => customersApi.create(draft),
+        'مشتری با موفقیت ایجاد شد.',
+      );
+    }
+  }
+
+  async function addContact() {
+    if (!customer || !contact.trim()) return;
+    await perform(
+      () =>
+        customersApi.addContact(customer.id, {
+          type: contact.includes('@') ? 'email' : 'phone',
+          value: contact,
+          label: 'اصلی',
+          isPrimary: true,
+          version: customer.version,
+        }),
+      'تماس به‌صورت fingerprint و مقدار ماسک‌شده ذخیره شد.',
+    );
+  }
+
+  async function addAddress() {
+    if (!customer || !address.trim()) return;
+    await perform(
+      () =>
+        customersApi.addAddress(customer.id, {
+          type: 'other',
+          label: address,
+          isPrimary: customer.addresses.length === 0,
+          version: customer.version,
+        }),
+      'برچسب نشانی ثبت شد.',
+    );
+  }
+
+  async function addConsent(status: 'granted' | 'revoked') {
+    if (!customer) return;
+    await perform(
+      () =>
+        customersApi.addConsent(customer.id, {
+          purpose: 'marketing',
+          channel: 'all',
+          status,
+          source: 'staff-ui',
+          reason:
+            status === 'granted'
+              ? 'ثبت رضایت توسط کارشناس'
+              : 'لغو رضایت توسط کارشناس',
+          version: customer.version,
+        }),
+      'تاریخچه رضایت ثبت شد.',
+    );
+  }
+
+  async function addCompanion() {
+    if (!customer || !companionId.trim()) return;
+    await perform(
+      () =>
+        customersApi.addCompanion(customer.id, {
+          relatedCustomerId: companionId,
+          relationshipType: 'companion',
+          version: customer.version,
+        }),
+      'رابطه همراه ثبت شد.',
+    );
+  }
+
+  async function detectDuplicates() {
+    if (!customer) return;
+    setBusy(true);
+    try {
+      const response = await customersApi.detectDuplicates(customer.id);
+      setDuplicates(response.data);
+      setMessage(
+        response.data.length
+          ? 'موارد مشابه برای بررسی دستی یافت شد.'
+          : 'مورد مشابهی یافت نشد.',
+      );
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'تشخیص موارد مشابه ناموفق بود.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function review(
+    candidate: DuplicateCandidate,
+    status: 'confirmed-distinct' | 'merge-proposed',
+  ) {
+    await perform(
+      () =>
+        customersApi.reviewDuplicate(candidate.id, {
+          status,
+          reason:
+            status === 'confirmed-distinct'
+              ? 'بررسی دستی: دو شخص متمایز هستند'
+              : 'پیشنهاد ادغام پس از بررسی دستی',
+          version: candidate.version,
+        }),
+      status === 'merge-proposed'
+        ? 'پیشنهاد ثبت شد؛ اجرای Merge تا تصمیم محصول/امنیت مسدود است.'
+        : 'تمایز دو رکورد ثبت شد.',
+    );
   }
 
   return (
     <Drawer onOpenChange={(open) => !open && onClose()} open>
-      <DrawerContent className="w-[min(94vw,38rem)] p-6">
+      <DrawerContent className="w-[min(96vw,48rem)] overflow-y-auto p-6">
         <DialogTitle>
           {mode === 'create'
             ? 'ایجاد مشتری'
             : mode === 'edit'
               ? 'ویرایش مشتری'
-              : 'مشاهده Customer 360'}
+              : 'Customer 360'}
         </DialogTitle>
         <DialogDescription>
-          {readonly
-            ? 'این فرم فقط نمونه‌ی طراحی است و رکورد پایدار ندارد.'
-            : 'اعتبارسنجی فعال است؛ ارسال فرم هیچ داده‌ای ذخیره نمی‌کند.'}
+          Persistence واقعی، کنترل نسخه و دسترسی شعبه فعال است. مدارک هویتی حساس
+          ذخیره نمی‌شوند.
         </DialogDescription>
-        <div className="mt-4 flex gap-2">
-          <Badge>{CUSTOMER_API_VERSION}</Badge>
-          <Badge className="bg-amber-500/10 text-amber-700">
-            بدون Persistence
-          </Badge>
-        </div>
-        <form className="mt-6 space-y-4" onSubmit={submit}>
+        {message ? (
+          <Alert className="mt-4" description={message} title="نتیجه عملیات" />
+        ) : null}
+
+        <form className="mt-5 space-y-4" onSubmit={submit}>
           <div className="grid gap-4 sm:grid-cols-2">
-            {(
-              [
-                ['displayName', 'نام نمایشی', 'مثال: مشتری سازمانی', 'text'],
-                ['firstName', 'نام', 'نام غیرحساس', 'text'],
-                ['lastName', 'نام خانوادگی', 'نام خانوادگی غیرحساس', 'text'],
-                ['primaryPhone', 'شماره تماس', '+98...', 'tel'],
-                ['email', 'ایمیل', 'name@example.com', 'email'],
-              ] as const
-            ).map(([key, label, placeholder, type]) => (
+            <FormField label="نوع مشتری">
+              <Select
+                disabled={readonly}
+                onValueChange={(value) =>
+                  setDraft((current) => ({
+                    ...current,
+                    kind: value as CustomerKind,
+                  }))
+                }
+                value={draft.kind}
+              >
+                <SelectTrigger aria-label="نوع مشتری">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="person">شخص حقیقی</SelectItem>
+                  <SelectItem value="organization">مشتری سازمانی</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormField>
+            <FormField id="customer-display-name" label="نام نمایشی" required>
+              <Input
+                disabled={readonly}
+                id="customer-display-name"
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    displayName: event.target.value,
+                  }))
+                }
+                value={draft.displayName}
+              />
+            </FormField>
+            {draft.kind === 'person' ? (
+              <>
+                <FormField id="customer-first-name" label="نام" required>
+                  <Input
+                    disabled={readonly}
+                    id="customer-first-name"
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        firstName: event.target.value,
+                      }))
+                    }
+                    value={draft.firstName ?? ''}
+                  />
+                </FormField>
+                <FormField
+                  id="customer-last-name"
+                  label="نام خانوادگی"
+                  required
+                >
+                  <Input
+                    disabled={readonly}
+                    id="customer-last-name"
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        lastName: event.target.value,
+                      }))
+                    }
+                    value={draft.lastName ?? ''}
+                  />
+                </FormField>
+                <FormField
+                  {...(customer?.birthDateMasked
+                    ? {
+                        description:
+                          'برای مشاهده به customers.sensitive.read نیاز است.',
+                      }
+                    : {})}
+                  id="customer-birth-date"
+                  label="تاریخ تولد"
+                >
+                  <Input
+                    disabled={readonly}
+                    id="customer-birth-date"
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        birthDate: event.target.value || null,
+                      }))
+                    }
+                    type="date"
+                    value={draft.birthDate ?? ''}
+                  />
+                </FormField>
+              </>
+            ) : (
               <FormField
-                {...(errors[key] ? { error: errors[key] } : {})}
-                id={`customer-${key}`}
-                key={key}
-                label={label}
-                required={['displayName', 'firstName', 'lastName'].includes(
-                  key,
-                )}
+                id="customer-organization"
+                label="شناسه Organization"
+                required
               >
                 <Input
-                  aria-invalid={Boolean(errors[key])}
                   disabled={readonly}
-                  id={`customer-${key}`}
+                  id="customer-organization"
                   onChange={(event) =>
                     setDraft((current) => ({
                       ...current,
-                      [key]: event.target.value,
+                      organizationId: event.target.value,
                     }))
                   }
-                  placeholder={placeholder}
-                  readOnly={readonly}
-                  type={type}
-                  value={draft[key]}
+                  value={draft.organizationId ?? ''}
                 />
               </FormField>
-            ))}
+            )}
+            <FormField label="نقش‌ها">
+              <div className="flex gap-2">
+                {(['customer', 'passenger'] as CustomerRole[]).map((role) => (
+                  <Button
+                    disabled={readonly}
+                    key={role}
+                    onClick={() =>
+                      setDraft((current) => ({
+                        ...current,
+                        roles: current.roles.includes(role)
+                          ? current.roles.filter((item) => item !== role)
+                          : [...current.roles, role],
+                      }))
+                    }
+                    type="button"
+                    variant={
+                      draft.roles.includes(role) ? 'secondary' : 'outline'
+                    }
+                  >
+                    {role === 'customer' ? 'مشتری' : 'مسافر'}
+                  </Button>
+                ))}
+              </div>
+            </FormField>
           </div>
-          <FormField
-            description="فقط برچسب نشانی غیرحساس؛ فایل هویتی دریافت نمی‌شود."
-            id="customer-address"
-            label="نشانی"
-          >
-            <Textarea
-              disabled={readonly}
-              id="customer-address"
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  addressLabel: event.target.value,
-                }))
-              }
-              readOnly={readonly}
-              value={draft.addressLabel}
-            />
-          </FormField>
-          {validated ? (
-            <Alert
-              description="فرم آماده اتصال آینده به Application Port است؛ ذخیره‌ای انجام نشد."
-              title="اعتبارسنجی موفق"
-            />
+          {!readonly ? (
+            <Button disabled={busy} type="submit">
+              {mode === 'create' ? 'ایجاد مشتری' : 'ذخیره با کنترل نسخه'}
+            </Button>
           ) : null}
-          <div className="flex justify-end gap-2">
-            <DrawerClose asChild>
-              <Button type="button" variant="ghost">
-                بستن
-              </Button>
-            </DrawerClose>
-            {!readonly ? (
-              <Button type="submit">بررسی فرم بدون ذخیره</Button>
-            ) : null}
-          </div>
         </form>
+
+        {customer ? (
+          <Tabs className="mt-6" defaultValue="contacts" dir="rtl">
+            <TabsList className="flex w-full flex-wrap justify-start">
+              <TabsTrigger value="contacts">تماس‌ها</TabsTrigger>
+              <TabsTrigger value="addresses">نشانی‌ها</TabsTrigger>
+              <TabsTrigger value="consents">رضایت</TabsTrigger>
+              <TabsTrigger value="companions">همراهان</TabsTrigger>
+              <TabsTrigger value="duplicates">موارد مشابه</TabsTrigger>
+            </TabsList>
+            <TabsContent className="space-y-3" value="contacts">
+              {customer.contacts.map((item) => {
+                const revealed = revealedContacts.has(item.id);
+                return (
+                  <Card
+                    className="flex items-center justify-between gap-3 p-3"
+                    key={item.id}
+                  >
+                    <div>
+                      <p className="font-bold" dir="ltr">
+                        {contactDisplayValue(item, revealed)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        مقدار واقعی رمزگذاری شده و نمایش آن نیازمند دسترسی حساس
+                        است.
+                      </p>
+                    </div>
+                    {item.value ? (
+                      <Button
+                        aria-pressed={revealed}
+                        onClick={() =>
+                          setRevealedContacts((current) => {
+                            const next = new Set(current);
+                            if (next.has(item.id)) next.delete(item.id);
+                            else next.add(item.id);
+                            return next;
+                          })
+                        }
+                        size="sm"
+                        type="button"
+                        variant="outline"
+                      >
+                        <Eye className="size-4" />
+                        {revealed ? 'پنهان‌کردن' : 'نمایش کنترل‌شده'}
+                      </Button>
+                    ) : (
+                      <Badge>فقط مقدار ماسک‌شده</Badge>
+                    )}
+                  </Card>
+                );
+              })}
+              <div className="flex gap-2">
+                <Input
+                  onChange={(event) => setContact(event.target.value)}
+                  placeholder="شماره یا ایمیل"
+                  value={contact}
+                />
+                <Button
+                  disabled={busy}
+                  onClick={() => void addContact()}
+                  type="button"
+                >
+                  افزودن
+                </Button>
+              </div>
+            </TabsContent>
+            <TabsContent className="space-y-3" value="addresses">
+              {customer.addresses.map((item) => (
+                <Card className="p-3" key={item.id}>
+                  <p className="font-bold">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {item.cityId ?? 'بدون مرجع شهر'}
+                  </p>
+                </Card>
+              ))}
+              <div className="flex gap-2">
+                <Input
+                  onChange={(event) => setAddress(event.target.value)}
+                  placeholder="برچسب نشانی غیرحساس"
+                  value={address}
+                />
+                <Button
+                  disabled={busy}
+                  onClick={() => void addAddress()}
+                  type="button"
+                >
+                  افزودن
+                </Button>
+              </div>
+            </TabsContent>
+            <TabsContent className="space-y-3" value="consents">
+              {customer.consents.map((item) => (
+                <Card className="p-3" key={item.id}>
+                  <p className="font-bold">
+                    {item.status === 'granted'
+                      ? 'رضایت ثبت‌شده'
+                      : 'رضایت لغوشده'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(item.occurredAt).toLocaleString('fa-IR')} ·{' '}
+                    {item.reason}
+                  </p>
+                </Card>
+              ))}
+              <div className="flex gap-2">
+                <Button
+                  disabled={busy}
+                  onClick={() => void addConsent('granted')}
+                  type="button"
+                  variant="outline"
+                >
+                  ثبت رضایت
+                </Button>
+                <Button
+                  disabled={busy}
+                  onClick={() => void addConsent('revoked')}
+                  type="button"
+                  variant="outline"
+                >
+                  لغو رضایت
+                </Button>
+              </div>
+            </TabsContent>
+            <TabsContent className="space-y-3" value="companions">
+              {customer.companions.map((item) => (
+                <Card className="p-3" key={item.id}>
+                  <p className="font-bold">{item.relatedDisplayName}</p>
+                  <p className="font-mono text-xs" dir="ltr">
+                    {item.relatedCustomerId}
+                  </p>
+                </Card>
+              ))}
+              <div className="flex gap-2">
+                <Input
+                  onChange={(event) => setCompanionId(event.target.value)}
+                  placeholder="UUID مشتری همراه"
+                  value={companionId}
+                />
+                <Button
+                  disabled={busy}
+                  onClick={() => void addCompanion()}
+                  type="button"
+                >
+                  افزودن
+                </Button>
+              </div>
+            </TabsContent>
+            <TabsContent className="space-y-3" value="duplicates">
+              <Alert
+                description="تشخیص فقط Candidate می‌سازد؛ Auto-merge و اجرای Merge تا بسته‌شدن DEC-OPEN-011 مسدود است."
+                title="بررسی دستی"
+                tone="warning"
+              />
+              <Button
+                disabled={busy}
+                onClick={() => void detectDuplicates()}
+                type="button"
+                variant="outline"
+              >
+                <AlertTriangle className="size-4" />
+                تشخیص موارد مشابه
+              </Button>
+              {duplicates.map((candidate) => (
+                <Card className="p-3" key={candidate.id}>
+                  <p className="font-bold">
+                    {candidate.candidateDisplayName} · امتیاز{' '}
+                    {candidate.score.toLocaleString('fa-IR')}٪
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {candidate.reasons.join('، ')}
+                  </p>
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      onClick={() =>
+                        void review(candidate, 'confirmed-distinct')
+                      }
+                      size="sm"
+                      variant="outline"
+                    >
+                      متمایز هستند
+                    </Button>
+                    <Button
+                      onClick={() => void review(candidate, 'merge-proposed')}
+                      size="sm"
+                      variant="outline"
+                    >
+                      ثبت پیشنهاد ادغام
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </TabsContent>
+          </Tabs>
+        ) : null}
+
+        <div className="mt-6 flex justify-end">
+          <DrawerClose asChild>
+            <Button type="button" variant="ghost">
+              بستن
+            </Button>
+          </DrawerClose>
+        </div>
       </DrawerContent>
     </Drawer>
   );
 }
 
-function CustomerResults({
-  onOpen,
-  state,
-}: {
-  onOpen: (mode: FormMode) => void;
-  state: CustomerPreviewState;
-}) {
+export function CustomerWorkspace() {
+  const [records, setRecords] = useState<readonly CustomerSummary[]>([]);
+  const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | 'active' | 'inactive'>('all');
-  const [sortBy, setSortBy] = useState<'displayName' | 'updatedAt'>(
-    'updatedAt',
-  );
-  const customers = useMemo(
-    () =>
-      filterPreviewCustomers(
-        previewCustomers,
-        normalizeCustomerListQuery({
-          search,
-          status,
-          sortBy,
-          sortDirection: sortBy === 'updatedAt' ? 'desc' : 'asc',
-        }),
-      ),
-    [search, sortBy, status],
-  );
+  const [status, setStatus] = useState<CustomerListQuery['status']>('all');
+  const [role, setRole] = useState<CustomerListQuery['role']>('all');
+  const [sortBy, setSortBy] =
+    useState<CustomerListQuery['sortBy']>('updatedAt');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [formMode, setFormMode] = useState<FormMode | null>(null);
+  const [selected, setSelected] = useState<CustomerDetail | undefined>();
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setRequestState('loading');
+    try {
+      const response = await customersApi.list({
+        search,
+        status,
+        role,
+        sortBy,
+        sortDirection: sortBy === 'displayName' ? 'asc' : 'desc',
+        page,
+        pageSize,
+      });
+      setRecords(response.data);
+      setTotal(response.meta.total);
+      setRequestState('ready');
+    } catch (error) {
+      setRecords([]);
+      setRequestState(
+        error instanceof CustomersApiError && error.status === 403
+          ? 'forbidden'
+          : 'error',
+      );
+    }
+  }, [page, role, search, sortBy, status]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 250);
+    return () => window.clearTimeout(timer);
+  }, [load]);
+
+  async function open(mode: FormMode, id?: string) {
+    if (id) {
+      try {
+        setSelected((await customersApi.detail(id)).data);
+      } catch (error) {
+        setNotice(
+          error instanceof Error
+            ? error.message
+            : 'دریافت Customer 360 ناموفق بود.',
+        );
+        return;
+      }
+    } else setSelected(undefined);
+    setFormMode(mode);
+  }
+
+  async function refreshAfter(message: string) {
+    setNotice(message);
+    setFormMode(null);
+    await load();
+  }
+
+  async function toggle(record: CustomerSummary) {
+    try {
+      await customersApi.status(record.id, {
+        status: record.status === 'active' ? 'inactive' : 'active',
+        version: record.version,
+        reason: 'تغییر وضعیت از رابط مشتریان',
+      });
+      setNotice('وضعیت مشتری با Audit و کنترل نسخه تغییر کرد.');
+      await load();
+    } catch (error) {
+      setNotice(
+        error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.',
+      );
+    }
+  }
 
   return (
-    <section className="space-y-4">
-      <FilterBar className="grid sm:grid-cols-3">
-        <FormField id="customer-search" label="جست‌وجو">
+    <div className="space-y-5">
+      <PageHeader
+        actions={
+          <Button onClick={() => void open('create')}>
+            <Plus className="size-4" />
+            ایجاد مشتری
+          </Button>
+        }
+        description="Customer 360 پایدار با Permission، Branch Scope، Audit، Consent و Duplicate Candidate Review."
+        eyebrow="CUSTOMER-001 · Phase B · PC-A"
+        title="مشتریان و مسافران"
+      />
+      <Alert
+        description="Persistence فعال است. تماس خام و مدارک هویتی ذخیره نمی‌شوند؛ Merge واقعی تا تصمیم قطعی محصول/امنیت مسدود است."
+        title="Backend واقعی · حفاظت PII"
+      />
+      {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
+      <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-4">
+        <FormField id="customer-search-live" label="جست‌وجو">
           <div className="relative">
-            <Search
-              aria-hidden="true"
-              className="absolute end-3 top-3.5 size-4 text-muted-foreground"
-            />
+            <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
             <Input
               className="pe-10"
-              id="customer-search"
-              onChange={(event) => setSearch(event.target.value)}
+              id="customer-search-live"
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(1);
+              }}
               placeholder="نام یا تماس ماسک‌شده"
               value={search}
             />
@@ -252,10 +730,13 @@ function CustomerResults({
         </FormField>
         <FormField label="وضعیت">
           <Select
-            onValueChange={(value) => setStatus(value as typeof status)}
+            onValueChange={(value) => {
+              setStatus(value as CustomerListQuery['status']);
+              setPage(1);
+            }}
             value={status}
           >
-            <SelectTrigger aria-label="فیلتر وضعیت مشتری">
+            <SelectTrigger aria-label="فیلتر وضعیت">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -265,268 +746,203 @@ function CustomerResults({
             </SelectContent>
           </Select>
         </FormField>
+        <FormField label="نقش">
+          <Select
+            onValueChange={(value) => {
+              setRole(value as CustomerListQuery['role']);
+              setPage(1);
+            }}
+            value={role}
+          >
+            <SelectTrigger aria-label="فیلتر نقش">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه</SelectItem>
+              <SelectItem value="customer">مشتری</SelectItem>
+              <SelectItem value="passenger">مسافر</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
         <FormField label="مرتب‌سازی">
           <Select
-            onValueChange={(value) => setSortBy(value as typeof sortBy)}
+            onValueChange={(value) =>
+              setSortBy(value as CustomerListQuery['sortBy'])
+            }
             value={sortBy}
           >
-            <SelectTrigger aria-label="مرتب‌سازی مشتریان">
+            <SelectTrigger aria-label="مرتب‌سازی">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="updatedAt">آخرین تغییر</SelectItem>
+              <SelectItem value="createdAt">تاریخ ایجاد</SelectItem>
               <SelectItem value="displayName">نام نمایشی</SelectItem>
             </SelectContent>
           </Select>
         </FormField>
       </FilterBar>
 
-      {state === 'loading' ? (
-        <Card aria-live="polite" className="space-y-3 p-4">
-          {[1, 2, 3].map((row) => (
-            <Skeleton className="h-16 w-full" key={row} />
+      {requestState === 'loading' ? (
+        <Card className="space-y-3 p-4">
+          {[1, 2, 3].map((item) => (
+            <Skeleton className="h-16 w-full" key={item} />
           ))}
         </Card>
-      ) : state === 'error' ? (
+      ) : requestState === 'forbidden' ? (
+        <EmptyState
+          description="مجوز customers.read برای مشاهده لازم است."
+          icon={Ban}
+          title="دسترسی مشتریان وجود ندارد"
+        />
+      ) : requestState === 'error' ? (
         <ErrorState
           action={
-            <Button size="sm" variant="outline">
-              <RefreshCw aria-hidden="true" className="size-4" />
+            <Button onClick={() => void load()} size="sm" variant="outline">
+              <RefreshCw className="size-4" />
               تلاش دوباره
             </Button>
           }
-          description="جزئیات خام سرور یا داده حساس نمایش داده نمی‌شود."
+          description="Session یا اتصال Backend را بررسی کنید."
           title="دریافت مشتریان ناموفق بود"
         />
-      ) : state === 'forbidden' ? (
-        <EmptyState
-          description="نمایش اطلاعات به customers.read نیاز دارد و پیش‌فرض مسدود است."
-          icon={Ban}
-          title="دسترسی مشاهده مشتریان وجود ندارد"
-        />
-      ) : state === 'empty' || customers.length === 0 ? (
+      ) : records.length === 0 ? (
         <EmptyState
           action={
-            <Button onClick={() => onOpen('create')} size="sm">
-              طراحی فرم ایجاد
+            <Button onClick={() => void open('create')} size="sm">
+              ایجاد مشتری
             </Button>
           }
-          description="هیچ جست‌وجوی Database اجرا نشده است."
+          description="با فیلتر فعلی رکوردی پیدا نشد."
           icon={UsersRound}
-          title="موردی یافت نشد"
+          title="فهرست خالی است"
         />
       ) : (
-        <Card className="overflow-hidden">
-          <div className="border-b border-border px-5 py-4">
-            <h2 className="font-black">فهرست نمایشی مشتریان و مسافران</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              شناسه‌ها ساختگی و تماس‌ها ماسک‌شده‌اند.
-            </p>
-          </div>
-          <div className="divide-y divide-border">
-            {customers.map((customer) => (
-              <article
-                className="grid gap-4 p-4 md:grid-cols-[1.2fr_1fr_auto] md:items-center"
-                key={customer.id}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary">
-                    <UserRound aria-hidden="true" className="size-5" />
-                  </span>
-                  <div>
-                    <h3 className="font-bold">{customer.displayName}</h3>
-                    <p className="text-xs text-muted-foreground" dir="ltr">
-                      {customer.maskedContact}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Badge>
-                    {customer.status === 'active' ? 'فعال' : 'غیرفعال'}
-                  </Badge>
-                  <Badge>رضایت: {getConsentLabel(customer.consent)}</Badge>
-                  <Badge>
-                    {customer.companionCount.toLocaleString('fa-IR')} همراه
-                  </Badge>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => onOpen('view')}
-                    size="sm"
-                    variant="outline"
-                  >
-                    <Eye aria-hidden="true" className="size-4" />
-                    مشاهده
-                  </Button>
-                  <Button
-                    onClick={() => onOpen('edit')}
-                    size="sm"
-                    variant="outline"
-                  >
-                    <FilePenLine aria-hidden="true" className="size-4" />
-                    ویرایش
-                  </Button>
-                </div>
-              </article>
-            ))}
-          </div>
+        <Card className="overflow-x-auto">
+          <table className="w-full min-w-[54rem] text-sm">
+            <thead className="bg-muted/50 text-muted-foreground">
+              <tr>
+                <th className="p-4 text-start">مشتری</th>
+                <th className="p-4 text-start">نقش</th>
+                <th className="p-4 text-start">رضایت</th>
+                <th className="p-4 text-start">نسخه</th>
+                <th className="p-4 text-start">عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {records.map((record) => (
+                <tr className="border-t border-border" key={record.id}>
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
+                        <UserRound className="size-5" />
+                      </span>
+                      <div>
+                        <p className="font-bold">{record.displayName}</p>
+                        <p className="text-xs text-muted-foreground" dir="ltr">
+                          {record.maskedPrimaryContact ?? 'بدون تماس'}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    {record.roles.map((item) => (
+                      <Badge className="me-1" key={item}>
+                        {item === 'customer' ? 'مشتری' : 'مسافر'}
+                      </Badge>
+                    ))}
+                  </td>
+                  <td className="p-4">
+                    <Badge>
+                      {record.currentConsentStatus === 'granted'
+                        ? 'ثبت‌شده'
+                        : record.currentConsentStatus === 'revoked'
+                          ? 'لغوشده'
+                          : 'ثبت‌نشده'}
+                    </Badge>
+                  </td>
+                  <td className="p-4 font-mono">{record.version}</td>
+                  <td className="p-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        onClick={() => void open('view', record.id)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Eye className="size-4" />
+                        مشاهده
+                      </Button>
+                      <Button
+                        onClick={() => void open('edit', record.id)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <FilePenLine className="size-4" />
+                        ویرایش
+                      </Button>
+                      <Button
+                        onClick={() => void toggle(record)}
+                        size="sm"
+                        variant="ghost"
+                      >
+                        {record.status === 'active'
+                          ? 'غیرفعال‌سازی'
+                          : 'فعال‌سازی'}
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </Card>
       )}
-      <PaginationShell
-        totalLabel={`${customers.length.toLocaleString('fa-IR')} رکورد نمایشی`}
-      />
-    </section>
-  );
-}
-
-function Info({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-xl border border-border bg-muted/30 p-4">
-      <Icon aria-hidden="true" className="size-4 text-primary" />
-      <p className="mt-3 text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-sm font-bold">{value}</p>
-    </div>
-  );
-}
-
-function Customer360Preview() {
-  return (
-    <Card className="p-4 sm:p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="font-black">Customer 360 — پیش‌نمایش</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            بدون اطلاعات حساس یا داده پایدار
-          </p>
-        </div>
-        <Badge className="bg-amber-500/10 text-amber-700">داده غیرواقعی</Badge>
-      </div>
-      <Tabs className="mt-5" defaultValue="identity" dir="rtl">
-        <TabsList className="flex w-full flex-wrap justify-start">
-          <TabsTrigger value="identity">هویت پایه</TabsTrigger>
-          <TabsTrigger value="contact">ارتباط و نشانی</TabsTrigger>
-          <TabsTrigger value="consent">رضایت‌نامه</TabsTrigger>
-          <TabsTrigger value="companions">همراهان</TabsTrigger>
-        </TabsList>
-        <TabsContent className="mt-4" value="identity">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Info icon={UserRound} label="نام نمایشی" value="مشتری نمونه ۰۱" />
-            <Info icon={ShieldCheck} label="مدارک حساس" value="ذخیره نمی‌شود" />
-            <Info icon={CheckCircle2} label="وضعیت" value="فعال — نمایشی" />
-          </div>
-        </TabsContent>
-        <TabsContent className="mt-4" value="contact">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Info icon={Link2} label="تماس اصلی" value="۰۹۱۲•••۱۲۳۴" />
-            <Info icon={MapPin} label="نشانی" value="برچسب نمایشی ثبت‌نشده" />
-          </div>
-        </TabsContent>
-        <TabsContent className="mt-4" value="consent">
-          <Info
-            icon={ShieldCheck}
-            label="رضایت ارتباطی"
-            value="مدیریت نیازمند customers.consent.manage"
-          />
-        </TabsContent>
-        <TabsContent className="mt-4" value="companions">
-          <Info
-            icon={UsersRound}
-            label="ارتباط همراهان"
-            value="۲ رابطه نمایشی؛ بدون FK یا ذخیره‌سازی"
-          />
-        </TabsContent>
-      </Tabs>
-    </Card>
-  );
-}
-
-function DuplicateReview() {
-  return (
-    <Card className="p-4 sm:p-5">
-      <div className="flex items-center gap-3">
-        <AlertTriangle aria-hidden="true" className="size-5 text-amber-700" />
-        <div>
-          <h2 className="font-black">بررسی دستی موارد مشابه</h2>
-          <p className="text-xs text-muted-foreground">
-            Candidate Detection فقط پیشنهاد می‌دهد؛ Auto-merge وجود ندارد.
-          </p>
-        </div>
-      </div>
-      <div className="mt-4 rounded-xl border border-dashed border-border p-4">
-        <p className="text-sm font-bold">کاندیدای نمایشی با امتیاز ۸۵٪</p>
-        <p className="mt-1 text-xs leading-6 text-muted-foreground">
-          دلیل‌ها: تماس ماسک‌شده و نام مشابه. تصمیم نهایی به customers.merge و
-          Audit فاز B نیاز دارد.
-        </p>
-        <div className="mt-3 flex gap-2">
-          <Button size="sm" variant="outline">
-            متمایز هستند
+      <div className="flex items-center justify-between gap-3">
+        <PaginationShell
+          currentPage={page}
+          totalLabel={`${total.toLocaleString('fa-IR')} رکورد`}
+        />
+        <div className="flex gap-2">
+          <Button
+            disabled={page === 1}
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
+            size="sm"
+            variant="outline"
+          >
+            قبلی
           </Button>
-          <Button disabled size="sm">
-            پیشنهاد ادغام
+          <Button
+            disabled={page * pageSize >= total}
+            onClick={() => setPage((value) => value + 1)}
+            size="sm"
+            variant="outline"
+          >
+            بعدی
           </Button>
         </div>
       </div>
-    </Card>
-  );
-}
-
-export function CustomerWorkspace() {
-  const [state, setState] = useState<CustomerPreviewState>('preview');
-  const [formMode, setFormMode] = useState<FormMode | null>(null);
-  return (
-    <div className="space-y-5">
-      <PageHeader
-        actions={
-          <Button onClick={() => setFormMode('create')}>
-            <Plus aria-hidden="true" className="size-4" />
-            ایجاد مشتری
-          </Button>
-        }
-        description="Foundation تجربه مشتریان و مسافران، Customer 360 و بررسی دستی موارد مشابه."
-        eyebrow="CUSTOMER-001 · Phase A · PC-A"
-        title="مشتریان و مسافران"
-      />
-      <Alert
-        description={CUSTOMER_PHASE_A_NOTICE}
-        title="پیش‌نمایش بدون Persistence"
-        tone="warning"
-      />
-      <Card className="p-4">
-        <fieldset>
-          <legend className="text-xs font-bold text-muted-foreground">
-            وضعیت‌های قابل بازبینی
-          </legend>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {customerStateOptions.map(([value, label]) => (
-              <Button
-                aria-pressed={state === value}
-                key={value}
-                onClick={() => setState(value)}
-                size="sm"
-                variant={state === value ? 'secondary' : 'ghost'}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
-        </fieldset>
+      <Card className="grid gap-3 p-4 sm:grid-cols-3">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="size-4 text-primary" />
+          <span className="text-sm">دسترسی حساس Backend-enforced</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <MapPin className="size-4 text-primary" />
+          <span className="text-sm">نشانی غیرحساس + City FK</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="size-4 text-primary" />
+          <span className="text-sm">Audit و Optimistic Version</span>
+        </div>
       </Card>
-      <CustomerResults onOpen={setFormMode} state={state} />
-      <div className="grid gap-5 xl:grid-cols-2">
-        <Customer360Preview />
-        <DuplicateReview />
-      </div>
       {formMode ? (
-        <CustomerForm mode={formMode} onClose={() => setFormMode(null)} />
+        <CustomerDrawer
+          key={`${formMode}-${selected?.id ?? 'new'}-${selected?.version ?? 0}`}
+          mode={formMode}
+          onClose={() => setFormMode(null)}
+          onSaved={refreshAfter}
+          {...(selected ? { customer: selected } : {})}
+        />
       ) : null}
     </div>
   );
