@@ -1,81 +1,81 @@
-# CUSTOMER-001 — Foundation مشتریان و مسافران
+# CUSTOMER-001 — مشتریان و مسافران
 
 - **Computer:** PC-A
-- **Branch:** `codex/pc-a-customer-foundation`
-- **Baseline:** `f4381b5c842c962652f6fb168b3a6507177393e4`
+- **Branch:** `codex/pc-a-customer-persistence`
+- **Phase B baseline:** `9b96f6eabfe8aed8fe3377fd221fed43dd79d2eb`
 - **Owner:** PC-A
-- **Overall status:** IN_PROGRESS
+- **Overall status:** READY_FOR_REVIEW
 - **Phase A status:** DONE/MERGED — Merge `9fb1cb33cef9bfbbb998d4e3ce823688e7700a31`
-- **Phase B status:** IN_PROGRESS — قفل‌های لازم با `MASTER002-HANDOFF-001` رزرو شدند
-- **Persistence:** در فاز A عمداً پیاده‌سازی نشد؛ در فاز B برنامه‌ریزی شده است
-- **Phase B baseline:** `9fb1cb33cef9bfbbb998d4e3ce823688e7700a31`
+- **Phase B status:** READY_FOR_REVIEW
+- **Implementation commits:** `55686a1` و `a8cd0be`
+- **Migration:** `20260824093000_customer_persistence`
 
-## هدف فاز A
+## نتیجه فاز B
 
-ایجاد Foundation رابط فارسی، RTL و Responsive برای مشتریان و مسافران، طراحی
-Application/API ماژول‌محلی و منطق قابل‌تست دامنه، بدون تغییر Database یا قرارداد
-مشترک. این فاز هیچ رکورد authoritative تولید نمی‌کند.
+Persistence و قرارداد عمومی Customers، API واقعی، کنترل Permission و Audit و
+Customer 360 متصل به Backend تکمیل شد. مدل‌های Customer، Contact، Address، Consent،
+Relationship، Status History، Duplicate Candidate و Customer Audit Event با FKهای واقعی،
+زمان UTC و optimistic versioning ایجاد شدند. حذف فیزیکی مشتری وجود ندارد و غیرفعال‌سازی
+به‌صورت status transition ثبت می‌شود.
 
-## تحویل‌های تکمیل‌شده
-
-- رابط فهرست مشتریان و مسافران با جست‌وجو، فیلتر وضعیت، مرتب‌سازی و صفحه‌بندی
-- فرم‌های ایجاد، مشاهده و ویرایش با Validation و Submit مسدود
-- پیش‌نمایش Customer 360 برای هویت غیرحساس، ارتباط، نشانی، رضایت‌نامه و همراهان
-- حالت‌های Loading، Empty، Error، Permission و Preview
-- Duplicate Candidate Detection با امتیاز و دلیل
-- صفحه بررسی دستی موارد مشابه؛ بدون Auto-merge
-- DTOها، Application Port و مسیرهای پیشنهادی API در مرز ماژول Customers
-- نگاشت عملیات به Permissionهای عمومی `customers.*` از `@rubi/contracts`
-- تست‌های Domain، Permission، UI contract و Boundary
+Frontend فارسی، RTL و Responsive اکنون مسیر واقعی API را برای فهرست، جست‌وجو، فیلتر،
+مرتب‌سازی، صفحه‌بندی، ایجاد/ویرایش، مشاهده Customer 360، تغییر وضعیت، تماس‌ها، نشانی‌ها،
+رضایت‌نامه‌ها، همراهان و بررسی موارد مشابه مصرف می‌کند. حالت‌های loading، empty، error،
+forbidden، success و conflict پوشش داده شده‌اند.
 
 ## مرز امنیت و داده
 
-- داده‌های UI ساختگی، دارای شناسه `preview-*` و تماس ماسک‌شده هستند.
-- ذخیره مقدار یا فایل مدرک هویتی و PII حساس تا تصمیم قطعی PII ممنوع است.
-- `customers.sensitive.read` فقط در طراحی Permission دیده می‌شود و هیچ داده
-  حساس در فاز A ارائه نمی‌شود.
-- Duplicate auto-merge ممنوع است. Candidate Detection فقط پیشنهاد می‌دهد و Review دستی
-  با `customers.merge` و Audit تنها مسیر مجاز تصمیم‌گیری است.
-- دسترسی پیش‌فرض deny است و عملیات با Permissionهای
-  `customers.read`، `customers.create`، `customers.update`،
-  `customers.consent.manage` و `customers.merge` طراحی شده‌اند.
+- مقدار خام تلفن یا ایمیل ذخیره نمی‌شود؛ فقط fingerprint مبتنی بر SHA-256 و مقدار
+  ماسک‌شده برای نمایش نگهداری می‌شود.
+- هیچ مقدار یا فایل مدرک هویتی و هیچ داده واقعی مسافر وارد Schema، Seed یا Git نشده است.
+- تاریخ تولد بدون `customers.sensitive.read` به‌صورت ماسک‌شده بازگردانده می‌شود.
+- تمام query و mutationها branch-scoped هستند و Guardهای واقعی احراز هویت و Permission
+  روی Controller اعمال شده‌اند.
+- Consent، تغییر وضعیت، تغییرات اصلی Customer، Contact/Address/Relationship و تصمیم
+  Duplicate Review در Customer Audit Event ثبت می‌شوند.
+- `DEC-OPEN-006` باز است؛ نگهداری مدارک هویتی حساس همچنان ممنوع می‌ماند.
+- `DEC-OPEN-011` باز است؛ Duplicate Candidate Detection و Review دستی پیاده‌سازی شده،
+  اما merge واقعی و auto-merge مسدود است. Review فقط `DISTINCT` یا
+  `MERGE_PROPOSED` را ثبت می‌کند و merge پیشنهادی نتیجه `BLOCKED` دارد.
 
-## API و Application Design
+## قرارداد و API
 
-نسخه پیشنهادی `customers.v1-draft` و پیشوند `/api/v1/customers` است.
-`CustomerApplicationPort` فقط قرارداد use caseها را تعریف می‌کند. در این Task
-هیچ Controller فعال، Repository implementation، Prisma client یا دسترسی مستقیم
-به IAM و Master Data ایجاد نشده است.
+قرارداد versioned عمومی `customers.v1` از `@rubi/contracts` منتشر شده است. مسیرهای
+فعال زیر پشت `/api/v1/customers` قرار دارند:
 
-## موارد عمداً خارج از فاز A
+- فهرست و ایجاد Customer
+- مشاهده و ویرایش Customer با کنترل version
+- تغییر وضعیت فعال/غیرفعال
+- فهرست و افزودن Contact، Address و Companion
+- ثبت Consent و مشاهده تاریخچه آن
+- تولید Duplicate Candidate و ثبت Review دستی
 
-- Prisma Schema، Migration، Seed و FKهای واقعی
-- Repository و Persistence واقعی
-- Endpoint اجرایی و اتصال شبکه Frontend
-- ذخیره مدارک هویتی یا فایل‌ها
-- Auto-merge موارد مشابه
-- تغییر Dependency، Lockfile یا `packages/contracts/src/index.ts`
-- تغییر فایل‌های مرکزی قفل‌شده توسط PC-B
+Master Data فقط از قرارداد عمومی و FKهای تعریف‌شده مصرف می‌شود؛ هیچ import یا query
+مستقیم به Repository داخلی IAM یا Master Data ایجاد نشده است.
 
-## Handoff فاز B
+## Migration و Fixture
 
-MASTER-002 با Merge `ddfebb3` ادغام و Handoff مستقل انجام شد. فاز B فقط دامنه
-Customers را پوشش می‌دهد و حق تغییر فایل‌های داخلی IAM یا Master Data را ندارد.
-قفل Migration، Customer shared-contract/root export و اسناد مرکزی Sprint برای PC-A رزرو
-هستند. قفل Dependency/Lockfile فقط هنگام نیاز واقعی و پس از ثبت فایل دقیق فعال می‌شود.
-هیچ Volume، داده یا تاریخچه Migration محلی حذف یا دستی دست‌کاری نمی‌شود و Migrationهای
-بعدی روی PostgreSQL ایزوله و تازه تست می‌شوند. فاز B باید:
-
-1. مدل و FKهای واقعی را با قواعد [مدل داده](../DATA_MODEL.md) طراحی کند.
-2. Master Data را فقط از قرارداد عمومی `@rubi/contracts` مصرف کند.
-3. Repository و API واقعی را پشت `CustomerApplicationPort` بسازد.
-4. ثبت Consent، Duplicate Review و هر عملیات Merge را Audit کند.
-5. سیاست نگهداری/رمزنگاری مدارک حساس را پس از بسته‌شدن تصمیم باز PII اجرا کند.
-6. تست Integration و Authorization واقعی را اضافه کند.
-7. نرخ ارز authoritative یا تولید واقعی Excel/PDF را در این Handoff پیاده‌سازی نکند.
-
+Migration افزایشی روی PostgreSQL 18 ایزوله و تازه از صفر deploy شد و
+`prisma migrate status` آن را up-to-date گزارش کرد. Migration شامل DROP، TRUNCATE یا
+DELETE نیست. Seed فقط fixtureهای ساختگی و non-login ایجاد می‌کند و دو اجرای متوالی آن
+idempotent بود؛ شمارش پایدار Customer/Contact/Address/Relationship برابر
+`2/1/1/1` باقی ماند. هیچ Volume یا داده موجود Rubi تغییر یا حذف نشد.
 
 ## کنترل‌های تحویل
 
-نتایج نهایی lint، typecheck، تست، build، Prettier، `git diff --check`،
-Secret/PII scan و Scope scan در Draft PR ثبت می‌شوند.
+- نصب frozen بدون تغییر dependency یا lockfile پاس شد.
+- Prisma format، validate، generate، migration deploy/status و seed دوگانه پاس شدند.
+- lint، typecheck و build کل Monorepo پاس شدند.
+- ۱۰۴ تست در Contracts، Database، API، Web، Worker و Config پاس شدند.
+- تست‌های contract، migration، repository، service، HTTP validation،
+  authorization/permission و frontend API client اضافه شدند.
+- `git diff --check`، Scope scan و Secret/PII scan پاس شدند.
+- فایل manifest یا lockfile تغییر نکرده است.
+
+## ریسک و Handoff بازبینی
+
+Reviewer باید Migration، branch scoping، optimistic conflict، Audit و عدم ذخیره PII خام
+را بازبینی کند. ادغام PR به `develop` مجاز به اجرای merge واقعی مشتری نیست و هیچ
+تصمیم باز محصول/امنیت را نمی‌بندد. فعال‌سازی نگهداری مدارک حساس یا merge واقعی فقط پس
+از تصمیم قطعی، ثبت در `docs/DECISIONS.md` و Work Item مستقل مجاز است. نرخ ارز
+authoritative و تولید واقعی Excel/PDF خارج از Scope این Task باقی می‌مانند.

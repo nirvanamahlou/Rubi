@@ -1,17 +1,17 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-23 — Handoff MASTER-002 به CUSTOMER-001 فاز B
+آخرین به‌روزرسانی: 2026-08-24 — CUSTOMER-001 فاز B آماده بازبینی
 
 ## خلاصه
 
 - مرحله جاری: **Sprint دوم — Master Data Persistence و Customer Foundation**
-- وضعیت: **CUSTOMER-001 فاز B در PC-A؛ CUSTOMER-AFFAIRS-001 فاز A برای PC-B برنامه‌ریزی شد**
+- وضعیت: **CUSTOMER-001 فاز B آماده بازبینی؛ CUSTOMER-AFFAIRS-001 فاز A برای PC-B برنامه‌ریزی‌شده**
 - Repository: `Rubi`، Remote با نام `origin`
-- Baseline: Commit `9fb1cb33cef9bfbbb998d4e3ce823688e7700a31` از آخرین `origin/develop`
-- شاخه فعال: `codex/pc-a-master-002-handoff`
-- Work Item فعال: `MASTER002-HANDOFF-001`؛ فقط مستندات و انتقال صریح قفل‌ها
+- Baseline: Commit `9b96f6eabfe8aed8fe3377fd221fed43dd79d2eb` از آخرین `origin/develop`
+- شاخه فعال: `codex/pc-a-customer-persistence`
+- Work Item: `CUSTOMER-001 Phase B`؛ `READY_FOR_REVIEW`
 - محیط مسئول: `COMPUTER_ID=PC-A`؛ dev server پروژه فعال نبود.
-- وضعیت محیط: Volume، داده و تاریخچه Migration دست‌نخورده‌اند؛ تست/build نرم‌افزاری اجرا نمی‌شود.
+- وضعیت محیط: Volume و داده موجود دست‌نخورده‌اند؛ Migration روی PostgreSQL 18 ایزوله و تازه و تمام gateهای نرم‌افزاری اجرا شدند.
 
 ### `MASTER-002` — PC-B — `DONE`
 
@@ -20,18 +20,21 @@
 - Persistence، REST، قرارداد عمومی و UI واقعی Master Data تحویل شدند.
 - چهار قفل Migration، Dependency/Lockfile، Master shared-contract و اسناد مرکزی آزاد شدند.
 
-### `CUSTOMER-001` — PC-A — `IN_PROGRESS`
+### `CUSTOMER-001` — PC-A — `READY_FOR_REVIEW`
 
 - فاز A با PR شماره ۱۶ و Merge Commit `9fb1cb33cef9bfbbb998d4e3ce823688e7700a31`
   به‌صورت `DONE/MERGED` وارد `origin/develop` شد.
-- وضعیت کلی تا تکمیل Persistence فاز B برابر `IN_PROGRESS` است.
-- فاز B با قفل‌های لازم رزروشده مجاز به شروع است.
-- محدوده فاز B فقط Customers است و فایل داخلی IAM یا Master Data را تغییر نمی‌دهد.
-- Master Data فقط از قرارداد عمومی `@rubi/contracts` مصرف می‌شود.
-- ذخیره مدارک هویتی حساس تا تصمیم قطعی PII ممنوع است.
-- Duplicate auto-merge ممنوع است؛ فقط Candidate Detection و Review دستی مجاز است.
+- فاز B از baseline قطعی `9b96f6eabfe8aed8fe3377fd221fed43dd79d2eb` روی شاخه
+  `codex/pc-a-customer-persistence` در Commitهای `55686a1` و `a8cd0be` تکمیل شد.
+- Migration افزایشی `20260824093000_customer_persistence`، مدل‌های Customers با FK واقعی،
+  قرارداد عمومی `customers.v1`، Repository/API، Permission/Audit و UI واقعی تحویل شدند.
+- migration deploy/status و Seed idempotent روی PostgreSQL 18 تازه پاس شدند؛ lint،
+  typecheck، build و ۱۰۴ تست کل Monorepo نیز پاس شدند.
+- مقدار خام Contact و مدارک هویتی ذخیره نمی‌شوند؛ Fixtureها کاملاً ساختگی هستند و
+  Dependency/Lockfile تغییری نکرد.
+- `DEC-OPEN-006` و `DEC-OPEN-011` باز می‌مانند. نگهداری مدرک حساس، auto-merge و
+  merge واقعی ممنوع‌اند؛ فقط Candidate Detection و Review دستی ثبت و Audit می‌شوند.
 - نرخ ارز authoritative و تولید واقعی Excel/PDF خارج از این Handoff باقی می‌مانند.
-
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 
 - Branch آینده `codex/pc-b-customer-affairs-foundation` و هدف آن Foundation مستقل

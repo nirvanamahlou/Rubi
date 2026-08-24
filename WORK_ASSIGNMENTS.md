@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-23 — Handoff MASTER-002 به CUSTOMER-001 فاز B
+آخرین به‌روزرسانی: 2026-08-24 — CUSTOMER-001 فاز B آماده بازبینی
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
@@ -24,7 +24,7 @@
 | IAM-002               | PC-A         | `codex/pc-a-iam-domain-permissions`         | انتشار Permission Codeهای Master Data و Customers، Seed تکرارپذیر و Handoff قرارداد عمومی     | `DONE`             | Merge `d1f1133`؛ ۱۷ Permission و بدون Schema/Migration/Dependency           |
 | IAM002-HANDOFF-001    | PC-A         | `codex/pc-a-iam-002-handoff`                | ثبت Merge، آزادسازی IAM contract lock و مجازکردن شروع دو Task مستقل Sprint دوم                | `DONE`             | Merge `0af31c2`؛ دو Task مستقل مجاز به شروع هستند                           |
 | MASTER-002            | PC-B         | `codex/pc-b-master-data-persistence`        | Database، Migration، Repository، Backend و اتصال واقعی Frontend اطلاعات پایه                  | `DONE`             | Merge `ddfebb3`؛ چهار قفل با Handoff مستقل آزاد شدند                        |
-| CUSTOMER-001          | PC-A         | `codex/pc-a-customer-foundation`            | مشتریان و مسافران، Customer 360، consent، همراهان و Duplicate Candidate Control               | `IN_PROGRESS`      | فاز A با Merge `9fb1cb3` تمام شد؛ فاز B مجاز و قفل‌های لازم رزرو شدند       |
+| CUSTOMER-001          | PC-A         | `codex/pc-a-customer-persistence`           | مشتریان و مسافران، Persistence، Customer 360، Consent، همراهان و Duplicate Review             | `READY_FOR_REVIEW` | Commits `55686a1` و `a8cd0be`؛ بدون تغییر Dependency/Lockfile؛ merge واقعی مسدود |
 | CUSTOMER-AFFAIRS-001  | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket              | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence |
 | MASTER002-HANDOFF-001 | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                           | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |
 
