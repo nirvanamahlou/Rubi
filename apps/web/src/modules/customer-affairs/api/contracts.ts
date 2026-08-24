@@ -28,6 +28,7 @@ export const customerAffairsLocalPermissions = [
   'customer_affairs.ticket.assign',
   'customer_affairs.ticket.escalate',
   'customer_affairs.ticket.close',
+  'customer_affairs.ticket.reopen',
   'customer_affairs.sla.manage',
   'customer_affairs.satisfaction.read',
   'customer_affairs.satisfaction.record',

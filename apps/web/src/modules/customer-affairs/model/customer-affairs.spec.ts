@@ -5,6 +5,7 @@ import {
   normalizeCustomerAffairsQuery,
 } from '../api/contracts';
 import {
+  buildSalesHandoffPreview,
   filterPreviewRecords,
   paginatePreview,
   previewLeads,
@@ -60,6 +61,14 @@ describe('customer affairs frontend foundation', () => {
     expect(paginatePreview(previewLeads, 1, 2)).toHaveLength(2);
   });
 
+  it('builds a non-persisted Sales handoff proposal', () => {
+    expect(buildSalesHandoffPreview(previewLeads[2]!)).toMatchObject({
+      contractVersion: 'customer-affairs.sales-handoff.v1-proposal',
+      eventType: 'SalesHandoffRequested',
+      persisted: false,
+      customerReference: null,
+    });
+  });
   it('validates create/edit preview forms without persistence', () => {
     expect(
       validateCustomerAffairsDraft({
@@ -82,7 +91,7 @@ describe('customer affairs frontend foundation', () => {
   });
 
   it('publishes an explicit local deny-by-default permission proposal', () => {
-    expect(customerAffairsLocalPermissions).toHaveLength(14);
+    expect(customerAffairsLocalPermissions).toHaveLength(15);
     expect(customerAffairsLocalPermissions).toContain(
       'customer_affairs.lead.handoff.propose',
     );

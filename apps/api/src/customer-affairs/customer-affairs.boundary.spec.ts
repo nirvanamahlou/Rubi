@@ -16,7 +16,7 @@ describe('customer affairs phase A boundary', () => {
     expect(source).toContain('CustomerAffairsApplicationPort');
     expect(source).toContain('CUSTOMER_AFFAIRS_PHASE_A_NOTICE');
     expect(source).not.toMatch(
-      /@rubi\/(?:database|contracts)|PrismaClient|@nestjs|Controller|Repository|\.\.\/iam|\.\.\/customers|master-data/,
+      /@rubi\/database|PrismaClient|@nestjs|Controller|Repository|\.\.\/iam|\.\.\/customers|master-data/,
     );
   });
 

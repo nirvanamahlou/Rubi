@@ -61,6 +61,7 @@ export interface LeadSummary {
   nextActionAt: string | null;
   createdAt: string;
   updatedAt: string;
+  customerReference: CustomerReference | null;
 }
 
 export interface LeadDraft {
@@ -76,6 +77,7 @@ export interface LeadDraft {
   priority: LeadPriority;
   assigneeReference: string | null;
   nextActionAt: string | null;
+  customerReference: CustomerReference | null;
 }
 
 export interface LeadActivity {
@@ -111,6 +113,7 @@ export type TicketPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL';
 export type SLAState = 'ON_TRACK' | 'AT_RISK' | 'BREACHED' | 'PAUSED' | 'MET';
 
 export type TicketCategory =
+  | 'QUESTION'
   | 'COMPLAINT'
   | 'PROFILE_CORRECTION'
   | 'CANCELLATION'
@@ -119,7 +122,28 @@ export type TicketCategory =
   | 'HOTEL_VOUCHER'
   | 'INSURANCE'
   | 'ADDITIONAL_SERVICE'
+  | 'SERVICE_ISSUE'
   | 'OTHER';
+
+export type TicketInteractionType =
+  | 'CUSTOMER_MESSAGE'
+  | 'OUTBOUND_REPLY'
+  | 'PHONE_CALL'
+  | 'INTERNAL_NOTE'
+  | 'ASSIGNMENT'
+  | 'STATUS_CHANGE'
+  | 'ESCALATION'
+  | 'SATISFACTION';
+
+export interface TicketInteraction {
+  id: string;
+  ticketId: string;
+  type: TicketInteractionType;
+  occurredAt: string;
+  actorReference: string;
+  summary: string;
+  customerVisible: boolean;
+}
 
 export const ticketSortFields = [
   'createdAt',
@@ -157,11 +181,14 @@ export interface SalesRequestReference {
   salesRequestId: string;
   contractId?: string;
   reservationId?: string;
-  serviceReference?: string;
+  ticketDocumentId?: string;
+  voucherDocumentId?: string;
+  insurancePolicyId?: string;
 }
 
 export interface SupportTicketSummary {
   id: string;
+  trackingNumber: string;
   subject: string;
   category: TicketCategory;
   priority: TicketPriority;
@@ -175,6 +202,11 @@ export interface SupportTicketSummary {
   resolvedAt: string | null;
   slaState: SLAState;
   escalated: boolean;
+  escalationLevel: 1 | 2 | 3 | null;
+  closedAt: string | null;
+  closeReason: string | null;
+  resolutionOutcome: string | null;
+  reopenCount: number;
   updatedAt: string;
 }
 
@@ -207,6 +239,26 @@ export interface Satisfaction {
   submittedAt: string;
 }
 
+export interface TicketClosure {
+  ticketId: string;
+  resolutionOutcome: string;
+  closeReason: string;
+  closedAt: string;
+  closedByReference: string;
+}
+
+export type TicketReopenReason =
+  | 'CUSTOMER_REPORTED_UNRESOLVED'
+  | 'NEW_RELATED_EVIDENCE'
+  | 'INCORRECT_RESOLUTION'
+  | 'SERVICE_REGRESSION';
+
+export interface TicketReopenRequest {
+  reason: TicketReopenReason;
+  note: string;
+  expectedVersion: number;
+}
+
 export type CustomerAffairsAction =
   | 'lead.read'
   | 'lead.create'
@@ -219,6 +271,7 @@ export type CustomerAffairsAction =
   | 'ticket.assign'
   | 'ticket.escalate'
   | 'ticket.close'
+  | 'ticket.reopen'
   | 'sla.manage'
   | 'satisfaction.read'
   | 'satisfaction.record';
@@ -237,6 +290,7 @@ export const customerAffairsPermissionMatrix: Readonly<
   'ticket.assign': 'customer_affairs.ticket.assign',
   'ticket.escalate': 'customer_affairs.ticket.escalate',
   'ticket.close': 'customer_affairs.ticket.close',
+  'ticket.reopen': 'customer_affairs.ticket.reopen',
   'sla.manage': 'customer_affairs.sla.manage',
   'satisfaction.read': 'customer_affairs.satisfaction.read',
   'satisfaction.record': 'customer_affairs.satisfaction.record',
@@ -251,7 +305,15 @@ export const customerAffairsEndpointProposals = {
   ticketStatus: '/api/v1/customer-affairs/tickets/:ticketId/status',
   escalation: '/api/v1/customer-affairs/tickets/:ticketId/escalations',
   satisfaction: '/api/v1/customer-affairs/tickets/:ticketId/satisfaction',
+  reopenTicket: '/api/v1/customer-affairs/tickets/:ticketId/reopen',
 } as const;
+
+export const leadSortFields = [
+  'createdAt',
+  'updatedAt',
+  'nextActionAt',
+  'priority',
+] as const satisfies readonly LeadListQuery['sortBy'][];
 
 export function hasCustomerAffairsPermission(
   grantedPermissions: readonly string[],
@@ -292,6 +354,32 @@ export function normalizeTicketListQuery(
     priority: input.priority ?? 'ALL',
     assigneeReference: input.assigneeReference?.trim() || null,
     slaState: input.slaState ?? 'ALL',
+    overdueOnly: input.overdueOnly ?? false,
+    sortBy,
+    sortDirection: input.sortDirection === 'asc' ? 'asc' : 'desc',
+    page: normalizePositiveInteger(input.page, DEFAULT_PAGE),
+    pageSize: normalizePositiveInteger(
+      input.pageSize,
+      DEFAULT_PAGE_SIZE,
+      MAX_PAGE_SIZE,
+    ),
+  };
+}
+
+export function normalizeLeadListQuery(
+  input: Partial<LeadListQuery>,
+): LeadListQuery {
+  const sortBy = leadSortFields.includes(
+    input.sortBy as LeadListQuery['sortBy'],
+  )
+    ? (input.sortBy as LeadListQuery['sortBy'])
+    : 'updatedAt';
+
+  return {
+    search: input.search?.trim().slice(0, 100) ?? '',
+    stage: input.stage ?? 'ALL',
+    priority: input.priority ?? 'ALL',
+    assigneeReference: input.assigneeReference?.trim() || null,
     overdueOnly: input.overdueOnly ?? false,
     sortBy,
     sortDirection: input.sortDirection === 'asc' ? 'asc' : 'desc',

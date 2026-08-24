@@ -10,7 +10,10 @@ import type {
   Satisfaction,
   SupportTicketDraft,
   SupportTicketSummary,
+  TicketClosure,
+  TicketInteraction,
   TicketListQuery,
+  TicketReopenRequest,
   TicketStatus,
 } from './customer-affairs.contracts';
 
@@ -61,6 +64,10 @@ export interface CustomerAffairsApplicationPort {
     query: TicketListQuery,
     actor: CustomerAffairsActorContext,
   ): Promise<PaginatedResult<SupportTicketSummary>>;
+  listTicketTimeline(
+    ticketId: string,
+    actor: CustomerAffairsActorContext,
+  ): Promise<readonly TicketInteraction[]>;
   createTicket(
     draft: SupportTicketDraft,
     actor: CustomerAffairsActorContext,
@@ -81,6 +88,16 @@ export interface CustomerAffairsApplicationPort {
     escalation: Omit<Escalation, 'id' | 'ticketId' | 'escalatedAt'>,
     actor: CustomerAffairsActorContext,
   ): Promise<Escalation>;
+  closeTicket(
+    ticketId: string,
+    closure: Omit<TicketClosure, 'ticketId' | 'closedAt' | 'closedByReference'>,
+    actor: CustomerAffairsActorContext,
+  ): Promise<TicketClosure>;
+  reopenTicket(
+    ticketId: string,
+    request: TicketReopenRequest,
+    actor: CustomerAffairsActorContext,
+  ): Promise<SupportTicketSummary>;
   recordSatisfaction(
     ticketId: string,
     satisfaction: Omit<Satisfaction, 'ticketId' | 'submittedAt'>,
