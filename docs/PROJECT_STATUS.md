@@ -1,6 +1,6 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-24 — CUSTOMER-001 فاز B آماده بازبینی
+آخرین به‌روزرسانی: 2026-08-24 — اصلاحات امنیتی و کارایی CUSTOMER-001 آماده بازبینی
 
 ## خلاصه
 
@@ -25,13 +25,20 @@
 - فاز A با PR شماره ۱۶ و Merge Commit `9fb1cb33cef9bfbbb998d4e3ce823688e7700a31`
   به‌صورت `DONE/MERGED` وارد `origin/develop` شد.
 - فاز B از baseline قطعی `9b96f6eabfe8aed8fe3377fd221fed43dd79d2eb` روی شاخه
-  `codex/pc-a-customer-persistence` در Commitهای `55686a1` و `a8cd0be` تکمیل شد؛ Draft PR شماره ۱۹ به `develop` باز است.
-- Migration افزایشی `20260824093000_customer_persistence`، مدل‌های Customers با FK واقعی،
-  قرارداد عمومی `customers.v1`، Repository/API، Permission/Audit و UI واقعی تحویل شدند.
-- migration deploy/status و Seed idempotent روی PostgreSQL 18 تازه پاس شدند؛ lint،
-  typecheck، build و ۱۰۴ تست کل Monorepo نیز پاس شدند.
-- مقدار خام Contact و مدارک هویتی ذخیره نمی‌شوند؛ Fixtureها کاملاً ساختگی هستند و
-  Dependency/Lockfile تغییری نکرد.
+  `codex/pc-a-customer-persistence` تکمیل شد؛ اصلاحات Review در Commitهای `c85de3d`،
+  `004b9cb` و `6e6df8c` روی همان Draft PR شماره ۱۹ قرار دارند.
+- Migration اصلی `20260824093000_customer_persistence` byte-for-byte دست‌نخورده ماند؛
+  Migration افزایشی `20260824113000_customer_contact_encryption_hardening` ستون‌ها،
+  constraintها و indexهای رمزنگاری Contact را بدون عملیات مخرب اضافه کرد.
+- Contact با AES-256-GCM و کلید نسخه‌دار ذخیره می‌شود؛ fingerprint از HMAC-SHA-256 با
+  کلید مستقل ساخته می‌شود. reveal فقط با `customers.sensitive.read` و Audit مستقل است.
+- Auditهای Customer/Contact/Address/Consent/Companion/Duplicate فقط snapshot allowlist دارند؛
+  duplicate query نیز branch-scoped، index-backed و محدود به ۵۰ کاندید است.
+- قرارداد عمومی به `customers.v2` ارتقا یافت. migration deploy/status، Seed دوگانه، lint،
+  typecheck، build و ۱۲۰ تست Monorepo پاس شدند؛ Dependency/Lockfile تغییری نکرد.
+- سه تنظیم blank-only در `.env.example`، `apps/api/.env.example` و validation رزرو و ثبت شدند:
+  `CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64`، `CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64` و
+  `CUSTOMER_CONTACT_ENCRYPTION_KEY_VERSION`. Fixtureها کاملاً ساختگی هستند.
 - `DEC-OPEN-006` و `DEC-OPEN-011` باز می‌مانند. نگهداری مدرک حساس، auto-merge و
   merge واقعی ممنوع‌اند؛ فقط Candidate Detection و Review دستی ثبت و Audit می‌شوند.
 - نرخ ارز authoritative و تولید واقعی Excel/PDF خارج از این Handoff باقی می‌مانند.

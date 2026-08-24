@@ -131,9 +131,13 @@ Baseline برنامه: `origin/develop` در Merge Commit
   به‌صورت `DONE/MERGED` تکمیل شد.
 - فاز B از `9b96f6eabfe8aed8fe3377fd221fed43dd79d2eb` روی
   `codex/pc-a-customer-persistence` پیاده‌سازی شد.
-- Migration افزایشی Customers، FKهای واقعی، Seed ساختگی و idempotent، قرارداد عمومی،
-  Repository/API، permission/audit و Customer 360 متصل تکمیل شدند.
-- lint، typecheck، build، migration deploy/status و Seed دوگانه پاس شدند؛ ۱۰۴ تست کل
+- Migration اصلی Customers بدون تغییر حفظ شد و Migration افزایشی
+  `20260824113000_customer_contact_encryption_hardening` رمزنگاری AES-256-GCM،
+  HMAC-SHA-256 و indexهای fingerprint را اضافه کرد؛ قرارداد عمومی `customers.v2`،
+  permission/audit allowlist و Customer 360 متصل تکمیل شدند.
+- duplicate search به query محدود و branch-scoped با سقف ۵۰ کاندید تبدیل شد و reveal مقدار
+  Contact فقط با `customers.sensitive.read` و Audit مستقل انجام می‌شود.
+- lint، typecheck، build، migration deploy/status و Seed دوگانه پاس شدند؛ ۱۲۰ تست کل
   Monorepo موفق بود و Dependency/Lockfile تغییر نکرد.
 - به‌دلیل بازبودن `DEC-OPEN-006` هیچ مدرک هویتی حساس ذخیره نمی‌شود. به‌دلیل بازبودن
   `DEC-OPEN-011` فقط Candidate Detection و Review دستی مجاز است و merge واقعی مسدود است.
