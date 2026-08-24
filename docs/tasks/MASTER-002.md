@@ -1,12 +1,14 @@
 # MASTER-002 — Master Data Persistence
 
-- وضعیت: `READY_FOR_REVIEW`
+- وضعیت: `DONE`
 - مالک: `PC-B`
 - Branch: `codex/pc-b-master-data-persistence`
+- Merge Commit: `ddfebb369de67cb7ff45bd15a06841d3251c945a`
 - Base: `f4381b5c842c962652f6fb168b3a6507177393e4`
-- Migration Owner: `PC-B/MASTER-002`
-- Dependency/Lockfile Owner: `PC-B/MASTER-002`
-- Shared Contract Owner: `PC-B/MASTER-002`
+- Migration Owner: `RELEASED` با Merge `ddfebb3`
+- Dependency/Lockfile Owner: `RELEASED` با Merge `ddfebb3`
+- Shared Contract Owner: `RELEASED` با Merge `ddfebb3`
+- Central Sprint status docs: `RELEASED` با Merge `ddfebb3`
 
 ## محدوده
 
@@ -79,6 +81,10 @@ timezone پایدار می‌شود. تا قرارداد عمومی Documents/Wo
 
 - `DEC-OPEN-004`: نرخ‌ها صرفاً Draft/Preview و `isAuthoritative=false` هستند.
 - تولید Excel/PDF واقعی منتظر قرارداد و Worker ماژول Documents است؛ هیچ فایل جعلی نیست.
-- چهار قفل MASTER-002 تا Merge فعال می‌مانند. پس از Merge باید Handoff مستقل، نتیجه
-  Migration و قرارداد Master را به PC-A تحویل دهد و سپس قفل Migration برای فاز B
-  `CUSTOMER-001` صریحاً رزرو شود.
+- PR شماره ۱۵ با Merge `ddfebb369de67cb7ff45bd15a06841d3251c945a` ادغام و Task
+  `DONE` شد.
+- چهار قفل MASTER-002 آزاد و قفل‌های لازم برای `CUSTOMER-001` فاز B در Handoff مستقل
+  رزرو شدند.
+- Migration اطلاعات پایه پیش‌تر روی دیتابیس Preview محلی اعمال شده است؛ Volume، داده یا
+  تاریخچه Migration نباید حذف یا دستی دست‌کاری شود.
+- تست Migrationهای بعدی فقط روی PostgreSQL ایزوله و تازه اجرا می‌شود.
