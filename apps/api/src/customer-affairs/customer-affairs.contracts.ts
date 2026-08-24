@@ -35,6 +35,14 @@ export interface LeadListQuery {
   pageSize: number;
 }
 
+export interface PaginatedResult<T> {
+  data: readonly T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export interface LeadSummary {
   id: string;
   title: string;
@@ -113,6 +121,31 @@ export type TicketCategory =
   | 'ADDITIONAL_SERVICE'
   | 'OTHER';
 
+export const ticketSortFields = [
+  'createdAt',
+  'updatedAt',
+  'firstResponseDueAt',
+  'resolutionDueAt',
+  'priority',
+  'status',
+] as const;
+
+export type TicketSortField = (typeof ticketSortFields)[number];
+
+export interface TicketListQuery {
+  search: string;
+  status: TicketStatus | 'ALL';
+  category: TicketCategory | 'ALL';
+  priority: TicketPriority | 'ALL';
+  assigneeReference: string | null;
+  slaState: SLAState | 'ALL';
+  overdueOnly: boolean;
+  sortBy: TicketSortField;
+  sortDirection: 'asc' | 'desc';
+  page: number;
+  pageSize: number;
+}
+
 export interface CustomerReference {
   kind: 'CUSTOMER_REFERENCE_PROPOSAL';
   customerId: string;
@@ -187,7 +220,8 @@ export type CustomerAffairsAction =
   | 'ticket.escalate'
   | 'ticket.close'
   | 'sla.manage'
-  | 'satisfaction.read';
+  | 'satisfaction.read'
+  | 'satisfaction.record';
 
 export const customerAffairsPermissionMatrix: Readonly<
   Record<CustomerAffairsAction, string>
@@ -205,6 +239,7 @@ export const customerAffairsPermissionMatrix: Readonly<
   'ticket.close': 'customer_affairs.ticket.close',
   'sla.manage': 'customer_affairs.sla.manage',
   'satisfaction.read': 'customer_affairs.satisfaction.read',
+  'satisfaction.record': 'customer_affairs.satisfaction.record',
 };
 
 export const customerAffairsEndpointProposals = {
@@ -224,4 +259,72 @@ export function hasCustomerAffairsPermission(
 ): boolean {
   const required = customerAffairsPermissionMatrix[action];
   return grantedPermissions.includes(required);
+}
+
+const DEFAULT_PAGE = 1;
+const DEFAULT_PAGE_SIZE = 25;
+const MAX_PAGE_SIZE = 100;
+
+function normalizePositiveInteger(
+  value: number | undefined,
+  fallback: number,
+  maximum?: number,
+): number {
+  if (value === undefined || !Number.isFinite(value)) {
+    return fallback;
+  }
+
+  const normalized = Math.max(1, Math.trunc(value));
+  return maximum === undefined ? normalized : Math.min(maximum, normalized);
+}
+
+export function normalizeTicketListQuery(
+  input: Partial<TicketListQuery>,
+): TicketListQuery {
+  const sortBy = ticketSortFields.includes(input.sortBy as TicketSortField)
+    ? (input.sortBy as TicketSortField)
+    : 'updatedAt';
+
+  return {
+    search: input.search?.trim().slice(0, 100) ?? '',
+    status: input.status ?? 'ALL',
+    category: input.category ?? 'ALL',
+    priority: input.priority ?? 'ALL',
+    assigneeReference: input.assigneeReference?.trim() || null,
+    slaState: input.slaState ?? 'ALL',
+    overdueOnly: input.overdueOnly ?? false,
+    sortBy,
+    sortDirection: input.sortDirection === 'asc' ? 'asc' : 'desc',
+    page: normalizePositiveInteger(input.page, DEFAULT_PAGE),
+    pageSize: normalizePositiveInteger(
+      input.pageSize,
+      DEFAULT_PAGE_SIZE,
+      MAX_PAGE_SIZE,
+    ),
+  };
+}
+
+export function createPaginatedResult<T>(
+  data: readonly T[],
+  total: number,
+  page: number,
+  pageSize: number,
+): PaginatedResult<T> {
+  const normalizedTotal = Number.isFinite(total)
+    ? Math.max(0, Math.trunc(total))
+    : 0;
+  const normalizedPage = normalizePositiveInteger(page, DEFAULT_PAGE);
+  const normalizedPageSize = normalizePositiveInteger(
+    pageSize,
+    DEFAULT_PAGE_SIZE,
+    MAX_PAGE_SIZE,
+  );
+
+  return {
+    data,
+    total: normalizedTotal,
+    page: normalizedPage,
+    pageSize: normalizedPageSize,
+    totalPages: Math.ceil(normalizedTotal / normalizedPageSize),
+  };
 }

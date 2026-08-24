@@ -142,14 +142,62 @@ describe('customer affairs phase A domain', () => {
   });
 
   it('uses an exact deny-by-default permission matrix', () => {
-    const readPermission = customerAffairsPermissionMatrix['lead.read'];
+    const leadReadPermission = customerAffairsPermissionMatrix['lead.read'];
+    const satisfactionReadPermission =
+      customerAffairsPermissionMatrix['satisfaction.read'];
+    const satisfactionRecordPermission =
+      customerAffairsPermissionMatrix['satisfaction.record'];
+
     expect(hasCustomerAffairsPermission([], 'lead.read')).toBe(false);
-    expect(hasCustomerAffairsPermission([readPermission], 'lead.read')).toBe(
-      true,
-    );
-    expect(hasCustomerAffairsPermission([readPermission], 'lead.update')).toBe(
-      false,
-    );
-    expect(Object.keys(customerAffairsPermissionMatrix)).toHaveLength(13);
+    expect(
+      hasCustomerAffairsPermission([leadReadPermission], 'lead.read'),
+    ).toBe(true);
+    expect(
+      hasCustomerAffairsPermission([leadReadPermission], 'lead.update'),
+    ).toBe(false);
+
+    expect(hasCustomerAffairsPermission([], 'satisfaction.read')).toBe(false);
+    expect(hasCustomerAffairsPermission([], 'satisfaction.record')).toBe(false);
+    expect(
+      hasCustomerAffairsPermission(
+        [satisfactionReadPermission],
+        'satisfaction.record',
+      ),
+    ).toBe(false);
+    expect(
+      hasCustomerAffairsPermission(
+        [satisfactionRecordPermission],
+        'satisfaction.read',
+      ),
+    ).toBe(false);
+    expect(
+      hasCustomerAffairsPermission(
+        [satisfactionReadPermission],
+        'satisfaction.read',
+      ),
+    ).toBe(true);
+    expect(
+      hasCustomerAffairsPermission(
+        [satisfactionRecordPermission],
+        'satisfaction.record',
+      ),
+    ).toBe(true);
+
+    expect(Object.values(customerAffairsPermissionMatrix)).toEqual([
+      'customer_affairs.lead.read',
+      'customer_affairs.lead.create',
+      'customer_affairs.lead.update',
+      'customer_affairs.lead.qualify',
+      'customer_affairs.lead.handoff.propose',
+      'customer_affairs.ticket.read',
+      'customer_affairs.ticket.create',
+      'customer_affairs.ticket.update',
+      'customer_affairs.ticket.assign',
+      'customer_affairs.ticket.escalate',
+      'customer_affairs.ticket.close',
+      'customer_affairs.sla.manage',
+      'customer_affairs.satisfaction.read',
+      'customer_affairs.satisfaction.record',
+    ]);
   });
 });

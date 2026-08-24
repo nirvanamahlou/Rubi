@@ -5,10 +5,12 @@ import type {
   LeadListQuery,
   LeadStage,
   LeadSummary,
+  PaginatedResult,
   QualificationResult,
   Satisfaction,
   SupportTicketDraft,
   SupportTicketSummary,
+  TicketListQuery,
   TicketStatus,
 } from './customer-affairs.contracts';
 
@@ -22,7 +24,7 @@ export interface CustomerAffairsApplicationPort {
   listLeads(
     query: LeadListQuery,
     actor: CustomerAffairsActorContext,
-  ): Promise<readonly LeadSummary[]>;
+  ): Promise<PaginatedResult<LeadSummary>>;
   getLead(
     leadId: string,
     actor: CustomerAffairsActorContext,
@@ -56,8 +58,9 @@ export interface CustomerAffairsApplicationPort {
     actor: CustomerAffairsActorContext,
   ): Promise<LeadActivity>;
   listTickets(
+    query: TicketListQuery,
     actor: CustomerAffairsActorContext,
-  ): Promise<readonly SupportTicketSummary[]>;
+  ): Promise<PaginatedResult<SupportTicketSummary>>;
   createTicket(
     draft: SupportTicketDraft,
     actor: CustomerAffairsActorContext,
