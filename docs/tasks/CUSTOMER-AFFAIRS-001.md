@@ -129,5 +129,6 @@ Merge این PR و Handoff صریح قفل‌های لازم آغاز می‌ش�
 
 - `29030c5` — Domain، Application Port، قرارداد ماژول‌محلی و تست‌ها
 - `ded122a` — Workspace فارسی/RTL، Preview stateها و تست‌های Frontend
+- `a1a78ac` — فرم‌های تخصصی Lead/Ticket و contract test فیلدهای عملیاتی
 
 این Branch Merge نشده و Source Branch حذف نمی‌شود.
