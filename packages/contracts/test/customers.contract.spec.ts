@@ -1,0 +1,19 @@
+import { describe, expect, it } from 'vitest';
+import {
+  CUSTOMER_ERROR_CODES,
+  CUSTOMERS_API_PREFIX,
+  CUSTOMERS_CONTRACT_VERSION,
+  customerEndpoints,
+} from '../src';
+
+describe('Customers public contract v1', () => {
+  it('publishes stable versioned endpoints and conflict errors', () => {
+    expect(CUSTOMERS_CONTRACT_VERSION).toBe(1);
+    expect(CUSTOMERS_API_PREFIX).toBe('/api/v1/customers');
+    expect(customerEndpoints.contacts('customer id')).toContain(
+      'customer%20id/contacts',
+    );
+    expect(CUSTOMER_ERROR_CODES).toContain('CONCURRENT_MODIFICATION');
+    expect(CUSTOMER_ERROR_CODES).toContain('MERGE_BLOCKED_BY_OPEN_DECISION');
+  });
+});
