@@ -25,7 +25,7 @@
 - فاز A با PR شماره ۱۶ و Merge Commit `9fb1cb33cef9bfbbb998d4e3ce823688e7700a31`
   به‌صورت `DONE/MERGED` وارد `origin/develop` شد.
 - فاز B از baseline قطعی `9b96f6eabfe8aed8fe3377fd221fed43dd79d2eb` روی شاخه
-  `codex/pc-a-customer-persistence` در Commitهای `55686a1` و `a8cd0be` تکمیل شد.
+  `codex/pc-a-customer-persistence` در Commitهای `55686a1` و `a8cd0be` تکمیل شد؛ Draft PR شماره ۱۹ به `develop` باز است.
 - Migration افزایشی `20260824093000_customer_persistence`، مدل‌های Customers با FK واقعی،
   قرارداد عمومی `customers.v1`، Repository/API، Permission/Audit و UI واقعی تحویل شدند.
 - migration deploy/status و Seed idempotent روی PostgreSQL 18 تازه پاس شدند؛ lint،

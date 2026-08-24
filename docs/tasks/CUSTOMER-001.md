@@ -8,6 +8,7 @@
 - **Phase A status:** DONE/MERGED — Merge `9fb1cb33cef9bfbbb998d4e3ce823688e7700a31`
 - **Phase B status:** READY_FOR_REVIEW
 - **Implementation commits:** `55686a1` و `a8cd0be`
+- **Draft PR:** #19 → `develop`
 - **Migration:** `20260824093000_customer_persistence`
 
 ## نتیجه فاز B
