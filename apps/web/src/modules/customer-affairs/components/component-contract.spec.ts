@@ -35,6 +35,10 @@ describe('customer affairs workspace contract', () => {
       'Persistence',
       'SLA',
       'Qualification',
+      'منبع آشنایی',
+      'تعداد مسافر',
+      'دسته‌بندی Ticket',
+      'موعد حل SLA',
     ]) {
       expect(workspaceSource).toContain(marker);
     }

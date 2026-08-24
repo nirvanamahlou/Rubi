@@ -284,6 +284,175 @@ function PreviewForm({
               value={draft.title}
             />
           </FormField>
+          {kind === 'lead' ? (
+            <div className="grid gap-4 rounded-2xl border border-border bg-muted/20 p-4 sm:grid-cols-2">
+              <FormField label="منبع آشنایی">
+                <Select defaultValue="REFERRAL" disabled={readonly}>
+                  <SelectTrigger aria-label="منبع آشنایی">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="REFERRAL">معرفی ساختگی</SelectItem>
+                    <SelectItem value="WEBSITE">وب‌سایت نمایشی</SelectItem>
+                    <SelectItem value="CAMPAIGN">کمپین نمایشی</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormField>
+              <FormField label="کانال ورودی">
+                <Select defaultValue="PHONE" disabled={readonly}>
+                  <SelectTrigger aria-label="کانال ورودی">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PHONE">تماس تلفنی</SelectItem>
+                    <SelectItem value="MESSAGE">پیام</SelectItem>
+                    <SelectItem value="MEETING">جلسه</SelectItem>
+                    <SelectItem value="WEB_FORM">فرم آنلاین</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormField>
+              <FormField id="lead-destination" label="مقصد پیشنهادی">
+                <Input
+                  defaultValue={mode === 'create' ? '' : 'مقصد نمونه A'}
+                  disabled={readonly}
+                  id="lead-destination"
+                  placeholder="Reference نمایشی مقصد"
+                  readOnly={readonly}
+                />
+              </FormField>
+              <FormField id="lead-approximate-date" label="تاریخ تقریبی سفر">
+                <Input
+                  defaultValue={mode === 'create' ? '' : '2026-09-10'}
+                  disabled={readonly}
+                  id="lead-approximate-date"
+                  readOnly={readonly}
+                  type="date"
+                />
+              </FormField>
+              <FormField id="lead-passengers" label="تعداد مسافر">
+                <Input
+                  defaultValue={mode === 'create' ? '1' : '3'}
+                  disabled={readonly}
+                  id="lead-passengers"
+                  min={1}
+                  readOnly={readonly}
+                  type="number"
+                />
+              </FormField>
+              <FormField id="lead-budget" label="بودجه اولیه">
+                <div className="grid grid-cols-[1fr_5rem] gap-2">
+                  <Input
+                    defaultValue={mode === 'create' ? '' : '250000000'}
+                    disabled={readonly}
+                    id="lead-budget"
+                    inputMode="decimal"
+                    placeholder="Decimal"
+                    readOnly={readonly}
+                  />
+                  <Input
+                    aria-label="کد ارز بودجه"
+                    defaultValue="IRR"
+                    disabled={readonly}
+                    dir="ltr"
+                    maxLength={3}
+                    readOnly={readonly}
+                  />
+                </div>
+              </FormField>
+            </div>
+          ) : (
+            <div className="grid gap-4 rounded-2xl border border-border bg-muted/20 p-4 sm:grid-cols-2">
+              <FormField label="دسته‌بندی Ticket">
+                <Select defaultValue="HOTEL_VOUCHER" disabled={readonly}>
+                  <SelectTrigger aria-label="دسته‌بندی Ticket">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="COMPLAINT">شکایت</SelectItem>
+                    <SelectItem value="PROFILE_CORRECTION">
+                      اصلاح مشخصات
+                    </SelectItem>
+                    <SelectItem value="CANCELLATION">کنسلی</SelectItem>
+                    <SelectItem value="REFUND">استرداد</SelectItem>
+                    <SelectItem value="TICKET_ISSUE">مشکل بلیت</SelectItem>
+                    <SelectItem value="HOTEL_VOUCHER">هتل یا واچر</SelectItem>
+                    <SelectItem value="INSURANCE">بیمه</SelectItem>
+                    <SelectItem value="ADDITIONAL_SERVICE">
+                      خدمات تکمیلی
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormField>
+              <FormField label="وضعیت Ticket">
+                <Select defaultValue="NEW" disabled={readonly}>
+                  <SelectTrigger aria-label="وضعیت Ticket">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NEW">جدید</SelectItem>
+                    <SelectItem value="TRIAGED">دسته‌بندی‌شده</SelectItem>
+                    <SelectItem value="IN_PROGRESS">در حال رسیدگی</SelectItem>
+                    <SelectItem value="WAITING_CUSTOMER">
+                      منتظر مشتری
+                    </SelectItem>
+                    <SelectItem value="WAITING_EXTERNAL">
+                      منتظر واحد بیرونی
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormField>
+              <FormField
+                description="فقط proposal؛ Customer داخلی import نمی‌شود."
+                id="ticket-customer-reference"
+                label="Customer Reference"
+              >
+                <Input
+                  defaultValue={
+                    mode === 'create' ? '' : 'preview-customer-ref-001'
+                  }
+                  disabled={readonly}
+                  dir="ltr"
+                  id="ticket-customer-reference"
+                  placeholder="preview-customer-ref-*"
+                  readOnly={readonly}
+                />
+              </FormField>
+              <FormField
+                description="قرارداد/رزرو/خدمت فقط reference پیشنهادی است."
+                id="ticket-sales-reference"
+                label="Sales/Reservation Reference"
+              >
+                <Input
+                  defaultValue={
+                    mode === 'create' ? '' : 'preview-sales-ref-001'
+                  }
+                  disabled={readonly}
+                  dir="ltr"
+                  id="ticket-sales-reference"
+                  placeholder="preview-sales-ref-*"
+                  readOnly={readonly}
+                />
+              </FormField>
+              <FormField id="ticket-response-due" label="موعد اولین پاسخ">
+                <Input
+                  defaultValue={mode === 'create' ? '' : '2026-08-25T09:00'}
+                  disabled={readonly}
+                  id="ticket-response-due"
+                  readOnly={readonly}
+                  type="datetime-local"
+                />
+              </FormField>
+              <FormField id="ticket-resolution-due" label="موعد حل SLA">
+                <Input
+                  defaultValue={mode === 'create' ? '' : '2026-08-25T16:00'}
+                  disabled={readonly}
+                  id="ticket-resolution-due"
+                  readOnly={readonly}
+                  type="datetime-local"
+                />
+              </FormField>
+            </div>
+          )}
           <FormField
             {...(errors.details ? { error: errors.details } : {})}
             description="از ثبت نام، شماره تماس، مدرک یا هر PII واقعی خودداری شود."
