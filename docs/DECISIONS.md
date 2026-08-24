@@ -29,11 +29,8 @@
 
 | ID           | اولویت | سوال/مالک لازم                                                                                         | اثر در صورت بازماندن                                  |
 | ------------ | ------ | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
-| DEC-OPEN-001 | P0     | مرز دقیق Sub-ledger و contract حسابداری قانونی؟ مالک مالی                                              | chart/mapping/posting schema                          |
 | DEC-OPEN-002 | P0     | دو سایت: دامنه، برند، channel، ارز، markup و gateway؟ مالک محصول                                       | channel/config/branding                               |
 | DEC-OPEN-003 | P0     | Providerهای موج اول و capability/SLA واقعی؟ عملیات سفر                                                 | adapter و reservation states                          |
-| DEC-OPEN-004 | P0     | ارزها، precision/rounding، FX source، tax و recognition؟ مالی                                          | Money/journal/reporting                               |
-| DEC-OPEN-005 | P0     | approval matrix برای purchase/payment/refund/journal؟ مالی/امنیت                                       | RBAC/workflow                                         |
 | DEC-OPEN-006 | P0     | PII/document retention، residency و key management؟ حقوقی/امنیت                                        | data/security/deployment                              |
 | DEC-OPEN-007 | P0     | hosting، RPO/RTO، availability و traffic؟ عملیات                                                       | topology/backup/capacity                              |
 | DEC-OPEN-008 | P1     | B2B credit exposure و blocking policy؟ فروش B2B/مالی                                                   | order authorization                                   |
@@ -44,9 +41,22 @@
 | DEC-OPEN-013 | P1     | تقویم/شیفت، سیاست حضور و مرخصی، حداقل payroll input و retention پرونده پرسنلی؟ منابع انسانی/مالی/حقوقی | HR workflow، permission، reporting و Finance contract |
 | DEC-OPEN-014 | P0     | مشخصات واقعی API بیمه سامان، sandbox، طرح‌ها، cancel/refund و SLA؟ عملیات سفر/بیمه                     | Insurance adapter و state/error mapping               |
 | DEC-OPEN-015 | P0     | قالب Excel، تناوب ارسال، کانال انتقال و acknowledgement هر ایرلاین؟ رزرواسیون                          | Manifest template/version/schedule                    |
-| DEC-OPEN-016 | P0     | ماتریس مجوز صدور/تحویل براساس پرداخت، چک، اعتبار و استثنای مدیر؟ مالی/فروش                              | Financial release policy و RBAC                       |
 
 ## روش ثبت تصمیم بعدی
 
 هر تصمیم باید Context، گزینه‌ها، انتخاب، دلیل، consequences، owner/date و migration/reversal plan
 داشته باشد. تغییر تصمیم پذیرفته‌شده با ADR جدید supersede می‌شود و تاریخچه حذف نمی‌شود.
+
+## تصمیم‌های پذیرفته‌شده FINANCE-001
+
+مالک محصول و کسب‌وکار در 2026-08-24 هر چهار Decision Record زیر را رسماً پذیرفت:
+
+- [DEC-OPEN-001 — مرز Sub-ledger و حسابداری قانونی](decisions/DEC-OPEN-001-finance-ledger-boundary.md)
+- [DEC-OPEN-004 — Money، FX، Tax و Recognition](decisions/DEC-OPEN-004-money-fx-tax-recognition.md)
+- [DEC-OPEN-005 — Approval Matrix و Maker/Checker](decisions/DEC-OPEN-005-finance-approval-matrix.md)
+- [DEC-OPEN-016 — Financial Release](decisions/DEC-OPEN-016-financial-release-policy.md)
+
+این چهار مورد دیگر تصمیم باز نیستند. پذیرش آن‌ها فقط Gate معماری را رفع می‌کند؛ در
+FINANCE-001 Phase A هیچ Prisma Schema، Migration، Repository، Persistence، Dependency یا
+Lockfile تغییر نمی‌کند. پس از Merge PR #21، ایجاد Schema و Migration افزایشی مالی فقط در
+Task مستقل Phase B، با رزرو مجدد قفل‌ها و Migration gate کامل، مجاز خواهد بود.

@@ -5,12 +5,15 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 
 ## دروازه‌های تصمیم پیش از Foundation
 
-- [ ] `DEC-OPEN-001`: دامنه Sub-ledger و مرز اتصال حسابداری قانونی تایید شود.
+- [x] `DEC-OPEN-001`: دامنه Sub-ledger و مرز اتصال حسابداری قانونی تایید شود.
 - [ ] `DEC-OPEN-002`: دو دامنه سایت، برندها، درگاه‌ها و ارزهای قابل فروش مشخص شوند.
 - [ ] `DEC-OPEN-003`: Providerهای موج اول و قابلیت واقعی هر API تعیین شوند.
-- [ ] `DEC-OPEN-004`: قواعد نگهداری/رمزنگاری مدارک هویتی و محل میزبانی تصویب شود.
-- [ ] `DEC-OPEN-005`: تقویم کاری، SLA و نقش‌های تایید مالی اولیه مشخص شوند.
+- [x] `DEC-OPEN-004`: ارز، Decimal/rounding، FX source، Tax و Recognition تایید شود.
+- [x] `DEC-OPEN-005`: Approval Matrix مالی و Maker/Checker تایید شود.
+- [ ] `DEC-OPEN-006`: PII/document retention، residency و key management تایید شود.
+- [ ] `DEC-OPEN-007`: hosting، RPO/RTO، availability و traffic تایید شود.
 - [ ] `DEC-OPEN-013`: سیاست HR، تقویم/شیفت، payroll input و retention پرسنلی مشخص شوند.
+- [x] `DEC-OPEN-016`: Financial Release، basisها و استثنای مدیر تایید شود.
 
 ## مراحل
 
@@ -143,19 +146,22 @@ Baseline برنامه: `origin/develop` در Merge Commit
   `DEC-OPEN-011` فقط Candidate Detection و Review دستی مجاز است و merge واقعی مسدود است.
 - PR شماره ۱۹ با Merge Commit `7d0a4f42e978b468263efdc83f780fa656fbd613` وارد `develop` شد؛ Task `DONE/MERGED` است.
 
-### `FINANCE-001` — PC-A — `PLANNED`
+### `FINANCE-001` — PC-A — `READY_FOR_REVIEW`
 
-- Branch آینده: `codex/pc-a-finance-foundation`؛ شروع پس از Merge Handoff مستقل.
-- فاز نخست فقط Foundation مالی، تثبیت مرز Sub-ledger، تصمیم‌های P0، طراحی Domain/Application،
+- Branch فعال: `codex/pc-a-finance-foundation` از baseline `a165923`؛ Handoff با PR #20
+  و Merge `11fc875` وارد `develop` شده است.
+- فاز نخست فقط Foundation مالی، تثبیت مرز Sub-ledger، طراحی Domain/Application،
   قراردادهای producer/consumer و UI/stateهای بدون Persistence را پوشش می‌دهد.
-- Migration، Schema، posting/accounting mapping، FX authoritative، tax/recognition و approval
-  workflow تا حل و ثبت `DEC-OPEN-001`، `DEC-OPEN-004`، `DEC-OPEN-005` و
-  `DEC-OPEN-016` ممنوع‌اند.
-- قفل Migration به Finance منتقل ولی تا Decision Gate غیرفعال است؛ Dependency/Lockfile فقط
-  پس از ثبت dependency و فایل دقیق فعال می‌شود. Finance shared-contract و اسناد مرکزی نیز
-  منحصراً در اختیار PC-A/FINANCE-001 هستند.
+- `DEC-OPEN-001`، `DEC-OPEN-004`، `DEC-OPEN-005` و `DEC-OPEN-016` با تأیید رسمی مالک
+  محصول و کسب‌وکار در 2026-08-24 به `ACCEPTED` تغییر کردند و Gate معماری رفع شد.
+- پذیرش Decisionها Scope فاز جاری را توسعه نمی‌دهد: هیچ Prisma Schema، Migration،
+  Repository، Persistence، Dependency یا Lockfile در FINANCE-001 Phase A تغییر نمی‌کند.
+- پس از Merge PR #21، Schema و Migration افزایشی مالی فقط در Task مستقل Phase B، با
+  رزرو صریح Migration Owner و اجرای Migration gate، مجاز خواهد بود.
 - Finance به جدول‌های Customers، Sales، Reservations، Procurement یا HR query مستقیم نمی‌زند
   و فقط contract/event عمومی و referenceهای پایدار مصرف می‌کند.
+- Domain/Application، قرارداد عمومی پیشنهادی و Workspace مسیر `/finance` تکمیل شدند؛
+  ۱۷۲ تست، lint/typecheck و Production Build پاس و PR شماره ۲۱ برای Review آماده می‌شود.
 
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 
@@ -198,7 +204,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
 ### معیارهای عدم تداخل
 
 - PC-A در `FINANCE-001` مالک مشروط Migration، Finance shared-contract و اسناد مرکزی است؛
-  تا حل Decision Gate هیچ Schema/Migration مالی ایجاد نمی‌شود.
+  Decision Gate پذیرفته شده است؛ Schema/Migration فقط پس از Merge PR #21 و در Task مستقل Phase B ایجاد می‌شود.
 - قفل Dependency/Lockfile فقط هنگام نیاز واقعی و پس از ثبت dependency و فایل دقیق فعال
   می‌شود.
 - هر تغییر Contract مشترک producer/consumer، نسخه و برنامه سازگاری ثبت‌شده می‌خواهد.
