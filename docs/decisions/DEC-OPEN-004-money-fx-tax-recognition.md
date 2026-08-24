@@ -1,10 +1,12 @@
 # DEC-OPEN-004 — ارز، Decimal، Rounding، FX، Tax و Recognition
 
-- **Status:** PROPOSED
+- **Status:** ACCEPTED
 - **Owner:** مالک مالی با تایید مالک محصول/حقوقی
 - **Proposer:** PC-A/FINANCE-001
 - **Date:** 2026-08-24
-- **Gate:** تا ACCEPTED شدن، FX authoritative، Tax/Recognition اجرایی و Migration ممنوع است.
+- **Approved by:** مالک محصول و کسب‌وکار
+- **Accepted date:** 2026-08-24
+- **Gate:** تصمیم معماری پذیرفته شد؛ پیاده‌سازی Schema/Migration فقط در Task مستقل Phase B و پس از Merge PR #21 مجاز است.
 
 ## Context
 
@@ -18,9 +20,9 @@
 2. number شناور و rounding سراسری؛ سریع ولی برای پول غیرقابل اتکا.
 3. Decimal + Currency Code + Policy versioned برای هر ارز و Legal Entity.
 
-## Proposed decision
+## Final decision
 
-گزینه ۳ پیشنهاد می‌شود:
+گزینه ۳ نهایی و پذیرفته شد:
 
 - ارز پایه برای هر Legal Entity تنظیم‌پذیر و مقدار اولیه پیشنهادی IRR است.
 - مقدار رسمی همیشه Currency Code دارد. تومان فقط Presentation است و canonical نیست.
@@ -28,7 +30,8 @@
 - مبلغ و نرخ Decimal canonical هستند؛ number شناور برای amount/rate ممنوع است.
 - policy اولیه پیشنهادی: scale حسابداری IRR برابر ۰ و ارزهای دیگر برابر ۲؛ نرخ FX تا
   ۱۸ رقم اعشار؛ IRR با HALF_UP و ارزهای دو اعشاری با HALF_EVEN.
-- این policy پیش از ACCEPTED شدن authoritative نیست و Schema را تثبیت نمی‌کند.
+- این policy مبنای نهایی طراحی است؛ authoritative شدن داده و تثبیت Schema فقط در Phase B
+  و پس از Migration تاییدشده انجام می‌شود.
 - Exchange Rate شامل base/quote، rate، source، validAt UTC، وضعیت DRAFT/APPROVED،
   approver و approval time است. Draft منبع posting/report رسمی نیست.
 - نرخ و rounding policy روی سند/line snapshot می‌شوند و اسناد قبلی بازنویسی نمی‌شوند.
@@ -49,8 +52,9 @@ Rule Reference محاسبه را قابل بازتولید و تغییر قان�
 - هر Legal Entity در هر بازه فقط یک ارز پایه موثر دارد.
 - source trust، stale-rate و Recognition trigger باید قبل از اجرا تعیین شوند.
 
-## Change and migration path
+## Migration and future change path
 
-مالک مالی scale/rounding، منابع نرخ، stale window، Tax و Recognition را تایید می‌کند؛
-سپس ADR پذیرفته‌شده، config contract و Migration افزایشی طراحی می‌شوند. تغییر آینده
-effective-dated است و سند تاریخی snapshot قبلی را حفظ می‌کند.
+در FINANCE-001 Phase A هیچ Schema، Migration، Repository یا Persistence ایجاد نمی‌شود.
+پس از Merge PR #21، Task مستقل Phase B می‌تواند config contract، منبع نرخ، stale window
+و Rule Referenceها را نهایی و Migration مالی را فقط به‌صورت افزایشی طراحی کند. تغییر آینده
+effective-dated است، snapshot تاریخی حفظ می‌شود و تغییر تصمیم با ADR جدید انجام می‌شود.

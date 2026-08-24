@@ -1,10 +1,12 @@
 # DEC-OPEN-016 — سیاست Financial Release و تحویل مدارک
 
-- **Status:** PROPOSED
+- **Status:** ACCEPTED
 - **Owner:** مالک مالی با تایید مالک فروش/عملیات
 - **Proposer:** PC-A/FINANCE-001
 - **Date:** 2026-08-24
-- **Gate:** تا ACCEPTED شدن، Release اجرایی، Migration و mutation بین‌ماژولی ممنوع است.
+- **Approved by:** مالک محصول و کسب‌وکار
+- **Accepted date:** 2026-08-24
+- **Gate:** تصمیم معماری پذیرفته شد؛ پیاده‌سازی Schema/Migration فقط در Task مستقل Phase B و پس از Merge PR #21 مجاز است.
 
 ## Context
 
@@ -18,9 +20,9 @@
 2. Release چندمبنایی سه‌گانه با استثنای کنترل‌شده.
 3. اختیار دستی مدیر بدون policy؛ سریع ولی مستعد bypass.
 
-## Proposed decision
+## Final decision
 
-گزینه ۲ پیشنهاد می‌شود:
+گزینه ۲ نهایی و پذیرفته شد:
 
 - وضعیت canonical شامل BLOCKED، CONDITIONAL و APPROVED است.
 - APPROVED براساس تسویه کامل یا اعتبار مصوب و کافی قابل پیشنهاد است.
@@ -49,8 +51,10 @@
 - شرایط اعتبار، برنامه پرداخت و چک معتبر پیش از پذیرش باید دقیق شوند.
 - ارزیابی، استثنا، revoke و delivery attempt غیرمجاز Audit می‌شوند.
 
-## Change and migration path
+## Migration and future change path
 
-مالک مالی/فروش basisها، exposure، check validity، expiry، revoke و رفتار پس از delivery
-را تایید می‌کند؛ سپس ADR پذیرفته‌شده، contract tests و Migration افزایشی طراحی می‌شوند.
-basis جدید با version بعدی policy/event و دوره سازگاری consumerها اضافه می‌شود.
+در FINANCE-001 Phase A هیچ Schema، Migration، Repository یا Persistence ایجاد نمی‌شود.
+پس از Merge PR #21، Task مستقل Phase B می‌تواند basisها، exposure، check validity، expiry،
+revoke، رفتار پس از delivery، contract tests و Migration مالی را فقط به‌صورت افزایشی
+پیاده‌سازی کند. basis جدید با نسخه بعدی policy/event، دوره سازگاری consumerها و در صورت
+تغییر انتخاب پذیرفته‌شده با ADR جدید اضافه می‌شود.

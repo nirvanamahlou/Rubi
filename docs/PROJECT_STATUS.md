@@ -1,11 +1,11 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-24 — FINANCE-001 با Draft PR #21 آماده بازبینی است
+آخرین به‌روزرسانی: 2026-08-24 — چهار Decision مالی ACCEPTED و PR #21 آماده Review است
 
 ## خلاصه
 
 - مرحله جاری: **Finance Foundation بدون Persistence**
-- وضعیت: **FINANCE-001 آماده Review؛ Decision Gate عبور نکرده و Schema/Migration ممنوع است**
+- وضعیت: **FINANCE-001 آماده Review؛ Gate معماری ACCEPTED و Persistence موکول به Phase B پس از Merge PR #21 است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: Merge Commit `a165923` از `origin/develop`
 - شاخه فعال: `codex/pc-a-finance-foundation`
@@ -60,10 +60,13 @@
 
 ### FINANCE-001 — PC-A — READY_FOR_REVIEW
 
-- Draft PR شماره ۲۱ از branch codex/pc-a-finance-foundation به develop باز شد.
-- چهار Decision Record با وضعیت PROPOSED ثبت شدند؛ Decision Gate عبور نکرده و هر
-  Prisma Model، Migration، posting، FX authoritative، Tax/Recognition، Approval Workflow
-  اجرایی و Financial Release اجرایی همچنان ممنوع است.
+- PR شماره ۲۱ از branch codex/pc-a-finance-foundation به develop برای Review آماده می‌شود.
+- مالک محصول و کسب‌وکار در 2026-08-24 هر چهار Decision مالی `DEC-OPEN-001/004/005/016`
+  را رسماً پذیرفت؛ این موارد دیگر تصمیم باز نیستند.
+- پذیرش Decisionها Scope Phase A را توسعه نمی‌دهد: Prisma Schema، Migration، Repository،
+  Persistence، Dependency و Lockfile همچنان در این PR بدون تغییر می‌مانند.
+- پس از Merge PR #21، ایجاد Schema و Migration افزایشی مالی فقط در Task مستقل Phase B،
+  با رزرو مجدد قفل‌ها و اجرای Migration gate کامل، مجاز خواهد بود.
 - قرارداد عمومی finance.v1-proposal، producer/consumer eventهای versioned، Permission
   Matrix و Domain/Application Port بدون Controller یا Persistence تکمیل شدند.
 - Money/Decimal، rounding، Journal balance، Check lifecycle، Maker/Checker، Release policy،
@@ -291,7 +294,7 @@
   UI واقعی و async export request تکمیل و چهار قفل آزاد شدند. نرخ ارز authoritative و
   تولید artifact واقعی Documents/Worker همچنان خارج از Scope است.
 - `CUSTOMER-001` — PC-A — `DONE/MERGED`: PR #19 با Merge `7d0a4f4` ادغام و چهار قفل آن در Handoff مستقل آزاد شدند.
-- `FINANCE-001` — PC-A — `PLANNED`: Foundation پس از Merge Handoff آغاز می‌شود؛ Migration و قرارداد اجرایی تا Decision Gate مسدود است.
+- `FINANCE-001` — PC-A — `READY_FOR_REVIEW`: چهار Decision مالی ACCEPTED؛ Phase B مستقل برای Schema/Migration فقط پس از Merge PR #21 مجاز است.
 - `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`: Phase A مستقل بدون Persistence؛
   فقط Frontend، طراحی دامنه/Application، Contract ماژول‌محلی و تست در مسیرهای
   `customer-affairs`. این Task هیچ قفل مشترکی دریافت نمی‌کند و Backend Persistence
@@ -299,11 +302,11 @@
 
 ## ریسک‌ها و تصمیم‌های باز
 
-- دامنه دقیق حسابداری عملیاتی و integration با حسابداری قانونی هنوز نهایی نیست.
+- دامنه Sub-ledger عملیاتی و مرز integration حسابداری قانونی با DEC-OPEN-001 نهایی شد.
 - Providerها، Payment Gatewayها و مشخصات دو سایت اعلام نشده‌اند.
 - محل میزبانی، RPO/RTO، retention و الزامات حقوقی PII نیازمند تایید هستند.
-- سیاست مالی ارز، rounding، مالیات و شماره‌گذاری اسناد باید قبل از Migration تایید شود.
-- schema/محاسبه authoritative نرخ ارز همچنان تا تصمیم قطعی خارج از این Handoff است.
+- سیاست ارز، rounding، FX و Tax/Recognition با DEC-OPEN-004 پذیرفته شد؛ شماره‌گذاری اسناد همچنان باز است.
+- schema و نرخ authoritative فقط در Task مستقل Phase B پس از Merge PR #21 و Migration gate مجاز است.
 - ذخیره PII حساس و مدارک هویتی تا تصمیم قطعی retention/رمزنگاری ممنوع می‌ماند.
-- اجرای Finance بدون Decision Gate و قفل یگانه Migration/Dependency ممنوع است؛ تاریخچه Migration یا داده محلی نباید دستی دست‌کاری شود.
+- اجرای Persistence مالی فقط در Task مستقل Phase B پس از Merge PR #21 و با قفل یگانه Migration/Dependency مجاز است؛ تاریخچه Migration یا داده محلی نباید دستی دست‌کاری شود.
 - Compose credentialها synthetic و Local هستند و پیش از هر محیط دیگر باید با secret manager جایگزین شوند.

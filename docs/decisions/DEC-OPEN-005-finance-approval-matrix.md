@@ -1,10 +1,12 @@
 # DEC-OPEN-005 — Approval Matrix مالی و Maker/Checker
 
-- **Status:** PROPOSED
+- **Status:** ACCEPTED
 - **Owner:** مالک مالی و مالک امنیت/IAM
 - **Proposer:** PC-A/FINANCE-001
 - **Date:** 2026-08-24
-- **Gate:** تا ACCEPTED شدن، Approval Workflow اجرایی و Migration آن ممنوع است.
+- **Approved by:** مالک محصول و کسب‌وکار
+- **Accepted date:** 2026-08-24
+- **Gate:** تصمیم معماری پذیرفته شد؛ پیاده‌سازی Schema/Migration فقط در Task مستقل Phase B و پس از Merge PR #21 مجاز است.
 
 ## Context
 
@@ -17,9 +19,9 @@ Purchase، Payment، Refund و Manual Journal حساس‌اند. یک Role ثا�
 2. شرط hardcoded در use caseها؛ پراکنده و غیرقابل version.
 3. Approval Matrix تنظیم‌پذیر و versioned با Maker/Checker.
 
-## Proposed decision
+## Final decision
 
-گزینه ۳ پیشنهاد می‌شود:
+گزینه ۳ نهایی و پذیرفته شد:
 
 - Matrix براساس operation type، amount band، currency، branch/legal entity و required
   role/permission resolve می‌شود.
@@ -47,8 +49,10 @@ Matrix versioned نیاز شعب و ارزهای مختلف و Segregation of Du
 - Approval موفق به‌تنهایی posting یا release را اجرا نمی‌کند.
 - SLA، delegation و escalation پیش از اجرا باید تعیین شوند.
 
-## Change and migration path
+## Migration and future change path
 
-نقش‌ها، thresholdها، ارز/شعبه، تعداد مراحل، SLA و delegation با مالک مالی/امنیت نهایی
-می‌شوند؛ سپس Settings→Finance contract، permissionهای IAM و Migration افزایشی طراحی
-خواهند شد. نسخه‌های قبلی Matrix برای Audit حفظ می‌شوند.
+در FINANCE-001 Phase A هیچ Schema، Migration، Repository یا Persistence ایجاد نمی‌شود.
+پس از Merge PR #21، Task مستقل Phase B می‌تواند نقش‌ها، thresholdها، تعداد مراحل، SLA،
+delegation، قرارداد Settings→Finance و permissionهای IAM را نهایی و Migration مالی را
+فقط به‌صورت افزایشی طراحی کند. نسخه‌های قبلی Matrix برای Audit حفظ و تغییر تصمیم با ADR
+جدید ثبت می‌شود.

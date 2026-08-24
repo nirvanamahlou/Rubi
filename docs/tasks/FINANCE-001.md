@@ -5,8 +5,8 @@
 - **Base:** a165923
 - **Status:** READY_FOR_REVIEW
 - **Date:** 2026-08-24
-- **Persistence:** مسدود با Decision Gate
-- **Draft PR:** #21 → develop
+- **Persistence:** موکول به Task مستقل Phase B پس از Merge PR #21
+- **PR:** #21 → develop؛ آماده Review
 - **Schema/Migration/Dependency:** بدون تغییر
 
 ## هدف
@@ -17,15 +17,16 @@ Repository، posting، FX authoritative، Tax/Recognition یا workflow اجرا
 
 ## Decision Gate
 
-چهار Proposal زیر ثبت شده‌اند و هنوز Gate را باز نمی‌کنند:
+چهار Decision زیر با تأیید رسمی مالک محصول و کسب‌وکار در 2026-08-24 پذیرفته شدند:
 
 - [DEC-OPEN-001](../decisions/DEC-OPEN-001-finance-ledger-boundary.md)
 - [DEC-OPEN-004](../decisions/DEC-OPEN-004-money-fx-tax-recognition.md)
 - [DEC-OPEN-005](../decisions/DEC-OPEN-005-finance-approval-matrix.md)
 - [DEC-OPEN-016](../decisions/DEC-OPEN-016-financial-release-policy.md)
 
-تا ACCEPTED شدن همه موارد، Schema/Migration و قابلیت اجرایی ممنوع می‌ماند.
-
+Gate معماری رفع شده است، اما FINANCE-001 همان Phase A بدون Persistence باقی می‌ماند.
+پس از Merge PR #21، ایجاد Prisma Schema و Migration افزایشی مالی فقط در Task مستقل
+Phase B، با رزرو مجدد قفل‌ها و اجرای Migration gate، مجاز خواهد بود.
 ## محدوده پیاده‌سازی
 
 ### Domain و Application
@@ -79,7 +80,7 @@ Workspace اصلی شامل پنج Tab داشبورد، ۳۰ بخش، عملیا
 
 ## قفل‌ها
 
-- Migration Owner: رزروشده ولی غیرفعال تا Decision Gate
+- Migration Owner: در Phase A غیرفعال؛ رزرو مجدد فقط برای Task مستقل Phase B پس از Merge PR #21
 - Dependency/Lockfile Owner: مشروط؛ در این Task dependency لازم نشد
 - Finance shared-contract/root export: PC-A/FINANCE-001
 - Central status docs: PC-A/FINANCE-001

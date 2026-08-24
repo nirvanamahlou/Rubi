@@ -1,10 +1,12 @@
 # DEC-OPEN-001 — مرز Sub-ledger عملیاتی و حسابداری قانونی
 
-- **Status:** PROPOSED
+- **Status:** ACCEPTED
 - **Owner:** مالک مالی و مالک محصول
 - **Proposer:** PC-A/FINANCE-001
 - **Date:** 2026-08-24
-- **Gate:** تا ACCEPTED شدن، Prisma Model، Migration و posting اجرایی ممنوع است.
+- **Approved by:** مالک محصول و کسب‌وکار
+- **Accepted date:** 2026-08-24
+- **Gate:** تصمیم معماری پذیرفته شد؛ پیاده‌سازی Schema/Migration فقط در Task مستقل Phase B و پس از Merge PR #21 مجاز است.
 
 ## Context
 
@@ -19,9 +21,9 @@ Rubi باید دریافت، پرداخت، فاکتور، تسویه، چک، �
 2. Sub-ledger دوطرفه عملیاتی همراه Posting Batch برای حسابداری قانونی.
 3. حسابداری قانونی کامل در Rubi؛ خارج از شناخت و Scope فعلی.
 
-## Proposed decision
+## Final decision
 
-گزینه ۲ پیشنهاد می‌شود:
+گزینه ۲ نهایی و پذیرفته شد:
 
 - Rubi مالک Sub-ledger عملیاتی و دفتر دوطرفه داخلی CRM است.
 - Journal فقط با توازن Debit/Credit در ارز پایه قابل پیشنهاد برای posting است؛ posted
@@ -46,9 +48,11 @@ Rubi باید دریافت، پرداخت، فاکتور، تسویه، چک، �
 - Account/Journal، balance، reversal، idempotency، reconciliation و audit لازم‌اند.
 - قبول Batch به معنی قانونی‌شدن دفتر داخلی یا انتقال مالکیت داده نیست.
 - خطای Connector نباید Journal posted یا عملیات سفر را rollback کند.
-- Tax/Recognition و mapping اجرایی تا تصمیم مستقل مسدود می‌مانند.
+- Tax/Recognition و mapping اجرایی تا Task مستقل Phase B و کنترل‌های آن اجرا نمی‌شوند.
 
-## Change and migration path
+## Migration and future change path
 
-پس از تایید مالک مالی، ADR پذیرفته‌شده این Proposal را supersede می‌کند. قرارداد Connector،
-mapping و retention جداگانه تایید و فقط سپس Schema/Migration افزایشی طراحی می‌شوند.
+در FINANCE-001 Phase A هیچ Schema، Migration، Repository یا Persistence ایجاد نمی‌شود.
+پس از Merge PR #21، Task مستقل Phase B می‌تواند قرارداد Connector، mapping و retention
+را نهایی و Schema/Migration مالی را فقط به‌صورت افزایشی طراحی کند. تغییر انتخاب پذیرفته‌شده
+با Decision Record یا ADR جدید، برنامه سازگاری و حفظ تاریخچه انجام می‌شود.
