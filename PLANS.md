@@ -143,9 +143,10 @@ Baseline برنامه: `origin/develop` در Merge Commit
   `DEC-OPEN-011` فقط Candidate Detection و Review دستی مجاز است و merge واقعی مسدود است.
 - PR شماره ۱۹ با Merge Commit `7d0a4f42e978b468263efdc83f780fa656fbd613` وارد `develop` شد؛ Task `DONE/MERGED` است.
 
-### `FINANCE-001` — PC-A — `PLANNED`
+### `FINANCE-001` — PC-A — `IN_PROGRESS`
 
-- Branch آینده: `codex/pc-a-finance-foundation`؛ شروع پس از Merge Handoff مستقل.
+- Branch فعال: `codex/pc-a-finance-foundation` از baseline `a165923`؛ Handoff با PR #20
+  و Merge `11fc875` وارد `develop` شده است.
 - فاز نخست فقط Foundation مالی، تثبیت مرز Sub-ledger، تصمیم‌های P0، طراحی Domain/Application،
   قراردادهای producer/consumer و UI/stateهای بدون Persistence را پوشش می‌دهد.
 - Migration، Schema، posting/accounting mapping، FX authoritative، tax/recognition و approval

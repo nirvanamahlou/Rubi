@@ -1,15 +1,15 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-24 — Handoff CUSTOMER-001 به FINANCE-001 آماده بازبینی
+آخرین به‌روزرسانی: 2026-08-24 — FINANCE-001 روی PC-A آغاز شد
 
 ## خلاصه
 
-- مرحله جاری: **Handoff مستقل Customer Persistence به Finance Foundation**
-- وضعیت: **CUSTOMER-001 ادغام‌شده؛ FINANCE-001 پس از Merge Handoff آماده شروع Foundation است**
+- مرحله جاری: **Finance Foundation بدون Persistence**
+- وضعیت: **FINANCE-001 روی شاخه مستقل در حال اجرا؛ Decision Gate باز و Schema/Migration ممنوع است**
 - Repository: `Rubi`، Remote با نام `origin`
-- Baseline: Merge Commit `7d0a4f42e978b468263efdc83f780fa656fbd613` از `origin/develop`
-- شاخه فعال: `codex/pc-a-customer-finance-handoff`
-- Work Item: `CUSTOMER001-FINANCE-HANDOFF-001`؛ `READY_FOR_REVIEW`
+- Baseline: Merge Commit `a165923` از `origin/develop`
+- شاخه فعال: `codex/pc-a-finance-foundation`
+- Work Item: `FINANCE-001`؛ `IN_PROGRESS`
 - محیط مسئول: `COMPUTER_ID=PC-A`؛ dev server پروژه فعال نبود.
 - نوع تغییر: فقط اسناد؛ بدون کد، Schema، Migration، Dependency یا Lockfile.
 

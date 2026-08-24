@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-24 — Handoff مستقل CUSTOMER-001 به FINANCE-001 آماده بازبینی
+آخرین به‌روزرسانی: 2026-08-24 — FINANCE-001 روی PC-A آغاز شد
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
@@ -25,8 +25,8 @@
 | IAM002-HANDOFF-001              | PC-A         | `codex/pc-a-iam-002-handoff`                | ثبت Merge، آزادسازی IAM contract lock و مجازکردن شروع دو Task مستقل Sprint دوم                                           | `DONE`             | Merge `0af31c2`؛ دو Task مستقل مجاز به شروع هستند                                |
 | MASTER-002                      | PC-B         | `codex/pc-b-master-data-persistence`        | Database، Migration، Repository، Backend و اتصال واقعی Frontend اطلاعات پایه                                             | `DONE`             | Merge `ddfebb3`؛ چهار قفل با Handoff مستقل آزاد شدند                             |
 | CUSTOMER-001                    | PC-A         | `codex/pc-a-customer-persistence`           | مشتریان، Persistence، رمزنگاری Contact، Audit redaction و Duplicate query                                                | `DONE`             | PR #19؛ Merge `7d0a4f4`؛ Migration و قرارداد Customer پایدار و تحویل‌شده         |
-| CUSTOMER001-FINANCE-HANDOFF-001 | PC-A         | `codex/pc-a-customer-finance-handoff`       | آزادسازی چهار قفل CUSTOMER-001 و رزرو کنترل‌شده FINANCE-001؛ فقط اسناد مرکزی و سند Handoff                               | `READY_FOR_REVIEW` | Base `7d0a4f4`؛ بدون کد، Schema، Migration، Dependency یا Lockfile               |
-| FINANCE-001                     | PC-A         | `codex/pc-a-finance-foundation`             | Foundation مالی، تصمیم‌های P0، مرز Sub-ledger، قراردادها و طراحی Domain/Application؛ Persistence فقط پس از Decision Gate | `PLANNED`          | شروع پس از Merge Handoff؛ `DEC-OPEN-001/004/005/016` مانع Schema/Migration هستند |
+| CUSTOMER001-FINANCE-HANDOFF-001 | PC-A         | `codex/pc-a-customer-finance-handoff`       | آزادسازی چهار قفل CUSTOMER-001 و رزرو کنترل‌شده FINANCE-001؛ فقط اسناد مرکزی و سند Handoff                               | `DONE`             | PR #20؛ Merge `11fc875`؛ بدون کد، Schema، Migration، Dependency یا Lockfile      |
+| FINANCE-001                     | PC-A         | `codex/pc-a-finance-foundation`             | Foundation مالی، تصمیم‌های P0، مرز Sub-ledger، قراردادها و طراحی Domain/Application؛ Persistence فقط پس از Decision Gate | `IN_PROGRESS`      | Base `a165923`؛ تصمیم‌ها PROPOSED و Schema/Migration همچنان ممنوع است             |
 | CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket                                         | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence      |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                                                      | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                      |
 
