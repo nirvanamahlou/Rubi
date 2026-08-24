@@ -146,7 +146,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
   `DEC-OPEN-011` فقط Candidate Detection و Review دستی مجاز است و merge واقعی مسدود است.
 - PR شماره ۱۹ با Merge Commit `7d0a4f42e978b468263efdc83f780fa656fbd613` وارد `develop` شد؛ Task `DONE/MERGED` است.
 
-### `FINANCE-001` — PC-A — `IN_PROGRESS`
+### `FINANCE-001` — PC-A — `READY_FOR_REVIEW`
 
 - Branch فعال: `codex/pc-a-finance-foundation` از baseline `a165923`؛ Handoff با PR #20
   و Merge `11fc875` وارد `develop` شده است.
@@ -160,6 +160,9 @@ Baseline برنامه: `origin/develop` در Merge Commit
   منحصراً در اختیار PC-A/FINANCE-001 هستند.
 - Finance به جدول‌های Customers، Sales، Reservations، Procurement یا HR query مستقیم نمی‌زند
   و فقط contract/event عمومی و referenceهای پایدار مصرف می‌کند.
+- Domain/Application، قرارداد عمومی پیشنهادی و Workspace مسیر `/finance` تکمیل شدند؛
+  ۱۷۲ تست، lint/typecheck و Production Build پاس و Draft PR شماره ۲۱ باز شد.
+- هیچ Prisma/Migration/Dependency/Lockfile تغییر نکرد و Decision Gate بسته می‌ماند.
 
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 

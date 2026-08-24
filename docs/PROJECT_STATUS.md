@@ -1,17 +1,17 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-24 — FINANCE-001 روی PC-A آغاز شد
+آخرین به‌روزرسانی: 2026-08-24 — FINANCE-001 با Draft PR #21 آماده بازبینی است
 
 ## خلاصه
 
 - مرحله جاری: **Finance Foundation بدون Persistence**
-- وضعیت: **FINANCE-001 روی شاخه مستقل در حال اجرا؛ Decision Gate باز و Schema/Migration ممنوع است**
+- وضعیت: **FINANCE-001 آماده Review؛ Decision Gate عبور نکرده و Schema/Migration ممنوع است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: Merge Commit `a165923` از `origin/develop`
 - شاخه فعال: `codex/pc-a-finance-foundation`
-- Work Item: `FINANCE-001`؛ `IN_PROGRESS`
+- Work Item: `FINANCE-001`؛ `READY_FOR_REVIEW`
 - محیط مسئول: `COMPUTER_ID=PC-A`؛ dev server پروژه فعال نبود.
-- نوع تغییر: فقط اسناد؛ بدون کد، Schema، Migration، Dependency یا Lockfile.
+- نوع تغییر: Domain/Application، قرارداد عمومی پیشنهادی، Frontend و Test؛ بدون Schema، Migration، Dependency یا Lockfile.
 
 ### `MASTER-002` — PC-B — `DONE`
 
@@ -44,8 +44,9 @@
 - `DEC-OPEN-006` و `DEC-OPEN-011` باز می‌مانند. نگهداری مدرک حساس، auto-merge و
   merge واقعی ممنوع‌اند؛ فقط Candidate Detection و Review دستی ثبت و Audit می‌شوند.
 - نرخ ارز authoritative و تولید واقعی Excel/PDF خارج از این Handoff باقی می‌مانند.
-### `CUSTOMER001-FINANCE-HANDOFF-001` — PC-A — `READY_FOR_REVIEW`
+### `CUSTOMER001-FINANCE-HANDOFF-001` — PC-A — `DONE`
 
+- PR شماره ۲۰ با Merge Commit `11fc875` وارد `origin/develop` شد.
 - چهار قفل Migration، Dependency/Lockfile، Customer shared-contract/export و اسناد مرکزی
   پس از Merge PR #19 از CUSTOMER-001 آزاد می‌شوند.
 - Migration Owner، Dependency/Lockfile Owner مشروط، Finance shared-contract/export و اسناد
@@ -56,6 +57,24 @@
   Sales، Reservations، Procurement یا HR ممنوع است.
 - این Handoff فقط مستندات است و هیچ dependency، lockfile، Schema یا Migration تغییر نمی‌دهد.
 
+
+### FINANCE-001 — PC-A — READY_FOR_REVIEW
+
+- Draft PR شماره ۲۱ از branch codex/pc-a-finance-foundation به develop باز شد.
+- چهار Decision Record با وضعیت PROPOSED ثبت شدند؛ Decision Gate عبور نکرده و هر
+  Prisma Model، Migration، posting، FX authoritative، Tax/Recognition، Approval Workflow
+  اجرایی و Financial Release اجرایی همچنان ممنوع است.
+- قرارداد عمومی finance.v1-proposal، producer/consumer eventهای versioned، Permission
+  Matrix و Domain/Application Port بدون Controller یا Persistence تکمیل شدند.
+- Money/Decimal، rounding، Journal balance، Check lifecycle، Maker/Checker، Release policy،
+  optimistic concurrency و idempotency با تست پوشش داده شدند.
+- مسیر /finance اکنون Workspace فارسی/RTL/Responsive با Dashboard، ۳۰ قابلیت قابل جست‌وجو،
+  فیلتر، sort، pagination، فرم‌های Preview، stateهای کامل و route خروجی Excel/PDF است.
+- lint، typecheck و build کل Monorepo پاس شدند؛ ۱۷۲ تست در ۵۰ فایل پاس شد و /finance در
+  Production Build تولید شد.
+- Dependency/Lockfile، Prisma، Migration و Seed تغییر نکردند. داده‌ها فقط synthetic هستند.
+- QA مرورگر داخلی به‌دلیل خطای ACL ابزار Windows و redirect احراز هویت انجام نشد؛ HTTP
+  redirect و Production Build route تایید شدند و dev server موقت متوقف شد.
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 
 - Branch آینده `codex/pc-b-customer-affairs-foundation` و هدف آن Foundation مستقل
