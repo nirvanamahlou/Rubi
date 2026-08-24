@@ -1,7 +1,49 @@
-import { createHash } from 'node:crypto';
+import { createCipheriv, createHmac, randomBytes } from 'node:crypto';
 
 import { createDatabaseClient } from '../src/client';
 import { PERMISSION_SEED_DATA } from '../src/permission-seed-data';
+
+function requiredContactKey(name: string): Buffer {
+  const encoded = process.env[name];
+  const key = encoded ? Buffer.from(encoded, 'base64') : Buffer.alloc(0);
+  if (key.length !== 32)
+    throw new Error(`${name} must be configured as a base64 32-byte key.`);
+  return key;
+}
+
+function protectSyntheticContact(value: string) {
+  const encryptionKey = requiredContactKey(
+    'CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64',
+  );
+  const fingerprintKey = requiredContactKey(
+    'CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64',
+  );
+  const keyVersion = Number(
+    process.env.CUSTOMER_CONTACT_ENCRYPTION_KEY_VERSION,
+  );
+  if (!Number.isInteger(keyVersion) || keyVersion < 1)
+    throw new Error(
+      'CUSTOMER_CONTACT_ENCRYPTION_KEY_VERSION must be a positive integer.',
+    );
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', encryptionKey, iv);
+  cipher.setAAD(Buffer.from('rubi:customer-contact:v1:phone', 'utf8'));
+  const encryptedValue = Buffer.concat([
+    cipher.update(value, 'utf8'),
+    cipher.final(),
+  ]).toString('base64');
+  const valueFingerprint = createHmac('sha256', fingerprintKey)
+    .update(value, 'utf8')
+    .digest('hex');
+  return {
+    encryptedValue,
+    encryptionIv: iv.toString('base64'),
+    encryptionAuthTag: cipher.getAuthTag().toString('base64'),
+    encryptionKeyVersion: keyVersion,
+    valueFingerprint,
+    valueHash: valueFingerprint,
+  };
+}
 
 async function seed(): Promise<void> {
   const database = createDatabaseClient();
@@ -129,10 +171,8 @@ async function seed(): Promise<void> {
           }),
         ),
       );
-      const syntheticPhone = ['+98', '912', '000', '1234'].join('');
-      const syntheticPhoneHash = createHash('sha256')
-        .update(syntheticPhone)
-        .digest('hex');
+      const syntheticPhone = '0000000000';
+      const protectedSyntheticPhone = protectSyntheticContact(syntheticPhone);
       const primaryCustomer = await transaction.customer.upsert({
         where: { id: '10000000-0000-4000-8000-000000000001' },
         create: {
@@ -167,23 +207,22 @@ async function seed(): Promise<void> {
         update: { displayName: 'مسافر همراه ساختگی', isActive: true },
       });
       await transaction.customerContact.upsert({
-        where: {
-          customerId_type_valueHash: {
-            customerId: primaryCustomer.id,
-            type: 'PHONE',
-            valueHash: syntheticPhoneHash,
-          },
-        },
+        where: { id: '13000000-0000-4000-8000-000000000001' },
         create: {
+          id: '13000000-0000-4000-8000-000000000001',
           customerId: primaryCustomer.id,
           type: 'PHONE',
           label: 'تماس ساختگی',
-          maskedValue: '+989•••234',
-          valueHash: syntheticPhoneHash,
+          maskedValue: '0000•••000',
+          ...protectedSyntheticPhone,
           isPrimary: true,
           createdByUserId: fixtureUser.id,
         },
-        update: { maskedValue: '+989•••234', isPrimary: true },
+        update: {
+          maskedValue: '0000•••000',
+          ...protectedSyntheticPhone,
+          isPrimary: true,
+        },
       });
       await transaction.customerAddress.upsert({
         where: { id: '11000000-0000-4000-8000-000000000001' },

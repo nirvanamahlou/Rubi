@@ -1,6 +1,6 @@
 import type { MasterDataResource } from '../master-data';
 
-export const CUSTOMERS_CONTRACT_VERSION = 1 as const;
+export const CUSTOMERS_CONTRACT_VERSION = 2 as const;
 export const CUSTOMERS_API_PREFIX = '/api/v1/customers' as const;
 
 export type CustomerKind = 'person' | 'organization';
@@ -44,6 +44,7 @@ export interface CustomerContact {
   type: CustomerContactType;
   label: string | null;
   maskedValue: string;
+  value?: string | null;
   isPrimary: boolean;
   verifiedAt: string | null;
   createdAt: string;

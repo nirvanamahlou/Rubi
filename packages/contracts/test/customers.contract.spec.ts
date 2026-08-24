@@ -8,7 +8,7 @@ import {
 
 describe('Customers public contract v1', () => {
   it('publishes stable versioned endpoints and conflict errors', () => {
-    expect(CUSTOMERS_CONTRACT_VERSION).toBe(1);
+    expect(CUSTOMERS_CONTRACT_VERSION).toBe(2);
     expect(CUSTOMERS_API_PREFIX).toBe('/api/v1/customers');
     expect(customerEndpoints.contacts('customer id')).toContain(
       'customer%20id/contacts',

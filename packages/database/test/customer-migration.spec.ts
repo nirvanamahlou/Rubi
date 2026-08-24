@@ -9,6 +9,13 @@ const migration = readFileSync(
   ),
   'utf8',
 );
+const hardeningMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    'prisma/migrations/20260824113000_customer_contact_encryption_hardening/migration.sql',
+  ),
+  'utf8',
+);
 const seed = readFileSync(resolve(process.cwd(), 'prisma/seed.ts'), 'utf8');
 
 describe('CUSTOMER-001 migration and seed', () => {
@@ -43,6 +50,34 @@ describe('CUSTOMER-001 migration and seed', () => {
     expect(migration).not.toMatch(/"(?:phone|email|value)"\s+VARCHAR/i);
     expect(seed).toContain('transaction.customer.upsert');
     expect(seed).toContain('transaction.customerConsent.upsert');
-    expect(seed).toContain('syntheticPhoneHash');
+    expect(seed).toContain('protectSyntheticContact');
+    expect(seed).toContain("createCipheriv('aes-256-gcm'");
+    expect(seed).toContain("createHmac('sha256'");
+    expect(seed).not.toContain("['+98', '912'");
+  });
+  it('adds constrained encryption fields without rewriting the pushed migration', () => {
+    for (const column of [
+      'encryptedValue',
+      'encryptionIv',
+      'encryptionAuthTag',
+      'encryptionKeyVersion',
+      'valueFingerprint',
+    ])
+      expect(hardeningMigration).toContain(`ADD COLUMN "${column}"`);
+    expect(hardeningMigration).toContain(
+      'customer_contacts_encryption_bundle_check',
+    );
+    expect(hardeningMigration).toContain('char_length("encryptionIv") = 16');
+    expect(hardeningMigration).toContain(
+      'char_length("encryptionAuthTag") = 24',
+    );
+    expect(hardeningMigration).toContain('"encryptionKeyVersion" > 0');
+    expect(hardeningMigration).toContain("'^[0-9a-f]{64}" + "$" + "'");
+    expect(hardeningMigration).toContain(
+      'customer_contacts_type_valueFingerprint_customerId_idx',
+    );
+    expect(hardeningMigration).not.toMatch(
+      /\b(?:DROP|TRUNCATE|DELETE FROM)\b/i,
+    );
   });
 });

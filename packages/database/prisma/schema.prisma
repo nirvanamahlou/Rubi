@@ -595,21 +595,28 @@ model Customer {
 }
 
 model CustomerContact {
-  id              String              @id @default(uuid()) @db.Uuid
-  customerId      String              @db.Uuid
-  type            CustomerContactType
-  label           String?             @db.VarChar(80)
-  maskedValue     String              @db.VarChar(160)
-  valueHash       String              @db.Char(64)
-  isPrimary       Boolean             @default(false)
-  verifiedAt      DateTime?           @db.Timestamptz(3)
-  createdByUserId String              @db.Uuid
-  createdAt       DateTime            @default(now()) @db.Timestamptz(3)
-  customer        Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  createdBy       User                @relation("CustomerContactCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  id                   String              @id @default(uuid()) @db.Uuid
+  customerId           String              @db.Uuid
+  type                 CustomerContactType
+  label                String?             @db.VarChar(80)
+  maskedValue          String              @db.VarChar(160)
+  encryptedValue       String?             @db.Text
+  encryptionIv         String?             @db.Char(16)
+  encryptionAuthTag    String?             @db.Char(24)
+  encryptionKeyVersion Int?
+  valueFingerprint     String?             @db.Char(64)
+  valueHash            String              @db.Char(64)
+  isPrimary            Boolean             @default(false)
+  verifiedAt           DateTime?           @db.Timestamptz(3)
+  createdByUserId      String              @db.Uuid
+  createdAt            DateTime            @default(now()) @db.Timestamptz(3)
+  customer             Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  createdBy            User                @relation("CustomerContactCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
 
   @@unique([customerId, type, valueHash])
+  @@unique([customerId, type, valueFingerprint])
   @@index([type, valueHash])
+  @@index([type, valueFingerprint, customerId])
   @@index([customerId, isPrimary])
   @@map("customer_contacts")
 }
