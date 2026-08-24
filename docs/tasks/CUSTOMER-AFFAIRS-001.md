@@ -1,6 +1,6 @@
 # CUSTOMER-AFFAIRS-001 — Foundation امور مشتریان Phase A
 
-- وضعیت: `READY_FOR_REVIEW`
+- وضعیت: `DRAFT_REVIEW_FIXES_COMPLETE`
 - مالک: `PC-B`
 - Branch: `codex/pc-b-customer-affairs-foundation`
 - Base: `9b96f6eabfe8aed8fe3377fd221fed43dd79d2eb`
@@ -48,12 +48,15 @@ Controller، Repository، Persistence، mutation بین‌ماژولی یا اط
 
 فایل‌های `apps/api/src/customer-affairs/**` موارد زیر را بدون Nest/Prisma تعریف می‌کنند:
 
-- `LeadListQuery`, `LeadSummary`, `LeadDraft`, `LeadStage`, `LeadActivity`
+- `LeadListQuery`, `TicketListQuery` و `PaginatedResult<T>` برای search/filter/sort و
+  pagination سمت سرور
+- `LeadSummary`, `LeadDraft`, `LeadStage`, `LeadActivity`
 - `QualificationResult`
 - `SupportTicketSummary`, `SupportTicketDraft`, `TicketStatus`, `TicketPriority`
 - `SLAState`, `Escalation`, `Satisfaction`
 - `CustomerReference` و `SalesRequestReference` فقط به‌صورت proposal
-- `CustomerAffairsApplicationPort` و `CustomerAffairsActorContext`
+- `CustomerAffairsApplicationPort` و `CustomerAffairsActorContext`؛ فهرست Lead و Ticket
+  هر دو نتیجه صفحه‌بندی‌شده برمی‌گردانند و Ticket query کامل دریافت می‌کند
 
 هیچ export در `packages/contracts` ایجاد نشده است. مسیرهای REST فقط proposal ماژول‌محلی
 هستند و Controller فعال ندارند.
@@ -77,6 +80,7 @@ Controller، Repository، Persistence، mutation بین‌ماژولی یا اط
 | بستن Ticket | `customer_affairs.ticket.close` |
 | مدیریت SLA | `customer_affairs.sla.manage` |
 | مشاهده Satisfaction | `customer_affairs.satisfaction.read` |
+| ثبت Satisfaction | `customer_affairs.satisfaction.record` |
 
 انتشار این Permissionها در IAM/shared contract خارج از Scope Phase A است و به Handoff و
 هماهنگی producer/consumer نیاز دارد.
@@ -88,7 +92,10 @@ Controller، Repository، Persistence، mutation بین‌ماژولی یا اط
 - Qualification امتیازی و disqualification
 - Follow-up overdue و Lead aging
 - SLA شامل on-track، at-risk، breached، paused و met
-- Permission Matrix واقعی با deny-by-default
+- Permission Matrix واقعی با deny-by-default؛ مجوزهای Satisfaction read/record مستقل‌اند
+  و هیچ‌کدام دسترسی دیگری را ایجاد نمی‌کند
+- Contract test برای normalization محدوده page/pageSize، فیلترهای مجاز Ticket، allowlist
+  فیلد sort و metadata نتیجه `PaginatedResult<T>`
 - Query normalization، filter، sort و pagination داده‌های Preview
 - فرم و Success validation بدون Persistence
 - UI contract برای تب‌ها، Pipeline، Timeline، stateها و Create/View/Edit
@@ -101,9 +108,9 @@ Controller، Repository، Persistence، mutation بین‌ماژولی یا اط
 - Prettier: فقط فایل‌های همین Task
 - lint کل Monorepo: ۶ Task موفق
 - typecheck کل Monorepo: ۹ Task موفق
-- تست API: ۳۷ تست در ۱۲ فایل
+- تست API: ۴۱ تست در ۱۳ فایل
 - تست Web: ۴۶ تست در ۱۴ فایل
-- تست کامل Monorepo: ۹۷ تست در ۳۴ فایل
+- تست کامل Monorepo: ۱۰۱ تست در ۳۵ فایل
 - Production Build: ۶ Task موفق؛ ۲۵ Route شامل `/customer-affairs`
 - Prisma Generate فقط برای typecheck/build با URL synthetic اجرا شد؛ هیچ Migration یا
   اتصال/نوشتن Database انجام نشد.
@@ -130,5 +137,7 @@ Merge این PR و Handoff صریح قفل‌های لازم آغاز می‌ش�
 - `29030c5` — Domain، Application Port، قرارداد ماژول‌محلی و تست‌ها
 - `ded122a` — Workspace فارسی/RTL، Preview stateها و تست‌های Frontend
 - `a1a78ac` — فرم‌های تخصصی Lead/Ticket و contract test فیلدهای عملیاتی
+- `d628302` — تفکیک Permission ثبت رضایت و قراردادهای list/pagination سمت سرور
+- `c4778eb` — هم‌راستایی پیشنهاد Permission محلی Web
 
-این Branch Merge نشده و Source Branch حذف نمی‌شود.
+PR شماره ۱۸ همچنان Draft است. این Branch Merge نشده و Source Branch حذف نمی‌شود.
