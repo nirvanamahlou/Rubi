@@ -118,6 +118,9 @@ describe('customer affairs phase A domain', () => {
       firstRespondedAt: null,
       resolvedAt: null,
       paused: false,
+      firstResponseWindowMinutes: 360,
+      resolutionWindowMinutes: 1440,
+      atRiskPercent: 20,
     };
     expect(calculateSLAState(base)).toBe('ON_TRACK');
     expect(

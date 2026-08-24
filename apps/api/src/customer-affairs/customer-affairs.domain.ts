@@ -181,6 +181,9 @@ export function calculateSLAState(input: {
   firstRespondedAt: string | null;
   resolvedAt: string | null;
   paused: boolean;
+  firstResponseWindowMinutes: number;
+  resolutionWindowMinutes: number;
+  atRiskPercent: number;
 }): SLAState {
   if (input.resolvedAt)
     return Date.parse(input.resolvedAt) <= Date.parse(input.resolutionDueAt)
@@ -194,6 +197,9 @@ export function calculateSLAState(input: {
     return 'BREACHED';
   const nextDeadline = input.firstRespondedAt ? resolutionDue : responseDue;
   const remaining = nextDeadline - now;
-  const window = Math.max(1, resolutionDue - responseDue);
-  return remaining / window <= 0.2 ? 'AT_RISK' : 'ON_TRACK';
+  const windowMinutes = input.firstRespondedAt
+    ? input.resolutionWindowMinutes
+    : input.firstResponseWindowMinutes;
+  const remainingPercent = (remaining / (windowMinutes * 60_000)) * 100;
+  return remainingPercent <= input.atRiskPercent ? 'AT_RISK' : 'ON_TRACK';
 }

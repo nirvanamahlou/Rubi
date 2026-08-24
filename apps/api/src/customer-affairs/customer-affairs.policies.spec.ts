@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   evaluateSLAPolicy,
+  SLAPolicyValidationError,
   validateTicketClosure,
   validateTicketReopen,
   type SLAPolicyProposal,
@@ -20,34 +21,104 @@ const policy: SLAPolicyProposal = {
   ],
 };
 
+const baseEvaluation = {
+  openedAt: '2026-08-24T08:00:00.000Z',
+  now: '2026-08-24T08:30:00.000Z',
+  firstRespondedAt: null,
+  resolvedAt: null,
+  paused: false,
+  policy,
+} as const;
+
 describe('customer affairs SLA and controlled reopen policies', () => {
-  it('maps an approaching response deadline to at-risk and escalation', () => {
+  it('changes the SLA state when policy.atRiskPercent changes', () => {
+    const input = { ...baseEvaluation, now: '2026-08-24T08:48:00.000Z' };
     expect(
       evaluateSLAPolicy({
-        openedAt: '2026-08-24T08:00:00.000Z',
+        ...input,
+        policy: { ...policy, atRiskPercent: 25 },
+      }).state,
+    ).toBe('AT_RISK');
+    expect(
+      evaluateSLAPolicy({
+        ...input,
+        policy: { ...policy, atRiskPercent: 15 },
+      }).state,
+    ).toBe('ON_TRACK');
+  });
+
+  it('uses firstResponseMinutes as the first-response risk window', () => {
+    expect(
+      evaluateSLAPolicy({
+        ...baseEvaluation,
         now: '2026-08-24T08:50:00.000Z',
-        firstRespondedAt: null,
-        resolvedAt: null,
-        paused: false,
-        policy,
+        policy: { ...policy, atRiskPercent: 10 },
       }),
     ).toMatchObject({
-      state: 'AT_RISK',
-      escalationLevel: 2,
+      state: 'ON_TRACK',
       firstResponseDueAt: '2026-08-24T09:00:00.000Z',
       resolutionDueAt: '2026-08-24T12:00:00.000Z',
     });
   });
 
-  it('maps a breached deadline to level-three escalation', () => {
+  it('uses resolutionMinutes and the resolution deadline after first response', () => {
     expect(
       evaluateSLAPolicy({
-        openedAt: '2026-08-24T08:00:00.000Z',
+        ...baseEvaluation,
+        now: '2026-08-24T11:20:00.000Z',
+        firstRespondedAt: '2026-08-24T08:30:00.000Z',
+      }),
+    ).toMatchObject({
+      state: 'AT_RISK',
+      escalationLevel: 2,
+      resolutionDueAt: '2026-08-24T12:00:00.000Z',
+    });
+  });
+
+  it('rejects invalid policy percentages, windows and escalation ordering', () => {
+    for (const invalidPolicy of [
+      { ...policy, atRiskPercent: 0 },
+      { ...policy, atRiskPercent: 100 },
+      { ...policy, firstResponseMinutes: 0 },
+      { ...policy, resolutionMinutes: 60 },
+      {
+        ...policy,
+        escalationLevels: [
+          { level: 1 as const, remainingPercent: 20, targetReference: 'one' },
+          { level: 2 as const, remainingPercent: 20, targetReference: 'two' },
+          { level: 3 as const, remainingPercent: 0, targetReference: 'three' },
+        ],
+      },
+    ]) {
+      expect(() =>
+        evaluateSLAPolicy({ ...baseEvaluation, policy: invalidPolicy }),
+      ).toThrowError(SLAPolicyValidationError);
+    }
+  });
+
+  it('rejects invalid or chronologically impossible timestamps', () => {
+    expect(() =>
+      evaluateSLAPolicy({ ...baseEvaluation, openedAt: 'not-a-timestamp' }),
+    ).toThrowError(/valid UTC ISO-8601/);
+    expect(() =>
+      evaluateSLAPolicy({
+        ...baseEvaluation,
+        now: '2026-08-24T07:59:00.000Z',
+      }),
+    ).toThrowError(/chronological timeline/);
+    expect(() =>
+      evaluateSLAPolicy({
+        ...baseEvaluation,
+        firstRespondedAt: '2026-02-30T08:30:00.000Z',
+      }),
+    ).toThrowError(/valid UTC ISO-8601/);
+  });
+
+  it('keeps breached SLA at escalation level three', () => {
+    expect(
+      evaluateSLAPolicy({
+        ...baseEvaluation,
         now: '2026-08-24T09:01:00.000Z',
-        firstRespondedAt: null,
-        resolvedAt: null,
-        paused: false,
-        policy,
       }),
     ).toMatchObject({ state: 'BREACHED', escalationLevel: 3 });
   });
