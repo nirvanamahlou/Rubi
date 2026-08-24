@@ -125,7 +125,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - PR شماره ۱۵ با Merge Commit `ddfebb369de67cb7ff45bd15a06841d3251c945a` ادغام شد؛
   چهار قفل MASTER-002 در Handoff مستقل آزاد شدند.
 
-### `CUSTOMER-001` — PC-A — `READY_FOR_REVIEW`
+### `CUSTOMER-001` — PC-A — `DONE/MERGED`
 
 - فاز A با PR شماره ۱۶ و Merge Commit `9fb1cb33cef9bfbbb998d4e3ce823688e7700a31`
   به‌صورت `DONE/MERGED` تکمیل شد.
@@ -141,7 +141,21 @@ Baseline برنامه: `origin/develop` در Merge Commit
   Monorepo موفق بود و Dependency/Lockfile تغییر نکرد.
 - به‌دلیل بازبودن `DEC-OPEN-006` هیچ مدرک هویتی حساس ذخیره نمی‌شود. به‌دلیل بازبودن
   `DEC-OPEN-011` فقط Candidate Detection و Review دستی مجاز است و merge واقعی مسدود است.
-- Task تا Review و Merge PR به `develop` در وضعیت `READY_FOR_REVIEW` می‌ماند.
+- PR شماره ۱۹ با Merge Commit `7d0a4f42e978b468263efdc83f780fa656fbd613` وارد `develop` شد؛ Task `DONE/MERGED` است.
+
+### `FINANCE-001` — PC-A — `PLANNED`
+
+- Branch آینده: `codex/pc-a-finance-foundation`؛ شروع پس از Merge Handoff مستقل.
+- فاز نخست فقط Foundation مالی، تثبیت مرز Sub-ledger، تصمیم‌های P0، طراحی Domain/Application،
+  قراردادهای producer/consumer و UI/stateهای بدون Persistence را پوشش می‌دهد.
+- Migration، Schema، posting/accounting mapping، FX authoritative، tax/recognition و approval
+  workflow تا حل و ثبت `DEC-OPEN-001`، `DEC-OPEN-004`، `DEC-OPEN-005` و
+  `DEC-OPEN-016` ممنوع‌اند.
+- قفل Migration به Finance منتقل ولی تا Decision Gate غیرفعال است؛ Dependency/Lockfile فقط
+  پس از ثبت dependency و فایل دقیق فعال می‌شود. Finance shared-contract و اسناد مرکزی نیز
+  منحصراً در اختیار PC-A/FINANCE-001 هستند.
+- Finance به جدول‌های Customers، Sales، Reservations، Procurement یا HR query مستقیم نمی‌زند
+  و فقط contract/event عمومی و referenceهای پایدار مصرف می‌کند.
 
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 
@@ -164,9 +178,9 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - Persistence، Prisma، Migration، Seed، Dependency، Lockfile و Contract مشترک در
   Phase A ممنوع‌اند. Backend Persistence فقط پس از Handoff آینده Migration انجام
   می‌شود.
-- قفل Migration، Customer shared-contract/root export و اسناد مرکزی Sprint نزد
-  PC-A/`CUSTOMER-001` Phase B می‌مانند؛ PC-B فایل‌های Database، IAM، Master Data،
-  Customers داخلی یا اسناد مرکزی را تغییر نمی‌دهد.
+- قفل‌های مشترک CUSTOMER-001 با Merge `7d0a4f4` آزاد و در Handoff مستقل برای
+  PC-A/`FINANCE-001` رزرو شده‌اند؛ PC-B همچنان به Database، IAM، Master Data،
+  Customers داخلی، Finance contract یا اسناد مرکزی دسترسی ندارد.
 
 ### ترتیب اجرا و ادغام Sprint دوم
 
@@ -176,14 +190,15 @@ Baseline برنامه: `origin/develop` در Merge Commit
 4. PC-A، `CUSTOMER-001` فاز A را روی Branch مستقل و بدون Persistence موازی آغاز کند.
 5. `MASTER-002` با migration gate ادغام و چهار قفلش صریح آزاد شد.
 6. Handoff مستقل، قفل‌های لازم را برای فاز B `CUSTOMER-001` رزرو کرد.
-7. Customer فقط پس از persistence، permission/audit و migration tests کامل `DONE` می‌شود.
+7. `CUSTOMER-001` پس از persistence، permission/audit و migration gate با Merge `7d0a4f4` برابر `DONE` شد.
 8. PC-B می‌تواند `CUSTOMER-AFFAIRS-001` Phase A را بدون قفل مشترک و فقط در مرز
    فایل ثبت‌شده موازی اجرا کند.
+9. Handoff مستقل، چهار قفل CUSTOMER-001 را آزاد و برای Foundation کنترل‌شده `FINANCE-001` رزرو می‌کند.
 
 ### معیارهای عدم تداخل
 
-- PC-A در CUSTOMER-001 فاز B مالک Prisma/Migration دامنه Customers، قرارداد مشترک Customer
-  و اسناد مرکزی Sprint است و به فایل‌های داخلی Master Data یا IAM دست نمی‌زند.
+- PC-A در `FINANCE-001` مالک مشروط Migration، Finance shared-contract و اسناد مرکزی است؛
+  تا حل Decision Gate هیچ Schema/Migration مالی ایجاد نمی‌شود.
 - قفل Dependency/Lockfile فقط هنگام نیاز واقعی و پس از ثبت dependency و فایل دقیق فعال
   می‌شود.
 - هر تغییر Contract مشترک producer/consumer، نسخه و برنامه سازگاری ثبت‌شده می‌خواهد.
