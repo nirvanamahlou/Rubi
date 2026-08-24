@@ -3,9 +3,12 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-const crmRoot = resolve(process.cwd(), 'apps/web/src/app/(crm)');
-const source = (path: string) =>
-  readFileSync(resolve(process.cwd(), path), 'utf8');
+const currentDirectory = process.cwd();
+const webRoot = currentDirectory.replaceAll('\\', '/').endsWith('/apps/web')
+  ? currentDirectory
+  : resolve(currentDirectory, 'apps/web');
+const crmRoot = resolve(webRoot, 'src/app/(crm)');
+const source = (path: string) => readFileSync(resolve(webRoot, path), 'utf8');
 
 const approvedRoutes = [
   'dashboard',
@@ -75,9 +78,7 @@ describe('17-route module foundation', () => {
   });
 
   it('covers dashboard queues and prevents sidebar horizontal overflow', () => {
-    const dashboard = source(
-      'apps/web/src/components/dashboard/dashboard-shell.tsx',
-    );
+    const dashboard = source('src/components/dashboard/dashboard-shell.tsx');
     for (const capability of [
       'Holdهای نزدیک انقضا',
       'Manifestهای آماده بازبینی',
@@ -90,7 +91,7 @@ describe('17-route module foundation', () => {
       expect(dashboard).toContain(capability);
     }
 
-    const shell = source('apps/web/src/components/layout/app-shell.tsx');
+    const shell = source('src/components/layout/app-shell.tsx');
     expect(shell).toContain('overflow-x-hidden');
     expect(shell).toContain('truncate whitespace-nowrap');
   });

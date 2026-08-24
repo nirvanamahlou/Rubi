@@ -2,7 +2,6 @@
 
 import {
   Activity,
-  ArrowLeft,
   ChevronLeft,
   ChevronRight,
   CircleAlert,
@@ -17,11 +16,9 @@ import {
   LockKeyhole,
   Plus,
   Search,
-  ShieldCheck,
   SlidersHorizontal,
   Sparkles,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -302,22 +299,6 @@ export function ModuleFoundationWorkspace({
       <PageHeader
         actions={
           <>
-            {config.key === 'system' ? (
-              <>
-                <Button asChild variant="secondary">
-                  <Link href="/users">
-                    <ShieldCheck aria-hidden="true" className="size-4" />
-                    کاربران و دسترسی
-                  </Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link href="/settings">
-                    تنظیمات موجود
-                    <ArrowLeft aria-hidden="true" className="size-4" />
-                  </Link>
-                </Button>
-              </>
-            ) : null}
             <Button
               onClick={() =>
                 setNotice(
