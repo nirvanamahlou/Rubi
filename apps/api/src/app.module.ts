@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { environmentValidationSchema } from './config/environment.validation';
+import { CustomersModule } from './customers/customers.module';
 import { DatabaseModule } from './database/database.module';
 import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
@@ -20,6 +21,7 @@ import { MasterDataModule } from './master-data/master-data.module';
       validationSchema: environmentValidationSchema,
     }),
     DatabaseModule,
+    CustomersModule,
     MasterDataModule,
     IamModule,
   ],
