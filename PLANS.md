@@ -177,7 +177,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - PR #24 با Source HEAD `6f475c0` و Merge Commit `b6da5d6` وارد `origin/develop` شد.
 - قفل‌های Migration، Legal Entity contract و اسناد مرکزی با دلیل `DONE/MERGED via PR #24` آزاد شدند.
 
-### `MASTER-003` — PC-B — `IN_PROGRESS`
+### `MASTER-003` — PC-B — `IN_PROGRESS / PARTIAL DRAFT`
 
 - Branch: `codex/pc-b-master-data-advanced` از `origin/develop@b6da5d6`.
 - توسعه افزایشی MASTER-002 برای Schema/Migration، Contract، Backend، Frontend، Import امن Excel و تست.
@@ -185,6 +185,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - Migration، Master Data shared-contract/root export و Central docs برای PC-B رزرو هستند.
 - Dependency/Lockfile تا اثبات نیاز Dependency جدید Excel آزاد می‌ماند.
 - اتصال‌های Documents/Worker/Finance/Reservations/Integrations فقط از Public Contract یا Port واقعی؛ بدون artifact یا Provider ساختگی.
+
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 
 - Branch آینده: `codex/pc-b-customer-affairs-foundation`.
