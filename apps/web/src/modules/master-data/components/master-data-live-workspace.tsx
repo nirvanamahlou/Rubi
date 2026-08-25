@@ -8,6 +8,7 @@ import type {
 } from '@rubi/contracts';
 import {
   Ban,
+  CheckCircle2,
   Database,
   Eye,
   FilePenLine,
@@ -17,6 +18,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  XCircle,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -52,11 +54,11 @@ import {
   type MasterDataFormMode,
 } from './master-data-live-form';
 
-const groups = ['جغرافیا', 'مالی', 'خدمات سفر', 'سازمان‌ها', 'فروش'] as const;
+const groups = ['مالی', 'جغرافیا', 'خدمات سفر', 'سازمان‌ها', 'فروش'] as const;
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
 export function MasterDataWorkspace() {
-  const [resource, setResource] = useState<MasterDataResourceKey>('countries');
+  const [resource, setResource] = useState<MasterDataResourceKey>('currencies');
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
@@ -81,14 +83,17 @@ export function MasterDataWorkspace() {
   const load = useCallback(async () => {
     setRequestState('loading');
     try {
-      const response = await masterDataApi.list(resource as MasterDataResource, {
-        search,
-        status,
-        sortBy,
-        sortDirection: 'asc',
-        page,
-        pageSize: 25,
-      });
+      const response = await masterDataApi.list(
+        resource as MasterDataResource,
+        {
+          search,
+          status,
+          sortBy,
+          sortDirection: 'asc',
+          page,
+          pageSize: 25,
+        },
+      );
       setRecords(response.data);
       setTotal(response.meta.total);
       setRequestState('ready');
@@ -147,10 +152,37 @@ export function MasterDataWorkspace() {
       );
       await load();
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.');
+      setNotice(
+        error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.',
+      );
     }
   }
 
+  async function decideRate(
+    record: MasterDataRecord,
+    action: 'approve' | 'reject',
+  ) {
+    const reason = window.prompt(
+      action === 'approve'
+        ? 'دلیل تأیید نرخ را وارد کنید:'
+        : 'دلیل رد نرخ را وارد کنید:',
+    );
+    if (!reason?.trim()) return;
+    try {
+      await masterDataApi.decideCurrencyRate(
+        record.id,
+        action,
+        record.version,
+        reason.trim(),
+      );
+      setNotice(action === 'approve' ? 'نرخ تأیید شد.' : 'نرخ رد شد.');
+      await load();
+    } catch (error) {
+      setNotice(
+        error instanceof Error ? error.message : 'تصمیم نرخ ناموفق بود.',
+      );
+    }
+  }
   async function requestExport(format: 'xlsx' | 'pdf') {
     try {
       const response = await masterDataApi.export({
@@ -164,13 +196,16 @@ export function MasterDataWorkspace() {
         },
         columns: ['code', 'name', 'status', 'updatedAt'],
         locale: 'fa-IR',
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tehran',
+        timezone:
+          Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tehran',
       });
       setNotice(
         `درخواست خروجی ثبت شد (${response.data.status}). تولید artifact منتظر Documents/Worker است.`,
       );
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : 'ثبت خروجی ناموفق بود.');
+      setNotice(
+        error instanceof Error ? error.message : 'ثبت خروجی ناموفق بود.',
+      );
     }
   }
 
@@ -179,7 +214,10 @@ export function MasterDataWorkspace() {
       <PageHeader
         actions={
           <>
-            <Button onClick={() => void requestExport('xlsx')} variant="outline">
+            <Button
+              onClick={() => void requestExport('xlsx')}
+              variant="outline"
+            >
               <FileSpreadsheet aria-hidden="true" className="size-4" />
               Excel
             </Button>
@@ -194,12 +232,12 @@ export function MasterDataWorkspace() {
           </>
         }
         description="مدیریت پایدار Reference Data و Organizationهای مشترک با کنترل دسترسی، Audit و نسخه رکورد."
-        eyebrow="MASTER-002 · PC-B"
+        eyebrow="MASTER-003 · PC-B"
         title="اطلاعات پایه"
       />
 
       <Alert
-        description="نرخ ارز فقط Draft/Preview است. خروجی Excel/PDF به‌صورت async ثبت می‌شود و تا Handoff رسمی Documents/Worker هیچ فایل ساختگی تولید نمی‌شود."
+        description="نرخ ارز با گردش Draft، تأیید یا رد، Maker/Checker و تاریخچه واقعی مدیریت می‌شود و همچنان برای ثبت مالی authoritative نیست. خروجی تا آماده‌شدن Documents/Worker در وضعیت انتظار می‌ماند."
         title="Persistence فعال · محدودیت‌های دامنه محفوظ"
       />
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
@@ -212,25 +250,33 @@ export function MasterDataWorkspace() {
             </span>
             <div>
               <h2 className="text-sm font-black">Catalog اطلاعات پایه</h2>
-              <p className="text-xs text-muted-foreground">۱۲ منبع پایدار</p>
+              <p className="text-xs text-muted-foreground">
+                ۱۲ منبع پایدار · مشترک بین شرکت‌ها
+              </p>
             </div>
           </div>
           <nav aria-label="دسته‌های اطلاعات پایه" className="mt-3 space-y-4">
             {groups.map((group) => (
               <section key={group}>
-                <h3 className="px-2 text-[11px] font-bold text-muted-foreground">{group}</h3>
+                <h3 className="px-2 text-[11px] font-bold text-muted-foreground">
+                  {group}
+                </h3>
                 <div className="mt-1 grid gap-1">
-                  {masterDataCatalog.filter((item) => item.group === group).map((item) => (
-                    <button
-                      aria-current={item.key === resource ? 'page' : undefined}
-                      className="rounded-xl px-3 py-2 text-start text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground"
-                      key={item.key}
-                      onClick={() => changeResource(item.key)}
-                      type="button"
-                    >
-                      {item.label}
-                    </button>
-                  ))}
+                  {masterDataCatalog
+                    .filter((item) => item.group === group)
+                    .map((item) => (
+                      <button
+                        aria-current={
+                          item.key === resource ? 'page' : undefined
+                        }
+                        className="rounded-xl px-3 py-2 text-start text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground"
+                        key={item.key}
+                        onClick={() => changeResource(item.key)}
+                        type="button"
+                      >
+                        {item.label}
+                      </button>
+                    ))}
                 </div>
               </section>
             ))}
@@ -254,19 +300,33 @@ export function MasterDataWorkspace() {
           <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
             <FormField id="master-data-search-live" label="جست‌وجوی سریع">
               <div className="relative">
-                <Search aria-hidden="true" className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
+                <Search
+                  aria-hidden="true"
+                  className="absolute end-3 top-3.5 size-4 text-muted-foreground"
+                />
                 <Input
                   className="pe-10"
                   id="master-data-search-live"
-                  onChange={(event) => { setSearch(event.target.value); setPage(1); }}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    setPage(1);
+                  }}
                   placeholder={`جست‌وجو در ${definition.label}`}
                   value={search}
                 />
               </div>
             </FormField>
             <FormField label="وضعیت">
-              <Select onValueChange={(value) => { setStatus(value as typeof status); setPage(1); }} value={status}>
-                <SelectTrigger aria-label="فیلتر وضعیت"><SelectValue /></SelectTrigger>
+              <Select
+                onValueChange={(value) => {
+                  setStatus(value as typeof status);
+                  setPage(1);
+                }}
+                value={status}
+              >
+                <SelectTrigger aria-label="فیلتر وضعیت">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">همه وضعیت‌ها</SelectItem>
                   <SelectItem value="active">فعال</SelectItem>
@@ -275,8 +335,13 @@ export function MasterDataWorkspace() {
               </Select>
             </FormField>
             <FormField label="مرتب‌سازی">
-              <Select onValueChange={(value) => setSortBy(value as typeof sortBy)} value={sortBy}>
-                <SelectTrigger aria-label="مرتب‌سازی"><SelectValue /></SelectTrigger>
+              <Select
+                onValueChange={(value) => setSortBy(value as typeof sortBy)}
+                value={sortBy}
+              >
+                <SelectTrigger aria-label="مرتب‌سازی">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="name">عنوان</SelectItem>
                   <SelectItem value="code">کد</SelectItem>
@@ -284,15 +349,29 @@ export function MasterDataWorkspace() {
                 </SelectContent>
               </Select>
             </FormField>
-            <Button onClick={() => { setSearch(''); setStatus('all'); setSortBy('name'); setPage(1); }} variant="ghost">
+            <Button
+              onClick={() => {
+                setSearch('');
+                setStatus('all');
+                setSortBy('name');
+                setPage(1);
+              }}
+              variant="ghost"
+            >
               <FilterX aria-hidden="true" className="size-4" />
               پاک‌کردن
             </Button>
           </FilterBar>
 
           {requestState === 'loading' ? (
-            <div aria-label="در حال بارگذاری" aria-live="polite" className="space-y-3">
-              {[0, 1, 2].map((item) => <Skeleton className="h-16 w-full" key={item} />)}
+            <div
+              aria-label="در حال بارگذاری"
+              aria-live="polite"
+              className="space-y-3"
+            >
+              {[0, 1, 2].map((item) => (
+                <Skeleton className="h-16 w-full" key={item} />
+              ))}
             </div>
           ) : requestState === 'forbidden' ? (
             <EmptyState
@@ -302,13 +381,22 @@ export function MasterDataWorkspace() {
             />
           ) : requestState === 'error' ? (
             <ErrorState
-              action={<Button onClick={() => void load()} size="sm" variant="outline"><RefreshCw aria-hidden="true" className="size-4" />تلاش دوباره</Button>}
+              action={
+                <Button onClick={() => void load()} size="sm" variant="outline">
+                  <RefreshCw aria-hidden="true" className="size-4" />
+                  تلاش دوباره
+                </Button>
+              }
               description="اتصال به Backend ناموفق بود. Session و تنظیم NEXT_PUBLIC_API_BASE_URL را بررسی کنید."
               title="دریافت اطلاعات پایه ناموفق بود"
             />
           ) : records.length === 0 ? (
             <EmptyState
-              action={<Button onClick={() => openForm('create')} size="sm">ایجاد {definition.singularLabel}</Button>}
+              action={
+                <Button onClick={() => openForm('create')} size="sm">
+                  ایجاد {definition.singularLabel}
+                </Button>
+              }
               description="با فیلتر فعلی رکوردی پیدا نشد."
               title={`${definition.label} خالی است`}
             />
@@ -327,21 +415,85 @@ export function MasterDataWorkspace() {
                 <tbody>
                   {records.map((record) => (
                     <tr className="border-t border-border" key={record.id}>
-                      <td className="p-4 font-mono text-xs" dir="ltr">{record.code}</td>
+                      <td className="p-4 font-mono text-xs" dir="ltr">
+                        {record.code}
+                      </td>
                       <td className="p-4 font-semibold">{record.name}</td>
                       <td className="p-4">
-                        <Badge className={record.status === 'active' ? 'bg-emerald-500/10 text-emerald-700' : 'bg-muted text-muted-foreground'}>
+                        <Badge
+                          className={
+                            record.status === 'active'
+                              ? 'bg-emerald-500/10 text-emerald-700'
+                              : 'bg-muted text-muted-foreground'
+                          }
+                        >
                           {record.status === 'active' ? 'فعال' : 'غیرفعال'}
                         </Badge>
                       </td>
-                      <td className="p-4">{new Date(record.updatedAt).toLocaleString('fa-IR')}</td>
+                      <td className="p-4">
+                        {new Date(record.updatedAt).toLocaleString('fa-IR')}
+                      </td>
                       <td className="p-4">
                         <div className="flex flex-wrap gap-2">
-                          <Button onClick={() => openForm('view', record)} size="sm" variant="outline"><Eye aria-hidden="true" className="size-4" />مشاهده</Button>
-                          <Button onClick={() => openForm('edit', record)} size="sm" variant="outline"><FilePenLine aria-hidden="true" className="size-4" />ویرایش</Button>
-                          <Button onClick={() => void toggle(record)} size="sm" variant="ghost">
-                            {record.status === 'active' ? 'غیرفعال‌سازی' : 'فعال‌سازی'}
+                          <Button
+                            onClick={() => openForm('view', record)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Eye aria-hidden="true" className="size-4" />
+                            مشاهده
                           </Button>
+                          <Button
+                            onClick={() => openForm('edit', record)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            <FilePenLine
+                              aria-hidden="true"
+                              className="size-4"
+                            />
+                            ویرایش
+                          </Button>
+                          <Button
+                            onClick={() => void toggle(record)}
+                            size="sm"
+                            variant="ghost"
+                          >
+                            {record.status === 'active'
+                              ? 'غیرفعال‌سازی'
+                              : 'فعال‌سازی'}
+                          </Button>{' '}
+                          {resource === 'exchange-rates' &&
+                          record.attributes.status === 'DRAFT' ? (
+                            <>
+                              <Button
+                                onClick={() =>
+                                  void decideRate(record, 'approve')
+                                }
+                                size="sm"
+                                variant="outline"
+                              >
+                                <CheckCircle2
+                                  aria-hidden="true"
+                                  className="size-4"
+                                />
+                                تأیید
+                              </Button>
+                              <Button
+                                onClick={() =>
+                                  void decideRate(record, 'reject')
+                                }
+                                size="sm"
+                                variant="ghost"
+                              >
+                                <XCircle
+                                  aria-hidden="true"
+                                  className="size-4"
+                                />
+                                رد
+                              </Button>
+                            </>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -352,10 +504,27 @@ export function MasterDataWorkspace() {
           )}
 
           <div className="flex items-center justify-between gap-3">
-            <PaginationShell currentPage={page} totalLabel={`${total.toLocaleString('fa-IR')} رکورد`} />
+            <PaginationShell
+              currentPage={page}
+              totalLabel={`${total.toLocaleString('fa-IR')} رکورد`}
+            />
             <div className="flex gap-2">
-              <Button disabled={page === 1} onClick={() => setPage((value) => Math.max(1, value - 1))} size="sm" variant="outline">قبلی</Button>
-              <Button disabled={page * 25 >= total} onClick={() => setPage((value) => value + 1)} size="sm" variant="outline">بعدی</Button>
+              <Button
+                disabled={page === 1}
+                onClick={() => setPage((value) => Math.max(1, value - 1))}
+                size="sm"
+                variant="outline"
+              >
+                قبلی
+              </Button>
+              <Button
+                disabled={page * 25 >= total}
+                onClick={() => setPage((value) => value + 1)}
+                size="sm"
+                variant="outline"
+              >
+                بعدی
+              </Button>
             </div>
           </div>
         </main>
@@ -366,7 +535,9 @@ export function MasterDataWorkspace() {
           definition={definition}
           key={`${resource}-${formMode}-${selected?.id ?? 'new'}`}
           mode={formMode}
-          onOpenChange={(open) => { if (!open) setFormMode(null); }}
+          onOpenChange={(open) => {
+            if (!open) setFormMode(null);
+          }}
           onPersist={persist}
           open
           {...(selected ? { record: selected } : {})}

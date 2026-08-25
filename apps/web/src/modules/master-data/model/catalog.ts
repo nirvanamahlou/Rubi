@@ -101,7 +101,19 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     fields: [
       { ...codeField, label: 'کد ISO-4217', placeholder: 'IRR' },
       nameField,
+      {
+        key: 'englishName',
+        label: 'نام انگلیسی',
+        type: 'text',
+        placeholder: 'Iranian Rial',
+      },
       { key: 'symbol', label: 'نماد نمایشی', type: 'text', placeholder: '﷼' },
+      {
+        key: 'decimalDigits',
+        label: 'تعداد رقم اعشار',
+        type: 'number',
+        placeholder: '2',
+      },
     ],
     preview: { code: 'IRR', name: 'ریال ایران', symbol: '﷼' },
   },
@@ -135,6 +147,13 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         required: true,
       },
       {
+        key: 'rateType',
+        label: 'نوع نرخ',
+        type: 'text',
+        placeholder: 'BUY / SELL / REFERENCE',
+        required: true,
+      },
+      {
         key: 'source',
         label: 'منبع نرخ',
         type: 'text',
@@ -147,6 +166,25 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         type: 'datetime-local',
         placeholder: '',
         required: true,
+      },
+      {
+        key: 'validFrom',
+        label: 'شروع اعتبار UTC',
+        type: 'datetime-local',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'validTo',
+        label: 'پایان اعتبار (اختیاری)',
+        type: 'datetime-local',
+        placeholder: '',
+      },
+      {
+        key: 'correctionReason',
+        label: 'توضیح اصلاح',
+        type: 'text',
+        placeholder: 'در صورت اصلاح نسخه قبلی',
       },
     ],
     preview: {
