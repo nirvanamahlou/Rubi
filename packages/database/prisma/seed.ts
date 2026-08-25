@@ -69,7 +69,7 @@ async function seed(): Promise<void> {
         },
         update: { isActive: true, name: 'مدیر سامانه' },
       });
-      await transaction.role.upsert({
+      const staff = await transaction.role.upsert({
         where: { code: 'staff' },
         create: {
           code: 'staff',
@@ -95,6 +95,26 @@ async function seed(): Promise<void> {
             update: {},
           }),
         ),
+      );
+      const staffPermissionCodes = new Set([
+        'legal-entity.read',
+        'legal-entity.switch',
+      ]);
+      await Promise.all(
+        seededPermissions
+          .filter((permission) => staffPermissionCodes.has(permission.code))
+          .map((permission) =>
+            transaction.rolePermission.upsert({
+              where: {
+                roleId_permissionId: {
+                  roleId: staff.id,
+                  permissionId: permission.id,
+                },
+              },
+              create: { roleId: staff.id, permissionId: permission.id },
+              update: {},
+            }),
+          ),
       );
       const fixtureBranch = await transaction.branch.upsert({
         where: { code: 'HQ' },
@@ -136,6 +156,34 @@ async function seed(): Promise<void> {
         },
         update: { isPrimary: true },
       });
+      const initialLegalEntities = [
+        { id: '20000000-0000-4000-8000-000000000001', code: 'NIYAYESH_SEIR_SAHAR', persianName: 'شرکت نیایش سیر سحر' },
+        { id: '20000000-0000-4000-8000-000000000002', code: 'JAHAN_BASTAN', persianName: 'شرکت جهان باستان' },
+      ] as const;
+      for (const initial of initialLegalEntities) {
+        const legalEntity = await transaction.legalEntity.upsert({
+          where: { code: initial.code },
+          create: { ...initial, updatedByUserId: fixtureUser.id },
+          update: {},
+        });
+        await transaction.legalEntityBrandingVersion.upsert({
+          where: { legalEntityId_version: { legalEntityId: legalEntity.id, version: 1 } },
+          create: {
+            legalEntityId: legalEntity.id,
+            version: 1,
+            snapshot: {
+              legalEntityId: legalEntity.id, code: legalEntity.code, persianName: legalEntity.persianName,
+              latinName: null, tradeName: null, logoFileId: null, letterheadFileId: null,
+              footerFileId: null, address: null, phone: null, email: null, website: null,
+              nationalId: null, registrationNumber: null, economicCode: null, paymentText: null,
+              sealFileId: null, authorizedSignatureId: null, primaryColor: null,
+              secondaryColor: null, legalFooterText: null, version: 1,
+            },
+            createdByUserId: fixtureUser.id,
+          },
+          update: {},
+        });
+      }
       await transaction.masterCountry.upsert({
         where: { code: 'IR' },
         create: {

@@ -13,6 +13,8 @@ export {
   MasterDataExportFormat,
   MasterDataExportStatus,
   MasterOrganizationRoleCode,
+  LegalEntityContextMode,
+  LegalEntityDocumentIssueStatus,
   SessionStatus,
   UserStatus,
 } from './generated/prisma/enums';
