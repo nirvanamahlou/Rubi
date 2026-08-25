@@ -103,4 +103,3 @@ Export موجود MASTER-002 حفظ شده و صادقانه در وضعیت `AW
 - Full monorepo lint/typecheck/test/build و اسکن نهایی پیش از Ready for Review
 
 Dependency Excel تا انتخاب کتابخانه Pin‌شده و Security Review اضافه نمی‌شود؛ بنابراین Dependency/Lockfile Lock همچنان آزاد است. Antivirus و Documents Worker آماده‌نبودنشان به‌عنوان موفقیت جعلی گزارش نمی‌شود.
-
