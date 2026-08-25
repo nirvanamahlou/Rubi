@@ -27,7 +27,7 @@
 
 ## قرارداد عمومی و سازگاری
 
-`legal-entities.v1` producer ماژول Legal Entities و مصرف‌کنندگان آن App Shell، Dashboard،
+`legal-entities.v2` producer ماژول Legal Entities و مصرف‌کنندگان آن App Shell، Dashboard،
 Reporting و ماژول‌های صادرکننده Sales، Reservations، Finance، Procurement و HR هستند.
 قرارداد افزایشی است و هیچ قرارداد Branch/IAM موجود را جایگزین نمی‌کند. مصرف‌کنندگان فقط
 service عمومی را مصرف می‌کنند و query مستقیم جدول Legal Entity ممنوع است.
@@ -57,7 +57,7 @@ Migration یا تغییر فایل‌های مرکزی رزروشده نیست.
 - APIها: list/selectable، context/switch، issue targets، issue/reissue، branding، audit، detail/update و status؛ همگی Authenticated و Deny-by-default.
 - UI: `LegalEntityProvider` سراسری، selector RTL/Responsive با stateهای loading/error/success، sync میان tabها و صفحه مدیریتی `/system/legal-entities`.
 - خروجی رسمی: `ALL` سربرگ ترکیبی ندارد؛ prompt انتخاب issuer یا دو target مستقل ارائه می‌شود و metadata/snapshot immutable ثبت می‌شود.
-- سربرگ اجباری: `requiresLetterhead=true` نبود asset را با `LEGAL_ENTITY_LETTERHEAD_REQUIRED` در Backend رد می‌کند.
+- سربرگ اجباری فقط از `DocumentTemplatePolicyPort` داخلی و trusted تعیین می‌شود؛ ورودی عمومی `requiresLetterhead` حذف شده و نبود asset برای policy رسمی با `LEGAL_ENTITY_LETTERHEAD_REQUIRED` رد می‌شود.
 
 ## وضعیت Branding
 
@@ -68,11 +68,12 @@ Migration یا تغییر فایل‌های مرکزی رزروشده نیست.
 ## Quality Gate
 
 - `pnpm install --frozen-lockfile`، Prisma format/validate/generate و Production Build کل Monorepo پاس شدند.
-- هر ۶ migration روی PostgreSQL خالی اجرا و status به‌روز شد؛ Seed دوبار بدون Duplicate و با شمارش `2 legal entities / 2 branding snapshots / 8 permissions` پاس شد.
-- lint و typecheck کل Monorepo و ۲۲۲ تست در ۶۲ فایل پاس شدند؛ route `/system/legal-entities` در Build تولید شد.
-- Smoke واقعی با Cookie session: Login، Login page، Dashboard و System Legal Entities، Switch به جهان باستان و حفظ پس از Refresh، `ALL`، prompt، دو target مستقل، Issue/Reissue Metadata و Audit پاس شد.
+- هر ۷ Migration روی PostgreSQL موقت تازه اجرا و status به‌روز شد؛ Seed دوبار بدون Duplicate پاس شد؛ Database اصلی `rubi` reset نشد.
+- lint و typecheck کل Monorepo و ۲۴۲ تست در ۶۶ فایل پاس شدند؛ route `/system/legal-entities` در Build تولید شد.
+- Smoke واقعی با Cookie session: نسخه اولیه صفر، concurrent initial با نتیجه `200/409`، stale conflict، Switch و Refresh، منع Issue در `ALL`، baseline کاربران بدون نقش/نقش سفارشی، denyهای admin/aggregate/no-session/inactive، Branch scope و صفحات Login/Dashboard/System Legal Entities پاس شد.
 - in-app Browser به‌علت reset داخلی runtime در دو تلاش قابل اتصال نبود؛ visual-only interaction جایگزین نشد. HTTP runtime، component/model tests، RTL/Responsive markup و Radix keyboard contract بررسی شدند.
-- `git diff --check`، Scope، Dependency/Lockfile، Secret/PII و Markdown link scan پاس شدند؛ دیتابیس‌ها و processهای موقت پاک شدند.
+- FK مرکب `(brandingSnapshotId, issuerLegalEntityId, brandingSnapshotVersion)`، Trigger append-only Branding Version، policy provenance و حفظ Snapshot سند قدیمی با تست واقعی PostgreSQL پاس شدند.
+- `git diff --check`، Scope، Dependency/Lockfile، Secret/PII و Markdown link scan پاس شدند؛ Databaseها و processهای موقت پاک شدند.
 
 ## تصمیم‌ها و Handoff باز
 

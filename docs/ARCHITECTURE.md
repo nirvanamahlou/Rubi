@@ -163,6 +163,15 @@ sequenceDiagram
 Payment verification و ثبت آن قبل از queue اتمیک است. شکست Provider payment را حذف
 نمی‌کند؛ retry محدود، manual follow-up یا refund با workflow مجزا انجام می‌شود.
 
+## Legal Entity output boundary
+
+Legal Entity فقط هویت issuer و Branding را مالک است و داده عملیاتی را scope نمی‌کند. تغییر
+Context با `expectedVersion` اجباری و claim اتمیک انجام می‌شود؛ نسخه مجازی اولیه صفر است.
+صدور سند فقط در Context مشخص مجاز است. `DocumentTemplatePolicyPort` داخلی، template/type/
+version و الزام سربرگ را از منبع trusted resolve می‌کند؛ Adapter پیش‌فرض تا اتصال واقعی
+Documents fail-closed است. Issue/Reissue به Branding Version append-only با FK مرکب متصل و
+همراه policy provenance و Audit در transaction ثبت می‌شوند؛ `ALL` هیچ سند ترکیبی تولید نمی‌کند.
+
 ## داده و ذخیره‌سازی
 
 - PostgreSQL: همه داده پایدار، audit metadata، status history و reporting views

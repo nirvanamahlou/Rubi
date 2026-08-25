@@ -146,10 +146,12 @@ erDiagram
   و فیلدهای حقوقی/تماس nullable را نگه می‌دارد؛ `ALL` هرگز در این جدول ذخیره نمی‌شود.
 - `user_legal_entity_contexts` انتخاب امن هر User را با mode، issuer اختیاری و Version نگه
   می‌دارد؛ mode تجمیعی فقط پس از کنترل `legal-entity.aggregate.read` معتبر است.
-- `legal_entity_branding_versions` Snapshot immutable لوگو/سربرگ/پابرگ، اطلاعات حقوقی و
-  رنگ‌ها را version می‌کند تا تغییر Branding سند قدیمی را بازنویسی نکند.
-- `legal_entity_document_issues` issuer id/code/name، Branding Snapshot Version، Template
-  Version، actor، UTC، نوع سند، reference، hash اختیاری، status و reason صدور مجدد را ثبت می‌کند.
+- `legal_entity_branding_versions` Snapshot append-only لوگو/سربرگ/پابرگ، اطلاعات حقوقی و
+  رنگ‌ها را version می‌کند؛ Trigger پایگاه داده UPDATE/DELETE هر نسخه را رد می‌کند.
+- `legal_entity_document_issues` علاوه بر issuer id/code/name، با FK مرکب واقعی روی
+  `(brandingSnapshotId, issuerLegalEntityId, brandingSnapshotVersion)` دقیقاً به همان Snapshot متصل است؛
+  `templateId/version` و `templatePolicyId/version` trusted، actor، UTC، reference، hash، status
+  و reason canonical صدور مجدد نیز ذخیره می‌شوند.
 - `legal_entity_audit_events` تغییر Context، مشخصات، Branding، وضعیت و Issue/Reissue را
   append-only ثبت می‌کند؛ شناسه asset مهر/امضا فقط برای Permission مجاز برگردانده می‌شود.
 - هیچ FK یا scope از Customer/Contract/Reservation/Procurement/Finance به Context فعال

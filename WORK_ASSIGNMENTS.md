@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-25 — اصلاحات Review PR #24 برای LEGAL-ENTITY-CONTEXT-001 آغاز شد؛ قفل‌ها تا Merge/Handoff فعال‌اند
+آخرین به‌روزرسانی: 2026-08-25 — اصلاحات Review PR #24 تکمیل شد؛ Draft PR و قفل‌ها تا Merge/Handoff فعال‌اند
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
@@ -27,7 +27,7 @@
 | CUSTOMER-001                    | PC-A         | `codex/pc-a-customer-persistence`           | مشتریان، Persistence، رمزنگاری Contact، Audit redaction و Duplicate query                     | `DONE`             | PR #19؛ Merge `7d0a4f4`؛ Migration و قرارداد Customer پایدار و تحویل‌شده    |
 | CUSTOMER001-FINANCE-HANDOFF-001 | PC-A         | `codex/pc-a-customer-finance-handoff`       | آزادسازی چهار قفل CUSTOMER-001 و رزرو کنترل‌شده FINANCE-001؛ فقط اسناد مرکزی و سند Handoff    | `DONE`             | PR #20؛ Merge `11fc875`؛ بدون کد، Schema، Migration، Dependency یا Lockfile |
 | FINANCE-001                     | PC-A         | `codex/pc-a-finance-foundation`             | Foundation مالی و چهار Decision پذیرفته‌شده؛ Phase A بدون Persistence و Migration             | `DONE`             | PR #21؛ Merge `45c107e`؛ قفل‌های stale با نبود FINANCE-002 آزاد شدند        |
-| LEGAL-ENTITY-CONTEXT-001        | PC-A         | `codex/pc-a-legal-entity-context`           | Legal Entity Full-Stack، Prisma، API، Contract، App Shell، صفحه مدیریت، Audit و Test          | `IN_PROGRESS`      | اصلاحات Review روی Draft PR #24؛ قفل‌ها تا Merge/Handoff فعال‌اند           |
+| LEGAL-ENTITY-CONTEXT-001        | PC-A         | `codex/pc-a-legal-entity-context`           | Legal Entity Full-Stack، Prisma، API، Contract، App Shell، صفحه مدیریت، Audit و Test          | `READY_FOR_REVIEW` | اصلاحات Review تکمیل؛ Draft PR #24 و قفل‌ها تا Merge/Handoff فعال‌اند       |
 | CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket              | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence |
 | MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11        |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                           | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |
@@ -219,10 +219,11 @@ Finance shared-contract در `packages/contracts/src/finance/**` مرز دامن
 
 ### اصلاحات Review PR #24
 
-- اصلاحات Review از HEAD برابر `17ad92703251e6f708fdd3e6c9fc03fd7c31975e` روی همان Branch و همان Draft PR انجام می‌شوند.
+- اصلاحات Review از HEAD برابر `17ad92703251e6f708fdd3e6c9fc03fd7c31975e` روی همان Branch و همان Draft PR انجام شدند.
 - قفل‌های Migration، Legal Entity shared-contract/root export و اسناد مرکزی بدون انتقال مالک، برای `PC-A/LEGAL-ENTITY-CONTEXT-001` فعال می‌مانند.
 - Dependency/Lockfile آزاد است؛ این Review به dependency جدید نیاز ندارد.
-- پنج محور الزام‌آور: optimistic concurrency اتمیک، FK واقعی Branding Snapshot، policy داخلی trusted/fail-closed، Reissue اتمیک با reason canonical و دسترسی پایه read/switch برای کاربر authenticated فعال.
+- پنج محور الزام‌آور تکمیل شدند: optimistic concurrency اتمیک، FK واقعی Branding Snapshot، policy داخلی trusted/fail-closed، Reissue اتمیک با reason canonical و دسترسی پایه read/switch برای کاربر authenticated فعال.
+- PostgreSQL تازه با ۷ Migration، Seed دوبار، ۲۴۲ تست در ۶۶ فایل، lint/typecheck/build و Smoke واقعی API/Web پاس شدند؛ قفل‌ها برای Review/Merge همچنان فعال‌اند.
 
 مسیرهای ماژول `apps/api/src/legal-entities/**`، `apps/web/src/modules/legal-entities/**`،
 App Shell مرتبط، route `/system/legal-entities` و تست‌های همان قابلیت برای این Work Item

@@ -1,9 +1,9 @@
 # قرارداد IAM
 
-نسخه عمومی جاری Permission Contract برابر `2` است. نسخه دوم علاوه بر مجوزهای پایه IAM،
-کدهای `master_data.*` و `customers.*` را برای مصرف از `@rubi/contracts` منتشر می‌کند.
-فهرست قطعی در `IAM_PERMISSION_CODES` و گروه‌های دامنه در
-`MASTER_DATA_PERMISSION_CODES` و `CUSTOMER_PERMISSION_CODES` قرار دارند.
+نسخه عمومی جاری Permission Contract برابر `4` است. کدهای IAM، Master Data، Customers و
+Legal Entity از `@rubi/contracts` منتشر می‌شوند. فهرست قطعی در `IAM_PERMISSION_CODES` و
+گروه‌های دامنه قرار دارد؛ `LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES` فقط
+`legal-entity.read/switch` را برای هر کاربر فعال دارای نشست معتبر baseline می‌کند.
 
 ## مرز عمومی
 
@@ -29,8 +29,10 @@ Schema جدید تا ادغام IAM و آزادسازی صریح Migration Lock 
 
 ## Authorization و Audit
 
-Guard احراز هویت وضعیت کاربر و نشست را از DB دوباره بررسی می‌کند. `RequirePermissions`
-deny-by-default است و use caseهای تغییر کاربر نیز actor و Audit ثبت می‌کنند. عملیات login،
+Guard احراز هویت وضعیت کاربر و نشست را از DB دوباره بررسی می‌کند. کاربر بدون نشست یا
+غیرفعال baseline دریافت نمی‌کند؛ Branch scope بدون تغییر می‌ماند و aggregate/manage/branding/
+audit/document permissions همچنان deny-by-default هستند. `RequirePermissions` نیز
+use caseهای دیگر را deny-by-default نگه می‌دارد و تغییر کاربر actor و Audit ثبت می‌کند. عملیات login،
 logout، refresh reuse، ساخت کاربر/نقش، تغییر access/status و لغو نشست Audit می‌شوند؛ هیچ
 password یا token خامی در metadata ثبت نمی‌شود.
 
