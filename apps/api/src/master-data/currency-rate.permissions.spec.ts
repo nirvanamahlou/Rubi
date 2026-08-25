@@ -15,7 +15,11 @@ describe('MASTER-003 controller permission metadata', () => {
     [MasterDataAuditController, 'history', 'master_data.audit.read'],
   ] as const)('protects %s.%s with %s', (controller, method, permission) => {
     expect(
-      Reflect.getMetadata(PERMISSIONS_KEY, controller.prototype[method]),
+      Reflect.getMetadata(
+        PERMISSIONS_KEY,
+        (controller.prototype as unknown as Record<string, object>)[method]!,
+      ),
     ).toEqual([permission]);
   });
 });
+
