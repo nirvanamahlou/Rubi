@@ -27,10 +27,36 @@ const expectedRoutes = [
   '/master-data',
 ];
 
+const expectedTitles = [
+  'داشبورد',
+  'مشتریان و مسافران',
+  'امور مشتریان، سرنخ‌ها و پشتیبانی',
+  'رزرواسیون و عملیات سفر',
+  'مدیریت و تعریف بلیت‌ها',
+  'قراردادها، فروش و تخصیص خدمات',
+  'خرید و تأمین',
+  'مالی و خزانه‌داری',
+  'مارکتینگ',
+  'آژانس‌ها و مشتریان سازمانی',
+  'منابع انسانی',
+  'وظایف و اتوماسیون',
+  'اسناد و فایل‌ها',
+  'گزارش‌ها',
+  'یکپارچه‌سازی‌ها',
+  'مدیریت سیستم',
+  'اطلاعات پایه',
+];
+
 describe('CRM navigation', () => {
   it('contains exactly the approved 17 routes in order', () => {
     expect(navigationItems.map((item) => item.href)).toEqual(expectedRoutes);
     expect(new Set(navigationItems.map((item) => item.href)).size).toBe(17);
+  });
+
+  it('uses exactly the approved 17 Persian titles in order', () => {
+    expect(navigationItems).toHaveLength(17);
+    expect(navigationItems.map((item) => item.title)).toEqual(expectedTitles);
+    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(17);
   });
 
   it('resolves the Human Resources owner route', () => {

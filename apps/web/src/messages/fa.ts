@@ -81,12 +81,12 @@ export const navigationMessages = [
     description: 'نمای کلی عملکرد و کارهای روزانه',
   },
   {
-    title: 'مشتریان',
+    title: 'مشتریان و مسافران',
     href: '/customers',
     description: 'پرونده و تعاملات مشتریان',
   },
   {
-    title: 'امور مشتریان و پشتیبانی',
+    title: 'امور مشتریان، سرنخ‌ها و پشتیبانی',
     href: '/customer-affairs',
     description: 'سرنخ‌ها، درخواست‌های قبل از فروش و پشتیبانی پس از سفر',
   },
@@ -96,17 +96,17 @@ export const navigationMessages = [
     description: 'بررسی ظرفیت، صدور خدمات، واچر، بیمه و منیفست',
   },
   {
-    title: 'تعریف و مدیریت بلیت‌ها',
+    title: 'مدیریت و تعریف بلیت‌ها',
     href: '/ticket-management',
     description: 'تعریف محصول بلیت، برنامه حرکت، نرخ و ظرفیت',
   },
   {
-    title: 'قراردادها و فروش',
+    title: 'قراردادها، فروش و تخصیص خدمات',
     href: '/sales',
     description: 'قرارداد جدید و تخصیص مسافر به خدمات',
   },
   {
-    title: 'خرید و تأمین‌کنندگان',
+    title: 'خرید و تأمین',
     href: '/purchases',
     description: 'خرید خدمات و تأمین‌کنندگان',
   },
