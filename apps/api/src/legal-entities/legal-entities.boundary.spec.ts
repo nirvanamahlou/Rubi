@@ -25,6 +25,7 @@ describe('legal entity module boundary', () => {
     );
     expect(service).toContain("action: 'legal-entity.document.issue'");
     expect(service).toContain("action: 'legal-entity.document.reissue'");
+    expect(service).toContain('LEGAL_ENTITY_LETTERHEAD_REQUIRED');
   });
 
   it('enforces optimistic claims and redacts sensitive branding by default', () => {

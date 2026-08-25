@@ -61,6 +61,7 @@ export class CreateDocumentIssueDto {
   @IsString() @MaxLength(120) referenceEntityType!: string;
   @IsString() @MaxLength(160) referenceEntityId!: string;
   @IsOptional() @Matches(/^[0-9a-f]{64}$/) fileHash?: string;
+  @IsOptional() @IsBoolean() requiresLetterhead?: boolean;
 }
 
 export class ReissueDocumentDto {

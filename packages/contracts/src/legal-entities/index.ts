@@ -9,8 +9,7 @@ export const LEGAL_ENTITY_CONTEXT_ALL = 'ALL' as const;
 
 export type LegalEntityCode = (typeof LEGAL_ENTITY_CODES)[number];
 export type LegalEntitySelection =
-  | LegalEntityCode
-  | typeof LEGAL_ENTITY_CONTEXT_ALL;
+  LegalEntityCode | typeof LEGAL_ENTITY_CONTEXT_ALL;
 
 export interface LegalEntityBrandingSnapshot {
   legalEntityId: string;
@@ -110,6 +109,7 @@ export interface LegalEntityDocumentIssueRequest {
   referenceEntityType: string;
   referenceEntityId: string;
   fileHash?: string;
+  requiresLetterhead?: boolean;
 }
 
 export interface LegalEntityDocumentIssueMetadata {
