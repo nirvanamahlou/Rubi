@@ -172,7 +172,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - PR #21 با Merge `45c107e` وارد `origin/develop` شد. هیچ `FINANCE-002` یا PR/Branch فعال
   Finance Persistence وجود ندارد؛ قفل‌های stale آن برای `LEGAL-ENTITY-CONTEXT-001` آزاد شدند.
 
-### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `READY_FOR_REVIEW`
+### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `IN_PROGRESS`
 
 - Base: `origin/develop@0ba85d4604f6eb4d792bee4c3059a32bcf858738`.
 - Draft PR #24 به `develop` ساخته شد؛ Merge و Force Push انجام نشده است.
@@ -182,6 +182,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - همه Gateهای Prisma، PostgreSQL خالی، Seed دوبار، ۲۲۲ تست، lint/typecheck/build و Smoke Cookie/API/Web پاس شدند.
 - اتصال binary upload به Public Upload Adapter آینده Documents وابسته است؛ تا آن زمان UI فایل ساختگی یا URL عمومی نمی‌سازد.
 - Migration، Contract و اسناد مرکزی تا Merge/Handoff رزرو هستند؛ Dependency/Lockfile آزاد است.
+- اصلاحات Review PR #24 از HEAD `17ad92703251e6f708fdd3e6c9fc03fd7c31975e` روی همان Branch آغاز شد؛ optimistic concurrency، Snapshot FK، trusted template policy، Reissue transaction و baseline read/switch باید پیش از بازگشت به Review کامل شوند.
 
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 

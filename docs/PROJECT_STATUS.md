@@ -1,15 +1,15 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-25 — LEGAL-ENTITY-CONTEXT-001 آغاز و قفل‌ها منتقل شد
+آخرین به‌روزرسانی: 2026-08-25 — اصلاحات Review PR #24 برای LEGAL-ENTITY-CONTEXT-001 آغاز شد
 
 ## خلاصه
 
 - مرحله جاری: **Issuer Company Context Full-Stack**
-- وضعیت: **LEGAL-ENTITY-CONTEXT-001 در حال اجرا؛ انتقال اتمیک قفل‌ها ثبت شد**
+- وضعیت: **LEGAL-ENTITY-CONTEXT-001 در حال اصلاح Review روی Draft PR #24؛ قفل‌ها فعال‌اند**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@0ba85d4604f6eb4d792bee4c3059a32bcf858738` شامل Merge PR #23
 - شاخه فعال: `codex/pc-a-legal-entity-context`
-- Work Item: `LEGAL-ENTITY-CONTEXT-001`؛ `IN_PROGRESS`
+- Work Item: `LEGAL-ENTITY-CONTEXT-001`؛ `IN_PROGRESS` (Review fixes from `17ad92703251e6f708fdd3e6c9fc03fd7c31975e`)
 - محیط مسئول: `COMPUTER_ID=PC-A`؛ Dev Serverها پیش از تغییر متوقف شدند.
 - نوع تغییر: Database، API، Contract، Permission/Audit، App Shell، صفحه مدیریت و تست؛
   Dependency/Lockfile تا اثبات نیاز واقعی آزاد است.
@@ -96,7 +96,7 @@
 - Dependency/Lockfile، Prisma، Migration و Seed تغییر نکردند. داده‌ها فقط synthetic هستند.
 - QA مرورگر داخلی به‌دلیل خطای ACL ابزار Windows و redirect احراز هویت انجام نشد؛ HTTP
   redirect و Production Build route تایید شدند و dev server موقت متوقف شد.
-### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `READY_FOR_REVIEW`
+### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `IN_PROGRESS`
 
 - Branch از `origin/develop@0ba85d4604f6eb4d792bee4c3059a32bcf858738` ساخته شد؛ Base از Branch قبلی MODULES استفاده نشده است.
 - Draft PR #24 از `codex/pc-a-legal-entity-context` به `develop` باز است و Merge نشده است.
@@ -106,6 +106,7 @@
 - Prisma و migration/status روی PostgreSQL خالی، Seed دوبار، lint/typecheck/test/build کل Monorepo و Smoke واقعی Cookie/API/Web پاس شدند؛ ۲۲۲ تست در ۶۲ فایل سبز است.
 - UI اتصال Branding به Documents را بدون فایل/URL ساختگی آماده و تا ارائه Public Upload Adapter واقعی غیرفعال نگه می‌دارد؛ لوگوی موجود نیایش حفظ و جهان باستان Placeholder صریح دارد.
 - Migration، Contract و اسناد مرکزی تا Merge/Handoff فعال‌اند؛ Dependency/Lockfile آزاد است.
+- اصلاحات Review PR #24 روی همان Branch آغاز شد: پنج نقص concurrency، snapshot integrity، trusted policy، reissue transaction/reason و authenticated baseline access بازتولید شده‌اند و Gate بازگشت به Review هستند.
 
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 
