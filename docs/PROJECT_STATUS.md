@@ -96,13 +96,15 @@
 - Dependency/Lockfile، Prisma، Migration و Seed تغییر نکردند. داده‌ها فقط synthetic هستند.
 - QA مرورگر داخلی به‌دلیل خطای ACL ابزار Windows و redirect احراز هویت انجام نشد؛ HTTP
   redirect و Production Build route تایید شدند و dev server موقت متوقف شد.
-### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `IN_PROGRESS`
+### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `READY_FOR_REVIEW`
 
-- Branch از `origin/develop@0ba85d4` ساخته شد؛ Base از Branch قبلی MODULES استفاده نشده است.
-- PR #21 و #23 Merge هستند، همه PRهای باز بررسی شدند و FINANCE-002 وجود ندارد.
-- Migration Owner و اسناد مرکزی برای Legal Entity فعال‌اند؛ Dependency/Lockfile آزاد است.
-- Scope شامل `legal-entities.v1`، Persistence افزایشی، Seed تکرارپذیر، Backend validation،
-  Permission/Audit، App Shell و `/system/legal-entities` است.
+- Branch از `origin/develop@0ba85d4604f6eb4d792bee4c3059a32bcf858738` ساخته شد؛ Base از Branch قبلی MODULES استفاده نشده است.
+- PR #21 و #23 Merge هستند، همه PRهای باز بررسی شدند و هیچ `FINANCE-002`، PR/Branch فعال Finance Persistence یا مالک جدید قفل وجود ندارد.
+- مدل افزایشی، Migration، Seed دو شرکت، قرارداد `legal-entities.v1`، هشت Permission، API امن، Branding Snapshot/Issue Metadata/Audit، App Shell و `/system/legal-entities` تکمیل شدند.
+- `ALL` مجازی و Permission-based است؛ صدور ترکیبی ممنوع، انتخاب issuer یا دو target مستقل الزامی و سربرگ الزامیِ تکمیل‌نشده در Backend رد می‌شود.
+- Prisma و migration/status روی PostgreSQL خالی، Seed دوبار، lint/typecheck/test/build کل Monorepo و Smoke واقعی Cookie/API/Web پاس شدند؛ ۲۲۲ تست در ۶۲ فایل سبز است.
+- UI اتصال Branding به Documents را بدون فایل/URL ساختگی آماده و تا ارائه Public Upload Adapter واقعی غیرفعال نگه می‌دارد؛ لوگوی موجود نیایش حفظ و جهان باستان Placeholder صریح دارد.
+- Migration، Contract و اسناد مرکزی تا Merge/Handoff فعال‌اند؛ Dependency/Lockfile آزاد است.
 
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 

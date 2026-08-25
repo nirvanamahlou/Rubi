@@ -172,14 +172,15 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - PR #21 با Merge `45c107e` وارد `origin/develop` شد. هیچ `FINANCE-002` یا PR/Branch فعال
   Finance Persistence وجود ندارد؛ قفل‌های stale آن برای `LEGAL-ENTITY-CONTEXT-001` آزاد شدند.
 
-### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `IN_PROGRESS`
+### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `READY_FOR_REVIEW`
 
 - Base: `origin/develop@0ba85d4604f6eb4d792bee4c3059a32bcf858738`.
-- Legal Entity از Branch و Tenant مستقل است و داده عملیاتی CRM را scope یا فیلتر نمی‌کند.
-- Migration، قرارداد عمومی `legal-entities.v1`، Permission/Audit، App Shell و صفحه
-  `/system/legal-entities` در Scope هستند.
-- Context مجازی `ALL` در Database ذخیره نمی‌شود و برای صدور سند رسمی معتبر نیست.
-- Migration و اسناد مرکزی تا Merge/Handoff این Task رزرو هستند؛ Dependency/Lockfile آزاد است.
+- Legal Entity مستقل از Branch/Tenant و بدون scope داده عملیاتی، با دو issuer واقعی و Context مجازی `ALL` تکمیل شد.
+- Migration افزایشی، Seed تکرارپذیر، `legal-entities.v1`، Permission/Audit، Issue/Reissue Metadata، App Shell و `/system/legal-entities` آماده Review هستند.
+- صدور ترکیبی ممنوع است؛ Backend issuer فعال، Permission، Snapshot و سربرگ الزامی را دوباره اعتبارسنجی می‌کند.
+- همه Gateهای Prisma، PostgreSQL خالی، Seed دوبار، ۲۲۲ تست، lint/typecheck/build و Smoke Cookie/API/Web پاس شدند.
+- اتصال binary upload به Public Upload Adapter آینده Documents وابسته است؛ تا آن زمان UI فایل ساختگی یا URL عمومی نمی‌سازد.
+- Migration، Contract و اسناد مرکزی تا Merge/Handoff رزرو هستند؛ Dependency/Lockfile آزاد است.
 
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 

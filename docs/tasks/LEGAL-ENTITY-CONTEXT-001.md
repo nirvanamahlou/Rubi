@@ -3,7 +3,7 @@
 - **Computer:** PC-A
 - **Branch:** `codex/pc-a-legal-entity-context`
 - **Base:** `0ba85d4604f6eb4d792bee4c3059a32bcf858738`
-- **Status:** IN_PROGRESS
+- **Status:** READY_FOR_REVIEW
 - **Dependency/Lockfile:** RELEASED؛ dependency جدیدی اثبات نشده است
 
 ## Gate و انتقال قفل
@@ -50,8 +50,31 @@ Migration یا تغییر فایل‌های مرکزی رزروشده نیست.
 شماره‌گذاری مستقل بر مبنای Legal Entity و document type در قرارداد قابل توسعه می‌ماند،
 اما Sequence فعلی بدون سیاست مصوب تغییر نمی‌کند. `ALL` هرگز issuer یا prefix نیست.
 
+## خروجی پیاده‌سازی
+
+- مدل‌ها: `LegalEntity`، `UserLegalEntityContext`، `LegalEntityBrandingVersion`، `LegalEntityAuditEvent` و `LegalEntityDocumentIssue` با FK، Index، Constraint و Version خوش‌بینانه.
+- APIها: list/selectable، context/switch، issue targets، issue/reissue، branding، audit، detail/update و status؛ همگی Authenticated و Deny-by-default.
+- UI: `LegalEntityProvider` سراسری، selector RTL/Responsive با stateهای loading/error/success، sync میان tabها و صفحه مدیریتی `/system/legal-entities`.
+- خروجی رسمی: `ALL` سربرگ ترکیبی ندارد؛ prompt انتخاب issuer یا دو target مستقل ارائه می‌شود و metadata/snapshot immutable ثبت می‌شود.
+- سربرگ اجباری: `requiresLetterhead=true` نبود asset را با `LEGAL_ENTITY_LETTERHEAD_REQUIRED` در Backend رد می‌کند.
+
+## وضعیت Branding
+
+- نیایش سیر سحر: لوگوی موجود `/brand/niyayesh.png` بدون تغییر حفظ شده است؛ referenceهای Documents و مشخصات حقوقی نامعلوم عمداً nullable هستند.
+- جهان باستان: لوگو/سربرگ واقعی موجود نبود؛ Placeholderهای «لوگو تکمیل نشده» و «سربرگ تکمیل نشده» نمایش داده می‌شوند و مقدار ساختگی Seed نشده است.
+- Public Upload Adapter اجرایی Documents هنوز در Repository وجود ندارد؛ کنترل‌های انتخاب فایل برای مدیر آماده اما غیرفعال‌اند تا قرارداد واقعی storage/access/audit فراهم شود. مهر و امضا URL عمومی ندارند و برای کاربر فاقد Permission redacted می‌شوند.
+
 ## Quality Gate
 
-Prisma format/validate/generate، migration روی PostgreSQL خالی، status، Seed دوبار، lint،
-typecheck، test، build، smoke Login/Dashboard/System/Switch، `git diff --check`، scope،
-secret/PII و Markdown links پیش از تحویل اجرا می‌شوند.
+- `pnpm install --frozen-lockfile`، Prisma format/validate/generate و Production Build کل Monorepo پاس شدند.
+- هر ۶ migration روی PostgreSQL خالی اجرا و status به‌روز شد؛ Seed دوبار بدون Duplicate و با شمارش `2 legal entities / 2 branding snapshots / 8 permissions` پاس شد.
+- lint و typecheck کل Monorepo و ۲۲۲ تست در ۶۲ فایل پاس شدند؛ route `/system/legal-entities` در Build تولید شد.
+- Smoke واقعی با Cookie session: Login، Login page، Dashboard و System Legal Entities، Switch به جهان باستان و حفظ پس از Refresh، `ALL`، prompt، دو target مستقل، Issue/Reissue Metadata و Audit پاس شد.
+- in-app Browser به‌علت reset داخلی runtime در دو تلاش قابل اتصال نبود؛ visual-only interaction جایگزین نشد. HTTP runtime، component/model tests، RTL/Responsive markup و Radix keyboard contract بررسی شدند.
+- `git diff --check`، Scope، Dependency/Lockfile، Secret/PII و Markdown link scan پاس شدند؛ دیتابیس‌ها و processهای موقت پاک شدند.
+
+## تصمیم‌ها و Handoff باز
+
+- `DEC-OPEN-010`: Prefix و Sequence اتمیک هر document type در scope issuer باید در Task مستقل پس از تصمیم مالی/حقوقی اجرا شود؛ `ALL` هرگز prefix نیست.
+- Documents Public Upload Adapter باید assetهای لوگو/سربرگ/پابرگ/مهر/امضا را version و authorize کند؛ Legal Entity فقط reference را از Contract عمومی می‌پذیرد.
+- قفل Migration، Legal Entity Contract و اسناد مرکزی تا Merge/Handoff فعال می‌مانند؛ Dependency/Lockfile آزاد است.
