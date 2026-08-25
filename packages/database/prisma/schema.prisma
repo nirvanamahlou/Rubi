@@ -196,6 +196,19 @@ enum MasterOrganizationRoleCode {
   BROKER
 }
 
+enum MasterCurrencyRateType {
+  BUY
+  SELL
+  REFERENCE
+}
+
+enum MasterCurrencyRateStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
 enum MasterDataExportFormat {
   XLSX
   PDF
@@ -254,6 +267,7 @@ model MasterCurrency {
   id                  String                    @id @default(uuid()) @db.Uuid
   code                String                    @unique @db.Char(3)
   name                String                    @db.VarChar(160)
+  englishName         String?                   @db.VarChar(160)
   symbol              String?                   @db.VarChar(16)
   decimalDigits       Int                       @default(2)
   isActive            Boolean                   @default(true)
@@ -272,24 +286,33 @@ model MasterCurrency {
 }
 
 model MasterDraftExchangeRate {
-  id                  String         @id @default(uuid()) @db.Uuid
-  fromCurrencyId      String         @db.Uuid
-  toCurrencyId        String         @db.Uuid
-  rate                Decimal        @db.Decimal(24, 10)
-  source              String         @db.VarChar(160)
-  observedAt          DateTime       @db.Timestamptz(3)
-  isAuthoritative     Boolean        @default(false)
-  isActive            Boolean        @default(true)
-  version             Int            @default(1)
-  createdByUserId     String         @db.Uuid
-  updatedByUserId     String         @db.Uuid
-  deactivatedByUserId String?        @db.Uuid
-  deactivatedAt       DateTime?      @db.Timestamptz(3)
-  createdAt           DateTime       @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime       @updatedAt @db.Timestamptz(3)
-  fromCurrency        MasterCurrency @relation("DraftRateFromCurrency", fields: [fromCurrencyId], references: [id], onDelete: Restrict)
-  toCurrency          MasterCurrency @relation("DraftRateToCurrency", fields: [toCurrencyId], references: [id], onDelete: Restrict)
+  id                  String                   @id @default(uuid()) @db.Uuid
+  fromCurrencyId      String                   @db.Uuid
+  toCurrencyId        String                   @db.Uuid
+  rate                Decimal                  @db.Decimal(24, 10)
+  rateType            MasterCurrencyRateType   @default(REFERENCE)
+  source              String                   @db.VarChar(160)
+  observedAt          DateTime                 @db.Timestamptz(3)
+  validFrom           DateTime                 @db.Timestamptz(3)
+  validTo             DateTime?                @db.Timestamptz(3)
+  status              MasterCurrencyRateStatus @default(DRAFT)
+  correctionReason    String?                  @db.VarChar(500)
+  decisionReason      String?                  @db.VarChar(500)
+  approvedByUserId    String?                  @db.Uuid
+  approvedAt          DateTime?                @db.Timestamptz(3)
+  isAuthoritative     Boolean                  @default(false)
+  isActive            Boolean                  @default(true)
+  version             Int                      @default(1)
+  createdByUserId     String                   @db.Uuid
+  updatedByUserId     String                   @db.Uuid
+  deactivatedByUserId String?                  @db.Uuid
+  deactivatedAt       DateTime?                @db.Timestamptz(3)
+  createdAt           DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                 @updatedAt @db.Timestamptz(3)
+  fromCurrency        MasterCurrency           @relation("DraftRateFromCurrency", fields: [fromCurrencyId], references: [id], onDelete: Restrict)
+  toCurrency          MasterCurrency           @relation("DraftRateToCurrency", fields: [toCurrencyId], references: [id], onDelete: Restrict)
 
+  @@index([fromCurrencyId, toCurrencyId, rateType, status, validFrom])
   @@index([fromCurrencyId, toCurrencyId, observedAt])
   @@index([isActive, observedAt])
   @@map("master_draft_exchange_rates")
@@ -479,6 +502,8 @@ model MasterDataAuditEvent {
   beforeSnapshot Json?
   afterSnapshot  Json?
   traceId        String?      @db.VarChar(120)
+  entityVersion  Int?
+  reason         String?      @db.VarChar(500)
   occurredAt     DateTime     @default(now()) @db.Timestamptz(3)
 
   @@index([resource, entityId, occurredAt])

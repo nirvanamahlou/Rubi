@@ -11,14 +11,21 @@ import {
 } from '../src';
 
 describe('IAM public permission contract', () => {
-  it('publishes the version 4 domain permission catalogs without duplicates', () => {
-    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(4);
+  it('publishes the version 5 domain permission catalogs without duplicates', () => {
+    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(5);
     expect(MASTER_DATA_PERMISSION_CODES).toEqual([
       'master_data.read',
       'master_data.create',
       'master_data.update',
       'master_data.status.manage',
       'master_data.export',
+      'master_data.import',
+      'master_data.audit.read',
+      'master_data.currency_rate.create',
+      'master_data.currency_rate.approve',
+      'master_data.sensitive_contact.read',
+      'master_data.sensitive_contact.unmask',
+      'master_data.delete',
     ]);
     expect(CUSTOMER_PERMISSION_CODES).toEqual([
       'customers.read',

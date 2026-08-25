@@ -13,20 +13,41 @@ import {
   type MasterDataResource,
 } from '@rubi/contracts';
 
-import { MasterDataRepository, toMasterDataRecord } from './master-data.repository';
+import {
+  MasterDataRepository,
+  toMasterDataRecord,
+} from './master-data.repository';
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const codePattern = /^[A-Z0-9][A-Z0-9_-]{1,31}$/;
 const organizationRoles = new Set([
-  'AGENCY', 'CORPORATE_CUSTOMER', 'SUPPLIER', 'AIRLINE', 'HOTEL_PROVIDER',
-  'INSURANCE_PROVIDER', 'BUS_PROVIDER', 'TOUR_OPERATOR', 'BROKER',
+  'AGENCY',
+  'CORPORATE_CUSTOMER',
+  'SUPPLIER',
+  'AIRLINE',
+  'HOTEL_PROVIDER',
+  'INSURANCE_PROVIDER',
+  'BUS_PROVIDER',
+  'TOUR_OPERATOR',
+  'BROKER',
 ]);
 
 const allowedFields: Record<MasterDataResource, readonly string[]> = {
   countries: ['code', 'name', 'englishName'],
   cities: ['code', 'name', 'countryId'],
-  currencies: ['code', 'name', 'symbol', 'decimalDigits'],
-  'exchange-rates': ['fromCurrencyCode', 'toCurrencyCode', 'rate', 'source', 'observedAt'],
+  currencies: ['code', 'name', 'englishName', 'symbol', 'decimalDigits'],
+  'exchange-rates': [
+    'fromCurrencyCode',
+    'toCurrencyCode',
+    'rate',
+    'rateType',
+    'source',
+    'observedAt',
+    'validFrom',
+    'validTo',
+    'correctionReason',
+  ],
   banks: ['code', 'name', 'countryId'],
   insurers: ['code', 'name', 'organizationId'],
   airlines: ['code', 'name', 'icaoCode', 'organizationId'],
@@ -41,7 +62,13 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   countries: ['code', 'name', 'englishName'],
   cities: ['code', 'name', 'countryId'],
   currencies: ['code', 'name'],
-  'exchange-rates': ['fromCurrencyCode', 'toCurrencyCode', 'rate', 'source', 'observedAt'],
+  'exchange-rates': [
+    'fromCurrencyCode',
+    'toCurrencyCode',
+    'rate',
+    'source',
+    'observedAt',
+  ],
   banks: ['code', 'name', 'countryId'],
   insurers: ['code', 'name', 'organizationId'],
   airlines: ['code', 'name', 'organizationId'],
@@ -68,7 +95,8 @@ function branchOf(actor: AuthenticatedActor, requested?: string): string {
 @Injectable()
 export class MasterDataService {
   constructor(
-    @Inject(MasterDataRepository) private readonly repository: MasterDataRepository,
+    @Inject(MasterDataRepository)
+    private readonly repository: MasterDataRepository,
   ) {}
 
   resource(value: string) {
@@ -98,6 +126,11 @@ export class MasterDataService {
     requestedBranch?: string,
   ) {
     const resource = resourceOf(resourceValue);
+    if (
+      resource === 'exchange-rates' &&
+      !actor.permissions.includes('master_data.currency_rate.create')
+    )
+      throw new ForbiddenException('مجوز ثبت نرخ ارز وجود ندارد.');
     const data = await this.prepare(resource, values, actor.userId, false);
     const row = await this.repository.create(
       resource,
@@ -116,8 +149,19 @@ export class MasterDataService {
     actor: AuthenticatedActor,
     requestedBranch?: string,
   ) {
-    if (!version) throw new BadRequestException('version برای ویرایش الزامی است.');
+    if (!version)
+      throw new BadRequestException('version برای ویرایش الزامی است.');
     const resource = resourceOf(resourceValue);
+    if (resource === 'exchange-rates') {
+      if (!actor.permissions.includes('master_data.currency_rate.create'))
+        throw new ForbiddenException('مجوز ثبت نرخ ارز وجود ندارد.');
+      const existing = await this.repository.find(resource, id);
+      if (String(existing?.status) !== 'DRAFT')
+        throw new ConflictException({
+          code: 'CURRENCY_RATE_IMMUTABLE',
+          message: 'نرخ تأیید یا ردشده قابل ویرایش نیست؛ نسخه جدید ثبت کنید.',
+        });
+    }
     const data = await this.prepare(resource, values, actor.userId, true);
     const row = await this.repository.update(
       resource,
@@ -238,24 +282,42 @@ export class MasterDataService {
     const unknown = Object.keys(values).filter(
       (key) => !allowedFields[resource].includes(key),
     );
-    if (unknown.length) throw new BadRequestException(`فیلد غیرمجاز: ${unknown.join(', ')}`);
+    if (unknown.length)
+      throw new BadRequestException(`فیلد غیرمجاز: ${unknown.join(', ')}`);
     if (!partial) {
       const missing = requiredFields[resource].filter(
-        (key) => values[key] === undefined || values[key] === null || values[key] === '',
+        (key) =>
+          values[key] === undefined ||
+          values[key] === null ||
+          values[key] === '',
       );
-      if (missing.length) throw new BadRequestException(`فیلد الزامی: ${missing.join(', ')}`);
+      if (missing.length)
+        throw new BadRequestException(`فیلد الزامی: ${missing.join(', ')}`);
     }
     const data: Record<string, unknown> = { ...values };
     if (typeof data.code === 'string') {
       const code = data.code.trim().toUpperCase();
-      if (!codePattern.test(code)) throw new BadRequestException('کد canonical معتبر نیست.');
+      if (!codePattern.test(code))
+        throw new BadRequestException('کد canonical معتبر نیست.');
       data.code = code;
     }
-    if (resource === 'countries' && typeof data.code === 'string' && data.code.length !== 2)
+    if (
+      resource === 'countries' &&
+      typeof data.code === 'string' &&
+      data.code.length !== 2
+    )
       throw new BadRequestException('کد کشور باید ISO-2 باشد.');
-    if (resource === 'currencies' && typeof data.code === 'string' && data.code.length !== 3)
+    if (
+      resource === 'currencies' &&
+      typeof data.code === 'string' &&
+      data.code.length !== 3
+    )
       throw new BadRequestException('کد ارز باید ISO-4217 باشد.');
-    if (resource === 'airlines' && typeof data.code === 'string' && data.code.length !== 2)
+    if (
+      resource === 'airlines' &&
+      typeof data.code === 'string' &&
+      data.code.length !== 2
+    )
       throw new BadRequestException('کد ایرلاین باید IATA-2 باشد.');
     if (resource === 'airlines' && typeof data.icaoCode === 'string') {
       const icaoCode = data.icaoCode.trim().toUpperCase();
@@ -264,36 +326,70 @@ export class MasterDataService {
       data.icaoCode = icaoCode;
     }
     for (const field of ['countryId', 'organizationId', 'cityId']) {
-      if (typeof data[field] === 'string' && !uuidPattern.test(data[field] as string))
+      if (
+        typeof data[field] === 'string' &&
+        !uuidPattern.test(data[field] as string)
+      )
         throw new BadRequestException(`${field} باید UUID معتبر باشد.`);
     }
     if (resource === 'currencies' && data.decimalDigits !== undefined) {
       const digits = Number(data.decimalDigits);
       if (!Number.isInteger(digits) || digits < 0 || digits > 6)
-        throw new BadRequestException('دقت ارز باید عدد صحیح بین صفر تا شش باشد.');
+        throw new BadRequestException(
+          'دقت ارز باید عدد صحیح بین صفر تا شش باشد.',
+        );
       data.decimalDigits = digits;
     }
-    if (resource === 'hotels' && data.starRating !== undefined && data.starRating !== null) {
+    if (
+      resource === 'hotels' &&
+      data.starRating !== undefined &&
+      data.starRating !== null
+    ) {
       const rating = Number(data.starRating);
       if (!Number.isInteger(rating) || rating < 1 || rating > 5)
-        throw new BadRequestException('درجه هتل باید عدد صحیح بین ۱ تا ۵ باشد.');
+        throw new BadRequestException(
+          'درجه هتل باید عدد صحیح بین ۱ تا ۵ باشد.',
+        );
       data.starRating = rating;
     }
     if (resource === 'leaders' && typeof data.languages === 'string')
-      data.languages = data.languages.split(',').map((value) => value.trim()).filter(Boolean);
+      data.languages = data.languages
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
     if (resource === 'organizations') {
       const roleCodes = Array.isArray(data.roleCodes)
         ? data.roleCodes.map(String).map((value) => value.trim().toUpperCase())
-        : String(data.roleCodes ?? '').split(',').map((value) => value.trim().toUpperCase()).filter(Boolean);
-      if (!roleCodes.length || roleCodes.some((code) => !organizationRoles.has(code)))
+        : String(data.roleCodes ?? '')
+            .split(',')
+            .map((value) => value.trim().toUpperCase())
+            .filter(Boolean);
+      if (
+        !roleCodes.length ||
+        roleCodes.some((code) => !organizationRoles.has(code))
+      )
         throw new BadRequestException('Role سازمان معتبر نیست.');
       delete data.roleCodes;
       data.roles = partial
-        ? { deleteMany: {}, create: roleCodes.map((roleCode) => ({ roleCode, assignedByUserId: actorUserId })) }
-        : { create: roleCodes.map((roleCode) => ({ roleCode, assignedByUserId: actorUserId })) };
+        ? {
+            deleteMany: {},
+            create: roleCodes.map((roleCode) => ({
+              roleCode,
+              assignedByUserId: actorUserId,
+            })),
+          }
+        : {
+            create: roleCodes.map((roleCode) => ({
+              roleCode,
+              assignedByUserId: actorUserId,
+            })),
+          };
     }
     const relationChecks: Partial<
-      Record<MasterDataResource, { field: string; target: MasterDataResource; role?: string }>
+      Record<
+        MasterDataResource,
+        { field: string; target: MasterDataResource; role?: string }
+      >
     > = {
       cities: { field: 'countryId', target: 'countries' },
       banks: { field: 'countryId', target: 'countries' },
@@ -316,40 +412,96 @@ export class MasterDataService {
     };
     const check = relationChecks[resource];
     if (check && typeof data[check.field] === 'string') {
-      const related = await this.repository.find(check.target, data[check.field] as string);
+      const related = await this.repository.find(
+        check.target,
+        data[check.field] as string,
+      );
       const roles = related?.roles as { roleCode: string }[] | undefined;
-      if (!related || !related.isActive || (check.role && !roles?.some(({ roleCode }) => roleCode === check.role)))
+      if (
+        !related ||
+        !related.isActive ||
+        (check.role && !roles?.some(({ roleCode }) => roleCode === check.role))
+      )
         throw new BadRequestException('مرجع فعال با Role موردنیاز یافت نشد.');
     }
     if (resource === 'hotels' && typeof data.organizationId === 'string') {
-      const organization = await this.repository.find('organizations', data.organizationId);
+      const organization = await this.repository.find(
+        'organizations',
+        data.organizationId,
+      );
       const roles = organization?.roles as { roleCode: string }[] | undefined;
-      if (!organization?.isActive || !roles?.some(({ roleCode }) => roleCode === 'HOTEL_PROVIDER'))
-        throw new BadRequestException('Organization فعال هتل با Role مناسب یافت نشد.');
+      if (
+        !organization?.isActive ||
+        !roles?.some(({ roleCode }) => roleCode === 'HOTEL_PROVIDER')
+      )
+        throw new BadRequestException(
+          'Organization فعال هتل با Role مناسب یافت نشد.',
+        );
     }
     if (resource === 'exchange-rates') {
       const fromCode = String(data.fromCurrencyCode ?? '').toUpperCase();
       const toCode = String(data.toCurrencyCode ?? '').toUpperCase();
-      if (!/^[A-Z]{3}$/.test(fromCode) || !/^[A-Z]{3}$/.test(toCode) || fromCode === toCode)
+      if (
+        !/^[A-Z]{3}$/.test(fromCode) ||
+        !/^[A-Z]{3}$/.test(toCode) ||
+        fromCode === toCode
+      )
         throw new BadRequestException('جفت ارز معتبر نیست.');
       const rate = String(data.rate ?? '');
       if (!/^\d+(\.\d{1,10})?$/.test(rate) || Number(rate) <= 0)
-        throw new BadRequestException('نرخ Decimal مثبت با حداکثر ۱۰ رقم اعشار لازم است.');
+        throw new BadRequestException(
+          'نرخ Decimal مثبت با حداکثر ۱۰ رقم اعشار لازم است.',
+        );
       const observedAt = new Date(String(data.observedAt));
-      if (Number.isNaN(observedAt.getTime())) throw new BadRequestException('زمان مشاهده معتبر نیست.');
+      const validFrom = new Date(String(data.validFrom ?? data.observedAt));
+      const validTo = data.validTo ? new Date(String(data.validTo)) : null;
+      if (
+        Number.isNaN(observedAt.getTime()) ||
+        Number.isNaN(validFrom.getTime())
+      )
+        throw new BadRequestException('زمان مشاهده یا شروع اعتبار معتبر نیست.');
+      if (validTo && (Number.isNaN(validTo.getTime()) || validTo <= validFrom))
+        throw new BadRequestException(
+          'پایان اعتبار باید بعد از شروع اعتبار باشد.',
+        );
+      const rateType = String(data.rateType ?? 'REFERENCE').toUpperCase();
+      if (!['BUY', 'SELL', 'REFERENCE'].includes(rateType))
+        throw new BadRequestException('نوع نرخ معتبر نیست.');
       const currencies = await Promise.all([
-        this.repository.list('currencies', { search: fromCode, status: 'active', sortBy: 'code', sortDirection: 'asc', page: 1, pageSize: 10 }),
-        this.repository.list('currencies', { search: toCode, status: 'active', sortBy: 'code', sortDirection: 'asc', page: 1, pageSize: 10 }),
+        this.repository.list('currencies', {
+          search: fromCode,
+          status: 'active',
+          sortBy: 'code',
+          sortDirection: 'asc',
+          page: 1,
+          pageSize: 10,
+        }),
+        this.repository.list('currencies', {
+          search: toCode,
+          status: 'active',
+          sortBy: 'code',
+          sortDirection: 'asc',
+          page: 1,
+          pageSize: 10,
+        }),
       ]);
       const from = currencies[0].rows.find((row) => row.code === fromCode);
       const to = currencies[1].rows.find((row) => row.code === toCode);
-      if (!from || !to) throw new BadRequestException('ارز فعال مبدأ یا مقصد یافت نشد.');
+      if (!from || !to)
+        throw new BadRequestException('ارز فعال مبدأ یا مقصد یافت نشد.');
       return {
         fromCurrencyId: from.id,
         toCurrencyId: to.id,
         rate,
         source: String(data.source).trim(),
         observedAt,
+        validFrom,
+        validTo,
+        rateType,
+        correctionReason: data.correctionReason
+          ? String(data.correctionReason).trim()
+          : null,
+        status: 'DRAFT',
         isAuthoritative: false,
       };
     }

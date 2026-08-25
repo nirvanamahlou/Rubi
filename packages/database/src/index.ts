@@ -12,6 +12,8 @@ export {
   CustomerRelationshipType,
   MasterDataExportFormat,
   MasterDataExportStatus,
+  MasterCurrencyRateStatus,
+  MasterCurrencyRateType,
   MasterOrganizationRoleCode,
   LegalEntityContextMode,
   LegalEntityDocumentIssueStatus,

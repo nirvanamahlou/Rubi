@@ -14,6 +14,8 @@ const actor: AuthenticatedActor = {
     'master_data.update',
     'master_data.status.manage',
     'master_data.export',
+    'master_data.currency_rate.create',
+    'master_data.currency_rate.approve',
   ],
   branchIds: ['33333333-3333-4333-8333-333333333333'],
 };
@@ -96,11 +98,23 @@ describe('MasterDataService', () => {
       list: vi
         .fn()
         .mockResolvedValueOnce({
-          rows: [{ ...currencyBase, id: '55555555-5555-4555-8555-555555555555', code: 'USD' }],
+          rows: [
+            {
+              ...currencyBase,
+              id: '55555555-5555-4555-8555-555555555555',
+              code: 'USD',
+            },
+          ],
           total: 1,
         })
         .mockResolvedValueOnce({
-          rows: [{ ...currencyBase, id: '66666666-6666-4666-8666-666666666666', code: 'IRR' }],
+          rows: [
+            {
+              ...currencyBase,
+              id: '66666666-6666-4666-8666-666666666666',
+              code: 'IRR',
+            },
+          ],
           total: 1,
         }),
       create: vi.fn().mockResolvedValue({
@@ -130,7 +144,12 @@ describe('MasterDataService', () => {
 
     expect(repository.create).toHaveBeenCalledWith(
       'exchange-rates',
-      expect.objectContaining({ isAuthoritative: false, rate: '600000' }),
+      expect.objectContaining({
+        isAuthoritative: false,
+        status: 'DRAFT',
+        rateType: 'REFERENCE',
+        rate: '600000',
+      }),
       actor.userId,
       actor.branchIds[0],
     );
