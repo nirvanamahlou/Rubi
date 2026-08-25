@@ -11,6 +11,7 @@ const role = (isActive: boolean, ...codes: string[]) => ({
 
 describe('authenticated legal-entity baseline permissions', () => {
   it.each([
+    ['staff role', [role(true, 'legal-entity.read', 'legal-entity.switch')]],
     ['no role', []],
     ['custom role', [role(true, 'customers.read')]],
     [

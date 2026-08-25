@@ -179,7 +179,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - Legal Entity مستقل از Branch/Tenant و بدون scope داده عملیاتی، با دو issuer واقعی و Context مجازی `ALL` تکمیل شد.
 - Migration افزایشی، Seed تکرارپذیر، `legal-entities.v2`، Permission/Audit، Issue/Reissue Metadata، App Shell و `/system/legal-entities` آماده Review هستند.
 - صدور ترکیبی ممنوع است؛ Backend issuer فعال، Permission، Snapshot و سربرگ الزامی را دوباره اعتبارسنجی می‌کند.
-- همه Gateهای Prisma، PostgreSQL تازه، Seed دوبار، ۲۴۲ تست در ۶۶ فایل، lint/typecheck/build و Smoke Cookie/API/Web پاس شدند.
+- همه Gateهای Prisma، PostgreSQL تازه، Seed دوبار، ۲۴۵ تست در ۶۶ فایل، lint/typecheck/build و Smoke Cookie/API/Web پاس شدند.
 - اتصال binary upload به Public Upload Adapter آینده Documents وابسته است؛ تا آن زمان UI فایل ساختگی یا URL عمومی نمی‌سازد.
 - Migration، Contract و اسناد مرکزی تا Merge/Handoff رزرو هستند؛ Dependency/Lockfile آزاد است.
 - اصلاحات Review PR #24 از HEAD `17ad92703251e6f708fdd3e6c9fc03fd7c31975e` روی همان Branch تکمیل شد: optimistic concurrency، Snapshot FK/immutability، trusted template policy، Reissue transaction و authenticated baseline read/switch همگی تست شده‌اند.

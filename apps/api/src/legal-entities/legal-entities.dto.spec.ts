@@ -58,7 +58,7 @@ describe('legal entity review DTO validation', () => {
     });
     expect(await validate(valid)).toHaveLength(0);
     expect(valid.reason).toBe('اصلاح شماره پیگیری');
-    for (const reason of ['   ', 'a', 'x'.repeat(501)]) {
+    for (const reason of ['   ', '\t\n', 'a', 'x'.repeat(501)]) {
       const invalid = plainToInstance(ReissueDocumentDto, {
         originalIssueId: '00000000-0000-4000-8000-000000000001',
         reason,

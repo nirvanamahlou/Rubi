@@ -1,7 +1,4 @@
-import {
-  HttpException,
-  UnprocessableEntityException,
-} from '@nestjs/common';
+import { HttpException, UnprocessableEntityException } from '@nestjs/common';
 import {
   LegalEntityContextMode,
   LegalEntityDocumentIssueStatus,
@@ -94,6 +91,7 @@ function harness(options?: {
   issuerLetterhead?: string | null;
   resolvedPolicy?: ResolvedDocumentTemplatePolicy | null;
   auditFails?: boolean;
+  issueFails?: boolean;
 }) {
   const actualIssuer = {
     ...issuer,
@@ -123,6 +121,7 @@ function harness(options?: {
     },
     legalEntityDocumentIssue: {
       create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => {
+        if (options?.issueFails) throw new Error('issue failed');
         created.push(data);
         return {
           ...data,
@@ -273,8 +272,36 @@ describe('trusted document issue and reissue policy', () => {
     ).rejects.toBeInstanceOf(UnprocessableEntityException);
   });
 
+  it('rejects reissue without trusted letterhead and in ALL context', async () => {
+    await expectCode(
+      harness({ issuerLetterhead: null }).service.reissue(
+        { originalIssueId: original.id, reason: 'اصلاح معتبر' },
+        actor,
+      ),
+      'LEGAL_ENTITY_LETTERHEAD_REQUIRED',
+    );
+    await expect(
+      harness({ contextMode: LegalEntityContextMode.ALL }).service.reissue(
+        { originalIssueId: original.id, reason: 'اصلاح معتبر' },
+        actor,
+      ),
+    ).rejects.toBeInstanceOf(UnprocessableEntityException);
+  });
+
+  it('does not leave a successful audit when reissue creation fails', async () => {
+    const test = harness({ issueFails: true });
+    await expect(
+      test.service.reissue(
+        { originalIssueId: original.id, reason: 'اصلاح معتبر' },
+        actor,
+      ),
+    ).rejects.toThrow('issue failed');
+    expect(test.created).toHaveLength(0);
+    expect(test.audits).toHaveLength(0);
+  });
+
   it('enforces the stable reason invariant before persistence', async () => {
-    for (const reason of ['   ', 'x', 'x'.repeat(501)]) {
+    for (const reason of ['   ', '\t\n', 'x', 'x'.repeat(501)]) {
       const test = harness();
       await expectCode(
         test.service.reissue({ originalIssueId: original.id, reason }, actor),

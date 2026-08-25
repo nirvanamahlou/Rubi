@@ -69,7 +69,7 @@ Migration یا تغییر فایل‌های مرکزی رزروشده نیست.
 
 - `pnpm install --frozen-lockfile`، Prisma format/validate/generate و Production Build کل Monorepo پاس شدند.
 - هر ۷ Migration روی PostgreSQL موقت تازه اجرا و status به‌روز شد؛ Seed دوبار بدون Duplicate پاس شد؛ Database اصلی `rubi` reset نشد.
-- lint و typecheck کل Monorepo و ۲۴۲ تست در ۶۶ فایل پاس شدند؛ route `/system/legal-entities` در Build تولید شد.
+- lint و typecheck کل Monorepo و ۲۴۵ تست در ۶۶ فایل پاس شدند؛ route `/system/legal-entities` در Build تولید شد.
 - Smoke واقعی با Cookie session: نسخه اولیه صفر، concurrent initial با نتیجه `200/409`، stale conflict، Switch و Refresh، منع Issue در `ALL`، baseline کاربران بدون نقش/نقش سفارشی، denyهای admin/aggregate/no-session/inactive، Branch scope و صفحات Login/Dashboard/System Legal Entities پاس شد.
 - in-app Browser به‌علت reset داخلی runtime در دو تلاش قابل اتصال نبود؛ visual-only interaction جایگزین نشد. HTTP runtime، component/model tests، RTL/Responsive markup و Radix keyboard contract بررسی شدند.
 - FK مرکب `(brandingSnapshotId, issuerLegalEntityId, brandingSnapshotVersion)`، Trigger append-only Branding Version، policy provenance و حفظ Snapshot سند قدیمی با تست واقعی PostgreSQL پاس شدند.

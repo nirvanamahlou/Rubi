@@ -103,7 +103,7 @@
 - PR #21 و #23 Merge هستند، همه PRهای باز بررسی شدند و هیچ `FINANCE-002`، PR/Branch فعال Finance Persistence یا مالک جدید قفل وجود ندارد.
 - مدل افزایشی، Migration، Seed دو شرکت، قرارداد `legal-entities.v2`، هشت Permission، API امن، Branding Snapshot/Issue Metadata/Audit، App Shell و `/system/legal-entities` تکمیل شدند.
 - `ALL` مجازی و Permission-based است؛ صدور ترکیبی ممنوع، انتخاب issuer یا دو target مستقل الزامی و سربرگ الزامیِ تکمیل‌نشده در Backend رد می‌شود.
-- Prisma و migration/status روی PostgreSQL تازه، Seed دوبار، lint/typecheck/test/build کل Monorepo و Smoke واقعی Cookie/API/Web پاس شدند؛ ۲۴۲ تست در ۶۶ فایل سبز است.
+- Prisma و migration/status روی PostgreSQL تازه، Seed دوبار، lint/typecheck/test/build کل Monorepo و Smoke واقعی Cookie/API/Web پاس شدند؛ ۲۴۵ تست در ۶۶ فایل سبز است.
 - UI اتصال Branding به Documents را بدون فایل/URL ساختگی آماده و تا ارائه Public Upload Adapter واقعی غیرفعال نگه می‌دارد؛ لوگوی موجود نیایش حفظ و جهان باستان Placeholder صریح دارد.
 - Migration، Contract و اسناد مرکزی تا Merge/Handoff فعال‌اند؛ Dependency/Lockfile آزاد است.
 - اصلاحات Review PR #24 روی همان Branch تکمیل شد: concurrency اتمیک، snapshot FK/immutability، trusted policy fail-closed، reissue transaction/reason canonical و authenticated baseline access با تست منفی و Smoke واقعی تثبیت شدند.

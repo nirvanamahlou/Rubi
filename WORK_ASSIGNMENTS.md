@@ -223,7 +223,7 @@ Finance shared-contract در `packages/contracts/src/finance/**` مرز دامن
 - قفل‌های Migration، Legal Entity shared-contract/root export و اسناد مرکزی بدون انتقال مالک، برای `PC-A/LEGAL-ENTITY-CONTEXT-001` فعال می‌مانند.
 - Dependency/Lockfile آزاد است؛ این Review به dependency جدید نیاز ندارد.
 - پنج محور الزام‌آور تکمیل شدند: optimistic concurrency اتمیک، FK واقعی Branding Snapshot، policy داخلی trusted/fail-closed، Reissue اتمیک با reason canonical و دسترسی پایه read/switch برای کاربر authenticated فعال.
-- PostgreSQL تازه با ۷ Migration، Seed دوبار، ۲۴۲ تست در ۶۶ فایل، lint/typecheck/build و Smoke واقعی API/Web پاس شدند؛ قفل‌ها برای Review/Merge همچنان فعال‌اند.
+- PostgreSQL تازه با ۷ Migration، Seed دوبار، ۲۴۵ تست در ۶۶ فایل، lint/typecheck/build و Smoke واقعی API/Web پاس شدند؛ قفل‌ها برای Review/Merge همچنان فعال‌اند.
 
 مسیرهای ماژول `apps/api/src/legal-entities/**`، `apps/web/src/modules/legal-entities/**`،
 App Shell مرتبط، route `/system/legal-entities` و تست‌های همان قابلیت برای این Work Item
