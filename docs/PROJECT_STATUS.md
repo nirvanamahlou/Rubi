@@ -1,17 +1,32 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-24 — چهار Decision مالی ACCEPTED و PR #21 آماده Review است
+آخرین به‌روزرسانی: 2026-08-24 — Foundation رابط هر ۱۷ بخش آماده Review است
 
 ## خلاصه
 
-- مرحله جاری: **Finance Foundation بدون Persistence**
-- وضعیت: **FINANCE-001 آماده Review؛ Gate معماری ACCEPTED و Persistence موکول به Phase B پس از Merge PR #21 است**
+- مرحله جاری: **Cross-module Frontend/Foundation تمام ماژول‌ها**
+- وضعیت: **MODULES-FOUNDATION-001 آماده Review؛ هر ۱۷ route در build و HTTP smoke تأیید شد**
 - Repository: `Rubi`، Remote با نام `origin`
-- Baseline: Merge Commit `a165923` از `origin/develop`
-- شاخه فعال: `codex/pc-a-finance-foundation`
-- Work Item: `FINANCE-001`؛ `READY_FOR_REVIEW`
-- محیط مسئول: `COMPUTER_ID=PC-A`؛ dev server پروژه فعال نبود.
-- نوع تغییر: Domain/Application، قرارداد عمومی پیشنهادی، Frontend و Test؛ بدون Schema، Migration، Dependency یا Lockfile.
+- Baseline: `origin/develop@45c107e` شامل Mergeهای PR #18 تا #22
+- شاخه فعال: `codex/pc-a-all-modules-foundation`
+- Work Item: `MODULES-FOUNDATION-001`؛ `READY_FOR_REVIEW`
+- محیط مسئول: `COMPUTER_ID=PC-A`؛ dev serverهای موقت پس از QA متوقف شدند.
+- نوع تغییر: Web UI، قرارداد ماژول‌محلی UI، تست Web و اسناد؛ بدون Schema، Migration،
+  Persistence، Controller ساختگی، Dependency یا Lockfile.
+
+### `MODULES-FOUNDATION-001` — PC-A — `READY_FOR_REVIEW`
+
+- ۱۲ Workspace باقی‌مانده با UI مشترک فارسی، RTL، Responsive، KPI، navigation داخلی،
+  جست‌وجو، فیلتر، sort، pagination، Preview CRUD، stateها، permission، audit و reference
+  بین‌ماژولی تکمیل شد؛ Customers، Customer Affairs، Finance، Master Data و IAM حفظ شدند.
+- Dashboard برای صف‌های فروش، رزرواسیون، ظرفیت، مالی و مدیریت تکمیل و Sidebar در برابر
+  overflow افقی و محوشدن عنوان سخت‌سازی شد.
+- lint، typecheck، test و production build کل Monorepo پاس شدند؛ ۱۷۸ تست Web/API
+  و ۲۵ تست package/worker پاس شدند. هر ۱۷ route در HTTP smoke پاسخ 200 و HTML معتبر داد.
+- QA مرورگر داخلی به‌علت خروج ناگهانی trusted browser process ممکن نشد؛ build و HTTP
+  smoke مطابق قرارداد Task جایگزین شدند.
+- Prisma/Migration/Seed، Dependency/Lockfile، Persistence، Secret/PII و artifact جعلی
+  تغییری نکردند؛ اتصال واقعی Provider/Worker/Documents/Reporting همچنان Deferred است.
 
 ### `MASTER-002` — PC-B — `DONE`
 

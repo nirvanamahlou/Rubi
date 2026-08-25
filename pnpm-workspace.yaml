@@ -3,14 +3,16 @@ packages:
   - packages/*
 
 allowBuilds:
-  '@prisma/engines': true
+  '@parcel/watcher': true
+  '@prisma/engines': false
   '@scarf/scarf': false
-  '@tailwindcss/oxide': true
-  argon2: true
-  esbuild: true
+  '@swc/core': true
+  '@tailwindcss/oxide': false
+  argon2: false
+  esbuild: false
   msgpackr-extract: false
-  prisma: true
-  sharp: true
+  prisma: false
+  sharp: false
   unrs-resolver: false
 
 minimumReleaseAgeExclude:

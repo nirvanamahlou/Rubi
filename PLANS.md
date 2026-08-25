@@ -3,6 +3,13 @@
 این برنامه backlog سطح محصول را نگهداری می‌کند. اولویت‌ها: `P0` الزامی برای
 foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه عملیاتی، `P2` بهبود بعدی.
 
+## Foundation رابط تمام ماژول‌ها
+
+- [x] `MODULES-FOUNDATION-001`: Foundation قابل بررسی هر ۱۷ route، Dashboard و Sidebar
+- [x] Coverage Matrix کامل PDF با وضعیت‌های `PRESERVE`، `BUILD` و `DEFERRED`
+- [x] lint، typecheck، test، production build و HTTP smoke هر ۱۷ route
+- [ ] اتصال Persistence/API/Provider/Worker/Documents و خروجی واقعی در Taskهای مالک هر ماژول
+
 ## دروازه‌های تصمیم پیش از Foundation
 
 - [x] `DEC-OPEN-001`: دامنه Sub-ledger و مرز اتصال حسابداری قانونی تایید شود.

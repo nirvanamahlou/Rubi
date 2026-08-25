@@ -95,7 +95,7 @@ function Navigation({
     <nav
       aria-label="منوی اصلی"
       className={cn(
-        'grid content-start gap-0.5',
+        'grid min-w-0 content-start gap-0.5 overflow-x-hidden',
         mobile
           ? 'auto-rows-[44px]'
           : 'h-full grid-rows-[repeat(17,minmax(32px,1fr))]',
@@ -107,7 +107,7 @@ function Navigation({
           <Link
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'group flex items-center gap-3 rounded-xl px-3 font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300',
+              'group flex min-w-0 items-center gap-3 overflow-hidden rounded-xl px-3 font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300',
               mobile
                 ? 'h-11 text-sm'
                 : 'h-full min-h-8 text-[clamp(12px,1.35vh,15px)]',
@@ -130,7 +130,9 @@ function Navigation({
               )}
             />
             {!compact ? (
-              <span>{title}</span>
+              <span className="min-w-0 truncate whitespace-nowrap">
+                {title}
+              </span>
             ) : (
               <span className="sr-only">{title}</span>
             )}
