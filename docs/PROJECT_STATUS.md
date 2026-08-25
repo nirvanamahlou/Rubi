@@ -1,17 +1,17 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-25 — اصلاحات Review PR #24 برای LEGAL-ENTITY-CONTEXT-001 تکمیل شد
+آخرین به‌روزرسانی: 2026-08-26 — PR #24 ادغام و MASTER-003 آغاز شد
 
 ## خلاصه
 
-- مرحله جاری: **Issuer Company Context Full-Stack**
-- وضعیت: **LEGAL-ENTITY-CONTEXT-001 آماده Review مجدد روی Draft PR #24؛ قفل‌ها فعال‌اند**
+- مرحله جاری: **Advanced Master Data Management Full-Stack**
+- وضعیت: **MASTER-003 در حال اجرا؛ انتقال اتمیک قفل‌ها ثبت شد**
 - Repository: `Rubi`، Remote با نام `origin`
-- Baseline: `origin/develop@0ba85d4604f6eb4d792bee4c3059a32bcf858738` شامل Merge PR #23
-- شاخه فعال: `codex/pc-a-legal-entity-context`
-- Work Item: `LEGAL-ENTITY-CONTEXT-001`؛ `READY_FOR_REVIEW` (Review fixes from `17ad92703251e6f708fdd3e6c9fc03fd7c31975e`)
-- محیط مسئول: `COMPUTER_ID=PC-A`؛ Dev Serverها پیش از تغییر متوقف شدند.
-- نوع تغییر: Database، API، Contract، Permission/Audit، App Shell، صفحه مدیریت و تست؛
+- Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
+- شاخه فعال: `codex/pc-b-master-data-advanced`
+- Work Item: `MASTER-003`؛ `IN_PROGRESS` از Base `b6da5d6`
+- محیط مسئول: `COMPUTER_ID=PC-B`؛ Dev Server فعالی برای Rubi وجود نداشت.
+- نوع تغییر: Database، API، Contract، Permission/Audit، Excel Import، Frontend و تست؛
   Dependency/Lockfile تا اثبات نیاز واقعی آزاد است.
 
 ### `MODULES-FOUNDATION-001` — PC-A — `READY_FOR_REVIEW`
@@ -96,18 +96,20 @@
 - Dependency/Lockfile، Prisma، Migration و Seed تغییر نکردند. داده‌ها فقط synthetic هستند.
 - QA مرورگر داخلی به‌دلیل خطای ACL ابزار Windows و redirect احراز هویت انجام نشد؛ HTTP
   redirect و Production Build route تایید شدند و dev server موقت متوقف شد.
-### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `READY_FOR_REVIEW`
+### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `DONE/MERGED`
 
-- Branch از `origin/develop@0ba85d4604f6eb4d792bee4c3059a32bcf858738` ساخته شد؛ Base از Branch قبلی MODULES استفاده نشده است.
-- Draft PR #24 از `codex/pc-a-legal-entity-context` به `develop` باز است و Merge نشده است.
-- PR #21 و #23 Merge هستند، همه PRهای باز بررسی شدند و هیچ `FINANCE-002`، PR/Branch فعال Finance Persistence یا مالک جدید قفل وجود ندارد.
-- مدل افزایشی، Migration، Seed دو شرکت، قرارداد `legal-entities.v2`، هشت Permission، API امن، Branding Snapshot/Issue Metadata/Audit، App Shell و `/system/legal-entities` تکمیل شدند.
-- `ALL` مجازی و Permission-based است؛ صدور ترکیبی ممنوع، انتخاب issuer یا دو target مستقل الزامی و سربرگ الزامیِ تکمیل‌نشده در Backend رد می‌شود.
-- Prisma و migration/status روی PostgreSQL تازه، Seed دوبار، lint/typecheck/test/build کل Monorepo و Smoke واقعی Cookie/API/Web پاس شدند؛ ۲۴۵ تست در ۶۶ فایل سبز است.
-- UI اتصال Branding به Documents را بدون فایل/URL ساختگی آماده و تا ارائه Public Upload Adapter واقعی غیرفعال نگه می‌دارد؛ لوگوی موجود نیایش حفظ و جهان باستان Placeholder صریح دارد.
-- Migration، Contract و اسناد مرکزی تا Merge/Handoff فعال‌اند؛ Dependency/Lockfile آزاد است.
-- اصلاحات Review PR #24 روی همان Branch تکمیل شد: concurrency اتمیک، snapshot FK/immutability، trusted policy fail-closed، reissue transaction/reason canonical و authenticated baseline access با تست منفی و Smoke واقعی تثبیت شدند.
+- PR #24 با Source HEAD `6f475c03eebc6379fc8be47a48eb0751d58f2d89` و Merge Commit
+  `b6da5d6300716a189958bc37d31ca195f0304dc5` وارد `origin/develop` شد.
+- Migration، Legal Entity shared-contract/root export و اسناد مرکزی با دلیل
+  `DONE/MERGED via PR #24` آزاد شدند؛ Dependency/Lockfile از قبل آزاد بود.
 
+### `MASTER-003` — PC-B — `IN_PROGRESS`
+
+- Branch مستقیماً از `origin/develop@b6da5d6` ساخته شد و Frozen Install بدون تغییر Lockfile پاس شد.
+- Migration Owner، Master Data shared-contract/root export و اسناد مرکزی برای MASTER-003 رزرو شدند.
+- Dependency/Lockfile آزاد است و فقط پس از اثبات نیاز Dependency جدید Excel رزرو می‌شود.
+- Scope توسعه افزایشی MASTER-002 شامل Master Data مشترک دو شرکت، نرخ مرجع غیر authoritative،
+  کاتالوگ‌های پیشرفته، Import امن Excel، UI واقعی و تست کامل است.
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 
 - Branch آینده `codex/pc-b-customer-affairs-foundation` و هدف آن Foundation مستقل

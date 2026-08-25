@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-25 — اصلاحات Review PR #24 تکمیل شد؛ Draft PR و قفل‌ها تا Merge/Handoff فعال‌اند
+آخرین به‌روزرسانی: 2026-08-26 — PR #24 ادغام شد و قفل‌های مشترک به MASTER-003 منتقل شدند
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
@@ -27,7 +27,8 @@
 | CUSTOMER-001                    | PC-A         | `codex/pc-a-customer-persistence`           | مشتریان، Persistence، رمزنگاری Contact، Audit redaction و Duplicate query                     | `DONE`             | PR #19؛ Merge `7d0a4f4`؛ Migration و قرارداد Customer پایدار و تحویل‌شده    |
 | CUSTOMER001-FINANCE-HANDOFF-001 | PC-A         | `codex/pc-a-customer-finance-handoff`       | آزادسازی چهار قفل CUSTOMER-001 و رزرو کنترل‌شده FINANCE-001؛ فقط اسناد مرکزی و سند Handoff    | `DONE`             | PR #20؛ Merge `11fc875`؛ بدون کد، Schema، Migration، Dependency یا Lockfile |
 | FINANCE-001                     | PC-A         | `codex/pc-a-finance-foundation`             | Foundation مالی و چهار Decision پذیرفته‌شده؛ Phase A بدون Persistence و Migration             | `DONE`             | PR #21؛ Merge `45c107e`؛ قفل‌های stale با نبود FINANCE-002 آزاد شدند        |
-| LEGAL-ENTITY-CONTEXT-001        | PC-A         | `codex/pc-a-legal-entity-context`           | Legal Entity Full-Stack، Prisma، API، Contract، App Shell، صفحه مدیریت، Audit و Test          | `READY_FOR_REVIEW` | اصلاحات Review تکمیل؛ Draft PR #24 و قفل‌ها تا Merge/Handoff فعال‌اند       |
+| LEGAL-ENTITY-CONTEXT-001        | PC-A         | `codex/pc-a-legal-entity-context`           | Legal Entity Full-Stack، Prisma، API، Contract، App Shell، صفحه مدیریت، Audit و Test          | `DONE`             | PR #24؛ Merge `b6da5d6`؛ قفل‌ها با دلیل `DONE/MERGED via PR #24` آزاد شدند  |
+| MASTER-003                      | PC-B         | `codex/pc-b-master-data-advanced`           | توسعه افزایشی Master Data: Schema/Migration، Contract، Backend، Frontend، Excel Import و Test | `IN_PROGRESS`      | Base `b6da5d6`؛ Migration، Master contract/root export و Central docs رزرو  |
 | CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket              | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence |
 | MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11        |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                           | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |
@@ -208,28 +209,31 @@ Finance Persistence و هیچ مالک جدیدی برای قفل‌ها وجو�
 Finance shared-contract در `packages/contracts/src/finance/**` مرز دامنه Finance باقی
 می‌ماند و به Task Legal Entity منتقل نمی‌شود.
 
-### قفل‌های فعال PC-A/LEGAL-ENTITY-CONTEXT-001
+### قفل‌های آزادشده PC-A/LEGAL-ENTITY-CONTEXT-001
 
-| قفل                                      | مالک/Task                     | محدوده                                                                                                                          | وضعیت/شرط آزادسازی          |
-| ---------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
-| Migration Owner                          | PC-A/LEGAL-ENTITY-CONTEXT-001 | `packages/database/prisma/schema.prisma`، Migration و Seed افزایشی Legal Entity                                                 | `ACTIVE` تا Merge و Handoff |
-| Legal Entity shared-contract/root export | PC-A/LEGAL-ENTITY-CONTEXT-001 | `packages/contracts/src/legal-entities/**` و export لازم                                                                        | `ACTIVE` تا Merge و Handoff |
-| Central status/docs                      | PC-A/LEGAL-ENTITY-CONTEXT-001 | `WORK_ASSIGNMENTS.md`، `PLANS.md`، `docs/PROJECT_STATUS.md`، اسناد معماری/داده مرتبط و `docs/tasks/LEGAL-ENTITY-CONTEXT-001.md` | `ACTIVE` تا Merge و Handoff |
-| Dependency/Lockfile Owner                | تخصیص‌نیافته                  | هیچ dependency جدیدی اثبات نشده؛ manifest و `pnpm-lock.yaml` خارج از Scope                                                      | `RELEASED`                  |
+مبنای آزادسازی: `DONE/MERGED via PR #24` با Source HEAD
+`6f475c03eebc6379fc8be47a48eb0751d58f2d89` و Merge Commit
+`b6da5d6300716a189958bc37d31ca195f0304dc5` در `origin/develop`.
 
-### اصلاحات Review PR #24
+- Migration Owner: `RELEASED`
+- Legal Entity shared-contract/root export: `RELEASED`
+- Central status/docs: `RELEASED`
+- Dependency/Lockfile Owner: همچنان `RELEASED`
 
-- اصلاحات Review از HEAD برابر `17ad92703251e6f708fdd3e6c9fc03fd7c31975e` روی همان Branch و همان Draft PR انجام شدند.
-- قفل‌های Migration، Legal Entity shared-contract/root export و اسناد مرکزی بدون انتقال مالک، برای `PC-A/LEGAL-ENTITY-CONTEXT-001` فعال می‌مانند.
-- Dependency/Lockfile آزاد است؛ این Review به dependency جدید نیاز ندارد.
-- پنج محور الزام‌آور تکمیل شدند: optimistic concurrency اتمیک، FK واقعی Branding Snapshot، policy داخلی trusted/fail-closed، Reissue اتمیک با reason canonical و دسترسی پایه read/switch برای کاربر authenticated فعال.
-- PostgreSQL تازه با ۷ Migration، Seed دوبار، ۲۴۵ تست در ۶۶ فایل، lint/typecheck/build و Smoke واقعی API/Web پاس شدند؛ قفل‌ها برای Review/Merge همچنان فعال‌اند.
+### قفل‌های فعال PC-B/MASTER-003
 
-مسیرهای ماژول `apps/api/src/legal-entities/**`، `apps/web/src/modules/legal-entities/**`،
-App Shell مرتبط، route `/system/legal-entities` و تست‌های همان قابلیت برای این Work Item
-رزرو هستند. تا Handoff، `MASTER-003`، `FINANCE-002` و هر Task دیگر حق Prisma/Migration
-یا تغییر فایل‌های مرکزی رزروشده را ندارند.
+| قفل | مالک/Task | محدوده | وضعیت/شرط آزادسازی |
+| --- | --- | --- | --- |
+| Migration Owner | PC-B/MASTER-003 | `packages/database/prisma/schema.prisma`، Migration و Seed افزایشی Master Data | `ACTIVE` تا Merge و Handoff |
+| Master Data shared-contract/root export | PC-B/MASTER-003 | `packages/contracts/src/master-data/**` و export لازم | `ACTIVE` تا Merge و Handoff |
+| Central status/docs | PC-B/MASTER-003 | `WORK_ASSIGNMENTS.md`، `PLANS.md`، `docs/PROJECT_STATUS.md` و `docs/tasks/MASTER-003.md` | `ACTIVE` تا Merge و Handoff |
+| Dependency/Lockfile Owner | تخصیص‌نیافته | فقط در صورت اثبات نیاز به Dependency جدید Excel رزرو می‌شود | `RELEASED` |
 
+محدوده اجرایی MASTER-003 شامل `apps/api/src/master-data/**`،
+`apps/web/src/modules/master-data/**`، route `/master-data`، قرارداد عمومی Master Data،
+Schema/Migration افزایشی و تست‌های همان قابلیت است. فایل‌های داخلی IAM، Legal Entities،
+Customers، Finance، Procurement، Reservations، Integrations و Documents خارج از مالکیت
+این Task می‌مانند و فقط از Public Contract یا Port نسخه‌دار مصرف می‌شوند.
 ## قفل‌های آزادشده Sprint دوم
 
 | قفل                             | مالک پیشین                | مبنای آزادسازی                                         |
