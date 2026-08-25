@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-25 — سه مانع Review رسمی PR #23 اصلاح شد؛ آماده بازبینی مجدد
+آخرین به‌روزرسانی: 2026-08-25 — قفل‌های FINANCE-001 پس از Merge آزاد و LEGAL-ENTITY-CONTEXT-001 رزرو شد
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
@@ -26,7 +26,8 @@
 | MASTER-002                      | PC-B         | `codex/pc-b-master-data-persistence`        | Database، Migration، Repository، Backend و اتصال واقعی Frontend اطلاعات پایه                  | `DONE`             | Merge `ddfebb3`؛ چهار قفل با Handoff مستقل آزاد شدند                        |
 | CUSTOMER-001                    | PC-A         | `codex/pc-a-customer-persistence`           | مشتریان، Persistence، رمزنگاری Contact، Audit redaction و Duplicate query                     | `DONE`             | PR #19؛ Merge `7d0a4f4`؛ Migration و قرارداد Customer پایدار و تحویل‌شده    |
 | CUSTOMER001-FINANCE-HANDOFF-001 | PC-A         | `codex/pc-a-customer-finance-handoff`       | آزادسازی چهار قفل CUSTOMER-001 و رزرو کنترل‌شده FINANCE-001؛ فقط اسناد مرکزی و سند Handoff    | `DONE`             | PR #20؛ Merge `11fc875`؛ بدون کد، Schema، Migration، Dependency یا Lockfile |
-| FINANCE-001                     | PC-A         | `codex/pc-a-finance-foundation`             | Foundation مالی و چهار Decision پذیرفته‌شده؛ Phase A بدون Persistence و Migration             | `READY_FOR_REVIEW` | PR #21؛ Gate معماری ACCEPTED؛ Phase B مستقل فقط پس از Merge PR مجاز است     |
+| FINANCE-001                     | PC-A         | `codex/pc-a-finance-foundation`             | Foundation مالی و چهار Decision پذیرفته‌شده؛ Phase A بدون Persistence و Migration             | `DONE`             | PR #21؛ Merge `45c107e`؛ قفل‌های stale با نبود FINANCE-002 آزاد شدند        |
+| LEGAL-ENTITY-CONTEXT-001        | PC-A         | `codex/pc-a-legal-entity-context`            | Legal Entity Full-Stack، Prisma، API، Contract، App Shell، صفحه مدیریت، Audit و Test           | `IN_PROGRESS`      | Base `0ba85d4`؛ Migration و اسناد مرکزی رزرو؛ Dependency/Lockfile آزاد      |
 | CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket              | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence |
 | MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11        |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                           | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |
@@ -191,19 +192,35 @@
   ماژول و سند Task است؛ انتشار Contract مشترک یا Persistence به Handoff صریح بعدی
   نیاز دارد.
 
-## قفل‌های فعال Sprint دوم پس از Handoff CUSTOMER-001 → FINANCE-001
+## انتقال اتمیک قفل FINANCE-001 → LEGAL-ENTITY-CONTEXT-001
 
-| قفل                            | مالک/Task        | محدوده                                                              | شرط فعال‌سازی/آزادسازی                                  |
-| ------------------------------ | ---------------- | ------------------------------------------------------------------- | ------------------------------------------------------- |
-| Migration Owner                | PC-A/FINANCE-001 | در Phase A غیرفعال؛ Prisma/Migration مالی فقط در Task مستقل Phase B | پس از Merge PR #21؛ رزرو مجدد، Migration gate و Handoff |
-| Dependency/Lockfile Owner      | PC-A/FINANCE-001 | در Phase A بدون تغییر؛ نیاز Phase B باید مستقل ثبت شود              | Merge PR #21 و رزرو نیاز دقیق در Task مستقل Phase B     |
-| Finance shared-contract/export | PC-A/FINANCE-001 | `packages/contracts/src/finance/**` و root export هماهنگ‌شده        | Merge PR #21 و Handoff برای Task مستقل Phase B          |
-| Central Sprint status docs     | PC-A/FINANCE-001 | `WORK_ASSIGNMENTS.md`، `PLANS.md` و `docs/PROJECT_STATUS.md`        | Merge FINANCE-001 و Handoff بعدی                        |
+دلیل انتقال: `FINANCE-001 merged via PR #21 and no active FINANCE-002 task exists`.
+ممیزی `origin/develop`، Git history، همه PRهای باز و بسته Finance، Remote Refها و اسناد
+مرکزی نشان داد PR #21 با Merge `45c107e` ادغام شده و هیچ FINANCE-002، Branch یا PR فعال
+Finance Persistence و هیچ مالک جدیدی برای قفل‌ها وجود ندارد.
 
-چهار Decision مالی در 2026-08-24 با تأیید مالک محصول و کسب‌وکار ACCEPTED شدند، اما
-این پذیرش Scope فاز جاری را تغییر نمی‌دهد. در FINANCE-001 Phase A هیچ Schema، Migration،
-Repository، Persistence، manifest یا lockfile تغییر نمی‌کند. پس از Merge PR #21، Task
-مستقل Phase B باید قفل‌ها را مجدداً رزرو و Migration gate کامل را اجرا کند.
+### قفل‌های آزادشده از PC-A/FINANCE-001
+
+- Migration Owner: `RELEASED`
+- Dependency/Lockfile Owner: `RELEASED`؛ FINANCE-001 هیچ Dependency یا Lockfile تغییر نداد
+- Central Sprint status docs: `RELEASED`
+
+Finance shared-contract در `packages/contracts/src/finance/**` مرز دامنه Finance باقی
+می‌ماند و به Task Legal Entity منتقل نمی‌شود.
+
+### قفل‌های فعال PC-A/LEGAL-ENTITY-CONTEXT-001
+
+| قفل | مالک/Task | محدوده | وضعیت/شرط آزادسازی |
+| --- | --- | --- | --- |
+| Migration Owner | PC-A/LEGAL-ENTITY-CONTEXT-001 | `packages/database/prisma/schema.prisma`، Migration و Seed افزایشی Legal Entity | `ACTIVE` تا Merge و Handoff |
+| Legal Entity shared-contract/root export | PC-A/LEGAL-ENTITY-CONTEXT-001 | `packages/contracts/src/legal-entities/**` و export لازم | `ACTIVE` تا Merge و Handoff |
+| Central status/docs | PC-A/LEGAL-ENTITY-CONTEXT-001 | `WORK_ASSIGNMENTS.md`، `PLANS.md`، `docs/PROJECT_STATUS.md`، اسناد معماری/داده مرتبط و `docs/tasks/LEGAL-ENTITY-CONTEXT-001.md` | `ACTIVE` تا Merge و Handoff |
+| Dependency/Lockfile Owner | تخصیص‌نیافته | هیچ dependency جدیدی اثبات نشده؛ manifest و `pnpm-lock.yaml` خارج از Scope | `RELEASED` |
+
+مسیرهای ماژول `apps/api/src/legal-entities/**`، `apps/web/src/modules/legal-entities/**`،
+App Shell مرتبط، route `/system/legal-entities` و تست‌های همان قابلیت برای این Work Item
+رزرو هستند. تا Handoff، `MASTER-003`، `FINANCE-002` و هر Task دیگر حق Prisma/Migration
+یا تغییر فایل‌های مرکزی رزروشده را ندارند.
 
 ## قفل‌های آزادشده Sprint دوم
 

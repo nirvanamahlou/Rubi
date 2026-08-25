@@ -153,7 +153,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
   `DEC-OPEN-011` فقط Candidate Detection و Review دستی مجاز است و merge واقعی مسدود است.
 - PR شماره ۱۹ با Merge Commit `7d0a4f42e978b468263efdc83f780fa656fbd613` وارد `develop` شد؛ Task `DONE/MERGED` است.
 
-### `FINANCE-001` — PC-A — `READY_FOR_REVIEW`
+### `FINANCE-001` — PC-A — `DONE/MERGED`
 
 - Branch فعال: `codex/pc-a-finance-foundation` از baseline `a165923`؛ Handoff با PR #20
   و Merge `11fc875` وارد `develop` شده است.
@@ -168,7 +168,18 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - Finance به جدول‌های Customers، Sales، Reservations، Procurement یا HR query مستقیم نمی‌زند
   و فقط contract/event عمومی و referenceهای پایدار مصرف می‌کند.
 - Domain/Application، قرارداد عمومی پیشنهادی و Workspace مسیر `/finance` تکمیل شدند؛
-  ۱۷۲ تست، lint/typecheck و Production Build پاس و PR شماره ۲۱ برای Review آماده می‌شود.
+  ۱۷۲ تست، lint/typecheck و Production Build پاس شدند.
+- PR #21 با Merge `45c107e` وارد `origin/develop` شد. هیچ `FINANCE-002` یا PR/Branch فعال
+  Finance Persistence وجود ندارد؛ قفل‌های stale آن برای `LEGAL-ENTITY-CONTEXT-001` آزاد شدند.
+
+### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `IN_PROGRESS`
+
+- Base: `origin/develop@0ba85d4604f6eb4d792bee4c3059a32bcf858738`.
+- Legal Entity از Branch و Tenant مستقل است و داده عملیاتی CRM را scope یا فیلتر نمی‌کند.
+- Migration، قرارداد عمومی `legal-entities.v1`، Permission/Audit، App Shell و صفحه
+  `/system/legal-entities` در Scope هستند.
+- Context مجازی `ALL` در Database ذخیره نمی‌شود و برای صدور سند رسمی معتبر نیست.
+- Migration و اسناد مرکزی تا Merge/Handoff این Task رزرو هستند؛ Dependency/Lockfile آزاد است.
 
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 

@@ -1,18 +1,18 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-24 — Foundation رابط هر ۱۷ بخش آماده Review است
+آخرین به‌روزرسانی: 2026-08-25 — LEGAL-ENTITY-CONTEXT-001 آغاز و قفل‌ها منتقل شد
 
 ## خلاصه
 
-- مرحله جاری: **Cross-module Frontend/Foundation تمام ماژول‌ها**
-- وضعیت: **MODULES-FOUNDATION-001 آماده Review؛ هر ۱۷ route در build و HTTP smoke تأیید شد**
+- مرحله جاری: **Issuer Company Context Full-Stack**
+- وضعیت: **LEGAL-ENTITY-CONTEXT-001 در حال اجرا؛ انتقال اتمیک قفل‌ها ثبت شد**
 - Repository: `Rubi`، Remote با نام `origin`
-- Baseline: `origin/develop@45c107e` شامل Mergeهای PR #18 تا #22
-- شاخه فعال: `codex/pc-a-all-modules-foundation`
-- Work Item: `MODULES-FOUNDATION-001`؛ `READY_FOR_REVIEW`
-- محیط مسئول: `COMPUTER_ID=PC-A`؛ dev serverهای موقت پس از QA متوقف شدند.
-- نوع تغییر: Web UI، قرارداد ماژول‌محلی UI، تست Web و اسناد؛ بدون Schema، Migration،
-  Persistence، Controller ساختگی، Dependency یا Lockfile.
+- Baseline: `origin/develop@0ba85d4604f6eb4d792bee4c3059a32bcf858738` شامل Merge PR #23
+- شاخه فعال: `codex/pc-a-legal-entity-context`
+- Work Item: `LEGAL-ENTITY-CONTEXT-001`؛ `IN_PROGRESS`
+- محیط مسئول: `COMPUTER_ID=PC-A`؛ Dev Serverها پیش از تغییر متوقف شدند.
+- نوع تغییر: Database، API، Contract، Permission/Audit، App Shell، صفحه مدیریت و تست؛
+  Dependency/Lockfile تا اثبات نیاز واقعی آزاد است.
 
 ### `MODULES-FOUNDATION-001` — PC-A — `READY_FOR_REVIEW`
 
@@ -73,9 +73,12 @@
 - این Handoff فقط مستندات است و هیچ dependency، lockfile، Schema یا Migration تغییر نمی‌دهد.
 
 
-### FINANCE-001 — PC-A — READY_FOR_REVIEW
+### FINANCE-001 — PC-A — DONE/MERGED
 
-- PR شماره ۲۱ از branch codex/pc-a-finance-foundation به develop برای Review آماده می‌شود.
+- PR شماره ۲۱ با Merge Commit `45c107e471d53d1c724303de02ba01a5e0e16b2a` وارد `origin/develop` شد.
+- هیچ `FINANCE-002`، PR باز Finance یا Branch فعال Finance Persistence وجود ندارد.
+- Migration، Dependency/Lockfile و اسناد مرکزی stale آن آزاد شدند؛ Dependency/Lockfile
+  تخصیص‌نیافته ماند و Migration/اسناد مرکزی به `LEGAL-ENTITY-CONTEXT-001` منتقل شدند.
 - مالک محصول و کسب‌وکار در 2026-08-24 هر چهار Decision مالی `DEC-OPEN-001/004/005/016`
   را رسماً پذیرفت؛ این موارد دیگر تصمیم باز نیستند.
 - پذیرش Decisionها Scope Phase A را توسعه نمی‌دهد: Prisma Schema، Migration، Repository،
@@ -93,6 +96,14 @@
 - Dependency/Lockfile، Prisma، Migration و Seed تغییر نکردند. داده‌ها فقط synthetic هستند.
 - QA مرورگر داخلی به‌دلیل خطای ACL ابزار Windows و redirect احراز هویت انجام نشد؛ HTTP
   redirect و Production Build route تایید شدند و dev server موقت متوقف شد.
+### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `IN_PROGRESS`
+
+- Branch از `origin/develop@0ba85d4` ساخته شد؛ Base از Branch قبلی MODULES استفاده نشده است.
+- PR #21 و #23 Merge هستند، همه PRهای باز بررسی شدند و FINANCE-002 وجود ندارد.
+- Migration Owner و اسناد مرکزی برای Legal Entity فعال‌اند؛ Dependency/Lockfile آزاد است.
+- Scope شامل `legal-entities.v1`، Persistence افزایشی، Seed تکرارپذیر، Backend validation،
+  Permission/Audit، App Shell و `/system/legal-entities` است.
+
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 
 - Branch آینده `codex/pc-b-customer-affairs-foundation` و هدف آن Foundation مستقل

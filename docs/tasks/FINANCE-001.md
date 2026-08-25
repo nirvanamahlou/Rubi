@@ -3,10 +3,10 @@
 - **Computer:** PC-A
 - **Branch:** codex/pc-a-finance-foundation
 - **Base:** a165923
-- **Status:** READY_FOR_REVIEW
+- **Status:** DONE/MERGED
 - **Date:** 2026-08-24
 - **Persistence:** موکول به Task مستقل Phase B پس از Merge PR #21
-- **PR:** #21 → develop؛ آماده Review
+- **PR:** #21 → develop؛ Merge `45c107e471d53d1c724303de02ba01a5e0e16b2a`
 - **Schema/Migration/Dependency:** بدون تغییر
 
 ## هدف
@@ -80,10 +80,12 @@ Workspace اصلی شامل پنج Tab داشبورد، ۳۰ بخش، عملیا
 
 ## قفل‌ها
 
-- Migration Owner: در Phase A غیرفعال؛ رزرو مجدد فقط برای Task مستقل Phase B پس از Merge PR #21
-- Dependency/Lockfile Owner: مشروط؛ در این Task dependency لازم نشد
-- Finance shared-contract/root export: PC-A/FINANCE-001
-- Central status docs: PC-A/FINANCE-001
+- Migration Owner: `RELEASED` پس از Merge PR #21 و اثبات نبود FINANCE-002
+- Dependency/Lockfile Owner: `RELEASED`؛ در این Task dependency لازم نشد
+- Finance shared-contract/root export: مرز دامنه Finance و بدون انتقال مالکیت
+- Central status docs: `RELEASED` و منتقل‌شده به PC-A/LEGAL-ENTITY-CONTEXT-001
+
+دلیل انتقال: `FINANCE-001 merged via PR #21 and no active FINANCE-002 task exists`.
 
 ## خارج از Scope
 
