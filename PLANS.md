@@ -175,6 +175,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
 ### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `READY_FOR_REVIEW`
 
 - Base: `origin/develop@0ba85d4604f6eb4d792bee4c3059a32bcf858738`.
+- Draft PR #24 به `develop` ساخته شد؛ Merge و Force Push انجام نشده است.
 - Legal Entity مستقل از Branch/Tenant و بدون scope داده عملیاتی، با دو issuer واقعی و Context مجازی `ALL` تکمیل شد.
 - Migration افزایشی، Seed تکرارپذیر، `legal-entities.v1`، Permission/Audit، Issue/Reissue Metadata، App Shell و `/system/legal-entities` آماده Review هستند.
 - صدور ترکیبی ممنوع است؛ Backend issuer فعال، Permission، Snapshot و سربرگ الزامی را دوباره اعتبارسنجی می‌کند.

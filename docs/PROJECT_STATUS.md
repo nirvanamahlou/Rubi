@@ -99,6 +99,7 @@
 ### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `READY_FOR_REVIEW`
 
 - Branch از `origin/develop@0ba85d4604f6eb4d792bee4c3059a32bcf858738` ساخته شد؛ Base از Branch قبلی MODULES استفاده نشده است.
+- Draft PR #24 از `codex/pc-a-legal-entity-context` به `develop` باز است و Merge نشده است.
 - PR #21 و #23 Merge هستند، همه PRهای باز بررسی شدند و هیچ `FINANCE-002`، PR/Branch فعال Finance Persistence یا مالک جدید قفل وجود ندارد.
 - مدل افزایشی، Migration، Seed دو شرکت، قرارداد `legal-entities.v1`، هشت Permission، API امن، Branding Snapshot/Issue Metadata/Audit، App Shell و `/system/legal-entities` تکمیل شدند.
 - `ALL` مجازی و Permission-based است؛ صدور ترکیبی ممنوع، انتخاب issuer یا دو target مستقل الزامی و سربرگ الزامیِ تکمیل‌نشده در Backend رد می‌شود.

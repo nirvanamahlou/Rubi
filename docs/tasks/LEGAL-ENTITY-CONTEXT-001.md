@@ -3,6 +3,7 @@
 - **Computer:** PC-A
 - **Branch:** `codex/pc-a-legal-entity-context`
 - **Base:** `0ba85d4604f6eb4d792bee4c3059a32bcf858738`
+- **Draft PR:** #24 → `develop`
 - **Status:** READY_FOR_REVIEW
 - **Dependency/Lockfile:** RELEASED؛ dependency جدیدی اثبات نشده است
 
