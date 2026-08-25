@@ -16,7 +16,7 @@ import { AuthGuard } from '../iam/auth.guard';
 import { RequirePermissions } from '../iam/iam.decorators';
 import { PermissionGuard } from '../iam/permission.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
-import {
+import type {
   CurrencyRateDecisionDto,
   CurrencyRateListDto,
 } from './currency-rate.dto';

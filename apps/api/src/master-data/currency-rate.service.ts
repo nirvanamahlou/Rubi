@@ -7,7 +7,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { AuthenticatedActor } from '@rubi/contracts';
-import { AuditOutcome, MasterCurrencyRateStatus, Prisma } from '@rubi/database';
+import { AuditOutcome, MasterCurrencyRateStatus } from '@rubi/database';
+import type { Prisma } from '@rubi/database';
 
 import { DatabaseService } from '../database/database.service';
 import type { CurrencyRateListDto } from './currency-rate.dto';
