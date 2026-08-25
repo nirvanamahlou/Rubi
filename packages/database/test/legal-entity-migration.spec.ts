@@ -10,6 +10,13 @@ const migration = readFileSync(
   ),
   'utf8',
 );
+const hardeningMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    'prisma/migrations/20260825170000_legal_entity_review_hardening/migration.sql',
+  ),
+  'utf8',
+);
 const seed = readFileSync(resolve(process.cwd(), 'prisma/seed.ts'), 'utf8');
 
 describe('legal entity persistence migration', () => {
@@ -48,6 +55,35 @@ describe('legal entity persistence migration', () => {
       'reissueReason',
     ])
       expect(migration).toContain(`"${column}"`);
+  });
+
+  it('adds a non-destructive exact branding snapshot FK and trusted policy provenance', () => {
+    expect(hardeningMigration).not.toMatch(/^\s*(DROP|TRUNCATE|DELETE)\b/im);
+    expect(hardeningMigration).toContain(
+      'UNIQUE ("id", "legalEntityId", "version")',
+    );
+    expect(hardeningMigration).toContain(
+      'FOREIGN KEY ("brandingSnapshotId", "issuerLegalEntityId", "brandingSnapshotVersion")',
+    );
+    expect(hardeningMigration).toContain(
+      'REFERENCES "legal_entity_branding_versions"("id", "legalEntityId", "version")',
+    );
+    expect(hardeningMigration).toContain(
+      'ON DELETE RESTRICT ON UPDATE RESTRICT',
+    );
+    expect(hardeningMigration).toContain(
+      'legal_entity_branding_versions_immutable',
+    );
+    expect(hardeningMigration).toContain(
+      'BEFORE UPDATE OR DELETE ON "legal_entity_branding_versions"',
+    );
+    for (const column of [
+      'brandingSnapshotId',
+      'templateId',
+      'templatePolicyId',
+      'templatePolicyVersion',
+    ])
+      expect(hardeningMigration).toContain(`"${column}"`);
   });
 
   it('seeds only two real issuers idempotently and never persists ALL as an issuer', () => {

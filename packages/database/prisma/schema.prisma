@@ -812,7 +812,10 @@ model LegalEntityBrandingVersion {
   legalEntity     LegalEntity @relation(fields: [legalEntityId], references: [id], onDelete: Restrict)
   createdBy       User        @relation("LegalEntityBrandingVersionCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
 
+  documentIssues LegalEntityDocumentIssue[] @relation("LegalEntityDocumentIssueBranding")
+
   @@unique([legalEntityId, version])
+  @@unique([id, legalEntityId, version])
   @@index([legalEntityId, createdAt])
   @@map("legal_entity_branding_versions")
 }
@@ -840,9 +843,13 @@ model LegalEntityDocumentIssue {
   issuerLegalEntityId     String                         @db.Uuid
   issuerCode              String                         @db.VarChar(40)
   issuerName              String                         @db.VarChar(200)
+  brandingSnapshotId      String                         @db.Uuid
   brandingSnapshotVersion Int
   brandingSnapshot        Json
+  templateId              String                         @db.VarChar(120)
   templateVersion         String                         @db.VarChar(80)
+  templatePolicyId        String                         @db.VarChar(120)
+  templatePolicyVersion   String                         @db.VarChar(80)
   actorUserId             String                         @db.Uuid
   issuedAt                DateTime                       @default(now()) @db.Timestamptz(3)
   documentType            String                         @db.VarChar(120)
@@ -853,6 +860,7 @@ model LegalEntityDocumentIssue {
   reissueReason           String?                        @db.VarChar(500)
   originalIssueId         String?                        @db.Uuid
   issuer                  LegalEntity                    @relation(fields: [issuerLegalEntityId], references: [id], onDelete: Restrict)
+  brandingVersion         LegalEntityBrandingVersion     @relation("LegalEntityDocumentIssueBranding", fields: [brandingSnapshotId, issuerLegalEntityId, brandingSnapshotVersion], references: [id, legalEntityId, version], onDelete: Restrict, onUpdate: Restrict)
   actor                   User                           @relation("LegalEntityDocumentIssueActor", fields: [actorUserId], references: [id], onDelete: Restrict)
   originalIssue           LegalEntityDocumentIssue?      @relation("LegalEntityReissues", fields: [originalIssueId], references: [id], onDelete: Restrict)
   reissues                LegalEntityDocumentIssue[]     @relation("LegalEntityReissues")
