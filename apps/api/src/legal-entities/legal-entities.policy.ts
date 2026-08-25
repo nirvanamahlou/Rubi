@@ -38,7 +38,7 @@ export function resolveIssueTargetIds(
 }
 
 export function assertRequiredLetterhead(
-  requiresLetterhead: boolean | undefined,
+  requiresLetterhead: boolean,
   letterheadFileId: string | null,
 ): void {
   if (requiresLetterhead && !letterheadFileId)

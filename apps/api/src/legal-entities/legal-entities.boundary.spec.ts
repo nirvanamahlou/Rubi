@@ -19,13 +19,15 @@ describe('legal entity module boundary', () => {
   it('revalidates a real active issuer and records reproducible output metadata', () => {
     expect(service).toContain('private async validateIssuer');
     expect(service).toContain('where: { id, isActive: true }');
-    expect(service).toContain('brandingSnapshot: json(branding)');
-    expect(service).toContain(
-      'brandingSnapshotVersion: issuer.brandingSnapshotVersion',
-    );
+    expect(service).toContain('brandingSnapshot: json(branding.snapshot)');
+    expect(service).toContain('brandingSnapshotId: branding.id');
+    expect(service).toContain('brandingSnapshotVersion: branding.version');
+    expect(service).toContain('templatePolicyId: policy.policyId');
     expect(service).toContain("action: 'legal-entity.document.issue'");
     expect(service).toContain("action: 'legal-entity.document.reissue'");
     expect(service).toContain('assertRequiredLetterhead(');
+    expect(service).toContain('this.templatePolicies.resolve(query)');
+    expect(service).not.toContain('input.requiresLetterhead');
   });
 
   it('enforces optimistic claims and redacts sensitive branding by default', () => {

@@ -5,13 +5,14 @@ import {
   IAM_PERMISSION_CODES,
   IAM_PERMISSION_CONTRACT_VERSION,
   MASTER_DATA_PERMISSION_CODES,
+  LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES,
   LEGAL_ENTITY_PERMISSION_CODES,
   type AuthenticatedActor,
 } from '../src';
 
 describe('IAM public permission contract', () => {
-  it('publishes the version 3 domain permission catalogs without duplicates', () => {
-    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(3);
+  it('publishes the version 4 domain permission catalogs without duplicates', () => {
+    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(4);
     expect(MASTER_DATA_PERMISSION_CODES).toEqual([
       'master_data.read',
       'master_data.create',
@@ -26,6 +27,10 @@ describe('IAM public permission contract', () => {
       'customers.merge',
       'customers.consent.manage',
       'customers.sensitive.read',
+    ]);
+    expect(LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES).toEqual([
+      'legal-entity.read',
+      'legal-entity.switch',
     ]);
     expect(LEGAL_ENTITY_PERMISSION_CODES).toEqual([
       'legal-entity.read',

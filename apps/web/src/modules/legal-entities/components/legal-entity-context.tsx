@@ -112,9 +112,10 @@ export function LegalEntityProvider({ children }: { children: ReactNode }) {
       setError(null);
       setFeedback(null);
       try {
+        if (!context) throw new Error('Context شرکت هنوز بارگذاری نشده است.');
         const response = await legalEntitiesApi.switch(
           selection,
-          context?.version,
+          context.version,
         );
         setContext(response.data);
         setFeedback('شرکت فعال با موفقیت تغییر کرد.');

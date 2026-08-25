@@ -22,6 +22,7 @@ import { AuditOutcome, SessionStatus, UserStatus } from '@rubi/database';
 import { hash, verify } from 'argon2';
 
 import { DatabaseService } from '../database/database.service';
+import { authenticatedPermissionCodes } from './authenticated-permissions';
 import {
   ACCESS_TTL_SECONDS,
   LOCK_MINUTES,
@@ -598,17 +599,7 @@ export class IamService {
       };
     }>;
   }): IamPermissionCode[] {
-    return [
-      ...new Set(
-        user.roles
-          .filter(({ role }) => role.isActive)
-          .flatMap(({ role }) =>
-            role.permissions.map(
-              ({ permission }) => permission.code as IamPermissionCode,
-            ),
-          ),
-      ),
-    ];
+    return authenticatedPermissionCodes(user.roles);
   }
   private loginResponse(user: {
     id: string;

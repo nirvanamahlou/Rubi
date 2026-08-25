@@ -72,7 +72,7 @@ export const legalEntitiesApi = {
       '/selectable',
     ),
   current: () => request<{ data: LegalEntityContext }>('/context'),
-  switch(selection: LegalEntitySelection, expectedVersion?: number) {
+  switch(selection: LegalEntitySelection, expectedVersion: number) {
     return request<{ data: LegalEntityContext }>('/context', {
       method: 'PATCH',
       body: JSON.stringify({ selection, expectedVersion }),

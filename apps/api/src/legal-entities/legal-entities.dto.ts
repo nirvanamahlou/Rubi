@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsIn,
@@ -8,16 +9,16 @@ import {
   Matches,
   MaxLength,
   Min,
+  MinLength,
 } from 'class-validator';
 
 export class SwitchLegalEntityDto {
   @IsIn(['NIYAYESH_SEIR_SAHAR', 'JAHAN_BASTAN', 'ALL'])
   selection!: 'NIYAYESH_SEIR_SAHAR' | 'JAHAN_BASTAN' | 'ALL';
 
-  @IsOptional()
   @IsInt()
-  @Min(1)
-  expectedVersion?: number;
+  @Min(0)
+  expectedVersion!: number;
 }
 
 export class UpdateLegalEntityDto {
@@ -56,17 +57,21 @@ export class IssueTargetQueryDto {
 
 export class CreateDocumentIssueDto {
   @IsUUID() issuerLegalEntityId!: string;
-  @IsString() @MaxLength(80) templateVersion!: string;
-  @IsString() @MaxLength(120) documentType!: string;
-  @IsString() @MaxLength(120) referenceEntityType!: string;
-  @IsString() @MaxLength(160) referenceEntityId!: string;
+  @IsString() @MinLength(1) @MaxLength(120) templateId!: string;
+  @IsString() @MinLength(1) @MaxLength(80) templateVersion!: string;
+  @IsString() @MinLength(1) @MaxLength(120) documentType!: string;
+  @IsString() @MinLength(1) @MaxLength(120) referenceEntityType!: string;
+  @IsString() @MinLength(1) @MaxLength(160) referenceEntityId!: string;
   @IsOptional() @Matches(/^[0-9a-f]{64}$/) fileHash?: string;
-  @IsOptional() @IsBoolean() requiresLetterhead?: boolean;
 }
 
 export class ReissueDocumentDto {
   @IsUUID() originalIssueId!: string;
-  @IsString() @MaxLength(500) reason!: string;
-  @IsString() @MaxLength(80) templateVersion!: string;
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MinLength(3)
+  @MaxLength(500)
+  @Matches(/\S/)
+  reason!: string;
   @IsOptional() @Matches(/^[0-9a-f]{64}$/) fileHash?: string;
 }

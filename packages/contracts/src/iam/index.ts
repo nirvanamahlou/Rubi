@@ -1,4 +1,4 @@
-export const IAM_PERMISSION_CONTRACT_VERSION = 3 as const;
+export const IAM_PERMISSION_CONTRACT_VERSION = 4 as const;
 
 export const IAM_CORE_PERMISSION_CODES = [
   'iam.users.read',
@@ -26,9 +26,13 @@ export const CUSTOMER_PERMISSION_CODES = [
   'customers.sensitive.read',
 ] as const;
 
-export const LEGAL_ENTITY_PERMISSION_CODES = [
+export const LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES = [
   'legal-entity.read',
   'legal-entity.switch',
+] as const;
+
+export const LEGAL_ENTITY_PERMISSION_CODES = [
+  ...LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES,
   'legal-entity.aggregate.read',
   'legal-entity.manage',
   'legal-entity.branding.manage',

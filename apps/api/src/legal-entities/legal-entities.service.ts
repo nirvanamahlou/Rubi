@@ -5,6 +5,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import {
   LEGAL_ENTITY_CODES,
@@ -25,6 +26,11 @@ import {
 import type { Prisma } from '@rubi/database';
 
 import { DatabaseService } from '../database/database.service';
+import {
+  DOCUMENT_TEMPLATE_POLICY_PORT,
+  type DocumentTemplatePolicyPort,
+  type ResolvedDocumentTemplatePolicy,
+} from './document-template-policy.port';
 import type {
   CreateDocumentIssueDto,
   ReissueDocumentDto,
@@ -133,6 +139,28 @@ function detail(row: EntityRow, includeSensitive: boolean): LegalEntityDetail {
   return { ...summary(row), ...snapshot(row, includeSensitive) };
 }
 
+const concurrentModification = () =>
+  new ConflictException({
+    code: 'CONCURRENT_MODIFICATION',
+    message: 'Context هم‌زمان تغییر کرده است.',
+  });
+
+const hasPrismaCode = (error: unknown, code: string): boolean =>
+  typeof error === 'object' &&
+  error !== null &&
+  'code' in error &&
+  (error as { code?: unknown }).code === code;
+
+const normalizeReissueReason = (reason: unknown): string => {
+  const normalized = typeof reason === 'string' ? reason.trim() : '';
+  if (normalized.length < 3 || normalized.length > 500)
+    throw new BadRequestException({
+      code: 'REISSUE_REASON_REQUIRED',
+      message: 'دلیل صدور مجدد باید بین ۳ تا ۵۰۰ نویسه معنادار باشد.',
+    });
+  return normalized;
+};
+
 function safeAudit(row: EntityRow | null) {
   if (!row) return null;
   return {
@@ -151,6 +179,8 @@ function safeAudit(row: EntityRow | null) {
 export class LegalEntitiesService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(DOCUMENT_TEMPLATE_POLICY_PORT)
+    private readonly templatePolicies: DocumentTemplatePolicyPort,
   ) {}
 
   async list(actor: AuthenticatedActor) {
@@ -188,29 +218,20 @@ export class LegalEntitiesService {
   }
 
   async current(actor: AuthenticatedActor) {
-    const context = await this.ensureContext(actor.userId);
+    const context = await this.resolveContext(actor.userId);
     return { data: this.contextResponse(context) };
   }
 
   async switch(
     selection: LegalEntitySelection,
-    expectedVersion: number | undefined,
+    expectedVersion: number,
     actor: AuthenticatedActor,
   ) {
+    if (!Number.isInteger(expectedVersion) || expectedVersion < 0)
+      throw new BadRequestException(
+        'expectedVersion باید عدد صحیح نامنفی باشد.',
+      );
     assertLegalEntitySelection(selection, actor.permissions);
-    const current =
-      await this.database.client.userLegalEntityContext.findUnique({
-        where: { userId: actor.userId },
-      });
-    if (
-      expectedVersion !== undefined &&
-      current &&
-      current.version !== expectedVersion
-    )
-      throw new ConflictException({
-        code: 'CONCURRENT_MODIFICATION',
-        message: 'Context هم‌زمان تغییر کرده است.',
-      });
     const selected =
       selection === LEGAL_ENTITY_CONTEXT_ALL
         ? null
@@ -219,49 +240,82 @@ export class LegalEntitiesService {
           });
     if (selection !== LEGAL_ENTITY_CONTEXT_ALL && !selected)
       throw new BadRequestException('شرکت صادرکننده فعال نیست.');
-    const result = await this.database.client.$transaction(
-      async (transaction) => {
-        const row = await transaction.userLegalEntityContext.upsert({
-          where: { userId: actor.userId },
-          create: {
-            userId: actor.userId,
-            mode:
-              selection === LEGAL_ENTITY_CONTEXT_ALL
-                ? LegalEntityContextMode.ALL
-                : LegalEntityContextMode.SPECIFIC,
-            legalEntityId: selected?.id ?? null,
-          },
-          update: {
-            mode:
-              selection === LEGAL_ENTITY_CONTEXT_ALL
-                ? LegalEntityContextMode.ALL
-                : LegalEntityContextMode.SPECIFIC,
-            legalEntityId: selected?.id ?? null,
-            version: { increment: 1 },
-          },
-          include: { legalEntity: true },
-        });
-        await transaction.legalEntityAuditEvent.create({
-          data: {
-            actorUserId: actor.userId,
-            action: 'legal-entity.context.switch',
-            entityId: selected?.id ?? null,
-            outcome: AuditOutcome.SUCCESS,
-            beforeSnapshot: json({
-              selection:
-                current?.mode === LegalEntityContextMode.ALL
-                  ? 'ALL'
-                  : (current?.legalEntityId ?? null),
-            }),
-            afterSnapshot: json({ selection }),
-          },
-        });
-        return row;
-      },
-    );
-    return { data: this.contextResponse(result) };
-  }
+    const mode =
+      selection === LEGAL_ENTITY_CONTEXT_ALL
+        ? LegalEntityContextMode.ALL
+        : LegalEntityContextMode.SPECIFIC;
+    try {
+      const result = await this.database.client.$transaction(
+        async (transaction) => {
+          if (expectedVersion === 0) {
+            const existing =
+              await transaction.userLegalEntityContext.findUnique({
+                where: { userId: actor.userId },
+              });
+            if (existing) throw concurrentModification();
+            const row = await transaction.userLegalEntityContext.create({
+              data: {
+                userId: actor.userId,
+                mode,
+                legalEntityId: selected?.id ?? null,
+              },
+              include: { legalEntity: true },
+            });
+            await transaction.legalEntityAuditEvent.create({
+              data: {
+                actorUserId: actor.userId,
+                action: 'legal-entity.context.switch',
+                entityId: selected?.id ?? null,
+                outcome: AuditOutcome.SUCCESS,
+                beforeSnapshot: json({ selection: null, version: 0 }),
+                afterSnapshot: json({ selection, version: row.version }),
+              },
+            });
+            return row;
+          }
 
+          const before = await transaction.userLegalEntityContext.findUnique({
+            where: { userId: actor.userId },
+          });
+          const claimed = await transaction.userLegalEntityContext.updateMany({
+            where: { userId: actor.userId, version: expectedVersion },
+            data: {
+              mode,
+              legalEntityId: selected?.id ?? null,
+              version: { increment: 1 },
+            },
+          });
+          if (claimed.count !== 1) throw concurrentModification();
+          const row =
+            await transaction.userLegalEntityContext.findUniqueOrThrow({
+              where: { userId: actor.userId },
+              include: { legalEntity: true },
+            });
+          await transaction.legalEntityAuditEvent.create({
+            data: {
+              actorUserId: actor.userId,
+              action: 'legal-entity.context.switch',
+              entityId: selected?.id ?? null,
+              outcome: AuditOutcome.SUCCESS,
+              beforeSnapshot: json({
+                selection:
+                  before?.mode === LegalEntityContextMode.ALL
+                    ? LEGAL_ENTITY_CONTEXT_ALL
+                    : (before?.legalEntityId ?? null),
+                version: before?.version ?? null,
+              }),
+              afterSnapshot: json({ selection, version: row.version }),
+            },
+          });
+          return row;
+        },
+      );
+      return { data: this.contextResponse(result) };
+    } catch (error) {
+      if (hasPrismaCode(error, 'P2002')) throw concurrentModification();
+      throw error;
+    }
+  }
   async find(id: string, actor: AuthenticatedActor) {
     const row = await this.database.client.legalEntity.findUnique({
       where: { id },
@@ -431,7 +485,7 @@ export class LegalEntitiesService {
   }
 
   async issueTargets(actor: AuthenticatedActor, strategy: IssueTargetStrategy) {
-    const context = await this.ensureContext(actor.userId);
+    const context = await this.resolveContext(actor.userId);
     if (context.mode === LegalEntityContextMode.ALL)
       assertLegalEntitySelection('ALL', actor.permissions);
     const rows = await this.database.client.legalEntity.findMany({
@@ -462,20 +516,32 @@ export class LegalEntitiesService {
 
   async recordIssue(input: CreateDocumentIssueDto, actor: AuthenticatedActor) {
     const issuer = await this.validateIssuer(input.issuerLegalEntityId, actor);
-    assertRequiredLetterhead(input.requiresLetterhead, issuer.letterheadFileId);
-    const branding = snapshot(issuer);
+    const policy = await this.resolveTemplatePolicy({
+      documentType: input.documentType,
+      templateId: input.templateId,
+      templateVersion: input.templateVersion,
+    });
+    assertRequiredLetterhead(
+      policy.requiresLetterhead,
+      issuer.letterheadFileId,
+    );
     const issue = await this.database.client.$transaction(
       async (transaction) => {
+        const branding = await this.resolveBrandingVersion(transaction, issuer);
         const row = await transaction.legalEntityDocumentIssue.create({
           data: {
             issuerLegalEntityId: issuer.id,
             issuerCode: issuer.code,
             issuerName: issuer.persianName,
-            brandingSnapshotVersion: issuer.brandingSnapshotVersion,
-            brandingSnapshot: json(branding),
-            templateVersion: input.templateVersion,
+            brandingSnapshotId: branding.id,
+            brandingSnapshotVersion: branding.version,
+            brandingSnapshot: json(branding.snapshot),
+            templateId: policy.templateId,
+            templateVersion: policy.templateVersion,
+            templatePolicyId: policy.policyId,
+            templatePolicyVersion: policy.policyVersion,
             actorUserId: actor.userId,
-            documentType: input.documentType,
+            documentType: policy.documentType,
             referenceEntityType: input.referenceEntityType,
             referenceEntityId: input.referenceEntityId,
             fileHash: input.fileHash ?? null,
@@ -490,10 +556,15 @@ export class LegalEntitiesService {
             outcome: AuditOutcome.SUCCESS,
             afterSnapshot: json({
               issueId: row.id,
-              documentType: input.documentType,
+              documentType: policy.documentType,
+              templateId: policy.templateId,
+              templateVersion: policy.templateVersion,
+              templatePolicyId: policy.policyId,
+              templatePolicyVersion: policy.policyVersion,
               referenceEntityType: input.referenceEntityType,
               referenceEntityId: input.referenceEntityId,
-              brandingSnapshotVersion: issuer.brandingSnapshotVersion,
+              brandingSnapshotId: branding.id,
+              brandingSnapshotVersion: branding.version,
             }),
           },
         });
@@ -504,6 +575,7 @@ export class LegalEntitiesService {
   }
 
   async reissue(input: ReissueDocumentDto, actor: AuthenticatedActor) {
+    const reason = normalizeReissueReason(input.reason);
     const original =
       await this.database.client.legalEntityDocumentIssue.findUnique({
         where: { id: input.originalIssueId },
@@ -513,42 +585,65 @@ export class LegalEntitiesService {
       original.issuerLegalEntityId,
       actor,
     );
-    const branding = snapshot(issuer);
-    const issue = await this.database.client.legalEntityDocumentIssue.create({
-      data: {
-        issuerLegalEntityId: issuer.id,
-        issuerCode: issuer.code,
-        issuerName: issuer.persianName,
-        brandingSnapshotVersion: issuer.brandingSnapshotVersion,
-        brandingSnapshot: json(branding),
-        templateVersion: input.templateVersion,
-        actorUserId: actor.userId,
-        documentType: original.documentType,
-        referenceEntityType: original.referenceEntityType,
-        referenceEntityId: original.referenceEntityId,
-        fileHash: input.fileHash ?? null,
-        status: LegalEntityDocumentIssueStatus.ISSUED,
-        reissueReason: input.reason,
-        originalIssueId: original.id,
-      },
+    const policy = await this.resolveTemplatePolicy({
+      documentType: original.documentType,
+      templateId: original.templateId,
+      templateVersion: original.templateVersion,
     });
-    await this.database.client.legalEntityAuditEvent.create({
-      data: {
-        actorUserId: actor.userId,
-        action: 'legal-entity.document.reissue',
-        entityId: issuer.id,
-        outcome: AuditOutcome.SUCCESS,
-        reason: input.reason,
-        afterSnapshot: json({
-          issueId: issue.id,
-          originalIssueId: original.id,
-          brandingSnapshotVersion: issuer.brandingSnapshotVersion,
-        }),
+    assertRequiredLetterhead(
+      policy.requiresLetterhead,
+      issuer.letterheadFileId,
+    );
+    const issue = await this.database.client.$transaction(
+      async (transaction) => {
+        const branding = await this.resolveBrandingVersion(transaction, issuer);
+        const row = await transaction.legalEntityDocumentIssue.create({
+          data: {
+            issuerLegalEntityId: issuer.id,
+            issuerCode: issuer.code,
+            issuerName: issuer.persianName,
+            brandingSnapshotId: branding.id,
+            brandingSnapshotVersion: branding.version,
+            brandingSnapshot: json(branding.snapshot),
+            templateId: policy.templateId,
+            templateVersion: policy.templateVersion,
+            templatePolicyId: policy.policyId,
+            templatePolicyVersion: policy.policyVersion,
+            actorUserId: actor.userId,
+            documentType: policy.documentType,
+            referenceEntityType: original.referenceEntityType,
+            referenceEntityId: original.referenceEntityId,
+            fileHash: input.fileHash ?? null,
+            status: LegalEntityDocumentIssueStatus.ISSUED,
+            reissueReason: reason,
+            originalIssueId: original.id,
+          },
+        });
+        await transaction.legalEntityAuditEvent.create({
+          data: {
+            actorUserId: actor.userId,
+            action: 'legal-entity.document.reissue',
+            entityId: issuer.id,
+            outcome: AuditOutcome.SUCCESS,
+            reason,
+            afterSnapshot: json({
+              issueId: row.id,
+              originalIssueId: original.id,
+              documentType: policy.documentType,
+              templateId: policy.templateId,
+              templateVersion: policy.templateVersion,
+              templatePolicyId: policy.policyId,
+              templatePolicyVersion: policy.policyVersion,
+              brandingSnapshotId: branding.id,
+              brandingSnapshotVersion: branding.version,
+            }),
+          },
+        });
+        return row;
       },
-    });
+    );
     return { data: this.issueMetadata(issue) };
   }
-
   private async validateIssuer(
     id: string,
     actor: AuthenticatedActor,
@@ -557,26 +652,62 @@ export class LegalEntitiesService {
       this.database.client.legalEntity.findFirst({
         where: { id, isActive: true },
       }),
-      this.ensureContext(actor.userId),
+      this.resolveContext(actor.userId),
     ]);
     if (!issuer)
       throw new BadRequestException('شرکت صادرکننده واقعی و فعال نیست.');
-    if (
-      context.mode === LegalEntityContextMode.SPECIFIC &&
-      context.legalEntityId !== id
-    )
+    if (context.mode === LegalEntityContextMode.ALL)
+      throw new UnprocessableEntityException({
+        code: 'LEGAL_ENTITY_SPECIFIC_CONTEXT_REQUIRED',
+        message: 'صدور و صدور مجدد در حالت هر دو شرکت مجاز نیست.',
+      });
+    if (context.legalEntityId !== id)
       throw new ForbiddenException(
         'شرکت صادرکننده با Context فعال کاربر یکسان نیست.',
       );
-    if (
-      context.mode === LegalEntityContextMode.ALL &&
-      !actor.permissions.includes('legal-entity.aggregate.read')
-    )
-      throw new ForbiddenException('Context تجمیعی غیرمجاز است.');
     return issuer;
   }
 
-  private async ensureContext(userId: string) {
+  private async resolveTemplatePolicy(query: {
+    documentType: string;
+    templateId: string;
+    templateVersion: string;
+  }): Promise<ResolvedDocumentTemplatePolicy> {
+    const policy = await this.templatePolicies.resolve(query);
+    if (
+      !policy ||
+      policy.documentType !== query.documentType ||
+      policy.templateId !== query.templateId ||
+      policy.templateVersion !== query.templateVersion
+    )
+      throw new UnprocessableEntityException({
+        code: 'DOCUMENT_TEMPLATE_POLICY_NOT_FOUND',
+        message: 'Policy معتبر و قابل اعتماد برای قالب سند یافت نشد.',
+      });
+    return policy;
+  }
+
+  private async resolveBrandingVersion(
+    transaction: Prisma.TransactionClient,
+    issuer: EntityRow,
+  ) {
+    const branding = await transaction.legalEntityBrandingVersion.findUnique({
+      where: {
+        legalEntityId_version: {
+          legalEntityId: issuer.id,
+          version: issuer.brandingSnapshotVersion,
+        },
+      },
+    });
+    if (!branding)
+      throw new ConflictException({
+        code: 'LEGAL_ENTITY_BRANDING_SNAPSHOT_NOT_FOUND',
+        message: 'نسخه Branding شرکت برای صدور سند یافت نشد.',
+      });
+    return branding;
+  }
+
+  private async resolveContext(userId: string) {
     const existing =
       await this.database.client.userLegalEntityContext.findUnique({
         where: { userId },
@@ -598,22 +729,13 @@ export class LegalEntitiesService {
       }));
     if (!preferred)
       throw new ConflictException('هیچ شرکت صادرکننده فعالی وجود ندارد.');
-    return this.database.client.userLegalEntityContext.upsert({
-      where: { userId },
-      create: {
-        userId,
-        mode: LegalEntityContextMode.SPECIFIC,
-        legalEntityId: preferred.id,
-      },
-      update: {
-        mode: LegalEntityContextMode.SPECIFIC,
-        legalEntityId: preferred.id,
-        version: { increment: 1 },
-      },
-      include: { legalEntity: true },
-    });
+    return {
+      mode: LegalEntityContextMode.SPECIFIC,
+      legalEntityId: preferred.id,
+      version: existing?.version ?? 0,
+      legalEntity: preferred,
+    };
   }
-
   private contextResponse(context: {
     mode: LegalEntityContextMode;
     legalEntityId: string | null;
@@ -636,8 +758,12 @@ export class LegalEntitiesService {
     issuerLegalEntityId: string;
     issuerCode: string;
     issuerName: string;
+    brandingSnapshotId: string;
     brandingSnapshotVersion: number;
+    templateId: string;
     templateVersion: string;
+    templatePolicyId: string;
+    templatePolicyVersion: string;
     actorUserId: string;
     issuedAt: Date;
     documentType: string;
@@ -652,8 +778,12 @@ export class LegalEntitiesService {
       issuerLegalEntityId: issue.issuerLegalEntityId,
       issuerCode: entityCode(issue.issuerCode),
       issuerName: issue.issuerName,
+      brandingSnapshotId: issue.brandingSnapshotId,
       brandingSnapshotVersion: issue.brandingSnapshotVersion,
+      templateId: issue.templateId,
       templateVersion: issue.templateVersion,
+      templatePolicyId: issue.templatePolicyId,
+      templatePolicyVersion: issue.templatePolicyVersion,
       actorUserId: issue.actorUserId,
       issuedAt: issue.issuedAt.toISOString(),
       documentType: issue.documentType,

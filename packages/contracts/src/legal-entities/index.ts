@@ -1,4 +1,4 @@
-export const LEGAL_ENTITIES_CONTRACT_VERSION = 1 as const;
+export const LEGAL_ENTITIES_CONTRACT_VERSION = 2 as const;
 
 export const LEGAL_ENTITY_CODES = [
   'NIYAYESH_SEIR_SAHAR',
@@ -76,7 +76,7 @@ export interface LegalEntityContext {
 
 export interface LegalEntitySwitchRequest {
   selection: LegalEntitySelection;
-  expectedVersion?: number;
+  expectedVersion: number;
 }
 
 export interface LegalEntityUpdateRequest {
@@ -104,12 +104,12 @@ export interface LegalEntityUpdateRequest {
 
 export interface LegalEntityDocumentIssueRequest {
   issuerLegalEntityId: string;
+  templateId: string;
   templateVersion: string;
   documentType: string;
   referenceEntityType: string;
   referenceEntityId: string;
   fileHash?: string;
-  requiresLetterhead?: boolean;
 }
 
 export interface LegalEntityDocumentIssueMetadata {
@@ -117,8 +117,12 @@ export interface LegalEntityDocumentIssueMetadata {
   issuerLegalEntityId: string;
   issuerCode: LegalEntityCode;
   issuerName: string;
+  brandingSnapshotId: string;
   brandingSnapshotVersion: number;
+  templateId: string;
   templateVersion: string;
+  templatePolicyId: string;
+  templatePolicyVersion: string;
   actorUserId: string;
   issuedAt: string;
   documentType: string;
