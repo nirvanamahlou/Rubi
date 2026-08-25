@@ -10,8 +10,10 @@ Baseline: `origin/develop@45c107e`
 
 تمام ۱۷ مسیر CRM برای بررسی محلی با رابط فارسی، RTL، Responsive و داده ساختگی آماده
 می‌شوند. تغییر فقط در Web UI، قراردادهای ماژول‌محلی UI، تست Web و اسناد Task است.
-Prisma/Migration/Seed/Persistence/Repository، Controller فعال ساختگی، Dependency/Lockfile،
-قرارداد عمومی پایدار، Query بین‌ماژولی، فایل خروجی جعلی، Secret، Credential و PII ممنوع‌اند.
+Prisma/Migration/Seed/Persistence/Repository و Controller فعال ساختگی ممنوع‌اند. تنها استثنا
+Supply-chain Build Policy Fix محدود در `pnpm-workspace.yaml` است؛ Dependency، Version و
+Lockfile، قرارداد عمومی پایدار، Query بین‌ماژولی، فایل خروجی جعلی، Secret، Credential و
+PII ممنوع‌اند.
 
 ## کنترل اولیه
 
@@ -87,11 +89,21 @@ Worker/Queue/Retry واقعی؛ Excel/PDF/CSV واقعی؛ approved reporting vi
 shared contract جدید؛ تصمیم‌های باز Provider، سایت/برند، retention، HR، SLA، numbering
 و Manifest template.
 
+## Supply-chain Build Policy Fix — Review PR #23
+
+- مکانیزم رسمی pnpm 11 یعنی `allowBuilds` در `pnpm-workspace.yaml` استفاده می‌شود.
+- فقط `@parcel/watcher` و `@swc/core` مقدار `true` دارند؛ تمام Packageهای native/build
+  شناخته‌شده دیگر صریحاً `false` هستند و wildcard وجود ندارد.
+- هیچ Dependency یا Version اضافه/تغییر نمی‌کند و `pnpm-lock.yaml` باید بدون Diff بماند.
+- Fresh Install frozen در Worktree موقت بدون `ERR_PNPM_IGNORED_BUILDS` پاس شد؛ خروجی
+  lifecycle فقط `@parcel/watcher install` و `@swc/core postinstall` را نشان داد،
+  `pnpm-lock.yaml` ثابت ماند، Worktree موقت حذف و قفل موقت `RELEASED` شد.
+
 ## Quality Gate
 
 - `pnpm lint`: پاس؛ ۶ workspace اجرایی موفق.
 - `pnpm typecheck`: پاس؛ ۹ task موفق همراه Prisma Client generate بدون تغییر Schema.
-- `pnpm test`: پاس؛ Web برابر ۷۱ تست، API برابر ۱۰۷ تست، Contracts برابر ۱۲ تست،
+- `pnpm test`: پاس؛ Web برابر ۷۳ تست، API برابر ۱۰۷ تست، Contracts برابر ۱۲ تست،
   Database برابر ۱۰ تست، Config برابر ۲ تست و Worker برابر ۱ تست.
 - `pnpm build`: پاس؛ ۶ task موفق و هر ۱۷ route اصلی در خروجی production موجود است.
 - HTTP production smoke: هر ۱۷ route با cookie کاملاً ساختگی، status 200 و HTML معتبر.
@@ -100,4 +112,4 @@ shared contract جدید؛ تصمیم‌های باز Provider، سایت/برن
 - Sidebar با تست رگرسیون overflow/truncate پوشش داده شد.
 - هیچ Prisma Schema، Migration، Seed، Dependency، Lockfile، Persistence، Controller
   ساختگی، فایل PDF/Excel/CSV جعلی، Secret، Credential یا PII واقعی تغییر/ایجاد نشد.
-- `git diff --check` و Secret/PII scan پیش از Push نهایی اجرا می‌شوند.
+- `git diff --check`، Scope و Secret/PII scan پاس شدند؛ فایل‌های تغییرکرده با Prettier همخوان‌اند.
