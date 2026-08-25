@@ -86,10 +86,10 @@ Export موجود MASTER-002 حفظ شده و صادقانه در وضعیت `AW
 - Seed دوبار: موفق؛ نرخ Seed صفر
 - Database tests: `17/17`
 - Contracts tests: `14/14`
-- API tests: `137/137` به‌علاوه `5/5` تست Guard جدید
+- API tests: `142/142`
 - Web tests: `77/77`
 - Web typecheck: موفق
-- Web production build: موفق؛ `/master-data` تولید شد
+- Full monorepo lint: موفق`r`n- Full monorepo typecheck: موفق`r`n- Full monorepo tests: موفق`r`n- Full monorepo production build: موفق؛ `/master-data` تولید شد
 
 ## باقی‌مانده و موارد مسدود
 
@@ -103,3 +103,4 @@ Export موجود MASTER-002 حفظ شده و صادقانه در وضعیت `AW
 - Full monorepo lint/typecheck/test/build و اسکن نهایی پیش از Ready for Review
 
 Dependency Excel تا انتخاب کتابخانه Pin‌شده و Security Review اضافه نمی‌شود؛ بنابراین Dependency/Lockfile Lock همچنان آزاد است. Antivirus و Documents Worker آماده‌نبودنشان به‌عنوان موفقیت جعلی گزارش نمی‌شود.
+
