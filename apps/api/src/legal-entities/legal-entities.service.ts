@@ -165,6 +165,10 @@ export class LegalEntitiesService {
       meta: {
         canAggregate: actor.permissions.includes('legal-entity.aggregate.read'),
         canManage: mayManage,
+        canManageBranding: actor.permissions.includes(
+          'legal-entity.branding.manage',
+        ),
+        canReadAudit: actor.permissions.includes('legal-entity.audit.read'),
       },
     };
   }

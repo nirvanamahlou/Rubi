@@ -19,8 +19,8 @@ export const faMessages = {
   },
   shell: {
     workspace: 'فضای کاری CRM',
-    branch: 'شعبه مرکزی',
-    branchLabel: 'انتخاب شعبه',
+    activeCompany: 'نیایش سیر سحر',
+    activeCompanyLabel: 'انتخاب شرکت فعال',
     notifications: 'اعلان‌ها',
     userMenu: 'منوی کاربر',
     profile: 'پروفایل من',
