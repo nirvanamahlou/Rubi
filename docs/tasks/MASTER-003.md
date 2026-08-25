@@ -3,8 +3,8 @@
 - وضعیت: `IN_PROGRESS — DRAFT PR / PARTIAL VERTICAL SLICE`
 - مالک: `PC-B`
 - Branch: `codex/pc-b-master-data-advanced`
-- Base: 6da5d6300716a189958bc37d31ca195f0304dc5`r
-- Draft PR: #25 — https://github.com/nirvanamahlou/Rubi/pull/25
+- Base: `b6da5d6300716a189958bc37d31ca195f0304dc5`
+- Draft PR: [#25](https://github.com/nirvanamahlou/Rubi/pull/25)
 - پیش‌نیاز: PR #24 با Source HEAD `6f475c0` و Merge Commit `b6da5d6` ادغام شده است.
 - Dependency/Lockfile Owner: `RELEASED`؛ هیچ Dependency جدیدی اضافه نشد.
 
