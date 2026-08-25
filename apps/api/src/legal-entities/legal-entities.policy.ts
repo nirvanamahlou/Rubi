@@ -37,6 +37,16 @@ export function resolveIssueTargetIds(
   return { ids: activeLegalEntityIds, requiresExplicitIssuer: false };
 }
 
+export function assertRequiredLetterhead(
+  requiresLetterhead: boolean | undefined,
+  letterheadFileId: string | null,
+): void {
+  if (requiresLetterhead && !letterheadFileId)
+    throw new UnprocessableEntityException({
+      code: 'LEGAL_ENTITY_LETTERHEAD_REQUIRED',
+      message: 'سربرگ شرکت صادرکننده برای این سند تکمیل نشده است.',
+    });
+}
 export function isSensitiveBrandingAllowed(
   permissions: readonly IamPermissionCode[],
 ): boolean {

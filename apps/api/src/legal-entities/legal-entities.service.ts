@@ -5,7 +5,6 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-  UnprocessableEntityException,
 } from '@nestjs/common';
 import {
   LEGAL_ENTITY_CODES,
@@ -32,6 +31,7 @@ import type {
 } from './legal-entities.dto';
 import {
   assertLegalEntitySelection,
+  assertRequiredLetterhead,
   isSensitiveBrandingAllowed,
   resolveIssueTargetIds,
   type IssueTargetStrategy,
@@ -462,11 +462,7 @@ export class LegalEntitiesService {
 
   async recordIssue(input: CreateDocumentIssueDto, actor: AuthenticatedActor) {
     const issuer = await this.validateIssuer(input.issuerLegalEntityId, actor);
-    if (input.requiresLetterhead && !issuer.letterheadFileId)
-      throw new UnprocessableEntityException({
-        code: 'LEGAL_ENTITY_LETTERHEAD_REQUIRED',
-        message: 'سربرگ شرکت صادرکننده برای این سند تکمیل نشده است.',
-      });
+    assertRequiredLetterhead(input.requiresLetterhead, issuer.letterheadFileId);
     const branding = snapshot(issuer);
     const issue = await this.database.client.$transaction(
       async (transaction) => {

@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   assertLegalEntitySelection,
+  assertRequiredLetterhead,
   resolveIssueTargetIds,
 } from './legal-entities.policy';
 
@@ -40,5 +41,14 @@ describe('legal entity backend policy', () => {
     expect(() =>
       resolveIssueTargetIds('NIYAYESH_SEIR_SAHAR', null, ['a', 'b'], 'prompt'),
     ).toThrow(UnprocessableEntityException);
+  });
+  it('blocks production issue when a required letterhead is missing', () => {
+    expect(() => assertRequiredLetterhead(true, null)).toThrow(
+      UnprocessableEntityException,
+    );
+    expect(() =>
+      assertRequiredLetterhead(true, 'document-file-id'),
+    ).not.toThrow();
+    expect(() => assertRequiredLetterhead(false, null)).not.toThrow();
   });
 });
