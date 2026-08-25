@@ -22,4 +22,3 @@ describe('MASTER-003 controller permission metadata', () => {
     ).toEqual([permission]);
   });
 });
-
