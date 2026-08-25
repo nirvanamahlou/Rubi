@@ -14,6 +14,7 @@
 | ماژول             | مالک داده/Invariant                                                                                                                                                                | API عمومی نمونه                                                        | وابستگی مجاز                                                                       |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | IAM               | user, session, role, permission, team                                                                                                                                              | authenticate, authorize, revoke                                        | Master Data(branch)                                                                |
+| Legal Entities    | issuer company profile، user issuer context، immutable branding snapshot، issue metadata و audit                                                                                  | selectable/context/switch، validate issuer، branding snapshot، record issue | IAM permission/audit actor، Documents asset references                           |
 | Master Data       | organization/role, provider profile, geography, service refs, channel                                                                                                              | resolve refs, activate/deactivate                                      | Documents برای metadata اختیاری                                                    |
 | Settings          | tenant/company, numbering, pricing/SLA/approval config                                                                                                                             | get effective setting                                                  | IAM برای audit actor                                                               |
 | Customers         | customer, contact, address, companion, identity ref, consent, merge                                                                                                                | create/update/merge, consent check                                     | Master Data, Documents                                                             |
@@ -24,7 +25,7 @@
 | Integrations      | connection, credential reference, provider mapping, webhook/sync record                                                                                                            | search/recheck/book/issue/refund                                       | Master Data, Reservations contract                                                 |
 | Procurement       | purchase request/order/receipt/invoice, supplier quote/discount, net purchase version and payable source                                                                          | accept reservation request, approve/order/receive/cancel               | Sales service reference, Reservations operation, Master Data, Finance posting port |
 | Finance           | financial case, invoice, payment, refund, settlement, account, journal, check, document release authorization                                                                     | verify/post/refund/settle/balance/release document                     | Sales/Procurement references, IAM approvals                                        |
-| Documents         | file metadata, template/version, generated document, access/send history                                                                                                           | generate/archive/sign URL                                              | Object storage; domain references                                                  |
+| Documents         | file metadata/version، confidentiality، access history و archive فایل نهایی                                                                                                        | store/version/archive، authorized asset access                          | Object storage; domain references                                                  |
 | Marketing         | campaign, segment definition, message run, attribution, discount                                                                                                                   | build consented audience, attribute                                    | Customers consent, Customer Affairs/Sales events                                   |
 | B2B               | contract, org user, credit policy, agreed rate, account manager                                                                                                                    | validate terms/credit                                                  | Master Data org, Finance exposure                                                  |
 | Human Resources   | employee/personnel record, contact/emergency contact, assignment, employment contract, attendance, shift, leave/mission, overtime, performance, training/certificate, issued asset | manage employment lifecycle, approve time/leave, publish payroll input | IAM user reference، Master Data branch refs، Documents، Finance payroll-input port |
@@ -77,8 +78,19 @@ Customers مالک identity و consent جاری/تاریخچه است. Marketing
 
 ### Documents در برابر ماژول صادرکننده
 
-ماژول دامنه اجازه و محتوای semantic سند را تعیین می‌کند؛ Documents render/version/archive
-را انجام می‌دهد. شماره رسمی بیرونی از Integrations/Reservations می‌آید و template آن را تولید نمی‌کند.
+ماژول دامنه اجازه، محتوای semantic، Render و Issue سند را مالک است. Documents فقط فایل
+نهایی و assetهای Branding را نگهداری، version، محرمانه، قابل‌دسترسی و archive می‌کند و
+مالک Render یا Issue نیست. ماژول صادرکننده issuer واقعی و Branding Snapshot immutable را
+از قرارداد عمومی `legal-entities.v1` می‌گیرد و Metadata صدور را ثبت می‌کند؛ query مستقیم
+جدول‌های Legal Entity ممنوع است. شماره رسمی بیرونی از Integrations/Reservations می‌آید و
+template آن را تولید نمی‌کند.
+
+### Legal Entity در برابر Branch و داده عملیاتی
+
+Legal Entity فقط هویت شرکت صادرکننده است و Branch، Tenant، Agency یا Customer Organization
+نیست. تغییر Context آن هیچ Customer، Contract، Reservation، Procurement یا Finance record
+را فیلتر نمی‌کند و Branch Scope امنیتی موجود را تغییر نمی‌دهد. `ALL` فقط Context مجازی
+گزارش‌گیری با Permission است، رکورد Legal Entity نیست و برای صدور رسمی معتبر نیست.
 
 ### Master Data در برابر B2B/Procurement
 
