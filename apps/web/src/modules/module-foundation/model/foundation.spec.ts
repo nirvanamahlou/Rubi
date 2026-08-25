@@ -56,9 +56,31 @@ describe('module foundation coverage', () => {
     expect(foundationModules.purchases.boundary).toContain(
       'سود فیلد دستی نیست',
     );
-    expect(foundationModules.documents.boundary).toContain('ماژول دامنه');
+    expect(foundationModules.documents.boundary).toContain('ماژول اصلی');
     expect(foundationModules.integrations.boundary).toContain('Secret');
     expect(foundationModules['human-resources'].boundary).toContain('Customer');
+  });
+
+  it('keeps rendering and issuance outside the Documents boundary', () => {
+    const documents = foundationModules.documents;
+
+    expect(documents.boundary).toContain(
+      'تولید، صدور و Render هر سند متعلق به ماژول اصلی است',
+    );
+    expect(documents.boundary).toContain('Documents فقط Artifact نهایی');
+    expect(documents.boundary).not.toMatch(
+      /Documents[^؛]*(?:render|Render|issue|صدور)/,
+    );
+    expect(
+      documents.sections.find(
+        (section) => section.title === 'مرز تولید و تحویل',
+      )?.items,
+    ).toEqual([
+      'Sales: تولید قرارداد',
+      'Reservations: تولید بلیت، Manifest، فرم رزرو، واچر و بیمه',
+      'Finance: تولید رسید، فاکتور و خروجی مالی خودش',
+      'Purchases: تولید سفارش و اسناد خرید؛ HR: تولید اسناد پرسنلی',
+    ]);
   });
 
   it('keeps exports deferred instead of declaring generated artifacts', () => {

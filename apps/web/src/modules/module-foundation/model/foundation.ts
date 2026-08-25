@@ -747,9 +747,9 @@ export const foundationModules: Record<
     key: 'documents',
     title: 'اسناد و فایل‌ها',
     description:
-      'آرشیو مرکزی metadata، نسخه، محرمانگی و دسترسی اسناد همه دامنه‌ها.',
+      'دریافت و نگهداری Artifact نهایی، آرشیو، نسخه‌بندی، محرمانگی، دسترسی و retention فایل‌های همه دامنه‌ها.',
     boundary:
-      'محتوا و اجازه صدور را ماژول دامنه تعیین می‌کند؛ Documents فقط render/archive/version/access را مالک است.',
+      'تولید، صدور و Render هر سند متعلق به ماژول اصلی است؛ Documents فقط Artifact نهایی را برای نگهداری، archive، version، confidentiality/access، expiry/retention، file owner، download/view audit و secure link دریافت می‌کند.',
     createLabel: 'ثبت metadata فایل',
     metrics: metrics([
       'اسناد جدید',
@@ -758,6 +758,16 @@ export const foundationModules: Record<
       'در انتظار آرشیو',
     ]),
     sections: [
+      {
+        title: 'مرز تولید و تحویل',
+        description: 'Domain-owned generation',
+        items: [
+          'Sales: تولید قرارداد',
+          'Reservations: تولید بلیت، Manifest، فرم رزرو، واچر و بیمه',
+          'Finance: تولید رسید، فاکتور و خروجی مالی خودش',
+          'Purchases: تولید سفارش و اسناد خرید؛ HR: تولید اسناد پرسنلی',
+        ],
+      },
       {
         title: 'انواع سند',
         description: 'آرشیو همه دامنه‌ها',

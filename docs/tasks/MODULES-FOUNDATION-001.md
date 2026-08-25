@@ -58,8 +58,12 @@ Prisma/Migration/Seed/Persistence/Repository، Controller فعال ساختگی�
 → Supplier Payable → Financial Release → Sales Access → Passenger Delivery → Support`
 
 ظرفیت، عملیات، Financial Release و Delivery محورهای مستقل‌اند. Reservation تخصیص
-passenger/service را تغییر نمی‌دهد؛ Ticket Catalog سند مسافر صادر نمی‌کند؛ Documents
-مالک archive/version/access است، نه صدور معنایی.
+passenger/service را تغییر نمی‌دهد؛ Ticket Catalog سند مسافر صادر نمی‌کند. تولید، صدور و
+Render هر سند بر عهده ماژول اصلی است: Sales قرارداد؛ Reservations بلیت، Manifest، فرم
+رزرو، واچر و بیمه؛ Finance رسید، فاکتور و خروجی مالی؛ Purchases سفارش و اسناد خرید؛
+و HR اسناد پرسنلی را تولید می‌کند. Documents فقط Artifact نهایی را دریافت و نگهداری
+می‌کند و مالک archive، version، confidentiality/access، expiry/retention، file owner،
+download/view audit و secure link است.
 
 ## استاندارد مشترک
 
@@ -73,7 +77,7 @@ passenger/service را تغییر نمی‌دهد؛ Ticket Catalog سند مسا
 | Permission Matrix | permission پیشنهادی deny-by-default |
 | Timeline/Audit | placeholder بدون actor/PII واقعی |
 | Cross-module reference | owner contract/reference؛ بدون query مستقیم |
-| خروجی | دکمه غیرفعال تا Worker/Documents؛ بدون فایل جعلی |
+| خروجی | دکمه غیرفعال تا Worker ماژول مالک و تحویل Artifact نهایی به Documents؛ بدون فایل جعلی |
 | Synthetic data | «نمونه طراحی و ذخیره‌نشده» |
 
 ## Deferred مشترک

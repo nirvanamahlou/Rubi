@@ -302,7 +302,7 @@ export function ModuleFoundationWorkspace({
             <Button
               onClick={() =>
                 setNotice(
-                  'مسیر خروجی پس از اتصال Worker و Documents فعال می‌شود؛ فایل جعلی تولید نشد.',
+                  'مسیر خروجی پس از اتصال Worker ماژول مالک و تحویل Artifact نهایی به Documents فعال می‌شود؛ فایل جعلی تولید نشد.',
                 )
               }
               variant="outline"
@@ -707,8 +707,9 @@ export function ModuleFoundationWorkspace({
         <div>
           <h2 className="font-black">مسیرهای خروجی همین ماژول</h2>
           <p className="mt-1 text-xs leading-6 text-muted-foreground">
-            دکمه‌ها intent و permission را نشان می‌دهند؛ تا اتصال Worker و
-            Documents هیچ فایل ساختگی تولید نمی‌شود.
+            دکمه‌ها intent و permission را نشان می‌دهند؛ تا اتصال Worker ماژول
+            مالک و تحویل Artifact نهایی به Documents هیچ فایل ساختگی تولید
+            نمی‌شود.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
