@@ -253,16 +253,8 @@ export function MasterDataWorkspace() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        description="مدیریت پایدار Reference Data و Organizationهای مشترک با کنترل دسترسی، Audit و نسخه رکورد."
-        eyebrow="MASTER-003 · PC-B"
-        title="اطلاعات پایه"
-      />
+      <PageHeader eyebrow="MASTER-003 · PC-B" title="اطلاعات پایه" />
 
-      <Alert
-        description="نرخ ارز با گردش Draft، تأیید یا رد، Maker/Checker و تاریخچه واقعی مدیریت می‌شود و همچنان برای ثبت مالی authoritative نیست. خروجی تا آماده‌شدن Documents/Worker در وضعیت انتظار می‌ماند."
-        title="Persistence فعال · محدودیت‌های دامنه محفوظ"
-      />
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
 
       <div className="space-y-5">
