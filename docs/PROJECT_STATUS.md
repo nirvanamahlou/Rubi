@@ -107,7 +107,13 @@
 
 - Branch مستقیماً از `origin/develop@b6da5d6` ساخته شد و Frozen Install بدون تغییر Lockfile پاس شد.
 - Migration Owner، Master Data shared-contract/root export و اسناد مرکزی برای MASTER-003 رزرو شدند.
-- Dependency/Lockfile برای `PC-B/MASTER-003` رزرو شد؛ نبود Parser ZIP/XLSX در API اثبات و افزودن Dependency کوچک Pin‌شده لازم شد.
+- `fflate@0.8.3` پس از اثبات نیاز، Pin و با فایل واقعی بدروم آزموده شد؛ قفل Dependency/Lockfile سپس آزاد شد.
+- Import واقعی هتل با قالب `HOTEL_IMPORT_V1`، Preview Token، Idempotency، Commit اتمیک،
+  کاتالوگ Meal/Room/Facility و UI متصل پیاده‌سازی شد.
+- فایل واقعی `hotel-data-بدروم.xlsx` روی PostgreSQL 18.1 با نتیجه ۲۲ ایجاد، صفر خطا
+  و صفر تکراری آزموده شد؛ دیتابیس موقت پس از آزمون حذف شد.
+- Scanner مستقل آنتی‌ویروس و Documents برای تصاویر هنوز متصل نیستند و وضعیت آن‌ها
+  صریحاً `UNAVAILABLE`/در انتظار گزارش می‌شود.
 - Scope توسعه افزایشی MASTER-002 شامل Master Data مشترک دو شرکت، نرخ مرجع غیر authoritative،
   کاتالوگ‌های پیشرفته، Import امن Excel، UI واقعی و تست کامل است.
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`

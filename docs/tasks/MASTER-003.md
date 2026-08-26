@@ -6,7 +6,7 @@
 - Base: `b6da5d6300716a189958bc37d31ca195f0304dc5`
 - Draft PR: [#25](https://github.com/nirvanamahlou/Rubi/pull/25)
 - پیش‌نیاز: PR #24 با Source HEAD `6f475c0` و Merge Commit `b6da5d6` ادغام شده است.
-- Dependency/Lockfile Owner: `PC-B/MASTER-003`؛ برای Parser امن ZIP/XLSX فعال شد.
+- Dependency/Lockfile Owner: `RELEASED`؛ `fflate@0.8.3` پس از Security Review و آزمون فایل واقعی تثبیت شد.
 
 ## انتقال اتمیک قفل‌ها
 
@@ -45,7 +45,7 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 
 ### Contract و Permission
 
-- Master Data Contract نسخه `2`
+- Master Data Contract نسخه `3`
 - IAM Permission Contract نسخه `5`
 - Permissionهای جدید در Contract و Seed:
   - `master_data.import`
@@ -78,19 +78,45 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 
 Export موجود MASTER-002 حفظ شده و صادقانه در وضعیت `AWAITING_DOCUMENTS_WORKER` باقی می‌ماند. فایل ساختگی ساخته نمی‌شود. اتصال Finance، Documents، Reservations، Procurement یا Integrations در این مرحله جعل نشده است.
 
+## Import واقعی هتل — HOTEL_IMPORT_V1
+
+- دو Endpoint واقعی `POST /master-data/hotel-imports/preview` و
+  `POST /master-data/hotel-imports/:sessionId/commit` اضافه شدند.
+- قالب دقیق ۱۸ ستونی فایل بدروم پذیرفته می‌شود؛ پسوند، MIME، File Signature،
+  Headerها، Scope شهر و سقف ردیف/ستون/سلول کنترل می‌شوند.
+- ZIP Bomb، Path Traversal، Macro/ActiveX/Embedding، External Link، Formula،
+  Hyperlink و DDE رد می‌شوند.
+- فایل Staging نام تصادفی و دسترسی محدود دارد؛ Preview Token فقط HMAC می‌شود و
+  ۱۵ دقیقه اعتبار دارد. Commit با Idempotency Key و یک تراکنش اتمیک انجام می‌شود.
+- تکراری‌ها با `SKIP` یا `UPDATE` مدیریت می‌شوند؛ `CREATE_NEW` بدون Mapping
+  کد جدید مجاز نیست.
+- Meal Service، Room Type و Facility گمشده فقط با انتخاب صریح کاربر ساخته می‌شوند.
+- قوانین استرداد، تصاویر و پرفروش به مالکیت Procurement، Documents و
+  Marketing/Sales احترام می‌گذارند و در Master Data ذخیره نمی‌شوند.
+- پنل Upload، انتخاب کشور/شهر، Preview، گزارش خطا/هشدار و Commit در Catalog هتل‌ها
+  به Backend واقعی متصل شد.
+- Scanner مستقل آنتی‌ویروس هنوز متصل نیست و UI/API صریحاً وضعیت `UNAVAILABLE`
+  را نمایش می‌دهند.
+
+آزمون انتها‌به‌انتها با فایل واقعی `hotel-data-بدروم.xlsx` روی PostgreSQL 18.1:
+۲۲ ردیف، صفر خطا، صفر تکراری و ۲۲ هتل ایجادشده. دیتابیس موقت پس از آزمون حذف شد.
+
 ## کنترل کیفیت اجراشده
 
 - `pnpm install --frozen-lockfile`: موفق، بدون تغییر Lockfile
 - Prisma format/validate/generate: موفق
-- هشت Migration روی PostgreSQL `18.1`: موفق و status به‌روز
+- نه Migration روی PostgreSQL `18.1`: موفق؛ اجرای دوم بدون Migration معوق
 - بررسی مستقیم پنج Check Constraint و Index: موفق
 - Seed دوبار: موفق؛ نرخ Seed صفر
-- Database tests: `17/17`
+- Database tests: `20/20`
 - Contracts tests: `14/14`
-- API tests: `142/142`
+- API tests: `148/148`
 - Web tests: `77/77`
 - Web typecheck: موفق
-- Full monorepo lint: موفق`r`n- Full monorepo typecheck: موفق`r`n- Full monorepo tests: موفق`r`n- Full monorepo production build: موفق؛ `/master-data` تولید شد
+- Full monorepo lint: موفق
+- Full monorepo typecheck: موفق
+- Full monorepo tests: موفق
+- Full monorepo production build: موفق؛ `/master-data` تولید شد
 
 ## باقی‌مانده و موارد مسدود
 
@@ -98,9 +124,9 @@ Export موجود MASTER-002 حفظ شده و صادقانه در وضعیت `AW
 
 - کاتالوگ‌های پیشرفته Airport/Terminal/Bank Branch، Supplier Contact/Service، Hotel Chain/Room/Meal/Facility/Composite، Aircraft/Class/Baggage/Manifest، Insurance Plan/Coverage، Tour/Transfer/Bus و Sales References مستقل
 - رمزنگاری و Unmask مخاطبان Master Data با کلید مستقل از Customers
-- Import امن `.xlsx`، Preview Token، Idempotency، Scanner Port و گزارش خطا
+- اتصال Scanner مستقل آنتی‌ویروس و Documents برای تصاویر هتل
 - نمودار تاریخچه واقعی و Audit Timeline کامل در UI
 - Smoke احرازشده CRUD/Permission/Approval/Import
 - Full monorepo lint/typecheck/test/build و اسکن نهایی پیش از Ready for Review
 
-Dependency Excel تا انتخاب کتابخانه Pin‌شده و Security Review اضافه نمی‌شود؛ بنابراین Dependency/Lockfile Lock همچنان آزاد است. Antivirus و Documents Worker آماده‌نبودنشان به‌عنوان موفقیت جعلی گزارش نمی‌شود.
+Parser ZIP با `fflate@0.8.3` دقیق Pin و Lock آن پس از تثبیت آزاد شد. Scanner مستقل آنتی‌ویروس و Documents Worker هنوز آماده نیستند و به‌عنوان موفقیت گزارش نمی‌شوند.

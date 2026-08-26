@@ -183,7 +183,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - توسعه افزایشی MASTER-002 برای Schema/Migration، Contract، Backend، Frontend، Import امن Excel و تست.
 - اطلاعات پایه میان هر دو Legal Entity مشترک است و selector شرکت آن را scope نمی‌کند.
 - Migration، Master Data shared-contract/root export و Central docs برای PC-B رزرو هستند.
-- Dependency/Lockfile پس از اثبات نبود Parser ZIP/XLSX برای `PC-B/MASTER-003` فعال شد.
+- Dependency/Lockfile پس از Pin کردن `fflate@0.8.3`، Security Review و آزمون فایل واقعی آزاد شد.
 - اتصال‌های Documents/Worker/Finance/Reservations/Integrations فقط از Public Contract یا Port واقعی؛ بدون artifact یا Provider ساختگی.
 
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
@@ -299,4 +299,3 @@ Baseline برنامه: `origin/develop` در Merge Commit
 پیاده‌سازی، validation، permission، audit، migration، UI states، تست‌های مرتبط،
 خروجی لازم و مستندات تکمیل شده؛ هیچ Secret وارد Git نشده و وضعیت/تخصیص به‌روز و
 شاخه Push شده است.
-

@@ -53,6 +53,7 @@ import {
   MasterDataLiveForm,
   type MasterDataFormMode,
 } from './master-data-live-form';
+import { HotelImportPanel } from './hotel-import-panel';
 
 const groups = ['مالی', 'جغرافیا', 'خدمات سفر', 'سازمان‌ها', 'فروش'] as const;
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
@@ -296,6 +297,9 @@ export function MasterDataWorkspace() {
               {definition.description}
             </p>
           </Card>
+          {resource === 'hotels' ? (
+            <HotelImportPanel onImported={() => void load()} />
+          ) : null}
 
           <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
             <FormField id="master-data-search-live" label="جست‌وجوی سریع">

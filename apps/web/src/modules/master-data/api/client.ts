@@ -1,6 +1,9 @@
 import type {
   MasterDataExportOperation,
   MasterDataExportRequest,
+  MasterHotelImportCommitRequest,
+  MasterHotelImportCommitResult,
+  MasterHotelImportPreview,
   MasterDataListQuery,
   MasterDataListResponse,
   MasterDataMutationRequest,
@@ -29,7 +32,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: {
       accept: 'application/json',
-      ...(init?.body ? { 'content-type': 'application/json' } : {}),
+      ...(init?.body && !(init.body instanceof FormData)
+        ? { 'content-type': 'application/json' }
+        : {}),
       ...init?.headers,
     },
   });
@@ -128,5 +133,25 @@ export const masterDataApi = {
       method: 'POST',
       body: JSON.stringify(input),
     });
+  },
+  previewHotelImport(input: { file: File; countryId: string; cityId: string }) {
+    const body = new FormData();
+    body.set('file', input.file);
+    body.set('countryId', input.countryId);
+    body.set('cityId', input.cityId);
+    body.set('templateVersion', 'HOTEL_IMPORT_V1');
+    return request<{ data: MasterHotelImportPreview }>(
+      '/hotel-imports/preview',
+      { method: 'POST', body },
+    );
+  },
+  commitHotelImport(sessionId: string, input: MasterHotelImportCommitRequest) {
+    return request<{ data: MasterHotelImportCommitResult }>(
+      `/hotel-imports/${encodeURIComponent(sessionId)}/commit`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      },
+    );
   },
 };

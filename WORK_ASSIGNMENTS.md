@@ -222,18 +222,19 @@ Finance shared-contract در `packages/contracts/src/finance/**` مرز دامن
 
 ### قفل‌های فعال PC-B/MASTER-003
 
-| قفل | مالک/Task | محدوده | وضعیت/شرط آزادسازی |
-| --- | --- | --- | --- |
-| Migration Owner | PC-B/MASTER-003 | `packages/database/prisma/schema.prisma`، Migration و Seed افزایشی Master Data | `ACTIVE` تا Merge و Handoff |
-| Master Data shared-contract/root export | PC-B/MASTER-003 | `packages/contracts/src/master-data/**` و export لازم | `ACTIVE` تا Merge و Handoff |
-| Central status/docs | PC-B/MASTER-003 | `WORK_ASSIGNMENTS.md`، `PLANS.md`، `docs/PROJECT_STATUS.md` و `docs/tasks/MASTER-003.md` | `ACTIVE` تا Merge و Handoff |
-| Dependency/Lockfile Owner | PC-B/MASTER-003 | `apps/api/package.json` و `pnpm-lock.yaml` برای Parser امن ZIP/XLSX | `ACTIVE` تا تثبیت Dependency |
+| قفل                                     | مالک/Task       | محدوده                                                                                   | وضعیت/شرط آزادسازی                                       |
+| --------------------------------------- | --------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Migration Owner                         | PC-B/MASTER-003 | `packages/database/prisma/schema.prisma`، Migration و Seed افزایشی Master Data           | `ACTIVE` تا Merge و Handoff                              |
+| Master Data shared-contract/root export | PC-B/MASTER-003 | `packages/contracts/src/master-data/**` و export لازم                                    | `ACTIVE` تا Merge و Handoff                              |
+| Central status/docs                     | PC-B/MASTER-003 | `WORK_ASSIGNMENTS.md`، `PLANS.md`، `docs/PROJECT_STATUS.md` و `docs/tasks/MASTER-003.md` | `ACTIVE` تا Merge و Handoff                              |
+| Dependency/Lockfile Owner               | PC-B/MASTER-003 | `fflate@0.8.3` در `apps/api/package.json` و `pnpm-lock.yaml`                             | `RELEASED` پس از Pin، Security Review و آزمون فایل واقعی |
 
 محدوده اجرایی MASTER-003 شامل `apps/api/src/master-data/**`،
 `apps/web/src/modules/master-data/**`، route `/master-data`، قرارداد عمومی Master Data،
 Schema/Migration افزایشی و تست‌های همان قابلیت است. فایل‌های داخلی IAM، Legal Entities،
 Customers، Finance، Procurement، Reservations، Integrations و Documents خارج از مالکیت
 این Task می‌مانند و فقط از Public Contract یا Port نسخه‌دار مصرف می‌شوند.
+
 ## قفل‌های آزادشده Sprint دوم
 
 | قفل                             | مالک پیشین                | مبنای آزادسازی                                         |
@@ -256,4 +257,3 @@ Customers، Finance، Procurement، Reservations، Integrations و Documents خ�
 - وضعیت `DONE` یعنی Commit و Push شده و گزارش تست/ریسک در Project Status ثبت شده
   است؛ ادغام‌شدن را تضمین نمی‌کند.
 - آزادکردن کار بدون تکمیل با تغییر مالک به `تخصیص‌نیافته` و ثبت دلیل انجام می‌شود.
-
