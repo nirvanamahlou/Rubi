@@ -18,8 +18,8 @@ import { AuthGuard } from '../iam/auth.guard';
 import { RequirePermissions } from '../iam/iam.decorators';
 import { PermissionGuard } from '../iam/permission.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import {
-  // eslint-disable-line @typescript-eslint/consistent-type-imports
   MasterDataExportDto,
   MasterDataListQueryDto,
   MasterDataMutationDto,
