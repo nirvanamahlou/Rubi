@@ -57,6 +57,11 @@ model User {
   customerDuplicateCandidates  CustomerDuplicateCandidate[] @relation("CustomerDuplicateCreatedBy")
   customerDuplicateReviews     CustomerDuplicateCandidate[] @relation("CustomerDuplicateReviewedBy")
   customerAuditEvents          CustomerAuditEvent[]         @relation("CustomerAuditActor")
+  legalEntityContext           UserLegalEntityContext?
+  legalEntitiesUpdated         LegalEntity[]                @relation("LegalEntityUpdatedBy")
+  legalEntityBrandingVersions  LegalEntityBrandingVersion[] @relation("LegalEntityBrandingVersionCreatedBy")
+  legalEntityAuditEvents       LegalEntityAuditEvent[]      @relation("LegalEntityAuditActor")
+  legalEntityDocumentIssues    LegalEntityDocumentIssue[]   @relation("LegalEntityDocumentIssueActor")
 
   @@map("iam_users")
 }
@@ -733,4 +738,135 @@ model CustomerAuditEvent {
   @@index([entityType, entityId, occurredAt])
   @@index([actorUserId, occurredAt])
   @@map("customer_audit_events")
+}
+
+enum LegalEntityContextMode {
+  SPECIFIC
+  ALL
+}
+
+enum LegalEntityDocumentIssueStatus {
+  ISSUED
+  FAILED
+}
+
+model LegalEntity {
+  id                      String                       @id @default(uuid()) @db.Uuid
+  code                    String                       @unique @db.VarChar(40)
+  persianName             String                       @db.VarChar(200)
+  latinName               String?                      @db.VarChar(200)
+  tradeName               String?                      @db.VarChar(200)
+  logoFileId              String?                      @db.Uuid
+  letterheadFileId        String?                      @db.Uuid
+  footerFileId            String?                      @db.Uuid
+  address                 String?                      @db.VarChar(500)
+  phone                   String?                      @db.VarChar(80)
+  email                   String?                      @db.VarChar(320)
+  website                 String?                      @db.VarChar(320)
+  nationalId              String?                      @db.VarChar(80)
+  registrationNumber      String?                      @db.VarChar(80)
+  economicCode            String?                      @db.VarChar(80)
+  paymentText             String?                      @db.VarChar(1000)
+  sealFileId              String?                      @db.Uuid
+  authorizedSignatureId   String?                      @db.Uuid
+  primaryColor            String?                      @db.VarChar(16)
+  secondaryColor          String?                      @db.VarChar(16)
+  legalFooterText         String?                      @db.VarChar(1000)
+  isActive                Boolean                      @default(true)
+  version                 Int                          @default(1)
+  brandingSnapshotVersion Int                          @default(1)
+  updatedByUserId         String?                      @db.Uuid
+  deactivatedAt           DateTime?                    @db.Timestamptz(3)
+  createdAt               DateTime                     @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime                     @updatedAt @db.Timestamptz(3)
+  updatedBy               User?                        @relation("LegalEntityUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  contexts                UserLegalEntityContext[]
+  brandingVersions        LegalEntityBrandingVersion[]
+  auditEvents             LegalEntityAuditEvent[]
+  documentIssues          LegalEntityDocumentIssue[]
+
+  @@index([isActive, persianName])
+  @@map("legal_entities")
+}
+
+model UserLegalEntityContext {
+  userId        String                 @id @db.Uuid
+  mode          LegalEntityContextMode @default(SPECIFIC)
+  legalEntityId String?                @db.Uuid
+  version       Int                    @default(1)
+  updatedAt     DateTime               @updatedAt @db.Timestamptz(3)
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  legalEntity   LegalEntity?           @relation(fields: [legalEntityId], references: [id], onDelete: Restrict)
+
+  @@index([legalEntityId])
+  @@map("user_legal_entity_contexts")
+}
+
+model LegalEntityBrandingVersion {
+  id              String      @id @default(uuid()) @db.Uuid
+  legalEntityId   String      @db.Uuid
+  version         Int
+  snapshot        Json
+  createdByUserId String      @db.Uuid
+  createdAt       DateTime    @default(now()) @db.Timestamptz(3)
+  legalEntity     LegalEntity @relation(fields: [legalEntityId], references: [id], onDelete: Restrict)
+  createdBy       User        @relation("LegalEntityBrandingVersionCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  documentIssues LegalEntityDocumentIssue[] @relation("LegalEntityDocumentIssueBranding")
+
+  @@unique([legalEntityId, version])
+  @@unique([id, legalEntityId, version])
+  @@index([legalEntityId, createdAt])
+  @@map("legal_entity_branding_versions")
+}
+
+model LegalEntityAuditEvent {
+  id             String       @id @default(uuid()) @db.Uuid
+  actorUserId    String       @db.Uuid
+  action         String       @db.VarChar(120)
+  entityId       String?      @db.Uuid
+  outcome        AuditOutcome
+  reason         String?      @db.VarChar(500)
+  beforeSnapshot Json?
+  afterSnapshot  Json?
+  occurredAt     DateTime     @default(now()) @db.Timestamptz(3)
+  actor          User         @relation("LegalEntityAuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  entity         LegalEntity? @relation(fields: [entityId], references: [id], onDelete: Restrict)
+
+  @@index([entityId, occurredAt])
+  @@index([actorUserId, occurredAt])
+  @@map("legal_entity_audit_events")
+}
+
+model LegalEntityDocumentIssue {
+  id                      String                         @id @default(uuid()) @db.Uuid
+  issuerLegalEntityId     String                         @db.Uuid
+  issuerCode              String                         @db.VarChar(40)
+  issuerName              String                         @db.VarChar(200)
+  brandingSnapshotId      String                         @db.Uuid
+  brandingSnapshotVersion Int
+  brandingSnapshot        Json
+  templateId              String                         @db.VarChar(120)
+  templateVersion         String                         @db.VarChar(80)
+  templatePolicyId        String                         @db.VarChar(120)
+  templatePolicyVersion   String                         @db.VarChar(80)
+  actorUserId             String                         @db.Uuid
+  issuedAt                DateTime                       @default(now()) @db.Timestamptz(3)
+  documentType            String                         @db.VarChar(120)
+  referenceEntityType     String                         @db.VarChar(120)
+  referenceEntityId       String                         @db.VarChar(160)
+  fileHash                String?                        @db.Char(64)
+  status                  LegalEntityDocumentIssueStatus
+  reissueReason           String?                        @db.VarChar(500)
+  originalIssueId         String?                        @db.Uuid
+  issuer                  LegalEntity                    @relation(fields: [issuerLegalEntityId], references: [id], onDelete: Restrict)
+  brandingVersion         LegalEntityBrandingVersion     @relation("LegalEntityDocumentIssueBranding", fields: [brandingSnapshotId, issuerLegalEntityId, brandingSnapshotVersion], references: [id, legalEntityId, version], onDelete: Restrict, onUpdate: Restrict)
+  actor                   User                           @relation("LegalEntityDocumentIssueActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  originalIssue           LegalEntityDocumentIssue?      @relation("LegalEntityReissues", fields: [originalIssueId], references: [id], onDelete: Restrict)
+  reissues                LegalEntityDocumentIssue[]     @relation("LegalEntityReissues")
+
+  @@index([issuerLegalEntityId, issuedAt])
+  @@index([referenceEntityType, referenceEntityId, issuedAt])
+  @@index([actorUserId, issuedAt])
+  @@map("legal_entity_document_issues")
 }

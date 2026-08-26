@@ -2,7 +2,6 @@
 
 import {
   Bell,
-  Building2,
   Check,
   ChevronsLeft,
   ChevronsRight,
@@ -27,16 +26,13 @@ import {
 } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 import { faMessages } from '@/messages/fa';
+import {
+  LegalEntityContextSelector,
+  LegalEntityProvider,
+} from '@/modules/legal-entities/components/legal-entity-context';
 import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
-import {
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/form-controls';
+import { Input } from '../ui/form-controls';
 import {
   Dialog,
   DialogClose,
@@ -357,7 +353,7 @@ function Breadcrumb() {
   );
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+function AppShellContent({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   return (
     <div className="flex min-h-screen bg-background">
@@ -449,25 +445,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Navigation mobile />
               </DrawerContent>
             </Drawer>
-            <div className="hidden min-w-40 md:block">
-              <Select defaultValue="main">
-                <SelectTrigger
-                  aria-label={faMessages.shell.branchLabel}
-                  className="border-0 bg-muted/70"
-                >
-                  <Building2
-                    aria-hidden="true"
-                    className="size-4 text-primary"
-                  />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="main">
-                    {faMessages.shell.branch}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <LegalEntityContextSelector />
             <div className="min-w-0 flex-1">
               <SearchDialog />
             </div>
@@ -482,5 +460,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
     </div>
+  );
+}
+
+export function AppShell({ children }: { children: ReactNode }) {
+  return (
+    <LegalEntityProvider>
+      <AppShellContent>{children}</AppShellContent>
+    </LegalEntityProvider>
   );
 }

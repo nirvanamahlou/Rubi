@@ -153,7 +153,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
   `DEC-OPEN-011` فقط Candidate Detection و Review دستی مجاز است و merge واقعی مسدود است.
 - PR شماره ۱۹ با Merge Commit `7d0a4f42e978b468263efdc83f780fa656fbd613` وارد `develop` شد؛ Task `DONE/MERGED` است.
 
-### `FINANCE-001` — PC-A — `READY_FOR_REVIEW`
+### `FINANCE-001` — PC-A — `DONE/MERGED`
 
 - Branch فعال: `codex/pc-a-finance-foundation` از baseline `a165923`؛ Handoff با PR #20
   و Merge `11fc875` وارد `develop` شده است.
@@ -168,7 +168,21 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - Finance به جدول‌های Customers، Sales، Reservations، Procurement یا HR query مستقیم نمی‌زند
   و فقط contract/event عمومی و referenceهای پایدار مصرف می‌کند.
 - Domain/Application، قرارداد عمومی پیشنهادی و Workspace مسیر `/finance` تکمیل شدند؛
-  ۱۷۲ تست، lint/typecheck و Production Build پاس و PR شماره ۲۱ برای Review آماده می‌شود.
+  ۱۷۲ تست، lint/typecheck و Production Build پاس شدند.
+- PR #21 با Merge `45c107e` وارد `origin/develop` شد. هیچ `FINANCE-002` یا PR/Branch فعال
+  Finance Persistence وجود ندارد؛ قفل‌های stale آن برای `LEGAL-ENTITY-CONTEXT-001` آزاد شدند.
+
+### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `READY_FOR_REVIEW`
+
+- Base: `origin/develop@0ba85d4604f6eb4d792bee4c3059a32bcf858738`.
+- Draft PR #24 به `develop` ساخته شد؛ Merge و Force Push انجام نشده است.
+- Legal Entity مستقل از Branch/Tenant و بدون scope داده عملیاتی، با دو issuer واقعی و Context مجازی `ALL` تکمیل شد.
+- Migration افزایشی، Seed تکرارپذیر، `legal-entities.v2`، Permission/Audit، Issue/Reissue Metadata، App Shell و `/system/legal-entities` آماده Review هستند.
+- صدور ترکیبی ممنوع است؛ Backend issuer فعال، Permission، Snapshot و سربرگ الزامی را دوباره اعتبارسنجی می‌کند.
+- همه Gateهای Prisma، PostgreSQL تازه، Seed دوبار، ۲۴۵ تست در ۶۶ فایل، lint/typecheck/build و Smoke Cookie/API/Web پاس شدند.
+- اتصال binary upload به Public Upload Adapter آینده Documents وابسته است؛ تا آن زمان UI فایل ساختگی یا URL عمومی نمی‌سازد.
+- Migration، Contract و اسناد مرکزی تا Merge/Handoff رزرو هستند؛ Dependency/Lockfile آزاد است.
+- اصلاحات Review PR #24 از HEAD `17ad92703251e6f708fdd3e6c9fc03fd7c31975e` روی همان Branch تکمیل شد: optimistic concurrency، Snapshot FK/immutability، trusted template policy، Reissue transaction و authenticated baseline read/switch همگی تست شده‌اند.
 
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 

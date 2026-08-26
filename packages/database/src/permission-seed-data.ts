@@ -16,4 +16,12 @@ export const PERMISSION_SEED_DATA = [
   ['customers.merge', 'customers', 'بررسی ادغام مشتریان'],
   ['customers.consent.manage', 'customers', 'مدیریت رضایت مشتریان'],
   ['customers.sensitive.read', 'customers', 'مشاهده اطلاعات حساس مشتریان'],
+  ['legal-entity.read', 'legal-entity', 'مشاهده شرکت‌های صادرکننده'],
+  ['legal-entity.switch', 'legal-entity', 'تغییر شرکت فعال'],
+  ['legal-entity.aggregate.read', 'legal-entity', 'مشاهده حالت تجمیعی شرکت‌ها'],
+  ['legal-entity.manage', 'legal-entity', 'مدیریت شرکت‌های صادرکننده'],
+  ['legal-entity.branding.manage', 'legal-entity', 'مدیریت برندینگ شرکت‌ها'],
+  ['legal-entity.audit.read', 'legal-entity', 'مشاهده Audit شرکت‌ها'],
+  ['legal-entity.document.issue', 'legal-entity', 'صدور سند با هویت شرکت'],
+  ['legal-entity.document.reissue', 'legal-entity', 'صدور مجدد سند با هویت شرکت'],
 ] as const;

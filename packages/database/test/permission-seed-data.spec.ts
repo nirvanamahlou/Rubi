@@ -20,6 +20,14 @@ describe('permission seed catalog', () => {
         'customers.merge',
         'customers.consent.manage',
         'customers.sensitive.read',
+        'legal-entity.read',
+        'legal-entity.switch',
+        'legal-entity.aggregate.read',
+        'legal-entity.manage',
+        'legal-entity.branding.manage',
+        'legal-entity.audit.read',
+        'legal-entity.document.issue',
+        'legal-entity.document.reissue',
       ]),
     );
   });

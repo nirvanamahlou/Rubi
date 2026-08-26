@@ -1,4 +1,4 @@
-export const IAM_PERMISSION_CONTRACT_VERSION = 2 as const;
+export const IAM_PERMISSION_CONTRACT_VERSION = 4 as const;
 
 export const IAM_CORE_PERMISSION_CODES = [
   'iam.users.read',
@@ -26,10 +26,26 @@ export const CUSTOMER_PERMISSION_CODES = [
   'customers.sensitive.read',
 ] as const;
 
+export const LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES = [
+  'legal-entity.read',
+  'legal-entity.switch',
+] as const;
+
+export const LEGAL_ENTITY_PERMISSION_CODES = [
+  ...LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES,
+  'legal-entity.aggregate.read',
+  'legal-entity.manage',
+  'legal-entity.branding.manage',
+  'legal-entity.audit.read',
+  'legal-entity.document.issue',
+  'legal-entity.document.reissue',
+] as const;
+
 export const IAM_PERMISSION_CODES = [
   ...IAM_CORE_PERMISSION_CODES,
   ...MASTER_DATA_PERMISSION_CODES,
   ...CUSTOMER_PERMISSION_CODES,
+  ...LEGAL_ENTITY_PERMISSION_CODES,
 ] as const;
 
 export type IamPermissionCode = (typeof IAM_PERMISSION_CODES)[number];
