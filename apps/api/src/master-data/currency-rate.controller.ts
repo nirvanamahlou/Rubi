@@ -16,7 +16,8 @@ import { AuthGuard } from '../iam/auth.guard';
 import { RequirePermissions } from '../iam/iam.decorators';
 import { PermissionGuard } from '../iam/permission.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
-import type {
+// Runtime imports are required for Nest emitDecoratorMetadata and ValidationPipe.
+import { // eslint-disable-line @typescript-eslint/consistent-type-imports
   CurrencyRateDecisionDto,
   CurrencyRateListDto,
 } from './currency-rate.dto';
