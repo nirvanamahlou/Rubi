@@ -41,7 +41,7 @@ Migration افزایشی `20260826143000_master_data_advanced_currency` اضاف
 - `entityVersion` و `reason` برای Audit اطلاعات پایه
 - `englishName` مستقل برای ارز
 
-Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 18 خالی با همه هشت Migration اجرا شد. Seed با دو کلید موقت مستقل و فقط در حافظه، دو بار بدون خطا اجرا شد. تعداد Seed نرخ ارز `0` است.
+Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 18 خالی با هر نه Migration اجرا شد. Seed با دو کلید موقت مستقل و فقط در حافظه، دو بار بدون خطا اجرا شد. تعداد Seed نرخ ارز `0` است.
 
 ### Contract و Permission
 
@@ -101,6 +101,17 @@ Export موجود MASTER-002 حفظ شده و صادقانه در وضعیت `AW
 آزمون انتها‌به‌انتها با فایل واقعی `hotel-data-بدروم.xlsx` روی PostgreSQL 18.1:
 ۲۲ ردیف، صفر خطا، صفر تکراری و ۲۲ هتل ایجادشده. دیتابیس موقت پس از آزمون حذف شد.
 
+### نتیجه Review رسمی PR #25
+
+- DTOهای Nest به‌صورت runtime import و با ValidationPipe واقعی برای payload معتبر، unknown،
+  missing، enum نامعتبر و nested DTO آزموده شدند.
+- همه فایل‌های `.rels` و اجزای externalLinks/connections/queryTables پیش از Preview بررسی و
+  با کد پایدار `HOTEL_IMPORT_EXTERNAL_RELATIONSHIP_FORBIDDEN` رد می‌شوند.
+- update/status عمومی نرخ ارز در Controller و Service با کد پایدار
+  `CURRENCY_RATE_STATUS_TRANSITION_FORBIDDEN` بسته شد؛ approve/reject اختصاصی حفظ شد.
+- پذیرش production-like: ۲۲ ایجاد، Commit تکراری بدون افزایش، فایل دوم ۲۲ Skip،
+  rollback اتمیک، Commit هم‌زمان ۲۰۱/۴۰۹، login/cookie واقعی و `/master-data` با پاسخ ۲۰۰.
+
 ## کنترل کیفیت اجراشده
 
 - `pnpm install --frozen-lockfile`: موفق، بدون تغییر Lockfile
@@ -110,7 +121,7 @@ Export موجود MASTER-002 حفظ شده و صادقانه در وضعیت `AW
 - Seed دوبار: موفق؛ نرخ Seed صفر
 - Database tests: `20/20`
 - Contracts tests: `14/14`
-- API tests: `148/148`
+- API tests: `172/172`
 - Web tests: `77/77`
 - Web typecheck: موفق
 - Full monorepo lint: موفق
@@ -126,7 +137,5 @@ Export موجود MASTER-002 حفظ شده و صادقانه در وضعیت `AW
 - رمزنگاری و Unmask مخاطبان Master Data با کلید مستقل از Customers
 - اتصال Scanner مستقل آنتی‌ویروس و Documents برای تصاویر هتل
 - نمودار تاریخچه واقعی و Audit Timeline کامل در UI
-- Smoke احرازشده CRUD/Permission/Approval/Import
-- Full monorepo lint/typecheck/test/build و اسکن نهایی پیش از Ready for Review
 
 Parser ZIP با `fflate@0.8.3` دقیق Pin و Lock آن پس از تثبیت آزاد شد. Scanner مستقل آنتی‌ویروس و Documents Worker هنوز آماده نیستند و به‌عنوان موفقیت گزارش نمی‌شوند.

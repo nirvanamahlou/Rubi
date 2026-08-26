@@ -184,6 +184,8 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - اطلاعات پایه میان هر دو Legal Entity مشترک است و selector شرکت آن را scope نمی‌کند.
 - Migration، Master Data shared-contract/root export و Central docs برای PC-B رزرو هستند.
 - Dependency/Lockfile پس از Pin کردن `fflate@0.8.3`، Security Review و آزمون فایل واقعی آزاد شد.
+- Review رسمی PR #25 روی همان Draft و Branch رفع شد؛ DTO runtime، امنیت OOXML و
+  گردش وضعیت نرخ ارز با تست‌های regression و پذیرش PostgreSQL 18 پوشش داده شدند.
 - اتصال‌های Documents/Worker/Finance/Reservations/Integrations فقط از Public Contract یا Port واقعی؛ بدون artifact یا Provider ساختگی.
 
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`

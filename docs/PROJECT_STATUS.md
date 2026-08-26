@@ -1,11 +1,11 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-26 — PR #24 ادغام و MASTER-003 آغاز شد
+آخرین به‌روزرسانی: 2026-08-26 — اصلاحات Review رسمی Draft PR #25 اعمال شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003 در حال اجرا؛ Vertical Slice نرخ ارز و Audit در Draft آماده شد**
+- وضعیت: **MASTER-003 در حال اجرا؛ Review رسمی Draft PR #25 رفع و آزمون شد**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
 - شاخه فعال: `codex/pc-b-master-data-advanced`
@@ -112,6 +112,10 @@
   کاتالوگ Meal/Room/Facility و UI متصل پیاده‌سازی شد.
 - فایل واقعی `hotel-data-بدروم.xlsx` روی PostgreSQL 18.1 با نتیجه ۲۲ ایجاد، صفر خطا
   و صفر تکراری آزموده شد؛ دیتابیس موقت پس از آزمون حذف شد.
+- Review رسمی PR #25 روی همان Draft/Branch اعمال شد: اعتبارسنجی runtime DTO، رد کامل
+  External Relationship/Data در OOXML و منع update/status عمومی نرخ ارز سخت‌سازی شدند.
+- پذیرش production-like و session واقعی: Preview فایل ۲۲ ردیفی، Commit اول ۲۲ ایجاد،
+  فایل دوم ۲۲ Skip، rollback اتمیک، تعارض هم‌زمان ۲۰۱/۴۰۹ و `/master-data` با پاسخ ۲۰۰.
 - Scanner مستقل آنتی‌ویروس و Documents برای تصاویر هنوز متصل نیستند و وضعیت آن‌ها
   صریحاً `UNAVAILABLE`/در انتظار گزارش می‌شود.
 - Scope توسعه افزایشی MASTER-002 شامل Master Data مشترک دو شرکت، نرخ مرجع غیر authoritative،
