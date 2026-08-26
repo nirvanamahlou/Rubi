@@ -154,4 +154,27 @@ describe('MasterDataService', () => {
       actor.branchIds[0],
     );
   });
+  it('forbids generic exchange-rate update and status before repository access', async () => {
+    const repository = {
+      find: vi.fn(),
+      update: vi.fn(),
+      setStatus: vi.fn(),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    const operations = [
+      service.update('exchange-rates', row.id, { rate: '610000' }, 1, actor),
+      service.status('exchange-rates', row.id, 'active', 1, actor),
+      service.status('exchange-rates', row.id, 'inactive', 1, actor),
+    ];
+
+    for (const operation of operations)
+      await expect(operation).rejects.toMatchObject({
+        response: { code: 'CURRENCY_RATE_STATUS_TRANSITION_FORBIDDEN' },
+        status: 409,
+      });
+    expect(repository.find).not.toHaveBeenCalled();
+    expect(repository.update).not.toHaveBeenCalled();
+    expect(repository.setStatus).not.toHaveBeenCalled();
+  });
 });

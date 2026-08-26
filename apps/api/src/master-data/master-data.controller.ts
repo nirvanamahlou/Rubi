@@ -18,12 +18,14 @@ import { AuthGuard } from '../iam/auth.guard';
 import { RequirePermissions } from '../iam/iam.decorators';
 import { PermissionGuard } from '../iam/permission.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
-import { // eslint-disable-line @typescript-eslint/consistent-type-imports
+import {
+  // eslint-disable-line @typescript-eslint/consistent-type-imports
   MasterDataExportDto,
   MasterDataListQueryDto,
   MasterDataMutationDto,
   MasterDataStatusDto,
 } from './master-data.dto';
+import { assertGenericCurrencyRateMutationAllowed } from './currency-rate.policy';
 import { MasterDataService } from './master-data.service';
 
 @ApiTags('Master Data')
@@ -31,7 +33,9 @@ import { MasterDataService } from './master-data.service';
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('master-data')
 export class MasterDataController {
-  constructor(@Inject(MasterDataService) private readonly service: MasterDataService) {}
+  constructor(
+    @Inject(MasterDataService) private readonly service: MasterDataService,
+  ) {}
 
   @Post('exports')
   @RequirePermissions('master_data.export')
@@ -51,7 +55,10 @@ export class MasterDataController {
 
   @Get(':resource')
   @RequirePermissions('master_data.read')
-  list(@Param('resource') resource: string, @Query() query: MasterDataListQueryDto) {
+  list(
+    @Param('resource') resource: string,
+    @Query() query: MasterDataListQueryDto,
+  ) {
     return this.service.list(resource, query as MasterDataListQuery);
   }
 
@@ -81,6 +88,7 @@ export class MasterDataController {
     @Req() request: AuthenticatedRequest,
     @Headers('x-branch-id') branchId?: string,
   ) {
+    assertGenericCurrencyRateMutationAllowed(resource);
     return this.service.update(
       resource,
       id,
@@ -100,6 +108,7 @@ export class MasterDataController {
     @Req() request: AuthenticatedRequest,
     @Headers('x-branch-id') branchId?: string,
   ) {
+    assertGenericCurrencyRateMutationAllowed(resource);
     return this.service.status(
       resource,
       id,

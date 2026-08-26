@@ -13,6 +13,7 @@ import {
   type MasterDataResource,
 } from '@rubi/contracts';
 
+import { assertGenericCurrencyRateMutationAllowed } from './currency-rate.policy';
 import {
   MasterDataRepository,
   toMasterDataRecord,
@@ -149,9 +150,10 @@ export class MasterDataService {
     actor: AuthenticatedActor,
     requestedBranch?: string,
   ) {
+    const resource = resourceOf(resourceValue);
+    assertGenericCurrencyRateMutationAllowed(resource);
     if (!version)
       throw new BadRequestException('version برای ویرایش الزامی است.');
-    const resource = resourceOf(resourceValue);
     if (resource === 'exchange-rates') {
       if (!actor.permissions.includes('master_data.currency_rate.create'))
         throw new ForbiddenException('مجوز ثبت نرخ ارز وجود ندارد.');
@@ -188,6 +190,7 @@ export class MasterDataService {
     requestedBranch?: string,
   ) {
     const resource = resourceOf(resourceValue);
+    assertGenericCurrencyRateMutationAllowed(resource);
     const row = await this.repository.setStatus(
       resource,
       id,

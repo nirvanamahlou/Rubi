@@ -1,4 +1,9 @@
-import { ValidationPipe, type CanActivate, type ExecutionContext, type INestApplication } from '@nestjs/common';
+import {
+  ValidationPipe,
+  type CanActivate,
+  type ExecutionContext,
+  type INestApplication,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,6 +18,8 @@ describe('Master Data HTTP contract', () => {
   const service = {
     list: vi.fn(),
     create: vi.fn(),
+    update: vi.fn(),
+    status: vi.fn(),
   };
   const authGuard: CanActivate = {
     canActivate(context: ExecutionContext) {
@@ -28,7 +35,10 @@ describe('Master Data HTTP contract', () => {
   };
 
   beforeEach(async () => {
-    service.list.mockResolvedValue({ data: [], meta: { page: 1, pageSize: 25, total: 0 } });
+    service.list.mockResolvedValue({
+      data: [],
+      meta: { page: 1, pageSize: 25, total: 0 },
+    });
     service.create.mockResolvedValue({ data: { id: 'record-id' } });
     const module = await Test.createTestingModule({
       controllers: [MasterDataController],
@@ -41,7 +51,11 @@ describe('Master Data HTTP contract', () => {
       .compile();
     app = module.createNestApplication();
     app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
     );
     await app.init();
   });
@@ -74,5 +88,25 @@ describe('Master Data HTTP contract', () => {
       .send({ code: 'IR' })
       .expect(400);
     expect(service.create).not.toHaveBeenCalled();
+  });
+  it('forbids generic exchange-rate update and status before the service', async () => {
+    await request(app.getHttpServer())
+      .patch('/master-data/exchange-rates/44444444-4444-4444-8444-444444444444')
+      .send({ values: { rate: '610000' }, version: 1 })
+      .expect(409)
+      .expect(({ body }) =>
+        expect(body.code).toBe('CURRENCY_RATE_STATUS_TRANSITION_FORBIDDEN'),
+      );
+    await request(app.getHttpServer())
+      .patch(
+        '/master-data/exchange-rates/44444444-4444-4444-8444-444444444444/status',
+      )
+      .send({ status: 'active', version: 1 })
+      .expect(409)
+      .expect(({ body }) =>
+        expect(body.code).toBe('CURRENCY_RATE_STATUS_TRANSITION_FORBIDDEN'),
+      );
+    expect(service.update).not.toHaveBeenCalled();
+    expect(service.status).not.toHaveBeenCalled();
   });
 });
