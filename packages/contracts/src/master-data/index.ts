@@ -1,4 +1,4 @@
-export const MASTER_DATA_CONTRACT_VERSION = 3 as const;
+export const MASTER_DATA_CONTRACT_VERSION = 4 as const;
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 
 export const MASTER_DATA_RESOURCES = [
@@ -202,6 +202,7 @@ export const masterDataEndpoints = {
     `${MASTER_DATA_API_PREFIX}/hotel-imports/${encodeURIComponent(sessionId)}/commit` as const,
 
   exports: `${MASTER_DATA_API_PREFIX}/exports` as const,
+  excelDownload: `${MASTER_DATA_API_PREFIX}/exports/xlsx/download` as const,
   exportStatus: (id: string) =>
     `${MASTER_DATA_API_PREFIX}/exports/${encodeURIComponent(id)}` as const,
 };

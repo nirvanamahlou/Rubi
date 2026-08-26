@@ -20,6 +20,7 @@ describe('Master Data HTTP contract', () => {
     create: vi.fn(),
     update: vi.fn(),
     status: vi.fn(),
+    downloadXlsx: vi.fn(),
   };
   const authGuard: CanActivate = {
     canActivate(context: ExecutionContext) {
@@ -40,6 +41,13 @@ describe('Master Data HTTP contract', () => {
       meta: { page: 1, pageSize: 25, total: 0 },
     });
     service.create.mockResolvedValue({ data: { id: 'record-id' } });
+    service.downloadXlsx.mockResolvedValue({
+      buffer: Buffer.from('xlsx-file'),
+      fileName: 'master-data-countries-2026-08-26.xlsx',
+      mimeType:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      requestId: '77777777-7777-4777-8777-777777777777',
+    });
     const module = await Test.createTestingModule({
       controllers: [MasterDataController],
       providers: [{ provide: MasterDataService, useValue: service }],
@@ -63,6 +71,35 @@ describe('Master Data HTTP contract', () => {
   afterEach(async () => {
     await app.close();
     vi.clearAllMocks();
+  });
+
+  it('downloads the generated XLSX with attachment headers', async () => {
+    await request(app.getHttpServer())
+      .post('/master-data/exports/xlsx/download')
+      .send({
+        resource: 'countries',
+        format: 'xlsx',
+        filters: {
+          search: '',
+          status: 'all',
+          sortBy: 'name',
+          sortDirection: 'asc',
+        },
+        columns: ['code', 'name', 'status', 'updatedAt'],
+        locale: 'fa-IR',
+        timezone: 'Asia/Tehran',
+      })
+      .expect(200)
+      .expect(
+        'content-type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      )
+      .expect('content-disposition', /master-data-countries-2026-08-26\.xlsx/);
+    expect(service.downloadXlsx).toHaveBeenCalledWith(
+      expect.objectContaining({ resource: 'countries', format: 'xlsx' }),
+      expect.objectContaining({ userId: expect.any(String) }),
+      undefined,
+    );
   });
 
   it('normalizes pagination through the versioned list DTO', async () => {

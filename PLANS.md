@@ -186,6 +186,8 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - Dependency/Lockfile پس از Pin کردن `fflate@0.8.3`، Security Review و آزمون فایل واقعی آزاد شد.
 - Review رسمی PR #25 روی همان Draft و Branch رفع شد؛ DTO runtime، امنیت OOXML و
   گردش وضعیت نرخ ارز با تست‌های regression و پذیرش PostgreSQL 18 پوشش داده شدند.
+- خروجی مستقیم XLSX فیلترشده و RTL تا سقف ۱۰٬۰۰۰ ردیف با Permission/Audit فعال است؛
+  PDF و خروجی آرشیوی پایدار تا اتصال Documents/Worker در وضعیت انتظار می‌مانند.
 - اتصال‌های Documents/Worker/Finance/Reservations/Integrations فقط از Public Contract یا Port واقعی؛ بدون artifact یا Provider ساختگی.
 
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`

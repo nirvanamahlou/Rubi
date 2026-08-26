@@ -191,6 +191,51 @@ describe('MasterDataService', () => {
       actor.branchIds[0],
     );
   });
+  it('builds a completed audited XLSX export from the filtered records', async () => {
+    const repository = {
+      list: vi.fn().mockResolvedValue({ rows: [row], total: 1 }),
+      createExport: vi.fn().mockResolvedValue({
+        id: '77777777-7777-4777-8777-777777777777',
+        status: 'COMPLETED',
+      }),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    const result = await service.downloadXlsx(
+      {
+        resource: 'countries',
+        format: 'xlsx',
+        filters: {
+          search: '',
+          status: 'all',
+          sortBy: 'name',
+          sortDirection: 'asc',
+        },
+        columns: ['code', 'name', 'englishName', 'status', 'updatedAt'],
+        locale: 'fa-IR',
+        timezone: 'Asia/Tehran',
+      },
+      actor,
+    );
+
+    expect(result.fileName).toMatch(
+      /^master-data-countries-\d{4}-\d{2}-\d{2}\.xlsx$/,
+    );
+    expect(result.buffer.subarray(0, 2).toString()).toBe('PK');
+    expect(repository.list).toHaveBeenCalledWith(
+      'countries',
+      expect.objectContaining({ page: 1, pageSize: 100 }),
+    );
+    expect(repository.createExport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resource: 'countries',
+        format: 'XLSX',
+        status: 'COMPLETED',
+        actorUserId: actor.userId,
+      }),
+    );
+  });
+
   it('forbids generic exchange-rate update and status before repository access', async () => {
     const repository = {
       find: vi.fn(),

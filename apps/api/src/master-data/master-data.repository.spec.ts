@@ -110,3 +110,47 @@ describe('MasterDataRepository optimistic locking', () => {
     expect(audit.create).toHaveBeenCalledTimes(1);
   });
 });
+describe('MasterDataRepository direct export audit', () => {
+  it('stores a completed request and a downloaded audit event', async () => {
+    const exportCreate = vi.fn().mockResolvedValue({
+      id: '77777777-7777-4777-8777-777777777777',
+      status: 'COMPLETED',
+    });
+    const auditCreate = vi.fn().mockResolvedValue({ id: 'audit-id' });
+    const transaction = {
+      masterDataExportRequest: { create: exportCreate },
+      masterDataAuditEvent: { create: auditCreate },
+    };
+    const database = {
+      client: {
+        $transaction: async <T>(
+          callback: (client: typeof transaction) => Promise<T>,
+        ) => callback(transaction),
+      },
+    } as unknown as DatabaseService;
+    const repository = new MasterDataRepository(database);
+
+    await repository.createExport({
+      resource: 'countries',
+      format: 'XLSX',
+      filterSnapshot: { status: 'all' },
+      columns: ['code', 'name'],
+      permissionSnapshot: ['master_data.export'],
+      actorUserId: '11111111-1111-4111-8111-111111111111',
+      actorBranchId: '33333333-3333-4333-8333-333333333333',
+      locale: 'fa-IR',
+      timezone: 'Asia/Tehran',
+      status: 'COMPLETED',
+    });
+
+    expect(exportCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ status: 'COMPLETED' }),
+    });
+    expect(auditCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: 'master_data.export.downloaded',
+        outcome: 'SUCCESS',
+      }),
+    });
+  });
+});

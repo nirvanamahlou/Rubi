@@ -16,6 +16,7 @@ import {
 } from '@rubi/contracts';
 
 import { assertGenericCurrencyRateMutationAllowed } from './currency-rate.policy';
+import { buildMasterDataXlsx, MASTER_DATA_XLSX_MIME } from './master-data.xlsx';
 import {
   MasterDataRepository,
   toMasterDataRecord,
@@ -134,6 +135,83 @@ function branchOf(actor: AuthenticatedActor, requested?: string): string {
   if (!branchId || !actor.branchIds.includes(branchId))
     throw new ForbiddenException('شعبه مجاز برای این عملیات مشخص نشده است.');
   return branchId;
+}
+
+type ExportInput = {
+  resource: string;
+  format: 'xlsx' | 'pdf';
+  filters: Record<string, unknown>;
+  columns: string[];
+  locale: 'fa-IR';
+  timezone: string;
+};
+
+const MAX_DIRECT_EXPORT_ROWS = 10_000;
+
+function validateExportInput(input: ExportInput): MasterDataResource {
+  const resource = resourceOf(input.resource);
+  const allowedFilterKeys = ['search', 'status', 'sortBy', 'sortDirection'];
+  if (
+    Object.keys(input.filters).some((key) => !allowedFilterKeys.includes(key))
+  )
+    throw new BadRequestException('فیلتر خروجی خارج از allowlist است.');
+  if (
+    input.filters.search !== undefined &&
+    (typeof input.filters.search !== 'string' ||
+      input.filters.search.length > 100)
+  )
+    throw new BadRequestException('جست‌وجوی خروجی معتبر نیست.');
+  if (
+    input.filters.status !== undefined &&
+    !['all', 'active', 'inactive'].includes(String(input.filters.status))
+  )
+    throw new BadRequestException('وضعیت فیلتر خروجی معتبر نیست.');
+  if (
+    input.filters.sortBy !== undefined &&
+    !['name', 'code', 'updatedAt'].includes(String(input.filters.sortBy))
+  )
+    throw new BadRequestException('مرتب‌سازی خروجی معتبر نیست.');
+  if (
+    input.filters.sortDirection !== undefined &&
+    !['asc', 'desc'].includes(String(input.filters.sortDirection))
+  )
+    throw new BadRequestException('جهت مرتب‌سازی خروجی معتبر نیست.');
+  const allowedColumns = new Set([
+    ...allowedFields[resource],
+    'code',
+    'name',
+    'status',
+    'updatedAt',
+  ]);
+  if (input.columns.some((column) => !allowedColumns.has(column)))
+    throw new BadRequestException('ستون خروجی خارج از allowlist است.');
+  if (
+    input.columns.length < 1 ||
+    input.columns.length > 30 ||
+    new Set(input.columns).size !== input.columns.length
+  )
+    throw new BadRequestException('بین ۱ تا ۳۰ ستون یکتای خروجی لازم است.');
+  try {
+    new Intl.DateTimeFormat(input.locale, {
+      timeZone: input.timezone,
+    }).format();
+  } catch {
+    throw new BadRequestException('منطقه زمانی خروجی معتبر نیست.');
+  }
+  return resource;
+}
+
+function exportQuery(input: ExportInput): MasterDataListQuery {
+  return {
+    search:
+      typeof input.filters.search === 'string' ? input.filters.search : '',
+    status: (input.filters.status ?? 'all') as MasterDataListQuery['status'],
+    sortBy: (input.filters.sortBy ?? 'name') as MasterDataListQuery['sortBy'],
+    sortDirection: (input.filters.sortDirection ??
+      'asc') as MasterDataListQuery['sortDirection'],
+    page: 1,
+    pageSize: 100,
+  };
 }
 
 @Injectable()
@@ -262,27 +340,7 @@ export class MasterDataService {
     actor: AuthenticatedActor,
     requestedBranch?: string,
   ) {
-    const filterKeys = Object.keys(input.filters);
-    const resource = resourceOf(input.resource);
-    const allowedFilterKeys = ['search', 'status', 'sortBy', 'sortDirection'];
-    if (filterKeys.some((key) => !allowedFilterKeys.includes(key)))
-      throw new BadRequestException('فیلتر خروجی خارج از allowlist است.');
-    if (
-      input.filters.status !== undefined &&
-      !['all', 'active', 'inactive'].includes(String(input.filters.status))
-    )
-      throw new BadRequestException('وضعیت فیلتر خروجی معتبر نیست.');
-    const allowedColumns = new Set([
-      ...allowedFields[resource],
-      'code',
-      'name',
-      'status',
-      'updatedAt',
-    ]);
-    if (input.columns.some((column) => !allowedColumns.has(column)))
-      throw new BadRequestException('ستون خروجی خارج از allowlist است.');
-    if (input.columns.length < 1 || input.columns.length > 30)
-      throw new BadRequestException('بین ۱ تا ۳۰ ستون خروجی لازم است.');
+    const resource = validateExportInput(input);
     const request = await this.repository.createExport({
       resource,
       format: input.format.toUpperCase() as 'XLSX' | 'PDF',
@@ -303,6 +361,56 @@ export class MasterDataService {
         artifactId: request.artifactId,
         createdAt: request.createdAt.toISOString(),
       },
+    };
+  }
+
+  async downloadXlsx(
+    input: ExportInput,
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+  ) {
+    if (input.format !== 'xlsx')
+      throw new BadRequestException('این مسیر فقط خروجی Excel را می‌پذیرد.');
+    const resource = validateExportInput(input);
+    const actorBranchId = branchOf(actor, requestedBranch);
+    const query = exportQuery(input);
+    const firstPage = await this.repository.list(resource, query);
+    if (firstPage.total > MAX_DIRECT_EXPORT_ROWS)
+      throw new BadRequestException(
+        `حداکثر ${MAX_DIRECT_EXPORT_ROWS.toLocaleString('fa-IR')} ردیف در هر خروجی Excel مجاز است؛ فیلتر را محدودتر کنید.`,
+      );
+    const rows = [...firstPage.rows];
+    for (let page = 2; rows.length < firstPage.total; page += 1) {
+      const nextPage = await this.repository.list(resource, { ...query, page });
+      rows.push(...nextPage.rows);
+    }
+    const workbook = buildMasterDataXlsx({
+      resource,
+      columns: input.columns,
+      records: rows.map((row) => toMasterDataRecord(resource, row)),
+      locale: input.locale,
+      timezone: input.timezone,
+    });
+    const request = await this.repository.createExport({
+      resource,
+      format: 'XLSX',
+      filterSnapshot: input.filters,
+      columns: input.columns,
+      permissionSnapshot: actor.permissions.filter((code) =>
+        code.startsWith('master_data.'),
+      ),
+      actorUserId: actor.userId,
+      actorBranchId,
+      locale: input.locale,
+      timezone: input.timezone,
+      status: 'COMPLETED',
+    });
+    const date = new Date().toISOString().slice(0, 10);
+    return {
+      buffer: Buffer.from(workbook),
+      fileName: `master-data-${resource}-${date}.xlsx`,
+      mimeType: MASTER_DATA_XLSX_MIME,
+      requestId: request.id,
     };
   }
 

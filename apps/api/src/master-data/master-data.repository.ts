@@ -315,16 +315,25 @@ export class MasterDataRepository {
     actorBranchId: string;
     locale: string;
     timezone: string;
+    status?: 'COMPLETED';
   }) {
     return this.database.client.$transaction(async (transaction) => {
+      const { status, ...payload } = data;
       const request = await transaction.masterDataExportRequest.create({
-        data: { ...data, filterSnapshot: json(data.filterSnapshot) },
+        data: {
+          ...payload,
+          filterSnapshot: json(data.filterSnapshot),
+          ...(status ? { status } : {}),
+        },
       });
       await transaction.masterDataAuditEvent.create({
         data: {
           actorUserId: data.actorUserId,
           actorBranchId: data.actorBranchId,
-          action: 'master_data.export.requested',
+          action:
+            request.status === 'COMPLETED'
+              ? 'master_data.export.downloaded'
+              : 'master_data.export.requested',
           resource: data.resource,
           entityId: request.id,
           outcome: AuditOutcome.SUCCESS,

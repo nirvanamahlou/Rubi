@@ -70,6 +70,7 @@ export function MasterDataWorkspace() {
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [selected, setSelected] = useState<MasterDataRecord | undefined>();
   const [notice, setNotice] = useState<string | null>(null);
+  const [exportingExcel, setExportingExcel] = useState(false);
   const definition = getMasterDataDefinition(resource);
   const isCountryCity = resource === 'countries' || resource === 'cities';
 
@@ -191,35 +192,64 @@ export function MasterDataWorkspace() {
     }
   }
   async function requestExport(format: 'xlsx' | 'pdf') {
+    const input = {
+      resource,
+      format,
+      filters: {
+        search: query.search,
+        status: query.status,
+        sortBy: query.sortBy,
+        sortDirection: query.sortDirection,
+      },
+      columns: Array.from(
+        new Set([
+          'code',
+          'name',
+          ...definition.fields.map((field) => field.key),
+          'status',
+          'updatedAt',
+        ]),
+      ),
+      locale: 'fa-IR' as const,
+      timezone:
+        Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tehran',
+    };
+    if (format === 'xlsx') setExportingExcel(true);
     try {
-      const response = await masterDataApi.export({
-        resource,
-        format,
-        filters: {
-          search: query.search,
-          status: query.status,
-          sortBy: query.sortBy,
-          sortDirection: query.sortDirection,
-        },
-        columns: ['code', 'name', 'status', 'updatedAt'],
-        locale: 'fa-IR',
-        timezone:
-          Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tehran',
-      });
+      if (format === 'xlsx') {
+        const file = await masterDataApi.downloadExcel(input);
+        const url = window.URL.createObjectURL(file.blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = file.fileName;
+        document.body.append(anchor);
+        anchor.click();
+        anchor.remove();
+        window.setTimeout(() => window.URL.revokeObjectURL(url), 0);
+        setNotice(`فایل Excel ${definition.label} با موفقیت دانلود شد.`);
+        return;
+      }
+      const response = await masterDataApi.export(input);
       setNotice(
-        `درخواست خروجی ثبت شد (${response.data.status}). تولید artifact منتظر Documents/Worker است.`,
+        `درخواست خروجی PDF ثبت شد (${response.data.status}). تولید فایل منتظر Documents/Worker است.`,
       );
     } catch (error) {
       setNotice(
-        error instanceof Error ? error.message : 'ثبت خروجی ناموفق بود.',
+        error instanceof Error ? error.message : 'دریافت خروجی ناموفق بود.',
       );
+    } finally {
+      if (format === 'xlsx') setExportingExcel(false);
     }
   }
 
   function renderResourceActions() {
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <Button onClick={() => void requestExport('xlsx')} variant="outline">
+        <Button
+          loading={exportingExcel}
+          onClick={() => void requestExport('xlsx')}
+          variant="outline"
+        >
           <FileSpreadsheet aria-hidden="true" className="size-4" />
           Excel
         </Button>

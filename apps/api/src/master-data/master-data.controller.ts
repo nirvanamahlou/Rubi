@@ -3,16 +3,20 @@ import {
   Controller,
   Get,
   Headers,
+  HttpCode,
   Inject,
   Param,
   Patch,
   Post,
   Query,
   Req,
+  Res,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import type { MasterDataListQuery } from '@rubi/contracts';
+import type { Response } from 'express';
 
 import { AuthGuard } from '../iam/auth.guard';
 import { RequirePermissions } from '../iam/iam.decorators';
@@ -36,6 +40,25 @@ export class MasterDataController {
   constructor(
     @Inject(MasterDataService) private readonly service: MasterDataService,
   ) {}
+
+  @Post('exports/xlsx/download')
+  @HttpCode(200)
+  @RequirePermissions('master_data.export')
+  async downloadXlsx(
+    @Body() dto: MasterDataExportDto,
+    @Req() request: AuthenticatedRequest,
+    @Res({ passthrough: true }) response: Response,
+    @Headers('x-branch-id') branchId?: string,
+  ) {
+    const file = await this.service.downloadXlsx(dto, request.actor, branchId);
+    response.setHeader('content-type', file.mimeType);
+    response.setHeader(
+      'content-disposition',
+      `attachment; filename="${file.fileName}"`,
+    );
+    response.setHeader('x-export-request-id', file.requestId);
+    return new StreamableFile(file.buffer);
+  }
 
   @Post('exports')
   @RequirePermissions('master_data.export')

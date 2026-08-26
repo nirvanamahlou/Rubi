@@ -72,11 +72,11 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 - فرم ارز شامل نام انگلیسی و تعداد رقم اعشار است.
 - فرم نرخ شامل نوع، زمان مشاهده، شروع/پایان اعتبار و توضیح اصلاح است.
 - عملیات تأیید/رد به Backend واقعی متصل است و دلیل تصمیم دریافت می‌شود.
-- پیام UI صریحاً مرجع و non-authoritative بودن نرخ و انتظار Export برای Documents/Worker را نشان می‌دهد.
+- پیام UI صریحاً مرجع و non-authoritative بودن نرخ را نشان می‌دهد؛ Excel مستقیم دانلود می‌شود و PDF منتظر Documents/Worker می‌ماند.
 
 ## وضعیت Export و Integration
 
-Export موجود MASTER-002 حفظ شده و صادقانه در وضعیت `AWAITING_DOCUMENTS_WORKER` باقی می‌ماند. فایل ساختگی ساخته نمی‌شود. اتصال Finance، Documents، Reservations، Procurement یا Integrations در این مرحله جعل نشده است.
+خروجی XLSX طبق ADR-022 به‌صورت گذرا، فیلترشده و مستقیم تا سقف ۱۰٬۰۰۰ ردیف تولید می‌شود و Permission/Audit دارد. خروجی PDF و هر Artifact پایدار یا آرشیوی صادقانه در وضعیت `AWAITING_DOCUMENTS_WORKER` باقی می‌ماند. اتصال Finance، Documents، Reservations، Procurement یا Integrations جعل نشده است.
 
 ## Import واقعی هتل — HOTEL_IMPORT_V1
 

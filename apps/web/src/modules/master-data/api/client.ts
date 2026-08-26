@@ -24,6 +24,41 @@ export class MasterDataApiError extends Error {
   }
 }
 
+async function requestFile(
+  path: string,
+  input: MasterDataExportRequest,
+): Promise<{ blob: Blob; fileName: string }> {
+  const baseUrl = getPublicApiBaseUrl();
+  if (!baseUrl) throw new MasterDataApiError('نشانی API پیکربندی نشده است.', 0);
+  const response = await fetch(`${baseUrl}/master-data${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      accept:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    const envelope = (await response.json().catch(() => null)) as {
+      error?: { message?: string };
+      message?: string;
+    } | null;
+    throw new MasterDataApiError(
+      envelope?.error?.message ??
+        envelope?.message ??
+        'دریافت خروجی Excel ناموفق بود.',
+      response.status,
+    );
+  }
+  const disposition = response.headers.get('content-disposition') ?? '';
+  const fileName =
+    /filename="?([^";]+)"?/i.exec(disposition)?.[1] ??
+    `master-data-${input.resource}.xlsx`;
+  return { blob: await response.blob(), fileName };
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new MasterDataApiError('نشانی API پیکربندی نشده است.', 0);
@@ -127,6 +162,9 @@ export const masterDataApi = {
       data: readonly Record<string, unknown>[];
       meta: { total: number };
     }>(`/audit/${resource}/${encodeURIComponent(entityId)}?page=${page}`);
+  },
+  downloadExcel(input: MasterDataExportRequest) {
+    return requestFile('/exports/xlsx/download', input);
   },
   export(input: MasterDataExportRequest) {
     return request<{ data: MasterDataExportOperation }>('/exports', {
