@@ -8,6 +8,8 @@ import {
   MasterDataAuditController,
 } from './currency-rate.controller';
 import { CurrencyRateService } from './currency-rate.service';
+import { HotelImportController } from './hotel-import.controller';
+import { HotelImportService } from './hotel-import.service';
 import { MasterDataController } from './master-data.controller';
 import { MasterDataRepository } from './master-data.repository';
 import { MasterDataService } from './master-data.service';
@@ -17,6 +19,7 @@ import { MasterDataService } from './master-data.service';
   controllers: [
     CurrencyRateController,
     MasterDataAuditController,
+    HotelImportController,
     MasterDataController,
   ],
   providers: [
@@ -25,6 +28,7 @@ import { MasterDataService } from './master-data.service';
     MasterDataRepository,
     MasterDataService,
     CurrencyRateService,
+    HotelImportService,
   ],
 })
 export class MasterDataModule {}

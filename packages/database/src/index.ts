@@ -14,6 +14,8 @@ export {
   MasterDataExportStatus,
   MasterCurrencyRateStatus,
   MasterCurrencyRateType,
+  MasterHotelImportDuplicateBehavior,
+  MasterHotelImportStatus,
   MasterOrganizationRoleCode,
   LegalEntityContextMode,
   LegalEntityDocumentIssueStatus,

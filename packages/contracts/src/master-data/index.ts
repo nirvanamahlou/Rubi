@@ -1,4 +1,4 @@
-export const MASTER_DATA_CONTRACT_VERSION = 2 as const;
+export const MASTER_DATA_CONTRACT_VERSION = 3 as const;
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 
 export const MASTER_DATA_RESOURCES = [
@@ -112,6 +112,76 @@ export interface MasterDataAuditRecord {
   reason: string | null;
   occurredAt: string;
 }
+export type MasterHotelImportDuplicateBehavior = 'SKIP' | 'UPDATE';
+
+export interface MasterHotelImportIssue {
+  rowNumber?: number;
+  column?: string;
+  code: string;
+  message: string;
+}
+
+export interface MasterHotelImportPreview {
+  sessionId: string;
+  previewToken: string;
+  previewExpiresAt: string;
+  templateVersion: 'HOTEL_IMPORT_V1';
+  scope: {
+    countryId: string;
+    cityId: string;
+    country: string;
+    city: string;
+  };
+  mapping: Readonly<Record<string, string>>;
+  security: {
+    entryCount: number;
+    uncompressedBytes: number;
+    formulaCount: 0;
+    externalLinkCount: 0;
+    macroCount: 0;
+    malwareScanStatus: 'UNAVAILABLE';
+  };
+  counts: { rows: number; invalid: number; duplicates: number };
+  rows: readonly {
+    rowNumber: number;
+    code: string;
+    englishName: string;
+    city: string;
+    starRating: number | null;
+    mealServiceCode: string | null;
+    defaultRoomType: string | null;
+    facilityCount: number;
+    isActive: boolean;
+    duplicate: boolean;
+  }[];
+  issues: readonly MasterHotelImportIssue[];
+  warnings: readonly MasterHotelImportIssue[];
+  previewTruncated: boolean;
+  atomicCommit: true;
+}
+
+export interface MasterHotelImportCommitRequest {
+  previewToken: string;
+  idempotencyKey: string;
+  duplicateBehavior: MasterHotelImportDuplicateBehavior;
+  createMissingReferences: boolean;
+}
+
+export interface MasterHotelImportCommitResult {
+  sessionId: string;
+  status: 'COMPLETED';
+  counts: {
+    rows: number;
+    valid: number;
+    invalid: number;
+    duplicates: number;
+    created: number;
+    updated: number;
+    skipped: number;
+  };
+  committedAt: string | null;
+}
+
 export const masterDataEndpoints = {
   list: (resource: MasterDataResource) =>
     `${MASTER_DATA_API_PREFIX}/${resource}` as const,
@@ -126,6 +196,11 @@ export const masterDataEndpoints = {
     `${MASTER_DATA_API_PREFIX}/currency-rates/${encodeURIComponent(id)}/${action}` as const,
   audit: (resource: string, entityId: string) =>
     `${MASTER_DATA_API_PREFIX}/audit/${encodeURIComponent(resource)}/${encodeURIComponent(entityId)}` as const,
+  hotelImportPreview:
+    `${MASTER_DATA_API_PREFIX}/hotel-imports/preview` as const,
+  hotelImportCommit: (sessionId: string) =>
+    `${MASTER_DATA_API_PREFIX}/hotel-imports/${encodeURIComponent(sessionId)}/commit` as const,
+
   exports: `${MASTER_DATA_API_PREFIX}/exports` as const,
   exportStatus: (id: string) =>
     `${MASTER_DATA_API_PREFIX}/exports/${encodeURIComponent(id)}` as const,

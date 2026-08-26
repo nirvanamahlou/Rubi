@@ -30,4 +30,11 @@ export const environmentValidationSchema = Joi.object({
     .integer()
     .min(1)
     .required(),
+  MASTER_DATA_IMPORT_TOKEN_KEY_BASE64: Joi.string()
+    .pattern(/^[A-Za-z0-9+/]{43}=$/)
+    .invalid(
+      Joi.ref('CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64'),
+      Joi.ref('CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64'),
+    )
+    .required(),
 });

@@ -13,6 +13,7 @@ const validEnvironment = {
   CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64: encryptionKey,
   CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64: fingerprintKey,
   CUSTOMER_CONTACT_ENCRYPTION_KEY_VERSION: 1,
+  MASTER_DATA_IMPORT_TOKEN_KEY_BASE64: Buffer.alloc(32, 3).toString('base64'),
 };
 
 describe('API environment validation', () => {
