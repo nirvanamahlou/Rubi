@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { strFromU8, unzipSync } from 'fflate';
+import { createHash } from 'node:crypto';
 
 export const HOTEL_IMPORT_TEMPLATE_VERSION = 'HOTEL_IMPORT_V1' as const;
 export const HOTEL_IMPORT_MIME =
@@ -88,6 +89,15 @@ function fail(message: string): never {
     message,
   });
 }
+function generateHotelCode(englishName: string, city: string) {
+  const token = createHash('sha256')
+    .update(`${englishName}:${city}`)
+    .digest('hex')
+    .slice(0, 12)
+    .toUpperCase();
+  return `HOTEL_${token}`;
+}
+
 function failExternalRelationship(
   externalLinkCount: number,
   entries: readonly string[],
@@ -359,11 +369,13 @@ export function parseHotelImportWorkbook(input: {
 
   rows.forEach((cells, index) => {
     const rowNumber = index + 2;
-    const code = normalize(cells[0] ?? '').toUpperCase();
+
     const englishName = normalize(cells[1] ?? '');
     const city = normalize(cells[3] ?? '');
+    const suppliedCode = normalize(cells[0] ?? '').toUpperCase();
+    const code = suppliedCode || generateHotelCode(englishName, city);
     const status = normalize(cells[15] ?? '');
-    if (!codePattern.test(code))
+    if (suppliedCode && !codePattern.test(suppliedCode))
       issues.push({
         rowNumber,
         column: 'شناسه هتل',

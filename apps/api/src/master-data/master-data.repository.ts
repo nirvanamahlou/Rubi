@@ -17,6 +17,7 @@ type Row = Record<string, unknown> & {
 };
 
 interface Delegate {
+  findFirst(args: object): Promise<Row | null>;
   findMany(args: object): Promise<Row[]>;
   findUnique(args: object): Promise<Row | null>;
   count(args: object): Promise<number>;
@@ -68,7 +69,9 @@ const nameFields: Record<MasterDataResource, string> = {
 };
 
 function delegate(client: unknown, resource: MasterDataResource): Delegate {
-  return (client as Record<string, Delegate>)[delegateNames[resource]] as Delegate;
+  return (client as Record<string, Delegate>)[
+    delegateNames[resource]
+  ] as Delegate;
 }
 
 function relations(resource: MasterDataResource): object | undefined {
@@ -80,7 +83,11 @@ function relations(resource: MasterDataResource): object | undefined {
 
 function scalar(value: unknown): string | number | boolean | null {
   if (value === null || value === undefined) return null;
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  )
     return value;
   if (value instanceof Date) return value.toISOString();
   if (Array.isArray(value)) return value.map(String).join(',');
@@ -106,9 +113,21 @@ export function toMasterDataRecord(
         ? `${code} · ${String(row.source ?? '')}`
         : String(row.name ?? '');
   const omitted = new Set([
-    'id', 'code', 'name', 'displayName', 'isActive', 'version', 'createdAt',
-    'updatedAt', 'createdByUserId', 'updatedByUserId', 'deactivatedByUserId',
-    'deactivatedAt', 'fromCurrency', 'toCurrency', 'roles',
+    'id',
+    'code',
+    'name',
+    'displayName',
+    'isActive',
+    'version',
+    'createdAt',
+    'updatedAt',
+    'createdByUserId',
+    'updatedByUserId',
+    'deactivatedByUserId',
+    'deactivatedAt',
+    'fromCurrency',
+    'toCurrency',
+    'roles',
   ]);
   const attributes = Object.fromEntries(
     Object.entries(row)
@@ -120,7 +139,8 @@ export function toMasterDataRecord(
     attributes.toCurrencyCode = String(to?.code ?? '');
   }
   if (resource === 'organizations') attributes.displayName = name;
-  if (roles) attributes.roleCodes = roles.map(({ roleCode }) => roleCode).join(',');
+  if (roles)
+    attributes.roleCodes = roles.map(({ roleCode }) => roleCode).join(',');
   return {
     id: row.id,
     resource,
@@ -136,7 +156,9 @@ export function toMasterDataRecord(
 
 @Injectable()
 export class MasterDataRepository {
-  constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
+  constructor(
+    @Inject(DatabaseService) private readonly database: DatabaseService,
+  ) {}
 
   async list(resource: MasterDataResource, query: MasterDataListQuery) {
     const model = delegate(this.database.client, resource);
@@ -180,6 +202,15 @@ export class MasterDataRepository {
     return delegate(this.database.client, resource).findUnique(args);
   }
 
+  async codeExists(resource: MasterDataResource, code: string) {
+    if (resource === 'exchange-rates') return false;
+    return Boolean(
+      await delegate(this.database.client, resource).findFirst({
+        where: { code },
+      }),
+    );
+  }
+
   async create(
     resource: MasterDataResource,
     data: Record<string, unknown>,
@@ -188,7 +219,11 @@ export class MasterDataRepository {
   ) {
     return this.database.client.$transaction(async (transaction) => {
       const row = await delegate(transaction, resource).create({
-        data: { ...data, createdByUserId: actorUserId, updatedByUserId: actorUserId },
+        data: {
+          ...data,
+          createdByUserId: actorUserId,
+          updatedByUserId: actorUserId,
+        },
         ...(relations(resource) ? { include: relations(resource) } : {}),
       });
       await transaction.masterDataAuditEvent.create({

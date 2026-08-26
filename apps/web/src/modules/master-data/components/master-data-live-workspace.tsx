@@ -421,7 +421,7 @@ export function MasterDataWorkspace() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="name">عنوان</SelectItem>
-                  <SelectItem value="code">کد</SelectItem>
+                  <SelectItem value="code">کد سیستمی</SelectItem>
                   <SelectItem value="updatedAt">آخرین تغییر</SelectItem>
                 </SelectContent>
               </Select>
@@ -482,7 +482,7 @@ export function MasterDataWorkspace() {
               <table className="w-full min-w-[46rem] text-sm">
                 <thead className="bg-muted/50 text-muted-foreground">
                   <tr>
-                    <th className="p-4 text-start">کد</th>
+                    <th className="p-4 text-start">کد سیستمی</th>
                     <th className="p-4 text-start">عنوان</th>
                     <th className="p-4 text-start">وضعیت</th>
                     <th className="p-4 text-start">آخرین تغییر</th>

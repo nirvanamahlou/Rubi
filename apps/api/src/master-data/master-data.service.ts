@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import {
   BadRequestException,
   ConflictException,
@@ -34,6 +36,47 @@ const organizationRoles = new Set([
   'BROKER',
 ]);
 
+const autoCodeAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const compactCodeRules: Partial<
+  Record<MasterDataResource, { alphabet: string; length: number }>
+> = {
+  countries: { alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', length: 2 },
+  currencies: { alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', length: 3 },
+  airlines: { alphabet: autoCodeAlphabet, length: 2 },
+};
+const resourceCodePrefixes: Record<MasterDataResource, string> = {
+  countries: 'CNT',
+  cities: 'CITY',
+  currencies: 'CUR',
+  'exchange-rates': 'RATE',
+  banks: 'BANK',
+  insurers: 'INS',
+  airlines: 'AIR',
+  hotels: 'HOTEL',
+  organizations: 'ORG',
+  brokers: 'BROKER',
+  leaders: 'LEADER',
+  'acquaintance-methods': 'ACQ',
+};
+
+function autoCodeSource(
+  values: Record<string, string | number | readonly string[] | null>,
+): string {
+  for (const field of ['displayName', 'name', 'legalName', 'englishName']) {
+    const value = values[field];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  throw new BadRequestException('نام رکورد برای تولید کد داخلی الزامی است.');
+}
+
+function hashToken(seed: string, alphabet: string, length: number): string {
+  const digest = createHash('sha256').update(seed, 'utf8').digest();
+  return Array.from(
+    { length },
+    (_, index) => alphabet[(digest[index] ?? 0) % alphabet.length],
+  ).join('');
+}
+
 const allowedFields: Record<MasterDataResource, readonly string[]> = {
   countries: ['code', 'name', 'englishName'],
   cities: ['code', 'name', 'countryId'],
@@ -60,9 +103,9 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
 };
 
 const requiredFields: Record<MasterDataResource, readonly string[]> = {
-  countries: ['code', 'name', 'englishName'],
-  cities: ['code', 'name', 'countryId'],
-  currencies: ['code', 'name'],
+  countries: ['name', 'englishName'],
+  cities: ['name', 'countryId'],
+  currencies: ['name'],
   'exchange-rates': [
     'fromCurrencyCode',
     'toCurrencyCode',
@@ -70,14 +113,14 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
     'source',
     'observedAt',
   ],
-  banks: ['code', 'name', 'countryId'],
-  insurers: ['code', 'name', 'organizationId'],
-  airlines: ['code', 'name', 'organizationId'],
-  hotels: ['code', 'name', 'cityId'],
-  organizations: ['code', 'legalName', 'displayName', 'roleCodes'],
-  brokers: ['code', 'name', 'organizationId'],
-  leaders: ['code', 'name', 'languages'],
-  'acquaintance-methods': ['code', 'name'],
+  banks: ['name', 'countryId'],
+  insurers: ['name', 'organizationId'],
+  airlines: ['name', 'organizationId'],
+  hotels: ['name', 'cityId'],
+  organizations: ['legalName', 'displayName', 'roleCodes'],
+  brokers: ['name', 'organizationId'],
+  leaders: ['name', 'languages'],
+  'acquaintance-methods': ['name'],
 };
 
 function resourceOf(value: string): MasterDataResource {
@@ -276,6 +319,30 @@ export class MasterDataService {
     };
   }
 
+  private async generateAutoCode(
+    resource: Exclude<MasterDataResource, 'exchange-rates'>,
+    values: Record<string, string | number | readonly string[] | null>,
+  ): Promise<string> {
+    const source = autoCodeSource(values).normalize('NFKC');
+    const compactRule = compactCodeRules[resource];
+    for (let attempt = 0; attempt < 2_048; attempt += 1) {
+      const seed = `${resource}:${source}:${attempt}`;
+      const candidate = compactRule
+        ? hashToken(seed, compactRule.alphabet, compactRule.length)
+        : `${resourceCodePrefixes[resource]}_${hashToken(
+            seed,
+            autoCodeAlphabet,
+            12,
+          )}`;
+      if (!(await this.repository.codeExists(resource, candidate)))
+        return candidate;
+    }
+    throw new ConflictException({
+      code: 'MASTER_DATA_CODE_EXHAUSTED',
+      message: 'تولید کد داخلی یکتا برای این رکورد ممکن نشد.',
+    });
+  }
+
   private async prepare(
     resource: MasterDataResource,
     values: Record<string, string | number | readonly string[] | null>,
@@ -298,30 +365,15 @@ export class MasterDataService {
         throw new BadRequestException(`فیلد الزامی: ${missing.join(', ')}`);
     }
     const data: Record<string, unknown> = { ...values };
-    if (typeof data.code === 'string') {
-      const code = data.code.trim().toUpperCase();
-      if (!codePattern.test(code))
-        throw new BadRequestException('کد canonical معتبر نیست.');
-      data.code = code;
+    if (resource !== 'exchange-rates') {
+      if (partial && Object.hasOwn(values, 'code'))
+        throw new BadRequestException(
+          'کد داخلی به‌صورت خودکار تولید می‌شود و قابل ویرایش نیست.',
+        );
+      if (!partial) data.code = await this.generateAutoCode(resource, values);
     }
-    if (
-      resource === 'countries' &&
-      typeof data.code === 'string' &&
-      data.code.length !== 2
-    )
-      throw new BadRequestException('کد کشور باید ISO-2 باشد.');
-    if (
-      resource === 'currencies' &&
-      typeof data.code === 'string' &&
-      data.code.length !== 3
-    )
-      throw new BadRequestException('کد ارز باید ISO-4217 باشد.');
-    if (
-      resource === 'airlines' &&
-      typeof data.code === 'string' &&
-      data.code.length !== 2
-    )
-      throw new BadRequestException('کد ایرلاین باید IATA-2 باشد.');
+    if (typeof data.code === 'string' && !codePattern.test(data.code))
+      throw new BadRequestException('کد داخلی تولیدشده معتبر نیست.');
     if (resource === 'airlines' && typeof data.icaoCode === 'string') {
       const icaoCode = data.icaoCode.trim().toUpperCase();
       if (icaoCode.length !== 3)

@@ -32,39 +32,76 @@ const row = {
 };
 
 describe('MasterDataService', () => {
-  it('persists a validated record with actor and branch scope', async () => {
+  it('generates and persists an internal code with actor and branch scope', async () => {
     const repository = {
-      create: vi.fn().mockResolvedValue(row),
+      codeExists: vi.fn().mockResolvedValue(false),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
     } as unknown as MasterDataRepository;
     const service = new MasterDataService(repository);
 
-    await expect(
-      service.create(
-        'countries',
-        { code: 'ir', name: 'ایران', englishName: 'Iran' },
-        actor,
-      ),
-    ).resolves.toMatchObject({ data: { code: 'IR', status: 'active' } });
+    const result = await service.create(
+      'countries',
+      { name: 'ایران', englishName: 'Iran' },
+      actor,
+    );
+
+    expect(result.data.code).toMatch(/^[A-Z]{2}$/);
+    expect(repository.codeExists).toHaveBeenCalledWith(
+      'countries',
+      expect.stringMatching(/^[A-Z]{2}$/),
+    );
     expect(repository.create).toHaveBeenCalledWith(
       'countries',
-      { code: 'IR', name: 'ایران', englishName: 'Iran' },
+      {
+        code: expect.stringMatching(/^[A-Z]{2}$/),
+        name: 'ایران',
+        englishName: 'Iran',
+      },
       actor.userId,
       actor.branchIds[0],
     );
   });
 
   it('denies mutations when no authorized branch exists', async () => {
-    const repository = { create: vi.fn() } as unknown as MasterDataRepository;
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      create: vi.fn(),
+    } as unknown as MasterDataRepository;
     const service = new MasterDataService(repository);
 
     await expect(
       service.create(
         'countries',
-        { code: 'IR', name: 'ایران', englishName: 'Iran' },
+        { name: 'ایران', englishName: 'Iran' },
         { ...actor, branchIds: [] },
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects manual changes to an automatically generated code', async () => {
+    const repository = {
+      update: vi.fn(),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await expect(
+      service.update(
+        'countries',
+        row.id,
+        { code: 'ZZ', name: 'ایران جدید' },
+        1,
+        actor,
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(repository.update).not.toHaveBeenCalled();
   });
 
   it('returns a coded conflict when the atomic version claim loses', async () => {

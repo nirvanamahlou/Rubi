@@ -259,7 +259,7 @@ export function HotelImportPanel({ onImported }: { onImported: () => void }) {
               <thead className="sticky top-0 bg-slate-100">
                 <tr>
                   <th className="p-2">ردیف</th>
-                  <th className="p-2">کد</th>
+                  <th className="p-2">کد سیستمی</th>
                   <th className="p-2">نام هتل</th>
                   <th className="p-2">ستاره</th>
                   <th className="p-2">وضعیت</th>
@@ -281,7 +281,7 @@ export function HotelImportPanel({ onImported }: { onImported: () => void }) {
 
           <div className="flex flex-wrap items-center gap-4">
             <label className="text-sm text-slate-700">
-              رفتار با کد تکراری
+              رفتار با کد سیستمی تکراری
               <select
                 className="mr-2 h-9 rounded-md border bg-white px-2"
                 value={duplicateBehavior}

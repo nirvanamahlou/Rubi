@@ -27,11 +27,12 @@ function fixture(options?: {
   formula?: boolean;
   macro?: boolean;
   badHeader?: boolean;
+  code?: string;
 }) {
   const headers = [...HOTEL_IMPORT_HEADERS];
   if (options?.badHeader) headers[0] = 'کد' as (typeof headers)[0];
   const values = [
-    'HTL-BODRUM-001',
+    options?.code ?? 'HTL-BODRUM-001',
     'Test Hotel',
     'بدروم',
     options?.city ?? 'بدروم',
@@ -122,6 +123,12 @@ describe('parseHotelImportWorkbook', () => {
       isActive: true,
       mealServiceCode: 'ALL',
     });
+  });
+
+  it('generates a system code when the hotel identifier is empty', () => {
+    const result = parse(fixture({ code: '' }));
+    expect(result.issues).toEqual([]);
+    expect(result.rows[0]?.code).toMatch(/^HOTEL_[A-F0-9]{12}$/);
   });
 
   it('reports city scope mismatch', () => {

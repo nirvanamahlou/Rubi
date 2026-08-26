@@ -15,18 +15,35 @@ const baseRow = {
   roles: [{ roleCode: 'AGENCY' }],
 };
 
+describe('MasterDataRepository code allocation', () => {
+  it('checks generated codes against the target resource', async () => {
+    const findFirst = vi.fn().mockResolvedValue(baseRow);
+    const database = {
+      client: { masterBank: { findFirst } },
+    } as unknown as DatabaseService;
+    const repository = new MasterDataRepository(database);
+
+    await expect(repository.codeExists('banks', 'BANK_AUTO')).resolves.toBe(
+      true,
+    );
+    expect(findFirst).toHaveBeenCalledWith({ where: { code: 'BANK_AUTO' } });
+  });
+});
+
 describe('MasterDataRepository optimistic locking', () => {
   it('allows only one concurrent mutation for the same expected version', async () => {
     let persistedVersion = 1;
     const model = {
       findUnique: vi.fn().mockResolvedValue(baseRow),
-      updateMany: vi.fn().mockImplementation(
-        async ({ where }: { where: { version: number } }) => {
-          if (where.version !== persistedVersion) return { count: 0 };
-          persistedVersion += 1;
-          return { count: 1 };
-        },
-      ),
+      updateMany: vi
+        .fn()
+        .mockImplementation(
+          async ({ where }: { where: { version: number } }) => {
+            if (where.version !== persistedVersion) return { count: 0 };
+            persistedVersion += 1;
+            return { count: 1 };
+          },
+        ),
       update: vi.fn().mockImplementation(async () => ({
         ...baseRow,
         version: persistedVersion,
@@ -40,18 +57,21 @@ describe('MasterDataRepository optimistic locking', () => {
     };
     const database = {
       client: {
-        $transaction: async <T>(callback: (client: typeof transaction) => Promise<T>) =>
-          callback(transaction),
+        $transaction: async <T>(
+          callback: (client: typeof transaction) => Promise<T>,
+        ) => callback(transaction),
       },
     } as unknown as DatabaseService;
     const repository = new MasterDataRepository(database);
     const nestedRoles = {
       roles: {
         deleteMany: {},
-        create: [{
-          roleCode: 'CORPORATE_CUSTOMER',
-          assignedByUserId: '11111111-1111-4111-8111-111111111111',
-        }],
+        create: [
+          {
+            roleCode: 'CORPORATE_CUSTOMER',
+            assignedByUserId: '11111111-1111-4111-8111-111111111111',
+          },
+        ],
       },
     };
 
