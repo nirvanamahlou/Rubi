@@ -216,44 +216,44 @@ export function MasterDataWorkspace() {
     }
   }
 
+  function renderResourceActions() {
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <Button onClick={() => void requestExport('xlsx')} variant="outline">
+          <FileSpreadsheet aria-hidden="true" className="size-4" />
+          Excel
+        </Button>
+        <Button onClick={() => void requestExport('pdf')} variant="outline">
+          <FileText aria-hidden="true" className="size-4" />
+          PDF
+        </Button>
+        {isCountryCity ? (
+          <>
+            <Button onClick={() => openCountryCityForm('countries')}>
+              <Plus aria-hidden="true" className="size-4" />
+              ایجاد کشور
+            </Button>
+            <Button
+              onClick={() => openCountryCityForm('cities')}
+              variant="outline"
+            >
+              <Plus aria-hidden="true" className="size-4" />
+              ایجاد شهر
+            </Button>
+          </>
+        ) : (
+          <Button onClick={() => openForm('create')}>
+            <Plus aria-hidden="true" className="size-4" />
+            ایجاد {definition.singularLabel}
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <PageHeader
-        actions={
-          <>
-            <Button
-              onClick={() => void requestExport('xlsx')}
-              variant="outline"
-            >
-              <FileSpreadsheet aria-hidden="true" className="size-4" />
-              Excel
-            </Button>
-            <Button onClick={() => void requestExport('pdf')} variant="outline">
-              <FileText aria-hidden="true" className="size-4" />
-              PDF
-            </Button>
-            {isCountryCity ? (
-              <>
-                <Button onClick={() => openCountryCityForm('countries')}>
-                  <Plus aria-hidden="true" className="size-4" />
-                  ایجاد کشور
-                </Button>
-                <Button
-                  onClick={() => openCountryCityForm('cities')}
-                  variant="outline"
-                >
-                  <Plus aria-hidden="true" className="size-4" />
-                  ایجاد شهر
-                </Button>
-              </>
-            ) : (
-              <Button onClick={() => openForm('create')}>
-                <Plus aria-hidden="true" className="size-4" />
-                ایجاد {definition.singularLabel}
-              </Button>
-            )}
-          </>
-        }
         description="مدیریت پایدار Reference Data و Organizationهای مشترک با کنترل دسترسی، Audit و نسخه رکورد."
         eyebrow="MASTER-003 · PC-B"
         title="اطلاعات پایه"
@@ -341,30 +341,33 @@ export function MasterDataWorkspace() {
                     : definition.description}
                 </p>
               </div>
-              {isCountryCity ? (
-                <div
-                  aria-label="انتخاب فهرست جغرافیا"
-                  className="flex rounded-xl bg-muted p-1"
-                  role="group"
-                >
-                  <Button
-                    aria-pressed={resource === 'countries'}
-                    onClick={() => changeResource('countries')}
-                    size="sm"
-                    variant={resource === 'countries' ? 'secondary' : 'ghost'}
+              <div className="flex flex-col gap-3 sm:items-end">
+                {isCountryCity ? (
+                  <div
+                    aria-label="انتخاب فهرست جغرافیا"
+                    className="flex rounded-xl bg-muted p-1"
+                    role="group"
                   >
-                    کشورها
-                  </Button>
-                  <Button
-                    aria-pressed={resource === 'cities'}
-                    onClick={() => changeResource('cities')}
-                    size="sm"
-                    variant={resource === 'cities' ? 'secondary' : 'ghost'}
-                  >
-                    شهرها
-                  </Button>
-                </div>
-              ) : null}
+                    <Button
+                      aria-pressed={resource === 'countries'}
+                      onClick={() => changeResource('countries')}
+                      size="sm"
+                      variant={resource === 'countries' ? 'secondary' : 'ghost'}
+                    >
+                      کشورها
+                    </Button>
+                    <Button
+                      aria-pressed={resource === 'cities'}
+                      onClick={() => changeResource('cities')}
+                      size="sm"
+                      variant={resource === 'cities' ? 'secondary' : 'ghost'}
+                    >
+                      شهرها
+                    </Button>
+                  </div>
+                ) : null}
+                {renderResourceActions()}
+              </div>
             </div>
           </Card>
           {resource === 'hotels' ? (
