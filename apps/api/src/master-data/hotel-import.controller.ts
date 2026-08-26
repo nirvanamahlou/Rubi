@@ -19,7 +19,8 @@ import { RequirePermissions } from '../iam/iam.decorators';
 import { PermissionGuard } from '../iam/permission.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 // Runtime imports are required for Nest emitDecoratorMetadata and ValidationPipe.
-import { // eslint-disable-line @typescript-eslint/consistent-type-imports
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import {
   HotelImportCommitDto,
   HotelImportPreviewDto,
 } from './hotel-import.dto';
