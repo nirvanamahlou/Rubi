@@ -71,6 +71,7 @@ export function MasterDataWorkspace() {
   const [selected, setSelected] = useState<MasterDataRecord | undefined>();
   const [notice, setNotice] = useState<string | null>(null);
   const definition = getMasterDataDefinition(resource);
+  const isCountryCity = resource === 'countries' || resource === 'cities';
 
   const query: MasterDataListQuery = {
     search,
@@ -126,6 +127,11 @@ export function MasterDataWorkspace() {
   function openForm(mode: MasterDataFormMode, record?: MasterDataRecord) {
     setSelected(record);
     setFormMode(mode);
+  }
+
+  function openCountryCityForm(next: 'countries' | 'cities') {
+    changeResource(next);
+    setFormMode('create');
   }
 
   async function persist(values: Record<string, string>) {
@@ -226,10 +232,26 @@ export function MasterDataWorkspace() {
               <FileText aria-hidden="true" className="size-4" />
               PDF
             </Button>
-            <Button onClick={() => openForm('create')}>
-              <Plus aria-hidden="true" className="size-4" />
-              ایجاد {definition.singularLabel}
-            </Button>
+            {isCountryCity ? (
+              <>
+                <Button onClick={() => openCountryCityForm('countries')}>
+                  <Plus aria-hidden="true" className="size-4" />
+                  ایجاد کشور
+                </Button>
+                <Button
+                  onClick={() => openCountryCityForm('cities')}
+                  variant="outline"
+                >
+                  <Plus aria-hidden="true" className="size-4" />
+                  ایجاد شهر
+                </Button>
+              </>
+            ) : (
+              <Button onClick={() => openForm('create')}>
+                <Plus aria-hidden="true" className="size-4" />
+                ایجاد {definition.singularLabel}
+              </Button>
+            )}
           </>
         }
         description="مدیریت پایدار Reference Data و Organizationهای مشترک با کنترل دسترسی، Audit و نسخه رکورد."
@@ -252,7 +274,7 @@ export function MasterDataWorkspace() {
             <div>
               <h2 className="text-sm font-black">Catalog اطلاعات پایه</h2>
               <p className="text-xs text-muted-foreground">
-                ۱۲ منبع پایدار · مشترک بین شرکت‌ها
+                ۱۱ بخش · ۱۲ منبع پایدار · مشترک بین شرکت‌ها
               </p>
             </div>
           </div>
@@ -270,18 +292,28 @@ export function MasterDataWorkspace() {
                 </h3>
                 <div className="mt-1 grid gap-1">
                   {masterDataCatalog
-                    .filter((item) => item.group === group)
+                    .filter(
+                      (item) => item.group === group && item.key !== 'cities',
+                    )
                     .map((item) => (
                       <button
                         aria-current={
-                          item.key === resource ? 'page' : undefined
+                          item.key === 'countries'
+                            ? isCountryCity
+                              ? 'page'
+                              : undefined
+                            : item.key === resource
+                              ? 'page'
+                              : undefined
                         }
                         className="rounded-lg px-3 py-2 text-start text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground"
                         key={item.key}
                         onClick={() => changeResource(item.key)}
                         type="button"
                       >
-                        {item.label}
+                        {item.key === 'countries'
+                          ? 'کشورها و شهرها'
+                          : item.label}
                       </button>
                     ))}
                 </div>
@@ -292,16 +324,48 @@ export function MasterDataWorkspace() {
 
         <main className="min-w-0 space-y-4">
           <Card className="p-4 sm:p-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-xl font-black">{definition.label}</h2>
-              <Badge>{definition.group}</Badge>
-              <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-                Backend واقعی
-              </Badge>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-xl font-black">
+                    {isCountryCity ? 'کشورها و شهرها' : definition.label}
+                  </h2>
+                  <Badge>{definition.group}</Badge>
+                  <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                    Backend واقعی
+                  </Badge>
+                </div>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                  {isCountryCity
+                    ? 'کشورها و شهرهای وابسته در یک بخش مدیریت می‌شوند؛ هر شهر هنگام ثبت به کشور مرجع متصل می‌شود.'
+                    : definition.description}
+                </p>
+              </div>
+              {isCountryCity ? (
+                <div
+                  aria-label="انتخاب فهرست جغرافیا"
+                  className="flex rounded-xl bg-muted p-1"
+                  role="group"
+                >
+                  <Button
+                    aria-pressed={resource === 'countries'}
+                    onClick={() => changeResource('countries')}
+                    size="sm"
+                    variant={resource === 'countries' ? 'secondary' : 'ghost'}
+                  >
+                    کشورها
+                  </Button>
+                  <Button
+                    aria-pressed={resource === 'cities'}
+                    onClick={() => changeResource('cities')}
+                    size="sm"
+                    variant={resource === 'cities' ? 'secondary' : 'ghost'}
+                  >
+                    شهرها
+                  </Button>
+                </div>
+              ) : null}
             </div>
-            <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              {definition.description}
-            </p>
           </Card>
           {resource === 'hotels' ? (
             <HotelImportPanel onImported={() => void load()} />
