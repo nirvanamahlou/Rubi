@@ -1,10 +1,10 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-26 — تقویم مشترک آبی با سوییچ شمسی/میلادی در همه فرم‌های تاریخ Web فعال شد
+آخرین به‌روزرسانی: 2026-08-27 — CUSTOMER-002A برای توسعه موازی PC-A در مرز مستقل Customers رزرو شد
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
-ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
-`DONE`.
+ثبت شود. وضعیت‌های مجاز: `PLANNED`، `PLANNED/RESERVED`، `IN_PROGRESS`،
+`BLOCKED`، `READY_FOR_REVIEW`، `DONE`.
 
 | Work ID                         | مالک         | Branch                                      | محدوده/فایل‌های اصلی                                                                                 | وضعیت              | وابستگی یا Handoff                                                          |
 | ------------------------------- | ------------ | ------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------ | --------------------------------------------------------------------------- |
@@ -25,6 +25,7 @@
 | IAM002-HANDOFF-001              | PC-A         | `codex/pc-a-iam-002-handoff`                | ثبت Merge، آزادسازی IAM contract lock و مجازکردن شروع دو Task مستقل Sprint دوم                       | `DONE`             | Merge `0af31c2`؛ دو Task مستقل مجاز به شروع هستند                           |
 | MASTER-002                      | PC-B         | `codex/pc-b-master-data-persistence`        | Database، Migration، Repository، Backend و اتصال واقعی Frontend اطلاعات پایه                         | `DONE`             | Merge `ddfebb3`؛ چهار قفل با Handoff مستقل آزاد شدند                        |
 | CUSTOMER-001                    | PC-A         | `codex/pc-a-customer-persistence`           | مشتریان، Persistence، رمزنگاری Contact، Audit redaction و Duplicate query                            | `DONE`             | PR #19؛ Merge `7d0a4f4`؛ Migration و قرارداد Customer پایدار و تحویل‌شده    |
+| CUSTOMER-002A                   | PC-A         | TBD                                         | Customer Operations Enhancement در مرز Web/API فعلی Customers و تست‌های اختصاصی                      | `PLANNED/RESERVED` | شروع از آخرین `origin/develop`؛ بدون قفل مشترک و بدون تداخل با MASTER-003   |
 | CUSTOMER001-FINANCE-HANDOFF-001 | PC-A         | `codex/pc-a-customer-finance-handoff`       | آزادسازی چهار قفل CUSTOMER-001 و رزرو کنترل‌شده FINANCE-001؛ فقط اسناد مرکزی و سند Handoff           | `DONE`             | PR #20؛ Merge `11fc875`؛ بدون کد، Schema، Migration، Dependency یا Lockfile |
 | FINANCE-001                     | PC-A         | `codex/pc-a-finance-foundation`             | Foundation مالی و چهار Decision پذیرفته‌شده؛ Phase A بدون Persistence و Migration                    | `DONE`             | PR #21؛ Merge `45c107e`؛ قفل‌های stale با نبود FINANCE-002 آزاد شدند        |
 | LEGAL-ENTITY-CONTEXT-001        | PC-A         | `codex/pc-a-legal-entity-context`           | Legal Entity Full-Stack، Prisma، API، Contract، App Shell، صفحه مدیریت، Audit و Test                 | `DONE`             | PR #24؛ Merge `b6da5d6`؛ قفل‌ها با دلیل `DONE/MERGED via PR #24` آزاد شدند  |
@@ -229,6 +230,21 @@ Finance shared-contract در `packages/contracts/src/finance/**` مرز دامن
 | Master Data shared-contract/root export | PC-B/MASTER-003 | `packages/contracts/src/master-data/**` و export لازم                                    | `ACTIVE` تا Merge و Handoff                              |
 | Central status/docs                     | PC-B/MASTER-003 | `WORK_ASSIGNMENTS.md`، `PLANS.md`، `docs/PROJECT_STATUS.md` و `docs/tasks/MASTER-003.md` | `ACTIVE` تا Merge و Handoff                              |
 | Dependency/Lockfile Owner               | PC-B/MASTER-003 | `fflate@0.8.3` در `apps/api/package.json` و `pnpm-lock.yaml`                             | `RELEASED` پس از Pin، Security Review و آزمون فایل واقعی |
+
+### رزرو موازی PC-A/CUSTOMER-002A
+
+- Task با عنوان `CUSTOMER-002A — Customer Operations Enhancement` و وضعیت
+  `PLANNED/RESERVED` برای PC-A رزرو است و باید از آخرین `origin/develop` آغاز شود.
+- محدوده مجاز فقط `apps/web/src/modules/customers/**`، صفحات مرتبط با `/customers`،
+  `apps/api/src/customers/**` با Schema فعلی، تست‌های اختصاصی Customers و
+  `docs/tasks/CUSTOMER-002A.md` است.
+- تغییر Prisma Schema یا Migration، Dependency یا Lockfile، Master Data، Legal Entity و
+  فایل‌های مرکزی قفل‌شده توسط MASTER-003 ممنوع است.
+- تغییر Customer shared-contract یا root export بدون هماهنگی و ثبت مجدد Handoff مجاز
+  نیست.
+- Migration Lock، Master Data shared-contract/root export و Central Sprint docs همچنان
+  در مالکیت PC-B/MASTER-003 باقی می‌مانند. وضعیت Dependency/Lockfile نیز همان وضعیت
+  ثبت‌شده در PR #25 است و این رزرو آن را تغییر نمی‌دهد.
 
 محدوده اجرایی MASTER-003 شامل `apps/api/src/master-data/**`،
 `apps/web/src/modules/master-data/**`، route `/master-data`، قرارداد عمومی Master Data،
