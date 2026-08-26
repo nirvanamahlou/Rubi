@@ -32,8 +32,10 @@ const MAX_ROWS = 10_000;
 const MAX_COLUMNS = 100;
 const MAX_CELL_LENGTH = 2_000;
 const codePattern = /^[A-Z0-9][A-Z0-9_-]{1,31}$/;
-const suspiciousEntry =
-  /(^|\/)(?:vbaProject|externalLinks|embeddings|activeX|ctrlProps|connections|customUI|macrosheets?)(?:\/|\.|$)|oleObject/i;
+const activeContentEntry =
+  /(^|\/)(?:vbaProject|embeddings|activeX|ctrlProps|customUI|macrosheets?)(?:\/|\.|$)|oleObject/i;
+const externalDataEntry =
+  /(^|\/)(?:externalLinks|queryTables)(?:\/|\.|$)|(^|\/)connections\.xml$/i;
 
 export interface HotelImportSourceRow {
   rowNumber: number;
@@ -86,6 +88,16 @@ function fail(message: string): never {
     message,
   });
 }
+function failExternalRelationship(
+  externalLinkCount: number,
+  entries: readonly string[],
+): never {
+  throw new BadRequestException({
+    code: 'HOTEL_IMPORT_EXTERNAL_RELATIONSHIP_FORBIDDEN',
+    message: 'External Relationship یا External Data در فایل اکسل مجاز نیست.',
+    details: { externalLinkCount, entries: entries.slice(0, 20) },
+  });
+}
 
 function normalize(value: string) {
   return value
@@ -109,6 +121,56 @@ function decodeXml(value: string) {
       String.fromCodePoint(Number.parseInt(code, 16)),
     )
     .replace(/&amp;/g, '&');
+}
+
+function relationshipAttribute(source: string, name: string) {
+  const expression = new RegExp(
+    `\\b${name}\\s*=\\s*(["'])([\\s\\S]*?)\\1`,
+    'i',
+  );
+  return decodeXml(source.match(expression)?.[2] ?? '').trim();
+}
+
+function inspectExternalRelationships(files: Record<string, Uint8Array>) {
+  let externalLinkCount = 0;
+  const entries: string[] = [];
+  for (const [name, content] of Object.entries(files)) {
+    if (!/\.rels$/i.test(name)) continue;
+    const xml = strFromU8(content);
+    if (/<!DOCTYPE\b|<!ENTITY\b/i.test(xml))
+      throw new BadRequestException({
+        code: 'HOTEL_IMPORT_XML_ENTITY_FORBIDDEN',
+        message: 'DTD و XML Entity در OOXML مجاز نیست.',
+      });
+    for (const match of xml.matchAll(/<Relationship\b([^>]*)\/?\s*>/gi)) {
+      const attributes = match[1] ?? '';
+      const targetMode = relationshipAttribute(
+        attributes,
+        'TargetMode',
+      ).toLowerCase();
+      const target = relationshipAttribute(attributes, 'Target');
+      const externalScheme = /^(?:https?|ftp|file|smb|mailto|data):/i.test(
+        target,
+      );
+      const uncPath = /^(?:\\\\|\/\/)[^/\\]/.test(target);
+      const drivePath = /^[a-z]:[\\/]/i.test(target);
+      const escapingPath = target
+        .split(/[\\/]+/)
+        .some((segment) => segment === '..');
+      if (
+        !target ||
+        targetMode === 'external' ||
+        externalScheme ||
+        uncPath ||
+        drivePath ||
+        escapingPath
+      ) {
+        externalLinkCount += 1;
+        entries.push(`${name}:${target || '[missing-target]'}`);
+      }
+    }
+  }
+  return { externalLinkCount, entries };
 }
 
 function cellColumn(reference: string) {
@@ -214,6 +276,8 @@ export function parseHotelImportWorkbook(input: {
   let entryCount = 0;
   let uncompressedBytes = 0;
   let rejectedEntry: string | null = null;
+  let externalDataPartCount = 0;
+  const externalEntries: string[] = [];
   let files: Record<string, Uint8Array>;
   try {
     files = unzipSync(input.buffer, {
@@ -229,12 +293,20 @@ export function parseHotelImportWorkbook(input: {
         const normalizedName = file.name.replace(/\\/g, '/').replace(/^\//, '');
         if (normalizedName.includes('../') || normalizedName.startsWith('../'))
           throw new Error('ZIP_PATH');
-        if (suspiciousEntry.test(normalizedName)) {
-          rejectedEntry = normalizedName;
+        if (externalDataEntry.test(normalizedName)) {
+          externalDataPartCount += 1;
+          externalEntries.push(normalizedName);
+          return false;
+        }
+        rejectedEntry = normalizedName;
+        if (activeContentEntry.test(normalizedName)) {
           throw new Error('ZIP_SUSPICIOUS');
         }
-        return /^(?:\[Content_Types\]\.xml|_rels\/.+|xl\/(?:workbook\.xml|_rels\/.+|sharedStrings\.xml|worksheets\/.+))$/i.test(
-          normalizedName,
+        return (
+          /\.rels$/i.test(normalizedName) ||
+          /^(?:\[Content_Types\]\.xml|xl\/(?:workbook\.xml|sharedStrings\.xml|worksheets\/.+))$/i.test(
+            normalizedName,
+          )
         );
       },
     });
@@ -248,6 +320,14 @@ export function parseHotelImportWorkbook(input: {
   }
 
   const workbookXml = files['xl/workbook.xml'];
+  const relationshipInspection = inspectExternalRelationships(files);
+  const externalLinkCount =
+    externalDataPartCount + relationshipInspection.externalLinkCount;
+  if (externalLinkCount > 0)
+    failExternalRelationship(externalLinkCount, [
+      ...externalEntries,
+      ...relationshipInspection.entries,
+    ]);
   const hotelSheet = files['xl/worksheets/sheet1.xml'];
   if (!workbookXml || !hotelSheet)
     fail('ساختار Workbook یا Sheet Hotels یافت نشد.');
