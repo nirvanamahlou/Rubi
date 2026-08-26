@@ -190,6 +190,13 @@ Baseline برنامه: `origin/develop` در Merge Commit
   PDF و خروجی آرشیوی پایدار تا اتصال Documents/Worker در وضعیت انتظار می‌مانند.
 - اتصال‌های Documents/Worker/Finance/Reservations/Integrations فقط از Public Contract یا Port واقعی؛ بدون artifact یا Provider ساختگی.
 
+### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
+
+- DatePicker مشترک با تم آبی، انتخاب روز/ساعت و سوییچ شمسی/میلادی در بالای تقویم.
+- پوشش همه فیلدهای تاریخ Customers، Customer Affairs، Finance و Master Data.
+- قرارداد ذخیره‌سازی بدون تغییر: ISO Gregorian؛ بدون Dependency، API، Schema یا Migration.
+- تست قراردادی مانع بازگشت ورودی خام مرورگر به فرم‌های سامانه می‌شود.
+
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 
 - Branch آینده: `codex/pc-b-customer-affairs-foundation`.

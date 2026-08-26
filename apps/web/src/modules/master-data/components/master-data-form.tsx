@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { FormField, Input } from '@/components/ui/form-controls';
 import {
   DialogDescription,
@@ -111,27 +112,48 @@ export function MasterDataForm({
                 key={field.key}
                 label={field.label}
               >
-                <Input
-                  aria-describedby={
-                    error ? errorId : field.hint ? helpId : undefined
-                  }
-                  aria-invalid={Boolean(error)}
-                  disabled={readonly}
-                  dir={isCanonical ? 'ltr' : undefined}
-                  id={`${definition.key}-${field.key}`}
-                  inputMode={field.type === 'number' ? 'decimal' : undefined}
-                  onChange={(event) =>
-                    setValues((current) => ({
-                      ...current,
-                      [field.key]: event.target.value,
-                    }))
-                  }
-                  placeholder={field.placeholder}
-                  readOnly={readonly}
-                  step={field.type === 'number' ? 'any' : undefined}
-                  type={field.type}
-                  value={values[field.key] ?? ''}
-                />
+                {field.type === 'datetime-local' ? (
+                  <DatePicker
+                    aria-describedby={
+                      error ? errorId : field.hint ? helpId : undefined
+                    }
+                    aria-invalid={Boolean(error)}
+                    disabled={readonly}
+                    id={`${definition.key}-${field.key}`}
+                    includeTime
+                    onChange={(nextValue) =>
+                      setValues((current) => ({
+                        ...current,
+                        [field.key]: nextValue,
+                      }))
+                    }
+                    placeholder={field.placeholder}
+                    readOnly={readonly}
+                    value={values[field.key] ?? ''}
+                  />
+                ) : (
+                  <Input
+                    aria-describedby={
+                      error ? errorId : field.hint ? helpId : undefined
+                    }
+                    aria-invalid={Boolean(error)}
+                    disabled={readonly}
+                    dir={isCanonical ? 'ltr' : undefined}
+                    id={`${definition.key}-${field.key}`}
+                    inputMode={field.type === 'number' ? 'decimal' : undefined}
+                    onChange={(event) =>
+                      setValues((current) => ({
+                        ...current,
+                        [field.key]: event.target.value,
+                      }))
+                    }
+                    placeholder={field.placeholder}
+                    readOnly={readonly}
+                    step={field.type === 'number' ? 'any' : undefined}
+                    type={field.type}
+                    value={values[field.key] ?? ''}
+                  />
+                )}
               </FormField>
             );
           })}

@@ -129,6 +129,17 @@
   صریحاً `UNAVAILABLE`/در انتظار گزارش می‌شود.
 - Scope توسعه افزایشی MASTER-002 شامل Master Data مشترک دو شرکت، نرخ مرجع غیر authoritative،
   کاتالوگ‌های پیشرفته، Import امن Excel، UI واقعی و تست کامل است.
+### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
+
+- کامپوننت مشترک DatePicker با تم آبی و سوییچ بالای تقویم برای شمسی/میلادی ایجاد شد.
+- همه ورودی‌های خام `date` و `datetime-local` در Customers، Customer Affairs، Finance
+  و Master Data با کامپوننت مشترک جایگزین شدند.
+- مقدار ارسالی و ذخیره‌شده همچنان ISO Gregorian است و سوییچ فقط نمایش/انتخاب را تغییر می‌دهد.
+- انتخاب ساعت برای فیلدهای datetime حفظ شد؛ ناوبری ماه، امروز، تاریخ انتخاب‌شده،
+  بستن با Escape و کلیک بیرون و ویژگی‌های دسترس‌پذیری پوشش داده شدند.
+- Web Typecheck، Lint و ۸۵ تست پاس شدند و چهار route متاثر روی dev server پاسخ ۲۰۰ دادند.
+- Production build به‌دلیل dev server فعال و قفل `.next` هم‌زمان اجرا نشد؛ dev compilation موفق بود.
+
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 
 - Branch آینده `codex/pc-b-customer-affairs-foundation` و هدف آن Foundation مستقل

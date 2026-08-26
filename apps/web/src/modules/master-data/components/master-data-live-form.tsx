@@ -4,6 +4,7 @@ import type { MasterDataRecord } from '@rubi/contracts';
 import { useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { FormField, Input } from '@/components/ui/form-controls';
 import {
   DialogDescription,
@@ -135,6 +136,17 @@ export function MasterDataLiveForm({
               <OrganizationRoleSelector
                 disabled={readonly || saving}
                 onChange={updateValue}
+                value={values[field.key] ?? ''}
+              />
+            ) : field.type === 'datetime-local' ? (
+              <DatePicker
+                aria-invalid={Boolean(error)}
+                disabled={readonly || saving}
+                id={controlId}
+                includeTime
+                onChange={updateValue}
+                placeholder={field.placeholder}
+                readOnly={readonly}
                 value={values[field.key] ?? ''}
               />
             ) : (

@@ -26,6 +26,7 @@ import {
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   FormField,
   Input,
@@ -341,16 +342,15 @@ function CustomerDrawer({
                   id="customer-birth-date"
                   label="تاریخ تولد"
                 >
-                  <Input
+                  <DatePicker
                     disabled={readonly}
                     id="customer-birth-date"
-                    onChange={(event) =>
+                    onChange={(nextValue) =>
                       setDraft((current) => ({
                         ...current,
-                        birthDate: event.target.value || null,
+                        birthDate: nextValue || null,
                       }))
                     }
-                    type="date"
                     value={draft.birthDate ?? ''}
                   />
                 </FormField>

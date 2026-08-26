@@ -26,6 +26,7 @@ import {
 import { useMemo, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   FormField,
   Input,
@@ -332,12 +333,11 @@ function PreviewForm({
                 />
               </FormField>
               <FormField id="lead-approximate-date" label="تاریخ تقریبی سفر">
-                <Input
+                <DatePicker
                   defaultValue={mode === 'create' ? '' : '2026-09-10'}
                   disabled={readonly}
                   id="lead-approximate-date"
                   readOnly={readonly}
-                  type="date"
                 />
               </FormField>
               <FormField id="lead-passengers" label="تعداد مسافر">
@@ -451,21 +451,21 @@ function PreviewForm({
                 title="ارتباط آینده با فروش و رزرواسیون"
               />
               <FormField id="ticket-response-due" label="موعد اولین پاسخ">
-                <Input
+                <DatePicker
                   defaultValue={mode === 'create' ? '' : '2026-08-25T09:00'}
                   disabled={readonly}
                   id="ticket-response-due"
+                  includeTime
                   readOnly={readonly}
-                  type="datetime-local"
                 />
               </FormField>
               <FormField id="ticket-resolution-due" label="موعد حل SLA">
-                <Input
+                <DatePicker
                   defaultValue={mode === 'create' ? '' : '2026-08-25T16:00'}
                   disabled={readonly}
                   id="ticket-resolution-due"
+                  includeTime
                   readOnly={readonly}
-                  type="datetime-local"
                 />
               </FormField>
               <FormField id="ticket-tracking-number" label="شماره پیگیری">
@@ -592,17 +592,17 @@ function PreviewForm({
             </FormField>
           </div>
           <FormField id="customer-affairs-next-action" label="تاریخ اقدام بعدی">
-            <Input
+            <DatePicker
               disabled={readonly}
               id="customer-affairs-next-action"
-              onChange={(event) =>
+              includeTime
+              onChange={(nextValue) =>
                 setDraft((current) => ({
                   ...current,
-                  nextActionAt: event.target.value,
+                  nextActionAt: nextValue,
                 }))
               }
               readOnly={readonly}
-              type="datetime-local"
               value={draft.nextActionAt}
             />
           </FormField>

@@ -11,6 +11,7 @@ import {
 import { useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   FormField,
   Input,
@@ -357,11 +358,10 @@ export function FinancePreviewForm({
                 />
               </FormField>
               <FormField label="تاریخ سررسید">
-                <Input
+                <DatePicker
                   defaultValue="2026-08-30"
                   disabled={readOnly}
                   readOnly={readOnly}
-                  type="date"
                 />
               </FormField>
               <FormField label="وضعیت">
@@ -421,11 +421,11 @@ export function FinancePreviewForm({
                 />
               </FormField>
               <FormField label="انقضای استثنا">
-                <Input
+                <DatePicker
                   defaultValue="2026-08-25T12:00"
                   disabled={readOnly}
+                  includeTime
                   readOnly={readOnly}
-                  type="datetime-local"
                 />
               </FormField>
             </div>
