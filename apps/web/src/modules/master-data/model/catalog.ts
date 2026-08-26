@@ -270,12 +270,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         required: true,
       },
       {
-        key: 'organizationId',
-        label: 'سازمان هتل (اختیاری)',
-        type: 'text',
-        placeholder: '',
-      },
-      {
         key: 'starRating',
         label: 'درجه هتل',
         type: 'number',

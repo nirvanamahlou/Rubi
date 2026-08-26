@@ -8,9 +8,9 @@ import { FormField, Input } from '@/components/ui/form-controls';
 import {
   DialogDescription,
   DialogTitle,
-  Drawer,
-  DrawerClose,
-  DrawerContent,
+  Dialog,
+  DialogClose,
+  DialogContent,
 } from '@/components/ui/overlays';
 import { Alert, Badge } from '@/components/ui/surfaces';
 import type { MasterDataCatalogItem } from '../model/catalog';
@@ -21,7 +21,6 @@ import {
   OrganizationRoleSelector,
 } from './master-data-reference-selector';
 
-
 export type MasterDataFormMode = 'create' | 'view' | 'edit';
 
 function valuesFrom(
@@ -29,7 +28,9 @@ function valuesFrom(
   record?: MasterDataRecord,
 ): Record<string, string> {
   if (!record)
-    return Object.fromEntries(definition.fields.map((field) => [field.key, '']));
+    return Object.fromEntries(
+      definition.fields.map((field) => [field.key, '']),
+    );
   const [fromCurrencyCode = '', toCurrencyCode = ''] = record.code.split('/');
   return Object.fromEntries(
     definition.fields.map((field) => {
@@ -43,7 +44,10 @@ function valuesFrom(
               : field.key === 'toCurrencyCode'
                 ? toCurrencyCode
                 : record.attributes[field.key];
-      return [field.key, value === null || value === undefined ? '' : String(value)];
+      return [
+        field.key,
+        value === null || value === undefined ? '' : String(value),
+      ];
     }),
   );
 }
@@ -79,7 +83,8 @@ export function MasterDataLiveForm({
       await onPersist(result.values);
     } catch (error) {
       setErrors({
-        form: error instanceof Error ? error.message : 'ذخیره اطلاعات ناموفق بود.',
+        form:
+          error instanceof Error ? error.message : 'ذخیره اطلاعات ناموفق بود.',
       });
     } finally {
       setSaving(false);
@@ -87,8 +92,8 @@ export function MasterDataLiveForm({
   }
 
   return (
-    <Drawer onOpenChange={onOpenChange} open={open}>
-      <DrawerContent className="w-[min(94vw,34rem)] overflow-y-auto p-6">
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogContent className="start-auto left-1/2 max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto p-6">
         <DialogTitle>
           {mode === 'create' ? 'ایجاد' : mode === 'edit' ? 'ویرایش' : 'مشاهده'}{' '}
           {definition.singularLabel}
@@ -100,10 +105,15 @@ export function MasterDataLiveForm({
         </DialogDescription>
         <div className="mt-4 flex gap-2">
           <Badge>master-data.v1</Badge>
-          {record ? <Badge>نسخه {record.version.toLocaleString('fa-IR')}</Badge> : null}
+          {record ? (
+            <Badge>نسخه {record.version.toLocaleString('fa-IR')}</Badge>
+          ) : null}
         </div>
 
-        <form className="mt-6 space-y-5" onSubmit={(event) => void submit(event)}>
+        <form
+          className="mt-6 space-y-5"
+          onSubmit={(event) => void submit(event)}
+        >
           {definition.fields.map((field) => {
             const error = errors[field.key];
             const controlId = `live-${definition.key}-${field.key}`;
@@ -158,18 +168,26 @@ export function MasterDataLiveForm({
             );
           })}
           {errors.form ? (
-            <Alert description={errors.form} title="ذخیره انجام نشد" tone="error" />
+            <Alert
+              description={errors.form}
+              title="ذخیره انجام نشد"
+              tone="error"
+            />
           ) : null}
           <div className="flex justify-end gap-2 border-t border-border pt-5">
-            <DrawerClose asChild>
-              <Button type="button" variant="ghost">بستن</Button>
-            </DrawerClose>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost">
+                بستن
+              </Button>
+            </DialogClose>
             {!readonly ? (
-              <Button loading={saving} type="submit">ذخیره</Button>
+              <Button loading={saving} type="submit">
+                ذخیره
+              </Button>
             ) : null}
           </div>
         </form>
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 }
