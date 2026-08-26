@@ -107,7 +107,7 @@
 
 - Branch مستقیماً از `origin/develop@b6da5d6` ساخته شد و Frozen Install بدون تغییر Lockfile پاس شد.
 - Migration Owner، Master Data shared-contract/root export و اسناد مرکزی برای MASTER-003 رزرو شدند.
-- Dependency/Lockfile آزاد است و فقط پس از اثبات نیاز Dependency جدید Excel رزرو می‌شود.
+- Dependency/Lockfile برای `PC-B/MASTER-003` رزرو شد؛ نبود Parser ZIP/XLSX در API اثبات و افزودن Dependency کوچک Pin‌شده لازم شد.
 - Scope توسعه افزایشی MASTER-002 شامل Master Data مشترک دو شرکت، نرخ مرجع غیر authoritative،
   کاتالوگ‌های پیشرفته، Import امن Excel، UI واقعی و تست کامل است.
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
@@ -342,3 +342,4 @@
 - ذخیره PII حساس و مدارک هویتی تا تصمیم قطعی retention/رمزنگاری ممنوع می‌ماند.
 - اجرای Persistence مالی فقط در Task مستقل Phase B پس از Merge PR #21 و با قفل یگانه Migration/Dependency مجاز است؛ تاریخچه Migration یا داده محلی نباید دستی دست‌کاری شود.
 - Compose credentialها synthetic و Local هستند و پیش از هر محیط دیگر باید با secret manager جایگزین شوند.
+

@@ -6,7 +6,7 @@
 - Base: `b6da5d6300716a189958bc37d31ca195f0304dc5`
 - Draft PR: [#25](https://github.com/nirvanamahlou/Rubi/pull/25)
 - پیش‌نیاز: PR #24 با Source HEAD `6f475c0` و Merge Commit `b6da5d6` ادغام شده است.
-- Dependency/Lockfile Owner: `RELEASED`؛ هیچ Dependency جدیدی اضافه نشد.
+- Dependency/Lockfile Owner: `PC-B/MASTER-003`؛ برای Parser امن ZIP/XLSX فعال شد.
 
 ## انتقال اتمیک قفل‌ها
 

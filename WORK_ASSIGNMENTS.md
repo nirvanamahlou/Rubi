@@ -227,7 +227,7 @@ Finance shared-contract در `packages/contracts/src/finance/**` مرز دامن
 | Migration Owner | PC-B/MASTER-003 | `packages/database/prisma/schema.prisma`، Migration و Seed افزایشی Master Data | `ACTIVE` تا Merge و Handoff |
 | Master Data shared-contract/root export | PC-B/MASTER-003 | `packages/contracts/src/master-data/**` و export لازم | `ACTIVE` تا Merge و Handoff |
 | Central status/docs | PC-B/MASTER-003 | `WORK_ASSIGNMENTS.md`، `PLANS.md`، `docs/PROJECT_STATUS.md` و `docs/tasks/MASTER-003.md` | `ACTIVE` تا Merge و Handoff |
-| Dependency/Lockfile Owner | تخصیص‌نیافته | فقط در صورت اثبات نیاز به Dependency جدید Excel رزرو می‌شود | `RELEASED` |
+| Dependency/Lockfile Owner | PC-B/MASTER-003 | `apps/api/package.json` و `pnpm-lock.yaml` برای Parser امن ZIP/XLSX | `ACTIVE` تا تثبیت Dependency |
 
 محدوده اجرایی MASTER-003 شامل `apps/api/src/master-data/**`،
 `apps/web/src/modules/master-data/**`، route `/master-data`، قرارداد عمومی Master Data،
@@ -256,3 +256,4 @@ Customers، Finance، Procurement، Reservations، Integrations و Documents خ�
 - وضعیت `DONE` یعنی Commit و Push شده و گزارش تست/ریسک در Project Status ثبت شده
   است؛ ادغام‌شدن را تضمین نمی‌کند.
 - آزادکردن کار بدون تکمیل با تغییر مالک به `تخصیص‌نیافته` و ثبت دلیل انجام می‌شود.
+
