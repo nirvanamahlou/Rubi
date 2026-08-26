@@ -243,8 +243,8 @@ export function MasterDataWorkspace() {
       />
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
 
-      <div className="grid gap-5 xl:grid-cols-[18rem_minmax(0,1fr)]">
-        <Card className="h-fit p-3 xl:sticky xl:top-20">
+      <div className="space-y-5">
+        <Card className="p-3 sm:p-4">
           <div className="flex items-center gap-2 border-b border-border px-2 pb-3">
             <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">
               <Database aria-hidden="true" className="size-4" />
@@ -256,10 +256,16 @@ export function MasterDataWorkspace() {
               </p>
             </div>
           </div>
-          <nav aria-label="دسته‌های اطلاعات پایه" className="mt-3 space-y-4">
+          <nav
+            aria-label="دسته‌های اطلاعات پایه"
+            className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
+          >
             {groups.map((group) => (
-              <section key={group}>
-                <h3 className="px-2 text-[11px] font-bold text-muted-foreground">
+              <section
+                className="rounded-xl border border-border/70 bg-muted/20 p-2"
+                key={group}
+              >
+                <h3 className="px-2 py-1 text-[11px] font-bold text-muted-foreground">
                   {group}
                 </h3>
                 <div className="mt-1 grid gap-1">
@@ -270,7 +276,7 @@ export function MasterDataWorkspace() {
                         aria-current={
                           item.key === resource ? 'page' : undefined
                         }
-                        className="rounded-xl px-3 py-2 text-start text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground"
+                        className="rounded-lg px-3 py-2 text-start text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground"
                         key={item.key}
                         onClick={() => changeResource(item.key)}
                         type="button"
