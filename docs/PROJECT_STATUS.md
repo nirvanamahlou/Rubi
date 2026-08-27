@@ -1,6 +1,6 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-27 — MASTER-003B-GEO آماده Draft PR پشته‌ای
+آخرین به‌روزرسانی: 2026-08-27 — Draft PR پشته‌ای #28 برای MASTER-003B-GEO ایجاد شد
 
 ## خلاصه
 
@@ -9,7 +9,7 @@
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
 - شاخه فعال: `codex/pc-b-master-data-next`
-- Work Item: `MASTER-003B-GEO`؛ Stacked روی `MASTER-003` و PR #25
+- Work Item: `MASTER-003B-GEO`؛ Draft PR #28 با Parent PR #25
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ Dev Server فعالی برای Rubi وجود نداشت.
 - نوع تغییر: Database، API، Contract، Permission/Audit، Excel Import، Frontend و تست؛
   Dependency/Lockfile تا اثبات نیاز واقعی آزاد است.
@@ -133,6 +133,8 @@
 
 - Branch مستقل `codex/pc-b-master-data-next` دقیقاً از Remote Parent
   `origin/codex/pc-b-master-data-advanced@f0d3b8c4` ساخته شد و Parent Branch
+- Draft PR #28 با Base `codex/pc-b-master-data-advanced` ایجاد شد و تا Merge
+  PR #25 نباید ادغام شود؛ سپس Base آن به `develop` تغییر می‌کند.
   دست‌نخورده ماند.
 - Migration افزایشی `20260827090000_master_data_geography` مدل‌های Region، Airport
   و Terminal و توسعهٔ غیرمخرب City را اضافه می‌کند؛ ISO/IATA/ICAO، مختصات،

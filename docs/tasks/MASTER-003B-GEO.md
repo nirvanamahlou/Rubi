@@ -4,6 +4,7 @@
 مالک: `PC-B`
 Branch: `codex/pc-b-master-data-next`
 Stacked Base: `codex/pc-b-master-data-advanced@f0d3b8c411d6e665147958e67193ac52c6ad4397`
+Stacked Draft PR: `#28`
 
 ## محدوده
 

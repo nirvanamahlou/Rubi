@@ -194,7 +194,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
   `codex/pc-b-master-data-next` و Base والد PR #25 پیاده‌سازی شد: Country،
   Province/Region، City، Airport و Terminal با Migration غیرمخرب، Contract v5،
   API/UI واقعی، Permission/Audit و optimistic lock.
-- PR این Slice به‌صورت Draft و stacked می‌ماند و پیش از Merge PR #25 ادغام نمی‌شود؛
+- Draft PR #28 به‌صورت stacked می‌ماند و پیش از Merge PR #25 ادغام نمی‌شود؛
   پس از Merge والد، Base آن به `develop` تغییر خواهد کرد.
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`

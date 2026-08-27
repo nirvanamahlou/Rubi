@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-27 — MASTER-003B-GEO به‌صورت Stacked زیر قفل فعال MASTER-003 رزرو شد
+آخرین به‌روزرسانی: 2026-08-27 — Draft PR #28 برای MASTER-003B-GEO به‌صورت Stacked ایجاد شد
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `PLANNED/RESERVED`، `IN_PROGRESS`،
@@ -31,7 +31,7 @@
 | LEGAL-ENTITY-CONTEXT-001        | PC-A         | `codex/pc-a-legal-entity-context`           | Legal Entity Full-Stack، Prisma، API، Contract، App Shell، صفحه مدیریت، Audit و Test                 | `DONE`             | PR #24؛ Merge `b6da5d6`؛ قفل‌ها با دلیل `DONE/MERGED via PR #24` آزاد شدند  |
 | MASTER-003                      | PC-B         | `codex/pc-b-master-data-advanced`           | توسعه افزایشی Master Data: Schema/Migration، Contract، Backend، Frontend، Excel Import/Export و Test | `IN_PROGRESS`      | Draft PR #25؛ خروجی XLSX واقعی فعال؛ سه قفل فعال و Dependency lock آزاد است |
 | CALENDAR-001                    | PC-B         | `codex/pc-b-master-data-advanced`           | تقویم مشترک آبی با سوییچ شمسی/میلادی در همه فرم‌های Web                                              | `READY_FOR_REVIEW` | ۸۵ تست Web، Typecheck و Lint موفق؛ چهار route لوکال پاسخ ۲۰۰ دادند          |
-| MASTER-003B-GEO                 | PC-B         | `codex/pc-b-master-data-next`               | Vertical Slice جغرافیا: Country، Province/Region، City، Airport، Terminal و تست/مستندات همان Slice  | `IN_PROGRESS`      | Stacked روی PR #25؛ زیرمجموعه قفل‌های فعال PC-B/MASTER-003                  |
+| MASTER-003B-GEO                 | PC-B         | `codex/pc-b-master-data-next`               | Vertical Slice جغرافیا: Country، Province/Region، City، Airport، Terminal و تست/مستندات همان Slice  | `READY_FOR_REVIEW` | Draft PR #28 روی PR #25؛ سه قفل MASTER-003 فعال می‌مانند                    |
 | CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket                     | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence |
 | MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix        | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11        |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                                  | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |
