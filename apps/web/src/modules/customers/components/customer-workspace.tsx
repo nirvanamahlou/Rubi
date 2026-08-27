@@ -32,7 +32,13 @@ import {
   UsersRound,
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -117,7 +123,7 @@ function listMasterData(
   });
 }
 
-function customerCode(id: string) {
+function shortReference(id: string) {
   return id.slice(0, 8).toUpperCase();
 }
 
@@ -128,6 +134,29 @@ function safeCustomerId(value: string | null) {
     )
     ? value
     : null;
+}
+
+interface NewCompanionDraft {
+  key: number;
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  phone: string;
+  relationshipType: CustomerRelationshipType;
+}
+
+let companionDraftKey = 0;
+
+function emptyCompanionDraft(): NewCompanionDraft {
+  companionDraftKey += 1;
+  return {
+    key: companionDraftKey,
+    firstName: '',
+    lastName: '',
+    birthDate: '',
+    phone: '',
+    relationshipType: 'companion',
+  };
 }
 
 function customerDraft(customer?: CustomerDetail): CustomerMutationRequest {
@@ -179,6 +208,8 @@ function CustomerDrawer({
   const [contactType, setContactType] = useState<CustomerContactType>('phone');
   const [contactLabel, setContactLabel] = useState('اصلی');
   const [contact, setContact] = useState('');
+  const [primaryPhone, setPrimaryPhone] = useState('');
+  const [newCompanions, setNewCompanions] = useState<NewCompanionDraft[]>([]);
   const [sensitiveReason, setSensitiveReason] = useState('');
   const [revealedDetail, setRevealedDetail] = useState<CustomerDetail | null>(
     null,
@@ -383,11 +414,114 @@ function CustomerDrawer({
         'مشتری با موفقیت ویرایش شد.',
       );
     } else {
-      await perform(
-        () => customersApi.create(draft),
-        'مشتری با موفقیت ایجاد شد.',
-      );
+      setBusy(true);
+      setMessage(null);
+      try {
+        let createdCustomer = (await customersApi.create(draft)).data;
+        if (primaryPhone.trim()) {
+          createdCustomer = (
+            await customersApi.addContact(createdCustomer.id, {
+              type: 'phone',
+              value: primaryPhone.trim(),
+              label: 'اصلی',
+              isPrimary: true,
+              version: createdCustomer.version,
+            })
+          ).data;
+        }
+
+        for (const companion of newCompanions) {
+          let createdCompanion = (
+            await customersApi.create({
+              kind: 'person',
+              firstName: companion.firstName.trim(),
+              lastName: companion.lastName.trim(),
+              displayName:
+                `${companion.firstName.trim()} ${companion.lastName.trim()}`.trim(),
+              birthDate: companion.birthDate || null,
+              roles: ['passenger'],
+              acquaintanceMethodId: null,
+            })
+          ).data;
+          if (companion.phone.trim()) {
+            createdCompanion = (
+              await customersApi.addContact(createdCompanion.id, {
+                type: 'phone',
+                value: companion.phone.trim(),
+                label: 'اصلی',
+                isPrimary: true,
+                version: createdCompanion.version,
+              })
+            ).data;
+          }
+          createdCustomer = (
+            await customersApi.addCompanion(createdCustomer.id, {
+              relatedCustomerId: createdCompanion.id,
+              relationshipType: companion.relationshipType,
+              version: createdCustomer.version,
+            })
+          ).data;
+        }
+
+        await onSaved(
+          newCompanions.length
+            ? `مشتری و ${newCompanions.length.toLocaleString('fa-IR')} مسافر همراه ثبت شدند.`
+            : 'مشتری با موفقیت ایجاد شد.',
+          createdCustomer,
+        );
+      } catch (error) {
+        setMessage(
+          `${error instanceof Error ? error.message : 'عملیات ناموفق بود.'} اگر بخشی از ثبت انجام شده، پیش از تلاش دوباره فهرست را بررسی کنید.`,
+        );
+      } finally {
+        setBusy(false);
+      }
     }
+  }
+
+  function resizeCompanions(count: number) {
+    const safeCount = Math.max(0, Math.min(9, count));
+    setNewCompanions((current) =>
+      safeCount > current.length
+        ? [
+            ...current,
+            ...Array.from(
+              { length: safeCount - current.length },
+              emptyCompanionDraft,
+            ),
+          ]
+        : current.slice(0, safeCount),
+    );
+  }
+
+  function updateCompanion(
+    index: number,
+    patch: Partial<Omit<NewCompanionDraft, 'key'>>,
+  ) {
+    setNewCompanions((current) =>
+      current.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...patch } : item,
+      ),
+    );
+  }
+
+  function handleEnterNavigation(event: KeyboardEvent<HTMLFormElement>) {
+    if (
+      mode !== 'create' ||
+      event.key !== 'Enter' ||
+      !(event.target instanceof HTMLInputElement)
+    )
+      return;
+    event.preventDefault();
+    const inputs = Array.from(
+      event.currentTarget.querySelectorAll<HTMLInputElement>(
+        'input:not([disabled])',
+      ),
+    ).filter((input) => input.type !== 'hidden');
+    const currentIndex = inputs.indexOf(event.target);
+    const nextInput = inputs[currentIndex + 1];
+    if (nextInput) nextInput.focus();
+    else event.currentTarget.requestSubmit();
   }
 
   async function addContact() {
@@ -530,7 +664,7 @@ function CustomerDrawer({
 
   return (
     <Drawer onOpenChange={(open) => !open && onClose()} open>
-      <DrawerContent className="w-[min(96vw,48rem)] overflow-y-auto p-6">
+      <DrawerContent className="w-[min(96vw,60rem)] overflow-y-auto p-6">
         <DialogTitle>
           {mode === 'create'
             ? 'ایجاد مشتری'
@@ -560,7 +694,20 @@ function CustomerDrawer({
           ) : null}
         </div>
 
-        <form className="mt-5 space-y-4" onSubmit={submit}>
+        <form
+          className="mt-5 space-y-4"
+          onKeyDown={handleEnterNavigation}
+          onSubmit={submit}
+        >
+          {mode === 'create' ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge>۱ · اطلاعات مشتری</Badge>
+              <Badge>۲ · مسافران همراه</Badge>
+              <span className="text-xs text-muted-foreground">
+                Enter شما را به ورودی بعدی می‌برد.
+              </span>
+            </div>
+          ) : null}
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField label="نوع مشتری">
               <Select
@@ -592,6 +739,7 @@ function CustomerDrawer({
                     displayName: event.target.value,
                   }))
                 }
+                required
                 value={draft.displayName}
               />
             </FormField>
@@ -607,6 +755,7 @@ function CustomerDrawer({
                         firstName: event.target.value,
                       }))
                     }
+                    required
                     value={draft.firstName ?? ''}
                   />
                 </FormField>
@@ -624,6 +773,7 @@ function CustomerDrawer({
                         lastName: event.target.value,
                       }))
                     }
+                    required
                     value={draft.lastName ?? ''}
                   />
                 </FormField>
@@ -725,10 +875,203 @@ function CustomerDrawer({
                 ))}
               </div>
             </FormField>
+            {mode === 'create' ? (
+              <FormField
+                description="در فهرست فقط به‌صورت Masked نمایش داده می‌شود."
+                id="customer-primary-phone"
+                label="شماره تماس اصلی"
+              >
+                <Input
+                  dir="ltr"
+                  id="customer-primary-phone"
+                  inputMode="tel"
+                  onChange={(event) => setPrimaryPhone(event.target.value)}
+                  pattern="\+?[0-9]{10,15}"
+                  placeholder="09xxxxxxxxx"
+                  type="tel"
+                  value={primaryPhone}
+                />
+              </FormField>
+            ) : null}
           </div>
+          {mode === 'create' ? (
+            <Card className="space-y-4 border-primary/20 bg-primary/[0.03] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-bold">مسافران همراه</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    برای هر همراه یک رکورد واقعی با نقش «مسافر» ساخته و رابطه آن
+                    با مشتری ثبت می‌شود.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    aria-label="کم‌کردن تعداد مسافران"
+                    disabled={newCompanions.length === 0}
+                    onClick={() => resizeCompanions(newCompanions.length - 1)}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    −
+                  </Button>
+                  <Input
+                    aria-label="تعداد مسافران همراه"
+                    className="w-20 text-center"
+                    max={9}
+                    min={0}
+                    onChange={(event) =>
+                      resizeCompanions(Number(event.target.value))
+                    }
+                    type="number"
+                    value={newCompanions.length}
+                  />
+                  <Button
+                    aria-label="اضافه‌کردن مسافر"
+                    disabled={newCompanions.length === 9}
+                    onClick={() => resizeCompanions(newCompanions.length + 1)}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    <Plus className="size-4" />
+                  </Button>
+                </div>
+              </div>
+              {newCompanions.length === 0 ? (
+                <EmptyState
+                  description="در صورت وجود همراه، تعداد مسافران را افزایش دهید."
+                  title="بدون مسافر همراه"
+                />
+              ) : (
+                <div className="space-y-3">
+                  {newCompanions.map((companion, index) => (
+                    <Card
+                      className="grid gap-3 p-4 sm:grid-cols-2"
+                      key={companion.key}
+                    >
+                      <div className="flex items-center justify-between sm:col-span-2">
+                        <p className="font-bold">
+                          مسافر همراه {(index + 1).toLocaleString('fa-IR')}
+                        </p>
+                        <Button
+                          onClick={() =>
+                            setNewCompanions((current) =>
+                              current.filter(
+                                (_, itemIndex) => itemIndex !== index,
+                              ),
+                            )
+                          }
+                          size="sm"
+                          type="button"
+                          variant="ghost"
+                        >
+                          حذف
+                        </Button>
+                      </div>
+                      <FormField
+                        id={`companion-${companion.key}-first-name`}
+                        label="نام"
+                        required
+                      >
+                        <Input
+                          id={`companion-${companion.key}-first-name`}
+                          onChange={(event) =>
+                            updateCompanion(index, {
+                              firstName: event.target.value,
+                            })
+                          }
+                          required
+                          value={companion.firstName}
+                        />
+                      </FormField>
+                      <FormField
+                        id={`companion-${companion.key}-last-name`}
+                        label="نام خانوادگی"
+                        required
+                      >
+                        <Input
+                          id={`companion-${companion.key}-last-name`}
+                          onChange={(event) =>
+                            updateCompanion(index, {
+                              lastName: event.target.value,
+                            })
+                          }
+                          required
+                          value={companion.lastName}
+                        />
+                      </FormField>
+                      <FormField
+                        id={`companion-${companion.key}-birth-date`}
+                        label="تاریخ تولد"
+                      >
+                        <Input
+                          id={`companion-${companion.key}-birth-date`}
+                          onChange={(event) =>
+                            updateCompanion(index, {
+                              birthDate: event.target.value,
+                            })
+                          }
+                          type="date"
+                          value={companion.birthDate}
+                        />
+                      </FormField>
+                      <FormField
+                        description="اختیاری و در نمایش عادی Masked"
+                        id={`companion-${companion.key}-phone`}
+                        label="شماره تماس"
+                      >
+                        <Input
+                          dir="ltr"
+                          id={`companion-${companion.key}-phone`}
+                          inputMode="tel"
+                          onChange={(event) =>
+                            updateCompanion(index, {
+                              phone: event.target.value,
+                            })
+                          }
+                          pattern="\+?[0-9]{10,15}"
+                          placeholder="09xxxxxxxxx"
+                          type="tel"
+                          value={companion.phone}
+                        />
+                      </FormField>
+                      <FormField label="نوع رابطه">
+                        <Select
+                          onValueChange={(value) =>
+                            updateCompanion(index, {
+                              relationshipType:
+                                value as CustomerRelationshipType,
+                            })
+                          }
+                          value={companion.relationshipType}
+                        >
+                          <SelectTrigger
+                            aria-label={`نوع رابطه مسافر ${index + 1}`}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="family">خانواده</SelectItem>
+                            <SelectItem value="companion">همراه</SelectItem>
+                            <SelectItem value="guardian">سرپرست</SelectItem>
+                            <SelectItem value="dependent">تحت تکفل</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormField>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </Card>
+          ) : null}
           {!readonly ? (
-            <Button disabled={busy} type="submit">
-              {mode === 'create' ? 'ایجاد مشتری' : 'ذخیره با کنترل نسخه'}
+            <Button className="w-full sm:w-auto" disabled={busy} type="submit">
+              {mode === 'create'
+                ? newCompanions.length
+                  ? 'ثبت مشتری و مسافران همراه'
+                  : 'ثبت مشتری'
+                : 'ذخیره با کنترل نسخه'}
             </Button>
           ) : null}
         </form>
@@ -761,12 +1104,6 @@ function CustomerDrawer({
             <TabsContent className="space-y-3" value="overview">
               <Card className="grid gap-3 p-4 sm:grid-cols-2">
                 <div>
-                  <p className="text-xs text-muted-foreground">کد مشتری</p>
-                  <p className="font-mono text-sm" dir="ltr">
-                    {customer.id}
-                  </p>
-                </div>
-                <div>
                   <p className="text-xs text-muted-foreground">وضعیت</p>
                   <Badge>
                     {customer.status === 'active' ? 'فعال' : 'غیرفعال'}
@@ -784,7 +1121,7 @@ function CustomerDrawer({
                 </div>
               </Card>
               <Alert
-                description="نام لاتین، جنسیت، یادداشت و کد مستقل کسب‌وکاری در Schema و customers.v2 موجود نیستند و برای CUSTOMER-002B مسدود ثبت شده‌اند."
+                description="نام لاتین، جنسیت و یادداشت در Schema و customers.v2 موجود نیستند و برای CUSTOMER-002B مسدود ثبت شده‌اند."
                 title="قابلیت‌های نیازمند قرارداد"
                 tone="warning"
               />
@@ -1057,9 +1394,6 @@ function CustomerDrawer({
               {customer.companions.map((item) => (
                 <Card className="p-3" key={item.id}>
                   <p className="font-bold">{item.relatedDisplayName}</p>
-                  <p className="font-mono text-xs" dir="ltr">
-                    {item.relatedCustomerId}
-                  </p>
                 </Card>
               ))}
               {!readonly ? (
@@ -1070,7 +1404,7 @@ function CustomerDrawer({
                       onChange={(event) =>
                         setCompanionSearch(event.target.value)
                       }
-                      placeholder="نام، تماس ماسک‌شده یا کد کامل"
+                      placeholder="نام یا تماس ماسک‌شده"
                       value={companionSearch}
                     />
                   </FormField>
@@ -1101,7 +1435,7 @@ function CustomerDrawer({
                         {(companionSearch.trim() ? companionOptions : []).map(
                           (record) => (
                             <SelectItem key={record.id} value={record.id}>
-                              {record.displayName} · {customerCode(record.id)}
+                              {record.displayName}
                             </SelectItem>
                           ),
                         )}
@@ -1558,6 +1892,19 @@ export function CustomerWorkspace() {
         description="Persistence فعال است. تماس در حالت عادی فقط ماسک‌شده نمایش داده می‌شود؛ مدرک هویتی ذخیره نمی‌شود و Merge واقعی مسدود است."
         title="Backend واقعی · حفاظت PII"
       />
+      <Card className="flex flex-col gap-4 border-primary/25 bg-primary/[0.04] p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-lg font-bold">ثبت مشتری و مسافران همراه</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            اطلاعات مشتری، شماره تماس و همراهان را در یک جریان مرحله‌ای وارد
+            کنید.
+          </p>
+        </div>
+        <Button onClick={() => void open('create')} size="lg">
+          <Plus className="size-4" />
+          بازکردن فرم ثبت
+        </Button>
+      </Card>
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-4">
         <FormField id="customer-search-live" label="جست‌وجو">
@@ -1570,7 +1917,7 @@ export function CustomerWorkspace() {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-              placeholder="نام، تماس ماسک‌شده یا کد کامل مشتری"
+              placeholder="نام یا تماس ماسک‌شده"
               value={search}
             />
           </div>
@@ -1626,7 +1973,7 @@ export function CustomerWorkspace() {
               <SelectItem value="all">همه شعب مجاز</SelectItem>
               {allowedBranchIds.map((id) => (
                 <SelectItem key={id} value={id}>
-                  شعبه {customerCode(id)}
+                  شعبه {shortReference(id)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -1796,12 +2143,11 @@ export function CustomerWorkspace() {
         />
       ) : (
         <Card className="overflow-x-auto">
-          <table className="w-full min-w-[70rem] text-sm">
+          <table className="w-full min-w-[64rem] text-sm">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
                 <th className="p-4 text-start">مشتری</th>
                 <th className="p-4 text-start">شماره تماس</th>
-                <th className="p-4 text-start">کد</th>
                 <th className="p-4 text-start">وضعیت و نقش</th>
                 <th className="p-4 text-start">رضایت</th>
                 <th className="p-4 text-start">آخرین تغییر</th>
@@ -1822,15 +2168,9 @@ export function CustomerWorkspace() {
                     </div>
                   </td>
                   <td className="p-4">
-                    <span
-                      className="font-mono text-muted-foreground"
-                      dir="ltr"
-                    >
+                    <span className="font-mono text-muted-foreground" dir="ltr">
                       {record.maskedPrimaryContact ?? 'بدون تماس'}
                     </span>
-                  </td>
-                  <td className="p-4 font-mono" dir="ltr" title={record.id}>
-                    {customerCode(record.id)}
                   </td>
                   <td className="p-4">
                     <Badge className="me-1">

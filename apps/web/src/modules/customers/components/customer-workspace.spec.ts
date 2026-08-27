@@ -66,9 +66,21 @@ describe('Customer Operations workspace boundaries', () => {
 
   it('shows the primary contact in a dedicated masked list column', () => {
     expect(source).toContain('شماره تماس');
-    expect(source).toContain(
-      "record.maskedPrimaryContact ?? 'بدون تماس'",
-    );
+    expect(source).toContain("record.maskedPrimaryContact ?? 'بدون تماس'");
+  });
+
+  it('provides an enter-friendly create flow with adjustable companion passengers', () => {
+    expect(source).toContain('ثبت مشتری و مسافران همراه');
+    expect(source).toContain('handleEnterNavigation');
+    expect(source).toContain('resizeCompanions');
+    expect(source).toContain("roles: ['passenger']");
+    expect(source).toContain('customersApi.addCompanion(createdCustomer.id');
+  });
+
+  it('keeps internal customer identifiers out of the visible workspace', () => {
+    expect(source).not.toContain('function customerCode');
+    expect(source).not.toContain('<th className="p-4 text-start">کد</th>');
+    expect(source).not.toContain('{item.relatedCustomerId}');
   });
 
   it('exposes the complete Customer 360 navigation', () => {
