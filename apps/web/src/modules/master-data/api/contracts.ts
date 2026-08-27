@@ -16,6 +16,11 @@ export const masterDataListQuerySchema = z.object({
   sortDirection: z.enum(['asc', 'desc']).default('asc'),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(10).max(100).default(25),
+  countryId: z.string().uuid().optional(),
+  regionId: z.string().uuid().optional(),
+  cityId: z.string().uuid().optional(),
+  airportId: z.string().uuid().optional(),
+  terminalType: z.enum(['DOMESTIC', 'INTERNATIONAL', 'VIP']).optional(),
 });
 
 export const masterDataExportRequestSchema = z.object({
@@ -108,5 +113,15 @@ export function serializeMasterDataListQuery(query: MasterDataListQuery) {
     page: String(query.page),
     pageSize: String(query.pageSize),
   });
+  for (const field of [
+    'countryId',
+    'regionId',
+    'cityId',
+    'airportId',
+    'terminalType',
+  ] as const) {
+    const value = query[field];
+    if (value) params.set(field, value);
+  }
   return params.toString();
 }

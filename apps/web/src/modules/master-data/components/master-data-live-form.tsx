@@ -5,7 +5,15 @@ import { useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
-import { FormField, Input } from '@/components/ui/form-controls';
+import {
+  FormField,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/form-controls';
 import {
   DialogDescription,
   DialogTitle,
@@ -105,7 +113,7 @@ export function MasterDataLiveForm({
             : 'اطلاعات پس از اعتبارسنجی در Backend ثبت و Audit می‌شود.'}
         </DialogDescription>
         <div className="mt-4 flex gap-2">
-          <Badge>master-data.v1</Badge>
+          <Badge>master-data.v5</Badge>
           {record ? (
             <Badge>نسخه {record.version.toLocaleString('fa-IR')}</Badge>
           ) : null}
@@ -138,6 +146,23 @@ export function MasterDataLiveForm({
                 onChange={updateValue}
                 value={values[field.key] ?? ''}
               />
+            ) : field.type === 'select' ? (
+              <Select
+                disabled={readonly || saving}
+                onValueChange={updateValue}
+                value={values[field.key] ?? ''}
+              >
+                <SelectTrigger aria-invalid={Boolean(error)} id={controlId}>
+                  <SelectValue placeholder="انتخاب کنید" />
+                </SelectTrigger>
+                <SelectContent>
+                  {field.options?.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             ) : field.type === 'datetime-local' ? (
               <DatePicker
                 aria-invalid={Boolean(error)}

@@ -9,6 +9,14 @@ const columnLabels: Readonly<Record<string, string>> = {
   name: 'عنوان',
   englishName: 'عنوان انگلیسی',
   countryId: 'کشور',
+  regionId: 'استان/ناحیه',
+  parentRegionId: 'ناحیه بالادستی',
+  iataCode: 'کد IATA',
+  ianaTimezone: 'منطقه زمانی IANA',
+  latitude: 'عرض جغرافیایی',
+  longitude: 'طول جغرافیایی',
+  airportId: 'فرودگاه',
+  terminalType: 'نوع ترمینال',
   symbol: 'نماد',
   decimalDigits: 'تعداد اعشار',
   fromCurrencyCode: 'ارز مبدأ',
@@ -36,7 +44,10 @@ const columnLabels: Readonly<Record<string, string>> = {
 
 const resourceLabels: Record<MasterDataResource, string> = {
   countries: 'کشورها',
+  regions: 'استان‌ها و نواحی',
   cities: 'شهرها',
+  airports: 'فرودگاه‌ها',
+  terminals: 'ترمینال‌ها',
   currencies: 'ارزها',
   'exchange-rates': 'نرخ ارز',
   banks: 'بانک‌ها',
@@ -50,9 +61,17 @@ const resourceLabels: Record<MasterDataResource, string> = {
 };
 
 function escapeXml(value: unknown): string {
-  return String(value ?? '')
-    .normalize('NFKC')
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+  return Array.from(String(value ?? '').normalize('NFKC'))
+    .filter((character) => {
+      const codePoint = character.codePointAt(0) ?? 0;
+      return (
+        codePoint === 0x09 ||
+        codePoint === 0x0a ||
+        codePoint === 0x0d ||
+        codePoint >= 0x20
+      );
+    })
+    .join('')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')

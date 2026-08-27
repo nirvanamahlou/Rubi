@@ -112,6 +112,28 @@ describe('Master Data HTTP contract', () => {
     );
   });
 
+  it('validates and forwards geography list filters', async () => {
+    await request(app.getHttpServer())
+      .get(
+        '/master-data/airports?countryId=44444444-4444-4444-8444-444444444444&regionId=55555555-5555-4555-8555-555555555555&cityId=66666666-6666-4666-8666-666666666666&page=1&pageSize=25',
+      )
+      .expect(200);
+    expect(service.list).toHaveBeenCalledWith(
+      'airports',
+      expect.objectContaining({
+        countryId: '44444444-4444-4444-8444-444444444444',
+        regionId: '55555555-5555-4555-8555-555555555555',
+        cityId: '66666666-6666-4666-8666-666666666666',
+      }),
+    );
+
+    service.list.mockClear();
+    await request(app.getHttpServer())
+      .get('/master-data/airports?countryId=not-a-uuid')
+      .expect(400);
+    expect(service.list).not.toHaveBeenCalled();
+  });
+
   it('rejects pagination outside the allowlist before the service', async () => {
     await request(app.getHttpServer())
       .get('/master-data/countries?pageSize=500')

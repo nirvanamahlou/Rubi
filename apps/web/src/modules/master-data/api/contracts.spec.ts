@@ -21,6 +21,22 @@ describe('master data API proposal', () => {
     expect(serializeMasterDataListQuery(query)).toContain('pageSize=25');
   });
 
+  it('serializes allowlisted geography filters', () => {
+    const query = parseMasterDataListQuery({
+      countryId: '11111111-1111-4111-8111-111111111111',
+      regionId: '22222222-2222-4222-8222-222222222222',
+      terminalType: 'VIP',
+    });
+    const serialized = serializeMasterDataListQuery(query);
+    expect(serialized).toContain(
+      'countryId=11111111-1111-4111-8111-111111111111',
+    );
+    expect(serialized).toContain(
+      'regionId=22222222-2222-4222-8222-222222222222',
+    );
+    expect(serialized).toContain('terminalType=VIP');
+  });
+
   it('rejects uncontrolled page sizes', () => {
     expect(() => parseMasterDataListQuery({ pageSize: 101 })).toThrow();
   });

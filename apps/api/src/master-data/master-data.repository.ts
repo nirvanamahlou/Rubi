@@ -40,7 +40,10 @@ function json(value: unknown): Exclude<JsonValue, null> {
 
 const delegateNames: Record<MasterDataResource, string> = {
   countries: 'masterCountry',
+  regions: 'masterRegion',
   cities: 'masterCity',
+  airports: 'masterAirport',
+  terminals: 'masterTerminal',
   currencies: 'masterCurrency',
   'exchange-rates': 'masterDraftExchangeRate',
   banks: 'masterBank',
@@ -54,7 +57,10 @@ const delegateNames: Record<MasterDataResource, string> = {
 };
 
 const nameFields: Record<MasterDataResource, string> = {
+  regions: 'name',
   countries: 'name',
+  airports: 'name',
+  terminals: 'name',
   cities: 'name',
   currencies: 'name',
   'exchange-rates': 'source',
@@ -68,6 +74,42 @@ const nameFields: Record<MasterDataResource, string> = {
   'acquaintance-methods': 'name',
 };
 
+const codeFields: Record<MasterDataResource, string> = {
+  countries: 'code',
+  regions: 'code',
+  cities: 'code',
+  airports: 'iataCode',
+  terminals: 'code',
+  currencies: 'code',
+  'exchange-rates': 'observedAt',
+  banks: 'code',
+  insurers: 'code',
+  airlines: 'code',
+  hotels: 'code',
+  organizations: 'code',
+  brokers: 'code',
+  leaders: 'code',
+  'acquaintance-methods': 'code',
+};
+
+const searchFields: Record<MasterDataResource, readonly string[]> = {
+  countries: ['name', 'englishName', 'code'],
+  regions: ['name', 'englishName', 'code'],
+  cities: ['name', 'englishName', 'code'],
+  airports: ['name', 'englishName', 'iataCode', 'icaoCode', 'ianaTimezone'],
+  terminals: ['name', 'englishName', 'code'],
+  currencies: ['name', 'englishName', 'code'],
+  'exchange-rates': ['source'],
+  banks: ['name', 'code'],
+  insurers: ['name', 'code'],
+  airlines: ['name', 'code', 'icaoCode'],
+  hotels: ['name', 'englishName', 'code'],
+  organizations: ['displayName', 'legalName', 'code'],
+  brokers: ['name', 'code'],
+  leaders: ['name', 'code'],
+  'acquaintance-methods': ['name', 'code'],
+};
+
 function delegate(client: unknown, resource: MasterDataResource): Delegate {
   return (client as Record<string, Delegate>)[
     delegateNames[resource]
@@ -78,6 +120,11 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'exchange-rates')
     return { fromCurrency: true, toCurrency: true };
   if (resource === 'organizations') return { roles: true };
+  if (resource === 'regions') return { country: true, parent: true };
+  if (resource === 'cities') return { country: true, region: true };
+  if (resource === 'airports')
+    return { city: { include: { country: true, region: true } } };
+  if (resource === 'terminals') return { airport: true };
   return undefined;
 }
 
@@ -102,10 +149,17 @@ export function toMasterDataRecord(
   const from = row.fromCurrency as Record<string, unknown> | undefined;
   const to = row.toCurrency as Record<string, unknown> | undefined;
   const roles = row.roles as { roleCode: string }[] | undefined;
+  const country = row.country as Record<string, unknown> | undefined;
+  const region = row.region as Record<string, unknown> | undefined;
+  const parent = row.parent as Record<string, unknown> | undefined;
+  const city = row.city as Record<string, unknown> | undefined;
+  const airport = row.airport as Record<string, unknown> | undefined;
   const code =
     resource === 'exchange-rates'
       ? `${String(from?.code ?? '')}/${String(to?.code ?? '')}`
-      : String(row.code ?? '');
+      : resource === 'airports'
+        ? String(row.iataCode ?? '')
+        : String(row.code ?? '');
   const name =
     resource === 'organizations'
       ? String(row.displayName ?? '')
@@ -128,6 +182,11 @@ export function toMasterDataRecord(
     'fromCurrency',
     'toCurrency',
     'roles',
+    'country',
+    'region',
+    'parent',
+    'city',
+    'airport',
   ]);
   const attributes = Object.fromEntries(
     Object.entries(row)
@@ -141,6 +200,30 @@ export function toMasterDataRecord(
   if (resource === 'organizations') attributes.displayName = name;
   if (roles)
     attributes.roleCodes = roles.map(({ roleCode }) => roleCode).join(',');
+  if (resource === 'countries') attributes.iso2Code = code;
+  if (resource === 'regions') {
+    attributes.countryCode = String(country?.code ?? '');
+    attributes.countryName = String(country?.name ?? '');
+    attributes.parentRegionName = String(parent?.name ?? '');
+  }
+  if (resource === 'cities') {
+    attributes.countryCode = String(country?.code ?? '');
+    attributes.countryName = String(country?.name ?? '');
+    attributes.regionName = String(region?.name ?? '');
+  }
+  if (resource === 'airports') {
+    const airportCountry = city?.country as Record<string, unknown> | undefined;
+    const airportRegion = city?.region as Record<string, unknown> | undefined;
+    attributes.cityName = String(city?.name ?? '');
+    attributes.countryId = String(city?.countryId ?? '');
+    attributes.countryName = String(airportCountry?.name ?? '');
+    attributes.regionId = city?.regionId ? String(city.regionId) : null;
+    attributes.regionName = String(airportRegion?.name ?? '');
+  }
+  if (resource === 'terminals') {
+    attributes.airportName = String(airport?.name ?? '');
+    attributes.airportIataCode = String(airport?.iataCode ?? '');
+  }
   return {
     id: row.id,
     resource,
@@ -165,20 +248,35 @@ export class MasterDataRepository {
     const nameField = nameFields[resource];
     const where: Record<string, unknown> = {};
     if (query.status !== 'all') where.isActive = query.status === 'active';
+    const airportCityWhere: Record<string, unknown> = {};
+    if (query.countryId) {
+      if (resource === 'regions' || resource === 'cities')
+        where.countryId = query.countryId;
+      if (resource === 'airports') airportCityWhere.countryId = query.countryId;
+    }
+    if (query.regionId) {
+      if (resource === 'cities') where.regionId = query.regionId;
+      if (resource === 'airports') airportCityWhere.regionId = query.regionId;
+    }
+    if (resource === 'airports') {
+      if (query.cityId) where.cityId = query.cityId;
+      if (Object.keys(airportCityWhere).length)
+        where.city = { is: airportCityWhere };
+    }
+    if (resource === 'terminals') {
+      if (query.airportId) where.airportId = query.airportId;
+      if (query.terminalType) where.terminalType = query.terminalType;
+    }
     if (query.search) {
-      where.OR =
-        resource === 'exchange-rates'
-          ? [{ source: { contains: query.search, mode: 'insensitive' } }]
-          : [
-              { [nameField]: { contains: query.search, mode: 'insensitive' } },
-              { code: { contains: query.search, mode: 'insensitive' } },
-            ];
+      where.OR = searchFields[resource].map((field) => ({
+        [field]: { contains: query.search, mode: 'insensitive' },
+      }));
     }
     const sortField =
       query.sortBy === 'name'
         ? nameField
-        : resource === 'exchange-rates' && query.sortBy === 'code'
-          ? 'observedAt'
+        : query.sortBy === 'code'
+          ? codeFields[resource]
           : query.sortBy;
     const args: Record<string, unknown> = {
       where,
@@ -206,7 +304,23 @@ export class MasterDataRepository {
     if (resource === 'exchange-rates') return false;
     return Boolean(
       await delegate(this.database.client, resource).findFirst({
-        where: { code },
+        where: { [codeFields[resource]]: code },
+      }),
+    );
+  }
+
+  async fieldExists(
+    resource: MasterDataResource,
+    field: string,
+    value: string,
+    excludeId?: string,
+  ) {
+    return Boolean(
+      await delegate(this.database.client, resource).findFirst({
+        where: {
+          [field]: value,
+          ...(excludeId ? { NOT: { id: excludeId } } : {}),
+        },
       }),
     );
   }

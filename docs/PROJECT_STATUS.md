@@ -1,15 +1,15 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-26 — اصلاحات Review رسمی Draft PR #25 اعمال شد
+آخرین به‌روزرسانی: 2026-08-27 — Draft PR پشته‌ای #28 برای MASTER-003B-GEO ایجاد شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003 در حال اجرا؛ Review رسمی Draft PR #25 رفع و آزمون شد**
+- وضعیت: **MASTER-003B-GEO روی Parent PR #25 پیاده‌سازی و پذیرش PostgreSQL/Smoke شد**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه فعال: `codex/pc-b-master-data-advanced`
-- Work Item: `MASTER-003`؛ `IN_PROGRESS` از Base `b6da5d6`
+- شاخه فعال: `codex/pc-b-master-data-next`
+- Work Item: `MASTER-003B-GEO`؛ Draft PR #28 با Parent PR #25
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ Dev Server فعالی برای Rubi وجود نداشت.
 - نوع تغییر: Database، API، Contract، Permission/Audit، Excel Import، Frontend و تست؛
   Dependency/Lockfile تا اثبات نیاز واقعی آزاد است.
@@ -129,6 +129,32 @@
   صریحاً `UNAVAILABLE`/در انتظار گزارش می‌شود.
 - Scope توسعه افزایشی MASTER-002 شامل Master Data مشترک دو شرکت، نرخ مرجع غیر authoritative،
   کاتالوگ‌های پیشرفته، Import امن Excel، UI واقعی و تست کامل است.
+### `MASTER-003B-GEO` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-next` دقیقاً از Remote Parent
+  `origin/codex/pc-b-master-data-advanced@f0d3b8c4` ساخته شد و Parent Branch
+- Draft PR #28 با Base `codex/pc-b-master-data-advanced` ایجاد شد و تا Merge
+  PR #25 نباید ادغام شود؛ سپس Base آن به `develop` تغییر می‌کند.
+  دست‌نخورده ماند.
+- Migration افزایشی `20260827090000_master_data_geography` مدل‌های Region، Airport
+  و Terminal و توسعهٔ غیرمخرب City را اضافه می‌کند؛ ISO/IATA/ICAO، مختصات،
+  same-country hierarchy و delete restrict در PostgreSQL enforce می‌شوند.
+- Contract عمومی به `master-data.v5` ارتقا یافت و Backend/Frontend واقعی پنج منبع
+  جغرافیا با Search/Filter/Sort/Pagination، Create/View/Edit، Status، Optimistic Lock،
+  Audit، Permission و UI فارسی RTL responsive تکمیل شد.
+- داده جغرافیا global است؛ هیچ Legal Entity filter یا branch ownership روی رکوردها
+  اعمال نمی‌شود و branch فقط در Audit metadata ثبت می‌گردد.
+- همه ۱۰ Migration روی PostgreSQL 18.1 خالی، Seed دوگانه، constraint test و smoke
+  احراز‌شده login + پنج API + `/master-data` با HTTP 200 پاس شدند؛ دیتابیس موقت
+  پس از آزمون حذف شد.
+- هیچ فایل Customers، dependency manifest یا lockfile تغییر نکرده است. این Slice زیر
+  همان سه قفل فعال `PC-B/MASTER-003` باقی می‌ماند و PR آن باید Draft و stacked روی
+  PR #25 باشد.
+- full typecheck، ۳۱۶ تست در ۷۷ فایل و production build کل Monorepo پاس شدند؛ lint
+  همه فایل‌های Slice نیز پاس است. full lint فقط روی DatePicker بدون تغییر Parent
+  متوقف می‌شود و برای حفظ Vertical Slice وارد این PR نشده است.
+
+
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
 
 - کامپوننت مشترک DatePicker با تم آبی و سوییچ بالای تقویم برای شمسی/میلادی ایجاد شد.

@@ -62,6 +62,57 @@ export function validateMasterDataDraft(
     }
   }
 
+  if (resource === 'countries' && values.iso2Code) {
+    values.iso2Code = values.iso2Code.toUpperCase();
+    if (!/^[A-Z]{2}$/.test(values.iso2Code))
+      errors.iso2Code = 'کد ISO-2 باید دو حرف بزرگ باشد.';
+  }
+
+  if (resource === 'regions' && values.type) {
+    if (!['PROVINCE', 'STATE', 'REGION', 'TERRITORY'].includes(values.type))
+      errors.type = 'نوع استان/ناحیه معتبر نیست.';
+  }
+
+  if (resource === 'airports') {
+    for (const [field, pattern, message] of [
+      ['iataCode', /^[A-Z]{3}$/, 'کد IATA باید سه حرف بزرگ باشد.'],
+      ['icaoCode', /^[A-Z]{4}$/, 'کد ICAO باید چهار حرف بزرگ باشد.'],
+    ] as const) {
+      if (!values[field]) continue;
+      values[field] = values[field].toUpperCase();
+      if (!pattern.test(values[field])) errors[field] = message;
+    }
+    if (values.ianaTimezone) {
+      try {
+        new Intl.DateTimeFormat('en-US', {
+          timeZone: values.ianaTimezone,
+        }).format();
+      } catch {
+        errors.ianaTimezone = 'Timezone باید شناسه معتبر IANA باشد.';
+      }
+    }
+    for (const [field, minimum, maximum] of [
+      ['latitude', -90, 90],
+      ['longitude', -180, 180],
+    ] as const) {
+      if (!values[field]) continue;
+      const coordinate = Number(values[field]);
+      if (
+        !Number.isFinite(coordinate) ||
+        coordinate < minimum ||
+        coordinate > maximum
+      )
+        errors[field] = 'مختصات خارج از بازه مجاز است.';
+    }
+  }
+
+  if (
+    resource === 'terminals' &&
+    values.terminalType &&
+    !['DOMESTIC', 'INTERNATIONAL', 'VIP'].includes(values.terminalType)
+  )
+    errors.terminalType = 'نوع ترمینال معتبر نیست.';
+
   if (resource === 'hotels' && values.starRating) {
     const rating = Number(values.starRating);
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) {

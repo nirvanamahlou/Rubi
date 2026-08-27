@@ -11,7 +11,7 @@ describe('master data catalog', () => {
     expect(masterDataCatalog.map((item) => item.key)).toEqual([
       ...masterDataResourceKeys,
     ]);
-    expect(new Set(masterDataCatalog.map((item) => item.key)).size).toBe(12);
+    expect(new Set(masterDataCatalog.map((item) => item.key)).size).toBe(15);
   });
 
   it('does not expose a hotel organization field', () => {
@@ -20,6 +20,27 @@ describe('master data catalog', () => {
         (field) => field.key === 'organizationId',
       ),
     ).toBe(false);
+  });
+
+  it('defines the complete geography fields and selector options', () => {
+    expect(
+      getMasterDataDefinition('airports').fields.map((field) => field.key),
+    ).toEqual([
+      'name',
+      'englishName',
+      'countryId',
+      'cityId',
+      'iataCode',
+      'icaoCode',
+      'ianaTimezone',
+      'latitude',
+      'longitude',
+    ]);
+    expect(
+      getMasterDataDefinition('terminals').fields.find(
+        (field) => field.key === 'terminalType',
+      )?.options,
+    ).toHaveLength(3);
   });
 
   it('defines required fields without exposing the internal code', () => {

@@ -25,8 +25,20 @@ export function resolveReferenceSelectorState(input: {
 const configs: Partial<
   Record<MasterDataResourceKey, Record<string, ReferenceFieldConfig>>
 > = {
+  regions: {
+    countryId: { target: 'countries', payload: 'id' },
+    parentRegionId: { target: 'regions', payload: 'id', optional: true },
+  },
   cities: {
     countryId: { target: 'countries', payload: 'id' },
+    regionId: { target: 'regions', payload: 'id', optional: true },
+  },
+  airports: {
+    countryId: { target: 'countries', payload: 'id' },
+    cityId: { target: 'cities', payload: 'id' },
+  },
+  terminals: {
+    airportId: { target: 'airports', payload: 'id' },
   },
   banks: {
     countryId: { target: 'countries', payload: 'id' },

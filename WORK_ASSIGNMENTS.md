@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-27 — CUSTOMER-002A برای توسعه موازی PC-A در مرز مستقل Customers رزرو شد
+آخرین به‌روزرسانی: 2026-08-27 — Draft PR #28 برای MASTER-003B-GEO به‌صورت Stacked ایجاد شد
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `PLANNED/RESERVED`، `IN_PROGRESS`،
@@ -31,6 +31,7 @@
 | LEGAL-ENTITY-CONTEXT-001        | PC-A         | `codex/pc-a-legal-entity-context`           | Legal Entity Full-Stack، Prisma، API، Contract، App Shell، صفحه مدیریت، Audit و Test                 | `DONE`             | PR #24؛ Merge `b6da5d6`؛ قفل‌ها با دلیل `DONE/MERGED via PR #24` آزاد شدند  |
 | MASTER-003                      | PC-B         | `codex/pc-b-master-data-advanced`           | توسعه افزایشی Master Data: Schema/Migration، Contract، Backend، Frontend، Excel Import/Export و Test | `IN_PROGRESS`      | Draft PR #25؛ خروجی XLSX واقعی فعال؛ سه قفل فعال و Dependency lock آزاد است |
 | CALENDAR-001                    | PC-B         | `codex/pc-b-master-data-advanced`           | تقویم مشترک آبی با سوییچ شمسی/میلادی در همه فرم‌های Web                                              | `READY_FOR_REVIEW` | ۸۵ تست Web، Typecheck و Lint موفق؛ چهار route لوکال پاسخ ۲۰۰ دادند          |
+| MASTER-003B-GEO                 | PC-B         | `codex/pc-b-master-data-next`               | Vertical Slice جغرافیا: Country، Province/Region، City، Airport، Terminal و تست/مستندات همان Slice  | `READY_FOR_REVIEW` | Draft PR #28 روی PR #25؛ سه قفل MASTER-003 فعال می‌مانند                    |
 | CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket                     | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence |
 | MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix        | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11        |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                                  | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |
@@ -230,6 +231,20 @@ Finance shared-contract در `packages/contracts/src/finance/**` مرز دامن
 | Master Data shared-contract/root export | PC-B/MASTER-003 | `packages/contracts/src/master-data/**` و export لازم                                    | `ACTIVE` تا Merge و Handoff                              |
 | Central status/docs                     | PC-B/MASTER-003 | `WORK_ASSIGNMENTS.md`، `PLANS.md`، `docs/PROJECT_STATUS.md` و `docs/tasks/MASTER-003.md` | `ACTIVE` تا Merge و Handoff                              |
 | Dependency/Lockfile Owner               | PC-B/MASTER-003 | `fflate@0.8.3` در `apps/api/package.json` و `pnpm-lock.yaml`                             | `RELEASED` پس از Pin، Security Review و آزمون فایل واقعی |
+
+#### زیرواحد Stacked `MASTER-003B-GEO`
+
+- Branch مستقل `codex/pc-b-master-data-next` از
+  `origin/codex/pc-b-master-data-advanced@f0d3b8c411d6e665147958e67193ac52c6ad4397`
+  ساخته شده و Parent Branch نباید از این Task تغییر یا Push شود.
+- محدوده انحصاری این Slice شامل مدل، Migration افزایشی، Repository/API/Contract،
+  Permission/Audit، UI فارسی RTL و تست‌های Country، Province/Region، City، Airport و
+  Terminal است؛ هیچ فایل Customers در این Task تغییر نمی‌کند.
+- سه قفل فعال Migration، Master Data shared-contract/root export و Central docs همان
+  قفل‌های `PC-B/MASTER-003` هستند و قفل جدید یا موازی ایجاد نمی‌شود؛ Dependency/Lockfile
+  آزاد می‌ماند و این Slice مجاز به تغییر manifest یا lockfile نیست.
+- PR این Slice باید Draft و با Base `codex/pc-b-master-data-advanced` باشد، وابستگی به
+  PR #25 را صریح ثبت کند و پیش از Merge والد ادغام نشود.
 
 ### رزرو موازی PC-A/CUSTOMER-002A
 
