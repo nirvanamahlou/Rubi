@@ -106,6 +106,83 @@ describe('CustomerRepository', () => {
     );
   });
 
+  it('applies only allowlisted model-backed list filters', async () => {
+    const customer = {
+      findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(0),
+    };
+    const database = { client: { customer } } as unknown as DatabaseService;
+    const repository = new CustomerRepository(database);
+
+    await repository.list([row.ownerBranchId], {
+      search: '',
+      kind: 'organization',
+      status: 'inactive',
+      role: 'customer',
+      acquaintanceMethodId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      createdFrom: '2026-08-01',
+      createdTo: '2026-08-31',
+      updatedFrom: '2026-08-10',
+      updatedTo: '2026-08-20',
+      sortBy: 'createdAt',
+      sortDirection: 'asc',
+      page: 2,
+      pageSize: 10,
+    });
+
+    expect(customer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          ownerBranchId: { in: [row.ownerBranchId] },
+          kind: 'ORGANIZATION',
+          isActive: false,
+          isCustomer: true,
+          acquaintanceMethodId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          createdAt: {
+            gte: new Date('2026-08-01'),
+            lte: new Date('2026-08-31T23:59:59.999Z'),
+          },
+          updatedAt: {
+            gte: new Date('2026-08-10'),
+            lte: new Date('2026-08-20T23:59:59.999Z'),
+          },
+        }),
+        orderBy: { createdAt: 'asc' },
+        skip: 10,
+        take: 10,
+      }),
+    );
+  });
+
+  it('reads branch-scoped audit with a safe explicit select', async () => {
+    const customer = { findFirst: vi.fn().mockResolvedValue({ id: row.id }) };
+    const customerDuplicateCandidate = {
+      findMany: vi.fn().mockResolvedValue([]),
+    };
+    const customerAuditEvent = { findMany: vi.fn().mockResolvedValue([]) };
+    const database = {
+      client: { customer, customerDuplicateCandidate, customerAuditEvent },
+    } as unknown as DatabaseService;
+    const repository = new CustomerRepository(database);
+
+    await repository.audit(row.id, [row.ownerBranchId]);
+
+    expect(customer.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          ownerBranchId: { in: [row.ownerBranchId] },
+        }),
+      }),
+    );
+    const auditQuery = customerAuditEvent.findMany.mock.calls[0]?.[0];
+    expect(auditQuery.select).toEqual(
+      expect.objectContaining({ action: true, reason: true, occurredAt: true }),
+    );
+    expect(auditQuery.select).not.toHaveProperty('beforeSnapshot');
+    expect(auditQuery.select).not.toHaveProperty('afterSnapshot');
+    expect(auditQuery).toMatchObject({ take: 200 });
+  });
+
   it('masks restricted birth date unless permission was granted upstream', () => {
     expect(toCustomerDetail(row as never, false)).toMatchObject({
       birthDate: null,

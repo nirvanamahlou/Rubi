@@ -1,6 +1,8 @@
 'use client';
 
 import type {
+  CustomerActivityEntry,
+  CustomerAuditEntry,
   CustomerDetail,
   CustomerAddressType,
   CustomerConsentChannel,
@@ -11,6 +13,7 @@ import type {
   CustomerRelationshipType,
   CustomerRole,
   CustomerSummary,
+  CustomerStatusHistoryEntry,
   DuplicateCandidate,
   MasterDataRecord,
 } from '@rubi/contracts';
@@ -28,6 +31,7 @@ import {
   UserRound,
   UsersRound,
 } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -71,6 +75,28 @@ const pageSize = 25;
 type RequestState =
   'loading' | 'ready' | 'error' | 'unauthorized' | 'forbidden';
 type FormMode = 'create' | 'view' | 'edit';
+type CustomerTab =
+  | 'overview'
+  | 'contacts'
+  | 'addresses'
+  | 'consents'
+  | 'companions'
+  | 'status-history'
+  | 'duplicates'
+  | 'activity'
+  | 'audit';
+
+const customerTabs: readonly CustomerTab[] = [
+  'overview',
+  'contacts',
+  'addresses',
+  'consents',
+  'companions',
+  'status-history',
+  'duplicates',
+  'activity',
+  'audit',
+];
 
 const sensitiveReasons = [
   ['customer-verification', 'احراز مشتری'],
@@ -95,6 +121,15 @@ function customerCode(id: string) {
   return id.slice(0, 8).toUpperCase();
 }
 
+function safeCustomerId(value: string | null) {
+  return value &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value,
+    )
+    ? value
+    : null;
+}
+
 function customerDraft(customer?: CustomerDetail): CustomerMutationRequest {
   return {
     kind: customer?.kind ?? 'person',
@@ -112,11 +147,15 @@ function customerDraft(customer?: CustomerDetail): CustomerMutationRequest {
 function CustomerDrawer({
   mode,
   customer,
+  activeTab,
+  onTabChange,
   onClose,
   onSaved,
 }: {
   mode: FormMode;
   customer?: CustomerDetail;
+  activeTab: CustomerTab;
+  onTabChange: (tab: CustomerTab) => void;
   onClose: () => void;
   onSaved: (message: string, detail: CustomerDetail) => Promise<void>;
 }) {
@@ -162,8 +201,93 @@ function CustomerDrawer({
   const [duplicates, setDuplicates] = useState<readonly DuplicateCandidate[]>(
     [],
   );
+  const [statusHistory, setStatusHistory] = useState<
+    readonly CustomerStatusHistoryEntry[]
+  >([]);
+  const [activities, setActivities] = useState<
+    readonly CustomerActivityEntry[]
+  >([]);
+  const [auditEvents, setAuditEvents] = useState<readonly CustomerAuditEntry[]>(
+    [],
+  );
+  const [historyState, setHistoryState] = useState<RequestState>('loading');
+  const [activityState, setActivityState] = useState<RequestState>('loading');
+  const [auditState, setAuditState] = useState<RequestState>('loading');
   const readonly = mode === 'view';
   const displayedCustomer = revealedDetail ?? customer;
+
+  const requestTimelines = useCallback(() => {
+    if (!customer) return;
+    void customersApi
+      .statusHistory(customer.id)
+      .then((response) => {
+        setStatusHistory(response.data);
+        setHistoryState('ready');
+      })
+      .catch((error: unknown) =>
+        setHistoryState(
+          error instanceof CustomersApiError && error.status === 403
+            ? 'forbidden'
+            : 'error',
+        ),
+      );
+    void customersApi
+      .activity(customer.id)
+      .then((response) => {
+        setActivities(response.data);
+        setActivityState('ready');
+      })
+      .catch((error: unknown) =>
+        setActivityState(
+          error instanceof CustomersApiError && error.status === 403
+            ? 'forbidden'
+            : 'error',
+        ),
+      );
+    void customersApi
+      .audit(customer.id)
+      .then((response) => {
+        setAuditEvents(response.data);
+        setAuditState('ready');
+      })
+      .catch((error: unknown) =>
+        setAuditState(
+          error instanceof CustomersApiError && error.status === 403
+            ? 'forbidden'
+            : 'error',
+        ),
+      );
+  }, [customer]);
+
+  useEffect(() => {
+    requestTimelines();
+  }, [requestTimelines]);
+
+  const loadTimelines = useCallback(() => {
+    setHistoryState('loading');
+    setActivityState('loading');
+    setAuditState('loading');
+    requestTimelines();
+  }, [requestTimelines]);
+
+  useEffect(() => {
+    if (!revealedDetail) return;
+    const remask = () => {
+      setRevealedDetail(null);
+      setSensitiveReason('');
+    };
+    const timer = window.setTimeout(remask, 60_000);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') remask();
+    };
+    window.addEventListener('blur', remask);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('blur', remask);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [revealedDetail]);
 
   useEffect(() => {
     let active = true;
@@ -200,8 +324,15 @@ function CustomerDrawer({
       void customersApi
         .list({
           search: companionSearch,
+          kind: 'all',
           status: 'active',
           role: 'all',
+          branchId: 'all',
+          acquaintanceMethodId: 'all',
+          createdFrom: null,
+          createdTo: null,
+          updatedFrom: null,
+          updatedTo: null,
           sortBy: 'displayName',
           sortDirection: 'asc',
           page: 1,
@@ -286,6 +417,7 @@ function CustomerDrawer({
       setMessage(
         'نمایش حساس برای همین مشاهده فعال شد و دلیل آن در Audit ثبت شده است.',
       );
+      requestTimelines();
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : 'نمایش داده حساس ناموفق بود.',
@@ -602,7 +734,19 @@ function CustomerDrawer({
         </form>
 
         {customer ? (
-          <Tabs className="mt-6" defaultValue="overview" dir="rtl">
+          <Tabs
+            className="mt-6"
+            dir="rtl"
+            onValueChange={(value) => {
+              const tab = value as CustomerTab;
+              if (tab !== 'contacts') {
+                setRevealedDetail(null);
+                setSensitiveReason('');
+              }
+              onTabChange(tab);
+            }}
+            value={activeTab}
+          >
             <TabsList className="flex w-full flex-wrap justify-start">
               <TabsTrigger value="overview">نمای کلی</TabsTrigger>
               <TabsTrigger value="contacts">تماس‌ها</TabsTrigger>
@@ -1021,26 +1165,125 @@ function CustomerDrawer({
                 </Card>
               ))}
             </TabsContent>
-            <TabsContent value="status-history">
+            <TabsContent className="space-y-3" value="status-history">
+              {historyState === 'loading' ? (
+                <Skeleton className="h-24 w-full" />
+              ) : historyState === 'forbidden' ? (
+                <EmptyState
+                  description="مجوز مشاهده تاریخچه این مشتری وجود ندارد."
+                  icon={Ban}
+                  title="دسترسی محدود"
+                />
+              ) : historyState === 'error' ? (
+                <ErrorState
+                  action={
+                    <Button onClick={() => void loadTimelines()} size="sm">
+                      تلاش دوباره
+                    </Button>
+                  }
+                  description="دریافت تاریخچه وضعیت ناموفق بود."
+                  title="خطا در Timeline"
+                />
+              ) : statusHistory.length === 0 ? (
+                <EmptyState
+                  description="برای این مشتری تغییر وضعیتی ثبت نشده است."
+                  title="تاریخچه وضعیت خالی است"
+                />
+              ) : (
+                statusHistory.map((entry) => (
+                  <Card className="p-3" key={entry.id}>
+                    <p className="font-bold">
+                      {entry.fromStatus === 'none'
+                        ? 'ایجاد فعال'
+                        : `${entry.fromStatus === 'active' ? 'فعال' : 'غیرفعال'} ← ${entry.toStatus === 'active' ? 'فعال' : 'غیرفعال'}`}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {entry.reason} · {entry.actor.displayName} ·{' '}
+                      {new Date(entry.occurredAt).toLocaleString('fa-IR')}
+                    </p>
+                  </Card>
+                ))
+              )}
+            </TabsContent>
+            <TabsContent className="space-y-3" value="activity">
+              {activityState === 'loading' ? (
+                <Skeleton className="h-24 w-full" />
+              ) : activityState === 'forbidden' ? (
+                <EmptyState
+                  description="مجوز مشاهده Timeline این مشتری وجود ندارد."
+                  icon={Ban}
+                  title="دسترسی محدود"
+                />
+              ) : activityState === 'error' ? (
+                <ErrorState
+                  action={
+                    <Button onClick={() => void loadTimelines()} size="sm">
+                      تلاش دوباره
+                    </Button>
+                  }
+                  description="دریافت فعالیت‌های واقعی Customers ناموفق بود."
+                  title="خطا در Timeline"
+                />
+              ) : activities.length === 0 ? (
+                <EmptyState
+                  description="فعالیت واقعی قابل نمایش برای این مشتری وجود ندارد."
+                  title="Timeline خالی است"
+                />
+              ) : (
+                activities.map((entry) => (
+                  <Card className="p-3" key={entry.id}>
+                    <p className="font-bold">{entry.title}</p>
+                    <p className="text-sm">{entry.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {entry.actor.displayName} ·{' '}
+                      {new Date(entry.occurredAt).toLocaleString('fa-IR')}
+                    </p>
+                  </Card>
+                ))
+              )}
               <Alert
-                description="تغییر وضعیت در Backend با دلیل، Actor و UTC ثبت می‌شود؛ customers.v2 تاریخچه را برنمی‌گرداند."
-                title="BLOCKED_FOR_CUSTOMER_002B"
+                description="رویدادهای Lead/Ticket، Sales و Reservations فقط پس از ارائه قرارداد عمومی مالک همان ماژول قابل اضافه‌شدن‌اند؛ هیچ query مستقیم یا داده ساختگی استفاده نشده است."
+                title="مرز Timeline بین‌ماژولی"
                 tone="warning"
               />
             </TabsContent>
-            <TabsContent value="activity">
-              <Alert
-                description="قرارداد عمومی Customers هنوز Timeline بین‌ماژولی را ارائه نمی‌کند؛ داده ساختگی نمایش داده نمی‌شود."
-                title="BLOCKED_FOR_CUSTOMER_002B"
-                tone="warning"
-              />
-            </TabsContent>
-            <TabsContent value="audit">
-              <Alert
-                description="Audit در Backend ثبت می‌شود، اما Endpoint خواندن Audit در قرارداد عمومی فعلی وجود ندارد."
-                title="BLOCKED_FOR_CUSTOMER_002B"
-                tone="warning"
-              />
+            <TabsContent className="space-y-3" value="audit">
+              {auditState === 'loading' ? (
+                <Skeleton className="h-24 w-full" />
+              ) : auditState === 'forbidden' ? (
+                <EmptyState
+                  description="نمایش Audit به مجوز iam.audit.read نیاز دارد."
+                  icon={Ban}
+                  title="دسترسی Audit وجود ندارد"
+                />
+              ) : auditState === 'error' ? (
+                <ErrorState
+                  action={
+                    <Button onClick={() => void loadTimelines()} size="sm">
+                      تلاش دوباره
+                    </Button>
+                  }
+                  description="دریافت Audit امن ناموفق بود."
+                  title="خطا در Audit"
+                />
+              ) : auditEvents.length === 0 ? (
+                <EmptyState
+                  description="رخداد Audit قابل نمایش وجود ندارد."
+                  title="Audit خالی است"
+                />
+              ) : (
+                auditEvents.map((entry) => (
+                  <Card className="p-3" key={entry.id}>
+                    <p className="font-mono text-sm" dir="ltr">
+                      {entry.action}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {entry.actor.displayName} · {entry.reason ?? 'بدون دلیل'}{' '}
+                      · {new Date(entry.occurredAt).toLocaleString('fa-IR')}
+                    </p>
+                  </Card>
+                ))
+              )}
             </TabsContent>
           </Tabs>
         ) : null}
@@ -1058,33 +1301,145 @@ function CustomerDrawer({
 }
 
 export function CustomerWorkspace() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialCustomerId = safeCustomerId(searchParams.get('customerId'));
+  const initialTab = searchParams.get('tab');
   const [records, setRecords] = useState<readonly CustomerSummary[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<CustomerListQuery['status']>('all');
-  const [role, setRole] = useState<CustomerListQuery['role']>('all');
-  const [sortBy, setSortBy] =
-    useState<CustomerListQuery['sortBy']>('updatedAt');
-  const [page, setPage] = useState(1);
+  const [kind, setKind] = useState<NonNullable<CustomerListQuery['kind']>>(
+    () => {
+      const value = searchParams.get('kind');
+      return value === 'person' || value === 'organization' ? value : 'all';
+    },
+  );
+  const [status, setStatus] = useState<CustomerListQuery['status']>(() => {
+    const value = searchParams.get('status');
+    return value === 'active' || value === 'inactive' ? value : 'all';
+  });
+  const [role, setRole] = useState<CustomerListQuery['role']>(() => {
+    const value = searchParams.get('role');
+    return value === 'customer' || value === 'passenger' ? value : 'all';
+  });
+  const [branchId, setBranchId] = useState(
+    () => searchParams.get('branchId') ?? 'all',
+  );
+  const [allowedBranchIds, setAllowedBranchIds] = useState<readonly string[]>(
+    [],
+  );
+  const [acquaintanceMethodId, setAcquaintanceMethodId] = useState(
+    () => searchParams.get('acquaintanceMethodId') ?? 'all',
+  );
+  const [acquaintanceMethods, setAcquaintanceMethods] = useState<
+    readonly MasterDataRecord[]
+  >([]);
+  const [createdFrom, setCreatedFrom] = useState(
+    () => searchParams.get('createdFrom') ?? '',
+  );
+  const [createdTo, setCreatedTo] = useState(
+    () => searchParams.get('createdTo') ?? '',
+  );
+  const [updatedFrom, setUpdatedFrom] = useState(
+    () => searchParams.get('updatedFrom') ?? '',
+  );
+  const [updatedTo, setUpdatedTo] = useState(
+    () => searchParams.get('updatedTo') ?? '',
+  );
+  const [sortBy, setSortBy] = useState<CustomerListQuery['sortBy']>(() => {
+    const value = searchParams.get('sortBy');
+    return value === 'displayName' || value === 'createdAt'
+      ? value
+      : 'updatedAt';
+  });
+  const [sortDirection, setSortDirection] = useState<
+    CustomerListQuery['sortDirection']
+  >(() => (searchParams.get('sortDirection') === 'asc' ? 'asc' : 'desc'));
+  const [page, setPage] = useState(() =>
+    Math.max(1, Number(searchParams.get('page')) || 1),
+  );
   const [total, setTotal] = useState(0);
-  const [formMode, setFormMode] = useState<FormMode | null>(null);
+  const [formMode, setFormMode] = useState<FormMode | null>(() =>
+    initialCustomerId ? 'view' : null,
+  );
+  const [selectedId, setSelectedId] = useState<string | null>(
+    initialCustomerId,
+  );
   const [selected, setSelected] = useState<CustomerDetail | undefined>();
+  const [activeTab, setActiveTab] = useState<CustomerTab>(() =>
+    customerTabs.includes(initialTab as CustomerTab)
+      ? (initialTab as CustomerTab)
+      : 'overview',
+  );
   const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    void listMasterData('acquaintance-methods')
+      .then((response) => setAcquaintanceMethods(response.data))
+      .catch(() => setAcquaintanceMethods([]));
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set('kind', kind);
+    params.set('status', status);
+    params.set('role', role);
+    params.set('branchId', branchId);
+    params.set('acquaintanceMethodId', acquaintanceMethodId);
+    if (createdFrom) params.set('createdFrom', createdFrom);
+    if (createdTo) params.set('createdTo', createdTo);
+    if (updatedFrom) params.set('updatedFrom', updatedFrom);
+    if (updatedTo) params.set('updatedTo', updatedTo);
+    params.set('sortBy', sortBy);
+    params.set('sortDirection', sortDirection);
+    params.set('page', String(page));
+    if (selectedId) {
+      params.set('customerId', selectedId);
+      params.set('tab', activeTab);
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [
+    acquaintanceMethodId,
+    activeTab,
+    branchId,
+    createdFrom,
+    createdTo,
+    kind,
+    page,
+    pathname,
+    role,
+    router,
+    selectedId,
+    sortBy,
+    sortDirection,
+    status,
+    updatedFrom,
+    updatedTo,
+  ]);
 
   const load = useCallback(async () => {
     setRequestState('loading');
     try {
       const response = await customersApi.list({
         search,
+        kind,
         status,
         role,
+        branchId,
+        acquaintanceMethodId,
+        createdFrom: createdFrom || null,
+        createdTo: createdTo || null,
+        updatedFrom: updatedFrom || null,
+        updatedTo: updatedTo || null,
         sortBy,
-        sortDirection: sortBy === 'displayName' ? 'asc' : 'desc',
+        sortDirection,
         page,
         pageSize,
       });
       setRecords(response.data);
       setTotal(response.meta.total);
+      setAllowedBranchIds(response.meta.allowedBranchIds ?? []);
       setRequestState('ready');
     } catch (error) {
       setRecords([]);
@@ -1094,7 +1449,21 @@ export function CustomerWorkspace() {
           : 'error',
       );
     }
-  }, [page, role, search, sortBy, status]);
+  }, [
+    acquaintanceMethodId,
+    branchId,
+    createdFrom,
+    createdTo,
+    kind,
+    page,
+    role,
+    search,
+    sortBy,
+    sortDirection,
+    status,
+    updatedFrom,
+    updatedTo,
+  ]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 250);
@@ -1105,6 +1474,8 @@ export function CustomerWorkspace() {
     if (id) {
       try {
         setSelected((await customersApi.detail(id)).data);
+        setSelectedId(id);
+        setActiveTab('overview');
       } catch (error) {
         setNotice(
           error instanceof Error
@@ -1113,13 +1484,41 @@ export function CustomerWorkspace() {
         );
         return;
       }
-    } else setSelected(undefined);
+    } else {
+      setSelected(undefined);
+      setSelectedId(null);
+    }
     setFormMode(mode);
   }
+
+  useEffect(() => {
+    if (!selectedId || selected?.id === selectedId) return;
+    let active = true;
+    void customersApi
+      .detail(selectedId)
+      .then((response) => {
+        if (active) setSelected(response.data);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setNotice(
+          error instanceof Error
+            ? error.message
+            : 'دریافت Deep Link مشتری ناموفق بود.',
+        );
+        setFormMode(null);
+        setSelectedId(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [selected, selectedId]);
 
   async function refreshAfter(message: string) {
     setNotice(message);
     setFormMode(null);
+    setSelectedId(null);
+    setSelected(undefined);
     await load();
   }
 
@@ -1128,7 +1527,10 @@ export function CustomerWorkspace() {
       await customersApi.status(record.id, {
         status: record.status === 'active' ? 'inactive' : 'active',
         version: record.version,
-        reason: 'تغییر وضعیت از رابط مشتریان',
+        reason:
+          record.status === 'active'
+            ? 'manual-deactivation'
+            : 'manual-activation',
       });
       setNotice('وضعیت مشتری با Audit و کنترل نسخه تغییر کرد.');
       await load();
@@ -1173,6 +1575,24 @@ export function CustomerWorkspace() {
             />
           </div>
         </FormField>
+        <FormField label="نوع مشتری">
+          <Select
+            onValueChange={(value) => {
+              setKind(value as NonNullable<CustomerListQuery['kind']>);
+              setPage(1);
+            }}
+            value={kind}
+          >
+            <SelectTrigger aria-label="فیلتر نوع مشتری">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه انواع</SelectItem>
+              <SelectItem value="person">شخص حقیقی</SelectItem>
+              <SelectItem value="organization">مشتری سازمانی</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
         <FormField label="وضعیت">
           <Select
             onValueChange={(value) => {
@@ -1190,6 +1610,92 @@ export function CustomerWorkspace() {
               <SelectItem value="inactive">غیرفعال</SelectItem>
             </SelectContent>
           </Select>
+        </FormField>
+        <FormField label="شعبه مجاز">
+          <Select
+            onValueChange={(value) => {
+              setBranchId(value);
+              setPage(1);
+            }}
+            value={branchId}
+          >
+            <SelectTrigger aria-label="فیلتر شعبه مجاز">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه شعب مجاز</SelectItem>
+              {allowedBranchIds.map((id) => (
+                <SelectItem key={id} value={id}>
+                  شعبه {customerCode(id)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+        <FormField label="نحوه آشنایی">
+          <Select
+            onValueChange={(value) => {
+              setAcquaintanceMethodId(value);
+              setPage(1);
+            }}
+            value={acquaintanceMethodId}
+          >
+            <SelectTrigger aria-label="فیلتر نحوه آشنایی">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه روش‌ها</SelectItem>
+              {acquaintanceMethods.map((record) => (
+                <SelectItem key={record.id} value={record.id}>
+                  {record.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+        <FormField id="customer-created-from" label="ایجاد از تاریخ">
+          <Input
+            id="customer-created-from"
+            onChange={(event) => {
+              setCreatedFrom(event.target.value);
+              setPage(1);
+            }}
+            type="date"
+            value={createdFrom}
+          />
+        </FormField>
+        <FormField id="customer-created-to" label="ایجاد تا تاریخ">
+          <Input
+            id="customer-created-to"
+            onChange={(event) => {
+              setCreatedTo(event.target.value);
+              setPage(1);
+            }}
+            type="date"
+            value={createdTo}
+          />
+        </FormField>
+        <FormField id="customer-updated-from" label="ویرایش از تاریخ">
+          <Input
+            id="customer-updated-from"
+            onChange={(event) => {
+              setUpdatedFrom(event.target.value);
+              setPage(1);
+            }}
+            type="date"
+            value={updatedFrom}
+          />
+        </FormField>
+        <FormField id="customer-updated-to" label="ویرایش تا تاریخ">
+          <Input
+            id="customer-updated-to"
+            onChange={(event) => {
+              setUpdatedTo(event.target.value);
+              setPage(1);
+            }}
+            type="date"
+            value={updatedTo}
+          />
         </FormField>
         <FormField label="نقش">
           <Select
@@ -1226,11 +1732,27 @@ export function CustomerWorkspace() {
             </SelectContent>
           </Select>
         </FormField>
+        <FormField label="جهت مرتب‌سازی">
+          <Select
+            onValueChange={(value) => {
+              setSortDirection(value as CustomerListQuery['sortDirection']);
+              setPage(1);
+            }}
+            value={sortDirection}
+          >
+            <SelectTrigger aria-label="جهت مرتب‌سازی">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="desc">نزولی</SelectItem>
+              <SelectItem value="asc">صعودی</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
       </FilterBar>
       <Alert
-        description="Branch Scope در Backend اعمال می‌شود و مستقل از Legal Entity است. فیلتر نوع مشتری و انتخاب Branch در customers.v2 وجود ندارند و برای CUSTOMER-002B مسدودند."
-        title="مرز فیلترها"
-        tone="warning"
+        description="Branch Scope در Backend اعمال و tampering رد می‌شود. فیلترهای غیرحساس هنگام بازگشت در URL می‌مانند؛ متن جست‌وجو چون ممکن است PII باشد فقط در حافظه همین صفحه نگه‌داری می‌شود."
+        title="فیلتر امن و مستقل از Legal Entity"
       />
 
       {requestState === 'loading' ? (
@@ -1406,14 +1928,26 @@ export function CustomerWorkspace() {
           <span className="text-sm">Audit و Optimistic Version</span>
         </div>
       </Card>
-      {formMode ? (
+      {formMode && (formMode === 'create' || selected) ? (
         <CustomerDrawer
+          activeTab={activeTab}
           key={`${formMode}-${selected?.id ?? 'new'}-${selected?.version ?? 0}`}
           mode={formMode}
-          onClose={() => setFormMode(null)}
+          onClose={() => {
+            setFormMode(null);
+            setSelectedId(null);
+            setSelected(undefined);
+            setActiveTab('overview');
+          }}
           onSaved={refreshAfter}
+          onTabChange={setActiveTab}
           {...(selected ? { customer: selected } : {})}
         />
+      ) : formMode ? (
+        <Card aria-label="در حال دریافت Customer 360" className="space-y-3 p-4">
+          <Skeleton className="h-8 w-1/3" />
+          <Skeleton className="h-40 w-full" />
+        </Card>
       ) : null}
     </div>
   );

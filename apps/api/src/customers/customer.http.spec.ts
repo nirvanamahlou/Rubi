@@ -13,7 +13,7 @@ import { CustomersController } from './customers.controller';
 const actor: AuthenticatedActor = {
   userId: '11111111-1111-4111-8111-111111111111',
   sessionId: '22222222-2222-4222-8222-222222222222',
-  permissions: ['customers.read', 'customers.create'],
+  permissions: ['customers.read', 'customers.create', 'iam.audit.read'],
   branchIds: ['33333333-3333-4333-8333-333333333333'],
 };
 describe('Customers HTTP integration', () => {
@@ -25,6 +25,10 @@ describe('Customers HTTP integration', () => {
     }),
     create: vi.fn().mockResolvedValue({ data: { id: 'customer-id' } }),
     detail: vi.fn().mockResolvedValue({ data: { id: 'customer-id' } }),
+    statusHistory: vi.fn().mockResolvedValue({ data: [] }),
+    activity: vi.fn().mockResolvedValue({ data: [] }),
+    audit: vi.fn().mockResolvedValue({ data: [] }),
+    status: vi.fn().mockResolvedValue({ data: { id: 'customer-id' } }),
   };
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -59,15 +63,66 @@ describe('Customers HTTP integration', () => {
   });
 
   it('serves the versioned list route with actor context', async () => {
-    await request(app.getHttpServer())
+    const response = await request(app.getHttpServer())
       .get('/api/v1/customers')
       .set('Cookie', 'rubi_access=test')
       .expect(200)
       .expect({ data: [], meta: { page: 1, pageSize: 25, total: 0 } });
+    expect(response.headers['cache-control']).toBe('private, no-store');
     expect(service.list).toHaveBeenCalledWith(
       expect.objectContaining({ page: 1 }),
       actor,
     );
+  });
+
+  it('validates and forwards model-backed list filters', async () => {
+    await request(app.getHttpServer())
+      .get('/api/v1/customers')
+      .query({
+        kind: 'organization',
+        branchId: actor.branchIds[0],
+        acquaintanceMethodId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        createdFrom: '2026-08-01',
+        createdTo: '2026-08-31',
+        sortBy: 'createdAt',
+        sortDirection: 'asc',
+      })
+      .set('Cookie', 'rubi_access=test')
+      .expect(200);
+    expect(service.list).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'organization',
+        branchId: actor.branchIds[0],
+        createdFrom: '2026-08-01',
+        sortBy: 'createdAt',
+        sortDirection: 'asc',
+      }),
+      actor,
+    );
+  });
+
+  it('serves read-only status, activity and audit timelines', async () => {
+    const customerId = '44444444-4444-4444-8444-444444444444';
+    for (const route of ['status-history', 'activity', 'audit']) {
+      const response = await request(app.getHttpServer())
+        .get(`/api/v1/customers/${customerId}/${route}`)
+        .set('Cookie', 'rubi_access=test')
+        .expect(200)
+        .expect({ data: [] });
+      expect(response.headers['cache-control']).toBe('private, no-store');
+    }
+    expect(service.statusHistory).toHaveBeenCalledWith(customerId, actor);
+    expect(service.activity).toHaveBeenCalledWith(customerId, actor);
+    expect(service.audit).toHaveBeenCalledWith(customerId, actor);
+  });
+
+  it('rejects a non-allowlisted status reason at the HTTP boundary', async () => {
+    await request(app.getHttpServer())
+      .patch('/api/v1/customers/44444444-4444-4444-8444-444444444444/status')
+      .set('Cookie', 'rubi_access=test')
+      .send({ status: 'inactive', version: 1, reason: 'free-text' })
+      .expect(400);
+    expect(service.status).not.toHaveBeenCalled();
   });
 
   it('forwards an explicit sensitive-read reason without logging contact data', async () => {

@@ -16,4 +16,11 @@ describe('Customers public contract v1', () => {
     expect(CUSTOMER_ERROR_CODES).toContain('CONCURRENT_MODIFICATION');
     expect(CUSTOMER_ERROR_CODES).toContain('MERGE_BLOCKED_BY_OPEN_DECISION');
   });
+
+  it('publishes additive timeline endpoints without changing the v2 consumer contract', () => {
+    const id = '10000000-0000-4000-8000-000000000001';
+    expect(customerEndpoints.statusHistory(id)).toContain('/status-history');
+    expect(customerEndpoints.activity(id)).toContain('/activity');
+    expect(customerEndpoints.audit(id)).toContain('/audit');
+  });
 });

@@ -22,8 +22,15 @@ describe('customers browser client', () => {
     vi.stubGlobal('fetch', fetchMock);
     await customersApi.list({
       search: 'نمونه',
+      kind: 'person',
       status: 'active',
       role: 'passenger',
+      branchId: '33333333-3333-4333-8333-333333333333',
+      acquaintanceMethodId: 'all',
+      createdFrom: '2026-08-01',
+      createdTo: '2026-08-31',
+      updatedFrom: null,
+      updatedTo: null,
       sortBy: 'updatedAt',
       sortDirection: 'desc',
       page: 1,
@@ -31,9 +38,33 @@ describe('customers browser client', () => {
     });
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/api/v1/customers?'),
-      expect.objectContaining({ credentials: 'include' }),
+      expect.objectContaining({ credentials: 'include', cache: 'no-store' }),
     );
     expect(fetchMock.mock.calls[0]?.[0]).toContain('role=passenger');
+    expect(fetchMock.mock.calls[0]?.[0]).toContain('kind=person');
+    expect(fetchMock.mock.calls[0]?.[0]).toContain('createdFrom=2026-08-01');
+  });
+
+  it('calls read-only customer timeline endpoints without cache', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const customerId = '10000000-0000-4000-8000-000000000001';
+
+    await customersApi.statusHistory(customerId);
+    await customersApi.activity(customerId);
+    await customersApi.audit(customerId);
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    for (const [url, init] of fetchMock.mock.calls) {
+      expect(url).toMatch(/status-history|activity|audit/);
+      expect(init).toEqual(
+        expect.objectContaining({ credentials: 'include', cache: 'no-store' }),
+      );
+    }
   });
 
   it('sends only an allowlisted explicit reason when sensitive data is requested', async () => {

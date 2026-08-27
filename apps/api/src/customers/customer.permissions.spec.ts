@@ -7,6 +7,8 @@ describe('CustomersController permission metadata', () => {
     ['list', 'customers.read'],
     ['create', 'customers.create'],
     ['detail', 'customers.read'],
+    ['statusHistory', 'customers.read'],
+    ['activity', 'customers.read'],
     ['update', 'customers.update'],
     ['status', 'customers.update'],
     ['contacts', 'customers.read'],
@@ -23,5 +25,11 @@ describe('CustomersController permission metadata', () => {
         CustomersController.prototype[method],
       ),
     ).toEqual([permission]);
+  });
+
+  it('requires customer read and IAM audit permissions for audit history', () => {
+    expect(
+      Reflect.getMetadata(PERMISSIONS_KEY, CustomersController.prototype.audit),
+    ).toEqual(['customers.read', 'iam.audit.read']);
   });
 });

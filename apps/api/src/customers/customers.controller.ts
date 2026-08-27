@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Headers,
   Inject,
   Param,
@@ -43,6 +44,8 @@ export class CustomersController {
   ) {}
 
   @Get()
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
   @RequirePermissions('customers.read')
   list(
     @Query() query: CustomerListQueryDto,
@@ -96,7 +99,33 @@ export class CustomersController {
     );
   }
 
+  @Get(':id/status-history')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @RequirePermissions('customers.read')
+  statusHistory(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.service.statusHistory(id, request.actor);
+  }
+
+  @Get(':id/activity')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @RequirePermissions('customers.read')
+  activity(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.service.activity(id, request.actor);
+  }
+
+  @Get(':id/audit')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @RequirePermissions('customers.read', 'iam.audit.read')
+  audit(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.service.audit(id, request.actor);
+  }
+
   @Get(':id')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
   @RequirePermissions('customers.read')
   detail(
     @Param('id') id: string,
@@ -132,6 +161,7 @@ export class CustomersController {
   }
 
   @Get(':id/contacts')
+  @Header('Cache-Control', 'private, no-store')
   @RequirePermissions('customers.read')
   async contacts(
     @Param('id') id: string,
@@ -155,6 +185,7 @@ export class CustomersController {
   }
 
   @Get(':id/addresses')
+  @Header('Cache-Control', 'private, no-store')
   @RequirePermissions('customers.read')
   async addresses(
     @Param('id') id: string,
@@ -177,6 +208,7 @@ export class CustomersController {
   }
 
   @Get(':id/companions')
+  @Header('Cache-Control', 'private, no-store')
   @RequirePermissions('customers.read')
   async companions(
     @Param('id') id: string,

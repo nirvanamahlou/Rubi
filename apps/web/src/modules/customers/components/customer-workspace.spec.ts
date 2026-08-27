@@ -29,11 +29,39 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('disabled={busy || !sensitiveReason}');
   });
 
-  it('does not fake blocked phase B capabilities or enable merge execution', () => {
-    expect(source).toContain('BLOCKED_FOR_CUSTOMER_002B');
-    expect(source).toContain('داده ساختگی نمایش داده نمی‌شود');
+  it('uses real customer timelines without crossing module boundaries or enabling merge', () => {
+    expect(source).toMatch(/\.statusHistory\(customer\.id\)/);
+    expect(source).toMatch(/\.activity\(customer\.id\)/);
+    expect(source).toMatch(/\.audit\(customer\.id\)/);
+    expect(source).toContain(
+      'هیچ query مستقیم یا داده ساختگی استفاده نشده است',
+    );
     expect(source).toContain('اجرای Merge');
     expect(source).toMatch(/<Button\s+disabled\s+size="sm"/);
+  });
+
+  it('auto-remasks sensitive data and never persists PII in browser storage or URL', () => {
+    expect(source).toContain('window.setTimeout(remask, 60_000)');
+    expect(source).toContain("window.addEventListener('blur', remask)");
+    expect(source).toContain("document.visibilityState === 'hidden'");
+    expect(source).not.toMatch(/localStorage|sessionStorage/);
+    expect(source).not.toContain("params.set('search'");
+  });
+
+  it('provides secure filters and a UUID-only customer deep link', () => {
+    expect(source).toContain('function safeCustomerId');
+    expect(source).toContain("params.set('customerId', selectedId)");
+    for (const filter of [
+      'kind',
+      'branchId',
+      'acquaintanceMethodId',
+      'createdFrom',
+      'createdTo',
+      'updatedFrom',
+      'updatedTo',
+      'sortDirection',
+    ])
+      expect(source).toContain(filter);
   });
 
   it('exposes the complete Customer 360 navigation', () => {

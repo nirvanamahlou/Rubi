@@ -35,6 +35,9 @@ describe('customer frontend live contract', () => {
       page: 1,
       pageSize: 100,
       role: 'all',
+      kind: 'all',
+      branchId: 'all',
+      acquaintanceMethodId: 'all',
     });
     expect(serializeCustomerListQuery(query)).toContain('pageSize=100');
   });

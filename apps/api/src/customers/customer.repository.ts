@@ -85,6 +85,29 @@ export interface CustomerRow {
   _count?: { relationships: number };
 }
 
+export interface CustomerStatusHistoryRow {
+  id: string;
+  fromStatus: string;
+  toStatus: string;
+  reason: string;
+  changedByUserId: string;
+  actorBranchId: string;
+  changedAt: Date;
+  changedBy: { displayName: string };
+}
+
+export interface CustomerAuditRow {
+  id: string;
+  action: string;
+  outcome: string;
+  reason: string | null;
+  actorUserId: string;
+  actorBranchId: string;
+  traceId: string | null;
+  occurredAt: Date;
+  actor: { displayName: string };
+}
+
 const detailInclude: Prisma.CustomerInclude = {
   contacts: { orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }] },
   addresses: { orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }] },
@@ -101,6 +124,20 @@ function json(value: unknown): object {
 }
 
 const lower = (value: string) => value.toLowerCase().replaceAll('_', '-');
+
+function utcRange(from: string | null, to: string | null) {
+  if (!from && !to) return undefined;
+  return {
+    ...(from ? { gte: new Date(from) } : {}),
+    ...(to
+      ? {
+          lte: new Date(
+            /^\d{4}-\d{2}-\d{2}$/.test(to) ? `${to}T23:59:59.999Z` : to,
+          ),
+        }
+      : {}),
+  };
+}
 
 export function toCustomerSummary(row: CustomerRow): CustomerSummary {
   const primary =
@@ -196,9 +233,23 @@ export class CustomerRepository {
       ownerBranchId: { in: [...branchIds] },
       mergedIntoId: null,
     };
+    if (query.kind && query.kind !== 'all')
+      where.kind = query.kind === 'person' ? 'PERSON' : 'ORGANIZATION';
     if (query.status !== 'all') where.isActive = query.status === 'active';
     if (query.role === 'customer') where.isCustomer = true;
     if (query.role === 'passenger') where.isPassenger = true;
+    if (query.acquaintanceMethodId && query.acquaintanceMethodId !== 'all')
+      where.acquaintanceMethodId = query.acquaintanceMethodId;
+    const createdAt = utcRange(
+      query.createdFrom ?? null,
+      query.createdTo ?? null,
+    );
+    const updatedAt = utcRange(
+      query.updatedFrom ?? null,
+      query.updatedTo ?? null,
+    );
+    if (createdAt) where.createdAt = createdAt;
+    if (updatedAt) where.updatedAt = updatedAt;
     if (query.search) {
       const exactCustomerId =
         /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -242,6 +293,63 @@ export class CustomerRepository {
       where: { id, ownerBranchId: { in: [...branchIds] }, mergedIntoId: null },
       include: detailInclude,
     }) as unknown as Promise<CustomerRow | null>;
+  }
+
+  async statusHistory(id: string, branchIds: readonly string[]) {
+    const customer = await this.database.client.customer.findFirst({
+      where: { id, ownerBranchId: { in: [...branchIds] }, mergedIntoId: null },
+      select: { id: true },
+    });
+    if (!customer) return null;
+    return this.database.client.customerStatusHistory.findMany({
+      where: { customerId: id },
+      include: { changedBy: { select: { displayName: true } } },
+      orderBy: { changedAt: 'desc' },
+      take: 200,
+    }) as unknown as Promise<CustomerStatusHistoryRow[]>;
+  }
+
+  async audit(id: string, branchIds: readonly string[]) {
+    const customer = await this.database.client.customer.findFirst({
+      where: { id, ownerBranchId: { in: [...branchIds] }, mergedIntoId: null },
+      select: { id: true },
+    });
+    if (!customer) return null;
+    const candidates =
+      await this.database.client.customerDuplicateCandidate.findMany({
+        where: {
+          OR: [{ sourceCustomerId: id }, { candidateCustomerId: id }],
+          sourceCustomer: { ownerBranchId: { in: [...branchIds] } },
+          candidateCustomer: { ownerBranchId: { in: [...branchIds] } },
+        },
+        select: { id: true },
+      });
+    return this.database.client.customerAuditEvent.findMany({
+      where: {
+        OR: [
+          { entityType: 'customer', entityId: id },
+          {
+            entityType: 'customer_duplicate_candidate',
+            entityId: {
+              in: candidates.map(({ id: candidateId }) => candidateId),
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        action: true,
+        outcome: true,
+        reason: true,
+        actorUserId: true,
+        actorBranchId: true,
+        traceId: true,
+        occurredAt: true,
+        actor: { select: { displayName: true } },
+      },
+      orderBy: { occurredAt: 'desc' },
+      take: 200,
+    }) as unknown as Promise<CustomerAuditRow[]>;
   }
 
   async create(

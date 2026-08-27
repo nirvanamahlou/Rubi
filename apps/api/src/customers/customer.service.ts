@@ -9,6 +9,8 @@ import {
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
+  CustomerActivityEntry,
+  CustomerAuditEntry,
   CustomerAddressRequest,
   CustomerCompanionRequest,
   CustomerConsentRequest,
@@ -23,6 +25,7 @@ import { CustomerKind } from '@rubi/database';
 
 import { CustomerContactCrypto } from './customer-contact.crypto';
 import {
+  type CustomerAuditRow,
   type CustomerRow,
   CustomerRepository,
   toCustomerDetail,
@@ -41,6 +44,28 @@ function conflict(): ConflictException {
     code: 'CONCURRENT_MODIFICATION',
     message: 'رکورد هم‌زمان تغییر کرده است. اطلاعات را دوباره دریافت کنید.',
   });
+}
+
+function scopedBranches(
+  actor: AuthenticatedActor,
+  requested: CustomerListQuery['branchId'] = 'all',
+) {
+  if (requested === 'all') return actor.branchIds;
+  if (!actor.branchIds.includes(requested))
+    throw new ForbiddenException({
+      code: 'CUSTOMER_BRANCH_SCOPE_FORBIDDEN',
+      message: 'شعبه انتخاب‌شده در دامنه دسترسی کاربر نیست.',
+    });
+  return [requested];
+}
+
+function validateDateRange(
+  from: string | null,
+  to: string | null,
+  label: string,
+) {
+  if (from && to && new Date(from).getTime() > new Date(to).getTime())
+    throw new BadRequestException(`ابتدای بازه ${label} پس از انتهای آن است.`);
 }
 
 export const CUSTOMER_SENSITIVE_READ_REASONS = [
@@ -158,6 +183,78 @@ function duplicateDto(row: {
   };
 }
 
+const activityPresentation: Record<
+  string,
+  Pick<CustomerActivityEntry, 'type' | 'title' | 'description'>
+> = {
+  'customers.create': {
+    type: 'created',
+    title: 'ایجاد مشتری',
+    description: 'پرونده مشتری ایجاد شد.',
+  },
+  'customers.update': {
+    type: 'updated',
+    title: 'ویرایش مشتری',
+    description: 'اطلاعات اصلی مشتری ویرایش شد.',
+  },
+  'customers.contact.create': {
+    type: 'contact',
+    title: 'ثبت راه تماس',
+    description: 'یک راه تماس محافظت‌شده ثبت شد.',
+  },
+  'customers.address.create': {
+    type: 'address',
+    title: 'ثبت نشانی',
+    description: 'یک نشانی مشتری ثبت شد.',
+  },
+  'customers.companion.create': {
+    type: 'companion',
+    title: 'ثبت همراه',
+    description: 'یک رابطه همراه یا خانواده ثبت شد.',
+  },
+  'customers.consent.create': {
+    type: 'consent',
+    title: 'تغییر رضایت',
+    description: 'وضعیت رضایت مشتری ثبت شد.',
+  },
+  'customers.status': {
+    type: 'status',
+    title: 'تغییر وضعیت',
+    description: 'وضعیت مشتری با دلیل مجاز تغییر کرد.',
+  },
+  'customers.duplicate.detected': {
+    type: 'duplicate-review',
+    title: 'شناسایی مورد مشابه',
+    description: 'یک کاندید تکراری برای بررسی دستی ثبت شد.',
+  },
+  'customers.duplicate.review': {
+    type: 'duplicate-review',
+    title: 'بررسی مورد مشابه',
+    description: 'نتیجه بررسی دستی رکورد مشابه ثبت شد.',
+  },
+  'customers.sensitive.read': {
+    type: 'sensitive-view',
+    title: 'مشاهده اطلاعات حساس',
+    description: 'نمایش کنترل‌شده و Audit‌شده انجام شد.',
+  },
+};
+
+function auditDto(row: CustomerAuditRow): CustomerAuditEntry {
+  return {
+    id: row.id,
+    action: row.action,
+    outcome: row.outcome.toLowerCase() as CustomerAuditEntry['outcome'],
+    reason: row.reason,
+    actor: {
+      userId: row.actorUserId,
+      displayName: row.actor.displayName,
+    },
+    actorBranchId: row.actorBranchId,
+    traceId: row.traceId,
+    occurredAt: row.occurredAt.toISOString(),
+  };
+}
+
 @Injectable()
 export class CustomerService {
   constructor(
@@ -211,11 +308,88 @@ export class CustomerService {
   }
 
   async list(query: CustomerListQuery, actor: AuthenticatedActor) {
-    const { rows, total } = await this.repository.list(actor.branchIds, query);
+    validateDateRange(
+      query.createdFrom ?? null,
+      query.createdTo ?? null,
+      'تاریخ ایجاد',
+    );
+    validateDateRange(
+      query.updatedFrom ?? null,
+      query.updatedTo ?? null,
+      'آخرین ویرایش',
+    );
+    const branchIds = scopedBranches(actor, query.branchId ?? 'all');
+    const { rows, total } = await this.repository.list(branchIds, query);
     return {
       data: rows.map(toCustomerSummary),
-      meta: { page: query.page, pageSize: query.pageSize, total },
+      meta: {
+        page: query.page,
+        pageSize: query.pageSize,
+        total,
+        allowedBranchIds: actor.branchIds,
+      },
     };
+  }
+
+  async statusHistory(id: string, actor: AuthenticatedActor) {
+    const rows = await this.repository.statusHistory(id, actor.branchIds);
+    if (!rows)
+      throw new NotFoundException({
+        code: 'CUSTOMER_NOT_FOUND',
+        message: 'مشتری یافت نشد.',
+      });
+    return {
+      data: rows.map((row) => ({
+        id: row.id,
+        fromStatus: row.fromStatus.toLowerCase() as
+          'active' | 'inactive' | 'none',
+        toStatus: row.toStatus.toLowerCase() as 'active' | 'inactive',
+        reason: row.reason,
+        actor: {
+          userId: row.changedByUserId,
+          displayName: row.changedBy.displayName,
+        },
+        actorBranchId: row.actorBranchId,
+        occurredAt: row.changedAt.toISOString(),
+      })),
+    };
+  }
+
+  async activity(id: string, actor: AuthenticatedActor) {
+    const rows = await this.repository.audit(id, actor.branchIds);
+    if (!rows)
+      throw new NotFoundException({
+        code: 'CUSTOMER_NOT_FOUND',
+        message: 'مشتری یافت نشد.',
+      });
+    return {
+      data: rows.flatMap((row) => {
+        const presentation = activityPresentation[row.action];
+        if (!presentation) return [];
+        return [
+          {
+            id: row.id,
+            ...presentation,
+            actor: {
+              userId: row.actorUserId,
+              displayName: row.actor.displayName,
+            },
+            actorBranchId: row.actorBranchId,
+            occurredAt: row.occurredAt.toISOString(),
+          },
+        ];
+      }),
+    };
+  }
+
+  async audit(id: string, actor: AuthenticatedActor) {
+    const rows = await this.repository.audit(id, actor.branchIds);
+    if (!rows)
+      throw new NotFoundException({
+        code: 'CUSTOMER_NOT_FOUND',
+        message: 'مشتری یافت نشد.',
+      });
+    return { data: rows.map(auditDto) };
   }
 
   async detail(

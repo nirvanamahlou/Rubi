@@ -1,5 +1,7 @@
 import type {
   CustomerAddressRequest,
+  CustomerActivityResponse,
+  CustomerAuditResponse,
   CustomerCompanionRequest,
   CustomerConsentRequest,
   CustomerContactRequest,
@@ -8,6 +10,7 @@ import type {
   CustomerListResponse,
   CustomerMutationRequest,
   CustomerStatusRequest,
+  CustomerStatusHistoryResponse,
   DuplicateCandidate,
   DuplicateReviewRequest,
 } from '@rubi/contracts';
@@ -30,6 +33,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!baseUrl) throw new CustomersApiError('نشانی API پیکربندی نشده است.', 0);
   const response = await fetch(`${baseUrl}/customers${path}`, {
     credentials: 'include',
+    cache: 'no-store',
     ...init,
     headers: {
       accept: 'application/json',
@@ -72,6 +76,19 @@ export const customersApi = {
         ? { headers: { 'x-sensitive-read-reason': sensitiveReadReason } }
         : undefined,
     );
+  },
+  statusHistory(id: string) {
+    return request<CustomerStatusHistoryResponse>(
+      `/${encodeURIComponent(id)}/status-history`,
+    );
+  },
+  activity(id: string) {
+    return request<CustomerActivityResponse>(
+      `/${encodeURIComponent(id)}/activity`,
+    );
+  },
+  audit(id: string) {
+    return request<CustomerAuditResponse>(`/${encodeURIComponent(id)}/audit`);
   },
   create(input: CustomerMutationRequest) {
     return request<{ data: CustomerDetail }>('', body(input));

@@ -17,6 +17,24 @@ export type DuplicateReviewStatus =
   'pending' | 'confirmed-distinct' | 'merge-proposed';
 export type CustomerSortField = 'displayName' | 'updatedAt' | 'createdAt';
 export type CustomerSortDirection = 'asc' | 'desc';
+export type CustomerActivityType =
+  | 'created'
+  | 'updated'
+  | 'contact'
+  | 'address'
+  | 'companion'
+  | 'consent'
+  | 'status'
+  | 'duplicate-review'
+  | 'sensitive-view';
+export const CUSTOMER_STATUS_REASON_CODES = [
+  'manual-activation',
+  'manual-deactivation',
+  'data-correction',
+  'duplicate-review',
+] as const;
+export type CustomerStatusReasonCode =
+  (typeof CUSTOMER_STATUS_REASON_CODES)[number];
 
 export const CUSTOMER_ERROR_CODES = [
   'CUSTOMER_NOT_FOUND',
@@ -31,8 +49,15 @@ export type CustomerErrorCode = (typeof CUSTOMER_ERROR_CODES)[number];
 
 export interface CustomerListQuery {
   search: string;
+  kind?: 'all' | CustomerKind;
   status: 'all' | CustomerStatus;
   role: 'all' | CustomerRole;
+  branchId?: 'all' | string;
+  acquaintanceMethodId?: 'all' | string;
+  createdFrom?: string | null;
+  createdTo?: string | null;
+  updatedFrom?: string | null;
+  updatedTo?: string | null;
   sortBy: CustomerSortField;
   sortDirection: CustomerSortDirection;
   page: number;
@@ -109,7 +134,60 @@ export interface CustomerDetail extends CustomerSummary {
 
 export interface CustomerListResponse {
   data: readonly CustomerSummary[];
-  meta: { page: number; pageSize: number; total: number };
+  meta: {
+    page: number;
+    pageSize: number;
+    total: number;
+    allowedBranchIds?: readonly string[];
+  };
+}
+
+export interface CustomerTimelineActor {
+  userId: string;
+  displayName: string;
+}
+
+export interface CustomerStatusHistoryEntry {
+  id: string;
+  fromStatus: CustomerStatus | 'none';
+  toStatus: CustomerStatus;
+  reason: string;
+  actor: CustomerTimelineActor;
+  actorBranchId: string;
+  occurredAt: string;
+}
+
+export interface CustomerActivityEntry {
+  id: string;
+  type: CustomerActivityType;
+  title: string;
+  description: string;
+  actor: CustomerTimelineActor;
+  actorBranchId: string;
+  occurredAt: string;
+}
+
+export interface CustomerAuditEntry {
+  id: string;
+  action: string;
+  outcome: 'success' | 'failure';
+  reason: string | null;
+  actor: CustomerTimelineActor;
+  actorBranchId: string;
+  traceId: string | null;
+  occurredAt: string;
+}
+
+export interface CustomerStatusHistoryResponse {
+  data: readonly CustomerStatusHistoryEntry[];
+}
+
+export interface CustomerActivityResponse {
+  data: readonly CustomerActivityEntry[];
+}
+
+export interface CustomerAuditResponse {
+  data: readonly CustomerAuditEntry[];
 }
 
 export interface MasterDataReferenceInput {
@@ -135,7 +213,7 @@ export interface CustomerMutationRequest {
 export interface CustomerStatusRequest {
   status: CustomerStatus;
   version: number;
-  reason: string;
+  reason: CustomerStatusReasonCode;
 }
 
 export interface CustomerContactRequest {
@@ -223,6 +301,12 @@ export const customerEndpoints = {
     `${CUSTOMERS_API_PREFIX}/${encodeURIComponent(id)}/companions` as const,
   consents: (id: string) =>
     `${CUSTOMERS_API_PREFIX}/${encodeURIComponent(id)}/consents` as const,
+  statusHistory: (id: string) =>
+    `${CUSTOMERS_API_PREFIX}/${encodeURIComponent(id)}/status-history` as const,
+  activity: (id: string) =>
+    `${CUSTOMERS_API_PREFIX}/${encodeURIComponent(id)}/activity` as const,
+  audit: (id: string) =>
+    `${CUSTOMERS_API_PREFIX}/${encodeURIComponent(id)}/audit` as const,
   duplicateCandidates: `${CUSTOMERS_API_PREFIX}/duplicate-candidates` as const,
   duplicateReview: (id: string) =>
     `${CUSTOMERS_API_PREFIX}/duplicate-candidates/${encodeURIComponent(id)}/review` as const,
