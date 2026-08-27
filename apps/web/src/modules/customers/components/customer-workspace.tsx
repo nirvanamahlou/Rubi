@@ -195,10 +195,7 @@ function CustomerDrawer({
   }, []);
 
   useEffect(() => {
-    if (!companionSearch.trim() || !customer) {
-      setCompanionOptions([]);
-      return;
-    }
+    if (!companionSearch.trim() || !customer) return;
     const timer = window.setTimeout(() => {
       void customersApi
         .list({
@@ -413,9 +410,23 @@ function CustomerDrawer({
           Persistence واقعی، کنترل نسخه و دسترسی شعبه فعال است. مدارک هویتی حساس
           ذخیره نمی‌شوند.
         </DialogDescription>
-        {message ? (
-          <Alert className="mt-4" description={message} title="نتیجه عملیات" />
-        ) : null}
+        <div aria-live="polite" role="status">
+          {message ? (
+            <Alert
+              className="mt-4"
+              description={message}
+              title="نتیجه عملیات"
+            />
+          ) : null}
+          {masterWarning ? (
+            <Alert
+              className="mt-4"
+              description={masterWarning}
+              title="اطلاعات پایه"
+              tone="warning"
+            />
+          ) : null}
+        </div>
 
         <form className="mt-5 space-y-4" onSubmit={submit}>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -943,11 +954,13 @@ function CustomerDrawer({
                         <SelectValue placeholder="انتخاب از نتایج" />
                       </SelectTrigger>
                       <SelectContent>
-                        {companionOptions.map((record) => (
-                          <SelectItem key={record.id} value={record.id}>
-                            {record.displayName} · {customerCode(record.id)}
-                          </SelectItem>
-                        ))}
+                        {(companionSearch.trim() ? companionOptions : []).map(
+                          (record) => (
+                            <SelectItem key={record.id} value={record.id}>
+                              {record.displayName} · {customerCode(record.id)}
+                            </SelectItem>
+                          ),
+                        )}
                       </SelectContent>
                     </Select>
                   </FormField>
