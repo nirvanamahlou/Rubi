@@ -66,11 +66,12 @@ export const customersApi = {
     );
   },
   detail(id: string, sensitiveReadReason?: string) {
-    return request<{ data: CustomerDetail }>(`/${encodeURIComponent(id)}`, {
-      headers: sensitiveReadReason
-        ? { 'x-sensitive-read-reason': sensitiveReadReason }
+    return request<{ data: CustomerDetail }>(
+      `/${encodeURIComponent(id)}`,
+      sensitiveReadReason
+        ? { headers: { 'x-sensitive-read-reason': sensitiveReadReason } }
         : undefined,
-    });
+    );
   },
   create(input: CustomerMutationRequest) {
     return request<{ data: CustomerDetail }>('', body(input));

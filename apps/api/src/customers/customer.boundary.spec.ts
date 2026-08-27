@@ -13,4 +13,18 @@ describe('customer phase A boundary', () => {
     );
     expect(source).toContain('CustomerApplicationPort');
   });
+  it('keeps active customer operations independent from Legal Entity context', () => {
+    const root = join(process.cwd(), 'src', 'customers');
+    const source = [
+      'customers.controller.ts',
+      'customer.service.ts',
+      'customer.repository.ts',
+    ]
+      .map((file) => readFileSync(join(root, file), 'utf8'))
+      .join('\n');
+
+    expect(source).not.toMatch(
+      /legal-entit|legalEntity|issuerContext|issuerId|master-data.*repository/i,
+    );
+  });
 });

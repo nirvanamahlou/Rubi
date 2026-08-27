@@ -194,7 +194,7 @@ describe('CustomerService', () => {
     expect(contactCrypto.decrypt).not.toHaveBeenCalled();
     expect(repository.auditSensitiveRead).not.toHaveBeenCalled();
 
-    const sensitiveActor = {
+    const sensitiveActor: AuthenticatedActor = {
       ...actor,
       permissions: [...actor.permissions, 'customers.sensitive.read'],
     };
