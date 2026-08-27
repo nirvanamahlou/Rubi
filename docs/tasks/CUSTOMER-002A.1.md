@@ -7,8 +7,10 @@
 - **Parent HEAD:** `5e9503d0b09560ed266aeaaa800d2fe701d1f712`
 - **Parent PR:** #26
 - **Started:** 2026-08-27
-- **Status:** IN_PROGRESS
+- **Status:** READY_FOR_REVIEW
 - **Initial PR Base:** `codex/pc-a-customer-operations`
+- **Draft Stacked PR:** #27
+- **Implementation Commit:** `144be97`
 
 ## محدوده رزروشده
 
@@ -71,3 +73,9 @@
 - Smoke احراز‌شده `/customers`: HTTP 200، RTL و عنوان معتبر، بدون redirect به login.
 - `git diff --check`، scoped Prettier، Secret scan و Production Privacy scan: پاس.
 - Prisma Schema/Migration/Seed، Dependency/Lockfile و همه فایل‌های Master Data: بدون تغییر.
+
+## قانون Merge
+
+PR #27 به PR #26 وابسته است و پیش از آن Merge نمی‌شود. پس از Merge والد، Base از
+`codex/pc-a-customer-operations` به `develop` تغییر می‌کند و Gateهای affected دوباره
+اجرا می‌شوند. Source Branch حذف و Force Push نمی‌شود.

@@ -4,7 +4,7 @@
 
 ## خلاصه
 
-### `CUSTOMER-002A.1` — PC-A — IMPLEMENTED / STACKED PR PENDING
+### `CUSTOMER-002A.1` — PC-A — `READY_FOR_REVIEW`
 
 - Branch فرزند `codex/pc-a-customer-next` از Remote Parent
   `codex/pc-a-customer-operations@5e9503d0b09560ed266aeaaa800d2fe701d1f712` ساخته شد؛ Parent PR #26 و Branch آن تغییر نکردند.
@@ -13,6 +13,7 @@
 - Migration Lock نزد `PC-B/MASTER-003` باقی ماند؛ Prisma/Migration/Seed/Dependency/Lockfile بدون تغییر هستند.
 - ۵۲ تست API Customers، ۱۴ تست Web Customers، ۱۵ تست Contract و ۲۶۹ تست کامل پاس شدند؛ lint، typecheck، Production Build و Smoke احراز‌شده `/customers` نیز پاس شدند.
 - نام لاتین، جنسیت، note، business code، idempotency persistence، Address Masking کامل، cross-module timeline و Merge واقعی در `BLOCKED_FOR_CUSTOMER_002B` باقی ماندند.
+- Draft Stacked PR #27 با Base اولیه `codex/pc-a-customer-operations` باز شد؛ به #26 وابسته است، پیش از Parent Merge نمی‌شود و پس از Merge والد Base آن به `develop` تغییر می‌کند.
 
 - مرحله جاری: **Issuer Company Context Full-Stack**
 - وضعیت: **LEGAL-ENTITY-CONTEXT-001 آماده Review مجدد روی Draft PR #24؛ قفل‌ها فعال‌اند**

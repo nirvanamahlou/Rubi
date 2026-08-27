@@ -31,7 +31,7 @@
 | CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket              | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence |
 | MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11        |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                           | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |
-| CUSTOMER-002A.1                 | PC-A         | `codex/pc-a-customer-next`                  | Timeline/Filters/Privacy در Customers؛ API/Web/Test/Contract و اسناد Task، بدون Database/Master Data | `IN_PROGRESS` | Stacked روی PR #26؛ Migration Lock نزد `PC-B/MASTER-003` و Schema نیازها در `BLOCKED_FOR_CUSTOMER_002B` |
+| CUSTOMER-002A.1                 | PC-A         | `codex/pc-a-customer-next`                  | Timeline/Filters/Privacy در Customers؛ API/Web/Test/Contract و اسناد Task، بدون Database/Master Data | `READY_FOR_REVIEW` | Draft PR #27 روی #26؛ Migration Lock نزد `PC-B/MASTER-003` و Schema نیازها در `BLOCKED_FOR_CUSTOMER_002B` |
 
 ### قفل موقت Supply-chain برای Review PR #23
 
