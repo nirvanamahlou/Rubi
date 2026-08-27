@@ -1,9 +1,12 @@
-export const MASTER_DATA_CONTRACT_VERSION = 4 as const;
+export const MASTER_DATA_CONTRACT_VERSION = 5 as const;
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 
 export const MASTER_DATA_RESOURCES = [
   'countries',
+  'regions',
   'cities',
+  'airports',
+  'terminals',
   'currencies',
   'exchange-rates',
   'banks',
@@ -18,6 +21,9 @@ export const MASTER_DATA_RESOURCES = [
 
 export type MasterDataResource = (typeof MASTER_DATA_RESOURCES)[number];
 export type MasterDataStatus = 'active' | 'inactive';
+export type MasterRegionType = 'PROVINCE' | 'STATE' | 'REGION' | 'TERRITORY';
+export type MasterTerminalType = 'DOMESTIC' | 'INTERNATIONAL' | 'VIP';
+
 export type MasterDataSortField = 'name' | 'code' | 'updatedAt';
 export type MasterDataSortDirection = 'asc' | 'desc';
 
@@ -28,6 +34,11 @@ export interface MasterDataListQuery {
   sortDirection: MasterDataSortDirection;
   page: number;
   pageSize: number;
+  countryId?: string;
+  regionId?: string;
+  cityId?: string;
+  airportId?: string;
+  terminalType?: MasterTerminalType;
 }
 
 export interface MasterDataRecord {

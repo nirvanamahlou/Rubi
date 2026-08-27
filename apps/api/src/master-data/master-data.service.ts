@@ -41,13 +41,15 @@ const autoCodeAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const compactCodeRules: Partial<
   Record<MasterDataResource, { alphabet: string; length: number }>
 > = {
-  countries: { alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', length: 2 },
   currencies: { alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', length: 3 },
   airlines: { alphabet: autoCodeAlphabet, length: 2 },
 };
 const resourceCodePrefixes: Record<MasterDataResource, string> = {
   countries: 'CNT',
+  regions: 'REGION',
   cities: 'CITY',
+  airports: 'AIRPORT',
+  terminals: 'TERMINAL',
   currencies: 'CUR',
   'exchange-rates': 'RATE',
   banks: 'BANK',
@@ -78,9 +80,47 @@ function hashToken(seed: string, alphabet: string, length: number): string {
   ).join('');
 }
 
+const regionTypes = new Set(['PROVINCE', 'STATE', 'REGION', 'TERRITORY']);
+const terminalTypes = new Set(['DOMESTIC', 'INTERNATIONAL', 'VIP']);
+
+function isValidIso2(value: string): boolean {
+  if (!/^[A-Z]{2}$/.test(value)) return false;
+  const label = new Intl.DisplayNames(['en'], { type: 'region' }).of(value);
+  return Boolean(label && label !== value && label !== 'Unknown Region');
+}
+
+function isValidIanaTimezone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value }).format();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const allowedFields: Record<MasterDataResource, readonly string[]> = {
-  countries: ['code', 'name', 'englishName'],
-  cities: ['code', 'name', 'countryId'],
+  countries: ['iso2Code', 'name', 'englishName'],
+  regions: [
+    'code',
+    'name',
+    'englishName',
+    'countryId',
+    'parentRegionId',
+    'type',
+  ],
+  cities: ['code', 'name', 'englishName', 'countryId', 'regionId'],
+  airports: [
+    'name',
+    'englishName',
+    'countryId',
+    'cityId',
+    'iataCode',
+    'icaoCode',
+    'ianaTimezone',
+    'latitude',
+    'longitude',
+  ],
+  terminals: ['code', 'name', 'englishName', 'airportId', 'terminalType'],
   currencies: ['code', 'name', 'englishName', 'symbol', 'decimalDigits'],
   'exchange-rates': [
     'fromCurrencyCode',
@@ -104,8 +144,21 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
 };
 
 const requiredFields: Record<MasterDataResource, readonly string[]> = {
-  countries: ['name', 'englishName'],
-  cities: ['name', 'countryId'],
+  countries: ['iso2Code', 'name', 'englishName'],
+  regions: ['name', 'englishName', 'countryId', 'type'],
+  cities: ['name', 'englishName', 'countryId'],
+  airports: [
+    'name',
+    'englishName',
+    'countryId',
+    'cityId',
+    'iataCode',
+    'icaoCode',
+    'ianaTimezone',
+    'latitude',
+    'longitude',
+  ],
+  terminals: ['name', 'airportId', 'terminalType'],
   currencies: ['name'],
   'exchange-rates': [
     'fromCurrencyCode',
@@ -150,7 +203,17 @@ const MAX_DIRECT_EXPORT_ROWS = 10_000;
 
 function validateExportInput(input: ExportInput): MasterDataResource {
   const resource = resourceOf(input.resource);
-  const allowedFilterKeys = ['search', 'status', 'sortBy', 'sortDirection'];
+  const allowedFilterKeys = [
+    'search',
+    'status',
+    'sortBy',
+    'sortDirection',
+    'countryId',
+    'regionId',
+    'cityId',
+    'airportId',
+    'terminalType',
+  ];
   if (
     Object.keys(input.filters).some((key) => !allowedFilterKeys.includes(key))
   )
@@ -171,11 +234,26 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     !['name', 'code', 'updatedAt'].includes(String(input.filters.sortBy))
   )
     throw new BadRequestException('مرتب‌سازی خروجی معتبر نیست.');
+  for (const field of ['countryId', 'regionId', 'cityId', 'airportId']) {
+    const value = input.filters[field];
+    if (
+      value !== undefined &&
+      (typeof value !== 'string' || !uuidPattern.test(value))
+    )
+      throw new BadRequestException(`${field} خروجی باید UUID معتبر باشد.`);
+  }
   if (
     input.filters.sortDirection !== undefined &&
     !['asc', 'desc'].includes(String(input.filters.sortDirection))
   )
     throw new BadRequestException('جهت مرتب‌سازی خروجی معتبر نیست.');
+  if (
+    input.filters.terminalType !== undefined &&
+    !['DOMESTIC', 'INTERNATIONAL', 'VIP'].includes(
+      String(input.filters.terminalType),
+    )
+  )
+    throw new BadRequestException('نوع ترمینال خروجی معتبر نیست.');
   const allowedColumns = new Set([
     ...allowedFields[resource],
     'code',
@@ -209,6 +287,26 @@ function exportQuery(input: ExportInput): MasterDataListQuery {
     sortBy: (input.filters.sortBy ?? 'name') as MasterDataListQuery['sortBy'],
     sortDirection: (input.filters.sortDirection ??
       'asc') as MasterDataListQuery['sortDirection'],
+    ...(typeof input.filters.countryId === 'string'
+      ? { countryId: input.filters.countryId }
+      : {}),
+    ...(typeof input.filters.regionId === 'string'
+      ? { regionId: input.filters.regionId }
+      : {}),
+    ...(typeof input.filters.cityId === 'string'
+      ? { cityId: input.filters.cityId }
+      : {}),
+    ...(typeof input.filters.airportId === 'string'
+      ? { airportId: input.filters.airportId }
+      : {}),
+    ...(typeof input.filters.terminalType === 'string'
+      ? {
+          terminalType: input.filters.terminalType as Exclude<
+            MasterDataListQuery['terminalType'],
+            undefined
+          >,
+        }
+      : {}),
     page: 1,
     pageSize: 100,
   };
@@ -285,7 +383,7 @@ export class MasterDataService {
           message: 'نرخ تأیید یا ردشده قابل ویرایش نیست؛ نسخه جدید ثبت کنید.',
         });
     }
-    const data = await this.prepare(resource, values, actor.userId, true);
+    const data = await this.prepare(resource, values, actor.userId, true, id);
     const row = await this.repository.update(
       resource,
       id,
@@ -456,6 +554,7 @@ export class MasterDataService {
     values: Record<string, string | number | readonly string[] | null>,
     actorUserId: string,
     partial: boolean,
+    entityId?: string,
   ): Promise<Record<string, unknown>> {
     const unknown = Object.keys(values).filter(
       (key) => !allowedFields[resource].includes(key),
@@ -473,7 +572,30 @@ export class MasterDataService {
         throw new BadRequestException(`فیلد الزامی: ${missing.join(', ')}`);
     }
     const data: Record<string, unknown> = { ...values };
-    if (resource !== 'exchange-rates') {
+    if (resource === 'countries' && typeof data.iso2Code === 'string') {
+      const iso2Code = data.iso2Code.trim().toUpperCase();
+      if (!isValidIso2(iso2Code))
+        throw new BadRequestException('کد ISO-2 کشور معتبر نیست.');
+      if (
+        await this.repository.fieldExists(
+          'countries',
+          'code',
+          iso2Code,
+          entityId,
+        )
+      )
+        throw new ConflictException({
+          code: 'MASTER_DATA_DUPLICATE_CODE',
+          message: 'کد ISO-2 کشور قبلاً ثبت شده است.',
+        });
+      delete data.iso2Code;
+      data.code = iso2Code;
+    }
+    const usesGeneratedCode =
+      resource !== 'exchange-rates' &&
+      resource !== 'countries' &&
+      resource !== 'airports';
+    if (usesGeneratedCode) {
       if (partial && Object.hasOwn(values, 'code'))
         throw new BadRequestException(
           'کد داخلی به‌صورت خودکار تولید می‌شود و قابل ویرایش نیست.',
@@ -488,12 +610,76 @@ export class MasterDataService {
         throw new BadRequestException('کد ICAO باید سه حرف باشد.');
       data.icaoCode = icaoCode;
     }
-    for (const field of ['countryId', 'organizationId', 'cityId']) {
+    for (const optionalReference of ['regionId', 'parentRegionId']) {
+      if (data[optionalReference] === '') data[optionalReference] = null;
+    }
+
+    for (const field of [
+      'countryId',
+      'organizationId',
+      'cityId',
+      'regionId',
+      'parentRegionId',
+      'airportId',
+    ]) {
       if (
         typeof data[field] === 'string' &&
         !uuidPattern.test(data[field] as string)
       )
         throw new BadRequestException(`${field} باید UUID معتبر باشد.`);
+    }
+    if (resource === 'regions' && data.type !== undefined) {
+      const type = String(data.type).trim().toUpperCase();
+      if (!regionTypes.has(type))
+        throw new BadRequestException('نوع استان/ناحیه معتبر نیست.');
+      data.type = type;
+    }
+    if (resource === 'terminals' && data.terminalType !== undefined) {
+      const terminalType = String(data.terminalType).trim().toUpperCase();
+      if (!terminalTypes.has(terminalType))
+        throw new BadRequestException('نوع ترمینال معتبر نیست.');
+      data.terminalType = terminalType;
+    }
+    if (resource === 'airports') {
+      for (const [field, length, label] of [
+        ['iataCode', 3, 'IATA'],
+        ['icaoCode', 4, 'ICAO'],
+      ] as const) {
+        if (data[field] === undefined) continue;
+        const code = String(data[field]).trim().toUpperCase();
+        if (!new RegExp(`^[A-Z]{${length}}$`).test(code))
+          throw new BadRequestException(
+            `کد ${label} باید ${length} حرف بزرگ باشد.`,
+          );
+        if (
+          await this.repository.fieldExists('airports', field, code, entityId)
+        )
+          throw new ConflictException({
+            code: 'MASTER_DATA_DUPLICATE_CODE',
+            message: `کد ${label} قبلاً ثبت شده است.`,
+          });
+        data[field] = code;
+      }
+      if (data.ianaTimezone !== undefined) {
+        const timezone = String(data.ianaTimezone).trim();
+        if (!isValidIanaTimezone(timezone))
+          throw new BadRequestException('Timezone باید شناسه معتبر IANA باشد.');
+        data.ianaTimezone = timezone;
+      }
+      for (const [field, minimum, maximum] of [
+        ['latitude', -90, 90],
+        ['longitude', -180, 180],
+      ] as const) {
+        if (data[field] === undefined) continue;
+        const coordinate = Number(data[field]);
+        if (
+          !Number.isFinite(coordinate) ||
+          coordinate < minimum ||
+          coordinate > maximum
+        )
+          throw new BadRequestException(`${field} خارج از بازه مجاز است.`);
+        data[field] = String(data[field]).trim();
+      }
     }
     if (resource === 'currencies' && data.decimalDigits !== undefined) {
       const digits = Number(data.decimalDigits);
@@ -555,6 +741,8 @@ export class MasterDataService {
       >
     > = {
       cities: { field: 'countryId', target: 'countries' },
+      regions: { field: 'countryId', target: 'countries' },
+      terminals: { field: 'airportId', target: 'airports' },
       banks: { field: 'countryId', target: 'countries' },
       hotels: { field: 'cityId', target: 'cities' },
       insurers: {
@@ -587,6 +775,48 @@ export class MasterDataService {
       )
         throw new BadRequestException('مرجع فعال با Role موردنیاز یافت نشد.');
     }
+    if (resource === 'regions' && typeof data.parentRegionId === 'string') {
+      if (data.parentRegionId === entityId)
+        throw new BadRequestException('ناحیه والد نمی‌تواند خود رکورد باشد.');
+      const parentRegion = await this.repository.find(
+        'regions',
+        data.parentRegionId,
+      );
+      if (
+        !parentRegion?.isActive ||
+        (typeof data.countryId === 'string' &&
+          parentRegion.countryId !== data.countryId)
+      )
+        throw new BadRequestException(
+          'ناحیه والد فعال باید در همان کشور باشد.',
+        );
+    }
+    if (resource === 'cities' && typeof data.regionId === 'string') {
+      const region = await this.repository.find('regions', data.regionId);
+      if (
+        !region?.isActive ||
+        (typeof data.countryId === 'string' &&
+          region.countryId !== data.countryId)
+      )
+        throw new BadRequestException(
+          'استان/ناحیه فعال باید در همان کشور باشد.',
+        );
+    }
+    if (resource === 'airports') {
+      if (typeof data.cityId === 'string') {
+        const city = await this.repository.find('cities', data.cityId);
+        if (
+          !city?.isActive ||
+          (typeof data.countryId === 'string' &&
+            city.countryId !== data.countryId)
+        )
+          throw new BadRequestException(
+            'شهر فعال باید در کشور انتخاب‌شده باشد.',
+          );
+      }
+      delete data.countryId;
+    }
+
     if (resource === 'hotels' && typeof data.organizationId === 'string') {
       const organization = await this.repository.find(
         'organizations',

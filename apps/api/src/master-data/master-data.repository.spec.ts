@@ -30,6 +30,56 @@ describe('MasterDataRepository code allocation', () => {
   });
 });
 
+describe('MasterDataRepository geography listing', () => {
+  it('applies relational filters, search, sorting and pagination to airports', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const count = vi.fn().mockResolvedValue(0);
+    const database = {
+      client: { masterAirport: { findMany, count } },
+    } as unknown as DatabaseService;
+    const repository = new MasterDataRepository(database);
+
+    await repository.list('airports', {
+      search: 'thr',
+      status: 'active',
+      countryId: '11111111-1111-4111-8111-111111111111',
+      regionId: '22222222-2222-4222-8222-222222222222',
+      cityId: '33333333-3333-4333-8333-333333333333',
+      sortBy: 'code',
+      sortDirection: 'desc',
+      page: 2,
+      pageSize: 10,
+    });
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          isActive: true,
+          cityId: '33333333-3333-4333-8333-333333333333',
+          city: {
+            is: {
+              countryId: '11111111-1111-4111-8111-111111111111',
+              regionId: '22222222-2222-4222-8222-222222222222',
+            },
+          },
+          OR: expect.arrayContaining([
+            { iataCode: { contains: 'thr', mode: 'insensitive' } },
+            { icaoCode: { contains: 'thr', mode: 'insensitive' } },
+          ]),
+        }),
+        orderBy: { iataCode: 'desc' },
+        skip: 10,
+        take: 10,
+      }),
+    );
+    expect(count).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        cityId: '33333333-3333-4333-8333-333333333333',
+      }),
+    });
+  });
+});
+
 describe('MasterDataRepository optimistic locking', () => {
   it('allows only one concurrent mutation for the same expected version', async () => {
     let persistedVersion = 1;

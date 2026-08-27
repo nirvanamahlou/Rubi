@@ -47,6 +47,21 @@ describe('master data reference field mapping', () => {
     ).toBe('USD');
   });
 
+  it('maps geography relations to persisted identifiers', () => {
+    expect(getReferenceFieldConfig('regions', 'countryId')?.target).toBe(
+      'countries',
+    );
+    expect(getReferenceFieldConfig('cities', 'regionId')?.target).toBe(
+      'regions',
+    );
+    expect(getReferenceFieldConfig('airports', 'cityId')?.target).toBe(
+      'cities',
+    );
+    expect(getReferenceFieldConfig('terminals', 'airportId')?.target).toBe(
+      'airports',
+    );
+  });
+
   it('filters organizations by compatible role', () => {
     const organization = {
       ...record,

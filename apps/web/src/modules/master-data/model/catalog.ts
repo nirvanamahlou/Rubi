@@ -1,6 +1,9 @@
 export const masterDataResourceKeys = [
   'countries',
+  'regions',
   'cities',
+  'airports',
+  'terminals',
   'currencies',
   'exchange-rates',
   'banks',
@@ -14,7 +17,8 @@ export const masterDataResourceKeys = [
 ] as const;
 
 export type MasterDataResourceKey = (typeof masterDataResourceKeys)[number];
-export type MasterDataFieldType = 'text' | 'number' | 'datetime-local';
+export type MasterDataFieldType =
+  'text' | 'number' | 'datetime-local' | 'select';
 
 export interface MasterDataFieldDefinition {
   key: string;
@@ -23,6 +27,7 @@ export interface MasterDataFieldDefinition {
   placeholder: string;
   required?: boolean;
   hint?: string;
+  options?: readonly { value: string; label: string }[];
 }
 
 export interface MasterDataCatalogItem {
@@ -49,9 +54,16 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     label: 'کشورها',
     singularLabel: 'کشور',
     group: 'جغرافیا',
-    description:
-      'کشور با نام فارسی و انگلیسی؛ کد داخلی هنگام ذخیره خودکار تولید می‌شود.',
+    description: 'کشور مشترک بین شرکت‌ها با کد رسمی ISO-2 و نام فارسی/انگلیسی.',
     fields: [
+      {
+        key: 'iso2Code',
+        label: 'کد ISO-2',
+        type: 'text',
+        placeholder: 'IR',
+        required: true,
+        hint: 'دو حرف رسمی کشور؛ با حروف بزرگ ذخیره می‌شود.',
+      },
       nameField,
       {
         key: 'englishName',
@@ -61,25 +73,190 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         required: true,
       },
     ],
-    preview: { code: 'IR', name: 'ایران', englishName: 'Iran' },
+    preview: { iso2Code: 'IR', name: 'ایران', englishName: 'Iran' },
+  },
+  {
+    key: 'regions',
+    label: 'استان‌ها و نواحی',
+    singularLabel: 'استان/ناحیه',
+    group: 'جغرافیا',
+    description: 'ساختار سلسله‌مراتبی استان، ایالت و ناحیه در محدوده یک کشور.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Tehran Province',
+        required: true,
+      },
+      {
+        key: 'countryId',
+        label: 'کشور',
+        type: 'text',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'parentRegionId',
+        label: 'ناحیه والد',
+        type: 'text',
+        placeholder: '',
+      },
+      {
+        key: 'type',
+        label: 'نوع ساختار',
+        type: 'select',
+        placeholder: '',
+        required: true,
+        options: [
+          { value: 'PROVINCE', label: 'استان' },
+          { value: 'STATE', label: 'ایالت' },
+          { value: 'REGION', label: 'ناحیه' },
+          { value: 'TERRITORY', label: 'قلمرو' },
+        ],
+      },
+    ],
+    preview: { name: 'تهران', englishName: 'Tehran', type: 'PROVINCE' },
   },
   {
     key: 'cities',
     label: 'شهرها',
     singularLabel: 'شهر',
     group: 'جغرافیا',
-    description: 'شهر وابسته به کشور؛ حذف رکورد استفاده‌شده مجاز نیست.',
+    description: 'شهر وابسته به کشور و در صورت نیاز استان/ناحیه ساختاری.',
     fields: [
       nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Tehran',
+        required: true,
+      },
       {
         key: 'countryId',
         label: 'کشور',
         type: 'text',
-        placeholder: 'country_...',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'regionId',
+        label: 'استان/ناحیه',
+        type: 'text',
+        placeholder: '',
+      },
+    ],
+    preview: { name: 'تهران', englishName: 'Tehran', countryId: 'country_ir' },
+  },
+  {
+    key: 'airports',
+    label: 'فرودگاه‌ها',
+    singularLabel: 'فرودگاه',
+    group: 'جغرافیا',
+    description:
+      'فرودگاه با کدهای رسمی، Timezone معتبر IANA و مختصات کنترل‌شده.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Mehrabad International Airport',
+        required: true,
+      },
+      {
+        key: 'countryId',
+        label: 'کشور',
+        type: 'text',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'cityId',
+        label: 'شهر',
+        type: 'text',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'iataCode',
+        label: 'کد IATA',
+        type: 'text',
+        placeholder: 'THR',
+        required: true,
+      },
+      {
+        key: 'icaoCode',
+        label: 'کد ICAO',
+        type: 'text',
+        placeholder: 'OIII',
+        required: true,
+      },
+      {
+        key: 'ianaTimezone',
+        label: 'Timezone IANA',
+        type: 'text',
+        placeholder: 'Asia/Tehran',
+        required: true,
+      },
+      {
+        key: 'latitude',
+        label: 'عرض جغرافیایی',
+        type: 'number',
+        placeholder: '35.6892',
+        required: true,
+      },
+      {
+        key: 'longitude',
+        label: 'طول جغرافیایی',
+        type: 'number',
+        placeholder: '51.3134',
         required: true,
       },
     ],
-    preview: { code: 'THR', name: 'تهران', countryId: 'country_ir' },
+    preview: { iataCode: 'THR', icaoCode: 'OIII', ianaTimezone: 'Asia/Tehran' },
+  },
+  {
+    key: 'terminals',
+    label: 'ترمینال‌ها',
+    singularLabel: 'ترمینال',
+    group: 'جغرافیا',
+    description: 'ترمینال وابسته به فرودگاه با نوع داخلی، بین‌المللی یا VIP.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Terminal 1',
+      },
+      {
+        key: 'airportId',
+        label: 'فرودگاه',
+        type: 'text',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'terminalType',
+        label: 'نوع ترمینال',
+        type: 'select',
+        placeholder: '',
+        required: true,
+        options: [
+          { value: 'DOMESTIC', label: 'داخلی' },
+          { value: 'INTERNATIONAL', label: 'بین‌المللی' },
+          { value: 'VIP', label: 'VIP' },
+        ],
+      },
+    ],
+    preview: {
+      name: 'ترمینال ۱',
+      airportId: 'airport_thr',
+      terminalType: 'DOMESTIC',
+    },
   },
   {
     key: 'currencies',

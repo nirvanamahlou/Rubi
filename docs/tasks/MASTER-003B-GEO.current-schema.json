@@ -1,0 +1,121 @@
+{
+  "tables": {
+    "master_countries": {
+      "columns": {
+        "id": {
+          "type": "UUID",
+          "nullable": false,
+          "unique": true,
+          "cardinality_estimate": 250
+        },
+        "code": {
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "cardinality_estimate": 250,
+          "unique": true
+        },
+        "name": {
+          "type": "VARCHAR(160)",
+          "nullable": false,
+          "cardinality_estimate": 240
+        },
+        "englishName": {
+          "type": "VARCHAR(160)",
+          "nullable": false,
+          "cardinality_estimate": 240
+        },
+        "isActive": {
+          "type": "BOOLEAN",
+          "nullable": false,
+          "default": true,
+          "cardinality_estimate": 2
+        },
+        "version": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": 1,
+          "cardinality_estimate": 20
+        }
+      },
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        [
+          "code"
+        ]
+      ],
+      "indexes": [
+        {
+          "name": "master_countries_isActive_name_idx",
+          "columns": [
+            "isActive",
+            "name"
+          ]
+        }
+      ]
+    },
+    "master_cities": {
+      "columns": {
+        "id": {
+          "type": "UUID",
+          "nullable": false,
+          "unique": true,
+          "cardinality_estimate": 250
+        },
+        "code": {
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "cardinality_estimate": 250
+        },
+        "name": {
+          "type": "VARCHAR(160)",
+          "nullable": false,
+          "cardinality_estimate": 240
+        },
+        "englishName": {
+          "type": "VARCHAR(160)",
+          "nullable": false,
+          "cardinality_estimate": 240
+        },
+        "isActive": {
+          "type": "BOOLEAN",
+          "nullable": false,
+          "default": true,
+          "cardinality_estimate": 2
+        },
+        "version": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": 1,
+          "cardinality_estimate": 20
+        },
+        "countryId": {
+          "type": "UUID",
+          "nullable": false,
+          "foreign_key": "master_countries.id",
+          "cardinality_estimate": 250
+        }
+      },
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        [
+          "countryId",
+          "code"
+        ]
+      ],
+      "indexes": [
+        {
+          "name": "master_cities_countryId_isActive_name_idx",
+          "columns": [
+            "countryId",
+            "isActive",
+            "name"
+          ]
+        }
+      ]
+    }
+  }
+}

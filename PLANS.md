@@ -190,6 +190,13 @@ Baseline برنامه: `origin/develop` در Merge Commit
   PDF و خروجی آرشیوی پایدار تا اتصال Documents/Worker در وضعیت انتظار می‌مانند.
 - اتصال‌های Documents/Worker/Finance/Reservations/Integrations فقط از Public Contract یا Port واقعی؛ بدون artifact یا Provider ساختگی.
 
+- `MASTER-003B-GEO` روی Branch مستقل
+  `codex/pc-b-master-data-next` و Base والد PR #25 پیاده‌سازی شد: Country،
+  Province/Region، City، Airport و Terminal با Migration غیرمخرب، Contract v5،
+  API/UI واقعی، Permission/Audit و optimistic lock.
+- PR این Slice به‌صورت Draft و stacked می‌ماند و پیش از Merge PR #25 ادغام نمی‌شود؛
+  پس از Merge والد، Base آن به `develop` تغییر خواهد کرد.
+
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
 
 - DatePicker مشترک با تم آبی، انتخاب روز/ساعت و سوییچ شمسی/میلادی در بالای تقویم.

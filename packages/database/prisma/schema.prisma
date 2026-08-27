@@ -235,6 +235,19 @@ enum MasterDataExportStatus {
   FAILED
 }
 
+enum MasterRegionType {
+  PROVINCE
+  STATE
+  REGION
+  TERRITORY
+}
+
+enum MasterTerminalType {
+  DOMESTIC
+  INTERNATIONAL
+  VIP
+}
+
 model MasterCountry {
   id                  String                     @id @default(uuid()) @db.Uuid
   code                String                     @unique @db.Char(2)
@@ -249,6 +262,7 @@ model MasterCountry {
   createdAt           DateTime                   @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime                   @updatedAt @db.Timestamptz(3)
   cities              MasterCity[]
+  regions             MasterRegion[]
   banks               MasterBank[]
   hotelImports        MasterHotelImportSession[]
 
@@ -259,8 +273,10 @@ model MasterCountry {
 model MasterCity {
   id                        String                     @id @default(uuid()) @db.Uuid
   countryId                 String                     @db.Uuid
+  regionId                  String?                    @db.Uuid
   code                      String                     @db.VarChar(32)
   name                      String                     @db.VarChar(160)
+  englishName               String                     @db.VarChar(160)
   isActive                  Boolean                    @default(true)
   version                   Int                        @default(1)
   createdByUserId           String                     @db.Uuid
@@ -270,13 +286,92 @@ model MasterCity {
   createdAt                 DateTime                   @default(now()) @db.Timestamptz(3)
   updatedAt                 DateTime                   @updatedAt @db.Timestamptz(3)
   country                   MasterCountry              @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  region                    MasterRegion?              @relation(fields: [regionId, countryId], references: [id, countryId], onDelete: Restrict)
   hotels                    MasterHotel[]
+  airports                  MasterAirport[]
   customerAddresses         CustomerAddress[]
   masterHotelImportSessions MasterHotelImportSession[]
 
   @@unique([countryId, code])
   @@index([countryId, isActive, name])
+  @@index([regionId, isActive, name])
   @@map("master_cities")
+}
+
+model MasterRegion {
+  id                  String           @id @default(uuid()) @db.Uuid
+  countryId           String           @db.Uuid
+  parentRegionId      String?          @db.Uuid
+  code                String           @db.VarChar(32)
+  name                String           @db.VarChar(160)
+  englishName         String           @db.VarChar(160)
+  type                MasterRegionType
+  isActive            Boolean          @default(true)
+  version             Int              @default(1)
+  createdByUserId     String           @db.Uuid
+  updatedByUserId     String           @db.Uuid
+  deactivatedByUserId String?          @db.Uuid
+  deactivatedAt       DateTime?        @db.Timestamptz(3)
+  createdAt           DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime         @updatedAt @db.Timestamptz(3)
+  country             MasterCountry    @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  parent              MasterRegion?    @relation("MasterRegionHierarchy", fields: [parentRegionId, countryId], references: [id, countryId], onDelete: Restrict)
+  children            MasterRegion[]   @relation("MasterRegionHierarchy")
+  cities              MasterCity[]
+
+  @@unique([countryId, code])
+  @@unique([id, countryId])
+  @@index([countryId, type, isActive, name])
+  @@index([parentRegionId, isActive, name])
+  @@map("master_regions")
+}
+
+model MasterAirport {
+  id                  String           @id @default(uuid()) @db.Uuid
+  cityId              String           @db.Uuid
+  iataCode            String           @unique @db.Char(3)
+  icaoCode            String           @unique @db.Char(4)
+  name                String           @db.VarChar(160)
+  englishName         String           @db.VarChar(160)
+  ianaTimezone        String           @db.VarChar(80)
+  latitude            Decimal          @db.Decimal(9, 6)
+  longitude           Decimal          @db.Decimal(9, 6)
+  isActive            Boolean          @default(true)
+  version             Int              @default(1)
+  createdByUserId     String           @db.Uuid
+  updatedByUserId     String           @db.Uuid
+  deactivatedByUserId String?          @db.Uuid
+  deactivatedAt       DateTime?        @db.Timestamptz(3)
+  createdAt           DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime         @updatedAt @db.Timestamptz(3)
+  city                MasterCity       @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  terminals           MasterTerminal[]
+
+  @@index([cityId, isActive, name])
+  @@index([ianaTimezone, isActive])
+  @@map("master_airports")
+}
+
+model MasterTerminal {
+  id                  String             @id @default(uuid()) @db.Uuid
+  airportId           String             @db.Uuid
+  code                String             @db.VarChar(32)
+  name                String             @db.VarChar(160)
+  englishName         String?            @db.VarChar(160)
+  terminalType        MasterTerminalType
+  isActive            Boolean            @default(true)
+  version             Int                @default(1)
+  createdByUserId     String             @db.Uuid
+  updatedByUserId     String             @db.Uuid
+  deactivatedByUserId String?            @db.Uuid
+  deactivatedAt       DateTime?          @db.Timestamptz(3)
+  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
+  airport             MasterAirport      @relation(fields: [airportId], references: [id], onDelete: Restrict)
+
+  @@unique([airportId, code])
+  @@index([airportId, terminalType, isActive, name])
+  @@map("master_terminals")
 }
 
 model MasterCurrency {

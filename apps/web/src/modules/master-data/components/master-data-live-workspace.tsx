@@ -56,6 +56,13 @@ import {
 import { HotelImportPanel } from './hotel-import-panel';
 
 const groups = ['مالی', 'جغرافیا', 'خدمات سفر', 'سازمان‌ها', 'فروش'] as const;
+const geographyResources = [
+  ['countries', 'کشورها'],
+  ['regions', 'استان‌ها/نواحی'],
+  ['cities', 'شهرها'],
+  ['airports', 'فرودگاه‌ها'],
+  ['terminals', 'ترمینال‌ها'],
+] as const;
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
 export function MasterDataWorkspace() {
@@ -72,6 +79,7 @@ export function MasterDataWorkspace() {
   const [notice, setNotice] = useState<string | null>(null);
   const [exportingExcel, setExportingExcel] = useState(false);
   const definition = getMasterDataDefinition(resource);
+  const isGeography = geographyResources.some(([key]) => key === resource);
   const isCountryCity = resource === 'countries' || resource === 'cities';
 
   const query: MasterDataListQuery = {
@@ -296,7 +304,7 @@ export function MasterDataWorkspace() {
             <div>
               <h2 className="text-sm font-black">Catalog اطلاعات پایه</h2>
               <p className="text-xs text-muted-foreground">
-                ۱۱ بخش · ۱۲ منبع پایدار · مشترک بین شرکت‌ها
+                ۱۵ منبع پایدار · مشترک بین شرکت‌ها · بدون فیلتر Legal Entity
               </p>
             </div>
           </div>
@@ -350,7 +358,9 @@ export function MasterDataWorkspace() {
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-xl font-black">
-                    {isCountryCity ? 'کشورها و شهرها' : definition.label}
+                    {isGeography
+                      ? `جغرافیا · ${definition.label}`
+                      : definition.label}
                   </h2>
                   <Badge>{definition.group}</Badge>
                   <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
