@@ -64,6 +64,13 @@ describe('Customer Operations workspace boundaries', () => {
       expect(source).toContain(filter);
   });
 
+  it('shows the primary contact in a dedicated masked list column', () => {
+    expect(source).toContain('شماره تماس');
+    expect(source).toContain(
+      "record.maskedPrimaryContact ?? 'بدون تماس'",
+    );
+  });
+
   it('exposes the complete Customer 360 navigation', () => {
     for (const tab of [
       'overview',

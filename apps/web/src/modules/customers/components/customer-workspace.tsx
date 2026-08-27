@@ -1796,10 +1796,11 @@ export function CustomerWorkspace() {
         />
       ) : (
         <Card className="overflow-x-auto">
-          <table className="w-full min-w-[64rem] text-sm">
+          <table className="w-full min-w-[70rem] text-sm">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
                 <th className="p-4 text-start">مشتری</th>
+                <th className="p-4 text-start">شماره تماس</th>
                 <th className="p-4 text-start">کد</th>
                 <th className="p-4 text-start">وضعیت و نقش</th>
                 <th className="p-4 text-start">رضایت</th>
@@ -1817,11 +1818,16 @@ export function CustomerWorkspace() {
                       </span>
                       <div>
                         <p className="font-bold">{record.displayName}</p>
-                        <p className="text-xs text-muted-foreground" dir="ltr">
-                          {record.maskedPrimaryContact ?? 'بدون تماس'}
-                        </p>
                       </div>
                     </div>
+                  </td>
+                  <td className="p-4">
+                    <span
+                      className="font-mono text-muted-foreground"
+                      dir="ltr"
+                    >
+                      {record.maskedPrimaryContact ?? 'بدون تماس'}
+                    </span>
                   </td>
                   <td className="p-4 font-mono" dir="ltr" title={record.id}>
                     {customerCode(record.id)}
