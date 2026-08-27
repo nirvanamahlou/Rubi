@@ -5,8 +5,9 @@
 - **Branch:** codex/pc-a-customer-operations
 - **Base commit:** b6da5d6300716a189958bc37d31ca195f0304dc5
 - **Started:** 2026-08-27
-- **Status:** READY_FOR_DRAFT_PR
+- **Status:** DRAFT_PR_OPEN
 - **Target:** develop
+- **Draft PR:** #26
 - **Schema/Migration/Dependency ownership:** NONE
 
 ## هدف و Scope
