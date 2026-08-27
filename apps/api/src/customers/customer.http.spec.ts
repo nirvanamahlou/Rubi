@@ -24,6 +24,7 @@ describe('Customers HTTP integration', () => {
       meta: { page: 1, pageSize: 25, total: 0 },
     }),
     create: vi.fn().mockResolvedValue({ data: { id: 'customer-id' } }),
+    detail: vi.fn().mockResolvedValue({ data: { id: 'customer-id' } }),
   };
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -66,6 +67,20 @@ describe('Customers HTTP integration', () => {
     expect(service.list).toHaveBeenCalledWith(
       expect.objectContaining({ page: 1 }),
       actor,
+    );
+  });
+
+  it('forwards an explicit sensitive-read reason without logging contact data', async () => {
+    await request(app.getHttpServer())
+      .get('/api/v1/customers/44444444-4444-4444-8444-444444444444')
+      .set('Cookie', 'rubi_access=test')
+      .set('x-sensitive-read-reason', 'customer-verification')
+      .expect(200);
+    expect(service.detail).toHaveBeenCalledWith(
+      '44444444-4444-4444-8444-444444444444',
+      actor,
+      undefined,
+      'customer-verification',
     );
   });
 

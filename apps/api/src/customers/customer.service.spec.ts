@@ -194,17 +194,104 @@ describe('CustomerService', () => {
     expect(contactCrypto.decrypt).not.toHaveBeenCalled();
     expect(repository.auditSensitiveRead).not.toHaveBeenCalled();
 
-    const sensitive = await service.detail(row.id, {
+    const sensitiveActor = {
       ...actor,
       permissions: [...actor.permissions, 'customers.sensitive.read'],
-    });
+    };
+    const permissionWithoutReason = await service.detail(
+      row.id,
+      sensitiveActor,
+    );
+    expect(permissionWithoutReason.data.contacts[0]?.value).toBeNull();
+    expect(contactCrypto.decrypt).not.toHaveBeenCalled();
+
+    const sensitive = await service.detail(
+      row.id,
+      sensitiveActor,
+      undefined,
+      'customer-verification',
+    );
     expect(sensitive.data.contacts[0]?.value).toBe('0000000000');
     expect(contactCrypto.decrypt).toHaveBeenCalledTimes(1);
     expect(repository.auditSensitiveRead).toHaveBeenCalledWith(
       row.id,
       actor.userId,
       row.ownerBranchId,
+      'customer-verification',
       undefined,
     );
+  });
+
+  it('requires permission and an allowlisted reason before unmasking', async () => {
+    const repository = {
+      find: vi.fn().mockResolvedValue(row),
+      auditSensitiveRead: vi.fn(),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+
+    await expect(
+      service.detail(row.id, actor, undefined, 'support-request'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      service.detail(
+        row.id,
+        {
+          ...actor,
+          permissions: [...actor.permissions, 'customers.sensitive.read'],
+        },
+        undefined,
+        'free-text-reason',
+      ),
+    ).rejects.toMatchObject({
+      response: { code: 'CUSTOMER_SENSITIVE_READ_REASON_INVALID' },
+    });
+    expect(repository.auditSensitiveRead).not.toHaveBeenCalled();
+  });
+
+  it('returns a stable safe error when contact decryption fails', async () => {
+    const encryptedRow = {
+      ...row,
+      contacts: [
+        {
+          id: '77777777-7777-4777-8777-777777777777',
+          type: 'PHONE',
+          label: null,
+          maskedValue: '0000•••000',
+          encryptedValue: 'encrypted-contact',
+          encryptionIv: 'iv-base64-value',
+          encryptionAuthTag: 'auth-tag-base64-value',
+          encryptionKeyVersion: 1,
+          valueFingerprint: 'f'.repeat(64),
+          isPrimary: true,
+          verifiedAt: null,
+          createdAt: row.createdAt,
+        },
+      ],
+    };
+    const repository = {
+      find: vi.fn().mockResolvedValue(encryptedRow),
+      auditSensitiveRead: vi.fn(),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository, {
+      decrypt: vi.fn(() => {
+        throw new Error('synthetic-decryption-failure');
+      }),
+    });
+
+    await expect(
+      service.detail(
+        row.id,
+        {
+          ...actor,
+          permissions: [...actor.permissions, 'customers.sensitive.read'],
+        },
+        undefined,
+        'data-correction',
+      ),
+    ).rejects.toMatchObject({
+      status: 422,
+      response: { code: 'CUSTOMER_CONTACT_DECRYPTION_FAILED' },
+    });
+    expect(repository.auditSensitiveRead).not.toHaveBeenCalled();
   });
 });

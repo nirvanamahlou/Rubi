@@ -65,8 +65,12 @@ export const customersApi = {
       `?${serializeCustomerListQuery(query)}`,
     );
   },
-  detail(id: string) {
-    return request<{ data: CustomerDetail }>(`/${encodeURIComponent(id)}`);
+  detail(id: string, sensitiveReadReason?: string) {
+    return request<{ data: CustomerDetail }>(`/${encodeURIComponent(id)}`, {
+      headers: sensitiveReadReason
+        ? { 'x-sensitive-read-reason': sensitiveReadReason }
+        : undefined,
+    });
   },
   create(input: CustomerMutationRequest) {
     return request<{ data: CustomerDetail }>('', body(input));

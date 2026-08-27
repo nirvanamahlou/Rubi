@@ -749,6 +749,7 @@ export class CustomerRepository {
     customerId: string,
     actorUserId: string,
     actorBranchId: string,
+    reason: string,
     traceId?: string,
   ) {
     await this.database.client.customerAuditEvent.create({
@@ -759,7 +760,7 @@ export class CustomerRepository {
         entityType: 'customer',
         entityId: customerId,
         outcome: AuditOutcome.SUCCESS,
-        reason: controlledAuditReason('permission-granted'),
+        reason: controlledAuditReason(reason),
         afterSnapshot: json({
           customerId,
           fields: ['birthDate', 'contacts.value'],
