@@ -83,7 +83,7 @@ Endpoint خواندن آن‌ها را ندارد؛ UI این محدودیت ر�
 - Lint کامل Monorepo پاس شد: ۶ Package دارای Script.
 - Typecheck کامل Monorepo پاس شد.
 - تست کامل Monorepo پاس شد: ۲۵۵ تست در ۶۷ فایل تست.
-- تست‌های هدفمند Customers پاس شد: ۱۴۲ تست API و ۸۲ تست Web.
+- تست‌های هدفمند Customers پاس شد: ۴۲ تست API در ۸ فایل و ۱۱ تست Web در ۳ فایل.
 - تست Boundary جدید Customer Workspace پاس شد: ۴ تست.
 - Production Build کامل Monorepo پاس شد.
 - HTTP production smoke مسیر /customers پاس شد: Status 200، HTML معتبر و RTL.
