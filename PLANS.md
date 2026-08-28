@@ -202,6 +202,10 @@ Baseline برنامه: `origin/develop` در Merge Commit
   مانده، تراکنش، درگاه و نرخ authoritative همچنان در مالکیت Finance هستند.
 - Draft PR #29 روی Branch جغرافیا و PR #28 پشته شده است و به‌تبع آن به PR #25 وابسته
   می‌ماند؛ پیش از والدها Merge نمی‌شود.
+- `MASTER-003D-UI-POLISH` به‌صورت Slice مستقل روی PR #29 آماده شد: KPIهای پاستلی و
+  آیکن‌دار در همه Workspaceها، نام KPIهای مالی و جغرافیا مطابق ماکاپ، نمای تخصصی پنج‌تب
+  جغرافیا و حذف خط Hover کارت‌های Hub. این Slice هیچ Schema، Migration، API Contract،
+  Customers، Dependency یا Lockfile را تغییر نمی‌دهد.
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
 

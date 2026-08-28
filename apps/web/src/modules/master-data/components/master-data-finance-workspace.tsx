@@ -1,6 +1,7 @@
 'use client';
 
 import type {
+  MasterDataListQuery,
   MasterDataRecord,
   MasterDataResource,
   MasterDataStatus,
@@ -10,14 +11,20 @@ import {
   Building2,
   ChartNoAxesCombined,
   CheckCircle2,
+  CircleDollarSign,
+  Clock3,
   Coins,
+  CreditCard,
   Eye,
   FilePenLine,
   FileSpreadsheet,
   Landmark,
+  MapPin,
   Plus,
   RefreshCw,
   Search,
+  Settings2,
+  Timer,
   WalletCards,
   Workflow,
   XCircle,
@@ -56,6 +63,10 @@ import {
   MasterDataLiveForm,
   type MasterDataFormMode,
 } from './master-data-live-form';
+import {
+  MasterDataKpiGrid,
+  type MasterDataKpiItem,
+} from './master-data-kpi-grid';
 
 type FinanceTab =
   'currencies' | 'rates' | 'approvals' | 'banks' | 'branches' | 'payments';
@@ -286,6 +297,13 @@ export function MasterDataFinanceWorkspace({
   const [rangeDays, setRangeDays] = useState('90');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [activeTotal, setActiveTotal] = useState(0);
+  const [latestReferenceUpdatedAt, setLatestReferenceUpdatedAt] = useState<
+    string | null
+  >(null);
+  const [kpiRates, setKpiRates] = useState<readonly CurrencyRateRow[]>([]);
+  const [todayRateTotal, setTodayRateTotal] = useState(0);
+  const [draftRateTotal, setDraftRateTotal] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [selected, setSelected] = useState<MasterDataRecord | undefined>();
@@ -303,43 +321,90 @@ export function MasterDataFinanceWorkspace({
         const observedFrom = new Date(
           Date.now() - Number(rangeDays) * 86_400_000,
         ).toISOString();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         const requestedRateStatus =
           tab === 'approvals'
             ? ('DRAFT' as const)
             : workflowStatus === 'all'
               ? undefined
               : workflowStatus;
-        const response = await masterDataApi.currencyRateHistory({
-          search,
-          ...(requestedRateStatus ? { status: requestedRateStatus } : {}),
-          observedFrom,
-          observedTo: new Date().toISOString(),
-          page,
-          pageSize: 25,
-        });
+        const [response, approvedResponse, todayResponse, draftResponse] =
+          await Promise.all([
+            masterDataApi.currencyRateHistory({
+              search,
+              ...(requestedRateStatus ? { status: requestedRateStatus } : {}),
+              observedFrom,
+              observedTo: new Date().toISOString(),
+              page,
+              pageSize: 25,
+            }),
+            masterDataApi.currencyRateHistory({
+              status: 'APPROVED',
+              observedFrom,
+              observedTo: new Date().toISOString(),
+              page: 1,
+              pageSize: 100,
+            }),
+            masterDataApi.currencyRateHistory({
+              observedFrom: today.toISOString(),
+              observedTo: new Date().toISOString(),
+              page: 1,
+              pageSize: 100,
+            }),
+            masterDataApi.currencyRateHistory({
+              status: 'DRAFT',
+              page: 1,
+              pageSize: 1,
+            }),
+          ]);
         setRates(response.data as unknown as readonly CurrencyRateRow[]);
+        setKpiRates(
+          approvedResponse.data as unknown as readonly CurrencyRateRow[],
+        );
+        setTodayRateTotal(todayResponse.meta.total);
+        setDraftRateTotal(draftResponse.meta.total);
         setRecords([]);
         setTotal(response.meta.total);
       } else {
-        const response = await masterDataApi.list(
-          resource as MasterDataResource,
-          {
-            search,
-            status,
-            sortBy: resource === 'payment-methods' ? 'updatedAt' : 'name',
-            sortDirection: 'asc',
-            page,
-            pageSize: 25,
-          },
-        );
+        const baseQuery: MasterDataListQuery = {
+          search,
+          status,
+          sortBy: resource === 'payment-methods' ? 'updatedAt' : 'name',
+          sortDirection: 'asc' as const,
+          page,
+          pageSize: 25,
+        };
+        const [response, activeResponse, latestResponse] = await Promise.all([
+          masterDataApi.list(resource as MasterDataResource, baseQuery),
+          masterDataApi.list(resource as MasterDataResource, {
+            ...baseQuery,
+            search: '',
+            status: 'active',
+            page: 1,
+            pageSize: 1,
+          }),
+          masterDataApi.list(resource as MasterDataResource, {
+            search: '',
+            status: 'all',
+            sortBy: 'updatedAt',
+            sortDirection: 'desc',
+            page: 1,
+            pageSize: 1,
+          }),
+        ]);
         setRecords(response.data);
         setRates([]);
+        setKpiRates([]);
+        setActiveTotal(activeResponse.meta.total);
+        setLatestReferenceUpdatedAt(latestResponse.data[0]?.updatedAt ?? null);
         setTotal(response.meta.total);
       }
       setRequestState('ready');
     } catch (error) {
       setRecords([]);
       setRates([]);
+      setKpiRates([]);
       setRequestState(
         error instanceof MasterDataApiError && error.status === 403
           ? 'forbidden'
@@ -471,20 +536,225 @@ export function MasterDataFinanceWorkspace({
     }
   }
 
-  const activeCount = records.filter((row) => row.status === 'active').length;
-  const kpis = isRateTab(tab)
-    ? [
-        ['رکوردهای بازه', total],
-        ['پیش‌نویس', rates.filter((row) => row.status === 'DRAFT').length],
-        ['تأییدشده', rates.filter((row) => row.status === 'APPROVED').length],
-        ['غیرقطعی', rates.filter((row) => !row.isAuthoritative).length],
-      ]
-    : [
-        ['کل رکوردها', total],
-        ['فعال در صفحه', activeCount],
-        ['غیرفعال در صفحه', records.length - activeCount],
-        ['نسخه قرارداد', 'v6'],
-      ];
+  const todayKey = new Date().toDateString();
+  const latestApprovedRate = (code: string) => {
+    const row = [...kpiRates]
+      .filter(
+        (item) =>
+          item.status === 'APPROVED' &&
+          item.fromCurrencyCode === code &&
+          item.toCurrencyCode === 'IRR',
+      )
+      .sort(
+        (left, right) =>
+          new Date(right.observedAt).getTime() -
+          new Date(left.observedAt).getTime(),
+      )[0];
+    return row
+      ? Number(row.rate).toLocaleString('fa-IR', {
+          maximumFractionDigits: 10,
+        })
+      : '—';
+  };
+  const averageApprovalMinutes = (() => {
+    const durations = kpiRates.flatMap((row) =>
+      row.approvedAt
+        ? [
+            Math.max(
+              0,
+              (new Date(row.approvedAt).getTime() -
+                new Date(row.observedAt).getTime()) /
+                60_000,
+            ),
+          ]
+        : [],
+    );
+    if (!durations.length) return '—';
+    return `${Math.round(
+      durations.reduce((sum, value) => sum + value, 0) / durations.length,
+    ).toLocaleString('fa-IR')} دقیقه`;
+  })();
+  const missingBankDetails = records.filter(
+    (row) =>
+      tab === 'banks' &&
+      (!row.attributes.englishName || !row.attributes.swiftCode),
+  ).length;
+  const coveredCities = new Set(
+    records
+      .map((row) => row.attributes.cityName)
+      .filter((value): value is string => typeof value === 'string' && !!value),
+  ).size;
+  const kpis: readonly MasterDataKpiItem[] =
+    tab === 'currencies'
+      ? [
+          { label: 'کل ارزها', value: total, icon: Coins, tone: 'sky' },
+          {
+            label: 'ارز فعال',
+            value: activeTotal,
+            icon: CheckCircle2,
+            tone: 'emerald',
+          },
+          {
+            label: 'ارز پایه سازمان',
+            value: '—',
+            icon: Building2,
+            tone: 'violet',
+            hint: 'پس از اتصال قرارداد Finance',
+          },
+          {
+            label: 'آخرین همگام‌سازی',
+            value: latestReferenceUpdatedAt
+              ? faDate(latestReferenceUpdatedAt)
+              : '—',
+            icon: RefreshCw,
+            tone: 'amber',
+          },
+        ]
+      : tab === 'rates'
+        ? [
+            {
+              label: 'دلار آمریکا',
+              value: latestApprovedRate('USD'),
+              icon: CircleDollarSign,
+              tone: 'sky',
+            },
+            {
+              label: 'یورو',
+              value: latestApprovedRate('EUR'),
+              icon: Coins,
+              tone: 'emerald',
+            },
+            {
+              label: 'درهم امارات',
+              value: latestApprovedRate('AED'),
+              icon: WalletCards,
+              tone: 'violet',
+            },
+            {
+              label: 'نرخ‌های امروز',
+              value: todayRateTotal,
+              icon: Clock3,
+              tone: 'amber',
+            },
+          ]
+        : tab === 'approvals'
+          ? [
+              {
+                label: 'در انتظار بررسی',
+                value: draftRateTotal,
+                icon: Clock3,
+                tone: 'amber',
+              },
+              {
+                label: 'تأییدشده امروز',
+                value: kpiRates.filter(
+                  (row) =>
+                    row.approvedAt &&
+                    new Date(row.approvedAt).toDateString() === todayKey,
+                ).length,
+                icon: CheckCircle2,
+                tone: 'emerald',
+              },
+              {
+                label: 'ردشده امروز',
+                value: '—',
+                icon: XCircle,
+                tone: 'rose',
+              },
+              {
+                label: 'میانگین زمان تأیید',
+                value: averageApprovalMinutes,
+                icon: Timer,
+                tone: 'sky',
+              },
+            ]
+          : tab === 'banks'
+            ? [
+                {
+                  label: 'کل بانک‌ها',
+                  value: total,
+                  icon: Landmark,
+                  tone: 'sky',
+                },
+                {
+                  label: 'بانک فعال',
+                  value: activeTotal,
+                  icon: CheckCircle2,
+                  tone: 'emerald',
+                },
+                {
+                  label: 'حساب‌های متصل',
+                  value: '—',
+                  icon: WalletCards,
+                  tone: 'violet',
+                  hint: 'در مالکیت Finance',
+                },
+                {
+                  label: 'نیازمند تکمیل اطلاعات',
+                  value: missingBankDetails,
+                  icon: FilePenLine,
+                  tone: 'amber',
+                  hint: 'در صفحه جاری',
+                },
+              ]
+            : tab === 'branches'
+              ? [
+                  {
+                    label: 'کل شعب ثبت‌شده',
+                    value: total,
+                    icon: Building2,
+                    tone: 'sky',
+                  },
+                  {
+                    label: 'شعب فعال',
+                    value: activeTotal,
+                    icon: CheckCircle2,
+                    tone: 'emerald',
+                  },
+                  {
+                    label: 'شهرهای تحت پوشش',
+                    value: coveredCities,
+                    icon: MapPin,
+                    tone: 'violet',
+                    hint: 'در صفحه جاری',
+                  },
+                  {
+                    label: 'شعب بدون حساب متصل',
+                    value: '—',
+                    icon: WalletCards,
+                    tone: 'amber',
+                    hint: 'پس از اتصال قرارداد Finance',
+                  },
+                ]
+              : [
+                  {
+                    label: 'روش‌های فعال',
+                    value: activeTotal,
+                    icon: WalletCards,
+                    tone: 'emerald',
+                  },
+                  {
+                    label: 'تراکنش‌های امروز',
+                    value: '—',
+                    icon: RefreshCw,
+                    tone: 'sky',
+                    hint: 'در مالکیت Finance',
+                  },
+                  {
+                    label: 'درگاه‌های متصل',
+                    value: '—',
+                    icon: CreditCard,
+                    tone: 'violet',
+                    hint: 'در مالکیت Finance',
+                  },
+                  {
+                    label: 'نیازمند پیکربندی',
+                    value: '—',
+                    icon: Settings2,
+                    tone: 'amber',
+                    hint: 'پس از اتصال قرارداد Finance',
+                  },
+                ];
 
   return (
     <div className="space-y-5" dir="rtl">
@@ -559,21 +829,7 @@ export function MasterDataFinanceWorkspace({
         </nav>
       </Card>
 
-      <section
-        aria-label="شاخص‌های واقعی"
-        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
-      >
-        {kpis.map(([label, value]) => (
-          <Card className="p-5" key={label}>
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="mt-2 text-2xl font-black">
-              {typeof value === 'number'
-                ? value.toLocaleString('fa-IR')
-                : value}
-            </p>
-          </Card>
-        ))}
-      </section>
+      <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${copy.title}`} />
 
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
         <FormField id="finance-search" label="جست‌وجو">

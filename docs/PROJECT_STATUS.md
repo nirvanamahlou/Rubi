@@ -172,6 +172,24 @@
   `origin/codex/pc-b-master-data-next@e0e3a5f` پشته شده است؛ Draft PR #29 با Base همین
   Branch ایجاد شد و قبل از Merge والدهای #28 و #25 نباید ادغام یا به `develop` منتقل شود.
 
+### `MASTER-003D-UI-POLISH` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-ui-polish` از
+  `origin/codex/pc-b-master-data-financial@e7e6180` ساخته شد و PR مالی #29 را تغییر
+  نمی‌دهد.
+- کارت KPI مشترک با شش رنگ پاستلی، آیکن معنایی، Dark Mode و چینش Responsive به همه
+  Workspaceهای اطلاعات پایه اضافه شد.
+- KPIهای شش نمای مالی و پنج نمای جغرافیا دقیقاً با نام‌های ماکاپ نمایش داده می‌شوند؛
+  مقادیر فاقد قرارداد واقعی Finance/Aggregate با `—` مشخص‌اند و عدد ساختگی ندارند.
+- جغرافیا اکنون پنج تب کشور، استان/ناحیه، شهر، فرودگاه و ترمینال، فیلترهای رابطه‌ای،
+  جدول تخصصی، قاعده یکپارچگی، عملیات واقعی و Export دارد.
+- خط رنگی پایین کارت‌های Hub در Hover حذف شد؛ حرکت و Focus Ring دسترس‌پذیر حفظ شدند.
+- تست کامل Repository برابر ۳۳۵ تست، Typecheck کل Monorepo و Production Build موفق
+  است. Lint فایل‌های تغییرکرده موفق است؛ Full Web Lint فقط روی ایراد قدیمی و دست‌نخورده
+  `apps/web/src/components/ui/date-picker.tsx` متوقف می‌شود.
+- Database، Migration، Backend، Contract، Customers، Dependency و Lockfile در این
+  Slice تغییر نکردند.
+
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
 

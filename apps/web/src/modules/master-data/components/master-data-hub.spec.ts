@@ -23,4 +23,9 @@ describe('MasterDataHub contract', () => {
     expect(hubSource).toContain('xl:grid-cols-4');
     expect(hubSource).toContain('focus-visible:ring-2');
   });
+
+  it('keeps hover feedback without drawing an underline', () => {
+    expect(hubSource).toContain('group-hover:-translate-y-1');
+    expect(hubSource).not.toContain('group-hover:scale-x-100');
+  });
 });

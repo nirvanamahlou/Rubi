@@ -34,47 +34,39 @@ const iconBySection: Record<MasterDataSectionSlug, LucideIcon> = {
 
 const toneClasses: Record<
   MasterDataSectionTone,
-  { icon: string; glow: string; line: string }
+  { icon: string; glow: string }
 > = {
   emerald: {
     icon: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300',
     glow: 'from-emerald-400/14',
-    line: 'bg-emerald-500',
   },
   sky: {
     icon: 'bg-sky-100 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300',
     glow: 'from-sky-400/14',
-    line: 'bg-sky-500',
   },
   violet: {
     icon: 'bg-violet-100 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300',
     glow: 'from-violet-400/14',
-    line: 'bg-violet-500',
   },
   orange: {
     icon: 'bg-orange-100 text-orange-700 dark:bg-orange-400/15 dark:text-orange-300',
     glow: 'from-orange-400/14',
-    line: 'bg-orange-500',
   },
   blue: {
     icon: 'bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300',
     glow: 'from-blue-400/14',
-    line: 'bg-blue-500',
   },
   cyan: {
     icon: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-400/15 dark:text-cyan-300',
     glow: 'from-cyan-400/14',
-    line: 'bg-cyan-500',
   },
   rose: {
     icon: 'bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300',
     glow: 'from-rose-400/14',
-    line: 'bg-rose-500',
   },
   purple: {
     icon: 'bg-purple-100 text-purple-700 dark:bg-purple-400/15 dark:text-purple-300',
     glow: 'from-purple-400/14',
-    line: 'bg-purple-500',
   },
 };
 
@@ -163,13 +155,6 @@ export function MasterDataHub() {
                         />
                       </span>
                     </div>
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        'absolute inset-x-0 bottom-0 h-1 origin-right scale-x-0 rounded-full transition-transform group-hover:scale-x-100',
-                        tone.line,
-                      )}
-                    />
                   </div>
                 </Card>
               </Link>
