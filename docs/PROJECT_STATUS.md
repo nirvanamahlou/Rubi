@@ -169,8 +169,8 @@
 - هیچ فایل Customers، manifest یا lockfile تغییر نکرده است؛ آیکن/لوگوی بانک تا قرارداد
   رسمی Documents به‌صورت upload جعلی پیاده‌سازی نشده است.
 - Branch `codex/pc-b-master-data-financial` دقیقاً روی
-  `origin/codex/pc-b-master-data-next@e0e3a5f` پشته شده است؛ Base نهایی PR قبل از Merge
-  والدها نباید `develop` باشد.
+  `origin/codex/pc-b-master-data-next@e0e3a5f` پشته شده است؛ Draft PR #29 با Base همین
+  Branch ایجاد شد و قبل از Merge والدهای #28 و #25 نباید ادغام یا به `develop` منتقل شود.
 
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`

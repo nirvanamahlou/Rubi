@@ -4,8 +4,9 @@
 - Computer: `PC-B`
 - Branch: `codex/pc-b-master-data-financial`
 - Base: `codex/pc-b-master-data-next@e0e3a5f`
+- Draft PR: [#29](https://github.com/nirvanamahlou/Rubi/pull/29)
 - مسیر محصول: `/master-data/finance`
-- والد: `MASTER-003` / Draft PR #25
+- والد مستقیم: `MASTER-003B-GEO` / Draft PR #28؛ والد زنجیره: `MASTER-003` / Draft PR #25
 - قفل‌ها: Migration، Master Data shared-contract و Central docs همان قفل‌های فعال
   `PC-B/MASTER-003` هستند؛ Dependency/Lockfile آزاد است.
 
