@@ -1,6 +1,6 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-27 — Draft PR پشته‌ای #28 برای MASTER-003B-GEO ایجاد شد
+آخرین به‌روزرسانی: 2026-08-29 — MASTER-003C-FINANCIAL در مسیر اطلاعات پایه پیاده‌سازی شد
 
 ## خلاصه
 
@@ -153,6 +153,24 @@
 - full typecheck، ۳۱۶ تست در ۷۷ فایل و production build کل Monorepo پاس شدند؛ lint
   همه فایل‌های Slice نیز پاس است. full lint فقط روی DatePicker بدون تغییر Parent
   متوقف می‌شود و برای حفظ Vertical Slice وارد این PR نشده است.
+
+### `MASTER-003C-FINANCIAL` — PC-B — `READY_FOR_REVIEW`
+
+- «مالی و پولی» زیرمجموعه Master Data در `/master-data/finance` است و شش نمای واقعی
+  ارزها، تاریخچه نرخ، گردش تأیید، بانک‌ها، شعب بانک و روش‌های پرداخت مرجع دارد.
+- Migration افزایشی `20260829100000_master_data_financial_reference` سیاست نمایش ارز،
+  نام انگلیسی/SWIFT بانک، شعبه مستقل و روش پرداخت مرجع را بدون عملیات مخرب اضافه می‌کند.
+- نرخ‌ها همچنان تاریخچه مستقل، Decimal مثبت با حداکثر ۱۰ اعشار، Maker/Checker، Audit،
+  Optimistic Lock و `isAuthoritative=false` دارند؛ Seed نرخ عمداً خالی است.
+- حساب، شبا، کارت، CVV، مانده، تسویه، تراکنش و پیکربندی درگاه وارد Master Data نشده‌اند
+  و هیچ Query مستقیمی به جداول Finance وجود ندارد.
+- همه ۱۱ Migration روی PostgreSQL 18.1 خالی، Seed دوگانه و Constraintهای SWIFT، کد
+  شعبه، ترتیب روش پرداخت و خالی‌بودن Seed نرخ با موفقیت آزموده شدند.
+- هیچ فایل Customers، manifest یا lockfile تغییر نکرده است؛ آیکن/لوگوی بانک تا قرارداد
+  رسمی Documents به‌صورت upload جعلی پیاده‌سازی نشده است.
+- Branch `codex/pc-b-master-data-financial` دقیقاً روی
+  `origin/codex/pc-b-master-data-next@e0e3a5f` پشته شده است؛ Base نهایی PR قبل از Merge
+  والدها نباید `develop` باشد.
 
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`

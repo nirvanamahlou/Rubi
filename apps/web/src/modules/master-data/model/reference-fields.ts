@@ -43,6 +43,10 @@ const configs: Partial<
   banks: {
     countryId: { target: 'countries', payload: 'id' },
   },
+  'bank-branches': {
+    bankId: { target: 'banks', payload: 'id' },
+    cityId: { target: 'cities', payload: 'id' },
+  },
   insurers: {
     organizationId: {
       target: 'organizations',

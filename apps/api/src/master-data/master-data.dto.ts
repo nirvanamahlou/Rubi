@@ -44,8 +44,25 @@ export class MasterDataListQueryDto {
   @IsUUID()
   airportId?: string;
   @IsOptional()
+  @IsUUID()
+  bankId?: string;
+  @IsOptional()
   @IsIn(['DOMESTIC', 'INTERNATIONAL', 'VIP'])
   terminalType?: 'DOMESTIC' | 'INTERNATIONAL' | 'VIP';
+  @IsOptional()
+  @IsIn([
+    'CASH',
+    'POS',
+    'BANK_TRANSFER',
+    'ONLINE_GATEWAY',
+    'CREDIT',
+    'WALLET',
+    'OTHER',
+  ])
+  paymentChannel?: string;
+  @IsOptional()
+  @IsIn(['RECEIPT', 'PAYMENT', 'BOTH'])
+  paymentDirection?: string;
 }
 
 export class MasterDataMutationDto {
@@ -77,6 +94,8 @@ export class MasterDataExportDto {
     'currencies',
     'exchange-rates',
     'banks',
+    'bank-branches',
+    'payment-methods',
     'insurers',
     'airlines',
     'hotels',

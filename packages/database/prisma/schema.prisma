@@ -209,6 +209,29 @@ enum MasterCurrencyRateStatus {
   EXPIRED
 }
 
+enum MasterCurrencyDisplayPolicy {
+  SYMBOL_BEFORE
+  SYMBOL_AFTER
+  CODE_BEFORE
+  CODE_AFTER
+}
+
+enum MasterPaymentMethodChannel {
+  CASH
+  POS
+  BANK_TRANSFER
+  ONLINE_GATEWAY
+  CREDIT
+  WALLET
+  OTHER
+}
+
+enum MasterPaymentMethodDirection {
+  RECEIPT
+  PAYMENT
+  BOTH
+}
+
 enum MasterHotelImportStatus {
   PREVIEW_READY
   COMMITTING
@@ -289,6 +312,7 @@ model MasterCity {
   region                    MasterRegion?              @relation(fields: [regionId, countryId], references: [id, countryId], onDelete: Restrict)
   hotels                    MasterHotel[]
   airports                  MasterAirport[]
+  bankBranches              MasterBankBranch[]
   customerAddresses         CustomerAddress[]
   masterHotelImportSessions MasterHotelImportSession[]
 
@@ -375,22 +399,23 @@ model MasterTerminal {
 }
 
 model MasterCurrency {
-  id                  String                    @id @default(uuid()) @db.Uuid
-  code                String                    @unique @db.Char(3)
-  name                String                    @db.VarChar(160)
-  englishName         String?                   @db.VarChar(160)
-  symbol              String?                   @db.VarChar(16)
-  decimalDigits       Int                       @default(2)
-  isActive            Boolean                   @default(true)
-  version             Int                       @default(1)
-  createdByUserId     String                    @db.Uuid
-  updatedByUserId     String                    @db.Uuid
-  deactivatedByUserId String?                   @db.Uuid
-  deactivatedAt       DateTime?                 @db.Timestamptz(3)
-  createdAt           DateTime                  @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime                  @updatedAt @db.Timestamptz(3)
-  draftRatesFrom      MasterDraftExchangeRate[] @relation("DraftRateFromCurrency")
-  draftRatesTo        MasterDraftExchangeRate[] @relation("DraftRateToCurrency")
+  id                  String                      @id @default(uuid()) @db.Uuid
+  code                String                      @unique @db.Char(3)
+  name                String                      @db.VarChar(160)
+  englishName         String?                     @db.VarChar(160)
+  symbol              String?                     @db.VarChar(16)
+  decimalDigits       Int                         @default(2)
+  displayPolicy       MasterCurrencyDisplayPolicy @default(CODE_AFTER)
+  isActive            Boolean                     @default(true)
+  version             Int                         @default(1)
+  createdByUserId     String                      @db.Uuid
+  updatedByUserId     String                      @db.Uuid
+  deactivatedByUserId String?                     @db.Uuid
+  deactivatedAt       DateTime?                   @db.Timestamptz(3)
+  createdAt           DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                    @updatedAt @db.Timestamptz(3)
+  draftRatesFrom      MasterDraftExchangeRate[]   @relation("DraftRateFromCurrency")
+  draftRatesTo        MasterDraftExchangeRate[]   @relation("DraftRateToCurrency")
 
   @@index([isActive, name])
   @@map("master_currencies")
@@ -430,22 +455,75 @@ model MasterDraftExchangeRate {
 }
 
 model MasterBank {
-  id                  String        @id @default(uuid()) @db.Uuid
-  countryId           String        @db.Uuid
-  code                String        @unique @db.VarChar(32)
-  name                String        @db.VarChar(160)
-  isActive            Boolean       @default(true)
-  version             Int           @default(1)
-  createdByUserId     String        @db.Uuid
-  updatedByUserId     String        @db.Uuid
-  deactivatedByUserId String?       @db.Uuid
-  deactivatedAt       DateTime?     @db.Timestamptz(3)
-  createdAt           DateTime      @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime      @updatedAt @db.Timestamptz(3)
-  country             MasterCountry @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  id                  String             @id @default(uuid()) @db.Uuid
+  countryId           String             @db.Uuid
+  code                String             @unique @db.VarChar(32)
+  name                String             @db.VarChar(160)
+  englishName         String?            @db.VarChar(160)
+  swiftCode           String?            @unique @db.VarChar(11)
+  isActive            Boolean            @default(true)
+  version             Int                @default(1)
+  createdByUserId     String             @db.Uuid
+  updatedByUserId     String             @db.Uuid
+  deactivatedByUserId String?            @db.Uuid
+  deactivatedAt       DateTime?          @db.Timestamptz(3)
+  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
+  country             MasterCountry      @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  branches            MasterBankBranch[]
 
   @@index([countryId, isActive, name])
   @@map("master_banks")
+}
+
+model MasterBankBranch {
+  id                  String     @id @default(uuid()) @db.Uuid
+  bankId              String     @db.Uuid
+  cityId              String     @db.Uuid
+  code                String     @db.VarChar(32)
+  name                String     @db.VarChar(160)
+  englishName         String?    @db.VarChar(160)
+  address             String?    @db.VarChar(500)
+  phone               String?    @db.VarChar(32)
+  isActive            Boolean    @default(true)
+  version             Int        @default(1)
+  createdByUserId     String     @db.Uuid
+  updatedByUserId     String     @db.Uuid
+  deactivatedByUserId String?    @db.Uuid
+  deactivatedAt       DateTime?  @db.Timestamptz(3)
+  createdAt           DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime   @updatedAt @db.Timestamptz(3)
+  bank                MasterBank @relation(fields: [bankId], references: [id], onDelete: Restrict)
+  city                MasterCity @relation(fields: [cityId], references: [id], onDelete: Restrict)
+
+  @@unique([bankId, code])
+  @@index([bankId, isActive, name])
+  @@index([cityId, isActive, name])
+  @@map("master_bank_branches")
+}
+
+model MasterPaymentMethod {
+  id                     String                       @id @default(uuid()) @db.Uuid
+  code                   String                       @unique @db.VarChar(32)
+  name                   String                       @db.VarChar(160)
+  englishName            String?                      @db.VarChar(160)
+  description            String?                      @db.VarChar(500)
+  channel                MasterPaymentMethodChannel
+  direction              MasterPaymentMethodDirection @default(BOTH)
+  requiresManualApproval Boolean                      @default(false)
+  displayOrder           Int                          @default(0)
+  isActive               Boolean                      @default(true)
+  version                Int                          @default(1)
+  createdByUserId        String                       @db.Uuid
+  updatedByUserId        String                       @db.Uuid
+  deactivatedByUserId    String?                      @db.Uuid
+  deactivatedAt          DateTime?                    @db.Timestamptz(3)
+  createdAt              DateTime                     @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime                     @updatedAt @db.Timestamptz(3)
+
+  @@index([isActive, displayOrder, name])
+  @@index([channel, direction, isActive])
+  @@map("master_payment_methods")
 }
 
 model MasterOrganization {

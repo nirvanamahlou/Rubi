@@ -9,10 +9,10 @@ import {
 
 describe('master data public contract', () => {
   it('publishes a stable versioned resource catalog', () => {
-    expect(MASTER_DATA_CONTRACT_VERSION).toBe(5);
+    expect(MASTER_DATA_CONTRACT_VERSION).toBe(6);
     expect(MASTER_DATA_API_PREFIX).toBe('/api/v1/master-data');
-    expect(MASTER_DATA_RESOURCES).toHaveLength(15);
-    expect(new Set(MASTER_DATA_RESOURCES).size).toBe(15);
+    expect(MASTER_DATA_RESOURCES).toHaveLength(17);
+    expect(new Set(MASTER_DATA_RESOURCES).size).toBe(17);
     expect(MASTER_DATA_RESOURCES.slice(0, 5)).toEqual([
       'countries',
       'regions',
@@ -20,6 +20,9 @@ describe('master data public contract', () => {
       'airports',
       'terminals',
     ]);
+    expect(MASTER_DATA_RESOURCES).toEqual(
+      expect.arrayContaining(['bank-branches', 'payment-methods']),
+    );
   });
 
   it('encodes identifiers in public endpoints', () => {

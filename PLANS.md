@@ -196,6 +196,10 @@ Baseline برنامه: `origin/develop` در Merge Commit
   API/UI واقعی، Permission/Audit و optimistic lock.
 - Draft PR #28 به‌صورت stacked می‌ماند و پیش از Merge PR #25 ادغام نمی‌شود؛
   پس از Merge والد، Base آن به `develop` تغییر خواهد کرد.
+- `MASTER-003C-FINANCIAL` زیر مسیر `/master-data/finance`، Contract v6 و Migration
+  `20260829100000_master_data_financial_reference` پیاده‌سازی شد: Currency Display
+  Policy، Rate History/Approval، Bank/Branch و Payment Method مرجع. حساب، شبا، کارت،
+  مانده، تراکنش، درگاه و نرخ authoritative همچنان در مالکیت Finance هستند.
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
 

@@ -100,4 +100,18 @@ describe('CRM navigation', () => {
       getNavigationBreadcrumbs('/settings').map((item) => item.href),
     ).toEqual(['/system', '/settings']);
   });
+
+  it('keeps master data active and exposes section breadcrumbs', () => {
+    const pathname = '/master-data/organizations-suppliers';
+
+    expect(isNavigationItemActive('/master-data', pathname)).toBe(true);
+    expect(getNavigationItem(pathname)?.href).toBe('/master-data');
+    expect(getNavigationBreadcrumbs(pathname)).toEqual([
+      { href: '/master-data', title: 'اطلاعات پایه' },
+      {
+        href: pathname,
+        title: 'سازمان‌ها و تأمین‌کنندگان',
+      },
+    ]);
+  });
 });

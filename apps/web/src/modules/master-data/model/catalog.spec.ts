@@ -11,7 +11,9 @@ describe('master data catalog', () => {
     expect(masterDataCatalog.map((item) => item.key)).toEqual([
       ...masterDataResourceKeys,
     ]);
-    expect(new Set(masterDataCatalog.map((item) => item.key)).size).toBe(15);
+    expect(new Set(masterDataCatalog.map((item) => item.key)).size).toBe(
+      masterDataResourceKeys.length,
+    );
   });
 
   it('does not expose a hotel organization field', () => {
@@ -43,14 +45,42 @@ describe('master data catalog', () => {
     ).toHaveLength(3);
   });
 
-  it('defines required fields without exposing the internal code', () => {
+  it('defines required fields and exposes only business-owned codes', () => {
+    const explicitCodeResources = new Set([
+      'currencies',
+      'banks',
+      'bank-branches',
+      'payment-methods',
+    ]);
     for (const resource of masterDataResourceKeys) {
       const definition = getMasterDataDefinition(resource);
       expect(definition.fields.some((field) => field.required)).toBe(true);
       expect(definition.fields.some((field) => field.key === 'code')).toBe(
-        false,
+        explicitCodeResources.has(resource),
       );
       expect(Object.keys(definition.preview).length).toBeGreaterThan(1);
     }
+  });
+
+  it('defines the complete financial reference resources', () => {
+    expect(
+      getMasterDataDefinition('currencies').fields.map((field) => field.key),
+    ).toContain('displayPolicy');
+    expect(
+      getMasterDataDefinition('bank-branches').fields.map((field) => field.key),
+    ).toEqual([
+      'code',
+      'name',
+      'englishName',
+      'bankId',
+      'cityId',
+      'address',
+      'phone',
+    ]);
+    expect(
+      getMasterDataDefinition('payment-methods').fields.find(
+        (field) => field.key === 'channel',
+      )?.options,
+    ).toHaveLength(7);
   });
 });

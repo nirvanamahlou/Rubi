@@ -1,4 +1,4 @@
-export const MASTER_DATA_CONTRACT_VERSION = 5 as const;
+export const MASTER_DATA_CONTRACT_VERSION = 6 as const;
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 
 export const MASTER_DATA_RESOURCES = [
@@ -10,6 +10,8 @@ export const MASTER_DATA_RESOURCES = [
   'currencies',
   'exchange-rates',
   'banks',
+  'bank-branches',
+  'payment-methods',
   'insurers',
   'airlines',
   'hotels',
@@ -23,6 +25,17 @@ export type MasterDataResource = (typeof MASTER_DATA_RESOURCES)[number];
 export type MasterDataStatus = 'active' | 'inactive';
 export type MasterRegionType = 'PROVINCE' | 'STATE' | 'REGION' | 'TERRITORY';
 export type MasterTerminalType = 'DOMESTIC' | 'INTERNATIONAL' | 'VIP';
+export type MasterCurrencyDisplayPolicy =
+  'SYMBOL_BEFORE' | 'SYMBOL_AFTER' | 'CODE_BEFORE' | 'CODE_AFTER';
+export type MasterPaymentMethodChannel =
+  | 'CASH'
+  | 'POS'
+  | 'BANK_TRANSFER'
+  | 'ONLINE_GATEWAY'
+  | 'CREDIT'
+  | 'WALLET'
+  | 'OTHER';
+export type MasterPaymentMethodDirection = 'RECEIPT' | 'PAYMENT' | 'BOTH';
 
 export type MasterDataSortField = 'name' | 'code' | 'updatedAt';
 export type MasterDataSortDirection = 'asc' | 'desc';
@@ -38,7 +51,10 @@ export interface MasterDataListQuery {
   regionId?: string;
   cityId?: string;
   airportId?: string;
+  bankId?: string;
   terminalType?: MasterTerminalType;
+  paymentChannel?: MasterPaymentMethodChannel;
+  paymentDirection?: MasterPaymentMethodDirection;
 }
 
 export interface MasterDataRecord {

@@ -51,6 +51,8 @@ const resourceLabels: Record<MasterDataResource, string> = {
   currencies: 'ارزها',
   'exchange-rates': 'نرخ ارز',
   banks: 'بانک‌ها',
+  'bank-branches': 'شعب بانک',
+  'payment-methods': 'روش‌های پرداخت',
   insurers: 'بیمه‌ها',
   airlines: 'ایرلاین‌ها',
   hotels: 'هتل‌ها',

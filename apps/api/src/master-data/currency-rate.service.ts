@@ -44,11 +44,57 @@ export class CurrencyRateService {
   ) {}
 
   async history(query: CurrencyRateListDto) {
+    const observedFrom = query.observedFrom
+      ? new Date(query.observedFrom)
+      : undefined;
+    const observedTo = query.observedTo
+      ? new Date(query.observedTo)
+      : undefined;
+    if (observedFrom && observedTo && observedFrom > observedTo)
+      throw new BadRequestException(
+        'ابتدای بازه تاریخچه باید قبل از انتهای آن باشد.',
+      );
     const where = {
+      ...(query.search?.trim()
+        ? {
+            OR: [
+              {
+                source: {
+                  contains: query.search.trim(),
+                  mode: 'insensitive' as const,
+                },
+              },
+              {
+                fromCurrency: {
+                  code: {
+                    contains: query.search.trim().toUpperCase(),
+                    mode: 'insensitive' as const,
+                  },
+                },
+              },
+              {
+                toCurrency: {
+                  code: {
+                    contains: query.search.trim().toUpperCase(),
+                    mode: 'insensitive' as const,
+                  },
+                },
+              },
+            ],
+          }
+        : {}),
       ...(query.fromCurrencyId ? { fromCurrencyId: query.fromCurrencyId } : {}),
       ...(query.toCurrencyId ? { toCurrencyId: query.toCurrencyId } : {}),
       ...(query.rateType ? { rateType: query.rateType } : {}),
       ...(query.status ? { status: query.status } : {}),
+      ...(observedFrom || observedTo
+        ? {
+            observedAt: {
+              ...(observedFrom ? { gte: observedFrom } : {}),
+              ...(observedTo ? { lte: observedTo } : {}),
+            },
+          }
+        : {}),
     };
     const [data, total] = await Promise.all([
       this.database.client.masterDraftExchangeRate.findMany({

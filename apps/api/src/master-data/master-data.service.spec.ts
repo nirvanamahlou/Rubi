@@ -386,4 +386,89 @@ describe('MasterDataService', () => {
       actor.branchIds[0],
     );
   });
+
+  it('creates a bank branch only from active bank/city references', async () => {
+    const bankId = '55555555-5555-4555-8555-555555555555';
+    const cityId = '66666666-6666-4666-8666-666666666666';
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      bankBranchCodeExists: vi.fn().mockResolvedValue(false),
+      find: vi.fn().mockResolvedValue({ isActive: true }),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create(
+      'bank-branches',
+      {
+        code: 'central_01',
+        name: 'شعبه مرکزی',
+        bankId,
+        cityId,
+      },
+      actor,
+    );
+
+    expect(repository.find).toHaveBeenCalledWith('banks', bankId);
+    expect(repository.find).toHaveBeenCalledWith('cities', cityId);
+    expect(repository.bankBranchCodeExists).toHaveBeenCalledWith(
+      bankId,
+      'CENTRAL_01',
+      undefined,
+    );
+    expect(repository.create).toHaveBeenCalledWith(
+      'bank-branches',
+      expect.objectContaining({ code: 'CENTRAL_01', bankId, cityId }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it('normalizes payment-method reference settings without Finance data', async () => {
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create(
+      'payment-methods',
+      {
+        code: 'bank_transfer',
+        name: 'حواله بانکی',
+        channel: 'BANK_TRANSFER',
+        direction: 'BOTH',
+        requiresManualApproval: 'true',
+        displayOrder: '2',
+      },
+      actor,
+    );
+
+    expect(repository.create).toHaveBeenCalledWith(
+      'payment-methods',
+      expect.objectContaining({
+        code: 'BANK_TRANSFER',
+        channel: 'BANK_TRANSFER',
+        direction: 'BOTH',
+        requiresManualApproval: true,
+        displayOrder: 2,
+      }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
 });

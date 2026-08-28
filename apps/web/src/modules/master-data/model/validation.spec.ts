@@ -61,12 +61,38 @@ describe('master data validation', () => {
     expect(result.errors.rate).toBeDefined();
   });
 
-  it('accepts a bank draft without an internal code', () => {
+  it('accepts and normalizes an explicit bank reference code', () => {
     const result = validateMasterDataDraft('banks', {
+      code: 'mellat',
       name: 'بانک',
+      englishName: 'Bank',
       countryId: 'country_ir',
     });
     expect(result.success).toBe(true);
-    expect(result.values.code).toBeUndefined();
+    expect(result.values.code).toBe('MELLAT');
+  });
+
+  it('validates payment-method display order and rate precision', () => {
+    const payment = validateMasterDataDraft('payment-methods', {
+      code: 'cash',
+      name: 'نقدی',
+      channel: 'CASH',
+      direction: 'BOTH',
+      displayOrder: '-1',
+    });
+    expect(payment.success).toBe(false);
+    expect(payment.errors.displayOrder).toBeDefined();
+
+    const rate = validateMasterDataDraft('exchange-rates', {
+      fromCurrencyCode: 'USD',
+      toCurrencyCode: 'IRR',
+      rate: '1.12345678901',
+      rateType: 'BUY',
+      source: 'manual',
+      observedAt: '2026-08-29T00:00',
+      validFrom: '2026-08-29T00:00',
+    });
+    expect(rate.success).toBe(false);
+    expect(rate.errors.rate).toBeDefined();
   });
 });

@@ -1,0 +1,998 @@
+'use client';
+
+import type {
+  MasterDataRecord,
+  MasterDataResource,
+  MasterDataStatus,
+} from '@rubi/contracts';
+import {
+  ArrowRight,
+  Building2,
+  ChartNoAxesCombined,
+  CheckCircle2,
+  Coins,
+  Eye,
+  FilePenLine,
+  FileSpreadsheet,
+  Landmark,
+  Plus,
+  RefreshCw,
+  Search,
+  WalletCards,
+  Workflow,
+  XCircle,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { Button, buttonVariants } from '@/components/ui/button';
+import {
+  FormField,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/form-controls';
+import {
+  Alert,
+  Badge,
+  Card,
+  EmptyState,
+  ErrorState,
+  FilterBar,
+  PageHeader,
+  PaginationShell,
+  Skeleton,
+} from '@/components/ui/surfaces';
+import { masterDataApi, MasterDataApiError } from '../api/client';
+import {
+  getMasterDataDefinition,
+  type MasterDataResourceKey,
+} from '../model/catalog';
+import type { MasterDataSectionDefinition } from '../model/sections';
+import {
+  MasterDataLiveForm,
+  type MasterDataFormMode,
+} from './master-data-live-form';
+
+type FinanceTab =
+  'currencies' | 'rates' | 'approvals' | 'banks' | 'branches' | 'payments';
+type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
+type RateStatus = 'DRAFT' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+
+interface CurrencyRateRow {
+  id: string;
+  fromCurrencyId: string;
+  toCurrencyId: string;
+  fromCurrencyCode: string;
+  toCurrencyCode: string;
+  rate: string;
+  rateType: 'BUY' | 'SELL' | 'REFERENCE';
+  source: string;
+  observedAt: string;
+  validFrom: string;
+  validTo: string | null;
+  status: RateStatus;
+  createdByUserId: string;
+  approvedByUserId: string | null;
+  approvedAt: string | null;
+  version: number;
+  isAuthoritative: false;
+}
+
+const tabs: readonly {
+  key: FinanceTab;
+  label: string;
+  resource: MasterDataResourceKey;
+  icon: typeof Coins;
+}[] = [
+  { key: 'currencies', label: 'ارزها', resource: 'currencies', icon: Coins },
+  {
+    key: 'rates',
+    label: 'نرخ و تاریخچه ارز',
+    resource: 'exchange-rates',
+    icon: ChartNoAxesCombined,
+  },
+  {
+    key: 'approvals',
+    label: 'گردش تأیید نرخ',
+    resource: 'exchange-rates',
+    icon: Workflow,
+  },
+  { key: 'banks', label: 'بانک‌ها', resource: 'banks', icon: Landmark },
+  {
+    key: 'branches',
+    label: 'شعب بانک',
+    resource: 'bank-branches',
+    icon: Building2,
+  },
+  {
+    key: 'payments',
+    label: 'روش پرداخت',
+    resource: 'payment-methods',
+    icon: WalletCards,
+  },
+];
+
+const tabCopy: Record<FinanceTab, { title: string; description: string }> = {
+  currencies: {
+    title: 'ارزها',
+    description:
+      'تعریف ارزهای ISO-4217 و سیاست نمایش؛ ارز پایه هر شرکت در Finance تعیین می‌شود.',
+  },
+  rates: {
+    title: 'نرخ و تاریخچه ارز',
+    description:
+      'ثبت و مشاهده تاریخچه نرخ‌های دستی غیرقطعی؛ هیچ نرخ Seed یا authoritative نمایش داده نمی‌شود.',
+  },
+  approvals: {
+    title: 'گردش تأیید نرخ',
+    description:
+      'Maker/Checker برای نرخ‌های پیشنهادی با ثبت دلیل تصمیم، نسخه و Audit واقعی.',
+  },
+  banks: {
+    title: 'بانک‌ها',
+    description:
+      'بانک‌های مرجع مشترک بین شرکت‌ها؛ حساب، مانده و شبا متعلق به Finance است.',
+  },
+  branches: {
+    title: 'شعب بانک',
+    description:
+      'تعریف مستقل شعبه با بانک، شهر، نشانی و تلفن عمومی بدون اطلاعات حساب.',
+  },
+  payments: {
+    title: 'روش‌های پرداخت',
+    description:
+      'تعریف کانال‌های مرجع دریافت و پرداخت؛ پیکربندی درگاه و تراکنش خارج از Master Data است.',
+  },
+};
+
+function isRateTab(tab: FinanceTab): boolean {
+  return tab === 'rates' || tab === 'approvals';
+}
+
+function resourceFor(tab: FinanceTab): MasterDataResourceKey {
+  return tabs.find((item) => item.key === tab)?.resource ?? 'currencies';
+}
+
+function rateRecord(row: CurrencyRateRow): MasterDataRecord {
+  return {
+    id: row.id,
+    resource: 'exchange-rates',
+    code: `${row.fromCurrencyCode}/${row.toCurrencyCode}`,
+    name: `${row.fromCurrencyCode}/${row.toCurrencyCode} · ${row.source}`,
+    status: row.status === 'EXPIRED' ? 'inactive' : 'active',
+    attributes: {
+      rate: row.rate,
+      rateType: row.rateType,
+      source: row.source,
+      observedAt: row.observedAt,
+      validFrom: row.validFrom,
+      validTo: row.validTo,
+      status: row.status,
+      createdByUserId: row.createdByUserId,
+      approvedByUserId: row.approvedByUserId,
+      approvedAt: row.approvedAt,
+      isAuthoritative: false,
+    },
+    version: row.version,
+    createdAt: row.observedAt,
+    updatedAt: row.approvedAt ?? row.observedAt,
+  };
+}
+
+function faDate(value: string | null | undefined): string {
+  return value ? new Date(value).toLocaleString('fa-IR') : '—';
+}
+
+function rateTypeLabel(value: CurrencyRateRow['rateType']): string {
+  return value === 'BUY' ? 'خرید' : value === 'SELL' ? 'فروش' : 'مبنا';
+}
+
+function statusLabel(value: RateStatus): string {
+  return value === 'DRAFT'
+    ? 'پیش‌نویس'
+    : value === 'APPROVED'
+      ? 'تأییدشده'
+      : value === 'REJECTED'
+        ? 'ردشده'
+        : 'منقضی';
+}
+
+function FinanceChart({ rates }: { rates: readonly CurrencyRateRow[] }) {
+  const points = useMemo(() => {
+    const ordered = [...rates]
+      .filter((row) => row.status === 'APPROVED')
+      .sort(
+        (left, right) =>
+          new Date(left.observedAt).getTime() -
+          new Date(right.observedAt).getTime(),
+      );
+    const values = ordered.map((row) => Number(row.rate));
+    const minimum = Math.min(...values);
+    const maximum = Math.max(...values);
+    const spread = maximum - minimum || 1;
+    return ordered.map((row, index) => ({
+      row,
+      x: ordered.length === 1 ? 50 : (index / (ordered.length - 1)) * 100,
+      y: 90 - ((Number(row.rate) - minimum) / spread) * 75,
+    }));
+  }, [rates]);
+
+  if (!points.length)
+    return (
+      <EmptyState
+        description="پس از تأیید نرخ، روند واقعی Backend در این نمودار نمایش داده می‌شود."
+        icon={ChartNoAxesCombined}
+        title="نرخ تأییدشده‌ای در این بازه نیست"
+      />
+    );
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-primary/5 to-transparent p-4">
+      <svg
+        aria-label="نمودار تاریخچه نرخ‌های تأییدشده"
+        className="h-64 w-full"
+        preserveAspectRatio="none"
+        role="img"
+        viewBox="0 0 100 100"
+      >
+        <polyline
+          fill="none"
+          points={points.map(({ x, y }) => `${x},${y}`).join(' ')}
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          vectorEffect="non-scaling-stroke"
+        />
+        {points.map(({ row, x, y }) => (
+          <circle
+            className="fill-background stroke-primary"
+            cx={x}
+            cy={y}
+            key={row.id}
+            r="1.8"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+          >
+            <title>{`${row.fromCurrencyCode}/${row.toCurrencyCode} · ${row.rate} · ${faDate(row.observedAt)}`}</title>
+          </circle>
+        ))}
+      </svg>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Tooltip هر نقطه شامل جفت ارز، نرخ و زمان مشاهده UTC است.
+      </p>
+    </div>
+  );
+}
+
+export function MasterDataFinanceWorkspace({
+  section,
+}: {
+  section: MasterDataSectionDefinition;
+}) {
+  const [tab, setTab] = useState<FinanceTab>('currencies');
+  const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
+  const [rates, setRates] = useState<readonly CurrencyRateRow[]>([]);
+  const [requestState, setRequestState] = useState<RequestState>('loading');
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [workflowStatus, setWorkflowStatus] = useState<'all' | RateStatus>(
+    'all',
+  );
+  const [rangeDays, setRangeDays] = useState('90');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
+  const [selected, setSelected] = useState<MasterDataRecord | undefined>();
+  const [audit, setAudit] = useState<readonly Record<string, unknown>[]>([]);
+  const [auditRateId, setAuditRateId] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const resource = resourceFor(tab);
+  const definition = getMasterDataDefinition(resource);
+  const copy = tabCopy[tab];
+
+  const load = useCallback(async () => {
+    setRequestState('loading');
+    try {
+      if (isRateTab(tab)) {
+        const observedFrom = new Date(
+          Date.now() - Number(rangeDays) * 86_400_000,
+        ).toISOString();
+        const requestedRateStatus =
+          tab === 'approvals'
+            ? ('DRAFT' as const)
+            : workflowStatus === 'all'
+              ? undefined
+              : workflowStatus;
+        const response = await masterDataApi.currencyRateHistory({
+          search,
+          ...(requestedRateStatus ? { status: requestedRateStatus } : {}),
+          observedFrom,
+          observedTo: new Date().toISOString(),
+          page,
+          pageSize: 25,
+        });
+        setRates(response.data as unknown as readonly CurrencyRateRow[]);
+        setRecords([]);
+        setTotal(response.meta.total);
+      } else {
+        const response = await masterDataApi.list(
+          resource as MasterDataResource,
+          {
+            search,
+            status,
+            sortBy: resource === 'payment-methods' ? 'updatedAt' : 'name',
+            sortDirection: 'asc',
+            page,
+            pageSize: 25,
+          },
+        );
+        setRecords(response.data);
+        setRates([]);
+        setTotal(response.meta.total);
+      }
+      setRequestState('ready');
+    } catch (error) {
+      setRecords([]);
+      setRates([]);
+      setRequestState(
+        error instanceof MasterDataApiError && error.status === 403
+          ? 'forbidden'
+          : 'error',
+      );
+    }
+  }, [page, rangeDays, resource, search, status, tab, workflowStatus]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 250);
+    return () => window.clearTimeout(timer);
+  }, [load]);
+
+  function changeTab(next: FinanceTab) {
+    setTab(next);
+    setSearch('');
+    setStatus('all');
+    setWorkflowStatus('all');
+    setPage(1);
+    setSelected(undefined);
+    setAudit([]);
+    setAuditRateId(null);
+    setNotice(null);
+  }
+
+  async function persist(values: Record<string, string>) {
+    if (formMode === 'edit' && selected) {
+      await masterDataApi.update(resource, selected.id, {
+        values,
+        version: selected.version,
+      });
+      setNotice(`${definition.singularLabel} با موفقیت ویرایش شد.`);
+    } else {
+      await masterDataApi.create(resource, { values });
+      setNotice(`${definition.singularLabel} با موفقیت ایجاد شد.`);
+    }
+    setFormMode(null);
+    await load();
+  }
+
+  async function toggle(record: MasterDataRecord) {
+    const next: MasterDataStatus =
+      record.status === 'active' ? 'inactive' : 'active';
+    try {
+      await masterDataApi.setStatus(resource, record.id, next, record.version);
+      setNotice(
+        `${definition.singularLabel} ${next === 'active' ? 'فعال' : 'غیرفعال'} شد.`,
+      );
+      await load();
+    } catch (error) {
+      setNotice(
+        error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.',
+      );
+    }
+  }
+
+  async function decide(row: CurrencyRateRow, action: 'approve' | 'reject') {
+    const reason = window.prompt(
+      action === 'approve' ? 'دلیل تأیید نرخ:' : 'دلیل رد نرخ:',
+    );
+    if (!reason?.trim()) return;
+    try {
+      await masterDataApi.decideCurrencyRate(
+        row.id,
+        action,
+        row.version,
+        reason.trim(),
+      );
+      setNotice(action === 'approve' ? 'نرخ تأیید شد.' : 'نرخ رد شد.');
+      await load();
+    } catch (error) {
+      setNotice(
+        error instanceof Error ? error.message : 'ثبت تصمیم ناموفق بود.',
+      );
+    }
+  }
+
+  async function showAudit(row: CurrencyRateRow) {
+    try {
+      const response = await masterDataApi.audit('exchange-rates', row.id);
+      setAudit(response.data);
+      setAuditRateId(row.id);
+    } catch (error) {
+      setNotice(
+        error instanceof Error ? error.message : 'دریافت Audit ناموفق بود.',
+      );
+    }
+  }
+
+  async function exportExcel() {
+    setExporting(true);
+    try {
+      const file = await masterDataApi.downloadExcel({
+        resource,
+        format: 'xlsx',
+        filters: {
+          search,
+          status,
+          sortBy: 'name',
+          sortDirection: 'asc',
+        },
+        columns: Array.from(
+          new Set([
+            'code',
+            'name',
+            ...definition.fields.map((field) => field.key),
+            'status',
+            'updatedAt',
+          ]),
+        ),
+        locale: 'fa-IR',
+        timezone:
+          Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tehran',
+      });
+      const url = window.URL.createObjectURL(file.blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = file.fileName;
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      setNotice(
+        error instanceof Error ? error.message : 'خروجی Excel ناموفق بود.',
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const activeCount = records.filter((row) => row.status === 'active').length;
+  const kpis = isRateTab(tab)
+    ? [
+        ['رکوردهای بازه', total],
+        ['پیش‌نویس', rates.filter((row) => row.status === 'DRAFT').length],
+        ['تأییدشده', rates.filter((row) => row.status === 'APPROVED').length],
+        ['غیرقطعی', rates.filter((row) => !row.isAuthoritative).length],
+      ]
+    : [
+        ['کل رکوردها', total],
+        ['فعال در صفحه', activeCount],
+        ['غیرفعال در صفحه', records.length - activeCount],
+        ['نسخه قرارداد', 'v6'],
+      ];
+
+  return (
+    <div className="space-y-5" dir="rtl">
+      <PageHeader
+        actions={
+          <Link
+            className={buttonVariants({ variant: 'outline' })}
+            href="/master-data"
+          >
+            <ArrowRight aria-hidden="true" className="size-4" />
+            همه بخش‌ها
+          </Link>
+        }
+        description={section.description}
+        eyebrow="اطلاعات پایه / مالی و پولی"
+        title={copy.title}
+      />
+
+      {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            onClick={() => {
+              setSelected(undefined);
+              setFormMode('create');
+            }}
+          >
+            <Plus aria-hidden="true" className="size-4" />
+            {tab === 'approvals'
+              ? 'درخواست نرخ'
+              : `افزودن ${definition.singularLabel}`}
+          </Button>
+          <Button
+            loading={exporting}
+            onClick={() => void exportExcel()}
+            variant="outline"
+          >
+            <FileSpreadsheet aria-hidden="true" className="size-4" />
+            خروجی اکسل
+          </Button>
+        </div>
+        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+          Backend واقعی · مشترک بین شرکت‌ها
+        </Badge>
+      </div>
+
+      <p className="text-sm leading-7 text-muted-foreground">
+        {copy.description}
+      </p>
+
+      <Card className="overflow-x-auto p-2">
+        <nav
+          aria-label="زیرمجموعه‌های مالی و پولی"
+          className="flex min-w-max gap-1 rounded-xl bg-primary/5 p-1"
+        >
+          {tabs.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                aria-current={tab === item.key ? 'page' : undefined}
+                className="flex min-h-11 items-center gap-2 rounded-lg px-4 text-sm font-bold text-muted-foreground transition hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-primary aria-[current=page]:shadow-sm"
+                key={item.key}
+                onClick={() => changeTab(item.key)}
+                type="button"
+              >
+                <Icon aria-hidden="true" className="size-4" />
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+      </Card>
+
+      <section
+        aria-label="شاخص‌های واقعی"
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        {kpis.map(([label, value]) => (
+          <Card className="p-5" key={label}>
+            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="mt-2 text-2xl font-black">
+              {typeof value === 'number'
+                ? value.toLocaleString('fa-IR')
+                : value}
+            </p>
+          </Card>
+        ))}
+      </section>
+
+      <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
+        <FormField id="finance-search" label="جست‌وجو">
+          <div className="relative">
+            <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
+            <Input
+              className="pe-10"
+              id="finance-search"
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(1);
+              }}
+              placeholder={`جست‌وجو در ${copy.title}`}
+              value={search}
+            />
+          </div>
+        </FormField>
+        {isRateTab(tab) ? (
+          <FormField label="وضعیت نرخ">
+            <Select
+              disabled={tab === 'approvals'}
+              onValueChange={(value) => {
+                setWorkflowStatus(value as typeof workflowStatus);
+                setPage(1);
+              }}
+              value={tab === 'approvals' ? 'DRAFT' : workflowStatus}
+            >
+              <SelectTrigger aria-label="فیلتر وضعیت نرخ">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                <SelectItem value="DRAFT">پیش‌نویس</SelectItem>
+                <SelectItem value="APPROVED">تأییدشده</SelectItem>
+                <SelectItem value="REJECTED">ردشده</SelectItem>
+                <SelectItem value="EXPIRED">منقضی</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormField>
+        ) : (
+          <FormField label="وضعیت">
+            <Select
+              onValueChange={(value) => {
+                setStatus(value as typeof status);
+                setPage(1);
+              }}
+              value={status}
+            >
+              <SelectTrigger aria-label="فیلتر وضعیت">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                <SelectItem value="active">فعال</SelectItem>
+                <SelectItem value="inactive">غیرفعال</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormField>
+        )}
+        {isRateTab(tab) ? (
+          <FormField label="بازه تاریخچه">
+            <Select onValueChange={setRangeDays} value={rangeDays}>
+              <SelectTrigger aria-label="انتخاب بازه تاریخچه">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30">۳۰ روز اخیر</SelectItem>
+                <SelectItem value="90">۹۰ روز اخیر</SelectItem>
+                <SelectItem value="365">یک سال اخیر</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormField>
+        ) : (
+          <div />
+        )}
+        <Button onClick={() => void load()} variant="ghost">
+          <RefreshCw aria-hidden="true" className="size-4" /> تازه‌سازی
+        </Button>
+      </FilterBar>
+
+      {tab === 'rates' && requestState === 'ready' ? (
+        <Card className="p-4 sm:p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="font-black">روند نرخ‌های تأییدشده</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                داده فقط از Backend و در بازه انتخابی خوانده می‌شود.
+              </p>
+            </div>
+            <Badge>isAuthoritative=false</Badge>
+          </div>
+          <FinanceChart rates={rates} />
+        </Card>
+      ) : null}
+
+      {requestState === 'loading' ? (
+        <div className="space-y-3" aria-live="polite">
+          {[0, 1, 2].map((item) => (
+            <Skeleton className="h-16 w-full" key={item} />
+          ))}
+        </div>
+      ) : requestState === 'forbidden' ? (
+        <EmptyState
+          description="مجوز master_data.read لازم است."
+          icon={Workflow}
+          title="دسترسی وجود ندارد"
+        />
+      ) : requestState === 'error' ? (
+        <ErrorState
+          action={
+            <Button onClick={() => void load()} variant="outline">
+              تلاش دوباره
+            </Button>
+          }
+          description="اتصال به Backend مالی و پولی اطلاعات پایه ناموفق بود."
+          title="دریافت اطلاعات ناموفق بود"
+        />
+      ) : isRateTab(tab) ? (
+        rates.length ? (
+          <Card className="overflow-x-auto">
+            <table className="w-full min-w-[62rem] text-sm">
+              <thead className="bg-muted/50 text-muted-foreground">
+                <tr>
+                  <th className="p-4 text-start">جفت ارز</th>
+                  <th className="p-4 text-start">نرخ</th>
+                  <th className="p-4 text-start">نوع</th>
+                  <th className="p-4 text-start">منبع</th>
+                  <th className="p-4 text-start">زمان UTC</th>
+                  <th className="p-4 text-start">وضعیت</th>
+                  <th className="p-4 text-start">مسئول ثبت</th>
+                  <th className="p-4 text-start">عملیات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rates.map((row) => (
+                  <tr className="border-t border-border" key={row.id}>
+                    <td className="p-4 font-mono" dir="ltr">
+                      {row.fromCurrencyCode}/{row.toCurrencyCode}
+                    </td>
+                    <td className="p-4 font-mono" dir="ltr">
+                      {row.rate}
+                    </td>
+                    <td className="p-4">{rateTypeLabel(row.rateType)}</td>
+                    <td className="p-4">{row.source}</td>
+                    <td className="p-4">{faDate(row.observedAt)}</td>
+                    <td className="p-4">
+                      <Badge>{statusLabel(row.status)}</Badge>
+                    </td>
+                    <td className="p-4 font-mono text-xs" dir="ltr">
+                      {row.createdByUserId}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          onClick={() => {
+                            setSelected(rateRecord(row));
+                            setFormMode('view');
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <Eye className="size-4" /> مشاهده
+                        </Button>
+                        {row.status === 'DRAFT' ? (
+                          <>
+                            <Button
+                              onClick={() => void decide(row, 'approve')}
+                              size="sm"
+                              variant="outline"
+                            >
+                              <CheckCircle2 className="size-4" /> تأیید
+                            </Button>
+                            <Button
+                              onClick={() => void decide(row, 'reject')}
+                              size="sm"
+                              variant="ghost"
+                            >
+                              <XCircle className="size-4" /> رد
+                            </Button>
+                          </>
+                        ) : null}
+                        <Button
+                          onClick={() => void showAudit(row)}
+                          size="sm"
+                          variant="ghost"
+                        >
+                          Audit
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        ) : (
+          <EmptyState
+            action={
+              <Button onClick={() => setFormMode('create')}>
+                ثبت نرخ جدید
+              </Button>
+            }
+            description="در بازه و فیلتر فعلی نرخ واقعی ثبت نشده است؛ Seed نرخ عمداً خالی است."
+            icon={ChartNoAxesCombined}
+            title="تاریخچه نرخ خالی است"
+          />
+        )
+      ) : records.length ? (
+        tab === 'payments' ? (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {records.map((record) => (
+              <Card className="p-5" key={record.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary">
+                    <WalletCards className="size-5" />
+                  </span>
+                  <Badge>
+                    {record.status === 'active' ? 'فعال' : 'غیرفعال'}
+                  </Badge>
+                </div>
+                <h3 className="mt-4 font-black">{record.name}</h3>
+                <p className="mt-2 min-h-10 text-xs leading-6 text-muted-foreground">
+                  {String(
+                    record.attributes.description ?? 'تعریف مرجع روش پرداخت',
+                  )}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+                  <Button
+                    onClick={() => {
+                      setSelected(record);
+                      setFormMode('view');
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Eye className="size-4" /> مشاهده
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setSelected(record);
+                      setFormMode('edit');
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <FilePenLine className="size-4" /> ویرایش
+                  </Button>
+                  <Button
+                    onClick={() => void toggle(record)}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    {record.status === 'active' ? 'غیرفعال‌سازی' : 'فعال‌سازی'}
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="overflow-x-auto">
+            <table className="w-full min-w-[54rem] text-sm">
+              <thead className="bg-muted/50 text-muted-foreground">
+                <tr>
+                  <th className="p-4 text-start">کد</th>
+                  <th className="p-4 text-start">نام فارسی</th>
+                  <th className="p-4 text-start">نام انگلیسی / مرجع</th>
+                  <th className="p-4 text-start">جزئیات</th>
+                  <th className="p-4 text-start">وضعیت</th>
+                  <th className="p-4 text-start">عملیات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((record) => (
+                  <tr className="border-t border-border" key={record.id}>
+                    <td className="p-4 font-mono" dir="ltr">
+                      {record.code}
+                    </td>
+                    <td className="p-4 font-semibold">{record.name}</td>
+                    <td className="p-4">
+                      {String(
+                        record.attributes.englishName ??
+                          record.attributes.bankName ??
+                          '—',
+                      )}
+                    </td>
+                    <td className="p-4 text-muted-foreground">
+                      {tab === 'currencies'
+                        ? `${String(record.attributes.symbol ?? '—')} · ${Number(record.attributes.decimalDigits ?? 0).toLocaleString('fa-IR')} رقم اعشار`
+                        : tab === 'banks'
+                          ? `${String(record.attributes.countryName ?? '—')} · ${Number(record.attributes.branchCount ?? 0).toLocaleString('fa-IR')} شعبه`
+                          : `${String(record.attributes.cityName ?? '—')} · ${String(record.attributes.phone ?? 'بدون تلفن')}`}
+                    </td>
+                    <td className="p-4">
+                      <Badge>
+                        {record.status === 'active' ? 'فعال' : 'غیرفعال'}
+                      </Badge>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          onClick={() => {
+                            setSelected(record);
+                            setFormMode('view');
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <Eye className="size-4" /> مشاهده
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setSelected(record);
+                            setFormMode('edit');
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <FilePenLine className="size-4" /> ویرایش
+                        </Button>
+                        <Button
+                          onClick={() => void toggle(record)}
+                          size="sm"
+                          variant="ghost"
+                        >
+                          {record.status === 'active'
+                            ? 'غیرفعال‌سازی'
+                            : 'فعال‌سازی'}
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        )
+      ) : (
+        <EmptyState
+          action={
+            <Button onClick={() => setFormMode('create')}>
+              افزودن {definition.singularLabel}
+            </Button>
+          }
+          description="با فیلتر فعلی رکوردی پیدا نشد."
+          icon={Landmark}
+          title={`${definition.label} خالی است`}
+        />
+      )}
+
+      {auditRateId ? (
+        <Card className="p-5">
+          <h2 className="font-black">Audit Timeline نرخ</h2>
+          <p className="mt-1 font-mono text-xs text-muted-foreground" dir="ltr">
+            {auditRateId}
+          </p>
+          {audit.length ? (
+            <ol className="mt-4 space-y-3 border-r border-border pr-5">
+              {audit.map((event, index) => (
+                <li
+                  className="relative rounded-xl bg-muted/40 p-4"
+                  key={String(event.id ?? index)}
+                >
+                  <span className="absolute -right-[1.45rem] top-5 size-2.5 rounded-full bg-primary" />
+                  <p className="font-semibold">
+                    {String(event.action ?? 'رویداد Audit')}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {faDate(String(event.occurredAt ?? ''))} · نسخه{' '}
+                    {String(event.entityVersion ?? '—')}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="mt-4 text-sm text-muted-foreground">
+              رویداد Audit برای این نرخ ثبت نشده است.
+            </p>
+          )}
+        </Card>
+      ) : null}
+
+      <div className="flex items-center justify-between gap-3">
+        <PaginationShell
+          currentPage={page}
+          totalLabel={`${total.toLocaleString('fa-IR')} رکورد`}
+        />
+        <div className="flex gap-2">
+          <Button
+            disabled={page === 1}
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
+            size="sm"
+            variant="outline"
+          >
+            قبلی
+          </Button>
+          <Button
+            disabled={page * 25 >= total}
+            onClick={() => setPage((value) => value + 1)}
+            size="sm"
+            variant="outline"
+          >
+            بعدی
+          </Button>
+        </div>
+      </div>
+
+      {formMode ? (
+        <MasterDataLiveForm
+          definition={definition}
+          key={`${resource}-${formMode}-${selected?.id ?? 'new'}`}
+          mode={formMode}
+          onOpenChange={(open) => {
+            if (!open) setFormMode(null);
+          }}
+          onPersist={persist}
+          open
+          {...(selected ? { record: selected } : {})}
+        />
+      ) : null}
+    </div>
+  );
+}

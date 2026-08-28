@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
-import { MasterDataWorkspace } from '@/modules/master-data/components/master-data-live-workspace';
+import { MasterDataHub } from '@/modules/master-data/components/master-data-hub';
 
 export const metadata: Metadata = { title: 'اطلاعات پایه' };
 
 export default function Page() {
-  return <MasterDataWorkspace />;
+  return <MasterDataHub />;
 }

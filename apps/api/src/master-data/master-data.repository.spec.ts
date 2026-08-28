@@ -80,6 +80,38 @@ describe('MasterDataRepository geography listing', () => {
   });
 });
 
+describe('MasterDataRepository financial reference listing', () => {
+  it('filters bank branches by bank/city and eager-loads display references', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const count = vi.fn().mockResolvedValue(0);
+    const database = {
+      client: { masterBankBranch: { findMany, count } },
+    } as unknown as DatabaseService;
+    const repository = new MasterDataRepository(database);
+    const bankId = '11111111-1111-4111-8111-111111111111';
+    const cityId = '22222222-2222-4222-8222-222222222222';
+
+    await repository.list('bank-branches', {
+      search: '',
+      status: 'active',
+      bankId,
+      cityId,
+      sortBy: 'name',
+      sortDirection: 'asc',
+      page: 1,
+      pageSize: 25,
+    });
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { isActive: true, bankId, cityId },
+        include: { bank: true, city: true },
+        orderBy: { name: 'asc' },
+      }),
+    );
+  });
+});
+
 describe('MasterDataRepository optimistic locking', () => {
   it('allows only one concurrent mutation for the same expected version', async () => {
     let persistedVersion = 1;

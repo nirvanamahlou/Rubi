@@ -20,7 +20,20 @@ export const masterDataListQuerySchema = z.object({
   regionId: z.string().uuid().optional(),
   cityId: z.string().uuid().optional(),
   airportId: z.string().uuid().optional(),
+  bankId: z.string().uuid().optional(),
   terminalType: z.enum(['DOMESTIC', 'INTERNATIONAL', 'VIP']).optional(),
+  paymentChannel: z
+    .enum([
+      'CASH',
+      'POS',
+      'BANK_TRANSFER',
+      'ONLINE_GATEWAY',
+      'CREDIT',
+      'WALLET',
+      'OTHER',
+    ])
+    .optional(),
+  paymentDirection: z.enum(['RECEIPT', 'PAYMENT', 'BOTH']).optional(),
 });
 
 export const masterDataExportRequestSchema = z.object({
@@ -118,7 +131,10 @@ export function serializeMasterDataListQuery(query: MasterDataListQuery) {
     'regionId',
     'cityId',
     'airportId',
+    'bankId',
     'terminalType',
+    'paymentChannel',
+    'paymentDirection',
   ] as const) {
     const value = query[field];
     if (value) params.set(field, value);

@@ -45,7 +45,7 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 
 ### Contract و Permission
 
-- Master Data Contract نسخه `3`
+- Master Data Contract نسخه `6`
 - IAM Permission Contract نسخه `5`
 - Permissionهای جدید در Contract و Seed:
   - `master_data.import`
@@ -68,7 +68,8 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 
 ### Web
 
-- گروه مالی اولین گروه و ارزها اولین Resource صفحه `/master-data` است.
+- گروه مالی از صفحه اصلی `/master-data` به Workspace اختصاصی
+  `/master-data/finance` باز می‌شود.
 - فرم ارز شامل نام انگلیسی و تعداد رقم اعشار است.
 - فرم نرخ شامل نوع، زمان مشاهده، شروع/پایان اعتبار و توضیح اصلاح است.
 - عملیات تأیید/رد به Backend واقعی متصل است و دلیل تصمیم دریافت می‌شود.
@@ -136,6 +137,6 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 - کاتالوگ‌های پیشرفته Airport/Terminal/Bank Branch، Supplier Contact/Service، Hotel Chain/Room/Meal/Facility/Composite، Aircraft/Class/Baggage/Manifest، Insurance Plan/Coverage، Tour/Transfer/Bus و Sales References مستقل
 - رمزنگاری و Unmask مخاطبان Master Data با کلید مستقل از Customers
 - اتصال Scanner مستقل آنتی‌ویروس و Documents برای تصاویر هتل
-- نمودار تاریخچه واقعی و Audit Timeline کامل در UI
+- اتصال لوگوی بانک به Documents Worker و قرارداد واقعی فایل
 
 Parser ZIP با `fflate@0.8.3` دقیق Pin و Lock آن پس از تثبیت آزاد شد. Scanner مستقل آنتی‌ویروس و Documents Worker هنوز آماده نیستند و به‌عنوان موفقیت گزارش نمی‌شوند.

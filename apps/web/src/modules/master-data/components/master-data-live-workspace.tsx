@@ -7,6 +7,7 @@ import type {
   MasterDataStatus,
 } from '@rubi/contracts';
 import {
+  ArrowRight,
   Ban,
   CheckCircle2,
   Database,
@@ -20,9 +21,10 @@ import {
   Search,
   XCircle,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   FormField,
   Input,
@@ -46,27 +48,26 @@ import {
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import {
   getMasterDataDefinition,
-  masterDataCatalog,
   type MasterDataResourceKey,
 } from '../model/catalog';
+import type { MasterDataSectionDefinition } from '../model/sections';
 import {
   MasterDataLiveForm,
   type MasterDataFormMode,
 } from './master-data-live-form';
 import { HotelImportPanel } from './hotel-import-panel';
+import { MasterDataFinanceWorkspace } from './master-data-finance-workspace';
 
-const groups = ['مالی', 'جغرافیا', 'خدمات سفر', 'سازمان‌ها', 'فروش'] as const;
-const geographyResources = [
-  ['countries', 'کشورها'],
-  ['regions', 'استان‌ها/نواحی'],
-  ['cities', 'شهرها'],
-  ['airports', 'فرودگاه‌ها'],
-  ['terminals', 'ترمینال‌ها'],
-] as const;
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
-export function MasterDataWorkspace() {
-  const [resource, setResource] = useState<MasterDataResourceKey>('currencies');
+function GenericMasterDataWorkspace({
+  section,
+}: {
+  section: MasterDataSectionDefinition;
+}) {
+  const [resource, setResource] = useState<MasterDataResourceKey>(
+    section.resources[0] ?? 'currencies',
+  );
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
@@ -79,7 +80,7 @@ export function MasterDataWorkspace() {
   const [notice, setNotice] = useState<string | null>(null);
   const [exportingExcel, setExportingExcel] = useState(false);
   const definition = getMasterDataDefinition(resource);
-  const isGeography = geographyResources.some(([key]) => key === resource);
+  const sectionDefinitions = section.resources.map(getMasterDataDefinition);
   const isCountryCity = resource === 'countries' || resource === 'cities';
 
   const query: MasterDataListQuery = {
@@ -124,6 +125,7 @@ export function MasterDataWorkspace() {
   }, [load]);
 
   function changeResource(next: MasterDataResourceKey) {
+    if (!section.resources.includes(next)) return;
     setResource(next);
     setSearch('');
     setStatus('all');
@@ -291,7 +293,20 @@ export function MasterDataWorkspace() {
 
   return (
     <div className="space-y-5">
-      <PageHeader eyebrow="MASTER-003 · PC-B" title="اطلاعات پایه" />
+      <PageHeader
+        actions={
+          <Link
+            className={buttonVariants({ variant: 'outline' })}
+            href="/master-data"
+          >
+            <ArrowRight aria-hidden="true" className="size-4" />
+            همه بخش‌ها
+          </Link>
+        }
+        description={section.description}
+        eyebrow="اطلاعات پایه"
+        title={section.title}
+      />
 
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
 
@@ -302,53 +317,40 @@ export function MasterDataWorkspace() {
               <Database aria-hidden="true" className="size-4" />
             </span>
             <div>
-              <h2 className="text-sm font-black">Catalog اطلاعات پایه</h2>
+              <h2 className="text-sm font-black">
+                زیرمجموعه‌های {section.title}
+              </h2>
               <p className="text-xs text-muted-foreground">
-                ۱۵ منبع پایدار · مشترک بین شرکت‌ها · بدون فیلتر Legal Entity
+                {section.resources.length.toLocaleString('fa-IR')} منبع مرجع ·
+                مشترک بین شرکت‌ها · بدون فیلتر Legal Entity
               </p>
             </div>
           </div>
           <nav
-            aria-label="دسته‌های اطلاعات پایه"
-            className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
+            aria-label={`زیرمجموعه‌های ${section.title}`}
+            className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-2"
           >
-            {groups.map((group) => (
-              <section
-                className="rounded-xl border border-border/70 bg-muted/20 p-2"
-                key={group}
-              >
-                <h3 className="px-2 py-1 text-[11px] font-bold text-muted-foreground">
-                  {group}
-                </h3>
-                <div className="mt-1 grid gap-1">
-                  {masterDataCatalog
-                    .filter(
-                      (item) => item.group === group && item.key !== 'cities',
-                    )
-                    .map((item) => (
-                      <button
-                        aria-current={
-                          item.key === 'countries'
-                            ? isCountryCity
-                              ? 'page'
-                              : undefined
-                            : item.key === resource
-                              ? 'page'
-                              : undefined
-                        }
-                        className="rounded-lg px-3 py-2 text-start text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground"
-                        key={item.key}
-                        onClick={() => changeResource(item.key)}
-                        type="button"
-                      >
-                        {item.key === 'countries'
-                          ? 'کشورها و شهرها'
-                          : item.label}
-                      </button>
-                    ))}
-                </div>
-              </section>
-            ))}
+            {sectionDefinitions
+              .filter((item) => item.key !== 'cities')
+              .map((item) => (
+                <button
+                  aria-current={
+                    item.key === 'countries'
+                      ? isCountryCity
+                        ? 'page'
+                        : undefined
+                      : item.key === resource
+                        ? 'page'
+                        : undefined
+                  }
+                  className="rounded-xl border border-border/70 bg-muted/20 px-4 py-3 text-start text-sm font-semibold text-muted-foreground transition hover:border-primary/30 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:border-primary aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground"
+                  key={item.key}
+                  onClick={() => changeResource(item.key)}
+                  type="button"
+                >
+                  {item.key === 'countries' ? 'کشورها و شهرها' : item.label}
+                </button>
+              ))}
           </nav>
         </Card>
 
@@ -357,12 +359,8 @@ export function MasterDataWorkspace() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-xl font-black">
-                    {isGeography
-                      ? `جغرافیا · ${definition.label}`
-                      : definition.label}
-                  </h2>
-                  <Badge>{definition.group}</Badge>
+                  <h2 className="text-xl font-black">{definition.label}</h2>
+                  <Badge>{section.title}</Badge>
                   <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                     Backend واقعی
                   </Badge>
@@ -653,5 +651,17 @@ export function MasterDataWorkspace() {
         />
       ) : null}
     </div>
+  );
+}
+
+export function MasterDataWorkspace({
+  section,
+}: {
+  section: MasterDataSectionDefinition;
+}) {
+  return section.slug === 'finance' ? (
+    <MasterDataFinanceWorkspace section={section} />
+  ) : (
+    <GenericMasterDataWorkspace section={section} />
   );
 }
