@@ -10,8 +10,7 @@
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
 - شاخه فعال: `codex/pc-b-master-data-sales-references`
 - Work Item: `MASTER-003I-SALES-REFERENCES`؛ Stacked روی Draft PR #35
-- محیط مسئول: `COMPUTER_ID=PC-B`؛ سرویس‌های محلی پس از Build نهایی روی ۴۰۰۰ و ۳۱۰۰
-  دوباره فعال می‌شوند.
+- محیط مسئول: `COMPUTER_ID=PC-B`؛ API روی ۴۰۰۰ و Web روی ۳۱۰۰ فعال‌اند.
 - نوع تغییر: Database، Migration، API Contract، Backend، Frontend، Test و Documentation؛
   بدون Customers، Dependency یا Lockfile.
 
