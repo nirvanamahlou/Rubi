@@ -86,8 +86,6 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
       'manifest-templates',
       'rail-companies',
       'train-types',
-      'bus-companies',
-      'bus-types',
     ],
     tone: 'blue',
   },
@@ -101,8 +99,17 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
   {
     slug: 'tours-travel-services',
     title: 'تور و خدمات سفر',
-    description: 'لیدرها و مراجع اجرایی تور و خدمات سفر',
-    resources: ['leaders'],
+    description:
+      'لیدرها، انواع تور و ترانسفر، CIP، ویزا و مراجع اتوبوسی خدمات سفر',
+    resources: [
+      'leaders',
+      'tour-types',
+      'transfer-types',
+      'cip-services',
+      'visa-services',
+      'bus-companies',
+      'bus-types',
+    ],
     tone: 'rose',
   },
   {

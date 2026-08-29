@@ -9,10 +9,10 @@ import {
 
 describe('master data public contract', () => {
   it('publishes a stable versioned resource catalog', () => {
-    expect(MASTER_DATA_CONTRACT_VERSION).toBe(11);
+    expect(MASTER_DATA_CONTRACT_VERSION).toBe(12);
     expect(MASTER_DATA_API_PREFIX).toBe('/api/v1/master-data');
-    expect(MASTER_DATA_RESOURCES).toHaveLength(41);
-    expect(new Set(MASTER_DATA_RESOURCES).size).toBe(41);
+    expect(MASTER_DATA_RESOURCES).toHaveLength(45);
+    expect(new Set(MASTER_DATA_RESOURCES).size).toBe(45);
     expect(MASTER_DATA_RESOURCES.slice(0, 5)).toEqual([
       'countries',
       'regions',
@@ -42,6 +42,10 @@ describe('master data public contract', () => {
         'train-types',
         'bus-companies',
         'bus-types',
+        'tour-types',
+        'transfer-types',
+        'cip-services',
+        'visa-services',
         'lead-sources',
         'sales-channels',
         'lost-reasons',

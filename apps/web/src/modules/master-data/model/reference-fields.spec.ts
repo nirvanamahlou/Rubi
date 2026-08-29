@@ -72,6 +72,16 @@ describe('master data reference field mapping', () => {
     ).toMatchObject({ target: 'hotels', multiple: true });
   });
 
+  it('publishes Provider choice and normalized facilities for buses', () => {
+    expect(
+      getReferenceFieldConfig('bus-companies', 'supplierId'),
+    ).toMatchObject({ target: 'suppliers', optional: true });
+    expect(getReferenceFieldConfig('bus-types', 'facilityIds')).toMatchObject({
+      target: 'facilities',
+      multiple: true,
+    });
+  });
+
   it('filters organizations by compatible role', () => {
     const organization = {
       ...record,

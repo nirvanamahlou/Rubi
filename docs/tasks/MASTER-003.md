@@ -152,6 +152,31 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
   پیش از همه والدهای خود Merge نمی‌شود؛ بعد از Merge والد، Base مطابق زنجیره به
   `develop` تغییر می‌کند.
 
+## Slice پشته‌ای تور و خدمات سفر — MASTER-003K
+
+- مسیر `/master-data/tours-travel-services` هفت نمای لیدرها، نوع تور، نوع
+  ترانسفر، CIP، ویزا، شرکت اتوبوس و نوع اتوبوس را با KPIهای دقیق ماکاپ،
+  Search/Filter/Sort/Pagination، Create/View/Edit، Active/Inactive و Export واقعی
+  ارائه می‌کند؛ همه پروفایل‌ها فقط Popup هستند و تب مستقل پروفایل لیدر وجود ندارد.
+- Migrationهای افزایشی `20260829220000_master_data_travel_services` و
+  `20260829221000_master_data_travel_bus_connections` مدل‌های Tour Type،
+  Transfer Type، CIP Service و Visa Service را اضافه و Leader را با شهر، نام
+  انگلیسی، مقصدها و تماس رمزنگاری/ماسک‌شده تکمیل می‌کند. FKها `ON DELETE RESTRICT`
+  و ظرفیت، مدت اعتبار، ترتیب و Version دارای Check واقعی‌اند؛ شرکت اتوبوس دقیقاً
+  به یک Organization یا Provider متصل و Facilityهای نوع اتوبوس M:N هستند.
+- Contract عمومی به `master-data.v12` و ۴۵ Resource ارتقا یافت؛ Backend واقعی،
+  Permissionهای Master Data، Audit با حذف Ciphertext، Optimistic Lock و Summary
+  واقعی همه تب‌ها را پوشش می‌دهند.
+- اسناد و آدرس لیدر، بانک و دستمزد، پرونده و سند مسافر، قیمت، ظرفیت، رزرو، Voucher،
+  قرارداد و تسویه خارج از این Aggregate باقی مانده‌اند؛ مقدارهای نیازمند قرارداد
+  Consumer با `—` نمایش داده می‌شوند و Query مستقیم بین‌ماژولی وجود ندارد.
+- تمام ۱۹ Migration روی PostgreSQL 18 خالی، Constraintهای ظرفیت/اعتبار، اتصال
+  Organization/Provider، FK محدودکننده Facility و Seed
+  دوگانه موفق بودند؛ Seed هیچ داده لیدر، تور، ترانسفر، CIP، ویزا یا مسافر نمی‌سازد.
+- Draft PR #38 از Branch `codex/pc-b-master-data-travel-services` روی Draft PR #37 پشته می‌شود و
+  پیش از همه والدهای خود Merge نمی‌شود؛ بعد از Merge والد، Base مطابق زنجیره به
+  `develop` تغییر می‌کند.
+
 ## Import واقعی هتل — HOTEL_IMPORT_V1
 
 - دو Endpoint واقعی `POST /master-data/hotel-imports/preview` و
@@ -207,7 +232,6 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 
 این Draft PR کل MASTER-003 را Complete اعلام نمی‌کند. موارد زیر هنوز پیاده‌سازی نشده‌اند و قفل‌ها آزاد نمی‌شوند:
 
-- کاتالوگ‌های Insurance Plan/Coverage و Tour/Transfer مستقل
 - اتصال Scanner مستقل آنتی‌ویروس و Documents برای تصاویر هتل
 - اتصال لوگوی بانک به Documents Worker و قرارداد واقعی فایل
 

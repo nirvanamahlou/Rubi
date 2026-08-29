@@ -120,6 +120,21 @@ export class MasterDataListQueryDto {
   @IsString()
   @MaxLength(160)
   destinationRegion?: string;
+  @IsOptional()
+  @IsUUID()
+  supplierId?: string;
+  @IsOptional()
+  @IsIn(['DOMESTIC', 'INTERNATIONAL', 'BOTH'])
+  tourScope?: 'DOMESTIC' | 'INTERNATIONAL' | 'BOTH';
+  @IsOptional()
+  @IsIn(['PRIVATE', 'SHARED'])
+  transferServiceMode?: 'PRIVATE' | 'SHARED';
+  @IsOptional()
+  @IsIn(['ADT', 'CHD', 'INF', 'ALL'])
+  passengerScope?: 'ADT' | 'CHD' | 'INF' | 'ALL';
+  @IsOptional()
+  @IsIn(['STANDARD', 'VIP', 'LUXURY', 'OTHER'])
+  busServiceClass?: 'STANDARD' | 'VIP' | 'LUXURY' | 'OTHER';
 }
 
 export class MasterDataMutationDto {
@@ -177,6 +192,10 @@ export class MasterDataExportDto {
     'travel-services',
     'organization-contacts',
     'leaders',
+    'tour-types',
+    'transfer-types',
+    'cip-services',
+    'visa-services',
     'acquaintance-methods',
     'lead-sources',
     'sales-channels',

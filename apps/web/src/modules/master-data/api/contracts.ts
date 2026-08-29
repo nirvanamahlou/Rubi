@@ -51,6 +51,11 @@ export const masterDataListQuerySchema = z.object({
   insurerId: z.string().uuid().optional(),
   currencyId: z.string().uuid().optional(),
   destinationRegion: z.string().trim().max(160).optional(),
+  supplierId: z.string().uuid().optional(),
+  tourScope: z.enum(['DOMESTIC', 'INTERNATIONAL', 'BOTH']).optional(),
+  transferServiceMode: z.enum(['PRIVATE', 'SHARED']).optional(),
+  passengerScope: z.enum(['ADT', 'CHD', 'INF', 'ALL']).optional(),
+  busServiceClass: z.enum(['STANDARD', 'VIP', 'LUXURY', 'OTHER']).optional(),
 });
 
 export const masterDataExportRequestSchema = z.object({
@@ -162,6 +167,11 @@ export function serializeMasterDataListQuery(query: MasterDataListQuery) {
     'insurerId',
     'currencyId',
     'destinationRegion',
+    'supplierId',
+    'tourScope',
+    'transferServiceMode',
+    'passengerScope',
+    'busServiceClass',
   ] as const) {
     const value = query[field];
     if (value) params.set(field, value);

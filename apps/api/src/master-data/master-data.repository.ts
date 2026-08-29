@@ -49,12 +49,22 @@ const protectedContactFields = new Set([
   'emailEncryptionAuthTag',
   'emailEncryptionKeyVersion',
   'emailFingerprint',
+  'primaryPhoneEncrypted',
+  'primaryPhoneEncryptionIv',
+  'primaryPhoneEncryptionAuthTag',
+  'primaryPhoneEncryptionKeyVersion',
+  'primaryPhoneFingerprint',
+  'roamingPhoneEncrypted',
+  'roamingPhoneEncryptionIv',
+  'roamingPhoneEncryptionAuthTag',
+  'roamingPhoneEncryptionKeyVersion',
+  'roamingPhoneFingerprint',
 ]);
 
 function auditSnapshot(resource: MasterDataResource, value: unknown) {
   const snapshot = json(value);
   if (
-    resource !== 'organization-contacts' ||
+    (resource !== 'organization-contacts' && resource !== 'leaders') ||
     typeof snapshot !== 'object' ||
     Array.isArray(snapshot)
   )
@@ -101,6 +111,10 @@ const delegateNames: Record<MasterDataResource, string> = {
   'travel-services': 'masterTravelService',
   'organization-contacts': 'masterOrganizationContact',
   leaders: 'masterLeader',
+  'tour-types': 'masterTourType',
+  'transfer-types': 'masterTransferType',
+  'cip-services': 'masterCipService',
+  'visa-services': 'masterVisaService',
   'acquaintance-methods': 'masterAcquaintanceMethod',
   'lead-sources': 'masterLeadSource',
   'sales-channels': 'masterSalesChannel',
@@ -145,6 +159,10 @@ const nameFields: Record<MasterDataResource, string> = {
   'travel-services': 'name',
   'organization-contacts': 'fullName',
   leaders: 'name',
+  'tour-types': 'name',
+  'transfer-types': 'name',
+  'cip-services': 'name',
+  'visa-services': 'name',
   'acquaintance-methods': 'name',
   'lead-sources': 'name',
   'sales-channels': 'name',
@@ -189,6 +207,10 @@ const codeFields: Record<MasterDataResource, string> = {
   'travel-services': 'code',
   'organization-contacts': 'code',
   leaders: 'code',
+  'tour-types': 'code',
+  'transfer-types': 'code',
+  'cip-services': 'code',
+  'visa-services': 'code',
   'acquaintance-methods': 'code',
   'lead-sources': 'code',
   'sales-channels': 'code',
@@ -238,7 +260,23 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
   brokers: ['name', 'code'],
   'travel-services': ['name', 'englishName', 'code'],
   'organization-contacts': ['fullName', 'jobTitle', 'code'],
-  leaders: ['name', 'code'],
+  leaders: ['name', 'englishName', 'code', 'expertise', 'welcomeSignCode'],
+  'tour-types': ['name', 'englishName', 'code', 'description'],
+  'transfer-types': [
+    'name',
+    'englishName',
+    'code',
+    'vehicleType',
+    'description',
+  ],
+  'cip-services': ['name', 'englishName', 'code', 'description'],
+  'visa-services': [
+    'name',
+    'englishName',
+    'code',
+    'visaType',
+    'description',
+  ],
   'acquaintance-methods': ['name', 'englishName', 'description', 'code'],
   'lead-sources': ['name', 'englishName', 'description', 'code'],
   'sales-channels': ['name', 'englishName', 'description', 'code'],
@@ -274,8 +312,16 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'airlines') return { organization: true, country: true };
   if (resource === 'baggage-rules') return { airline: true, cabinClass: true };
   if (resource === 'manifest-templates') return { airline: true };
-  if (resource === 'rail-companies' || resource === 'bus-companies')
+  if (resource === 'rail-companies')
     return { organization: true, country: true };
+  if (resource === 'bus-companies')
+    return {
+      organization: true,
+      supplier: { include: { organization: true } },
+      country: true,
+    };
+  if (resource === 'bus-types')
+    return { facilities: { include: { facility: true } } };
   if (resource === 'suppliers')
     return {
       organization: true,
@@ -293,6 +339,18 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'travel-services')
     return { _count: { select: { suppliers: true, brokers: true } } };
   if (resource === 'organization-contacts') return { organization: true };
+  if (resource === 'leaders')
+    return { city: { include: { country: true } } };
+  if (resource === 'cip-services')
+    return {
+      airport: { include: { city: true } },
+      supplier: { include: { organization: true } },
+    };
+  if (resource === 'visa-services')
+    return {
+      country: true,
+      supplier: { include: { organization: true } },
+    };
   if (resource === 'regions') return { country: true, parent: true };
   if (resource === 'cities') return { country: true, region: true };
   if (resource === 'airports')
@@ -357,6 +415,7 @@ export function toMasterDataRecord(
   const bank = row.bank as Record<string, unknown> | undefined;
   const organization = row.organization as Record<string, unknown> | undefined;
   const insurer = row.insurer as Record<string, unknown> | undefined;
+  const supplier = row.supplier as Record<string, unknown> | undefined;
   const currency = row.currency as Record<string, unknown> | undefined;
   const airline = row.airline as Record<string, unknown> | undefined;
   const cabinClass = row.cabinClass as Record<string, unknown> | undefined;
@@ -422,6 +481,7 @@ export function toMasterDataRecord(
     'bank',
     'organization',
     'insurer',
+    'supplier',
     'currency',
     'airline',
     'cabinClass',
@@ -501,6 +561,33 @@ export function toMasterDataRecord(
     attributes.organizationName = String(organization?.displayName ?? '');
     attributes.organizationCode = String(organization?.code ?? '');
   }
+  if (resource === 'leaders') {
+    const leaderCountry = city?.country as Record<string, unknown> | undefined;
+    attributes.cityName = String(city?.name ?? '');
+    attributes.countryId = String(city?.countryId ?? '');
+    attributes.countryName = String(leaderCountry?.name ?? '');
+  }
+  if (resource === 'cip-services') {
+    const providerOrganization = supplier?.organization as
+      | Record<string, unknown>
+      | undefined;
+    attributes.airportName = String(airport?.name ?? '');
+    attributes.airportIataCode = String(airport?.iataCode ?? '');
+    attributes.supplierName = String(
+      providerOrganization?.displayName ?? supplier?.code ?? '',
+    );
+    attributes.supplierCode = String(supplier?.code ?? '');
+  }
+  if (resource === 'visa-services') {
+    const providerOrganization = supplier?.organization as
+      | Record<string, unknown>
+      | undefined;
+    attributes.countryName = String(country?.name ?? '');
+    attributes.supplierName = String(
+      providerOrganization?.displayName ?? supplier?.code ?? '',
+    );
+    attributes.supplierCode = String(supplier?.code ?? '');
+  }
   if (resource === 'insurers') {
     attributes.organizationName = String(organization?.displayName ?? '');
     attributes.organizationCode = String(organization?.code ?? '');
@@ -536,6 +623,31 @@ export function toMasterDataRecord(
   ) {
     attributes.organizationName = String(organization?.displayName ?? '');
     attributes.countryName = String(country?.name ?? '');
+  }
+  if (resource === 'bus-companies') {
+    const supplierOrganization = supplier?.organization as
+      | Record<string, unknown>
+      | undefined;
+    attributes.supplierName = String(
+      supplierOrganization?.displayName ?? supplier?.code ?? '',
+    );
+    attributes.connectionType = supplier ? 'Provider' : 'Organization';
+    attributes.connectionName = String(
+      supplierOrganization?.displayName ??
+        supplier?.code ??
+        organization?.displayName ??
+        '',
+    );
+  }
+  if (resource === 'bus-types') {
+    attributes.facilityIds =
+      facilityLinks
+        ?.map(({ facility }) => String(facility.id ?? ''))
+        .join(',') ?? '';
+    attributes.facilityNames =
+      facilityLinks
+        ?.map(({ facility }) => String(facility.name ?? ''))
+        .join(',') ?? '';
   }
   if (resource === 'baggage-rules') {
     attributes.airlineName = String(airline?.name ?? '');
@@ -673,6 +785,9 @@ export class MasterDataRepository {
         where.countryId = query.countryId;
       if (resource === 'hotel-chains') where.countryId = query.countryId;
       if (resource === 'insurers') where.countryId = query.countryId;
+      if (resource === 'visa-services') where.countryId = query.countryId;
+      if (resource === 'leaders')
+        where.city = { is: { countryId: query.countryId } };
       if (resource === 'hotels' || resource === 'composite-hotels')
         where.city = { is: { countryId: query.countryId } };
     }
@@ -685,6 +800,20 @@ export class MasterDataRepository {
       if (Object.keys(airportCityWhere).length)
         where.city = { is: airportCityWhere };
     }
+    if (resource === 'leaders' && query.cityId) where.cityId = query.cityId;
+    if (resource === 'cip-services') {
+      if (query.airportId) where.airportId = query.airportId;
+      if (query.supplierId) where.supplierId = query.supplierId;
+      if (query.passengerScope) where.passengerScope = query.passengerScope;
+    }
+    if (resource === 'visa-services' && query.supplierId)
+      where.supplierId = query.supplierId;
+    if (resource === 'tour-types' && query.tourScope)
+      where.scope = query.tourScope;
+    if (resource === 'transfer-types' && query.transferServiceMode)
+      where.serviceMode = query.transferServiceMode;
+    if (resource === 'bus-types' && query.busServiceClass)
+      where.serviceClass = query.busServiceClass;
     if (resource === 'terminals') {
       if (query.airportId) where.airportId = query.airportId;
       if (query.terminalType) where.terminalType = query.terminalType;
@@ -1278,6 +1407,134 @@ export class MasterDataRepository {
         active: coverageActive,
         currencies: coverageCurrencies.length,
         needsReview: coverageNeedsReview,
+      },
+    };
+  }
+
+  async travelServicesSummary() {
+    const client = this.database.client;
+    const [
+      leaderTotal,
+      leaderActive,
+      leaderDestinations,
+      tourTotal,
+      tourActive,
+      tourDomestic,
+      tourInternational,
+      transferTotal,
+      transferActive,
+      transferPrivate,
+      transferShared,
+      cipTotal,
+      cipActive,
+      cipAirports,
+      cipProviders,
+      visaTotal,
+      visaActive,
+      visaCountries,
+      visaIncompleteGuidance,
+      busCompanyTotal,
+      busCompanyActive,
+      busCompanyOrganizations,
+      busCompanyProviders,
+      busTypeTotal,
+      busTypeActive,
+      busFacilities,
+    ] = await Promise.all([
+      client.masterLeader.count(),
+      client.masterLeader.count({ where: { isActive: true } }),
+      client.masterLeader.findMany({ select: { destinations: true } }),
+      client.masterTourType.count(),
+      client.masterTourType.count({ where: { isActive: true } }),
+      client.masterTourType.count({ where: { scope: 'DOMESTIC' } }),
+      client.masterTourType.count({ where: { scope: 'INTERNATIONAL' } }),
+      client.masterTransferType.count(),
+      client.masterTransferType.count({ where: { isActive: true } }),
+      client.masterTransferType.count({ where: { serviceMode: 'PRIVATE' } }),
+      client.masterTransferType.count({ where: { serviceMode: 'SHARED' } }),
+      client.masterCipService.count(),
+      client.masterCipService.count({ where: { isActive: true } }),
+      client.masterCipService.findMany({
+        distinct: ['airportId'],
+        select: { airportId: true },
+      }),
+      client.masterCipService.findMany({
+        where: { supplierId: { not: null } },
+        distinct: ['supplierId'],
+        select: { supplierId: true },
+      }),
+      client.masterVisaService.count(),
+      client.masterVisaService.count({ where: { isActive: true } }),
+      client.masterVisaService.findMany({
+        distinct: ['countryId'],
+        select: { countryId: true },
+      }),
+      client.masterVisaService.count({
+        where: { guidanceFileReference: null },
+      }),
+      client.masterBusCompany.count(),
+      client.masterBusCompany.count({ where: { isActive: true } }),
+      client.masterBusCompany.findMany({
+        where: { organizationId: { not: null } },
+        distinct: ['organizationId'],
+        select: { organizationId: true },
+      }),
+      client.masterBusCompany.findMany({
+        where: { supplierId: { not: null } },
+        distinct: ['supplierId'],
+        select: { supplierId: true },
+      }),
+      client.masterBusType.count(),
+      client.masterBusType.count({ where: { isActive: true } }),
+      client.masterBusTypeFacility.findMany({
+        distinct: ['facilityId'],
+        select: { facilityId: true },
+      }),
+    ]);
+    return {
+      leaders: {
+        total: leaderTotal,
+        active: leaderActive,
+        destinations: new Set(
+          leaderDestinations.flatMap(({ destinations }) => destinations),
+        ).size,
+        incompleteDocuments: null,
+      },
+      tourTypes: {
+        total: tourTotal,
+        active: tourActive,
+        domestic: tourDomestic,
+        international: tourInternational,
+      },
+      transferTypes: {
+        total: transferTotal,
+        active: transferActive,
+        private: transferPrivate,
+        shared: transferShared,
+      },
+      cipServices: {
+        total: cipTotal,
+        active: cipActive,
+        airports: cipAirports.length,
+        providers: cipProviders.length,
+      },
+      visaServices: {
+        total: visaTotal,
+        active: visaActive,
+        countries: visaCountries.length,
+        incompleteGuidance: visaIncompleteGuidance,
+      },
+      busCompanies: {
+        total: busCompanyTotal,
+        active: busCompanyActive,
+        organizations: busCompanyOrganizations.length,
+        providers: busCompanyProviders.length,
+      },
+      busTypes: {
+        total: busTypeTotal,
+        active: busTypeActive,
+        amenities: busFacilities.length,
+        companies: null,
       },
     };
   }

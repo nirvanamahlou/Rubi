@@ -113,6 +113,12 @@ export class MasterDataController {
     return this.service.insuranceSummary();
   }
 
+  @Get('travel-services-catalog/summary')
+  @RequirePermissions('master_data.read')
+  travelServicesSummary() {
+    return this.service.travelServicesSummary();
+  }
+
   @Get(':resource/:id')
   @RequirePermissions('master_data.read')
   detail(@Param('resource') resource: string, @Param('id') id: string) {
