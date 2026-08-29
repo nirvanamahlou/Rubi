@@ -29,6 +29,7 @@ describe('Customers HTTP integration', () => {
     activity: vi.fn().mockResolvedValue({ data: [] }),
     audit: vi.fn().mockResolvedValue({ data: [] }),
     status: vi.fn().mockResolvedValue({ data: { id: 'customer-id' } }),
+    addConsent: vi.fn().mockResolvedValue({ data: { id: 'customer-id' } }),
   };
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -147,4 +148,47 @@ describe('Customers HTTP integration', () => {
       .expect(400);
     expect(service.create).not.toHaveBeenCalled();
   });
+
+  it('trims and forwards the actual consent reason', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/customers/44444444-4444-4444-8444-444444444444/consents')
+      .set('Cookie', 'rubi_access=test')
+      .send({
+        purpose: 'marketing',
+        channel: 'all',
+        status: 'granted',
+        source: 'staff-ui',
+        reason: '  درخواست حضوری مشتری  ',
+        version: 1,
+      })
+      .expect(201);
+
+    expect(service.addConsent).toHaveBeenCalledWith(
+      '44444444-4444-4444-8444-444444444444',
+      expect.objectContaining({ reason: 'درخواست حضوری مشتری' }),
+      actor,
+      undefined,
+      undefined,
+    );
+  });
+
+  it.each(['', ' ', '\t', '\n', 'x'.repeat(501)])(
+    'rejects invalid consent reason at the HTTP boundary (%j)',
+    async (reason) => {
+      await request(app.getHttpServer())
+        .post('/api/v1/customers/44444444-4444-4444-8444-444444444444/consents')
+        .set('Cookie', 'rubi_access=test')
+        .send({
+          purpose: 'marketing',
+          channel: 'all',
+          status: 'granted',
+          source: 'staff-ui',
+          reason,
+          version: 1,
+        })
+        .expect(400);
+
+      expect(service.addConsent).not.toHaveBeenCalled();
+    },
+  );
 });

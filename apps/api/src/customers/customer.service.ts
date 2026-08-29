@@ -68,6 +68,31 @@ function validateDateRange(
     throw new BadRequestException(`ابتدای بازه ${label} پس از انتهای آن است.`);
 }
 
+const consentReasonEmail = /\b[^\s@]+@[^\s@]+\.[^\s@]+\b/i;
+const consentReasonLongNumber = /(?:\d[\s()-]?){10,}/;
+const consentReasonSecret =
+  /\b(?:bearer\s+\S+|(?:api[_-]?key|password|secret|token)\s*[:=]\s*\S+)/i;
+
+function consentReason(value: string): string {
+  const reason = value.trim();
+  if (reason.length < 3 || reason.length > 500)
+    throw new BadRequestException({
+      code: 'CUSTOMER_CONSENT_REASON_INVALID',
+      message: 'دلیل رضایت باید بین ۳ تا ۵۰۰ نویسه باشد.',
+    });
+  if (
+    consentReasonEmail.test(reason) ||
+    consentReasonLongNumber.test(reason) ||
+    consentReasonSecret.test(reason)
+  )
+    throw new BadRequestException({
+      code: 'CUSTOMER_CONSENT_REASON_SENSITIVE_DATA',
+      message:
+        'دلیل رضایت نباید شامل اطلاعات تماس، شناسه حساس یا اطلاعات محرمانه باشد.',
+    });
+  return reason;
+}
+
 export const CUSTOMER_SENSITIVE_READ_REASONS = [
   'customer-verification',
   'support-request',
@@ -575,10 +600,15 @@ export class CustomerService {
     requestedBranch?: string,
     traceId?: string,
   ) {
+    const normalizedInput = {
+      ...input,
+      source: input.source.trim(),
+      reason: consentReason(input.reason),
+    };
     const row = await this.repository.addConsent(
       id,
       actor.branchIds,
-      input,
+      normalizedInput,
       actor.userId,
       branchOf(actor, requestedBranch),
       traceId,

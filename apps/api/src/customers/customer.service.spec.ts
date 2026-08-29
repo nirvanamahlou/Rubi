@@ -1,4 +1,8 @@
-import { ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import type {
   AuthenticatedActor,
   CustomerMutationRequest,
@@ -210,6 +214,93 @@ describe('CustomerService', () => {
       response: { code: 'CONCURRENT_MODIFICATION' },
       status: 409,
     });
+  });
+
+  it('persists the actual trimmed consent reason', async () => {
+    const repository = {
+      addConsent: vi.fn().mockResolvedValue(row),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+
+    await service.addConsent(
+      row.id,
+      {
+        purpose: 'marketing',
+        channel: 'all',
+        status: 'granted',
+        source: '  staff-ui  ',
+        reason: '  درخواست حضوری مشتری  ',
+        version: 1,
+      },
+      actor,
+    );
+
+    expect(repository.addConsent).toHaveBeenCalledWith(
+      row.id,
+      actor.branchIds,
+      expect.objectContaining({
+        source: 'staff-ui',
+        reason: 'درخواست حضوری مشتری',
+      }),
+      actor.userId,
+      actor.branchIds[0],
+      undefined,
+    );
+  });
+
+  it.each(['', ' ', '\t', '\n', 'ab', 'x'.repeat(501)])(
+    'rejects an invalid consent reason before persistence (%j)',
+    async (reason) => {
+      const repository = {
+        addConsent: vi.fn(),
+      } as unknown as CustomerRepository;
+      const { service } = createService(repository);
+
+      await expect(
+        service.addConsent(
+          row.id,
+          {
+            purpose: 'marketing',
+            channel: 'all',
+            status: 'granted',
+            source: 'staff-ui',
+            reason,
+            version: 1,
+          },
+          actor,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.addConsent).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    'تماس با 09120000000 انجام شد',
+    'ارسال به person@example.test',
+    'Bearer synthetic-token',
+  ])('rejects sensitive consent reason content (%s)', async (reason) => {
+    const repository = {
+      addConsent: vi.fn(),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+
+    await expect(
+      service.addConsent(
+        row.id,
+        {
+          purpose: 'marketing',
+          channel: 'all',
+          status: 'revoked',
+          source: 'staff-ui',
+          reason,
+          version: 1,
+        },
+        actor,
+      ),
+    ).rejects.toMatchObject({
+      response: { code: 'CUSTOMER_CONSENT_REASON_SENSITIVE_DATA' },
+    });
+    expect(repository.addConsent).not.toHaveBeenCalled();
   });
 
   it('hashes and masks contacts without passing the raw value to persistence', async () => {

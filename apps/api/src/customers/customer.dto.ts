@@ -117,7 +117,11 @@ export class CustomerConsentDto {
     'sms' | 'email' | 'phone' | 'all';
   @IsIn(['granted', 'revoked']) status!: 'granted' | 'revoked';
   @IsString() @MinLength(2) @MaxLength(120) source!: string;
-  @IsString() @MinLength(3) @MaxLength(500) reason!: string;
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MinLength(3)
+  @MaxLength(500)
+  reason!: string;
   @IsOptional() @IsDateString() occurredAt?: string;
   @IsInt() @Min(1) version!: number;
 }
