@@ -88,14 +88,22 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('مدارک سفر مسافر');
     expect(source).toContain("const kind = 'person' as const");
     expect(source).not.toContain('customer-national-id');
-    expect(source).toContain('انتخاب مشتری موجود به‌عنوان مسافر');
+    expect(source).toContain('انتخاب همین مشتری به‌عنوان مسافر');
     expect(source).toContain('index === 0 ? (');
     expect(source).toContain('aria-label="روش افزودن مسافر 1"');
     expect(source).toContain('بدون ورود دوباره اطلاعات');
     expect(source).toContain("source: 'new'");
-    expect(source).toContain('existingCustomerId');
+    expect(source).toContain("source: 'new' | 'primaryCustomer'");
+    expect(source).toContain("newCompanions[0]?.source === 'primaryCustomer'");
+    expect(source).toContain(
+      "Array.from(new Set([...draft.roles, 'passenger' as const]))",
+    );
+    expect(source).toContain(
+      "if (companion.source === 'primaryCustomer') continue",
+    );
+    expect(source).not.toContain('existingCustomerId');
+    expect(source).not.toContain('newCompanionOptions');
     expect(source).toContain('relatedCustomerId: passengerId');
-    expect(source).toContain("role: 'customer'");
   });
 
   it('opens Customer 360 immediately and exports every authorized filtered row to Excel', () => {

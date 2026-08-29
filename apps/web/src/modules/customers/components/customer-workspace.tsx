@@ -192,9 +192,7 @@ function safeCustomerId(value: string | null) {
 
 interface NewCompanionDraft {
   key: number;
-  source: 'new' | 'existing';
-  existingCustomerId: string;
-  existingCustomerSearch: string;
+  source: 'new' | 'primaryCustomer';
   firstName: string;
   lastName: string;
   birthDate: string;
@@ -211,8 +209,6 @@ function emptyCompanionDraft(): NewCompanionDraft {
   return {
     key: companionDraftKey,
     source: 'new',
-    existingCustomerId: '',
-    existingCustomerSearch: '',
     firstName: '',
     lastName: '',
     birthDate: '',
@@ -279,9 +275,6 @@ function CustomerDrawer({
   const [primaryPhone, setPrimaryPhone] = useState('');
   const [primaryEmail, setPrimaryEmail] = useState('');
   const [newCompanions, setNewCompanions] = useState<NewCompanionDraft[]>([]);
-  const [newCompanionOptions, setNewCompanionOptions] = useState<
-    Readonly<Record<number, readonly CustomerSummary[]>>
-  >({});
   const [sensitiveReason, setSensitiveReason] = useState('');
   const [revealedDetail, setRevealedDetail] = useState<CustomerDetail | null>(
     null,
@@ -451,53 +444,6 @@ function CustomerDrawer({
     return () => window.clearTimeout(timer);
   }, [companionSearch, customer]);
 
-  useEffect(() => {
-    const searches = newCompanions.filter(
-      (companion) =>
-        companion.source === 'existing' &&
-        companion.existingCustomerSearch.trim(),
-    );
-    if (!searches.length) return;
-    let active = true;
-    const timer = window.setTimeout(() => {
-      void Promise.all(
-        searches.map(async (companion) => {
-          const response = await customersApi.list({
-            search: companion.existingCustomerSearch,
-            kind: 'person',
-            status: 'active',
-            role: 'customer',
-            branchId: 'all',
-            acquaintanceMethodId: 'all',
-            createdFrom: null,
-            createdTo: null,
-            updatedFrom: null,
-            updatedTo: null,
-            sortBy: 'displayName',
-            sortDirection: 'asc',
-            page: 1,
-            pageSize: 25,
-          });
-          return [companion.key, response.data] as const;
-        }),
-      )
-        .then((entries) => {
-          if (active)
-            setNewCompanionOptions((current) => ({
-              ...current,
-              ...Object.fromEntries(entries),
-            }));
-        })
-        .catch(() => {
-          if (active) setMessage('جست‌وجوی مشتریان موجود ناموفق بود.');
-        });
-    }, 300);
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-    };
-  }, [newCompanions]);
-
   async function perform(
     operation: () => Promise<{ data: CustomerDetail }>,
     success: string,
@@ -523,12 +469,17 @@ function CustomerDrawer({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const primaryCustomerIsPassenger =
+      mode === 'create' && newCompanions[0]?.source === 'primaryCustomer';
     const submittedDraft: CustomerMutationRequest = {
       ...draft,
       displayName:
         draft.kind === 'person'
           ? `${draft.firstName?.trim() ?? ''} ${draft.lastName?.trim() ?? ''}`.trim()
           : draft.displayName,
+      roles: primaryCustomerIsPassenger
+        ? Array.from(new Set([...draft.roles, 'passenger' as const]))
+        : draft.roles,
     };
     if (customer) {
       await perform(
@@ -543,20 +494,6 @@ function CustomerDrawer({
       setBusy(true);
       setMessage(null);
       try {
-        const missingExistingPassenger = newCompanions.find(
-          (companion) =>
-            companion.source === 'existing' && !companion.existingCustomerId,
-        );
-        if (missingExistingPassenger)
-          throw new Error(
-            'برای هر ردیف «مشتری موجود»، یک مشتری را از نتایج انتخاب کنید.',
-          );
-        const existingPassengerIds = newCompanions
-          .filter((companion) => companion.source === 'existing')
-          .map((companion) => companion.existingCustomerId);
-        if (new Set(existingPassengerIds).size !== existingPassengerIds.length)
-          throw new Error('یک مشتری موجود را فقط یک‌بار انتخاب کنید.');
-
         let createdCustomer = (await customersApi.create(submittedDraft)).data;
         if (primaryPhone.trim()) {
           createdCustomer = (
@@ -582,42 +519,40 @@ function CustomerDrawer({
         }
 
         for (const companion of newCompanions) {
-          let passengerId = companion.existingCustomerId;
-          if (companion.source === 'new') {
-            let createdCompanion = (
-              await customersApi.create({
-                kind: 'person',
-                firstName: companion.firstName.trim(),
-                lastName: companion.lastName.trim(),
-                displayName:
-                  `${companion.firstName.trim()} ${companion.lastName.trim()}`.trim(),
-                organizationId: companion.organizationId || null,
-                birthDate: companion.birthDate || null,
-                roles: ['passenger'],
-                acquaintanceMethodId: null,
+          if (companion.source === 'primaryCustomer') continue;
+          let createdCompanion = (
+            await customersApi.create({
+              kind: 'person',
+              firstName: companion.firstName.trim(),
+              lastName: companion.lastName.trim(),
+              displayName:
+                `${companion.firstName.trim()} ${companion.lastName.trim()}`.trim(),
+              organizationId: companion.organizationId || null,
+              birthDate: companion.birthDate || null,
+              roles: ['passenger'],
+              acquaintanceMethodId: null,
+            })
+          ).data;
+          const passengerId = createdCompanion.id;
+          if (companion.phone.trim()) {
+            createdCompanion = (
+              await customersApi.addContact(createdCompanion.id, {
+                type: 'phone',
+                value: companion.phone.trim(),
+                label: 'اصلی',
+                isPrimary: true,
+                version: createdCompanion.version,
               })
             ).data;
-            passengerId = createdCompanion.id;
-            if (companion.phone.trim()) {
-              createdCompanion = (
-                await customersApi.addContact(createdCompanion.id, {
-                  type: 'phone',
-                  value: companion.phone.trim(),
-                  label: 'اصلی',
-                  isPrimary: true,
-                  version: createdCompanion.version,
-                })
-              ).data;
-            }
-            if (companion.email.trim()) {
-              await customersApi.addContact(createdCompanion.id, {
-                type: 'email',
-                value: companion.email.trim().toLowerCase(),
-                label: 'اصلی',
-                isPrimary: !companion.phone.trim(),
-                version: createdCompanion.version,
-              });
-            }
+          }
+          if (companion.email.trim()) {
+            await customersApi.addContact(createdCompanion.id, {
+              type: 'email',
+              value: companion.email.trim().toLowerCase(),
+              label: 'اصلی',
+              isPrimary: !companion.phone.trim(),
+              version: createdCompanion.version,
+            });
           }
           createdCustomer = (
             await customersApi.addCompanion(createdCustomer.id, {
@@ -628,10 +563,17 @@ function CustomerDrawer({
           ).data;
         }
 
+        const addedCompanionCount = newCompanions.filter(
+          (companion) => companion.source === 'new',
+        ).length;
         await onSaved(
-          newCompanions.length
-            ? `مشتری و ${newCompanions.length.toLocaleString('fa-IR')} مسافر همراه ثبت شدند.`
-            : 'مشتری با موفقیت ایجاد شد.',
+          primaryCustomerIsPassenger && addedCompanionCount
+            ? `مشتری به‌عنوان مسافر و ${addedCompanionCount.toLocaleString('fa-IR')} همراه ثبت شدند.`
+            : primaryCustomerIsPassenger
+              ? 'مشتری بدون ایجاد رکورد تکراری به‌عنوان مسافر ثبت شد.'
+              : addedCompanionCount
+                ? `مشتری و ${addedCompanionCount.toLocaleString('fa-IR')} مسافر همراه ثبت شدند.`
+                : 'مشتری با موفقیت ایجاد شد.',
           createdCustomer,
         );
       } catch (error) {
@@ -1058,8 +1000,8 @@ function CustomerDrawer({
                 <div>
                   <p className="font-bold">مسافران همراه</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    مسافر را می‌توانید جدید ثبت کنید یا از مشتریان موجود انتخاب
-                    کنید تا اطلاعات او دوباره وارد نشود.
+                    برای مسافر شماره ۱ می‌توانید اطلاعات همین مشتری را استفاده
+                    کنید تا دوباره وارد نشود.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1132,9 +1074,7 @@ function CustomerDrawer({
                           <Select
                             onValueChange={(value) =>
                               updateCompanion(index, {
-                                source: value as 'new' | 'existing',
-                                existingCustomerId: '',
-                                existingCustomerSearch: '',
+                                source: value as 'new' | 'primaryCustomer',
                               })
                             }
                             value={companion.source}
@@ -1146,64 +1086,53 @@ function CustomerDrawer({
                               <SelectItem value="new">
                                 ثبت مسافر جدید
                               </SelectItem>
-                              <SelectItem value="existing">
-                                انتخاب مشتری موجود به‌عنوان مسافر
+                              <SelectItem value="primaryCustomer">
+                                انتخاب همین مشتری به‌عنوان مسافر
                               </SelectItem>
                             </SelectContent>
                           </Select>
                         </FormField>
                       ) : null}
-                      {companion.source === 'existing' ? (
+                      {companion.source === 'primaryCustomer' ? (
                         <>
                           <FormField
-                            id={`companion-${companion.key}-existing-search`}
-                            label="جست‌وجوی مشتری موجود"
+                            id={`companion-${companion.key}-first-name`}
+                            label="نام"
                           >
                             <Input
-                              id={`companion-${companion.key}-existing-search`}
-                              onChange={(event) =>
-                                updateCompanion(index, {
-                                  existingCustomerSearch: event.target.value,
-                                  existingCustomerId: '',
-                                })
-                              }
-                              placeholder="نام یا شماره تماس ماسک‌شده"
-                              value={companion.existingCustomerSearch}
+                              disabled
+                              id={`companion-${companion.key}-first-name`}
+                              value={draft.firstName ?? ''}
                             />
                           </FormField>
-                          <FormField label="انتخاب مشتری">
-                            <Select
-                              onValueChange={(value) =>
-                                updateCompanion(index, {
-                                  existingCustomerId: value,
-                                })
-                              }
-                              value={companion.existingCustomerId}
-                            >
-                              <SelectTrigger
-                                aria-label={`انتخاب مشتری برای مسافر ${index + 1}`}
-                              >
-                                <SelectValue placeholder="انتخاب از نتایج" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {(newCompanionOptions[companion.key] ?? []).map(
-                                  (record) => (
-                                    <SelectItem
-                                      key={record.id}
-                                      value={record.id}
-                                    >
-                                      {record.displayName} —{' '}
-                                      {record.maskedPrimaryContact ??
-                                        'بدون شماره تماس'}
-                                    </SelectItem>
-                                  ),
-                                )}
-                              </SelectContent>
-                            </Select>
+                          <FormField
+                            id={`companion-${companion.key}-last-name`}
+                            label="نام خانوادگی"
+                          >
+                            <Input
+                              disabled
+                              id={`companion-${companion.key}-last-name`}
+                              value={draft.lastName ?? ''}
+                            />
+                          </FormField>
+                          <CustomerDateField
+                            disabled
+                            id={`companion-${companion.key}-birth-date`}
+                            label="تاریخ تولد"
+                            mode={calendarMode}
+                            onModeChange={onCalendarModeChange}
+                            onChange={() => undefined}
+                            value={draft.birthDate ?? ''}
+                          />
+                          <FormField label="شماره تماس اصلی">
+                            <Input disabled dir="ltr" value={primaryPhone} />
+                          </FormField>
+                          <FormField label="ایمیل مشتری">
+                            <Input disabled dir="ltr" value={primaryEmail} />
                           </FormField>
                           <Alert
                             className="sm:col-span-2"
-                            description="اطلاعات همین مشتری استفاده می‌شود، نقش مسافر بدون حذف نقش مشتری ثبت و رابطه همراه ایجاد می‌شود."
+                            description="اطلاعات بالای فرم خودکار استفاده می‌شود و همین رکورد مشتری، بدون ساخت رکورد تکراری، نقش مسافر هم می‌گیرد."
                             title="بدون ورود دوباره اطلاعات"
                           />
                         </>
