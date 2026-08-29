@@ -1,12 +1,35 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
+import { CustomersApiError } from '../api/client';
+import { customerListFailureState } from './customer-workspace-state';
+
 const source = readFileSync(
   new URL('./customer-workspace.tsx', import.meta.url),
   'utf8',
 );
 
 describe('Customer Operations workspace boundaries', () => {
+  it.each([
+    [new CustomersApiError('unauthorized', 401), 'unauthorized'],
+    [new CustomersApiError('forbidden', 403), 'forbidden'],
+    [new CustomersApiError('conflict', 409), 'error'],
+    [new CustomersApiError('server', 500), 'error'],
+    [new TypeError('network failed'), 'error'],
+  ] as const)(
+    'classifies list failures without conflating auth states',
+    (error, state) => {
+      expect(customerListFailureState(error)).toBe(state);
+    },
+  );
+
+  it('offers an explicit login path only for the unauthorized state', () => {
+    expect(source).toContain('customerListFailureState(error)');
+    expect(source).toContain('href="/login?next=%2Fcustomers"');
+    expect(source).toContain('نیاز به ورود دوباره');
+    expect(source).toContain('دسترسی مشتریان وجود ندارد');
+  });
+
   it('uses public master-data APIs and keeps Legal Entity out of customer scope', () => {
     expect(source).toContain(
       "import { masterDataApi } from '@/modules/master-data/api/client'",

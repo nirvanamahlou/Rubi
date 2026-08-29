@@ -66,6 +66,7 @@ import {
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { customersApi, CustomersApiError } from '../api/client';
 import { contactDisplayValue } from '../model/customer';
+import { customerListFailureState } from './customer-workspace-state';
 
 const pageSize = 25;
 type RequestState =
@@ -1088,11 +1089,7 @@ export function CustomerWorkspace() {
       setRequestState('ready');
     } catch (error) {
       setRecords([]);
-      setRequestState(
-        error instanceof CustomersApiError && error.status === 403
-          ? 'forbidden'
-          : 'error',
-      );
+      setRequestState(customerListFailureState(error));
     }
   }, [page, role, search, sortBy, status]);
 
@@ -1241,6 +1238,11 @@ export function CustomerWorkspace() {
         </Card>
       ) : requestState === 'unauthorized' ? (
         <ErrorState
+          action={
+            <Button asChild size="sm">
+              <a href="/login?next=%2Fcustomers">ورود دوباره</a>
+            </Button>
+          }
           description="نشست معتبر نیست؛ دوباره وارد شوید."
           title="نیاز به ورود دوباره"
         />
