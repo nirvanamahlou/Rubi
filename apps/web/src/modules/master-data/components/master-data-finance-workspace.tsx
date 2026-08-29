@@ -67,9 +67,10 @@ import {
   MasterDataKpiGrid,
   type MasterDataKpiItem,
 } from './master-data-kpi-grid';
+import { MasterDataProfileDialog } from './master-data-profile-dialog';
 
 type FinanceTab =
-  'currencies' | 'rates' | 'approvals' | 'banks' | 'branches' | 'payments';
+  'currencies' | 'approvals' | 'banks' | 'branches' | 'payments';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 type RateStatus = 'DRAFT' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
 
@@ -101,12 +102,6 @@ const tabs: readonly {
 }[] = [
   { key: 'currencies', label: 'ارزها', resource: 'currencies', icon: Coins },
   {
-    key: 'rates',
-    label: 'نرخ و تاریخچه ارز',
-    resource: 'exchange-rates',
-    icon: ChartNoAxesCombined,
-  },
-  {
     key: 'approvals',
     label: 'گردش تأیید نرخ',
     resource: 'exchange-rates',
@@ -131,12 +126,7 @@ const tabCopy: Record<FinanceTab, { title: string; description: string }> = {
   currencies: {
     title: 'ارزها',
     description:
-      'تعریف ارزهای ISO-4217 و سیاست نمایش؛ ارز پایه هر شرکت در Finance تعیین می‌شود.',
-  },
-  rates: {
-    title: 'نرخ و تاریخچه ارز',
-    description:
-      'ثبت و مشاهده تاریخچه نرخ‌های دستی غیرقطعی؛ هیچ نرخ Seed یا authoritative نمایش داده نمی‌شود.',
+      'تعریف ارزهای ISO-4217 و سیاست نمایش؛ با انتخاب هر ارز، نرخ جاری و تاریخچه واقعی آن نمایش داده می‌شود.',
   },
   approvals: {
     title: 'گردش تأیید نرخ',
@@ -161,7 +151,11 @@ const tabCopy: Record<FinanceTab, { title: string; description: string }> = {
 };
 
 function isRateTab(tab: FinanceTab): boolean {
-  return tab === 'rates' || tab === 'approvals';
+  return tab === 'approvals';
+}
+
+function ratePairKey(row: CurrencyRateRow): string {
+  return `${row.fromCurrencyId}:${row.toCurrencyId}:${row.rateType}`;
 }
 
 function resourceFor(tab: FinanceTab): MasterDataResourceKey {
@@ -291,9 +285,6 @@ export function MasterDataFinanceWorkspace({
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
-  const [workflowStatus, setWorkflowStatus] = useState<'all' | RateStatus>(
-    'all',
-  );
   const [rangeDays, setRangeDays] = useState('90');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -302,11 +293,20 @@ export function MasterDataFinanceWorkspace({
     string | null
   >(null);
   const [kpiRates, setKpiRates] = useState<readonly CurrencyRateRow[]>([]);
-  const [todayRateTotal, setTodayRateTotal] = useState(0);
   const [draftRateTotal, setDraftRateTotal] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [selected, setSelected] = useState<MasterDataRecord | undefined>();
+  const [selectedCurrency, setSelectedCurrency] = useState<
+    MasterDataRecord | undefined
+  >();
+  const [currencyProfileOpen, setCurrencyProfileOpen] = useState(false);
+  const [currencyHistoryState, setCurrencyHistoryState] =
+    useState<RequestState>('ready');
+  const [currencyHistory, setCurrencyHistory] = useState<
+    readonly CurrencyRateRow[]
+  >([]);
+  const [selectedPair, setSelectedPair] = useState('');
   const [audit, setAudit] = useState<readonly Record<string, unknown>[]>([]);
   const [auditRateId, setAuditRateId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -318,51 +318,28 @@ export function MasterDataFinanceWorkspace({
     setRequestState('loading');
     try {
       if (isRateTab(tab)) {
-        const observedFrom = new Date(
-          Date.now() - Number(rangeDays) * 86_400_000,
-        ).toISOString();
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const requestedRateStatus =
-          tab === 'approvals'
-            ? ('DRAFT' as const)
-            : workflowStatus === 'all'
-              ? undefined
-              : workflowStatus;
-        const [response, approvedResponse, todayResponse, draftResponse] =
-          await Promise.all([
-            masterDataApi.currencyRateHistory({
-              search,
-              ...(requestedRateStatus ? { status: requestedRateStatus } : {}),
-              observedFrom,
-              observedTo: new Date().toISOString(),
-              page,
-              pageSize: 25,
-            }),
-            masterDataApi.currencyRateHistory({
-              status: 'APPROVED',
-              observedFrom,
-              observedTo: new Date().toISOString(),
-              page: 1,
-              pageSize: 100,
-            }),
-            masterDataApi.currencyRateHistory({
-              observedFrom: today.toISOString(),
-              observedTo: new Date().toISOString(),
-              page: 1,
-              pageSize: 100,
-            }),
-            masterDataApi.currencyRateHistory({
-              status: 'DRAFT',
-              page: 1,
-              pageSize: 1,
-            }),
-          ]);
+        const [response, approvedResponse, draftResponse] = await Promise.all([
+          masterDataApi.currencyRateHistory({
+            search,
+            status: 'DRAFT',
+            page,
+            pageSize: 25,
+          }),
+          masterDataApi.currencyRateHistory({
+            status: 'APPROVED',
+            page: 1,
+            pageSize: 100,
+          }),
+          masterDataApi.currencyRateHistory({
+            status: 'DRAFT',
+            page: 1,
+            pageSize: 10,
+          }),
+        ]);
         setRates(response.data as unknown as readonly CurrencyRateRow[]);
         setKpiRates(
           approvedResponse.data as unknown as readonly CurrencyRateRow[],
         );
-        setTodayRateTotal(todayResponse.meta.total);
         setDraftRateTotal(draftResponse.meta.total);
         setRecords([]);
         setTotal(response.meta.total);
@@ -411,20 +388,108 @@ export function MasterDataFinanceWorkspace({
           : 'error',
       );
     }
-  }, [page, rangeDays, resource, search, status, tab, workflowStatus]);
+  }, [page, resource, search, status, tab]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 250);
     return () => window.clearTimeout(timer);
   }, [load]);
 
+  const loadCurrencyHistory = useCallback(async () => {
+    if (!selectedCurrency) return;
+    setCurrencyHistoryState('loading');
+    const observedFrom = new Date(
+      Date.now() - Number(rangeDays) * 86_400_000,
+    ).toISOString();
+    const query = {
+      observedFrom,
+      observedTo: new Date().toISOString(),
+      page: 1,
+      pageSize: 100,
+    } as const;
+    try {
+      const [asSource, asTarget] = await Promise.all([
+        masterDataApi.currencyRateHistory({
+          ...query,
+          fromCurrencyId: selectedCurrency.id,
+        }),
+        masterDataApi.currencyRateHistory({
+          ...query,
+          toCurrencyId: selectedCurrency.id,
+        }),
+      ]);
+      const merged = [
+        ...(asSource.data as unknown as readonly CurrencyRateRow[]),
+        ...(asTarget.data as unknown as readonly CurrencyRateRow[]),
+      ];
+      const unique = [
+        ...new Map(merged.map((row) => [row.id, row] as const)).values(),
+      ].sort(
+        (left, right) =>
+          new Date(right.observedAt).getTime() -
+          new Date(left.observedAt).getTime(),
+      );
+      setCurrencyHistory(unique);
+      setSelectedPair((current) => {
+        if (unique.some((row) => ratePairKey(row) === current)) return current;
+        const preferred =
+          unique.find(
+            (row) =>
+              row.status === 'APPROVED' &&
+              (row.toCurrencyCode === 'IRR' || row.fromCurrencyCode === 'IRR'),
+          ) ??
+          unique.find((row) => row.status === 'APPROVED') ??
+          unique[0];
+        return preferred ? ratePairKey(preferred) : '';
+      });
+      setCurrencyHistoryState('ready');
+    } catch (error) {
+      setCurrencyHistory([]);
+      setCurrencyHistoryState(
+        error instanceof MasterDataApiError && error.status === 403
+          ? 'forbidden'
+          : 'error',
+      );
+    }
+  }, [rangeDays, selectedCurrency]);
+
+  useEffect(() => {
+    if (!currencyProfileOpen) return;
+    const timer = window.setTimeout(() => void loadCurrencyHistory(), 0);
+    return () => window.clearTimeout(timer);
+  }, [currencyProfileOpen, loadCurrencyHistory]);
+
+  const currencyPairs = useMemo(() => {
+    const pairs = new Map<string, string>();
+    for (const row of currencyHistory)
+      pairs.set(
+        ratePairKey(row),
+        `${row.fromCurrencyCode}/${row.toCurrencyCode} · ${rateTypeLabel(row.rateType)}`,
+      );
+    return [...pairs.entries()].map(([value, label]) => ({ value, label }));
+  }, [currencyHistory]);
+
+  const selectedCurrencyRates = useMemo(
+    () => currencyHistory.filter((row) => ratePairKey(row) === selectedPair),
+    [currencyHistory, selectedPair],
+  );
+
+  function openCurrencyProfile(record: MasterDataRecord) {
+    setSelectedCurrency(record);
+    setSelectedPair('');
+    setAudit([]);
+    setAuditRateId(null);
+    setCurrencyProfileOpen(true);
+  }
+
   function changeTab(next: FinanceTab) {
     setTab(next);
     setSearch('');
     setStatus('all');
-    setWorkflowStatus('all');
     setPage(1);
     setSelected(undefined);
+    setSelectedCurrency(undefined);
+    setCurrencyProfileOpen(false);
     setAudit([]);
     setAuditRateId(null);
     setNotice(null);
@@ -537,25 +602,6 @@ export function MasterDataFinanceWorkspace({
   }
 
   const todayKey = new Date().toDateString();
-  const latestApprovedRate = (code: string) => {
-    const row = [...kpiRates]
-      .filter(
-        (item) =>
-          item.status === 'APPROVED' &&
-          item.fromCurrencyCode === code &&
-          item.toCurrencyCode === 'IRR',
-      )
-      .sort(
-        (left, right) =>
-          new Date(right.observedAt).getTime() -
-          new Date(left.observedAt).getTime(),
-      )[0];
-    return row
-      ? Number(row.rate).toLocaleString('fa-IR', {
-          maximumFractionDigits: 10,
-        })
-      : '—';
-  };
   const averageApprovalMinutes = (() => {
     const durations = kpiRates.flatMap((row) =>
       row.approvedAt
@@ -610,151 +656,177 @@ export function MasterDataFinanceWorkspace({
             tone: 'amber',
           },
         ]
-      : tab === 'rates'
+      : tab === 'approvals'
         ? [
             {
-              label: 'دلار آمریکا',
-              value: latestApprovedRate('USD'),
-              icon: CircleDollarSign,
-              tone: 'sky',
-            },
-            {
-              label: 'یورو',
-              value: latestApprovedRate('EUR'),
-              icon: Coins,
-              tone: 'emerald',
-            },
-            {
-              label: 'درهم امارات',
-              value: latestApprovedRate('AED'),
-              icon: WalletCards,
-              tone: 'violet',
-            },
-            {
-              label: 'نرخ‌های امروز',
-              value: todayRateTotal,
+              label: 'در انتظار بررسی',
+              value: draftRateTotal,
               icon: Clock3,
               tone: 'amber',
             },
+            {
+              label: 'تأییدشده امروز',
+              value: kpiRates.filter(
+                (row) =>
+                  row.approvedAt &&
+                  new Date(row.approvedAt).toDateString() === todayKey,
+              ).length,
+              icon: CheckCircle2,
+              tone: 'emerald',
+            },
+            {
+              label: 'ردشده امروز',
+              value: '—',
+              icon: XCircle,
+              tone: 'rose',
+            },
+            {
+              label: 'میانگین زمان تأیید',
+              value: averageApprovalMinutes,
+              icon: Timer,
+              tone: 'sky',
+            },
           ]
-        : tab === 'approvals'
+        : tab === 'banks'
           ? [
               {
-                label: 'در انتظار بررسی',
-                value: draftRateTotal,
-                icon: Clock3,
-                tone: 'amber',
+                label: 'کل بانک‌ها',
+                value: total,
+                icon: Landmark,
+                tone: 'sky',
               },
               {
-                label: 'تأییدشده امروز',
-                value: kpiRates.filter(
-                  (row) =>
-                    row.approvedAt &&
-                    new Date(row.approvedAt).toDateString() === todayKey,
-                ).length,
+                label: 'بانک فعال',
+                value: activeTotal,
                 icon: CheckCircle2,
                 tone: 'emerald',
               },
               {
-                label: 'ردشده امروز',
+                label: 'حساب‌های متصل',
                 value: '—',
-                icon: XCircle,
-                tone: 'rose',
+                icon: WalletCards,
+                tone: 'violet',
+                hint: 'در مالکیت Finance',
               },
               {
-                label: 'میانگین زمان تأیید',
-                value: averageApprovalMinutes,
-                icon: Timer,
-                tone: 'sky',
+                label: 'نیازمند تکمیل اطلاعات',
+                value: missingBankDetails,
+                icon: FilePenLine,
+                tone: 'amber',
+                hint: 'در صفحه جاری',
               },
             ]
-          : tab === 'banks'
+          : tab === 'branches'
             ? [
                 {
-                  label: 'کل بانک‌ها',
+                  label: 'کل شعب ثبت‌شده',
                   value: total,
-                  icon: Landmark,
+                  icon: Building2,
                   tone: 'sky',
                 },
                 {
-                  label: 'بانک فعال',
+                  label: 'شعب فعال',
                   value: activeTotal,
                   icon: CheckCircle2,
                   tone: 'emerald',
                 },
                 {
-                  label: 'حساب‌های متصل',
+                  label: 'شهرهای تحت پوشش',
+                  value: coveredCities,
+                  icon: MapPin,
+                  tone: 'violet',
+                  hint: 'در صفحه جاری',
+                },
+                {
+                  label: 'شعب بدون حساب متصل',
                   value: '—',
                   icon: WalletCards,
+                  tone: 'amber',
+                  hint: 'پس از اتصال قرارداد Finance',
+                },
+              ]
+            : [
+                {
+                  label: 'روش‌های فعال',
+                  value: activeTotal,
+                  icon: WalletCards,
+                  tone: 'emerald',
+                },
+                {
+                  label: 'تراکنش‌های امروز',
+                  value: '—',
+                  icon: RefreshCw,
+                  tone: 'sky',
+                  hint: 'در مالکیت Finance',
+                },
+                {
+                  label: 'درگاه‌های متصل',
+                  value: '—',
+                  icon: CreditCard,
                   tone: 'violet',
                   hint: 'در مالکیت Finance',
                 },
                 {
-                  label: 'نیازمند تکمیل اطلاعات',
-                  value: missingBankDetails,
-                  icon: FilePenLine,
+                  label: 'نیازمند پیکربندی',
+                  value: '—',
+                  icon: Settings2,
                   tone: 'amber',
-                  hint: 'در صفحه جاری',
+                  hint: 'پس از اتصال قرارداد Finance',
                 },
-              ]
-            : tab === 'branches'
-              ? [
-                  {
-                    label: 'کل شعب ثبت‌شده',
-                    value: total,
-                    icon: Building2,
-                    tone: 'sky',
-                  },
-                  {
-                    label: 'شعب فعال',
-                    value: activeTotal,
-                    icon: CheckCircle2,
-                    tone: 'emerald',
-                  },
-                  {
-                    label: 'شهرهای تحت پوشش',
-                    value: coveredCities,
-                    icon: MapPin,
-                    tone: 'violet',
-                    hint: 'در صفحه جاری',
-                  },
-                  {
-                    label: 'شعب بدون حساب متصل',
-                    value: '—',
-                    icon: WalletCards,
-                    tone: 'amber',
-                    hint: 'پس از اتصال قرارداد Finance',
-                  },
-                ]
-              : [
-                  {
-                    label: 'روش‌های فعال',
-                    value: activeTotal,
-                    icon: WalletCards,
-                    tone: 'emerald',
-                  },
-                  {
-                    label: 'تراکنش‌های امروز',
-                    value: '—',
-                    icon: RefreshCw,
-                    tone: 'sky',
-                    hint: 'در مالکیت Finance',
-                  },
-                  {
-                    label: 'درگاه‌های متصل',
-                    value: '—',
-                    icon: CreditCard,
-                    tone: 'violet',
-                    hint: 'در مالکیت Finance',
-                  },
-                  {
-                    label: 'نیازمند پیکربندی',
-                    value: '—',
-                    icon: Settings2,
-                    tone: 'amber',
-                    hint: 'پس از اتصال قرارداد Finance',
-                  },
-                ];
+              ];
+
+  const approvedCurrencyRates = [...selectedCurrencyRates]
+    .filter((row) => row.status === 'APPROVED')
+    .sort(
+      (left, right) =>
+        new Date(right.observedAt).getTime() -
+        new Date(left.observedAt).getTime(),
+    );
+  const currentCurrencyRate = approvedCurrencyRates[0];
+  const previousCurrencyRate = approvedCurrencyRates[1];
+  const currencyRateChange = (() => {
+    if (!currentCurrencyRate || !previousCurrencyRate) return '—';
+    const previous = Number(previousCurrencyRate.rate);
+    if (!Number.isFinite(previous) || previous === 0) return '—';
+    const change =
+      ((Number(currentCurrencyRate.rate) - previous) / previous) * 100;
+    return `${change > 0 ? '+' : ''}${change.toLocaleString('fa-IR', {
+      maximumFractionDigits: 2,
+    })}٪`;
+  })();
+  const currencyProfileKpis: readonly MasterDataKpiItem[] = [
+    {
+      label: 'نرخ جاری تأییدشده',
+      value: currentCurrencyRate
+        ? Number(currentCurrencyRate.rate).toLocaleString('fa-IR', {
+            maximumFractionDigits: 10,
+          })
+        : '—',
+      icon: CircleDollarSign,
+      tone: 'sky',
+      hint: currentCurrencyRate
+        ? `${currentCurrencyRate.fromCurrencyCode}/${currentCurrencyRate.toCurrencyCode} · ${rateTypeLabel(currentCurrencyRate.rateType)}`
+        : 'نرخ تأییدشده‌ای ثبت نشده است',
+    },
+    {
+      label: 'تغییر نسبت به نرخ قبل',
+      value: currencyRateChange,
+      icon: ChartNoAxesCombined,
+      tone: 'emerald',
+    },
+    {
+      label: 'آخرین مشاهده',
+      value: currentCurrencyRate ? faDate(currentCurrencyRate.observedAt) : '—',
+      icon: Clock3,
+      tone: 'violet',
+    },
+    {
+      label: 'رکورد تاریخچه در بازه',
+      value: selectedCurrencyRates.length,
+      icon: Workflow,
+      tone: 'amber',
+    },
+  ];
 
   return (
     <div className="space-y-5" dir="rtl">
@@ -849,23 +921,12 @@ export function MasterDataFinanceWorkspace({
         </FormField>
         {isRateTab(tab) ? (
           <FormField label="وضعیت نرخ">
-            <Select
-              disabled={tab === 'approvals'}
-              onValueChange={(value) => {
-                setWorkflowStatus(value as typeof workflowStatus);
-                setPage(1);
-              }}
-              value={tab === 'approvals' ? 'DRAFT' : workflowStatus}
-            >
+            <Select disabled value="DRAFT">
               <SelectTrigger aria-label="فیلتر وضعیت نرخ">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">همه وضعیت‌ها</SelectItem>
                 <SelectItem value="DRAFT">پیش‌نویس</SelectItem>
-                <SelectItem value="APPROVED">تأییدشده</SelectItem>
-                <SelectItem value="REJECTED">ردشده</SelectItem>
-                <SelectItem value="EXPIRED">منقضی</SelectItem>
               </SelectContent>
             </Select>
           </FormField>
@@ -889,41 +950,11 @@ export function MasterDataFinanceWorkspace({
             </Select>
           </FormField>
         )}
-        {isRateTab(tab) ? (
-          <FormField label="بازه تاریخچه">
-            <Select onValueChange={setRangeDays} value={rangeDays}>
-              <SelectTrigger aria-label="انتخاب بازه تاریخچه">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="30">۳۰ روز اخیر</SelectItem>
-                <SelectItem value="90">۹۰ روز اخیر</SelectItem>
-                <SelectItem value="365">یک سال اخیر</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormField>
-        ) : (
-          <div />
-        )}
+        <div />
         <Button onClick={() => void load()} variant="ghost">
           <RefreshCw aria-hidden="true" className="size-4" /> تازه‌سازی
         </Button>
       </FilterBar>
-
-      {tab === 'rates' && requestState === 'ready' ? (
-        <Card className="p-4 sm:p-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="font-black">روند نرخ‌های تأییدشده</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                داده فقط از Backend و در بازه انتخابی خوانده می‌شود.
-              </p>
-            </div>
-            <Badge>isAuthoritative=false</Badge>
-          </div>
-          <FinanceChart rates={rates} />
-        </Card>
-      ) : null}
 
       {requestState === 'loading' ? (
         <div className="space-y-3" aria-live="polite">
@@ -1107,7 +1138,19 @@ export function MasterDataFinanceWorkspace({
                     <td className="p-4 font-mono" dir="ltr">
                       {record.code}
                     </td>
-                    <td className="p-4 font-semibold">{record.name}</td>
+                    <td className="p-4 font-semibold">
+                      {tab === 'currencies' ? (
+                        <button
+                          className="text-start font-semibold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          onClick={() => openCurrencyProfile(record)}
+                          type="button"
+                        >
+                          {record.name}
+                        </button>
+                      ) : (
+                        record.name
+                      )}
+                    </td>
                     <td className="p-4">
                       {String(
                         record.attributes.englishName ??
@@ -1131,8 +1174,12 @@ export function MasterDataFinanceWorkspace({
                       <div className="flex flex-wrap gap-2">
                         <Button
                           onClick={() => {
-                            setSelected(record);
-                            setFormMode('view');
+                            if (tab === 'currencies')
+                              openCurrencyProfile(record);
+                            else {
+                              setSelected(record);
+                              setFormMode('view');
+                            }
                           }}
                           size="sm"
                           variant="outline"
@@ -1248,6 +1295,222 @@ export function MasterDataFinanceWorkspace({
           open
           {...(selected ? { record: selected } : {})}
         />
+      ) : null}
+      {selectedCurrency ? (
+        <MasterDataProfileDialog
+          description="نرخ جاری، نمودار و جدول تاریخچه براساس ارز و جفت نرخ انتخاب‌شده از Backend خوانده می‌شود."
+          onOpenChange={setCurrencyProfileOpen}
+          open={currencyProfileOpen}
+          title={`جزئیات ارز ${selectedCurrency.code}`}
+        >
+          <div className="space-y-5">
+            <Card className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-5">
+              {[
+                ['کد ISO-4217', selectedCurrency.code],
+                ['نام فارسی', selectedCurrency.name],
+                [
+                  'نام انگلیسی',
+                  String(selectedCurrency.attributes.englishName ?? '—'),
+                ],
+                [
+                  'نماد / اعشار',
+                  `${String(selectedCurrency.attributes.symbol ?? '—')} · ${Number(selectedCurrency.attributes.decimalDigits ?? 0).toLocaleString('fa-IR')} رقم`,
+                ],
+                [
+                  'سیاست نمایش',
+                  String(selectedCurrency.attributes.displayPolicy ?? '—'),
+                ],
+              ].map(([label, value]) => (
+                <dl className="rounded-xl bg-muted/40 p-3" key={label}>
+                  <dt className="text-xs text-muted-foreground">{label}</dt>
+                  <dd className="mt-1 font-bold">{value}</dd>
+                </dl>
+              ))}
+            </Card>
+
+            <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto_auto]">
+              <FormField label="جفت ارز و نوع نرخ">
+                <Select
+                  disabled={!currencyPairs.length}
+                  onValueChange={(value) => {
+                    setSelectedPair(value);
+                    setAudit([]);
+                    setAuditRateId(null);
+                  }}
+                  value={selectedPair}
+                >
+                  <SelectTrigger aria-label="انتخاب جفت ارز برای نمودار">
+                    <SelectValue placeholder="تاریخچه‌ای ثبت نشده است" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencyPairs.map((pair) => (
+                      <SelectItem key={pair.value} value={pair.value}>
+                        {pair.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+              <FormField label="بازه تاریخچه">
+                <Select onValueChange={setRangeDays} value={rangeDays}>
+                  <SelectTrigger aria-label="انتخاب بازه تاریخچه ارز">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">۳۰ روز اخیر</SelectItem>
+                    <SelectItem value="90">۹۰ روز اخیر</SelectItem>
+                    <SelectItem value="365">یک سال اخیر</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormField>
+              <Button
+                onClick={() => void loadCurrencyHistory()}
+                variant="ghost"
+              >
+                <RefreshCw className="size-4" /> تازه‌سازی
+              </Button>
+              <Button
+                onClick={() => {
+                  setCurrencyProfileOpen(false);
+                  changeTab('approvals');
+                  setFormMode('create');
+                }}
+              >
+                <Plus className="size-4" /> ثبت نرخ جدید
+              </Button>
+            </FilterBar>
+
+            {currencyHistoryState === 'loading' ? (
+              <div className="space-y-3" aria-label="در حال دریافت تاریخچه ارز">
+                {[0, 1, 2].map((item) => (
+                  <Skeleton className="h-20 w-full" key={item} />
+                ))}
+              </div>
+            ) : currencyHistoryState === 'forbidden' ? (
+              <EmptyState
+                description="مجوز master_data.read برای مشاهده تاریخچه نرخ لازم است."
+                icon={Workflow}
+                title="دسترسی تاریخچه نرخ وجود ندارد"
+              />
+            ) : currencyHistoryState === 'error' ? (
+              <ErrorState
+                action={
+                  <Button
+                    onClick={() => void loadCurrencyHistory()}
+                    variant="outline"
+                  >
+                    تلاش دوباره
+                  </Button>
+                }
+                description="دریافت نرخ‌های این ارز از Backend ناموفق بود."
+                title="تاریخچه ارز دریافت نشد"
+              />
+            ) : selectedCurrencyRates.length ? (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="font-black">نرخ و تاریخچه ارز</h2>
+                  <Badge>isAuthoritative=false</Badge>
+                </div>
+                <MasterDataKpiGrid
+                  items={currencyProfileKpis}
+                  label={`شاخص‌های نرخ ${selectedCurrency.code}`}
+                />
+                <FinanceChart rates={selectedCurrencyRates} />
+                <Card className="overflow-x-auto">
+                  <table className="w-full min-w-[62rem] text-sm">
+                    <thead className="bg-muted/50 text-muted-foreground">
+                      <tr>
+                        <th className="p-4 text-start">جفت ارز</th>
+                        <th className="p-4 text-start">نرخ</th>
+                        <th className="p-4 text-start">نوع</th>
+                        <th className="p-4 text-start">منبع</th>
+                        <th className="p-4 text-start">زمان UTC</th>
+                        <th className="p-4 text-start">وضعیت</th>
+                        <th className="p-4 text-start">مسئول ثبت</th>
+                        <th className="p-4 text-start">Audit</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedCurrencyRates.map((row) => (
+                        <tr className="border-t border-border" key={row.id}>
+                          <td className="p-4 font-mono" dir="ltr">
+                            {row.fromCurrencyCode}/{row.toCurrencyCode}
+                          </td>
+                          <td className="p-4 font-mono" dir="ltr">
+                            {row.rate}
+                          </td>
+                          <td className="p-4">{rateTypeLabel(row.rateType)}</td>
+                          <td className="p-4">{row.source}</td>
+                          <td className="p-4">{faDate(row.observedAt)}</td>
+                          <td className="p-4">
+                            <Badge>{statusLabel(row.status)}</Badge>
+                          </td>
+                          <td className="p-4 font-mono text-xs" dir="ltr">
+                            {row.createdByUserId}
+                          </td>
+                          <td className="p-4">
+                            <Button
+                              onClick={() => void showAudit(row)}
+                              size="sm"
+                              variant="ghost"
+                            >
+                              مشاهده
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </Card>
+                {auditRateId ? (
+                  <Card className="p-5">
+                    <h3 className="font-black">Audit Timeline نرخ</h3>
+                    {audit.length ? (
+                      <ol className="mt-4 space-y-3 border-r border-border pr-5">
+                        {audit.map((event, index) => (
+                          <li
+                            className="relative rounded-xl bg-muted/40 p-4"
+                            key={String(event.id ?? index)}
+                          >
+                            <span className="absolute -right-[1.45rem] top-5 size-2.5 rounded-full bg-primary" />
+                            <p className="font-semibold">
+                              {String(event.action ?? 'رویداد Audit')}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {faDate(String(event.occurredAt ?? ''))} · نسخه{' '}
+                              {String(event.entityVersion ?? '—')}
+                            </p>
+                          </li>
+                        ))}
+                      </ol>
+                    ) : (
+                      <p className="mt-4 text-sm text-muted-foreground">
+                        رویدادی برای نرخ انتخاب‌شده ثبت نشده است.
+                      </p>
+                    )}
+                  </Card>
+                ) : null}
+              </>
+            ) : (
+              <EmptyState
+                action={
+                  <Button
+                    onClick={() => {
+                      setCurrencyProfileOpen(false);
+                      changeTab('approvals');
+                      setFormMode('create');
+                    }}
+                  >
+                    ثبت نرخ جدید
+                  </Button>
+                }
+                description="برای این ارز در بازه انتخاب‌شده نرخ واقعی ثبت نشده است؛ Seed نرخ عمداً خالی است."
+                icon={ChartNoAxesCombined}
+                title="تاریخچه نرخ این ارز خالی است"
+              />
+            )}
+          </div>
+        </MasterDataProfileDialog>
       ) : null}
     </div>
   );

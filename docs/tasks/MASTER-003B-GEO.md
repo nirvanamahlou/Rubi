@@ -1,5 +1,8 @@
 # MASTER-003B-GEO — Geography Vertical Slice
 
+> یادداشت رابط: در `MASTER-003G` شهر و استان/ناحیه در یک تب بالادستی تجمیع شدند؛
+> مدل‌ها، FKها و APIهای مستقل بدون Migration یا تغییر Contract حفظ شده‌اند.
+
 آخرین به‌روزرسانی: 2026-08-27
 مالک: `PC-B`
 Branch: `codex/pc-b-master-data-next`

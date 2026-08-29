@@ -1,5 +1,8 @@
 # MASTER-003E-SUPPLIERS — Organizations and Suppliers Vertical Slice
 
+> یادداشت رابط: در `MASTER-003G` پروفایل تأمین‌کننده و کارگزار از فهرست در Popup باز
+> می‌شود و نمای مستقل «اطلاعات تماس» حذف شده است؛ مدل داده مخاطب حذف نشده است.
+
 - مالک و Computer: `PC-B`
 - Branch: `codex/pc-b-master-data-suppliers`
 - Stacked Base: `codex/pc-b-master-data-ui-polish@920328e`

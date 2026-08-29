@@ -28,7 +28,7 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
     slug: 'finance',
     title: 'مالی و پولی',
     description:
-      'ارزها، تاریخچه و تأیید نرخ، بانک‌ها، شعب و روش‌های پرداخت مرجع',
+      'ارزها با تاریخچه نرخ، گردش تأیید، بانک‌ها، شعب و روش‌های پرداخت مرجع',
     resources: [
       'currencies',
       'exchange-rates',
@@ -41,7 +41,8 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
   {
     slug: 'geography',
     title: 'جغرافیا',
-    description: 'کشورها، نواحی، شهرها، فرودگاه‌ها و ترمینال‌ها',
+    description:
+      'کشورها، نمای یکپارچه شهرها و استان‌ها، فرودگاه‌ها و ترمینال‌ها',
     resources: ['countries', 'regions', 'cities', 'airports', 'terminals'],
     tone: 'sky',
   },

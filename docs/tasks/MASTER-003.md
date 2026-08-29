@@ -84,15 +84,29 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 
 - Migration افزایشی `20260829150000_master_data_accommodation` مدل‌های Hotel Chain،
   روابط نرمال Meal/Room/Facility و Composite Hotel را بدون عملیات مخرب اضافه می‌کند.
-- مسیر `/master-data/accommodation` هشت تب ماکاپ، KPI واقعی، فیلترهای رابطه‌ای،
-  Search/Sort/Pagination، Create/View/Edit، Active/Inactive، Export و Import موجود
-  `HOTEL_IMPORT_V1` را ارائه می‌کند.
+- مسیر `/master-data/accommodation` هفت تب کاتالوگ، پروفایل Popup از فهرست هتل‌ها،
+  KPI واقعی، فیلترهای رابطه‌ای، Search/Sort/Pagination، Create/View/Edit،
+  Active/Inactive، Export و Import موجود `HOTEL_IMPORT_V1` را ارائه می‌کند.
 - اطلاعات اقامت global است و Legal Entity selector آن را فیلتر نمی‌کند. Branch فقط
   در Audit عملیات ثبت می‌شود و مالکیت رکورد را محدود نمی‌کند.
 - Contract/Rate/Inventory/Voucher/Passenger Assignment و فایل Documents وارد این
   Aggregate نشده‌اند و فقط از قرارداد عمومی ماژول مالک قابل مصرف خواهند بود.
 - شاخه `codex/pc-b-master-data-accommodation` روی PR #31 پشته شده و پیش از والدهای
   #31 ← #30 ← #29 ← #28 ← #25 نباید Merge شود.
+
+## Slice پشته‌ای تجمیع رابط — MASTER-003G
+
+- برچسب داخلی Work Item از Header صفحه اصلی حذف شد و کارت‌های Hub فقط
+  زیرمجموعه‌های قابل مشاهده را گزارش می‌کنند.
+- تاریخچه و نمودار نرخ از تب مستقل به پنجره جزئیات ارز منتقل شد؛ انتخاب ارز و سپس
+  جفت/نوع نرخ، داده واقعی Backend را برای بازه ۳۰/۹۰/۳۶۵ روزه نمایش می‌دهد.
+- شهر و استان/ناحیه یک تب بالادستی دارند؛ تفکیک مدل داده و FKها بدون Migration حفظ شد.
+- پروفایل هتل، تأمین‌کننده و کارگزار از فهرست اصلی در Dialog مشترک باز می‌شود و
+  تب‌های مستقل پروفایل حذف شدند.
+- نمای مستقل اطلاعات تماس سازمان‌ها و تأمین‌کنندگان حذف شد؛ داده یا Schema مخاطب
+  حذف نشده است.
+- Draft PR #33 از شاخه `codex/pc-b-master-data-ux-consolidation` روی PR #32 پشته
+  شده و پیش از والدهای #32 ← #31 ← #30 ← #29 ← #28 ← #25 نباید Merge شود.
 
 ## Import واقعی هتل — HOTEL_IMPORT_V1
 

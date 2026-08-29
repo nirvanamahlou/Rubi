@@ -12,10 +12,9 @@ const source = readFileSync(
 );
 
 describe('accommodation workspace', () => {
-  it('implements all eight approved mockup tabs', () => {
+  it('implements the catalog tabs and opens hotel profiles from the list', () => {
     for (const label of [
       'هتل‌ها',
-      'پروفایل هتل',
       'زنجیره هتل',
       'نوع اتاق',
       'وعده و سرویس',
@@ -24,6 +23,14 @@ describe('accommodation workspace', () => {
       'هتل ترکیبی',
     ])
       expect(source).toContain(label);
+
+    const tabs = source.slice(
+      source.indexOf('const tabs'),
+      source.indexOf('const copy'),
+    );
+    expect(tabs).not.toContain("id: 'hotel-profile'");
+    expect(source).toContain('<MasterDataProfileDialog');
+    expect(source).toContain('setProfileOpen(true)');
   });
 
   it('keeps every accommodation KPI label identical to the mockup', () => {

@@ -89,19 +89,11 @@ const geographyTabs: readonly {
   },
   {
     resource: 'regions',
-    label: 'استان‌ها و نواحی',
-    icon: Layers3,
-    integrityTitle: 'کد استان در محدوده کشور کنترل می‌شود',
-    integrityDescription:
-      'ساختار ناحیه به کشور مرجع متصل است و غیرفعال‌سازی، شهرهای وابسته را حذف نمی‌کند.',
-  },
-  {
-    resource: 'cities',
-    label: 'شهرها',
+    label: 'شهرها و استان‌ها',
     icon: MapPin,
-    integrityTitle: 'رابطه شهر و فرودگاه مستقل است',
+    integrityTitle: 'شهر و استان در یک نمای ساختاری مدیریت می‌شوند',
     integrityDescription:
-      'هر شهر به کشور و در صورت نیاز به استان/ناحیه متصل می‌شود؛ ارتباط‌ها با FK واقعی نگهداری می‌شوند.',
+      'استان/ناحیه و شهر از همین بخش مدیریت می‌شوند؛ رابطه‌های مستقل و FKهای واقعی آن‌ها بدون ادغام مخرب داده حفظ شده‌اند.',
   },
   {
     resource: 'airports',
@@ -309,6 +301,12 @@ export function MasterDataGeographyWorkspace({
   const [total, setTotal] = useState(0);
   const [activeTotal, setActiveTotal] = useState(0);
   const [internationalTotal, setInternationalTotal] = useState(0);
+  const [locationTotals, setLocationTotals] = useState({
+    regions: 0,
+    activeRegions: 0,
+    cities: 0,
+    activeCities: 0,
+  });
   const [countryId, setCountryId] = useState('all');
   const [regionId, setRegionId] = useState('all');
   const [cityId, setCityId] = useState('all');
@@ -329,9 +327,11 @@ export function MasterDataGeographyWorkspace({
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const definition = getMasterDataDefinition(resource);
+  const isLocationView = resource === 'regions' || resource === 'cities';
   const currentTab =
-    geographyTabs.find((item) => item.resource === resource) ??
-    geographyTabs[0];
+    geographyTabs.find((item) =>
+      isLocationView ? item.resource === 'regions' : item.resource === resource,
+    ) ?? geographyTabs[0];
 
   const scopedFilters = useMemo(
     () => ({
@@ -383,17 +383,59 @@ export function MasterDataGeographyWorkspace({
             pageSize: 1,
           }),
         );
+      } else requests.push(Promise.resolve(undefined));
+      if (resource === 'regions' || resource === 'cities') {
+        const pairedResource = resource === 'regions' ? 'cities' : 'regions';
+        requests.push(
+          masterDataApi.list(pairedResource, {
+            search: '',
+            status: 'all',
+            sortBy: 'name',
+            sortDirection: 'asc',
+            page: 1,
+            pageSize: 1,
+          }),
+          masterDataApi.list(pairedResource, {
+            search: '',
+            status: 'active',
+            sortBy: 'name',
+            sortDirection: 'asc',
+            page: 1,
+            pageSize: 1,
+          }),
+        );
       }
-      const [listResult, activeResult, internationalResult] =
-        (await Promise.all(requests)) as [
-          Awaited<ReturnType<typeof masterDataApi.list>>,
-          Awaited<ReturnType<typeof masterDataApi.list>>,
-          Awaited<ReturnType<typeof masterDataApi.list>> | undefined,
-        ];
+      const [
+        listResult,
+        activeResult,
+        internationalResult,
+        pairedResult,
+        pairedActiveResult,
+      ] = (await Promise.all(requests)) as [
+        Awaited<ReturnType<typeof masterDataApi.list>>,
+        Awaited<ReturnType<typeof masterDataApi.list>>,
+        Awaited<ReturnType<typeof masterDataApi.list>> | undefined,
+        Awaited<ReturnType<typeof masterDataApi.list>> | undefined,
+        Awaited<ReturnType<typeof masterDataApi.list>> | undefined,
+      ];
       setRecords(listResult.data);
       setTotal(listResult.meta.total);
       setActiveTotal(activeResult.meta.total);
       setInternationalTotal(internationalResult?.meta.total ?? 0);
+      if (resource === 'regions')
+        setLocationTotals({
+          regions: listResult.meta.total,
+          activeRegions: activeResult.meta.total,
+          cities: pairedResult?.meta.total ?? 0,
+          activeCities: pairedActiveResult?.meta.total ?? 0,
+        });
+      else if (resource === 'cities')
+        setLocationTotals({
+          regions: pairedResult?.meta.total ?? 0,
+          activeRegions: pairedActiveResult?.meta.total ?? 0,
+          cities: listResult.meta.total,
+          activeCities: activeResult.meta.total,
+        });
       setRequestState('ready');
     } catch (error) {
       setRecords([]);
@@ -524,18 +566,6 @@ export function MasterDataGeographyWorkspace({
   }
 
   const inactiveTotal = Math.max(0, total - activeTotal);
-  const missingEnglish = records.filter(
-    (record) => attribute(record, 'englishName') === '—',
-  ).length;
-  const missingRegion = records.filter(
-    (record) =>
-      resource === 'cities' && attribute(record, 'regionName') === '—',
-  ).length;
-  const coveredCountries = new Set(
-    records
-      .map((record) => record.attributes.countryName)
-      .filter((value): value is string => typeof value === 'string' && !!value),
-  ).size;
   const coveredCities = new Set(
     records
       .map((record) => record.attributes.cityName)
@@ -567,110 +597,89 @@ export function MasterDataGeographyWorkspace({
             hint: 'رکوردهای غیرفعال در دامنه فعلی',
           },
         ]
-      : resource === 'regions'
+      : resource === 'regions' || resource === 'cities'
         ? [
-            { label: 'کل استان‌ها', value: total, icon: Layers3, tone: 'sky' },
             {
-              label: 'استان فعال',
-              value: activeTotal,
+              label: 'کل شهرها',
+              value: locationTotals.cities,
+              icon: MapPin,
+              tone: 'sky',
+            },
+            {
+              label: 'شهر فعال',
+              value: locationTotals.activeCities,
               icon: CheckCircle2,
               tone: 'emerald',
             },
             {
-              label: 'کشورهای پوشش‌داده‌شده',
-              value: coveredCountries,
-              icon: Globe2,
+              label: 'کل استان‌ها',
+              value: locationTotals.regions,
+              icon: Layers3,
               tone: 'violet',
-              hint: 'در صفحه جاری',
             },
             {
-              label: 'فاقد نام انگلیسی',
-              value: missingEnglish,
-              icon: CircleAlert,
+              label: 'استان فعال',
+              value: locationTotals.activeRegions,
+              icon: CheckCircle2,
               tone: 'amber',
-              hint: 'در صفحه جاری',
             },
           ]
-        : resource === 'cities'
+        : resource === 'airports'
           ? [
-              { label: 'کل شهرها', value: total, icon: MapPin, tone: 'sky' },
               {
-                label: 'شهر فعال',
+                label: 'کل فرودگاه‌ها',
+                value: total,
+                icon: PlaneTakeoff,
+                tone: 'sky',
+              },
+              {
+                label: 'فرودگاه فعال',
                 value: activeTotal,
                 icon: CheckCircle2,
                 tone: 'emerald',
               },
               {
-                label: 'شهر دارای فرودگاه',
-                value: '—',
-                icon: PlaneTakeoff,
+                label: 'شهرهای مرتبط',
+                value: coveredCities,
+                icon: MapPin,
                 tone: 'violet',
-                hint: 'پس از ارائه Aggregate قراردادی',
-              },
-              {
-                label: 'نیازمند تکمیل استان',
-                value: missingRegion,
-                icon: Layers3,
-                tone: 'amber',
                 hint: 'در صفحه جاری',
               },
+              {
+                label: 'ناقص یا نیازمند بررسی',
+                value: inactiveTotal,
+                icon: CircleAlert,
+                tone: 'amber',
+                hint: 'رکوردهای غیرفعال در دامنه فعلی',
+              },
             ]
-          : resource === 'airports'
-            ? [
-                {
-                  label: 'کل فرودگاه‌ها',
-                  value: total,
-                  icon: PlaneTakeoff,
-                  tone: 'sky',
-                },
-                {
-                  label: 'فرودگاه فعال',
-                  value: activeTotal,
-                  icon: CheckCircle2,
-                  tone: 'emerald',
-                },
-                {
-                  label: 'شهرهای مرتبط',
-                  value: coveredCities,
-                  icon: MapPin,
-                  tone: 'violet',
-                  hint: 'در صفحه جاری',
-                },
-                {
-                  label: 'ناقص یا نیازمند بررسی',
-                  value: inactiveTotal,
-                  icon: CircleAlert,
-                  tone: 'amber',
-                  hint: 'رکوردهای غیرفعال در دامنه فعلی',
-                },
-              ]
-            : [
-                {
-                  label: 'کل ترمینال‌ها',
-                  value: total,
-                  icon: SquareStack,
-                  tone: 'sky',
-                },
-                {
-                  label: 'ترمینال فعال',
-                  value: activeTotal,
-                  icon: CheckCircle2,
-                  tone: 'emerald',
-                },
-                {
-                  label: 'بین‌المللی',
-                  value: internationalTotal,
-                  icon: Globe2,
-                  tone: 'violet',
-                },
-                {
-                  label: 'نیازمند بازبینی',
-                  value: inactiveTotal,
-                  icon: History,
-                  tone: 'amber',
-                  hint: 'رکوردهای غیرفعال در دامنه فعلی',
-                },
-              ];
+          : [
+              {
+                label: 'کل ترمینال‌ها',
+                value: total,
+                icon: SquareStack,
+                tone: 'sky',
+              },
+              {
+                label: 'ترمینال فعال',
+                value: activeTotal,
+                icon: CheckCircle2,
+                tone: 'emerald',
+              },
+              {
+                label: 'بین‌المللی',
+                value: internationalTotal,
+                icon: Globe2,
+                tone: 'violet',
+              },
+              {
+                label: 'نیازمند بازبینی',
+                value: inactiveTotal,
+                icon: History,
+                tone: 'amber',
+                hint: 'رکوردهای غیرفعال در دامنه فعلی',
+              },
+            ];
 
   const columns = geographyColumns(resource);
 
@@ -686,9 +695,13 @@ export function MasterDataGeographyWorkspace({
             همه بخش‌ها
           </Link>
         }
-        description={definition.description}
+        description={
+          isLocationView
+            ? 'مدیریت یکپارچه شهرها و استان‌ها/نواحی با حفظ رابطه ساختاری و کشور مرجع.'
+            : definition.description
+        }
         eyebrow={`اطلاعات پایه / ${section.title}`}
-        title={definition.label}
+        title={isLocationView ? 'شهرها و استان‌ها' : definition.label}
       />
 
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
@@ -727,7 +740,12 @@ export function MasterDataGeographyWorkspace({
             const Icon = item.icon;
             return (
               <button
-                aria-current={resource === item.resource ? 'page' : undefined}
+                aria-current={
+                  resource === item.resource ||
+                  (item.resource === 'regions' && resource === 'cities')
+                    ? 'page'
+                    : undefined
+                }
                 className="flex min-h-11 items-center gap-2 rounded-lg px-4 text-sm font-bold text-muted-foreground transition hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-sky-700 aria-[current=page]:shadow-sm dark:aria-[current=page]:text-sky-300"
                 key={item.resource}
                 onClick={() => changeResource(item.resource)}
@@ -739,9 +757,39 @@ export function MasterDataGeographyWorkspace({
             );
           })}
         </nav>
+        {isLocationView ? (
+          <div
+            aria-label="انتخاب نوع داده شهر و استان"
+            className="mt-2 flex flex-wrap gap-2 border-t border-border/70 px-2 pt-3"
+            role="group"
+          >
+            <Button
+              aria-pressed={resource === 'cities'}
+              onClick={() => changeResource('cities')}
+              size="sm"
+              variant={resource === 'cities' ? 'primary' : 'ghost'}
+            >
+              <MapPin aria-hidden="true" className="size-4" /> شهرها
+            </Button>
+            <Button
+              aria-pressed={resource === 'regions'}
+              onClick={() => changeResource('regions')}
+              size="sm"
+              variant={resource === 'regions' ? 'primary' : 'ghost'}
+            >
+              <Layers3 aria-hidden="true" className="size-4" /> استان‌ها و نواحی
+            </Button>
+            <span className="self-center text-xs text-muted-foreground">
+              یک بخش مشترک با دو نوع رکورد ساختاری
+            </span>
+          </div>
+        ) : null}
       </Card>
 
-      <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${definition.label}`} />
+      <MasterDataKpiGrid
+        items={kpis}
+        label={`شاخص‌های ${isLocationView ? 'شهرها و استان‌ها' : definition.label}`}
+      />
 
       <Card className="border-sky-200/80 bg-gradient-to-l from-sky-50 to-background p-4 dark:border-sky-400/20 dark:from-sky-950/40">
         <div className="flex items-start gap-3">
