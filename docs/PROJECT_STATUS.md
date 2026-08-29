@@ -1,15 +1,15 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-29 — MASTER-003I-SALES-REFERENCES پیاده‌سازی و آزموده شد
+آخرین به‌روزرسانی: 2026-08-29 — MASTER-003J-INSURANCE پیاده‌سازی و آزموده شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003I-SALES-REFERENCES روی شاخه Stacked مستقل آماده Review است**
+- وضعیت: **MASTER-003J-INSURANCE روی شاخه Stacked مستقل آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه فعال: `codex/pc-b-master-data-sales-references`
-- Work Item: `MASTER-003I-SALES-REFERENCES`؛ Stacked روی Draft PR #35
+- شاخه فعال: `codex/pc-b-master-data-insurance`
+- Work Item: `MASTER-003J-INSURANCE`؛ Stacked روی Draft PR #36
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ API روی ۴۰۰۰ و Web روی ۳۱۰۰ فعال‌اند.
 - نوع تغییر: Database، Migration، API Contract، Backend، Frontend، Test و Documentation؛
   بدون Customers، Dependency یا Lockfile.
@@ -322,6 +322,32 @@
   فایل‌های دو Workspace حمل‌ونقل و مراجع فروش موفق است؛ Full lint فقط به‌دلیل ایراد
   قدیمی DatePicker خارج از این Slice متوقف می‌شود.
 
+
+### `MASTER-003J-INSURANCE` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-insurance` از
+  `origin/codex/pc-b-master-data-sales-references@fbc423d` ساخته شد و روی Draft PR
+  #36 پشته می‌شود؛ هیچ شاخه والد یا متعلق به PC-A تغییر نمی‌کند.
+- Draft PR #37 با Base `codex/pc-b-master-data-sales-references` ساخته شد و پیش از
+  Merge PR #36 و تمام والدهای آن نباید ادغام شود؛ پس از Merge والد، Base مطابق
+  زنجیره به `develop` تغییر می‌کند.
+- دو Migration افزایشی بیمه، Insurer را با Country و نام انگلیسی تکمیل و مدل‌های
+  Insurance Plan، Coverage و رابطه چندبه‌چند آنها را با FK محدودکننده، Check مبلغ،
+  سن، اعتبار و Version اضافه می‌کنند؛ عملیات مخرب وجود ندارد.
+- Contract عمومی به `master-data.v11` و ۴۱ Resource ارتقا یافت. سه کاتالوگ شرکت‌های
+  بیمه، طرح‌ها و پوشش‌ها به API واقعی، Permission، Audit، Optimistic Lock، Export،
+  Search/Filter/Sort/Pagination و Summary واقعی متصل‌اند.
+- Workspace فارسی RTL Responsive مطابق ماکاپ سه تب و KPIهای پاستلی هم‌نام دارد؛
+  مشاهده جزئیات فقط Popup است و هیچ صفحه مستقل پروفایل ساخته نشده است.
+- Pricing، Policy، Passenger، Reservation، Provider و Documents در مالکیت ماژول‌های
+  مربوط باقی مانده‌اند؛ Query مستقیم بین‌ماژولی و Seed عملیاتی/ساختگی اضافه نشده است.
+- تمام ۱۷ Migration روی PostgreSQL 18 خالی و Seed دوگانه موفق بود؛ همان Migrationها
+  روی دیتابیس محلی Deploy شدند. هیچ فایل Customers، dependency manifest یا lockfile
+  تغییر نکرده و سه قفل MASTER-003 فعال می‌مانند.
+- Full Test شامل API `211/211`، Web `124/124`، Database `46/46`، Contracts `14/14`
+  و سه تست سایر بسته‌ها موفق بود؛ Full Typecheck و Production Build نیز پاس شدند.
+  Lint تمام فایل‌های این Slice موفق است؛ Full lint فقط به‌دلیل ایراد قدیمی DatePicker
+  خارج از این Slice متوقف می‌شود.
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
 

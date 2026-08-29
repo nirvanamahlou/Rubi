@@ -53,6 +53,24 @@ describe('master data API proposal', () => {
     );
   });
 
+  it('serializes normalized insurance filters', () => {
+    const query = parseMasterDataListQuery({
+      insurerId: '11111111-1111-4111-8111-111111111111',
+      currencyId: '22222222-2222-4222-8222-222222222222',
+      destinationRegion: 'شنگن',
+    });
+    const serialized = serializeMasterDataListQuery(query);
+    expect(serialized).toContain(
+      'insurerId=11111111-1111-4111-8111-111111111111',
+    );
+    expect(serialized).toContain(
+      'currencyId=22222222-2222-4222-8222-222222222222',
+    );
+    expect(serialized).toContain(
+      `destinationRegion=${encodeURIComponent('شنگن')}`,
+    );
+  });
+
   it('rejects uncontrolled page sizes', () => {
     expect(() => parseMasterDataListQuery({ pageSize: 101 })).toThrow();
   });

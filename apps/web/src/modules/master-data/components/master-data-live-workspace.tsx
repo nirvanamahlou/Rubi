@@ -59,6 +59,7 @@ import { HotelImportPanel } from './hotel-import-panel';
 import { MasterDataAccommodationWorkspace } from './master-data-accommodation-workspace';
 import { MasterDataFinanceWorkspace } from './master-data-finance-workspace';
 import { MasterDataGeographyWorkspace } from './master-data-geography-workspace';
+import { MasterDataInsuranceWorkspace } from './master-data-insurance-workspace';
 import { MasterDataKpiGrid } from './master-data-kpi-grid';
 import { MasterDataSuppliersWorkspace } from './master-data-suppliers-workspace';
 import { MasterDataTransportationWorkspace } from './master-data-transportation-workspace';
@@ -708,6 +709,7 @@ export function MasterDataWorkspace({
     return <MasterDataAccommodationWorkspace />;
   if (section.slug === 'transportation')
     return <MasterDataTransportationWorkspace />;
+  if (section.slug === 'insurance') return <MasterDataInsuranceWorkspace />;
   if (section.slug === 'sales-references')
     return <MasterDataSalesReferencesWorkspace />;
   return <GenericMasterDataWorkspace section={section} />;

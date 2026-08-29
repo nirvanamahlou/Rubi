@@ -94,8 +94,8 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
   {
     slug: 'insurance',
     title: 'بیمه',
-    description: 'بیمه‌گران و اطلاعات مرجع خدمات بیمه سفر',
-    resources: ['insurers'],
+    description: 'شرکت‌های بیمه، طرح‌ها و پوشش‌های مرجع خدمات بیمه سفر',
+    resources: ['insurers', 'insurance-plans', 'insurance-coverages'],
     tone: 'cyan',
   },
   {

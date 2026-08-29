@@ -110,6 +110,16 @@ export class MasterDataListQueryDto {
   @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
   saleableOnly?: boolean;
+  @IsOptional()
+  @IsUUID()
+  insurerId?: string;
+  @IsOptional()
+  @IsUUID()
+  currencyId?: string;
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  destinationRegion?: string;
 }
 
 export class MasterDataMutationDto {
@@ -144,6 +154,8 @@ export class MasterDataExportDto {
     'bank-branches',
     'payment-methods',
     'insurers',
+    'insurance-plans',
+    'insurance-coverages',
     'airlines',
     'aircraft-types',
     'cabin-classes',

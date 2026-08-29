@@ -54,6 +54,18 @@ const configs: Partial<
       payload: 'id',
       requiredRole: 'INSURANCE_PROVIDER',
     },
+    countryId: { target: 'countries', payload: 'id' },
+  },
+  'insurance-plans': {
+    insurerId: { target: 'insurers', payload: 'id' },
+    coverageIds: {
+      target: 'insurance-coverages',
+      payload: 'id',
+      multiple: true,
+    },
+  },
+  'insurance-coverages': {
+    currencyId: { target: 'currencies', payload: 'id' },
   },
   airlines: {
     organizationId: {

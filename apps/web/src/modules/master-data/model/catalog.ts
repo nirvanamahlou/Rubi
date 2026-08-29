@@ -10,6 +10,8 @@ export const masterDataResourceKeys = [
   'bank-branches',
   'payment-methods',
   'insurers',
+  'insurance-plans',
+  'insurance-coverages',
   'airlines',
   'aircraft-types',
   'cabin-classes',
@@ -63,6 +65,7 @@ export interface MasterDataCatalogItem {
     | 'مالی'
     | 'اقامت'
     | 'حمل‌ونقل'
+    | 'بیمه'
     | 'خدمات سفر'
     | 'سازمان‌ها'
     | 'فروش';
@@ -588,13 +591,20 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
   },
   {
     key: 'insurers',
-    label: 'بیمه‌ها',
-    singularLabel: 'بیمه‌گر',
-    group: 'خدمات سفر',
+    label: 'شرکت‌های بیمه',
+    singularLabel: 'شرکت بیمه',
+    group: 'بیمه',
     description:
-      'سازمان بیمه‌گر و reference خدمت؛ قرارداد خرید در Procurement است.',
+      'مدیریت بیمه‌گران دارای Organization فعال با نقش بیمه‌گر؛ قرارداد خرید در Procurement است.',
     fields: [
       nameField,
+      {
+        key: 'englishName',
+        label: 'نام انگلیسی',
+        type: 'text',
+        placeholder: 'Insurance Company',
+        required: true,
+      },
       {
         key: 'organizationId',
         label: 'سازمان بیمه‌گر',
@@ -602,11 +612,150 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: 'org_...',
         required: true,
       },
+      {
+        key: 'countryId',
+        label: 'کشور',
+        type: 'text',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'logoFileReference',
+        label: 'Reference لوگو در Documents',
+        type: 'text',
+        placeholder: 'UUID معتبر Documents',
+        hint: 'اختیاری؛ هیچ فایل یا شناسه ساختگی ذخیره نمی‌شود.',
+      },
     ],
     preview: {
-      code: 'INS_SAMPLE',
       name: 'بیمه نمونه',
+      englishName: 'Sample Insurance',
       organizationId: 'org_insurer',
+    },
+  },
+  {
+    key: 'insurance-plans',
+    label: 'طرح‌های بیمه',
+    singularLabel: 'طرح بیمه',
+    group: 'بیمه',
+    description:
+      'تعریف طرح‌های قابل استفاده بر اساس بیمه‌گر، مقصد، گروه سنی و بازه اعتبار.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Travel Insurance Plan',
+      },
+      {
+        key: 'insurerId',
+        label: 'بیمه‌گر',
+        type: 'text',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'destinationRegion',
+        label: 'مقصد یا منطقه',
+        type: 'text',
+        placeholder: 'شنگن / سراسر جهان',
+        required: true,
+      },
+      {
+        key: 'minimumAge',
+        label: 'حداقل سن',
+        type: 'number',
+        placeholder: '0',
+        required: true,
+      },
+      {
+        key: 'maximumAge',
+        label: 'حداکثر سن',
+        type: 'number',
+        placeholder: '65',
+      },
+      {
+        key: 'validFrom',
+        label: 'شروع اعتبار',
+        type: 'datetime-local',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'validTo',
+        label: 'پایان اعتبار',
+        type: 'datetime-local',
+        placeholder: '',
+      },
+      {
+        key: 'coverageIds',
+        label: 'پوشش‌ها',
+        type: 'text',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'description',
+        label: 'شرح استفاده',
+        type: 'text',
+        placeholder: 'شرح مرجع طرح',
+      },
+    ],
+    preview: {
+      name: 'طرح نمونه',
+      destinationRegion: 'منطقه مرجع',
+      minimumAge: '0',
+    },
+  },
+  {
+    key: 'insurance-coverages',
+    label: 'پوشش‌ها',
+    singularLabel: 'پوشش',
+    group: 'بیمه',
+    description:
+      'کاتالوگ پوشش‌های بیمه با سقف، ارز، فرانشیز و شرح قابل استفاده در طرح‌ها.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Medical Coverage',
+      },
+      {
+        key: 'coverageLimit',
+        label: 'سقف تعهد',
+        type: 'text',
+        placeholder: '10000.0000000000',
+        required: true,
+        hint: 'Decimal مثبت با حداکثر ۱۰ رقم اعشار.',
+      },
+      {
+        key: 'currencyId',
+        label: 'ارز',
+        type: 'text',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'deductibleAmount',
+        label: 'فرانشیز',
+        type: 'text',
+        placeholder: '0',
+        hint: 'Decimal نامنفی و حداکثر برابر سقف تعهد.',
+      },
+      {
+        key: 'description',
+        label: 'شرح',
+        type: 'text',
+        placeholder: 'شرح مرجع پوشش',
+      },
+    ],
+    preview: {
+      name: 'پوشش نمونه',
+      coverageLimit: '10000',
+      deductibleAmount: '0',
     },
   },
   {
