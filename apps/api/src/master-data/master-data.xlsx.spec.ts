@@ -42,4 +42,27 @@ describe('buildMasterDataXlsx', () => {
     expect(worksheet).toContain('t="inlineStr"');
     expect(worksheet).not.toContain('<f>');
   });
+
+  it('removes only XML-forbidden C0 controls and preserves allowed whitespace and DEL', () => {
+    const files = unzipSync(
+      buildMasterDataXlsx({
+        resource: 'countries',
+        columns: ['name'],
+        records: [
+          {
+            ...record,
+            name: 'A\u0000B\u0008C\u001fD\u007fE\tF\rG\nH',
+          },
+        ],
+        locale: 'fa-IR',
+        timezone: 'Asia/Tehran',
+      }),
+    );
+    const worksheet = strFromU8(files['xl/worksheets/sheet1.xml']!);
+
+    expect(worksheet).not.toContain('\u0000');
+    expect(worksheet).not.toContain('\u0008');
+    expect(worksheet).not.toContain('\u001f');
+    expect(worksheet).toContain('ABCD\u007fE\tF\rG\nH');
+  });
 });

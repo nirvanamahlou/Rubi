@@ -49,10 +49,24 @@ const resourceLabels: Record<MasterDataResource, string> = {
   'acquaintance-methods': 'نحوه آشنایی',
 };
 
+function removeForbiddenXmlControlCharacters(value: string): string {
+  let sanitized = '';
+  for (const character of value) {
+    const codePoint = character.codePointAt(0)!;
+    const forbidden =
+      codePoint <= 0x08 ||
+      codePoint === 0x0b ||
+      codePoint === 0x0c ||
+      (codePoint >= 0x0e && codePoint <= 0x1f);
+    if (!forbidden) sanitized += character;
+  }
+  return sanitized;
+}
+
 function escapeXml(value: unknown): string {
-  return String(value ?? '')
-    .normalize('NFKC')
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+  return removeForbiddenXmlControlCharacters(
+    String(value ?? '').normalize('NFKC'),
+  )
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
