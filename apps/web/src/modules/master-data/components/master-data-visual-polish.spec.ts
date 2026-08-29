@@ -35,14 +35,10 @@ describe('Master Data visual polish contract', () => {
       'کشور فعال',
       'کشور دارای مقصد',
       'نیازمند بازبینی',
-      'کل استان‌ها',
-      'استان فعال',
-      'کشورهای پوشش‌داده‌شده',
-      'فاقد نام انگلیسی',
       'کل شهرها',
       'شهر فعال',
-      'شهر دارای فرودگاه',
-      'نیازمند تکمیل استان',
+      'کل استان‌ها',
+      'استان فعال',
       'کل فرودگاه‌ها',
       'فرودگاه فعال',
       'شهرهای مرتبط',
@@ -62,10 +58,10 @@ describe('Master Data visual polish contract', () => {
       'ارز فعال',
       'ارز پایه سازمان',
       'آخرین همگام‌سازی',
-      'دلار آمریکا',
-      'یورو',
-      'درهم امارات',
-      'نرخ‌های امروز',
+      'نرخ جاری تأییدشده',
+      'تغییر نسبت به نرخ قبل',
+      'آخرین مشاهده',
+      'رکورد تاریخچه در بازه',
       'در انتظار بررسی',
       'تأییدشده امروز',
       'ردشده امروز',
@@ -90,5 +86,26 @@ describe('Master Data visual polish contract', () => {
   it('does not draw an underline on section-card hover', () => {
     const hub = source('master-data-hub.tsx');
     expect(hub).not.toContain('group-hover:scale-x-100');
+  });
+
+  it('consolidates currency history and the city/region navigation', () => {
+    const finance = source('master-data-finance-workspace.tsx');
+    const financeTabs = finance.slice(
+      finance.indexOf('const tabs'),
+      finance.indexOf('const tabCopy'),
+    );
+    const geography = source('master-data-geography-workspace.tsx');
+    const geographyTabs = geography.slice(
+      geography.indexOf('const geographyTabs'),
+      geography.indexOf('const terminalLabels'),
+    );
+
+    expect(financeTabs).not.toContain("key: 'rates'");
+    expect(finance).toContain('<MasterDataProfileDialog');
+    expect(finance).toContain('fromCurrencyId: selectedCurrency.id');
+    expect(finance).toContain('toCurrencyId: selectedCurrency.id');
+    expect(geographyTabs).toContain("label: 'شهرها و استان‌ها'");
+    expect(geographyTabs).not.toContain("resource: 'cities'");
+    expect(geography).toContain("changeResource('cities')");
   });
 });

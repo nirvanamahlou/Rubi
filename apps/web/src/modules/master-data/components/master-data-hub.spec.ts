@@ -28,4 +28,11 @@ describe('MasterDataHub contract', () => {
     expect(hubSource).toContain('group-hover:-translate-y-1');
     expect(hubSource).not.toContain('group-hover:scale-x-100');
   });
+
+  it('shows the consolidated navigation without the internal work label', () => {
+    expect(hubSource).not.toContain('eyebrow="MASTER-003 · PC-B"');
+    expect(hubSource).toContain("'ارزها و تاریخچه نرخ'");
+    expect(hubSource).toContain("'شهرها و استان‌ها'");
+    expect(hubSource).not.toContain("'اطلاعات تماس'");
+  });
 });

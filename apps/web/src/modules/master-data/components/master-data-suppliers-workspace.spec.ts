@@ -12,16 +12,20 @@ const source = readFileSync(
 );
 
 describe('organizations and suppliers workspace', () => {
-  it('implements all approved mockup tabs', () => {
-    for (const label of [
-      'تأمین‌کنندگان',
-      'پروفایل تأمین‌کننده',
-      'کارگزاران',
-      'پروفایل کارگزار',
-      'اطلاعات تماس',
-      'وضعیت همکاری',
-    ])
-      expect(source).toContain(label);
+  it('keeps profiles in popups and removes standalone profile/contact tabs', () => {
+    const tabs = source.slice(
+      source.indexOf('const tabs'),
+      source.indexOf('const tabCopy'),
+    );
+
+    expect(tabs).toContain("id: 'suppliers'");
+    expect(tabs).toContain("id: 'brokers'");
+    expect(tabs).toContain("id: 'collaboration'");
+    expect(tabs).not.toContain("id: 'supplier-profile'");
+    expect(tabs).not.toContain("id: 'broker-profile'");
+    expect(tabs).not.toContain("id: 'contacts'");
+    expect(source).toContain('<MasterDataProfileDialog');
+    expect(source).toContain('setProfileOpen(true)');
   });
 
   it('keeps every KPI label aligned with the approved mockup', () => {
@@ -34,9 +38,6 @@ describe('organizations and suppliers workspace', () => {
       'پروفایل فعال',
       'شهرهای تحت پوشش',
       'نیازمند تکمیل',
-      'کل مخاطبان',
-      'مخاطب فعال',
-      'دارای WhatsApp',
       'در حال بررسی',
       'تعلیق خرید',
       'پایان همکاری',
@@ -44,9 +45,9 @@ describe('organizations and suppliers workspace', () => {
       expect(source).toContain(label);
   });
 
-  it('uses real APIs, masks contacts and leaves module-owned metrics unknown', () => {
+  it('uses real APIs and leaves module-owned metrics unknown', () => {
     expect(source).toContain('organizationSupplierSummary');
-    expect(source).toContain('unmaskOrganizationContact');
+    expect(source).not.toContain('unmaskOrganizationContact');
     expect(source).toContain("label: 'طرف قرارداد'");
     expect(source).toContain("value: '—'");
     expect(source).not.toContain('سپهر سفر');

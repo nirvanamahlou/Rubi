@@ -70,12 +70,25 @@ const toneClasses: Record<
   },
 };
 
+const visibleSubsections: Partial<
+  Record<MasterDataSectionSlug, readonly string[]>
+> = {
+  finance: [
+    'ارزها و تاریخچه نرخ',
+    'گردش تأیید نرخ',
+    'بانک‌ها',
+    'شعب بانک',
+    'روش پرداخت',
+  ],
+  geography: ['کشورها', 'شهرها و استان‌ها', 'فرودگاه‌ها', 'ترمینال‌ها'],
+  'organizations-suppliers': ['تأمین‌کنندگان', 'کارگزاران', 'وضعیت همکاری'],
+};
+
 export function MasterDataHub() {
   return (
     <div className="space-y-6">
       <PageHeader
         description="مدیریت یکپارچه داده‌های مرجع سازمان؛ برای ورود به هر حوزه، کارت مربوط را انتخاب کنید."
-        eyebrow="MASTER-003 · PC-B"
         title="اطلاعات پایه"
       />
 
@@ -87,9 +100,11 @@ export function MasterDataHub() {
           {masterDataSections.map((section) => {
             const Icon = iconBySection[section.slug];
             const tone = toneClasses[section.tone];
-            const resourceLabels = section.resources.map(
-              (resource) => getMasterDataDefinition(resource).label,
-            );
+            const resourceLabels =
+              visibleSubsections[section.slug] ??
+              section.resources.map(
+                (resource) => getMasterDataDefinition(resource).label,
+              );
 
             return (
               <Link
@@ -144,7 +159,7 @@ export function MasterDataHub() {
 
                     <div className="mt-auto flex items-center justify-between border-t border-border/70 pt-4 text-sm">
                       <span className="font-semibold text-muted-foreground">
-                        {section.resources.length.toLocaleString('fa-IR')}{' '}
+                        {resourceLabels.length.toLocaleString('fa-IR')}{' '}
                         زیرمجموعه
                       </span>
                       <span className="flex items-center gap-2 font-bold text-primary">

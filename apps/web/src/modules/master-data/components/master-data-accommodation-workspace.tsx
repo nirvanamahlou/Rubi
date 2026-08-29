@@ -9,7 +9,6 @@ import type {
 import {
   ArrowRight,
   BedDouble,
-  Building2,
   CheckCircle2,
   CircleAlert,
   Clock3,
@@ -67,10 +66,10 @@ import {
   MasterDataKpiGrid,
   type MasterDataKpiItem,
 } from './master-data-kpi-grid';
+import { MasterDataProfileDialog } from './master-data-profile-dialog';
 
 type AccommodationTab =
   | 'hotels'
-  | 'hotel-profile'
   | 'chains'
   | 'room-types'
   | 'meals'
@@ -81,7 +80,6 @@ type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
 const tabs = [
   { id: 'hotels', label: 'هتل‌ها', icon: Hotel },
-  { id: 'hotel-profile', label: 'پروفایل هتل', icon: Building2 },
   { id: 'chains', label: 'زنجیره هتل', icon: Link2 },
   { id: 'room-types', label: 'نوع اتاق', icon: BedDouble },
   { id: 'meals', label: 'وعده و سرویس', icon: UtensilsCrossed },
@@ -98,12 +96,6 @@ const copy: Record<
     title: 'هتل‌ها',
     description: 'مدیریت مشخصات مرجع، موقعیت، تصاویر و فروش‌پذیری عمومی هتل‌ها',
     action: 'افزودن هتل',
-  },
-  'hotel-profile': {
-    title: 'پروفایل هتل',
-    description:
-      'مشخصات توسعه‌پذیر هتل، موقعیت، سرویس‌ها، اسناد تصویری و تاریخچه',
-    action: 'ویرایش هتل',
   },
   chains: {
     title: 'زنجیره هتل',
@@ -253,6 +245,7 @@ export function MasterDataAccommodationWorkspace() {
   const [mealCategoryFilter, setMealCategoryFilter] = useState('all');
   const [facilityCategoryFilter, setFacilityCategoryFilter] = useState('all');
   const [selected, setSelected] = useState<MasterDataRecord>();
+  const [profileOpen, setProfileOpen] = useState(false);
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -323,18 +316,12 @@ export function MasterDataAccommodationWorkspace() {
         status,
         sortBy: 'name',
         sortDirection: 'asc',
-        page: tab === 'hotel-profile' ? 1 : page,
-        pageSize: tab === 'hotel-profile' ? 100 : 25,
+        page,
+        pageSize: 25,
         ...scopedFilters,
       });
       setRecords(response.data);
       setTotal(response.meta.total);
-      if (tab === 'hotel-profile')
-        setSelected(
-          (value) =>
-            response.data.find((record) => record.id === value?.id) ??
-            response.data[0],
-        );
       setRequestState('ready');
     } catch (error) {
       setRecords([]);
@@ -399,7 +386,7 @@ export function MasterDataAccommodationWorkspace() {
   }, [load]);
 
   const kpis = useMemo<readonly MasterDataKpiItem[]>(() => {
-    if (tab === 'hotels' || tab === 'hotel-profile')
+    if (tab === 'hotels')
       return [
         {
           label: 'کل هتل‌ها',
@@ -575,13 +562,15 @@ export function MasterDataAccommodationWorkspace() {
     setCapacityFilter('all');
     setMealCategoryFilter('all');
     setFacilityCategoryFilter('all');
+    setSelected(undefined);
+    setProfileOpen(false);
     setNotice(null);
     setFormMode(null);
   }
 
   function selectProfile(record: MasterDataRecord) {
     setSelected(record);
-    changeTab('hotel-profile');
+    setProfileOpen(true);
   }
 
   async function persist(values: Record<string, string>) {
@@ -940,7 +929,13 @@ export function MasterDataAccommodationWorkspace() {
                 {tab === 'hotels' ? (
                   <>
                     <td className="p-4">
-                      <b>{record.name}</b>
+                      <button
+                        className="text-start font-bold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => selectProfile(record)}
+                        type="button"
+                      >
+                        {record.name}
+                      </button>
                       <br />
                       <small className="text-muted-foreground">
                         {attribute(record, 'englishName')}
@@ -1307,8 +1302,6 @@ export function MasterDataAccommodationWorkspace() {
           onImported={() => void Promise.all([load(), loadSummary()])}
         />
       </div>
-    ) : tab === 'hotel-profile' ? (
-      profile()
     ) : tab === 'combined' && records.length ? (
       combined()
     ) : records.length ? (
@@ -1326,7 +1319,7 @@ export function MasterDataAccommodationWorkspace() {
       />
     );
 
-  const showFilters = !['hotel-profile', 'import'].includes(tab);
+  const showFilters = tab !== 'import';
   const boundary =
     tab === 'import'
       ? {
@@ -1390,9 +1383,8 @@ export function MasterDataAccommodationWorkspace() {
                 ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               return;
             }
-            setFormMode(
-              tab === 'hotel-profile' && selected ? 'edit' : 'create',
-            );
+            setSelected(undefined);
+            setFormMode('create');
           }}
         >
           <Plus className="size-4" /> {current.action}
@@ -1522,6 +1514,16 @@ export function MasterDataAccommodationWorkspace() {
           open
           {...(selected && formMode !== 'create' ? { record: selected } : {})}
         />
+      ) : null}
+      {selected?.resource === 'hotels' ? (
+        <MasterDataProfileDialog
+          description="پروفایل هتل از فهرست اصلی و بدون ایجاد سکشن جداگانه نمایش داده می‌شود."
+          onOpenChange={setProfileOpen}
+          open={profileOpen}
+          title="پروفایل هتل"
+        >
+          {profile()}
+        </MasterDataProfileDialog>
       ) : null}
     </div>
   );

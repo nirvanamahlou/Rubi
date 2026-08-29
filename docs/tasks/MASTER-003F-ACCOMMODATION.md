@@ -1,5 +1,8 @@
 # MASTER-003F — Accommodation Master Data
 
+> یادداشت رابط: در `MASTER-003G` تب مستقل پروفایل هتل حذف و همان پروفایل با کلیک
+> روی هتل در Popup باز می‌شود؛ هفت تب کاتالوگ باقی مانده‌اند.
+
 - وضعیت: `READY_FOR_REVIEW — STACKED DRAFT PR #32`
 - مالک: `PC-B`
 - Branch: `codex/pc-b-master-data-accommodation`

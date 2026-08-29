@@ -1,5 +1,8 @@
 # MASTER-003C-FINANCIAL — Financial Reference Data
 
+> یادداشت رابط: در `MASTER-003G` تب مستقل تاریخچه حذف و نمودار/جدول نرخ داخل Popup
+> جزئیات ارز منتقل شد؛ گردش تأیید نرخ مستقل باقی مانده است.
+
 - مالک: `PC-B`
 - Computer: `PC-B`
 - Branch: `codex/pc-b-master-data-financial`

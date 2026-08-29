@@ -1,18 +1,18 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-29 — MASTER-003F-ACCOMMODATION در مسیر اطلاعات پایه پیاده‌سازی شد
+آخرین به‌روزرسانی: 2026-08-29 — MASTER-003G-UX-CONSOLIDATION پیاده‌سازی و آزموده شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003F-ACCOMMODATION به‌صورت Stacked روی PR #31 پیاده‌سازی و پذیرش PostgreSQL شد**
+- وضعیت: **MASTER-003G-UX-CONSOLIDATION به‌صورت Stacked روی PR #32 آماده تحویل است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه فعال: `codex/pc-b-master-data-accommodation`
-- Work Item: `MASTER-003F-ACCOMMODATION`؛ Draft PR #32 روی Draft PR #31
-- محیط مسئول: `COMPUTER_ID=PC-B`؛ Dev Server فعالی برای Rubi وجود نداشت.
-- نوع تغییر: Database، API، Contract، Permission/Audit، Excel Import، Frontend و تست؛
-  Dependency/Lockfile تا اثبات نیاز واقعی آزاد است.
+- شاخه فعال: `codex/pc-b-master-data-ux-consolidation`
+- Work Item: `MASTER-003G-UX-CONSOLIDATION`؛ Stacked روی Draft PR #32
+- محیط مسئول: `COMPUTER_ID=PC-B`؛ API روی ۴۰۰۰ و Web روی ۳۱۰۰ فعال‌اند.
+- نوع تغییر: Frontend، تست و مستندات؛ بدون Database، Migration، API Contract،
+  Dependency یا Lockfile.
 
 ### `MODULES-FOUNDATION-001` — PC-A — `READY_FOR_REVIEW`
 
@@ -221,9 +221,9 @@
   نمی‌دهد.
 - Draft PR #32 با Base `codex/pc-b-master-data-suppliers` ایجاد شد و پیش از Merge
   زنجیره #31 ← #30 ← #29 ← #28 ← #25 نباید ادغام شود.
-- هشت نمای ماکاپ اقامت شامل هتل‌ها، پروفایل هتل، زنجیره، نوع اتاق، وعده/سرویس،
-  امکانات، ورود گروهی Excel و هتل ترکیبی در `/master-data/accommodation` به Backend
-  واقعی متصل شدند.
+- هفت نمای کاتالوگ اقامت شامل هتل‌ها، زنجیره، نوع اتاق، وعده/سرویس، امکانات، ورود
+  گروهی Excel و هتل ترکیبی در `/master-data/accommodation` به Backend واقعی متصل
+  هستند؛ پروفایل هتل طبق MASTER-003G از فهرست در Popup باز می‌شود.
 - Migration افزایشی `20260829150000_master_data_accommodation` زنجیره هتل، روابط
   چندبه‌چند Meal/Room/Facility و هتل ترکیبی/اعضا را اضافه و مشخصات هتل را با وب‌سایت،
   زمان ورود/خروج، مختصات و لوگوی مرجع توسعه می‌دهد.
@@ -244,6 +244,27 @@
   `apps/web/src/components/ui/date-picker.tsx` متوقف می‌شود.
 - هیچ فایل Customers، dependency manifest یا lockfile و هیچ جدول عملیاتی ماژول دیگر
   تغییر نکرده است.
+
+### `MASTER-003G-UX-CONSOLIDATION` — PC-B — `IN_PROGRESS`
+
+- Branch مستقل `codex/pc-b-master-data-ux-consolidation` از HEAD تأییدشده PR #32
+  ساخته شد و شاخه‌های والد یا PC-A را تغییر نمی‌دهد.
+- تاریخچه و نمودار نرخ داخل Popup جزئیات ارز قرار گرفت و با انتخاب ارز، جفت/نوع نرخ
+  و بازه زمانی از Backend واقعی خوانده می‌شود؛ تب مستقل تاریخچه حذف شد.
+- شهر و استان/ناحیه در یک تب بالادستی تجمیع شدند و نوع رکورد در همان صفحه انتخاب
+  می‌شود؛ Schema و FKهای مستقل بدون تغییر باقی ماندند.
+- پروفایل هتل، تأمین‌کننده و کارگزار با کلیک نام/مشاهده در Dialog مشترک باز می‌شود؛
+  تب‌های پروفایل و نمای مستقل اطلاعات تماس از رابط حذف شدند.
+- برچسب `MASTER-003 · PC-B` از Header صفحه اصلی حذف و شمارنده‌های Hub با نماهای
+  قابل مشاهده هماهنگ شدند.
+- ESLint تمام فایل‌های Slice، Typecheck و Production Build موفق‌اند؛ هر `366/366`
+  تست Repository پاس شد. API Health پاسخ ۲۰۰ و Routeهای محافظت‌شده پاسخ ۳۰۷ به Login
+  می‌دهند.
+- Full Web Lint فقط به‌علت خطای قدیمی `react-hooks/set-state-in-effect` و هشدار
+  `aria-required` در `apps/web/src/components/ui/date-picker.tsx` خارج از این Slice
+  متوقف می‌شود.
+- هیچ فایل Customers، Prisma/Migration/Seed، API/Contract، Dependency/Lockfile،
+  Secret یا PII تغییر نکرده است.
 
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`

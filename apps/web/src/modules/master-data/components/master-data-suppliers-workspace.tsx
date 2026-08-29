@@ -13,16 +13,13 @@ import {
   Building2,
   CheckCircle2,
   Clock3,
-  Contact,
   Database,
   Eye,
   FilePenLine,
   FileSpreadsheet,
   FilterX,
   LockKeyhole,
-  Mail,
   MapPin,
-  MessageCircle,
   Network,
   Plug,
   Plus,
@@ -30,7 +27,6 @@ import {
   Search,
   ShieldCheck,
   ShieldX,
-  UserRound,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -64,22 +60,14 @@ import {
   type MasterDataFormMode,
 } from './master-data-live-form';
 import { MasterDataKpiGrid } from './master-data-kpi-grid';
+import { MasterDataProfileDialog } from './master-data-profile-dialog';
 
-type SupplierTab =
-  | 'suppliers'
-  | 'supplier-profile'
-  | 'brokers'
-  | 'broker-profile'
-  | 'contacts'
-  | 'collaboration';
+type SupplierTab = 'suppliers' | 'brokers' | 'collaboration';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
 const tabs = [
   { id: 'suppliers', label: 'تأمین‌کنندگان', icon: Building2 },
-  { id: 'supplier-profile', label: 'پروفایل تأمین‌کننده', icon: Briefcase },
   { id: 'brokers', label: 'کارگزاران', icon: Users },
-  { id: 'broker-profile', label: 'پروفایل کارگزار', icon: UserRound },
-  { id: 'contacts', label: 'اطلاعات تماس', icon: Contact },
   { id: 'collaboration', label: 'وضعیت همکاری', icon: ShieldCheck },
 ] as const;
 
@@ -93,28 +81,11 @@ const tabCopy: Record<
       'مدیریت تأمین‌کنندگان خدمات سفر، پوشش خدمات، اتصال Provider و وضعیت همکاری',
     action: 'افزودن تأمین‌کننده',
   },
-  'supplier-profile': {
-    title: 'پروفایل تأمین‌کننده',
-    description:
-      'نمای یکپارچه خدمات، قواعد خرید، شناسه‌های بیرونی و مرز دسترسی ماژول‌ها',
-    action: 'ویرایش پروفایل',
-  },
   brokers: {
     title: 'کارگزاران',
     description:
       'مدیریت پروفایل یکتای کارگزار، اطلاعات تماس، خدمات و محدودیت خرید',
     action: 'افزودن کارگزار',
-  },
-  'broker-profile': {
-    title: 'پروفایل کارگزار',
-    description: 'جزئیات اجرایی کارگزار، پوشش خدمات چندبه‌چند و مخاطبان مرتبط',
-    action: 'ویرایش کارگزار',
-  },
-  contacts: {
-    title: 'اطلاعات تماس',
-    description:
-      'مدیریت چند مخاطب برای هر تأمین‌کننده یا کارگزار با داده‌های ماسک‌شونده',
-    action: 'افزودن مخاطب',
   },
   collaboration: {
     title: 'وضعیت همکاری',
@@ -142,9 +113,8 @@ const emptySummary: MasterOrganizationSupplierSummary = {
 };
 
 function resourceFor(tab: SupplierTab): MasterDataResource {
-  if (tab === 'suppliers' || tab === 'supplier-profile') return 'suppliers';
-  if (tab === 'brokers' || tab === 'broker-profile') return 'brokers';
-  if (tab === 'contacts') return 'organization-contacts';
+  if (tab === 'suppliers') return 'suppliers';
+  if (tab === 'brokers') return 'brokers';
   return 'suppliers';
 }
 
@@ -223,15 +193,18 @@ export function MasterDataSuppliersWorkspace() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<MasterDataRecord>();
+  const [profileOpen, setProfileOpen] = useState(false);
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
-  const [unmasked, setUnmasked] = useState<
-    Record<string, { phone: string | null; email: string | null }>
-  >({});
   const copy = tabCopy[tab];
   const resource = resourceFor(tab);
   const definition = getMasterDataDefinition(resource);
+  const formDefinition = getMasterDataDefinition(
+    formMode && formMode !== 'create' && selected
+      ? selected.resource
+      : resource,
+  );
 
   const loadSummary = useCallback(async () => {
     try {
@@ -279,12 +252,6 @@ export function MasterDataSuppliersWorkspace() {
         setRecords(response.data);
         setCollaborationRecords([]);
         setTotal(response.meta.total);
-        if (tab === 'supplier-profile' || tab === 'broker-profile')
-          setSelected(
-            (current) =>
-              response.data.find((record) => record.id === current?.id) ??
-              response.data[0],
-          );
       }
       setRequestState('ready');
     } catch (error) {
@@ -309,7 +276,7 @@ export function MasterDataSuppliersWorkspace() {
   }, [load]);
 
   const kpis = useMemo(() => {
-    if (tab === 'suppliers' || tab === 'supplier-profile')
+    if (tab === 'suppliers')
       return [
         {
           label: 'کل تأمین‌کنندگان',
@@ -336,7 +303,7 @@ export function MasterDataSuppliersWorkspace() {
           tone: 'amber' as const,
         },
       ];
-    if (tab === 'brokers' || tab === 'broker-profile')
+    if (tab === 'brokers')
       return [
         {
           label: 'کل کارگزاران',
@@ -360,33 +327,6 @@ export function MasterDataSuppliersWorkspace() {
           label: 'نیازمند تکمیل',
           value: summary.brokers.incomplete,
           icon: AlertTriangle,
-          tone: 'amber' as const,
-        },
-      ];
-    if (tab === 'contacts')
-      return [
-        {
-          label: 'کل مخاطبان',
-          value: summary.contacts.total,
-          icon: Contact,
-          tone: 'sky' as const,
-        },
-        {
-          label: 'مخاطب فعال',
-          value: summary.contacts.active,
-          icon: CheckCircle2,
-          tone: 'emerald' as const,
-        },
-        {
-          label: 'دارای WhatsApp',
-          value: summary.contacts.whatsapp,
-          icon: MessageCircle,
-          tone: 'violet' as const,
-        },
-        {
-          label: 'نیازمند تکمیل',
-          value: summary.contacts.incomplete,
-          icon: Mail,
           tone: 'amber' as const,
         },
       ];
@@ -423,16 +363,24 @@ export function MasterDataSuppliersWorkspace() {
     setSearch('');
     setStatus('all');
     setPage(1);
+    setSelected(undefined);
+    setProfileOpen(false);
+    setFormMode(null);
     setNotice(null);
+  }
+
+  function openProfile(record: MasterDataRecord) {
+    setSelected(record);
+    setProfileOpen(true);
   }
 
   async function persist(values: Record<string, string>) {
     if (formMode === 'edit' && selected) {
-      await masterDataApi.update(resource, selected.id, {
+      await masterDataApi.update(selected.resource, selected.id, {
         values,
         version: selected.version,
       });
-      setNotice(`${definition.singularLabel} با موفقیت ویرایش شد.`);
+      setNotice(`${formDefinition.singularLabel} با موفقیت ویرایش شد.`);
     } else {
       await masterDataApi.create(resource, { values });
       setNotice(`${definition.singularLabel} با موفقیت ایجاد شد.`);
@@ -500,32 +448,8 @@ export function MasterDataSuppliersWorkspace() {
     }
   }
 
-  async function unmaskContact(record: MasterDataRecord) {
-    try {
-      const response = await masterDataApi.unmaskOrganizationContact(record.id);
-      setUnmasked((current) => ({ ...current, [record.id]: response.data }));
-      window.setTimeout(
-        () =>
-          setUnmasked((current) => {
-            const next = { ...current };
-            delete next[record.id];
-            return next;
-          }),
-        30_000,
-      );
-    } catch (error) {
-      setNotice(
-        error instanceof Error
-          ? error.message
-          : 'نمایش اطلاعات حساس مجاز نیست.',
-      );
-    }
-  }
-
   const openCreateOrEdit = () => {
-    if ((tab === 'supplier-profile' || tab === 'broker-profile') && selected)
-      setFormMode('edit');
-    else if (tab !== 'collaboration') {
+    if (tab !== 'collaboration') {
       setSelected(undefined);
       setFormMode('create');
     }
@@ -533,16 +457,7 @@ export function MasterDataSuppliersWorkspace() {
 
   const rowActions = (record: MasterDataRecord) => (
     <div className="flex flex-wrap gap-2">
-      <Button
-        onClick={() => {
-          setSelected(record);
-          if (record.resource === 'suppliers') setTab('supplier-profile');
-          else if (record.resource === 'brokers') setTab('broker-profile');
-          else setFormMode('view');
-        }}
-        size="sm"
-        variant="outline"
-      >
+      <Button onClick={() => openProfile(record)} size="sm" variant="outline">
         <Eye className="size-4" /> مشاهده
       </Button>
       <Button
@@ -562,24 +477,9 @@ export function MasterDataSuppliersWorkspace() {
   );
 
   function renderProfile(
-    record: MasterDataRecord | undefined,
+    record: MasterDataRecord,
     kind: 'supplier' | 'broker',
   ) {
-    if (!record)
-      return (
-        <EmptyState
-          action={
-            <Button onClick={() => setFormMode('create')}>ایجاد پروفایل</Button>
-          }
-          description="برای این بخش هنوز پروفایل پایداری ثبت نشده است."
-          icon={kind === 'supplier' ? Building2 : Users}
-          title={
-            kind === 'supplier'
-              ? 'پروفایل تأمین‌کننده خالی است'
-              : 'پروفایل کارگزار خالی است'
-          }
-        />
-      );
     const serviceNames = text(record, 'serviceNames', '');
     return (
       <div className="space-y-4">
@@ -714,7 +614,15 @@ export function MasterDataSuppliersWorkspace() {
                   <td className="p-4 font-mono" dir="ltr">
                     {record.code}
                   </td>
-                  <td className="p-4 font-semibold">{record.name}</td>
+                  <td className="p-4 font-semibold">
+                    <button
+                      className="text-start font-semibold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={() => openProfile(record)}
+                      type="button"
+                    >
+                      {record.name}
+                    </button>
+                  </td>
                   <td className="p-4">
                     {text(record, 'countryName')} / {text(record, 'cityName')}
                   </td>
@@ -771,7 +679,15 @@ export function MasterDataSuppliersWorkspace() {
                   <td className="p-4 font-mono" dir="ltr">
                     {record.code}
                   </td>
-                  <td className="p-4 font-semibold">{record.name}</td>
+                  <td className="p-4 font-semibold">
+                    <button
+                      className="text-start font-semibold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={() => openProfile(record)}
+                      type="button"
+                    >
+                      {record.name}
+                    </button>
+                  </td>
                   <td className="p-4">
                     {text(record, 'organizationName')} / BROKER
                   </td>
@@ -795,69 +711,6 @@ export function MasterDataSuppliersWorkspace() {
                   <td className="p-4">{rowActions(record)}</td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-        </Card>
-      );
-    if (tab === 'contacts')
-      return (
-        <Card className="overflow-x-auto">
-          <table className="w-full min-w-[78rem] text-sm">
-            <thead className="bg-muted/50 text-muted-foreground">
-              <tr>
-                {[
-                  'نام مخاطب',
-                  'سمت',
-                  'متعلق به',
-                  'نوع مالک',
-                  'کانال ترجیحی',
-                  'تلفن / WhatsApp',
-                  'ایمیل',
-                  'وضعیت',
-                  'عملیات',
-                ].map((head) => (
-                  <th className="p-4 text-start" key={head}>
-                    {head}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {records.map((record) => {
-                const revealed = unmasked[record.id];
-                return (
-                  <tr className="border-t border-border" key={record.id}>
-                    <td className="p-4 font-semibold">{record.name}</td>
-                    <td className="p-4">{text(record, 'jobTitle')}</td>
-                    <td className="p-4">{text(record, 'organizationName')}</td>
-                    <td className="p-4">Organization</td>
-                    <td className="p-4">{text(record, 'preferredChannel')}</td>
-                    <td className="p-4 font-mono" dir="ltr">
-                      {revealed?.phone ?? text(record, 'phoneMasked')}
-                    </td>
-                    <td className="p-4 font-mono" dir="ltr">
-                      {revealed?.email ?? text(record, 'emailMasked')}
-                    </td>
-                    <td className="p-4">
-                      <Badge>
-                        {record.status === 'active' ? 'فعال' : 'غیرفعال'}
-                      </Badge>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          onClick={() => void unmaskContact(record)}
-                          size="sm"
-                          variant="outline"
-                        >
-                          <Eye className="size-4" /> نمایش مجاز
-                        </Button>
-                        {rowActions(record)}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
             </tbody>
           </table>
         </Card>
@@ -906,7 +759,13 @@ export function MasterDataSuppliersWorkspace() {
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <h4 className="font-bold">{record.name}</h4>
+                            <button
+                              className="text-start font-bold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              onClick={() => openProfile(record)}
+                              type="button"
+                            >
+                              {record.name}
+                            </button>
                             <p
                               className="mt-1 font-mono text-xs text-muted-foreground"
                               dir="ltr"
@@ -965,10 +824,6 @@ export function MasterDataSuppliersWorkspace() {
         description="دریافت اطلاعات از Backend ناموفق بود."
         title="خطا در دریافت اطلاعات"
       />
-    ) : tab === 'supplier-profile' ? (
-      renderProfile(selected, 'supplier')
-    ) : tab === 'broker-profile' ? (
-      renderProfile(selected, 'broker')
     ) : tab === 'collaboration' ? (
       renderCollaboration()
     ) : records.length ? (
@@ -1036,67 +891,57 @@ export function MasterDataSuppliersWorkspace() {
       </Card>
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${copy.title}`} />
       <Alert
-        description={
-          tab === 'contacts'
-            ? 'شماره و ایمیل در Backend با کلید مستقل Master Data رمزنگاری می‌شوند؛ فهرست و Audit فقط مقدار ماسک‌شده دارند و نمایش کامل نیازمند مجوز و Audit است.'
-            : 'Organization و Role در Master Data است؛ قرارداد، اعتبار، نرخ خرید و بدهی Provider در B2B، Procurement یا Finance باقی می‌ماند و Credential فقط در Integrations ذخیره می‌شود.'
-        }
-        title={
-          tab === 'contacts' ? 'PII Encryption و Masking' : 'مرز مالکیت داده'
-        }
+        description="Organization و Role در Master Data است؛ قرارداد، اعتبار، نرخ خرید و بدهی Provider در B2B، Procurement یا Finance باقی می‌ماند و Credential فقط در Integrations ذخیره می‌شود."
+        title="مرز مالکیت داده"
         tone="warning"
       />
-      {tab !== 'supplier-profile' && tab !== 'broker-profile' ? (
-        <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
-          <FormField id="supplier-search" label="جستجو">
-            <div className="relative">
-              <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
-              <Input
-                className="pe-10"
-                id="supplier-search"
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                }}
-                placeholder={`جستجو در ${copy.title}`}
-                value={search}
-              />
-            </div>
-          </FormField>
-          <FormField label="وضعیت">
-            <Select
-              onValueChange={(value) => {
-                setStatus(value as typeof status);
+      <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
+        <FormField id="supplier-search" label="جستجو">
+          <div className="relative">
+            <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
+            <Input
+              className="pe-10"
+              id="supplier-search"
+              onChange={(event) => {
+                setSearch(event.target.value);
                 setPage(1);
               }}
-              value={status}
-            >
-              <SelectTrigger aria-label="فیلتر وضعیت">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                <SelectItem value="active">فعال</SelectItem>
-                <SelectItem value="inactive">غیرفعال</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormField>
-          <Button
-            onClick={() => {
-              setSearch('');
-              setStatus('all');
+              placeholder={`جستجو در ${copy.title}`}
+              value={search}
+            />
+          </div>
+        </FormField>
+        <FormField label="وضعیت">
+          <Select
+            onValueChange={(value) => {
+              setStatus(value as typeof status);
               setPage(1);
             }}
-            variant="ghost"
+            value={status}
           >
-            <FilterX className="size-4" /> پاک‌کردن
-          </Button>
-        </FilterBar>
-      ) : null}
+            <SelectTrigger aria-label="فیلتر وضعیت">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+              <SelectItem value="active">فعال</SelectItem>
+              <SelectItem value="inactive">غیرفعال</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
+        <Button
+          onClick={() => {
+            setSearch('');
+            setStatus('all');
+            setPage(1);
+          }}
+          variant="ghost"
+        >
+          <FilterX className="size-4" /> پاک‌کردن
+        </Button>
+      </FilterBar>
       {content}
-      {tab !== 'collaboration' &&
-      tab !== 'supplier-profile' &&
-      tab !== 'broker-profile' ? (
+      {tab !== 'collaboration' ? (
         <div className="flex items-center justify-between gap-3">
           <PaginationShell
             currentPage={page}
@@ -1124,8 +969,8 @@ export function MasterDataSuppliersWorkspace() {
       ) : null}
       {formMode ? (
         <MasterDataLiveForm
-          definition={definition}
-          key={`${resource}-${formMode}-${selected?.id ?? 'new'}`}
+          definition={formDefinition}
+          key={`${formDefinition.key}-${formMode}-${selected?.id ?? 'new'}`}
           mode={formMode}
           onOpenChange={(open) => {
             if (!open) setFormMode(null);
@@ -1134,6 +979,24 @@ export function MasterDataSuppliersWorkspace() {
           open
           {...(selected ? { record: selected } : {})}
         />
+      ) : null}
+      {selected &&
+      (selected.resource === 'suppliers' || selected.resource === 'brokers') ? (
+        <MasterDataProfileDialog
+          description="پروفایل از همان فهرست اصلی باز شده و بدون خروج از بخش قابل مشاهده است."
+          onOpenChange={setProfileOpen}
+          open={profileOpen}
+          title={
+            selected.resource === 'suppliers'
+              ? 'پروفایل تأمین‌کننده'
+              : 'پروفایل کارگزار'
+          }
+        >
+          {renderProfile(
+            selected,
+            selected.resource === 'suppliers' ? 'supplier' : 'broker',
+          )}
+        </MasterDataProfileDialog>
       ) : null}
     </div>
   );
