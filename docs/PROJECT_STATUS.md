@@ -5,11 +5,11 @@
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003G-UX-CONSOLIDATION به‌صورت Stacked روی PR #32 آماده تحویل است**
+- وضعیت: **MASTER-003G-UX-CONSOLIDATION در Draft PR #33 روی PR #32 آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
 - شاخه فعال: `codex/pc-b-master-data-ux-consolidation`
-- Work Item: `MASTER-003G-UX-CONSOLIDATION`؛ Stacked روی Draft PR #32
+- Work Item: `MASTER-003G-UX-CONSOLIDATION`؛ Draft PR #33 روی Draft PR #32
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ API روی ۴۰۰۰ و Web روی ۳۱۰۰ فعال‌اند.
 - نوع تغییر: Frontend، تست و مستندات؛ بدون Database، Migration، API Contract،
   Dependency یا Lockfile.
@@ -245,10 +245,12 @@
 - هیچ فایل Customers، dependency manifest یا lockfile و هیچ جدول عملیاتی ماژول دیگر
   تغییر نکرده است.
 
-### `MASTER-003G-UX-CONSOLIDATION` — PC-B — `IN_PROGRESS`
+### `MASTER-003G-UX-CONSOLIDATION` — PC-B — `READY_FOR_REVIEW`
 
 - Branch مستقل `codex/pc-b-master-data-ux-consolidation` از HEAD تأییدشده PR #32
   ساخته شد و شاخه‌های والد یا PC-A را تغییر نمی‌دهد.
+- Draft PR #33 با Base `codex/pc-b-master-data-accommodation` ایجاد شد و پیش از PR
+  #32 یا سایر والدهای پشته Merge نمی‌شود.
 - تاریخچه و نمودار نرخ داخل Popup جزئیات ارز قرار گرفت و با انتخاب ارز، جفت/نوع نرخ
   و بازه زمانی از Backend واقعی خوانده می‌شود؛ تب مستقل تاریخچه حذف شد.
 - شهر و استان/ناحیه در یک تب بالادستی تجمیع شدند و نوع رکورد در همان صفحه انتخاب

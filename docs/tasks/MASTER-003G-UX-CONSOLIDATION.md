@@ -5,6 +5,7 @@
 - مالک: `PC-B`
 - Branch: `codex/pc-b-master-data-ux-consolidation`
 - والد مستقیم: `MASTER-003F-ACCOMMODATION` / Draft PR #32
+- Draft PR: #33 با Base `codex/pc-b-master-data-accommodation`
 - محدوده: فقط `apps/web/**`، تست‌های Web و اسناد همین Slice
 - بدون تغییر Database، Migration، Seed، API Contract، Dependency یا Lockfile
 

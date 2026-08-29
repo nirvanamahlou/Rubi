@@ -105,8 +105,8 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
   تب‌های مستقل پروفایل حذف شدند.
 - نمای مستقل اطلاعات تماس سازمان‌ها و تأمین‌کنندگان حذف شد؛ داده یا Schema مخاطب
   حذف نشده است.
-- شاخه `codex/pc-b-master-data-ux-consolidation` روی PR #32 پشته می‌شود و پیش از
-  والدهای #32 ← #31 ← #30 ← #29 ← #28 ← #25 نباید Merge شود.
+- Draft PR #33 از شاخه `codex/pc-b-master-data-ux-consolidation` روی PR #32 پشته
+  شده و پیش از والدهای #32 ← #31 ← #30 ← #29 ← #28 ← #25 نباید Merge شود.
 
 ## Import واقعی هتل — HOTEL_IMPORT_V1
 
