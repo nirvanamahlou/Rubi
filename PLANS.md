@@ -177,7 +177,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - PR #24 با Source HEAD `6f475c0` و Merge Commit `b6da5d6` وارد `origin/develop` شد.
 - قفل‌های Migration، Legal Entity contract و اسناد مرکزی با دلیل `DONE/MERGED via PR #24` آزاد شدند.
 
-### `MASTER-003` — PC-B — `IN_PROGRESS / PARTIAL DRAFT`
+### `MASTER-003 Phase A` — PC-B — `DONE / READY_FOR_REVIEW`
 
 - Branch: `codex/pc-b-master-data-advanced` از `origin/develop@b6da5d6`.
 - توسعه افزایشی MASTER-002 برای Schema/Migration، Contract، Backend، Frontend، Import امن Excel و تست.
@@ -189,6 +189,32 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - خروجی مستقیم XLSX فیلترشده و RTL تا سقف ۱۰٬۰۰۰ ردیف با Permission/Audit فعال است؛
   PDF و خروجی آرشیوی پایدار تا اتصال Documents/Worker در وضعیت انتظار می‌مانند.
 - اتصال‌های Documents/Worker/Finance/Reservations/Integrations فقط از Public Contract یا Port واقعی؛ بدون artifact یا Provider ساختگی.
+- DONE فقط برای Phase A شامل نرخ ارز پیشرفته، Import امن هتل، کاتالوگ‌های موجود و UI
+  فعلی است؛ کل اطلاعات پایه تکمیل‌شده نیست.
+- `MASTER-003E-SUPPLIERS` در Branch مستقل و خارج از PR #25 با وضعیت
+  `PAUSED_FOR_CUSTOMER_002B_MIGRATION_HANDOFF` باقی می‌ماند.
+- Migration و Central Docs برای `PC-A/CUSTOMER-002B` رزرو مشروط هستند و فقط بعد از
+  Merge ترتیبی PRهای #25، #26 و #27 و Handoff نهایی فعال می‌شوند؛ Customer shared-contract/
+  root export نیز برای همان Task رزرو است.
+- Master shared-contract/root export پس از Merge PR #25 پایدار و `RELEASED` می‌شود؛
+  Dependency/Lockfile برابر `RELEASED` باقی می‌ماند.
+
+### `MASTER-004` — PC-B — `PLANNED`
+
+- ادامه کاتالوگ‌ها، Antivirus/Documents Integration، PII encryption/unmask و قابلیت‌های
+  آینده اطلاعات پایه را پوشش می‌دهد.
+- تا Handoff بعدی فقط طراحی و تغییرات ماژول‌محلی غیرمرکزی مجاز است؛ Prisma Schema،
+  Migration، Seed، Root Contract، Dependency/Lockfile و اسناد مرکزی ممنوع‌اند.
+- هیچ Persistence، Antivirus، Documents Adapter یا artifact ساختگی به‌عنوان قابلیت نهایی
+  معرفی نمی‌شود.
+- مرجع: [MASTER-004.md](docs/tasks/MASTER-004.md).
+
+### `CUSTOMER-002B` — PC-A — `PLANNED / RESERVED`
+
+- Migration Owner، Central Sprint Docs و Customer shared-contract/root export برای این
+  Task رزرو شده‌اند، اما Reservation تا عبور کامل Gate #25 → #26 → #27 فعال نیست.
+- شروع Persistence یا تغییر Schema پیش از Handoff نهایی ممنوع است.
+- مرجع انتقال: [MASTER-003-HANDOFF.md](docs/tasks/MASTER-003-HANDOFF.md).
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
 

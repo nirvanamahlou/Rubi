@@ -1,15 +1,15 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-26 — اصلاحات Review رسمی Draft PR #25 اعمال شد
+آخرین به‌روزرسانی: 2026-08-29 — MASTER-003 Phase A برای Review و Handoff مشروط آماده شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003 در حال اجرا؛ Review رسمی Draft PR #25 رفع و آزمون شد**
+- وضعیت: **MASTER-003 Phase A برابر DONE / READY_FOR_REVIEW؛ کل Master Data تکمیل نشده است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
 - شاخه فعال: `codex/pc-b-master-data-advanced`
-- Work Item: `MASTER-003`؛ `IN_PROGRESS` از Base `b6da5d6`
+- Work Item: `MASTER-003 Phase A`؛ `READY_FOR_REVIEW` از Base `b6da5d6`
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ Dev Server فعالی برای Rubi وجود نداشت.
 - نوع تغییر: Database، API، Contract، Permission/Audit، Excel Import، Frontend و تست؛
   Dependency/Lockfile تا اثبات نیاز واقعی آزاد است.
@@ -103,7 +103,7 @@
 - Migration، Legal Entity shared-contract/root export و اسناد مرکزی با دلیل
   `DONE/MERGED via PR #24` آزاد شدند؛ Dependency/Lockfile از قبل آزاد بود.
 
-### `MASTER-003` — PC-B — `IN_PROGRESS`
+### `MASTER-003 Phase A` — PC-B — `DONE / READY_FOR_REVIEW`
 
 - Branch مستقیماً از `origin/develop@b6da5d6` ساخته شد و Frozen Install بدون تغییر Lockfile پاس شد.
 - Migration Owner، Master Data shared-contract/root export و اسناد مرکزی برای MASTER-003 رزرو شدند.
@@ -129,6 +129,18 @@
   صریحاً `UNAVAILABLE`/در انتظار گزارش می‌شود.
 - Scope توسعه افزایشی MASTER-002 شامل Master Data مشترک دو شرکت، نرخ مرجع غیر authoritative،
   کاتالوگ‌های پیشرفته، Import امن Excel، UI واقعی و تست کامل است.
+- این وضعیت فقط Phase A شامل نرخ ارز پیشرفته، Import امن هتل، کاتالوگ‌های موجود و UI
+  فعلی را می‌بندد؛ کل اطلاعات پایه Complete نیست و ادامه در `MASTER-004` برابر `PLANNED` است.
+- مانع lint مربوط به `no-control-regex` بدون Disable/Suppress و با بررسی صریح code point
+  رفع شد؛ C0های ممنوع حذف و TAB/CR/LF و DEL طبق Policy قبلی حفظ می‌شوند.
+- ادامه Suppliers روی Branch مستقل وارد PR #25 نمی‌شود و با وضعیت
+  `PAUSED_FOR_CUSTOMER_002B_MIGRATION_HANDOFF` باقی می‌ماند.
+- Migration و Central Docs برای `PC-A/CUSTOMER-002B` رزرو شده‌اند، اما فقط پس از Merge
+  ترتیبی PRهای #25، #26 و #27 و Handoff نهایی فعال می‌شوند. Customer shared-contract/root
+  export نیز با همین Gate رزرو است؛ Master shared-contract پس از Merge #25 پایدار و
+  `RELEASED` و Dependency/Lockfile همچنان `RELEASED` خواهد بود.
+- مرجع Handoff: [MASTER-003-HANDOFF.md](tasks/MASTER-003-HANDOFF.md). برنامه ادامه:
+  [MASTER-004.md](tasks/MASTER-004.md).
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
 
 - کامپوننت مشترک DatePicker با تم آبی و سوییچ بالای تقویم برای شمسی/میلادی ایجاد شد.

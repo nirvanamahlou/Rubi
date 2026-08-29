@@ -1,6 +1,6 @@
 # MASTER-003 — Advanced Master Data Management
 
-- وضعیت: `IN_PROGRESS — DRAFT PR / PARTIAL VERTICAL SLICE`
+- وضعیت: `PHASE A DONE / READY_FOR_REVIEW — کل Master Data تکمیل نشده است`
 - مالک: `PC-B`
 - Branch: `codex/pc-b-master-data-advanced`
 - Base: `b6da5d6300716a189958bc37d31ca195f0304dc5`
@@ -13,11 +13,17 @@
 قفل‌های Migration، Legal Entity shared-contract و اسناد مرکزی متعلق به
 `PC-A/LEGAL-ENTITY-CONTEXT-001` با دلیل `DONE/MERGED via PR #24` آزاد شدند.
 
-قفل‌های فعال این Task:
+قفل‌های فعال این Task تا Merge PR #25:
 
 - Migration Owner: `PC-B/MASTER-003`
 - Master Data shared-contract/root export: `PC-B/MASTER-003`
 - Central Sprint status docs: `PC-B/MASTER-003`
+
+Handoff بعدی انتقال زودهنگام نیست: Migration Owner و Central Docs برای
+`PC-A/CUSTOMER-002B` رزرو شده‌اند، اما فقط پس از Merge ترتیبی PR #25، سپس #26 و
+سپس #27 و ثبت Handoff نهایی فعال می‌شوند. Customer shared-contract/root export نیز
+با همین Gate رزرو است. Master Data shared-contract/root export پس از Merge #25
+پایدار و `RELEASED` می‌شود و Dependency/Lockfile برابر `RELEASED` باقی می‌ماند.
 
 ## مرزهای قطعی
 
@@ -111,6 +117,9 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
   `CURRENCY_RATE_STATUS_TRANSITION_FORBIDDEN` بسته شد؛ approve/reject اختصاصی حفظ شد.
 - پذیرش production-like: ۲۲ ایجاد، Commit تکراری بدون افزایش، فایل دوم ۲۲ Skip،
   rollback اتمیک، Commit هم‌زمان ۲۰۱/۴۰۹، login/cookie واقعی و `/master-data` با پاسخ ۲۰۰.
+- `no-control-regex` در تولید XLSX بدون Suppress و با پیمایش code point رفع شد؛ تست
+  Regression حذف `U+0000`، `U+0008` و `U+001F` و حفظ Policy قبلی برای TAB، CR، LF و
+  `U+007F` را کنترل می‌کند.
 
 ## کنترل کیفیت اجراشده
 
@@ -129,9 +138,10 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 - Full monorepo tests: موفق
 - Full monorepo production build: موفق؛ `/master-data` تولید شد
 
-## باقی‌مانده و موارد مسدود
+## باقی‌مانده منتقل‌شده به MASTER-004
 
-این Draft PR کل MASTER-003 را Complete اعلام نمی‌کند. موارد زیر هنوز پیاده‌سازی نشده‌اند و قفل‌ها آزاد نمی‌شوند:
+این Draft PR فقط MASTER-003 Phase A را می‌بندد و کل اطلاعات پایه را Complete اعلام
+نمی‌کند. موارد زیر هنوز پیاده‌سازی نشده‌اند و در `MASTER-004` برابر `PLANNED` هستند:
 
 - کاتالوگ‌های پیشرفته Airport/Terminal/Bank Branch، Supplier Contact/Service، Hotel Chain/Room/Meal/Facility/Composite، Aircraft/Class/Baggage/Manifest، Insurance Plan/Coverage، Tour/Transfer/Bus و Sales References مستقل
 - رمزنگاری و Unmask مخاطبان Master Data با کلید مستقل از Customers
@@ -139,3 +149,9 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 - نمودار تاریخچه واقعی و Audit Timeline کامل در UI
 
 Parser ZIP با `fflate@0.8.3` دقیق Pin و Lock آن پس از تثبیت آزاد شد. Scanner مستقل آنتی‌ویروس و Documents Worker هنوز آماده نیستند و به‌عنوان موفقیت گزارش نمی‌شوند.
+
+`MASTER-003E-SUPPLIERS` روی Branch مستقل وارد این PR نمی‌شود و برابر
+`PAUSED_FOR_CUSTOMER_002B_MIGRATION_HANDOFF` است. آن Branch و `MASTER-004` تا Handoff
+بعدی حق Prisma Schema، Migration، Seed، Root Contract، Dependency/Lockfile یا تغییر
+اسناد مرکزی ندارند. جزئیات در [MASTER-003-HANDOFF.md](MASTER-003-HANDOFF.md) و
+[MASTER-004.md](MASTER-004.md) ثبت شده است.
