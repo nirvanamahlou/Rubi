@@ -206,6 +206,8 @@ Baseline برنامه: `origin/develop` در Merge Commit
   آیکن‌دار در همه Workspaceها، نام KPIهای مالی و جغرافیا مطابق ماکاپ، نمای تخصصی پنج‌تب
   جغرافیا و حذف خط Hover کارت‌های Hub. این Slice هیچ Schema، Migration، API Contract،
   Customers، Dependency یا Lockfile را تغییر نمی‌دهد.
+- Draft PR #30 با Base `codex/pc-b-master-data-financial` ایجاد شد و پیش از والدهای
+  #29، #28 و #25 نباید Merge شود.
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
 

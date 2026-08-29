@@ -177,6 +177,8 @@
 - Branch مستقل `codex/pc-b-master-data-ui-polish` از
   `origin/codex/pc-b-master-data-financial@e7e6180` ساخته شد و PR مالی #29 را تغییر
   نمی‌دهد.
+- Draft PR #30 با Base همان Branch مالی ایجاد شد و تا Merge والدهای #29، #28 و #25
+  نباید ادغام شود.
 - کارت KPI مشترک با شش رنگ پاستلی، آیکن معنایی، Dark Mode و چینش Responsive به همه
   Workspaceهای اطلاعات پایه اضافه شد.
 - KPIهای شش نمای مالی و پنج نمای جغرافیا دقیقاً با نام‌های ماکاپ نمایش داده می‌شوند؛

@@ -4,6 +4,7 @@
 - Computer: `PC-B`
 - Branch: `codex/pc-b-master-data-ui-polish`
 - Base: `codex/pc-b-master-data-financial@e7e6180`
+- Draft PR: [#30](https://github.com/nirvanamahlou/Rubi/pull/30)
 - والد مستقیم: `MASTER-003C-FINANCIAL` / Draft PR #29
 - محدوده: فقط Web و مستندات همان Slice
 
