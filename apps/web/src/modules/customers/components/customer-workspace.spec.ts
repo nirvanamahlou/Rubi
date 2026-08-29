@@ -5,6 +5,10 @@ const source = readFileSync(
   new URL('./customer-workspace.tsx', import.meta.url),
   'utf8',
 );
+const dateFieldSource = readFileSync(
+  new URL('./customer-date-field.tsx', import.meta.url),
+  'utf8',
+);
 
 describe('Customer Operations workspace boundaries', () => {
   it('uses public master-data APIs and keeps Legal Entity out of customer scope', () => {
@@ -90,8 +94,10 @@ describe('Customer Operations workspace boundaries', () => {
   });
 
   it('uses the shared blue Persian/Gregorian calendar for list and create dates', () => {
-    expect(source).toContain('<CustomerCalendarSwitch');
     expect(source).toContain('<CustomerDateField');
+    expect(source).toContain('onModeChange={setCalendarMode}');
+    expect(dateFieldSource).toContain('<CustomerCalendarSwitch');
+    expect(dateFieldSource).toContain('role="dialog"');
     expect(source).toContain('customer-created-from');
     expect(source).toContain('customer-updated-to');
     expect(source).not.toContain('type="date"');

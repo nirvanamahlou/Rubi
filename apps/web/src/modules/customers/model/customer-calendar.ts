@@ -4,6 +4,11 @@ export interface CustomerDateParts {
   day: number;
 }
 
+export interface CustomerCalendarDay {
+  day: number;
+  iso: string;
+}
+
 export const persianMonths = [
   'فروردین',
   'اردیبهشت',
@@ -40,6 +45,29 @@ function isoParts(value: string): CustomerDateParts | null {
     : null;
 }
 
+export function gregorianParts(value: string): CustomerDateParts {
+  const parsed = isoParts(value);
+  const date = parsed
+    ? new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day))
+    : new Date();
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+  };
+}
+
+export function gregorianDateToIso(parts: CustomerDateParts): string | null {
+  const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+  if (
+    date.getUTCFullYear() !== parts.year ||
+    date.getUTCMonth() + 1 !== parts.month ||
+    date.getUTCDate() !== parts.day
+  )
+    return null;
+  return date.toISOString().slice(0, 10);
+}
+
 export function persianDateToIso(parts: CustomerDateParts): string | null {
   const start = Date.UTC(parts.year + 620, 2, 1);
   for (let offset = 0; offset < 430; offset += 1) {
@@ -62,6 +90,54 @@ export function currentPersianParts(value: string): CustomerDateParts {
       ? new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day))
       : new Date(),
   );
+}
+
+export function calendarMonthDays(
+  mode: 'persian' | 'gregorian',
+  year: number,
+  month: number,
+): Array<CustomerCalendarDay | null> {
+  const toIso = mode === 'persian' ? persianDateToIso : gregorianDateToIso;
+  const firstIso = toIso({ year, month, day: 1 });
+  if (!firstIso) return [];
+
+  const firstWeekday = new Date(`${firstIso}T00:00:00.000Z`).getUTCDay();
+  const saturdayFirstOffset = (firstWeekday + 1) % 7;
+  const cells: Array<CustomerCalendarDay | null> = Array.from(
+    { length: saturdayFirstOffset },
+    () => null,
+  );
+  for (let day = 1; day <= 31; day += 1) {
+    const iso = toIso({ year, month, day });
+    if (!iso) break;
+    cells.push({ day, iso });
+  }
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
+
+export function shiftCalendarMonth(
+  parts: Pick<CustomerDateParts, 'year' | 'month'>,
+  direction: -1 | 1,
+) {
+  const month = parts.month + direction;
+  if (month < 1) return { year: parts.year - 1, month: 12 };
+  if (month > 12) return { year: parts.year + 1, month: 1 };
+  return { year: parts.year, month };
+}
+
+export function calendarMonthTitle(
+  mode: 'persian' | 'gregorian',
+  year: number,
+  month: number,
+) {
+  if (mode === 'persian')
+    return `${persianMonths[month - 1]} ${persianNumber(year)}`;
+  return new Intl.DateTimeFormat('fa-IR-u-ca-gregory', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(year, month - 1, 1)));
 }
 
 export function persianNumber(value: number) {

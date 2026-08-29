@@ -79,7 +79,6 @@ import { masterDataApi } from '@/modules/master-data/api/client';
 import { customersApi, CustomersApiError } from '../api/client';
 import { contactDisplayValue } from '../model/customer';
 import {
-  CustomerCalendarSwitch,
   CustomerDateField,
   type CustomerCalendarMode,
 } from './customer-date-field';
@@ -730,10 +729,6 @@ function CustomerDrawer({
                   Enter شما را به ورودی بعدی می‌برد.
                 </span>
               </div>
-              <CustomerCalendarSwitch
-                mode={calendarMode}
-                onChange={onCalendarModeChange}
-              />
             </div>
           ) : null}
           <div className="grid gap-4 sm:grid-cols-2">
@@ -799,6 +794,7 @@ function CustomerDrawer({
                   id="customer-birth-date"
                   label="تاریخ تولد"
                   mode={calendarMode}
+                  onModeChange={onCalendarModeChange}
                   onChange={(value) =>
                     setDraft((current) => ({
                       ...current,
@@ -1018,6 +1014,7 @@ function CustomerDrawer({
                         id={`companion-${companion.key}-birth-date`}
                         label="تاریخ تولد"
                         mode={calendarMode}
+                        onModeChange={onCalendarModeChange}
                         onChange={(value) =>
                           updateCompanion(index, { birthDate: value })
                         }
@@ -2055,12 +2052,6 @@ export function CustomerWorkspace() {
             />
           </div>
         </FormField>
-        <FormField label="نوع تقویم">
-          <CustomerCalendarSwitch
-            mode={calendarMode}
-            onChange={setCalendarMode}
-          />
-        </FormField>
         <FormField label="وضعیت">
           <Select
             onValueChange={(value) => {
@@ -2125,6 +2116,7 @@ export function CustomerWorkspace() {
           id="customer-created-from"
           label="ایجاد از تاریخ"
           mode={calendarMode}
+          onModeChange={setCalendarMode}
           onChange={(value) => {
             setCreatedFrom(value);
             setPage(1);
@@ -2135,6 +2127,7 @@ export function CustomerWorkspace() {
           id="customer-created-to"
           label="ایجاد تا تاریخ"
           mode={calendarMode}
+          onModeChange={setCalendarMode}
           onChange={(value) => {
             setCreatedTo(value);
             setPage(1);
@@ -2145,6 +2138,7 @@ export function CustomerWorkspace() {
           id="customer-updated-from"
           label="ویرایش از تاریخ"
           mode={calendarMode}
+          onModeChange={setCalendarMode}
           onChange={(value) => {
             setUpdatedFrom(value);
             setPage(1);
@@ -2155,6 +2149,7 @@ export function CustomerWorkspace() {
           id="customer-updated-to"
           label="ویرایش تا تاریخ"
           mode={calendarMode}
+          onModeChange={setCalendarMode}
           onChange={(value) => {
             setUpdatedTo(value);
             setPage(1);
