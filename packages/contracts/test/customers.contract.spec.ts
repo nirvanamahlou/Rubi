@@ -5,6 +5,7 @@ import {
   CUSTOMERS_CONTRACT_VERSION,
   customerEndpoints,
 } from '../src';
+import type { CustomerListResponse } from '../src';
 
 describe('Customers public contract v1', () => {
   it('publishes stable versioned endpoints and conflict errors', () => {
@@ -22,5 +23,17 @@ describe('Customers public contract v1', () => {
     expect(customerEndpoints.statusHistory(id)).toContain('/status-history');
     expect(customerEndpoints.activity(id)).toContain('/activity');
     expect(customerEndpoints.audit(id)).toContain('/audit');
+  });
+
+  it('publishes additive filter-scoped KPI metadata', () => {
+    const metrics: CustomerListResponse['meta']['metrics'] = {
+      totalCustomers: 10,
+      totalPassengers: 14,
+      newCustomersLastThreeMonths: 3,
+      returningCustomerRate: null,
+      returningCustomerRateStatus: 'awaiting-sales-public-contract',
+    };
+    expect(metrics.totalCustomers).toBe(10);
+    expect(metrics.returningCustomerRate).toBeNull();
   });
 });

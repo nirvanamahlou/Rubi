@@ -75,6 +75,26 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('resizeCompanions');
     expect(source).toContain("roles: ['passenger']");
     expect(source).toContain('customersApi.addCompanion(createdCustomer.id');
+    expect(source).toContain(
+      'organizationId: companion.organizationId || null',
+    );
+    expect(source).toContain("const kind = 'person' as const");
+  });
+
+  it('renders filter-scoped KPI cards without inventing Sales purchase data', () => {
+    expect(source).toContain('metrics.totalCustomers');
+    expect(source).toContain('metrics.totalPassengers');
+    expect(source).toContain('metrics.newCustomersLastThreeMonths');
+    expect(source).toContain('metrics.returningCustomerRate');
+    expect(source).toContain('در انتظار قرارداد عمومی خرید از Sales');
+  });
+
+  it('uses the shared blue Persian/Gregorian calendar for list and create dates', () => {
+    expect(source).toContain('<CustomerCalendarSwitch');
+    expect(source).toContain('<CustomerDateField');
+    expect(source).toContain('customer-created-from');
+    expect(source).toContain('customer-updated-to');
+    expect(source).not.toContain('type="date"');
   });
 
   it('keeps internal customer identifiers out of the visible workspace', () => {

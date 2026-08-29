@@ -102,6 +102,43 @@ describe('CustomerService', () => {
     expect(repository.list).not.toHaveBeenCalled();
   });
 
+  it('returns filter-scoped customer metrics without inventing Sales data', async () => {
+    const repository = {
+      list: vi.fn().mockResolvedValue({
+        rows: [row],
+        total: 1,
+        metrics: {
+          totalCustomers: 1,
+          totalPassengers: 1,
+          newCustomersLastThreeMonths: 1,
+        },
+      }),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    const response = await service.list(
+      {
+        search: '',
+        kind: 'person',
+        status: 'all',
+        role: 'all',
+        branchId: 'all',
+        sortBy: 'updatedAt',
+        sortDirection: 'desc',
+        page: 1,
+        pageSize: 25,
+      },
+      actor,
+    );
+
+    expect(response.meta.metrics).toEqual({
+      totalCustomers: 1,
+      totalPassengers: 1,
+      newCustomersLastThreeMonths: 1,
+      returningCustomerRate: null,
+      returningCustomerRateStatus: 'awaiting-sales-public-contract',
+    });
+  });
+
   it('returns safe real status, activity and audit timelines', async () => {
     const repository = {
       statusHistory: vi.fn().mockResolvedValue([

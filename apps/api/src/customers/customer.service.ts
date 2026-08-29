@@ -319,7 +319,10 @@ export class CustomerService {
       'آخرین ویرایش',
     );
     const branchIds = scopedBranches(actor, query.branchId ?? 'all');
-    const { rows, total } = await this.repository.list(branchIds, query);
+    const { rows, total, metrics } = await this.repository.list(
+      branchIds,
+      query,
+    );
     return {
       data: rows.map(toCustomerSummary),
       meta: {
@@ -327,6 +330,11 @@ export class CustomerService {
         pageSize: query.pageSize,
         total,
         allowedBranchIds: actor.branchIds,
+        metrics: {
+          ...metrics,
+          returningCustomerRate: null,
+          returningCustomerRateStatus: 'awaiting-sales-public-contract',
+        },
       },
     };
   }

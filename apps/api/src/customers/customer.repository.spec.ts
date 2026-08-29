@@ -152,6 +152,20 @@ describe('CustomerRepository', () => {
         take: 10,
       }),
     );
+    expect(customer.count).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        kind: 'PERSON',
+        isCustomer: true,
+        ownerBranchId: { in: [row.ownerBranchId] },
+      }),
+    });
+    expect(customer.count).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        kind: 'PERSON',
+        isPassenger: true,
+        ownerBranchId: { in: [row.ownerBranchId] },
+      }),
+    });
   });
 
   it('reads branch-scoped audit with a safe explicit select', async () => {

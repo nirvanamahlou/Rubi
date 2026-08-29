@@ -139,7 +139,16 @@ export interface CustomerListResponse {
     pageSize: number;
     total: number;
     allowedBranchIds?: readonly string[];
+    metrics: CustomerListMetrics;
   };
+}
+
+export interface CustomerListMetrics {
+  totalCustomers: number;
+  totalPassengers: number;
+  newCustomersLastThreeMonths: number;
+  returningCustomerRate: number | null;
+  returningCustomerRateStatus: 'available' | 'awaiting-sales-public-contract';
 }
 
 export interface CustomerTimelineActor {

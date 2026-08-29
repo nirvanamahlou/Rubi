@@ -7,7 +7,7 @@ import type {
   CustomerAddressType,
   CustomerConsentChannel,
   CustomerContactType,
-  CustomerKind,
+  CustomerListMetrics,
   CustomerListQuery,
   CustomerMutationRequest,
   CustomerRelationshipType,
@@ -28,6 +28,8 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
+  ShoppingBag,
+  TrendingUp,
   UserRound,
   UsersRound,
 } from 'lucide-react';
@@ -76,8 +78,21 @@ import {
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { customersApi, CustomersApiError } from '../api/client';
 import { contactDisplayValue } from '../model/customer';
+import {
+  CustomerCalendarSwitch,
+  CustomerDateField,
+  type CustomerCalendarMode,
+} from './customer-date-field';
+import { formatCustomerDate } from '../model/customer-calendar';
 
 const pageSize = 25;
+const emptyMetrics: CustomerListMetrics = {
+  totalCustomers: 0,
+  totalPassengers: 0,
+  newCustomersLastThreeMonths: 0,
+  returningCustomerRate: null,
+  returningCustomerRateStatus: 'awaiting-sales-public-contract',
+};
 type RequestState =
   'loading' | 'ready' | 'error' | 'unauthorized' | 'forbidden';
 type FormMode = 'create' | 'view' | 'edit';
@@ -142,6 +157,7 @@ interface NewCompanionDraft {
   lastName: string;
   birthDate: string;
   phone: string;
+  organizationId: string;
   relationshipType: CustomerRelationshipType;
 }
 
@@ -155,6 +171,7 @@ function emptyCompanionDraft(): NewCompanionDraft {
     lastName: '',
     birthDate: '',
     phone: '',
+    organizationId: '',
     relationshipType: 'companion',
   };
 }
@@ -180,6 +197,8 @@ function CustomerDrawer({
   onTabChange,
   onClose,
   onSaved,
+  calendarMode,
+  onCalendarModeChange,
 }: {
   mode: FormMode;
   customer?: CustomerDetail;
@@ -187,6 +206,8 @@ function CustomerDrawer({
   onTabChange: (tab: CustomerTab) => void;
   onClose: () => void;
   onSaved: (message: string, detail: CustomerDetail) => Promise<void>;
+  calendarMode: CustomerCalendarMode;
+  onCalendarModeChange: (mode: CustomerCalendarMode) => void;
 }) {
   const [draft, setDraft] = useState<CustomerMutationRequest>(() =>
     customerDraft(customer),
@@ -355,7 +376,7 @@ function CustomerDrawer({
       void customersApi
         .list({
           search: companionSearch,
-          kind: 'all',
+          kind: 'person',
           status: 'active',
           role: 'all',
           branchId: 'all',
@@ -438,6 +459,7 @@ function CustomerDrawer({
               lastName: companion.lastName.trim(),
               displayName:
                 `${companion.firstName.trim()} ${companion.lastName.trim()}`.trim(),
+              organizationId: companion.organizationId || null,
               birthDate: companion.birthDate || null,
               roles: ['passenger'],
               acquaintanceMethodId: null,
@@ -700,34 +722,29 @@ function CustomerDrawer({
           onSubmit={submit}
         >
           {mode === 'create' ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge>۱ · اطلاعات مشتری</Badge>
-              <Badge>۲ · مسافران همراه</Badge>
-              <span className="text-xs text-muted-foreground">
-                Enter شما را به ورودی بعدی می‌برد.
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge>۱ · اطلاعات مشتری حقیقی</Badge>
+                <Badge>۲ · مسافران همراه</Badge>
+                <span className="text-xs text-muted-foreground">
+                  Enter شما را به ورودی بعدی می‌برد.
+                </span>
+              </div>
+              <CustomerCalendarSwitch
+                mode={calendarMode}
+                onChange={onCalendarModeChange}
+              />
             </div>
           ) : null}
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormField label="نوع مشتری">
-              <Select
-                disabled={readonly}
-                onValueChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    kind: value as CustomerKind,
-                  }))
-                }
-                value={draft.kind}
-              >
-                <SelectTrigger aria-label="نوع مشتری">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="person">شخص حقیقی</SelectItem>
-                  <SelectItem value="organization">مشتری سازمانی</SelectItem>
-                </SelectContent>
-              </Select>
+            <FormField label="نوع پرونده">
+              <div className="flex h-11 items-center rounded-xl border border-primary/25 bg-primary/5 px-3">
+                <Badge>
+                  {draft.kind === 'person'
+                    ? 'مشتری حقیقی'
+                    : 'رکورد سازمانی قدیمی'}
+                </Badge>
+              </div>
             </FormField>
             <FormField id="customer-display-name" label="نام نمایشی" required>
               <Input
@@ -777,29 +794,19 @@ function CustomerDrawer({
                     value={draft.lastName ?? ''}
                   />
                 </FormField>
-                <FormField
-                  {...(customer?.birthDateMasked
-                    ? {
-                        description:
-                          'برای مشاهده به customers.sensitive.read نیاز است.',
-                      }
-                    : {})}
+                <CustomerDateField
+                  disabled={readonly}
                   id="customer-birth-date"
                   label="تاریخ تولد"
-                >
-                  <Input
-                    disabled={readonly}
-                    id="customer-birth-date"
-                    onChange={(event) =>
-                      setDraft((current) => ({
-                        ...current,
-                        birthDate: event.target.value || null,
-                      }))
-                    }
-                    type="date"
-                    value={draft.birthDate ?? ''}
-                  />
-                </FormField>
+                  mode={calendarMode}
+                  onChange={(value) =>
+                    setDraft((current) => ({
+                      ...current,
+                      birthDate: value || null,
+                    }))
+                  }
+                  value={draft.birthDate ?? ''}
+                />
               </>
             ) : (
               <FormField label="سازمان مرجع" required>
@@ -851,29 +858,35 @@ function CustomerDrawer({
                 </SelectContent>
               </Select>
             </FormField>
-            <FormField label="نقش‌ها">
-              <div className="flex gap-2">
-                {(['customer', 'passenger'] as CustomerRole[]).map((role) => (
-                  <Button
-                    disabled={readonly}
-                    key={role}
-                    onClick={() =>
-                      setDraft((current) => ({
-                        ...current,
-                        roles: current.roles.includes(role)
-                          ? current.roles.filter((item) => item !== role)
-                          : [...current.roles, role],
-                      }))
-                    }
-                    type="button"
-                    variant={
-                      draft.roles.includes(role) ? 'secondary' : 'outline'
-                    }
-                  >
-                    {role === 'customer' ? 'مشتری' : 'مسافر'}
-                  </Button>
-                ))}
-              </div>
+            <FormField label="نقش">
+              {mode === 'create' ? (
+                <div className="flex h-11 items-center rounded-xl border border-primary/25 bg-primary/5 px-3">
+                  <Badge>مشتری</Badge>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  {(['customer', 'passenger'] as CustomerRole[]).map((role) => (
+                    <Button
+                      disabled={readonly}
+                      key={role}
+                      onClick={() =>
+                        setDraft((current) => ({
+                          ...current,
+                          roles: current.roles.includes(role)
+                            ? current.roles.filter((item) => item !== role)
+                            : [...current.roles, role],
+                        }))
+                      }
+                      type="button"
+                      variant={
+                        draft.roles.includes(role) ? 'secondary' : 'outline'
+                      }
+                    >
+                      {role === 'customer' ? 'مشتری' : 'مسافر'}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </FormField>
             {mode === 'create' ? (
               <FormField
@@ -1001,21 +1014,15 @@ function CustomerDrawer({
                           value={companion.lastName}
                         />
                       </FormField>
-                      <FormField
+                      <CustomerDateField
                         id={`companion-${companion.key}-birth-date`}
                         label="تاریخ تولد"
-                      >
-                        <Input
-                          id={`companion-${companion.key}-birth-date`}
-                          onChange={(event) =>
-                            updateCompanion(index, {
-                              birthDate: event.target.value,
-                            })
-                          }
-                          type="date"
-                          value={companion.birthDate}
-                        />
-                      </FormField>
+                        mode={calendarMode}
+                        onChange={(value) =>
+                          updateCompanion(index, { birthDate: value })
+                        }
+                        value={companion.birthDate}
+                      />
                       <FormField
                         description="اختیاری و در نمایش عادی Masked"
                         id={`companion-${companion.key}-phone`}
@@ -1036,7 +1043,37 @@ function CustomerDrawer({
                           value={companion.phone}
                         />
                       </FormField>
-                      <FormField label="نوع رابطه">
+                      <FormField label="سازمان مسافر">
+                        <Select
+                          onValueChange={(value) =>
+                            updateCompanion(index, {
+                              organizationId:
+                                value === 'not-selected' ? '' : value,
+                            })
+                          }
+                          value={companion.organizationId || 'not-selected'}
+                        >
+                          <SelectTrigger
+                            aria-label={`سازمان مسافر ${index + 1}`}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="not-selected">
+                              مسافر شخصی
+                            </SelectItem>
+                            {masters.organizations.map((organization) => (
+                              <SelectItem
+                                key={organization.id}
+                                value={organization.id}
+                              >
+                                {organization.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormField>
+                      <FormField label="رابطه با مشتری">
                         <Select
                           onValueChange={(value) =>
                             updateCompanion(index, {
@@ -1053,7 +1090,9 @@ function CustomerDrawer({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="family">خانواده</SelectItem>
-                            <SelectItem value="companion">همراه</SelectItem>
+                            <SelectItem value="companion">
+                              همراه مشتری (پیش‌فرض)
+                            </SelectItem>
                             <SelectItem value="guardian">سرپرست</SelectItem>
                             <SelectItem value="dependent">تحت تکفل</SelectItem>
                           </SelectContent>
@@ -1110,14 +1149,33 @@ function CustomerDrawer({
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">شعبه مالک</p>
-                  <p className="font-mono text-sm" dir="ltr">
-                    {customer.ownerBranchId}
+                  <p className="text-xs text-muted-foreground">نوع پرونده</p>
+                  <p className="text-sm">
+                    {customer.roles.includes('passenger') &&
+                    customer.organizationId
+                      ? 'مسافر سازمانی'
+                      : customer.roles.includes('passenger')
+                        ? 'مسافر شخصی'
+                        : 'مشتری حقیقی'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">نسخه</p>
-                  <p>{customer.version.toLocaleString('fa-IR')}</p>
+                  <p className="text-xs text-muted-foreground">تاریخ ایجاد</p>
+                  <p>{formatCustomerDate(customer.createdAt, calendarMode)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">آخرین ویرایش</p>
+                  <p>{formatCustomerDate(customer.updatedAt, calendarMode)}</p>
+                </div>
+                <div className="sm:col-span-2">
+                  <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <ShoppingBag className="size-4 text-primary" />
+                    آخرین تاریخ خرید مشتری
+                  </p>
+                  <p className="mt-1 font-semibold">—</p>
+                  <p className="text-xs text-muted-foreground">
+                    در انتظار قرارداد عمومی Customer Purchase Summary از Sales
+                  </p>
                 </div>
               </Card>
               <Alert
@@ -1641,13 +1699,15 @@ export function CustomerWorkspace() {
   const initialCustomerId = safeCustomerId(searchParams.get('customerId'));
   const initialTab = searchParams.get('tab');
   const [records, setRecords] = useState<readonly CustomerSummary[]>([]);
+  const [metrics, setMetrics] = useState<CustomerListMetrics>(emptyMetrics);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [kind, setKind] = useState<NonNullable<CustomerListQuery['kind']>>(
-    () => {
-      const value = searchParams.get('kind');
-      return value === 'person' || value === 'organization' ? value : 'all';
-    },
+  const kind = 'person' as const;
+  const [calendarMode, setCalendarMode] = useState<CustomerCalendarMode>(
+    () =>
+      (searchParams.get('calendar') === 'gregorian'
+        ? 'gregorian'
+        : 'persian') as CustomerCalendarMode,
   );
   const [status, setStatus] = useState<CustomerListQuery['status']>(() => {
     const value = searchParams.get('status');
@@ -1717,6 +1777,7 @@ export function CustomerWorkspace() {
   useEffect(() => {
     const params = new URLSearchParams();
     params.set('kind', kind);
+    params.set('calendar', calendarMode);
     params.set('status', status);
     params.set('role', role);
     params.set('branchId', branchId);
@@ -1737,6 +1798,7 @@ export function CustomerWorkspace() {
     acquaintanceMethodId,
     activeTab,
     branchId,
+    calendarMode,
     createdFrom,
     createdTo,
     kind,
@@ -1773,10 +1835,12 @@ export function CustomerWorkspace() {
       });
       setRecords(response.data);
       setTotal(response.meta.total);
+      setMetrics(response.meta.metrics);
       setAllowedBranchIds(response.meta.allowedBranchIds ?? []);
       setRequestState('ready');
     } catch (error) {
       setRecords([]);
+      setMetrics(emptyMetrics);
       setRequestState(
         error instanceof CustomersApiError && error.status === 403
           ? 'forbidden'
@@ -1888,6 +1952,75 @@ export function CustomerWorkspace() {
         eyebrow="CUSTOMER-002A · PC-A"
         title="مشتریان و مسافران"
       />
+      <section
+        aria-label="شاخص‌های مشتریان"
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-surface p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-muted-foreground">
+              تعداد کل مشتریان
+            </p>
+            <UserRound className="size-5 text-primary" />
+          </div>
+          <p className="mt-3 text-3xl font-black">
+            {requestState === 'loading'
+              ? '…'
+              : metrics.totalCustomers.toLocaleString('fa-IR')}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            اشخاص حقیقی مطابق فیلترهای فعال
+          </p>
+        </Card>
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-surface p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-muted-foreground">
+              تعداد کل مسافران
+            </p>
+            <UsersRound className="size-5 text-primary" />
+          </div>
+          <p className="mt-3 text-3xl font-black">
+            {requestState === 'loading'
+              ? '…'
+              : metrics.totalPassengers.toLocaleString('fa-IR')}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            شخصی و سازمانی مطابق فیلترها
+          </p>
+        </Card>
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-surface p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-muted-foreground">
+              مشتریان جدید سه ماه اخیر
+            </p>
+            <TrendingUp className="size-5 text-primary" />
+          </div>
+          <p className="mt-3 text-3xl font-black">
+            {requestState === 'loading'
+              ? '…'
+              : metrics.newCustomersLastThreeMonths.toLocaleString('fa-IR')}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            بازه سه‌ماهه UTC و فیلترهای فعال
+          </p>
+        </Card>
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-surface p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-muted-foreground">
+              نرخ بازگشت مشتری
+            </p>
+            <ShoppingBag className="size-5 text-primary" />
+          </div>
+          <p className="mt-3 text-3xl font-black">
+            {metrics.returningCustomerRate === null
+              ? '—'
+              : `${metrics.returningCustomerRate.toLocaleString('fa-IR')}٪`}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            در انتظار قرارداد عمومی خرید از Sales
+          </p>
+        </Card>
+      </section>
       <Alert
         description="Persistence فعال است. تماس در حالت عادی فقط ماسک‌شده نمایش داده می‌شود؛ مدرک هویتی ذخیره نمی‌شود و Merge واقعی مسدود است."
         title="Backend واقعی · حفاظت PII"
@@ -1922,23 +2055,11 @@ export function CustomerWorkspace() {
             />
           </div>
         </FormField>
-        <FormField label="نوع مشتری">
-          <Select
-            onValueChange={(value) => {
-              setKind(value as NonNullable<CustomerListQuery['kind']>);
-              setPage(1);
-            }}
-            value={kind}
-          >
-            <SelectTrigger aria-label="فیلتر نوع مشتری">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">همه انواع</SelectItem>
-              <SelectItem value="person">شخص حقیقی</SelectItem>
-              <SelectItem value="organization">مشتری سازمانی</SelectItem>
-            </SelectContent>
-          </Select>
+        <FormField label="نوع تقویم">
+          <CustomerCalendarSwitch
+            mode={calendarMode}
+            onChange={setCalendarMode}
+          />
         </FormField>
         <FormField label="وضعیت">
           <Select
@@ -1958,7 +2079,7 @@ export function CustomerWorkspace() {
             </SelectContent>
           </Select>
         </FormField>
-        <FormField label="شعبه مجاز">
+        <FormField label="محدوده دسترسی">
           <Select
             onValueChange={(value) => {
               setBranchId(value);
@@ -1966,14 +2087,14 @@ export function CustomerWorkspace() {
             }}
             value={branchId}
           >
-            <SelectTrigger aria-label="فیلتر شعبه مجاز">
+            <SelectTrigger aria-label="فیلتر محدوده دسترسی">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">همه شعب مجاز</SelectItem>
+              <SelectItem value="all">همه محدوده‌های مجاز</SelectItem>
               {allowedBranchIds.map((id) => (
                 <SelectItem key={id} value={id}>
-                  شعبه {shortReference(id)}
+                  محدوده {shortReference(id)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -2000,50 +2121,46 @@ export function CustomerWorkspace() {
             </SelectContent>
           </Select>
         </FormField>
-        <FormField id="customer-created-from" label="ایجاد از تاریخ">
-          <Input
-            id="customer-created-from"
-            onChange={(event) => {
-              setCreatedFrom(event.target.value);
-              setPage(1);
-            }}
-            type="date"
-            value={createdFrom}
-          />
-        </FormField>
-        <FormField id="customer-created-to" label="ایجاد تا تاریخ">
-          <Input
-            id="customer-created-to"
-            onChange={(event) => {
-              setCreatedTo(event.target.value);
-              setPage(1);
-            }}
-            type="date"
-            value={createdTo}
-          />
-        </FormField>
-        <FormField id="customer-updated-from" label="ویرایش از تاریخ">
-          <Input
-            id="customer-updated-from"
-            onChange={(event) => {
-              setUpdatedFrom(event.target.value);
-              setPage(1);
-            }}
-            type="date"
-            value={updatedFrom}
-          />
-        </FormField>
-        <FormField id="customer-updated-to" label="ویرایش تا تاریخ">
-          <Input
-            id="customer-updated-to"
-            onChange={(event) => {
-              setUpdatedTo(event.target.value);
-              setPage(1);
-            }}
-            type="date"
-            value={updatedTo}
-          />
-        </FormField>
+        <CustomerDateField
+          id="customer-created-from"
+          label="ایجاد از تاریخ"
+          mode={calendarMode}
+          onChange={(value) => {
+            setCreatedFrom(value);
+            setPage(1);
+          }}
+          value={createdFrom}
+        />
+        <CustomerDateField
+          id="customer-created-to"
+          label="ایجاد تا تاریخ"
+          mode={calendarMode}
+          onChange={(value) => {
+            setCreatedTo(value);
+            setPage(1);
+          }}
+          value={createdTo}
+        />
+        <CustomerDateField
+          id="customer-updated-from"
+          label="ویرایش از تاریخ"
+          mode={calendarMode}
+          onChange={(value) => {
+            setUpdatedFrom(value);
+            setPage(1);
+          }}
+          value={updatedFrom}
+        />
+        <CustomerDateField
+          id="customer-updated-to"
+          label="ویرایش تا تاریخ"
+          mode={calendarMode}
+          onChange={(value) => {
+            setUpdatedTo(value);
+            setPage(1);
+          }}
+          value={updatedTo}
+        />
         <FormField label="نقش">
           <Select
             onValueChange={(value) => {
@@ -2100,6 +2217,11 @@ export function CustomerWorkspace() {
       <Alert
         description="Branch Scope در Backend اعمال و tampering رد می‌شود. فیلترهای غیرحساس هنگام بازگشت در URL می‌مانند؛ متن جست‌وجو چون ممکن است PII باشد فقط در حافظه همین صفحه نگه‌داری می‌شود."
         title="فیلتر امن و مستقل از Legal Entity"
+      />
+      <Alert
+        description="«نیایش سیر سحر» و «جهان باستان» در مدل فعلی Legal Entity هستند، اما Customer هنوز FK شرکت صادرکننده ندارد. تبدیل Scope امنیتی به فیلتر شرکت بدون Schema رابطه‌ای واقعی مجاز نیست و برای CUSTOMER-002B ثبت شده است."
+        title="فیلتر شرکت نیازمند اتصال داده واقعی"
+        tone="warning"
       />
 
       {requestState === 'loading' ? (
@@ -2178,7 +2300,11 @@ export function CustomerWorkspace() {
                     </Badge>
                     {record.roles.map((item) => (
                       <Badge className="me-1" key={item}>
-                        {item === 'customer' ? 'مشتری' : 'مسافر'}
+                        {item === 'customer'
+                          ? 'مشتری'
+                          : record.organizationId
+                            ? 'مسافر سازمانی'
+                            : 'مسافر شخصی'}
                       </Badge>
                     ))}
                   </td>
@@ -2192,7 +2318,7 @@ export function CustomerWorkspace() {
                     </Badge>
                   </td>
                   <td className="p-4">
-                    {new Date(record.updatedAt).toLocaleDateString('fa-IR')}
+                    {formatCustomerDate(record.updatedAt, calendarMode)}
                   </td>
                   <td className="p-4">
                     <div className="flex flex-wrap gap-2">
@@ -2277,6 +2403,7 @@ export function CustomerWorkspace() {
       {formMode && (formMode === 'create' || selected) ? (
         <CustomerDrawer
           activeTab={activeTab}
+          calendarMode={calendarMode}
           key={`${formMode}-${selected?.id ?? 'new'}-${selected?.version ?? 0}`}
           mode={formMode}
           onClose={() => {
@@ -2285,6 +2412,7 @@ export function CustomerWorkspace() {
             setSelected(undefined);
             setActiveTab('overview');
           }}
+          onCalendarModeChange={setCalendarMode}
           onSaved={refreshAfter}
           onTabChange={setActiveTab}
           {...(selected ? { customer: selected } : {})}

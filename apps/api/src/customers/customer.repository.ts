@@ -271,21 +271,55 @@ export class CustomerRepository {
         },
       ];
     }
-    const [rows, total] = await Promise.all([
-      this.database.client.customer.findMany({
-        where,
-        include: {
-          contacts: { where: { isPrimary: true }, take: 1 },
-          consents: { orderBy: { occurredAt: 'desc' }, take: 1 },
-          _count: { select: { relationships: true } },
-        },
-        orderBy: { [query.sortBy]: query.sortDirection },
-        skip: (query.page - 1) * query.pageSize,
-        take: query.pageSize,
-      }),
-      this.database.client.customer.count({ where }),
-    ]);
-    return { rows: rows as unknown as CustomerRow[], total };
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setUTCMonth(threeMonthsAgo.getUTCMonth() - 3);
+    const filteredCreatedAt = where.createdAt as
+      { gte?: Date; lte?: Date } | undefined;
+    const newCustomerCreatedAt = {
+      ...(filteredCreatedAt ?? {}),
+      gte:
+        filteredCreatedAt?.gte && filteredCreatedAt.gte > threeMonthsAgo
+          ? filteredCreatedAt.gte
+          : threeMonthsAgo,
+    };
+    const [rows, total, totalCustomers, totalPassengers, newCustomers] =
+      await Promise.all([
+        this.database.client.customer.findMany({
+          where,
+          include: {
+            contacts: { where: { isPrimary: true }, take: 1 },
+            consents: { orderBy: { occurredAt: 'desc' }, take: 1 },
+            _count: { select: { relationships: true } },
+          },
+          orderBy: { [query.sortBy]: query.sortDirection },
+          skip: (query.page - 1) * query.pageSize,
+          take: query.pageSize,
+        }),
+        this.database.client.customer.count({ where }),
+        this.database.client.customer.count({
+          where: { ...where, kind: 'PERSON', isCustomer: true },
+        }),
+        this.database.client.customer.count({
+          where: { ...where, kind: 'PERSON', isPassenger: true },
+        }),
+        this.database.client.customer.count({
+          where: {
+            ...where,
+            kind: 'PERSON',
+            isCustomer: true,
+            createdAt: newCustomerCreatedAt,
+          },
+        }),
+      ]);
+    return {
+      rows: rows as unknown as CustomerRow[],
+      total,
+      metrics: {
+        totalCustomers,
+        totalPassengers,
+        newCustomersLastThreeMonths: newCustomers,
+      },
+    };
   }
 
   async find(id: string, branchIds: readonly string[]) {
