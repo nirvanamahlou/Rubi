@@ -273,6 +273,8 @@
 - Branch مستقل `codex/pc-b-master-data-transport` از
   `origin/codex/pc-b-master-data-ux-consolidation@70d97ea` ساخته شد و هیچ شاخه والد
   یا متعلق به PC-A را تغییر نمی‌دهد.
+- Draft PR #35 با Base `codex/pc-b-master-data-ux-consolidation` ساخته شد و پیش از
+  Merge PR #33 نباید ادغام شود؛ پس از Merge والد Base آن به `develop` تغییر می‌کند.
 - Migration افزایشی `20260829170000_master_data_transport` مشخصات دوزبانه ایرلاین،
   نوع هواپیما، کلاس پروازی، قاعده بار، قالب Manifest، شرکت/نوع قطار و شرکت/نوع
   اتوبوس را با FK محدودکننده، Optimistic Lock و Constraintهای واقعی اضافه می‌کند.
