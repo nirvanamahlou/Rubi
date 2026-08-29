@@ -108,8 +108,11 @@ describe('Customer Operations workspace boundaries', () => {
       source.indexOf('async function exportFilteredCustomers'),
       source.indexOf('async function importCustomers'),
     );
-    expect(exportSource).not.toContain('maskedPrimaryContact');
-    expect(source).toContain('اطلاعات تماس در فایل قرار نگرفت');
+    expect(exportSource).toContain(
+      "record.maskedPrimaryContact ?? 'بدون تماس'",
+    );
+    expect(exportSource).toContain('شماره تماس (ماسک‌شده)');
+    expect(source).toContain('همراه با شماره تماس ماسک‌شده ساخته شد');
   });
 
   it('shows twenty people per page with a complete page position and masked mobile number', () => {

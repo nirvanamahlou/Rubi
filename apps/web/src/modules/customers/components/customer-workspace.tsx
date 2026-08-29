@@ -2136,6 +2136,7 @@ export function CustomerWorkspace() {
       }
       const rows = exportRecords.map((record) => [
         record.displayName,
+        record.maskedPrimaryContact ?? 'بدون تماس',
         record.status === 'active' ? 'فعال' : 'غیرفعال',
         record.roles
           .map((item) => (item === 'customer' ? 'مشتری' : 'مسافر'))
@@ -2153,6 +2154,7 @@ export function CustomerWorkspace() {
         [
           [
             'نام مشتری',
+            'شماره تماس (ماسک‌شده)',
             'وضعیت',
             'نقش‌ها',
             'رضایت',
@@ -2163,7 +2165,7 @@ export function CustomerWorkspace() {
         ],
       );
       setNotice(
-        `خروجی XLSX همه ${exportRecords.length.toLocaleString('fa-IR')} رکورد مطابق فیلترهای فعال ساخته شد؛ اطلاعات تماس در فایل قرار نگرفت.`,
+        `خروجی XLSX همه ${exportRecords.length.toLocaleString('fa-IR')} رکورد مطابق فیلترهای فعال همراه با شماره تماس ماسک‌شده ساخته شد.`,
       );
     } catch (error) {
       setNotice(
