@@ -57,6 +57,8 @@ import {
 } from './master-data-live-form';
 import { HotelImportPanel } from './hotel-import-panel';
 import { MasterDataFinanceWorkspace } from './master-data-finance-workspace';
+import { MasterDataGeographyWorkspace } from './master-data-geography-workspace';
+import { MasterDataKpiGrid } from './master-data-kpi-grid';
 
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
@@ -82,6 +84,9 @@ function GenericMasterDataWorkspace({
   const definition = getMasterDataDefinition(resource);
   const sectionDefinitions = section.resources.map(getMasterDataDefinition);
   const isCountryCity = resource === 'countries' || resource === 'cities';
+  const activeCount = records.filter(
+    (record) => record.status === 'active',
+  ).length;
 
   const query: MasterDataListQuery = {
     search,
@@ -404,6 +409,36 @@ function GenericMasterDataWorkspace({
             <HotelImportPanel onImported={() => void load()} />
           ) : null}
 
+          <MasterDataKpiGrid
+            items={[
+              {
+                label: `کل ${definition.label}`,
+                value: total,
+                icon: Database,
+                tone: 'sky',
+              },
+              {
+                label: 'فعال در صفحه',
+                value: activeCount,
+                icon: CheckCircle2,
+                tone: 'emerald',
+              },
+              {
+                label: 'غیرفعال در صفحه',
+                value: records.length - activeCount,
+                icon: XCircle,
+                tone: 'rose',
+              },
+              {
+                label: 'نسخه قرارداد',
+                value: 'v6',
+                icon: FileText,
+                tone: 'violet',
+              },
+            ]}
+            label={`شاخص‌های ${definition.label}`}
+          />
+
           <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
             <FormField id="master-data-search-live" label="جست‌وجوی سریع">
               <div className="relative">
@@ -659,9 +694,9 @@ export function MasterDataWorkspace({
 }: {
   section: MasterDataSectionDefinition;
 }) {
-  return section.slug === 'finance' ? (
-    <MasterDataFinanceWorkspace section={section} />
-  ) : (
-    <GenericMasterDataWorkspace section={section} />
-  );
+  if (section.slug === 'finance')
+    return <MasterDataFinanceWorkspace section={section} />;
+  if (section.slug === 'geography')
+    return <MasterDataGeographyWorkspace section={section} />;
+  return <GenericMasterDataWorkspace section={section} />;
 }
