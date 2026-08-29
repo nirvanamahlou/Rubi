@@ -172,17 +172,56 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - PR #21 با Merge `45c107e` وارد `origin/develop` شد. هیچ `FINANCE-002` یا PR/Branch فعال
   Finance Persistence وجود ندارد؛ قفل‌های stale آن برای `LEGAL-ENTITY-CONTEXT-001` آزاد شدند.
 
-### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `READY_FOR_REVIEW`
+### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `DONE/MERGED`
 
-- Base: `origin/develop@0ba85d4604f6eb4d792bee4c3059a32bcf858738`.
-- Draft PR #24 به `develop` ساخته شد؛ Merge و Force Push انجام نشده است.
-- Legal Entity مستقل از Branch/Tenant و بدون scope داده عملیاتی، با دو issuer واقعی و Context مجازی `ALL` تکمیل شد.
-- Migration افزایشی، Seed تکرارپذیر، `legal-entities.v2`، Permission/Audit، Issue/Reissue Metadata، App Shell و `/system/legal-entities` آماده Review هستند.
-- صدور ترکیبی ممنوع است؛ Backend issuer فعال، Permission، Snapshot و سربرگ الزامی را دوباره اعتبارسنجی می‌کند.
-- همه Gateهای Prisma، PostgreSQL تازه، Seed دوبار، ۲۴۵ تست در ۶۶ فایل، lint/typecheck/build و Smoke Cookie/API/Web پاس شدند.
-- اتصال binary upload به Public Upload Adapter آینده Documents وابسته است؛ تا آن زمان UI فایل ساختگی یا URL عمومی نمی‌سازد.
-- Migration، Contract و اسناد مرکزی تا Merge/Handoff رزرو هستند؛ Dependency/Lockfile آزاد است.
-- اصلاحات Review PR #24 از HEAD `17ad92703251e6f708fdd3e6c9fc03fd7c31975e` روی همان Branch تکمیل شد: optimistic concurrency، Snapshot FK/immutability، trusted template policy، Reissue transaction و authenticated baseline read/switch همگی تست شده‌اند.
+- PR #24 با Source HEAD `6f475c0` و Merge Commit `b6da5d6` وارد `origin/develop` شد.
+- قفل‌های Migration، Legal Entity contract و اسناد مرکزی با دلیل `DONE/MERGED via PR #24` آزاد شدند.
+
+### `MASTER-003 Phase A` — PC-B — `DONE / READY_FOR_REVIEW`
+
+- Branch: `codex/pc-b-master-data-advanced` از `origin/develop@b6da5d6`.
+- توسعه افزایشی MASTER-002 برای Schema/Migration، Contract، Backend، Frontend، Import امن Excel و تست.
+- اطلاعات پایه میان هر دو Legal Entity مشترک است و selector شرکت آن را scope نمی‌کند.
+- Migration، Master Data shared-contract/root export و Central docs برای PC-B رزرو هستند.
+- Dependency/Lockfile پس از Pin کردن `fflate@0.8.3`، Security Review و آزمون فایل واقعی آزاد شد.
+- Review رسمی PR #25 روی همان Draft و Branch رفع شد؛ DTO runtime، امنیت OOXML و
+  گردش وضعیت نرخ ارز با تست‌های regression و پذیرش PostgreSQL 18 پوشش داده شدند.
+- خروجی مستقیم XLSX فیلترشده و RTL تا سقف ۱۰٬۰۰۰ ردیف با Permission/Audit فعال است؛
+  PDF و خروجی آرشیوی پایدار تا اتصال Documents/Worker در وضعیت انتظار می‌مانند.
+- اتصال‌های Documents/Worker/Finance/Reservations/Integrations فقط از Public Contract یا Port واقعی؛ بدون artifact یا Provider ساختگی.
+- DONE فقط برای Phase A شامل نرخ ارز پیشرفته، Import امن هتل، کاتالوگ‌های موجود و UI
+  فعلی است؛ کل اطلاعات پایه تکمیل‌شده نیست.
+- `MASTER-003E-SUPPLIERS` در Branch مستقل و خارج از PR #25 با وضعیت
+  `PAUSED_FOR_CUSTOMER_002B_MIGRATION_HANDOFF` باقی می‌ماند.
+- Migration و Central Docs برای `PC-A/CUSTOMER-002B` رزرو مشروط هستند و فقط بعد از
+  Merge ترتیبی PRهای #25، #26 و #27 و Handoff نهایی فعال می‌شوند؛ Customer shared-contract/
+  root export نیز برای همان Task رزرو است.
+- Master shared-contract/root export پس از Merge PR #25 پایدار و `RELEASED` می‌شود؛
+  Dependency/Lockfile برابر `RELEASED` باقی می‌ماند.
+
+### `MASTER-004` — PC-B — `PLANNED`
+
+- ادامه کاتالوگ‌ها، Antivirus/Documents Integration، PII encryption/unmask و قابلیت‌های
+  آینده اطلاعات پایه را پوشش می‌دهد.
+- تا Handoff بعدی فقط طراحی و تغییرات ماژول‌محلی غیرمرکزی مجاز است؛ Prisma Schema،
+  Migration، Seed، Root Contract، Dependency/Lockfile و اسناد مرکزی ممنوع‌اند.
+- هیچ Persistence، Antivirus، Documents Adapter یا artifact ساختگی به‌عنوان قابلیت نهایی
+  معرفی نمی‌شود.
+- مرجع: [MASTER-004.md](docs/tasks/MASTER-004.md).
+
+### `CUSTOMER-002B` — PC-A — `PLANNED / RESERVED`
+
+- Migration Owner، Central Sprint Docs و Customer shared-contract/root export برای این
+  Task رزرو شده‌اند، اما Reservation تا عبور کامل Gate #25 → #26 → #27 فعال نیست.
+- شروع Persistence یا تغییر Schema پیش از Handoff نهایی ممنوع است.
+- مرجع انتقال: [MASTER-003-HANDOFF.md](docs/tasks/MASTER-003-HANDOFF.md).
+
+### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
+
+- DatePicker مشترک با تم آبی، انتخاب روز/ساعت و سوییچ شمسی/میلادی در بالای تقویم.
+- پوشش همه فیلدهای تاریخ Customers، Customer Affairs، Finance و Master Data.
+- قرارداد ذخیره‌سازی بدون تغییر: ISO Gregorian؛ بدون Dependency، API، Schema یا Migration.
+- تست قراردادی مانع بازگشت ورودی خام مرورگر به فرم‌های سامانه می‌شود.
 
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 

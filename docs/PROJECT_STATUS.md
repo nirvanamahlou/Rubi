@@ -1,17 +1,17 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-25 — اصلاحات Review PR #24 برای LEGAL-ENTITY-CONTEXT-001 تکمیل شد
+آخرین به‌روزرسانی: 2026-08-29 — MASTER-003 Phase A برای Review و Handoff مشروط آماده شد
 
 ## خلاصه
 
-- مرحله جاری: **Issuer Company Context Full-Stack**
-- وضعیت: **LEGAL-ENTITY-CONTEXT-001 آماده Review مجدد روی Draft PR #24؛ قفل‌ها فعال‌اند**
+- مرحله جاری: **Advanced Master Data Management Full-Stack**
+- وضعیت: **MASTER-003 Phase A برابر DONE / READY_FOR_REVIEW؛ کل Master Data تکمیل نشده است**
 - Repository: `Rubi`، Remote با نام `origin`
-- Baseline: `origin/develop@0ba85d4604f6eb4d792bee4c3059a32bcf858738` شامل Merge PR #23
-- شاخه فعال: `codex/pc-a-legal-entity-context`
-- Work Item: `LEGAL-ENTITY-CONTEXT-001`؛ `READY_FOR_REVIEW` (Review fixes from `17ad92703251e6f708fdd3e6c9fc03fd7c31975e`)
-- محیط مسئول: `COMPUTER_ID=PC-A`؛ Dev Serverها پیش از تغییر متوقف شدند.
-- نوع تغییر: Database، API، Contract، Permission/Audit، App Shell، صفحه مدیریت و تست؛
+- Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
+- شاخه فعال: `codex/pc-b-master-data-advanced`
+- Work Item: `MASTER-003 Phase A`؛ `READY_FOR_REVIEW` از Base `b6da5d6`
+- محیط مسئول: `COMPUTER_ID=PC-B`؛ Dev Server فعالی برای Rubi وجود نداشت.
+- نوع تغییر: Database، API، Contract، Permission/Audit، Excel Import، Frontend و تست؛
   Dependency/Lockfile تا اثبات نیاز واقعی آزاد است.
 
 ### `MODULES-FOUNDATION-001` — PC-A — `READY_FOR_REVIEW`
@@ -96,17 +96,61 @@
 - Dependency/Lockfile، Prisma، Migration و Seed تغییر نکردند. داده‌ها فقط synthetic هستند.
 - QA مرورگر داخلی به‌دلیل خطای ACL ابزار Windows و redirect احراز هویت انجام نشد؛ HTTP
   redirect و Production Build route تایید شدند و dev server موقت متوقف شد.
-### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `READY_FOR_REVIEW`
+### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `DONE/MERGED`
 
-- Branch از `origin/develop@0ba85d4604f6eb4d792bee4c3059a32bcf858738` ساخته شد؛ Base از Branch قبلی MODULES استفاده نشده است.
-- Draft PR #24 از `codex/pc-a-legal-entity-context` به `develop` باز است و Merge نشده است.
-- PR #21 و #23 Merge هستند، همه PRهای باز بررسی شدند و هیچ `FINANCE-002`، PR/Branch فعال Finance Persistence یا مالک جدید قفل وجود ندارد.
-- مدل افزایشی، Migration، Seed دو شرکت، قرارداد `legal-entities.v2`، هشت Permission، API امن، Branding Snapshot/Issue Metadata/Audit، App Shell و `/system/legal-entities` تکمیل شدند.
-- `ALL` مجازی و Permission-based است؛ صدور ترکیبی ممنوع، انتخاب issuer یا دو target مستقل الزامی و سربرگ الزامیِ تکمیل‌نشده در Backend رد می‌شود.
-- Prisma و migration/status روی PostgreSQL تازه، Seed دوبار، lint/typecheck/test/build کل Monorepo و Smoke واقعی Cookie/API/Web پاس شدند؛ ۲۴۵ تست در ۶۶ فایل سبز است.
-- UI اتصال Branding به Documents را بدون فایل/URL ساختگی آماده و تا ارائه Public Upload Adapter واقعی غیرفعال نگه می‌دارد؛ لوگوی موجود نیایش حفظ و جهان باستان Placeholder صریح دارد.
-- Migration، Contract و اسناد مرکزی تا Merge/Handoff فعال‌اند؛ Dependency/Lockfile آزاد است.
-- اصلاحات Review PR #24 روی همان Branch تکمیل شد: concurrency اتمیک، snapshot FK/immutability، trusted policy fail-closed، reissue transaction/reason canonical و authenticated baseline access با تست منفی و Smoke واقعی تثبیت شدند.
+- PR #24 با Source HEAD `6f475c03eebc6379fc8be47a48eb0751d58f2d89` و Merge Commit
+  `b6da5d6300716a189958bc37d31ca195f0304dc5` وارد `origin/develop` شد.
+- Migration، Legal Entity shared-contract/root export و اسناد مرکزی با دلیل
+  `DONE/MERGED via PR #24` آزاد شدند؛ Dependency/Lockfile از قبل آزاد بود.
+
+### `MASTER-003 Phase A` — PC-B — `DONE / READY_FOR_REVIEW`
+
+- Branch مستقیماً از `origin/develop@b6da5d6` ساخته شد و Frozen Install بدون تغییر Lockfile پاس شد.
+- Migration Owner، Master Data shared-contract/root export و اسناد مرکزی برای MASTER-003 رزرو شدند.
+- `fflate@0.8.3` پس از اثبات نیاز، Pin و با فایل واقعی بدروم آزموده شد؛ قفل Dependency/Lockfile سپس آزاد شد.
+- Import واقعی هتل با قالب `HOTEL_IMPORT_V1`، Preview Token، Idempotency، Commit اتمیک،
+  کاتالوگ Meal/Room/Facility و UI متصل پیاده‌سازی شد.
+- فایل واقعی `hotel-data-بدروم.xlsx` روی PostgreSQL 18.1 با نتیجه ۲۲ ایجاد، صفر خطا
+  و صفر تکراری آزموده شد؛ دیتابیس موقت پس از آزمون حذف شد.
+- Review رسمی PR #25 روی همان Draft/Branch اعمال شد: اعتبارسنجی runtime DTO، رد کامل
+  External Relationship/Data در OOXML و منع update/status عمومی نرخ ارز سخت‌سازی شدند.
+- پذیرش production-like و session واقعی: Preview فایل ۲۲ ردیفی، Commit اول ۲۲ ایجاد،
+  فایل دوم ۲۲ Skip، rollback اتمیک، تعارض هم‌زمان ۲۰۱/۴۰۹ و `/master-data` با پاسخ ۲۰۰.
+- ورود دستی کد یکتا از تمام فرم‌های اطلاعات پایه حذف شد؛ Backend کد داخلی یکتا را
+  از نام رکورد تولید می‌کند و ویرایش آن ممنوع است. در Import هتل نیز شناسه خالی
+  به‌صورت خودکار تولید می‌شود و فایل‌های قدیمی دارای شناسه سازگار باقی مانده‌اند.
+- توضیح فرعی PageHeader و Alert فنی Persistence از بالای صفحه اطلاعات پایه حذف شدند
+  تا کاربر مستقیماً کاتالوگ بخش‌ها را ببیند.
+- فرم‌های Create/View/Edit اطلاعات پایه از Drawer کناری به Dialog وسط صفحه منتقل شدند؛
+  فیلد و selector سازمان هتل نیز از فرم هتل حذف شد.
+- خروجی واقعی XLSX برای همه منابع اطلاعات پایه با فیلتر و مرتب‌سازی جاری، چیدمان RTL،
+  سقف ۱۰٬۰۰۰ ردیف، کنترل مجوز و Audit فعال شد؛ PDF آرشیوی همچنان منتظر Documents/Worker است.
+- Scanner مستقل آنتی‌ویروس و Documents برای تصاویر هنوز متصل نیستند و وضعیت آن‌ها
+  صریحاً `UNAVAILABLE`/در انتظار گزارش می‌شود.
+- Scope توسعه افزایشی MASTER-002 شامل Master Data مشترک دو شرکت، نرخ مرجع غیر authoritative،
+  کاتالوگ‌های پیشرفته، Import امن Excel، UI واقعی و تست کامل است.
+- این وضعیت فقط Phase A شامل نرخ ارز پیشرفته، Import امن هتل، کاتالوگ‌های موجود و UI
+  فعلی را می‌بندد؛ کل اطلاعات پایه Complete نیست و ادامه در `MASTER-004` برابر `PLANNED` است.
+- مانع lint مربوط به `no-control-regex` بدون Disable/Suppress و با بررسی صریح code point
+  رفع شد؛ C0های ممنوع حذف و TAB/CR/LF و DEL طبق Policy قبلی حفظ می‌شوند.
+- ادامه Suppliers روی Branch مستقل وارد PR #25 نمی‌شود و با وضعیت
+  `PAUSED_FOR_CUSTOMER_002B_MIGRATION_HANDOFF` باقی می‌ماند.
+- Migration و Central Docs برای `PC-A/CUSTOMER-002B` رزرو شده‌اند، اما فقط پس از Merge
+  ترتیبی PRهای #25، #26 و #27 و Handoff نهایی فعال می‌شوند. Customer shared-contract/root
+  export نیز با همین Gate رزرو است؛ Master shared-contract پس از Merge #25 پایدار و
+  `RELEASED` و Dependency/Lockfile همچنان `RELEASED` خواهد بود.
+- مرجع Handoff: [MASTER-003-HANDOFF.md](tasks/MASTER-003-HANDOFF.md). برنامه ادامه:
+  [MASTER-004.md](tasks/MASTER-004.md).
+### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
+
+- کامپوننت مشترک DatePicker با تم آبی و سوییچ بالای تقویم برای شمسی/میلادی ایجاد شد.
+- همه ورودی‌های خام `date` و `datetime-local` در Customers، Customer Affairs، Finance
+  و Master Data با کامپوننت مشترک جایگزین شدند.
+- مقدار ارسالی و ذخیره‌شده همچنان ISO Gregorian است و سوییچ فقط نمایش/انتخاب را تغییر می‌دهد.
+- انتخاب ساعت برای فیلدهای datetime حفظ شد؛ ناوبری ماه، امروز، تاریخ انتخاب‌شده،
+  بستن با Escape و کلیک بیرون و ویژگی‌های دسترس‌پذیری پوشش داده شدند.
+- Web Typecheck، Lint و ۸۵ تست پاس شدند و چهار route متاثر روی dev server پاسخ ۲۰۰ دادند.
+- Production build به‌دلیل dev server فعال و قفل `.next` هم‌زمان اجرا نشد؛ dev compilation موفق بود.
 
 ### `CUSTOMER-AFFAIRS-001` — PC-B — `PLANNED`
 
