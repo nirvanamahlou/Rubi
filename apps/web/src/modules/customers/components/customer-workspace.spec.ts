@@ -217,7 +217,12 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('value: companion.email.trim().toLowerCase()');
     expect(source).toContain('مدارک سفر مسافر');
     expect(source).toContain("const kind = 'person' as const");
-    expect(source).not.toContain('customer-national-id');
+    expect(source).toContain('id="customer-national-id"');
+    expect(source).toContain('companion-${companion.key}-national-id');
+    expect(source).toContain(
+      'nationalId: normalizeNationalId(companion.nationalId)',
+    );
+    expect(source).toContain('کد ملی مسافر شماره');
     expect(source).toContain('انتخاب همین مشتری به‌عنوان مسافر');
     expect(source).toContain('index === 0 ? (');
     expect(source).toContain('aria-label="روش افزودن مسافر 1"');
@@ -257,6 +262,8 @@ describe('Customer Operations workspace boundaries', () => {
     expect(exportSource).toContain(
       "record.maskedPrimaryContact ?? 'بدون تماس'",
     );
+    expect(exportSource).toContain("record.maskedNationalId ?? 'ثبت نشده'");
+    expect(exportSource).toContain('کد ملی (ماسک‌شده)');
     expect(exportSource).toContain('شماره تماس (ماسک‌شده)');
     expect(source).toContain('همراه با شماره تماس ماسک‌شده ساخته شد');
   });

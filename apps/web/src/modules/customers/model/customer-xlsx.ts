@@ -3,6 +3,7 @@ const decoder = new TextDecoder();
 
 export const customerImportHeaders = [
   'نام مشتری*',
+  'کد ملی*',
   'شماره تماس',
   'ایمیل',
   'تاریخ تولد',
@@ -10,6 +11,7 @@ export const customerImportHeaders = [
 
 export interface CustomerImportRow {
   name: string;
+  nationalId: string;
   phone: string;
   email: string;
   birthDate: string;
@@ -253,16 +255,23 @@ export async function parseCustomerXlsx(file: File) {
     headers.map((header, index) => [header.trim(), index]),
   );
   const nameIndex = positions.get(customerImportHeaders[0]);
+  const nationalIdIndex = positions.get(customerImportHeaders[1]);
   if (nameIndex === undefined)
     throw new Error(`ستون اجباری «${customerImportHeaders[0]}» پیدا نشد.`);
+  if (nationalIdIndex === undefined)
+    throw new Error(`ستون اجباری «${customerImportHeaders[1]}» پیدا نشد.`);
   const valueAt = (row: readonly string[], header: string) =>
     row[positions.get(header) ?? -1]?.trim() ?? '';
   return data
     .map<CustomerImportRow>((row) => ({
       name: row[nameIndex]?.trim() ?? '',
-      phone: valueAt(row, customerImportHeaders[1]),
-      email: valueAt(row, customerImportHeaders[2]),
-      birthDate: valueAt(row, customerImportHeaders[3]),
+      nationalId: row[nationalIdIndex]?.trim() ?? '',
+      phone: valueAt(row, customerImportHeaders[2]),
+      email: valueAt(row, customerImportHeaders[3]),
+      birthDate: valueAt(row, customerImportHeaders[4]),
     }))
-    .filter((row) => row.name || row.phone || row.email || row.birthDate);
+    .filter(
+      (row) =>
+        row.name || row.nationalId || row.phone || row.email || row.birthDate,
+    );
 }

@@ -8,6 +8,8 @@ import {
   customerPermissionCodes,
   customerUiStates,
   validateCustomerMutation,
+  isValidIranianNationalId,
+  normalizeNationalId,
 } from './customer';
 
 describe('customer frontend live contract', () => {
@@ -60,6 +62,21 @@ describe('customer frontend live contract', () => {
         roles: ['customer'],
       }).errors,
     ).toHaveProperty('organizationId');
+  });
+  it('normalizes Persian digits and validates national ID checksum', () => {
+    expect(normalizeNationalId(' ۱۲۳۴۵۶۷۸۹۱ ')).toBe('1234567891');
+    expect(isValidIranianNationalId('1234567891')).toBe(true);
+    expect(isValidIranianNationalId('1234567890')).toBe(false);
+    expect(
+      validateCustomerMutation({
+        kind: 'person',
+        displayName: 'مشتری ساختگی',
+        firstName: 'مشتری',
+        lastName: 'ساختگی',
+        nationalId: '1234567891',
+        roles: ['customer'],
+      }).valid,
+    ).toBe(true);
   });
   it('keeps real contacts hidden until an authorized user explicitly reveals them', () => {
     const contact = {

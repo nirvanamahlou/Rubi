@@ -79,7 +79,11 @@ import {
 } from '@/components/ui/surfaces';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { customersApi, CustomersApiError } from '../api/client';
-import { contactDisplayValue } from '../model/customer';
+import {
+  contactDisplayValue,
+  isValidIranianNationalId,
+  normalizeNationalId,
+} from '../model/customer';
 import { formatCustomerDate } from '../model/customer-calendar';
 import {
   customerImportHeaders,
@@ -200,6 +204,7 @@ interface NewCompanionDraft {
   source: 'new' | 'primaryCustomer';
   firstName: string;
   lastName: string;
+  nationalId: string;
   birthDate: string;
   phone: string;
   email: string;
@@ -216,6 +221,7 @@ function emptyCompanionDraft(): NewCompanionDraft {
     source: 'new',
     firstName: '',
     lastName: '',
+    nationalId: '',
     birthDate: '',
     phone: '',
     email: '',
@@ -230,6 +236,7 @@ function customerDraft(customer?: CustomerDetail): CustomerMutationRequest {
     organizationId: customer?.organizationId ?? null,
     firstName: customer?.firstName ?? '',
     lastName: customer?.lastName ?? '',
+    nationalId: '',
     displayName: customer?.displayName ?? '',
     birthDate: customer?.birthDate ?? null,
     roles: customer?.roles ?? ['customer'],
@@ -498,10 +505,32 @@ function CustomerDrawer({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (
+      mode === 'create' &&
+      draft.kind === 'person' &&
+      !isValidIranianNationalId(draft.nationalId ?? '')
+    ) {
+      setMessage('کد ملی مشتری باید ده‌رقمی و دارای رقم کنترل معتبر باشد.');
+      return;
+    }
+    const invalidPassengerIndex = newCompanions.findIndex(
+      (companion) =>
+        companion.source === 'new' &&
+        !isValidIranianNationalId(companion.nationalId),
+    );
+    if (invalidPassengerIndex >= 0) {
+      setMessage(
+        `کد ملی مسافر شماره ${(invalidPassengerIndex + 1).toLocaleString('fa-IR')} معتبر نیست.`,
+      );
+      return;
+    }
     const primaryCustomerIsPassenger =
       mode === 'create' && newCompanions[0]?.source === 'primaryCustomer';
     const submittedDraft: CustomerMutationRequest = {
       ...draft,
+      ...(draft.nationalId
+        ? { nationalId: normalizeNationalId(draft.nationalId) }
+        : {}),
       displayName:
         draft.kind === 'person'
           ? `${draft.firstName?.trim() ?? ''} ${draft.lastName?.trim() ?? ''}`.trim()
@@ -556,6 +585,7 @@ function CustomerDrawer({
               lastName: companion.lastName.trim(),
               displayName:
                 `${companion.firstName.trim()} ${companion.lastName.trim()}`.trim(),
+              nationalId: normalizeNationalId(companion.nationalId),
               organizationId: companion.organizationId || null,
               birthDate: companion.birthDate || null,
               roles: ['passenger'],
@@ -903,6 +933,42 @@ function CustomerDrawer({
                     value={draft.lastName ?? ''}
                   />
                 </FormField>
+                <FormField
+                  description={
+                    mode === 'create'
+                      ? 'اجباری؛ ده‌رقمی و دارای رقم کنترل معتبر'
+                      : customer?.maskedNationalId
+                        ? `ثبت‌شده: ${customer.maskedNationalId} — فقط برای تغییر دوباره وارد کنید`
+                        : 'برای تکمیل پرونده وارد کنید'
+                  }
+                  id="customer-national-id"
+                  label="کد ملی"
+                  required={mode === 'create'}
+                >
+                  <Input
+                    autoComplete="off"
+                    disabled={readonly}
+                    dir="ltr"
+                    id="customer-national-id"
+                    inputMode="numeric"
+                    maxLength={10}
+                    minLength={10}
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        nationalId: event.target.value,
+                      }))
+                    }
+                    pattern="[0-9۰-۹٠-٩]{10}"
+                    placeholder={customer?.maskedNationalId ?? '0123456789'}
+                    required={mode === 'create'}
+                    value={
+                      readonly
+                        ? (customer?.maskedNationalId ?? 'ثبت نشده')
+                        : (draft.nationalId ?? '')
+                    }
+                  />
+                </FormField>
                 <CustomerDateField
                   disabled={readonly}
                   id="customer-birth-date"
@@ -1156,6 +1222,16 @@ function CustomerDrawer({
                               value={draft.lastName ?? ''}
                             />
                           </FormField>
+                          <FormField label="کد ملی">
+                            <Input
+                              disabled
+                              dir="ltr"
+                              value={
+                                draft.nationalId ||
+                                'از اطلاعات مشتری استفاده می‌شود'
+                              }
+                            />
+                          </FormField>
                           <CustomerDateField
                             disabled
                             id={`companion-${companion.key}-birth-date`}
@@ -1219,6 +1295,29 @@ function CustomerDrawer({
                               این اطلاعات همراه پرونده واقعی مسافر ذخیره می‌شود.
                             </p>
                           </div>
+                          <FormField
+                            description="اجباری؛ مستقل از مشتری و سایر مسافران"
+                            id={`companion-${companion.key}-national-id`}
+                            label="کد ملی مسافر"
+                            required
+                          >
+                            <Input
+                              autoComplete="off"
+                              dir="ltr"
+                              id={`companion-${companion.key}-national-id`}
+                              inputMode="numeric"
+                              maxLength={10}
+                              minLength={10}
+                              onChange={(event) =>
+                                updateCompanion(index, {
+                                  nationalId: event.target.value,
+                                })
+                              }
+                              pattern="[0-9۰-۹٠-٩]{10}"
+                              required
+                              value={companion.nationalId}
+                            />
+                          </FormField>
                           <CustomerDateField
                             id={`companion-${companion.key}-birth-date`}
                             label="تاریخ تولد"
@@ -1392,6 +1491,12 @@ function CustomerDrawer({
                       : customer.roles.includes('passenger')
                         ? 'مسافر شخصی'
                         : 'مشتری حقیقی'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">کد ملی</p>
+                  <p dir="ltr" className="text-right font-mono">
+                    {customer.maskedNationalId ?? 'ثبت نشده'}
                   </p>
                 </div>
                 <div>
@@ -2261,6 +2366,7 @@ export function CustomerWorkspace() {
       }
       const rows = exportRecords.map((record) => [
         record.displayName,
+        record.maskedNationalId ?? 'ثبت نشده',
         record.maskedPrimaryContact ?? 'بدون تماس',
         record.status === 'active' ? 'فعال' : 'غیرفعال',
         record.roles
@@ -2279,6 +2385,7 @@ export function CustomerWorkspace() {
         [
           [
             'نام مشتری',
+            'کد ملی (ماسک‌شده)',
             'شماره تماس (ماسک‌شده)',
             'وضعیت',
             'نقش‌ها',
@@ -2320,6 +2427,10 @@ export function CustomerWorkspace() {
           );
           continue;
         }
+        if (!isValidIranianNationalId(row.nationalId)) {
+          failures.push(`ردیف ${index + 2}: کد ملی معتبر نیست.`);
+          continue;
+        }
         if (row.phone && !/^\+?[0-9]{10,15}$/.test(row.phone)) {
           failures.push(`ردیف ${index + 2}: شماره تماس معتبر نیست.`);
           continue;
@@ -2341,6 +2452,7 @@ export function CustomerWorkspace() {
               firstName,
               lastName,
               displayName: row.name,
+              nationalId: normalizeNationalId(row.nationalId),
               birthDate: row.birthDate || null,
               roles: ['customer'],
               acquaintanceMethodId: null,

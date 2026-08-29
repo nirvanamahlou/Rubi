@@ -28,6 +28,25 @@ export const customerPermissionCodes = [
   'customers.sensitive.read',
 ] as const;
 
+export function normalizeNationalId(value: string): string {
+  return value
+    .trim()
+    .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+    .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
+}
+
+export function isValidIranianNationalId(value: string): boolean {
+  const normalized = normalizeNationalId(value);
+  if (!/^\d{10}$/.test(normalized) || /^(\d)\1{9}$/.test(normalized))
+    return false;
+  const remainder =
+    [...normalized.slice(0, 9)].reduce(
+      (sum, digit, index) => sum + Number(digit) * (10 - index),
+      0,
+    ) % 11;
+  return Number(normalized[9]) === (remainder < 2 ? remainder : 11 - remainder);
+}
+
 export function validateCustomerMutation(input: CustomerMutationRequest) {
   const errors: Record<string, string> = {};
   if (input.displayName.trim().length < 2)
@@ -36,6 +55,11 @@ export function validateCustomerMutation(input: CustomerMutationRequest) {
     errors.firstName = 'نام الزامی است.';
   if (input.kind === 'person' && !input.lastName?.trim())
     errors.lastName = 'نام خانوادگی الزامی است.';
+  if (
+    input.kind === 'person' &&
+    !isValidIranianNationalId(input.nationalId ?? '')
+  )
+    errors.nationalId = 'کد ملی ده‌رقمی معتبر الزامی است.';
   if (input.kind === 'organization' && !input.organizationId)
     errors.organizationId = 'Organization الزامی است.';
   if (!input.roles.length) errors.roles = 'حداقل یک نقش لازم است.';
