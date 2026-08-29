@@ -9,7 +9,7 @@
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
 - شاخه فعال: `codex/pc-b-master-data-accommodation`
-- Work Item: `MASTER-003F-ACCOMMODATION`؛ Stacked روی Draft PR #31
+- Work Item: `MASTER-003F-ACCOMMODATION`؛ Draft PR #32 روی Draft PR #31
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ Dev Server فعالی برای Rubi وجود نداشت.
 - نوع تغییر: Database، API، Contract، Permission/Audit، Excel Import، Frontend و تست؛
   Dependency/Lockfile تا اثبات نیاز واقعی آزاد است.
@@ -214,11 +214,13 @@
 - هیچ Query مستقیمی به Procurement، Finance یا Integrations و هیچ تغییری در Customers،
   dependency manifest یا lockfile وجود ندارد.
 
-### `MASTER-003F-ACCOMMODATION` — PC-B — `IN_PROGRESS`
+### `MASTER-003F-ACCOMMODATION` — PC-B — `READY_FOR_REVIEW`
 
 - Branch مستقل `codex/pc-b-master-data-accommodation` از
   `origin/codex/pc-b-master-data-suppliers@02d4101` ساخته شد و PR والد #31 را تغییر
   نمی‌دهد.
+- Draft PR #32 با Base `codex/pc-b-master-data-suppliers` ایجاد شد و پیش از Merge
+  زنجیره #31 ← #30 ← #29 ← #28 ← #25 نباید ادغام شود.
 - هشت نمای ماکاپ اقامت شامل هتل‌ها، پروفایل هتل، زنجیره، نوع اتاق، وعده/سرویس،
   امکانات، ورود گروهی Excel و هتل ترکیبی در `/master-data/accommodation` به Backend
   واقعی متصل شدند.

@@ -1,10 +1,11 @@
 # MASTER-003F — Accommodation Master Data
 
-- وضعیت: `IN_PROGRESS — STACKED DRAFT PR PENDING`
+- وضعیت: `READY_FOR_REVIEW — STACKED DRAFT PR #32`
 - مالک: `PC-B`
 - Branch: `codex/pc-b-master-data-accommodation`
 - Parent: PR #31 / `codex/pc-b-master-data-suppliers@02d4101`
 - Parent chain: `#31 ← #30 ← #29 ← #28 ← #25`
+- Draft PR: [#32](https://github.com/nirvanamahlou/Rubi/pull/32)
 - Route: `/master-data/accommodation`
 - Migration: `20260829150000_master_data_accommodation`
 
