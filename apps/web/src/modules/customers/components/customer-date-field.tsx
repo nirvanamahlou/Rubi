@@ -213,17 +213,28 @@ export function CustomerDateField({
             </div>
             {calendarView === 'days' ? (
               <>
-                <div className="mt-3 grid grid-cols-7 text-center text-[11px] font-semibold text-muted-foreground">
-                  {['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'].map((day) => (
+                <div
+                  className="mt-3 grid grid-cols-7 text-center text-[11px] font-semibold text-muted-foreground"
+                  dir={mode === 'gregorian' ? 'ltr' : 'rtl'}
+                >
+                  {(mode === 'gregorian'
+                    ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                    : ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج']
+                  ).map((day) => (
                     <span
-                      className={day === 'ج' ? 'text-destructive' : ''}
+                      className={
+                        day === 'ج' || day === 'Fri' ? 'text-destructive' : ''
+                      }
                       key={day}
                     >
                       {day}
                     </span>
                   ))}
                 </div>
-                <div className="mt-1 grid grid-cols-7 gap-0.5">
+                <div
+                  className="mt-1 grid grid-cols-7 gap-0.5"
+                  dir={mode === 'gregorian' ? 'ltr' : 'rtl'}
+                >
                   {days.map((day, index) =>
                     day ? (
                       <button

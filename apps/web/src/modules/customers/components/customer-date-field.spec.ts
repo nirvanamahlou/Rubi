@@ -18,7 +18,7 @@ describe('Customer date field', () => {
   it('formats the same stored UTC date in the selected calendar', () => {
     const iso = '2026-03-21T00:00:00.000Z';
     expect(formatCustomerDate(iso, 'persian')).toContain('۱۴۰۵');
-    expect(formatCustomerDate(iso, 'gregorian')).toContain('۲۰۲۶');
+    expect(formatCustomerDate(iso, 'gregorian')).toContain('2026');
   });
 
   it('builds a selectable Persian calendar grid instead of manual date inputs', () => {
@@ -45,6 +45,16 @@ describe('Customer date field', () => {
   it('builds a Gregorian calendar grid with real month length', () => {
     const days = calendarMonthDays('gregorian', 2026, 2).filter(Boolean);
     expect(days).toHaveLength(28);
+  });
+
+  it('places Gregorian days in a conventional Sunday-first grid', () => {
+    const august2023 = calendarMonthDays('gregorian', 2023, 8);
+    expect(august2023.slice(0, 2)).toEqual([null, null]);
+    const august18Index = august2023.findIndex(
+      (day) => day?.iso === '2023-08-18',
+    );
+    expect(august18Index % 7).toBe(5);
+    expect(formatCustomerDate('2023-08-18', 'gregorian')).toContain('Aug');
   });
 
   it('uses English labels for Gregorian month tiles', () => {

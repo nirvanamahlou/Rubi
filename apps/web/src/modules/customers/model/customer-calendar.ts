@@ -229,9 +229,10 @@ export function calendarMonthDays(
   if (!firstIso) return [];
 
   const firstWeekday = new Date(`${firstIso}T00:00:00.000Z`).getUTCDay();
-  const saturdayFirstOffset = (firstWeekday + 1) % 7;
+  const firstDayOffset =
+    mode === 'persian' ? (firstWeekday + 1) % 7 : firstWeekday;
   const cells: Array<CustomerCalendarDay | null> = Array.from(
-    { length: saturdayFirstOffset },
+    { length: firstDayOffset },
     () => null,
   );
   for (let day = 1; day <= 31; day += 1) {
@@ -284,7 +285,7 @@ export function formatCustomerDate(
 ) {
   if (!value) return 'ثبت نشده';
   return new Intl.DateTimeFormat(
-    mode === 'persian' ? 'fa-IR-u-ca-persian' : 'fa-IR-u-ca-gregory',
+    mode === 'persian' ? 'fa-IR-u-ca-persian' : 'en-GB',
     { dateStyle: 'medium', timeZone: 'UTC' },
   ).format(new Date(value));
 }
