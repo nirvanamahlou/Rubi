@@ -166,6 +166,12 @@ export class MasterDataExportDto {
     'organization-contacts',
     'leaders',
     'acquaintance-methods',
+    'lead-sources',
+    'sales-channels',
+    'lost-reasons',
+    'customer-types',
+    'tags',
+    'campaign-types',
   ])
   resource!: string;
 

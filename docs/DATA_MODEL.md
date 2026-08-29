@@ -235,6 +235,22 @@ erDiagram
 - همه رکوردها global و مشترک دو شرکت هستند؛ Legal Entity Selector آن‌ها را فیلتر نمی‌کند
   و Branch فقط در Audit actor scope ثبت می‌شود.
 
+### Master Data مراجع فروش
+
+- نحوه آشنایی، منبع سرنخ، کانال فروش، دلیل از دست رفتن، نوع مشتری، Tag و نوع کمپین
+  هفت کاتالوگ مستقل هستند و نباید به‌جای یکدیگر یا به‌صورت یک enum مشترک استفاده شوند.
+- هر مرجع کد داخلی یکتا، نام فارسی، نام انگلیسی اختیاری، توضیح، ترتیب نمایش، وضعیت
+  فعال/غیرفعال، Version خوش‌بینانه و Audit actor/time دارد. رنگ Tag فقط Hex استاندارد
+  Uppercase است و ترتیب نمایش در سطح دیتابیس نامنفی کنترل می‌شود.
+- اتصال Lead/Customer/Campaign/Contract به این Referenceها و شمارش مصرف آن‌ها در مالکیت
+  ماژول مصرف‌کننده است. Master Data به جدول Customers یا Sales Query مستقیم نمی‌زند و
+  شمارنده مصرف فقط پس از انتشار Public Aggregate Contract نمایش داده می‌شود.
+- رابطه چندبه‌چند Tag با رکوردهای عملیاتی در Aggregate مصرف‌کننده نگه‌داری می‌شود؛
+  Master Data فقط تعریف Tag را مالک است. رکورد استفاده‌شده حذف فیزیکی نمی‌شود و فقط
+  غیرفعال می‌شود.
+- همه این Referenceها global و مشترک هر دو Legal Entity هستند و selector شرکت آن‌ها را
+  فیلتر نمی‌کند؛ Branch فقط در Audit actor scope ثبت می‌شود.
+
 ### Accommodation Master Data
 
 - Hotel یک Reference مشترک میان Legal Entityها است و به City واقعی و در صورت وجود

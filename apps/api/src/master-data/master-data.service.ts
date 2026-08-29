@@ -79,6 +79,12 @@ const resourceCodePrefixes: Record<MasterDataResource, string> = {
   'organization-contacts': 'CONTACT',
   leaders: 'LEADER',
   'acquaintance-methods': 'ACQ',
+  'lead-sources': 'LEAD_SOURCE',
+  'sales-channels': 'SALES_CHANNEL',
+  'lost-reasons': 'LOST_REASON',
+  'customer-types': 'CUSTOMER_TYPE',
+  tags: 'TAG',
+  'campaign-types': 'CAMPAIGN_TYPE',
 };
 
 function autoCodeSource(
@@ -414,7 +420,18 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'isPrimary',
   ],
   leaders: ['code', 'name', 'languages', 'expertise'],
-  'acquaintance-methods': ['code', 'name', 'description'],
+  'acquaintance-methods': [
+    'name',
+    'englishName',
+    'description',
+    'displayOrder',
+  ],
+  'lead-sources': ['name', 'englishName', 'description', 'displayOrder'],
+  'sales-channels': ['name', 'englishName', 'description', 'displayOrder'],
+  'lost-reasons': ['name', 'englishName', 'description', 'displayOrder'],
+  'customer-types': ['name', 'englishName', 'description', 'displayOrder'],
+  tags: ['name', 'englishName', 'description', 'colorHex', 'displayOrder'],
+  'campaign-types': ['name', 'englishName', 'description', 'displayOrder'],
 };
 
 const requiredFields: Record<MasterDataResource, readonly string[]> = {
@@ -481,6 +498,12 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   'organization-contacts': ['organizationId', 'fullName', 'preferredChannel'],
   leaders: ['name', 'languages'],
   'acquaintance-methods': ['name'],
+  'lead-sources': ['name'],
+  'sales-channels': ['name'],
+  'lost-reasons': ['name'],
+  'customer-types': ['name'],
+  tags: ['name'],
+  'campaign-types': ['name'],
 };
 
 function resourceOf(value: string): MasterDataResource {
@@ -1076,6 +1099,13 @@ export class MasterDataService {
         'train-types',
         'bus-companies',
         'bus-types',
+        'acquaintance-methods',
+        'lead-sources',
+        'sales-channels',
+        'lost-reasons',
+        'customer-types',
+        'tags',
+        'campaign-types',
       ].includes(resource)
     ) {
       for (const field of [
@@ -1384,6 +1414,34 @@ export class MasterDataService {
         )
           throw new BadRequestException('فهرست امکانات معتبر نیست.');
         data.amenities = [...new Set(amenities)];
+      }
+    }
+    if (
+      [
+        'acquaintance-methods',
+        'lead-sources',
+        'sales-channels',
+        'lost-reasons',
+        'customer-types',
+        'tags',
+        'campaign-types',
+      ].includes(resource)
+    ) {
+      if (data.displayOrder !== undefined) {
+        const displayOrder = Number(data.displayOrder || 0);
+        if (!Number.isInteger(displayOrder) || displayOrder < 0)
+          throw new BadRequestException(
+            'ترتیب نمایش باید عدد صحیح نامنفی باشد.',
+          );
+        data.displayOrder = displayOrder;
+      }
+      if (resource === 'tags' && Object.hasOwn(data, 'colorHex')) {
+        const colorHex = String(data.colorHex ?? '')
+          .trim()
+          .toUpperCase();
+        if (colorHex && !/^#[0-9A-F]{6}$/.test(colorHex))
+          throw new BadRequestException('رنگ Tag باید کد Hex معتبر باشد.');
+        data.colorHex = colorHex || null;
       }
     }
     if (resource === 'baggage-rules' || resource === 'manifest-templates') {

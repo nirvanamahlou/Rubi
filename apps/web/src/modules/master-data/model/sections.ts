@@ -108,8 +108,17 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
   {
     slug: 'sales-references',
     title: 'مراجع فروش',
-    description: 'نحوه آشنایی و داده‌های مرجع چرخه فروش',
-    resources: ['acquaintance-methods'],
+    description:
+      'نحوه آشنایی، منبع سرنخ، کانال، دلیل باخت، نوع مشتری، Tag و نوع کمپین',
+    resources: [
+      'acquaintance-methods',
+      'lead-sources',
+      'sales-channels',
+      'lost-reasons',
+      'customer-types',
+      'tags',
+      'campaign-types',
+    ],
     tone: 'purple',
   },
 ];

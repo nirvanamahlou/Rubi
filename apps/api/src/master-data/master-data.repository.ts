@@ -100,6 +100,12 @@ const delegateNames: Record<MasterDataResource, string> = {
   'organization-contacts': 'masterOrganizationContact',
   leaders: 'masterLeader',
   'acquaintance-methods': 'masterAcquaintanceMethod',
+  'lead-sources': 'masterLeadSource',
+  'sales-channels': 'masterSalesChannel',
+  'lost-reasons': 'masterLostReason',
+  'customer-types': 'masterCustomerType',
+  tags: 'masterTag',
+  'campaign-types': 'masterCampaignType',
 };
 
 const nameFields: Record<MasterDataResource, string> = {
@@ -136,6 +142,12 @@ const nameFields: Record<MasterDataResource, string> = {
   'organization-contacts': 'fullName',
   leaders: 'name',
   'acquaintance-methods': 'name',
+  'lead-sources': 'name',
+  'sales-channels': 'name',
+  'lost-reasons': 'name',
+  'customer-types': 'name',
+  tags: 'name',
+  'campaign-types': 'name',
 };
 
 const codeFields: Record<MasterDataResource, string> = {
@@ -172,6 +184,12 @@ const codeFields: Record<MasterDataResource, string> = {
   'organization-contacts': 'code',
   leaders: 'code',
   'acquaintance-methods': 'code',
+  'lead-sources': 'code',
+  'sales-channels': 'code',
+  'lost-reasons': 'code',
+  'customer-types': 'code',
+  tags: 'code',
+  'campaign-types': 'code',
 };
 
 const searchFields: Record<MasterDataResource, readonly string[]> = {
@@ -207,7 +225,13 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
   'travel-services': ['name', 'englishName', 'code'],
   'organization-contacts': ['fullName', 'jobTitle', 'code'],
   leaders: ['name', 'code'],
-  'acquaintance-methods': ['name', 'code'],
+  'acquaintance-methods': ['name', 'englishName', 'description', 'code'],
+  'lead-sources': ['name', 'englishName', 'description', 'code'],
+  'sales-channels': ['name', 'englishName', 'description', 'code'],
+  'lost-reasons': ['name', 'englishName', 'description', 'code'],
+  'customer-types': ['name', 'englishName', 'description', 'code'],
+  tags: ['name', 'englishName', 'description', 'code', 'colorHex'],
+  'campaign-types': ['name', 'englishName', 'description', 'code'],
 };
 
 function delegate(client: unknown, resource: MasterDataResource): Delegate {

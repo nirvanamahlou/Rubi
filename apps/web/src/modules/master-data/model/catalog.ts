@@ -32,6 +32,12 @@ export const masterDataResourceKeys = [
   'organization-contacts',
   'leaders',
   'acquaintance-methods',
+  'lead-sources',
+  'sales-channels',
+  'lost-reasons',
+  'customer-types',
+  'tags',
+  'campaign-types',
 ] as const;
 
 export type MasterDataResourceKey = (typeof masterDataResourceKeys)[number];
@@ -1704,10 +1710,22 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     fields: [
       nameField,
       {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Referral',
+      },
+      {
         key: 'description',
         label: 'توضیح',
         type: 'text',
         placeholder: 'توضیح اختیاری',
+      },
+      {
+        key: 'displayOrder',
+        label: 'ترتیب نمایش',
+        type: 'number',
+        placeholder: '0',
       },
     ],
     preview: {
@@ -1715,6 +1733,193 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       name: 'معرفی دوستان',
       description: 'نمونه طراحی',
     },
+  },
+  {
+    key: 'lead-sources',
+    label: 'منابع سرنخ',
+    singularLabel: 'منبع سرنخ',
+    group: 'فروش',
+    description:
+      'منشأ ورود Lead؛ مستقل از نحوه آشنایی مشتری، کانال فروش و کمپین.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Lead Source',
+      },
+      {
+        key: 'description',
+        label: 'توضیحات',
+        type: 'text',
+        placeholder: 'تعریف منبع سرنخ',
+      },
+      {
+        key: 'displayOrder',
+        label: 'ترتیب نمایش',
+        type: 'number',
+        placeholder: '0',
+      },
+    ],
+    preview: { code: 'AUTO', name: 'منبع سرنخ', displayOrder: '0' },
+  },
+  {
+    key: 'sales-channels',
+    label: 'کانال‌های فروش',
+    singularLabel: 'کانال فروش',
+    group: 'فروش',
+    description:
+      'کانال انجام فروش؛ رابطه استفاده و تراکنش فروش در ماژول Sales باقی می‌ماند.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Sales Channel',
+      },
+      {
+        key: 'description',
+        label: 'توضیحات',
+        type: 'text',
+        placeholder: 'تعریف کانال فروش',
+      },
+      {
+        key: 'displayOrder',
+        label: 'ترتیب نمایش',
+        type: 'number',
+        placeholder: '0',
+      },
+    ],
+    preview: { code: 'AUTO', name: 'کانال فروش', displayOrder: '0' },
+  },
+  {
+    key: 'lost-reasons',
+    label: 'دلایل از دست رفتن',
+    singularLabel: 'دلیل از دست رفتن',
+    group: 'فروش',
+    description:
+      'دلیل مرجع پایان ناموفق Lead/Opportunity؛ وضعیت چرخه فروش در Customer Affairs/Sales است.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Lost Reason',
+      },
+      {
+        key: 'description',
+        label: 'توضیحات',
+        type: 'text',
+        placeholder: 'تعریف دلیل',
+      },
+      {
+        key: 'displayOrder',
+        label: 'ترتیب نمایش',
+        type: 'number',
+        placeholder: '0',
+      },
+    ],
+    preview: { code: 'AUTO', name: 'دلیل از دست رفتن', displayOrder: '0' },
+  },
+  {
+    key: 'customer-types',
+    label: 'انواع مشتری',
+    singularLabel: 'نوع مشتری',
+    group: 'فروش',
+    description:
+      'طبقه‌بندی مرجع نوع مشتری؛ مستقل از Tag و بدون تغییر مدل Customers.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Customer Type',
+      },
+      {
+        key: 'description',
+        label: 'توضیحات',
+        type: 'text',
+        placeholder: 'تعریف نوع مشتری',
+      },
+      {
+        key: 'displayOrder',
+        label: 'ترتیب نمایش',
+        type: 'number',
+        placeholder: '0',
+      },
+    ],
+    preview: { code: 'AUTO', name: 'نوع مشتری', displayOrder: '0' },
+  },
+  {
+    key: 'tags',
+    label: 'Tagها',
+    singularLabel: 'Tag',
+    group: 'فروش',
+    description:
+      'برچسب مرجع چندمنظوره؛ رابطه چندبه‌چند هر مصرف‌کننده در همان ماژول مالک است.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Tag',
+      },
+      {
+        key: 'colorHex',
+        label: 'رنگ',
+        type: 'text',
+        placeholder: '#2563EB',
+        hint: 'کد Hex شش‌رقمی؛ فقط برای نمایش.',
+      },
+      {
+        key: 'description',
+        label: 'توضیحات',
+        type: 'text',
+        placeholder: 'تعریف Tag',
+      },
+      {
+        key: 'displayOrder',
+        label: 'ترتیب نمایش',
+        type: 'number',
+        placeholder: '0',
+      },
+    ],
+    preview: { code: 'AUTO', name: 'Tag', colorHex: '#2563EB' },
+  },
+  {
+    key: 'campaign-types',
+    label: 'انواع کمپین',
+    singularLabel: 'نوع کمپین',
+    group: 'فروش',
+    description:
+      'نوع مرجع کمپین؛ خود کمپین، بودجه و Attribution در Marketing نگه‌داری می‌شود.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Campaign Type',
+      },
+      {
+        key: 'description',
+        label: 'توضیحات',
+        type: 'text',
+        placeholder: 'تعریف نوع کمپین',
+      },
+      {
+        key: 'displayOrder',
+        label: 'ترتیب نمایش',
+        type: 'number',
+        placeholder: '0',
+      },
+    ],
+    preview: { code: 'AUTO', name: 'نوع کمپین', displayOrder: '0' },
   },
 ];
 

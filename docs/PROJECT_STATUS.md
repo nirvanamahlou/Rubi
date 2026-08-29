@@ -1,18 +1,18 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-29 — MASTER-003H-TRANSPORT پیاده‌سازی و آزموده شد
+آخرین به‌روزرسانی: 2026-08-29 — MASTER-003I-SALES-REFERENCES پیاده‌سازی و آزموده شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003H-TRANSPORT روی شاخه Stacked مستقل آماده Review است**
+- وضعیت: **MASTER-003I-SALES-REFERENCES روی شاخه Stacked مستقل آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه فعال: `codex/pc-b-master-data-ux-consolidation`
-- Work Item: `MASTER-003H-TRANSPORT`؛ وابسته به Draft PR #33
+- شاخه فعال: `codex/pc-b-master-data-sales-references`
+- Work Item: `MASTER-003I-SALES-REFERENCES`؛ Stacked روی Draft PR #35
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ API روی ۴۰۰۰ و Web روی ۳۱۰۰ فعال‌اند.
-- نوع تغییر: Frontend، تست و مستندات؛ بدون Database، Migration، API Contract،
-  Dependency یا Lockfile.
+- نوع تغییر: Database، Migration، API Contract، Backend، Frontend، Test و Documentation؛
+  بدون Customers، Dependency یا Lockfile.
 
 ### `MODULES-FOUNDATION-001` — PC-A — `READY_FOR_REVIEW`
 
@@ -291,6 +291,36 @@
   دیتابیس محلی Deploy و Seed دو بار بدون ایجاد داده ساختگی اجرا شد.
 - هیچ فایل Customers، dependency manifest یا lockfile تغییر نکرده و سه قفل فعال
   Migration/Contract/Docs همچنان زیر `PC-B/MASTER-003` باقی می‌مانند.
+
+### `MASTER-003I-SALES-REFERENCES` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-sales-references` از
+  `origin/codex/pc-b-master-data-transport@1049928` ساخته شد و روی Draft PR #35 پشته
+  می‌شود؛ هیچ شاخه والد یا متعلق به PC-A تغییر نمی‌کند.
+- Draft PR #36 با Base `codex/pc-b-master-data-transport` ساخته شد و پیش از Merge
+  PR #35 و تمام والدهای آن نباید ادغام شود؛ پس از Merge والد، Base مطابق زنجیره به
+  `develop` تغییر می‌کند.
+- Migration افزایشی `20260829190000_master_data_sales_references` شش کاتالوگ جدید
+  Lead Source، Sales Channel، Lost Reason، Customer Type، Tag و Campaign Type را
+  اضافه و کاتالوگ موجود Acquaintance Method را با نام انگلیسی و ترتیب نمایش تکمیل
+  می‌کند؛ Check واقعی ترتیب نامنفی و رنگ Hex Tag و Unique Code فعال است.
+- Contract عمومی به `master-data.v10` ارتقا یافت و هر هفت مرجع به Backend واقعی
+  Search/Sort/Pagination، Create/Edit، Active/Inactive، Optimistic Lock، Audit،
+  Permission و Export متصل شدند.
+- Workspace فارسی RTL Responsive مطابق ماکاپ هفت تب و چهار KPI پاستلی هم‌نام دارد.
+  هیچ تب پروفایل مستقلی وجود ندارد و جزئیات هر ردیف از نام یا دکمه مشاهده در Popup
+  مشترک باز می‌شود.
+- شمارنده استفاده به‌دلیل مالکیت آن توسط Consumer Aggregate و ممنوعیت Query مستقیم
+  Customers/Sales صادقانه با `—` نمایش داده می‌شود؛ پس از قرارداد عمومی نسخه‌دار قابل
+  اتصال است. Seed این Slice عمداً هیچ مرجع ساختگی اضافه نمی‌کند.
+- تمام ۱۵ Migration روی PostgreSQL 18 خالی و Seed دوگانه موفق بود؛ همان Migration روی
+  دیتابیس محلی Deploy و Seed دو بار اجرا شد. هیچ فایل Customers، dependency manifest
+  یا lockfile تغییر نکرده و سه قفل MASTER-003 فعال می‌مانند.
+- Full Test شامل API `204/204`، Web `120/120`، Database `42/42`، Contracts `14/14`
+  و سه تست سایر بسته‌ها موفق بود؛ Full Typecheck و Production Build نیز پاس شدند.
+  Smoke احراز‌شده API و `/master-data/sales-references` هر دو پاسخ ۲۰۰ دادند. Lint
+  فایل‌های دو Workspace حمل‌ونقل و مراجع فروش موفق است؛ Full lint فقط به‌دلیل ایراد
+  قدیمی DatePicker خارج از این Slice متوقف می‌شود.
 
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`

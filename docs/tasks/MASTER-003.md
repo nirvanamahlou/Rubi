@@ -45,7 +45,7 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 
 ### Contract و Permission
 
-- Master Data Contract نسخه `8` در بالاترین Slice پشته (`MASTER-003F`)؛ Parent PR #25
+- Master Data Contract نسخه `10` در بالاترین Slice پشته (`MASTER-003I`)؛ Parent PR #25
   مستقل و دست‌نخورده باقی می‌ماند.
 - IAM Permission Contract نسخه `5`
 - Permissionهای جدید در Contract و Seed:
@@ -108,6 +108,30 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 - Draft PR #33 از شاخه `codex/pc-b-master-data-ux-consolidation` روی PR #32 پشته
   شده و پیش از والدهای #32 ← #31 ← #30 ← #29 ← #28 ← #25 نباید Merge شود.
 
+## Slice پشته‌ای حمل‌ونقل — MASTER-003H
+
+- ۹ کاتالوگ ایرلاین، نوع هواپیما، کلاس پروازی، قاعده بار، قالب Manifest، شرکت و نوع
+  قطار و شرکت و نوع اتوبوس با Migration افزایشی، API واقعی و Workspace مطابق ماکاپ
+  ارائه شدند؛ پروفایل فقط Popup است.
+- اتصال‌های عملیاتی Provider، Inventory، Reservation، Settlement و Manifest مسافر
+  خارج از Master Data باقی مانده و فقط از Public Contract قابل اتصال است.
+- Draft PR #35 روی PR #33 پشته شده و پیش از زنجیره والد Merge نمی‌شود.
+
+## Slice پشته‌ای مراجع فروش — MASTER-003I
+
+- هفت کاتالوگ مستقل نحوه آشنایی، منبع سرنخ، کانال فروش، دلیل از دست رفتن، نوع مشتری،
+  Tag و نوع کمپین با Migration افزایشی، Contract v10، Backend و Workspace واقعی
+  فارسی/RTL/Responsive پیاده‌سازی شدند.
+- پروفایل هر مرجع فقط از داخل فهرست در Popup باز می‌شود و تب یا سکشن مستقل پروفایل
+  وجود ندارد. چهار KPI دقیق ماکاپ عبارت‌اند از کل موارد، فعال، استفاده‌شده و نیازمند
+  بازبینی.
+- شمارش استفاده در مالکیت Aggregate مصرف‌کننده است؛ تا انتشار قرارداد عمومی آن مقدار
+  `—` نمایش داده می‌شود و هیچ Query مستقیم به Customers یا Sales وجود ندارد.
+- Branch `codex/pc-b-master-data-sales-references` روی PR #35 پشته می‌شود و پیش از
+  همه والدهای خود Merge نمی‌شود.
+- Draft PR #36 با Base اولیه `codex/pc-b-master-data-transport` ایجاد شده است؛ بعد از
+  Merge والد، Base مطابق زنجیره به `develop` تغییر می‌کند.
+
 ## Import واقعی هتل — HOTEL_IMPORT_V1
 
 - دو Endpoint واقعی `POST /master-data/hotel-imports/preview` و
@@ -163,8 +187,7 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 
 این Draft PR کل MASTER-003 را Complete اعلام نمی‌کند. موارد زیر هنوز پیاده‌سازی نشده‌اند و قفل‌ها آزاد نمی‌شوند:
 
-- کاتالوگ‌های Aircraft/Class/Baggage/Manifest، Insurance Plan/Coverage،
-  Tour/Transfer/Bus و Sales References مستقل
+- کاتالوگ‌های Insurance Plan/Coverage و Tour/Transfer مستقل
 - اتصال Scanner مستقل آنتی‌ویروس و Documents برای تصاویر هتل
 - اتصال لوگوی بانک به Documents Worker و قرارداد واقعی فایل
 
