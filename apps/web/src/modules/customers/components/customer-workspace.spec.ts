@@ -109,6 +109,9 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).not.toContain('CUSTOMER-002A · PC-A');
     expect(source).not.toContain('Backend واقعی · حفاظت PII');
     expect(source).not.toContain('فیلتر محدوده دسترسی');
+    expect(source).toContain('start-auto left-1/2');
+    expect(source).not.toContain('customer-display-name');
+    expect(source).toContain('const submittedDraft: CustomerMutationRequest');
   });
 
   it('keeps internal customer identifiers out of the visible workspace', () => {

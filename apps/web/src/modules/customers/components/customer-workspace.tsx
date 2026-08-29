@@ -420,11 +420,18 @@ function CustomerDrawer({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const submittedDraft: CustomerMutationRequest = {
+      ...draft,
+      displayName:
+        draft.kind === 'person'
+          ? `${draft.firstName?.trim() ?? ''} ${draft.lastName?.trim() ?? ''}`.trim()
+          : draft.displayName,
+    };
     if (customer) {
       await perform(
         () =>
           customersApi.update(customer.id, {
-            ...draft,
+            ...submittedDraft,
             version: customer.version,
           }),
         'مشتری با موفقیت ویرایش شد.',
@@ -433,7 +440,7 @@ function CustomerDrawer({
       setBusy(true);
       setMessage(null);
       try {
-        let createdCustomer = (await customersApi.create(draft)).data;
+        let createdCustomer = (await customersApi.create(submittedDraft)).data;
         if (primaryPhone.trim()) {
           createdCustomer = (
             await customersApi.addContact(createdCustomer.id, {
@@ -681,7 +688,7 @@ function CustomerDrawer({
 
   return (
     <Dialog onOpenChange={(open) => !open && onClose()} open>
-      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-[60rem] overflow-y-auto p-6">
+      <DialogContent className="start-auto left-1/2 max-h-[calc(100dvh-2rem)] max-w-[60rem] overflow-x-hidden overflow-y-auto p-6">
         <DialogTitle>
           {mode === 'create'
             ? 'ایجاد مشتری'
@@ -735,20 +742,6 @@ function CustomerDrawer({
                     : 'رکورد سازمانی قدیمی'}
                 </Badge>
               </div>
-            </FormField>
-            <FormField id="customer-display-name" label="نام نمایشی" required>
-              <Input
-                disabled={readonly}
-                id="customer-display-name"
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    displayName: event.target.value,
-                  }))
-                }
-                required
-                value={draft.displayName}
-              />
             </FormField>
             {draft.kind === 'person' ? (
               <>
