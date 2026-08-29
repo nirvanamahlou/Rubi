@@ -90,6 +90,8 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('exportVisibleCustomers');
     expect(source).toContain('customer-import-template.xlsx');
     expect(source).toContain('parseCustomerXlsx(file)');
+    expect(source).toContain('importInputRef.current?.click()');
+    expect(source).not.toContain('<Button asChild disabled={importing}');
     expect(source).toContain('نام مشتری');
     const exportSource = source.slice(
       source.indexOf('function exportVisibleCustomers'),

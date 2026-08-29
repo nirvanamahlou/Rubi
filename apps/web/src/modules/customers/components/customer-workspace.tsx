@@ -39,6 +39,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
   type FormEvent,
   type KeyboardEvent,
@@ -1879,6 +1880,7 @@ export function CustomerWorkspace() {
   );
   const [notice, setNotice] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void listMasterData('acquaintance-methods')
@@ -2252,23 +2254,29 @@ export function CustomerWorkspace() {
             <Download className="size-4" />
             دانلود قالب ورود
           </Button>
-          <Button asChild disabled={importing} size="lg" variant="outline">
-            <label className="cursor-pointer">
-              <Upload className="size-4" />
-              {importing ? 'در حال ورود…' : 'ورود از Excel'}
-              <input
-                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                className="sr-only"
-                disabled={importing}
-                onChange={(event) => {
-                  const file = event.currentTarget.files?.[0];
-                  if (file) void importCustomers(file);
-                  event.currentTarget.value = '';
-                }}
-                type="file"
-              />
-            </label>
+          <Button
+            disabled={importing}
+            onClick={() => importInputRef.current?.click()}
+            size="lg"
+            type="button"
+            variant="outline"
+          >
+            <Upload className="size-4" />
+            {importing ? 'در حال ورود…' : 'ورود از Excel'}
           </Button>
+          <input
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            className="sr-only"
+            disabled={importing}
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              if (file) void importCustomers(file);
+              event.currentTarget.value = '';
+            }}
+            ref={importInputRef}
+            tabIndex={-1}
+            type="file"
+          />
           <Button onClick={() => void open('create')} size="lg">
             <Plus className="size-4" />
             بازکردن فرم ثبت
