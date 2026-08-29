@@ -9,7 +9,7 @@
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
 - شاخه فعال: `codex/pc-b-master-data-travel-services`
-- Work Item: `MASTER-003K-TRAVEL-SERVICES`؛ Stacked روی Draft PR #37
+- Work Item: `MASTER-003K-TRAVEL-SERVICES`؛ Draft PR #38، Stacked روی Draft PR #37
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ API روی ۴۰۰۰ و Web روی ۳۱۰۰ فعال‌اند.
 - نوع تغییر: Database، Migration، API Contract، Backend، Frontend، Test و Documentation؛
   بدون Customers، Dependency یا Lockfile.
@@ -353,7 +353,7 @@
 
 - Branch مستقل `codex/pc-b-master-data-travel-services` از
   `origin/codex/pc-b-master-data-insurance@1a94fca` ساخته شد و روی Draft PR #37
-  پشته می‌شود؛ هیچ شاخه والد یا متعلق به PC-A تغییر نمی‌کند.
+  پشته می‌شود؛ Draft PR #38 ایجاد شد و هیچ شاخه والد یا متعلق به PC-A تغییر نمی‌کند.
 - Migrationهای افزایشی `20260829220000_master_data_travel_services` و
   `20260829221000_master_data_travel_bus_connections` چهار کاتالوگ Tour
   Type، Transfer Type، CIP Service و Visa Service را اضافه و Leader را با Location،

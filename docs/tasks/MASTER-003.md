@@ -173,7 +173,7 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 - تمام ۱۹ Migration روی PostgreSQL 18 خالی، Constraintهای ظرفیت/اعتبار، اتصال
   Organization/Provider، FK محدودکننده Facility و Seed
   دوگانه موفق بودند؛ Seed هیچ داده لیدر، تور، ترانسفر، CIP، ویزا یا مسافر نمی‌سازد.
-- Branch `codex/pc-b-master-data-travel-services` روی Draft PR #37 پشته می‌شود و
+- Draft PR #38 از Branch `codex/pc-b-master-data-travel-services` روی Draft PR #37 پشته می‌شود و
   پیش از همه والدهای خود Merge نمی‌شود؛ بعد از Merge والد، Base مطابق زنجیره به
   `develop` تغییر می‌کند.
 
