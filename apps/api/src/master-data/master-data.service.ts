@@ -53,6 +53,8 @@ const resourceCodePrefixes: Record<MasterDataResource, string> = {
   currencies: 'CUR',
   'exchange-rates': 'RATE',
   banks: 'BANK',
+  'bank-branches': 'BANK_BRANCH',
+  'payment-methods': 'PAYMENT_METHOD',
   insurers: 'INS',
   airlines: 'AIR',
   hotels: 'HOTEL',
@@ -82,6 +84,22 @@ function hashToken(seed: string, alphabet: string, length: number): string {
 
 const regionTypes = new Set(['PROVINCE', 'STATE', 'REGION', 'TERRITORY']);
 const terminalTypes = new Set(['DOMESTIC', 'INTERNATIONAL', 'VIP']);
+const currencyDisplayPolicies = new Set([
+  'SYMBOL_BEFORE',
+  'SYMBOL_AFTER',
+  'CODE_BEFORE',
+  'CODE_AFTER',
+]);
+const paymentChannels = new Set([
+  'CASH',
+  'POS',
+  'BANK_TRANSFER',
+  'ONLINE_GATEWAY',
+  'CREDIT',
+  'WALLET',
+  'OTHER',
+]);
+const paymentDirections = new Set(['RECEIPT', 'PAYMENT', 'BOTH']);
 
 function isValidIso2(value: string): boolean {
   if (!/^[A-Z]{2}$/.test(value)) return false;
@@ -121,7 +139,14 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'longitude',
   ],
   terminals: ['code', 'name', 'englishName', 'airportId', 'terminalType'],
-  currencies: ['code', 'name', 'englishName', 'symbol', 'decimalDigits'],
+  currencies: [
+    'code',
+    'name',
+    'englishName',
+    'symbol',
+    'decimalDigits',
+    'displayPolicy',
+  ],
   'exchange-rates': [
     'fromCurrencyCode',
     'toCurrencyCode',
@@ -133,7 +158,26 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'validTo',
     'correctionReason',
   ],
-  banks: ['code', 'name', 'countryId'],
+  banks: ['code', 'name', 'englishName', 'countryId', 'swiftCode'],
+  'bank-branches': [
+    'code',
+    'name',
+    'englishName',
+    'bankId',
+    'cityId',
+    'address',
+    'phone',
+  ],
+  'payment-methods': [
+    'code',
+    'name',
+    'englishName',
+    'description',
+    'channel',
+    'direction',
+    'requiresManualApproval',
+    'displayOrder',
+  ],
   insurers: ['code', 'name', 'organizationId'],
   airlines: ['code', 'name', 'icaoCode', 'organizationId'],
   hotels: ['code', 'name', 'cityId', 'organizationId', 'starRating'],
@@ -159,7 +203,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
     'longitude',
   ],
   terminals: ['name', 'airportId', 'terminalType'],
-  currencies: ['name'],
+  currencies: ['code', 'name', 'englishName', 'displayPolicy'],
   'exchange-rates': [
     'fromCurrencyCode',
     'toCurrencyCode',
@@ -167,7 +211,9 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
     'source',
     'observedAt',
   ],
-  banks: ['name', 'countryId'],
+  banks: ['code', 'name', 'englishName', 'countryId'],
+  'bank-branches': ['code', 'name', 'bankId', 'cityId'],
+  'payment-methods': ['code', 'name', 'channel', 'direction'],
   insurers: ['name', 'organizationId'],
   airlines: ['name', 'organizationId'],
   hotels: ['name', 'cityId'],
@@ -212,7 +258,10 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     'regionId',
     'cityId',
     'airportId',
+    'bankId',
     'terminalType',
+    'paymentChannel',
+    'paymentDirection',
   ];
   if (
     Object.keys(input.filters).some((key) => !allowedFilterKeys.includes(key))
@@ -234,7 +283,13 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     !['name', 'code', 'updatedAt'].includes(String(input.filters.sortBy))
   )
     throw new BadRequestException('مرتب‌سازی خروجی معتبر نیست.');
-  for (const field of ['countryId', 'regionId', 'cityId', 'airportId']) {
+  for (const field of [
+    'countryId',
+    'regionId',
+    'cityId',
+    'airportId',
+    'bankId',
+  ]) {
     const value = input.filters[field];
     if (
       value !== undefined &&
@@ -254,6 +309,16 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     )
   )
     throw new BadRequestException('نوع ترمینال خروجی معتبر نیست.');
+  if (
+    input.filters.paymentChannel !== undefined &&
+    !paymentChannels.has(String(input.filters.paymentChannel))
+  )
+    throw new BadRequestException('کانال روش پرداخت معتبر نیست.');
+  if (
+    input.filters.paymentDirection !== undefined &&
+    !paymentDirections.has(String(input.filters.paymentDirection))
+  )
+    throw new BadRequestException('جهت روش پرداخت معتبر نیست.');
   const allowedColumns = new Set([
     ...allowedFields[resource],
     'code',
@@ -299,10 +364,29 @@ function exportQuery(input: ExportInput): MasterDataListQuery {
     ...(typeof input.filters.airportId === 'string'
       ? { airportId: input.filters.airportId }
       : {}),
+    ...(typeof input.filters.bankId === 'string'
+      ? { bankId: input.filters.bankId }
+      : {}),
     ...(typeof input.filters.terminalType === 'string'
       ? {
           terminalType: input.filters.terminalType as Exclude<
             MasterDataListQuery['terminalType'],
+            undefined
+          >,
+        }
+      : {}),
+    ...(typeof input.filters.paymentChannel === 'string'
+      ? {
+          paymentChannel: input.filters.paymentChannel as Exclude<
+            MasterDataListQuery['paymentChannel'],
+            undefined
+          >,
+        }
+      : {}),
+    ...(typeof input.filters.paymentDirection === 'string'
+      ? {
+          paymentDirection: input.filters.paymentDirection as Exclude<
+            MasterDataListQuery['paymentDirection'],
             undefined
           >,
         }
@@ -594,7 +678,11 @@ export class MasterDataService {
     const usesGeneratedCode =
       resource !== 'exchange-rates' &&
       resource !== 'countries' &&
-      resource !== 'airports';
+      resource !== 'airports' &&
+      resource !== 'currencies' &&
+      resource !== 'banks' &&
+      resource !== 'bank-branches' &&
+      resource !== 'payment-methods';
     if (usesGeneratedCode) {
       if (partial && Object.hasOwn(values, 'code'))
         throw new BadRequestException(
@@ -602,8 +690,37 @@ export class MasterDataService {
         );
       if (!partial) data.code = await this.generateAutoCode(resource, values);
     }
-    if (typeof data.code === 'string' && !codePattern.test(data.code))
+    if (
+      usesGeneratedCode &&
+      typeof data.code === 'string' &&
+      !codePattern.test(data.code)
+    )
       throw new BadRequestException('کد داخلی تولیدشده معتبر نیست.');
+    if (
+      ['currencies', 'banks', 'bank-branches', 'payment-methods'].includes(
+        resource,
+      ) &&
+      data.code !== undefined
+    ) {
+      const code = String(data.code).trim().toUpperCase();
+      const expectedPattern =
+        resource === 'currencies' ? /^[A-Z]{3}$/ : codePattern;
+      if (!expectedPattern.test(code))
+        throw new BadRequestException(
+          resource === 'currencies'
+            ? 'کد ISO-4217 ارز باید سه حرف بزرگ باشد.'
+            : 'کد باید با حروف بزرگ یا عدد و حداکثر ۳۲ نویسه باشد.',
+        );
+      if (
+        resource !== 'bank-branches' &&
+        (await this.repository.fieldExists(resource, 'code', code, entityId))
+      )
+        throw new ConflictException({
+          code: 'MASTER_DATA_DUPLICATE_CODE',
+          message: 'کد قبلاً ثبت شده است.',
+        });
+      data.code = code;
+    }
     if (resource === 'airlines' && typeof data.icaoCode === 'string') {
       const icaoCode = data.icaoCode.trim().toUpperCase();
       if (icaoCode.length !== 3)
@@ -621,6 +738,7 @@ export class MasterDataService {
       'regionId',
       'parentRegionId',
       'airportId',
+      'bankId',
     ]) {
       if (
         typeof data[field] === 'string' &&
@@ -689,6 +807,57 @@ export class MasterDataService {
         );
       data.decimalDigits = digits;
     }
+    if (resource === 'currencies' && data.displayPolicy !== undefined) {
+      const displayPolicy = String(data.displayPolicy).trim().toUpperCase();
+      if (!currencyDisplayPolicies.has(displayPolicy))
+        throw new BadRequestException('سیاست نمایش ارز معتبر نیست.');
+      data.displayPolicy = displayPolicy;
+    }
+    if (resource === 'banks' && data.swiftCode !== undefined) {
+      const swiftCode = String(data.swiftCode).trim().toUpperCase();
+      if (swiftCode && !/^[A-Z0-9]{8}([A-Z0-9]{3})?$/.test(swiftCode))
+        throw new BadRequestException('کد SWIFT باید ۸ یا ۱۱ نویسه بزرگ باشد.');
+      if (
+        swiftCode &&
+        (await this.repository.fieldExists(
+          'banks',
+          'swiftCode',
+          swiftCode,
+          entityId,
+        ))
+      )
+        throw new ConflictException({
+          code: 'MASTER_DATA_DUPLICATE_CODE',
+          message: 'کد SWIFT قبلاً ثبت شده است.',
+        });
+      data.swiftCode = swiftCode || null;
+    }
+    if (resource === 'payment-methods') {
+      if (data.channel !== undefined) {
+        const channel = String(data.channel).trim().toUpperCase();
+        if (!paymentChannels.has(channel))
+          throw new BadRequestException('کانال روش پرداخت معتبر نیست.');
+        data.channel = channel;
+      }
+      if (data.direction !== undefined) {
+        const direction = String(data.direction).trim().toUpperCase();
+        if (!paymentDirections.has(direction))
+          throw new BadRequestException('جهت روش پرداخت معتبر نیست.');
+        data.direction = direction;
+      }
+      if (data.requiresManualApproval !== undefined)
+        data.requiresManualApproval =
+          data.requiresManualApproval === true ||
+          String(data.requiresManualApproval).toLowerCase() === 'true';
+      if (data.displayOrder !== undefined) {
+        const displayOrder = Number(data.displayOrder);
+        if (!Number.isInteger(displayOrder) || displayOrder < 0)
+          throw new BadRequestException(
+            'ترتیب نمایش باید عدد صحیح نامنفی باشد.',
+          );
+        data.displayOrder = displayOrder;
+      }
+    }
     if (
       resource === 'hotels' &&
       data.starRating !== undefined &&
@@ -744,6 +913,7 @@ export class MasterDataService {
       regions: { field: 'countryId', target: 'countries' },
       terminals: { field: 'airportId', target: 'airports' },
       banks: { field: 'countryId', target: 'countries' },
+      'bank-branches': { field: 'bankId', target: 'banks' },
       hotels: { field: 'cityId', target: 'cities' },
       insurers: {
         field: 'organizationId',
@@ -774,6 +944,31 @@ export class MasterDataService {
         (check.role && !roles?.some(({ roleCode }) => roleCode === check.role))
       )
         throw new BadRequestException('مرجع فعال با Role موردنیاز یافت نشد.');
+    }
+    if (resource === 'bank-branches') {
+      if (typeof data.cityId === 'string') {
+        const city = await this.repository.find('cities', data.cityId);
+        if (!city?.isActive)
+          throw new BadRequestException('شهر فعال برای شعبه بانک یافت نشد.');
+      }
+      if (data.code !== undefined) {
+        const existing = entityId
+          ? await this.repository.find('bank-branches', entityId)
+          : null;
+        const bankId = String(data.bankId ?? existing?.bankId ?? '');
+        if (
+          !uuidPattern.test(bankId) ||
+          (await this.repository.bankBranchCodeExists(
+            bankId,
+            String(data.code),
+            entityId,
+          ))
+        )
+          throw new ConflictException({
+            code: 'MASTER_DATA_DUPLICATE_CODE',
+            message: 'کد شعبه در بانک انتخاب‌شده قبلاً ثبت شده است.',
+          });
+      }
     }
     if (resource === 'regions' && typeof data.parentRegionId === 'string') {
       if (data.parentRegionId === entityId)

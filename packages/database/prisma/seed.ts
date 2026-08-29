@@ -157,8 +157,16 @@ async function seed(): Promise<void> {
         update: { isPrimary: true },
       });
       const initialLegalEntities = [
-        { id: '20000000-0000-4000-8000-000000000001', code: 'NIYAYESH_SEIR_SAHAR', persianName: 'شرکت نیایش سیر سحر' },
-        { id: '20000000-0000-4000-8000-000000000002', code: 'JAHAN_BASTAN', persianName: 'شرکت جهان باستان' },
+        {
+          id: '20000000-0000-4000-8000-000000000001',
+          code: 'NIYAYESH_SEIR_SAHAR',
+          persianName: 'شرکت نیایش سیر سحر',
+        },
+        {
+          id: '20000000-0000-4000-8000-000000000002',
+          code: 'JAHAN_BASTAN',
+          persianName: 'شرکت جهان باستان',
+        },
       ] as const;
       for (const initial of initialLegalEntities) {
         const legalEntity = await transaction.legalEntity.upsert({
@@ -167,17 +175,38 @@ async function seed(): Promise<void> {
           update: {},
         });
         await transaction.legalEntityBrandingVersion.upsert({
-          where: { legalEntityId_version: { legalEntityId: legalEntity.id, version: 1 } },
+          where: {
+            legalEntityId_version: {
+              legalEntityId: legalEntity.id,
+              version: 1,
+            },
+          },
           create: {
             legalEntityId: legalEntity.id,
             version: 1,
             snapshot: {
-              legalEntityId: legalEntity.id, code: legalEntity.code, persianName: legalEntity.persianName,
-              latinName: null, tradeName: null, logoFileId: null, letterheadFileId: null,
-              footerFileId: null, address: null, phone: null, email: null, website: null,
-              nationalId: null, registrationNumber: null, economicCode: null, paymentText: null,
-              sealFileId: null, authorizedSignatureId: null, primaryColor: null,
-              secondaryColor: null, legalFooterText: null, version: 1,
+              legalEntityId: legalEntity.id,
+              code: legalEntity.code,
+              persianName: legalEntity.persianName,
+              latinName: null,
+              tradeName: null,
+              logoFileId: null,
+              letterheadFileId: null,
+              footerFileId: null,
+              address: null,
+              phone: null,
+              email: null,
+              website: null,
+              nationalId: null,
+              registrationNumber: null,
+              economicCode: null,
+              paymentText: null,
+              sealFileId: null,
+              authorizedSignatureId: null,
+              primaryColor: null,
+              secondaryColor: null,
+              legalFooterText: null,
+              version: 1,
             },
             createdByUserId: fixtureUser.id,
           },
@@ -196,27 +225,34 @@ async function seed(): Promise<void> {
         update: { name: 'ایران', englishName: 'Iran', isActive: true },
       });
       await Promise.all(
-        [
-          ['IRR', 'ریال ایران', '﷼', 0],
-          ['USD', 'دلار آمریکا', '$', 2],
-        ].map(([code, name, symbol, decimalDigits]) =>
-          transaction.masterCurrency.upsert({
-            where: { code: String(code) },
-            create: {
-              code: String(code),
-              name: String(name),
-              symbol: String(symbol),
-              decimalDigits: Number(decimalDigits),
-              createdByUserId: fixtureActorId,
-              updatedByUserId: fixtureActorId,
-            },
-            update: {
-              name: String(name),
-              symbol: String(symbol),
-              decimalDigits: Number(decimalDigits),
-              isActive: true,
-            },
-          }),
+        (
+          [
+            ['IRR', 'ریال ایران', 'Iranian Rial', '﷼', 0, 'SYMBOL_AFTER'],
+            ['USD', 'دلار آمریکا', 'US Dollar', '$', 2, 'SYMBOL_BEFORE'],
+          ] as const
+        ).map(
+          ([code, name, englishName, symbol, decimalDigits, displayPolicy]) =>
+            transaction.masterCurrency.upsert({
+              where: { code: String(code) },
+              create: {
+                code: String(code),
+                name: String(name),
+                englishName: String(englishName),
+                symbol: String(symbol),
+                decimalDigits: Number(decimalDigits),
+                displayPolicy,
+                createdByUserId: fixtureActorId,
+                updatedByUserId: fixtureActorId,
+              },
+              update: {
+                name: String(name),
+                englishName: String(englishName),
+                symbol: String(symbol),
+                decimalDigits: Number(decimalDigits),
+                displayPolicy,
+                isActive: true,
+              },
+            }),
         ),
       );
       const tehranRegion = await transaction.masterRegion.upsert({

@@ -47,6 +47,8 @@ const delegateNames: Record<MasterDataResource, string> = {
   currencies: 'masterCurrency',
   'exchange-rates': 'masterDraftExchangeRate',
   banks: 'masterBank',
+  'bank-branches': 'masterBankBranch',
+  'payment-methods': 'masterPaymentMethod',
   insurers: 'masterInsurer',
   airlines: 'masterAirline',
   hotels: 'masterHotel',
@@ -65,6 +67,8 @@ const nameFields: Record<MasterDataResource, string> = {
   currencies: 'name',
   'exchange-rates': 'source',
   banks: 'name',
+  'bank-branches': 'name',
+  'payment-methods': 'name',
   insurers: 'name',
   airlines: 'name',
   hotels: 'name',
@@ -83,6 +87,8 @@ const codeFields: Record<MasterDataResource, string> = {
   currencies: 'code',
   'exchange-rates': 'observedAt',
   banks: 'code',
+  'bank-branches': 'code',
+  'payment-methods': 'code',
   insurers: 'code',
   airlines: 'code',
   hotels: 'code',
@@ -100,7 +106,9 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
   terminals: ['name', 'englishName', 'code'],
   currencies: ['name', 'englishName', 'code'],
   'exchange-rates': ['source'],
-  banks: ['name', 'code'],
+  banks: ['name', 'englishName', 'code', 'swiftCode'],
+  'bank-branches': ['name', 'englishName', 'code', 'address', 'phone'],
+  'payment-methods': ['name', 'englishName', 'code', 'description'],
   insurers: ['name', 'code'],
   airlines: ['name', 'code', 'icaoCode'],
   hotels: ['name', 'englishName', 'code'],
@@ -125,6 +133,9 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'airports')
     return { city: { include: { country: true, region: true } } };
   if (resource === 'terminals') return { airport: true };
+  if (resource === 'banks')
+    return { country: true, _count: { select: { branches: true } } };
+  if (resource === 'bank-branches') return { bank: true, city: true };
   return undefined;
 }
 
@@ -154,6 +165,8 @@ export function toMasterDataRecord(
   const parent = row.parent as Record<string, unknown> | undefined;
   const city = row.city as Record<string, unknown> | undefined;
   const airport = row.airport as Record<string, unknown> | undefined;
+  const bank = row.bank as Record<string, unknown> | undefined;
+  const count = row._count as Record<string, unknown> | undefined;
   const code =
     resource === 'exchange-rates'
       ? `${String(from?.code ?? '')}/${String(to?.code ?? '')}`
@@ -187,6 +200,8 @@ export function toMasterDataRecord(
     'parent',
     'city',
     'airport',
+    'bank',
+    '_count',
   ]);
   const attributes = Object.fromEntries(
     Object.entries(row)
@@ -223,6 +238,14 @@ export function toMasterDataRecord(
   if (resource === 'terminals') {
     attributes.airportName = String(airport?.name ?? '');
     attributes.airportIataCode = String(airport?.iataCode ?? '');
+  }
+  if (resource === 'banks') {
+    attributes.countryName = String(country?.name ?? '');
+    attributes.branchCount = Number(count?.branches ?? 0);
+  }
+  if (resource === 'bank-branches') {
+    attributes.bankName = String(bank?.name ?? '');
+    attributes.cityName = String(city?.name ?? '');
   }
   return {
     id: row.id,
@@ -266,6 +289,14 @@ export class MasterDataRepository {
     if (resource === 'terminals') {
       if (query.airportId) where.airportId = query.airportId;
       if (query.terminalType) where.terminalType = query.terminalType;
+    }
+    if (resource === 'bank-branches') {
+      if (query.bankId) where.bankId = query.bankId;
+      if (query.cityId) where.cityId = query.cityId;
+    }
+    if (resource === 'payment-methods') {
+      if (query.paymentChannel) where.channel = query.paymentChannel;
+      if (query.paymentDirection) where.direction = query.paymentDirection;
     }
     if (query.search) {
       where.OR = searchFields[resource].map((field) => ({
@@ -319,6 +350,18 @@ export class MasterDataRepository {
       await delegate(this.database.client, resource).findFirst({
         where: {
           [field]: value,
+          ...(excludeId ? { NOT: { id: excludeId } } : {}),
+        },
+      }),
+    );
+  }
+
+  async bankBranchCodeExists(bankId: string, code: string, excludeId?: string) {
+    return Boolean(
+      await this.database.client.masterBankBranch.findFirst({
+        where: {
+          bankId,
+          code,
           ...(excludeId ? { NOT: { id: excludeId } } : {}),
         },
       }),

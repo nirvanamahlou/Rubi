@@ -127,10 +127,13 @@ export const masterDataApi = {
     );
   },
   currencyRateHistory(query: {
+    search?: string;
     fromCurrencyId?: string;
     toCurrencyId?: string;
     rateType?: 'BUY' | 'SELL' | 'REFERENCE';
     status?: 'DRAFT' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+    observedFrom?: string;
+    observedTo?: string;
     page?: number;
     pageSize?: number;
   }) {

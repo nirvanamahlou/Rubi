@@ -4,7 +4,7 @@ import { getMasterDataDefinition, type MasterDataResourceKey } from './catalog';
 
 const draftValuesSchema = z.record(
   z.string(),
-  z.string().trim().max(200, 'حداکثر طول مجاز ۲۰۰ نویسه است.'),
+  z.string().trim().max(500, 'حداکثر طول مجاز ۵۰۰ نویسه است.'),
 );
 const currencyCodePattern = /^[A-Z]{3}$/;
 
@@ -56,10 +56,37 @@ export function validateMasterDataDraft(
   }
 
   if (resource === 'exchange-rates' && values.rate) {
-    const rate = Number(values.rate);
-    if (!Number.isFinite(rate) || rate <= 0) {
-      errors.rate = 'نرخ باید عدد Decimal مثبت باشد.';
+    if (!/^\d+(\.\d{1,10})?$/.test(values.rate) || Number(values.rate) <= 0) {
+      errors.rate = 'نرخ باید Decimal مثبت با حداکثر ۱۰ رقم اعشار باشد.';
     }
+  }
+
+  if (
+    ['currencies', 'banks', 'bank-branches', 'payment-methods'].includes(
+      resource,
+    ) &&
+    values.code
+  ) {
+    values.code = values.code.toUpperCase();
+    const pattern =
+      resource === 'currencies' ? /^[A-Z]{3}$/ : /^[A-Z0-9][A-Z0-9_-]{1,31}$/;
+    if (!pattern.test(values.code))
+      errors.code =
+        resource === 'currencies'
+          ? 'کد ISO-4217 باید سه حرف بزرگ باشد.'
+          : 'کد باید بزرگ، یکتا و حداکثر ۳۲ نویسه باشد.';
+  }
+
+  if (resource === 'banks' && values.swiftCode) {
+    values.swiftCode = values.swiftCode.toUpperCase();
+    if (!/^[A-Z0-9]{8}([A-Z0-9]{3})?$/.test(values.swiftCode))
+      errors.swiftCode = 'کد SWIFT باید ۸ یا ۱۱ نویسه بزرگ باشد.';
+  }
+
+  if (resource === 'payment-methods' && values.displayOrder) {
+    const displayOrder = Number(values.displayOrder);
+    if (!Number.isInteger(displayOrder) || displayOrder < 0)
+      errors.displayOrder = 'ترتیب نمایش باید عدد صحیح نامنفی باشد.';
   }
 
   if (resource === 'countries' && values.iso2Code) {

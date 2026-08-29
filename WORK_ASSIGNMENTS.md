@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-27 — Draft PR #28 برای MASTER-003B-GEO به‌صورت Stacked ایجاد شد
+آخرین به‌روزرسانی: 2026-08-29 — MASTER-003C-FINANCIAL به‌صورت Vertical Slice در حال پذیرش است
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `PLANNED/RESERVED`، `IN_PROGRESS`،
@@ -31,7 +31,8 @@
 | LEGAL-ENTITY-CONTEXT-001        | PC-A         | `codex/pc-a-legal-entity-context`           | Legal Entity Full-Stack، Prisma، API، Contract، App Shell، صفحه مدیریت، Audit و Test                 | `DONE`             | PR #24؛ Merge `b6da5d6`؛ قفل‌ها با دلیل `DONE/MERGED via PR #24` آزاد شدند  |
 | MASTER-003                      | PC-B         | `codex/pc-b-master-data-advanced`           | توسعه افزایشی Master Data: Schema/Migration، Contract، Backend، Frontend، Excel Import/Export و Test | `IN_PROGRESS`      | Draft PR #25؛ خروجی XLSX واقعی فعال؛ سه قفل فعال و Dependency lock آزاد است |
 | CALENDAR-001                    | PC-B         | `codex/pc-b-master-data-advanced`           | تقویم مشترک آبی با سوییچ شمسی/میلادی در همه فرم‌های Web                                              | `READY_FOR_REVIEW` | ۸۵ تست Web، Typecheck و Lint موفق؛ چهار route لوکال پاسخ ۲۰۰ دادند          |
-| MASTER-003B-GEO                 | PC-B         | `codex/pc-b-master-data-next`               | Vertical Slice جغرافیا: Country، Province/Region، City، Airport، Terminal و تست/مستندات همان Slice  | `READY_FOR_REVIEW` | Draft PR #28 روی PR #25؛ سه قفل MASTER-003 فعال می‌مانند                    |
+| MASTER-003B-GEO                 | PC-B         | `codex/pc-b-master-data-next`               | Vertical Slice جغرافیا: Country، Province/Region، City، Airport، Terminal و تست/مستندات همان Slice   | `READY_FOR_REVIEW` | Draft PR #28 روی PR #25؛ سه قفل MASTER-003 فعال می‌مانند                    |
+| MASTER-003C-FINANCIAL           | PC-B         | `codex/pc-b-master-data-financial`          | مالی و پولی در Master Data: Currency، Rate Workflow/History، Bank/Branch و Payment Method مرجع       | `READY_FOR_REVIEW` | Draft PR #29 روی PR #28 و به‌تبع آن #25؛ بدون Query مستقیم Finance          |
 | CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket                     | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence |
 | MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix        | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11        |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                                  | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |
@@ -245,6 +246,22 @@ Finance shared-contract در `packages/contracts/src/finance/**` مرز دامن
   آزاد می‌ماند و این Slice مجاز به تغییر manifest یا lockfile نیست.
 - PR این Slice باید Draft و با Base `codex/pc-b-master-data-advanced` باشد، وابستگی به
   PR #25 را صریح ثبت کند و پیش از Merge والد ادغام نشود.
+
+#### زیرواحد `MASTER-003C-FINANCIAL`
+
+- Branch مستقل `codex/pc-b-master-data-financial` از
+  `origin/codex/pc-b-master-data-next@e0e3a5f` ساخته شده و Base PR آن باید همان
+  Branch جغرافیا باشد؛ Draft PR #29 ایجاد شد و Parentهای #28 و #25 پیش از آن Merge
+  می‌شوند.
+- این Slice زیرمجموعه «اطلاعات پایه / مالی و پولی» است و در مسیر
+  `/master-data/finance` ارائه می‌شود؛ ماژول مستقل Finance یا مسیر `/finance` نیست.
+- محدوده مالکیت Master Data شامل تعریف ارز، تاریخچه نرخ دستی non-authoritative،
+  Maker/Checker، بانک، شعبه بانک و روش پرداخت مرجع است. حساب، شبا، کارت، CVV، مانده،
+  تسویه، تراکنش و تنظیم واقعی درگاه در مالکیت Finance باقی می‌مانند.
+- Migration، Contract، Backend، UI RTL، Test و Documentation این Slice زیر همان سه
+  قفل فعال `PC-B/MASTER-003` انجام می‌شود؛ Dependency/Lockfile آزاد و بدون تغییر است.
+- هیچ نرخ واقعی یا ساختگی، بانک، شعبه یا روش پرداخت عملیاتی در Seed اضافه نمی‌شود؛
+  Seed فقط ارزهای استاندارد موجود را با نام انگلیسی و سیاست نمایش تکمیل می‌کند.
 
 ### رزرو موازی PC-A/CUSTOMER-002A
 
