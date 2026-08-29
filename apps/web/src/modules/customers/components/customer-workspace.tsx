@@ -1287,14 +1287,6 @@ function CustomerDrawer({
                               value={companion.lastName}
                             />
                           </FormField>
-                          <div className="border-t border-border pt-3 sm:col-span-2">
-                            <p className="font-semibold">
-                              اطلاعات تکمیلی مسافر
-                            </p>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              این اطلاعات همراه پرونده واقعی مسافر ذخیره می‌شود.
-                            </p>
-                          </div>
                           <FormField
                             description="اجباری؛ مستقل از مشتری و سایر مسافران"
                             id={`companion-${companion.key}-national-id`}
@@ -1318,86 +1310,114 @@ function CustomerDrawer({
                               value={companion.nationalId}
                             />
                           </FormField>
-                          <CustomerDateField
-                            id={`companion-${companion.key}-birth-date`}
-                            label="تاریخ تولد"
-                            mode={calendarMode}
-                            onModeChange={onCalendarModeChange}
-                            onChange={(value) =>
-                              updateCompanion(index, { birthDate: value })
-                            }
-                            value={companion.birthDate}
-                          />
-                          <FormField
-                            description="اختیاری و در نمایش عادی Masked"
-                            id={`companion-${companion.key}-phone`}
-                            label="شماره تماس"
-                          >
-                            <Input
-                              dir="ltr"
-                              id={`companion-${companion.key}-phone`}
-                              inputMode="tel"
-                              onChange={(event) =>
-                                updateCompanion(index, {
-                                  phone: event.target.value,
-                                })
-                              }
-                              pattern="\+?[0-9]{10,15}"
-                              placeholder="09xxxxxxxxx"
-                              type="tel"
-                              value={companion.phone}
-                            />
-                          </FormField>
-                          <FormField
-                            description="اختیاری و در نمایش عادی Masked"
-                            id={`companion-${companion.key}-email`}
-                            label="ایمیل مسافر"
-                          >
-                            <Input
-                              autoComplete="email"
-                              dir="ltr"
-                              id={`companion-${companion.key}-email`}
-                              inputMode="email"
-                              onChange={(event) =>
-                                updateCompanion(index, {
-                                  email: event.target.value,
-                                })
-                              }
-                              placeholder="passenger@example.com"
-                              type="email"
-                              value={companion.email}
-                            />
-                          </FormField>
-                          <FormField label="سازمان مسافر">
-                            <Select
-                              onValueChange={(value) =>
-                                updateCompanion(index, {
-                                  organizationId:
-                                    value === 'not-selected' ? '' : value,
-                                })
-                              }
-                              value={companion.organizationId || 'not-selected'}
-                            >
-                              <SelectTrigger
-                                aria-label={`سازمان مسافر ${index + 1}`}
+                          <details className="group rounded-xl border bg-background p-3 sm:col-span-2">
+                            <summary className="cursor-pointer list-none font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                              <span className="flex items-center justify-between gap-3">
+                                اطلاعات ۳۶۰ مسافر (اختیاری)
+                                <span
+                                  aria-hidden="true"
+                                  className="text-muted-foreground transition-transform group-open:rotate-180"
+                                >
+                                  ▾
+                                </span>
+                              </span>
+                              <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                                تاریخ تولد، تماس، ایمیل، شرکت و مدارک سفر
+                              </span>
+                            </summary>
+                            <div className="mt-4 grid gap-3 border-t pt-4 sm:grid-cols-2">
+                              <CustomerDateField
+                                id={`companion-${companion.key}-birth-date`}
+                                label="تاریخ تولد"
+                                mode={calendarMode}
+                                onModeChange={onCalendarModeChange}
+                                onChange={(value) =>
+                                  updateCompanion(index, { birthDate: value })
+                                }
+                                value={companion.birthDate}
+                              />
+                              <FormField
+                                description="اختیاری و در نمایش عادی Masked"
+                                id={`companion-${companion.key}-phone`}
+                                label="شماره تماس"
                               >
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="not-selected">
-                                  مسافر شخصی
-                                </SelectItem>
-                                {masters.organizations.map((organization) => (
-                                  <SelectItem
-                                    key={organization.id}
-                                    value={organization.id}
+                                <Input
+                                  dir="ltr"
+                                  id={`companion-${companion.key}-phone`}
+                                  inputMode="tel"
+                                  onChange={(event) =>
+                                    updateCompanion(index, {
+                                      phone: event.target.value,
+                                    })
+                                  }
+                                  pattern="\+?[0-9]{10,15}"
+                                  placeholder="09xxxxxxxxx"
+                                  type="tel"
+                                  value={companion.phone}
+                                />
+                              </FormField>
+                              <FormField
+                                description="اختیاری و در نمایش عادی Masked"
+                                id={`companion-${companion.key}-email`}
+                                label="ایمیل مسافر"
+                              >
+                                <Input
+                                  autoComplete="email"
+                                  dir="ltr"
+                                  id={`companion-${companion.key}-email`}
+                                  inputMode="email"
+                                  onChange={(event) =>
+                                    updateCompanion(index, {
+                                      email: event.target.value,
+                                    })
+                                  }
+                                  placeholder="passenger@example.com"
+                                  type="email"
+                                  value={companion.email}
+                                />
+                              </FormField>
+                              <FormField label="شرکت مسافر">
+                                <Select
+                                  onValueChange={(value) =>
+                                    updateCompanion(index, {
+                                      organizationId:
+                                        value === 'not-selected' ? '' : value,
+                                    })
+                                  }
+                                  value={
+                                    companion.organizationId || 'not-selected'
+                                  }
+                                >
+                                  <SelectTrigger
+                                    aria-label={`شرکت مسافر ${index + 1}`}
                                   >
-                                    {organization.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormField>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="not-selected">
+                                      مسافر شخصی
+                                    </SelectItem>
+                                    {masters.organizations.map(
+                                      (organization) => (
+                                        <SelectItem
+                                          key={organization.id}
+                                          value={organization.id}
+                                        >
+                                          {organization.name}
+                                        </SelectItem>
+                                      ),
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </FormField>
+                              <Alert
+                                className="sm:col-span-2"
+                                description="نام و نام خانوادگی انگلیسی، شماره پاسپورت، کشور صادرکننده و تاریخ‌های صدور/انقضا پس از فعال‌شدن نگهداری امن مدارک در همین بخش قابل ثبت خواهند بود."
+                                title="مدارک سفر مسافر"
+                                tone="warning"
+                              />
+                            </div>
+                          </details>
                         </>
                       )}
                       <FormField label="رابطه با مشتری">
@@ -1425,12 +1445,6 @@ function CustomerDrawer({
                           </SelectContent>
                         </Select>
                       </FormField>
-                      <Alert
-                        className="sm:col-span-2"
-                        description="نام و نام خانوادگی انگلیسی، شماره پاسپورت، کشور صادرکننده و تاریخ‌های صدور/انقضا پس از فعال‌شدن نگهداری امن مدارک در همین بخش قابل ثبت خواهند بود."
-                        title="مدارک سفر مسافر"
-                        tone="warning"
-                      />
                     </Card>
                   ))}
                 </div>

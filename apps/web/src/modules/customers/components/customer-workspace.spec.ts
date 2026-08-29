@@ -220,7 +220,10 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain(
       'organizationId: companion.organizationId || null',
     );
-    expect(source).toContain('اطلاعات تکمیلی مسافر');
+    expect(source).toContain('اطلاعات ۳۶۰ مسافر (اختیاری)');
+    expect(source).toContain('<details className=');
+    expect(source).toContain('<summary className=');
+    expect(source).toContain('تاریخ تولد، تماس، ایمیل، شرکت و مدارک سفر');
     expect(source).toContain('companion-${companion.key}-email');
     expect(source).toContain('value: companion.email.trim().toLowerCase()');
     expect(source).toContain('مدارک سفر مسافر');
