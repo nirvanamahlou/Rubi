@@ -273,7 +273,8 @@ export function MasterDataTransportationWorkspace() {
   }, [load]);
 
   useEffect(() => {
-    void loadSummary();
+    const timer = window.setTimeout(() => void loadSummary(), 0);
+    return () => window.clearTimeout(timer);
   }, [loadSummary]);
 
   const kpis = useMemo<readonly MasterDataKpiItem[]>(() => {
