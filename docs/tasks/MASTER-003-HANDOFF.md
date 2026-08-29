@@ -39,4 +39,3 @@
 `MASTER-003E-SUPPLIERS` و `MASTER-004` حق ایجاد یا Merge کردن Prisma Schema،
 Migration، Seed، Root Contract، Dependency/Lockfile یا تغییر اسناد مرکزی را ندارند.
 مصرف قرارداد پایدار Master Data مجاز است، اما تغییر موازی آن مجاز نیست.
-
