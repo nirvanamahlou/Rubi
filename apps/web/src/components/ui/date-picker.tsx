@@ -58,14 +58,16 @@ export function DatePicker({
   const [anchor, setAnchor] = React.useState(
     () => parseIsoDate(currentValue) ?? new Date(),
   );
+  const [previousValue, setPreviousValue] = React.useState(currentValue);
   const rootRef = React.useRef<HTMLDivElement>(null);
   const selectedDate = currentValue.slice(0, 10);
   const days = calendarMonthDays(anchor, calendarSystem);
 
-  React.useEffect(() => {
+  if (previousValue !== currentValue) {
+    setPreviousValue(currentValue);
     const parsed = parseIsoDate(currentValue);
     if (parsed) setAnchor(parsed);
-  }, [currentValue]);
+  }
 
   React.useEffect(() => {
     if (!open) return;
@@ -99,7 +101,6 @@ export function DatePicker({
       <button
         {...ariaProps}
         aria-expanded={open}
-        aria-required={required}
         aria-haspopup="dialog"
         className={cn(
           'flex h-11 w-full items-center justify-between gap-3 rounded-xl border border-input bg-surface px-3 text-sm text-foreground shadow-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50',

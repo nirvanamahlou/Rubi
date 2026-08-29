@@ -26,6 +26,7 @@ describe('shared date picker contract', () => {
     expect(pickerSource).toContain("'شمسی'");
     expect(pickerSource).toContain("'میلادی'");
     expect(pickerSource).toContain('bg-primary');
+    expect(pickerSource).not.toContain('aria-required');
     expect(pickerSource.indexOf('نوع تقویم')).toBeLessThan(
       pickerSource.indexOf('calendarMonthLabel(anchor'),
     );
