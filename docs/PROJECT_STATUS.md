@@ -316,6 +316,11 @@
 - تمام ۱۵ Migration روی PostgreSQL 18 خالی و Seed دوگانه موفق بود؛ همان Migration روی
   دیتابیس محلی Deploy و Seed دو بار اجرا شد. هیچ فایل Customers، dependency manifest
   یا lockfile تغییر نکرده و سه قفل MASTER-003 فعال می‌مانند.
+- Full Test شامل API `204/204`، Web `120/120`، Database `42/42`، Contracts `14/14`
+  و سه تست سایر بسته‌ها موفق بود؛ Full Typecheck و Production Build نیز پاس شدند.
+  Smoke احراز‌شده API و `/master-data/sales-references` هر دو پاسخ ۲۰۰ دادند. Lint
+  فایل‌های دو Workspace حمل‌ونقل و مراجع فروش موفق است؛ Full lint فقط به‌دلیل ایراد
+  قدیمی DatePicker خارج از این Slice متوقف می‌شود.
 
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
