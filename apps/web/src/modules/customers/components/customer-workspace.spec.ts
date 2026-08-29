@@ -155,9 +155,19 @@ describe('Customer Operations workspace boundaries', () => {
     }
   });
 
+  it('opens the same 360 dossier for every customer or passenger', () => {
+    expect(source).toContain('function customerRoleLabel');
+    expect(source).toContain('مشتری یا مسافر');
+    expect(source).toContain('بازکردن پرونده ۳۶۰');
+    expect(source).toContain("onClick={() => void open('view', record.id)}");
+    expect(source).toContain('پرونده ۳۶۰ درجه');
+  });
+
   it('shows the full 360 dossier catalog without inventing cross-module data', () => {
     for (const section of [
       'شماره پاسپورت',
+      'نام انگلیسی مطابق پاسپورت (اجباری)',
+      'نام خانوادگی انگلیسی مطابق پاسپورت (اجباری)',
       'کشور صادرکننده',
       'هشدار انقضای مدارک',
       'درخواست‌ها',

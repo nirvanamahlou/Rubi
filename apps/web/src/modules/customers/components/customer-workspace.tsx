@@ -131,6 +131,8 @@ const customerTabs: readonly CustomerTab[] = [
 
 const travelDocumentFields = [
   'پاسپورت',
+  'نام انگلیسی مطابق پاسپورت (اجباری)',
+  'نام خانوادگی انگلیسی مطابق پاسپورت (اجباری)',
   'شماره پاسپورت',
   'کشور صادرکننده',
   'تاریخ صدور',
@@ -139,6 +141,13 @@ const travelDocumentFields = [
   'مدارک هویتی',
   'هشدار انقضای مدارک',
 ] as const;
+
+function customerRoleLabel(roles: readonly CustomerRole[]) {
+  const customer = roles.includes('customer');
+  const passenger = roles.includes('passenger');
+  if (customer && passenger) return 'مشتری و مسافر';
+  return passenger ? 'مسافر' : 'مشتری';
+}
 
 const connectedDossierSections = [
   ['درخواست‌ها', 'امور مشتریان'],
@@ -740,11 +749,13 @@ function CustomerDrawer({
           {mode === 'create'
             ? 'ایجاد مشتری'
             : mode === 'edit'
-              ? 'ویرایش مشتری'
-              : 'Customer 360'}
+              ? `ویرایش پرونده ${customerRoleLabel(draft.roles)}`
+              : `پرونده ۳۶۰ درجه ${customerRoleLabel(draft.roles)}`}
         </DialogTitle>
         <DialogDescription>
-          اطلاعات مشتری و مسافران همراه را وارد کنید.
+          {mode === 'create'
+            ? 'اطلاعات مشتری و مسافران همراه را وارد کنید.'
+            : `اطلاعات کامل این ${customerRoleLabel(draft.roles)} را مشاهده و مدیریت کنید.`}
         </DialogDescription>
         <div aria-live="polite" role="status">
           {message ? (
@@ -785,7 +796,7 @@ function CustomerDrawer({
               <div className="flex h-11 items-center rounded-xl border border-primary/25 bg-primary/5 px-3">
                 <Badge>
                   {draft.kind === 'person'
-                    ? 'مشتری حقیقی'
+                    ? customerRoleLabel(draft.roles)
                     : 'رکورد سازمانی قدیمی'}
                 </Badge>
               </div>
@@ -2458,7 +2469,7 @@ export function CustomerWorkspace() {
           <table className="w-full min-w-[64rem] text-sm">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
-                <th className="p-4 text-start">مشتری</th>
+                <th className="p-4 text-start">مشتری یا مسافر</th>
                 <th className="p-4 text-start">شماره تماس</th>
                 <th className="p-4 text-start">وضعیت و نقش</th>
                 <th className="p-4 text-start">رضایت</th>
@@ -2470,14 +2481,24 @@ export function CustomerWorkspace() {
               {records.map((record) => (
                 <tr className="border-t border-border" key={record.id}>
                   <td className="p-4">
-                    <div className="flex items-center gap-3">
+                    <button
+                      aria-label={`بازکردن پرونده ۳۶۰ ${customerRoleLabel(record.roles)} ${record.displayName}`}
+                      className="group flex items-center gap-3 rounded-xl text-start outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      onClick={() => void open('view', record.id)}
+                      type="button"
+                    >
                       <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
                         <UserRound className="size-5" />
                       </span>
                       <div>
-                        <p className="font-bold">{record.displayName}</p>
+                        <p className="font-bold text-primary group-hover:underline">
+                          {record.displayName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          بازکردن پرونده ۳۶۰ {customerRoleLabel(record.roles)}
+                        </p>
                       </div>
-                    </div>
+                    </button>
                   </td>
                   <td className="p-4">
                     <span className="font-mono text-muted-foreground" dir="ltr">
@@ -2518,7 +2539,7 @@ export function CustomerWorkspace() {
                         variant="outline"
                       >
                         <Eye className="size-4" />
-                        مشاهده
+                        پرونده ۳۶۰
                       </Button>
                       <Button
                         onClick={() => void open('edit', record.id)}
@@ -2533,8 +2554,8 @@ export function CustomerWorkspace() {
                         onConfirm={() => void toggle(record)}
                         title={
                           record.status === 'active'
-                            ? 'غیرفعال‌سازی مشتری'
-                            : 'فعال‌سازی مشتری'
+                            ? 'غیرفعال‌سازی پرونده شخص'
+                            : 'فعال‌سازی پرونده شخص'
                         }
                         trigger={
                           <Button size="sm" variant="ghost">
