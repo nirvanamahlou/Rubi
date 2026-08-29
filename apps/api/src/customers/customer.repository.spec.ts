@@ -10,6 +10,7 @@ const row = {
   lastName: 'آزمایشی',
   displayName: 'مشتری ساختگی',
   birthDate: new Date('1990-01-01T00:00:00.000Z'),
+  nationalIdMasked: '******7891',
   isActive: true,
   isCustomer: true,
   isPassenger: true,

@@ -35,6 +35,7 @@ export interface CustomerRow {
   lastName: string | null;
   displayName: string;
   birthDate: Date | null;
+  nationalIdMasked: string | null;
   isActive: boolean;
   isCustomer: boolean;
   isPassenger: boolean;
@@ -154,6 +155,7 @@ export function toCustomerSummary(row: CustomerRow): CustomerSummary {
       ...(row.isPassenger ? (['passenger'] as const) : []),
     ],
     maskedPrimaryContact: primary?.maskedValue ?? null,
+    maskedNationalId: row.nationalIdMasked ?? null,
     currentConsentStatus: latestConsent
       ? (lower(latestConsent.status) as 'granted' | 'revoked')
       : 'not-recorded',

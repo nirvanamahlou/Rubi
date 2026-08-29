@@ -9,6 +9,7 @@ import type {
 } from '@rubi/contracts';
 import { describe, expect, it, vi } from 'vitest';
 import type { CustomerContactCrypto } from './customer-contact.crypto';
+import type { CustomerNationalIdProtector } from './customer-national-id';
 import type { CustomerRepository } from './customer.repository';
 import { CustomerService } from './customer.service';
 
@@ -45,9 +46,24 @@ function createService(
     fingerprint: vi.fn().mockReturnValue('f'.repeat(64)),
     ...cryptoOverrides,
   } as unknown as CustomerContactCrypto;
+  const nationalIdProtector = {
+    protect: vi.fn().mockReturnValue({
+      nationalIdEncrypted: 'encrypted-national-id',
+      nationalIdIv: 'iv-base64-value',
+      nationalIdAuthTag: 'auth-tag-base64-value',
+      nationalIdKeyVersion: 1,
+      nationalIdFingerprint: 'n'.repeat(64),
+      nationalIdMasked: '******7891',
+    }),
+  } as unknown as CustomerNationalIdProtector;
   return {
-    service: new CustomerService(repository, contactCrypto),
+    service: new CustomerService(
+      repository,
+      contactCrypto,
+      nationalIdProtector,
+    ),
     contactCrypto,
+    nationalIdProtector,
   };
 }
 const mutation: CustomerMutationRequest = {
@@ -55,6 +71,7 @@ const mutation: CustomerMutationRequest = {
   firstName: 'نمونه',
   lastName: 'آزمایشی',
   displayName: 'مشتری ساختگی',
+  nationalId: '1234567891',
   roles: ['customer', 'passenger'],
 };
 
@@ -66,6 +83,7 @@ const row = {
   lastName: 'آزمایشی',
   displayName: 'مشتری ساختگی',
   birthDate: new Date('1990-01-01T00:00:00.000Z'),
+  nationalIdMasked: '******7891',
   isActive: true,
   isCustomer: true,
   isPassenger: true,
@@ -82,6 +100,51 @@ const row = {
 };
 
 describe('CustomerService', () => {
+  it('requires and protects a separate national ID before persistence', async () => {
+    const repository = {
+      create: vi.fn().mockResolvedValue(row),
+    } as unknown as CustomerRepository;
+    const { service, nationalIdProtector } = createService(repository);
+
+    await service.create(mutation, actor);
+
+    expect(nationalIdProtector.protect).toHaveBeenCalledWith('1234567891');
+    const persisted = vi.mocked(repository.create).mock.calls[0]?.[0];
+    expect(persisted).toMatchObject({
+      nationalIdEncrypted: 'encrypted-national-id',
+      nationalIdFingerprint: 'n'.repeat(64),
+      nationalIdMasked: '******7891',
+    });
+    expect(persisted).not.toHaveProperty('nationalId');
+    expect(JSON.stringify(persisted)).not.toContain('1234567891');
+  });
+
+  it('rejects a person create without national ID', async () => {
+    const repository = { create: vi.fn() } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    const withoutNationalId = { ...mutation };
+    delete withoutNationalId.nationalId;
+
+    await expect(
+      service.create(withoutNationalId, actor),
+    ).rejects.toMatchObject({
+      response: { code: 'CUSTOMER_NATIONAL_ID_REQUIRED' },
+    });
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('returns a safe conflict for a duplicate national ID fingerprint', async () => {
+    const repository = {
+      create: vi.fn().mockRejectedValue({ code: 'P2002' }),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+
+    await expect(service.create(mutation, actor)).rejects.toMatchObject({
+      status: 409,
+      response: { code: 'CUSTOMER_NATIONAL_ID_EXISTS' },
+    });
+  });
+
   it('rejects branch filter tampering before querying persistence', async () => {
     const repository = { list: vi.fn() } as unknown as CustomerRepository;
     const { service } = createService(repository);

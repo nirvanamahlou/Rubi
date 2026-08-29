@@ -16,6 +16,13 @@ const hardeningMigration = readFileSync(
   ),
   'utf8',
 );
+const nationalIdMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    'prisma/migrations/20260829170000_customer_national_id/migration.sql',
+  ),
+  'utf8',
+);
 const seed = readFileSync(resolve(process.cwd(), 'prisma/seed.ts'), 'utf8');
 
 describe('CUSTOMER-001 migration and seed', () => {
@@ -72,12 +79,33 @@ describe('CUSTOMER-001 migration and seed', () => {
       'char_length("encryptionAuthTag") = 24',
     );
     expect(hardeningMigration).toContain('"encryptionKeyVersion" > 0');
-    expect(hardeningMigration).toContain("'^[0-9a-f]{64}" + "$" + "'");
+    expect(hardeningMigration).toContain("'^[0-9a-f]{64}" + '$' + "'");
     expect(hardeningMigration).toContain(
       'customer_contacts_type_valueFingerprint_customerId_idx',
     );
     expect(hardeningMigration).not.toMatch(
       /\b(?:DROP|TRUNCATE|DELETE FROM)\b/i,
+    );
+  });
+
+  it('stores national IDs only as encrypted, fingerprinted and masked values', () => {
+    for (const column of [
+      'nationalIdEncrypted',
+      'nationalIdIv',
+      'nationalIdAuthTag',
+      'nationalIdKeyVersion',
+      'nationalIdFingerprint',
+      'nationalIdMasked',
+    ])
+      expect(nationalIdMigration).toContain(`ADD COLUMN "${column}"`);
+    expect(nationalIdMigration).toContain(
+      'customers_nationalIdFingerprint_key',
+    );
+    expect(nationalIdMigration).toContain(
+      'customers_national_id_complete_check',
+    );
+    expect(nationalIdMigration).not.toMatch(
+      /ADD COLUMN "nationalId"|\b(?:DROP|TRUNCATE|DELETE FROM)\b/i,
     );
   });
 });

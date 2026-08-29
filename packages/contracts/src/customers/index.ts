@@ -42,6 +42,10 @@ export const CUSTOMER_ERROR_CODES = [
   'CONCURRENT_MODIFICATION',
   'CUSTOMER_SELF_RELATION',
   'CUSTOMER_RELATION_EXISTS',
+  'CUSTOMER_NATIONAL_ID_REQUIRED',
+  'CUSTOMER_NATIONAL_ID_INVALID',
+  'CUSTOMER_NATIONAL_ID_EXISTS',
+  'CUSTOMER_NATIONAL_ID_PERSON_ONLY',
   'DUPLICATE_CANDIDATE_NOT_FOUND',
   'MERGE_BLOCKED_BY_OPEN_DECISION',
 ] as const;
@@ -111,6 +115,7 @@ export interface CustomerSummary {
   status: CustomerStatus;
   roles: CustomerRole[];
   maskedPrimaryContact: string | null;
+  maskedNationalId: string | null;
   currentConsentStatus: CustomerConsentStatus | 'not-recorded';
   companionCount: number;
   ownerBranchId: string;
@@ -214,6 +219,7 @@ export interface CustomerMutationRequest {
   lastName?: string | null;
   displayName: string;
   birthDate?: string | null;
+  nationalId?: string | null;
   roles: CustomerRole[];
   acquaintanceMethodId?: string | null;
   version?: number;
