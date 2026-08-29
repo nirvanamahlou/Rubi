@@ -1,6 +1,7 @@
 import type {
   MasterAccommodationSummary,
   MasterInsuranceSummary,
+  MasterTravelServicesSummary,
   MasterDataExportOperation,
   MasterDataExportRequest,
   MasterHotelImportCommitRequest,
@@ -187,6 +188,11 @@ export const masterDataApi = {
   },
   insuranceSummary() {
     return request<{ data: MasterInsuranceSummary }>('/insurance/summary');
+  },
+  travelServicesSummary() {
+    return request<{ data: MasterTravelServicesSummary }>(
+      '/travel-services-catalog/summary',
+    );
   },
   downloadExcel(input: MasterDataExportRequest) {
     return requestFile('/exports/xlsx/download', input);

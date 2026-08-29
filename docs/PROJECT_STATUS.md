@@ -1,15 +1,15 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-29 — MASTER-003J-INSURANCE پیاده‌سازی و آزموده شد
+آخرین به‌روزرسانی: 2026-08-29 — MASTER-003K-TRAVEL-SERVICES پیاده‌سازی و آزموده شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003J-INSURANCE روی شاخه Stacked مستقل آماده Review است**
+- وضعیت: **MASTER-003K-TRAVEL-SERVICES روی شاخه Stacked مستقل آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه فعال: `codex/pc-b-master-data-insurance`
-- Work Item: `MASTER-003J-INSURANCE`؛ Stacked روی Draft PR #36
+- شاخه فعال: `codex/pc-b-master-data-travel-services`
+- Work Item: `MASTER-003K-TRAVEL-SERVICES`؛ Stacked روی Draft PR #37
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ API روی ۴۰۰۰ و Web روی ۳۱۰۰ فعال‌اند.
 - نوع تغییر: Database، Migration، API Contract، Backend، Frontend، Test و Documentation؛
   بدون Customers، Dependency یا Lockfile.
@@ -348,6 +348,33 @@
   و سه تست سایر بسته‌ها موفق بود؛ Full Typecheck و Production Build نیز پاس شدند.
   Lint تمام فایل‌های این Slice موفق است؛ Full lint فقط به‌دلیل ایراد قدیمی DatePicker
   خارج از این Slice متوقف می‌شود.
+
+### `MASTER-003K-TRAVEL-SERVICES` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-travel-services` از
+  `origin/codex/pc-b-master-data-insurance@1a94fca` ساخته شد و روی Draft PR #37
+  پشته می‌شود؛ هیچ شاخه والد یا متعلق به PC-A تغییر نمی‌کند.
+- Migrationهای افزایشی `20260829220000_master_data_travel_services` و
+  `20260829221000_master_data_travel_bus_connections` چهار کاتالوگ Tour
+  Type، Transfer Type، CIP Service و Visa Service را اضافه و Leader را با Location،
+  نام انگلیسی، مقصد و تماس رمزنگاری/ماسک‌شده تکمیل می‌کند؛ FK محدودکننده و Check
+  ظرفیت، اعتبار، ترتیب و Version فعال است. Bus Company دقیقاً به یک Organization
+  یا Provider متصل و Facilityهای Bus Type با رابطه M:N نگهداری می‌شوند.
+- Contract عمومی به `master-data.v12` و ۴۵ Resource ارتقا یافت. هفت تب ماکاپ به API
+  واقعی، Permission، Audit بدون Ciphertext، Optimistic Lock، Export و Summary واقعی
+  متصل‌اند؛ شرکت و نوع اتوبوس در سطح Hub به این بخش تخصیص یکتای UI دارند.
+- Workspace فارسی RTL Responsive KPIهای پاستلی هم‌نام و ستون‌های دقیق ماکاپ دارد؛
+  مشاهده همه جزئیات، به‌ویژه پروفایل لیدر، فقط Popup است و مسیر مستقل ساخته نشده است.
+- اسناد/آدرس/بانک/دستمزد لیدر، پرونده و سند مسافر، قیمت، ظرفیت، Reservation، Voucher،
+  قرارداد و Settlement وارد Master Data نشده‌اند؛ شمارنده بدون Public Contract با
+  `—` نمایش داده می‌شود و Seed این Slice عمداً خالی است.
+- تمام ۱۹ Migration روی PostgreSQL 18 خالی، Constraintهای زنده و Seed دوگانه موفق
+  بودند؛ همان Migration روی دیتابیس محلی Deploy و Seed دو بار اجرا شد. هیچ فایل
+  Customers، dependency manifest یا lockfile تغییر نکرده است.
+- Full Test شامل API `218/218`، Web `129/129`، Database `51/51`، Contracts `14/14`
+  و سه تست سایر بسته‌ها، در مجموع `415/415` موفق بود؛ Full Typecheck و Production
+  Build نیز پاس شدند. Lint فایل‌های Slice موفق است؛ Full lint فقط به‌دلیل ایراد قدیمی
+  DatePicker خارج از این Slice متوقف می‌شود.
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
 

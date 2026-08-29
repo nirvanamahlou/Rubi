@@ -99,8 +99,18 @@ const configs: Partial<
       target: 'organizations',
       payload: 'id',
       requiredRole: 'BUS_PROVIDER',
+      optional: true,
     },
+    supplierId: { target: 'suppliers', payload: 'id', optional: true },
     countryId: { target: 'countries', payload: 'id' },
+  },
+  'bus-types': {
+    facilityIds: {
+      target: 'facilities',
+      payload: 'id',
+      multiple: true,
+      optional: true,
+    },
   },
   brokers: {
     organizationId: {
@@ -122,6 +132,17 @@ const configs: Partial<
   },
   'organization-contacts': {
     organizationId: { target: 'organizations', payload: 'id' },
+  },
+  leaders: {
+    cityId: { target: 'cities', payload: 'id' },
+  },
+  'cip-services': {
+    airportId: { target: 'airports', payload: 'id' },
+    supplierId: { target: 'suppliers', payload: 'id', optional: true },
+  },
+  'visa-services': {
+    countryId: { target: 'countries', payload: 'id' },
+    supplierId: { target: 'suppliers', payload: 'id', optional: true },
   },
   hotels: {
     cityId: { target: 'cities', payload: 'id' },

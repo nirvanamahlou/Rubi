@@ -1,4 +1,4 @@
-export const MASTER_DATA_CONTRACT_VERSION = 11 as const;
+export const MASTER_DATA_CONTRACT_VERSION = 12 as const;
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 
 export const MASTER_DATA_RESOURCES = [
@@ -36,6 +36,10 @@ export const MASTER_DATA_RESOURCES = [
   'travel-services',
   'organization-contacts',
   'leaders',
+  'tour-types',
+  'transfer-types',
+  'cip-services',
+  'visa-services',
   'acquaintance-methods',
   'lead-sources',
   'sales-channels',
@@ -77,6 +81,9 @@ export type MasterManifestTemplateStatus = 'DRAFT' | 'ACTIVE' | 'EXPIRED';
 export type MasterTrainCategory =
   'SLEEPER' | 'EXPRESS' | 'SALOON' | 'LUXURY' | 'OTHER';
 export type MasterBusServiceClass = 'STANDARD' | 'VIP' | 'LUXURY' | 'OTHER';
+export type MasterTourScope = 'DOMESTIC' | 'INTERNATIONAL' | 'BOTH';
+export type MasterTransferServiceMode = 'PRIVATE' | 'SHARED';
+export type MasterCipPassengerScope = 'ADT' | 'CHD' | 'INF' | 'ALL';
 
 export type MasterDataSortField = 'name' | 'code' | 'updatedAt';
 export type MasterDataSortDirection = 'asc' | 'desc';
@@ -111,6 +118,11 @@ export interface MasterDataListQuery {
   insurerId?: string;
   currencyId?: string;
   destinationRegion?: string;
+  supplierId?: string;
+  tourScope?: MasterTourScope;
+  transferServiceMode?: MasterTransferServiceMode;
+  passengerScope?: MasterCipPassengerScope;
+  busServiceClass?: MasterBusServiceClass;
 }
 
 export interface MasterDataRecord {
@@ -284,6 +296,51 @@ export interface MasterInsuranceSummary {
     needsReview: number;
   };
 }
+
+export interface MasterTravelServicesSummary {
+  leaders: {
+    total: number;
+    active: number;
+    destinations: number;
+    incompleteDocuments: null;
+  };
+  tourTypes: {
+    total: number;
+    active: number;
+    domestic: number;
+    international: number;
+  };
+  transferTypes: {
+    total: number;
+    active: number;
+    private: number;
+    shared: number;
+  };
+  cipServices: {
+    total: number;
+    active: number;
+    airports: number;
+    providers: number;
+  };
+  visaServices: {
+    total: number;
+    active: number;
+    countries: number;
+    incompleteGuidance: number;
+  };
+  busCompanies: {
+    total: number;
+    active: number;
+    organizations: number;
+    providers: number;
+  };
+  busTypes: {
+    total: number;
+    active: number;
+    amenities: number;
+    companies: null;
+  };
+}
 export type MasterHotelImportDuplicateBehavior = 'SKIP' | 'UPDATE';
 
 export interface MasterHotelImportIssue {
@@ -375,6 +432,8 @@ export const masterDataEndpoints = {
   accommodationSummary:
     `${MASTER_DATA_API_PREFIX}/accommodation/summary` as const,
   insuranceSummary: `${MASTER_DATA_API_PREFIX}/insurance/summary` as const,
+  travelServicesSummary:
+    `${MASTER_DATA_API_PREFIX}/travel-services-catalog/summary` as const,
   hotelImportPreview:
     `${MASTER_DATA_API_PREFIX}/hotel-imports/preview` as const,
   hotelImportCommit: (sessionId: string) =>

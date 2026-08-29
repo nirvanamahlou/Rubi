@@ -113,7 +113,7 @@ export function MasterDataLiveForm({
             : 'اطلاعات پس از اعتبارسنجی در Backend ثبت و Audit می‌شود.'}
         </DialogDescription>
         <div className="mt-4 flex gap-2">
-          <Badge>master-data.v8</Badge>
+          <Badge>master-data.v12</Badge>
           {record ? (
             <Badge>نسخه {record.version.toLocaleString('fa-IR')}</Badge>
           ) : null}

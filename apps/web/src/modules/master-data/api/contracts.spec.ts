@@ -71,6 +71,24 @@ describe('master data API proposal', () => {
     );
   });
 
+  it('serializes normalized travel service filters', () => {
+    const query = parseMasterDataListQuery({
+      supplierId: '11111111-1111-4111-8111-111111111111',
+      tourScope: 'INTERNATIONAL',
+      transferServiceMode: 'PRIVATE',
+      passengerScope: 'ALL',
+      busServiceClass: 'VIP',
+    });
+    const serialized = serializeMasterDataListQuery(query);
+    expect(serialized).toContain(
+      'supplierId=11111111-1111-4111-8111-111111111111',
+    );
+    expect(serialized).toContain('tourScope=INTERNATIONAL');
+    expect(serialized).toContain('transferServiceMode=PRIVATE');
+    expect(serialized).toContain('passengerScope=ALL');
+    expect(serialized).toContain('busServiceClass=VIP');
+  });
+
   it('rejects uncontrolled page sizes', () => {
     expect(() => parseMasterDataListQuery({ pageSize: 101 })).toThrow();
   });

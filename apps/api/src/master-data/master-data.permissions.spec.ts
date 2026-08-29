@@ -10,6 +10,7 @@ describe('MasterDataController permission metadata', () => {
     ['exportStatus', 'master_data.export'],
     ['list', 'master_data.read'],
     ['insuranceSummary', 'master_data.read'],
+    ['travelServicesSummary', 'master_data.read'],
     ['detail', 'master_data.read'],
     ['create', 'master_data.create'],
     ['update', 'master_data.update'],

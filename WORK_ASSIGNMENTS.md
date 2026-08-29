@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-29 — MASTER-003K-TRAVEL-SERVICES آغاز شد
+آخرین به‌روزرسانی: 2026-08-29 — MASTER-003K-TRAVEL-SERVICES آماده Draft PR شد
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `PLANNED/RESERVED`، `IN_PROGRESS`،
@@ -40,7 +40,7 @@
 | MASTER-003H-TRANSPORT           | PC-B         | `codex/pc-b-master-data-transport`          | Vertical Slice حمل‌ونقل: Airline، Aircraft، Cabin، Baggage، Manifest، Rail و Bus با پروفایل Popup       | `READY_FOR_REVIEW` | Draft PR #35 روی PR #33؛ سه قفل MASTER-003 فعال و Customers دست‌نخورده است  |
 | MASTER-003I-SALES-REFERENCES    | PC-B         | `codex/pc-b-master-data-sales-references`   | Vertical Slice مراجع فروش: Acquaintance، Lead Source، Channel، Lost Reason، Customer Type، Tag، Campaign | `READY_FOR_REVIEW` | Draft PR #36 روی PR #35؛ سه قفل فعال و بدون Query مستقیم Customers          |
 | MASTER-003J-INSURANCE           | PC-B         | `codex/pc-b-master-data-insurance`          | Vertical Slice بیمه: Insurer، Insurance Plan، Coverage، روابط مرجع، Popup و آزمون کامل                 | `READY_FOR_REVIEW` | Draft PR #37 روی PR #36؛ سه قفل فعال و بدون داده عملیاتی Reservations       |
-| MASTER-003K-TRAVEL-SERVICES     | PC-B         | `codex/pc-b-master-data-travel-services`    | Vertical Slice تور و خدمات سفر: Leader، Tour/Transfer Type، CIP، Visa و Bus Catalog                    | `IN_PROGRESS`      | Stacked روی PR #37؛ پروفایل لیدر فقط Popup و بدون داده عملیاتی/مسافر       |
+| MASTER-003K-TRAVEL-SERVICES     | PC-B         | `codex/pc-b-master-data-travel-services`    | Vertical Slice تور و خدمات سفر: Leader، Tour/Transfer Type، CIP، Visa و Bus Catalog                    | `READY_FOR_REVIEW` | Stacked روی PR #37؛ همه Profileها Popup؛ Bus به Organization/Provider و Facility واقعی متصل است |
 | CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket                      | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence |
 | MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix         | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11        |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                                   | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |

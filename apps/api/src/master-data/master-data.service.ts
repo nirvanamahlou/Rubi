@@ -80,6 +80,10 @@ const resourceCodePrefixes: Record<MasterDataResource, string> = {
   'travel-services': 'SERVICE',
   'organization-contacts': 'CONTACT',
   leaders: 'LEADER',
+  'tour-types': 'TOUR',
+  'transfer-types': 'TRANSFER',
+  'cip-services': 'CIP',
+  'visa-services': 'VISA',
   'acquaintance-methods': 'ACQ',
   'lead-sources': 'LEAD_SOURCE',
   'sales-channels': 'SALES_CHANNEL',
@@ -164,6 +168,9 @@ const trainCategories = new Set([
   'OTHER',
 ]);
 const busServiceClasses = new Set(['STANDARD', 'VIP', 'LUXURY', 'OTHER']);
+const tourScopes = new Set(['DOMESTIC', 'INTERNATIONAL', 'BOTH']);
+const transferServiceModes = new Set(['PRIVATE', 'SHARED']);
+const cipPassengerScopes = new Set(['ADT', 'CHD', 'INF', 'ALL']);
 
 function isValidIso2(value: string): boolean {
   if (!/^[A-Z]{2}$/.test(value)) return false;
@@ -287,6 +294,11 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'englishName',
     'insurerId',
     'destinationRegion',
+    'supplierId',
+    'tourScope',
+    'transferServiceMode',
+    'passengerScope',
+    'busServiceClass',
     'minimumAge',
     'maximumAge',
     'validFrom',
@@ -373,6 +385,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'name',
     'englishName',
     'organizationId',
+    'supplierId',
     'countryId',
     'logoFileReference',
   ],
@@ -383,6 +396,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'model',
     'serviceClass',
     'amenities',
+    'facilityIds',
   ],
   hotels: [
     'name',
@@ -450,7 +464,60 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'hasWhatsapp',
     'isPrimary',
   ],
-  leaders: ['code', 'name', 'languages', 'expertise'],
+  leaders: [
+    'code',
+    'name',
+    'englishName',
+    'cityId',
+    'languages',
+    'expertise',
+    'destinations',
+    'primaryPhone',
+    'roamingPhone',
+    'welcomeSignCode',
+    'operationalNotes',
+  ],
+  'tour-types': [
+    'code',
+    'name',
+    'englishName',
+    'scope',
+    'description',
+    'displayOrder',
+  ],
+  'transfer-types': [
+    'code',
+    'name',
+    'englishName',
+    'vehicleType',
+    'serviceMode',
+    'suggestedCapacity',
+    'description',
+    'displayOrder',
+  ],
+  'cip-services': [
+    'code',
+    'name',
+    'englishName',
+    'airportId',
+    'supplierId',
+    'passengerScope',
+    'includedItems',
+    'description',
+    'displayOrder',
+  ],
+  'visa-services': [
+    'code',
+    'name',
+    'englishName',
+    'countryId',
+    'supplierId',
+    'visaType',
+    'referenceValidityDays',
+    'guidanceFileReference',
+    'description',
+    'displayOrder',
+  ],
   'acquaintance-methods': [
     'name',
     'englishName',
@@ -523,7 +590,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   ],
   'rail-companies': ['name', 'organizationId', 'countryId'],
   'train-types': ['name', 'manufacturer', 'model', 'category'],
-  'bus-companies': ['name', 'organizationId', 'countryId'],
+  'bus-companies': ['name', 'countryId'],
   'bus-types': ['name', 'manufacturer', 'model', 'serviceClass'],
   hotels: ['name', 'cityId'],
   'hotel-chains': ['name', 'countryId'],
@@ -536,7 +603,11 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   brokers: ['name', 'organizationId'],
   'travel-services': ['code', 'name'],
   'organization-contacts': ['organizationId', 'fullName', 'preferredChannel'],
-  leaders: ['name', 'languages'],
+  leaders: ['name', 'cityId', 'languages', 'destinations'],
+  'tour-types': ['name', 'scope'],
+  'transfer-types': ['name', 'vehicleType', 'serviceMode'],
+  'cip-services': ['name', 'airportId', 'passengerScope', 'includedItems'],
+  'visa-services': ['name', 'countryId', 'visaType'],
   'acquaintance-methods': ['name'],
   'lead-sources': ['name'],
   'sales-channels': ['name'],
@@ -588,6 +659,9 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     'paymentDirection',
     'organizationId',
     'serviceId',
+    'insurerId',
+    'currencyId',
+    'supplierId',
     'collaborationStatus',
     'providerConnected',
     'hasWhatsapp',
@@ -665,6 +739,26 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     !mealServiceCategories.has(String(input.filters.mealServiceCategory))
   )
     throw new BadRequestException('دسته Meal/Service خروجی معتبر نیست.');
+  if (
+    input.filters.tourScope !== undefined &&
+    !tourScopes.has(String(input.filters.tourScope))
+  )
+    throw new BadRequestException('دامنه نوع تور خروجی معتبر نیست.');
+  if (
+    input.filters.transferServiceMode !== undefined &&
+    !transferServiceModes.has(String(input.filters.transferServiceMode))
+  )
+    throw new BadRequestException('شیوه ترانسفر خروجی معتبر نیست.');
+  if (
+    input.filters.passengerScope !== undefined &&
+    !cipPassengerScopes.has(String(input.filters.passengerScope))
+  )
+    throw new BadRequestException('دامنه مسافر خروجی معتبر نیست.');
+  if (
+    input.filters.busServiceClass !== undefined &&
+    !busServiceClasses.has(String(input.filters.busServiceClass))
+  )
+    throw new BadRequestException('رده اتوبوس خروجی معتبر نیست.');
   if (
     input.filters.starRating !== undefined &&
     (!Number.isInteger(Number(input.filters.starRating)) ||
@@ -802,6 +896,50 @@ function exportQuery(input: ExportInput): MasterDataListQuery {
     ...(typeof input.filters.saleableOnly === 'boolean'
       ? { saleableOnly: input.filters.saleableOnly }
       : {}),
+    ...(typeof input.filters.insurerId === 'string'
+      ? { insurerId: input.filters.insurerId }
+      : {}),
+    ...(typeof input.filters.currencyId === 'string'
+      ? { currencyId: input.filters.currencyId }
+      : {}),
+    ...(typeof input.filters.destinationRegion === 'string'
+      ? { destinationRegion: input.filters.destinationRegion }
+      : {}),
+    ...(typeof input.filters.supplierId === 'string'
+      ? { supplierId: input.filters.supplierId }
+      : {}),
+    ...(typeof input.filters.tourScope === 'string'
+      ? {
+          tourScope: input.filters.tourScope as Exclude<
+            MasterDataListQuery['tourScope'],
+            undefined
+          >,
+        }
+      : {}),
+    ...(typeof input.filters.transferServiceMode === 'string'
+      ? {
+          transferServiceMode: input.filters.transferServiceMode as Exclude<
+            MasterDataListQuery['transferServiceMode'],
+            undefined
+          >,
+        }
+      : {}),
+    ...(typeof input.filters.passengerScope === 'string'
+      ? {
+          passengerScope: input.filters.passengerScope as Exclude<
+            MasterDataListQuery['passengerScope'],
+            undefined
+          >,
+        }
+      : {}),
+    ...(typeof input.filters.busServiceClass === 'string'
+      ? {
+          busServiceClass: input.filters.busServiceClass as Exclude<
+            MasterDataListQuery['busServiceClass'],
+            undefined
+          >,
+        }
+      : {}),
     page: 1,
     pageSize: 100,
   };
@@ -894,6 +1032,10 @@ export class MasterDataService {
 
   async insuranceSummary() {
     return { data: await this.repository.insuranceSummary() };
+  }
+
+  async travelServicesSummary() {
+    return { data: await this.repository.travelServicesSummary() };
   }
 
   async create(
@@ -1173,6 +1315,7 @@ export class MasterDataService {
       }
       for (const field of [
         'organizationId',
+        'supplierId',
         'mealServiceId',
         'defaultRoomTypeId',
         'chainId',
@@ -1290,6 +1433,38 @@ export class MasterDataService {
       data.validTo = null;
     if (resource === 'insurance-plans' && data.maximumAge === '')
       data.maximumAge = null;
+    if (resource === 'leaders' && data.cityId === '') data.cityId = null;
+    if (
+      (resource === 'cip-services' || resource === 'visa-services') &&
+      data.supplierId === ''
+    )
+      data.supplierId = null;
+    if (resource === 'bus-companies') {
+      if (data.organizationId === '') data.organizationId = null;
+      if (data.supplierId === '') data.supplierId = null;
+      const existing =
+        partial && entityId
+          ? await this.repository.find('bus-companies', entityId)
+          : null;
+      const organizationId = Object.hasOwn(data, 'organizationId')
+        ? data.organizationId
+        : existing?.organizationId;
+      const supplierId = Object.hasOwn(data, 'supplierId')
+        ? data.supplierId
+        : existing?.supplierId;
+      if (
+        (typeof organizationId === 'string') ===
+        (typeof supplierId === 'string')
+      )
+        throw new BadRequestException(
+          'شرکت اتوبوس باید دقیقاً به یک Organization یا Provider متصل باشد.',
+        );
+    }
+    if (
+      resource === 'visa-services' &&
+      data.guidanceFileReference === ''
+    )
+      data.guidanceFileReference = null;
     if (resource === 'suppliers' || resource === 'brokers') {
       for (const optionalReference of ['countryId', 'cityId']) {
         if (data[optionalReference] === '') data[optionalReference] = null;
@@ -1312,6 +1487,8 @@ export class MasterDataService {
       'fileReferenceId',
       'insurerId',
       'currencyId',
+      'supplierId',
+      'guidanceFileReference',
     ]) {
       if (
         typeof data[field] === 'string' &&
@@ -1473,6 +1650,31 @@ export class MasterDataService {
           throw new BadRequestException('فهرست امکانات معتبر نیست.');
         data.amenities = [...new Set(amenities)];
       }
+    }
+    if (resource === 'bus-types' && Object.hasOwn(data, 'facilityIds')) {
+      const facilityIds = referenceIds(data.facilityIds, 'امکانات اتوبوس');
+      const facilities = await Promise.all(
+        facilityIds.map((id) => this.repository.find('facilities', id)),
+      );
+      if (facilities.some((facility) => !facility?.isActive))
+        throw new BadRequestException(
+          'یک یا چند امکان فعال اتوبوس یافت نشد.',
+        );
+      delete data.facilityIds;
+      data.facilities = partial
+        ? {
+            deleteMany: {},
+            create: facilityIds.map((facilityId) => ({
+              facilityId,
+              assignedByUserId: actorUserId,
+            })),
+          }
+        : {
+            create: facilityIds.map((facilityId) => ({
+              facilityId,
+              assignedByUserId: actorUserId,
+            })),
+          };
     }
     if (resource === 'insurers') {
       if (data.countryId === null)
@@ -2087,11 +2289,145 @@ export class MasterDataService {
     } else if (resource === 'hotels' && Object.hasOwn(data, 'starRating')) {
       data.starRating = null;
     }
-    if (resource === 'leaders' && typeof data.languages === 'string')
-      data.languages = data.languages
-        .split(',')
+    if (resource === 'leaders') {
+      if (data.cityId === null)
+        throw new BadRequestException('شهر فعالیت لیدر الزامی است.');
+      for (const [field, label] of [
+        ['languages', 'زبان‌های لیدر'],
+        ['destinations', 'مقصدهای لیدر'],
+      ] as const) {
+        if (!Object.hasOwn(data, field)) continue;
+        const values = (
+          Array.isArray(data[field])
+            ? data[field].map(String)
+            : String(data[field] ?? '').split(',')
+        )
+          .map((value) => value.trim())
+          .filter(Boolean);
+        if (
+          !values.length ||
+          values.length > 30 ||
+          values.some((value) => value.length > 80)
+        )
+          throw new BadRequestException(`${label} معتبر نیست.`);
+        data[field] = [...new Set(values)];
+      }
+      for (const [input, prefix] of [
+        ['primaryPhone', 'primaryPhone'],
+        ['roamingPhone', 'roamingPhone'],
+      ] as const) {
+        if (!Object.hasOwn(data, input)) continue;
+        const phone = String(data[input] ?? '').trim();
+        delete data[input];
+        if (!phone) {
+          Object.assign(data, {
+            [`${prefix}Encrypted`]: null,
+            [`${prefix}EncryptionIv`]: null,
+            [`${prefix}EncryptionAuthTag`]: null,
+            [`${prefix}EncryptionKeyVersion`]: null,
+            [`${prefix}Masked`]: null,
+            [`${prefix}Fingerprint`]: null,
+          });
+          continue;
+        }
+        const protectedPhone = this.contactCrypto.protect('phone', phone);
+        Object.assign(data, {
+          [`${prefix}Encrypted`]: protectedPhone.encrypted,
+          [`${prefix}EncryptionIv`]: protectedPhone.encryptionIv,
+          [`${prefix}EncryptionAuthTag`]:
+            protectedPhone.encryptionAuthTag,
+          [`${prefix}EncryptionKeyVersion`]:
+            protectedPhone.encryptionKeyVersion,
+          [`${prefix}Masked`]: protectedPhone.masked,
+          [`${prefix}Fingerprint`]: protectedPhone.fingerprint,
+        });
+      }
+    }
+    if (resource === 'tour-types' && data.scope !== undefined) {
+      const scope = String(data.scope).trim().toUpperCase();
+      if (!tourScopes.has(scope))
+        throw new BadRequestException('دامنه نوع تور معتبر نیست.');
+      data.scope = scope;
+    }
+    if (
+      resource === 'transfer-types' &&
+      data.serviceMode !== undefined
+    ) {
+      const mode = String(data.serviceMode).trim().toUpperCase();
+      if (!transferServiceModes.has(mode))
+        throw new BadRequestException('شیوه سرویس ترانسفر معتبر نیست.');
+      data.serviceMode = mode;
+    }
+    if (
+      resource === 'cip-services' &&
+      data.passengerScope !== undefined
+    ) {
+      const scope = String(data.passengerScope).trim().toUpperCase();
+      if (!cipPassengerScopes.has(scope))
+        throw new BadRequestException('دامنه مسافر خدمت CIP معتبر نیست.');
+      data.passengerScope = scope;
+    }
+    for (const catalogResource of [
+      'tour-types',
+      'transfer-types',
+      'cip-services',
+      'visa-services',
+    ] as const) {
+      if (resource !== catalogResource || data.displayOrder === undefined)
+        continue;
+      const displayOrder = Number(data.displayOrder || 0);
+      if (!Number.isInteger(displayOrder) || displayOrder < 0)
+        throw new BadRequestException(
+          'ترتیب نمایش باید عدد صحیح نامنفی باشد.',
+        );
+      data.displayOrder = displayOrder;
+    }
+    if (
+      resource === 'transfer-types' &&
+      Object.hasOwn(data, 'suggestedCapacity')
+    ) {
+      const raw = String(data.suggestedCapacity ?? '').trim();
+      if (!raw) data.suggestedCapacity = null;
+      else {
+        const capacity = Number(raw);
+        if (!Number.isInteger(capacity) || capacity < 1 || capacity > 100)
+          throw new BadRequestException(
+            'ظرفیت پیشنهادی باید عدد صحیح بین ۱ تا ۱۰۰ باشد.',
+          );
+        data.suggestedCapacity = capacity;
+      }
+    }
+    if (resource === 'cip-services' && Object.hasOwn(data, 'includedItems')) {
+      const includedItems = (
+        Array.isArray(data.includedItems)
+          ? data.includedItems.map(String)
+          : String(data.includedItems ?? '').split(',')
+      )
         .map((value) => value.trim())
         .filter(Boolean);
+      if (
+        !includedItems.length ||
+        includedItems.length > 50 ||
+        includedItems.some((value) => value.length > 120)
+      )
+        throw new BadRequestException('اقلام خدمت CIP معتبر نیستند.');
+      data.includedItems = [...new Set(includedItems)];
+    }
+    if (
+      resource === 'visa-services' &&
+      Object.hasOwn(data, 'referenceValidityDays')
+    ) {
+      const raw = String(data.referenceValidityDays ?? '').trim();
+      if (!raw) data.referenceValidityDays = null;
+      else {
+        const days = Number(raw);
+        if (!Number.isInteger(days) || days < 1 || days > 3650)
+          throw new BadRequestException(
+            'مدت اعتبار مرجع باید عدد صحیح بین ۱ تا ۳۶۵۰ روز باشد.',
+          );
+        data.referenceValidityDays = days;
+      }
+    }
     if (resource === 'organizations') {
       const roleCodes = Array.isArray(data.roleCodes)
         ? data.roleCodes.map(String).map((value) => value.trim().toUpperCase())
@@ -2178,6 +2514,9 @@ export class MasterDataService {
         field: 'organizationId',
         target: 'organizations',
       },
+      leaders: { field: 'cityId', target: 'cities' },
+      'cip-services': { field: 'airportId', target: 'airports' },
+      'visa-services': { field: 'countryId', target: 'countries' },
     };
     const check = relationChecks[resource];
     if (check && typeof data[check.field] === 'string') {
@@ -2212,6 +2551,19 @@ export class MasterDataService {
       const country = await this.repository.find('countries', data.countryId);
       if (!country?.isActive)
         throw new BadRequestException('کشور فعال برای شرکت بیمه یافت نشد.');
+    }
+    if (
+      (resource === 'cip-services' ||
+        resource === 'visa-services' ||
+        resource === 'bus-companies') &&
+      typeof data.supplierId === 'string'
+    ) {
+      const supplier = await this.repository.find(
+        'suppliers',
+        data.supplierId,
+      );
+      if (!supplier?.isActive)
+        throw new BadRequestException('Provider فعال یافت نشد.');
     }
     if (resource === 'baggage-rules' && typeof data.cabinClassId === 'string') {
       const cabinClass = await this.repository.find(
