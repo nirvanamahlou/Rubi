@@ -24,18 +24,143 @@ export const persianMonths = [
   'اسفند',
 ] as const;
 
-const persianFormatter = new Intl.DateTimeFormat('en-US-u-ca-persian', {
-  year: 'numeric',
-  month: 'numeric',
-  day: 'numeric',
-  timeZone: 'UTC',
-});
+export const gregorianMonths = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const;
+
+const persianYearBreaks = [
+  -61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097, 2192,
+  2262, 2324, 2394, 2456, 3178,
+] as const;
+
+function integerDivision(value: number, divisor: number) {
+  return Math.trunc(value / divisor);
+}
+
+function integerMod(value: number, divisor: number) {
+  return value - integerDivision(value, divisor) * divisor;
+}
+
+function gregorianToDayNumber(year: number, month: number, day: number) {
+  let result =
+    integerDivision((year + integerDivision(month - 8, 6) + 100100) * 1461, 4) +
+    integerDivision(153 * integerMod(month + 9, 12) + 2, 5) +
+    day -
+    34840408;
+  result -=
+    integerDivision(
+      integerDivision(year + 100100 + integerDivision(month - 8, 6), 100) * 3,
+      4,
+    ) - 752;
+  return result;
+}
+
+function dayNumberToGregorian(dayNumber: number): CustomerDateParts {
+  let value = 4 * dayNumber + 139361631;
+  value =
+    value +
+    integerDivision(integerDivision(4 * dayNumber + 183187720, 146097) * 3, 4) *
+      4 -
+    3908;
+  const interim = integerDivision(integerMod(value, 1461), 4) * 5 + 308;
+  const day = integerDivision(integerMod(interim, 153), 5) + 1;
+  const month = integerMod(integerDivision(interim, 153), 12) + 1;
+  const year =
+    integerDivision(value, 1461) - 100100 + integerDivision(8 - month, 6);
+  return { year, month, day };
+}
+
+function persianYearData(year: number) {
+  const gregorianYear = year + 621;
+  let leapDays = -14;
+  let previousBreak: number = persianYearBreaks[0]!;
+  let jump = 0;
+  let nextBreak = 0;
+
+  for (let index = 1; index < persianYearBreaks.length; index += 1) {
+    nextBreak = persianYearBreaks[index] ?? persianYearBreaks.at(-1)!;
+    jump = nextBreak - previousBreak;
+    if (year < nextBreak) break;
+    leapDays +=
+      integerDivision(jump, 33) * 8 + integerDivision(integerMod(jump, 33), 4);
+    previousBreak = nextBreak;
+  }
+
+  let offset = year - previousBreak;
+  leapDays +=
+    integerDivision(offset, 33) * 8 +
+    integerDivision(integerMod(offset, 33) + 3, 4);
+  if (integerMod(jump, 33) === 4 && jump - offset === 4) leapDays += 1;
+
+  const gregorianLeapDays =
+    integerDivision(gregorianYear, 4) -
+    integerDivision((integerDivision(gregorianYear, 100) + 1) * 3, 4) -
+    150;
+  const marchDay = 20 + leapDays - gregorianLeapDays;
+
+  if (jump - offset < 6)
+    offset = offset - jump + integerDivision(jump + 4, 33) * 33;
+  let leap = integerMod(integerMod(offset + 1, 33) - 1, 4);
+  if (leap === -1) leap = 4;
+  return { gregorianYear, marchDay, leap };
+}
+
+function persianToDayNumber(year: number, month: number, day: number) {
+  const yearData = persianYearData(year);
+  return (
+    gregorianToDayNumber(yearData.gregorianYear, 3, yearData.marchDay) +
+    (month - 1) * 31 -
+    integerDivision(month, 7) * (month - 7) +
+    day -
+    1
+  );
+}
+
+function dayNumberToPersian(dayNumber: number): CustomerDateParts {
+  const gregorian = dayNumberToGregorian(dayNumber);
+  let year = gregorian.year - 621;
+  const yearData = persianYearData(year);
+  const firstDay = gregorianToDayNumber(gregorian.year, 3, yearData.marchDay);
+  let offset = dayNumber - firstDay;
+
+  if (offset >= 0 && offset <= 185)
+    return {
+      year,
+      month: 1 + integerDivision(offset, 31),
+      day: integerMod(offset, 31) + 1,
+    };
+  if (offset >= 0) offset -= 186;
+  else {
+    year -= 1;
+    offset += 179;
+    if (yearData.leap === 1) offset += 1;
+  }
+  return {
+    year,
+    month: 7 + integerDivision(offset, 30),
+    day: integerMod(offset, 30) + 1,
+  };
+}
 
 export function persianParts(date: Date): CustomerDateParts {
-  const parts = persianFormatter.formatToParts(date);
-  const value = (type: 'year' | 'month' | 'day') =>
-    Number(parts.find((part) => part.type === type)?.value);
-  return { year: value('year'), month: value('month'), day: value('day') };
+  return dayNumberToPersian(
+    gregorianToDayNumber(
+      date.getUTCFullYear(),
+      date.getUTCMonth() + 1,
+      date.getUTCDate(),
+    ),
+  );
 }
 
 function isoParts(value: string): CustomerDateParts | null {
@@ -69,18 +194,20 @@ export function gregorianDateToIso(parts: CustomerDateParts): string | null {
 }
 
 export function persianDateToIso(parts: CustomerDateParts): string | null {
-  const start = Date.UTC(parts.year + 620, 2, 1);
-  for (let offset = 0; offset < 430; offset += 1) {
-    const date = new Date(start + offset * 86_400_000);
-    const candidate = persianParts(date);
-    if (
-      candidate.year === parts.year &&
-      candidate.month === parts.month &&
-      candidate.day === parts.day
-    )
-      return date.toISOString().slice(0, 10);
-  }
-  return null;
+  if (parts.month < 1 || parts.month > 12 || parts.day < 1) return null;
+  const gregorian = dayNumberToGregorian(
+    persianToDayNumber(parts.year, parts.month, parts.day),
+  );
+  const convertedBack = dayNumberToPersian(
+    gregorianToDayNumber(gregorian.year, gregorian.month, gregorian.day),
+  );
+  if (
+    convertedBack.year !== parts.year ||
+    convertedBack.month !== parts.month ||
+    convertedBack.day !== parts.day
+  )
+    return null;
+  return gregorianDateToIso(gregorian);
 }
 
 export function currentPersianParts(value: string): CustomerDateParts {
@@ -131,13 +258,20 @@ export function calendarMonthTitle(
   year: number,
   month: number,
 ) {
-  if (mode === 'persian')
-    return `${persianMonths[month - 1]} ${persianNumber(year)}`;
-  return new Intl.DateTimeFormat('fa-IR-u-ca-gregory', {
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(Date.UTC(year, month - 1, 1)));
+  return `${calendarMonthName(mode, month)} ${calendarYearLabel(mode, year)}`;
+}
+
+export function calendarMonthName(
+  mode: 'persian' | 'gregorian',
+  month: number,
+) {
+  return mode === 'persian'
+    ? persianMonths[month - 1]
+    : gregorianMonths[month - 1];
+}
+
+export function calendarYearLabel(mode: 'persian' | 'gregorian', year: number) {
+  return mode === 'persian' ? persianNumber(year) : String(year);
 }
 
 export function persianNumber(value: number) {

@@ -8,7 +8,9 @@ import { FormField } from '@/components/ui/form-controls';
 import { cn } from '@/lib/utils';
 import {
   calendarMonthDays,
+  calendarMonthName,
   calendarMonthTitle,
+  calendarYearLabel,
   currentPersianParts,
   formatCustomerDate,
   gregorianParts,
@@ -17,6 +19,7 @@ import {
 } from '../model/customer-calendar';
 
 export type CustomerCalendarMode = 'persian' | 'gregorian';
+type CustomerCalendarView = 'days' | 'months' | 'years';
 
 export function CustomerCalendarSwitch({
   mode,
@@ -70,6 +73,8 @@ export function CustomerDateField({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
+  const [calendarView, setCalendarView] =
+    useState<CustomerCalendarView>('days');
   const selected = useMemo(
     () =>
       mode === 'persian' ? currentPersianParts(value) : gregorianParts(value),
@@ -115,6 +120,7 @@ export function CustomerDateField({
             onClick={() => {
               if (!open)
                 setView({ year: selected.year, month: selected.month });
+              setCalendarView('days');
               setOpen((current) => !current);
             }}
             type="button"
@@ -135,6 +141,7 @@ export function CustomerDateField({
                 year: nextSelected.year,
                 month: nextSelected.month,
               });
+              setCalendarView('days');
               onModeChange(nextMode);
             }}
           />
@@ -148,24 +155,55 @@ export function CustomerDateField({
           >
             <div className="flex items-center justify-between rounded-xl bg-primary px-2 py-2 text-primary-foreground">
               <Button
-                aria-label="ماه قبل"
+                aria-label="بازه قبل"
                 className="size-8 p-0 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
                 onClick={() =>
-                  setView((current) => shiftCalendarMonth(current, -1))
+                  setView((current) =>
+                    calendarView === 'days'
+                      ? shiftCalendarMonth(current, -1)
+                      : {
+                          ...current,
+                          year:
+                            current.year - (calendarView === 'years' ? 12 : 1),
+                        },
+                  )
                 }
                 type="button"
                 variant="ghost"
               >
                 <ChevronRight className="size-4" />
               </Button>
-              <p className="text-sm font-bold">
-                {calendarMonthTitle(mode, view.year, view.month)}
-              </p>
+              <div className="flex items-center gap-1 text-sm font-bold">
+                <button
+                  className="rounded-md px-2 py-1 outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white/70"
+                  dir={mode === 'gregorian' ? 'ltr' : 'rtl'}
+                  onClick={() => setCalendarView('months')}
+                  type="button"
+                >
+                  {calendarMonthName(mode, view.month)}
+                </button>
+                <button
+                  aria-label="انتخاب سال"
+                  className="rounded-md px-2 py-1 outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white/70"
+                  onClick={() => setCalendarView('years')}
+                  type="button"
+                >
+                  {calendarYearLabel(mode, view.year)}
+                </button>
+              </div>
               <Button
-                aria-label="ماه بعد"
+                aria-label="بازه بعد"
                 className="size-8 p-0 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
                 onClick={() =>
-                  setView((current) => shiftCalendarMonth(current, 1))
+                  setView((current) =>
+                    calendarView === 'days'
+                      ? shiftCalendarMonth(current, 1)
+                      : {
+                          ...current,
+                          year:
+                            current.year + (calendarView === 'years' ? 12 : 1),
+                        },
+                  )
                 }
                 type="button"
                 variant="ghost"
@@ -173,44 +211,96 @@ export function CustomerDateField({
                 <ChevronLeft className="size-4" />
               </Button>
             </div>
-            <div className="mt-3 grid grid-cols-7 text-center text-[11px] font-semibold text-muted-foreground">
-              {['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'].map((day) => (
-                <span
-                  className={day === 'ج' ? 'text-destructive' : ''}
-                  key={day}
-                >
-                  {day}
-                </span>
-              ))}
-            </div>
-            <div className="mt-1 grid grid-cols-7 gap-0.5">
-              {days.map((day, index) =>
-                day ? (
+            {calendarView === 'days' ? (
+              <>
+                <div className="mt-3 grid grid-cols-7 text-center text-[11px] font-semibold text-muted-foreground">
+                  {['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'].map((day) => (
+                    <span
+                      className={day === 'ج' ? 'text-destructive' : ''}
+                      key={day}
+                    >
+                      {day}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-1 grid grid-cols-7 gap-0.5">
+                  {days.map((day, index) =>
+                    day ? (
+                      <button
+                        aria-label={`${persianNumber(day.day)} ${calendarMonthTitle(mode, view.year, view.month)}`}
+                        aria-pressed={value === day.iso}
+                        className={cn(
+                          'flex size-9 items-center justify-center justify-self-center rounded-lg text-xs font-medium outline-none transition hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
+                          value === day.iso &&
+                            'bg-primary text-primary-foreground hover:bg-primary',
+                          value !== day.iso &&
+                            day.iso === today &&
+                            'border border-primary text-primary',
+                        )}
+                        key={day.iso}
+                        onClick={() => {
+                          onChange(day.iso);
+                          setOpen(false);
+                        }}
+                        type="button"
+                      >
+                        {persianNumber(day.day)}
+                      </button>
+                    ) : (
+                      <span aria-hidden="true" key={`empty-${index}`} />
+                    ),
+                  )}
+                </div>
+              </>
+            ) : calendarView === 'months' ? (
+              <div className="mt-3 grid grid-cols-3 gap-2" dir="rtl">
+                {Array.from({ length: 12 }, (_, index) => index + 1).map(
+                  (month) => (
+                    <button
+                      aria-pressed={view.month === month}
+                      className={cn(
+                        'min-h-11 rounded-xl border border-primary/10 px-2 py-2 text-xs font-semibold outline-none transition hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
+                        view.month === month &&
+                          'border-primary bg-primary text-primary-foreground hover:bg-primary',
+                      )}
+                      dir={mode === 'gregorian' ? 'ltr' : 'rtl'}
+                      key={month}
+                      onClick={() => {
+                        setView((current) => ({ ...current, month }));
+                        setCalendarView('days');
+                      }}
+                      type="button"
+                    >
+                      {calendarMonthName(mode, month)}
+                    </button>
+                  ),
+                )}
+              </div>
+            ) : (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {Array.from(
+                  { length: 12 },
+                  (_, index) => view.year - 5 + index,
+                ).map((year) => (
                   <button
-                    aria-label={`${persianNumber(day.day)} ${calendarMonthTitle(mode, view.year, view.month)}`}
-                    aria-pressed={value === day.iso}
+                    aria-pressed={view.year === year}
                     className={cn(
-                      'flex size-9 items-center justify-center justify-self-center rounded-lg text-xs font-medium outline-none transition hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
-                      value === day.iso &&
-                        'bg-primary text-primary-foreground hover:bg-primary',
-                      value !== day.iso &&
-                        day.iso === today &&
-                        'border border-primary text-primary',
+                      'min-h-11 rounded-xl border border-primary/10 px-2 py-2 text-sm font-semibold outline-none transition hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
+                      view.year === year &&
+                        'border-primary bg-primary text-primary-foreground hover:bg-primary',
                     )}
-                    key={day.iso}
+                    key={year}
                     onClick={() => {
-                      onChange(day.iso);
-                      setOpen(false);
+                      setView((current) => ({ ...current, year }));
+                      setCalendarView('months');
                     }}
                     type="button"
                   >
-                    {persianNumber(day.day)}
+                    {calendarYearLabel(mode, year)}
                   </button>
-                ) : (
-                  <span aria-hidden="true" key={`empty-${index}`} />
-                ),
-              )}
-            </div>
+                ))}
+              </div>
+            )}
             <div className="mt-3 flex items-center justify-between border-t border-border pt-2">
               <Button
                 onClick={() => {

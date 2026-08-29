@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   calendarMonthDays,
+  calendarMonthName,
   formatCustomerDate,
+  persianParts,
   persianDateToIso,
 } from '../model/customer-calendar';
 
@@ -25,8 +27,29 @@ describe('Customer date field', () => {
     expect(days[0]).toEqual({ day: 1, iso: '2026-03-21' });
   });
 
+  it('keeps Persian leap-year boundaries and weekdays exact', () => {
+    const leapEsfand = calendarMonthDays('persian', 1403, 12).filter(Boolean);
+    const regularEsfand = calendarMonthDays('persian', 1404, 12).filter(
+      Boolean,
+    );
+    expect(leapEsfand).toHaveLength(30);
+    expect(leapEsfand.at(-1)).toEqual({ day: 30, iso: '2025-03-20' });
+    expect(regularEsfand).toHaveLength(29);
+    expect(persianParts(new Date('2026-08-29T00:00:00.000Z'))).toEqual({
+      year: 1405,
+      month: 6,
+      day: 7,
+    });
+  });
+
   it('builds a Gregorian calendar grid with real month length', () => {
     const days = calendarMonthDays('gregorian', 2026, 2).filter(Boolean);
     expect(days).toHaveLength(28);
+  });
+
+  it('uses English labels for Gregorian month tiles', () => {
+    expect(calendarMonthName('gregorian', 1)).toBe('January');
+    expect(calendarMonthName('gregorian', 12)).toBe('December');
+    expect(calendarMonthName('persian', 1)).toBe('فروردین');
   });
 });
