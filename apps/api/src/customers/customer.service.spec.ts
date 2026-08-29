@@ -55,6 +55,7 @@ function createService(
       nationalIdFingerprint: 'n'.repeat(64),
       nationalIdMasked: '******7891',
     }),
+    decrypt: vi.fn().mockReturnValue('1234567891'),
   } as unknown as CustomerNationalIdProtector;
   return {
     service: new CustomerService(
@@ -83,6 +84,10 @@ const row = {
   lastName: 'آزمایشی',
   displayName: 'مشتری ساختگی',
   birthDate: new Date('1990-01-01T00:00:00.000Z'),
+  nationalIdEncrypted: 'encrypted-national-id',
+  nationalIdIv: 'iv-base64-value',
+  nationalIdAuthTag: 'auth-tag-base64-value',
+  nationalIdKeyVersion: 1,
   nationalIdMasked: '******7891',
   isActive: true,
   isCustomer: true,
@@ -446,14 +451,17 @@ describe('CustomerService', () => {
       find: vi.fn().mockResolvedValue(encryptedRow),
       auditSensitiveRead: vi.fn().mockResolvedValue(undefined),
     } as unknown as CustomerRepository;
-    const { service, contactCrypto } = createService(repository);
+    const { service, contactCrypto, nationalIdProtector } =
+      createService(repository);
 
     const masked = await service.detail(row.id, actor);
     expect(masked.data.contacts[0]).toMatchObject({
       maskedValue: '0000•••000',
       value: null,
     });
+    expect(masked.data.nationalId).toBeNull();
     expect(contactCrypto.decrypt).not.toHaveBeenCalled();
+    expect(nationalIdProtector.decrypt).not.toHaveBeenCalled();
     expect(repository.auditSensitiveRead).not.toHaveBeenCalled();
 
     const sensitiveActor: AuthenticatedActor = {
@@ -474,7 +482,9 @@ describe('CustomerService', () => {
       'customer-verification',
     );
     expect(sensitive.data.contacts[0]?.value).toBe('0000000000');
+    expect(sensitive.data.nationalId).toBe('1234567891');
     expect(contactCrypto.decrypt).toHaveBeenCalledTimes(1);
+    expect(nationalIdProtector.decrypt).toHaveBeenCalledWith(encryptedRow);
     expect(repository.auditSensitiveRead).toHaveBeenCalledWith(
       row.id,
       actor.userId,
@@ -552,7 +562,7 @@ describe('CustomerService', () => {
       ),
     ).rejects.toMatchObject({
       status: 422,
-      response: { code: 'CUSTOMER_CONTACT_DECRYPTION_FAILED' },
+      response: { code: 'CUSTOMER_SENSITIVE_DECRYPTION_FAILED' },
     });
     expect(repository.auditSensitiveRead).not.toHaveBeenCalled();
   });

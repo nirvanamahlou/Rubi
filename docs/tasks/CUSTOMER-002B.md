@@ -28,5 +28,6 @@
 - Seed دو بار با موفقیت اجرا شد.
 - تست واقعی با دو Customer Person و دو کد ملی مصنوعی مستقل انجام شد؛ رابطه مشتری/مسافر نیز ثبت شد.
 - API فقط مقدار Masked را برگرداند و هیچ ciphertext، fingerprint، IV یا auth tag به Client نداد.
+- مقدار کامل کد ملی فقط با مجوز `customers.sensitive.read`، دلیل مجاز، Audit و Auto-remask نمایش داده می‌شود.
 - lint، typecheck، تمام ۳۳۴ تست Monorepo و Production Build پاس شدند.
 - Smoke احراز‌شده `/customers` روی Web و API ایزوله پاس شد.

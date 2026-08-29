@@ -1496,8 +1496,17 @@ function CustomerDrawer({
                 <div>
                   <p className="text-xs text-muted-foreground">کد ملی</p>
                   <p dir="ltr" className="text-right font-mono">
-                    {customer.maskedNationalId ?? 'ثبت نشده'}
+                    {revealedDetail?.nationalId ??
+                      customer.maskedNationalId ??
+                      'ثبت نشده'}
                   </p>
+                  {customer.maskedNationalId ? (
+                    <Badge className="mt-2">
+                      {revealedDetail?.nationalId
+                        ? 'نمایش Audit‌شده'
+                        : 'ماسک‌شده'}
+                    </Badge>
+                  ) : null}
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">تاریخ ایجاد</p>
@@ -1518,6 +1527,37 @@ function CustomerDrawer({
                   </p>
                 </div>
               </Card>
+              {customer.maskedNationalId && !revealedDetail?.nationalId ? (
+                <Card className="grid gap-3 p-4 sm:grid-cols-[1fr_auto]">
+                  <FormField label="دلیل نمایش کد ملی">
+                    <Select
+                      onValueChange={setSensitiveReason}
+                      value={sensitiveReason}
+                    >
+                      <SelectTrigger aria-label="دلیل نمایش کد ملی">
+                        <SelectValue placeholder="انتخاب دلیل مجاز" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sensitiveReasons.map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <Button
+                    className="self-end"
+                    disabled={busy || !sensitiveReason}
+                    onClick={() => void revealSensitive()}
+                    type="button"
+                    variant="outline"
+                  >
+                    <Eye className="size-4" />
+                    نمایش کد ملی
+                  </Button>
+                </Card>
+              ) : null}
               <Alert
                 description="نام لاتین، جنسیت و یادداشت در Schema و customers.v2 موجود نیستند و برای CUSTOMER-002B مسدود ثبت شده‌اند."
                 title="قابلیت‌های نیازمند قرارداد"

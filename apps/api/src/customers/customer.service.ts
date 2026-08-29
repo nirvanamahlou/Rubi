@@ -324,6 +324,7 @@ export class CustomerService {
       });
     const detail = toCustomerDetail(row, true);
     let contacts;
+    let nationalId;
     try {
       contacts = detail.contacts.map((contact, index) => ({
         ...contact,
@@ -337,10 +338,11 @@ export class CustomerService {
           },
         ),
       }));
+      nationalId = this.nationalIdProtector.decrypt(row);
     } catch {
       throw new UnprocessableEntityException({
-        code: 'CUSTOMER_CONTACT_DECRYPTION_FAILED',
-        message: 'نمایش اطلاعات تماس حساس ممکن نشد.',
+        code: 'CUSTOMER_SENSITIVE_DECRYPTION_FAILED',
+        message: 'نمایش اطلاعات حساس مشتری ممکن نشد.',
       });
     }
     await this.repository.auditSensitiveRead(
@@ -350,7 +352,7 @@ export class CustomerService {
       reason,
       traceId,
     );
-    return { ...detail, contacts };
+    return { ...detail, contacts, nationalId };
   }
 
   async list(query: CustomerListQuery, actor: AuthenticatedActor) {

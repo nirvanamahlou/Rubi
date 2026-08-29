@@ -36,6 +36,32 @@ describe('Customer national ID protection', () => {
     expect(protectedValue.nationalIdMasked).toBe('******7891');
     expect(protectedValue.nationalIdFingerprint).toHaveLength(64);
     expect(JSON.stringify(protectedValue)).not.toContain('1234567891');
+    expect(protector.decrypt(protectedValue)).toBe('1234567891');
+  });
+
+  it('returns null for a legacy empty identity and rejects tampering', () => {
+    const protector = new CustomerNationalIdProtector(
+      new ConfigService({
+        CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64: encryptionKey,
+        CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64: fingerprintKey,
+        CUSTOMER_CONTACT_ENCRYPTION_KEY_VERSION: 1,
+      }),
+    );
+    expect(
+      protector.decrypt({
+        nationalIdEncrypted: null,
+        nationalIdIv: null,
+        nationalIdAuthTag: null,
+        nationalIdKeyVersion: null,
+      }),
+    ).toBeNull();
+    const protectedValue = protector.protect('1234567891');
+    expect(() =>
+      protector.decrypt({
+        ...protectedValue,
+        nationalIdEncrypted: `${protectedValue.nationalIdEncrypted.slice(0, -2)}AA`,
+      }),
+    ).toThrow();
   });
 
   it.each(['', '123', '1234567890', '1111111111'])(

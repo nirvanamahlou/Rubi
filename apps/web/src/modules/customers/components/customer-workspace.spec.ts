@@ -182,6 +182,14 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).not.toContain("params.set('search'");
   });
 
+  it('reveals national ID only through the audited sensitive flow', () => {
+    expect(source).toContain('revealedDetail?.nationalId');
+    expect(source).toContain('customer.maskedNationalId');
+    expect(source).toContain('دلیل نمایش کد ملی');
+    expect(source).toContain('نمایش کد ملی');
+    expect(source).toContain('disabled={busy || !sensitiveReason}');
+  });
+
   it('provides secure filters and a UUID-only customer deep link', () => {
     expect(source).toContain('function safeCustomerId');
     expect(source).toContain("params.set('customerId', selectedId)");

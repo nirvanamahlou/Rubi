@@ -129,6 +129,7 @@ export interface CustomerDetail extends CustomerSummary {
   lastName: string | null;
   birthDate: string | null;
   birthDateMasked: boolean;
+  nationalId?: string | null;
   acquaintanceMethodId: string | null;
   contacts: readonly CustomerContact[];
   addresses: readonly CustomerAddress[];

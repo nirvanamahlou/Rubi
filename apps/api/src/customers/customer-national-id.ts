@@ -1,4 +1,9 @@
-import { createCipheriv, createHmac, randomBytes } from 'node:crypto';
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHmac,
+  randomBytes,
+} from 'node:crypto';
 
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -13,6 +18,13 @@ export type ProtectedNationalId = {
   nationalIdKeyVersion: number;
   nationalIdFingerprint: string;
   nationalIdMasked: string;
+};
+
+export type StoredNationalId = {
+  nationalIdEncrypted: string | null;
+  nationalIdIv: string | null;
+  nationalIdAuthTag: string | null;
+  nationalIdKeyVersion: number | null;
 };
 
 export function normalizeNationalId(value: string): string {
@@ -81,5 +93,36 @@ export class CustomerNationalIdProtector {
         .digest('hex'),
       nationalIdMasked: `******${normalized.slice(-4)}`,
     };
+  }
+
+  decrypt(value: StoredNationalId): string | null {
+    if (
+      value.nationalIdEncrypted === null &&
+      value.nationalIdIv === null &&
+      value.nationalIdAuthTag === null &&
+      value.nationalIdKeyVersion === null
+    )
+      return null;
+    if (
+      !value.nationalIdEncrypted ||
+      !value.nationalIdIv ||
+      !value.nationalIdAuthTag ||
+      value.nationalIdKeyVersion !== this.keyVersion
+    )
+      throw new Error('Customer national ID encryption metadata is invalid.');
+    const decipher = createDecipheriv(
+      'aes-256-gcm',
+      this.encryptionKey,
+      Buffer.from(value.nationalIdIv, 'base64'),
+    );
+    decipher.setAAD(Buffer.from('rubi:customer-national-id:v1', 'utf8'));
+    decipher.setAuthTag(Buffer.from(value.nationalIdAuthTag, 'base64'));
+    const decrypted = Buffer.concat([
+      decipher.update(Buffer.from(value.nationalIdEncrypted, 'base64')),
+      decipher.final(),
+    ]).toString('utf8');
+    if (!isValidIranianNationalId(decrypted))
+      throw new Error('Customer national ID plaintext is invalid.');
+    return decrypted;
   }
 }
