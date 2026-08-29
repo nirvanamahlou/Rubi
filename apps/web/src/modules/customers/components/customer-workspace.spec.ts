@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CustomersApiError } from '../api/client';
 import {
+  buildCustomerConsentRequest,
   customerListFailureState,
   fetchCustomerConflictSnapshot,
 } from './customer-workspace-state';
@@ -76,6 +77,64 @@ describe('Customer Operations workspace boundaries', () => {
     expect(result.message).toContain('دریافت نسخه جدید ناموفق بود');
     expect(result.message).not.toContain('نسخه جدید سرور دریافت شد');
     expect(source).toContain('تلاش دوباره برای دریافت نسخه جدید');
+  });
+
+  it('sends the actual trimmed consent reason without a fabricated fallback', () => {
+    const result = buildCustomerConsentRequest({
+      status: 'granted',
+      channel: 'all',
+      source: '  staff-ui  ',
+      reason: '  درخواست حضوری مشتری  ',
+      version: 4,
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      request: {
+        purpose: 'marketing',
+        channel: 'all',
+        status: 'granted',
+        source: 'staff-ui',
+        reason: 'درخواست حضوری مشتری',
+        version: 4,
+      },
+    });
+    expect(source).not.toContain('ثبت رضایت توسط کارشناس');
+    expect(source).not.toContain('لغو رضایت توسط کارشناس');
+  });
+
+  it.each(['', ' ', '\t', '\n', 'ab'])(
+    'rejects an empty or too-short consent reason (%j)',
+    (reason) => {
+      expect(
+        buildCustomerConsentRequest({
+          status: 'granted',
+          channel: 'all',
+          source: 'staff-ui',
+          reason,
+          version: 1,
+        }),
+      ).toMatchObject({ ok: false });
+    },
+  );
+
+  it('rejects overlong and sensitive consent reasons', () => {
+    for (const reason of [
+      'x'.repeat(501),
+      'تماس با 09120000000 انجام شد',
+      'ارسال به person@example.test',
+      'token=synthetic-secret',
+    ]) {
+      expect(
+        buildCustomerConsentRequest({
+          status: 'revoked',
+          channel: 'phone',
+          source: 'staff-ui',
+          reason,
+          version: 1,
+        }),
+      ).toMatchObject({ ok: false });
+    }
   });
 
   it('uses public master-data APIs and keeps Legal Entity out of customer scope', () => {

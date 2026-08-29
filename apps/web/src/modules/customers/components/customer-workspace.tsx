@@ -67,6 +67,7 @@ import { masterDataApi } from '@/modules/master-data/api/client';
 import { customersApi, CustomersApiError } from '../api/client';
 import { contactDisplayValue } from '../model/customer';
 import {
+  buildCustomerConsentRequest,
   customerListFailureState,
   fetchCustomerConflictSnapshot,
 } from './customer-workspace-state';
@@ -340,19 +341,19 @@ function CustomerDrawer({
 
   async function addConsent(status: 'granted' | 'revoked') {
     if (!customer) return;
+    const result = buildCustomerConsentRequest({
+      status,
+      channel: consentChannel,
+      source: consentSource,
+      reason: consentReason,
+      version: customer.version,
+    });
+    if (!result.ok) {
+      setMessage(result.message);
+      return;
+    }
     await perform(
-      () =>
-        customersApi.addConsent(customer.id, {
-          purpose: 'marketing',
-          channel: consentChannel,
-          status,
-          source: consentSource.trim(),
-          reason:
-            status === 'granted'
-              ? 'ثبت رضایت توسط کارشناس'
-              : 'لغو رضایت توسط کارشناس',
-          version: customer.version,
-        }),
+      () => customersApi.addConsent(customer.id, result.request),
       'تاریخچه رضایت ثبت شد.',
     );
   }
@@ -916,6 +917,7 @@ function CustomerDrawer({
                   <FormField id="consent-reason" label="دلیل" required>
                     <Input
                       id="consent-reason"
+                      maxLength={500}
                       onChange={(event) => setConsentReason(event.target.value)}
                       value={consentReason}
                     />

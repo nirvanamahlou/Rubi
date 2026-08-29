@@ -1,4 +1,59 @@
+import type {
+  CustomerConsentChannel,
+  CustomerConsentRequest,
+  CustomerConsentStatus,
+} from '@rubi/contracts';
+
 import { CustomersApiError } from '../api/client';
+
+const consentReasonEmail = /\b[^\s@]+@[^\s@]+\.[^\s@]+\b/i;
+const consentReasonLongNumber = /(?:\d[\s()-]?){10,}/;
+const consentReasonSecret =
+  /\b(?:bearer\s+\S+|(?:api[_-]?key|password|secret|token)\s*[:=]\s*\S+)/i;
+
+export type CustomerConsentInput = {
+  status: CustomerConsentStatus;
+  channel: CustomerConsentChannel;
+  source: string;
+  reason: string;
+  version: number;
+};
+
+export type CustomerConsentValidationResult =
+  | { ok: true; request: CustomerConsentRequest }
+  | { ok: false; message: string };
+
+export function buildCustomerConsentRequest(
+  input: CustomerConsentInput,
+): CustomerConsentValidationResult {
+  const reason = input.reason.trim();
+  if (reason.length < 3)
+    return { ok: false, message: 'دلیل رضایت باید حداقل ۳ نویسه باشد.' };
+  if (reason.length > 500)
+    return { ok: false, message: 'دلیل رضایت نباید بیش از ۵۰۰ نویسه باشد.' };
+  if (
+    consentReasonEmail.test(reason) ||
+    consentReasonLongNumber.test(reason) ||
+    consentReasonSecret.test(reason)
+  )
+    return {
+      ok: false,
+      message:
+        'دلیل رضایت نباید شامل اطلاعات تماس، شناسه حساس یا اطلاعات محرمانه باشد.',
+    };
+
+  return {
+    ok: true,
+    request: {
+      purpose: 'marketing',
+      channel: input.channel,
+      status: input.status,
+      source: input.source.trim(),
+      reason,
+      version: input.version,
+    },
+  };
+}
 
 export type CustomerListFailureState = 'unauthorized' | 'forbidden' | 'error';
 
