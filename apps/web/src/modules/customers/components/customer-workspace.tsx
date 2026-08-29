@@ -196,6 +196,7 @@ interface NewCompanionDraft {
   lastName: string;
   birthDate: string;
   phone: string;
+  email: string;
   organizationId: string;
   relationshipType: CustomerRelationshipType;
 }
@@ -210,6 +211,7 @@ function emptyCompanionDraft(): NewCompanionDraft {
     lastName: '',
     birthDate: '',
     phone: '',
+    email: '',
     organizationId: '',
     relationshipType: 'companion',
   };
@@ -530,6 +532,17 @@ function CustomerDrawer({
                 value: companion.phone.trim(),
                 label: 'اصلی',
                 isPrimary: true,
+                version: createdCompanion.version,
+              })
+            ).data;
+          }
+          if (companion.email.trim()) {
+            createdCompanion = (
+              await customersApi.addContact(createdCompanion.id, {
+                type: 'email',
+                value: companion.email.trim().toLowerCase(),
+                label: 'اصلی',
+                isPrimary: !companion.phone.trim(),
                 version: createdCompanion.version,
               })
             ).data;
@@ -1074,6 +1087,12 @@ function CustomerDrawer({
                           value={companion.lastName}
                         />
                       </FormField>
+                      <div className="border-t border-border pt-3 sm:col-span-2">
+                        <p className="font-semibold">اطلاعات تکمیلی مسافر</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          این اطلاعات همراه پرونده واقعی مسافر ذخیره می‌شود.
+                        </p>
+                      </div>
                       <CustomerDateField
                         id={`companion-${companion.key}-birth-date`}
                         label="تاریخ تولد"
@@ -1102,6 +1121,26 @@ function CustomerDrawer({
                           placeholder="09xxxxxxxxx"
                           type="tel"
                           value={companion.phone}
+                        />
+                      </FormField>
+                      <FormField
+                        description="اختیاری و در نمایش عادی Masked"
+                        id={`companion-${companion.key}-email`}
+                        label="ایمیل مسافر"
+                      >
+                        <Input
+                          autoComplete="email"
+                          dir="ltr"
+                          id={`companion-${companion.key}-email`}
+                          inputMode="email"
+                          onChange={(event) =>
+                            updateCompanion(index, {
+                              email: event.target.value,
+                            })
+                          }
+                          placeholder="passenger@example.com"
+                          type="email"
+                          value={companion.email}
                         />
                       </FormField>
                       <FormField label="سازمان مسافر">
@@ -1159,6 +1198,12 @@ function CustomerDrawer({
                           </SelectContent>
                         </Select>
                       </FormField>
+                      <Alert
+                        className="sm:col-span-2"
+                        description="نام و نام خانوادگی انگلیسی، شماره پاسپورت، کشور صادرکننده و تاریخ‌های صدور/انقضا پس از فعال‌شدن نگهداری امن مدارک در همین بخش قابل ثبت خواهند بود."
+                        title="مدارک سفر مسافر"
+                        tone="warning"
+                      />
                     </Card>
                   ))}
                 </div>
