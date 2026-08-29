@@ -298,6 +298,9 @@
 - Branch مستقل `codex/pc-b-master-data-sales-references` از
   `origin/codex/pc-b-master-data-transport@1049928` ساخته شد و روی Draft PR #35 پشته
   می‌شود؛ هیچ شاخه والد یا متعلق به PC-A تغییر نمی‌کند.
+- Draft PR #36 با Base `codex/pc-b-master-data-transport` ساخته شد و پیش از Merge
+  PR #35 و تمام والدهای آن نباید ادغام شود؛ پس از Merge والد، Base مطابق زنجیره به
+  `develop` تغییر می‌کند.
 - Migration افزایشی `20260829190000_master_data_sales_references` شش کاتالوگ جدید
   Lead Source، Sales Channel، Lost Reason، Customer Type، Tag و Campaign Type را
   اضافه و کاتالوگ موجود Acquaintance Method را با نام انگلیسی و ترتیب نمایش تکمیل

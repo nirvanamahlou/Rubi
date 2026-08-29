@@ -212,7 +212,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
   پروفایل Popup در Draft PR #35 روی PR #33 آماده Review است.
 - `MASTER-003I-SALES-REFERENCES` با هفت کاتالوگ مستقل مراجع فروش، Contract v10،
   Migration افزایشی و پروفایل Popup روی شاخه
-  `codex/pc-b-master-data-sales-references` آماده Review است؛ شمارش مصرف تا انتشار
+  `codex/pc-b-master-data-sales-references` و Draft PR #36 آماده Review است؛ شمارش مصرف تا انتشار
   Public Aggregate Contract با `—` نمایش داده می‌شود و Query مستقیم Customers/Sales
   وجود ندارد.
 

@@ -129,6 +129,8 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
   `—` نمایش داده می‌شود و هیچ Query مستقیم به Customers یا Sales وجود ندارد.
 - Branch `codex/pc-b-master-data-sales-references` روی PR #35 پشته می‌شود و پیش از
   همه والدهای خود Merge نمی‌شود.
+- Draft PR #36 با Base اولیه `codex/pc-b-master-data-transport` ایجاد شده است؛ بعد از
+  Merge والد، Base مطابق زنجیره به `develop` تغییر می‌کند.
 
 ## Import واقعی هتل — HOTEL_IMPORT_V1
 
