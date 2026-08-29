@@ -1,6 +1,7 @@
 import { Transform } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsIn,
   IsInt,
   IsObject,
@@ -63,6 +64,26 @@ export class MasterDataListQueryDto {
   @IsOptional()
   @IsIn(['RECEIPT', 'PAYMENT', 'BOTH'])
   paymentDirection?: string;
+  @IsOptional()
+  @IsUUID()
+  organizationId?: string;
+  @IsOptional()
+  @IsUUID()
+  serviceId?: string;
+  @IsOptional()
+  @IsIn(['ACTIVE', 'UNDER_REVIEW', 'PURCHASE_SUSPENDED', 'ENDED'])
+  collaborationStatus?: string;
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  providerConnected?: boolean;
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  hasWhatsapp?: boolean;
+  @IsOptional()
+  @IsIn(['all', 'complete', 'incomplete'])
+  contactCompleteness?: 'all' | 'complete' | 'incomplete';
 }
 
 export class MasterDataMutationDto {
@@ -100,7 +121,10 @@ export class MasterDataExportDto {
     'airlines',
     'hotels',
     'organizations',
+    'suppliers',
     'brokers',
+    'travel-services',
+    'organization-contacts',
     'leaders',
     'acquaintance-methods',
   ])

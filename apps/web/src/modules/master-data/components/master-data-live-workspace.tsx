@@ -59,6 +59,7 @@ import { HotelImportPanel } from './hotel-import-panel';
 import { MasterDataFinanceWorkspace } from './master-data-finance-workspace';
 import { MasterDataGeographyWorkspace } from './master-data-geography-workspace';
 import { MasterDataKpiGrid } from './master-data-kpi-grid';
+import { MasterDataSuppliersWorkspace } from './master-data-suppliers-workspace';
 
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
@@ -698,5 +699,7 @@ export function MasterDataWorkspace({
     return <MasterDataFinanceWorkspace section={section} />;
   if (section.slug === 'geography')
     return <MasterDataGeographyWorkspace section={section} />;
+  if (section.slug === 'organizations-suppliers')
+    return <MasterDataSuppliersWorkspace />;
   return <GenericMasterDataWorkspace section={section} />;
 }

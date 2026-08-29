@@ -34,6 +34,14 @@ export const masterDataListQuerySchema = z.object({
     ])
     .optional(),
   paymentDirection: z.enum(['RECEIPT', 'PAYMENT', 'BOTH']).optional(),
+  organizationId: z.string().uuid().optional(),
+  serviceId: z.string().uuid().optional(),
+  collaborationStatus: z
+    .enum(['ACTIVE', 'UNDER_REVIEW', 'PURCHASE_SUSPENDED', 'ENDED'])
+    .optional(),
+  providerConnected: z.boolean().optional(),
+  hasWhatsapp: z.boolean().optional(),
+  contactCompleteness: z.enum(['all', 'complete', 'incomplete']).optional(),
 });
 
 export const masterDataExportRequestSchema = z.object({
@@ -135,9 +143,17 @@ export function serializeMasterDataListQuery(query: MasterDataListQuery) {
     'terminalType',
     'paymentChannel',
     'paymentDirection',
+    'organizationId',
+    'serviceId',
+    'collaborationStatus',
+    'contactCompleteness',
   ] as const) {
     const value = query[field];
     if (value) params.set(field, value);
+  }
+  for (const field of ['providerConnected', 'hasWhatsapp'] as const) {
+    const value = query[field];
+    if (value !== undefined) params.set(field, String(value));
   }
   return params.toString();
 }

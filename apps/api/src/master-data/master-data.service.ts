@@ -17,6 +17,7 @@ import {
 
 import { assertGenericCurrencyRateMutationAllowed } from './currency-rate.policy';
 import { buildMasterDataXlsx, MASTER_DATA_XLSX_MIME } from './master-data.xlsx';
+import { MasterDataContactCrypto } from './master-data-contact.crypto';
 import {
   MasterDataRepository,
   toMasterDataRecord,
@@ -59,7 +60,10 @@ const resourceCodePrefixes: Record<MasterDataResource, string> = {
   airlines: 'AIR',
   hotels: 'HOTEL',
   organizations: 'ORG',
+  suppliers: 'SUPPLIER',
   brokers: 'BROKER',
+  'travel-services': 'SERVICE',
+  'organization-contacts': 'CONTACT',
   leaders: 'LEADER',
   'acquaintance-methods': 'ACQ',
 };
@@ -68,6 +72,10 @@ function autoCodeSource(
   values: Record<string, string | number | readonly string[] | null>,
 ): string {
   for (const field of ['displayName', 'name', 'legalName', 'englishName']) {
+    const value = values[field];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  for (const field of ['fullName', 'organizationId']) {
     const value = values[field];
     if (typeof value === 'string' && value.trim()) return value.trim();
   }
@@ -100,6 +108,19 @@ const paymentChannels = new Set([
   'OTHER',
 ]);
 const paymentDirections = new Set(['RECEIPT', 'PAYMENT', 'BOTH']);
+const collaborationStatuses = new Set([
+  'ACTIVE',
+  'UNDER_REVIEW',
+  'PURCHASE_SUSPENDED',
+  'ENDED',
+]);
+const contactChannels = new Set([
+  'PHONE',
+  'WHATSAPP',
+  'EMAIL',
+  'TELEGRAM',
+  'OTHER',
+]);
 
 function isValidIso2(value: string): boolean {
   if (!/^[A-Z]{2}$/.test(value)) return false;
@@ -182,7 +203,34 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
   airlines: ['code', 'name', 'icaoCode', 'organizationId'],
   hotels: ['code', 'name', 'cityId', 'organizationId', 'starRating'],
   organizations: ['code', 'legalName', 'displayName', 'roleCodes'],
-  brokers: ['code', 'name', 'organizationId'],
+  suppliers: [
+    'organizationId',
+    'countryId',
+    'cityId',
+    'externalProviderReference',
+    'collaborationStatus',
+    'serviceCodes',
+  ],
+  brokers: [
+    'code',
+    'name',
+    'organizationId',
+    'countryId',
+    'cityId',
+    'collaborationStatus',
+    'serviceCodes',
+  ],
+  'travel-services': ['code', 'name', 'englishName'],
+  'organization-contacts': [
+    'organizationId',
+    'fullName',
+    'jobTitle',
+    'preferredChannel',
+    'phone',
+    'email',
+    'hasWhatsapp',
+    'isPrimary',
+  ],
   leaders: ['code', 'name', 'languages', 'expertise'],
   'acquaintance-methods': ['code', 'name', 'description'],
 };
@@ -218,7 +266,10 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   airlines: ['name', 'organizationId'],
   hotels: ['name', 'cityId'],
   organizations: ['legalName', 'displayName', 'roleCodes'],
+  suppliers: ['organizationId'],
   brokers: ['name', 'organizationId'],
+  'travel-services': ['code', 'name'],
+  'organization-contacts': ['organizationId', 'fullName', 'preferredChannel'],
   leaders: ['name', 'languages'],
   'acquaintance-methods': ['name'],
 };
@@ -262,6 +313,12 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     'terminalType',
     'paymentChannel',
     'paymentDirection',
+    'organizationId',
+    'serviceId',
+    'collaborationStatus',
+    'providerConnected',
+    'hasWhatsapp',
+    'contactCompleteness',
   ];
   if (
     Object.keys(input.filters).some((key) => !allowedFilterKeys.includes(key))
@@ -391,6 +448,34 @@ function exportQuery(input: ExportInput): MasterDataListQuery {
           >,
         }
       : {}),
+    ...(typeof input.filters.organizationId === 'string'
+      ? { organizationId: input.filters.organizationId }
+      : {}),
+    ...(typeof input.filters.serviceId === 'string'
+      ? { serviceId: input.filters.serviceId }
+      : {}),
+    ...(typeof input.filters.collaborationStatus === 'string'
+      ? {
+          collaborationStatus: input.filters.collaborationStatus as Exclude<
+            MasterDataListQuery['collaborationStatus'],
+            undefined
+          >,
+        }
+      : {}),
+    ...(typeof input.filters.providerConnected === 'boolean'
+      ? { providerConnected: input.filters.providerConnected }
+      : {}),
+    ...(typeof input.filters.hasWhatsapp === 'boolean'
+      ? { hasWhatsapp: input.filters.hasWhatsapp }
+      : {}),
+    ...(typeof input.filters.contactCompleteness === 'string'
+      ? {
+          contactCompleteness: input.filters.contactCompleteness as Exclude<
+            MasterDataListQuery['contactCompleteness'],
+            undefined
+          >,
+        }
+      : {}),
     page: 1,
     pageSize: 100,
   };
@@ -401,6 +486,8 @@ export class MasterDataService {
   constructor(
     @Inject(MasterDataRepository)
     private readonly repository: MasterDataRepository,
+    @Inject(MasterDataContactCrypto)
+    private readonly contactCrypto: MasterDataContactCrypto = undefined as never,
   ) {}
 
   resource(value: string) {
@@ -421,6 +508,58 @@ export class MasterDataService {
     const row = await this.repository.find(resource, id);
     if (!row) throw new NotFoundException('رکورد اطلاعات پایه یافت نشد.');
     return { data: toMasterDataRecord(resource, row) };
+  }
+
+  async unmaskOrganizationContact(
+    id: string,
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+  ) {
+    const row = await this.repository.find('organization-contacts', id);
+    if (!row || !row.isActive)
+      throw new NotFoundException('مخاطب فعال یافت نشد.');
+    const phone = this.contactCrypto.decrypt('phone', {
+      encrypted:
+        typeof row.phoneEncrypted === 'string' ? row.phoneEncrypted : null,
+      encryptionIv:
+        typeof row.phoneEncryptionIv === 'string'
+          ? row.phoneEncryptionIv
+          : null,
+      encryptionAuthTag:
+        typeof row.phoneEncryptionAuthTag === 'string'
+          ? row.phoneEncryptionAuthTag
+          : null,
+      encryptionKeyVersion:
+        typeof row.phoneEncryptionKeyVersion === 'number'
+          ? row.phoneEncryptionKeyVersion
+          : null,
+    });
+    const email = this.contactCrypto.decrypt('email', {
+      encrypted:
+        typeof row.emailEncrypted === 'string' ? row.emailEncrypted : null,
+      encryptionIv:
+        typeof row.emailEncryptionIv === 'string'
+          ? row.emailEncryptionIv
+          : null,
+      encryptionAuthTag:
+        typeof row.emailEncryptionAuthTag === 'string'
+          ? row.emailEncryptionAuthTag
+          : null,
+      encryptionKeyVersion:
+        typeof row.emailEncryptionKeyVersion === 'number'
+          ? row.emailEncryptionKeyVersion
+          : null,
+    });
+    await this.repository.recordSensitiveContactRead({
+      contactId: id,
+      actorUserId: actor.userId,
+      actorBranchId: branchOf(actor, requestedBranch),
+    });
+    return { data: { id, phone, email } };
+  }
+
+  async organizationSupplierSummary() {
+    return { data: await this.repository.organizationSupplierSummary() };
   }
 
   async create(
@@ -682,7 +821,8 @@ export class MasterDataService {
       resource !== 'currencies' &&
       resource !== 'banks' &&
       resource !== 'bank-branches' &&
-      resource !== 'payment-methods';
+      resource !== 'payment-methods' &&
+      resource !== 'travel-services';
     if (usesGeneratedCode) {
       if (partial && Object.hasOwn(values, 'code'))
         throw new BadRequestException(
@@ -697,9 +837,13 @@ export class MasterDataService {
     )
       throw new BadRequestException('کد داخلی تولیدشده معتبر نیست.');
     if (
-      ['currencies', 'banks', 'bank-branches', 'payment-methods'].includes(
-        resource,
-      ) &&
+      [
+        'currencies',
+        'banks',
+        'bank-branches',
+        'payment-methods',
+        'travel-services',
+      ].includes(resource) &&
       data.code !== undefined
     ) {
       const code = String(data.code).trim().toUpperCase();
@@ -729,6 +873,11 @@ export class MasterDataService {
     }
     for (const optionalReference of ['regionId', 'parentRegionId']) {
       if (data[optionalReference] === '') data[optionalReference] = null;
+    }
+    if (resource === 'suppliers' || resource === 'brokers') {
+      for (const optionalReference of ['countryId', 'cityId']) {
+        if (data[optionalReference] === '') data[optionalReference] = null;
+      }
     }
 
     for (const field of [
@@ -858,6 +1007,135 @@ export class MasterDataService {
         data.displayOrder = displayOrder;
       }
     }
+    if (resource === 'suppliers' || resource === 'brokers') {
+      if (data.collaborationStatus !== undefined) {
+        const collaborationStatus = String(data.collaborationStatus)
+          .trim()
+          .toUpperCase();
+        if (!collaborationStatuses.has(collaborationStatus))
+          throw new BadRequestException('وضعیت همکاری معتبر نیست.');
+        data.collaborationStatus = collaborationStatus;
+      }
+      if (data.externalProviderReference !== undefined) {
+        const reference = String(data.externalProviderReference ?? '').trim();
+        data.externalProviderReference = reference || null;
+      }
+      if (Object.hasOwn(data, 'serviceCodes')) {
+        const serviceCodes = (
+          Array.isArray(data.serviceCodes)
+            ? data.serviceCodes.map(String)
+            : String(data.serviceCodes ?? '').split(',')
+        )
+          .map((value) => value.trim().toUpperCase())
+          .filter(Boolean);
+        if (
+          serviceCodes.length > 50 ||
+          serviceCodes.some((code) => !codePattern.test(code))
+        )
+          throw new BadRequestException('کدهای خدمت معتبر نیستند.');
+        const uniqueCodes = [...new Set(serviceCodes)];
+        const serviceRows = await Promise.all(
+          uniqueCodes.map(async (code) => {
+            const result = await this.repository.list('travel-services', {
+              search: code,
+              status: 'active',
+              sortBy: 'code',
+              sortDirection: 'asc',
+              page: 1,
+              pageSize: 10,
+            });
+            return result.rows.find((row) => row.code === code);
+          }),
+        );
+        if (serviceRows.some((row) => !row))
+          throw new BadRequestException('یک یا چند خدمت مرجع فعال یافت نشد.');
+        delete data.serviceCodes;
+        data.services = partial
+          ? {
+              deleteMany: {},
+              create: serviceRows.map((row) => ({
+                serviceId: row!.id,
+                assignedByUserId: actorUserId,
+              })),
+            }
+          : {
+              create: serviceRows.map((row) => ({
+                serviceId: row!.id,
+                assignedByUserId: actorUserId,
+              })),
+            };
+      }
+    }
+    if (resource === 'organization-contacts') {
+      if (data.preferredChannel !== undefined) {
+        const channel = String(data.preferredChannel).trim().toUpperCase();
+        if (!contactChannels.has(channel))
+          throw new BadRequestException('کانال ترجیحی مخاطب معتبر نیست.');
+        data.preferredChannel = channel;
+      }
+      for (const field of ['hasWhatsapp', 'isPrimary'] as const) {
+        if (data[field] !== undefined)
+          data[field] =
+            data[field] === true ||
+            String(data[field]).trim().toLowerCase() === 'true';
+      }
+      const hasPhone = Object.hasOwn(data, 'phone');
+      const hasEmail = Object.hasOwn(data, 'email');
+      if (
+        !partial &&
+        !String(data.phone ?? '').trim() &&
+        !String(data.email ?? '').trim()
+      )
+        throw new BadRequestException('حداقل تلفن یا ایمیل مخاطب الزامی است.');
+      if (hasPhone) {
+        const phone = String(data.phone ?? '').trim();
+        delete data.phone;
+        if (!phone && !partial) {
+          Object.assign(data, {
+            phoneEncrypted: null,
+            phoneEncryptionIv: null,
+            phoneEncryptionAuthTag: null,
+            phoneEncryptionKeyVersion: null,
+            phoneMasked: null,
+            phoneFingerprint: null,
+          });
+        } else if (phone) {
+          const protectedPhone = this.contactCrypto.protect('phone', phone);
+          Object.assign(data, {
+            phoneEncrypted: protectedPhone.encrypted,
+            phoneEncryptionIv: protectedPhone.encryptionIv,
+            phoneEncryptionAuthTag: protectedPhone.encryptionAuthTag,
+            phoneEncryptionKeyVersion: protectedPhone.encryptionKeyVersion,
+            phoneMasked: protectedPhone.masked,
+            phoneFingerprint: protectedPhone.fingerprint,
+          });
+        }
+      }
+      if (hasEmail) {
+        const email = String(data.email ?? '').trim();
+        delete data.email;
+        if (!email && !partial) {
+          Object.assign(data, {
+            emailEncrypted: null,
+            emailEncryptionIv: null,
+            emailEncryptionAuthTag: null,
+            emailEncryptionKeyVersion: null,
+            emailMasked: null,
+            emailFingerprint: null,
+          });
+        } else if (email) {
+          const protectedEmail = this.contactCrypto.protect('email', email);
+          Object.assign(data, {
+            emailEncrypted: protectedEmail.encrypted,
+            emailEncryptionIv: protectedEmail.encryptionIv,
+            emailEncryptionAuthTag: protectedEmail.encryptionAuthTag,
+            emailEncryptionKeyVersion: protectedEmail.encryptionKeyVersion,
+            emailMasked: protectedEmail.masked,
+            emailFingerprint: protectedEmail.fingerprint,
+          });
+        }
+      }
+    }
     if (
       resource === 'hotels' &&
       data.starRating !== undefined &&
@@ -930,6 +1208,15 @@ export class MasterDataService {
         target: 'organizations',
         role: 'BROKER',
       },
+      suppliers: {
+        field: 'organizationId',
+        target: 'organizations',
+        role: 'SUPPLIER',
+      },
+      'organization-contacts': {
+        field: 'organizationId',
+        target: 'organizations',
+      },
     };
     const check = relationChecks[resource];
     if (check && typeof data[check.field] === 'string') {
@@ -968,6 +1255,24 @@ export class MasterDataService {
             code: 'MASTER_DATA_DUPLICATE_CODE',
             message: 'کد شعبه در بانک انتخاب‌شده قبلاً ثبت شده است.',
           });
+      }
+    }
+    if (resource === 'suppliers' || resource === 'brokers') {
+      if (typeof data.countryId === 'string') {
+        const country = await this.repository.find('countries', data.countryId);
+        if (!country?.isActive)
+          throw new BadRequestException('کشور فعال برای پروفایل یافت نشد.');
+      }
+      if (typeof data.cityId === 'string') {
+        const city = await this.repository.find('cities', data.cityId);
+        if (
+          !city?.isActive ||
+          (typeof data.countryId === 'string' &&
+            city.countryId !== data.countryId)
+        )
+          throw new BadRequestException(
+            'شهر فعال باید در کشور انتخاب‌شده باشد.',
+          );
       }
     }
     if (resource === 'regions' && typeof data.parentRegionId === 'string') {

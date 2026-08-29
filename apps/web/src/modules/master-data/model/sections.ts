@@ -49,7 +49,13 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
     slug: 'organizations-suppliers',
     title: 'سازمان‌ها و تأمین‌کنندگان',
     description: 'سازمان‌ها، تأمین‌کنندگان، کارگزاران و همکاران',
-    resources: ['organizations', 'brokers'],
+    resources: [
+      'organizations',
+      'suppliers',
+      'brokers',
+      'travel-services',
+      'organization-contacts',
+    ],
     tone: 'violet',
   },
   {

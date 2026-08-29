@@ -211,6 +211,13 @@ erDiagram
 
 - profile واحد است و roleها چندگانه؛ Agency/Supplier duplicate organization نمی‌سازند.
 - external mapping بر `(connection_id, entity_type, external_id)` یکتا است.
+- Supplier و Broker پروفایل‌های role-specific با FK محدودکننده به همان Organization هستند؛
+  خدمت قابل ارائه از کاتالوگ مرجع و رابطه چندبه‌چند نگه‌داری می‌شود.
+- هر Organization می‌تواند چند Contact داشته باشد. تلفن و ایمیل فقط به‌صورت
+  AES-256-GCM، Mask و Fingerprint ذخیره می‌شوند؛ plaintext در List، Export یا Audit نیست
+  و Unmask مجاز رویداد Audit مستقل ایجاد می‌کند.
+- وضعیت همکاری Supplier/Broker مرجع Master Data است؛ Contract، Purchase، Settlement و
+  Provider credential در مالکیت Procurement، Finance و Integrations باقی می‌مانند.
 
 ### Human Resources
 
