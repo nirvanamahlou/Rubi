@@ -54,11 +54,11 @@ import {
 } from '@/components/ui/form-controls';
 import {
   ConfirmDialog,
+  Dialog,
+  DialogClose,
+  DialogContent,
   DialogDescription,
   DialogTitle,
-  Drawer,
-  DrawerClose,
-  DrawerContent,
   Tabs,
   TabsContent,
   TabsList,
@@ -135,10 +135,6 @@ function listMasterData(
     page: 1,
     pageSize: 100,
   });
-}
-
-function shortReference(id: string) {
-  return id.slice(0, 8).toUpperCase();
 }
 
 function safeCustomerId(value: string | null) {
@@ -684,8 +680,8 @@ function CustomerDrawer({
   }
 
   return (
-    <Drawer onOpenChange={(open) => !open && onClose()} open>
-      <DrawerContent className="w-[min(96vw,60rem)] overflow-y-auto p-6">
+    <Dialog onOpenChange={(open) => !open && onClose()} open>
+      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-[60rem] overflow-y-auto p-6">
         <DialogTitle>
           {mode === 'create'
             ? 'ایجاد مشتری'
@@ -694,8 +690,7 @@ function CustomerDrawer({
               : 'Customer 360'}
         </DialogTitle>
         <DialogDescription>
-          Persistence واقعی، کنترل نسخه و دسترسی شعبه فعال است. مدارک هویتی حساس
-          ذخیره نمی‌شوند.
+          اطلاعات مشتری و مسافران همراه را وارد کنید.
         </DialogDescription>
         <div aria-live="polite" role="status">
           {message ? (
@@ -1678,14 +1673,14 @@ function CustomerDrawer({
         ) : null}
 
         <div className="mt-6 flex justify-end">
-          <DrawerClose asChild>
+          <DialogClose asChild>
             <Button type="button" variant="ghost">
               بستن
             </Button>
-          </DrawerClose>
+          </DialogClose>
         </div>
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1714,12 +1709,6 @@ export function CustomerWorkspace() {
     const value = searchParams.get('role');
     return value === 'customer' || value === 'passenger' ? value : 'all';
   });
-  const [branchId, setBranchId] = useState(
-    () => searchParams.get('branchId') ?? 'all',
-  );
-  const [allowedBranchIds, setAllowedBranchIds] = useState<readonly string[]>(
-    [],
-  );
   const [acquaintanceMethodId, setAcquaintanceMethodId] = useState(
     () => searchParams.get('acquaintanceMethodId') ?? 'all',
   );
@@ -1731,12 +1720,6 @@ export function CustomerWorkspace() {
   );
   const [createdTo, setCreatedTo] = useState(
     () => searchParams.get('createdTo') ?? '',
-  );
-  const [updatedFrom, setUpdatedFrom] = useState(
-    () => searchParams.get('updatedFrom') ?? '',
-  );
-  const [updatedTo, setUpdatedTo] = useState(
-    () => searchParams.get('updatedTo') ?? '',
   );
   const [sortBy, setSortBy] = useState<CustomerListQuery['sortBy']>(() => {
     const value = searchParams.get('sortBy');
@@ -1777,12 +1760,9 @@ export function CustomerWorkspace() {
     params.set('calendar', calendarMode);
     params.set('status', status);
     params.set('role', role);
-    params.set('branchId', branchId);
     params.set('acquaintanceMethodId', acquaintanceMethodId);
     if (createdFrom) params.set('createdFrom', createdFrom);
     if (createdTo) params.set('createdTo', createdTo);
-    if (updatedFrom) params.set('updatedFrom', updatedFrom);
-    if (updatedTo) params.set('updatedTo', updatedTo);
     params.set('sortBy', sortBy);
     params.set('sortDirection', sortDirection);
     params.set('page', String(page));
@@ -1794,7 +1774,6 @@ export function CustomerWorkspace() {
   }, [
     acquaintanceMethodId,
     activeTab,
-    branchId,
     calendarMode,
     createdFrom,
     createdTo,
@@ -1807,8 +1786,6 @@ export function CustomerWorkspace() {
     sortBy,
     sortDirection,
     status,
-    updatedFrom,
-    updatedTo,
   ]);
 
   const load = useCallback(async () => {
@@ -1819,12 +1796,10 @@ export function CustomerWorkspace() {
         kind,
         status,
         role,
-        branchId,
+        branchId: 'all',
         acquaintanceMethodId,
         createdFrom: createdFrom || null,
         createdTo: createdTo || null,
-        updatedFrom: updatedFrom || null,
-        updatedTo: updatedTo || null,
         sortBy,
         sortDirection,
         page,
@@ -1833,7 +1808,6 @@ export function CustomerWorkspace() {
       setRecords(response.data);
       setTotal(response.meta.total);
       setMetrics(response.meta.metrics);
-      setAllowedBranchIds(response.meta.allowedBranchIds ?? []);
       setRequestState('ready');
     } catch (error) {
       setRecords([]);
@@ -1846,7 +1820,6 @@ export function CustomerWorkspace() {
     }
   }, [
     acquaintanceMethodId,
-    branchId,
     createdFrom,
     createdTo,
     kind,
@@ -1856,8 +1829,6 @@ export function CustomerWorkspace() {
     sortBy,
     sortDirection,
     status,
-    updatedFrom,
-    updatedTo,
   ]);
 
   useEffect(() => {
@@ -1945,15 +1916,13 @@ export function CustomerWorkspace() {
             ایجاد مشتری
           </Button>
         }
-        description="Customer 360 عملیاتی با Permission، Branch Scope، Audit، Consent و Duplicate Candidate Review."
-        eyebrow="CUSTOMER-002A · PC-A"
         title="مشتریان و مسافران"
       />
       <section
         aria-label="شاخص‌های مشتریان"
         className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
       >
-        <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-surface p-4">
+        <Card className="border-blue-300/60 bg-gradient-to-br from-blue-500/20 via-blue-100/60 to-surface p-4 dark:via-blue-950/40">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-muted-foreground">
               تعداد کل مشتریان
@@ -1969,7 +1938,7 @@ export function CustomerWorkspace() {
             اشخاص حقیقی مطابق فیلترهای فعال
           </p>
         </Card>
-        <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-surface p-4">
+        <Card className="border-cyan-300/60 bg-gradient-to-br from-cyan-500/20 via-cyan-100/60 to-surface p-4 dark:via-cyan-950/40">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-muted-foreground">
               تعداد کل مسافران
@@ -1985,7 +1954,7 @@ export function CustomerWorkspace() {
             شخصی و سازمانی مطابق فیلترها
           </p>
         </Card>
-        <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-surface p-4">
+        <Card className="border-emerald-300/60 bg-gradient-to-br from-emerald-500/20 via-emerald-100/60 to-surface p-4 dark:via-emerald-950/40">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-muted-foreground">
               مشتریان جدید سه ماه اخیر
@@ -2001,7 +1970,7 @@ export function CustomerWorkspace() {
             بازه سه‌ماهه UTC و فیلترهای فعال
           </p>
         </Card>
-        <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-surface p-4">
+        <Card className="border-amber-300/60 bg-gradient-to-br from-amber-500/20 via-amber-100/60 to-surface p-4 dark:via-amber-950/40">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-muted-foreground">
               نرخ بازگشت مشتری
@@ -2018,10 +1987,6 @@ export function CustomerWorkspace() {
           </p>
         </Card>
       </section>
-      <Alert
-        description="Persistence فعال است. تماس در حالت عادی فقط ماسک‌شده نمایش داده می‌شود؛ مدرک هویتی ذخیره نمی‌شود و Merge واقعی مسدود است."
-        title="Backend واقعی · حفاظت PII"
-      />
       <Card className="flex flex-col gap-4 border-primary/25 bg-primary/[0.04] p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-lg font-bold">ثبت مشتری و مسافران همراه</p>
@@ -2070,27 +2035,6 @@ export function CustomerWorkspace() {
             </SelectContent>
           </Select>
         </FormField>
-        <FormField label="محدوده دسترسی">
-          <Select
-            onValueChange={(value) => {
-              setBranchId(value);
-              setPage(1);
-            }}
-            value={branchId}
-          >
-            <SelectTrigger aria-label="فیلتر محدوده دسترسی">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">همه محدوده‌های مجاز</SelectItem>
-              {allowedBranchIds.map((id) => (
-                <SelectItem key={id} value={id}>
-                  محدوده {shortReference(id)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormField>
         <FormField label="نحوه آشنایی">
           <Select
             onValueChange={(value) => {
@@ -2133,28 +2077,6 @@ export function CustomerWorkspace() {
             setPage(1);
           }}
           value={createdTo}
-        />
-        <CustomerDateField
-          id="customer-updated-from"
-          label="ویرایش از تاریخ"
-          mode={calendarMode}
-          onModeChange={setCalendarMode}
-          onChange={(value) => {
-            setUpdatedFrom(value);
-            setPage(1);
-          }}
-          value={updatedFrom}
-        />
-        <CustomerDateField
-          id="customer-updated-to"
-          label="ویرایش تا تاریخ"
-          mode={calendarMode}
-          onModeChange={setCalendarMode}
-          onChange={(value) => {
-            setUpdatedTo(value);
-            setPage(1);
-          }}
-          value={updatedTo}
         />
         <FormField label="نقش">
           <Select
@@ -2209,16 +2131,6 @@ export function CustomerWorkspace() {
           </Select>
         </FormField>
       </FilterBar>
-      <Alert
-        description="Branch Scope در Backend اعمال و tampering رد می‌شود. فیلترهای غیرحساس هنگام بازگشت در URL می‌مانند؛ متن جست‌وجو چون ممکن است PII باشد فقط در حافظه همین صفحه نگه‌داری می‌شود."
-        title="فیلتر امن و مستقل از Legal Entity"
-      />
-      <Alert
-        description="«نیایش سیر سحر» و «جهان باستان» در مدل فعلی Legal Entity هستند، اما Customer هنوز FK شرکت صادرکننده ندارد. تبدیل Scope امنیتی به فیلتر شرکت بدون Schema رابطه‌ای واقعی مجاز نیست و برای CUSTOMER-002B ثبت شده است."
-        title="فیلتر شرکت نیازمند اتصال داده واقعی"
-        tone="warning"
-      />
-
       {requestState === 'loading' ? (
         <Card className="space-y-3 p-4">
           {[1, 2, 3].map((item) => (

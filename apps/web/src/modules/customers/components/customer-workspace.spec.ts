@@ -61,8 +61,6 @@ describe('Customer Operations workspace boundaries', () => {
       'acquaintanceMethodId',
       'createdFrom',
       'createdTo',
-      'updatedFrom',
-      'updatedTo',
       'sortDirection',
     ])
       expect(source).toContain(filter);
@@ -99,8 +97,18 @@ describe('Customer Operations workspace boundaries', () => {
     expect(dateFieldSource).toContain('<CustomerCalendarSwitch');
     expect(dateFieldSource).toContain('role="dialog"');
     expect(source).toContain('customer-created-from');
-    expect(source).toContain('customer-updated-to');
+    expect(source).not.toContain('customer-updated-to');
+    expect(source).not.toContain('customer-updated-from');
     expect(source).not.toContain('type="date"');
+  });
+
+  it('uses a centered create dialog and removes technical-only page chrome', () => {
+    expect(source).toContain('<Dialog onOpenChange');
+    expect(source).toContain('<DialogContent');
+    expect(source).not.toContain('<Drawer');
+    expect(source).not.toContain('CUSTOMER-002A · PC-A');
+    expect(source).not.toContain('Backend واقعی · حفاظت PII');
+    expect(source).not.toContain('فیلتر محدوده دسترسی');
   });
 
   it('keeps internal customer identifiers out of the visible workspace', () => {
