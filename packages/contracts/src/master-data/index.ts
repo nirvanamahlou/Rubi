@@ -1,4 +1,4 @@
-export const MASTER_DATA_CONTRACT_VERSION = 9 as const;
+export const MASTER_DATA_CONTRACT_VERSION = 10 as const;
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 
 export const MASTER_DATA_RESOURCES = [
@@ -35,6 +35,12 @@ export const MASTER_DATA_RESOURCES = [
   'organization-contacts',
   'leaders',
   'acquaintance-methods',
+  'lead-sources',
+  'sales-channels',
+  'lost-reasons',
+  'customer-types',
+  'tags',
+  'campaign-types',
 ] as const;
 
 export type MasterDataResource = (typeof MASTER_DATA_RESOURCES)[number];

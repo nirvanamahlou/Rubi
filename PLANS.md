@@ -208,6 +208,13 @@ Baseline برنامه: `origin/develop` در Merge Commit
   Customers، Dependency یا Lockfile را تغییر نمی‌دهد.
 - Draft PR #30 با Base `codex/pc-b-master-data-financial` ایجاد شد و پیش از والدهای
   #29، #28 و #25 نباید Merge شود.
+- `MASTER-003H-TRANSPORT` با ۹ کاتالوگ حمل‌ونقل، Contract v9، Migration افزایشی و
+  پروفایل Popup در Draft PR #35 روی PR #33 آماده Review است.
+- `MASTER-003I-SALES-REFERENCES` با هفت کاتالوگ مستقل مراجع فروش، Contract v10،
+  Migration افزایشی و پروفایل Popup روی شاخه
+  `codex/pc-b-master-data-sales-references` آماده Review است؛ شمارش مصرف تا انتشار
+  Public Aggregate Contract با `—` نمایش داده می‌شود و Query مستقیم Customers/Sales
+  وجود ندارد.
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
 

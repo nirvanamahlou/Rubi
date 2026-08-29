@@ -62,6 +62,7 @@ import { MasterDataGeographyWorkspace } from './master-data-geography-workspace'
 import { MasterDataKpiGrid } from './master-data-kpi-grid';
 import { MasterDataSuppliersWorkspace } from './master-data-suppliers-workspace';
 import { MasterDataTransportationWorkspace } from './master-data-transportation-workspace';
+import { MasterDataSalesReferencesWorkspace } from './master-data-sales-references-workspace';
 
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
@@ -707,5 +708,7 @@ export function MasterDataWorkspace({
     return <MasterDataAccommodationWorkspace />;
   if (section.slug === 'transportation')
     return <MasterDataTransportationWorkspace />;
+  if (section.slug === 'sales-references')
+    return <MasterDataSalesReferencesWorkspace />;
   return <GenericMasterDataWorkspace section={section} />;
 }

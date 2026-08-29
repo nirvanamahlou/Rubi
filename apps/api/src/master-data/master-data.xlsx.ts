@@ -53,6 +53,7 @@ const columnLabels: Readonly<Record<string, string>> = {
   publicationStatus: 'وضعیت انتشار',
   serviceClass: 'کلاس خدمات',
   amenities: 'امکانات',
+  colorHex: 'رنگ',
   cityId: 'شهر',
   starRating: 'درجه هتل',
   chainId: 'زنجیره هتل',
@@ -120,6 +121,12 @@ const resourceLabels: Record<MasterDataResource, string> = {
   'organization-contacts': 'مخاطبان سازمانی',
   leaders: 'لیدرها',
   'acquaintance-methods': 'نحوه آشنایی',
+  'lead-sources': 'منابع سرنخ',
+  'sales-channels': 'کانال‌های فروش',
+  'lost-reasons': 'دلایل از دست رفتن',
+  'customer-types': 'انواع مشتری',
+  tags: 'Tagها',
+  'campaign-types': 'انواع کمپین',
 };
 
 function escapeXml(value: unknown): string {

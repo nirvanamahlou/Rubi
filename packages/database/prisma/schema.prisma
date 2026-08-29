@@ -1315,7 +1315,9 @@ model MasterAcquaintanceMethod {
   id                  String     @id @default(uuid()) @db.Uuid
   code                String     @unique @db.VarChar(32)
   name                String     @db.VarChar(160)
+  englishName         String?    @db.VarChar(160)
   description         String?    @db.VarChar(500)
+  displayOrder        Int        @default(0)
   isActive            Boolean    @default(true)
   version             Int        @default(1)
   createdByUserId     String     @db.Uuid
@@ -1326,8 +1328,130 @@ model MasterAcquaintanceMethod {
   updatedAt           DateTime   @updatedAt @db.Timestamptz(3)
   customers           Customer[]
 
+  @@index([isActive, displayOrder, name])
   @@index([isActive, name])
   @@map("master_acquaintance_methods")
+}
+
+model MasterLeadSource {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(32)
+  name                String    @db.VarChar(160)
+  englishName         String?   @db.VarChar(160)
+  description         String?   @db.VarChar(500)
+  displayOrder        Int       @default(0)
+  isActive            Boolean   @default(true)
+  version             Int       @default(1)
+  createdByUserId     String    @db.Uuid
+  updatedByUserId     String    @db.Uuid
+  deactivatedByUserId String?   @db.Uuid
+  deactivatedAt       DateTime? @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([isActive, displayOrder, name])
+  @@map("master_lead_sources")
+}
+
+model MasterSalesChannel {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(32)
+  name                String    @db.VarChar(160)
+  englishName         String?   @db.VarChar(160)
+  description         String?   @db.VarChar(500)
+  displayOrder        Int       @default(0)
+  isActive            Boolean   @default(true)
+  version             Int       @default(1)
+  createdByUserId     String    @db.Uuid
+  updatedByUserId     String    @db.Uuid
+  deactivatedByUserId String?   @db.Uuid
+  deactivatedAt       DateTime? @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([isActive, displayOrder, name])
+  @@map("master_sales_channels")
+}
+
+model MasterLostReason {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(32)
+  name                String    @db.VarChar(160)
+  englishName         String?   @db.VarChar(160)
+  description         String?   @db.VarChar(500)
+  displayOrder        Int       @default(0)
+  isActive            Boolean   @default(true)
+  version             Int       @default(1)
+  createdByUserId     String    @db.Uuid
+  updatedByUserId     String    @db.Uuid
+  deactivatedByUserId String?   @db.Uuid
+  deactivatedAt       DateTime? @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([isActive, displayOrder, name])
+  @@map("master_lost_reasons")
+}
+
+model MasterCustomerType {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(32)
+  name                String    @db.VarChar(160)
+  englishName         String?   @db.VarChar(160)
+  description         String?   @db.VarChar(500)
+  displayOrder        Int       @default(0)
+  isActive            Boolean   @default(true)
+  version             Int       @default(1)
+  createdByUserId     String    @db.Uuid
+  updatedByUserId     String    @db.Uuid
+  deactivatedByUserId String?   @db.Uuid
+  deactivatedAt       DateTime? @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([isActive, displayOrder, name])
+  @@map("master_customer_types")
+}
+
+model MasterTag {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(32)
+  name                String    @db.VarChar(160)
+  englishName         String?   @db.VarChar(160)
+  description         String?   @db.VarChar(500)
+  colorHex            String?   @db.Char(7)
+  displayOrder        Int       @default(0)
+  isActive            Boolean   @default(true)
+  version             Int       @default(1)
+  createdByUserId     String    @db.Uuid
+  updatedByUserId     String    @db.Uuid
+  deactivatedByUserId String?   @db.Uuid
+  deactivatedAt       DateTime? @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([isActive, displayOrder, name])
+  @@map("master_tags")
+}
+
+model MasterCampaignType {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(32)
+  name                String    @db.VarChar(160)
+  englishName         String?   @db.VarChar(160)
+  description         String?   @db.VarChar(500)
+  displayOrder        Int       @default(0)
+  isActive            Boolean   @default(true)
+  version             Int       @default(1)
+  createdByUserId     String    @db.Uuid
+  updatedByUserId     String    @db.Uuid
+  deactivatedByUserId String?   @db.Uuid
+  deactivatedAt       DateTime? @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([isActive, displayOrder, name])
+  @@map("master_campaign_types")
 }
 
 model MasterDataAuditEvent {

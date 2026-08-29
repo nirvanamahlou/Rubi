@@ -32,6 +32,34 @@ const row = {
 };
 
 describe('MasterDataService', () => {
+  it('normalizes a Tag color and generates its internal code', async () => {
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create(
+      'tags',
+      { name: 'پیگیری ویژه', colorHex: '#aabbcc', displayOrder: '2' },
+      actor,
+    );
+
+    expect(repository.create).toHaveBeenCalledWith(
+      'tags',
+      expect.objectContaining({ colorHex: '#AABBCC', displayOrder: 2 }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
   it('normalizes unique IATA/ICAO codes and enforces the airline organization role', async () => {
     const repository = {
       fieldExists: vi.fn().mockResolvedValue(false),
