@@ -1,4 +1,4 @@
-export const MASTER_DATA_CONTRACT_VERSION = 6 as const;
+export const MASTER_DATA_CONTRACT_VERSION = 7 as const;
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 
 export const MASTER_DATA_RESOURCES = [
@@ -16,7 +16,10 @@ export const MASTER_DATA_RESOURCES = [
   'airlines',
   'hotels',
   'organizations',
+  'suppliers',
   'brokers',
+  'travel-services',
+  'organization-contacts',
   'leaders',
   'acquaintance-methods',
 ] as const;
@@ -36,6 +39,10 @@ export type MasterPaymentMethodChannel =
   | 'WALLET'
   | 'OTHER';
 export type MasterPaymentMethodDirection = 'RECEIPT' | 'PAYMENT' | 'BOTH';
+export type MasterCollaborationStatus =
+  'ACTIVE' | 'UNDER_REVIEW' | 'PURCHASE_SUSPENDED' | 'ENDED';
+export type MasterOrganizationContactChannel =
+  'PHONE' | 'WHATSAPP' | 'EMAIL' | 'TELEGRAM' | 'OTHER';
 
 export type MasterDataSortField = 'name' | 'code' | 'updatedAt';
 export type MasterDataSortDirection = 'asc' | 'desc';
@@ -55,6 +62,12 @@ export interface MasterDataListQuery {
   terminalType?: MasterTerminalType;
   paymentChannel?: MasterPaymentMethodChannel;
   paymentDirection?: MasterPaymentMethodDirection;
+  organizationId?: string;
+  serviceId?: string;
+  collaborationStatus?: MasterCollaborationStatus;
+  providerConnected?: boolean;
+  hasWhatsapp?: boolean;
+  contactCompleteness?: 'all' | 'complete' | 'incomplete';
 }
 
 export interface MasterDataRecord {
@@ -138,6 +151,34 @@ export interface MasterDataAuditRecord {
   entityVersion: number | null;
   reason: string | null;
   occurredAt: string;
+}
+
+export interface MasterOrganizationContactUnmasked {
+  id: string;
+  phone: string | null;
+  email: string | null;
+}
+
+export interface MasterOrganizationSupplierSummary {
+  suppliers: {
+    total: number;
+    activeCollaboration: number;
+    contracted: null;
+    providerConnected: number;
+  };
+  brokers: {
+    total: number;
+    active: number;
+    coveredCities: number;
+    incomplete: number;
+  };
+  contacts: {
+    total: number;
+    active: number;
+    whatsapp: number;
+    incomplete: number;
+  };
+  collaboration: Record<MasterCollaborationStatus, number>;
 }
 export type MasterHotelImportDuplicateBehavior = 'SKIP' | 'UPDATE';
 
@@ -223,6 +264,10 @@ export const masterDataEndpoints = {
     `${MASTER_DATA_API_PREFIX}/currency-rates/${encodeURIComponent(id)}/${action}` as const,
   audit: (resource: string, entityId: string) =>
     `${MASTER_DATA_API_PREFIX}/audit/${encodeURIComponent(resource)}/${encodeURIComponent(entityId)}` as const,
+  unmaskOrganizationContact: (id: string) =>
+    `${MASTER_DATA_API_PREFIX}/organization-contacts/${encodeURIComponent(id)}/unmask` as const,
+  organizationSupplierSummary:
+    `${MASTER_DATA_API_PREFIX}/organizations-suppliers/summary` as const,
   hotelImportPreview:
     `${MASTER_DATA_API_PREFIX}/hotel-imports/preview` as const,
   hotelImportCommit: (sessionId: string) =>

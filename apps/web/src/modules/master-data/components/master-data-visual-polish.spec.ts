@@ -16,12 +16,14 @@ describe('Master Data visual polish contract', () => {
     const liveWorkspace = source('master-data-live-workspace.tsx');
     const finance = source('master-data-finance-workspace.tsx');
     const geography = source('master-data-geography-workspace.tsx');
+    const suppliers = source('master-data-suppliers-workspace.tsx');
 
     expect(kpis).toContain('bg-gradient-to-br');
     expect(kpis).toContain('<Icon aria-hidden="true"');
     expect(liveWorkspace).toContain('<MasterDataKpiGrid');
     expect(finance).toContain('<MasterDataKpiGrid');
     expect(geography).toContain('<MasterDataKpiGrid');
+    expect(suppliers).toContain('<MasterDataKpiGrid');
   });
 
   it('keeps geography KPI names aligned with the approved mockup', () => {

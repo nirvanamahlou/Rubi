@@ -192,6 +192,28 @@
 - Database، Migration، Backend، Contract، Customers، Dependency و Lockfile در این
   Slice تغییر نکردند.
 
+### `MASTER-003E-SUPPLIERS` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-suppliers` از
+  `origin/codex/pc-b-master-data-ui-polish@920328e` ساخته شد و PR والد #30 را تغییر
+  نمی‌دهد.
+- Draft PR #31 با Base همان Branch والد ساخته شد و پیش از Merge زنجیره
+  #30 ← #29 ← #28 ← #25 نباید ادغام شود.
+- شش نمای دقیق تأمین‌کنندگان، پروفایل تأمین‌کننده، کارگزاران، پروفایل کارگزار،
+  اطلاعات تماس و وضعیت همکاری در `/master-data/organizations-suppliers` پیاده‌سازی شدند.
+- Migration افزایشی `20260829133000_master_data_suppliers` پروفایل Supplier، خدمات
+  رابطه‌ای Supplier/Broker و مخاطبان چندگانه را با FK محدودکننده اضافه می‌کند.
+- Contactهای سازمانی فقط رمز‌شده/Mask/Fingerprint ذخیره می‌شوند؛ Unmask مجوز مستقل،
+  Audit و Mask مجدد خودکار دارد و plaintext وارد List، Excel یا Audit نمی‌شود.
+- KPIها با نام و آیکن ماکاپ از Summary واقعی Backend تغذیه می‌شوند؛ تعداد قرارداد که
+  متعلق به Procurement است بدون جعل قرارداد با `—` نمایش داده می‌شود.
+- همه ۱۲ Migration روی PostgreSQL 18 خالی، Seed دوگانه و رد زنده داده Contact نامعتبر
+  موفق بودند؛ Seed هیچ Supplier، Contact، Contract یا Provider ساختگی اضافه نمی‌کند.
+- Lint، Typecheck، Production Build و همه `349/349` تست Repository موفق هستند و مسیر
+  `/master-data/organizations-suppliers` در خروجی SSG ساخته می‌شود.
+- هیچ Query مستقیمی به Procurement، Finance یا Integrations و هیچ تغییری در Customers،
+  dependency manifest یا lockfile وجود ندارد.
+
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
 

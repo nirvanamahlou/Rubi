@@ -67,6 +67,20 @@ const configs: Partial<
       payload: 'id',
       requiredRole: 'BROKER',
     },
+    countryId: { target: 'countries', payload: 'id', optional: true },
+    cityId: { target: 'cities', payload: 'id', optional: true },
+  },
+  suppliers: {
+    organizationId: {
+      target: 'organizations',
+      payload: 'id',
+      requiredRole: 'SUPPLIER',
+    },
+    countryId: { target: 'countries', payload: 'id', optional: true },
+    cityId: { target: 'cities', payload: 'id', optional: true },
+  },
+  'organization-contacts': {
+    organizationId: { target: 'organizations', payload: 'id' },
   },
   hotels: {
     cityId: { target: 'cities', payload: 'id' },

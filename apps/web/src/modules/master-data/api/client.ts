@@ -7,6 +7,8 @@ import type {
   MasterDataListQuery,
   MasterDataListResponse,
   MasterDataMutationRequest,
+  MasterOrganizationContactUnmasked,
+  MasterOrganizationSupplierSummary,
   MasterDataRecord,
   MasterDataResource,
   MasterDataStatus,
@@ -165,6 +167,16 @@ export const masterDataApi = {
       data: readonly Record<string, unknown>[];
       meta: { total: number };
     }>(`/audit/${resource}/${encodeURIComponent(entityId)}?page=${page}`);
+  },
+  unmaskOrganizationContact(id: string) {
+    return request<{ data: MasterOrganizationContactUnmasked }>(
+      `/organization-contacts/${encodeURIComponent(id)}/unmask`,
+    );
+  },
+  organizationSupplierSummary() {
+    return request<{ data: MasterOrganizationSupplierSummary }>(
+      '/organizations-suppliers/summary',
+    );
   },
   downloadExcel(input: MasterDataExportRequest) {
     return requestFile('/exports/xlsx/download', input);

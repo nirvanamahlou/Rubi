@@ -45,7 +45,7 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 
 ### Contract و Permission
 
-- Master Data Contract نسخه `6`
+- Master Data Contract نسخه `7`
 - IAM Permission Contract نسخه `5`
 - Permissionهای جدید در Contract و Seed:
   - `master_data.import`
@@ -134,8 +134,7 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 
 این Draft PR کل MASTER-003 را Complete اعلام نمی‌کند. موارد زیر هنوز پیاده‌سازی نشده‌اند و قفل‌ها آزاد نمی‌شوند:
 
-- کاتالوگ‌های پیشرفته Airport/Terminal/Bank Branch، Supplier Contact/Service، Hotel Chain/Room/Meal/Facility/Composite، Aircraft/Class/Baggage/Manifest، Insurance Plan/Coverage، Tour/Transfer/Bus و Sales References مستقل
-- رمزنگاری و Unmask مخاطبان Master Data با کلید مستقل از Customers
+- کاتالوگ‌های پیشرفته Hotel Chain/Room/Meal/Facility/Composite، Aircraft/Class/Baggage/Manifest، Insurance Plan/Coverage، Tour/Transfer/Bus و Sales References مستقل
 - اتصال Scanner مستقل آنتی‌ویروس و Documents برای تصاویر هتل
 - اتصال لوگوی بانک به Documents Worker و قرارداد واقعی فایل
 

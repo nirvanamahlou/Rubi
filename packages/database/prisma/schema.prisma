@@ -271,6 +271,21 @@ enum MasterTerminalType {
   VIP
 }
 
+enum MasterCollaborationStatus {
+  ACTIVE
+  UNDER_REVIEW
+  PURCHASE_SUSPENDED
+  ENDED
+}
+
+enum MasterOrganizationContactChannel {
+  PHONE
+  WHATSAPP
+  EMAIL
+  TELEGRAM
+  OTHER
+}
+
 model MasterCountry {
   id                  String                     @id @default(uuid()) @db.Uuid
   code                String                     @unique @db.Char(2)
@@ -287,6 +302,8 @@ model MasterCountry {
   cities              MasterCity[]
   regions             MasterRegion[]
   banks               MasterBank[]
+  suppliers           MasterSupplier[]
+  brokers             MasterBroker[]
   hotelImports        MasterHotelImportSession[]
 
   @@index([isActive, name])
@@ -313,6 +330,8 @@ model MasterCity {
   hotels                    MasterHotel[]
   airports                  MasterAirport[]
   bankBranches              MasterBankBranch[]
+  suppliers                 MasterSupplier[]
+  brokers                   MasterBroker[]
   customerAddresses         CustomerAddress[]
   masterHotelImportSessions MasterHotelImportSession[]
 
@@ -527,19 +546,21 @@ model MasterPaymentMethod {
 }
 
 model MasterOrganization {
-  id                  String                   @id @default(uuid()) @db.Uuid
-  code                String                   @unique @db.VarChar(32)
-  legalName           String                   @db.VarChar(200)
-  displayName         String                   @db.VarChar(160)
-  isActive            Boolean                  @default(true)
-  version             Int                      @default(1)
-  createdByUserId     String                   @db.Uuid
-  updatedByUserId     String                   @db.Uuid
-  deactivatedByUserId String?                  @db.Uuid
-  deactivatedAt       DateTime?                @db.Timestamptz(3)
-  createdAt           DateTime                 @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime                 @updatedAt @db.Timestamptz(3)
+  id                  String                      @id @default(uuid()) @db.Uuid
+  code                String                      @unique @db.VarChar(32)
+  legalName           String                      @db.VarChar(200)
+  displayName         String                      @db.VarChar(160)
+  isActive            Boolean                     @default(true)
+  version             Int                         @default(1)
+  createdByUserId     String                      @db.Uuid
+  updatedByUserId     String                      @db.Uuid
+  deactivatedByUserId String?                     @db.Uuid
+  deactivatedAt       DateTime?                   @db.Timestamptz(3)
+  createdAt           DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                    @updatedAt @db.Timestamptz(3)
   roles               MasterOrganizationRole[]
+  supplier            MasterSupplier?
+  contacts            MasterOrganizationContact[]
   insurer             MasterInsurer?
   airline             MasterAirline?
   broker              MasterBroker?
@@ -560,6 +581,117 @@ model MasterOrganizationRole {
   @@id([organizationId, roleCode])
   @@index([roleCode])
   @@map("master_organization_roles")
+}
+
+model MasterSupplier {
+  id                        String                    @id @default(uuid()) @db.Uuid
+  organizationId            String                    @unique @db.Uuid
+  countryId                 String?                   @db.Uuid
+  cityId                    String?                   @db.Uuid
+  code                      String                    @unique @db.VarChar(32)
+  externalProviderReference String?                   @db.VarChar(120)
+  collaborationStatus       MasterCollaborationStatus @default(UNDER_REVIEW)
+  isActive                  Boolean                   @default(true)
+  version                   Int                       @default(1)
+  createdByUserId           String                    @db.Uuid
+  updatedByUserId           String                    @db.Uuid
+  deactivatedByUserId       String?                   @db.Uuid
+  deactivatedAt             DateTime?                 @db.Timestamptz(3)
+  createdAt                 DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime                  @updatedAt @db.Timestamptz(3)
+  organization              MasterOrganization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  country                   MasterCountry?            @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  city                      MasterCity?               @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  services                  MasterSupplierService[]
+
+  @@index([countryId, cityId, isActive])
+  @@index([collaborationStatus, isActive])
+  @@index([externalProviderReference])
+  @@map("master_suppliers")
+}
+
+model MasterTravelService {
+  id                  String                  @id @default(uuid()) @db.Uuid
+  code                String                  @unique @db.VarChar(32)
+  name                String                  @db.VarChar(160)
+  englishName         String?                 @db.VarChar(160)
+  isActive            Boolean                 @default(true)
+  version             Int                     @default(1)
+  createdByUserId     String                  @db.Uuid
+  updatedByUserId     String                  @db.Uuid
+  deactivatedByUserId String?                 @db.Uuid
+  deactivatedAt       DateTime?               @db.Timestamptz(3)
+  createdAt           DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                @updatedAt @db.Timestamptz(3)
+  suppliers           MasterSupplierService[]
+  brokers             MasterBrokerService[]
+
+  @@index([isActive, name])
+  @@map("master_travel_services")
+}
+
+model MasterSupplierService {
+  supplierId       String              @db.Uuid
+  serviceId        String              @db.Uuid
+  assignedAt       DateTime            @default(now()) @db.Timestamptz(3)
+  assignedByUserId String              @db.Uuid
+  supplier         MasterSupplier      @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  service          MasterTravelService @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@id([supplierId, serviceId])
+  @@index([serviceId])
+  @@map("master_supplier_services")
+}
+
+model MasterBrokerService {
+  brokerId         String              @db.Uuid
+  serviceId        String              @db.Uuid
+  assignedAt       DateTime            @default(now()) @db.Timestamptz(3)
+  assignedByUserId String              @db.Uuid
+  broker           MasterBroker        @relation(fields: [brokerId], references: [id], onDelete: Restrict)
+  service          MasterTravelService @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@id([brokerId, serviceId])
+  @@index([serviceId])
+  @@map("master_broker_services")
+}
+
+model MasterOrganizationContact {
+  id                        String                           @id @default(uuid()) @db.Uuid
+  organizationId            String                           @db.Uuid
+  code                      String                           @unique @db.VarChar(32)
+  fullName                  String                           @db.VarChar(160)
+  jobTitle                  String?                          @db.VarChar(160)
+  preferredChannel          MasterOrganizationContactChannel @default(PHONE)
+  hasWhatsapp               Boolean                          @default(false)
+  isPrimary                 Boolean                          @default(false)
+  phoneEncrypted            String?                          @db.Text
+  phoneEncryptionIv         String?                          @db.VarChar(24)
+  phoneEncryptionAuthTag    String?                          @db.VarChar(24)
+  phoneEncryptionKeyVersion Int?
+  phoneMasked               String?                          @db.VarChar(80)
+  phoneFingerprint          String?                          @db.Char(64)
+  emailEncrypted            String?                          @db.Text
+  emailEncryptionIv         String?                          @db.VarChar(24)
+  emailEncryptionAuthTag    String?                          @db.VarChar(24)
+  emailEncryptionKeyVersion Int?
+  emailMasked               String?                          @db.VarChar(320)
+  emailFingerprint          String?                          @db.Char(64)
+  isActive                  Boolean                          @default(true)
+  version                   Int                              @default(1)
+  createdByUserId           String                           @db.Uuid
+  updatedByUserId           String                           @db.Uuid
+  deactivatedByUserId       String?                          @db.Uuid
+  deactivatedAt             DateTime?                        @db.Timestamptz(3)
+  createdAt                 DateTime                         @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime                         @updatedAt @db.Timestamptz(3)
+  organization              MasterOrganization               @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, phoneFingerprint])
+  @@unique([organizationId, emailFingerprint])
+  @@index([organizationId, isActive, fullName])
+  @@index([hasWhatsapp, isActive])
+  @@map("master_organization_contacts")
 }
 
 model MasterInsurer {
@@ -748,21 +880,29 @@ model MasterHotelImportSession {
 }
 
 model MasterBroker {
-  id                  String             @id @default(uuid()) @db.Uuid
-  organizationId      String             @unique @db.Uuid
-  code                String             @unique @db.VarChar(32)
-  name                String             @db.VarChar(160)
-  isActive            Boolean            @default(true)
-  version             Int                @default(1)
-  createdByUserId     String             @db.Uuid
-  updatedByUserId     String             @db.Uuid
-  deactivatedByUserId String?            @db.Uuid
-  deactivatedAt       DateTime?          @db.Timestamptz(3)
-  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
-  organization        MasterOrganization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  id                  String                    @id @default(uuid()) @db.Uuid
+  organizationId      String                    @unique @db.Uuid
+  countryId           String?                   @db.Uuid
+  cityId              String?                   @db.Uuid
+  code                String                    @unique @db.VarChar(32)
+  name                String                    @db.VarChar(160)
+  collaborationStatus MasterCollaborationStatus @default(UNDER_REVIEW)
+  isActive            Boolean                   @default(true)
+  version             Int                       @default(1)
+  createdByUserId     String                    @db.Uuid
+  updatedByUserId     String                    @db.Uuid
+  deactivatedByUserId String?                   @db.Uuid
+  deactivatedAt       DateTime?                 @db.Timestamptz(3)
+  createdAt           DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                  @updatedAt @db.Timestamptz(3)
+  organization        MasterOrganization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  country             MasterCountry?            @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  city                MasterCity?               @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  services            MasterBrokerService[]
 
   @@index([isActive, name])
+  @@index([countryId, cityId, isActive])
+  @@index([collaborationStatus, isActive])
   @@map("master_brokers")
 }
 

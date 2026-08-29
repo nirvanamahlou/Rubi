@@ -85,6 +85,22 @@ export class MasterDataController {
     return this.service.list(resource, query as MasterDataListQuery);
   }
 
+  @Get('organization-contacts/:id/unmask')
+  @RequirePermissions('master_data.sensitive_contact.unmask')
+  unmaskOrganizationContact(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId?: string,
+  ) {
+    return this.service.unmaskOrganizationContact(id, request.actor, branchId);
+  }
+
+  @Get('organizations-suppliers/summary')
+  @RequirePermissions('master_data.read')
+  organizationSupplierSummary() {
+    return this.service.organizationSupplierSummary();
+  }
+
   @Get(':resource/:id')
   @RequirePermissions('master_data.read')
   detail(@Param('resource') resource: string, @Param('id') id: string) {

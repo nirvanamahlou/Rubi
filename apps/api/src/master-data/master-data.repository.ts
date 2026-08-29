@@ -38,6 +38,34 @@ function json(value: unknown): Exclude<JsonValue, null> {
   return JSON.parse(JSON.stringify(value)) as Exclude<JsonValue, null>;
 }
 
+const protectedContactFields = new Set([
+  'phoneEncrypted',
+  'phoneEncryptionIv',
+  'phoneEncryptionAuthTag',
+  'phoneEncryptionKeyVersion',
+  'phoneFingerprint',
+  'emailEncrypted',
+  'emailEncryptionIv',
+  'emailEncryptionAuthTag',
+  'emailEncryptionKeyVersion',
+  'emailFingerprint',
+]);
+
+function auditSnapshot(resource: MasterDataResource, value: unknown) {
+  const snapshot = json(value);
+  if (
+    resource !== 'organization-contacts' ||
+    typeof snapshot !== 'object' ||
+    Array.isArray(snapshot)
+  )
+    return snapshot;
+  return Object.fromEntries(
+    Object.entries(snapshot).filter(
+      ([key]) => !protectedContactFields.has(key),
+    ),
+  );
+}
+
 const delegateNames: Record<MasterDataResource, string> = {
   countries: 'masterCountry',
   regions: 'masterRegion',
@@ -53,7 +81,10 @@ const delegateNames: Record<MasterDataResource, string> = {
   airlines: 'masterAirline',
   hotels: 'masterHotel',
   organizations: 'masterOrganization',
+  suppliers: 'masterSupplier',
   brokers: 'masterBroker',
+  'travel-services': 'masterTravelService',
+  'organization-contacts': 'masterOrganizationContact',
   leaders: 'masterLeader',
   'acquaintance-methods': 'masterAcquaintanceMethod',
 };
@@ -73,7 +104,10 @@ const nameFields: Record<MasterDataResource, string> = {
   airlines: 'name',
   hotels: 'name',
   organizations: 'displayName',
+  suppliers: 'code',
   brokers: 'name',
+  'travel-services': 'name',
+  'organization-contacts': 'fullName',
   leaders: 'name',
   'acquaintance-methods': 'name',
 };
@@ -93,7 +127,10 @@ const codeFields: Record<MasterDataResource, string> = {
   airlines: 'code',
   hotels: 'code',
   organizations: 'code',
+  suppliers: 'code',
   brokers: 'code',
+  'travel-services': 'code',
+  'organization-contacts': 'code',
   leaders: 'code',
   'acquaintance-methods': 'code',
 };
@@ -113,7 +150,10 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
   airlines: ['name', 'code', 'icaoCode'],
   hotels: ['name', 'englishName', 'code'],
   organizations: ['displayName', 'legalName', 'code'],
+  suppliers: ['code', 'externalProviderReference'],
   brokers: ['name', 'code'],
+  'travel-services': ['name', 'englishName', 'code'],
+  'organization-contacts': ['fullName', 'jobTitle', 'code'],
   leaders: ['name', 'code'],
   'acquaintance-methods': ['name', 'code'],
 };
@@ -128,6 +168,23 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'exchange-rates')
     return { fromCurrency: true, toCurrency: true };
   if (resource === 'organizations') return { roles: true };
+  if (resource === 'suppliers')
+    return {
+      organization: true,
+      country: true,
+      city: true,
+      services: { include: { service: true } },
+    };
+  if (resource === 'brokers')
+    return {
+      organization: true,
+      country: true,
+      city: true,
+      services: { include: { service: true } },
+    };
+  if (resource === 'travel-services')
+    return { _count: { select: { suppliers: true, brokers: true } } };
+  if (resource === 'organization-contacts') return { organization: true };
   if (resource === 'regions') return { country: true, parent: true };
   if (resource === 'cities') return { country: true, region: true };
   if (resource === 'airports')
@@ -166,6 +223,9 @@ export function toMasterDataRecord(
   const city = row.city as Record<string, unknown> | undefined;
   const airport = row.airport as Record<string, unknown> | undefined;
   const bank = row.bank as Record<string, unknown> | undefined;
+  const organization = row.organization as Record<string, unknown> | undefined;
+  const services = row.services as
+    { service: Record<string, unknown> }[] | undefined;
   const count = row._count as Record<string, unknown> | undefined;
   const code =
     resource === 'exchange-rates'
@@ -176,9 +236,13 @@ export function toMasterDataRecord(
   const name =
     resource === 'organizations'
       ? String(row.displayName ?? '')
-      : resource === 'exchange-rates'
-        ? `${code} · ${String(row.source ?? '')}`
-        : String(row.name ?? '');
+      : resource === 'suppliers'
+        ? String(organization?.displayName ?? '')
+        : resource === 'organization-contacts'
+          ? String(row.fullName ?? '')
+          : resource === 'exchange-rates'
+            ? `${code} · ${String(row.source ?? '')}`
+            : String(row.name ?? '');
   const omitted = new Set([
     'id',
     'code',
@@ -201,7 +265,10 @@ export function toMasterDataRecord(
     'city',
     'airport',
     'bank',
+    'organization',
+    'services',
     '_count',
+    ...protectedContactFields,
   ]);
   const attributes = Object.fromEntries(
     Object.entries(row)
@@ -247,6 +314,26 @@ export function toMasterDataRecord(
     attributes.bankName = String(bank?.name ?? '');
     attributes.cityName = String(city?.name ?? '');
   }
+  if (resource === 'suppliers' || resource === 'brokers') {
+    attributes.organizationName = String(organization?.displayName ?? '');
+    attributes.organizationCode = String(organization?.code ?? '');
+    attributes.countryName = String(country?.name ?? '');
+    attributes.cityName = String(city?.name ?? '');
+    attributes.serviceCodes =
+      services?.map(({ service }) => String(service.code ?? '')).join(',') ??
+      '';
+    attributes.serviceNames =
+      services?.map(({ service }) => String(service.name ?? '')).join(',') ??
+      '';
+  }
+  if (resource === 'travel-services') {
+    attributes.supplierCount = Number(count?.suppliers ?? 0);
+    attributes.brokerCount = Number(count?.brokers ?? 0);
+  }
+  if (resource === 'organization-contacts') {
+    attributes.organizationName = String(organization?.displayName ?? '');
+    attributes.organizationCode = String(organization?.code ?? '');
+  }
   return {
     id: row.id,
     resource,
@@ -276,6 +363,8 @@ export class MasterDataRepository {
       if (resource === 'regions' || resource === 'cities')
         where.countryId = query.countryId;
       if (resource === 'airports') airportCityWhere.countryId = query.countryId;
+      if (resource === 'suppliers' || resource === 'brokers')
+        where.countryId = query.countryId;
     }
     if (query.regionId) {
       if (resource === 'cities') where.regionId = query.regionId;
@@ -298,10 +387,64 @@ export class MasterDataRepository {
       if (query.paymentChannel) where.channel = query.paymentChannel;
       if (query.paymentDirection) where.direction = query.paymentDirection;
     }
+    if (resource === 'suppliers' || resource === 'brokers') {
+      if (query.cityId) where.cityId = query.cityId;
+      if (query.organizationId) where.organizationId = query.organizationId;
+      if (query.serviceId)
+        where.services = { some: { serviceId: query.serviceId } };
+      if (query.collaborationStatus)
+        where.collaborationStatus = query.collaborationStatus;
+    }
+    if (resource === 'suppliers' && query.providerConnected !== undefined)
+      where.externalProviderReference = query.providerConnected
+        ? { not: null }
+        : null;
+    if (resource === 'organization-contacts') {
+      if (query.organizationId) where.organizationId = query.organizationId;
+      if (query.hasWhatsapp !== undefined)
+        where.hasWhatsapp = query.hasWhatsapp;
+      if (query.contactCompleteness === 'complete')
+        where.AND = [
+          { phoneMasked: { not: null } },
+          { emailMasked: { not: null } },
+        ];
+      if (query.contactCompleteness === 'incomplete')
+        where.AND = [{ OR: [{ phoneMasked: null }, { emailMasked: null }] }];
+    }
     if (query.search) {
-      where.OR = searchFields[resource].map((field) => ({
+      const direct = searchFields[resource].map((field) => ({
         [field]: { contains: query.search, mode: 'insensitive' },
       }));
+      if (resource === 'suppliers' || resource === 'brokers')
+        direct.push({
+          organization: {
+            is: {
+              OR: [
+                {
+                  displayName: {
+                    contains: query.search,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  legalName: {
+                    contains: query.search,
+                    mode: 'insensitive',
+                  },
+                },
+              ],
+            },
+          },
+        } as never);
+      if (resource === 'organization-contacts')
+        direct.push({
+          organization: {
+            is: {
+              displayName: { contains: query.search, mode: 'insensitive' },
+            },
+          },
+        } as never);
+      where.OR = direct;
     }
     const sortField =
       query.sortBy === 'name'
@@ -309,9 +452,13 @@ export class MasterDataRepository {
         : query.sortBy === 'code'
           ? codeFields[resource]
           : query.sortBy;
+    const orderBy =
+      query.sortBy === 'name' && resource === 'suppliers'
+        ? { organization: { displayName: query.sortDirection } }
+        : { [sortField]: query.sortDirection };
     const args: Record<string, unknown> = {
       where,
-      orderBy: { [sortField]: query.sortDirection },
+      orderBy,
       skip: (query.page - 1) * query.pageSize,
       take: query.pageSize,
     };
@@ -391,7 +538,7 @@ export class MasterDataRepository {
           resource,
           entityId: row.id,
           outcome: AuditOutcome.SUCCESS,
-          afterSnapshot: json(row),
+          afterSnapshot: auditSnapshot(resource, row),
         },
       });
       return row;
@@ -431,8 +578,8 @@ export class MasterDataRepository {
           resource,
           entityId: id,
           outcome: AuditOutcome.SUCCESS,
-          beforeSnapshot: json(before),
-          afterSnapshot: json(row),
+          beforeSnapshot: auditSnapshot(resource, before),
+          afterSnapshot: auditSnapshot(resource, row),
         },
       });
       return row;
@@ -510,5 +657,103 @@ export class MasterDataRepository {
     return this.database.client.masterDataExportRequest.findFirst({
       where: { id, actorUserId },
     });
+  }
+
+  async recordSensitiveContactRead(input: {
+    contactId: string;
+    actorUserId: string;
+    actorBranchId: string;
+  }) {
+    await this.database.client.masterDataAuditEvent.create({
+      data: {
+        actorUserId: input.actorUserId,
+        actorBranchId: input.actorBranchId,
+        action: 'master_data.organization_contact.unmask',
+        resource: 'organization-contacts',
+        entityId: input.contactId,
+        outcome: AuditOutcome.SUCCESS,
+        afterSnapshot: { disclosure: 'SENSITIVE_CONTACT_UNMASKED' },
+      },
+    });
+  }
+
+  async organizationSupplierSummary() {
+    const client = this.database.client;
+    const [
+      supplierTotal,
+      supplierActive,
+      supplierProviderConnected,
+      brokerTotal,
+      brokerActive,
+      brokerCities,
+      brokerIncomplete,
+      contactTotal,
+      contactActive,
+      contactWhatsapp,
+      contactIncomplete,
+      supplierCollaboration,
+      brokerCollaboration,
+    ] = await Promise.all([
+      client.masterSupplier.count(),
+      client.masterSupplier.count({
+        where: { isActive: true, collaborationStatus: 'ACTIVE' },
+      }),
+      client.masterSupplier.count({
+        where: { externalProviderReference: { not: null } },
+      }),
+      client.masterBroker.count(),
+      client.masterBroker.count({ where: { isActive: true } }),
+      client.masterBroker.findMany({
+        where: { cityId: { not: null } },
+        distinct: ['cityId'],
+        select: { cityId: true },
+      }),
+      client.masterBroker.count({
+        where: { OR: [{ countryId: null }, { cityId: null }] },
+      }),
+      client.masterOrganizationContact.count(),
+      client.masterOrganizationContact.count({ where: { isActive: true } }),
+      client.masterOrganizationContact.count({ where: { hasWhatsapp: true } }),
+      client.masterOrganizationContact.count({
+        where: { OR: [{ phoneMasked: null }, { emailMasked: null }] },
+      }),
+      client.masterSupplier.groupBy({
+        by: ['collaborationStatus'],
+        _count: { _all: true },
+      }),
+      client.masterBroker.groupBy({
+        by: ['collaborationStatus'],
+        _count: { _all: true },
+      }),
+    ]);
+    const collaboration = {
+      ACTIVE: 0,
+      UNDER_REVIEW: 0,
+      PURCHASE_SUSPENDED: 0,
+      ENDED: 0,
+    };
+    for (const entry of [...supplierCollaboration, ...brokerCollaboration])
+      collaboration[entry.collaborationStatus] += entry._count._all;
+    return {
+      suppliers: {
+        total: supplierTotal,
+        activeCollaboration: supplierActive,
+        contracted: null,
+        providerConnected: supplierProviderConnected,
+      },
+      brokers: {
+        total: brokerTotal,
+        active: brokerActive,
+        coveredCities: brokerCities.length,
+        incomplete: brokerIncomplete,
+      },
+      contacts: {
+        total: contactTotal,
+        active: contactActive,
+        whatsapp: contactWhatsapp,
+        incomplete: contactIncomplete,
+      },
+      collaboration,
+    };
   }
 }

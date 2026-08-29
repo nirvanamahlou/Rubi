@@ -1,7 +1,10 @@
 import type { DatabaseService } from '../database/database.service';
 import { describe, expect, it, vi } from 'vitest';
 
-import { MasterDataRepository } from './master-data.repository';
+import {
+  MasterDataRepository,
+  toMasterDataRecord,
+} from './master-data.repository';
 
 const baseRow = {
   id: '44444444-4444-4444-8444-444444444444',
@@ -234,5 +237,75 @@ describe('MasterDataRepository direct export audit', () => {
         outcome: 'SUCCESS',
       }),
     });
+  });
+});
+
+describe('MasterDataRepository protected organization contacts', () => {
+  const contactRow = {
+    id: '55555555-5555-4555-8555-555555555555',
+    organizationId: baseRow.id,
+    code: 'CONTACT_TEST',
+    fullName: 'مخاطب آزمون',
+    jobTitle: 'مدیر فروش',
+    preferredChannel: 'PHONE',
+    hasWhatsapp: true,
+    isPrimary: true,
+    phoneEncrypted: 'ciphertext',
+    phoneEncryptionIv: 'iv',
+    phoneEncryptionAuthTag: 'tag',
+    phoneEncryptionKeyVersion: 1,
+    phoneMasked: '+98••••4567',
+    phoneFingerprint: 'a'.repeat(64),
+    emailEncrypted: 'ciphertext-email',
+    emailEncryptionIv: 'iv-email',
+    emailEncryptionAuthTag: 'tag-email',
+    emailEncryptionKeyVersion: 1,
+    emailMasked: 'n•••@example.com',
+    emailFingerprint: 'b'.repeat(64),
+    isActive: true,
+    version: 1,
+    createdAt: new Date('2026-08-29T00:00:00.000Z'),
+    updatedAt: new Date('2026-08-29T00:00:00.000Z'),
+    organization: baseRow,
+  };
+
+  it('returns masks but never protected payloads in the public record', () => {
+    const record = toMasterDataRecord('organization-contacts', contactRow);
+
+    expect(record.attributes.phoneMasked).toBe('+98••••4567');
+    expect(record.attributes.emailMasked).toBe('n•••@example.com');
+    expect(record.attributes).not.toHaveProperty('phoneEncrypted');
+    expect(record.attributes).not.toHaveProperty('phoneFingerprint');
+    expect(record.attributes).not.toHaveProperty('emailEncrypted');
+  });
+
+  it('redacts encrypted values and fingerprints from audit snapshots', async () => {
+    const create = vi.fn().mockResolvedValue(contactRow);
+    const auditCreate = vi.fn().mockResolvedValue({ id: 'audit-id' });
+    const transaction = {
+      masterOrganizationContact: { create },
+      masterDataAuditEvent: { create: auditCreate },
+    };
+    const database = {
+      client: {
+        $transaction: async <T>(
+          callback: (client: typeof transaction) => Promise<T>,
+        ) => callback(transaction),
+      },
+    } as unknown as DatabaseService;
+    const repository = new MasterDataRepository(database);
+
+    await repository.create(
+      'organization-contacts',
+      { fullName: 'مخاطب آزمون' },
+      '11111111-1111-4111-8111-111111111111',
+      '33333333-3333-4333-8333-333333333333',
+    );
+
+    const snapshot = auditCreate.mock.calls[0]?.[0].data.afterSnapshot;
+    expect(snapshot).toMatchObject({ phoneMasked: '+98••••4567' });
+    expect(snapshot).not.toHaveProperty('phoneEncrypted');
+    expect(snapshot).not.toHaveProperty('phoneFingerprint');
+    expect(snapshot).not.toHaveProperty('emailEncrypted');
   });
 });
