@@ -89,6 +89,8 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain("const kind = 'person' as const");
     expect(source).not.toContain('customer-national-id');
     expect(source).toContain('انتخاب مشتری موجود به‌عنوان مسافر');
+    expect(source).toContain('index === 0 ? (');
+    expect(source).toContain('aria-label="روش افزودن مسافر 1"');
     expect(source).toContain('بدون ورود دوباره اطلاعات');
     expect(source).toContain("source: 'new'");
     expect(source).toContain('existingCustomerId');

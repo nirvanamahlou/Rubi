@@ -1127,30 +1127,32 @@ function CustomerDrawer({
                           حذف
                         </Button>
                       </div>
-                      <FormField label="روش افزودن مسافر">
-                        <Select
-                          onValueChange={(value) =>
-                            updateCompanion(index, {
-                              source: value as 'new' | 'existing',
-                              existingCustomerId: '',
-                              existingCustomerSearch: '',
-                            })
-                          }
-                          value={companion.source}
-                        >
-                          <SelectTrigger
-                            aria-label={`روش افزودن مسافر ${index + 1}`}
+                      {index === 0 ? (
+                        <FormField label="روش افزودن مسافر">
+                          <Select
+                            onValueChange={(value) =>
+                              updateCompanion(index, {
+                                source: value as 'new' | 'existing',
+                                existingCustomerId: '',
+                                existingCustomerSearch: '',
+                              })
+                            }
+                            value={companion.source}
                           >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="new">ثبت مسافر جدید</SelectItem>
-                            <SelectItem value="existing">
-                              انتخاب مشتری موجود به‌عنوان مسافر
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormField>
+                            <SelectTrigger aria-label="روش افزودن مسافر 1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="new">
+                                ثبت مسافر جدید
+                              </SelectItem>
+                              <SelectItem value="existing">
+                                انتخاب مشتری موجود به‌عنوان مسافر
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormField>
+                      ) : null}
                       {companion.source === 'existing' ? (
                         <>
                           <FormField
