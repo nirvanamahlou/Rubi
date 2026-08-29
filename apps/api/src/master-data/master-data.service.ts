@@ -34,6 +34,7 @@ const organizationRoles = new Set([
   'HOTEL_PROVIDER',
   'INSURANCE_PROVIDER',
   'BUS_PROVIDER',
+  'RAIL_OPERATOR',
   'TOUR_OPERATOR',
   'BROKER',
 ]);
@@ -43,7 +44,6 @@ const compactCodeRules: Partial<
   Record<MasterDataResource, { alphabet: string; length: number }>
 > = {
   currencies: { alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', length: 3 },
-  airlines: { alphabet: autoCodeAlphabet, length: 2 },
 };
 const resourceCodePrefixes: Record<MasterDataResource, string> = {
   countries: 'CNT',
@@ -58,6 +58,14 @@ const resourceCodePrefixes: Record<MasterDataResource, string> = {
   'payment-methods': 'PAYMENT_METHOD',
   insurers: 'INS',
   airlines: 'AIR',
+  'aircraft-types': 'AIRCRAFT',
+  'cabin-classes': 'CABIN',
+  'baggage-rules': 'BAGGAGE',
+  'manifest-templates': 'MANIFEST',
+  'rail-companies': 'RAIL',
+  'train-types': 'TRAIN',
+  'bus-companies': 'BUS',
+  'bus-types': 'BUS_TYPE',
   hotels: 'HOTEL',
   'hotel-chains': 'HOTEL_CHAIN',
   'room-types': 'ROOM_TYPE',
@@ -127,6 +135,27 @@ const contactChannels = new Set([
   'OTHER',
 ]);
 const mealServiceCategories = new Set(['MEAL_PLAN', 'SERVICE']);
+const aircraftBodyTypes = new Set([
+  'NARROW_BODY',
+  'WIDE_BODY',
+  'TURBOPROP',
+  'REGIONAL',
+  'OTHER',
+]);
+const cabinTypes = new Set(['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST']);
+const passengerTypes = new Set(['ADT', 'CHD', 'INF']);
+const baggageUnits = new Set(['KG', 'PC']);
+const transportRouteScopes = new Set(['ALL', 'DOMESTIC', 'INTERNATIONAL']);
+const manifestFileFormats = new Set(['XLSX', 'CSV', 'XML', 'JSON']);
+const manifestStatuses = new Set(['DRAFT', 'ACTIVE', 'EXPIRED']);
+const trainCategories = new Set([
+  'SLEEPER',
+  'EXPRESS',
+  'SALOON',
+  'LUXURY',
+  'OTHER',
+]);
+const busServiceClasses = new Set(['STANDARD', 'VIP', 'LUXURY', 'OTHER']);
 
 function isValidIso2(value: string): boolean {
   if (!/^[A-Z]{2}$/.test(value)) return false;
@@ -237,7 +266,87 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'displayOrder',
   ],
   insurers: ['code', 'name', 'organizationId'],
-  airlines: ['code', 'name', 'icaoCode', 'organizationId'],
+  airlines: [
+    'code',
+    'name',
+    'englishName',
+    'icaoCode',
+    'organizationId',
+    'countryId',
+    'logoFileReference',
+  ],
+  'aircraft-types': [
+    'name',
+    'englishName',
+    'manufacturer',
+    'model',
+    'bodyType',
+  ],
+  'cabin-classes': [
+    'name',
+    'englishName',
+    'bookingCode',
+    'cabinType',
+    'displayOrder',
+  ],
+  'baggage-rules': [
+    'name',
+    'airlineId',
+    'cabinClassId',
+    'passengerType',
+    'routeScope',
+    'allowance',
+    'unit',
+    'pieceCount',
+    'validFrom',
+    'validTo',
+    'description',
+  ],
+  'manifest-templates': [
+    'name',
+    'airlineId',
+    'versionNumber',
+    'fileFormat',
+    'fileReferenceId',
+    'sheetName',
+    'headerRow',
+    'dateFormat',
+    'requiredColumns',
+    'columnOrder',
+    'validFrom',
+    'validTo',
+    'publicationStatus',
+  ],
+  'rail-companies': [
+    'name',
+    'englishName',
+    'organizationId',
+    'countryId',
+    'logoFileReference',
+  ],
+  'train-types': [
+    'name',
+    'englishName',
+    'manufacturer',
+    'model',
+    'category',
+    'amenities',
+  ],
+  'bus-companies': [
+    'name',
+    'englishName',
+    'organizationId',
+    'countryId',
+    'logoFileReference',
+  ],
+  'bus-types': [
+    'name',
+    'englishName',
+    'manufacturer',
+    'model',
+    'serviceClass',
+    'amenities',
+  ],
   hotels: [
     'name',
     'englishName',
@@ -336,7 +445,29 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   'bank-branches': ['code', 'name', 'bankId', 'cityId'],
   'payment-methods': ['code', 'name', 'channel', 'direction'],
   insurers: ['name', 'organizationId'],
-  airlines: ['name', 'organizationId'],
+  airlines: ['code', 'name', 'organizationId'],
+  'aircraft-types': ['name', 'manufacturer', 'model', 'bodyType'],
+  'cabin-classes': ['name', 'bookingCode', 'cabinType'],
+  'baggage-rules': [
+    'name',
+    'airlineId',
+    'passengerType',
+    'allowance',
+    'unit',
+    'validFrom',
+  ],
+  'manifest-templates': [
+    'name',
+    'airlineId',
+    'versionNumber',
+    'fileFormat',
+    'validFrom',
+    'publicationStatus',
+  ],
+  'rail-companies': ['name', 'organizationId', 'countryId'],
+  'train-types': ['name', 'manufacturer', 'model', 'category'],
+  'bus-companies': ['name', 'organizationId', 'countryId'],
+  'bus-types': ['name', 'manufacturer', 'model', 'serviceClass'],
   hotels: ['name', 'cityId'],
   'hotel-chains': ['name', 'countryId'],
   'room-types': ['name'],
@@ -936,6 +1067,15 @@ export class MasterDataService {
         'meal-services',
         'facilities',
         'composite-hotels',
+        'airlines',
+        'aircraft-types',
+        'cabin-classes',
+        'baggage-rules',
+        'manifest-templates',
+        'rail-companies',
+        'train-types',
+        'bus-companies',
+        'bus-types',
       ].includes(resource)
     ) {
       for (const field of [
@@ -957,6 +1097,8 @@ export class MasterDataService {
         'chainId',
         'logoFileReference',
         'iconFileReference',
+        'fileReferenceId',
+        'cabinClassId',
       ]) {
         if (data[field] === '') data[field] = null;
       }
@@ -989,7 +1131,9 @@ export class MasterDataService {
       resource !== 'bank-branches' &&
       resource !== 'payment-methods' &&
       resource !== 'travel-services';
-    if (usesGeneratedCode) {
+    // IATA is the public business identifier of an airline and is never generated.
+    const generatesInternalCode = usesGeneratedCode && resource !== 'airlines';
+    if (generatesInternalCode) {
       if (partial && Object.hasOwn(values, 'code'))
         throw new BadRequestException(
           'کد داخلی به‌صورت خودکار تولید می‌شود و قابل ویرایش نیست.',
@@ -997,7 +1141,7 @@ export class MasterDataService {
       if (!partial) data.code = await this.generateAutoCode(resource, values);
     }
     if (
-      usesGeneratedCode &&
+      generatesInternalCode &&
       typeof data.code === 'string' &&
       !codePattern.test(data.code)
     )
@@ -1031,11 +1175,30 @@ export class MasterDataService {
         });
       data.code = code;
     }
-    if (resource === 'airlines' && typeof data.icaoCode === 'string') {
-      const icaoCode = data.icaoCode.trim().toUpperCase();
-      if (icaoCode.length !== 3)
-        throw new BadRequestException('کد ICAO باید سه حرف باشد.');
-      data.icaoCode = icaoCode;
+    if (resource === 'airlines') {
+      for (const [field, length, label] of [
+        ['code', 2, 'IATA'],
+        ['icaoCode', 3, 'ICAO'],
+      ] as const) {
+        if (data[field] === undefined || data[field] === null) continue;
+        const code = String(data[field]).trim().toUpperCase();
+        if (field === 'icaoCode' && !code) {
+          data[field] = null;
+          continue;
+        }
+        if (!new RegExp(`^[A-Z0-9]{${length}}$`).test(code))
+          throw new BadRequestException(
+            `کد ${label} باید ${length} حرف یا عدد بزرگ باشد.`,
+          );
+        if (
+          await this.repository.fieldExists('airlines', field, code, entityId)
+        )
+          throw new ConflictException({
+            code: 'MASTER_DATA_DUPLICATE_CODE',
+            message: `کد ${label} قبلاً ثبت شده است.`,
+          });
+        data[field] = code;
+      }
     }
     for (const optionalReference of ['regionId', 'parentRegionId']) {
       if (data[optionalReference] === '') data[optionalReference] = null;
@@ -1058,6 +1221,9 @@ export class MasterDataService {
       'chainId',
       'logoFileReference',
       'iconFileReference',
+      'airlineId',
+      'cabinClassId',
+      'fileReferenceId',
     ]) {
       if (
         typeof data[field] === 'string' &&
@@ -1076,6 +1242,163 @@ export class MasterDataService {
       if (!terminalTypes.has(terminalType))
         throw new BadRequestException('نوع ترمینال معتبر نیست.');
       data.terminalType = terminalType;
+    }
+    if (resource === 'aircraft-types' && data.bodyType !== undefined) {
+      const bodyType = String(data.bodyType).trim().toUpperCase();
+      if (!aircraftBodyTypes.has(bodyType))
+        throw new BadRequestException('نوع بدنه هواپیما معتبر نیست.');
+      data.bodyType = bodyType;
+    }
+    if (resource === 'cabin-classes') {
+      if (data.bookingCode !== undefined) {
+        const bookingCode = String(data.bookingCode).trim().toUpperCase();
+        if (!/^[A-Z0-9]{1,8}$/.test(bookingCode))
+          throw new BadRequestException('کد رزرو کلاس پروازی معتبر نیست.');
+        if (
+          await this.repository.fieldExists(
+            'cabin-classes',
+            'bookingCode',
+            bookingCode,
+            entityId,
+          )
+        )
+          throw new ConflictException({
+            code: 'MASTER_DATA_DUPLICATE_CODE',
+            message: 'کد رزرو کلاس پروازی قبلاً ثبت شده است.',
+          });
+        data.bookingCode = bookingCode;
+      }
+      if (data.cabinType !== undefined) {
+        const cabinType = String(data.cabinType).trim().toUpperCase();
+        if (!cabinTypes.has(cabinType))
+          throw new BadRequestException('نوع Cabin معتبر نیست.');
+        data.cabinType = cabinType;
+      }
+      if (data.displayOrder !== undefined) {
+        const displayOrder = Number(data.displayOrder || 0);
+        if (!Number.isInteger(displayOrder) || displayOrder < 0)
+          throw new BadRequestException(
+            'ترتیب نمایش باید عدد صحیح نامنفی باشد.',
+          );
+        data.displayOrder = displayOrder;
+      }
+    }
+    if (resource === 'baggage-rules') {
+      if (data.cabinClassId === '') data.cabinClassId = null;
+      for (const [field, options, label] of [
+        ['passengerType', passengerTypes, 'نوع مسافر'],
+        ['routeScope', transportRouteScopes, 'دامنه مسیر'],
+        ['unit', baggageUnits, 'واحد بار'],
+      ] as const) {
+        if (data[field] === undefined) continue;
+        const value = String(data[field]).trim().toUpperCase();
+        if (!options.has(value))
+          throw new BadRequestException(`${label} معتبر نیست.`);
+        data[field] = value;
+      }
+      if (data.allowance !== undefined) {
+        const allowance = String(data.allowance).trim();
+        if (!/^\d+(\.\d{1,2})?$/.test(allowance) || Number(allowance) <= 0)
+          throw new BadRequestException('مقدار بار باید Decimal مثبت باشد.');
+        data.allowance = allowance;
+      }
+      if (Object.hasOwn(data, 'pieceCount')) {
+        const pieceCount = String(data.pieceCount ?? '').trim();
+        if (!pieceCount) data.pieceCount = null;
+        else if (
+          !Number.isInteger(Number(pieceCount)) ||
+          Number(pieceCount) < 1
+        )
+          throw new BadRequestException(
+            'تعداد قطعه بار باید عدد صحیح مثبت باشد.',
+          );
+        else data.pieceCount = Number(pieceCount);
+      }
+    }
+    if (resource === 'manifest-templates') {
+      for (const [field, options, label] of [
+        ['fileFormat', manifestFileFormats, 'فرمت فایل'],
+        ['publicationStatus', manifestStatuses, 'وضعیت انتشار'],
+      ] as const) {
+        if (data[field] === undefined) continue;
+        const value = String(data[field]).trim().toUpperCase();
+        if (!options.has(value))
+          throw new BadRequestException(`${label} معتبر نیست.`);
+        data[field] = value;
+      }
+      for (const field of ['versionNumber', 'headerRow'] as const) {
+        if (data[field] === undefined) continue;
+        const value = Number(data[field]);
+        if (!Number.isInteger(value) || value < 1)
+          throw new BadRequestException(`${field} باید عدد صحیح مثبت باشد.`);
+        data[field] = value;
+      }
+      for (const field of ['requiredColumns', 'columnOrder'] as const) {
+        if (!Object.hasOwn(data, field)) continue;
+        const values = (
+          Array.isArray(data[field])
+            ? data[field].map(String)
+            : String(data[field] ?? '').split(',')
+        )
+          .map((value) => value.trim())
+          .filter(Boolean);
+        if (!values.length || values.length > 100)
+          throw new BadRequestException(
+            `${field} باید فهرست معتبر ستون‌ها باشد.`,
+          );
+        data[field] = [...new Set(values)];
+      }
+      if (data.fileReferenceId === '') data.fileReferenceId = null;
+      if (
+        data.publicationStatus === 'ACTIVE' &&
+        typeof data.fileReferenceId !== 'string'
+      )
+        throw new BadRequestException(
+          'انتشار قالب فعال فقط با Reference واقعی Documents مجاز است.',
+        );
+    }
+    if (resource === 'train-types' && data.category !== undefined) {
+      const category = String(data.category).trim().toUpperCase();
+      if (!trainCategories.has(category))
+        throw new BadRequestException('دسته قطار معتبر نیست.');
+      data.category = category;
+    }
+    if (resource === 'bus-types' && data.serviceClass !== undefined) {
+      const serviceClass = String(data.serviceClass).trim().toUpperCase();
+      if (!busServiceClasses.has(serviceClass))
+        throw new BadRequestException('کلاس خدمات اتوبوس معتبر نیست.');
+      data.serviceClass = serviceClass;
+    }
+    if (resource === 'train-types' || resource === 'bus-types') {
+      if (Object.hasOwn(data, 'amenities')) {
+        const amenities = (
+          Array.isArray(data.amenities)
+            ? data.amenities.map(String)
+            : String(data.amenities ?? '').split(',')
+        )
+          .map((value) => value.trim())
+          .filter(Boolean);
+        if (
+          amenities.length > 40 ||
+          amenities.some((value) => value.length > 80)
+        )
+          throw new BadRequestException('فهرست امکانات معتبر نیست.');
+        data.amenities = [...new Set(amenities)];
+      }
+    }
+    if (resource === 'baggage-rules' || resource === 'manifest-templates') {
+      const validFrom = data.validFrom
+        ? new Date(String(data.validFrom))
+        : null;
+      const validTo = data.validTo ? new Date(String(data.validTo)) : null;
+      if (!validFrom || Number.isNaN(validFrom.getTime()))
+        throw new BadRequestException('شروع اعتبار معتبر نیست.');
+      if (validTo && (Number.isNaN(validTo.getTime()) || validTo < validFrom))
+        throw new BadRequestException(
+          'پایان اعتبار باید بعد از شروع اعتبار باشد.',
+        );
+      data.validFrom = validFrom;
+      data.validTo = validTo;
     }
     if (resource === 'airports') {
       for (const [field, length, label] of [
@@ -1594,6 +1917,18 @@ export class MasterDataService {
         target: 'organizations',
         role: 'AIRLINE',
       },
+      'baggage-rules': { field: 'airlineId', target: 'airlines' },
+      'manifest-templates': { field: 'airlineId', target: 'airlines' },
+      'rail-companies': {
+        field: 'organizationId',
+        target: 'organizations',
+        role: 'RAIL_OPERATOR',
+      },
+      'bus-companies': {
+        field: 'organizationId',
+        target: 'organizations',
+        role: 'BUS_PROVIDER',
+      },
       brokers: {
         field: 'organizationId',
         target: 'organizations',
@@ -1627,6 +1962,24 @@ export class MasterDataService {
       const chain = await this.repository.find('hotel-chains', data.chainId);
       if (!chain?.isActive)
         throw new BadRequestException('زنجیره هتل فعال یافت نشد.');
+    }
+    if (
+      (resource === 'airlines' ||
+        resource === 'rail-companies' ||
+        resource === 'bus-companies') &&
+      typeof data.countryId === 'string'
+    ) {
+      const country = await this.repository.find('countries', data.countryId);
+      if (!country?.isActive)
+        throw new BadRequestException('کشور فعال برای شرکت حمل‌ونقل یافت نشد.');
+    }
+    if (resource === 'baggage-rules' && typeof data.cabinClassId === 'string') {
+      const cabinClass = await this.repository.find(
+        'cabin-classes',
+        data.cabinClassId,
+      );
+      if (!cabinClass?.isActive)
+        throw new BadRequestException('کلاس پروازی فعال یافت نشد.');
     }
     if (resource === 'bank-branches') {
       if (typeof data.cityId === 'string') {

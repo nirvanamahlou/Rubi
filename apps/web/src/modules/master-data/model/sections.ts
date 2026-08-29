@@ -76,8 +76,19 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
   {
     slug: 'transportation',
     title: 'حمل‌ونقل',
-    description: 'شرکت‌های هواپیمایی و مراجع حمل‌ونقل سفر',
-    resources: ['airlines'],
+    description:
+      'ایرلاین‌ها، هواپیما، کلاس و بار، Manifest و مراجع ریلی و اتوبوسی',
+    resources: [
+      'airlines',
+      'aircraft-types',
+      'cabin-classes',
+      'baggage-rules',
+      'manifest-templates',
+      'rail-companies',
+      'train-types',
+      'bus-companies',
+      'bus-types',
+    ],
     tone: 'blue',
   },
   {

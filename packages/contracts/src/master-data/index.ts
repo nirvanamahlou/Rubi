@@ -1,4 +1,4 @@
-export const MASTER_DATA_CONTRACT_VERSION = 8 as const;
+export const MASTER_DATA_CONTRACT_VERSION = 9 as const;
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 
 export const MASTER_DATA_RESOURCES = [
@@ -14,6 +14,14 @@ export const MASTER_DATA_RESOURCES = [
   'payment-methods',
   'insurers',
   'airlines',
+  'aircraft-types',
+  'cabin-classes',
+  'baggage-rules',
+  'manifest-templates',
+  'rail-companies',
+  'train-types',
+  'bus-companies',
+  'bus-types',
   'hotels',
   'hotel-chains',
   'room-types',
@@ -49,6 +57,18 @@ export type MasterCollaborationStatus =
 export type MasterOrganizationContactChannel =
   'PHONE' | 'WHATSAPP' | 'EMAIL' | 'TELEGRAM' | 'OTHER';
 export type MasterMealServiceCategory = 'MEAL_PLAN' | 'SERVICE';
+export type MasterAircraftBodyType =
+  'NARROW_BODY' | 'WIDE_BODY' | 'TURBOPROP' | 'REGIONAL' | 'OTHER';
+export type MasterCabinType =
+  'ECONOMY' | 'PREMIUM_ECONOMY' | 'BUSINESS' | 'FIRST';
+export type MasterPassengerType = 'ADT' | 'CHD' | 'INF';
+export type MasterBaggageUnit = 'KG' | 'PC';
+export type MasterTransportRouteScope = 'ALL' | 'DOMESTIC' | 'INTERNATIONAL';
+export type MasterManifestFileFormat = 'XLSX' | 'CSV' | 'XML' | 'JSON';
+export type MasterManifestTemplateStatus = 'DRAFT' | 'ACTIVE' | 'EXPIRED';
+export type MasterTrainCategory =
+  'SLEEPER' | 'EXPRESS' | 'SALOON' | 'LUXURY' | 'OTHER';
+export type MasterBusServiceClass = 'STANDARD' | 'VIP' | 'LUXURY' | 'OTHER';
 
 export type MasterDataSortField = 'name' | 'code' | 'updatedAt';
 export type MasterDataSortDirection = 'asc' | 'desc';

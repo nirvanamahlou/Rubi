@@ -61,6 +61,34 @@ const configs: Partial<
       payload: 'id',
       requiredRole: 'AIRLINE',
     },
+    countryId: { target: 'countries', payload: 'id', optional: true },
+  },
+  'baggage-rules': {
+    airlineId: { target: 'airlines', payload: 'id' },
+    cabinClassId: {
+      target: 'cabin-classes',
+      payload: 'id',
+      optional: true,
+    },
+  },
+  'manifest-templates': {
+    airlineId: { target: 'airlines', payload: 'id' },
+  },
+  'rail-companies': {
+    organizationId: {
+      target: 'organizations',
+      payload: 'id',
+      requiredRole: 'RAIL_OPERATOR',
+    },
+    countryId: { target: 'countries', payload: 'id' },
+  },
+  'bus-companies': {
+    organizationId: {
+      target: 'organizations',
+      payload: 'id',
+      requiredRole: 'BUS_PROVIDER',
+    },
+    countryId: { target: 'countries', payload: 'id' },
   },
   brokers: {
     organizationId: {
@@ -140,6 +168,7 @@ export const ORGANIZATION_ROLE_OPTIONS = [
   ['HOTEL_PROVIDER', 'تأمین‌کننده هتل'],
   ['INSURANCE_PROVIDER', 'بیمه‌گر'],
   ['BUS_PROVIDER', 'تأمین‌کننده اتوبوس'],
+  ['RAIL_OPERATOR', 'شرکت ریلی'],
   ['TOUR_OPERATOR', 'مجری تور'],
   ['BROKER', 'کارگزار'],
 ] as const;
