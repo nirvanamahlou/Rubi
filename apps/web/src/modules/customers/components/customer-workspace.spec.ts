@@ -89,9 +89,12 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain("const kind = 'person' as const");
   });
 
-  it('opens Customer 360 immediately and exports authorized filtered rows to Excel', () => {
+  it('opens Customer 360 immediately and exports every authorized filtered row to Excel', () => {
     expect(source).toContain('در حال دریافت اطلاعات مشتری');
-    expect(source).toContain('exportVisibleCustomers');
+    expect(source).toContain('exportFilteredCustomers');
+    expect(source).toContain('const exportPageSize = 100');
+    expect(source).toContain('exportPage <= exportPageCount');
+    expect(source).toContain('همه ${exportRecords.length.toLocaleString');
     expect(source).toContain('customer-import-template.xlsx');
     expect(source).toContain('parseCustomerXlsx(file)');
     expect(source).toContain('emailIsValid');
@@ -101,11 +104,19 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).not.toContain('<Button asChild disabled={importing}');
     expect(source).toContain('نام مشتری');
     const exportSource = source.slice(
-      source.indexOf('function exportVisibleCustomers'),
+      source.indexOf('async function exportFilteredCustomers'),
       source.indexOf('async function importCustomers'),
     );
     expect(exportSource).not.toContain('maskedPrimaryContact');
     expect(source).toContain('اطلاعات تماس در فایل قرار نگرفت');
+  });
+
+  it('shows twenty people per page with a complete page position and masked mobile number', () => {
+    expect(source).toContain('const pageSize = 20');
+    expect(source).toContain('Math.max(1, Math.ceil(total / pageSize))');
+    expect(source).toContain('نفر در هر صفحه');
+    expect(source).toContain('شماره همراه (ماسک‌شده)');
+    expect(source).toContain("record.maskedPrimaryContact ?? 'بدون تماس'");
   });
 
   it('renders filter-scoped KPI cards without inventing Sales purchase data', () => {

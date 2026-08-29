@@ -75,7 +75,6 @@ import {
   ErrorState,
   FilterBar,
   PageHeader,
-  PaginationShell,
   Skeleton,
 } from '@/components/ui/surfaces';
 import { masterDataApi } from '@/modules/master-data/api/client';
@@ -92,7 +91,8 @@ import {
   parseCustomerXlsx,
 } from '../model/customer-xlsx';
 
-const pageSize = 25;
+const pageSize = 20;
+const exportPageSize = 100;
 const emptyMetrics: CustomerListMetrics = {
   totalCustomers: 0,
   totalPassengers: 0,
@@ -1935,6 +1935,7 @@ export function CustomerWorkspace() {
       : 'overview',
   );
   const [notice, setNotice] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<{
     completed: number;
@@ -2105,31 +2106,74 @@ export function CustomerWorkspace() {
     }
   }
 
-  function exportVisibleCustomers() {
-    const rows = records.map((record) => [
-      record.displayName,
-      record.status === 'active' ? 'فعال' : 'غیرفعال',
-      record.roles
-        .map((item) => (item === 'customer' ? 'مشتری' : 'مسافر'))
-        .join('، '),
-      record.currentConsentStatus === 'granted'
-        ? 'ثبت‌شده'
-        : record.currentConsentStatus === 'revoked'
-          ? 'لغوشده'
-          : 'ثبت‌نشده',
-      formatCustomerDate(record.createdAt, calendarMode),
-      formatCustomerDate(record.updatedAt, calendarMode),
-    ]);
-    downloadCustomerXlsx(
-      `customers-${new Date().toISOString().slice(0, 10)}.xlsx`,
-      [
-        ['نام مشتری', 'وضعیت', 'نقش‌ها', 'رضایت', 'تاریخ ایجاد', 'آخرین تغییر'],
-        ...rows,
-      ],
-    );
-    setNotice(
-      `خروجی XLSX صفحه فعلی برای ${records.length.toLocaleString('fa-IR')} رکورد فیلترشده ساخته شد؛ اطلاعات تماس در فایل قرار نگرفت.`,
-    );
+  async function exportFilteredCustomers() {
+    setExporting(true);
+    setNotice(null);
+    try {
+      const exportQuery = {
+        search,
+        kind,
+        status,
+        role,
+        branchId: 'all' as const,
+        acquaintanceMethodId,
+        createdFrom: createdFrom || null,
+        createdTo: createdTo || null,
+        sortBy,
+        sortDirection,
+        page: 1,
+        pageSize: exportPageSize,
+      };
+      const firstPage = await customersApi.list(exportQuery);
+      const exportRecords = [...firstPage.data];
+      const exportPageCount = Math.ceil(firstPage.meta.total / exportPageSize);
+      for (let exportPage = 2; exportPage <= exportPageCount; exportPage += 1) {
+        const response = await customersApi.list({
+          ...exportQuery,
+          page: exportPage,
+        });
+        exportRecords.push(...response.data);
+      }
+      const rows = exportRecords.map((record) => [
+        record.displayName,
+        record.status === 'active' ? 'فعال' : 'غیرفعال',
+        record.roles
+          .map((item) => (item === 'customer' ? 'مشتری' : 'مسافر'))
+          .join('، '),
+        record.currentConsentStatus === 'granted'
+          ? 'ثبت‌شده'
+          : record.currentConsentStatus === 'revoked'
+            ? 'لغوشده'
+            : 'ثبت‌نشده',
+        formatCustomerDate(record.createdAt, calendarMode),
+        formatCustomerDate(record.updatedAt, calendarMode),
+      ]);
+      downloadCustomerXlsx(
+        `customers-${new Date().toISOString().slice(0, 10)}.xlsx`,
+        [
+          [
+            'نام مشتری',
+            'وضعیت',
+            'نقش‌ها',
+            'رضایت',
+            'تاریخ ایجاد',
+            'آخرین تغییر',
+          ],
+          ...rows,
+        ],
+      );
+      setNotice(
+        `خروجی XLSX همه ${exportRecords.length.toLocaleString('fa-IR')} رکورد مطابق فیلترهای فعال ساخته شد؛ اطلاعات تماس در فایل قرار نگرفت.`,
+      );
+    } catch (error) {
+      setNotice(
+        error instanceof Error
+          ? error.message
+          : 'ساخت خروجی کامل مشتریان ناموفق بود.',
+      );
+    } finally {
+      setExporting(false);
+    }
   }
 
   async function importCustomers(file: File) {
@@ -2303,13 +2347,13 @@ export function CustomerWorkspace() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
-            disabled={records.length === 0}
-            onClick={exportVisibleCustomers}
+            disabled={records.length === 0 || exporting}
+            onClick={() => void exportFilteredCustomers()}
             size="lg"
             variant="outline"
           >
             <Download className="size-4" />
-            خروجی Excel
+            {exporting ? 'در حال ساخت خروجی کامل…' : 'خروجی Excel'}
           </Button>
           <Button
             onClick={() =>
@@ -2532,7 +2576,7 @@ export function CustomerWorkspace() {
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
                 <th className="p-4 text-start">مشتری یا مسافر</th>
-                <th className="p-4 text-start">شماره تماس</th>
+                <th className="p-4 text-start">شماره همراه (ماسک‌شده)</th>
                 <th className="p-4 text-start">وضعیت و نقش</th>
                 <th className="p-4 text-start">رضایت</th>
                 <th className="p-4 text-start">آخرین تغییر</th>
@@ -2635,11 +2679,13 @@ export function CustomerWorkspace() {
           </table>
         </Card>
       )}
-      <div className="flex items-center justify-between gap-3">
-        <PaginationShell
-          currentPage={page}
-          totalLabel={`${total.toLocaleString('fa-IR')} رکورد`}
-        />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          صفحه {page.toLocaleString('fa-IR')} از{' '}
+          {Math.max(1, Math.ceil(total / pageSize)).toLocaleString('fa-IR')} ·{' '}
+          {total.toLocaleString('fa-IR')} نفر ·{' '}
+          {pageSize.toLocaleString('fa-IR')} نفر در هر صفحه
+        </p>
         <div className="flex gap-2">
           <Button
             disabled={page === 1}
