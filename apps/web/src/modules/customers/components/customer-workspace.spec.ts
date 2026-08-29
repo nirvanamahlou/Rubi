@@ -85,6 +85,14 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain("const kind = 'person' as const");
   });
 
+  it('opens Customer 360 immediately and exports authorized filtered rows to Excel', () => {
+    expect(source).toContain('در حال دریافت اطلاعات مشتری');
+    expect(source).toContain('downloadCustomerExcel(records, calendarMode)');
+    expect(source).toContain('application/vnd.ms-excel');
+    expect(source).toContain('تماس ماسک‌شده');
+    expect(source).not.toContain('async function exportFilteredCustomers');
+  });
+
   it('renders filter-scoped KPI cards without inventing Sales purchase data', () => {
     expect(source).toContain('metrics.totalCustomers');
     expect(source).toContain('metrics.totalPassengers');

@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   Ban,
   CheckCircle2,
+  Download,
   Eye,
   FilePenLine,
   MapPin,
@@ -92,6 +93,58 @@ const emptyMetrics: CustomerListMetrics = {
   returningCustomerRate: null,
   returningCustomerRateStatus: 'awaiting-sales-public-contract',
 };
+
+function spreadsheetCell(value: string) {
+  const escaped = value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+  return `<Cell><Data ss:Type="String">${escaped}</Data></Cell>`;
+}
+
+function downloadCustomerExcel(
+  records: readonly CustomerSummary[],
+  calendarMode: CustomerCalendarMode,
+) {
+  const headers = [
+    'نام مشتری',
+    'تماس ماسک‌شده',
+    'وضعیت',
+    'نقش‌ها',
+    'رضایت',
+    'آخرین تغییر',
+  ];
+  const rows = records.map((record) => [
+    record.displayName,
+    record.maskedPrimaryContact ?? 'بدون تماس',
+    record.status === 'active' ? 'فعال' : 'غیرفعال',
+    record.roles
+      .map((role) => (role === 'customer' ? 'مشتری' : 'مسافر'))
+      .join('، '),
+    record.currentConsentStatus === 'granted'
+      ? 'ثبت‌شده'
+      : record.currentConsentStatus === 'revoked'
+        ? 'لغوشده'
+        : 'ثبت‌نشده',
+    formatCustomerDate(record.updatedAt, calendarMode),
+  ]);
+  const table = [headers, ...rows]
+    .map(
+      (row) =>
+        `<Row>${row.map((value) => spreadsheetCell(value)).join('')}</Row>`,
+    )
+    .join('');
+  const workbook = `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Customers"><Table>${table}</Table></Worksheet></Workbook>`;
+  const url = URL.createObjectURL(
+    new Blob([workbook], { type: 'application/vnd.ms-excel;charset=utf-8' }),
+  );
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `customers-${new Date().toISOString().slice(0, 10)}.xls`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
 type RequestState =
   'loading' | 'ready' | 'error' | 'unauthorized' | 'forbidden';
 type FormMode = 'create' | 'view' | 'edit';
@@ -1861,16 +1914,20 @@ export function CustomerWorkspace() {
 
   async function open(mode: FormMode, id?: string) {
     if (id) {
+      setSelected(undefined);
+      setSelectedId(id);
+      setActiveTab('overview');
+      setFormMode(mode);
       try {
         setSelected((await customersApi.detail(id)).data);
-        setSelectedId(id);
-        setActiveTab('overview');
       } catch (error) {
         setNotice(
           error instanceof Error
             ? error.message
             : 'دریافت Customer 360 ناموفق بود.',
         );
+        setFormMode(null);
+        setSelectedId(null);
         return;
       }
     } else {
@@ -1932,15 +1989,7 @@ export function CustomerWorkspace() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        actions={
-          <Button onClick={() => void open('create')}>
-            <Plus className="size-4" />
-            ایجاد مشتری
-          </Button>
-        }
-        title="مشتریان و مسافران"
-      />
+      <PageHeader title="مشتریان و مسافران" />
       <section
         aria-label="شاخص‌های مشتریان"
         className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
@@ -2018,10 +2067,26 @@ export function CustomerWorkspace() {
             کنید.
           </p>
         </div>
-        <Button onClick={() => void open('create')} size="lg">
-          <Plus className="size-4" />
-          بازکردن فرم ثبت
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            disabled={records.length === 0}
+            onClick={() => {
+              downloadCustomerExcel(records, calendarMode);
+              setNotice(
+                `خروجی Excel صفحه فعلی برای ${records.length.toLocaleString('fa-IR')} رکورد فیلترشده ساخته شد.`,
+              );
+            }}
+            size="lg"
+            variant="outline"
+          >
+            <Download className="size-4" />
+            خروجی Excel
+          </Button>
+          <Button onClick={() => void open('create')} size="lg">
+            <Plus className="size-4" />
+            بازکردن فرم ثبت
+          </Button>
+        </div>
       </Card>
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-4">
@@ -2348,10 +2413,21 @@ export function CustomerWorkspace() {
           {...(selected ? { customer: selected } : {})}
         />
       ) : formMode ? (
-        <Card aria-label="در حال دریافت Customer 360" className="space-y-3 p-4">
-          <Skeleton className="h-8 w-1/3" />
-          <Skeleton className="h-40 w-full" />
-        </Card>
+        <Dialog open>
+          <DialogContent className="start-auto left-1/2 max-w-[60rem] overflow-hidden p-6">
+            <DialogTitle>در حال دریافت اطلاعات مشتری</DialogTitle>
+            <DialogDescription>
+              اطلاعات مجاز Customer 360 در حال بارگذاری است.
+            </DialogDescription>
+            <div
+              aria-label="در حال دریافت Customer 360"
+              className="mt-5 space-y-3"
+            >
+              <Skeleton className="h-8 w-1/3" />
+              <Skeleton className="h-40 w-full" />
+            </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
     </div>
   );
