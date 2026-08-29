@@ -87,6 +87,7 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('value: companion.email.trim().toLowerCase()');
     expect(source).toContain('مدارک سفر مسافر');
     expect(source).toContain("const kind = 'person' as const");
+    expect(source).not.toContain('customer-national-id');
   });
 
   it('opens Customer 360 immediately and exports every authorized filtered row to Excel', () => {
