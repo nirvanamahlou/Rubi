@@ -66,7 +66,10 @@ import {
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { customersApi, CustomersApiError } from '../api/client';
 import { contactDisplayValue } from '../model/customer';
-import { customerListFailureState } from './customer-workspace-state';
+import {
+  customerListFailureState,
+  fetchCustomerConflictSnapshot,
+} from './customer-workspace-state';
 
 const pageSize = 25;
 type RequestState =
@@ -112,7 +115,7 @@ function customerDraft(customer?: CustomerDetail): CustomerMutationRequest {
 
 function CustomerDrawer({
   mode,
-  customer,
+  customer: initialCustomer,
   onClose,
   onSaved,
 }: {
@@ -122,10 +125,14 @@ function CustomerDrawer({
   onSaved: (message: string, detail: CustomerDetail) => Promise<void>;
 }) {
   const [draft, setDraft] = useState<CustomerMutationRequest>(() =>
-    customerDraft(customer),
+    customerDraft(initialCustomer),
+  );
+  const [customer, setCustomer] = useState<CustomerDetail | undefined>(
+    initialCustomer,
   );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [conflictRefreshPending, setConflictRefreshPending] = useState(false);
   const [masters, setMasters] = useState<{
     organizations: readonly MasterDataRecord[];
     acquaintanceMethods: readonly MasterDataRecord[];
@@ -165,6 +172,22 @@ function CustomerDrawer({
   );
   const readonly = mode === 'view';
   const displayedCustomer = revealedDetail ?? customer;
+
+  async function refreshAfterConflict(customerId: string) {
+    const result = await fetchCustomerConflictSnapshot(
+      customerId,
+      draft,
+      async (id) => (await customersApi.detail(id)).data,
+    );
+    setMessage(result.message);
+    if (result.status === 'refreshed') {
+      setCustomer(result.customer);
+      setRevealedDetail(null);
+      setConflictRefreshPending(false);
+      return;
+    }
+    setConflictRefreshPending(true);
+  }
 
   useEffect(() => {
     let active = true;
@@ -229,13 +252,17 @@ function CustomerDrawer({
       setRevealedDetail(null);
       await onSaved(success, response.data);
     } catch (error) {
-      setMessage(
-        error instanceof CustomersApiError && error.status === 409
-          ? 'نسخه رکورد تغییر کرده است؛ داده تازه دریافت شد.'
-          : error instanceof Error
-            ? error.message
-            : 'عملیات ناموفق بود.',
-      );
+      if (
+        error instanceof CustomersApiError &&
+        error.status === 409 &&
+        customer
+      ) {
+        await refreshAfterConflict(customer.id);
+      } else {
+        setMessage(
+          error instanceof Error ? error.message : 'عملیات ناموفق بود.',
+        );
+      }
     } finally {
       setBusy(false);
     }
@@ -418,6 +445,18 @@ function CustomerDrawer({
               description={message}
               title="نتیجه عملیات"
             />
+          ) : null}
+          {conflictRefreshPending && customer ? (
+            <Button
+              className="mt-3"
+              disabled={busy}
+              onClick={() => void refreshAfterConflict(customer.id)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              تلاش دوباره برای دریافت نسخه جدید
+            </Button>
           ) : null}
           {masterWarning ? (
             <Alert
