@@ -132,6 +132,26 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 - Draft PR #36 با Base اولیه `codex/pc-b-master-data-transport` ایجاد شده است؛ بعد از
   Merge والد، Base مطابق زنجیره به `develop` تغییر می‌کند.
 
+## Slice پشته‌ای بیمه — MASTER-003J
+
+- مسیر `/master-data/insurance` سه نمای شرکت‌های بیمه، طرح‌های بیمه و پوشش‌ها را با
+  KPIهای دقیق ماکاپ، Search/Filter/Sort/Pagination، Create/View/Edit، Active/Inactive،
+  Export و جزئیات Popup ارائه می‌کند؛ صفحه مستقل پروفایل ساخته نشده است.
+- Insurer فقط به Organization دارای نقش `INSURANCE_PROVIDER` متصل می‌شود. Country،
+  Currency، Plan و Coverage با FK واقعی و `ON DELETE RESTRICT` به هم متصل‌اند و
+  Legal Entity selector این داده‌های مشترک را فیلتر نمی‌کند.
+- Migrationهای افزایشی `20260829210000_master_data_insurance` و
+  `20260829211000_master_data_insurance_version_constraint` بدون عملیات مخرب،
+  محدودیت واقعی سن، بازه اعتبار، مبلغ، فرانشیز و Optimistic Version را اعمال می‌کنند.
+- Contract عمومی به `master-data.v11` و ۴۱ Resource ارتقا یافت؛ Backend واقعی،
+  Permissionهای موجود Master Data، Audit و Summary واقعی هر سه کاتالوگ را پوشش می‌دهند.
+- قیمت‌گذاری بیمه، صدور بیمه‌نامه، مسافر، Reservation، Provider و Documents خارج از
+  این Aggregate باقی مانده‌اند؛ Query مستقیم به ماژول‌های مالک یا داده ساختگی Seed
+  اضافه نشده است.
+- Branch `codex/pc-b-master-data-insurance` روی PR #36 پشته می‌شود و پیش از همه
+  والدهای خود Merge نمی‌شود؛ بعد از Merge والد، Base مطابق زنجیره به `develop`
+  تغییر می‌کند.
+
 ## Import واقعی هتل — HOTEL_IMPORT_V1
 
 - دو Endpoint واقعی `POST /master-data/hotel-imports/preview` و

@@ -1,4 +1,4 @@
-export const MASTER_DATA_CONTRACT_VERSION = 10 as const;
+export const MASTER_DATA_CONTRACT_VERSION = 11 as const;
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 
 export const MASTER_DATA_RESOURCES = [
@@ -13,6 +13,8 @@ export const MASTER_DATA_RESOURCES = [
   'bank-branches',
   'payment-methods',
   'insurers',
+  'insurance-plans',
+  'insurance-coverages',
   'airlines',
   'aircraft-types',
   'cabin-classes',
@@ -106,6 +108,9 @@ export interface MasterDataListQuery {
   mealServiceCategory?: MasterMealServiceCategory;
   facilityCategory?: string;
   saleableOnly?: boolean;
+  insurerId?: string;
+  currencyId?: string;
+  destinationRegion?: string;
 }
 
 export interface MasterDataRecord {
@@ -258,6 +263,27 @@ export interface MasterAccommodationSummary {
     needsReview: number;
   };
 }
+
+export interface MasterInsuranceSummary {
+  insurers: {
+    total: number;
+    active: number;
+    countries: number;
+    missingLogo: number;
+  };
+  plans: {
+    total: number;
+    active: number;
+    expiringSoon: number;
+    destinations: number;
+  };
+  coverages: {
+    total: number;
+    active: number;
+    currencies: number;
+    needsReview: number;
+  };
+}
 export type MasterHotelImportDuplicateBehavior = 'SKIP' | 'UPDATE';
 
 export interface MasterHotelImportIssue {
@@ -348,6 +374,7 @@ export const masterDataEndpoints = {
     `${MASTER_DATA_API_PREFIX}/organizations-suppliers/summary` as const,
   accommodationSummary:
     `${MASTER_DATA_API_PREFIX}/accommodation/summary` as const,
+  insuranceSummary: `${MASTER_DATA_API_PREFIX}/insurance/summary` as const,
   hotelImportPreview:
     `${MASTER_DATA_API_PREFIX}/hotel-imports/preview` as const,
   hotelImportCommit: (sessionId: string) =>

@@ -57,6 +57,8 @@ const resourceCodePrefixes: Record<MasterDataResource, string> = {
   'bank-branches': 'BANK_BRANCH',
   'payment-methods': 'PAYMENT_METHOD',
   insurers: 'INS',
+  'insurance-plans': 'INS_PLAN',
+  'insurance-coverages': 'INS_COVERAGE',
   airlines: 'AIR',
   'aircraft-types': 'AIRCRAFT',
   'cabin-classes': 'CABIN',
@@ -271,7 +273,36 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'requiresManualApproval',
     'displayOrder',
   ],
-  insurers: ['code', 'name', 'organizationId'],
+  insurers: [
+    'code',
+    'name',
+    'englishName',
+    'organizationId',
+    'countryId',
+    'logoFileReference',
+  ],
+  'insurance-plans': [
+    'code',
+    'name',
+    'englishName',
+    'insurerId',
+    'destinationRegion',
+    'minimumAge',
+    'maximumAge',
+    'validFrom',
+    'validTo',
+    'description',
+    'coverageIds',
+  ],
+  'insurance-coverages': [
+    'code',
+    'name',
+    'englishName',
+    'currencyId',
+    'coverageLimit',
+    'deductibleAmount',
+    'description',
+  ],
   airlines: [
     'code',
     'name',
@@ -461,7 +492,16 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   banks: ['code', 'name', 'englishName', 'countryId'],
   'bank-branches': ['code', 'name', 'bankId', 'cityId'],
   'payment-methods': ['code', 'name', 'channel', 'direction'],
-  insurers: ['name', 'organizationId'],
+  insurers: ['name', 'englishName', 'organizationId', 'countryId'],
+  'insurance-plans': [
+    'name',
+    'insurerId',
+    'destinationRegion',
+    'minimumAge',
+    'validFrom',
+    'coverageIds',
+  ],
+  'insurance-coverages': ['name', 'currencyId', 'coverageLimit'],
   airlines: ['code', 'name', 'organizationId'],
   'aircraft-types': ['name', 'manufacturer', 'model', 'bodyType'],
   'cabin-classes': ['name', 'bookingCode', 'cabinType'],
@@ -557,6 +597,9 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     'mealServiceCategory',
     'facilityCategory',
     'saleableOnly',
+    'insurerId',
+    'currencyId',
+    'destinationRegion',
   ];
   if (
     Object.keys(input.filters).some((key) => !allowedFilterKeys.includes(key))
@@ -849,6 +892,10 @@ export class MasterDataService {
     return { data: await this.repository.accommodationSummary() };
   }
 
+  async insuranceSummary() {
+    return { data: await this.repository.insuranceSummary() };
+  }
+
   async create(
     resourceValue: string,
     values: Record<string, string | number | readonly string[] | null>,
@@ -1099,6 +1146,9 @@ export class MasterDataService {
         'train-types',
         'bus-companies',
         'bus-types',
+        'insurers',
+        'insurance-plans',
+        'insurance-coverages',
         'acquaintance-methods',
         'lead-sources',
         'sales-channels',
@@ -1115,6 +1165,7 @@ export class MasterDataService {
         'hotelRules',
         'usageDescription',
         'category',
+        'destinationRegion',
       ]) {
         if (!Object.hasOwn(data, field)) continue;
         const value = String(data[field] ?? '').trim();
@@ -1129,6 +1180,7 @@ export class MasterDataService {
         'iconFileReference',
         'fileReferenceId',
         'cabinClassId',
+        'countryId',
       ]) {
         if (data[field] === '') data[field] = null;
       }
@@ -1234,6 +1286,10 @@ export class MasterDataService {
       if (data[optionalReference] === '') data[optionalReference] = null;
     }
     if (data.chainId === '') data.chainId = null;
+    if (resource === 'insurance-plans' && data.validTo === '')
+      data.validTo = null;
+    if (resource === 'insurance-plans' && data.maximumAge === '')
+      data.maximumAge = null;
     if (resource === 'suppliers' || resource === 'brokers') {
       for (const optionalReference of ['countryId', 'cityId']) {
         if (data[optionalReference] === '') data[optionalReference] = null;
@@ -1254,6 +1310,8 @@ export class MasterDataService {
       'airlineId',
       'cabinClassId',
       'fileReferenceId',
+      'insurerId',
+      'currencyId',
     ]) {
       if (
         typeof data[field] === 'string' &&
@@ -1415,6 +1473,117 @@ export class MasterDataService {
           throw new BadRequestException('فهرست امکانات معتبر نیست.');
         data.amenities = [...new Set(amenities)];
       }
+    }
+    if (resource === 'insurers') {
+      if (data.countryId === null)
+        throw new BadRequestException('کشور شرکت بیمه الزامی است.');
+      if (data.englishName === null)
+        throw new BadRequestException('نام انگلیسی شرکت بیمه الزامی است.');
+    }
+    if (resource === 'insurance-plans') {
+      if (data.destinationRegion === null)
+        throw new BadRequestException('مقصد یا منطقه طرح الزامی است.');
+      const existing =
+        partial && entityId
+          ? await this.repository.find('insurance-plans', entityId)
+          : null;
+      const minimumAge = Number(data.minimumAge ?? existing?.minimumAge ?? 0);
+      const maximumAgeValue = data.maximumAge ?? existing?.maximumAge ?? null;
+      const maximumAge =
+        maximumAgeValue === null || maximumAgeValue === ''
+          ? null
+          : Number(maximumAgeValue);
+      if (!Number.isInteger(minimumAge) || minimumAge < 0 || minimumAge > 130)
+        throw new BadRequestException(
+          'حداقل سن باید عدد صحیح بین صفر تا ۱۳۰ باشد.',
+        );
+      if (
+        maximumAge !== null &&
+        (!Number.isInteger(maximumAge) ||
+          maximumAge < minimumAge ||
+          maximumAge > 130)
+      )
+        throw new BadRequestException(
+          'حداکثر سن باید عدد صحیح بین حداقل سن و ۱۳۰ باشد.',
+        );
+      if (Object.hasOwn(data, 'minimumAge')) data.minimumAge = minimumAge;
+      if (Object.hasOwn(data, 'maximumAge')) data.maximumAge = maximumAge;
+
+      const validFromValue = data.validFrom ?? existing?.validFrom;
+      const validToValue = data.validTo ?? existing?.validTo ?? null;
+      const validFrom = validFromValue
+        ? new Date(String(validFromValue))
+        : null;
+      const validTo = validToValue ? new Date(String(validToValue)) : null;
+      if (!validFrom || Number.isNaN(validFrom.getTime()))
+        throw new BadRequestException('شروع اعتبار طرح معتبر نیست.');
+      if (validTo && (Number.isNaN(validTo.getTime()) || validTo < validFrom))
+        throw new BadRequestException(
+          'پایان اعتبار طرح باید بعد از شروع اعتبار باشد.',
+        );
+      if (Object.hasOwn(data, 'validFrom')) data.validFrom = validFrom;
+      if (Object.hasOwn(data, 'validTo')) data.validTo = validTo;
+
+      if (Object.hasOwn(data, 'coverageIds')) {
+        const coverageIds = referenceIds(data.coverageIds, 'پوشش‌های طرح');
+        if (!coverageIds.length)
+          throw new BadRequestException('حداقل یک پوشش فعال الزامی است.');
+        const coverages = await Promise.all(
+          coverageIds.map((id) =>
+            this.repository.find('insurance-coverages', id),
+          ),
+        );
+        if (coverages.some((coverage) => !coverage?.isActive))
+          throw new BadRequestException('یک یا چند پوشش بیمه فعال یافت نشد.');
+        delete data.coverageIds;
+        data.coverages = partial
+          ? {
+              deleteMany: {},
+              create: coverageIds.map((coverageId) => ({
+                coverageId,
+                assignedByUserId: actorUserId,
+              })),
+            }
+          : {
+              create: coverageIds.map((coverageId) => ({
+                coverageId,
+                assignedByUserId: actorUserId,
+              })),
+            };
+      }
+    }
+    if (resource === 'insurance-coverages') {
+      const normalizedAmounts: Record<string, string> = {};
+      for (const [field, positive, label] of [
+        ['coverageLimit', true, 'سقف تعهد'],
+        ['deductibleAmount', false, 'فرانشیز'],
+      ] as const) {
+        if (!Object.hasOwn(data, field)) continue;
+        const value = String(data[field] ?? '').trim();
+        if (
+          !/^\d{1,14}(?:\.\d{1,10})?$/.test(value) ||
+          (positive ? Number(value) <= 0 : Number(value) < 0)
+        )
+          throw new BadRequestException(
+            `${label} باید Decimal ${positive ? 'مثبت' : 'نامنفی'} با حداکثر ۱۰ رقم اعشار باشد.`,
+          );
+        normalizedAmounts[field] = value;
+        data[field] = value;
+      }
+      const existing =
+        partial && entityId
+          ? await this.repository.find('insurance-coverages', entityId)
+          : null;
+      const coverageLimit = Number(
+        normalizedAmounts.coverageLimit ?? existing?.coverageLimit,
+      );
+      const deductibleAmount = Number(
+        normalizedAmounts.deductibleAmount ?? existing?.deductibleAmount ?? 0,
+      );
+      if (deductibleAmount > coverageLimit)
+        throw new BadRequestException(
+          'فرانشیز نمی‌تواند بیشتر از سقف تعهد باشد.',
+        );
     }
     if (
       [
@@ -1970,6 +2139,14 @@ export class MasterDataService {
         target: 'organizations',
         role: 'INSURANCE_PROVIDER',
       },
+      'insurance-plans': {
+        field: 'insurerId',
+        target: 'insurers',
+      },
+      'insurance-coverages': {
+        field: 'currencyId',
+        target: 'currencies',
+      },
       airlines: {
         field: 'organizationId',
         target: 'organizations',
@@ -2030,6 +2207,11 @@ export class MasterDataService {
       const country = await this.repository.find('countries', data.countryId);
       if (!country?.isActive)
         throw new BadRequestException('کشور فعال برای شرکت حمل‌ونقل یافت نشد.');
+    }
+    if (resource === 'insurers' && typeof data.countryId === 'string') {
+      const country = await this.repository.find('countries', data.countryId);
+      if (!country?.isActive)
+        throw new BadRequestException('کشور فعال برای شرکت بیمه یافت نشد.');
     }
     if (resource === 'baggage-rules' && typeof data.cabinClassId === 'string') {
       const cabinClass = await this.repository.find(

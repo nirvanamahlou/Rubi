@@ -48,6 +48,9 @@ export const masterDataListQuerySchema = z.object({
   mealServiceCategory: z.enum(['MEAL_PLAN', 'SERVICE']).optional(),
   facilityCategory: z.string().trim().max(80).optional(),
   saleableOnly: z.boolean().optional(),
+  insurerId: z.string().uuid().optional(),
+  currencyId: z.string().uuid().optional(),
+  destinationRegion: z.string().trim().max(160).optional(),
 });
 
 export const masterDataExportRequestSchema = z.object({
@@ -156,6 +159,9 @@ export function serializeMasterDataListQuery(query: MasterDataListQuery) {
     'chainId',
     'mealServiceCategory',
     'facilityCategory',
+    'insurerId',
+    'currencyId',
+    'destinationRegion',
   ] as const) {
     const value = query[field];
     if (value) params.set(field, value);

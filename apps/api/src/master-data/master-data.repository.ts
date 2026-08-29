@@ -78,6 +78,8 @@ const delegateNames: Record<MasterDataResource, string> = {
   'bank-branches': 'masterBankBranch',
   'payment-methods': 'masterPaymentMethod',
   insurers: 'masterInsurer',
+  'insurance-plans': 'masterInsurancePlan',
+  'insurance-coverages': 'masterInsuranceCoverage',
   airlines: 'masterAirline',
   'aircraft-types': 'masterAircraftType',
   'cabin-classes': 'masterCabinClass',
@@ -120,6 +122,8 @@ const nameFields: Record<MasterDataResource, string> = {
   'bank-branches': 'name',
   'payment-methods': 'name',
   insurers: 'name',
+  'insurance-plans': 'name',
+  'insurance-coverages': 'name',
   airlines: 'name',
   'aircraft-types': 'name',
   'cabin-classes': 'name',
@@ -162,6 +166,8 @@ const codeFields: Record<MasterDataResource, string> = {
   'bank-branches': 'code',
   'payment-methods': 'code',
   insurers: 'code',
+  'insurance-plans': 'code',
+  'insurance-coverages': 'code',
   airlines: 'code',
   'aircraft-types': 'code',
   'cabin-classes': 'code',
@@ -203,7 +209,15 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
   banks: ['name', 'englishName', 'code', 'swiftCode'],
   'bank-branches': ['name', 'englishName', 'code', 'address', 'phone'],
   'payment-methods': ['name', 'englishName', 'code', 'description'],
-  insurers: ['name', 'code'],
+  insurers: ['name', 'englishName', 'code'],
+  'insurance-plans': [
+    'name',
+    'englishName',
+    'code',
+    'destinationRegion',
+    'description',
+  ],
+  'insurance-coverages': ['name', 'englishName', 'code', 'description'],
   airlines: ['name', 'englishName', 'code', 'icaoCode'],
   'aircraft-types': ['name', 'englishName', 'code', 'manufacturer', 'model'],
   'cabin-classes': ['name', 'englishName', 'code', 'bookingCode'],
@@ -244,6 +258,19 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'exchange-rates')
     return { fromCurrency: true, toCurrency: true };
   if (resource === 'organizations') return { roles: true };
+  if (resource === 'insurers')
+    return {
+      organization: true,
+      country: true,
+      _count: { select: { plans: true } },
+    };
+  if (resource === 'insurance-plans')
+    return {
+      insurer: true,
+      coverages: { include: { coverage: true } },
+    };
+  if (resource === 'insurance-coverages')
+    return { currency: true, _count: { select: { plans: true } } };
   if (resource === 'airlines') return { organization: true, country: true };
   if (resource === 'baggage-rules') return { airline: true, cabinClass: true };
   if (resource === 'manifest-templates') return { airline: true };
@@ -329,6 +356,8 @@ export function toMasterDataRecord(
   const airport = row.airport as Record<string, unknown> | undefined;
   const bank = row.bank as Record<string, unknown> | undefined;
   const organization = row.organization as Record<string, unknown> | undefined;
+  const insurer = row.insurer as Record<string, unknown> | undefined;
+  const currency = row.currency as Record<string, unknown> | undefined;
   const airline = row.airline as Record<string, unknown> | undefined;
   const cabinClass = row.cabinClass as Record<string, unknown> | undefined;
   const services = row.services as
@@ -339,6 +368,8 @@ export function toMasterDataRecord(
     Record<string, unknown> | undefined;
   const facilityLinks = row.facilities as
     { facility: Record<string, unknown> }[] | undefined;
+  const coverageLinks = row.coverages as
+    { coverage: Record<string, unknown> }[] | undefined;
   const mealServiceLinks = row.mealServices as
     { mealService: Record<string, unknown> }[] | undefined;
   const roomTypeLinks = row.roomTypes as
@@ -390,6 +421,8 @@ export function toMasterDataRecord(
     'airport',
     'bank',
     'organization',
+    'insurer',
+    'currency',
     'airline',
     'cabinClass',
     'services',
@@ -397,6 +430,7 @@ export function toMasterDataRecord(
     'mealService',
     'defaultRoomType',
     'facilities',
+    'coverages',
     'mealServices',
     'roomTypes',
     'members',
@@ -466,6 +500,34 @@ export function toMasterDataRecord(
   if (resource === 'organization-contacts') {
     attributes.organizationName = String(organization?.displayName ?? '');
     attributes.organizationCode = String(organization?.code ?? '');
+  }
+  if (resource === 'insurers') {
+    attributes.organizationName = String(organization?.displayName ?? '');
+    attributes.organizationCode = String(organization?.code ?? '');
+    attributes.countryName = String(country?.name ?? '');
+    attributes.planCount = Number(count?.plans ?? 0);
+  }
+  if (resource === 'insurance-plans') {
+    attributes.insurerName = String(insurer?.name ?? '');
+    attributes.insurerCode = String(insurer?.code ?? '');
+    attributes.coverageIds =
+      coverageLinks
+        ?.map(({ coverage }) => String(coverage.id ?? ''))
+        .join(',') ?? '';
+    attributes.coverageCodes =
+      coverageLinks
+        ?.map(({ coverage }) => String(coverage.code ?? ''))
+        .join(',') ?? '';
+    attributes.coverageNames =
+      coverageLinks
+        ?.map(({ coverage }) => String(coverage.name ?? ''))
+        .join('، ') ?? '';
+    attributes.coverageCount = coverageLinks?.length ?? 0;
+  }
+  if (resource === 'insurance-coverages') {
+    attributes.currencyCode = String(currency?.code ?? '');
+    attributes.currencyName = String(currency?.name ?? '');
+    attributes.planCount = Number(count?.plans ?? 0);
   }
   if (
     resource === 'airlines' ||
@@ -610,6 +672,7 @@ export class MasterDataRepository {
       )
         where.countryId = query.countryId;
       if (resource === 'hotel-chains') where.countryId = query.countryId;
+      if (resource === 'insurers') where.countryId = query.countryId;
       if (resource === 'hotels' || resource === 'composite-hotels')
         where.city = { is: { countryId: query.countryId } };
     }
@@ -650,6 +713,16 @@ export class MasterDataRepository {
       where.referenceCapacity = query.referenceCapacity;
     if (resource === 'facilities' && query.facilityCategory)
       where.category = query.facilityCategory;
+    if (resource === 'insurance-plans') {
+      if (query.insurerId) where.insurerId = query.insurerId;
+      if (query.destinationRegion)
+        where.destinationRegion = {
+          contains: query.destinationRegion,
+          mode: 'insensitive',
+        };
+    }
+    if (resource === 'insurance-coverages' && query.currencyId)
+      where.currencyId = query.currencyId;
     if (resource === 'suppliers' || resource === 'brokers') {
       if (query.cityId) where.cityId = query.cityId;
       if (query.organizationId) where.organizationId = query.organizationId;
@@ -1135,6 +1208,76 @@ export class MasterDataRepository {
         active: compositeActive,
         uniqueMemberHotels: compositeMembers.length,
         needsReview: compositeNeedsReview,
+      },
+    };
+  }
+
+  async insuranceSummary() {
+    const client = this.database.client;
+    const now = new Date();
+    const expiringAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const [
+      insurerTotal,
+      insurerActive,
+      insurerCountries,
+      insurerMissingLogo,
+      planTotal,
+      planActive,
+      planExpiringSoon,
+      planDestinations,
+      coverageTotal,
+      coverageActive,
+      coverageCurrencies,
+      coverageNeedsReview,
+    ] = await Promise.all([
+      client.masterInsurer.count(),
+      client.masterInsurer.count({ where: { isActive: true } }),
+      client.masterInsurer.findMany({
+        where: { countryId: { not: null } },
+        distinct: ['countryId'],
+        select: { countryId: true },
+      }),
+      client.masterInsurer.count({ where: { logoFileReference: null } }),
+      client.masterInsurancePlan.count(),
+      client.masterInsurancePlan.count({ where: { isActive: true } }),
+      client.masterInsurancePlan.count({
+        where: {
+          isActive: true,
+          validTo: { gt: now, lte: expiringAt },
+        },
+      }),
+      client.masterInsurancePlan.findMany({
+        distinct: ['destinationRegion'],
+        select: { destinationRegion: true },
+      }),
+      client.masterInsuranceCoverage.count(),
+      client.masterInsuranceCoverage.count({ where: { isActive: true } }),
+      client.masterInsuranceCoverage.findMany({
+        distinct: ['currencyId'],
+        select: { currencyId: true },
+      }),
+      client.masterInsuranceCoverage.count({
+        where: { OR: [{ englishName: null }, { description: null }] },
+      }),
+    ]);
+    return {
+      insurers: {
+        total: insurerTotal,
+        active: insurerActive,
+        countries: insurerCountries.length,
+        missingLogo: insurerMissingLogo,
+      },
+      plans: {
+        total: planTotal,
+        active: planActive,
+        expiringSoon: planExpiringSoon,
+        destinations: planDestinations.length,
+      },
+      coverages: {
+        total: coverageTotal,
+        active: coverageActive,
+        currencies: coverageCurrencies.length,
+        needsReview: coverageNeedsReview,
       },
     };
   }

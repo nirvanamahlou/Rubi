@@ -107,6 +107,12 @@ export class MasterDataController {
     return this.service.accommodationSummary();
   }
 
+  @Get('insurance/summary')
+  @RequirePermissions('master_data.read')
+  insuranceSummary() {
+    return this.service.insuranceSummary();
+  }
+
   @Get(':resource/:id')
   @RequirePermissions('master_data.read')
   detail(@Param('resource') resource: string, @Param('id') id: string) {
