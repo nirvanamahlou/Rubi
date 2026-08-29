@@ -139,6 +139,7 @@ describe('Customer Operations workspace boundaries', () => {
   it('exposes the complete Customer 360 navigation', () => {
     for (const tab of [
       'overview',
+      'dossier',
       'contacts',
       'addresses',
       'consents',
@@ -150,5 +151,29 @@ describe('Customer Operations workspace boundaries', () => {
     ]) {
       expect(source).toContain('value="' + tab + '"');
     }
+  });
+
+  it('shows the full 360 dossier catalog without inventing cross-module data', () => {
+    for (const section of [
+      'شماره پاسپورت',
+      'کشور صادرکننده',
+      'هشدار انقضای مدارک',
+      'درخواست‌ها',
+      'قراردادها',
+      'خدمات خریداری‌شده',
+      'بلیط‌ها',
+      'واچرها',
+      'بیمه‌نامه‌ها',
+      'پرداخت‌ها',
+      'چک‌ها',
+      'تیکت‌های پشتیبانی',
+      'فایل‌ها و اسناد',
+      'Timeline کامل فعالیت‌ها',
+    ])
+      expect(source).toContain(section);
+    expect(source).toContain('در انتظار اتصال امن');
+    expect(source).toContain(
+      'هیچ شماره مدرک یا تاریخ ساختگی نمایش داده نمی‌شود',
+    );
   });
 });

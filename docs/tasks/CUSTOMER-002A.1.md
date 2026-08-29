@@ -51,6 +51,8 @@
 - دریافتی قرارداد مشتری: فقط قرارداد `receipt.create` وجود دارد و Public Finance/Sales Read Contract مبتنی بر Customer ID منتشر نشده است.
 - تعداد خرید و تاریخچه سفر مشتری/مسافر: Public Summary Contract از Sales/Reservations وجود ندارد و Query مستقیم جدول‌های آن ماژول‌ها ممنوع است.
 - خروجی گروهی تماس خام: به Permission اختصاصی Bulk Export، مقصد و دلیل ثبت‌شده و Audit گروهی نیاز دارد؛ Sensitive Reveal تک‌رکوردی نباید برای دورزدن این کنترل استفاده شود.
+- مدارک سفر/هویتی شامل پاسپورت، شماره، کشور صادرکننده، تاریخ صدور/انقضا، ویزا و هشدار انقضا: مدل امن Persistence در Schema فعلی Customers وجود ندارد.
+- پرونده ۳۶۰ بین‌ماژولی شامل درخواست، قرارداد، خدمت، بلیط، واچر، بیمه‌نامه، پرداخت، چک، تیکت و فایل: تا انتشار Customer-scoped Public Read Contract از ماژول مالک، فقط وضعیت اتصال نمایش داده می‌شود.
 - Merge واقعی/Auto-merge: تا بسته‌شدن `DEC-OPEN-011` ممنوع است.
 
 ## قابلیت‌های تکمیل‌شده
@@ -68,6 +70,7 @@
 - همه requestهای Customers با `cache: no-store` و GETهای حساس با `Cache-Control: private, no-store` پاسخ می‌گیرند.
 - Customer 360 فارسی/RTL/Responsive با Deep Link امن، tab فعال، Skeleton، Empty، Error/Retry، Forbidden و Conflict موجود.
 - خروجی صفحه فیلترشده با فرمت واقعی XLSX و بدون اطلاعات تماس؛ ورود گروهی XLSX با قالب دانلودی که فقط ستون «نام مشتری» را اجباری می‌کند.
+- تب «پرونده ۳۶۰ درجه» با فهرست کامل مدارک سفر، سوابق تجاری/مالی/پشتیبانی/اسناد و مسیر Timeline؛ هر بخش فاقد قرارداد عمومی بدون داده ساختگی با وضعیت اتصال مشخص نمایش داده می‌شود.
 - قرارداد `customers.v2` فقط با extension اختیاری و backward-compatible توسعه یافت؛ Customer Affairs بدون تغییر باقی ماند.
 
 ## کنترل کیفیت

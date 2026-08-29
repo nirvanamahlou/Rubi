@@ -105,6 +105,7 @@ type RequestState =
 type FormMode = 'create' | 'view' | 'edit';
 type CustomerTab =
   | 'overview'
+  | 'dossier'
   | 'contacts'
   | 'addresses'
   | 'consents'
@@ -116,6 +117,7 @@ type CustomerTab =
 
 const customerTabs: readonly CustomerTab[] = [
   'overview',
+  'dossier',
   'contacts',
   'addresses',
   'consents',
@@ -125,6 +127,30 @@ const customerTabs: readonly CustomerTab[] = [
   'activity',
   'audit',
 ];
+
+const travelDocumentFields = [
+  'پاسپورت',
+  'شماره پاسپورت',
+  'کشور صادرکننده',
+  'تاریخ صدور',
+  'تاریخ انقضا',
+  'ویزا',
+  'مدارک هویتی',
+  'هشدار انقضای مدارک',
+] as const;
+
+const connectedDossierSections = [
+  ['درخواست‌ها', 'امور مشتریان'],
+  ['قراردادها', 'فروش'],
+  ['خدمات خریداری‌شده', 'فروش'],
+  ['بلیط‌ها', 'رزرواسیون'],
+  ['واچرها', 'رزرواسیون'],
+  ['بیمه‌نامه‌ها', 'رزرواسیون'],
+  ['پرداخت‌ها', 'مالی'],
+  ['چک‌ها', 'مالی'],
+  ['تیکت‌های پشتیبانی', 'امور مشتریان'],
+  ['فایل‌ها و اسناد', 'اسناد'],
+] as const;
 
 const sensitiveReasons = [
   ['customer-verification', 'احراز مشتری'],
@@ -1154,6 +1180,7 @@ function CustomerDrawer({
           >
             <TabsList className="flex w-full flex-wrap justify-start">
               <TabsTrigger value="overview">نمای کلی</TabsTrigger>
+              <TabsTrigger value="dossier">پرونده ۳۶۰ درجه</TabsTrigger>
               <TabsTrigger value="contacts">تماس‌ها</TabsTrigger>
               <TabsTrigger value="addresses">نشانی‌ها</TabsTrigger>
               <TabsTrigger value="consents">رضایت</TabsTrigger>
@@ -1206,6 +1233,79 @@ function CustomerDrawer({
                 title="قابلیت‌های نیازمند قرارداد"
                 tone="warning"
               />
+            </TabsContent>
+            <TabsContent className="space-y-4" value="dossier">
+              <Card className="space-y-4 p-4">
+                <div>
+                  <p className="font-bold">مدارک سفر و هویتی</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    اطلاعات حساس مدارک فقط با نگهداری رمزنگاری‌شده، دسترسی مجاز
+                    و ثبت مشاهده نمایش داده می‌شود.
+                  </p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {travelDocumentFields.map((field) => (
+                    <div
+                      className="flex items-center justify-between gap-3 rounded-xl border bg-muted/20 p-3"
+                      key={field}
+                    >
+                      <span className="text-sm font-medium">{field}</span>
+                      <Badge className="bg-muted text-muted-foreground">
+                        در انتظار زیرساخت مدارک
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+                <Alert
+                  description="مدل امن پاسپورت، ویزا و هشدار انقضا هنوز در پایگاه داده مشتریان وجود ندارد؛ تا تکمیل آن هیچ شماره مدرک یا تاریخ ساختگی نمایش داده نمی‌شود."
+                  title="حفاظت از مدارک مسافر"
+                  tone="warning"
+                />
+              </Card>
+
+              <Card className="space-y-4 p-4">
+                <div>
+                  <p className="font-bold">سوابق کامل پرونده</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    هر بخش پس از اتصال امن به سامانه مالک خود، اطلاعات واقعی
+                    همین مشتری یا مسافر را نشان می‌دهد.
+                  </p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {connectedDossierSections.map(([label, owner]) => (
+                    <div
+                      className="flex items-center justify-between gap-3 rounded-xl border p-3"
+                      key={label}
+                    >
+                      <div>
+                        <p className="text-sm font-semibold">{label}</p>
+                        <p className="text-xs text-muted-foreground">{owner}</p>
+                      </div>
+                      <Badge className="bg-muted text-muted-foreground">
+                        در انتظار اتصال امن
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <Card className="flex flex-wrap items-center justify-between gap-4 p-4">
+                <div>
+                  <p className="font-bold">Timeline کامل فعالیت‌ها</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    اکنون {activities.length.toLocaleString('fa-IR')} فعالیت
+                    واقعی از بخش مشتریان در دسترس است؛ رویدادهای سایر بخش‌ها پس
+                    از اتصال امن به همین Timeline افزوده می‌شوند.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => onTabChange('activity')}
+                  type="button"
+                  variant="outline"
+                >
+                  مشاهده Timeline
+                </Button>
+              </Card>
             </TabsContent>
             <TabsContent className="space-y-3" value="contacts">
               <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
