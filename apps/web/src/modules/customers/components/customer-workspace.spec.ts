@@ -87,10 +87,16 @@ describe('Customer Operations workspace boundaries', () => {
 
   it('opens Customer 360 immediately and exports authorized filtered rows to Excel', () => {
     expect(source).toContain('در حال دریافت اطلاعات مشتری');
-    expect(source).toContain('downloadCustomerExcel(records, calendarMode)');
-    expect(source).toContain('application/vnd.ms-excel');
-    expect(source).toContain('تماس ماسک‌شده');
-    expect(source).not.toContain('async function exportFilteredCustomers');
+    expect(source).toContain('exportVisibleCustomers');
+    expect(source).toContain('customer-import-template.xlsx');
+    expect(source).toContain('parseCustomerXlsx(file)');
+    expect(source).toContain('نام مشتری');
+    const exportSource = source.slice(
+      source.indexOf('function exportVisibleCustomers'),
+      source.indexOf('async function importCustomers'),
+    );
+    expect(exportSource).not.toContain('maskedPrimaryContact');
+    expect(source).toContain('اطلاعات تماس در فایل قرار نگرفت');
   });
 
   it('renders filter-scoped KPI cards without inventing Sales purchase data', () => {

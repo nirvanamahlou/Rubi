@@ -31,6 +31,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   TrendingUp,
+  Upload,
   UserRound,
   UsersRound,
 } from 'lucide-react';
@@ -84,6 +85,11 @@ import {
   type CustomerCalendarMode,
 } from './customer-date-field';
 import { formatCustomerDate } from '../model/customer-calendar';
+import {
+  customerImportHeaders,
+  downloadCustomerXlsx,
+  parseCustomerXlsx,
+} from '../model/customer-xlsx';
 
 const pageSize = 25;
 const emptyMetrics: CustomerListMetrics = {
@@ -94,57 +100,6 @@ const emptyMetrics: CustomerListMetrics = {
   returningCustomerRateStatus: 'awaiting-sales-public-contract',
 };
 
-function spreadsheetCell(value: string) {
-  const escaped = value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;');
-  return `<Cell><Data ss:Type="String">${escaped}</Data></Cell>`;
-}
-
-function downloadCustomerExcel(
-  records: readonly CustomerSummary[],
-  calendarMode: CustomerCalendarMode,
-) {
-  const headers = [
-    'نام مشتری',
-    'تماس ماسک‌شده',
-    'وضعیت',
-    'نقش‌ها',
-    'رضایت',
-    'آخرین تغییر',
-  ];
-  const rows = records.map((record) => [
-    record.displayName,
-    record.maskedPrimaryContact ?? 'بدون تماس',
-    record.status === 'active' ? 'فعال' : 'غیرفعال',
-    record.roles
-      .map((role) => (role === 'customer' ? 'مشتری' : 'مسافر'))
-      .join('، '),
-    record.currentConsentStatus === 'granted'
-      ? 'ثبت‌شده'
-      : record.currentConsentStatus === 'revoked'
-        ? 'لغوشده'
-        : 'ثبت‌نشده',
-    formatCustomerDate(record.updatedAt, calendarMode),
-  ]);
-  const table = [headers, ...rows]
-    .map(
-      (row) =>
-        `<Row>${row.map((value) => spreadsheetCell(value)).join('')}</Row>`,
-    )
-    .join('');
-  const workbook = `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Customers"><Table>${table}</Table></Worksheet></Workbook>`;
-  const url = URL.createObjectURL(
-    new Blob([workbook], { type: 'application/vnd.ms-excel;charset=utf-8' }),
-  );
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = `customers-${new Date().toISOString().slice(0, 10)}.xls`;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
 type RequestState =
   'loading' | 'ready' | 'error' | 'unauthorized' | 'forbidden';
 type FormMode = 'create' | 'view' | 'edit';
@@ -1823,6 +1778,7 @@ export function CustomerWorkspace() {
       : 'overview',
   );
   const [notice, setNotice] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     void listMasterData('acquaintance-methods')
@@ -1987,6 +1943,113 @@ export function CustomerWorkspace() {
     }
   }
 
+  function exportVisibleCustomers() {
+    const rows = records.map((record) => [
+      record.displayName,
+      record.status === 'active' ? 'فعال' : 'غیرفعال',
+      record.roles
+        .map((item) => (item === 'customer' ? 'مشتری' : 'مسافر'))
+        .join('، '),
+      record.currentConsentStatus === 'granted'
+        ? 'ثبت‌شده'
+        : record.currentConsentStatus === 'revoked'
+          ? 'لغوشده'
+          : 'ثبت‌نشده',
+      formatCustomerDate(record.createdAt, calendarMode),
+      formatCustomerDate(record.updatedAt, calendarMode),
+    ]);
+    downloadCustomerXlsx(
+      `customers-${new Date().toISOString().slice(0, 10)}.xlsx`,
+      [
+        ['نام مشتری', 'وضعیت', 'نقش‌ها', 'رضایت', 'تاریخ ایجاد', 'آخرین تغییر'],
+        ...rows,
+      ],
+    );
+    setNotice(
+      `خروجی XLSX صفحه فعلی برای ${records.length.toLocaleString('fa-IR')} رکورد فیلترشده ساخته شد؛ اطلاعات تماس در فایل قرار نگرفت.`,
+    );
+  }
+
+  async function importCustomers(file: File) {
+    setImporting(true);
+    setNotice(null);
+    try {
+      const rows = await parseCustomerXlsx(file);
+      let imported = 0;
+      const failures: string[] = [];
+      for (const [index, row] of rows.entries()) {
+        const nameParts = row.name.split(/\s+/).filter(Boolean);
+        if (nameParts.length < 2) {
+          failures.push(
+            `ردیف ${index + 2}: نام باید شامل نام و نام خانوادگی باشد.`,
+          );
+          continue;
+        }
+        if (row.phone && !/^\+?[0-9]{10,15}$/.test(row.phone)) {
+          failures.push(`ردیف ${index + 2}: شماره تماس معتبر نیست.`);
+          continue;
+        }
+        if (row.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) {
+          failures.push(`ردیف ${index + 2}: ایمیل معتبر نیست.`);
+          continue;
+        }
+        if (row.birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(row.birthDate)) {
+          failures.push(`ردیف ${index + 2}: تاریخ باید YYYY-MM-DD باشد.`);
+          continue;
+        }
+        const lastName = nameParts.at(-1)!;
+        const firstName = nameParts.slice(0, -1).join(' ');
+        try {
+          let created = (
+            await customersApi.create({
+              kind: 'person',
+              firstName,
+              lastName,
+              displayName: row.name,
+              birthDate: row.birthDate || null,
+              roles: ['customer'],
+              acquaintanceMethodId: null,
+            })
+          ).data;
+          if (row.phone) {
+            created = (
+              await customersApi.addContact(created.id, {
+                type: 'phone',
+                value: row.phone,
+                label: 'اصلی',
+                isPrimary: true,
+                version: created.version,
+              })
+            ).data;
+          }
+          if (row.email)
+            await customersApi.addContact(created.id, {
+              type: 'email',
+              value: row.email.toLowerCase(),
+              label: 'اصلی',
+              isPrimary: !row.phone,
+              version: created.version,
+            });
+          imported += 1;
+        } catch (error) {
+          failures.push(
+            `ردیف ${index + 2}: ${error instanceof Error ? error.message : 'ثبت ناموفق بود.'}`,
+          );
+        }
+      }
+      await load();
+      setNotice(
+        `${imported.toLocaleString('fa-IR')} مشتری وارد شد.${failures.length ? ` ${failures.length.toLocaleString('fa-IR')} ردیف خطا داشت: ${failures.slice(0, 3).join(' | ')}` : ''}`,
+      );
+    } catch (error) {
+      setNotice(
+        error instanceof Error ? error.message : 'خواندن فایل XLSX ناموفق بود.',
+      );
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <div className="space-y-5">
       <PageHeader title="مشتریان و مسافران" />
@@ -2070,17 +2133,41 @@ export function CustomerWorkspace() {
         <div className="flex flex-wrap gap-2">
           <Button
             disabled={records.length === 0}
-            onClick={() => {
-              downloadCustomerExcel(records, calendarMode);
-              setNotice(
-                `خروجی Excel صفحه فعلی برای ${records.length.toLocaleString('fa-IR')} رکورد فیلترشده ساخته شد.`,
-              );
-            }}
+            onClick={exportVisibleCustomers}
             size="lg"
             variant="outline"
           >
             <Download className="size-4" />
             خروجی Excel
+          </Button>
+          <Button
+            onClick={() =>
+              downloadCustomerXlsx('customer-import-template.xlsx', [
+                customerImportHeaders,
+              ])
+            }
+            size="lg"
+            variant="outline"
+          >
+            <Download className="size-4" />
+            دانلود قالب ورود
+          </Button>
+          <Button asChild disabled={importing} size="lg" variant="outline">
+            <label className="cursor-pointer">
+              <Upload className="size-4" />
+              {importing ? 'در حال ورود…' : 'ورود از Excel'}
+              <input
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                className="sr-only"
+                disabled={importing}
+                onChange={(event) => {
+                  const file = event.currentTarget.files?.[0];
+                  if (file) void importCustomers(file);
+                  event.currentTarget.value = '';
+                }}
+                type="file"
+              />
+            </label>
           </Button>
           <Button onClick={() => void open('create')} size="lg">
             <Plus className="size-4" />

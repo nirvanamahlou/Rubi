@@ -48,6 +48,9 @@
 - نرخ بازگشت و آخرین تاریخ خرید: Sales هنوز Public Customer Purchase Summary با purchase count/last purchase UTC منتشر نکرده است؛ مقدار ساختگی یا query مستقیم Sales ممنوع است.
 - فیلتر شرکت «نیایش سیر سحر / جهان باستان»: این دو رکورد Legal Entity هستند و Customer در Schema فعلی FK شرکت صادرکننده ندارد؛ Branch Scope امنیتی نیز نباید به Legal Entity تبدیل یا جعل شود.
 - مقدار رابطه مستقل `customer` برای مسافر: enum فعلی فقط `family/companion/guardian/dependent` دارد؛ UI از `companion` با عنوان «همراه مشتری» به‌عنوان پیش‌فرض معتبر استفاده می‌کند.
+- دریافتی قرارداد مشتری: فقط قرارداد `receipt.create` وجود دارد و Public Finance/Sales Read Contract مبتنی بر Customer ID منتشر نشده است.
+- تعداد خرید و تاریخچه سفر مشتری/مسافر: Public Summary Contract از Sales/Reservations وجود ندارد و Query مستقیم جدول‌های آن ماژول‌ها ممنوع است.
+- خروجی گروهی تماس خام: به Permission اختصاصی Bulk Export، مقصد و دلیل ثبت‌شده و Audit گروهی نیاز دارد؛ Sensitive Reveal تک‌رکوردی نباید برای دورزدن این کنترل استفاده شود.
 - Merge واقعی/Auto-merge: تا بسته‌شدن `DEC-OPEN-011` ممنوع است.
 
 ## قابلیت‌های تکمیل‌شده
@@ -64,6 +67,7 @@
 - تماس پیش‌فرض masked، reveal فقط با permission و reason allowlist، Audit، refresh timeline و auto-remask پس از ۶۰ ثانیه/blur/hidden/تغییر tab.
 - همه requestهای Customers با `cache: no-store` و GETهای حساس با `Cache-Control: private, no-store` پاسخ می‌گیرند.
 - Customer 360 فارسی/RTL/Responsive با Deep Link امن، tab فعال، Skeleton، Empty، Error/Retry، Forbidden و Conflict موجود.
+- خروجی صفحه فیلترشده با فرمت واقعی XLSX و بدون اطلاعات تماس؛ ورود گروهی XLSX با قالب دانلودی که فقط ستون «نام مشتری» را اجباری می‌کند.
 - قرارداد `customers.v2` فقط با extension اختیاری و backward-compatible توسعه یافت؛ Customer Affairs بدون تغییر باقی ماند.
 
 ## کنترل کیفیت
