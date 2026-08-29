@@ -79,6 +79,14 @@ const delegateNames: Record<MasterDataResource, string> = {
   'payment-methods': 'masterPaymentMethod',
   insurers: 'masterInsurer',
   airlines: 'masterAirline',
+  'aircraft-types': 'masterAircraftType',
+  'cabin-classes': 'masterCabinClass',
+  'baggage-rules': 'masterBaggageRule',
+  'manifest-templates': 'masterManifestTemplate',
+  'rail-companies': 'masterRailCompany',
+  'train-types': 'masterTrainType',
+  'bus-companies': 'masterBusCompany',
+  'bus-types': 'masterBusType',
   hotels: 'masterHotel',
   'hotel-chains': 'masterHotelChain',
   'room-types': 'masterRoomType',
@@ -107,6 +115,14 @@ const nameFields: Record<MasterDataResource, string> = {
   'payment-methods': 'name',
   insurers: 'name',
   airlines: 'name',
+  'aircraft-types': 'name',
+  'cabin-classes': 'name',
+  'baggage-rules': 'name',
+  'manifest-templates': 'name',
+  'rail-companies': 'name',
+  'train-types': 'name',
+  'bus-companies': 'name',
+  'bus-types': 'name',
   hotels: 'name',
   'hotel-chains': 'name',
   'room-types': 'name',
@@ -135,6 +151,14 @@ const codeFields: Record<MasterDataResource, string> = {
   'payment-methods': 'code',
   insurers: 'code',
   airlines: 'code',
+  'aircraft-types': 'code',
+  'cabin-classes': 'code',
+  'baggage-rules': 'code',
+  'manifest-templates': 'code',
+  'rail-companies': 'code',
+  'train-types': 'code',
+  'bus-companies': 'code',
+  'bus-types': 'code',
   hotels: 'code',
   'hotel-chains': 'code',
   'room-types': 'code',
@@ -162,7 +186,15 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
   'bank-branches': ['name', 'englishName', 'code', 'address', 'phone'],
   'payment-methods': ['name', 'englishName', 'code', 'description'],
   insurers: ['name', 'code'],
-  airlines: ['name', 'code', 'icaoCode'],
+  airlines: ['name', 'englishName', 'code', 'icaoCode'],
+  'aircraft-types': ['name', 'englishName', 'code', 'manufacturer', 'model'],
+  'cabin-classes': ['name', 'englishName', 'code', 'bookingCode'],
+  'baggage-rules': ['name', 'code', 'description'],
+  'manifest-templates': ['name', 'code', 'sheetName'],
+  'rail-companies': ['name', 'englishName', 'code'],
+  'train-types': ['name', 'englishName', 'code', 'manufacturer', 'model'],
+  'bus-companies': ['name', 'englishName', 'code'],
+  'bus-types': ['name', 'englishName', 'code', 'manufacturer', 'model'],
   hotels: ['name', 'englishName', 'code'],
   'hotel-chains': ['name', 'englishName', 'code', 'website'],
   'room-types': ['name', 'englishName', 'code', 'usageDescription'],
@@ -188,6 +220,11 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'exchange-rates')
     return { fromCurrency: true, toCurrency: true };
   if (resource === 'organizations') return { roles: true };
+  if (resource === 'airlines') return { organization: true, country: true };
+  if (resource === 'baggage-rules') return { airline: true, cabinClass: true };
+  if (resource === 'manifest-templates') return { airline: true };
+  if (resource === 'rail-companies' || resource === 'bus-companies')
+    return { organization: true, country: true };
   if (resource === 'suppliers')
     return {
       organization: true,
@@ -268,6 +305,8 @@ export function toMasterDataRecord(
   const airport = row.airport as Record<string, unknown> | undefined;
   const bank = row.bank as Record<string, unknown> | undefined;
   const organization = row.organization as Record<string, unknown> | undefined;
+  const airline = row.airline as Record<string, unknown> | undefined;
+  const cabinClass = row.cabinClass as Record<string, unknown> | undefined;
   const services = row.services as
     { service: Record<string, unknown> }[] | undefined;
   const chain = row.chain as Record<string, unknown> | undefined;
@@ -327,6 +366,8 @@ export function toMasterDataRecord(
     'airport',
     'bank',
     'organization',
+    'airline',
+    'cabinClass',
     'services',
     'chain',
     'mealService',
@@ -401,6 +442,24 @@ export function toMasterDataRecord(
   if (resource === 'organization-contacts') {
     attributes.organizationName = String(organization?.displayName ?? '');
     attributes.organizationCode = String(organization?.code ?? '');
+  }
+  if (
+    resource === 'airlines' ||
+    resource === 'rail-companies' ||
+    resource === 'bus-companies'
+  ) {
+    attributes.organizationName = String(organization?.displayName ?? '');
+    attributes.countryName = String(country?.name ?? '');
+  }
+  if (resource === 'baggage-rules') {
+    attributes.airlineName = String(airline?.name ?? '');
+    attributes.airlineCode = String(airline?.code ?? '');
+    attributes.cabinClassName = String(cabinClass?.name ?? '');
+    attributes.bookingCode = String(cabinClass?.bookingCode ?? '');
+  }
+  if (resource === 'manifest-templates') {
+    attributes.airlineName = String(airline?.name ?? '');
+    attributes.airlineCode = String(airline?.code ?? '');
   }
   if (resource === 'hotels') {
     const hotelCountry = city?.country as Record<string, unknown> | undefined;
@@ -519,6 +578,12 @@ export class MasterDataRepository {
         where.countryId = query.countryId;
       if (resource === 'airports') airportCityWhere.countryId = query.countryId;
       if (resource === 'suppliers' || resource === 'brokers')
+        where.countryId = query.countryId;
+      if (
+        resource === 'airlines' ||
+        resource === 'rail-companies' ||
+        resource === 'bus-companies'
+      )
         where.countryId = query.countryId;
       if (resource === 'hotel-chains') where.countryId = query.countryId;
       if (resource === 'hotels' || resource === 'composite-hotels')

@@ -219,6 +219,22 @@ erDiagram
 - وضعیت همکاری Supplier/Broker مرجع Master Data است؛ Contract، Purchase، Settlement و
   Provider credential در مالکیت Procurement، Finance و Integrations باقی می‌مانند.
 
+### Master Data حمل‌ونقل
+
+- `master_airlines` کد عمومی IATA یکتا و Uppercase، کد ICAO اختیاری یکتا، نام دوزبانه،
+  کشور و Organization دارای Role ایرلاین را نگه می‌دارد؛ Credential و Connection در
+  Integrations باقی می‌ماند.
+- نوع هواپیما، کلاس پروازی، نوع قطار و نوع اتوبوس کاتالوگ‌های مشترک و مستقل از ناوگان،
+  برنامه حرکت، قیمت و موجودی هستند. تخصیص اجرایی در Ticket Catalog/Reservations است.
+- قاعده بار تاریخچه مستقل با FK ایرلاین/کلاس، نوع مسافر، دامنه مسیر، Decimal مثبت، واحد،
+  تعداد قطعه و بازه اعتبار دارد؛ رکورد استفاده‌شده حذف فیزیکی نمی‌شود.
+- قالب Manifest فقط ساختار و نسخه قالب را نگه می‌دارد. فایل فعال نیازمند UUID واقعی از
+  قرارداد Documents است؛ Manifest مسافر و تاریخچه ارسال در Reservations باقی می‌ماند.
+- شرکت ریلی و اتوبوس هرکدام به Organization و Country فعال FK محدودکننده دارند. قرارداد،
+  فروش، تسویه و Provider operation در ماژول‌های مالک نگه‌داری می‌شوند.
+- همه رکوردها global و مشترک دو شرکت هستند؛ Legal Entity Selector آن‌ها را فیلتر نمی‌کند
+  و Branch فقط در Audit actor scope ثبت می‌شود.
+
 ### Accommodation Master Data
 
 - Hotel یک Reference مشترک میان Legal Entityها است و به City واقعی و در صورت وجود

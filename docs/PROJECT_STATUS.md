@@ -1,15 +1,15 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-29 — MASTER-003G-UX-CONSOLIDATION پیاده‌سازی و آزموده شد
+آخرین به‌روزرسانی: 2026-08-29 — MASTER-003H-TRANSPORT پیاده‌سازی و آزموده شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003G-UX-CONSOLIDATION در Draft PR #33 روی PR #32 آماده Review است**
+- وضعیت: **MASTER-003H-TRANSPORT روی شاخه Stacked مستقل آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
 - شاخه فعال: `codex/pc-b-master-data-ux-consolidation`
-- Work Item: `MASTER-003G-UX-CONSOLIDATION`؛ Draft PR #33 روی Draft PR #32
+- Work Item: `MASTER-003H-TRANSPORT`؛ وابسته به Draft PR #33
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ API روی ۴۰۰۰ و Web روی ۳۱۰۰ فعال‌اند.
 - نوع تغییر: Frontend، تست و مستندات؛ بدون Database، Migration، API Contract،
   Dependency یا Lockfile.
@@ -267,6 +267,30 @@
   متوقف می‌شود.
 - هیچ فایل Customers، Prisma/Migration/Seed، API/Contract، Dependency/Lockfile،
   Secret یا PII تغییر نکرده است.
+
+### `MASTER-003H-TRANSPORT` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-transport` از
+  `origin/codex/pc-b-master-data-ux-consolidation@70d97ea` ساخته شد و هیچ شاخه والد
+  یا متعلق به PC-A را تغییر نمی‌دهد.
+- Draft PR #35 با Base `codex/pc-b-master-data-ux-consolidation` ساخته شد و پیش از
+  Merge PR #33 نباید ادغام شود؛ پس از Merge والد Base آن به `develop` تغییر می‌کند.
+- Migration افزایشی `20260829170000_master_data_transport` مشخصات دوزبانه ایرلاین،
+  نوع هواپیما، کلاس پروازی، قاعده بار، قالب Manifest، شرکت/نوع قطار و شرکت/نوع
+  اتوبوس را با FK محدودکننده، Optimistic Lock و Constraintهای واقعی اضافه می‌کند.
+- Contract عمومی به `master-data.v9` ارتقا یافت و هر ۹ منبع حمل‌ونقل به Backend واقعی
+  Search/Sort/Pagination، Create/Edit، Active/Inactive، Audit، Permission و Export
+  متصل شدند.
+- Workspace فارسی RTL Responsive مطابق ماکاپ ۹ تب و KPIهای پاستلی هم‌نام دارد؛ تب
+  مستقل پروفایل ایرلاین وجود ندارد و پروفایل همه ردیف‌ها از نام یا دکمه مشاهده در
+  Popup باز می‌شود.
+- Credential/Secret اتصال Provider، موجودی/قیمت/رزرو، قرارداد/تسویه و Manifest مسافر
+  وارد Master Data نشده‌اند؛ Connection یا Documents فاقد قرارداد با `—`/وضعیت
+  در انتظار نمایش داده می‌شود و Seed حمل‌ونقل عمداً خالی است.
+- تمام ۱۴ Migration روی PostgreSQL 18 خالی و Seed دوگانه موفق بود؛ همان Migration روی
+  دیتابیس محلی Deploy و Seed دو بار بدون ایجاد داده ساختگی اجرا شد.
+- هیچ فایل Customers، dependency manifest یا lockfile تغییر نکرده و سه قفل فعال
+  Migration/Contract/Docs همچنان زیر `PC-B/MASTER-003` باقی می‌مانند.
 
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`

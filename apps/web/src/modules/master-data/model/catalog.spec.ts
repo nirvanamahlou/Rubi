@@ -52,6 +52,7 @@ describe('master data catalog', () => {
       'bank-branches',
       'payment-methods',
       'travel-services',
+      'airlines',
     ]);
     for (const resource of masterDataResourceKeys) {
       const definition = getMasterDataDefinition(resource);

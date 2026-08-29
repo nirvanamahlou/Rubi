@@ -61,6 +61,7 @@ import { MasterDataFinanceWorkspace } from './master-data-finance-workspace';
 import { MasterDataGeographyWorkspace } from './master-data-geography-workspace';
 import { MasterDataKpiGrid } from './master-data-kpi-grid';
 import { MasterDataSuppliersWorkspace } from './master-data-suppliers-workspace';
+import { MasterDataTransportationWorkspace } from './master-data-transportation-workspace';
 
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
@@ -704,5 +705,7 @@ export function MasterDataWorkspace({
     return <MasterDataSuppliersWorkspace />;
   if (section.slug === 'accommodation')
     return <MasterDataAccommodationWorkspace />;
+  if (section.slug === 'transportation')
+    return <MasterDataTransportationWorkspace />;
   return <GenericMasterDataWorkspace section={section} />;
 }

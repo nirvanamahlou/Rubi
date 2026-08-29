@@ -32,6 +32,68 @@ const row = {
 };
 
 describe('MasterDataService', () => {
+  it('normalizes unique IATA/ICAO codes and enforces the airline organization role', async () => {
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      find: vi.fn().mockResolvedValue({
+        ...row,
+        displayName: 'ایرلاین سازمانی',
+        roles: [{ roleCode: 'AIRLINE' }],
+      }),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create(
+      'airlines',
+      {
+        code: 'w5',
+        icaoCode: 'irm',
+        name: 'ایرلاین آزمایشی',
+        organizationId: row.id,
+      },
+      actor,
+    );
+
+    expect(repository.create).toHaveBeenCalledWith(
+      'airlines',
+      expect.objectContaining({ code: 'W5', icaoCode: 'IRM' }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it('rejects a non-positive baggage allowance before persistence', async () => {
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      create: vi.fn(),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await expect(
+      service.create(
+        'baggage-rules',
+        {
+          name: 'قاعده بار',
+          airlineId: row.id,
+          passengerType: 'ADT',
+          allowance: '0',
+          unit: 'KG',
+          validFrom: '2026-08-29',
+        },
+        actor,
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
   it('persists the canonical ISO-2 code with actor and audit branch', async () => {
     const repository = {
       fieldExists: vi.fn().mockResolvedValue(false),
