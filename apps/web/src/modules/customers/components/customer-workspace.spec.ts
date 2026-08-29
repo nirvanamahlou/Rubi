@@ -94,6 +94,9 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('exportVisibleCustomers');
     expect(source).toContain('customer-import-template.xlsx');
     expect(source).toContain('parseCustomerXlsx(file)');
+    expect(source).toContain('emailIsValid');
+    expect(source).toContain('ایمیل نامعتبر نادیده گرفته شد');
+    expect(source).toContain('importProgress.completed');
     expect(source).toContain('importInputRef.current?.click()');
     expect(source).not.toContain('<Button asChild disabled={importing}');
     expect(source).toContain('نام مشتری');

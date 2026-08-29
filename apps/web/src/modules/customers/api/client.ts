@@ -28,7 +28,28 @@ export class CustomersApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+let refreshInFlight: Promise<boolean> | null = null;
+
+async function refreshAccess(baseUrl: string) {
+  refreshInFlight ??= fetch(`${baseUrl}/iam/auth/refresh`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  })
+    .then((response) => response.ok)
+    .catch(() => false)
+    .finally(() => {
+      refreshInFlight = null;
+    });
+  return refreshInFlight;
+}
+
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  retriedAfterRefresh = false,
+): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new CustomersApiError('نشانی API پیکربندی نشده است.', 0);
   const response = await fetch(`${baseUrl}/customers${path}`, {
@@ -41,6 +62,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       ...init?.headers,
     },
   });
+  if (
+    response.status === 401 &&
+    !retriedAfterRefresh &&
+    (await refreshAccess(baseUrl))
+  )
+    return request<T>(path, init, true);
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
       code?: string;

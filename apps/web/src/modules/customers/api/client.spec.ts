@@ -109,4 +109,28 @@ describe('customers browser client', () => {
       customersApi.detail('10000000-0000-4000-8000-000000000001'),
     ).rejects.toMatchObject({ status: 409, code: 'CONCURRENT_MODIFICATION' });
   });
+
+  it('refreshes an expired access cookie once and retries the customer request', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 401 })
+      .mockResolvedValueOnce({ ok: true, status: 200 })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: { id: 'synthetic-customer' } }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await customersApi.detail('10000000-0000-4000-8000-000000000001');
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      'http://localhost:4000/api/v1/iam/auth/refresh',
+    );
+    expect(fetchMock.mock.calls[1]?.[1]).toEqual(
+      expect.objectContaining({ method: 'POST', credentials: 'include' }),
+    );
+  });
 });

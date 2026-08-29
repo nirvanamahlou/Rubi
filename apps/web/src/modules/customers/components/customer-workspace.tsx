@@ -1936,6 +1936,10 @@ export function CustomerWorkspace() {
   );
   const [notice, setNotice] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<{
+    completed: number;
+    total: number;
+  } | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -2135,6 +2139,8 @@ export function CustomerWorkspace() {
       const rows = await parseCustomerXlsx(file);
       let imported = 0;
       const failures: string[] = [];
+      const warnings: string[] = [];
+      setImportProgress({ completed: 0, total: rows.length });
       for (const [index, row] of rows.entries()) {
         const nameParts = row.name.split(/\s+/).filter(Boolean);
         if (nameParts.length < 2) {
@@ -2147,10 +2153,10 @@ export function CustomerWorkspace() {
           failures.push(`ردیف ${index + 2}: شماره تماس معتبر نیست.`);
           continue;
         }
-        if (row.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) {
-          failures.push(`ردیف ${index + 2}: ایمیل معتبر نیست.`);
-          continue;
-        }
+        const emailIsValid =
+          !row.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email);
+        if (!emailIsValid)
+          warnings.push(`ردیف ${index + 2}: ایمیل نامعتبر نادیده گرفته شد.`);
         if (row.birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(row.birthDate)) {
           failures.push(`ردیف ${index + 2}: تاریخ باید YYYY-MM-DD باشد.`);
           continue;
@@ -2180,7 +2186,7 @@ export function CustomerWorkspace() {
               })
             ).data;
           }
-          if (row.email)
+          if (row.email && emailIsValid)
             await customersApi.addContact(created.id, {
               type: 'email',
               value: row.email.toLowerCase(),
@@ -2190,14 +2196,20 @@ export function CustomerWorkspace() {
             });
           imported += 1;
         } catch (error) {
+          if (error instanceof CustomersApiError && error.status === 401)
+            throw new Error(
+              `نشست ورود منقضی شد؛ عملیات پس از ${imported.toLocaleString('fa-IR')} ثبت متوقف شد. دوباره وارد شوید و فایل ادامه را استفاده کنید.`,
+            );
           failures.push(
             `ردیف ${index + 2}: ${error instanceof Error ? error.message : 'ثبت ناموفق بود.'}`,
           );
         }
+        if ((index + 1) % 10 === 0 || index === rows.length - 1)
+          setImportProgress({ completed: index + 1, total: rows.length });
       }
       await load();
       setNotice(
-        `${imported.toLocaleString('fa-IR')} مشتری وارد شد.${failures.length ? ` ${failures.length.toLocaleString('fa-IR')} ردیف خطا داشت: ${failures.slice(0, 3).join(' | ')}` : ''}`,
+        `${imported.toLocaleString('fa-IR')} مشتری وارد شد.${failures.length ? ` ${failures.length.toLocaleString('fa-IR')} ردیف خطا داشت: ${failures.slice(0, 3).join(' | ')}` : ''}${warnings.length ? ` ایمیل نامعتبر در ${warnings.length.toLocaleString('fa-IR')} ردیف نادیده گرفته شد.` : ''}`,
       );
     } catch (error) {
       setNotice(
@@ -2205,6 +2217,7 @@ export function CustomerWorkspace() {
       );
     } finally {
       setImporting(false);
+      setImportProgress(null);
     }
   }
 
@@ -2318,7 +2331,11 @@ export function CustomerWorkspace() {
             variant="outline"
           >
             <Upload className="size-4" />
-            {importing ? 'در حال ورود…' : 'ورود از Excel'}
+            {importing && importProgress
+              ? `در حال ورود ${importProgress.completed.toLocaleString('fa-IR')} از ${importProgress.total.toLocaleString('fa-IR')}`
+              : importing
+                ? 'در حال آماده‌سازی…'
+                : 'ورود از Excel'}
           </Button>
           <input
             accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
