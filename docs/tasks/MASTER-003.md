@@ -148,9 +148,9 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 - قیمت‌گذاری بیمه، صدور بیمه‌نامه، مسافر، Reservation، Provider و Documents خارج از
   این Aggregate باقی مانده‌اند؛ Query مستقیم به ماژول‌های مالک یا داده ساختگی Seed
   اضافه نشده است.
-- Branch `codex/pc-b-master-data-insurance` روی PR #36 پشته می‌شود و پیش از همه
-  والدهای خود Merge نمی‌شود؛ بعد از Merge والد، Base مطابق زنجیره به `develop`
-  تغییر می‌کند.
+- Draft PR #37 از Branch `codex/pc-b-master-data-insurance` روی PR #36 پشته شده و
+  پیش از همه والدهای خود Merge نمی‌شود؛ بعد از Merge والد، Base مطابق زنجیره به
+  `develop` تغییر می‌کند.
 
 ## Import واقعی هتل — HOTEL_IMPORT_V1
 

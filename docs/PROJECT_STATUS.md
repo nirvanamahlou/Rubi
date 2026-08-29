@@ -328,6 +328,9 @@
 - Branch مستقل `codex/pc-b-master-data-insurance` از
   `origin/codex/pc-b-master-data-sales-references@fbc423d` ساخته شد و روی Draft PR
   #36 پشته می‌شود؛ هیچ شاخه والد یا متعلق به PC-A تغییر نمی‌کند.
+- Draft PR #37 با Base `codex/pc-b-master-data-sales-references` ساخته شد و پیش از
+  Merge PR #36 و تمام والدهای آن نباید ادغام شود؛ پس از Merge والد، Base مطابق
+  زنجیره به `develop` تغییر می‌کند.
 - دو Migration افزایشی بیمه، Insurer را با Country و نام انگلیسی تکمیل و مدل‌های
   Insurance Plan، Coverage و رابطه چندبه‌چند آنها را با FK محدودکننده، Check مبلغ،
   سن، اعتبار و Version اضافه می‌کنند؛ عملیات مخرب وجود ندارد.
