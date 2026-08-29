@@ -84,6 +84,32 @@ export class MasterDataListQueryDto {
   @IsOptional()
   @IsIn(['all', 'complete', 'incomplete'])
   contactCompleteness?: 'all' | 'complete' | 'incomplete';
+  @IsOptional()
+  @IsUUID()
+  chainId?: string;
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  starRating?: number;
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  referenceCapacity?: number;
+  @IsOptional()
+  @IsIn(['MEAL_PLAN', 'SERVICE'])
+  mealServiceCategory?: 'MEAL_PLAN' | 'SERVICE';
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  facilityCategory?: string;
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  saleableOnly?: boolean;
 }
 
 export class MasterDataMutationDto {
@@ -120,6 +146,11 @@ export class MasterDataExportDto {
     'insurers',
     'airlines',
     'hotels',
+    'hotel-chains',
+    'room-types',
+    'meal-services',
+    'facilities',
+    'composite-hotels',
     'organizations',
     'suppliers',
     'brokers',

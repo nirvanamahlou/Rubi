@@ -62,6 +62,16 @@ describe('master data reference field mapping', () => {
     );
   });
 
+  it('publishes multi-reference selectors for hotel catalogs and members', () => {
+    expect(getReferenceFieldConfig('hotels', 'facilityIds')).toMatchObject({
+      target: 'facilities',
+      multiple: true,
+    });
+    expect(
+      getReferenceFieldConfig('composite-hotels', 'memberHotelIds'),
+    ).toMatchObject({ target: 'hotels', multiple: true });
+  });
+
   it('filters organizations by compatible role', () => {
     const organization = {
       ...record,

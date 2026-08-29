@@ -45,7 +45,8 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 
 ### Contract و Permission
 
-- Master Data Contract نسخه `7`
+- Master Data Contract نسخه `8` در بالاترین Slice پشته (`MASTER-003F`)؛ Parent PR #25
+  مستقل و دست‌نخورده باقی می‌ماند.
 - IAM Permission Contract نسخه `5`
 - Permissionهای جدید در Contract و Seed:
   - `master_data.import`
@@ -78,6 +79,20 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 ## وضعیت Export و Integration
 
 خروجی XLSX طبق ADR-022 به‌صورت گذرا، فیلترشده و مستقیم تا سقف ۱۰٬۰۰۰ ردیف تولید می‌شود و Permission/Audit دارد. خروجی PDF و هر Artifact پایدار یا آرشیوی صادقانه در وضعیت `AWAITING_DOCUMENTS_WORKER` باقی می‌ماند. اتصال Finance، Documents، Reservations، Procurement یا Integrations جعل نشده است.
+
+## Slice پشته‌ای اقامت — MASTER-003F
+
+- Migration افزایشی `20260829150000_master_data_accommodation` مدل‌های Hotel Chain،
+  روابط نرمال Meal/Room/Facility و Composite Hotel را بدون عملیات مخرب اضافه می‌کند.
+- مسیر `/master-data/accommodation` هشت تب ماکاپ، KPI واقعی، فیلترهای رابطه‌ای،
+  Search/Sort/Pagination، Create/View/Edit، Active/Inactive، Export و Import موجود
+  `HOTEL_IMPORT_V1` را ارائه می‌کند.
+- اطلاعات اقامت global است و Legal Entity selector آن را فیلتر نمی‌کند. Branch فقط
+  در Audit عملیات ثبت می‌شود و مالکیت رکورد را محدود نمی‌کند.
+- Contract/Rate/Inventory/Voucher/Passenger Assignment و فایل Documents وارد این
+  Aggregate نشده‌اند و فقط از قرارداد عمومی ماژول مالک قابل مصرف خواهند بود.
+- شاخه `codex/pc-b-master-data-accommodation` روی PR #31 پشته شده و پیش از والدهای
+  #31 ← #30 ← #29 ← #28 ← #25 نباید Merge شود.
 
 ## Import واقعی هتل — HOTEL_IMPORT_V1
 
@@ -134,7 +149,8 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 
 این Draft PR کل MASTER-003 را Complete اعلام نمی‌کند. موارد زیر هنوز پیاده‌سازی نشده‌اند و قفل‌ها آزاد نمی‌شوند:
 
-- کاتالوگ‌های پیشرفته Hotel Chain/Room/Meal/Facility/Composite، Aircraft/Class/Baggage/Manifest، Insurance Plan/Coverage، Tour/Transfer/Bus و Sales References مستقل
+- کاتالوگ‌های Aircraft/Class/Baggage/Manifest، Insurance Plan/Coverage،
+  Tour/Transfer/Bus و Sales References مستقل
 - اتصال Scanner مستقل آنتی‌ویروس و Documents برای تصاویر هتل
 - اتصال لوگوی بانک به Documents Worker و قرارداد واقعی فایل
 

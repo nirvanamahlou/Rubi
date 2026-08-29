@@ -59,6 +59,11 @@ const resourceCodePrefixes: Record<MasterDataResource, string> = {
   insurers: 'INS',
   airlines: 'AIR',
   hotels: 'HOTEL',
+  'hotel-chains': 'HOTEL_CHAIN',
+  'room-types': 'ROOM_TYPE',
+  'meal-services': 'MEAL_SERVICE',
+  facilities: 'FACILITY',
+  'composite-hotels': 'COMPOSITE_HOTEL',
   organizations: 'ORG',
   suppliers: 'SUPPLIER',
   brokers: 'BROKER',
@@ -121,6 +126,7 @@ const contactChannels = new Set([
   'TELEGRAM',
   'OTHER',
 ]);
+const mealServiceCategories = new Set(['MEAL_PLAN', 'SERVICE']);
 
 function isValidIso2(value: string): boolean {
   if (!/^[A-Z]{2}$/.test(value)) return false;
@@ -135,6 +141,37 @@ function isValidIanaTimezone(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+function referenceIds(value: unknown, label: string): string[] {
+  const ids = (
+    Array.isArray(value) ? value.map(String) : String(value ?? '').split(',')
+  )
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const unique = [...new Set(ids)];
+  if (
+    unique.length > 100 ||
+    unique.length !== ids.length ||
+    unique.some((id) => !uuidPattern.test(id))
+  )
+    throw new BadRequestException(
+      `${label} باید فهرست UUID یکتا و معتبر باشد.`,
+    );
+  return unique;
+}
+
+function normalizedWebsite(value: unknown): string | null {
+  const website = String(value ?? '').trim();
+  if (!website) return null;
+  if (
+    website.length > 320 ||
+    !/^(https?:\/\/)?[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}(?:[/:?#].*)?$/i.test(
+      website,
+    )
+  )
+    throw new BadRequestException('نشانی وب‌سایت معتبر نیست.');
+  return website;
 }
 
 const allowedFields: Record<MasterDataResource, readonly string[]> = {
@@ -201,7 +238,43 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
   ],
   insurers: ['code', 'name', 'organizationId'],
   airlines: ['code', 'name', 'icaoCode', 'organizationId'],
-  hotels: ['code', 'name', 'cityId', 'organizationId', 'starRating'],
+  hotels: [
+    'name',
+    'englishName',
+    'cityId',
+    'chainId',
+    'starRating',
+    'address',
+    'description',
+    'hotelRules',
+    'website',
+    'checkInTime',
+    'checkOutTime',
+    'latitude',
+    'longitude',
+    'isSaleableReference',
+    'mealServiceIds',
+    'roomTypeIds',
+    'facilityIds',
+  ],
+  'hotel-chains': ['name', 'englishName', 'countryId', 'website'],
+  'room-types': [
+    'name',
+    'englishName',
+    'referenceCapacity',
+    'usageDescription',
+  ],
+  'meal-services': ['name', 'englishName', 'category', 'includedMeals'],
+  facilities: ['name', 'englishName', 'category', 'displayOrder'],
+  'composite-hotels': [
+    'name',
+    'englishName',
+    'cityId',
+    'usageCondition',
+    'isSaleableReference',
+    'memberHotelIds',
+    'backupMemberIds',
+  ],
   organizations: ['code', 'legalName', 'displayName', 'roleCodes'],
   suppliers: [
     'organizationId',
@@ -265,6 +338,11 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   insurers: ['name', 'organizationId'],
   airlines: ['name', 'organizationId'],
   hotels: ['name', 'cityId'],
+  'hotel-chains': ['name', 'countryId'],
+  'room-types': ['name'],
+  'meal-services': ['name', 'category'],
+  facilities: ['name'],
+  'composite-hotels': ['name', 'cityId', 'usageCondition', 'memberHotelIds'],
   organizations: ['legalName', 'displayName', 'roleCodes'],
   suppliers: ['organizationId'],
   brokers: ['name', 'organizationId'],
@@ -310,6 +388,7 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     'cityId',
     'airportId',
     'bankId',
+    'chainId',
     'terminalType',
     'paymentChannel',
     'paymentDirection',
@@ -319,6 +398,11 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     'providerConnected',
     'hasWhatsapp',
     'contactCompleteness',
+    'starRating',
+    'referenceCapacity',
+    'mealServiceCategory',
+    'facilityCategory',
+    'saleableOnly',
   ];
   if (
     Object.keys(input.filters).some((key) => !allowedFilterKeys.includes(key))
@@ -346,6 +430,9 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     'cityId',
     'airportId',
     'bankId',
+    'chainId',
+    'organizationId',
+    'serviceId',
   ]) {
     const value = input.filters[field];
     if (
@@ -376,6 +463,25 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     !paymentDirections.has(String(input.filters.paymentDirection))
   )
     throw new BadRequestException('جهت روش پرداخت معتبر نیست.');
+  if (
+    input.filters.mealServiceCategory !== undefined &&
+    !mealServiceCategories.has(String(input.filters.mealServiceCategory))
+  )
+    throw new BadRequestException('دسته Meal/Service خروجی معتبر نیست.');
+  if (
+    input.filters.starRating !== undefined &&
+    (!Number.isInteger(Number(input.filters.starRating)) ||
+      Number(input.filters.starRating) < 1 ||
+      Number(input.filters.starRating) > 5)
+  )
+    throw new BadRequestException('درجه هتل خروجی معتبر نیست.');
+  if (
+    input.filters.referenceCapacity !== undefined &&
+    (!Number.isInteger(Number(input.filters.referenceCapacity)) ||
+      Number(input.filters.referenceCapacity) < 1 ||
+      Number(input.filters.referenceCapacity) > 20)
+  )
+    throw new BadRequestException('ظرفیت استاندارد خروجی معتبر نیست.');
   const allowedColumns = new Set([
     ...allowedFields[resource],
     'code',
@@ -476,6 +582,29 @@ function exportQuery(input: ExportInput): MasterDataListQuery {
           >,
         }
       : {}),
+    ...(typeof input.filters.chainId === 'string'
+      ? { chainId: input.filters.chainId }
+      : {}),
+    ...(typeof input.filters.starRating === 'number'
+      ? { starRating: input.filters.starRating }
+      : {}),
+    ...(typeof input.filters.referenceCapacity === 'number'
+      ? { referenceCapacity: input.filters.referenceCapacity }
+      : {}),
+    ...(typeof input.filters.mealServiceCategory === 'string'
+      ? {
+          mealServiceCategory: input.filters.mealServiceCategory as Exclude<
+            MasterDataListQuery['mealServiceCategory'],
+            undefined
+          >,
+        }
+      : {}),
+    ...(typeof input.filters.facilityCategory === 'string'
+      ? { facilityCategory: input.filters.facilityCategory }
+      : {}),
+    ...(typeof input.filters.saleableOnly === 'boolean'
+      ? { saleableOnly: input.filters.saleableOnly }
+      : {}),
     page: 1,
     pageSize: 100,
   };
@@ -560,6 +689,10 @@ export class MasterDataService {
 
   async organizationSupplierSummary() {
     return { data: await this.repository.organizationSupplierSummary() };
+  }
+
+  async accommodationSummary() {
+    return { data: await this.repository.accommodationSummary() };
   }
 
   async create(
@@ -795,6 +928,39 @@ export class MasterDataService {
         throw new BadRequestException(`فیلد الزامی: ${missing.join(', ')}`);
     }
     const data: Record<string, unknown> = { ...values };
+    if (
+      [
+        'hotels',
+        'hotel-chains',
+        'room-types',
+        'meal-services',
+        'facilities',
+        'composite-hotels',
+      ].includes(resource)
+    ) {
+      for (const field of [
+        'englishName',
+        'address',
+        'description',
+        'hotelRules',
+        'usageDescription',
+        'category',
+      ]) {
+        if (!Object.hasOwn(data, field)) continue;
+        const value = String(data[field] ?? '').trim();
+        data[field] = value || null;
+      }
+      for (const field of [
+        'organizationId',
+        'mealServiceId',
+        'defaultRoomTypeId',
+        'chainId',
+        'logoFileReference',
+        'iconFileReference',
+      ]) {
+        if (data[field] === '') data[field] = null;
+      }
+    }
     if (resource === 'countries' && typeof data.iso2Code === 'string') {
       const iso2Code = data.iso2Code.trim().toUpperCase();
       if (!isValidIso2(iso2Code))
@@ -874,6 +1040,7 @@ export class MasterDataService {
     for (const optionalReference of ['regionId', 'parentRegionId']) {
       if (data[optionalReference] === '') data[optionalReference] = null;
     }
+    if (data.chainId === '') data.chainId = null;
     if (resource === 'suppliers' || resource === 'brokers') {
       for (const optionalReference of ['countryId', 'cityId']) {
         if (data[optionalReference] === '') data[optionalReference] = null;
@@ -888,6 +1055,9 @@ export class MasterDataService {
       'parentRegionId',
       'airportId',
       'bankId',
+      'chainId',
+      'logoFileReference',
+      'iconFileReference',
     ]) {
       if (
         typeof data[field] === 'string' &&
@@ -1136,10 +1306,227 @@ export class MasterDataService {
         }
       }
     }
+    if (resource === 'hotel-chains' || resource === 'hotels') {
+      if (Object.hasOwn(data, 'website'))
+        data.website = normalizedWebsite(data.website);
+    }
+    if (
+      resource === 'room-types' &&
+      data.referenceCapacity !== undefined &&
+      data.referenceCapacity !== null &&
+      data.referenceCapacity !== ''
+    ) {
+      const capacity = Number(data.referenceCapacity);
+      if (!Number.isInteger(capacity) || capacity < 1 || capacity > 20)
+        throw new BadRequestException(
+          'ظرفیت استاندارد اتاق باید عدد صحیح بین ۱ تا ۲۰ باشد.',
+        );
+      data.referenceCapacity = capacity;
+    } else if (
+      resource === 'room-types' &&
+      Object.hasOwn(data, 'referenceCapacity')
+    ) {
+      data.referenceCapacity = null;
+    }
+    if (resource === 'meal-services') {
+      if (data.category !== undefined) {
+        const category = String(data.category).trim().toUpperCase();
+        if (!mealServiceCategories.has(category))
+          throw new BadRequestException('دسته Meal/Service معتبر نیست.');
+        data.category = category;
+      }
+      if (Object.hasOwn(data, 'includedMeals')) {
+        const includedMeals = (
+          Array.isArray(data.includedMeals)
+            ? data.includedMeals.map(String)
+            : String(data.includedMeals ?? '').split(',')
+        )
+          .map((value) => value.trim())
+          .filter(Boolean);
+        if (
+          includedMeals.length > 20 ||
+          includedMeals.some((value) => value.length > 80)
+        )
+          throw new BadRequestException('فهرست وعده‌های شامل‌شده معتبر نیست.');
+        data.includedMeals = [...new Set(includedMeals)];
+      }
+    }
+    if (resource === 'facilities' && data.displayOrder !== undefined) {
+      const displayOrder =
+        data.displayOrder === '' || data.displayOrder === null
+          ? 0
+          : Number(data.displayOrder);
+      if (!Number.isInteger(displayOrder) || displayOrder < 0)
+        throw new BadRequestException(
+          'ترتیب نمایش امکان باید عدد صحیح نامنفی باشد.',
+        );
+      data.displayOrder = displayOrder;
+    }
+    if (resource === 'hotels') {
+      if (data.isSaleableReference === '') delete data.isSaleableReference;
+      else if (data.isSaleableReference !== undefined)
+        data.isSaleableReference =
+          data.isSaleableReference === true ||
+          String(data.isSaleableReference).toLowerCase() === 'true';
+      for (const field of ['checkInTime', 'checkOutTime'] as const) {
+        if (data[field] === undefined) continue;
+        const time = String(data[field] ?? '').trim();
+        if (time && !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(time))
+          throw new BadRequestException(`${field} باید با قالب HH:mm باشد.`);
+        data[field] = time || null;
+      }
+      const hasLatitude = Object.hasOwn(data, 'latitude');
+      const hasLongitude = Object.hasOwn(data, 'longitude');
+      if (hasLatitude !== hasLongitude)
+        throw new BadRequestException(
+          'عرض و طول جغرافیایی باید با هم ثبت شوند.',
+        );
+      for (const [field, minimum, maximum] of [
+        ['latitude', -90, 90],
+        ['longitude', -180, 180],
+      ] as const) {
+        if (!Object.hasOwn(data, field)) continue;
+        const raw = String(data[field] ?? '').trim();
+        if (!raw) {
+          data[field] = null;
+          continue;
+        }
+        const coordinate = Number(raw);
+        if (
+          !Number.isFinite(coordinate) ||
+          coordinate < minimum ||
+          coordinate > maximum
+        )
+          throw new BadRequestException(`${field} خارج از بازه مجاز است.`);
+        data[field] = raw;
+      }
+
+      const relationInputs = [
+        {
+          input: 'mealServiceIds',
+          relation: 'mealServices',
+          foreignKey: 'mealServiceId',
+          target: 'meal-services' as const,
+          legacy: 'mealServiceId',
+          label: 'سرویس‌های غذایی',
+        },
+        {
+          input: 'roomTypeIds',
+          relation: 'roomTypes',
+          foreignKey: 'roomTypeId',
+          target: 'room-types' as const,
+          legacy: 'defaultRoomTypeId',
+          label: 'نوع‌های اتاق',
+        },
+        {
+          input: 'facilityIds',
+          relation: 'facilities',
+          foreignKey: 'facilityId',
+          target: 'facilities' as const,
+          label: 'امکانات',
+        },
+      ];
+      for (const relationInput of relationInputs) {
+        if (!Object.hasOwn(data, relationInput.input)) continue;
+        const ids = referenceIds(
+          data[relationInput.input],
+          relationInput.label,
+        );
+        const rows = await Promise.all(
+          ids.map((id) => this.repository.find(relationInput.target, id)),
+        );
+        if (rows.some((row) => !row?.isActive))
+          throw new BadRequestException(
+            `یک یا چند مرجع فعال ${relationInput.label} یافت نشد.`,
+          );
+        delete data[relationInput.input];
+        data[relationInput.relation] = partial
+          ? {
+              deleteMany: {},
+              create: ids.map((id) => ({
+                [relationInput.foreignKey]: id,
+                assignedByUserId: actorUserId,
+              })),
+            }
+          : {
+              create: ids.map((id) => ({
+                [relationInput.foreignKey]: id,
+                assignedByUserId: actorUserId,
+              })),
+            };
+        if (relationInput.legacy) data[relationInput.legacy] = ids[0] ?? null;
+      }
+    }
+    if (resource === 'composite-hotels') {
+      if (data.isSaleableReference === '') delete data.isSaleableReference;
+      else if (data.isSaleableReference !== undefined)
+        data.isSaleableReference =
+          data.isSaleableReference === true ||
+          String(data.isSaleableReference).toLowerCase() === 'true';
+      if (Object.hasOwn(data, 'memberHotelIds')) {
+        const memberIds = referenceIds(
+          data.memberHotelIds,
+          'هتل‌های عضو ترکیب',
+        );
+        if (!memberIds.length)
+          throw new BadRequestException('حداقل یک هتل عضو الزامی است.');
+        const backupIds = Object.hasOwn(data, 'backupMemberIds')
+          ? referenceIds(data.backupMemberIds, 'اعضای پشتیبان')
+          : [];
+        if (backupIds.some((id) => !memberIds.includes(id)))
+          throw new BadRequestException(
+            'هتل پشتیبان باید در فهرست اعضای ترکیب باشد.',
+          );
+        const existing =
+          partial && entityId
+            ? await this.repository.find('composite-hotels', entityId)
+            : null;
+        const cityId = String(data.cityId ?? existing?.cityId ?? '');
+        const hotels = await Promise.all(
+          memberIds.map((id) => this.repository.find('hotels', id)),
+        );
+        if (
+          hotels.some(
+            (hotel) =>
+              !hotel?.isActive ||
+              !hotel.isSaleableReference ||
+              hotel.cityId !== cityId,
+          )
+        )
+          throw new BadRequestException(
+            'هتل‌های عضو باید فعال، فروش‌پذیر و در شهر ترکیب باشند.',
+          );
+        delete data.memberHotelIds;
+        delete data.backupMemberIds;
+        data.members = partial
+          ? {
+              deleteMany: {},
+              create: memberIds.map((hotelId, index) => ({
+                hotelId,
+                priority: index + 1,
+                isBackup: backupIds.includes(hotelId),
+                assignedByUserId: actorUserId,
+              })),
+            }
+          : {
+              create: memberIds.map((hotelId, index) => ({
+                hotelId,
+                priority: index + 1,
+                isBackup: backupIds.includes(hotelId),
+                assignedByUserId: actorUserId,
+              })),
+            };
+      } else if (Object.hasOwn(data, 'backupMemberIds')) {
+        throw new BadRequestException(
+          'برای ویرایش اعضای پشتیبان، فهرست کامل هتل‌های عضو لازم است.',
+        );
+      }
+    }
     if (
       resource === 'hotels' &&
       data.starRating !== undefined &&
-      data.starRating !== null
+      data.starRating !== null &&
+      data.starRating !== ''
     ) {
       const rating = Number(data.starRating);
       if (!Number.isInteger(rating) || rating < 1 || rating > 5)
@@ -1147,6 +1534,8 @@ export class MasterDataService {
           'درجه هتل باید عدد صحیح بین ۱ تا ۵ باشد.',
         );
       data.starRating = rating;
+    } else if (resource === 'hotels' && Object.hasOwn(data, 'starRating')) {
+      data.starRating = null;
     }
     if (resource === 'leaders' && typeof data.languages === 'string')
       data.languages = data.languages
@@ -1193,6 +1582,8 @@ export class MasterDataService {
       banks: { field: 'countryId', target: 'countries' },
       'bank-branches': { field: 'bankId', target: 'banks' },
       hotels: { field: 'cityId', target: 'cities' },
+      'hotel-chains': { field: 'countryId', target: 'countries' },
+      'composite-hotels': { field: 'cityId', target: 'cities' },
       insurers: {
         field: 'organizationId',
         target: 'organizations',
@@ -1231,6 +1622,11 @@ export class MasterDataService {
         (check.role && !roles?.some(({ roleCode }) => roleCode === check.role))
       )
         throw new BadRequestException('مرجع فعال با Role موردنیاز یافت نشد.');
+    }
+    if (resource === 'hotels' && typeof data.chainId === 'string') {
+      const chain = await this.repository.find('hotel-chains', data.chainId);
+      if (!chain?.isActive)
+        throw new BadRequestException('زنجیره هتل فعال یافت نشد.');
     }
     if (resource === 'bank-branches') {
       if (typeof data.cityId === 'string') {

@@ -62,7 +62,14 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
     slug: 'accommodation',
     title: 'اقامت',
     description: 'هتل‌ها و اطلاعات مرجع خدمات اقامتی',
-    resources: ['hotels'],
+    resources: [
+      'hotels',
+      'hotel-chains',
+      'room-types',
+      'meal-services',
+      'facilities',
+      'composite-hotels',
+    ],
     tone: 'orange',
   },
   {

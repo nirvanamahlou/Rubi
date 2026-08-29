@@ -37,6 +37,22 @@ describe('master data API proposal', () => {
     expect(serialized).toContain('terminalType=VIP');
   });
 
+  it('serializes accommodation filters without leaking unknown keys', () => {
+    const query = parseMasterDataListQuery({
+      starRating: 5,
+      referenceCapacity: 2,
+      mealServiceCategory: 'MEAL_PLAN',
+      facilityCategory: 'عمومی',
+    });
+    const serialized = serializeMasterDataListQuery(query);
+    expect(serialized).toContain('starRating=5');
+    expect(serialized).toContain('referenceCapacity=2');
+    expect(serialized).toContain('mealServiceCategory=MEAL_PLAN');
+    expect(serialized).toContain(
+      `facilityCategory=${encodeURIComponent('عمومی')}`,
+    );
+  });
+
   it('rejects uncontrolled page sizes', () => {
     expect(() => parseMasterDataListQuery({ pageSize: 101 })).toThrow();
   });

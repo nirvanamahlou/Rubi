@@ -101,6 +101,12 @@ export class MasterDataController {
     return this.service.organizationSupplierSummary();
   }
 
+  @Get('accommodation/summary')
+  @RequirePermissions('master_data.read')
+  accommodationSummary() {
+    return this.service.accommodationSummary();
+  }
+
   @Get(':resource/:id')
   @RequirePermissions('master_data.read')
   detail(@Param('resource') resource: string, @Param('id') id: string) {

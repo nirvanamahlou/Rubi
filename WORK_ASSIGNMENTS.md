@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-29 — MASTER-003E-SUPPLIERS برای سازمان‌ها و تأمین‌کنندگان رزرو شد
+آخرین به‌روزرسانی: 2026-08-29 — MASTER-003F-ACCOMMODATION در Draft PR #32 تحویل شد
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `PLANNED/RESERVED`، `IN_PROGRESS`،
@@ -35,6 +35,7 @@
 | MASTER-003C-FINANCIAL           | PC-B         | `codex/pc-b-master-data-financial`          | مالی و پولی در Master Data: Currency، Rate Workflow/History، Bank/Branch و Payment Method مرجع        | `READY_FOR_REVIEW` | Draft PR #29 روی PR #28 و به‌تبع آن #25؛ بدون Query مستقیم Finance          |
 | MASTER-003D-UI-POLISH           | PC-B         | `codex/pc-b-master-data-ui-polish`          | KPI پاستلی مشترک، نمای کامل جغرافیا و حذف underline کارت‌های Hub بدون تغییر Backend/Database          | `READY_FOR_REVIEW` | Draft PR #30 روی PR #29؛ ۳۳۵ تست، Typecheck و Build موفق                    |
 | MASTER-003E-SUPPLIERS           | PC-B         | `codex/pc-b-master-data-suppliers`          | Vertical Slice سازمان‌ها و تأمین‌کنندگان: Supplier، Broker، Contact ماسک‌شده، Service و Collaboration | `READY_FOR_REVIEW` | Draft PR #31 روی PR #30؛ قفل‌های Migration/Contract/Docs فعال MASTER-003    |
+| MASTER-003F-ACCOMMODATION       | PC-B         | `codex/pc-b-master-data-accommodation`      | Vertical Slice اقامت: Hotel Profile، Chain، Room، Meal، Facility، Excel و Composite Hotel             | `READY_FOR_REVIEW` | Draft PR #32 روی PR #31؛ قفل‌های Migration/Contract/Docs فعال MASTER-003    |
 | CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket                      | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence |
 | MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix         | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11        |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                                   | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |

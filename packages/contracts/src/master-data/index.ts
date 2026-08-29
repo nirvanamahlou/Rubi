@@ -1,4 +1,4 @@
-export const MASTER_DATA_CONTRACT_VERSION = 7 as const;
+export const MASTER_DATA_CONTRACT_VERSION = 8 as const;
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 
 export const MASTER_DATA_RESOURCES = [
@@ -15,6 +15,11 @@ export const MASTER_DATA_RESOURCES = [
   'insurers',
   'airlines',
   'hotels',
+  'hotel-chains',
+  'room-types',
+  'meal-services',
+  'facilities',
+  'composite-hotels',
   'organizations',
   'suppliers',
   'brokers',
@@ -43,6 +48,7 @@ export type MasterCollaborationStatus =
   'ACTIVE' | 'UNDER_REVIEW' | 'PURCHASE_SUSPENDED' | 'ENDED';
 export type MasterOrganizationContactChannel =
   'PHONE' | 'WHATSAPP' | 'EMAIL' | 'TELEGRAM' | 'OTHER';
+export type MasterMealServiceCategory = 'MEAL_PLAN' | 'SERVICE';
 
 export type MasterDataSortField = 'name' | 'code' | 'updatedAt';
 export type MasterDataSortDirection = 'asc' | 'desc';
@@ -68,6 +74,12 @@ export interface MasterDataListQuery {
   providerConnected?: boolean;
   hasWhatsapp?: boolean;
   contactCompleteness?: 'all' | 'complete' | 'incomplete';
+  chainId?: string;
+  starRating?: number;
+  referenceCapacity?: number;
+  mealServiceCategory?: MasterMealServiceCategory;
+  facilityCategory?: string;
+  saleableOnly?: boolean;
 }
 
 export interface MasterDataRecord {
@@ -180,6 +192,46 @@ export interface MasterOrganizationSupplierSummary {
   };
   collaboration: Record<MasterCollaborationStatus, number>;
 }
+
+export interface MasterAccommodationSummary {
+  hotels: {
+    total: number;
+    saleable: number;
+    countries: number;
+    cities: number;
+    incomplete: number;
+  };
+  chains: {
+    total: number;
+    active: number;
+    memberHotels: number;
+    incomplete: number;
+  };
+  roomTypes: {
+    total: number;
+    active: number;
+    standardCapacity: number;
+    pendingDomainApproval: number;
+  };
+  mealServices: {
+    total: number;
+    active: number;
+    mealPlans: number;
+    needsReview: number;
+  };
+  facilities: {
+    total: number;
+    active: number;
+    categories: number;
+    missingIcon: number;
+  };
+  compositeHotels: {
+    total: number;
+    active: number;
+    uniqueMemberHotels: number;
+    needsReview: number;
+  };
+}
 export type MasterHotelImportDuplicateBehavior = 'SKIP' | 'UPDATE';
 
 export interface MasterHotelImportIssue {
@@ -268,6 +320,8 @@ export const masterDataEndpoints = {
     `${MASTER_DATA_API_PREFIX}/organization-contacts/${encodeURIComponent(id)}/unmask` as const,
   organizationSupplierSummary:
     `${MASTER_DATA_API_PREFIX}/organizations-suppliers/summary` as const,
+  accommodationSummary:
+    `${MASTER_DATA_API_PREFIX}/accommodation/summary` as const,
   hotelImportPreview:
     `${MASTER_DATA_API_PREFIX}/hotel-imports/preview` as const,
   hotelImportCommit: (sessionId: string) =>

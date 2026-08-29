@@ -1,15 +1,15 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-29 — MASTER-003C-FINANCIAL در مسیر اطلاعات پایه پیاده‌سازی شد
+آخرین به‌روزرسانی: 2026-08-29 — MASTER-003F-ACCOMMODATION در مسیر اطلاعات پایه پیاده‌سازی شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003B-GEO روی Parent PR #25 پیاده‌سازی و پذیرش PostgreSQL/Smoke شد**
+- وضعیت: **MASTER-003F-ACCOMMODATION به‌صورت Stacked روی PR #31 پیاده‌سازی و پذیرش PostgreSQL شد**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه فعال: `codex/pc-b-master-data-next`
-- Work Item: `MASTER-003B-GEO`؛ Draft PR #28 با Parent PR #25
+- شاخه فعال: `codex/pc-b-master-data-accommodation`
+- Work Item: `MASTER-003F-ACCOMMODATION`؛ Draft PR #32 روی Draft PR #31
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ Dev Server فعالی برای Rubi وجود نداشت.
 - نوع تغییر: Database، API، Contract، Permission/Audit، Excel Import، Frontend و تست؛
   Dependency/Lockfile تا اثبات نیاز واقعی آزاد است.
@@ -213,6 +213,37 @@
   `/master-data/organizations-suppliers` در خروجی SSG ساخته می‌شود.
 - هیچ Query مستقیمی به Procurement، Finance یا Integrations و هیچ تغییری در Customers،
   dependency manifest یا lockfile وجود ندارد.
+
+### `MASTER-003F-ACCOMMODATION` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-accommodation` از
+  `origin/codex/pc-b-master-data-suppliers@02d4101` ساخته شد و PR والد #31 را تغییر
+  نمی‌دهد.
+- Draft PR #32 با Base `codex/pc-b-master-data-suppliers` ایجاد شد و پیش از Merge
+  زنجیره #31 ← #30 ← #29 ← #28 ← #25 نباید ادغام شود.
+- هشت نمای ماکاپ اقامت شامل هتل‌ها، پروفایل هتل، زنجیره، نوع اتاق، وعده/سرویس،
+  امکانات، ورود گروهی Excel و هتل ترکیبی در `/master-data/accommodation` به Backend
+  واقعی متصل شدند.
+- Migration افزایشی `20260829150000_master_data_accommodation` زنجیره هتل، روابط
+  چندبه‌چند Meal/Room/Facility و هتل ترکیبی/اعضا را اضافه و مشخصات هتل را با وب‌سایت،
+  زمان ورود/خروج، مختصات و لوگوی مرجع توسعه می‌دهد.
+- Check Constraintهای زمان، جفت و بازه مختصات، ترتیب نمایش و اولویت عضو و همه FKهای
+  جدید با `ON DELETE RESTRICT` در PostgreSQL اعمال می‌شوند؛ Migration دادهٔ قدیمی
+  Meal/Room را بدون حذف به روابط جدید backfill می‌کند.
+- Contract عمومی `master-data.v8` شامل ۲۵ منبع و Summary واقعی اقامت است. KPIهای
+  هر شش کاتالوگ دقیقاً با نام و آیکن ماکاپ از Aggregate واقعی Backend تغذیه می‌شوند.
+- قرارداد، نرخ خرید، موجودی، Voucher و تخصیص مسافر جعل نشده‌اند؛ این داده‌ها در
+  Procurement/Reservations باقی می‌مانند و مرجع Documents تا قرارداد رسمی با `—`
+  یا وضعیت در انتظار نمایش داده می‌شود.
+- همه ۱۳ Migration روی PostgreSQL 18.1 خالی، Seed دوگانه و Constraintهای زنده زمان،
+  مختصات، ترتیب و اولویت موفق‌اند؛ Seed هیچ Hotel/Chain/Composite یا قرارداد ساختگی
+  اضافه نمی‌کند.
+- Frozen install، Prisma format/validate/generate، Lint فایل‌های Slice، Typecheck و
+  Production Build و هر `366/366` تست Repository موفق‌اند. Full Web Lint فقط روی
+  ایراد قدیمی و خارج از Slice در
+  `apps/web/src/components/ui/date-picker.tsx` متوقف می‌شود.
+- هیچ فایل Customers، dependency manifest یا lockfile و هیچ جدول عملیاتی ماژول دیگر
+  تغییر نکرده است.
 
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`

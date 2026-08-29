@@ -219,6 +219,24 @@ erDiagram
 - وضعیت همکاری Supplier/Broker مرجع Master Data است؛ Contract، Purchase، Settlement و
   Provider credential در مالکیت Procurement، Finance و Integrations باقی می‌مانند.
 
+### Accommodation Master Data
+
+- Hotel یک Reference مشترک میان Legal Entityها است و به City واقعی و در صورت وجود
+  Hotel Chain و Organization دارای Role `HOTEL_PROVIDER` متصل می‌شود؛ selector شرکت
+  روی این کاتالوگ فیلتر مالکیتی اعمال نمی‌کند.
+- زمان ورود/خروج با قالب `HH:mm`، مختصات به‌صورت جفت Decimal و درجه هتل با بازه
+  کنترل‌شده ذخیره می‌شوند. رکورد مصرف‌شده حذف فیزیکی نمی‌شود و Active/Saleable و
+  Version خوش‌بینانه دارد.
+- Meal/Service، Room Type و Facility رکوردهای مستقل کاتالوگ‌اند. اتصال آن‌ها به Hotel
+  در `master_hotel_meal_services`، `master_hotel_room_types` و
+  `master_hotel_facilities` نگه‌داری می‌شود و ستون Checkbox ثابت ساخته نمی‌شود.
+- Composite Hotel یک Reference نمایشی فروش در یک City است؛ اعضا فقط Hotel فعال،
+  فروش‌پذیر و هم‌شهر هستند، اولویت مثبت و یکتا دارند و عضو پشتیبان نیز باید عضو همان
+  ترکیب باشد.
+- موجودی اتاق، تخصیص مسافر و Voucher در Reservations و قرارداد و نرخ خرید در
+  Procurement باقی می‌مانند. Logo/Image فقط شناسه عمومی Documents است و تا انتشار
+  قرارداد واقعی فایل، باینری یا reference ساختگی ذخیره نمی‌شود.
+
 ### Human Resources
 
 - Employee یک هویت دامنه مستقل است؛ Customer، Passenger یا Organization Contact به‌عنوان
