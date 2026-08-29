@@ -7,6 +7,7 @@ export interface ReferenceFieldConfig {
   payload: 'id' | 'code';
   requiredRole?: string;
   optional?: boolean;
+  multiple?: boolean;
 }
 export type ReferenceSelectorState =
   'loading' | 'ready' | 'empty' | 'error' | 'forbidden';
@@ -84,6 +85,46 @@ const configs: Partial<
   },
   hotels: {
     cityId: { target: 'cities', payload: 'id' },
+    chainId: {
+      target: 'hotel-chains',
+      payload: 'id',
+      optional: true,
+    },
+    mealServiceIds: {
+      target: 'meal-services',
+      payload: 'id',
+      optional: true,
+      multiple: true,
+    },
+    roomTypeIds: {
+      target: 'room-types',
+      payload: 'id',
+      optional: true,
+      multiple: true,
+    },
+    facilityIds: {
+      target: 'facilities',
+      payload: 'id',
+      optional: true,
+      multiple: true,
+    },
+  },
+  'hotel-chains': {
+    countryId: { target: 'countries', payload: 'id' },
+  },
+  'composite-hotels': {
+    cityId: { target: 'cities', payload: 'id' },
+    memberHotelIds: {
+      target: 'hotels',
+      payload: 'id',
+      multiple: true,
+    },
+    backupMemberIds: {
+      target: 'hotels',
+      payload: 'id',
+      optional: true,
+      multiple: true,
+    },
   },
   'exchange-rates': {
     fromCurrencyCode: { target: 'currencies', payload: 'code' },

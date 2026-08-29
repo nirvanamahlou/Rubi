@@ -9,10 +9,10 @@ import {
 
 describe('master data public contract', () => {
   it('publishes a stable versioned resource catalog', () => {
-    expect(MASTER_DATA_CONTRACT_VERSION).toBe(7);
+    expect(MASTER_DATA_CONTRACT_VERSION).toBe(8);
     expect(MASTER_DATA_API_PREFIX).toBe('/api/v1/master-data');
-    expect(MASTER_DATA_RESOURCES).toHaveLength(20);
-    expect(new Set(MASTER_DATA_RESOURCES).size).toBe(20);
+    expect(MASTER_DATA_RESOURCES).toHaveLength(25);
+    expect(new Set(MASTER_DATA_RESOURCES).size).toBe(25);
     expect(MASTER_DATA_RESOURCES.slice(0, 5)).toEqual([
       'countries',
       'regions',
@@ -27,6 +27,11 @@ describe('master data public contract', () => {
         'suppliers',
         'travel-services',
         'organization-contacts',
+        'hotel-chains',
+        'room-types',
+        'meal-services',
+        'facilities',
+        'composite-hotels',
       ]),
     );
   });

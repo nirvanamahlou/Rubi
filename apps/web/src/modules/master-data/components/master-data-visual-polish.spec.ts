@@ -17,6 +17,7 @@ describe('Master Data visual polish contract', () => {
     const finance = source('master-data-finance-workspace.tsx');
     const geography = source('master-data-geography-workspace.tsx');
     const suppliers = source('master-data-suppliers-workspace.tsx');
+    const accommodation = source('master-data-accommodation-workspace.tsx');
 
     expect(kpis).toContain('bg-gradient-to-br');
     expect(kpis).toContain('<Icon aria-hidden="true"');
@@ -24,6 +25,7 @@ describe('Master Data visual polish contract', () => {
     expect(finance).toContain('<MasterDataKpiGrid');
     expect(geography).toContain('<MasterDataKpiGrid');
     expect(suppliers).toContain('<MasterDataKpiGrid');
+    expect(accommodation).toContain('<MasterDataKpiGrid');
   });
 
   it('keeps geography KPI names aligned with the approved mockup', () => {

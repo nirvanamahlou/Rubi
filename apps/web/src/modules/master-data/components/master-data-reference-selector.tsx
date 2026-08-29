@@ -53,7 +53,9 @@ export function MasterDataReferenceSelector({
           hasOrganizationRole(record, config.requiredRole),
         );
         setOptions(compatible);
-        setState(resolveReferenceSelectorState({ optionCount: compatible.length }));
+        setState(
+          resolveReferenceSelectorState({ optionCount: compatible.length }),
+        );
       } catch (error) {
         if (!active) return;
         setOptions([]);
@@ -72,14 +74,54 @@ export function MasterDataReferenceSelector({
   }, [config.requiredRole, config.target, query]);
 
   const selected = useMemo(
-    () => options.find((record) => mapReferenceOption(config, record) === value),
+    () =>
+      options.find((record) => mapReferenceOption(config, record) === value),
     [config, options, value],
   );
+  const selectedValues = useMemo(
+    () =>
+      value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    [value],
+  );
+  const selectedOptions = useMemo(
+    () =>
+      options.filter((record) =>
+        selectedValues.includes(mapReferenceOption(config, record)),
+      ),
+    [config, options, selectedValues],
+  );
+
+  function choose(optionValue: string) {
+    if (!config.multiple) {
+      onChange(optionValue);
+      return;
+    }
+    onChange(
+      selectedValues.includes(optionValue)
+        ? selectedValues.filter((item) => item !== optionValue).join(',')
+        : [...selectedValues, optionValue].join(','),
+    );
+  }
 
   if (disabled) {
     return (
       <div className="rounded-xl border border-input bg-muted/40 px-3 py-2.5 text-sm">
-        {selected ? `${selected.name} (${selected.code})` : value ? 'مرجع ثبت‌شده' : '—'}
+        {config.multiple
+          ? selectedOptions.length
+            ? selectedOptions
+                .map((record) => `${record.name} (${record.code})`)
+                .join('، ')
+            : selectedValues.length
+              ? `${selectedValues.length.toLocaleString('fa-IR')} مرجع ثبت‌شده`
+              : '—'
+          : selected
+            ? `${selected.name} (${selected.code})`
+            : value
+              ? 'مرجع ثبت‌شده'
+              : '—'}
       </div>
     );
   }
@@ -87,9 +129,30 @@ export function MasterDataReferenceSelector({
   return (
     <div className="space-y-2">
       {value ? (
-        <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-2">
-          <Badge>{selected ? `${selected.name} · ${selected.code}` : 'مرجع انتخاب شده'}</Badge>
-          {config.optional ? (
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-primary/20 bg-primary/5 p-2">
+          <div className="flex flex-wrap gap-1.5">
+            {config.multiple ? (
+              selectedOptions.length ? (
+                selectedOptions.map((record) => (
+                  <Badge
+                    key={record.id}
+                  >{`${record.name} · ${record.code}`}</Badge>
+                ))
+              ) : (
+                <Badge>
+                  {selectedValues.length.toLocaleString('fa-IR')} مرجع انتخاب
+                  شده
+                </Badge>
+              )
+            ) : (
+              <Badge>
+                {selected
+                  ? `${selected.name} · ${selected.code}`
+                  : 'مرجع انتخاب شده'}
+              </Badge>
+            )}
+          </div>
+          {config.optional || config.multiple ? (
             <Button
               aria-label="پاک‌کردن انتخاب"
               onClick={() => onChange('')}
@@ -120,6 +183,7 @@ export function MasterDataReferenceSelector({
         />
       </div>
       <div
+        aria-multiselectable={config.multiple || undefined}
         className="max-h-48 overflow-y-auto rounded-xl border border-border p-2"
         id={`${id}-options`}
         role="listbox"
@@ -150,13 +214,15 @@ export function MasterDataReferenceSelector({
           <div className="grid gap-1">
             {options.map((record) => {
               const optionValue = mapReferenceOption(config, record);
-              const optionSelected = optionValue === value;
+              const optionSelected = config.multiple
+                ? selectedValues.includes(optionValue)
+                : optionValue === value;
               return (
                 <button
                   aria-selected={optionSelected}
                   className="rounded-lg px-3 py-2 text-start text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:bg-primary aria-selected:text-primary-foreground"
                   key={record.id}
-                  onClick={() => onChange(optionValue)}
+                  onClick={() => choose(optionValue)}
                   role="option"
                   type="button"
                 >
@@ -199,7 +265,10 @@ export function OrganizationRoleSelector({
             }
           />
           <span>{label}</span>
-          <span className="font-mono text-[10px] text-muted-foreground" dir="ltr">
+          <span
+            className="font-mono text-[10px] text-muted-foreground"
+            dir="ltr"
+          >
             {code}
           </span>
         </label>

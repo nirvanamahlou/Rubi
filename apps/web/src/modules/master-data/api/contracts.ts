@@ -42,6 +42,12 @@ export const masterDataListQuerySchema = z.object({
   providerConnected: z.boolean().optional(),
   hasWhatsapp: z.boolean().optional(),
   contactCompleteness: z.enum(['all', 'complete', 'incomplete']).optional(),
+  chainId: z.string().uuid().optional(),
+  starRating: z.coerce.number().int().min(1).max(5).optional(),
+  referenceCapacity: z.coerce.number().int().min(1).max(20).optional(),
+  mealServiceCategory: z.enum(['MEAL_PLAN', 'SERVICE']).optional(),
+  facilityCategory: z.string().trim().max(80).optional(),
+  saleableOnly: z.boolean().optional(),
 });
 
 export const masterDataExportRequestSchema = z.object({
@@ -147,11 +153,22 @@ export function serializeMasterDataListQuery(query: MasterDataListQuery) {
     'serviceId',
     'collaborationStatus',
     'contactCompleteness',
+    'chainId',
+    'mealServiceCategory',
+    'facilityCategory',
   ] as const) {
     const value = query[field];
     if (value) params.set(field, value);
   }
-  for (const field of ['providerConnected', 'hasWhatsapp'] as const) {
+  if (query.starRating !== undefined)
+    params.set('starRating', String(query.starRating));
+  if (query.referenceCapacity !== undefined)
+    params.set('referenceCapacity', String(query.referenceCapacity));
+  for (const field of [
+    'providerConnected',
+    'hasWhatsapp',
+    'saleableOnly',
+  ] as const) {
     const value = query[field];
     if (value !== undefined) params.set(field, String(value));
   }

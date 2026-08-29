@@ -84,4 +84,34 @@ describe('master data catalog', () => {
       )?.options,
     ).toHaveLength(7);
   });
+
+  it('defines normalized accommodation catalogs without manual internal codes', () => {
+    expect(
+      getMasterDataDefinition('hotels').fields.map((field) => field.key),
+    ).toEqual(
+      expect.arrayContaining([
+        'chainId',
+        'mealServiceIds',
+        'roomTypeIds',
+        'facilityIds',
+      ]),
+    );
+    expect(
+      getMasterDataDefinition('composite-hotels').fields.map(
+        (field) => field.key,
+      ),
+    ).toContain('memberHotelIds');
+    for (const resource of [
+      'hotel-chains',
+      'room-types',
+      'meal-services',
+      'facilities',
+      'composite-hotels',
+    ] as const)
+      expect(
+        getMasterDataDefinition(resource).fields.some(
+          (field) => field.key === 'code',
+        ),
+      ).toBe(false);
+  });
 });

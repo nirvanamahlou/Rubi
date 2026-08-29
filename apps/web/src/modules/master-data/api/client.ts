@@ -1,4 +1,5 @@
 import type {
+  MasterAccommodationSummary,
   MasterDataExportOperation,
   MasterDataExportRequest,
   MasterHotelImportCommitRequest,
@@ -176,6 +177,11 @@ export const masterDataApi = {
   organizationSupplierSummary() {
     return request<{ data: MasterOrganizationSupplierSummary }>(
       '/organizations-suppliers/summary',
+    );
+  },
+  accommodationSummary() {
+    return request<{ data: MasterAccommodationSummary }>(
+      '/accommodation/summary',
     );
   },
   downloadExcel(input: MasterDataExportRequest) {

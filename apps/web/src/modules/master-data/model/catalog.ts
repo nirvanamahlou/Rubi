@@ -12,6 +12,11 @@ export const masterDataResourceKeys = [
   'insurers',
   'airlines',
   'hotels',
+  'hotel-chains',
+  'room-types',
+  'meal-services',
+  'facilities',
+  'composite-hotels',
   'organizations',
   'suppliers',
   'brokers',
@@ -39,7 +44,7 @@ export interface MasterDataCatalogItem {
   key: MasterDataResourceKey;
   label: string;
   singularLabel: string;
-  group: 'جغرافیا' | 'مالی' | 'خدمات سفر' | 'سازمان‌ها' | 'فروش';
+  group: 'جغرافیا' | 'مالی' | 'اقامت' | 'خدمات سفر' | 'سازمان‌ها' | 'فروش';
   description: string;
   fields: readonly MasterDataFieldDefinition[];
   preview: Readonly<Record<string, string>>;
@@ -612,17 +617,29 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     key: 'hotels',
     label: 'هتل‌ها',
     singularLabel: 'هتل',
-    group: 'خدمات سفر',
+    group: 'اقامت',
     description:
-      'هتل، شهر و درجه‌بندی نمایشی؛ قرارداد و نرخ خرید خارج از Master Data است.',
+      'پروفایل مرجع هتل، موقعیت، زنجیره و کاتالوگ خدمات؛ قرارداد و موجودی خارج از Master Data است.',
     fields: [
       nameField,
+      {
+        key: 'englishName',
+        label: 'نام انگلیسی',
+        type: 'text',
+        placeholder: 'Hotel English Name',
+      },
       {
         key: 'cityId',
         label: 'شهر',
         type: 'text',
-        placeholder: 'city_...',
+        placeholder: '',
         required: true,
+      },
+      {
+        key: 'chainId',
+        label: 'زنجیره هتل',
+        type: 'text',
+        placeholder: '',
       },
       {
         key: 'starRating',
@@ -630,13 +647,255 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         type: 'number',
         placeholder: '1 تا 5',
       },
+      {
+        key: 'address',
+        label: 'آدرس',
+        type: 'text',
+        placeholder: 'نشانی مرجع هتل',
+      },
+      {
+        key: 'website',
+        label: 'وب‌سایت',
+        type: 'text',
+        placeholder: 'hotel.example',
+      },
+      {
+        key: 'checkInTime',
+        label: 'ساعت ورود',
+        type: 'text',
+        placeholder: '15:00',
+      },
+      {
+        key: 'checkOutTime',
+        label: 'ساعت خروج',
+        type: 'text',
+        placeholder: '12:00',
+      },
+      {
+        key: 'latitude',
+        label: 'عرض جغرافیایی',
+        type: 'number',
+        placeholder: '35.000000',
+      },
+      {
+        key: 'longitude',
+        label: 'طول جغرافیایی',
+        type: 'number',
+        placeholder: '51.000000',
+      },
+      {
+        key: 'isSaleableReference',
+        label: 'فروش‌پذیری مرجع',
+        type: 'select',
+        placeholder: '',
+        options: [
+          { value: 'true', label: 'فروش‌پذیر' },
+          { value: 'false', label: 'غیرفروش‌پذیر' },
+        ],
+      },
+      {
+        key: 'mealServiceIds',
+        label: 'وعده و سرویس',
+        type: 'text',
+        placeholder: '',
+      },
+      {
+        key: 'roomTypeIds',
+        label: 'نوع‌های اتاق',
+        type: 'text',
+        placeholder: '',
+      },
+      {
+        key: 'facilityIds',
+        label: 'امکانات',
+        type: 'text',
+        placeholder: '',
+      },
     ],
     preview: {
-      code: 'HTL_SAMPLE',
-      name: 'هتل نمونه',
-      cityId: 'city_tehran',
-      starRating: '5',
+      code: 'AUTO',
+      name: 'عنوان هتل',
+      cityId: 'UUID',
+      starRating: '1-5',
     },
+  },
+  {
+    key: 'hotel-chains',
+    label: 'زنجیره‌های هتل',
+    singularLabel: 'زنجیره هتل',
+    group: 'اقامت',
+    description: 'برند و گروه‌بندی مرجع هتل‌ها با کشور مبدأ و وب‌سایت.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'نام انگلیسی',
+        type: 'text',
+        placeholder: 'Chain English Name',
+      },
+      {
+        key: 'countryId',
+        label: 'کشور مبدأ',
+        type: 'text',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'website',
+        label: 'وب‌سایت',
+        type: 'text',
+        placeholder: 'chain.example',
+      },
+    ],
+    preview: { code: 'AUTO', name: 'عنوان زنجیره', countryId: 'UUID' },
+  },
+  {
+    key: 'room-types',
+    label: 'نوع‌های اتاق',
+    singularLabel: 'نوع اتاق',
+    group: 'اقامت',
+    description:
+      'کاتالوگ استاندارد نوع اتاق؛ موجودی و تخصیص مسافر در Reservations است.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Room Type',
+      },
+      {
+        key: 'referenceCapacity',
+        label: 'ظرفیت استاندارد',
+        type: 'number',
+        placeholder: '1 تا 20',
+      },
+      {
+        key: 'usageDescription',
+        label: 'توضیح استفاده',
+        type: 'text',
+        placeholder: 'توضیح مرجع و غیرعملیاتی',
+      },
+    ],
+    preview: { code: 'AUTO', name: 'نوع اتاق', referenceCapacity: '2' },
+  },
+  {
+    key: 'meal-services',
+    label: 'وعده و سرویس',
+    singularLabel: 'وعده/سرویس',
+    group: 'اقامت',
+    description: 'کاتالوگ مستقل Meal Plan و Service Code با وعده‌های شامل‌شده.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Meal or Service',
+      },
+      {
+        key: 'category',
+        label: 'دسته',
+        type: 'select',
+        placeholder: '',
+        required: true,
+        options: [
+          { value: 'MEAL_PLAN', label: 'Meal Plan' },
+          { value: 'SERVICE', label: 'Service' },
+        ],
+      },
+      {
+        key: 'includedMeals',
+        label: 'وعده‌های شامل‌شده',
+        type: 'text',
+        placeholder: 'صبحانه،ناهار،شام',
+      },
+    ],
+    preview: { code: 'AUTO', name: 'عنوان سرویس', category: 'MEAL_PLAN' },
+  },
+  {
+    key: 'facilities',
+    label: 'امکانات هتل',
+    singularLabel: 'امکان',
+    group: 'اقامت',
+    description: 'کاتالوگ مستقل امکانات با دسته‌بندی و رابطه چندبه‌چند به هتل.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Facility',
+      },
+      {
+        key: 'category',
+        label: 'دسته',
+        type: 'text',
+        placeholder: 'عمومی، ورزشی، خانواده و ...',
+      },
+      {
+        key: 'displayOrder',
+        label: 'ترتیب نمایش',
+        type: 'number',
+        placeholder: '0',
+      },
+    ],
+    preview: { code: 'AUTO', name: 'عنوان امکان', displayOrder: '0' },
+  },
+  {
+    key: 'composite-hotels',
+    label: 'هتل‌های ترکیبی',
+    singularLabel: 'هتل ترکیبی',
+    group: 'اقامت',
+    description:
+      'رکورد نمایشی فروش شامل چند هتل واقعی؛ رزرو و قرارداد روی هتل واقعی می‌ماند.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Composite Hotel',
+      },
+      {
+        key: 'cityId',
+        label: 'شهر',
+        type: 'text',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'usageCondition',
+        label: 'شرط استفاده',
+        type: 'text',
+        placeholder: 'شرط تخصیص و اطلاع‌رسانی',
+        required: true,
+      },
+      {
+        key: 'isSaleableReference',
+        label: 'فروش‌پذیری مرجع',
+        type: 'select',
+        placeholder: '',
+        options: [
+          { value: 'true', label: 'فروش‌پذیر' },
+          { value: 'false', label: 'در حال بررسی' },
+        ],
+      },
+      {
+        key: 'memberHotelIds',
+        label: 'هتل‌های عضو به‌ترتیب اولویت',
+        type: 'text',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'backupMemberIds',
+        label: 'اعضای پشتیبان',
+        type: 'text',
+        placeholder: '',
+      },
+    ],
+    preview: { code: 'AUTO', name: 'عنوان ترکیب', cityId: 'UUID' },
   },
   {
     key: 'organizations',

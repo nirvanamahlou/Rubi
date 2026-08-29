@@ -80,6 +80,11 @@ const delegateNames: Record<MasterDataResource, string> = {
   insurers: 'masterInsurer',
   airlines: 'masterAirline',
   hotels: 'masterHotel',
+  'hotel-chains': 'masterHotelChain',
+  'room-types': 'masterRoomType',
+  'meal-services': 'masterMealService',
+  facilities: 'masterFacility',
+  'composite-hotels': 'masterCompositeHotel',
   organizations: 'masterOrganization',
   suppliers: 'masterSupplier',
   brokers: 'masterBroker',
@@ -103,6 +108,11 @@ const nameFields: Record<MasterDataResource, string> = {
   insurers: 'name',
   airlines: 'name',
   hotels: 'name',
+  'hotel-chains': 'name',
+  'room-types': 'name',
+  'meal-services': 'name',
+  facilities: 'name',
+  'composite-hotels': 'name',
   organizations: 'displayName',
   suppliers: 'code',
   brokers: 'name',
@@ -126,6 +136,11 @@ const codeFields: Record<MasterDataResource, string> = {
   insurers: 'code',
   airlines: 'code',
   hotels: 'code',
+  'hotel-chains': 'code',
+  'room-types': 'code',
+  'meal-services': 'code',
+  facilities: 'code',
+  'composite-hotels': 'code',
   organizations: 'code',
   suppliers: 'code',
   brokers: 'code',
@@ -149,6 +164,11 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
   insurers: ['name', 'code'],
   airlines: ['name', 'code', 'icaoCode'],
   hotels: ['name', 'englishName', 'code'],
+  'hotel-chains': ['name', 'englishName', 'code', 'website'],
+  'room-types': ['name', 'englishName', 'code', 'usageDescription'],
+  'meal-services': ['name', 'englishName', 'code'],
+  facilities: ['name', 'englishName', 'code', 'category'],
+  'composite-hotels': ['name', 'englishName', 'code', 'usageCondition'],
   organizations: ['displayName', 'legalName', 'code'],
   suppliers: ['code', 'externalProviderReference'],
   brokers: ['name', 'code'],
@@ -193,6 +213,30 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'banks')
     return { country: true, _count: { select: { branches: true } } };
   if (resource === 'bank-branches') return { bank: true, city: true };
+  if (resource === 'hotels')
+    return {
+      city: { include: { country: true, region: true } },
+      chain: true,
+      organization: true,
+      mealService: true,
+      defaultRoomType: true,
+      facilities: { include: { facility: true } },
+      mealServices: { include: { mealService: true } },
+      roomTypes: { include: { roomType: true } },
+    };
+  if (resource === 'hotel-chains')
+    return { country: true, _count: { select: { hotels: true } } };
+  if (resource === 'room-types')
+    return { _count: { select: { hotelLinks: true } } };
+  if (resource === 'meal-services')
+    return { _count: { select: { hotelLinks: true } } };
+  if (resource === 'facilities')
+    return { _count: { select: { hotels: true } } };
+  if (resource === 'composite-hotels')
+    return {
+      city: { include: { country: true, region: true } },
+      members: { include: { hotel: { include: { city: true } } } },
+    };
   return undefined;
 }
 
@@ -226,6 +270,23 @@ export function toMasterDataRecord(
   const organization = row.organization as Record<string, unknown> | undefined;
   const services = row.services as
     { service: Record<string, unknown> }[] | undefined;
+  const chain = row.chain as Record<string, unknown> | undefined;
+  const mealService = row.mealService as Record<string, unknown> | undefined;
+  const defaultRoomType = row.defaultRoomType as
+    Record<string, unknown> | undefined;
+  const facilityLinks = row.facilities as
+    { facility: Record<string, unknown> }[] | undefined;
+  const mealServiceLinks = row.mealServices as
+    { mealService: Record<string, unknown> }[] | undefined;
+  const roomTypeLinks = row.roomTypes as
+    { roomType: Record<string, unknown> }[] | undefined;
+  const compositeMembers = row.members as
+    | {
+        hotel: Record<string, unknown>;
+        priority: number;
+        isBackup: boolean;
+      }[]
+    | undefined;
   const count = row._count as Record<string, unknown> | undefined;
   const code =
     resource === 'exchange-rates'
@@ -267,6 +328,13 @@ export function toMasterDataRecord(
     'bank',
     'organization',
     'services',
+    'chain',
+    'mealService',
+    'defaultRoomType',
+    'facilities',
+    'mealServices',
+    'roomTypes',
+    'members',
     '_count',
     ...protectedContactFields,
   ]);
@@ -334,6 +402,93 @@ export function toMasterDataRecord(
     attributes.organizationName = String(organization?.displayName ?? '');
     attributes.organizationCode = String(organization?.code ?? '');
   }
+  if (resource === 'hotels') {
+    const hotelCountry = city?.country as Record<string, unknown> | undefined;
+    const hotelRegion = city?.region as Record<string, unknown> | undefined;
+    const relatedMeals =
+      mealServiceLinks?.map(({ mealService: value }) => value) ??
+      (mealService ? [mealService] : []);
+    const relatedRooms =
+      roomTypeLinks?.map(({ roomType }) => roomType) ??
+      (defaultRoomType ? [defaultRoomType] : []);
+    attributes.cityName = String(city?.name ?? '');
+    attributes.countryId = String(city?.countryId ?? '');
+    attributes.countryName = String(hotelCountry?.name ?? '');
+    attributes.regionName = String(hotelRegion?.name ?? '');
+    attributes.chainName = String(chain?.name ?? '');
+    attributes.organizationName = String(organization?.displayName ?? '');
+    attributes.facilityIds =
+      facilityLinks
+        ?.map(({ facility }) => String(facility.id ?? ''))
+        .join(',') ?? '';
+    attributes.facilityCodes =
+      facilityLinks
+        ?.map(({ facility }) => String(facility.code ?? ''))
+        .join(',') ?? '';
+    attributes.facilityNames =
+      facilityLinks
+        ?.map(({ facility }) => String(facility.name ?? ''))
+        .join(',') ?? '';
+    attributes.mealServiceIds = relatedMeals
+      .map((value) => String(value.id ?? ''))
+      .join(',');
+    attributes.mealServiceCodes = relatedMeals
+      .map((value) => String(value.code ?? ''))
+      .join(',');
+    attributes.mealServiceNames = relatedMeals
+      .map((value) => String(value.name ?? ''))
+      .join(',');
+    attributes.roomTypeIds = relatedRooms
+      .map((value) => String(value.id ?? ''))
+      .join(',');
+    attributes.roomTypeCodes = relatedRooms
+      .map((value) => String(value.code ?? ''))
+      .join(',');
+    attributes.roomTypeNames = relatedRooms
+      .map((value) => String(value.name ?? ''))
+      .join(',');
+  }
+  if (resource === 'hotel-chains') {
+    attributes.countryName = String(country?.name ?? '');
+    attributes.hotelCount = Number(count?.hotels ?? 0);
+  }
+  if (resource === 'room-types' || resource === 'meal-services')
+    attributes.hotelCount = Number(count?.hotelLinks ?? 0);
+  if (resource === 'facilities')
+    attributes.hotelCount = Number(count?.hotels ?? 0);
+  if (resource === 'composite-hotels') {
+    const compositeCountry = city?.country as
+      Record<string, unknown> | undefined;
+    attributes.cityName = String(city?.name ?? '');
+    attributes.countryId = String(city?.countryId ?? '');
+    attributes.countryName = String(compositeCountry?.name ?? '');
+    attributes.memberHotelIds =
+      compositeMembers?.map(({ hotel }) => String(hotel.id ?? '')).join(',') ??
+      '';
+    attributes.memberHotelNames =
+      compositeMembers
+        ?.map(({ hotel }) => String(hotel.name ?? ''))
+        .join(',') ?? '';
+    attributes.memberHotelCodes =
+      compositeMembers
+        ?.map(({ hotel }) => String(hotel.code ?? ''))
+        .join(',') ?? '';
+    attributes.memberCityNames =
+      compositeMembers
+        ?.map(({ hotel }) => {
+          const memberCity = hotel.city as Record<string, unknown> | undefined;
+          return String(memberCity?.name ?? '');
+        })
+        .join(',') ?? '';
+    attributes.memberPriorities =
+      compositeMembers?.map(({ priority }) => priority).join(',') ?? '';
+    attributes.backupMemberIds =
+      compositeMembers
+        ?.filter(({ isBackup }) => isBackup)
+        .map(({ hotel }) => String(hotel.id ?? ''))
+        .join(',') ?? '';
+    attributes.memberCount = compositeMembers?.length ?? 0;
+  }
   return {
     id: row.id,
     resource,
@@ -365,6 +520,9 @@ export class MasterDataRepository {
       if (resource === 'airports') airportCityWhere.countryId = query.countryId;
       if (resource === 'suppliers' || resource === 'brokers')
         where.countryId = query.countryId;
+      if (resource === 'hotel-chains') where.countryId = query.countryId;
+      if (resource === 'hotels' || resource === 'composite-hotels')
+        where.city = { is: { countryId: query.countryId } };
     }
     if (query.regionId) {
       if (resource === 'cities') where.regionId = query.regionId;
@@ -387,6 +545,22 @@ export class MasterDataRepository {
       if (query.paymentChannel) where.channel = query.paymentChannel;
       if (query.paymentDirection) where.direction = query.paymentDirection;
     }
+    if (resource === 'hotels') {
+      if (query.cityId) where.cityId = query.cityId;
+      if (query.chainId) where.chainId = query.chainId;
+      if (query.starRating) where.starRating = query.starRating;
+      if (query.saleableOnly) where.isSaleableReference = true;
+    }
+    if (resource === 'composite-hotels') {
+      if (query.cityId) where.cityId = query.cityId;
+      if (query.saleableOnly) where.isSaleableReference = true;
+    }
+    if (resource === 'meal-services' && query.mealServiceCategory)
+      where.category = query.mealServiceCategory;
+    if (resource === 'room-types' && query.referenceCapacity)
+      where.referenceCapacity = query.referenceCapacity;
+    if (resource === 'facilities' && query.facilityCategory)
+      where.category = query.facilityCategory;
     if (resource === 'suppliers' || resource === 'brokers') {
       if (query.cityId) where.cityId = query.cityId;
       if (query.organizationId) where.organizationId = query.organizationId;
@@ -754,6 +928,125 @@ export class MasterDataRepository {
         incomplete: contactIncomplete,
       },
       collaboration,
+    };
+  }
+
+  async accommodationSummary() {
+    const client = this.database.client;
+    const [
+      hotelTotal,
+      hotelSaleable,
+      hotelLocations,
+      hotelIncomplete,
+      chainTotal,
+      chainActive,
+      chainMemberHotels,
+      chainIncomplete,
+      roomTotal,
+      roomActive,
+      roomStandardCapacity,
+      roomPendingApproval,
+      mealTotal,
+      mealActive,
+      mealPlans,
+      mealNeedsReview,
+      facilityTotal,
+      facilityActive,
+      facilityCategories,
+      facilityMissingIcon,
+      compositeTotal,
+      compositeActive,
+      compositeMembers,
+      compositeNeedsReview,
+    ] = await Promise.all([
+      client.masterHotel.count(),
+      client.masterHotel.count({
+        where: { isActive: true, isSaleableReference: true },
+      }),
+      client.masterHotel.findMany({
+        distinct: ['cityId'],
+        select: { cityId: true, city: { select: { countryId: true } } },
+      }),
+      client.masterHotel.count({
+        where: {
+          OR: [{ englishName: null }, { address: null }, { starRating: null }],
+        },
+      }),
+      client.masterHotelChain.count(),
+      client.masterHotelChain.count({ where: { isActive: true } }),
+      client.masterHotel.count({ where: { chainId: { not: null } } }),
+      client.masterHotelChain.count({
+        where: { OR: [{ englishName: null }, { website: null }] },
+      }),
+      client.masterRoomType.count(),
+      client.masterRoomType.count({ where: { isActive: true } }),
+      client.masterRoomType.count({
+        where: { referenceCapacity: { not: null } },
+      }),
+      client.masterRoomType.count({ where: { referenceCapacity: null } }),
+      client.masterMealService.count(),
+      client.masterMealService.count({ where: { isActive: true } }),
+      client.masterMealService.count({ where: { category: 'MEAL_PLAN' } }),
+      client.masterMealService.count({
+        where: { OR: [{ englishName: null }, { isActive: false }] },
+      }),
+      client.masterFacility.count(),
+      client.masterFacility.count({ where: { isActive: true } }),
+      client.masterFacility.findMany({
+        where: { category: { not: null } },
+        distinct: ['category'],
+        select: { category: true },
+      }),
+      client.masterFacility.count({ where: { iconFileReference: null } }),
+      client.masterCompositeHotel.count(),
+      client.masterCompositeHotel.count({ where: { isActive: true } }),
+      client.masterCompositeHotelMember.findMany({
+        distinct: ['hotelId'],
+        select: { hotelId: true },
+      }),
+      client.masterCompositeHotel.count({
+        where: { OR: [{ isActive: false }, { members: { none: {} } }] },
+      }),
+    ]);
+    return {
+      hotels: {
+        total: hotelTotal,
+        saleable: hotelSaleable,
+        countries: new Set(hotelLocations.map(({ city }) => city.countryId))
+          .size,
+        cities: hotelLocations.length,
+        incomplete: hotelIncomplete,
+      },
+      chains: {
+        total: chainTotal,
+        active: chainActive,
+        memberHotels: chainMemberHotels,
+        incomplete: chainIncomplete,
+      },
+      roomTypes: {
+        total: roomTotal,
+        active: roomActive,
+        standardCapacity: roomStandardCapacity,
+        pendingDomainApproval: roomPendingApproval,
+      },
+      mealServices: {
+        total: mealTotal,
+        active: mealActive,
+        mealPlans,
+        needsReview: mealNeedsReview,
+      },
+      facilities: {
+        total: facilityTotal,
+        active: facilityActive,
+        categories: facilityCategories.length,
+        missingIcon: facilityMissingIcon,
+      },
+      compositeHotels: {
+        total: compositeTotal,
+        active: compositeActive,
+        uniqueMemberHotels: compositeMembers.length,
+        needsReview: compositeNeedsReview,
+      },
     };
   }
 }

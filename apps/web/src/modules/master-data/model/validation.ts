@@ -146,6 +146,42 @@ export function validateMasterDataDraft(
       errors.starRating = 'درجه هتل باید عدد صحیح بین ۱ تا ۵ باشد.';
     }
   }
+  if (resource === 'hotels') {
+    for (const field of ['checkInTime', 'checkOutTime'] as const) {
+      if (
+        values[field] &&
+        !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(values[field])
+      )
+        errors[field] = 'زمان باید با قالب HH:mm باشد.';
+    }
+    if (Boolean(values.latitude) !== Boolean(values.longitude)) {
+      errors.latitude = 'عرض و طول جغرافیایی باید با هم ثبت شوند.';
+      errors.longitude = 'عرض و طول جغرافیایی باید با هم ثبت شوند.';
+    }
+    for (const [field, minimum, maximum] of [
+      ['latitude', -90, 90],
+      ['longitude', -180, 180],
+    ] as const) {
+      if (!values[field]) continue;
+      const coordinate = Number(values[field]);
+      if (
+        !Number.isFinite(coordinate) ||
+        coordinate < minimum ||
+        coordinate > maximum
+      )
+        errors[field] = 'مختصات خارج از بازه مجاز است.';
+    }
+  }
+  if (resource === 'room-types' && values.referenceCapacity) {
+    const capacity = Number(values.referenceCapacity);
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 20)
+      errors.referenceCapacity = 'ظرفیت باید عدد صحیح بین ۱ تا ۲۰ باشد.';
+  }
+  if (resource === 'facilities' && values.displayOrder) {
+    const displayOrder = Number(values.displayOrder);
+    if (!Number.isInteger(displayOrder) || displayOrder < 0)
+      errors.displayOrder = 'ترتیب نمایش باید عدد صحیح نامنفی باشد.';
+  }
 
   return { success: Object.keys(errors).length === 0, values, errors };
 }
