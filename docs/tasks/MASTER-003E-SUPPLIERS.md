@@ -3,6 +3,7 @@
 - مالک و Computer: `PC-B`
 - Branch: `codex/pc-b-master-data-suppliers`
 - Stacked Base: `codex/pc-b-master-data-ui-polish@920328e`
+- Stacked Draft PR: [#31](https://github.com/nirvanamahlou/Rubi/pull/31)
 - مسیر محصول: `/master-data/organizations-suppliers`
 - والد مستقیم: `MASTER-003D-UI-POLISH` / Draft PR #30
 - قفل‌ها: Migration، Master Data shared-contract و اسناد مرکزی همان قفل‌های فعال

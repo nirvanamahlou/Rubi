@@ -192,11 +192,13 @@
 - Database، Migration، Backend، Contract، Customers، Dependency و Lockfile در این
   Slice تغییر نکردند.
 
-### `MASTER-003E-SUPPLIERS` — PC-B — `IN_PROGRESS`
+### `MASTER-003E-SUPPLIERS` — PC-B — `READY_FOR_REVIEW`
 
 - Branch مستقل `codex/pc-b-master-data-suppliers` از
   `origin/codex/pc-b-master-data-ui-polish@920328e` ساخته شد و PR والد #30 را تغییر
   نمی‌دهد.
+- Draft PR #31 با Base همان Branch والد ساخته شد و پیش از Merge زنجیره
+  #30 ← #29 ← #28 ← #25 نباید ادغام شود.
 - شش نمای دقیق تأمین‌کنندگان، پروفایل تأمین‌کننده، کارگزاران، پروفایل کارگزار،
   اطلاعات تماس و وضعیت همکاری در `/master-data/organizations-suppliers` پیاده‌سازی شدند.
 - Migration افزایشی `20260829133000_master_data_suppliers` پروفایل Supplier، خدمات
