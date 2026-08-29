@@ -77,6 +77,8 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('resizeCompanions');
     expect(source).toContain("roles: ['passenger']");
     expect(source).toContain('customersApi.addCompanion(createdCustomer.id');
+    expect(source).toContain('customer-primary-email');
+    expect(source).toContain("type: 'email'");
     expect(source).toContain(
       'organizationId: companion.organizationId || null',
     );

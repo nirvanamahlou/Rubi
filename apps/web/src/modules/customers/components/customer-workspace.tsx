@@ -225,6 +225,7 @@ function CustomerDrawer({
   const [contactLabel, setContactLabel] = useState('اصلی');
   const [contact, setContact] = useState('');
   const [primaryPhone, setPrimaryPhone] = useState('');
+  const [primaryEmail, setPrimaryEmail] = useState('');
   const [newCompanions, setNewCompanions] = useState<NewCompanionDraft[]>([]);
   const [sensitiveReason, setSensitiveReason] = useState('');
   const [revealedDetail, setRevealedDetail] = useState<CustomerDetail | null>(
@@ -448,6 +449,17 @@ function CustomerDrawer({
               value: primaryPhone.trim(),
               label: 'اصلی',
               isPrimary: true,
+              version: createdCustomer.version,
+            })
+          ).data;
+        }
+        if (primaryEmail.trim()) {
+          createdCustomer = (
+            await customersApi.addContact(createdCustomer.id, {
+              type: 'email',
+              value: primaryEmail.trim().toLowerCase(),
+              label: 'اصلی',
+              isPrimary: !primaryPhone.trim(),
               version: createdCustomer.version,
             })
           ).data;
@@ -873,22 +885,40 @@ function CustomerDrawer({
               )}
             </FormField>
             {mode === 'create' ? (
-              <FormField
-                description="در فهرست فقط به‌صورت Masked نمایش داده می‌شود."
-                id="customer-primary-phone"
-                label="شماره تماس اصلی"
-              >
-                <Input
-                  dir="ltr"
+              <>
+                <FormField
+                  description="در فهرست فقط به‌صورت Masked نمایش داده می‌شود."
                   id="customer-primary-phone"
-                  inputMode="tel"
-                  onChange={(event) => setPrimaryPhone(event.target.value)}
-                  pattern="\+?[0-9]{10,15}"
-                  placeholder="09xxxxxxxxx"
-                  type="tel"
-                  value={primaryPhone}
-                />
-              </FormField>
+                  label="شماره تماس اصلی"
+                >
+                  <Input
+                    dir="ltr"
+                    id="customer-primary-phone"
+                    inputMode="tel"
+                    onChange={(event) => setPrimaryPhone(event.target.value)}
+                    pattern="\+?[0-9]{10,15}"
+                    placeholder="09xxxxxxxxx"
+                    type="tel"
+                    value={primaryPhone}
+                  />
+                </FormField>
+                <FormField
+                  description="اختیاری و در نمایش عادی Masked"
+                  id="customer-primary-email"
+                  label="ایمیل مشتری"
+                >
+                  <Input
+                    autoComplete="email"
+                    dir="ltr"
+                    id="customer-primary-email"
+                    inputMode="email"
+                    onChange={(event) => setPrimaryEmail(event.target.value)}
+                    placeholder="customer@example.com"
+                    type="email"
+                    value={primaryEmail}
+                  />
+                </FormField>
+              </>
             ) : null}
           </div>
           {mode === 'create' ? (
