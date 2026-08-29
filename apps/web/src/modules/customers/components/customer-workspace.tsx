@@ -192,6 +192,9 @@ function safeCustomerId(value: string | null) {
 
 interface NewCompanionDraft {
   key: number;
+  source: 'new' | 'existing';
+  existingCustomerId: string;
+  existingCustomerSearch: string;
   firstName: string;
   lastName: string;
   birthDate: string;
@@ -207,6 +210,9 @@ function emptyCompanionDraft(): NewCompanionDraft {
   companionDraftKey += 1;
   return {
     key: companionDraftKey,
+    source: 'new',
+    existingCustomerId: '',
+    existingCustomerSearch: '',
     firstName: '',
     lastName: '',
     birthDate: '',
@@ -273,6 +279,9 @@ function CustomerDrawer({
   const [primaryPhone, setPrimaryPhone] = useState('');
   const [primaryEmail, setPrimaryEmail] = useState('');
   const [newCompanions, setNewCompanions] = useState<NewCompanionDraft[]>([]);
+  const [newCompanionOptions, setNewCompanionOptions] = useState<
+    Readonly<Record<number, readonly CustomerSummary[]>>
+  >({});
   const [sensitiveReason, setSensitiveReason] = useState('');
   const [revealedDetail, setRevealedDetail] = useState<CustomerDetail | null>(
     null,
@@ -442,6 +451,53 @@ function CustomerDrawer({
     return () => window.clearTimeout(timer);
   }, [companionSearch, customer]);
 
+  useEffect(() => {
+    const searches = newCompanions.filter(
+      (companion) =>
+        companion.source === 'existing' &&
+        companion.existingCustomerSearch.trim(),
+    );
+    if (!searches.length) return;
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void Promise.all(
+        searches.map(async (companion) => {
+          const response = await customersApi.list({
+            search: companion.existingCustomerSearch,
+            kind: 'person',
+            status: 'active',
+            role: 'customer',
+            branchId: 'all',
+            acquaintanceMethodId: 'all',
+            createdFrom: null,
+            createdTo: null,
+            updatedFrom: null,
+            updatedTo: null,
+            sortBy: 'displayName',
+            sortDirection: 'asc',
+            page: 1,
+            pageSize: 25,
+          });
+          return [companion.key, response.data] as const;
+        }),
+      )
+        .then((entries) => {
+          if (active)
+            setNewCompanionOptions((current) => ({
+              ...current,
+              ...Object.fromEntries(entries),
+            }));
+        })
+        .catch(() => {
+          if (active) setMessage('جست‌وجوی مشتریان موجود ناموفق بود.');
+        });
+    }, 300);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [newCompanions]);
+
   async function perform(
     operation: () => Promise<{ data: CustomerDetail }>,
     success: string,
@@ -487,6 +543,20 @@ function CustomerDrawer({
       setBusy(true);
       setMessage(null);
       try {
+        const missingExistingPassenger = newCompanions.find(
+          (companion) =>
+            companion.source === 'existing' && !companion.existingCustomerId,
+        );
+        if (missingExistingPassenger)
+          throw new Error(
+            'برای هر ردیف «مشتری موجود»، یک مشتری را از نتایج انتخاب کنید.',
+          );
+        const existingPassengerIds = newCompanions
+          .filter((companion) => companion.source === 'existing')
+          .map((companion) => companion.existingCustomerId);
+        if (new Set(existingPassengerIds).size !== existingPassengerIds.length)
+          throw new Error('یک مشتری موجود را فقط یک‌بار انتخاب کنید.');
+
         let createdCustomer = (await customersApi.create(submittedDraft)).data;
         if (primaryPhone.trim()) {
           createdCustomer = (
@@ -512,44 +582,46 @@ function CustomerDrawer({
         }
 
         for (const companion of newCompanions) {
-          let createdCompanion = (
-            await customersApi.create({
-              kind: 'person',
-              firstName: companion.firstName.trim(),
-              lastName: companion.lastName.trim(),
-              displayName:
-                `${companion.firstName.trim()} ${companion.lastName.trim()}`.trim(),
-              organizationId: companion.organizationId || null,
-              birthDate: companion.birthDate || null,
-              roles: ['passenger'],
-              acquaintanceMethodId: null,
-            })
-          ).data;
-          if (companion.phone.trim()) {
-            createdCompanion = (
-              await customersApi.addContact(createdCompanion.id, {
-                type: 'phone',
-                value: companion.phone.trim(),
-                label: 'اصلی',
-                isPrimary: true,
-                version: createdCompanion.version,
+          let passengerId = companion.existingCustomerId;
+          if (companion.source === 'new') {
+            let createdCompanion = (
+              await customersApi.create({
+                kind: 'person',
+                firstName: companion.firstName.trim(),
+                lastName: companion.lastName.trim(),
+                displayName:
+                  `${companion.firstName.trim()} ${companion.lastName.trim()}`.trim(),
+                organizationId: companion.organizationId || null,
+                birthDate: companion.birthDate || null,
+                roles: ['passenger'],
+                acquaintanceMethodId: null,
               })
             ).data;
-          }
-          if (companion.email.trim()) {
-            createdCompanion = (
+            passengerId = createdCompanion.id;
+            if (companion.phone.trim()) {
+              createdCompanion = (
+                await customersApi.addContact(createdCompanion.id, {
+                  type: 'phone',
+                  value: companion.phone.trim(),
+                  label: 'اصلی',
+                  isPrimary: true,
+                  version: createdCompanion.version,
+                })
+              ).data;
+            }
+            if (companion.email.trim()) {
               await customersApi.addContact(createdCompanion.id, {
                 type: 'email',
                 value: companion.email.trim().toLowerCase(),
                 label: 'اصلی',
                 isPrimary: !companion.phone.trim(),
                 version: createdCompanion.version,
-              })
-            ).data;
+              });
+            }
           }
           createdCustomer = (
             await customersApi.addCompanion(createdCustomer.id, {
-              relatedCustomerId: createdCompanion.id,
+              relatedCustomerId: passengerId,
               relationshipType: companion.relationshipType,
               version: createdCustomer.version,
             })
@@ -986,8 +1058,8 @@ function CustomerDrawer({
                 <div>
                   <p className="font-bold">مسافران همراه</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    برای هر همراه یک رکورد واقعی با نقش «مسافر» ساخته و رابطه آن
-                    با مشتری ثبت می‌شود.
+                    مسافر را می‌توانید جدید ثبت کنید یا از مشتریان موجود انتخاب
+                    کنید تا اطلاعات او دوباره وارد نشود.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1055,124 +1127,208 @@ function CustomerDrawer({
                           حذف
                         </Button>
                       </div>
-                      <FormField
-                        id={`companion-${companion.key}-first-name`}
-                        label="نام"
-                        required
-                      >
-                        <Input
-                          id={`companion-${companion.key}-first-name`}
-                          onChange={(event) =>
-                            updateCompanion(index, {
-                              firstName: event.target.value,
-                            })
-                          }
-                          required
-                          value={companion.firstName}
-                        />
-                      </FormField>
-                      <FormField
-                        id={`companion-${companion.key}-last-name`}
-                        label="نام خانوادگی"
-                        required
-                      >
-                        <Input
-                          id={`companion-${companion.key}-last-name`}
-                          onChange={(event) =>
-                            updateCompanion(index, {
-                              lastName: event.target.value,
-                            })
-                          }
-                          required
-                          value={companion.lastName}
-                        />
-                      </FormField>
-                      <div className="border-t border-border pt-3 sm:col-span-2">
-                        <p className="font-semibold">اطلاعات تکمیلی مسافر</p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          این اطلاعات همراه پرونده واقعی مسافر ذخیره می‌شود.
-                        </p>
-                      </div>
-                      <CustomerDateField
-                        id={`companion-${companion.key}-birth-date`}
-                        label="تاریخ تولد"
-                        mode={calendarMode}
-                        onModeChange={onCalendarModeChange}
-                        onChange={(value) =>
-                          updateCompanion(index, { birthDate: value })
-                        }
-                        value={companion.birthDate}
-                      />
-                      <FormField
-                        description="اختیاری و در نمایش عادی Masked"
-                        id={`companion-${companion.key}-phone`}
-                        label="شماره تماس"
-                      >
-                        <Input
-                          dir="ltr"
-                          id={`companion-${companion.key}-phone`}
-                          inputMode="tel"
-                          onChange={(event) =>
-                            updateCompanion(index, {
-                              phone: event.target.value,
-                            })
-                          }
-                          pattern="\+?[0-9]{10,15}"
-                          placeholder="09xxxxxxxxx"
-                          type="tel"
-                          value={companion.phone}
-                        />
-                      </FormField>
-                      <FormField
-                        description="اختیاری و در نمایش عادی Masked"
-                        id={`companion-${companion.key}-email`}
-                        label="ایمیل مسافر"
-                      >
-                        <Input
-                          autoComplete="email"
-                          dir="ltr"
-                          id={`companion-${companion.key}-email`}
-                          inputMode="email"
-                          onChange={(event) =>
-                            updateCompanion(index, {
-                              email: event.target.value,
-                            })
-                          }
-                          placeholder="passenger@example.com"
-                          type="email"
-                          value={companion.email}
-                        />
-                      </FormField>
-                      <FormField label="سازمان مسافر">
+                      <FormField label="روش افزودن مسافر">
                         <Select
                           onValueChange={(value) =>
                             updateCompanion(index, {
-                              organizationId:
-                                value === 'not-selected' ? '' : value,
+                              source: value as 'new' | 'existing',
+                              existingCustomerId: '',
+                              existingCustomerSearch: '',
                             })
                           }
-                          value={companion.organizationId || 'not-selected'}
+                          value={companion.source}
                         >
                           <SelectTrigger
-                            aria-label={`سازمان مسافر ${index + 1}`}
+                            aria-label={`روش افزودن مسافر ${index + 1}`}
                           >
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="not-selected">
-                              مسافر شخصی
+                            <SelectItem value="new">ثبت مسافر جدید</SelectItem>
+                            <SelectItem value="existing">
+                              انتخاب مشتری موجود به‌عنوان مسافر
                             </SelectItem>
-                            {masters.organizations.map((organization) => (
-                              <SelectItem
-                                key={organization.id}
-                                value={organization.id}
-                              >
-                                {organization.name}
-                              </SelectItem>
-                            ))}
                           </SelectContent>
                         </Select>
                       </FormField>
+                      {companion.source === 'existing' ? (
+                        <>
+                          <FormField
+                            id={`companion-${companion.key}-existing-search`}
+                            label="جست‌وجوی مشتری موجود"
+                          >
+                            <Input
+                              id={`companion-${companion.key}-existing-search`}
+                              onChange={(event) =>
+                                updateCompanion(index, {
+                                  existingCustomerSearch: event.target.value,
+                                  existingCustomerId: '',
+                                })
+                              }
+                              placeholder="نام یا شماره تماس ماسک‌شده"
+                              value={companion.existingCustomerSearch}
+                            />
+                          </FormField>
+                          <FormField label="انتخاب مشتری">
+                            <Select
+                              onValueChange={(value) =>
+                                updateCompanion(index, {
+                                  existingCustomerId: value,
+                                })
+                              }
+                              value={companion.existingCustomerId}
+                            >
+                              <SelectTrigger
+                                aria-label={`انتخاب مشتری برای مسافر ${index + 1}`}
+                              >
+                                <SelectValue placeholder="انتخاب از نتایج" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(newCompanionOptions[companion.key] ?? []).map(
+                                  (record) => (
+                                    <SelectItem
+                                      key={record.id}
+                                      value={record.id}
+                                    >
+                                      {record.displayName} —{' '}
+                                      {record.maskedPrimaryContact ??
+                                        'بدون شماره تماس'}
+                                    </SelectItem>
+                                  ),
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </FormField>
+                          <Alert
+                            className="sm:col-span-2"
+                            description="اطلاعات همین مشتری استفاده می‌شود، نقش مسافر بدون حذف نقش مشتری ثبت و رابطه همراه ایجاد می‌شود."
+                            title="بدون ورود دوباره اطلاعات"
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <FormField
+                            id={`companion-${companion.key}-first-name`}
+                            label="نام"
+                            required
+                          >
+                            <Input
+                              id={`companion-${companion.key}-first-name`}
+                              onChange={(event) =>
+                                updateCompanion(index, {
+                                  firstName: event.target.value,
+                                })
+                              }
+                              required
+                              value={companion.firstName}
+                            />
+                          </FormField>
+                          <FormField
+                            id={`companion-${companion.key}-last-name`}
+                            label="نام خانوادگی"
+                            required
+                          >
+                            <Input
+                              id={`companion-${companion.key}-last-name`}
+                              onChange={(event) =>
+                                updateCompanion(index, {
+                                  lastName: event.target.value,
+                                })
+                              }
+                              required
+                              value={companion.lastName}
+                            />
+                          </FormField>
+                          <div className="border-t border-border pt-3 sm:col-span-2">
+                            <p className="font-semibold">
+                              اطلاعات تکمیلی مسافر
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              این اطلاعات همراه پرونده واقعی مسافر ذخیره می‌شود.
+                            </p>
+                          </div>
+                          <CustomerDateField
+                            id={`companion-${companion.key}-birth-date`}
+                            label="تاریخ تولد"
+                            mode={calendarMode}
+                            onModeChange={onCalendarModeChange}
+                            onChange={(value) =>
+                              updateCompanion(index, { birthDate: value })
+                            }
+                            value={companion.birthDate}
+                          />
+                          <FormField
+                            description="اختیاری و در نمایش عادی Masked"
+                            id={`companion-${companion.key}-phone`}
+                            label="شماره تماس"
+                          >
+                            <Input
+                              dir="ltr"
+                              id={`companion-${companion.key}-phone`}
+                              inputMode="tel"
+                              onChange={(event) =>
+                                updateCompanion(index, {
+                                  phone: event.target.value,
+                                })
+                              }
+                              pattern="\+?[0-9]{10,15}"
+                              placeholder="09xxxxxxxxx"
+                              type="tel"
+                              value={companion.phone}
+                            />
+                          </FormField>
+                          <FormField
+                            description="اختیاری و در نمایش عادی Masked"
+                            id={`companion-${companion.key}-email`}
+                            label="ایمیل مسافر"
+                          >
+                            <Input
+                              autoComplete="email"
+                              dir="ltr"
+                              id={`companion-${companion.key}-email`}
+                              inputMode="email"
+                              onChange={(event) =>
+                                updateCompanion(index, {
+                                  email: event.target.value,
+                                })
+                              }
+                              placeholder="passenger@example.com"
+                              type="email"
+                              value={companion.email}
+                            />
+                          </FormField>
+                          <FormField label="سازمان مسافر">
+                            <Select
+                              onValueChange={(value) =>
+                                updateCompanion(index, {
+                                  organizationId:
+                                    value === 'not-selected' ? '' : value,
+                                })
+                              }
+                              value={companion.organizationId || 'not-selected'}
+                            >
+                              <SelectTrigger
+                                aria-label={`سازمان مسافر ${index + 1}`}
+                              >
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="not-selected">
+                                  مسافر شخصی
+                                </SelectItem>
+                                {masters.organizations.map((organization) => (
+                                  <SelectItem
+                                    key={organization.id}
+                                    value={organization.id}
+                                  >
+                                    {organization.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormField>
+                        </>
+                      )}
                       <FormField label="رابطه با مشتری">
                         <Select
                           onValueChange={(value) =>

@@ -78,6 +78,84 @@ describe('CustomerRepository', () => {
     expect(snapshot).toContain('changedFields');
   });
 
+  it('promotes an existing customer to passenger in the relationship transaction', async () => {
+    const related = {
+      ...row,
+      id: '55555555-5555-4555-8555-555555555555',
+      isPassenger: false,
+    };
+    const customer = {
+      findFirst: vi
+        .fn()
+        .mockResolvedValueOnce(row)
+        .mockResolvedValueOnce(related),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      update: vi.fn().mockResolvedValue({
+        ...related,
+        isPassenger: true,
+        version: 2,
+      }),
+      findUniqueOrThrow: vi.fn().mockResolvedValue(row),
+    };
+    const customerRelationship = {
+      create: vi.fn().mockResolvedValue({
+        id: '66666666-6666-4666-8666-666666666666',
+        customerId: row.id,
+        relatedCustomerId: related.id,
+        relationshipType: 'COMPANION',
+      }),
+    };
+    const customerAuditEvent = {
+      create: vi.fn().mockResolvedValue({ id: 'audit' }),
+    };
+    const transaction = {
+      customer,
+      customerRelationship,
+      customerAuditEvent,
+    };
+    const database = {
+      client: {
+        $transaction: async <T>(
+          callback: (client: typeof transaction) => Promise<T>,
+        ) => callback(transaction),
+      },
+    } as unknown as DatabaseService;
+    const repository = new CustomerRepository(database);
+
+    await repository.addCompanion(
+      row.id,
+      [row.ownerBranchId],
+      {
+        relatedCustomerId: related.id,
+        relationshipType: 'companion',
+        version: row.version,
+      },
+      '11111111-1111-4111-8111-111111111111',
+      row.ownerBranchId,
+    );
+
+    expect(customer.update).toHaveBeenCalledWith({
+      where: { id: related.id },
+      data: {
+        isPassenger: true,
+        version: { increment: 1 },
+        updatedByUserId: '11111111-1111-4111-8111-111111111111',
+      },
+    });
+    expect(customerRelationship.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ relatedCustomerId: related.id }),
+    });
+    expect(customerAuditEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: 'customers.role.passenger.add',
+        entityId: related.id,
+      }),
+    });
+    expect(JSON.stringify(customerAuditEvent.create.mock.calls)).not.toContain(
+      related.displayName,
+    );
+  });
+
   it('searches an exact customer code without weakening branch scope', async () => {
     const customer = {
       findMany: vi.fn().mockResolvedValue([]),

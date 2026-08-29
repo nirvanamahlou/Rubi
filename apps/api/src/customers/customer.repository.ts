@@ -698,6 +698,37 @@ export class CustomerRepository {
           },
         });
         if (!related) return null;
+        if (!related.isPassenger) {
+          const promoted = await transaction.customer.update({
+            where: { id: related.id },
+            data: {
+              isPassenger: true,
+              version: { increment: 1 },
+              updatedByUserId: actorUserId,
+            },
+          });
+          await transaction.customerAuditEvent.create({
+            data: {
+              actorUserId,
+              actorBranchId,
+              action: 'customers.role.passenger.add',
+              entityType: 'customer',
+              entityId: related.id,
+              outcome: AuditOutcome.SUCCESS,
+              beforeSnapshot: json({
+                isCustomer: related.isCustomer,
+                isPassenger: related.isPassenger,
+                version: related.version,
+              }),
+              afterSnapshot: json({
+                isCustomer: promoted.isCustomer,
+                isPassenger: promoted.isPassenger,
+                version: promoted.version,
+              }),
+              traceId: traceId ?? null,
+            },
+          });
+        }
         return transaction.customerRelationship.create({
           data: {
             customerId: id,
