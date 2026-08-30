@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { getMasterDataSection } from '../model/sections';
+
 const source = readFileSync(
   resolve(
     process.cwd(),
@@ -12,15 +14,12 @@ const source = readFileSync(
 );
 
 describe('travel services workspace', () => {
-  it('implements all seven mockup tabs with exact KPI labels', () => {
+  it('keeps the remaining mockup tabs and their exact KPI labels', () => {
     for (const label of [
       'لیدرها',
       'نوع تور',
       'نوع ترانسفر',
-      'CIP',
       'ویزا',
-      'شرکت اتوبوس',
-      'نوع اتوبوس',
       'کل لیدرها',
       'مقصدها',
       'مدرک ناقص',
@@ -28,17 +27,33 @@ describe('travel services workspace', () => {
       'خارجی',
       'اختصاصی',
       'اشتراکی',
-      'فرودگاه‌ها',
-      'Providerها',
-      'Organization',
-      'امکانات',
-      'شرکت‌ها',
+      'کشورها',
     ])
       expect(source).toContain(label);
   });
 
+  it('removes CIP and bus navigation and keeps tabs aligned with the hub card', () => {
+    const tabs = source.slice(
+      source.indexOf('const tabs'),
+      source.indexOf('type TravelResource'),
+    );
+    const resources = [...tabs.matchAll(/resource: '([^']+)'/g)].map(
+      (match) => match[1],
+    );
+    expect(resources).toEqual(
+      getMasterDataSection('tours-travel-services')?.resources,
+    );
+    expect(resources).toHaveLength(4);
+    for (const resource of ['cip-services', 'bus-companies', 'bus-types'])
+      expect(source).not.toContain(resource);
+    expect(source).not.toContain('setAirports');
+  });
+
   it('opens every profile from the list without a standalone profile tab', () => {
-    const tabs = source.slice(source.indexOf('const tabs'), source.indexOf('const rules'));
+    const tabs = source.slice(
+      source.indexOf('const tabs'),
+      source.indexOf('const rules'),
+    );
     expect(tabs).not.toContain('پروفایل');
     expect(source).toContain('<MasterDataProfileDialog');
     expect(source).toContain('setProfileOpen(true)');
