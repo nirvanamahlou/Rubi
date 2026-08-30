@@ -332,8 +332,7 @@ function GenericMasterDataWorkspace({
                 زیرمجموعه‌های {section.title}
               </h2>
               <p className="text-xs text-muted-foreground">
-                {section.resources.length.toLocaleString('fa-IR')} منبع مرجع ·
-                مشترک بین شرکت‌ها · بدون فیلتر Legal Entity
+                {section.resources.length.toLocaleString('fa-IR')} منبع مرجع
               </p>
             </div>
           </div>
@@ -372,9 +371,6 @@ function GenericMasterDataWorkspace({
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-xl font-black">{definition.label}</h2>
                   <Badge>{section.title}</Badge>
-                  <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-                    Backend واقعی
-                  </Badge>
                 </div>
                 <p className="mt-2 text-sm leading-7 text-muted-foreground">
                   {isCountryCity

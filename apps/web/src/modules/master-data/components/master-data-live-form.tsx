@@ -102,22 +102,24 @@ export function MasterDataLiveForm({
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="start-auto left-1/2 max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto p-6">
+      <DialogContent
+        {...(!readonly ? { 'aria-describedby': undefined } : {})}
+        className="start-auto left-1/2 max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto p-6"
+      >
         <DialogTitle>
           {mode === 'create' ? 'ایجاد' : mode === 'edit' ? 'ویرایش' : 'مشاهده'}{' '}
           {definition.singularLabel}
         </DialogTitle>
-        <DialogDescription>
-          {readonly
-            ? 'جزئیات رکورد پایدار و فقط‌خواندنی است.'
-            : 'اطلاعات پس از اعتبارسنجی در Backend ثبت و Audit می‌شود.'}
-        </DialogDescription>
-        <div className="mt-4 flex gap-2">
-          <Badge>master-data.v12</Badge>
-          {record ? (
+        {readonly ? (
+          <DialogDescription>
+            جزئیات رکورد پایدار و فقط‌خواندنی است.
+          </DialogDescription>
+        ) : null}
+        {record ? (
+          <div className="mt-4 flex gap-2">
             <Badge>نسخه {record.version.toLocaleString('fa-IR')}</Badge>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
 
         <form
           className="mt-6 space-y-5"

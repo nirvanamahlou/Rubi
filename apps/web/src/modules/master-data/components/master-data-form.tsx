@@ -89,7 +89,6 @@ export function MasterDataForm({
         </DialogDescription>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          <Badge>Contract: master-data.v1-draft</Badge>
           <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">
             Blocked by Migration Lock
           </Badge>

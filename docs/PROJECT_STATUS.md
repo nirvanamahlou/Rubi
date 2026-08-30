@@ -1,18 +1,34 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-31 — MASTER-003M-CURRENCY-FORM پیاده‌سازی و آزموده شد
+آخرین به‌روزرسانی: 2026-08-31 — MASTER-003N-CLEAN-LABELS پیاده‌سازی و آزموده شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003M-CURRENCY-FORM روی شاخه Stacked مستقل آماده Review است**
+- وضعیت: **MASTER-003N-CLEAN-LABELS روی شاخه Stacked مستقل آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه فعال: `codex/pc-b-master-data-currency-form`
-- Work Item: `MASTER-003M-CURRENCY-FORM`؛ Stacked روی Draft PR #39
+- شاخه فعال: `codex/pc-b-master-data-clean-labels`
+- Work Item: `MASTER-003N-CLEAN-LABELS`؛ Stacked روی Draft PR #40
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ Web روی ۳۱۰۰ و API روی ۴۰۰۰ پاسخ می‌دهند.
-- نوع تغییر: Master Data Web/API/Contract/Test/Docs؛ بدون تغییر Schema، Migration،
+- نوع تغییر: فقط Master Data Web/Test/Docs؛ بدون تغییر API/Contract، Schema، Migration،
   Seed، Customers، Dependency یا Lockfile.
+
+### `MASTER-003N-CLEAN-LABELS` — PC-B — `READY_FOR_REVIEW`
+
+- متن فنی اعتبارسنجی Backend/Audit از بالای فرم‌های واقعی و نشان نسخه قرارداد از
+  فرم‌های واقعی/Preview حذف شد؛ اعتبارسنجی، ذخیره‌سازی، Audit و Contract تغییر نکردند.
+- نشان «Backend واقعی · مشترک بین شرکت‌ها» در مالی و جغرافیا و نمونه جداگانه نشان
+  Backend/توضیح scope در نمای عمومی Master Data حذف شدند؛ سایر ماژول‌ها دست‌نخورده‌اند.
+- عنوان دسترس‌پذیر Dialog، توضیح نمای فقط‌خواندنی، نسخه رکورد و هشدار Preview حفظ شدند؛
+  فرم بدون توضیح به شناسه توضیح ناموجود ارجاع نمی‌دهد و نوار خالی نشان‌ها باقی نمی‌ماند.
+- Web tests: `151/151` و typecheck موفق؛ تست بازگشت، همه کامپوننت‌های Master Data را پوشش می‌دهد.
+- lint هر شش فایل تغییرکرده و Production Build موفق؛ هر هشت HTML زیرمجموعه اطلاعات پایه
+  بدون متن/برچسب‌های حذف‌شده ساخته شدند. `git diff --check` و Scope/Secret-pattern scan موفق‌اند.
+- API Health پاسخ ۲۰۰ و Web بدون Session به Login سالم پاسخ ۲۰۰ می‌دهد؛ سرورها روشن‌اند.
+  Smoke احراز‌شده انجام نشد؛ ایراد قدیمی lint تقویم مشترک خارج از محدوده این اصلاح باقی است.
+- والد #40 / `808ca13` و قفل‌های `PC-B/MASTER-003` ثابت‌اند؛ PR باید Draft و روی شاخه
+  `codex/pc-b-master-data-currency-form` باشد و پیش از والد #40 و زنجیره #25 Merge نشود.
 
 ### `MASTER-003M-CURRENCY-FORM` — PC-B — `READY_FOR_REVIEW`
 

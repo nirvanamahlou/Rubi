@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -11,6 +11,38 @@ function source(fileName: string) {
 }
 
 describe('Master Data visual polish contract', () => {
+  it('omits technical contract and backend badges throughout the Master Data UI', () => {
+    const directory = resolve(
+      process.cwd(),
+      'src/modules/master-data/components',
+    );
+    for (const fileName of readdirSync(directory).filter((file) =>
+      file.endsWith('.tsx'),
+    )) {
+      const component = source(fileName);
+      expect(component, fileName).not.toMatch(/master-data\.v\d+/);
+      expect(component, fileName).not.toContain('Backend واقعی');
+      expect(component, fileName).not.toContain(
+        'اطلاعات پس از اعتبارسنجی در Backend ثبت و Audit می‌شود.',
+      );
+      expect(component, fileName).not.toContain(
+        'مشترک بین شرکت‌ها · بدون فیلتر Legal Entity',
+      );
+    }
+  });
+
+  it('preserves form behavior, record versions and honest preview disclosure', () => {
+    const form = source('master-data-live-form.tsx');
+    expect(form).toContain('<DialogTitle>');
+    expect(form).toContain("'aria-describedby': undefined");
+    expect(form).toContain('validateMasterDataDraft(definition.key, values)');
+    expect(form).toContain('await onPersist(result.values)');
+    expect(form).toContain("record.version.toLocaleString('fa-IR')");
+    expect(source('master-data-form.tsx')).toContain(
+      'Blocked by Migration Lock',
+    );
+  });
+
   it('uses pastel KPI cards with a semantic icon in every card', () => {
     const kpis = source('master-data-kpi-grid.tsx');
     const liveWorkspace = source('master-data-live-workspace.tsx');

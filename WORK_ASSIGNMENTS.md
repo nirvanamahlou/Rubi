@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-31 — MASTER-003M-CURRENCY-FORM آماده Review است
+آخرین به‌روزرسانی: 2026-08-31 — MASTER-003N-CLEAN-LABELS آماده Review است
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `PLANNED/RESERVED`، `IN_PROGRESS`،
@@ -45,6 +45,14 @@
 | CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket                      | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence |
 | MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix         | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11        |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                                   | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |
+
+### `MASTER-003N-CLEAN-LABELS` — PC-B — `READY_FOR_REVIEW`
+
+- Branch: `codex/pc-b-master-data-clean-labels` از PR #40 / `808ca13`؛ والد دست‌نخورده می‌ماند.
+- محدوده: حذف متن و نشان فنی از Header فرم‌ها و Workspaceهای Master Data؛ فقط `apps/web/src/modules/master-data/components/**` و تست/اسناد همان کار.
+- قرارداد API، اعتبارسنجی، Audit، نسخه رکورد، هشدار Preview، داده‌ها و فرم‌ها حفظ می‌شوند؛ بدون Backend/Schema/Migration/Seed/Dependency/Customers.
+- اسناد وضعیت تحت قفل فعال `PC-B/MASTER-003`؛ سه قفل اصلی تغییر نمی‌کنند و Dependency آزاد می‌ماند. Draft PR مستقیم روی #40 و بدون Merge خودکار.
+- Web: هر ۱۵۱ تست، typecheck، lint فایل‌های تغییرکرده و Production Build موفق؛ هشت صفحه ساخته‌شده فاقد برچسب‌های حذف‌شده‌اند. گزارش در `docs/PROJECT_STATUS.md` ثبت شد.
 
 ### `MASTER-003M-CURRENCY-FORM` — PC-B — `READY_FOR_REVIEW`
 
