@@ -2,6 +2,10 @@
 
 مالک: PC-B / MASTER-003. شاخه: `codex/pc-b-master-data-partner-forms`، والد #44.
 
+## تحویل Stacked
+
+Draft PR #45: https://github.com/nirvanamahlou/Rubi/pull/45 با Base برابر `codex/pc-b-master-data-clear-fields`، وابسته به #44 و زنجیره والد شامل #25. پیش از Merge والدها، به‌ویژه #25، این PR نباید Merge شود. پس از ادغام زنجیره والد، Base به `develop` منتقل شود؛ Merge خودکار، Force Push، تغییر Parent Branch/main و حذف Source Branch انجام نمی‌شود.
+
 ## دامنه و سازگاری
 
 - نام انگلیسی مستقل در هر پروفایل، نوع حقیقی/حقوقی در Organization مشترک و انتخاب تماس اصلی از مخاطبان همان Organization.

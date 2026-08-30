@@ -54,7 +54,7 @@
 - سه قفل Migration/Contract/Docs همان `PC-B/MASTER-003`؛ Schema، قرارداد Master Data و اسناد وضعیت برای همین زیرواحد رزرو می‌شوند. بدون Dependency، Customers یا فایل داخلی ماژول دیگر.
 - Producer: Master Data API، Consumer: Master Data Web. توسعه سازگار با v12: فیلدهای اختیاری `englishName`/`primaryContactId` برای Supplier/Broker و `personType` برای Organization؛ نبود فیلد در PATCH مقدار قبلی را حفظ می‌کند. فقط نام/Mask مخاطب در پاسخ عمومی؛ هیچ Ciphertext یا شماره کامل در List/Export/Audit پروفایل نیست.
 - قرارداد و محدودیت خرید فاقد Public Service عملیاتی‌اند؛ اتصال آن‌ها Deferred و بدون جعل داده/نوشتن در مالک دیگر است.
-- PR به‌صورت Draft Stacked روی `codex/pc-b-master-data-clear-fields` و وابسته به #44 و زنجیره #25؛ پیش از والد Merge نشود.
+- Draft PR #45: https://github.com/nirvanamahlou/Rubi/pull/45 — Stacked روی `codex/pc-b-master-data-clear-fields` و وابسته به #44 و زنجیره #25؛ پیش از والد Merge نشود.
 - نتیجه: چهار فیلد/قابلیت اصلی با ذخیره واقعی، Mask، انتخاب چندگانه و Popup تکمیل شد. Migration `20260831090000_master_data_partner_forms` افزایشی است؛ PostgreSQL 18 خالی، Seed دوبار و چهار آزمون واقعی DB موفق‌اند. تست‌های واحد، typecheck، lint محدوده و Production Build موفق؛ lint کلی Web فقط ایراد قبلی DatePicker را دارد. Smoke احراز‌شده به Session کاربر نیاز دارد.
 
 ### `MASTER-003P-CLEAR-FIELDS` — PC-B — `READY_FOR_REVIEW`

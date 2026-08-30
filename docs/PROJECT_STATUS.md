@@ -22,7 +22,7 @@
 - نسخه جداشده از سایر تغییرات محلی: API ۲۵۴ تست، Web ۱۸۶ تست (شامل ۶ تست SSR فرم واقعی)، typecheck و Production Build API/Web موفق. نسخه مشترک نیز API ۳۸۴، Web ۲۴۸، Contract ۱۴ و Database ۵۳ تست موفق دارد (شامل کارهای هم‌زمان دیگر).
 - lint API و فایل‌های Web متاثر موفق؛ lint کلی Web فقط خطا/هشدار قبلی DatePicker مشترک را دارد. مرورگر به Login هدایت شد؛ Smoke احراز‌شده ادعا نمی‌شود. API روی ۴۰۰۰ و Web روی ۳۱۰۰ روشن‌اند.
 - قرارداد و سقف خرید تا Public Service واقعی B2B/Procurement و اتصال Provider تا سرویس Integrations، Deferred هستند؛ عدد، قرارداد یا اتصال جعلی ثبت نشد. سه قفل PC-B/MASTER-003 ثابت و تغییرات محلی حذف امن، همکاری و اصلاحات جانبی محفوظ و خارج از Commit این Slice هستند.
-- والد #44 دست‌نخورده است؛ PR جدید Draft و Stacked است و پیش از والدها Merge نمی‌شود. گزارش: `docs/tasks/MASTER-003Q-PARTNER-FORMS.md`.
+- والد #44 دست‌نخورده است؛ [Draft PR #45](https://github.com/nirvanamahlou/Rubi/pull/45) روی آن Stacked است و پیش از والدها Merge نمی‌شود. گزارش: `docs/tasks/MASTER-003Q-PARTNER-FORMS.md`.
 
 ### `MASTER-003P-CLEAR-FIELDS` — PC-B — `READY_FOR_REVIEW`
 
