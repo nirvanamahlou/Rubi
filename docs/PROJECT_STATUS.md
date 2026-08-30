@@ -1,18 +1,36 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-31 — MASTER-003O-PAYMENT-FORM پیاده‌سازی و آزموده شد
+آخرین به‌روزرسانی: 2026-08-31 — MASTER-003P-CLEAR-FIELDS پیاده‌سازی و آزموده شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003O-PAYMENT-FORM روی شاخه Stacked مستقل آماده Review است**
+- وضعیت: **MASTER-003P-CLEAR-FIELDS روی شاخه Stacked مستقل آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه فعال: `codex/pc-b-master-data-payment-form`
-- Work Item: `MASTER-003O-PAYMENT-FORM`؛ Stacked روی Draft PR #42
+- شاخه فعال: `codex/pc-b-master-data-clear-fields`
+- Work Item: `MASTER-003P-CLEAR-FIELDS`؛ Stacked روی Draft PR #43
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ Web روی ۳۱۰۰ و API روی ۴۰۰۰ پاسخ می‌دهند.
-- نوع تغییر: Master Data Web/API/Test/Docs؛ بدون تغییر فایل Contract، Schema، Migration،
-  Seed، Customers، Dependency یا Lockfile.
+- نوع تغییر: Master Data Web/Test/Docs؛ بدون تغییر Backend، Contract، Schema، Migration،
+  Seed، Customers، UI مشترک، Dependency یا Lockfile.
+
+### `MASTER-003P-CLEAR-FIELDS` — PC-B — `READY_FOR_REVIEW`
+
+- دکمه «×» برای انتخاب‌های ساده، مرجع اجباری/اختیاری، چندانتخابی و تاریخ در فرم‌های
+  ایجاد/ویرایش Master Data، فرم ارز/نرخ، Preview و ورود گروهی هتل اضافه شد.
+- دکمه نام فارسی دسترس‌پذیر و فضای لمس ۴۴ پیکسل دارد؛ Submit نیست و پس از پاک‌کردن،
+  فوکوس به همان فیلد برمی‌گردد. در حالت خالی، فقط‌خواندنی و ذخیره نمایش داده نمی‌شود.
+- پاک‌کردن فقط state همان فیلد را تغییر می‌دهد؛ انتخاب اجباری تا انتخاب دوباره قابل ذخیره
+  نیست. در ورود گروهی هتل، پاک‌کردن کشور، شهر و Preview وابسته را نیز خالی می‌کند.
+- آزمون واقعی TSX با پیکربندی Vitest محلی Web فعال شد؛ تنظیمات Next و Dependency ثابت‌اند.
+- کنترل کیفیت روی checkout مستقل `687a183` برای جداسازی از تغییرات هم‌زمان Workspace:
+  Frozen install، `175/175` تست Web (۲۰ تست جدید)، typecheck، lint فایل‌های متاثر و Production Build موفق.
+- lint کل Web همچنان فقط ایراد قبلی DatePicker مشترک در خطوط ۶۷ و ۹۹ را گزارش می‌کند؛
+  آن فایل خارج از Scope و دست‌نخورده است. `git diff --check` و Scope/Secret-pattern scan موفق‌اند.
+- Health API و Login پاسخ ۲۰۰ دارند؛ بدون Session مسیر `/master-data` به Login می‌رود.
+  Smoke احراز‌شده ادعا نمی‌شود. سرورهای محلی روشن و تغییرات محلی دیگر حفظ شده‌اند.
+- Parent #43 / `b78d0a9` و سه قفل `PC-B/MASTER-003` ثابت‌اند؛ Draft روی شاخه والد،
+  وابسته به #43 و زنجیره #25؛ بدون Merge خودکار. گزارش: `docs/tasks/MASTER-003P-CLEAR-FIELDS.md`.
 
 ### `MASTER-003O-PAYMENT-FORM` — PC-B — `READY_FOR_REVIEW`
 

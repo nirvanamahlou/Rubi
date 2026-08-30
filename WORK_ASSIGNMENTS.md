@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-31 — MASTER-003P-CLEAR-FIELDS در حال اجرا است
+آخرین به‌روزرسانی: 2026-08-31 — MASTER-003P-CLEAR-FIELDS آماده Review است
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `PLANNED/RESERVED`، `IN_PROGRESS`،
@@ -46,7 +46,7 @@
 | MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix         | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11        |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                                   | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |
 
-### `MASTER-003P-CLEAR-FIELDS` — PC-B — `IN_PROGRESS`
+### `MASTER-003P-CLEAR-FIELDS` — PC-B — `READY_FOR_REVIEW`
 
 - Branch: `codex/pc-b-master-data-clear-fields` از PR #43 / `b78d0a9`؛ والد دست‌نخورده می‌ماند.
 - محدوده: پاک‌کردن انتخاب در فرم‌های Master Data (انتخاب ساده/مرجع/چندانتخابی/تاریخ)، کنترل محلی فرم، اعتبارسنجی و آزمون‌های Web و اسناد همین واحد کار.
@@ -55,6 +55,7 @@
 - رزرو فایل مرکزی جدید `apps/web/vitest.config.mts` فقط برای اجرای آزمون واقعی کامپوننت‌های TSX با همان JSX خودکار Next و alias موجود Web؛ بدون Dependency یا تغییر تنظیمات ساخت Next.
 - تغییرات محلی موجود در `master-data-suppliers-workspace.tsx` و `supplier-collaboration.ts` خارج از Scope‌اند و نه بازنویسی، نه stage می‌شوند.
 - تحویل Draft Stacked روی `codex/pc-b-master-data-payment-form`؛ پیش از #43 و والدهای پشته Merge نشود.
+- کنترل کیفیت روی checkout مستقل همین Commit (بدون تغییرات هم‌زمان دیگر): Frozen install، `175/175` تست Web شامل ۲۰ آزمون جدید، typecheck، lint فایل‌های متاثر و Production Build موفق؛ گزارش کامل در `docs/tasks/MASTER-003P-CLEAR-FIELDS.md`.
 
 ### `MASTER-003O-PAYMENT-FORM` — PC-B — `READY_FOR_REVIEW`
 
