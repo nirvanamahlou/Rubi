@@ -68,6 +68,7 @@ import {
   type MasterDataKpiItem,
 } from './master-data-kpi-grid';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
+import { MasterDataCurrencyForm } from './master-data-currency-form';
 
 type FinanceTab =
   'currencies' | 'approvals' | 'banks' | 'branches' | 'payments';
@@ -126,7 +127,7 @@ const tabCopy: Record<FinanceTab, { title: string; description: string }> = {
   currencies: {
     title: 'ارزها',
     description:
-      'تعریف ارزهای ISO-4217 و سیاست نمایش؛ با انتخاب هر ارز، نرخ جاری و تاریخچه واقعی آن نمایش داده می‌شود.',
+      'تعریف ارزهای ISO-4217؛ با انتخاب هر ارز، نرخ جاری و تاریخچه واقعی آن نمایش داده می‌شود.',
   },
   approvals: {
     title: 'گردش تأیید نرخ',
@@ -1283,7 +1284,19 @@ export function MasterDataFinanceWorkspace({
         </div>
       </div>
 
-      {formMode ? (
+      {formMode && resource === 'currencies' ? (
+        <MasterDataCurrencyForm
+          key={`currency-${selected?.id ?? 'new'}`}
+          {...(selected ? { record: selected } : {})}
+          onOpenChange={(open) => {
+            if (!open) setFormMode(null);
+          }}
+          onSaved={(record) => {
+            if (selectedCurrency?.id === record.id) setSelectedCurrency(record);
+            void load();
+          }}
+        />
+      ) : formMode ? (
         <MasterDataLiveForm
           definition={definition}
           key={`${resource}-${formMode}-${selected?.id ?? 'new'}`}
@@ -1317,9 +1330,10 @@ export function MasterDataFinanceWorkspace({
                   `${String(selectedCurrency.attributes.symbol ?? '—')} · ${Number(selectedCurrency.attributes.decimalDigits ?? 0).toLocaleString('fa-IR')} رقم`,
                 ],
                 [
-                  'سیاست نمایش',
-                  String(selectedCurrency.attributes.displayPolicy ?? '—'),
+                  'وضعیت ارز',
+                  selectedCurrency.status === 'active' ? 'فعال' : 'غیرفعال',
                 ],
+                ['ارز پایه', 'نامشخص — در انتظار اتصال مالی'],
               ].map(([label, value]) => (
                 <dl className="rounded-xl bg-muted/40 p-3" key={label}>
                   <dt className="text-xs text-muted-foreground">{label}</dt>
@@ -1372,8 +1386,8 @@ export function MasterDataFinanceWorkspace({
               <Button
                 onClick={() => {
                   setCurrencyProfileOpen(false);
-                  changeTab('approvals');
-                  setFormMode('create');
+                  setSelected(selectedCurrency);
+                  setFormMode('edit');
                 }}
               >
                 <Plus className="size-4" /> ثبت نرخ جدید
@@ -1497,8 +1511,8 @@ export function MasterDataFinanceWorkspace({
                   <Button
                     onClick={() => {
                       setCurrencyProfileOpen(false);
-                      changeTab('approvals');
-                      setFormMode('create');
+                      setSelected(selectedCurrency);
+                      setFormMode('edit');
                     }}
                   >
                     ثبت نرخ جدید

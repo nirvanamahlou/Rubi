@@ -1,4 +1,6 @@
 import type {
+  MasterCurrencyRateQuoteRequest,
+  MasterCurrencyRateRecord,
   MasterAccommodationSummary,
   MasterInsuranceSummary,
   MasterTravelServicesSummary,
@@ -150,6 +152,15 @@ export const masterDataApi = {
       data: readonly Record<string, unknown>[];
       meta: { total: number };
     }>(`/currency-rates?${parameters.toString()}`);
+  },
+  createCurrencyQuote(input: MasterCurrencyRateQuoteRequest) {
+    return request<{ data: readonly MasterCurrencyRateRecord[] }>(
+      '/currency-rates/quotes',
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      },
+    );
   },
   decideCurrencyRate(
     id: string,

@@ -302,7 +302,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'ارز',
     group: 'مالی',
     description:
-      'مشخصات نمایشی ارز با کد رسمی ISO-4217، نام انگلیسی و سیاست نمایش مستقل.',
+      'مشخصات ارز با کد رسمی ISO-4217، نام فارسی و انگلیسی، نماد و تعداد اعشار.',
     fields: [
       {
         key: 'code',
@@ -326,19 +326,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'تعداد رقم اعشار',
         type: 'number',
         placeholder: '2',
-      },
-      {
-        key: 'displayPolicy',
-        label: 'سیاست نمایش',
-        type: 'select',
-        placeholder: '',
-        required: true,
-        options: [
-          { value: 'SYMBOL_BEFORE', label: 'نماد قبل از مبلغ' },
-          { value: 'SYMBOL_AFTER', label: 'نماد بعد از مبلغ' },
-          { value: 'CODE_BEFORE', label: 'کد قبل از مبلغ' },
-          { value: 'CODE_AFTER', label: 'کد بعد از مبلغ' },
-        ],
       },
     ],
     preview: { code: 'IRR', name: 'ریال ایران', symbol: '﷼' },

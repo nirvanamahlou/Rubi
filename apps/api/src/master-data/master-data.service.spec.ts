@@ -32,6 +32,38 @@ const row = {
 };
 
 describe('MasterDataService', () => {
+  it('allows currencies without display policy and preserves existing policy on edit', async () => {
+    const currency = { ...row, code: 'USD', displayPolicy: 'SYMBOL_BEFORE' };
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      create: vi.fn().mockResolvedValue(currency),
+      update: vi.fn().mockResolvedValue({ ...currency, version: 2 }),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    const values = {
+      code: 'USD',
+      name: 'ارز تست',
+      englishName: 'Test currency',
+      symbol: '$',
+      decimalDigits: '2',
+    };
+    await service.create('currencies', values, actor);
+    await service.update('currencies', currency.id, values, 1, actor);
+    expect(repository.create).toHaveBeenCalledWith(
+      'currencies',
+      { ...values, decimalDigits: 2 },
+      actor.userId,
+      actor.branchIds[0],
+    );
+    expect(repository.update).toHaveBeenCalledWith(
+      'currencies',
+      currency.id,
+      { ...values, decimalDigits: 2 },
+      1,
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
   it('normalizes a Tag color and generates its internal code', async () => {
     const repository = {
       codeExists: vi.fn().mockResolvedValue(false),
