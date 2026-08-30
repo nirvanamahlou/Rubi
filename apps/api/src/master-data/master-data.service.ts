@@ -558,7 +558,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   ],
   banks: ['code', 'name', 'englishName', 'countryId'],
   'bank-branches': ['code', 'name', 'bankId', 'cityId'],
-  'payment-methods': ['code', 'name', 'channel', 'direction'],
+  'payment-methods': ['name', 'channel', 'direction'],
   insurers: ['name', 'englishName', 'organizationId', 'countryId'],
   'insurance-plans': [
     'name',
@@ -1327,6 +1327,13 @@ export class MasterDataService {
       ]) {
         if (data[field] === '') data[field] = null;
       }
+    }
+    if (
+      resource === 'payment-methods' &&
+      !partial &&
+      !Object.hasOwn(values, 'code')
+    ) {
+      data.code = await this.generateAutoCode(resource, values);
     }
     if (resource === 'countries' && typeof data.iso2Code === 'string') {
       const iso2Code = data.iso2Code.trim().toUpperCase();
