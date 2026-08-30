@@ -4,6 +4,7 @@ import type { MasterDataRecord } from '@rubi/contracts';
 import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
+import { Button } from '@/components/ui/button';
 import { Checkbox, Input } from '@/components/ui/form-controls';
 import { Alert, Badge, EmptyState, Skeleton } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
@@ -25,6 +26,9 @@ export function MasterDataReferenceSelector({
   label = 'انتخاب',
   onChange,
   value,
+  scopeValue,
+  refreshKey = 0,
+  onManage,
 }: {
   config: ReferenceFieldConfig;
   disabled: boolean;
@@ -32,12 +36,27 @@ export function MasterDataReferenceSelector({
   label?: string;
   onChange: (value: string) => void;
   value: string;
+  scopeValue?: string;
+  refreshKey?: number;
+  onManage?: (record?: MasterDataRecord) => void;
 }) {
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState<readonly MasterDataRecord[]>([]);
+  const [savedSelection, setSavedSelection] = useState<MasterDataRecord | null>(null);
   const [state, setState] = useState<ReferenceSelectorState>('loading');
 
   useEffect(() => {
+    if (config.multiple || config.payload !== 'id' || !value) return;
+    let active = true;
+    void masterDataApi.detail(config.target, value).then(({ data }) => {
+      if (active && (!config.scopeField || !scopeValue || String(data.attributes[config.scopeField] ?? '') === scopeValue))
+        setSavedSelection(data);
+    }).catch(() => { if (active) setSavedSelection(null); });
+    return () => { active = false; };
+  }, [config.multiple, config.payload, config.target, config.scopeField, scopeValue, value, refreshKey]);
+
+  useEffect(() => {
+    if (config.scopeField === 'organizationId' && !scopeValue) return;
     let active = true;
     const timer = window.setTimeout(async () => {
       setState(resolveReferenceSelectorState({ loading: true }));
@@ -49,6 +68,7 @@ export function MasterDataReferenceSelector({
           sortDirection: 'asc',
           page: 1,
           pageSize: 100,
+          ...(config.scopeField && scopeValue ? { [config.scopeField]: scopeValue } : {}),
         });
         if (!active) return;
         const compatible = response.data.filter((record) =>
@@ -73,12 +93,13 @@ export function MasterDataReferenceSelector({
       active = false;
       window.clearTimeout(timer);
     };
-  }, [config.requiredRole, config.target, query]);
+  }, [config.requiredRole, config.target, config.scopeField, scopeValue, refreshKey, query]);
 
   const selected = useMemo(
     () =>
-      options.find((record) => mapReferenceOption(config, record) === value),
-    [config, options, value],
+      options.find((record) => mapReferenceOption(config, record) === value) ??
+      (savedSelection?.id === value ? savedSelection : undefined),
+    [config, options, value, savedSelection],
   );
   const selectedValues = useMemo(
     () =>
@@ -128,8 +149,24 @@ export function MasterDataReferenceSelector({
     );
   }
 
+  if (config.scopeField === 'organizationId' && !scopeValue)
+    return <p className="text-sm text-muted-foreground">ابتدا سازمان را انتخاب کنید.</p>;
+
   return (
     <div className="space-y-2">
+      {onManage ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={() => onManage()} size="sm" type="button" variant="outline">
+            {config.target === 'organizations' ? 'افزودن سازمان' : config.target === 'organization-contacts' ? 'افزودن مخاطب' : 'افزودن خدمت'}
+          </Button>
+          {!config.multiple && selected ? <Button onClick={() => onManage(selected)} size="sm" type="button" variant="ghost">
+            {config.target === 'organizations' ? 'ویرایش سازمان و نوع شخصیت' : 'ویرایش مخاطب'}
+          </Button> : null}
+          {config.target === 'organizations' && selected ? <Badge>
+            نوع شخصیت: {selected.attributes.personType === 'NATURAL' ? 'حقیقی' : selected.attributes.personType === 'LEGAL' ? 'حقوقی' : 'ثبت نشده'}
+          </Badge> : null}
+        </div>
+      ) : null}
       {value ? (
         <div className="flex items-center justify-between gap-2 rounded-xl border border-primary/20 bg-primary/5 p-2">
           <div className="flex flex-wrap gap-1.5">
@@ -227,6 +264,9 @@ export function MasterDataReferenceSelector({
                   type="button"
                 >
                   <span className="font-semibold">{record.name}</span>
+                  {config.target === 'organization-contacts' ? <span className="ms-2 text-xs" dir="ltr">
+                    {String(record.attributes.phoneMasked || record.attributes.emailMasked || '—')}
+                  </span> : null}
                   <span className="ms-2 font-mono text-xs" dir="ltr">
                     {record.code}
                   </span>

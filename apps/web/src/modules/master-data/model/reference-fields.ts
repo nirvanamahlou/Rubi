@@ -8,6 +8,7 @@ export interface ReferenceFieldConfig {
   requiredRole?: string;
   optional?: boolean;
   multiple?: boolean;
+  scopeField?: 'organizationId' | 'countryId';
 }
 export type ReferenceSelectorState =
   'loading' | 'ready' | 'empty' | 'error' | 'forbidden';
@@ -119,7 +120,9 @@ const configs: Partial<
       requiredRole: 'BROKER',
     },
     countryId: { target: 'countries', payload: 'id', optional: true },
-    cityId: { target: 'cities', payload: 'id', optional: true },
+    cityId: { target: 'cities', payload: 'id', optional: true, scopeField: 'countryId' },
+    primaryContactId: { target: 'organization-contacts', payload: 'id', optional: true, scopeField: 'organizationId' },
+    serviceCodes: { target: 'travel-services', payload: 'code', multiple: true, optional: true },
   },
   suppliers: {
     organizationId: {
@@ -128,7 +131,9 @@ const configs: Partial<
       requiredRole: 'SUPPLIER',
     },
     countryId: { target: 'countries', payload: 'id', optional: true },
-    cityId: { target: 'cities', payload: 'id', optional: true },
+    cityId: { target: 'cities', payload: 'id', optional: true, scopeField: 'countryId' },
+    primaryContactId: { target: 'organization-contacts', payload: 'id', optional: true, scopeField: 'organizationId' },
+    serviceCodes: { target: 'travel-services', payload: 'code', multiple: true, optional: true },
   },
   'organization-contacts': {
     organizationId: { target: 'organizations', payload: 'id' },

@@ -179,6 +179,11 @@ function ProfileData({ label, value }: { label: string; value: string }) {
   );
 }
 
+function partnerPersonType(record: MasterDataRecord) {
+  return record.attributes.organizationPersonType === 'NATURAL' ? 'حقیقی'
+    : record.attributes.organizationPersonType === 'LEGAL' ? 'حقوقی' : 'ثبت نشده';
+}
+
 export function MasterDataSuppliersWorkspace() {
   const [tab, setTab] = useState<SupplierTab>('suppliers');
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
@@ -538,6 +543,11 @@ export function MasterDataSuppliersWorkspace() {
             </h3>
             <dl className="mt-5 grid gap-4 sm:grid-cols-2">
               <ProfileData label="کد" value={record.code} />
+              <ProfileData label="نام انگلیسی" value={text(record, 'englishName')} />
+              <ProfileData label="نوع شخصیت" value={partnerPersonType(record)} />
+              <ProfileData label="مخاطب اصلی" value={text(record, 'primaryContactName')} />
+              <ProfileData label="تلفن اصلی" value={text(record, 'primaryPhoneMasked')} />
+              <ProfileData label="ایمیل اصلی" value={text(record, 'primaryEmailMasked')} />
               <ProfileData
                 label="سازمان"
                 value={text(record, 'organizationName')}
@@ -622,6 +632,7 @@ export function MasterDataSuppliersWorkspace() {
                     >
                       {record.name}
                     </button>
+                    <p className="mt-1 text-xs font-normal text-muted-foreground" dir="ltr">{text(record, 'englishName')}</p>
                   </td>
                   <td className="p-4">
                     {text(record, 'countryName')} / {text(record, 'cityName')}
@@ -687,14 +698,18 @@ export function MasterDataSuppliersWorkspace() {
                     >
                       {record.name}
                     </button>
+                    <p className="mt-1 text-xs font-normal text-muted-foreground" dir="ltr">{text(record, 'englishName')}</p>
                   </td>
                   <td className="p-4">
-                    {text(record, 'organizationName')} / BROKER
+                    {text(record, 'organizationName')} / {partnerPersonType(record)}
                   </td>
                   <td className="p-4">
                     {text(record, 'countryName')} / {text(record, 'cityName')}
                   </td>
-                  <td className="p-4 text-muted-foreground">—</td>
+                  <td className="p-4 text-muted-foreground">
+                    <span className="block text-xs">{text(record, 'primaryContactName')}</span>
+                    <span dir="ltr">{text(record, 'primaryPhoneMasked', text(record, 'primaryEmailMasked'))}</span>
+                  </td>
                   <td className="p-4">
                     <ServiceChips value={text(record, 'serviceNames', '')} />
                   </td>

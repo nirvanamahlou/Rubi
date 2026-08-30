@@ -22,7 +22,8 @@ import {
   DialogContent,
 } from '@/components/ui/overlays';
 import { Alert, Badge } from '@/components/ui/surfaces';
-import type { MasterDataCatalogItem } from '../model/catalog';
+import { getMasterDataDefinition, type MasterDataCatalogItem } from '../model/catalog';
+import { masterDataApi } from '../api/client';
 import { getMasterDataFormFields } from '../model/form-fields';
 import { validateMasterDataDraft } from '../model/validation';
 import { getReferenceFieldConfig } from '../model/reference-fields';
@@ -70,6 +71,8 @@ export function MasterDataLiveForm({
   onPersist,
   open,
   record,
+  initialValues,
+  lockedFields = [],
 }: {
   definition: MasterDataCatalogItem;
   mode: MasterDataFormMode;
@@ -77,8 +80,12 @@ export function MasterDataLiveForm({
   onPersist: (values: Record<string, string>) => Promise<void>;
   open: boolean;
   record?: MasterDataRecord;
+  initialValues?: Record<string, string>;
+  lockedFields?: readonly string[];
 }) {
-  const [values, setValues] = useState(() => valuesFrom(definition, record));
+  const [values, setValues] = useState(() => ({ ...valuesFrom(definition, record), ...initialValues }));
+  const [referenceForm, setReferenceForm] = useState<{ field: string; definition: MasterDataCatalogItem; record?: MasterDataRecord; defaults: Record<string, string> } | null>(null);
+  const [referenceRevision, setReferenceRevision] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const readonly = mode === 'view';
@@ -103,7 +110,7 @@ export function MasterDataLiveForm({
   }
 
   return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
+    <><Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent
         {...(!readonly ? { 'aria-describedby': undefined } : {})}
         className="start-auto left-1/2 max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto p-6"
@@ -135,11 +142,28 @@ export function MasterDataLiveForm({
               field.key,
             );
             const updateValue = (value: string) =>
-              setValues((current) => ({ ...current, [field.key]: value }));
+              setValues((current) => ({ ...current, [field.key]: value,
+                ...((definition.key === 'suppliers' || definition.key === 'brokers') && current[field.key] !== value
+                  ? field.key === 'organizationId' ? { primaryContactId: '' } : field.key === 'countryId' ? { cityId: '' } : {} : {}),
+              }));
+            const canManage = (definition.key === 'suppliers' || definition.key === 'brokers') &&
+              ['organizationId', 'primaryContactId', 'serviceCodes'].includes(field.key) && !readonly && !saving;
             const control = reference ? (
               <MasterDataReferenceSelector
+                key={`${field.key}-${reference.scopeField ? values[reference.scopeField] : ''}-${referenceRevision}`}
                 config={reference}
-                disabled={readonly || saving}
+                disabled={readonly || saving || lockedFields.includes(field.key)}
+                {...(reference.scopeField ? { scopeValue: values[reference.scopeField] ?? '' } : {})}
+                {...(canManage ? { onManage: (related?: MasterDataRecord) => setReferenceForm({
+                  field: field.key,
+                  definition: getMasterDataDefinition(reference.target),
+                  ...(related ? { record: related } : {}),
+                  defaults: reference.target === 'organizations'
+                    ? (related ? {} : { roleCodes: reference.requiredRole ?? '' })
+                    : reference.target === 'organization-contacts'
+                      ? { organizationId: values.organizationId ?? '', ...(related ? {} : { preferredChannel: 'PHONE' }) }
+                      : {},
+                }) } : {})}
                 id={controlId}
                 label={field.label}
                 onChange={updateValue}
@@ -245,5 +269,30 @@ export function MasterDataLiveForm({
         </form>
       </DialogContent>
     </Dialog>
+    {referenceForm ? <MasterDataLiveForm
+      key={`${referenceForm.field}-${referenceForm.record?.id ?? 'new'}`}
+      definition={referenceForm.definition}
+      mode={referenceForm.record ? 'edit' : 'create'}
+      open
+      initialValues={referenceForm.defaults}
+      lockedFields={referenceForm.definition.key === 'organization-contacts' ? ['organizationId'] : []}
+      {...(referenceForm.record ? { record: referenceForm.record } : {})}
+      onOpenChange={(next) => { if (!next) setReferenceForm(null); }}
+      onPersist={async (draft) => {
+        const resource = referenceForm.definition.key;
+        const response = referenceForm.record
+          ? await masterDataApi.update(resource, referenceForm.record.id, { values: draft, version: referenceForm.record.version })
+          : await masterDataApi.create(resource, { values: draft });
+        const field = referenceForm.field;
+        const config = getReferenceFieldConfig(definition.key, field)!;
+        const selectedValue = config.payload === 'code' ? response.data.code : response.data.id;
+        setValues((current) => ({ ...current,
+          [field]: config.multiple ? [...new Set([...(current[field] ?? '').split(',').filter(Boolean), selectedValue])].join(',') : selectedValue,
+          ...(field === 'organizationId' && current.organizationId !== selectedValue ? { primaryContactId: '' } : {}),
+        }));
+        setReferenceRevision((revision) => revision + 1);
+        setReferenceForm(null);
+      }}
+    /> : null}</>
   );
 }
