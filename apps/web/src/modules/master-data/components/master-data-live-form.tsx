@@ -26,6 +26,7 @@ import type { MasterDataCatalogItem } from '../model/catalog';
 import { getMasterDataFormFields } from '../model/form-fields';
 import { validateMasterDataDraft } from '../model/validation';
 import { getReferenceFieldConfig } from '../model/reference-fields';
+import { MasterDataClearableField } from './master-data-clearable-field';
 import {
   MasterDataReferenceSelector,
   OrganizationRoleSelector,
@@ -140,12 +141,14 @@ export function MasterDataLiveForm({
                 config={reference}
                 disabled={readonly || saving}
                 id={controlId}
+                label={field.label}
                 onChange={updateValue}
                 value={values[field.key] ?? ''}
               />
             ) : field.key === 'roleCodes' ? (
               <OrganizationRoleSelector
                 disabled={readonly || saving}
+                id={controlId}
                 onChange={updateValue}
                 value={values[field.key] ?? ''}
               />
@@ -203,7 +206,20 @@ export function MasterDataLiveForm({
                 key={field.key}
                 label={field.label}
               >
-                {control}
+                {!reference &&
+                (field.type === 'select' || field.type === 'datetime-local') ? (
+                  <MasterDataClearableField
+                    controlId={controlId}
+                    label={field.label}
+                    value={values[field.key] ?? ''}
+                    onClear={() => updateValue('')}
+                    disabled={readonly || saving}
+                  >
+                    {control}
+                  </MasterDataClearableField>
+                ) : (
+                  control
+                )}
               </FormField>
             );
           })}

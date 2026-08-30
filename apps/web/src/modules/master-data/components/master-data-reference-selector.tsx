@@ -1,13 +1,13 @@
 'use client';
 
 import type { MasterDataRecord } from '@rubi/contracts';
-import { Search, X } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
 import { Checkbox, Input } from '@/components/ui/form-controls';
 import { Alert, Badge, EmptyState, Skeleton } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
+import { MasterDataClearSelection } from './master-data-clearable-field';
 import {
   hasOrganizationRole,
   mapReferenceOption,
@@ -22,12 +22,14 @@ export function MasterDataReferenceSelector({
   config,
   disabled,
   id,
+  label = 'انتخاب',
   onChange,
   value,
 }: {
   config: ReferenceFieldConfig;
   disabled: boolean;
   id: string;
+  label?: string;
   onChange: (value: string) => void;
   value: string;
 }) {
@@ -152,17 +154,15 @@ export function MasterDataReferenceSelector({
               </Badge>
             )}
           </div>
-          {config.optional || config.multiple ? (
-            <Button
-              aria-label="پاک‌کردن انتخاب"
-              onClick={() => onChange('')}
-              size="sm"
-              type="button"
-              variant="ghost"
-            >
-              <X aria-hidden="true" className="size-4" />
-            </Button>
-          ) : null}
+          <MasterDataClearSelection
+            controlId={id}
+            label={label}
+            value={value}
+            onClear={() => {
+              onChange('');
+              setQuery('');
+            }}
+          />
         </div>
       ) : null}
       <div className="relative">
@@ -242,10 +242,12 @@ export function MasterDataReferenceSelector({
 
 export function OrganizationRoleSelector({
   disabled,
+  id,
   onChange,
   value,
 }: {
   disabled: boolean;
+  id: string;
   onChange: (value: string) => void;
   value: string;
 }) {
@@ -255,9 +257,20 @@ export function OrganizationRoleSelector({
       <legend className="px-1 text-xs font-semibold text-muted-foreground">
         یک یا چند Role را انتخاب کنید
       </legend>
-      {ORGANIZATION_ROLE_OPTIONS.map(([code, label]) => (
+      {value && !disabled ? (
+        <div className="flex justify-end">
+          <MasterDataClearSelection
+            controlId={id}
+            label="نقش‌های انتخاب‌شده"
+            value={value}
+            onClear={() => onChange('')}
+          />
+        </div>
+      ) : null}
+      {ORGANIZATION_ROLE_OPTIONS.map(([code, label], index) => (
         <label className="flex items-center gap-2 text-sm" key={code}>
           <Checkbox
+            id={index === 0 ? id : `${id}-${code}`}
             checked={selected.has(code)}
             disabled={disabled}
             onCheckedChange={(checked) =>
