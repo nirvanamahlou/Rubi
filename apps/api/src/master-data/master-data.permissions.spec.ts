@@ -15,6 +15,7 @@ describe('MasterDataController permission metadata', () => {
     ['create', 'master_data.create'],
     ['update', 'master_data.update'],
     ['status', 'master_data.status.manage'],
+    ['remove', 'master_data.delete'],
   ] as const)('requires %s on %s', (method, permission) => {
     expect(
       Reflect.getMetadata(

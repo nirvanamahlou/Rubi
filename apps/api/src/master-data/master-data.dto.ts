@@ -147,6 +147,13 @@ export class MasterDataMutationDto {
   version?: number;
 }
 
+export class MasterDataDeleteDto {
+  @IsInt()
+  @Min(1)
+  @Max(2147483646)
+  version!: number;
+}
+
 export class MasterDataStatusDto {
   @IsIn(['active', 'inactive'])
   status!: 'active' | 'inactive';

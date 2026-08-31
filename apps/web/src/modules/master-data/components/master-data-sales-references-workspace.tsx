@@ -49,6 +49,7 @@ import {
   Skeleton,
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
+import { MasterDataDeleteButton } from './master-data-delete-button';
 import { getMasterDataDefinition } from '../model/catalog';
 import {
   MasterDataLiveForm,
@@ -243,6 +244,16 @@ export function MasterDataSalesReferencesWorkspace() {
     await Promise.all([load(), loadSummary()]);
   }
 
+  async function afterDelete() {
+    setSelected(undefined);
+    setFormMode(null);
+    setProfileOpen(false);
+    setNotice('رکورد با موفقیت حذف شد.');
+    if (records.length === 1 && page > 1) setPage(page - 1);
+    else await load();
+    await loadSummary();
+  }
+
   async function toggle(record: MasterDataRecord) {
     try {
       await masterDataApi.setStatus(
@@ -416,6 +427,10 @@ export function MasterDataSalesReferencesWorkspace() {
                     >
                       <FilePenLine className="size-4" />
                     </Button>
+                    <MasterDataDeleteButton
+                      record={record}
+                      onDeleted={afterDelete}
+                    />
                     <Button
                       onClick={() => void toggle(record)}
                       size="sm"

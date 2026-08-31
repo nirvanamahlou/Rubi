@@ -156,6 +156,14 @@ export interface MasterDataMutationRequest {
   version?: number;
 }
 
+export interface MasterDataDeleteRequest {
+  version: number;
+}
+
+export interface MasterDataDeleteResponse {
+  data: { id: string; resource: MasterDataResource; deleted: true };
+}
+
 export interface MasterDataExportRequest {
   resource: MasterDataResource;
   format: 'xlsx' | 'pdf';

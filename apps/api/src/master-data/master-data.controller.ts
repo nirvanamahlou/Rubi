@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   HttpCode,
@@ -25,6 +26,7 @@ import type { AuthenticatedRequest } from '../iam/iam.types';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import {
   MasterDataExportDto,
+  MasterDataDeleteDto,
   MasterDataListQueryDto,
   MasterDataMutationDto,
   MasterDataStatusDto,
@@ -150,6 +152,25 @@ export class MasterDataController {
       resource,
       id,
       dto.values,
+      dto.version,
+      request.actor,
+      branchId,
+    );
+  }
+
+  @Delete(':resource/:id')
+  @HttpCode(200)
+  @RequirePermissions('master_data.delete')
+  remove(
+    @Param('resource') resource: string,
+    @Param('id') id: string,
+    @Body() dto: MasterDataDeleteDto,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId?: string,
+  ) {
+    return this.service.remove(
+      resource,
+      id,
       dto.version,
       request.actor,
       branchId,
