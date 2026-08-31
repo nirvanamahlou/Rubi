@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isMasterTransportFormResource } from '@rubi/contracts';
 
 import { getMasterDataDefinition, type MasterDataResourceKey } from './catalog';
 import { getMasterDataFormFields } from './form-fields';
@@ -35,6 +36,12 @@ export function validateMasterDataDraft(
     Object.entries(parsed.data).map(([key, value]) => [key, value.trim()]),
   );
   const errors: Record<string, string> = {};
+  if (isMasterTransportFormResource(resource)) {
+    if (values.transportStatus && !['ACTIVE', 'INACTIVE', 'UNDER_REVIEW'].includes(values.transportStatus))
+      errors.transportStatus = 'وضعیت معتبر نیست.';
+    if (!values.transportStatus) delete values.transportStatus;
+    if ((values.englishName?.length ?? 0) > 160) errors.englishName = 'نام انگلیسی حداکثر ۱۶۰ نویسه است.';
+  }
   if ((resource === 'suppliers' || resource === 'brokers') && (values.englishName?.length ?? 0) > 160)
     errors.englishName = 'نام انگلیسی حداکثر ۱۶۰ نویسه است.';
   if (resource === 'organizations' && values.personType && !['NATURAL', 'LEGAL'].includes(values.personType))
@@ -44,6 +51,28 @@ export function validateMasterDataDraft(
     if (field.required && !values[field.key]) {
       errors[field.key] = `${field.label} الزامی است.`;
     }
+    if (isMasterTransportFormResource(resource) && values[field.key] &&
+      field.options && !field.options.some((option) => option.value === values[field.key]))
+      errors[field.key] = `${field.label} معتبر نیست.`;
+  }
+  if (resource === 'airlines') {
+    for (const [key, pattern] of [['code', /^[A-Z0-9]{2}$/], ['icaoCode', /^[A-Z0-9]{3}$/]] as const) {
+      if (!values[key]) continue;
+      values[key] = values[key].toUpperCase();
+      if (!pattern.test(values[key])) errors[key] = 'کد ایرلاین معتبر نیست.';
+    }
+  }
+  if (resource === 'baggage-rules') {
+    if (values.allowance && (!/^\d+(\.\d{1,2})?$/.test(values.allowance) || Number(values.allowance) <= 0 || Number(values.allowance) > 999999.99))
+      errors.allowance = 'مقدار بار باید مثبت و حداکثر دو رقم اعشار باشد.';
+    if (values.pieceCount && (!/^\d+$/.test(values.pieceCount) || Number(values.pieceCount) < 1 || Number(values.pieceCount) > 2147483647))
+      errors.pieceCount = 'تعداد قطعه باید عدد صحیح مثبت باشد.';
+    if (values.unit === 'PC' && !values.pieceCount) errors.pieceCount = 'برای واحد قطعه، تعداد قطعه الزامی است.';
+    for (const key of ['validFrom', 'validTo']) {
+      if (values[key] && Number.isNaN(Date.parse(values[key]))) errors[key] = 'تاریخ معتبر نیست.';
+    }
+    if (values.validFrom && values.validTo && Date.parse(values.validTo) < Date.parse(values.validFrom))
+      errors.validTo = 'پایان اعتبار باید بعد از شروع اعتبار باشد.';
   }
 
   for (const key of ['fromCurrencyCode', 'toCurrencyCode']) {

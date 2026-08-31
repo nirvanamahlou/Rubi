@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { isMasterTransportFormResource } from '@rubi/contracts';
 import type {
   MasterDataListQuery,
   MasterDataRecord,
@@ -324,7 +325,7 @@ function relations(resource: MasterDataResource): object | undefined {
       supplier: { include: { organization: true } },
       country: true,
     };
-  if (resource === 'bus-types')
+  if (resource === 'bus-types' || resource === 'train-types')
     return { facilities: { include: { facility: true } } };
   if (resource === 'suppliers')
     return {
@@ -665,7 +666,16 @@ export function toMasterDataRecord(
         '',
     );
   }
-  if (resource === 'bus-types') {
+  if (isMasterTransportFormResource(resource)) {
+    attributes.transportStatus = row.isUnderReview ? 'UNDER_REVIEW' : row.isActive ? 'ACTIVE' : 'INACTIVE';
+    attributes.integrationConnectionReference = null;
+    attributes.integrationConnectionStatus = 'UNAVAILABLE';
+    attributes.logoReferenceStatus = 'UNAVAILABLE';
+    attributes.vehicleTypeCount = null;
+    attributes.vehicleTypeCountStatus = 'UNAVAILABLE';
+    attributes.capacityStatus = 'OWNED_BY_FLEET_OR_SERVICE';
+  }
+  if (resource === 'bus-types' || resource === 'train-types') {
     attributes.facilityIds =
       facilityLinks
         ?.map(({ facility }) => String(facility.id ?? ''))
@@ -908,6 +918,10 @@ export class MasterDataRepository {
       if (query.contactCompleteness === 'incomplete')
         where.AND = [{ OR: [{ phoneMasked: null }, { emailMasked: null }] }];
     }
+    if (isMasterTransportFormResource(resource) && query.transportStatus) {
+      where.isUnderReview = query.transportStatus === 'UNDER_REVIEW';
+      where.isActive = query.transportStatus === 'ACTIVE';
+    }
     if (query.search) {
       const direct = searchFields[resource].map((field) => ({
         [field]: { contains: query.search, mode: 'insensitive' },
@@ -1052,7 +1066,10 @@ export class MasterDataRepository {
   ) {
     return this.database.client.$transaction(async (transaction) => {
       const model = delegate(transaction, resource);
-      const before = await model.findUnique({ where: { id } });
+      const before = await model.findUnique({
+        where: { id },
+        ...(resource === 'train-types' ? { include: relations(resource) } : {}),
+      });
       if (!before || before.version !== expectedVersion) return null;
       const claimed = await model.updateMany({
         where: { id, version: expectedVersion },
@@ -1144,6 +1161,7 @@ export class MasterDataRepository {
       id,
       {
         isActive,
+        ...(isMasterTransportFormResource(resource) ? { isUnderReview: false } : {}),
         deactivatedAt: isActive ? null : now,
         deactivatedByUserId: isActive ? null : actorUserId,
         ...(resource === 'terminals' ? { isUnderMaintenance: false } : {}),

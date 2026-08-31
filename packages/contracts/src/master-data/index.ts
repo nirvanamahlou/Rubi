@@ -51,6 +51,13 @@ export const MASTER_DATA_RESOURCES = [
 
 export type MasterDataResource = (typeof MASTER_DATA_RESOURCES)[number];
 export type MasterDataStatus = 'active' | 'inactive';
+/** Additive v12 transport form fields. Under review remains inactive for legacy consumers. */
+export const MASTER_TRANSPORT_FORM_RESOURCES = ['airlines', 'aircraft-types', 'baggage-rules', 'rail-companies', 'train-types', 'bus-companies', 'bus-types'] as const;
+export type MasterTransportFormResource = (typeof MASTER_TRANSPORT_FORM_RESOURCES)[number];
+export type MasterTransportStatus = 'ACTIVE' | 'INACTIVE' | 'UNDER_REVIEW';
+export function isMasterTransportFormResource(resource: string): resource is MasterTransportFormResource {
+  return (MASTER_TRANSPORT_FORM_RESOURCES as readonly string[]).includes(resource);
+}
 export type MasterRegionType = 'PROVINCE' | 'STATE' | 'REGION' | 'TERRITORY';
 export type MasterTerminalType = 'DOMESTIC' | 'INTERNATIONAL' | 'MIXED' | 'VIP';
 export type MasterCurrencyDisplayPolicy =
@@ -99,6 +106,7 @@ export type MasterDataSortField = 'name' | 'code' | 'updatedAt';
 export type MasterDataSortDirection = 'asc' | 'desc';
 
 export interface MasterDataListQuery {
+  transportStatus?: MasterTransportStatus;
   search: string;
   status: 'all' | MasterDataStatus;
   sortBy: MasterDataSortField;

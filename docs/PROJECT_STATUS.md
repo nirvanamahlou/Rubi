@@ -1,5 +1,7 @@
 # وضعیت پروژه
 
+آخرین به‌روزرسانی: 2026-08-31 — تجمیع و انتشار تمام اصلاحات محلی PC-B
+
 ## انتشار و فعال‌سازی تمام تغییرات محلی — 2026-08-31
 
 - کاربر انتشار همه اصلاحات موجود و فعال‌سازی محلی را تأیید کرد. تغییرات در شش Slice سربرگ، وضعیت همکاری، حذف امن، فرم‌های سفر، ترمینال و وعده/سرویس تفکیک می‌شوند؛ گزارش‌های «محلی/بدون Push» پایین، تاریخچه مرحله پیاده‌سازی هستند.
@@ -15,19 +17,29 @@
 - Migration افزایشی `20260831130000_master_data_meal_service_forms` و همه Migrationهای نسخه محلی روی PostgreSQL 18 خالی اجرا شدند؛ Seed دوبار و ۸ آزمون واقعی ذخیره/Audit/فیلتر/Export/FK/Constraint موفق. آزمون‌های API/Web/Contract/Database، Typecheck و Build جداگانه موفق‌اند؛ خطای lint کلی Web همان DatePicker قبلی است.
 - تغییرات محلی کاربر، سه قفل PC-B/MASTER-003 و Branch جاری محفوظ‌اند؛ Customers/Dependency/Seed، دیتابیس کاربردی و Client سرور تغییر نکردند. API4000 در کنترل نهایی در دسترس نبود؛ Smoke احراز‌شده ادعا نمی‌شود. فعال‌سازی نیازمند هماهنگی Migrationهای محلی معلق است. گزارش: `docs/tasks/MASTER-003-LOCAL-MEAL-SERVICE-FORM.md`.
 
-آخرین به‌روزرسانی: 2026-08-31 — MASTER-003Q-PARTNER-FORMS پیاده‌سازی و آزموده شد
+گزارش‌های مرحله‌ای پایین تاریخی هستند؛ فعال‌سازی و تجمیع حمل‌ونقل PR #47 اکنون با تأیید صریح کاربر در `MASTER-003-LOCAL-PUBLISH` انجام می‌شود.
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003Q-PARTNER-FORMS روی شاخه Stacked مستقل آماده Review است**
+- وضعیت: **انتشار اصلاحات محلی در Sliceهای مستقل و تجمیع نسخه اجرایی کامل**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه فعال: `codex/pc-b-master-data-partner-forms`
-- Work Item: `MASTER-003Q-PARTNER-FORMS`؛ Stacked روی Draft PR #44
-- محیط مسئول: `COMPUTER_ID=PC-B`؛ Web روی ۳۱۰۰ و API روی ۴۰۰۰ پاسخ می‌دهند.
+- شاخه نسخه اجرایی: `codex/pc-b-master-data-local-complete`
+- Work Item: `MASTER-003-LOCAL-PUBLISH`؛ شش Slice مستقل به‌علاوه نسخه حمل‌ونقل PR #47؛ والد مشترک Draft PR #45.
+- محیط مسئول: `COMPUTER_ID=PC-B`؛ داده‌های Checkout اصلی محفوظ‌اند؛ API4000 و Web3100 محل اجرای نسخه تجمیعی هستند.
 - نوع تغییر: Master Data Database/API/Contract/Web/Test/Docs؛ بدون تغییر Seed، Customers،
   UI مشترک، Dependency یا Lockfile.
+
+### `MASTER-003R-TRANSPORT-FORMS` — PC-B — `READY_FOR_REVIEW`
+
+- پوشش تصاویر ۴۳۹ تا ۴۴۵ در هفت فرم ایرلاین، هواپیما، قواعد بار، شرکت ریلی، قطار، شرکت اتوبوس و نوع اتوبوس بررسی و تکمیل شد. فیلدهای نام فارسی/انگلیسی، کشور/سازمان، سازنده/مدل و دسته‌های موجود حفظ شدند؛ وضعیت بررسی، مشخصات سیستمی فقط‌خواندنی و تاریخچه واقعی داخل پروفایل Popup اضافه شد.
+- امکانات قطار به رابطه چندبه‌چند واقعی Facility متصل است؛ امکانات متنی قدیمی باقی می‌ماند. فیلتر وضعیت قبل از Pagination و در خروجی Excel اعمال می‌شود. تغییر وضعیت مجوز اختصاصی می‌خواهد و همراه Version/Audit در همان تراکنش ثبت می‌شود.
+- Migration افزایشی `20260831120000_master_data_transport_forms`: هفت پرچم بررسی با Constraint و جدول ارتباطی قطار/امکانات با FK محدودکننده؛ هر ۲۱ Migration روی PostgreSQL 18 موقت، Seed دوبار و ۹ آزمون واقعی موفق شدند. فقط دیتابیس موقت آزمون حذف شد؛ دیتابیس اصلی Deploy نشد.
+- کنترل کیفیت: API ۲۶۵، Web ۲۰۳، Contracts ۱۴ و Database ۵۵ تست موفق؛ Prisma format/validate/generate، typecheck و Production Build API/Web موفق. lint API/Database و کل ماژول Master Data وب موفق؛ lint سراسری Web فقط خطا/هشدار قبلی DatePicker مشترک را دارد و آن فایل دست‌نخورده است.
+- اتصال واقعی Documents/Integrations، شمارش انواع ناوگان و ظرفیت عملیاتی همچنان منتظر قرارداد مالک هستند. مرجع لوگوی قبلی فقط‌خواندنی نمایش داده می‌شود؛ UUID جدید تاییدنشده پذیرفته نمی‌شود. مقدار، Connection، Secret یا داده ساختگی ماکاپ Seed نشد.
+- Checkout مستقل `C:/Users/admin/Rubi-transport-forms` از `2088010` برای حفظ تغییرات محلی حذف امن، فرم ترمینال/تور/سفر و سایر کارهای هم‌زمان استفاده شد. Health API و Login نسخه اصلی ۲۰۰ هستند؛ Smoke مرورگر احراز‌شده نسخه جدید ادعا نمی‌شود. ادغام در Checkout مشترک و Deploy محلی نیازمند هماهنگی جداست.
+- سه قفل Migration/Contract/Docs زیر `PC-B/MASTER-003` فعال باقی می‌مانند؛ والد #45 و کل زنجیره Stacked، Customers، Seed و Dependency/Lockfile تغییر نکردند. قبل از والدها Merge نشود. گزارش و جدول فیلدها: `docs/tasks/MASTER-003R-TRANSPORT-FORMS.md`.
 
 ### `MASTER-003Q-PARTNER-FORMS` — PC-B — `READY_FOR_REVIEW`
 

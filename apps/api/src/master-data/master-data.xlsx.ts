@@ -112,6 +112,7 @@ const columnLabels: Readonly<Record<string, string>> = {
   currencyId: 'ارز',
   description: 'توضیحات',
   status: 'وضعیت',
+  transportStatus: 'وضعیت بررسی',
   updatedAt: 'آخرین تغییر',
 };
 
@@ -208,6 +209,10 @@ function recordValue(
     return record.resource === 'meal-services' && record.attributes.isUnderReview === true
       ? 'در حال بررسی'
       : record.status === 'active' ? 'فعال' : 'غیرفعال';
+  if (column === 'transportStatus') {
+    const status = record.attributes.transportStatus;
+    return status === 'UNDER_REVIEW' ? 'در حال بررسی' : status === 'ACTIVE' ? 'فعال' : 'غیرفعال';
+  }
   if (column === 'updatedAt')
     return formatter.format(new Date(record.updatedAt));
   const value = record.attributes[column];
