@@ -1,6 +1,10 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import { MasterDataPowerButton } from './master-data-power-button';
+import {
+  MasterDataDateRangeFilter,
+  useMasterDataDateRange,
+} from './master-data-date-range-filter';
 
 import type {
   MasterDataRecord,
@@ -111,12 +115,18 @@ export function MasterDataSalesReferencesWorkspace() {
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
+  const {
+    filters: dateFilters,
+    props: dateRangeProps,
+    reset: resetDateRange,
+  } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
     setRequestState('loading');
     try {
       const response = await masterDataApi.list(resource, {
         ...columnFilters,
+        ...dateFilters,
         search,
         status,
         sortBy: 'name',
@@ -135,7 +145,7 @@ export function MasterDataSalesReferencesWorkspace() {
           : 'error',
       );
     }
-  }, [columnFilters, page, resource, search, status]);
+  }, [columnFilters, dateFilters, page, resource, search, status]);
 
   const loadSummary = useCallback(async () => {
     try {
@@ -255,6 +265,7 @@ export function MasterDataSalesReferencesWorkspace() {
         format: 'xlsx',
         filters: {
           ...columnFilters,
+          ...dateFilters,
           search,
           status,
           sortBy: 'name',
@@ -482,6 +493,10 @@ export function MasterDataSalesReferencesWorkspace() {
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${definition.label}`} />
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
         {columnFilterControls}
+        <MasterDataDateRangeFilter
+          idPrefix="sales-references-created"
+          {...dateRangeProps}
+        />
         <FormField id="sales-reference-search" label="جست‌وجو">
           <div className="relative">
             <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -519,6 +534,7 @@ export function MasterDataSalesReferencesWorkspace() {
           onClick={() => {
             setSearch('');
             resetColumnFilters();
+            resetDateRange();
             setStatus('all');
             setPage(1);
           }}

@@ -1,6 +1,10 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import { MasterDataPowerButton } from './master-data-power-button';
+import {
+  MasterDataDateRangeFilter,
+  useMasterDataDateRange,
+} from './master-data-date-range-filter';
 
 import type {
   MasterDataRecord,
@@ -235,6 +239,11 @@ export function MasterDataSuppliersWorkspace() {
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
+  const {
+    filters: dateFilters,
+    props: dateRangeProps,
+    reset: resetDateRange,
+  } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
     const sequence = ++loadSequence.current;
@@ -243,6 +252,7 @@ export function MasterDataSuppliersWorkspace() {
       if (tab === 'collaboration') {
         const response = await loadSupplierCollaborationPage(masterDataApi, {
           ...columnFilters,
+          ...dateFilters,
           search,
           status,
           page,
@@ -255,6 +265,7 @@ export function MasterDataSuppliersWorkspace() {
       } else {
         const response = await masterDataApi.list(resource, {
           ...columnFilters,
+          ...dateFilters,
           search,
           status,
           sortBy: 'name',
@@ -278,7 +289,7 @@ export function MasterDataSuppliersWorkspace() {
           : 'error',
       );
     }
-  }, [columnFilters, page, resource, search, status, tab]);
+  }, [columnFilters, dateFilters, page, resource, search, status, tab]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadSummary(), 0);
@@ -436,6 +447,7 @@ export function MasterDataSuppliersWorkspace() {
         format: 'xlsx',
         filters: {
           ...columnFilters,
+          ...dateFilters,
           search,
           status,
           sortBy: 'name',
@@ -980,6 +992,10 @@ export function MasterDataSuppliersWorkspace() {
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${copy.title}`} />
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
         {columnFilterControls}
+        <MasterDataDateRangeFilter
+          idPrefix="suppliers-created"
+          {...dateRangeProps}
+        />
         <FormField id="supplier-search" label="جستجو">
           <div className="relative">
             <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -1017,6 +1033,7 @@ export function MasterDataSuppliersWorkspace() {
           onClick={() => {
             setSearch('');
             resetColumnFilters();
+            resetDateRange();
             setStatus('all');
             setPage(1);
           }}

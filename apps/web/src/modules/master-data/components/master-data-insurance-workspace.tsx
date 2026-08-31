@@ -1,6 +1,10 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import { MasterDataPowerButton } from './master-data-power-button';
+import {
+  MasterDataDateRangeFilter,
+  useMasterDataDateRange,
+} from './master-data-date-range-filter';
 
 import type {
   MasterDataRecord,
@@ -180,12 +184,18 @@ export function MasterDataInsuranceWorkspace() {
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
+  const {
+    filters: dateFilters,
+    props: dateRangeProps,
+    reset: resetDateRange,
+  } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
     setRequestState('loading');
     try {
       const response = await masterDataApi.list(resource, {
         ...columnFilters,
+        ...dateFilters,
         search,
         status,
         sortBy: 'name',
@@ -213,7 +223,15 @@ export function MasterDataInsuranceWorkspace() {
           : 'error',
       );
     }
-  }, [columnFilters, page, referenceFilter, resource, search, status]);
+  }, [
+    columnFilters,
+    dateFilters,
+    page,
+    referenceFilter,
+    resource,
+    search,
+    status,
+  ]);
 
   const loadSummary = useCallback(async () => {
     try {
@@ -412,6 +430,7 @@ export function MasterDataInsuranceWorkspace() {
         format: 'xlsx',
         filters: {
           ...columnFilters,
+          ...dateFilters,
           search,
           status,
           sortBy: 'name',
@@ -733,6 +752,10 @@ export function MasterDataInsuranceWorkspace() {
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${definition.label}`} />
       <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-[minmax(14rem,1fr)_12rem_14rem_auto]">
         {columnFilterControls}
+        <MasterDataDateRangeFilter
+          idPrefix="insurance-created"
+          {...dateRangeProps}
+        />
         <FormField id="insurance-search" label="جست‌وجو">
           <div className="relative">
             <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -791,6 +814,7 @@ export function MasterDataInsuranceWorkspace() {
           onClick={() => {
             setSearch('');
             resetColumnFilters();
+            resetDateRange();
             setStatus('all');
             setReferenceFilter('all');
             setPage(1);

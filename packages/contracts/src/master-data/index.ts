@@ -127,6 +127,10 @@ export {
 export interface MasterDataListQuery {
   columnFilter1?: string;
   columnFilter2?: string;
+  /** Inclusive Gregorian ISO date (`YYYY-MM-DD`) applied to record creation time. */
+  createdFrom?: string;
+  /** Inclusive Gregorian ISO date (`YYYY-MM-DD`) applied to record creation time. */
+  createdTo?: string;
   transportStatus?: MasterTransportStatus;
   search: string;
   status: 'all' | MasterDataStatus;

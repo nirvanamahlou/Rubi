@@ -1,6 +1,10 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import { MasterDataPowerButton } from './master-data-power-button';
+import {
+  MasterDataDateRangeFilter,
+  useMasterDataDateRange,
+} from './master-data-date-range-filter';
 
 import type {
   MasterDataListQuery,
@@ -287,11 +291,17 @@ export function MasterDataTravelServicesWorkspace() {
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
+  const {
+    filters: dateFilters,
+    props: dateRangeProps,
+    reset: resetDateRange,
+  } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
     setRequestState('loading');
     const query: MasterDataListQuery = {
       ...columnFilters,
+      ...dateFilters,
       search,
       status,
       sortBy: 'name',
@@ -326,7 +336,15 @@ export function MasterDataTravelServicesWorkspace() {
           : 'error',
       );
     }
-  }, [columnFilters, page, referenceFilter, resource, search, status]);
+  }, [
+    columnFilters,
+    dateFilters,
+    page,
+    referenceFilter,
+    resource,
+    search,
+    status,
+  ]);
 
   const loadSummary = useCallback(async () => {
     try {
@@ -522,6 +540,7 @@ export function MasterDataTravelServicesWorkspace() {
     try {
       const filters: Omit<MasterDataListQuery, 'page' | 'pageSize'> = {
         ...columnFilters,
+        ...dateFilters,
         search,
         status,
         sortBy: 'name',
@@ -791,6 +810,10 @@ export function MasterDataTravelServicesWorkspace() {
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${definition.label}`} />
       <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-[minmax(14rem,1fr)_12rem_14rem_auto]">
         {columnFilterControls}
+        <MasterDataDateRangeFilter
+          idPrefix="travel-services-created"
+          {...dateRangeProps}
+        />
         <FormField id="travel-search" label="جست‌وجو">
           <div className="relative">
             <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -849,6 +872,7 @@ export function MasterDataTravelServicesWorkspace() {
           onClick={() => {
             setSearch('');
             resetColumnFilters();
+            resetDateRange();
             setStatus('all');
             setReferenceFilter('all');
             setPage(1);

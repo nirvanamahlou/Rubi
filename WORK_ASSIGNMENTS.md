@@ -1,5 +1,13 @@
 # Work Assignments
 
+## MASTER-003-DATE-RANGE-FILTERS — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: فیلتر جمع‌وجور «از تاریخ / تا تاریخ» به همه فهرست‌های اطلاعات پایه اضافه شود و انتخاب تاریخ در هر دو تقویم شمسی و میلادی در دسترس باشد.
+- Branch: `codex/pc-b-master-data-date-filters` به‌صورت Stacked روی نسخه تحویلی `codex/pc-b-master-data-remove-kpi-notes@ccf68db`؛ توسعه مستقیم روی `develop` انجام نمی‌شود.
+- محدوده رزرو: قرارداد افزایشی Query فهرست و Export اطلاعات پایه، DTO/Repository همان ماژول، Client و هشت Workspace اطلاعات پایه، کامپوننت مشترک بازه تاریخ، آزمون‌ها و گزارش همین Work Item. بدون Calendar، Customers، Schema/Migration، داده، Dependency/Lockfile یا تغییر دیتابیس.
+- Producer/Consumer قرارداد هر دو Master Data API/Web تحت مالکیت PC-B هستند. `createdFrom` و `createdTo` اختیاری و با رفتار قبلی سازگارند؛ بازه روی `createdAt` و برای تاریخچه نرخ روی `observedAt`، پیش از Pagination اعمال می‌شود.
+- نتیجه: گروه فشرده بازه تاریخ در هشت Workspace تخصصی و fallback عمومی قرار گرفت؛ تقویم مشترک همان تاریخ را به انتخاب کاربر شمسی یا میلادی نمایش می‌دهد، بازه قابل پاک‌کردن است و Excel همان فیلتر را دریافت می‌کند. API بازه معکوس/نامعتبر را رد و روز پایان را به‌صورت کامل و inclusive محاسبه می‌کند. ۵۲۳ تست Web و ۶۷۱ تست API موفق؛ Typecheck، lint محدوده و Production Build Web/API/Contract موفق‌اند. کنترل بصری روی نسخه همین Branch در پورت موقت ۳۱۰۱، نمایش فشرده و کلیدهای شمسی/میلادی را تأیید کرد؛ پورت ۳۱۰۰ متعلق به Checkout PC-A و دست‌نخورده باقی ماند.
+
 ## MASTER-003-REMOVE-KPI-NOTES — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-08-31: تمام نوارهای توضیحی/قاعده‌ای بلافاصله زیر کارت‌های KPI از همه Workspaceهای اطلاعات پایه حذف شوند؛ خود KPIها، تب‌ها، فیلترها، جدول‌ها و رفتار Backend حفظ می‌شوند.

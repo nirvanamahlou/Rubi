@@ -32,6 +32,25 @@ const row = {
 };
 
 describe('MasterDataService', () => {
+  it('rejects an inverted list date range before querying persistence', async () => {
+    const repository = { list: vi.fn() } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await expect(
+      service.list('countries', {
+        createdFrom: '2026-09-01',
+        createdTo: '2026-08-01',
+        search: '',
+        status: 'all',
+        sortBy: 'name',
+        sortDirection: 'asc',
+        page: 1,
+        pageSize: 25,
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(repository.list).not.toHaveBeenCalled();
+  });
+
   it('allows currencies without display policy and preserves existing policy on edit', async () => {
     const currency = { ...row, code: 'USD', displayPolicy: 'SYMBOL_BEFORE' };
     const repository = {

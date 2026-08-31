@@ -1,6 +1,10 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import { MasterDataPowerButton } from './master-data-power-button';
+import {
+  MasterDataDateRangeFilter,
+  useMasterDataDateRange,
+} from './master-data-date-range-filter';
 
 import type {
   MasterDataListQuery,
@@ -397,11 +401,17 @@ export function MasterDataGeographyWorkspace() {
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
+  const {
+    filters: dateFilters,
+    props: dateRangeProps,
+    reset: resetDateRange,
+  } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
     setRequestState('loading');
     const baseQuery: MasterDataListQuery = {
       ...columnFilters,
+      ...dateFilters,
       search,
       status,
       sortBy,
@@ -486,7 +496,16 @@ export function MasterDataGeographyWorkspace() {
           : 'error',
       );
     }
-  }, [columnFilters, page, resource, scopedFilters, search, sortBy, status]);
+  }, [
+    columnFilters,
+    dateFilters,
+    page,
+    resource,
+    scopedFilters,
+    search,
+    sortBy,
+    status,
+  ]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 250);
@@ -568,6 +587,7 @@ export function MasterDataGeographyWorkspace() {
         format: 'xlsx',
         filters: {
           ...columnFilters,
+          ...dateFilters,
           search,
           status,
           sortBy,
@@ -829,6 +849,10 @@ export function MasterDataGeographyWorkspace() {
 
       <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-[minmax(13rem,1fr)_10rem_10rem_repeat(2,minmax(10rem,12rem))_auto]">
         {columnFilterControls}
+        <MasterDataDateRangeFilter
+          idPrefix="geography-created"
+          {...dateRangeProps}
+        />
         <FormField id="geography-search" label="جست‌وجو">
           <div className="relative">
             <Search
@@ -1004,6 +1028,24 @@ export function MasterDataGeographyWorkspace() {
             </FormField>
           </>
         ) : null}
+        <Button
+          onClick={() => {
+            setSearch('');
+            resetColumnFilters();
+            resetDateRange();
+            setStatus('all');
+            setSortBy('name');
+            setCountryId('all');
+            setRegionId('all');
+            setCityId('all');
+            setAirportId('all');
+            setTerminalType('all');
+            setPage(1);
+          }}
+          variant="ghost"
+        >
+          پاک‌کردن
+        </Button>
         <Button onClick={() => void load()} variant="ghost">
           <RefreshCw aria-hidden="true" className="size-4" />
           تازه‌سازی

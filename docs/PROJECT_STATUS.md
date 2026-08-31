@@ -1,5 +1,12 @@
 # وضعیت پروژه
 
+## فیلتر بازه تاریخ اطلاعات پایه — 2026-08-31
+
+- `MASTER-003-DATE-RANGE-FILTERS` روی شاخه `codex/pc-b-master-data-date-filters` به‌صورت Stacked روی نسخه حذف نوارهای KPI آماده Review است؛ `develop`، Checkout و Web پورت ۳۱۰۰ متعلق به PC-A تغییر نکردند.
+- در مالی و پولی، جغرافیا، سازمان‌ها و تأمین‌کنندگان، اقامت، حمل‌ونقل، بیمه، تور و خدمات سفر، مراجع فروش و fallback عمومی یک گروه جمع‌وجور «از تاریخ / تا تاریخ» افزوده شد. تقویم مشترک داخل Popup کلید شمسی/میلادی دارد، تاریخ پایدار Gregorian ISO نگهداری می‌شود و بازه مستقل یا همراه پاک‌کردن همه فیلترها قابل حذف است.
+- Query افزایشی `createdFrom`/`createdTo` روی `createdAt` پیش از Pagination و Export اعمال می‌شود؛ روز پایان inclusive است. تاریخچه نرخ ارز همین کنترل را روی `observedAt` می‌گیرد. ورودی نامعتبر یا بازه معکوس در API رد می‌شود؛ نبود تاریخ دقیقاً رفتار قبلی را حفظ می‌کند. بدون Schema/Migration، Calendar، Customers، Dependency یا تغییر داده.
+- ۵۲۳ تست Web و ۶۷۱ تست API موفق؛ Typecheck، lint محدوده و Production Build Web/API/Contract پاس شدند. بررسی بصری روی پورت موقت ۳۱۰۱ چیدمان فشرده، برچسب‌ها و هر دو تقویم را تأیید کرد؛ سرور موقت سپس بسته شد.
+
 ## حذف نوارهای توضیحی زیر KPI اطلاعات پایه — 2026-08-31
 
 - `MASTER-003-REMOVE-KPI-NOTES` روی شاخه `codex/pc-b-master-data-remove-kpi-notes` از `origin/develop@03e4c43` آماده Review است.

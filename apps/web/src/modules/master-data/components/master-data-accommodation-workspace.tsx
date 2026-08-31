@@ -1,6 +1,10 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import { MasterDataPowerButton } from './master-data-power-button';
+import {
+  MasterDataDateRangeFilter,
+  useMasterDataDateRange,
+} from './master-data-date-range-filter';
 
 import type {
   MasterAccommodationSummary,
@@ -322,6 +326,11 @@ export function MasterDataAccommodationWorkspace() {
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
+  const {
+    filters: dateFilters,
+    props: dateRangeProps,
+    reset: resetDateRange,
+  } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
     if (tab === 'import') {
@@ -332,6 +341,7 @@ export function MasterDataAccommodationWorkspace() {
     try {
       const response = await masterDataApi.list(resource, {
         ...columnFilters,
+        ...dateFilters,
         search,
         status: tab === 'meals' || status === 'under_review' ? 'all' : status,
         sortBy: 'name',
@@ -351,7 +361,16 @@ export function MasterDataAccommodationWorkspace() {
           : 'error',
       );
     }
-  }, [columnFilters, page, resource, scopedFilters, search, status, tab]);
+  }, [
+    columnFilters,
+    dateFilters,
+    page,
+    resource,
+    scopedFilters,
+    search,
+    status,
+    tab,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -645,6 +664,7 @@ export function MasterDataAccommodationWorkspace() {
         format: 'xlsx',
         filters: {
           ...columnFilters,
+          ...dateFilters,
           search,
           status: tab === 'meals' || status === 'under_review' ? 'all' : status,
           sortBy: 'name',
@@ -1446,6 +1466,10 @@ export function MasterDataAccommodationWorkspace() {
       {showFilters ? (
         <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-6">
           {columnFilterControls}
+          <MasterDataDateRangeFilter
+            idPrefix="accommodation-created"
+            {...dateRangeProps}
+          />
           <FormField id="accommodation-search" label="جستجو">
             <div className="relative">
               <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -1487,6 +1511,7 @@ export function MasterDataAccommodationWorkspace() {
             onClick={() => {
               setSearch('');
               resetColumnFilters();
+              resetDateRange();
               setStatus('all');
               setCountryFilter('all');
               setCityFilter('all');
