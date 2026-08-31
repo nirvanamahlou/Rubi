@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto';
 
+import { isMasterTransportFormResource } from '@rubi/contracts';
+import { transportStatusData } from './transport-form.policy';
 import {
   BadRequestException,
   ConflictException,
@@ -380,6 +382,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'model',
     'category',
     'amenities',
+    'facilityIds',
   ],
   'bus-companies': [
     'name',
@@ -650,6 +653,7 @@ function validateExportInput(input: ExportInput): MasterDataResource {
   const allowedFilterKeys = [
     'search',
     'status',
+    'transportStatus',
     'sortBy',
     'sortDirection',
     'countryId',
@@ -777,7 +781,13 @@ function validateExportInput(input: ExportInput): MasterDataResource {
       Number(input.filters.referenceCapacity) > 20)
   )
     throw new BadRequestException('ظرفیت استاندارد خروجی معتبر نیست.');
+  if (input.filters.transportStatus !== undefined &&
+      (!isMasterTransportFormResource(resource) ||
+       typeof input.filters.transportStatus !== 'string' ||
+       !['ACTIVE', 'INACTIVE', 'UNDER_REVIEW'].includes(input.filters.transportStatus)))
+    throw new BadRequestException('وضعیت حمل‌ونقل خروجی معتبر نیست.');
   const allowedColumns = new Set([
+    ...(isMasterTransportFormResource(resource) ? ['transportStatus'] : []),
     ...allowedFields[resource],
     'code',
     'name',
@@ -804,6 +814,8 @@ function validateExportInput(input: ExportInput): MasterDataResource {
 
 function exportQuery(input: ExportInput): MasterDataListQuery {
   return {
+    ...(typeof input.filters.transportStatus === 'string'
+      ? { transportStatus: input.filters.transportStatus as Exclude<MasterDataListQuery['transportStatus'], undefined> } : {}),
     search:
       typeof input.filters.search === 'string' ? input.filters.search : '',
     status: (input.filters.status ?? 'all') as MasterDataListQuery['status'],
@@ -1055,6 +1067,7 @@ export class MasterDataService {
     )
       throw new ForbiddenException('مجوز ثبت نرخ ارز وجود ندارد.');
     const data = await this.prepare(resource, values, actor.userId, false);
+    Object.assign(data, transportStatusData(resource, values, actor));
     const row = await this.repository.create(
       resource,
       data,
@@ -1087,6 +1100,7 @@ export class MasterDataService {
         });
     }
     const data = await this.prepare(resource, values, actor.userId, true, id);
+    Object.assign(data, transportStatusData(resource, values, actor));
     const row = await this.repository.update(
       resource,
       id,
@@ -1260,7 +1274,8 @@ export class MasterDataService {
     entityId?: string,
   ): Promise<Record<string, unknown>> {
     const unknown = Object.keys(values).filter(
-      (key) => !allowedFields[resource].includes(key),
+      (key) => !allowedFields[resource].includes(key) &&
+        !(isMasterTransportFormResource(resource) && key === 'transportStatus'),
     );
     if (unknown.length)
       throw new BadRequestException(`فیلد غیرمجاز: ${unknown.join(', ')}`);
@@ -1275,6 +1290,28 @@ export class MasterDataService {
         throw new BadRequestException(`فیلد الزامی: ${missing.join(', ')}`);
     }
     const data: Record<string, unknown> = { ...values };
+    if (isMasterTransportFormResource(resource)) {
+      delete data.transportStatus;
+      for (const field of requiredFields[resource]) {
+        if (partial && Object.hasOwn(data, field) && (data[field] === null || data[field] === ''))
+          throw new BadRequestException(`${field} الزامی است.`);
+      }
+      for (const [field, limit] of [['name', 160], ['englishName', 160], ['manufacturer', 120], ['model', 120]] as const) {
+        if (!Object.hasOwn(data, field)) continue;
+        if (data[field] !== null && typeof data[field] !== 'string')
+          throw new BadRequestException(`${field} باید متن باشد.`);
+        const value = String(data[field] ?? '').trim();
+        if ((field !== 'englishName' && !value) || value.length > limit)
+          throw new BadRequestException(`${field} خالی یا بیش از حد مجاز است.`);
+        data[field] = value || null;
+      }
+      // A UUID alone is not proof of an authorized, existing Documents asset.
+      if (Object.hasOwn(data, 'logoFileReference')) {
+        const current = partial && entityId ? await this.repository.find(resource, entityId) : null;
+        if (data.logoFileReference && data.logoFileReference !== current?.logoFileReference)
+          throw new BadRequestException('انتخاب لوگو تا آماده‌شدن اتصال اسناد امکان‌پذیر نیست.');
+      }
+    }
     if (resource === 'organizations' && Object.hasOwn(data, 'personType')) {
       const personType = String(data.personType ?? '').trim().toUpperCase();
       if (personType && !['NATURAL', 'LEGAL'].includes(personType))
@@ -1592,7 +1629,7 @@ export class MasterDataService {
       }
       if (data.allowance !== undefined) {
         const allowance = String(data.allowance).trim();
-        if (!/^\d+(\.\d{1,2})?$/.test(allowance) || Number(allowance) <= 0)
+        if (!/^\d+(\.\d{1,2})?$/.test(allowance) || Number(allowance) <= 0 || Number(allowance) > 999999.99)
           throw new BadRequestException('مقدار بار باید Decimal مثبت باشد.');
         data.allowance = allowance;
       }
@@ -1601,13 +1638,18 @@ export class MasterDataService {
         if (!pieceCount) data.pieceCount = null;
         else if (
           !Number.isInteger(Number(pieceCount)) ||
-          Number(pieceCount) < 1
+          Number(pieceCount) < 1 || Number(pieceCount) > 2147483647
         )
           throw new BadRequestException(
             'تعداد قطعه بار باید عدد صحیح مثبت باشد.',
           );
         else data.pieceCount = Number(pieceCount);
       }
+      const current = partial && entityId ? await this.repository.find(resource, entityId) : null;
+      const unit = data.unit ?? current?.unit;
+      const pieces = Object.hasOwn(data, 'pieceCount') ? data.pieceCount : current?.pieceCount;
+      if (unit === 'PC' && !pieces)
+        throw new BadRequestException('برای واحد قطعه، تعداد قطعه الزامی است.');
     }
     if (resource === 'manifest-templates') {
       for (const [field, options, label] of [
@@ -1680,14 +1722,14 @@ export class MasterDataService {
         data.amenities = [...new Set(amenities)];
       }
     }
-    if (resource === 'bus-types' && Object.hasOwn(data, 'facilityIds')) {
-      const facilityIds = referenceIds(data.facilityIds, 'امکانات اتوبوس');
+    if ((resource === 'bus-types' || resource === 'train-types') && Object.hasOwn(data, 'facilityIds')) {
+      const facilityIds = referenceIds(data.facilityIds, 'امکانات وسیله');
       const facilities = await Promise.all(
         facilityIds.map((id) => this.repository.find('facilities', id)),
       );
       if (facilities.some((facility) => !facility?.isActive))
         throw new BadRequestException(
-          'یک یا چند امکان فعال اتوبوس یافت نشد.',
+          'یک یا چند امکان فعال وسیله یافت نشد.',
         );
       delete data.facilityIds;
       data.facilities = partial
@@ -1845,6 +1887,12 @@ export class MasterDataService {
       }
     }
     if (resource === 'baggage-rules' || resource === 'manifest-templates') {
+      const current = resource === 'baggage-rules' && partial && entityId
+        ? await this.repository.find(resource, entityId) : null;
+      if (resource === 'baggage-rules' && partial) {
+        if (!Object.hasOwn(data, 'validFrom')) data.validFrom = current?.validFrom;
+        if (!Object.hasOwn(data, 'validTo')) data.validTo = current?.validTo;
+      }
       const validFrom = data.validFrom
         ? new Date(String(data.validFrom))
         : null;

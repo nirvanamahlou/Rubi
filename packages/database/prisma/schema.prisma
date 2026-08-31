@@ -894,6 +894,7 @@ model MasterInsurancePlanCoverage {
 }
 
 model MasterAirline {
+  isUnderReview       Boolean                  @default(false)
   id                  String                   @id @default(uuid()) @db.Uuid
   organizationId      String                   @unique @db.Uuid
   code                String                   @unique @db.Char(2)
@@ -921,6 +922,7 @@ model MasterAirline {
 }
 
 model MasterAircraftType {
+  isUnderReview       Boolean                @default(false)
   id                  String                 @id @default(uuid()) @db.Uuid
   code                String                 @unique @db.VarChar(32)
   manufacturer        String                 @db.VarChar(120)
@@ -965,6 +967,7 @@ model MasterCabinClass {
 }
 
 model MasterBaggageRule {
+  isUnderReview       Boolean                   @default(false)
   id                  String                    @id @default(uuid()) @db.Uuid
   airlineId           String                    @db.Uuid
   cabinClassId        String?                   @db.Uuid
@@ -1026,6 +1029,7 @@ model MasterManifestTemplate {
 }
 
 model MasterRailCompany {
+  isUnderReview       Boolean            @default(false)
   id                  String             @id @default(uuid()) @db.Uuid
   organizationId      String             @unique @db.Uuid
   countryId           String             @db.Uuid
@@ -1049,22 +1053,24 @@ model MasterRailCompany {
 }
 
 model MasterTrainType {
-  id                  String              @id @default(uuid()) @db.Uuid
-  code                String              @unique @db.VarChar(32)
-  manufacturer        String              @db.VarChar(120)
-  model               String              @db.VarChar(120)
-  name                String              @db.VarChar(160)
-  englishName         String?             @db.VarChar(160)
+  isUnderReview       Boolean                   @default(false)
+  facilities          MasterTrainTypeFacility[]
+  id                  String                    @id @default(uuid()) @db.Uuid
+  code                String                    @unique @db.VarChar(32)
+  manufacturer        String                    @db.VarChar(120)
+  model               String                    @db.VarChar(120)
+  name                String                    @db.VarChar(160)
+  englishName         String?                   @db.VarChar(160)
   category            MasterTrainCategory
   amenities           String[]
-  isActive            Boolean             @default(true)
-  version             Int                 @default(1)
-  createdByUserId     String              @db.Uuid
-  updatedByUserId     String              @db.Uuid
-  deactivatedByUserId String?             @db.Uuid
-  deactivatedAt       DateTime?           @db.Timestamptz(3)
-  createdAt           DateTime            @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime            @updatedAt @db.Timestamptz(3)
+  isActive            Boolean                   @default(true)
+  version             Int                       @default(1)
+  createdByUserId     String                    @db.Uuid
+  updatedByUserId     String                    @db.Uuid
+  deactivatedByUserId String?                   @db.Uuid
+  deactivatedAt       DateTime?                 @db.Timestamptz(3)
+  createdAt           DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                  @updatedAt @db.Timestamptz(3)
 
   @@unique([manufacturer, model])
   @@index([category, isActive, name])
@@ -1072,6 +1078,7 @@ model MasterTrainType {
 }
 
 model MasterBusCompany {
+  isUnderReview       Boolean             @default(false)
   id                  String              @id @default(uuid()) @db.Uuid
   organizationId      String?             @unique @db.Uuid
   supplierId          String?             @unique @db.Uuid
@@ -1097,6 +1104,7 @@ model MasterBusCompany {
 }
 
 model MasterBusType {
+  isUnderReview       Boolean                 @default(false)
   id                  String                  @id @default(uuid()) @db.Uuid
   code                String                  @unique @db.VarChar(32)
   manufacturer        String                  @db.VarChar(120)
@@ -1118,6 +1126,19 @@ model MasterBusType {
   @@unique([manufacturer, model])
   @@index([serviceClass, isActive, name])
   @@map("master_bus_types")
+}
+
+model MasterTrainTypeFacility {
+  trainTypeId      String          @db.Uuid
+  facilityId       String          @db.Uuid
+  assignedAt       DateTime        @default(now()) @db.Timestamptz(3)
+  assignedByUserId String          @db.Uuid
+  trainType        MasterTrainType @relation(fields: [trainTypeId], references: [id], onDelete: Restrict)
+  facility         MasterFacility  @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+
+  @@id([trainTypeId, facilityId])
+  @@index([facilityId])
+  @@map("master_train_type_facilities")
 }
 
 model MasterBusTypeFacility {
@@ -1226,21 +1247,22 @@ model MasterRoomType {
 }
 
 model MasterFacility {
-  id                  String                  @id @default(uuid()) @db.Uuid
-  code                String                  @unique @db.VarChar(32)
-  name                String                  @db.VarChar(160)
-  englishName         String?                 @db.VarChar(160)
-  category            String?                 @db.VarChar(80)
-  iconFileReference   String?                 @db.Uuid
-  displayOrder        Int                     @default(0)
-  isActive            Boolean                 @default(true)
-  version             Int                     @default(1)
-  createdByUserId     String                  @db.Uuid
-  updatedByUserId     String                  @db.Uuid
-  deactivatedByUserId String?                 @db.Uuid
-  deactivatedAt       DateTime?               @db.Timestamptz(3)
-  createdAt           DateTime                @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime                @updatedAt @db.Timestamptz(3)
+  trainTypes          MasterTrainTypeFacility[]
+  id                  String                    @id @default(uuid()) @db.Uuid
+  code                String                    @unique @db.VarChar(32)
+  name                String                    @db.VarChar(160)
+  englishName         String?                   @db.VarChar(160)
+  category            String?                   @db.VarChar(80)
+  iconFileReference   String?                   @db.Uuid
+  displayOrder        Int                       @default(0)
+  isActive            Boolean                   @default(true)
+  version             Int                       @default(1)
+  createdByUserId     String                    @db.Uuid
+  updatedByUserId     String                    @db.Uuid
+  deactivatedByUserId String?                   @db.Uuid
+  deactivatedAt       DateTime?                 @db.Timestamptz(3)
+  createdAt           DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                  @updatedAt @db.Timestamptz(3)
   hotels              MasterHotelFacility[]
   busTypes            MasterBusTypeFacility[]
 
