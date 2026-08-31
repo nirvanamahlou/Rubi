@@ -25,6 +25,7 @@ import {
   Eye,
   FilePenLine,
   MapPin,
+  Phone,
   Plus,
   RefreshCw,
   Search,
@@ -45,7 +46,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   FormField,
   Input,
@@ -81,6 +82,7 @@ import { masterDataApi } from '@/modules/master-data/api/client';
 import { customersApi, CustomersApiError } from '../api/client';
 import {
   contactDisplayValue,
+  contactCallHref,
   isValidIranianNationalId,
   normalizeNationalId,
 } from '../model/customer';
@@ -1653,12 +1655,12 @@ function CustomerDrawer({
             </TabsContent>
             <TabsContent className="space-y-3" value="contacts">
               <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                <FormField label="دلیل نمایش داده حساس">
+                <FormField label="دلیل مشاهده شماره تماس">
                   <Select
                     onValueChange={setSensitiveReason}
                     value={sensitiveReason}
                   >
-                    <SelectTrigger aria-label="دلیل نمایش داده حساس">
+                    <SelectTrigger aria-label="دلیل مشاهده شماره تماس">
                       <SelectValue placeholder="انتخاب دلیل مجاز" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1678,28 +1680,67 @@ function CustomerDrawer({
                   variant="outline"
                 >
                   <Eye className="size-4" />
-                  نمایش کنترل‌شده
+                  نمایش شماره کامل
                 </Button>
               </div>
-              {displayedCustomer?.contacts.map((item) => (
-                <Card
-                  className="flex items-center justify-between gap-3 p-3"
-                  key={item.id}
+              <p className="text-sm text-muted-foreground">
+                برای دیدن شماره کامل مشتری یا مسافر، دلیل مشاهده را انتخاب کنید.
+                پس از نمایش، دکمه تماس فعال می‌شود. شماره‌ها پس از یک دقیقه یا
+                خروج از صفحه دوباره پنهان می‌شوند.
+              </p>
+              {revealedDetail ? (
+                <Button
+                  onClick={() => {
+                    setRevealedDetail(null);
+                    setSensitiveReason('');
+                  }}
+                  type="button"
+                  size="sm"
+                  variant="outline"
                 >
-                  <div>
-                    <p className="font-bold" dir="ltr">
-                      {contactDisplayValue(item, Boolean(revealedDetail))}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.type === 'email' ? 'ایمیل' : 'تلفن'} ·{' '}
-                      {item.label ?? 'بدون برچسب'}
-                    </p>
-                  </div>
-                  <Badge>
-                    {revealedDetail ? 'نمایش Audit‌شده' : 'ماسک‌شده'}
-                  </Badge>
-                </Card>
-              ))}
+                  پنهان‌کردن شماره‌ها
+                </Button>
+              ) : null}
+              {displayedCustomer?.contacts.map((item) => {
+                const callHref = contactCallHref(item, Boolean(revealedDetail));
+                return (
+                  <Card
+                    className="flex flex-wrap items-center justify-between gap-3 p-3"
+                    key={item.id}
+                  >
+                    <div>
+                      <p className="font-bold" dir="ltr">
+                        {contactDisplayValue(item, Boolean(revealedDetail))}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.type === 'email' ? 'ایمیل' : 'تلفن'} ·{' '}
+                        {item.label ?? 'بدون برچسب'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge>
+                        {revealedDetail && item.value
+                          ? 'نمایش کامل'
+                          : 'پنهان‌شده'}
+                      </Badge>
+                      {callHref ? (
+                        <a
+                          className={buttonVariants({ size: 'sm' })}
+                          href={callHref}
+                        >
+                          <Phone aria-hidden="true" className="size-4" />
+                          تماس
+                        </a>
+                      ) : null}
+                    </div>
+                  </Card>
+                );
+              })}
+              {displayedCustomer?.contacts.length === 0 ? (
+                <p className="p-3 text-sm text-muted-foreground">
+                  شماره تماس یا ایمیلی برای این شخص ثبت نشده است.
+                </p>
+              ) : null}
               {!readonly ? (
                 <Card className="grid gap-3 p-4 sm:grid-cols-3">
                   <FormField label="نوع تماس">
@@ -2315,11 +2356,15 @@ export function CustomerWorkspace() {
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  async function open(mode: FormMode, id?: string) {
+  async function open(
+    mode: FormMode,
+    id?: string,
+    tab: CustomerTab = 'overview',
+  ) {
     if (id) {
       setSelected(undefined);
       setSelectedId(id);
-      setActiveTab('overview');
+      setActiveTab(tab);
       setFormMode(mode);
       try {
         setSelected((await customersApi.detail(id)).data);
@@ -2874,7 +2919,7 @@ export function CustomerWorkspace() {
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
                 <th className="p-4 text-start">مشتری یا مسافر</th>
-                <th className="p-4 text-start">شماره همراه (ماسک‌شده)</th>
+                <th className="p-4 text-start">شماره تماس</th>
                 <th className="p-4 text-start">وضعیت و نقش</th>
                 <th className="p-4 text-start">رضایت</th>
                 <th className="p-4 text-start">آخرین تغییر</th>
@@ -2908,6 +2953,16 @@ export function CustomerWorkspace() {
                     <span className="font-mono text-muted-foreground" dir="ltr">
                       {record.maskedPrimaryContact ?? 'بدون تماس'}
                     </span>
+                    <Button
+                      className="mt-2"
+                      onClick={() => void open('view', record.id, 'contacts')}
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
+                      <Phone aria-hidden="true" className="size-4" />
+                      نمایش شماره و تماس
+                    </Button>
                   </td>
                   <td className="p-4">
                     <Badge className="me-1">

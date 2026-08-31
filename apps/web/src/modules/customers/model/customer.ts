@@ -72,3 +72,13 @@ export function contactDisplayValue(
 ): string {
   return revealed && contact.value ? contact.value : contact.maskedValue;
 }
+
+export function contactCallHref(
+  contact: CustomerContact,
+  revealed: boolean,
+): string | null {
+  if (!revealed || contact.type !== 'phone' || !contact.value) return null;
+  const number = contact.value.trim().replace(/[ ()-]/g, '');
+  // Do not pass masked values, URI parameters or control characters to a dialer.
+  return /^\+?[0-9]{7,15}$/.test(number) ? `tel:${number}` : null;
+}

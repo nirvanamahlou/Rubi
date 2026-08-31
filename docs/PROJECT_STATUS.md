@@ -4,6 +4,12 @@
 
 ## خلاصه
 
+### CUSTOMER-002B — پیگیری نمایش شماره و تماس (2026-08-31)
+
+- روی همان Branch مشتریان و Preview اصلی؛ میان‌بر تماس برای هر مشتری یا مسافر اضافه شد.
+- شماره کامل فقط با دلیل مجاز و Permission/Audit موجود نمایش داده می‌شود؛ لینک تماس پس از Reveal و پنهان‌کردن دستی در دسترس است.
+- ۱۲۳ تست Web، ۸۱ تست API Customers، lint، typecheck و Production Build وب پاس شدند؛ هیچ تغییر Database یا داده مشتریان انجام نشد.
+
 ### `CUSTOMER-002A.1` — PC-A — `READY_FOR_REVIEW`
 
 - Branch فرزند `codex/pc-a-customer-next` از Remote Parent

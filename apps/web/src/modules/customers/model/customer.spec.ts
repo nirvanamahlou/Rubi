@@ -5,6 +5,7 @@ import {
 } from '../api/contracts';
 import {
   contactDisplayValue,
+  contactCallHref,
   customerPermissionCodes,
   customerUiStates,
   validateCustomerMutation,
@@ -94,5 +95,35 @@ describe('customer frontend live contract', () => {
     expect(contactDisplayValue({ ...contact, value: null }, true)).toBe(
       '0000•••000',
     );
+  });
+
+  it('only exposes a dialing link for explicitly revealed phone contacts', () => {
+    const contact = {
+      id: 'synthetic-call-contact',
+      type: 'phone' as const,
+      label: null,
+      maskedValue: '0000•••000',
+      value: '+1 (202) 555-0100',
+      isPrimary: true,
+      verifiedAt: null,
+      createdAt: '2026-08-31T00:00:00.000Z',
+    };
+    expect(contactCallHref(contact, true)).toBe('tel:+12025550100');
+    expect(contactCallHref(contact, false)).toBeNull();
+    expect(contactCallHref({ ...contact, value: null }, true)).toBeNull();
+    expect(contactCallHref({ ...contact, type: 'email' }, true)).toBeNull();
+    for (const value of [
+      contact.maskedValue,
+      'javascript:alert(1)',
+      '+12025550100;ext=123',
+      '+12025550100?body=test',
+      '+1202\n5550100',
+      '123',
+      '1'.repeat(16),
+    ]) {
+      expect(contactCallHref({ ...contact, value }, true)).toBeNull();
+    }
+    // Re-masking also removes the callable target even if a value is present.
+    expect(contactCallHref(contact, false)).toBeNull();
   });
 });

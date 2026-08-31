@@ -18,6 +18,15 @@ const dateFieldSource = readFileSync(
 );
 
 describe('Customer Operations workspace boundaries', () => {
+  it('opens contacts for either role and offers a call only after audited reveal', () => {
+    expect(source).toContain("open('view', record.id, 'contacts')");
+    expect(source).toContain('setActiveTab(tab)');
+    expect(source).toContain('نمایش شماره و تماس');
+    expect(source).toContain('نمایش شماره کامل');
+    expect(source).toContain('contactCallHref(item, Boolean(revealedDetail))');
+    expect(source).toContain('href={callHref}');
+    expect(source).toContain('پنهان‌کردن شماره‌ها');
+  });
   it.each([
     [new CustomersApiError('unauthorized', 401), 'unauthorized'],
     [new CustomersApiError('forbidden', 403), 'forbidden'],
@@ -283,7 +292,7 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('const pageSize = 20');
     expect(source).toContain('Math.max(1, Math.ceil(total / pageSize))');
     expect(source).toContain('نفر در هر صفحه');
-    expect(source).toContain('شماره همراه (ماسک‌شده)');
+    expect(source).toContain('<th className="p-4 text-start">شماره تماس</th>');
     expect(source).toContain("record.maskedPrimaryContact ?? 'بدون تماس'");
   });
 

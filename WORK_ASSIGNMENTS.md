@@ -249,6 +249,13 @@ App Shell مرتبط، route `/system/legal-entities` و تست‌های هما�
 
 ## قرارداد مالکیت
 
+### CUSTOMER-002B — پیگیری نمایش و تماس (2026-08-31)
+
+- مالک `PC-A`؛ روی همان Branch `codex/pc-a-customer-002b-national-id`.
+- وضعیت `READY_FOR_REVIEW`؛ فقط UI/model/test مشتریان و سند همین Task؛ بدون Schema، Migration یا Dependency.
+- میان‌بر نمایش شماره برای مشتری و مسافر و لینک تماس فقط پس از Reveal دلیل‌دار و Audit موجود؛ قفل دیگری منتقل نمی‌شود.
+- ۱۲۳ تست Web و ۸۱ تست API Customers، lint/typecheck/build وب و diff check پاس شدند.
+
 - یک فایل یا Migration هم‌زمان فقط یک مالک فعال دارد.
 - تغییر محدود و ناگزیر در فایل مشترک باید در توضیح ردیف و Commit اعلام شود.
 - وضعیت `DONE` یعنی Commit و Push شده و گزارش تست/ریسک در Project Status ثبت شده
