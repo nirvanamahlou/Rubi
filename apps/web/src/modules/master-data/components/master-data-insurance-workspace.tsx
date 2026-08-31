@@ -681,7 +681,6 @@ export function MasterDataInsuranceWorkspace() {
           </Link>
         }
         description={definition.description}
-        eyebrow="اطلاعات پایه / بیمه"
         title={definition.label}
       />
       <div className="flex flex-wrap gap-2">

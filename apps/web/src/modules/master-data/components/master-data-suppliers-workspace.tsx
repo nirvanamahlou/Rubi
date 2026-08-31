@@ -866,7 +866,6 @@ export function MasterDataSuppliersWorkspace() {
           </Link>
         }
         description={copy.description}
-        eyebrow="اطلاعات پایه / سازمان‌ها و تأمین‌کنندگان"
         title={copy.title}
       />
       <div className="flex flex-wrap gap-2">

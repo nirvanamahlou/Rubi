@@ -842,7 +842,6 @@ export function MasterDataFinanceWorkspace({
           </Link>
         }
         description={section.description}
-        eyebrow="اطلاعات پایه / مالی و پولی"
         title={copy.title}
       />
 

@@ -602,7 +602,6 @@ export function MasterDataTransportationWorkspace() {
           </Link>
         }
         description={definition.description}
-        eyebrow="اطلاعات پایه / حمل‌ونقل"
         title={definition.label}
       />
       <div className="flex flex-wrap gap-2">
