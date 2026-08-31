@@ -83,15 +83,21 @@ import { customersApi, CustomersApiError } from '../api/client';
 import {
   contactDisplayValue,
   contactCallHref,
+  customerDraft,
   isValidIranianNationalId,
   normalizeNationalId,
 } from '../model/customer';
 import { formatCustomerDate } from '../model/customer-calendar';
 import {
   customerImportHeaders,
+  CUSTOMER_IMPORT_TEMPLATE_VERSION,
   downloadCustomerXlsx,
   parseCustomerXlsx,
 } from '../model/customer-xlsx';
+import {
+  previewCustomerImport,
+  type CustomerImportPreviewRow,
+} from '../model/customer-import-preview';
 import {
   CustomerDateField,
   type CustomerCalendarMode,
@@ -232,21 +238,6 @@ function emptyCompanionDraft(): NewCompanionDraft {
   };
 }
 
-function customerDraft(customer?: CustomerDetail): CustomerMutationRequest {
-  return {
-    kind: customer?.kind ?? 'person',
-    organizationId: customer?.organizationId ?? null,
-    firstName: customer?.firstName ?? '',
-    lastName: customer?.lastName ?? '',
-    nationalId: '',
-    displayName: customer?.displayName ?? '',
-    birthDate: customer?.birthDate ?? null,
-    roles: customer?.roles ?? ['customer'],
-    acquaintanceMethodId: customer?.acquaintanceMethodId ?? null,
-    ...(customer ? { version: customer.version } : {}),
-  };
-}
-
 function CustomerDrawer({
   mode,
   customer: initialCustomer,
@@ -297,6 +288,7 @@ function CustomerDrawer({
   const [revealedDetail, setRevealedDetail] = useState<CustomerDetail | null>(
     null,
   );
+  const sensitiveRequestId = useRef(0);
   const [addressType, setAddressType] = useState<CustomerAddressType>('home');
   const [address, setAddress] = useState('');
   const [countryId, setCountryId] = useState('');
@@ -339,11 +331,7 @@ function CustomerDrawer({
         setHistoryState('ready');
       })
       .catch((error: unknown) =>
-        setHistoryState(
-          error instanceof CustomersApiError && error.status === 403
-            ? 'forbidden'
-            : 'error',
-        ),
+        setHistoryState(customerListFailureState(error)),
       );
     void customersApi
       .activity(customer.id)
@@ -352,11 +340,7 @@ function CustomerDrawer({
         setActivityState('ready');
       })
       .catch((error: unknown) =>
-        setActivityState(
-          error instanceof CustomersApiError && error.status === 403
-            ? 'forbidden'
-            : 'error',
-        ),
+        setActivityState(customerListFailureState(error)),
       );
     void customersApi
       .audit(customer.id)
@@ -365,11 +349,7 @@ function CustomerDrawer({
         setAuditState('ready');
       })
       .catch((error: unknown) =>
-        setAuditState(
-          error instanceof CustomersApiError && error.status === 403
-            ? 'forbidden'
-            : 'error',
-        ),
+        setAuditState(customerListFailureState(error)),
       );
   }, [customer]);
 
@@ -385,18 +365,21 @@ function CustomerDrawer({
   }, [requestTimelines]);
 
   useEffect(() => {
-    if (!revealedDetail) return;
     const remask = () => {
+      sensitiveRequestId.current += 1;
       setRevealedDetail(null);
       setSensitiveReason('');
     };
-    const timer = window.setTimeout(remask, 60_000);
+    const timer = revealedDetail
+      ? window.setTimeout(remask, 60_000)
+      : undefined;
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') remask();
     };
     window.addEventListener('blur', remask);
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => {
+      sensitiveRequestId.current += 1;
       window.clearTimeout(timer);
       window.removeEventListener('blur', remask);
       document.removeEventListener('visibilitychange', onVisibilityChange);
@@ -541,6 +524,15 @@ function CustomerDrawer({
         ? Array.from(new Set([...draft.roles, 'passenger' as const]))
         : draft.roles,
     };
+    if (!draft.nationalId?.trim()) delete submittedDraft.nationalId;
+    if (!submittedDraft.roles.length) {
+      setMessage('حداقل یک نقش مشتری یا مسافر انتخاب کنید.');
+      return;
+    }
+    if (draft.kind === 'organization' && !draft.organizationId) {
+      setMessage('سازمان مرجع را از اطلاعات پایه انتخاب کنید.');
+      return;
+    }
     if (customer) {
       await perform(
         () =>
@@ -713,8 +705,10 @@ function CustomerDrawer({
       return;
     }
     setBusy(true);
+    const requestId = ++sensitiveRequestId.current;
     try {
       const response = await customersApi.detail(customer.id, sensitiveReason);
+      if (requestId !== sensitiveRequestId.current) return;
       setRevealedDetail(response.data);
       setMessage(
         'نمایش حساس برای همین مشاهده فعال شد و دلیل آن در Audit ثبت شده است.',
@@ -883,7 +877,7 @@ function CustomerDrawer({
           {mode === 'create' ? (
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge>۱ · اطلاعات مشتری حقیقی</Badge>
+                <Badge>۱ · اطلاعات پرونده</Badge>
                 <Badge>۲ · مسافران همراه</Badge>
                 <span className="text-xs text-muted-foreground">
                   Enter شما را به ورودی بعدی می‌برد.
@@ -893,13 +887,31 @@ function CustomerDrawer({
           ) : null}
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField label="نوع پرونده">
-              <div className="flex h-11 items-center rounded-xl border border-primary/25 bg-primary/5 px-3">
-                <Badge>
-                  {draft.kind === 'person'
-                    ? customerRoleLabel(draft.roles)
-                    : 'رکورد سازمانی قدیمی'}
-                </Badge>
-              </div>
+              <Select
+                disabled={mode !== 'create' || newCompanions.length > 0}
+                value={draft.kind}
+                onValueChange={(value) =>
+                  setDraft((current) => ({
+                    ...current,
+                    kind: value as CustomerMutationRequest['kind'],
+                    organizationId: null,
+                    nationalId: '',
+                    firstName: '',
+                    lastName: '',
+                    displayName: '',
+                    birthDate: null,
+                    roles: ['customer'],
+                  }))
+                }
+              >
+                <SelectTrigger aria-label="نوع پرونده">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="person">شخص حقیقی</SelectItem>
+                  <SelectItem value="organization">سازمان</SelectItem>
+                </SelectContent>
+              </Select>
             </FormField>
             {draft.kind === 'person' ? (
               <>
@@ -994,6 +1006,9 @@ function CustomerDrawer({
                     setDraft((current) => ({
                       ...current,
                       organizationId: value,
+                      displayName:
+                        masters.organizations.find((item) => item.id === value)
+                          ?.name ?? current.displayName,
                     }))
                   }
                   value={draft.organizationId ?? ''}
@@ -1037,34 +1052,32 @@ function CustomerDrawer({
               </Select>
             </FormField>
             <FormField label="نقش">
-              {mode === 'create' ? (
-                <div className="flex h-11 items-center rounded-xl border border-primary/25 bg-primary/5 px-3">
-                  <Badge>مشتری</Badge>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  {(['customer', 'passenger'] as CustomerRole[]).map((role) => (
-                    <Button
-                      disabled={readonly}
-                      key={role}
-                      onClick={() =>
-                        setDraft((current) => ({
-                          ...current,
-                          roles: current.roles.includes(role)
-                            ? current.roles.filter((item) => item !== role)
-                            : [...current.roles, role],
-                        }))
-                      }
-                      type="button"
-                      variant={
-                        draft.roles.includes(role) ? 'secondary' : 'outline'
-                      }
-                    >
-                      {role === 'customer' ? 'مشتری' : 'مسافر'}
-                    </Button>
-                  ))}
-                </div>
-              )}
+              <div className="flex gap-2">
+                {(['customer', 'passenger'] as CustomerRole[]).map((role) => (
+                  <Button
+                    disabled={
+                      readonly ||
+                      (draft.kind === 'organization' && role === 'passenger')
+                    }
+                    aria-pressed={draft.roles.includes(role)}
+                    key={role}
+                    onClick={() =>
+                      setDraft((current) => ({
+                        ...current,
+                        roles: current.roles.includes(role)
+                          ? current.roles.filter((item) => item !== role)
+                          : [...current.roles, role],
+                      }))
+                    }
+                    type="button"
+                    variant={
+                      draft.roles.includes(role) ? 'secondary' : 'outline'
+                    }
+                  >
+                    {role === 'customer' ? 'مشتری' : 'مسافر'}
+                  </Button>
+                ))}
+              </div>
             </FormField>
             {mode === 'create' ? (
               <>
@@ -1103,7 +1116,7 @@ function CustomerDrawer({
               </>
             ) : null}
           </div>
-          {mode === 'create' ? (
+          {mode === 'create' && draft.kind === 'person' ? (
             <Card className="space-y-4 border-primary/20 bg-primary/[0.03] p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -1378,8 +1391,12 @@ function CustomerDrawer({
                                   value={companion.email}
                                 />
                               </FormField>
-                              <FormField label="شرکت مسافر">
+                              <FormField
+                                label="شرکت مسافر"
+                                description="اتصال شخص به سازمان در انتظار ارتقای مدل داده است."
+                              >
                                 <Select
+                                  disabled
                                   onValueChange={(value) =>
                                     updateCompanion(index, {
                                       organizationId:
@@ -1470,10 +1487,9 @@ function CustomerDrawer({
             dir="rtl"
             onValueChange={(value) => {
               const tab = value as CustomerTab;
-              if (tab !== 'contacts') {
-                setRevealedDetail(null);
-                setSensitiveReason('');
-              }
+              sensitiveRequestId.current += 1;
+              setRevealedDetail(null);
+              setSensitiveReason('');
               onTabChange(tab);
             }}
             value={activeTab}
@@ -1491,6 +1507,13 @@ function CustomerDrawer({
               <TabsTrigger value="audit">Audit</TabsTrigger>
             </TabsList>
             <TabsContent className="space-y-3" value="overview">
+              {customer.kind === 'person' && !customer.maskedNationalId ? (
+                <Alert
+                  title="نیازمند تکمیل اطلاعات"
+                  tone="warning"
+                  description="شناسه این پرونده قدیمی ثبت نشده است؛ ویرایش اطلاعات نامرتبط مجاز است. شناسه صوری وارد نکنید."
+                />
+              ) : null}
               <Card className="grid gap-3 p-4 sm:grid-cols-2">
                 <div>
                   <p className="text-xs text-muted-foreground">وضعیت</p>
@@ -1645,7 +1668,12 @@ function CustomerDrawer({
                   </p>
                 </div>
                 <Button
-                  onClick={() => onTabChange('activity')}
+                  onClick={() => {
+                    sensitiveRequestId.current += 1;
+                    setRevealedDetail(null);
+                    setSensitiveReason('');
+                    onTabChange('activity');
+                  }}
                   type="button"
                   variant="outline"
                 >
@@ -1691,6 +1719,7 @@ function CustomerDrawer({
               {revealedDetail ? (
                 <Button
                   onClick={() => {
+                    sensitiveRequestId.current += 1;
                     setRevealedDetail(null);
                     setSensitiveReason('');
                   }}
@@ -2069,6 +2098,19 @@ function CustomerDrawer({
             <TabsContent className="space-y-3" value="status-history">
               {historyState === 'loading' ? (
                 <Skeleton className="h-24 w-full" />
+              ) : historyState === 'unauthorized' ? (
+                <ErrorState
+                  title="نیاز به ورود دوباره"
+                  description="نشست ورود معتبر نیست."
+                  action={
+                    <a
+                      className={buttonVariants({ size: 'sm' })}
+                      href="/login?next=%2Fcustomers"
+                    >
+                      ورود دوباره
+                    </a>
+                  }
+                />
               ) : historyState === 'forbidden' ? (
                 <EmptyState
                   description="مجوز مشاهده تاریخچه این مشتری وجود ندارد."
@@ -2109,6 +2151,19 @@ function CustomerDrawer({
             <TabsContent className="space-y-3" value="activity">
               {activityState === 'loading' ? (
                 <Skeleton className="h-24 w-full" />
+              ) : activityState === 'unauthorized' ? (
+                <ErrorState
+                  title="نیاز به ورود دوباره"
+                  description="نشست ورود معتبر نیست."
+                  action={
+                    <a
+                      className={buttonVariants({ size: 'sm' })}
+                      href="/login?next=%2Fcustomers"
+                    >
+                      ورود دوباره
+                    </a>
+                  }
+                />
               ) : activityState === 'forbidden' ? (
                 <EmptyState
                   description="مجوز مشاهده Timeline این مشتری وجود ندارد."
@@ -2151,6 +2206,19 @@ function CustomerDrawer({
             <TabsContent className="space-y-3" value="audit">
               {auditState === 'loading' ? (
                 <Skeleton className="h-24 w-full" />
+              ) : auditState === 'unauthorized' ? (
+                <ErrorState
+                  title="نیاز به ورود دوباره"
+                  description="نشست ورود معتبر نیست."
+                  action={
+                    <a
+                      className={buttonVariants({ size: 'sm' })}
+                      href="/login?next=%2Fcustomers"
+                    >
+                      ورود دوباره
+                    </a>
+                  }
+                />
               ) : auditState === 'forbidden' ? (
                 <EmptyState
                   description="نمایش Audit به مجوز iam.audit.read نیاز دارد."
@@ -2211,7 +2279,24 @@ export function CustomerWorkspace() {
   const [metrics, setMetrics] = useState<CustomerListMetrics>(emptyMetrics);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const kind = 'person' as const;
+  const [kind, setKind] = useState<NonNullable<CustomerListQuery['kind']>>(
+    () => {
+      const value = searchParams.get('kind');
+      return value === 'person' || value === 'organization' ? value : 'all';
+    },
+  );
+  const [branchId, setBranchId] = useState(
+    () => safeCustomerId(searchParams.get('branchId')) ?? 'all',
+  );
+  const [allowedBranchIds, setAllowedBranchIds] = useState<readonly string[]>(
+    [],
+  );
+  const [updatedFrom, setUpdatedFrom] = useState(
+    () => searchParams.get('updatedFrom') ?? '',
+  );
+  const [updatedTo, setUpdatedTo] = useState(
+    () => searchParams.get('updatedTo') ?? '',
+  );
   const [calendarMode, setCalendarMode] = useState<CustomerCalendarMode>(
     () =>
       (searchParams.get('calendar') === 'gregorian'
@@ -2266,6 +2351,9 @@ export function CustomerWorkspace() {
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [importPreview, setImportPreview] = useState<
+    CustomerImportPreviewRow[] | null
+  >(null);
   const [importProgress, setImportProgress] = useState<{
     completed: number;
     total: number;
@@ -2281,6 +2369,9 @@ export function CustomerWorkspace() {
   useEffect(() => {
     const params = new URLSearchParams();
     params.set('kind', kind);
+    params.set('branchId', branchId);
+    if (updatedFrom) params.set('updatedFrom', updatedFrom);
+    if (updatedTo) params.set('updatedTo', updatedTo);
     params.set('calendar', calendarMode);
     params.set('status', status);
     params.set('role', role);
@@ -2298,6 +2389,9 @@ export function CustomerWorkspace() {
   }, [
     acquaintanceMethodId,
     activeTab,
+    branchId,
+    updatedFrom,
+    updatedTo,
     calendarMode,
     createdFrom,
     createdTo,
@@ -2320,16 +2414,19 @@ export function CustomerWorkspace() {
         kind,
         status,
         role,
-        branchId: 'all',
+        branchId,
         acquaintanceMethodId,
         createdFrom: createdFrom || null,
         createdTo: createdTo || null,
+        updatedFrom: updatedFrom || null,
+        updatedTo: updatedTo || null,
         sortBy,
         sortDirection,
         page,
         pageSize,
       });
       setRecords(response.data);
+      setAllowedBranchIds(response.meta.allowedBranchIds ?? []);
       setTotal(response.meta.total);
       setMetrics(response.meta.metrics);
       setRequestState('ready');
@@ -2342,6 +2439,9 @@ export function CustomerWorkspace() {
     acquaintanceMethodId,
     createdFrom,
     createdTo,
+    branchId,
+    updatedFrom,
+    updatedTo,
     kind,
     page,
     role,
@@ -2444,10 +2544,12 @@ export function CustomerWorkspace() {
         kind,
         status,
         role,
-        branchId: 'all' as const,
+        branchId,
         acquaintanceMethodId,
         createdFrom: createdFrom || null,
         createdTo: createdTo || null,
+        updatedFrom: updatedFrom || null,
+        updatedTo: updatedTo || null,
         sortBy,
         sortDirection,
         page: 1,
@@ -2513,33 +2615,51 @@ export function CustomerWorkspace() {
     setImporting(true);
     setNotice(null);
     try {
-      const rows = await parseCustomerXlsx(file);
+      setImportPreview(previewCustomerImport(await parseCustomerXlsx(file)));
+    } catch {
+      setNotice(
+        'فایل XLSX خوانده نشد؛ قالب، حجم و نبود فرمول یا محتوای فعال را بررسی کنید.',
+      );
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function commitCustomerImport() {
+    if (!importPreview || importing) return;
+    const accepted = importPreview.filter((item) => !item.errors.length);
+    const rows = accepted.map((item) => item.row);
+    if (!rows.length) return;
+    setImporting(true);
+    setNotice(null);
+    try {
       let imported = 0;
       const failures: string[] = [];
       const warnings: string[] = [];
       setImportProgress({ completed: 0, total: rows.length });
       for (const [index, row] of rows.entries()) {
+        const rowNumber = accepted[index]!.rowNumber;
         const nameParts = row.name.split(/\s+/).filter(Boolean);
         if (nameParts.length < 2) {
           failures.push(
-            `ردیف ${index + 2}: نام باید شامل نام و نام خانوادگی باشد.`,
+            `ردیف ${rowNumber}: نام باید شامل نام و نام خانوادگی باشد.`,
           );
           continue;
         }
         if (!isValidIranianNationalId(row.nationalId)) {
-          failures.push(`ردیف ${index + 2}: کد ملی معتبر نیست.`);
+          failures.push(`ردیف ${rowNumber}: کد ملی معتبر نیست.`);
           continue;
         }
         if (row.phone && !/^\+?[0-9]{10,15}$/.test(row.phone)) {
-          failures.push(`ردیف ${index + 2}: شماره تماس معتبر نیست.`);
+          failures.push(`ردیف ${rowNumber}: شماره تماس معتبر نیست.`);
           continue;
         }
         const emailIsValid =
           !row.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email);
         if (!emailIsValid)
-          warnings.push(`ردیف ${index + 2}: ایمیل نامعتبر نادیده گرفته شد.`);
+          warnings.push(`ردیف ${rowNumber}: ایمیل نامعتبر نادیده گرفته شد.`);
         if (row.birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(row.birthDate)) {
-          failures.push(`ردیف ${index + 2}: تاریخ باید YYYY-MM-DD باشد.`);
+          failures.push(`ردیف ${rowNumber}: تاریخ باید YYYY-MM-DD باشد.`);
           continue;
         }
         const lastName = nameParts.at(-1)!;
@@ -2583,7 +2703,7 @@ export function CustomerWorkspace() {
               `نشست ورود منقضی شد؛ عملیات پس از ${imported.toLocaleString('fa-IR')} ثبت متوقف شد. دوباره وارد شوید و فایل ادامه را استفاده کنید.`,
             );
           failures.push(
-            `ردیف ${index + 2}: ${error instanceof Error ? error.message : 'ثبت ناموفق بود.'}`,
+            `ردیف ${rowNumber}: ${error instanceof Error ? error.message : 'ثبت ناموفق بود.'}`,
           );
         }
         if ((index + 1) % 10 === 0 || index === rows.length - 1)
@@ -2599,6 +2719,7 @@ export function CustomerWorkspace() {
       );
     } finally {
       setImporting(false);
+      setImportPreview(null);
       setImportProgress(null);
     }
   }
@@ -2620,10 +2741,12 @@ export function CustomerWorkspace() {
           <p className="mt-3 text-3xl font-black">
             {requestState === 'loading'
               ? '…'
-              : metrics.totalCustomers.toLocaleString('fa-IR')}
+              : requestState === 'ready'
+                ? metrics.totalCustomers.toLocaleString('fa-IR')
+                : 'در دسترس نیست'}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            اشخاص حقیقی مطابق فیلترهای فعال
+            نقش مشتری، مطابق همه فیلترهای فعال
           </p>
         </Card>
         <Card className="border-cyan-300/60 bg-gradient-to-br from-cyan-500/20 via-cyan-100/60 to-surface p-4 dark:via-cyan-950/40">
@@ -2636,7 +2759,9 @@ export function CustomerWorkspace() {
           <p className="mt-3 text-3xl font-black">
             {requestState === 'loading'
               ? '…'
-              : metrics.totalPassengers.toLocaleString('fa-IR')}
+              : requestState === 'ready'
+                ? metrics.totalPassengers.toLocaleString('fa-IR')
+                : 'در دسترس نیست'}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
             شخصی و سازمانی مطابق فیلترها
@@ -2652,7 +2777,9 @@ export function CustomerWorkspace() {
           <p className="mt-3 text-3xl font-black">
             {requestState === 'loading'
               ? '…'
-              : metrics.newCustomersLastThreeMonths.toLocaleString('fa-IR')}
+              : requestState === 'ready'
+                ? metrics.newCustomersLastThreeMonths.toLocaleString('fa-IR')
+                : 'در دسترس نیست'}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
             بازه سه‌ماهه UTC و فیلترهای فعال
@@ -2739,7 +2866,113 @@ export function CustomerWorkspace() {
         </div>
       </Card>
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
+      {importPreview ? (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open && !importing) setImportPreview(null);
+          }}
+        >
+          <DialogContent className="start-auto left-1/2 max-h-[85vh] max-w-3xl overflow-y-auto p-6">
+            <DialogTitle>پیش‌نمایش ورود مشتریان</DialogTitle>
+            <DialogDescription>
+              قالب {CUSTOMER_IMPORT_TEMPLATE_VERSION}؛{' '}
+              {importPreview.length.toLocaleString('fa-IR')} ردیف؛{' '}
+              {importPreview
+                .filter((item) => !item.errors.length)
+                .length.toLocaleString('fa-IR')}{' '}
+              ردیف معتبر.{' '}
+              {importing
+                ? 'ثبت ردیف‌های تأییدشده در جریان است.'
+                : 'پیش‌نمایش به‌تنهایی هیچ رکوردی ثبت نمی‌کند.'}{' '}
+              ردیف‌های خطادار ارسال نمی‌شوند.
+            </DialogDescription>
+            <p className="text-sm text-muted-foreground">
+              تکراری‌های موجود در پایگاه داده هنگام ثبت توسط سرور رد می‌شوند.
+              ثبت تماس و شخص چند مرحله دارد؛ در شکست شبکه، گزارش را بررسی کنید و
+              کل فایل را بی‌بررسی تکرار نکنید.
+            </p>
+            <div className="max-h-80 overflow-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr>
+                    <th>ردیف</th>
+                    <th>نام</th>
+                    <th>نتیجه اعتبارسنجی</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {importPreview.map((item) => (
+                    <tr key={item.rowNumber} className="border-t">
+                      <td className="p-2">{item.rowNumber}</td>
+                      <td>{item.row.name}</td>
+                      <td>{item.errors.join('؛ ') || 'آماده ثبت'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                disabled={
+                  importing ||
+                  !importPreview.some((item) => !item.errors.length)
+                }
+                onClick={() => void commitCustomerImport()}
+              >
+                تأیید و ثبت ردیف‌های معتبر
+              </Button>
+              <Button
+                disabled={importing}
+                variant="outline"
+                onClick={() => setImportPreview(null)}
+              >
+                انصراف
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : null}
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-4">
+        <FormField label="نوع شخص">
+          <Select
+            value={kind}
+            onValueChange={(value) => {
+              setKind(value as NonNullable<CustomerListQuery['kind']>);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger aria-label="فیلتر نوع شخص">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه اشخاص و سازمان‌ها</SelectItem>
+              <SelectItem value="person">شخص حقیقی</SelectItem>
+              <SelectItem value="organization">سازمان</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
+        <FormField label="شعبه مجاز">
+          <Select
+            value={branchId}
+            onValueChange={(value) => {
+              setBranchId(value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger aria-label="فیلتر شعبه مجاز">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه شعب مجاز</SelectItem>
+              {allowedBranchIds.map((id) => (
+                <SelectItem key={id} value={id}>
+                  شعبه {id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
         <FormField id="customer-search-live" label="جست‌وجو">
           <div className="relative">
             <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -2834,6 +3067,28 @@ export function CustomerWorkspace() {
             </SelectContent>
           </Select>
         </FormField>
+        <CustomerDateField
+          id="customer-updated-from"
+          label="ویرایش از تاریخ"
+          mode={calendarMode}
+          onModeChange={setCalendarMode}
+          onChange={(value) => {
+            setUpdatedFrom(value);
+            setPage(1);
+          }}
+          value={updatedFrom}
+        />
+        <CustomerDateField
+          id="customer-updated-to"
+          label="ویرایش تا تاریخ"
+          mode={calendarMode}
+          onModeChange={setCalendarMode}
+          onChange={(value) => {
+            setUpdatedTo(value);
+            setPage(1);
+          }}
+          value={updatedTo}
+        />
         <FormField label="مرتب‌سازی">
           <Select
             onValueChange={(value) =>
@@ -2946,6 +3201,10 @@ export function CustomerWorkspace() {
                         <p className="text-xs text-muted-foreground">
                           بازکردن پرونده ۳۶۰ {customerRoleLabel(record.roles)}
                         </p>
+                        {record.kind === 'person' &&
+                        !record.maskedNationalId ? (
+                          <Badge>نیازمند تکمیل اطلاعات</Badge>
+                        ) : null}
                       </div>
                     </button>
                   </td>
