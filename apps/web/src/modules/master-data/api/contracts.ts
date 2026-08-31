@@ -21,7 +21,7 @@ export const masterDataListQuerySchema = z.object({
   cityId: z.string().uuid().optional(),
   airportId: z.string().uuid().optional(),
   bankId: z.string().uuid().optional(),
-  terminalType: z.enum(['DOMESTIC', 'INTERNATIONAL', 'VIP']).optional(),
+  terminalType: z.enum(['DOMESTIC', 'INTERNATIONAL', 'MIXED', 'VIP']).optional(),
   paymentChannel: z
     .enum([
       'CASH',

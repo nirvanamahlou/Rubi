@@ -52,7 +52,7 @@ export const MASTER_DATA_RESOURCES = [
 export type MasterDataResource = (typeof MASTER_DATA_RESOURCES)[number];
 export type MasterDataStatus = 'active' | 'inactive';
 export type MasterRegionType = 'PROVINCE' | 'STATE' | 'REGION' | 'TERRITORY';
-export type MasterTerminalType = 'DOMESTIC' | 'INTERNATIONAL' | 'VIP';
+export type MasterTerminalType = 'DOMESTIC' | 'INTERNATIONAL' | 'MIXED' | 'VIP';
 export type MasterCurrencyDisplayPolicy =
   'SYMBOL_BEFORE' | 'SYMBOL_AFTER' | 'CODE_BEFORE' | 'CODE_AFTER';
 export type MasterPaymentMethodChannel =

@@ -21,6 +21,7 @@ import { buildMasterDataXlsx, MASTER_DATA_XLSX_MIME } from './master-data.xlsx';
 import { MasterDataContactCrypto } from './master-data-contact.crypto';
 import { isMasterDataDependencyError } from './master-data-deletion.policy';
 import { prepareTourTypeForm } from './tour-type-form.policy';
+import { prepareTerminalForm } from './terminal-form.policy';
 import { completeTravelReferenceDetails, prepareTravelReferenceForm } from './travel-reference-form.policy';
 import {
   MasterDataRepository,
@@ -120,7 +121,7 @@ function hashToken(seed: string, alphabet: string, length: number): string {
 }
 
 const regionTypes = new Set(['PROVINCE', 'STATE', 'REGION', 'TERRITORY']);
-const terminalTypes = new Set(['DOMESTIC', 'INTERNATIONAL', 'VIP']);
+const terminalTypes = new Set(['DOMESTIC', 'INTERNATIONAL', 'MIXED', 'VIP']);
 const currencyDisplayPolicies = new Set([
   'SYMBOL_BEFORE',
   'SYMBOL_AFTER',
@@ -244,7 +245,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'latitude',
     'longitude',
   ],
-  terminals: ['code', 'name', 'englishName', 'airportId', 'terminalType'],
+  terminals: ['code', 'name', 'englishName', 'airportId', 'terminalType', 'gateCount', 'operatingHoursMode', 'opensAt', 'closesAt'],
   currencies: [
     'code',
     'name',
@@ -729,7 +730,7 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     throw new BadRequestException('جهت مرتب‌سازی خروجی معتبر نیست.');
   if (
     input.filters.terminalType !== undefined &&
-    !['DOMESTIC', 'INTERNATIONAL', 'VIP'].includes(
+    !['DOMESTIC', 'INTERNATIONAL', 'MIXED', 'VIP'].includes(
       String(input.filters.terminalType),
     )
   )
@@ -1063,6 +1064,8 @@ export class MasterDataService {
     const form =
       resource === 'tour-types'
         ? prepareTourTypeForm(values, actor, true)
+        : resource === 'terminals'
+          ? prepareTerminalForm(values, actor, true)
         : resource === 'transfer-types' || resource === 'visa-services'
           ? prepareTravelReferenceForm(resource, values, actor, true)
         : { values, statusData: {} };
@@ -1102,6 +1105,8 @@ export class MasterDataService {
     const form =
       resource === 'tour-types'
         ? prepareTourTypeForm(values, actor, false)
+        : resource === 'terminals'
+          ? prepareTerminalForm(values, actor, false, (await this.repository.find(resource, id)) ?? {})
         : resource === 'transfer-types' || resource === 'visa-services'
           ? prepareTravelReferenceForm(resource, values, actor, false)
         : { values, statusData: {} };

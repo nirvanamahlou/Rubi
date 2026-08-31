@@ -261,7 +261,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     label: 'ترمینال‌ها',
     singularLabel: 'ترمینال',
     group: 'جغرافیا',
-    description: 'ترمینال وابسته به فرودگاه با نوع داخلی، بین‌المللی یا VIP.',
+    description: 'ترمینال وابسته به فرودگاه با نوع داخلی، بین‌المللی، مشترک یا VIP.',
     fields: [
       nameField,
       {
@@ -286,9 +286,17 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         options: [
           { value: 'DOMESTIC', label: 'داخلی' },
           { value: 'INTERNATIONAL', label: 'بین‌المللی' },
+          { value: 'MIXED', label: 'مشترک' },
           { value: 'VIP', label: 'VIP' },
         ],
       },
+      { key: 'gateCount', label: 'تعداد گیت', type: 'number', placeholder: '' },
+      { key: 'operatingHoursMode', label: 'ساعت فعالیت', type: 'select', placeholder: '', options: [
+        { value: 'ALL_DAY', label: '۲۴ ساعته' },
+        { value: 'TIME_RANGE', label: 'بازه ساعت' },
+      ] },
+      { key: 'opensAt', label: 'شروع فعالیت', type: 'text', placeholder: '05:00' },
+      { key: 'closesAt', label: 'پایان فعالیت', type: 'text', placeholder: '24:00' },
     ],
     preview: {
       name: 'ترمینال ۱',
