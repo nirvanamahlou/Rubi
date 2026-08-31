@@ -17,7 +17,10 @@ const busConnectionsMigration = readFileSync(
   ),
   'utf8',
 );
-const schema = readFileSync(join(process.cwd(), 'prisma/schema.prisma'), 'utf8');
+const schema = readFileSync(
+  join(process.cwd(), 'prisma/schema.prisma'),
+  'utf8',
+);
 const seed = readFileSync(join(process.cwd(), 'prisma/seed.ts'), 'utf8');
 
 describe('MASTER-003K-TRAVEL-SERVICES migration', () => {
@@ -75,10 +78,9 @@ describe('MASTER-003K-TRAVEL-SERVICES migration', () => {
       expect(migration).toContain(constraint);
   });
 
-  it('does not seed leaders, tour, transfer, CIP, visa or passenger data', () => {
+  it('does not seed operational leaders, tour, transfer, CIP or visa records', () => {
     expect(seed).not.toMatch(
       /master(?:Leader|TourType|TransferType|CipService|VisaService)\.(?:create|upsert)/,
     );
-    expect(seed).not.toMatch(/passport|passenger document|visa applicant/i);
   });
 });

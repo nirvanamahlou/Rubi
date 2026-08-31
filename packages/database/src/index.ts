@@ -23,4 +23,10 @@ export {
   LegalEntityDocumentIssueStatus,
   SessionStatus,
   UserStatus,
+  DocumentArchiveStatus,
+  DocumentConfidentiality,
+  DocumentDomain,
+  DocumentProcessingStatus,
+  DocumentQuarantineStatus,
+  DocumentScanStatus,
 } from './generated/prisma/enums';

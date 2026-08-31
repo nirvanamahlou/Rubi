@@ -62,6 +62,12 @@ model User {
   legalEntityBrandingVersions  LegalEntityBrandingVersion[] @relation("LegalEntityBrandingVersionCreatedBy")
   legalEntityAuditEvents       LegalEntityAuditEvent[]      @relation("LegalEntityAuditActor")
   legalEntityDocumentIssues    LegalEntityDocumentIssue[]   @relation("LegalEntityDocumentIssueActor")
+  documentsOwned               Document[]                   @relation("DocumentOwner")
+  documentsCreated             Document[]                   @relation("DocumentCreatedBy")
+  documentsUpdated             Document[]                   @relation("DocumentUpdatedBy")
+  documentVersionsCreated      DocumentVersion[]            @relation("DocumentVersionCreatedBy")
+  documentAuditEvents          DocumentAuditEvent[]         @relation("DocumentAuditActor")
+  documentQuarantinesReviewed  DocumentQuarantine[]         @relation("DocumentQuarantineReviewer")
 
   @@map("iam_users")
 }
@@ -128,6 +134,8 @@ model Branch {
   ownedCustomers        Customer[]              @relation("CustomerOwnerBranch")
   customerStatusHistory CustomerStatusHistory[]
   customerAuditEvents   CustomerAuditEvent[]
+  documents             Document[]
+  documentAuditEvents   DocumentAuditEvent[]
 
   @@map("branches")
 }
@@ -2141,4 +2149,233 @@ model LegalEntityDocumentIssue {
   @@index([referenceEntityType, referenceEntityId, issuedAt])
   @@index([actorUserId, issuedAt])
   @@map("legal_entity_document_issues")
+}
+
+enum DocumentDomain {
+  CUSTOMER_IDENTITY
+  SALES
+  TRAVEL
+  PROCUREMENT
+  FINANCE
+  HUMAN_RESOURCES
+  ORGANIZATION
+  REPORTING
+  BRAND
+  GENERAL
+}
+
+enum DocumentConfidentiality {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+}
+
+enum DocumentArchiveStatus {
+  ACTIVE
+  ARCHIVED
+  DELETED
+}
+
+enum DocumentScanStatus {
+  PENDING_SCAN
+  CLEAN
+  INFECTED
+  SCAN_FAILED
+  QUARANTINED
+  AWAITING_ANTIVIRUS_ADAPTER
+}
+
+enum DocumentQuarantineStatus {
+  ACTIVE
+  RELEASED
+  REJECTED
+}
+
+enum DocumentProcessingStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model DocumentType {
+  id                     String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code                   String                  @unique @db.VarChar(80)
+  name                   String                  @db.VarChar(160)
+  domain                 DocumentDomain
+  defaultConfidentiality DocumentConfidentiality @default(INTERNAL) @map("default_confidentiality")
+  allowedMimeTypes       String[]                @map("allowed_mime_types")
+  maxFileSizeBytes       BigInt                  @default(26214400) @map("max_file_size_bytes") @db.BigInt
+  requiresExpiry         Boolean                 @default(false) @map("requires_expiry")
+  isActive               Boolean                 @default(true) @map("is_active")
+  createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime                @updatedAt @map("updated_at") @db.Timestamptz(3)
+  documents              Document[]
+
+  @@index([domain, isActive, name])
+  @@map("document_types")
+}
+
+model DocumentCategory {
+  id        String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code      String             @unique @db.VarChar(80)
+  name      String             @db.VarChar(160)
+  parentId  String?            @map("parent_id") @db.Uuid
+  isActive  Boolean            @default(true) @map("is_active")
+  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  parent    DocumentCategory?  @relation("DocumentCategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children  DocumentCategory[] @relation("DocumentCategoryTree")
+  documents Document[]
+
+  @@index([parentId, isActive, name])
+  @@map("document_categories")
+}
+
+model Document {
+  id                   String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  archiveCode          String                  @unique @default(dbgenerated("documents_generate_archive_code()")) @map("archive_code") @db.VarChar(40)
+  title                String                  @db.VarChar(240)
+  description          String?                 @db.VarChar(1000)
+  documentTypeId       String                  @map("document_type_id") @db.Uuid
+  categoryId           String?                 @map("category_id") @db.Uuid
+  branchId             String                  @map("branch_id") @db.Uuid
+  ownerUserId          String                  @map("owner_user_id") @db.Uuid
+  sourceModule         String                  @map("source_module") @db.VarChar(80)
+  sourceEntityType     String?                 @map("source_entity_type") @db.VarChar(120)
+  sourceEntityId       String?                 @map("source_entity_id") @db.VarChar(160)
+  confidentiality      DocumentConfidentiality @default(INTERNAL)
+  archiveStatus        DocumentArchiveStatus   @default(ACTIVE) @map("archive_status")
+  validUntil           DateTime?               @map("valid_until") @db.Timestamptz(3)
+  currentVersionId     String?                 @unique @map("current_version_id") @db.Uuid
+  currentVersionNumber Int                     @default(0) @map("current_version_number")
+  legalHoldActive      Boolean                 @default(false) @map("legal_hold_active")
+  deletedAt            DateTime?               @map("deleted_at") @db.Timestamptz(3)
+  version              Int                     @default(1)
+  createdByUserId      String                  @map("created_by_user_id") @db.Uuid
+  updatedByUserId      String                  @map("updated_by_user_id") @db.Uuid
+  createdAt            DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime                @updatedAt @map("updated_at") @db.Timestamptz(3)
+  documentType         DocumentType            @relation(fields: [documentTypeId], references: [id], onDelete: Restrict)
+  category             DocumentCategory?       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  branch               Branch                  @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  owner                User                    @relation("DocumentOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  createdBy            User                    @relation("DocumentCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedBy            User                    @relation("DocumentUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  versions             DocumentVersion[]       @relation("DocumentVersions")
+  currentVersion       DocumentVersion?        @relation("CurrentDocumentVersion", fields: [currentVersionId], references: [id], onDelete: Restrict)
+  relations            DocumentRelation[]
+  auditEvents          DocumentAuditEvent[]
+
+  @@index([branchId, archiveStatus, updatedAt])
+  @@index([documentTypeId, archiveStatus, updatedAt])
+  @@index([categoryId, archiveStatus, updatedAt])
+  @@index([ownerUserId, updatedAt])
+  @@index([createdByUserId, createdAt])
+  @@index([validUntil, archiveStatus])
+  @@map("documents")
+}
+
+model DocumentVersion {
+  id                 String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  documentId         String                  @map("document_id") @db.Uuid
+  versionNumber      Int                     @map("version_number")
+  storageObjectKey   String                  @unique @map("storage_object_key") @db.VarChar(300)
+  originalFileName   String                  @map("original_file_name") @db.VarChar(255)
+  safeDownloadName   String                  @map("safe_download_name") @db.VarChar(160)
+  detectedMimeType   String                  @map("detected_mime_type") @db.VarChar(160)
+  extension          String                  @db.VarChar(16)
+  sizeBytes          BigInt                  @map("size_bytes") @db.BigInt
+  sha256             String                  @db.Char(64)
+  scanStatus         DocumentScanStatus      @default(PENDING_SCAN) @map("scan_status")
+  versionNote        String                  @map("version_note") @db.VarChar(500)
+  createdByUserId    String                  @map("created_by_user_id") @db.Uuid
+  createdAt          DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  document           Document                @relation("DocumentVersions", fields: [documentId], references: [id], onDelete: Restrict)
+  currentForDocument Document?               @relation("CurrentDocumentVersion")
+  createdBy          User                    @relation("DocumentVersionCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  auditEvents        DocumentAuditEvent[]
+  quarantine         DocumentQuarantine?
+  processingJobs     DocumentProcessingJob[]
+
+  @@unique([documentId, versionNumber])
+  @@index([documentId, createdAt])
+  @@index([createdByUserId, createdAt])
+  @@index([scanStatus, createdAt])
+  @@map("document_versions")
+}
+
+model DocumentRelation {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  documentId       String   @map("document_id") @db.Uuid
+  relationType     String   @map("relation_type") @db.VarChar(80)
+  sourceModule     String   @map("source_module") @db.VarChar(80)
+  sourceEntityType String   @map("source_entity_type") @db.VarChar(120)
+  sourceEntityId   String   @map("source_entity_id") @db.VarChar(160)
+  displayLabel     String   @map("display_label") @db.VarChar(240)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  document         Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, relationType, sourceModule, sourceEntityType, sourceEntityId], map: "document_relations_document_id_relation_type_source_module_sour")
+  @@index([sourceModule, sourceEntityType, sourceEntityId], map: "document_relations_source_module_source_entity_type_source_enti")
+  @@map("document_relations")
+}
+
+model DocumentAuditEvent {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  documentId       String           @map("document_id") @db.Uuid
+  versionId        String?          @map("version_id") @db.Uuid
+  actorUserId      String           @map("actor_user_id") @db.Uuid
+  actorBranchId    String           @map("actor_branch_id") @db.Uuid
+  action           String           @db.VarChar(120)
+  outcome          AuditOutcome
+  reason           String?          @db.VarChar(500)
+  ipSummary        String           @map("ip_summary") @db.VarChar(64)
+  userAgentSummary String           @map("user_agent_summary") @db.VarChar(240)
+  occurredAt       DateTime         @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  document         Document         @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  version          DocumentVersion? @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  actor            User             @relation("DocumentAuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  actorBranch      Branch           @relation(fields: [actorBranchId], references: [id], onDelete: Restrict)
+
+  @@index([documentId, occurredAt])
+  @@index([actorUserId, occurredAt])
+  @@index([actorBranchId, occurredAt])
+  @@index([versionId, occurredAt])
+  @@map("document_audit_events")
+}
+
+model DocumentQuarantine {
+  id               String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versionId        String                   @unique @map("version_id") @db.Uuid
+  status           DocumentQuarantineStatus @default(ACTIVE)
+  reasonCode       String                   @map("reason_code") @db.VarChar(120)
+  quarantinedAt    DateTime                 @default(now()) @map("quarantined_at") @db.Timestamptz(3)
+  reviewedByUserId String?                  @map("reviewed_by_user_id") @db.Uuid
+  reviewedAt       DateTime?                @map("reviewed_at") @db.Timestamptz(3)
+  reviewReason     String?                  @map("review_reason") @db.VarChar(500)
+  version          DocumentVersion          @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  reviewedBy       User?                    @relation("DocumentQuarantineReviewer", fields: [reviewedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([status, quarantinedAt])
+  @@index([reviewedByUserId, reviewedAt])
+  @@map("document_quarantines")
+}
+
+model DocumentProcessingJob {
+  id            String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versionId     String                   @map("version_id") @db.Uuid
+  jobType       String                   @map("job_type") @db.VarChar(80)
+  status        DocumentProcessingStatus @default(PENDING)
+  attempts      Int                      @default(0)
+  availableAt   DateTime                 @default(now()) @map("available_at") @db.Timestamptz(3)
+  lastErrorCode String?                  @map("last_error_code") @db.VarChar(120)
+  createdAt     DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)
+  version       DocumentVersion          @relation(fields: [versionId], references: [id], onDelete: Restrict)
+
+  @@unique([versionId, jobType])
+  @@index([status, availableAt])
+  @@map("document_processing_jobs")
 }
