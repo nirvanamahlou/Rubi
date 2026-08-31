@@ -52,6 +52,9 @@ import {
   Skeleton,
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
+import { loadTourTypeActorNames as loadActorNames } from '../api/tour-type-actors';
+import { terminalHoursLabel, terminalStatusLabel, terminalUpdatedLabel } from '../model/terminal-form';
+import { MasterDataTerminalForm } from './master-data-terminal-form';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import {
   getMasterDataDefinition,
@@ -109,13 +112,14 @@ const geographyTabs: readonly {
     icon: SquareStack,
     integrityTitle: 'ترمینال در محدوده فرودگاه تعریف می‌شود',
     integrityDescription:
-      'ترمینال به فرودگاه مرجع متصل است و نوع آن داخلی، بین‌المللی یا VIP خواهد بود.',
+      'ترمینال به فرودگاه مرجع متصل است و نوع آن داخلی، بین‌المللی، مشترک یا VIP خواهد بود.',
   },
 ];
 
 const terminalLabels: Record<string, string> = {
   DOMESTIC: 'داخلی',
   INTERNATIONAL: 'بین‌المللی',
+  MIXED: 'مشترک',
   VIP: 'VIP',
 };
 
@@ -142,7 +146,7 @@ function statusBadge(record: MasterDataRecord) {
           : 'bg-muted text-muted-foreground'
       }
     >
-      {record.status === 'active' ? 'فعال' : 'غیرفعال'}
+      {record.resource === 'terminals' ? terminalStatusLabel(record) : record.status === 'active' ? 'فعال' : 'غیرفعال'}
     </Badge>
   );
 }
@@ -194,9 +198,10 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
   return [
     'کد/عنوان',
     'فرودگاه',
-    'نام انگلیسی',
+    'شهر',
     'نوع ترمینال',
-    'نسخه',
+    'تعداد گیت',
+    'ساعت فعالیت',
     'آخرین تغییر',
     'وضعیت',
     'عملیات',
@@ -206,6 +211,7 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
 function recordCells(
   resource: GeographyResource,
   record: MasterDataRecord,
+  actorNames: Readonly<Record<string, string>> = {},
 ): readonly React.ReactNode[] {
   if (resource === 'countries')
     return [
@@ -267,12 +273,13 @@ function recordCells(
         {record.code}
       </p>
     </div>,
-    `${attribute(record, 'airportIataCode')} · ${attribute(record, 'airportName')}`,
-    attribute(record, 'englishName'),
+    `${attribute(record, 'airportIataCode')} · ${attribute(record, 'airportIcaoCode')}`,
+    attribute(record, 'cityName'),
     terminalLabels[attribute(record, 'terminalType')] ??
       attribute(record, 'terminalType'),
-    `v${record.version.toLocaleString('fa-IR')}`,
-    new Date(record.updatedAt).toLocaleString('fa-IR'),
+    attribute(record, 'gateCount'),
+    terminalHoursLabel(record),
+    terminalUpdatedLabel(record, actorNames),
     statusBadge(record),
   ];
 }
@@ -288,6 +295,13 @@ const referenceQuery: MasterDataListQuery = {
 
 export function MasterDataGeographyWorkspace() {
   const [resource, setResource] = useState<GeographyResource>('countries');
+  const [actorNames, setActorNames] = useState<Readonly<Record<string, string>>>({});
+  useEffect(() => {
+    if (resource !== 'terminals') return;
+    const controller = new AbortController();
+    void loadActorNames(controller.signal).then((names) => { if (!controller.signal.aborted) setActorNames(names); });
+    return () => controller.abort();
+  }, [resource]);
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
@@ -982,6 +996,7 @@ export function MasterDataGeographyWorkspace() {
                   <SelectItem value="all">همه انواع</SelectItem>
                   <SelectItem value="DOMESTIC">داخلی</SelectItem>
                   <SelectItem value="INTERNATIONAL">بین‌المللی</SelectItem>
+                  <SelectItem value="MIXED">مشترک</SelectItem>
                   <SelectItem value="VIP">VIP</SelectItem>
                 </SelectContent>
               </Select>
@@ -1058,7 +1073,7 @@ export function MasterDataGeographyWorkspace() {
                   className="border-t border-border transition hover:bg-sky-500/[0.035]"
                   key={record.id}
                 >
-                  {recordCells(resource, record).map((cell, index) => (
+                  {recordCells(resource, record, actorNames).map((cell, index) => (
                     <td className="p-4" key={columns[index]}>
                       {cell}
                     </td>
@@ -1136,7 +1151,10 @@ export function MasterDataGeographyWorkspace() {
         </div>
       </div>
 
-      {formMode ? (
+      {formMode && resource === 'terminals' ? (
+        <MasterDataTerminalForm key={`${formMode}-${selected?.id ?? 'new'}`} mode={formMode} actorNames={actorNames}
+          onOpenChange={() => setFormMode(null)} onPersist={persist} {...(selected ? { record: selected } : {})} />
+      ) : formMode ? (
         <MasterDataLiveForm
           definition={definition}
           key={`${resource}-${formMode}-${selected?.id ?? 'new'}`}

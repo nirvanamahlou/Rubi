@@ -361,7 +361,7 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'cities') return { country: true, region: true };
   if (resource === 'airports')
     return { city: { include: { country: true, region: true } } };
-  if (resource === 'terminals') return { airport: true };
+  if (resource === 'terminals') return { airport: { include: { city: true } } };
   if (resource === 'banks')
     return { country: true, _count: { select: { branches: true } } };
   if (resource === 'bank-branches') return { bank: true, city: true };
@@ -551,6 +551,11 @@ export function toMasterDataRecord(
   if (resource === 'terminals') {
     attributes.airportName = String(airport?.name ?? '');
     attributes.airportIataCode = String(airport?.iataCode ?? '');
+    attributes.airportIcaoCode = String(airport?.icaoCode ?? '');
+    attributes.cityId = String(airport?.cityId ?? '');
+    attributes.cityName = String((airport?.city as Record<string, unknown> | undefined)?.name ?? '');
+    attributes.ianaTimezone = String(airport?.ianaTimezone ?? '');
+    attributes.updatedByUserId = String(row.updatedByUserId ?? '');
   }
   if (resource === 'banks') {
     attributes.countryName = String(country?.name ?? '');
@@ -1135,6 +1140,7 @@ export class MasterDataRepository {
         isActive,
         deactivatedAt: isActive ? null : now,
         deactivatedByUserId: isActive ? null : actorUserId,
+        ...(resource === 'terminals' ? { isUnderMaintenance: false } : {}),
       },
       expectedVersion,
       actorUserId,

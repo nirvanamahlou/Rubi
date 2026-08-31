@@ -352,6 +352,7 @@ enum MasterRegionType {
 enum MasterTerminalType {
   DOMESTIC
   INTERNATIONAL
+  MIXED
   VIP
 }
 
@@ -495,6 +496,11 @@ model MasterTerminal {
   name                String             @db.VarChar(160)
   englishName         String?            @db.VarChar(160)
   terminalType        MasterTerminalType
+  gateCount           Int?
+  operatingHoursMode  String?            @db.VarChar(16)
+  opensAt             String?            @db.Char(5)
+  closesAt            String?            @db.Char(5)
+  isUnderMaintenance  Boolean            @default(false)
   isActive            Boolean            @default(true)
   version             Int                @default(1)
   createdByUserId     String             @db.Uuid

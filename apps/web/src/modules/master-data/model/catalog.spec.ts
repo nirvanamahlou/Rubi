@@ -42,7 +42,17 @@ describe('master data catalog', () => {
       getMasterDataDefinition('terminals').fields.find(
         (field) => field.key === 'terminalType',
       )?.options,
-    ).toHaveLength(3);
+    ).toHaveLength(4);
+    expect(
+      getMasterDataDefinition('terminals').fields.map((field) => field.key),
+    ).toEqual(
+      expect.arrayContaining([
+        'gateCount',
+        'operatingHoursMode',
+        'opensAt',
+        'closesAt',
+      ]),
+    );
   });
 
   it('defines required fields and exposes only business-owned codes', () => {

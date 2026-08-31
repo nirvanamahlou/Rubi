@@ -48,8 +48,8 @@ export class MasterDataListQueryDto {
   @IsUUID()
   bankId?: string;
   @IsOptional()
-  @IsIn(['DOMESTIC', 'INTERNATIONAL', 'VIP'])
-  terminalType?: 'DOMESTIC' | 'INTERNATIONAL' | 'VIP';
+  @IsIn(['DOMESTIC', 'INTERNATIONAL', 'MIXED', 'VIP'])
+  terminalType?: 'DOMESTIC' | 'INTERNATIONAL' | 'MIXED' | 'VIP';
   @IsOptional()
   @IsIn([
     'CASH',

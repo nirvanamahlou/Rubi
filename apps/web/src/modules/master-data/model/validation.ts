@@ -141,7 +141,7 @@ export function validateMasterDataDraft(
   if (
     resource === 'terminals' &&
     values.terminalType &&
-    !['DOMESTIC', 'INTERNATIONAL', 'VIP'].includes(values.terminalType)
+    !['DOMESTIC', 'INTERNATIONAL', 'MIXED', 'VIP'].includes(values.terminalType)
   )
     errors.terminalType = 'نوع ترمینال معتبر نیست.';
 
