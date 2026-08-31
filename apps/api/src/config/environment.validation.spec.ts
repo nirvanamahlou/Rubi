@@ -14,6 +14,9 @@ const validEnvironment = {
   CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64: fingerprintKey,
   CUSTOMER_CONTACT_ENCRYPTION_KEY_VERSION: 1,
   MASTER_DATA_IMPORT_TOKEN_KEY_BASE64: Buffer.alloc(32, 3).toString('base64'),
+  DOCUMENTS_STORAGE_ENCRYPTION_KEY_BASE64: Buffer.alloc(32, 4).toString(
+    'base64',
+  ),
 };
 
 describe('API environment validation', () => {
@@ -46,6 +49,21 @@ describe('API environment validation', () => {
       environmentValidationSchema.validate({
         ...validEnvironment,
         IAM_ACCESS_TOKEN_SECRET: encryptionKey,
+      }).error,
+    ).toBeDefined();
+  });
+
+  it('requires an independent 32-byte Documents storage key', () => {
+    expect(
+      environmentValidationSchema.validate({
+        ...validEnvironment,
+        DOCUMENTS_STORAGE_ENCRYPTION_KEY_BASE64: undefined,
+      }).error,
+    ).toBeDefined();
+    expect(
+      environmentValidationSchema.validate({
+        ...validEnvironment,
+        DOCUMENTS_STORAGE_ENCRYPTION_KEY_BASE64: encryptionKey,
       }).error,
     ).toBeDefined();
   });
