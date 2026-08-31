@@ -95,7 +95,7 @@ Master Data v4 در develop، `MasterDataRecord` و `masterDataEndpoints` را �
 - Rendering tests validate real components, empty initial state, disabled operational export/save, read-only form and all UI failure states. They do **not** establish browser event/visual QA.
 - Browser plugin failed twice before browser discovery because Windows sandbox could not apply deny-read ACLs. No cookies, profiles or sessions inspected and no auth bypass attempted.
 - HTTP smoke: preview ticket route without auth **307 → /login?next=%2Fticket-management**; preview login **200**; existing API health **200**; unauthenticated Master Data **401**. These are not authenticated UI or visual tests.
-- Existing API did not return CORS allow-origin for `http://localhost:3211`; configuration was not modified. The adapter truthfully reports unavailable/error from this preview origin until the service owner allows the origin. A successful authenticated Master Data integration from this port is **not claimed**.
+- Initial delivery only (superseded by the connection follow-up below): existing API did not return CORS allow-origin for `http://localhost:3211`; configuration was not modified. The adapter truthfully reports unavailable/error from this preview origin until the service owner allows the origin. A successful authenticated Master Data integration from this port is **not claimed**.
 
 Commands (Node 24 on PATH):
 
@@ -114,8 +114,8 @@ pnpm --filter @rubi/api build
 
 ## لوکال و تحویل
 
-- Preview: http://localhost:3211/ticket-management (production build, loopback listener, task process PID 15220 at start).
-- API base compiled as `http://localhost:4000/api/v1`; only GET reference consumption is implemented. Existing auth/proxy is unchanged. Sign in through the existing authorized app/session; this task creates no user/session/credential.
+- Preview: http://localhost:3211/ticket-management. Initial task process PID 15220 was replaced by the task-local same-origin proxy described below.
+- Initial build API base was `http://localhost:4000/api/v1` (follow-up changes this to `/api/v1`); only GET reference consumption is implemented. Existing auth/proxy is unchanged. Sign in through the existing authorized app/session; this task creates no user/session/credential.
 - Original listeners at 3100 (PID 3340) and 4000 (PID 15952) were retained, with no stop/restart or database changes.
 - Only this task's new Preview process may be stopped when no longer needed.
 - No screenshots or successful visual smoke are claimed.
@@ -123,3 +123,25 @@ pnpm --filter @rubi/api build
 مالک اسناد مرکزی پس از review، فقط ردیف TICKET-CATALOG-001 و همین ماتریس واقعی A را به WORK_ASSIGNMENTS / PROJECT_STATUS / PLANS اضافه کند؛ هیچ قفل مشترکی منتقل نشود. تست مشترک route و CORS مبدأ Preview نیز نیازهای مشخص هماهنگی‌اند.
 
 **Phase B خودکار آغاز نشد.** شرط شروع B: Handoff صریح + رزرو تازه Schema/Migration/Contract/IAM wiring/central files، مدل FK نهایی، optimistic locking اتمیک، idempotency/fingerprint پایدار، audit/outbox و آزمون واقعی transaction/round-trip.
+
+## Follow-up: اتصال Preview به سرور — 2026-08-31
+
+User explicitly requested fixing the Preview/server connection. Reserved addition within the existing module scope: apps/web/src/modules/ticket-catalog/preview/** for a loopback-only proxy and transport checks. No shared configuration lock is acquired. Preview will call /api/v1 on its own origin (3211); a local proxy forwards to the unchanged API at 4000 and the task-only Next server at 3212. Original Origin, authentication status and Set-Cookie are preserved; no credential, permissive CORS or authentication bypass is introduced. Only the task-owned Preview process may be restarted. Validation results follow below.
+
+Connection follow-up outcome: RESOLVED. The current build uses NEXT_PUBLIC_API_BASE_URL=/api/v1. Local process 2072 listens on 3211 (proxy), and task-only Next process 24392 listens on 3212. Existing 3100/4000 processes remain 3340/15952, unchanged.
+
+Validation: five node:test transport checks passed (routing/query, method/body/Origin, status/Set-Cookie fidelity, foreign-origin/DNS-rebinding rejection, unavailable upstream). Full Web lint, typecheck and production build passed. Live smoke through 3211: health 200, login page 200, protected Master Data 401, protected ticket route 307, empty login body 400 from existing server validation, foreign origin rejected 403. Served login JavaScript contains the relative /api/v1 base and no old direct localhost:4000 API URL. No real credential or synthetic authentication token was submitted to Rubi. Successful account login still requires the user's existing credentials; this is connection verification, not an authenticated visual test.
+
+Reproduction (Node 24 on PATH, run in apps/web):
+
+```powershell
+$env:NEXT_PUBLIC_API_BASE_URL = '/api/v1'
+pnpm build
+# Separate background processes; both loopback only, do not stop 3100 or 4000:
+node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3212
+node src/modules/ticket-catalog/preview/server.mjs
+# Isolated transport fixture tests (no connection to Rubi DB or API):
+node --test src/modules/ticket-catalog/preview/server.check.mjs
+```
+
+The prior request for server-owner CORS changes is superseded: no CORS/server/IAM configuration change is now necessary. The unrelated shared route-foundation test handoff remains unchanged; Phase B remains unstarted.
