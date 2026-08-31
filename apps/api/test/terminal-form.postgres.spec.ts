@@ -11,6 +11,9 @@ import type { DatabaseService } from '../src/database/database.service';
 import { MasterDataRepository } from '../src/master-data/master-data.repository';
 import { MasterDataService } from '../src/master-data/master-data.service';
 
+import { postgresTestTarget } from './postgres-test-target';
+const postgresTarget = postgresTestTarget();
+
 const enabled = process.env.RUBI_RUN_TERMINAL_POSTGRES_TESTS === '1';
 const databaseName = `rubi_md_terminal_test_${randomUUID().replaceAll('-', '')}`;
 const migrationName = '20260831110000_master_data_terminal_details';
@@ -43,10 +46,10 @@ function sql(database: string, input: string, timeout = 30000) {
     [
       'exec',
       '-i',
-      'rubi-postgres-1',
+      postgresTarget.container,
       'psql',
       '-U',
-      'rubi_local',
+      postgresTarget.user,
       '-d',
       database,
       '-v',
@@ -63,13 +66,13 @@ function sql(database: string, input: string, timeout = 30000) {
 }
 describe.skipIf(!enabled)('terminal form on isolated PostgreSQL 18', () => {
   beforeAll(async () => {
-    const local = parseEnv(
-      readFileSync(resolve(process.cwd(), '.env'), 'utf8'),
-    );
+    const local = process.env.RUBI_TEST_POSTGRES_CONTAINER
+      ? process.env
+      : parseEnv(readFileSync(resolve(process.cwd(), '.env'), 'utf8'));
     const url = new URL(local.DATABASE_URL!);
     if (
       !['localhost', '127.0.0.1'].includes(url.hostname) ||
-      url.port !== '55432'
+      url.port !== postgresTarget.port
     )
       throw new Error('Only local Rubi PostgreSQL is allowed.');
     if (!/^rubi_md_terminal_test_[a-f0-9]{32}$/.test(databaseName))
@@ -127,7 +130,9 @@ describe.skipIf(!enabled)('terminal form on isolated PostgreSQL 18', () => {
       );
     // Use pre-migration SQL for the legacy fixture: the current generated client
     // cannot seed an older schema that lacks its newly introduced columns.
-    sql(databaseName, `
+    sql(
+      databaseName,
+      `
       INSERT INTO "master_countries" ("id", "code", "name", "englishName", "createdByUserId", "updatedByUserId", "updatedAt")
         VALUES ('${legacyCountryId}', 'ZZ', 'کشور آزمون', 'Test country', '${userId}', '${userId}', NOW());
       INSERT INTO "master_cities" ("id", "countryId", "code", "name", "englishName", "createdByUserId", "updatedByUserId", "updatedAt")
@@ -136,11 +141,9 @@ describe.skipIf(!enabled)('terminal form on isolated PostgreSQL 18', () => {
         VALUES ('${legacyAirportId}', '${legacyCityId}', 'ZZZ', 'ZZZZ', 'فرودگاه آزمون', 'Test airport', 'UTC', 0, 0, '${userId}', '${userId}', NOW());
       INSERT INTO "master_terminals" ("id", "airportId", "code", "name", "terminalType", "createdByUserId", "updatedByUserId", "updatedAt")
         VALUES ('${legacyTerminalId}', '${legacyAirportId}', 'LEGACY_TEST', 'ترمینال پیش از مهاجرت', 'DOMESTIC', '${userId}', '${userId}', NOW());
-    `);
-    legacyBefore = sql(
-      databaseName,
-      legacySnapshotSql,
+    `,
     );
+    legacyBefore = sql(databaseName, legacySnapshotSql);
     sql(
       databaseName,
       directories
@@ -181,12 +184,7 @@ describe.skipIf(!enabled)('terminal form on isolated PostgreSQL 18', () => {
       sql('postgres', `DROP DATABASE "${databaseName}";`);
   }, 30000);
   it('preserves existing terminals through migration and a second seed without inventing metadata', () => {
-    expect(
-      sql(
-        databaseName,
-        legacySnapshotSql,
-      ),
-    ).toBe(legacyBefore);
+    expect(sql(databaseName, legacySnapshotSql)).toBe(legacyBefore);
     expect(
       sql(
         databaseName,

@@ -12,6 +12,9 @@ import type { DatabaseService } from '../src/database/database.service';
 import { MasterDataRepository } from '../src/master-data/master-data.repository';
 import { MasterDataService } from '../src/master-data/master-data.service';
 
+import { postgresTestTarget } from './postgres-test-target';
+const postgresTarget = postgresTestTarget();
+
 const enabled = process.env.RUBI_RUN_MEAL_POSTGRES_TESTS === '1';
 const databaseName = `rubi_md_meal_test_${randomUUID().replaceAll('-', '')}`;
 const migrationName = '20260831130000_master_data_meal_service_forms';
@@ -39,10 +42,10 @@ function sql(database: string, input: string, timeout = 30000) {
     [
       'exec',
       '-i',
-      'rubi-postgres-1',
+      postgresTarget.container,
       'psql',
       '-U',
-      'rubi_local',
+      postgresTarget.user,
       '-d',
       database,
       '-v',
@@ -64,16 +67,19 @@ describe.skipIf(!enabled)(
   'meal/service forms on isolated PostgreSQL 18',
   () => {
     beforeAll(async () => {
-      const local = parseEnv(
-        readFileSync(
-          process.env.RUBI_MEAL_TEST_ENV_FILE ?? resolve(process.cwd(), '.env'),
-          'utf8',
-        ),
-      );
+      const local = process.env.RUBI_TEST_POSTGRES_CONTAINER
+        ? process.env
+        : parseEnv(
+            readFileSync(
+              process.env.RUBI_MEAL_TEST_ENV_FILE ??
+                resolve(process.cwd(), '.env'),
+              'utf8',
+            ),
+          );
       const url = new URL(local.DATABASE_URL!);
       if (
         !['localhost', '127.0.0.1'].includes(url.hostname) ||
-        url.port !== '55432' ||
+        url.port !== postgresTarget.port ||
         !/^rubi_md_meal_test_[a-f0-9]{32}$/.test(databaseName)
       )
         throw new Error('Only isolated local test database is permitted.');

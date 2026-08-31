@@ -13,6 +13,9 @@ import { MasterDataRepository } from '../src/master-data/master-data.repository'
 import { MasterDataService } from '../src/master-data/master-data.service';
 
 // Opt in explicitly; never migrate, seed, or clean up the application database.
+import { postgresTestTarget } from './postgres-test-target';
+const postgresTarget = postgresTestTarget();
+
 const enabled = process.env.RUBI_RUN_TRAVEL_FORM_POSTGRES_TESTS === '1';
 const databaseName = `rubi_md_travel_form_test_${randomUUID().replaceAll('-', '')}`;
 const migrationName = '20260831100000_master_data_travel_reference_forms';
@@ -41,10 +44,10 @@ function sql(database: string, input: string) {
     [
       'exec',
       '-i',
-      'rubi-postgres-1',
+      postgresTarget.container,
       'psql',
       '-U',
-      'rubi_local',
+      postgresTarget.user,
       '-d',
       database,
       '-v',
@@ -76,7 +79,7 @@ describe.skipIf(!enabled)(
       const configured = new URL(databaseUrl);
       if (
         !['localhost', '127.0.0.1'].includes(configured.hostname) ||
-        configured.port !== '55432'
+        configured.port !== postgresTarget.port
       )
         throw new Error('Only the local Rubi PostgreSQL port is allowed.');
       if (!/^rubi_md_travel_form_test_[a-f0-9]{32}$/.test(databaseName))

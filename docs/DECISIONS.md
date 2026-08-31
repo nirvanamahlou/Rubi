@@ -1,5 +1,18 @@
 # تصمیم‌های معماری
 
+## Clarifications carried from the approved source tasks — 2026-08-31
+
+- `TICKET-PRICING-002`: PR #46 records the owner's clarification that final sale
+  prices are dynamic Sales quotation/contract snapshots. Ticket Catalog owns
+  purchase/cost reference versions only, not a fixed sale amount. This supersedes
+  older combined purchase/sale wording for Catalog; no Sales persistence or FX
+  conversion is implemented by this integration. See `tasks/TICKET-CATALOG-001.md`.
+- PR #46 also records the owner's narrow IAM policy change: minimum password
+  length 10, preserving uppercase/lowercase/digit/special-character checks and
+  maximum 200. This integration carries that existing change to Web and API
+  together; it does not reset passwords or provision application users.
+
+
 ## تصمیم‌های پذیرفته‌شده در Bootstrap
 
 | ID      | تصمیم                                                                                              | دلیل/پیامد                                                                                                                    |

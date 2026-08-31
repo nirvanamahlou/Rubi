@@ -14,6 +14,9 @@ import type { DatabaseService } from '../src/database/database.service';
 import { MasterDataRepository } from '../src/master-data/master-data.repository';
 import { MasterDataService } from '../src/master-data/master-data.service';
 
+import { postgresTestTarget } from './postgres-test-target';
+const postgresTarget = postgresTestTarget();
+
 const enabled = process.env.RUBI_RUN_TRANSPORT_POSTGRES_TESTS === '1';
 const databaseName = `rubi_md_transport_test_${randomUUID().replaceAll('-', '')}`;
 const userId = '11111111-1111-4111-8111-111111111111';
@@ -41,10 +44,10 @@ function sql(database: string, input: string) {
     [
       'exec',
       '-i',
-      'rubi-postgres-1',
+      postgresTarget.container,
       'psql',
       '-U',
-      'rubi_local',
+      postgresTarget.user,
       '-d',
       database,
       '-v',
@@ -61,17 +64,19 @@ function sql(database: string, input: string) {
 
 describe.skipIf(!enabled)('transport forms on isolated PostgreSQL 18', () => {
   beforeAll(async () => {
-    const local = parseEnv(
-      readFileSync(
-        process.env.RUBI_TRANSPORT_TEST_ENV_FILE ??
-          resolve(process.cwd(), '.env'),
-        'utf8',
-      ),
-    );
+    const local = process.env.RUBI_TEST_POSTGRES_CONTAINER
+      ? process.env
+      : parseEnv(
+          readFileSync(
+            process.env.RUBI_TRANSPORT_TEST_ENV_FILE ??
+              resolve(process.cwd(), '.env'),
+            'utf8',
+          ),
+        );
     const url = new URL(local.DATABASE_URL!);
     if (
       !['localhost', '127.0.0.1'].includes(url.hostname) ||
-      url.port !== '55432'
+      url.port !== postgresTarget.port
     )
       throw new Error('Only local Rubi PostgreSQL is allowed.');
     if (!/^rubi_md_transport_test_[a-f0-9]{32}$/.test(databaseName))
@@ -372,22 +377,41 @@ describe.skipIf(!enabled)('transport forms on isolated PostgreSQL 18', () => {
     expect(result.data.attributes.validTo).toBe(record.attributes.validTo);
   });
   it('safely deletes a train type with owned facility links without deleting the facility', async () => {
-    const train = (await service.create('train-types', {
-      name: 'Isolated deletion test train',
-      manufacturer: 'Test',
-      model: 'Delete-only',
-      category: 'SLEEPER',
-      facilityIds: facilityId,
-    }, actor)).data;
+    const train = (
+      await service.create(
+        'train-types',
+        {
+          name: 'Isolated deletion test train',
+          manufacturer: 'Test',
+          model: 'Delete-only',
+          category: 'SLEEPER',
+          facilityIds: facilityId,
+        },
+        actor,
+      )
+    ).data;
     await service.remove('train-types', train.id, train.version, {
       ...actor,
       permissions: [...actor.permissions, 'master_data.delete'],
     });
-    expect(await client.masterTrainType.findUnique({ where: { id: train.id } })).toBeNull();
-    expect(await client.masterTrainTypeFacility.count({ where: { trainTypeId: train.id } })).toBe(0);
-    expect(await client.masterFacility.findUnique({ where: { id: facilityId } })).not.toBeNull();
-    expect(await client.masterDataAuditEvent.count({ where: {
-      entityId: train.id, action: 'master_data.delete',
-    } })).toBe(1);
+    expect(
+      await client.masterTrainType.findUnique({ where: { id: train.id } }),
+    ).toBeNull();
+    expect(
+      await client.masterTrainTypeFacility.count({
+        where: { trainTypeId: train.id },
+      }),
+    ).toBe(0);
+    expect(
+      await client.masterFacility.findUnique({ where: { id: facilityId } }),
+    ).not.toBeNull();
+    expect(
+      await client.masterDataAuditEvent.count({
+        where: {
+          entityId: train.id,
+          action: 'master_data.delete',
+        },
+      }),
+    ).toBe(1);
   });
 });

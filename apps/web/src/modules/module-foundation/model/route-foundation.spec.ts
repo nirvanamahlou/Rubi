@@ -32,7 +32,6 @@ const approvedRoutes = [
 
 const foundationRoutes = [
   'reservations',
-  'ticket-management',
   'sales',
   'purchases',
   'marketing',
@@ -63,6 +62,9 @@ describe('17-route module foundation', () => {
   });
 
   it('preserves connected workspaces and the Master Data hub-to-section flow', () => {
+    expect(
+      readFileSync(resolve(crmRoot, 'ticket-management/page.tsx'), 'utf8'),
+    ).toContain('TicketWorkspace');
     expect(
       readFileSync(resolve(crmRoot, 'customers/page.tsx'), 'utf8'),
     ).toContain('CustomerWorkspace');

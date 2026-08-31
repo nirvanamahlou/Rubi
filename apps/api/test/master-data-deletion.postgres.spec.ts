@@ -13,10 +13,13 @@ import { MasterDataRepository } from '../src/master-data/master-data.repository'
 import { MasterDataService } from '../src/master-data/master-data.service';
 
 // Opt-in only. Never run migrations, fixtures or cleanup on the application DB.
+import { postgresTestTarget } from './postgres-test-target';
+const postgresTarget = postgresTestTarget();
+
 const enabled = process.env.RUBI_RUN_DELETE_POSTGRES_TESTS === '1';
-const container = 'rubi-postgres-1';
+const container = postgresTarget.container;
 const databaseName = `rubi_md_delete_test_${randomUUID().replaceAll('-', '')}`;
-const owner = 'rubi_local';
+const owner = postgresTarget.user;
 const actorId = '11111111-1111-4111-8111-111111111111';
 const branchId = '33333333-3333-4333-8333-333333333333';
 const attribution = { createdByUserId: actorId, updatedByUserId: actorId };
@@ -73,7 +76,7 @@ describe.skipIf(!enabled)('safe deletion on isolated PostgreSQL 18', () => {
     const configured = new URL(databaseUrl);
     if (
       !['localhost', '127.0.0.1'].includes(configured.hostname) ||
-      configured.port !== '55432'
+      configured.port !== postgresTarget.port
     )
       throw new Error(
         'Deletion integration tests require the local Rubi PostgreSQL port.',

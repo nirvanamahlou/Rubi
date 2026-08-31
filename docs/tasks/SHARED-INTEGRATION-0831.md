@@ -1,6 +1,6 @@
 # SHARED-INTEGRATION-0831
 
-Status: IN_PROGRESS. Integration owner: PC-A. Date: 2026-08-31.
+Status: READY_FOR_REVIEW. Integration owner: PC-A. Date: 2026-08-31.
 
 The product owner requested a single product containing both PCs' published work.
 The isolated worktree is for merge/testing safety only; delivery is through one PR
@@ -34,4 +34,34 @@ rather than blindly introducing a second competing transport implementation.
 
 ## Results
 
-Pending. No claim of approval, merge, or PC-B local synchronization yet.
+- Frozen install, full lint (6 tasks), typecheck (9 tasks) and 1,221 ordinary
+  repository tests passed. All 57 opt-in PostgreSQL tests passed separately in
+  six suites on the dedicated loopback container (none counted as passed while skipped).
+- All 26 migrations deployed to an empty database; seed ran twice successfully
+  when executed serially. The first concurrent seed attempt hit a local resource
+  timeout; no production transaction limits were changed to hide it.
+- Every input migration hash is unchanged. All 58 Master model definitions match
+  PC-B's snapshot and all 22 other model definitions match develop (whitespace ignored).
+- Additional diagnostic `prisma migrate diff` is NOT clean: inherited index/FK
+  names differ from implicit Prisma names, and MasterLeader.destinations has an
+  empty-array database default absent in the source schema. No structural model
+  change was introduced by this integration. Names/default alignment is a follow-up
+  for the existing schema owner, not an excuse to rewrite historical migrations.
+- Production build: all 6 tasks passed (Web/API/Worker/packages), including all
+  shared routes and the eight Master Data sections. No cached build was accepted.
+- Authenticated same-origin smoke: 8 groups passed, covering all 45 Master Data
+  list resources, finance/geography KPI requests, Ticket Catalog reference queries,
+  all key Persian RTL pages, real XLSX output and session logout.
+- Customer regression HTTP/database smoke: 11 checks passed, including real
+  encrypted national-ID/contact persistence, masking, audited reveal, checksum,
+  duplicate rejection, unrelated-edit preservation, branch tampering and 200/409
+  concurrent mutation. Only synthetic data in the disposable database was used.
+- The first XLSX smoke request incorrectly included pagination fields; the API
+  correctly rejected it. The corrected documented export contract passed.
+- Combined UI was checked via authenticated HTTP and rendered-component tests;
+  no new full interactive browser QA is claimed.
+- PR #46's existing IAM minimum-password change and dynamic Sales pricing handoff
+  were retained and recorded centrally. Catalog stays Preview; pricing/issuance
+  and the remaining Customer security backlog are not declared implemented.
+- Final target is one develop. No final merge, PC-B update, application database
+  change, or release of PC-B development locks is claimed before the merge result.
