@@ -54,7 +54,7 @@ describe('organizations and suppliers workspace', () => {
     expect(source).not.toContain('CTR-');
   });
 
-  it('keeps the collaboration view read-only with no separate form', () => {
+  it('keeps collaboration editing in source forms but permits the shared status action', () => {
     expect(source).not.toContain('تعریف وضعیت');
     expect(source).toContain("formMode && tab !== 'collaboration'");
     const actions = source.slice(
@@ -64,7 +64,9 @@ describe('organizations and suppliers workspace', () => {
     const writeGuard = actions.indexOf("tab !== 'collaboration'");
     expect(writeGuard).toBeGreaterThan(actions.indexOf('openProfile(record)'));
     expect(writeGuard).toBeLessThan(actions.indexOf("setFormMode('edit')"));
-    expect(writeGuard).toBeLessThan(actions.indexOf('toggle(record)'));
+    expect(writeGuard).toBeGreaterThan(
+      actions.indexOf('<MasterDataPowerButton'),
+    );
     expect(source).toContain('تازه‌سازی وضعیت‌ها');
   });
 

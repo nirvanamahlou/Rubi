@@ -62,6 +62,31 @@ function fixture(options?: {
 }
 
 describe('CurrencyRateService decisions', () => {
+  it('filters history by both currency columns before counting and paginating', async () => {
+    const model = {
+      findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(0),
+    };
+    const service = new CurrencyRateService({
+      client: { masterDraftExchangeRate: model },
+    } as unknown as DatabaseService);
+    await service.history({
+      columnFilter1: ' usd ',
+      columnFilter2: 'IRR',
+      page: 2,
+      pageSize: 25,
+      status: 'DRAFT',
+    });
+    const where = {
+      status: 'DRAFT',
+      fromCurrency: { code: { contains: 'usd', mode: 'insensitive' } },
+      toCurrency: { code: { contains: 'IRR', mode: 'insensitive' } },
+    };
+    expect(model.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where, skip: 25, take: 25 }),
+    );
+    expect(model.count).toHaveBeenCalledWith({ where });
+  });
   it.each([
     ['approve', MasterCurrencyRateStatus.APPROVED],
     ['reject', MasterCurrencyRateStatus.REJECTED],

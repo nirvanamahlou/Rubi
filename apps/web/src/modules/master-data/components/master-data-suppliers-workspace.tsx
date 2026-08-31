@@ -1,4 +1,6 @@
 'use client';
+import { useMasterDataColumnFilters } from './master-data-column-filters';
+import { MasterDataPowerButton } from './master-data-power-button';
 
 import type {
   MasterDataRecord,
@@ -134,6 +136,7 @@ function collaborationLabel(value: string) {
   return (
     {
       ACTIVE: 'همکاری فعال',
+      INACTIVE: 'غیرفعال',
       UNDER_REVIEW: 'در حال بررسی',
       PURCHASE_SUSPENDED: 'تعلیق خرید',
       ENDED: 'پایان همکاری',
@@ -185,8 +188,11 @@ function ProfileData({ label, value }: { label: string; value: string }) {
 }
 
 function partnerPersonType(record: MasterDataRecord) {
-  return record.attributes.organizationPersonType === 'NATURAL' ? 'حقیقی'
-    : record.attributes.organizationPersonType === 'LEGAL' ? 'حقوقی' : 'ثبت نشده';
+  return record.attributes.organizationPersonType === 'NATURAL'
+    ? 'حقیقی'
+    : record.attributes.organizationPersonType === 'LEGAL'
+      ? 'حقوقی'
+      : 'ثبت نشده';
 }
 
 export function MasterDataSuppliersWorkspace() {
@@ -227,12 +233,16 @@ export function MasterDataSuppliersWorkspace() {
     }
   }, []);
 
+  const { columnFilters, columnFilterControls, resetColumnFilters } =
+    useMasterDataColumnFilters(resource, () => setPage(1));
+
   const load = useCallback(async () => {
     const sequence = ++loadSequence.current;
     setRequestState('loading');
     try {
       if (tab === 'collaboration') {
         const response = await loadSupplierCollaborationPage(masterDataApi, {
+          ...columnFilters,
           search,
           status,
           page,
@@ -244,6 +254,7 @@ export function MasterDataSuppliersWorkspace() {
         setTotal(response.total);
       } else {
         const response = await masterDataApi.list(resource, {
+          ...columnFilters,
           search,
           status,
           sortBy: 'name',
@@ -267,7 +278,7 @@ export function MasterDataSuppliersWorkspace() {
           : 'error',
       );
     }
-  }, [page, resource, search, status, tab]);
+  }, [columnFilters, page, resource, search, status, tab]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadSummary(), 0);
@@ -371,6 +382,7 @@ export function MasterDataSuppliersWorkspace() {
     setRequestState('loading');
     setTab(next);
     setSearch('');
+    resetColumnFilters();
     setStatus('all');
     setPage(1);
     setSelected(undefined);
@@ -411,22 +423,9 @@ export function MasterDataSuppliersWorkspace() {
     await loadSummary();
   }
 
-  async function toggle(record: MasterDataRecord) {
-    if (tab === 'collaboration') return;
-    try {
-      await masterDataApi.setStatus(
-        record.resource,
-        record.id,
-        record.status === 'active' ? 'inactive' : 'active',
-        record.version,
-      );
-      setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
-      await Promise.all([load(), loadSummary()]);
-    } catch (error) {
-      setNotice(
-        error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.',
-      );
-    }
+  async function afterStatusChange() {
+    setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
+    await Promise.all([load(), loadSummary()]);
   }
 
   async function requestExcel() {
@@ -436,6 +435,7 @@ export function MasterDataSuppliersWorkspace() {
         resource,
         format: 'xlsx',
         filters: {
+          ...columnFilters,
           search,
           status,
           sortBy: 'name',
@@ -483,6 +483,7 @@ export function MasterDataSuppliersWorkspace() {
       <Button onClick={() => openProfile(record)} size="sm" variant="outline">
         <Eye className="size-4" /> مشاهده
       </Button>
+      <MasterDataPowerButton record={record} onChanged={afterStatusChange} />
       {tab !== 'collaboration' ? (
         <>
           <Button
@@ -496,9 +497,6 @@ export function MasterDataSuppliersWorkspace() {
             <FilePenLine className="size-4" /> ویرایش
           </Button>
           <MasterDataDeleteButton record={record} onDeleted={afterDelete} />
-          <Button onClick={() => void toggle(record)} size="sm" variant="ghost">
-            {record.status === 'active' ? 'غیرفعال‌سازی' : 'فعال‌سازی'}
-          </Button>
         </>
       ) : null}
     </div>
@@ -523,7 +521,11 @@ export function MasterDataSuppliersWorkspace() {
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-xl font-black">{record.name}</h2>
               <CollaborationBadge
-                value={text(record, 'collaborationStatus', 'UNDER_REVIEW')}
+                value={
+                  record.status === 'inactive'
+                    ? 'INACTIVE'
+                    : text(record, 'collaborationStatus', 'UNDER_REVIEW')
+                }
               />
             </div>
             <p
@@ -566,11 +568,26 @@ export function MasterDataSuppliersWorkspace() {
             </h3>
             <dl className="mt-5 grid gap-4 sm:grid-cols-2">
               <ProfileData label="کد" value={record.code} />
-              <ProfileData label="نام انگلیسی" value={text(record, 'englishName')} />
-              <ProfileData label="نوع شخصیت" value={partnerPersonType(record)} />
-              <ProfileData label="مخاطب اصلی" value={text(record, 'primaryContactName')} />
-              <ProfileData label="تلفن اصلی" value={text(record, 'primaryPhoneMasked')} />
-              <ProfileData label="ایمیل اصلی" value={text(record, 'primaryEmailMasked')} />
+              <ProfileData
+                label="نام انگلیسی"
+                value={text(record, 'englishName')}
+              />
+              <ProfileData
+                label="نوع شخصیت"
+                value={partnerPersonType(record)}
+              />
+              <ProfileData
+                label="مخاطب اصلی"
+                value={text(record, 'primaryContactName')}
+              />
+              <ProfileData
+                label="تلفن اصلی"
+                value={text(record, 'primaryPhoneMasked')}
+              />
+              <ProfileData
+                label="ایمیل اصلی"
+                value={text(record, 'primaryEmailMasked')}
+              />
               <ProfileData
                 label="سازمان"
                 value={text(record, 'organizationName')}
@@ -655,7 +672,12 @@ export function MasterDataSuppliersWorkspace() {
                     >
                       {record.name}
                     </button>
-                    <p className="mt-1 text-xs font-normal text-muted-foreground" dir="ltr">{text(record, 'englishName')}</p>
+                    <p
+                      className="mt-1 text-xs font-normal text-muted-foreground"
+                      dir="ltr"
+                    >
+                      {text(record, 'englishName')}
+                    </p>
                   </td>
                   <td className="p-4">
                     {text(record, 'countryName')} / {text(record, 'cityName')}
@@ -670,11 +692,11 @@ export function MasterDataSuppliersWorkspace() {
                   </td>
                   <td className="p-4">
                     <CollaborationBadge
-                      value={text(
-                        record,
-                        'collaborationStatus',
-                        'UNDER_REVIEW',
-                      )}
+                      value={
+                        record.status === 'inactive'
+                          ? 'INACTIVE'
+                          : text(record, 'collaborationStatus', 'UNDER_REVIEW')
+                      }
                     />
                   </td>
                   <td className="p-4">{rowActions(record)}</td>
@@ -721,17 +743,31 @@ export function MasterDataSuppliersWorkspace() {
                     >
                       {record.name}
                     </button>
-                    <p className="mt-1 text-xs font-normal text-muted-foreground" dir="ltr">{text(record, 'englishName')}</p>
+                    <p
+                      className="mt-1 text-xs font-normal text-muted-foreground"
+                      dir="ltr"
+                    >
+                      {text(record, 'englishName')}
+                    </p>
                   </td>
                   <td className="p-4">
-                    {text(record, 'organizationName')} / {partnerPersonType(record)}
+                    {text(record, 'organizationName')} /{' '}
+                    {partnerPersonType(record)}
                   </td>
                   <td className="p-4">
                     {text(record, 'countryName')} / {text(record, 'cityName')}
                   </td>
                   <td className="p-4 text-muted-foreground">
-                    <span className="block text-xs">{text(record, 'primaryContactName')}</span>
-                    <span dir="ltr">{text(record, 'primaryPhoneMasked', text(record, 'primaryEmailMasked'))}</span>
+                    <span className="block text-xs">
+                      {text(record, 'primaryContactName')}
+                    </span>
+                    <span dir="ltr">
+                      {text(
+                        record,
+                        'primaryPhoneMasked',
+                        text(record, 'primaryEmailMasked'),
+                      )}
+                    </span>
                   </td>
                   <td className="p-4">
                     <ServiceChips value={text(record, 'serviceNames', '')} />
@@ -739,11 +775,11 @@ export function MasterDataSuppliersWorkspace() {
                   <td className="p-4 text-muted-foreground">—</td>
                   <td className="p-4">
                     <CollaborationBadge
-                      value={text(
-                        record,
-                        'collaborationStatus',
-                        'UNDER_REVIEW',
-                      )}
+                      value={
+                        record.status === 'inactive'
+                          ? 'INACTIVE'
+                          : text(record, 'collaborationStatus', 'UNDER_REVIEW')
+                      }
                     />
                   </td>
                   <td className="p-4">{rowActions(record)}</td>
@@ -817,6 +853,11 @@ export function MasterDataSuppliersWorkspace() {
                           </Badge>
                         </div>
                         <p className="mt-3 text-xs text-muted-foreground">
+                          <Badge>
+                            {record.status === 'active'
+                              ? 'رکورد فعال'
+                              : 'رکورد غیرفعال'}
+                          </Badge>{' '}
                           خدمات: {text(record, 'serviceNames')}
                         </p>
                         <footer className="mt-3 border-t border-border pt-3">
@@ -943,6 +984,7 @@ export function MasterDataSuppliersWorkspace() {
         tone="warning"
       />
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
+        {columnFilterControls}
         <FormField id="supplier-search" label="جستجو">
           <div className="relative">
             <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -979,6 +1021,7 @@ export function MasterDataSuppliersWorkspace() {
         <Button
           onClick={() => {
             setSearch('');
+            resetColumnFilters();
             setStatus('all');
             setPage(1);
           }}

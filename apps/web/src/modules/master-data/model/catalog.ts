@@ -110,8 +110,20 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: 'Iran',
         required: true,
       },
+      {
+        key: 'displayOrder',
+        label: 'ترتیب نمایش',
+        type: 'number',
+        placeholder: '0',
+        hint: 'عدد صحیح از صفر تا ۱۰۰٬۰۰۰',
+      },
     ],
-    preview: { iso2Code: 'IR', name: 'ایران', englishName: 'Iran' },
+    preview: {
+      iso2Code: 'IR',
+      name: 'ایران',
+      englishName: 'Iran',
+      displayOrder: '0',
+    },
   },
   {
     key: 'regions',
@@ -261,7 +273,8 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     label: 'ترمینال‌ها',
     singularLabel: 'ترمینال',
     group: 'جغرافیا',
-    description: 'ترمینال وابسته به فرودگاه با نوع داخلی، بین‌المللی، مشترک یا VIP.',
+    description:
+      'ترمینال وابسته به فرودگاه با نوع داخلی، بین‌المللی، مشترک یا VIP.',
     fields: [
       nameField,
       {
@@ -291,12 +304,28 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         ],
       },
       { key: 'gateCount', label: 'تعداد گیت', type: 'number', placeholder: '' },
-      { key: 'operatingHoursMode', label: 'ساعت فعالیت', type: 'select', placeholder: '', options: [
-        { value: 'ALL_DAY', label: '۲۴ ساعته' },
-        { value: 'TIME_RANGE', label: 'بازه ساعت' },
-      ] },
-      { key: 'opensAt', label: 'شروع فعالیت', type: 'text', placeholder: '05:00' },
-      { key: 'closesAt', label: 'پایان فعالیت', type: 'text', placeholder: '24:00' },
+      {
+        key: 'operatingHoursMode',
+        label: 'ساعت فعالیت',
+        type: 'select',
+        placeholder: '',
+        options: [
+          { value: 'ALL_DAY', label: '۲۴ ساعته' },
+          { value: 'TIME_RANGE', label: 'بازه ساعت' },
+        ],
+      },
+      {
+        key: 'opensAt',
+        label: 'شروع فعالیت',
+        type: 'text',
+        placeholder: '05:00',
+      },
+      {
+        key: 'closesAt',
+        label: 'پایان فعالیت',
+        type: 'text',
+        placeholder: '24:00',
+      },
     ],
     preview: {
       name: 'ترمینال ۱',
@@ -1222,7 +1251,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         required: true,
       },
     ],
-    preview: { name: 'شرکت اتوبوس', organizationId: 'UUID', supplierId: '', countryId: 'UUID' },
+    preview: {
+      name: 'شرکت اتوبوس',
+      organizationId: 'UUID',
+      supplierId: '',
+      countryId: 'UUID',
+    },
   },
   {
     key: 'bus-types',
@@ -1452,7 +1486,13 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     group: 'اقامت',
     description: 'کاتالوگ مستقل Meal Plan و Service Code با وعده‌های شامل‌شده.',
     fields: [
-      { key: 'code', label: 'کد سرویس', type: 'text', placeholder: 'BB / RO', required: true },
+      {
+        key: 'code',
+        label: 'کد سرویس',
+        type: 'text',
+        placeholder: 'BB / RO',
+        required: true,
+      },
       nameField,
       {
         key: 'englishName',
@@ -1573,8 +1613,14 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       'Profile مشترک Organization با roleهای چندگانه Agency/Corporate.',
     fields: [
       {
-        key: 'personType', label: 'نوع شخصیت', type: 'select', placeholder: '',
-        options: [{ value: 'NATURAL', label: 'حقیقی' }, { value: 'LEGAL', label: 'حقوقی' }],
+        key: 'personType',
+        label: 'نوع شخصیت',
+        type: 'select',
+        placeholder: '',
+        options: [
+          { value: 'NATURAL', label: 'حقیقی' },
+          { value: 'LEGAL', label: 'حقوقی' },
+        ],
         hint: 'این مشخصه متعلق به سازمان است و بین پروفایل‌های آن مشترک است.',
       },
       {
@@ -1614,7 +1660,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'پروفایل مرجع تأمین‌کننده متصل به Organization یکتا؛ قرارداد و بدهی در ماژول مالک باقی می‌ماند.',
     fields: [
-      { key: 'englishName', label: 'نام انگلیسی تأمین‌کننده', type: 'text', placeholder: '' },
+      {
+        key: 'englishName',
+        label: 'نام انگلیسی تأمین‌کننده',
+        type: 'text',
+        placeholder: '',
+      },
       {
         key: 'organizationId',
         label: 'سازمان تأمین‌کننده',
@@ -1661,8 +1712,13 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: 'HOTEL,FLIGHT',
         hint: 'یک یا چند خدمت از کاتالوگ انتخاب کنید.',
       },
-      { key: 'primaryContactId', label: 'تماس اصلی', type: 'text', placeholder: '',
-        hint: 'از مخاطبان سازمان انتخاب کنید؛ تلفن و ایمیل فقط ماسک‌شده نمایش داده می‌شوند.' },
+      {
+        key: 'primaryContactId',
+        label: 'تماس اصلی',
+        type: 'text',
+        placeholder: '',
+        hint: 'از مخاطبان سازمان انتخاب کنید؛ تلفن و ایمیل فقط ماسک‌شده نمایش داده می‌شوند.',
+      },
     ],
     preview: {
       organizationId: 'org_supplier',
@@ -1678,7 +1734,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       'Profile عملیاتی کارگزار با reference سازمان؛ بدهی و قرارداد اینجا نگهداری نمی‌شود.',
     fields: [
       nameField,
-      { key: 'englishName', label: 'نام انگلیسی کارگزار', type: 'text', placeholder: '' },
+      {
+        key: 'englishName',
+        label: 'نام انگلیسی کارگزار',
+        type: 'text',
+        placeholder: '',
+      },
       {
         key: 'organizationId',
         label: 'سازمان کارگزار',
@@ -1718,8 +1779,13 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: 'HOTEL,FLIGHT',
         hint: 'یک یا چند خدمت از کاتالوگ انتخاب کنید.',
       },
-      { key: 'primaryContactId', label: 'تماس اصلی', type: 'text', placeholder: '',
-        hint: 'از مخاطبان سازمان انتخاب کنید؛ تلفن و ایمیل فقط ماسک‌شده نمایش داده می‌شوند.' },
+      {
+        key: 'primaryContactId',
+        label: 'تماس اصلی',
+        type: 'text',
+        placeholder: '',
+        hint: 'از مخاطبان سازمان انتخاب کنید؛ تلفن و ایمیل فقط ماسک‌شده نمایش داده می‌شوند.',
+      },
     ],
     preview: {
       code: 'BROKER_SAMPLE',

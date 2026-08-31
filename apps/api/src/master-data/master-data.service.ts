@@ -1,3 +1,4 @@
+import { columnFilterWhere } from './catalog-filters';
 import { createHash } from 'node:crypto';
 
 import { isMasterTransportFormResource } from '@rubi/contracts';
@@ -24,8 +25,14 @@ import { MasterDataContactCrypto } from './master-data-contact.crypto';
 import { isMasterDataDependencyError } from './master-data-deletion.policy';
 import { prepareTourTypeForm } from './tour-type-form.policy';
 import { prepareTerminalForm } from './terminal-form.policy';
-import { prepareMealServiceForm, rethrowMealServiceWriteError } from './meal-service-form.policy';
-import { completeTravelReferenceDetails, prepareTravelReferenceForm } from './travel-reference-form.policy';
+import {
+  prepareMealServiceForm,
+  rethrowMealServiceWriteError,
+} from './meal-service-form.policy';
+import {
+  completeTravelReferenceDetails,
+  prepareTravelReferenceForm,
+} from './travel-reference-form.policy';
 import {
   MasterDataRepository,
   toMasterDataRecord,
@@ -227,7 +234,7 @@ function normalizedWebsite(value: unknown): string | null {
 }
 
 const allowedFields: Record<MasterDataResource, readonly string[]> = {
-  countries: ['iso2Code', 'name', 'englishName'],
+  countries: ['iso2Code', 'name', 'englishName', 'displayOrder'],
   regions: [
     'code',
     'name',
@@ -248,7 +255,17 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'latitude',
     'longitude',
   ],
-  terminals: ['code', 'name', 'englishName', 'airportId', 'terminalType', 'gateCount', 'operatingHoursMode', 'opensAt', 'closesAt'],
+  terminals: [
+    'code',
+    'name',
+    'englishName',
+    'airportId',
+    'terminalType',
+    'gateCount',
+    'operatingHoursMode',
+    'opensAt',
+    'closesAt',
+  ],
   currencies: [
     'code',
     'name',
@@ -444,7 +461,13 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'memberHotelIds',
     'backupMemberIds',
   ],
-  organizations: ['code', 'legalName', 'displayName', 'roleCodes', 'personType'],
+  organizations: [
+    'code',
+    'legalName',
+    'displayName',
+    'roleCodes',
+    'personType',
+  ],
   suppliers: [
     'englishName',
     'primaryContactId',
@@ -659,6 +682,8 @@ const MAX_DIRECT_EXPORT_ROWS = 10_000;
 function validateExportInput(input: ExportInput): MasterDataResource {
   const resource = resourceOf(input.resource);
   const allowedFilterKeys = [
+    'columnFilter1',
+    'columnFilter2',
     'search',
     'status',
     'transportStatus',
@@ -751,8 +776,13 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     !paymentDirections.has(String(input.filters.paymentDirection))
   )
     throw new BadRequestException('جهت روش پرداخت معتبر نیست.');
-  if (input.filters.mealServiceStatus !== undefined &&
-    (input.resource !== 'meal-services' || !['active', 'inactive', 'under_review'].includes(String(input.filters.mealServiceStatus))))
+  if (
+    input.filters.mealServiceStatus !== undefined &&
+    (input.resource !== 'meal-services' ||
+      !['active', 'inactive', 'under_review'].includes(
+        String(input.filters.mealServiceStatus),
+      ))
+  )
     throw new BadRequestException('فیلتر وضعیت وعده/سرویس معتبر نیست.');
   if (
     input.filters.mealServiceCategory !== undefined &&
@@ -793,11 +823,16 @@ function validateExportInput(input: ExportInput): MasterDataResource {
       Number(input.filters.referenceCapacity) > 20)
   )
     throw new BadRequestException('ظرفیت استاندارد خروجی معتبر نیست.');
-  if (input.filters.transportStatus !== undefined &&
-      (!isMasterTransportFormResource(resource) ||
-       typeof input.filters.transportStatus !== 'string' ||
-       !['ACTIVE', 'INACTIVE', 'UNDER_REVIEW'].includes(input.filters.transportStatus)))
+  if (
+    input.filters.transportStatus !== undefined &&
+    (!isMasterTransportFormResource(resource) ||
+      typeof input.filters.transportStatus !== 'string' ||
+      !['ACTIVE', 'INACTIVE', 'UNDER_REVIEW'].includes(
+        input.filters.transportStatus,
+      ))
+  )
     throw new BadRequestException('وضعیت حمل‌ونقل خروجی معتبر نیست.');
+  columnFilterWhere(resource, input.filters);
   const allowedColumns = new Set([
     ...(isMasterTransportFormResource(resource) ? ['transportStatus'] : []),
     ...allowedFields[resource],
@@ -826,8 +861,20 @@ function validateExportInput(input: ExportInput): MasterDataResource {
 
 function exportQuery(input: ExportInput): MasterDataListQuery {
   return {
+    ...(typeof input.filters.columnFilter1 === 'string'
+      ? { columnFilter1: input.filters.columnFilter1 }
+      : {}),
+    ...(typeof input.filters.columnFilter2 === 'string'
+      ? { columnFilter2: input.filters.columnFilter2 }
+      : {}),
     ...(typeof input.filters.transportStatus === 'string'
-      ? { transportStatus: input.filters.transportStatus as Exclude<MasterDataListQuery['transportStatus'], undefined> } : {}),
+      ? {
+          transportStatus: input.filters.transportStatus as Exclude<
+            MasterDataListQuery['transportStatus'],
+            undefined
+          >,
+        }
+      : {}),
     search:
       typeof input.filters.search === 'string' ? input.filters.search : '',
     status: (input.filters.status ?? 'all') as MasterDataListQuery['status'],
@@ -911,7 +958,12 @@ function exportQuery(input: ExportInput): MasterDataListQuery {
       ? { referenceCapacity: input.filters.referenceCapacity }
       : {}),
     ...(typeof input.filters.mealServiceStatus === 'string'
-      ? { mealServiceStatus: input.filters.mealServiceStatus as Exclude<MasterDataListQuery['mealServiceStatus'], undefined> }
+      ? {
+          mealServiceStatus: input.filters.mealServiceStatus as Exclude<
+            MasterDataListQuery['mealServiceStatus'],
+            undefined
+          >,
+        }
       : {}),
     ...(typeof input.filters.mealServiceCategory === 'string'
       ? {
@@ -1085,23 +1137,24 @@ export class MasterDataService {
       resource === 'meal-services'
         ? prepareMealServiceForm(values, actor, true)
         : resource === 'tour-types'
-        ? prepareTourTypeForm(values, actor, true)
-        : resource === 'terminals'
-          ? prepareTerminalForm(values, actor, true)
-        : resource === 'transfer-types' || resource === 'visa-services'
-          ? prepareTravelReferenceForm(resource, values, actor, true)
-        : { values, statusData: {} };
+          ? prepareTourTypeForm(values, actor, true)
+          : resource === 'terminals'
+            ? prepareTerminalForm(values, actor, true)
+            : resource === 'transfer-types' || resource === 'visa-services'
+              ? prepareTravelReferenceForm(resource, values, actor, true)
+              : { values, statusData: {} };
     const data = await this.prepare(resource, form.values, actor.userId, false);
-    Object.assign(data, form.statusData, transportStatusData(resource, values, actor));
-    const row = await this.repository.create(
-      resource,
+    Object.assign(
       data,
-      actor.userId,
-      branchOf(actor, requestedBranch),
-    ).catch((error: unknown) => {
-      if (resource === 'meal-services') rethrowMealServiceWriteError(error);
-      throw error;
-    });
+      form.statusData,
+      transportStatusData(resource, values, actor),
+    );
+    const row = await this.repository
+      .create(resource, data, actor.userId, branchOf(actor, requestedBranch))
+      .catch((error: unknown) => {
+        if (resource === 'meal-services') rethrowMealServiceWriteError(error);
+        throw error;
+      });
     return { data: toMasterDataRecord(resource, row) };
   }
 
@@ -1131,25 +1184,42 @@ export class MasterDataService {
       resource === 'meal-services'
         ? prepareMealServiceForm(values, actor, false)
         : resource === 'tour-types'
-        ? prepareTourTypeForm(values, actor, false)
-        : resource === 'terminals'
-          ? prepareTerminalForm(values, actor, false, (await this.repository.find(resource, id)) ?? {})
-        : resource === 'transfer-types' || resource === 'visa-services'
-          ? prepareTravelReferenceForm(resource, values, actor, false)
-        : { values, statusData: {} };
-    const data = await this.prepare(resource, form.values, actor.userId, true, id);
-    Object.assign(data, form.statusData, transportStatusData(resource, values, actor));
-    const row = await this.repository.update(
+          ? prepareTourTypeForm(values, actor, false)
+          : resource === 'terminals'
+            ? prepareTerminalForm(
+                values,
+                actor,
+                false,
+                (await this.repository.find(resource, id)) ?? {},
+              )
+            : resource === 'transfer-types' || resource === 'visa-services'
+              ? prepareTravelReferenceForm(resource, values, actor, false)
+              : { values, statusData: {} };
+    const data = await this.prepare(
       resource,
-      id,
-      data,
-      version,
+      form.values,
       actor.userId,
-      branchOf(actor, requestedBranch),
-    ).catch((error: unknown) => {
-      if (resource === 'meal-services') rethrowMealServiceWriteError(error);
-      throw error;
-    });
+      true,
+      id,
+    );
+    Object.assign(
+      data,
+      form.statusData,
+      transportStatusData(resource, values, actor),
+    );
+    const row = await this.repository
+      .update(
+        resource,
+        id,
+        data,
+        version,
+        actor.userId,
+        branchOf(actor, requestedBranch),
+      )
+      .catch((error: unknown) => {
+        if (resource === 'meal-services') rethrowMealServiceWriteError(error);
+        throw error;
+      });
     if (!row)
       throw new ConflictException({
         code: 'CONCURRENT_MODIFICATION',
@@ -1350,7 +1420,8 @@ export class MasterDataService {
     entityId?: string,
   ): Promise<Record<string, unknown>> {
     const unknown = Object.keys(values).filter(
-      (key) => !allowedFields[resource].includes(key) &&
+      (key) =>
+        !allowedFields[resource].includes(key) &&
         !(isMasterTransportFormResource(resource) && key === 'transportStatus'),
     );
     if (unknown.length)
@@ -1369,10 +1440,19 @@ export class MasterDataService {
     if (isMasterTransportFormResource(resource)) {
       delete data.transportStatus;
       for (const field of requiredFields[resource]) {
-        if (partial && Object.hasOwn(data, field) && (data[field] === null || data[field] === ''))
+        if (
+          partial &&
+          Object.hasOwn(data, field) &&
+          (data[field] === null || data[field] === '')
+        )
           throw new BadRequestException(`${field} الزامی است.`);
       }
-      for (const [field, limit] of [['name', 160], ['englishName', 160], ['manufacturer', 120], ['model', 120]] as const) {
+      for (const [field, limit] of [
+        ['name', 160],
+        ['englishName', 160],
+        ['manufacturer', 120],
+        ['model', 120],
+      ] as const) {
         if (!Object.hasOwn(data, field)) continue;
         if (data[field] !== null && typeof data[field] !== 'string')
           throw new BadRequestException(`${field} باید متن باشد.`);
@@ -1383,13 +1463,23 @@ export class MasterDataService {
       }
       // A UUID alone is not proof of an authorized, existing Documents asset.
       if (Object.hasOwn(data, 'logoFileReference')) {
-        const current = partial && entityId ? await this.repository.find(resource, entityId) : null;
-        if (data.logoFileReference && data.logoFileReference !== current?.logoFileReference)
-          throw new BadRequestException('انتخاب لوگو تا آماده‌شدن اتصال اسناد امکان‌پذیر نیست.');
+        const current =
+          partial && entityId
+            ? await this.repository.find(resource, entityId)
+            : null;
+        if (
+          data.logoFileReference &&
+          data.logoFileReference !== current?.logoFileReference
+        )
+          throw new BadRequestException(
+            'انتخاب لوگو تا آماده‌شدن اتصال اسناد امکان‌پذیر نیست.',
+          );
       }
     }
     if (resource === 'organizations' && Object.hasOwn(data, 'personType')) {
-      const personType = String(data.personType ?? '').trim().toUpperCase();
+      const personType = String(data.personType ?? '')
+        .trim()
+        .toUpperCase();
       if (personType && !['NATURAL', 'LEGAL'].includes(personType))
         throw new BadRequestException('نوع شخصیت باید حقیقی یا حقوقی باشد.');
       data.personType = personType || null;
@@ -1487,6 +1577,14 @@ export class MasterDataService {
         });
       delete data.iso2Code;
       data.code = iso2Code;
+    }
+    if (resource === 'countries' && data.displayOrder !== undefined) {
+      const order = Number(data.displayOrder || 0);
+      if (!Number.isSafeInteger(order) || order < 0 || order > 100000)
+        throw new BadRequestException(
+          'ترتیب کشور باید عدد صحیح بین صفر و ۱۰۰٬۰۰۰ باشد.',
+        );
+      data.displayOrder = order;
     }
     const usesGeneratedCode =
       resource !== 'exchange-rates' &&
@@ -1603,10 +1701,7 @@ export class MasterDataService {
           'شرکت اتوبوس باید دقیقاً به یک Organization یا Provider متصل باشد.',
         );
     }
-    if (
-      resource === 'visa-services' &&
-      data.guidanceFileReference === ''
-    )
+    if (resource === 'visa-services' && data.guidanceFileReference === '')
       data.guidanceFileReference = null;
     if (resource === 'suppliers' || resource === 'brokers') {
       for (const optionalReference of ['countryId', 'cityId']) {
@@ -1707,7 +1802,11 @@ export class MasterDataService {
       }
       if (data.allowance !== undefined) {
         const allowance = String(data.allowance).trim();
-        if (!/^\d+(\.\d{1,2})?$/.test(allowance) || Number(allowance) <= 0 || Number(allowance) > 999999.99)
+        if (
+          !/^\d+(\.\d{1,2})?$/.test(allowance) ||
+          Number(allowance) <= 0 ||
+          Number(allowance) > 999999.99
+        )
           throw new BadRequestException('مقدار بار باید Decimal مثبت باشد.');
         data.allowance = allowance;
       }
@@ -1716,16 +1815,22 @@ export class MasterDataService {
         if (!pieceCount) data.pieceCount = null;
         else if (
           !Number.isInteger(Number(pieceCount)) ||
-          Number(pieceCount) < 1 || Number(pieceCount) > 2147483647
+          Number(pieceCount) < 1 ||
+          Number(pieceCount) > 2147483647
         )
           throw new BadRequestException(
             'تعداد قطعه بار باید عدد صحیح مثبت باشد.',
           );
         else data.pieceCount = Number(pieceCount);
       }
-      const current = partial && entityId ? await this.repository.find(resource, entityId) : null;
+      const current =
+        partial && entityId
+          ? await this.repository.find(resource, entityId)
+          : null;
       const unit = data.unit ?? current?.unit;
-      const pieces = Object.hasOwn(data, 'pieceCount') ? data.pieceCount : current?.pieceCount;
+      const pieces = Object.hasOwn(data, 'pieceCount')
+        ? data.pieceCount
+        : current?.pieceCount;
       if (unit === 'PC' && !pieces)
         throw new BadRequestException('برای واحد قطعه، تعداد قطعه الزامی است.');
     }
@@ -1800,15 +1905,16 @@ export class MasterDataService {
         data.amenities = [...new Set(amenities)];
       }
     }
-    if ((resource === 'bus-types' || resource === 'train-types') && Object.hasOwn(data, 'facilityIds')) {
+    if (
+      (resource === 'bus-types' || resource === 'train-types') &&
+      Object.hasOwn(data, 'facilityIds')
+    ) {
       const facilityIds = referenceIds(data.facilityIds, 'امکانات وسیله');
       const facilities = await Promise.all(
         facilityIds.map((id) => this.repository.find('facilities', id)),
       );
       if (facilities.some((facility) => !facility?.isActive))
-        throw new BadRequestException(
-          'یک یا چند امکان فعال وسیله یافت نشد.',
-        );
+        throw new BadRequestException('یک یا چند امکان فعال وسیله یافت نشد.');
       delete data.facilityIds;
       data.facilities = partial
         ? {
@@ -1965,10 +2071,13 @@ export class MasterDataService {
       }
     }
     if (resource === 'baggage-rules' || resource === 'manifest-templates') {
-      const current = resource === 'baggage-rules' && partial && entityId
-        ? await this.repository.find(resource, entityId) : null;
+      const current =
+        resource === 'baggage-rules' && partial && entityId
+          ? await this.repository.find(resource, entityId)
+          : null;
       if (resource === 'baggage-rules' && partial) {
-        if (!Object.hasOwn(data, 'validFrom')) data.validFrom = current?.validFrom;
+        if (!Object.hasOwn(data, 'validFrom'))
+          data.validFrom = current?.validFrom;
         if (!Object.hasOwn(data, 'validTo')) data.validTo = current?.validTo;
       }
       const validFrom = data.validFrom
@@ -2489,8 +2598,7 @@ export class MasterDataService {
         Object.assign(data, {
           [`${prefix}Encrypted`]: protectedPhone.encrypted,
           [`${prefix}EncryptionIv`]: protectedPhone.encryptionIv,
-          [`${prefix}EncryptionAuthTag`]:
-            protectedPhone.encryptionAuthTag,
+          [`${prefix}EncryptionAuthTag`]: protectedPhone.encryptionAuthTag,
           [`${prefix}EncryptionKeyVersion`]:
             protectedPhone.encryptionKeyVersion,
           [`${prefix}Masked`]: protectedPhone.masked,
@@ -2504,19 +2612,13 @@ export class MasterDataService {
         throw new BadRequestException('دامنه نوع تور معتبر نیست.');
       data.scope = scope;
     }
-    if (
-      resource === 'transfer-types' &&
-      data.serviceMode !== undefined
-    ) {
+    if (resource === 'transfer-types' && data.serviceMode !== undefined) {
       const mode = String(data.serviceMode).trim().toUpperCase();
       if (!transferServiceModes.has(mode))
         throw new BadRequestException('شیوه سرویس ترانسفر معتبر نیست.');
       data.serviceMode = mode;
     }
-    if (
-      resource === 'cip-services' &&
-      data.passengerScope !== undefined
-    ) {
+    if (resource === 'cip-services' && data.passengerScope !== undefined) {
       const scope = String(data.passengerScope).trim().toUpperCase();
       if (!cipPassengerScopes.has(scope))
         throw new BadRequestException('دامنه مسافر خدمت CIP معتبر نیست.');
@@ -2582,12 +2684,19 @@ export class MasterDataService {
       }
     }
     if (resource === 'transfer-types' || resource === 'visa-services') {
-      const coupledFields = resource === 'transfer-types'
-        ? ['suggestedCapacity', 'suggestedCapacityMin']
-        : ['referenceValidityMode', 'referenceValidityDays'];
+      const coupledFields =
+        resource === 'transfer-types'
+          ? ['suggestedCapacity', 'suggestedCapacityMin']
+          : ['referenceValidityMode', 'referenceValidityDays'];
       if (coupledFields.some((field) => Object.hasOwn(data, field))) {
-        const existing = partial && entityId ? await this.repository.find(resource, entityId) : null;
-        Object.assign(data, completeTravelReferenceDetails(resource, data, existing));
+        const existing =
+          partial && entityId
+            ? await this.repository.find(resource, entityId)
+            : null;
+        Object.assign(
+          data,
+          completeTravelReferenceDetails(resource, data, existing),
+        );
       }
     }
     if (resource === 'organizations' && Object.hasOwn(data, 'roleCodes')) {
@@ -2758,25 +2867,41 @@ export class MasterDataService {
       }
     }
     if (resource === 'suppliers' || resource === 'brokers') {
-      const existing = entityId ? await this.repository.find(resource, entityId) : null;
+      const existing = entityId
+        ? await this.repository.find(resource, entityId)
+        : null;
       const organizationId = Object.hasOwn(data, 'organizationId')
-        ? data.organizationId : existing?.organizationId;
+        ? data.organizationId
+        : existing?.organizationId;
       const primaryContactId = Object.hasOwn(data, 'primaryContactId')
-        ? data.primaryContactId : existing?.primaryContactId;
+        ? data.primaryContactId
+        : existing?.primaryContactId;
       if (primaryContactId !== null && primaryContactId !== undefined) {
-        if (typeof primaryContactId !== 'string' || !uuidPattern.test(primaryContactId))
+        if (
+          typeof primaryContactId !== 'string' ||
+          !uuidPattern.test(primaryContactId)
+        )
           throw new BadRequestException('تماس اصلی باید شناسه معتبر باشد.');
-        const contact = await this.repository.find('organization-contacts', primaryContactId);
+        const contact = await this.repository.find(
+          'organization-contacts',
+          primaryContactId,
+        );
         if (!contact?.isActive || contact.organizationId !== organizationId)
-          throw new BadRequestException('تماس اصلی باید مخاطب فعال همان سازمان باشد.');
+          throw new BadRequestException(
+            'تماس اصلی باید مخاطب فعال همان سازمان باشد.',
+          );
       }
       if (typeof data.countryId === 'string') {
         const country = await this.repository.find('countries', data.countryId);
         if (!country?.isActive)
           throw new BadRequestException('کشور فعال برای پروفایل یافت نشد.');
       }
-      const cityId = Object.hasOwn(data, 'cityId') ? data.cityId : existing?.cityId;
-      const countryId = Object.hasOwn(data, 'countryId') ? data.countryId : existing?.countryId;
+      const cityId = Object.hasOwn(data, 'cityId')
+        ? data.cityId
+        : existing?.cityId;
+      const countryId = Object.hasOwn(data, 'countryId')
+        ? data.countryId
+        : existing?.countryId;
       if (typeof cityId === 'string') {
         const city = await this.repository.find('cities', cityId);
         if (

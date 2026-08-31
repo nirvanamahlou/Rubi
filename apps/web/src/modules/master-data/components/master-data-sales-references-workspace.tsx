@@ -1,4 +1,6 @@
 'use client';
+import { useMasterDataColumnFilters } from './master-data-column-filters';
+import { MasterDataPowerButton } from './master-data-power-button';
 
 import type {
   MasterDataRecord,
@@ -126,10 +128,14 @@ export function MasterDataSalesReferencesWorkspace() {
   const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
   const CurrentIcon = currentTab.icon;
 
+  const { columnFilters, columnFilterControls, resetColumnFilters } =
+    useMasterDataColumnFilters(resource, () => setPage(1));
+
   const load = useCallback(async () => {
     setRequestState('loading');
     try {
       const response = await masterDataApi.list(resource, {
+        ...columnFilters,
         search,
         status,
         sortBy: 'name',
@@ -148,7 +154,7 @@ export function MasterDataSalesReferencesWorkspace() {
           : 'error',
       );
     }
-  }, [page, resource, search, status]);
+  }, [columnFilters, page, resource, search, status]);
 
   const loadSummary = useCallback(async () => {
     try {
@@ -216,6 +222,7 @@ export function MasterDataSalesReferencesWorkspace() {
   function changeResource(next: SalesReferenceResource) {
     setResource(next);
     setSearch('');
+    resetColumnFilters();
     setStatus('all');
     setPage(1);
     setSelected(undefined);
@@ -254,21 +261,9 @@ export function MasterDataSalesReferencesWorkspace() {
     await loadSummary();
   }
 
-  async function toggle(record: MasterDataRecord) {
-    try {
-      await masterDataApi.setStatus(
-        resource,
-        record.id,
-        record.status === 'active' ? 'inactive' : 'active',
-        record.version,
-      );
-      setNotice('وضعیت با کنترل نسخه و Audit به‌روزرسانی شد.');
-      await Promise.all([load(), loadSummary()]);
-    } catch (error) {
-      setNotice(
-        error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.',
-      );
-    }
+  async function afterStatusChange() {
+    setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
+    await Promise.all([load(), loadSummary()]);
   }
 
   async function downloadExcel() {
@@ -277,7 +272,13 @@ export function MasterDataSalesReferencesWorkspace() {
       const response = await masterDataApi.downloadExcel({
         resource,
         format: 'xlsx',
-        filters: { search, status, sortBy: 'name', sortDirection: 'asc' },
+        filters: {
+          ...columnFilters,
+          search,
+          status,
+          sortBy: 'name',
+          sortDirection: 'asc',
+        },
         columns: [
           'code',
           'name',
@@ -431,15 +432,10 @@ export function MasterDataSalesReferencesWorkspace() {
                       record={record}
                       onDeleted={afterDelete}
                     />
-                    <Button
-                      onClick={() => void toggle(record)}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      {record.status === 'active'
-                        ? 'غیرفعال‌سازی'
-                        : 'فعال‌سازی'}
-                    </Button>
+                    <MasterDataPowerButton
+                      record={record}
+                      onChanged={afterStatusChange}
+                    />
                   </div>
                 </td>
               </tr>
@@ -509,6 +505,7 @@ export function MasterDataSalesReferencesWorkspace() {
         tone="warning"
       />
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
+        {columnFilterControls}
         <FormField id="sales-reference-search" label="جست‌وجو">
           <div className="relative">
             <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -545,6 +542,7 @@ export function MasterDataSalesReferencesWorkspace() {
         <Button
           onClick={() => {
             setSearch('');
+            resetColumnFilters();
             setStatus('all');
             setPage(1);
           }}
