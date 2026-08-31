@@ -1,6 +1,7 @@
 'use client';
 
 import type {
+  BranchReference,
   CustomerActivityEntry,
   CustomerAuditEntry,
   CustomerDetail,
@@ -88,6 +89,7 @@ import {
   normalizeNationalId,
 } from '../model/customer';
 import { formatCustomerDate } from '../model/customer-calendar';
+import { customerBranchOptions } from '../model/customer-branches';
 import {
   customerImportHeaders,
   CUSTOMER_IMPORT_TEMPLATE_VERSION,
@@ -2279,38 +2281,48 @@ export function CustomerWorkspace() {
   const [metrics, setMetrics] = useState<CustomerListMetrics>(emptyMetrics);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [kind, setKind] = useState<NonNullable<CustomerListQuery['kind']>>(
-    () => {
-      const value = searchParams.get('kind');
-      return value === 'person' || value === 'organization' ? value : 'all';
-    },
-  );
   const [branchId, setBranchId] = useState(
     () => safeCustomerId(searchParams.get('branchId')) ?? 'all',
   );
   const [allowedBranchIds, setAllowedBranchIds] = useState<readonly string[]>(
     [],
   );
-  const [updatedFrom, setUpdatedFrom] = useState(
-    () => searchParams.get('updatedFrom') ?? '',
+  const [branchReferences, setBranchReferences] = useState<
+    readonly BranchReference[]
+  >([]);
+  const [branchNamesState, setBranchNamesState] = useState<
+    'loading' | 'ready' | 'error'
+  >('loading');
+  const [branchNamesAttempt, setBranchNamesAttempt] = useState(0);
+  const branchOptions = customerBranchOptions(
+    allowedBranchIds,
+    branchReferences,
   );
-  const [updatedTo, setUpdatedTo] = useState(
-    () => searchParams.get('updatedTo') ?? '',
-  );
+
+  useEffect(() => {
+    let cancelled = false;
+    void customersApi
+      .branchReferences()
+      .then((references) => {
+        if (cancelled) return;
+        setBranchReferences(references);
+        setBranchNamesState('ready');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setBranchReferences([]);
+        setBranchNamesState('error');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [branchNamesAttempt]);
   const [calendarMode, setCalendarMode] = useState<CustomerCalendarMode>(
     () =>
       (searchParams.get('calendar') === 'gregorian'
         ? 'gregorian'
         : 'persian') as CustomerCalendarMode,
   );
-  const [status, setStatus] = useState<CustomerListQuery['status']>(() => {
-    const value = searchParams.get('status');
-    return value === 'active' || value === 'inactive' ? value : 'all';
-  });
-  const [role, setRole] = useState<CustomerListQuery['role']>(() => {
-    const value = searchParams.get('role');
-    return value === 'customer' || value === 'passenger' ? value : 'all';
-  });
   const [acquaintanceMethodId, setAcquaintanceMethodId] = useState(
     () => searchParams.get('acquaintanceMethodId') ?? 'all',
   );
@@ -2368,13 +2380,8 @@ export function CustomerWorkspace() {
 
   useEffect(() => {
     const params = new URLSearchParams();
-    params.set('kind', kind);
     params.set('branchId', branchId);
-    if (updatedFrom) params.set('updatedFrom', updatedFrom);
-    if (updatedTo) params.set('updatedTo', updatedTo);
     params.set('calendar', calendarMode);
-    params.set('status', status);
-    params.set('role', role);
     params.set('acquaintanceMethodId', acquaintanceMethodId);
     if (createdFrom) params.set('createdFrom', createdFrom);
     if (createdTo) params.set('createdTo', createdTo);
@@ -2390,20 +2397,15 @@ export function CustomerWorkspace() {
     acquaintanceMethodId,
     activeTab,
     branchId,
-    updatedFrom,
-    updatedTo,
     calendarMode,
     createdFrom,
     createdTo,
-    kind,
     page,
     pathname,
-    role,
     router,
     selectedId,
     sortBy,
     sortDirection,
-    status,
   ]);
 
   const load = useCallback(async () => {
@@ -2411,15 +2413,15 @@ export function CustomerWorkspace() {
     try {
       const response = await customersApi.list({
         search,
-        kind,
-        status,
-        role,
+        kind: 'all',
+        status: 'all',
+        role: 'all',
         branchId,
         acquaintanceMethodId,
         createdFrom: createdFrom || null,
         createdTo: createdTo || null,
-        updatedFrom: updatedFrom || null,
-        updatedTo: updatedTo || null,
+        updatedFrom: null,
+        updatedTo: null,
         sortBy,
         sortDirection,
         page,
@@ -2440,15 +2442,10 @@ export function CustomerWorkspace() {
     createdFrom,
     createdTo,
     branchId,
-    updatedFrom,
-    updatedTo,
-    kind,
     page,
-    role,
     search,
     sortBy,
     sortDirection,
-    status,
   ]);
 
   useEffect(() => {
@@ -2539,17 +2536,17 @@ export function CustomerWorkspace() {
     setExporting(true);
     setNotice(null);
     try {
-      const exportQuery = {
+      const exportQuery: CustomerListQuery = {
         search,
-        kind,
-        status,
-        role,
+        kind: 'all',
+        status: 'all',
+        role: 'all',
         branchId,
         acquaintanceMethodId,
         createdFrom: createdFrom || null,
         createdTo: createdTo || null,
-        updatedFrom: updatedFrom || null,
-        updatedTo: updatedTo || null,
+        updatedFrom: null,
+        updatedTo: null,
         sortBy,
         sortDirection,
         page: 1,
@@ -2934,26 +2931,9 @@ export function CustomerWorkspace() {
         </Dialog>
       ) : null}
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-4">
-        <FormField label="نوع شخص">
-          <Select
-            value={kind}
-            onValueChange={(value) => {
-              setKind(value as NonNullable<CustomerListQuery['kind']>);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger aria-label="فیلتر نوع شخص">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">همه اشخاص و سازمان‌ها</SelectItem>
-              <SelectItem value="person">شخص حقیقی</SelectItem>
-              <SelectItem value="organization">سازمان</SelectItem>
-            </SelectContent>
-          </Select>
-        </FormField>
         <FormField label="شعبه مجاز">
           <Select
+            disabled={branchNamesState === 'loading'}
             value={branchId}
             onValueChange={(value) => {
               setBranchId(value);
@@ -2965,13 +2945,41 @@ export function CustomerWorkspace() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">همه شعب مجاز</SelectItem>
-              {allowedBranchIds.map((id) => (
-                <SelectItem key={id} value={id}>
-                  شعبه {id}
+              {branchOptions.map((branch) => (
+                <SelectItem
+                  key={branch.id}
+                  value={branch.id}
+                  disabled={branch.unavailable}
+                >
+                  {branch.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {branchNamesState === 'loading' ? (
+            <p role="status" className="text-xs text-muted-foreground">
+              در حال دریافت نام شعب…
+            </p>
+          ) : branchNamesState === 'error' ||
+            branchOptions.some((branch) => branch.unavailable) ? (
+            <div
+              role="status"
+              className="flex items-center gap-2 text-xs text-muted-foreground"
+            >
+              نام شعبه در دسترس نیست.
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setBranchNamesState('loading');
+                  setBranchNamesAttempt((attempt) => attempt + 1);
+                }}
+              >
+                تلاش مجدد
+              </Button>
+            </div>
+          ) : null}
         </FormField>
         <FormField id="customer-search-live" label="جست‌وجو">
           <div className="relative">
@@ -2987,24 +2995,6 @@ export function CustomerWorkspace() {
               value={search}
             />
           </div>
-        </FormField>
-        <FormField label="وضعیت">
-          <Select
-            onValueChange={(value) => {
-              setStatus(value as CustomerListQuery['status']);
-              setPage(1);
-            }}
-            value={status}
-          >
-            <SelectTrigger aria-label="فیلتر وضعیت">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">همه</SelectItem>
-              <SelectItem value="active">فعال</SelectItem>
-              <SelectItem value="inactive">غیرفعال</SelectItem>
-            </SelectContent>
-          </Select>
         </FormField>
         <FormField label="نحوه آشنایی">
           <Select
@@ -3048,46 +3038,6 @@ export function CustomerWorkspace() {
             setPage(1);
           }}
           value={createdTo}
-        />
-        <FormField label="نقش">
-          <Select
-            onValueChange={(value) => {
-              setRole(value as CustomerListQuery['role']);
-              setPage(1);
-            }}
-            value={role}
-          >
-            <SelectTrigger aria-label="فیلتر نقش">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">همه</SelectItem>
-              <SelectItem value="customer">مشتری</SelectItem>
-              <SelectItem value="passenger">مسافر</SelectItem>
-            </SelectContent>
-          </Select>
-        </FormField>
-        <CustomerDateField
-          id="customer-updated-from"
-          label="ویرایش از تاریخ"
-          mode={calendarMode}
-          onModeChange={setCalendarMode}
-          onChange={(value) => {
-            setUpdatedFrom(value);
-            setPage(1);
-          }}
-          value={updatedFrom}
-        />
-        <CustomerDateField
-          id="customer-updated-to"
-          label="ویرایش تا تاریخ"
-          mode={calendarMode}
-          onModeChange={setCalendarMode}
-          onChange={(value) => {
-            setUpdatedTo(value);
-            setPage(1);
-          }}
-          value={updatedTo}
         />
         <FormField label="مرتب‌سازی">
           <Select
