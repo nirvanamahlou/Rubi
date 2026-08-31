@@ -35,6 +35,10 @@ export function validateMasterDataDraft(
     Object.entries(parsed.data).map(([key, value]) => [key, value.trim()]),
   );
   const errors: Record<string, string> = {};
+  if ((resource === 'suppliers' || resource === 'brokers') && (values.englishName?.length ?? 0) > 160)
+    errors.englishName = 'نام انگلیسی حداکثر ۱۶۰ نویسه است.';
+  if (resource === 'organizations' && values.personType && !['NATURAL', 'LEGAL'].includes(values.personType))
+    errors.personType = 'نوع شخصیت باید حقیقی یا حقوقی باشد.';
 
   for (const field of getMasterDataFormFields(definition)) {
     if (field.required && !values[field.key]) {

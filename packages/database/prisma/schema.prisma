@@ -644,6 +644,7 @@ model MasterOrganization {
   code                String                      @unique @db.VarChar(32)
   legalName           String                      @db.VarChar(200)
   displayName         String                      @db.VarChar(160)
+  personType          String?                     @db.VarChar(16)
   isActive            Boolean                     @default(true)
   version             Int                         @default(1)
   createdByUserId     String                      @db.Uuid
@@ -680,25 +681,28 @@ model MasterOrganizationRole {
 }
 
 model MasterSupplier {
-  id                        String                    @id @default(uuid()) @db.Uuid
-  organizationId            String                    @unique @db.Uuid
-  countryId                 String?                   @db.Uuid
-  cityId                    String?                   @db.Uuid
-  code                      String                    @unique @db.VarChar(32)
-  externalProviderReference String?                   @db.VarChar(120)
-  collaborationStatus       MasterCollaborationStatus @default(UNDER_REVIEW)
-  isActive                  Boolean                   @default(true)
-  version                   Int                       @default(1)
-  createdByUserId           String                    @db.Uuid
-  updatedByUserId           String                    @db.Uuid
-  deactivatedByUserId       String?                   @db.Uuid
-  deactivatedAt             DateTime?                 @db.Timestamptz(3)
-  createdAt                 DateTime                  @default(now()) @db.Timestamptz(3)
-  updatedAt                 DateTime                  @updatedAt @db.Timestamptz(3)
-  organization              MasterOrganization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  country                   MasterCountry?            @relation(fields: [countryId], references: [id], onDelete: Restrict)
-  city                      MasterCity?               @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  id                        String                     @id @default(uuid()) @db.Uuid
+  organizationId            String                     @unique @db.Uuid
+  countryId                 String?                    @db.Uuid
+  cityId                    String?                    @db.Uuid
+  code                      String                     @unique @db.VarChar(32)
+  englishName               String?                    @db.VarChar(160)
+  primaryContactId          String?                    @db.Uuid
+  externalProviderReference String?                    @db.VarChar(120)
+  collaborationStatus       MasterCollaborationStatus  @default(UNDER_REVIEW)
+  isActive                  Boolean                    @default(true)
+  version                   Int                        @default(1)
+  createdByUserId           String                     @db.Uuid
+  updatedByUserId           String                     @db.Uuid
+  deactivatedByUserId       String?                    @db.Uuid
+  deactivatedAt             DateTime?                  @db.Timestamptz(3)
+  createdAt                 DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime                   @updatedAt @db.Timestamptz(3)
+  organization              MasterOrganization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  country                   MasterCountry?             @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  city                      MasterCity?                @relation(fields: [cityId], references: [id], onDelete: Restrict)
   services                  MasterSupplierService[]
+  primaryContact            MasterOrganizationContact? @relation("SupplierPrimaryContact", fields: [primaryContactId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Restrict)
   cipServices               MasterCipService[]
   visaServices              MasterVisaService[]
   busCompany                MasterBusCompany?
@@ -706,6 +710,7 @@ model MasterSupplier {
   @@index([countryId, cityId, isActive])
   @@index([collaborationStatus, isActive])
   @@index([externalProviderReference])
+  @@index([primaryContactId, organizationId])
   @@map("master_suppliers")
 }
 
@@ -785,7 +790,10 @@ model MasterOrganizationContact {
   createdAt                 DateTime                         @default(now()) @db.Timestamptz(3)
   updatedAt                 DateTime                         @updatedAt @db.Timestamptz(3)
   organization              MasterOrganization               @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  primaryForSuppliers       MasterSupplier[]                 @relation("SupplierPrimaryContact")
+  primaryForBrokers         MasterBroker[]                   @relation("BrokerPrimaryContact")
 
+  @@unique([id, organizationId])
   @@unique([organizationId, phoneFingerprint])
   @@unique([organizationId, emailFingerprint])
   @@index([organizationId, isActive, fullName])
@@ -1382,26 +1390,30 @@ model MasterHotelImportSession {
 }
 
 model MasterBroker {
-  id                  String                    @id @default(uuid()) @db.Uuid
-  organizationId      String                    @unique @db.Uuid
-  countryId           String?                   @db.Uuid
-  cityId              String?                   @db.Uuid
-  code                String                    @unique @db.VarChar(32)
-  name                String                    @db.VarChar(160)
-  collaborationStatus MasterCollaborationStatus @default(UNDER_REVIEW)
-  isActive            Boolean                   @default(true)
-  version             Int                       @default(1)
-  createdByUserId     String                    @db.Uuid
-  updatedByUserId     String                    @db.Uuid
-  deactivatedByUserId String?                   @db.Uuid
-  deactivatedAt       DateTime?                 @db.Timestamptz(3)
-  createdAt           DateTime                  @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime                  @updatedAt @db.Timestamptz(3)
-  organization        MasterOrganization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  country             MasterCountry?            @relation(fields: [countryId], references: [id], onDelete: Restrict)
-  city                MasterCity?               @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  id                  String                     @id @default(uuid()) @db.Uuid
+  organizationId      String                     @unique @db.Uuid
+  countryId           String?                    @db.Uuid
+  cityId              String?                    @db.Uuid
+  code                String                     @unique @db.VarChar(32)
+  name                String                     @db.VarChar(160)
+  englishName         String?                    @db.VarChar(160)
+  primaryContactId    String?                    @db.Uuid
+  collaborationStatus MasterCollaborationStatus  @default(UNDER_REVIEW)
+  isActive            Boolean                    @default(true)
+  version             Int                        @default(1)
+  createdByUserId     String                     @db.Uuid
+  updatedByUserId     String                     @db.Uuid
+  deactivatedByUserId String?                    @db.Uuid
+  deactivatedAt       DateTime?                  @db.Timestamptz(3)
+  createdAt           DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                   @updatedAt @db.Timestamptz(3)
+  organization        MasterOrganization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  country             MasterCountry?             @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  city                MasterCity?                @relation(fields: [cityId], references: [id], onDelete: Restrict)
   services            MasterBrokerService[]
+  primaryContact      MasterOrganizationContact? @relation("BrokerPrimaryContact", fields: [primaryContactId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Restrict)
 
+  @@index([primaryContactId, organizationId])
   @@index([isActive, name])
   @@index([countryId, cityId, isActive])
   @@index([collaborationStatus, isActive])

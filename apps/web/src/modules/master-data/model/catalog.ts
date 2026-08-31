@@ -1564,6 +1564,11 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       'Profile مشترک Organization با roleهای چندگانه Agency/Corporate.',
     fields: [
       {
+        key: 'personType', label: 'نوع شخصیت', type: 'select', placeholder: '',
+        options: [{ value: 'NATURAL', label: 'حقیقی' }, { value: 'LEGAL', label: 'حقوقی' }],
+        hint: 'این مشخصه متعلق به سازمان است و بین پروفایل‌های آن مشترک است.',
+      },
+      {
         key: 'legalName',
         label: 'نام ثبتی',
         type: 'text',
@@ -1600,6 +1605,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'پروفایل مرجع تأمین‌کننده متصل به Organization یکتا؛ قرارداد و بدهی در ماژول مالک باقی می‌ماند.',
     fields: [
+      { key: 'englishName', label: 'نام انگلیسی تأمین‌کننده', type: 'text', placeholder: '' },
       {
         key: 'organizationId',
         label: 'سازمان تأمین‌کننده',
@@ -1641,11 +1647,13 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
       {
         key: 'serviceCodes',
-        label: 'کد خدمات',
+        label: 'خدمات قابل ارائه',
         type: 'text',
         placeholder: 'HOTEL,FLIGHT',
-        hint: 'کدهای کاتالوگ خدمات را با ویرگول جدا کنید.',
+        hint: 'یک یا چند خدمت از کاتالوگ انتخاب کنید.',
       },
+      { key: 'primaryContactId', label: 'تماس اصلی', type: 'text', placeholder: '',
+        hint: 'از مخاطبان سازمان انتخاب کنید؛ تلفن و ایمیل فقط ماسک‌شده نمایش داده می‌شوند.' },
     ],
     preview: {
       organizationId: 'org_supplier',
@@ -1661,6 +1669,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       'Profile عملیاتی کارگزار با reference سازمان؛ بدهی و قرارداد اینجا نگهداری نمی‌شود.',
     fields: [
       nameField,
+      { key: 'englishName', label: 'نام انگلیسی کارگزار', type: 'text', placeholder: '' },
       {
         key: 'organizationId',
         label: 'سازمان کارگزار',
@@ -1695,11 +1704,13 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
       {
         key: 'serviceCodes',
-        label: 'کد خدمات',
+        label: 'خدمات قابل ارائه',
         type: 'text',
         placeholder: 'HOTEL,FLIGHT',
-        hint: 'کدهای کاتالوگ خدمات را با ویرگول جدا کنید.',
+        hint: 'یک یا چند خدمت از کاتالوگ انتخاب کنید.',
       },
+      { key: 'primaryContactId', label: 'تماس اصلی', type: 'text', placeholder: '',
+        hint: 'از مخاطبان سازمان انتخاب کنید؛ تلفن و ایمیل فقط ماسک‌شده نمایش داده می‌شوند.' },
     ],
     preview: {
       code: 'BROKER_SAMPLE',

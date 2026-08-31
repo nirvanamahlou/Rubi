@@ -1,18 +1,28 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-31 — MASTER-003P-CLEAR-FIELDS پیاده‌سازی و آزموده شد
+آخرین به‌روزرسانی: 2026-08-31 — MASTER-003Q-PARTNER-FORMS پیاده‌سازی و آزموده شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003P-CLEAR-FIELDS روی شاخه Stacked مستقل آماده Review است**
+- وضعیت: **MASTER-003Q-PARTNER-FORMS روی شاخه Stacked مستقل آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه فعال: `codex/pc-b-master-data-clear-fields`
-- Work Item: `MASTER-003P-CLEAR-FIELDS`؛ Stacked روی Draft PR #43
+- شاخه فعال: `codex/pc-b-master-data-partner-forms`
+- Work Item: `MASTER-003Q-PARTNER-FORMS`؛ Stacked روی Draft PR #44
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ Web روی ۳۱۰۰ و API روی ۴۰۰۰ پاسخ می‌دهند.
-- نوع تغییر: Master Data Web/Test/Docs؛ بدون تغییر Backend، Contract، Schema، Migration،
-  Seed، Customers، UI مشترک، Dependency یا Lockfile.
+- نوع تغییر: Master Data Database/API/Contract/Web/Test/Docs؛ بدون تغییر Seed، Customers،
+  UI مشترک، Dependency یا Lockfile.
+
+### `MASTER-003Q-PARTNER-FORMS` — PC-B — `READY_FOR_REVIEW`
+
+- نام انگلیسی مستقل Supplier/Broker، نوع حقیقی/حقوقی Organization، تماس اصلی فعال همان سازمان و انتخاب چندگانه خدمات واقعی اضافه شدند؛ فرم‌های مرتبط Popup هستند و در فهرست/پروفایل فقط Mask تماس نمایش داده می‌شود.
+- FK مرکب مانع اتصال مخاطب سازمان دیگر، جابه‌جایی هویت و حذف مخاطب استفاده‌شده است. PATCH مقادیر غایب را حفظ و فیلدهای اختیاری صریحاً خالی را پاک می‌کند؛ مجوز، Version و Audit موجود حفظ شدند.
+- Migration افزایشی `20260831090000_master_data_partner_forms` روی PostgreSQL 18 خالی و دیتابیس محلی اجرا شد؛ Seed دوبار فقط در DB موقت، چهار آزمون واقعی FK/رمزنگاری/ذخیره/Audit موفق‌اند. DB موقت آزمون حذف شد؛ داده عملیاتی حذف نشد.
+- نسخه جداشده از سایر تغییرات محلی: API ۲۵۴ تست، Web ۱۸۶ تست (شامل ۶ تست SSR فرم واقعی)، typecheck و Production Build API/Web موفق. نسخه مشترک نیز API ۳۸۴، Web ۲۴۸، Contract ۱۴ و Database ۵۳ تست موفق دارد (شامل کارهای هم‌زمان دیگر).
+- lint API و فایل‌های Web متاثر موفق؛ lint کلی Web فقط خطا/هشدار قبلی DatePicker مشترک را دارد. مرورگر به Login هدایت شد؛ Smoke احراز‌شده ادعا نمی‌شود. API روی ۴۰۰۰ و Web روی ۳۱۰۰ روشن‌اند.
+- قرارداد و سقف خرید تا Public Service واقعی B2B/Procurement و اتصال Provider تا سرویس Integrations، Deferred هستند؛ عدد، قرارداد یا اتصال جعلی ثبت نشد. سه قفل PC-B/MASTER-003 ثابت و تغییرات محلی حذف امن، همکاری و اصلاحات جانبی محفوظ و خارج از Commit این Slice هستند.
+- والد #44 دست‌نخورده است؛ [Draft PR #45](https://github.com/nirvanamahlou/Rubi/pull/45) روی آن Stacked است و پیش از والدها Merge نمی‌شود. گزارش: `docs/tasks/MASTER-003Q-PARTNER-FORMS.md`.
 
 ### `MASTER-003P-CLEAR-FIELDS` — PC-B — `READY_FOR_REVIEW`
 

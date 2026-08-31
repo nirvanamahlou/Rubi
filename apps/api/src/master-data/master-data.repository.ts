@@ -256,8 +256,8 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
   facilities: ['name', 'englishName', 'code', 'category'],
   'composite-hotels': ['name', 'englishName', 'code', 'usageCondition'],
   organizations: ['displayName', 'legalName', 'code'],
-  suppliers: ['code', 'externalProviderReference'],
-  brokers: ['name', 'code'],
+  suppliers: ['code', 'englishName', 'externalProviderReference'],
+  brokers: ['name', 'englishName', 'code'],
   'travel-services': ['name', 'englishName', 'code'],
   'organization-contacts': ['fullName', 'jobTitle', 'code'],
   leaders: ['name', 'englishName', 'code', 'expertise', 'welcomeSignCode'],
@@ -325,6 +325,7 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'suppliers')
     return {
       organization: true,
+      primaryContact: { select: { id: true, fullName: true, phoneMasked: true, emailMasked: true, isActive: true } },
       country: true,
       city: true,
       services: { include: { service: true } },
@@ -332,6 +333,7 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'brokers')
     return {
       organization: true,
+      primaryContact: { select: { id: true, fullName: true, phoneMasked: true, emailMasked: true, isActive: true } },
       country: true,
       city: true,
       services: { include: { service: true } },
@@ -480,6 +482,7 @@ export function toMasterDataRecord(
     'airport',
     'bank',
     'organization',
+    'primaryContact',
     'insurer',
     'supplier',
     'currency',
@@ -543,6 +546,11 @@ export function toMasterDataRecord(
   }
   if (resource === 'suppliers' || resource === 'brokers') {
     attributes.organizationName = String(organization?.displayName ?? '');
+    attributes.organizationPersonType = organization?.personType ? String(organization.personType) : null;
+    const primaryContact = row.primaryContact as Record<string, unknown> | null | undefined;
+    attributes.primaryContactName = primaryContact?.isActive ? String(primaryContact.fullName ?? '') : null;
+    attributes.primaryPhoneMasked = primaryContact?.isActive ? (primaryContact.phoneMasked as string | null) : null;
+    attributes.primaryEmailMasked = primaryContact?.isActive ? (primaryContact.emailMasked as string | null) : null;
     attributes.organizationCode = String(organization?.code ?? '');
     attributes.countryName = String(country?.name ?? '');
     attributes.cityName = String(city?.name ?? '');
@@ -1174,7 +1182,11 @@ export class MasterDataRepository {
         select: { cityId: true },
       }),
       client.masterBroker.count({
-        where: { OR: [{ countryId: null }, { cityId: null }] },
+        where: { OR: [
+          { countryId: null }, { cityId: null }, { englishName: null },
+          { primaryContactId: null }, { primaryContact: { is: { isActive: false } } },
+          { organization: { is: { personType: null } } }, { services: { none: {} } },
+        ] },
       }),
       client.masterOrganizationContact.count(),
       client.masterOrganizationContact.count({ where: { isActive: true } }),

@@ -435,8 +435,10 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'memberHotelIds',
     'backupMemberIds',
   ],
-  organizations: ['code', 'legalName', 'displayName', 'roleCodes'],
+  organizations: ['code', 'legalName', 'displayName', 'roleCodes', 'personType'],
   suppliers: [
+    'englishName',
+    'primaryContactId',
     'organizationId',
     'countryId',
     'cityId',
@@ -445,6 +447,8 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'serviceCodes',
   ],
   brokers: [
+    'englishName',
+    'primaryContactId',
     'code',
     'name',
     'organizationId',
@@ -1271,6 +1275,23 @@ export class MasterDataService {
         throw new BadRequestException(`فیلد الزامی: ${missing.join(', ')}`);
     }
     const data: Record<string, unknown> = { ...values };
+    if (resource === 'organizations' && Object.hasOwn(data, 'personType')) {
+      const personType = String(data.personType ?? '').trim().toUpperCase();
+      if (personType && !['NATURAL', 'LEGAL'].includes(personType))
+        throw new BadRequestException('نوع شخصیت باید حقیقی یا حقوقی باشد.');
+      data.personType = personType || null;
+    }
+    if (resource === 'suppliers' || resource === 'brokers') {
+      if (Object.hasOwn(data, 'englishName')) {
+        if (data.englishName !== null && typeof data.englishName !== 'string')
+          throw new BadRequestException('نام انگلیسی باید متن باشد.');
+        const englishName = String(data.englishName ?? '').trim();
+        if (englishName.length > 160)
+          throw new BadRequestException('نام انگلیسی حداکثر ۱۶۰ نویسه است.');
+        data.englishName = englishName || null;
+      }
+      if (data.primaryContactId === '') data.primaryContactId = null;
+    }
     if (
       [
         'hotels',
@@ -1479,6 +1500,7 @@ export class MasterDataService {
     }
 
     for (const field of [
+      'primaryContactId',
       'countryId',
       'organizationId',
       'cityId',
@@ -2435,7 +2457,7 @@ export class MasterDataService {
         data.referenceValidityDays = days;
       }
     }
-    if (resource === 'organizations') {
+    if (resource === 'organizations' && Object.hasOwn(data, 'roleCodes')) {
       const roleCodes = Array.isArray(data.roleCodes)
         ? data.roleCodes.map(String).map((value) => value.trim().toUpperCase())
         : String(data.roleCodes ?? '')
@@ -2606,17 +2628,30 @@ export class MasterDataService {
       }
     }
     if (resource === 'suppliers' || resource === 'brokers') {
+      const existing = entityId ? await this.repository.find(resource, entityId) : null;
+      const organizationId = Object.hasOwn(data, 'organizationId')
+        ? data.organizationId : existing?.organizationId;
+      const primaryContactId = Object.hasOwn(data, 'primaryContactId')
+        ? data.primaryContactId : existing?.primaryContactId;
+      if (primaryContactId !== null && primaryContactId !== undefined) {
+        if (typeof primaryContactId !== 'string' || !uuidPattern.test(primaryContactId))
+          throw new BadRequestException('تماس اصلی باید شناسه معتبر باشد.');
+        const contact = await this.repository.find('organization-contacts', primaryContactId);
+        if (!contact?.isActive || contact.organizationId !== organizationId)
+          throw new BadRequestException('تماس اصلی باید مخاطب فعال همان سازمان باشد.');
+      }
       if (typeof data.countryId === 'string') {
         const country = await this.repository.find('countries', data.countryId);
         if (!country?.isActive)
           throw new BadRequestException('کشور فعال برای پروفایل یافت نشد.');
       }
-      if (typeof data.cityId === 'string') {
-        const city = await this.repository.find('cities', data.cityId);
+      const cityId = Object.hasOwn(data, 'cityId') ? data.cityId : existing?.cityId;
+      const countryId = Object.hasOwn(data, 'countryId') ? data.countryId : existing?.countryId;
+      if (typeof cityId === 'string') {
+        const city = await this.repository.find('cities', cityId);
         if (
           !city?.isActive ||
-          (typeof data.countryId === 'string' &&
-            city.countryId !== data.countryId)
+          (typeof countryId === 'string' && city.countryId !== countryId)
         )
           throw new BadRequestException(
             'شهر فعال باید در کشور انتخاب‌شده باشد.',

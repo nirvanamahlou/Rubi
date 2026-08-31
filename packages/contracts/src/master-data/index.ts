@@ -68,6 +68,15 @@ export type MasterCollaborationStatus =
   'ACTIVE' | 'UNDER_REVIEW' | 'PURCHASE_SUSPENDED' | 'ENDED';
 export type MasterOrganizationContactChannel =
   'PHONE' | 'WHATSAPP' | 'EMAIL' | 'TELEGRAM' | 'OTHER';
+/** Nullable on legacy organizations; identity belongs to the shared organization. */
+export const MASTER_ORGANIZATION_PERSON_TYPES = ['NATURAL', 'LEGAL'] as const;
+export type MasterOrganizationPersonType = (typeof MASTER_ORGANIZATION_PERSON_TYPES)[number];
+/** Additive v12 fields; omitted PATCH fields retain their saved values. */
+export interface MasterPartnerProfileFields {
+  englishName?: string | null;
+  primaryContactId?: string | null;
+  serviceCodes?: string | readonly string[];
+}
 export type MasterMealServiceCategory = 'MEAL_PLAN' | 'SERVICE';
 export type MasterAircraftBodyType =
   'NARROW_BODY' | 'WIDE_BODY' | 'TURBOPROP' | 'REGIONAL' | 'OTHER';
