@@ -1,5 +1,17 @@
 # Work Assignments
 
+## SHARED-INTEGRATION-0831 — PC-A — IN_PROGRESS
+
+- Owner authorization: combine the published changes of both computers into one develop product (2026-08-31).
+- Base: `5f9cb723de39e29cff95f26b047138699bd36392`.
+- Frozen inputs: PC-B PR #55 `241308e45aead3fcea82cc08466ce60dde057f8c` (including its published parent stack), PC-A PR #56 `f0dd7922cc60bd61b8fc0487b2311867c5616888`, and PC-A PR #46 `86551ce447fb9af3d7fb49119498cee3c7e1ec2a`.
+- Branch: `codex/pc-a-shared-integration-0831`; isolated worktree only protects ongoing source work. The delivery target is ONE `develop`, not another product or permanent preview.
+- Reserved integration-only scope: reconcile these published snapshots, merge-conflict resolutions, compatibility/regression fixes and tests, and the integration entries in WORK_ASSIGNMENTS/PROJECT_STATUS/PLANS. No new business feature, dependency, or historical Migration edit is authorized.
+- Existing PC-B development locks are NOT transferred or released by this integration. No source branch, PC-B working copy, active development reservation, or uncommitted file is modified. New unpublished/source-head changes are excluded until explicitly selected.
+- Review the combined code and original dependencies before a normal PR merge; do not bypass protections, invent approvals, force-push, or change main. Failure of a required safety/compatibility gate blocks merging.
+- Test databases contain synthetic data only. Existing local databases, protected encryption keys, secrets, and volumes are preserved. Applying additive migrations to a live local database requires a verified backup first.
+
+
 ## Current customer-chain handoff — 2026-08-31
 
 - Supersedes the historical conditional MASTER-003 handoff below for this customer-only chain.
