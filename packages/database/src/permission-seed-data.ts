@@ -10,6 +10,25 @@ export const PERMISSION_SEED_DATA = [
   ['master_data.update', 'master_data', 'ویرایش اطلاعات پایه'],
   ['master_data.status.manage', 'master_data', 'مدیریت وضعیت اطلاعات پایه'],
   ['master_data.export', 'master_data', 'خروجی اطلاعات پایه'],
+  ['master_data.import', 'master_data', 'ورود گروهی اطلاعات پایه'],
+  ['master_data.audit.read', 'master_data', 'مشاهده تاریخچه اطلاعات پایه'],
+  ['master_data.currency_rate.create', 'master_data', 'ثبت نرخ مرجع ارز'],
+  [
+    'master_data.currency_rate.approve',
+    'master_data',
+    'تأیید یا رد نرخ مرجع ارز',
+  ],
+  [
+    'master_data.sensitive_contact.read',
+    'master_data',
+    'مشاهده تماس حساس به‌شکل پوشیده',
+  ],
+  [
+    'master_data.sensitive_contact.unmask',
+    'master_data',
+    'آشکارسازی کنترل‌شده تماس حساس',
+  ],
+  ['master_data.delete', 'master_data', 'حذف مدیریتی اطلاعات پایه'],
   ['customers.read', 'customers', 'مشاهده مشتریان'],
   ['customers.create', 'customers', 'ایجاد مشتریان'],
   ['customers.update', 'customers', 'ویرایش مشتریان'],
@@ -23,5 +42,9 @@ export const PERMISSION_SEED_DATA = [
   ['legal-entity.branding.manage', 'legal-entity', 'مدیریت برندینگ شرکت‌ها'],
   ['legal-entity.audit.read', 'legal-entity', 'مشاهده Audit شرکت‌ها'],
   ['legal-entity.document.issue', 'legal-entity', 'صدور سند با هویت شرکت'],
-  ['legal-entity.document.reissue', 'legal-entity', 'صدور مجدد سند با هویت شرکت'],
+  [
+    'legal-entity.document.reissue',
+    'legal-entity',
+    'صدور مجدد سند با هویت شرکت',
+  ],
 ] as const;

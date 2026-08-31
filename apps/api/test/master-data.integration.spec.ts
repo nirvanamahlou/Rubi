@@ -1,4 +1,9 @@
-import { ValidationPipe, type CanActivate, type ExecutionContext, type INestApplication } from '@nestjs/common';
+import {
+  ValidationPipe,
+  type CanActivate,
+  type ExecutionContext,
+  type INestApplication,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,6 +18,9 @@ describe('Master Data HTTP contract', () => {
   const service = {
     list: vi.fn(),
     create: vi.fn(),
+    update: vi.fn(),
+    status: vi.fn(),
+    downloadXlsx: vi.fn(),
   };
   const authGuard: CanActivate = {
     canActivate(context: ExecutionContext) {
@@ -28,8 +36,18 @@ describe('Master Data HTTP contract', () => {
   };
 
   beforeEach(async () => {
-    service.list.mockResolvedValue({ data: [], meta: { page: 1, pageSize: 25, total: 0 } });
+    service.list.mockResolvedValue({
+      data: [],
+      meta: { page: 1, pageSize: 25, total: 0 },
+    });
     service.create.mockResolvedValue({ data: { id: 'record-id' } });
+    service.downloadXlsx.mockResolvedValue({
+      buffer: Buffer.from('xlsx-file'),
+      fileName: 'master-data-countries-2026-08-26.xlsx',
+      mimeType:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      requestId: '77777777-7777-4777-8777-777777777777',
+    });
     const module = await Test.createTestingModule({
       controllers: [MasterDataController],
       providers: [{ provide: MasterDataService, useValue: service }],
@@ -41,7 +59,11 @@ describe('Master Data HTTP contract', () => {
       .compile();
     app = module.createNestApplication();
     app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
     );
     await app.init();
   });
@@ -49,6 +71,35 @@ describe('Master Data HTTP contract', () => {
   afterEach(async () => {
     await app.close();
     vi.clearAllMocks();
+  });
+
+  it('downloads the generated XLSX with attachment headers', async () => {
+    await request(app.getHttpServer())
+      .post('/master-data/exports/xlsx/download')
+      .send({
+        resource: 'countries',
+        format: 'xlsx',
+        filters: {
+          search: '',
+          status: 'all',
+          sortBy: 'name',
+          sortDirection: 'asc',
+        },
+        columns: ['code', 'name', 'status', 'updatedAt'],
+        locale: 'fa-IR',
+        timezone: 'Asia/Tehran',
+      })
+      .expect(200)
+      .expect(
+        'content-type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      )
+      .expect('content-disposition', /master-data-countries-2026-08-26\.xlsx/);
+    expect(service.downloadXlsx).toHaveBeenCalledWith(
+      expect.objectContaining({ resource: 'countries', format: 'xlsx' }),
+      expect.objectContaining({ userId: expect.any(String) }),
+      undefined,
+    );
   });
 
   it('normalizes pagination through the versioned list DTO', async () => {
@@ -74,5 +125,25 @@ describe('Master Data HTTP contract', () => {
       .send({ code: 'IR' })
       .expect(400);
     expect(service.create).not.toHaveBeenCalled();
+  });
+  it('forbids generic exchange-rate update and status before the service', async () => {
+    await request(app.getHttpServer())
+      .patch('/master-data/exchange-rates/44444444-4444-4444-8444-444444444444')
+      .send({ values: { rate: '610000' }, version: 1 })
+      .expect(409)
+      .expect(({ body }) =>
+        expect(body.code).toBe('CURRENCY_RATE_STATUS_TRANSITION_FORBIDDEN'),
+      );
+    await request(app.getHttpServer())
+      .patch(
+        '/master-data/exchange-rates/44444444-4444-4444-8444-444444444444/status',
+      )
+      .send({ status: 'active', version: 1 })
+      .expect(409)
+      .expect(({ body }) =>
+        expect(body.code).toBe('CURRENCY_RATE_STATUS_TRANSITION_FORBIDDEN'),
+      );
+    expect(service.update).not.toHaveBeenCalled();
+    expect(service.status).not.toHaveBeenCalled();
   });
 });
