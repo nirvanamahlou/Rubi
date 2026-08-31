@@ -1,5 +1,14 @@
 # Work Assignments
 
+## MASTER-003-CATALOG-USABILITY — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: پاور وضعیت، دو فیلتر ستونی، تکمیل ستون‌های ماکاپ و واقع‌گراتر کردن نمونه‌های محلی.
+- شاخه مستقل `codex/pc-b-master-data-catalog-usability` از `6abd960` / PR #57؛ شاخه‌های تحویلی ثابت می‌مانند. هیچ Merge یا تغییر والد مجاز نیست.
+- رزرو محدود: `apps/web/src/modules/master-data/**`، `apps/api/src/master-data/**`، ابزار/تست همین ماژول، `packages/contracts/src/master-data/**`، WORK_ASSIGNMENTS، PROJECT_STATUS، DECISIONS و سند Task. Producer/consumer قرارداد افزایشی فقط Master Data API/Web (PC-B)؛ فیلتر اختیاری قبل از Pagination و Export اعمال می‌شود و نبود آن رفتار قبلی را حفظ می‌کند.
+- مبنای شروع Handoff origin/develop پس از #41 بود. بررسی نهایی Merge #58 / `e25f288` را نشان داد: قفل‌های توسعه PC-B منتقل یا آزاد نشده‌اند و رزرو integration خاتمه یافته است. این Work Item زیر PC-B/MASTER-003 می‌ماند؛ Migration محدود `MasterCountry.displayOrder` در `20260831140000_master_country_display_order` و همان قسمت Schema، قرارداد و اسناد فوق برای تحویل ثبت شده‌اند. بدون Dependency، Calendar، Customers یا داخلی ماژول دیگر. ادغام نسخه جدید develop در این شاخه انجام نشده است.
+- نمونه‌سازی فقط development محلی با Backup، Preview، Audit و حفظ داده کاربر/نمونه ویرایش‌شده؛ بدون PII واقعی، حساب، کارت، نرخ ارز، Connection یا سند جعلی.
+- نتیجه: پاور مشترک در هشت Workspace، دو فیلتر allowlist قبل از Pagination/Export برای ۴۵ کاتالوگ، ستون‌های تخصصی حمل‌ونقل/هتل/جغرافیا و ترتیب کشور قابل ذخیره‌سازی. ۷۸ Fixture دست‌نخورده با حفظ ID/FK و Audit بازآرایی شدند؛ اجرای مجدد صفر تغییر داشت. ۹۹۴ تست عمومی و ۹ تست مستقل PostgreSQL 18 موفق، Build و Typecheck موفق؛ lint محدوده موفق و خطای قدیمی Calendar در lint کامل خارج Scope باقی است. Smoke احراز‌شده به Session کاربر نیاز دارد. Migration محلی پس از Backup اعمال شد؛ API4000/Web3100 روشن‌اند. جزئیات و محدودیت‌ها: `docs/tasks/MASTER-003-CATALOG-USABILITY.md`.
+
 ### `MASTER-003-LOCAL-DEMO-DATA` — PC-B — `READY_FOR_REVIEW`
 
 - درخواست 2026-08-31 کاربر: افزودن داده آزمایشی برای تمام بخش‌های اطلاعات پایه روی لوکال. Branch: `codex/pc-b-master-data-demo-fixtures` از `241308e` / PR #55.

@@ -2,8 +2,25 @@ import { MASTER_DATA_RESOURCES } from '@rubi/contracts';
 import { describe, expect, it } from 'vitest';
 import { DEMO_EXCLUDED, masterDataDemoRecords } from './demo-data';
 import { assertLocalDemoTarget } from './local-demo';
+import { realisticMasterDataDemoRecords } from './realistic-demo-data';
 
 describe('explicit local Master Data demo fixtures', () => {
+  it('offers natural labels without rates, personal contacts or invented external connections', () => {
+    const fixtures = realisticMasterDataDemoRecords();
+    expect(fixtures.map((row) => row.key)).toEqual(
+      masterDataDemoRecords().map((row) => row.key),
+    );
+    const values = fixtures.map((row) => row.values((key) => key));
+    expect(JSON.stringify(values)).not.toMatch(
+      /نمونه [12]|Demo (?:Hotel|Supplier|Manufacturer|Bank)|(?:externalProviderReference|fileReferenceId|logoFileReference|primaryPhone|accountNumber|iban|cvv)/i,
+    );
+    expect(
+      fixtures.some((row) => String(row.resource) === 'exchange-rates'),
+    ).toBe(false);
+    expect(values.find((value) => value.code === 'BB')?.englishName).toBe(
+      'Bed & Breakfast',
+    );
+  });
   it('covers all retained reference catalogs with ordered dependencies and marked synthetic names', () => {
     const fixtures = masterDataDemoRecords();
     expect([...new Set(fixtures.map((row) => row.resource))].sort()).toEqual(
