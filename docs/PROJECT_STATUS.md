@@ -1,5 +1,11 @@
 # وضعیت پروژه
 
+## یکدست‌سازی اکشن‌های فیلتر اطلاعات پایه — 2026-08-31
+
+- `MASTER-003-FILTER-ACTIONS` روی شاخه `codex/pc-b-master-data-filter-actions` به‌صورت Stacked روی تحویل حذف نوارهای قفل‌دار آماده Review است. تمام Workspaceهای تخصصی و fallback عمومی از کامپوننت مشترک «پاک‌کردن / تازه‌سازی» استفاده می‌کنند.
+- اکشن‌ها در ردیف پایینی تمام‌عرض FilterBar و سمت چپ چیدمان RTL قرار دارند؛ هر دو Button دارای Border، پس‌زمینه، آیکون و حالت‌های Hover/Focus هستند. منطق فیلترها، داده، مجوز، صفحه‌بندی و API تغییر نکرده است.
+- ۵۳۴ تست Web، Typecheck، lint کامل Web و Production Build موفق‌اند. بررسی زنده روی `localhost:3101/master-data/geography` چیدمان، فیلتر تاریخ و نبود نوار قفل را تأیید کرد. سرور PC-A روی پورت ۳۱۰۰ و Checkout آن دست‌نخورده‌اند.
+
 ## تثبیت حذف نوارهای قفل‌دار زیر KPI اطلاعات پایه — 2026-08-31
 
 - `MASTER-003-REMOVE-LOCK-NOTES` روی شاخه `codex/pc-b-master-data-remove-lock-notes` و به‌صورت Stacked روی تحویل فیلتر تاریخ آماده Review است. هر هشت Workspace تخصصی و fallback عمومی مستقیماً از KPI به فیلترها می‌رسند و نوار ثابت قفل/قاعده میان آن‌ها ندارند.

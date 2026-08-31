@@ -65,6 +65,7 @@ import {
 } from '../model/terminal-form';
 import { MasterDataTerminalForm } from './master-data-terminal-form';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataFilterActions } from './master-data-filter-actions';
 import {
   getMasterDataDefinition,
   type MasterDataResourceKey,
@@ -1028,8 +1029,8 @@ export function MasterDataGeographyWorkspace() {
             </FormField>
           </>
         ) : null}
-        <Button
-          onClick={() => {
+        <MasterDataFilterActions
+          onClear={() => {
             setSearch('');
             resetColumnFilters();
             resetDateRange();
@@ -1042,14 +1043,8 @@ export function MasterDataGeographyWorkspace() {
             setTerminalType('all');
             setPage(1);
           }}
-          variant="ghost"
-        >
-          پاک‌کردن
-        </Button>
-        <Button onClick={() => void load()} variant="ghost">
-          <RefreshCw aria-hidden="true" className="size-4" />
-          تازه‌سازی
-        </Button>
+          onRefresh={() => void load()}
+        />
       </FilterBar>
 
       {requestState === 'loading' ? (

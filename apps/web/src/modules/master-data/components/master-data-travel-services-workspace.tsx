@@ -23,7 +23,6 @@ import {
   FileQuestion,
   FileSpreadsheet,
   FileText,
-  FilterX,
   Globe2,
   Link2,
   LockKeyhole,
@@ -75,6 +74,7 @@ import {
   visaValidityLabel,
 } from '../model/travel-reference-form';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataFilterActions } from './master-data-filter-actions';
 import { getMasterDataDefinition } from '../model/catalog';
 import {
   MasterDataLiveForm,
@@ -868,8 +868,8 @@ export function MasterDataTravelServicesWorkspace() {
             </SelectContent>
           </Select>
         </FormField>
-        <Button
-          onClick={() => {
+        <MasterDataFilterActions
+          onClear={() => {
             setSearch('');
             resetColumnFilters();
             resetDateRange();
@@ -877,10 +877,8 @@ export function MasterDataTravelServicesWorkspace() {
             setReferenceFilter('all');
             setPage(1);
           }}
-          variant="ghost"
-        >
-          <FilterX className="size-4" /> پاک‌کردن
-        </Button>
+          onRefresh={() => void Promise.all([load(), loadSummary()])}
+        />
       </FilterBar>
       {content}
       <div className="flex items-center justify-between gap-3">

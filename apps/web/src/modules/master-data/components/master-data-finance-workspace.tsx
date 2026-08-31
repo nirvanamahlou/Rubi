@@ -61,6 +61,7 @@ import {
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataFilterActions } from './master-data-filter-actions';
 import {
   getMasterDataDefinition,
   type MasterDataResourceKey,
@@ -983,21 +984,16 @@ export function MasterDataFinanceWorkspace({
             </Select>
           </FormField>
         )}
-        <Button
-          onClick={() => {
+        <MasterDataFilterActions
+          onClear={() => {
             setSearch('');
             resetColumnFilters();
             resetDateRange();
             setStatus('all');
             setPage(1);
           }}
-          variant="ghost"
-        >
-          پاک‌کردن
-        </Button>
-        <Button onClick={() => void load()} variant="ghost">
-          <RefreshCw aria-hidden="true" className="size-4" /> تازه‌سازی
-        </Button>
+          onRefresh={() => void load()}
+        />
       </FilterBar>
 
       {requestState === 'loading' ? (
@@ -1425,12 +1421,6 @@ export function MasterDataFinanceWorkspace({
                 </Select>
               </FormField>
               <Button
-                onClick={() => void loadCurrencyHistory()}
-                variant="ghost"
-              >
-                <RefreshCw className="size-4" /> تازه‌سازی
-              </Button>
-              <Button
                 onClick={() => {
                   setCurrencyProfileOpen(false);
                   setSelected(selectedCurrency);
@@ -1439,6 +1429,15 @@ export function MasterDataFinanceWorkspace({
               >
                 <Plus className="size-4" /> ثبت نرخ جدید
               </Button>
+              <MasterDataFilterActions
+                onClear={() => {
+                  setRangeDays('90');
+                  setSelectedPair('');
+                  setAudit([]);
+                  setAuditRateId(null);
+                }}
+                onRefresh={() => void loadCurrencyHistory()}
+              />
             </FilterBar>
 
             {currencyHistoryState === 'loading' ? (

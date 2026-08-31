@@ -22,7 +22,6 @@ import {
   Eye,
   FilePenLine,
   FileSpreadsheet,
-  FilterX,
   Hotel,
   ImageIcon,
   Layers3,
@@ -63,6 +62,7 @@ import {
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataFilterActions } from './master-data-filter-actions';
 import { getMasterDataDefinition } from '../model/catalog';
 import { HotelImportPanel } from './hotel-import-panel';
 import {
@@ -1507,8 +1507,8 @@ export function MasterDataAccommodationWorkspace() {
               </SelectContent>
             </Select>
           </FormField>
-          <Button
-            onClick={() => {
+          <MasterDataFilterActions
+            onClear={() => {
               setSearch('');
               resetColumnFilters();
               resetDateRange();
@@ -1521,10 +1521,8 @@ export function MasterDataAccommodationWorkspace() {
               setFacilityCategoryFilter('all');
               setPage(1);
             }}
-            variant="ghost"
-          >
-            <FilterX className="size-4" /> پاک‌کردن
-          </Button>
+            onRefresh={() => void Promise.all([load(), loadSummary()])}
+          />
         </FilterBar>
       ) : null}
       {content}

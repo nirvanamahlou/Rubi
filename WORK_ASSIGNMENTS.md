@@ -1,5 +1,14 @@
 # Work Assignments
 
+## MASTER-003-FILTER-ACTIONS — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: کنترل‌های «پاک‌کردن» و «تازه‌سازی» در تمام فیلترهای اطلاعات پایه به دکمه‌های دارای Border و پس‌زمینه تبدیل و در ردیف پایینیِ سمت چپ سکشن فیلتر یکدست شوند.
+- Branch: `codex/pc-b-master-data-filter-actions` به‌صورت Stacked روی نسخه تحویلی `codex/pc-b-master-data-remove-lock-notes@51aed9e`؛ توسعه مستقیم روی `develop` انجام نمی‌شود.
+- محدوده رزرو: فقط کامپوننت‌های FilterBar در `apps/web/src/modules/master-data/components/**`، کامپوننت مشترک اکشن فیلتر، آزمون رگرسیون نمایش و گزارش همین Work Item. بدون API/Contract، Schema/Migration، Seed/Data، Customers، Calendar، Dependency/Lockfile یا تغییر دیتابیس.
+- منطق فیلتر، داده، صفحه‌بندی و مجوزها ثابت می‌ماند؛ این تغییر Presentation/Interaction است و تازه‌سازی هر Workspace فقط Loader موجود همان صفحه را فراخوانی می‌کند.
+- نتیجه: اکشن مشترک تمام FilterBarهای اطلاعات پایه در یک ردیف تمام‌عرض زیر فیلدها قرار گرفت؛ در RTL با تراز انتهای ردیف در سمت چپ نمایش داده می‌شود. هر دو کنترل Button واقعی با Border، پس‌زمینه، Focus/Hover و آیکون مستقل هستند. تازه‌سازی وضعیت همکاری نیز با همان کامپوننت و عنوان تخصصی حفظ شد.
+- ۵۳۴ تست Web، Typecheck، lint کامل Web و Production Build موفق‌اند. بررسی زنده جغرافیا روی Checkout همین شاخه در پورت ۳۱۰۱ وجود فیلتر تاریخ و دو دکمه پایین-چپ و حذف نوار قفل قدیمی را تأیید کرد. پورت ۳۱۰۰ همچنان متعلق به Checkout جداگانه PC-A است و تغییر یا متوقف نشد.
+
 ## MASTER-003-REMOVE-LOCK-NOTES — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-08-31: نوارهای قفل‌دار/قاعده‌ای باقی‌مانده زیر KPIهای تمام بخش‌های اطلاعات پایه، از جمله جغرافیا، حذف و از بازگشت آن‌ها جلوگیری شود.

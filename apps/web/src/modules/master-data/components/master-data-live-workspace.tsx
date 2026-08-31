@@ -15,7 +15,6 @@ import {
   FilePenLine,
   FileSpreadsheet,
   FileText,
-  FilterX,
   Plus,
   RefreshCw,
   Search,
@@ -47,6 +46,7 @@ import {
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataFilterActions } from './master-data-filter-actions';
 import {
   MasterDataDateRangeFilter,
   useMasterDataDateRange,
@@ -517,19 +517,16 @@ function GenericMasterDataWorkspace({
                 </SelectContent>
               </Select>
             </FormField>
-            <Button
-              onClick={() => {
+            <MasterDataFilterActions
+              onClear={() => {
                 setSearch('');
                 resetDateRange();
                 setStatus('all');
                 setSortBy('name');
                 setPage(1);
               }}
-              variant="ghost"
-            >
-              <FilterX aria-hidden="true" className="size-4" />
-              پاک‌کردن
-            </Button>
+              onRefresh={() => void load()}
+            />
           </FilterBar>
 
           {requestState === 'loading' ? (

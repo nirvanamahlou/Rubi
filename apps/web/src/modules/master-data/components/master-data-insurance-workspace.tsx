@@ -23,7 +23,6 @@ import {
   Eye,
   FilePenLine,
   FileSpreadsheet,
-  FilterX,
   Globe2,
   Link2,
   Plus,
@@ -59,6 +58,7 @@ import {
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataFilterActions } from './master-data-filter-actions';
 import { getMasterDataDefinition } from '../model/catalog';
 import {
   MasterDataLiveForm,
@@ -810,8 +810,8 @@ export function MasterDataInsuranceWorkspace() {
             </SelectContent>
           </Select>
         </FormField>
-        <Button
-          onClick={() => {
+        <MasterDataFilterActions
+          onClear={() => {
             setSearch('');
             resetColumnFilters();
             resetDateRange();
@@ -819,10 +819,8 @@ export function MasterDataInsuranceWorkspace() {
             setReferenceFilter('all');
             setPage(1);
           }}
-          variant="ghost"
-        >
-          <FilterX className="size-4" /> پاک‌کردن
-        </Button>
+          onRefresh={() => void Promise.all([load(), loadSummary()])}
+        />
       </FilterBar>
       {content}
       <div className="flex items-center justify-between gap-3">

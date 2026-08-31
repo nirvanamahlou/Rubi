@@ -23,7 +23,6 @@ import {
   Eye,
   FilePenLine,
   FileSpreadsheet,
-  FilterX,
   LockKeyhole,
   MapPin,
   Network,
@@ -61,6 +60,7 @@ import {
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataFilterActions } from './master-data-filter-actions';
 import { getMasterDataDefinition } from '../model/catalog';
 import {
   groupSupplierCollaborationRecords,
@@ -957,14 +957,7 @@ export function MasterDataSuppliersWorkspace() {
               <Plus className="size-4" /> {copy.action}
             </Button>
           </>
-        ) : (
-          <Button
-            onClick={() => void Promise.all([load(), loadSummary()])}
-            variant="outline"
-          >
-            <RefreshCw className="size-4" /> تازه‌سازی وضعیت‌ها
-          </Button>
-        )}
+        ) : null}
       </div>
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
       <Card className="overflow-x-auto p-2">
@@ -1029,18 +1022,19 @@ export function MasterDataSuppliersWorkspace() {
             </SelectContent>
           </Select>
         </FormField>
-        <Button
-          onClick={() => {
+        <MasterDataFilterActions
+          onClear={() => {
             setSearch('');
             resetColumnFilters();
             resetDateRange();
             setStatus('all');
             setPage(1);
           }}
-          variant="ghost"
-        >
-          <FilterX className="size-4" /> پاک‌کردن
-        </Button>
+          onRefresh={() => void Promise.all([load(), loadSummary()])}
+          refreshLabel={
+            tab === 'collaboration' ? 'تازه‌سازی وضعیت‌ها' : 'تازه‌سازی'
+          }
+        />
       </FilterBar>
       {content}
       {tab === 'collaboration' ? (
