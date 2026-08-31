@@ -30,6 +30,9 @@ describe('master data API proposal', () => {
       masterDataEndpoints.action('countries', 'country/ir', 'deactivate'),
     ).toBe('/api/v1/master-data/countries/country%2Fir/actions/deactivate');
     expect(masterDataEndpoints.exports).toBe('/api/v1/master-data/exports');
+    expect(masterDataEndpoints.excelDownload).toBe(
+      '/api/v1/master-data/exports/xlsx/download',
+    );
   });
 
   it('validates an auditable export request', () => {

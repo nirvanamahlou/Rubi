@@ -35,15 +35,6 @@ export interface MasterDataCatalogItem {
   preview: Readonly<Record<string, string>>;
 }
 
-const codeField: MasterDataFieldDefinition = {
-  key: 'code',
-  label: 'کد یکتا',
-  type: 'text',
-  placeholder: 'مثلاً IR',
-  required: true,
-  hint: 'کد canonical انگلیسی و بدون فاصله است.',
-};
-
 const nameField: MasterDataFieldDefinition = {
   key: 'name',
   label: 'عنوان فارسی',
@@ -58,9 +49,9 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     label: 'کشورها',
     singularLabel: 'کشور',
     group: 'جغرافیا',
-    description: 'کشور canonical با کد ISO و وضعیت فعال/غیرفعال.',
+    description:
+      'کشور با نام فارسی و انگلیسی؛ کد داخلی هنگام ذخیره خودکار تولید می‌شود.',
     fields: [
-      { ...codeField, label: 'کد ISO-2', placeholder: 'IR' },
       nameField,
       {
         key: 'englishName',
@@ -79,7 +70,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     group: 'جغرافیا',
     description: 'شهر وابسته به کشور؛ حذف رکورد استفاده‌شده مجاز نیست.',
     fields: [
-      codeField,
       nameField,
       {
         key: 'countryId',
@@ -97,11 +87,22 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'ارز',
     group: 'مالی',
     description:
-      'کد ISO-4217 و مشخصات نمایش؛ precision نهایی نیازمند تصمیم مالی است.',
+      'مشخصات نمایشی ارز؛ کد داخلی هنگام ذخیره خودکار تولید می‌شود و precision نهایی نیازمند تصمیم مالی است.',
     fields: [
-      { ...codeField, label: 'کد ISO-4217', placeholder: 'IRR' },
       nameField,
+      {
+        key: 'englishName',
+        label: 'نام انگلیسی',
+        type: 'text',
+        placeholder: 'Iranian Rial',
+      },
       { key: 'symbol', label: 'نماد نمایشی', type: 'text', placeholder: '﷼' },
+      {
+        key: 'decimalDigits',
+        label: 'تعداد رقم اعشار',
+        type: 'number',
+        placeholder: '2',
+      },
     ],
     preview: { code: 'IRR', name: 'ریال ایران', symbol: '﷼' },
   },
@@ -135,6 +136,13 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         required: true,
       },
       {
+        key: 'rateType',
+        label: 'نوع نرخ',
+        type: 'text',
+        placeholder: 'BUY / SELL / REFERENCE',
+        required: true,
+      },
+      {
         key: 'source',
         label: 'منبع نرخ',
         type: 'text',
@@ -147,6 +155,25 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         type: 'datetime-local',
         placeholder: '',
         required: true,
+      },
+      {
+        key: 'validFrom',
+        label: 'شروع اعتبار UTC',
+        type: 'datetime-local',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'validTo',
+        label: 'پایان اعتبار (اختیاری)',
+        type: 'datetime-local',
+        placeholder: '',
+      },
+      {
+        key: 'correctionReason',
+        label: 'توضیح اصلاح',
+        type: 'text',
+        placeholder: 'در صورت اصلاح نسخه قبلی',
       },
     ],
     preview: {
@@ -163,7 +190,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     group: 'مالی',
     description: 'تعریف بانک و کشور مرجع؛ حساب و مانده متعلق به Finance است.',
     fields: [
-      codeField,
       nameField,
       {
         key: 'countryId',
@@ -187,7 +213,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'سازمان بیمه‌گر و reference خدمت؛ قرارداد خرید در Procurement است.',
     fields: [
-      codeField,
       nameField,
       {
         key: 'organizationId',
@@ -209,9 +234,8 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'ایرلاین',
     group: 'خدمات سفر',
     description:
-      'کدهای IATA/ICAO و پیوند Organization بدون اطلاعات اتصال Provider.',
+      'مشخصات ایرلاین، کد تخصصی ICAO و پیوند Organization بدون اطلاعات اتصال Provider؛ کد داخلی خودکار است.',
     fields: [
-      { ...codeField, label: 'کد IATA', placeholder: 'W5' },
       nameField,
       { key: 'icaoCode', label: 'کد ICAO', type: 'text', placeholder: 'IRM' },
       {
@@ -237,7 +261,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'هتل، شهر و درجه‌بندی نمایشی؛ قرارداد و نرخ خرید خارج از Master Data است.',
     fields: [
-      codeField,
       nameField,
       {
         key: 'cityId',
@@ -245,12 +268,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         type: 'text',
         placeholder: 'city_...',
         required: true,
-      },
-      {
-        key: 'organizationId',
-        label: 'سازمان هتل (اختیاری)',
-        type: 'text',
-        placeholder: '',
       },
       {
         key: 'starRating',
@@ -274,7 +291,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'Profile مشترک Organization با roleهای چندگانه Agency/Corporate.',
     fields: [
-      codeField,
       {
         key: 'legalName',
         label: 'نام ثبتی',
@@ -312,7 +328,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'Profile عملیاتی کارگزار با reference سازمان؛ بدهی و قرارداد اینجا نگهداری نمی‌شود.',
     fields: [
-      codeField,
       nameField,
       {
         key: 'organizationId',
@@ -336,7 +351,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'اطلاعات مرجع لیدر؛ سند، حساب بانکی و دستمزد با permission و ماژول مالک نگهداری می‌شود.',
     fields: [
-      codeField,
       nameField,
       {
         key: 'languages',
@@ -367,7 +381,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'Reference مستقل از Sales Channel و Campaign برای منشأ آشنایی مشتری.',
     fields: [
-      codeField,
       nameField,
       {
         key: 'description',

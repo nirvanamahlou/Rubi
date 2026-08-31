@@ -5,6 +5,7 @@ import { MasterDataController } from './master-data.controller';
 
 describe('MasterDataController permission metadata', () => {
   it.each([
+    ['downloadXlsx', 'master_data.export'],
     ['requestExport', 'master_data.export'],
     ['exportStatus', 'master_data.export'],
     ['list', 'master_data.read'],

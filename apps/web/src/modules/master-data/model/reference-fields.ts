@@ -9,11 +9,7 @@ export interface ReferenceFieldConfig {
   optional?: boolean;
 }
 export type ReferenceSelectorState =
-  | 'loading'
-  | 'ready'
-  | 'empty'
-  | 'error'
-  | 'forbidden';
+  'loading' | 'ready' | 'empty' | 'error' | 'forbidden';
 
 export function resolveReferenceSelectorState(input: {
   loading?: boolean;
@@ -25,7 +21,6 @@ export function resolveReferenceSelectorState(input: {
   if (input.errorStatus !== undefined) return 'error';
   return (input.optionCount ?? 0) > 0 ? 'ready' : 'empty';
 }
-
 
 const configs: Partial<
   Record<MasterDataResourceKey, Record<string, ReferenceFieldConfig>>
@@ -59,12 +54,6 @@ const configs: Partial<
   },
   hotels: {
     cityId: { target: 'cities', payload: 'id' },
-    organizationId: {
-      target: 'organizations',
-      payload: 'id',
-      requiredRole: 'HOTEL_PROVIDER',
-      optional: true,
-    },
   },
   'exchange-rates': {
     fromCurrencyCode: { target: 'currencies', payload: 'code' },
@@ -116,8 +105,7 @@ export function toggleOrganizationRole(
   const selected = new Set(current.split(',').filter(Boolean));
   if (checked) selected.add(role);
   else selected.delete(role);
-  return ORGANIZATION_ROLE_OPTIONS
-    .map(([code]) => code)
+  return ORGANIZATION_ROLE_OPTIONS.map(([code]) => code)
     .filter((code) => selected.has(code))
     .join(',');
 }

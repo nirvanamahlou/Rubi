@@ -4,6 +4,13 @@ export const masterDataPermissions = [
   'master_data.update',
   'master_data.status.manage',
   'master_data.export',
+  'master_data.import',
+  'master_data.audit.read',
+  'master_data.currency_rate.create',
+  'master_data.currency_rate.approve',
+  'master_data.sensitive_contact.read',
+  'master_data.sensitive_contact.unmask',
+  'master_data.delete',
 ] as const;
 
 export type MasterDataPermission = (typeof masterDataPermissions)[number];

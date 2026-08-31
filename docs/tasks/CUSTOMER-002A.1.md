@@ -1,5 +1,15 @@
 # CUSTOMER-002A.1 — Timeline, Filters and Privacy UX
 
+## Sequential merge review — 2026-08-31
+
+- Product owner authorized the customer-only chain #26 → #27 → #34 → #41.
+- #26 merged as `a470d061b0284eb17b1d55b84b0b441a86b2df30`; #27 now targets `develop`.
+- Reconciled the assignment/status conflicts while preserving Master Data handoff and all PC-B rows. Kept the module-local CustomerDateField without editing the shared DatePicker.
+- Pulled the workbook archive/XML hardening forward from #41 before merging this parent: bounded compressed/expanded size, ZIP members, CRC/header consistency, unsafe path/active content/external relationship rejection and 5,000-row limit. The national-ID column is NOT introduced in this parent; the template remains `customers-person-v1`.
+- Parser regression: 20 tests passed. Final merged-basis full gates are rerun below/in the PR review record; historical test counts below are not a claim about the current merge tree.
+- No source dependency, lockfile, schema or migration change relative to current develop. API/Web/test scope remains Customers only. Real data, encryption keys and the main local preview are untouched.
+- Foreign identity, full documents, retention, atomic server import, cross-module history and Person-to-Organization persistence remain unsupported. The later #41 slice addresses further supported UI correctness; this parent is not a claim of complete Customers.
+
 - **Computer:** PC-A
 - **Owner:** PC-A
 - **Branch:** `codex/pc-a-customer-next`

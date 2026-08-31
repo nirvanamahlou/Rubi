@@ -3,13 +3,14 @@
 import { useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { FormField, Input } from '@/components/ui/form-controls';
 import {
   DialogDescription,
   DialogTitle,
-  Drawer,
-  DrawerClose,
-  DrawerContent,
+  Dialog,
+  DialogClose,
+  DialogContent,
 } from '@/components/ui/overlays';
 import { Alert, Badge } from '@/components/ui/surfaces';
 import type { MasterDataCatalogItem } from '../model/catalog';
@@ -76,8 +77,8 @@ export function MasterDataForm({
   }
 
   return (
-    <Drawer onOpenChange={onOpenChange} open={open}>
-      <DrawerContent className="w-[min(94vw,34rem)] p-6">
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogContent className="start-auto left-1/2 max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto p-6">
         <DialogTitle>
           {modeLabels[mode]} {definition.singularLabel}
         </DialogTitle>
@@ -111,27 +112,48 @@ export function MasterDataForm({
                 key={field.key}
                 label={field.label}
               >
-                <Input
-                  aria-describedby={
-                    error ? errorId : field.hint ? helpId : undefined
-                  }
-                  aria-invalid={Boolean(error)}
-                  disabled={readonly}
-                  dir={isCanonical ? 'ltr' : undefined}
-                  id={`${definition.key}-${field.key}`}
-                  inputMode={field.type === 'number' ? 'decimal' : undefined}
-                  onChange={(event) =>
-                    setValues((current) => ({
-                      ...current,
-                      [field.key]: event.target.value,
-                    }))
-                  }
-                  placeholder={field.placeholder}
-                  readOnly={readonly}
-                  step={field.type === 'number' ? 'any' : undefined}
-                  type={field.type}
-                  value={values[field.key] ?? ''}
-                />
+                {field.type === 'datetime-local' ? (
+                  <DatePicker
+                    aria-describedby={
+                      error ? errorId : field.hint ? helpId : undefined
+                    }
+                    aria-invalid={Boolean(error)}
+                    disabled={readonly}
+                    id={`${definition.key}-${field.key}`}
+                    includeTime
+                    onChange={(nextValue) =>
+                      setValues((current) => ({
+                        ...current,
+                        [field.key]: nextValue,
+                      }))
+                    }
+                    placeholder={field.placeholder}
+                    readOnly={readonly}
+                    value={values[field.key] ?? ''}
+                  />
+                ) : (
+                  <Input
+                    aria-describedby={
+                      error ? errorId : field.hint ? helpId : undefined
+                    }
+                    aria-invalid={Boolean(error)}
+                    disabled={readonly}
+                    dir={isCanonical ? 'ltr' : undefined}
+                    id={`${definition.key}-${field.key}`}
+                    inputMode={field.type === 'number' ? 'decimal' : undefined}
+                    onChange={(event) =>
+                      setValues((current) => ({
+                        ...current,
+                        [field.key]: event.target.value,
+                      }))
+                    }
+                    placeholder={field.placeholder}
+                    readOnly={readonly}
+                    step={field.type === 'number' ? 'any' : undefined}
+                    type={field.type}
+                    value={values[field.key] ?? ''}
+                  />
+                )}
               </FormField>
             );
           })}
@@ -153,15 +175,15 @@ export function MasterDataForm({
           ) : null}
 
           <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-5">
-            <DrawerClose asChild>
+            <DialogClose asChild>
               <Button type="button" variant="ghost">
                 بستن
               </Button>
-            </DrawerClose>
+            </DialogClose>
             {!readonly ? <Button type="submit">اعتبارسنجی فرم</Button> : null}
           </div>
         </form>
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 }

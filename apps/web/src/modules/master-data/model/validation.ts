@@ -6,7 +6,6 @@ const draftValuesSchema = z.record(
   z.string(),
   z.string().trim().max(200, 'حداکثر طول مجاز ۲۰۰ نویسه است.'),
 );
-const canonicalCodePattern = /^[A-Z0-9][A-Z0-9_-]{1,31}$/;
 const currencyCodePattern = /^[A-Z]{3}$/;
 
 export interface MasterDataValidationResult {
@@ -40,10 +39,6 @@ export function validateMasterDataDraft(
     if (field.required && !values[field.key]) {
       errors[field.key] = `${field.label} الزامی است.`;
     }
-  }
-
-  if (values.code && !canonicalCodePattern.test(values.code)) {
-    errors.code = 'کد باید انگلیسی، بزرگ و بدون فاصله باشد.';
   }
 
   for (const key of ['fromCurrencyCode', 'toCurrencyCode']) {

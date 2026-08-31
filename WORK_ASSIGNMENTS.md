@@ -1,38 +1,53 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-25 — اصلاحات Review PR #24 تکمیل شد؛ Draft PR و قفل‌ها تا Merge/Handoff فعال‌اند
+## Current customer-chain handoff — 2026-08-31
+
+- Supersedes the historical conditional MASTER-003 handoff below for this customer-only chain.
+- Prerequisites are now fulfilled: #25 merged `d73f51f`, #26 merged `a470d06`, #27 merged `eb2fe1e`.
+- The product owner explicitly authorized review, conflict resolution and sequential merge of #26/#27/#34/#41; no PC-B PR is included.
+- Migration, Customer shared-contract and Central customer-status ownership: `ACTIVE — PC-A/CUSTOMER-002B`, limited to completing/reviewing #34/#41 and recording the final handoff. No additional domain schema is authorized.
+- Master shared-contract: `RELEASED / STABLE`; Dependency/Lockfile: `RELEASED`. PC-B source branches and pending PRs remain untouched.
+- National-ID slice only; DEC-OPEN-006/011 remain open for passports, retention/residency/KMS and actual merge. No production deployment or real-data migration is authorized by this review.
+- `CUSTOMER-CHAIN-REVIEW-001` continues in `codex/pc-a-customer-34-reconcile-20260831` in the isolated review worktree. Shared customer locks release only after the final #41 handoff.
+
+آخرین به‌روزرسانی: 2026-08-29 — MASTER-003 Phase A برای Review و Handoff مشروط آماده شد
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
-ثبت شود. وضعیت‌های مجاز: `PLANNED`، `IN_PROGRESS`، `BLOCKED`، `READY_FOR_REVIEW`،
-`DONE`.
+ثبت شود. وضعیت‌های مجاز: `PLANNED`، `PLANNED/RESERVED`، `IN_PROGRESS`،
+`BLOCKED`، `READY_FOR_REVIEW`، `DONE`.
 
-| Work ID                         | مالک         | Branch                                      | محدوده/فایل‌های اصلی                                                                                   | وضعیت              | وابستگی یا Handoff                                                                                                        |
-| ------------------------------- | ------------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| BOOT-001                        | PC-A         | `codex/pc-a-bootstrap-docs`                 | اسناد Bootstrap، معماری، ERD، workflow و backlog                                                       | `READY_FOR_REVIEW` | PC-B باید همه اسناد و تصمیم‌های باز P0 را مرور کند                                                                        |
-| FOUNDATION-001                  | PC-A         | `codex/pc-a-technical-bootstrap`            | Technical Bootstrap: Monorepo، Web/API/Worker، Docker Compose و Prisma Client بدون مدل تجاری           | `DONE`             | Commit `d9a9793` ادغام شد؛ مبنای Work Itemهای Full-Stack                                                                  |
-| FOUNDATION-002                  | تخصیص‌نیافته | TBD                                         | سخت‌سازی زیرساخت، CI و استقرار محیط‌های غیرمحلی                                                        | `PLANNED`          | FOUNDATION-001 و تصمیم‌های میزبانی/RPO/RTO                                                                                |
-| FOUNDATION-003                  | تخصیص‌نیافته | TBD                                         | IAM/Audit foundation، schema دامنه و Migration اولیه                                                   | `PLANNED`          | با `IAM-001` جایگزین شده؛ برای جلوگیری از اجرای موازی رزرو جدید نگیرد                                                     |
-| FOUNDATION-004                  | PC-B         | `codex/pc-b-frontend-foundation`            | Frontend Foundation: `apps/web/**`، تست Frontend و `docs/tasks/PC-B.md`                                | `READY_FOR_REVIEW` | Base `b5b7c5d`؛ قفل Dependency/Lockfile آزاد شد                                                                           |
-| DOCS-002                        | PC-A         | `codex/pc-a-hr-module-ownership`            | ثبت ماژول منابع انسانی، مالکیت نهایی ماژول‌ها و قرارداد همکاری Full-Stack                              | `READY_FOR_REVIEW` | فقط مستندات؛ بدون کد، Dependency، Schema یا Migration                                                                     |
-| DOCS-003                        | PC-A         | `codex/pc-a-sprint-1-planning`              | ثبت برنامه Sprint اول، مرز کار و Handoff دو Task `IAM-001` و `MASTER-001`                              | `READY_FOR_REVIEW` | Base `c4f8bde`؛ فقط اسناد برنامه‌ریزی                                                                                     |
-| ARCH-001                        | PC-A         | `codex/pc-a-approved-workflow-architecture` | معماری ۱۷ بخش، فروش/تخصیص، رزرواسیون/Manifest، تعریف بلیت، خرید/تخفیف و release مالی                   | `DONE`             | Merge `99dd1cf`؛ مرجع قطعی UI-ARCH-001                                                                                    |
-| UI-ARCH-001                     | PC-A         | `codex/pc-a-approved-workflow-frontend`     | منوی ۱۷ بخشی، صفحات گردش فروش/رزرواسیون/خرید/مالی، تعریف بلیت و مدیریت سیستم در `apps/web/**`          | `DONE`             | Merge `543f6e2`؛ دسترسی عملی IAM از مدیریت سیستم و منوی ۱۷ بخشی تثبیت شد                                                  |
-| IAM-001                         | PC-A         | `codex/pc-a-iam-foundation`                 | IAM Full-Stack: Database، API، Web، Test، امنیت، شعبه/دسترسی و Audit                                   | `DONE`             | Merge `50eaccaf`؛ Handoff عمومی IAM ثبت و قفل‌های مشترک آزاد شد                                                           |
-| MASTER-001                      | PC-B         | `codex/pc-b-master-data-foundation`         | Foundation بدون Persistence اطلاعات پایه، UI، قرارداد ماژول‌محلی و تست                                 | `DONE`             | Merge `cda0f9a`؛ Persistence واقعی به `MASTER-002` منتقل شد                                                               |
-| SPRINT1-HANDOFF-001             | PC-A         | `codex/pc-a-sprint-1-handoff`               | بستن Sprint اول، ثبت Mergeهای نهایی، آزادسازی قفل‌ها و برنامه اولیه Sprint دوم                         | `DONE`             | Merge `9c69124`؛ چهار قفل Sprint اول آزاد شدند                                                                            |
-| SPRINT2-PLANNING-001            | PC-A         | `codex/pc-a-sprint-2-planning`              | ترتیب اجرا، قفل‌ها، مرز فایل و Handoff سه Task آغاز Sprint دوم                                         | `DONE`             | Merge `9efb37c`؛ فقط اسناد برنامه‌ریزی و وضعیت                                                                            |
-| IAM-002                         | PC-A         | `codex/pc-a-iam-domain-permissions`         | انتشار Permission Codeهای Master Data و Customers، Seed تکرارپذیر و Handoff قرارداد عمومی              | `DONE`             | Merge `d1f1133`؛ ۱۷ Permission و بدون Schema/Migration/Dependency                                                         |
-| IAM002-HANDOFF-001              | PC-A         | `codex/pc-a-iam-002-handoff`                | ثبت Merge، آزادسازی IAM contract lock و مجازکردن شروع دو Task مستقل Sprint دوم                         | `DONE`             | Merge `0af31c2`؛ دو Task مستقل مجاز به شروع هستند                                                                         |
-| MASTER-002                      | PC-B         | `codex/pc-b-master-data-persistence`        | Database، Migration، Repository، Backend و اتصال واقعی Frontend اطلاعات پایه                           | `DONE`             | Merge `ddfebb3`؛ چهار قفل با Handoff مستقل آزاد شدند                                                                      |
-| CUSTOMER-001                    | PC-A         | `codex/pc-a-customer-persistence`           | مشتریان، Persistence، رمزنگاری Contact، Audit redaction و Duplicate query                              | `DONE`             | PR #19؛ Merge `7d0a4f4`؛ Migration و قرارداد Customer پایدار و تحویل‌شده                                                  |
-| CUSTOMER001-FINANCE-HANDOFF-001 | PC-A         | `codex/pc-a-customer-finance-handoff`       | آزادسازی چهار قفل CUSTOMER-001 و رزرو کنترل‌شده FINANCE-001؛ فقط اسناد مرکزی و سند Handoff             | `DONE`             | PR #20؛ Merge `11fc875`؛ بدون کد، Schema، Migration، Dependency یا Lockfile                                               |
-| FINANCE-001                     | PC-A         | `codex/pc-a-finance-foundation`             | Foundation مالی و چهار Decision پذیرفته‌شده؛ Phase A بدون Persistence و Migration                      | `DONE`             | PR #21؛ Merge `45c107e`؛ قفل‌های stale با نبود FINANCE-002 آزاد شدند                                                      |
-| LEGAL-ENTITY-CONTEXT-001        | PC-A         | `codex/pc-a-legal-entity-context`           | Legal Entity Full-Stack، Prisma، API، Contract، App Shell، صفحه مدیریت، Audit و Test                   | `READY_FOR_REVIEW` | اصلاحات Review تکمیل؛ Draft PR #24 و قفل‌ها تا Merge/Handoff فعال‌اند                                                     |
-| CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket                       | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence                                               |
-| MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix          | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11                                                      |
-| MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                                    | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                                                               |
-| CUSTOMER-002A.1                 | PC-A         | `codex/pc-a-customer-next`                  | Timeline/Filters/Privacy در Customers؛ API/Web/Test/Contract و اسناد Task، بدون Database/Master Data   | `READY_FOR_REVIEW` | Draft PR #27 روی #26؛ Migration Lock نزد `PC-B/MASTER-003` و Schema نیازها در `BLOCKED_FOR_CUSTOMER_002B`                 |
-| CUSTOMER-002B                   | PC-A         | `codex/pc-a-customer-002b-national-id`      | کد ملی امن و مستقل برای هر Customer Person/Passenger؛ Prisma/Migration، API، Web، Import/Export و Test | `READY_FOR_REVIEW` | Migration Lock با دستور صریح مالک در 2026-08-29 از `PC-B/MASTER-003` به `PC-A/CUSTOMER-002B` منتقل شد؛ Stacked روی PR #27 |
+| Work ID                         | مالک         | Branch                                      | محدوده/فایل‌های اصلی                                                                          | وضعیت              | وابستگی یا Handoff                                                                    |
+| ------------------------------- | ------------ | ------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------- |
+| BOOT-001                        | PC-A         | `codex/pc-a-bootstrap-docs`                 | اسناد Bootstrap، معماری، ERD، workflow و backlog                                              | `READY_FOR_REVIEW` | PC-B باید همه اسناد و تصمیم‌های باز P0 را مرور کند                                    |
+| FOUNDATION-001                  | PC-A         | `codex/pc-a-technical-bootstrap`            | Technical Bootstrap: Monorepo، Web/API/Worker، Docker Compose و Prisma Client بدون مدل تجاری  | `DONE`             | Commit `d9a9793` ادغام شد؛ مبنای Work Itemهای Full-Stack                              |
+| FOUNDATION-002                  | تخصیص‌نیافته | TBD                                         | سخت‌سازی زیرساخت، CI و استقرار محیط‌های غیرمحلی                                               | `PLANNED`          | FOUNDATION-001 و تصمیم‌های میزبانی/RPO/RTO                                            |
+| FOUNDATION-003                  | تخصیص‌نیافته | TBD                                         | IAM/Audit foundation، schema دامنه و Migration اولیه                                          | `PLANNED`          | با `IAM-001` جایگزین شده؛ برای جلوگیری از اجرای موازی رزرو جدید نگیرد                 |
+| FOUNDATION-004                  | PC-B         | `codex/pc-b-frontend-foundation`            | Frontend Foundation: `apps/web/**`، تست Frontend و `docs/tasks/PC-B.md`                       | `READY_FOR_REVIEW` | Base `b5b7c5d`؛ قفل Dependency/Lockfile آزاد شد                                       |
+| DOCS-002                        | PC-A         | `codex/pc-a-hr-module-ownership`            | ثبت ماژول منابع انسانی، مالکیت نهایی ماژول‌ها و قرارداد همکاری Full-Stack                     | `READY_FOR_REVIEW` | فقط مستندات؛ بدون کد، Dependency، Schema یا Migration                                 |
+| DOCS-003                        | PC-A         | `codex/pc-a-sprint-1-planning`              | ثبت برنامه Sprint اول، مرز کار و Handoff دو Task `IAM-001` و `MASTER-001`                     | `READY_FOR_REVIEW` | Base `c4f8bde`؛ فقط اسناد برنامه‌ریزی                                                 |
+| ARCH-001                        | PC-A         | `codex/pc-a-approved-workflow-architecture` | معماری ۱۷ بخش، فروش/تخصیص، رزرواسیون/Manifest، تعریف بلیت، خرید/تخفیف و release مالی          | `DONE`             | Merge `99dd1cf`؛ مرجع قطعی UI-ARCH-001                                                |
+| UI-ARCH-001                     | PC-A         | `codex/pc-a-approved-workflow-frontend`     | منوی ۱۷ بخشی، صفحات گردش فروش/رزرواسیون/خرید/مالی، تعریف بلیت و مدیریت سیستم در `apps/web/**` | `DONE`             | Merge `543f6e2`؛ دسترسی عملی IAM از مدیریت سیستم و منوی ۱۷ بخشی تثبیت شد              |
+| IAM-001                         | PC-A         | `codex/pc-a-iam-foundation`                 | IAM Full-Stack: Database، API، Web، Test، امنیت، شعبه/دسترسی و Audit                          | `DONE`             | Merge `50eaccaf`؛ Handoff عمومی IAM ثبت و قفل‌های مشترک آزاد شد                       |
+| MASTER-001                      | PC-B         | `codex/pc-b-master-data-foundation`         | Foundation بدون Persistence اطلاعات پایه، UI، قرارداد ماژول‌محلی و تست                        | `DONE`             | Merge `cda0f9a`؛ Persistence واقعی به `MASTER-002` منتقل شد                           |
+| SPRINT1-HANDOFF-001             | PC-A         | `codex/pc-a-sprint-1-handoff`               | بستن Sprint اول، ثبت Mergeهای نهایی، آزادسازی قفل‌ها و برنامه اولیه Sprint دوم                | `DONE`             | Merge `9c69124`؛ چهار قفل Sprint اول آزاد شدند                                        |
+| SPRINT2-PLANNING-001            | PC-A         | `codex/pc-a-sprint-2-planning`              | ترتیب اجرا، قفل‌ها، مرز فایل و Handoff سه Task آغاز Sprint دوم                                | `DONE`             | Merge `9efb37c`؛ فقط اسناد برنامه‌ریزی و وضعیت                                        |
+| IAM-002                         | PC-A         | `codex/pc-a-iam-domain-permissions`         | انتشار Permission Codeهای Master Data و Customers، Seed تکرارپذیر و Handoff قرارداد عمومی     | `DONE`             | Merge `d1f1133`؛ ۱۷ Permission و بدون Schema/Migration/Dependency                     |
+| IAM002-HANDOFF-001              | PC-A         | `codex/pc-a-iam-002-handoff`                | ثبت Merge، آزادسازی IAM contract lock و مجازکردن شروع دو Task مستقل Sprint دوم                | `DONE`             | Merge `0af31c2`؛ دو Task مستقل مجاز به شروع هستند                                     |
+| MASTER-002                      | PC-B         | `codex/pc-b-master-data-persistence`        | Database، Migration، Repository، Backend و اتصال واقعی Frontend اطلاعات پایه                  | `DONE`             | Merge `ddfebb3`؛ چهار قفل با Handoff مستقل آزاد شدند                                  |
+| CUSTOMER-001                    | PC-A         | `codex/pc-a-customer-persistence`           | مشتریان، Persistence، رمزنگاری Contact، Audit redaction و Duplicate query                     | `DONE`             | PR #19؛ Merge `7d0a4f4`؛ Migration و قرارداد Customer پایدار و تحویل‌شده              |
+| CUSTOMER-002A                   | PC-A         | TBD                                         | Customer Operations Enhancement در مرز Web/API فعلی Customers و تست‌های اختصاصی               | `PLANNED/RESERVED` | شروع از آخرین `origin/develop`؛ بدون قفل مشترک و بدون تداخل با MASTER-003             |
+| CUSTOMER-002B                   | PC-A         | TBD                                         | Customer Persistence بعدی و قرارداد عمومی Customers؛ Scope دقیق در Handoff فعال‌سازی می‌شود   | `PLANNED/RESERVED` | فعال‌سازی قفل‌ها فقط پس از Merge ترتیبی PRهای #25، #26 و #27                          |
+| CUSTOMER001-FINANCE-HANDOFF-001 | PC-A         | `codex/pc-a-customer-finance-handoff`       | آزادسازی چهار قفل CUSTOMER-001 و رزرو کنترل‌شده FINANCE-001؛ فقط اسناد مرکزی و سند Handoff    | `DONE`             | PR #20؛ Merge `11fc875`؛ بدون کد، Schema، Migration، Dependency یا Lockfile           |
+| FINANCE-001                     | PC-A         | `codex/pc-a-finance-foundation`             | Foundation مالی و چهار Decision پذیرفته‌شده؛ Phase A بدون Persistence و Migration             | `DONE`             | PR #21؛ Merge `45c107e`؛ قفل‌های stale با نبود FINANCE-002 آزاد شدند                  |
+| LEGAL-ENTITY-CONTEXT-001        | PC-A         | `codex/pc-a-legal-entity-context`           | Legal Entity Full-Stack، Prisma، API، Contract، App Shell، صفحه مدیریت، Audit و Test          | `DONE`             | PR #24؛ Merge `b6da5d6`؛ قفل‌ها با دلیل `DONE/MERGED via PR #24` آزاد شدند            |
+| MASTER-003                      | PC-B         | `codex/pc-b-master-data-advanced`           | Phase A: نرخ ارز پیشرفته، Import امن هتل، کاتالوگ‌های موجود، UI و Excel واقعی                 | `READY_FOR_REVIEW` | PR #25؛ کل Master Data تکمیل‌شده نیست؛ Handoff قفل‌ها مشروط و آینده است               |
+| MASTER-004                      | PC-B         | TBD                                         | ادامه کاتالوگ‌ها، Antivirus/Documents، PII encryption/unmask و قابلیت‌های آینده Master Data   | `PLANNED`          | تا Handoff بعدی بدون Prisma، Migration، Seed، Root Contract، Dependency و اسناد مرکزی |
+| CALENDAR-001                    | PC-B         | `codex/pc-b-master-data-advanced`           | تقویم مشترک آبی با سوییچ شمسی/میلادی در همه فرم‌های Web                                       | `READY_FOR_REVIEW` | ۸۵ تست Web، Typecheck و Lint موفق؛ چهار route لوکال پاسخ ۲۰۰ دادند                    |
+| CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket              | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence           |
+| MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11                  |
+| MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                           | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                           |
+| CUSTOMER-002A.1                 | PC-A         | `codex/pc-a-customer-next`                  | Timeline/Filters/Privacy در Customers؛ API/Web/Test/Contract و اسناد Task، بدون Database/Master Data | `READY_FOR_REVIEW` | Draft PR #27 روی #26؛ Migration Lock نزد `PC-B/MASTER-003` و Schema نیازها در `BLOCKED_FOR_CUSTOMER_002B` |
+| CUSTOMER-CHAIN-REVIEW-001 | PC-A | `codex/pc-a-customer-27-reconcile-20260831` | Customer PR chain review, conflict reconciliation and targeted safety gates | `IN_PROGRESS` | Authorized 2026-08-31: #26 merged a470d06; #27/#34/#41 sequentially. No PC-B PR changes or production data changes. |
 
 ### قفل موقت Supply-chain برای Review PR #23
 
@@ -210,27 +225,64 @@ Finance Persistence و هیچ مالک جدیدی برای قفل‌ها وجو�
 Finance shared-contract در `packages/contracts/src/finance/**` مرز دامنه Finance باقی
 می‌ماند و به Task Legal Entity منتقل نمی‌شود.
 
-### قفل‌های فعال PC-A/LEGAL-ENTITY-CONTEXT-001
+### قفل‌های آزادشده PC-A/LEGAL-ENTITY-CONTEXT-001
 
-| قفل                                      | مالک/Task                     | محدوده                                                                                                                          | وضعیت/شرط آزادسازی          |
-| ---------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
-| Migration Owner                          | PC-A/LEGAL-ENTITY-CONTEXT-001 | `packages/database/prisma/schema.prisma`، Migration و Seed افزایشی Legal Entity                                                 | `ACTIVE` تا Merge و Handoff |
-| Legal Entity shared-contract/root export | PC-A/LEGAL-ENTITY-CONTEXT-001 | `packages/contracts/src/legal-entities/**` و export لازم                                                                        | `ACTIVE` تا Merge و Handoff |
-| Central status/docs                      | PC-A/LEGAL-ENTITY-CONTEXT-001 | `WORK_ASSIGNMENTS.md`، `PLANS.md`، `docs/PROJECT_STATUS.md`، اسناد معماری/داده مرتبط و `docs/tasks/LEGAL-ENTITY-CONTEXT-001.md` | `ACTIVE` تا Merge و Handoff |
-| Dependency/Lockfile Owner                | تخصیص‌نیافته                  | هیچ dependency جدیدی اثبات نشده؛ manifest و `pnpm-lock.yaml` خارج از Scope                                                      | `RELEASED`                  |
+مبنای آزادسازی: `DONE/MERGED via PR #24` با Source HEAD
+`6f475c03eebc6379fc8be47a48eb0751d58f2d89` و Merge Commit
+`b6da5d6300716a189958bc37d31ca195f0304dc5` در `origin/develop`.
 
-### اصلاحات Review PR #24
+- Migration Owner: `RELEASED`
+- Legal Entity shared-contract/root export: `RELEASED`
+- Central status/docs: `RELEASED`
+- Dependency/Lockfile Owner: همچنان `RELEASED`
 
-- اصلاحات Review از HEAD برابر `17ad92703251e6f708fdd3e6c9fc03fd7c31975e` روی همان Branch و همان Draft PR انجام شدند.
-- قفل‌های Migration، Legal Entity shared-contract/root export و اسناد مرکزی بدون انتقال مالک، برای `PC-A/LEGAL-ENTITY-CONTEXT-001` فعال می‌مانند.
-- Dependency/Lockfile آزاد است؛ این Review به dependency جدید نیاز ندارد.
-- پنج محور الزام‌آور تکمیل شدند: optimistic concurrency اتمیک، FK واقعی Branding Snapshot، policy داخلی trusted/fail-closed، Reissue اتمیک با reason canonical و دسترسی پایه read/switch برای کاربر authenticated فعال.
-- PostgreSQL تازه با ۷ Migration، Seed دوبار، ۲۴۵ تست در ۶۶ فایل، lint/typecheck/build و Smoke واقعی API/Web پاس شدند؛ قفل‌ها برای Review/Merge همچنان فعال‌اند.
+### Handoff مشروط قفل‌های MASTER-003 Phase A
 
-مسیرهای ماژول `apps/api/src/legal-entities/**`، `apps/web/src/modules/legal-entities/**`،
-App Shell مرتبط، route `/system/legal-entities` و تست‌های همان قابلیت برای این Work Item
-رزرو هستند. تا Handoff، `MASTER-003`، `FINANCE-002` و هر Task دیگر حق Prisma/Migration
-یا تغییر فایل‌های مرکزی رزروشده را ندارند.
+این جدول وضعیت آینده را رزرو می‌کند و انتقال زودهنگام نیست. تا Merge PR #25، مالک
+فعلی قفل‌های MASTER-003 همچنان PC-B است. فعال‌سازی قفل‌های CUSTOMER-002B فقط پس از
+Merge ترتیبی PR #25، سپس PR #26 و سپس PR #27 و ثبت Handoff نهایی مجاز است.
+
+| قفل                                     | وضعیت فعلی تا Merge PR #25 | رزرو/وضعیت بعدی                                                                           |
+| --------------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------- |
+| Migration Owner                         | `ACTIVE — PC-B/MASTER-003` | `RESERVED — PC-A/CUSTOMER-002B`؛ فعال فقط پس از Merge #25 → #26 → #27                     |
+| Central Sprint docs                     | `ACTIVE — PC-B/MASTER-003` | `RESERVED — PC-A/CUSTOMER-002B`؛ فعال فقط پس از همان سه Merge و Handoff نهایی             |
+| Customer shared-contract/root export    | بدون تغییر توسط MASTER-003 | `RESERVED — PC-A/CUSTOMER-002B`؛ استفاده فقط پس از فعال‌سازی Handoff                      |
+| Master Data shared-contract/root export | `ACTIVE — PC-B/MASTER-003` | پس از Merge PR #25 برابر `RELEASED / STABLE`؛ تغییر موازی در MASTER-003E/MASTER-004 ممنوع |
+| Dependency/Lockfile Owner               | `RELEASED`                 | `RELEASED`؛ هیچ Dependency یا Lockfile جدیدی در این Handoff ایجاد نمی‌شود                 |
+
+`MASTER-003E-SUPPLIERS` روی Branch مستقل در وضعیت
+`PAUSED_FOR_CUSTOMER_002B_MIGRATION_HANDOFF` است و Migration آن تا Handoff بعدی حق
+Merge ندارد. `MASTER-004` نیز تا فعال‌شدن قفل بعدی حق تغییر Prisma Schema، Migration،
+Seed، Root Contract، Dependency/Lockfile یا اسناد مرکزی را ندارد.
+
+### رزرو موازی PC-A/CUSTOMER-002A
+
+- Task با عنوان `CUSTOMER-002A — Customer Operations Enhancement` و وضعیت
+  `PLANNED/RESERVED` برای PC-A رزرو است و باید از آخرین `origin/develop` آغاز شود.
+- محدوده مجاز فقط `apps/web/src/modules/customers/**`، صفحات مرتبط با `/customers`،
+  `apps/api/src/customers/**` با Schema فعلی، تست‌های اختصاصی Customers و
+  `docs/tasks/CUSTOMER-002A.md` است.
+- تغییر Prisma Schema یا Migration، Dependency یا Lockfile، Master Data، Legal Entity و
+  فایل‌های مرکزی قفل‌شده توسط MASTER-003 ممنوع است.
+- تغییر Customer shared-contract یا root export بدون هماهنگی و ثبت مجدد Handoff مجاز
+  نیست.
+- Migration Lock، Master Data shared-contract/root export و Central Sprint docs همچنان
+  در مالکیت PC-B/MASTER-003 باقی می‌مانند. وضعیت Dependency/Lockfile نیز همان وضعیت
+  ثبت‌شده در PR #25 است و این رزرو آن را تغییر نمی‌دهد.
+
+محدوده اجرایی MASTER-003 شامل `apps/api/src/master-data/**`،
+`apps/web/src/modules/master-data/**`، route `/master-data`، قرارداد عمومی Master Data،
+Schema/Migration افزایشی و تست‌های همان قابلیت است. فایل‌های داخلی IAM، Legal Entities،
+Customers، Finance، Procurement، Reservations، Integrations و Documents خارج از مالکیت
+این Task می‌مانند و فقط از Public Contract یا Port نسخه‌دار مصرف می‌شوند.
+
+### قفل فعال PC-B/CALENDAR-001
+
+- محدوده: `apps/web/src/components/ui/date-picker*`، export همان UI و جایگزینی
+  ورودی‌های `date`/`datetime-local` در ماژول‌های Web.
+- تغییر Dependency/Lockfile، API، Database، Contract و Migration مجاز نیست.
+- مقدار ذخیره‌شده همچنان ISO Gregorian باقی می‌ماند؛ سوییچ شمسی/میلادی فقط لایه
+  نمایش و انتخاب تاریخ است.
 
 ## قفل‌های آزادشده Sprint دوم
 

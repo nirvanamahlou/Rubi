@@ -3,9 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { validateMasterDataDraft } from './validation';
 
 describe('master data validation', () => {
-  it('accepts a canonical country draft', () => {
+  it('accepts a country draft without an internal code', () => {
     const result = validateMasterDataDraft('countries', {
-      code: 'IR',
       name: 'ایران',
       englishName: 'Iran',
     });
@@ -25,12 +24,12 @@ describe('master data validation', () => {
     expect(result.errors.rate).toBeDefined();
   });
 
-  it('rejects non-canonical codes', () => {
+  it('accepts a bank draft without an internal code', () => {
     const result = validateMasterDataDraft('banks', {
-      code: 'bank code',
       name: 'بانک',
       countryId: 'country_ir',
     });
-    expect(result.errors.code).toContain('بدون فاصله');
+    expect(result.success).toBe(true);
+    expect(result.values.code).toBeUndefined();
   });
 });

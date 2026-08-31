@@ -5,7 +5,7 @@ import { masterDataResourceKeys } from '../model/catalog';
 export const MASTER_DATA_API_PROPOSAL_VERSION = 'master-data.v1-draft';
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data';
 export const MASTER_DATA_BLOCKED_REASON =
-  'Blocked by Migration Lock: persistence and authoritative exports are not implemented.';
+  'PDF archival export remains dependent on the Documents Worker; direct Excel download is available.';
 
 export const masterDataResourceSchema = z.enum(masterDataResourceKeys);
 export const masterDataStatusSchema = z.enum(['active', 'inactive']);
@@ -90,6 +90,7 @@ export const masterDataEndpoints = {
   ) =>
     `${MASTER_DATA_API_PREFIX}/${resource}/${encodeURIComponent(id)}/actions/${action}` as const,
   exports: `${MASTER_DATA_API_PREFIX}/exports` as const,
+  excelDownload: `${MASTER_DATA_API_PREFIX}/exports/xlsx/download` as const,
   exportStatus: (operationId: string) =>
     `${MASTER_DATA_API_PREFIX}/exports/${encodeURIComponent(operationId)}` as const,
 };
