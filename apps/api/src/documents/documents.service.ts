@@ -8,6 +8,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -137,6 +138,15 @@ function canReadSensitive(
     (confidentiality !== 'CONFIDENTIAL' && confidentiality !== 'RESTRICTED') ||
     permissions.includes('documents.sensitive.read')
   );
+}
+
+const previewableImageMimeTypes = new Set(['image/jpeg', 'image/png']);
+
+export interface DocumentFileDelivery {
+  stream: Readable;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
 }
 
 function mapListItem(
@@ -285,6 +295,9 @@ export class DocumentsService {
     permissions: readonly string[],
   ): DocumentDetailV1 {
     const base = mapListItem(row, permissions);
+    const sensitive =
+      row.confidentiality === 'CONFIDENTIAL' ||
+      row.confidentiality === 'RESTRICTED';
     const sensitiveAllowed = canReadSensitive(row.confidentiality, permissions);
     return {
       ...base,
@@ -306,8 +319,12 @@ export class DocumentsService {
           : 'پرونده محرمانه',
       })),
       capabilities: {
-        viewFile: permissions.includes('documents.file.read'),
-        download: permissions.includes('documents.download'),
+        viewFile:
+          permissions.includes('documents.file.read') && sensitiveAllowed,
+        download:
+          permissions.includes('documents.file.read') &&
+          permissions.includes('documents.download') &&
+          (!sensitive || permissions.includes('documents.sensitive.download')),
         uploadVersion: permissions.includes('documents.version.create'),
         editMetadata: permissions.includes('documents.metadata.update'),
         viewAudit: permissions.includes('documents.audit.read'),
@@ -448,12 +465,7 @@ export class DocumentsService {
     id: string,
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
-  ): Promise<{
-    stream: Readable;
-    fileName: string;
-    mimeType: string;
-    sizeBytes: number;
-  }> {
+  ): Promise<DocumentFileDelivery> {
     const row = await this.repository.findDetail(id, actor.branchIds);
     if (!row || !row.currentVersion)
       throw new NotFoundException('سند پیدا نشد.');
@@ -490,6 +502,76 @@ export class DocumentsService {
       }
       throw new ForbiddenException('دانلود این سند مجاز نیست.');
     }
+    return {
+      stream: await this.storage.openQuarantined(
+        row.currentVersion.storageObjectKey,
+        Number(row.currentVersion.sizeBytes),
+      ),
+      fileName: row.currentVersion.safeDownloadName,
+      mimeType: row.currentVersion.detectedMimeType,
+      sizeBytes: Number(row.currentVersion.sizeBytes),
+    };
+  }
+
+  async preview(
+    id: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<DocumentFileDelivery> {
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row || !row.currentVersion)
+      throw new NotFoundException('سند پیدا نشد.');
+    this.assertDomain(row.documentType.domain, actor.permissions);
+
+    const sensitive =
+      row.confidentiality === 'CONFIDENTIAL' ||
+      row.confidentiality === 'RESTRICTED';
+    const sensitiveAllowed =
+      !sensitive ||
+      (actor.permissions.includes('documents.sensitive.read') &&
+        (metadata.sensitiveReason?.trim().length ?? 0) >= 5);
+    const previewable = previewableImageMimeTypes.has(
+      row.currentVersion.detectedMimeType,
+    );
+    const allowed =
+      actor.permissions.includes('documents.file.read') &&
+      sensitiveAllowed &&
+      row.archiveStatus === 'ACTIVE' &&
+      row.currentVersion.scanStatus === 'CLEAN' &&
+      previewable;
+
+    const denialReason =
+      row.currentVersion.scanStatus !== 'CLEAN'
+        ? 'PREVIEW_SCAN_BLOCKED'
+        : !previewable
+          ? 'PREVIEW_TYPE_UNSUPPORTED'
+          : 'PREVIEW_POLICY_DENIED';
+    await this.repository.appendAudit({
+      documentId: row.id,
+      versionId: row.currentVersion.id,
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      action: 'documents.file.preview',
+      outcome: allowed ? 'SUCCESS' : 'FAILURE',
+      reason: allowed ? metadata.sensitiveReason?.trim() || null : denialReason,
+      ipSummary: summarizeIp(metadata.ipAddress),
+      userAgentSummary: summarizeUserAgent(metadata.userAgent),
+    });
+
+    if (row.currentVersion.scanStatus !== 'CLEAN') {
+      throw new ConflictException(
+        'پیش‌نمایش تا پایان اسکن امنیتی فعال نمی‌شود.',
+      );
+    }
+    if (!previewable) {
+      throw new UnsupportedMediaTypeException(
+        'پیش‌نمایش تصویری فقط برای فایل JPEG یا PNG در دسترس است.',
+      );
+    }
+    if (!allowed) {
+      throw new ForbiddenException('مشاهده محتوای این سند مجاز نیست.');
+    }
+
     return {
       stream: await this.storage.openQuarantined(
         row.currentVersion.storageObjectKey,

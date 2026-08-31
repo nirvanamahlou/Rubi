@@ -70,4 +70,38 @@ describe('documents API client', () => {
     >;
     expect(headers['content-type']).toBeUndefined();
   });
+
+  it('loads an authenticated image preview with the sensitive-read reason and abort signal', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(new Blob(['image-bytes'], { type: 'image/jpeg' }), {
+        status: 200,
+        headers: {
+          'content-type': 'image/jpeg',
+          'content-disposition': 'inline; filename="photo.jpg"',
+        },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const controller = new AbortController();
+
+    const response = await documentsApi.preview(
+      'document-id',
+      'بررسی پرونده',
+      controller.signal,
+    );
+
+    expect(response.blob.type).toBe('image/jpeg');
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/documents/document-id/preview'),
+      expect.objectContaining({
+        credentials: 'include',
+        cache: 'no-store',
+        signal: controller.signal,
+        headers: expect.objectContaining({
+          'x-sensitive-read-reason': encodeURIComponent('بررسی پرونده'),
+        }),
+      }),
+    );
+  });
 });

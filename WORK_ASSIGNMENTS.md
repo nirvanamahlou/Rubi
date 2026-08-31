@@ -1,5 +1,16 @@
 # Work Assignments
 
+## DOCUMENTS-003B — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: تصویر بارگذاری‌شده باید پس از اسکن پاک و احراز مجوز، داخل تب پیش‌نمایش همان سند قابل مشاهده باشد.
+- Branch: `codex/pc-b-documents-image-preview`، فرزند `codex/pc-b-documents-usability@8cbe77b` / Draft PR #65. این Slice مستقیم به `develop` نمی‌رود و والدها را Merge یا بازنویسی نمی‌کند.
+- محدوده رزروشده: `apps/api/src/documents/**`، `apps/web/src/modules/documents/**` و تست‌های همان ماژول؛ اسناد `WORK_ASSIGNMENTS.md`، `docs/PROJECT_STATUS.md`، `PLANS.md` و `docs/tasks/DOCUMENTS-003B.md`.
+- بدون Prisma Schema/Migration/Seed، بدون Dependency/Lockfile و بدون تغییر قرارداد عمومی. endpoint افزایشی و احراز‌شده `GET /documents/:id/preview` فقط producer داخلی Web را پوشش می‌دهد و backward-compatible است؛ مجوز `documents.file.read`، محرمانگی، شعبه، آرشیو فعال و Scan پاک را مستقل از مجوز دانلود کنترل می‌کند.
+- Web فقط برای تصویر JPEG/PNG پاک و مجاز، پاسخ را به Blob URL موقت تبدیل می‌کند و در cleanup آن را آزاد می‌سازد. پیش‌نمایش برای Pending/آلوده/قرنطینه، سند بدون مجوز، یا نوع غیرتصویری fail-closed می‌ماند؛ Audit مستقل مشاهده ثبت می‌شود و URL عمومی/ماندگار ساخته نمی‌شود.
+- نتیجه: پیش‌نمایش واقعی تصویر در تب جزئیات، دلیل مشاهده فایل محرمانه، مسیر inline امن، Audit مستقل، وضعیت‌های خطا/Loading/Retry و cleanup درخواست/Blob URL تکمیل شد. فایل لوکال `100.jpg` از نوع JPEG و Scan پاک برای این جریان آماده است.
+- Validation: lint/typecheck/build کامل API و Web موفق؛ ۷۰۸ تست API موفق با ۶۶ skip اختیاری و ۵۱۶ تست Web موفق. API4000 و Web3100 از همین Worktree فعال و Health برابر ۲۰۰ است. گزارش: `docs/tasks/DOCUMENTS-003B.md`.
+- Final lock state: این Slice هیچ Migration/Dependency/Contract lock نگرفت. رزرو Documents API/Web و اسناد مرکزی با وضعیت `RELEASED — PC-B/DOCUMENTS-003B ready for review` تحویل می‌شود؛ والدها، `develop` و `main` بدون Merge باقی می‌مانند.
+
 ## DOCUMENTS-003A — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-08-31: حذف نمای مستقل گزارش دسترسی و نگه‌داشتن Timeline در جزئیات سند؛ تکمیل لینک اشتراک داخلی؛ فعال‌سازی اسکن واقعی فایل در محیط لوکال PC-B؛ فعال‌کردن نماهای شخصی و یکدست‌سازی افکت و رنگ رابط Documents.

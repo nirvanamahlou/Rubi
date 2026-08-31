@@ -530,6 +530,22 @@ export function DocumentsWorkspace() {
     }
   }
 
+  const loadDocumentPreview = useCallback(
+    async (
+      document: DocumentDetailV1,
+      sensitiveReason: string | undefined,
+      signal: AbortSignal,
+    ) => {
+      const response = await documentsApi.preview(
+        document.id,
+        sensitiveReason,
+        signal,
+      );
+      return response.blob;
+    },
+    [],
+  );
+
   const hasFilters = Boolean(
     query.search ||
     query.typeCode ||
@@ -1502,6 +1518,7 @@ export function DocumentsWorkspace() {
         loading={detailLoading}
         onCopyLink={(document) => void copyInternalLink(document)}
         onDownload={(document) => void download(document)}
+        onLoadPreview={loadDocumentPreview}
         onOpenChange={changeDetailOpen}
         onToggleFavorite={toggleFavorite}
         open={detailOpen}

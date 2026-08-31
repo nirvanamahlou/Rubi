@@ -46,6 +46,12 @@ describe('Documents HTTP boundary', () => {
       mimeType: 'application/pdf',
       sizeBytes: 9,
     }),
+    preview: vi.fn().mockResolvedValue({
+      stream: Readable.from(Buffer.from([0xff, 0xd8, 0xff, 0xd9])),
+      fileName: 'photo.jpg',
+      mimeType: 'image/jpeg',
+      sizeBytes: 4,
+    }),
   };
   const iam = {
     authenticate: vi.fn().mockResolvedValue(actor),
@@ -175,5 +181,26 @@ describe('Documents HTTP boundary', () => {
       'documents.file.read',
       'documents.download',
     ]);
+  });
+
+  it('serves an inline preview with read permissions and no download requirement', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/documents/44444444-4444-4444-8444-444444444444/preview')
+      .set('Cookie', 'rubi_access=test')
+      .set('x-sensitive-read-reason', encodeURIComponent('بررسی پرونده'))
+      .expect(200);
+
+    expect(iam.assertPermissions).toHaveBeenCalledWith(actor, [
+      'documents.metadata.read',
+      'documents.file.read',
+    ]);
+    expect(service.preview).toHaveBeenCalledWith(
+      '44444444-4444-4444-8444-444444444444',
+      actor,
+      expect.objectContaining({ sensitiveReason: 'بررسی پرونده' }),
+    );
+    expect(response.headers['content-type']).toContain('image/jpeg');
+    expect(response.headers['content-disposition']).toContain('inline');
+    expect(response.headers['x-content-type-options']).toBe('nosniff');
   });
 });

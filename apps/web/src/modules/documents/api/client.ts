@@ -75,6 +75,50 @@ async function request<T>(
   return response.json() as Promise<T>;
 }
 
+async function requestFile(
+  path: string,
+  sensitiveReason?: string,
+  signal?: AbortSignal,
+  retriedAfterRefresh = false,
+): Promise<{ blob: Blob; disposition: string | null }> {
+  const baseUrl = getPublicApiBaseUrl();
+  if (!baseUrl) throw new DocumentsApiError('نشانی API پیکربندی نشده است.', 0);
+  const response = await fetch(`${baseUrl}/documents${path}`, {
+    credentials: 'include',
+    cache: 'no-store',
+    ...(signal ? { signal } : {}),
+    headers: {
+      accept: '*/*',
+      ...(sensitiveReason
+        ? {
+            'x-sensitive-read-reason': encodeURIComponent(sensitiveReason),
+          }
+        : {}),
+    },
+  });
+  if (
+    response.status === 401 &&
+    !retriedAfterRefresh &&
+    (await refreshAccess(baseUrl))
+  ) {
+    return requestFile(path, sensitiveReason, signal, true);
+  }
+  if (!response.ok) {
+    const envelope = (await response.json().catch(() => null)) as {
+      message?: string;
+      error?: { message?: string };
+    } | null;
+    throw new DocumentsApiError(
+      envelope?.error?.message ?? envelope?.message ?? 'دریافت فایل مجاز نیست.',
+      response.status,
+    );
+  }
+  return {
+    blob: await response.blob(),
+    disposition: response.headers.get('content-disposition'),
+  };
+}
+
 function serializeListQuery(query: DocumentListQueryV1): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
@@ -96,7 +140,11 @@ export const documentsApi = {
     return request<DocumentDetailResponseV1>(
       `/${encodeURIComponent(id)}`,
       sensitiveReason
-        ? { headers: { 'x-sensitive-read-reason': sensitiveReason } }
+        ? {
+            headers: {
+              'x-sensitive-read-reason': encodeURIComponent(sensitiveReason),
+            },
+          }
         : undefined,
     );
   },
@@ -121,32 +169,14 @@ export const documentsApi = {
   async branchReferences(): Promise<readonly BranchReference[]> {
     return (await this.sessionContext()).branches;
   },
-  async download(id: string, sensitiveReason?: string) {
-    const baseUrl = getPublicApiBaseUrl();
-    if (!baseUrl)
-      throw new DocumentsApiError('نشانی API پیکربندی نشده است.', 0);
-    const response = await fetch(
-      `${baseUrl}/documents/${encodeURIComponent(id)}/download`,
-      {
-        credentials: 'include',
-        cache: 'no-store',
-        ...(sensitiveReason
-          ? { headers: { 'x-sensitive-read-reason': sensitiveReason } }
-          : {}),
-      },
+  download(id: string, sensitiveReason?: string) {
+    return requestFile(`/${encodeURIComponent(id)}/download`, sensitiveReason);
+  },
+  preview(id: string, sensitiveReason?: string, signal?: AbortSignal) {
+    return requestFile(
+      `/${encodeURIComponent(id)}/preview`,
+      sensitiveReason,
+      signal,
     );
-    if (!response.ok) {
-      const envelope = (await response.json().catch(() => null)) as {
-        message?: string;
-      } | null;
-      throw new DocumentsApiError(
-        envelope?.message ?? 'دریافت فایل مجاز نیست.',
-        response.status,
-      );
-    }
-    return {
-      blob: await response.blob(),
-      disposition: response.headers.get('content-disposition'),
-    };
   },
 };
