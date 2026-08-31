@@ -1,5 +1,13 @@
 # Work Assignments
 
+## MASTER-003-REMOVE-LOCK-NOTES — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: نوارهای قفل‌دار/قاعده‌ای باقی‌مانده زیر KPIهای تمام بخش‌های اطلاعات پایه، از جمله جغرافیا، حذف و از بازگشت آن‌ها جلوگیری شود.
+- Branch: `codex/pc-b-master-data-remove-lock-notes` به‌صورت Stacked روی `codex/pc-b-master-data-date-filters@49d83b8`؛ توسعه مستقیم روی `develop` انجام نمی‌شود.
+- محدوده رزرو: فقط Workspaceهای `apps/web/src/modules/master-data/components/**`، آزمون رگرسیون نمایش و گزارش همین Work Item در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`. بدون API/Contract، Schema/Migration، Seed، Customers، Calendar، Dependency/Lockfile یا تغییر دیتابیس.
+- رفتار حذف امن، کنترل وابستگی رکوردها، وضعیت/پاور، خطاهای دسترسی و پیام‌های نتیجه عملیات حفظ می‌شوند؛ این اصلاح فقط نوار اطلاع‌رسانی ثابت بین KPI و فیلترها را هدف می‌گیرد.
+- نتیجه: نسخه جاری هر هشت Workspace تخصصی و fallback عمومی فاقد Alert/Card قفل‌دار بین KPI و فیلترهاست. آزمون قبلی از بررسی فاصله ثابت به کنترل کامل بازه KPI تا FilterBar ارتقا یافت و آیکون/عنوان‌های قاعده‌ای را نیز رد می‌کند. ۵۲۳ تست Web، Typecheck، lint کامل Web و Production Build موفق‌اند. علت مشاهده نوار در `localhost:3100` اجرای Checkout مستقل PC-A از `C:\Users\admin\Rubi-documents-vertical-slice` است؛ آن پردازش و فایل‌ها دست‌نخورده ماندند.
+
 ## MASTER-003-DATE-RANGE-FILTERS — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-08-31: فیلتر جمع‌وجور «از تاریخ / تا تاریخ» به همه فهرست‌های اطلاعات پایه اضافه شود و انتخاب تاریخ در هر دو تقویم شمسی و میلادی در دسترس باشد.

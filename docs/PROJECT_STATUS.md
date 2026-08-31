@@ -1,5 +1,11 @@
 # وضعیت پروژه
 
+## تثبیت حذف نوارهای قفل‌دار زیر KPI اطلاعات پایه — 2026-08-31
+
+- `MASTER-003-REMOVE-LOCK-NOTES` روی شاخه `codex/pc-b-master-data-remove-lock-notes` و به‌صورت Stacked روی تحویل فیلتر تاریخ آماده Review است. هر هشت Workspace تخصصی و fallback عمومی مستقیماً از KPI به فیلترها می‌رسند و نوار ثابت قفل/قاعده میان آن‌ها ندارند.
+- آزمون رگرسیون از تطبیق ۱۸۰ نویسه‌ای به بررسی کامل محتوای بین `MasterDataKpiGrid` و `FilterBar` ارتقا یافت؛ `Alert`، `Card`، آیکون‌های قفل/قاعده و عنوان‌های «قاعده یکپارچگی/مرز دامنه» در این محل رد می‌شوند. پیام‌های دسترسی، نتیجه عملیات و منطق حذف امن حفظ شده‌اند.
+- ۵۲۳ تست Web، Typecheck، lint کامل Web و Production Build موفق‌اند. بررسی Process نشان داد `localhost:3100` از Checkout مستقل PC-A در `C:\Users\admin\Rubi-documents-vertical-slice` اجرا می‌شود؛ به همین علت نسخه قدیمی هنوز در آن پورت دیده می‌شود. Checkout و پردازش PC-A تغییر یا متوقف نشدند.
+
 ## فیلتر بازه تاریخ اطلاعات پایه — 2026-08-31
 
 - `MASTER-003-DATE-RANGE-FILTERS` روی شاخه `codex/pc-b-master-data-date-filters` به‌صورت Stacked روی نسخه حذف نوارهای KPI آماده Review است؛ `develop`، Checkout و Web پورت ۳۱۰۰ متعلق به PC-A تغییر نکردند.

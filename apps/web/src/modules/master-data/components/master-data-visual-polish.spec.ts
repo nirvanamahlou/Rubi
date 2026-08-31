@@ -70,15 +70,23 @@ describe('Master Data visual polish contract', () => {
       'master-data-insurance-workspace.tsx',
       'master-data-travel-services-workspace.tsx',
       'master-data-sales-references-workspace.tsx',
+      'master-data-live-workspace.tsx',
     ];
 
     for (const fileName of sectionFiles) {
       const workspace = source(fileName);
-      expect(workspace, fileName).not.toMatch(
-        /<MasterDataKpiGrid[\s\S]{0,180}?\/>\s*<Alert\b/,
+      const kpiStart = workspace.indexOf('<MasterDataKpiGrid');
+      const filtersStart = workspace.indexOf('<FilterBar', kpiStart);
+
+      expect(kpiStart, `${fileName}: KPI grid`).toBeGreaterThanOrEqual(0);
+      expect(filtersStart, `${fileName}: filters after KPI grid`).toBeGreaterThan(
+        kpiStart,
       );
-      expect(workspace, fileName).not.toMatch(
-        /<MasterDataKpiGrid[\s\S]{0,180}?\/>\s*<Card\b/,
+
+      const postKpiContent = workspace.slice(kpiStart, filtersStart);
+      expect(postKpiContent, fileName).not.toMatch(/<(?:Alert|Card)\b/);
+      expect(postKpiContent, fileName).not.toMatch(
+        /LockKeyhole|ShieldCheck|قاعده یکپارچگی|مرز دامنه/,
       );
     }
   });
