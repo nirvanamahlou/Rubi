@@ -24,7 +24,10 @@ export function currencyFormValues(
   );
 }
 
-export function validateCurrencyForm(input: Record<string, string>) {
+export function validateCurrencyForm(
+  input: Record<string, string>,
+  status?: string,
+) {
   const allowed = new Set(
     getMasterDataDefinition('currencies').fields.map(({ key }) => key),
   );
@@ -45,6 +48,8 @@ export function validateCurrencyForm(input: Record<string, string>) {
   )
     result.errors.decimalDigits =
       'تعداد اعشار باید عدد صحیح بین صفر تا شش باشد.';
+  if (status !== undefined && status !== 'active' && status !== 'inactive')
+    result.errors.status = 'وضعیت ارز الزامی است.';
   result.success = Object.keys(result.errors).length === 0;
   return result;
 }

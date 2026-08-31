@@ -30,6 +30,7 @@ import {
 } from '../model/currency-form';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
 import { MasterDataReferenceSelector } from './master-data-reference-selector';
+import { MasterDataClearableField } from './master-data-clearable-field';
 
 const currencyDefinition = getMasterDataDefinition('currencies');
 
@@ -44,7 +45,7 @@ export function MasterDataCurrencyForm({
 }) {
   const [saved, setSaved] = useState(record);
   const [values, setValues] = useState(() => currencyFormValues(record));
-  const [status, setStatus] = useState<MasterDataStatus>(
+  const [status, setStatus] = useState<MasterDataStatus | ''>(
     record?.status ?? 'active',
   );
   const [rateValues, setRateValues] = useState<Record<string, string>>({});
@@ -63,10 +64,10 @@ export function MasterDataCurrencyForm({
   async function saveCurrency(event: FormEvent) {
     event.preventDefault();
     if (saving) return;
-    const validated = validateCurrencyForm(values);
+    const validated = validateCurrencyForm(values, status);
     setErrors(validated.errors);
     setNotice('');
-    if (!validated.success) return;
+    if (!validated.success || !status) return;
     setSaving(true);
     try {
       await persistCurrencyForm(masterDataApi, {
@@ -179,22 +180,46 @@ export function MasterDataCurrencyForm({
                   </FormField>
                 );
               })}
-              <FormField id="currency-status" label="وضعیت ارز">
-                <Select
-                  disabled={saving}
+              <FormField
+                id="currency-status"
+                label="وضعیت ارز"
+                required
+                {...(errors.status ? { error: errors.status } : {})}
+              >
+                <MasterDataClearableField
+                  controlId="currency-status"
+                  label="وضعیت ارز"
                   value={status}
-                  onValueChange={(value) =>
-                    setStatus(value as MasterDataStatus)
-                  }
+                  onClear={() => setStatus('')}
+                  disabled={saving}
                 >
-                  <SelectTrigger id="currency-status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">فعال</SelectItem>
-                    <SelectItem value="inactive">غیرفعال</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Select
+                    disabled={saving}
+                    value={status}
+                    onValueChange={(value) => {
+                      if (
+                        value === 'active' ||
+                        value === 'inactive' ||
+                        value === ''
+                      )
+                        setStatus(value);
+                    }}
+                  >
+                    <SelectTrigger
+                      id="currency-status"
+                      aria-invalid={Boolean(errors.status)}
+                      aria-describedby={
+                        errors.status ? 'currency-status-error' : undefined
+                      }
+                    >
+                      <SelectValue placeholder="انتخاب کنید" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">فعال</SelectItem>
+                      <SelectItem value="inactive">غیرفعال</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </MasterDataClearableField>
               </FormField>
               <FormField
                 id="currency-base"
@@ -272,6 +297,7 @@ export function MasterDataCurrencyForm({
                 <MasterDataReferenceSelector
                   config={{ target: 'currencies', payload: 'code' }}
                   id="quote-target"
+                  label="ارز مقابل نرخ"
                   disabled={saving || !saved || saved.status !== 'active'}
                   value={rateValues.toCurrencyCode ?? ''}
                   onChange={(value) => updateRate('toCurrencyCode', value)}
@@ -325,14 +351,28 @@ export function MasterDataCurrencyForm({
                     : {})}
                   {...(rateErrors[key] ? { error: rateErrors[key] } : {})}
                 >
-                  <DatePicker
-                    id={`quote-${key}`}
-                    includeTime
-                    disabled={saving || !saved || saved.status !== 'active'}
-                    aria-invalid={Boolean(rateErrors[key])}
+                  <MasterDataClearableField
+                    controlId={`quote-${key}`}
+                    label={
+                      key === 'observedAt'
+                        ? 'تاریخ و ساعت'
+                        : key === 'validFrom'
+                          ? 'شروع اعتبار'
+                          : 'پایان اعتبار'
+                    }
                     value={rateValues[key] ?? ''}
-                    onChange={(value) => updateRate(key, value)}
-                  />
+                    onClear={() => updateRate(key, '')}
+                    disabled={saving || !saved || saved.status !== 'active'}
+                  >
+                    <DatePicker
+                      id={`quote-${key}`}
+                      includeTime
+                      disabled={saving || !saved || saved.status !== 'active'}
+                      aria-invalid={Boolean(rateErrors[key])}
+                      value={rateValues[key] ?? ''}
+                      onChange={(value) => updateRate(key, value)}
+                    />
+                  </MasterDataClearableField>
                 </FormField>
               ))}
               <FormField id="quote-maker" label="ثبت‌کننده">
