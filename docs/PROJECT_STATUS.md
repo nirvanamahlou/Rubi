@@ -1,6 +1,14 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-31 — اصلاح نمایش فهرست مالی و جغرافیا پس از ثبت فرم
+آخرین به‌روزرسانی: 2026-08-31 — داده آزمایشی مستقل و امن برای اطلاعات پایه
+
+## داده آزمایشی تمام بخش‌های اطلاعات پایه — 2026-08-31
+
+- `MASTER-003-LOCAL-DEMO-DATA` روی `codex/pc-b-master-data-demo-fixtures` از `241308e` / PR #55: ۷۸ رکورد با برچسب «آزمایشی» در ۴۰ کاتالوگ هشت بخش اصلی روی لوکال ثبت شد. داده‌ها FK واقعی دارند؛ هیچ نرخ ارز، حساب/کارت، PII واقعی یا اتصال خارجی ساختگی ساخته نشد.
+- اجرای صریح ابزار مستقل، محدود به DB مشخص لوکال و محیط development/test است؛ از Service و اعتبارسنجی موجود استفاده می‌کند. تراکنش واحد، قفل اجرای هم‌زمان و Audit marker مانع ثبت ناقص، بازنویسی داده موجود و تکرار نمونه‌ها می‌شوند. Seed عمومی، IAM، Customers، Schema، Migration و Dependency تغییر نکردند.
+- پیش از اجرا Backup خصوصی گرفته شد. Preview کامل Rollback شد؛ اجرای اول ۷۸ Create و اجرای دوم صفر Create / ۷۸ Reuse داشت. تمام نمونه‌ها از List با جست‌وجوی «آزمایشی» و Detail در DB محلی بازیابی شدند.
+- ۵۴۶ تست API موفق، شامل ۹ تست واحد و ۴ آزمون واقعی PostgreSQL 18 جدید با تمام Migrationها؛ ۵۷ آزمون اختیاری دیگر skip شدند. lint، Typecheck و Build API موفق‌اند. API `/api/v1/health` و Login پاسخ ۲۰۰؛ مرورگر بدون Session به Login هدایت می‌شود و Smoke احراز‌شده ادعا نمی‌شود.
+- ابزار فقط به‌صورت دستی اجرا می‌شود و هنگام Startup/Seed عمومی فعال نیست. سرورها، داده قبلی و شاخه‌های والد/PC-A/main/develop محفوظ‌اند؛ قفل‌های PC-B/MASTER-003 تغییر نکردند. گزارش و دستور اجرا: `docs/tasks/MASTER-003-LOCAL-DEMO-DATA.md`.
 
 ## اصلاح نمایش فهرست پس از ثبت فرم — 2026-08-31
 
@@ -34,8 +42,8 @@
 - وضعیت: **انتشار اصلاحات محلی در Sliceهای مستقل و تجمیع نسخه اجرایی کامل**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه نسخه اجرایی: `codex/pc-b-master-data-list-visibility`، شامل نسخه تجمیعی `codex/pc-b-master-data-local-complete` و اصلاح نمایش فهرست.
-- Work Item جاری: `MASTER-003-LIST-VISIBILITY` روی PR #54؛ نسخه تجمیعی و Sliceهای انتشار قبلی حفظ شده‌اند.
+- شاخه جاری: `codex/pc-b-master-data-demo-fixtures` از `codex/pc-b-master-data-list-visibility`، شامل نسخه تجمیعی و اصلاح نمایش فهرست؛ Runtime برنامه تغییر نکرده و داده آزمایشی به DB لوکال اضافه شده است.
+- Work Item جاری: `MASTER-003-LOCAL-DEMO-DATA` روی والد PR #55؛ نسخه تجمیعی و Sliceهای انتشار قبلی حفظ شده‌اند.
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ داده‌های Checkout اصلی محفوظ‌اند؛ API4000 و Web3100 محل اجرای نسخه تجمیعی هستند.
 - نوع تغییر: Master Data Database/API/Contract/Web/Test/Docs؛ بدون تغییر Seed، Customers،
   UI مشترک، Dependency یا Lockfile.
