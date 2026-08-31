@@ -113,6 +113,9 @@ const configs: Partial<
       optional: true,
     },
   },
+  'train-types': {
+    facilityIds: { target: 'facilities', payload: 'id', multiple: true, optional: true },
+  },
   brokers: {
     organizationId: {
       target: 'organizations',

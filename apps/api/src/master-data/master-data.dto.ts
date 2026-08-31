@@ -14,6 +14,9 @@ import {
 } from 'class-validator';
 
 export class MasterDataListQueryDto {
+  @IsOptional()
+  @IsIn(['ACTIVE', 'INACTIVE', 'UNDER_REVIEW'])
+  transportStatus?: 'ACTIVE' | 'INACTIVE' | 'UNDER_REVIEW';
   @IsOptional() @IsString() @MaxLength(100) search = '';
   @IsOptional() @IsIn(['all', 'active', 'inactive']) status:
     'all' | 'active' | 'inactive' = 'all';

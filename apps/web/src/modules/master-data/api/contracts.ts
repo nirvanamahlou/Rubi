@@ -10,6 +10,7 @@ export const MASTER_DATA_BLOCKED_REASON =
 export const masterDataResourceSchema = z.enum(masterDataResourceKeys);
 export const masterDataStatusSchema = z.enum(['active', 'inactive']);
 export const masterDataListQuerySchema = z.object({
+  transportStatus: z.enum(['ACTIVE', 'INACTIVE', 'UNDER_REVIEW']).optional(),
   search: z.string().trim().max(100).default(''),
   status: z.enum(['all', 'active', 'inactive']).default('all'),
   sortBy: z.enum(['name', 'code', 'updatedAt']).default('name'),
@@ -149,6 +150,7 @@ export function serializeMasterDataListQuery(query: MasterDataListQuery) {
     pageSize: String(query.pageSize),
   });
   for (const field of [
+    'transportStatus',
     'countryId',
     'regionId',
     'cityId',

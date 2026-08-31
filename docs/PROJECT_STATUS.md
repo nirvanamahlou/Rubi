@@ -1,18 +1,28 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-31 — MASTER-003Q-PARTNER-FORMS پیاده‌سازی و آزموده شد
+آخرین به‌روزرسانی: 2026-08-31 — MASTER-003R-TRANSPORT-FORMS پیاده‌سازی و آزموده شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003Q-PARTNER-FORMS روی شاخه Stacked مستقل آماده Review است**
+- وضعیت: **MASTER-003R-TRANSPORT-FORMS روی شاخه Stacked مستقل آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه فعال: `codex/pc-b-master-data-partner-forms`
-- Work Item: `MASTER-003Q-PARTNER-FORMS`؛ Stacked روی Draft PR #44
-- محیط مسئول: `COMPUTER_ID=PC-B`؛ Web روی ۳۱۰۰ و API روی ۴۰۰۰ پاسخ می‌دهند.
+- شاخه این تحویل: `codex/pc-b-master-data-transport-forms`
+- Work Item: `MASTER-003R-TRANSPORT-FORMS`؛ Stacked روی Draft PR #45
+- محیط مسئول: `COMPUTER_ID=PC-B`؛ Checkout اصلی و سرورهای ۳۱۰۰/۴۰۰۰ حفظ شده‌اند؛ نسخه جدید هنوز روی آن‌ها منتشر نشده است.
 - نوع تغییر: Master Data Database/API/Contract/Web/Test/Docs؛ بدون تغییر Seed، Customers،
   UI مشترک، Dependency یا Lockfile.
+
+### `MASTER-003R-TRANSPORT-FORMS` — PC-B — `READY_FOR_REVIEW`
+
+- پوشش تصاویر ۴۳۹ تا ۴۴۵ در هفت فرم ایرلاین، هواپیما، قواعد بار، شرکت ریلی، قطار، شرکت اتوبوس و نوع اتوبوس بررسی و تکمیل شد. فیلدهای نام فارسی/انگلیسی، کشور/سازمان، سازنده/مدل و دسته‌های موجود حفظ شدند؛ وضعیت بررسی، مشخصات سیستمی فقط‌خواندنی و تاریخچه واقعی داخل پروفایل Popup اضافه شد.
+- امکانات قطار به رابطه چندبه‌چند واقعی Facility متصل است؛ امکانات متنی قدیمی باقی می‌ماند. فیلتر وضعیت قبل از Pagination و در خروجی Excel اعمال می‌شود. تغییر وضعیت مجوز اختصاصی می‌خواهد و همراه Version/Audit در همان تراکنش ثبت می‌شود.
+- Migration افزایشی `20260831120000_master_data_transport_forms`: هفت پرچم بررسی با Constraint و جدول ارتباطی قطار/امکانات با FK محدودکننده؛ هر ۲۱ Migration روی PostgreSQL 18 موقت، Seed دوبار و ۹ آزمون واقعی موفق شدند. فقط دیتابیس موقت آزمون حذف شد؛ دیتابیس اصلی Deploy نشد.
+- کنترل کیفیت: API ۲۶۵، Web ۲۰۳، Contracts ۱۴ و Database ۵۵ تست موفق؛ Prisma format/validate/generate، typecheck و Production Build API/Web موفق. lint API/Database و کل ماژول Master Data وب موفق؛ lint سراسری Web فقط خطا/هشدار قبلی DatePicker مشترک را دارد و آن فایل دست‌نخورده است.
+- اتصال واقعی Documents/Integrations، شمارش انواع ناوگان و ظرفیت عملیاتی همچنان منتظر قرارداد مالک هستند. مرجع لوگوی قبلی فقط‌خواندنی نمایش داده می‌شود؛ UUID جدید تاییدنشده پذیرفته نمی‌شود. مقدار، Connection، Secret یا داده ساختگی ماکاپ Seed نشد.
+- Checkout مستقل `C:/Users/admin/Rubi-transport-forms` از `2088010` برای حفظ تغییرات محلی حذف امن، فرم ترمینال/تور/سفر و سایر کارهای هم‌زمان استفاده شد. Health API و Login نسخه اصلی ۲۰۰ هستند؛ Smoke مرورگر احراز‌شده نسخه جدید ادعا نمی‌شود. ادغام در Checkout مشترک و Deploy محلی نیازمند هماهنگی جداست.
+- سه قفل Migration/Contract/Docs زیر `PC-B/MASTER-003` فعال باقی می‌مانند؛ والد #45 و کل زنجیره Stacked، Customers، Seed و Dependency/Lockfile تغییر نکردند. قبل از والدها Merge نشود. گزارش و جدول فیلدها: `docs/tasks/MASTER-003R-TRANSPORT-FORMS.md`.
 
 ### `MASTER-003Q-PARTNER-FORMS` — PC-B — `READY_FOR_REVIEW`
 

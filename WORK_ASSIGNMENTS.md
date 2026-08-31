@@ -1,6 +1,18 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-31 — MASTER-003Q-PARTNER-FORMS آماده Review است
+آخرین به‌روزرسانی: 2026-08-31 — MASTER-003R-TRANSPORT-FORMS آماده Review است
+
+### `MASTER-003R-TRANSPORT-FORMS` — PC-B — `READY_FOR_REVIEW`
+
+- Branch: `codex/pc-b-master-data-transport-forms` از `origin/codex/pc-b-master-data-partner-forms@2088010`؛ Draft stacked روی #45، والدها دست‌نخورده.
+- اجرای مستقل در `C:/Users/admin/Rubi-transport-forms` برای حفظ همه تغییرات ثبت‌نشده و سرورهای Checkout اصلی؛ ادغام محلی تغییرات هم‌زمان نیازمند هماهنگی جداست.
+- محدوده: هفت فرم حمل‌ونقل، API/Repository/Contract ماژول Master Data، Prisma/Migration افزایشی امکانات قطار و وضعیت بررسی، آزمون‌ها و اسناد همین Slice.
+- قفل Migration، Master Data shared-contract و اسناد مرکزی زیر مالکیت فعال `PC-B/MASTER-003`؛ بدون تغییر Dependency/Lockfile، Customers یا جداول ماژول‌های دیگر.
+- Producer/Consumer هر دو PC-B: افزودن اختیاری `values.transportStatus` و `train-types.values.facilityIds`، پاسخ attributes و فیلتر وضعیت حمل‌ونقل؛ قرارداد v12 سازگار، درخواست قدیمی رفتار قبلی را حفظ می‌کند. وضعیت بررسی در قرارداد عمومی قدیمی inactive است.
+- اتصال Documents/Integrations و شمارش ناوگان تا قرارداد واقعی فقط‌خواندنی/ناموجود؛ کدهای تولیدشده، Version و Audit ورودی دستی نیستند. ظرفیت در مدل وسیله ذخیره نمی‌شود.
+- آزمون‌ها: API ۲۶۵، Web ۲۰۳، Contracts ۱۴، Database ۵۵ و PostgreSQL ۱۸ واقعی ۹ تست موفق؛ Build/Typecheck و lint محدوده موفق. ایراد قبلی DatePicker در lint کل Web باقی است. Seed دوبار در دیتابیس موقت اجرا شد؛ Deploy محلی و Smoke احراز‌شده نسخه جدید انجام نشد.
+- قفل‌های اصلی MASTER-003 آزاد نمی‌شوند. اتصال به تغییرات ثبت‌نشده Checkout مشترک، Deploy و Merge نیازمند هماهنگی جداست؛ شرح دقیق در `docs/tasks/MASTER-003R-TRANSPORT-FORMS.md`.
+
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `PLANNED/RESERVED`، `IN_PROGRESS`،
