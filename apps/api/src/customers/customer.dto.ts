@@ -11,6 +11,7 @@ import {
   IsUUID,
   Max,
   MaxLength,
+  Matches,
   Min,
   MinLength,
   ValidateIf,
@@ -73,6 +74,18 @@ export class CustomerMutationDto {
   lastName?: string | null;
   @IsString() @MinLength(2) @MaxLength(200) displayName!: string;
   @IsOptional() @IsDateString() birthDate?: string | null;
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string'
+      ? value
+          .trim()
+          .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+          .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+      : value,
+  )
+  @IsString()
+  @Matches(/^\d{10}$/)
+  nationalId?: string | null;
   @IsArray() @IsIn(['customer', 'passenger'], { each: true }) roles!: (
     'customer' | 'passenger'
   )[];

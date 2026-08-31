@@ -149,6 +149,28 @@ describe('Customers HTTP integration', () => {
     expect(service.create).not.toHaveBeenCalled();
   });
 
+  it('normalizes Persian national ID digits at the HTTP boundary', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/customers')
+      .set('Cookie', 'rubi_access=test')
+      .send({
+        kind: 'person',
+        firstName: 'مشتری',
+        lastName: 'ساختگی',
+        displayName: 'مشتری ساختگی',
+        nationalId: '۱۲۳۴۵۶۷۸۹۱',
+        roles: ['customer'],
+      })
+      .expect(201);
+
+    expect(service.create).toHaveBeenCalledWith(
+      expect.objectContaining({ nationalId: '1234567891' }),
+      actor,
+      undefined,
+      undefined,
+    );
+  });
+
   it('trims and forwards the actual consent reason', async () => {
     await request(app.getHttpServer())
       .post('/api/v1/customers/44444444-4444-4444-8444-444444444444/consents')

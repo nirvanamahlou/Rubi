@@ -5,9 +5,12 @@ import {
 } from '../api/contracts';
 import {
   contactDisplayValue,
+  contactCallHref,
   customerPermissionCodes,
   customerUiStates,
   validateCustomerMutation,
+  isValidIranianNationalId,
+  normalizeNationalId,
 } from './customer';
 
 describe('customer frontend live contract', () => {
@@ -61,6 +64,21 @@ describe('customer frontend live contract', () => {
       }).errors,
     ).toHaveProperty('organizationId');
   });
+  it('normalizes Persian digits and validates national ID checksum', () => {
+    expect(normalizeNationalId(' ۱۲۳۴۵۶۷۸۹۱ ')).toBe('1234567891');
+    expect(isValidIranianNationalId('1234567891')).toBe(true);
+    expect(isValidIranianNationalId('1234567890')).toBe(false);
+    expect(
+      validateCustomerMutation({
+        kind: 'person',
+        displayName: 'مشتری ساختگی',
+        firstName: 'مشتری',
+        lastName: 'ساختگی',
+        nationalId: '1234567891',
+        roles: ['customer'],
+      }).valid,
+    ).toBe(true);
+  });
   it('keeps real contacts hidden until an authorized user explicitly reveals them', () => {
     const contact = {
       id: 'synthetic-contact',
@@ -77,5 +95,35 @@ describe('customer frontend live contract', () => {
     expect(contactDisplayValue({ ...contact, value: null }, true)).toBe(
       '0000•••000',
     );
+  });
+
+  it('only exposes a dialing link for explicitly revealed phone contacts', () => {
+    const contact = {
+      id: 'synthetic-call-contact',
+      type: 'phone' as const,
+      label: null,
+      maskedValue: '0000•••000',
+      value: '+1 (202) 555-0100',
+      isPrimary: true,
+      verifiedAt: null,
+      createdAt: '2026-08-31T00:00:00.000Z',
+    };
+    expect(contactCallHref(contact, true)).toBe('tel:+12025550100');
+    expect(contactCallHref(contact, false)).toBeNull();
+    expect(contactCallHref({ ...contact, value: null }, true)).toBeNull();
+    expect(contactCallHref({ ...contact, type: 'email' }, true)).toBeNull();
+    for (const value of [
+      contact.maskedValue,
+      'javascript:alert(1)',
+      '+12025550100;ext=123',
+      '+12025550100?body=test',
+      '+1202\n5550100',
+      '123',
+      '1'.repeat(16),
+    ]) {
+      expect(contactCallHref({ ...contact, value }, true)).toBeNull();
+    }
+    // Re-masking also removes the callable target even if a value is present.
+    expect(contactCallHref(contact, false)).toBeNull();
   });
 });

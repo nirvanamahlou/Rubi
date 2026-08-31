@@ -1,5 +1,15 @@
 # Work Assignments
 
+## Current customer-chain handoff — 2026-08-31
+
+- Supersedes the historical conditional MASTER-003 handoff below for this customer-only chain.
+- Prerequisites are now fulfilled: #25 merged `d73f51f`, #26 merged `a470d06`, #27 merged `eb2fe1e`.
+- The product owner explicitly authorized review, conflict resolution and sequential merge of #26/#27/#34/#41; no PC-B PR is included.
+- Migration, Customer shared-contract and Central customer-status ownership: `ACTIVE — PC-A/CUSTOMER-002B`, limited to completing/reviewing #34/#41 and recording the final handoff. No additional domain schema is authorized.
+- Master shared-contract: `RELEASED / STABLE`; Dependency/Lockfile: `RELEASED`. PC-B source branches and pending PRs remain untouched.
+- National-ID slice only; DEC-OPEN-006/011 remain open for passports, retention/residency/KMS and actual merge. No production deployment or real-data migration is authorized by this review.
+- `CUSTOMER-CHAIN-REVIEW-001` continues in `codex/pc-a-customer-34-reconcile-20260831` in the isolated review worktree. Shared customer locks release only after the final #41 handoff.
+
 آخرین به‌روزرسانی: 2026-08-29 — MASTER-003 Phase A برای Review و Handoff مشروط آماده شد
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
@@ -290,6 +300,13 @@ Customers، Finance، Procurement، Reservations، Integrations و Documents خ�
 | Central Sprint status docs      | PC-A/CUSTOMER-001 Phase B | Merge PR #19 و Handoff مستقل به FINANCE-001            |
 
 ## قرارداد مالکیت
+
+### CUSTOMER-002B — پیگیری نمایش و تماس (2026-08-31)
+
+- مالک `PC-A`؛ روی همان Branch `codex/pc-a-customer-002b-national-id`.
+- وضعیت `READY_FOR_REVIEW`؛ فقط UI/model/test مشتریان و سند همین Task؛ بدون Schema، Migration یا Dependency.
+- میان‌بر نمایش شماره برای مشتری و مسافر و لینک تماس فقط پس از Reveal دلیل‌دار و Audit موجود؛ قفل دیگری منتقل نمی‌شود.
+- ۱۲۳ تست Web و ۸۱ تست API Customers، lint/typecheck/build وب و diff check پاس شدند.
 
 - یک فایل یا Migration هم‌زمان فقط یک مالک فعال دارد.
 - تغییر محدود و ناگزیر در فایل مشترک باید در توضیح ردیف و Commit اعلام شود.

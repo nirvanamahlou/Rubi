@@ -25,6 +25,7 @@ import {
   Eye,
   FilePenLine,
   MapPin,
+  Phone,
   Plus,
   RefreshCw,
   Search,
@@ -45,8 +46,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 
-import { Button } from '@/components/ui/button';
-
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   FormField,
   Input,
@@ -80,7 +80,12 @@ import {
 } from '@/components/ui/surfaces';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { customersApi, CustomersApiError } from '../api/client';
-import { contactDisplayValue } from '../model/customer';
+import {
+  contactDisplayValue,
+  contactCallHref,
+  isValidIranianNationalId,
+  normalizeNationalId,
+} from '../model/customer';
 import { formatCustomerDate } from '../model/customer-calendar';
 import {
   customerImportHeaders,
@@ -201,6 +206,7 @@ interface NewCompanionDraft {
   source: 'new' | 'primaryCustomer';
   firstName: string;
   lastName: string;
+  nationalId: string;
   birthDate: string;
   phone: string;
   email: string;
@@ -217,6 +223,7 @@ function emptyCompanionDraft(): NewCompanionDraft {
     source: 'new',
     firstName: '',
     lastName: '',
+    nationalId: '',
     birthDate: '',
     phone: '',
     email: '',
@@ -231,6 +238,7 @@ function customerDraft(customer?: CustomerDetail): CustomerMutationRequest {
     organizationId: customer?.organizationId ?? null,
     firstName: customer?.firstName ?? '',
     lastName: customer?.lastName ?? '',
+    nationalId: '',
     displayName: customer?.displayName ?? '',
     birthDate: customer?.birthDate ?? null,
     roles: customer?.roles ?? ['customer'],
@@ -499,10 +507,32 @@ function CustomerDrawer({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (
+      mode === 'create' &&
+      draft.kind === 'person' &&
+      !isValidIranianNationalId(draft.nationalId ?? '')
+    ) {
+      setMessage('کد ملی مشتری باید ده‌رقمی و دارای رقم کنترل معتبر باشد.');
+      return;
+    }
+    const invalidPassengerIndex = newCompanions.findIndex(
+      (companion) =>
+        companion.source === 'new' &&
+        !isValidIranianNationalId(companion.nationalId),
+    );
+    if (invalidPassengerIndex >= 0) {
+      setMessage(
+        `کد ملی مسافر شماره ${(invalidPassengerIndex + 1).toLocaleString('fa-IR')} معتبر نیست.`,
+      );
+      return;
+    }
     const primaryCustomerIsPassenger =
       mode === 'create' && newCompanions[0]?.source === 'primaryCustomer';
     const submittedDraft: CustomerMutationRequest = {
       ...draft,
+      ...(draft.nationalId
+        ? { nationalId: normalizeNationalId(draft.nationalId) }
+        : {}),
       displayName:
         draft.kind === 'person'
           ? `${draft.firstName?.trim() ?? ''} ${draft.lastName?.trim() ?? ''}`.trim()
@@ -557,6 +587,7 @@ function CustomerDrawer({
               lastName: companion.lastName.trim(),
               displayName:
                 `${companion.firstName.trim()} ${companion.lastName.trim()}`.trim(),
+              nationalId: normalizeNationalId(companion.nationalId),
               organizationId: companion.organizationId || null,
               birthDate: companion.birthDate || null,
               roles: ['passenger'],
@@ -904,6 +935,42 @@ function CustomerDrawer({
                     value={draft.lastName ?? ''}
                   />
                 </FormField>
+                <FormField
+                  description={
+                    mode === 'create'
+                      ? 'اجباری؛ ده‌رقمی و دارای رقم کنترل معتبر'
+                      : customer?.maskedNationalId
+                        ? `ثبت‌شده: ${customer.maskedNationalId} — فقط برای تغییر دوباره وارد کنید`
+                        : 'برای تکمیل پرونده وارد کنید'
+                  }
+                  id="customer-national-id"
+                  label="کد ملی"
+                  required={mode === 'create'}
+                >
+                  <Input
+                    autoComplete="off"
+                    disabled={readonly}
+                    dir="ltr"
+                    id="customer-national-id"
+                    inputMode="numeric"
+                    maxLength={10}
+                    minLength={10}
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        nationalId: event.target.value,
+                      }))
+                    }
+                    pattern="[0-9۰-۹٠-٩]{10}"
+                    placeholder={customer?.maskedNationalId ?? '0123456789'}
+                    required={mode === 'create'}
+                    value={
+                      readonly
+                        ? (customer?.maskedNationalId ?? 'ثبت نشده')
+                        : (draft.nationalId ?? '')
+                    }
+                  />
+                </FormField>
                 <CustomerDateField
                   disabled={readonly}
                   id="customer-birth-date"
@@ -1157,6 +1224,16 @@ function CustomerDrawer({
                               value={draft.lastName ?? ''}
                             />
                           </FormField>
+                          <FormField label="کد ملی">
+                            <Input
+                              disabled
+                              dir="ltr"
+                              value={
+                                draft.nationalId ||
+                                'از اطلاعات مشتری استفاده می‌شود'
+                              }
+                            />
+                          </FormField>
                           <CustomerDateField
                             disabled
                             id={`companion-${companion.key}-birth-date`}
@@ -1212,94 +1289,137 @@ function CustomerDrawer({
                               value={companion.lastName}
                             />
                           </FormField>
-                          <div className="border-t border-border pt-3 sm:col-span-2">
-                            <p className="font-semibold">
-                              اطلاعات تکمیلی مسافر
-                            </p>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              این اطلاعات همراه پرونده واقعی مسافر ذخیره می‌شود.
-                            </p>
-                          </div>
-                          <CustomerDateField
-                            id={`companion-${companion.key}-birth-date`}
-                            label="تاریخ تولد"
-                            mode={calendarMode}
-                            onModeChange={onCalendarModeChange}
-                            onChange={(value) =>
-                              updateCompanion(index, { birthDate: value })
-                            }
-                            value={companion.birthDate}
-                          />
                           <FormField
-                            description="اختیاری و در نمایش عادی Masked"
-                            id={`companion-${companion.key}-phone`}
-                            label="شماره تماس"
+                            description="اجباری؛ مستقل از مشتری و سایر مسافران"
+                            id={`companion-${companion.key}-national-id`}
+                            label="کد ملی مسافر"
+                            required
                           >
                             <Input
+                              autoComplete="off"
                               dir="ltr"
-                              id={`companion-${companion.key}-phone`}
-                              inputMode="tel"
+                              id={`companion-${companion.key}-national-id`}
+                              inputMode="numeric"
+                              maxLength={10}
+                              minLength={10}
                               onChange={(event) =>
                                 updateCompanion(index, {
-                                  phone: event.target.value,
+                                  nationalId: event.target.value,
                                 })
                               }
-                              pattern="\+?[0-9]{10,15}"
-                              placeholder="09xxxxxxxxx"
-                              type="tel"
-                              value={companion.phone}
+                              pattern="[0-9۰-۹٠-٩]{10}"
+                              required
+                              value={companion.nationalId}
                             />
                           </FormField>
-                          <FormField
-                            description="اختیاری و در نمایش عادی Masked"
-                            id={`companion-${companion.key}-email`}
-                            label="ایمیل مسافر"
-                          >
-                            <Input
-                              autoComplete="email"
-                              dir="ltr"
-                              id={`companion-${companion.key}-email`}
-                              inputMode="email"
-                              onChange={(event) =>
-                                updateCompanion(index, {
-                                  email: event.target.value,
-                                })
-                              }
-                              placeholder="passenger@example.com"
-                              type="email"
-                              value={companion.email}
-                            />
-                          </FormField>
-                          <FormField label="سازمان مسافر">
-                            <Select
-                              onValueChange={(value) =>
-                                updateCompanion(index, {
-                                  organizationId:
-                                    value === 'not-selected' ? '' : value,
-                                })
-                              }
-                              value={companion.organizationId || 'not-selected'}
-                            >
-                              <SelectTrigger
-                                aria-label={`سازمان مسافر ${index + 1}`}
+                          <details className="group rounded-xl border bg-background p-3 sm:col-span-2">
+                            <summary className="cursor-pointer list-none font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                              <span className="flex items-center justify-between gap-3">
+                                اطلاعات ۳۶۰ مسافر (اختیاری)
+                                <span
+                                  aria-hidden="true"
+                                  className="text-muted-foreground transition-transform group-open:rotate-180"
+                                >
+                                  ▾
+                                </span>
+                              </span>
+                              <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                                تاریخ تولد، تماس، ایمیل، شرکت و مدارک سفر
+                              </span>
+                            </summary>
+                            <div className="mt-4 grid gap-3 border-t pt-4 sm:grid-cols-2">
+                              <CustomerDateField
+                                id={`companion-${companion.key}-birth-date`}
+                                label="تاریخ تولد"
+                                mode={calendarMode}
+                                onModeChange={onCalendarModeChange}
+                                onChange={(value) =>
+                                  updateCompanion(index, { birthDate: value })
+                                }
+                                value={companion.birthDate}
+                              />
+                              <FormField
+                                description="اختیاری و در نمایش عادی Masked"
+                                id={`companion-${companion.key}-phone`}
+                                label="شماره تماس"
                               >
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="not-selected">
-                                  مسافر شخصی
-                                </SelectItem>
-                                {masters.organizations.map((organization) => (
-                                  <SelectItem
-                                    key={organization.id}
-                                    value={organization.id}
+                                <Input
+                                  dir="ltr"
+                                  id={`companion-${companion.key}-phone`}
+                                  inputMode="tel"
+                                  onChange={(event) =>
+                                    updateCompanion(index, {
+                                      phone: event.target.value,
+                                    })
+                                  }
+                                  pattern="\+?[0-9]{10,15}"
+                                  placeholder="09xxxxxxxxx"
+                                  type="tel"
+                                  value={companion.phone}
+                                />
+                              </FormField>
+                              <FormField
+                                description="اختیاری و در نمایش عادی Masked"
+                                id={`companion-${companion.key}-email`}
+                                label="ایمیل مسافر"
+                              >
+                                <Input
+                                  autoComplete="email"
+                                  dir="ltr"
+                                  id={`companion-${companion.key}-email`}
+                                  inputMode="email"
+                                  onChange={(event) =>
+                                    updateCompanion(index, {
+                                      email: event.target.value,
+                                    })
+                                  }
+                                  placeholder="passenger@example.com"
+                                  type="email"
+                                  value={companion.email}
+                                />
+                              </FormField>
+                              <FormField label="شرکت مسافر">
+                                <Select
+                                  onValueChange={(value) =>
+                                    updateCompanion(index, {
+                                      organizationId:
+                                        value === 'not-selected' ? '' : value,
+                                    })
+                                  }
+                                  value={
+                                    companion.organizationId || 'not-selected'
+                                  }
+                                >
+                                  <SelectTrigger
+                                    aria-label={`شرکت مسافر ${index + 1}`}
                                   >
-                                    {organization.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormField>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="not-selected">
+                                      مسافر شخصی
+                                    </SelectItem>
+                                    {masters.organizations.map(
+                                      (organization) => (
+                                        <SelectItem
+                                          key={organization.id}
+                                          value={organization.id}
+                                        >
+                                          {organization.name}
+                                        </SelectItem>
+                                      ),
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </FormField>
+                              <Alert
+                                className="sm:col-span-2"
+                                description="نام و نام خانوادگی انگلیسی، شماره پاسپورت، کشور صادرکننده و تاریخ‌های صدور/انقضا پس از فعال‌شدن نگهداری امن مدارک در همین بخش قابل ثبت خواهند بود."
+                                title="مدارک سفر مسافر"
+                                tone="warning"
+                              />
+                            </div>
+                          </details>
                         </>
                       )}
                       <FormField label="رابطه با مشتری">
@@ -1327,12 +1447,6 @@ function CustomerDrawer({
                           </SelectContent>
                         </Select>
                       </FormField>
-                      <Alert
-                        className="sm:col-span-2"
-                        description="نام و نام خانوادگی انگلیسی، شماره پاسپورت، کشور صادرکننده و تاریخ‌های صدور/انقضا پس از فعال‌شدن نگهداری امن مدارک در همین بخش قابل ثبت خواهند بود."
-                        title="مدارک سفر مسافر"
-                        tone="warning"
-                      />
                     </Card>
                   ))}
                 </div>
@@ -1396,6 +1510,21 @@ function CustomerDrawer({
                   </p>
                 </div>
                 <div>
+                  <p className="text-xs text-muted-foreground">کد ملی</p>
+                  <p dir="ltr" className="text-right font-mono">
+                    {revealedDetail?.nationalId ??
+                      customer.maskedNationalId ??
+                      'ثبت نشده'}
+                  </p>
+                  {customer.maskedNationalId ? (
+                    <Badge className="mt-2">
+                      {revealedDetail?.nationalId
+                        ? 'نمایش Audit‌شده'
+                        : 'ماسک‌شده'}
+                    </Badge>
+                  ) : null}
+                </div>
+                <div>
                   <p className="text-xs text-muted-foreground">تاریخ ایجاد</p>
                   <p>{formatCustomerDate(customer.createdAt, calendarMode)}</p>
                 </div>
@@ -1414,6 +1543,37 @@ function CustomerDrawer({
                   </p>
                 </div>
               </Card>
+              {customer.maskedNationalId && !revealedDetail?.nationalId ? (
+                <Card className="grid gap-3 p-4 sm:grid-cols-[1fr_auto]">
+                  <FormField label="دلیل نمایش کد ملی">
+                    <Select
+                      onValueChange={setSensitiveReason}
+                      value={sensitiveReason}
+                    >
+                      <SelectTrigger aria-label="دلیل نمایش کد ملی">
+                        <SelectValue placeholder="انتخاب دلیل مجاز" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sensitiveReasons.map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <Button
+                    className="self-end"
+                    disabled={busy || !sensitiveReason}
+                    onClick={() => void revealSensitive()}
+                    type="button"
+                    variant="outline"
+                  >
+                    <Eye className="size-4" />
+                    نمایش کد ملی
+                  </Button>
+                </Card>
+              ) : null}
               <Alert
                 description="نام لاتین، جنسیت و یادداشت در Schema و customers.v2 موجود نیستند و برای CUSTOMER-002B مسدود ثبت شده‌اند."
                 title="قابلیت‌های نیازمند قرارداد"
@@ -1495,12 +1655,12 @@ function CustomerDrawer({
             </TabsContent>
             <TabsContent className="space-y-3" value="contacts">
               <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                <FormField label="دلیل نمایش داده حساس">
+                <FormField label="دلیل مشاهده شماره تماس">
                   <Select
                     onValueChange={setSensitiveReason}
                     value={sensitiveReason}
                   >
-                    <SelectTrigger aria-label="دلیل نمایش داده حساس">
+                    <SelectTrigger aria-label="دلیل مشاهده شماره تماس">
                       <SelectValue placeholder="انتخاب دلیل مجاز" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1520,28 +1680,67 @@ function CustomerDrawer({
                   variant="outline"
                 >
                   <Eye className="size-4" />
-                  نمایش کنترل‌شده
+                  نمایش شماره کامل
                 </Button>
               </div>
-              {displayedCustomer?.contacts.map((item) => (
-                <Card
-                  className="flex items-center justify-between gap-3 p-3"
-                  key={item.id}
+              <p className="text-sm text-muted-foreground">
+                برای دیدن شماره کامل مشتری یا مسافر، دلیل مشاهده را انتخاب کنید.
+                پس از نمایش، دکمه تماس فعال می‌شود. شماره‌ها پس از یک دقیقه یا
+                خروج از صفحه دوباره پنهان می‌شوند.
+              </p>
+              {revealedDetail ? (
+                <Button
+                  onClick={() => {
+                    setRevealedDetail(null);
+                    setSensitiveReason('');
+                  }}
+                  type="button"
+                  size="sm"
+                  variant="outline"
                 >
-                  <div>
-                    <p className="font-bold" dir="ltr">
-                      {contactDisplayValue(item, Boolean(revealedDetail))}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.type === 'email' ? 'ایمیل' : 'تلفن'} ·{' '}
-                      {item.label ?? 'بدون برچسب'}
-                    </p>
-                  </div>
-                  <Badge>
-                    {revealedDetail ? 'نمایش Audit‌شده' : 'ماسک‌شده'}
-                  </Badge>
-                </Card>
-              ))}
+                  پنهان‌کردن شماره‌ها
+                </Button>
+              ) : null}
+              {displayedCustomer?.contacts.map((item) => {
+                const callHref = contactCallHref(item, Boolean(revealedDetail));
+                return (
+                  <Card
+                    className="flex flex-wrap items-center justify-between gap-3 p-3"
+                    key={item.id}
+                  >
+                    <div>
+                      <p className="font-bold" dir="ltr">
+                        {contactDisplayValue(item, Boolean(revealedDetail))}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.type === 'email' ? 'ایمیل' : 'تلفن'} ·{' '}
+                        {item.label ?? 'بدون برچسب'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge>
+                        {revealedDetail && item.value
+                          ? 'نمایش کامل'
+                          : 'پنهان‌شده'}
+                      </Badge>
+                      {callHref ? (
+                        <a
+                          className={buttonVariants({ size: 'sm' })}
+                          href={callHref}
+                        >
+                          <Phone aria-hidden="true" className="size-4" />
+                          تماس
+                        </a>
+                      ) : null}
+                    </div>
+                  </Card>
+                );
+              })}
+              {displayedCustomer?.contacts.length === 0 ? (
+                <p className="p-3 text-sm text-muted-foreground">
+                  شماره تماس یا ایمیلی برای این شخص ثبت نشده است.
+                </p>
+              ) : null}
               {!readonly ? (
                 <Card className="grid gap-3 p-4 sm:grid-cols-3">
                   <FormField label="نوع تماس">
@@ -2157,11 +2356,15 @@ export function CustomerWorkspace() {
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  async function open(mode: FormMode, id?: string) {
+  async function open(
+    mode: FormMode,
+    id?: string,
+    tab: CustomerTab = 'overview',
+  ) {
     if (id) {
       setSelected(undefined);
       setSelectedId(id);
-      setActiveTab('overview');
+      setActiveTab(tab);
       setFormMode(mode);
       try {
         setSelected((await customersApi.detail(id)).data);
@@ -2262,6 +2465,7 @@ export function CustomerWorkspace() {
       }
       const rows = exportRecords.map((record) => [
         record.displayName,
+        record.maskedNationalId ?? 'ثبت نشده',
         record.maskedPrimaryContact ?? 'بدون تماس',
         record.status === 'active' ? 'فعال' : 'غیرفعال',
         record.roles
@@ -2280,6 +2484,7 @@ export function CustomerWorkspace() {
         [
           [
             'نام مشتری',
+            'کد ملی (ماسک‌شده)',
             'شماره تماس (ماسک‌شده)',
             'وضعیت',
             'نقش‌ها',
@@ -2321,6 +2526,10 @@ export function CustomerWorkspace() {
           );
           continue;
         }
+        if (!isValidIranianNationalId(row.nationalId)) {
+          failures.push(`ردیف ${index + 2}: کد ملی معتبر نیست.`);
+          continue;
+        }
         if (row.phone && !/^\+?[0-9]{10,15}$/.test(row.phone)) {
           failures.push(`ردیف ${index + 2}: شماره تماس معتبر نیست.`);
           continue;
@@ -2342,6 +2551,7 @@ export function CustomerWorkspace() {
               firstName,
               lastName,
               displayName: row.name,
+              nationalId: normalizeNationalId(row.nationalId),
               birthDate: row.birthDate || null,
               roles: ['customer'],
               acquaintanceMethodId: null,
@@ -2709,7 +2919,7 @@ export function CustomerWorkspace() {
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
                 <th className="p-4 text-start">مشتری یا مسافر</th>
-                <th className="p-4 text-start">شماره همراه (ماسک‌شده)</th>
+                <th className="p-4 text-start">شماره تماس</th>
                 <th className="p-4 text-start">وضعیت و نقش</th>
                 <th className="p-4 text-start">رضایت</th>
                 <th className="p-4 text-start">آخرین تغییر</th>
@@ -2743,6 +2953,16 @@ export function CustomerWorkspace() {
                     <span className="font-mono text-muted-foreground" dir="ltr">
                       {record.maskedPrimaryContact ?? 'بدون تماس'}
                     </span>
+                    <Button
+                      className="mt-2"
+                      onClick={() => void open('view', record.id, 'contacts')}
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
+                      <Phone aria-hidden="true" className="size-4" />
+                      نمایش شماره و تماس
+                    </Button>
                   </td>
                   <td className="p-4">
                     <Badge className="me-1">

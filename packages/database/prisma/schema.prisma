@@ -720,42 +720,48 @@ enum CustomerDuplicateReviewStatus {
 }
 
 model Customer {
-  id                   String                       @id @default(uuid()) @db.Uuid
-  kind                 CustomerKind
-  organizationId       String?                      @db.Uuid
-  firstName            String?                      @db.VarChar(120)
-  lastName             String?                      @db.VarChar(120)
-  displayName          String                       @db.VarChar(200)
-  birthDate            DateTime?                    @db.Date
-  isActive             Boolean                      @default(true)
-  isCustomer           Boolean                      @default(true)
-  isPassenger          Boolean                      @default(false)
-  acquaintanceMethodId String?                      @db.Uuid
-  ownerBranchId        String                       @db.Uuid
-  version              Int                          @default(1)
-  mergedIntoId         String?                      @db.Uuid
-  createdByUserId      String                       @db.Uuid
-  updatedByUserId      String                       @db.Uuid
-  deactivatedByUserId  String?                      @db.Uuid
-  deactivatedAt        DateTime?                    @db.Timestamptz(3)
-  createdAt            DateTime                     @default(now()) @db.Timestamptz(3)
-  updatedAt            DateTime                     @updatedAt @db.Timestamptz(3)
-  organization         MasterOrganization?          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  acquaintanceMethod   MasterAcquaintanceMethod?    @relation(fields: [acquaintanceMethodId], references: [id], onDelete: Restrict)
-  ownerBranch          Branch                       @relation("CustomerOwnerBranch", fields: [ownerBranchId], references: [id], onDelete: Restrict)
-  createdBy            User                         @relation("CustomerCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  updatedBy            User                         @relation("CustomerUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: Restrict)
-  deactivatedBy        User?                        @relation("CustomerDeactivatedBy", fields: [deactivatedByUserId], references: [id], onDelete: Restrict)
-  mergedInto           Customer?                    @relation("CustomerMergeTrace", fields: [mergedIntoId], references: [id], onDelete: Restrict)
-  mergedCustomers      Customer[]                   @relation("CustomerMergeTrace")
-  contacts             CustomerContact[]
-  addresses            CustomerAddress[]
-  consents             CustomerConsent[]
-  relationships        CustomerRelationship[]       @relation("CustomerRelationshipFrom")
-  relatedFrom          CustomerRelationship[]       @relation("CustomerRelationshipTo")
-  duplicateCandidates  CustomerDuplicateCandidate[] @relation("DuplicateSourceCustomer")
-  duplicateMatches     CustomerDuplicateCandidate[] @relation("DuplicateCandidateCustomer")
-  statusHistory        CustomerStatusHistory[]
+  id                    String                       @id @default(uuid()) @db.Uuid
+  kind                  CustomerKind
+  organizationId        String?                      @db.Uuid
+  firstName             String?                      @db.VarChar(120)
+  lastName              String?                      @db.VarChar(120)
+  displayName           String                       @db.VarChar(200)
+  birthDate             DateTime?                    @db.Date
+  nationalIdEncrypted   String?                      @db.Text
+  nationalIdIv          String?                      @db.Char(16)
+  nationalIdAuthTag     String?                      @db.Char(24)
+  nationalIdKeyVersion  Int?
+  nationalIdFingerprint String?                      @unique @db.Char(64)
+  nationalIdMasked      String?                      @db.VarChar(16)
+  isActive              Boolean                      @default(true)
+  isCustomer            Boolean                      @default(true)
+  isPassenger           Boolean                      @default(false)
+  acquaintanceMethodId  String?                      @db.Uuid
+  ownerBranchId         String                       @db.Uuid
+  version               Int                          @default(1)
+  mergedIntoId          String?                      @db.Uuid
+  createdByUserId       String                       @db.Uuid
+  updatedByUserId       String                       @db.Uuid
+  deactivatedByUserId   String?                      @db.Uuid
+  deactivatedAt         DateTime?                    @db.Timestamptz(3)
+  createdAt             DateTime                     @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime                     @updatedAt @db.Timestamptz(3)
+  organization          MasterOrganization?          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  acquaintanceMethod    MasterAcquaintanceMethod?    @relation(fields: [acquaintanceMethodId], references: [id], onDelete: Restrict)
+  ownerBranch           Branch                       @relation("CustomerOwnerBranch", fields: [ownerBranchId], references: [id], onDelete: Restrict)
+  createdBy             User                         @relation("CustomerCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedBy             User                         @relation("CustomerUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  deactivatedBy         User?                        @relation("CustomerDeactivatedBy", fields: [deactivatedByUserId], references: [id], onDelete: Restrict)
+  mergedInto            Customer?                    @relation("CustomerMergeTrace", fields: [mergedIntoId], references: [id], onDelete: Restrict)
+  mergedCustomers       Customer[]                   @relation("CustomerMergeTrace")
+  contacts              CustomerContact[]
+  addresses             CustomerAddress[]
+  consents              CustomerConsent[]
+  relationships         CustomerRelationship[]       @relation("CustomerRelationshipFrom")
+  relatedFrom           CustomerRelationship[]       @relation("CustomerRelationshipTo")
+  duplicateCandidates   CustomerDuplicateCandidate[] @relation("DuplicateSourceCustomer")
+  duplicateMatches      CustomerDuplicateCandidate[] @relation("DuplicateCandidateCustomer")
+  statusHistory         CustomerStatusHistory[]
 
   @@index([ownerBranchId, isActive, updatedAt])
   @@index([displayName])

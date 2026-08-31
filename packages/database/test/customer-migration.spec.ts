@@ -16,7 +16,36 @@ const hardeningMigration = readFileSync(
   ),
   'utf8',
 );
+const nationalIdMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    'prisma/migrations/20260829170000_customer_national_id/migration.sql',
+  ),
+  'utf8',
+);
 const seed = readFileSync(resolve(process.cwd(), 'prisma/seed.ts'), 'utf8');
+
+const nationalIdKeyMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    'prisma/migrations/20260831120000_customer_national_id_key_required/migration.sql',
+  ),
+  'utf8',
+);
+
+describe('national-ID key version hardening', () => {
+  it('closes the SQL UNKNOWN loophole without rewriting historical migrations', () => {
+    expect(nationalIdKeyMigration).toContain(
+      'customers_national_id_key_required_check',
+    );
+    expect(nationalIdKeyMigration).toContain(
+      '"nationalIdEncrypted" IS NULL OR "nationalIdKeyVersion" IS NOT NULL',
+    );
+    expect(nationalIdKeyMigration).not.toMatch(
+      /\b(?:DROP|TRUNCATE|DELETE FROM)\b/i,
+    );
+  });
+});
 
 describe('CUSTOMER-001 migration and seed', () => {
   it('is additive and creates the complete Customers persistence boundary', () => {
@@ -72,12 +101,33 @@ describe('CUSTOMER-001 migration and seed', () => {
       'char_length("encryptionAuthTag") = 24',
     );
     expect(hardeningMigration).toContain('"encryptionKeyVersion" > 0');
-    expect(hardeningMigration).toContain("'^[0-9a-f]{64}" + "$" + "'");
+    expect(hardeningMigration).toContain("'^[0-9a-f]{64}" + '$' + "'");
     expect(hardeningMigration).toContain(
       'customer_contacts_type_valueFingerprint_customerId_idx',
     );
     expect(hardeningMigration).not.toMatch(
       /\b(?:DROP|TRUNCATE|DELETE FROM)\b/i,
+    );
+  });
+
+  it('stores national IDs only as encrypted, fingerprinted and masked values', () => {
+    for (const column of [
+      'nationalIdEncrypted',
+      'nationalIdIv',
+      'nationalIdAuthTag',
+      'nationalIdKeyVersion',
+      'nationalIdFingerprint',
+      'nationalIdMasked',
+    ])
+      expect(nationalIdMigration).toContain(`ADD COLUMN "${column}"`);
+    expect(nationalIdMigration).toContain(
+      'customers_nationalIdFingerprint_key',
+    );
+    expect(nationalIdMigration).toContain(
+      'customers_national_id_complete_check',
+    );
+    expect(nationalIdMigration).not.toMatch(
+      /ADD COLUMN "nationalId"|\b(?:DROP|TRUNCATE|DELETE FROM)\b/i,
     );
   });
 });

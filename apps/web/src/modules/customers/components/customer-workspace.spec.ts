@@ -18,6 +18,15 @@ const dateFieldSource = readFileSync(
 );
 
 describe('Customer Operations workspace boundaries', () => {
+  it('opens contacts for either role and offers a call only after audited reveal', () => {
+    expect(source).toContain("open('view', record.id, 'contacts')");
+    expect(source).toContain('setActiveTab(tab)');
+    expect(source).toContain('نمایش شماره و تماس');
+    expect(source).toContain('نمایش شماره کامل');
+    expect(source).toContain('contactCallHref(item, Boolean(revealedDetail))');
+    expect(source).toContain('href={callHref}');
+    expect(source).toContain('پنهان‌کردن شماره‌ها');
+  });
   it.each([
     [new CustomersApiError('unauthorized', 401), 'unauthorized'],
     [new CustomersApiError('forbidden', 403), 'forbidden'],
@@ -182,6 +191,14 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).not.toContain("params.set('search'");
   });
 
+  it('reveals national ID only through the audited sensitive flow', () => {
+    expect(source).toContain('revealedDetail?.nationalId');
+    expect(source).toContain('customer.maskedNationalId');
+    expect(source).toContain('دلیل نمایش کد ملی');
+    expect(source).toContain('نمایش کد ملی');
+    expect(source).toContain('disabled={busy || !sensitiveReason}');
+  });
+
   it('provides secure filters and a UUID-only customer deep link', () => {
     expect(source).toContain('function safeCustomerId');
     expect(source).toContain("params.set('customerId', selectedId)");
@@ -212,12 +229,20 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain(
       'organizationId: companion.organizationId || null',
     );
-    expect(source).toContain('اطلاعات تکمیلی مسافر');
+    expect(source).toContain('اطلاعات ۳۶۰ مسافر (اختیاری)');
+    expect(source).toContain('<details className=');
+    expect(source).toContain('<summary className=');
+    expect(source).toContain('تاریخ تولد، تماس، ایمیل، شرکت و مدارک سفر');
     expect(source).toContain('companion-${companion.key}-email');
     expect(source).toContain('value: companion.email.trim().toLowerCase()');
     expect(source).toContain('مدارک سفر مسافر');
     expect(source).toContain("const kind = 'person' as const");
-    expect(source).not.toContain('customer-national-id');
+    expect(source).toContain('id="customer-national-id"');
+    expect(source).toContain('companion-${companion.key}-national-id');
+    expect(source).toContain(
+      'nationalId: normalizeNationalId(companion.nationalId)',
+    );
+    expect(source).toContain('کد ملی مسافر شماره');
     expect(source).toContain('انتخاب همین مشتری به‌عنوان مسافر');
     expect(source).toContain('index === 0 ? (');
     expect(source).toContain('aria-label="روش افزودن مسافر 1"');
@@ -257,6 +282,8 @@ describe('Customer Operations workspace boundaries', () => {
     expect(exportSource).toContain(
       "record.maskedPrimaryContact ?? 'بدون تماس'",
     );
+    expect(exportSource).toContain("record.maskedNationalId ?? 'ثبت نشده'");
+    expect(exportSource).toContain('کد ملی (ماسک‌شده)');
     expect(exportSource).toContain('شماره تماس (ماسک‌شده)');
     expect(source).toContain('همراه با شماره تماس ماسک‌شده ساخته شد');
   });
@@ -265,7 +292,7 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('const pageSize = 20');
     expect(source).toContain('Math.max(1, Math.ceil(total / pageSize))');
     expect(source).toContain('نفر در هر صفحه');
-    expect(source).toContain('شماره همراه (ماسک‌شده)');
+    expect(source).toContain('<th className="p-4 text-start">شماره تماس</th>');
     expect(source).toContain("record.maskedPrimaryContact ?? 'بدون تماس'");
   });
 

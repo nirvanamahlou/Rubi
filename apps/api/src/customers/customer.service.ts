@@ -25,6 +25,10 @@ import { CustomerKind } from '@rubi/database';
 
 import { CustomerContactCrypto } from './customer-contact.crypto';
 import {
+  CustomerNationalIdProtector,
+  type ProtectedNationalId,
+} from './customer-national-id';
+import {
   type CustomerAuditRow,
   type CustomerRow,
   CustomerRepository,
@@ -124,7 +128,11 @@ function prismaCode(error: unknown): string | undefined {
     : undefined;
 }
 
-function prepareMutation(input: CustomerMutationRequest, update: boolean) {
+function prepareMutation(
+  input: CustomerMutationRequest,
+  update: boolean,
+  protectedNationalId?: ProtectedNationalId,
+) {
   const roles = new Set(input.roles);
   if (!roles.size)
     throw new BadRequestException('حداقل نقش مشتری یا مسافر لازم است.');
@@ -137,9 +145,23 @@ function prepareMutation(input: CustomerMutationRequest, update: boolean) {
     throw new BadRequestException(
       'مرجع Organization برای مشتری سازمانی الزامی است.',
     );
+  if (!update && input.kind === 'person' && !protectedNationalId)
+    throw new BadRequestException({
+      code: 'CUSTOMER_NATIONAL_ID_REQUIRED',
+      message: 'کد ملی مشتری یا مسافر الزامی است.',
+    });
+  if (input.kind === 'organization' && input.nationalId)
+    throw new BadRequestException({
+      code: 'CUSTOMER_NATIONAL_ID_PERSON_ONLY',
+      message: 'کد ملی فقط برای اشخاص حقیقی ثبت می‌شود.',
+    });
   if (input.birthDate) {
     const date = new Date(`${input.birthDate}T00:00:00.000Z`);
-    if (Number.isNaN(date.getTime()) || date > new Date())
+    if (
+      Number.isNaN(date.getTime()) ||
+      date.toISOString().slice(0, 10) !== input.birthDate ||
+      date > new Date()
+    )
       throw new BadRequestException('تاریخ تولد معتبر نیست.');
   }
   const data: Record<string, unknown> = {
@@ -155,8 +177,13 @@ function prepareMutation(input: CustomerMutationRequest, update: boolean) {
     isCustomer: roles.has('customer'),
     isPassenger: roles.has('passenger'),
     acquaintanceMethodId: input.acquaintanceMethodId ?? null,
+    ...(protectedNationalId ?? {}),
   };
-  if (update) delete data.kind;
+  if (update) {
+    delete data.kind;
+    // Masked/omitted values are not a request to clear an existing date.
+    if (input.birthDate === undefined) delete data.birthDate;
+  }
   return data;
 }
 
@@ -286,6 +313,8 @@ export class CustomerService {
     @Inject(CustomerRepository) private readonly repository: CustomerRepository,
     @Inject(CustomerContactCrypto)
     private readonly contactCrypto: CustomerContactCrypto,
+    @Inject(CustomerNationalIdProtector)
+    private readonly nationalIdProtector: CustomerNationalIdProtector,
   ) {}
 
   private async present(
@@ -303,6 +332,7 @@ export class CustomerService {
       });
     const detail = toCustomerDetail(row, true);
     let contacts;
+    let nationalId;
     try {
       contacts = detail.contacts.map((contact, index) => ({
         ...contact,
@@ -316,10 +346,11 @@ export class CustomerService {
           },
         ),
       }));
+      nationalId = this.nationalIdProtector.decrypt(row);
     } catch {
       throw new UnprocessableEntityException({
-        code: 'CUSTOMER_CONTACT_DECRYPTION_FAILED',
-        message: 'نمایش اطلاعات تماس حساس ممکن نشد.',
+        code: 'CUSTOMER_SENSITIVE_DECRYPTION_FAILED',
+        message: 'نمایش اطلاعات حساس مشتری ممکن نشد.',
       });
     }
     await this.repository.auditSensitiveRead(
@@ -329,7 +360,7 @@ export class CustomerService {
       reason,
       traceId,
     );
-    return { ...detail, contacts };
+    return { ...detail, contacts, nationalId };
   }
 
   async list(query: CustomerListQuery, actor: AuthenticatedActor) {
@@ -465,7 +496,13 @@ export class CustomerService {
     let row;
     try {
       row = await this.repository.create(
-        prepareMutation(input, false),
+        prepareMutation(
+          input,
+          false,
+          input.kind === 'person' && input.nationalId
+            ? this.nationalIdProtector.protect(input.nationalId)
+            : undefined,
+        ),
         actor.userId,
         branchOf(actor, requestedBranch),
         traceId,
@@ -475,6 +512,11 @@ export class CustomerService {
         throw new BadRequestException({
           code: 'INVALID_MASTER_DATA_REFERENCE',
           message: 'مرجع اطلاعات پایه معتبر نیست.',
+        });
+      if (prismaCode(error) === 'P2002')
+        throw new ConflictException({
+          code: 'CUSTOMER_NATIONAL_ID_EXISTS',
+          message: 'برای این کد ملی قبلاً پرونده ثبت شده است.',
         });
       throw error;
     }
@@ -490,15 +532,31 @@ export class CustomerService {
   ) {
     if (!input.version)
       throw new BadRequestException('version برای ویرایش الزامی است.');
-    const row = await this.repository.update(
-      id,
-      actor.branchIds,
-      prepareMutation(input, true),
-      input.version,
-      actor.userId,
-      branchOf(actor, requestedBranch),
-      traceId,
-    );
+    let row;
+    try {
+      row = await this.repository.update(
+        id,
+        actor.branchIds,
+        prepareMutation(
+          input,
+          true,
+          input.nationalId
+            ? this.nationalIdProtector.protect(input.nationalId)
+            : undefined,
+        ),
+        input.version,
+        actor.userId,
+        branchOf(actor, requestedBranch),
+        traceId,
+      );
+    } catch (error) {
+      if (prismaCode(error) === 'P2002')
+        throw new ConflictException({
+          code: 'CUSTOMER_NATIONAL_ID_EXISTS',
+          message: 'برای این کد ملی قبلاً پرونده ثبت شده است.',
+        });
+      throw error;
+    }
     if (!row) throw conflict();
     return { data: await this.present(row, actor, traceId) };
   }

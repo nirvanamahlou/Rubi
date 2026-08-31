@@ -15,6 +15,8 @@ describe('Customers public contract v1', () => {
       'customer%20id/contacts',
     );
     expect(CUSTOMER_ERROR_CODES).toContain('CONCURRENT_MODIFICATION');
+    expect(CUSTOMER_ERROR_CODES).toContain('CUSTOMER_NATIONAL_ID_INVALID');
+    expect(CUSTOMER_ERROR_CODES).toContain('CUSTOMER_NATIONAL_ID_EXISTS');
     expect(CUSTOMER_ERROR_CODES).toContain('MERGE_BLOCKED_BY_OPEN_DECISION');
   });
 
