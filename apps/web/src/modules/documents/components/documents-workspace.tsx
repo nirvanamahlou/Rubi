@@ -170,28 +170,38 @@ function Metric({
   hint,
   icon: Icon,
   label,
+  tone = 'blue',
   value,
 }: {
   hint: string;
   icon: typeof Files;
   label: string;
+  tone?: 'amber' | 'blue' | 'emerald' | 'violet';
   value: number;
 }) {
+  const toneClass = {
+    amber: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40',
+    blue: 'bg-blue-100 text-blue-700 dark:bg-blue-950/40',
+    emerald: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40',
+    violet: 'bg-violet-100 text-violet-700 dark:bg-violet-950/40',
+  }[tone];
+
   return (
-    <Card className="relative overflow-hidden p-4">
-      <span
-        aria-hidden="true"
-        className="absolute inset-y-0 start-0 w-1 bg-primary"
-      />
+    <Card className="p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold text-muted-foreground">{label}</p>
-          <p className="mt-2 text-2xl font-black">
+          <p className="text-sm font-semibold text-muted-foreground">{label}</p>
+          <p className="mt-2 text-3xl font-black text-foreground">
             {value.toLocaleString('fa-IR')}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
         </div>
-        <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
+        <span
+          className={cn(
+            'grid size-11 place-items-center rounded-full',
+            toneClass,
+          )}
+        >
           <Icon aria-hidden="true" className="size-5" />
         </span>
       </div>
@@ -376,6 +386,18 @@ export function DocumentsWorkspace() {
   const visibleExpired = documents.filter(
     (item) => item.validUntil && new Date(item.validUntil) < new Date(),
   ).length;
+  const visibleExpiring = documents.filter((item) => {
+    if (!item.validUntil) return false;
+    const remaining = new Date(item.validUntil).getTime() - Date.now();
+    return remaining >= 0 && remaining <= 30 * 86_400_000;
+  }).length;
+  const followUpDocuments = documents
+    .filter(
+      (item) =>
+        item.currentVersion.scanStatus !== 'CLEAN' ||
+        (item.validUntil && new Date(item.validUntil) < new Date()),
+    )
+    .slice(0, 3);
 
   function table() {
     if (loading)
@@ -888,65 +910,154 @@ export function DocumentsWorkspace() {
           >
             <Metric
               icon={Files}
-              hint="در دامنه مجاز"
-              label="کل اسناد"
+              hint="در دامنه دسترسی شما"
+              label="اسناد قابل مشاهده"
+              tone="blue"
               value={total}
             />
             <Metric
-              icon={UploadCloud}
-              hint="در صفحه جاری"
-              label="نسخه‌های نمایش‌داده‌شده"
-              value={documents.length}
+              icon={ClockAlert}
+              hint="تا ۳۰ روز آینده"
+              label="نزدیک انقضا"
+              tone="emerald"
+              value={visibleExpiring}
             />
             <Metric
               icon={ShieldAlert}
-              hint="Fail-closed"
-              label="نیازمند اسکن"
+              hint="نیازمند بررسی یا اسکن"
+              label="مدارک نیازمند پیگیری"
+              tone="violet"
               value={visibleQuarantine}
             />
             <Metric
               icon={ClockAlert}
-              hint="در صفحه جاری"
-              label="منقضی"
+              hint="نیازمند بازبینی"
+              label="مدارک منقضی"
+              tone="amber"
               value={visibleExpired}
             />
           </section>
-          <div className="grid gap-4 xl:grid-cols-[1.25fr_.75fr]">
+          <div className="grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
             <Card className="p-5">
-              <h2 className="font-black">دسترسی سریع آرشیو</h2>
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                {sections.slice(2, 8).map(({ icon: Icon, key, label }) => (
-                  <button
-                    className="flex min-h-14 items-center gap-3 rounded-xl border border-border p-3 text-start font-bold hover:border-primary/40 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:hover:bg-blue-950/20"
-                    key={key}
-                    onClick={() => changeSection(key)}
-                    type="button"
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="flex items-center gap-2 text-lg font-black">
+                  <ClockAlert aria-hidden="true" className="size-5" />
+                  تازه‌های آرشیو
+                </h2>
+                <button
+                  className="text-sm font-bold text-primary hover:underline"
+                  onClick={() => changeSection('all')}
+                  type="button"
+                >
+                  همه اسناد
+                </button>
+              </div>
+              {documents.length ? (
+                <div className="mt-4 divide-y divide-border">
+                  {documents.slice(0, 5).map((item) => (
+                    <button
+                      className="flex w-full items-center gap-3 py-4 text-start hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      key={item.id}
+                      onClick={() => void openDetail(item.id)}
+                      type="button"
+                    >
+                      <Files
+                        aria-hidden="true"
+                        className="size-5 shrink-0 text-primary"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-bold">
+                          {item.title}
+                        </span>
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          {item.type.name} · نسخه{' '}
+                          {item.currentVersion.versionNumber.toLocaleString(
+                            'fa-IR',
+                          )}
+                        </span>
+                      </span>
+                      <Badge className="bg-emerald-100 text-emerald-700">
+                        فعال
+                      </Badge>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-5 text-sm text-muted-foreground">
+                  هنوز سندی برای نمایش وجود ندارد.
+                </p>
+              )}
+            </Card>
+            <Card className="p-5">
+              <h2 className="flex items-center gap-2 text-lg font-black">
+                <UserRound aria-hidden="true" className="size-5" />
+                کارهای من
+              </h2>
+              {followUpDocuments.length ? (
+                <div className="mt-4 divide-y divide-border">
+                  {followUpDocuments.map((item) => {
+                    const expired = Boolean(
+                      item.validUntil && new Date(item.validUntil) < new Date(),
+                    );
+                    return (
+                      <div
+                        className="flex items-center justify-between gap-3 py-4"
+                        key={item.id}
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate font-bold">
+                            {expired
+                              ? `تمدید ${item.title}`
+                              : `پیگیری بررسی ${item.title}`}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {expired
+                              ? `منقضی در ${date(item.validUntil)}`
+                              : scanLabel[item.currentVersion.scanStatus]}
+                          </p>
+                        </div>
+                        <button
+                          className="shrink-0 text-sm font-bold text-primary hover:underline"
+                          onClick={() => void openDetail(item.id)}
+                          type="button"
+                        >
+                          پیگیری
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mt-5 text-sm text-muted-foreground">
+                  کار بازی برای پیگیری ندارید.
+                </p>
+              )}
+              <div className="mt-5 border-t border-border pt-5">
+                <h3 className="font-black">مسیرهای پیشنهادی برای بررسی</h3>
+                <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                  از منوی آرشیو وارد هر بخش شوید یا روی عنوان سند کلیک کنید.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => setUploadOpen(true)}
+                    size="sm"
+                    variant="outline"
                   >
-                    <Icon aria-hidden="true" className="size-5 text-primary" />
-                    {label}
-                  </button>
-                ))}
+                    <UploadCloud aria-hidden="true" className="size-4" />
+                    فرم بارگذاری
+                  </Button>
+                  <Button
+                    onClick={() => changeSection('all')}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Files aria-hidden="true" className="size-4" />
+                    همه اسناد
+                  </Button>
+                </div>
               </div>
             </Card>
-            <Alert
-              description="فایل‌های جدید واقعاً به Backend ارسال می‌شوند، اما تا اتصال Antivirus در قرنطینه می‌مانند و قابل دانلود نیستند."
-              title="وضعیت پردازش امنیتی"
-              tone="warning"
-            />
           </div>
-          <Card className="p-5">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="font-black">آخرین اسناد مجاز</h2>
-              <Button
-                onClick={() => changeSection('all')}
-                size="sm"
-                variant="outline"
-              >
-                مشاهده همه
-              </Button>
-            </div>
-            <div className="mt-4">{table()}</div>
-          </Card>
         </div>
       );
     return (
@@ -1006,12 +1117,10 @@ export function DocumentsWorkspace() {
             بارگذاری فایل
           </Button>
         }
-        description="آرشیو مرکزی فایل نهایی، Metadata، نسخه، محرمانگی و سابقه دسترسی؛ صدور سند در ماژول مالک باقی می‌ماند."
-        eyebrow="DOCUMENTS-002 · PC-B · REAL VERTICAL SLICE"
         title="اسناد و فایل‌ها"
       />
       {notice ? (
-        <Alert className="relative" description={notice} title="نتیجه عملیات">
+        <Alert className="relative pe-20" title={notice}>
           <Button
             className="absolute end-2 top-2"
             onClick={() => setNotice('')}
@@ -1053,13 +1162,10 @@ export function DocumentsWorkspace() {
           <div className="mt-2 grid gap-1">
             {personalViews.map((label, index) => (
               <button
-                className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-start text-xs font-semibold text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-disabled="true"
+                className="flex min-h-10 cursor-default items-center gap-2 rounded-lg px-3 text-start text-xs font-semibold text-muted-foreground"
+                disabled
                 key={label}
-                onClick={() =>
-                  setNotice(
-                    `${label} پس از قرارداد SavedDocumentView در Slice بعد فعال می‌شود.`,
-                  )
-                }
                 type="button"
               >
                 {index === 3 ? (
@@ -1076,7 +1182,24 @@ export function DocumentsWorkspace() {
             ))}
           </div>
         </Card>
-        <div className="min-w-0">{content()}</div>
+        <div className="min-w-0 space-y-3">
+          {section !== 'overview' ? (
+            <Card className="flex flex-wrap items-center justify-between gap-3 p-3">
+              <h2 className="font-black">
+                {sections.find((item) => item.key === section)?.label}
+              </h2>
+              <Button
+                onClick={() => changeSection('overview')}
+                size="sm"
+                variant="outline"
+              >
+                <ChevronRight aria-hidden="true" className="size-4" />
+                بازگشت به نمای کلی
+              </Button>
+            </Card>
+          ) : null}
+          {content()}
+        </div>
       </div>
       <DocumentUploadDialog
         branches={branches}

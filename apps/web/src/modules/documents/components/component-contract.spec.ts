@@ -45,8 +45,18 @@ describe('documents workspace contract', () => {
       'نتیجه‌ای پیدا نشد',
       'نشست شما پایان یافته است',
       'دسترسی به اسناد مجاز نیست',
+      'تازه‌های آرشیو',
+      'کارهای من',
+      'بازگشت به نمای کلی',
     ])
       expect(source).toContain(marker);
+    for (const removedCopy of [
+      'DOCUMENTS-002 · PC-B · REAL VERTICAL SLICE',
+      'آرشیو مرکزی فایل نهایی، Metadata',
+      'نتیجه عملیات',
+      'SavedDocumentView',
+    ])
+      expect(source).not.toContain(removedCopy);
   });
 
   it('uses the versioned backend and contains no production preview records', () => {
