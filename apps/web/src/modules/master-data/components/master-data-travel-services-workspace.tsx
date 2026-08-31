@@ -724,7 +724,6 @@ export function MasterDataTravelServicesWorkspace() {
           </Link>
         }
         description={definition.description}
-        eyebrow="اطلاعات پایه / تور و خدمات سفر"
         title={definition.label}
       />
       <div className="flex flex-wrap gap-2">

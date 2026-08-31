@@ -1363,7 +1363,6 @@ export function MasterDataAccommodationWorkspace() {
           </Link>
         }
         description={current.description}
-        eyebrow="اطلاعات پایه / اقامت و هتل"
         title={current.title}
       />
       <div className="flex flex-wrap gap-2">

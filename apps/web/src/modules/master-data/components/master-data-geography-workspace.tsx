@@ -56,7 +56,6 @@ import {
   getMasterDataDefinition,
   type MasterDataResourceKey,
 } from '../model/catalog';
-import type { MasterDataSectionDefinition } from '../model/sections';
 import {
   MasterDataLiveForm,
   type MasterDataFormMode,
@@ -286,11 +285,7 @@ const referenceQuery: MasterDataListQuery = {
   pageSize: 100,
 };
 
-export function MasterDataGeographyWorkspace({
-  section,
-}: {
-  section: MasterDataSectionDefinition;
-}) {
+export function MasterDataGeographyWorkspace() {
   const [resource, setResource] = useState<GeographyResource>('countries');
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
@@ -700,7 +695,6 @@ export function MasterDataGeographyWorkspace({
             ? 'مدیریت یکپارچه شهرها و استان‌ها/نواحی با حفظ رابطه ساختاری و کشور مرجع.'
             : definition.description
         }
-        eyebrow={`اطلاعات پایه / ${section.title}`}
         title={isLocationView ? 'شهرها و استان‌ها' : definition.label}
       />
 

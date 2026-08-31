@@ -315,7 +315,6 @@ function GenericMasterDataWorkspace({
           </Link>
         }
         description={section.description}
-        eyebrow="اطلاعات پایه"
         title={section.title}
       />
 
@@ -699,7 +698,7 @@ export function MasterDataWorkspace({
   if (section.slug === 'finance')
     return <MasterDataFinanceWorkspace section={section} />;
   if (section.slug === 'geography')
-    return <MasterDataGeographyWorkspace section={section} />;
+    return <MasterDataGeographyWorkspace />;
   if (section.slug === 'organizations-suppliers')
     return <MasterDataSuppliersWorkspace />;
   if (section.slug === 'accommodation')

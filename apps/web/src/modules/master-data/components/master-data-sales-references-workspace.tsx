@@ -446,7 +446,6 @@ export function MasterDataSalesReferencesWorkspace() {
           </Link>
         }
         description={definition.description}
-        eyebrow="اطلاعات پایه / مراجع فروش"
         title={definition.label}
       />
       <div className="flex flex-wrap gap-2">
