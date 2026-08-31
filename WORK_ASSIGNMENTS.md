@@ -3,7 +3,7 @@
 ## IAM-003-LOGIN-STABILITY — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک در 2026-08-31: خطای تکراری «رمز صحیح نیست» پس از تغییر/راه‌اندازی مجدد به‌صورت دائمی برطرف شود. `COMPUTER_ID=PC-B`.
-- Branch: `codex/pc-b-iam-login-stability` از آخرین `origin/develop`. این اصلاح مستقیم روی `develop` یا `main` انجام نمی‌شود.
+- Branch: `codex/pc-b-iam-login-stability` از آخرین `origin/develop`؛ Draft PR #68 به `develop`. این اصلاح مستقیم روی `develop` یا `main` انجام نمی‌شود.
 - مالکیت نهایی IAM برای PC-A محفوظ است؛ قفل‌های IAM-001/IAM-002 آزاد شده‌اند و این کار یک استثنای محدود و صریح PC-B برای پایداری Login است.
 - محدوده رزروشده: Bootstrap داخلی مدیر و Refresh نشست در `apps/api/src/iam/**`، helper مشترک Refresh و Login UI در `apps/web/src/**`، تست‌های هدفمند و `docs/tasks/IAM-003-LOGIN-STABILITY.md`؛ فقط ورودی‌های همین Work Item در اسناد مرکزی.
 - بدون Prisma Schema/Migration/Seed، بدون تغییر قرارداد عمومی یا Permission، بدون Dependency/Lockfile و بدون بازنشانی حساب/رمز/Session یا تغییر داده کاربردی در زمان پیاده‌سازی.

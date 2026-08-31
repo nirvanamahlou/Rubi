@@ -2,8 +2,8 @@
 
 ## IAM-003 — پایداری ورود و نشست چندتب — آماده بررسی
 
-- `PC-B` با درخواست صریح مالک روی `codex/pc-b-iam-login-stability` Hotfix محدود IAM را
-  از آخرین `origin/develop` پیاده کرد. اجرای مجدد Bootstrap دیگر رمز، وضعیت یا شمارنده
+- `PC-B` با درخواست صریح مالک روی `codex/pc-b-iam-login-stability` و Draft PR #68، Hotfix
+  محدود IAM را از آخرین `origin/develop` پیاده کرد. اجرای مجدد Bootstrap دیگر رمز، وضعیت یا شمارنده
   ورود کاربر موجود را بازنویسی نمی‌کند و فقط اتصال idempotent نقش مدیر/شعبه را تضمین می‌کند.
 - Rotation نشست اکنون با claim اتمیک انجام می‌شود. Token منطبق که حداکثر پنج ثانیه قبل
   توسط تب دیگر Rotate شده، پاسخ conflict قابل‌بازیابی می‌گیرد و خانواده Session را revoke
