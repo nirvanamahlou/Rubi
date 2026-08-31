@@ -8,6 +8,8 @@
 
 والد: `codex/pc-b-documents-vertical-slice@37558aa`
 
+تحویل: Draft PR #65
+
 ## هدف و محدوده
 
 این Slice تجربه استفاده از Documents را روی Vertical Slice موجود کامل می‌کند:

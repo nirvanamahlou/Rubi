@@ -3,7 +3,7 @@
 ## DOCUMENTS-003A — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-08-31: حذف نمای مستقل گزارش دسترسی و نگه‌داشتن Timeline در جزئیات سند؛ تکمیل لینک اشتراک داخلی؛ فعال‌سازی اسکن واقعی فایل در محیط لوکال PC-B؛ فعال‌کردن نماهای شخصی و یکدست‌سازی افکت و رنگ رابط Documents.
-- Branch: `codex/pc-b-documents-usability`، فرزند `codex/pc-b-documents-vertical-slice@37558aa` / Draft PR #64. این Slice مستقیم به `develop` نمی‌رود و والدها را تغییر یا Merge نمی‌کند.
+- Branch: `codex/pc-b-documents-usability` / Draft PR #65، فرزند `codex/pc-b-documents-vertical-slice@37558aa` / Draft PR #64. این Slice مستقیم به `develop` نمی‌رود و والدها را تغییر یا Merge نمی‌کند.
 - محدوده رزروشده: `apps/api/src/documents/**`، `apps/web/src/modules/documents/**`، قرارداد افزایشی Documents در `packages/contracts/src/documents/**`، مثال تنظیمات Documents، تست‌ها و اسناد `WORK_ASSIGNMENTS.md`، `docs/PROJECT_STATUS.md`، `PLANS.md` و `docs/tasks/DOCUMENTS-003A.md`.
 - بدون Prisma Schema/Migration/Seed و بدون Dependency/Lockfile. Migration Owner و Dependency/Lockfile Owner رزرو نمی‌شوند. قرارداد عمومی فقط فیلتر شخصی افزایشی و backward-compatible برای producer/consumer خود Documents API/Web است.
 - لینک اشتراک در این Slice فقط لینک داخلی احراز‌شده و Permission-aware است؛ لینک عمومی/ناشناس، دورزدن محرمانگی و دانلود بدون Scan ممنوع می‌ماند. Audit Timeline از منوی مستقل حذف می‌شود ولی داخل جزئیات هر فایل حفظ می‌شود.
