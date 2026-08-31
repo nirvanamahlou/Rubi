@@ -356,20 +356,16 @@ export function MasterDataFinanceWorkspace({
         };
         const [response, activeResponse, latestResponse] = await Promise.all([
           masterDataApi.list(resource as MasterDataResource, baseQuery),
-          masterDataApi.list(resource as MasterDataResource, {
+          masterDataApi.listSummary(resource as MasterDataResource, {
             ...baseQuery,
             search: '',
             status: 'active',
-            page: 1,
-            pageSize: 1,
           }),
-          masterDataApi.list(resource as MasterDataResource, {
+          masterDataApi.listSummary(resource as MasterDataResource, {
             search: '',
             status: 'all',
             sortBy: 'updatedAt',
             sortDirection: 'desc',
-            page: 1,
-            pageSize: 1,
           }),
         ]);
         setRecords(response.data);

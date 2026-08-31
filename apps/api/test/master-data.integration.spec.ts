@@ -141,6 +141,34 @@ describe('Master Data HTTP contract', () => {
     expect(service.list).not.toHaveBeenCalled();
   });
 
+  it.each([
+    'countries',
+    'regions',
+    'cities',
+    'airports',
+    'terminals',
+    'currencies',
+    'banks',
+    'bank-branches',
+    'payment-methods',
+  ])(
+    'accepts the %s KPI page size and rejects the previous invalid request',
+    async (resource) => {
+      await request(app.getHttpServer())
+        .get(`/master-data/${resource}?status=active&page=1&pageSize=1`)
+        .expect(400);
+      expect(service.list).not.toHaveBeenCalled();
+
+      await request(app.getHttpServer())
+        .get(`/master-data/${resource}?status=active&page=1&pageSize=10`)
+        .expect(200);
+      expect(service.list).toHaveBeenCalledWith(
+        resource,
+        expect.objectContaining({ status: 'active', page: 1, pageSize: 10 }),
+      );
+    },
+  );
+
   it('requires a values object for mutations', async () => {
     await request(app.getHttpServer())
       .post('/master-data/countries')

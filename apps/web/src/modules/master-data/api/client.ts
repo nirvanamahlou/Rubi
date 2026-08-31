@@ -102,6 +102,13 @@ export const masterDataApi = {
       `/${resource}?${serializeMasterDataListQuery(query)}`,
     );
   },
+  listSummary(
+    resource: MasterDataResource,
+    query: Omit<MasterDataListQuery, 'page' | 'pageSize'>,
+  ) {
+    // KPI totals still use the list endpoint and must obey its 10–100 limit.
+    return masterDataApi.list(resource, { ...query, page: 1, pageSize: 10 });
+  },
   detail(resource: MasterDataResource, id: string) {
     return request<{ data: MasterDataRecord }>(
       `/${resource}/${encodeURIComponent(id)}`,

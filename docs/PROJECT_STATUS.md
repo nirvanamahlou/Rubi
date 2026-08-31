@@ -1,6 +1,14 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-31 — تجمیع و انتشار تمام اصلاحات محلی PC-B
+آخرین به‌روزرسانی: 2026-08-31 — اصلاح نمایش فهرست مالی و جغرافیا پس از ثبت فرم
+
+## اصلاح نمایش فهرست پس از ثبت فرم — 2026-08-31
+
+- `MASTER-003-LIST-VISIBILITY` روی `codex/pc-b-master-data-list-visibility` از نسخه تجمیعی `790c20a`: درخواست‌های KPI مالی و جغرافیا از pageSize نامعتبر 1 به helper مشترک با اندازه معتبر 10 منتقل شدند؛ فهرست اصلی، فیلترها، مجوزها و قرارداد Backend بدون تغییرند.
+- ثبت فرودگاه در Audit محلی موجود بود؛ داده حذف نشده بود و خطای درخواست KPI باعث شکست بارگذاری فهرست می‌شد. هیچ Migration، Reset، Seed یا ویرایش داده کاربردی انجام نشد.
+- ۹۵۸ تست عمومی موفق، از جمله سه تست Web جدید و نه تست HTTP اعتبارسنجی برای منابع مالی/جغرافیا؛ ۵۷ تست اختیاری PostgreSQL در اجرای عمومی skip شدند. این اصلاح Schema یا Repository را تغییر نمی‌دهد.
+- Typecheck و Production Build موفق؛ lint محدوده موفق و lint کل همان خطا/هشدار DatePicker مشترک را دارد. API4000 و Login3100 پاسخ ۲۰۰؛ Web نسخه اصلاح‌شده را اجرا می‌کند. مرورگر تست به Login هدایت شد و Smoke با حساب کاربر انجام نشده است.
+- کاربر درخواست Merge به develop داده است؛ PRهای والد هنوز Draft و بدون Review هستند. بررسی غیرمخرب Merge نیز در WORK_ASSIGNMENTS، PROJECT_STATUS و master-data.xlsx تعارض یافت. هیچ Merge یا تغییر شاخه والد/PC-A/main/develop انجام نشده است. گزارش نهایی: `docs/tasks/MASTER-003-LIST-VISIBILITY.md`.
 
 ## انتشار و فعال‌سازی تمام تغییرات محلی — 2026-08-31
 
@@ -26,8 +34,8 @@
 - وضعیت: **انتشار اصلاحات محلی در Sliceهای مستقل و تجمیع نسخه اجرایی کامل**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه نسخه اجرایی: `codex/pc-b-master-data-local-complete`
-- Work Item: `MASTER-003-LOCAL-PUBLISH`؛ شش Slice مستقل به‌علاوه نسخه حمل‌ونقل PR #47؛ والد مشترک Draft PR #45.
+- شاخه نسخه اجرایی: `codex/pc-b-master-data-list-visibility`، شامل نسخه تجمیعی `codex/pc-b-master-data-local-complete` و اصلاح نمایش فهرست.
+- Work Item جاری: `MASTER-003-LIST-VISIBILITY` روی PR #54؛ نسخه تجمیعی و Sliceهای انتشار قبلی حفظ شده‌اند.
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ داده‌های Checkout اصلی محفوظ‌اند؛ API4000 و Web3100 محل اجرای نسخه تجمیعی هستند.
 - نوع تغییر: Master Data Database/API/Contract/Web/Test/Docs؛ بدون تغییر Seed، Customers،
   UI مشترک، Dependency یا Lockfile.

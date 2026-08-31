@@ -1,6 +1,14 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-31 — تجمیع و انتشار تمام اصلاحات محلی PC-B
+آخرین به‌روزرسانی: 2026-08-31 — اصلاح نمایش فهرست مالی و جغرافیا پس از ثبت فرم
+
+### `MASTER-003-LIST-VISIBILITY` — PC-B — `READY_FOR_REVIEW`
+
+- درخواست کاربر: اصلاح نمایش‌ندادن داده پس از ثبت فرم و سپس ادغام به develop؛ مجوز Merge به معنی عبور از Review و وابستگی‌های باز نیست.
+- Branch: `codex/pc-b-master-data-list-visibility` از `790c20a`؛ والدها، PC-A، Customers و داده‌های موجود دست‌نخورده می‌مانند.
+- Scope: درخواست‌های فهرست/KPI مالی و جغرافیا، تست سازگاری Web/API و اسناد همین اصلاح؛ زیر قفل اسناد PC-B/MASTER-003. بدون Migration، Seed، Contract یا Dependency/Lockfile جدید.
+- علت تأییدشده: شش درخواست KPI با pageSize=1 در برابر حداقل 10 قرارداد؛ شکست Promise.all فهرست موفق را نیز خالی می‌کند. اصلاح و آزمون قبل از انتشار انجام می‌شود.
+- نتیجه: helper مشترک با pageSize=10، ۱۲ تست بازگشت جدید و ۹۵۸ تست عمومی موفق؛ Typecheck و Production Build موفق، lint محدوده موفق. lint کلی همان ایراد قبلی DatePicker است. API4000/Login3100 سالم؛ Smoke احراز‌شده انجام نشده است. ادغام به develop تا Review والدها و حل سه تعارض معلق می‌ماند.
 
 ### `MASTER-003-LOCAL-PUBLISH` — PC-B — `READY_FOR_REVIEW`
 

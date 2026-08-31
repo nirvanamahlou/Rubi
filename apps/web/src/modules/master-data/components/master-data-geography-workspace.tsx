@@ -374,44 +374,36 @@ export function MasterDataGeographyWorkspace() {
     try {
       const requests: Promise<unknown>[] = [
         masterDataApi.list(resource as MasterDataResource, baseQuery),
-        masterDataApi.list(resource as MasterDataResource, {
+        masterDataApi.listSummary(resource as MasterDataResource, {
           ...baseQuery,
           search: '',
           status: 'active',
-          page: 1,
-          pageSize: 1,
         }),
       ];
       if (resource === 'terminals') {
         requests.push(
-          masterDataApi.list('terminals', {
+          masterDataApi.listSummary('terminals', {
             ...baseQuery,
             search: '',
             status: 'all',
             terminalType: 'INTERNATIONAL',
-            page: 1,
-            pageSize: 1,
           }),
         );
       } else requests.push(Promise.resolve(undefined));
       if (resource === 'regions' || resource === 'cities') {
         const pairedResource = resource === 'regions' ? 'cities' : 'regions';
         requests.push(
-          masterDataApi.list(pairedResource, {
+          masterDataApi.listSummary(pairedResource, {
             search: '',
             status: 'all',
             sortBy: 'name',
             sortDirection: 'asc',
-            page: 1,
-            pageSize: 1,
           }),
-          masterDataApi.list(pairedResource, {
+          masterDataApi.listSummary(pairedResource, {
             search: '',
             status: 'active',
             sortBy: 'name',
             sortDirection: 'asc',
-            page: 1,
-            pageSize: 1,
           }),
         );
       }
