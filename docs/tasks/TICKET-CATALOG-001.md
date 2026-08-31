@@ -145,3 +145,23 @@ node --test src/modules/ticket-catalog/preview/server.check.mjs
 ```
 
 The prior request for server-owner CORS changes is superseded: no CORS/server/IAM configuration change is now necessary. The unrelated shared route-foundation test handoff remains unchanged; Phase B remains unstarted.
+
+
+## Follow-up: approved IAM password policy and administrator provisioning — 2026-08-31
+
+COMPUTER_ID=PC-A. The user explicitly approved lowering the global minimum from 12 to 10 characters after being told this affects all users, and requested a full-access administrator account. This is a narrow, explicit extension of the original no-IAM scope; Phase B remains unstarted. PC-A owns IAM, and the current competing work is in Master Data, not IAM.
+
+Reserved task-local files: apps/api/src/iam/password-policy.ts, apps/api/src/iam/password-policy.spec.ts, apps/api/src/iam/dto/create-user.dto.ts, apps/api/src/iam/dto/create-user-password-policy.spec.ts, apps/web/src/app/(crm)/users/user-management.tsx. No shared schema, dependency, central-file or migration lock is acquired. Central assignment/status files remain reserved to their existing owner; this addendum is the task-local reservation and handoff.
+
+Keep all four character-class checks and the existing maximum length. Provision only the requested new user via the documented IAM bootstrap service with the existing protected local runtime configuration, then verify through normal HTTP authentication. Check for an existing username first; do not overwrite an existing account, alter other users/roles, run seed, replace keys, or store credentials in tracked files/logs. Original services on 3100/4000 must remain running. Policy changes in this branch do not hot-update the original API process.
+
+
+IAM follow-up outcome: the requested new account was created through the public IAM bootstrap service, with a preflight confirming no existing username. Normal login through 3211 returned 200; all 25 currently published permissions, the administrator role and the one active branch were verified. Authenticated Master Data airline GET and /ticket-management returned 200, and the existing API at 4000 accepted the issued session. The verification session was logged out (204). No credentials, cookies, tokens, key values or other user records were saved in tracked files.
+
+The full task AppModule initially refused startup because the older running server configuration has no Master Data import-token key. No key was generated or replaced. The one-shot provisioning context loaded only the public IamModule and DatabaseModule, with the exact existing validators for NODE_ENV, DATABASE_URL and IAM_ACCESS_TOKEN_SECRET; unrelated Master Data/customer modules were not loaded. Normal password hashing, role assignment and audit were retained.
+
+Validation: 25 IAM tests in four files passed, including 9/10/11/12-character boundaries, preserved character classes, DTO maximum 200 and rejection at 201. API and Web lint, typecheck and production builds passed. Post-build connection smoke passed all seven checks, including foreign-origin rejection and real unauthenticated responses. No browser visual QA is claimed. The previously documented unrelated shared route-foundation test remains a merge gate.
+
+Runtime distinction: the account is usable now against the existing local database/API, including from the main application when it uses that API. The new global 10-character creation policy is prepared in this branch and the rebuilt Preview UI; it is not hot-loaded into the original running API or the main application. Their existing creation validator remains 12 until an authorized integration/restart. Existing login accepts the new account normally. No merge/deploy or original-service restart was performed. Final listeners: 3100 PID 3340, 4000 PID 15952, 3211 proxy PID 2072; only task Next 3212 was rebuilt/restarted (PID 3488).
+
+Central-document owner handoff: record the explicit user approval and this narrow IAM exception/status in WORK_ASSIGNMENTS and PROJECT_STATUS alongside the existing task entry; no central lock is transferred. Global policy rollout must coordinate the frontend and API. Passwords and provisioning environment values must remain outside Git.

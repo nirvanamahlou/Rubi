@@ -296,12 +296,12 @@ export function UserManagement() {
               <Input dir="ltr" name="email" type="email" />
             </FormField>
             <FormField
-              description="حداقل ۱۲ نویسه شامل بزرگ، کوچک، رقم و نویسه ویژه"
+              description="حداقل ۱۰ نویسه شامل بزرگ، کوچک، رقم و نویسه ویژه"
               label="رمز اولیه"
             >
               <Input
                 dir="ltr"
-                minLength={12}
+                minLength={10}
                 name="password"
                 required
                 type="password"

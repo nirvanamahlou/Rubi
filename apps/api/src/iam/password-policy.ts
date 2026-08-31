@@ -1,8 +1,8 @@
-export const PASSWORD_MIN_LENGTH = 12;
+export const PASSWORD_MIN_LENGTH = 10;
 
 export function passwordPolicyErrors(password: string): string[] {
   const checks: Array<[boolean, string]> = [
-    [password.length >= PASSWORD_MIN_LENGTH, 'حداقل ۱۲ نویسه لازم است.'],
+    [password.length >= PASSWORD_MIN_LENGTH, 'حداقل ۱۰ نویسه لازم است.'],
     [/[a-z]/.test(password), 'حداقل یک حرف کوچک لاتین لازم است.'],
     [/[A-Z]/.test(password), 'حداقل یک حرف بزرگ لاتین لازم است.'],
     [/\d/.test(password), 'حداقل یک رقم لازم است.'],
