@@ -82,6 +82,114 @@ const row = {
 };
 
 describe('CustomerService', () => {
+  it('rejects branch filter tampering before querying persistence', async () => {
+    const repository = { list: vi.fn() } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    await expect(
+      service.list(
+        {
+          search: '',
+          status: 'all',
+          role: 'all',
+          branchId: '99999999-9999-4999-8999-999999999999',
+          sortBy: 'updatedAt',
+          sortDirection: 'desc',
+          page: 1,
+          pageSize: 25,
+        },
+        actor,
+      ),
+    ).rejects.toMatchObject({
+      status: 403,
+      response: { code: 'CUSTOMER_BRANCH_SCOPE_FORBIDDEN' },
+    });
+    expect(repository.list).not.toHaveBeenCalled();
+  });
+
+  it('returns filter-scoped customer metrics without inventing Sales data', async () => {
+    const repository = {
+      list: vi.fn().mockResolvedValue({
+        rows: [row],
+        total: 1,
+        metrics: {
+          totalCustomers: 1,
+          totalPassengers: 1,
+          newCustomersLastThreeMonths: 1,
+        },
+      }),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    const response = await service.list(
+      {
+        search: '',
+        kind: 'person',
+        status: 'all',
+        role: 'all',
+        branchId: 'all',
+        sortBy: 'updatedAt',
+        sortDirection: 'desc',
+        page: 1,
+        pageSize: 25,
+      },
+      actor,
+    );
+
+    expect(response.meta.metrics).toEqual({
+      totalCustomers: 1,
+      totalPassengers: 1,
+      newCustomersLastThreeMonths: 1,
+      returningCustomerRate: null,
+      returningCustomerRateStatus: 'awaiting-sales-public-contract',
+    });
+  });
+
+  it('returns safe real status, activity and audit timelines', async () => {
+    const repository = {
+      statusHistory: vi.fn().mockResolvedValue([
+        {
+          id: 'history-id',
+          fromStatus: 'ACTIVE',
+          toStatus: 'INACTIVE',
+          reason: 'manual-deactivation',
+          changedByUserId: actor.userId,
+          actorBranchId: actor.branchIds[0],
+          changedAt: row.updatedAt,
+          changedBy: { displayName: 'کاربر ساختگی' },
+        },
+      ]),
+      audit: vi.fn().mockResolvedValue([
+        {
+          id: 'audit-id',
+          action: 'customers.sensitive.read',
+          outcome: 'SUCCESS',
+          reason: 'customer-verification',
+          actorUserId: actor.userId,
+          actorBranchId: actor.branchIds[0],
+          traceId: 'trace-id',
+          occurredAt: row.updatedAt,
+          actor: { displayName: 'کاربر ساختگی' },
+        },
+      ]),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+
+    await expect(service.statusHistory(row.id, actor)).resolves.toMatchObject({
+      data: [{ fromStatus: 'active', toStatus: 'inactive' }],
+    });
+    await expect(service.activity(row.id, actor)).resolves.toMatchObject({
+      data: [{ type: 'sensitive-view', title: 'مشاهده اطلاعات حساس' }],
+    });
+    const audit = await service.audit(row.id, actor);
+    expect(audit.data[0]).toEqual(
+      expect.objectContaining({
+        action: 'customers.sensitive.read',
+        outcome: 'success',
+      }),
+    );
+    expect(audit.data[0]).not.toHaveProperty('beforeSnapshot');
+    expect(audit.data[0]).not.toHaveProperty('afterSnapshot');
+  });
+
   it('enforces branch context on mutations', async () => {
     const repository = { create: vi.fn() } as unknown as CustomerRepository;
     const { service } = createService(repository);

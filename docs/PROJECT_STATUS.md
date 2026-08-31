@@ -4,6 +4,25 @@
 
 ## خلاصه
 
+### CUSTOMER-CHAIN-REVIEW-001 — 2026-08-31
+
+- با تأیید صریح مالک، فقط زنجیره مشتریان #26 → #27 → #34 → #41 در حال بررسی و ادغام ترتیبی است.
+- PR #26 پس از ۳۴۴ تست و Smoke واقعی روی مبنای ادغام‌شده، با Commit `a470d06` ادغام شد.
+- PR #27 به develop تغییر مبنا یافت؛ حل تعارض و انتقال زودتر کنترل‌های امنیتی XLSX از #41 انجام شده و در انتظار Gate نهایی است.
+- هیچ PR کامپیوتر B، کلید، داده واقعی یا سرویس لوکال اصلی تغییر نکرده است؛ تصمیم‌های باز امنیتی خودکار پذیرفته نمی‌شوند.
+
+### `CUSTOMER-002A.1` — PC-A — `READY_FOR_REVIEW`
+
+- Branch فرزند `codex/pc-a-customer-next` از Remote Parent
+  `codex/pc-a-customer-operations@5e9503d0b09560ed266aeaaa800d2fe701d1f712` ساخته شد؛ Parent PR #26 و Branch آن تغییر نکردند.
+- فیلترهای مدل فعلی، Status History، Customers-only Activity Timeline، Audit API حداقلی، Privacy UX و Deep Link امن Customer 360 تکمیل شدند.
+- قرارداد `customers.v2` به‌صورت additive/backward-compatible باقی ماند و هیچ فایل Customer Affairs یا Master Data تغییر نکرد.
+- Migration Lock نزد `PC-B/MASTER-003` باقی ماند؛ Prisma/Migration/Seed/Dependency/Lockfile بدون تغییر هستند.
+- ۵۲ تست API Customers، ۱۴ تست Web Customers، ۱۵ تست Contract و ۲۶۹ تست کامل پاس شدند؛ lint، typecheck، Production Build و Smoke احراز‌شده `/customers` نیز پاس شدند.
+- نام لاتین، جنسیت، note، business code، idempotency persistence، Address Masking کامل، cross-module timeline و Merge واقعی در `BLOCKED_FOR_CUSTOMER_002B` باقی ماندند.
+- Draft Stacked PR #27 با Base اولیه `codex/pc-a-customer-operations` باز شد؛ به #26 وابسته است، پیش از Parent Merge نمی‌شود و پس از Merge والد Base آن به `develop` تغییر می‌کند.
+
+
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
 - وضعیت: **MASTER-003 Phase A برابر DONE / READY_FOR_REVIEW؛ کل Master Data تکمیل نشده است**
 - Repository: `Rubi`، Remote با نام `origin`

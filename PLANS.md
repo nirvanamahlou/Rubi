@@ -276,6 +276,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
 
 ### مرحله 3 — CRM و فروش (`P1`)
 
+- [x] `CUSTOMER-002A.1`: Timeline/Filters/Privacy UX با Persistence فعلی؛ Draft PR #27 به‌صورت Stacked روی PR #26
 - [ ] Customer 360، contacts، addresses، companions، consent و duplicate merge
 - [ ] Customer Affairs: request/lead، qualification، activities و پشتیبانی قبل/بعد فروش
 - [ ] Sales Contract: quotation/version، party/payer/passenger و contract documents

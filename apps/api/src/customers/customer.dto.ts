@@ -1,4 +1,5 @@
 import { Transform, Type } from 'class-transformer';
+import { CUSTOMER_STATUS_REASON_CODES } from '@rubi/contracts';
 import {
   IsArray,
   IsBoolean,
@@ -17,10 +18,30 @@ import {
 
 export class CustomerListQueryDto {
   @IsOptional() @IsString() @MaxLength(100) search = '';
+  @IsOptional() @IsIn(['all', 'person', 'organization']) kind:
+    'all' | 'person' | 'organization' = 'all';
   @IsOptional() @IsIn(['all', 'active', 'inactive']) status:
     'all' | 'active' | 'inactive' = 'all';
   @IsOptional() @IsIn(['all', 'customer', 'passenger']) role:
     'all' | 'customer' | 'passenger' = 'all';
+  @IsOptional()
+  @IsString()
+  @MaxLength(36)
+  @ValidateIf((value: CustomerListQueryDto) => value.branchId !== 'all')
+  @IsUUID()
+  branchId = 'all';
+  @IsOptional()
+  @IsString()
+  @MaxLength(36)
+  @ValidateIf(
+    (value: CustomerListQueryDto) => value.acquaintanceMethodId !== 'all',
+  )
+  @IsUUID()
+  acquaintanceMethodId = 'all';
+  @IsOptional() @IsDateString() createdFrom: string | null = null;
+  @IsOptional() @IsDateString() createdTo: string | null = null;
+  @IsOptional() @IsDateString() updatedFrom: string | null = null;
+  @IsOptional() @IsDateString() updatedTo: string | null = null;
   @IsOptional() @IsIn(['displayName', 'updatedAt', 'createdAt']) sortBy:
     'displayName' | 'updatedAt' | 'createdAt' = 'updatedAt';
   @IsOptional() @IsIn(['asc', 'desc']) sortDirection: 'asc' | 'desc' = 'desc';
@@ -62,7 +83,8 @@ export class CustomerMutationDto {
 export class CustomerStatusDto {
   @IsIn(['active', 'inactive']) status!: 'active' | 'inactive';
   @IsInt() @Min(1) version!: number;
-  @IsString() @MinLength(3) @MaxLength(500) reason!: string;
+  @IsIn(CUSTOMER_STATUS_REASON_CODES)
+  reason!: (typeof CUSTOMER_STATUS_REASON_CODES)[number];
 }
 
 export class CustomerContactDto {

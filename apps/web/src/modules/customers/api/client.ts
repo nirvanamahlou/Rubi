@@ -1,5 +1,7 @@
 import type {
   CustomerAddressRequest,
+  CustomerActivityResponse,
+  CustomerAuditResponse,
   CustomerCompanionRequest,
   CustomerConsentRequest,
   CustomerContactRequest,
@@ -8,6 +10,7 @@ import type {
   CustomerListResponse,
   CustomerMutationRequest,
   CustomerStatusRequest,
+  CustomerStatusHistoryResponse,
   DuplicateCandidate,
   DuplicateReviewRequest,
 } from '@rubi/contracts';
@@ -25,11 +28,33 @@ export class CustomersApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+let refreshInFlight: Promise<boolean> | null = null;
+
+async function refreshAccess(baseUrl: string) {
+  refreshInFlight ??= fetch(`${baseUrl}/iam/auth/refresh`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  })
+    .then((response) => response.ok)
+    .catch(() => false)
+    .finally(() => {
+      refreshInFlight = null;
+    });
+  return refreshInFlight;
+}
+
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  retriedAfterRefresh = false,
+): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new CustomersApiError('نشانی API پیکربندی نشده است.', 0);
   const response = await fetch(`${baseUrl}/customers${path}`, {
     credentials: 'include',
+    cache: 'no-store',
     ...init,
     headers: {
       accept: 'application/json',
@@ -37,6 +62,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       ...init?.headers,
     },
   });
+  if (
+    response.status === 401 &&
+    !retriedAfterRefresh &&
+    (await refreshAccess(baseUrl))
+  )
+    return request<T>(path, init, true);
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
       code?: string;
@@ -72,6 +103,19 @@ export const customersApi = {
         ? { headers: { 'x-sensitive-read-reason': sensitiveReadReason } }
         : undefined,
     );
+  },
+  statusHistory(id: string) {
+    return request<CustomerStatusHistoryResponse>(
+      `/${encodeURIComponent(id)}/status-history`,
+    );
+  },
+  activity(id: string) {
+    return request<CustomerActivityResponse>(
+      `/${encodeURIComponent(id)}/activity`,
+    );
+  },
+  audit(id: string) {
+    return request<CustomerAuditResponse>(`/${encodeURIComponent(id)}/audit`);
   },
   create(input: CustomerMutationRequest) {
     return request<{ data: CustomerDetail }>('', body(input));
