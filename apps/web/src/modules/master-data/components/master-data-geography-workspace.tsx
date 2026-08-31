@@ -726,9 +726,6 @@ export function MasterDataGeographyWorkspace({
             خروجی اکسل
           </Button>
         </div>
-        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-          Backend واقعی · مشترک بین شرکت‌ها
-        </Badge>
       </div>
 
       <Card className="overflow-x-auto p-2">
