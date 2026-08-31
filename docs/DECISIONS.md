@@ -25,6 +25,7 @@
 | ADR-019 | IAM از Argon2id، access JWT کوتاه‌عمر و refresh opaque چرخشی با Hash ذخیره‌شده استفاده می‌کند          | token خام در DB نیست؛ reuse کل family را revoke می‌کند؛ RBAC و branch scope از قرارداد عمومی منتشر می‌شوند                    |
 | ADR-020 | فروش مالک قرارداد و تخصیص passenger/service؛ Ticket Catalog مالک تعریف بلیت؛ Reservations مالک اجرا/صدور/Manifest؛ Procurement مالک خرید؛ Finance مالک release تحویل است | حذف ورود تکراری و جلوگیری از اختلاط فروش/عملیات/خرید/مالی؛ شرح کامل در `TRAVEL_WORKFLOW_ARCHITECTURE.md` |
 | ADR-021 | ماژول تولیدکننده مالک Render و Issue سند است؛ Documents فقط فایل نهایی، نسخه، محرمانگی، دسترسی و Archive را مالک است | ADR-012 را در بخش Render supersede می‌کند؛ Metadata هویت صادرکننده از `legal-entities.v1` گرفته می‌شود و هیچ منوی صدور مستقل یا query مستقیم جدول Legal Entity ایجاد نمی‌شود |
+| ADR-022 | Master Data فایل XLSX گذرای فیلترشده را مستقیم Render و Download می‌کند؛ PDF و آرشیو پایدار همچنان از Documents/Worker عبور می‌کنند | خروجی Excel عملیاتی بدون جعل Artifact فعال می‌شود؛ سقف ۱۰٬۰۰۰ ردیف، Permission، Audit و ایمنی Formula Injection اجباری است |
 
 ## تصمیم‌های باز
 

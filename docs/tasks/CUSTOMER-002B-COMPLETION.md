@@ -1,5 +1,13 @@
 # CUSTOMER-002B — Independent completion
 
+## Current sequential integration review — 2026-08-31
+
+- This section supersedes the historical parent/lock/merge blockers below. The product owner explicitly authorized customer-chain review, conflict repair and sequential merges.
+- Parents merged to develop: #25 `d73f51f`, #26 `a470d06`, #27 `eb2fe1e`, #34 `b5f06a2`. #41 is reviewed on top of that develop tree, preserving Master Data, shared UI and the new additive national-ID constraint.
+- Resolved the duplicated service-test conflict by retaining the child organization-rejection regression together with the parent birthday-preservation/date-validation regressions. No parent correction is dropped.
+- Status: `INTEGRATION_REVIEW` for this bounded slice; full CUSTOMER-002B remains `PARTIAL_DELIVERY`. DEC-OPEN-006/011, passport/foreign identity, secure Documents, retention, real customer merging and durable import/idempotency remain blocked.
+- Review uses synthetic PostgreSQL 5435, API 4015 and Web 3115 with stable DPAPI-protected keys separate from all existing local environments. The historical runner below needs an externally provided persistent `MASTER_DATA_IMPORT_TOKEN_KEY_BASE64` on the merged Master Data baseline; this review never runs it against its existing 55432 database or changes that environment.
+
 - Computer/owner: PC-A.
 - Branch: `codex/pc-a-customer-002b-completion`.
 - Baseline: `bcfb835` (PR #34 source, includes #26 fixes and #27).

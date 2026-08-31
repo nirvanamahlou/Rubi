@@ -22,6 +22,10 @@ const record: MasterDataRecord = {
 };
 
 describe('master data reference field mapping', () => {
+  it('does not define an organization selector for hotels', () => {
+    expect(getReferenceFieldConfig('hotels', 'organizationId')).toBeUndefined();
+  });
+
   it('maps Country selection to its persisted id', () => {
     const config = getReferenceFieldConfig('cities', 'countryId');
     expect(config).toBeDefined();
@@ -34,8 +38,13 @@ describe('master data reference field mapping', () => {
       'fromCurrencyCode',
     );
     expect(config).toBeDefined();
-    expect(mapReferenceOption(config!, { ...record, resource: 'currencies', code: 'USD' }))
-      .toBe('USD');
+    expect(
+      mapReferenceOption(config!, {
+        ...record,
+        resource: 'currencies',
+        code: 'USD',
+      }),
+    ).toBe('USD');
   });
 
   it('filters organizations by compatible role', () => {
@@ -69,5 +78,4 @@ describe('master data reference field mapping', () => {
       'forbidden',
     );
   });
-
 });
