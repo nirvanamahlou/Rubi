@@ -1,6 +1,7 @@
 'use client';
 
 import type {
+  BranchReference,
   CustomerActivityEntry,
   CustomerAuditEntry,
   CustomerDetail,
@@ -88,6 +89,7 @@ import {
   normalizeNationalId,
 } from '../model/customer';
 import { formatCustomerDate } from '../model/customer-calendar';
+import { customerBranchOptions } from '../model/customer-branches';
 import {
   customerImportHeaders,
   CUSTOMER_IMPORT_TEMPLATE_VERSION,
@@ -2285,6 +2287,36 @@ export function CustomerWorkspace() {
   const [allowedBranchIds, setAllowedBranchIds] = useState<readonly string[]>(
     [],
   );
+  const [branchReferences, setBranchReferences] = useState<
+    readonly BranchReference[]
+  >([]);
+  const [branchNamesState, setBranchNamesState] = useState<
+    'loading' | 'ready' | 'error'
+  >('loading');
+  const [branchNamesAttempt, setBranchNamesAttempt] = useState(0);
+  const branchOptions = customerBranchOptions(
+    allowedBranchIds,
+    branchReferences,
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    void customersApi
+      .branchReferences()
+      .then((references) => {
+        if (cancelled) return;
+        setBranchReferences(references);
+        setBranchNamesState('ready');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setBranchReferences([]);
+        setBranchNamesState('error');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [branchNamesAttempt]);
   const [calendarMode, setCalendarMode] = useState<CustomerCalendarMode>(
     () =>
       (searchParams.get('calendar') === 'gregorian'
@@ -2901,6 +2933,7 @@ export function CustomerWorkspace() {
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-4">
         <FormField label="شعبه مجاز">
           <Select
+            disabled={branchNamesState === 'loading'}
             value={branchId}
             onValueChange={(value) => {
               setBranchId(value);
@@ -2912,13 +2945,41 @@ export function CustomerWorkspace() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">همه شعب مجاز</SelectItem>
-              {allowedBranchIds.map((id) => (
-                <SelectItem key={id} value={id}>
-                  شعبه {id}
+              {branchOptions.map((branch) => (
+                <SelectItem
+                  key={branch.id}
+                  value={branch.id}
+                  disabled={branch.unavailable}
+                >
+                  {branch.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {branchNamesState === 'loading' ? (
+            <p role="status" className="text-xs text-muted-foreground">
+              در حال دریافت نام شعب…
+            </p>
+          ) : branchNamesState === 'error' ||
+            branchOptions.some((branch) => branch.unavailable) ? (
+            <div
+              role="status"
+              className="flex items-center gap-2 text-xs text-muted-foreground"
+            >
+              نام شعبه در دسترس نیست.
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setBranchNamesState('loading');
+                  setBranchNamesAttempt((attempt) => attempt + 1);
+                }}
+              >
+                تلاش مجدد
+              </Button>
+            </div>
+          ) : null}
         </FormField>
         <FormField id="customer-search-live" label="جست‌وجو">
           <div className="relative">

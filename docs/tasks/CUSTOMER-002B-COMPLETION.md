@@ -90,6 +90,14 @@ Proposed policy, NOT accepted: AES-256-GCM with versioned keys and independent H
 - No database, schema, migration, dependency, lockfile or key changes. Preserve the pre-existing local change to `apps/web/next-env.d.ts`.
 - Verification: Web tests 147/147, Web lint, Web typecheck, scoped Prettier and `git diff --check` passed. Production build and authenticated browser smoke were not repeated for this UI follow-up; preserve the running preview and its existing generated-file change. Existing Web/API listeners were not stopped.
 
+## Branch-name follow-up — PC-A
+
+- Reserved scope: Customers Web client, branch-label model, filter UI and their tests on the main-preview branch. Shared central documents remain locked and unchanged.
+- Consume existing public IAM refresh response (`LoginResponse.user.branches`), shared with access-cookie refresh to avoid concurrent token rotation. No IAM implementation, permissions or contract change.
+- Display real branch names only for IDs allowed by the Customers response. Keep UUIDs as internal selection values; unavailable names use an explicit unavailable state and retry, never a fabricated company label.
+- Web regression tests cover real-name mapping, missing names, branch-scope intersection, shared refresh and retry. Browser verification was attempted twice but the trusted browser runtime exited before connection; no visual smoke result is claimed. Production build is not repeated in the active preview checkout to preserve its generated-file change.
+- Passed: 151 Web tests, Web lint/typecheck, scoped Prettier and diff check. No API, database, shared-contract, dependency or lockfile changes.
+
 ## Merge prerequisites
 
 Read-only `git merge-tree` against `origin/develop@d73f51f` reports conflicts in `WORK_ASSIGNMENTS.md`, `docs/PROJECT_STATUS.md` and `apps/web/src/modules/customers/components/customer-workspace.tsx`. No merge was applied. This branch deliberately preserves unmerged #26/#27/#34 ancestry instead of silently dropping existing features. Its incremental review range is `bcfb835..HEAD`; the PR against develop also contains inherited stack changes. Do not merge it until parents, shared-lock handoff, integration conflicts and final-basis review/gates are resolved. No other PR or branch was edited.

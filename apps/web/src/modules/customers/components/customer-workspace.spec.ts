@@ -200,6 +200,12 @@ describe('Customer Operations workspace boundaries', () => {
   });
 
   it('provides secure filters and a UUID-only customer deep link', () => {
+    expect(source).toContain('customerBranchOptions(');
+    expect(source).toContain('.branchReferences()');
+    expect(source).toContain('{branch.name}');
+    expect(source).not.toContain('شعبه {id}');
+    expect(source).toContain('disabled={branch.unavailable}');
+    expect(source).toContain('setBranchNamesAttempt((attempt) => attempt + 1)');
     expect(source).toContain('function safeCustomerId');
     expect(source).toContain("params.set('customerId', selectedId)");
     for (const filter of [

@@ -1,4 +1,6 @@
 import type {
+  BranchReference,
+  LoginResponse,
   CustomerAddressRequest,
   CustomerActivityResponse,
   CustomerAuditResponse,
@@ -28,7 +30,7 @@ export class CustomersApiError extends Error {
   }
 }
 
-let refreshInFlight: Promise<boolean> | null = null;
+let refreshInFlight: Promise<LoginResponse | null> | null = null;
 
 async function refreshAccess(baseUrl: string) {
   refreshInFlight ??= fetch(`${baseUrl}/iam/auth/refresh`, {
@@ -37,8 +39,10 @@ async function refreshAccess(baseUrl: string) {
     cache: 'no-store',
     headers: { accept: 'application/json' },
   })
-    .then((response) => response.ok)
-    .catch(() => false)
+    .then(async (response) =>
+      response.ok ? ((await response.json()) as LoginResponse) : null,
+    )
+    .catch(() => null)
     .finally(() => {
       refreshInFlight = null;
     });
@@ -91,6 +95,16 @@ const body = (value: unknown): RequestInit => ({
 });
 
 export const customersApi = {
+  async branchReferences(): Promise<readonly BranchReference[]> {
+    const baseUrl = getPublicApiBaseUrl();
+    if (!baseUrl)
+      throw new CustomersApiError('نشانی API پیکربندی نشده است.', 0);
+    const session = await refreshAccess(baseUrl);
+    if (!session?.user?.branches) {
+      throw new CustomersApiError('دریافت نام شعب مجاز ناموفق بود.', 0);
+    }
+    return session.user.branches;
+  },
   list(query: CustomerListQuery) {
     return request<CustomerListResponse>(
       `?${serializeCustomerListQuery(query)}`,
