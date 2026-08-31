@@ -7,6 +7,10 @@
   purchase/cost reference versions only, not a fixed sale amount. This supersedes
   older combined purchase/sale wording for Catalog; no Sales persistence or FX
   conversion is implemented by this integration. See `tasks/TICKET-CATALOG-001.md`.
+- The same source handoff clarifies mixed-currency Sales: preserve separate
+  Decimal/currency components for one ticket sale; never sum unlike currencies
+  or invent an FX rate. Converted totals need the approved Finance policy and a
+  rate snapshot. This is a Sales backlog requirement, not an implemented feature.
 - PR #46 also records the owner's narrow IAM policy change: minimum password
   length 10, preserving uppercase/lowercase/digit/special-character checks and
   maximum 200. This integration carries that existing change to Web and API

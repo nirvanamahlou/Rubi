@@ -2,6 +2,11 @@
 
 Status: READY_FOR_REVIEW. Integration owner: PC-A. Date: 2026-08-31.
 
+Integration PR: https://github.com/nirvanamahlou/Rubi/pull/58 (target develop).
+Upon successful merge of this PR, this integration slice is DONE/MERGED and its
+integration-only reservation ends. PC-B's development locks are unaffected. Check
+GitHub/Git for the actual merge commit; local environments update separately from code.
+
 The product owner requested a single product containing both PCs' published work.
 The isolated worktree is for merge/testing safety only; delivery is through one PR
 to develop. Source branches and existing working copies are not rewritten.

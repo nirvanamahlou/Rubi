@@ -2,6 +2,8 @@
 
 ## SHARED-INTEGRATION-0831 — PC-A — IN_PROGRESS
 
+- Final handoff: PR #58 targets develop. Required combined runtime gates passed; on its successful merge this integration becomes DONE and only its integration reservation ends. PC-B development locks stay as recorded. Each PC must safely fast-forward to the resulting develop commit; no local data or keys travel through Git.
+
 - Central handoff scope includes recording the existing PR #46 pricing/IAM clarification in DECISIONS and travel architecture; no new business decision or permission expansion beyond that source snapshot.
 
 - Current ownership: customer-chain #41 is MERGED and its locks RELEASED. PC-B's later MASTER-003 stack retains its Migration/Master-contract/development-doc locks; the historical Phase-A release does not release this later work. This task coordinates only frozen integration entries and compatibility checks under the owner's explicit request.
