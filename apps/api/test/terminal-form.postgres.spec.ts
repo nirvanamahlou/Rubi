@@ -15,6 +15,11 @@ const enabled = process.env.RUBI_RUN_TERMINAL_POSTGRES_TESTS === '1';
 const databaseName = `rubi_md_terminal_test_${randomUUID().replaceAll('-', '')}`;
 const migrationName = '20260831110000_master_data_terminal_details';
 const userId = '11111111-1111-4111-8111-111111111111';
+const legacyCountryId = randomUUID();
+const legacyCityId = randomUUID();
+const legacyAirportId = randomUUID();
+const legacyTerminalId = randomUUID();
+const legacySnapshotSql = `SELECT "id", "airportId", "code", "name", "terminalType", "isActive" FROM "master_terminals" WHERE "id" = '${legacyTerminalId}';`;
 const actor: AuthenticatedActor = {
   userId,
   sessionId: userId,
@@ -120,10 +125,21 @@ describe.skipIf(!enabled)('terminal form on isolated PostgreSQL 18', () => {
           timeout: 60000,
         },
       );
-    seed();
+    // Use pre-migration SQL for the legacy fixture: the current generated client
+    // cannot seed an older schema that lacks its newly introduced columns.
+    sql(databaseName, `
+      INSERT INTO "master_countries" ("id", "code", "name", "englishName", "createdByUserId", "updatedByUserId", "updatedAt")
+        VALUES ('${legacyCountryId}', 'ZZ', 'کشور آزمون', 'Test country', '${userId}', '${userId}', NOW());
+      INSERT INTO "master_cities" ("id", "countryId", "code", "name", "englishName", "createdByUserId", "updatedByUserId", "updatedAt")
+        VALUES ('${legacyCityId}', '${legacyCountryId}', 'LEGACY_TEST', 'شهر آزمون', 'Test city', '${userId}', '${userId}', NOW());
+      INSERT INTO "master_airports" ("id", "cityId", "iataCode", "icaoCode", "name", "englishName", "ianaTimezone", "latitude", "longitude", "createdByUserId", "updatedByUserId", "updatedAt")
+        VALUES ('${legacyAirportId}', '${legacyCityId}', 'ZZZ', 'ZZZZ', 'فرودگاه آزمون', 'Test airport', 'UTC', 0, 0, '${userId}', '${userId}', NOW());
+      INSERT INTO "master_terminals" ("id", "airportId", "code", "name", "terminalType", "createdByUserId", "updatedByUserId", "updatedAt")
+        VALUES ('${legacyTerminalId}', '${legacyAirportId}', 'LEGACY_TEST', 'ترمینال پیش از مهاجرت', 'DOMESTIC', '${userId}', '${userId}', NOW());
+    `);
     legacyBefore = sql(
       databaseName,
-      'SELECT "id", "airportId", "code", "name", "terminalType", "isActive" FROM "master_terminals" ORDER BY "id";',
+      legacySnapshotSql,
     );
     sql(
       databaseName,
@@ -138,6 +154,7 @@ describe.skipIf(!enabled)('terminal form on isolated PostgreSQL 18', () => {
         .join('\n'),
       90000,
     );
+    seed();
     seed();
     // Optional isolated generated client avoids replacing a live server's client.
     const clientPath = process.env.RUBI_TERMINAL_TEST_CLIENT;
@@ -167,7 +184,7 @@ describe.skipIf(!enabled)('terminal form on isolated PostgreSQL 18', () => {
     expect(
       sql(
         databaseName,
-        'SELECT "id", "airportId", "code", "name", "terminalType", "isActive" FROM "master_terminals" ORDER BY "id";',
+        legacySnapshotSql,
       ),
     ).toBe(legacyBefore);
     expect(

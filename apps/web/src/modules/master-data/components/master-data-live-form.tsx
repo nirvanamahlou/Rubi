@@ -1,6 +1,7 @@
 'use client';
 
-import type { MasterDataRecord } from '@rubi/contracts';
+import { isMasterTransportFormResource, type MasterDataRecord } from '@rubi/contracts';
+import { MasterDataTransportMetadata } from './master-data-transport-metadata';
 import { useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -56,7 +57,9 @@ function valuesFrom(
               ? fromCurrencyCode
               : field.key === 'toCurrencyCode'
                 ? toCurrencyCode
-                : record.attributes[field.key];
+                : field.key === 'transportStatus'
+                  ? record.attributes.transportStatus ?? (record.status === 'active' ? 'ACTIVE' : 'INACTIVE')
+                  : record.attributes[field.key];
       return [
         field.key,
         value === null || value === undefined ? '' : String(value),
@@ -105,6 +108,10 @@ function GenericMasterDataLiveForm({
     const result = validateMasterDataDraft(definition.key, values);
     setErrors(result.errors);
     if (!result.success) return;
+    if (isMasterTransportFormResource(definition.key) && record &&
+      result.values.transportStatus === (record.attributes.transportStatus ?? (record.status === 'active' ? 'ACTIVE' : 'INACTIVE'))) {
+      delete result.values.transportStatus;
+    }
     setSaving(true);
     try {
       await onPersist(result.values);
@@ -143,6 +150,9 @@ function GenericMasterDataLiveForm({
           className="mt-6 space-y-5"
           onSubmit={(event) => void submit(event)}
         >
+          {isMasterTransportFormResource(definition.key) ? (
+            <MasterDataTransportMetadata resource={definition.key} {...(record ? { record } : {})} />
+          ) : null}
           {getMasterDataFormFields(definition).map((field) => {
             const error = errors[field.key];
             const controlId = `live-${definition.key}-${field.key}`;
@@ -207,7 +217,7 @@ function GenericMasterDataLiveForm({
                 aria-invalid={Boolean(error)}
                 disabled={readonly || saving}
                 id={controlId}
-                includeTime
+                includeTime={definition.key !== 'baggage-rules'}
                 onChange={updateValue}
                 placeholder={field.placeholder}
                 readOnly={readonly}

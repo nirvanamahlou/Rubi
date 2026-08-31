@@ -318,6 +318,7 @@ describe('owned association cleanup', () => {
     ['composite-hotels', 'masterCompositeHotelMember', 'compositeHotelId'],
     ['insurance-plans', 'masterInsurancePlanCoverage', 'planId'],
     ['bus-types', 'masterBusTypeFacility', 'busTypeId'],
+    ['train-types', 'masterTrainTypeFacility', 'trainTypeId'],
   ] as const)(
     'removes only associations owned by %s',
     async (resource, delegate, key) => {
