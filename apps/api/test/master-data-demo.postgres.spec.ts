@@ -4,6 +4,11 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseEnv } from 'node:util';
 import { ConfigService } from '@nestjs/config';
+import {
+  type AuthenticatedActor,
+  MASTER_DATA_RESOURCES,
+  getMasterDataColumnFilters,
+} from '@rubi/contracts';
 import { createDatabaseClient, type DatabaseClient } from '@rubi/database';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DatabaseService } from '../src/database/database.service';
@@ -242,5 +247,188 @@ describe.skipIf(process.env.RUBI_RUN_DEMO_POSTGRES_TESTS !== '1')(
         }),
       ).toBe(0);
     }, 120000);
+
+    it('executes both allowlisted filters for every catalog on PostgreSQL', async () => {
+      for (const resource of MASTER_DATA_RESOURCES) {
+        for (const [index, field] of getMasterDataColumnFilters(
+          resource,
+        ).entries()) {
+          for (const value of field.options?.map(([key]) => key) ?? [
+            'missing-match',
+          ]) {
+            const result = await service.list(resource, {
+              search: '',
+              status: 'all',
+              sortBy: 'name',
+              sortDirection: 'asc',
+              page: 1,
+              pageSize: 1,
+              [index === 0 ? 'columnFilter1' : 'columnFilter2']: value,
+            });
+            expect(
+              result.data.length,
+              `${resource}/${field.label}/${value}`,
+            ).toBeLessThanOrEqual(1);
+          }
+        }
+      }
+    }, 120000);
+
+    it('refreshes only untouched demo data atomically, previews safely and never overwrites subsequent user edits', async () => {
+      const refresh = (apply: boolean) =>
+        seedLocalMasterDataDemo({
+          databaseUrl,
+          environment: 'test',
+          contactKey,
+          apply,
+          realistic: true,
+        });
+      const original = await run(true);
+      const cityId = original.records.find((row) => row.key === 'city-1')!.id;
+      const before = await client.masterDataAuditEvent.count();
+      await expect(refresh(true)).rejects.toThrow('was edited');
+      expect(await client.masterDataAuditEvent.count()).toBe(before);
+      expect(
+        (await client.masterCountry.findMany()).map((row) => row.code),
+      ).toContain('AQ');
+      // Restore only the isolated test's sentinel edit so the untouched-pack path can be exercised.
+      await client.masterCity.update({
+        where: { id: cityId },
+        data: { englishName: 'Demo City 1', version: 1 },
+      });
+      const preview = await refresh(false);
+      expect(preview.refreshed).toBe(original.records.length);
+      expect(await client.masterDataAuditEvent.count()).toBe(before);
+      const result = await refresh(true);
+      expect(result.refreshed).toBe(original.records.length);
+      expect(result.created).toBe(0);
+      expect(result.records).toEqual(original.records);
+      expect((await service.detail('cities', cityId)).data.name).toBe(
+        'استانبول',
+      );
+      expect(
+        await client.masterCurrency.findFirst({ where: { code: 'EUR' } }),
+      ).not.toBeNull();
+      expect(
+        await client.masterMealService.findFirst({ where: { code: 'BB' } }),
+      ).not.toBeNull();
+      await client.masterCity.update({
+        where: { id: cityId },
+        data: { englishName: 'Retained user edit', version: { increment: 1 } },
+      });
+      expect((await refresh(true)).refreshed).toBe(0);
+      expect(
+        (await client.masterCity.findUnique({ where: { id: cityId } }))
+          ?.englishName,
+      ).toBe('Retained user edit');
+      expect(await client.masterDraftExchangeRate.count()).toBe(0);
+    }, 120000);
+
+    it('stores country order with real constraints, authorization-attributed audit and optimistic version', async () => {
+      const actor: AuthenticatedActor = {
+        userId: DEMO_ACTOR_ID,
+        sessionId: DEMO_ACTOR_ID,
+        branchIds: [DEMO_ACTOR_ID],
+        permissions: ['master_data.update'],
+      };
+      const before = (await service.detail('countries', sentinelId)).data;
+      expect(before.attributes.displayOrder).toBe(0);
+      for (const displayOrder of [-1, 100001, 1.5]) {
+        await expect(
+          service.update(
+            'countries',
+            sentinelId,
+            { displayOrder },
+            before.version,
+            actor,
+          ),
+        ).rejects.toThrow();
+      }
+      for (const displayOrder of [-1, 100001]) {
+        await expect(
+          client.masterCountry.update({
+            where: { id: sentinelId },
+            data: { displayOrder },
+          }),
+        ).rejects.toThrow();
+      }
+      const updated = await service.update(
+        'countries',
+        sentinelId,
+        { displayOrder: 12 },
+        before.version,
+        actor,
+      );
+      expect(updated.data.attributes.displayOrder).toBe(12);
+      expect(updated.data.version).toBe(before.version + 1);
+    });
+
+    it('deactivates and reactivates every reference with audit and optimistic locking, without deleting relations', async () => {
+      const report = await run(true);
+      const actor: AuthenticatedActor = {
+        userId: DEMO_ACTOR_ID,
+        sessionId: DEMO_ACTOR_ID,
+        branchIds: [DEMO_ACTOR_ID],
+        permissions: ['master_data.status.manage'],
+      };
+      const linksBefore = await client.masterHotelMealService.count();
+      for (const fixture of report.records) {
+        const before = (await service.detail(fixture.resource, fixture.id))
+          .data;
+        const changed = await service.status(
+          fixture.resource,
+          fixture.id,
+          'inactive',
+          before.version,
+          actor,
+        );
+        expect(changed.data.status, fixture.resource).toBe('inactive');
+        expect(changed.data.version).toBe(before.version + 1);
+        await expect(
+          service.status(
+            fixture.resource,
+            fixture.id,
+            'active',
+            before.version,
+            actor,
+          ),
+        ).rejects.toThrow();
+        expect(
+          await client.masterDataAuditEvent.count({
+            where: {
+              entityId: fixture.id,
+              action: 'master_data.update',
+              afterSnapshot: { path: ['version'], equals: before.version + 1 },
+            },
+          }),
+        ).toBeGreaterThan(0);
+        const restored = await service.status(
+          fixture.resource,
+          fixture.id,
+          'active',
+          changed.data.version,
+          actor,
+        );
+        expect(restored.data.status).toBe('active');
+      }
+      expect(await client.masterHotelMealService.count()).toBe(linksBefore);
+    }, 120000);
+
+    it('verifies the manual migration inverse only in this disposable database', async () => {
+      const before = await client.masterCountry.count();
+      const migrationPath = resolve(
+        process.cwd(),
+        '../../packages/database/prisma/migrations/20260831140000_master_country_display_order',
+      );
+      sql(
+        databaseName,
+        readFileSync(resolve(migrationPath, 'rollback.sql'), 'utf8'),
+      );
+      sql(
+        databaseName,
+        readFileSync(resolve(migrationPath, 'migration.sql'), 'utf8'),
+      );
+      expect(await client.masterCountry.count()).toBe(before);
+    });
   },
 );

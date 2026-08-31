@@ -1,4 +1,6 @@
 'use client';
+import { useMasterDataColumnFilters } from './master-data-column-filters';
+import { MasterDataPowerButton } from './master-data-power-button';
 
 import type {
   MasterDataListQuery,
@@ -63,7 +65,11 @@ import {
 } from '../model/tour-type-form';
 import { MasterDataTourTypeForm } from './master-data-tour-type-form';
 import { MasterDataTravelReferenceForm } from './master-data-travel-reference-form';
-import { transferCapacityLabel, transferUsageLabel, visaValidityLabel } from '../model/travel-reference-form';
+import {
+  transferCapacityLabel,
+  transferUsageLabel,
+  visaValidityLabel,
+} from '../model/travel-reference-form';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { getMasterDataDefinition } from '../model/catalog';
 import {
@@ -279,9 +285,13 @@ export function MasterDataTravelServicesWorkspace() {
   const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
   const CurrentIcon = currentTab.icon;
 
+  const { columnFilters, columnFilterControls, resetColumnFilters } =
+    useMasterDataColumnFilters(resource, () => setPage(1));
+
   const load = useCallback(async () => {
     setRequestState('loading');
     const query: MasterDataListQuery = {
+      ...columnFilters,
       search,
       status,
       sortBy: 'name',
@@ -316,7 +326,7 @@ export function MasterDataTravelServicesWorkspace() {
           : 'error',
       );
     }
-  }, [page, referenceFilter, resource, search, status]);
+  }, [columnFilters, page, referenceFilter, resource, search, status]);
 
   const loadSummary = useCallback(async () => {
     try {
@@ -455,6 +465,7 @@ export function MasterDataTravelServicesWorkspace() {
   function changeResource(next: TravelResource) {
     setResource(next);
     setSearch('');
+    resetColumnFilters();
     setStatus('all');
     setReferenceFilter('all');
     setPage(1);
@@ -501,27 +512,16 @@ export function MasterDataTravelServicesWorkspace() {
     await loadSummary();
   }
 
-  async function toggle(record: MasterDataRecord) {
-    try {
-      await masterDataApi.setStatus(
-        resource,
-        record.id,
-        record.status === 'active' ? 'inactive' : 'active',
-        record.version,
-      );
-      setNotice('وضعیت با کنترل نسخه و Audit به‌روزرسانی شد.');
-      await Promise.all([load(), loadSummary()]);
-    } catch (error) {
-      setNotice(
-        error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.',
-      );
-    }
+  async function afterStatusChange() {
+    setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
+    await Promise.all([load(), loadSummary()]);
   }
 
   async function downloadExcel() {
     setExporting(true);
     try {
       const filters: Omit<MasterDataListQuery, 'page' | 'pageSize'> = {
+        ...columnFilters,
         search,
         status,
         sortBy: 'name',
@@ -594,9 +594,7 @@ export function MasterDataTravelServicesWorkspace() {
         <FilePenLine className="size-4" />
       </Button>
       <MasterDataDeleteButton record={record} onDeleted={afterDelete} />
-      <Button onClick={() => void toggle(record)} size="sm" variant="ghost">
-        {record.status === 'active' ? 'غیرفعال‌سازی' : 'فعال‌سازی'}
-      </Button>
+      <MasterDataPowerButton record={record} onChanged={afterStatusChange} />
     </div>
   );
 
@@ -797,6 +795,7 @@ export function MasterDataTravelServicesWorkspace() {
         tone="warning"
       />
       <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-[minmax(14rem,1fr)_12rem_14rem_auto]">
+        {columnFilterControls}
         <FormField id="travel-search" label="جست‌وجو">
           <div className="relative">
             <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -854,6 +853,7 @@ export function MasterDataTravelServicesWorkspace() {
         <Button
           onClick={() => {
             setSearch('');
+            resetColumnFilters();
             setStatus('all');
             setReferenceFilter('all');
             setPage(1);
@@ -898,11 +898,15 @@ export function MasterDataTravelServicesWorkspace() {
           onPersist={persist}
           {...(selected && formMode === 'edit' ? { record: selected } : {})}
         />
-      ) : formMode && (resource === 'transfer-types' || resource === 'visa-services') && formMode !== 'view' ? (
+      ) : formMode &&
+        (resource === 'transfer-types' || resource === 'visa-services') &&
+        formMode !== 'view' ? (
         <MasterDataTravelReferenceForm
           key={`${resource}-${formMode}-${selected?.id ?? 'new'}`}
           resource={resource}
-          onOpenChange={(open) => { if (!open) setFormMode(null); }}
+          onOpenChange={(open) => {
+            if (!open) setFormMode(null);
+          }}
           onPersist={persist}
           {...(selected && formMode === 'edit' ? { record: selected } : {})}
         />
@@ -969,9 +973,11 @@ export function MasterDataTravelServicesWorkspace() {
                         {field.label}
                       </dt>
                       <dd className="mt-1 break-words font-semibold">
-                        {resource === 'transfer-types' && field.key === 'suggestedCapacity'
+                        {resource === 'transfer-types' &&
+                        field.key === 'suggestedCapacity'
                           ? transferCapacityLabel(selected)
-                          : resource === 'visa-services' && field.key === 'referenceValidityDays'
+                          : resource === 'visa-services' &&
+                              field.key === 'referenceValidityDays'
                             ? visaValidityLabel(selected)
                             : translated(selected, field.key)}
                       </dd>
@@ -980,13 +986,17 @@ export function MasterDataTravelServicesWorkspace() {
                   {resource === 'tour-types' ? (
                     <>
                       <div>
-                        <dt className="text-xs text-muted-foreground">استفاده</dt>
+                        <dt className="text-xs text-muted-foreground">
+                          استفاده
+                        </dt>
                         <dd className="mt-1 font-semibold">
                           {tourTypeUsageLabel(selected)}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-xs text-muted-foreground">آخرین تغییر</dt>
+                        <dt className="text-xs text-muted-foreground">
+                          آخرین تغییر
+                        </dt>
                         <dd className="mt-1 break-words font-semibold">
                           {tourTypeUpdatedLabel(selected, tourActorNames)}
                         </dd>

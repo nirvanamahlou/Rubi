@@ -52,11 +52,24 @@ export const MASTER_DATA_RESOURCES = [
 export type MasterDataResource = (typeof MASTER_DATA_RESOURCES)[number];
 export type MasterDataStatus = 'active' | 'inactive';
 /** Additive v12 transport form fields. Under review remains inactive for legacy consumers. */
-export const MASTER_TRANSPORT_FORM_RESOURCES = ['airlines', 'aircraft-types', 'baggage-rules', 'rail-companies', 'train-types', 'bus-companies', 'bus-types'] as const;
-export type MasterTransportFormResource = (typeof MASTER_TRANSPORT_FORM_RESOURCES)[number];
+export const MASTER_TRANSPORT_FORM_RESOURCES = [
+  'airlines',
+  'aircraft-types',
+  'baggage-rules',
+  'rail-companies',
+  'train-types',
+  'bus-companies',
+  'bus-types',
+] as const;
+export type MasterTransportFormResource =
+  (typeof MASTER_TRANSPORT_FORM_RESOURCES)[number];
 export type MasterTransportStatus = 'ACTIVE' | 'INACTIVE' | 'UNDER_REVIEW';
-export function isMasterTransportFormResource(resource: string): resource is MasterTransportFormResource {
-  return (MASTER_TRANSPORT_FORM_RESOURCES as readonly string[]).includes(resource);
+export function isMasterTransportFormResource(
+  resource: string,
+): resource is MasterTransportFormResource {
+  return (MASTER_TRANSPORT_FORM_RESOURCES as readonly string[]).includes(
+    resource,
+  );
 }
 export type MasterRegionType = 'PROVINCE' | 'STATE' | 'REGION' | 'TERRITORY';
 export type MasterTerminalType = 'DOMESTIC' | 'INTERNATIONAL' | 'MIXED' | 'VIP';
@@ -77,7 +90,8 @@ export type MasterOrganizationContactChannel =
   'PHONE' | 'WHATSAPP' | 'EMAIL' | 'TELEGRAM' | 'OTHER';
 /** Nullable on legacy organizations; identity belongs to the shared organization. */
 export const MASTER_ORGANIZATION_PERSON_TYPES = ['NATURAL', 'LEGAL'] as const;
-export type MasterOrganizationPersonType = (typeof MASTER_ORGANIZATION_PERSON_TYPES)[number];
+export type MasterOrganizationPersonType =
+  (typeof MASTER_ORGANIZATION_PERSON_TYPES)[number];
 /** Additive v12 fields; omitted PATCH fields retain their saved values. */
 export interface MasterPartnerProfileFields {
   englishName?: string | null;
@@ -105,7 +119,14 @@ export type MasterCipPassengerScope = 'ADT' | 'CHD' | 'INF' | 'ALL';
 export type MasterDataSortField = 'name' | 'code' | 'updatedAt';
 export type MasterDataSortDirection = 'asc' | 'desc';
 
+export {
+  getMasterDataColumnFilters,
+  type MasterDataColumnFilter,
+} from './catalog-filters';
+
 export interface MasterDataListQuery {
+  columnFilter1?: string;
+  columnFilter2?: string;
   transportStatus?: MasterTransportStatus;
   search: string;
   status: 'all' | MasterDataStatus;
@@ -460,7 +481,8 @@ export const masterDataEndpoints = {
   status: (resource: MasterDataResource, id: string) =>
     `${MASTER_DATA_API_PREFIX}/${resource}/${encodeURIComponent(id)}/status` as const,
   currencyRates: `${MASTER_DATA_API_PREFIX}/currency-rates` as const,
-  currencyRateQuotes: `${MASTER_DATA_API_PREFIX}/currency-rates/quotes` as const,
+  currencyRateQuotes:
+    `${MASTER_DATA_API_PREFIX}/currency-rates/quotes` as const,
   currentCurrencyRate:
     `${MASTER_DATA_API_PREFIX}/currency-rates/current` as const,
   currencyRateDecision: (id: string, action: 'approve' | 'reject') =>

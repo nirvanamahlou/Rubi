@@ -14,7 +14,10 @@ interface CollaborationReader {
 
 export async function loadSupplierCollaborationPage(
   reader: CollaborationReader,
-  query: Pick<MasterDataListQuery, 'search' | 'status' | 'page'>,
+  query: Pick<
+    MasterDataListQuery,
+    'search' | 'status' | 'page' | 'columnFilter1' | 'columnFilter2'
+  >,
 ) {
   const pageSize = 25;
   const filters: MasterDataListQuery = {

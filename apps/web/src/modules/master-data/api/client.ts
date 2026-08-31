@@ -148,6 +148,8 @@ export const masterDataApi = {
     );
   },
   currencyRateHistory(query: {
+    columnFilter1?: string;
+    columnFilter2?: string;
     search?: string;
     fromCurrencyId?: string;
     toCurrencyId?: string;

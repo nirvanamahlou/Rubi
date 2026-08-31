@@ -1,11 +1,20 @@
 'use client';
+import {
+  transportColumns,
+  transportColumnValue,
+} from '../model/transport-columns';
+import { useMasterDataColumnFilters } from './master-data-column-filters';
+import { MasterDataPowerButton } from './master-data-power-button';
 
 import type {
   MasterDataRecord,
   MasterDataResource,
   MasterDataStatus,
 } from '@rubi/contracts';
-import { isMasterTransportFormResource, type MasterTransportStatus } from '@rubi/contracts';
+import {
+  isMasterTransportFormResource,
+  type MasterTransportStatus,
+} from '@rubi/contracts';
 import { MasterDataTransportMetadata } from './master-data-transport-metadata';
 import { MasterDataTransportAudit } from './master-data-transport-audit';
 import {
@@ -175,24 +184,6 @@ function attribute(record: MasterDataRecord, key: string, fallback = '—') {
     : String(value);
 }
 
-function descriptionFor(record: MasterDataRecord) {
-  if (record.resource === 'airlines')
-    return `${attribute(record, 'englishName')} · ${attribute(record, 'countryName')}`;
-  if (
-    record.resource === 'aircraft-types' ||
-    record.resource === 'train-types' ||
-    record.resource === 'bus-types'
-  )
-    return `${attribute(record, 'manufacturer')} · ${attribute(record, 'model')}`;
-  if (record.resource === 'cabin-classes')
-    return `${attribute(record, 'bookingCode')} · ${attribute(record, 'cabinType')}`;
-  if (record.resource === 'baggage-rules')
-    return `${attribute(record, 'airlineName')} · ${attribute(record, 'allowance')} ${attribute(record, 'unit')}`;
-  if (record.resource === 'manifest-templates')
-    return `${attribute(record, 'airlineName')} · ${attribute(record, 'fileFormat')}`;
-  return `${attribute(record, 'englishName')} · ${attribute(record, 'countryName')}`;
-}
-
 function needsCompletion(record: MasterDataRecord) {
   if (
     record.resource === 'airlines' ||
@@ -218,7 +209,9 @@ export function MasterDataTransportationWorkspace() {
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
-  const [transportStatus, setTransportStatus] = useState<'all' | MasterTransportStatus>('all');
+  const [transportStatus, setTransportStatus] = useState<
+    'all' | MasterTransportStatus
+  >('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<MasterDataRecord>();
@@ -230,10 +223,14 @@ export function MasterDataTransportationWorkspace() {
   const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
   const CurrentIcon = currentTab.icon;
 
+  const { columnFilters, columnFilterControls, resetColumnFilters } =
+    useMasterDataColumnFilters(resource, () => setPage(1));
+
   const load = useCallback(async () => {
     setRequestState('loading');
     try {
       const response = await masterDataApi.list(resource, {
+        ...columnFilters,
         ...(transportStatus !== 'all' ? { transportStatus } : {}),
         search,
         status,
@@ -253,7 +250,7 @@ export function MasterDataTransportationWorkspace() {
           : 'error',
       );
     }
-  }, [page, resource, search, status, transportStatus]);
+  }, [columnFilters, page, resource, search, status, transportStatus]);
 
   const loadSummary = useCallback(async () => {
     try {
@@ -398,6 +395,7 @@ export function MasterDataTransportationWorkspace() {
   function changeResource(next: TransportResource) {
     setResource(next);
     setSearch('');
+    resetColumnFilters();
     setStatus('all');
     setTransportStatus('all');
     setPage(1);
@@ -432,21 +430,9 @@ export function MasterDataTransportationWorkspace() {
     await loadSummary();
   }
 
-  async function toggle(record: MasterDataRecord) {
-    try {
-      await masterDataApi.setStatus(
-        resource,
-        record.id,
-        record.status === 'active' ? 'inactive' : 'active',
-        record.version,
-      );
-      setNotice('وضعیت با کنترل نسخه و Audit به‌روزرسانی شد.');
-      await Promise.all([load(), loadSummary()]);
-    } catch (error) {
-      setNotice(
-        error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.',
-      );
-    }
+  async function afterStatusChange() {
+    setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
+    await Promise.all([load(), loadSummary()]);
   }
 
   async function downloadExcel() {
@@ -455,14 +441,23 @@ export function MasterDataTransportationWorkspace() {
       const response = await masterDataApi.downloadExcel({
         resource,
         format: 'xlsx',
-        filters: { search, status, sortBy: 'name', sortDirection: 'asc', ...(transportStatus !== 'all' ? { transportStatus } : {}) },
-        columns: [...new Set([
-          'code',
-          'name',
-          ...getMasterDataFormFields(definition).map((field) => field.key),
-          'status',
-          'updatedAt',
-        ])],
+        filters: {
+          ...columnFilters,
+          search,
+          status,
+          sortBy: 'name',
+          sortDirection: 'asc',
+          ...(transportStatus !== 'all' ? { transportStatus } : {}),
+        },
+        columns: [
+          ...new Set([
+            'code',
+            'name',
+            ...getMasterDataFormFields(definition).map((field) => field.key),
+            'status',
+            'updatedAt',
+          ]),
+        ],
         locale: 'fa-IR',
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
@@ -485,6 +480,7 @@ export function MasterDataTransportationWorkspace() {
     setProfileOpen(true);
   }
 
+  const columns = transportColumns(resource);
   const content =
     requestState === 'loading' ? (
       <div aria-label="در حال بارگذاری" className="space-y-3">
@@ -525,11 +521,12 @@ export function MasterDataTransportationWorkspace() {
           <thead className="bg-muted/50 text-muted-foreground">
             <tr>
               <th className="p-4 text-start">ردیف</th>
-              <th className="p-4 text-start">کد</th>
-              <th className="p-4 text-start">عنوان</th>
-              <th className="p-4 text-start">مشخصات مرجع</th>
+              {columns.map(([key, label]) => (
+                <th key={key} className="p-4 text-start whitespace-nowrap">
+                  {label}
+                </th>
+              ))}
               <th className="p-4 text-start">وضعیت</th>
-              <th className="p-4 text-start">آخرین تغییر</th>
               <th className="p-4 text-start">عملیات</th>
             </tr>
           </thead>
@@ -542,21 +539,37 @@ export function MasterDataTransportationWorkspace() {
                 <td className="p-4">
                   {((page - 1) * 25 + index + 1).toLocaleString('fa-IR')}
                 </td>
-                <td className="p-4 font-mono text-xs" dir="ltr">
-                  {record.code}
-                </td>
-                <td className="p-4">
-                  <button
-                    className="font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    onClick={() => openProfile(record)}
-                    type="button"
-                  >
-                    {record.name}
-                  </button>
-                </td>
-                <td className="p-4 text-muted-foreground">
-                  {descriptionFor(record)}
-                </td>
+                {columns.map(([key]) => (
+                  <td key={key} className="p-4 min-w-28">
+                    {key === 'name' ? (
+                      <>
+                        <button
+                          type="button"
+                          className="text-start font-bold text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                          onClick={() => openProfile(record)}
+                        >
+                          {record.name}
+                        </button>
+                        {[
+                          'airlines',
+                          'rail-companies',
+                          'bus-companies',
+                        ].includes(resource) ? (
+                          <p
+                            className="text-xs text-muted-foreground"
+                            dir="ltr"
+                          >
+                            {attribute(record, 'englishName')}
+                          </p>
+                        ) : null}
+                      </>
+                    ) : (
+                      <span className={key === 'code' ? 'font-mono' : ''}>
+                        {transportColumnValue(record, key)}
+                      </span>
+                    )}
+                  </td>
+                ))}
                 <td className="p-4">
                   <Badge
                     className={
@@ -565,11 +578,12 @@ export function MasterDataTransportationWorkspace() {
                         : 'bg-muted text-muted-foreground'
                     }
                   >
-                    {record.attributes.transportStatus === 'UNDER_REVIEW' ? 'در حال بررسی' : record.status === 'active' ? 'فعال' : 'غیرفعال'}
+                    {record.attributes.transportStatus === 'UNDER_REVIEW'
+                      ? 'در حال بررسی'
+                      : record.status === 'active'
+                        ? 'فعال'
+                        : 'غیرفعال'}
                   </Badge>
-                </td>
-                <td className="p-4">
-                  {new Date(record.updatedAt).toLocaleString('fa-IR')}
                 </td>
                 <td className="p-4">
                   <div className="flex flex-wrap gap-2">
@@ -596,15 +610,10 @@ export function MasterDataTransportationWorkspace() {
                       record={record}
                       onDeleted={afterDelete}
                     />
-                    <Button
-                      onClick={() => void toggle(record)}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      {record.status === 'active'
-                        ? 'غیرفعال‌سازی'
-                        : 'فعال‌سازی'}
-                    </Button>
+                    <MasterDataPowerButton
+                      record={record}
+                      onChanged={afterStatusChange}
+                    />
                   </div>
                 </td>
               </tr>
@@ -674,6 +683,7 @@ export function MasterDataTransportationWorkspace() {
         tone="warning"
       />
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
+        {columnFilterControls}
         <FormField id="transport-search" label="جست‌وجو">
           <div className="relative">
             <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -692,26 +702,46 @@ export function MasterDataTransportationWorkspace() {
         <FormField label="وضعیت">
           <Select
             onValueChange={(value) => {
-              if (isMasterTransportFormResource(resource)) setTransportStatus(value as typeof transportStatus);
+              if (isMasterTransportFormResource(resource))
+                setTransportStatus(value as typeof transportStatus);
               else setStatus(value as typeof status);
               setPage(1);
             }}
-            value={isMasterTransportFormResource(resource) ? transportStatus : status}
+            value={
+              isMasterTransportFormResource(resource) ? transportStatus : status
+            }
           >
             <SelectTrigger aria-label="فیلتر وضعیت">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-              <SelectItem value={isMasterTransportFormResource(resource) ? 'ACTIVE' : 'active'}>فعال</SelectItem>
-              <SelectItem value={isMasterTransportFormResource(resource) ? 'INACTIVE' : 'inactive'}>غیرفعال</SelectItem>
-              {isMasterTransportFormResource(resource) ? <SelectItem value="UNDER_REVIEW">در حال بررسی</SelectItem> : null}
+              <SelectItem
+                value={
+                  isMasterTransportFormResource(resource) ? 'ACTIVE' : 'active'
+                }
+              >
+                فعال
+              </SelectItem>
+              <SelectItem
+                value={
+                  isMasterTransportFormResource(resource)
+                    ? 'INACTIVE'
+                    : 'inactive'
+                }
+              >
+                غیرفعال
+              </SelectItem>
+              {isMasterTransportFormResource(resource) ? (
+                <SelectItem value="UNDER_REVIEW">در حال بررسی</SelectItem>
+              ) : null}
             </SelectContent>
           </Select>
         </FormField>
         <Button
           onClick={() => {
             setSearch('');
+            resetColumnFilters();
             setStatus('all');
             setTransportStatus('all');
             setPage(1);
@@ -767,8 +797,15 @@ export function MasterDataTransportationWorkspace() {
           title={`پروفایل ${definition.singularLabel}`}
         >
           <div className="space-y-4">
-            {isMasterTransportFormResource(resource) ? <MasterDataTransportMetadata resource={resource} record={selected} /> : null}
-            {profileOpen && isMasterTransportFormResource(resource) ? <MasterDataTransportAudit key={selected.id} record={selected} /> : null}
+            {isMasterTransportFormResource(resource) ? (
+              <MasterDataTransportMetadata
+                resource={resource}
+                record={selected}
+              />
+            ) : null}
+            {profileOpen && isMasterTransportFormResource(resource) ? (
+              <MasterDataTransportAudit key={selected.id} record={selected} />
+            ) : null}
             <Card className="overflow-hidden">
               <div className="grid gap-5 bg-gradient-to-l from-blue-50 via-background to-cyan-50 p-6 dark:from-blue-950/30 dark:to-cyan-950/30 md:grid-cols-[6rem_1fr_auto]">
                 <span className="grid size-24 place-items-center rounded-3xl bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300">
@@ -780,7 +817,11 @@ export function MasterDataTransportationWorkspace() {
                     {selected.code} · {attribute(selected, 'englishName')}
                   </p>
                   <Badge className="mt-3">
-                    {selected.attributes.transportStatus === 'UNDER_REVIEW' ? 'در حال بررسی' : selected.status === 'active' ? 'فعال' : 'غیرفعال'}
+                    {selected.attributes.transportStatus === 'UNDER_REVIEW'
+                      ? 'در حال بررسی'
+                      : selected.status === 'active'
+                        ? 'فعال'
+                        : 'غیرفعال'}
                   </Badge>
                 </div>
                 <div className="text-center">

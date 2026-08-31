@@ -1,4 +1,6 @@
 'use client';
+import { useMasterDataColumnFilters } from './master-data-column-filters';
+import { MasterDataPowerButton } from './master-data-power-button';
 
 import type {
   MasterAccommodationSummary,
@@ -192,26 +194,32 @@ function StatusBadge({
   saleable?: boolean;
 }) {
   const active = record.status === 'active';
-  const underReview = record.resource === 'meal-services' && record.attributes.isUnderReview === true;
+  const underReview =
+    record.resource === 'meal-services' &&
+    record.attributes.isUnderReview === true;
   const isSaleable =
     attribute(record, 'isSaleableReference', 'true') === 'true';
   return (
     <Badge
       className={
-        underReview ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' : active && (!saleable || isSaleable)
-          ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-          : active
-            ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
-            : 'bg-muted text-muted-foreground'
+        underReview
+          ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+          : active && (!saleable || isSaleable)
+            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+            : active
+              ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+              : 'bg-muted text-muted-foreground'
       }
     >
-      {underReview ? 'در حال بررسی' : !active
-        ? 'غیرفعال'
-        : saleable
-          ? isSaleable
-            ? 'فروش‌پذیر'
-            : 'در حال بررسی'
-          : 'فعال'}
+      {underReview
+        ? 'در حال بررسی'
+        : !active
+          ? 'غیرفعال'
+          : saleable
+            ? isSaleable
+              ? 'فروش‌پذیر'
+              : 'در حال بررسی'
+            : 'فعال'}
     </Badge>
   );
 }
@@ -232,7 +240,9 @@ export function MasterDataAccommodationWorkspace() {
     useState<MasterAccommodationSummary>(emptySummary);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus | 'under_review'>('all');
+  const [status, setStatus] = useState<
+    'all' | MasterDataStatus | 'under_review'
+  >('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [countries, setCountries] = useState<readonly MasterDataRecord[]>([]);
@@ -282,7 +292,9 @@ export function MasterDataAccommodationWorkspace() {
             mealServiceCategory: mealCategoryFilter as 'MEAL_PLAN' | 'SERVICE',
           }
         : {}),
-      ...(tab === 'meals' && status !== 'all' ? { mealServiceStatus: status } : {}),
+      ...(tab === 'meals' && status !== 'all'
+        ? { mealServiceStatus: status }
+        : {}),
       ...(tab === 'facilities' && facilityCategoryFilter !== 'all'
         ? { facilityCategory: facilityCategoryFilter }
         : {}),
@@ -308,6 +320,9 @@ export function MasterDataAccommodationWorkspace() {
     }
   }, []);
 
+  const { columnFilters, columnFilterControls, resetColumnFilters } =
+    useMasterDataColumnFilters(resource, () => setPage(1));
+
   const load = useCallback(async () => {
     if (tab === 'import') {
       setRequestState('ready');
@@ -316,6 +331,7 @@ export function MasterDataAccommodationWorkspace() {
     setRequestState('loading');
     try {
       const response = await masterDataApi.list(resource, {
+        ...columnFilters,
         search,
         status: tab === 'meals' || status === 'under_review' ? 'all' : status,
         sortBy: 'name',
@@ -335,7 +351,7 @@ export function MasterDataAccommodationWorkspace() {
           : 'error',
       );
     }
-  }, [page, resource, scopedFilters, search, status, tab]);
+  }, [columnFilters, page, resource, scopedFilters, search, status, tab]);
 
   useEffect(() => {
     let cancelled = false;
@@ -558,6 +574,7 @@ export function MasterDataAccommodationWorkspace() {
   function changeTab(next: AccommodationTab) {
     setTab(next);
     setSearch('');
+    resetColumnFilters();
     setStatus('all');
     setPage(1);
     setCountryFilter('all');
@@ -589,7 +606,11 @@ export function MasterDataAccommodationWorkspace() {
         );
       } else {
         await masterDataApi.create(resource, { values });
-        setNotice(resource === 'meal-services' ? 'وعده و سرویس ثبت شد.' : `${definition.singularLabel} با کد داخلی خودکار ثبت شد.`);
+        setNotice(
+          resource === 'meal-services'
+            ? 'وعده و سرویس ثبت شد.'
+            : `${definition.singularLabel} با کد داخلی خودکار ثبت شد.`,
+        );
       }
       setFormMode(null);
       await Promise.all([load(), loadSummary()]);
@@ -610,21 +631,9 @@ export function MasterDataAccommodationWorkspace() {
     await loadSummary();
   }
 
-  async function toggleStatus(record: MasterDataRecord) {
-    try {
-      await masterDataApi.setStatus(
-        record.resource,
-        record.id,
-        record.status === 'active' ? 'inactive' : 'active',
-        record.version,
-      );
-      setNotice('وضعیت با کنترل نسخه و Audit به‌روزرسانی شد.');
-      await Promise.all([load(), loadSummary()]);
-    } catch (error) {
-      setNotice(
-        error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.',
-      );
-    }
+  async function afterStatusChange() {
+    setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
+    await Promise.all([load(), loadSummary()]);
   }
 
   async function downloadExcel() {
@@ -635,15 +644,23 @@ export function MasterDataAccommodationWorkspace() {
         resource,
         format: 'xlsx',
         filters: {
+          ...columnFilters,
           search,
           status: tab === 'meals' || status === 'under_review' ? 'all' : status,
           sortBy: 'name',
           sortDirection: 'asc',
           ...scopedFilters,
         },
-        columns: resource === 'meal-services'
-          ? [...new Set(['code', ...definition.fields.map((field) => field.key), 'status'])]
-          : definition.fields.map((field) => field.key),
+        columns:
+          resource === 'meal-services'
+            ? [
+                ...new Set([
+                  'code',
+                  ...definition.fields.map((field) => field.key),
+                  'status',
+                ]),
+              ]
+            : definition.fields.map((field) => field.key),
         locale: 'fa-IR',
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
@@ -690,13 +707,7 @@ export function MasterDataAccommodationWorkspace() {
           <FilePenLine className="size-4" /> ویرایش
         </Button>
         <MasterDataDeleteButton record={record} onDeleted={afterDelete} />
-        <Button
-          onClick={() => void toggleStatus(record)}
-          size="sm"
-          variant="ghost"
-        >
-          {record.status === 'active' ? 'غیرفعال‌سازی' : 'فعال‌سازی'}
-        </Button>
+        <MasterDataPowerButton record={record} onChanged={afterStatusChange} />
       </div>
     );
   }
@@ -875,6 +886,13 @@ export function MasterDataAccommodationWorkspace() {
             'امکانات منتخب',
             'تأمین‌کننده HOTEL_PROVIDER',
             'فروش‌پذیری',
+            'وعده و سرویس',
+            'نوع اتاق',
+            'وب‌سایت',
+            'ساعت ورود / خروج',
+            'آدرس',
+            'مختصات',
+            'آخرین تغییر',
             'عملیات',
           ]
         : tab === 'chains'
@@ -977,6 +995,29 @@ export function MasterDataAccommodationWorkspace() {
                     </td>
                     <td className="p-4">
                       <StatusBadge record={record} saleable />
+                    </td>
+                    <td className="p-4">
+                      {chips(attribute(record, 'mealServiceNames', ''))}
+                    </td>
+                    <td className="p-4">
+                      {chips(attribute(record, 'roomTypeNames', ''))}
+                    </td>
+                    <td className="p-4" dir="ltr">
+                      {attribute(record, 'website')}
+                    </td>
+                    <td className="p-4" dir="ltr">
+                      {attribute(record, 'checkInTime')} /{' '}
+                      {attribute(record, 'checkOutTime')}
+                    </td>
+                    <td className="p-4 min-w-64">
+                      {attribute(record, 'address')}
+                    </td>
+                    <td className="p-4" dir="ltr">
+                      {attribute(record, 'latitude')} /{' '}
+                      {attribute(record, 'longitude')}
+                    </td>
+                    <td className="p-4">
+                      {new Date(record.updatedAt).toLocaleString('fa-IR')}
                     </td>
                   </>
                 ) : tab === 'chains' ? (
@@ -1439,6 +1480,7 @@ export function MasterDataAccommodationWorkspace() {
       />
       {showFilters ? (
         <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-6">
+          {columnFilterControls}
           <FormField id="accommodation-search" label="جستجو">
             <div className="relative">
               <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -1470,13 +1512,16 @@ export function MasterDataAccommodationWorkspace() {
                 <SelectItem value="all">همه وضعیت‌ها</SelectItem>
                 <SelectItem value="active">فعال</SelectItem>
                 <SelectItem value="inactive">غیرفعال</SelectItem>
-                {tab === 'meals' ? <SelectItem value="under_review">در حال بررسی</SelectItem> : null}
+                {tab === 'meals' ? (
+                  <SelectItem value="under_review">در حال بررسی</SelectItem>
+                ) : null}
               </SelectContent>
             </Select>
           </FormField>
           <Button
             onClick={() => {
               setSearch('');
+              resetColumnFilters();
               setStatus('all');
               setCountryFilter('all');
               setCityFilter('all');

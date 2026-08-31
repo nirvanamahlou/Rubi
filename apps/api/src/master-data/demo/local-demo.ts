@@ -10,6 +10,10 @@ import {
   masterDataDemoRecords,
   type DemoResource,
 } from './demo-data';
+import {
+  REALISTIC_DEMO_REVISION,
+  realisticMasterDataDemoRecords,
+} from './realistic-demo-data';
 
 // Offline fixture attribution only. No IAM user, permission, session or token is created.
 export const DEMO_ACTOR_ID = 'f0000000-0000-4000-8000-000000000001';
@@ -20,6 +24,7 @@ const actor: AuthenticatedActor = {
   permissions: [
     'master_data.read',
     'master_data.create',
+    'master_data.update',
     'master_data.status.manage',
   ],
 };
@@ -53,6 +58,7 @@ export type DemoReport = {
   applied: boolean;
   created: number;
   reused: number;
+  refreshed: number;
   records: { key: string; resource: DemoResource; id: string }[];
 };
 class PreviewRollback extends Error {
@@ -66,6 +72,7 @@ export async function seedLocalMasterDataDemo(input: {
   environment: string;
   contactKey: string;
   apply: boolean;
+  realistic?: boolean;
 }): Promise<DemoReport> {
   assertLocalDemoTarget(input.databaseUrl, input.environment);
   const crypto = new MasterDataContactCrypto(
@@ -97,9 +104,60 @@ export async function seedLocalMasterDataDemo(input: {
           applied: input.apply,
           created: 0,
           reused: 0,
+          refreshed: 0,
           records: [],
         };
-        for (const fixture of masterDataDemoRecords()) {
+        const fixtures = input.realistic
+          ? realisticMasterDataDemoRecords()
+          : masterDataDemoRecords();
+        const completedRefresh =
+          input.realistic &&
+          (await transaction.masterDataAuditEvent.findFirst({
+            where: {
+              actorUserId: DEMO_ACTOR_ID,
+              action: 'master_data.demo.refresh',
+              traceId: `${DEMO_PREFIX}/${REALISTIC_DEMO_REVISION}`,
+            },
+          }));
+        // Validate the entire connected fixture set before changing any identity or relationship.
+        // A user edit/deactivation means this pack is no longer disposable demo data.
+        if (input.realistic && !completedRefresh) {
+          for (const fixture of fixtures) {
+            const marker = await transaction.masterDataAuditEvent.findFirst({
+              where: {
+                actorUserId: DEMO_ACTOR_ID,
+                action: 'master_data.demo.seed',
+                traceId: `${DEMO_PREFIX}/${fixture.key}`,
+              },
+            });
+            if (!marker) continue;
+            if (!marker.entityId || marker.resource !== fixture.resource)
+              throw new Error(`Invalid demo marker: ${fixture.key}`);
+            const existing = await service.detail(
+              fixture.resource,
+              marker.entityId,
+            );
+            if (
+              existing.data.version !== 1 ||
+              existing.data.status !== 'active'
+            )
+              throw new Error(
+                `Demo refresh stopped: ${fixture.key} was edited; no records were changed.`,
+              );
+            const userEdits = await transaction.masterDataAuditEvent.count({
+              where: {
+                resource: fixture.resource,
+                entityId: marker.entityId,
+                actorUserId: { not: DEMO_ACTOR_ID },
+              },
+            });
+            if (userEdits)
+              throw new Error(
+                `Demo refresh stopped: ${fixture.key} has user history; no records were changed.`,
+              );
+          }
+        }
+        for (const fixture of fixtures) {
           const traceId = `${DEMO_PREFIX}/${fixture.key}`;
           const marker = await transaction.masterDataAuditEvent.findFirst({
             where: {
@@ -115,7 +173,16 @@ export async function seedLocalMasterDataDemo(input: {
             // Preserve even manually edited fixtures. Never recreate a deleted one silently.
             id = (await service.detail(fixture.resource, marker.entityId)).data
               .id;
-            report.reused++;
+            if (input.realistic && !completedRefresh) {
+              const values = fixture.values((key) => {
+                const reference = ids.get(key);
+                if (!reference)
+                  throw new Error(`Missing demo dependency: ${key}`);
+                return reference;
+              });
+              await service.update(fixture.resource, id, values, 1, actor);
+              report.refreshed++;
+            } else report.reused++;
           } else {
             const values = fixture.values((key) => {
               const reference = ids.get(key);
@@ -157,6 +224,26 @@ export async function seedLocalMasterDataDemo(input: {
             key: fixture.key,
             resource: fixture.resource,
             id,
+          });
+        }
+        if (input.realistic && !completedRefresh) {
+          await transaction.masterDataAuditEvent.create({
+            data: {
+              actorUserId: DEMO_ACTOR_ID,
+              actorBranchId: actor.branchIds[0]!,
+              action: 'master_data.demo.refresh',
+              resource: 'countries',
+              outcome: 'SUCCESS',
+              traceId: `${DEMO_PREFIX}/${REALISTIC_DEMO_REVISION}`,
+              reason:
+                'Explicit local fixture refresh; fictional businesses, no real contacts, credentials, FX rates or integrations.',
+              afterSnapshot: {
+                synthetic: true,
+                revision: REALISTIC_DEMO_REVISION,
+                refreshed: report.refreshed,
+                created: report.created,
+              },
+            },
           });
         }
         if (!input.apply) throw new PreviewRollback(report);
