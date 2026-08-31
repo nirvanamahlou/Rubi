@@ -1,6 +1,5 @@
 import type {
   BranchReference,
-  LoginResponse,
   CustomerAddressRequest,
   CustomerActivityResponse,
   CustomerAuditResponse,
@@ -18,6 +17,7 @@ import type {
 } from '@rubi/contracts';
 
 import { getPublicApiBaseUrl } from '../../../lib/environment';
+import { refreshAuthenticatedSession } from '../../../lib/auth-session';
 import { serializeCustomerListQuery } from './contracts';
 
 export class CustomersApiError extends Error {
@@ -28,25 +28,6 @@ export class CustomersApiError extends Error {
   ) {
     super(message);
   }
-}
-
-let refreshInFlight: Promise<LoginResponse | null> | null = null;
-
-async function refreshAccess(baseUrl: string) {
-  refreshInFlight ??= fetch(`${baseUrl}/iam/auth/refresh`, {
-    method: 'POST',
-    credentials: 'include',
-    cache: 'no-store',
-    headers: { accept: 'application/json' },
-  })
-    .then(async (response) =>
-      response.ok ? ((await response.json()) as LoginResponse) : null,
-    )
-    .catch(() => null)
-    .finally(() => {
-      refreshInFlight = null;
-    });
-  return refreshInFlight;
 }
 
 async function request<T>(
@@ -69,7 +50,7 @@ async function request<T>(
   if (
     response.status === 401 &&
     !retriedAfterRefresh &&
-    (await refreshAccess(baseUrl))
+    (await refreshAuthenticatedSession(baseUrl))
   )
     return request<T>(path, init, true);
   if (!response.ok) {
@@ -99,7 +80,7 @@ export const customersApi = {
     const baseUrl = getPublicApiBaseUrl();
     if (!baseUrl)
       throw new CustomersApiError('نشانی API پیکربندی نشده است.', 0);
-    const session = await refreshAccess(baseUrl);
+    const session = await refreshAuthenticatedSession(baseUrl);
     if (!session?.user?.branches) {
       throw new CustomersApiError('دریافت نام شعب مجاز ناموفق بود.', 0);
     }

@@ -6,6 +6,7 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { getPublicApiBaseUrl } from '@/lib/environment';
+import { loginErrorMessage } from './login-error';
 
 export function LoginForm() {
   const router = useRouter();
@@ -34,7 +35,7 @@ export function LoginForm() {
         }),
       });
       if (!response.ok) {
-        setError('نام کاربری یا رمز عبور صحیح نیست.');
+        setError(loginErrorMessage(response.status));
         return;
       }
       const target = search.get('next');

@@ -6,3 +6,4 @@ export const ACCESS_TTL_SECONDS = 15 * 60;
 export const REFRESH_TTL_DAYS = 14;
 export const MAX_LOGIN_ATTEMPTS = 5;
 export const LOCK_MINUTES = 15;
+export const CONCURRENT_REFRESH_GRACE_MS = 5_000;
