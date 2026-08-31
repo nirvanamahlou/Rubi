@@ -28,7 +28,7 @@ describe('transportation workspace', () => {
 
     const tabs = source.slice(
       source.indexOf('const tabs'),
-      source.indexOf('const boundaryCopy'),
+      source.indexOf('const attributeLabels'),
     );
     expect(tabs).not.toContain('پروفایل ایرلاین');
     expect(source).toContain('<MasterDataProfileDialog');

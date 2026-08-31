@@ -10,6 +10,47 @@
 - Domain boundaries: Documents stores/version-controls final file assets and archive metadata only. Issuance/rendering stays in producer modules; no direct query to another module's tables. Finance/HR content access remains deny-by-default behind separate permissions.
 - Deferred: production antivirus engine/worker, advanced secure sharing, final retention deletion, exports and cross-module producer integrations. They require separate slices and unresolved security/operations decisions.
 - Validation: all 28 migrations on empty PostgreSQL 18, repeatable Seed, full lint/typecheck/build and 1,296 tests passed (66 opt-in PostgreSQL tests remain intentionally skipped in the ordinary suite). Authenticated browser smoke covered upload, fail-closed download, Persian/Gregorian date preservation, role isolation for Archive/Sales/Finance/HR and desktop/mobile layout. Synthetic DB/container, file, keys and ignored environment files were removed after validation.
+## MASTER-003-FILTER-ACTIONS — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: کنترل‌های «پاک‌کردن» و «تازه‌سازی» در تمام فیلترهای اطلاعات پایه به دکمه‌های دارای Border و پس‌زمینه تبدیل و در ردیف پایینیِ سمت چپ سکشن فیلتر یکدست شوند.
+- Branch: `codex/pc-b-master-data-filter-actions` به‌صورت Stacked روی نسخه تحویلی `codex/pc-b-master-data-remove-lock-notes@51aed9e`؛ توسعه مستقیم روی `develop` انجام نمی‌شود.
+- محدوده رزرو: فقط کامپوننت‌های FilterBar در `apps/web/src/modules/master-data/components/**`، کامپوننت مشترک اکشن فیلتر، آزمون رگرسیون نمایش و گزارش همین Work Item. بدون API/Contract، Schema/Migration، Seed/Data، Customers، Calendar، Dependency/Lockfile یا تغییر دیتابیس.
+- منطق فیلتر، داده، صفحه‌بندی و مجوزها ثابت می‌ماند؛ این تغییر Presentation/Interaction است و تازه‌سازی هر Workspace فقط Loader موجود همان صفحه را فراخوانی می‌کند.
+- نتیجه: اکشن مشترک تمام FilterBarهای اطلاعات پایه در یک ردیف تمام‌عرض زیر فیلدها قرار گرفت؛ در RTL با تراز انتهای ردیف در سمت چپ نمایش داده می‌شود. هر دو کنترل Button واقعی با Border، پس‌زمینه، Focus/Hover و آیکون مستقل هستند. تازه‌سازی وضعیت همکاری نیز با همان کامپوننت و عنوان تخصصی حفظ شد.
+- ۵۳۴ تست Web، Typecheck، lint کامل Web و Production Build موفق‌اند. بررسی زنده جغرافیا روی Checkout همین شاخه در پورت ۳۱۰۱ وجود فیلتر تاریخ و دو دکمه پایین-چپ و حذف نوار قفل قدیمی را تأیید کرد. پورت ۳۱۰۰ همچنان متعلق به Checkout جداگانه PC-A است و تغییر یا متوقف نشد.
+
+## MASTER-003-REMOVE-LOCK-NOTES — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: نوارهای قفل‌دار/قاعده‌ای باقی‌مانده زیر KPIهای تمام بخش‌های اطلاعات پایه، از جمله جغرافیا، حذف و از بازگشت آن‌ها جلوگیری شود.
+- Branch: `codex/pc-b-master-data-remove-lock-notes` به‌صورت Stacked روی `codex/pc-b-master-data-date-filters@49d83b8`؛ توسعه مستقیم روی `develop` انجام نمی‌شود.
+- محدوده رزرو: فقط Workspaceهای `apps/web/src/modules/master-data/components/**`، آزمون رگرسیون نمایش و گزارش همین Work Item در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`. بدون API/Contract، Schema/Migration، Seed، Customers، Calendar، Dependency/Lockfile یا تغییر دیتابیس.
+- رفتار حذف امن، کنترل وابستگی رکوردها، وضعیت/پاور، خطاهای دسترسی و پیام‌های نتیجه عملیات حفظ می‌شوند؛ این اصلاح فقط نوار اطلاع‌رسانی ثابت بین KPI و فیلترها را هدف می‌گیرد.
+- نتیجه: نسخه جاری هر هشت Workspace تخصصی و fallback عمومی فاقد Alert/Card قفل‌دار بین KPI و فیلترهاست. آزمون قبلی از بررسی فاصله ثابت به کنترل کامل بازه KPI تا FilterBar ارتقا یافت و آیکون/عنوان‌های قاعده‌ای را نیز رد می‌کند. ۵۲۳ تست Web، Typecheck، lint کامل Web و Production Build موفق‌اند. علت مشاهده نوار در `localhost:3100` اجرای Checkout مستقل PC-A از `C:\Users\admin\Rubi-documents-vertical-slice` است؛ آن پردازش و فایل‌ها دست‌نخورده ماندند.
+
+## MASTER-003-DATE-RANGE-FILTERS — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: فیلتر جمع‌وجور «از تاریخ / تا تاریخ» به همه فهرست‌های اطلاعات پایه اضافه شود و انتخاب تاریخ در هر دو تقویم شمسی و میلادی در دسترس باشد.
+- Branch: `codex/pc-b-master-data-date-filters` به‌صورت Stacked روی نسخه تحویلی `codex/pc-b-master-data-remove-kpi-notes@ccf68db`؛ توسعه مستقیم روی `develop` انجام نمی‌شود.
+- محدوده رزرو: قرارداد افزایشی Query فهرست و Export اطلاعات پایه، DTO/Repository همان ماژول، Client و هشت Workspace اطلاعات پایه، کامپوننت مشترک بازه تاریخ، آزمون‌ها و گزارش همین Work Item. بدون Calendar، Customers، Schema/Migration، داده، Dependency/Lockfile یا تغییر دیتابیس.
+- Producer/Consumer قرارداد هر دو Master Data API/Web تحت مالکیت PC-B هستند. `createdFrom` و `createdTo` اختیاری و با رفتار قبلی سازگارند؛ بازه روی `createdAt` و برای تاریخچه نرخ روی `observedAt`، پیش از Pagination اعمال می‌شود.
+- نتیجه: گروه فشرده بازه تاریخ در هشت Workspace تخصصی و fallback عمومی قرار گرفت؛ تقویم مشترک همان تاریخ را به انتخاب کاربر شمسی یا میلادی نمایش می‌دهد، بازه قابل پاک‌کردن است و Excel همان فیلتر را دریافت می‌کند. API بازه معکوس/نامعتبر را رد و روز پایان را به‌صورت کامل و inclusive محاسبه می‌کند. ۵۲۳ تست Web و ۶۷۱ تست API موفق؛ Typecheck، lint محدوده و Production Build Web/API/Contract موفق‌اند. کنترل بصری روی نسخه همین Branch در پورت موقت ۳۱۰۱، نمایش فشرده و کلیدهای شمسی/میلادی را تأیید کرد؛ پورت ۳۱۰۰ متعلق به Checkout PC-A و دست‌نخورده باقی ماند.
+
+## MASTER-003-REMOVE-KPI-NOTES — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: تمام نوارهای توضیحی/قاعده‌ای بلافاصله زیر کارت‌های KPI از همه Workspaceهای اطلاعات پایه حذف شوند؛ خود KPIها، تب‌ها، فیلترها، جدول‌ها و رفتار Backend حفظ می‌شوند.
+- Branch: `codex/pc-b-master-data-remove-kpi-notes` از `origin/develop@03e4c431f29286509cdf0e5423aae8ed3a87a788`؛ توسعه مستقیم روی `develop` انجام نمی‌شود.
+- محدوده رزرو: فقط `apps/web/src/modules/master-data/components/**`، آزمون‌های رندر مرتبط و گزارش همین Work Item در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`. بدون Customers، Calendar، API/Contract، Schema/Migration، Seed یا Dependency/Lockfile.
+- قفل‌های فعال PC-B/MASTER-003 بدون تغییر می‌مانند؛ این اصلاح صرفاً Presentation است و مالکیت یا قرارداد ماژول دیگری را تغییر نمی‌دهد.
+- نتیجه: نوارهای توضیحی زیر KPI در جغرافیا، سازمان‌ها و تأمین‌کنندگان، اقامت، حمل‌ونقل، بیمه، خدمات سفر و مراجع فروش حذف شدند؛ مالی و پولی از ابتدا چنین نوار مستقلی نداشت. ۵۱۱ تست Web، Typecheck، lint فایل‌های متاثر و Production Build موفق‌اند. API روی ۴۰۰۰ سالم و Web روی ۳۱۰۰ روشن است؛ مسیر محافظت‌شده بدون Session مطابق انتظار به Login هدایت می‌شود.
+
+## MASTER-003-DEMO-BOOTSTRAP — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-08-31: داده‌های نمایشی اطلاعات پایه به‌شکلی در Git منتشر شوند که PC-A نیز بتواند همان رکوردها را در دیتابیس لوکال خود ببیند.
+- Branch: `codex/pc-b-master-data-demo-bootstrap` از `origin/develop@1fd22ef` پس از Merge #60؛ توسعه مستقیم روی `develop` انجام نمی‌شود.
+- محدوده رزرو: فرمان‌ها و Runner ریشه برای بارگذاری Environment، Build و Preview/Apply داده نمایشی، Parser و تست CLI در Master Data API، مستند اجرای PC-A و ورودی‌های همین Task در WORK_ASSIGNMENTS/PROJECT_STATUS. `package.json` فقط برای افزودن Script رزرو است؛ Dependency و Lockfile تغییر نمی‌کنند.
+- Fixture موجود ۷۸ رکورد/۴۰ کاتالوگ بدون تغییر ماهیت استفاده می‌شود. Seed عمومی Prisma، Startup، Schema/Migration، Contract، Customers، IAM و داده عملیاتی خارج از Scope هستند.
+- Apply باید همچنان فقط با فرمان صریح، محیط development/test، PostgreSQL روی localhost:55432 و DB مجاز اجرا شود؛ Production/Remote رد می‌شوند. اجرای دوباره idempotent است و داده ویرایش‌شده کاربر را بازنویسی نمی‌کند.
+- نتیجه: `pnpm master-data:demo:preview` و `pnpm master-data:demo:apply` از Root قابل اجرا هستند؛ Runner تنظیمات خصوصی را قبل از Prisma/Build بارگذاری می‌کند و Apply تأیید صریح را به ابزار سطح پایین می‌دهد. Preview واقعی هر ۷۸ رکورد را Reuse و کامل Rollback کرد. ۱۲ تست واحد CLI/Fixture، ۹ آزمون واقعی PostgreSQL 18، ۱٬۲۵۹ تست عمومی، lint/typecheck و Build کامل موفق‌اند. PR عادی به `develop` ساخته می‌شود؛ Branch حذف یا Force Push نمی‌شود.
 
 ## MASTER-003-DEVELOP-INTEGRATION — PC-B — READY_FOR_REVIEW
 

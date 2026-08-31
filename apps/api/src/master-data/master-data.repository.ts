@@ -883,6 +883,17 @@ export class MasterDataRepository {
     const nameField = nameFields[resource];
     const where: Record<string, unknown> = {};
     if (query.status !== 'all') where.isActive = query.status === 'active';
+    if (query.createdFrom || query.createdTo) {
+      const createdAt: Record<string, Date> = {};
+      if (query.createdFrom)
+        createdAt.gte = new Date(`${query.createdFrom}T00:00:00.000Z`);
+      if (query.createdTo) {
+        const exclusiveEnd = new Date(`${query.createdTo}T00:00:00.000Z`);
+        exclusiveEnd.setUTCDate(exclusiveEnd.getUTCDate() + 1);
+        createdAt.lt = exclusiveEnd;
+      }
+      where.createdAt = createdAt;
+    }
     const airportCityWhere: Record<string, unknown> = {};
     if (query.countryId) {
       if (resource === 'regions' || resource === 'cities')

@@ -15,7 +15,6 @@ import {
   FilePenLine,
   FileSpreadsheet,
   FileText,
-  FilterX,
   Plus,
   RefreshCw,
   Search,
@@ -47,6 +46,11 @@ import {
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataFilterActions } from './master-data-filter-actions';
+import {
+  MasterDataDateRangeFilter,
+  useMasterDataDateRange,
+} from './master-data-date-range-filter';
 import {
   getMasterDataDefinition,
   type MasterDataResourceKey,
@@ -88,6 +92,11 @@ function GenericMasterDataWorkspace({
   const [selected, setSelected] = useState<MasterDataRecord | undefined>();
   const [notice, setNotice] = useState<string | null>(null);
   const [exportingExcel, setExportingExcel] = useState(false);
+  const {
+    filters: dateFilters,
+    props: dateRangeProps,
+    reset: resetDateRange,
+  } = useMasterDataDateRange(() => setPage(1));
   const definition = getMasterDataDefinition(resource);
   const sectionDefinitions = section.resources.map(getMasterDataDefinition);
   const isCountryCity = resource === 'countries' || resource === 'cities';
@@ -96,6 +105,7 @@ function GenericMasterDataWorkspace({
   ).length;
 
   const query: MasterDataListQuery = {
+    ...dateFilters,
     search,
     status,
     sortBy,
@@ -110,6 +120,7 @@ function GenericMasterDataWorkspace({
       const response = await masterDataApi.list(
         resource as MasterDataResource,
         {
+          ...dateFilters,
           search,
           status,
           sortBy,
@@ -129,7 +140,7 @@ function GenericMasterDataWorkspace({
           : 'error',
       );
     }
-  }, [page, resource, search, sortBy, status]);
+  }, [dateFilters, page, resource, search, sortBy, status]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 250);
@@ -226,6 +237,7 @@ function GenericMasterDataWorkspace({
       resource,
       format,
       filters: {
+        ...dateFilters,
         search: query.search,
         status: query.status,
         sortBy: query.sortBy,
@@ -450,6 +462,10 @@ function GenericMasterDataWorkspace({
           />
 
           <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
+            <MasterDataDateRangeFilter
+              idPrefix="master-data-created"
+              {...dateRangeProps}
+            />
             <FormField id="master-data-search-live" label="جست‌وجوی سریع">
               <div className="relative">
                 <Search
@@ -501,18 +517,16 @@ function GenericMasterDataWorkspace({
                 </SelectContent>
               </Select>
             </FormField>
-            <Button
-              onClick={() => {
+            <MasterDataFilterActions
+              onClear={() => {
                 setSearch('');
+                resetDateRange();
                 setStatus('all');
                 setSortBy('name');
                 setPage(1);
               }}
-              variant="ghost"
-            >
-              <FilterX aria-hidden="true" className="size-4" />
-              پاک‌کردن
-            </Button>
+              onRefresh={() => void load()}
+            />
           </FilterBar>
 
           {requestState === 'loading' ? (
@@ -710,8 +724,7 @@ export function MasterDataWorkspace({
 }) {
   if (section.slug === 'finance')
     return <MasterDataFinanceWorkspace section={section} />;
-  if (section.slug === 'geography')
-    return <MasterDataGeographyWorkspace />;
+  if (section.slug === 'geography') return <MasterDataGeographyWorkspace />;
   if (section.slug === 'organizations-suppliers')
     return <MasterDataSuppliersWorkspace />;
   if (section.slug === 'accommodation')

@@ -1,36 +1,27 @@
 import { createRequire } from 'node:module';
+import { loadEnvFile } from 'node:process';
+
+if (!process.env.DATABASE_URL)
+  loadEnvFile(
+    process.env.RUBI_API_ENV_FILE ?? new URL('../.env', import.meta.url),
+  );
+
 const require = createRequire(import.meta.url);
 const {
   seedLocalMasterDataDemo,
 } = require('../dist/master-data/demo/local-demo.js');
+const {
+  parseLocalDemoCli,
+} = require('../dist/master-data/demo/local-demo-cli.js');
 
-const mode = process.argv[2];
-if (
-  ![
-    '--preview',
-    '--apply',
-    '--preview-realistic',
-    '--apply-realistic',
-  ].includes(mode) ||
-  process.argv.length !== 3
-)
-  throw new Error(
-    'Specify --preview/--apply or --preview-realistic/--apply-realistic. Build the API first.',
-  );
-if (
-  mode.startsWith('--apply') &&
-  process.env.RUBI_ALLOW_LOCAL_MASTER_DEMO !== '1'
-)
-  throw new Error(
-    'Set RUBI_ALLOW_LOCAL_MASTER_DEMO=1 to acknowledge local synthetic data creation.',
-  );
+const command = parseLocalDemoCli(process.argv.slice(2), process.env);
 
 const report = await seedLocalMasterDataDemo({
   databaseUrl: process.env.DATABASE_URL ?? '',
   environment: process.env.NODE_ENV ?? '',
   contactKey: process.env.MASTER_DATA_IMPORT_TOKEN_KEY_BASE64 ?? '',
-  apply: mode.startsWith('--apply'),
-  realistic: mode.endsWith('-realistic'),
+  apply: command.apply,
+  realistic: command.realistic,
 });
 const byResource = {};
 for (const row of report.records)

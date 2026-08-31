@@ -1,6 +1,10 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import { MasterDataPowerButton } from './master-data-power-button';
+import {
+  MasterDataDateRangeFilter,
+  useMasterDataDateRange,
+} from './master-data-date-range-filter';
 
 import type {
   MasterDataListQuery,
@@ -57,6 +61,7 @@ import {
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataFilterActions } from './master-data-filter-actions';
 import {
   getMasterDataDefinition,
   type MasterDataResourceKey,
@@ -320,6 +325,11 @@ export function MasterDataFinanceWorkspace({
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
+  const {
+    filters: dateFilters,
+    props: dateRangeProps,
+    reset: resetDateRange,
+  } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
     setRequestState('loading');
@@ -328,6 +338,12 @@ export function MasterDataFinanceWorkspace({
         const [response, approvedResponse, draftResponse] = await Promise.all([
           masterDataApi.currencyRateHistory({
             ...columnFilters,
+            ...(dateRangeProps.fromDate
+              ? { observedFrom: `${dateRangeProps.fromDate}T00:00:00.000Z` }
+              : {}),
+            ...(dateRangeProps.toDate
+              ? { observedTo: `${dateRangeProps.toDate}T23:59:59.999Z` }
+              : {}),
             search,
             status: 'DRAFT',
             page,
@@ -354,6 +370,7 @@ export function MasterDataFinanceWorkspace({
       } else {
         const baseQuery: MasterDataListQuery = {
           ...columnFilters,
+          ...dateFilters,
           search,
           status,
           sortBy: resource === 'payment-methods' ? 'updatedAt' : 'name',
@@ -393,7 +410,17 @@ export function MasterDataFinanceWorkspace({
           : 'error',
       );
     }
-  }, [columnFilters, page, resource, search, status, tab]);
+  }, [
+    columnFilters,
+    dateFilters,
+    dateRangeProps.fromDate,
+    dateRangeProps.toDate,
+    page,
+    resource,
+    search,
+    status,
+    tab,
+  ]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 250);
@@ -571,6 +598,7 @@ export function MasterDataFinanceWorkspace({
         format: 'xlsx',
         filters: {
           ...columnFilters,
+          ...dateFilters,
           search,
           status,
           sortBy: 'name',
@@ -906,6 +934,10 @@ export function MasterDataFinanceWorkspace({
 
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
         {columnFilterControls}
+        <MasterDataDateRangeFilter
+          idPrefix="finance-created"
+          {...dateRangeProps}
+        />
         <FormField id="finance-search" label="جست‌وجو">
           <div className="relative">
             <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -952,10 +984,16 @@ export function MasterDataFinanceWorkspace({
             </Select>
           </FormField>
         )}
-        <div />
-        <Button onClick={() => void load()} variant="ghost">
-          <RefreshCw aria-hidden="true" className="size-4" /> تازه‌سازی
-        </Button>
+        <MasterDataFilterActions
+          onClear={() => {
+            setSearch('');
+            resetColumnFilters();
+            resetDateRange();
+            setStatus('all');
+            setPage(1);
+          }}
+          onRefresh={() => void load()}
+        />
       </FilterBar>
 
       {requestState === 'loading' ? (
@@ -1383,12 +1421,6 @@ export function MasterDataFinanceWorkspace({
                 </Select>
               </FormField>
               <Button
-                onClick={() => void loadCurrencyHistory()}
-                variant="ghost"
-              >
-                <RefreshCw className="size-4" /> تازه‌سازی
-              </Button>
-              <Button
                 onClick={() => {
                   setCurrencyProfileOpen(false);
                   setSelected(selectedCurrency);
@@ -1397,6 +1429,15 @@ export function MasterDataFinanceWorkspace({
               >
                 <Plus className="size-4" /> ثبت نرخ جدید
               </Button>
+              <MasterDataFilterActions
+                onClear={() => {
+                  setRangeDays('90');
+                  setSelectedPair('');
+                  setAudit([]);
+                  setAuditRateId(null);
+                }}
+                onRefresh={() => void loadCurrencyHistory()}
+              />
             </FilterBar>
 
             {currencyHistoryState === 'loading' ? (

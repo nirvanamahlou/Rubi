@@ -4,7 +4,6 @@ import {
   Database,
   FileSpreadsheet,
   FileText,
-  FilterX,
   LockKeyhole,
   Plus,
   Search,
@@ -44,6 +43,7 @@ import {
   proposedPermissionMatrix,
 } from '../model/permissions';
 import { MasterDataForm, type MasterDataFormMode } from './master-data-form';
+import { MasterDataFilterActions } from './master-data-filter-actions';
 import {
   MASTER_DATA_BLOCKER_TITLE,
   masterDataStateOptions,
@@ -243,17 +243,14 @@ export function MasterDataWorkspace({
                 </SelectContent>
               </Select>
             </FormField>
-            <Button
-              onClick={() => {
+            <MasterDataFilterActions
+              onClear={() => {
                 setSearch('');
                 setStatus('all');
                 setSort('name');
               }}
-              variant="ghost"
-            >
-              <FilterX aria-hidden="true" className="size-4" />
-              پاک‌کردن
-            </Button>
+              onRefresh={() => setPreviewState(initialPreviewState)}
+            />
           </FilterBar>
 
           <Card className="p-4">

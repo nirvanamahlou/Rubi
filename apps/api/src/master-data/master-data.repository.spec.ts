@@ -34,6 +34,47 @@ describe('MasterDataRepository code allocation', () => {
 });
 
 describe('MasterDataRepository geography listing', () => {
+  it('applies an inclusive UTC creation-date range before pagination', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const count = vi.fn().mockResolvedValue(0);
+    const database = {
+      client: { masterCountry: { findMany, count } },
+    } as unknown as DatabaseService;
+    const repository = new MasterDataRepository(database);
+
+    await repository.list('countries', {
+      createdFrom: '2026-08-01',
+      createdTo: '2026-08-31',
+      search: '',
+      status: 'all',
+      sortBy: 'name',
+      sortDirection: 'asc',
+      page: 1,
+      pageSize: 25,
+    });
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          createdAt: {
+            gte: new Date('2026-08-01T00:00:00.000Z'),
+            lt: new Date('2026-09-01T00:00:00.000Z'),
+          },
+        },
+        skip: 0,
+        take: 25,
+      }),
+    );
+    expect(count).toHaveBeenCalledWith({
+      where: {
+        createdAt: {
+          gte: new Date('2026-08-01T00:00:00.000Z'),
+          lt: new Date('2026-09-01T00:00:00.000Z'),
+        },
+      },
+    });
+  });
+
   it('applies relational filters, search, sorting and pagination to airports', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const count = vi.fn().mockResolvedValue(0);
