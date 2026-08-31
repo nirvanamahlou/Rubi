@@ -1,4 +1,26 @@
-import type { CustomerContact, CustomerMutationRequest } from '@rubi/contracts';
+import type {
+  CustomerContact,
+  CustomerDetail,
+  CustomerMutationRequest,
+} from '@rubi/contracts';
+
+export function customerDraft(
+  customer?: CustomerDetail,
+): CustomerMutationRequest {
+  return {
+    kind: customer?.kind ?? 'person',
+    organizationId: customer?.organizationId ?? null,
+    firstName: customer?.firstName ?? '',
+    lastName: customer?.lastName ?? '',
+    displayName: customer?.displayName ?? '',
+    ...(!customer?.birthDateMasked
+      ? { birthDate: customer?.birthDate ?? null }
+      : {}),
+    roles: customer?.roles ?? ['customer'],
+    acquaintanceMethodId: customer?.acquaintanceMethodId ?? null,
+    ...(customer ? { version: customer.version } : {}),
+  };
+}
 
 export type CustomerUiState =
   | 'loading'

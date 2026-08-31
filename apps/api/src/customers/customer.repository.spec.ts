@@ -237,14 +237,14 @@ describe('CustomerRepository', () => {
     );
     expect(customer.count).toHaveBeenCalledWith({
       where: expect.objectContaining({
-        kind: 'PERSON',
+        kind: 'ORGANIZATION',
         isCustomer: true,
         ownerBranchId: { in: [row.ownerBranchId] },
       }),
     });
     expect(customer.count).toHaveBeenCalledWith({
       where: expect.objectContaining({
-        kind: 'PERSON',
+        kind: 'ORGANIZATION',
         isPassenger: true,
         ownerBranchId: { in: [row.ownerBranchId] },
       }),

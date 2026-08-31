@@ -105,6 +105,50 @@ const row = {
 };
 
 describe('CustomerService', () => {
+  it('preserves omitted birthday and national ID during unrelated legacy edits', async () => {
+    const repository = {
+      update: vi.fn().mockResolvedValue(row),
+    } as unknown as CustomerRepository;
+    const { service, nationalIdProtector } = createService(repository);
+    const edit = { ...mutation, version: 1 };
+    delete edit.nationalId;
+    await service.update(row.id, edit, actor);
+    const data = vi.mocked(repository.update).mock.calls[0]?.[2];
+    expect(data).not.toHaveProperty('birthDate');
+    expect(data).not.toHaveProperty('nationalIdEncrypted');
+    expect(nationalIdProtector.protect).not.toHaveBeenCalled();
+    await service.update(row.id, { ...edit, birthDate: null }, actor);
+    expect(vi.mocked(repository.update).mock.calls[1]?.[2]).toHaveProperty(
+      'birthDate',
+      null,
+    );
+  });
+
+  it('rejects unsupported passenger organization instead of silently discarding it', async () => {
+    const repository = {
+      create: vi.fn().mockResolvedValue(row),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    await expect(
+      service.create(
+        { ...mutation, organizationId: actor.branchIds[0]! },
+        actor,
+      ),
+    ).rejects.toThrow('اتصال شخص به سازمان');
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it.each(['2025-02-29', '2026-02-31', '2999-01-01'])(
+    'rejects invalid or future date %s before persistence',
+    async (birthDate) => {
+      const repository = { create: vi.fn() } as unknown as CustomerRepository;
+      const { service } = createService(repository);
+      await expect(
+        service.create({ ...mutation, birthDate }, actor),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.create).not.toHaveBeenCalled();
+    },
+  );
   it('requires and protects a separate national ID before persistence', async () => {
     const repository = {
       create: vi.fn().mockResolvedValue(row),
