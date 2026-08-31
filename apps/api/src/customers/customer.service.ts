@@ -157,7 +157,11 @@ function prepareMutation(
     });
   if (input.birthDate) {
     const date = new Date(`${input.birthDate}T00:00:00.000Z`);
-    if (Number.isNaN(date.getTime()) || date > new Date())
+    if (
+      Number.isNaN(date.getTime()) ||
+      date.toISOString().slice(0, 10) !== input.birthDate ||
+      date > new Date()
+    )
       throw new BadRequestException('تاریخ تولد معتبر نیست.');
   }
   const data: Record<string, unknown> = {
@@ -175,7 +179,11 @@ function prepareMutation(
     acquaintanceMethodId: input.acquaintanceMethodId ?? null,
     ...(protectedNationalId ?? {}),
   };
-  if (update) delete data.kind;
+  if (update) {
+    delete data.kind;
+    // Masked/omitted values are not a request to clear an existing date.
+    if (input.birthDate === undefined) delete data.birthDate;
+  }
   return data;
 }
 

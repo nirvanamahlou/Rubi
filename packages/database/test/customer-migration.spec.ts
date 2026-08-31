@@ -25,6 +25,28 @@ const nationalIdMigration = readFileSync(
 );
 const seed = readFileSync(resolve(process.cwd(), 'prisma/seed.ts'), 'utf8');
 
+const nationalIdKeyMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    'prisma/migrations/20260831120000_customer_national_id_key_required/migration.sql',
+  ),
+  'utf8',
+);
+
+describe('national-ID key version hardening', () => {
+  it('closes the SQL UNKNOWN loophole without rewriting historical migrations', () => {
+    expect(nationalIdKeyMigration).toContain(
+      'customers_national_id_key_required_check',
+    );
+    expect(nationalIdKeyMigration).toContain(
+      '"nationalIdEncrypted" IS NULL OR "nationalIdKeyVersion" IS NOT NULL',
+    );
+    expect(nationalIdKeyMigration).not.toMatch(
+      /\b(?:DROP|TRUNCATE|DELETE FROM)\b/i,
+    );
+  });
+});
+
 describe('CUSTOMER-001 migration and seed', () => {
   it('is additive and creates the complete Customers persistence boundary', () => {
     for (const table of [

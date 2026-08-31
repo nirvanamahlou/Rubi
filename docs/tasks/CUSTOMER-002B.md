@@ -1,5 +1,16 @@
 # CUSTOMER-002B — Secure National ID
 
+## Sequential integration review — 2026-08-31
+
+- Parent #27 merged `eb2fe1e`; #34 now targets develop. The customer-only handoff is activated in WORK_ASSIGNMENTS after #25/#26/#27, per the product owner's explicit chain authorization.
+- Reconciled only customer/status/assignment conflicts, preserving all merged Master Data and shared DatePicker files. XLSX security from parent #27 is retained; national-ID template version is now `customers-person-v2`.
+- Reproduced an actual PostgreSQL CHECK loophole in an isolated transaction: ciphertext with a NULL key version was accepted by the historical CHECK (SQL UNKNOWN). The transaction was rolled back.
+- Added `20260831120000_customer_national_id_key_required`, an additive constraint requiring non-null key version when ciphertext exists. Historical migration bytes are unchanged. No plaintext identity or real data is involved.
+- Pulled the omitted-birthday preservation and strict calendar validation from child #41 forward so the intermediate PR cannot clear a masked date on unrelated edits; regression tests included.
+- Scope remains the Iranian national-ID slice only, not passport/foreign identity, full document storage, retention or production key management. DEC-OPEN-006/011 are not marked accepted by this review.
+- Final integration gates: frozen install; Prisma validate/generate; all 11 migrations on empty isolated PostgreSQL, seed twice; lint/typecheck/full production build; 420 tests across 80 files; whitespace/scope/secret-pattern checks passed. Unchanged packages may use the task cache.
+- Runtime review: 11 synthetic HTTP/database checks passed on API 4015, Web 3115 and PostgreSQL 5435, including required/checksummed/duplicate national ID, masking/reasoned reveal/audit, persisted ciphertext, unchanged omitted birthday, invalid dates, branch rejection and concurrent 200/409. This is HTTP smoke, not a visual browser QA claim.
+
 - **Computer:** PC-A
 - **Owner:** PC-A
 - **Branch:** `codex/pc-a-customer-002b-national-id`
