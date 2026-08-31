@@ -371,4 +371,23 @@ describe.skipIf(!enabled)('transport forms on isolated PostgreSQL 18', () => {
     expect(result.data.attributes.validFrom).toBe(record.attributes.validFrom);
     expect(result.data.attributes.validTo).toBe(record.attributes.validTo);
   });
+  it('safely deletes a train type with owned facility links without deleting the facility', async () => {
+    const train = (await service.create('train-types', {
+      name: 'Isolated deletion test train',
+      manufacturer: 'Test',
+      model: 'Delete-only',
+      category: 'SLEEPER',
+      facilityIds: facilityId,
+    }, actor)).data;
+    await service.remove('train-types', train.id, train.version, {
+      ...actor,
+      permissions: [...actor.permissions, 'master_data.delete'],
+    });
+    expect(await client.masterTrainType.findUnique({ where: { id: train.id } })).toBeNull();
+    expect(await client.masterTrainTypeFacility.count({ where: { trainTypeId: train.id } })).toBe(0);
+    expect(await client.masterFacility.findUnique({ where: { id: facilityId } })).not.toBeNull();
+    expect(await client.masterDataAuditEvent.count({ where: {
+      entityId: train.id, action: 'master_data.delete',
+    } })).toBe(1);
+  });
 });
