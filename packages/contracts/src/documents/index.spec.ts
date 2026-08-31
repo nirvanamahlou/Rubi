@@ -4,6 +4,7 @@ import {
   DOCUMENT_ARCHIVE_STATUS_CODES,
   DOCUMENT_CONFIDENTIALITY_CODES,
   DOCUMENT_DOMAIN_CODES,
+  DOCUMENT_PERSONAL_VIEW_CODES,
   DOCUMENT_SCAN_STATUS_CODES,
   DOCUMENTS_CONTRACT_VERSION,
 } from './index';
@@ -34,5 +35,10 @@ describe('documents shared contract v1', () => {
       'DELETED',
     ]);
     expect(DOCUMENT_SCAN_STATUS_CODES).toContain('AWAITING_ANTIVIRUS_ADAPTER');
+    expect(DOCUMENT_PERSONAL_VIEW_CODES).toEqual([
+      'OWNED',
+      'UPLOADED',
+      'RECENTLY_VIEWED',
+    ]);
   });
 });

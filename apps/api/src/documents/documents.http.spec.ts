@@ -87,6 +87,7 @@ describe('Documents HTTP boundary', () => {
         categoryId: '66666666-6666-4666-8666-666666666666',
         branchId,
         scanStatus: 'CLEAN',
+        personalView: 'UPLOADED',
         createdFrom: '2026-08-01',
         createdTo: '2026-08-31',
         sortBy: 'archiveCode',
@@ -104,6 +105,7 @@ describe('Documents HTTP boundary', () => {
         categoryId: '66666666-6666-4666-8666-666666666666',
         branchId,
         scanStatus: 'CLEAN',
+        personalView: 'UPLOADED',
         createdFrom: '2026-08-01',
         sortBy: 'archiveCode',
       }),
@@ -118,6 +120,15 @@ describe('Documents HTTP boundary', () => {
     await request(app.getHttpServer())
       .get('/api/v1/documents')
       .query({ domain: 'PAYROLL', pageSize: 1000 })
+      .set('Cookie', 'rubi_access=test')
+      .expect(400);
+    expect(service.list).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unknown personal view before reaching the service', async () => {
+    await request(app.getHttpServer())
+      .get('/api/v1/documents')
+      .query({ personalView: 'SOMEONE_ELSE' })
       .set('Cookie', 'rubi_access=test')
       .expect(400);
     expect(service.list).not.toHaveBeenCalled();

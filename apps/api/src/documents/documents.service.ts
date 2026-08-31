@@ -29,6 +29,7 @@ import {
   type DocumentListRow,
   DocumentsRepository,
 } from './documents.repository';
+import { DocumentsScanProcessor } from './documents.scan-processor';
 import { LocalDocumentStorage } from './documents.storage';
 import {
   MAX_DOCUMENT_SIZE_BYTES,
@@ -173,6 +174,8 @@ export class DocumentsService {
     private readonly repository: DocumentsRepository,
     @Inject(LocalDocumentStorage)
     private readonly storage: LocalDocumentStorage,
+    @Inject(DocumentsScanProcessor)
+    private readonly scanProcessor: DocumentsScanProcessor,
   ) {}
 
   private assertDomain(
@@ -202,6 +205,7 @@ export class DocumentsService {
       normalized,
       actor.branchIds,
       allowedDocumentDomains(actor.permissions),
+      actor.userId,
     );
     return {
       data: rows.map((row) => mapListItem(row, actor.permissions)),
@@ -246,7 +250,7 @@ export class DocumentsService {
           allowedMimeTypes: [
             ...new Set(documentTypes.flatMap((type) => type.allowedMimeTypes)),
           ],
-          antivirusAvailable: false,
+          antivirusAvailable: this.scanProcessor.available,
         },
       },
     };
@@ -404,6 +408,14 @@ export class DocumentsService {
         ipSummary: summarizeIp(metadata.ipAddress),
         userAgentSummary: summarizeUserAgent(metadata.userAgent),
       });
+      if (await this.scanProcessor.processVersion(versionId)) {
+        const scanned = await this.repository.findDetail(
+          documentId,
+          actor.branchIds,
+        );
+        if (scanned)
+          return { data: this.mapDetail(scanned, actor.permissions) };
+      }
       return { data: this.mapDetail(row, actor.permissions) };
     } catch (error) {
       await this.storage

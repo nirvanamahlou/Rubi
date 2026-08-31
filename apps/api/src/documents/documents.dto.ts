@@ -23,6 +23,7 @@ import {
   DOCUMENT_ARCHIVE_STATUS_CODES,
   DOCUMENT_CONFIDENTIALITY_CODES,
   DOCUMENT_DOMAIN_CODES,
+  DOCUMENT_PERSONAL_VIEW_CODES,
   DOCUMENT_SCAN_STATUS_CODES,
 } from '@rubi/contracts';
 
@@ -79,6 +80,10 @@ export class DocumentListQueryDto {
   @IsOptional()
   @IsDateString({ strict: true })
   createdTo?: string;
+
+  @IsOptional()
+  @IsEnum(DOCUMENT_PERSONAL_VIEW_CODES)
+  personalView?: (typeof DOCUMENT_PERSONAL_VIEW_CODES)[number];
 
   @IsOptional()
   @IsIn([

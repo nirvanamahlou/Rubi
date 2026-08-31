@@ -3,6 +3,7 @@ import type { DocumentDomainCode, DocumentListQueryV1 } from '@rubi/contracts';
 import { AuditOutcome, type Prisma } from '@rubi/database';
 
 import { DatabaseService } from '../database/database.service';
+import type { LocalAntivirusResult } from './documents.antivirus';
 
 export const documentListInclude = {
   documentType: {
@@ -24,11 +25,22 @@ export const documentDetailInclude = {
   relations: { orderBy: { createdAt: 'asc' as const } },
 } satisfies Prisma.DocumentInclude;
 
+export const documentScanJobInclude = {
+  version: {
+    include: {
+      document: { select: { id: true, branchId: true } },
+    },
+  },
+} satisfies Prisma.DocumentProcessingJobInclude;
+
 export type DocumentListRow = Prisma.DocumentGetPayload<{
   include: typeof documentListInclude;
 }>;
 export type DocumentDetailRow = Prisma.DocumentGetPayload<{
   include: typeof documentDetailInclude;
+}>;
+export type DocumentScanJobRow = Prisma.DocumentProcessingJobGetPayload<{
+  include: typeof documentScanJobInclude;
 }>;
 
 const domainPermission: Readonly<
@@ -77,6 +89,7 @@ export class DocumentsRepository {
       DocumentListQueryV1,
     branchIds: readonly string[],
     domains: readonly DocumentDomainCode[],
+    actorUserId: string,
   ) {
     if (query.domain && !domains.includes(query.domain)) {
       return { rows: [] as DocumentListRow[], total: 0 };
@@ -106,6 +119,21 @@ export class DocumentsRepository {
         ? { archiveStatus: query.archiveStatus }
         : { archiveStatus: { not: 'DELETED' } }),
       ...(query.ownerUserId ? { ownerUserId: query.ownerUserId } : {}),
+      ...(query.personalView === 'OWNED' ? { ownerUserId: actorUserId } : {}),
+      ...(query.personalView === 'UPLOADED'
+        ? { createdByUserId: actorUserId }
+        : {}),
+      ...(query.personalView === 'RECENTLY_VIEWED'
+        ? {
+            auditEvents: {
+              some: {
+                actorUserId,
+                action: 'documents.metadata.view',
+                outcome: AuditOutcome.SUCCESS,
+              },
+            },
+          }
+        : {}),
       ...(query.categoryId ? { categoryId: query.categoryId } : {}),
       ...(query.confidentiality
         ? { confidentiality: query.confidentiality }
@@ -363,6 +391,99 @@ export class DocumentsRepository {
       include: { actor: { select: { id: true, displayName: true } } },
       orderBy: { occurredAt: 'desc' },
       take: 200,
+    });
+  }
+
+  pendingScanJobs(take: number) {
+    return this.database.client.documentProcessingJob.findMany({
+      where: {
+        jobType: 'ANTIVIRUS_SCAN',
+        status: { in: ['PENDING', 'FAILED'] },
+        attempts: { lt: 3 },
+        availableAt: { lte: new Date() },
+      },
+      include: documentScanJobInclude,
+      orderBy: [{ availableAt: 'asc' }, { createdAt: 'asc' }],
+      take,
+    });
+  }
+
+  scanJobForVersion(versionId: string) {
+    return this.database.client.documentProcessingJob.findFirst({
+      where: {
+        versionId,
+        jobType: 'ANTIVIRUS_SCAN',
+        status: { in: ['PENDING', 'FAILED'] },
+        attempts: { lt: 3 },
+      },
+      include: documentScanJobInclude,
+    });
+  }
+
+  claimScanJob(id: string): Promise<DocumentScanJobRow | null> {
+    return this.database.client.$transaction(async (transaction) => {
+      const claimed = await transaction.documentProcessingJob.updateMany({
+        where: {
+          id,
+          status: { in: ['PENDING', 'FAILED'] },
+          attempts: { lt: 3 },
+        },
+        data: { status: 'RUNNING', attempts: { increment: 1 } },
+      });
+      if (claimed.count !== 1) return null;
+      return transaction.documentProcessingJob.findUnique({
+        where: { id },
+        include: documentScanJobInclude,
+      });
+    });
+  }
+
+  async finishScanJob(job: DocumentScanJobRow, result: LocalAntivirusResult) {
+    const clean = result.status === 'CLEAN';
+    const scanCompleted = result.status !== 'SCAN_FAILED';
+    const nextAttemptAt = new Date(
+      Date.now() + Math.min(15, Math.max(1, job.attempts)) * 60_000,
+    );
+    await this.database.client.$transaction(async (transaction) => {
+      await transaction.documentVersion.update({
+        where: { id: job.versionId },
+        data: { scanStatus: result.status },
+      });
+      await transaction.documentQuarantine.update({
+        where: { versionId: job.versionId },
+        data: {
+          status: clean ? 'RELEASED' : 'ACTIVE',
+          reasonCode: clean
+            ? 'ANTIVIRUS_SCAN_CLEAN'
+            : result.threatCode || 'ANTIVIRUS_SCAN_FAILED',
+          reviewedAt: clean ? result.scannedAt : null,
+          reviewReason: `${result.engineVersion} · ${result.adapterReference}`,
+        },
+      });
+      await transaction.documentProcessingJob.update({
+        where: { id: job.id },
+        data: {
+          status: scanCompleted ? 'COMPLETED' : 'FAILED',
+          availableAt: scanCompleted ? result.scannedAt : nextAttemptAt,
+          lastErrorCode: result.threatCode,
+        },
+      });
+      await transaction.documentAuditEvent.create({
+        data: {
+          documentId: job.version.document.id,
+          versionId: job.versionId,
+          actorUserId: job.version.createdByUserId,
+          actorBranchId: job.version.document.branchId,
+          action: 'documents.antivirus.scan',
+          outcome: scanCompleted ? AuditOutcome.SUCCESS : AuditOutcome.FAILURE,
+          reason:
+            result.status === 'CLEAN'
+              ? 'WINDOWS_DEFENDER_CLEAN'
+              : result.threatCode,
+          ipSummary: 'local-system',
+          userAgentSummary: result.engineVersion,
+        },
+      });
     });
   }
 }

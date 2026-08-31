@@ -31,13 +31,14 @@ describe('documents API client', () => {
       domain: 'FINANCE',
       scanStatus: 'CLEAN',
       createdFrom: '2026-08-01',
+      personalView: 'UPLOADED',
       page: 2,
       pageSize: 25,
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining(
-        '/documents?domain=FINANCE&scanStatus=CLEAN&createdFrom=2026-08-01&page=2&pageSize=25',
+        '/documents?domain=FINANCE&scanStatus=CLEAN&createdFrom=2026-08-01&personalView=UPLOADED&page=2&pageSize=25',
       ),
       expect.objectContaining({ credentials: 'include', cache: 'no-store' }),
     );

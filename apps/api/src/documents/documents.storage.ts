@@ -62,6 +62,15 @@ export class LocalDocumentStorage {
     objectKey: string,
     expectedSizeBytes: number,
   ): Promise<Readable> {
+    return Readable.from(
+      await this.readQuarantined(objectKey, expectedSizeBytes),
+    );
+  }
+
+  async readQuarantined(
+    objectKey: string,
+    expectedSizeBytes: number,
+  ): Promise<Buffer> {
     const target = this.pathFor(objectKey);
     const stored = await readFile(target);
     if (
@@ -84,6 +93,6 @@ export class LocalDocumentStorage {
     if (contents.length !== expectedSizeBytes) {
       throw new Error('Stored document failed integrity verification.');
     }
-    return Readable.from(contents);
+    return contents;
   }
 }

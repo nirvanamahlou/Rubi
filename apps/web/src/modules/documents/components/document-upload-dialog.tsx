@@ -114,8 +114,8 @@ export function DocumentUploadDialog({
         <div className="sticky top-0 z-20 border-b border-border bg-surface px-6 py-5 pe-14">
           <DialogTitle>بارگذاری سند</DialogTitle>
           <DialogDescription>
-            کد آرشیو توسط Backend و Database ساخته می‌شود و فایل تا پایان اسکن
-            در فضای خصوصی قرنطینه می‌ماند.
+            کد آرشیو به‌صورت خودکار ساخته می‌شود. فایل ابتدا در فضای خصوصی قرار
+            می‌گیرد و فقط پس از تأیید اسکن امنیتی قابل دریافت خواهد بود.
           </DialogDescription>
         </div>
         <form
@@ -362,9 +362,19 @@ export function DocumentUploadDialog({
             </div>
             <Alert
               className="mt-4"
-              description="Antivirus production هنوز متصل نیست؛ بنابراین Upload موفق به معنی پاک‌بودن فایل نیست و دانلود Fail-closed باقی می‌ماند."
-              title="ارسال مستقیم به قرنطینه"
-              tone="warning"
+              description={
+                options?.uploadPolicy.antivirusAvailable
+                  ? 'موتور امنیتی فعال است؛ فایل پس از بارگذاری فوراً اسکن می‌شود و فقط نتیجه پاک اجازه دریافت می‌گیرد.'
+                  : 'موتور امنیتی در این محیط فعال نیست؛ فایل خصوصی می‌ماند و تا انجام بررسی امنیتی قابل دریافت نخواهد بود.'
+              }
+              title={
+                options?.uploadPolicy.antivirusAvailable
+                  ? 'اسکن امنیتی فعال'
+                  : 'حفاظت تا زمان بررسی امنیتی'
+              }
+              tone={
+                options?.uploadPolicy.antivirusAvailable ? 'info' : 'warning'
+              }
             />
           </section>
 
@@ -385,7 +395,11 @@ export function DocumentUploadDialog({
               انصراف
             </Button>
             <Button disabled={submitting || !file || !options} type="submit">
-              {submitting ? 'در حال ارسال امن…' : 'بارگذاری و ثبت در قرنطینه'}
+              {submitting
+                ? 'در حال ارسال و اسکن امن…'
+                : options?.uploadPolicy.antivirusAvailable
+                  ? 'بارگذاری و اسکن امن'
+                  : 'بارگذاری با حفاظت امنیتی'}
             </Button>
           </div>
         </form>

@@ -45,6 +45,14 @@ export type DocumentScanStatusCode =
 export type DocumentValidityFilter =
   'ALL' | 'VALID' | 'EXPIRING' | 'EXPIRED' | 'WITHOUT_EXPIRY';
 
+export const DOCUMENT_PERSONAL_VIEW_CODES = [
+  'OWNED',
+  'UPLOADED',
+  'RECENTLY_VIEWED',
+] as const;
+export type DocumentPersonalViewCode =
+  (typeof DOCUMENT_PERSONAL_VIEW_CODES)[number];
+
 export type DocumentSortCode =
   | 'createdAt'
   | 'updatedAt'
@@ -66,6 +74,7 @@ export interface DocumentListQueryV1 {
   confidentiality?: DocumentConfidentialityCode;
   createdFrom?: string;
   createdTo?: string;
+  personalView?: DocumentPersonalViewCode;
   sortBy?: DocumentSortCode;
   sortDirection?: 'asc' | 'desc';
   page?: number;
