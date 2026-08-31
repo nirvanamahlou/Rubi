@@ -17,6 +17,7 @@ import {
 } from '../model/catalog';
 import { supplyLabels } from '../model/preview';
 import styles from './ticket-form.module.css';
+import { ReferencePicker } from './reference-picker';
 
 function wallValue(utcValue: string, zone: string) {
   if (!utcValue) return '';
@@ -46,11 +47,13 @@ export function TicketForm({
   initial,
   references,
   onSave,
+  onReference,
   onCancel,
   readOnly = false,
 }: {
   initial: ProductInput;
   references: readonly Reference[];
+  onReference?: (reference: Reference) => void;
   onSave: (input: ProductInput, reason: string) => void;
   onCancel: () => void;
   readOnly?: boolean;
@@ -135,29 +138,19 @@ export function TicketForm({
             />
           </FormField>
           <div className={styles.fields}>
-            <FormField
-              label="ایرلاین"
+            <ReferencePicker
               id="ticket-airline"
-              description="فقط مراجع انتخاب‌شده از API اطلاعات پایه"
-            >
-              <select
-                id="ticket-airline"
-                className="h-11 rounded-xl border bg-surface px-3"
-                value={segment.airlineId}
-                onChange={(event) =>
-                  changeSegment({ airlineId: event.target.value })
-                }
-              >
-                <option value="">انتخاب نشده — پیش‌نویس</option>
-                {references
-                  .filter((r) => r.kind === 'airline')
-                  .map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-              </select>
-            </FormField>
+              label="ایرلاین"
+              resource="airlines"
+              readOnly={readOnly}
+              value={references.find(
+                (r) => r.kind === 'airline' && r.id === segment.airlineId,
+              )}
+              onSelect={(ref) => {
+                if (ref) onReference?.(ref);
+                changeSegment({ airlineId: ref?.id ?? '' });
+              }}
+            />
             <FormField label="شماره پرواز" id="ticket-flight" required>
               <Input
                 id="ticket-flight"
@@ -170,13 +163,7 @@ export function TicketForm({
                 }
               />
             </FormField>
-            {[
-              'هواپیما',
-              'فرودگاه مبدأ',
-              'فرودگاه مقصد',
-              'کلاس پروازی',
-              'بار مجاز',
-            ].map((label) => (
+            {['هواپیما', 'کلاس پروازی', 'بار مجاز'].map((label) => (
               <FormField label={label} key={label}>
                 <Input
                   disabled
@@ -184,6 +171,68 @@ export function TicketForm({
                   value="منتظر API اطلاعات پایه"
                 />
               </FormField>
+            ))}
+          </div>
+        </section>
+        <section className="space-y-4">
+          <h3 className="font-bold text-primary">مسیر بلیت مستقل</h3>
+          <p className="text-xs text-muted-foreground">
+            کشور و شهر از اطلاعات پایه انتخاب می‌شوند و جایگزین فرودگاه نیستند.
+            هر پرواز مستقل است؛ رفت‌وبرگشت با انتخاب دو بلیت در بخش ترکیب سفر
+            ساخته می‌شود.
+          </p>
+          <div className={styles.fields}>
+            {(['origin', 'destination'] as const).map((end) => (
+              <div className="min-w-0 space-y-4" key={end}>
+                <ReferencePicker
+                  id={`ticket-${end}-country`}
+                  label={`کشور ${end === 'origin' ? 'مبدأ' : 'مقصد'}`}
+                  resource="countries"
+                  readOnly={readOnly}
+                  value={references.find(
+                    (r) =>
+                      r.kind === 'country' &&
+                      r.id === segment[`${end}CountryId`],
+                  )}
+                  onSelect={(ref) => {
+                    if (ref) onReference?.(ref);
+                    changeSegment({
+                      [`${end}CountryId`]: ref?.id ?? '',
+                      [`${end}CityId`]: '',
+                      [`${end}AirportId`]: '',
+                    });
+                  }}
+                />
+                <ReferencePicker
+                  key={segment[`${end}CountryId`]}
+                  id={`ticket-${end}-city`}
+                  label={`شهر ${end === 'origin' ? 'مبدأ' : 'مقصد'}`}
+                  resource="cities"
+                  readOnly={readOnly}
+                  countryId={segment[`${end}CountryId`]}
+                  value={references.find(
+                    (r) =>
+                      r.kind === 'city' && r.id === segment[`${end}CityId`],
+                  )}
+                  onSelect={(ref) => {
+                    if (ref) onReference?.(ref);
+                    changeSegment({
+                      [`${end}CityId`]: ref?.id ?? '',
+                      [`${end}AirportId`]: '',
+                    });
+                  }}
+                />
+                <FormField
+                  label={`فرودگاه ${end === 'origin' ? 'مبدأ' : 'مقصد'}`}
+                  id={`ticket-${end}-airport`}
+                >
+                  <Input
+                    id={`ticket-${end}-airport`}
+                    disabled
+                    value="جست‌وجوی فرودگاه — منتظر API اطلاعات پایه"
+                  />
+                </FormField>
+              </div>
             ))}
           </div>
         </section>
@@ -344,41 +393,37 @@ export function TicketForm({
           </p>
         </section>
         <section className="space-y-4">
-          <h3 className="font-bold text-primary">۴. قیمت و نسخه نرخ</h3>
+          <h3 className="font-bold text-primary">
+            ۴. قیمت خرید و نسخه نرخ تأمین
+          </h3>
+          <Alert
+            title="قیمت فروش داینامیک است"
+            description="قیمت فروش هنگام فروش و در قرارداد یا پیشنهاد فروش تعیین می‌شود؛ این فرم قیمت فروش ثابت ندارد."
+          />
           <div className={styles.fields}>
-            <FormField label="ارز نرخ" id="ticket-currency">
-              <select
-                id="ticket-currency"
-                className="h-11 rounded-xl border bg-surface px-3"
-                value={input.fare.currencyId}
-                onChange={(event) => {
-                  const currency = references.find(
-                    (r) => r.kind === 'currency' && r.id === event.target.value,
-                  );
-                  setInput({
-                    ...input,
-                    fare: {
-                      ...input.fare,
-                      currencyId: currency?.id ?? '',
-                      currencyCode: currency?.code ?? '',
-                    },
-                  });
-                }}
-              >
-                <option value="">انتخاب نشده — پیش‌نویس</option>
-                {references
-                  .filter((r) => r.kind === 'currency')
-                  .map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name} ({r.code})
-                    </option>
-                  ))}
-              </select>
-            </FormField>
+            <ReferencePicker
+              id="ticket-currency"
+              label="ارز خرید"
+              resource="currencies"
+              readOnly={readOnly}
+              value={references.find(
+                (r) => r.kind === 'currency' && r.id === input.fare.currencyId,
+              )}
+              onSelect={(ref) => {
+                if (ref) onReference?.(ref);
+                setInput({
+                  ...input,
+                  fare: {
+                    ...input.fare,
+                    currencyId: ref?.id ?? '',
+                    currencyCode: ref?.code ?? '',
+                  },
+                });
+              }}
+            />
             {(
               [
                 ['purchase', 'قیمت خرید'],
-                ['sale', 'قیمت فروش'],
                 ['fee', 'کارمزد (مبلغ مستقل)'],
                 ['commission', 'کمیسیون (مبلغ مستقل)'],
               ] as const

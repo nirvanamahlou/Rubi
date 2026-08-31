@@ -21,6 +21,10 @@ export function emptyInput(): ProductInput {
         airlineId: '',
         aircraftId: '',
         flightNumber: '',
+        originCountryId: '',
+        originCityId: '',
+        destinationCountryId: '',
+        destinationCityId: '',
         originAirportId: '',
         destinationAirportId: '',
         departureAt: '',
@@ -38,7 +42,6 @@ export function emptyInput(): ProductInput {
     rules: '',
     fare: {
       purchase: '0',
-      sale: '0',
       fee: '0',
       commission: '0',
       currencyId: '',
@@ -74,7 +77,6 @@ export function previewSamples(now: string): Product[] {
         fare: {
           ...input.fare,
           purchase: '100.10',
-          sale: '125.20',
           validFrom: now,
           validTo: departureAt,
         },

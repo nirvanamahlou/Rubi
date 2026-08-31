@@ -63,8 +63,8 @@ export function ReferenceBrowser({
         <Badge>فقط خواندن از API موجود</Badge>
       </div>
       <p className="text-sm text-muted-foreground">
-        ایرلاین و ارز را برای فرم پیش‌نویس انتخاب کنید. کشور و شهر فقط قابل
-        مشاهده‌اند؛ جایگزین فرودگاه نیستند.
+        انتخاب و جست‌وجوی ایرلاین، ارز، کشور و شهر مستقیماً داخل فرم بلیت در
+        دسترس است. این بخش مرور مراجع است؛ کشور و شهر جایگزین فرودگاه نیستند.
       </p>
       <div className="flex flex-wrap gap-2">
         <select

@@ -44,6 +44,7 @@ import {
 } from '../model/preview';
 import { ReferenceBrowser } from './reference-browser';
 import { TicketForm } from './ticket-form';
+import { JourneyPreview } from './journey-preview';
 import formStyles from './ticket-form.module.css';
 
 export const previewStates = {
@@ -99,6 +100,12 @@ export function TicketWorkspace() {
     references.find((r) => r.kind === kind && r.id === id);
   const label = (kind: Reference['kind'], id: string) =>
     resolve(kind, id)?.name ?? 'منتظر مرجع';
+  function rememberReference(value: Reference) {
+    setReferences((rows) => [
+      ...rows.filter((r) => r.id !== value.id || r.kind !== value.kind),
+      value,
+    ]);
+  }
   function selectReference(record: MasterDataRecord) {
     const value = asReference(record);
     if (!value) return;
@@ -449,7 +456,7 @@ export function TicketWorkspace() {
                       'حرکت / رسیدن',
                       'تأمین / وضعیت',
                       'ظرفیت تعریف‌شده',
-                      'آخرین نرخ نمایشی',
+                      'قیمت خرید / فروش',
                       'عملیات',
                     ].map((heading) => (
                       <th className="px-4 py-3" key={heading} scope="col">
@@ -483,8 +490,16 @@ export function TicketWorkspace() {
                         </td>
                         <td className="space-y-2 px-4 py-4">
                           <p>
-                            {label('airport', segment.originAirportId)} ←{' '}
-                            {label('airport', segment.destinationAirportId)}
+                            {label('city', segment.originCityId)} ←{' '}
+                            {label('city', segment.destinationCityId)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {label('country', segment.originCountryId)} /{' '}
+                            {label('country', segment.destinationCountryId)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            فرودگاه: {label('airport', segment.originAirportId)}{' '}
+                            ← {label('airport', segment.destinationAirportId)}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {label(
@@ -536,10 +551,14 @@ export function TicketWorkspace() {
                         </td>
                         <td className="space-y-2 px-4 py-4">
                           <p dir="ltr">
-                            {fare.sale} {fare.currencyCode || 'ارز انتخاب نشده'}
+                            {fare.purchase}{' '}
+                            {fare.currencyCode || 'ارز انتخاب نشده'}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            نسخه نرخ {fare.version.toLocaleString('fa-IR')}
+                            خرید • نسخه {fare.version.toLocaleString('fa-IR')}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            قیمت فروش: داینامیک در فروش
                           </p>
                         </td>
                         <td className="px-4 py-4">
@@ -619,6 +638,9 @@ export function TicketWorkspace() {
           </nav>
         </>
       )}
+      {preview ? (
+        <JourneyPreview products={products} references={references} />
+      ) : null}
       <ReferenceBrowser onSelect={selectReference} />
       {references.length ? (
         <p className="text-xs text-muted-foreground">
@@ -666,6 +688,7 @@ export function TicketWorkspace() {
               <TicketForm
                 initial={form.product?.definition ?? emptyInput()}
                 references={references}
+                onReference={rememberReference}
                 onSave={save}
                 onCancel={() => setForm(null)}
                 readOnly={form.mode === 'view'}
@@ -684,8 +707,8 @@ export function TicketWorkspace() {
                   <h3 className="font-bold">نسخه‌های نرخ — حفظ مقادیر پیشین</h3>
                   {form.product.fares.map((fare) => (
                     <p className="text-sm" key={fare.version}>
-                      نسخه {fare.version}: خرید {fare.purchase} / فروش{' '}
-                      {fare.sale} {fare.currencyCode || '(بدون ارز)'} •{' '}
+                      نسخه {fare.version}: خرید {fare.purchase}{' '}
+                      {fare.currencyCode || '(بدون ارز)'} •{' '}
                       {displayTime(fare.createdAt)}
                     </p>
                   ))}

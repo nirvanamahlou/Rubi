@@ -87,13 +87,21 @@ export async function listReferences(
   };
 }
 export function asReference(record: MasterDataRecord): Reference | undefined {
-  if (record.resource !== 'airlines' && record.resource !== 'currencies')
-    return undefined;
+  const kinds = {
+    airlines: 'airline',
+    currencies: 'currency',
+    countries: 'country',
+    cities: 'city',
+  } as const;
+  if (!(record.resource in kinds)) return undefined;
   return {
     id: record.id,
     name: record.name,
     active: record.status === 'active',
-    kind: record.resource === 'airlines' ? 'airline' : 'currency',
+    kind: kinds[record.resource as PublishedResource],
+    ...(typeof record.attributes.countryId === 'string'
+      ? { countryId: record.attributes.countryId }
+      : {}),
     code: record.code,
   };
 }

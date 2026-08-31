@@ -21,6 +21,26 @@ import {
 const now = '2026-08-31T00:00:00.000Z';
 const refs: Reference[] = [
   {
+    id: 'test-country',
+    kind: 'country',
+    name: 'Synthetic country',
+    active: true,
+  },
+  {
+    id: 'test-city-a',
+    kind: 'city',
+    name: 'Synthetic city A',
+    active: true,
+    countryId: 'test-country',
+  },
+  {
+    id: 'test-city-b',
+    kind: 'city',
+    name: 'Synthetic city B',
+    active: true,
+    countryId: 'test-country',
+  },
+  {
     id: 'test-airline',
     kind: 'airline',
     name: 'Synthetic airline',
@@ -75,6 +95,10 @@ function input(): ProductInput {
         airlineId: 'test-airline',
         aircraftId: 'test-aircraft',
         flightNumber: 'TEST-1',
+        originCountryId: 'test-country',
+        destinationCountryId: 'test-country',
+        originCityId: 'test-city-a',
+        destinationCityId: 'test-city-b',
         originAirportId: 'test-origin',
         destinationAirportId: 'test-destination',
         departureAt: '2026-09-03T22:30:00Z',
@@ -92,7 +116,6 @@ function input(): ProductInput {
     rules: 'Synthetic rules',
     fare: {
       purchase: '0.10',
-      sale: '0.20',
       fee: '0',
       commission: '0',
       currencyId: 'test-currency',
@@ -343,7 +366,7 @@ describe('Versioning and lifecycle', () => {
     const old = product();
     const next = reviseProduct(
       old,
-      { ...input(), fare: { ...input().fare, sale: '5' } },
+      { ...input(), fare: { ...input().fare, purchase: '5' } },
       1,
       resolve,
       now,
@@ -353,9 +376,9 @@ describe('Versioning and lifecycle', () => {
     );
     expect(old.fares).toHaveLength(1);
     expect(next.definitions).toHaveLength(2);
-    expect(next.definitions[0]?.definition.fare.sale).toBe('0.20');
-    expect(next.definitions[1]?.definition.fare.sale).toBe('5');
-    expect(next.fares.map((fare) => fare.sale)).toEqual(['0.20', '5']);
+    expect(next.definitions[0]?.definition.fare.purchase).toBe('0.10');
+    expect(next.definitions[1]?.definition.fare.purchase).toBe('5');
+    expect(next.fares.map((fare) => fare.purchase)).toEqual(['0.10', '5']);
     expect(copyProduct(next, 'test-copy', resolve, now, 'test')).toMatchObject({
       id: 'test-copy',
       version: 1,
@@ -494,6 +517,47 @@ describe('Versioning and lifecycle', () => {
         ...inventory,
         total: 9,
       }),
+    ).toThrow();
+  });
+});
+
+describe('Sales-owned pricing and geography', () => {
+  it('accepts purchase-only fares and rejects a legacy fixed sale price', () => {
+    expect(() => validateProduct(input(), resolve)).not.toThrow();
+    const legacy = { ...input(), fare: { ...input().fare, sale: '123' } };
+    expect(() => validateProduct(legacy, resolve)).toThrow('قیمت فروش');
+  });
+  it('rejects a city outside its selected country even in a draft', () => {
+    const value = input();
+    const foreign: Reference = {
+      id: 'foreign-country',
+      kind: 'country',
+      name: 'Synthetic foreign country',
+      active: true,
+    };
+    const resolver: ReferenceResolver = (kind, id) =>
+      kind === 'country' && id === foreign.id ? foreign : resolve(kind, id);
+    expect(() =>
+      validateProduct(
+        {
+          ...value,
+          segments: [{ ...value.segments[0]!, originCountryId: foreign.id }],
+        },
+        resolver,
+      ),
+    ).toThrow('شهر باید');
+  });
+  it('does not use country/city selection as a substitute for missing airports', () => {
+    const value = input();
+    expect(() =>
+      validateProduct(
+        {
+          ...value,
+          segments: [{ ...value.segments[0]!, originAirportId: '' }],
+        },
+        resolve,
+        true,
+      ),
     ).toThrow();
   });
 });

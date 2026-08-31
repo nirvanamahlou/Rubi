@@ -30,6 +30,11 @@ describe('Rendered ticket UI', () => {
     expect(html).toContain('ذخیره واقعی — منتظر API و مجوز');
     expect(html).not.toMatch(/name="(held|confirmed)"/);
     expect(html).not.toContain('type="datetime-local"');
+    expect(html).not.toContain('id="ticket-sale"');
+    expect(html).toContain('قیمت فروش داینامیک است');
+    expect(html).toContain('کشور مبدأ');
+    expect(html).toContain('شهر مقصد');
+    expect(html).toContain('انتخاب و جست‌وجوی ایرلاین');
   });
   it('renders view mode disabled without a submit operation', () => {
     const initial = previewSamples('2026-08-31T00:00:00.000Z')[0]!.definition;

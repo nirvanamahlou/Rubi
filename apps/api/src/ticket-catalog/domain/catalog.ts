@@ -3,13 +3,22 @@
 export type CatalogStatus = 'draft' | 'active' | 'paused' | 'cancelled';
 export type SupplyType = 'company' | 'allotment' | 'charter' | 'supplier';
 export type ReferenceKind =
-  'airline' | 'airport' | 'aircraft' | 'flightClass' | 'baggage' | 'currency';
+  | 'airline'
+  | 'airport'
+  | 'aircraft'
+  | 'flightClass'
+  | 'baggage'
+  | 'currency'
+  | 'country'
+  | 'city';
 export interface Reference {
   id: string;
   kind: ReferenceKind;
   name: string;
   active: boolean;
   code?: string;
+  countryId?: string;
+  cityId?: string;
 }
 export type ReferenceResolver = (
   kind: ReferenceKind,
@@ -19,6 +28,10 @@ export interface Segment {
   airlineId: string;
   aircraftId: string;
   flightNumber: string;
+  originCountryId: string;
+  originCityId: string;
+  destinationCountryId: string;
+  destinationCityId: string;
   originAirportId: string;
   destinationAirportId: string;
   departureAt: string;
@@ -28,7 +41,6 @@ export interface Segment {
 }
 export interface FareInput {
   purchase: string;
-  sale: string;
   fee: string;
   commission: string;
   currencyId: string;
@@ -379,6 +391,18 @@ export function validateProduct(
         'اتصال مسیر قطعه‌ها نامعتبر است.',
       );
     }
+    for (const end of ['origin', 'destination'] as const) {
+      const countryId = segment[`${end}CountryId`];
+      const cityId = segment[`${end}CityId`];
+      reference(resolve, 'country', countryId, ready);
+      const city = reference(resolve, 'city', cityId, ready);
+      if (city)
+        ensure(
+          Boolean(countryId) && city.countryId === countryId,
+          'شهر باید متعلق به کشور انتخاب‌شده باشد.',
+          'REFERENCE',
+        );
+    }
     reference(resolve, 'airline', segment.airlineId, ready);
     reference(resolve, 'aircraft', segment.aircraftId, ready);
     reference(resolve, 'airport', segment.originAirportId, ready);
@@ -398,9 +422,12 @@ export function validateProduct(
       'کد ارز با مرجع انتخابی تطابق ندارد.',
       'REFERENCE',
     );
+  ensure(
+    !('sale' in input.fare),
+    'قیمت فروش باید در فروش تعیین شود، نه در تعریف بلیت.',
+  );
   for (const amount of [
     input.fare.purchase,
-    input.fare.sale,
     input.fare.fee,
     input.fare.commission,
   ])
@@ -411,7 +438,7 @@ export function validateProduct(
   );
   ensure(
     utc(input.fare.validTo) <= utc(input.segments[0]!.departureAt),
-    'اعتبار فروش نباید پس از حرکت اولین پرواز باشد.',
+    'اعتبار نرخ خرید نباید پس از حرکت اولین پرواز باشد.',
   );
 }
 function history(

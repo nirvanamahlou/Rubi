@@ -75,3 +75,30 @@ describe('Published read-only Master Data adapter', () => {
     ).toBe(false);
   });
 });
+
+it('maps country and city identities with their published parent relationship', () => {
+  const record = {
+    id: 'city-test',
+    resource: 'cities' as const,
+    code: 'TC',
+    name: 'Test City',
+    status: 'active' as const,
+    attributes: { countryId: 'country-test' },
+    version: 1,
+    createdAt: '',
+    updatedAt: '',
+  };
+  expect(asReference(record)).toMatchObject({
+    id: 'city-test',
+    kind: 'city',
+    countryId: 'country-test',
+  });
+  expect(
+    asReference({
+      ...record,
+      id: 'country-test',
+      resource: 'countries',
+      attributes: {},
+    }),
+  ).toMatchObject({ kind: 'country' });
+});
