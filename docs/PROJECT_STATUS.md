@@ -1,18 +1,32 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-29 — MASTER-003K-TRAVEL-SERVICES پیاده‌سازی و آزموده شد
+آخرین به‌روزرسانی: 2026-08-31 — MASTER-003L-SECTION-CLEANUP پیاده‌سازی و آزموده شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003K-TRAVEL-SERVICES روی شاخه Stacked مستقل آماده Review است**
+- وضعیت: **MASTER-003L-SECTION-CLEANUP روی شاخه Stacked مستقل آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه فعال: `codex/pc-b-master-data-travel-services`
-- Work Item: `MASTER-003K-TRAVEL-SERVICES`؛ Draft PR #38، Stacked روی Draft PR #37
-- محیط مسئول: `COMPUTER_ID=PC-B`؛ API روی ۴۰۰۰ و Web روی ۳۱۰۰ فعال‌اند.
-- نوع تغییر: Database، Migration، API Contract، Backend، Frontend، Test و Documentation؛
-  بدون Customers، Dependency یا Lockfile.
+- شاخه فعال: `codex/pc-b-master-data-section-cleanup`
+- Work Item: `MASTER-003L-SECTION-CLEANUP`؛ Stacked روی Draft PR #38
+- محیط مسئول: `COMPUTER_ID=PC-B`؛ Web روی ۳۱۰۰ و API روی ۴۰۰۰ پاسخ می‌دهند.
+- نوع تغییر: فقط Frontend، Test و Documentation؛ بدون تغییر داده، API، Migration،
+  Customers، Dependency یا Lockfile.
+
+### `MASTER-003L-SECTION-CLEANUP` — PC-B — `READY_FOR_REVIEW`
+
+- شرکت اتوبوس، نوع اتوبوس و CIP از رابط تور و خدمات سفر حذف شدند؛ چهار تب لیدرها،
+  نوع تور، نوع ترانسفر و ویزا باقی ماندند. اتوبوس فقط در حمل‌ونقل نمایش داده می‌شود.
+- نوع مشتری، منبع سرنخ و نوع کمپین از مراجع فروش حذف شدند؛ نحوه آشنایی، کانال فروش،
+  دلیل از دست رفتن و Tag باقی ماندند. متن و شمارنده کارت‌های Hub هماهنگ شدند.
+- داده‌ها و قرارداد هر ۴۵ منبع حفظ شده‌اند؛ موارد بدون ورودی ناوبری صریحاً ثبت شده‌اند.
+- Web tests: `133/133`، typecheck، lint فایل‌های تغییرکرده و Production Build موفق؛
+  خروجی HTML ساخته‌شده دقیقاً چهار تب و چهار زیرمجموعه در هر یک از دو بخش دارد.
+- Full Web lint فقط همان خطا/هشدار پیشین `date-picker.tsx` را گزارش می‌کند؛ فایل تغییر نکرد.
+  مرورگر بدون Session به Login می‌رود؛ Smoke احراز‌شده در این اصلاح ادعا نمی‌شود.
+- سه قفل فعال `PC-B/MASTER-003` و وضعیت آزاد Dependency/Lockfile تغییر نکرده‌اند.
+- جزئیات: `docs/tasks/MASTER-003L-SECTION-CLEANUP.md`.
 
 ### `MODULES-FOUNDATION-001` — PC-A — `READY_FOR_REVIEW`
 

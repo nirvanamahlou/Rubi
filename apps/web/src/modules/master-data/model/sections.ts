@@ -23,6 +23,14 @@ export interface MasterDataSectionDefinition {
   tone: MasterDataSectionTone;
 }
 
+// Retained in the API/catalog for existing references, but not in section navigation.
+export const unlistedMasterDataResources = [
+  'cip-services',
+  'lead-sources',
+  'customer-types',
+  'campaign-types',
+] as const satisfies readonly MasterDataResourceKey[];
+
 export const masterDataSections: readonly MasterDataSectionDefinition[] = [
   {
     slug: 'finance',
@@ -86,6 +94,8 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
       'manifest-templates',
       'rail-companies',
       'train-types',
+      'bus-companies',
+      'bus-types',
     ],
     tone: 'blue',
   },
@@ -99,32 +109,19 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
   {
     slug: 'tours-travel-services',
     title: 'تور و خدمات سفر',
-    description:
-      'لیدرها، انواع تور و ترانسفر، CIP، ویزا و مراجع اتوبوسی خدمات سفر',
-    resources: [
-      'leaders',
-      'tour-types',
-      'transfer-types',
-      'cip-services',
-      'visa-services',
-      'bus-companies',
-      'bus-types',
-    ],
+    description: 'لیدرها، انواع تور و ترانسفر و خدمات ویزا',
+    resources: ['leaders', 'tour-types', 'transfer-types', 'visa-services'],
     tone: 'rose',
   },
   {
     slug: 'sales-references',
     title: 'مراجع فروش',
-    description:
-      'نحوه آشنایی، منبع سرنخ، کانال، دلیل باخت، نوع مشتری، Tag و نوع کمپین',
+    description: 'نحوه آشنایی، کانال فروش، دلیل از دست رفتن و Tag',
     resources: [
       'acquaintance-methods',
-      'lead-sources',
       'sales-channels',
       'lost-reasons',
-      'customer-types',
       'tags',
-      'campaign-types',
     ],
     tone: 'purple',
   },

@@ -8,10 +8,7 @@ import type {
   MasterTravelServicesSummary,
 } from '@rubi/contracts';
 import {
-  Armchair,
   ArrowRight,
-  BriefcaseBusiness,
-  BusFront,
   CheckCircle2,
   CircleAlert,
   Database,
@@ -25,12 +22,10 @@ import {
   Link2,
   LockKeyhole,
   MapPin,
-  Plane,
   Plus,
   RefreshCw,
   Route,
   Search,
-  Settings2,
   ShieldCheck,
   UserRound,
   Users,
@@ -78,10 +73,7 @@ const tabs = [
   { resource: 'leaders', label: 'لیدرها', icon: UserRound },
   { resource: 'tour-types', label: 'نوع تور', icon: MapPin },
   { resource: 'transfer-types', label: 'نوع ترانسفر', icon: Route },
-  { resource: 'cip-services', label: 'CIP', icon: Plane },
   { resource: 'visa-services', label: 'ویزا', icon: FileText },
-  { resource: 'bus-companies', label: 'شرکت اتوبوس', icon: BusFront },
-  { resource: 'bus-types', label: 'نوع اتوبوس', icon: Armchair },
 ] as const satisfies readonly {
   resource: MasterDataResource;
   label: string;
@@ -103,21 +95,9 @@ const rules: Record<TravelResource, { title: string; text: string }> = {
     title: 'وسیله و شیوه سرویس مستقل‌اند',
     text: 'نوع ترانسفر مرجع است؛ رزرو، تخصیص راننده، ناوگان عملیاتی و قیمت در این Master Data نیست. · Transport Reference',
   },
-  'cip-services': {
-    title: 'خدمت مرجع با اجرای رزرو متفاوت است',
-    text: 'Provider و فرودگاه Reference هستند؛ ظرفیت، قیمت، رزرو و Voucher در ماژول مالک خدمت مدیریت می‌شود. · Service Boundary',
-  },
   'visa-services': {
     title: 'مدرک متقاضی در Master Data ذخیره نمی‌شود',
     text: 'این صفحه فقط تعریف خدمت است؛ پرونده، اسناد مسافر، پرداخت و پیگیری در ماژول‌های مالک نگهداری می‌شوند. · No Passenger Data',
-  },
-  'bus-companies': {
-    title: 'شرکت اتوبوس موجودیت سازمانی مستقل است',
-    text: 'شرکت به Organization فعال متصل است؛ اتصال Provider پس از قرارداد عمومی و قرارداد، بدهی و تسویه در Procurement و Finance باقی می‌ماند. · Organization / Provider',
-  },
-  'bus-types': {
-    title: 'امکانات ستون ثابت نیستند',
-    text: 'امکانات به‌صورت مجموعه مرجع نگهداری می‌شوند؛ رابطه شرکت و ظرفیت عملیاتی پس از قرارداد ناوگان از ماژول مالک خوانده می‌شود. · Facility Reference',
   },
 };
 
@@ -155,17 +135,6 @@ const headers: Record<TravelResource, readonly string[]> = {
     'وضعیت',
     'عملیات',
   ],
-  'cip-services': [
-    'کد',
-    'عنوان خدمت',
-    'فرودگاه',
-    'مسافر',
-    'Provider',
-    'اقلام شامل‌شده',
-    'آخرین تغییر',
-    'وضعیت',
-    'عملیات',
-  ],
   'visa-services': [
     'کد',
     'عنوان',
@@ -174,28 +143,6 @@ const headers: Record<TravelResource, readonly string[]> = {
     'Provider',
     'مدت اعتبار مرجع',
     'مدارک راهنما',
-    'وضعیت',
-    'عملیات',
-  ],
-  'bus-companies': [
-    'کد',
-    'نام شرکت',
-    'نام انگلیسی',
-    'نوع اتصال',
-    'کشور',
-    'ناوگان مرجع',
-    'آخرین تغییر',
-    'وضعیت',
-    'عملیات',
-  ],
-  'bus-types': [
-    'کد',
-    'عنوان',
-    'رده',
-    'چیدمان مرجع',
-    'امکانات',
-    'شرکت‌های استفاده‌کننده',
-    'آخرین تغییر',
     'وضعیت',
     'عملیات',
   ],
@@ -230,15 +177,6 @@ const profileFields: Record<
     { key: 'suggestedCapacity', label: 'ظرفیت پیشنهادی' },
     { key: 'description', label: 'شرح' },
   ],
-  'cip-services': [
-    { key: 'englishName', label: 'عنوان انگلیسی' },
-    { key: 'airportName', label: 'فرودگاه' },
-    { key: 'airportIataCode', label: 'IATA' },
-    { key: 'passengerScope', label: 'مسافر' },
-    { key: 'supplierName', label: 'Provider' },
-    { key: 'includedItems', label: 'اقلام شامل‌شده' },
-    { key: 'description', label: 'شرح' },
-  ],
   'visa-services': [
     { key: 'englishName', label: 'عنوان انگلیسی' },
     { key: 'countryName', label: 'کشور مقصد' },
@@ -248,20 +186,6 @@ const profileFields: Record<
     { key: 'guidanceFileReference', label: 'Reference راهنما' },
     { key: 'description', label: 'شرح' },
   ],
-  'bus-companies': [
-    { key: 'englishName', label: 'نام انگلیسی' },
-    { key: 'connectionType', label: 'نوع اتصال' },
-    { key: 'connectionName', label: 'مرجع متصل' },
-    { key: 'countryName', label: 'کشور' },
-    { key: 'logoFileReference', label: 'Reference لوگو' },
-  ],
-  'bus-types': [
-    { key: 'englishName', label: 'عنوان انگلیسی' },
-    { key: 'serviceClass', label: 'رده' },
-    { key: 'manufacturer', label: 'سازنده' },
-    { key: 'model', label: 'مدل / چیدمان مرجع' },
-    { key: 'facilityNames', label: 'امکانات' },
-  ],
 };
 
 const enumLabels: Record<string, string> = {
@@ -270,14 +194,6 @@ const enumLabels: Record<string, string> = {
   BOTH: 'داخلی / خارجی',
   PRIVATE: 'اختصاصی',
   SHARED: 'اشتراکی',
-  ALL: 'همه مسافران',
-  ADT: 'بزرگسال',
-  CHD: 'کودک',
-  INF: 'نوزاد',
-  STANDARD: 'استاندارد',
-  VIP: 'VIP',
-  LUXURY: 'لوکس',
-  OTHER: 'سایر',
 };
 
 function attribute(record: MasterDataRecord, key: string, fallback = '—') {
@@ -333,7 +249,6 @@ export function MasterDataTravelServicesWorkspace() {
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [summary, setSummary] = useState<MasterTravelServicesSummary>();
   const [countries, setCountries] = useState<readonly MasterDataRecord[]>([]);
-  const [airports, setAirports] = useState<readonly MasterDataRecord[]>([]);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
   const [referenceFilter, setReferenceFilter] = useState('all');
@@ -361,28 +276,15 @@ export function MasterDataTravelServicesWorkspace() {
         ? { countryId: referenceFilter }
         : {}),
       ...(referenceFilter !== 'all' && resource === 'tour-types'
-        ? { tourScope: referenceFilter as 'DOMESTIC' | 'INTERNATIONAL' | 'BOTH' }
+        ? {
+            tourScope: referenceFilter as 'DOMESTIC' | 'INTERNATIONAL' | 'BOTH',
+          }
         : {}),
       ...(referenceFilter !== 'all' && resource === 'transfer-types'
         ? { transferServiceMode: referenceFilter as 'PRIVATE' | 'SHARED' }
         : {}),
-      ...(referenceFilter !== 'all' && resource === 'cip-services'
-        ? { airportId: referenceFilter }
-        : {}),
       ...(referenceFilter !== 'all' && resource === 'visa-services'
         ? { countryId: referenceFilter }
-        : {}),
-      ...(referenceFilter !== 'all' && resource === 'bus-companies'
-        ? { countryId: referenceFilter }
-        : {}),
-      ...(referenceFilter !== 'all' && resource === 'bus-types'
-        ? {
-            busServiceClass: referenceFilter as
-              | 'STANDARD'
-              | 'VIP'
-              | 'LUXURY'
-              | 'OTHER',
-          }
         : {}),
     };
     try {
@@ -417,27 +319,17 @@ export function MasterDataTravelServicesWorkspace() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void loadSummary();
-      void Promise.all(
-        [
-          ['countries', setCountries],
-          ['airports', setAirports],
-        ].map(async ([target, setter]) => {
-          const response = await masterDataApi.list(
-            target as MasterDataResource,
-            {
-              search: '',
-              status: 'active',
-              sortBy: 'name',
-              sortDirection: 'asc',
-              page: 1,
-              pageSize: 100,
-            },
-          );
-          (setter as (rows: readonly MasterDataRecord[]) => void)(
-            response.data,
-          );
-        }),
-      ).catch(() => undefined);
+      void masterDataApi
+        .list('countries', {
+          search: '',
+          status: 'active',
+          sortBy: 'name',
+          sortDirection: 'asc',
+          page: 1,
+          pageSize: 100,
+        })
+        .then((response) => setCountries(response.data))
+        .catch(() => undefined);
     }, 0);
     return () => window.clearTimeout(timer);
   }, [loadSummary]);
@@ -457,13 +349,9 @@ export function MasterDataTravelServicesWorkspace() {
         label:
           resource === 'leaders'
             ? 'کل لیدرها'
-            : resource === 'tour-types' ||
-                resource === 'transfer-types' ||
-                resource === 'bus-types'
+            : resource === 'tour-types' || resource === 'transfer-types'
               ? 'کل انواع'
-              : resource === 'bus-companies'
-                ? 'کل شرکت‌ها'
-                : 'کل خدمات',
+              : 'کل خدمات',
         value: input.total ?? '—',
         icon: CurrentIcon,
         tone: 'sky',
@@ -516,55 +404,20 @@ export function MasterDataTravelServicesWorkspace() {
         thirdIcon: UserRound,
         fourthIcon: Users,
       });
-    if (resource === 'cip-services')
-      return common({
-        total: summary?.cipServices.total,
-        active: summary?.cipServices.active,
-        thirdLabel: 'فرودگاه‌ها',
-        thirdValue: summary?.cipServices.airports,
-        fourthLabel: 'Providerها',
-        fourthValue: summary?.cipServices.providers,
-        thirdIcon: Plane,
-        fourthIcon: BriefcaseBusiness,
-      });
-    if (resource === 'visa-services')
-      return common({
-        total: summary?.visaServices.total,
-        active: summary?.visaServices.active,
-        thirdLabel: 'کشورها',
-        thirdValue: summary?.visaServices.countries,
-        fourthLabel: 'مدرک ناقص',
-        fourthValue: summary?.visaServices.incompleteGuidance,
-        fourthIcon: FileQuestion,
-      });
-    if (resource === 'bus-companies')
-      return common({
-        total: summary?.busCompanies.total,
-        active: summary?.busCompanies.active,
-        thirdLabel: 'Organization',
-        thirdValue: summary?.busCompanies.organizations,
-        fourthLabel: 'Provider',
-        fourthValue: summary?.busCompanies.providers,
-        thirdIcon: Link2,
-        fourthIcon: Users,
-      });
     return common({
-      total: summary?.busTypes.total,
-      active: summary?.busTypes.active,
-      thirdLabel: 'امکانات',
-      thirdValue: summary?.busTypes.amenities,
-      fourthLabel: 'شرکت‌ها',
-      fourthValue: summary?.busTypes.companies,
-      thirdIcon: Settings2,
-      fourthIcon: BriefcaseBusiness,
+      total: summary?.visaServices.total,
+      active: summary?.visaServices.active,
+      thirdLabel: 'کشورها',
+      thirdValue: summary?.visaServices.countries,
+      fourthLabel: 'مدرک ناقص',
+      fourthValue: summary?.visaServices.incompleteGuidance,
+      fourthIcon: FileQuestion,
     });
   }, [CurrentIcon, resource, summary]);
 
   const filter = useMemo(() => {
-    if (resource === 'leaders' || resource === 'visa-services' || resource === 'bus-companies')
+    if (resource === 'leaders' || resource === 'visa-services')
       return { label: 'کشور', options: countries };
-    if (resource === 'cip-services')
-      return { label: 'فرودگاه', options: airports };
     if (resource === 'tour-types')
       return {
         label: 'دامنه',
@@ -574,24 +427,14 @@ export function MasterDataTravelServicesWorkspace() {
           { id: 'BOTH', name: 'داخلی / خارجی' },
         ],
       };
-    if (resource === 'transfer-types')
-      return {
-        label: 'شیوه سرویس',
-        options: [
-          { id: 'PRIVATE', name: 'اختصاصی' },
-          { id: 'SHARED', name: 'اشتراکی' },
-        ],
-      };
     return {
-      label: 'رده',
+      label: 'شیوه سرویس',
       options: [
-        { id: 'STANDARD', name: 'استاندارد' },
-        { id: 'VIP', name: 'VIP' },
-        { id: 'LUXURY', name: 'لوکس' },
-        { id: 'OTHER', name: 'سایر' },
+        { id: 'PRIVATE', name: 'اختصاصی' },
+        { id: 'SHARED', name: 'اشتراکی' },
       ],
     };
-  }, [airports, countries, resource]);
+  }, [countries, resource]);
 
   function changeResource(next: TravelResource) {
     setResource(next);
@@ -663,9 +506,7 @@ export function MasterDataTravelServicesWorkspace() {
         ...(referenceFilter !== 'all' && resource === 'tour-types'
           ? {
               tourScope: referenceFilter as
-                | 'DOMESTIC'
-                | 'INTERNATIONAL'
-                | 'BOTH',
+                'DOMESTIC' | 'INTERNATIONAL' | 'BOTH',
             }
           : {}),
         ...(referenceFilter !== 'all' && resource === 'transfer-types'
@@ -673,23 +514,8 @@ export function MasterDataTravelServicesWorkspace() {
               transferServiceMode: referenceFilter as 'PRIVATE' | 'SHARED',
             }
           : {}),
-        ...(referenceFilter !== 'all' && resource === 'cip-services'
-          ? { airportId: referenceFilter }
-          : {}),
         ...(referenceFilter !== 'all' && resource === 'visa-services'
           ? { countryId: referenceFilter }
-          : {}),
-        ...(referenceFilter !== 'all' && resource === 'bus-companies'
-          ? { countryId: referenceFilter }
-          : {}),
-        ...(referenceFilter !== 'all' && resource === 'bus-types'
-          ? {
-              busServiceClass: referenceFilter as
-                | 'STANDARD'
-                | 'VIP'
-                | 'LUXURY'
-                | 'OTHER',
-            }
           : {}),
       };
       const response = await masterDataApi.downloadExcel({
@@ -785,7 +611,9 @@ export function MasterDataTravelServicesWorkspace() {
       return [
         code,
         nameButton,
-        <span dir="ltr" key="english">{attribute(record, 'englishName')}</span>,
+        <span dir="ltr" key="english">
+          {attribute(record, 'englishName')}
+        </span>,
         <Badge key="scope">{translated(record, 'scope')}</Badge>,
         attribute(record, 'description'),
         '—',
@@ -801,46 +629,16 @@ export function MasterDataTravelServicesWorkspace() {
         attribute(record, 'description'),
         '—',
       ];
-    if (resource === 'cip-services')
-      return [
-        code,
-        nameButton,
-        attribute(record, 'airportIataCode'),
-        <Badge key="passenger">{translated(record, 'passengerScope')}</Badge>,
-        attribute(record, 'supplierName'),
-        chips(attribute(record, 'includedItems')),
-        updated(record),
-      ];
-    if (resource === 'visa-services')
-      return [
-        code,
-        nameButton,
-        attribute(record, 'countryName'),
-        <Badge key="visa">{attribute(record, 'visaType')}</Badge>,
-        attribute(record, 'supplierName'),
-        attribute(record, 'referenceValidityDays') === '—'
-          ? '—'
-          : `${attribute(record, 'referenceValidityDays')} روز`,
-        attribute(record, 'guidanceFileReference'),
-      ];
-    if (resource === 'bus-companies')
-      return [
-        code,
-        nameButton,
-        <span dir="ltr" key="english">{attribute(record, 'englishName')}</span>,
-        <Badge key="link">{attribute(record, 'connectionType')}</Badge>,
-        attribute(record, 'countryName'),
-        '—',
-        updated(record),
-      ];
     return [
       code,
       nameButton,
-      translated(record, 'serviceClass'),
-      attribute(record, 'model'),
-      chips(attribute(record, 'facilityNames')),
-      '—',
-      updated(record),
+      attribute(record, 'countryName'),
+      <Badge key="visa">{attribute(record, 'visaType')}</Badge>,
+      attribute(record, 'supplierName'),
+      attribute(record, 'referenceValidityDays') === '—'
+        ? '—'
+        : `${attribute(record, 'referenceValidityDays')} روز`,
+      attribute(record, 'guidanceFileReference'),
     ];
   }
 

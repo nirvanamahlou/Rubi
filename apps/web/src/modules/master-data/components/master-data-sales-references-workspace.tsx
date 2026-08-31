@@ -16,7 +16,6 @@ import {
   FileSpreadsheet,
   FilterX,
   Link2,
-  Megaphone,
   Plus,
   RefreshCw,
   Search,
@@ -24,8 +23,6 @@ import {
   Store,
   Tags,
   UserRoundSearch,
-  UsersRound,
-  Waypoints,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -71,12 +68,9 @@ const tabs = [
     label: 'نحوه آشنایی',
     icon: UserRoundSearch,
   },
-  { resource: 'lead-sources', label: 'منبع سرنخ', icon: Waypoints },
   { resource: 'sales-channels', label: 'کانال فروش', icon: Store },
   { resource: 'lost-reasons', label: 'دلیل از دست رفتن', icon: CircleX },
-  { resource: 'customer-types', label: 'نوع مشتری', icon: UsersRound },
   { resource: 'tags', label: 'Tag', icon: Tags },
-  { resource: 'campaign-types', label: 'نوع کمپین', icon: Megaphone },
 ] as const satisfies readonly {
   resource: MasterDataResource;
   label: string;
@@ -87,12 +81,8 @@ type SalesReferenceResource = (typeof tabs)[number]['resource'];
 
 const rules: Record<SalesReferenceResource, { title: string; text: string }> = {
   'acquaintance-methods': {
-    title: 'نحوه آشنایی با منبع سرنخ یکی نیست',
-    text: 'این مرجع فقط روش آشنایی مشتری را تعریف می‌کند؛ منشأ Lead، کانال فروش و کمپین رکوردهای مستقل دارند.',
-  },
-  'lead-sources': {
-    title: 'منبع سرنخ از کانال و کمپین مستقل است',
-    text: 'Lead و رابطه استفاده در Customer Affairs مالکیت می‌شود و این صفحه به جدول آن ماژول Query مستقیم ندارد.',
+    title: 'نحوه آشنایی یک مرجع مستقل است',
+    text: 'این مرجع فقط روش آشنایی را تعریف می‌کند؛ رابطه استفاده در ماژول مصرف‌کننده نگهداری می‌شود و این صفحه به جدول آن ماژول Query مستقیم ندارد.',
   },
   'sales-channels': {
     title: 'کانال استفاده‌شده حذف فیزیکی نمی‌شود',
@@ -102,17 +92,9 @@ const rules: Record<SalesReferenceResource, { title: string; text: string }> = {
     title: 'دلیل از دست رفتن برای پایان ناموفق است',
     text: 'تغییر وضعیت Lead/Opportunity و الزام انتخاب دلیل در ماژول مالک چرخه فروش اجرا می‌شود.',
   },
-  'customer-types': {
-    title: 'نوع مشتری با Tag متفاوت است',
-    text: 'نوع مشتری طبقه‌بندی مرجع است؛ تخصیص آن به مشتری نیازمند قرارداد عمومی Customers خواهد بود.',
-  },
   tags: {
     title: 'Tag رابطه چندبه‌چند مصرف‌کننده است',
     text: 'هر ماژول مالک رابطه Tag با رکوردهای خودش است و Master Data فقط تعریف، رنگ و وضعیت Tag را نگه می‌دارد.',
-  },
-  'campaign-types': {
-    title: 'نوع کمپین با منبع سرنخ متفاوت است',
-    text: 'خود کمپین، بودجه و Attribution در Marketing نگه‌داری می‌شود و اینجا فقط نوع مرجع تعریف می‌شود.',
   },
 };
 
