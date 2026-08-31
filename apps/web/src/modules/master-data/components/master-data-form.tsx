@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/overlays';
 import { Alert, Badge } from '@/components/ui/surfaces';
 import type { MasterDataCatalogItem } from '../model/catalog';
+import { getMasterDataFormFields } from '../model/form-fields';
 import { validateMasterDataDraft } from '../model/validation';
 
 export type MasterDataFormMode = 'create' | 'view' | 'edit';
@@ -38,11 +39,11 @@ function initialValues(
 ) {
   if (mode === 'create') {
     return Object.fromEntries(
-      definition.fields.map((field) => [field.key, '']),
+      getMasterDataFormFields(definition).map((field) => [field.key, '']),
     );
   }
   return Object.fromEntries(
-    definition.fields.map((field) => [
+    getMasterDataFormFields(definition).map((field) => [
       field.key,
       definition.preview[field.key] ?? '',
     ]),
@@ -95,7 +96,7 @@ export function MasterDataForm({
         </div>
 
         <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
-          {definition.fields.map((field) => {
+          {getMasterDataFormFields(definition).map((field) => {
             const error = errors[field.key];
             const helpId = `${definition.key}-${field.key}-help`;
             const errorId = `${definition.key}-${field.key}-error`;

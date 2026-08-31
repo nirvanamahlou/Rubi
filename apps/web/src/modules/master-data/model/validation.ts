@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { getMasterDataDefinition, type MasterDataResourceKey } from './catalog';
+import { getMasterDataFormFields } from './form-fields';
 
 const draftValuesSchema = z.record(
   z.string(),
@@ -35,7 +36,7 @@ export function validateMasterDataDraft(
   );
   const errors: Record<string, string> = {};
 
-  for (const field of definition.fields) {
+  for (const field of getMasterDataFormFields(definition)) {
     if (field.required && !values[field.key]) {
       errors[field.key] = `${field.label} الزامی است.`;
     }

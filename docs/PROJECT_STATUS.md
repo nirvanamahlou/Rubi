@@ -1,18 +1,37 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-31 — MASTER-003N-CLEAN-LABELS پیاده‌سازی و آزموده شد
+آخرین به‌روزرسانی: 2026-08-31 — MASTER-003O-PAYMENT-FORM پیاده‌سازی و آزموده شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003N-CLEAN-LABELS روی شاخه Stacked مستقل آماده Review است**
+- وضعیت: **MASTER-003O-PAYMENT-FORM روی شاخه Stacked مستقل آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه فعال: `codex/pc-b-master-data-clean-labels`
-- Work Item: `MASTER-003N-CLEAN-LABELS`؛ Stacked روی Draft PR #40
+- شاخه فعال: `codex/pc-b-master-data-payment-form`
+- Work Item: `MASTER-003O-PAYMENT-FORM`؛ Stacked روی Draft PR #42
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ Web روی ۳۱۰۰ و API روی ۴۰۰۰ پاسخ می‌دهند.
-- نوع تغییر: فقط Master Data Web/Test/Docs؛ بدون تغییر API/Contract، Schema، Migration،
+- نوع تغییر: Master Data Web/API/Test/Docs؛ بدون تغییر فایل Contract، Schema، Migration،
   Seed، Customers، Dependency یا Lockfile.
+
+### `MASTER-003O-PAYMENT-FORM` — PC-B — `READY_FOR_REVIEW`
+
+- ورودی «کد روش» و «نام انگلیسی» فقط از فرم ایجاد/ویرایش/مشاهده روش‌های پرداخت حذف شدند؛
+  سایر فرم‌ها، Catalog مرجع و ستون‌های Export بدون تغییر باقی می‌مانند.
+- فهرست فیلدهای فرم از Catalog جدا شد؛ دو فیلد حذف‌شده در state یا payload ویرایش خالی
+  نمی‌شوند، بنابراین کد و نام انگلیسی ذخیره‌شده قبلی حفظ می‌شوند.
+- ایجاد روش پرداخت بدون code از تولیدکننده موجود کد یکتای Backend استفاده می‌کند؛ کد
+  صریح مصرف‌کننده قدیمی همچنان پذیرفته/اعتبارسنجی می‌شود و شکل پاسخ تغییر نکرده است.
+- تغییر الزامی‌بودن code سازگار و افزایشی است؛ producer/consumer و رفتار Update در
+  `WORK_ASSIGNMENTS.md` ثبت شده‌اند. Schema/Migration/Seed و داده‌های موجود تغییر نکردند.
+- Web: `155/155` و API: `245/245` تست موفق؛ شامل نبود دو فیلد، حفظ Export و سایر فرم‌ها،
+  ایجاد بدون کد، رفع برخورد نام/کد، سازگاری کد صریح و حفظ مقادیر قبلی هنگام ویرایش.
+- typecheck و Production Build هر دو برنامه، lint فایل‌های Web متاثر و کل API موفق؛
+  `git diff --check` و Scope/Secret-pattern scan موفق‌اند. ایراد پیشین DatePicker مشترک خارج از Scope است.
+- API محلی پس از تغییر Source توسط watcher راه‌اندازی مجدد شده و Health پاسخ ۲۰۰ می‌دهد؛
+  Web بدون Session به Login سالم با پاسخ ۲۰۰ می‌رود. Smoke احراز‌شده ادعا نمی‌شود؛ سرورها روشن‌اند.
+- Parent #42 / `495af50` و قفل‌های `PC-B/MASTER-003` ثابت‌اند؛ Draft PR روی
+  `codex/pc-b-master-data-clean-labels` و وابسته به #42 و زنجیره #25 است؛ پیش از والد Merge نشود.
 
 ### `MASTER-003N-CLEAN-LABELS` — PC-B — `READY_FOR_REVIEW`
 

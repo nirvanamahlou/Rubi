@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/overlays';
 import { Alert, Badge } from '@/components/ui/surfaces';
 import type { MasterDataCatalogItem } from '../model/catalog';
+import { getMasterDataFormFields } from '../model/form-fields';
 import { validateMasterDataDraft } from '../model/validation';
 import { getReferenceFieldConfig } from '../model/reference-fields';
 import {
@@ -38,11 +39,11 @@ function valuesFrom(
 ): Record<string, string> {
   if (!record)
     return Object.fromEntries(
-      definition.fields.map((field) => [field.key, '']),
+      getMasterDataFormFields(definition).map((field) => [field.key, '']),
     );
   const [fromCurrencyCode = '', toCurrencyCode = ''] = record.code.split('/');
   return Object.fromEntries(
-    definition.fields.map((field) => {
+    getMasterDataFormFields(definition).map((field) => {
       const value =
         field.key === 'code'
           ? record.code
@@ -125,7 +126,7 @@ export function MasterDataLiveForm({
           className="mt-6 space-y-5"
           onSubmit={(event) => void submit(event)}
         >
-          {definition.fields.map((field) => {
+          {getMasterDataFormFields(definition).map((field) => {
             const error = errors[field.key];
             const controlId = `live-${definition.key}-${field.key}`;
             const reference = getReferenceFieldConfig(
