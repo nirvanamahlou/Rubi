@@ -1,5 +1,17 @@
 # Work Assignments
 
+## DOCUMENTS-003A — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: حذف نمای مستقل گزارش دسترسی و نگه‌داشتن Timeline در جزئیات سند؛ تکمیل لینک اشتراک داخلی؛ فعال‌سازی اسکن واقعی فایل در محیط لوکال PC-B؛ فعال‌کردن نماهای شخصی و یکدست‌سازی افکت و رنگ رابط Documents.
+- Branch: `codex/pc-b-documents-usability`، فرزند `codex/pc-b-documents-vertical-slice@37558aa` / Draft PR #64. این Slice مستقیم به `develop` نمی‌رود و والدها را تغییر یا Merge نمی‌کند.
+- محدوده رزروشده: `apps/api/src/documents/**`، `apps/web/src/modules/documents/**`، قرارداد افزایشی Documents در `packages/contracts/src/documents/**`، مثال تنظیمات Documents، تست‌ها و اسناد `WORK_ASSIGNMENTS.md`، `docs/PROJECT_STATUS.md`، `PLANS.md` و `docs/tasks/DOCUMENTS-003A.md`.
+- بدون Prisma Schema/Migration/Seed و بدون Dependency/Lockfile. Migration Owner و Dependency/Lockfile Owner رزرو نمی‌شوند. قرارداد عمومی فقط فیلتر شخصی افزایشی و backward-compatible برای producer/consumer خود Documents API/Web است.
+- لینک اشتراک در این Slice فقط لینک داخلی احراز‌شده و Permission-aware است؛ لینک عمومی/ناشناس، دورزدن محرمانگی و دانلود بدون Scan ممنوع می‌ماند. Audit Timeline از منوی مستقل حذف می‌شود ولی داخل جزئیات هر فایل حفظ می‌شود.
+- Antivirus روی PC-B با Microsoft Defender فعال و fail-closed است؛ `CLEAN` فقط پس از اجرای واقعی موتور و تطبیق SHA-256 ثبت می‌شود. نبود/خطای موتور همچنان دانلود را مسدود می‌کند و هیچ Seed/UI وضعیت پاک جعل نمی‌کند. Adapter تولیدی S3/MinIO و Worker توزیع‌شده همچنان خارج از این Slice هستند.
+- نتیجه: منوی مستقل Activity حذف و Timeline داخل جزئیات حفظ شد؛ لینک داخلی مستقیم و قابل کپی، چهار نمای شخصی، رنگ و افکت تمام سکشن‌ها و پیام واقعی وضعیت اسکن تکمیل شدند. هر ۶ فایل لوکال با Defender واقعی `CLEAN`، Jobها `COMPLETED` و قرنطینه‌ها `RELEASED` شدند؛ Backup خصوصی پیش از اجرا معتبر است.
+- Validation: lint/typecheck/build برای API/Web/Contracts موفق؛ ۱٬۲۳۴ تست موفق و ۶۶ تست اختیاری skip. Smoke مرورگر احراز‌شده مسیرهای شخصی، Favorite، Recently Viewed، کپی/بازکردن لینک، Timeline داخل فایل و Download gate پاک را پوشش داد. گزارش: `docs/tasks/DOCUMENTS-003A.md`.
+- Final lock state: این Slice هیچ Migration/Dependency lock نگرفت. رزرو Documents API/Web/Contract و اسناد مرکزی با وضعیت `RELEASED — PC-B/DOCUMENTS-003A ready for review` تحویل می‌شود؛ Branch والد، PRها، `develop` و `main` بدون Merge باقی می‌مانند.
+
 ## DOCUMENTS-002 — PC-B — READY_FOR_REVIEW
 
 - Owner confirmed on 2026-09-01 that the `PC-B/MASTER-003` Migration and central-file locks are released for this work. `COMPUTER_ID=PC-B`.

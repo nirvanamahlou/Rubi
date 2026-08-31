@@ -23,6 +23,9 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 - [x] `DOCUMENTS-002`: Persistence و Migration افزایشی، قرارداد/IAM، API و بارگذاری واقعی،
       Storage محلی رمزگذاری‌شده، UI متصل، تفکیک نقش و Smoke Desktop/Mobile؛ آماده Review
       در Draft PR #64 روی Branch والد Phase A و بدون Merge مستقیم به `develop`.
+- [x] `DOCUMENTS-003A`: تجربه لوکال Documents؛ حذف نمای مستقل Activity، لینک داخلی
+      Permission-aware، چهار نمای شخصی، رابط رنگی و اسکن واقعی Microsoft Defender با
+      تطبیق SHA-256 و fail-closed؛ روی شاخه فرزند و بدون Migration/Dependency.
 - [ ] `DOCUMENTS-003`: Adapter تولیدی S3/MinIO و Antivirus Worker عملیاتی با retry،
       monitoring و recovery؛ پس از تصمیم امنیت/عملیات و رزرو تازه Migration/Dependency.
 - [ ] `DOCUMENTS-004`: اشتراک امن، نسخه‌گذاری تکمیلی، Export، retention نهایی و اتصال
