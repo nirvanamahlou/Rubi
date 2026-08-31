@@ -1,14 +1,7 @@
 import type { Metadata } from 'next';
-
-import { ModuleFoundationWorkspace } from '@/modules/module-foundation/components/module-foundation-workspace';
-import { foundationModules } from '@/modules/module-foundation/model/foundation';
+import { TicketWorkspace } from '@/modules/ticket-catalog/components/ticket-workspace';
 
 export const metadata: Metadata = { title: 'مدیریت و تعریف بلیت‌ها' };
-
 export default function Page() {
-  return (
-    <ModuleFoundationWorkspace
-      config={foundationModules['ticket-management']}
-    />
-  );
+  return <TicketWorkspace />;
 }
