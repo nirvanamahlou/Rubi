@@ -123,6 +123,8 @@ export interface MasterDataListQuery {
   starRating?: number;
   referenceCapacity?: number;
   mealServiceCategory?: MasterMealServiceCategory;
+  /** Meal-only lifecycle; under review remains inactive for legacy consumers. */
+  mealServiceStatus?: 'active' | 'inactive' | 'under_review';
   facilityCategory?: string;
   saleableOnly?: boolean;
   insurerId?: string;

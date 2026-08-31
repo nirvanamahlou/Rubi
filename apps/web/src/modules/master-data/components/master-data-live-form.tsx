@@ -28,6 +28,7 @@ import { getMasterDataFormFields } from '../model/form-fields';
 import { validateMasterDataDraft } from '../model/validation';
 import { getReferenceFieldConfig } from '../model/reference-fields';
 import { MasterDataClearableField } from './master-data-clearable-field';
+import { MasterDataMealServiceForm } from './master-data-meal-service-form';
 import {
   MasterDataReferenceSelector,
   OrganizationRoleSelector,
@@ -64,7 +65,15 @@ function valuesFrom(
   );
 }
 
-export function MasterDataLiveForm({
+export function MasterDataLiveForm(props: Parameters<typeof GenericMasterDataLiveForm>[0]) {
+  if (props.definition.key === 'meal-services') return props.open ? <MasterDataMealServiceForm
+    mode={props.mode} onOpenChange={props.onOpenChange} onPersist={props.onPersist}
+    {...(props.record ? { record: props.record } : {})}
+  /> : null;
+  return <GenericMasterDataLiveForm {...props} />;
+}
+
+function GenericMasterDataLiveForm({
   definition,
   mode,
   onOpenChange,

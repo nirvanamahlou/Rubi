@@ -1452,6 +1452,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     group: 'اقامت',
     description: 'کاتالوگ مستقل Meal Plan و Service Code با وعده‌های شامل‌شده.',
     fields: [
+      { key: 'code', label: 'کد سرویس', type: 'text', placeholder: 'BB / RO', required: true },
       nameField,
       {
         key: 'englishName',
@@ -1477,7 +1478,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: 'صبحانه،ناهار،شام',
       },
     ],
-    preview: { code: 'AUTO', name: 'عنوان سرویس', category: 'MEAL_PLAN' },
+    preview: { code: 'BB', name: 'عنوان سرویس', category: 'MEAL_PLAN' },
   },
   {
     key: 'facilities',

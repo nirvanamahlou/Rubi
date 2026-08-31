@@ -63,6 +63,7 @@ describe('master data catalog', () => {
       'payment-methods',
       'travel-services',
       'airlines',
+      'meal-services',
     ]);
     for (const resource of masterDataResourceKeys) {
       const definition = getMasterDataDefinition(resource);
@@ -115,7 +116,6 @@ describe('master data catalog', () => {
     for (const resource of [
       'hotel-chains',
       'room-types',
-      'meal-services',
       'facilities',
       'composite-hotels',
     ] as const)
