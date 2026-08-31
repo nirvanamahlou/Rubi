@@ -1,5 +1,22 @@
 # وضعیت پروژه
 
+## DOCUMENTS-002 — Vertical Slice واقعی و Stacked — آماده بررسی
+
+- `PC-B` یک Slice مستقل روی `codex/pc-b-documents-vertical-slice` و والد
+  `codex/pc-b-documents-foundation@05b09e8` آماده کرده است. Phase A همچنان Draft PR #61
+  و ادغام‌نشده است؛ این Slice مستقیماً به `develop` Merge نمی‌شود و PR آن تا Merge والد
+  همان Branch والد را هدف می‌گیرد.
+- Persistence افزایشی Documents، قرارداد `documents.v1`، ۲۸ Permission، ۱۹ نوع سند،
+  ۹ دسته، REST API واقعی، Storage محلی رمزگذاری‌شده، `/documents` متصل، Dialog بارگذاری
+  و جزئیات شش‌تب تکمیل شدند. Binary در Database نیست و دانلود تا Scan پاک fail-closed است.
+- نقش‌های Archive/Sales/Finance/HR از هم جدا هستند؛ Finance و HR به محتوای خارج از Domain
+  خود دسترسی ندارند و Archive محتوای حساس را Mask‌شده و بدون دانلود می‌بیند.
+- ۲۸ Migration از صفر و Seed دوگانه روی PostgreSQL 18، lint/typecheck/build کامل و
+  ۱٬۲۹۶ تست عمومی پاس شدند. Smoke واقعی مرورگر بارگذاری، تاریخ شمسی/میلادی، دسترسی چهار
+  نقش و Desktop/Mobile را پوشش داد؛ تمام داده‌ها و زیرساخت Synthetic پس از تست حذف شدند.
+- Adapter تولیدی S3/MinIO، Antivirus Worker، retention قطعی، اشتراک امن، Export و اتصال
+  producerها Deferred هستند. جزئیات: `docs/tasks/DOCUMENTS-002.md`.
+
 ## ادغام تکمیلی اطلاعات پایه با develop — 2026-08-31
 
 - با تأیید صریح مالک برای Push و Merge، شاخه `codex/pc-b-master-data-develop-integration` از `origin/develop@e25f288` (#58 ادغام‌شده) ساخته شد و تاریخچه دقیق #59 / `b04c2bd` شامل #57 را دریافت کرد. والد #55/#54 و حمل‌ونقل جداگانه #47 قبلاً در #58 حضور دارند؛ تغییرات PC-A و اصلاح امنیتی XLSX/Calendar حفظ شدند.

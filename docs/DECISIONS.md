@@ -1,5 +1,16 @@
 # تصمیم‌های معماری
 
+## اجرای موقت DOCUMENTS-002 — 2026-09-01
+
+- ADR-002 و الزام S3/MinIO برای محیط تولید بدون تغییر باقی می‌ماند. Adapter فعلی Documents
+  فقط برای Development/Test این Vertical Slice است و فایل را بیرون Database با AES-256-GCM،
+  کلید مستقل، object key تصادفی و permission محدود نگه می‌دارد؛ معرفی آن به‌عنوان Storage
+  تولید ممنوع است.
+- تا اتصال Antivirus واقعی، هر نسخه جدید `AWAITING_ANTIVIRUS_ADAPTER` می‌ماند و دانلود
+  آن fail-closed است. تغییر دستی Scan به `CLEAN` یا جعل پاسخ Scanner در Seed/UI ممنوع است.
+- تصمیم `DEC-OPEN-006` درباره retention، residency و key management همچنان باز است؛ این
+  Slice حذف دائمی، گردش کلید تولید یا تعهد نگهداری را حدس نمی‌زند.
+
 ## Clarifications carried from the approved source tasks — 2026-08-31
 
 - `TICKET-PRICING-002`: PR #46 records the owner's clarification that final sale

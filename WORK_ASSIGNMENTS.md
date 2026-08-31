@@ -1,5 +1,16 @@
 # Work Assignments
 
+## DOCUMENTS-002 — PC-B — READY_FOR_REVIEW
+
+- Owner confirmed on 2026-09-01 that the `PC-B/MASTER-003` Migration and central-file locks are released for this work. `COMPUTER_ID=PC-B`.
+- Branch: `codex/pc-b-documents-vertical-slice`; stacked on `origin/codex/pc-b-documents-foundation@05b09e8` / Draft PR #61. Phase A does not need to merge into `develop` before this slice; the new PR must target the Phase-A branch until its parent is merged.
+- Reserved scope: Documents Prisma schema and one additive migration; Documents repository/application/controller/module; versioned Documents contract and IAM permission seed; `/documents` Web module, route/navigation integration and tests; shared Dialog RTL positioning fix in `apps/web/src/components/ui/overlays.tsx`; storage environment examples in root/API `.env.example`; `WORK_ASSIGNMENTS.md`, `docs/PROJECT_STATUS.md`, `PLANS.md`, `docs/DECISIONS.md`; task report `docs/tasks/DOCUMENTS-002.md`.
+- Final lock state: Migration Owner, Documents shared-contract/root export, Documents IAM permission/seed slice, shared Dialog/environment-example files and central status/docs are `RELEASED — PC-B/DOCUMENTS-002 ready for review`. Dependency/Lockfile stayed `RELEASED`; `pnpm-lock.yaml` was not changed.
+- First vertical slice: server-side document list/search/filter/sort/pagination, document detail with six tabs, central upload dialog with real multipart/storage adapter flow, base permission enforcement, Loading/Empty/Error/Forbidden states, authenticated route/navigation/responsive smoke and database/API/Web tests.
+- Domain boundaries: Documents stores/version-controls final file assets and archive metadata only. Issuance/rendering stays in producer modules; no direct query to another module's tables. Finance/HR content access remains deny-by-default behind separate permissions.
+- Deferred: production antivirus engine/worker, advanced secure sharing, final retention deletion, exports and cross-module producer integrations. They require separate slices and unresolved security/operations decisions.
+- Validation: all 28 migrations on empty PostgreSQL 18, repeatable Seed, full lint/typecheck/build and 1,296 tests passed (66 opt-in PostgreSQL tests remain intentionally skipped in the ordinary suite). Authenticated browser smoke covered upload, fail-closed download, Persian/Gregorian date preservation, role isolation for Archive/Sales/Finance/HR and desktop/mobile layout. Synthetic DB/container, file, keys and ignored environment files were removed after validation.
+
 ## MASTER-003-DEVELOP-INTEGRATION — PC-B — READY_FOR_REVIEW
 
 - Owner explicitly requested push and merge to dev/develop on 2026-08-31. This authorizes this normal PR integration, superseding the earlier no-merge restriction for the delivered Master Data snapshots; no force push or source-branch deletion.
