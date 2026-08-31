@@ -7,6 +7,7 @@ import type {
   MasterDataStatus,
 } from '@rubi/contracts';
 import {
+  ArrowRight,
   Ban,
   CheckCircle2,
   Database,
@@ -20,9 +21,10 @@ import {
   Search,
   XCircle,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   FormField,
   Input,
@@ -44,22 +46,37 @@ import {
   Skeleton,
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
+import { MasterDataDeleteButton } from './master-data-delete-button';
 import {
   getMasterDataDefinition,
-  masterDataCatalog,
   type MasterDataResourceKey,
 } from '../model/catalog';
+import type { MasterDataSectionDefinition } from '../model/sections';
 import {
   MasterDataLiveForm,
   type MasterDataFormMode,
 } from './master-data-live-form';
 import { HotelImportPanel } from './hotel-import-panel';
+import { MasterDataAccommodationWorkspace } from './master-data-accommodation-workspace';
+import { MasterDataFinanceWorkspace } from './master-data-finance-workspace';
+import { MasterDataGeographyWorkspace } from './master-data-geography-workspace';
+import { MasterDataInsuranceWorkspace } from './master-data-insurance-workspace';
+import { MasterDataKpiGrid } from './master-data-kpi-grid';
+import { MasterDataSuppliersWorkspace } from './master-data-suppliers-workspace';
+import { MasterDataTransportationWorkspace } from './master-data-transportation-workspace';
+import { MasterDataSalesReferencesWorkspace } from './master-data-sales-references-workspace';
+import { MasterDataTravelServicesWorkspace } from './master-data-travel-services-workspace';
 
-const groups = ['مالی', 'جغرافیا', 'خدمات سفر', 'سازمان‌ها', 'فروش'] as const;
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
-export function MasterDataWorkspace() {
-  const [resource, setResource] = useState<MasterDataResourceKey>('currencies');
+function GenericMasterDataWorkspace({
+  section,
+}: {
+  section: MasterDataSectionDefinition;
+}) {
+  const [resource, setResource] = useState<MasterDataResourceKey>(
+    section.resources[0] ?? 'currencies',
+  );
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
@@ -72,7 +89,11 @@ export function MasterDataWorkspace() {
   const [notice, setNotice] = useState<string | null>(null);
   const [exportingExcel, setExportingExcel] = useState(false);
   const definition = getMasterDataDefinition(resource);
+  const sectionDefinitions = section.resources.map(getMasterDataDefinition);
   const isCountryCity = resource === 'countries' || resource === 'cities';
+  const activeCount = records.filter(
+    (record) => record.status === 'active',
+  ).length;
 
   const query: MasterDataListQuery = {
     search,
@@ -116,6 +137,7 @@ export function MasterDataWorkspace() {
   }, [load]);
 
   function changeResource(next: MasterDataResourceKey) {
+    if (!section.resources.includes(next)) return;
     setResource(next);
     setSearch('');
     setStatus('all');
@@ -148,6 +170,14 @@ export function MasterDataWorkspace() {
     }
     setFormMode(null);
     await load();
+  }
+
+  async function afterDelete() {
+    setSelected(undefined);
+    setFormMode(null);
+    setNotice('رکورد با موفقیت حذف شد.');
+    if (records.length === 1 && page > 1) setPage(page - 1);
+    else await load();
   }
 
   async function toggle(record: MasterDataRecord) {
@@ -283,7 +313,19 @@ export function MasterDataWorkspace() {
 
   return (
     <div className="space-y-5">
-      <PageHeader eyebrow="MASTER-003 · PC-B" title="اطلاعات پایه" />
+      <PageHeader
+        actions={
+          <Link
+            className={buttonVariants({ variant: 'outline' })}
+            href="/master-data"
+          >
+            <ArrowRight aria-hidden="true" className="size-4" />
+            همه بخش‌ها
+          </Link>
+        }
+        description={section.description}
+        title={section.title}
+      />
 
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
 
@@ -294,53 +336,39 @@ export function MasterDataWorkspace() {
               <Database aria-hidden="true" className="size-4" />
             </span>
             <div>
-              <h2 className="text-sm font-black">Catalog اطلاعات پایه</h2>
+              <h2 className="text-sm font-black">
+                زیرمجموعه‌های {section.title}
+              </h2>
               <p className="text-xs text-muted-foreground">
-                ۱۱ بخش · ۱۲ منبع پایدار · مشترک بین شرکت‌ها
+                {section.resources.length.toLocaleString('fa-IR')} منبع مرجع
               </p>
             </div>
           </div>
           <nav
-            aria-label="دسته‌های اطلاعات پایه"
-            className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
+            aria-label={`زیرمجموعه‌های ${section.title}`}
+            className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-2"
           >
-            {groups.map((group) => (
-              <section
-                className="rounded-xl border border-border/70 bg-muted/20 p-2"
-                key={group}
-              >
-                <h3 className="px-2 py-1 text-[11px] font-bold text-muted-foreground">
-                  {group}
-                </h3>
-                <div className="mt-1 grid gap-1">
-                  {masterDataCatalog
-                    .filter(
-                      (item) => item.group === group && item.key !== 'cities',
-                    )
-                    .map((item) => (
-                      <button
-                        aria-current={
-                          item.key === 'countries'
-                            ? isCountryCity
-                              ? 'page'
-                              : undefined
-                            : item.key === resource
-                              ? 'page'
-                              : undefined
-                        }
-                        className="rounded-lg px-3 py-2 text-start text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground"
-                        key={item.key}
-                        onClick={() => changeResource(item.key)}
-                        type="button"
-                      >
-                        {item.key === 'countries'
-                          ? 'کشورها و شهرها'
-                          : item.label}
-                      </button>
-                    ))}
-                </div>
-              </section>
-            ))}
+            {sectionDefinitions
+              .filter((item) => item.key !== 'cities')
+              .map((item) => (
+                <button
+                  aria-current={
+                    item.key === 'countries'
+                      ? isCountryCity
+                        ? 'page'
+                        : undefined
+                      : item.key === resource
+                        ? 'page'
+                        : undefined
+                  }
+                  className="rounded-xl border border-border/70 bg-muted/20 px-4 py-3 text-start text-sm font-semibold text-muted-foreground transition hover:border-primary/30 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:border-primary aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground"
+                  key={item.key}
+                  onClick={() => changeResource(item.key)}
+                  type="button"
+                >
+                  {item.key === 'countries' ? 'کشورها و شهرها' : item.label}
+                </button>
+              ))}
           </nav>
         </Card>
 
@@ -349,13 +377,8 @@ export function MasterDataWorkspace() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-xl font-black">
-                    {isCountryCity ? 'کشورها و شهرها' : definition.label}
-                  </h2>
-                  <Badge>{definition.group}</Badge>
-                  <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-                    Backend واقعی
-                  </Badge>
+                  <h2 className="text-xl font-black">{definition.label}</h2>
+                  <Badge>{section.title}</Badge>
                 </div>
                 <p className="mt-2 text-sm leading-7 text-muted-foreground">
                   {isCountryCity
@@ -395,6 +418,36 @@ export function MasterDataWorkspace() {
           {resource === 'hotels' ? (
             <HotelImportPanel onImported={() => void load()} />
           ) : null}
+
+          <MasterDataKpiGrid
+            items={[
+              {
+                label: `کل ${definition.label}`,
+                value: total,
+                icon: Database,
+                tone: 'sky',
+              },
+              {
+                label: 'فعال در صفحه',
+                value: activeCount,
+                icon: CheckCircle2,
+                tone: 'emerald',
+              },
+              {
+                label: 'غیرفعال در صفحه',
+                value: records.length - activeCount,
+                icon: XCircle,
+                tone: 'rose',
+              },
+              {
+                label: 'نسخه قرارداد',
+                value: 'v6',
+                icon: FileText,
+                tone: 'violet',
+              },
+            ]}
+            label={`شاخص‌های ${definition.label}`}
+          />
 
           <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
             <FormField id="master-data-search-live" label="جست‌وجوی سریع">
@@ -553,6 +606,10 @@ export function MasterDataWorkspace() {
                             />
                             ویرایش
                           </Button>
+                          <MasterDataDeleteButton
+                            record={record}
+                            onDeleted={afterDelete}
+                          />
                           <Button
                             onClick={() => void toggle(record)}
                             size="sm"
@@ -644,4 +701,27 @@ export function MasterDataWorkspace() {
       ) : null}
     </div>
   );
+}
+
+export function MasterDataWorkspace({
+  section,
+}: {
+  section: MasterDataSectionDefinition;
+}) {
+  if (section.slug === 'finance')
+    return <MasterDataFinanceWorkspace section={section} />;
+  if (section.slug === 'geography')
+    return <MasterDataGeographyWorkspace />;
+  if (section.slug === 'organizations-suppliers')
+    return <MasterDataSuppliersWorkspace />;
+  if (section.slug === 'accommodation')
+    return <MasterDataAccommodationWorkspace />;
+  if (section.slug === 'transportation')
+    return <MasterDataTransportationWorkspace />;
+  if (section.slug === 'insurance') return <MasterDataInsuranceWorkspace />;
+  if (section.slug === 'tours-travel-services')
+    return <MasterDataTravelServicesWorkspace />;
+  if (section.slug === 'sales-references')
+    return <MasterDataSalesReferencesWorkspace />;
+  return <GenericMasterDataWorkspace section={section} />;
 }

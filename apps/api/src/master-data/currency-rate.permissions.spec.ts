@@ -7,6 +7,14 @@ import {
 } from './currency-rate.controller';
 
 describe('MASTER-003 controller permission metadata', () => {
+  it('requires both currency creation permissions for a quote', () => {
+    expect(
+      Reflect.getMetadata(
+        PERMISSIONS_KEY,
+        CurrencyRateController.prototype.createQuote,
+      ),
+    ).toEqual(['master_data.create', 'master_data.currency_rate.create']);
+  });
   it.each([
     [CurrencyRateController, 'history', 'master_data.read'],
     [CurrencyRateController, 'current', 'master_data.read'],

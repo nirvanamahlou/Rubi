@@ -4,7 +4,15 @@ import { useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
-import { FormField, Input } from '@/components/ui/form-controls';
+import {
+  FormField,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/form-controls';
 import {
   DialogDescription,
   DialogTitle,
@@ -14,7 +22,9 @@ import {
 } from '@/components/ui/overlays';
 import { Alert, Badge } from '@/components/ui/surfaces';
 import type { MasterDataCatalogItem } from '../model/catalog';
+import { getMasterDataFormFields } from '../model/form-fields';
 import { validateMasterDataDraft } from '../model/validation';
+import { MasterDataClearableField } from './master-data-clearable-field';
 
 export type MasterDataFormMode = 'create' | 'view' | 'edit';
 
@@ -38,11 +48,11 @@ function initialValues(
 ) {
   if (mode === 'create') {
     return Object.fromEntries(
-      definition.fields.map((field) => [field.key, '']),
+      getMasterDataFormFields(definition).map((field) => [field.key, '']),
     );
   }
   return Object.fromEntries(
-    definition.fields.map((field) => [
+    getMasterDataFormFields(definition).map((field) => [
       field.key,
       definition.preview[field.key] ?? '',
     ]),
@@ -89,14 +99,13 @@ export function MasterDataForm({
         </DialogDescription>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          <Badge>Contract: master-data.v1-draft</Badge>
           <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">
             Blocked by Migration Lock
           </Badge>
         </div>
 
         <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
-          {definition.fields.map((field) => {
+          {getMasterDataFormFields(definition).map((field) => {
             const error = errors[field.key];
             const helpId = `${definition.key}-${field.key}-help`;
             const errorId = `${definition.key}-${field.key}-error`;
@@ -112,48 +121,92 @@ export function MasterDataForm({
                 key={field.key}
                 label={field.label}
               >
-                {field.type === 'datetime-local' ? (
-                  <DatePicker
-                    aria-describedby={
-                      error ? errorId : field.hint ? helpId : undefined
-                    }
-                    aria-invalid={Boolean(error)}
-                    disabled={readonly}
-                    id={`${definition.key}-${field.key}`}
-                    includeTime
-                    onChange={(nextValue) =>
-                      setValues((current) => ({
-                        ...current,
-                        [field.key]: nextValue,
-                      }))
-                    }
-                    placeholder={field.placeholder}
-                    readOnly={readonly}
-                    value={values[field.key] ?? ''}
-                  />
-                ) : (
-                  <Input
-                    aria-describedby={
-                      error ? errorId : field.hint ? helpId : undefined
-                    }
-                    aria-invalid={Boolean(error)}
-                    disabled={readonly}
-                    dir={isCanonical ? 'ltr' : undefined}
-                    id={`${definition.key}-${field.key}`}
-                    inputMode={field.type === 'number' ? 'decimal' : undefined}
-                    onChange={(event) =>
-                      setValues((current) => ({
-                        ...current,
-                        [field.key]: event.target.value,
-                      }))
-                    }
-                    placeholder={field.placeholder}
-                    readOnly={readonly}
-                    step={field.type === 'number' ? 'any' : undefined}
-                    type={field.type}
-                    value={values[field.key] ?? ''}
-                  />
-                )}
+                <MasterDataClearableField
+                  controlId={`${definition.key}-${field.key}`}
+                  label={field.label}
+                  value={
+                    field.type === 'select' || field.type === 'datetime-local'
+                      ? (values[field.key] ?? '')
+                      : ''
+                  }
+                  disabled={readonly}
+                  onClear={() =>
+                    setValues((current) => ({ ...current, [field.key]: '' }))
+                  }
+                >
+                  {field.type === 'select' ? (
+                    <Select
+                      disabled={readonly}
+                      value={values[field.key] ?? ''}
+                      onValueChange={(value) =>
+                        setValues((current) => ({
+                          ...current,
+                          [field.key]: value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger
+                        id={`${definition.key}-${field.key}`}
+                        aria-invalid={Boolean(error)}
+                        aria-describedby={
+                          error ? errorId : field.hint ? helpId : undefined
+                        }
+                      >
+                        <SelectValue placeholder="انتخاب کنید" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {field.options?.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : field.type === 'datetime-local' ? (
+                    <DatePicker
+                      aria-describedby={
+                        error ? errorId : field.hint ? helpId : undefined
+                      }
+                      aria-invalid={Boolean(error)}
+                      disabled={readonly}
+                      id={`${definition.key}-${field.key}`}
+                      includeTime
+                      onChange={(nextValue) =>
+                        setValues((current) => ({
+                          ...current,
+                          [field.key]: nextValue,
+                        }))
+                      }
+                      placeholder={field.placeholder}
+                      readOnly={readonly}
+                      value={values[field.key] ?? ''}
+                    />
+                  ) : (
+                    <Input
+                      aria-describedby={
+                        error ? errorId : field.hint ? helpId : undefined
+                      }
+                      aria-invalid={Boolean(error)}
+                      disabled={readonly}
+                      dir={isCanonical ? 'ltr' : undefined}
+                      id={`${definition.key}-${field.key}`}
+                      inputMode={
+                        field.type === 'number' ? 'decimal' : undefined
+                      }
+                      onChange={(event) =>
+                        setValues((current) => ({
+                          ...current,
+                          [field.key]: event.target.value,
+                        }))
+                      }
+                      placeholder={field.placeholder}
+                      readOnly={readonly}
+                      step={field.type === 'number' ? 'any' : undefined}
+                      type={field.type}
+                      value={values[field.key] ?? ''}
+                    />
+                  )}
+                </MasterDataClearableField>
               </FormField>
             );
           })}

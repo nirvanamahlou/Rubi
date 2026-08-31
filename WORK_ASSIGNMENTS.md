@@ -24,43 +24,171 @@
 - Next product work requested by the owner is PC-A Ticket Catalog: definition/schedule/fare/capacity, not passenger issuance or Manifest. This is a next-step handoff, NOT a Migration reservation and NOT permission to change PC-B branches.
 
 آخرین به‌روزرسانی: 2026-08-29 — MASTER-003 Phase A برای Review و Handoff مشروط آماده شد
+آخرین به‌روزرسانی: 2026-08-31 — اصلاح نمایش فهرست مالی و جغرافیا پس از ثبت فرم
+
+### `MASTER-003-LIST-VISIBILITY` — PC-B — `READY_FOR_REVIEW`
+
+- درخواست کاربر: اصلاح نمایش‌ندادن داده پس از ثبت فرم و سپس ادغام به develop؛ مجوز Merge به معنی عبور از Review و وابستگی‌های باز نیست.
+- Branch: `codex/pc-b-master-data-list-visibility` از `790c20a`؛ والدها، PC-A، Customers و داده‌های موجود دست‌نخورده می‌مانند.
+- Scope: درخواست‌های فهرست/KPI مالی و جغرافیا، تست سازگاری Web/API و اسناد همین اصلاح؛ زیر قفل اسناد PC-B/MASTER-003. بدون Migration، Seed، Contract یا Dependency/Lockfile جدید.
+- علت تأییدشده: شش درخواست KPI با pageSize=1 در برابر حداقل 10 قرارداد؛ شکست Promise.all فهرست موفق را نیز خالی می‌کند. اصلاح و آزمون قبل از انتشار انجام می‌شود.
+- نتیجه: helper مشترک با pageSize=10، ۱۲ تست بازگشت جدید و ۹۵۸ تست عمومی موفق؛ Typecheck و Production Build موفق، lint محدوده موفق. lint کلی همان ایراد قبلی DatePicker است. API4000/Login3100 سالم؛ Smoke احراز‌شده انجام نشده است. ادغام به develop تا Review والدها و حل سه تعارض معلق می‌ماند.
+
+### `MASTER-003-LOCAL-PUBLISH` — PC-B — `READY_FOR_REVIEW`
+
+- مجوز صریح کاربر در 2026-08-31: انتشار تمام تغییرات محلی پروژه و فعال‌سازی نسخه کامل محلی، با حفظ کد و داده‌های موجود.
+- اصلاحات سربرگ، وضعیت همکاری، حذف امن، فرم‌های سفر، ترمینال و وعده/سرویس در Commitها و شاخه‌های Stacked تفکیک می‌شوند؛ والدهای موجود، PC-A، main و develop تغییر نمی‌کنند. هیچ Merge یا Force Push انجام نمی‌شود.
+- Scope شامل کد/تست/اسناد Master Data و مهاجرت‌های افزایشی معلق است؛ تنظیمات خصوصی، نسخه پشتیبان، داده عملیاتی، خروجی ساخت و Dependencyها وارد Git نمی‌شوند. سه قفل PC-B/MASTER-003 فعال و Dependency/Lockfile آزاد باقی می‌ماند.
+- قبل از Deploy محلی، Backup دیتابیس گرفته می‌شود؛ Seed یا Reset روی داده کاربردی اجرا نمی‌شود. آزمون‌ها در DB مستقل هستند. API4000، Web3100 و زیرساخت Rubi پس از بررسی روشن می‌مانند.
+- نتیجه: شش شاخه تخصصی و Draft PRهای #48 تا #53 منتشر شدند؛ نسخه حمل‌ونقل #47 نیز بدون تغییر والدها در شاخه `codex/pc-b-master-data-local-complete` قرار گرفت. اصلاح آزمون ترمینال با Fast-forward به #52 رسید؛ حذف امن امکانات وابسته قطار در نسخه تجمیعی با تست واقعی بررسی شد.
+- هر ۲۴ Migration محلی اعمال شده، داده قبلی محفوظ و API4000/Worker/Web3100 روشن‌اند. ۹۴۶ تست عمومی، Typecheck و Production Build موفق؛ آزمون واقعی ترمینال ۱۵ و حمل‌ونقل ۱۰ موفق. lint محدوده موفق؛ ایراد قبلی DatePicker و نبود Smoke احراز‌شده صریحاً گزارش شده‌اند. جزئیات: `docs/tasks/MASTER-003-LOCAL-PUBLISH.md`.
+
+### `MASTER-003-LOCAL-MEAL-SERVICE-FORM` — PC-B — `READY_FOR_REVIEW`
+
+- تأیید صریح کاربر برای تکمیل روی همین نسخه محلی با حفظ تمام تغییرات موجود؛ checkout جاری `codex/pc-b-master-data-partner-forms` جابه‌جا نمی‌شود.
+- Scope: فقط کد قابل تعریف وعده/سرویس، چندانتخابی وعده‌ها و وضعیت در حال بررسی؛ API/Contract/Web، Migration افزایشی، آزمون و اسناد همین اصلاح. بدون Customers، Seed یا Dependency/Lockfile.
+- زیر قفل‌های فعال Migration/Contract/Docs مربوط به PC-B/MASTER-003. تغییرات قبلی حذف امن و فرم‌های دیگر حفظ می‌شوند. آزمون و Client جدید در نسخه آزمایشی جدا؛ Deploy دیتابیس کاربردی و تغییر سرورها خارج از این اصلاح است.
+- قرارداد افزایشی سازگار با v12، Producer/Consumer: Master Data API/Web (PC-B): `values.code` اختیاری برای مصرف‌کننده قدیمی و قابل تعریف در فرم وعده؛ `values.status=active|inactive|under_review` با مجوز وضعیت و ذخیره اتمیک/Audit. در حال بررسی برای مصرف‌کننده قدیمی inactive است؛ `mealServiceStatus` فیلتر اختصاصی جدید و `includedMealsJson` نمایش بدون از دست دادن داده آرایه است.
+- کد استاندارد با کنترل یکتایی و خطای هم‌زمانی، انتخاب چندگانه همراه پاک‌کردن و حفظ وعده سفارشی، وضعیت سه‌گانه در فرم/فهرست/فیلتر/Excel تکمیل شد. هشت آزمون واقعی PostgreSQL 18، Seed دوگانه، کنترل TypeScript و Build API/Web در نسخه جدا موفق؛ جزئیات در `docs/tasks/MASTER-003-LOCAL-MEAL-SERVICE-FORM.md`.
+- فعال‌سازی محلی معلق است: Migration کاربردی و Client سرور مشترک تغییر نکرده‌اند؛ در کنترل نهایی API4000 پاسخ نمی‌دهد و Web3100 به Login می‌رود. Commit/Push و جابه‌جایی Branch در این اصلاح محلی انجام نشد.
+
+یادداشت: محدودیت فعال‌سازی/انتشار در گزارش مرحله‌ای بالا با مجوز جدید کاربر در `MASTER-003-LOCAL-PUBLISH` جایگزین شده است.
+
+### `MASTER-003R-TRANSPORT-FORMS` — PC-B — `READY_FOR_REVIEW`
+
+- Branch: `codex/pc-b-master-data-transport-forms` از `origin/codex/pc-b-master-data-partner-forms@2088010`؛ Draft stacked روی #45، والدها دست‌نخورده.
+- اجرای مستقل در `C:/Users/admin/Rubi-transport-forms` برای حفظ همه تغییرات ثبت‌نشده و سرورهای Checkout اصلی؛ ادغام محلی تغییرات هم‌زمان نیازمند هماهنگی جداست.
+- محدوده: هفت فرم حمل‌ونقل، API/Repository/Contract ماژول Master Data، Prisma/Migration افزایشی امکانات قطار و وضعیت بررسی، آزمون‌ها و اسناد همین Slice.
+- قفل Migration، Master Data shared-contract و اسناد مرکزی زیر مالکیت فعال `PC-B/MASTER-003`؛ بدون تغییر Dependency/Lockfile، Customers یا جداول ماژول‌های دیگر.
+- Producer/Consumer هر دو PC-B: افزودن اختیاری `values.transportStatus` و `train-types.values.facilityIds`، پاسخ attributes و فیلتر وضعیت حمل‌ونقل؛ قرارداد v12 سازگار، درخواست قدیمی رفتار قبلی را حفظ می‌کند. وضعیت بررسی در قرارداد عمومی قدیمی inactive است.
+- اتصال Documents/Integrations و شمارش ناوگان تا قرارداد واقعی فقط‌خواندنی/ناموجود؛ کدهای تولیدشده، Version و Audit ورودی دستی نیستند. ظرفیت در مدل وسیله ذخیره نمی‌شود.
+- آزمون‌ها: API ۲۶۵، Web ۲۰۳، Contracts ۱۴، Database ۵۵ و PostgreSQL ۱۸ واقعی ۹ تست موفق؛ Build/Typecheck و lint محدوده موفق. ایراد قبلی DatePicker در lint کل Web باقی است. Seed دوبار در دیتابیس موقت اجرا شد؛ Deploy محلی و Smoke احراز‌شده نسخه جدید انجام نشد.
+- قفل‌های اصلی MASTER-003 آزاد نمی‌شوند. اتصال به تغییرات ثبت‌نشده Checkout مشترک، Deploy و Merge نیازمند هماهنگی جداست؛ شرح دقیق در `docs/tasks/MASTER-003R-TRANSPORT-FORMS.md`.
+
+تجمیع نسخه حمل‌ونقل منتشرشده در PR #47 با اصلاحات بالا، تحت مجوز انتشار کامل کاربر، روی `codex/pc-b-master-data-local-complete` انجام می‌شود؛ شاخه تجمیعی برای اجرای محلی است و PRهای تخصصی مستقل باقی می‌مانند.
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `PLANNED/RESERVED`، `IN_PROGRESS`،
 `BLOCKED`، `READY_FOR_REVIEW`، `DONE`.
 
-| Work ID                         | مالک         | Branch                                      | محدوده/فایل‌های اصلی                                                                          | وضعیت              | وابستگی یا Handoff                                                                    |
-| ------------------------------- | ------------ | ------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------- |
-| BOOT-001                        | PC-A         | `codex/pc-a-bootstrap-docs`                 | اسناد Bootstrap، معماری، ERD، workflow و backlog                                              | `READY_FOR_REVIEW` | PC-B باید همه اسناد و تصمیم‌های باز P0 را مرور کند                                    |
-| FOUNDATION-001                  | PC-A         | `codex/pc-a-technical-bootstrap`            | Technical Bootstrap: Monorepo، Web/API/Worker، Docker Compose و Prisma Client بدون مدل تجاری  | `DONE`             | Commit `d9a9793` ادغام شد؛ مبنای Work Itemهای Full-Stack                              |
-| FOUNDATION-002                  | تخصیص‌نیافته | TBD                                         | سخت‌سازی زیرساخت، CI و استقرار محیط‌های غیرمحلی                                               | `PLANNED`          | FOUNDATION-001 و تصمیم‌های میزبانی/RPO/RTO                                            |
-| FOUNDATION-003                  | تخصیص‌نیافته | TBD                                         | IAM/Audit foundation، schema دامنه و Migration اولیه                                          | `PLANNED`          | با `IAM-001` جایگزین شده؛ برای جلوگیری از اجرای موازی رزرو جدید نگیرد                 |
-| FOUNDATION-004                  | PC-B         | `codex/pc-b-frontend-foundation`            | Frontend Foundation: `apps/web/**`، تست Frontend و `docs/tasks/PC-B.md`                       | `READY_FOR_REVIEW` | Base `b5b7c5d`؛ قفل Dependency/Lockfile آزاد شد                                       |
-| DOCS-002                        | PC-A         | `codex/pc-a-hr-module-ownership`            | ثبت ماژول منابع انسانی، مالکیت نهایی ماژول‌ها و قرارداد همکاری Full-Stack                     | `READY_FOR_REVIEW` | فقط مستندات؛ بدون کد، Dependency، Schema یا Migration                                 |
-| DOCS-003                        | PC-A         | `codex/pc-a-sprint-1-planning`              | ثبت برنامه Sprint اول، مرز کار و Handoff دو Task `IAM-001` و `MASTER-001`                     | `READY_FOR_REVIEW` | Base `c4f8bde`؛ فقط اسناد برنامه‌ریزی                                                 |
-| ARCH-001                        | PC-A         | `codex/pc-a-approved-workflow-architecture` | معماری ۱۷ بخش، فروش/تخصیص، رزرواسیون/Manifest، تعریف بلیت، خرید/تخفیف و release مالی          | `DONE`             | Merge `99dd1cf`؛ مرجع قطعی UI-ARCH-001                                                |
-| UI-ARCH-001                     | PC-A         | `codex/pc-a-approved-workflow-frontend`     | منوی ۱۷ بخشی، صفحات گردش فروش/رزرواسیون/خرید/مالی، تعریف بلیت و مدیریت سیستم در `apps/web/**` | `DONE`             | Merge `543f6e2`؛ دسترسی عملی IAM از مدیریت سیستم و منوی ۱۷ بخشی تثبیت شد              |
-| IAM-001                         | PC-A         | `codex/pc-a-iam-foundation`                 | IAM Full-Stack: Database، API، Web، Test، امنیت، شعبه/دسترسی و Audit                          | `DONE`             | Merge `50eaccaf`؛ Handoff عمومی IAM ثبت و قفل‌های مشترک آزاد شد                       |
-| MASTER-001                      | PC-B         | `codex/pc-b-master-data-foundation`         | Foundation بدون Persistence اطلاعات پایه، UI، قرارداد ماژول‌محلی و تست                        | `DONE`             | Merge `cda0f9a`؛ Persistence واقعی به `MASTER-002` منتقل شد                           |
-| SPRINT1-HANDOFF-001             | PC-A         | `codex/pc-a-sprint-1-handoff`               | بستن Sprint اول، ثبت Mergeهای نهایی، آزادسازی قفل‌ها و برنامه اولیه Sprint دوم                | `DONE`             | Merge `9c69124`؛ چهار قفل Sprint اول آزاد شدند                                        |
-| SPRINT2-PLANNING-001            | PC-A         | `codex/pc-a-sprint-2-planning`              | ترتیب اجرا، قفل‌ها، مرز فایل و Handoff سه Task آغاز Sprint دوم                                | `DONE`             | Merge `9efb37c`؛ فقط اسناد برنامه‌ریزی و وضعیت                                        |
-| IAM-002                         | PC-A         | `codex/pc-a-iam-domain-permissions`         | انتشار Permission Codeهای Master Data و Customers، Seed تکرارپذیر و Handoff قرارداد عمومی     | `DONE`             | Merge `d1f1133`؛ ۱۷ Permission و بدون Schema/Migration/Dependency                     |
-| IAM002-HANDOFF-001              | PC-A         | `codex/pc-a-iam-002-handoff`                | ثبت Merge، آزادسازی IAM contract lock و مجازکردن شروع دو Task مستقل Sprint دوم                | `DONE`             | Merge `0af31c2`؛ دو Task مستقل مجاز به شروع هستند                                     |
-| MASTER-002                      | PC-B         | `codex/pc-b-master-data-persistence`        | Database، Migration، Repository، Backend و اتصال واقعی Frontend اطلاعات پایه                  | `DONE`             | Merge `ddfebb3`؛ چهار قفل با Handoff مستقل آزاد شدند                                  |
-| CUSTOMER-001                    | PC-A         | `codex/pc-a-customer-persistence`           | مشتریان، Persistence، رمزنگاری Contact، Audit redaction و Duplicate query                     | `DONE`             | PR #19؛ Merge `7d0a4f4`؛ Migration و قرارداد Customer پایدار و تحویل‌شده              |
-| CUSTOMER-002A                   | PC-A         | TBD                                         | Customer Operations Enhancement در مرز Web/API فعلی Customers و تست‌های اختصاصی               | `PLANNED/RESERVED` | شروع از آخرین `origin/develop`؛ بدون قفل مشترک و بدون تداخل با MASTER-003             |
 | CUSTOMER-002B                   | PC-A         | TBD                                         | Customer Persistence بعدی و قرارداد عمومی Customers؛ Scope دقیق در Handoff فعال‌سازی می‌شود   | `PLANNED/RESERVED` | فعال‌سازی قفل‌ها فقط پس از Merge ترتیبی PRهای #25، #26 و #27                          |
-| CUSTOMER001-FINANCE-HANDOFF-001 | PC-A         | `codex/pc-a-customer-finance-handoff`       | آزادسازی چهار قفل CUSTOMER-001 و رزرو کنترل‌شده FINANCE-001؛ فقط اسناد مرکزی و سند Handoff    | `DONE`             | PR #20؛ Merge `11fc875`؛ بدون کد، Schema، Migration، Dependency یا Lockfile           |
-| FINANCE-001                     | PC-A         | `codex/pc-a-finance-foundation`             | Foundation مالی و چهار Decision پذیرفته‌شده؛ Phase A بدون Persistence و Migration             | `DONE`             | PR #21؛ Merge `45c107e`؛ قفل‌های stale با نبود FINANCE-002 آزاد شدند                  |
-| LEGAL-ENTITY-CONTEXT-001        | PC-A         | `codex/pc-a-legal-entity-context`           | Legal Entity Full-Stack، Prisma، API، Contract، App Shell، صفحه مدیریت، Audit و Test          | `DONE`             | PR #24؛ Merge `b6da5d6`؛ قفل‌ها با دلیل `DONE/MERGED via PR #24` آزاد شدند            |
-| MASTER-003                      | PC-B         | `codex/pc-b-master-data-advanced`           | Phase A: نرخ ارز پیشرفته، Import امن هتل، کاتالوگ‌های موجود، UI و Excel واقعی                 | `READY_FOR_REVIEW` | PR #25؛ کل Master Data تکمیل‌شده نیست؛ Handoff قفل‌ها مشروط و آینده است               |
 | MASTER-004                      | PC-B         | TBD                                         | ادامه کاتالوگ‌ها، Antivirus/Documents، PII encryption/unmask و قابلیت‌های آینده Master Data   | `PLANNED`          | تا Handoff بعدی بدون Prisma، Migration، Seed، Root Contract، Dependency و اسناد مرکزی |
-| CALENDAR-001                    | PC-B         | `codex/pc-b-master-data-advanced`           | تقویم مشترک آبی با سوییچ شمسی/میلادی در همه فرم‌های Web                                       | `READY_FOR_REVIEW` | ۸۵ تست Web، Typecheck و Lint موفق؛ چهار route لوکال پاسخ ۲۰۰ دادند                    |
-| CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket              | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence           |
-| MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11                  |
-| MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                           | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                           |
 | CUSTOMER-002A.1                 | PC-A         | `codex/pc-a-customer-next`                  | Timeline/Filters/Privacy در Customers؛ API/Web/Test/Contract و اسناد Task، بدون Database/Master Data | `READY_FOR_REVIEW` | Draft PR #27 روی #26؛ Migration Lock نزد `PC-B/MASTER-003` و Schema نیازها در `BLOCKED_FOR_CUSTOMER_002B` |
 | CUSTOMER-CHAIN-REVIEW-001 | PC-A | `codex/pc-a-customer-41-reconcile-20260831` | Customer PR chain review, conflict reconciliation and targeted safety gates | `READY_FOR_REVIEW` | #26/#27/#34 merged; 425 tests and 17 HTTP/database checks pass. DONE and Customer shared locks RELEASED upon #41 merge. No PC-B PR or real-data changes. |
+| Work ID                         | مالک         | Branch                                      | محدوده/فایل‌های اصلی                                                                                  | وضعیت              | وابستگی یا Handoff                                                          |
+| ------------------------------- | ------------ | ------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------ | --------------------------------------------------------------------------- |
+| BOOT-001                        | PC-A         | `codex/pc-a-bootstrap-docs`                 | اسناد Bootstrap، معماری، ERD، workflow و backlog                                                      | `READY_FOR_REVIEW` | PC-B باید همه اسناد و تصمیم‌های باز P0 را مرور کند                          |
+| FOUNDATION-001                  | PC-A         | `codex/pc-a-technical-bootstrap`            | Technical Bootstrap: Monorepo، Web/API/Worker، Docker Compose و Prisma Client بدون مدل تجاری          | `DONE`             | Commit `d9a9793` ادغام شد؛ مبنای Work Itemهای Full-Stack                    |
+| FOUNDATION-002                  | تخصیص‌نیافته | TBD                                         | سخت‌سازی زیرساخت، CI و استقرار محیط‌های غیرمحلی                                                       | `PLANNED`          | FOUNDATION-001 و تصمیم‌های میزبانی/RPO/RTO                                  |
+| FOUNDATION-003                  | تخصیص‌نیافته | TBD                                         | IAM/Audit foundation، schema دامنه و Migration اولیه                                                  | `PLANNED`          | با `IAM-001` جایگزین شده؛ برای جلوگیری از اجرای موازی رزرو جدید نگیرد       |
+| FOUNDATION-004                  | PC-B         | `codex/pc-b-frontend-foundation`            | Frontend Foundation: `apps/web/**`، تست Frontend و `docs/tasks/PC-B.md`                               | `READY_FOR_REVIEW` | Base `b5b7c5d`؛ قفل Dependency/Lockfile آزاد شد                             |
+| DOCS-002                        | PC-A         | `codex/pc-a-hr-module-ownership`            | ثبت ماژول منابع انسانی، مالکیت نهایی ماژول‌ها و قرارداد همکاری Full-Stack                             | `READY_FOR_REVIEW` | فقط مستندات؛ بدون کد، Dependency، Schema یا Migration                       |
+| DOCS-003                        | PC-A         | `codex/pc-a-sprint-1-planning`              | ثبت برنامه Sprint اول، مرز کار و Handoff دو Task `IAM-001` و `MASTER-001`                             | `READY_FOR_REVIEW` | Base `c4f8bde`؛ فقط اسناد برنامه‌ریزی                                       |
+| ARCH-001                        | PC-A         | `codex/pc-a-approved-workflow-architecture` | معماری ۱۷ بخش، فروش/تخصیص، رزرواسیون/Manifest، تعریف بلیت، خرید/تخفیف و release مالی                  | `DONE`             | Merge `99dd1cf`؛ مرجع قطعی UI-ARCH-001                                      |
+| UI-ARCH-001                     | PC-A         | `codex/pc-a-approved-workflow-frontend`     | منوی ۱۷ بخشی، صفحات گردش فروش/رزرواسیون/خرید/مالی، تعریف بلیت و مدیریت سیستم در `apps/web/**`         | `DONE`             | Merge `543f6e2`؛ دسترسی عملی IAM از مدیریت سیستم و منوی ۱۷ بخشی تثبیت شد    |
+| IAM-001                         | PC-A         | `codex/pc-a-iam-foundation`                 | IAM Full-Stack: Database، API، Web، Test، امنیت، شعبه/دسترسی و Audit                                  | `DONE`             | Merge `50eaccaf`؛ Handoff عمومی IAM ثبت و قفل‌های مشترک آزاد شد             |
+| MASTER-001                      | PC-B         | `codex/pc-b-master-data-foundation`         | Foundation بدون Persistence اطلاعات پایه، UI، قرارداد ماژول‌محلی و تست                                | `DONE`             | Merge `cda0f9a`؛ Persistence واقعی به `MASTER-002` منتقل شد                 |
+| SPRINT1-HANDOFF-001             | PC-A         | `codex/pc-a-sprint-1-handoff`               | بستن Sprint اول، ثبت Mergeهای نهایی، آزادسازی قفل‌ها و برنامه اولیه Sprint دوم                        | `DONE`             | Merge `9c69124`؛ چهار قفل Sprint اول آزاد شدند                              |
+| SPRINT2-PLANNING-001            | PC-A         | `codex/pc-a-sprint-2-planning`              | ترتیب اجرا، قفل‌ها، مرز فایل و Handoff سه Task آغاز Sprint دوم                                        | `DONE`             | Merge `9efb37c`؛ فقط اسناد برنامه‌ریزی و وضعیت                              |
+| IAM-002                         | PC-A         | `codex/pc-a-iam-domain-permissions`         | انتشار Permission Codeهای Master Data و Customers، Seed تکرارپذیر و Handoff قرارداد عمومی             | `DONE`             | Merge `d1f1133`؛ ۱۷ Permission و بدون Schema/Migration/Dependency           |
+| IAM002-HANDOFF-001              | PC-A         | `codex/pc-a-iam-002-handoff`                | ثبت Merge، آزادسازی IAM contract lock و مجازکردن شروع دو Task مستقل Sprint دوم                        | `DONE`             | Merge `0af31c2`؛ دو Task مستقل مجاز به شروع هستند                           |
+| MASTER-002                      | PC-B         | `codex/pc-b-master-data-persistence`        | Database، Migration، Repository، Backend و اتصال واقعی Frontend اطلاعات پایه                          | `DONE`             | Merge `ddfebb3`؛ چهار قفل با Handoff مستقل آزاد شدند                        |
+| CUSTOMER-001                    | PC-A         | `codex/pc-a-customer-persistence`           | مشتریان، Persistence، رمزنگاری Contact، Audit redaction و Duplicate query                             | `DONE`             | PR #19؛ Merge `7d0a4f4`؛ Migration و قرارداد Customer پایدار و تحویل‌شده    |
+| CUSTOMER-002A                   | PC-A         | TBD                                         | Customer Operations Enhancement در مرز Web/API فعلی Customers و تست‌های اختصاصی                       | `PLANNED/RESERVED` | شروع از آخرین `origin/develop`؛ بدون قفل مشترک و بدون تداخل با MASTER-003   |
+| CUSTOMER001-FINANCE-HANDOFF-001 | PC-A         | `codex/pc-a-customer-finance-handoff`       | آزادسازی چهار قفل CUSTOMER-001 و رزرو کنترل‌شده FINANCE-001؛ فقط اسناد مرکزی و سند Handoff            | `DONE`             | PR #20؛ Merge `11fc875`؛ بدون کد، Schema، Migration، Dependency یا Lockfile |
+| FINANCE-001                     | PC-A         | `codex/pc-a-finance-foundation`             | Foundation مالی و چهار Decision پذیرفته‌شده؛ Phase A بدون Persistence و Migration                     | `DONE`             | PR #21؛ Merge `45c107e`؛ قفل‌های stale با نبود FINANCE-002 آزاد شدند        |
+| LEGAL-ENTITY-CONTEXT-001        | PC-A         | `codex/pc-a-legal-entity-context`           | Legal Entity Full-Stack، Prisma، API، Contract، App Shell، صفحه مدیریت، Audit و Test                  | `DONE`             | PR #24؛ Merge `b6da5d6`؛ قفل‌ها با دلیل `DONE/MERGED via PR #24` آزاد شدند  |
+| MASTER-003                      | PC-B         | `codex/pc-b-master-data-advanced`           | توسعه افزایشی Master Data: Schema/Migration، Contract، Backend، Frontend، Excel Import/Export و Test  | `IN_PROGRESS`      | Draft PR #25؛ خروجی XLSX واقعی فعال؛ سه قفل فعال و Dependency lock آزاد است |
+| CALENDAR-001                    | PC-B         | `codex/pc-b-master-data-advanced`           | تقویم مشترک آبی با سوییچ شمسی/میلادی در همه فرم‌های Web                                               | `READY_FOR_REVIEW` | ۸۵ تست Web، Typecheck و Lint موفق؛ چهار route لوکال پاسخ ۲۰۰ دادند          |
+| MASTER-003B-GEO                 | PC-B         | `codex/pc-b-master-data-next`               | Vertical Slice جغرافیا: Country، Province/Region، City، Airport، Terminal و تست/مستندات همان Slice    | `READY_FOR_REVIEW` | Draft PR #28 روی PR #25؛ سه قفل MASTER-003 فعال می‌مانند                    |
+| MASTER-003C-FINANCIAL           | PC-B         | `codex/pc-b-master-data-financial`          | مالی و پولی در Master Data: Currency، Rate Workflow/History، Bank/Branch و Payment Method مرجع        | `READY_FOR_REVIEW` | Draft PR #29 روی PR #28 و به‌تبع آن #25؛ بدون Query مستقیم Finance          |
+| MASTER-003D-UI-POLISH           | PC-B         | `codex/pc-b-master-data-ui-polish`          | KPI پاستلی مشترک، نمای کامل جغرافیا و حذف underline کارت‌های Hub بدون تغییر Backend/Database          | `READY_FOR_REVIEW` | Draft PR #30 روی PR #29؛ ۳۳۵ تست، Typecheck و Build موفق                    |
+| MASTER-003E-SUPPLIERS           | PC-B         | `codex/pc-b-master-data-suppliers`          | Vertical Slice سازمان‌ها و تأمین‌کنندگان: Supplier، Broker، Contact ماسک‌شده، Service و Collaboration | `READY_FOR_REVIEW` | Draft PR #31 روی PR #30؛ قفل‌های Migration/Contract/Docs فعال MASTER-003    |
+| MASTER-003F-ACCOMMODATION       | PC-B         | `codex/pc-b-master-data-accommodation`      | Vertical Slice اقامت: Hotel Profile، Chain، Room، Meal، Facility، Excel و Composite Hotel             | `READY_FOR_REVIEW` | Draft PR #32 روی PR #31؛ قفل‌های Migration/Contract/Docs فعال MASTER-003    |
+| MASTER-003G-UX-CONSOLIDATION    | PC-B         | `codex/pc-b-master-data-ux-consolidation`   | ادغام نرخ/تاریخچه در ارز، ادغام نمای شهر/استان، پروفایل‌های Popup و حذف نمای مستقل مخاطبان             | `READY_FOR_REVIEW` | Draft PR #33 روی PR #32؛ فقط Web/Test/Docs و بدون Schema، Migration یا API  |
+| MASTER-003H-TRANSPORT           | PC-B         | `codex/pc-b-master-data-transport`          | Vertical Slice حمل‌ونقل: Airline، Aircraft، Cabin، Baggage، Manifest، Rail و Bus با پروفایل Popup       | `READY_FOR_REVIEW` | Draft PR #35 روی PR #33؛ سه قفل MASTER-003 فعال و Customers دست‌نخورده است  |
+| MASTER-003I-SALES-REFERENCES    | PC-B         | `codex/pc-b-master-data-sales-references`   | Vertical Slice مراجع فروش: Acquaintance، Lead Source، Channel، Lost Reason، Customer Type، Tag، Campaign | `READY_FOR_REVIEW` | Draft PR #36 روی PR #35؛ سه قفل فعال و بدون Query مستقیم Customers          |
+| MASTER-003J-INSURANCE           | PC-B         | `codex/pc-b-master-data-insurance`          | Vertical Slice بیمه: Insurer، Insurance Plan، Coverage، روابط مرجع، Popup و آزمون کامل                 | `READY_FOR_REVIEW` | Draft PR #37 روی PR #36؛ سه قفل فعال و بدون داده عملیاتی Reservations       |
+| MASTER-003K-TRAVEL-SERVICES     | PC-B         | `codex/pc-b-master-data-travel-services`    | Vertical Slice تور و خدمات سفر: Leader، Tour/Transfer Type، CIP، Visa و Bus Catalog                    | `READY_FOR_REVIEW` | Draft PR #38، Stacked روی PR #37؛ همه Profileها Popup؛ Bus به Organization/Provider و Facility واقعی متصل است |
+| MASTER-003L-SECTION-CLEANUP     | PC-B         | `codex/pc-b-master-data-section-cleanup`   | حذف شش ورودی از رابط خدمات سفر و مراجع فروش؛ هماهنگی کارت‌ها و تست ناوبری                         | `READY_FOR_REVIEW` | Stacked روی PR #38؛ Web/Test/Docs زیر قفل MASTER-003؛ بدون حذف داده، تغییر API یا Customers |
+| CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket                      | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence |
+| MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix         | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11        |
+| MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                                   | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |
+
+### `MASTER-003-LOCAL-TRAVEL-FORMS` — PC-B — `READY_FOR_LOCAL_REVIEW` (فعال‌سازی معلق)
+
+- تأیید کاربر برای تکمیل فرم‌های نوع ترانسفر و ویزا روی تغییرات موجود، بدون حذف یا بازنویسی کار نوع تور، حذف امن و سایر اصلاحات محلی.
+- محدوده: دو فرم و نمایش فهرست/پروفایل آن‌ها، وضعیت مجوزدار اتمیک، ظرفیت بازه‌ای، نوع اعتبار مرجع ویزا، Migration افزایشی و آزمون‌های همان دو منبع.
+- Schema، Migration `20260831100000_master_data_travel_reference_forms`، قرارداد افزایشی v12 و اسناد این اصلاح زیر قفل موجود `PC-B/MASTER-003` هستند؛ Dependency/Lockfile، Customers و IAM داخلی تغییر نمی‌کنند.
+- در این گفت‌وگوی جانبی Branch/Commit/Push یا سرورهای مشترک تغییر نمی‌کنند؛ بررسی دیتابیس و ساخت در محیط آزمایشی جدا انجام می‌شود. جزئیات سازگاری در `docs/tasks/MASTER-003-LOCAL-TRAVEL-FORMS.md` ثبت می‌شود.
+- فرم‌ها و ذخیره‌سازی پیاده شدند؛ ۷۰ تست هدفمند API، ۲۸ تست Web، ۱۳ تست واقعی PostgreSQL 18 و دو تست Migration موفق‌اند. اجرای Migration/بازسازی Client روی محیط مشترک در این کار انجام نشده و باید با کار هم‌زمان ترمینال هماهنگ شود.
+
+### `MASTER-003Q-PARTNER-FORMS` — PC-B — `READY_FOR_REVIEW`
+
+- Branch: `codex/pc-b-master-data-partner-forms` از `560b3c1` / PR #44؛ والدها تغییر نمی‌کنند.
+- مجوز هماهنگی: درخواست صریح کاربر در 2026-08-31 برای تکمیل تأمین‌کننده/کارگزار روی نسخه فعلی با حفظ تغییرات محلی حذف امن و وضعیت همکاری. آن تغییرات جداگانه باقی می‌مانند و در Commit این کار وارد نمی‌شوند.
+- محدوده: نام انگلیسی مستقل پروفایل، نوع شخصیت سازمان، تماس اصلی وابسته به همان سازمان، انتخاب چندگانه خدمات، فرم‌های Popup، Migration افزایشی، API/Permission/Audit، Test و اسناد همین Slice.
+- سه قفل Migration/Contract/Docs همان `PC-B/MASTER-003`؛ Schema، قرارداد Master Data و اسناد وضعیت برای همین زیرواحد رزرو می‌شوند. بدون Dependency، Customers یا فایل داخلی ماژول دیگر.
+- Producer: Master Data API، Consumer: Master Data Web. توسعه سازگار با v12: فیلدهای اختیاری `englishName`/`primaryContactId` برای Supplier/Broker و `personType` برای Organization؛ نبود فیلد در PATCH مقدار قبلی را حفظ می‌کند. فقط نام/Mask مخاطب در پاسخ عمومی؛ هیچ Ciphertext یا شماره کامل در List/Export/Audit پروفایل نیست.
+- قرارداد و محدودیت خرید فاقد Public Service عملیاتی‌اند؛ اتصال آن‌ها Deferred و بدون جعل داده/نوشتن در مالک دیگر است.
+- Draft PR #45: https://github.com/nirvanamahlou/Rubi/pull/45 — Stacked روی `codex/pc-b-master-data-clear-fields` و وابسته به #44 و زنجیره #25؛ پیش از والد Merge نشود.
+- نتیجه: چهار فیلد/قابلیت اصلی با ذخیره واقعی، Mask، انتخاب چندگانه و Popup تکمیل شد. Migration `20260831090000_master_data_partner_forms` افزایشی است؛ PostgreSQL 18 خالی، Seed دوبار و چهار آزمون واقعی DB موفق‌اند. تست‌های واحد، typecheck، lint محدوده و Production Build موفق؛ lint کلی Web فقط ایراد قبلی DatePicker را دارد. Smoke احراز‌شده به Session کاربر نیاز دارد.
+
+### `MASTER-003-LOCAL-TERMINAL-FORM` — PC-B — `READY_FOR_REVIEW` (محلی)
+
+- تأیید صریح کاربر برای تکمیل ترمینال روی فایل‌های دارای تغییر محلی و Migration افزایشی در 2026-08-31؛ تغییرات حذف امن، تور و سایر کارها حفظ می‌شوند. کار محلی روی checkout فعلی، بدون تغییر Branch، Commit/Push، restart سرورها یا تغییر داده عملیاتی است.
+- محدوده: مدل/Migration ترمینال، Policy و Repository/DTO/Export همان Master Data، Contract افزایشی، فرم/فهرست جغرافیا، آزمون‌ها و گزارش. فایل‌های مرکزی Schema/Contract/Docs زیر همان سه قفل PC-B/MASTER-003 رزرو هستند؛ Dependency/Lockfile آزاد و دست‌نخورده می‌ماند.
+- Producer: Master Data API؛ Consumer: Master Data Web. `MIXED` به enum نوع ترمینال اضافه می‌شود. فیلدهای اختیاری `gateCount`، `operatingHoursMode`، `opensAt`، `closesAt` افزایشی و سازگار با payload قدیمی‌اند؛ نبود در PATCH مقدار قبل را حفظ می‌کند. ساعت‌ها ساعت محلی تکرارشونده در Timezone فرودگاه‌اند، نه زمان وقوع رویداد.
+- `values.status` فقط در فرم ترمینال مقادیر active/inactive/maintenance دارد و با مجوز master_data.status.manage، همراه مشخصات در یک تراکنش/Audit ذخیره می‌شود. رکورد در تعمیرات isActive=false و isUnderMaintenance=true دارد؛ قرارداد عمومی status همچنان active/inactive است و مصرف‌کننده قدیمی آن را قابل استفاده نمی‌بیند.
+- شهر، IATA/ICAO و Timezone از FK فرودگاه خوانده می‌شوند؛ نام تغییر‌دهنده فقط از API عمومی مجوزدار IAM، بدون Query مستقیم. Schema/Migration فقط افزایشی است؛ تست DB در پایگاه موقت مستقل انجام می‌شود. Customers و Finance خارج از محدوده‌اند.
+- نتیجه: فرم و فهرست ترمینال شامل نوع مشترک، تعداد گیت، ساعت فعالیت و تعمیرات تکمیل شد. ۶۹ تست جدید API/Web و ۱۵ آزمون واقعی PostgreSQL 18 موفق؛ مجموعه جاری API با ۴۶۳، Web با ۳۰۴ و Contract با ۱۴ تست موفق است. lint محدوده، typecheck با قرارداد جاری، Prisma format/validate/generate و Build جداگانه API/Web موفق‌اند.
+- Migration `20260831110000_master_data_terminal_details` و Seed دوبار فقط در DB مستقل آزموده شدند؛ Seed در نسخه آزمایشی با مهلت تراکنش ۶۰ثانیه‌ای اجرا شد چون مهلت پیش‌فرض ۵ثانیه‌ای در محیط جاری تمام می‌شد. DB آزمون حذف شد؛ فعال‌سازی روی دیتابیس/سرور مشترک هنوز انجام نشده و نیازمند هماهنگی است. گزارش: `docs/tasks/MASTER-003-LOCAL-TERMINAL-FORM.md`.
+
+### `MASTER-003-LOCAL-TOUR-FORM` — PC-B — `READY_FOR_REVIEW` (محلی)
+
+- کار محلی گفت‌وگوی جانبی با تأیید صریح کاربر برای اصلاح هم‌پوشان، با حفظ تغییرات موجود؛ در این گفت‌وگو Branch جابه‌جا نشد و Commit/Push انجام نشد. هنگام پایان بررسی، checkout مشترک روی `codex/pc-b-master-data-partner-forms` بود.
+- Scope: فقط فرم/فهرست نوع تور، اعتبارسنجی و ذخیره اتمیک وضعیت در Master Data، نمایش metadata آخرین تغییر، آزمون‌ها و سند `docs/tasks/MASTER-003-LOCAL-TOUR-FORM.md`؛ بدون Customers، IAM داخلی، Schema/Migration/Seed یا Dependency/Lockfile.
+- تغییر محدود فایل‌های مشترک `master-data.service.ts`، `master-data.repository.ts` و `master-data-travel-services-workspace.tsx` با حفظ کامل حذف امن و سایر تغییرات محلی؛ فایل‌های جدید فرم و آزمون مستقل‌اند. اسناد مرکزی زیر قفل فعال PC-B/MASTER-003 می‌مانند.
+- Producer/Consumer: Master Data API/Web. قرارداد افزایشی سازگار با v12: `values.status` اختیاری فقط برای `tour-types`؛ تغییر وضعیت نیازمند `master_data.status.manage` و همراه سایر فیلدها در همان تراکنش/Audit است. نبود status رفتار قدیمی را حفظ می‌کند.
+- پاسخ نوع تور در attributes، `updatedByUserId` واقعی و `usageCount=null`/`usageStatus=UNAVAILABLE` دارد. شمارش محصولات تا انتشار قرارداد مالک موجود نیست؛ نام کاربر فقط از API عمومی مجوزدار `GET /iam/users` خوانده می‌شود، بدون Query مستقیم یا ذخیره نام/PII در Master Data.
+- بررسی: ۵۸ آزمون جدید نوع تور؛ مجموعه جاری Web با ۲۴۲ تست و API با ۳۸۴ تست موفق/۱۱ تست skipped؛ typecheck، lint فایل‌های متاثر و Build جدا از خروجی سرور موفق‌اند. Smoke احراز‌شده به‌دلیل نبود Session انجام نشد. شمارش استفاده همچنان وابسته به قرارداد محصولات است.
+
+### `MASTER-003P-CLEAR-FIELDS` — PC-B — `READY_FOR_REVIEW`
+
+- Branch: `codex/pc-b-master-data-clear-fields` از PR #43 / `b78d0a9`؛ والد دست‌نخورده می‌ماند.
+- محدوده: پاک‌کردن انتخاب در فرم‌های Master Data (انتخاب ساده/مرجع/چندانتخابی/تاریخ)، کنترل محلی فرم، اعتبارسنجی و آزمون‌های Web و اسناد همین واحد کار.
+- فیلد اجباری پس از پاک‌کردن بدون انتخاب دوباره قابل ذخیره نیست؛ فیلد فقط‌خواندنی یا در حال ذخیره قابل پاک‌کردن نیست. پاک‌کردن انتخاب هیچ رکورد مرجعی را حذف نمی‌کند.
+- بدون تغییر UI مشترک، Customers، Backend، Contract، Schema/Migration/Seed یا Dependency/Lockfile؛ اسناد مرکزی تحت قفل فعال `PC-B/MASTER-003` و سه قفل اصلی ثابت‌اند.
+- رزرو فایل مرکزی جدید `apps/web/vitest.config.mts` فقط برای اجرای آزمون واقعی کامپوننت‌های TSX با همان JSX خودکار Next و alias موجود Web؛ بدون Dependency یا تغییر تنظیمات ساخت Next.
+- تغییرات محلی موجود در `master-data-suppliers-workspace.tsx` و `supplier-collaboration.ts` خارج از Scope‌اند و نه بازنویسی، نه stage می‌شوند.
+- تحویل Draft Stacked روی `codex/pc-b-master-data-payment-form`؛ پیش از #43 و والدهای پشته Merge نشود.
+- کنترل کیفیت روی checkout مستقل همین Commit (بدون تغییرات هم‌زمان دیگر): Frozen install، `175/175` تست Web شامل ۲۰ آزمون جدید، typecheck، lint فایل‌های متاثر و Production Build موفق؛ گزارش کامل در `docs/tasks/MASTER-003P-CLEAR-FIELDS.md`.
+
+### `MASTER-003O-PAYMENT-FORM` — PC-B — `READY_FOR_REVIEW`
+
+- Branch: `codex/pc-b-master-data-payment-form` از PR #42 / `495af50`؛ والد دست‌نخورده می‌ماند.
+- محدوده: حذف ورودی کد روش و نام انگلیسی فقط از فرم روش پرداخت، مدل فیلدهای فرم و validation، تولید کد داخلی در Master Data API و تست/اسناد همان کار؛ بدون Customers یا Finance.
+- رفتار افزایشی سازگار با Contract v12: در `POST /api/v1/master-data/payment-methods` اگر `values.code` ارسال نشود، Backend کد یکتا تولید می‌کند. کد صریح مصرف‌کننده قدیمی همچنان پذیرفته و اعتبارسنجی می‌شود؛ Update بدون این دو فیلد، مقدارهای قبلی را حفظ می‌کند. Producer: Master Data API؛ Consumer: Master Data Web؛ هر دو PC-B.
+- فیلدهای Catalog/Export، Schema، Migration، Seed، قرارداد عمومی و Dependency/Lockfile تغییر نمی‌کنند؛ اسناد مرکزی تحت قفل فعال `PC-B/MASTER-003` و سه قفل اصلی ثابت‌اند.
+- Draft PR روی شاخه `codex/pc-b-master-data-clean-labels`؛ پیش از #42 و والدهای پشته Merge نشود.
+- Web: `155/155` و API: `245/245` تست موفق؛ typecheck هر دو، lint فایل‌های Web متاثر و کل API و Production Build هر دو موفق‌اند. API محلی با کد جدید پاسخ ۲۰۰ می‌دهد؛ گزارش در `docs/PROJECT_STATUS.md`.
+
+### `MASTER-003N-CLEAN-LABELS` — PC-B — `READY_FOR_REVIEW`
+
+- Branch: `codex/pc-b-master-data-clean-labels` از PR #40 / `808ca13`؛ والد دست‌نخورده می‌ماند.
+- محدوده: حذف متن و نشان فنی از Header فرم‌ها و Workspaceهای Master Data؛ فقط `apps/web/src/modules/master-data/components/**` و تست/اسناد همان کار.
+- قرارداد API، اعتبارسنجی، Audit، نسخه رکورد، هشدار Preview، داده‌ها و فرم‌ها حفظ می‌شوند؛ بدون Backend/Schema/Migration/Seed/Dependency/Customers.
+- اسناد وضعیت تحت قفل فعال `PC-B/MASTER-003`؛ سه قفل اصلی تغییر نمی‌کنند و Dependency آزاد می‌ماند. Draft PR مستقیم روی #40 و بدون Merge خودکار.
+- Web: هر ۱۵۱ تست، typecheck، lint فایل‌های تغییرکرده و Production Build موفق؛ هشت صفحه ساخته‌شده فاقد برچسب‌های حذف‌شده‌اند. گزارش در `docs/PROJECT_STATUS.md` ثبت شد.
+
+### `MASTER-003M-CURRENCY-FORM` — PC-B — `READY_FOR_REVIEW`
+
+- Branch: `codex/pc-b-master-data-currency-form` از PR #39 / `02f88e9`؛ والد دست‌نخورده است.
+- گزارش پیاده‌سازی و کنترل کیفیت: `docs/tasks/MASTER-003M-CURRENCY-FORM.md`؛ Draft PR مستقیم روی #39، بدون Merge خودکار.
+- محدوده: فرم ارز و ثبت نرخ خرید/فروش در Web، تست‌ها، API همان Master Data و اسناد.
+- قفل مشترک: `packages/contracts/src/master-data/index.ts` و export لازم، تحت قفل فعال MASTER-003؛ بدون Schema/Migration/Dependency یا Customers.
+- قرارداد افزایشی سازگار با v12: `POST /api/v1/master-data/currency-rates/quotes` با ارز مبدأ/مقصد، buyRate و sellRate اختیاری (حداقل یکی)، منبع، زمان UTC، بازه اعتبار و دلیل اصلاح؛ پاسخ فهرست نرخ‌های جدید. Producer: Master Data API؛ Consumer: فرم ارز Master Data Web، هر دو PC-B. مسیرهای قبلی و ساختار تاریخچه تغییر نمی‌کنند.
+- دو نرخ در تراکنش واحد، Draft و `isAuthoritative=false` ثبت می‌شوند؛ ثبت‌کننده از actor است. ارز پایه فقط‌خواندنی و منتظر قرارداد Finance باقی می‌ماند. سیاست نمایش از UI حذف و مقدار ذخیره‌شده حفظ می‌شود؛ ایجاد جدید از Default موجود DB استفاده می‌کند.
 
 ### قفل موقت Supply-chain برای Review PR #23
 
@@ -271,6 +399,37 @@ Merge ندارد. `MASTER-004` نیز تا فعال‌شدن قفل بعدی ح�
 Seed، Root Contract، Dependency/Lockfile یا اسناد مرکزی را ندارد.
 
 ### سابقه رزرو موازی PC-A/CUSTOMER-002A — ادغام‌شده با #26
+#### زیرواحد Stacked `MASTER-003B-GEO`
+
+- Branch مستقل `codex/pc-b-master-data-next` از
+  `origin/codex/pc-b-master-data-advanced@f0d3b8c411d6e665147958e67193ac52c6ad4397`
+  ساخته شده و Parent Branch نباید از این Task تغییر یا Push شود.
+- محدوده انحصاری این Slice شامل مدل، Migration افزایشی، Repository/API/Contract،
+  Permission/Audit، UI فارسی RTL و تست‌های Country، Province/Region، City، Airport و
+  Terminal است؛ هیچ فایل Customers در این Task تغییر نمی‌کند.
+- سه قفل فعال Migration، Master Data shared-contract/root export و Central docs همان
+  قفل‌های `PC-B/MASTER-003` هستند و قفل جدید یا موازی ایجاد نمی‌شود؛ Dependency/Lockfile
+  آزاد می‌ماند و این Slice مجاز به تغییر manifest یا lockfile نیست.
+- PR این Slice باید Draft و با Base `codex/pc-b-master-data-advanced` باشد، وابستگی به
+  PR #25 را صریح ثبت کند و پیش از Merge والد ادغام نشود.
+
+#### زیرواحد `MASTER-003C-FINANCIAL`
+
+- Branch مستقل `codex/pc-b-master-data-financial` از
+  `origin/codex/pc-b-master-data-next@e0e3a5f` ساخته شده و Base PR آن باید همان
+  Branch جغرافیا باشد؛ Draft PR #29 ایجاد شد و Parentهای #28 و #25 پیش از آن Merge
+  می‌شوند.
+- این Slice زیرمجموعه «اطلاعات پایه / مالی و پولی» است و در مسیر
+  `/master-data/finance` ارائه می‌شود؛ ماژول مستقل Finance یا مسیر `/finance` نیست.
+- محدوده مالکیت Master Data شامل تعریف ارز، تاریخچه نرخ دستی non-authoritative،
+  Maker/Checker، بانک، شعبه بانک و روش پرداخت مرجع است. حساب، شبا، کارت، CVV، مانده،
+  تسویه، تراکنش و تنظیم واقعی درگاه در مالکیت Finance باقی می‌مانند.
+- Migration، Contract، Backend، UI RTL، Test و Documentation این Slice زیر همان سه
+  قفل فعال `PC-B/MASTER-003` انجام می‌شود؛ Dependency/Lockfile آزاد و بدون تغییر است.
+- هیچ نرخ واقعی یا ساختگی، بانک، شعبه یا روش پرداخت عملیاتی در Seed اضافه نمی‌شود؛
+  Seed فقط ارزهای استاندارد موجود را با نام انگلیسی و سیاست نمایش تکمیل می‌کند.
+
+### رزرو موازی PC-A/CUSTOMER-002A
 
 - Task با عنوان `CUSTOMER-002A — Customer Operations Enhancement` و وضعیت
   `PLANNED/RESERVED` برای PC-A رزرو است و باید از آخرین `origin/develop` آغاز شود.

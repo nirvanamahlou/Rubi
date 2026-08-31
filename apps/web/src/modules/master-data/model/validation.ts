@@ -1,10 +1,12 @@
 import { z } from 'zod';
+import { isMasterTransportFormResource } from '@rubi/contracts';
 
 import { getMasterDataDefinition, type MasterDataResourceKey } from './catalog';
+import { getMasterDataFormFields } from './form-fields';
 
 const draftValuesSchema = z.record(
   z.string(),
-  z.string().trim().max(200, 'حداکثر طول مجاز ۲۰۰ نویسه است.'),
+  z.string().trim().max(500, 'حداکثر طول مجاز ۵۰۰ نویسه است.'),
 );
 const currencyCodePattern = /^[A-Z]{3}$/;
 
@@ -34,11 +36,43 @@ export function validateMasterDataDraft(
     Object.entries(parsed.data).map(([key, value]) => [key, value.trim()]),
   );
   const errors: Record<string, string> = {};
+  if (isMasterTransportFormResource(resource)) {
+    if (values.transportStatus && !['ACTIVE', 'INACTIVE', 'UNDER_REVIEW'].includes(values.transportStatus))
+      errors.transportStatus = 'وضعیت معتبر نیست.';
+    if (!values.transportStatus) delete values.transportStatus;
+    if ((values.englishName?.length ?? 0) > 160) errors.englishName = 'نام انگلیسی حداکثر ۱۶۰ نویسه است.';
+  }
+  if ((resource === 'suppliers' || resource === 'brokers') && (values.englishName?.length ?? 0) > 160)
+    errors.englishName = 'نام انگلیسی حداکثر ۱۶۰ نویسه است.';
+  if (resource === 'organizations' && values.personType && !['NATURAL', 'LEGAL'].includes(values.personType))
+    errors.personType = 'نوع شخصیت باید حقیقی یا حقوقی باشد.';
 
-  for (const field of definition.fields) {
+  for (const field of getMasterDataFormFields(definition)) {
     if (field.required && !values[field.key]) {
       errors[field.key] = `${field.label} الزامی است.`;
     }
+    if (isMasterTransportFormResource(resource) && values[field.key] &&
+      field.options && !field.options.some((option) => option.value === values[field.key]))
+      errors[field.key] = `${field.label} معتبر نیست.`;
+  }
+  if (resource === 'airlines') {
+    for (const [key, pattern] of [['code', /^[A-Z0-9]{2}$/], ['icaoCode', /^[A-Z0-9]{3}$/]] as const) {
+      if (!values[key]) continue;
+      values[key] = values[key].toUpperCase();
+      if (!pattern.test(values[key])) errors[key] = 'کد ایرلاین معتبر نیست.';
+    }
+  }
+  if (resource === 'baggage-rules') {
+    if (values.allowance && (!/^\d+(\.\d{1,2})?$/.test(values.allowance) || Number(values.allowance) <= 0 || Number(values.allowance) > 999999.99))
+      errors.allowance = 'مقدار بار باید مثبت و حداکثر دو رقم اعشار باشد.';
+    if (values.pieceCount && (!/^\d+$/.test(values.pieceCount) || Number(values.pieceCount) < 1 || Number(values.pieceCount) > 2147483647))
+      errors.pieceCount = 'تعداد قطعه باید عدد صحیح مثبت باشد.';
+    if (values.unit === 'PC' && !values.pieceCount) errors.pieceCount = 'برای واحد قطعه، تعداد قطعه الزامی است.';
+    for (const key of ['validFrom', 'validTo']) {
+      if (values[key] && Number.isNaN(Date.parse(values[key]))) errors[key] = 'تاریخ معتبر نیست.';
+    }
+    if (values.validFrom && values.validTo && Date.parse(values.validTo) < Date.parse(values.validFrom))
+      errors.validTo = 'پایان اعتبار باید بعد از شروع اعتبار باشد.';
   }
 
   for (const key of ['fromCurrencyCode', 'toCurrencyCode']) {
@@ -56,17 +90,131 @@ export function validateMasterDataDraft(
   }
 
   if (resource === 'exchange-rates' && values.rate) {
-    const rate = Number(values.rate);
-    if (!Number.isFinite(rate) || rate <= 0) {
-      errors.rate = 'نرخ باید عدد Decimal مثبت باشد.';
+    if (!/^\d+(\.\d{1,10})?$/.test(values.rate) || Number(values.rate) <= 0) {
+      errors.rate = 'نرخ باید Decimal مثبت با حداکثر ۱۰ رقم اعشار باشد.';
     }
   }
+
+  if (
+    ['currencies', 'banks', 'bank-branches', 'payment-methods'].includes(
+      resource,
+    ) &&
+    values.code
+  ) {
+    values.code = values.code.toUpperCase();
+    const pattern =
+      resource === 'currencies' ? /^[A-Z]{3}$/ : /^[A-Z0-9][A-Z0-9_-]{1,31}$/;
+    if (!pattern.test(values.code))
+      errors.code =
+        resource === 'currencies'
+          ? 'کد ISO-4217 باید سه حرف بزرگ باشد.'
+          : 'کد باید بزرگ، یکتا و حداکثر ۳۲ نویسه باشد.';
+  }
+
+  if (resource === 'banks' && values.swiftCode) {
+    values.swiftCode = values.swiftCode.toUpperCase();
+    if (!/^[A-Z0-9]{8}([A-Z0-9]{3})?$/.test(values.swiftCode))
+      errors.swiftCode = 'کد SWIFT باید ۸ یا ۱۱ نویسه بزرگ باشد.';
+  }
+
+  if (resource === 'payment-methods' && values.displayOrder) {
+    const displayOrder = Number(values.displayOrder);
+    if (!Number.isInteger(displayOrder) || displayOrder < 0)
+      errors.displayOrder = 'ترتیب نمایش باید عدد صحیح نامنفی باشد.';
+  }
+
+  if (resource === 'countries' && values.iso2Code) {
+    values.iso2Code = values.iso2Code.toUpperCase();
+    if (!/^[A-Z]{2}$/.test(values.iso2Code))
+      errors.iso2Code = 'کد ISO-2 باید دو حرف بزرگ باشد.';
+  }
+
+  if (resource === 'regions' && values.type) {
+    if (!['PROVINCE', 'STATE', 'REGION', 'TERRITORY'].includes(values.type))
+      errors.type = 'نوع استان/ناحیه معتبر نیست.';
+  }
+
+  if (resource === 'airports') {
+    for (const [field, pattern, message] of [
+      ['iataCode', /^[A-Z]{3}$/, 'کد IATA باید سه حرف بزرگ باشد.'],
+      ['icaoCode', /^[A-Z]{4}$/, 'کد ICAO باید چهار حرف بزرگ باشد.'],
+    ] as const) {
+      if (!values[field]) continue;
+      values[field] = values[field].toUpperCase();
+      if (!pattern.test(values[field])) errors[field] = message;
+    }
+    if (values.ianaTimezone) {
+      try {
+        new Intl.DateTimeFormat('en-US', {
+          timeZone: values.ianaTimezone,
+        }).format();
+      } catch {
+        errors.ianaTimezone = 'Timezone باید شناسه معتبر IANA باشد.';
+      }
+    }
+    for (const [field, minimum, maximum] of [
+      ['latitude', -90, 90],
+      ['longitude', -180, 180],
+    ] as const) {
+      if (!values[field]) continue;
+      const coordinate = Number(values[field]);
+      if (
+        !Number.isFinite(coordinate) ||
+        coordinate < minimum ||
+        coordinate > maximum
+      )
+        errors[field] = 'مختصات خارج از بازه مجاز است.';
+    }
+  }
+
+  if (
+    resource === 'terminals' &&
+    values.terminalType &&
+    !['DOMESTIC', 'INTERNATIONAL', 'MIXED', 'VIP'].includes(values.terminalType)
+  )
+    errors.terminalType = 'نوع ترمینال معتبر نیست.';
 
   if (resource === 'hotels' && values.starRating) {
     const rating = Number(values.starRating);
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
       errors.starRating = 'درجه هتل باید عدد صحیح بین ۱ تا ۵ باشد.';
     }
+  }
+  if (resource === 'hotels') {
+    for (const field of ['checkInTime', 'checkOutTime'] as const) {
+      if (
+        values[field] &&
+        !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(values[field])
+      )
+        errors[field] = 'زمان باید با قالب HH:mm باشد.';
+    }
+    if (Boolean(values.latitude) !== Boolean(values.longitude)) {
+      errors.latitude = 'عرض و طول جغرافیایی باید با هم ثبت شوند.';
+      errors.longitude = 'عرض و طول جغرافیایی باید با هم ثبت شوند.';
+    }
+    for (const [field, minimum, maximum] of [
+      ['latitude', -90, 90],
+      ['longitude', -180, 180],
+    ] as const) {
+      if (!values[field]) continue;
+      const coordinate = Number(values[field]);
+      if (
+        !Number.isFinite(coordinate) ||
+        coordinate < minimum ||
+        coordinate > maximum
+      )
+        errors[field] = 'مختصات خارج از بازه مجاز است.';
+    }
+  }
+  if (resource === 'room-types' && values.referenceCapacity) {
+    const capacity = Number(values.referenceCapacity);
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 20)
+      errors.referenceCapacity = 'ظرفیت باید عدد صحیح بین ۱ تا ۲۰ باشد.';
+  }
+  if (resource === 'facilities' && values.displayOrder) {
+    const displayOrder = Number(values.displayOrder);
+    if (!Number.isInteger(displayOrder) || displayOrder < 0)
+      errors.displayOrder = 'ترتیب نمایش باید عدد صحیح نامنفی باشد.';
   }
 
   return { success: Object.keys(errors).length === 0, values, errors };

@@ -32,7 +32,39 @@ const row = {
 };
 
 describe('MasterDataService', () => {
-  it('generates and persists an internal code with actor and branch scope', async () => {
+  it('allows currencies without display policy and preserves existing policy on edit', async () => {
+    const currency = { ...row, code: 'USD', displayPolicy: 'SYMBOL_BEFORE' };
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      create: vi.fn().mockResolvedValue(currency),
+      update: vi.fn().mockResolvedValue({ ...currency, version: 2 }),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    const values = {
+      code: 'USD',
+      name: 'ارز تست',
+      englishName: 'Test currency',
+      symbol: '$',
+      decimalDigits: '2',
+    };
+    await service.create('currencies', values, actor);
+    await service.update('currencies', currency.id, values, 1, actor);
+    expect(repository.create).toHaveBeenCalledWith(
+      'currencies',
+      { ...values, decimalDigits: 2 },
+      actor.userId,
+      actor.branchIds[0],
+    );
+    expect(repository.update).toHaveBeenCalledWith(
+      'currencies',
+      currency.id,
+      { ...values, decimalDigits: 2 },
+      1,
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+  it('normalizes a Tag color and generates its internal code', async () => {
     const repository = {
       codeExists: vi.fn().mockResolvedValue(false),
       create: vi
@@ -46,21 +78,113 @@ describe('MasterDataService', () => {
     } as unknown as MasterDataRepository;
     const service = new MasterDataService(repository);
 
-    const result = await service.create(
-      'countries',
-      { name: 'ایران', englishName: 'Iran' },
+    await service.create(
+      'tags',
+      { name: 'پیگیری ویژه', colorHex: '#aabbcc', displayOrder: '2' },
       actor,
     );
 
-    expect(result.data.code).toMatch(/^[A-Z]{2}$/);
-    expect(repository.codeExists).toHaveBeenCalledWith(
+    expect(repository.create).toHaveBeenCalledWith(
+      'tags',
+      expect.objectContaining({ colorHex: '#AABBCC', displayOrder: 2 }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it('normalizes unique IATA/ICAO codes and enforces the airline organization role', async () => {
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      find: vi.fn().mockResolvedValue({
+        ...row,
+        displayName: 'ایرلاین سازمانی',
+        roles: [{ roleCode: 'AIRLINE' }],
+      }),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create(
+      'airlines',
+      {
+        code: 'w5',
+        icaoCode: 'irm',
+        name: 'ایرلاین آزمایشی',
+        organizationId: row.id,
+      },
+      actor,
+    );
+
+    expect(repository.create).toHaveBeenCalledWith(
+      'airlines',
+      expect.objectContaining({ code: 'W5', icaoCode: 'IRM' }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it('rejects a non-positive baggage allowance before persistence', async () => {
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      create: vi.fn(),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await expect(
+      service.create(
+        'baggage-rules',
+        {
+          name: 'قاعده بار',
+          airlineId: row.id,
+          passengerType: 'ADT',
+          allowance: '0',
+          unit: 'KG',
+          validFrom: '2026-08-29',
+        },
+        actor,
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('persists the canonical ISO-2 code with actor and audit branch', async () => {
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    const result = await service.create(
       'countries',
-      expect.stringMatching(/^[A-Z]{2}$/),
+      { iso2Code: 'ir', name: 'ایران', englishName: 'Iran' },
+      actor,
+    );
+
+    expect(result.data.code).toBe('IR');
+    expect(repository.fieldExists).toHaveBeenCalledWith(
+      'countries',
+      'code',
+      'IR',
+      undefined,
     );
     expect(repository.create).toHaveBeenCalledWith(
       'countries',
       {
-        code: expect.stringMatching(/^[A-Z]{2}$/),
+        code: 'IR',
         name: 'ایران',
         englishName: 'Iran',
       },
@@ -71,7 +195,7 @@ describe('MasterDataService', () => {
 
   it('denies mutations when no authorized branch exists', async () => {
     const repository = {
-      codeExists: vi.fn().mockResolvedValue(false),
+      fieldExists: vi.fn().mockResolvedValue(false),
       create: vi.fn(),
     } as unknown as MasterDataRepository;
     const service = new MasterDataService(repository);
@@ -79,7 +203,7 @@ describe('MasterDataService', () => {
     await expect(
       service.create(
         'countries',
-        { name: 'ایران', englishName: 'Iran' },
+        { iso2Code: 'IR', name: 'ایران', englishName: 'Iran' },
         { ...actor, branchIds: [] },
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
@@ -258,5 +382,215 @@ describe('MasterDataService', () => {
     expect(repository.find).not.toHaveBeenCalled();
     expect(repository.update).not.toHaveBeenCalled();
     expect(repository.setStatus).not.toHaveBeenCalled();
+  });
+  it('normalizes airport codes and enforces active same-country city references', async () => {
+    const countryId = '55555555-5555-4555-8555-555555555555';
+    const cityId = '66666666-6666-4666-8666-666666666666';
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      find: vi.fn().mockResolvedValue({ isActive: true, countryId }),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create(
+      'airports',
+      {
+        name: 'مهرآباد',
+        englishName: 'Mehrabad',
+        countryId,
+        cityId,
+        iataCode: 'thr',
+        icaoCode: 'oiii',
+        ianaTimezone: 'Asia/Tehran',
+        latitude: '35.6892',
+        longitude: '51.3134',
+      },
+      actor,
+    );
+
+    expect(repository.fieldExists).toHaveBeenCalledTimes(2);
+    expect(repository.find).toHaveBeenCalledWith('cities', cityId);
+    expect(repository.create).toHaveBeenCalledWith(
+      'airports',
+      expect.objectContaining({
+        cityId,
+        iataCode: 'THR',
+        icaoCode: 'OIII',
+        ianaTimezone: 'Asia/Tehran',
+        latitude: '35.6892',
+        longitude: '51.3134',
+      }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+    expect(repository.create).not.toHaveBeenCalledWith(
+      'airports',
+      expect.objectContaining({ countryId }),
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
+  it('rejects invalid IANA timezones and out-of-range coordinates', async () => {
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      create: vi.fn(),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    const base = {
+      name: 'فرودگاه آزمون',
+      englishName: 'Test Airport',
+      countryId: '55555555-5555-4555-8555-555555555555',
+      cityId: '66666666-6666-4666-8666-666666666666',
+      iataCode: 'TST',
+      icaoCode: 'OITT',
+      longitude: '51',
+    };
+
+    await expect(
+      service.create(
+        'airports',
+        {
+          ...base,
+          ianaTimezone: 'Mars/Olympus_Mons',
+          latitude: '35',
+        },
+        actor,
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    await expect(
+      service.create(
+        'airports',
+        {
+          ...base,
+          ianaTimezone: 'Asia/Tehran',
+          latitude: '91',
+        },
+        actor,
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+  it('allows partial airport edits without resending relationship fields', async () => {
+    const repository = {
+      update: vi.fn().mockResolvedValue({
+        ...row,
+        iataCode: 'THR',
+        name: 'فرودگاه مهرآباد',
+      }),
+      find: vi.fn(),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.update(
+      'airports',
+      row.id,
+      { name: 'فرودگاه مهرآباد' },
+      1,
+      actor,
+    );
+
+    expect(repository.find).not.toHaveBeenCalled();
+    expect(repository.update).toHaveBeenCalledWith(
+      'airports',
+      row.id,
+      { name: 'فرودگاه مهرآباد' },
+      1,
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it('creates a bank branch only from active bank/city references', async () => {
+    const bankId = '55555555-5555-4555-8555-555555555555';
+    const cityId = '66666666-6666-4666-8666-666666666666';
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      bankBranchCodeExists: vi.fn().mockResolvedValue(false),
+      find: vi.fn().mockResolvedValue({ isActive: true }),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create(
+      'bank-branches',
+      {
+        code: 'central_01',
+        name: 'شعبه مرکزی',
+        bankId,
+        cityId,
+      },
+      actor,
+    );
+
+    expect(repository.find).toHaveBeenCalledWith('banks', bankId);
+    expect(repository.find).toHaveBeenCalledWith('cities', cityId);
+    expect(repository.bankBranchCodeExists).toHaveBeenCalledWith(
+      bankId,
+      'CENTRAL_01',
+      undefined,
+    );
+    expect(repository.create).toHaveBeenCalledWith(
+      'bank-branches',
+      expect.objectContaining({ code: 'CENTRAL_01', bankId, cityId }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it('normalizes payment-method reference settings without Finance data', async () => {
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create(
+      'payment-methods',
+      {
+        code: 'bank_transfer',
+        name: 'حواله بانکی',
+        channel: 'BANK_TRANSFER',
+        direction: 'BOTH',
+        requiresManualApproval: 'true',
+        displayOrder: '2',
+      },
+      actor,
+    );
+
+    expect(repository.create).toHaveBeenCalledWith(
+      'payment-methods',
+      expect.objectContaining({
+        code: 'BANK_TRANSFER',
+        channel: 'BANK_TRANSFER',
+        direction: 'BOTH',
+        requiresManualApproval: true,
+        displayOrder: 2,
+      }),
+      actor.userId,
+      actor.branchIds[0],
+    );
   });
 });

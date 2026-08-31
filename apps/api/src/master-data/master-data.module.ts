@@ -11,6 +11,7 @@ import { CurrencyRateService } from './currency-rate.service';
 import { HotelImportController } from './hotel-import.controller';
 import { HotelImportService } from './hotel-import.service';
 import { MasterDataController } from './master-data.controller';
+import { MasterDataContactCrypto } from './master-data-contact.crypto';
 import { MasterDataRepository } from './master-data.repository';
 import { MasterDataService } from './master-data.service';
 
@@ -26,6 +27,7 @@ import { MasterDataService } from './master-data.service';
     AuthGuard,
     PermissionGuard,
     MasterDataRepository,
+    MasterDataContactCrypto,
     MasterDataService,
     CurrencyRateService,
     HotelImportService,

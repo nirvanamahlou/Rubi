@@ -47,6 +47,41 @@ describe('master data reference field mapping', () => {
     ).toBe('USD');
   });
 
+  it('maps geography relations to persisted identifiers', () => {
+    expect(getReferenceFieldConfig('regions', 'countryId')?.target).toBe(
+      'countries',
+    );
+    expect(getReferenceFieldConfig('cities', 'regionId')?.target).toBe(
+      'regions',
+    );
+    expect(getReferenceFieldConfig('airports', 'cityId')?.target).toBe(
+      'cities',
+    );
+    expect(getReferenceFieldConfig('terminals', 'airportId')?.target).toBe(
+      'airports',
+    );
+  });
+
+  it('publishes multi-reference selectors for hotel catalogs and members', () => {
+    expect(getReferenceFieldConfig('hotels', 'facilityIds')).toMatchObject({
+      target: 'facilities',
+      multiple: true,
+    });
+    expect(
+      getReferenceFieldConfig('composite-hotels', 'memberHotelIds'),
+    ).toMatchObject({ target: 'hotels', multiple: true });
+  });
+
+  it('publishes Provider choice and normalized facilities for buses', () => {
+    expect(
+      getReferenceFieldConfig('bus-companies', 'supplierId'),
+    ).toMatchObject({ target: 'suppliers', optional: true });
+    expect(getReferenceFieldConfig('bus-types', 'facilityIds')).toMatchObject({
+      target: 'facilities',
+      multiple: true,
+    });
+  });
+
   it('filters organizations by compatible role', () => {
     const organization = {
       ...record,

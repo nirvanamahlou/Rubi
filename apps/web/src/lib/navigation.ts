@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 
 import { navigationMessages, type NavigationHref } from '../messages/fa';
+import { getMasterDataSection } from '../modules/master-data/model/sections';
 
 const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/dashboard': Gauge,
@@ -65,9 +66,10 @@ export function getNavigationItem(pathname: string) {
   if (direct) return direct;
 
   const alias = navigationAliases[pathname as keyof typeof navigationAliases];
-  return alias
-    ? navigationItems.find((item) => item.href === alias.parentHref)
-    : undefined;
+  if (alias)
+    return navigationItems.find((item) => item.href === alias.parentHref);
+
+  return navigationItems.find((item) => pathname.startsWith(`${item.href}/`));
 }
 
 export function isNavigationItemActive(href: NavigationHref, pathname: string) {
@@ -75,6 +77,21 @@ export function isNavigationItemActive(href: NavigationHref, pathname: string) {
 }
 
 export function getNavigationBreadcrumbs(pathname: string) {
+  if (pathname.startsWith('/master-data/')) {
+    const sectionSlug = pathname.slice('/master-data/'.length).split('/')[0];
+    const section = getMasterDataSection(sectionSlug ?? '');
+    const parent = navigationItems.find((item) => item.href === '/master-data');
+    if (section) {
+      return [
+        ...(parent ? [{ href: parent.href, title: parent.title }] : []),
+        {
+          href: `/master-data/${section.slug}`,
+          title: section.title,
+        },
+      ];
+    }
+  }
+
   const alias = navigationAliases[pathname as keyof typeof navigationAliases];
   if (alias) {
     const parent = navigationItems.find(

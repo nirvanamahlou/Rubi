@@ -1,0 +1,140 @@
+import type { MasterDataResourceKey } from './catalog';
+
+export const masterDataSectionSlugs = [
+  'finance',
+  'geography',
+  'organizations-suppliers',
+  'accommodation',
+  'transportation',
+  'insurance',
+  'tours-travel-services',
+  'sales-references',
+] as const;
+
+export type MasterDataSectionSlug = (typeof masterDataSectionSlugs)[number];
+export type MasterDataSectionTone =
+  'emerald' | 'sky' | 'violet' | 'orange' | 'blue' | 'cyan' | 'rose' | 'purple';
+
+export interface MasterDataSectionDefinition {
+  slug: MasterDataSectionSlug;
+  title: string;
+  description: string;
+  resources: readonly MasterDataResourceKey[];
+  tone: MasterDataSectionTone;
+}
+
+// Retained in the API/catalog for existing references, but not in section navigation.
+export const unlistedMasterDataResources = [
+  'cip-services',
+  'lead-sources',
+  'customer-types',
+  'campaign-types',
+] as const satisfies readonly MasterDataResourceKey[];
+
+export const masterDataSections: readonly MasterDataSectionDefinition[] = [
+  {
+    slug: 'finance',
+    title: 'مالی و پولی',
+    description:
+      'ارزها با تاریخچه نرخ، گردش تأیید، بانک‌ها، شعب و روش‌های پرداخت مرجع',
+    resources: [
+      'currencies',
+      'exchange-rates',
+      'banks',
+      'bank-branches',
+      'payment-methods',
+    ],
+    tone: 'emerald',
+  },
+  {
+    slug: 'geography',
+    title: 'جغرافیا',
+    description:
+      'کشورها، نمای یکپارچه شهرها و استان‌ها، فرودگاه‌ها و ترمینال‌ها',
+    resources: ['countries', 'regions', 'cities', 'airports', 'terminals'],
+    tone: 'sky',
+  },
+  {
+    slug: 'organizations-suppliers',
+    title: 'سازمان‌ها و تأمین‌کنندگان',
+    description: 'سازمان‌ها، تأمین‌کنندگان، کارگزاران و همکاران',
+    resources: [
+      'organizations',
+      'suppliers',
+      'brokers',
+      'travel-services',
+      'organization-contacts',
+    ],
+    tone: 'violet',
+  },
+  {
+    slug: 'accommodation',
+    title: 'اقامت',
+    description: 'هتل‌ها و اطلاعات مرجع خدمات اقامتی',
+    resources: [
+      'hotels',
+      'hotel-chains',
+      'room-types',
+      'meal-services',
+      'facilities',
+      'composite-hotels',
+    ],
+    tone: 'orange',
+  },
+  {
+    slug: 'transportation',
+    title: 'حمل‌ونقل',
+    description:
+      'ایرلاین‌ها، هواپیما، کلاس و بار، Manifest و مراجع ریلی و اتوبوسی',
+    resources: [
+      'airlines',
+      'aircraft-types',
+      'cabin-classes',
+      'baggage-rules',
+      'manifest-templates',
+      'rail-companies',
+      'train-types',
+      'bus-companies',
+      'bus-types',
+    ],
+    tone: 'blue',
+  },
+  {
+    slug: 'insurance',
+    title: 'بیمه',
+    description: 'شرکت‌های بیمه، طرح‌ها و پوشش‌های مرجع خدمات بیمه سفر',
+    resources: ['insurers', 'insurance-plans', 'insurance-coverages'],
+    tone: 'cyan',
+  },
+  {
+    slug: 'tours-travel-services',
+    title: 'تور و خدمات سفر',
+    description: 'لیدرها، انواع تور و ترانسفر و خدمات ویزا',
+    resources: ['leaders', 'tour-types', 'transfer-types', 'visa-services'],
+    tone: 'rose',
+  },
+  {
+    slug: 'sales-references',
+    title: 'مراجع فروش',
+    description: 'نحوه آشنایی، کانال فروش، دلیل از دست رفتن و Tag',
+    resources: [
+      'acquaintance-methods',
+      'sales-channels',
+      'lost-reasons',
+      'tags',
+    ],
+    tone: 'purple',
+  },
+];
+
+export function getMasterDataSection(slug: string) {
+  return masterDataSections.find((section) => section.slug === slug);
+}
+
+export function getMasterDataSectionForResource(
+  resource: MasterDataResourceKey,
+) {
+  return masterDataSections.find((section) =>
+    section.resources.includes(resource),
+  );
+}
