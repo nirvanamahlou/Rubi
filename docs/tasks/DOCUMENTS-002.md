@@ -8,6 +8,8 @@ Branch: `codex/pc-b-documents-vertical-slice`
 
 Parent: `origin/codex/pc-b-documents-foundation@05b09e8` / Draft PR `#61`
 
+Draft PR این Slice: `#64` با Base برابر `codex/pc-b-documents-foundation`
+
 تاریخ شروع: 2026-09-01
 
 ## رزرو

@@ -4,8 +4,8 @@
 
 - `PC-B` یک Slice مستقل روی `codex/pc-b-documents-vertical-slice` و والد
   `codex/pc-b-documents-foundation@05b09e8` آماده کرده است. Phase A همچنان Draft PR #61
-  و ادغام‌نشده است؛ این Slice مستقیماً به `develop` Merge نمی‌شود و PR آن تا Merge والد
-  همان Branch والد را هدف می‌گیرد.
+  و ادغام‌نشده است؛ Draft PR #64 مستقیماً به `develop` نمی‌رود و تا Merge والد همان
+  Branch والد را هدف می‌گیرد.
 - Persistence افزایشی Documents، قرارداد `documents.v1`، ۲۸ Permission، ۱۹ نوع سند،
   ۹ دسته، REST API واقعی، Storage محلی رمزگذاری‌شده، `/documents` متصل، Dialog بارگذاری
   و جزئیات شش‌تب تکمیل شدند. Binary در Database نیست و دانلود تا Scan پاک fail-closed است.

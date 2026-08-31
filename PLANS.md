@@ -22,7 +22,7 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
       `codex/pc-b-documents-foundation` / Draft PR #61؛ هنوز به `develop` ادغام نشده است.
 - [x] `DOCUMENTS-002`: Persistence و Migration افزایشی، قرارداد/IAM، API و بارگذاری واقعی،
       Storage محلی رمزگذاری‌شده، UI متصل، تفکیک نقش و Smoke Desktop/Mobile؛ آماده Review
-      روی Branch والد Phase A و بدون Merge مستقیم به `develop`.
+      در Draft PR #64 روی Branch والد Phase A و بدون Merge مستقیم به `develop`.
 - [ ] `DOCUMENTS-003`: Adapter تولیدی S3/MinIO و Antivirus Worker عملیاتی با retry،
       monitoring و recovery؛ پس از تصمیم امنیت/عملیات و رزرو تازه Migration/Dependency.
 - [ ] `DOCUMENTS-004`: اشتراک امن، نسخه‌گذاری تکمیلی، Export، retention نهایی و اتصال
