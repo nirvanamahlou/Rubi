@@ -1,4 +1,9 @@
 import type {
+  MasterCurrencyRateQuoteRequest,
+  MasterCurrencyRateRecord,
+  MasterAccommodationSummary,
+  MasterInsuranceSummary,
+  MasterTravelServicesSummary,
   MasterDataExportOperation,
   MasterDataExportRequest,
   MasterHotelImportCommitRequest,
@@ -7,9 +12,12 @@ import type {
   MasterDataListQuery,
   MasterDataListResponse,
   MasterDataMutationRequest,
+  MasterOrganizationContactUnmasked,
+  MasterOrganizationSupplierSummary,
   MasterDataRecord,
   MasterDataResource,
   MasterDataStatus,
+  MasterDataDeleteResponse,
 } from '@rubi/contracts';
 
 import { getPublicApiBaseUrl } from '../../../lib/environment';
@@ -94,6 +102,13 @@ export const masterDataApi = {
       `/${resource}?${serializeMasterDataListQuery(query)}`,
     );
   },
+  listSummary(
+    resource: MasterDataResource,
+    query: Omit<MasterDataListQuery, 'page' | 'pageSize'>,
+  ) {
+    // KPI totals still use the list endpoint and must obey its 10–100 limit.
+    return masterDataApi.list(resource, { ...query, page: 1, pageSize: 10 });
+  },
   detail(resource: MasterDataResource, id: string) {
     return request<{ data: MasterDataRecord }>(
       `/${resource}/${encodeURIComponent(id)}`,
@@ -115,6 +130,12 @@ export const masterDataApi = {
       { method: 'PATCH', body: JSON.stringify(body) },
     );
   },
+  remove(resource: MasterDataResource, id: string, version: number) {
+    return request<MasterDataDeleteResponse>(
+      `/${resource}/${encodeURIComponent(id)}`,
+      { method: 'DELETE', body: JSON.stringify({ version }) },
+    );
+  },
   setStatus(
     resource: MasterDataResource,
     id: string,
@@ -127,10 +148,13 @@ export const masterDataApi = {
     );
   },
   currencyRateHistory(query: {
+    search?: string;
     fromCurrencyId?: string;
     toCurrencyId?: string;
     rateType?: 'BUY' | 'SELL' | 'REFERENCE';
     status?: 'DRAFT' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+    observedFrom?: string;
+    observedTo?: string;
     page?: number;
     pageSize?: number;
   }) {
@@ -142,6 +166,15 @@ export const masterDataApi = {
       data: readonly Record<string, unknown>[];
       meta: { total: number };
     }>(`/currency-rates?${parameters.toString()}`);
+  },
+  createCurrencyQuote(input: MasterCurrencyRateQuoteRequest) {
+    return request<{ data: readonly MasterCurrencyRateRecord[] }>(
+      '/currency-rates/quotes',
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      },
+    );
   },
   decideCurrencyRate(
     id: string,
@@ -162,6 +195,29 @@ export const masterDataApi = {
       data: readonly Record<string, unknown>[];
       meta: { total: number };
     }>(`/audit/${resource}/${encodeURIComponent(entityId)}?page=${page}`);
+  },
+  unmaskOrganizationContact(id: string) {
+    return request<{ data: MasterOrganizationContactUnmasked }>(
+      `/organization-contacts/${encodeURIComponent(id)}/unmask`,
+    );
+  },
+  organizationSupplierSummary() {
+    return request<{ data: MasterOrganizationSupplierSummary }>(
+      '/organizations-suppliers/summary',
+    );
+  },
+  accommodationSummary() {
+    return request<{ data: MasterAccommodationSummary }>(
+      '/accommodation/summary',
+    );
+  },
+  insuranceSummary() {
+    return request<{ data: MasterInsuranceSummary }>('/insurance/summary');
+  },
+  travelServicesSummary() {
+    return request<{ data: MasterTravelServicesSummary }>(
+      '/travel-services-catalog/summary',
+    );
   },
   downloadExcel(input: MasterDataExportRequest) {
     return requestFile('/exports/xlsx/download', input);

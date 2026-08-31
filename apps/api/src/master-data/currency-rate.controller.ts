@@ -6,6 +6,7 @@ import {
   Inject,
   Param,
   Patch,
+  Post,
   Query,
   Req,
   UseGuards,
@@ -21,6 +22,7 @@ import type { AuthenticatedRequest } from '../iam/iam.types';
 import {
   CurrencyRateDecisionDto,
   CurrencyRateListDto,
+  CurrencyRateQuoteDto,
 } from './currency-rate.dto';
 import { CurrencyRateService } from './currency-rate.service';
 
@@ -32,6 +34,16 @@ export class CurrencyRateController {
   constructor(
     @Inject(CurrencyRateService) private readonly service: CurrencyRateService,
   ) {}
+
+  @Post('quotes')
+  @RequirePermissions('master_data.create', 'master_data.currency_rate.create')
+  createQuote(
+    @Body() dto: CurrencyRateQuoteDto,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId?: string,
+  ) {
+    return this.service.createQuote(dto, request.actor, branchId);
+  }
 
   @Get()
   @RequirePermissions('master_data.read')

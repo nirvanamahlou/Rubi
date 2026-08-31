@@ -27,7 +27,7 @@ describe('master data component contract', () => {
   });
 
   it('covers the full catalog and deny-by-default viewer behavior', () => {
-    expect(masterDataCatalog).toHaveLength(12);
+    expect(masterDataCatalog).toHaveLength(45);
     expect(proposedPermissionMatrix.viewer).toEqual(['master_data.read']);
     expect(proposedPermissionMatrix.viewer).not.toContain('master_data.export');
   });

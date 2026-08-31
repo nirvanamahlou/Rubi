@@ -12,6 +12,46 @@ afterEach(() => {
 });
 
 describe('master data browser client', () => {
+  it('deletes only the requested record with credentials and its expected version', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const response = {
+      data: { id: 'bank/id', resource: 'banks', deleted: true },
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => response });
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(masterDataApi.remove('banks', 'bank/id', 3)).resolves.toEqual(
+      response,
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/master-data/banks/bank%2Fid',
+      expect.objectContaining({
+        credentials: 'include',
+        method: 'DELETE',
+        body: JSON.stringify({ version: 3 }),
+      }),
+    );
+  });
+
+  it('preserves a dependency conflict instead of pretending deletion succeeded', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: async () => ({ error: { message: 'رکورد دارای وابستگی است.' } }),
+      }),
+    );
+    await expect(
+      masterDataApi.remove('banks', 'bank-id', 1),
+    ).rejects.toMatchObject({
+      status: 409,
+      message: 'رکورد دارای وابستگی است.',
+    });
+  });
+
   it('sends credentialed requests to the configured versioned API', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const fetchMock = vi.fn().mockResolvedValue({

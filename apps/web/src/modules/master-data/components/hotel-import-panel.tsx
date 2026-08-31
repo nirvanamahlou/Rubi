@@ -10,8 +10,10 @@ import { FileCheck2, FileSpreadsheet, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-controls';
 import { Alert, Badge, Card } from '@/components/ui/surfaces';
 import { masterDataApi } from '../api/client';
+import { MasterDataClearableField } from './master-data-clearable-field';
 
 const lookupQuery: MasterDataListQuery = {
   search: '',
@@ -42,8 +44,9 @@ export function HotelImportPanel({ onImported }: { onImported: () => void }) {
   const [cityId, setCityId] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<MasterHotelImportPreview | null>(null);
-  const [duplicateBehavior, setDuplicateBehavior] =
-    useState<MasterHotelImportDuplicateBehavior>('SKIP');
+  const [duplicateBehavior, setDuplicateBehavior] = useState<
+    MasterHotelImportDuplicateBehavior | ''
+  >('SKIP');
   const [createMissingReferences, setCreateMissingReferences] = useState(true);
   const [busy, setBusy] = useState<'preview' | 'commit' | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -93,6 +96,10 @@ export function HotelImportPanel({ onImported }: { onImported: () => void }) {
 
   async function commit() {
     if (!preview || preview.issues.length > 0) return;
+    if (!duplicateBehavior) {
+      setMessage('رفتار با کد سیستمی تکراری را انتخاب کنید.');
+      return;
+    }
     setBusy('commit');
     setMessage(null);
     try {
@@ -140,44 +147,68 @@ export function HotelImportPanel({ onImported }: { onImported: () => void }) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <label className="space-y-1 text-sm font-medium text-slate-700">
-          کشور
-          <select
-            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3"
+        <FormField id="hotel-import-country" label="کشور" required>
+          <MasterDataClearableField
+            controlId="hotel-import-country"
+            label="کشور"
             value={countryId}
-            onChange={(event) => {
-              setCountryId(event.target.value);
+            disabled={busy !== null}
+            onClear={() => {
+              setCountryId('');
               setCityId('');
               setPreview(null);
             }}
           >
-            <option value="">انتخاب کشور</option>
-            {countries.map((country) => (
-              <option key={country.id} value={country.id}>
-                {country.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="space-y-1 text-sm font-medium text-slate-700">
-          شهر
-          <select
-            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3"
+            <select
+              id="hotel-import-country"
+              disabled={busy !== null}
+              className="h-10 w-full rounded-md border border-slate-300 bg-white px-3"
+              value={countryId}
+              onChange={(event) => {
+                setCountryId(event.target.value);
+                setCityId('');
+                setPreview(null);
+              }}
+            >
+              <option value="">انتخاب کشور</option>
+              {countries.map((country) => (
+                <option key={country.id} value={country.id}>
+                  {country.name}
+                </option>
+              ))}
+            </select>
+          </MasterDataClearableField>
+        </FormField>
+        <FormField id="hotel-import-city" label="شهر" required>
+          <MasterDataClearableField
+            controlId="hotel-import-city"
+            label="شهر"
             value={cityId}
-            disabled={!countryId}
-            onChange={(event) => {
-              setCityId(event.target.value);
+            disabled={busy !== null || !countryId}
+            onClear={() => {
+              setCityId('');
               setPreview(null);
             }}
           >
-            <option value="">انتخاب شهر</option>
-            {scopedCities.map((city) => (
-              <option key={city.id} value={city.id}>
-                {city.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            <select
+              id="hotel-import-city"
+              className="h-10 w-full rounded-md border border-slate-300 bg-white px-3"
+              value={cityId}
+              disabled={busy !== null || !countryId}
+              onChange={(event) => {
+                setCityId(event.target.value);
+                setPreview(null);
+              }}
+            >
+              <option value="">انتخاب شهر</option>
+              {scopedCities.map((city) => (
+                <option key={city.id} value={city.id}>
+                  {city.name}
+                </option>
+              ))}
+            </select>
+          </MasterDataClearableField>
+        </FormField>
         <label className="space-y-1 text-sm font-medium text-slate-700">
           فایل اکسل
           <input
@@ -280,21 +311,35 @@ export function HotelImportPanel({ onImported }: { onImported: () => void }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
-            <label className="text-sm text-slate-700">
-              رفتار با کد سیستمی تکراری
-              <select
-                className="mr-2 h-9 rounded-md border bg-white px-2"
+            <FormField
+              id="hotel-import-duplicates"
+              label="رفتار با کد سیستمی تکراری"
+              required
+            >
+              <MasterDataClearableField
+                controlId="hotel-import-duplicates"
+                label="رفتار با کد سیستمی تکراری"
                 value={duplicateBehavior}
-                onChange={(event) =>
-                  setDuplicateBehavior(
-                    event.target.value as MasterHotelImportDuplicateBehavior,
-                  )
-                }
+                disabled={busy !== null}
+                onClear={() => setDuplicateBehavior('')}
               >
-                <option value="SKIP">رد کردن تکراری‌ها</option>
-                <option value="UPDATE">به‌روزرسانی تکراری‌ها</option>
-              </select>
-            </label>
+                <select
+                  id="hotel-import-duplicates"
+                  disabled={busy !== null}
+                  className="mr-2 h-9 rounded-md border bg-white px-2"
+                  value={duplicateBehavior}
+                  onChange={(event) =>
+                    setDuplicateBehavior(
+                      event.target.value as MasterHotelImportDuplicateBehavior,
+                    )
+                  }
+                >
+                  <option value="">انتخاب کنید</option>
+                  <option value="SKIP">رد کردن تکراری‌ها</option>
+                  <option value="UPDATE">به‌روزرسانی تکراری‌ها</option>
+                </select>
+              </MasterDataClearableField>
+            </FormField>
             <label className="inline-flex items-center gap-2 text-sm text-slate-700">
               <input
                 type="checkbox"
@@ -308,7 +353,9 @@ export function HotelImportPanel({ onImported }: { onImported: () => void }) {
             <Button
               type="button"
               onClick={() => void commit()}
-              disabled={busy !== null || preview.issues.length > 0}
+              disabled={
+                busy !== null || preview.issues.length > 0 || !duplicateBehavior
+              }
             >
               {busy === 'commit' ? 'در حال ثبت…' : 'ثبت نهایی هتل‌ها'}
             </Button>

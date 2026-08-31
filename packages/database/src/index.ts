@@ -14,6 +14,8 @@ export {
   MasterDataExportStatus,
   MasterCurrencyRateStatus,
   MasterCurrencyRateType,
+  MasterRegionType,
+  MasterTerminalType,
   MasterHotelImportDuplicateBehavior,
   MasterHotelImportStatus,
   MasterOrganizationRoleCode,

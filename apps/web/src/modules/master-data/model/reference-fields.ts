@@ -7,6 +7,8 @@ export interface ReferenceFieldConfig {
   payload: 'id' | 'code';
   requiredRole?: string;
   optional?: boolean;
+  multiple?: boolean;
+  scopeField?: 'organizationId' | 'countryId';
 }
 export type ReferenceSelectorState =
   'loading' | 'ready' | 'empty' | 'error' | 'forbidden';
@@ -25,11 +27,27 @@ export function resolveReferenceSelectorState(input: {
 const configs: Partial<
   Record<MasterDataResourceKey, Record<string, ReferenceFieldConfig>>
 > = {
+  regions: {
+    countryId: { target: 'countries', payload: 'id' },
+    parentRegionId: { target: 'regions', payload: 'id', optional: true },
+  },
   cities: {
     countryId: { target: 'countries', payload: 'id' },
+    regionId: { target: 'regions', payload: 'id', optional: true },
+  },
+  airports: {
+    countryId: { target: 'countries', payload: 'id' },
+    cityId: { target: 'cities', payload: 'id' },
+  },
+  terminals: {
+    airportId: { target: 'airports', payload: 'id' },
   },
   banks: {
     countryId: { target: 'countries', payload: 'id' },
+  },
+  'bank-branches': {
+    bankId: { target: 'banks', payload: 'id' },
+    cityId: { target: 'cities', payload: 'id' },
   },
   insurers: {
     organizationId: {
@@ -37,6 +55,18 @@ const configs: Partial<
       payload: 'id',
       requiredRole: 'INSURANCE_PROVIDER',
     },
+    countryId: { target: 'countries', payload: 'id' },
+  },
+  'insurance-plans': {
+    insurerId: { target: 'insurers', payload: 'id' },
+    coverageIds: {
+      target: 'insurance-coverages',
+      payload: 'id',
+      multiple: true,
+    },
+  },
+  'insurance-coverages': {
+    currencyId: { target: 'currencies', payload: 'id' },
   },
   airlines: {
     organizationId: {
@@ -44,6 +74,47 @@ const configs: Partial<
       payload: 'id',
       requiredRole: 'AIRLINE',
     },
+    countryId: { target: 'countries', payload: 'id', optional: true },
+  },
+  'baggage-rules': {
+    airlineId: { target: 'airlines', payload: 'id' },
+    cabinClassId: {
+      target: 'cabin-classes',
+      payload: 'id',
+      optional: true,
+    },
+  },
+  'manifest-templates': {
+    airlineId: { target: 'airlines', payload: 'id' },
+  },
+  'rail-companies': {
+    organizationId: {
+      target: 'organizations',
+      payload: 'id',
+      requiredRole: 'RAIL_OPERATOR',
+    },
+    countryId: { target: 'countries', payload: 'id' },
+  },
+  'bus-companies': {
+    organizationId: {
+      target: 'organizations',
+      payload: 'id',
+      requiredRole: 'BUS_PROVIDER',
+      optional: true,
+    },
+    supplierId: { target: 'suppliers', payload: 'id', optional: true },
+    countryId: { target: 'countries', payload: 'id' },
+  },
+  'bus-types': {
+    facilityIds: {
+      target: 'facilities',
+      payload: 'id',
+      multiple: true,
+      optional: true,
+    },
+  },
+  'train-types': {
+    facilityIds: { target: 'facilities', payload: 'id', multiple: true, optional: true },
   },
   brokers: {
     organizationId: {
@@ -51,9 +122,78 @@ const configs: Partial<
       payload: 'id',
       requiredRole: 'BROKER',
     },
+    countryId: { target: 'countries', payload: 'id', optional: true },
+    cityId: { target: 'cities', payload: 'id', optional: true, scopeField: 'countryId' },
+    primaryContactId: { target: 'organization-contacts', payload: 'id', optional: true, scopeField: 'organizationId' },
+    serviceCodes: { target: 'travel-services', payload: 'code', multiple: true, optional: true },
+  },
+  suppliers: {
+    organizationId: {
+      target: 'organizations',
+      payload: 'id',
+      requiredRole: 'SUPPLIER',
+    },
+    countryId: { target: 'countries', payload: 'id', optional: true },
+    cityId: { target: 'cities', payload: 'id', optional: true, scopeField: 'countryId' },
+    primaryContactId: { target: 'organization-contacts', payload: 'id', optional: true, scopeField: 'organizationId' },
+    serviceCodes: { target: 'travel-services', payload: 'code', multiple: true, optional: true },
+  },
+  'organization-contacts': {
+    organizationId: { target: 'organizations', payload: 'id' },
+  },
+  leaders: {
+    cityId: { target: 'cities', payload: 'id' },
+  },
+  'cip-services': {
+    airportId: { target: 'airports', payload: 'id' },
+    supplierId: { target: 'suppliers', payload: 'id', optional: true },
+  },
+  'visa-services': {
+    countryId: { target: 'countries', payload: 'id' },
+    supplierId: { target: 'suppliers', payload: 'id', optional: true },
   },
   hotels: {
     cityId: { target: 'cities', payload: 'id' },
+    chainId: {
+      target: 'hotel-chains',
+      payload: 'id',
+      optional: true,
+    },
+    mealServiceIds: {
+      target: 'meal-services',
+      payload: 'id',
+      optional: true,
+      multiple: true,
+    },
+    roomTypeIds: {
+      target: 'room-types',
+      payload: 'id',
+      optional: true,
+      multiple: true,
+    },
+    facilityIds: {
+      target: 'facilities',
+      payload: 'id',
+      optional: true,
+      multiple: true,
+    },
+  },
+  'hotel-chains': {
+    countryId: { target: 'countries', payload: 'id' },
+  },
+  'composite-hotels': {
+    cityId: { target: 'cities', payload: 'id' },
+    memberHotelIds: {
+      target: 'hotels',
+      payload: 'id',
+      multiple: true,
+    },
+    backupMemberIds: {
+      target: 'hotels',
+      payload: 'id',
+      optional: true,
+      multiple: true,
+    },
   },
   'exchange-rates': {
     fromCurrencyCode: { target: 'currencies', payload: 'code' },
@@ -69,6 +209,7 @@ export const ORGANIZATION_ROLE_OPTIONS = [
   ['HOTEL_PROVIDER', 'تأمین‌کننده هتل'],
   ['INSURANCE_PROVIDER', 'بیمه‌گر'],
   ['BUS_PROVIDER', 'تأمین‌کننده اتوبوس'],
+  ['RAIL_OPERATOR', 'شرکت ریلی'],
   ['TOUR_OPERATOR', 'مجری تور'],
   ['BROKER', 'کارگزار'],
 ] as const;

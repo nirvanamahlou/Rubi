@@ -1,33 +1,148 @@
-export const MASTER_DATA_CONTRACT_VERSION = 4 as const;
+export const MASTER_DATA_CONTRACT_VERSION = 12 as const;
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 
 export const MASTER_DATA_RESOURCES = [
   'countries',
+  'regions',
   'cities',
+  'airports',
+  'terminals',
   'currencies',
   'exchange-rates',
   'banks',
+  'bank-branches',
+  'payment-methods',
   'insurers',
+  'insurance-plans',
+  'insurance-coverages',
   'airlines',
+  'aircraft-types',
+  'cabin-classes',
+  'baggage-rules',
+  'manifest-templates',
+  'rail-companies',
+  'train-types',
+  'bus-companies',
+  'bus-types',
   'hotels',
+  'hotel-chains',
+  'room-types',
+  'meal-services',
+  'facilities',
+  'composite-hotels',
   'organizations',
+  'suppliers',
   'brokers',
+  'travel-services',
+  'organization-contacts',
   'leaders',
+  'tour-types',
+  'transfer-types',
+  'cip-services',
+  'visa-services',
   'acquaintance-methods',
+  'lead-sources',
+  'sales-channels',
+  'lost-reasons',
+  'customer-types',
+  'tags',
+  'campaign-types',
 ] as const;
 
 export type MasterDataResource = (typeof MASTER_DATA_RESOURCES)[number];
 export type MasterDataStatus = 'active' | 'inactive';
+/** Additive v12 transport form fields. Under review remains inactive for legacy consumers. */
+export const MASTER_TRANSPORT_FORM_RESOURCES = ['airlines', 'aircraft-types', 'baggage-rules', 'rail-companies', 'train-types', 'bus-companies', 'bus-types'] as const;
+export type MasterTransportFormResource = (typeof MASTER_TRANSPORT_FORM_RESOURCES)[number];
+export type MasterTransportStatus = 'ACTIVE' | 'INACTIVE' | 'UNDER_REVIEW';
+export function isMasterTransportFormResource(resource: string): resource is MasterTransportFormResource {
+  return (MASTER_TRANSPORT_FORM_RESOURCES as readonly string[]).includes(resource);
+}
+export type MasterRegionType = 'PROVINCE' | 'STATE' | 'REGION' | 'TERRITORY';
+export type MasterTerminalType = 'DOMESTIC' | 'INTERNATIONAL' | 'MIXED' | 'VIP';
+export type MasterCurrencyDisplayPolicy =
+  'SYMBOL_BEFORE' | 'SYMBOL_AFTER' | 'CODE_BEFORE' | 'CODE_AFTER';
+export type MasterPaymentMethodChannel =
+  | 'CASH'
+  | 'POS'
+  | 'BANK_TRANSFER'
+  | 'ONLINE_GATEWAY'
+  | 'CREDIT'
+  | 'WALLET'
+  | 'OTHER';
+export type MasterPaymentMethodDirection = 'RECEIPT' | 'PAYMENT' | 'BOTH';
+export type MasterCollaborationStatus =
+  'ACTIVE' | 'UNDER_REVIEW' | 'PURCHASE_SUSPENDED' | 'ENDED';
+export type MasterOrganizationContactChannel =
+  'PHONE' | 'WHATSAPP' | 'EMAIL' | 'TELEGRAM' | 'OTHER';
+/** Nullable on legacy organizations; identity belongs to the shared organization. */
+export const MASTER_ORGANIZATION_PERSON_TYPES = ['NATURAL', 'LEGAL'] as const;
+export type MasterOrganizationPersonType = (typeof MASTER_ORGANIZATION_PERSON_TYPES)[number];
+/** Additive v12 fields; omitted PATCH fields retain their saved values. */
+export interface MasterPartnerProfileFields {
+  englishName?: string | null;
+  primaryContactId?: string | null;
+  serviceCodes?: string | readonly string[];
+}
+export type MasterMealServiceCategory = 'MEAL_PLAN' | 'SERVICE';
+export type MasterAircraftBodyType =
+  'NARROW_BODY' | 'WIDE_BODY' | 'TURBOPROP' | 'REGIONAL' | 'OTHER';
+export type MasterCabinType =
+  'ECONOMY' | 'PREMIUM_ECONOMY' | 'BUSINESS' | 'FIRST';
+export type MasterPassengerType = 'ADT' | 'CHD' | 'INF';
+export type MasterBaggageUnit = 'KG' | 'PC';
+export type MasterTransportRouteScope = 'ALL' | 'DOMESTIC' | 'INTERNATIONAL';
+export type MasterManifestFileFormat = 'XLSX' | 'CSV' | 'XML' | 'JSON';
+export type MasterManifestTemplateStatus = 'DRAFT' | 'ACTIVE' | 'EXPIRED';
+export type MasterTrainCategory =
+  'SLEEPER' | 'EXPRESS' | 'SALOON' | 'LUXURY' | 'OTHER';
+export type MasterBusServiceClass = 'STANDARD' | 'VIP' | 'LUXURY' | 'OTHER';
+export type MasterTourScope = 'DOMESTIC' | 'INTERNATIONAL' | 'BOTH';
+export type MasterTransferServiceMode = 'PRIVATE' | 'SHARED';
+export type MasterVisaValidityMode = 'DAYS' | 'PASSPORT_EXPIRY';
+export type MasterCipPassengerScope = 'ADT' | 'CHD' | 'INF' | 'ALL';
+
 export type MasterDataSortField = 'name' | 'code' | 'updatedAt';
 export type MasterDataSortDirection = 'asc' | 'desc';
 
 export interface MasterDataListQuery {
+  transportStatus?: MasterTransportStatus;
   search: string;
   status: 'all' | MasterDataStatus;
   sortBy: MasterDataSortField;
   sortDirection: MasterDataSortDirection;
   page: number;
   pageSize: number;
+  countryId?: string;
+  regionId?: string;
+  cityId?: string;
+  airportId?: string;
+  bankId?: string;
+  terminalType?: MasterTerminalType;
+  paymentChannel?: MasterPaymentMethodChannel;
+  paymentDirection?: MasterPaymentMethodDirection;
+  organizationId?: string;
+  serviceId?: string;
+  collaborationStatus?: MasterCollaborationStatus;
+  providerConnected?: boolean;
+  hasWhatsapp?: boolean;
+  contactCompleteness?: 'all' | 'complete' | 'incomplete';
+  chainId?: string;
+  starRating?: number;
+  referenceCapacity?: number;
+  mealServiceCategory?: MasterMealServiceCategory;
+  /** Meal-only lifecycle; under review remains inactive for legacy consumers. */
+  mealServiceStatus?: 'active' | 'inactive' | 'under_review';
+  facilityCategory?: string;
+  saleableOnly?: boolean;
+  insurerId?: string;
+  currencyId?: string;
+  destinationRegion?: string;
+  supplierId?: string;
+  tourScope?: MasterTourScope;
+  transferServiceMode?: MasterTransferServiceMode;
+  passengerScope?: MasterCipPassengerScope;
+  busServiceClass?: MasterBusServiceClass;
 }
 
 export interface MasterDataRecord {
@@ -50,6 +165,14 @@ export interface MasterDataListResponse {
 export interface MasterDataMutationRequest {
   values: Readonly<Record<string, string | number | readonly string[] | null>>;
   version?: number;
+}
+
+export interface MasterDataDeleteRequest {
+  version: number;
+}
+
+export interface MasterDataDeleteResponse {
+  data: { id: string; resource: MasterDataResource; deleted: true };
 }
 
 export interface MasterDataExportRequest {
@@ -75,6 +198,19 @@ export type MasterCurrencyRateWorkflowStatus =
 export interface MasterCurrencyRateDecisionRequest {
   expectedVersion: number;
   reason: string;
+}
+
+/** Additive v12 command: appends one or both manual quote sides atomically. */
+export interface MasterCurrencyRateQuoteRequest {
+  fromCurrencyCode: string;
+  toCurrencyCode: string;
+  buyRate?: string;
+  sellRate?: string;
+  source: string;
+  observedAt: string;
+  validFrom?: string;
+  validTo?: string;
+  correctionReason?: string;
 }
 
 export interface MasterCurrencyRateRecord {
@@ -111,6 +247,140 @@ export interface MasterDataAuditRecord {
   entityVersion: number | null;
   reason: string | null;
   occurredAt: string;
+}
+
+export interface MasterOrganizationContactUnmasked {
+  id: string;
+  phone: string | null;
+  email: string | null;
+}
+
+export interface MasterOrganizationSupplierSummary {
+  suppliers: {
+    total: number;
+    activeCollaboration: number;
+    contracted: null;
+    providerConnected: number;
+  };
+  brokers: {
+    total: number;
+    active: number;
+    coveredCities: number;
+    incomplete: number;
+  };
+  contacts: {
+    total: number;
+    active: number;
+    whatsapp: number;
+    incomplete: number;
+  };
+  collaboration: Record<MasterCollaborationStatus, number>;
+}
+
+export interface MasterAccommodationSummary {
+  hotels: {
+    total: number;
+    saleable: number;
+    countries: number;
+    cities: number;
+    incomplete: number;
+  };
+  chains: {
+    total: number;
+    active: number;
+    memberHotels: number;
+    incomplete: number;
+  };
+  roomTypes: {
+    total: number;
+    active: number;
+    standardCapacity: number;
+    pendingDomainApproval: number;
+  };
+  mealServices: {
+    total: number;
+    active: number;
+    mealPlans: number;
+    needsReview: number;
+  };
+  facilities: {
+    total: number;
+    active: number;
+    categories: number;
+    missingIcon: number;
+  };
+  compositeHotels: {
+    total: number;
+    active: number;
+    uniqueMemberHotels: number;
+    needsReview: number;
+  };
+}
+
+export interface MasterInsuranceSummary {
+  insurers: {
+    total: number;
+    active: number;
+    countries: number;
+    missingLogo: number;
+  };
+  plans: {
+    total: number;
+    active: number;
+    expiringSoon: number;
+    destinations: number;
+  };
+  coverages: {
+    total: number;
+    active: number;
+    currencies: number;
+    needsReview: number;
+  };
+}
+
+export interface MasterTravelServicesSummary {
+  leaders: {
+    total: number;
+    active: number;
+    destinations: number;
+    incompleteDocuments: null;
+  };
+  tourTypes: {
+    total: number;
+    active: number;
+    domestic: number;
+    international: number;
+  };
+  transferTypes: {
+    total: number;
+    active: number;
+    private: number;
+    shared: number;
+  };
+  cipServices: {
+    total: number;
+    active: number;
+    airports: number;
+    providers: number;
+  };
+  visaServices: {
+    total: number;
+    active: number;
+    countries: number;
+    incompleteGuidance: number;
+  };
+  busCompanies: {
+    total: number;
+    active: number;
+    organizations: number;
+    providers: number;
+  };
+  busTypes: {
+    total: number;
+    active: number;
+    amenities: number;
+    companies: null;
+  };
 }
 export type MasterHotelImportDuplicateBehavior = 'SKIP' | 'UPDATE';
 
@@ -190,12 +460,22 @@ export const masterDataEndpoints = {
   status: (resource: MasterDataResource, id: string) =>
     `${MASTER_DATA_API_PREFIX}/${resource}/${encodeURIComponent(id)}/status` as const,
   currencyRates: `${MASTER_DATA_API_PREFIX}/currency-rates` as const,
+  currencyRateQuotes: `${MASTER_DATA_API_PREFIX}/currency-rates/quotes` as const,
   currentCurrencyRate:
     `${MASTER_DATA_API_PREFIX}/currency-rates/current` as const,
   currencyRateDecision: (id: string, action: 'approve' | 'reject') =>
     `${MASTER_DATA_API_PREFIX}/currency-rates/${encodeURIComponent(id)}/${action}` as const,
   audit: (resource: string, entityId: string) =>
     `${MASTER_DATA_API_PREFIX}/audit/${encodeURIComponent(resource)}/${encodeURIComponent(entityId)}` as const,
+  unmaskOrganizationContact: (id: string) =>
+    `${MASTER_DATA_API_PREFIX}/organization-contacts/${encodeURIComponent(id)}/unmask` as const,
+  organizationSupplierSummary:
+    `${MASTER_DATA_API_PREFIX}/organizations-suppliers/summary` as const,
+  accommodationSummary:
+    `${MASTER_DATA_API_PREFIX}/accommodation/summary` as const,
+  insuranceSummary: `${MASTER_DATA_API_PREFIX}/insurance/summary` as const,
+  travelServicesSummary:
+    `${MASTER_DATA_API_PREFIX}/travel-services-catalog/summary` as const,
   hotelImportPreview:
     `${MASTER_DATA_API_PREFIX}/hotel-imports/preview` as const,
   hotelImportCommit: (sessionId: string) =>

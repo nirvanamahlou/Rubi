@@ -51,7 +51,8 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 
 ### Contract و Permission
 
-- Master Data Contract نسخه `3`
+- Master Data Contract نسخه `10` در بالاترین Slice پشته (`MASTER-003I`)؛ Parent PR #25
+  مستقل و دست‌نخورده باقی می‌ماند.
 - IAM Permission Contract نسخه `5`
 - Permissionهای جدید در Contract و Seed:
   - `master_data.import`
@@ -74,7 +75,8 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 
 ### Web
 
-- گروه مالی اولین گروه و ارزها اولین Resource صفحه `/master-data` است.
+- گروه مالی از صفحه اصلی `/master-data` به Workspace اختصاصی
+  `/master-data/finance` باز می‌شود.
 - فرم ارز شامل نام انگلیسی و تعداد رقم اعشار است.
 - فرم نرخ شامل نوع، زمان مشاهده، شروع/پایان اعتبار و توضیح اصلاح است.
 - عملیات تأیید/رد به Backend واقعی متصل است و دلیل تصمیم دریافت می‌شود.
@@ -83,6 +85,103 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 ## وضعیت Export و Integration
 
 خروجی XLSX طبق ADR-022 به‌صورت گذرا، فیلترشده و مستقیم تا سقف ۱۰٬۰۰۰ ردیف تولید می‌شود و Permission/Audit دارد. خروجی PDF و هر Artifact پایدار یا آرشیوی صادقانه در وضعیت `AWAITING_DOCUMENTS_WORKER` باقی می‌ماند. اتصال Finance، Documents، Reservations، Procurement یا Integrations جعل نشده است.
+
+## Slice پشته‌ای اقامت — MASTER-003F
+
+- Migration افزایشی `20260829150000_master_data_accommodation` مدل‌های Hotel Chain،
+  روابط نرمال Meal/Room/Facility و Composite Hotel را بدون عملیات مخرب اضافه می‌کند.
+- مسیر `/master-data/accommodation` هفت تب کاتالوگ، پروفایل Popup از فهرست هتل‌ها،
+  KPI واقعی، فیلترهای رابطه‌ای، Search/Sort/Pagination، Create/View/Edit،
+  Active/Inactive، Export و Import موجود `HOTEL_IMPORT_V1` را ارائه می‌کند.
+- اطلاعات اقامت global است و Legal Entity selector آن را فیلتر نمی‌کند. Branch فقط
+  در Audit عملیات ثبت می‌شود و مالکیت رکورد را محدود نمی‌کند.
+- Contract/Rate/Inventory/Voucher/Passenger Assignment و فایل Documents وارد این
+  Aggregate نشده‌اند و فقط از قرارداد عمومی ماژول مالک قابل مصرف خواهند بود.
+- شاخه `codex/pc-b-master-data-accommodation` روی PR #31 پشته شده و پیش از والدهای
+  #31 ← #30 ← #29 ← #28 ← #25 نباید Merge شود.
+
+## Slice پشته‌ای تجمیع رابط — MASTER-003G
+
+- برچسب داخلی Work Item از Header صفحه اصلی حذف شد و کارت‌های Hub فقط
+  زیرمجموعه‌های قابل مشاهده را گزارش می‌کنند.
+- تاریخچه و نمودار نرخ از تب مستقل به پنجره جزئیات ارز منتقل شد؛ انتخاب ارز و سپس
+  جفت/نوع نرخ، داده واقعی Backend را برای بازه ۳۰/۹۰/۳۶۵ روزه نمایش می‌دهد.
+- شهر و استان/ناحیه یک تب بالادستی دارند؛ تفکیک مدل داده و FKها بدون Migration حفظ شد.
+- پروفایل هتل، تأمین‌کننده و کارگزار از فهرست اصلی در Dialog مشترک باز می‌شود و
+  تب‌های مستقل پروفایل حذف شدند.
+- نمای مستقل اطلاعات تماس سازمان‌ها و تأمین‌کنندگان حذف شد؛ داده یا Schema مخاطب
+  حذف نشده است.
+- Draft PR #33 از شاخه `codex/pc-b-master-data-ux-consolidation` روی PR #32 پشته
+  شده و پیش از والدهای #32 ← #31 ← #30 ← #29 ← #28 ← #25 نباید Merge شود.
+
+## Slice پشته‌ای حمل‌ونقل — MASTER-003H
+
+- ۹ کاتالوگ ایرلاین، نوع هواپیما، کلاس پروازی، قاعده بار، قالب Manifest، شرکت و نوع
+  قطار و شرکت و نوع اتوبوس با Migration افزایشی، API واقعی و Workspace مطابق ماکاپ
+  ارائه شدند؛ پروفایل فقط Popup است.
+- اتصال‌های عملیاتی Provider، Inventory، Reservation، Settlement و Manifest مسافر
+  خارج از Master Data باقی مانده و فقط از Public Contract قابل اتصال است.
+- Draft PR #35 روی PR #33 پشته شده و پیش از زنجیره والد Merge نمی‌شود.
+
+## Slice پشته‌ای مراجع فروش — MASTER-003I
+
+- هفت کاتالوگ مستقل نحوه آشنایی، منبع سرنخ، کانال فروش، دلیل از دست رفتن، نوع مشتری،
+  Tag و نوع کمپین با Migration افزایشی، Contract v10، Backend و Workspace واقعی
+  فارسی/RTL/Responsive پیاده‌سازی شدند.
+- پروفایل هر مرجع فقط از داخل فهرست در Popup باز می‌شود و تب یا سکشن مستقل پروفایل
+  وجود ندارد. چهار KPI دقیق ماکاپ عبارت‌اند از کل موارد، فعال، استفاده‌شده و نیازمند
+  بازبینی.
+- شمارش استفاده در مالکیت Aggregate مصرف‌کننده است؛ تا انتشار قرارداد عمومی آن مقدار
+  `—` نمایش داده می‌شود و هیچ Query مستقیم به Customers یا Sales وجود ندارد.
+- Branch `codex/pc-b-master-data-sales-references` روی PR #35 پشته می‌شود و پیش از
+  همه والدهای خود Merge نمی‌شود.
+- Draft PR #36 با Base اولیه `codex/pc-b-master-data-transport` ایجاد شده است؛ بعد از
+  Merge والد، Base مطابق زنجیره به `develop` تغییر می‌کند.
+
+## Slice پشته‌ای بیمه — MASTER-003J
+
+- مسیر `/master-data/insurance` سه نمای شرکت‌های بیمه، طرح‌های بیمه و پوشش‌ها را با
+  KPIهای دقیق ماکاپ، Search/Filter/Sort/Pagination، Create/View/Edit، Active/Inactive،
+  Export و جزئیات Popup ارائه می‌کند؛ صفحه مستقل پروفایل ساخته نشده است.
+- Insurer فقط به Organization دارای نقش `INSURANCE_PROVIDER` متصل می‌شود. Country،
+  Currency، Plan و Coverage با FK واقعی و `ON DELETE RESTRICT` به هم متصل‌اند و
+  Legal Entity selector این داده‌های مشترک را فیلتر نمی‌کند.
+- Migrationهای افزایشی `20260829210000_master_data_insurance` و
+  `20260829211000_master_data_insurance_version_constraint` بدون عملیات مخرب،
+  محدودیت واقعی سن، بازه اعتبار، مبلغ، فرانشیز و Optimistic Version را اعمال می‌کنند.
+- Contract عمومی به `master-data.v11` و ۴۱ Resource ارتقا یافت؛ Backend واقعی،
+  Permissionهای موجود Master Data، Audit و Summary واقعی هر سه کاتالوگ را پوشش می‌دهند.
+- قیمت‌گذاری بیمه، صدور بیمه‌نامه، مسافر، Reservation، Provider و Documents خارج از
+  این Aggregate باقی مانده‌اند؛ Query مستقیم به ماژول‌های مالک یا داده ساختگی Seed
+  اضافه نشده است.
+- Draft PR #37 از Branch `codex/pc-b-master-data-insurance` روی PR #36 پشته شده و
+  پیش از همه والدهای خود Merge نمی‌شود؛ بعد از Merge والد، Base مطابق زنجیره به
+  `develop` تغییر می‌کند.
+
+## Slice پشته‌ای تور و خدمات سفر — MASTER-003K
+
+- مسیر `/master-data/tours-travel-services` هفت نمای لیدرها، نوع تور، نوع
+  ترانسفر، CIP، ویزا، شرکت اتوبوس و نوع اتوبوس را با KPIهای دقیق ماکاپ،
+  Search/Filter/Sort/Pagination، Create/View/Edit، Active/Inactive و Export واقعی
+  ارائه می‌کند؛ همه پروفایل‌ها فقط Popup هستند و تب مستقل پروفایل لیدر وجود ندارد.
+- Migrationهای افزایشی `20260829220000_master_data_travel_services` و
+  `20260829221000_master_data_travel_bus_connections` مدل‌های Tour Type،
+  Transfer Type، CIP Service و Visa Service را اضافه و Leader را با شهر، نام
+  انگلیسی، مقصدها و تماس رمزنگاری/ماسک‌شده تکمیل می‌کند. FKها `ON DELETE RESTRICT`
+  و ظرفیت، مدت اعتبار، ترتیب و Version دارای Check واقعی‌اند؛ شرکت اتوبوس دقیقاً
+  به یک Organization یا Provider متصل و Facilityهای نوع اتوبوس M:N هستند.
+- Contract عمومی به `master-data.v12` و ۴۵ Resource ارتقا یافت؛ Backend واقعی،
+  Permissionهای Master Data، Audit با حذف Ciphertext، Optimistic Lock و Summary
+  واقعی همه تب‌ها را پوشش می‌دهند.
+- اسناد و آدرس لیدر، بانک و دستمزد، پرونده و سند مسافر، قیمت، ظرفیت، رزرو، Voucher،
+  قرارداد و تسویه خارج از این Aggregate باقی مانده‌اند؛ مقدارهای نیازمند قرارداد
+  Consumer با `—` نمایش داده می‌شوند و Query مستقیم بین‌ماژولی وجود ندارد.
+- تمام ۱۹ Migration روی PostgreSQL 18 خالی، Constraintهای ظرفیت/اعتبار، اتصال
+  Organization/Provider، FK محدودکننده Facility و Seed
+  دوگانه موفق بودند؛ Seed هیچ داده لیدر، تور، ترانسفر، CIP، ویزا یا مسافر نمی‌سازد.
+- Draft PR #38 از Branch `codex/pc-b-master-data-travel-services` روی Draft PR #37 پشته می‌شود و
+  پیش از همه والدهای خود Merge نمی‌شود؛ بعد از Merge والد، Base مطابق زنجیره به
+  `develop` تغییر می‌کند.
 
 ## Import واقعی هتل — HOTEL_IMPORT_V1
 
@@ -143,10 +242,8 @@ Migration فاقد `DROP`، `TRUNCATE` و `DELETE` است و روی PostgreSQL 1
 این Draft PR فقط MASTER-003 Phase A را می‌بندد و کل اطلاعات پایه را Complete اعلام
 نمی‌کند. موارد زیر هنوز پیاده‌سازی نشده‌اند و در `MASTER-004` برابر `PLANNED` هستند:
 
-- کاتالوگ‌های پیشرفته Airport/Terminal/Bank Branch، Supplier Contact/Service، Hotel Chain/Room/Meal/Facility/Composite، Aircraft/Class/Baggage/Manifest، Insurance Plan/Coverage، Tour/Transfer/Bus و Sales References مستقل
-- رمزنگاری و Unmask مخاطبان Master Data با کلید مستقل از Customers
 - اتصال Scanner مستقل آنتی‌ویروس و Documents برای تصاویر هتل
-- نمودار تاریخچه واقعی و Audit Timeline کامل در UI
+- اتصال لوگوی بانک به Documents Worker و قرارداد واقعی فایل
 
 Parser ZIP با `fflate@0.8.3` دقیق Pin و Lock آن پس از تثبیت آزاد شد. Scanner مستقل آنتی‌ویروس و Documents Worker هنوز آماده نیستند و به‌عنوان موفقیت گزارش نمی‌شوند.
 

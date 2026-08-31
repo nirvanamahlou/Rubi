@@ -192,6 +192,7 @@ enum MasterOrganizationRoleCode {
   HOTEL_PROVIDER
   INSURANCE_PROVIDER
   BUS_PROVIDER
+  RAIL_OPERATOR
   TOUR_OPERATOR
   BROKER
 }
@@ -209,6 +210,29 @@ enum MasterCurrencyRateStatus {
   EXPIRED
 }
 
+enum MasterCurrencyDisplayPolicy {
+  SYMBOL_BEFORE
+  SYMBOL_AFTER
+  CODE_BEFORE
+  CODE_AFTER
+}
+
+enum MasterPaymentMethodChannel {
+  CASH
+  POS
+  BANK_TRANSFER
+  ONLINE_GATEWAY
+  CREDIT
+  WALLET
+  OTHER
+}
+
+enum MasterPaymentMethodDirection {
+  RECEIPT
+  PAYMENT
+  BOTH
+}
+
 enum MasterHotelImportStatus {
   PREVIEW_READY
   COMMITTING
@@ -223,6 +247,89 @@ enum MasterHotelImportDuplicateBehavior {
   CREATE_NEW
 }
 
+enum MasterMealServiceCategory {
+  MEAL_PLAN
+  SERVICE
+}
+
+enum MasterAircraftBodyType {
+  NARROW_BODY
+  WIDE_BODY
+  TURBOPROP
+  REGIONAL
+  OTHER
+}
+
+enum MasterCabinType {
+  ECONOMY
+  PREMIUM_ECONOMY
+  BUSINESS
+  FIRST
+}
+
+enum MasterPassengerType {
+  ADT
+  CHD
+  INF
+}
+
+enum MasterBaggageUnit {
+  KG
+  PC
+}
+
+enum MasterTransportRouteScope {
+  ALL
+  DOMESTIC
+  INTERNATIONAL
+}
+
+enum MasterManifestFileFormat {
+  XLSX
+  CSV
+  XML
+  JSON
+}
+
+enum MasterManifestTemplateStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+}
+
+enum MasterTrainCategory {
+  SLEEPER
+  EXPRESS
+  SALOON
+  LUXURY
+  OTHER
+}
+
+enum MasterBusServiceClass {
+  STANDARD
+  VIP
+  LUXURY
+  OTHER
+}
+
+enum MasterTourScope {
+  DOMESTIC
+  INTERNATIONAL
+  BOTH
+}
+
+enum MasterTransferServiceMode {
+  PRIVATE
+  SHARED
+}
+
+enum MasterCipPassengerScope {
+  ADT
+  CHD
+  INF
+  ALL
+}
+
 enum MasterDataExportFormat {
   XLSX
   PDF
@@ -233,6 +340,35 @@ enum MasterDataExportStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+enum MasterRegionType {
+  PROVINCE
+  STATE
+  REGION
+  TERRITORY
+}
+
+enum MasterTerminalType {
+  DOMESTIC
+  INTERNATIONAL
+  MIXED
+  VIP
+}
+
+enum MasterCollaborationStatus {
+  ACTIVE
+  UNDER_REVIEW
+  PURCHASE_SUSPENDED
+  ENDED
+}
+
+enum MasterOrganizationContactChannel {
+  PHONE
+  WHATSAPP
+  EMAIL
+  TELEGRAM
+  OTHER
 }
 
 model MasterCountry {
@@ -249,8 +385,17 @@ model MasterCountry {
   createdAt           DateTime                   @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime                   @updatedAt @db.Timestamptz(3)
   cities              MasterCity[]
+  regions             MasterRegion[]
   banks               MasterBank[]
+  suppliers           MasterSupplier[]
+  brokers             MasterBroker[]
+  hotelChains         MasterHotelChain[]
   hotelImports        MasterHotelImportSession[]
+  airlines            MasterAirline[]
+  railCompanies       MasterRailCompany[]
+  busCompanies        MasterBusCompany[]
+  insurers            MasterInsurer[]
+  visaServices        MasterVisaService[]
 
   @@index([isActive, name])
   @@map("master_countries")
@@ -259,8 +404,10 @@ model MasterCountry {
 model MasterCity {
   id                        String                     @id @default(uuid()) @db.Uuid
   countryId                 String                     @db.Uuid
+  regionId                  String?                    @db.Uuid
   code                      String                     @db.VarChar(32)
   name                      String                     @db.VarChar(160)
+  englishName               String                     @db.VarChar(160)
   isActive                  Boolean                    @default(true)
   version                   Int                        @default(1)
   createdByUserId           String                     @db.Uuid
@@ -270,32 +417,124 @@ model MasterCity {
   createdAt                 DateTime                   @default(now()) @db.Timestamptz(3)
   updatedAt                 DateTime                   @updatedAt @db.Timestamptz(3)
   country                   MasterCountry              @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  region                    MasterRegion?              @relation(fields: [regionId, countryId], references: [id, countryId], onDelete: Restrict)
   hotels                    MasterHotel[]
+  airports                  MasterAirport[]
+  bankBranches              MasterBankBranch[]
+  suppliers                 MasterSupplier[]
+  brokers                   MasterBroker[]
+  compositeHotels           MasterCompositeHotel[]
   customerAddresses         CustomerAddress[]
   masterHotelImportSessions MasterHotelImportSession[]
+  leaders                   MasterLeader[]
 
   @@unique([countryId, code])
   @@index([countryId, isActive, name])
+  @@index([regionId, isActive, name])
   @@map("master_cities")
 }
 
+model MasterRegion {
+  id                  String           @id @default(uuid()) @db.Uuid
+  countryId           String           @db.Uuid
+  parentRegionId      String?          @db.Uuid
+  code                String           @db.VarChar(32)
+  name                String           @db.VarChar(160)
+  englishName         String           @db.VarChar(160)
+  type                MasterRegionType
+  isActive            Boolean          @default(true)
+  version             Int              @default(1)
+  createdByUserId     String           @db.Uuid
+  updatedByUserId     String           @db.Uuid
+  deactivatedByUserId String?          @db.Uuid
+  deactivatedAt       DateTime?        @db.Timestamptz(3)
+  createdAt           DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime         @updatedAt @db.Timestamptz(3)
+  country             MasterCountry    @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  parent              MasterRegion?    @relation("MasterRegionHierarchy", fields: [parentRegionId, countryId], references: [id, countryId], onDelete: Restrict)
+  children            MasterRegion[]   @relation("MasterRegionHierarchy")
+  cities              MasterCity[]
+
+  @@unique([countryId, code])
+  @@unique([id, countryId])
+  @@index([countryId, type, isActive, name])
+  @@index([parentRegionId, isActive, name])
+  @@map("master_regions")
+}
+
+model MasterAirport {
+  id                  String             @id @default(uuid()) @db.Uuid
+  cityId              String             @db.Uuid
+  iataCode            String             @unique @db.Char(3)
+  icaoCode            String             @unique @db.Char(4)
+  name                String             @db.VarChar(160)
+  englishName         String             @db.VarChar(160)
+  ianaTimezone        String             @db.VarChar(80)
+  latitude            Decimal            @db.Decimal(9, 6)
+  longitude           Decimal            @db.Decimal(9, 6)
+  isActive            Boolean            @default(true)
+  version             Int                @default(1)
+  createdByUserId     String             @db.Uuid
+  updatedByUserId     String             @db.Uuid
+  deactivatedByUserId String?            @db.Uuid
+  deactivatedAt       DateTime?          @db.Timestamptz(3)
+  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
+  city                MasterCity         @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  terminals           MasterTerminal[]
+  cipServices         MasterCipService[]
+
+  @@index([cityId, isActive, name])
+  @@index([ianaTimezone, isActive])
+  @@map("master_airports")
+}
+
+model MasterTerminal {
+  id                  String             @id @default(uuid()) @db.Uuid
+  airportId           String             @db.Uuid
+  code                String             @db.VarChar(32)
+  name                String             @db.VarChar(160)
+  englishName         String?            @db.VarChar(160)
+  terminalType        MasterTerminalType
+  gateCount           Int?
+  operatingHoursMode  String?            @db.VarChar(16)
+  opensAt             String?            @db.Char(5)
+  closesAt            String?            @db.Char(5)
+  isUnderMaintenance  Boolean            @default(false)
+  isActive            Boolean            @default(true)
+  version             Int                @default(1)
+  createdByUserId     String             @db.Uuid
+  updatedByUserId     String             @db.Uuid
+  deactivatedByUserId String?            @db.Uuid
+  deactivatedAt       DateTime?          @db.Timestamptz(3)
+  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
+  airport             MasterAirport      @relation(fields: [airportId], references: [id], onDelete: Restrict)
+
+  @@unique([airportId, code])
+  @@index([airportId, terminalType, isActive, name])
+  @@map("master_terminals")
+}
+
 model MasterCurrency {
-  id                  String                    @id @default(uuid()) @db.Uuid
-  code                String                    @unique @db.Char(3)
-  name                String                    @db.VarChar(160)
-  englishName         String?                   @db.VarChar(160)
-  symbol              String?                   @db.VarChar(16)
-  decimalDigits       Int                       @default(2)
-  isActive            Boolean                   @default(true)
-  version             Int                       @default(1)
-  createdByUserId     String                    @db.Uuid
-  updatedByUserId     String                    @db.Uuid
-  deactivatedByUserId String?                   @db.Uuid
-  deactivatedAt       DateTime?                 @db.Timestamptz(3)
-  createdAt           DateTime                  @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime                  @updatedAt @db.Timestamptz(3)
-  draftRatesFrom      MasterDraftExchangeRate[] @relation("DraftRateFromCurrency")
-  draftRatesTo        MasterDraftExchangeRate[] @relation("DraftRateToCurrency")
+  id                  String                      @id @default(uuid()) @db.Uuid
+  code                String                      @unique @db.Char(3)
+  name                String                      @db.VarChar(160)
+  englishName         String?                     @db.VarChar(160)
+  symbol              String?                     @db.VarChar(16)
+  decimalDigits       Int                         @default(2)
+  displayPolicy       MasterCurrencyDisplayPolicy @default(CODE_AFTER)
+  isActive            Boolean                     @default(true)
+  version             Int                         @default(1)
+  createdByUserId     String                      @db.Uuid
+  updatedByUserId     String                      @db.Uuid
+  deactivatedByUserId String?                     @db.Uuid
+  deactivatedAt       DateTime?                   @db.Timestamptz(3)
+  createdAt           DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                    @updatedAt @db.Timestamptz(3)
+  draftRatesFrom      MasterDraftExchangeRate[]   @relation("DraftRateFromCurrency")
+  draftRatesTo        MasterDraftExchangeRate[]   @relation("DraftRateToCurrency")
+  insuranceCoverages  MasterInsuranceCoverage[]
 
   @@index([isActive, name])
   @@map("master_currencies")
@@ -335,40 +574,98 @@ model MasterDraftExchangeRate {
 }
 
 model MasterBank {
-  id                  String        @id @default(uuid()) @db.Uuid
-  countryId           String        @db.Uuid
-  code                String        @unique @db.VarChar(32)
-  name                String        @db.VarChar(160)
-  isActive            Boolean       @default(true)
-  version             Int           @default(1)
-  createdByUserId     String        @db.Uuid
-  updatedByUserId     String        @db.Uuid
-  deactivatedByUserId String?       @db.Uuid
-  deactivatedAt       DateTime?     @db.Timestamptz(3)
-  createdAt           DateTime      @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime      @updatedAt @db.Timestamptz(3)
-  country             MasterCountry @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  id                  String             @id @default(uuid()) @db.Uuid
+  countryId           String             @db.Uuid
+  code                String             @unique @db.VarChar(32)
+  name                String             @db.VarChar(160)
+  englishName         String?            @db.VarChar(160)
+  swiftCode           String?            @unique @db.VarChar(11)
+  isActive            Boolean            @default(true)
+  version             Int                @default(1)
+  createdByUserId     String             @db.Uuid
+  updatedByUserId     String             @db.Uuid
+  deactivatedByUserId String?            @db.Uuid
+  deactivatedAt       DateTime?          @db.Timestamptz(3)
+  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
+  country             MasterCountry      @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  branches            MasterBankBranch[]
 
   @@index([countryId, isActive, name])
   @@map("master_banks")
 }
 
+model MasterBankBranch {
+  id                  String     @id @default(uuid()) @db.Uuid
+  bankId              String     @db.Uuid
+  cityId              String     @db.Uuid
+  code                String     @db.VarChar(32)
+  name                String     @db.VarChar(160)
+  englishName         String?    @db.VarChar(160)
+  address             String?    @db.VarChar(500)
+  phone               String?    @db.VarChar(32)
+  isActive            Boolean    @default(true)
+  version             Int        @default(1)
+  createdByUserId     String     @db.Uuid
+  updatedByUserId     String     @db.Uuid
+  deactivatedByUserId String?    @db.Uuid
+  deactivatedAt       DateTime?  @db.Timestamptz(3)
+  createdAt           DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime   @updatedAt @db.Timestamptz(3)
+  bank                MasterBank @relation(fields: [bankId], references: [id], onDelete: Restrict)
+  city                MasterCity @relation(fields: [cityId], references: [id], onDelete: Restrict)
+
+  @@unique([bankId, code])
+  @@index([bankId, isActive, name])
+  @@index([cityId, isActive, name])
+  @@map("master_bank_branches")
+}
+
+model MasterPaymentMethod {
+  id                     String                       @id @default(uuid()) @db.Uuid
+  code                   String                       @unique @db.VarChar(32)
+  name                   String                       @db.VarChar(160)
+  englishName            String?                      @db.VarChar(160)
+  description            String?                      @db.VarChar(500)
+  channel                MasterPaymentMethodChannel
+  direction              MasterPaymentMethodDirection @default(BOTH)
+  requiresManualApproval Boolean                      @default(false)
+  displayOrder           Int                          @default(0)
+  isActive               Boolean                      @default(true)
+  version                Int                          @default(1)
+  createdByUserId        String                       @db.Uuid
+  updatedByUserId        String                       @db.Uuid
+  deactivatedByUserId    String?                      @db.Uuid
+  deactivatedAt          DateTime?                    @db.Timestamptz(3)
+  createdAt              DateTime                     @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime                     @updatedAt @db.Timestamptz(3)
+
+  @@index([isActive, displayOrder, name])
+  @@index([channel, direction, isActive])
+  @@map("master_payment_methods")
+}
+
 model MasterOrganization {
-  id                  String                   @id @default(uuid()) @db.Uuid
-  code                String                   @unique @db.VarChar(32)
-  legalName           String                   @db.VarChar(200)
-  displayName         String                   @db.VarChar(160)
-  isActive            Boolean                  @default(true)
-  version             Int                      @default(1)
-  createdByUserId     String                   @db.Uuid
-  updatedByUserId     String                   @db.Uuid
-  deactivatedByUserId String?                  @db.Uuid
-  deactivatedAt       DateTime?                @db.Timestamptz(3)
-  createdAt           DateTime                 @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime                 @updatedAt @db.Timestamptz(3)
+  id                  String                      @id @default(uuid()) @db.Uuid
+  code                String                      @unique @db.VarChar(32)
+  legalName           String                      @db.VarChar(200)
+  displayName         String                      @db.VarChar(160)
+  personType          String?                     @db.VarChar(16)
+  isActive            Boolean                     @default(true)
+  version             Int                         @default(1)
+  createdByUserId     String                      @db.Uuid
+  updatedByUserId     String                      @db.Uuid
+  deactivatedByUserId String?                     @db.Uuid
+  deactivatedAt       DateTime?                   @db.Timestamptz(3)
+  createdAt           DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                    @updatedAt @db.Timestamptz(3)
   roles               MasterOrganizationRole[]
+  supplier            MasterSupplier?
+  contacts            MasterOrganizationContact[]
   insurer             MasterInsurer?
   airline             MasterAirline?
+  railCompany         MasterRailCompany?
+  busCompany          MasterBusCompany?
   broker              MasterBroker?
   hotel               MasterHotel?
   customers           Customer[]
@@ -389,59 +686,135 @@ model MasterOrganizationRole {
   @@map("master_organization_roles")
 }
 
+model MasterSupplier {
+  id                        String                     @id @default(uuid()) @db.Uuid
+  organizationId            String                     @unique @db.Uuid
+  countryId                 String?                    @db.Uuid
+  cityId                    String?                    @db.Uuid
+  code                      String                     @unique @db.VarChar(32)
+  englishName               String?                    @db.VarChar(160)
+  primaryContactId          String?                    @db.Uuid
+  externalProviderReference String?                    @db.VarChar(120)
+  collaborationStatus       MasterCollaborationStatus  @default(UNDER_REVIEW)
+  isActive                  Boolean                    @default(true)
+  version                   Int                        @default(1)
+  createdByUserId           String                     @db.Uuid
+  updatedByUserId           String                     @db.Uuid
+  deactivatedByUserId       String?                    @db.Uuid
+  deactivatedAt             DateTime?                  @db.Timestamptz(3)
+  createdAt                 DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime                   @updatedAt @db.Timestamptz(3)
+  organization              MasterOrganization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  country                   MasterCountry?             @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  city                      MasterCity?                @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  services                  MasterSupplierService[]
+  primaryContact            MasterOrganizationContact? @relation("SupplierPrimaryContact", fields: [primaryContactId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Restrict)
+  cipServices               MasterCipService[]
+  visaServices              MasterVisaService[]
+  busCompany                MasterBusCompany?
+
+  @@index([countryId, cityId, isActive])
+  @@index([collaborationStatus, isActive])
+  @@index([externalProviderReference])
+  @@index([primaryContactId, organizationId])
+  @@map("master_suppliers")
+}
+
+model MasterTravelService {
+  id                  String                  @id @default(uuid()) @db.Uuid
+  code                String                  @unique @db.VarChar(32)
+  name                String                  @db.VarChar(160)
+  englishName         String?                 @db.VarChar(160)
+  isActive            Boolean                 @default(true)
+  version             Int                     @default(1)
+  createdByUserId     String                  @db.Uuid
+  updatedByUserId     String                  @db.Uuid
+  deactivatedByUserId String?                 @db.Uuid
+  deactivatedAt       DateTime?               @db.Timestamptz(3)
+  createdAt           DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                @updatedAt @db.Timestamptz(3)
+  suppliers           MasterSupplierService[]
+  brokers             MasterBrokerService[]
+
+  @@index([isActive, name])
+  @@map("master_travel_services")
+}
+
+model MasterSupplierService {
+  supplierId       String              @db.Uuid
+  serviceId        String              @db.Uuid
+  assignedAt       DateTime            @default(now()) @db.Timestamptz(3)
+  assignedByUserId String              @db.Uuid
+  supplier         MasterSupplier      @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  service          MasterTravelService @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@id([supplierId, serviceId])
+  @@index([serviceId])
+  @@map("master_supplier_services")
+}
+
+model MasterBrokerService {
+  brokerId         String              @db.Uuid
+  serviceId        String              @db.Uuid
+  assignedAt       DateTime            @default(now()) @db.Timestamptz(3)
+  assignedByUserId String              @db.Uuid
+  broker           MasterBroker        @relation(fields: [brokerId], references: [id], onDelete: Restrict)
+  service          MasterTravelService @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@id([brokerId, serviceId])
+  @@index([serviceId])
+  @@map("master_broker_services")
+}
+
+model MasterOrganizationContact {
+  id                        String                           @id @default(uuid()) @db.Uuid
+  organizationId            String                           @db.Uuid
+  code                      String                           @unique @db.VarChar(32)
+  fullName                  String                           @db.VarChar(160)
+  jobTitle                  String?                          @db.VarChar(160)
+  preferredChannel          MasterOrganizationContactChannel @default(PHONE)
+  hasWhatsapp               Boolean                          @default(false)
+  isPrimary                 Boolean                          @default(false)
+  phoneEncrypted            String?                          @db.Text
+  phoneEncryptionIv         String?                          @db.VarChar(24)
+  phoneEncryptionAuthTag    String?                          @db.VarChar(24)
+  phoneEncryptionKeyVersion Int?
+  phoneMasked               String?                          @db.VarChar(80)
+  phoneFingerprint          String?                          @db.Char(64)
+  emailEncrypted            String?                          @db.Text
+  emailEncryptionIv         String?                          @db.VarChar(24)
+  emailEncryptionAuthTag    String?                          @db.VarChar(24)
+  emailEncryptionKeyVersion Int?
+  emailMasked               String?                          @db.VarChar(320)
+  emailFingerprint          String?                          @db.Char(64)
+  isActive                  Boolean                          @default(true)
+  version                   Int                              @default(1)
+  createdByUserId           String                           @db.Uuid
+  updatedByUserId           String                           @db.Uuid
+  deactivatedByUserId       String?                          @db.Uuid
+  deactivatedAt             DateTime?                        @db.Timestamptz(3)
+  createdAt                 DateTime                         @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime                         @updatedAt @db.Timestamptz(3)
+  organization              MasterOrganization               @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  primaryForSuppliers       MasterSupplier[]                 @relation("SupplierPrimaryContact")
+  primaryForBrokers         MasterBroker[]                   @relation("BrokerPrimaryContact")
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, phoneFingerprint])
+  @@unique([organizationId, emailFingerprint])
+  @@index([organizationId, isActive, fullName])
+  @@index([hasWhatsapp, isActive])
+  @@map("master_organization_contacts")
+}
+
 model MasterInsurer {
-  id                  String             @id @default(uuid()) @db.Uuid
-  organizationId      String             @unique @db.Uuid
-  code                String             @unique @db.VarChar(32)
-  name                String             @db.VarChar(160)
-  isActive            Boolean            @default(true)
-  version             Int                @default(1)
-  createdByUserId     String             @db.Uuid
-  updatedByUserId     String             @db.Uuid
-  deactivatedByUserId String?            @db.Uuid
-  deactivatedAt       DateTime?          @db.Timestamptz(3)
-  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
-  organization        MasterOrganization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-
-  @@index([isActive, name])
-  @@map("master_insurers")
-}
-
-model MasterAirline {
-  id                  String             @id @default(uuid()) @db.Uuid
-  organizationId      String             @unique @db.Uuid
-  code                String             @unique @db.Char(2)
-  icaoCode            String?            @unique @db.Char(3)
-  name                String             @db.VarChar(160)
-  isActive            Boolean            @default(true)
-  version             Int                @default(1)
-  createdByUserId     String             @db.Uuid
-  updatedByUserId     String             @db.Uuid
-  deactivatedByUserId String?            @db.Uuid
-  deactivatedAt       DateTime?          @db.Timestamptz(3)
-  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
-  organization        MasterOrganization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-
-  @@index([isActive, name])
-  @@map("master_airlines")
-}
-
-model MasterHotel {
   id                  String                @id @default(uuid()) @db.Uuid
-  cityId              String                @db.Uuid
-  organizationId      String?               @unique @db.Uuid
-  mealServiceId       String?               @db.Uuid
-  defaultRoomTypeId   String?               @db.Uuid
+  organizationId      String                @unique @db.Uuid
+  countryId           String?               @db.Uuid
   code                String                @unique @db.VarChar(32)
   name                String                @db.VarChar(160)
   englishName         String?               @db.VarChar(160)
-  address             String?               @db.VarChar(1000)
-  description         String?               @db.VarChar(2000)
-  hotelRules          String?               @db.VarChar(2000)
-  starRating          Int?
-  isSaleableReference Boolean               @default(true)
+  logoFileReference   String?               @db.Uuid
   isActive            Boolean               @default(true)
   version             Int                   @default(1)
   createdByUserId     String                @db.Uuid
@@ -450,65 +823,421 @@ model MasterHotel {
   deactivatedAt       DateTime?             @db.Timestamptz(3)
   createdAt           DateTime              @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime              @updatedAt @db.Timestamptz(3)
-  city                MasterCity            @relation(fields: [cityId], references: [id], onDelete: Restrict)
-  organization        MasterOrganization?   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  mealService         MasterMealService?    @relation(fields: [mealServiceId], references: [id], onDelete: Restrict)
-  defaultRoomType     MasterRoomType?       @relation(fields: [defaultRoomTypeId], references: [id], onDelete: Restrict)
-  facilities          MasterHotelFacility[]
+  organization        MasterOrganization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  country             MasterCountry?        @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  plans               MasterInsurancePlan[]
+
+  @@index([countryId, isActive, name])
+  @@index([isActive, name])
+  @@map("master_insurers")
+}
+
+model MasterInsurancePlan {
+  id                  String                        @id @default(uuid()) @db.Uuid
+  insurerId           String                        @db.Uuid
+  code                String                        @unique @db.VarChar(32)
+  name                String                        @db.VarChar(160)
+  englishName         String?                       @db.VarChar(160)
+  destinationRegion   String                        @db.VarChar(160)
+  minimumAge          Int                           @default(0)
+  maximumAge          Int?
+  validFrom           DateTime                      @db.Timestamptz(3)
+  validTo             DateTime?                     @db.Timestamptz(3)
+  description         String?                       @db.VarChar(1000)
+  isActive            Boolean                       @default(true)
+  version             Int                           @default(1)
+  createdByUserId     String                        @db.Uuid
+  updatedByUserId     String                        @db.Uuid
+  deactivatedByUserId String?                       @db.Uuid
+  deactivatedAt       DateTime?                     @db.Timestamptz(3)
+  createdAt           DateTime                      @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                      @updatedAt @db.Timestamptz(3)
+  insurer             MasterInsurer                 @relation(fields: [insurerId], references: [id], onDelete: Restrict)
+  coverages           MasterInsurancePlanCoverage[]
+
+  @@index([insurerId, isActive, name])
+  @@index([destinationRegion, isActive, name])
+  @@index([validTo, isActive])
+  @@map("master_insurance_plans")
+}
+
+model MasterInsuranceCoverage {
+  id                  String                        @id @default(uuid()) @db.Uuid
+  currencyId          String                        @db.Uuid
+  code                String                        @unique @db.VarChar(32)
+  name                String                        @db.VarChar(160)
+  englishName         String?                       @db.VarChar(160)
+  coverageLimit       Decimal                       @db.Decimal(24, 10)
+  deductibleAmount    Decimal                       @default(0) @db.Decimal(24, 10)
+  description         String?                       @db.VarChar(1000)
+  isActive            Boolean                       @default(true)
+  version             Int                           @default(1)
+  createdByUserId     String                        @db.Uuid
+  updatedByUserId     String                        @db.Uuid
+  deactivatedByUserId String?                       @db.Uuid
+  deactivatedAt       DateTime?                     @db.Timestamptz(3)
+  createdAt           DateTime                      @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                      @updatedAt @db.Timestamptz(3)
+  currency            MasterCurrency                @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  plans               MasterInsurancePlanCoverage[]
+
+  @@index([currencyId, isActive, name])
+  @@index([isActive, name])
+  @@map("master_insurance_coverages")
+}
+
+model MasterInsurancePlanCoverage {
+  planId           String                  @db.Uuid
+  coverageId       String                  @db.Uuid
+  assignedAt       DateTime                @default(now()) @db.Timestamptz(3)
+  assignedByUserId String                  @db.Uuid
+  plan             MasterInsurancePlan     @relation(fields: [planId], references: [id], onDelete: Restrict)
+  coverage         MasterInsuranceCoverage @relation(fields: [coverageId], references: [id], onDelete: Restrict)
+
+  @@id([planId, coverageId])
+  @@index([coverageId])
+  @@map("master_insurance_plan_coverages")
+}
+
+model MasterAirline {
+  isUnderReview       Boolean                  @default(false)
+  id                  String                   @id @default(uuid()) @db.Uuid
+  organizationId      String                   @unique @db.Uuid
+  code                String                   @unique @db.Char(2)
+  icaoCode            String?                  @unique @db.Char(3)
+  name                String                   @db.VarChar(160)
+  englishName         String?                  @db.VarChar(160)
+  countryId           String?                  @db.Uuid
+  logoFileReference   String?                  @db.Uuid
+  isActive            Boolean                  @default(true)
+  version             Int                      @default(1)
+  createdByUserId     String                   @db.Uuid
+  updatedByUserId     String                   @db.Uuid
+  deactivatedByUserId String?                  @db.Uuid
+  deactivatedAt       DateTime?                @db.Timestamptz(3)
+  createdAt           DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                 @updatedAt @db.Timestamptz(3)
+  organization        MasterOrganization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  country             MasterCountry?           @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  baggageRules        MasterBaggageRule[]
+  manifestTemplates   MasterManifestTemplate[]
+
+  @@index([isActive, name])
+  @@index([countryId, isActive, name])
+  @@map("master_airlines")
+}
+
+model MasterAircraftType {
+  isUnderReview       Boolean                @default(false)
+  id                  String                 @id @default(uuid()) @db.Uuid
+  code                String                 @unique @db.VarChar(32)
+  manufacturer        String                 @db.VarChar(120)
+  model               String                 @db.VarChar(120)
+  name                String                 @db.VarChar(160)
+  englishName         String?                @db.VarChar(160)
+  bodyType            MasterAircraftBodyType
+  isActive            Boolean                @default(true)
+  version             Int                    @default(1)
+  createdByUserId     String                 @db.Uuid
+  updatedByUserId     String                 @db.Uuid
+  deactivatedByUserId String?                @db.Uuid
+  deactivatedAt       DateTime?              @db.Timestamptz(3)
+  createdAt           DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime               @updatedAt @db.Timestamptz(3)
+
+  @@unique([manufacturer, model])
+  @@index([bodyType, isActive, name])
+  @@map("master_aircraft_types")
+}
+
+model MasterCabinClass {
+  id                  String              @id @default(uuid()) @db.Uuid
+  code                String              @unique @db.VarChar(32)
+  bookingCode         String              @unique @db.VarChar(8)
+  name                String              @db.VarChar(160)
+  englishName         String?             @db.VarChar(160)
+  cabinType           MasterCabinType
+  displayOrder        Int                 @default(0)
+  isActive            Boolean             @default(true)
+  version             Int                 @default(1)
+  createdByUserId     String              @db.Uuid
+  updatedByUserId     String              @db.Uuid
+  deactivatedByUserId String?             @db.Uuid
+  deactivatedAt       DateTime?           @db.Timestamptz(3)
+  createdAt           DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime            @updatedAt @db.Timestamptz(3)
+  baggageRules        MasterBaggageRule[]
+
+  @@index([cabinType, isActive, displayOrder, name])
+  @@map("master_cabin_classes")
+}
+
+model MasterBaggageRule {
+  isUnderReview       Boolean                   @default(false)
+  id                  String                    @id @default(uuid()) @db.Uuid
+  airlineId           String                    @db.Uuid
+  cabinClassId        String?                   @db.Uuid
+  code                String                    @unique @db.VarChar(32)
+  name                String                    @db.VarChar(160)
+  passengerType       MasterPassengerType
+  routeScope          MasterTransportRouteScope @default(ALL)
+  allowance           Decimal                   @db.Decimal(8, 2)
+  unit                MasterBaggageUnit
+  pieceCount          Int?
+  validFrom           DateTime                  @db.Date
+  validTo             DateTime?                 @db.Date
+  description         String?                   @db.VarChar(500)
+  isActive            Boolean                   @default(true)
+  version             Int                       @default(1)
+  createdByUserId     String                    @db.Uuid
+  updatedByUserId     String                    @db.Uuid
+  deactivatedByUserId String?                   @db.Uuid
+  deactivatedAt       DateTime?                 @db.Timestamptz(3)
+  createdAt           DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                  @updatedAt @db.Timestamptz(3)
+  airline             MasterAirline             @relation(fields: [airlineId], references: [id], onDelete: Restrict)
+  cabinClass          MasterCabinClass?         @relation(fields: [cabinClassId], references: [id], onDelete: Restrict)
+
+  @@index([airlineId, cabinClassId, passengerType, routeScope, isActive])
+  @@index([validFrom, validTo])
+  @@map("master_baggage_rules")
+}
+
+model MasterManifestTemplate {
+  id                  String                       @id @default(uuid()) @db.Uuid
+  airlineId           String                       @db.Uuid
+  code                String                       @unique @db.VarChar(32)
+  name                String                       @db.VarChar(160)
+  versionNumber       Int
+  fileFormat          MasterManifestFileFormat
+  fileReferenceId     String?                      @db.Uuid
+  sheetName           String?                      @db.VarChar(120)
+  headerRow           Int                          @default(1)
+  dateFormat          String?                      @db.VarChar(40)
+  requiredColumns     String[]
+  columnOrder         String[]
+  validFrom           DateTime                     @db.Date
+  validTo             DateTime?                    @db.Date
+  publicationStatus   MasterManifestTemplateStatus @default(DRAFT)
+  isActive            Boolean                      @default(true)
+  version             Int                          @default(1)
+  createdByUserId     String                       @db.Uuid
+  updatedByUserId     String                       @db.Uuid
+  deactivatedByUserId String?                      @db.Uuid
+  deactivatedAt       DateTime?                    @db.Timestamptz(3)
+  createdAt           DateTime                     @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                     @updatedAt @db.Timestamptz(3)
+  airline             MasterAirline                @relation(fields: [airlineId], references: [id], onDelete: Restrict)
+
+  @@unique([airlineId, versionNumber])
+  @@index([airlineId, publicationStatus, validFrom, validTo])
+  @@map("master_manifest_templates")
+}
+
+model MasterRailCompany {
+  isUnderReview       Boolean            @default(false)
+  id                  String             @id @default(uuid()) @db.Uuid
+  organizationId      String             @unique @db.Uuid
+  countryId           String             @db.Uuid
+  code                String             @unique @db.VarChar(32)
+  name                String             @db.VarChar(160)
+  englishName         String?            @db.VarChar(160)
+  logoFileReference   String?            @db.Uuid
+  isActive            Boolean            @default(true)
+  version             Int                @default(1)
+  createdByUserId     String             @db.Uuid
+  updatedByUserId     String             @db.Uuid
+  deactivatedByUserId String?            @db.Uuid
+  deactivatedAt       DateTime?          @db.Timestamptz(3)
+  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
+  organization        MasterOrganization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  country             MasterCountry      @relation(fields: [countryId], references: [id], onDelete: Restrict)
+
+  @@index([countryId, isActive, name])
+  @@map("master_rail_companies")
+}
+
+model MasterTrainType {
+  isUnderReview       Boolean                   @default(false)
+  facilities          MasterTrainTypeFacility[]
+  id                  String                    @id @default(uuid()) @db.Uuid
+  code                String                    @unique @db.VarChar(32)
+  manufacturer        String                    @db.VarChar(120)
+  model               String                    @db.VarChar(120)
+  name                String                    @db.VarChar(160)
+  englishName         String?                   @db.VarChar(160)
+  category            MasterTrainCategory
+  amenities           String[]
+  isActive            Boolean                   @default(true)
+  version             Int                       @default(1)
+  createdByUserId     String                    @db.Uuid
+  updatedByUserId     String                    @db.Uuid
+  deactivatedByUserId String?                   @db.Uuid
+  deactivatedAt       DateTime?                 @db.Timestamptz(3)
+  createdAt           DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                  @updatedAt @db.Timestamptz(3)
+
+  @@unique([manufacturer, model])
+  @@index([category, isActive, name])
+  @@map("master_train_types")
+}
+
+model MasterBusCompany {
+  isUnderReview       Boolean             @default(false)
+  id                  String              @id @default(uuid()) @db.Uuid
+  organizationId      String?             @unique @db.Uuid
+  supplierId          String?             @unique @db.Uuid
+  countryId           String              @db.Uuid
+  code                String              @unique @db.VarChar(32)
+  name                String              @db.VarChar(160)
+  englishName         String?             @db.VarChar(160)
+  logoFileReference   String?             @db.Uuid
+  isActive            Boolean             @default(true)
+  version             Int                 @default(1)
+  createdByUserId     String              @db.Uuid
+  updatedByUserId     String              @db.Uuid
+  deactivatedByUserId String?             @db.Uuid
+  deactivatedAt       DateTime?           @db.Timestamptz(3)
+  createdAt           DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime            @updatedAt @db.Timestamptz(3)
+  organization        MasterOrganization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  supplier            MasterSupplier?     @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  country             MasterCountry       @relation(fields: [countryId], references: [id], onDelete: Restrict)
+
+  @@index([countryId, isActive, name])
+  @@map("master_bus_companies")
+}
+
+model MasterBusType {
+  isUnderReview       Boolean                 @default(false)
+  id                  String                  @id @default(uuid()) @db.Uuid
+  code                String                  @unique @db.VarChar(32)
+  manufacturer        String                  @db.VarChar(120)
+  model               String                  @db.VarChar(120)
+  name                String                  @db.VarChar(160)
+  englishName         String?                 @db.VarChar(160)
+  serviceClass        MasterBusServiceClass
+  amenities           String[]
+  isActive            Boolean                 @default(true)
+  version             Int                     @default(1)
+  createdByUserId     String                  @db.Uuid
+  updatedByUserId     String                  @db.Uuid
+  deactivatedByUserId String?                 @db.Uuid
+  deactivatedAt       DateTime?               @db.Timestamptz(3)
+  createdAt           DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                @updatedAt @db.Timestamptz(3)
+  facilities          MasterBusTypeFacility[]
+
+  @@unique([manufacturer, model])
+  @@index([serviceClass, isActive, name])
+  @@map("master_bus_types")
+}
+
+model MasterTrainTypeFacility {
+  trainTypeId      String          @db.Uuid
+  facilityId       String          @db.Uuid
+  assignedAt       DateTime        @default(now()) @db.Timestamptz(3)
+  assignedByUserId String          @db.Uuid
+  trainType        MasterTrainType @relation(fields: [trainTypeId], references: [id], onDelete: Restrict)
+  facility         MasterFacility  @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+
+  @@id([trainTypeId, facilityId])
+  @@index([facilityId])
+  @@map("master_train_type_facilities")
+}
+
+model MasterBusTypeFacility {
+  busTypeId        String         @db.Uuid
+  facilityId       String         @db.Uuid
+  assignedAt       DateTime       @default(now()) @db.Timestamptz(3)
+  assignedByUserId String         @db.Uuid
+  busType          MasterBusType  @relation(fields: [busTypeId], references: [id], onDelete: Restrict)
+  facility         MasterFacility @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+
+  @@id([busTypeId, facilityId])
+  @@index([facilityId])
+  @@map("master_bus_type_facilities")
+}
+
+model MasterHotel {
+  id                   String                       @id @default(uuid()) @db.Uuid
+  cityId               String                       @db.Uuid
+  chainId              String?                      @db.Uuid
+  organizationId       String?                      @unique @db.Uuid
+  mealServiceId        String?                      @db.Uuid
+  defaultRoomTypeId    String?                      @db.Uuid
+  code                 String                       @unique @db.VarChar(32)
+  name                 String                       @db.VarChar(160)
+  englishName          String?                      @db.VarChar(160)
+  address              String?                      @db.VarChar(1000)
+  description          String?                      @db.VarChar(2000)
+  hotelRules           String?                      @db.VarChar(2000)
+  website              String?                      @db.VarChar(320)
+  checkInTime          String?                      @db.Char(5)
+  checkOutTime         String?                      @db.Char(5)
+  latitude             Decimal?                     @db.Decimal(9, 6)
+  longitude            Decimal?                     @db.Decimal(9, 6)
+  logoFileReference    String?                      @db.Uuid
+  starRating           Int?
+  isSaleableReference  Boolean                      @default(true)
+  isActive             Boolean                      @default(true)
+  version              Int                          @default(1)
+  createdByUserId      String                       @db.Uuid
+  updatedByUserId      String                       @db.Uuid
+  deactivatedByUserId  String?                      @db.Uuid
+  deactivatedAt        DateTime?                    @db.Timestamptz(3)
+  createdAt            DateTime                     @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime                     @updatedAt @db.Timestamptz(3)
+  city                 MasterCity                   @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  chain                MasterHotelChain?            @relation(fields: [chainId], references: [id], onDelete: Restrict)
+  organization         MasterOrganization?          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  mealService          MasterMealService?           @relation(fields: [mealServiceId], references: [id], onDelete: Restrict)
+  defaultRoomType      MasterRoomType?              @relation(fields: [defaultRoomTypeId], references: [id], onDelete: Restrict)
+  facilities           MasterHotelFacility[]
+  mealServices         MasterHotelMealService[]
+  roomTypes            MasterHotelRoomType[]
+  compositeMemberships MasterCompositeHotelMember[]
 
   @@index([cityId, isActive, name])
+  @@index([chainId, isActive, name])
+  @@index([isSaleableReference, isActive, name])
   @@index([mealServiceId])
   @@index([defaultRoomTypeId])
   @@map("master_hotels")
 }
 
 model MasterMealService {
-  id                  String        @id @default(uuid()) @db.Uuid
-  code                String        @unique @db.VarChar(32)
-  name                String        @db.VarChar(160)
-  englishName         String?       @db.VarChar(160)
-  includedMeals       String[]
-  isActive            Boolean       @default(true)
-  version             Int           @default(1)
-  createdByUserId     String        @db.Uuid
-  updatedByUserId     String        @db.Uuid
-  deactivatedByUserId String?       @db.Uuid
-  deactivatedAt       DateTime?     @db.Timestamptz(3)
-  createdAt           DateTime      @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime      @updatedAt @db.Timestamptz(3)
+  id                  String                    @id @default(uuid()) @db.Uuid
+  code                String                    @unique @db.VarChar(32)
+  name                String                    @db.VarChar(160)
+  englishName         String?                   @db.VarChar(160)
+  category            MasterMealServiceCategory @default(MEAL_PLAN)
+  includedMeals       String[]                  @default([])
+  isActive            Boolean                   @default(true)
+  isUnderReview       Boolean                   @default(false)
+  version             Int                       @default(1)
+  createdByUserId     String                    @db.Uuid
+  updatedByUserId     String                    @db.Uuid
+  deactivatedByUserId String?                   @db.Uuid
+  deactivatedAt       DateTime?                 @db.Timestamptz(3)
+  createdAt           DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                  @updatedAt @db.Timestamptz(3)
   hotels              MasterHotel[]
+  hotelLinks          MasterHotelMealService[]
 
   @@index([isActive, name])
+  @@index([category, isActive, name])
   @@map("master_meal_services")
 }
 
 model MasterRoomType {
-  id                  String        @id @default(uuid()) @db.Uuid
-  code                String        @unique @db.VarChar(32)
-  name                String        @db.VarChar(160)
-  englishName         String?       @db.VarChar(160)
-  referenceCapacity   Int?
-  isActive            Boolean       @default(true)
-  version             Int           @default(1)
-  createdByUserId     String        @db.Uuid
-  updatedByUserId     String        @db.Uuid
-  deactivatedByUserId String?       @db.Uuid
-  deactivatedAt       DateTime?     @db.Timestamptz(3)
-  createdAt           DateTime      @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime      @updatedAt @db.Timestamptz(3)
-  hotels              MasterHotel[]
-
-  @@index([isActive, name])
-  @@map("master_room_types")
-}
-
-model MasterFacility {
   id                  String                @id @default(uuid()) @db.Uuid
   code                String                @unique @db.VarChar(32)
   name                String                @db.VarChar(160)
   englishName         String?               @db.VarChar(160)
-  category            String?               @db.VarChar(80)
-  iconFileReference   String?               @db.Uuid
+  referenceCapacity   Int?
+  usageDescription    String?               @db.VarChar(500)
   isActive            Boolean               @default(true)
   version             Int                   @default(1)
   createdByUserId     String                @db.Uuid
@@ -517,9 +1246,35 @@ model MasterFacility {
   deactivatedAt       DateTime?             @db.Timestamptz(3)
   createdAt           DateTime              @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime              @updatedAt @db.Timestamptz(3)
-  hotels              MasterHotelFacility[]
+  hotels              MasterHotel[]
+  hotelLinks          MasterHotelRoomType[]
 
   @@index([isActive, name])
+  @@map("master_room_types")
+}
+
+model MasterFacility {
+  trainTypes          MasterTrainTypeFacility[]
+  id                  String                    @id @default(uuid()) @db.Uuid
+  code                String                    @unique @db.VarChar(32)
+  name                String                    @db.VarChar(160)
+  englishName         String?                   @db.VarChar(160)
+  category            String?                   @db.VarChar(80)
+  iconFileReference   String?                   @db.Uuid
+  displayOrder        Int                       @default(0)
+  isActive            Boolean                   @default(true)
+  version             Int                       @default(1)
+  createdByUserId     String                    @db.Uuid
+  updatedByUserId     String                    @db.Uuid
+  deactivatedByUserId String?                   @db.Uuid
+  deactivatedAt       DateTime?                 @db.Timestamptz(3)
+  createdAt           DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                  @updatedAt @db.Timestamptz(3)
+  hotels              MasterHotelFacility[]
+  busTypes            MasterBusTypeFacility[]
+
+  @@index([isActive, name])
+  @@index([category, isActive, displayOrder, name])
   @@map("master_facilities")
 }
 
@@ -534,6 +1289,95 @@ model MasterHotelFacility {
   @@id([hotelId, facilityId])
   @@index([facilityId])
   @@map("master_hotel_facilities")
+}
+
+model MasterHotelChain {
+  id                  String        @id @default(uuid()) @db.Uuid
+  countryId           String        @db.Uuid
+  code                String        @unique @db.VarChar(32)
+  name                String        @db.VarChar(160)
+  englishName         String?       @db.VarChar(160)
+  website             String?       @db.VarChar(320)
+  logoFileReference   String?       @db.Uuid
+  isActive            Boolean       @default(true)
+  version             Int           @default(1)
+  createdByUserId     String        @db.Uuid
+  updatedByUserId     String        @db.Uuid
+  deactivatedByUserId String?       @db.Uuid
+  deactivatedAt       DateTime?     @db.Timestamptz(3)
+  createdAt           DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime      @updatedAt @db.Timestamptz(3)
+  country             MasterCountry @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  hotels              MasterHotel[]
+
+  @@index([countryId, isActive, name])
+  @@map("master_hotel_chains")
+}
+
+model MasterHotelMealService {
+  hotelId          String            @db.Uuid
+  mealServiceId    String            @db.Uuid
+  assignedAt       DateTime          @default(now()) @db.Timestamptz(3)
+  assignedByUserId String            @db.Uuid
+  hotel            MasterHotel       @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  mealService      MasterMealService @relation(fields: [mealServiceId], references: [id], onDelete: Restrict)
+
+  @@id([hotelId, mealServiceId])
+  @@index([mealServiceId])
+  @@map("master_hotel_meal_services")
+}
+
+model MasterHotelRoomType {
+  hotelId          String         @db.Uuid
+  roomTypeId       String         @db.Uuid
+  assignedAt       DateTime       @default(now()) @db.Timestamptz(3)
+  assignedByUserId String         @db.Uuid
+  hotel            MasterHotel    @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  roomType         MasterRoomType @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+
+  @@id([hotelId, roomTypeId])
+  @@index([roomTypeId])
+  @@map("master_hotel_room_types")
+}
+
+model MasterCompositeHotel {
+  id                  String                       @id @default(uuid()) @db.Uuid
+  cityId              String                       @db.Uuid
+  code                String                       @unique @db.VarChar(32)
+  name                String                       @db.VarChar(160)
+  englishName         String?                      @db.VarChar(160)
+  usageCondition      String                       @db.VarChar(2000)
+  isSaleableReference Boolean                      @default(true)
+  isActive            Boolean                      @default(true)
+  version             Int                          @default(1)
+  createdByUserId     String                       @db.Uuid
+  updatedByUserId     String                       @db.Uuid
+  deactivatedByUserId String?                      @db.Uuid
+  deactivatedAt       DateTime?                    @db.Timestamptz(3)
+  createdAt           DateTime                     @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                     @updatedAt @db.Timestamptz(3)
+  city                MasterCity                   @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  members             MasterCompositeHotelMember[]
+
+  @@index([cityId, isActive, name])
+  @@index([isSaleableReference, isActive, name])
+  @@map("master_composite_hotels")
+}
+
+model MasterCompositeHotelMember {
+  compositeHotelId String               @db.Uuid
+  hotelId          String               @db.Uuid
+  priority         Int
+  isBackup         Boolean              @default(false)
+  assignedAt       DateTime             @default(now()) @db.Timestamptz(3)
+  assignedByUserId String               @db.Uuid
+  compositeHotel   MasterCompositeHotel @relation(fields: [compositeHotelId], references: [id], onDelete: Restrict)
+  hotel            MasterHotel          @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+
+  @@id([compositeHotelId, hotelId])
+  @@unique([compositeHotelId, priority])
+  @@index([hotelId])
+  @@map("master_composite_hotel_members")
 }
 
 model MasterHotelImportSession {
@@ -575,48 +1419,182 @@ model MasterHotelImportSession {
 }
 
 model MasterBroker {
-  id                  String             @id @default(uuid()) @db.Uuid
-  organizationId      String             @unique @db.Uuid
-  code                String             @unique @db.VarChar(32)
-  name                String             @db.VarChar(160)
-  isActive            Boolean            @default(true)
-  version             Int                @default(1)
-  createdByUserId     String             @db.Uuid
-  updatedByUserId     String             @db.Uuid
-  deactivatedByUserId String?            @db.Uuid
-  deactivatedAt       DateTime?          @db.Timestamptz(3)
-  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
-  organization        MasterOrganization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  id                  String                     @id @default(uuid()) @db.Uuid
+  organizationId      String                     @unique @db.Uuid
+  countryId           String?                    @db.Uuid
+  cityId              String?                    @db.Uuid
+  code                String                     @unique @db.VarChar(32)
+  name                String                     @db.VarChar(160)
+  englishName         String?                    @db.VarChar(160)
+  primaryContactId    String?                    @db.Uuid
+  collaborationStatus MasterCollaborationStatus  @default(UNDER_REVIEW)
+  isActive            Boolean                    @default(true)
+  version             Int                        @default(1)
+  createdByUserId     String                     @db.Uuid
+  updatedByUserId     String                     @db.Uuid
+  deactivatedByUserId String?                    @db.Uuid
+  deactivatedAt       DateTime?                  @db.Timestamptz(3)
+  createdAt           DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                   @updatedAt @db.Timestamptz(3)
+  organization        MasterOrganization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  country             MasterCountry?             @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  city                MasterCity?                @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  services            MasterBrokerService[]
+  primaryContact      MasterOrganizationContact? @relation("BrokerPrimaryContact", fields: [primaryContactId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Restrict)
 
+  @@index([primaryContactId, organizationId])
   @@index([isActive, name])
+  @@index([countryId, cityId, isActive])
+  @@index([collaborationStatus, isActive])
   @@map("master_brokers")
 }
 
 model MasterLeader {
-  id                  String    @id @default(uuid()) @db.Uuid
-  code                String    @unique @db.VarChar(32)
-  name                String    @db.VarChar(160)
-  languages           String[]
-  expertise           String?   @db.VarChar(300)
-  isActive            Boolean   @default(true)
-  version             Int       @default(1)
-  createdByUserId     String    @db.Uuid
-  updatedByUserId     String    @db.Uuid
-  deactivatedByUserId String?   @db.Uuid
-  deactivatedAt       DateTime? @db.Timestamptz(3)
-  createdAt           DateTime  @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime  @updatedAt @db.Timestamptz(3)
+  id                               String      @id @default(uuid()) @db.Uuid
+  cityId                           String?     @db.Uuid
+  code                             String      @unique @db.VarChar(32)
+  name                             String      @db.VarChar(160)
+  englishName                      String?     @db.VarChar(160)
+  languages                        String[]
+  expertise                        String?     @db.VarChar(300)
+  destinations                     String[]
+  primaryPhoneEncrypted            String?     @db.Text
+  primaryPhoneEncryptionIv         String?     @db.VarChar(24)
+  primaryPhoneEncryptionAuthTag    String?     @db.VarChar(24)
+  primaryPhoneEncryptionKeyVersion Int?
+  primaryPhoneMasked               String?     @db.VarChar(80)
+  primaryPhoneFingerprint          String?     @db.Char(64)
+  roamingPhoneEncrypted            String?     @db.Text
+  roamingPhoneEncryptionIv         String?     @db.VarChar(24)
+  roamingPhoneEncryptionAuthTag    String?     @db.VarChar(24)
+  roamingPhoneEncryptionKeyVersion Int?
+  roamingPhoneMasked               String?     @db.VarChar(80)
+  roamingPhoneFingerprint          String?     @db.Char(64)
+  welcomeSignCode                  String?     @db.VarChar(80)
+  operationalNotes                 String?     @db.VarChar(1000)
+  isActive                         Boolean     @default(true)
+  version                          Int         @default(1)
+  createdByUserId                  String      @db.Uuid
+  updatedByUserId                  String      @db.Uuid
+  deactivatedByUserId              String?     @db.Uuid
+  deactivatedAt                    DateTime?   @db.Timestamptz(3)
+  createdAt                        DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt                        DateTime    @updatedAt @db.Timestamptz(3)
+  city                             MasterCity? @relation(fields: [cityId], references: [id], onDelete: Restrict)
 
   @@index([isActive, name])
+  @@index([cityId, isActive, name])
   @@map("master_leaders")
+}
+
+model MasterTourType {
+  id                  String          @id @default(uuid()) @db.Uuid
+  code                String          @unique @db.VarChar(32)
+  name                String          @db.VarChar(160)
+  englishName         String?         @db.VarChar(160)
+  scope               MasterTourScope
+  description         String?         @db.VarChar(1000)
+  displayOrder        Int             @default(0)
+  isActive            Boolean         @default(true)
+  version             Int             @default(1)
+  createdByUserId     String          @db.Uuid
+  updatedByUserId     String          @db.Uuid
+  deactivatedByUserId String?         @db.Uuid
+  deactivatedAt       DateTime?       @db.Timestamptz(3)
+  createdAt           DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime        @updatedAt @db.Timestamptz(3)
+
+  @@index([scope, isActive, displayOrder, name])
+  @@map("master_tour_types")
+}
+
+model MasterTransferType {
+  id                   String                    @id @default(uuid()) @db.Uuid
+  code                 String                    @unique @db.VarChar(32)
+  name                 String                    @db.VarChar(160)
+  englishName          String?                   @db.VarChar(160)
+  vehicleType          String                    @db.VarChar(120)
+  serviceMode          MasterTransferServiceMode
+  suggestedCapacity    Int?
+  suggestedCapacityMin Int?
+  description          String?                   @db.VarChar(1000)
+  displayOrder         Int                       @default(0)
+  isActive             Boolean                   @default(true)
+  version              Int                       @default(1)
+  createdByUserId      String                    @db.Uuid
+  updatedByUserId      String                    @db.Uuid
+  deactivatedByUserId  String?                   @db.Uuid
+  deactivatedAt        DateTime?                 @db.Timestamptz(3)
+  createdAt            DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime                  @updatedAt @db.Timestamptz(3)
+
+  @@index([serviceMode, isActive, displayOrder, name])
+  @@map("master_transfer_types")
+}
+
+model MasterCipService {
+  id                  String                  @id @default(uuid()) @db.Uuid
+  airportId           String                  @db.Uuid
+  supplierId          String?                 @db.Uuid
+  code                String                  @unique @db.VarChar(32)
+  name                String                  @db.VarChar(160)
+  englishName         String?                 @db.VarChar(160)
+  passengerScope      MasterCipPassengerScope @default(ALL)
+  includedItems       String[]
+  description         String?                 @db.VarChar(1000)
+  displayOrder        Int                     @default(0)
+  isActive            Boolean                 @default(true)
+  version             Int                     @default(1)
+  createdByUserId     String                  @db.Uuid
+  updatedByUserId     String                  @db.Uuid
+  deactivatedByUserId String?                 @db.Uuid
+  deactivatedAt       DateTime?               @db.Timestamptz(3)
+  createdAt           DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                @updatedAt @db.Timestamptz(3)
+  airport             MasterAirport           @relation(fields: [airportId], references: [id], onDelete: Restrict)
+  supplier            MasterSupplier?         @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+  @@index([airportId, isActive, displayOrder, name])
+  @@index([supplierId, isActive])
+  @@map("master_cip_services")
+}
+
+model MasterVisaService {
+  id                    String          @id @default(uuid()) @db.Uuid
+  countryId             String          @db.Uuid
+  supplierId            String?         @db.Uuid
+  code                  String          @unique @db.VarChar(32)
+  name                  String          @db.VarChar(160)
+  englishName           String?         @db.VarChar(160)
+  visaType              String          @db.VarChar(120)
+  referenceValidityDays Int?
+  referenceValidityMode String          @default("DAYS") @db.VarChar(24)
+  guidanceFileReference String?         @db.Uuid
+  description           String?         @db.VarChar(1000)
+  displayOrder          Int             @default(0)
+  isActive              Boolean         @default(true)
+  version               Int             @default(1)
+  createdByUserId       String          @db.Uuid
+  updatedByUserId       String          @db.Uuid
+  deactivatedByUserId   String?         @db.Uuid
+  deactivatedAt         DateTime?       @db.Timestamptz(3)
+  createdAt             DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime        @updatedAt @db.Timestamptz(3)
+  country               MasterCountry   @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  supplier              MasterSupplier? @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+  @@index([countryId, isActive, displayOrder, name])
+  @@index([supplierId, isActive])
+  @@map("master_visa_services")
 }
 
 model MasterAcquaintanceMethod {
   id                  String     @id @default(uuid()) @db.Uuid
   code                String     @unique @db.VarChar(32)
   name                String     @db.VarChar(160)
+  englishName         String?    @db.VarChar(160)
   description         String?    @db.VarChar(500)
+  displayOrder        Int        @default(0)
   isActive            Boolean    @default(true)
   version             Int        @default(1)
   createdByUserId     String     @db.Uuid
@@ -627,8 +1605,130 @@ model MasterAcquaintanceMethod {
   updatedAt           DateTime   @updatedAt @db.Timestamptz(3)
   customers           Customer[]
 
+  @@index([isActive, displayOrder, name])
   @@index([isActive, name])
   @@map("master_acquaintance_methods")
+}
+
+model MasterLeadSource {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(32)
+  name                String    @db.VarChar(160)
+  englishName         String?   @db.VarChar(160)
+  description         String?   @db.VarChar(500)
+  displayOrder        Int       @default(0)
+  isActive            Boolean   @default(true)
+  version             Int       @default(1)
+  createdByUserId     String    @db.Uuid
+  updatedByUserId     String    @db.Uuid
+  deactivatedByUserId String?   @db.Uuid
+  deactivatedAt       DateTime? @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([isActive, displayOrder, name])
+  @@map("master_lead_sources")
+}
+
+model MasterSalesChannel {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(32)
+  name                String    @db.VarChar(160)
+  englishName         String?   @db.VarChar(160)
+  description         String?   @db.VarChar(500)
+  displayOrder        Int       @default(0)
+  isActive            Boolean   @default(true)
+  version             Int       @default(1)
+  createdByUserId     String    @db.Uuid
+  updatedByUserId     String    @db.Uuid
+  deactivatedByUserId String?   @db.Uuid
+  deactivatedAt       DateTime? @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([isActive, displayOrder, name])
+  @@map("master_sales_channels")
+}
+
+model MasterLostReason {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(32)
+  name                String    @db.VarChar(160)
+  englishName         String?   @db.VarChar(160)
+  description         String?   @db.VarChar(500)
+  displayOrder        Int       @default(0)
+  isActive            Boolean   @default(true)
+  version             Int       @default(1)
+  createdByUserId     String    @db.Uuid
+  updatedByUserId     String    @db.Uuid
+  deactivatedByUserId String?   @db.Uuid
+  deactivatedAt       DateTime? @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([isActive, displayOrder, name])
+  @@map("master_lost_reasons")
+}
+
+model MasterCustomerType {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(32)
+  name                String    @db.VarChar(160)
+  englishName         String?   @db.VarChar(160)
+  description         String?   @db.VarChar(500)
+  displayOrder        Int       @default(0)
+  isActive            Boolean   @default(true)
+  version             Int       @default(1)
+  createdByUserId     String    @db.Uuid
+  updatedByUserId     String    @db.Uuid
+  deactivatedByUserId String?   @db.Uuid
+  deactivatedAt       DateTime? @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([isActive, displayOrder, name])
+  @@map("master_customer_types")
+}
+
+model MasterTag {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(32)
+  name                String    @db.VarChar(160)
+  englishName         String?   @db.VarChar(160)
+  description         String?   @db.VarChar(500)
+  colorHex            String?   @db.Char(7)
+  displayOrder        Int       @default(0)
+  isActive            Boolean   @default(true)
+  version             Int       @default(1)
+  createdByUserId     String    @db.Uuid
+  updatedByUserId     String    @db.Uuid
+  deactivatedByUserId String?   @db.Uuid
+  deactivatedAt       DateTime? @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([isActive, displayOrder, name])
+  @@map("master_tags")
+}
+
+model MasterCampaignType {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(32)
+  name                String    @db.VarChar(160)
+  englishName         String?   @db.VarChar(160)
+  description         String?   @db.VarChar(500)
+  displayOrder        Int       @default(0)
+  isActive            Boolean   @default(true)
+  version             Int       @default(1)
+  createdByUserId     String    @db.Uuid
+  updatedByUserId     String    @db.Uuid
+  deactivatedByUserId String?   @db.Uuid
+  deactivatedAt       DateTime? @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([isActive, displayOrder, name])
+  @@map("master_campaign_types")
 }
 
 model MasterDataAuditEvent {
