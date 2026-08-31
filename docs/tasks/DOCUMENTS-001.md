@@ -6,6 +6,8 @@
 
 Branch: `codex/pc-b-documents-foundation`
 
+Draft PR: `#61` → `develop`
+
 Base: `origin/develop@1fd22efd836e16df5a62b73430444bd3f856f5e6`
 
 تاریخ شروع: 2026-09-01
