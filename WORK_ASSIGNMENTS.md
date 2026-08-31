@@ -5,10 +5,11 @@
 - Supersedes the historical conditional MASTER-003 handoff below for this customer-only chain.
 - Prerequisites are now fulfilled: #25 merged `d73f51f`, #26 merged `a470d06`, #27 merged `eb2fe1e`.
 - The product owner explicitly authorized review, conflict resolution and sequential merge of #26/#27/#34/#41; no PC-B PR is included.
-- Migration, Customer shared-contract and Central customer-status ownership: `ACTIVE — PC-A/CUSTOMER-002B`, limited to completing/reviewing #34/#41 and recording the final handoff. No additional domain schema is authorized.
+- Migration, Customer shared-contract and Central customer-status ownership: `ACTIVE — PC-A/CUSTOMER-002B` only until PR #41 merges; **automatically RELEASED by this explicit final handoff when #41 is MERGED**. No new domain schema is authorized. Any subsequent task must reserve its own scope on fresh develop.
 - Master shared-contract: `RELEASED / STABLE`; Dependency/Lockfile: `RELEASED`. PC-B source branches and pending PRs remain untouched.
 - National-ID slice only; DEC-OPEN-006/011 remain open for passports, retention/residency/KMS and actual merge. No production deployment or real-data migration is authorized by this review.
-- PR #34 merged `b5f06a2` after 420 tests, 11 fresh migrations and real encrypted national-ID smoke. `CUSTOMER-CHAIN-REVIEW-001` now continues in `codex/pc-a-customer-41-reconcile-20260831`; shared customer locks release only after the final #41 handoff.
+- PR #34 merged `b5f06a2` after 420 tests, 11 fresh migrations and real encrypted national-ID smoke. #41 integration passes 425 tests/81 files, full lint/typecheck/build and 17 synthetic HTTP/database checks on top of it. `CUSTOMER-CHAIN-REVIEW-001` becomes DONE upon #41 merge; full CUSTOMER-002B remains partial with the security/API backlog documented.
+- Next product work requested by the owner is PC-A Ticket Catalog: definition/schedule/fare/capacity, not passenger issuance or Manifest. This is a next-step handoff, NOT a Migration reservation and NOT permission to change PC-B branches.
 
 آخرین به‌روزرسانی: 2026-08-29 — MASTER-003 Phase A برای Review و Handoff مشروط آماده شد
 
