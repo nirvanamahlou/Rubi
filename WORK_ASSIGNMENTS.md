@@ -3,7 +3,7 @@
 ## DOCUMENTS-003B — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-08-31: تصویر بارگذاری‌شده باید پس از اسکن پاک و احراز مجوز، داخل تب پیش‌نمایش همان سند قابل مشاهده باشد.
-- Branch: `codex/pc-b-documents-image-preview`، فرزند `codex/pc-b-documents-usability@8cbe77b` / Draft PR #65. این Slice مستقیم به `develop` نمی‌رود و والدها را Merge یا بازنویسی نمی‌کند.
+- Branch: `codex/pc-b-documents-image-preview` / Draft PR #67، فرزند `codex/pc-b-documents-usability@8cbe77b` / Draft PR #65. این Slice مستقیم به `develop` نمی‌رود و والدها را Merge یا بازنویسی نمی‌کند.
 - محدوده رزروشده: `apps/api/src/documents/**`، `apps/web/src/modules/documents/**` و تست‌های همان ماژول؛ اسناد `WORK_ASSIGNMENTS.md`، `docs/PROJECT_STATUS.md`، `PLANS.md` و `docs/tasks/DOCUMENTS-003B.md`.
 - بدون Prisma Schema/Migration/Seed، بدون Dependency/Lockfile و بدون تغییر قرارداد عمومی. endpoint افزایشی و احراز‌شده `GET /documents/:id/preview` فقط producer داخلی Web را پوشش می‌دهد و backward-compatible است؛ مجوز `documents.file.read`، محرمانگی، شعبه، آرشیو فعال و Scan پاک را مستقل از مجوز دانلود کنترل می‌کند.
 - Web فقط برای تصویر JPEG/PNG پاک و مجاز، پاسخ را به Blob URL موقت تبدیل می‌کند و در cleanup آن را آزاد می‌سازد. پیش‌نمایش برای Pending/آلوده/قرنطینه، سند بدون مجوز، یا نوع غیرتصویری fail-closed می‌ماند؛ Audit مستقل مشاهده ثبت می‌شود و URL عمومی/ماندگار ساخته نمی‌شود.
