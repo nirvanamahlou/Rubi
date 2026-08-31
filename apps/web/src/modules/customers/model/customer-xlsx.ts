@@ -1,5 +1,23 @@
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
+export const CUSTOMER_IMPORT_TEMPLATE_VERSION = 'customers-person-v1';
+export const CUSTOMER_IMPORT_MAX_ROWS = 5000;
+const maxFileBytes = 5 * 1024 * 1024;
+const maxExpandedBytes = 20 * 1024 * 1024;
+
+export function validateCustomerWorkbookXml(xml: string) {
+  for (const character of xml) {
+    const code = character.codePointAt(0)!;
+    if ((code < 32 && code !== 9 && code !== 10 && code !== 13) || code === 127)
+      throw new Error('نویسه کنترلی نامعتبر در فایل وجود دارد.');
+  }
+  if (
+    /<!DOCTYPE|<!ENTITY|<(?:[\w.-]+:)?(?:f|ddeLink|oleObject|externalReference)\b|macroEnabled|vbaProject|TargetMode\s*=\s*["']External["']/i.test(
+      xml,
+    )
+  )
+    throw new Error('فرمول، ماکرو یا ارتباط خارجی در فایل مجاز نیست.');
+}
 
 export const customerImportHeaders = [
   'نام مشتری*',
@@ -166,7 +184,9 @@ export function downloadCustomerXlsx(
   URL.revokeObjectURL(url);
 }
 
-async function unzipWorkbook(buffer: ArrayBuffer) {
+export async function unzipWorkbook(buffer: ArrayBuffer) {
+  if (buffer.byteLength > maxFileBytes || buffer.byteLength < 22)
+    throw new Error('فایل XLSX باید حداکثر ۵ مگابایت و معتبر باشد.');
   const bytes = new Uint8Array(buffer);
   const view = new DataView(buffer);
   let endOffset = bytes.length - 22;
@@ -174,24 +194,64 @@ async function unzipWorkbook(buffer: ArrayBuffer) {
     endOffset -= 1;
   if (endOffset < 0) throw new Error('فایل XLSX معتبر نیست.');
   const entryCount = view.getUint16(endOffset + 10, true);
+  if (
+    !entryCount ||
+    entryCount > 100 ||
+    view.getUint16(endOffset + 4, true) !== 0 ||
+    view.getUint16(endOffset + 6, true) !== 0
+  )
+    throw new Error('ساختار یا تعداد فایل‌های XLSX مجاز نیست.');
   let offset = view.getUint32(endOffset + 16, true);
   const files = new Map<string, string>();
+  let expandedBytes = 0;
 
   for (let index = 0; index < entryCount; index += 1) {
-    if (view.getUint32(offset, true) !== 0x02014b50)
+    if (offset + 46 > endOffset || view.getUint32(offset, true) !== 0x02014b50)
       throw new Error('ساختار XLSX قابل خواندن نیست.');
     const method = view.getUint16(offset + 10, true);
+    const flags = view.getUint16(offset + 8, true);
+    const expectedSize = view.getUint32(offset + 24, true);
+    const expectedCrc = view.getUint32(offset + 16, true);
     const compressedSize = view.getUint32(offset + 20, true);
     const nameLength = view.getUint16(offset + 28, true);
     const extraLength = view.getUint16(offset + 30, true);
     const commentLength = view.getUint16(offset + 32, true);
     const localOffset = view.getUint32(offset + 42, true);
+    if (
+      flags & 1 ||
+      expectedSize > maxExpandedBytes ||
+      expandedBytes + expectedSize > maxExpandedBytes ||
+      offset + 46 + nameLength + extraLength + commentLength > endOffset ||
+      localOffset + 30 > buffer.byteLength
+    )
+      throw new Error('فایل رمزدار یا اندازه غیرمجاز XLSX.');
     const name = decoder.decode(
       bytes.slice(offset + 46, offset + 46 + nameLength),
     );
+    if (
+      files.has(name) ||
+      name.startsWith('/') ||
+      name.includes('\\') ||
+      name.split('/').some((part) => part === '..' || part === '.') ||
+      /:|vbaProject|embeddings|externalLinks/i.test(name)
+    )
+      throw new Error('مسیر داخلی ناامن یا تکراری در XLSX.');
+    if (
+      view.getUint32(localOffset, true) !== 0x04034b50 ||
+      view.getUint16(localOffset + 8, true) !== method ||
+      view.getUint16(localOffset + 6, true) !== flags
+    )
+      throw new Error('ساختار فایل فشرده سازگار نیست.');
     const localNameLength = view.getUint16(localOffset + 26, true);
     const localExtraLength = view.getUint16(localOffset + 28, true);
     const dataStart = localOffset + 30 + localNameLength + localExtraLength;
+    if (
+      dataStart + compressedSize > offset ||
+      decoder.decode(
+        bytes.slice(localOffset + 30, localOffset + 30 + localNameLength),
+      ) !== name
+    )
+      throw new Error('محدوده داخلی فایل فشرده معتبر نیست.');
     const compressed = bytes.slice(dataStart, dataStart + compressedSize);
     let content: Uint8Array;
     if (method === 0) content = compressed;
@@ -199,9 +259,30 @@ async function unzipWorkbook(buffer: ArrayBuffer) {
       const stream = new Blob([compressed])
         .stream()
         .pipeThrough(new DecompressionStream('deflate-raw' as 'deflate'));
-      content = new Uint8Array(await new Response(stream).arrayBuffer());
+      const reader = stream.getReader();
+      const chunks: Uint8Array[] = [];
+      let size = 0;
+      try {
+        while (true) {
+          const chunk = await reader.read();
+          if (chunk.done) break;
+          size += chunk.value.byteLength;
+          if (size > expectedSize || expandedBytes + size > maxExpandedBytes)
+            throw new Error('حجم بازشده فایل بیش از حد مجاز است.');
+          chunks.push(chunk.value);
+        }
+      } finally {
+        await reader.cancel();
+      }
+      content = joinBytes(chunks);
     } else throw new Error('نوع فشرده‌سازی XLSX پشتیبانی نمی‌شود.');
-    files.set(name, decoder.decode(content));
+    if (content.byteLength !== expectedSize || crc32(content) !== expectedCrc)
+      throw new Error('یکپارچگی فایل XLSX تأیید نشد.');
+    expandedBytes += content.byteLength;
+    const xml = decoder.decode(content);
+    if (name.endsWith('.xml') || name.endsWith('.rels'))
+      validateCustomerWorkbookXml(xml);
+    files.set(name, xml);
     offset += 46 + nameLength + extraLength + commentLength;
   }
   return files;
@@ -217,7 +298,33 @@ function cellColumn(reference: string) {
 }
 
 export async function parseCustomerXlsx(file: File) {
+  if (file.size > maxFileBytes || !file.name.toLowerCase().endsWith('.xlsx'))
+    throw new Error('فقط فایل XLSX تا ۵ مگابایت مجاز است.');
   const files = await unzipWorkbook(await file.arrayBuffer());
+  for (const [name, xml] of files) {
+    if (!name.endsWith('.xml') && !name.endsWith('.rels')) continue;
+    const parsed = new DOMParser().parseFromString(xml, 'application/xml');
+    if (parsed.getElementsByTagName('parsererror').length)
+      throw new Error('XML فایل معتبر نیست.');
+    for (const element of parsed.getElementsByTagName('*')) {
+      if (
+        ['f', 'ddeLink', 'oleObject', 'externalReference'].includes(
+          element.localName,
+        )
+      )
+        throw new Error('محتوای فعال در XLSX مجاز نیست.');
+      if (element.localName === 'Relationship') {
+        const target = element.getAttribute('Target') ?? '';
+        if (
+          element.getAttribute('TargetMode')?.toLowerCase() === 'external' ||
+          /:|\\/.test(target) ||
+          target.startsWith('/') ||
+          target.split('/').includes('..')
+        )
+          throw new Error('ارتباط خارجی یا مسیر ناامن در XLSX.');
+      }
+    }
+  }
   const sheetXml = files.get('xl/worksheets/sheet1.xml');
   if (!sheetXml) throw new Error('Sheet مشتریان در فایل پیدا نشد.');
   const sharedXml = files.get('xl/sharedStrings.xml');
@@ -233,10 +340,14 @@ export async function parseCustomerXlsx(file: File) {
       )
     : [];
   const sheet = new DOMParser().parseFromString(sheetXml, 'application/xml');
+  if (sheet.getElementsByTagName('row').length > CUSTOMER_IMPORT_MAX_ROWS + 1)
+    throw new Error('حداکثر ۵۰۰۰ ردیف در هر فایل مجاز است.');
   const rows = [...sheet.getElementsByTagName('row')].map((row) => {
     const values: string[] = [];
     for (const cell of [...row.getElementsByTagName('c')]) {
       const index = cellColumn(cell.getAttribute('r') ?? 'A1');
+      if (!Number.isInteger(index) || index < 0 || index > 30)
+        throw new Error('تعداد یا آدرس ستون‌ها مجاز نیست.');
       const type = cell.getAttribute('t');
       const raw = cell.getElementsByTagName('v')[0]?.textContent ?? '';
       values[index] =
