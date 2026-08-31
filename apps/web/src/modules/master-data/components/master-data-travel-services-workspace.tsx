@@ -192,7 +192,7 @@ const profileFields: Record<
     { key: 'visaType', label: 'نوع ویزا' },
     { key: 'supplierName', label: 'Provider' },
     { key: 'referenceValidityDays', label: 'مدت اعتبار مرجع' },
-    { key: 'guidanceFileReference', label: 'Reference راهنما' },
+    { key: 'guidanceFileReference', label: 'مدارک راهنما' },
     { key: 'description', label: 'شرح' },
   ],
 };
@@ -215,10 +215,6 @@ function attribute(record: MasterDataRecord, key: string, fallback = '—') {
 function translated(record: MasterDataRecord, key: string) {
   const value = attribute(record, key);
   return enumLabels[value] ?? value;
-}
-
-function updated(record: MasterDataRecord) {
-  return new Date(record.updatedAt).toLocaleString('fa-IR');
 }
 
 function chips(value: string) {
@@ -254,6 +250,17 @@ function statusBadge(record: MasterDataRecord) {
 
 export function MasterDataTravelServicesWorkspace() {
   const [resource, setResource] = useState<TravelResource>('leaders');
+  const [tourActorNames, setTourActorNames] = useState<Record<string, string>>(
+    {},
+  );
+  useEffect(() => {
+    if (resource !== 'tour-types') return;
+    const controller = new AbortController();
+    void loadTourTypeActorNames(controller.signal).then((names) => {
+      if (!controller.signal.aborted) setTourActorNames(names);
+    });
+    return () => controller.abort();
+  }, [resource]);
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [summary, setSummary] = useState<MasterTravelServicesSummary>();
@@ -636,8 +643,8 @@ export function MasterDataTravelServicesWorkspace() {
         </span>,
         <Badge key="scope">{translated(record, 'scope')}</Badge>,
         attribute(record, 'description'),
-        '—',
-        updated(record),
+        tourTypeUsageLabel(record),
+        tourTypeUpdatedLabel(record, tourActorNames),
       ];
     if (resource === 'transfer-types')
       return [
@@ -645,9 +652,9 @@ export function MasterDataTravelServicesWorkspace() {
         nameButton,
         attribute(record, 'vehicleType'),
         <Badge key="mode">{translated(record, 'serviceMode')}</Badge>,
-        attribute(record, 'suggestedCapacity'),
+        transferCapacityLabel(record),
         attribute(record, 'description'),
-        '—',
+        transferUsageLabel(record),
       ];
     return [
       code,
@@ -655,9 +662,7 @@ export function MasterDataTravelServicesWorkspace() {
       attribute(record, 'countryName'),
       <Badge key="visa">{attribute(record, 'visaType')}</Badge>,
       attribute(record, 'supplierName'),
-      attribute(record, 'referenceValidityDays') === '—'
-        ? '—'
-        : `${attribute(record, 'referenceValidityDays')} روز`,
+      visaValidityLabel(record),
       attribute(record, 'guidanceFileReference'),
     ];
   }
@@ -883,7 +888,25 @@ export function MasterDataTravelServicesWorkspace() {
           </Button>
         </div>
       </div>
-      {formMode ? (
+      {formMode && resource === 'tour-types' && formMode !== 'view' ? (
+        <MasterDataTourTypeForm
+          key={`tour-${formMode}-${selected?.id ?? 'new'}`}
+          actorNames={tourActorNames}
+          onOpenChange={(open) => {
+            if (!open) setFormMode(null);
+          }}
+          onPersist={persist}
+          {...(selected && formMode === 'edit' ? { record: selected } : {})}
+        />
+      ) : formMode && (resource === 'transfer-types' || resource === 'visa-services') && formMode !== 'view' ? (
+        <MasterDataTravelReferenceForm
+          key={`${resource}-${formMode}-${selected?.id ?? 'new'}`}
+          resource={resource}
+          onOpenChange={(open) => { if (!open) setFormMode(null); }}
+          onPersist={persist}
+          {...(selected && formMode === 'edit' ? { record: selected } : {})}
+        />
+      ) : formMode ? (
         <MasterDataLiveForm
           definition={definition}
           key={`${resource}-${formMode}-${selected?.id ?? 'new'}`}
@@ -946,10 +969,30 @@ export function MasterDataTravelServicesWorkspace() {
                         {field.label}
                       </dt>
                       <dd className="mt-1 break-words font-semibold">
-                        {translated(selected, field.key)}
+                        {resource === 'transfer-types' && field.key === 'suggestedCapacity'
+                          ? transferCapacityLabel(selected)
+                          : resource === 'visa-services' && field.key === 'referenceValidityDays'
+                            ? visaValidityLabel(selected)
+                            : translated(selected, field.key)}
                       </dd>
                     </div>
                   ))}
+                  {resource === 'tour-types' ? (
+                    <>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">استفاده</dt>
+                        <dd className="mt-1 font-semibold">
+                          {tourTypeUsageLabel(selected)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">آخرین تغییر</dt>
+                        <dd className="mt-1 break-words font-semibold">
+                          {tourTypeUpdatedLabel(selected, tourActorNames)}
+                        </dd>
+                      </div>
+                    </>
+                  ) : null}
                 </dl>
               </Card>
               <Card className="p-5">

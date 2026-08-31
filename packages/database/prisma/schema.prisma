@@ -1480,23 +1480,24 @@ model MasterTourType {
 }
 
 model MasterTransferType {
-  id                  String                    @id @default(uuid()) @db.Uuid
-  code                String                    @unique @db.VarChar(32)
-  name                String                    @db.VarChar(160)
-  englishName         String?                   @db.VarChar(160)
-  vehicleType         String                    @db.VarChar(120)
-  serviceMode         MasterTransferServiceMode
-  suggestedCapacity   Int?
-  description         String?                   @db.VarChar(1000)
-  displayOrder        Int                       @default(0)
-  isActive            Boolean                   @default(true)
-  version             Int                       @default(1)
-  createdByUserId     String                    @db.Uuid
-  updatedByUserId     String                    @db.Uuid
-  deactivatedByUserId String?                   @db.Uuid
-  deactivatedAt       DateTime?                 @db.Timestamptz(3)
-  createdAt           DateTime                  @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime                  @updatedAt @db.Timestamptz(3)
+  id                   String                    @id @default(uuid()) @db.Uuid
+  code                 String                    @unique @db.VarChar(32)
+  name                 String                    @db.VarChar(160)
+  englishName          String?                   @db.VarChar(160)
+  vehicleType          String                    @db.VarChar(120)
+  serviceMode          MasterTransferServiceMode
+  suggestedCapacity    Int?
+  suggestedCapacityMin Int?
+  description          String?                   @db.VarChar(1000)
+  displayOrder         Int                       @default(0)
+  isActive             Boolean                   @default(true)
+  version              Int                       @default(1)
+  createdByUserId      String                    @db.Uuid
+  updatedByUserId      String                    @db.Uuid
+  deactivatedByUserId  String?                   @db.Uuid
+  deactivatedAt        DateTime?                 @db.Timestamptz(3)
+  createdAt            DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime                  @updatedAt @db.Timestamptz(3)
 
   @@index([serviceMode, isActive, displayOrder, name])
   @@map("master_transfer_types")
@@ -1538,6 +1539,7 @@ model MasterVisaService {
   englishName           String?         @db.VarChar(160)
   visaType              String          @db.VarChar(120)
   referenceValidityDays Int?
+  referenceValidityMode String          @default("DAYS") @db.VarChar(24)
   guidanceFileReference String?         @db.Uuid
   description           String?         @db.VarChar(1000)
   displayOrder          Int             @default(0)

@@ -20,6 +20,8 @@ import { assertGenericCurrencyRateMutationAllowed } from './currency-rate.policy
 import { buildMasterDataXlsx, MASTER_DATA_XLSX_MIME } from './master-data.xlsx';
 import { MasterDataContactCrypto } from './master-data-contact.crypto';
 import { isMasterDataDependencyError } from './master-data-deletion.policy';
+import { prepareTourTypeForm } from './tour-type-form.policy';
+import { completeTravelReferenceDetails, prepareTravelReferenceForm } from './travel-reference-form.policy';
 import {
   MasterDataRepository,
   toMasterDataRecord,
@@ -498,6 +500,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'vehicleType',
     'serviceMode',
     'suggestedCapacity',
+    'suggestedCapacityMin',
     'description',
     'displayOrder',
   ],
@@ -520,6 +523,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'supplierId',
     'visaType',
     'referenceValidityDays',
+    'referenceValidityMode',
     'guidanceFileReference',
     'description',
     'displayOrder',
@@ -1056,7 +1060,14 @@ export class MasterDataService {
       !actor.permissions.includes('master_data.currency_rate.create')
     )
       throw new ForbiddenException('مجوز ثبت نرخ ارز وجود ندارد.');
-    const data = await this.prepare(resource, values, actor.userId, false);
+    const form =
+      resource === 'tour-types'
+        ? prepareTourTypeForm(values, actor, true)
+        : resource === 'transfer-types' || resource === 'visa-services'
+          ? prepareTravelReferenceForm(resource, values, actor, true)
+        : { values, statusData: {} };
+    const data = await this.prepare(resource, form.values, actor.userId, false);
+    Object.assign(data, form.statusData);
     const row = await this.repository.create(
       resource,
       data,
@@ -1088,7 +1099,14 @@ export class MasterDataService {
           message: 'نرخ تأیید یا ردشده قابل ویرایش نیست؛ نسخه جدید ثبت کنید.',
         });
     }
-    const data = await this.prepare(resource, values, actor.userId, true, id);
+    const form =
+      resource === 'tour-types'
+        ? prepareTourTypeForm(values, actor, false)
+        : resource === 'transfer-types' || resource === 'visa-services'
+          ? prepareTravelReferenceForm(resource, values, actor, false)
+        : { values, statusData: {} };
+    const data = await this.prepare(resource, form.values, actor.userId, true, id);
+    Object.assign(data, form.statusData);
     const row = await this.repository.update(
       resource,
       id,
@@ -1723,9 +1741,7 @@ export class MasterDataService {
         facilityIds.map((id) => this.repository.find('facilities', id)),
       );
       if (facilities.some((facility) => !facility?.isActive))
-        throw new BadRequestException(
-          'یک یا چند امکان فعال اتوبوس یافت نشد.',
-        );
+        throw new BadRequestException('یک یا چند امکان فعال اتوبوس یافت نشد.');
       delete data.facilityIds;
       data.facilities = partial
         ? {
@@ -2443,9 +2459,7 @@ export class MasterDataService {
         continue;
       const displayOrder = Number(data.displayOrder || 0);
       if (!Number.isInteger(displayOrder) || displayOrder < 0)
-        throw new BadRequestException(
-          'ترتیب نمایش باید عدد صحیح نامنفی باشد.',
-        );
+        throw new BadRequestException('ترتیب نمایش باید عدد صحیح نامنفی باشد.');
       data.displayOrder = displayOrder;
     }
     if (
@@ -2492,6 +2506,15 @@ export class MasterDataService {
             'مدت اعتبار مرجع باید عدد صحیح بین ۱ تا ۳۶۵۰ روز باشد.',
           );
         data.referenceValidityDays = days;
+      }
+    }
+    if (resource === 'transfer-types' || resource === 'visa-services') {
+      const coupledFields = resource === 'transfer-types'
+        ? ['suggestedCapacity', 'suggestedCapacityMin']
+        : ['referenceValidityMode', 'referenceValidityDays'];
+      if (coupledFields.some((field) => Object.hasOwn(data, field))) {
+        const existing = partial && entityId ? await this.repository.find(resource, entityId) : null;
+        Object.assign(data, completeTravelReferenceDetails(resource, data, existing));
       }
     }
     if (resource === 'organizations' && Object.hasOwn(data, 'roleCodes')) {
@@ -2624,10 +2647,7 @@ export class MasterDataService {
         resource === 'bus-companies') &&
       typeof data.supplierId === 'string'
     ) {
-      const supplier = await this.repository.find(
-        'suppliers',
-        data.supplierId,
-      );
+      const supplier = await this.repository.find('suppliers', data.supplierId);
       if (!supplier?.isActive)
         throw new BadRequestException('Provider فعال یافت نشد.');
     }
