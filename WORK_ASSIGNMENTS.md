@@ -1,5 +1,13 @@
 # Work Assignments
 
+## MASTER-003-DEVELOP-INTEGRATION — PC-B — IN_PROGRESS
+
+- Owner explicitly requested push and merge to dev/develop on 2026-08-31. This authorizes this normal PR integration, superseding the earlier no-merge restriction for the delivered Master Data snapshots; no force push or source-branch deletion.
+- Base: `origin/develop@e25f2886c3e6d7e90c33ef27604bdce76dc973f0` (merged #58). Source: #59 `b04c2bd7c31b6ef85ed7357d83f4c5f548183d12`, including #57 `6abd960` and the existing #55/#54/#47 lineage already retained by #58.
+- Branch: `codex/pc-b-master-data-develop-integration`; isolated worktree preserves the original checkout, live servers, private configuration and data.
+- Reservation under PC-B/MASTER-003: integration of the published Master Data files/migration/contract; compatibility changes in Master Data tests only; WORK_ASSIGNMENTS, PROJECT_STATUS and this integration task report. No new feature, Customers/Calendar edit, historical migration rewrite, dependency/lockfile change, or application database operation.
+- #58 integration reservation ended upon its verified merge. Existing PC-B development locks remain unchanged; this does not acquire or release another module's locks. Combined checks and review must pass before normal PR merge; no invented approvals or protection bypass.
+
 ## SHARED-INTEGRATION-0831 — PC-A — IN_PROGRESS
 
 - Final handoff: PR #58 targets develop. Required combined runtime gates passed; on its successful merge this integration becomes DONE and only its integration reservation ends. PC-B development locks stay as recorded. Each PC must safely fast-forward to the resulting develop commit; no local data or keys travel through Git.
