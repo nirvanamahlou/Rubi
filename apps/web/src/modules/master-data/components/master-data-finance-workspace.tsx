@@ -1,4 +1,6 @@
 'use client';
+import { useMasterDataColumnFilters } from './master-data-column-filters';
+import { MasterDataPowerButton } from './master-data-power-button';
 
 import type {
   MasterDataListQuery,
@@ -316,12 +318,16 @@ export function MasterDataFinanceWorkspace({
   const definition = getMasterDataDefinition(resource);
   const copy = tabCopy[tab];
 
+  const { columnFilters, columnFilterControls, resetColumnFilters } =
+    useMasterDataColumnFilters(resource, () => setPage(1));
+
   const load = useCallback(async () => {
     setRequestState('loading');
     try {
       if (isRateTab(tab)) {
         const [response, approvedResponse, draftResponse] = await Promise.all([
           masterDataApi.currencyRateHistory({
+            ...columnFilters,
             search,
             status: 'DRAFT',
             page,
@@ -347,6 +353,7 @@ export function MasterDataFinanceWorkspace({
         setTotal(response.meta.total);
       } else {
         const baseQuery: MasterDataListQuery = {
+          ...columnFilters,
           search,
           status,
           sortBy: resource === 'payment-methods' ? 'updatedAt' : 'name',
@@ -386,7 +393,7 @@ export function MasterDataFinanceWorkspace({
           : 'error',
       );
     }
-  }, [page, resource, search, status, tab]);
+  }, [columnFilters, page, resource, search, status, tab]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 250);
@@ -483,6 +490,7 @@ export function MasterDataFinanceWorkspace({
   function changeTab(next: FinanceTab) {
     setTab(next);
     setSearch('');
+    resetColumnFilters();
     setStatus('all');
     setPage(1);
     setSelected(undefined);
@@ -517,20 +525,9 @@ export function MasterDataFinanceWorkspace({
     else await load();
   }
 
-  async function toggle(record: MasterDataRecord) {
-    const next: MasterDataStatus =
-      record.status === 'active' ? 'inactive' : 'active';
-    try {
-      await masterDataApi.setStatus(resource, record.id, next, record.version);
-      setNotice(
-        `${definition.singularLabel} ${next === 'active' ? 'فعال' : 'غیرفعال'} شد.`,
-      );
-      await load();
-    } catch (error) {
-      setNotice(
-        error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.',
-      );
-    }
+  async function afterStatusChange() {
+    setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
+    await load();
   }
 
   async function decide(row: CurrencyRateRow, action: 'approve' | 'reject') {
@@ -573,6 +570,7 @@ export function MasterDataFinanceWorkspace({
         resource,
         format: 'xlsx',
         filters: {
+          ...columnFilters,
           search,
           status,
           sortBy: 'name',
@@ -907,6 +905,7 @@ export function MasterDataFinanceWorkspace({
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${copy.title}`} />
 
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
+        {columnFilterControls}
         <FormField id="finance-search" label="جست‌وجو">
           <div className="relative">
             <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -1119,13 +1118,10 @@ export function MasterDataFinanceWorkspace({
                     record={record}
                     onDeleted={afterDelete}
                   />
-                  <Button
-                    onClick={() => void toggle(record)}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    {record.status === 'active' ? 'غیرفعال‌سازی' : 'فعال‌سازی'}
-                  </Button>
+                  <MasterDataPowerButton
+                    record={record}
+                    onChanged={afterStatusChange}
+                  />
                 </div>
               </Card>
             ))}
@@ -1211,15 +1207,10 @@ export function MasterDataFinanceWorkspace({
                           record={record}
                           onDeleted={afterDelete}
                         />
-                        <Button
-                          onClick={() => void toggle(record)}
-                          size="sm"
-                          variant="ghost"
-                        >
-                          {record.status === 'active'
-                            ? 'غیرفعال‌سازی'
-                            : 'فعال‌سازی'}
-                        </Button>
+                        <MasterDataPowerButton
+                          record={record}
+                          onChanged={afterStatusChange}
+                        />
                       </div>
                     </td>
                   </tr>

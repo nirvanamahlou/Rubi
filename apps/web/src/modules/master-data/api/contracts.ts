@@ -10,6 +10,8 @@ export const MASTER_DATA_BLOCKED_REASON =
 export const masterDataResourceSchema = z.enum(masterDataResourceKeys);
 export const masterDataStatusSchema = z.enum(['active', 'inactive']);
 export const masterDataListQuerySchema = z.object({
+  columnFilter1: z.string().trim().max(100).optional(),
+  columnFilter2: z.string().trim().max(100).optional(),
   transportStatus: z.enum(['ACTIVE', 'INACTIVE', 'UNDER_REVIEW']).optional(),
   search: z.string().trim().max(100).default(''),
   status: z.enum(['all', 'active', 'inactive']).default('all'),
@@ -22,7 +24,9 @@ export const masterDataListQuerySchema = z.object({
   cityId: z.string().uuid().optional(),
   airportId: z.string().uuid().optional(),
   bankId: z.string().uuid().optional(),
-  terminalType: z.enum(['DOMESTIC', 'INTERNATIONAL', 'MIXED', 'VIP']).optional(),
+  terminalType: z
+    .enum(['DOMESTIC', 'INTERNATIONAL', 'MIXED', 'VIP'])
+    .optional(),
   paymentChannel: z
     .enum([
       'CASH',
@@ -151,6 +155,8 @@ export function serializeMasterDataListQuery(query: MasterDataListQuery) {
     pageSize: String(query.pageSize),
   });
   for (const field of [
+    'columnFilter1',
+    'columnFilter2',
     'transportStatus',
     'countryId',
     'regionId',

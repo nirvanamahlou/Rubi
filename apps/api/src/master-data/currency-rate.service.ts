@@ -205,6 +205,26 @@ export class CurrencyRateService {
         : {}),
       ...(query.fromCurrencyId ? { fromCurrencyId: query.fromCurrencyId } : {}),
       ...(query.toCurrencyId ? { toCurrencyId: query.toCurrencyId } : {}),
+      ...(query.columnFilter1?.trim()
+        ? {
+            fromCurrency: {
+              code: {
+                contains: query.columnFilter1.trim(),
+                mode: 'insensitive' as const,
+              },
+            },
+          }
+        : {}),
+      ...(query.columnFilter2?.trim()
+        ? {
+            toCurrency: {
+              code: {
+                contains: query.columnFilter2.trim(),
+                mode: 'insensitive' as const,
+              },
+            },
+          }
+        : {}),
       ...(query.rateType ? { rateType: query.rateType } : {}),
       ...(query.status ? { status: query.status } : {}),
       ...(observedFrom || observedTo

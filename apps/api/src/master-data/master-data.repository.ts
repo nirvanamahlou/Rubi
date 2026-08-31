@@ -1,3 +1,4 @@
+import { columnFilterWhere } from './catalog-filters';
 import {
   ConflictException,
   Inject,
@@ -298,6 +299,24 @@ function delegate(client: unknown, resource: MasterDataResource): Delegate {
 }
 
 function relations(resource: MasterDataResource): object | undefined {
+  if (resource === 'countries')
+    return {
+      _count: {
+        select: {
+          cities: true,
+          regions: true,
+          banks: true,
+          suppliers: true,
+          brokers: true,
+          hotelChains: true,
+          airlines: true,
+          railCompanies: true,
+          busCompanies: true,
+          insurers: true,
+          visaServices: true,
+        },
+      },
+    };
   if (resource === 'exchange-rates')
     return { fromCurrency: true, toCurrency: true };
   if (resource === 'organizations') return { roles: true };
@@ -330,7 +349,15 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'suppliers')
     return {
       organization: true,
-      primaryContact: { select: { id: true, fullName: true, phoneMasked: true, emailMasked: true, isActive: true } },
+      primaryContact: {
+        select: {
+          id: true,
+          fullName: true,
+          phoneMasked: true,
+          emailMasked: true,
+          isActive: true,
+        },
+      },
       country: true,
       city: true,
       services: { include: { service: true } },
@@ -338,7 +365,15 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'brokers')
     return {
       organization: true,
-      primaryContact: { select: { id: true, fullName: true, phoneMasked: true, emailMasked: true, isActive: true } },
+      primaryContact: {
+        select: {
+          id: true,
+          fullName: true,
+          phoneMasked: true,
+          emailMasked: true,
+          isActive: true,
+        },
+      },
       country: true,
       city: true,
       services: { include: { service: true } },
@@ -346,8 +381,7 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'travel-services')
     return { _count: { select: { suppliers: true, brokers: true } } };
   if (resource === 'organization-contacts') return { organization: true };
-  if (resource === 'leaders')
-    return { city: { include: { country: true } } };
+  if (resource === 'leaders') return { city: { include: { country: true } } };
   if (resource === 'cip-services')
     return {
       airport: { include: { city: true } },
@@ -358,10 +392,23 @@ function relations(resource: MasterDataResource): object | undefined {
       country: true,
       supplier: { include: { organization: true } },
     };
-  if (resource === 'regions') return { country: true, parent: true };
-  if (resource === 'cities') return { country: true, region: true };
+  if (resource === 'regions')
+    return {
+      country: true,
+      parent: true,
+      _count: { select: { cities: true } },
+    };
+  if (resource === 'cities')
+    return {
+      country: true,
+      region: true,
+      _count: { select: { airports: true } },
+    };
   if (resource === 'airports')
-    return { city: { include: { country: true, region: true } } };
+    return {
+      city: { include: { country: true, region: true } },
+      _count: { select: { terminals: true } },
+    };
   if (resource === 'terminals') return { airport: { include: { city: true } } };
   if (resource === 'banks')
     return { country: true, _count: { select: { branches: true } } };
@@ -529,18 +576,31 @@ export function toMasterDataRecord(
   if (resource === 'organizations') attributes.displayName = name;
   if (roles)
     attributes.roleCodes = roles.map(({ roleCode }) => roleCode).join(',');
-  if (resource === 'countries') attributes.iso2Code = code;
+  if (resource === 'countries') {
+    attributes.iso2Code = code;
+    for (const [key, value] of Object.entries(count ?? {}))
+      attributes[`${key}Count`] = Number(value);
+    attributes.dependencyCount = count
+      ? Object.values(count).reduce<number>(
+          (sum, value) => sum + Number(value),
+          0,
+        )
+      : null;
+  }
   if (resource === 'regions') {
+    attributes.cityCount = count ? Number(count.cities) : null;
     attributes.countryCode = String(country?.code ?? '');
     attributes.countryName = String(country?.name ?? '');
     attributes.parentRegionName = String(parent?.name ?? '');
   }
   if (resource === 'cities') {
+    attributes.airportCount = count ? Number(count.airports) : null;
     attributes.countryCode = String(country?.code ?? '');
     attributes.countryName = String(country?.name ?? '');
     attributes.regionName = String(region?.name ?? '');
   }
   if (resource === 'airports') {
+    attributes.terminalCount = count ? Number(count.terminals) : null;
     const airportCountry = city?.country as Record<string, unknown> | undefined;
     const airportRegion = city?.region as Record<string, unknown> | undefined;
     attributes.cityName = String(city?.name ?? '');
@@ -554,7 +614,9 @@ export function toMasterDataRecord(
     attributes.airportIataCode = String(airport?.iataCode ?? '');
     attributes.airportIcaoCode = String(airport?.icaoCode ?? '');
     attributes.cityId = String(airport?.cityId ?? '');
-    attributes.cityName = String((airport?.city as Record<string, unknown> | undefined)?.name ?? '');
+    attributes.cityName = String(
+      (airport?.city as Record<string, unknown> | undefined)?.name ?? '',
+    );
     attributes.ianaTimezone = String(airport?.ianaTimezone ?? '');
     attributes.updatedByUserId = String(row.updatedByUserId ?? '');
   }
@@ -568,11 +630,20 @@ export function toMasterDataRecord(
   }
   if (resource === 'suppliers' || resource === 'brokers') {
     attributes.organizationName = String(organization?.displayName ?? '');
-    attributes.organizationPersonType = organization?.personType ? String(organization.personType) : null;
-    const primaryContact = row.primaryContact as Record<string, unknown> | null | undefined;
-    attributes.primaryContactName = primaryContact?.isActive ? String(primaryContact.fullName ?? '') : null;
-    attributes.primaryPhoneMasked = primaryContact?.isActive ? (primaryContact.phoneMasked as string | null) : null;
-    attributes.primaryEmailMasked = primaryContact?.isActive ? (primaryContact.emailMasked as string | null) : null;
+    attributes.organizationPersonType = organization?.personType
+      ? String(organization.personType)
+      : null;
+    const primaryContact = row.primaryContact as
+      Record<string, unknown> | null | undefined;
+    attributes.primaryContactName = primaryContact?.isActive
+      ? String(primaryContact.fullName ?? '')
+      : null;
+    attributes.primaryPhoneMasked = primaryContact?.isActive
+      ? (primaryContact.phoneMasked as string | null)
+      : null;
+    attributes.primaryEmailMasked = primaryContact?.isActive
+      ? (primaryContact.emailMasked as string | null)
+      : null;
     attributes.organizationCode = String(organization?.code ?? '');
     attributes.countryName = String(country?.name ?? '');
     attributes.cityName = String(city?.name ?? '');
@@ -667,7 +738,11 @@ export function toMasterDataRecord(
     );
   }
   if (isMasterTransportFormResource(resource)) {
-    attributes.transportStatus = row.isUnderReview ? 'UNDER_REVIEW' : row.isActive ? 'ACTIVE' : 'INACTIVE';
+    attributes.transportStatus = row.isUnderReview
+      ? 'UNDER_REVIEW'
+      : row.isActive
+        ? 'ACTIVE'
+        : 'INACTIVE';
     attributes.integrationConnectionReference = null;
     attributes.integrationConnectionStatus = 'UNAVAILABLE';
     attributes.logoReferenceStatus = 'UNAVAILABLE';
@@ -957,6 +1032,12 @@ export class MasterDataRepository {
         } as never);
       where.OR = direct;
     }
+    const columnConditions = columnFilterWhere(resource, query);
+    if (columnConditions.length)
+      where.AND = [
+        ...(Array.isArray(where.AND) ? where.AND : []),
+        ...columnConditions,
+      ];
     const sortField =
       query.sortBy === 'name'
         ? nameField
@@ -1161,7 +1242,9 @@ export class MasterDataRepository {
       id,
       {
         isActive,
-        ...(isMasterTransportFormResource(resource) ? { isUnderReview: false } : {}),
+        ...(isMasterTransportFormResource(resource)
+          ? { isUnderReview: false }
+          : {}),
         deactivatedAt: isActive ? null : now,
         deactivatedByUserId: isActive ? null : actorUserId,
         ...(resource === 'terminals' ? { isUnderMaintenance: false } : {}),
@@ -1273,11 +1356,17 @@ export class MasterDataRepository {
         select: { cityId: true },
       }),
       client.masterBroker.count({
-        where: { OR: [
-          { countryId: null }, { cityId: null }, { englishName: null },
-          { primaryContactId: null }, { primaryContact: { is: { isActive: false } } },
-          { organization: { is: { personType: null } } }, { services: { none: {} } },
-        ] },
+        where: {
+          OR: [
+            { countryId: null },
+            { cityId: null },
+            { englishName: null },
+            { primaryContactId: null },
+            { primaryContact: { is: { isActive: false } } },
+            { organization: { is: { personType: null } } },
+            { services: { none: {} } },
+          ],
+        },
       }),
       client.masterOrganizationContact.count(),
       client.masterOrganizationContact.count({ where: { isActive: true } }),
