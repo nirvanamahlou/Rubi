@@ -1987,9 +1987,16 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
       {
         key: 'suggestedCapacity',
-        label: 'ظرفیت پیشنهادی',
+        label: 'حداکثر ظرفیت پیشنهادی',
         type: 'number',
         placeholder: '3',
+      },
+      {
+        key: 'suggestedCapacityMin',
+        label: 'حداقل ظرفیت پیشنهادی',
+        type: 'number',
+        placeholder: '1',
+        hint: 'برای ثبت بازه، حداقل و حداکثر را وارد کنید؛ حداقل اختیاری است.',
       },
       {
         key: 'description',
@@ -2118,6 +2125,16 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         required: true,
       },
       {
+        key: 'referenceValidityMode',
+        label: 'نوع اعتبار مرجع',
+        type: 'select',
+        placeholder: '',
+        options: [
+          { value: 'DAYS', label: 'تعداد روز مشخص' },
+          { value: 'PASSPORT_EXPIRY', label: 'تا پایان اعتبار پاسپورت' },
+        ],
+      },
+      {
         key: 'referenceValidityDays',
         label: 'مدت اعتبار مرجع (روز)',
         type: 'number',
@@ -2125,10 +2142,10 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
       {
         key: 'guidanceFileReference',
-        label: 'Reference راهنمای Documents',
+        label: 'مدارک راهنما',
         type: 'text',
-        placeholder: 'UUID معتبر Documents',
-        hint: 'فقط شناسه فایل؛ خود سند متقاضی در Master Data ذخیره نمی‌شود.',
+        placeholder: 'شناسه فایل راهنمای عمومی',
+        hint: 'شناسه UUID راهنمای عمومی در اسناد؛ فایل یا مشخصات متقاضی در این فرم دریافت نمی‌شود.',
       },
       {
         key: 'description',

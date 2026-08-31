@@ -280,13 +280,7 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
     'description',
   ],
   'cip-services': ['name', 'englishName', 'code', 'description'],
-  'visa-services': [
-    'name',
-    'englishName',
-    'code',
-    'visaType',
-    'description',
-  ],
+  'visa-services': ['name', 'englishName', 'code', 'visaType', 'description'],
   'acquaintance-methods': ['name', 'englishName', 'description', 'code'],
   'lead-sources': ['name', 'englishName', 'description', 'code'],
   'sales-channels': ['name', 'englishName', 'description', 'code'],
@@ -519,6 +513,18 @@ export function toMasterDataRecord(
     attributes.fromCurrencyCode = String(from?.code ?? '');
     attributes.toCurrencyCode = String(to?.code ?? '');
   }
+  if (resource === 'tour-types') {
+    attributes.updatedByUserId =
+      typeof row.updatedByUserId === 'string' ? row.updatedByUserId : null;
+    // Product ownership is external; unavailable is not a measured zero.
+    attributes.usageCount = null;
+    attributes.usageStatus = 'UNAVAILABLE';
+  }
+  if (resource === 'transfer-types') {
+    // Reservation usage has no published consumer contract yet; unknown is not zero.
+    attributes.usageCount = null;
+    attributes.usageStatus = 'UNAVAILABLE';
+  }
   if (resource === 'organizations') attributes.displayName = name;
   if (roles)
     attributes.roleCodes = roles.map(({ roleCode }) => roleCode).join(',');
@@ -587,8 +593,7 @@ export function toMasterDataRecord(
   }
   if (resource === 'cip-services') {
     const providerOrganization = supplier?.organization as
-      | Record<string, unknown>
-      | undefined;
+      Record<string, unknown> | undefined;
     attributes.airportName = String(airport?.name ?? '');
     attributes.airportIataCode = String(airport?.iataCode ?? '');
     attributes.supplierName = String(
@@ -598,8 +603,7 @@ export function toMasterDataRecord(
   }
   if (resource === 'visa-services') {
     const providerOrganization = supplier?.organization as
-      | Record<string, unknown>
-      | undefined;
+      Record<string, unknown> | undefined;
     attributes.countryName = String(country?.name ?? '');
     attributes.supplierName = String(
       providerOrganization?.displayName ?? supplier?.code ?? '',
@@ -644,8 +648,7 @@ export function toMasterDataRecord(
   }
   if (resource === 'bus-companies') {
     const supplierOrganization = supplier?.organization as
-      | Record<string, unknown>
-      | undefined;
+      Record<string, unknown> | undefined;
     attributes.supplierName = String(
       supplierOrganization?.displayName ?? supplier?.code ?? '',
     );

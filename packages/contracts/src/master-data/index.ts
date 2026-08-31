@@ -92,6 +92,7 @@ export type MasterTrainCategory =
 export type MasterBusServiceClass = 'STANDARD' | 'VIP' | 'LUXURY' | 'OTHER';
 export type MasterTourScope = 'DOMESTIC' | 'INTERNATIONAL' | 'BOTH';
 export type MasterTransferServiceMode = 'PRIVATE' | 'SHARED';
+export type MasterVisaValidityMode = 'DAYS' | 'PASSPORT_EXPIRY';
 export type MasterCipPassengerScope = 'ADT' | 'CHD' | 'INF' | 'ALL';
 
 export type MasterDataSortField = 'name' | 'code' | 'updatedAt';
