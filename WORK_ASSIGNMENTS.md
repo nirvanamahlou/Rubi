@@ -48,7 +48,7 @@
 | MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11                  |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                           | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                           |
 | CUSTOMER-002A.1                 | PC-A         | `codex/pc-a-customer-next`                  | Timeline/Filters/Privacy در Customers؛ API/Web/Test/Contract و اسناد Task، بدون Database/Master Data | `READY_FOR_REVIEW` | Draft PR #27 روی #26؛ Migration Lock نزد `PC-B/MASTER-003` و Schema نیازها در `BLOCKED_FOR_CUSTOMER_002B` |
-| CUSTOMER-CHAIN-REVIEW-001 | PC-A | `codex/pc-a-customer-27-reconcile-20260831` | Customer PR chain review, conflict reconciliation and targeted safety gates | `IN_PROGRESS` | Authorized 2026-08-31: #26 merged a470d06; #27/#34/#41 sequentially. No PC-B PR changes or production data changes. |
+| CUSTOMER-CHAIN-REVIEW-001 | PC-A | `codex/pc-a-customer-41-reconcile-20260831` | Customer PR chain review, conflict reconciliation and targeted safety gates | `READY_FOR_REVIEW` | #26/#27/#34 merged; 425 tests and 17 HTTP/database checks pass. DONE and Customer shared locks RELEASED upon #41 merge. No PC-B PR or real-data changes. |
 
 ### قفل موقت Supply-chain برای Review PR #23
 
@@ -237,9 +237,11 @@ Finance shared-contract در `packages/contracts/src/finance/**` مرز دامن
 - Central status/docs: `RELEASED`
 - Dependency/Lockfile Owner: همچنان `RELEASED`
 
-### Handoff مشروط قفل‌های MASTER-003 Phase A
+### سابقه Handoff مشروط قفل‌های MASTER-003 Phase A — انجام‌شده
 
-این جدول وضعیت آینده را رزرو می‌کند و انتقال زودهنگام نیست. تا Merge PR #25، مالک
+این بخش سابقه پیش از ادغام است، نه وضعیت جاری قفل‌ها. #25/#26/#27 ادغام شده‌اند؛ وضعیت جاری و آزادسازی نهایی با Merge #41 فقط در ابتدای همین سند تعریف شده است.
+
+این جدول در زمان ثبت، وضعیت آینده را رزرو می‌کرد و انتقال زودهنگام نبود. تا Merge PR #25، مالک
 فعلی قفل‌های MASTER-003 همچنان PC-B است. فعال‌سازی قفل‌های CUSTOMER-002B فقط پس از
 Merge ترتیبی PR #25، سپس PR #26 و سپس PR #27 و ثبت Handoff نهایی مجاز است.
 
@@ -256,7 +258,7 @@ Merge ترتیبی PR #25، سپس PR #26 و سپس PR #27 و ثبت Handoff ن�
 Merge ندارد. `MASTER-004` نیز تا فعال‌شدن قفل بعدی حق تغییر Prisma Schema، Migration،
 Seed، Root Contract، Dependency/Lockfile یا اسناد مرکزی را ندارد.
 
-### رزرو موازی PC-A/CUSTOMER-002A
+### سابقه رزرو موازی PC-A/CUSTOMER-002A — ادغام‌شده با #26
 
 - Task با عنوان `CUSTOMER-002A — Customer Operations Enhancement` و وضعیت
   `PLANNED/RESERVED` برای PC-A رزرو است و باید از آخرین `origin/develop` آغاز شود.
