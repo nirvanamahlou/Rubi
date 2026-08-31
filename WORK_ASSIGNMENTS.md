@@ -1,5 +1,21 @@
 # Work Assignments
 
+### `MASTER-003-LOCAL-PUBLISH` — PC-B — `IN_PROGRESS`
+
+- مجوز صریح کاربر در 2026-08-31: انتشار تمام تغییرات محلی پروژه و فعال‌سازی نسخه کامل محلی، با حفظ کد و داده‌های موجود.
+- اصلاحات سربرگ، وضعیت همکاری، حذف امن، فرم‌های سفر، ترمینال و وعده/سرویس در Commitها و شاخه‌های Stacked تفکیک می‌شوند؛ والدهای موجود، PC-A، main و develop تغییر نمی‌کنند. هیچ Merge یا Force Push انجام نمی‌شود.
+- Scope شامل کد/تست/اسناد Master Data و مهاجرت‌های افزایشی معلق است؛ تنظیمات خصوصی، نسخه پشتیبان، داده عملیاتی، خروجی ساخت و Dependencyها وارد Git نمی‌شوند. سه قفل PC-B/MASTER-003 فعال و Dependency/Lockfile آزاد باقی می‌ماند.
+- قبل از Deploy محلی، Backup دیتابیس گرفته می‌شود؛ Seed یا Reset روی داده کاربردی اجرا نمی‌شود. آزمون‌ها در DB مستقل هستند. API4000، Web3100 و زیرساخت Rubi پس از بررسی روشن می‌مانند.
+
+### `MASTER-003-LOCAL-MEAL-SERVICE-FORM` — PC-B — `READY_FOR_REVIEW`
+
+- تأیید صریح کاربر برای تکمیل روی همین نسخه محلی با حفظ تمام تغییرات موجود؛ checkout جاری `codex/pc-b-master-data-partner-forms` جابه‌جا نمی‌شود.
+- Scope: فقط کد قابل تعریف وعده/سرویس، چندانتخابی وعده‌ها و وضعیت در حال بررسی؛ API/Contract/Web، Migration افزایشی، آزمون و اسناد همین اصلاح. بدون Customers، Seed یا Dependency/Lockfile.
+- زیر قفل‌های فعال Migration/Contract/Docs مربوط به PC-B/MASTER-003. تغییرات قبلی حذف امن و فرم‌های دیگر حفظ می‌شوند. آزمون و Client جدید در نسخه آزمایشی جدا؛ Deploy دیتابیس کاربردی و تغییر سرورها خارج از این اصلاح است.
+- قرارداد افزایشی سازگار با v12، Producer/Consumer: Master Data API/Web (PC-B): `values.code` اختیاری برای مصرف‌کننده قدیمی و قابل تعریف در فرم وعده؛ `values.status=active|inactive|under_review` با مجوز وضعیت و ذخیره اتمیک/Audit. در حال بررسی برای مصرف‌کننده قدیمی inactive است؛ `mealServiceStatus` فیلتر اختصاصی جدید و `includedMealsJson` نمایش بدون از دست دادن داده آرایه است.
+- کد استاندارد با کنترل یکتایی و خطای هم‌زمانی، انتخاب چندگانه همراه پاک‌کردن و حفظ وعده سفارشی، وضعیت سه‌گانه در فرم/فهرست/فیلتر/Excel تکمیل شد. هشت آزمون واقعی PostgreSQL 18، Seed دوگانه، کنترل TypeScript و Build API/Web در نسخه جدا موفق؛ جزئیات در `docs/tasks/MASTER-003-LOCAL-MEAL-SERVICE-FORM.md`.
+- فعال‌سازی محلی معلق است: Migration کاربردی و Client سرور مشترک تغییر نکرده‌اند؛ در کنترل نهایی API4000 پاسخ نمی‌دهد و Web3100 به Login می‌رود. Commit/Push و جابه‌جایی Branch در این اصلاح محلی انجام نشد.
+
 آخرین به‌روزرسانی: 2026-08-31 — MASTER-003Q-PARTNER-FORMS آماده Review است
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
@@ -46,6 +62,14 @@
 | MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix         | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11        |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                                   | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |
 
+### `MASTER-003-LOCAL-TRAVEL-FORMS` — PC-B — `READY_FOR_LOCAL_REVIEW` (فعال‌سازی معلق)
+
+- تأیید کاربر برای تکمیل فرم‌های نوع ترانسفر و ویزا روی تغییرات موجود، بدون حذف یا بازنویسی کار نوع تور، حذف امن و سایر اصلاحات محلی.
+- محدوده: دو فرم و نمایش فهرست/پروفایل آن‌ها، وضعیت مجوزدار اتمیک، ظرفیت بازه‌ای، نوع اعتبار مرجع ویزا، Migration افزایشی و آزمون‌های همان دو منبع.
+- Schema، Migration `20260831100000_master_data_travel_reference_forms`، قرارداد افزایشی v12 و اسناد این اصلاح زیر قفل موجود `PC-B/MASTER-003` هستند؛ Dependency/Lockfile، Customers و IAM داخلی تغییر نمی‌کنند.
+- در این گفت‌وگوی جانبی Branch/Commit/Push یا سرورهای مشترک تغییر نمی‌کنند؛ بررسی دیتابیس و ساخت در محیط آزمایشی جدا انجام می‌شود. جزئیات سازگاری در `docs/tasks/MASTER-003-LOCAL-TRAVEL-FORMS.md` ثبت می‌شود.
+- فرم‌ها و ذخیره‌سازی پیاده شدند؛ ۷۰ تست هدفمند API، ۲۸ تست Web، ۱۳ تست واقعی PostgreSQL 18 و دو تست Migration موفق‌اند. اجرای Migration/بازسازی Client روی محیط مشترک در این کار انجام نشده و باید با کار هم‌زمان ترمینال هماهنگ شود.
+
 ### `MASTER-003Q-PARTNER-FORMS` — PC-B — `READY_FOR_REVIEW`
 
 - Branch: `codex/pc-b-master-data-partner-forms` از `560b3c1` / PR #44؛ والدها تغییر نمی‌کنند.
@@ -56,6 +80,25 @@
 - قرارداد و محدودیت خرید فاقد Public Service عملیاتی‌اند؛ اتصال آن‌ها Deferred و بدون جعل داده/نوشتن در مالک دیگر است.
 - Draft PR #45: https://github.com/nirvanamahlou/Rubi/pull/45 — Stacked روی `codex/pc-b-master-data-clear-fields` و وابسته به #44 و زنجیره #25؛ پیش از والد Merge نشود.
 - نتیجه: چهار فیلد/قابلیت اصلی با ذخیره واقعی، Mask، انتخاب چندگانه و Popup تکمیل شد. Migration `20260831090000_master_data_partner_forms` افزایشی است؛ PostgreSQL 18 خالی، Seed دوبار و چهار آزمون واقعی DB موفق‌اند. تست‌های واحد، typecheck، lint محدوده و Production Build موفق؛ lint کلی Web فقط ایراد قبلی DatePicker را دارد. Smoke احراز‌شده به Session کاربر نیاز دارد.
+
+### `MASTER-003-LOCAL-TERMINAL-FORM` — PC-B — `READY_FOR_REVIEW` (محلی)
+
+- تأیید صریح کاربر برای تکمیل ترمینال روی فایل‌های دارای تغییر محلی و Migration افزایشی در 2026-08-31؛ تغییرات حذف امن، تور و سایر کارها حفظ می‌شوند. کار محلی روی checkout فعلی، بدون تغییر Branch، Commit/Push، restart سرورها یا تغییر داده عملیاتی است.
+- محدوده: مدل/Migration ترمینال، Policy و Repository/DTO/Export همان Master Data، Contract افزایشی، فرم/فهرست جغرافیا، آزمون‌ها و گزارش. فایل‌های مرکزی Schema/Contract/Docs زیر همان سه قفل PC-B/MASTER-003 رزرو هستند؛ Dependency/Lockfile آزاد و دست‌نخورده می‌ماند.
+- Producer: Master Data API؛ Consumer: Master Data Web. `MIXED` به enum نوع ترمینال اضافه می‌شود. فیلدهای اختیاری `gateCount`، `operatingHoursMode`، `opensAt`، `closesAt` افزایشی و سازگار با payload قدیمی‌اند؛ نبود در PATCH مقدار قبل را حفظ می‌کند. ساعت‌ها ساعت محلی تکرارشونده در Timezone فرودگاه‌اند، نه زمان وقوع رویداد.
+- `values.status` فقط در فرم ترمینال مقادیر active/inactive/maintenance دارد و با مجوز master_data.status.manage، همراه مشخصات در یک تراکنش/Audit ذخیره می‌شود. رکورد در تعمیرات isActive=false و isUnderMaintenance=true دارد؛ قرارداد عمومی status همچنان active/inactive است و مصرف‌کننده قدیمی آن را قابل استفاده نمی‌بیند.
+- شهر، IATA/ICAO و Timezone از FK فرودگاه خوانده می‌شوند؛ نام تغییر‌دهنده فقط از API عمومی مجوزدار IAM، بدون Query مستقیم. Schema/Migration فقط افزایشی است؛ تست DB در پایگاه موقت مستقل انجام می‌شود. Customers و Finance خارج از محدوده‌اند.
+- نتیجه: فرم و فهرست ترمینال شامل نوع مشترک، تعداد گیت، ساعت فعالیت و تعمیرات تکمیل شد. ۶۹ تست جدید API/Web و ۱۵ آزمون واقعی PostgreSQL 18 موفق؛ مجموعه جاری API با ۴۶۳، Web با ۳۰۴ و Contract با ۱۴ تست موفق است. lint محدوده، typecheck با قرارداد جاری، Prisma format/validate/generate و Build جداگانه API/Web موفق‌اند.
+- Migration `20260831110000_master_data_terminal_details` و Seed دوبار فقط در DB مستقل آزموده شدند؛ Seed در نسخه آزمایشی با مهلت تراکنش ۶۰ثانیه‌ای اجرا شد چون مهلت پیش‌فرض ۵ثانیه‌ای در محیط جاری تمام می‌شد. DB آزمون حذف شد؛ فعال‌سازی روی دیتابیس/سرور مشترک هنوز انجام نشده و نیازمند هماهنگی است. گزارش: `docs/tasks/MASTER-003-LOCAL-TERMINAL-FORM.md`.
+
+### `MASTER-003-LOCAL-TOUR-FORM` — PC-B — `READY_FOR_REVIEW` (محلی)
+
+- کار محلی گفت‌وگوی جانبی با تأیید صریح کاربر برای اصلاح هم‌پوشان، با حفظ تغییرات موجود؛ در این گفت‌وگو Branch جابه‌جا نشد و Commit/Push انجام نشد. هنگام پایان بررسی، checkout مشترک روی `codex/pc-b-master-data-partner-forms` بود.
+- Scope: فقط فرم/فهرست نوع تور، اعتبارسنجی و ذخیره اتمیک وضعیت در Master Data، نمایش metadata آخرین تغییر، آزمون‌ها و سند `docs/tasks/MASTER-003-LOCAL-TOUR-FORM.md`؛ بدون Customers، IAM داخلی، Schema/Migration/Seed یا Dependency/Lockfile.
+- تغییر محدود فایل‌های مشترک `master-data.service.ts`، `master-data.repository.ts` و `master-data-travel-services-workspace.tsx` با حفظ کامل حذف امن و سایر تغییرات محلی؛ فایل‌های جدید فرم و آزمون مستقل‌اند. اسناد مرکزی زیر قفل فعال PC-B/MASTER-003 می‌مانند.
+- Producer/Consumer: Master Data API/Web. قرارداد افزایشی سازگار با v12: `values.status` اختیاری فقط برای `tour-types`؛ تغییر وضعیت نیازمند `master_data.status.manage` و همراه سایر فیلدها در همان تراکنش/Audit است. نبود status رفتار قدیمی را حفظ می‌کند.
+- پاسخ نوع تور در attributes، `updatedByUserId` واقعی و `usageCount=null`/`usageStatus=UNAVAILABLE` دارد. شمارش محصولات تا انتشار قرارداد مالک موجود نیست؛ نام کاربر فقط از API عمومی مجوزدار `GET /iam/users` خوانده می‌شود، بدون Query مستقیم یا ذخیره نام/PII در Master Data.
+- بررسی: ۵۸ آزمون جدید نوع تور؛ مجموعه جاری Web با ۲۴۲ تست و API با ۳۸۴ تست موفق/۱۱ تست skipped؛ typecheck، lint فایل‌های متاثر و Build جدا از خروجی سرور موفق‌اند. Smoke احراز‌شده به‌دلیل نبود Session انجام نشد. شمارش استفاده همچنان وابسته به قرارداد محصولات است.
 
 ### `MASTER-003P-CLEAR-FIELDS` — PC-B — `READY_FOR_REVIEW`
 

@@ -103,6 +103,9 @@ export class MasterDataListQueryDto {
   @IsIn(['MEAL_PLAN', 'SERVICE'])
   mealServiceCategory?: 'MEAL_PLAN' | 'SERVICE';
   @IsOptional()
+  @IsIn(['active', 'inactive', 'under_review'])
+  mealServiceStatus?: 'active' | 'inactive' | 'under_review';
+  @IsOptional()
   @IsString()
   @MaxLength(80)
   facilityCategory?: string;

@@ -1194,6 +1194,7 @@ model MasterMealService {
   category            MasterMealServiceCategory @default(MEAL_PLAN)
   includedMeals       String[]                  @default([])
   isActive            Boolean                   @default(true)
+  isUnderReview       Boolean                   @default(false)
   version             Int                       @default(1)
   createdByUserId     String                    @db.Uuid
   updatedByUserId     String                    @db.Uuid

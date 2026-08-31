@@ -22,6 +22,7 @@ import { MasterDataContactCrypto } from './master-data-contact.crypto';
 import { isMasterDataDependencyError } from './master-data-deletion.policy';
 import { prepareTourTypeForm } from './tour-type-form.policy';
 import { prepareTerminalForm } from './terminal-form.policy';
+import { prepareMealServiceForm, rethrowMealServiceWriteError } from './meal-service-form.policy';
 import { completeTravelReferenceDetails, prepareTravelReferenceForm } from './travel-reference-form.policy';
 import {
   MasterDataRepository,
@@ -429,7 +430,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'referenceCapacity',
     'usageDescription',
   ],
-  'meal-services': ['name', 'englishName', 'category', 'includedMeals'],
+  'meal-services': ['code', 'name', 'englishName', 'category', 'includedMeals'],
   facilities: ['name', 'englishName', 'category', 'displayOrder'],
   'composite-hotels': [
     'name',
@@ -680,6 +681,7 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     'starRating',
     'referenceCapacity',
     'mealServiceCategory',
+    'mealServiceStatus',
     'facilityCategory',
     'saleableOnly',
     'insurerId',
@@ -745,6 +747,9 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     !paymentDirections.has(String(input.filters.paymentDirection))
   )
     throw new BadRequestException('جهت روش پرداخت معتبر نیست.');
+  if (input.filters.mealServiceStatus !== undefined &&
+    (input.resource !== 'meal-services' || !['active', 'inactive', 'under_review'].includes(String(input.filters.mealServiceStatus))))
+    throw new BadRequestException('فیلتر وضعیت وعده/سرویس معتبر نیست.');
   if (
     input.filters.mealServiceCategory !== undefined &&
     !mealServiceCategories.has(String(input.filters.mealServiceCategory))
@@ -892,6 +897,9 @@ function exportQuery(input: ExportInput): MasterDataListQuery {
       : {}),
     ...(typeof input.filters.referenceCapacity === 'number'
       ? { referenceCapacity: input.filters.referenceCapacity }
+      : {}),
+    ...(typeof input.filters.mealServiceStatus === 'string'
+      ? { mealServiceStatus: input.filters.mealServiceStatus as Exclude<MasterDataListQuery['mealServiceStatus'], undefined> }
       : {}),
     ...(typeof input.filters.mealServiceCategory === 'string'
       ? {
@@ -1062,7 +1070,9 @@ export class MasterDataService {
     )
       throw new ForbiddenException('مجوز ثبت نرخ ارز وجود ندارد.');
     const form =
-      resource === 'tour-types'
+      resource === 'meal-services'
+        ? prepareMealServiceForm(values, actor, true)
+        : resource === 'tour-types'
         ? prepareTourTypeForm(values, actor, true)
         : resource === 'terminals'
           ? prepareTerminalForm(values, actor, true)
@@ -1076,7 +1086,10 @@ export class MasterDataService {
       data,
       actor.userId,
       branchOf(actor, requestedBranch),
-    );
+    ).catch((error: unknown) => {
+      if (resource === 'meal-services') rethrowMealServiceWriteError(error);
+      throw error;
+    });
     return { data: toMasterDataRecord(resource, row) };
   }
 
@@ -1103,7 +1116,9 @@ export class MasterDataService {
         });
     }
     const form =
-      resource === 'tour-types'
+      resource === 'meal-services'
+        ? prepareMealServiceForm(values, actor, false)
+        : resource === 'tour-types'
         ? prepareTourTypeForm(values, actor, false)
         : resource === 'terminals'
           ? prepareTerminalForm(values, actor, false, (await this.repository.find(resource, id)) ?? {})
@@ -1119,7 +1134,10 @@ export class MasterDataService {
       version,
       actor.userId,
       branchOf(actor, requestedBranch),
-    );
+    ).catch((error: unknown) => {
+      if (resource === 'meal-services') rethrowMealServiceWriteError(error);
+      throw error;
+    });
     if (!row)
       throw new ConflictException({
         code: 'CONCURRENT_MODIFICATION',
@@ -1410,7 +1428,7 @@ export class MasterDataService {
       }
     }
     if (
-      resource === 'payment-methods' &&
+      (resource === 'payment-methods' || resource === 'meal-services') &&
       !partial &&
       !Object.hasOwn(values, 'code')
     ) {
@@ -1443,6 +1461,7 @@ export class MasterDataService {
       resource !== 'banks' &&
       resource !== 'bank-branches' &&
       resource !== 'payment-methods' &&
+      resource !== 'meal-services' &&
       resource !== 'travel-services';
     // IATA is the public business identifier of an airline and is never generated.
     const generatesInternalCode = usesGeneratedCode && resource !== 'airlines';
@@ -1466,6 +1485,7 @@ export class MasterDataService {
         'bank-branches',
         'payment-methods',
         'travel-services',
+        'meal-services',
       ].includes(resource) &&
       data.code !== undefined
     ) {

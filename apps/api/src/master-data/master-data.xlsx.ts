@@ -205,7 +205,9 @@ function recordValue(
   if (column === 'code') return record.code;
   if (column === 'name') return record.name;
   if (column === 'status')
-    return record.status === 'active' ? 'فعال' : 'غیرفعال';
+    return record.resource === 'meal-services' && record.attributes.isUnderReview === true
+      ? 'در حال بررسی'
+      : record.status === 'active' ? 'فعال' : 'غیرفعال';
   if (column === 'updatedAt')
     return formatter.format(new Date(record.updatedAt));
   const value = record.attributes[column];

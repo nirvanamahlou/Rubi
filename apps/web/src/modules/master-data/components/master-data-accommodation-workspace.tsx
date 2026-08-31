@@ -192,19 +192,20 @@ function StatusBadge({
   saleable?: boolean;
 }) {
   const active = record.status === 'active';
+  const underReview = record.resource === 'meal-services' && record.attributes.isUnderReview === true;
   const isSaleable =
     attribute(record, 'isSaleableReference', 'true') === 'true';
   return (
     <Badge
       className={
-        active && (!saleable || isSaleable)
+        underReview ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' : active && (!saleable || isSaleable)
           ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
           : active
             ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
             : 'bg-muted text-muted-foreground'
       }
     >
-      {!active
+      {underReview ? 'در حال بررسی' : !active
         ? 'غیرفعال'
         : saleable
           ? isSaleable
@@ -231,7 +232,7 @@ export function MasterDataAccommodationWorkspace() {
     useState<MasterAccommodationSummary>(emptySummary);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [status, setStatus] = useState<'all' | MasterDataStatus | 'under_review'>('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [countries, setCountries] = useState<readonly MasterDataRecord[]>([]);
@@ -281,6 +282,7 @@ export function MasterDataAccommodationWorkspace() {
             mealServiceCategory: mealCategoryFilter as 'MEAL_PLAN' | 'SERVICE',
           }
         : {}),
+      ...(tab === 'meals' && status !== 'all' ? { mealServiceStatus: status } : {}),
       ...(tab === 'facilities' && facilityCategoryFilter !== 'all'
         ? { facilityCategory: facilityCategoryFilter }
         : {}),
@@ -291,6 +293,7 @@ export function MasterDataAccommodationWorkspace() {
       countryFilter,
       facilityCategoryFilter,
       mealCategoryFilter,
+      status,
       starFilter,
       tab,
     ],
@@ -314,7 +317,7 @@ export function MasterDataAccommodationWorkspace() {
     try {
       const response = await masterDataApi.list(resource, {
         search,
-        status,
+        status: tab === 'meals' || status === 'under_review' ? 'all' : status,
         sortBy: 'name',
         sortDirection: 'asc',
         page,
@@ -586,7 +589,7 @@ export function MasterDataAccommodationWorkspace() {
         );
       } else {
         await masterDataApi.create(resource, { values });
-        setNotice(`${definition.singularLabel} با کد داخلی خودکار ثبت شد.`);
+        setNotice(resource === 'meal-services' ? 'وعده و سرویس ثبت شد.' : `${definition.singularLabel} با کد داخلی خودکار ثبت شد.`);
       }
       setFormMode(null);
       await Promise.all([load(), loadSummary()]);
@@ -633,12 +636,14 @@ export function MasterDataAccommodationWorkspace() {
         format: 'xlsx',
         filters: {
           search,
-          status,
+          status: tab === 'meals' || status === 'under_review' ? 'all' : status,
           sortBy: 'name',
           sortDirection: 'asc',
           ...scopedFilters,
         },
-        columns: definition.fields.map((field) => field.key),
+        columns: resource === 'meal-services'
+          ? [...new Set(['code', ...definition.fields.map((field) => field.key), 'status'])]
+          : definition.fields.map((field) => field.key),
         locale: 'fa-IR',
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
@@ -1465,6 +1470,7 @@ export function MasterDataAccommodationWorkspace() {
                 <SelectItem value="all">همه وضعیت‌ها</SelectItem>
                 <SelectItem value="active">فعال</SelectItem>
                 <SelectItem value="inactive">غیرفعال</SelectItem>
+                {tab === 'meals' ? <SelectItem value="under_review">در حال بررسی</SelectItem> : null}
               </SelectContent>
             </Select>
           </FormField>

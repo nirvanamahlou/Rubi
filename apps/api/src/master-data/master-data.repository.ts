@@ -737,6 +737,8 @@ export function toMasterDataRecord(
   }
   if (resource === 'room-types' || resource === 'meal-services')
     attributes.hotelCount = Number(count?.hotelLinks ?? 0);
+  if (resource === 'meal-services')
+    attributes.includedMealsJson = JSON.stringify(row.includedMeals ?? []);
   if (resource === 'facilities')
     attributes.hotelCount = Number(count?.hotels ?? 0);
   if (resource === 'composite-hotels') {
@@ -864,6 +866,10 @@ export class MasterDataRepository {
     }
     if (resource === 'meal-services' && query.mealServiceCategory)
       where.category = query.mealServiceCategory;
+    if (resource === 'meal-services' && query.mealServiceStatus) {
+      where.isActive = query.mealServiceStatus === 'active';
+      where.isUnderReview = query.mealServiceStatus === 'under_review';
+    }
     if (resource === 'room-types' && query.referenceCapacity)
       where.referenceCapacity = query.referenceCapacity;
     if (resource === 'facilities' && query.facilityCategory)
@@ -1141,6 +1147,7 @@ export class MasterDataRepository {
         deactivatedAt: isActive ? null : now,
         deactivatedByUserId: isActive ? null : actorUserId,
         ...(resource === 'terminals' ? { isUnderMaintenance: false } : {}),
+        ...(resource === 'meal-services' ? { isUnderReview: false } : {}),
       },
       expectedVersion,
       actorUserId,
@@ -1357,7 +1364,7 @@ export class MasterDataRepository {
       client.masterMealService.count({ where: { isActive: true } }),
       client.masterMealService.count({ where: { category: 'MEAL_PLAN' } }),
       client.masterMealService.count({
-        where: { OR: [{ englishName: null }, { isActive: false }] },
+        where: { OR: [{ englishName: null }, { isUnderReview: true }] },
       }),
       client.masterFacility.count(),
       client.masterFacility.count({ where: { isActive: true } }),
