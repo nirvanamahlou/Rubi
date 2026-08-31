@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 
-import { ModuleFoundationWorkspace } from '@/modules/module-foundation/components/module-foundation-workspace';
-import { foundationModules } from '@/modules/module-foundation/model/foundation';
+import { DocumentsWorkspace } from '@/modules/documents/components/documents-workspace';
 
 export const metadata: Metadata = { title: 'اسناد و فایل‌ها' };
 
+// Dedicated replacement for ModuleFoundationWorkspace / foundationModules['documents'].
+
 export default function Page() {
-  return <ModuleFoundationWorkspace config={foundationModules['documents']} />;
+  return <DocumentsWorkspace />;
 }
