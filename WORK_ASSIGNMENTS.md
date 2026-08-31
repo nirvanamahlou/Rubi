@@ -1,12 +1,13 @@
 # Work Assignments
 
-## MASTER-003-DEVELOP-INTEGRATION — PC-B — IN_PROGRESS
+## MASTER-003-DEVELOP-INTEGRATION — PC-B — READY_FOR_REVIEW
 
 - Owner explicitly requested push and merge to dev/develop on 2026-08-31. This authorizes this normal PR integration, superseding the earlier no-merge restriction for the delivered Master Data snapshots; no force push or source-branch deletion.
 - Base: `origin/develop@e25f2886c3e6d7e90c33ef27604bdce76dc973f0` (merged #58). Source: #59 `b04c2bd7c31b6ef85ed7357d83f4c5f548183d12`, including #57 `6abd960` and the existing #55/#54/#47 lineage already retained by #58.
 - Branch: `codex/pc-b-master-data-develop-integration`; isolated worktree preserves the original checkout, live servers, private configuration and data.
-- Reservation under PC-B/MASTER-003: integration of the published Master Data files/migration/contract; compatibility changes in Master Data tests only; WORK_ASSIGNMENTS, PROJECT_STATUS and this integration task report. No new feature, Customers/Calendar edit, historical migration rewrite, dependency/lockfile change, or application database operation.
+- Reservation under PC-B/MASTER-003: integration of the published Master Data files/migration/contract; compatibility changes in Master Data tests only; WORK_ASSIGNMENTS, PROJECT_STATUS, preservation of both published DECISIONS entries, and this integration task report. No new feature, Customers/Calendar edit, historical migration rewrite, dependency/lockfile change, or application database operation.
 - #58 integration reservation ended upon its verified merge. Existing PC-B development locks remain unchanged; this does not acquire or release another module's locks. Combined checks and review must pass before normal PR merge; no invented approvals or protection bypass.
+- Combined gates passed: full lint/typecheck/build, 1,257 ordinary tests and all 66 opt-in PostgreSQL tests, 27 migrations on empty PostgreSQL 18, two seeds, 45 authenticated catalog lists and 11 authenticated production HTTP/RTL routes. No application database or account changed. Existing Swagger documentation debt remains unchanged and is explicitly reported, not marked passed. See `docs/tasks/MASTER-003-DEVELOP-INTEGRATION.md`. On successful PR merge only this integration reservation becomes DONE/MERGED; source branches and PC-B development locks remain.
 
 ## SHARED-INTEGRATION-0831 — PC-A — IN_PROGRESS
 
@@ -41,6 +42,25 @@
 
 آخرین به‌روزرسانی: 2026-08-29 — MASTER-003 Phase A برای Review و Handoff مشروط آماده شد
 آخرین به‌روزرسانی: 2026-08-31 — اصلاح نمایش فهرست مالی و جغرافیا پس از ثبت فرم
+
+## MASTER-003-CATALOG-USABILITY — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: پاور وضعیت، دو فیلتر ستونی، تکمیل ستون‌های ماکاپ و واقع‌گراتر کردن نمونه‌های محلی.
+- شاخه مستقل `codex/pc-b-master-data-catalog-usability` از `6abd960` / PR #57؛ شاخه‌های تحویلی ثابت می‌مانند. هیچ Merge یا تغییر والد مجاز نیست.
+- رزرو محدود: `apps/web/src/modules/master-data/**`، `apps/api/src/master-data/**`، ابزار/تست همین ماژول، `packages/contracts/src/master-data/**`، WORK_ASSIGNMENTS، PROJECT_STATUS، DECISIONS و سند Task. Producer/consumer قرارداد افزایشی فقط Master Data API/Web (PC-B)؛ فیلتر اختیاری قبل از Pagination و Export اعمال می‌شود و نبود آن رفتار قبلی را حفظ می‌کند.
+- مبنای شروع Handoff origin/develop پس از #41 بود. بررسی نهایی Merge #58 / `e25f288` را نشان داد: قفل‌های توسعه PC-B منتقل یا آزاد نشده‌اند و رزرو integration خاتمه یافته است. این Work Item زیر PC-B/MASTER-003 می‌ماند؛ Migration محدود `MasterCountry.displayOrder` در `20260831140000_master_country_display_order` و همان قسمت Schema، قرارداد و اسناد فوق برای تحویل ثبت شده‌اند. بدون Dependency، Calendar، Customers یا داخلی ماژول دیگر. ادغام نسخه جدید develop در این شاخه انجام نشده است.
+- نمونه‌سازی فقط development محلی با Backup، Preview، Audit و حفظ داده کاربر/نمونه ویرایش‌شده؛ بدون PII واقعی، حساب، کارت، نرخ ارز، Connection یا سند جعلی.
+- نتیجه: پاور مشترک در هشت Workspace، دو فیلتر allowlist قبل از Pagination/Export برای ۴۵ کاتالوگ، ستون‌های تخصصی حمل‌ونقل/هتل/جغرافیا و ترتیب کشور قابل ذخیره‌سازی. ۷۸ Fixture دست‌نخورده با حفظ ID/FK و Audit بازآرایی شدند؛ اجرای مجدد صفر تغییر داشت. ۹۹۴ تست عمومی و ۹ تست مستقل PostgreSQL 18 موفق، Build و Typecheck موفق؛ lint محدوده موفق و خطای قدیمی Calendar در lint کامل خارج Scope باقی است. Smoke احراز‌شده به Session کاربر نیاز دارد. Migration محلی پس از Backup اعمال شد؛ API4000/Web3100 روشن‌اند. جزئیات و محدودیت‌ها: `docs/tasks/MASTER-003-CATALOG-USABILITY.md`.
+
+### `MASTER-003-LOCAL-DEMO-DATA` — PC-B — `READY_FOR_REVIEW`
+
+- درخواست 2026-08-31 کاربر: افزودن داده آزمایشی برای تمام بخش‌های اطلاعات پایه روی لوکال. Branch: `codex/pc-b-master-data-demo-fixtures` از `241308e` / PR #55.
+- Scope: Fixture اختصاصی Master Data با اجرای صریح و محدود به PostgreSQL لوکال، آزمون تکرارپذیری/حفظ داده، اسناد. زیر قفل اسناد PC-B/MASTER-003؛ بدون Migration، تغییر Contract، Dependency، IAM، Customers یا Seed عمومی.
+- رکوردها برچسب آزمایشی دارند؛ فقط Create از Service موجود همراه Audit سیستمی اختصاصی. هیچ داده موجود Update/Delete نمی‌شود؛ خطا کل اجرای Fixture را Rollback می‌کند و اجرای دوباره با Audit marker رکورد تکراری نمی‌سازد.
+- قبل از اجرای کاربردی Backup خصوصی؛ تست ابتدا روی DB مستقل. نرخ ارز، کاتالوگ‌های حذف‌شده از منو، ارتباط Provider/Documents/Finance و اطلاعات واقعی حساس ساخته نمی‌شوند. شاخه‌های والد/PC-A/main/develop بدون تغییر؛ Merge خارج از این درخواست است.
+- نتیجه: ۷۸ رکورد در ۴۰ کاتالوگ هشت بخش ساخته شد؛ اجرای دوم صفر Create و ۷۸ Reuse. جست‌وجو و Detail تمام نمونه‌ها روی DB محلی تأیید شد. ۵۴۶ تست API شامل ۱۳ تست جدید موفق؛ lint، Typecheck و Build API موفق. نسخه پشتیبان خصوصی محفوظ و سرورها روشن‌اند. مرورگر تست بدون Session به Login می‌رود؛ Smoke احراز‌شده ادعا نمی‌شود. جزئیات: `docs/tasks/MASTER-003-LOCAL-DEMO-DATA.md`.
+
+آخرین به‌روزرسانی: 2026-08-31 — داده آزمایشی مستقل و امن برای اطلاعات پایه
 
 ### `MASTER-003-LIST-VISIBILITY` — PC-B — `READY_FOR_REVIEW`
 

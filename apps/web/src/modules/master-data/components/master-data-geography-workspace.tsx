@@ -1,4 +1,6 @@
 'use client';
+import { useMasterDataColumnFilters } from './master-data-column-filters';
+import { MasterDataPowerButton } from './master-data-power-button';
 
 import type {
   MasterDataListQuery,
@@ -53,7 +55,11 @@ import {
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { loadTourTypeActorNames as loadActorNames } from '../api/tour-type-actors';
-import { terminalHoursLabel, terminalStatusLabel, terminalUpdatedLabel } from '../model/terminal-form';
+import {
+  terminalHoursLabel,
+  terminalStatusLabel,
+  terminalUpdatedLabel,
+} from '../model/terminal-form';
 import { MasterDataTerminalForm } from './master-data-terminal-form';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import {
@@ -137,6 +143,18 @@ function attribute(record: MasterDataRecord, key: string): string {
     : String(value);
 }
 
+function airportLocalTime(record: MasterDataRecord) {
+  try {
+    return new Intl.DateTimeFormat('fa-IR', {
+      timeZone: attribute(record, 'ianaTimezone'),
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date());
+  } catch {
+    return '—';
+  }
+}
+
 function statusBadge(record: MasterDataRecord) {
   return (
     <Badge
@@ -146,7 +164,11 @@ function statusBadge(record: MasterDataRecord) {
           : 'bg-muted text-muted-foreground'
       }
     >
-      {record.resource === 'terminals' ? terminalStatusLabel(record) : record.status === 'active' ? 'فعال' : 'غیرفعال'}
+      {record.resource === 'terminals'
+        ? terminalStatusLabel(record)
+        : record.status === 'active'
+          ? 'فعال'
+          : 'غیرفعال'}
     </Badge>
   );
 }
@@ -157,6 +179,8 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
       'کد ISO-2',
       'نام فارسی',
       'نام انگلیسی',
+      'ترتیب',
+      'وابستگی‌ها',
       'نسخه',
       'آخرین تغییر',
       'وضعیت',
@@ -169,6 +193,8 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
       'نام انگلیسی',
       'کشور',
       'نوع ساختار',
+      'تعداد شهر',
+      'آخرین تغییر',
       'نسخه',
       'وضعیت',
       'عملیات',
@@ -180,6 +206,8 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
       'نام انگلیسی',
       'کشور',
       'استان/ناحیه',
+      'فرودگاه‌ها',
+      'برچسب مقصد',
       'نسخه',
       'وضعیت',
       'عملیات',
@@ -189,8 +217,11 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
       'IATA',
       'ICAO',
       'نام فارسی',
+      'نام انگلیسی',
       'شهر',
       'Timezone',
+      'ساعت محلی',
+      'ترمینال‌ها',
       'مختصات',
       'وضعیت',
       'عملیات',
@@ -220,6 +251,13 @@ function recordCells(
       </span>,
       record.name,
       attribute(record, 'englishName'),
+      attribute(record, 'displayOrder'),
+      <span key="dependencies" title="وابستگی‌های مستقیم داخل اطلاعات پایه">
+        {attribute(record, 'dependencyCount')} مورد ·{' '}
+        {attribute(record, 'citiesCount')} شهر ·{' '}
+        {attribute(record, 'regionsCount')} استان ·{' '}
+        {attribute(record, 'banksCount')} بانک
+      </span>,
       `v${record.version.toLocaleString('fa-IR')}`,
       new Date(record.updatedAt).toLocaleString('fa-IR'),
       statusBadge(record),
@@ -233,6 +271,8 @@ function recordCells(
       attribute(record, 'englishName'),
       attribute(record, 'countryName'),
       regionLabels[attribute(record, 'type')] ?? attribute(record, 'type'),
+      attribute(record, 'cityCount'),
+      new Date(record.updatedAt).toLocaleString('fa-IR'),
       `v${record.version.toLocaleString('fa-IR')}`,
       statusBadge(record),
     ];
@@ -245,6 +285,13 @@ function recordCells(
       attribute(record, 'englishName'),
       attribute(record, 'countryName'),
       attribute(record, 'regionName'),
+      attribute(record, 'airportCount'),
+      <span
+        key="destination-tag"
+        title="برچسب مقصد از قرارداد قواعد بازار دریافت می‌شود؛ داده ساختگی نمایش داده نمی‌شود"
+      >
+        در انتظار اتصال قواعد بازار
+      </span>,
       `v${record.version.toLocaleString('fa-IR')}`,
       statusBadge(record),
     ];
@@ -257,10 +304,13 @@ function recordCells(
         {attribute(record, 'icaoCode')}
       </span>,
       record.name,
+      attribute(record, 'englishName'),
       attribute(record, 'cityName'),
       <span className="font-mono text-xs" dir="ltr" key="timezone">
         {attribute(record, 'ianaTimezone')}
       </span>,
+      airportLocalTime(record),
+      attribute(record, 'terminalCount'),
       <span className="font-mono text-xs" dir="ltr" key="coordinates">
         {attribute(record, 'latitude')}، {attribute(record, 'longitude')}
       </span>,
@@ -295,11 +345,15 @@ const referenceQuery: MasterDataListQuery = {
 
 export function MasterDataGeographyWorkspace() {
   const [resource, setResource] = useState<GeographyResource>('countries');
-  const [actorNames, setActorNames] = useState<Readonly<Record<string, string>>>({});
+  const [actorNames, setActorNames] = useState<
+    Readonly<Record<string, string>>
+  >({});
   useEffect(() => {
     if (resource !== 'terminals') return;
     const controller = new AbortController();
-    void loadActorNames(controller.signal).then((names) => { if (!controller.signal.aborted) setActorNames(names); });
+    void loadActorNames(controller.signal).then((names) => {
+      if (!controller.signal.aborted) setActorNames(names);
+    });
     return () => controller.abort();
   }, [resource]);
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
@@ -360,9 +414,13 @@ export function MasterDataGeographyWorkspace() {
     [airportId, cityId, countryId, regionId, resource, terminalType],
   );
 
+  const { columnFilters, columnFilterControls, resetColumnFilters } =
+    useMasterDataColumnFilters(resource, () => setPage(1));
+
   const load = useCallback(async () => {
     setRequestState('loading');
     const baseQuery: MasterDataListQuery = {
+      ...columnFilters,
       search,
       status,
       sortBy,
@@ -447,7 +505,7 @@ export function MasterDataGeographyWorkspace() {
           : 'error',
       );
     }
-  }, [page, resource, scopedFilters, search, sortBy, status]);
+  }, [columnFilters, page, resource, scopedFilters, search, sortBy, status]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 250);
@@ -480,6 +538,7 @@ export function MasterDataGeographyWorkspace() {
   function changeResource(next: GeographyResource) {
     setResource(next);
     setSearch('');
+    resetColumnFilters();
     setStatus('all');
     setSortBy('name');
     setPage(1);
@@ -515,20 +574,9 @@ export function MasterDataGeographyWorkspace() {
     else await load();
   }
 
-  async function toggle(record: MasterDataRecord) {
-    try {
-      const next: MasterDataStatus =
-        record.status === 'active' ? 'inactive' : 'active';
-      await masterDataApi.setStatus(resource, record.id, next, record.version);
-      setNotice(
-        `${definition.singularLabel} ${next === 'active' ? 'فعال' : 'غیرفعال'} شد.`,
-      );
-      await load();
-    } catch (error) {
-      setNotice(
-        error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.',
-      );
-    }
+  async function afterStatusChange() {
+    setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
+    await load();
   }
 
   async function exportExcel() {
@@ -538,6 +586,7 @@ export function MasterDataGeographyWorkspace() {
         resource,
         format: 'xlsx',
         filters: {
+          ...columnFilters,
           search,
           status,
           sortBy,
@@ -820,6 +869,7 @@ export function MasterDataGeographyWorkspace() {
       </Card>
 
       <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-[minmax(13rem,1fr)_10rem_10rem_repeat(2,minmax(10rem,12rem))_auto]">
+        {columnFilterControls}
         <FormField id="geography-search" label="جست‌وجو">
           <div className="relative">
             <Search
@@ -1065,11 +1115,13 @@ export function MasterDataGeographyWorkspace() {
                   className="border-t border-border transition hover:bg-sky-500/[0.035]"
                   key={record.id}
                 >
-                  {recordCells(resource, record, actorNames).map((cell, index) => (
-                    <td className="p-4" key={columns[index]}>
-                      {cell}
-                    </td>
-                  ))}
+                  {recordCells(resource, record, actorNames).map(
+                    (cell, index) => (
+                      <td className="p-4" key={columns[index]}>
+                        {cell}
+                      </td>
+                    ),
+                  )}
                   <td className="p-4">
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -1100,15 +1152,10 @@ export function MasterDataGeographyWorkspace() {
                         record={record}
                         onDeleted={afterDelete}
                       />
-                      <Button
-                        onClick={() => void toggle(record)}
-                        size="sm"
-                        variant="ghost"
-                      >
-                        {record.status === 'active'
-                          ? 'غیرفعال‌سازی'
-                          : 'فعال‌سازی'}
-                      </Button>
+                      <MasterDataPowerButton
+                        record={record}
+                        onChanged={afterStatusChange}
+                      />
                     </div>
                   </td>
                 </tr>
@@ -1144,8 +1191,14 @@ export function MasterDataGeographyWorkspace() {
       </div>
 
       {formMode && resource === 'terminals' ? (
-        <MasterDataTerminalForm key={`${formMode}-${selected?.id ?? 'new'}`} mode={formMode} actorNames={actorNames}
-          onOpenChange={() => setFormMode(null)} onPersist={persist} {...(selected ? { record: selected } : {})} />
+        <MasterDataTerminalForm
+          key={`${formMode}-${selected?.id ?? 'new'}`}
+          mode={formMode}
+          actorNames={actorNames}
+          onOpenChange={() => setFormMode(null)}
+          onPersist={persist}
+          {...(selected ? { record: selected } : {})}
+        />
       ) : formMode ? (
         <MasterDataLiveForm
           definition={definition}

@@ -14,6 +14,8 @@ import {
 } from 'class-validator';
 
 export class MasterDataListQueryDto {
+  @IsOptional() @IsString() @MaxLength(100) columnFilter1?: string;
+  @IsOptional() @IsString() @MaxLength(100) columnFilter2?: string;
   @IsOptional()
   @IsIn(['ACTIVE', 'INACTIVE', 'UNDER_REVIEW'])
   transportStatus?: 'ACTIVE' | 'INACTIVE' | 'UNDER_REVIEW';
