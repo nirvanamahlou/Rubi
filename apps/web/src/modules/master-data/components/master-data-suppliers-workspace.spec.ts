@@ -53,4 +53,29 @@ describe('organizations and suppliers workspace', () => {
     expect(source).not.toContain('سپهر سفر');
     expect(source).not.toContain('CTR-');
   });
+
+  it('keeps the collaboration view read-only with no separate form', () => {
+    expect(source).not.toContain('تعریف وضعیت');
+    expect(source).toContain("formMode && tab !== 'collaboration'");
+    const actions = source.slice(
+      source.indexOf('const rowActions'),
+      source.indexOf('function renderProfile'),
+    );
+    const writeGuard = actions.indexOf("tab !== 'collaboration'");
+    expect(writeGuard).toBeGreaterThan(actions.indexOf('openProfile(record)'));
+    expect(writeGuard).toBeLessThan(actions.indexOf("setFormMode('edit')"));
+    expect(writeGuard).toBeLessThan(actions.indexOf('toggle(record)'));
+    expect(source).toContain('تازه‌سازی وضعیت‌ها');
+  });
+
+  it('reads both source lists and provides pagination for the collaboration board', () => {
+    expect(source).toContain('loadSupplierCollaborationPage(masterDataApi, {');
+    expect(source).toMatch(
+      /groupSupplierCollaborationRecords\(\s*records,\s*collaborationRecords/,
+    );
+    expect(source).toContain('page >= collaborationPageCount');
+    expect(source).not.toContain('pageSize: 100');
+    expect(source).toContain('laneRecords.length.toLocaleString');
+    expect(source).toContain('if (sequence !== loadSequence.current) return;');
+  });
 });
