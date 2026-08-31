@@ -1,18 +1,32 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-31 — MASTER-003L-SECTION-CLEANUP پیاده‌سازی و آزموده شد
+آخرین به‌روزرسانی: 2026-08-31 — MASTER-003M-CURRENCY-FORM پیاده‌سازی و آزموده شد
 
 ## خلاصه
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003L-SECTION-CLEANUP روی شاخه Stacked مستقل آماده Review است**
+- وضعیت: **MASTER-003M-CURRENCY-FORM روی شاخه Stacked مستقل آماده Review است**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه فعال: `codex/pc-b-master-data-section-cleanup`
-- Work Item: `MASTER-003L-SECTION-CLEANUP`؛ Stacked روی Draft PR #38
+- شاخه فعال: `codex/pc-b-master-data-currency-form`
+- Work Item: `MASTER-003M-CURRENCY-FORM`؛ Stacked روی Draft PR #39
 - محیط مسئول: `COMPUTER_ID=PC-B`؛ Web روی ۳۱۰۰ و API روی ۴۰۰۰ پاسخ می‌دهند.
-- نوع تغییر: فقط Frontend، Test و Documentation؛ بدون تغییر داده، API، Migration،
-  Customers، Dependency یا Lockfile.
+- نوع تغییر: Master Data Web/API/Contract/Test/Docs؛ بدون تغییر Schema، Migration،
+  Seed، Customers، Dependency یا Lockfile.
+
+### `MASTER-003M-CURRENCY-FORM` — PC-B — `READY_FOR_REVIEW`
+
+- فرم اختصاصی ارز: نام فارسی/انگلیسی، ISO، نماد، تعداد اعشار و وضعیت؛ سیاست نمایش از
+  فرم و پروفایل حذف شد، ولی مقدار ذخیره‌شده قبلی و پیش‌فرض Database حفظ می‌شوند.
+- ثبت نرخ خرید/فروش، ارز مقابل، منبع، تاریخ/ساعت و بازه اعتبار در همان Popup؛ تاریخچه
+  مستقل باقی می‌ماند. ارز پایه فقط‌خواندنی و در انتظار قرارداد واقعی Finance است.
+- endpoint افزایشی `/api/v1/master-data/currency-rates/quotes` نرخ‌های ارسالی و Audit را
+  در یک تراکنش ثبت می‌کند؛ Decimal تا ۱۰ اعشار، UTC، مجوز، DRAFT و `isAuthoritative=false`.
+- ثبت‌کننده از Session تعیین می‌شود؛ وضعیت تأیید از فرم قابل تحمیل نیست. نام نمایشی
+  کاربر تا اتصال قرارداد عمومی هویت موجود نیست و نتیجه ثبت، شناسه واقعی کاربر را نشان می‌دهد.
+- تست‌ها، محدودیت Smoke احراز‌شده و خطای پیشین lint مشترک در گزارش همین کار ثبت شده‌اند.
+- والد #39 و سه قفل فعال `PC-B/MASTER-003` دست‌نخورده‌اند؛ Dependency/Lockfile آزاد است.
+- جزئیات: `docs/tasks/MASTER-003M-CURRENCY-FORM.md`.
 
 ### `MASTER-003L-SECTION-CLEANUP` — PC-B — `READY_FOR_REVIEW`
 

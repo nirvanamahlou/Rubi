@@ -172,6 +172,19 @@ export interface MasterCurrencyRateDecisionRequest {
   reason: string;
 }
 
+/** Additive v12 command: appends one or both manual quote sides atomically. */
+export interface MasterCurrencyRateQuoteRequest {
+  fromCurrencyCode: string;
+  toCurrencyCode: string;
+  buyRate?: string;
+  sellRate?: string;
+  source: string;
+  observedAt: string;
+  validFrom?: string;
+  validTo?: string;
+  correctionReason?: string;
+}
+
 export interface MasterCurrencyRateRecord {
   id: string;
   fromCurrencyId: string;
@@ -419,6 +432,7 @@ export const masterDataEndpoints = {
   status: (resource: MasterDataResource, id: string) =>
     `${MASTER_DATA_API_PREFIX}/${resource}/${encodeURIComponent(id)}/status` as const,
   currencyRates: `${MASTER_DATA_API_PREFIX}/currency-rates` as const,
+  currencyRateQuotes: `${MASTER_DATA_API_PREFIX}/currency-rates/quotes` as const,
   currentCurrencyRate:
     `${MASTER_DATA_API_PREFIX}/currency-rates/current` as const,
   currencyRateDecision: (id: string, action: 'approve' | 'reject') =>

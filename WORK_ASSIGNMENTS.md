@@ -1,6 +1,6 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-31 — MASTER-003L-SECTION-CLEANUP آماده Review شد
+آخرین به‌روزرسانی: 2026-08-31 — MASTER-003M-CURRENCY-FORM آماده Review است
 
 هر ردیف مالکیت یک واحد کار و فایل‌های آن را مشخص می‌کند. قبل از ویرایش، ردیف جدید
 ثبت شود. وضعیت‌های مجاز: `PLANNED`، `PLANNED/RESERVED`، `IN_PROGRESS`،
@@ -45,6 +45,15 @@
 | CUSTOMER-AFFAIRS-001            | PC-B         | `codex/pc-b-customer-affairs-foundation`    | Foundation امور مشتریان: Lead، پیش‌فروش، Follow-up، پشتیبانی پس از فروش و Ticket                      | `PLANNED`          | فاز A فقط Frontend، طراحی دامنه، قرارداد ماژول‌محلی و تست؛ بدون Persistence |
 | MODULES-FOUNDATION-001          | PC-A         | `codex/pc-a-all-modules-foundation`         | Foundation رابط ۱۷ بخش، تست Web و اسناد Task؛ `pnpm-workspace.yaml` فقط برای Build Policy Fix         | `READY_FOR_REVIEW` | PR #23؛ قفل موقت Dependency/Lockfile فقط برای Allowlist دقیق pnpm 11        |
 | MASTER002-HANDOFF-001           | PC-A         | `codex/pc-a-master-002-handoff`             | ثبت Mergeهای MASTER-002/Customer Phase A، انتقال قفل‌ها و مرز فاز B                                   | `READY_FOR_REVIEW` | فقط شش فایل مستنداتی؛ Draft PR به `develop`                                 |
+
+### `MASTER-003M-CURRENCY-FORM` — PC-B — `READY_FOR_REVIEW`
+
+- Branch: `codex/pc-b-master-data-currency-form` از PR #39 / `02f88e9`؛ والد دست‌نخورده است.
+- گزارش پیاده‌سازی و کنترل کیفیت: `docs/tasks/MASTER-003M-CURRENCY-FORM.md`؛ Draft PR مستقیم روی #39، بدون Merge خودکار.
+- محدوده: فرم ارز و ثبت نرخ خرید/فروش در Web، تست‌ها، API همان Master Data و اسناد.
+- قفل مشترک: `packages/contracts/src/master-data/index.ts` و export لازم، تحت قفل فعال MASTER-003؛ بدون Schema/Migration/Dependency یا Customers.
+- قرارداد افزایشی سازگار با v12: `POST /api/v1/master-data/currency-rates/quotes` با ارز مبدأ/مقصد، buyRate و sellRate اختیاری (حداقل یکی)، منبع، زمان UTC، بازه اعتبار و دلیل اصلاح؛ پاسخ فهرست نرخ‌های جدید. Producer: Master Data API؛ Consumer: فرم ارز Master Data Web، هر دو PC-B. مسیرهای قبلی و ساختار تاریخچه تغییر نمی‌کنند.
+- دو نرخ در تراکنش واحد، Draft و `isAuthoritative=false` ثبت می‌شوند؛ ثبت‌کننده از actor است. ارز پایه فقط‌خواندنی و منتظر قرارداد Finance باقی می‌ماند. سیاست نمایش از UI حذف و مقدار ذخیره‌شده حفظ می‌شود؛ ایجاد جدید از Default موجود DB استفاده می‌کند.
 
 ### قفل موقت Supply-chain برای Review PR #23
 

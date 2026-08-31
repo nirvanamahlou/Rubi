@@ -548,7 +548,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
     'longitude',
   ],
   terminals: ['name', 'airportId', 'terminalType'],
-  currencies: ['code', 'name', 'englishName', 'displayPolicy'],
+  currencies: ['code', 'name', 'englishName'],
   'exchange-rates': [
     'fromCurrencyCode',
     'toCurrencyCode',
