@@ -57,6 +57,8 @@ describe('documents workspace contract', () => {
       'SavedDocumentView',
     ])
       expect(source).not.toContain(removedCopy);
+    expect(source).toContain('bg-gradient-to-br');
+    expect(source).toContain('absolute inset-y-0 start-0 w-1');
   });
 
   it('uses the versioned backend and contains no production preview records', () => {
