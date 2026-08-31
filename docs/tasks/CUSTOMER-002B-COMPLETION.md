@@ -81,6 +81,15 @@ Proposed policy, NOT accepted: AES-256-GCM with versioned keys and independent H
 - Existing address storage is a label plus city reference, not encrypted full-address storage. Do not use the label for a full street address. Notes, travel documents, retention/legal hold and cross-module KPI sources are not fabricated.
 - Upgrade tests on the final merged develop baseline, real foreign identity tests, browser interaction tests, retention and storage-backed idempotency tests remain outstanding; full CUSTOMER-002B is not complete.
 
+## Main preview UI follow-up — 2026-08-31
+
+- PC-A, scope: Customers list filter cleanup on `codex/pc-a-customer-002b-main-preview`, explicitly requested in Screenshot (275).
+- Task-local scope record only: central documents and shared locks are not modified by this UI-only follow-up.
+- Remove person kind, status, role and updated-from/to controls. Retain branch, search, acquaintance, created-from/to and sorting controls.
+- Old links no longer restore removed filters; list/KPI and XLSX queries use all kinds/statuses/roles and no updated-date restriction. Backend authorization and profile form fields remain unchanged.
+- No database, schema, migration, dependency, lockfile or key changes. Preserve the pre-existing local change to `apps/web/next-env.d.ts`.
+- Verification: Web tests 147/147, Web lint, Web typecheck, scoped Prettier and `git diff --check` passed. Production build and authenticated browser smoke were not repeated for this UI follow-up; preserve the running preview and its existing generated-file change. Existing Web/API listeners were not stopped.
+
 ## Merge prerequisites
 
 Read-only `git merge-tree` against `origin/develop@d73f51f` reports conflicts in `WORK_ASSIGNMENTS.md`, `docs/PROJECT_STATUS.md` and `apps/web/src/modules/customers/components/customer-workspace.tsx`. No merge was applied. This branch deliberately preserves unmerged #26/#27/#34 ancestry instead of silently dropping existing features. Its incremental review range is `bcfb835..HEAD`; the PR against develop also contains inherited stack changes. Do not merge it until parents, shared-lock handoff, integration conflicts and final-basis review/gates are resolved. No other PR or branch was edited.

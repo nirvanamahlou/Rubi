@@ -203,7 +203,6 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('function safeCustomerId');
     expect(source).toContain("params.set('customerId', selectedId)");
     for (const filter of [
-      'kind',
       'branchId',
       'acquaintanceMethodId',
       'createdFrom',
@@ -236,11 +235,7 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('companion-${companion.key}-email');
     expect(source).toContain('value: companion.email.trim().toLowerCase()');
     expect(source).toContain('مدارک سفر مسافر');
-    expect(source).toContain('setKind');
-    expect(source).toContain('فیلتر نوع شخص');
     expect(source).toContain('فیلتر شعبه مجاز');
-    expect(source).toContain('customer-updated-from');
-    expect(source).toContain('customer-updated-to');
     expect(source).toContain('id="customer-national-id"');
     expect(source).toContain('companion-${companion.key}-national-id');
     expect(source).toContain(
@@ -314,9 +309,64 @@ describe('Customer Operations workspace boundaries', () => {
     expect(dateFieldSource).toContain('<CustomerCalendarSwitch');
     expect(dateFieldSource).toContain('role="dialog"');
     expect(source).toContain('customer-created-from');
-    expect(source).toContain('customer-updated-to');
-    expect(source).toContain('customer-updated-from');
+    expect(source).toContain('customer-created-to');
     expect(source).not.toContain('type="date"');
+  });
+
+  it('removes marked filters without retaining hidden URL restrictions', () => {
+    const workspace = source.slice(
+      source.indexOf('export function CustomerWorkspace'),
+    );
+    const filters = workspace.slice(
+      workspace.indexOf('<FilterBar'),
+      workspace.indexOf('</FilterBar>'),
+    );
+    for (const label of [
+      'نوع شخص',
+      'وضعیت',
+      'نقش',
+      'ویرایش از تاریخ',
+      'ویرایش تا تاریخ',
+    ]) {
+      expect(filters).not.toContain('label="' + label + '"');
+    }
+    for (const key of ['kind', 'status', 'role', 'updatedFrom', 'updatedTo']) {
+      expect(workspace).not.toContain("searchParams.get('" + key + "')");
+      expect(workspace).not.toContain("params.set('" + key + "'");
+    }
+    for (const label of [
+      'شعبه مجاز',
+      'جست‌وجو',
+      'نحوه آشنایی',
+      'ایجاد از تاریخ',
+      'ایجاد تا تاریخ',
+      'مرتب‌سازی',
+      'جهت مرتب‌سازی',
+    ]) {
+      expect(filters).toContain('label="' + label + '"');
+    }
+    const list = workspace.slice(
+      workspace.indexOf('const load ='),
+      workspace.indexOf('async function open'),
+    );
+    const exported = workspace.slice(
+      workspace.indexOf('const exportQuery:'),
+      workspace.indexOf('const firstPage'),
+    );
+    for (const query of [list, exported]) {
+      for (const neutral of [
+        "kind: 'all'",
+        "status: 'all'",
+        "role: 'all'",
+        'updatedFrom: null',
+        'updatedTo: null',
+      ]) {
+        expect(query).toContain(neutral);
+      }
+      expect(query).toContain('branchId,');
+      expect(query).toContain('createdFrom: createdFrom || null');
+      expect(query).toContain('createdTo: createdTo || null');
+    }
   });
 
   it('uses a centered create dialog and removes technical-only page chrome', () => {
