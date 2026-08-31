@@ -1,60 +1,49 @@
 'use client';
 
 import {
+  Activity,
   Archive,
-  ArchiveRestore,
-  Boxes,
+  Building2,
   ChevronLeft,
   ChevronRight,
-  Clock3,
-  Download,
-  Eye,
-  FileClock,
-  FileKey,
+  ClockAlert,
   FileLock2,
-  FilePlus2,
   Files,
   FileSearch,
-  Filter,
-  FolderKanban,
-  HardDrive,
-  History,
-  LockKeyhole,
+  HeartHandshake,
+  LayoutDashboard,
+  Link2,
+  PackageSearch,
+  RefreshCw,
   Search,
+  Settings2,
   ShieldAlert,
-  ShieldCheck,
-  TriangleAlert,
+  ShoppingCart,
+  Star,
   UploadCloud,
+  UserRound,
 } from 'lucide-react';
-import { useMemo, useState, type ReactNode } from 'react';
+import type {
+  BranchReference,
+  DocumentAuditEventV1,
+  DocumentDetailV1,
+  DocumentDomainCode,
+  DocumentListItemV1,
+  DocumentListQueryV1,
+  DocumentOptionsResponseV1,
+} from '@rubi/contracts';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import {
-  documentsLocalPermissions,
-  documentsPhaseANotice,
-  documentsPreviewStates,
-  type DocumentsPreviewState,
-} from '../api/contracts';
-import {
-  defaultDocumentQuery,
-  documentCategories,
-  filterPreviewDocuments,
-  normalizeDocumentQuery,
-  paginatePreviewDocuments,
-  previewAccessHistory,
-  previewDocuments,
-  shouldBlockPreviewDownload,
-  stateDescription,
-  type DocumentsSection,
-  type PreviewConfidentiality,
-  type PreviewDocument,
-  type PreviewDocumentCategory,
-  type PreviewScanStatus,
-} from '../model/documents';
+import { documentsApi, DocumentsApiError } from '../api/client';
+import { DocumentDetailDialog } from './document-detail-dialog';
+import { DocumentUploadDialog } from './document-upload-dialog';
 import {
   Alert,
   Badge,
   Button,
   Card,
+  Checkbox,
+  DatePicker,
   EmptyState,
   ErrorState,
   FilterBar,
@@ -70,868 +59,431 @@ import {
 } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
+type SectionKey =
+  | 'overview'
+  | 'all'
+  | 'customer'
+  | 'sales'
+  | 'travel'
+  | 'procurement'
+  | 'hr'
+  | 'expired'
+  | 'shares'
+  | 'activity'
+  | 'archive';
+
 const sections: readonly {
-  key: DocumentsSection;
+  key: SectionKey;
   label: string;
   icon: typeof Files;
+  domain?: DocumentDomainCode;
 }[] = [
-  { key: 'dashboard', label: 'داشبورد اسناد', icon: Boxes },
+  { key: 'overview', label: 'نمای کلی', icon: LayoutDashboard },
   { key: 'all', label: 'همه اسناد', icon: Files },
-  { key: 'categories', label: 'دسته‌بندی‌ها', icon: FolderKanban },
-  { key: 'versions', label: 'نسخه‌های فایل', icon: FileClock },
-  { key: 'sensitive', label: 'فایل‌های محرمانه', icon: FileLock2 },
-  { key: 'quarantine', label: 'قرنطینه و امنیت', icon: ShieldAlert },
-  { key: 'archive', label: 'آرشیو', icon: Archive },
-  { key: 'history', label: 'تاریخچه دسترسی', icon: History },
+  {
+    key: 'customer',
+    label: 'مشتری و هویت',
+    icon: UserRound,
+    domain: 'CUSTOMER_IDENTITY',
+  },
+  {
+    key: 'sales',
+    label: 'فروش و قرارداد',
+    icon: ShoppingCart,
+    domain: 'SALES',
+  },
+  {
+    key: 'travel',
+    label: 'سفر و رزرواسیون',
+    icon: PackageSearch,
+    domain: 'TRAVEL',
+  },
+  {
+    key: 'procurement',
+    label: 'خرید و مالی',
+    icon: Building2,
+    domain: 'PROCUREMENT',
+  },
+  {
+    key: 'hr',
+    label: 'سازمان و منابع انسانی',
+    icon: HeartHandshake,
+    domain: 'HUMAN_RESOURCES',
+  },
+  { key: 'expired', label: 'مدارک ناقص و منقضی', icon: ClockAlert },
+  { key: 'shares', label: 'اشتراک‌گذاری‌ها', icon: Link2 },
+  { key: 'activity', label: 'فعالیت و گزارش دسترسی', icon: Activity },
+  { key: 'archive', label: 'مدیریت آرشیو', icon: Archive },
 ];
 
-const confidentialityLabels: Readonly<Record<PreviewConfidentiality, string>> =
-  {
-    PUBLIC: 'عمومی',
-    INTERNAL: 'داخلی',
-    CONFIDENTIAL: 'محرمانه',
-    RESTRICTED: 'بسیار محدود',
-  };
+const archiveSections = [
+  'دسته‌بندی و برچسب',
+  'سیاست نوع سند',
+  'بررسی و قرنطینه',
+  'مسئول و مالک فایل',
+  'نگهداری و توقف حذف',
+  'حذف منطقی و بازیابی',
+  'سلامت آرشیو',
+  'خروجی‌ها و پردازش‌ها',
+] as const;
 
-const scanLabels: Readonly<Record<PreviewScanStatus, string>> = {
+const personalViews = [
+  'اسناد من',
+  'بارگذاری‌های من',
+  'اخیراً دیده‌شده',
+  'علاقه‌مندی‌ها',
+] as const;
+
+const confidentialityLabel = {
+  PUBLIC: 'عمومی',
+  INTERNAL: 'داخلی',
+  CONFIDENTIAL: 'محرمانه',
+  RESTRICTED: 'بسیار محدود',
+} as const;
+
+const scanLabel = {
   PENDING_SCAN: 'در انتظار اسکن',
   CLEAN: 'پاک',
   INFECTED: 'آلوده',
   SCAN_FAILED: 'خطای اسکن',
   QUARANTINED: 'قرنطینه',
-  AWAITING_ANTIVIRUS_ADAPTER: 'در انتظار اتصال آنتی‌ویروس',
-};
+  AWAITING_ANTIVIRUS_ADAPTER: 'در انتظار آنتی‌ویروس',
+} as const;
 
-const scanTone: Readonly<Record<PreviewScanStatus, string>> = {
-  PENDING_SCAN: 'bg-amber-100 text-amber-800',
-  CLEAN: 'bg-emerald-100 text-emerald-800',
-  INFECTED: 'bg-red-100 text-red-800',
-  SCAN_FAILED: 'bg-orange-100 text-orange-800',
-  QUARANTINED: 'bg-red-100 text-red-800',
-  AWAITING_ANTIVIRUS_ADAPTER: 'bg-slate-200 text-slate-700',
-};
-
-function formatUtc(value: string): string {
-  return new Intl.DateTimeFormat('fa-IR', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'UTC',
-  }).format(new Date(value));
+function date(value: string | null) {
+  return value
+    ? new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+        dateStyle: 'medium',
+        timeZone: 'UTC',
+      }).format(new Date(value))
+    : 'بدون انقضا';
 }
 
-function PreviewBadge() {
-  return (
-    <Badge className="border border-cyan-200 bg-cyan-50 text-cyan-800">
-      Preview · Awaiting Persistence
-    </Badge>
-  );
+function scanTone(status: DocumentListItemV1['currentVersion']['scanStatus']) {
+  if (status === 'CLEAN') return 'bg-emerald-100 text-emerald-800';
+  if (status === 'PENDING_SCAN' || status === 'AWAITING_ANTIVIRUS_ADAPTER')
+    return 'bg-amber-100 text-amber-800';
+  return 'bg-red-100 text-red-800';
 }
 
-function MetricCard({
-  detail,
+function Metric({
+  hint,
   icon: Icon,
   label,
-  tone,
   value,
 }: {
-  detail: string;
+  hint: string;
   icon: typeof Files;
   label: string;
-  tone: string;
-  value: string;
+  value: number;
 }) {
   return (
     <Card className="relative overflow-hidden p-4">
       <span
         aria-hidden="true"
-        className={cn('absolute inset-y-0 start-0 w-1', tone)}
+        className="absolute inset-y-0 start-0 w-1 bg-primary"
       />
       <div className="flex items-start justify-between gap-3">
-        <span className="grid size-10 place-items-center rounded-xl bg-muted text-primary">
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+          <p className="mt-2 text-2xl font-black">
+            {value.toLocaleString('fa-IR')}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+        </div>
+        <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
           <Icon aria-hidden="true" className="size-5" />
         </span>
-        <PreviewBadge />
       </div>
-      <p className="mt-3 text-xs font-bold text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-black">{value}</p>
-      <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
-        {detail}
-      </p>
     </Card>
   );
 }
 
-function StateSurface({
-  onReset,
-  state,
-}: {
-  onReset: () => void;
-  state: DocumentsPreviewState;
-}) {
-  if (state === 'loading') {
-    return (
-      <Card aria-busy="true" className="space-y-4 p-5" role="status">
-        <span className="sr-only">در حال بارگذاری اسناد</span>
-        {Array.from({ length: 5 }).map((_, index) => (
-          <Skeleton className="h-14" key={index} />
-        ))}
-      </Card>
-    );
-  }
-  const action = (
-    <Button onClick={onReset} variant="outline">
-      بازگشت به Preview
-    </Button>
-  );
-  if (state === 'error' || state === 'conflict') {
-    return (
-      <ErrorState
-        action={action}
-        description={stateDescription(state)}
-        title={state === 'conflict' ? 'تعارض نسخه سند' : 'خطا در دریافت اسناد'}
-      />
-    );
-  }
-  return (
-    <EmptyState
-      action={action}
-      description={stateDescription(state)}
-      icon={state === 'forbidden' ? LockKeyhole : FileSearch}
-      title={
-        state === 'unauthorized'
-          ? 'ورود به سامانه لازم است'
-          : state === 'forbidden'
-            ? 'دسترسی به این محدوده مجاز نیست'
-            : 'سندی برای نمایش وجود ندارد'
-      }
-    />
-  );
-}
-
-function DocumentsTable({
-  documents,
-  onAction,
-}: {
-  documents: readonly PreviewDocument[];
-  onAction: (message: string) => void;
-}) {
-  return (
-    <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
-      <table className="min-w-[1760px] w-full border-collapse text-start text-sm">
-        <caption className="sr-only">
-          فهرست اسناد Preview با Metadata و کنترل دسترسی
-        </caption>
-        <thead className="bg-muted/60 text-xs text-muted-foreground">
-          <tr>
-            {[
-              'نام نمایشی',
-              'نوع سند',
-              'ماژول مالک',
-              'رکورد مرتبط',
-              'شرکت صادرکننده',
-              'نسخه',
-              'حجم / فرمت',
-              'محرمانگی',
-              'وضعیت اسکن',
-              'آرشیو',
-              'ثبت‌کننده',
-              'ایجاد / آخرین تغییر',
-              'اقدام',
-            ].map((column) => (
-              <th
-                className="whitespace-nowrap px-4 py-3 text-start font-black"
-                key={column}
-                scope="col"
-              >
-                {column}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {documents.map((document) => (
-            <tr className="align-top hover:bg-muted/25" key={document.id}>
-              <td className="max-w-64 px-4 py-4">
-                <p className="font-black">{document.displayName}</p>
-                <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                  {document.id}
-                </p>
-              </td>
-              <td className="px-4 py-4">{document.category}</td>
-              <td className="px-4 py-4">{document.sourceModule}</td>
-              <td className="max-w-48 break-all px-4 py-4 font-mono text-xs text-muted-foreground">
-                {document.sourceRecord}
-              </td>
-              <td className="px-4 py-4">{document.issuer}</td>
-              <td className="px-4 py-4 font-black">
-                v{document.version.toLocaleString('fa-IR')}
-              </td>
-              <td className="px-4 py-4">
-                {document.sizeLabel}
-                <span className="ms-1 text-xs text-muted-foreground">
-                  · {document.format}
-                </span>
-              </td>
-              <td className="px-4 py-4">
-                <Badge
-                  className={
-                    document.confidentiality === 'RESTRICTED'
-                      ? 'bg-red-100 text-red-800'
-                      : ''
-                  }
-                >
-                  {confidentialityLabels[document.confidentiality]}
-                </Badge>
-              </td>
-              <td className="px-4 py-4">
-                <Badge className={scanTone[document.scanStatus]}>
-                  {scanLabels[document.scanStatus]}
-                </Badge>
-              </td>
-              <td className="px-4 py-4">
-                {document.archiveStatus === 'ARCHIVED' ? 'آرشیوشده' : 'فعال'}
-                {document.legalHold ? (
-                  <p className="mt-1 text-xs font-bold text-red-700">
-                    Legal Hold
-                  </p>
-                ) : null}
-              </td>
-              <td className="px-4 py-4">{document.createdBy}</td>
-              <td className="whitespace-nowrap px-4 py-4 text-xs text-muted-foreground">
-                <p>{formatUtc(document.createdAt)}</p>
-                <p className="mt-1">{formatUtc(document.updatedAt)}</p>
-              </td>
-              <td className="px-4 py-4">
-                <div className="flex gap-1">
-                  <Button
-                    aria-label={`مشاهده ${document.displayName}`}
-                    onClick={() =>
-                      onAction(
-                        document.masked
-                          ? 'نمایش Masked باقی ماند؛ Permission حساس و Reason معتبر لازم است.'
-                          : 'جزئیات Preview نمایش داده می‌شود؛ Access Audit واقعی ثبت نشد.',
-                      )
-                    }
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <Eye aria-hidden="true" className="size-4" />
-                    مشاهده
-                  </Button>
-                  <Button
-                    aria-label={`درخواست دانلود ${document.displayName}`}
-                    onClick={() =>
-                      onAction(
-                        `دانلود مسدود شد: ${shouldBlockPreviewDownload(document)}. Signed URL واقعی ساخته نشد.`,
-                      )
-                    }
-                    size="sm"
-                    variant="outline"
-                  >
-                    <Download aria-hidden="true" className="size-4" />
-                    دانلود
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function SectionCard({ children }: { children: ReactNode }) {
-  return <Card className="p-5">{children}</Card>;
-}
-
 export function DocumentsWorkspace() {
-  const [activeSection, setActiveSection] =
-    useState<DocumentsSection>('dashboard');
-  const [previewState, setPreviewState] =
-    useState<DocumentsPreviewState>('preview');
-  const [query, setQuery] = useState(defaultDocumentQuery);
-  const [notice, setNotice] = useState('');
-  const [sensitiveReason, setSensitiveReason] = useState('');
-
-  const filtered = useMemo(
-    () => filterPreviewDocuments(previewDocuments, query),
-    [query],
+  const [section, setSection] = useState<SectionKey>('overview');
+  const [sectionDomain, setSectionDomain] = useState<DocumentDomainCode | null>(
+    null,
   );
-  const totalPages = Math.max(1, Math.ceil(filtered.length / query.pageSize));
-  const currentPage = Math.min(query.page, totalPages);
-  const paged = paginatePreviewDocuments(filtered, currentPage, query.pageSize);
+  const [query, setQuery] = useState<DocumentListQueryV1>({
+    page: 1,
+    pageSize: 25,
+    sortBy: 'updatedAt',
+    sortDirection: 'desc',
+  });
+  const [documents, setDocuments] = useState<readonly DocumentListItemV1[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [errorStatus, setErrorStatus] = useState(0);
+  const [options, setOptions] = useState<
+    DocumentOptionsResponseV1['data'] | null
+  >(null);
+  const [branches, setBranches] = useState<readonly BranchReference[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [notice, setNotice] = useState('');
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const [detail, setDetail] = useState<DocumentDetailV1 | null>(null);
+  const [audit, setAudit] = useState<readonly DocumentAuditEventV1[]>([]);
 
-  const setQueryField = <K extends keyof typeof query>(
-    field: K,
-    value: (typeof query)[K],
-  ) =>
-    setQuery((current) =>
-      normalizeDocumentQuery({ ...current, [field]: value, page: 1 }),
-    );
+  const effectiveQuery = useMemo(() => {
+    const active = sections.find((item) => item.key === section);
+    const domain = sectionDomain ?? active?.domain;
+    return {
+      ...query,
+      ...(domain ? { domain } : {}),
+      ...(section === 'expired' ? { validity: 'EXPIRED' as const } : {}),
+    };
+  }, [query, section, sectionDomain]);
 
-  const metrics = [
-    {
-      label: 'کل فایل‌ها',
-      value: '۱٬۲۴۸',
-      detail: 'عدد نمایشی؛ اتصال Persistence انجام نشده',
-      icon: Files,
-      tone: 'bg-blue-500',
-    },
-    {
-      label: 'اسناد جدید',
-      value: '۲۳',
-      detail: '۲۴ ساعت گذشته · Preview',
-      icon: FilePlus2,
-      tone: 'bg-cyan-500',
-    },
-    {
-      label: 'در انتظار اسکن',
-      value: '۷',
-      detail: 'دانلود تا CLEAN ممنوع',
-      icon: ShieldCheck,
-      tone: 'bg-amber-500',
-    },
-    {
-      label: 'قرنطینه‌شده',
-      value: '۲',
-      detail: 'نیازمند Permission مدیریت قرنطینه',
-      icon: ShieldAlert,
-      tone: 'bg-red-500',
-    },
-    {
-      label: 'اسناد محرمانه',
-      value: '۱۸۶',
-      detail: 'Reason و Audit برای مشاهده/دانلود',
-      icon: FileKey,
-      tone: 'bg-violet-500',
-    },
-    {
-      label: 'آرشیوشده',
-      value: '۳۱۴',
-      detail: 'تاریخچه نسخه حذف نمی‌شود',
-      icon: Archive,
-      tone: 'bg-slate-500',
-    },
-    {
-      label: 'حجم مصرف‌شده',
-      value: '۱۸٫۷ GB',
-      detail: 'برآورد synthetic از Object Storage خصوصی',
-      icon: HardDrive,
-      tone: 'bg-emerald-500',
-    },
-    {
-      label: 'نزدیک حذف یا انقضا',
-      value: '۹',
-      detail: 'حذف دائمی تا تصویب Policy غیرفعال',
-      icon: Clock3,
-      tone: 'bg-orange-500',
-    },
-  ] as const;
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await documentsApi.list(effectiveQuery);
+      setDocuments(response.data);
+      setTotal(response.meta.total);
+      setTotalPages(response.meta.totalPages);
+      setSelected(new Set());
+    } catch (caught) {
+      const apiError = caught instanceof DocumentsApiError ? caught : null;
+      setError(apiError?.message ?? 'ارتباط با سرویس اسناد برقرار نشد.');
+      setErrorStatus(apiError?.status ?? 0);
+    } finally {
+      setLoading(false);
+    }
+  }, [effectiveQuery]);
 
-  function resetFilters() {
-    setQuery(defaultDocumentQuery);
-    setPreviewState('preview');
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    Promise.all([documentsApi.options(), documentsApi.branchReferences()])
+      .then(([documentOptions, allowedBranches]) => {
+        setOptions(documentOptions.data);
+        setBranches(allowedBranches);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  function updateQuery(patch: Partial<DocumentListQueryV1>) {
+    setQuery((current) => ({ ...current, ...patch, page: patch.page ?? 1 }));
   }
 
-  function renderAllDocuments() {
-    return (
-      <section aria-labelledby="documents-list-title" className="space-y-4">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-black" id="documents-list-title">
-              همه اسناد
-            </h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              جست‌وجو، مرتب‌سازی و Pagination در قرارداد آینده سمت سرور اجرا
-              می‌شوند.
-            </p>
-          </div>
-          <PreviewBadge />
-        </div>
-        <FilterBar className="flex-wrap">
-          <FormField id="documents-search" label="نام، شناسه یا مرجع">
-            <div className="relative min-w-56">
-              <Search
-                aria-hidden="true"
-                className="absolute end-3 top-3.5 size-4 text-muted-foreground"
-              />
-              <Input
-                className="pe-10"
-                id="documents-search"
-                onChange={(event) =>
-                  setQueryField('search', event.target.value)
-                }
-                placeholder="جست‌وجوی اسناد"
-                value={query.search}
-              />
-            </div>
-          </FormField>
-          <FormField label="دسته">
-            <Select
-              onValueChange={(value) =>
-                setQueryField(
-                  'category',
-                  value as PreviewDocumentCategory | 'ALL',
-                )
-              }
-              value={query.category}
-            >
-              <SelectTrigger className="min-w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">همه دسته‌ها</SelectItem>
-                {documentCategories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
-          <FormField label="محرمانگی">
-            <Select
-              onValueChange={(value) =>
-                setQueryField(
-                  'confidentiality',
-                  value as PreviewConfidentiality | 'ALL',
-                )
-              }
-              value={query.confidentiality}
-            >
-              <SelectTrigger className="min-w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">همه سطوح</SelectItem>
-                {Object.entries(confidentialityLabels).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
-          <FormField label="وضعیت اسکن">
-            <Select
-              onValueChange={(value) =>
-                setQueryField('scanStatus', value as PreviewScanStatus | 'ALL')
-              }
-              value={query.scanStatus}
-            >
-              <SelectTrigger className="min-w-44">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
-                {Object.entries(scanLabels).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
-          <FormField label="آرشیو">
-            <Select
-              onValueChange={(value) =>
-                setQueryField(
-                  'archiveStatus',
-                  value as 'ALL' | 'ACTIVE' | 'ARCHIVED',
-                )
-              }
-              value={query.archiveStatus}
-            >
-              <SelectTrigger className="min-w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">همه</SelectItem>
-                <SelectItem value="ACTIVE">فعال</SelectItem>
-                <SelectItem value="ARCHIVED">آرشیوشده</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormField>
-          <FormField label="مرتب‌سازی">
-            <Select
-              onValueChange={(value) =>
-                setQueryField('sortBy', value as typeof query.sortBy)
-              }
-              value={query.sortBy}
-            >
-              <SelectTrigger className="min-w-36">
-                <Filter aria-hidden="true" className="size-4" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="updatedAt">آخرین تغییر</SelectItem>
-                <SelectItem value="displayName">نام سند</SelectItem>
-                <SelectItem value="sizeBytes">حجم فایل</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormField>
-          <Button onClick={resetFilters} variant="ghost">
-            پاک‌کردن فیلترها
-          </Button>
-        </FilterBar>
-        {previewState === 'preview' ? (
-          paged.length > 0 ? (
-            <>
-              <DocumentsTable documents={paged} onAction={setNotice} />
-              <nav
-                aria-label="صفحه‌بندی اسناد"
-                className="flex items-center justify-between gap-3 text-sm text-muted-foreground"
-              >
-                <span>
-                  {filtered.length.toLocaleString('fa-IR')} نتیجه Preview · صفحه{' '}
-                  {currentPage.toLocaleString('fa-IR')} از{' '}
-                  {totalPages.toLocaleString('fa-IR')}
-                </span>
-                <div className="flex gap-1">
-                  <Button
-                    aria-label="صفحه قبل"
-                    disabled={currentPage <= 1}
-                    onClick={() =>
-                      setQuery((current) => ({
-                        ...current,
-                        page: currentPage - 1,
-                      }))
-                    }
-                    size="icon"
-                    variant="outline"
-                  >
-                    <ChevronRight aria-hidden="true" className="size-4" />
-                  </Button>
-                  <Button
-                    aria-label="صفحه بعد"
-                    disabled={currentPage >= totalPages}
-                    onClick={() =>
-                      setQuery((current) => ({
-                        ...current,
-                        page: currentPage + 1,
-                      }))
-                    }
-                    size="icon"
-                    variant="outline"
-                  >
-                    <ChevronLeft aria-hidden="true" className="size-4" />
-                  </Button>
-                </div>
-              </nav>
-            </>
-          ) : (
-            <EmptyState
-              action={
-                <Button onClick={resetFilters} variant="outline">
-                  حذف فیلترها
-                </Button>
-              }
-              description="عبارت یا فیلتر دیگری را امتحان کنید."
-              title="سندی پیدا نشد"
-            />
-          )
-        ) : (
-          <StateSurface
-            onReset={() => setPreviewState('preview')}
-            state={previewState}
-          />
-        )}
-      </section>
-    );
+  function removeQuery(key: keyof DocumentListQueryV1) {
+    setQuery((current) => {
+      const next = { ...current };
+      delete next[key];
+      return { ...next, page: 1 };
+    });
   }
 
-  function renderSection(): ReactNode {
-    if (activeSection === 'all') return renderAllDocuments();
-    if (activeSection === 'dashboard')
-      return (
-        <div className="space-y-4">
-          <section
-            aria-label="شاخص‌های اسناد"
-            className="grid grid-cols-2 gap-3 xl:grid-cols-4"
-          >
-            {metrics.map((metric) => (
-              <MetricCard key={metric.label} {...metric} />
-            ))}
-          </section>
-          <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
-            <SectionCard>
-              <div className="flex items-center gap-2">
-                <ShieldCheck
-                  aria-hidden="true"
-                  className="size-5 text-primary"
-                />
-                <h2 className="font-black">وضعیت امنیت فایل</h2>
-              </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                {[
-                  ['CLEAN', '۱٬۲۳۳', 'دانلود فقط پس از مجوز'],
-                  ['PENDING / FAILED', '۹', 'دانلود عمومی مسدود'],
-                  ['QUARANTINED', '۲', 'جداسازی در Object Storage'],
-                ].map(([label, value, detail]) => (
-                  <div className="rounded-xl bg-muted/60 p-4" key={label}>
-                    <p className="font-mono text-xs text-primary">{label}</p>
-                    <p className="mt-2 text-xl font-black">{value}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {detail}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-            <Alert
-              description="Adapter واقعی Antivirus در این فاز وجود ندارد. وضعیت AWAITING_ANTIVIRUS_ADAPTER صریح است و نتیجه CLEAN ساختگی تولید نمی‌شود."
-              title="در انتظار Antivirus Adapter"
-              tone="warning"
-            />
-          </div>
-          <Alert
-            description="DEC-OPEN-006 هنوز Retention/Residency و مدیریت کلید را تعیین نکرده است. حذف دائمی غیرفعال و تاریخ‌های حذف فقط پیشنهاد Preview هستند."
-            title="Retention Policy هنوز قطعی نیست"
-            tone="warning"
-          />
-        </div>
+  function changeSection(next: SectionKey) {
+    setSection(next);
+    setSectionDomain(
+      next === 'procurement'
+        ? 'PROCUREMENT'
+        : next === 'hr'
+          ? 'HUMAN_RESOURCES'
+          : null,
+    );
+    setQuery((current) => ({ ...current, page: 1 }));
+  }
+
+  async function openDetail(id: string) {
+    setDetailOpen(true);
+    setDetailLoading(true);
+    setDetailError('');
+    setDetail(null);
+    setAudit([]);
+    try {
+      const response = await documentsApi.detail(id);
+      setDetail(response.data);
+      if (response.data.capabilities.viewAudit) {
+        documentsApi
+          .audit(id)
+          .then((events) => setAudit(events.data))
+          .catch(() => undefined);
+      }
+    } catch (caught) {
+      setDetailError(
+        caught instanceof Error
+          ? caught.message
+          : 'جزئیات سند قابل دریافت نیست.',
       );
-    if (activeSection === 'categories')
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
+  async function upload(form: FormData) {
+    setUploading(true);
+    setUploadError('');
+    try {
+      const response = await documentsApi.upload(form);
+      setUploadOpen(false);
+      setNotice(
+        `سند ${response.data.archiveCode} ثبت شد و تا اسکن امنیتی در قرنطینه است.`,
+      );
+      await load();
+      await openDetail(response.data.id);
+    } catch (caught) {
+      setUploadError(
+        caught instanceof Error ? caught.message : 'بارگذاری ناموفق بود.',
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function download(document: DocumentDetailV1) {
+    try {
+      const response = await documentsApi.download(document.id);
+      const url = URL.createObjectURL(response.blob);
+      const anchor = window.document.createElement('a');
+      anchor.href = url;
+      anchor.download = document.currentVersion.safeDownloadName;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (caught) {
+      setNotice(caught instanceof Error ? caught.message : 'دانلود مجاز نیست.');
+    }
+  }
+
+  const hasFilters = Boolean(
+    query.search ||
+    query.typeCode ||
+    query.categoryId ||
+    query.branchId ||
+    query.archiveStatus ||
+    query.scanStatus ||
+    query.validity ||
+    query.ownerUserId ||
+    query.confidentiality ||
+    query.createdFrom ||
+    query.createdTo,
+  );
+  const page = query.page ?? 1;
+  const visibleQuarantine = documents.filter(
+    (item) => item.currentVersion.scanStatus !== 'CLEAN',
+  ).length;
+  const visibleExpired = documents.filter(
+    (item) => item.validUntil && new Date(item.validUntil) < new Date(),
+  ).length;
+
+  function table() {
+    if (loading)
       return (
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          {documentCategories.map((category, index) => (
-            <Card className="p-4" key={category}>
-              <span className="grid size-10 place-items-center rounded-xl bg-secondary text-primary">
-                <FolderKanban aria-hidden="true" className="size-5" />
-              </span>
-              <h2 className="mt-3 font-black">{category}</h2>
-              <p className="mt-1 text-xs leading-6 text-muted-foreground">
-                کد دسته ماژول‌محلی و مستقل از جدول ماژول تولیدکننده.
-              </p>
-              <p className="mt-3 text-sm font-black">
-                {(index * 13 + 7).toLocaleString('fa-IR')} فایل Preview
-              </p>
-            </Card>
+        <div className="space-y-3" aria-label="در حال بارگذاری اسناد">
+          <Skeleton className="h-12" />
+          {[1, 2, 3, 4].map((item) => (
+            <Skeleton className="h-16" key={item} />
           ))}
-        </section>
-      );
-    if (activeSection === 'versions')
-      return (
-        <div className="grid gap-4 xl:grid-cols-[1.2fr_.8fr]">
-          <SectionCard>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="font-black">نسخه‌های قرارداد فروش نمونه</h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  نسخه جاری v3 · نسخه‌های قبلی immutable
-                </p>
-              </div>
-              <PreviewBadge />
-            </div>
-            <ol className="mt-5 space-y-3">
-              {[
-                ['v3', 'نسخه جاری', 'اصلاح پیوست نهایی', 'CLEAN', '۲٫۴ MB'],
-                [
-                  'v2',
-                  'نسخه قبلی',
-                  'اصلاح اطلاعات صادرکننده',
-                  'CLEAN',
-                  '۲٫۲ MB',
-                ],
-                [
-                  'v1',
-                  'نسخه اولیه',
-                  'تحویل فایل نهایی از Sales',
-                  'CLEAN',
-                  '۲٫۱ MB',
-                ],
-              ].map(([version, status, note, scan, size]) => (
-                <li
-                  className="flex flex-col gap-3 rounded-xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
-                  key={version}
-                >
-                  <div>
-                    <p className="font-black">
-                      {version} · {status}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {note} · {scan} · {size}
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() =>
-                      setNotice(
-                        'دانلود نسخه در Preview غیرفعال است؛ Signed URL ساخته نشد.',
-                      )
-                    }
-                    size="sm"
-                    variant="outline"
-                  >
-                    <Download aria-hidden="true" className="size-4" />
-                    دانلود مجاز
-                  </Button>
-                </li>
-              ))}
-            </ol>
-          </SectionCard>
-          <Alert
-            description="ایجاد نسخه جدید Object Key و SHA-256 جدید می‌خواهد؛ نسخه قبلی هرگز overwrite یا حذف نمی‌شود."
-            title="Version Immutability"
-          />
         </div>
       );
-    if (activeSection === 'sensitive')
+    if (error) {
+      if (errorStatus === 403)
+        return (
+          <ErrorState
+            action={<Button onClick={() => void load()}>تلاش دوباره</Button>}
+            description={error}
+            title="دسترسی به اسناد مجاز نیست"
+          />
+        );
       return (
-        <div className="grid gap-4 xl:grid-cols-[1.2fr_.8fr]">
-          <SectionCard>
-            <div className="flex items-center gap-2">
-              <FileLock2 aria-hidden="true" className="size-5 text-primary" />
-              <h2 className="font-black">کنترل فایل حساس</h2>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {Object.entries(confidentialityLabels).map(([code, label]) => (
-                <div
-                  className="rounded-xl border border-border p-3 text-center"
-                  key={code}
-                >
-                  <p className="font-mono text-xs text-primary">{code}</p>
-                  <p className="mt-1 text-sm font-black">{label}</p>
-                </div>
-              ))}
-            </div>
-            <FormField
-              description="حداقل ۵ نویسه؛ در نسخه واقعی همراه Actor و نتیجه Audit می‌شود."
-              id="sensitive-reason"
-              label="Reason مشاهده یا دانلود حساس"
-              required
-            >
-              <Input
-                id="sensitive-reason"
-                onChange={(event) => setSensitiveReason(event.target.value)}
-                placeholder="دلیل عملیاتی مجاز"
-                value={sensitiveReason}
-              />
-            </FormField>
-            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-900">
-              <p className="font-black">سند محرمانه ••••••••</p>
-              <p className="mt-1 text-xs">
-                نمایش Masked برای کاربر فاقد documents.sensitive.read
-              </p>
+        <ErrorState
+          action={<Button onClick={() => void load()}>تلاش دوباره</Button>}
+          description={error}
+          title={
+            errorStatus === 401
+              ? 'نشست شما پایان یافته است'
+              : 'خطای دریافت اسناد'
+          }
+        />
+      );
+    }
+    if (!documents.length)
+      return (
+        <EmptyState
+          action={
+            hasFilters ? (
               <Button
-                className="mt-3"
-                disabled={sensitiveReason.trim().length < 5}
                 onClick={() =>
-                  setNotice(
-                    'Reason در Preview بررسی شد؛ فایل Unmask نشد و Audit واقعی ثبت نشد.',
-                  )
+                  setQuery({
+                    page: 1,
+                    pageSize: 25,
+                    sortBy: 'updatedAt',
+                    sortDirection: 'desc',
+                  })
                 }
-                size="sm"
                 variant="outline"
               >
-                <Eye aria-hidden="true" className="size-4" />
-                درخواست مشاهده
+                پاک‌کردن فیلترها
               </Button>
-            </div>
-          </SectionCard>
-          <SectionCard>
-            <h2 className="font-black">Permissionهای ماژول‌محلی</h2>
-            <p className="mt-1 text-xs leading-6 text-muted-foreground">
-              Proposal است؛ IAM مرکزی به‌علت قفل فعال تغییر نکرد.
-            </p>
-            <ul className="mt-3 space-y-1.5">
-              {documentsLocalPermissions.map((permission) => (
-                <li
-                  className="rounded-lg bg-muted px-3 py-2 font-mono text-xs"
-                  key={permission}
-                >
-                  {permission}
-                </li>
-              ))}
-            </ul>
-          </SectionCard>
-        </div>
-      );
-    if (activeSection === 'quarantine')
-      return (
-        <div className="space-y-4">
-          <Alert
-            description="فایل PENDING_SCAN، SCAN_FAILED، INFECTED یا QUARANTINED قابل دانلود عمومی نیست. Adapter غایب با AWAITING_ANTIVIRUS_ADAPTER نمایش داده می‌شود."
-            title="Fail-closed Security Gate"
-            tone="warning"
-          />
-          <DocumentsTable
-            documents={previewDocuments.filter(
-              (document) => document.scanStatus !== 'CLEAN',
-            )}
-            onAction={setNotice}
-          />
-        </div>
-      );
-    if (activeSection === 'archive')
-      return (
-        <div className="grid gap-4 xl:grid-cols-3">
-          <SectionCard>
-            <Archive aria-hidden="true" className="size-6 text-primary" />
-            <h2 className="mt-3 font-black">Archive / Restore</h2>
-            <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              هر دو عملیات Reason، Permission، Actor، UTC و رکورد تاریخچه
-              immutable می‌خواهند.
-            </p>
-            <Button
-              className="mt-4"
-              onClick={() => setNotice('Restore در Preview ذخیره نشد.')}
-              variant="outline"
-            >
-              <ArchiveRestore aria-hidden="true" className="size-4" />
-              بازیابی نمایشی
-            </Button>
-          </SectionCard>
-          <SectionCard>
-            <FileKey aria-hidden="true" className="size-6 text-primary" />
-            <h2 className="mt-3 font-black">Legal Hold</h2>
-            <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              Hold فعال حذف و گردش Retention را متوقف می‌کند؛ Release مجوز و
-              دلیل مستقل دارد.
-            </p>
-            <Badge className="mt-4 bg-red-100 text-red-800">
-              ۱ Hold فعال Preview
-            </Badge>
-          </SectionCard>
-          <SectionCard>
-            <TriangleAlert
-              aria-hidden="true"
-              className="size-6 text-amber-600"
-            />
-            <h2 className="mt-3 font-black">Retention Policy</h2>
-            <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              Policy حقوقی قطعی نشده است. تاریخ حذف پیشنهادی فقط هشدار است.
-            </p>
-            <Button className="mt-4" disabled variant="destructive">
-              حذف دائمی غیرفعال
-            </Button>
-          </SectionCard>
-        </div>
+            ) : (
+              <Button onClick={() => setUploadOpen(true)}>
+                بارگذاری اولین سند
+              </Button>
+            )
+          }
+          description={
+            hasFilters
+              ? 'عبارت یا فیلتر دیگری را امتحان کنید.'
+              : 'هنوز سندی در دامنه مجاز شما ثبت نشده است.'
+          }
+          title={hasFilters ? 'نتیجه‌ای پیدا نشد' : 'آرشیو خالی است'}
+        />
       );
     return (
-      <SectionCard>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="font-black">تاریخچه دسترسی</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              IP خلاصه‌شده، User Agent، Reason و نتیجه؛ بدون URL امضاشده یا PII
-              حساس.
-            </p>
+      <>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-blue-50 p-3 text-sm dark:bg-blue-950/20">
+          <span>{selected.size.toLocaleString('fa-IR')} سند انتخاب شده</span>
+          <div className="flex gap-2">
+            <Button
+              disabled={!selected.size}
+              onClick={() =>
+                setNotice(
+                  'عملیات گروهی پس از کنترل مجوز تک‌تک اسناد در Slice بعد فعال می‌شود.',
+                )
+              }
+              size="sm"
+              variant="outline"
+            >
+              عملیات گروهی
+            </Button>
+            <Button
+              onClick={() =>
+                setNotice('خروجی Excel/PDF به Export Worker مستقل نیاز دارد.')
+              }
+              size="sm"
+              variant="outline"
+            >
+              خروجی
+            </Button>
           </div>
-          <PreviewBadge />
         </div>
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-[900px] w-full text-sm">
-            <thead className="bg-muted/60 text-xs text-muted-foreground">
+        <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
+          <table className="min-w-[1180px] w-full text-sm">
+            <thead className="bg-blue-50/80 text-xs text-blue-950 dark:bg-blue-950/30 dark:text-blue-100">
               <tr>
+                <th className="px-3 py-3 text-start">
+                  <span className="sr-only">انتخاب</span>
+                </th>
                 {[
-                  'عملیات',
-                  'Actor',
-                  'زمان UTC',
-                  'IP خلاصه',
-                  'User Agent',
-                  'Reason',
-                  'نتیجه',
+                  'عنوان و فایل',
+                  'کد آرشیو',
+                  'نوع',
+                  'مالک',
+                  'محرمانگی',
+                  'وضعیت اسکن',
+                  'اعتبار',
+                  'آخرین تغییر',
                 ].map((column) => (
                   <th className="px-3 py-3 text-start" key={column}>
                     {column}
@@ -940,69 +492,526 @@ export function DocumentsWorkspace() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {previewAccessHistory.map((event) => (
-                <tr key={event.id}>
-                  <td className="px-3 py-4 font-black">{event.action}</td>
-                  <td className="px-3 py-4">{event.actor}</td>
-                  <td className="px-3 py-4">{formatUtc(event.occurredAt)}</td>
-                  <td className="px-3 py-4 font-mono text-xs">
-                    {event.ipSummary}
-                  </td>
-                  <td className="px-3 py-4">{event.userAgent}</td>
-                  <td className="px-3 py-4">{event.reason}</td>
+              {documents.map((document) => (
+                <tr
+                  className="hover:bg-blue-50/45 dark:hover:bg-blue-950/15"
+                  key={document.id}
+                >
                   <td className="px-3 py-4">
-                    <Badge
-                      className={
-                        event.outcome === 'ردشده'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-emerald-100 text-emerald-800'
+                    <Checkbox
+                      aria-label={`انتخاب ${document.title}`}
+                      checked={selected.has(document.id)}
+                      onCheckedChange={(checked) =>
+                        setSelected((current) => {
+                          const next = new Set(current);
+                          if (checked) next.add(document.id);
+                          else next.delete(document.id);
+                          return next;
+                        })
                       }
+                    />
+                  </td>
+                  <td className="max-w-80 px-3 py-4">
+                    <button
+                      className="text-start font-black text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={() => void openDetail(document.id)}
+                      type="button"
                     >
-                      {event.outcome}
+                      {document.title}
+                    </button>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      {document.currentVersion.safeDownloadName} · v
+                      {document.currentVersion.versionNumber.toLocaleString(
+                        'fa-IR',
+                      )}
+                    </p>
+                  </td>
+                  <td className="px-3 py-4 font-mono text-xs">
+                    {document.archiveCode}
+                  </td>
+                  <td className="px-3 py-4">{document.type.name}</td>
+                  <td className="px-3 py-4">{document.owner.displayName}</td>
+                  <td className="px-3 py-4">
+                    <Badge>
+                      {confidentialityLabel[document.confidentiality]}
                     </Badge>
                   </td>
+                  <td className="px-3 py-4">
+                    <Badge
+                      className={scanTone(document.currentVersion.scanStatus)}
+                    >
+                      {scanLabel[document.currentVersion.scanStatus]}
+                    </Badge>
+                  </td>
+                  <td className="px-3 py-4">{date(document.validUntil)}</td>
+                  <td className="px-3 py-4">{date(document.updatedAt)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </SectionCard>
+        <nav
+          aria-label="صفحه‌بندی اسناد"
+          className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground"
+        >
+          <span>
+            {total.toLocaleString('fa-IR')} سند · صفحه{' '}
+            {page.toLocaleString('fa-IR')} از{' '}
+            {totalPages.toLocaleString('fa-IR')}
+          </span>
+          <div className="flex gap-1">
+            <Button
+              aria-label="صفحه قبل"
+              disabled={page <= 1}
+              onClick={() => updateQuery({ page: page - 1 })}
+              size="icon"
+              variant="outline"
+            >
+              <ChevronRight aria-hidden="true" className="size-4" />
+            </Button>
+            <Button
+              aria-label="صفحه بعد"
+              disabled={page >= totalPages}
+              onClick={() => updateQuery({ page: page + 1 })}
+              size="icon"
+              variant="outline"
+            >
+              <ChevronLeft aria-hidden="true" className="size-4" />
+            </Button>
+          </div>
+        </nav>
+      </>
+    );
+  }
+
+  function filters() {
+    return (
+      <FilterBar className="grid items-end gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <FormField id="documents-search" label="جست‌وجو">
+          <div className="relative">
+            <Search
+              aria-hidden="true"
+              className="absolute end-3 top-3.5 size-4 text-muted-foreground"
+            />
+            <Input
+              className="pe-10"
+              id="documents-search"
+              onChange={(event) => updateQuery({ search: event.target.value })}
+              placeholder="عنوان، کد آرشیو یا نام فایل"
+              value={query.search ?? ''}
+            />
+          </div>
+        </FormField>
+        <FormField label="نوع سند">
+          <Select
+            onValueChange={(value) =>
+              value === 'ALL'
+                ? removeQuery('typeCode')
+                : updateQuery({ typeCode: value })
+            }
+            value={query.typeCode ?? 'ALL'}
+          >
+            <SelectTrigger aria-label="نوع سند">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">همه انواع</SelectItem>
+              {options?.documentTypes.map((type) => (
+                <SelectItem key={type.id} value={type.code}>
+                  {type.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+        <FormField label="وضعیت آرشیو">
+          <Select
+            onValueChange={(value) =>
+              value === 'ALL'
+                ? removeQuery('archiveStatus')
+                : updateQuery({ archiveStatus: value as never })
+            }
+            value={query.archiveStatus ?? 'ALL'}
+          >
+            <SelectTrigger aria-label="وضعیت آرشیو">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
+              <SelectItem value="ACTIVE">فعال</SelectItem>
+              <SelectItem value="ARCHIVED">آرشیوی</SelectItem>
+              <SelectItem value="DELETED">حذف منطقی</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
+        <FormField label="دسته‌بندی">
+          <Select
+            onValueChange={(value) =>
+              value === 'ALL'
+                ? removeQuery('categoryId')
+                : updateQuery({ categoryId: value })
+            }
+            value={query.categoryId ?? 'ALL'}
+          >
+            <SelectTrigger aria-label="دسته‌بندی سند">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">همه دسته‌ها</SelectItem>
+              {options?.categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+        <FormField label="شعبه">
+          <Select
+            onValueChange={(value) =>
+              value === 'ALL'
+                ? removeQuery('branchId')
+                : updateQuery({ branchId: value })
+            }
+            value={query.branchId ?? 'ALL'}
+          >
+            <SelectTrigger aria-label="شعبه سند">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">همه شعب مجاز</SelectItem>
+              {branches.map((branch) => (
+                <SelectItem key={branch.id} value={branch.id}>
+                  {branch.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+        <FormField label="وضعیت اسکن">
+          <Select
+            onValueChange={(value) =>
+              value === 'ALL'
+                ? removeQuery('scanStatus')
+                : updateQuery({ scanStatus: value as never })
+            }
+            value={query.scanStatus ?? 'ALL'}
+          >
+            <SelectTrigger aria-label="وضعیت اسکن سند">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
+              <SelectItem value="CLEAN">پاک</SelectItem>
+              <SelectItem value="PENDING_SCAN">در انتظار اسکن</SelectItem>
+              <SelectItem value="AWAITING_ANTIVIRUS_ADAPTER">
+                در انتظار آنتی‌ویروس
+              </SelectItem>
+              <SelectItem value="QUARANTINED">قرنطینه</SelectItem>
+              <SelectItem value="INFECTED">آلوده</SelectItem>
+              <SelectItem value="SCAN_FAILED">خطای اسکن</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
+        <FormField label="اعتبار و انقضا">
+          <Select
+            onValueChange={(value) =>
+              value === 'ALL'
+                ? removeQuery('validity')
+                : updateQuery({ validity: value as never })
+            }
+            value={query.validity ?? 'ALL'}
+          >
+            <SelectTrigger aria-label="اعتبار سند">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">همه</SelectItem>
+              <SelectItem value="VALID">معتبر</SelectItem>
+              <SelectItem value="EXPIRING">نزدیک انقضا</SelectItem>
+              <SelectItem value="EXPIRED">منقضی</SelectItem>
+              <SelectItem value="WITHOUT_EXPIRY">بدون انقضا</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
+        <FormField label="مالک">
+          <Select
+            onValueChange={(value) =>
+              value === 'ALL'
+                ? removeQuery('ownerUserId')
+                : updateQuery({ ownerUserId: value })
+            }
+            value={query.ownerUserId ?? 'ALL'}
+          >
+            <SelectTrigger aria-label="مالک سند">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">همه مالکان</SelectItem>
+              {options?.owners.map((owner) => (
+                <SelectItem key={owner.id} value={owner.id}>
+                  {owner.displayName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+        <FormField label="محرمانگی">
+          <Select
+            onValueChange={(value) =>
+              value === 'ALL'
+                ? removeQuery('confidentiality')
+                : updateQuery({ confidentiality: value as never })
+            }
+            value={query.confidentiality ?? 'ALL'}
+          >
+            <SelectTrigger aria-label="محرمانگی">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">همه سطوح</SelectItem>
+              <SelectItem value="PUBLIC">عمومی</SelectItem>
+              <SelectItem value="INTERNAL">داخلی</SelectItem>
+              <SelectItem value="CONFIDENTIAL">محرمانه</SelectItem>
+              <SelectItem value="RESTRICTED">بسیار محدود</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
+        <FormField id="documents-created-from" label="ثبت از تاریخ">
+          <DatePicker
+            id="documents-created-from"
+            onChange={(value) =>
+              value
+                ? updateQuery({ createdFrom: value })
+                : removeQuery('createdFrom')
+            }
+            required={false}
+            value={query.createdFrom ?? ''}
+          />
+        </FormField>
+        <FormField id="documents-created-to" label="ثبت تا تاریخ">
+          <DatePicker
+            id="documents-created-to"
+            onChange={(value) =>
+              value
+                ? updateQuery({ createdTo: value })
+                : removeQuery('createdTo')
+            }
+            required={false}
+            value={query.createdTo ?? ''}
+          />
+        </FormField>
+        <FormField label="مرتب‌سازی">
+          <Select
+            onValueChange={(value) => updateQuery({ sortBy: value as never })}
+            value={query.sortBy ?? 'updatedAt'}
+          >
+            <SelectTrigger aria-label="مرتب‌سازی">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="updatedAt">آخرین تغییر</SelectItem>
+              <SelectItem value="createdAt">تاریخ ثبت</SelectItem>
+              <SelectItem value="title">عنوان</SelectItem>
+              <SelectItem value="archiveCode">کد آرشیو</SelectItem>
+              <SelectItem value="validUntil">تاریخ اعتبار</SelectItem>
+              <SelectItem value="sizeBytes">حجم فایل</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
+        <div className="flex gap-2 pb-0.5">
+          <Button
+            className="flex-1"
+            onClick={() =>
+              setQuery({
+                page: 1,
+                pageSize: 25,
+                sortBy: 'updatedAt',
+                sortDirection: 'desc',
+              })
+            }
+            variant="outline"
+          >
+            پاک‌کردن
+          </Button>
+          <Button
+            aria-label="بازخوانی"
+            onClick={() => void load()}
+            size="icon"
+            variant="outline"
+          >
+            <RefreshCw aria-hidden="true" className="size-4" />
+          </Button>
+        </div>
+      </FilterBar>
+    );
+  }
+
+  function content() {
+    if (section === 'archive')
+      return (
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {archiveSections.map((label) => (
+            <Card className="p-5" key={label}>
+              <Settings2 aria-hidden="true" className="size-6 text-primary" />
+              <h2 className="mt-3 font-black">{label}</h2>
+              <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                ساختار این بخش مطابق ماکاپ آماده است؛ عملیات پیشرفته در Slice
+                مستقل فعال می‌شود.
+              </p>
+            </Card>
+          ))}
+        </section>
+      );
+    if (section === 'shares')
+      return (
+        <EmptyState
+          description="ایجاد لینک امن نسخه‌محور، گیرنده، زمان انقضا و تعداد استفاده در Slice اشتراک امن پیاده می‌شود."
+          icon={Link2}
+          title="اشتراک امن هنوز فعال نشده است"
+        />
+      );
+    if (section === 'activity')
+      return (
+        <EmptyState
+          description="برای مشاهده Audit Timeline روی عنوان یک سند کلیک کنید و تب «فعالیت و نگهداری» را باز کنید."
+          icon={Activity}
+          title="گزارش دسترسی سندمحور"
+        />
+      );
+    if (section === 'overview')
+      return (
+        <div className="space-y-4">
+          <section
+            aria-label="شاخص‌های اسناد"
+            className="grid grid-cols-2 gap-3 xl:grid-cols-4"
+          >
+            <Metric
+              icon={Files}
+              hint="در دامنه مجاز"
+              label="کل اسناد"
+              value={total}
+            />
+            <Metric
+              icon={UploadCloud}
+              hint="در صفحه جاری"
+              label="نسخه‌های نمایش‌داده‌شده"
+              value={documents.length}
+            />
+            <Metric
+              icon={ShieldAlert}
+              hint="Fail-closed"
+              label="نیازمند اسکن"
+              value={visibleQuarantine}
+            />
+            <Metric
+              icon={ClockAlert}
+              hint="در صفحه جاری"
+              label="منقضی"
+              value={visibleExpired}
+            />
+          </section>
+          <div className="grid gap-4 xl:grid-cols-[1.25fr_.75fr]">
+            <Card className="p-5">
+              <h2 className="font-black">دسترسی سریع آرشیو</h2>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {sections.slice(2, 8).map(({ icon: Icon, key, label }) => (
+                  <button
+                    className="flex min-h-14 items-center gap-3 rounded-xl border border-border p-3 text-start font-bold hover:border-primary/40 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:hover:bg-blue-950/20"
+                    key={key}
+                    onClick={() => changeSection(key)}
+                    type="button"
+                  >
+                    <Icon aria-hidden="true" className="size-5 text-primary" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </Card>
+            <Alert
+              description="فایل‌های جدید واقعاً به Backend ارسال می‌شوند، اما تا اتصال Antivirus در قرنطینه می‌مانند و قابل دانلود نیستند."
+              title="وضعیت پردازش امنیتی"
+              tone="warning"
+            />
+          </div>
+          <Card className="p-5">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-black">آخرین اسناد مجاز</h2>
+              <Button
+                onClick={() => changeSection('all')}
+                size="sm"
+                variant="outline"
+              >
+                مشاهده همه
+              </Button>
+            </div>
+            <div className="mt-4">{table()}</div>
+          </Card>
+        </div>
+      );
+    return (
+      <div className="space-y-4">
+        {section === 'procurement' ? (
+          <Card className="flex flex-wrap items-center gap-2 p-3">
+            <span className="me-2 text-sm font-bold">دامنه فعال:</span>
+            <Button
+              onClick={() => setSectionDomain('PROCUREMENT')}
+              size="sm"
+              variant={sectionDomain === 'PROCUREMENT' ? 'primary' : 'outline'}
+            >
+              خرید و تدارکات
+            </Button>
+            <Button
+              onClick={() => setSectionDomain('FINANCE')}
+              size="sm"
+              variant={sectionDomain === 'FINANCE' ? 'primary' : 'outline'}
+            >
+              مالی
+            </Button>
+          </Card>
+        ) : null}
+        {section === 'hr' ? (
+          <Card className="flex flex-wrap items-center gap-2 p-3">
+            <span className="me-2 text-sm font-bold">دامنه فعال:</span>
+            <Button
+              onClick={() => setSectionDomain('ORGANIZATION')}
+              size="sm"
+              variant={sectionDomain === 'ORGANIZATION' ? 'primary' : 'outline'}
+            >
+              سازمان
+            </Button>
+            <Button
+              onClick={() => setSectionDomain('HUMAN_RESOURCES')}
+              size="sm"
+              variant={
+                sectionDomain === 'HUMAN_RESOURCES' ? 'primary' : 'outline'
+              }
+            >
+              منابع انسانی
+            </Button>
+          </Card>
+        ) : null}
+        {filters()}
+        <Card className="p-4">{table()}</Card>
+      </div>
     );
   }
 
   return (
-    <main className="space-y-6" id="main-content">
+    <main className="space-y-5" id="documents-workspace">
       <PageHeader
         actions={
-          <>
-            <Button
-              onClick={() => {
-                setActiveSection('all');
-                setNotice(
-                  'نشست Upload فقط Preview است؛ Object Storage و Persistence متصل نیستند.',
-                );
-              }}
-            >
-              <UploadCloud aria-hidden="true" className="size-4" />
-              بارگذاری فایل
-            </Button>
-            <PreviewBadge />
-          </>
+          <Button onClick={() => setUploadOpen(true)}>
+            <UploadCloud aria-hidden="true" className="size-4" />
+            بارگذاری فایل
+          </Button>
         }
-        description="Archive مرکزی فایل نهایی، Metadata، نسخه، محرمانگی، اسکن امنیتی و تاریخچه دسترسی؛ Render و Issue در ماژول تولیدکننده باقی می‌ماند."
-        eyebrow="DOCUMENTS-001 · PC-B · Phase A"
+        description="آرشیو مرکزی فایل نهایی، Metadata، نسخه، محرمانگی و سابقه دسترسی؛ صدور سند در ماژول مالک باقی می‌ماند."
+        eyebrow="DOCUMENTS-002 · PC-B · REAL VERTICAL SLICE"
         title="اسناد و فایل‌ها"
       />
-      <Alert
-        description={documentsPhaseANotice}
-        title="Foundation ماژول‌محلی؛ بدون فایل یا موفقیت ساختگی"
-      />
       {notice ? (
-        <Alert
-          className="relative"
-          description={notice}
-          title="نتیجه اقدام Preview"
-        >
+        <Alert className="relative" description={notice} title="نتیجه عملیات">
           <Button
             className="absolute end-2 top-2"
             onClick={() => setNotice('')}
@@ -1013,65 +1022,83 @@ export function DocumentsWorkspace() {
           </Button>
         </Alert>
       ) : null}
-      <Card className="p-3">
-        <nav
-          aria-label="بخش‌های Workspace اسناد"
-          className="flex gap-2 overflow-x-auto pb-1"
-        >
-          {sections.map(({ icon: Icon, key, label }) => (
-            <button
-              aria-current={activeSection === key ? 'page' : undefined}
-              className={cn(
-                'flex min-h-11 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
-                activeSection === key
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-border bg-surface text-muted-foreground hover:bg-muted hover:text-foreground',
-              )}
-              key={key}
-              onClick={() => setActiveSection(key)}
-              type="button"
-            >
-              <Icon aria-hidden="true" className="size-4" />
-              {label}
-            </button>
-          ))}
-        </nav>
-      </Card>
-      <FilterBar className="items-end">
-        <FormField label="بررسی Stateهای UI">
-          <Select
-            onValueChange={(value) =>
-              setPreviewState(value as DocumentsPreviewState)
-            }
-            value={previewState}
+      <div className="grid gap-4 xl:grid-cols-[15.5rem_minmax(0,1fr)]">
+        <Card className="h-fit p-3 xl:sticky xl:top-20">
+          <nav
+            aria-label="بخش‌های اسناد"
+            className="grid gap-1 sm:grid-cols-2 xl:grid-cols-1"
           >
-            <SelectTrigger className="min-w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {documentsPreviewStates.map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormField>
-        <p className="pb-3 text-xs text-muted-foreground">
-          Loading · Empty · Error · Unauthorized · Forbidden · Conflict ·
-          Preview
-        </p>
-      </FilterBar>
-      {activeSection === 'all' ? (
-        renderSection()
-      ) : previewState === 'preview' ? (
-        renderSection()
-      ) : (
-        <StateSurface
-          onReset={() => setPreviewState('preview')}
-          state={previewState}
-        />
-      )}
+            {sections.map(({ icon: Icon, key, label }) => (
+              <button
+                aria-current={section === key ? 'page' : undefined}
+                className={cn(
+                  'flex min-h-11 items-center gap-3 rounded-xl px-3 text-start text-sm font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
+                  section === key
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-blue-50 hover:text-foreground dark:hover:bg-blue-950/20',
+                )}
+                key={key}
+                onClick={() => changeSection(key)}
+                type="button"
+              >
+                <Icon aria-hidden="true" className="size-4 shrink-0" />
+                {label}
+              </button>
+            ))}
+          </nav>
+          <div className="my-3 border-t border-border" />
+          <p className="px-3 text-xs font-black text-muted-foreground">
+            نماهای شخصی
+          </p>
+          <div className="mt-2 grid gap-1">
+            {personalViews.map((label, index) => (
+              <button
+                className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-start text-xs font-semibold text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                key={label}
+                onClick={() =>
+                  setNotice(
+                    `${label} پس از قرارداد SavedDocumentView در Slice بعد فعال می‌شود.`,
+                  )
+                }
+                type="button"
+              >
+                {index === 3 ? (
+                  <Star aria-hidden="true" className="size-4" />
+                ) : index === 2 ? (
+                  <FileSearch aria-hidden="true" className="size-4" />
+                ) : index === 1 ? (
+                  <UploadCloud aria-hidden="true" className="size-4" />
+                ) : (
+                  <FileLock2 aria-hidden="true" className="size-4" />
+                )}
+                {label}
+              </button>
+            ))}
+          </div>
+        </Card>
+        <div className="min-w-0">{content()}</div>
+      </div>
+      <DocumentUploadDialog
+        branches={branches}
+        error={uploadError}
+        onOpenChange={(open) => {
+          setUploadOpen(open);
+          if (!open) setUploadError('');
+        }}
+        onSubmit={upload}
+        open={uploadOpen}
+        options={options}
+        submitting={uploading}
+      />
+      <DocumentDetailDialog
+        audit={audit}
+        document={detail}
+        error={detailError}
+        loading={detailLoading}
+        onDownload={(document) => void download(document)}
+        onOpenChange={setDetailOpen}
+        open={detailOpen}
+      />
     </main>
   );
 }
