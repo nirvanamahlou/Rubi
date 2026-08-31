@@ -13,11 +13,13 @@ import {
   type AuthenticatedActor,
   type MasterDataListQuery,
   type MasterDataResource,
+  type MasterDataDeleteResponse,
 } from '@rubi/contracts';
 
 import { assertGenericCurrencyRateMutationAllowed } from './currency-rate.policy';
 import { buildMasterDataXlsx, MASTER_DATA_XLSX_MIME } from './master-data.xlsx';
 import { MasterDataContactCrypto } from './master-data-contact.crypto';
+import { isMasterDataDependencyError } from './master-data-deletion.policy';
 import {
   MasterDataRepository,
   toMasterDataRecord,
@@ -1101,6 +1103,41 @@ export class MasterDataService {
         message: 'رکورد هم‌زمان تغییر کرده است.',
       });
     return { data: toMasterDataRecord(resource, row) };
+  }
+
+  async remove(
+    resourceValue: string,
+    id: string,
+    version: number,
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+  ): Promise<MasterDataDeleteResponse> {
+    if (!actor.permissions.includes('master_data.delete'))
+      throw new ForbiddenException('مجوز حذف اطلاعات پایه وجود ندارد.');
+    const resource = resourceOf(resourceValue);
+    if (!uuidPattern.test(id))
+      throw new BadRequestException('شناسه رکورد معتبر نیست.');
+    if (!Number.isSafeInteger(version) || version < 1 || version > 2147483646)
+      throw new BadRequestException('نسخه معتبر رکورد برای حذف الزامی است.');
+    const actorBranchId = branchOf(actor, requestedBranch);
+    try {
+      await this.repository.remove(
+        resource,
+        id,
+        version,
+        actor.userId,
+        actorBranchId,
+      );
+    } catch (error) {
+      if (isMasterDataDependencyError(error))
+        throw new ConflictException({
+          code: 'MASTER_DATA_IN_USE',
+          message:
+            'این رکورد در اطلاعات دیگری استفاده شده و حذف نمی‌شود؛ می‌توانید آن را غیرفعال کنید.',
+        });
+      throw error;
+    }
+    return { data: { id, resource, deleted: true } };
   }
 
   async status(

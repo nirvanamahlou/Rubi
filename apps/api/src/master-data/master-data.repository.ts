@@ -1,4 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type {
   MasterDataListQuery,
   MasterDataRecord,
@@ -7,6 +12,10 @@ import type {
 import { AuditOutcome } from '@rubi/database';
 
 import { DatabaseService } from '../database/database.service';
+import {
+  assertMasterDataDeletionAllowed,
+  removeOwnedMasterDataLinks,
+} from './master-data-deletion.policy';
 
 type Row = Record<string, unknown> & {
   id: string;
@@ -24,6 +33,7 @@ interface Delegate {
   create(args: object): Promise<Row>;
   update(args: object): Promise<Row>;
   updateMany(args: object): Promise<{ count: number }>;
+  deleteMany(args: object): Promise<{ count: number }>;
 }
 
 type JsonValue =
@@ -1056,6 +1066,53 @@ export class MasterDataRepository {
         },
       });
       return row;
+    });
+  }
+
+  async remove(
+    resource: MasterDataResource,
+    id: string,
+    expectedVersion: number,
+    actorUserId: string,
+    actorBranchId: string,
+  ) {
+    return this.database.client.$transaction(async (transaction) => {
+      const model = delegate(transaction, resource);
+      const before = await model.findUnique({ where: { id } });
+      if (!before) throw new NotFoundException('رکورد اطلاعات پایه یافت نشد.');
+      assertMasterDataDeletionAllowed(resource, before);
+      const conflict = () =>
+        new ConflictException({
+          code: 'CONCURRENT_MODIFICATION',
+          message:
+            'رکورد هم‌زمان تغییر کرده است؛ فهرست را تازه‌سازی و دوباره بررسی کنید.',
+        });
+      if (before.version !== expectedVersion) throw conflict();
+      const claimed = await model.updateMany({
+        where: {
+          id,
+          version: expectedVersion,
+          ...(resource === 'exchange-rates' ? { status: 'DRAFT' } : {}),
+        },
+        data: { updatedByUserId: actorUserId, version: { increment: 1 } },
+      });
+      if (claimed.count !== 1) throw conflict();
+      await removeOwnedMasterDataLinks(transaction, resource, id);
+      const deleted = await model.deleteMany({
+        where: { id, version: expectedVersion + 1 },
+      });
+      if (deleted.count !== 1) throw conflict();
+      await transaction.masterDataAuditEvent.create({
+        data: {
+          actorUserId,
+          actorBranchId,
+          action: 'master_data.delete',
+          resource,
+          entityId: id,
+          outcome: AuditOutcome.SUCCESS,
+          beforeSnapshot: { id, version: before.version },
+        },
+      });
     });
   }
 

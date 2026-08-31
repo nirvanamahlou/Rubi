@@ -17,6 +17,7 @@ import type {
   MasterDataRecord,
   MasterDataResource,
   MasterDataStatus,
+  MasterDataDeleteResponse,
 } from '@rubi/contracts';
 
 import { getPublicApiBaseUrl } from '../../../lib/environment';
@@ -120,6 +121,12 @@ export const masterDataApi = {
     return request<{ data: MasterDataRecord }>(
       `/${resource}/${encodeURIComponent(id)}`,
       { method: 'PATCH', body: JSON.stringify(body) },
+    );
+  },
+  remove(resource: MasterDataResource, id: string, version: number) {
+    return request<MasterDataDeleteResponse>(
+      `/${resource}/${encodeURIComponent(id)}`,
+      { method: 'DELETE', body: JSON.stringify({ version }) },
     );
   },
   setStatus(

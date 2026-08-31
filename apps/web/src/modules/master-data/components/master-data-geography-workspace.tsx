@@ -52,6 +52,7 @@ import {
   Skeleton,
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
+import { MasterDataDeleteButton } from './master-data-delete-button';
 import {
   getMasterDataDefinition,
   type MasterDataResourceKey,
@@ -498,6 +499,14 @@ export function MasterDataGeographyWorkspace() {
     }
     setFormMode(null);
     await load();
+  }
+
+  async function afterDelete() {
+    setSelected(undefined);
+    setFormMode(null);
+    setNotice('رکورد با موفقیت حذف شد.');
+    if (records.length === 1 && page > 1) setPage(page - 1);
+    else await load();
   }
 
   async function toggle(record: MasterDataRecord) {
@@ -1080,6 +1089,10 @@ export function MasterDataGeographyWorkspace() {
                         <FilePenLine aria-hidden="true" className="size-4" />
                         ویرایش
                       </Button>
+                      <MasterDataDeleteButton
+                        record={record}
+                        onDeleted={afterDelete}
+                      />
                       <Button
                         onClick={() => void toggle(record)}
                         size="sm"

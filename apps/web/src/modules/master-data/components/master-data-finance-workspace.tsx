@@ -54,6 +54,7 @@ import {
   Skeleton,
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
+import { MasterDataDeleteButton } from './master-data-delete-button';
 import {
   getMasterDataDefinition,
   type MasterDataResourceKey,
@@ -509,6 +510,15 @@ export function MasterDataFinanceWorkspace({
     }
     setFormMode(null);
     await load();
+  }
+
+  async function afterDelete() {
+    setSelected(undefined);
+    setFormMode(null);
+    setNotice('رکورد با موفقیت حذف شد.');
+    if ((isRateTab(tab) ? rates.length : records.length) === 1 && page > 1)
+      setPage(page - 1);
+    else await load();
   }
 
   async function toggle(record: MasterDataRecord) {
@@ -1023,6 +1033,10 @@ export function MasterDataFinanceWorkspace({
                         </Button>
                         {row.status === 'DRAFT' ? (
                           <>
+                            <MasterDataDeleteButton
+                              record={rateRecord(row)}
+                              onDeleted={afterDelete}
+                            />
                             <Button
                               onClick={() => void decide(row, 'approve')}
                               size="sm"
@@ -1105,6 +1119,10 @@ export function MasterDataFinanceWorkspace({
                   >
                     <FilePenLine className="size-4" /> ویرایش
                   </Button>
+                  <MasterDataDeleteButton
+                    record={record}
+                    onDeleted={afterDelete}
+                  />
                   <Button
                     onClick={() => void toggle(record)}
                     size="sm"
@@ -1193,6 +1211,10 @@ export function MasterDataFinanceWorkspace({
                         >
                           <FilePenLine className="size-4" /> ویرایش
                         </Button>
+                        <MasterDataDeleteButton
+                          record={record}
+                          onDeleted={afterDelete}
+                        />
                         <Button
                           onClick={() => void toggle(record)}
                           size="sm"
@@ -1437,7 +1459,7 @@ export function MasterDataFinanceWorkspace({
                         <th className="p-4 text-start">زمان UTC</th>
                         <th className="p-4 text-start">وضعیت</th>
                         <th className="p-4 text-start">مسئول ثبت</th>
-                        <th className="p-4 text-start">Audit</th>
+                        <th className="p-4 text-start">عملیات</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1459,6 +1481,12 @@ export function MasterDataFinanceWorkspace({
                             {row.createdByUserId}
                           </td>
                           <td className="p-4">
+                            {row.status === 'DRAFT' ? (
+                              <MasterDataDeleteButton
+                                record={rateRecord(row)}
+                                onDeleted={loadCurrencyHistory}
+                              />
+                            ) : null}
                             <Button
                               onClick={() => void showAudit(row)}
                               size="sm"
