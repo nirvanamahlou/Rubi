@@ -6,6 +6,7 @@ import {
 import {
   contactDisplayValue,
   contactCallHref,
+  customerDraft,
   customerPermissionCodes,
   customerUiStates,
   validateCustomerMutation,
@@ -14,6 +15,26 @@ import {
 } from './customer';
 
 describe('customer frontend live contract', () => {
+  it('omits masked values when preparing an existing customer for editing', () => {
+    const existing = {
+      kind: 'person' as const,
+      organizationId: null,
+      firstName: 'نمونه',
+      lastName: 'قدیمی',
+      displayName: 'نمونه قدیمی',
+      roles: ['customer' as const],
+      acquaintanceMethodId: null,
+      birthDate: null,
+      birthDateMasked: true,
+      version: 3,
+    };
+    const draft = customerDraft(
+      existing as Parameters<typeof customerDraft>[0],
+    );
+    expect(draft).not.toHaveProperty('birthDate');
+    expect(draft).not.toHaveProperty('nationalId');
+    expect(draft.version).toBe(3);
+  });
   it('covers operational and conflict states with published permissions', () => {
     expect(customerUiStates).toEqual([
       'loading',

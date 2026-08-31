@@ -236,7 +236,11 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('companion-${companion.key}-email');
     expect(source).toContain('value: companion.email.trim().toLowerCase()');
     expect(source).toContain('مدارک سفر مسافر');
-    expect(source).toContain("const kind = 'person' as const");
+    expect(source).toContain('setKind');
+    expect(source).toContain('فیلتر نوع شخص');
+    expect(source).toContain('فیلتر شعبه مجاز');
+    expect(source).toContain('customer-updated-from');
+    expect(source).toContain('customer-updated-to');
     expect(source).toContain('id="customer-national-id"');
     expect(source).toContain('companion-${companion.key}-national-id');
     expect(source).toContain(
@@ -310,8 +314,8 @@ describe('Customer Operations workspace boundaries', () => {
     expect(dateFieldSource).toContain('<CustomerCalendarSwitch');
     expect(dateFieldSource).toContain('role="dialog"');
     expect(source).toContain('customer-created-from');
-    expect(source).not.toContain('customer-updated-to');
-    expect(source).not.toContain('customer-updated-from');
+    expect(source).toContain('customer-updated-to');
+    expect(source).toContain('customer-updated-from');
     expect(source).not.toContain('type="date"');
   });
 

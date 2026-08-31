@@ -124,6 +124,20 @@ describe('CustomerService', () => {
     );
   });
 
+  it('rejects unsupported passenger organization instead of silently discarding it', async () => {
+    const repository = {
+      create: vi.fn().mockResolvedValue(row),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    await expect(
+      service.create(
+        { ...mutation, organizationId: actor.branchIds[0]! },
+        actor,
+      ),
+    ).rejects.toThrow('اتصال شخص به سازمان');
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
   it.each(['2025-02-29', '2026-02-31', '2999-01-01'])(
     'rejects invalid or future date %s before persistence',
     async (birthDate) => {

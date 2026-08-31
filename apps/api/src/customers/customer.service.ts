@@ -155,6 +155,12 @@ function prepareMutation(
       code: 'CUSTOMER_NATIONAL_ID_PERSON_ONLY',
       message: 'کد ملی فقط برای اشخاص حقیقی ثبت می‌شود.',
     });
+  if (input.kind === 'person' && input.organizationId)
+    throw new BadRequestException({
+      code: 'CUSTOMER_PERSON_ORGANIZATION_UNSUPPORTED',
+      message:
+        'اتصال شخص به سازمان در مدل فعلی پشتیبانی نمی‌شود؛ اطلاعات شرکت ذخیره نشد.',
+    });
   if (input.birthDate) {
     const date = new Date(`${input.birthDate}T00:00:00.000Z`);
     if (

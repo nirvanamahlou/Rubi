@@ -304,15 +304,14 @@ export class CustomerRepository {
         }),
         this.database.client.customer.count({ where }),
         this.database.client.customer.count({
-          where: { ...where, kind: 'PERSON', isCustomer: true },
+          where: { ...where, isCustomer: true },
         }),
         this.database.client.customer.count({
-          where: { ...where, kind: 'PERSON', isPassenger: true },
+          where: { ...where, isPassenger: true },
         }),
         this.database.client.customer.count({
           where: {
             ...where,
-            kind: 'PERSON',
             isCustomer: true,
             createdAt: newCustomerCreatedAt,
           },
