@@ -5,6 +5,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -40,6 +41,62 @@ function conflict(): ConflictException {
     code: 'CONCURRENT_MODIFICATION',
     message: 'رکورد هم‌زمان تغییر کرده است. اطلاعات را دوباره دریافت کنید.',
   });
+}
+
+const consentReasonEmail = /\b[^\s@]+@[^\s@]+\.[^\s@]+\b/i;
+const consentReasonLongNumber = /(?:\d[\s()-]?){10,}/;
+const consentReasonSecret =
+  /\b(?:bearer\s+\S+|(?:api[_-]?key|password|secret|token)\s*[:=]\s*\S+)/i;
+
+function consentReason(value: string): string {
+  const reason = value.trim();
+  if (reason.length < 3 || reason.length > 500)
+    throw new BadRequestException({
+      code: 'CUSTOMER_CONSENT_REASON_INVALID',
+      message: 'دلیل رضایت باید بین ۳ تا ۵۰۰ نویسه باشد.',
+    });
+  if (
+    consentReasonEmail.test(reason) ||
+    consentReasonLongNumber.test(reason) ||
+    consentReasonSecret.test(reason)
+  )
+    throw new BadRequestException({
+      code: 'CUSTOMER_CONSENT_REASON_SENSITIVE_DATA',
+      message:
+        'دلیل رضایت نباید شامل اطلاعات تماس، شناسه حساس یا اطلاعات محرمانه باشد.',
+    });
+  return reason;
+}
+
+export const CUSTOMER_SENSITIVE_READ_REASONS = [
+  'customer-verification',
+  'support-request',
+  'data-correction',
+] as const;
+
+type CustomerSensitiveReadReason =
+  (typeof CUSTOMER_SENSITIVE_READ_REASONS)[number];
+
+function sensitiveReadReason(
+  value: string | undefined,
+): CustomerSensitiveReadReason | null {
+  if (!value?.trim()) return null;
+  if (
+    !CUSTOMER_SENSITIVE_READ_REASONS.includes(
+      value as CustomerSensitiveReadReason,
+    )
+  )
+    throw new BadRequestException({
+      code: 'CUSTOMER_SENSITIVE_READ_REASON_INVALID',
+      message: 'دلیل مجاز برای مشاهده اطلاعات حساس مشخص نشده است.',
+    });
+  return value as CustomerSensitiveReadReason;
+}
+
+function prismaCode(error: unknown): string | undefined {
+  return typeof error === 'object' && error !== null && 'code' in error
+    ? String(error.code)
+    : undefined;
 }
 
 function prepareMutation(input: CustomerMutationRequest, update: boolean) {
@@ -138,26 +195,41 @@ export class CustomerService {
     row: CustomerRow,
     actor: AuthenticatedActor,
     traceId?: string,
+    requestedReason?: string,
   ) {
-    const sensitive = actor.permissions.includes('customers.sensitive.read');
-    const detail = toCustomerDetail(row, sensitive);
-    if (!sensitive) return detail;
-    const contacts = detail.contacts.map((contact, index) => ({
-      ...contact,
-      value: this.contactCrypto.decrypt(
-        row.contacts?.[index] ?? {
-          type: contact.type.toUpperCase() as 'PHONE' | 'EMAIL',
-          encryptedValue: null,
-          encryptionIv: null,
-          encryptionAuthTag: null,
-          encryptionKeyVersion: null,
-        },
-      ),
-    }));
+    const reason = sensitiveReadReason(requestedReason);
+    if (!reason) return toCustomerDetail(row, false);
+    if (!actor.permissions.includes('customers.sensitive.read'))
+      throw new ForbiddenException({
+        code: 'CUSTOMER_SENSITIVE_READ_FORBIDDEN',
+        message: 'مجوز مشاهده اطلاعات حساس مشتری وجود ندارد.',
+      });
+    const detail = toCustomerDetail(row, true);
+    let contacts;
+    try {
+      contacts = detail.contacts.map((contact, index) => ({
+        ...contact,
+        value: this.contactCrypto.decrypt(
+          row.contacts?.[index] ?? {
+            type: contact.type.toUpperCase() as 'PHONE' | 'EMAIL',
+            encryptedValue: null,
+            encryptionIv: null,
+            encryptionAuthTag: null,
+            encryptionKeyVersion: null,
+          },
+        ),
+      }));
+    } catch {
+      throw new UnprocessableEntityException({
+        code: 'CUSTOMER_CONTACT_DECRYPTION_FAILED',
+        message: 'نمایش اطلاعات تماس حساس ممکن نشد.',
+      });
+    }
     await this.repository.auditSensitiveRead(
       row.id,
       actor.userId,
       row.ownerBranchId,
+      reason,
       traceId,
     );
     return { ...detail, contacts };
@@ -171,14 +243,26 @@ export class CustomerService {
     };
   }
 
-  async detail(id: string, actor: AuthenticatedActor, traceId?: string) {
+  async detail(
+    id: string,
+    actor: AuthenticatedActor,
+    traceId?: string,
+    requestedSensitiveReadReason?: string,
+  ) {
     const row = await this.repository.find(id, actor.branchIds);
     if (!row)
       throw new NotFoundException({
         code: 'CUSTOMER_NOT_FOUND',
         message: 'مشتری یافت نشد.',
       });
-    return { data: await this.present(row, actor, traceId) };
+    return {
+      data: await this.present(
+        row,
+        actor,
+        traceId,
+        requestedSensitiveReadReason,
+      ),
+    };
   }
 
   async maskedDetail(id: string, actor: AuthenticatedActor) {
@@ -196,12 +280,22 @@ export class CustomerService {
     requestedBranch?: string,
     traceId?: string,
   ) {
-    const row = await this.repository.create(
-      prepareMutation(input, false),
-      actor.userId,
-      branchOf(actor, requestedBranch),
-      traceId,
-    );
+    let row;
+    try {
+      row = await this.repository.create(
+        prepareMutation(input, false),
+        actor.userId,
+        branchOf(actor, requestedBranch),
+        traceId,
+      );
+    } catch (error) {
+      if (prismaCode(error) === 'P2003')
+        throw new BadRequestException({
+          code: 'INVALID_MASTER_DATA_REFERENCE',
+          message: 'مرجع اطلاعات پایه معتبر نیست.',
+        });
+      throw error;
+    }
     return { data: await this.present(row, actor, traceId) };
   }
 
@@ -256,24 +350,34 @@ export class CustomerService {
     traceId?: string,
   ) {
     const normalizedContact = normalizeContact(input.type, input.value);
-    const row = await this.repository.addContact(
-      id,
-      actor.branchIds,
-      {
-        type: input.type,
-        label: input.label ?? null,
-        isPrimary: input.isPrimary ?? false,
-        version: input.version,
-        ...this.contactCrypto.protect(
-          input.type,
-          normalizedContact.normalized,
-          normalizedContact.maskedValue,
-        ),
-      },
-      actor.userId,
-      branchOf(actor, requestedBranch),
-      traceId,
-    );
+    let row;
+    try {
+      row = await this.repository.addContact(
+        id,
+        actor.branchIds,
+        {
+          type: input.type,
+          label: input.label ?? null,
+          isPrimary: input.isPrimary ?? false,
+          version: input.version,
+          ...this.contactCrypto.protect(
+            input.type,
+            normalizedContact.normalized,
+            normalizedContact.maskedValue,
+          ),
+        },
+        actor.userId,
+        branchOf(actor, requestedBranch),
+        traceId,
+      );
+    } catch (error) {
+      if (prismaCode(error) === 'P2002')
+        throw new ConflictException({
+          code: 'CUSTOMER_CONTACT_DUPLICATE',
+          message: 'این اطلاعات تماس قبلاً برای مشتری ثبت شده است.',
+        });
+      throw error;
+    }
     if (!row) throw conflict();
     return { data: await this.present(row, actor, traceId) };
   }
@@ -285,14 +389,24 @@ export class CustomerService {
     requestedBranch?: string,
     traceId?: string,
   ) {
-    const row = await this.repository.addAddress(
-      id,
-      actor.branchIds,
-      input,
-      actor.userId,
-      branchOf(actor, requestedBranch),
-      traceId,
-    );
+    let row;
+    try {
+      row = await this.repository.addAddress(
+        id,
+        actor.branchIds,
+        input,
+        actor.userId,
+        branchOf(actor, requestedBranch),
+        traceId,
+      );
+    } catch (error) {
+      if (prismaCode(error) === 'P2003')
+        throw new BadRequestException({
+          code: 'INVALID_MASTER_DATA_REFERENCE',
+          message: 'شهر انتخاب‌شده معتبر نیست.',
+        });
+      throw error;
+    }
     if (!row) throw conflict();
     return { data: await this.present(row, actor, traceId) };
   }
@@ -304,10 +418,15 @@ export class CustomerService {
     requestedBranch?: string,
     traceId?: string,
   ) {
+    const normalizedInput = {
+      ...input,
+      source: input.source.trim(),
+      reason: consentReason(input.reason),
+    };
     const row = await this.repository.addConsent(
       id,
       actor.branchIds,
-      input,
+      normalizedInput,
       actor.userId,
       branchOf(actor, requestedBranch),
       traceId,
@@ -337,14 +456,24 @@ export class CustomerService {
         code: 'CUSTOMER_NOT_FOUND',
         message: 'همراه در دامنه شعب مجاز یافت نشد.',
       });
-    const row = await this.repository.addCompanion(
-      id,
-      actor.branchIds,
-      input,
-      actor.userId,
-      branchOf(actor, requestedBranch),
-      traceId,
-    );
+    let row;
+    try {
+      row = await this.repository.addCompanion(
+        id,
+        actor.branchIds,
+        input,
+        actor.userId,
+        branchOf(actor, requestedBranch),
+        traceId,
+      );
+    } catch (error) {
+      if (prismaCode(error) === 'P2002')
+        throw new ConflictException({
+          code: 'CUSTOMER_RELATION_EXISTS',
+          message: 'این رابطه همراه قبلاً ثبت شده است.',
+        });
+      throw error;
+    }
     if (!row) throw conflict();
     return { data: await this.present(row, actor, traceId) };
   }

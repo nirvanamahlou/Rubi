@@ -200,7 +200,14 @@ export class CustomerRepository {
     if (query.role === 'customer') where.isCustomer = true;
     if (query.role === 'passenger') where.isPassenger = true;
     if (query.search) {
+      const exactCustomerId =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          query.search,
+        )
+          ? query.search
+          : null;
       where.OR = [
+        ...(exactCustomerId ? [{ id: exactCustomerId }] : []),
         { displayName: { contains: query.search, mode: 'insensitive' } },
         { firstName: { contains: query.search, mode: 'insensitive' } },
         { lastName: { contains: query.search, mode: 'insensitive' } },
@@ -749,6 +756,7 @@ export class CustomerRepository {
     customerId: string,
     actorUserId: string,
     actorBranchId: string,
+    reason: string,
     traceId?: string,
   ) {
     await this.database.client.customerAuditEvent.create({
@@ -759,7 +767,7 @@ export class CustomerRepository {
         entityType: 'customer',
         entityId: customerId,
         outcome: AuditOutcome.SUCCESS,
-        reason: controlledAuditReason('permission-granted'),
+        reason: controlledAuditReason(reason),
         afterSnapshot: json({
           customerId,
           fields: ['birthDate', 'contacts.value'],

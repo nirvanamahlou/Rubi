@@ -78,6 +78,34 @@ describe('CustomerRepository', () => {
     expect(snapshot).toContain('changedFields');
   });
 
+  it('searches an exact customer code without weakening branch scope', async () => {
+    const customer = {
+      findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(0),
+    };
+    const database = { client: { customer } } as unknown as DatabaseService;
+    const repository = new CustomerRepository(database);
+
+    await repository.list([row.ownerBranchId], {
+      search: row.id,
+      status: 'all',
+      role: 'all',
+      sortBy: 'updatedAt',
+      sortDirection: 'desc',
+      page: 1,
+      pageSize: 25,
+    });
+
+    expect(customer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          ownerBranchId: { in: [row.ownerBranchId] },
+          OR: expect.arrayContaining([{ id: row.id }]),
+        }),
+      }),
+    );
+  });
+
   it('masks restricted birth date unless permission was granted upstream', () => {
     expect(toCustomerDetail(row as never, false)).toMatchObject({
       birthDate: null,

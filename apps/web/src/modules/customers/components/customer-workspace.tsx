@@ -2,12 +2,17 @@
 
 import type {
   CustomerDetail,
+  CustomerAddressType,
+  CustomerConsentChannel,
+  CustomerContactType,
   CustomerKind,
   CustomerListQuery,
   CustomerMutationRequest,
+  CustomerRelationshipType,
   CustomerRole,
   CustomerSummary,
   DuplicateCandidate,
+  MasterDataRecord,
 } from '@rubi/contracts';
 import {
   AlertTriangle,
@@ -37,6 +42,7 @@ import {
   SelectValue,
 } from '@/components/ui/form-controls';
 import {
+  ConfirmDialog,
   DialogDescription,
   DialogTitle,
   Drawer,
@@ -58,12 +64,42 @@ import {
   PaginationShell,
   Skeleton,
 } from '@/components/ui/surfaces';
+import { masterDataApi } from '@/modules/master-data/api/client';
 import { customersApi, CustomersApiError } from '../api/client';
 import { contactDisplayValue } from '../model/customer';
+import {
+  buildCustomerConsentRequest,
+  customerListFailureState,
+  fetchCustomerConflictSnapshot,
+} from './customer-workspace-state';
 
 const pageSize = 25;
-type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
+type RequestState =
+  'loading' | 'ready' | 'error' | 'unauthorized' | 'forbidden';
 type FormMode = 'create' | 'view' | 'edit';
+
+const sensitiveReasons = [
+  ['customer-verification', 'احراز مشتری'],
+  ['support-request', 'درخواست پشتیبانی'],
+  ['data-correction', 'اصلاح داده'],
+] as const;
+
+function listMasterData(
+  resource: 'organizations' | 'acquaintance-methods' | 'countries' | 'cities',
+) {
+  return masterDataApi.list(resource, {
+    search: '',
+    status: 'active',
+    sortBy: 'name',
+    sortDirection: 'asc',
+    page: 1,
+    pageSize: 100,
+  });
+}
+
+function customerCode(id: string) {
+  return id.slice(0, 8).toUpperCase();
+}
 
 function customerDraft(customer?: CustomerDetail): CustomerMutationRequest {
   return {
@@ -81,45 +117,154 @@ function customerDraft(customer?: CustomerDetail): CustomerMutationRequest {
 
 function CustomerDrawer({
   mode,
-  customer,
+  customer: initialCustomer,
   onClose,
   onSaved,
 }: {
   mode: FormMode;
   customer?: CustomerDetail;
   onClose: () => void;
-  onSaved: (message: string) => Promise<void>;
+  onSaved: (message: string, detail: CustomerDetail) => Promise<void>;
 }) {
   const [draft, setDraft] = useState<CustomerMutationRequest>(() =>
-    customerDraft(customer),
+    customerDraft(initialCustomer),
+  );
+  const [customer, setCustomer] = useState<CustomerDetail | undefined>(
+    initialCustomer,
   );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [conflictRefreshPending, setConflictRefreshPending] = useState(false);
+  const [masters, setMasters] = useState<{
+    organizations: readonly MasterDataRecord[];
+    acquaintanceMethods: readonly MasterDataRecord[];
+    countries: readonly MasterDataRecord[];
+    cities: readonly MasterDataRecord[];
+  }>({
+    organizations: [],
+    acquaintanceMethods: [],
+    countries: [],
+    cities: [],
+  });
+  const [masterWarning, setMasterWarning] = useState<string | null>(null);
+  const [contactType, setContactType] = useState<CustomerContactType>('phone');
+  const [contactLabel, setContactLabel] = useState('اصلی');
   const [contact, setContact] = useState('');
-  const [revealedContacts, setRevealedContacts] = useState<Set<string>>(
-    () => new Set(),
+  const [sensitiveReason, setSensitiveReason] = useState('');
+  const [revealedDetail, setRevealedDetail] = useState<CustomerDetail | null>(
+    null,
   );
+  const [addressType, setAddressType] = useState<CustomerAddressType>('home');
   const [address, setAddress] = useState('');
+  const [countryId, setCountryId] = useState('');
+  const [cityId, setCityId] = useState('');
+  const [companionSearch, setCompanionSearch] = useState('');
+  const [companionOptions, setCompanionOptions] = useState<
+    readonly CustomerSummary[]
+  >([]);
   const [companionId, setCompanionId] = useState('');
+  const [relationshipType, setRelationshipType] =
+    useState<CustomerRelationshipType>('companion');
+  const [consentChannel, setConsentChannel] =
+    useState<CustomerConsentChannel>('all');
+  const [consentSource, setConsentSource] = useState('staff-ui');
+  const [consentReason, setConsentReason] = useState('');
   const [duplicates, setDuplicates] = useState<readonly DuplicateCandidate[]>(
     [],
   );
   const readonly = mode === 'view';
+  const displayedCustomer = revealedDetail ?? customer;
 
-  async function perform(operation: () => Promise<unknown>, success: string) {
+  async function refreshAfterConflict(customerId: string) {
+    const result = await fetchCustomerConflictSnapshot(
+      customerId,
+      draft,
+      async (id) => (await customersApi.detail(id)).data,
+    );
+    setMessage(result.message);
+    if (result.status === 'refreshed') {
+      setCustomer(result.customer);
+      setRevealedDetail(null);
+      setConflictRefreshPending(false);
+      return;
+    }
+    setConflictRefreshPending(true);
+  }
+
+  useEffect(() => {
+    let active = true;
+    void Promise.all([
+      listMasterData('organizations'),
+      listMasterData('acquaintance-methods'),
+      listMasterData('countries'),
+      listMasterData('cities'),
+    ])
+      .then(([organizations, acquaintanceMethods, countries, cities]) => {
+        if (!active) return;
+        setMasters({
+          organizations: organizations.data,
+          acquaintanceMethods: acquaintanceMethods.data,
+          countries: countries.data,
+          cities: cities.data,
+        });
+      })
+      .catch(() => {
+        if (active) {
+          setMasterWarning(
+            'اطلاعات پایه در دسترس نیست؛ انتخاب مرجع جدید موقتاً غیرفعال است.',
+          );
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!companionSearch.trim() || !customer) return;
+    const timer = window.setTimeout(() => {
+      void customersApi
+        .list({
+          search: companionSearch,
+          status: 'active',
+          role: 'all',
+          sortBy: 'displayName',
+          sortDirection: 'asc',
+          page: 1,
+          pageSize: 25,
+        })
+        .then((response) =>
+          setCompanionOptions(
+            response.data.filter((record) => record.id !== customer.id),
+          ),
+        )
+        .catch(() => setCompanionOptions([]));
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [companionSearch, customer]);
+
+  async function perform(
+    operation: () => Promise<{ data: CustomerDetail }>,
+    success: string,
+  ) {
     setBusy(true);
     setMessage(null);
     try {
-      await operation();
-      await onSaved(success);
+      const response = await operation();
+      setRevealedDetail(null);
+      await onSaved(success, response.data);
     } catch (error) {
-      setMessage(
-        error instanceof CustomersApiError && error.status === 409
-          ? 'نسخه رکورد تغییر کرده است؛ صفحه دوباره بارگذاری شد.'
-          : error instanceof Error
-            ? error.message
-            : 'عملیات ناموفق بود.',
-      );
+      if (
+        error instanceof CustomersApiError &&
+        error.status === 409 &&
+        customer
+      ) {
+        await refreshAfterConflict(customer.id);
+      } else {
+        setMessage(
+          error instanceof Error ? error.message : 'عملیات ناموفق بود.',
+        );
+      }
     } finally {
       setBusy(false);
     }
@@ -149,14 +294,35 @@ function CustomerDrawer({
     await perform(
       () =>
         customersApi.addContact(customer.id, {
-          type: contact.includes('@') ? 'email' : 'phone',
+          type: contactType,
           value: contact,
-          label: 'اصلی',
-          isPrimary: true,
+          label: contactLabel.trim() || null,
+          isPrimary: customer.contacts.length === 0,
           version: customer.version,
         }),
       'تماس به‌صورت fingerprint و مقدار ماسک‌شده ذخیره شد.',
     );
+  }
+
+  async function revealSensitive() {
+    if (!customer || !sensitiveReason) {
+      setMessage('برای نمایش داده حساس، دلیل مجاز را انتخاب کنید.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const response = await customersApi.detail(customer.id, sensitiveReason);
+      setRevealedDetail(response.data);
+      setMessage(
+        'نمایش حساس برای همین مشاهده فعال شد و دلیل آن در Audit ثبت شده است.',
+      );
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : 'نمایش داده حساس ناموفق بود.',
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function addAddress() {
@@ -164,8 +330,9 @@ function CustomerDrawer({
     await perform(
       () =>
         customersApi.addAddress(customer.id, {
-          type: 'other',
+          type: addressType,
           label: address,
+          cityId: cityId || null,
           isPrimary: customer.addresses.length === 0,
           version: customer.version,
         }),
@@ -175,19 +342,19 @@ function CustomerDrawer({
 
   async function addConsent(status: 'granted' | 'revoked') {
     if (!customer) return;
+    const result = buildCustomerConsentRequest({
+      status,
+      channel: consentChannel,
+      source: consentSource,
+      reason: consentReason,
+      version: customer.version,
+    });
+    if (!result.ok) {
+      setMessage(result.message);
+      return;
+    }
     await perform(
-      () =>
-        customersApi.addConsent(customer.id, {
-          purpose: 'marketing',
-          channel: 'all',
-          status,
-          source: 'staff-ui',
-          reason:
-            status === 'granted'
-              ? 'ثبت رضایت توسط کارشناس'
-              : 'لغو رضایت توسط کارشناس',
-          version: customer.version,
-        }),
+      () => customersApi.addConsent(customer.id, result.request),
       'تاریخچه رضایت ثبت شد.',
     );
   }
@@ -198,7 +365,7 @@ function CustomerDrawer({
       () =>
         customersApi.addCompanion(customer.id, {
           relatedCustomerId: companionId,
-          relationshipType: 'companion',
+          relationshipType,
           version: customer.version,
         }),
       'رابطه همراه ثبت شد.',
@@ -231,20 +398,32 @@ function CustomerDrawer({
     candidate: DuplicateCandidate,
     status: 'confirmed-distinct' | 'merge-proposed',
   ) {
-    await perform(
-      () =>
-        customersApi.reviewDuplicate(candidate.id, {
-          status,
-          reason:
-            status === 'confirmed-distinct'
-              ? 'بررسی دستی: دو شخص متمایز هستند'
-              : 'پیشنهاد ادغام پس از بررسی دستی',
-          version: candidate.version,
-        }),
-      status === 'merge-proposed'
-        ? 'پیشنهاد ثبت شد؛ اجرای Merge تا تصمیم محصول/امنیت مسدود است.'
-        : 'تمایز دو رکورد ثبت شد.',
-    );
+    setBusy(true);
+    try {
+      await customersApi.reviewDuplicate(candidate.id, {
+        status,
+        reason:
+          status === 'confirmed-distinct'
+            ? 'بررسی دستی: دو شخص متمایز هستند'
+            : 'پیشنهاد ادغام پس از بررسی دستی',
+        version: candidate.version,
+      });
+      setMessage(
+        status === 'merge-proposed'
+          ? 'پیشنهاد ثبت شد؛ اجرای Merge تا تصمیم محصول/امنیت مسدود است.'
+          : 'تمایز دو رکورد ثبت شد.',
+      );
+      const response = await customersApi.detectDuplicates(
+        candidate.sourceCustomerId,
+      );
+      setDuplicates(response.data);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : 'ثبت نتیجه بررسی ناموفق بود.',
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -261,9 +440,35 @@ function CustomerDrawer({
           Persistence واقعی، کنترل نسخه و دسترسی شعبه فعال است. مدارک هویتی حساس
           ذخیره نمی‌شوند.
         </DialogDescription>
-        {message ? (
-          <Alert className="mt-4" description={message} title="نتیجه عملیات" />
-        ) : null}
+        <div aria-live="polite" role="status">
+          {message ? (
+            <Alert
+              className="mt-4"
+              description={message}
+              title="نتیجه عملیات"
+            />
+          ) : null}
+          {conflictRefreshPending && customer ? (
+            <Button
+              className="mt-3"
+              disabled={busy}
+              onClick={() => void refreshAfterConflict(customer.id)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              تلاش دوباره برای دریافت نسخه جدید
+            </Button>
+          ) : null}
+          {masterWarning ? (
+            <Alert
+              className="mt-4"
+              description={masterWarning}
+              title="اطلاعات پایه"
+              tone="warning"
+            />
+          ) : null}
+        </div>
 
         <form className="mt-5 space-y-4" onSubmit={submit}>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -356,24 +561,55 @@ function CustomerDrawer({
                 </FormField>
               </>
             ) : (
-              <FormField
-                id="customer-organization"
-                label="شناسه Organization"
-                required
-              >
-                <Input
-                  disabled={readonly}
-                  id="customer-organization"
-                  onChange={(event) =>
+              <FormField label="سازمان مرجع" required>
+                <Select
+                  disabled={readonly || masters.organizations.length === 0}
+                  onValueChange={(value) =>
                     setDraft((current) => ({
                       ...current,
-                      organizationId: event.target.value,
+                      organizationId: value,
                     }))
                   }
                   value={draft.organizationId ?? ''}
-                />
+                >
+                  <SelectTrigger aria-label="سازمان مرجع">
+                    <SelectValue placeholder="انتخاب از اطلاعات پایه" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {masters.organizations.map((record) => (
+                      <SelectItem key={record.id} value={record.id}>
+                        {record.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </FormField>
             )}
+            <FormField label="نحوه آشنایی">
+              <Select
+                disabled={readonly || masters.acquaintanceMethods.length === 0}
+                onValueChange={(value) =>
+                  setDraft((current) => ({
+                    ...current,
+                    acquaintanceMethodId:
+                      value === 'not-selected' ? null : value,
+                  }))
+                }
+                value={draft.acquaintanceMethodId ?? 'not-selected'}
+              >
+                <SelectTrigger aria-label="نحوه آشنایی">
+                  <SelectValue placeholder="انتخاب از اطلاعات پایه" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not-selected">ثبت نشده</SelectItem>
+                  {masters.acquaintanceMethods.map((record) => (
+                    <SelectItem key={record.id} value={record.id}>
+                      {record.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
             <FormField label="نقش‌ها">
               <div className="flex gap-2">
                 {(['customer', 'passenger'] as CustomerRole[]).map((role) => (
@@ -407,93 +643,234 @@ function CustomerDrawer({
         </form>
 
         {customer ? (
-          <Tabs className="mt-6" defaultValue="contacts" dir="rtl">
+          <Tabs className="mt-6" defaultValue="overview" dir="rtl">
             <TabsList className="flex w-full flex-wrap justify-start">
+              <TabsTrigger value="overview">نمای کلی</TabsTrigger>
               <TabsTrigger value="contacts">تماس‌ها</TabsTrigger>
               <TabsTrigger value="addresses">نشانی‌ها</TabsTrigger>
               <TabsTrigger value="consents">رضایت</TabsTrigger>
               <TabsTrigger value="companions">همراهان</TabsTrigger>
+              <TabsTrigger value="status-history">تاریخچه وضعیت</TabsTrigger>
               <TabsTrigger value="duplicates">موارد مشابه</TabsTrigger>
+              <TabsTrigger value="activity">فعالیت‌ها</TabsTrigger>
+              <TabsTrigger value="audit">Audit</TabsTrigger>
             </TabsList>
+            <TabsContent className="space-y-3" value="overview">
+              <Card className="grid gap-3 p-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs text-muted-foreground">کد مشتری</p>
+                  <p className="font-mono text-sm" dir="ltr">
+                    {customer.id}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">وضعیت</p>
+                  <Badge>
+                    {customer.status === 'active' ? 'فعال' : 'غیرفعال'}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">شعبه مالک</p>
+                  <p className="font-mono text-sm" dir="ltr">
+                    {customer.ownerBranchId}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">نسخه</p>
+                  <p>{customer.version.toLocaleString('fa-IR')}</p>
+                </div>
+              </Card>
+              <Alert
+                description="نام لاتین، جنسیت، یادداشت و کد مستقل کسب‌وکاری در Schema و customers.v2 موجود نیستند و برای CUSTOMER-002B مسدود ثبت شده‌اند."
+                title="قابلیت‌های نیازمند قرارداد"
+                tone="warning"
+              />
+            </TabsContent>
             <TabsContent className="space-y-3" value="contacts">
-              {customer.contacts.map((item) => {
-                const revealed = revealedContacts.has(item.id);
-                return (
-                  <Card
-                    className="flex items-center justify-between gap-3 p-3"
-                    key={item.id}
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <FormField label="دلیل نمایش داده حساس">
+                  <Select
+                    onValueChange={setSensitiveReason}
+                    value={sensitiveReason}
                   >
-                    <div>
-                      <p className="font-bold" dir="ltr">
-                        {contactDisplayValue(item, revealed)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        مقدار واقعی رمزگذاری شده و نمایش آن نیازمند دسترسی حساس
-                        است.
-                      </p>
-                    </div>
-                    {item.value ? (
-                      <Button
-                        aria-pressed={revealed}
-                        onClick={() =>
-                          setRevealedContacts((current) => {
-                            const next = new Set(current);
-                            if (next.has(item.id)) next.delete(item.id);
-                            else next.add(item.id);
-                            return next;
-                          })
-                        }
-                        size="sm"
-                        type="button"
-                        variant="outline"
-                      >
-                        <Eye className="size-4" />
-                        {revealed ? 'پنهان‌کردن' : 'نمایش کنترل‌شده'}
-                      </Button>
-                    ) : (
-                      <Badge>فقط مقدار ماسک‌شده</Badge>
-                    )}
-                  </Card>
-                );
-              })}
-              <div className="flex gap-2">
-                <Input
-                  onChange={(event) => setContact(event.target.value)}
-                  placeholder="شماره یا ایمیل"
-                  value={contact}
-                />
+                    <SelectTrigger aria-label="دلیل نمایش داده حساس">
+                      <SelectValue placeholder="انتخاب دلیل مجاز" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sensitiveReasons.map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
                 <Button
-                  disabled={busy}
-                  onClick={() => void addContact()}
+                  className="self-end"
+                  disabled={busy || !sensitiveReason}
+                  onClick={() => void revealSensitive()}
                   type="button"
+                  variant="outline"
                 >
-                  افزودن
+                  <Eye className="size-4" />
+                  نمایش کنترل‌شده
                 </Button>
               </div>
+              {displayedCustomer?.contacts.map((item) => (
+                <Card
+                  className="flex items-center justify-between gap-3 p-3"
+                  key={item.id}
+                >
+                  <div>
+                    <p className="font-bold" dir="ltr">
+                      {contactDisplayValue(item, Boolean(revealedDetail))}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.type === 'email' ? 'ایمیل' : 'تلفن'} ·{' '}
+                      {item.label ?? 'بدون برچسب'}
+                    </p>
+                  </div>
+                  <Badge>
+                    {revealedDetail ? 'نمایش Audit‌شده' : 'ماسک‌شده'}
+                  </Badge>
+                </Card>
+              ))}
+              {!readonly ? (
+                <Card className="grid gap-3 p-4 sm:grid-cols-3">
+                  <FormField label="نوع تماس">
+                    <Select
+                      onValueChange={(value) =>
+                        setContactType(value as CustomerContactType)
+                      }
+                      value={contactType}
+                    >
+                      <SelectTrigger aria-label="نوع تماس">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="phone">تلفن</SelectItem>
+                        <SelectItem value="email">ایمیل</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField id="contact-label" label="برچسب">
+                    <Input
+                      id="contact-label"
+                      onChange={(event) => setContactLabel(event.target.value)}
+                      value={contactLabel}
+                    />
+                  </FormField>
+                  <FormField id="contact-value" label="مقدار" required>
+                    <Input
+                      dir="ltr"
+                      id="contact-value"
+                      onChange={(event) => setContact(event.target.value)}
+                      value={contact}
+                    />
+                  </FormField>
+                  <Button
+                    disabled={busy}
+                    onClick={() => void addContact()}
+                    type="button"
+                  >
+                    افزودن تماس
+                  </Button>
+                </Card>
+              ) : null}
             </TabsContent>
             <TabsContent className="space-y-3" value="addresses">
               {customer.addresses.map((item) => (
                 <Card className="p-3" key={item.id}>
                   <p className="font-bold">{item.label}</p>
                   <p className="text-xs text-muted-foreground">
-                    {item.cityId ?? 'بدون مرجع شهر'}
+                    {masters.cities.find((record) => record.id === item.cityId)
+                      ?.name ?? 'بدون مرجع شهر'}{' '}
+                    · {item.type}
                   </p>
                 </Card>
               ))}
-              <div className="flex gap-2">
-                <Input
-                  onChange={(event) => setAddress(event.target.value)}
-                  placeholder="برچسب نشانی غیرحساس"
-                  value={address}
-                />
-                <Button
-                  disabled={busy}
-                  onClick={() => void addAddress()}
-                  type="button"
-                >
-                  افزودن
-                </Button>
-              </div>
+              {!readonly ? (
+                <Card className="grid gap-3 p-4 sm:grid-cols-2">
+                  <FormField label="نوع نشانی">
+                    <Select
+                      onValueChange={(value) =>
+                        setAddressType(value as CustomerAddressType)
+                      }
+                      value={addressType}
+                    >
+                      <SelectTrigger aria-label="نوع نشانی">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="home">منزل</SelectItem>
+                        <SelectItem value="work">محل کار</SelectItem>
+                        <SelectItem value="billing">صورتحساب</SelectItem>
+                        <SelectItem value="other">سایر</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField id="address-label" label="برچسب نشانی" required>
+                    <Input
+                      id="address-label"
+                      onChange={(event) => setAddress(event.target.value)}
+                      value={address}
+                    />
+                  </FormField>
+                  <FormField label="کشور">
+                    <Select
+                      onValueChange={(value) => {
+                        setCountryId(value);
+                        setCityId('');
+                      }}
+                      value={countryId}
+                    >
+                      <SelectTrigger aria-label="کشور نشانی">
+                        <SelectValue placeholder="انتخاب کشور" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {masters.countries.map((record) => (
+                          <SelectItem key={record.id} value={record.id}>
+                            {record.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField label="شهر">
+                    <Select onValueChange={setCityId} value={cityId}>
+                      <SelectTrigger aria-label="شهر نشانی">
+                        <SelectValue placeholder="انتخاب شهر" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {masters.cities
+                          .filter(
+                            (record) =>
+                              !countryId ||
+                              String(record.attributes.countryId ?? '') ===
+                                countryId,
+                          )
+                          .map((record) => (
+                            <SelectItem key={record.id} value={record.id}>
+                              {record.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <Button
+                    disabled={busy}
+                    onClick={() => void addAddress()}
+                    type="button"
+                  >
+                    افزودن نشانی
+                  </Button>
+                </Card>
+              ) : null}
+              <Alert
+                description="Schema فعلی فقط برچسب غیرحساس و City FK را نگه می‌دارد؛ متن کامل نشانی و Masking برای CUSTOMER-002B مسدود است."
+                title="حفاظت نشانی"
+                tone="warning"
+              />
             </TabsContent>
             <TabsContent className="space-y-3" value="consents">
               {customer.consents.map((item) => (
@@ -501,32 +878,78 @@ function CustomerDrawer({
                   <p className="font-bold">
                     {item.status === 'granted'
                       ? 'رضایت ثبت‌شده'
-                      : 'رضایت لغوشده'}
+                      : 'رضایت لغوشده'}{' '}
+                    · {item.channel}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {new Date(item.occurredAt).toLocaleString('fa-IR')} ·{' '}
-                    {item.reason}
+                    {item.source} · {item.reason}
                   </p>
                 </Card>
               ))}
-              <div className="flex gap-2">
-                <Button
-                  disabled={busy}
-                  onClick={() => void addConsent('granted')}
-                  type="button"
-                  variant="outline"
-                >
-                  ثبت رضایت
-                </Button>
-                <Button
-                  disabled={busy}
-                  onClick={() => void addConsent('revoked')}
-                  type="button"
-                  variant="outline"
-                >
-                  لغو رضایت
-                </Button>
-              </div>
+              {!readonly ? (
+                <Card className="grid gap-3 p-4 sm:grid-cols-3">
+                  <FormField label="کانال">
+                    <Select
+                      onValueChange={(value) =>
+                        setConsentChannel(value as CustomerConsentChannel)
+                      }
+                      value={consentChannel}
+                    >
+                      <SelectTrigger aria-label="کانال رضایت">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">همه</SelectItem>
+                        <SelectItem value="sms">پیامک</SelectItem>
+                        <SelectItem value="email">ایمیل</SelectItem>
+                        <SelectItem value="phone">تلفن</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField id="consent-source" label="منبع" required>
+                    <Input
+                      id="consent-source"
+                      onChange={(event) => setConsentSource(event.target.value)}
+                      value={consentSource}
+                    />
+                  </FormField>
+                  <FormField id="consent-reason" label="دلیل" required>
+                    <Input
+                      id="consent-reason"
+                      maxLength={500}
+                      onChange={(event) => setConsentReason(event.target.value)}
+                      value={consentReason}
+                    />
+                  </FormField>
+                  <div className="flex gap-2 sm:col-span-3">
+                    <Button
+                      disabled={busy}
+                      onClick={() => void addConsent('granted')}
+                      type="button"
+                      variant="outline"
+                    >
+                      ثبت رضایت
+                    </Button>
+                    <Button
+                      disabled={busy}
+                      onClick={() => void addConsent('revoked')}
+                      type="button"
+                      variant="outline"
+                    >
+                      لغو رضایت
+                    </Button>
+                    <Button
+                      disabled
+                      size="sm"
+                      title="Merge واقعی تا تصمیم امنیت و محصول مسدود است"
+                      variant="ghost"
+                    >
+                      اجرای Merge
+                    </Button>
+                  </div>
+                </Card>
+              ) : null}
             </TabsContent>
             <TabsContent className="space-y-3" value="companions">
               {customer.companions.map((item) => (
@@ -537,20 +960,61 @@ function CustomerDrawer({
                   </p>
                 </Card>
               ))}
-              <div className="flex gap-2">
-                <Input
-                  onChange={(event) => setCompanionId(event.target.value)}
-                  placeholder="UUID مشتری همراه"
-                  value={companionId}
-                />
-                <Button
-                  disabled={busy}
-                  onClick={() => void addCompanion()}
-                  type="button"
-                >
-                  افزودن
-                </Button>
-              </div>
+              {!readonly ? (
+                <Card className="grid gap-3 p-4 sm:grid-cols-2">
+                  <FormField id="companion-search" label="جست‌وجوی مشتری همراه">
+                    <Input
+                      id="companion-search"
+                      onChange={(event) =>
+                        setCompanionSearch(event.target.value)
+                      }
+                      placeholder="نام، تماس ماسک‌شده یا کد کامل"
+                      value={companionSearch}
+                    />
+                  </FormField>
+                  <FormField label="نوع رابطه">
+                    <Select
+                      onValueChange={(value) =>
+                        setRelationshipType(value as CustomerRelationshipType)
+                      }
+                      value={relationshipType}
+                    >
+                      <SelectTrigger aria-label="نوع رابطه همراه">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="family">خانواده</SelectItem>
+                        <SelectItem value="companion">همراه</SelectItem>
+                        <SelectItem value="guardian">سرپرست</SelectItem>
+                        <SelectItem value="dependent">تحت تکفل</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField label="انتخاب مشتری">
+                    <Select onValueChange={setCompanionId} value={companionId}>
+                      <SelectTrigger aria-label="انتخاب مشتری همراه">
+                        <SelectValue placeholder="انتخاب از نتایج" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(companionSearch.trim() ? companionOptions : []).map(
+                          (record) => (
+                            <SelectItem key={record.id} value={record.id}>
+                              {record.displayName} · {customerCode(record.id)}
+                            </SelectItem>
+                          ),
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <Button
+                    disabled={busy || !companionId}
+                    onClick={() => void addCompanion()}
+                    type="button"
+                  >
+                    ثبت رابطه
+                  </Button>
+                </Card>
+              ) : null}
             </TabsContent>
             <TabsContent className="space-y-3" value="duplicates">
               <Alert
@@ -578,6 +1042,7 @@ function CustomerDrawer({
                   </p>
                   <div className="mt-3 flex gap-2">
                     <Button
+                      disabled={busy || readonly}
                       onClick={() =>
                         void review(candidate, 'confirmed-distinct')
                       }
@@ -587,6 +1052,7 @@ function CustomerDrawer({
                       متمایز هستند
                     </Button>
                     <Button
+                      disabled={busy || readonly}
                       onClick={() => void review(candidate, 'merge-proposed')}
                       size="sm"
                       variant="outline"
@@ -596,6 +1062,27 @@ function CustomerDrawer({
                   </div>
                 </Card>
               ))}
+            </TabsContent>
+            <TabsContent value="status-history">
+              <Alert
+                description="تغییر وضعیت در Backend با دلیل، Actor و UTC ثبت می‌شود؛ customers.v2 تاریخچه را برنمی‌گرداند."
+                title="BLOCKED_FOR_CUSTOMER_002B"
+                tone="warning"
+              />
+            </TabsContent>
+            <TabsContent value="activity">
+              <Alert
+                description="قرارداد عمومی Customers هنوز Timeline بین‌ماژولی را ارائه نمی‌کند؛ داده ساختگی نمایش داده نمی‌شود."
+                title="BLOCKED_FOR_CUSTOMER_002B"
+                tone="warning"
+              />
+            </TabsContent>
+            <TabsContent value="audit">
+              <Alert
+                description="Audit در Backend ثبت می‌شود، اما Endpoint خواندن Audit در قرارداد عمومی فعلی وجود ندارد."
+                title="BLOCKED_FOR_CUSTOMER_002B"
+                tone="warning"
+              />
             </TabsContent>
           </Tabs>
         ) : null}
@@ -643,11 +1130,7 @@ export function CustomerWorkspace() {
       setRequestState('ready');
     } catch (error) {
       setRecords([]);
-      setRequestState(
-        error instanceof CustomersApiError && error.status === 403
-          ? 'forbidden'
-          : 'error',
-      );
+      setRequestState(customerListFailureState(error));
     }
   }, [page, role, search, sortBy, status]);
 
@@ -703,12 +1186,12 @@ export function CustomerWorkspace() {
             ایجاد مشتری
           </Button>
         }
-        description="Customer 360 پایدار با Permission، Branch Scope، Audit، Consent و Duplicate Candidate Review."
-        eyebrow="CUSTOMER-001 · Phase B · PC-A"
+        description="Customer 360 عملیاتی با Permission، Branch Scope، Audit، Consent و Duplicate Candidate Review."
+        eyebrow="CUSTOMER-002A · PC-A"
         title="مشتریان و مسافران"
       />
       <Alert
-        description="Persistence فعال است. تماس خام و مدارک هویتی ذخیره نمی‌شوند؛ Merge واقعی تا تصمیم قطعی محصول/امنیت مسدود است."
+        description="Persistence فعال است. تماس در حالت عادی فقط ماسک‌شده نمایش داده می‌شود؛ مدرک هویتی ذخیره نمی‌شود و Merge واقعی مسدود است."
         title="Backend واقعی · حفاظت PII"
       />
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
@@ -723,7 +1206,7 @@ export function CustomerWorkspace() {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-              placeholder="نام یا تماس ماسک‌شده"
+              placeholder="نام، تماس ماسک‌شده یا کد کامل مشتری"
               value={search}
             />
           </div>
@@ -782,6 +1265,11 @@ export function CustomerWorkspace() {
           </Select>
         </FormField>
       </FilterBar>
+      <Alert
+        description="Branch Scope در Backend اعمال می‌شود و مستقل از Legal Entity است. فیلتر نوع مشتری و انتخاب Branch در customers.v2 وجود ندارند و برای CUSTOMER-002B مسدودند."
+        title="مرز فیلترها"
+        tone="warning"
+      />
 
       {requestState === 'loading' ? (
         <Card className="space-y-3 p-4">
@@ -789,6 +1277,16 @@ export function CustomerWorkspace() {
             <Skeleton className="h-16 w-full" key={item} />
           ))}
         </Card>
+      ) : requestState === 'unauthorized' ? (
+        <ErrorState
+          action={
+            <Button asChild size="sm">
+              <a href="/login?next=%2Fcustomers">ورود دوباره</a>
+            </Button>
+          }
+          description="نشست معتبر نیست؛ دوباره وارد شوید."
+          title="نیاز به ورود دوباره"
+        />
       ) : requestState === 'forbidden' ? (
         <EmptyState
           description="مجوز customers.read برای مشاهده لازم است."
@@ -819,13 +1317,14 @@ export function CustomerWorkspace() {
         />
       ) : (
         <Card className="overflow-x-auto">
-          <table className="w-full min-w-[54rem] text-sm">
+          <table className="w-full min-w-[64rem] text-sm">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
                 <th className="p-4 text-start">مشتری</th>
-                <th className="p-4 text-start">نقش</th>
+                <th className="p-4 text-start">کد</th>
+                <th className="p-4 text-start">وضعیت و نقش</th>
                 <th className="p-4 text-start">رضایت</th>
-                <th className="p-4 text-start">نسخه</th>
+                <th className="p-4 text-start">آخرین تغییر</th>
                 <th className="p-4 text-start">عملیات</th>
               </tr>
             </thead>
@@ -845,7 +1344,13 @@ export function CustomerWorkspace() {
                       </div>
                     </div>
                   </td>
+                  <td className="p-4 font-mono" dir="ltr" title={record.id}>
+                    {customerCode(record.id)}
+                  </td>
                   <td className="p-4">
+                    <Badge className="me-1">
+                      {record.status === 'active' ? 'فعال' : 'غیرفعال'}
+                    </Badge>
                     {record.roles.map((item) => (
                       <Badge className="me-1" key={item}>
                         {item === 'customer' ? 'مشتری' : 'مسافر'}
@@ -861,7 +1366,9 @@ export function CustomerWorkspace() {
                           : 'ثبت‌نشده'}
                     </Badge>
                   </td>
-                  <td className="p-4 font-mono">{record.version}</td>
+                  <td className="p-4">
+                    {new Date(record.updatedAt).toLocaleDateString('fa-IR')}
+                  </td>
                   <td className="p-4">
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -880,15 +1387,22 @@ export function CustomerWorkspace() {
                         <FilePenLine className="size-4" />
                         ویرایش
                       </Button>
-                      <Button
-                        onClick={() => void toggle(record)}
-                        size="sm"
-                        variant="ghost"
-                      >
-                        {record.status === 'active'
-                          ? 'غیرفعال‌سازی'
-                          : 'فعال‌سازی'}
-                      </Button>
+                      <ConfirmDialog
+                        description="این تغییر با دلیل استاندارد، زمان UTC و Actor در Audit ثبت می‌شود."
+                        onConfirm={() => void toggle(record)}
+                        title={
+                          record.status === 'active'
+                            ? 'غیرفعال‌سازی مشتری'
+                            : 'فعال‌سازی مشتری'
+                        }
+                        trigger={
+                          <Button size="sm" variant="ghost">
+                            {record.status === 'active'
+                              ? 'غیرفعال‌سازی'
+                              : 'فعال‌سازی'}
+                          </Button>
+                        }
+                      />
                     </div>
                   </td>
                 </tr>

@@ -102,8 +102,9 @@ export class CustomersController {
     @Param('id') id: string,
     @Req() request: AuthenticatedRequest,
     @Headers('x-request-id') traceId?: string,
+    @Headers('x-sensitive-read-reason') sensitiveReadReason?: string,
   ) {
-    return this.service.detail(id, request.actor, traceId);
+    return this.service.detail(id, request.actor, traceId, sensitiveReadReason);
   }
 
   @Patch(':id')
