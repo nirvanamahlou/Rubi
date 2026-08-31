@@ -1,0 +1,59 @@
+.dialog {
+  width: min(56rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
+}
+
+.form {
+  container-type: inline-size;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* A fieldset's intrinsic minimum otherwise lets wide controls expand the form. */
+.form fieldset {
+  min-inline-size: 0;
+  inline-size: 100%;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.fields > * {
+  min-inline-size: 0;
+}
+
+.form :where(input, select, textarea) {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.form select {
+  inline-size: 100%;
+}
+
+/* Keep the shared calendar popup within this form's column on narrow screens. */
+.form [role='dialog'] {
+  max-inline-size: 100%;
+}
+
+.actions > button {
+  max-inline-size: 100%;
+  height: auto;
+  min-height: 2.75rem;
+  white-space: normal;
+}
+
+/* Respond to the form's available width, including a narrow app browser panel. */
+@container (min-width: 40rem) {
+  .fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
