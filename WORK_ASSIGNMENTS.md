@@ -1,5 +1,13 @@
 # Work Assignments
 
+## MASTER-003-REMOVE-KPI-NOTES — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: تمام نوارهای توضیحی/قاعده‌ای بلافاصله زیر کارت‌های KPI از همه Workspaceهای اطلاعات پایه حذف شوند؛ خود KPIها، تب‌ها، فیلترها، جدول‌ها و رفتار Backend حفظ می‌شوند.
+- Branch: `codex/pc-b-master-data-remove-kpi-notes` از `origin/develop@03e4c431f29286509cdf0e5423aae8ed3a87a788`؛ توسعه مستقیم روی `develop` انجام نمی‌شود.
+- محدوده رزرو: فقط `apps/web/src/modules/master-data/components/**`، آزمون‌های رندر مرتبط و گزارش همین Work Item در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`. بدون Customers، Calendar، API/Contract، Schema/Migration، Seed یا Dependency/Lockfile.
+- قفل‌های فعال PC-B/MASTER-003 بدون تغییر می‌مانند؛ این اصلاح صرفاً Presentation است و مالکیت یا قرارداد ماژول دیگری را تغییر نمی‌دهد.
+- نتیجه: نوارهای توضیحی زیر KPI در جغرافیا، سازمان‌ها و تأمین‌کنندگان، اقامت، حمل‌ونقل، بیمه، خدمات سفر و مراجع فروش حذف شدند؛ مالی و پولی از ابتدا چنین نوار مستقلی نداشت. ۵۱۱ تست Web، Typecheck، lint فایل‌های متاثر و Production Build موفق‌اند. API روی ۴۰۰۰ سالم و Web روی ۳۱۰۰ روشن است؛ مسیر محافظت‌شده بدون Session مطابق انتظار به Login هدایت می‌شود.
+
 ## MASTER-003-DEMO-BOOTSTRAP — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک در 2026-08-31: داده‌های نمایشی اطلاعات پایه به‌شکلی در Git منتشر شوند که PC-A نیز بتواند همان رکوردها را در دیتابیس لوکال خود ببیند.

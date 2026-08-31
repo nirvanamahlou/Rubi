@@ -26,7 +26,6 @@ import {
   Plus,
   RefreshCw,
   Search,
-  ShieldCheck,
   SquareStack,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -85,40 +84,26 @@ const geographyTabs: readonly {
   resource: GeographyResource;
   label: string;
   icon: typeof Globe2;
-  integrityTitle: string;
-  integrityDescription: string;
 }[] = [
   {
     resource: 'countries',
     label: 'کشورها',
     icon: Globe2,
-    integrityTitle: 'حذف رکورد وابسته مجاز نیست',
-    integrityDescription:
-      'کشوری که شهر، استان، فرودگاه یا بانک وابسته دارد فقط غیرفعال می‌شود.',
   },
   {
     resource: 'regions',
     label: 'شهرها و استان‌ها',
     icon: MapPin,
-    integrityTitle: 'شهر و استان در یک نمای ساختاری مدیریت می‌شوند',
-    integrityDescription:
-      'استان/ناحیه و شهر از همین بخش مدیریت می‌شوند؛ رابطه‌های مستقل و FKهای واقعی آن‌ها بدون ادغام مخرب داده حفظ شده‌اند.',
   },
   {
     resource: 'airports',
     label: 'فرودگاه‌ها',
     icon: PlaneTakeoff,
-    integrityTitle: 'زمان همیشه UTC ذخیره می‌شود',
-    integrityDescription:
-      'Timezone فقط IANA معتبر است؛ IATA و ICAO در کل سیستم یکتا و مختصات دارای Constraint واقعی هستند.',
   },
   {
     resource: 'terminals',
     label: 'ترمینال‌ها',
     icon: SquareStack,
-    integrityTitle: 'ترمینال در محدوده فرودگاه تعریف می‌شود',
-    integrityDescription:
-      'ترمینال به فرودگاه مرجع متصل است و نوع آن داخلی، بین‌المللی، مشترک یا VIP خواهد بود.',
   },
 ];
 
@@ -392,10 +377,6 @@ export function MasterDataGeographyWorkspace() {
   const [exporting, setExporting] = useState(false);
   const definition = getMasterDataDefinition(resource);
   const isLocationView = resource === 'regions' || resource === 'cities';
-  const currentTab =
-    geographyTabs.find((item) =>
-      isLocationView ? item.resource === 'regions' : item.resource === resource,
-    ) ?? geographyTabs[0];
 
   const scopedFilters = useMemo(
     () => ({
@@ -845,28 +826,6 @@ export function MasterDataGeographyWorkspace() {
         items={kpis}
         label={`شاخص‌های ${isLocationView ? 'شهرها و استان‌ها' : definition.label}`}
       />
-
-      <Card className="border-sky-200/80 bg-gradient-to-l from-sky-50 to-background p-4 dark:border-sky-400/20 dark:from-sky-950/40">
-        <div className="flex items-start gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300">
-            <LockKeyhole aria-hidden="true" className="size-5" />
-          </span>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-black">
-                {currentTab?.integrityTitle ?? 'قاعده یکپارچگی جغرافیا'}
-              </h2>
-              <Badge className="bg-sky-500/10 text-sky-700 dark:text-sky-300">
-                <ShieldCheck aria-hidden="true" className="me-1 size-3" />
-                قاعده یکپارچگی
-              </Badge>
-            </div>
-            <p className="mt-1 text-xs leading-6 text-muted-foreground sm:text-sm">
-              {currentTab?.integrityDescription ?? definition.description}
-            </p>
-          </div>
-        </div>
-      </Card>
 
       <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-[minmax(13rem,1fr)_10rem_10rem_repeat(2,minmax(10rem,12rem))_auto]">
         {columnFilterControls}

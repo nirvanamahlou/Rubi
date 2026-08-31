@@ -100,46 +100,6 @@ const tabs = [
 
 type TransportResource = (typeof tabs)[number]['resource'];
 
-const boundaryCopy: Record<TransportResource, { title: string; text: string }> =
-  {
-    airlines: {
-      title: 'Connection و Credential در Integrations است',
-      text: 'اینجا فقط مشخصات مرجع ایرلاین و شناسه عمومی نگهداری می‌شود؛ کلید، Token و Secret هرگز در Master Data ثبت نمی‌شود.',
-    },
-    'aircraft-types': {
-      title: 'ناوگان عملیاتی خارج از این کاتالوگ است',
-      text: 'این صفحه فقط نوع هواپیما را تعریف می‌کند؛ تخصیص هواپیما به پرواز در عملیات پرواز انجام می‌شود.',
-    },
-    'cabin-classes': {
-      title: 'کلاس مرجع با موجودی صندلی متفاوت است',
-      text: 'قیمت، ظرفیت و موجودی در Ticket Catalog و Reservations باقی می‌ماند و این صفحه به جدول آن ماژول‌ها Query مستقیم ندارد.',
-    },
-    'baggage-rules': {
-      title: 'هر تغییر بار یک نسخه مستقل است',
-      text: 'قاعده استفاده‌شده حذف فیزیکی یا بازنویسی نمی‌شود و با غیرفعال‌سازی و بازه اعتبار مدیریت می‌شود.',
-    },
-    'manifest-templates': {
-      title: 'فایل فقط با قرارداد واقعی Documents منتشر می‌شود',
-      text: 'تا پیش از دریافت Reference معتبر، قالب در حالت پیش‌نویس می‌ماند و هیچ فایل یا شناسه ساختگی ثبت نمی‌شود.',
-    },
-    'rail-companies': {
-      title: 'فروش و اتصال Provider مالکیت این صفحه نیست',
-      text: 'شرکت ریلی مرجع به Organization متصل است؛ رزرو، قرارداد و تسویه در ماژول‌های مالک باقی می‌ماند.',
-    },
-    'train-types': {
-      title: 'نوع قطار یک مرجع مشترک است',
-      text: 'سرویس اجرایی، ظرفیت و برنامه حرکت در دامنه رزرو و عملیات نگهداری می‌شود.',
-    },
-    'bus-companies': {
-      title: 'شرکت اتوبوس از Organization مشترک استفاده می‌کند',
-      text: 'اطلاعات فروش، قرارداد و تسویه در Master Data ذخیره نمی‌شود.',
-    },
-    'bus-types': {
-      title: 'نوع اتوبوس جایگزین سرویس اجرایی نیست',
-      text: 'این کاتالوگ فقط مدل و امکانات مرجع را نگهداری می‌کند.',
-    },
-  };
-
 const attributeLabels: Record<string, string> = {
   englishName: 'نام انگلیسی',
   icaoCode: 'کد ICAO',
@@ -677,11 +637,6 @@ export function MasterDataTransportationWorkspace() {
         </nav>
       </Card>
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${definition.label}`} />
-      <Alert
-        description={boundaryCopy[resource].text}
-        title={boundaryCopy[resource].title}
-        tone="warning"
-      />
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
         {columnFilterControls}
         <FormField id="transport-search" label="جست‌وجو">

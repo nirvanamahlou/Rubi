@@ -60,6 +60,29 @@ describe('Master Data visual polish contract', () => {
     expect(accommodation).toContain('<MasterDataKpiGrid');
   });
 
+  it('omits explanatory callouts immediately below KPI cards in every section', () => {
+    const sectionFiles = [
+      'master-data-finance-workspace.tsx',
+      'master-data-geography-workspace.tsx',
+      'master-data-suppliers-workspace.tsx',
+      'master-data-accommodation-workspace.tsx',
+      'master-data-transportation-workspace.tsx',
+      'master-data-insurance-workspace.tsx',
+      'master-data-travel-services-workspace.tsx',
+      'master-data-sales-references-workspace.tsx',
+    ];
+
+    for (const fileName of sectionFiles) {
+      const workspace = source(fileName);
+      expect(workspace, fileName).not.toMatch(
+        /<MasterDataKpiGrid[\s\S]{0,180}?\/>\s*<Alert\b/,
+      );
+      expect(workspace, fileName).not.toMatch(
+        /<MasterDataKpiGrid[\s\S]{0,180}?\/>\s*<Card\b/,
+      );
+    }
+  });
+
   it('keeps geography KPI names aligned with the approved mockup', () => {
     const geography = source('master-data-geography-workspace.tsx');
     for (const label of [

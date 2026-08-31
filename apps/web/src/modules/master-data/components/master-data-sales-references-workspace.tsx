@@ -82,25 +82,6 @@ const tabs = [
 
 type SalesReferenceResource = (typeof tabs)[number]['resource'];
 
-const rules: Record<SalesReferenceResource, { title: string; text: string }> = {
-  'acquaintance-methods': {
-    title: 'نحوه آشنایی یک مرجع مستقل است',
-    text: 'این مرجع فقط روش آشنایی را تعریف می‌کند؛ رابطه استفاده در ماژول مصرف‌کننده نگهداری می‌شود و این صفحه به جدول آن ماژول Query مستقیم ندارد.',
-  },
-  'sales-channels': {
-    title: 'کانال استفاده‌شده حذف فیزیکی نمی‌شود',
-    text: 'کانال مرجع با Active/Inactive مدیریت می‌شود؛ سفارش و تراکنش فروش در Sales باقی می‌ماند.',
-  },
-  'lost-reasons': {
-    title: 'دلیل از دست رفتن برای پایان ناموفق است',
-    text: 'تغییر وضعیت Lead/Opportunity و الزام انتخاب دلیل در ماژول مالک چرخه فروش اجرا می‌شود.',
-  },
-  tags: {
-    title: 'Tag رابطه چندبه‌چند مصرف‌کننده است',
-    text: 'هر ماژول مالک رابطه Tag با رکوردهای خودش است و Master Data فقط تعریف، رنگ و وضعیت Tag را نگه می‌دارد.',
-  },
-};
-
 function attribute(record: MasterDataRecord, key: string, fallback = '—') {
   const value = record.attributes[key];
   return value === null || value === undefined || value === ''
@@ -499,11 +480,6 @@ export function MasterDataSalesReferencesWorkspace() {
         </nav>
       </Card>
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${definition.label}`} />
-      <Alert
-        description={rules[resource].text}
-        title={rules[resource].title}
-        tone="warning"
-      />
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
         {columnFilterControls}
         <FormField id="sales-reference-search" label="جست‌وجو">

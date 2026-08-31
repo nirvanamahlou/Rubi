@@ -1378,36 +1378,6 @@ export function MasterDataAccommodationWorkspace() {
     );
 
   const showFilters = tab !== 'import';
-  const boundary =
-    tab === 'import'
-      ? {
-          title: 'محتوای Excel فقط داده است',
-          description:
-            'هیچ متن داخل فایل به‌عنوان دستور اجرایی تفسیر نمی‌شود؛ ثبت نهایی نیازمند تأیید صریح کاربر است.',
-        }
-      : tab === 'combined'
-        ? {
-            title: 'هتل ترکیبی جایگزین هتل واقعی نیست',
-            description:
-              'رزرو و موجودی روی هتل واقعی یا قرارداد تأییدشده در Reservations و Procurement باقی می‌ماند.',
-          }
-        : tab === 'facilities'
-          ? {
-              title: 'امکانات ستون ثابت هتل نیستند',
-              description:
-                'هر امکان یک رکورد کاتالوگ است و از طریق رابطه چندبه‌چند به هتل متصل می‌شود.',
-            }
-          : tab === 'meals'
-            ? {
-                title: 'Meal Plan و Service رکورد کاتالوگ هستند',
-                description:
-                  'هر سرویس کد، عنوان و وعده‌های شامل‌شده دارد و به هتل‌ها رابطه‌ای متصل می‌شود؛ Checkbox ثابت ساخته نمی‌شود.',
-              }
-            : {
-                title: 'قرارداد، نرخ و موجودی مالکیت این صفحه نیست',
-                description:
-                  'رزرو و موجودی اتاق در Reservations و قرارداد و نرخ خرید در Procurement باقی می‌ماند.',
-              };
 
   return (
     <div className="space-y-5">
@@ -1473,11 +1443,6 @@ export function MasterDataAccommodationWorkspace() {
       {kpis.length ? (
         <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${current.title}`} />
       ) : null}
-      <Alert
-        description={boundary.description}
-        title={boundary.title}
-        tone="warning"
-      />
       {showFilters ? (
         <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-6">
           {columnFilterControls}

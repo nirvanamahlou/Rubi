@@ -978,11 +978,6 @@ export function MasterDataSuppliersWorkspace() {
         </nav>
       </Card>
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${copy.title}`} />
-      <Alert
-        description="Organization و Role در Master Data است؛ قرارداد، اعتبار، نرخ خرید و بدهی Provider در B2B، Procurement یا Finance باقی می‌ماند و Credential فقط در Integrations ذخیره می‌شود."
-        title="مرز مالکیت داده"
-        tone="warning"
-      />
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
         {columnFilterControls}
         <FormField id="supplier-search" label="جستجو">

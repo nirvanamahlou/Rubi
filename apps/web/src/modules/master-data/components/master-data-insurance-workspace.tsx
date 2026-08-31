@@ -731,11 +731,6 @@ export function MasterDataInsuranceWorkspace() {
         </nav>
       </Card>
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${definition.label}`} />
-      <Alert
-        description={rules[resource].text}
-        title={rules[resource].title}
-        tone="warning"
-      />
       <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-[minmax(14rem,1fr)_12rem_14rem_auto]">
         {columnFilterControls}
         <FormField id="insurance-search" label="جست‌وجو">
