@@ -30,7 +30,7 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -56,6 +56,10 @@ import {
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { getMasterDataDefinition } from '../model/catalog';
 import {
+  groupSupplierCollaborationRecords,
+  loadSupplierCollaborationPage,
+} from '../model/supplier-collaboration';
+import {
   MasterDataLiveForm,
   type MasterDataFormMode,
 } from './master-data-live-form';
@@ -73,7 +77,7 @@ const tabs = [
 
 const tabCopy: Record<
   SupplierTab,
-  { title: string; description: string; action: string }
+  { title: string; description: string; action: string | null }
 > = {
   suppliers: {
     title: 'تأمین‌کنندگان',
@@ -90,8 +94,8 @@ const tabCopy: Record<
   collaboration: {
     title: 'وضعیت همکاری',
     description:
-      'پایش وضعیت همکاری، محدودیت خرید، قواعد لغو و مراجع قرارداد بدون تداخل مالکیت',
-    action: 'تعریف وضعیت',
+      'نمایش تأمین‌کنندگان و کارگزاران بر اساس وضعیت ثبت‌شده آن‌ها؛ تغییر وضعیت از فرم اصلی هر رکورد انجام می‌شود.',
+    action: null,
   },
 };
 
@@ -190,6 +194,8 @@ export function MasterDataSuppliersWorkspace() {
   const [collaborationRecords, setCollaborationRecords] = useState<
     readonly MasterDataRecord[]
   >([]);
+  const [collaborationPageCount, setCollaborationPageCount] = useState(1);
+  const loadSequence = useRef(0);
   const [summary, setSummary] =
     useState<MasterOrganizationSupplierSummary>(emptySummary);
   const [requestState, setRequestState] = useState<RequestState>('loading');
@@ -221,30 +227,20 @@ export function MasterDataSuppliersWorkspace() {
   }, []);
 
   const load = useCallback(async () => {
+    const sequence = ++loadSequence.current;
     setRequestState('loading');
     try {
       if (tab === 'collaboration') {
-        const [suppliers, brokers] = await Promise.all([
-          masterDataApi.list('suppliers', {
-            search,
-            status,
-            sortBy: 'name',
-            sortDirection: 'asc',
-            page: 1,
-            pageSize: 100,
-          }),
-          masterDataApi.list('brokers', {
-            search,
-            status,
-            sortBy: 'name',
-            sortDirection: 'asc',
-            page: 1,
-            pageSize: 100,
-          }),
-        ]);
-        setRecords(suppliers.data);
-        setCollaborationRecords(brokers.data);
-        setTotal(suppliers.meta.total + brokers.meta.total);
+        const response = await loadSupplierCollaborationPage(masterDataApi, {
+          search,
+          status,
+          page,
+        });
+        if (sequence !== loadSequence.current) return;
+        setRecords(response.suppliers);
+        setCollaborationRecords(response.brokers);
+        setCollaborationPageCount(response.pageCount);
+        setTotal(response.total);
       } else {
         const response = await masterDataApi.list(resource, {
           search,
@@ -254,12 +250,14 @@ export function MasterDataSuppliersWorkspace() {
           page,
           pageSize: 25,
         });
+        if (sequence !== loadSequence.current) return;
         setRecords(response.data);
         setCollaborationRecords([]);
         setTotal(response.meta.total);
       }
       setRequestState('ready');
     } catch (error) {
+      if (sequence !== loadSequence.current) return;
       setRecords([]);
       setCollaborationRecords([]);
       setRequestState(
@@ -277,7 +275,10 @@ export function MasterDataSuppliersWorkspace() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 200);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      loadSequence.current += 1;
+    };
   }, [load]);
 
   const kpis = useMemo(() => {
@@ -364,6 +365,9 @@ export function MasterDataSuppliersWorkspace() {
   }, [summary, tab]);
 
   function changeTab(next: SupplierTab) {
+    if (next === tab) return;
+    loadSequence.current += 1;
+    setRequestState('loading');
     setTab(next);
     setSearch('');
     setStatus('all');
@@ -380,6 +384,7 @@ export function MasterDataSuppliersWorkspace() {
   }
 
   async function persist(values: Record<string, string>) {
+    if (tab === 'collaboration') return;
     if (formMode === 'edit' && selected) {
       await masterDataApi.update(selected.resource, selected.id, {
         values,
@@ -395,6 +400,7 @@ export function MasterDataSuppliersWorkspace() {
   }
 
   async function toggle(record: MasterDataRecord) {
+    if (tab === 'collaboration') return;
     try {
       await masterDataApi.setStatus(
         record.resource,
@@ -465,19 +471,23 @@ export function MasterDataSuppliersWorkspace() {
       <Button onClick={() => openProfile(record)} size="sm" variant="outline">
         <Eye className="size-4" /> مشاهده
       </Button>
-      <Button
-        onClick={() => {
-          setSelected(record);
-          setFormMode('edit');
-        }}
-        size="sm"
-        variant="outline"
-      >
-        <FilePenLine className="size-4" /> ویرایش
-      </Button>
-      <Button onClick={() => void toggle(record)} size="sm" variant="ghost">
-        {record.status === 'active' ? 'غیرفعال‌سازی' : 'فعال‌سازی'}
-      </Button>
+      {tab !== 'collaboration' ? (
+        <>
+          <Button
+            onClick={() => {
+              setSelected(record);
+              setFormMode('edit');
+            }}
+            size="sm"
+            variant="outline"
+          >
+            <FilePenLine className="size-4" /> ویرایش
+          </Button>
+          <Button onClick={() => void toggle(record)} size="sm" variant="ghost">
+            {record.status === 'active' ? 'غیرفعال‌سازی' : 'فعال‌سازی'}
+          </Button>
+        </>
+      ) : null}
     </div>
   );
 
@@ -734,7 +744,10 @@ export function MasterDataSuppliersWorkspace() {
   }
 
   function renderCollaboration() {
-    const all = [...records, ...collaborationRecords];
+    const groups = groupSupplierCollaborationRecords(
+      records,
+      collaborationRecords,
+    );
     const lanes = [
       { value: 'ACTIVE', title: 'همکاری فعال', icon: CheckCircle2 },
       { value: 'UNDER_REVIEW', title: 'در حال بررسی', icon: Clock3 },
@@ -746,11 +759,7 @@ export function MasterDataSuppliersWorkspace() {
         <div className="grid min-w-[62rem] grid-cols-4 gap-3">
           {lanes.map((lane) => {
             const LaneIcon = lane.icon;
-            const laneRecords = all.filter(
-              (record) =>
-                text(record, 'collaborationStatus', 'UNDER_REVIEW') ===
-                lane.value,
-            );
+            const laneRecords = groups[lane.value];
             return (
               <section
                 className="min-h-80 rounded-2xl border border-border bg-muted/25 p-3"
@@ -762,7 +771,7 @@ export function MasterDataSuppliersWorkspace() {
                     {lane.title}
                   </h3>
                   <Badge>
-                    {summary.collaboration[lane.value].toLocaleString('fa-IR')}
+                    {laneRecords.length.toLocaleString('fa-IR')} در این صفحه
                   </Badge>
                 </header>
                 <div className="mt-3 space-y-2">
@@ -804,7 +813,7 @@ export function MasterDataSuppliersWorkspace() {
                     ))
                   ) : (
                     <p className="py-8 text-center text-xs text-muted-foreground">
-                      رکوردی در این وضعیت نیست.
+                      در این صفحه رکوردی با این وضعیت نیست.
                     </p>
                   )}
                 </div>
@@ -869,16 +878,27 @@ export function MasterDataSuppliersWorkspace() {
         title={copy.title}
       />
       <div className="flex flex-wrap gap-2">
-        <Button
-          loading={exporting}
-          onClick={() => void requestExcel()}
-          variant="outline"
-        >
-          <FileSpreadsheet className="size-4" /> خروجی اکسل
-        </Button>
-        <Button disabled={tab === 'collaboration'} onClick={openCreateOrEdit}>
-          <Plus className="size-4" /> {copy.action}
-        </Button>
+        {tab !== 'collaboration' ? (
+          <>
+            <Button
+              loading={exporting}
+              onClick={() => void requestExcel()}
+              variant="outline"
+            >
+              <FileSpreadsheet className="size-4" /> خروجی اکسل
+            </Button>
+            <Button onClick={openCreateOrEdit}>
+              <Plus className="size-4" /> {copy.action}
+            </Button>
+          </>
+        ) : (
+          <Button
+            onClick={() => void Promise.all([load(), loadSummary()])}
+            variant="outline"
+          >
+            <RefreshCw className="size-4" /> تازه‌سازی وضعیت‌ها
+          </Button>
+        )}
       </div>
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
       <Card className="overflow-x-auto p-2">
@@ -955,33 +975,42 @@ export function MasterDataSuppliersWorkspace() {
         </Button>
       </FilterBar>
       {content}
-      {tab !== 'collaboration' ? (
-        <div className="flex items-center justify-between gap-3">
-          <PaginationShell
-            currentPage={page}
-            totalLabel={`${total.toLocaleString('fa-IR')} رکورد`}
-          />
-          <div className="flex gap-2">
-            <Button
-              disabled={page === 1}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-              size="sm"
-              variant="outline"
-            >
-              قبلی
-            </Button>
-            <Button
-              disabled={page * 25 >= total}
-              onClick={() => setPage((value) => value + 1)}
-              size="sm"
-              variant="outline"
-            >
-              بعدی
-            </Button>
-          </div>
-        </div>
+      {tab === 'collaboration' ? (
+        <p className="text-sm text-muted-foreground">
+          در هر صفحه حداکثر ۲۵ تأمین‌کننده و ۲۵ کارگزار نمایش داده می‌شود؛
+          شاخص‌های بالا مربوط به کل رکوردها هستند.
+        </p>
       ) : null}
-      {formMode ? (
+      <div className="flex items-center justify-between gap-3">
+        <PaginationShell
+          currentPage={page}
+          totalLabel={`${total.toLocaleString('fa-IR')} رکورد`}
+        />
+        <div className="flex gap-2">
+          <Button
+            disabled={requestState !== 'ready' || page === 1}
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
+            size="sm"
+            variant="outline"
+          >
+            قبلی
+          </Button>
+          <Button
+            disabled={
+              requestState !== 'ready' ||
+              (tab === 'collaboration'
+                ? page >= collaborationPageCount
+                : page * 25 >= total)
+            }
+            onClick={() => setPage((value) => value + 1)}
+            size="sm"
+            variant="outline"
+          >
+            بعدی
+          </Button>
+        </div>
+      </div>
+      {formMode && tab !== 'collaboration' ? (
         <MasterDataLiveForm
           definition={formDefinition}
           key={`${formDefinition.key}-${formMode}-${selected?.id ?? 'new'}`}
