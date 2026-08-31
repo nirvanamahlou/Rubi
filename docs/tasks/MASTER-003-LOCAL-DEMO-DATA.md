@@ -62,16 +62,16 @@ restored.
 From the repository root, with the existing private local API environment:
 
 ```powershell
-pnpm --filter @rubi/api build
-node --env-file=apps/api/.env apps/api/scripts/seed-master-data-demo.mjs --preview
-$env:RUBI_ALLOW_LOCAL_MASTER_DEMO = '1'
-node --env-file=apps/api/.env apps/api/scripts/seed-master-data-demo.mjs --apply
-Remove-Item Env:RUBI_ALLOW_LOCAL_MASTER_DEMO
+pnpm master-data:demo:preview
+pnpm master-data:demo:apply
 ```
 
 Preview executes the same validation/writes in a transaction and then rolls back
-all data and audits. Do not substitute the general Prisma seed, which has a
-different scope. Keep the existing encryption key unchanged.
+all data and audits. These repository commands use the realistic synthetic labels
+and the apply command carries an explicit acknowledgement. The lower-level command
+and `RUBI_ALLOW_LOCAL_MASTER_DEMO=1` remain supported for compatibility. Do not
+substitute the general Prisma seed, which has a different scope. Keep the existing
+encryption key unchanged.
 
 ## Verification
 
