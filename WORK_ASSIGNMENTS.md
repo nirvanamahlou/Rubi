@@ -1,6 +1,14 @@
 # Work Assignments
 
-آخرین به‌روزرسانی: 2026-08-31 — اصلاح نمایش فهرست مالی و جغرافیا پس از ثبت فرم
+### `MASTER-003-LOCAL-DEMO-DATA` — PC-B — `READY_FOR_REVIEW`
+
+- درخواست 2026-08-31 کاربر: افزودن داده آزمایشی برای تمام بخش‌های اطلاعات پایه روی لوکال. Branch: `codex/pc-b-master-data-demo-fixtures` از `241308e` / PR #55.
+- Scope: Fixture اختصاصی Master Data با اجرای صریح و محدود به PostgreSQL لوکال، آزمون تکرارپذیری/حفظ داده، اسناد. زیر قفل اسناد PC-B/MASTER-003؛ بدون Migration، تغییر Contract، Dependency، IAM، Customers یا Seed عمومی.
+- رکوردها برچسب آزمایشی دارند؛ فقط Create از Service موجود همراه Audit سیستمی اختصاصی. هیچ داده موجود Update/Delete نمی‌شود؛ خطا کل اجرای Fixture را Rollback می‌کند و اجرای دوباره با Audit marker رکورد تکراری نمی‌سازد.
+- قبل از اجرای کاربردی Backup خصوصی؛ تست ابتدا روی DB مستقل. نرخ ارز، کاتالوگ‌های حذف‌شده از منو، ارتباط Provider/Documents/Finance و اطلاعات واقعی حساس ساخته نمی‌شوند. شاخه‌های والد/PC-A/main/develop بدون تغییر؛ Merge خارج از این درخواست است.
+- نتیجه: ۷۸ رکورد در ۴۰ کاتالوگ هشت بخش ساخته شد؛ اجرای دوم صفر Create و ۷۸ Reuse. جست‌وجو و Detail تمام نمونه‌ها روی DB محلی تأیید شد. ۵۴۶ تست API شامل ۱۳ تست جدید موفق؛ lint، Typecheck و Build API موفق. نسخه پشتیبان خصوصی محفوظ و سرورها روشن‌اند. مرورگر تست بدون Session به Login می‌رود؛ Smoke احراز‌شده ادعا نمی‌شود. جزئیات: `docs/tasks/MASTER-003-LOCAL-DEMO-DATA.md`.
+
+آخرین به‌روزرسانی: 2026-08-31 — داده آزمایشی مستقل و امن برای اطلاعات پایه
 
 ### `MASTER-003-LIST-VISIBILITY` — PC-B — `READY_FOR_REVIEW`
 
