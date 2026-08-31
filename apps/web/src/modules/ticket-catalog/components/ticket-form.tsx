@@ -16,6 +16,7 @@ import {
   type Segment,
 } from '../model/catalog';
 import { supplyLabels } from '../model/preview';
+import styles from './ticket-form.module.css';
 
 function wallValue(utcValue: string, zone: string) {
   if (!utcValue) return '';
@@ -112,7 +113,7 @@ export function TicketForm({
     }
   }
   return (
-    <form onSubmit={submit} className="space-y-6">
+    <form onSubmit={submit} className={`${styles.form} space-y-6`}>
       <Alert
         title="پیش‌نمایش؛ فقط حافظه همین صفحه"
         description="فرم به ذخیره واقعی متصل نیست. اطلاعات واقعی مسافر یا مشتری وارد نکنید. مراجع انتخاب‌نشده در پیش‌نویس خالی می‌مانند و فعال‌سازی را مسدود می‌کنند."
@@ -133,7 +134,7 @@ export function TicketForm({
               }
             />
           </FormField>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className={styles.fields}>
             <FormField
               label="ایرلاین"
               id="ticket-airline"
@@ -192,7 +193,7 @@ export function TicketForm({
             تقویم شمسی/میلادی برای ورود است؛ اعتبارسنجی با UTC انجام می‌شود.
             برای عبور از نیمه‌شب، تاریخ رسیدن را روز بعد انتخاب کنید.
           </p>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className={styles.fields}>
             <FormField label="تاریخ و ساعت حرکت" id="ticket-departure">
               <DatePicker
                 id="ticket-departure"
@@ -274,7 +275,7 @@ export function TicketForm({
             />
             ظرفیت متعلق به شرکت است
           </label>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className={styles.fields}>
             <FormField label="نوع تأمین" id="ticket-supply">
               <select
                 id="ticket-supply"
@@ -344,7 +345,7 @@ export function TicketForm({
         </section>
         <section className="space-y-4">
           <h3 className="font-bold text-primary">۴. قیمت و نسخه نرخ</h3>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className={styles.fields}>
             <FormField label="ارز نرخ" id="ticket-currency">
               <select
                 id="ticket-currency"
@@ -446,7 +447,9 @@ export function TicketForm({
           </FormField>
         </section>
       </fieldset>
-      <div className="sticky bottom-0 flex flex-wrap gap-3 border-t bg-surface py-4">
+      <div
+        className={`${styles.actions} sticky bottom-0 flex flex-wrap gap-3 border-t bg-surface py-4`}
+      >
         {!readOnly ? (
           <Button type="submit">اعمال فقط در پیش‌نمایش</Button>
         ) : null}

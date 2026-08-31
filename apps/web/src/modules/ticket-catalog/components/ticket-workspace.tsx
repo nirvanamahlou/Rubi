@@ -44,6 +44,7 @@ import {
 } from '../model/preview';
 import { ReferenceBrowser } from './reference-browser';
 import { TicketForm } from './ticket-form';
+import formStyles from './ticket-form.module.css';
 
 export const previewStates = {
   ready: 'عادی',
@@ -648,9 +649,9 @@ export function TicketWorkspace() {
       >
         <DialogContent
           dir="rtl"
-          className="start-auto! left-1/2! max-h-[90vh] max-w-4xl overflow-y-auto"
+          className={`${formStyles.dialog} start-auto! left-1/2! max-w-4xl`}
         >
-          <DialogTitle>
+          <DialogTitle className="pe-10">
             {form?.mode === 'view'
               ? 'مشاهده برنامه نمایشی'
               : form?.mode === 'edit'

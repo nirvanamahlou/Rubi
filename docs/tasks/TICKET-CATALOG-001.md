@@ -165,3 +165,17 @@ Validation: 25 IAM tests in four files passed, including 9/10/11/12-character bo
 Runtime distinction: the account is usable now against the existing local database/API, including from the main application when it uses that API. The new global 10-character creation policy is prepared in this branch and the rebuilt Preview UI; it is not hot-loaded into the original running API or the main application. Their existing creation validator remains 12 until an authorized integration/restart. Existing login accepts the new account normally. No merge/deploy or original-service restart was performed. Final listeners: 3100 PID 3340, 4000 PID 15952, 3211 proxy PID 2072; only task Next 3212 was rebuilt/restarted (PID 3488).
 
 Central-document owner handoff: record the explicit user approval and this narrow IAM exception/status in WORK_ASSIGNMENTS and PROJECT_STATUS alongside the existing task entry; no central lock is transferred. Global policy rollout must coordinate the frontend and API. Passwords and provisioning environment values must remain outside Git.
+
+
+## Follow-up: ticket form containment — 2026-08-31
+
+PC-A, existing task branch. User reports the ticket definition form overflows its frame. Reserve only ticket-catalog/components/ticket-form.tsx, ticket-workspace.tsx and new ticket-form.module.css, plus this task handoff. Shared Dialog/FormField/DatePicker, other modules, central locks, API, database and dependencies remain unchanged. Fix intrinsic fieldset/field minimum widths, use form-container-based columns, and bound the dialog to the viewport. Verify against the existing authenticated Preview with a fresh isolated headless browser; the in-app browser failed initialization with the known Windows ACL error.
+
+
+Form containment outcome: fixed in the task Preview. Before the change, a real isolated headless Edge UI run reproduced 320px overflow (dialog clientWidth 286, scrollWidth 295; fieldset 271px with multiple controls outside the frame) and a 390px calendar extending to x=-3 while the dialog begins at x=16.
+
+After the change, normal-login browser checks passed at 1440x900, 768x700, 640x700, 390x844 and 320x700. Dialogs remain fully within the viewport, scrollWidth equals clientWidth at every size, all closed-form controls are horizontally contained, and opened calendars remain within the dialog horizontally. At 320px the fieldset is now 254px and dialog client/scroll widths are both 286px. Calendar scrolling and the form close button were exercised; narrow-form and calendar screenshots were visually inspected. The browser used a fresh isolated context, not the user's browser/profile; test sessions were logged out. The failed in-app browser check is not claimed as successful.
+
+The module-local stylesheet removes intrinsic fieldset/control minimums, switches columns according to the actual form width, bounds the dialog to the dynamic viewport, and contains the shared calendar without editing shared UI. Web lint/typecheck/build and all 58 existing ticket tests passed. No new test that merely mirrors CSS class names was added. Original 3100/4000 and proxy 3211 remained running unchanged; only task Next 3212 was rebuilt/restarted (PID 11096). Preview-only in-memory entries reset on reload as already documented.
+
+Central owner handoff: include this resolved ticket-form follow-up with TICKET-CATALOG-001 in the existing assignment/status entry. No central, migration or dependency lock changes. The earlier unrelated route-foundation merge gate remains outstanding.
