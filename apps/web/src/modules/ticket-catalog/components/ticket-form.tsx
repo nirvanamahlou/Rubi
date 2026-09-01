@@ -13,6 +13,33 @@ import styles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
 import { ReferencePicker } from './reference-picker';
 
+type TicketDefinitionMode = 'one-way' | 'round-trip';
+
+export function createReturnTicketDraft(source: ProductInput): ProductInput {
+  const outbound = source.segments[0]!;
+  return {
+    ...source,
+    title: '',
+    fare: { ...source.fare },
+    segments: [
+      {
+        ...outbound,
+        flightNumber: '',
+        originCountryId: outbound.destinationCountryId,
+        originCityId: outbound.destinationCityId,
+        originAirportId: outbound.destinationAirportId,
+        destinationCountryId: outbound.originCountryId,
+        destinationCityId: outbound.originCityId,
+        destinationAirportId: outbound.originAirportId,
+        departureAt: '',
+        arrivalAt: '',
+        departureZone: outbound.arrivalZone,
+        arrivalZone: outbound.departureZone,
+      },
+    ],
+  };
+}
+
 function wallValue(utcValue: string, zone: string) {
   if (!utcValue) return '';
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -44,15 +71,22 @@ export function TicketForm({
   onReference,
   onCancel,
   readOnly = false,
+  allowRoundTrip = false,
 }: {
   initial: ProductInput;
   references: readonly Reference[];
   onReference?: (reference: Reference) => void;
-  onSave: (input: ProductInput, reason: string) => void;
+  onSave: (inputs: readonly ProductInput[], reason: string) => void;
   onCancel: () => void;
   readOnly?: boolean;
+  allowRoundTrip?: boolean;
 }) {
   const [input, setInput] = useState(initial);
+  const [definitionMode, setDefinitionMode] =
+    useState<TicketDefinitionMode>('one-way');
+  const [returnInput, setReturnInput] = useState(() =>
+    createReturnTicketDraft(initial),
+  );
   const first = initial.segments[0]!;
   const [departure, setDeparture] = useState(
     wallValue(first.departureAt, first.departureZone),
@@ -66,6 +100,14 @@ export function TicketForm({
   const [arrivalOffset, setArrivalOffset] = useState(
     offsetValue(first.arrivalAt, first.arrivalZone),
   );
+  const [returnDeparture, setReturnDeparture] = useState('');
+  const [returnArrival, setReturnArrival] = useState('');
+  const [returnDepartureOffset, setReturnDepartureOffset] = useState(
+    offsetValue('', first.arrivalZone),
+  );
+  const [returnArrivalOffset, setReturnArrivalOffset] = useState(
+    offsetValue('', first.departureZone),
+  );
   const [validFrom, setValidFrom] = useState(
     initial.fare.validFrom.slice(0, 16),
   );
@@ -73,8 +115,26 @@ export function TicketForm({
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const segment = input.segments[0]!;
+  const returnSegment = returnInput.segments[0]!;
   const changeSegment = (patch: Partial<Segment>) =>
     setInput({ ...input, segments: [{ ...segment, ...patch }] });
+  const changeReturnSegment = (patch: Partial<Segment>) =>
+    setReturnInput({
+      ...returnInput,
+      segments: [{ ...returnSegment, ...patch }],
+    });
+  function chooseDefinitionMode(mode: TicketDefinitionMode) {
+    setDefinitionMode(mode);
+    if (mode === 'round-trip') {
+      const draft = createReturnTicketDraft(input);
+      const draftSegment = draft.segments[0]!;
+      setReturnInput(draft);
+      setReturnDeparture('');
+      setReturnArrival('');
+      setReturnDepartureOffset(offsetValue('', draftSegment.departureZone));
+      setReturnArrivalOffset(offsetValue('', draftSegment.arrivalZone));
+    }
+  }
   function submit(event: FormEvent) {
     event.preventDefault();
     try {
@@ -101,7 +161,35 @@ export function TicketForm({
           validTo: wallTimeToUtc(validTo, 'UTC', '+00:00'),
         },
       };
-      onSave(definition, reason);
+      if (definitionMode === 'round-trip' && allowRoundTrip) {
+        const returnDefinition: ProductInput = {
+          ...returnInput,
+          supplyType: definition.supplyType,
+          companyOwned: definition.companyOwned,
+          entryMethod: definition.entryMethod,
+          totalCapacity: definition.totalCapacity,
+          rules: definition.rules,
+          fare: { ...definition.fare },
+          segments: [
+            {
+              ...returnSegment,
+              departureAt: wallTimeToUtc(
+                returnDeparture,
+                returnSegment.departureZone,
+                returnDepartureOffset,
+              ),
+              arrivalAt: wallTimeToUtc(
+                returnArrival,
+                returnSegment.arrivalZone,
+                returnArrivalOffset,
+              ),
+            },
+          ],
+        };
+        onSave([definition, returnDefinition], reason);
+      } else {
+        onSave([definition], reason);
+      }
       setError('');
     } catch (problem) {
       setError(
@@ -118,9 +206,41 @@ export function TicketForm({
       />
       {error ? <Alert tone="error" title={error} /> : null}
       <fieldset disabled={readOnly} className="space-y-6 disabled:opacity-80">
+        {allowRoundTrip ? (
+          <section className="space-y-3">
+            <h3 className="font-bold text-primary">۱. نوع تعریف بلیت</h3>
+            <FormField label="نوع بلیت" id="ticket-definition-mode" required>
+              <select
+                id="ticket-definition-mode"
+                className="h-11 rounded-xl border bg-surface px-3"
+                value={definitionMode}
+                onChange={(event) =>
+                  chooseDefinitionMode(
+                    event.target.value as TicketDefinitionMode,
+                  )
+                }
+              >
+                <option value="one-way">یک‌طرفه</option>
+                <option value="round-trip">رفت‌وبرگشت</option>
+              </select>
+            </FormField>
+            <p className="text-xs leading-6 text-muted-foreground">
+              در حالت رفت‌وبرگشت، دو بلیت مستقل ساخته می‌شود؛ هر بلیت بعداً هم
+              جداگانه و هم در ترکیب رفت‌وبرگشت قابل فروش است.
+            </p>
+          </section>
+        ) : null}
         <section className="space-y-4">
-          <h3 className="font-bold text-primary">۱. مشخصات برنامه</h3>
-          <FormField label="عنوان برنامه" id="ticket-title" required>
+          <h3 className="font-bold text-primary">
+            {allowRoundTrip ? '۲. مشخصات بلیت رفت' : '۱. مشخصات بلیت'}
+          </h3>
+          <FormField
+            label={
+              definitionMode === 'round-trip' ? 'نام بلیت رفت' : 'نام بلیت'
+            }
+            id="ticket-title"
+            required
+          >
             <Input
               id="ticket-title"
               value={input.title}
@@ -202,8 +322,8 @@ export function TicketForm({
           <h3 className="font-bold text-primary">مسیر بلیت مستقل</h3>
           <p className="text-xs text-muted-foreground">
             کشور و شهر از اطلاعات پایه انتخاب می‌شوند و جایگزین فرودگاه نیستند.
-            هر پرواز مستقل است؛ رفت‌وبرگشت با انتخاب دو بلیت در بخش ترکیب سفر
-            ساخته می‌شود.
+            فرودگاه نیز از اطلاعات پایه انتخاب می‌شود. این مسیر یک بلیت مستقل
+            است و در حالت رفت‌وبرگشت، مسیر برگشت نیز مستقل ثبت می‌شود.
           </p>
           <div className={styles.fields}>
             {(['origin', 'destination'] as const).map((end) => (
@@ -269,7 +389,7 @@ export function TicketForm({
           </div>
         </section>
         <section className="space-y-4">
-          <h3 className="font-bold text-primary">۲. زمان و مسیر یک‌طرفه</h3>
+          <h3 className="font-bold text-primary">زمان بلیت رفت</h3>
           <p className="text-xs text-muted-foreground">
             تقویم شمسی/میلادی برای ورود است؛ اعتبارسنجی با UTC انجام می‌شود.
             برای عبور از نیمه‌شب، تاریخ رسیدن را روز بعد انتخاب کنید.
@@ -335,13 +455,260 @@ export function TicketForm({
               />
             </FormField>
           </div>
-          <p className="text-xs text-muted-foreground">
-            مدل دامنه چندقطعه‌ای است؛ ویرایش رفت‌وبرگشت و چند Segment در توسعه
-            بعدی رابط قرار دارد.
-          </p>
         </section>
+        {definitionMode === 'round-trip' && allowRoundTrip ? (
+          <section className="space-y-4 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+            <h3 className="font-bold text-primary">۳. مشخصات بلیت برگشت</h3>
+            <Alert
+              title="بلیت برگشت مستقل ثبت می‌شود"
+              description="تأمین، ظرفیت، نرخ خرید و قوانین از بلیت رفت کپی می‌شوند؛ بعد از ثبت می‌توانید هر بلیت را جداگانه ویرایش یا بفروشید."
+            />
+            <FormField label="نام بلیت برگشت" id="ticket-return-title" required>
+              <Input
+                id="ticket-return-title"
+                value={returnInput.title}
+                maxLength={160}
+                required
+                onChange={(event) =>
+                  setReturnInput({ ...returnInput, title: event.target.value })
+                }
+              />
+            </FormField>
+            <div className={styles.fields}>
+              <ReferencePicker
+                id="ticket-return-airline"
+                label="ایرلاین برگشت"
+                resource="airlines"
+                readOnly={readOnly}
+                value={references.find(
+                  (r) =>
+                    r.kind === 'airline' && r.id === returnSegment.airlineId,
+                )}
+                onSelect={(ref) => {
+                  if (ref) onReference?.(ref);
+                  changeReturnSegment({ airlineId: ref?.id ?? '' });
+                }}
+              />
+              <FormField
+                label="شماره پرواز برگشت"
+                id="ticket-return-flight"
+                required
+              >
+                <Input
+                  id="ticket-return-flight"
+                  dir="ltr"
+                  value={returnSegment.flightNumber}
+                  maxLength={12}
+                  required
+                  onChange={(event) =>
+                    changeReturnSegment({ flightNumber: event.target.value })
+                  }
+                />
+              </FormField>
+              <ReferencePicker
+                id="ticket-return-aircraft"
+                label="نوع هواپیمای برگشت"
+                resource="aircraft-types"
+                readOnly={readOnly}
+                value={references.find(
+                  (r) =>
+                    r.kind === 'aircraft' && r.id === returnSegment.aircraftId,
+                )}
+                onSelect={(ref) => {
+                  if (ref) onReference?.(ref);
+                  changeReturnSegment({ aircraftId: ref?.id ?? '' });
+                }}
+              />
+              <ReferencePicker
+                id="ticket-return-flight-class"
+                label="کلاس پروازی برگشت"
+                resource="cabin-classes"
+                readOnly={readOnly}
+                value={references.find(
+                  (r) =>
+                    r.kind === 'flightClass' &&
+                    r.id === returnInput.flightClassId,
+                )}
+                onSelect={(ref) => {
+                  if (ref) onReference?.(ref);
+                  setReturnInput({
+                    ...returnInput,
+                    flightClassId: ref?.id ?? '',
+                  });
+                }}
+              />
+              <ReferencePicker
+                id="ticket-return-baggage"
+                label="بار مجاز برگشت"
+                resource="baggage-rules"
+                readOnly={readOnly}
+                value={references.find(
+                  (r) => r.kind === 'baggage' && r.id === returnInput.baggageId,
+                )}
+                onSelect={(ref) => {
+                  if (ref) onReference?.(ref);
+                  setReturnInput({ ...returnInput, baggageId: ref?.id ?? '' });
+                }}
+              />
+            </div>
+            <h4 className="font-semibold">مسیر برگشت</h4>
+            <p className="text-xs text-muted-foreground">
+              مبدأ و مقصد از مسیر رفت معکوس شده‌اند و در صورت نیاز قابل تغییرند.
+            </p>
+            <div className={styles.fields}>
+              {(['origin', 'destination'] as const).map((end) => (
+                <div className="min-w-0 space-y-4" key={`return-${end}`}>
+                  <ReferencePicker
+                    id={`ticket-return-${end}-country`}
+                    label={`کشور ${end === 'origin' ? 'مبدأ' : 'مقصد'} برگشت`}
+                    resource="countries"
+                    readOnly={readOnly}
+                    value={references.find(
+                      (r) =>
+                        r.kind === 'country' &&
+                        r.id === returnSegment[`${end}CountryId`],
+                    )}
+                    onSelect={(ref) => {
+                      if (ref) onReference?.(ref);
+                      changeReturnSegment({
+                        [`${end}CountryId`]: ref?.id ?? '',
+                        [`${end}CityId`]: '',
+                        [`${end}AirportId`]: '',
+                      });
+                    }}
+                  />
+                  <ReferencePicker
+                    key={returnSegment[`${end}CountryId`]}
+                    id={`ticket-return-${end}-city`}
+                    label={`شهر ${end === 'origin' ? 'مبدأ' : 'مقصد'} برگشت`}
+                    resource="cities"
+                    readOnly={readOnly}
+                    countryId={returnSegment[`${end}CountryId`]}
+                    value={references.find(
+                      (r) =>
+                        r.kind === 'city' &&
+                        r.id === returnSegment[`${end}CityId`],
+                    )}
+                    onSelect={(ref) => {
+                      if (ref) onReference?.(ref);
+                      changeReturnSegment({
+                        [`${end}CityId`]: ref?.id ?? '',
+                        [`${end}AirportId`]: '',
+                      });
+                    }}
+                  />
+                  <ReferencePicker
+                    key={`${returnSegment[`${end}CityId`]}-return-airport`}
+                    id={`ticket-return-${end}-airport`}
+                    label={`فرودگاه ${end === 'origin' ? 'مبدأ' : 'مقصد'} برگشت`}
+                    resource="airports"
+                    readOnly={readOnly}
+                    countryId={returnSegment[`${end}CountryId`]}
+                    cityId={returnSegment[`${end}CityId`]}
+                    value={references.find(
+                      (r) =>
+                        r.kind === 'airport' &&
+                        r.id === returnSegment[`${end}AirportId`],
+                    )}
+                    onSelect={(ref) => {
+                      if (ref) onReference?.(ref);
+                      changeReturnSegment({
+                        [`${end}AirportId`]: ref?.id ?? '',
+                      });
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+            <h4 className="font-semibold">زمان برگشت</h4>
+            <div className={styles.fields}>
+              <FormField
+                label="تاریخ و ساعت حرکت برگشت"
+                id="ticket-return-departure"
+              >
+                <TicketDatePicker
+                  id="ticket-return-departure"
+                  value={returnDeparture}
+                  onChange={setReturnDeparture}
+                  includeTime
+                  disabled={readOnly}
+                />
+              </FormField>
+              <FormField
+                label="تاریخ و ساعت رسیدن برگشت"
+                id="ticket-return-arrival"
+              >
+                <TicketDatePicker
+                  id="ticket-return-arrival"
+                  value={returnArrival}
+                  onChange={setReturnArrival}
+                  includeTime
+                  disabled={readOnly}
+                />
+              </FormField>
+              <FormField
+                label="منطقه زمانی مبدأ برگشت (IANA)"
+                id="ticket-return-departure-zone"
+              >
+                <Input
+                  id="ticket-return-departure-zone"
+                  dir="ltr"
+                  value={returnSegment.departureZone}
+                  onChange={(event) =>
+                    changeReturnSegment({ departureZone: event.target.value })
+                  }
+                />
+              </FormField>
+              <FormField
+                label="منطقه زمانی مقصد برگشت (IANA)"
+                id="ticket-return-arrival-zone"
+              >
+                <Input
+                  id="ticket-return-arrival-zone"
+                  dir="ltr"
+                  value={returnSegment.arrivalZone}
+                  onChange={(event) =>
+                    changeReturnSegment({ arrivalZone: event.target.value })
+                  }
+                />
+              </FormField>
+              <FormField
+                label="اختلاف UTC مبدأ برگشت"
+                id="ticket-return-departure-offset"
+              >
+                <Input
+                  id="ticket-return-departure-offset"
+                  dir="ltr"
+                  placeholder="+03:30"
+                  value={returnDepartureOffset}
+                  onChange={(event) =>
+                    setReturnDepartureOffset(event.target.value)
+                  }
+                />
+              </FormField>
+              <FormField
+                label="اختلاف UTC مقصد برگشت"
+                id="ticket-return-arrival-offset"
+              >
+                <Input
+                  id="ticket-return-arrival-offset"
+                  dir="ltr"
+                  placeholder="+03:30"
+                  value={returnArrivalOffset}
+                  onChange={(event) =>
+                    setReturnArrivalOffset(event.target.value)
+                  }
+                />
+              </FormField>
+            </div>
+          </section>
+        ) : null}
         <section className="space-y-4">
-          <h3 className="font-bold text-primary">۳. تأمین و ظرفیت</h3>
+          <h3 className="font-bold text-primary">
+            {definitionMode === 'round-trip' && allowRoundTrip
+              ? '۴. تأمین و ظرفیت مشترک اولیه'
+              : '۳. تأمین و ظرفیت'}
+          </h3>
           <label className="flex items-center gap-2 text-sm font-semibold">
             <input
               type="checkbox"
@@ -419,8 +786,8 @@ export function TicketForm({
             </FormField>
           </div>
           <p className="text-xs leading-6 text-muted-foreground">
-            ورود دستی به معنی مالکیت شرکت نیست. انتخاب سربرگ، داده برنامه و
-            محدوده شعبه را تغییر نمی‌دهد. Hold، قطعی و باقی‌مانده واقعی منتظر
+            ورود دستی به معنی مالکیت شرکت نیست. انتخاب سربرگ، داده بلیت و محدوده
+            شعبه را تغییر نمی‌دهد. Hold، قطعی و باقی‌مانده واقعی منتظر
             رزرواسیون‌اند و ورودی دستی ندارند.
           </p>
         </section>
@@ -501,7 +868,7 @@ export function TicketForm({
           </p>
         </section>
         <section className="space-y-4">
-          <h3 className="font-bold text-primary">۵. شرایط همین محصول</h3>
+          <h3 className="font-bold text-primary">۵. شرایط بلیت</h3>
           <FormField
             label="قوانین تغییر، کنسلی و محدودیت فروش"
             id="ticket-rules"

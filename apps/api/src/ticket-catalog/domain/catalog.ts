@@ -335,7 +335,7 @@ export function validateProduct(
 ): void {
   ensure(
     input.title.trim().length > 0 && input.title.length <= 160,
-    'عنوان برنامه الزامی و حداکثر ۱۶۰ نویسه است.',
+    'نام بلیت الزامی و حداکثر ۱۶۰ نویسه است.',
   );
   ensure(
     input.transport === 'flight',

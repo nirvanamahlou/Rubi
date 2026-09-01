@@ -4,7 +4,7 @@ export const statusLabels = {
   draft: 'پیش‌نویس',
   active: 'فعال',
   paused: 'توقف فروش',
-  cancelled: 'لغو برنامه',
+  cancelled: 'لغو بلیت',
 } as const;
 export const supplyLabels = {
   company: 'ظرفیت شرکت',
@@ -62,7 +62,7 @@ export function previewSamples(now: string): Product[] {
       'preview-sample-' + index,
       {
         ...input,
-        title: 'برنامه ساختگی ' + (index + 1),
+        title: 'بلیت ساختگی ' + (index + 1),
         totalCapacity: 20 + index * 5,
         supplyType: index % 2 ? 'company' : 'supplier',
         companyOwned: Boolean(index % 2),

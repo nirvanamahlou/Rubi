@@ -61,13 +61,13 @@ export function CatalogState({ state }: { state: keyof typeof previewStates }) {
   if (state === 'ready') return null;
   const messages = {
     loading: 'در حال دریافت فهرست…',
-    empty: 'برنامه‌ای مطابق فیلترها وجود ندارد.',
+    empty: 'بلیتی مطابق فیلترها وجود ندارد.',
     error: 'دریافت فهرست ناموفق بود؛ دوباره تلاش کنید.',
     unauthorized: 'برای مشاهده داده عملیاتی وارد شوید (401).',
     forbidden:
       'مجوز اختصاصی مدیریت بلیت منتشر نشده است؛ عملیات واقعی مسدود است (403).',
     conflict:
-      'نسخه برنامه تغییر کرده است؛ فرم را ببندید و نسخه تازه را باز کنید (409).',
+      'نسخه بلیت تغییر کرده است؛ فرم را ببندید و نسخه تازه را باز کنید (409).',
     success:
       'تغییر فقط در حافظه پیش‌نمایش اعمال شد؛ ذخیره واقعی انجام نشده است.',
   };
@@ -129,40 +129,50 @@ export function TicketWorkspace() {
     setNotice('حافظه پیش‌نمایش این صفحه پاک شد.');
     setProblem('');
   }
-  function save(input: ProductInput, editReason: string) {
+  function save(inputs: readonly ProductInput[], editReason: string) {
     if (!preview || !form || form.mode === 'view')
       throw new Error('ویرایش فقط در Preview مجاز است.');
     const now = new Date().toISOString();
     const current = form.product;
-    const next = current
-      ? reviseProduct(
-          current,
-          input,
-          current.version,
-          resolve,
-          now,
-          'کاربر نمایشی',
-          editReason,
-          {
-            total: current.definition.totalCapacity,
-            version: 0,
-            allocations: [],
-          },
-        )
-      : createProduct(
+    if (current && inputs.length !== 1)
+      throw new Error('ویرایش یک بلیت باید روی همان بلیت انجام شود.');
+
+    let updated = products;
+    if (current) {
+      const next = reviseProduct(
+        current,
+        inputs[0]!,
+        current.version,
+        resolve,
+        now,
+        'کاربر نمایشی',
+        editReason,
+        {
+          total: current.definition.totalCapacity,
+          version: 0,
+          allocations: [],
+        },
+      );
+      updated = replacePreview(updated, next, current.version);
+    } else {
+      for (const input of inputs) {
+        const next = createProduct(
           'preview-' + crypto.randomUUID(),
           input,
           resolve,
           now,
           'کاربر نمایشی',
         );
-    // Preview is a single mounted session. Validate against the current collection.
-    const updated = replacePreview(products, next, current?.version);
+        updated = replacePreview(updated, next);
+      }
+    }
     setProducts(updated);
     setForm(null);
     setProblem('');
     setNotice(
-      'تغییر فقط در حافظه پیش‌نمایش اعمال شد؛ با خروج یا بازخوانی صفحه از بین می‌رود.',
+      inputs.length === 2
+        ? 'دو بلیت مستقل رفت و برگشت در پیش‌نمایش ساخته شد؛ هرکدام جداگانه یا باهم قابل فروش‌اند.'
+        : 'تغییر فقط در حافظه پیش‌نمایش اعمال شد؛ با خروج یا بازخوانی صفحه از بین می‌رود.',
     );
   }
   function copy(product: Product) {
@@ -177,7 +187,7 @@ export function TicketWorkspace() {
       setProducts(replacePreview(products, next));
       setProblem('');
       setNotice(
-        'کپی پیش‌نویس ساخته شد؛ بدون کپی تخصیص، Hold یا سابقه برنامه قبلی.',
+        'کپی پیش‌نویس ساخته شد؛ بدون کپی تخصیص، Hold یا سابقه بلیت قبلی.',
       );
     } catch (error) {
       setProblem(error instanceof Error ? error.message : 'کپی ناموفق بود.');
@@ -219,8 +229,8 @@ export function TicketWorkspace() {
     <div className="space-y-5" dir="rtl">
       <PageHeader
         title="مدیریت و تعریف بلیت‌ها"
-        eyebrow="محصول • برنامه پرواز • نرخ و ظرفیت"
-        description="تعریف برنامه‌های قابل فروش؛ صدور بلیت مسافر و Manifest در رزرواسیون انجام می‌شود."
+        eyebrow="بلیت پرواز • نرخ خرید • ظرفیت"
+        description="تعریف بلیت‌های قابل فروش؛ صدور بلیت مسافر و Manifest در رزرواسیون انجام می‌شود."
         actions={
           <>
             <Button
@@ -235,7 +245,7 @@ export function TicketWorkspace() {
               onClick={() => setForm({ mode: 'create' })}
             >
               <Plus className="size-4" aria-hidden />
-              برنامه جدید نمایشی
+              تعریف بلیت جدید
             </Button>
           </>
         }
@@ -269,11 +279,11 @@ export function TicketWorkspace() {
               onClick={() => {
                 setProducts(previewSamples(new Date().toISOString()));
                 setNotice(
-                  '۸ برنامه کاملاً ساختگی بارگذاری شد؛ مراجع و شمارنده‌های واقعی ندارد.',
+                  '۸ بلیت کاملاً ساختگی بارگذاری شد؛ مراجع و شمارنده‌های واقعی ندارد.',
                 );
               }}
             >
-              بارگذاری برنامه‌های ساختگی
+              بارگذاری بلیت‌های ساختگی
             </Button>
           </>
         )}
@@ -283,7 +293,7 @@ export function TicketWorkspace() {
       <div className="grid gap-3 sm:grid-cols-3">
         {[
           [
-            'برنامه‌های این پیش‌نمایش',
+            'بلیت‌های این پیش‌نمایش',
             preview ? products.length.toLocaleString('fa-IR') : '—',
           ],
           ['موجودی قابل فروش واقعی', 'منتظر رزرواسیون'],
@@ -297,7 +307,7 @@ export function TicketWorkspace() {
       </div>
       <Card className="space-y-4 p-4">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <FormField label="جست‌وجوی برنامه و شماره پرواز" id="ticket-search">
+          <FormField label="جست‌وجوی بلیت و شماره پرواز" id="ticket-search">
             <Input
               id="ticket-search"
               value={query.search}
@@ -437,8 +447,8 @@ export function TicketWorkspace() {
         </>
       ) : result.rows.length === 0 ? (
         <EmptyState
-          title="برنامه‌ای یافت نشد"
-          description="برنامه نمایشی جدید بسازید یا فیلترها را پاک کنید."
+          title="بلیتی یافت نشد"
+          description="بلیت جدید بسازید یا فیلترها را پاک کنید."
         />
       ) : (
         <>
@@ -446,12 +456,12 @@ export function TicketWorkspace() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[960px] text-right text-sm">
                 <caption className="border-b bg-primary/5 px-4 py-3 text-right font-semibold">
-                  برنامه‌های ساختگی • قیمت‌ها و ظرفیت‌ها آزمایشی‌اند
+                  بلیت‌های ساختگی • قیمت‌ها و ظرفیت‌ها آزمایشی‌اند
                 </caption>
                 <thead className="bg-muted/50 text-xs text-muted-foreground">
                   <tr>
                     {[
-                      'برنامه / ایرلاین',
+                      'بلیت / ایرلاین',
                       'مسیر / کلاس',
                       'حرکت / رسیدن',
                       'تأمین / وضعیت',
@@ -615,7 +625,7 @@ export function TicketWorkspace() {
             className="flex flex-wrap items-center justify-between gap-3 text-sm"
           >
             <span>
-              {result.total.toLocaleString('fa-IR')} برنامه نمایشی • صفحه{' '}
+              {result.total.toLocaleString('fa-IR')} بلیت نمایشی • صفحه{' '}
               {result.page.toLocaleString('fa-IR')} از{' '}
               {result.pages.toLocaleString('fa-IR')}
             </span>
@@ -675,10 +685,10 @@ export function TicketWorkspace() {
         >
           <DialogTitle className="pe-10">
             {form?.mode === 'view'
-              ? 'مشاهده برنامه نمایشی'
+              ? 'مشاهده بلیت'
               : form?.mode === 'edit'
-                ? 'ویرایش برنامه نمایشی'
-                : 'برنامه جدید نمایشی'}
+                ? 'ویرایش بلیت'
+                : 'تعریف بلیت جدید'}
           </DialogTitle>
           <DialogDescription>
             اطلاعات همین جلسه؛ بدون ذخیره در سرور
@@ -692,6 +702,7 @@ export function TicketWorkspace() {
                 onSave={save}
                 onCancel={() => setForm(null)}
                 readOnly={form.mode === 'view'}
+                allowRoundTrip={form.mode === 'create'}
               />
               {form.product ? (
                 <section className="mt-6 space-y-3 border-t pt-4">
@@ -728,7 +739,7 @@ export function TicketWorkspace() {
           <DialogTitle>تأیید تغییر وضعیت نمایشی</DialogTitle>
           <DialogDescription>
             فعال‌سازی به همه مراجع معتبر و نرخ دارای اعتبار نیاز دارد. توقف فروش
-            تخصیص‌ها را آزاد نمی‌کند. لغو برنامه تخصیص‌یافته مسدود است.
+            تخصیص‌ها را آزاد نمی‌کند. لغو بلیت تخصیص‌یافته مسدود است.
           </DialogDescription>
           {problem ? <Alert tone="error" title={problem} /> : null}
           <FormField label="دلیل تغییر وضعیت" id="ticket-status-reason">
