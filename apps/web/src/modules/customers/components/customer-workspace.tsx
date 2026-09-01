@@ -2886,26 +2886,26 @@ export function CustomerWorkspace() {
         </div>
         <div className="flex flex-wrap gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <label
-              className="sr-only"
-              htmlFor="customer-sensitive-export-reason"
-            >
-              دلیل خروجی شماره‌های کامل
-            </label>
-            <select
-              className="h-11 rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            <Select
               disabled={exporting}
-              id="customer-sensitive-export-reason"
-              onChange={(event) => setExportReason(event.target.value)}
+              onValueChange={setExportReason}
               value={exportReason}
             >
-              <option value="">دلیل نمایش شماره‌ها</option>
-              {sensitiveReasons.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger
+                aria-label="دلیل خروجی شماره‌های کامل"
+                className="h-11 min-w-44"
+                id="customer-sensitive-export-reason"
+              >
+                <SelectValue placeholder="دلیل نمایش شماره‌ها" />
+              </SelectTrigger>
+              <SelectContent>
+                {sensitiveReasons.map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               disabled={records.length === 0 || exporting || !exportReason}
               onClick={() => void exportFilteredCustomers()}

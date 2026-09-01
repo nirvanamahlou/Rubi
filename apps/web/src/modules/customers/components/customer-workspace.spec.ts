@@ -323,6 +323,13 @@ describe('Customer Operations workspace boundaries', () => {
     expect(exportSource).toContain("'شماره تماس'");
     expect(exportSource).toContain('دلیل مشاهده در Audit ثبت شد');
     expect(source).toContain('customer-sensitive-export-reason');
+    expect(source).toContain('aria-label="دلیل خروجی شماره‌های کامل"');
+    expect(source).toContain(
+      '<SelectValue placeholder="دلیل نمایش شماره‌ها" />',
+    );
+    expect(source).not.toContain(
+      '<option value="">دلیل نمایش شماره‌ها</option>',
+    );
     expect(source).toContain("'خروجی Excel'");
     expect(source).toContain(
       'disabled={records.length === 0 || exporting || !exportReason}',
