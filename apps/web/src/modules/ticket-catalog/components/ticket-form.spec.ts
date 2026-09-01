@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import type { Reference } from '../model/catalog';
 import { emptyInput } from '../model/preview';
-import { createReturnTicketDraft } from './ticket-form';
+import {
+  buildAutomaticTicketTitle,
+  createReturnTicketDraft,
+  inferWallTimeOffset,
+} from './ticket-form';
 
 describe('Round-trip ticket definition', () => {
   it('creates an independent return draft with the outbound route reversed', () => {
@@ -43,5 +48,50 @@ describe('Round-trip ticket definition', () => {
 
     expect(outbound.fare.purchase).not.toBe('999');
     expect(outbound.segments[0]!.flightNumber).not.toBe('RETURN-1');
+  });
+});
+
+describe('Hidden ticket metadata', () => {
+  it('builds the ticket name automatically from the flight and route', () => {
+    const input = emptyInput();
+    const segment = input.segments[0]!;
+    segment.flightNumber = 'W5-1042';
+    segment.originAirportId = 'airport-ika';
+    segment.destinationAirportId = 'airport-ist';
+    const references: Reference[] = [
+      {
+        id: 'airport-ika',
+        kind: 'airport',
+        code: 'IKA',
+        name: 'امام خمینی',
+        active: true,
+      },
+      {
+        id: 'airport-ist',
+        kind: 'airport',
+        code: 'IST',
+        name: 'استانبول',
+        active: true,
+      },
+    ];
+
+    expect(buildAutomaticTicketTitle(input, references)).toBe(
+      'W5-1042 • IKA به IST',
+    );
+  });
+
+  it('infers the airport offset without exposing a technical input', () => {
+    expect(inferWallTimeOffset('2026-09-01T10:00', 'Asia/Tehran')).toBe(
+      '+03:30',
+    );
+    expect(inferWallTimeOffset('2026-09-01T10:00', 'Europe/Istanbul')).toBe(
+      '+03:00',
+    );
+  });
+
+  it('rejects a daylight-saving gap with a user-facing message', () => {
+    expect(() =>
+      inferWallTimeOffset('2026-03-08T02:30', 'America/New_York'),
+    ).toThrow('این ساعت در منطقه زمانی فرودگاه معتبر نیست');
   });
 });

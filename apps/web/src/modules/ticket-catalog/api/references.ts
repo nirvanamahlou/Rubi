@@ -123,6 +123,9 @@ export function asReference(record: MasterDataRecord): Reference | undefined {
     ...(typeof record.attributes.cityId === 'string'
       ? { cityId: record.attributes.cityId }
       : {}),
+    ...(typeof record.attributes.ianaTimezone === 'string'
+      ? { timezone: record.attributes.ianaTimezone }
+      : {}),
     code: record.code,
   };
 }

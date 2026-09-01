@@ -66,7 +66,6 @@ function wallValue(utcValue: string, zone: string) {
   return `${p('year')}-${p('month')}-${p('day')}T${p('hour')}:${p('minute')}`;
 }
 function offsetValue(utcValue: string, zone: string) {
-  if (!utcValue) return zone === 'Asia/Tehran' ? '+03:30' : '+00:00';
   const delta = Math.round(
     (Date.parse(wallValue(utcValue, zone) + ':00Z') - Date.parse(utcValue)) /
       60000,
@@ -74,6 +73,53 @@ function offsetValue(utcValue: string, zone: string) {
   return `${delta >= 0 ? '+' : '-'}${Math.floor(Math.abs(delta) / 60)
     .toString()
     .padStart(2, '0')}:${(Math.abs(delta) % 60).toString().padStart(2, '0')}`;
+}
+
+export function inferWallTimeOffset(wallTime: string, zone: string): string {
+  const approximate = Date.parse(`${wallTime}:00Z`);
+  if (!Number.isFinite(approximate))
+    throw new Error('تاریخ و ساعت انتخاب‌شده معتبر نیست.');
+  try {
+    const candidates = new Set(
+      [-86_400_000, 0, 86_400_000].map((shift) =>
+        offsetValue(new Date(approximate + shift).toISOString(), zone),
+      ),
+    );
+    for (const candidate of candidates) {
+      try {
+        wallTimeToUtc(wallTime, zone, candidate);
+        return candidate;
+      } catch {
+        // Try the other side of a daylight-saving transition.
+      }
+    }
+  } catch {
+    throw new Error('منطقه زمانی فرودگاه انتخاب‌شده معتبر نیست.');
+  }
+  throw new Error(
+    'این ساعت در منطقه زمانی فرودگاه معتبر نیست؛ ساعت دیگری انتخاب کنید.',
+  );
+}
+
+export function buildAutomaticTicketTitle(
+  definition: ProductInput,
+  references: readonly Reference[],
+): string {
+  const segment = definition.segments[0]!;
+  const label = (kind: Reference['kind'], id: string, fallback: string) => {
+    const reference = references.find(
+      (item) => item.kind === kind && item.id === id,
+    );
+    return reference?.code || reference?.name || fallback;
+  };
+  const origin = segment.originAirportId
+    ? label('airport', segment.originAirportId, 'مبدأ')
+    : label('city', segment.originCityId, 'مبدأ');
+  const destination = segment.destinationAirportId
+    ? label('airport', segment.destinationAirportId, 'مقصد')
+    : label('city', segment.destinationCityId, 'مقصد');
+  const flight = segment.flightNumber.trim() || 'پرواز';
+  return `${flight} • ${origin} به ${destination}`.slice(0, 160);
 }
 export function TicketForm({
   initial,
@@ -105,20 +151,8 @@ export function TicketForm({
   const [arrival, setArrival] = useState(
     wallValue(first.arrivalAt, first.arrivalZone),
   );
-  const [departureOffset, setDepartureOffset] = useState(
-    offsetValue(first.departureAt, first.departureZone),
-  );
-  const [arrivalOffset, setArrivalOffset] = useState(
-    offsetValue(first.arrivalAt, first.arrivalZone),
-  );
   const [returnDeparture, setReturnDeparture] = useState('');
   const [returnArrival, setReturnArrival] = useState('');
-  const [returnDepartureOffset, setReturnDepartureOffset] = useState(
-    offsetValue('', first.arrivalZone),
-  );
-  const [returnArrivalOffset, setReturnArrivalOffset] = useState(
-    offsetValue('', first.departureZone),
-  );
   const [validFrom, setValidFrom] = useState(
     initial.fare.validFrom.slice(0, 16),
   );
@@ -138,12 +172,9 @@ export function TicketForm({
     setDefinitionMode(mode);
     if (mode === 'round-trip') {
       const draft = createReturnTicketDraft(input);
-      const draftSegment = draft.segments[0]!;
       setReturnInput(draft);
       setReturnDeparture('');
       setReturnArrival('');
-      setReturnDepartureOffset(offsetValue('', draftSegment.departureZone));
-      setReturnArrivalOffset(offsetValue('', draftSegment.arrivalZone));
     }
   }
   function submit(event: FormEvent) {
@@ -151,18 +182,19 @@ export function TicketForm({
     try {
       const definition = {
         ...input,
+        title: buildAutomaticTicketTitle(input, references),
         segments: [
           {
             ...segment,
             departureAt: wallTimeToUtc(
               departure,
               segment.departureZone,
-              departureOffset,
+              inferWallTimeOffset(departure, segment.departureZone),
             ),
             arrivalAt: wallTimeToUtc(
               arrival,
               segment.arrivalZone,
-              arrivalOffset,
+              inferWallTimeOffset(arrival, segment.arrivalZone),
             ),
           },
         ],
@@ -175,6 +207,7 @@ export function TicketForm({
       if (definitionMode === 'round-trip' && allowRoundTrip) {
         const returnDefinition: ProductInput = {
           ...returnInput,
+          title: buildAutomaticTicketTitle(returnInput, references),
           supplyType: definition.supplyType,
           companyOwned: definition.companyOwned,
           entryMethod: definition.entryMethod,
@@ -187,12 +220,15 @@ export function TicketForm({
               departureAt: wallTimeToUtc(
                 returnDeparture,
                 returnSegment.departureZone,
-                returnDepartureOffset,
+                inferWallTimeOffset(
+                  returnDeparture,
+                  returnSegment.departureZone,
+                ),
               ),
               arrivalAt: wallTimeToUtc(
                 returnArrival,
                 returnSegment.arrivalZone,
-                returnArrivalOffset,
+                inferWallTimeOffset(returnArrival, returnSegment.arrivalZone),
               ),
             },
           ],
@@ -246,23 +282,6 @@ export function TicketForm({
           <h3 className="font-bold text-primary">
             {allowRoundTrip ? '۲. مشخصات بلیت رفت' : '۱. مشخصات بلیت'}
           </h3>
-          <FormField
-            label={
-              definitionMode === 'round-trip' ? 'نام بلیت رفت' : 'نام بلیت'
-            }
-            id="ticket-title"
-            required
-          >
-            <Input
-              id="ticket-title"
-              value={input.title}
-              maxLength={160}
-              required
-              onChange={(event) =>
-                setInput({ ...input, title: event.target.value })
-              }
-            />
-          </FormField>
           <div className={styles.fields}>
             <ReferencePicker
               id="ticket-airline"
@@ -356,6 +375,8 @@ export function TicketForm({
                       [`${end}CountryId`]: ref?.id ?? '',
                       [`${end}CityId`]: '',
                       [`${end}AirportId`]: '',
+                      [end === 'origin' ? 'departureZone' : 'arrivalZone']:
+                        'UTC',
                     });
                   }}
                 />
@@ -375,6 +396,8 @@ export function TicketForm({
                     changeSegment({
                       [`${end}CityId`]: ref?.id ?? '',
                       [`${end}AirportId`]: '',
+                      [end === 'origin' ? 'departureZone' : 'arrivalZone']:
+                        'UTC',
                     });
                   }}
                 />
@@ -393,7 +416,11 @@ export function TicketForm({
                   )}
                   onSelect={(ref) => {
                     if (ref) onReference?.(ref);
-                    changeSegment({ [`${end}AirportId`]: ref?.id ?? '' });
+                    changeSegment({
+                      [`${end}AirportId`]: ref?.id ?? '',
+                      [end === 'origin' ? 'departureZone' : 'arrivalZone']:
+                        ref?.timezone ?? 'UTC',
+                    });
                   }}
                 />
               </div>
@@ -425,47 +452,6 @@ export function TicketForm({
                 disabled={readOnly}
               />
             </FormField>
-            <FormField
-              label="منطقه زمانی مبدأ (IANA)"
-              id="ticket-departure-zone"
-            >
-              <Input
-                id="ticket-departure-zone"
-                dir="ltr"
-                value={segment.departureZone}
-                onChange={(event) =>
-                  changeSegment({ departureZone: event.target.value })
-                }
-              />
-            </FormField>
-            <FormField label="منطقه زمانی مقصد (IANA)" id="ticket-arrival-zone">
-              <Input
-                id="ticket-arrival-zone"
-                dir="ltr"
-                value={segment.arrivalZone}
-                onChange={(event) =>
-                  changeSegment({ arrivalZone: event.target.value })
-                }
-              />
-            </FormField>
-            <FormField label="اختلاف UTC مبدأ" id="ticket-departure-offset">
-              <Input
-                id="ticket-departure-offset"
-                dir="ltr"
-                placeholder="+03:30"
-                value={departureOffset}
-                onChange={(event) => setDepartureOffset(event.target.value)}
-              />
-            </FormField>
-            <FormField label="اختلاف UTC مقصد" id="ticket-arrival-offset">
-              <Input
-                id="ticket-arrival-offset"
-                dir="ltr"
-                placeholder="+03:30"
-                value={arrivalOffset}
-                onChange={(event) => setArrivalOffset(event.target.value)}
-              />
-            </FormField>
           </div>
         </section>
         {definitionMode === 'round-trip' && allowRoundTrip ? (
@@ -475,17 +461,6 @@ export function TicketForm({
               title="بلیت برگشت مستقل ثبت می‌شود"
               description="تأمین، ظرفیت، نرخ خرید و قوانین از بلیت رفت کپی می‌شوند؛ بعد از ثبت می‌توانید هر بلیت را جداگانه ویرایش یا بفروشید."
             />
-            <FormField label="نام بلیت برگشت" id="ticket-return-title" required>
-              <Input
-                id="ticket-return-title"
-                value={returnInput.title}
-                maxLength={160}
-                required
-                onChange={(event) =>
-                  setReturnInput({ ...returnInput, title: event.target.value })
-                }
-              />
-            </FormField>
             <div className={styles.fields}>
               <ReferencePicker
                 id="ticket-return-airline"
@@ -586,6 +561,8 @@ export function TicketForm({
                         [`${end}CountryId`]: ref?.id ?? '',
                         [`${end}CityId`]: '',
                         [`${end}AirportId`]: '',
+                        [end === 'origin' ? 'departureZone' : 'arrivalZone']:
+                          'UTC',
                       });
                     }}
                   />
@@ -606,6 +583,8 @@ export function TicketForm({
                       changeReturnSegment({
                         [`${end}CityId`]: ref?.id ?? '',
                         [`${end}AirportId`]: '',
+                        [end === 'origin' ? 'departureZone' : 'arrivalZone']:
+                          'UTC',
                       });
                     }}
                   />
@@ -626,6 +605,8 @@ export function TicketForm({
                       if (ref) onReference?.(ref);
                       changeReturnSegment({
                         [`${end}AirportId`]: ref?.id ?? '',
+                        [end === 'origin' ? 'departureZone' : 'arrivalZone']:
+                          ref?.timezone ?? 'UTC',
                       });
                     }}
                   />
@@ -656,60 +637,6 @@ export function TicketForm({
                   onChange={setReturnArrival}
                   includeTime
                   disabled={readOnly}
-                />
-              </FormField>
-              <FormField
-                label="منطقه زمانی مبدأ برگشت (IANA)"
-                id="ticket-return-departure-zone"
-              >
-                <Input
-                  id="ticket-return-departure-zone"
-                  dir="ltr"
-                  value={returnSegment.departureZone}
-                  onChange={(event) =>
-                    changeReturnSegment({ departureZone: event.target.value })
-                  }
-                />
-              </FormField>
-              <FormField
-                label="منطقه زمانی مقصد برگشت (IANA)"
-                id="ticket-return-arrival-zone"
-              >
-                <Input
-                  id="ticket-return-arrival-zone"
-                  dir="ltr"
-                  value={returnSegment.arrivalZone}
-                  onChange={(event) =>
-                    changeReturnSegment({ arrivalZone: event.target.value })
-                  }
-                />
-              </FormField>
-              <FormField
-                label="اختلاف UTC مبدأ برگشت"
-                id="ticket-return-departure-offset"
-              >
-                <Input
-                  id="ticket-return-departure-offset"
-                  dir="ltr"
-                  placeholder="+03:30"
-                  value={returnDepartureOffset}
-                  onChange={(event) =>
-                    setReturnDepartureOffset(event.target.value)
-                  }
-                />
-              </FormField>
-              <FormField
-                label="اختلاف UTC مقصد برگشت"
-                id="ticket-return-arrival-offset"
-              >
-                <Input
-                  id="ticket-return-arrival-offset"
-                  dir="ltr"
-                  placeholder="+03:30"
-                  value={returnArrivalOffset}
-                  onChange={(event) =>
-                    setReturnArrivalOffset(event.target.value)
-                  }
                 />
               </FormField>
             </div>

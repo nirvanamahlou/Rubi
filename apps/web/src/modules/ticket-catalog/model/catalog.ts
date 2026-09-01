@@ -19,6 +19,7 @@ export interface Reference {
   code?: string;
   countryId?: string;
   cityId?: string;
+  timezone?: string;
 }
 export type ReferenceResolver = (
   kind: ReferenceKind,
