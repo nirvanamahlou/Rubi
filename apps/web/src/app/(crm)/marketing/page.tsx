@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 
-import { ModuleFoundationWorkspace } from '@/modules/module-foundation/components/module-foundation-workspace';
-import { foundationModules } from '@/modules/module-foundation/model/foundation';
+import { MarketingWorkspace } from '@/modules/marketing/components/marketing-workspace';
 
 export const metadata: Metadata = { title: 'مارکتینگ' };
 
+// Graduation marker for the shared route-foundation contract: this page replaces
+// ModuleFoundationWorkspace configured with foundationModules['marketing'].
+
 export default function Page() {
-  return <ModuleFoundationWorkspace config={foundationModules['marketing']} />;
+  return <MarketingWorkspace />;
 }
