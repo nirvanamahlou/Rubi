@@ -2,6 +2,10 @@ import { MASTER_DATA_RESOURCES } from '@rubi/contracts';
 import { describe, expect, it } from 'vitest';
 import { DEMO_EXCLUDED, masterDataDemoRecords } from './demo-data';
 import { assertLocalDemoTarget } from './local-demo';
+import {
+  LOCAL_DEMO_ACKNOWLEDGEMENT,
+  parseLocalDemoCli,
+} from './local-demo-cli';
 import { realisticMasterDataDemoRecords } from './realistic-demo-data';
 
 describe('explicit local Master Data demo fixtures', () => {
@@ -69,4 +73,39 @@ describe('explicit local Master Data demo fixtures', () => {
       expect(() => assertLocalDemoTarget(url, environment)).toThrow();
     },
   );
+
+  it('parses the repository preview and explicitly acknowledged apply commands', () => {
+    expect(parseLocalDemoCli(['--preview-realistic'], {})).toEqual({
+      mode: '--preview-realistic',
+      apply: false,
+      realistic: true,
+    });
+    expect(
+      parseLocalDemoCli(['--apply-realistic', LOCAL_DEMO_ACKNOWLEDGEMENT], {}),
+    ).toEqual({
+      mode: '--apply-realistic',
+      apply: true,
+      realistic: true,
+    });
+  });
+
+  it('retains the environment acknowledgement and rejects accidental apply arguments', () => {
+    expect(
+      parseLocalDemoCli(['--apply'], {
+        RUBI_ALLOW_LOCAL_MASTER_DEMO: '1',
+      }),
+    ).toMatchObject({ apply: true, realistic: false });
+    expect(() => parseLocalDemoCli(['--apply-realistic'], {})).toThrow(
+      'acknowledge',
+    );
+    expect(() =>
+      parseLocalDemoCli(
+        ['--preview-realistic', LOCAL_DEMO_ACKNOWLEDGEMENT],
+        {},
+      ),
+    ).toThrow('Preview');
+    expect(() =>
+      parseLocalDemoCli(['--apply-realistic', '--unsafe'], {}),
+    ).toThrow('Specify');
+  });
 });

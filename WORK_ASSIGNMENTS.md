@@ -1,5 +1,14 @@
 # Work Assignments
 
+## MASTER-003-DEMO-BOOTSTRAP — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-08-31: داده‌های نمایشی اطلاعات پایه به‌شکلی در Git منتشر شوند که PC-A نیز بتواند همان رکوردها را در دیتابیس لوکال خود ببیند.
+- Branch: `codex/pc-b-master-data-demo-bootstrap` از `origin/develop@1fd22ef` پس از Merge #60؛ توسعه مستقیم روی `develop` انجام نمی‌شود.
+- محدوده رزرو: فرمان‌ها و Runner ریشه برای بارگذاری Environment، Build و Preview/Apply داده نمایشی، Parser و تست CLI در Master Data API، مستند اجرای PC-A و ورودی‌های همین Task در WORK_ASSIGNMENTS/PROJECT_STATUS. `package.json` فقط برای افزودن Script رزرو است؛ Dependency و Lockfile تغییر نمی‌کنند.
+- Fixture موجود ۷۸ رکورد/۴۰ کاتالوگ بدون تغییر ماهیت استفاده می‌شود. Seed عمومی Prisma، Startup، Schema/Migration، Contract، Customers، IAM و داده عملیاتی خارج از Scope هستند.
+- Apply باید همچنان فقط با فرمان صریح، محیط development/test، PostgreSQL روی localhost:55432 و DB مجاز اجرا شود؛ Production/Remote رد می‌شوند. اجرای دوباره idempotent است و داده ویرایش‌شده کاربر را بازنویسی نمی‌کند.
+- نتیجه: `pnpm master-data:demo:preview` و `pnpm master-data:demo:apply` از Root قابل اجرا هستند؛ Runner تنظیمات خصوصی را قبل از Prisma/Build بارگذاری می‌کند و Apply تأیید صریح را به ابزار سطح پایین می‌دهد. Preview واقعی هر ۷۸ رکورد را Reuse و کامل Rollback کرد. ۱۲ تست واحد CLI/Fixture، ۹ آزمون واقعی PostgreSQL 18، ۱٬۲۵۹ تست عمومی، lint/typecheck و Build کامل موفق‌اند. PR عادی به `develop` ساخته می‌شود؛ Branch حذف یا Force Push نمی‌شود.
+
 ## MASTER-003-DEVELOP-INTEGRATION — PC-B — READY_FOR_REVIEW
 
 - Owner explicitly requested push and merge to dev/develop on 2026-08-31. This authorizes this normal PR integration, superseding the earlier no-merge restriction for the delivered Master Data snapshots; no force push or source-branch deletion.
