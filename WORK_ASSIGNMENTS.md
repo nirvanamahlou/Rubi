@@ -1,6 +1,6 @@
 # Work Assignments
 
-## DOCUMENTS-003C-DEMO-BOOTSTRAP — PC-B — IN_PROGRESS
+## DOCUMENTS-003C-DEMO-BOOTSTRAP — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک: داده‌ها و فایل‌های نمایشی بخش اسناد به‌شکلی در Git منتشر شوند که PC-A و PC-B بتوانند همان بسته را روی دیتابیس و Storage محلی خود ایجاد کنند. `COMPUTER_ID=PC-B`.
 - Branch: `codex/pc-b-documents-demo-bootstrap` از `origin/develop@8758271`؛ توسعه مستقیم روی `develop` یا `main` انجام نمی‌شود.
@@ -9,6 +9,9 @@
 - Apply فقط برای `development/test`، PostgreSQL محلی allowlist‌شده و با تأیید صریح مجاز است؛ Startup، Seed عمومی و Production آن را اجرا نمی‌کنند. اجرای دوباره idempotent است و رکورد ویرایش‌شده کاربر را بازنویسی نمی‌کند.
 - وضعیت `CLEAN` فقط پس از اسکن واقعی Adapter فعال ثبت می‌شود؛ نبود یا خطای Antivirus کل Apply را fail-closed متوقف می‌کند. Preview هیچ رکورد یا فایل ایجاد نمی‌کند.
 - بدون Schema/Migration، قرارداد عمومی، Dependency/Lockfile یا تغییر Permission. `package.json` فقط برای دو Script محلی رزرو است؛ Migration و Dependency/Lockfile Owner آزاد می‌مانند.
+- نتیجه: هفت سند کاملاً ساختگی با تصویر PNG واقعی و رنگی برای هویت مشتری، فروش، سفر، خرید و منابع انسانی آماده شد؛ دو سند نزدیک انقضا و یک سند منقضی نیز KPIهای نمای کلی را پوشش می‌دهند. فایل‌ها در زمان اجرا تولید و فقط به‌صورت رمزگذاری‌شده ذخیره می‌شوند.
+- Validation: Preview روی دیتابیس برنامه بدون Write، Apply با Microsoft Defender واقعی، اجرای دوم با `created=0/reused=7`، مشاهده هر هفت رکورد و Preview PNG از API موفق بود. چهار تست PostgreSQL مستقل، ۷۲۹ تست API با ۷۰ skip اختیاری، lint API، typecheck کامل Workspace و Build API موفق‌اند.
+- Final lock state: `RELEASED — PC-B/DOCUMENTS-003C-DEMO-BOOTSTRAP ready for review`. هیچ Migration، Contract، Permission، Dependency یا Lockfile تغییر نکرد؛ داده کاربردی و Secret وارد Git نمی‌شود.
 
 ## IAM-003-LOGIN-STABILITY — PC-B — DONE/MERGED
 

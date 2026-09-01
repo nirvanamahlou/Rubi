@@ -22,6 +22,8 @@
     "db:validate": "pnpm --filter @rubi/database db:validate",
     "master-data:demo:preview": "node apps/api/scripts/run-local-master-data-demo.mjs --preview",
     "master-data:demo:apply": "node apps/api/scripts/run-local-master-data-demo.mjs --apply",
+    "documents:demo:preview": "node apps/api/scripts/run-local-documents-demo.mjs --preview",
+    "documents:demo:apply": "node apps/api/scripts/run-local-documents-demo.mjs --apply",
     "infra:config": "docker compose --env-file .env.example -f infrastructure/compose.dev.yaml config",
     "infra:up": "docker compose --env-file .env -f infrastructure/compose.dev.yaml up -d",
     "infra:down": "docker compose --env-file .env -f infrastructure/compose.dev.yaml down"
