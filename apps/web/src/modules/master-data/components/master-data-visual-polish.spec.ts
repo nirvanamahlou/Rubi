@@ -60,6 +60,37 @@ describe('Master Data visual polish contract', () => {
     expect(accommodation).toContain('<MasterDataKpiGrid');
   });
 
+  it('omits explanatory callouts immediately below KPI cards in every section', () => {
+    const sectionFiles = [
+      'master-data-finance-workspace.tsx',
+      'master-data-geography-workspace.tsx',
+      'master-data-suppliers-workspace.tsx',
+      'master-data-accommodation-workspace.tsx',
+      'master-data-transportation-workspace.tsx',
+      'master-data-insurance-workspace.tsx',
+      'master-data-travel-services-workspace.tsx',
+      'master-data-sales-references-workspace.tsx',
+      'master-data-live-workspace.tsx',
+    ];
+
+    for (const fileName of sectionFiles) {
+      const workspace = source(fileName);
+      const kpiStart = workspace.indexOf('<MasterDataKpiGrid');
+      const filtersStart = workspace.indexOf('<FilterBar', kpiStart);
+
+      expect(kpiStart, `${fileName}: KPI grid`).toBeGreaterThanOrEqual(0);
+      expect(filtersStart, `${fileName}: filters after KPI grid`).toBeGreaterThan(
+        kpiStart,
+      );
+
+      const postKpiContent = workspace.slice(kpiStart, filtersStart);
+      expect(postKpiContent, fileName).not.toMatch(/<(?:Alert|Card)\b/);
+      expect(postKpiContent, fileName).not.toMatch(
+        /LockKeyhole|ShieldCheck|قاعده یکپارچگی|مرز دامنه/,
+      );
+    }
+  });
+
   it('keeps geography KPI names aligned with the approved mockup', () => {
     const geography = source('master-data-geography-workspace.tsx');
     for (const label of [

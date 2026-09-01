@@ -1,6 +1,10 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import { MasterDataPowerButton } from './master-data-power-button';
+import {
+  MasterDataDateRangeFilter,
+  useMasterDataDateRange,
+} from './master-data-date-range-filter';
 
 import type {
   MasterAccommodationSummary,
@@ -18,7 +22,6 @@ import {
   Eye,
   FilePenLine,
   FileSpreadsheet,
-  FilterX,
   Hotel,
   ImageIcon,
   Layers3,
@@ -59,6 +62,7 @@ import {
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataFilterActions } from './master-data-filter-actions';
 import { getMasterDataDefinition } from '../model/catalog';
 import { HotelImportPanel } from './hotel-import-panel';
 import {
@@ -322,6 +326,11 @@ export function MasterDataAccommodationWorkspace() {
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
+  const {
+    filters: dateFilters,
+    props: dateRangeProps,
+    reset: resetDateRange,
+  } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
     if (tab === 'import') {
@@ -332,6 +341,7 @@ export function MasterDataAccommodationWorkspace() {
     try {
       const response = await masterDataApi.list(resource, {
         ...columnFilters,
+        ...dateFilters,
         search,
         status: tab === 'meals' || status === 'under_review' ? 'all' : status,
         sortBy: 'name',
@@ -351,7 +361,16 @@ export function MasterDataAccommodationWorkspace() {
           : 'error',
       );
     }
-  }, [columnFilters, page, resource, scopedFilters, search, status, tab]);
+  }, [
+    columnFilters,
+    dateFilters,
+    page,
+    resource,
+    scopedFilters,
+    search,
+    status,
+    tab,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -645,6 +664,7 @@ export function MasterDataAccommodationWorkspace() {
         format: 'xlsx',
         filters: {
           ...columnFilters,
+          ...dateFilters,
           search,
           status: tab === 'meals' || status === 'under_review' ? 'all' : status,
           sortBy: 'name',
@@ -1378,36 +1398,6 @@ export function MasterDataAccommodationWorkspace() {
     );
 
   const showFilters = tab !== 'import';
-  const boundary =
-    tab === 'import'
-      ? {
-          title: 'محتوای Excel فقط داده است',
-          description:
-            'هیچ متن داخل فایل به‌عنوان دستور اجرایی تفسیر نمی‌شود؛ ثبت نهایی نیازمند تأیید صریح کاربر است.',
-        }
-      : tab === 'combined'
-        ? {
-            title: 'هتل ترکیبی جایگزین هتل واقعی نیست',
-            description:
-              'رزرو و موجودی روی هتل واقعی یا قرارداد تأییدشده در Reservations و Procurement باقی می‌ماند.',
-          }
-        : tab === 'facilities'
-          ? {
-              title: 'امکانات ستون ثابت هتل نیستند',
-              description:
-                'هر امکان یک رکورد کاتالوگ است و از طریق رابطه چندبه‌چند به هتل متصل می‌شود.',
-            }
-          : tab === 'meals'
-            ? {
-                title: 'Meal Plan و Service رکورد کاتالوگ هستند',
-                description:
-                  'هر سرویس کد، عنوان و وعده‌های شامل‌شده دارد و به هتل‌ها رابطه‌ای متصل می‌شود؛ Checkbox ثابت ساخته نمی‌شود.',
-              }
-            : {
-                title: 'قرارداد، نرخ و موجودی مالکیت این صفحه نیست',
-                description:
-                  'رزرو و موجودی اتاق در Reservations و قرارداد و نرخ خرید در Procurement باقی می‌ماند.',
-              };
 
   return (
     <div className="space-y-5">
@@ -1473,14 +1463,13 @@ export function MasterDataAccommodationWorkspace() {
       {kpis.length ? (
         <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${current.title}`} />
       ) : null}
-      <Alert
-        description={boundary.description}
-        title={boundary.title}
-        tone="warning"
-      />
       {showFilters ? (
         <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-6">
           {columnFilterControls}
+          <MasterDataDateRangeFilter
+            idPrefix="accommodation-created"
+            {...dateRangeProps}
+          />
           <FormField id="accommodation-search" label="جستجو">
             <div className="relative">
               <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -1518,10 +1507,11 @@ export function MasterDataAccommodationWorkspace() {
               </SelectContent>
             </Select>
           </FormField>
-          <Button
-            onClick={() => {
+          <MasterDataFilterActions
+            onClear={() => {
               setSearch('');
               resetColumnFilters();
+              resetDateRange();
               setStatus('all');
               setCountryFilter('all');
               setCityFilter('all');
@@ -1531,10 +1521,8 @@ export function MasterDataAccommodationWorkspace() {
               setFacilityCategoryFilter('all');
               setPage(1);
             }}
-            variant="ghost"
-          >
-            <FilterX className="size-4" /> پاک‌کردن
-          </Button>
+            onRefresh={() => void Promise.all([load(), loadSummary()])}
+          />
         </FilterBar>
       ) : null}
       {content}

@@ -1,6 +1,10 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import { MasterDataPowerButton } from './master-data-power-button';
+import {
+  MasterDataDateRangeFilter,
+  useMasterDataDateRange,
+} from './master-data-date-range-filter';
 
 import type {
   MasterDataRecord,
@@ -19,7 +23,6 @@ import {
   Eye,
   FilePenLine,
   FileSpreadsheet,
-  FilterX,
   LockKeyhole,
   MapPin,
   Network,
@@ -57,6 +60,7 @@ import {
 } from '@/components/ui/surfaces';
 import { masterDataApi, MasterDataApiError } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { MasterDataFilterActions } from './master-data-filter-actions';
 import { getMasterDataDefinition } from '../model/catalog';
 import {
   groupSupplierCollaborationRecords,
@@ -235,6 +239,11 @@ export function MasterDataSuppliersWorkspace() {
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
+  const {
+    filters: dateFilters,
+    props: dateRangeProps,
+    reset: resetDateRange,
+  } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
     const sequence = ++loadSequence.current;
@@ -243,6 +252,7 @@ export function MasterDataSuppliersWorkspace() {
       if (tab === 'collaboration') {
         const response = await loadSupplierCollaborationPage(masterDataApi, {
           ...columnFilters,
+          ...dateFilters,
           search,
           status,
           page,
@@ -255,6 +265,7 @@ export function MasterDataSuppliersWorkspace() {
       } else {
         const response = await masterDataApi.list(resource, {
           ...columnFilters,
+          ...dateFilters,
           search,
           status,
           sortBy: 'name',
@@ -278,7 +289,7 @@ export function MasterDataSuppliersWorkspace() {
           : 'error',
       );
     }
-  }, [columnFilters, page, resource, search, status, tab]);
+  }, [columnFilters, dateFilters, page, resource, search, status, tab]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadSummary(), 0);
@@ -436,6 +447,7 @@ export function MasterDataSuppliersWorkspace() {
         format: 'xlsx',
         filters: {
           ...columnFilters,
+          ...dateFilters,
           search,
           status,
           sortBy: 'name',
@@ -945,14 +957,7 @@ export function MasterDataSuppliersWorkspace() {
               <Plus className="size-4" /> {copy.action}
             </Button>
           </>
-        ) : (
-          <Button
-            onClick={() => void Promise.all([load(), loadSummary()])}
-            variant="outline"
-          >
-            <RefreshCw className="size-4" /> تازه‌سازی وضعیت‌ها
-          </Button>
-        )}
+        ) : null}
       </div>
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
       <Card className="overflow-x-auto p-2">
@@ -978,13 +983,12 @@ export function MasterDataSuppliersWorkspace() {
         </nav>
       </Card>
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${copy.title}`} />
-      <Alert
-        description="Organization و Role در Master Data است؛ قرارداد، اعتبار، نرخ خرید و بدهی Provider در B2B، Procurement یا Finance باقی می‌ماند و Credential فقط در Integrations ذخیره می‌شود."
-        title="مرز مالکیت داده"
-        tone="warning"
-      />
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
         {columnFilterControls}
+        <MasterDataDateRangeFilter
+          idPrefix="suppliers-created"
+          {...dateRangeProps}
+        />
         <FormField id="supplier-search" label="جستجو">
           <div className="relative">
             <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -1018,17 +1022,19 @@ export function MasterDataSuppliersWorkspace() {
             </SelectContent>
           </Select>
         </FormField>
-        <Button
-          onClick={() => {
+        <MasterDataFilterActions
+          onClear={() => {
             setSearch('');
             resetColumnFilters();
+            resetDateRange();
             setStatus('all');
             setPage(1);
           }}
-          variant="ghost"
-        >
-          <FilterX className="size-4" /> پاک‌کردن
-        </Button>
+          onRefresh={() => void Promise.all([load(), loadSummary()])}
+          refreshLabel={
+            tab === 'collaboration' ? 'تازه‌سازی وضعیت‌ها' : 'تازه‌سازی'
+          }
+        />
       </FilterBar>
       {content}
       {tab === 'collaboration' ? (

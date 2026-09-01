@@ -4,18 +4,28 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
+  IsISO8601,
   IsObject,
   IsOptional,
   IsString,
   IsUUID,
   Max,
   MaxLength,
+  Matches,
   Min,
 } from 'class-validator';
 
 export class MasterDataListQueryDto {
   @IsOptional() @IsString() @MaxLength(100) columnFilter1?: string;
   @IsOptional() @IsString() @MaxLength(100) columnFilter2?: string;
+  @IsOptional()
+  @IsISO8601({ strict: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  createdFrom?: string;
+  @IsOptional()
+  @IsISO8601({ strict: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  createdTo?: string;
   @IsOptional()
   @IsIn(['ACTIVE', 'INACTIVE', 'UNDER_REVIEW'])
   transportStatus?: 'ACTIVE' | 'INACTIVE' | 'UNDER_REVIEW';
