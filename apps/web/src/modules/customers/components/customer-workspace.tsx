@@ -107,6 +107,7 @@ import {
 import {
   buildCustomerConsentRequest,
   customerListFailureState,
+  customerSensitiveRevealFeedback,
   fetchCustomerConflictSnapshot,
 } from './customer-workspace-state';
 
@@ -287,6 +288,10 @@ function CustomerDrawer({
   const [primaryEmail, setPrimaryEmail] = useState('');
   const [newCompanions, setNewCompanions] = useState<NewCompanionDraft[]>([]);
   const [sensitiveReason, setSensitiveReason] = useState('');
+  const [sensitiveFeedback, setSensitiveFeedback] = useState<{
+    kind: 'success' | 'unauthorized' | 'forbidden' | 'unreadable' | 'error';
+    message: string;
+  } | null>(null);
   const [revealedDetail, setRevealedDetail] = useState<CustomerDetail | null>(
     null,
   );
@@ -371,6 +376,7 @@ function CustomerDrawer({
       sensitiveRequestId.current += 1;
       setRevealedDetail(null);
       setSensitiveReason('');
+      setSensitiveFeedback(null);
     };
     const timer = revealedDetail
       ? window.setTimeout(remask, 60_000)
@@ -703,23 +709,44 @@ function CustomerDrawer({
 
   async function revealSensitive() {
     if (!customer || !sensitiveReason) {
-      setMessage('برای نمایش داده حساس، دلیل مجاز را انتخاب کنید.');
+      const feedback = {
+        kind: 'error',
+        message: 'برای نمایش شماره کامل، ابتدا دلیل مجاز را انتخاب کنید.',
+      } as const;
+      setSensitiveFeedback(feedback);
+      if (activeTab !== 'contacts') setMessage(feedback.message);
       return;
     }
     setBusy(true);
+    setSensitiveFeedback(null);
     const requestId = ++sensitiveRequestId.current;
     try {
       const response = await customersApi.detail(customer.id, sensitiveReason);
       if (requestId !== sensitiveRequestId.current) return;
       setRevealedDetail(response.data);
-      setMessage(
-        'نمایش حساس برای همین مشاهده فعال شد و دلیل آن در Audit ثبت شده است.',
-      );
+      const hasRevealedValue =
+        activeTab === 'contacts'
+          ? response.data.contacts.some((item) => Boolean(item.value))
+          : Boolean(response.data.nationalId);
+      const feedback = hasRevealedValue
+        ? {
+            kind: 'success',
+            message:
+              'شماره کامل برای همین مشاهده نمایش داده شد و دلیل آن در Audit ثبت شد.',
+          }
+        : {
+            kind: 'error',
+            message:
+              'Backend پاسخ داد، اما شماره کاملی در این پرونده برنگرداند. ثبت تماس و تنظیمات رمزگشایی را بررسی کنید.',
+          };
+      setSensitiveFeedback(feedback);
+      if (activeTab !== 'contacts') setMessage(feedback.message);
       requestTimelines();
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : 'نمایش داده حساس ناموفق بود.',
-      );
+      setRevealedDetail(null);
+      const feedback = customerSensitiveRevealFeedback(error);
+      setSensitiveFeedback(feedback);
+      if (activeTab !== 'contacts') setMessage(feedback.message);
     } finally {
       setBusy(false);
     }
@@ -1492,6 +1519,7 @@ function CustomerDrawer({
               sensitiveRequestId.current += 1;
               setRevealedDetail(null);
               setSensitiveReason('');
+              setSensitiveFeedback(null);
               onTabChange(tab);
             }}
             value={activeTab}
@@ -1572,7 +1600,10 @@ function CustomerDrawer({
                 <Card className="grid gap-3 p-4 sm:grid-cols-[1fr_auto]">
                   <FormField label="دلیل نمایش کد ملی">
                     <Select
-                      onValueChange={setSensitiveReason}
+                      onValueChange={(value) => {
+                        setSensitiveReason(value);
+                        setSensitiveFeedback(null);
+                      }}
                       value={sensitiveReason}
                     >
                       <SelectTrigger aria-label="دلیل نمایش کد ملی">
@@ -1687,7 +1718,10 @@ function CustomerDrawer({
               <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                 <FormField label="دلیل مشاهده شماره تماس">
                   <Select
-                    onValueChange={setSensitiveReason}
+                    onValueChange={(value) => {
+                      setSensitiveReason(value);
+                      setSensitiveFeedback(null);
+                    }}
                     value={sensitiveReason}
                   >
                     <SelectTrigger aria-label="دلیل مشاهده شماره تماس">
@@ -1713,6 +1747,30 @@ function CustomerDrawer({
                   نمایش شماره کامل
                 </Button>
               </div>
+              {sensitiveFeedback ? (
+                <Alert
+                  className="mt-3"
+                  description={sensitiveFeedback.message}
+                  title={
+                    sensitiveFeedback.kind === 'success'
+                      ? 'شماره نمایش داده شد'
+                      : 'نمایش شماره انجام نشد'
+                  }
+                  tone={sensitiveFeedback.kind === 'success' ? 'info' : 'error'}
+                >
+                  {sensitiveFeedback.kind === 'unauthorized' ? (
+                    <a
+                      className={buttonVariants({
+                        className: 'mt-3',
+                        size: 'sm',
+                      })}
+                      href="/login?next=%2Fcustomers"
+                    >
+                      ورود دوباره
+                    </a>
+                  ) : null}
+                </Alert>
+              ) : null}
               <p className="text-sm text-muted-foreground">
                 برای دیدن شماره کامل مشتری یا مسافر، دلیل مشاهده را انتخاب کنید.
                 پس از نمایش، دکمه تماس فعال می‌شود. شماره‌ها پس از یک دقیقه یا
@@ -1724,6 +1782,7 @@ function CustomerDrawer({
                     sensitiveRequestId.current += 1;
                     setRevealedDetail(null);
                     setSensitiveReason('');
+                    setSensitiveFeedback(null);
                   }}
                   type="button"
                   size="sm"
@@ -3170,7 +3229,7 @@ export function CustomerWorkspace() {
                       variant="outline"
                     >
                       <Phone aria-hidden="true" className="size-4" />
-                      نمایش شماره و تماس
+                      مشاهده تماس‌ها
                     </Button>
                   </td>
                   <td className="p-4">
