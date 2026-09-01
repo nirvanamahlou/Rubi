@@ -79,6 +79,82 @@ async function seed(): Promise<void> {
         },
         update: { isActive: true, name: 'کاربر عادی' },
       });
+      const documentRoleSpecs = [
+        {
+          code: 'archive_staff',
+          name: 'کارشناس آرشیو',
+          permissions: [
+            'documents.list',
+            'documents.metadata.read',
+            'documents.upload',
+            'documents.metadata.update',
+            'documents.version.create',
+            'documents.owner.change',
+            'documents.category.manage',
+            'documents.policy.manage',
+            'documents.audit.read',
+            'documents.quarantine.manage',
+            'documents.delete',
+            'documents.restore',
+            'documents.export',
+            'documents.customer_identity.read',
+            'documents.sales.read',
+            'documents.travel.read',
+            'documents.procurement.read',
+            'documents.organization.read',
+            'documents.reporting.read',
+            'documents.brand.read',
+          ],
+        },
+        {
+          code: 'sales_staff',
+          name: 'کارشناس فروش',
+          permissions: [
+            'documents.list',
+            'documents.metadata.read',
+            'documents.file.read',
+            'documents.download',
+            'documents.upload',
+            'documents.version.create',
+            'documents.sensitive.read',
+            'documents.sensitive.download',
+            'documents.customer_identity.read',
+            'documents.sales.read',
+            'documents.travel.read',
+          ],
+        },
+        {
+          code: 'finance_staff',
+          name: 'کارشناس مالی',
+          permissions: [
+            'documents.list',
+            'documents.metadata.read',
+            'documents.file.read',
+            'documents.download',
+            'documents.upload',
+            'documents.version.create',
+            'documents.sensitive.read',
+            'documents.sensitive.download',
+            'documents.procurement.read',
+            'documents.finance.read',
+          ],
+        },
+        {
+          code: 'hr_staff',
+          name: 'کارشناس منابع انسانی',
+          permissions: [
+            'documents.list',
+            'documents.metadata.read',
+            'documents.file.read',
+            'documents.download',
+            'documents.upload',
+            'documents.version.create',
+            'documents.sensitive.read',
+            'documents.sensitive.download',
+            'documents.hr.read',
+          ],
+        },
+      ] as const;
       await Promise.all(
         seededPermissions.map((permission) =>
           transaction.rolePermission.upsert({
@@ -96,6 +172,32 @@ async function seed(): Promise<void> {
           }),
         ),
       );
+      for (const spec of documentRoleSpecs) {
+        const role = await transaction.role.upsert({
+          where: { code: spec.code },
+          create: {
+            code: spec.code,
+            name: spec.name,
+            description: 'نقش سیستمی حداقلی برای ماژول اسناد',
+            isSystem: true,
+          },
+          update: { name: spec.name, isActive: true },
+        });
+        for (const permission of seededPermissions.filter(({ code }) =>
+          spec.permissions.includes(code as never),
+        )) {
+          await transaction.rolePermission.upsert({
+            where: {
+              roleId_permissionId: {
+                roleId: role.id,
+                permissionId: permission.id,
+              },
+            },
+            create: { roleId: role.id, permissionId: permission.id },
+            update: {},
+          });
+        }
+      }
       const staffPermissionCodes = new Set([
         'legal-entity.read',
         'legal-entity.switch',
@@ -168,6 +270,80 @@ async function seed(): Promise<void> {
           persianName: 'شرکت جهان باستان',
         },
       ] as const;
+      const allowedDocumentMimeTypes = [
+        'application/pdf',
+        'image/png',
+        'image/jpeg',
+        'text/plain',
+        'text/csv',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ];
+      const documentTypes = [
+        ['CUSTOMER_DOCUMENT', 'مدارک مشتری', 'CUSTOMER_IDENTITY', false],
+        ['PASSPORT', 'پاسپورت', 'CUSTOMER_IDENTITY', true],
+        ['QUOTATION', 'پیشنهاد قیمت', 'SALES', true],
+        ['CONTRACT', 'قرارداد', 'SALES', true],
+        ['AMENDMENT', 'الحاقیه', 'SALES', true],
+        ['TICKET', 'بلیت', 'TRAVEL', true],
+        ['MANIFEST', 'Manifest', 'TRAVEL', false],
+        ['HOTEL_RESERVATION_FORM', 'فرم رزرو هتل', 'TRAVEL', true],
+        ['VOUCHER', 'واچر', 'TRAVEL', true],
+        ['INSURANCE_POLICY', 'بیمه‌نامه', 'TRAVEL', true],
+        ['INVOICE', 'فاکتور', 'FINANCE', false],
+        ['RECEIPT', 'رسید', 'FINANCE', false],
+        ['PROCUREMENT_DOCUMENT', 'اسناد خرید', 'PROCUREMENT', false],
+        ['FINANCIAL_DOCUMENT', 'اسناد مالی', 'FINANCE', false],
+        ['CHECK', 'چک', 'FINANCE', true],
+        ['ORGANIZATION_DOCUMENT', 'اسناد سازمانی', 'ORGANIZATION', true],
+        ['HR_DOCUMENT', 'اسناد منابع انسانی', 'HUMAN_RESOURCES', true],
+        ['REPORT_EXPORT', 'گزارش و خروجی', 'REPORTING', false],
+        ['BRAND_ASSET_TEMPLATE', 'دارایی برند و قالب', 'BRAND', false],
+      ] as const;
+      for (const [code, name, domain, requiresExpiry] of documentTypes) {
+        await transaction.documentType.upsert({
+          where: { code },
+          create: {
+            code,
+            name,
+            domain,
+            defaultConfidentiality:
+              domain === 'FINANCE' || domain === 'HUMAN_RESOURCES'
+                ? 'RESTRICTED'
+                : domain === 'CUSTOMER_IDENTITY'
+                  ? 'CONFIDENTIAL'
+                  : 'INTERNAL',
+            allowedMimeTypes: allowedDocumentMimeTypes,
+            maxFileSizeBytes: BigInt(25 * 1024 * 1024),
+            requiresExpiry,
+          },
+          update: {
+            name,
+            domain,
+            allowedMimeTypes: allowedDocumentMimeTypes,
+            requiresExpiry,
+            isActive: true,
+          },
+        });
+      }
+      const documentCategories = [
+        ['CUSTOMER_IDENTITY', 'مشتری و هویت'],
+        ['SALES_CONTRACTS', 'فروش و قرارداد'],
+        ['TRAVEL_RESERVATIONS', 'سفر و رزرواسیون'],
+        ['PROCUREMENT_FINANCE', 'خرید و مالی'],
+        ['ORGANIZATION_HR', 'سازمان و منابع انسانی'],
+        ['MISSING_EXPIRED', 'مدارک ناقص و منقضی'],
+        ['REPORTS_EXPORTS', 'گزارش‌ها و خروجی‌ها'],
+        ['BRAND_ASSETS', 'دارایی‌های برند'],
+        ['GENERAL_ARCHIVE', 'آرشیو عمومی'],
+      ] as const;
+      for (const [code, name] of documentCategories) {
+        await transaction.documentCategory.upsert({
+          where: { code },
+          create: { code, name },
+          update: { name, isActive: true },
+        });
+      }
       for (const initial of initialLegalEntities) {
         const legalEntity = await transaction.legalEntity.upsert({
           where: { code: initial.code },

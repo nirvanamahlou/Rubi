@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CUSTOMER_PERMISSION_CODES,
+  DOCUMENT_PERMISSION_CODES,
   IAM_PERMISSION_CODES,
   IAM_PERMISSION_CONTRACT_VERSION,
   MASTER_DATA_PERMISSION_CODES,
@@ -11,8 +12,8 @@ import {
 } from '../src';
 
 describe('IAM public permission contract', () => {
-  it('publishes the version 5 domain permission catalogs without duplicates', () => {
-    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(5);
+  it('publishes the version 6 domain permission catalogs without duplicates', () => {
+    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(6);
     expect(MASTER_DATA_PERMISSION_CODES).toEqual([
       'master_data.read',
       'master_data.create',
@@ -49,6 +50,18 @@ describe('IAM public permission contract', () => {
       'legal-entity.document.issue',
       'legal-entity.document.reissue',
     ]);
+    expect(DOCUMENT_PERMISSION_CODES).toEqual(
+      expect.arrayContaining([
+        'documents.list',
+        'documents.metadata.read',
+        'documents.file.read',
+        'documents.download',
+        'documents.upload',
+        'documents.audit.read',
+        'documents.finance.read',
+        'documents.hr.read',
+      ]),
+    );
     expect(new Set(IAM_PERMISSION_CODES).size).toBe(
       IAM_PERMISSION_CODES.length,
     );

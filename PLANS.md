@@ -16,12 +16,25 @@
 این برنامه backlog سطح محصول را نگهداری می‌کند. اولویت‌ها: `P0` الزامی برای
 foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه عملیاتی، `P2` بهبود بعدی.
 
+## Documents — زنجیره Stacked فعلی
+
+- [x] `DOCUMENTS-001`: Foundation رابط و معماری ماژول روی
+      `codex/pc-b-documents-foundation` / Draft PR #61؛ هنوز به `develop` ادغام نشده است.
+- [x] `DOCUMENTS-002`: Persistence و Migration افزایشی، قرارداد/IAM، API و بارگذاری واقعی،
+      Storage محلی رمزگذاری‌شده، UI متصل، تفکیک نقش و Smoke Desktop/Mobile؛ آماده Review
+      در Draft PR #64 روی Branch والد Phase A و بدون Merge مستقیم به `develop`.
+- [ ] `DOCUMENTS-003`: Adapter تولیدی S3/MinIO و Antivirus Worker عملیاتی با retry،
+      monitoring و recovery؛ پس از تصمیم امنیت/عملیات و رزرو تازه Migration/Dependency.
+- [ ] `DOCUMENTS-004`: اشتراک امن، نسخه‌گذاری تکمیلی، Export، retention نهایی و اتصال
+      producerها فقط از Public Contract/Event؛ بدون query مستقیم جدول ماژول دیگر.
+
 ## Foundation رابط تمام ماژول‌ها
 
 - [x] `MODULES-FOUNDATION-001`: Foundation قابل بررسی هر ۱۷ route، Dashboard و Sidebar
 - [x] Coverage Matrix کامل PDF با وضعیت‌های `PRESERVE`، `BUILD` و `DEFERRED`
 - [x] lint، typecheck، test، production build و HTTP smoke هر ۱۷ route
-- [ ] اتصال Persistence/API/Provider/Worker/Documents و خروجی واقعی در Taskهای مالک هر ماژول
+- [ ] اتصال کامل Provider/Worker و خروجی‌های cross-module در Taskهای مالک هر ماژول؛
+      Persistence/API و بارگذاری واقعی Documents در `DOCUMENTS-002` آماده Review است
 
 ## دروازه‌های تصمیم پیش از Foundation
 

@@ -1,0 +1,175 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  Headers,
+  Inject,
+  Param,
+  Post,
+  Query,
+  Req,
+  StreamableFile,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBody, ApiConsumes, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import type { DocumentListQueryV1 } from '@rubi/contracts';
+
+import { AuthGuard } from '../iam/auth.guard';
+import { RequirePermissions } from '../iam/iam.decorators';
+import type { AuthenticatedRequest } from '../iam/iam.types';
+import { PermissionGuard } from '../iam/permission.guard';
+// Runtime imports are required for Nest validation metadata.
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { DocumentListQueryDto, DocumentUploadDto } from './documents.dto';
+import {
+  type DocumentRequestMetadata,
+  DocumentsService,
+  type UploadedDocumentFile,
+} from './documents.service';
+import { MAX_DOCUMENT_SIZE_BYTES } from './documents.validation';
+
+function requestMetadata(
+  request: AuthenticatedRequest,
+  sensitiveReason?: string,
+): DocumentRequestMetadata {
+  const userAgent = request.headers['user-agent'];
+  return {
+    ...(request.ip ? { ipAddress: request.ip } : {}),
+    ...(userAgent
+      ? { userAgent: Array.isArray(userAgent) ? userAgent[0] : userAgent }
+      : {}),
+    ...(sensitiveReason ? { sensitiveReason } : {}),
+  };
+}
+
+@ApiTags('Documents')
+@ApiCookieAuth('rubi_access')
+@UseGuards(AuthGuard, PermissionGuard)
+@Controller('documents')
+export class DocumentsController {
+  constructor(
+    @Inject(DocumentsService) private readonly service: DocumentsService,
+  ) {}
+
+  @Get()
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @RequirePermissions('documents.list')
+  list(
+    @Query() query: DocumentListQueryDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.list(query as DocumentListQueryV1, request.actor);
+  }
+
+  @Get('options')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @RequirePermissions('documents.list')
+  options(@Req() request: AuthenticatedRequest) {
+    return this.service.options(request.actor);
+  }
+
+  @Post('upload')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: [
+        'file',
+        'title',
+        'documentTypeId',
+        'categoryId',
+        'branchId',
+        'ownerUserId',
+        'sourceModule',
+        'sourceEntityType',
+        'sourceEntityId',
+        'sourceDisplayLabel',
+      ],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        title: { type: 'string' },
+        documentTypeId: { type: 'string', format: 'uuid' },
+        categoryId: { type: 'string', format: 'uuid' },
+        branchId: { type: 'string', format: 'uuid' },
+        ownerUserId: { type: 'string', format: 'uuid' },
+        sourceModule: { type: 'string' },
+        sourceEntityType: { type: 'string' },
+        sourceEntityId: { type: 'string' },
+        sourceDisplayLabel: { type: 'string' },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { files: 1, fileSize: MAX_DOCUMENT_SIZE_BYTES },
+    }),
+  )
+  @RequirePermissions('documents.upload')
+  upload(
+    @Body() dto: DocumentUploadDto,
+    @UploadedFile() file: UploadedDocumentFile | undefined,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.upload(
+      dto,
+      file,
+      request.actor,
+      requestMetadata(request),
+    );
+  }
+
+  @Get(':id/audit')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @RequirePermissions('documents.audit.read')
+  audit(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.service.audit(id, request.actor);
+  }
+
+  @Get(':id/download')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @RequirePermissions(
+    'documents.metadata.read',
+    'documents.file.read',
+    'documents.download',
+  )
+  async download(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-sensitive-read-reason') sensitiveReason?: string,
+  ) {
+    const result = await this.service.download(
+      id,
+      request.actor,
+      requestMetadata(request, sensitiveReason),
+    );
+    return new StreamableFile(result.stream, {
+      type: result.mimeType,
+      length: result.sizeBytes,
+      disposition: `attachment; filename*=UTF-8''${encodeURIComponent(result.fileName)}`,
+    });
+  }
+
+  @Get(':id')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @RequirePermissions('documents.metadata.read')
+  detail(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-sensitive-read-reason') sensitiveReason?: string,
+  ) {
+    return this.service.detail(
+      id,
+      request.actor,
+      requestMetadata(request, sensitiveReason),
+    );
+  }
+}

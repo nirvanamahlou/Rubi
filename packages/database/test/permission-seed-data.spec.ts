@@ -35,6 +35,16 @@ describe('permission seed catalog', () => {
         'legal-entity.audit.read',
         'legal-entity.document.issue',
         'legal-entity.document.reissue',
+        'documents.list',
+        'documents.metadata.read',
+        'documents.file.read',
+        'documents.download',
+        'documents.upload',
+        'documents.audit.read',
+        'documents.sensitive.read',
+        'documents.sensitive.download',
+        'documents.finance.read',
+        'documents.hr.read',
       ]),
     );
   });

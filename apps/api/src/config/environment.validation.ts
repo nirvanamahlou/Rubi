@@ -37,4 +37,19 @@ export const environmentValidationSchema = Joi.object({
       Joi.ref('CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64'),
     )
     .required(),
+  DOCUMENTS_STORAGE_ROOT: Joi.string()
+    .trim()
+    .when('NODE_ENV', {
+      is: 'production',
+      then: Joi.string().trim().required(),
+      otherwise: Joi.string().trim().default('.data/documents'),
+    }),
+  DOCUMENTS_STORAGE_ENCRYPTION_KEY_BASE64: Joi.string()
+    .pattern(/^[A-Za-z0-9+/]{43}=$/)
+    .invalid(
+      Joi.ref('CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64'),
+      Joi.ref('CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64'),
+      Joi.ref('MASTER_DATA_IMPORT_TOKEN_KEY_BASE64'),
+    )
+    .required(),
 });

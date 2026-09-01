@@ -10,22 +10,30 @@ function productionSources(): string {
     .join('\n');
 }
 
-describe('documents Phase A boundary', () => {
-  it('contains domain, validation, application and adapter ports only', () => {
+describe('documents vertical-slice boundary', () => {
+  it('keeps persistence inside the owning module and avoids foreign repositories', () => {
     const source = productionSources();
-    expect(source).toContain('DocumentsApplicationPort');
-    expect(source).toContain('ObjectStoragePort');
-    expect(source).toContain('AntivirusScanPort');
-    expect(source).toContain('DOCUMENTS_PHASE_A_NOTICE');
+    expect(source).toContain('class DocumentsRepository');
+    expect(source).toContain('class DocumentsService');
+    expect(source).toContain('class DocumentsController');
     expect(source).not.toMatch(
-      /@rubi\/database|PrismaClient|@nestjs|packages\/database|\.\.\/iam|\.\.\/master-data|\.\.\/ticket-catalog/,
+      /\.\.\/(?:master-data|customers|customer-affairs|finance|ticket-catalog)\//,
     );
   });
 
-  it('does not expose an active controller, repository or fabricated persistence', () => {
+  it('exposes the real module while keeping file bytes out of repository fields', () => {
     const files = readdirSync(join(process.cwd(), 'src', 'documents'));
-    expect(
-      files.some((file) => /controller|repository|module/i.test(file)),
-    ).toBe(false);
+    expect(files).toEqual(
+      expect.arrayContaining([
+        'documents.controller.ts',
+        'documents.repository.ts',
+        'documents.service.ts',
+        'documents.storage.ts',
+        'documents.module.ts',
+      ]),
+    );
+    const source = productionSources();
+    expect(source).toContain('storageObjectKey');
+    expect(source).not.toMatch(/(?:fileBytes|binaryData|base64Payload)\s*:/);
   });
 });
