@@ -5,6 +5,7 @@
 - **Base:** `origin/develop@f78e70e`
 - **Status:** READY_FOR_REVIEW
 - **Date:** 2026-09-01
+- **PR:** Draft [#75](https://github.com/nirvanamahlou/Rubi/pull/75) → `develop`
 - **Persistence:** ندارد؛ فقط Foundation و Preview
 - **Schema/Migration/Seed/Dependency:** بدون تغییر
 
