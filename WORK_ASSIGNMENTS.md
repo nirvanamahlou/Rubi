@@ -11,6 +11,19 @@
 - نتیجه: Workflow خواندنی و بدون Deploy آماده شد. Full lint/typecheck/test/build محلی موفق است؛ ۲۸ Migration روی PostgreSQL 18 خالی اعمال و Seed دوبار موفق شد. فایل‌های همین Slice با Prettier معتبرند؛ بدهی قالب‌بندی ۵۰۷ فایل قدیمی فقط به‌عنوان سابقه ثبت و به Branchهای جاری تحمیل نشد.
 - Final lock state: `RELEASED — PC-B/CI-001 ready for review`. این Task هیچ Migration، Dependency/Lockfile، Schema/Seed، Contract یا مالکیت ماژولی نگرفت؛ Branchها، Worktreeها، Dev Serverها و دیتابیس‌های PC-A/PC-B دست‌نخورده ماندند.
 
+## DOCUMENTS-003C-DEMO-BOOTSTRAP — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک: داده‌ها و فایل‌های نمایشی بخش اسناد به‌شکلی در Git منتشر شوند که PC-A و PC-B بتوانند همان بسته را روی دیتابیس و Storage محلی خود ایجاد کنند. `COMPUTER_ID=PC-B`.
+- Branch: `codex/pc-b-documents-demo-bootstrap`؛ پس از Rebase نهایی روی `origin/develop@74351cd`، توسعه مستقیم روی `develop` یا `main` انجام نشد.
+- محدوده رزروشده: Fixture و فرمان Preview/Apply محلی در `apps/api/src/documents/demo/**` و `apps/api/scripts/**`، تست‌های Documents، Scriptهای Root در `package.json` و مستند همین Task؛ فقط ورودی‌های همین Work Item در اسناد مرکزی.
+- بسته فقط داده و فایل کاملاً ساختگی تولید می‌کند، به User/Branch/Permission موجود متصل می‌شود و هیچ حساب، رمز، Session، PII، Secret یا Binary واقعی را وارد Git نمی‌کند. فایل تصویر در زمان اجرا به‌صورت قطعی تولید و با Storage خصوصی AES-256-GCM ذخیره می‌شود.
+- Apply فقط برای `development/test`، PostgreSQL محلی allowlist‌شده و با تأیید صریح مجاز است؛ Startup، Seed عمومی و Production آن را اجرا نمی‌کنند. اجرای دوباره idempotent است و رکورد ویرایش‌شده کاربر را بازنویسی نمی‌کند.
+- وضعیت `CLEAN` فقط پس از اسکن واقعی Adapter فعال ثبت می‌شود؛ نبود یا خطای Antivirus کل Apply را fail-closed متوقف می‌کند. Preview هیچ رکورد یا فایل ایجاد نمی‌کند.
+- بدون Schema/Migration، قرارداد عمومی، Dependency/Lockfile یا تغییر Permission. `package.json` فقط برای دو Script محلی رزرو است؛ Migration و Dependency/Lockfile Owner آزاد می‌مانند.
+- نتیجه: هفت سند کاملاً ساختگی با تصویر PNG واقعی و رنگی برای هویت مشتری، فروش، سفر، خرید و منابع انسانی آماده شد؛ دو سند نزدیک انقضا و یک سند منقضی نیز KPIهای نمای کلی را پوشش می‌دهند. فایل‌ها در زمان اجرا تولید و فقط به‌صورت رمزگذاری‌شده ذخیره می‌شوند.
+- Validation: Preview روی دیتابیس برنامه بدون Write، Apply با Microsoft Defender واقعی، اجرای دوم با `created=0/reused=7`، مشاهده هر هفت رکورد و Preview PNG از API موفق بود. چهار تست PostgreSQL مستقل، ۷۲۹ تست API با ۷۰ skip اختیاری، lint API، typecheck کامل Workspace و Build API موفق‌اند.
+- Final lock state: `RELEASED — PC-B/DOCUMENTS-003C-DEMO-BOOTSTRAP ready for review`. هیچ Migration، Contract، Permission، Dependency یا Lockfile تغییر نکرد؛ داده کاربردی و Secret وارد Git نمی‌شود.
+
 ## IAM-003-LOGIN-STABILITY — PC-B — DONE/MERGED
 
 - درخواست صریح مالک در 2026-08-31: خطای تکراری «رمز صحیح نیست» پس از تغییر/راه‌اندازی مجدد به‌صورت دائمی برطرف شود. `COMPUTER_ID=PC-B`.

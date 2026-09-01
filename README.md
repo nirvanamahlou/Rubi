@@ -83,6 +83,27 @@ pnpm --filter @rubi/worker dev
 Worker برای startup به Redis در دسترس نیاز دارد. Prisma commandها نیز `DATABASE_URL` را از
 `.env` ریشه می‌خوانند. schema فعلی عمداً model ندارد و تولید Client بدون مدل مصنوعی معتبر است.
 
+## داده نمایشی اسناد
+
+پس از اجرای Migrationها و Seed معمول، هر توسعه‌دهنده می‌تواند همان هفت سند و تصویر کاملاً
+ساختگی را روی دیتابیس و Storage محلی خود ایجاد کند. ابتدا نتیجه را بدون هیچ تغییری ببینید:
+
+```powershell
+pnpm documents:demo:preview
+```
+
+سپس، در حالی که Antivirus محلی فعال است، داده‌ها را اعمال کنید:
+
+```powershell
+pnpm documents:demo:apply
+```
+
+فرمان Apply فقط در محیط `development/test` و فقط برای PostgreSQL محلی Rubi روی پورت
+`55432` اجرا می‌شود. اجرای دوباره رکورد تکراری نمی‌سازد و Metadata ویرایش‌شده کاربر را
+بازنویسی نمی‌کند. تنظیمات به‌طور پیش‌فرض از `apps/api/.env` خوانده می‌شوند؛ برای مسیر
+دیگر، `RUBI_API_ENV_FILE` را تعیین کنید. این بسته حساب مدیر یا رمز ایجاد نمی‌کند و به یک
+مدیر فعال و شعبه مجاز موجود نیاز دارد.
+
 ## اسناد مرجع
 
 - نیازمندی محصول: [docs/PRODUCT_REQUIREMENTS.md](docs/PRODUCT_REQUIREMENTS.md)
