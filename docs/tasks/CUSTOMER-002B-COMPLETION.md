@@ -89,7 +89,7 @@ Proposed policy, NOT accepted: AES-256-GCM with versioned keys and independent H
 
 - Import remains a client-orchestrated series of individually persisted API mutations, not an atomic/idempotent server import job. A later contact failure can leave the already-created profile. Server-side duplicate validation still applies; resumable jobs and durable per-row receipts require the schema/contract work above.
 - XLSX template `customers-person-v2` is identified in the preview UI; a negotiated server-side template-version/import-job contract is not implemented. The current template requires name and Iranian national ID and does not claim organization/foreign-person import support.
-- Masked export is still based on existing `customers.read` and branch scope. Dedicated export permission, sensitive export and secure file delivery are not implemented. No sensitive export was enabled.
+- Masked export remains available with `customers.read` and branch scope. The UI follow-up also offers a client-generated full-phone XLSX only after selecting an allowlisted reason; every row is fetched through the existing audited `customers.sensitive.read` path and the whole export aborts on a reveal failure. A dedicated export permission and server-side secure file delivery are still not implemented.
 - Existing address storage is a label plus city reference, not encrypted full-address storage. Do not use the label for a full street address. Notes, travel documents, retention/legal hold and cross-module KPI sources are not fabricated.
 - Upgrade tests on the final merged develop baseline, real foreign identity tests, browser interaction tests, retention and storage-backed idempotency tests remain outstanding; full CUSTOMER-002B is not complete.
 
@@ -117,6 +117,13 @@ Proposed policy, NOT accepted: AES-256-GCM with versioned keys and independent H
 - Reveal success or 401/403/decryption/no-value/network failure is shown beside the reveal control. 401 offers a non-PII login path; 403 does not weaken permission enforcement.
 - Existing encryption keys are not replaced and sensitive values remain out of URLs, logs, storage and default responses.
 - Verification: 86 targeted Customers tests and all 516 Web tests pass after refreshing the built contract package. Web lint passes. Full Web typecheck remains blocked only by pre-existing Master Data contract/source skew on the fetched develop baseline; no Customer type error is reported.
+
+## Audited full-phone XLSX follow-up — 2026-09-01
+
+- The existing masked export remains the default. A separate full-phone export requires an allowlisted reason and uses the permission-, branch- and Audit-enforced sensitive-detail endpoint for every filtered customer.
+- The file is not generated partially: permission, decryption or network failure aborts it and shows the same specific safe reveal feedback. National IDs remain masked and spreadsheet formula protection remains in the shared XLSX writer.
+- Existing encrypted values and key versions are not rewritten. A legacy contact encrypted with an unavailable key cannot be reconstructed from its mask and must be corrected through an authorized data-maintenance workflow.
+- Verification: 86 Customers tests, scoped ESLint, scoped Prettier and `git diff --check` pass.
 
 ## Merge prerequisites
 
