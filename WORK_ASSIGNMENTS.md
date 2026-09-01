@@ -1,5 +1,14 @@
 # Work Assignments
 
+## CI-001 — PC-B — IN_PROGRESS
+
+- درخواست صریح مالک در 2026-09-01: CI مشترک و اجباری برای Branchها و PRهای PC-A/PC-B، بدون لغو یا اختلال متقابل، پیاده‌سازی شود. `COMPUTER_ID=PC-B`.
+- Branch: `codex/pc-b-ci-foundation` از `origin/develop@8758271883bf1d9f4bb072aa31250b39f66e4e07` در Worktree مستقل `C:\Users\admin\Rubi-ci`؛ Checkoutها، Branchها، سرورها و تغییرات محلی هر دو کامپیوتر خارج از این کار هستند.
+- محدوده رزروشده: Workflow جدید `.github/workflows/ci.yml`، سند مستقل `docs/tasks/CI-001.md` و فقط ورودی‌های همین Work Item در اسناد وضعیت مرکزی.
+- این Task هیچ مالکیت Migration، Dependency/Lockfile، Schema/Seed، API Contract یا ماژول کاربردی نمی‌گیرد و هیچ فایل `package.json`، `pnpm-lock.yaml` یا Migration را تغییر نمی‌دهد.
+- CI برای Push و Pull Request شاخه‌های `codex/pc-a-*` و `codex/pc-b-*` و Push به `develop` اجرا می‌شود. کلید Concurrency بر اساس Head Branch است؛ فقط اجرای قدیمی همان Branch لغو می‌شود و اجرای PC-A/PC-B مستقل می‌ماند.
+- Gate اجباری این Slice: نصب frozen با Node/pnpm pin‌شده، Prisma format/validate/generate، Format check، Full Monorepo lint، Full typecheck/test/build و Migration/Seed دوگانه روی PostgreSQL 18 موقت. هیچ Deploy، Production credential یا تغییر دیتابیس کاربردی انجام نمی‌شود.
+
 ## IAM-003-LOGIN-STABILITY — PC-B — DONE/MERGED
 
 - درخواست صریح مالک در 2026-08-31: خطای تکراری «رمز صحیح نیست» پس از تغییر/راه‌اندازی مجدد به‌صورت دائمی برطرف شود. `COMPUTER_ID=PC-B`.
