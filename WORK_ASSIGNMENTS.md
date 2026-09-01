@@ -1,13 +1,36 @@
 # Work Assignments
 
-## MASTER-003-DEVELOP-INTEGRATION — PC-B — READY_FOR_REVIEW
+## MASTER-003-LOCK-RELEASE — PC-A — READY_FOR_REVIEW
 
+- Product-owner authorization on 2026-09-01: release the remaining `PC-B/MASTER-003`
+  development locks after the verified merge of PR #60 into `develop`.
+- Verified prerequisite: PR #60 is `MERGED`; `origin/develop` contains merge commit
+  `1fd22efd836e16df5a62b73430444bd3f856f5e6`, all 27 migrations, the stable
+  Master Data contract, and the recorded integration gates.
+- On merge of this documentation-only handoff, the following locks become
+  `RELEASED / UNASSIGNED`: Migration Owner, Master Data shared-contract/root export,
+  and Central development/status docs. Dependency/Lockfile was already `RELEASED`
+  and remains unchanged.
+- No lock is automatically transferred to Documents, Ticket Catalog, or another
+  module. A later task must reserve each needed lock atomically from fresh
+  `origin/develop`; only one Migration Owner and one Dependency/Lockfile Owner may
+  exist at a time.
+- Historical MASTER-003 source branches and reports remain immutable evidence.
+  Future Master Data changes require a new work item and fresh reservations.
+- Scope is limited to `WORK_ASSIGNMENTS.md`, `PLANS.md`, `docs/PROJECT_STATUS.md`,
+  and `docs/tasks/MASTER-003-LOCK-RELEASE.md`; no application code, schema,
+  migration, dependency, lockfile, account, runtime, or database change is allowed.
+
+## MASTER-003-DEVELOP-INTEGRATION — PC-B — DONE / MERGED
+
+- PR #60 merged normally into `develop` as `1fd22efd836e16df5a62b73430444bd3f856f5e6`;
+  its integration-only reservation is complete.
 - Owner explicitly requested push and merge to dev/develop on 2026-08-31. This authorizes this normal PR integration, superseding the earlier no-merge restriction for the delivered Master Data snapshots; no force push or source-branch deletion.
 - Base: `origin/develop@e25f2886c3e6d7e90c33ef27604bdce76dc973f0` (merged #58). Source: #59 `b04c2bd7c31b6ef85ed7357d83f4c5f548183d12`, including #57 `6abd960` and the existing #55/#54/#47 lineage already retained by #58.
 - Branch: `codex/pc-b-master-data-develop-integration`; isolated worktree preserves the original checkout, live servers, private configuration and data.
 - Reservation under PC-B/MASTER-003: integration of the published Master Data files/migration/contract; compatibility changes in Master Data tests only; WORK_ASSIGNMENTS, PROJECT_STATUS, preservation of both published DECISIONS entries, and this integration task report. No new feature, Customers/Calendar edit, historical migration rewrite, dependency/lockfile change, or application database operation.
 - #58 integration reservation ended upon its verified merge. Existing PC-B development locks remain unchanged; this does not acquire or release another module's locks. Combined checks and review must pass before normal PR merge; no invented approvals or protection bypass.
-- Combined gates passed: full lint/typecheck/build, 1,257 ordinary tests and all 66 opt-in PostgreSQL tests, 27 migrations on empty PostgreSQL 18, two seeds, 45 authenticated catalog lists and 11 authenticated production HTTP/RTL routes. No application database or account changed. Existing Swagger documentation debt remains unchanged and is explicitly reported, not marked passed. See `docs/tasks/MASTER-003-DEVELOP-INTEGRATION.md`. On successful PR merge only this integration reservation becomes DONE/MERGED; source branches and PC-B development locks remain.
+- Combined gates passed: full lint/typecheck/build, 1,257 ordinary tests and all 66 opt-in PostgreSQL tests, 27 migrations on empty PostgreSQL 18, two seeds, 45 authenticated catalog lists and 11 authenticated production HTTP/RTL routes. No application database or account changed. Existing Swagger documentation debt remains unchanged and is explicitly reported, not marked passed. See `docs/tasks/MASTER-003-DEVELOP-INTEGRATION.md`. PR #60 completed the integration reservation; the explicit global lock release is recorded by `MASTER-003-LOCK-RELEASE` above.
 
 ## SHARED-INTEGRATION-0831 — PC-A — IN_PROGRESS
 

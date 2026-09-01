@@ -1,11 +1,22 @@
 # برنامه اجرای Rubi
 
-## یکپارچه‌سازی مشترک — 2026-08-31
+## Handoff آزادسازی MASTER-003 — 2026-09-01
 
-- SHARED-INTEGRATION-0831 در حال ترکیب Snapshotهای منتشرشده PR #55/#56/#46 در یک develop است؛ Branchهای مبدأ حفظ و نسخه ترکیبی بازبینی می‌شود.
+- [x] ادغام نهایی اطلاعات پایه از طریق PR #60 و Merge Commit `1fd22ef` تأیید شد.
+- [ ] پس از Merge PR این Handoff، Migration Owner، Master Data contract/root export
+      و Central development docs برابر `RELEASED / UNASSIGNED` می‌شوند.
+- [x] Dependency/Lockfile بدون تغییر در وضعیت `RELEASED` باقی می‌ماند.
+- [ ] Documents و Ticket Catalog برای هر Persistence یا تغییر قرارداد مرکزی، قفل
+      لازم را جداگانه و به‌ترتیب رزرو می‌کنند؛ اجرای دو Migration Owner موازی ممنوع است.
+- ادامه اطلاعات پایه با شناسه `MASTER-004` یا Task تازه انجام می‌شود و حق استفاده
+  ضمنی از قفل‌های تاریخی MASTER-003 ندارد.
+
+## یکپارچه‌سازی مشترک — 2026-08-31 — DONE
+
+- SHARED-INTEGRATION-0831 از طریق PR #58 و تکمیل اطلاعات پایه از طریق PR #60 در یک `develop` مشترک ادغام شدند؛ Branchهای مبدأ حفظ شده‌اند.
 - بلیت Phase A باقی می‌ماند؛ قیمت نهایی فروش در Sales، قیمت خرید مرجع در Catalog و صدور/Manifest در Reservations است.
-- پس از عبور Gateها و Merge، هر دو دستگاه از همان Commit develop استفاده می‌کنند. Git کد را همگام می‌کند، نه داده یا کلید خصوصی دیتابیس محلی را.
-- توسعه بعدی در Branch ماژولی انجام می‌شود؛ قفل Migration/Contract اطلاعات پایه بدون Handoff صریح جابه‌جا نمی‌شود.
+- هر دو دستگاه باید از آخرین Commit `develop` استفاده کنند. Git کد را همگام می‌کند، نه داده یا کلید خصوصی دیتابیس محلی را.
+- توسعه بعدی در Branch ماژولی انجام می‌شود؛ Handoff صریح آزادسازی قفل‌های اطلاعات پایه در `MASTER-003-LOCK-RELEASE` ثبت شده است.
 
 ## تحویل زنجیره مشتریان — 2026-08-31
 
