@@ -109,14 +109,17 @@ export const documentsApi = {
       body: form,
     });
   },
-  async branchReferences(): Promise<readonly BranchReference[]> {
+  async sessionContext(): Promise<LoginResponse['user']> {
     const baseUrl = getPublicApiBaseUrl();
     if (!baseUrl)
       throw new DocumentsApiError('نشانی API پیکربندی نشده است.', 0);
     const session = await refreshAccess(baseUrl);
-    if (!session?.user.branches)
-      throw new DocumentsApiError('دریافت شعب مجاز ناموفق بود.', 0);
-    return session.user.branches;
+    if (!session?.user)
+      throw new DocumentsApiError('دریافت اطلاعات کاربر ناموفق بود.', 0);
+    return session.user;
+  },
+  async branchReferences(): Promise<readonly BranchReference[]> {
+    return (await this.sessionContext()).branches;
   },
   async download(id: string, sensitiveReason?: string) {
     const baseUrl = getPublicApiBaseUrl();

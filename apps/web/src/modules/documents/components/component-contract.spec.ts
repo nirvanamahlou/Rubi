@@ -48,6 +48,11 @@ describe('documents workspace contract', () => {
       'تازه‌های آرشیو',
       'کارهای من',
       'بازگشت به نمای کلی',
+      'لینک‌های داخلی اسناد',
+      'اسناد من',
+      'بارگذاری‌های من',
+      'اخیراً دیده‌شده',
+      'علاقه‌مندی‌ها',
     ])
       expect(source).toContain(marker);
     for (const removedCopy of [
@@ -55,10 +60,14 @@ describe('documents workspace contract', () => {
       'آرشیو مرکزی فایل نهایی، Metadata',
       'نتیجه عملیات',
       'SavedDocumentView',
+      "{ key: 'activity', label: 'فعالیت و گزارش دسترسی'",
     ])
       expect(source).not.toContain(removedCopy);
     expect(source).toContain('bg-gradient-to-br');
     expect(source).toContain('absolute inset-y-0 start-0 w-1');
+    expect(source).toContain('from-sky-50 via-blue-50/85');
+    expect(source).toContain('personalView: serverPersonalView');
+    expect(source).toContain("url.searchParams.set('document', id)");
   });
 
   it('uses the versioned backend and contains no production preview records', () => {

@@ -2,12 +2,14 @@
 
 import {
   Activity,
+  Copy,
   Download,
   FileClock,
   FileSearch,
   Link2,
   LockKeyhole,
   ShieldCheck,
+  Star,
 } from 'lucide-react';
 import type { DocumentAuditEventV1, DocumentDetailV1 } from '@rubi/contracts';
 
@@ -19,6 +21,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogTitle,
+  Input,
   Skeleton,
   Tabs,
   TabsContent,
@@ -34,12 +37,12 @@ const confidentialityLabel = {
 } as const;
 
 const scanLabel = {
-  PENDING_SCAN: 'در انتظار اسکن',
+  PENDING_SCAN: 'در حال اسکن امنیتی',
   CLEAN: 'پاک و مجاز',
   INFECTED: 'آلوده',
   SCAN_FAILED: 'خطای اسکن',
   QUARANTINED: 'قرنطینه',
-  AWAITING_ANTIVIRUS_ADAPTER: 'در انتظار اتصال آنتی‌ویروس',
+  AWAITING_ANTIVIRUS_ADAPTER: 'نیازمند بررسی امنیتی',
 } as const;
 
 function date(value: string | null) {
@@ -56,7 +59,7 @@ function InfoGrid({ rows }: { rows: readonly [string, string][] }) {
     <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {rows.map(([label, value]) => (
         <div
-          className="rounded-xl border border-border bg-muted/35 p-3"
+          className="rounded-xl border border-sky-200/80 bg-gradient-to-br from-sky-50 to-blue-50/80 p-3 shadow-sm dark:border-sky-400/20 dark:from-sky-950/35 dark:to-blue-950/25"
           key={label}
         >
           <dt className="text-xs font-semibold text-muted-foreground">
@@ -74,23 +77,50 @@ export function DocumentDetailDialog({
   document,
   error,
   loading,
+  favorite,
+  onCopyLink,
   onDownload,
   onOpenChange,
+  onToggleFavorite,
   open,
+  shareLink,
 }: {
   audit: readonly DocumentAuditEventV1[];
   document: DocumentDetailV1 | null;
   error: string;
   loading: boolean;
+  favorite: boolean;
+  onCopyLink: (document: DocumentDetailV1) => void;
   onDownload: (document: DocumentDetailV1) => void;
   onOpenChange: (open: boolean) => void;
+  onToggleFavorite: (document: DocumentDetailV1) => void;
   open: boolean;
+  shareLink: string;
 }) {
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto p-0">
-        <div className="sticky top-0 z-10 border-b border-border bg-surface px-6 py-5 pe-14">
-          <DialogTitle>{document?.title ?? 'جزئیات سند'}</DialogTitle>
+        <div className="sticky top-0 z-10 border-b border-sky-200 bg-gradient-to-l from-sky-50 via-white to-blue-50 px-6 py-5 pe-14 dark:border-sky-400/20 dark:from-sky-950/70 dark:via-surface dark:to-blue-950/50">
+          <div className="flex items-center gap-3">
+            <DialogTitle>{document?.title ?? 'جزئیات سند'}</DialogTitle>
+            {document ? (
+              <Button
+                aria-label={
+                  favorite ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'
+                }
+                onClick={() => onToggleFavorite(document)}
+                size="icon"
+                variant="ghost"
+              >
+                <Star
+                  aria-hidden="true"
+                  className={
+                    favorite ? 'size-5 fill-amber-400 text-amber-500' : 'size-5'
+                  }
+                />
+              </Button>
+            ) : null}
+          </div>
           <DialogDescription>
             {document
               ? `${document.archiveCode} · ${document.type.name}`
@@ -111,7 +141,7 @@ export function DocumentDetailDialog({
             />
           ) : document ? (
             <Tabs defaultValue="preview" dir="rtl">
-              <TabsList className="mb-5 flex w-full gap-1 overflow-x-auto">
+              <TabsList className="mb-5 flex w-full gap-1 overflow-x-auto border border-sky-200 bg-sky-50/80 p-1 dark:border-sky-400/20 dark:bg-sky-950/30">
                 {(
                   [
                     ['preview', 'پیش‌نمایش'],
@@ -130,7 +160,7 @@ export function DocumentDetailDialog({
 
               <TabsContent value="preview">
                 <div className="grid gap-4 lg:grid-cols-[1fr_18rem]">
-                  <div className="grid min-h-80 place-items-center rounded-2xl border border-dashed border-blue-200 bg-blue-50/50 p-8 text-center dark:bg-blue-950/20">
+                  <div className="grid min-h-80 place-items-center rounded-2xl border border-dashed border-sky-300 bg-gradient-to-br from-sky-50 via-blue-50/70 to-indigo-50 p-8 text-center shadow-inner dark:border-sky-400/30 dark:from-sky-950/50 dark:via-blue-950/30 dark:to-indigo-950/30">
                     <div>
                       <FileSearch
                         className="mx-auto size-12 text-primary"
@@ -209,7 +239,7 @@ export function DocumentDetailDialog({
                   />
                   {document.relations.map((relation) => (
                     <div
-                      className="flex items-start gap-3 rounded-xl border border-border p-4"
+                      className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50/70 p-4 shadow-sm dark:border-emerald-400/20 dark:from-emerald-950/35 dark:to-teal-950/25"
                       key={relation.id}
                     >
                       <Link2
@@ -232,7 +262,7 @@ export function DocumentDetailDialog({
                 <div className="space-y-3">
                   {document.versions.map((version) => (
                     <div
-                      className="flex flex-col gap-3 rounded-xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-col gap-3 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50/70 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-violet-400/20 dark:from-violet-950/35 dark:to-indigo-950/25"
                       key={version.id}
                     >
                       <div className="flex items-start gap-3">
@@ -260,7 +290,7 @@ export function DocumentDetailDialog({
 
               <TabsContent value="access">
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-2xl border border-border p-4">
+                  <div className="rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 to-blue-100/60 p-4 shadow-sm dark:border-sky-400/20 dark:from-sky-950/45 dark:to-blue-950/30">
                     <LockKeyhole
                       className="size-6 text-primary"
                       aria-hidden="true"
@@ -283,11 +313,33 @@ export function DocumentDetailDialog({
                       )}
                     </div>
                   </div>
-                  <Alert
-                    description="ایجاد و لغو لینک امن با گیرنده، نسخه ثابت، انقضا و سقف استفاده در Slice مستقل پیاده می‌شود."
-                    title="اشتراک امن · مرحله بعد"
-                    tone="warning"
-                  />
+                  <div className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-100/60 p-4 shadow-sm dark:border-violet-400/20 dark:from-violet-950/45 dark:to-indigo-950/30">
+                    <Link2
+                      aria-hidden="true"
+                      className="size-6 text-violet-700 dark:text-violet-300"
+                    />
+                    <h3 className="mt-3 font-black">لینک داخلی سند</h3>
+                    <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                      گیرنده پس از ورود و فقط در صورت داشتن مجوز همین سند
+                      می‌تواند آن را باز کند.
+                    </p>
+                    <div className="mt-3 flex gap-2">
+                      <Input
+                        aria-label="لینک داخلی سند"
+                        className="text-left text-xs"
+                        dir="ltr"
+                        readOnly
+                        value={shareLink}
+                      />
+                      <Button
+                        onClick={() => onCopyLink(document)}
+                        type="button"
+                      >
+                        <Copy aria-hidden="true" className="size-4" />
+                        کپی لینک
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
 
@@ -304,7 +356,7 @@ export function DocumentDetailDialog({
                     {audit.length ? (
                       audit.map((event) => (
                         <div
-                          className="border-s-2 border-blue-200 ps-4"
+                          className="rounded-xl border-s-4 border-sky-300 bg-sky-50/70 p-3 ps-4 dark:bg-sky-950/25"
                           key={event.id}
                         >
                           <p className="text-sm font-bold">{event.action}</p>
@@ -331,7 +383,7 @@ export function DocumentDetailDialog({
                       title="Legal Hold"
                       tone={document.legalHoldActive ? 'warning' : 'info'}
                     />
-                    <div className="rounded-xl border border-border p-4">
+                    <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-4 dark:border-emerald-400/20 dark:from-emerald-950/35 dark:to-teal-950/25">
                       <ShieldCheck
                         className="size-5 text-primary"
                         aria-hidden="true"

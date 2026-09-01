@@ -1,12 +1,13 @@
 'use client';
 
 import {
-  Activity,
   Archive,
   Building2,
+  Check,
   ChevronLeft,
   ChevronRight,
   ClockAlert,
+  Copy,
   FileLock2,
   Files,
   FileSearch,
@@ -18,6 +19,7 @@ import {
   Search,
   Settings2,
   ShieldAlert,
+  Sparkles,
   ShoppingCart,
   Star,
   UploadCloud,
@@ -69,8 +71,9 @@ type SectionKey =
   | 'hr'
   | 'expired'
   | 'shares'
-  | 'activity'
   | 'archive';
+
+type PersonalViewKey = 'owned' | 'uploaded' | 'recent' | 'favorites';
 
 const sections: readonly {
   key: SectionKey;
@@ -112,7 +115,6 @@ const sections: readonly {
   },
   { key: 'expired', label: 'مدارک ناقص و منقضی', icon: ClockAlert },
   { key: 'shares', label: 'اشتراک‌گذاری‌ها', icon: Link2 },
-  { key: 'activity', label: 'فعالیت و گزارش دسترسی', icon: Activity },
   { key: 'archive', label: 'مدیریت آرشیو', icon: Archive },
 ];
 
@@ -127,11 +129,25 @@ const archiveSections = [
   'خروجی‌ها و پردازش‌ها',
 ] as const;
 
-const personalViews = [
-  'اسناد من',
-  'بارگذاری‌های من',
-  'اخیراً دیده‌شده',
-  'علاقه‌مندی‌ها',
+const personalViews: readonly {
+  key: PersonalViewKey;
+  label: string;
+  icon: typeof Files;
+}[] = [
+  { key: 'owned', label: 'اسناد من', icon: FileLock2 },
+  { key: 'uploaded', label: 'بارگذاری‌های من', icon: UploadCloud },
+  { key: 'recent', label: 'اخیراً دیده‌شده', icon: FileSearch },
+  { key: 'favorites', label: 'علاقه‌مندی‌ها', icon: Star },
+] as const;
+
+const sectionSurface =
+  'border-sky-200/80 bg-gradient-to-br from-white via-sky-50/55 to-blue-100/45 shadow-sm transition duration-200 hover:border-sky-300 hover:shadow-md dark:border-sky-400/20 dark:from-surface dark:via-sky-950/30 dark:to-blue-950/25';
+
+const archiveTone = [
+  'border-sky-200 bg-gradient-to-br from-sky-50 to-blue-100/70 dark:border-sky-400/20 dark:from-sky-950/45 dark:to-blue-950/30',
+  'border-violet-200 bg-gradient-to-br from-violet-50 to-purple-100/70 dark:border-violet-400/20 dark:from-violet-950/45 dark:to-purple-950/30',
+  'border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-100/70 dark:border-emerald-400/20 dark:from-emerald-950/45 dark:to-teal-950/30',
+  'border-amber-200 bg-gradient-to-br from-amber-50 to-orange-100/70 dark:border-amber-400/20 dark:from-amber-950/45 dark:to-orange-950/30',
 ] as const;
 
 const confidentialityLabel = {
@@ -142,12 +158,12 @@ const confidentialityLabel = {
 } as const;
 
 const scanLabel = {
-  PENDING_SCAN: 'در انتظار اسکن',
+  PENDING_SCAN: 'در حال اسکن امنیتی',
   CLEAN: 'پاک',
   INFECTED: 'آلوده',
   SCAN_FAILED: 'خطای اسکن',
   QUARANTINED: 'قرنطینه',
-  AWAITING_ANTIVIRUS_ADAPTER: 'در انتظار آنتی‌ویروس',
+  AWAITING_ANTIVIRUS_ADAPTER: 'نیازمند بررسی امنیتی',
 } as const;
 
 function date(value: string | null) {
@@ -270,25 +286,49 @@ export function DocumentsWorkspace() {
   const [detailError, setDetailError] = useState('');
   const [detail, setDetail] = useState<DocumentDetailV1 | null>(null);
   const [audit, setAudit] = useState<readonly DocumentAuditEventV1[]>([]);
+  const [currentUserId, setCurrentUserId] = useState('');
+  const [personalView, setPersonalView] = useState<PersonalViewKey | null>(
+    null,
+  );
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [copiedDocumentId, setCopiedDocumentId] = useState('');
 
   const effectiveQuery = useMemo(() => {
     const active = sections.find((item) => item.key === section);
     const domain = sectionDomain ?? active?.domain;
+    const serverPersonalView =
+      personalView === 'owned'
+        ? ('OWNED' as const)
+        : personalView === 'uploaded'
+          ? ('UPLOADED' as const)
+          : personalView === 'recent'
+            ? ('RECENTLY_VIEWED' as const)
+            : undefined;
     return {
       ...query,
+      ...(personalView === 'favorites' ? { page: 1, pageSize: 100 } : {}),
       ...(domain ? { domain } : {}),
       ...(section === 'expired' ? { validity: 'EXPIRED' as const } : {}),
+      ...(serverPersonalView ? { personalView: serverPersonalView } : {}),
     };
-  }, [query, section, sectionDomain]);
+  }, [personalView, query, section, sectionDomain]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const response = await documentsApi.list(effectiveQuery);
-      setDocuments(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const visible =
+        personalView === 'favorites'
+          ? response.data.filter((item) => favoriteIds.has(item.id))
+          : response.data;
+      setDocuments(visible);
+      setTotal(
+        personalView === 'favorites' ? visible.length : response.meta.total,
+      );
+      setTotalPages(
+        personalView === 'favorites' ? 1 : response.meta.totalPages,
+      );
       setSelected(new Set());
     } catch (caught) {
       const apiError = caught instanceof DocumentsApiError ? caught : null;
@@ -297,20 +337,45 @@ export function DocumentsWorkspace() {
     } finally {
       setLoading(false);
     }
-  }, [effectiveQuery]);
+  }, [effectiveQuery, favoriteIds, personalView]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   useEffect(() => {
-    Promise.all([documentsApi.options(), documentsApi.branchReferences()])
-      .then(([documentOptions, allowedBranches]) => {
+    Promise.all([documentsApi.options(), documentsApi.sessionContext()])
+      .then(([documentOptions, sessionUser]) => {
         setOptions(documentOptions.data);
-        setBranches(allowedBranches);
+        setBranches(sessionUser.branches);
+        setCurrentUserId(sessionUser.id);
       })
       .catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (!currentUserId || typeof window === 'undefined') return;
+    const stored = window.localStorage.getItem(
+      `rubi.documents.favorites.${currentUserId}`,
+    );
+    if (!stored) return;
+    try {
+      const values = JSON.parse(stored) as unknown;
+      if (Array.isArray(values)) {
+        setFavoriteIds(
+          new Set(
+            values.filter(
+              (value): value is string => typeof value === 'string',
+            ),
+          ),
+        );
+      }
+    } catch {
+      window.localStorage.removeItem(
+        `rubi.documents.favorites.${currentUserId}`,
+      );
+    }
+  }, [currentUserId]);
 
   function updateQuery(patch: Partial<DocumentListQueryV1>) {
     setQuery((current) => ({ ...current, ...patch, page: patch.page ?? 1 }));
@@ -325,6 +390,7 @@ export function DocumentsWorkspace() {
   }
 
   function changeSection(next: SectionKey) {
+    setPersonalView(null);
     setSection(next);
     setSectionDomain(
       next === 'procurement'
@@ -336,7 +402,63 @@ export function DocumentsWorkspace() {
     setQuery((current) => ({ ...current, page: 1 }));
   }
 
-  async function openDetail(id: string) {
+  function changePersonalView(next: PersonalViewKey) {
+    setPersonalView(next);
+    setSection('all');
+    setSectionDomain(null);
+    setQuery((current) => ({
+      ...current,
+      page: 1,
+      pageSize: next === 'favorites' ? 100 : 25,
+    }));
+  }
+
+  function internalShareLink(id: string) {
+    if (typeof window === 'undefined') return `/documents?document=${id}`;
+    const url = new URL('/documents', window.location.origin);
+    url.searchParams.set('document', id);
+    return url.toString();
+  }
+
+  async function copyInternalLink(document: DocumentListItemV1) {
+    const link = internalShareLink(document.id);
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiedDocumentId(document.id);
+      setNotice(`لینک داخلی «${document.title}» کپی شد.`);
+      window.setTimeout(() => setCopiedDocumentId(''), 2500);
+    } catch {
+      setNotice('کپی خودکار ممکن نبود؛ لینک را از جزئیات سند انتخاب کنید.');
+    }
+  }
+
+  function toggleFavorite(document: DocumentListItemV1) {
+    setFavoriteIds((current) => {
+      const next = new Set(current);
+      if (next.has(document.id)) next.delete(document.id);
+      else next.add(document.id);
+      if (currentUserId && typeof window !== 'undefined') {
+        window.localStorage.setItem(
+          `rubi.documents.favorites.${currentUserId}`,
+          JSON.stringify([...next]),
+        );
+      }
+      return next;
+    });
+  }
+
+  function changeDetailOpen(open: boolean) {
+    setDetailOpen(open);
+    if (!open && typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('document')) {
+        url.searchParams.delete('document');
+        window.history.replaceState({}, '', url);
+      }
+    }
+  }
+
+  const openDetail = useCallback(async (id: string) => {
     setDetailOpen(true);
     setDetailLoading(true);
     setDetailError('');
@@ -360,7 +482,17 @@ export function DocumentsWorkspace() {
     } finally {
       setDetailLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const requestedDocumentId = new URL(window.location.href).searchParams.get(
+      'document',
+    );
+    if (/^[0-9a-f-]{36}$/i.test(requestedDocumentId ?? '')) {
+      void openDetail(requestedDocumentId!);
+    }
+  }, [openDetail]);
 
   async function upload(form: FormData) {
     setUploading(true);
@@ -369,7 +501,9 @@ export function DocumentsWorkspace() {
       const response = await documentsApi.upload(form);
       setUploadOpen(false);
       setNotice(
-        `سند ${response.data.archiveCode} ثبت شد و تا اسکن امنیتی در قرنطینه است.`,
+        response.data.currentVersion.scanStatus === 'CLEAN'
+          ? `سند ${response.data.archiveCode} ثبت و با موفقیت اسکن شد.`
+          : `سند ${response.data.archiveCode} ثبت شد؛ دریافت فایل تا پایان بررسی امنیتی بسته می‌ماند.`,
       );
       await load();
       await openDetail(response.data.id);
@@ -407,7 +541,8 @@ export function DocumentsWorkspace() {
     query.ownerUserId ||
     query.confidentiality ||
     query.createdFrom ||
-    query.createdTo,
+    query.createdTo ||
+    personalView,
   );
   const page = query.page ?? 1;
   const visibleQuarantine = documents.filter(
@@ -466,14 +601,15 @@ export function DocumentsWorkspace() {
           action={
             hasFilters ? (
               <Button
-                onClick={() =>
+                onClick={() => {
+                  setPersonalView(null);
                   setQuery({
                     page: 1,
                     pageSize: 25,
                     sortBy: 'updatedAt',
                     sortDirection: 'desc',
-                  })
-                }
+                  });
+                }}
                 variant="outline"
               >
                 پاک‌کردن فیلترها
@@ -564,13 +700,33 @@ export function DocumentsWorkspace() {
                     />
                   </td>
                   <td className="max-w-80 px-3 py-4">
-                    <button
-                      className="text-start font-black text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      onClick={() => void openDetail(document.id)}
-                      type="button"
-                    >
-                      {document.title}
-                    </button>
+                    <div className="flex items-start gap-2">
+                      <button
+                        aria-label={
+                          favoriteIds.has(document.id)
+                            ? `حذف ${document.title} از علاقه‌مندی‌ها`
+                            : `افزودن ${document.title} به علاقه‌مندی‌ها`
+                        }
+                        className="mt-0.5 shrink-0 rounded-md text-amber-500 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => toggleFavorite(document)}
+                        type="button"
+                      >
+                        <Star
+                          aria-hidden="true"
+                          className={cn(
+                            'size-4',
+                            favoriteIds.has(document.id) && 'fill-amber-400',
+                          )}
+                        />
+                      </button>
+                      <button
+                        className="text-start font-black text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => void openDetail(document.id)}
+                        type="button"
+                      >
+                        {document.title}
+                      </button>
+                    </div>
                     <p className="mt-1 truncate text-xs text-muted-foreground">
                       {document.currentVersion.safeDownloadName} · v
                       {document.currentVersion.versionNumber.toLocaleString(
@@ -874,14 +1030,15 @@ export function DocumentsWorkspace() {
         <div className="flex gap-2 pb-0.5">
           <Button
             className="flex-1"
-            onClick={() =>
+            onClick={() => {
+              setPersonalView(null);
               setQuery({
                 page: 1,
                 pageSize: 25,
                 sortBy: 'updatedAt',
                 sortDirection: 'desc',
-              })
-            }
+              });
+            }}
             variant="outline"
           >
             پاک‌کردن
@@ -903,13 +1060,19 @@ export function DocumentsWorkspace() {
     if (section === 'archive')
       return (
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {archiveSections.map((label) => (
-            <Card className="p-5" key={label}>
+          {archiveSections.map((label, index) => (
+            <Card
+              className={cn(
+                'group relative overflow-hidden p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md',
+                archiveTone[index % archiveTone.length],
+              )}
+              key={label}
+            >
+              <span className="absolute -end-7 -top-7 size-24 rounded-full bg-white/50 blur-2xl dark:bg-white/5" />
               <Settings2 aria-hidden="true" className="size-6 text-primary" />
               <h2 className="mt-3 font-black">{label}</h2>
               <p className="mt-2 text-xs leading-6 text-muted-foreground">
-                ساختار این بخش مطابق ماکاپ آماده است؛ عملیات پیشرفته در Slice
-                مستقل فعال می‌شود.
+                تنظیمات و وضعیت این بخش از همین آرشیو مدیریت می‌شود.
               </p>
             </Card>
           ))}
@@ -917,19 +1080,82 @@ export function DocumentsWorkspace() {
       );
     if (section === 'shares')
       return (
-        <EmptyState
-          description="ایجاد لینک امن نسخه‌محور، گیرنده، زمان انقضا و تعداد استفاده در Slice اشتراک امن پیاده می‌شود."
-          icon={Link2}
-          title="اشتراک امن هنوز فعال نشده است"
-        />
-      );
-    if (section === 'activity')
-      return (
-        <EmptyState
-          description="برای مشاهده Audit Timeline روی عنوان یک سند کلیک کنید و تب «فعالیت و نگهداری» را باز کنید."
-          icon={Activity}
-          title="گزارش دسترسی سندمحور"
-        />
+        <section className="space-y-4">
+          <Card className={cn('relative overflow-hidden p-5', sectionSurface)}>
+            <span className="absolute -end-12 -top-12 size-40 rounded-full bg-violet-200/40 blur-3xl dark:bg-violet-500/10" />
+            <div className="relative flex items-start gap-4">
+              <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-violet-200/70 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300">
+                <Link2 aria-hidden="true" className="size-6" />
+              </span>
+              <div>
+                <h2 className="text-lg font-black">لینک‌های داخلی اسناد</h2>
+                <p className="mt-1 text-sm leading-7 text-muted-foreground">
+                  لینک‌ها مستقیم سند را باز می‌کنند؛ ورود و مجوز همان سند برای
+                  گیرنده الزامی است و دانلود ناامن ایجاد نمی‌شود.
+                </p>
+              </div>
+            </div>
+          </Card>
+          {loading ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              <Skeleton className="h-36" />
+              <Skeleton className="h-36" />
+            </div>
+          ) : documents.length ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              {documents.map((item) => (
+                <Card className={cn('p-4', sectionSurface)} key={item.id}>
+                  <div className="flex items-start gap-3">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-sky-200/70 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300">
+                      <Files aria-hidden="true" className="size-5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <button
+                        className="block max-w-full truncate text-start font-black text-primary hover:underline"
+                        onClick={() => void openDetail(item.id)}
+                        type="button"
+                      >
+                        {item.title}
+                      </button>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {item.archiveCode} · نسخه{' '}
+                        {item.currentVersion.versionNumber.toLocaleString(
+                          'fa-IR',
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <Input
+                      aria-label={`لینک داخلی ${item.title}`}
+                      className="text-left text-xs"
+                      dir="ltr"
+                      readOnly
+                      value={internalShareLink(item.id)}
+                    />
+                    <Button
+                      onClick={() => void copyInternalLink(item)}
+                      type="button"
+                    >
+                      {copiedDocumentId === item.id ? (
+                        <Check aria-hidden="true" className="size-4" />
+                      ) : (
+                        <Copy aria-hidden="true" className="size-4" />
+                      )}
+                      {copiedDocumentId === item.id ? 'کپی شد' : 'کپی'}
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              description="برای ساخت لینک داخلی ابتدا یک سند بارگذاری کنید."
+              icon={Link2}
+              title="سندی برای اشتراک وجود ندارد"
+            />
+          )}
+        </section>
       );
     if (section === 'overview')
       return (
@@ -968,7 +1194,7 @@ export function DocumentsWorkspace() {
             />
           </section>
           <div className="grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
-            <Card className="p-5">
+            <Card className={cn('p-5', sectionSurface)}>
               <div className="flex items-center justify-between gap-3">
                 <h2 className="flex items-center gap-2 text-lg font-black">
                   <ClockAlert aria-hidden="true" className="size-5" />
@@ -1018,7 +1244,7 @@ export function DocumentsWorkspace() {
                 </p>
               )}
             </Card>
-            <Card className="p-5">
+            <Card className={cn('p-5', sectionSurface)}>
               <h2 className="flex items-center gap-2 text-lg font-black">
                 <UserRound aria-hidden="true" className="size-5" />
                 کارهای من
@@ -1093,7 +1319,12 @@ export function DocumentsWorkspace() {
     return (
       <div className="space-y-4">
         {section === 'procurement' ? (
-          <Card className="flex flex-wrap items-center gap-2 p-3">
+          <Card
+            className={cn(
+              'flex flex-wrap items-center gap-2 p-3',
+              sectionSurface,
+            )}
+          >
             <span className="me-2 text-sm font-bold">دامنه فعال:</span>
             <Button
               onClick={() => setSectionDomain('PROCUREMENT')}
@@ -1112,7 +1343,12 @@ export function DocumentsWorkspace() {
           </Card>
         ) : null}
         {section === 'hr' ? (
-          <Card className="flex flex-wrap items-center gap-2 p-3">
+          <Card
+            className={cn(
+              'flex flex-wrap items-center gap-2 p-3',
+              sectionSurface,
+            )}
+          >
             <span className="me-2 text-sm font-bold">دامنه فعال:</span>
             <Button
               onClick={() => setSectionDomain('ORGANIZATION')}
@@ -1133,7 +1369,7 @@ export function DocumentsWorkspace() {
           </Card>
         ) : null}
         {filters()}
-        <Card className="p-4">{table()}</Card>
+        <Card className={cn('p-4', sectionSurface)}>{table()}</Card>
       </div>
     );
   }
@@ -1162,19 +1398,25 @@ export function DocumentsWorkspace() {
         </Alert>
       ) : null}
       <div className="grid gap-4 xl:grid-cols-[15.5rem_minmax(0,1fr)]">
-        <Card className="h-fit p-3 xl:sticky xl:top-20">
+        <Card className="h-fit overflow-hidden border-sky-200/80 bg-gradient-to-b from-sky-50 via-blue-50/85 to-indigo-100/65 p-3 shadow-sm dark:border-sky-400/20 dark:from-sky-950/55 dark:via-blue-950/40 dark:to-indigo-950/35 xl:sticky xl:top-20">
+          <div className="mb-3 flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-xs font-black text-sky-900 shadow-sm dark:bg-white/5 dark:text-sky-100">
+            <Sparkles aria-hidden="true" className="size-4 text-sky-600" />
+            آرشیو اسناد
+          </div>
           <nav
             aria-label="بخش‌های اسناد"
             className="grid gap-1 sm:grid-cols-2 xl:grid-cols-1"
           >
             {sections.map(({ icon: Icon, key, label }) => (
               <button
-                aria-current={section === key ? 'page' : undefined}
+                aria-current={
+                  !personalView && section === key ? 'page' : undefined
+                }
                 className={cn(
                   'flex min-h-11 items-center gap-3 rounded-xl px-3 text-start text-sm font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
-                  section === key
+                  !personalView && section === key
                     ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:bg-blue-50 hover:text-foreground dark:hover:bg-blue-950/20',
+                    : 'text-sky-950/75 hover:bg-white/80 hover:text-sky-950 hover:shadow-sm dark:text-sky-100/75 dark:hover:bg-white/10 dark:hover:text-white',
                 )}
                 key={key}
                 onClick={() => changeSection(key)}
@@ -1185,38 +1427,47 @@ export function DocumentsWorkspace() {
               </button>
             ))}
           </nav>
-          <div className="my-3 border-t border-border" />
-          <p className="px-3 text-xs font-black text-muted-foreground">
+          <div className="my-3 border-t border-sky-200 dark:border-sky-400/20" />
+          <p className="px-3 text-xs font-black text-sky-900/70 dark:text-sky-100/70">
             نماهای شخصی
           </p>
           <div className="mt-2 grid gap-1">
-            {personalViews.map((label, index) => (
-              <button
-                aria-disabled="true"
-                className="flex min-h-10 cursor-default items-center gap-2 rounded-lg px-3 text-start text-xs font-semibold text-muted-foreground"
-                disabled
-                key={label}
-                type="button"
-              >
-                {index === 3 ? (
-                  <Star aria-hidden="true" className="size-4" />
-                ) : index === 2 ? (
-                  <FileSearch aria-hidden="true" className="size-4" />
-                ) : index === 1 ? (
-                  <UploadCloud aria-hidden="true" className="size-4" />
-                ) : (
-                  <FileLock2 aria-hidden="true" className="size-4" />
-                )}
-                {label}
-              </button>
-            ))}
+            {personalViews.map(({ icon: Icon, key, label }) => {
+              const active = personalView === key;
+              return (
+                <button
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'flex min-h-10 items-center gap-2 rounded-lg px-3 text-start text-xs font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
+                    active
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-sky-950/70 hover:bg-white/80 hover:text-sky-950 dark:text-sky-100/70 dark:hover:bg-white/10 dark:hover:text-white',
+                  )}
+                  key={key}
+                  onClick={() => changePersonalView(key)}
+                  type="button"
+                >
+                  <Icon aria-hidden="true" className="size-4" />
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </Card>
         <div className="min-w-0 space-y-3">
           {section !== 'overview' ? (
-            <Card className="flex flex-wrap items-center justify-between gap-3 p-3">
-              <h2 className="font-black">
-                {sections.find((item) => item.key === section)?.label}
+            <Card
+              className={cn(
+                'flex flex-wrap items-center justify-between gap-3 p-3',
+                sectionSurface,
+              )}
+            >
+              <h2 className="flex items-center gap-2 font-black">
+                <Sparkles aria-hidden="true" className="size-4 text-primary" />
+                {personalView
+                  ? personalViews.find((item) => item.key === personalView)
+                      ?.label
+                  : sections.find((item) => item.key === section)?.label}
               </h2>
               <Button
                 onClick={() => changeSection('overview')}
@@ -1247,10 +1498,14 @@ export function DocumentsWorkspace() {
         audit={audit}
         document={detail}
         error={detailError}
+        favorite={Boolean(detail && favoriteIds.has(detail.id))}
         loading={detailLoading}
+        onCopyLink={(document) => void copyInternalLink(document)}
         onDownload={(document) => void download(document)}
-        onOpenChange={setDetailOpen}
+        onOpenChange={changeDetailOpen}
+        onToggleFavorite={toggleFavorite}
         open={detailOpen}
+        shareLink={detail ? internalShareLink(detail.id) : ''}
       />
     </main>
   );

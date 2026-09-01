@@ -9,6 +9,7 @@ import type {
 } from './documents.repository';
 import { allowedDocumentDomains } from './documents.repository';
 import { DocumentsService } from './documents.service';
+import type { DocumentsScanProcessor } from './documents.scan-processor';
 import type { LocalDocumentStorage } from './documents.storage';
 
 const branchId = '33333333-3333-4333-8333-333333333333';
@@ -120,6 +121,10 @@ describe('DocumentsService security and persistence flow', () => {
     removeQuarantined: vi.fn(),
     openQuarantined: vi.fn(),
   };
+  const scanProcessor = {
+    available: true,
+    processVersion: vi.fn().mockResolvedValue(false),
+  };
   let service: DocumentsService;
 
   beforeEach(() => {
@@ -127,6 +132,7 @@ describe('DocumentsService security and persistence flow', () => {
     service = new DocumentsService(
       repository as unknown as DocumentsRepository,
       storage as unknown as LocalDocumentStorage,
+      scanProcessor as unknown as DocumentsScanProcessor,
     );
   });
 
@@ -150,6 +156,7 @@ describe('DocumentsService security and persistence flow', () => {
       expect.objectContaining({ page: 1, pageSize: 25 }),
       [branchId],
       ['GENERAL', 'SALES'],
+      actor.userId,
     );
     expect(result.data[0]).toMatchObject({
       title: 'سند محرمانه ••••••',
