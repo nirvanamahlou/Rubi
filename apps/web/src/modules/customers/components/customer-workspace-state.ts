@@ -67,6 +67,45 @@ export function customerListFailureState(
   return 'error';
 }
 
+export type CustomerSensitiveRevealFeedback = {
+  kind: 'unauthorized' | 'forbidden' | 'unreadable' | 'error';
+  message: string;
+};
+
+export function customerSensitiveRevealFeedback(
+  error: unknown,
+): CustomerSensitiveRevealFeedback {
+  if (error instanceof CustomersApiError && error.status === 401)
+    return {
+      kind: 'unauthorized',
+      message:
+        'نشست ورود منقضی شده است. دوباره وارد شوید و نمایش شماره را تکرار کنید.',
+    };
+  if (error instanceof CustomersApiError && error.status === 403)
+    return {
+      kind: 'forbidden',
+      message:
+        'حساب شما مجوز مشاهده شماره کامل را ندارد. این دسترسی باید توسط مدیر سیستم داده شود.',
+    };
+  if (
+    error instanceof CustomersApiError &&
+    (error.status === 422 ||
+      error.code === 'CUSTOMER_SENSITIVE_DECRYPTION_FAILED')
+  )
+    return {
+      kind: 'unreadable',
+      message:
+        'شماره ثبت شده با کلید فعلی قابل خواندن نیست. برای جلوگیری از آسیب به اطلاعات، کلید جدید جایگزین نشد؛ تنظیمات کلید محیط باید بررسی شود.',
+    };
+  return {
+    kind: 'error',
+    message:
+      error instanceof Error
+        ? error.message
+        : 'دریافت شماره کامل ناموفق بود. دوباره تلاش کنید.',
+  };
+}
+
 export type CustomerConflictRefreshResult<TCustomer, TDraft> =
   | {
       status: 'refreshed';
