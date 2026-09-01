@@ -3,7 +3,7 @@
 ## DOCUMENTS-003C-DEMO-BOOTSTRAP — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک: داده‌ها و فایل‌های نمایشی بخش اسناد به‌شکلی در Git منتشر شوند که PC-A و PC-B بتوانند همان بسته را روی دیتابیس و Storage محلی خود ایجاد کنند. `COMPUTER_ID=PC-B`.
-- Branch: `codex/pc-b-documents-demo-bootstrap` از `origin/develop@8758271`؛ توسعه مستقیم روی `develop` یا `main` انجام نمی‌شود.
+- Branch: `codex/pc-b-documents-demo-bootstrap`؛ پس از Rebase نهایی روی `origin/develop@74351cd`، توسعه مستقیم روی `develop` یا `main` انجام نشد.
 - محدوده رزروشده: Fixture و فرمان Preview/Apply محلی در `apps/api/src/documents/demo/**` و `apps/api/scripts/**`، تست‌های Documents، Scriptهای Root در `package.json` و مستند همین Task؛ فقط ورودی‌های همین Work Item در اسناد مرکزی.
 - بسته فقط داده و فایل کاملاً ساختگی تولید می‌کند، به User/Branch/Permission موجود متصل می‌شود و هیچ حساب، رمز، Session، PII، Secret یا Binary واقعی را وارد Git نمی‌کند. فایل تصویر در زمان اجرا به‌صورت قطعی تولید و با Storage خصوصی AES-256-GCM ذخیره می‌شود.
 - Apply فقط برای `development/test`، PostgreSQL محلی allowlist‌شده و با تأیید صریح مجاز است؛ Startup، Seed عمومی و Production آن را اجرا نمی‌کنند. اجرای دوباره idempotent است و رکورد ویرایش‌شده کاربر را بازنویسی نمی‌کند.
