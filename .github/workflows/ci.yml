@@ -15,10 +15,11 @@ on:
       - 'codex/pc-b-*'
   workflow_dispatch:
 
-# A new commit cancels only the older run for the same head branch. PC-A and PC-B
-# branches therefore never cancel or serialize each other's validation.
+# A new commit cancels only the older run for the same event and head branch.
+# Push and pull-request checks remain independent, and PC-A and PC-B branches
+# never cancel or serialize each other's validation.
 concurrency:
-  group: rubi-ci-${{ github.event.pull_request.head.ref || github.ref_name }}
+  group: rubi-ci-${{ github.event_name }}-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
 
 permissions:
