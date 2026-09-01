@@ -1,14 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import {
-  Alert,
-  Button,
-  DatePicker,
-  FormField,
-  Input,
-  Textarea,
-} from '@/components/ui';
+import { Alert, Button, FormField, Input, Textarea } from '@/components/ui';
 import {
   wallTimeToUtc,
   type ProductInput,
@@ -17,6 +10,7 @@ import {
 } from '../model/catalog';
 import { supplyLabels } from '../model/preview';
 import styles from './ticket-form.module.css';
+import { TicketDatePicker } from './ticket-date-picker';
 import { ReferencePicker } from './reference-picker';
 
 function wallValue(utcValue: string, zone: string) {
@@ -244,7 +238,7 @@ export function TicketForm({
           </p>
           <div className={styles.fields}>
             <FormField label="تاریخ و ساعت حرکت" id="ticket-departure">
-              <DatePicker
+              <TicketDatePicker
                 id="ticket-departure"
                 value={departure}
                 onChange={setDeparture}
@@ -253,7 +247,7 @@ export function TicketForm({
               />
             </FormField>
             <FormField label="تاریخ و ساعت رسیدن" id="ticket-arrival">
-              <DatePicker
+              <TicketDatePicker
                 id="ticket-arrival"
                 value={arrival}
                 onChange={setArrival}
@@ -444,7 +438,7 @@ export function TicketForm({
               </FormField>
             ))}
             <FormField label="شروع اعتبار نرخ (UTC)" id="ticket-valid-from">
-              <DatePicker
+              <TicketDatePicker
                 id="ticket-valid-from"
                 value={validFrom}
                 onChange={setValidFrom}
@@ -453,7 +447,7 @@ export function TicketForm({
               />
             </FormField>
             <FormField label="پایان اعتبار نرخ (UTC)" id="ticket-valid-to">
-              <DatePicker
+              <TicketDatePicker
                 id="ticket-valid-to"
                 value={validTo}
                 onChange={setValidTo}

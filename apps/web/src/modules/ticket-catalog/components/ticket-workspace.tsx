@@ -8,7 +8,6 @@ import {
   Badge,
   Button,
   Card,
-  DatePicker,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -46,6 +45,7 @@ import { ReferenceBrowser } from './reference-browser';
 import { TicketForm } from './ticket-form';
 import { JourneyPreview } from './journey-preview';
 import formStyles from './ticket-form.module.css';
+import { TicketDatePicker } from './ticket-date-picker';
 
 export const previewStates = {
   ready: 'عادی',
@@ -353,14 +353,14 @@ export function TicketWorkspace() {
             </select>
           </FormField>
           <FormField label="حرکت از تاریخ (UTC)" id="ticket-filter-from">
-            <DatePicker
+            <TicketDatePicker
               id="ticket-filter-from"
               value={query.from}
               onChange={(from) => filter({ from })}
             />
           </FormField>
           <FormField label="حرکت تا تاریخ (UTC)" id="ticket-filter-to">
-            <DatePicker
+            <TicketDatePicker
               id="ticket-filter-to"
               value={query.to}
               onChange={(to) => filter({ to })}
