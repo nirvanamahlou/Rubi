@@ -12,6 +12,15 @@
 - مجوز انتشار: مالک در 2026-09-01 صریحاً دریافت آخرین تغییرات PC-A، Push این Branch و Merge آن با `develop` را خواست. `origin/develop@f78e70e` بدون Conflict در Branch ادغام و کنترل کیفیت کامل تکرار شد؛ انتشار فقط از مسیر PR انجام می‌شود و `main` و Force Push ممنوع می‌مانند.
 - Final lock state: `RELEASED — PC-B/LEGAL-ENTITY-BRAND-LOGO-001 ready for review`. هیچ قفل Migration، Contract، Dependency/Lockfile، Permission، Database یا Branch گرفته نشد.
 
+## DOCUMENTS-003D-LOCAL-INTERACTIONS — PC-B — IN_PROGRESS
+
+- درخواست صریح مالک: داده‌های آزمایشی اسناد روی PC-A نیز قابل ایجاد و مشاهده باشند، کارت‌های مدیریت آرشیو عمل کنند و فرم بارگذاری به‌ویژه Dropdownها قابل استفاده باشد؛ پس از تست، Push و Merge به `develop` انجام شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-documents-interactions` از `origin/develop@0f1d7b6`؛ توسعه مستقیم روی `develop` یا `main` ممنوع و Merge نهایی فقط به `develop` است.
+- محدوده رزروشده: `apps/web/src/modules/documents/**`، `apps/api/src/documents/**`، قرارداد افزایشی Documents در `packages/contracts/src/documents/**`، Scriptهای Demo اسناد، تست‌های همین ماژول و ورودی‌های همین Work Item در `WORK_ASSIGNMENTS.md`، `docs/PROJECT_STATUS.md`، `PLANS.md` و سند Task.
+- قرارداد Options فقط اطلاعات شعبه مجاز و شناسه کاربر جاری را به producer/consumer خود Documents اضافه می‌کند تا فرم به Refresh مستقل IAM وابسته نباشد. هیچ دسترسی مستقیم به جدول ماژول دیگر خارج از Repository موجود و Scope احراز‌شده ایجاد نمی‌شود.
+- داده‌های نمایشی همچنان کاملاً ساختگی، محلی، idempotent، رمزگذاری‌شده و fail-closed در برابر Antivirus هستند. Git دیتابیس یا Secret را منتقل نمی‌کند؛ فرمان Apply باید پیش‌نیازهای محلی را قابل تشخیص و اجرای PC-A را روشن و قابل تایید کند.
+- بدون Schema/Migration، Permission جدید، Dependency/Lockfile یا تغییر Seed عمومی. Migration و Dependency/Lockfile Owner آزاد می‌مانند.
+
 ## DOCUMENTS-003C-CI-PORTABILITY — PC-B — READY_FOR_REVIEW
 
 - CI مشترک پس از Merge PR #72 دو شکست Linux-only در محافظ Storage بسته داده نمایشی Documents کشف کرد؛ درخواست صریح مالک برای Push و Merge تمام تغییرات، مجوز اصلاح محدود این مانع یکپارچه‌سازی است. `COMPUTER_ID=PC-B`.
