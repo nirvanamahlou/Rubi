@@ -319,6 +319,18 @@ describe('Customer Operations workspace boundaries', () => {
     expect(exportSource).toContain('کد ملی (ماسک‌شده)');
     expect(exportSource).toContain('شماره تماس (ماسک‌شده)');
     expect(source).toContain('همراه با شماره تماس ماسک‌شده ساخته شد');
+    expect(exportSource).toContain('includeFullPhoneNumbers');
+    expect(exportSource).toContain(
+      'await customersApi.detail(record.id, exportReason)',
+    );
+    expect(exportSource).toContain("contact.type === 'phone'");
+    expect(exportSource).toContain("? 'شماره تماس'");
+    expect(exportSource).toContain('دلیل مشاهده در Audit ثبت شد');
+    expect(source).toContain('customer-sensitive-export-reason');
+    expect(source).toContain('خروجی Excel با شماره کامل');
+    expect(source).toContain(
+      'disabled={records.length === 0 || exporting || !exportReason}',
+    );
   });
 
   it('shows twenty people per page with a complete page position and masked mobile number', () => {
