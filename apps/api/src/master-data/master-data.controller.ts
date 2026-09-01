@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   HttpCode,
@@ -25,6 +26,7 @@ import type { AuthenticatedRequest } from '../iam/iam.types';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import {
   MasterDataExportDto,
+  MasterDataDeleteDto,
   MasterDataListQueryDto,
   MasterDataMutationDto,
   MasterDataStatusDto,
@@ -85,6 +87,40 @@ export class MasterDataController {
     return this.service.list(resource, query as MasterDataListQuery);
   }
 
+  @Get('organization-contacts/:id/unmask')
+  @RequirePermissions('master_data.sensitive_contact.unmask')
+  unmaskOrganizationContact(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId?: string,
+  ) {
+    return this.service.unmaskOrganizationContact(id, request.actor, branchId);
+  }
+
+  @Get('organizations-suppliers/summary')
+  @RequirePermissions('master_data.read')
+  organizationSupplierSummary() {
+    return this.service.organizationSupplierSummary();
+  }
+
+  @Get('accommodation/summary')
+  @RequirePermissions('master_data.read')
+  accommodationSummary() {
+    return this.service.accommodationSummary();
+  }
+
+  @Get('insurance/summary')
+  @RequirePermissions('master_data.read')
+  insuranceSummary() {
+    return this.service.insuranceSummary();
+  }
+
+  @Get('travel-services-catalog/summary')
+  @RequirePermissions('master_data.read')
+  travelServicesSummary() {
+    return this.service.travelServicesSummary();
+  }
+
   @Get(':resource/:id')
   @RequirePermissions('master_data.read')
   detail(@Param('resource') resource: string, @Param('id') id: string) {
@@ -116,6 +152,25 @@ export class MasterDataController {
       resource,
       id,
       dto.values,
+      dto.version,
+      request.actor,
+      branchId,
+    );
+  }
+
+  @Delete(':resource/:id')
+  @HttpCode(200)
+  @RequirePermissions('master_data.delete')
+  remove(
+    @Param('resource') resource: string,
+    @Param('id') id: string,
+    @Body() dto: MasterDataDeleteDto,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId?: string,
+  ) {
+    return this.service.remove(
+      resource,
+      id,
       dto.version,
       request.actor,
       branchId,

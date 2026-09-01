@@ -10,12 +10,58 @@ export const MASTER_DATA_BLOCKED_REASON =
 export const masterDataResourceSchema = z.enum(masterDataResourceKeys);
 export const masterDataStatusSchema = z.enum(['active', 'inactive']);
 export const masterDataListQuerySchema = z.object({
+  columnFilter1: z.string().trim().max(100).optional(),
+  columnFilter2: z.string().trim().max(100).optional(),
+  transportStatus: z.enum(['ACTIVE', 'INACTIVE', 'UNDER_REVIEW']).optional(),
   search: z.string().trim().max(100).default(''),
   status: z.enum(['all', 'active', 'inactive']).default('all'),
   sortBy: z.enum(['name', 'code', 'updatedAt']).default('name'),
   sortDirection: z.enum(['asc', 'desc']).default('asc'),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(10).max(100).default(25),
+  countryId: z.string().uuid().optional(),
+  regionId: z.string().uuid().optional(),
+  cityId: z.string().uuid().optional(),
+  airportId: z.string().uuid().optional(),
+  bankId: z.string().uuid().optional(),
+  terminalType: z
+    .enum(['DOMESTIC', 'INTERNATIONAL', 'MIXED', 'VIP'])
+    .optional(),
+  paymentChannel: z
+    .enum([
+      'CASH',
+      'POS',
+      'BANK_TRANSFER',
+      'ONLINE_GATEWAY',
+      'CREDIT',
+      'WALLET',
+      'OTHER',
+    ])
+    .optional(),
+  paymentDirection: z.enum(['RECEIPT', 'PAYMENT', 'BOTH']).optional(),
+  organizationId: z.string().uuid().optional(),
+  serviceId: z.string().uuid().optional(),
+  collaborationStatus: z
+    .enum(['ACTIVE', 'UNDER_REVIEW', 'PURCHASE_SUSPENDED', 'ENDED'])
+    .optional(),
+  providerConnected: z.boolean().optional(),
+  hasWhatsapp: z.boolean().optional(),
+  contactCompleteness: z.enum(['all', 'complete', 'incomplete']).optional(),
+  chainId: z.string().uuid().optional(),
+  starRating: z.coerce.number().int().min(1).max(5).optional(),
+  referenceCapacity: z.coerce.number().int().min(1).max(20).optional(),
+  mealServiceCategory: z.enum(['MEAL_PLAN', 'SERVICE']).optional(),
+  mealServiceStatus: z.enum(['active', 'inactive', 'under_review']).optional(),
+  facilityCategory: z.string().trim().max(80).optional(),
+  saleableOnly: z.boolean().optional(),
+  insurerId: z.string().uuid().optional(),
+  currencyId: z.string().uuid().optional(),
+  destinationRegion: z.string().trim().max(160).optional(),
+  supplierId: z.string().uuid().optional(),
+  tourScope: z.enum(['DOMESTIC', 'INTERNATIONAL', 'BOTH']).optional(),
+  transferServiceMode: z.enum(['PRIVATE', 'SHARED']).optional(),
+  passengerScope: z.enum(['ADT', 'CHD', 'INF', 'ALL']).optional(),
+  busServiceClass: z.enum(['STANDARD', 'VIP', 'LUXURY', 'OTHER']).optional(),
 });
 
 export const masterDataExportRequestSchema = z.object({
@@ -108,5 +154,49 @@ export function serializeMasterDataListQuery(query: MasterDataListQuery) {
     page: String(query.page),
     pageSize: String(query.pageSize),
   });
+  for (const field of [
+    'columnFilter1',
+    'columnFilter2',
+    'transportStatus',
+    'countryId',
+    'regionId',
+    'cityId',
+    'airportId',
+    'bankId',
+    'terminalType',
+    'paymentChannel',
+    'paymentDirection',
+    'organizationId',
+    'serviceId',
+    'collaborationStatus',
+    'contactCompleteness',
+    'chainId',
+    'mealServiceCategory',
+    'mealServiceStatus',
+    'facilityCategory',
+    'insurerId',
+    'currencyId',
+    'destinationRegion',
+    'supplierId',
+    'tourScope',
+    'transferServiceMode',
+    'passengerScope',
+    'busServiceClass',
+  ] as const) {
+    const value = query[field];
+    if (value) params.set(field, value);
+  }
+  if (query.starRating !== undefined)
+    params.set('starRating', String(query.starRating));
+  if (query.referenceCapacity !== undefined)
+    params.set('referenceCapacity', String(query.referenceCapacity));
+  for (const field of [
+    'providerConnected',
+    'hasWhatsapp',
+    'saleableOnly',
+  ] as const) {
+    const value = query[field];
+    if (value !== undefined) params.set(field, String(value));
+  }
   return params.toString();
 }

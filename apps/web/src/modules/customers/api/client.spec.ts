@@ -10,6 +10,49 @@ afterEach(() => {
 });
 
 describe('customers browser client', () => {
+  it('gets real branch names from the public credentialed session response', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const branches = [
+      { id: 'synthetic-branch', code: 'TEST', name: 'شعبه آزمایشی' },
+    ];
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ user: { branches } }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const [first, second] = await Promise.all([
+      customersApi.branchReferences(),
+      customersApi.branchReferences(),
+    ]);
+    expect(first).toEqual(branches);
+    expect(second).toEqual(branches);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/iam/auth/refresh',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+      }),
+    );
+  });
+
+  it('rejects unavailable names and allows a later retry without invented references', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('network failure'))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ user: { branches: [] } }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(customersApi.branchReferences()).rejects.toThrow(
+      'دریافت نام شعب مجاز ناموفق بود.',
+    );
+    await expect(customersApi.branchReferences()).resolves.toEqual([]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
   it('uses the versioned credentialed API and serializes query mapping', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const fetchMock = vi.fn().mockResolvedValue({
@@ -115,7 +158,11 @@ describe('customers browser client', () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce({ ok: false, status: 401 })
-      .mockResolvedValueOnce({ ok: true, status: 200 })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ user: { branches: [] } }),
+      })
       .mockResolvedValueOnce({
         ok: true,
         status: 200,

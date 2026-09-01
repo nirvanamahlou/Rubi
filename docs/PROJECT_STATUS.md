@@ -1,6 +1,69 @@
 # وضعیت پروژه
 
-آخرین به‌روزرسانی: 2026-08-29 — MASTER-003 Phase A برای Review و Handoff مشروط آماده شد
+## ادغام تکمیلی اطلاعات پایه با develop — 2026-08-31
+
+- با تأیید صریح مالک برای Push و Merge، شاخه `codex/pc-b-master-data-develop-integration` از `origin/develop@e25f288` (#58 ادغام‌شده) ساخته شد و تاریخچه دقیق #59 / `b04c2bd` شامل #57 را دریافت کرد. والد #55/#54 و حمل‌ونقل جداگانه #47 قبلاً در #58 حضور دارند؛ تغییرات PC-A و اصلاح امنیتی XLSX/Calendar حفظ شدند.
+- نسخه ترکیبی: نصب frozen، lint و typecheck کامل، Production Build، ۱٬۲۵۷ تست عمومی و ۶۶ آزمون واقعی PostgreSQL موفق. ۲۷ Migration از صفر و Seed دوگانه روی دیتابیس مستقل پاس شدند. تنها Migration تازه نسبت به develop همان ترتیب کشور است؛ هیچ Migration تاریخی تغییر نکرده است.
+- Smoke احراز‌شده: فهرست هر ۴۵ کاتالوگ، ثبت/نمایش/فیلتر، پاور وضعیت و خطای نسخه قدیمی، وابستگی‌ها و Excel واقعی؛ همچنین ۱۱ مسیر Production فارسی RTL شامل اطلاعات پایه، Customers و Ticket Catalog موفق. این بررسی HTTP است و ادعای تست تعاملی مرورگر ندارد.
+- گزارش ابزار OpenAPI تغییر ناسازگار جدیدی نیافت؛ کمبود مستندات Swagger قبلی با امتیاز یکسان F باقی است و «بازبینی کامل و پاک API» ادعا نمی‌شود. جزئیات و خروجی‌های بررسی در `docs/tasks/MASTER-003-DEVELOP-INTEGRATION.md` ثبت شده‌اند.
+- Merge نهایی فقط با نتیجه تأییدشده PR گزارش می‌شود. Checkout و سرورهای اصلی، داده و کلیدهای محلی، شاخه‌های منبع و قفل‌های توسعه PC-B دست‌نخورده‌اند؛ تنها دیتابیس‌ها/کانتینرهای آزمایشی همین اجرا پس از آزمون حذف شدند. گزارش‌های زیر تاریخچه Snapshotهای قبلی‌اند.
+
+## نسخه مشترک دو کامپیوتر — SHARED-INTEGRATION-0831 — در حال اعتبارسنجی
+
+- هدف مالک محصول یک نسخه مشترک در develop است: اطلاعات پایه PC-B تا PR #55، مشتریان PC-A تا PR #56 و بلیت PC-A تا PR #46.
+- سه Snapshot منتشرشده ترکیب و تعارض‌ها با حفظ اصلاح امنیتی Excel و گزارش‌های دو طرف حل شدند؛ Merge نهایی به develop و همگام‌سازی PC-B هنوز انجام نشده است.
+- ۲۶ Migration با حفظ بایت‌های تاریخی روی PostgreSQL آزمایشی خالی اعمال شدند. داده کاربردی، کلیدها، Volumeها و Branchهای منبع دست‌نخورده‌اند.
+- نصب frozen، lint، typecheck، ۱۲۲۱ تست عمومی، ۵۷ تست واقعی PostgreSQL، Seed دوگانه، Build کامل و Smoke احراز‌شده مشترک پاس شدند. Dependency/Lockfile تغییر نکرده است. اختلاف قدیمی نام Constraint/Indexها و Default لیدر در گزارش Task ثبت شده؛ هیچ Migration تاریخی بازنویسی نشد.
+- بلیت همچنان Phase A/Preview است. قیمت نهایی فروش متعلق به Sales است؛ صدور و Manifest در Reservations می‌مانند. تغییر رمز IAM موجود در PR #46 برابر حداقل ۱۰ نویسه همراه همه شروط نوع نویسه است؛ این Task حسابی ایجاد نمی‌کند.
+- گزارش‌های پایین تاریخی‌اند. قفل‌های توسعه اطلاعات پایه نزد PC-B باقی می‌مانند و این ادغام قفل توسعه جدیدی منتقل نمی‌کند.
+
+
+آخرین به‌روزرسانی: 2026-08-31 — اصلاح نمایش فهرست مالی و جغرافیا پس از ثبت فرم
+
+آخرین به‌روزرسانی: 2026-08-31 — کنترل وضعیت، فیلترها و تکمیل فهرست‌های اطلاعات پایه
+
+## اصلاح کاربردپذیری کاتالوگ‌ها — 2026-08-31
+
+- `MASTER-003-CATALOG-USABILITY` روی شاخه مستقل `codex/pc-b-master-data-catalog-usability` از #57 / `6abd960` آماده Review است. نسخه‌های تحویلی/والدها و PC-A دست‌نخورده‌اند. در بررسی نهایی #58 در `origin/develop@e25f288` ادغام شده بود؛ تغییرات این درخواست هنوز جزو آن Snapshot نیستند.
+- دکمه Power برای وضعیت واقعی با نسخه و Permission، دو فیلتر ستونی قابل پاک‌کردن در هر کاتالوگ و ستون‌های ماکاپ حمل‌ونقل/هتل/جغرافیا تکمیل شد. تعداد وابستگی‌ها از FKهای واقعی Master Data است. داده بیرون از مالکیت ماژول بدون قرارداد جعل نمی‌شود؛ نرخ‌ها تابع گردش اختصاصی خود هستند، نه Power عمومی.
+- Migration افزایشی `20260831140000_master_country_display_order` ترتیب کشور را با پیش‌فرض صفر و قید 0..100000 اضافه می‌کند. روی PostgreSQL 18 خالی همراه ۲۴ Migration قبلی و سپس روی لوکال پس از Backup اجرا شد. هیچ Customer، Calendar، Dependency یا داده عملیاتی دیگر تغییر نکرد.
+- فقط ۷۸ Fixture قابل انتساب و بدون ویرایش کاربر به نام‌های طبیعی‌تر تغییر یافتند؛ ID/FK محفوظ و اجرای دوم صفر تغییر داشت. کسب‌وکارها نمایشی‌اند؛ اطلاعات تماس واقعی، نرخ ارز، حساب، کارت، کلید یا Connection ساختگی افزوده نشد.
+- ۹۹۴ تست عمومی، ۹ تست یکپارچه مستقل، Typecheck و Build API/Web موفق؛ lint محدوده موفق، lint عمومی Web تنها خطای قبلی DatePicker را دارد. API health و Login برابر 200؛ درخواست بدون ورود به اطلاعات پایه 307 و API محافظت‌شده 401 است. تست کلیک احراز‌شده معلق به ورود کاربر است؛ ادعای Smoke کامل وجود ندارد.
+- [گزارش تحویل](tasks/MASTER-003-CATALOG-USABILITY.md) شامل Scope، سازگاری قرارداد، Migration، داده نمایشی، آزمون و استثناهای مالکیت است. هیچ Merge یا Force Push توسط این Task انجام نشده است.
+
+## داده آزمایشی تمام بخش‌های اطلاعات پایه — 2026-08-31
+
+- `MASTER-003-LOCAL-DEMO-DATA` روی `codex/pc-b-master-data-demo-fixtures` از `241308e` / PR #55: ۷۸ رکورد با برچسب «آزمایشی» در ۴۰ کاتالوگ هشت بخش اصلی روی لوکال ثبت شد. داده‌ها FK واقعی دارند؛ هیچ نرخ ارز، حساب/کارت، PII واقعی یا اتصال خارجی ساختگی ساخته نشد.
+- اجرای صریح ابزار مستقل، محدود به DB مشخص لوکال و محیط development/test است؛ از Service و اعتبارسنجی موجود استفاده می‌کند. تراکنش واحد، قفل اجرای هم‌زمان و Audit marker مانع ثبت ناقص، بازنویسی داده موجود و تکرار نمونه‌ها می‌شوند. Seed عمومی، IAM، Customers، Schema، Migration و Dependency تغییر نکردند.
+- پیش از اجرا Backup خصوصی گرفته شد. Preview کامل Rollback شد؛ اجرای اول ۷۸ Create و اجرای دوم صفر Create / ۷۸ Reuse داشت. تمام نمونه‌ها از List با جست‌وجوی «آزمایشی» و Detail در DB محلی بازیابی شدند.
+- ۵۴۶ تست API موفق، شامل ۹ تست واحد و ۴ آزمون واقعی PostgreSQL 18 جدید با تمام Migrationها؛ ۵۷ آزمون اختیاری دیگر skip شدند. lint، Typecheck و Build API موفق‌اند. API `/api/v1/health` و Login پاسخ ۲۰۰؛ مرورگر بدون Session به Login هدایت می‌شود و Smoke احراز‌شده ادعا نمی‌شود.
+- ابزار فقط به‌صورت دستی اجرا می‌شود و هنگام Startup/Seed عمومی فعال نیست. سرورها، داده قبلی و شاخه‌های والد/PC-A/main/develop محفوظ‌اند؛ قفل‌های PC-B/MASTER-003 تغییر نکردند. گزارش و دستور اجرا: `docs/tasks/MASTER-003-LOCAL-DEMO-DATA.md`.
+
+## اصلاح نمایش فهرست پس از ثبت فرم — 2026-08-31
+
+- `MASTER-003-LIST-VISIBILITY` روی `codex/pc-b-master-data-list-visibility` از نسخه تجمیعی `790c20a`: درخواست‌های KPI مالی و جغرافیا از pageSize نامعتبر 1 به helper مشترک با اندازه معتبر 10 منتقل شدند؛ فهرست اصلی، فیلترها، مجوزها و قرارداد Backend بدون تغییرند.
+- ثبت فرودگاه در Audit محلی موجود بود؛ داده حذف نشده بود و خطای درخواست KPI باعث شکست بارگذاری فهرست می‌شد. هیچ Migration، Reset، Seed یا ویرایش داده کاربردی انجام نشد.
+- ۹۵۸ تست عمومی موفق، از جمله سه تست Web جدید و نه تست HTTP اعتبارسنجی برای منابع مالی/جغرافیا؛ ۵۷ تست اختیاری PostgreSQL در اجرای عمومی skip شدند. این اصلاح Schema یا Repository را تغییر نمی‌دهد.
+- Typecheck و Production Build موفق؛ lint محدوده موفق و lint کل همان خطا/هشدار DatePicker مشترک را دارد. API4000 و Login3100 پاسخ ۲۰۰؛ Web نسخه اصلاح‌شده را اجرا می‌کند. مرورگر تست به Login هدایت شد و Smoke با حساب کاربر انجام نشده است.
+- کاربر درخواست Merge به develop داده است؛ PRهای والد هنوز Draft و بدون Review هستند. بررسی غیرمخرب Merge نیز در WORK_ASSIGNMENTS، PROJECT_STATUS و master-data.xlsx تعارض یافت. هیچ Merge یا تغییر شاخه والد/PC-A/main/develop انجام نشده است. گزارش نهایی: `docs/tasks/MASTER-003-LIST-VISIBILITY.md`.
+
+## انتشار و فعال‌سازی تمام تغییرات محلی — 2026-08-31
+
+- کاربر انتشار همه اصلاحات موجود و فعال‌سازی محلی را تأیید کرد. تغییرات در شش Slice سربرگ، وضعیت همکاری، حذف امن، فرم‌های سفر، ترمینال و وعده/سرویس در Draft PRهای #48 تا #53 منتشر شدند؛ حمل‌ونقل #47 نیز در نسخه تجمیعی حضور دارد. گزارش‌های «محلی/بدون Push» پایین، تاریخچه مرحله پیاده‌سازی هستند.
+- از داده‌های کاربردی Backup خصوصی گرفته شد. چهار Migration سفر/ترمینال/حمل‌ونقل/وعده با موفقیت Deploy شدند؛ دیتابیس محلی با ۲۴ Migration به‌روز است. هیچ Reset، حذف داده یا Seed کاربردی انجام نشد.
+- API4000 پاسخ Health سالم دارد؛ Web3100 و Login پاسخ ۲۰۰ می‌دهند. مسیرهای محافظت‌شده بدون Session به Login هدایت می‌شوند؛ Smoke احراز‌شده ادعا نمی‌شود. اتصال ابزار مرورگر داخلی در این اجرا در دسترس نبود.
+- کل پروژه: API ۵۲۴، Web ۳۴۶، Contract ۱۴، Database ۵۹ و Config/Worker سه تست موفق؛ Typecheck و Production Build موفق. lint محدوده Master Data و API موفق؛ lint کلی فقط خطا/هشدار قدیمی DatePicker مشترک را دارد.
+- آزمون واقعی مستقل PostgreSQL 18: حذف امن ۷، فرم‌های سفر ۱۳ و وعده ۸ موفق؛ در نسخه تجمیعی نهایی ترمینال ۱۵ و حمل‌ونقل ۱۰ آزمون موفق با تمام Migrationها و Seed دوگانه. مشکل Fixture قدیمی ترمینال برطرف شد؛ اجرای نخست Seed هم‌زمان با تست کل پروژه به Timeout خورد و اجرای مستقل مجدد موفق بود.
+- Customers، Dependency/Lockfile و شاخه‌های والد/PC-A محفوظ‌اند؛ سه قفل PC-B/MASTER-003 فعال می‌مانند. گزارش انتشار و محدودیت‌های تأیید: `docs/tasks/MASTER-003-LOCAL-PUBLISH.md`.
+
+### `MASTER-003-LOCAL-MEAL-SERVICE-FORM` — PC-B — آماده بررسی؛ فعال‌سازی محلی معلق
+
+- فرم Popup وعده/سرویس: کد قابل تعریف با پیشنهاد RO/BB/HB/FB/ALL/UALL/BRN، عنوان فارسی/انگلیسی، دسته، انتخاب چندگانه وعده‌ها و پاک‌کردن، تعداد واقعی هتل مرتبط فقط‌خواندنی و فعال/غیرفعال/در حال بررسی.
+- وضعیت و محتوا با مجوز، Version و Audit در تراکنش واحد ثبت می‌شوند. فیلتر و Excel وضعیت بررسی را مستقل نمایش می‌دهند؛ مصرف‌کننده قدیمی آن را inactive می‌بیند. کدهای خودکار قدیمی و وعده‌های سفارشی بدون بازنویسی حفظ می‌شوند.
+- Migration افزایشی `20260831130000_master_data_meal_service_forms` و همه Migrationهای نسخه محلی روی PostgreSQL 18 خالی اجرا شدند؛ Seed دوبار و ۸ آزمون واقعی ذخیره/Audit/فیلتر/Export/FK/Constraint موفق. آزمون‌های API/Web/Contract/Database، Typecheck و Build جداگانه موفق‌اند؛ خطای lint کلی Web همان DatePicker قبلی است.
+- تغییرات محلی کاربر، سه قفل PC-B/MASTER-003 و Branch جاری محفوظ‌اند؛ Customers/Dependency/Seed، دیتابیس کاربردی و Client سرور تغییر نکردند. API4000 در کنترل نهایی در دسترس نبود؛ Smoke احراز‌شده ادعا نمی‌شود. فعال‌سازی نیازمند هماهنگی Migrationهای محلی معلق است. گزارش: `docs/tasks/MASTER-003-LOCAL-MEAL-SERVICE-FORM.md`.
+
+گزارش‌های مرحله‌ای پایین تاریخی هستند؛ فعال‌سازی و تجمیع حمل‌ونقل PR #47 اکنون با تأیید صریح کاربر در `MASTER-003-LOCAL-PUBLISH` انجام می‌شود.
 
 ## خلاصه
 
@@ -33,14 +96,137 @@
 
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
-- وضعیت: **MASTER-003 Phase A برابر DONE / READY_FOR_REVIEW؛ کل Master Data تکمیل نشده است**
+- وضعیت: **انتشار اصلاحات محلی در Sliceهای مستقل و تجمیع نسخه اجرایی کامل**
 - Repository: `Rubi`، Remote با نام `origin`
 - Baseline: `origin/develop@b6da5d6300716a189958bc37d31ca195f0304dc5` شامل Merge PR #24
-- شاخه فعال: `codex/pc-b-master-data-advanced`
-- Work Item: `MASTER-003 Phase A`؛ `READY_FOR_REVIEW` از Base `b6da5d6`
-- محیط مسئول: `COMPUTER_ID=PC-B`؛ Dev Server فعالی برای Rubi وجود نداشت.
-- نوع تغییر: Database، API، Contract، Permission/Audit، Excel Import، Frontend و تست؛
-  Dependency/Lockfile تا اثبات نیاز واقعی آزاد است.
+- شاخه جاری: `codex/pc-b-master-data-demo-fixtures` از `codex/pc-b-master-data-list-visibility`، شامل نسخه تجمیعی و اصلاح نمایش فهرست؛ Runtime برنامه تغییر نکرده و داده آزمایشی به DB لوکال اضافه شده است.
+- Work Item جاری: `MASTER-003-LOCAL-DEMO-DATA` روی والد PR #55؛ نسخه تجمیعی و Sliceهای انتشار قبلی حفظ شده‌اند.
+- محیط مسئول: `COMPUTER_ID=PC-B`؛ داده‌های Checkout اصلی محفوظ‌اند؛ API4000 و Web3100 محل اجرای نسخه تجمیعی هستند.
+- نوع تغییر: Master Data Database/API/Contract/Web/Test/Docs؛ بدون تغییر Seed، Customers،
+  UI مشترک، Dependency یا Lockfile.
+
+### `MASTER-003R-TRANSPORT-FORMS` — PC-B — `READY_FOR_REVIEW`
+
+- پوشش تصاویر ۴۳۹ تا ۴۴۵ در هفت فرم ایرلاین، هواپیما، قواعد بار، شرکت ریلی، قطار، شرکت اتوبوس و نوع اتوبوس بررسی و تکمیل شد. فیلدهای نام فارسی/انگلیسی، کشور/سازمان، سازنده/مدل و دسته‌های موجود حفظ شدند؛ وضعیت بررسی، مشخصات سیستمی فقط‌خواندنی و تاریخچه واقعی داخل پروفایل Popup اضافه شد.
+- امکانات قطار به رابطه چندبه‌چند واقعی Facility متصل است؛ امکانات متنی قدیمی باقی می‌ماند. فیلتر وضعیت قبل از Pagination و در خروجی Excel اعمال می‌شود. تغییر وضعیت مجوز اختصاصی می‌خواهد و همراه Version/Audit در همان تراکنش ثبت می‌شود.
+- Migration افزایشی `20260831120000_master_data_transport_forms`: هفت پرچم بررسی با Constraint و جدول ارتباطی قطار/امکانات با FK محدودکننده؛ هر ۲۱ Migration روی PostgreSQL 18 موقت، Seed دوبار و ۹ آزمون واقعی موفق شدند. فقط دیتابیس موقت آزمون حذف شد؛ دیتابیس اصلی Deploy نشد.
+- کنترل کیفیت: API ۲۶۵، Web ۲۰۳، Contracts ۱۴ و Database ۵۵ تست موفق؛ Prisma format/validate/generate، typecheck و Production Build API/Web موفق. lint API/Database و کل ماژول Master Data وب موفق؛ lint سراسری Web فقط خطا/هشدار قبلی DatePicker مشترک را دارد و آن فایل دست‌نخورده است.
+- اتصال واقعی Documents/Integrations، شمارش انواع ناوگان و ظرفیت عملیاتی همچنان منتظر قرارداد مالک هستند. مرجع لوگوی قبلی فقط‌خواندنی نمایش داده می‌شود؛ UUID جدید تاییدنشده پذیرفته نمی‌شود. مقدار، Connection، Secret یا داده ساختگی ماکاپ Seed نشد.
+- Checkout مستقل `C:/Users/admin/Rubi-transport-forms` از `2088010` برای حفظ تغییرات محلی حذف امن، فرم ترمینال/تور/سفر و سایر کارهای هم‌زمان استفاده شد. Health API و Login نسخه اصلی ۲۰۰ هستند؛ Smoke مرورگر احراز‌شده نسخه جدید ادعا نمی‌شود. ادغام در Checkout مشترک و Deploy محلی نیازمند هماهنگی جداست.
+- سه قفل Migration/Contract/Docs زیر `PC-B/MASTER-003` فعال باقی می‌مانند؛ والد #45 و کل زنجیره Stacked، Customers، Seed و Dependency/Lockfile تغییر نکردند. قبل از والدها Merge نشود. گزارش و جدول فیلدها: `docs/tasks/MASTER-003R-TRANSPORT-FORMS.md`.
+
+### `MASTER-003Q-PARTNER-FORMS` — PC-B — `READY_FOR_REVIEW`
+
+- نام انگلیسی مستقل Supplier/Broker، نوع حقیقی/حقوقی Organization، تماس اصلی فعال همان سازمان و انتخاب چندگانه خدمات واقعی اضافه شدند؛ فرم‌های مرتبط Popup هستند و در فهرست/پروفایل فقط Mask تماس نمایش داده می‌شود.
+- FK مرکب مانع اتصال مخاطب سازمان دیگر، جابه‌جایی هویت و حذف مخاطب استفاده‌شده است. PATCH مقادیر غایب را حفظ و فیلدهای اختیاری صریحاً خالی را پاک می‌کند؛ مجوز، Version و Audit موجود حفظ شدند.
+- Migration افزایشی `20260831090000_master_data_partner_forms` روی PostgreSQL 18 خالی و دیتابیس محلی اجرا شد؛ Seed دوبار فقط در DB موقت، چهار آزمون واقعی FK/رمزنگاری/ذخیره/Audit موفق‌اند. DB موقت آزمون حذف شد؛ داده عملیاتی حذف نشد.
+- نسخه جداشده از سایر تغییرات محلی: API ۲۵۴ تست، Web ۱۸۶ تست (شامل ۶ تست SSR فرم واقعی)، typecheck و Production Build API/Web موفق. نسخه مشترک نیز API ۳۸۴، Web ۲۴۸، Contract ۱۴ و Database ۵۳ تست موفق دارد (شامل کارهای هم‌زمان دیگر).
+- lint API و فایل‌های Web متاثر موفق؛ lint کلی Web فقط خطا/هشدار قبلی DatePicker مشترک را دارد. مرورگر به Login هدایت شد؛ Smoke احراز‌شده ادعا نمی‌شود. API روی ۴۰۰۰ و Web روی ۳۱۰۰ روشن‌اند.
+- قرارداد و سقف خرید تا Public Service واقعی B2B/Procurement و اتصال Provider تا سرویس Integrations، Deferred هستند؛ عدد، قرارداد یا اتصال جعلی ثبت نشد. سه قفل PC-B/MASTER-003 ثابت و تغییرات محلی حذف امن، همکاری و اصلاحات جانبی محفوظ و خارج از Commit این Slice هستند.
+- والد #44 دست‌نخورده است؛ [Draft PR #45](https://github.com/nirvanamahlou/Rubi/pull/45) روی آن Stacked است و پیش از والدها Merge نمی‌شود. گزارش: `docs/tasks/MASTER-003Q-PARTNER-FORMS.md`.
+
+### `MASTER-003-LOCAL-TRAVEL-FORMS` — PC-B — آماده بررسی محلی؛ فعال‌سازی معلق
+
+- فرم Popup نوع ترانسفر: کد خودکار فقط‌خواندنی، عنوان فارسی/انگلیسی، وسیله، شیوه سرویس، حداقل/حداکثر ظرفیت، شرح، ترتیب و وضعیت. استفاده فقط‌خواندنی و تا اتصال رزرو فاقد عدد ساختگی است.
+- فرم Popup ویزا: کد، عنوان‌ها، کشور مقصد، نوع ویزا، Provider، اعتبار روزشمار یا تا پایان پاسپورت، شناسه مدارک راهنمای عمومی، شرح، ترتیب و وضعیت؛ بدون اطلاعات متقاضی/پاسپورت.
+- دو ستون و سه CHECK افزایشی در `20260831100000_master_data_travel_reference_forms`؛ ذخیره وضعیت/مشخصات اتمیک با مجوز، کنترل نسخه و Audit. رکوردهای قدیمی محفوظ‌اند.
+- ۷۰ تست هدفمند API، ۲۸ تست Web، ۱۳ آزمون واقعی PostgreSQL 18 و دو تست ساختار Migration موفق؛ Web typecheck، lint فایل‌های همین تغییر و Build جداگانه API/Web موفق‌اند. آزمون گسترده‌تر، خطاهای خارج از Scope در فرم ترمینال را نشان داد؛ جزئیات و مراحل فعال‌سازی در `docs/tasks/MASTER-003-LOCAL-TRAVEL-FORMS.md`.
+- Migration و Prisma Client جدید فقط در محیط آزمایشی جدا بررسی شدند؛ دیتابیس کاربردی، سرورها، Branch و Git staging/Commit/Push تغییر نکردند. تغییرات هم‌زمان محفوظ‌اند.
+
+### `MASTER-003-LOCAL-TERMINAL-FORM` — PC-B — آماده بررسی محلی
+
+- فرم و فهرست ترمینال مطابق فیلدهای تصویر تکمیل شد: نوع داخلی/بین‌المللی/مشترک/VIP، گیت، ساعت ۲۴ساعته یا بازه محلی با پشتیبانی از 24:00 و عبور از نیمه‌شب، فعال/غیرفعال/تعمیرات. مشاهده و ویرایش Popup است؛ کد، شهر و کدهای فرودگاه و آخرین تغییر فقط‌خواندنی‌اند.
+- Migration افزایشی `20260831110000_master_data_terminal_details` با CHECKهای واقعی و بدون تغییر رکوردهای قبلی؛ وضعیت و مشخصات در یک تراکنش مجوزدار با Version/Audit ذخیره می‌شوند. تعمیرات برای مصرف‌کننده قدیمی غیرفعال محسوب می‌شود.
+- ۴۱ تست جدید API، ۲۸ تست Web و ۱۵ آزمون PostgreSQL 18 موفق. مجموعه جاری API: ۴۶۳ موفق، Web: ۳۰۴ موفق، Contract: ۱۴ موفق؛ lint محدوده، typecheck با Source قرارداد جاری، Prisma format/validate/generate و Production Build جداگانه API/Web موفق.
+- Seed دوبار در دیتابیس موقت و با مهلت بیشتر فقط در Client آزمایشی اجرا شد؛ مهلت پیش‌فرض Seed در این محیط تمام می‌شد. DB آزمایشی حذف شد. Migration کاربردی، Client سرور مشترک، سرورها، Branch و Git staging/Commit/Push تغییر نکردند؛ Smoke احراز‌شده ادعا نمی‌شود. قفل‌های PC-B/MASTER-003 ثابت‌اند. گزارش و فعال‌سازی: `docs/tasks/MASTER-003-LOCAL-TERMINAL-FORM.md`.
+
+### `MASTER-003-LOCAL-TOUR-FORM` — PC-B — آماده بررسی محلی
+
+- فرم Popup نوع تور با کد خودکار، عنوان فارسی/انگلیسی، دامنه، شرح، ترتیب و وضعیت تکمیل شد؛ کد، استفاده و آخرین تغییر فقط‌خواندنی‌اند. ذخیره وضعیت و مشخصات اتمیک، مجوزدار و دارای کنترل نسخه/Audit است.
+- نمایش نام تغییر‌دهنده از API عمومی مجوزدار IAM است؛ شمارش محصولات تا قرارداد مالک مربوط در وضعیت «در انتظار اتصال محصولات» باقی می‌ماند.
+- ۵۸ آزمون جدید؛ Web جاری ۲۴۲ موفق، API جاری ۳۸۴ موفق/۱۱ skipped، typecheck، lint فایل‌های متاثر و Build جدا از سرور موفق. Smoke احراز‌شده انجام نشد.
+- تغییر محلی بدون Commit/Push، تغییر Branch، Schema/Migration/Seed، Dependency یا دست‌زدن به سرورها؛ تغییرات هم‌زمان حفظ شدند. گزارش: `docs/tasks/MASTER-003-LOCAL-TOUR-FORM.md`.
+
+### `MASTER-003P-CLEAR-FIELDS` — PC-B — `READY_FOR_REVIEW`
+
+- دکمه «×» برای انتخاب‌های ساده، مرجع اجباری/اختیاری، چندانتخابی و تاریخ در فرم‌های
+  ایجاد/ویرایش Master Data، فرم ارز/نرخ، Preview و ورود گروهی هتل اضافه شد.
+- دکمه نام فارسی دسترس‌پذیر و فضای لمس ۴۴ پیکسل دارد؛ Submit نیست و پس از پاک‌کردن،
+  فوکوس به همان فیلد برمی‌گردد. در حالت خالی، فقط‌خواندنی و ذخیره نمایش داده نمی‌شود.
+- پاک‌کردن فقط state همان فیلد را تغییر می‌دهد؛ انتخاب اجباری تا انتخاب دوباره قابل ذخیره
+  نیست. در ورود گروهی هتل، پاک‌کردن کشور، شهر و Preview وابسته را نیز خالی می‌کند.
+- آزمون واقعی TSX با پیکربندی Vitest محلی Web فعال شد؛ تنظیمات Next و Dependency ثابت‌اند.
+- کنترل کیفیت روی checkout مستقل `687a183` برای جداسازی از تغییرات هم‌زمان Workspace:
+  Frozen install، `175/175` تست Web (۲۰ تست جدید)، typecheck، lint فایل‌های متاثر و Production Build موفق.
+- lint کل Web همچنان فقط ایراد قبلی DatePicker مشترک در خطوط ۶۷ و ۹۹ را گزارش می‌کند؛
+  آن فایل خارج از Scope و دست‌نخورده است. `git diff --check` و Scope/Secret-pattern scan موفق‌اند.
+- Health API و Login پاسخ ۲۰۰ دارند؛ بدون Session مسیر `/master-data` به Login می‌رود.
+  Smoke احراز‌شده ادعا نمی‌شود. سرورهای محلی روشن و تغییرات محلی دیگر حفظ شده‌اند.
+- Parent #43 / `b78d0a9` و سه قفل `PC-B/MASTER-003` ثابت‌اند؛ Draft روی شاخه والد،
+  وابسته به #43 و زنجیره #25؛ بدون Merge خودکار. گزارش: `docs/tasks/MASTER-003P-CLEAR-FIELDS.md`.
+
+### `MASTER-003O-PAYMENT-FORM` — PC-B — `READY_FOR_REVIEW`
+
+- ورودی «کد روش» و «نام انگلیسی» فقط از فرم ایجاد/ویرایش/مشاهده روش‌های پرداخت حذف شدند؛
+  سایر فرم‌ها، Catalog مرجع و ستون‌های Export بدون تغییر باقی می‌مانند.
+- فهرست فیلدهای فرم از Catalog جدا شد؛ دو فیلد حذف‌شده در state یا payload ویرایش خالی
+  نمی‌شوند، بنابراین کد و نام انگلیسی ذخیره‌شده قبلی حفظ می‌شوند.
+- ایجاد روش پرداخت بدون code از تولیدکننده موجود کد یکتای Backend استفاده می‌کند؛ کد
+  صریح مصرف‌کننده قدیمی همچنان پذیرفته/اعتبارسنجی می‌شود و شکل پاسخ تغییر نکرده است.
+- تغییر الزامی‌بودن code سازگار و افزایشی است؛ producer/consumer و رفتار Update در
+  `WORK_ASSIGNMENTS.md` ثبت شده‌اند. Schema/Migration/Seed و داده‌های موجود تغییر نکردند.
+- Web: `155/155` و API: `245/245` تست موفق؛ شامل نبود دو فیلد، حفظ Export و سایر فرم‌ها،
+  ایجاد بدون کد، رفع برخورد نام/کد، سازگاری کد صریح و حفظ مقادیر قبلی هنگام ویرایش.
+- typecheck و Production Build هر دو برنامه، lint فایل‌های Web متاثر و کل API موفق؛
+  `git diff --check` و Scope/Secret-pattern scan موفق‌اند. ایراد پیشین DatePicker مشترک خارج از Scope است.
+- API محلی پس از تغییر Source توسط watcher راه‌اندازی مجدد شده و Health پاسخ ۲۰۰ می‌دهد؛
+  Web بدون Session به Login سالم با پاسخ ۲۰۰ می‌رود. Smoke احراز‌شده ادعا نمی‌شود؛ سرورها روشن‌اند.
+- Parent #42 / `495af50` و قفل‌های `PC-B/MASTER-003` ثابت‌اند؛ Draft PR روی
+  `codex/pc-b-master-data-clean-labels` و وابسته به #42 و زنجیره #25 است؛ پیش از والد Merge نشود.
+
+### `MASTER-003N-CLEAN-LABELS` — PC-B — `READY_FOR_REVIEW`
+
+- متن فنی اعتبارسنجی Backend/Audit از بالای فرم‌های واقعی و نشان نسخه قرارداد از
+  فرم‌های واقعی/Preview حذف شد؛ اعتبارسنجی، ذخیره‌سازی، Audit و Contract تغییر نکردند.
+- نشان «Backend واقعی · مشترک بین شرکت‌ها» در مالی و جغرافیا و نمونه جداگانه نشان
+  Backend/توضیح scope در نمای عمومی Master Data حذف شدند؛ سایر ماژول‌ها دست‌نخورده‌اند.
+- عنوان دسترس‌پذیر Dialog، توضیح نمای فقط‌خواندنی، نسخه رکورد و هشدار Preview حفظ شدند؛
+  فرم بدون توضیح به شناسه توضیح ناموجود ارجاع نمی‌دهد و نوار خالی نشان‌ها باقی نمی‌ماند.
+- Web tests: `151/151` و typecheck موفق؛ تست بازگشت، همه کامپوننت‌های Master Data را پوشش می‌دهد.
+- lint هر شش فایل تغییرکرده و Production Build موفق؛ هر هشت HTML زیرمجموعه اطلاعات پایه
+  بدون متن/برچسب‌های حذف‌شده ساخته شدند. `git diff --check` و Scope/Secret-pattern scan موفق‌اند.
+- API Health پاسخ ۲۰۰ و Web بدون Session به Login سالم پاسخ ۲۰۰ می‌دهد؛ سرورها روشن‌اند.
+  Smoke احراز‌شده انجام نشد؛ ایراد قدیمی lint تقویم مشترک خارج از محدوده این اصلاح باقی است.
+- والد #40 / `808ca13` و قفل‌های `PC-B/MASTER-003` ثابت‌اند؛ PR باید Draft و روی شاخه
+  `codex/pc-b-master-data-currency-form` باشد و پیش از والد #40 و زنجیره #25 Merge نشود.
+
+### `MASTER-003M-CURRENCY-FORM` — PC-B — `READY_FOR_REVIEW`
+
+- فرم اختصاصی ارز: نام فارسی/انگلیسی، ISO، نماد، تعداد اعشار و وضعیت؛ سیاست نمایش از
+  فرم و پروفایل حذف شد، ولی مقدار ذخیره‌شده قبلی و پیش‌فرض Database حفظ می‌شوند.
+- ثبت نرخ خرید/فروش، ارز مقابل، منبع، تاریخ/ساعت و بازه اعتبار در همان Popup؛ تاریخچه
+  مستقل باقی می‌ماند. ارز پایه فقط‌خواندنی و در انتظار قرارداد واقعی Finance است.
+- endpoint افزایشی `/api/v1/master-data/currency-rates/quotes` نرخ‌های ارسالی و Audit را
+  در یک تراکنش ثبت می‌کند؛ Decimal تا ۱۰ اعشار، UTC، مجوز، DRAFT و `isAuthoritative=false`.
+- ثبت‌کننده از Session تعیین می‌شود؛ وضعیت تأیید از فرم قابل تحمیل نیست. نام نمایشی
+  کاربر تا اتصال قرارداد عمومی هویت موجود نیست و نتیجه ثبت، شناسه واقعی کاربر را نشان می‌دهد.
+- تست‌ها، محدودیت Smoke احراز‌شده و خطای پیشین lint مشترک در گزارش همین کار ثبت شده‌اند.
+- والد #39 و سه قفل فعال `PC-B/MASTER-003` دست‌نخورده‌اند؛ Dependency/Lockfile آزاد است.
+- جزئیات: `docs/tasks/MASTER-003M-CURRENCY-FORM.md`.
+
+### `MASTER-003L-SECTION-CLEANUP` — PC-B — `READY_FOR_REVIEW`
+
+- شرکت اتوبوس، نوع اتوبوس و CIP از رابط تور و خدمات سفر حذف شدند؛ چهار تب لیدرها،
+  نوع تور، نوع ترانسفر و ویزا باقی ماندند. اتوبوس فقط در حمل‌ونقل نمایش داده می‌شود.
+- نوع مشتری، منبع سرنخ و نوع کمپین از مراجع فروش حذف شدند؛ نحوه آشنایی، کانال فروش،
+  دلیل از دست رفتن و Tag باقی ماندند. متن و شمارنده کارت‌های Hub هماهنگ شدند.
+- داده‌ها و قرارداد هر ۴۵ منبع حفظ شده‌اند؛ موارد بدون ورودی ناوبری صریحاً ثبت شده‌اند.
+- Web tests: `133/133`، typecheck، lint فایل‌های تغییرکرده و Production Build موفق؛
+  خروجی HTML ساخته‌شده دقیقاً چهار تب و چهار زیرمجموعه در هر یک از دو بخش دارد.
+- Full Web lint فقط همان خطا/هشدار پیشین `date-picker.tsx` را گزارش می‌کند؛ فایل تغییر نکرد.
+  مرورگر بدون Session به Login می‌رود؛ Smoke احراز‌شده در این اصلاح ادعا نمی‌شود.
+- سه قفل فعال `PC-B/MASTER-003` و وضعیت آزاد Dependency/Lockfile تغییر نکرده‌اند.
+- جزئیات: `docs/tasks/MASTER-003L-SECTION-CLEANUP.md`.
 
 ### `MODULES-FOUNDATION-001` — PC-A — `READY_FOR_REVIEW`
 
@@ -169,6 +355,253 @@
   `RELEASED` و Dependency/Lockfile همچنان `RELEASED` خواهد بود.
 - مرجع Handoff: [MASTER-003-HANDOFF.md](tasks/MASTER-003-HANDOFF.md). برنامه ادامه:
   [MASTER-004.md](tasks/MASTER-004.md).
+### `MASTER-003B-GEO` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-next` دقیقاً از Remote Parent
+  `origin/codex/pc-b-master-data-advanced@f0d3b8c4` ساخته شد و Parent Branch
+- Draft PR #28 با Base `codex/pc-b-master-data-advanced` ایجاد شد و تا Merge
+  PR #25 نباید ادغام شود؛ سپس Base آن به `develop` تغییر می‌کند.
+  دست‌نخورده ماند.
+- Migration افزایشی `20260827090000_master_data_geography` مدل‌های Region، Airport
+  و Terminal و توسعهٔ غیرمخرب City را اضافه می‌کند؛ ISO/IATA/ICAO، مختصات،
+  same-country hierarchy و delete restrict در PostgreSQL enforce می‌شوند.
+- Contract عمومی به `master-data.v5` ارتقا یافت و Backend/Frontend واقعی پنج منبع
+  جغرافیا با Search/Filter/Sort/Pagination، Create/View/Edit، Status، Optimistic Lock،
+  Audit، Permission و UI فارسی RTL responsive تکمیل شد.
+- داده جغرافیا global است؛ هیچ Legal Entity filter یا branch ownership روی رکوردها
+  اعمال نمی‌شود و branch فقط در Audit metadata ثبت می‌گردد.
+- همه ۱۰ Migration روی PostgreSQL 18.1 خالی، Seed دوگانه، constraint test و smoke
+  احراز‌شده login + پنج API + `/master-data` با HTTP 200 پاس شدند؛ دیتابیس موقت
+  پس از آزمون حذف شد.
+- هیچ فایل Customers، dependency manifest یا lockfile تغییر نکرده است. این Slice زیر
+  همان سه قفل فعال `PC-B/MASTER-003` باقی می‌ماند و PR آن باید Draft و stacked روی
+  PR #25 باشد.
+- full typecheck، ۳۱۶ تست در ۷۷ فایل و production build کل Monorepo پاس شدند؛ lint
+  همه فایل‌های Slice نیز پاس است. full lint فقط روی DatePicker بدون تغییر Parent
+  متوقف می‌شود و برای حفظ Vertical Slice وارد این PR نشده است.
+
+### `MASTER-003C-FINANCIAL` — PC-B — `READY_FOR_REVIEW`
+
+- «مالی و پولی» زیرمجموعه Master Data در `/master-data/finance` است و شش نمای واقعی
+  ارزها، تاریخچه نرخ، گردش تأیید، بانک‌ها، شعب بانک و روش‌های پرداخت مرجع دارد.
+- Migration افزایشی `20260829100000_master_data_financial_reference` سیاست نمایش ارز،
+  نام انگلیسی/SWIFT بانک، شعبه مستقل و روش پرداخت مرجع را بدون عملیات مخرب اضافه می‌کند.
+- نرخ‌ها همچنان تاریخچه مستقل، Decimal مثبت با حداکثر ۱۰ اعشار، Maker/Checker، Audit،
+  Optimistic Lock و `isAuthoritative=false` دارند؛ Seed نرخ عمداً خالی است.
+- حساب، شبا، کارت، CVV، مانده، تسویه، تراکنش و پیکربندی درگاه وارد Master Data نشده‌اند
+  و هیچ Query مستقیمی به جداول Finance وجود ندارد.
+- همه ۱۱ Migration روی PostgreSQL 18.1 خالی، Seed دوگانه و Constraintهای SWIFT، کد
+  شعبه، ترتیب روش پرداخت و خالی‌بودن Seed نرخ با موفقیت آزموده شدند.
+- هیچ فایل Customers، manifest یا lockfile تغییر نکرده است؛ آیکن/لوگوی بانک تا قرارداد
+  رسمی Documents به‌صورت upload جعلی پیاده‌سازی نشده است.
+- Branch `codex/pc-b-master-data-financial` دقیقاً روی
+  `origin/codex/pc-b-master-data-next@e0e3a5f` پشته شده است؛ Draft PR #29 با Base همین
+  Branch ایجاد شد و قبل از Merge والدهای #28 و #25 نباید ادغام یا به `develop` منتقل شود.
+
+### `MASTER-003D-UI-POLISH` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-ui-polish` از
+  `origin/codex/pc-b-master-data-financial@e7e6180` ساخته شد و PR مالی #29 را تغییر
+  نمی‌دهد.
+- Draft PR #30 با Base همان Branch مالی ایجاد شد و تا Merge والدهای #29، #28 و #25
+  نباید ادغام شود.
+- کارت KPI مشترک با شش رنگ پاستلی، آیکن معنایی، Dark Mode و چینش Responsive به همه
+  Workspaceهای اطلاعات پایه اضافه شد.
+- KPIهای شش نمای مالی و پنج نمای جغرافیا دقیقاً با نام‌های ماکاپ نمایش داده می‌شوند؛
+  مقادیر فاقد قرارداد واقعی Finance/Aggregate با `—` مشخص‌اند و عدد ساختگی ندارند.
+- جغرافیا اکنون پنج تب کشور، استان/ناحیه، شهر، فرودگاه و ترمینال، فیلترهای رابطه‌ای،
+  جدول تخصصی، قاعده یکپارچگی، عملیات واقعی و Export دارد.
+- خط رنگی پایین کارت‌های Hub در Hover حذف شد؛ حرکت و Focus Ring دسترس‌پذیر حفظ شدند.
+- تست کامل Repository برابر ۳۳۵ تست، Typecheck کل Monorepo و Production Build موفق
+  است. Lint فایل‌های تغییرکرده موفق است؛ Full Web Lint فقط روی ایراد قدیمی و دست‌نخورده
+  `apps/web/src/components/ui/date-picker.tsx` متوقف می‌شود.
+- Database، Migration، Backend، Contract، Customers، Dependency و Lockfile در این
+  Slice تغییر نکردند.
+
+### `MASTER-003E-SUPPLIERS` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-suppliers` از
+  `origin/codex/pc-b-master-data-ui-polish@920328e` ساخته شد و PR والد #30 را تغییر
+  نمی‌دهد.
+- Draft PR #31 با Base همان Branch والد ساخته شد و پیش از Merge زنجیره
+  #30 ← #29 ← #28 ← #25 نباید ادغام شود.
+- شش نمای دقیق تأمین‌کنندگان، پروفایل تأمین‌کننده، کارگزاران، پروفایل کارگزار،
+  اطلاعات تماس و وضعیت همکاری در `/master-data/organizations-suppliers` پیاده‌سازی شدند.
+- Migration افزایشی `20260829133000_master_data_suppliers` پروفایل Supplier، خدمات
+  رابطه‌ای Supplier/Broker و مخاطبان چندگانه را با FK محدودکننده اضافه می‌کند.
+- Contactهای سازمانی فقط رمز‌شده/Mask/Fingerprint ذخیره می‌شوند؛ Unmask مجوز مستقل،
+  Audit و Mask مجدد خودکار دارد و plaintext وارد List، Excel یا Audit نمی‌شود.
+- KPIها با نام و آیکن ماکاپ از Summary واقعی Backend تغذیه می‌شوند؛ تعداد قرارداد که
+  متعلق به Procurement است بدون جعل قرارداد با `—` نمایش داده می‌شود.
+- همه ۱۲ Migration روی PostgreSQL 18 خالی، Seed دوگانه و رد زنده داده Contact نامعتبر
+  موفق بودند؛ Seed هیچ Supplier، Contact، Contract یا Provider ساختگی اضافه نمی‌کند.
+- Lint، Typecheck، Production Build و همه `349/349` تست Repository موفق هستند و مسیر
+  `/master-data/organizations-suppliers` در خروجی SSG ساخته می‌شود.
+- هیچ Query مستقیمی به Procurement، Finance یا Integrations و هیچ تغییری در Customers،
+  dependency manifest یا lockfile وجود ندارد.
+
+### `MASTER-003F-ACCOMMODATION` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-accommodation` از
+  `origin/codex/pc-b-master-data-suppliers@02d4101` ساخته شد و PR والد #31 را تغییر
+  نمی‌دهد.
+- Draft PR #32 با Base `codex/pc-b-master-data-suppliers` ایجاد شد و پیش از Merge
+  زنجیره #31 ← #30 ← #29 ← #28 ← #25 نباید ادغام شود.
+- هفت نمای کاتالوگ اقامت شامل هتل‌ها، زنجیره، نوع اتاق، وعده/سرویس، امکانات، ورود
+  گروهی Excel و هتل ترکیبی در `/master-data/accommodation` به Backend واقعی متصل
+  هستند؛ پروفایل هتل طبق MASTER-003G از فهرست در Popup باز می‌شود.
+- Migration افزایشی `20260829150000_master_data_accommodation` زنجیره هتل، روابط
+  چندبه‌چند Meal/Room/Facility و هتل ترکیبی/اعضا را اضافه و مشخصات هتل را با وب‌سایت،
+  زمان ورود/خروج، مختصات و لوگوی مرجع توسعه می‌دهد.
+- Check Constraintهای زمان، جفت و بازه مختصات، ترتیب نمایش و اولویت عضو و همه FKهای
+  جدید با `ON DELETE RESTRICT` در PostgreSQL اعمال می‌شوند؛ Migration دادهٔ قدیمی
+  Meal/Room را بدون حذف به روابط جدید backfill می‌کند.
+- Contract عمومی `master-data.v8` شامل ۲۵ منبع و Summary واقعی اقامت است. KPIهای
+  هر شش کاتالوگ دقیقاً با نام و آیکن ماکاپ از Aggregate واقعی Backend تغذیه می‌شوند.
+- قرارداد، نرخ خرید، موجودی، Voucher و تخصیص مسافر جعل نشده‌اند؛ این داده‌ها در
+  Procurement/Reservations باقی می‌مانند و مرجع Documents تا قرارداد رسمی با `—`
+  یا وضعیت در انتظار نمایش داده می‌شود.
+- همه ۱۳ Migration روی PostgreSQL 18.1 خالی، Seed دوگانه و Constraintهای زنده زمان،
+  مختصات، ترتیب و اولویت موفق‌اند؛ Seed هیچ Hotel/Chain/Composite یا قرارداد ساختگی
+  اضافه نمی‌کند.
+- Frozen install، Prisma format/validate/generate، Lint فایل‌های Slice، Typecheck و
+  Production Build و هر `366/366` تست Repository موفق‌اند. Full Web Lint فقط روی
+  ایراد قدیمی و خارج از Slice در
+  `apps/web/src/components/ui/date-picker.tsx` متوقف می‌شود.
+- هیچ فایل Customers، dependency manifest یا lockfile و هیچ جدول عملیاتی ماژول دیگر
+  تغییر نکرده است.
+
+### `MASTER-003G-UX-CONSOLIDATION` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-ux-consolidation` از HEAD تأییدشده PR #32
+  ساخته شد و شاخه‌های والد یا PC-A را تغییر نمی‌دهد.
+- Draft PR #33 با Base `codex/pc-b-master-data-accommodation` ایجاد شد و پیش از PR
+  #32 یا سایر والدهای پشته Merge نمی‌شود.
+- تاریخچه و نمودار نرخ داخل Popup جزئیات ارز قرار گرفت و با انتخاب ارز، جفت/نوع نرخ
+  و بازه زمانی از Backend واقعی خوانده می‌شود؛ تب مستقل تاریخچه حذف شد.
+- شهر و استان/ناحیه در یک تب بالادستی تجمیع شدند و نوع رکورد در همان صفحه انتخاب
+  می‌شود؛ Schema و FKهای مستقل بدون تغییر باقی ماندند.
+- پروفایل هتل، تأمین‌کننده و کارگزار با کلیک نام/مشاهده در Dialog مشترک باز می‌شود؛
+  تب‌های پروفایل و نمای مستقل اطلاعات تماس از رابط حذف شدند.
+- برچسب `MASTER-003 · PC-B` از Header صفحه اصلی حذف و شمارنده‌های Hub با نماهای
+  قابل مشاهده هماهنگ شدند.
+- ESLint تمام فایل‌های Slice، Typecheck و Production Build موفق‌اند؛ هر `366/366`
+  تست Repository پاس شد. API Health پاسخ ۲۰۰ و Routeهای محافظت‌شده پاسخ ۳۰۷ به Login
+  می‌دهند.
+- Full Web Lint فقط به‌علت خطای قدیمی `react-hooks/set-state-in-effect` و هشدار
+  `aria-required` در `apps/web/src/components/ui/date-picker.tsx` خارج از این Slice
+  متوقف می‌شود.
+- هیچ فایل Customers، Prisma/Migration/Seed، API/Contract، Dependency/Lockfile،
+  Secret یا PII تغییر نکرده است.
+
+### `MASTER-003H-TRANSPORT` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-transport` از
+  `origin/codex/pc-b-master-data-ux-consolidation@70d97ea` ساخته شد و هیچ شاخه والد
+  یا متعلق به PC-A را تغییر نمی‌دهد.
+- Draft PR #35 با Base `codex/pc-b-master-data-ux-consolidation` ساخته شد و پیش از
+  Merge PR #33 نباید ادغام شود؛ پس از Merge والد Base آن به `develop` تغییر می‌کند.
+- Migration افزایشی `20260829170000_master_data_transport` مشخصات دوزبانه ایرلاین،
+  نوع هواپیما، کلاس پروازی، قاعده بار، قالب Manifest، شرکت/نوع قطار و شرکت/نوع
+  اتوبوس را با FK محدودکننده، Optimistic Lock و Constraintهای واقعی اضافه می‌کند.
+- Contract عمومی به `master-data.v9` ارتقا یافت و هر ۹ منبع حمل‌ونقل به Backend واقعی
+  Search/Sort/Pagination، Create/Edit، Active/Inactive، Audit، Permission و Export
+  متصل شدند.
+- Workspace فارسی RTL Responsive مطابق ماکاپ ۹ تب و KPIهای پاستلی هم‌نام دارد؛ تب
+  مستقل پروفایل ایرلاین وجود ندارد و پروفایل همه ردیف‌ها از نام یا دکمه مشاهده در
+  Popup باز می‌شود.
+- Credential/Secret اتصال Provider، موجودی/قیمت/رزرو، قرارداد/تسویه و Manifest مسافر
+  وارد Master Data نشده‌اند؛ Connection یا Documents فاقد قرارداد با `—`/وضعیت
+  در انتظار نمایش داده می‌شود و Seed حمل‌ونقل عمداً خالی است.
+- تمام ۱۴ Migration روی PostgreSQL 18 خالی و Seed دوگانه موفق بود؛ همان Migration روی
+  دیتابیس محلی Deploy و Seed دو بار بدون ایجاد داده ساختگی اجرا شد.
+- هیچ فایل Customers، dependency manifest یا lockfile تغییر نکرده و سه قفل فعال
+  Migration/Contract/Docs همچنان زیر `PC-B/MASTER-003` باقی می‌مانند.
+
+### `MASTER-003I-SALES-REFERENCES` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-sales-references` از
+  `origin/codex/pc-b-master-data-transport@1049928` ساخته شد و روی Draft PR #35 پشته
+  می‌شود؛ هیچ شاخه والد یا متعلق به PC-A تغییر نمی‌کند.
+- Draft PR #36 با Base `codex/pc-b-master-data-transport` ساخته شد و پیش از Merge
+  PR #35 و تمام والدهای آن نباید ادغام شود؛ پس از Merge والد، Base مطابق زنجیره به
+  `develop` تغییر می‌کند.
+- Migration افزایشی `20260829190000_master_data_sales_references` شش کاتالوگ جدید
+  Lead Source، Sales Channel، Lost Reason، Customer Type، Tag و Campaign Type را
+  اضافه و کاتالوگ موجود Acquaintance Method را با نام انگلیسی و ترتیب نمایش تکمیل
+  می‌کند؛ Check واقعی ترتیب نامنفی و رنگ Hex Tag و Unique Code فعال است.
+- Contract عمومی به `master-data.v10` ارتقا یافت و هر هفت مرجع به Backend واقعی
+  Search/Sort/Pagination، Create/Edit، Active/Inactive، Optimistic Lock، Audit،
+  Permission و Export متصل شدند.
+- Workspace فارسی RTL Responsive مطابق ماکاپ هفت تب و چهار KPI پاستلی هم‌نام دارد.
+  هیچ تب پروفایل مستقلی وجود ندارد و جزئیات هر ردیف از نام یا دکمه مشاهده در Popup
+  مشترک باز می‌شود.
+- شمارنده استفاده به‌دلیل مالکیت آن توسط Consumer Aggregate و ممنوعیت Query مستقیم
+  Customers/Sales صادقانه با `—` نمایش داده می‌شود؛ پس از قرارداد عمومی نسخه‌دار قابل
+  اتصال است. Seed این Slice عمداً هیچ مرجع ساختگی اضافه نمی‌کند.
+- تمام ۱۵ Migration روی PostgreSQL 18 خالی و Seed دوگانه موفق بود؛ همان Migration روی
+  دیتابیس محلی Deploy و Seed دو بار اجرا شد. هیچ فایل Customers، dependency manifest
+  یا lockfile تغییر نکرده و سه قفل MASTER-003 فعال می‌مانند.
+- Full Test شامل API `204/204`، Web `120/120`، Database `42/42`، Contracts `14/14`
+  و سه تست سایر بسته‌ها موفق بود؛ Full Typecheck و Production Build نیز پاس شدند.
+  Smoke احراز‌شده API و `/master-data/sales-references` هر دو پاسخ ۲۰۰ دادند. Lint
+  فایل‌های دو Workspace حمل‌ونقل و مراجع فروش موفق است؛ Full lint فقط به‌دلیل ایراد
+  قدیمی DatePicker خارج از این Slice متوقف می‌شود.
+
+
+### `MASTER-003J-INSURANCE` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-insurance` از
+  `origin/codex/pc-b-master-data-sales-references@fbc423d` ساخته شد و روی Draft PR
+  #36 پشته می‌شود؛ هیچ شاخه والد یا متعلق به PC-A تغییر نمی‌کند.
+- Draft PR #37 با Base `codex/pc-b-master-data-sales-references` ساخته شد و پیش از
+  Merge PR #36 و تمام والدهای آن نباید ادغام شود؛ پس از Merge والد، Base مطابق
+  زنجیره به `develop` تغییر می‌کند.
+- دو Migration افزایشی بیمه، Insurer را با Country و نام انگلیسی تکمیل و مدل‌های
+  Insurance Plan، Coverage و رابطه چندبه‌چند آنها را با FK محدودکننده، Check مبلغ،
+  سن، اعتبار و Version اضافه می‌کنند؛ عملیات مخرب وجود ندارد.
+- Contract عمومی به `master-data.v11` و ۴۱ Resource ارتقا یافت. سه کاتالوگ شرکت‌های
+  بیمه، طرح‌ها و پوشش‌ها به API واقعی، Permission، Audit، Optimistic Lock، Export،
+  Search/Filter/Sort/Pagination و Summary واقعی متصل‌اند.
+- Workspace فارسی RTL Responsive مطابق ماکاپ سه تب و KPIهای پاستلی هم‌نام دارد؛
+  مشاهده جزئیات فقط Popup است و هیچ صفحه مستقل پروفایل ساخته نشده است.
+- Pricing، Policy، Passenger، Reservation، Provider و Documents در مالکیت ماژول‌های
+  مربوط باقی مانده‌اند؛ Query مستقیم بین‌ماژولی و Seed عملیاتی/ساختگی اضافه نشده است.
+- تمام ۱۷ Migration روی PostgreSQL 18 خالی و Seed دوگانه موفق بود؛ همان Migrationها
+  روی دیتابیس محلی Deploy شدند. هیچ فایل Customers، dependency manifest یا lockfile
+  تغییر نکرده و سه قفل MASTER-003 فعال می‌مانند.
+- Full Test شامل API `211/211`، Web `124/124`، Database `46/46`، Contracts `14/14`
+  و سه تست سایر بسته‌ها موفق بود؛ Full Typecheck و Production Build نیز پاس شدند.
+  Lint تمام فایل‌های این Slice موفق است؛ Full lint فقط به‌دلیل ایراد قدیمی DatePicker
+  خارج از این Slice متوقف می‌شود.
+
+### `MASTER-003K-TRAVEL-SERVICES` — PC-B — `READY_FOR_REVIEW`
+
+- Branch مستقل `codex/pc-b-master-data-travel-services` از
+  `origin/codex/pc-b-master-data-insurance@1a94fca` ساخته شد و روی Draft PR #37
+  پشته می‌شود؛ Draft PR #38 ایجاد شد و هیچ شاخه والد یا متعلق به PC-A تغییر نمی‌کند.
+- Migrationهای افزایشی `20260829220000_master_data_travel_services` و
+  `20260829221000_master_data_travel_bus_connections` چهار کاتالوگ Tour
+  Type، Transfer Type، CIP Service و Visa Service را اضافه و Leader را با Location،
+  نام انگلیسی، مقصد و تماس رمزنگاری/ماسک‌شده تکمیل می‌کند؛ FK محدودکننده و Check
+  ظرفیت، اعتبار، ترتیب و Version فعال است. Bus Company دقیقاً به یک Organization
+  یا Provider متصل و Facilityهای Bus Type با رابطه M:N نگهداری می‌شوند.
+- Contract عمومی به `master-data.v12` و ۴۵ Resource ارتقا یافت. هفت تب ماکاپ به API
+  واقعی، Permission، Audit بدون Ciphertext، Optimistic Lock، Export و Summary واقعی
+  متصل‌اند؛ شرکت و نوع اتوبوس در سطح Hub به این بخش تخصیص یکتای UI دارند.
+- Workspace فارسی RTL Responsive KPIهای پاستلی هم‌نام و ستون‌های دقیق ماکاپ دارد؛
+  مشاهده همه جزئیات، به‌ویژه پروفایل لیدر، فقط Popup است و مسیر مستقل ساخته نشده است.
+- اسناد/آدرس/بانک/دستمزد لیدر، پرونده و سند مسافر، قیمت، ظرفیت، Reservation، Voucher،
+  قرارداد و Settlement وارد Master Data نشده‌اند؛ شمارنده بدون Public Contract با
+  `—` نمایش داده می‌شود و Seed این Slice عمداً خالی است.
+- تمام ۱۹ Migration روی PostgreSQL 18 خالی، Constraintهای زنده و Seed دوگانه موفق
+  بودند؛ همان Migration روی دیتابیس محلی Deploy و Seed دو بار اجرا شد. هیچ فایل
+  Customers، dependency manifest یا lockfile تغییر نکرده است.
+- Full Test شامل API `218/218`، Web `129/129`، Database `51/51`، Contracts `14/14`
+  و سه تست سایر بسته‌ها، در مجموع `415/415` موفق بود؛ Full Typecheck و Production
+  Build نیز پاس شدند. Lint فایل‌های Slice موفق است؛ Full lint فقط به‌دلیل ایراد قدیمی
+  DatePicker خارج از این Slice متوقف می‌شود.
+
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
 
 - کامپوننت مشترک DatePicker با تم آبی و سوییچ بالای تقویم برای شمسی/میلادی ایجاد شد.

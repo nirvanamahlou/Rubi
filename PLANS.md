@@ -1,5 +1,12 @@
 # برنامه اجرای Rubi
 
+## یکپارچه‌سازی مشترک — 2026-08-31
+
+- SHARED-INTEGRATION-0831 در حال ترکیب Snapshotهای منتشرشده PR #55/#56/#46 در یک develop است؛ Branchهای مبدأ حفظ و نسخه ترکیبی بازبینی می‌شود.
+- بلیت Phase A باقی می‌ماند؛ قیمت نهایی فروش در Sales، قیمت خرید مرجع در Catalog و صدور/Manifest در Reservations است.
+- پس از عبور Gateها و Merge، هر دو دستگاه از همان Commit develop استفاده می‌کنند. Git کد را همگام می‌کند، نه داده یا کلید خصوصی دیتابیس محلی را.
+- توسعه بعدی در Branch ماژولی انجام می‌شود؛ قفل Migration/Contract اطلاعات پایه بدون Handoff صریح جابه‌جا نمی‌شود.
+
 ## تحویل زنجیره مشتریان — 2026-08-31
 
 - #26، #27 و #34 به develop ادغام شدند؛ #41 پس از ۴۲۵ تست و Smoke واقعی آماده ادغام Slice موجود است، نه تأیید تکمیل همه قابلیت‌های Customers.
@@ -221,6 +228,32 @@ Baseline برنامه: `origin/develop` در Merge Commit
   Task رزرو شده‌اند، اما Reservation تا عبور کامل Gate #25 → #26 → #27 فعال نیست.
 - شروع Persistence یا تغییر Schema پیش از Handoff نهایی ممنوع است.
 - مرجع انتقال: [MASTER-003-HANDOFF.md](docs/tasks/MASTER-003-HANDOFF.md).
+
+- `MASTER-003B-GEO` روی Branch مستقل
+  `codex/pc-b-master-data-next` و Base والد PR #25 پیاده‌سازی شد: Country،
+  Province/Region، City، Airport و Terminal با Migration غیرمخرب، Contract v5،
+  API/UI واقعی، Permission/Audit و optimistic lock.
+- Draft PR #28 به‌صورت stacked می‌ماند و پیش از Merge PR #25 ادغام نمی‌شود؛
+  پس از Merge والد، Base آن به `develop` تغییر خواهد کرد.
+- `MASTER-003C-FINANCIAL` زیر مسیر `/master-data/finance`، Contract v6 و Migration
+  `20260829100000_master_data_financial_reference` پیاده‌سازی شد: Currency Display
+  Policy، Rate History/Approval، Bank/Branch و Payment Method مرجع. حساب، شبا، کارت،
+  مانده، تراکنش، درگاه و نرخ authoritative همچنان در مالکیت Finance هستند.
+- Draft PR #29 روی Branch جغرافیا و PR #28 پشته شده است و به‌تبع آن به PR #25 وابسته
+  می‌ماند؛ پیش از والدها Merge نمی‌شود.
+- `MASTER-003D-UI-POLISH` به‌صورت Slice مستقل روی PR #29 آماده شد: KPIهای پاستلی و
+  آیکن‌دار در همه Workspaceها، نام KPIهای مالی و جغرافیا مطابق ماکاپ، نمای تخصصی پنج‌تب
+  جغرافیا و حذف خط Hover کارت‌های Hub. این Slice هیچ Schema، Migration، API Contract،
+  Customers، Dependency یا Lockfile را تغییر نمی‌دهد.
+- Draft PR #30 با Base `codex/pc-b-master-data-financial` ایجاد شد و پیش از والدهای
+  #29، #28 و #25 نباید Merge شود.
+- `MASTER-003H-TRANSPORT` با ۹ کاتالوگ حمل‌ونقل، Contract v9، Migration افزایشی و
+  پروفایل Popup در Draft PR #35 روی PR #33 آماده Review است.
+- `MASTER-003I-SALES-REFERENCES` با هفت کاتالوگ مستقل مراجع فروش، Contract v10،
+  Migration افزایشی و پروفایل Popup روی شاخه
+  `codex/pc-b-master-data-sales-references` و Draft PR #36 آماده Review است؛ شمارش مصرف تا انتشار
+  Public Aggregate Contract با `—` نمایش داده می‌شود و Query مستقیم Customers/Sales
+  وجود ندارد.
 
 ### `CALENDAR-001` — PC-B — `READY_FOR_REVIEW`
 

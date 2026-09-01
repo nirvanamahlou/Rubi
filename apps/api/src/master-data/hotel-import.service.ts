@@ -438,9 +438,17 @@ export class HotelImportService implements OnModuleDestroy {
           await tx.masterHotelFacility.deleteMany({
             where: { hotelId: existing.id },
           });
-          await this.assignFacilities(
+          await tx.masterHotelMealService.deleteMany({
+            where: { hotelId: existing.id },
+          });
+          await tx.masterHotelRoomType.deleteMany({
+            where: { hotelId: existing.id },
+          });
+          await this.assignHotelCatalogs(
             tx,
             existing.id,
+            references.mealServiceId,
+            references.roomTypeId,
             references.facilityIds,
             actor.userId,
           );
@@ -465,9 +473,11 @@ export class HotelImportService implements OnModuleDestroy {
             },
           });
           affectedHotelId = hotel.id;
-          await this.assignFacilities(
+          await this.assignHotelCatalogs(
             tx,
             hotel.id,
+            references.mealServiceId,
+            references.roomTypeId,
             references.facilityIds,
             actor.userId,
           );
@@ -622,20 +632,37 @@ export class HotelImportService implements OnModuleDestroy {
     return { mealServiceId, roomTypeId, facilityIds };
   }
 
-  private async assignFacilities(
+  private async assignHotelCatalogs(
     tx: Prisma.TransactionClient,
     hotelId: string,
+    mealServiceId: string | null,
+    roomTypeId: string | null,
     facilityIds: readonly string[],
     actorUserId: string,
   ) {
-    if (!facilityIds.length) return;
-    await tx.masterHotelFacility.createMany({
-      data: facilityIds.map((facilityId) => ({
-        hotelId,
-        facilityId,
-        assignedByUserId: actorUserId,
-      })),
-      skipDuplicates: true,
-    });
+    await Promise.all([
+      mealServiceId
+        ? tx.masterHotelMealService.createMany({
+            data: [{ hotelId, mealServiceId, assignedByUserId: actorUserId }],
+            skipDuplicates: true,
+          })
+        : Promise.resolve(),
+      roomTypeId
+        ? tx.masterHotelRoomType.createMany({
+            data: [{ hotelId, roomTypeId, assignedByUserId: actorUserId }],
+            skipDuplicates: true,
+          })
+        : Promise.resolve(),
+      facilityIds.length
+        ? tx.masterHotelFacility.createMany({
+            data: facilityIds.map((facilityId) => ({
+              hotelId,
+              facilityId,
+              assignedByUserId: actorUserId,
+            })),
+            skipDuplicates: true,
+          })
+        : Promise.resolve(),
+    ]);
   }
 }

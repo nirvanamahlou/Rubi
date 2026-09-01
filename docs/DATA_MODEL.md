@@ -211,6 +211,63 @@ erDiagram
 
 - profile واحد است و roleها چندگانه؛ Agency/Supplier duplicate organization نمی‌سازند.
 - external mapping بر `(connection_id, entity_type, external_id)` یکتا است.
+- Supplier و Broker پروفایل‌های role-specific با FK محدودکننده به همان Organization هستند؛
+  خدمت قابل ارائه از کاتالوگ مرجع و رابطه چندبه‌چند نگه‌داری می‌شود.
+- هر Organization می‌تواند چند Contact داشته باشد. تلفن و ایمیل فقط به‌صورت
+  AES-256-GCM، Mask و Fingerprint ذخیره می‌شوند؛ plaintext در List، Export یا Audit نیست
+  و Unmask مجاز رویداد Audit مستقل ایجاد می‌کند.
+- وضعیت همکاری Supplier/Broker مرجع Master Data است؛ Contract، Purchase، Settlement و
+  Provider credential در مالکیت Procurement، Finance و Integrations باقی می‌مانند.
+
+### Master Data حمل‌ونقل
+
+- `master_airlines` کد عمومی IATA یکتا و Uppercase، کد ICAO اختیاری یکتا، نام دوزبانه،
+  کشور و Organization دارای Role ایرلاین را نگه می‌دارد؛ Credential و Connection در
+  Integrations باقی می‌ماند.
+- نوع هواپیما، کلاس پروازی، نوع قطار و نوع اتوبوس کاتالوگ‌های مشترک و مستقل از ناوگان،
+  برنامه حرکت، قیمت و موجودی هستند. تخصیص اجرایی در Ticket Catalog/Reservations است.
+- قاعده بار تاریخچه مستقل با FK ایرلاین/کلاس، نوع مسافر، دامنه مسیر، Decimal مثبت، واحد،
+  تعداد قطعه و بازه اعتبار دارد؛ رکورد استفاده‌شده حذف فیزیکی نمی‌شود.
+- قالب Manifest فقط ساختار و نسخه قالب را نگه می‌دارد. فایل فعال نیازمند UUID واقعی از
+  قرارداد Documents است؛ Manifest مسافر و تاریخچه ارسال در Reservations باقی می‌ماند.
+- شرکت ریلی و اتوبوس هرکدام به Organization و Country فعال FK محدودکننده دارند. قرارداد،
+  فروش، تسویه و Provider operation در ماژول‌های مالک نگه‌داری می‌شوند.
+- همه رکوردها global و مشترک دو شرکت هستند؛ Legal Entity Selector آن‌ها را فیلتر نمی‌کند
+  و Branch فقط در Audit actor scope ثبت می‌شود.
+
+### Master Data مراجع فروش
+
+- نحوه آشنایی، منبع سرنخ، کانال فروش، دلیل از دست رفتن، نوع مشتری، Tag و نوع کمپین
+  هفت کاتالوگ مستقل هستند و نباید به‌جای یکدیگر یا به‌صورت یک enum مشترک استفاده شوند.
+- هر مرجع کد داخلی یکتا، نام فارسی، نام انگلیسی اختیاری، توضیح، ترتیب نمایش، وضعیت
+  فعال/غیرفعال، Version خوش‌بینانه و Audit actor/time دارد. رنگ Tag فقط Hex استاندارد
+  Uppercase است و ترتیب نمایش در سطح دیتابیس نامنفی کنترل می‌شود.
+- اتصال Lead/Customer/Campaign/Contract به این Referenceها و شمارش مصرف آن‌ها در مالکیت
+  ماژول مصرف‌کننده است. Master Data به جدول Customers یا Sales Query مستقیم نمی‌زند و
+  شمارنده مصرف فقط پس از انتشار Public Aggregate Contract نمایش داده می‌شود.
+- رابطه چندبه‌چند Tag با رکوردهای عملیاتی در Aggregate مصرف‌کننده نگه‌داری می‌شود؛
+  Master Data فقط تعریف Tag را مالک است. رکورد استفاده‌شده حذف فیزیکی نمی‌شود و فقط
+  غیرفعال می‌شود.
+- همه این Referenceها global و مشترک هر دو Legal Entity هستند و selector شرکت آن‌ها را
+  فیلتر نمی‌کند؛ Branch فقط در Audit actor scope ثبت می‌شود.
+
+### Accommodation Master Data
+
+- Hotel یک Reference مشترک میان Legal Entityها است و به City واقعی و در صورت وجود
+  Hotel Chain و Organization دارای Role `HOTEL_PROVIDER` متصل می‌شود؛ selector شرکت
+  روی این کاتالوگ فیلتر مالکیتی اعمال نمی‌کند.
+- زمان ورود/خروج با قالب `HH:mm`، مختصات به‌صورت جفت Decimal و درجه هتل با بازه
+  کنترل‌شده ذخیره می‌شوند. رکورد مصرف‌شده حذف فیزیکی نمی‌شود و Active/Saleable و
+  Version خوش‌بینانه دارد.
+- Meal/Service، Room Type و Facility رکوردهای مستقل کاتالوگ‌اند. اتصال آن‌ها به Hotel
+  در `master_hotel_meal_services`، `master_hotel_room_types` و
+  `master_hotel_facilities` نگه‌داری می‌شود و ستون Checkbox ثابت ساخته نمی‌شود.
+- Composite Hotel یک Reference نمایشی فروش در یک City است؛ اعضا فقط Hotel فعال،
+  فروش‌پذیر و هم‌شهر هستند، اولویت مثبت و یکتا دارند و عضو پشتیبان نیز باید عضو همان
+  ترکیب باشد.
+- موجودی اتاق، تخصیص مسافر و Voucher در Reservations و قرارداد و نرخ خرید در
+  Procurement باقی می‌مانند. Logo/Image فقط شناسه عمومی Documents است و تا انتشار
+  قرارداد واقعی فایل، باینری یا reference ساختگی ذخیره نمی‌شود.
 
 ### Human Resources
 

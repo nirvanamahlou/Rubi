@@ -1,5 +1,35 @@
 # تصمیم‌های معماری
 
+## Clarifications carried from the approved source tasks — 2026-08-31
+
+- `TICKET-PRICING-002`: PR #46 records the owner's clarification that final sale
+  prices are dynamic Sales quotation/contract snapshots. Ticket Catalog owns
+  purchase/cost reference versions only, not a fixed sale amount. This supersedes
+  older combined purchase/sale wording for Catalog; no Sales persistence or FX
+  conversion is implemented by this integration. See `tasks/TICKET-CATALOG-001.md`.
+- The same source handoff clarifies mixed-currency Sales: preserve separate
+  Decimal/currency components for one ticket sale; never sum unlike currencies
+  or invent an FX rate. Converted totals need the approved Finance policy and a
+  rate snapshot. This is a Sales backlog requirement, not an implemented feature.
+- PR #46 also records the owner's narrow IAM policy change: minimum password
+  length 10, preserving uppercase/lowercase/digit/special-character checks and
+  maximum 200. This integration carries that existing change to Web and API
+  together; it does not reset passwords or provision application users.
+
+
+## هماهنگی MASTER-003-CATALOG-USABILITY — 2026-08-31
+
+مبنای اولیه بررسی Handoff origin/develop پس از #41 بود؛ بررسی نهایی Merge #58 / e25f288
+را نشان داد. Handoff جدید صراحتاً قفل‌های توسعه PC-B را حفظ می‌کند و تنها رزرو integration
+پس از Merge خاتمه می‌یابد؛ رزرو محدود کار جاری زیر PC-B/MASTER-003 ادامه دارد.
+درخواست جدید مالک با حفظ نسخه‌های تحویلی روی شاخه مستقل از #57 اجرا می‌شود؛ ادغام
+develop یا تغییر والدها جزو این کار نیست. فقط قرارداد Master Data و اسناد اعلام‌شده
+در WORK_ASSIGNMENTS برای این اصلاح رزرو شده‌اند. پس از تطبیق ماکاپ، قفل محدود Schema/Migration
+برای افزودن ترتیب کشور با پیش‌فرض صفر و قید عدد صحیح نامنفی به همین Work Item اضافه شد؛ Calendar دست نمی‌خورد.
+ستون‌های وابسته به ماژول‌های دیگر بدون Public Contract مقدار واقعی ندارند؛ مقدار ناموجود
+با وضعیت انتظار نمایش داده می‌شود، نه صفر یا اتصال ساختگی. داده نمونه فقط با منشأ آزمایشی
+و بدون دست‌کاری داده کاربر واقع‌گراتر می‌شود؛ نرخ ارز و PII واقعی همچنان ممنوع‌اند.
+
 ## تصمیم‌های پذیرفته‌شده در Bootstrap
 
 | ID      | تصمیم                                                                                              | دلیل/پیامد                                                                                                                    |
