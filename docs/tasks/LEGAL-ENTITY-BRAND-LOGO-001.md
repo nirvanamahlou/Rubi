@@ -21,7 +21,7 @@
 
 آماده بررسی روی `codex/pc-b-jahan-bastan-logo` از `origin/develop@0f1d7b6fd15cba995be9793e0a9686474ad8c4c9`.
 
-مالک در 2026-09-01 صریحاً دریافت آخرین تغییرات PC-A، Push Branch و Merge با `develop` را مجاز کرد. پیش از انتشار، `origin/develop@f78e70e` در Branch کاری ادغام و کنترل کیفیت تکرار می‌شود.
+مالک در 2026-09-01 صریحاً دریافت آخرین تغییرات PC-A، Push Branch و Merge با `develop` را مجاز کرد. `origin/develop@f78e70e` شامل PR #74 PC-A بدون Conflict در Branch کاری ادغام و کنترل کیفیت کامل تکرار شد.
 
 ## پیاده‌سازی
 
@@ -32,10 +32,11 @@
 
 ## کنترل کیفیت
 
-- Web tests: `552/552` موفق
-- Web lint: موفق، بدون Warning
-- Web typecheck: موفق
-- Production Build: موفق، ۳۴ Route
+- Full Workspace tests: `1,383` تست اجراشده موفق؛ `70` تست PostgreSQL اختیاری skip
+- Web tests پس از Integration: `565/565` موفق
+- Full Workspace lint: موفق، بدون Warning
+- Full Workspace typecheck: موفق
+- Full Production Build: موفق، Web با ۳۴ Route
 - Smoke لوکال: API health، Login Web و Asset لوگو همگی HTTP 200
 - کنترل بصری Asset: نسبت افقی و محتوای تصویر صحیح است
 

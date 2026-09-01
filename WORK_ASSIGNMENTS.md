@@ -8,8 +8,8 @@
 - بدون Backend، Database، Schema/Migration/Seed، داده کاربر، API Contract، Dependency/Lockfile یا Permission. هیچ قفل Migration، Contract، Dependency/Lockfile یا Branch گرفته نمی‌شود.
 - `LEGAL-ENTITY-CONTEXT-001` قبلاً با PR #24 ادغام و قفل‌های آن آزاد شده است؛ این تغییر فقط مصرف‌کننده Web و برندینگ نمایشی را لمس می‌کند.
 - نتیجه: App Shell برند را از Legal Entity Context موجود می‌خواند؛ انتخاب `JAHAN_BASTAN` فایل افقی دقیقاً مطابق تصویر مالک را همراه نام و متن جایگزین درست نمایش می‌دهد و انتخاب نیایش سیر رفتار قبلی را حفظ می‌کند. Asset سرو‌شده با فایل ورودی SHA-256 یکسان دارد.
-- Validation: هر ۵۵۲ تست Web، lint، typecheck و Production Build با ۳۴ Route موفق‌اند. API health، صفحه Login و Asset جهان باستان روی `http://localhost:4000` و `http://localhost:3100` پاسخ ۲۰۰ دادند و تصویر سرو‌شده به‌صورت بصری کنترل شد.
-- مجوز انتشار: مالک در 2026-09-01 صریحاً دریافت آخرین تغییرات PC-A، Push این Branch و Merge آن با `develop` را خواست. انتشار فقط از مسیر PR و پس از ادغام `origin/develop@f78e70e` و کنترل کیفیت مجدد انجام می‌شود؛ `main` و Force Push ممنوع می‌مانند.
+- Validation: پیش از Integration هر ۵۵۲ تست Web و Smoke لوکال API/Web/Asset موفق بود. پس از ادغام `origin/develop@f78e70e` شامل PR #74 PC-A، Full lint/typecheck/build و ۱٬۳۸۳ تست اجراشده Workspace موفق شدند؛ ۷۰ تست PostgreSQL اختیاری طبق Suite معمول skip ماندند و Web هر ۵۶۵ تست را گذراند.
+- مجوز انتشار: مالک در 2026-09-01 صریحاً دریافت آخرین تغییرات PC-A، Push این Branch و Merge آن با `develop` را خواست. `origin/develop@f78e70e` بدون Conflict در Branch ادغام و کنترل کیفیت کامل تکرار شد؛ انتشار فقط از مسیر PR انجام می‌شود و `main` و Force Push ممنوع می‌مانند.
 - Final lock state: `RELEASED — PC-B/LEGAL-ENTITY-BRAND-LOGO-001 ready for review`. هیچ قفل Migration، Contract، Dependency/Lockfile، Permission، Database یا Branch گرفته نشد.
 
 ## DOCUMENTS-003C-CI-PORTABILITY — PC-B — READY_FOR_REVIEW
