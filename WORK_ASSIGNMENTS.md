@@ -1,5 +1,15 @@
 # Work Assignments
 
+## MARKETING-001 — PC-B — IN_PROGRESS
+
+- درخواست صریح مالک: Foundation حرفه‌ای ماژول Marketing در Phase A بدون Persistence، مستقل از Documents در PC-B و Ticket Catalog/Sales در PC-A. `COMPUTER_ID=PC-B`.
+- Base: `origin/develop@cd146fa48cb70af951ab23c9118f4b377dae5e3f` پس از Merge PR #62 / `MASTER-003-LOCK-RELEASE`. Branch: `codex/pc-b-marketing-foundation`؛ توسعه مستقیم روی `develop` یا `main` ممنوع است.
+- محدوده رزروشده: `apps/api/src/marketing/**` برای Domain/Application/Ports/Validation/Error/Permission proposal بدون Controller یا Repository فعال؛ `apps/web/src/modules/marketing/**` و اتصال محدود route موجود `/marketing`؛ تست‌های همان ماژول؛ `docs/tasks/MARKETING-001.md`؛ فقط همین ورودی محدود در `WORK_ASSIGNMENTS.md`.
+- مرز بین‌ماژولی: Customers، Customer Affairs، Sales، Finance، Master Data، Documents و Integrations فقط از Public Contract/Event/Port پیشنهادی مصرف می‌شوند؛ Query مستقیم جدول یا import زیرساخت داخلی آن‌ها ممنوع است. Marketing فقط Offer Intent می‌دهد و قیمت نهایی قرارداد نزد Sales می‌ماند؛ ارسال واقعی و Provider Credential نزد Integrations/Notifications است.
+- این Phase هیچ Prisma Schema/Migration/Seed، `packages/contracts/src/index.ts`، IAM مرکزی، `package.json`، `pnpm-lock.yaml`، AppModule/Navigation مشترک متعارض، Controller فعال، Repository جعلی، Worker یا پیام واقعی را تغییر نمی‌دهد.
+- Lock state: Migration Owner، Dependency/Lockfile Owner و Shared Root Contract برای این Task رزرو نمی‌شوند و `RELEASED / UNASSIGNED` می‌مانند. Permissionها Proposal ماژول‌محلی و deny-by-default هستند؛ اتصال IAM و Persistence فقط در Phase B با Handoff و رزرو تازه مجاز است.
+- داده Preview فقط synthetic با شناسه `preview-*` و بدون PII خام است. KPI فاقد Backend واقعی با `AWAITING_ANALYTICS_CONTRACT`، Attribution مالی با `PROPOSED` و ارسال بدون Adapter با `AWAITING_INTEGRATION_ADAPTER` نمایش داده می‌شود.
+
 ## LEGAL-ENTITY-BRAND-LOGO-001 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-01: با انتخاب شرکت فعال «جهان باستان»، لوگوی افقی ارسالی همان شرکت در App Shell جای لوگوی «نیایش سیر سحر» نمایش داده شود. `COMPUTER_ID=PC-B`.
