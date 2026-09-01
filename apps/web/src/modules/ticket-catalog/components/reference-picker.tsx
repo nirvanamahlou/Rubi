@@ -17,6 +17,7 @@ export function ReferencePicker({
   value,
   onSelect,
   countryId,
+  cityId,
   readOnly = false,
 }: {
   id: string;
@@ -25,6 +26,7 @@ export function ReferencePicker({
   value: Reference | undefined;
   onSelect: (value: Reference | undefined) => void;
   countryId?: string;
+  cityId?: string;
   readOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -37,20 +39,35 @@ export function ReferencePicker({
     total: number;
     error?: string;
   }>();
-  const enabled = !readOnly && (resource !== 'cities' || Boolean(countryId));
-  const key = JSON.stringify([resource, search, page, countryId, attempt]);
+  const enabled =
+    !readOnly &&
+    (resource !== 'cities' || Boolean(countryId)) &&
+    (resource !== 'airports' || Boolean(cityId));
+  const key = JSON.stringify([
+    resource,
+    search,
+    page,
+    countryId,
+    cityId,
+    attempt,
+  ]);
   useEffect(() => {
     if (!open || !enabled) return;
     const abort = new AbortController();
     const timer = setTimeout(() => {
-      void listReferences(resource, search, page, abort.signal)
+      void listReferences(resource, search, page, abort.signal, {
+        ...(countryId ? { countryId } : {}),
+        ...(cityId ? { cityId } : {}),
+      })
         .then((response) => {
           if (abort.signal.aborted) return;
           const rows = response.data
             .map(asReference)
             .filter((item): item is Reference => Boolean(item))
             .filter(
-              (item) => resource !== 'cities' || item.countryId === countryId,
+              (item) =>
+                (resource !== 'cities' || item.countryId === countryId) &&
+                (resource !== 'airports' || item.cityId === cityId),
             );
           setResult({ key, rows, total: response.meta.total });
         })
@@ -75,7 +92,7 @@ export function ReferencePicker({
       clearTimeout(timer);
       abort.abort();
     };
-  }, [open, enabled, resource, search, page, countryId, key]);
+  }, [open, enabled, resource, search, page, countryId, cityId, key]);
   const current = result?.key === key ? result : undefined;
   return (
     <div className="min-w-0 space-y-2">
@@ -102,7 +119,9 @@ export function ReferencePicker({
             ? `${value.name} (${value.code ?? ''})`
             : resource === 'cities' && !countryId
               ? 'ابتدا کشور را انتخاب کنید'
-              : `انتخاب و جست‌وجوی ${label}`}
+              : resource === 'airports' && !cityId
+                ? 'ابتدا شهر را انتخاب کنید'
+                : `انتخاب و جست‌وجوی ${label}`}
         </Button>
         {value && !readOnly ? (
           <Button
@@ -199,10 +218,9 @@ export function ReferencePicker({
                   بعدی
                 </Button>
               </div>
-              {resource === 'cities' ? (
+              {resource === 'cities' || resource === 'airports' ? (
                 <p className="text-xs text-muted-foreground">
-                  فقط شهرهای کشور انتخاب‌شده قابل انتخاب‌اند. صفحه‌بندی مربوط به
-                  جست‌وجوی عمومی شهرهاست.
+                  نتایج با رابطهٔ جغرافیایی انتخاب‌شده در API فیلتر شده‌اند.
                 </p>
               ) : null}
             </>
