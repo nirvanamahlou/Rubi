@@ -3,18 +3,14 @@
 import { useEffect, useState } from 'react';
 import {
   BusFront,
-  Copy,
-  Eye,
-  FilePenLine,
   Plane,
   Plus,
   RefreshCw,
   TrainFront,
-  Trash2,
+  Users,
 } from 'lucide-react';
 import {
   Alert,
-  Badge,
   Button,
   Card,
   Dialog,
@@ -35,7 +31,6 @@ import {
   createProduct,
   reviseProduct,
   transitionProduct,
-  transitions,
   type CatalogStatus,
   type Product,
   type ProductInput,
@@ -48,7 +43,6 @@ import {
   displayTime,
   emptyInput,
   initialQuery,
-  journeyLabels,
   parseCatalogSnapshot,
   queryProducts,
   repeatDefinition,
@@ -59,6 +53,7 @@ import {
   type PreviewQuery,
   type RepeatCadence,
 } from '../model/preview';
+import { TicketCatalogCard } from './ticket-catalog-card';
 import { TicketForm } from './ticket-form';
 import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
@@ -298,17 +293,27 @@ export function TicketWorkspace() {
         <Alert tone="error" title={problem} />
       ) : null}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="p-5">
+        <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 p-5 dark:border-blue-900 dark:from-blue-950/70 dark:to-blue-900/30">
           <p className="text-sm text-muted-foreground">کل بلیت‌ها</p>
-          <p className="mt-3 text-2xl font-black text-primary">
-            {hydrated ? products.length.toLocaleString('fa-IR') : '…'}
-          </p>
+          <div className="mt-3 flex items-center justify-between">
+            <p className="text-2xl font-black text-blue-800 dark:text-blue-200">
+              {hydrated ? products.length.toLocaleString('fa-IR') : '…'}
+            </p>
+            <Users className="size-7 text-blue-600" aria-hidden />
+          </div>
         </Card>
         {(['flight', 'train', 'bus'] as const).map((transport) => {
           const Icon = transportIcons[transport];
+          const tone = {
+            flight:
+              'border-cyan-200 bg-gradient-to-br from-cyan-50 to-sky-100/70 dark:border-cyan-900 dark:from-cyan-950/70 dark:to-sky-900/30',
+            train:
+              'border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-100/70 dark:border-emerald-900 dark:from-emerald-950/70 dark:to-teal-900/30',
+            bus: 'border-amber-200 bg-gradient-to-br from-amber-50 to-orange-100/70 dark:border-amber-900 dark:from-amber-950/70 dark:to-orange-900/30',
+          }[transport];
           return (
             <Card
-              className="flex items-center justify-between p-5"
+              className={`flex items-center justify-between p-5 ${tone}`}
               key={transport}
             >
               <div>
@@ -448,186 +453,27 @@ export function TicketWorkspace() {
         />
       ) : (
         <>
-          <Card className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1050px] text-right text-sm">
-                <thead className="bg-muted/50 text-xs text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3">بلیت</th>
-                    <th className="px-4 py-3">مسیر</th>
-                    <th className="px-4 py-3">حرکت / رسیدن</th>
-                    <th className="px-4 py-3">وضعیت / تأمین</th>
-                    <th className="px-4 py-3">ظرفیت / خرید</th>
-                    <th className="px-4 py-3">عملیات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.rows.map((product) => {
-                    const segment = product.definition.segments[0]!;
-                    const display = product.definition.display;
-                    const operatorKind =
-                      product.definition.transport === 'flight'
-                        ? 'airline'
-                        : product.definition.transport === 'train'
-                          ? 'railCompany'
-                          : 'busCompany';
-                    return (
-                      <tr
-                        key={product.id}
-                        className="border-t align-top hover:bg-muted/20"
-                      >
-                        <td className="space-y-2 px-4 py-4">
-                          <div className="flex flex-wrap gap-2">
-                            <Badge>
-                              {transportLabels[product.definition.transport]}
-                            </Badge>
-                            <Badge>
-                              {journeyLabels[product.definition.journeyRole]}
-                            </Badge>
-                            {product.id.startsWith('sample-ticket-') ? (
-                              <Badge>نمونه ساختگی</Badge>
-                            ) : null}
-                          </div>
-                          <p className="font-bold">
-                            {product.definition.title}
-                          </p>
-                          <p dir="ltr" className="text-right">
-                            {segment.flightNumber}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {referenceLabel(
-                              operatorKind,
-                              segment.airlineId,
-                              display?.operator || 'شرکت انتخاب نشده',
-                            )}
-                          </p>
-                        </td>
-                        <td className="space-y-2 px-4 py-4">
-                          <p>
-                            {referenceLabel(
-                              'city',
-                              segment.originCityId,
-                              display?.origin || 'مبدأ',
-                            )}{' '}
-                            ←{' '}
-                            {referenceLabel(
-                              'city',
-                              segment.destinationCityId,
-                              display?.destination || 'مقصد',
-                            )}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {product.definition.transport === 'flight'
-                              ? `${referenceLabel('airport', segment.originAirportId, segment.originTerminal || 'فرودگاه مبدأ')} ← ${referenceLabel('airport', segment.destinationAirportId, segment.destinationTerminal || 'فرودگاه مقصد')}`
-                              : `${segment.originTerminal || 'پایانه مبدأ'} ← ${segment.destinationTerminal || 'پایانه مقصد'}`}
-                          </p>
-                        </td>
-                        <td className="space-y-2 whitespace-nowrap px-4 py-4">
-                          <p>
-                            {displayTime(
-                              segment.departureAt,
-                              segment.departureZone,
-                            )}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {displayTime(
-                              segment.arrivalAt,
-                              segment.arrivalZone,
-                            )}
-                          </p>
-                        </td>
-                        <td className="space-y-2 px-4 py-4">
-                          <Badge>{statusLabels[product.status]}</Badge>
-                          <p>{supplyLabels[product.definition.supplyType]}</p>
-                          <p className="text-xs text-muted-foreground">
-                            نسخه {product.version.toLocaleString('fa-IR')}
-                          </p>
-                        </td>
-                        <td className="space-y-2 px-4 py-4">
-                          <p className="font-bold">
-                            {product.definition.totalCapacity.toLocaleString(
-                              'fa-IR',
-                            )}{' '}
-                            نفر
-                          </p>
-                          <p dir="ltr">
-                            {product.fares.at(-1)?.purchase}{' '}
-                            {product.fares.at(-1)?.currencyCode || '—'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            قیمت فروش در فروش تعیین می‌شود
-                          </p>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex flex-col gap-1">
-                            <Button
-                              variant="ghost"
-                              onClick={() => setForm({ mode: 'view', product })}
-                            >
-                              <Eye className="size-4" aria-hidden />
-                              مشاهده
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              disabled={
-                                product.status !== 'draft' &&
-                                product.status !== 'paused'
-                              }
-                              onClick={() => setForm({ mode: 'edit', product })}
-                            >
-                              <FilePenLine className="size-4" aria-hidden />
-                              ویرایش
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => openDuplicate(product)}
-                            >
-                              <Copy className="size-4" aria-hidden />
-                              کپی و تغییر تاریخ
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() =>
-                                setRepeat({
-                                  product,
-                                  cadence: 'weekly',
-                                  count: 1,
-                                })
-                              }
-                            >
-                              <RefreshCw className="size-4" aria-hidden />
-                              تکرار برنامه
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              className="text-destructive"
-                              onClick={() => setDeleteProduct(product)}
-                            >
-                              <Trash2 className="size-4" aria-hidden />
-                              حذف
-                            </Button>
-                            {transitions[product.status].map((status) => (
-                              <Button
-                                key={status}
-                                variant="outline"
-                                onClick={() => {
-                                  setProblem('');
-                                  setReason('');
-                                  setStatusChange({ product, status });
-                                }}
-                              >
-                                {statusLabels[status]}
-                              </Button>
-                            ))}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {result.rows.map((product) => (
+              <TicketCatalogCard
+                key={product.id}
+                product={product}
+                referenceLabel={referenceLabel}
+                onView={() => setForm({ mode: 'view', product })}
+                onEdit={() => setForm({ mode: 'edit', product })}
+                onDuplicate={() => openDuplicate(product)}
+                onRepeat={() =>
+                  setRepeat({ product, cadence: 'weekly', count: 1 })
+                }
+                onDelete={() => setDeleteProduct(product)}
+                onStatus={(status) => {
+                  setProblem('');
+                  setReason('');
+                  setStatusChange({ product, status });
+                }}
+              />
+            ))}
+          </div>
           <nav
             aria-label="صفحه‌بندی بلیت‌ها"
             className="flex flex-wrap items-center justify-between gap-3 text-sm"
