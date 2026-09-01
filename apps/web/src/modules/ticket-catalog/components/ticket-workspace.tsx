@@ -16,6 +16,11 @@ import {
   FormField,
   Input,
   PageHeader,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui';
 import { asReference } from '../api/references';
 import {
@@ -316,51 +321,62 @@ export function TicketWorkspace() {
             />
           </FormField>
           <FormField label="وضعیت فروش" id="ticket-status-filter">
-            <select
-              id="ticket-status-filter"
-              className="h-11 rounded-xl border bg-surface px-3"
+            <Select
               value={query.status}
-              onChange={(e) => filter({ status: e.target.value })}
+              onValueChange={(status) => filter({ status })}
             >
-              <option value="all">همه وضعیت‌ها</option>
-              {Object.entries(statusLabels).map(([key, value]) => (
-                <option value={key} key={key}>
-                  {value}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="ticket-status-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                {Object.entries(statusLabels).map(([key, value]) => (
+                  <SelectItem value={key} key={key}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </FormField>
           <FormField label="نوع تأمین" id="ticket-supply-filter">
-            <select
-              id="ticket-supply-filter"
-              className="h-11 rounded-xl border bg-surface px-3"
+            <Select
               value={query.supply}
-              onChange={(e) => filter({ supply: e.target.value })}
+              onValueChange={(supply) => filter({ supply })}
             >
-              <option value="all">همه انواع</option>
-              {Object.entries(supplyLabels).map(([key, value]) => (
-                <option value={key} key={key}>
-                  {value}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="ticket-supply-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="all">همه انواع</SelectItem>
+                {Object.entries(supplyLabels).map(([key, value]) => (
+                  <SelectItem value={key} key={key}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </FormField>
           <FormField label="ایرلاین" id="ticket-airline-filter">
-            <select
-              id="ticket-airline-filter"
-              className="h-11 rounded-xl border bg-surface px-3"
-              value={query.airline}
-              onChange={(e) => filter({ airline: e.target.value })}
+            <Select
+              value={query.airline || 'all'}
+              onValueChange={(airline) =>
+                filter({ airline: airline === 'all' ? '' : airline })
+              }
             >
-              <option value="">همه ایرلاین‌ها</option>
-              {references
-                .filter((r) => r.kind === 'airline')
-                .map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-            </select>
+              <SelectTrigger id="ticket-airline-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="all">همه ایرلاین‌ها</SelectItem>
+                {references
+                  .filter((r) => r.kind === 'airline')
+                  .map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </FormField>
           <FormField label="حرکت از تاریخ (UTC)" id="ticket-filter-from">
             <TicketDatePicker
@@ -377,18 +393,21 @@ export function TicketWorkspace() {
             />
           </FormField>
           <FormField label="مرتب‌سازی" id="ticket-sort">
-            <select
-              id="ticket-sort"
-              className="h-11 rounded-xl border bg-surface px-3"
+            <Select
               value={query.sort}
-              onChange={(e) =>
-                filter({ sort: e.target.value as PreviewQuery['sort'] })
+              onValueChange={(sort) =>
+                filter({ sort: sort as PreviewQuery['sort'] })
               }
             >
-              <option value="departure">تاریخ حرکت</option>
-              <option value="title">عنوان</option>
-              <option value="updated">آخرین ویرایش</option>
-            </select>
+              <SelectTrigger id="ticket-sort">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="departure">تاریخ حرکت</SelectItem>
+                <SelectItem value="title">نام بلیت</SelectItem>
+                <SelectItem value="updated">آخرین ویرایش</SelectItem>
+              </SelectContent>
+            </Select>
           </FormField>
           <div className="flex items-end gap-2">
             <Button
@@ -414,20 +433,26 @@ export function TicketWorkspace() {
             <summary className="cursor-pointer text-xs text-muted-foreground">
               بررسی حالت‌های رابط — فقط شبیه‌سازی
             </summary>
-            <select
-              aria-label="حالت آزمایشی رابط"
-              className="mt-2 rounded-lg border bg-surface p-2 text-sm"
+            <Select
               value={state}
-              onChange={(e) =>
-                setState(e.target.value as keyof typeof previewStates)
+              onValueChange={(nextState) =>
+                setState(nextState as keyof typeof previewStates)
               }
             >
-              {Object.entries(previewStates).map(([key, value]) => (
-                <option value={key} key={key}>
-                  {value}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger
+                aria-label="حالت آزمایشی رابط"
+                className="mt-2 max-w-xs"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                {Object.entries(previewStates).map(([key, value]) => (
+                  <SelectItem value={key} key={key}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </details>
         ) : null}
       </Card>

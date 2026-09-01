@@ -2,7 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import type { MasterDataRecord } from '@rubi/contracts';
-import { Alert, Badge, Button, Card, Input } from '@/components/ui';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui';
 import {
   listReferences,
   ReferenceApiError,
@@ -71,22 +82,25 @@ export function ReferenceBrowser({
         مستقیماً از API جدید اطلاعات پایه در فرم بلیت در دسترس است.
       </p>
       <div className="flex flex-wrap gap-2">
-        <select
-          aria-label="نوع مرجع"
-          className="rounded-xl border bg-surface p-2"
+        <Select
           value={resource}
-          onChange={(event) => {
-            setResource(event.target.value as PublishedResource);
+          onValueChange={(nextResource) => {
+            setResource(nextResource as PublishedResource);
             setPage(1);
             setResult({ state: 'loading', rows: [], total: 0 });
           }}
         >
-          {Object.entries(resourceLabels).map(([key, label]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger aria-label="نوع مرجع" className="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent dir="rtl">
+            {Object.entries(resourceLabels).map(([key, label]) => (
+              <SelectItem key={key} value={key}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Input
           className="max-w-xs"
           aria-label="جست‌وجوی مرجع"

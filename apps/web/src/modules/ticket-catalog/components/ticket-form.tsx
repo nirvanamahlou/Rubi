@@ -1,7 +1,18 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { Alert, Button, FormField, Input, Textarea } from '@/components/ui';
+import {
+  Alert,
+  Button,
+  FormField,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@/components/ui';
 import {
   wallTimeToUtc,
   type ProductInput,
@@ -210,19 +221,20 @@ export function TicketForm({
           <section className="space-y-3">
             <h3 className="font-bold text-primary">۱. نوع تعریف بلیت</h3>
             <FormField label="نوع بلیت" id="ticket-definition-mode" required>
-              <select
-                id="ticket-definition-mode"
-                className="h-11 rounded-xl border bg-surface px-3"
+              <Select
                 value={definitionMode}
-                onChange={(event) =>
-                  chooseDefinitionMode(
-                    event.target.value as TicketDefinitionMode,
-                  )
+                onValueChange={(mode) =>
+                  chooseDefinitionMode(mode as TicketDefinitionMode)
                 }
               >
-                <option value="one-way">یک‌طرفه</option>
-                <option value="round-trip">رفت‌وبرگشت</option>
-              </select>
+                <SelectTrigger id="ticket-definition-mode">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent dir="rtl">
+                  <SelectItem value="one-way">یک‌طرفه</SelectItem>
+                  <SelectItem value="round-trip">رفت‌وبرگشت</SelectItem>
+                </SelectContent>
+              </Select>
             </FormField>
             <p className="text-xs leading-6 text-muted-foreground">
               در حالت رفت‌وبرگشت، دو بلیت مستقل ساخته می‌شود؛ هر بلیت بعداً هم
@@ -725,44 +737,48 @@ export function TicketForm({
           </label>
           <div className={styles.fields}>
             <FormField label="نوع تأمین" id="ticket-supply">
-              <select
-                id="ticket-supply"
-                className="h-11 rounded-xl border bg-surface px-3"
+              <Select
                 value={input.supplyType}
-                onChange={(event) =>
+                onValueChange={(supplyType) =>
                   setInput({
                     ...input,
-                    supplyType: event.target
-                      .value as ProductInput['supplyType'],
-                    companyOwned: event.target.value === 'company',
+                    supplyType: supplyType as ProductInput['supplyType'],
+                    companyOwned: supplyType === 'company',
                   })
                 }
               >
-                {Object.entries(supplyLabels).map(([key, label]) => (
-                  <option value={key} key={key}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="ticket-supply">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent dir="rtl">
+                  {Object.entries(supplyLabels).map(([key, label]) => (
+                    <SelectItem value={key} key={key}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </FormField>
             <FormField label="روش ورود" id="ticket-entry">
-              <select
-                id="ticket-entry"
-                className="h-11 rounded-xl border bg-surface px-3"
+              <Select
                 value={input.entryMethod}
-                onChange={(event) =>
+                onValueChange={(entryMethod) =>
                   setInput({
                     ...input,
-                    entryMethod: event.target
-                      .value as ProductInput['entryMethod'],
+                    entryMethod: entryMethod as ProductInput['entryMethod'],
                   })
                 }
               >
-                <option value="manual">دستی</option>
-                <option value="api" disabled>
-                  API — اتصال Provider آماده نیست
-                </option>
-              </select>
+                <SelectTrigger id="ticket-entry">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent dir="rtl">
+                  <SelectItem value="manual">دستی</SelectItem>
+                  <SelectItem value="api" disabled>
+                    API — اتصال Provider آماده نیست
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </FormField>
             <FormField label="ظرفیت کل تعریف‌شده" id="ticket-capacity">
               <Input
