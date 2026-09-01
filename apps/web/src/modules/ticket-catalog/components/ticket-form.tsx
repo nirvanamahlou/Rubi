@@ -157,15 +157,45 @@ export function TicketForm({
                 }
               />
             </FormField>
-            {['هواپیما', 'کلاس پروازی', 'بار مجاز'].map((label) => (
-              <FormField label={label} key={label}>
-                <Input
-                  disabled
-                  aria-label={label}
-                  value="منتظر API اطلاعات پایه"
-                />
-              </FormField>
-            ))}
+            <ReferencePicker
+              id="ticket-aircraft"
+              label="نوع هواپیما"
+              resource="aircraft-types"
+              readOnly={readOnly}
+              value={references.find(
+                (r) => r.kind === 'aircraft' && r.id === segment.aircraftId,
+              )}
+              onSelect={(ref) => {
+                if (ref) onReference?.(ref);
+                changeSegment({ aircraftId: ref?.id ?? '' });
+              }}
+            />
+            <ReferencePicker
+              id="ticket-flight-class"
+              label="کلاس پروازی"
+              resource="cabin-classes"
+              readOnly={readOnly}
+              value={references.find(
+                (r) => r.kind === 'flightClass' && r.id === input.flightClassId,
+              )}
+              onSelect={(ref) => {
+                if (ref) onReference?.(ref);
+                setInput({ ...input, flightClassId: ref?.id ?? '' });
+              }}
+            />
+            <ReferencePicker
+              id="ticket-baggage"
+              label="بار مجاز"
+              resource="baggage-rules"
+              readOnly={readOnly}
+              value={references.find(
+                (r) => r.kind === 'baggage' && r.id === input.baggageId,
+              )}
+              onSelect={(ref) => {
+                if (ref) onReference?.(ref);
+                setInput({ ...input, baggageId: ref?.id ?? '' });
+              }}
+            />
           </div>
         </section>
         <section className="space-y-4">
@@ -216,16 +246,24 @@ export function TicketForm({
                     });
                   }}
                 />
-                <FormField
-                  label={`فرودگاه ${end === 'origin' ? 'مبدأ' : 'مقصد'}`}
+                <ReferencePicker
+                  key={`${segment[`${end}CityId`]}-airport`}
                   id={`ticket-${end}-airport`}
-                >
-                  <Input
-                    id={`ticket-${end}-airport`}
-                    disabled
-                    value="جست‌وجوی فرودگاه — منتظر API اطلاعات پایه"
-                  />
-                </FormField>
+                  label={`فرودگاه ${end === 'origin' ? 'مبدأ' : 'مقصد'}`}
+                  resource="airports"
+                  readOnly={readOnly}
+                  countryId={segment[`${end}CountryId`]}
+                  cityId={segment[`${end}CityId`]}
+                  value={references.find(
+                    (r) =>
+                      r.kind === 'airport' &&
+                      r.id === segment[`${end}AirportId`],
+                  )}
+                  onSelect={(ref) => {
+                    if (ref) onReference?.(ref);
+                    changeSegment({ [`${end}AirportId`]: ref?.id ?? '' });
+                  }}
+                />
               </div>
             ))}
           </div>

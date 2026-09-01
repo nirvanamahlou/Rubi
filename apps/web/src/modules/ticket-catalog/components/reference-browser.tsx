@@ -11,6 +11,10 @@ import {
 
 const resourceLabels: Record<PublishedResource, string> = {
   airlines: 'ایرلاین',
+  airports: 'فرودگاه',
+  'aircraft-types': 'نوع هواپیما',
+  'cabin-classes': 'کلاس پروازی',
+  'baggage-rules': 'بار مجاز',
   currencies: 'ارز',
   countries: 'کشور',
   cities: 'شهر',
@@ -63,8 +67,8 @@ export function ReferenceBrowser({
         <Badge>فقط خواندن از API موجود</Badge>
       </div>
       <p className="text-sm text-muted-foreground">
-        انتخاب و جست‌وجوی ایرلاین، ارز، کشور و شهر مستقیماً داخل فرم بلیت در
-        دسترس است. این بخش مرور مراجع است؛ کشور و شهر جایگزین فرودگاه نیستند.
+        انتخاب و جست‌وجوی ایرلاین، فرودگاه، هواپیما، کلاس، بار، ارز، کشور و شهر
+        مستقیماً از API جدید اطلاعات پایه در فرم بلیت در دسترس است.
       </p>
       <div className="flex flex-wrap gap-2">
         <select

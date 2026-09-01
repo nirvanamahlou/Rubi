@@ -25,7 +25,9 @@ describe('Rendered ticket UI', () => {
       }),
     );
     expect(html).toContain('ظرفیت متعلق به شرکت است');
-    expect(html).toContain('منتظر API اطلاعات پایه');
+    expect(html).toContain('انتخاب و جست‌وجوی نوع هواپیما');
+    expect(html).toContain('فرودگاه مبدأ');
+    expect(html).toContain('ابتدا شهر را انتخاب کنید');
     expect(html).toContain('اعمال فقط در پیش‌نمایش');
     expect(html).toContain('ذخیره واقعی — منتظر API و مجوز');
     expect(html).not.toMatch(/name="(held|confirmed)"/);

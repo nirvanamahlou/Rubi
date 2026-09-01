@@ -3,10 +3,9 @@
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from 'lucide-react';
 import * as React from 'react';
 
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   calendarMonthDays,
-  calendarMonthLabel,
   calendarParts,
   formatCalendarValue,
   joinDateAndTime,
@@ -15,6 +14,7 @@ import {
   toIsoDate,
   type CalendarSystem,
 } from '@/components/ui/date-picker.utils';
+import { cn } from '@/lib/utils';
 
 const monthLabels = {
   persian: [
@@ -32,20 +32,27 @@ const monthLabels = {
     'اسفند',
   ],
   gregorian: [
-    'ژانویه',
-    'فوریه',
-    'مارس',
-    'آوریل',
-    'مه',
-    'ژوئن',
-    'ژوئیه',
-    'اوت',
-    'سپتامبر',
-    'اکتبر',
-    'نوامبر',
-    'دسامبر',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ],
 } satisfies Record<CalendarSystem, string[]>;
+const weekdayLabels = {
+  persian: ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'],
+  gregorian: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+} satisfies Record<CalendarSystem, string[]>;
+type TicketCalendarView = 'days' | 'months' | 'years';
+const formatNumber = (value: number) =>
+  new Intl.NumberFormat('fa-IR', { useGrouping: false }).format(value);
 
 export function moveToCalendarMonth(
   anchor: Date,
@@ -64,17 +71,14 @@ export function moveToCalendarMonth(
   return next;
 }
 
-const weekdayLabels = {
-  persian: ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'],
-  gregorian: ['ی', 'د', 'س', 'چ', 'پ', 'ج', 'ش'],
-} satisfies Record<CalendarSystem, string[]>;
-
 export interface TicketDatePickerProps {
   id?: string;
   name?: string;
   value?: string;
   defaultValue?: string;
   onChange?: (value: string) => void;
+  calendarSystem?: CalendarSystem;
+  onCalendarSystemChange?: (value: CalendarSystem) => void;
   includeTime?: boolean;
   disabled?: boolean;
   readOnly?: boolean;
@@ -86,12 +90,14 @@ export interface TicketDatePickerProps {
 }
 
 export function TicketDatePicker({
+  calendarSystem: controlledCalendarSystem,
   className,
   defaultValue = '',
   disabled,
   id,
   includeTime = false,
   name,
+  onCalendarSystemChange,
   onChange,
   placeholder = 'انتخاب تاریخ',
   readOnly,
@@ -100,16 +106,21 @@ export function TicketDatePicker({
   ...ariaProps
 }: TicketDatePickerProps) {
   const [internalValue, setInternalValue] = React.useState(defaultValue);
-  const currentValue = value ?? internalValue;
-  const [calendarSystem, setCalendarSystem] =
+  const [internalCalendarSystem, setInternalCalendarSystem] =
     React.useState<CalendarSystem>('persian');
+  const calendarSystem = controlledCalendarSystem ?? internalCalendarSystem;
+  const currentValue = value ?? internalValue;
   const [open, setOpen] = React.useState(false);
+  const [calendarView, setCalendarView] =
+    React.useState<TicketCalendarView>('days');
   const [anchor, setAnchor] = React.useState(
     () => parseIsoDate(currentValue) ?? new Date(),
   );
   const rootRef = React.useRef<HTMLDivElement>(null);
   const selectedDate = currentValue.slice(0, 10);
+  const currentParts = calendarParts(anchor, calendarSystem);
   const days = calendarMonthDays(anchor, calendarSystem);
+  const today = toIsoDate(new Date());
 
   React.useEffect(() => {
     if (!open) return;
@@ -131,199 +142,242 @@ export function TicketDatePicker({
     if (value === undefined) setInternalValue(nextValue);
     onChange?.(nextValue);
   };
-
   const selectDay = (isoDate: string) => {
     emit(joinDateAndTime(isoDate, currentValue, includeTime));
     if (!includeTime) setOpen(false);
+  };
+  const setSystem = (system: CalendarSystem) => {
+    if (controlledCalendarSystem === undefined)
+      setInternalCalendarSystem(system);
+    onCalendarSystemChange?.(system);
+    setAnchor(parseIsoDate(currentValue) ?? new Date());
+    setCalendarView('days');
+  };
+  const shiftRange = (direction: -1 | 1) => {
+    setAnchor((current) => {
+      if (calendarView === 'days')
+        return moveCalendarMonth(current, direction, calendarSystem);
+      const parts = calendarParts(current, calendarSystem);
+      return moveToCalendarMonth(
+        current,
+        parts.year + direction * (calendarView === 'years' ? 12 : 1),
+        parts.month,
+        calendarSystem,
+      );
+    });
   };
 
   return (
     <div className={cn('relative w-full', className)} ref={rootRef}>
       <input name={name} type="hidden" value={currentValue} />
-      <button
-        {...ariaProps}
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        className={cn(
-          'flex h-11 w-full items-center justify-between gap-3 rounded-xl border border-input bg-surface px-3 text-sm text-foreground shadow-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50',
-          !currentValue && 'text-muted-foreground',
-        )}
-        disabled={disabled || readOnly}
-        id={id}
-        onClick={() => {
-          if (!open) {
-            const parsed = parseIsoDate(currentValue);
-            if (parsed) setAnchor(parsed);
-          }
-          setOpen((current) => !current);
-        }}
-        type="button"
-      >
-        <span>
-          {currentValue
-            ? formatCalendarValue(currentValue, calendarSystem, includeTime)
-            : placeholder}
-        </span>
-        <CalendarDays aria-hidden="true" className="size-5 text-primary" />
-      </button>
+      <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+        <button
+          {...ariaProps}
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          className={cn(
+            'flex h-11 min-w-0 flex-1 items-center justify-between rounded-xl border border-primary/30 bg-primary/[0.03] px-3 text-sm outline-none transition hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50',
+            !currentValue && 'text-muted-foreground',
+          )}
+          data-calendar-theme="dashboard-blue"
+          disabled={disabled || readOnly}
+          id={id}
+          onClick={() => {
+            if (!open) setAnchor(parseIsoDate(currentValue) ?? new Date());
+            setCalendarView('days');
+            setOpen((current) => !current);
+          }}
+          type="button"
+        >
+          <span className="truncate">
+            {currentValue
+              ? formatCalendarValue(currentValue, calendarSystem, includeTime)
+              : placeholder}
+          </span>
+          <CalendarDays
+            aria-hidden="true"
+            className="size-4 shrink-0 text-primary"
+          />
+        </button>
+        <div
+          aria-label="نوع تقویم"
+          className="inline-flex shrink-0 justify-self-start rounded-lg border border-primary/25 bg-primary/5 p-0.5"
+          role="group"
+        >
+          <Button
+            className="h-8 rounded-md px-2.5 text-xs"
+            onClick={() => setSystem('persian')}
+            type="button"
+            variant={calendarSystem === 'persian' ? 'primary' : 'ghost'}
+          >
+            شمسی
+          </Button>
+          <Button
+            className="h-8 rounded-md px-2.5 text-xs"
+            onClick={() => setSystem('gregorian')}
+            type="button"
+            variant={calendarSystem === 'gregorian' ? 'primary' : 'ghost'}
+          >
+            میلادی
+          </Button>
+        </div>
+      </div>
 
       {open ? (
         <div
           aria-label="انتخاب تاریخ"
-          className="absolute start-0 top-[calc(100%+0.5rem)] z-[70] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15"
-          dir="rtl"
+          className="absolute start-0 top-full z-[70] mt-2 w-[min(19rem,calc(100vw-2rem))] rounded-2xl border border-primary/20 bg-popover p-3 text-popover-foreground shadow-2xl"
           role="dialog"
         >
-          <div
-            aria-label="نوع تقویم"
-            className="mb-3 grid grid-cols-2 rounded-xl bg-secondary p-1"
-            role="group"
-          >
-            {(['persian', 'gregorian'] as const).map((system) => (
+          <div className="flex items-center justify-between rounded-xl bg-primary px-2 py-2 text-primary-foreground">
+            <Button
+              aria-label="بازه قبل"
+              className="size-8 p-0 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+              onClick={() => shiftRange(-1)}
+              type="button"
+              variant="ghost"
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+            <div className="flex items-center gap-1 text-sm font-bold">
               <button
-                aria-pressed={calendarSystem === system}
-                className={cn(
-                  'min-h-9 rounded-lg px-3 text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
-                  calendarSystem === system
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-secondary-foreground hover:bg-primary/10',
-                )}
-                key={system}
-                onClick={() => setCalendarSystem(system)}
+                aria-label="انتخاب ماه"
+                className="rounded-md px-2 py-1 outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white/70"
+                dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
+                onClick={() => setCalendarView('months')}
                 type="button"
               >
-                {system === 'persian' ? 'شمسی' : 'میلادی'}
+                {monthLabels[calendarSystem][currentParts.month - 1]}
               </button>
-            ))}
-          </div>
-
-          <div className="mb-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1 rounded-xl bg-primary px-2 py-2 text-primary-foreground">
-            <button
-              aria-label="ماه قبل"
-              className="flex size-9 items-center justify-center rounded-lg outline-none hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
-              onClick={() =>
-                setAnchor((current) =>
-                  moveCalendarMonth(current, -1, calendarSystem),
-                )
-              }
-              type="button"
-            >
-              <ChevronRight aria-hidden="true" className="size-5" />
-            </button>
-            <strong className="col-start-2 row-start-1 truncate px-1 text-center text-xs">
-              {calendarMonthLabel(anchor, calendarSystem)}
-            </strong>
-            <div className="col-span-3 row-start-2 flex min-w-0 items-center justify-center gap-2 pt-1">
-              <select
-                aria-label="انتخاب ماه"
-                style={{ inlineSize: 0 }}
-                className="min-w-0 flex-1 rounded-lg border border-white/25 bg-primary px-2 py-1.5 text-xs font-bold text-primary-foreground outline-none focus-visible:ring-2 focus-visible:ring-white"
-                value={calendarParts(anchor, calendarSystem).month}
-                onChange={(event) =>
-                  setAnchor((current) =>
-                    moveToCalendarMonth(
-                      current,
-                      calendarParts(current, calendarSystem).year,
-                      Number(event.target.value),
-                      calendarSystem,
-                    ),
-                  )
-                }
-              >
-                {monthLabels[calendarSystem].map((label, index) => (
-                  <option
-                    className="bg-surface text-foreground"
-                    key={label}
-                    value={index + 1}
-                  >
-                    {label}
-                  </option>
-                ))}
-              </select>
-              <select
+              <button
                 aria-label="انتخاب سال"
-                style={{ inlineSize: '6rem' }}
-                className="w-24 rounded-lg border border-white/25 bg-primary px-2 py-1.5 text-xs font-bold text-primary-foreground outline-none focus-visible:ring-2 focus-visible:ring-white"
-                value={calendarParts(anchor, calendarSystem).year}
-                onChange={(event) =>
-                  setAnchor((current) =>
-                    moveToCalendarMonth(
-                      current,
-                      Number(event.target.value),
-                      calendarParts(current, calendarSystem).month,
-                      calendarSystem,
-                    ),
-                  )
-                }
+                className="rounded-md px-2 py-1 outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white/70"
+                onClick={() => setCalendarView('years')}
+                type="button"
               >
-                {Array.from(
-                  { length: 41 },
-                  (_, index) =>
-                    calendarParts(anchor, calendarSystem).year - 20 + index,
-                ).map((year) => (
-                  <option
-                    className="bg-surface text-foreground"
-                    key={year}
-                    value={year}
-                  >
-                    {new Intl.NumberFormat('fa-IR', {
-                      useGrouping: false,
-                    }).format(year)}
-                  </option>
-                ))}
-              </select>
+                {formatNumber(currentParts.year)}
+              </button>
             </div>
-            <button
-              aria-label="ماه بعد"
-              className="col-start-3 row-start-1 flex size-9 items-center justify-center rounded-lg outline-none hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
-              onClick={() =>
-                setAnchor((current) =>
-                  moveCalendarMonth(current, 1, calendarSystem),
-                )
-              }
+            <Button
+              aria-label="بازه بعد"
+              className="size-8 p-0 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+              onClick={() => shiftRange(1)}
               type="button"
+              variant="ghost"
             >
-              <ChevronLeft aria-hidden="true" className="size-5" />
-            </button>
+              <ChevronLeft className="size-4" />
+            </Button>
           </div>
 
-          <div className="grid grid-cols-7 gap-1 text-center">
-            {weekdayLabels[calendarSystem].map((label, index) => (
-              <span
-                className="py-1 text-xs font-bold text-primary"
-                key={`${label}-${index}`}
+          {calendarView === 'days' ? (
+            <>
+              <div
+                className="mt-3 grid grid-cols-7 text-center text-[11px] font-semibold text-muted-foreground"
+                dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
               >
-                {label}
-              </span>
-            ))}
-            {days.map((day) => {
-              const selected = day.isoDate === selectedDate;
-              return (
+                {weekdayLabels[calendarSystem].map((day, index) => (
+                  <span
+                    className={
+                      day === 'ج' || day === 'Fri' ? 'text-destructive' : ''
+                    }
+                    key={`${day}-${index}`}
+                  >
+                    {day}
+                  </span>
+                ))}
+              </div>
+              <div
+                className="mt-1 grid grid-cols-7 gap-0.5"
+                dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
+              >
+                {days.map((day, index) =>
+                  day.isCurrentMonth ? (
+                    <button
+                      aria-label={`${day.year}/${day.month}/${day.day}`}
+                      aria-pressed={day.isoDate === selectedDate}
+                      className={cn(
+                        'flex size-9 items-center justify-center justify-self-center rounded-lg text-xs font-medium outline-none transition hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
+                        day.isoDate === selectedDate &&
+                          'bg-primary text-primary-foreground hover:bg-primary',
+                        day.isoDate !== selectedDate &&
+                          day.isToday &&
+                          'border border-primary text-primary',
+                      )}
+                      key={day.isoDate}
+                      onClick={() => selectDay(day.isoDate)}
+                      type="button"
+                    >
+                      {formatNumber(day.day)}
+                    </button>
+                  ) : (
+                    <span aria-hidden="true" key={`empty-${index}`} />
+                  ),
+                )}
+              </div>
+            </>
+          ) : calendarView === 'months' ? (
+            <div className="mt-3 grid grid-cols-3 gap-2" dir="rtl">
+              {monthLabels[calendarSystem].map((label, index) => (
                 <button
-                  aria-label={`${day.year}/${day.month}/${day.day}`}
-                  aria-pressed={selected}
+                  aria-pressed={currentParts.month === index + 1}
                   className={cn(
-                    'flex aspect-square items-center justify-center rounded-lg text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
-                    day.isCurrentMonth
-                      ? 'text-foreground hover:bg-primary/10'
-                      : 'text-muted-foreground/45',
-                    day.isToday &&
-                      !selected &&
-                      'border border-primary font-bold text-primary',
-                    selected &&
-                      'bg-primary font-bold text-primary-foreground shadow-sm hover:bg-primary/90',
+                    'min-h-11 rounded-xl border border-primary/10 px-2 py-2 text-xs font-semibold outline-none transition hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
+                    currentParts.month === index + 1 &&
+                      'border-primary bg-primary text-primary-foreground hover:bg-primary',
                   )}
-                  key={day.isoDate}
-                  onClick={() => selectDay(day.isoDate)}
+                  dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
+                  key={label}
+                  onClick={() => {
+                    setAnchor((current) =>
+                      moveToCalendarMonth(
+                        current,
+                        currentParts.year,
+                        index + 1,
+                        calendarSystem,
+                      ),
+                    );
+                    setCalendarView('days');
+                  }}
                   type="button"
                 >
-                  {new Intl.NumberFormat('fa-IR').format(day.day)}
+                  {label}
                 </button>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {Array.from(
+                { length: 12 },
+                (_, index) => currentParts.year - 5 + index,
+              ).map((year) => (
+                <button
+                  aria-pressed={currentParts.year === year}
+                  className={cn(
+                    'min-h-11 rounded-xl border border-primary/10 px-2 py-2 text-sm font-semibold outline-none transition hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
+                    currentParts.year === year &&
+                      'border-primary bg-primary text-primary-foreground hover:bg-primary',
+                  )}
+                  key={year}
+                  onClick={() => {
+                    setAnchor((current) =>
+                      moveToCalendarMonth(
+                        current,
+                        year,
+                        currentParts.month,
+                        calendarSystem,
+                      ),
+                    );
+                    setCalendarView('months');
+                  }}
+                  type="button"
+                >
+                  {formatNumber(year)}
+                </button>
+              ))}
+            </div>
+          )}
 
-          {includeTime ? (
+          {includeTime && calendarView === 'days' ? (
             <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-2">
               <Clock3 aria-hidden="true" className="size-4 text-primary" />
               <label className="text-xs font-semibold" htmlFor={`${id}-time`}>
@@ -333,22 +387,46 @@ export function TicketDatePicker({
                 className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-surface px-2 text-center text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
                 id={`${id}-time`}
                 onChange={(event) => {
-                  const date = selectedDate || toIsoDate(new Date());
+                  const date = selectedDate || today;
                   emit(`${date}T${event.target.value}`);
                 }}
                 type="time"
                 value={/T(\d{2}:\d{2})/.exec(currentValue)?.[1] ?? '00:00'}
               />
-              <button
-                className="h-9 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring"
-                onClick={() => setOpen(false)}
-                type="button"
-              >
+              <Button onClick={() => setOpen(false)} size="sm" type="button">
                 تأیید
-              </button>
+              </Button>
             </div>
           ) : null}
 
+          {calendarView === 'days' ? (
+            <div className="mt-3 flex items-center justify-between border-t border-border pt-2">
+              <Button
+                onClick={() => {
+                  emit(joinDateAndTime(today, currentValue, includeTime));
+                  if (!includeTime) setOpen(false);
+                }}
+                size="sm"
+                type="button"
+                variant="secondary"
+              >
+                امروز
+              </Button>
+              {currentValue && !required ? (
+                <Button
+                  onClick={() => {
+                    emit('');
+                    setOpen(false);
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  پاک‌کردن
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
           {required ? (
             <span className="sr-only">انتخاب تاریخ الزامی است.</span>
           ) : null}
