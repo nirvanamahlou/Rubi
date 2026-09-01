@@ -12,6 +12,7 @@
 - نتیجه: Domain/Application/Port و قواعد Permission، Decimal، UTC، Lifecycle، Consent/Suppression/Frequency Cap و Idempotency بدون Controller/Persistence آماده شد. Workspace فارسی RTL شامل ۱۸ KPI تعریف‌شده، فهرست و فرم ۹مرحله‌ای کمپین، Segment، Channel، Offer/Coupon، Attribution، Budget/Spend، Timeline و Consent/Suppression است.
 - Validation: ۳۷ تست هدفمند API و ۱۱ تست هدفمند Web؛ Full Monorepo نهایی با ۱۴۲۹ تست موفق و ۷۰ skip اختیاری؛ lint، typecheck و production build کامل موفق. Browser QA دسکتاپ و موبایل بدون Overflow یا Console error؛ Scope/Secret/PII/Prisma/Migration/Dependency scan پاک است.
 - Phase B: Persistence، قرارداد عمومی، IAM binding، Analytics/Attribution، Provider integration و SLO/RPO/RTO فقط با Work Item، قفل و Handoff مستقل طبق `docs/tasks/MARKETING-001.md` مجازند.
+- Draft PR: `#75` به مقصد `develop`؛ سازنده Branch آن را Merge نمی‌کند.
 - Final lock state: `RELEASED — PC-B/MARKETING-001 ready for review`. Migration، Dependency/Lockfile و Shared Root Contract در تمام Task آزاد و بدون تغییر ماندند.
 
 ## DOCUMENTS-003C-CI-PORTABILITY — PC-B — READY_FOR_REVIEW
