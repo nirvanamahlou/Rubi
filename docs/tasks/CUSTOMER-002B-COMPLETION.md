@@ -89,7 +89,7 @@ Proposed policy, NOT accepted: AES-256-GCM with versioned keys and independent H
 
 - Import remains a client-orchestrated series of individually persisted API mutations, not an atomic/idempotent server import job. A later contact failure can leave the already-created profile. Server-side duplicate validation still applies; resumable jobs and durable per-row receipts require the schema/contract work above.
 - XLSX template `customers-person-v2` is identified in the preview UI; a negotiated server-side template-version/import-job contract is not implemented. The current template requires name and Iranian national ID and does not claim organization/foreign-person import support.
-- Masked export remains available with `customers.read` and branch scope. The UI follow-up also offers a client-generated full-phone XLSX only after selecting an allowlisted reason; every row is fetched through the existing audited `customers.sensitive.read` path and the whole export aborts on a reveal failure. A dedicated export permission and server-side secure file delivery are still not implemented.
+- The single customer XLSX export includes full phone numbers after selecting an allowlisted reason; every row is fetched through the existing audited `customers.sensitive.read` path and the whole export aborts on a reveal failure. A dedicated export permission and server-side secure file delivery are still not implemented.
 - Existing address storage is a label plus city reference, not encrypted full-address storage. Do not use the label for a full street address. Notes, travel documents, retention/legal hold and cross-module KPI sources are not fabricated.
 - Upgrade tests on the final merged develop baseline, real foreign identity tests, browser interaction tests, retention and storage-backed idempotency tests remain outstanding; full CUSTOMER-002B is not complete.
 
@@ -120,7 +120,7 @@ Proposed policy, NOT accepted: AES-256-GCM with versioned keys and independent H
 
 ## Audited full-phone XLSX follow-up — 2026-09-01
 
-- The existing masked export remains the default. A separate full-phone export requires an allowlisted reason and uses the permission-, branch- and Audit-enforced sensitive-detail endpoint for every filtered customer.
+- The user-requested single full-phone export replaces the masked export button. Until a stable local API key can safely survive restart, it retains the existing allowlisted reason selector and uses the permission-, branch- and Audit-enforced sensitive-detail endpoint for every filtered customer.
 - The file is not generated partially: permission, decryption or network failure aborts it and shows the same specific safe reveal feedback. National IDs remain masked and spreadsheet formula protection remains in the shared XLSX writer.
 - Existing encrypted values and key versions are not rewritten. A legacy contact encrypted with an unavailable key cannot be reconstructed from its mask and must be corrected through an authorized data-maintenance workflow.
 - Verification: 86 Customers tests, scoped ESLint, scoped Prettier and `git diff --check` pass.

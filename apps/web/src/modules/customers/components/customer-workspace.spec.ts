@@ -312,22 +312,18 @@ describe('Customer Operations workspace boundaries', () => {
       source.indexOf('async function exportFilteredCustomers'),
       source.indexOf('async function importCustomers'),
     );
-    expect(exportSource).toContain(
-      "record.maskedPrimaryContact ?? 'بدون تماس'",
-    );
     expect(exportSource).toContain("record.maskedNationalId ?? 'ثبت نشده'");
     expect(exportSource).toContain('کد ملی (ماسک‌شده)');
-    expect(exportSource).toContain('شماره تماس (ماسک‌شده)');
-    expect(source).toContain('همراه با شماره تماس ماسک‌شده ساخته شد');
-    expect(exportSource).toContain('includeFullPhoneNumbers');
+    expect(exportSource).not.toContain('شماره تماس (ماسک‌شده)');
+    expect(source).not.toContain('خروجی Excel (ماسک‌شده)');
     expect(exportSource).toContain(
       'await customersApi.detail(record.id, exportReason)',
     );
     expect(exportSource).toContain("contact.type === 'phone'");
-    expect(exportSource).toContain("? 'شماره تماس'");
+    expect(exportSource).toContain("'شماره تماس'");
     expect(exportSource).toContain('دلیل مشاهده در Audit ثبت شد');
     expect(source).toContain('customer-sensitive-export-reason');
-    expect(source).toContain('خروجی Excel با شماره کامل');
+    expect(source).toContain("'خروجی Excel'");
     expect(source).toContain(
       'disabled={records.length === 0 || exporting || !exportReason}',
     );
