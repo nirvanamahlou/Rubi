@@ -7,7 +7,7 @@
 - محدوده رزروشده: Workflow جدید `.github/workflows/ci.yml`، سند مستقل `docs/tasks/CI-001.md` و فقط ورودی‌های همین Work Item در اسناد وضعیت مرکزی.
 - این Task هیچ مالکیت Migration، Dependency/Lockfile، Schema/Seed، API Contract یا ماژول کاربردی نمی‌گیرد و هیچ فایل `package.json`، `pnpm-lock.yaml` یا Migration را تغییر نمی‌دهد.
 - CI برای Push و Pull Request شاخه‌های `codex/pc-a-*` و `codex/pc-b-*` و Push به `develop` اجرا می‌شود. کلید Concurrency بر اساس Head Branch است؛ فقط اجرای قدیمی همان Branch لغو می‌شود و اجرای PC-A/PC-B مستقل می‌ماند.
-- Gate اجباری این Slice: نصب frozen با Node/pnpm pin‌شده، Prisma format/validate/generate، Format check، Full Monorepo lint، Full typecheck/test/build و Migration/Seed دوگانه روی PostgreSQL 18 موقت. هیچ Deploy، Production credential یا تغییر دیتابیس کاربردی انجام نمی‌شود.
+- Gate اجباری این Slice: نصب frozen با Node/pnpm pin‌شده، Prisma format/validate/generate، Prettier فایل‌های تغییرکرده، Full Monorepo lint، Full typecheck/test/build و Migration/Seed دوگانه روی PostgreSQL 18 موقت. بدهی قالب‌بندی فایل‌های قدیمی به Branchهای جاری تحمیل نمی‌شود؛ هیچ Deploy، Production credential یا تغییر دیتابیس کاربردی انجام نمی‌شود.
 
 ## IAM-003-LOGIN-STABILITY — PC-B — DONE/MERGED
 

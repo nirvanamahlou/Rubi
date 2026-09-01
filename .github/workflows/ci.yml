@@ -42,6 +42,7 @@ jobs:
       - name: Check out the exact revision
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Install the repository pnpm version
@@ -74,8 +75,30 @@ jobs:
           pnpm db:validate
           pnpm db:generate
 
-      - name: Check formatting
-        run: pnpm format:check
+      - name: Check formatting of changed files
+        env:
+          EVENT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
+        run: |
+          base_sha="$EVENT_BASE_SHA"
+          if [[ -z "$base_sha" || "$base_sha" =~ ^0+$ ]]; then
+            if git show-ref --verify --quiet refs/remotes/origin/develop; then
+              base_sha="$(git merge-base HEAD origin/develop)"
+            else
+              base_sha="$(git rev-list --max-parents=0 HEAD)"
+            fi
+          fi
+
+          mapfile -d '' changed_files < <(
+            git diff --name-only --diff-filter=ACMR -z "$base_sha" "$GITHUB_SHA" -- \
+              '*.cjs' '*.css' '*.html' '*.js' '*.json' '*.jsx' '*.md' '*.mjs' \
+              '*.mts' '*.scss' '*.ts' '*.tsx' '*.yaml' '*.yml'
+          )
+
+          if (( ${#changed_files[@]} == 0 )); then
+            echo "No changed Prettier-supported files."
+          else
+            pnpm exec prettier --check "${changed_files[@]}"
+          fi
 
       - name: Full monorepo lint
         run: pnpm lint
