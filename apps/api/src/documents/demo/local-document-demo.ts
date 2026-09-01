@@ -125,13 +125,15 @@ export function assertLocalDocumentsDemoTarget(
       'Only the explicitly named local Rubi database is allowed for Documents demo data.',
     );
   }
-  if (!storageRoot.trim()) {
+  const trimmedStorageRoot = storageRoot.trim();
+  if (!trimmedStorageRoot) {
     throw new Error('DOCUMENTS_STORAGE_ROOT is required.');
   }
-  const resolvedStorage = resolve(storageRoot);
+  const resolvedStorage = resolve(trimmedStorageRoot);
   if (
     resolvedStorage === parse(resolvedStorage).root ||
-    resolvedStorage.startsWith('\\\\')
+    /^[A-Za-z]:[\\/]*$/.test(trimmedStorageRoot) ||
+    /^[\\/]{2}/.test(trimmedStorageRoot)
   ) {
     throw new Error('Documents demo storage must be a scoped local directory.');
   }

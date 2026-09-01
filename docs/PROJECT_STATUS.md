@@ -30,6 +30,8 @@
   مشاهده هفت سند و یک Preview PNG از API زنده موفق بود. تست PostgreSQL مستقل، تست‌های
   عمومی و Build API نیز موفق‌اند. راه‌اندازی PC-A در
   `docs/tasks/DOCUMENTS-003C-DEMO-BOOTSTRAP.md` ثبت شده است.
+- Follow-up یکپارچه‌سازی CI، تشخیص Windows drive root و UNC را روی Windows/Linux یکسان
+  و fail-closed کرد؛ مسیرهای scoped معتبر حفظ و ۱۴ تست Fixture موفق شدند.
 
 ## IAM-003 — پایداری ورود و نشست چندتب — ادغام‌شده
 

@@ -1,11 +1,13 @@
 # Work Assignments
 
-## DOCUMENTS-003C-CI-PORTABILITY — PC-B — IN_PROGRESS
+## DOCUMENTS-003C-CI-PORTABILITY — PC-B — READY_FOR_REVIEW
 
 - CI مشترک پس از Merge PR #72 دو شکست Linux-only در محافظ Storage بسته داده نمایشی Documents کشف کرد؛ درخواست صریح مالک برای Push و Merge تمام تغییرات، مجوز اصلاح محدود این مانع یکپارچه‌سازی است. `COMPUTER_ID=PC-B`.
 - Branch موقت اصلاح همان `codex/pc-b-ci-foundation` است تا PR #71 فقط پس از سبزشدن آخرین `develop` Merge شود. محدوده فقط `apps/api/src/documents/demo/local-document-demo.ts`، تست موجود `document-demo-fixtures.spec.ts` در صورت نیاز و اسناد همین Work Item است.
 - هدف: مسیر ریشه Windows و UNC روی runner لینوکسی نیز fail-closed رد شوند، درحالی‌که مسیر scoped ویندوزی و مسیر scoped محلی معتبر باقی بمانند.
 - بدون Schema/Migration/Seed، Dependency/Lockfile، API Contract، Permission، داده کاربردی یا تغییر Storage. مالکیت اصلی Documents گسترش نمی‌یابد و Worktreeهای قبلی دست‌نخورده می‌مانند.
+- نتیجه: اعتبارسنجی Storage Root اکنون ورودی خام را مستقل از سیستم‌عامل برای Windows drive root و UNC بررسی می‌کند و مسیر scoped معتبر را حفظ می‌کند. دو پوشش رگرسیون برای `C:/` و UNC با slash افزوده شد؛ Prettier، lint هدفمند و هر ۱۴ تست Fixture موفق‌اند.
+- Final lock state: `RELEASED — PC-B/DOCUMENTS-003C-CI-PORTABILITY ready for review`. هیچ قفل Migration، Dependency/Lockfile، Contract، Permission یا داده‌ای گرفته نشد.
 
 ## CI-001 — PC-B — READY_FOR_REVIEW
 
