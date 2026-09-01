@@ -37,12 +37,22 @@ function requestMetadata(
   sensitiveReason?: string,
 ): DocumentRequestMetadata {
   const userAgent = request.headers['user-agent'];
+  let decodedSensitiveReason = sensitiveReason;
+  if (sensitiveReason) {
+    try {
+      decodedSensitiveReason = decodeURIComponent(sensitiveReason);
+    } catch {
+      decodedSensitiveReason = sensitiveReason;
+    }
+  }
   return {
     ...(request.ip ? { ipAddress: request.ip } : {}),
     ...(userAgent
       ? { userAgent: Array.isArray(userAgent) ? userAgent[0] : userAgent }
       : {}),
-    ...(sensitiveReason ? { sensitiveReason } : {}),
+    ...(decodedSensitiveReason
+      ? { sensitiveReason: decodedSensitiveReason }
+      : {}),
   };
 }
 
@@ -154,6 +164,28 @@ export class DocumentsController {
       type: result.mimeType,
       length: result.sizeBytes,
       disposition: `attachment; filename*=UTF-8''${encodeURIComponent(result.fileName)}`,
+    });
+  }
+
+  @Get(':id/preview')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @Header('X-Content-Type-Options', 'nosniff')
+  @RequirePermissions('documents.metadata.read', 'documents.file.read')
+  async preview(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-sensitive-read-reason') sensitiveReason?: string,
+  ) {
+    const result = await this.service.preview(
+      id,
+      request.actor,
+      requestMetadata(request, sensitiveReason),
+    );
+    return new StreamableFile(result.stream, {
+      type: result.mimeType,
+      length: result.sizeBytes,
+      disposition: `inline; filename*=UTF-8''${encodeURIComponent(result.fileName)}`,
     });
   }
 

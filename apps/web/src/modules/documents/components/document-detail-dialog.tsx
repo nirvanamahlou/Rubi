@@ -5,13 +5,14 @@ import {
   Copy,
   Download,
   FileClock,
-  FileSearch,
   Link2,
   LockKeyhole,
   ShieldCheck,
   Star,
 } from 'lucide-react';
 import type { DocumentAuditEventV1, DocumentDetailV1 } from '@rubi/contracts';
+
+import { DocumentImagePreview } from './document-image-preview';
 
 import {
   Alert,
@@ -80,6 +81,7 @@ export function DocumentDetailDialog({
   favorite,
   onCopyLink,
   onDownload,
+  onLoadPreview,
   onOpenChange,
   onToggleFavorite,
   open,
@@ -92,6 +94,11 @@ export function DocumentDetailDialog({
   favorite: boolean;
   onCopyLink: (document: DocumentDetailV1) => void;
   onDownload: (document: DocumentDetailV1) => void;
+  onLoadPreview: (
+    document: DocumentDetailV1,
+    sensitiveReason: string | undefined,
+    signal: AbortSignal,
+  ) => Promise<Blob>;
   onOpenChange: (open: boolean) => void;
   onToggleFavorite: (document: DocumentDetailV1) => void;
   open: boolean;
@@ -160,27 +167,12 @@ export function DocumentDetailDialog({
 
               <TabsContent value="preview">
                 <div className="grid gap-4 lg:grid-cols-[1fr_18rem]">
-                  <div className="grid min-h-80 place-items-center rounded-2xl border border-dashed border-sky-300 bg-gradient-to-br from-sky-50 via-blue-50/70 to-indigo-50 p-8 text-center shadow-inner dark:border-sky-400/30 dark:from-sky-950/50 dark:via-blue-950/30 dark:to-indigo-950/30">
-                    <div>
-                      <FileSearch
-                        className="mx-auto size-12 text-primary"
-                        aria-hidden="true"
-                      />
-                      <h3 className="mt-4 font-black">
-                        نسخه جاری{' '}
-                        {document.currentVersion.versionNumber.toLocaleString(
-                          'fa-IR',
-                        )}
-                      </h3>
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                        پیش‌نمایش فقط پس از اسکن پاک و مجوز محتوای فایل فعال
-                        می‌شود.
-                      </p>
-                      <Badge className="mt-4">
-                        {scanLabel[document.currentVersion.scanStatus] ??
-                          document.currentVersion.scanStatus}
-                      </Badge>
-                    </div>
+                  <div className="grid min-h-80 place-items-center rounded-2xl border border-dashed border-sky-300 bg-gradient-to-br from-sky-50 via-blue-50/70 to-indigo-50 p-4 text-center shadow-inner sm:p-8 dark:border-sky-400/30 dark:from-sky-950/50 dark:via-blue-950/30 dark:to-indigo-950/30">
+                    <DocumentImagePreview
+                      document={document}
+                      key={document.currentVersion.id}
+                      onLoadPreview={onLoadPreview}
+                    />
                   </div>
                   <div className="space-y-3">
                     <Alert

@@ -53,6 +53,8 @@ describe('documents workspace contract', () => {
       'بارگذاری‌های من',
       'اخیراً دیده‌شده',
       'علاقه‌مندی‌ها',
+      'نمایش امن تصویر',
+      'تصویر اسکن‌شده و مجاز',
     ])
       expect(source).toContain(marker);
     for (const removedCopy of [
@@ -68,6 +70,9 @@ describe('documents workspace contract', () => {
     expect(source).toContain('from-sky-50 via-blue-50/85');
     expect(source).toContain('personalView: serverPersonalView');
     expect(source).toContain("url.searchParams.set('document', id)");
+    expect(source).toContain('documentsApi.preview');
+    expect(source).toContain('URL.revokeObjectURL');
+    expect(source).not.toContain('dangerouslySetInnerHTML');
   });
 
   it('uses the versioned backend and contains no production preview records', () => {

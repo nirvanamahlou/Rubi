@@ -1,5 +1,11 @@
+import { Readable } from 'node:stream';
+
 import type { AuthenticatedActor } from '@rubi/contracts';
-import { ConflictException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  UnsupportedMediaTypeException,
+} from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { DocumentUploadDto } from './documents.dto';
@@ -29,6 +35,7 @@ function row(
   overrides: Partial<{
     confidentiality: DocumentDetailRow['confidentiality'];
     domain: DocumentDetailRow['documentType']['domain'];
+    mimeType: string;
     scanStatus: NonNullable<DocumentDetailRow['currentVersion']>['scanStatus'];
   }> = {},
 ): DocumentDetailRow {
@@ -41,8 +48,8 @@ function row(
       'documents/44444444-4444-4444-8444-444444444444/v1/88888888-8888-4888-8888-888888888888.bin',
     originalFileName: 'contract.pdf',
     safeDownloadName: 'contract.pdf',
-    detectedMimeType: 'application/pdf',
-    extension: 'pdf',
+    detectedMimeType: overrides.mimeType ?? 'application/pdf',
+    extension: overrides.mimeType === 'image/jpeg' ? 'jpg' : 'pdf',
     sizeBytes: 12n,
     sha256: 'a'.repeat(64),
     scanStatus: overrides.scanStatus ?? 'AWAITING_ANTIVIRUS_ADAPTER',
@@ -164,6 +171,35 @@ describe('DocumentsService security and persistence flow', () => {
     });
   });
 
+  it('reports sensitive file capabilities from the effective read permissions', async () => {
+    repository.findDetail.mockResolvedValue(row());
+    repository.appendAudit.mockResolvedValue({});
+
+    const denied = await service.detail(
+      row().id,
+      {
+        ...actor,
+        permissions: [...actor.permissions, 'documents.file.read'],
+      },
+      {},
+    );
+    const allowed = await service.detail(
+      row().id,
+      {
+        ...actor,
+        permissions: [
+          ...actor.permissions,
+          'documents.file.read',
+          'documents.sensitive.read',
+        ],
+      },
+      {},
+    );
+
+    expect(denied.data.capabilities.viewFile).toBe(false);
+    expect(allowed.data.capabilities.viewFile).toBe(true);
+  });
+
   it('stores a valid upload under an opaque key and records it as quarantined', async () => {
     repository.uploadReferences.mockResolvedValue({
       documentType: {
@@ -236,6 +272,122 @@ describe('DocumentsService security and persistence flow', () => {
         action: 'documents.download',
         outcome: 'FAILURE',
         reason: 'DOWNLOAD_POLICY_DENIED',
+      }),
+    );
+    expect(storage.openQuarantined).not.toHaveBeenCalled();
+  });
+
+  it('streams a clean image preview with sensitive-read reason and its own audit action', async () => {
+    const previewActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.file.read',
+        'documents.sensitive.read',
+      ],
+    };
+    repository.findDetail.mockResolvedValue(
+      row({ mimeType: 'image/jpeg', scanStatus: 'CLEAN' }),
+    );
+    repository.appendAudit.mockResolvedValue({});
+    storage.openQuarantined.mockResolvedValue(
+      Readable.from(Buffer.from([0xff, 0xd8, 0xff, 0xd9])),
+    );
+
+    const result = await service.preview(row().id, previewActor, {
+      ipAddress: '192.0.2.44',
+      sensitiveReason: 'بررسی پرونده',
+    });
+
+    expect(result.mimeType).toBe('image/jpeg');
+    expect(repository.appendAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'documents.file.preview',
+        outcome: 'SUCCESS',
+        reason: 'بررسی پرونده',
+      }),
+    );
+    expect(storage.openQuarantined).toHaveBeenCalledOnce();
+  });
+
+  it('does not stream a clean non-image through the preview endpoint', async () => {
+    const previewActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.file.read',
+        'documents.sensitive.read',
+      ],
+    };
+    repository.findDetail.mockResolvedValue(
+      row({ mimeType: 'application/pdf', scanStatus: 'CLEAN' }),
+    );
+    repository.appendAudit.mockResolvedValue({});
+
+    await expect(
+      service.preview(row().id, previewActor, {
+        sensitiveReason: 'بررسی پرونده',
+      }),
+    ).rejects.toBeInstanceOf(UnsupportedMediaTypeException);
+    expect(repository.appendAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'documents.file.preview',
+        outcome: 'FAILURE',
+        reason: 'PREVIEW_TYPE_UNSUPPORTED',
+      }),
+    );
+    expect(storage.openQuarantined).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when an image preview has not passed its security scan', async () => {
+    const previewActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.file.read',
+        'documents.sensitive.read',
+      ],
+    };
+    repository.findDetail.mockResolvedValue(
+      row({ mimeType: 'image/jpeg', scanStatus: 'PENDING_SCAN' }),
+    );
+    repository.appendAudit.mockResolvedValue({});
+
+    await expect(
+      service.preview(row().id, previewActor, {
+        sensitiveReason: 'بررسی پرونده',
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(repository.appendAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        outcome: 'FAILURE',
+        reason: 'PREVIEW_SCAN_BLOCKED',
+      }),
+    );
+    expect(storage.openQuarantined).not.toHaveBeenCalled();
+  });
+
+  it('requires a meaningful reason before previewing a sensitive image', async () => {
+    const previewActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.file.read',
+        'documents.sensitive.read',
+      ],
+    };
+    repository.findDetail.mockResolvedValue(
+      row({ mimeType: 'image/jpeg', scanStatus: 'CLEAN' }),
+    );
+    repository.appendAudit.mockResolvedValue({});
+
+    await expect(
+      service.preview(row().id, previewActor, { sensitiveReason: 'کم' }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.appendAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        outcome: 'FAILURE',
+        reason: 'PREVIEW_POLICY_DENIED',
       }),
     );
     expect(storage.openQuarantined).not.toHaveBeenCalled();
