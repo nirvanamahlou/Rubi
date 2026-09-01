@@ -39,6 +39,8 @@ jobs:
     name: Full quality gate
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      DATABASE_URL: postgresql://rubi_ci:rubi_ci@127.0.0.1:5432/rubi_ci?schema=public
     steps:
       - name: Check out the exact revision
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -68,8 +70,6 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate and generate Prisma client
-        env:
-          DATABASE_URL: postgresql://rubi_ci:rubi_ci@127.0.0.1:5432/rubi_ci?schema=public
         run: |
           pnpm db:format
           git diff --exit-code -- packages/database/prisma/schema.prisma

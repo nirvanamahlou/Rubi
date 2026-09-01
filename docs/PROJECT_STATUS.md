@@ -1,5 +1,23 @@
 # وضعیت پروژه
 
+## CI-001 — CI مشترک PC-A و PC-B — آماده بررسی
+
+- `PC-B` روی Branch و Worktree مستقل `codex/pc-b-ci-foundation` یک GitHub Actions
+  مشترک برای Push و PRهای `codex/pc-a-*`، `codex/pc-b-*`، `develop` و `main` آماده
+  کرده است. این Workflow فقط Checkout خواندنی دارد و هیچ Commit، Push، Merge یا Deploy
+  انجام نمی‌دهد.
+- Concurrency با ترکیب نوع رخداد و Head Branch جدا می‌شود؛ اجرای PC-A و PC-B مستقل است،
+  Push و PR یکدیگر را لغو نمی‌کنند و فقط اجرای قدیمی همان رخداد روی همان Branch متوقف
+  می‌شود. PostgreSQL 18 و تمام داده‌های آزمون داخل runner موقت و synthetic هستند.
+- Gateها شامل نصب frozen با Node/pnpm دقیق Repository، Prisma format/validate/generate،
+  Prettier فایل‌های تغییرکرده، Full Monorepo lint/typecheck/test/build و اجرای هر ۲۸
+  Migration به‌همراه Seed دوگانه است. Prettier فقط تغییرات جدید را کنترل می‌کند تا بدهی
+  قالب‌بندی ۵۰۷ فایل قدیمی باعث توقف Branchهای جاری نشود.
+- اعتبارسنجی محلی: lint، typecheck، همه تست‌ها و Production Build موفق؛ ۲۸ Migration روی
+  PostgreSQL 18 خالی اعمال شد و Seed دوبار موفق بود. هیچ Schema، Migration، Dependency،
+  Lockfile، کد ماژول، دیتابیس توسعه یا سرور PC-A/PC-B تغییر نکرد. جزئیات:
+  `docs/tasks/CI-001.md`.
+
 ## IAM-003 — پایداری ورود و نشست چندتب — ادغام‌شده
 
 - `PC-B` با درخواست صریح مالک روی `codex/pc-b-iam-login-stability`، Hotfix محدود IAM را

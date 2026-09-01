@@ -1,6 +1,6 @@
 # Work Assignments
 
-## CI-001 — PC-B — IN_PROGRESS
+## CI-001 — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک در 2026-09-01: CI مشترک و اجباری برای Branchها و PRهای PC-A/PC-B، بدون لغو یا اختلال متقابل، پیاده‌سازی شود. `COMPUTER_ID=PC-B`.
 - Branch: `codex/pc-b-ci-foundation` از `origin/develop@8758271883bf1d9f4bb072aa31250b39f66e4e07` در Worktree مستقل `C:\Users\admin\Rubi-ci`؛ Checkoutها، Branchها، سرورها و تغییرات محلی هر دو کامپیوتر خارج از این کار هستند.
@@ -8,6 +8,8 @@
 - این Task هیچ مالکیت Migration، Dependency/Lockfile، Schema/Seed، API Contract یا ماژول کاربردی نمی‌گیرد و هیچ فایل `package.json`، `pnpm-lock.yaml` یا Migration را تغییر نمی‌دهد.
 - CI برای Push و Pull Request شاخه‌های `codex/pc-a-*` و `codex/pc-b-*` و Push به `develop` اجرا می‌شود. کلید Concurrency بر اساس نوع رخداد و Head Branch است؛ فقط اجرای قدیمی همان رخداد و Branch لغو می‌شود، Push و PR یکدیگر را متوقف نمی‌کنند و اجرای PC-A/PC-B مستقل می‌ماند.
 - Gate اجباری این Slice: نصب frozen با Node/pnpm pin‌شده، Prisma format/validate/generate، Prettier فایل‌های تغییرکرده، Full Monorepo lint، Full typecheck/test/build و Migration/Seed دوگانه روی PostgreSQL 18 موقت. بدهی قالب‌بندی فایل‌های قدیمی به Branchهای جاری تحمیل نمی‌شود؛ هیچ Deploy، Production credential یا تغییر دیتابیس کاربردی انجام نمی‌شود.
+- نتیجه: Workflow خواندنی و بدون Deploy آماده شد. Full lint/typecheck/test/build محلی موفق است؛ ۲۸ Migration روی PostgreSQL 18 خالی اعمال و Seed دوبار موفق شد. فایل‌های همین Slice با Prettier معتبرند؛ بدهی قالب‌بندی ۵۰۷ فایل قدیمی فقط به‌عنوان سابقه ثبت و به Branchهای جاری تحمیل نشد.
+- Final lock state: `RELEASED — PC-B/CI-001 ready for review`. این Task هیچ Migration، Dependency/Lockfile، Schema/Seed، Contract یا مالکیت ماژولی نگرفت؛ Branchها، Worktreeها، Dev Serverها و دیتابیس‌های PC-A/PC-B دست‌نخورده ماندند.
 
 ## IAM-003-LOGIN-STABILITY — PC-B — DONE/MERGED
 
