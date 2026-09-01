@@ -110,6 +110,14 @@ Proposed policy, NOT accepted: AES-256-GCM with versioned keys and independent H
 - Web regression tests cover real-name mapping, missing names, branch-scope intersection, shared refresh and retry. Browser verification was attempted twice but the trusted browser runtime exited before connection; no visual smoke result is claimed. Production build is not repeated in the active preview checkout to preserve its generated-file change.
 - Passed: 151 Web tests, Web lint/typecheck, scoped Prettier and diff check. No API, database, shared-contract, dependency or lockfile changes.
 
+## Contact reveal UX follow-up — 2026-09-01
+
+- Branch `codex/pc-a-customer-contact-reveal-fix` from current `origin/develop`; Customers Web/test/task-doc only.
+- The list action is labelled “view contacts” because it only opens the contacts tab. Full reveal still requires an allowlisted reason and `customers.sensitive.read`.
+- Reveal success or 401/403/decryption/no-value/network failure is shown beside the reveal control. 401 offers a non-PII login path; 403 does not weaken permission enforcement.
+- Existing encryption keys are not replaced and sensitive values remain out of URLs, logs, storage and default responses.
+- Verification: 86 targeted Customers tests and all 516 Web tests pass after refreshing the built contract package. Web lint passes. Full Web typecheck remains blocked only by pre-existing Master Data contract/source skew on the fetched develop baseline; no Customer type error is reported.
+
 ## Merge prerequisites
 
 Read-only `git merge-tree` against `origin/develop@d73f51f` reports conflicts in `WORK_ASSIGNMENTS.md`, `docs/PROJECT_STATUS.md` and `apps/web/src/modules/customers/components/customer-workspace.tsx`. No merge was applied. This branch deliberately preserves unmerged #26/#27/#34 ancestry instead of silently dropping existing features. Its incremental review range is `bcfb835..HEAD`; the PR against develop also contains inherited stack changes. Do not merge it until parents, shared-lock handoff, integration conflicts and final-basis review/gates are resolved. No other PR or branch was edited.
