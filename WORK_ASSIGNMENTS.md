@@ -1,14 +1,18 @@
 # Work Assignments
 
-## MARKETING-001 — PC-B — IN_PROGRESS
+## MARKETING-001 — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک: Foundation حرفه‌ای ماژول Marketing در Phase A بدون Persistence، مستقل از Documents در PC-B و Ticket Catalog/Sales در PC-A. `COMPUTER_ID=PC-B`.
-- Base: `origin/develop@cd146fa48cb70af951ab23c9118f4b377dae5e3f` پس از Merge PR #62 / `MASTER-003-LOCK-RELEASE`. Branch: `codex/pc-b-marketing-foundation`؛ توسعه مستقیم روی `develop` یا `main` ممنوع است.
+- Base نهایی پس از Rebase: `origin/develop@f78e70e` شامل Merge PR #62 / `MASTER-003-LOCK-RELEASE`، CI مشترک و Ticket Catalog PR #74. Branch: `codex/pc-b-marketing-foundation`؛ توسعه مستقیم روی `develop` یا `main` انجام نشد.
 - محدوده رزروشده: `apps/api/src/marketing/**` برای Domain/Application/Ports/Validation/Error/Permission proposal بدون Controller یا Repository فعال؛ `apps/web/src/modules/marketing/**` و اتصال محدود route موجود `/marketing`؛ تست‌های همان ماژول؛ `docs/tasks/MARKETING-001.md`؛ فقط همین ورودی محدود در `WORK_ASSIGNMENTS.md`.
 - مرز بین‌ماژولی: Customers، Customer Affairs، Sales، Finance، Master Data، Documents و Integrations فقط از Public Contract/Event/Port پیشنهادی مصرف می‌شوند؛ Query مستقیم جدول یا import زیرساخت داخلی آن‌ها ممنوع است. Marketing فقط Offer Intent می‌دهد و قیمت نهایی قرارداد نزد Sales می‌ماند؛ ارسال واقعی و Provider Credential نزد Integrations/Notifications است.
 - این Phase هیچ Prisma Schema/Migration/Seed، `packages/contracts/src/index.ts`، IAM مرکزی، `package.json`، `pnpm-lock.yaml`، AppModule/Navigation مشترک متعارض، Controller فعال، Repository جعلی، Worker یا پیام واقعی را تغییر نمی‌دهد.
 - Lock state: Migration Owner، Dependency/Lockfile Owner و Shared Root Contract برای این Task رزرو نمی‌شوند و `RELEASED / UNASSIGNED` می‌مانند. Permissionها Proposal ماژول‌محلی و deny-by-default هستند؛ اتصال IAM و Persistence فقط در Phase B با Handoff و رزرو تازه مجاز است.
 - داده Preview فقط synthetic با شناسه `preview-*` و بدون PII خام است. KPI فاقد Backend واقعی با `AWAITING_ANALYTICS_CONTRACT`، Attribution مالی با `PROPOSED` و ارسال بدون Adapter با `AWAITING_INTEGRATION_ADAPTER` نمایش داده می‌شود.
+- نتیجه: Domain/Application/Port و قواعد Permission، Decimal، UTC، Lifecycle، Consent/Suppression/Frequency Cap و Idempotency بدون Controller/Persistence آماده شد. Workspace فارسی RTL شامل ۱۸ KPI تعریف‌شده، فهرست و فرم ۹مرحله‌ای کمپین، Segment، Channel، Offer/Coupon، Attribution، Budget/Spend، Timeline و Consent/Suppression است.
+- Validation: ۳۷ تست هدفمند API و ۱۱ تست هدفمند Web؛ Full Monorepo نهایی با ۱۴۲۹ تست موفق و ۷۰ skip اختیاری؛ lint، typecheck و production build کامل موفق. Browser QA دسکتاپ و موبایل بدون Overflow یا Console error؛ Scope/Secret/PII/Prisma/Migration/Dependency scan پاک است.
+- Phase B: Persistence، قرارداد عمومی، IAM binding، Analytics/Attribution، Provider integration و SLO/RPO/RTO فقط با Work Item، قفل و Handoff مستقل طبق `docs/tasks/MARKETING-001.md` مجازند.
+- Final lock state: `RELEASED — PC-B/MARKETING-001 ready for review`. Migration، Dependency/Lockfile و Shared Root Contract در تمام Task آزاد و بدون تغییر ماندند.
 
 ## DOCUMENTS-003C-CI-PORTABILITY — PC-B — READY_FOR_REVIEW
 
