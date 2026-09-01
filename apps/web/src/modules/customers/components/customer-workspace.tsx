@@ -2592,8 +2592,8 @@ export function CustomerWorkspace() {
     }
   }
 
-  async function exportFilteredCustomers(includeFullPhoneNumbers = false) {
-    if (includeFullPhoneNumbers && !exportReason) {
+  async function exportFilteredCustomers() {
+    if (!exportReason) {
       setNotice('برای خروجی شماره‌های کامل، ابتدا دلیل مجاز را انتخاب کنید.');
       return;
     }
@@ -2627,30 +2627,26 @@ export function CustomerWorkspace() {
         exportRecords.push(...response.data);
       }
       const revealedPrimaryContacts = new Map<string, string>();
-      if (includeFullPhoneNumbers) {
-        for (const record of exportRecords) {
-          const detail = (await customersApi.detail(record.id, exportReason))
-            .data;
-          const primaryPhone =
-            detail.contacts.find(
-              (contact) =>
-                contact.type === 'phone' && contact.isPrimary && contact.value,
-            ) ??
-            detail.contacts.find(
-              (contact) => contact.type === 'phone' && contact.value,
-            );
-          revealedPrimaryContacts.set(
-            record.id,
-            primaryPhone?.value?.trim() || 'بدون تماس',
+      for (const record of exportRecords) {
+        const detail = (await customersApi.detail(record.id, exportReason))
+          .data;
+        const primaryPhone =
+          detail.contacts.find(
+            (contact) =>
+              contact.type === 'phone' && contact.isPrimary && contact.value,
+          ) ??
+          detail.contacts.find(
+            (contact) => contact.type === 'phone' && contact.value,
           );
-        }
+        revealedPrimaryContacts.set(
+          record.id,
+          primaryPhone?.value?.trim() || 'بدون تماس',
+        );
       }
       const rows = exportRecords.map((record) => [
         record.displayName,
         record.maskedNationalId ?? 'ثبت نشده',
-        includeFullPhoneNumbers
-          ? (revealedPrimaryContacts.get(record.id) ?? 'بدون تماس')
-          : (record.maskedPrimaryContact ?? 'بدون تماس'),
+        revealedPrimaryContacts.get(record.id) ?? 'بدون تماس',
         record.status === 'active' ? 'فعال' : 'غیرفعال',
         record.roles
           .map((item) => (item === 'customer' ? 'مشتری' : 'مسافر'))
@@ -2664,12 +2660,12 @@ export function CustomerWorkspace() {
         formatCustomerDate(record.updatedAt, calendarMode),
       ]);
       downloadCustomerXlsx(
-        `customers${includeFullPhoneNumbers ? '-with-phones' : ''}-${new Date().toISOString().slice(0, 10)}.xlsx`,
+        `customers-with-phones-${new Date().toISOString().slice(0, 10)}.xlsx`,
         [
           [
             'نام مشتری',
             'کد ملی (ماسک‌شده)',
-            includeFullPhoneNumbers ? 'شماره تماس' : 'شماره تماس (ماسک‌شده)',
+            'شماره تماس',
             'وضعیت',
             'نقش‌ها',
             'رضایت',
@@ -2680,18 +2676,10 @@ export function CustomerWorkspace() {
         ],
       );
       setNotice(
-        includeFullPhoneNumbers
-          ? `خروجی حساس XLSX همه ${exportRecords.length.toLocaleString('fa-IR')} رکورد مطابق فیلترهای فعال همراه با شماره تماس کامل ساخته و دلیل مشاهده در Audit ثبت شد.`
-          : `خروجی XLSX همه ${exportRecords.length.toLocaleString('fa-IR')} رکورد مطابق فیلترهای فعال همراه با شماره تماس ماسک‌شده ساخته شد.`,
+        `خروجی حساس XLSX همه ${exportRecords.length.toLocaleString('fa-IR')} رکورد مطابق فیلترهای فعال همراه با شماره تماس کامل ساخته و دلیل مشاهده در Audit ثبت شد.`,
       );
     } catch (error) {
-      setNotice(
-        includeFullPhoneNumbers
-          ? customerSensitiveRevealFeedback(error).message
-          : error instanceof Error
-            ? error.message
-            : 'ساخت خروجی کامل مشتریان ناموفق بود.',
-      );
+      setNotice(customerSensitiveRevealFeedback(error).message);
     } finally {
       setExporting(false);
     }
@@ -2897,15 +2885,6 @@ export function CustomerWorkspace() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            disabled={records.length === 0 || exporting}
-            onClick={() => void exportFilteredCustomers()}
-            size="lg"
-            variant="outline"
-          >
-            <Download className="size-4" />
-            {exporting ? 'در حال ساخت خروجی…' : 'خروجی Excel (ماسک‌شده)'}
-          </Button>
           <div className="flex flex-wrap items-center gap-2">
             <label
               className="sr-only"
@@ -2929,12 +2908,12 @@ export function CustomerWorkspace() {
             </select>
             <Button
               disabled={records.length === 0 || exporting || !exportReason}
-              onClick={() => void exportFilteredCustomers(true)}
+              onClick={() => void exportFilteredCustomers()}
               size="lg"
               variant="outline"
             >
               <Download className="size-4" />
-              خروجی Excel با شماره کامل
+              {exporting ? 'در حال ساخت خروجی…' : 'خروجی Excel'}
             </Button>
           </div>
           <Button
