@@ -18,19 +18,61 @@ import {
   type ProductInput,
   type Reference,
   type Segment,
+  type TransportType,
 } from '../model/catalog';
-import { supplyLabels } from '../model/preview';
+import { emptyInput, supplyLabels, transportLabels } from '../model/preview';
 import styles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
 import { ReferencePicker } from './reference-picker';
+import type { PublishedResource } from '../api/references';
 
 type TicketDefinitionMode = 'one-way' | 'round-trip';
+
+type TransportConfig = {
+  operatorKind: Reference['kind'];
+  operatorResource: PublishedResource;
+  operatorLabel: string;
+  vehicleKind: Reference['kind'];
+  vehicleResource: PublishedResource;
+  vehicleLabel: string;
+  numberLabel: string;
+};
+const transportConfig: Record<TransportType, TransportConfig> = {
+  flight: {
+    operatorKind: 'airline',
+    operatorResource: 'airlines',
+    operatorLabel: 'ایرلاین',
+    vehicleKind: 'aircraft',
+    vehicleResource: 'aircraft-types',
+    vehicleLabel: 'نوع هواپیما',
+    numberLabel: 'شماره پرواز',
+  },
+  train: {
+    operatorKind: 'railCompany',
+    operatorResource: 'rail-companies',
+    operatorLabel: 'شرکت ریلی',
+    vehicleKind: 'trainType',
+    vehicleResource: 'train-types',
+    vehicleLabel: 'نوع قطار',
+    numberLabel: 'شماره قطار',
+  },
+  bus: {
+    operatorKind: 'busCompany',
+    operatorResource: 'bus-companies',
+    operatorLabel: 'شرکت اتوبوس‌رانی',
+    vehicleKind: 'busType',
+    vehicleResource: 'bus-types',
+    vehicleLabel: 'نوع اتوبوس',
+    numberLabel: 'شماره سرویس',
+  },
+};
 
 export function createReturnTicketDraft(source: ProductInput): ProductInput {
   const outbound = source.segments[0]!;
   return {
     ...source,
     title: '',
+    journeyRole: 'return',
     fare: { ...source.fare },
     segments: [
       {
@@ -39,9 +81,11 @@ export function createReturnTicketDraft(source: ProductInput): ProductInput {
         originCountryId: outbound.destinationCountryId,
         originCityId: outbound.destinationCityId,
         originAirportId: outbound.destinationAirportId,
+        originTerminal: outbound.destinationTerminal,
         destinationCountryId: outbound.originCountryId,
         destinationCityId: outbound.originCityId,
         destinationAirportId: outbound.originAirportId,
+        destinationTerminal: outbound.originTerminal,
         departureAt: '',
         arrivalAt: '',
         departureZone: outbound.arrivalZone,
@@ -51,7 +95,7 @@ export function createReturnTicketDraft(source: ProductInput): ProductInput {
   };
 }
 
-function wallValue(utcValue: string, zone: string) {
+export function wallValue(utcValue: string, zone: string) {
   if (!utcValue) return '';
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: zone,
@@ -74,7 +118,6 @@ function offsetValue(utcValue: string, zone: string) {
     .toString()
     .padStart(2, '0')}:${(Math.abs(delta) % 60).toString().padStart(2, '0')}`;
 }
-
 export function inferWallTimeOffset(wallTime: string, zone: string): string {
   const approximate = Date.parse(`${wallTime}:00Z`);
   if (!Number.isFinite(approximate))
@@ -94,33 +137,297 @@ export function inferWallTimeOffset(wallTime: string, zone: string): string {
       }
     }
   } catch {
-    throw new Error('منطقه زمانی فرودگاه انتخاب‌شده معتبر نیست.');
+    throw new Error('منطقه زمانی مسیر انتخاب‌شده معتبر نیست.');
   }
   throw new Error(
-    'این ساعت در منطقه زمانی فرودگاه معتبر نیست؛ ساعت دیگری انتخاب کنید.',
+    'این ساعت در منطقه زمانی مسیر معتبر نیست؛ ساعت دیگری انتخاب کنید.',
   );
 }
-
+function referenceLabel(
+  references: readonly Reference[],
+  kind: Reference['kind'],
+  id: string,
+  fallback: string,
+) {
+  const reference = references.find(
+    (item) => item.kind === kind && item.id === id,
+  );
+  return reference?.code || reference?.name || fallback;
+}
 export function buildAutomaticTicketTitle(
   definition: ProductInput,
   references: readonly Reference[],
 ): string {
   const segment = definition.segments[0]!;
-  const label = (kind: Reference['kind'], id: string, fallback: string) => {
-    const reference = references.find(
-      (item) => item.kind === kind && item.id === id,
-    );
-    return reference?.code || reference?.name || fallback;
-  };
   const origin = segment.originAirportId
-    ? label('airport', segment.originAirportId, 'مبدأ')
-    : label('city', segment.originCityId, 'مبدأ');
+    ? referenceLabel(references, 'airport', segment.originAirportId, 'مبدأ')
+    : referenceLabel(
+        references,
+        'city',
+        segment.originCityId,
+        definition.display?.origin || 'مبدأ',
+      );
   const destination = segment.destinationAirportId
-    ? label('airport', segment.destinationAirportId, 'مقصد')
-    : label('city', segment.destinationCityId, 'مقصد');
-  const flight = segment.flightNumber.trim() || 'پرواز';
-  return `${flight} • ${origin} به ${destination}`.slice(0, 160);
+    ? referenceLabel(
+        references,
+        'airport',
+        segment.destinationAirportId,
+        'مقصد',
+      )
+    : referenceLabel(
+        references,
+        'city',
+        segment.destinationCityId,
+        definition.display?.destination || 'مقصد',
+      );
+  const number =
+    segment.flightNumber.trim() || transportLabels[definition.transport];
+  return `${number} • ${origin} به ${destination}`.slice(0, 160);
 }
+function withDisplaySnapshot(
+  definition: ProductInput,
+  references: readonly Reference[],
+): ProductInput {
+  const segment = definition.segments[0]!;
+  const config = transportConfig[definition.transport];
+  return {
+    ...definition,
+    display: {
+      operator: referenceLabel(
+        references,
+        config.operatorKind,
+        segment.airlineId,
+        definition.display?.operator || config.operatorLabel,
+      ),
+      vehicle: referenceLabel(
+        references,
+        config.vehicleKind,
+        segment.aircraftId,
+        definition.display?.vehicle || config.vehicleLabel,
+      ),
+      origin: referenceLabel(
+        references,
+        'city',
+        segment.originCityId,
+        definition.display?.origin || 'مبدأ',
+      ),
+      destination: referenceLabel(
+        references,
+        'city',
+        segment.destinationCityId,
+        definition.display?.destination || 'مقصد',
+      ),
+    },
+  };
+}
+
+function TransportFields({
+  prefix,
+  suffix,
+  input,
+  segment,
+  references,
+  readOnly,
+  onInput,
+  onSegment,
+  onReference,
+}: {
+  prefix: string;
+  suffix: string;
+  input: ProductInput;
+  segment: Segment;
+  references: readonly Reference[];
+  readOnly: boolean;
+  onInput: (next: ProductInput) => void;
+  onSegment: (patch: Partial<Segment>) => void;
+  onReference?: ((reference: Reference) => void) | undefined;
+}) {
+  const config = transportConfig[input.transport];
+  return (
+    <div className={styles.fields}>
+      <ReferencePicker
+        id={`${prefix}-operator`}
+        label={`${config.operatorLabel}${suffix}`}
+        resource={config.operatorResource}
+        readOnly={readOnly}
+        value={references.find(
+          (r) => r.kind === config.operatorKind && r.id === segment.airlineId,
+        )}
+        onSelect={(ref) => {
+          if (ref) onReference?.(ref);
+          onSegment({ airlineId: ref?.id ?? '' });
+        }}
+      />
+      <FormField
+        label={`${config.numberLabel}${suffix}`}
+        id={`${prefix}-number`}
+        required
+      >
+        <Input
+          id={`${prefix}-number`}
+          dir="ltr"
+          value={segment.flightNumber}
+          maxLength={20}
+          required
+          onChange={(event) => onSegment({ flightNumber: event.target.value })}
+        />
+      </FormField>
+      <ReferencePicker
+        id={`${prefix}-vehicle`}
+        label={`${config.vehicleLabel}${suffix}`}
+        resource={config.vehicleResource}
+        readOnly={readOnly}
+        value={references.find(
+          (r) => r.kind === config.vehicleKind && r.id === segment.aircraftId,
+        )}
+        onSelect={(ref) => {
+          if (ref) onReference?.(ref);
+          onSegment({ aircraftId: ref?.id ?? '' });
+        }}
+      />
+      {input.transport === 'flight' ? (
+        <>
+          <ReferencePicker
+            id={`${prefix}-flight-class`}
+            label={`کلاس پروازی${suffix}`}
+            resource="cabin-classes"
+            readOnly={readOnly}
+            value={references.find(
+              (r) => r.kind === 'flightClass' && r.id === input.flightClassId,
+            )}
+            onSelect={(ref) => {
+              if (ref) onReference?.(ref);
+              onInput({ ...input, flightClassId: ref?.id ?? '' });
+            }}
+          />
+          <ReferencePicker
+            id={`${prefix}-baggage`}
+            label={`بار مجاز${suffix}`}
+            resource="baggage-rules"
+            readOnly={readOnly}
+            value={references.find(
+              (r) => r.kind === 'baggage' && r.id === input.baggageId,
+            )}
+            onSelect={(ref) => {
+              if (ref) onReference?.(ref);
+              onInput({ ...input, baggageId: ref?.id ?? '' });
+            }}
+          />
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function RouteFields({
+  prefix,
+  suffix,
+  input,
+  segment,
+  references,
+  readOnly,
+  onSegment,
+  onReference,
+}: {
+  prefix: string;
+  suffix: string;
+  input: ProductInput;
+  segment: Segment;
+  references: readonly Reference[];
+  readOnly: boolean;
+  onSegment: (patch: Partial<Segment>) => void;
+  onReference?: ((reference: Reference) => void) | undefined;
+}) {
+  return (
+    <div className={styles.fields}>
+      {(['origin', 'destination'] as const).map((end) => {
+        const side = end === 'origin' ? 'مبدأ' : 'مقصد';
+        const zoneKey = end === 'origin' ? 'departureZone' : 'arrivalZone';
+        return (
+          <div className="min-w-0 space-y-4" key={`${prefix}-${end}`}>
+            <ReferencePicker
+              id={`${prefix}-${end}-country`}
+              label={`کشور ${side}${suffix}`}
+              resource="countries"
+              readOnly={readOnly}
+              value={references.find(
+                (r) =>
+                  r.kind === 'country' && r.id === segment[`${end}CountryId`],
+              )}
+              onSelect={(ref) => {
+                if (ref) onReference?.(ref);
+                onSegment({
+                  [`${end}CountryId`]: ref?.id ?? '',
+                  [`${end}CityId`]: '',
+                  [`${end}AirportId`]: '',
+                  [zoneKey]:
+                    input.transport === 'flight' ? 'UTC' : 'Asia/Tehran',
+                });
+              }}
+            />
+            <ReferencePicker
+              key={segment[`${end}CountryId`]}
+              id={`${prefix}-${end}-city`}
+              label={`شهر ${side}${suffix}`}
+              resource="cities"
+              readOnly={readOnly}
+              countryId={segment[`${end}CountryId`]}
+              value={references.find(
+                (r) => r.kind === 'city' && r.id === segment[`${end}CityId`],
+              )}
+              onSelect={(ref) => {
+                if (ref) onReference?.(ref);
+                onSegment({
+                  [`${end}CityId`]: ref?.id ?? '',
+                  [`${end}AirportId`]: '',
+                  [zoneKey]:
+                    input.transport === 'flight' ? 'UTC' : 'Asia/Tehran',
+                });
+              }}
+            />
+            {input.transport === 'flight' ? (
+              <ReferencePicker
+                key={`${segment[`${end}CityId`]}-airport`}
+                id={`${prefix}-${end}-airport`}
+                label={`فرودگاه ${side}${suffix}`}
+                resource="airports"
+                readOnly={readOnly}
+                countryId={segment[`${end}CountryId`]}
+                cityId={segment[`${end}CityId`]}
+                value={references.find(
+                  (r) =>
+                    r.kind === 'airport' && r.id === segment[`${end}AirportId`],
+                )}
+                onSelect={(ref) => {
+                  if (ref) onReference?.(ref);
+                  onSegment({
+                    [`${end}AirportId`]: ref?.id ?? '',
+                    [zoneKey]: ref?.timezone ?? 'UTC',
+                  });
+                }}
+              />
+            ) : (
+              <FormField
+                label={`${input.transport === 'train' ? 'ایستگاه' : 'پایانه'} ${side}${suffix}`}
+                id={`${prefix}-${end}-terminal`}
+              >
+                <Input
+                  id={`${prefix}-${end}-terminal`}
+                  value={segment[`${end}Terminal`]}
+                  maxLength={160}
+                  onChange={(event) =>
+                    onSegment({ [`${end}Terminal`]: event.target.value })
+                  }
+                />
+              </FormField>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function TicketForm({
   initial,
   references,
@@ -132,15 +439,16 @@ export function TicketForm({
 }: {
   initial: ProductInput;
   references: readonly Reference[];
-  onReference?: (reference: Reference) => void;
+  onReference?: ((reference: Reference) => void) | undefined;
   onSave: (inputs: readonly ProductInput[], reason: string) => void;
   onCancel: () => void;
   readOnly?: boolean;
   allowRoundTrip?: boolean;
 }) {
   const [input, setInput] = useState(initial);
-  const [definitionMode, setDefinitionMode] =
-    useState<TicketDefinitionMode>('one-way');
+  const [definitionMode, setDefinitionMode] = useState<TicketDefinitionMode>(
+    initial.journeyRole === 'one-way' ? 'one-way' : 'round-trip',
+  );
   const [returnInput, setReturnInput] = useState(() =>
     createReturnTicketDraft(initial),
   );
@@ -168,11 +476,34 @@ export function TicketForm({
       ...returnInput,
       segments: [{ ...returnSegment, ...patch }],
     });
+  function chooseTransport(transport: TransportType) {
+    const fresh = emptyInput(transport);
+    const freshSegment = fresh.segments[0]!;
+    setInput({
+      ...input,
+      transport,
+      flightClassId: '',
+      baggageId: '',
+      display: undefined,
+      segments: [freshSegment],
+    });
+    setDefinitionMode('one-way');
+    setReturnInput(
+      createReturnTicketDraft({
+        ...input,
+        transport,
+        segments: [freshSegment],
+      }),
+    );
+    setDeparture('');
+    setArrival('');
+    setReturnDeparture('');
+    setReturnArrival('');
+  }
   function chooseDefinitionMode(mode: TicketDefinitionMode) {
     setDefinitionMode(mode);
     if (mode === 'round-trip') {
-      const draft = createReturnTicketDraft(input);
-      setReturnInput(draft);
+      setReturnInput(createReturnTicketDraft(input));
       setReturnDeparture('');
       setReturnArrival('');
     }
@@ -180,9 +511,20 @@ export function TicketForm({
   function submit(event: FormEvent) {
     event.preventDefault();
     try {
-      const definition = {
+      const roundTrip = definitionMode === 'round-trip' && allowRoundTrip;
+      const groupId = roundTrip ? crypto.randomUUID() : undefined;
+      const baseDefinition: ProductInput = {
         ...input,
-        title: buildAutomaticTicketTitle(input, references),
+        journeyRole: roundTrip
+          ? 'outbound'
+          : allowRoundTrip
+            ? 'one-way'
+            : input.journeyRole,
+        ...(roundTrip
+          ? { tripGroupId: groupId }
+          : allowRoundTrip
+            ? { tripGroupId: undefined }
+            : {}),
         segments: [
           {
             ...segment,
@@ -204,10 +546,19 @@ export function TicketForm({
           validTo: wallTimeToUtc(validTo, 'UTC', '+00:00'),
         },
       };
-      if (definitionMode === 'round-trip' && allowRoundTrip) {
-        const returnDefinition: ProductInput = {
+      const definition = withDisplaySnapshot(
+        {
+          ...baseDefinition,
+          title: buildAutomaticTicketTitle(baseDefinition, references),
+        },
+        references,
+      );
+      if (roundTrip) {
+        const returnBase: ProductInput = {
           ...returnInput,
-          title: buildAutomaticTicketTitle(returnInput, references),
+          transport: definition.transport,
+          journeyRole: 'return',
+          tripGroupId: groupId,
           supplyType: definition.supplyType,
           companyOwned: definition.companyOwned,
           entryMethod: definition.entryMethod,
@@ -233,10 +584,15 @@ export function TicketForm({
             },
           ],
         };
+        const returnDefinition = withDisplaySnapshot(
+          {
+            ...returnBase,
+            title: buildAutomaticTicketTitle(returnBase, references),
+          },
+          references,
+        );
         onSave([definition, returnDefinition], reason);
-      } else {
-        onSave([definition], reason);
-      }
+      } else onSave([definition], reason);
       setError('');
     } catch (problem) {
       setError(
@@ -246,193 +602,82 @@ export function TicketForm({
   }
   return (
     <form onSubmit={submit} className={`${styles.form} space-y-6`}>
-      <Alert
-        title="پیش‌نمایش؛ فقط حافظه همین صفحه"
-        description="فرم به ذخیره واقعی متصل نیست. اطلاعات واقعی مسافر یا مشتری وارد نکنید. مراجع انتخاب‌نشده در پیش‌نویس خالی می‌مانند و فعال‌سازی را مسدود می‌کنند."
-        tone="warning"
-      />
       {error ? <Alert tone="error" title={error} /> : null}
       <fieldset disabled={readOnly} className="space-y-6 disabled:opacity-80">
-        {allowRoundTrip ? (
-          <section className="space-y-3">
-            <h3 className="font-bold text-primary">۱. نوع تعریف بلیت</h3>
-            <FormField label="نوع بلیت" id="ticket-definition-mode" required>
+        <section className="space-y-4">
+          <h3 className="font-bold text-primary">۱. نوع بلیت</h3>
+          <div className={styles.fields}>
+            <FormField label="نوع وسیله سفر" id="ticket-transport" required>
               <Select
-                value={definitionMode}
-                onValueChange={(mode) =>
-                  chooseDefinitionMode(mode as TicketDefinitionMode)
+                value={input.transport}
+                onValueChange={(value) =>
+                  chooseTransport(value as TransportType)
                 }
               >
-                <SelectTrigger id="ticket-definition-mode">
+                <SelectTrigger id="ticket-transport">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent dir="rtl">
-                  <SelectItem value="one-way">یک‌طرفه</SelectItem>
-                  <SelectItem value="round-trip">رفت‌وبرگشت</SelectItem>
+                  {Object.entries(transportLabels).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </FormField>
+            {allowRoundTrip ? (
+              <FormField label="مسیر فروش" id="ticket-definition-mode" required>
+                <Select
+                  value={definitionMode}
+                  onValueChange={(mode) =>
+                    chooseDefinitionMode(mode as TicketDefinitionMode)
+                  }
+                >
+                  <SelectTrigger id="ticket-definition-mode">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent dir="rtl">
+                    <SelectItem value="one-way">یک‌طرفه</SelectItem>
+                    <SelectItem value="round-trip">رفت‌وبرگشت</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormField>
+            ) : null}
+          </div>
+          {allowRoundTrip ? (
             <p className="text-xs leading-6 text-muted-foreground">
-              در حالت رفت‌وبرگشت، دو بلیت مستقل ساخته می‌شود؛ هر بلیت بعداً هم
-              جداگانه و هم در ترکیب رفت‌وبرگشت قابل فروش است.
+              در حالت رفت‌وبرگشت، دو بلیت مستقل ساخته می‌شود و هرکدام جداگانه
+              نیز قابل فروش و ویرایش است.
             </p>
-          </section>
-        ) : null}
+          ) : null}
+        </section>
         <section className="space-y-4">
           <h3 className="font-bold text-primary">
-            {allowRoundTrip ? '۲. مشخصات بلیت رفت' : '۱. مشخصات بلیت'}
+            ۲. مشخصات حرکت {definitionMode === 'round-trip' ? 'رفت' : ''}
           </h3>
-          <div className={styles.fields}>
-            <ReferencePicker
-              id="ticket-airline"
-              label="ایرلاین"
-              resource="airlines"
-              readOnly={readOnly}
-              value={references.find(
-                (r) => r.kind === 'airline' && r.id === segment.airlineId,
-              )}
-              onSelect={(ref) => {
-                if (ref) onReference?.(ref);
-                changeSegment({ airlineId: ref?.id ?? '' });
-              }}
-            />
-            <FormField label="شماره پرواز" id="ticket-flight" required>
-              <Input
-                id="ticket-flight"
-                dir="ltr"
-                value={segment.flightNumber}
-                maxLength={12}
-                required
-                onChange={(event) =>
-                  changeSegment({ flightNumber: event.target.value })
-                }
-              />
-            </FormField>
-            <ReferencePicker
-              id="ticket-aircraft"
-              label="نوع هواپیما"
-              resource="aircraft-types"
-              readOnly={readOnly}
-              value={references.find(
-                (r) => r.kind === 'aircraft' && r.id === segment.aircraftId,
-              )}
-              onSelect={(ref) => {
-                if (ref) onReference?.(ref);
-                changeSegment({ aircraftId: ref?.id ?? '' });
-              }}
-            />
-            <ReferencePicker
-              id="ticket-flight-class"
-              label="کلاس پروازی"
-              resource="cabin-classes"
-              readOnly={readOnly}
-              value={references.find(
-                (r) => r.kind === 'flightClass' && r.id === input.flightClassId,
-              )}
-              onSelect={(ref) => {
-                if (ref) onReference?.(ref);
-                setInput({ ...input, flightClassId: ref?.id ?? '' });
-              }}
-            />
-            <ReferencePicker
-              id="ticket-baggage"
-              label="بار مجاز"
-              resource="baggage-rules"
-              readOnly={readOnly}
-              value={references.find(
-                (r) => r.kind === 'baggage' && r.id === input.baggageId,
-              )}
-              onSelect={(ref) => {
-                if (ref) onReference?.(ref);
-                setInput({ ...input, baggageId: ref?.id ?? '' });
-              }}
-            />
-          </div>
-        </section>
-        <section className="space-y-4">
-          <h3 className="font-bold text-primary">مسیر بلیت مستقل</h3>
-          <p className="text-xs text-muted-foreground">
-            کشور و شهر از اطلاعات پایه انتخاب می‌شوند و جایگزین فرودگاه نیستند.
-            فرودگاه نیز از اطلاعات پایه انتخاب می‌شود. این مسیر یک بلیت مستقل
-            است و در حالت رفت‌وبرگشت، مسیر برگشت نیز مستقل ثبت می‌شود.
-          </p>
-          <div className={styles.fields}>
-            {(['origin', 'destination'] as const).map((end) => (
-              <div className="min-w-0 space-y-4" key={end}>
-                <ReferencePicker
-                  id={`ticket-${end}-country`}
-                  label={`کشور ${end === 'origin' ? 'مبدأ' : 'مقصد'}`}
-                  resource="countries"
-                  readOnly={readOnly}
-                  value={references.find(
-                    (r) =>
-                      r.kind === 'country' &&
-                      r.id === segment[`${end}CountryId`],
-                  )}
-                  onSelect={(ref) => {
-                    if (ref) onReference?.(ref);
-                    changeSegment({
-                      [`${end}CountryId`]: ref?.id ?? '',
-                      [`${end}CityId`]: '',
-                      [`${end}AirportId`]: '',
-                      [end === 'origin' ? 'departureZone' : 'arrivalZone']:
-                        'UTC',
-                    });
-                  }}
-                />
-                <ReferencePicker
-                  key={segment[`${end}CountryId`]}
-                  id={`ticket-${end}-city`}
-                  label={`شهر ${end === 'origin' ? 'مبدأ' : 'مقصد'}`}
-                  resource="cities"
-                  readOnly={readOnly}
-                  countryId={segment[`${end}CountryId`]}
-                  value={references.find(
-                    (r) =>
-                      r.kind === 'city' && r.id === segment[`${end}CityId`],
-                  )}
-                  onSelect={(ref) => {
-                    if (ref) onReference?.(ref);
-                    changeSegment({
-                      [`${end}CityId`]: ref?.id ?? '',
-                      [`${end}AirportId`]: '',
-                      [end === 'origin' ? 'departureZone' : 'arrivalZone']:
-                        'UTC',
-                    });
-                  }}
-                />
-                <ReferencePicker
-                  key={`${segment[`${end}CityId`]}-airport`}
-                  id={`ticket-${end}-airport`}
-                  label={`فرودگاه ${end === 'origin' ? 'مبدأ' : 'مقصد'}`}
-                  resource="airports"
-                  readOnly={readOnly}
-                  countryId={segment[`${end}CountryId`]}
-                  cityId={segment[`${end}CityId`]}
-                  value={references.find(
-                    (r) =>
-                      r.kind === 'airport' &&
-                      r.id === segment[`${end}AirportId`],
-                  )}
-                  onSelect={(ref) => {
-                    if (ref) onReference?.(ref);
-                    changeSegment({
-                      [`${end}AirportId`]: ref?.id ?? '',
-                      [end === 'origin' ? 'departureZone' : 'arrivalZone']:
-                        ref?.timezone ?? 'UTC',
-                    });
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </section>
-        <section className="space-y-4">
-          <h3 className="font-bold text-primary">زمان بلیت رفت</h3>
-          <p className="text-xs text-muted-foreground">
-            تقویم شمسی/میلادی برای ورود است؛ اعتبارسنجی با UTC انجام می‌شود.
-            برای عبور از نیمه‌شب، تاریخ رسیدن را روز بعد انتخاب کنید.
-          </p>
+          <TransportFields
+            prefix="ticket"
+            suffix=""
+            input={input}
+            segment={segment}
+            references={references}
+            readOnly={readOnly}
+            onInput={setInput}
+            onSegment={changeSegment}
+            onReference={onReference}
+          />
+          <h4 className="font-semibold">مسیر</h4>
+          <RouteFields
+            prefix="ticket"
+            suffix=""
+            input={input}
+            segment={segment}
+            references={references}
+            readOnly={readOnly}
+            onSegment={changeSegment}
+            onReference={onReference}
+          />
           <div className={styles.fields}>
             <FormField label="تاریخ و ساعت حرکت" id="ticket-departure">
               <TicketDatePicker
@@ -456,164 +701,28 @@ export function TicketForm({
         </section>
         {definitionMode === 'round-trip' && allowRoundTrip ? (
           <section className="space-y-4 rounded-2xl border border-primary/20 bg-primary/5 p-4">
-            <h3 className="font-bold text-primary">۳. مشخصات بلیت برگشت</h3>
-            <Alert
-              title="بلیت برگشت مستقل ثبت می‌شود"
-              description="تأمین، ظرفیت، نرخ خرید و قوانین از بلیت رفت کپی می‌شوند؛ بعد از ثبت می‌توانید هر بلیت را جداگانه ویرایش یا بفروشید."
+            <h3 className="font-bold text-primary">۳. مشخصات حرکت برگشت</h3>
+            <TransportFields
+              prefix="ticket-return"
+              suffix=" برگشت"
+              input={returnInput}
+              segment={returnSegment}
+              references={references}
+              readOnly={readOnly}
+              onInput={setReturnInput}
+              onSegment={changeReturnSegment}
+              onReference={onReference}
             />
-            <div className={styles.fields}>
-              <ReferencePicker
-                id="ticket-return-airline"
-                label="ایرلاین برگشت"
-                resource="airlines"
-                readOnly={readOnly}
-                value={references.find(
-                  (r) =>
-                    r.kind === 'airline' && r.id === returnSegment.airlineId,
-                )}
-                onSelect={(ref) => {
-                  if (ref) onReference?.(ref);
-                  changeReturnSegment({ airlineId: ref?.id ?? '' });
-                }}
-              />
-              <FormField
-                label="شماره پرواز برگشت"
-                id="ticket-return-flight"
-                required
-              >
-                <Input
-                  id="ticket-return-flight"
-                  dir="ltr"
-                  value={returnSegment.flightNumber}
-                  maxLength={12}
-                  required
-                  onChange={(event) =>
-                    changeReturnSegment({ flightNumber: event.target.value })
-                  }
-                />
-              </FormField>
-              <ReferencePicker
-                id="ticket-return-aircraft"
-                label="نوع هواپیمای برگشت"
-                resource="aircraft-types"
-                readOnly={readOnly}
-                value={references.find(
-                  (r) =>
-                    r.kind === 'aircraft' && r.id === returnSegment.aircraftId,
-                )}
-                onSelect={(ref) => {
-                  if (ref) onReference?.(ref);
-                  changeReturnSegment({ aircraftId: ref?.id ?? '' });
-                }}
-              />
-              <ReferencePicker
-                id="ticket-return-flight-class"
-                label="کلاس پروازی برگشت"
-                resource="cabin-classes"
-                readOnly={readOnly}
-                value={references.find(
-                  (r) =>
-                    r.kind === 'flightClass' &&
-                    r.id === returnInput.flightClassId,
-                )}
-                onSelect={(ref) => {
-                  if (ref) onReference?.(ref);
-                  setReturnInput({
-                    ...returnInput,
-                    flightClassId: ref?.id ?? '',
-                  });
-                }}
-              />
-              <ReferencePicker
-                id="ticket-return-baggage"
-                label="بار مجاز برگشت"
-                resource="baggage-rules"
-                readOnly={readOnly}
-                value={references.find(
-                  (r) => r.kind === 'baggage' && r.id === returnInput.baggageId,
-                )}
-                onSelect={(ref) => {
-                  if (ref) onReference?.(ref);
-                  setReturnInput({ ...returnInput, baggageId: ref?.id ?? '' });
-                }}
-              />
-            </div>
-            <h4 className="font-semibold">مسیر برگشت</h4>
-            <p className="text-xs text-muted-foreground">
-              مبدأ و مقصد از مسیر رفت معکوس شده‌اند و در صورت نیاز قابل تغییرند.
-            </p>
-            <div className={styles.fields}>
-              {(['origin', 'destination'] as const).map((end) => (
-                <div className="min-w-0 space-y-4" key={`return-${end}`}>
-                  <ReferencePicker
-                    id={`ticket-return-${end}-country`}
-                    label={`کشور ${end === 'origin' ? 'مبدأ' : 'مقصد'} برگشت`}
-                    resource="countries"
-                    readOnly={readOnly}
-                    value={references.find(
-                      (r) =>
-                        r.kind === 'country' &&
-                        r.id === returnSegment[`${end}CountryId`],
-                    )}
-                    onSelect={(ref) => {
-                      if (ref) onReference?.(ref);
-                      changeReturnSegment({
-                        [`${end}CountryId`]: ref?.id ?? '',
-                        [`${end}CityId`]: '',
-                        [`${end}AirportId`]: '',
-                        [end === 'origin' ? 'departureZone' : 'arrivalZone']:
-                          'UTC',
-                      });
-                    }}
-                  />
-                  <ReferencePicker
-                    key={returnSegment[`${end}CountryId`]}
-                    id={`ticket-return-${end}-city`}
-                    label={`شهر ${end === 'origin' ? 'مبدأ' : 'مقصد'} برگشت`}
-                    resource="cities"
-                    readOnly={readOnly}
-                    countryId={returnSegment[`${end}CountryId`]}
-                    value={references.find(
-                      (r) =>
-                        r.kind === 'city' &&
-                        r.id === returnSegment[`${end}CityId`],
-                    )}
-                    onSelect={(ref) => {
-                      if (ref) onReference?.(ref);
-                      changeReturnSegment({
-                        [`${end}CityId`]: ref?.id ?? '',
-                        [`${end}AirportId`]: '',
-                        [end === 'origin' ? 'departureZone' : 'arrivalZone']:
-                          'UTC',
-                      });
-                    }}
-                  />
-                  <ReferencePicker
-                    key={`${returnSegment[`${end}CityId`]}-return-airport`}
-                    id={`ticket-return-${end}-airport`}
-                    label={`فرودگاه ${end === 'origin' ? 'مبدأ' : 'مقصد'} برگشت`}
-                    resource="airports"
-                    readOnly={readOnly}
-                    countryId={returnSegment[`${end}CountryId`]}
-                    cityId={returnSegment[`${end}CityId`]}
-                    value={references.find(
-                      (r) =>
-                        r.kind === 'airport' &&
-                        r.id === returnSegment[`${end}AirportId`],
-                    )}
-                    onSelect={(ref) => {
-                      if (ref) onReference?.(ref);
-                      changeReturnSegment({
-                        [`${end}AirportId`]: ref?.id ?? '',
-                        [end === 'origin' ? 'departureZone' : 'arrivalZone']:
-                          ref?.timezone ?? 'UTC',
-                      });
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-            <h4 className="font-semibold">زمان برگشت</h4>
+            <RouteFields
+              prefix="ticket-return"
+              suffix=" برگشت"
+              input={returnInput}
+              segment={returnSegment}
+              references={references}
+              readOnly={readOnly}
+              onSegment={changeReturnSegment}
+              onReference={onReference}
+            />
             <div className={styles.fields}>
               <FormField
                 label="تاریخ و ساعت حرکت برگشت"
@@ -643,11 +752,7 @@ export function TicketForm({
           </section>
         ) : null}
         <section className="space-y-4">
-          <h3 className="font-bold text-primary">
-            {definitionMode === 'round-trip' && allowRoundTrip
-              ? '۴. تأمین و ظرفیت مشترک اولیه'
-              : '۳. تأمین و ظرفیت'}
-          </h3>
+          <h3 className="font-bold text-primary">۴. تأمین و ظرفیت</h3>
           <label className="flex items-center gap-2 text-sm font-semibold">
             <input
               type="checkbox"
@@ -702,12 +807,12 @@ export function TicketForm({
                 <SelectContent dir="rtl">
                   <SelectItem value="manual">دستی</SelectItem>
                   <SelectItem value="api" disabled>
-                    API — اتصال Provider آماده نیست
+                    API
                   </SelectItem>
                 </SelectContent>
               </Select>
             </FormField>
-            <FormField label="ظرفیت کل تعریف‌شده" id="ticket-capacity">
+            <FormField label="ظرفیت کل" id="ticket-capacity">
               <Input
                 id="ticket-capacity"
                 type="number"
@@ -728,20 +833,12 @@ export function TicketForm({
               />
             </FormField>
           </div>
-          <p className="text-xs leading-6 text-muted-foreground">
-            ورود دستی به معنی مالکیت شرکت نیست. انتخاب سربرگ، داده بلیت و محدوده
-            شعبه را تغییر نمی‌دهد. Hold، قطعی و باقی‌مانده واقعی منتظر
-            رزرواسیون‌اند و ورودی دستی ندارند.
-          </p>
         </section>
         <section className="space-y-4">
-          <h3 className="font-bold text-primary">
-            ۴. قیمت خرید و نسخه نرخ تأمین
-          </h3>
-          <Alert
-            title="قیمت فروش داینامیک است"
-            description="قیمت فروش هنگام فروش و در قرارداد یا پیشنهاد فروش تعیین می‌شود؛ این فرم قیمت فروش ثابت ندارد."
-          />
+          <h3 className="font-bold text-primary">۵. قیمت خرید</h3>
+          <p className="text-sm text-muted-foreground">
+            قیمت فروش هنگام فروش تعیین می‌شود.
+          </p>
           <div className={styles.fields}>
             <ReferencePicker
               id="ticket-currency"
@@ -766,13 +863,13 @@ export function TicketForm({
             {(
               [
                 ['purchase', 'قیمت خرید'],
-                ['fee', 'کارمزد (مبلغ مستقل)'],
-                ['commission', 'کمیسیون (مبلغ مستقل)'],
+                ['fee', 'کارمزد'],
+                ['commission', 'کمیسیون'],
               ] as const
             ).map(([key, label]) => (
-              <FormField label={label} key={key} id={'ticket-' + key}>
+              <FormField label={label} key={key} id={`ticket-${key}`}>
                 <Input
-                  id={'ticket-' + key}
+                  id={`ticket-${key}`}
                   dir="ltr"
                   inputMode="decimal"
                   value={input.fare[key]}
@@ -785,7 +882,7 @@ export function TicketForm({
                 />
               </FormField>
             ))}
-            <FormField label="شروع اعتبار نرخ (UTC)" id="ticket-valid-from">
+            <FormField label="شروع اعتبار نرخ" id="ticket-valid-from">
               <TicketDatePicker
                 id="ticket-valid-from"
                 value={validFrom}
@@ -794,7 +891,7 @@ export function TicketForm({
                 disabled={readOnly}
               />
             </FormField>
-            <FormField label="پایان اعتبار نرخ (UTC)" id="ticket-valid-to">
+            <FormField label="پایان اعتبار نرخ" id="ticket-valid-to">
               <TicketDatePicker
                 id="ticket-valid-to"
                 value={validTo}
@@ -804,14 +901,9 @@ export function TicketForm({
               />
             </FormField>
           </div>
-          <p className="text-xs text-muted-foreground">
-            مبالغ رشته Decimal هستند. سیاست اعمال کارمزد/تخفیف هنوز باز است؛ جمع
-            نهایی، تبدیل ارز یا سود حسابداری محاسبه نمی‌شود. تغییر قیمت نسخه
-            تازه می‌سازد.
-          </p>
         </section>
         <section className="space-y-4">
-          <h3 className="font-bold text-primary">۵. شرایط بلیت</h3>
+          <h3 className="font-bold text-primary">۶. شرایط بلیت</h3>
           <FormField
             label="قوانین تغییر، کنسلی و محدودیت فروش"
             id="ticket-rules"
@@ -825,7 +917,7 @@ export function TicketForm({
               }
             />
           </FormField>
-          <FormField label="دلیل تغییر / یادداشت پیش‌نمایش" id="ticket-reason">
+          <FormField label="یادداشت تغییر" id="ticket-reason">
             <Input
               id="ticket-reason"
               value={reason}
@@ -838,13 +930,14 @@ export function TicketForm({
         className={`${styles.actions} sticky bottom-0 flex flex-wrap gap-3 border-t bg-surface py-4`}
       >
         {!readOnly ? (
-          <Button type="submit">اعمال فقط در پیش‌نمایش</Button>
+          <Button type="submit">
+            {definitionMode === 'round-trip' && allowRoundTrip
+              ? 'ذخیره دو بلیت رفت و برگشت'
+              : 'ذخیره بلیت'}
+          </Button>
         ) : null}
         <Button type="button" variant="outline" onClick={onCancel}>
           بستن فرم
-        </Button>
-        <Button type="button" disabled variant="ghost">
-          ذخیره واقعی — منتظر API و مجوز
         </Button>
       </div>
     </form>

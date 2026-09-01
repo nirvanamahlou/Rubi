@@ -92,6 +92,6 @@ describe('Hidden ticket metadata', () => {
   it('rejects a daylight-saving gap with a user-facing message', () => {
     expect(() =>
       inferWallTimeOffset('2026-03-08T02:30', 'America/New_York'),
-    ).toThrow('این ساعت در منطقه زمانی فرودگاه معتبر نیست');
+    ).toThrow('این ساعت در منطقه زمانی مسیر معتبر نیست');
   });
 });

@@ -1,12 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
+  catalogStorageKey,
   initialQuery,
+  parseCatalogSnapshot,
   previewSamples,
   queryProducts,
+  repeatDefinition,
   replacePreview,
 } from './preview';
-describe('Preview isolation and query', () => {
+
+describe('Ticket catalog browser collection and query', () => {
   const samples = previewSamples('2026-08-31T00:00:00.000Z');
   it('keeps local core identical to the domain proposal until public-contract handoff', () => {
     const web = readFileSync(new URL('./catalog.ts', import.meta.url), 'utf8');
@@ -19,21 +23,40 @@ describe('Preview isolation and query', () => {
     );
     expect(web.replace(/\r\n/g, '\n')).toBe(api.replace(/\r\n/g, '\n'));
   });
+  it('includes one-way and paired flight, train and bus samples', () => {
+    expect(samples).toHaveLength(9);
+    expect(new Set(samples.map((p) => p.definition.transport))).toEqual(
+      new Set(['flight', 'train', 'bus']),
+    );
+    expect(
+      samples.filter((p) => p.definition.journeyRole === 'one-way'),
+    ).toHaveLength(3);
+    expect(
+      samples.filter((p) => p.definition.journeyRole === 'outbound'),
+    ).toHaveLength(3);
+    expect(
+      samples.filter((p) => p.definition.journeyRole === 'return'),
+    ).toHaveLength(3);
+  });
   it('paginates, filters and sorts the same collection', () => {
     expect(queryProducts(samples, initialQuery).rows).toHaveLength(6);
     expect(
       queryProducts(samples, { ...initialQuery, page: 2 }).rows,
-    ).toHaveLength(2);
+    ).toHaveLength(3);
     expect(
       queryProducts(samples, { ...initialQuery, supply: 'company' }).total,
-    ).toBe(4);
+    ).toBe(3);
     expect(
-      queryProducts(samples, { ...initialQuery, search: 'DEMO-3' }).rows[0]?.id,
-    ).toBe('preview-sample-2');
+      queryProducts(samples, { ...initialQuery, transport: 'train' }).total,
+    ).toBe(3);
+    expect(
+      queryProducts(samples, { ...initialQuery, search: 'W5-1042' }).rows[0]
+        ?.id,
+    ).toBe('sample-ticket-1');
     expect(
       queryProducts(samples, { ...initialQuery, direction: 'desc' }).rows[0]
         ?.id,
-    ).toBe('preview-sample-7');
+    ).toBe('sample-ticket-5');
     expect(
       queryProducts(samples, { ...initialQuery, status: 'active' }).total,
     ).toBe(0);
@@ -44,6 +67,29 @@ describe('Preview isolation and query', () => {
         to: '2026-09-08',
       }).total,
     ).toBe(1);
+  });
+  it('shifts all schedule and fare dates for weekly and monthly repeats', () => {
+    const source = samples[0]!.definition;
+    const weekly = repeatDefinition(source, 'weekly', 2);
+    const monthly = repeatDefinition(source, 'monthly', 1);
+    expect(
+      Date.parse(weekly.segments[0]!.departureAt) -
+        Date.parse(source.segments[0]!.departureAt),
+    ).toBe(14 * 86_400_000);
+    expect(new Date(monthly.segments[0]!.departureAt).getUTCMonth()).toBe(
+      (new Date(source.segments[0]!.departureAt).getUTCMonth() + 1) % 12,
+    );
+    expect(weekly.journeyRole).toBe('one-way');
+    expect(weekly.tripGroupId).toBeUndefined();
+  });
+  it('round-trips valid browser storage and rejects malformed data', () => {
+    const raw = JSON.stringify({ products: samples, references: [] });
+    expect(parseCatalogSnapshot(raw)?.products).toHaveLength(9);
+    expect(parseCatalogSnapshot('{broken')).toBeUndefined();
+    expect(
+      parseCatalogSnapshot(JSON.stringify({ products: [{}], references: [] })),
+    ).toBeUndefined();
+    expect(catalogStorageKey).toContain('ticket-catalog');
   });
   it('does not fabricate master IDs or actual reservation counters', () => {
     expect(
@@ -57,7 +103,7 @@ describe('Preview isolation and query', () => {
       /pnr|passenger|confirmed|held/i,
     );
   });
-  it('rejects stale preview edits and duplicate identity', () => {
+  it('rejects stale edits and duplicate identity', () => {
     expect(() => replacePreview(samples, samples[0]!)).toThrow('Conflict');
     expect(() => replacePreview(samples, samples[0]!, 0)).toThrow('Conflict');
   });

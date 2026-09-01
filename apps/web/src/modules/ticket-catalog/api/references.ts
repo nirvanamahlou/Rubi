@@ -15,7 +15,11 @@ export type PublishedResource =
   | 'baggage-rules'
   | 'currencies'
   | 'countries'
-  | 'cities';
+  | 'cities'
+  | 'rail-companies'
+  | 'train-types'
+  | 'bus-companies'
+  | 'bus-types';
 export interface ReferenceFilters {
   countryId?: string;
   cityId?: string;
@@ -110,6 +114,10 @@ export function asReference(record: MasterDataRecord): Reference | undefined {
     currencies: 'currency',
     countries: 'country',
     cities: 'city',
+    'rail-companies': 'railCompany',
+    'train-types': 'trainType',
+    'bus-companies': 'busCompany',
+    'bus-types': 'busType',
   } as const;
   if (!(record.resource in kinds)) return undefined;
   return {

@@ -29,6 +29,10 @@ const resourceLabels: Record<PublishedResource, string> = {
   currencies: 'ارز',
   countries: 'کشور',
   cities: 'شهر',
+  'rail-companies': 'شرکت ریلی',
+  'train-types': 'نوع قطار',
+  'bus-companies': 'شرکت اتوبوس‌رانی',
+  'bus-types': 'نوع اتوبوس',
 };
 export function ReferenceBrowser({
   onSelect,

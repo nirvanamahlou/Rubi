@@ -1,6 +1,8 @@
 // Phase A pure proposal; mirrored in Web until a shared-contract handoff.
 // No persistence, permission grant, provider call or transaction guarantee.
 export type CatalogStatus = 'draft' | 'active' | 'paused' | 'cancelled';
+export type TransportType = 'flight' | 'train' | 'bus';
+export type JourneyRole = 'one-way' | 'outbound' | 'return';
 export type SupplyType = 'company' | 'allotment' | 'charter' | 'supplier';
 export type ReferenceKind =
   | 'airline'
@@ -10,7 +12,11 @@ export type ReferenceKind =
   | 'baggage'
   | 'currency'
   | 'country'
-  | 'city';
+  | 'city'
+  | 'railCompany'
+  | 'trainType'
+  | 'busCompany'
+  | 'busType';
 export interface Reference {
   id: string;
   kind: ReferenceKind;
@@ -39,6 +45,8 @@ export interface Segment {
   arrivalAt: string;
   departureZone: string;
   arrivalZone: string;
+  originTerminal: string;
+  destinationTerminal: string;
 }
 export interface FareInput {
   purchase: string;
@@ -49,9 +57,18 @@ export interface FareInput {
   validFrom: string;
   validTo: string;
 }
+export interface ProductDisplaySnapshot {
+  operator: string;
+  vehicle: string;
+  origin: string;
+  destination: string;
+}
 export interface ProductInput {
   title: string;
-  transport: 'flight';
+  transport: TransportType;
+  journeyRole: JourneyRole;
+  tripGroupId?: string | undefined;
+  display?: ProductDisplaySnapshot | undefined;
   segments: readonly Segment[];
   flightClassId: string;
   baggageId: string;
@@ -339,8 +356,12 @@ export function validateProduct(
     'نام بلیت الزامی و حداکثر ۱۶۰ نویسه است.',
   );
   ensure(
-    input.transport === 'flight',
-    'مرحله نخست فقط پرواز را پشتیبانی می‌کند.',
+    ['flight', 'train', 'bus'].includes(input.transport),
+    'نوع وسیله سفر نامعتبر است.',
+  );
+  ensure(
+    ['one-way', 'outbound', 'return'].includes(input.journeyRole),
+    'نوع مسیر بلیت نامعتبر است.',
   );
   ensure(
     input.segments.length > 0 && input.segments.length <= 8,
@@ -363,8 +384,8 @@ export function validateProduct(
   let previous: Segment | undefined;
   for (const segment of input.segments) {
     ensure(
-      /^[A-Za-z0-9][A-Za-z0-9 -]{0,11}$/.test(segment.flightNumber),
-      'شماره پرواز معتبر (حداکثر ۱۲ نویسه) لازم است.',
+      /^[A-Za-z0-9][A-Za-z0-9 -]{0,19}$/.test(segment.flightNumber),
+      'شماره حرکت معتبر (حداکثر ۲۰ نویسه) لازم است.',
     );
     validZone(segment.departureZone);
     validZone(segment.arrivalZone);
@@ -404,14 +425,42 @@ export function validateProduct(
           'REFERENCE',
         );
     }
-    reference(resolve, 'airline', segment.airlineId, ready);
-    reference(resolve, 'aircraft', segment.aircraftId, ready);
-    reference(resolve, 'airport', segment.originAirportId, ready);
-    reference(resolve, 'airport', segment.destinationAirportId, ready);
+    const operatorKind =
+      input.transport === 'flight'
+        ? 'airline'
+        : input.transport === 'train'
+          ? 'railCompany'
+          : 'busCompany';
+    const vehicleKind =
+      input.transport === 'flight'
+        ? 'aircraft'
+        : input.transport === 'train'
+          ? 'trainType'
+          : 'busType';
+    reference(resolve, operatorKind, segment.airlineId, ready);
+    reference(resolve, vehicleKind, segment.aircraftId, ready);
+    if (input.transport === 'flight') {
+      reference(resolve, 'airport', segment.originAirportId, ready);
+      reference(resolve, 'airport', segment.destinationAirportId, ready);
+    } else {
+      ensure(
+        !segment.originCityId ||
+          !segment.destinationCityId ||
+          segment.originCityId !== segment.destinationCityId,
+        'شهر مبدأ و مقصد نباید یکسان باشند.',
+      );
+      ensure(
+        segment.originTerminal.trim().length <= 160 &&
+          segment.destinationTerminal.trim().length <= 160,
+        'نام پایانه یا ایستگاه حداکثر ۱۶۰ نویسه است.',
+      );
+    }
     previous = segment;
   }
-  reference(resolve, 'flightClass', input.flightClassId, ready);
-  reference(resolve, 'baggage', input.baggageId, ready);
+  if (input.transport === 'flight') {
+    reference(resolve, 'flightClass', input.flightClassId, ready);
+    reference(resolve, 'baggage', input.baggageId, ready);
+  }
   const currency = reference(resolve, 'currency', input.fare.currencyId, ready);
   ensure(
     !input.fare.currencyCode || /^[A-Z]{3}$/.test(input.fare.currencyCode),
@@ -600,11 +649,5 @@ export function copyProduct(
   actor: string,
 ): Product {
   ensure(id !== product.id, 'کپی باید شناسه جدید داشته باشد.');
-  return createProduct(
-    id,
-    { ...product.definition, title: product.definition.title + ' — کپی' },
-    resolve,
-    at,
-    actor,
-  );
+  return createProduct(id, { ...product.definition }, resolve, at, actor);
 }

@@ -153,3 +153,25 @@ it('uses v12 geographic filters and maps all ticket reference kinds', async () =
     ),
   ).toEqual(['aircraft', 'flightClass', 'baggage']);
 });
+it('maps published rail and bus references for ticket definitions', () => {
+  const base = {
+    id: 'transport-reference',
+    code: 'TEST',
+    name: 'Synthetic transport reference',
+    status: 'active' as const,
+    attributes: {},
+    version: 1,
+    createdAt: '',
+    updatedAt: '',
+  };
+  expect(
+    ['rail-companies', 'train-types', 'bus-companies', 'bus-types'].map(
+      (resource) =>
+        asReference({
+          ...base,
+          resource: resource as
+            'rail-companies' | 'train-types' | 'bus-companies' | 'bus-types',
+        })?.kind,
+    ),
+  ).toEqual(['railCompany', 'trainType', 'busCompany', 'busType']);
+});

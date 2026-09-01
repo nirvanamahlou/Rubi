@@ -1,8 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import type { MasterDataRecord } from '@rubi/contracts';
-import { Copy, Eye, FilePenLine, Plane, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+  BusFront,
+  Copy,
+  Eye,
+  FilePenLine,
+  Plane,
+  Plus,
+  RefreshCw,
+  TrainFront,
+  Trash2,
+} from 'lucide-react';
 import {
   Alert,
   Badge,
@@ -22,9 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui';
-import { asReference } from '../api/references';
 import {
-  copyProduct,
   createProduct,
   reviseProduct,
   transitionProduct,
@@ -36,112 +43,98 @@ import {
   type ReferenceResolver,
 } from '../model/catalog';
 import {
+  catalogSamples,
+  catalogStorageKey,
   displayTime,
   emptyInput,
   initialQuery,
-  previewSamples,
+  journeyLabels,
+  parseCatalogSnapshot,
   queryProducts,
+  repeatDefinition,
   replacePreview,
   statusLabels,
   supplyLabels,
+  transportLabels,
   type PreviewQuery,
+  type RepeatCadence,
 } from '../model/preview';
-import { ReferenceBrowser } from './reference-browser';
 import { TicketForm } from './ticket-form';
-import { JourneyPreview } from './journey-preview';
 import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
 
-export const previewStates = {
-  ready: 'عادی',
-  loading: 'در حال دریافت',
-  empty: 'خالی',
-  error: 'خطا',
-  unauthorized: 'ورود لازم',
-  forbidden: 'بدون مجوز',
-  conflict: 'تعارض نسخه',
-  success: 'اعمال تغییر آزمایشی',
-} as const;
-export function CatalogState({ state }: { state: keyof typeof previewStates }) {
-  if (state === 'ready') return null;
-  const messages = {
-    loading: 'در حال دریافت فهرست…',
-    empty: 'بلیتی مطابق فیلترها وجود ندارد.',
-    error: 'دریافت فهرست ناموفق بود؛ دوباره تلاش کنید.',
-    unauthorized: 'برای مشاهده داده عملیاتی وارد شوید (401).',
-    forbidden:
-      'مجوز اختصاصی مدیریت بلیت منتشر نشده است؛ عملیات واقعی مسدود است (403).',
-    conflict:
-      'نسخه بلیت تغییر کرده است؛ فرم را ببندید و نسخه تازه را باز کنید (409).',
-    success:
-      'تغییر فقط در حافظه پیش‌نمایش اعمال شد؛ ذخیره واقعی انجام نشده است.',
-  };
-  return (
-    <Alert
-      title={messages[state]}
-      tone={state === 'error' || state === 'conflict' ? 'error' : 'info'}
-    />
-  );
-}
+const actor = 'کاربر جاری';
+const transportIcons = {
+  flight: Plane,
+  train: TrainFront,
+  bus: BusFront,
+};
+
 export function TicketWorkspace() {
-  const [preview, setPreview] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [references, setReferences] = useState<Reference[]>([]);
+  const [hydrated, setHydrated] = useState(false);
   const [query, setQuery] = useState<PreviewQuery>(initialQuery);
   const [form, setForm] = useState<{
     mode: 'create' | 'view' | 'edit';
     product?: Product;
+    initial?: ProductInput;
   } | null>(null);
   const [notice, setNotice] = useState('');
   const [problem, setProblem] = useState('');
-  const [state, setState] = useState<keyof typeof previewStates>('ready');
   const [statusChange, setStatusChange] = useState<{
     product: Product;
     status: CatalogStatus;
   } | null>(null);
+  const [deleteProduct, setDeleteProduct] = useState<Product>();
+  const [repeat, setRepeat] = useState<{
+    product: Product;
+    cadence: RepeatCadence;
+    count: number;
+  }>();
   const [reason, setReason] = useState('');
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const stored = parseCatalogSnapshot(
+        localStorage.getItem(catalogStorageKey),
+      );
+      if (stored) {
+        setProducts(stored.products);
+        setReferences(stored.references);
+      } else setProducts(catalogSamples(new Date().toISOString()));
+      setHydrated(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(
+      catalogStorageKey,
+      JSON.stringify({ products, references }),
+    );
+  }, [hydrated, products, references]);
+
   const result = queryProducts(products, query);
   const resolve: ReferenceResolver = (kind, id) =>
     references.find((r) => r.kind === kind && r.id === id);
-  const label = (kind: Reference['kind'], id: string) =>
-    resolve(kind, id)?.name ?? 'منتظر مرجع';
+  const referenceLabel = (
+    kind: Reference['kind'],
+    id: string,
+    fallback: string,
+  ) => resolve(kind, id)?.name ?? fallback;
   function rememberReference(value: Reference) {
     setReferences((rows) => [
       ...rows.filter((r) => r.id !== value.id || r.kind !== value.kind),
       value,
     ]);
   }
-  function selectReference(record: MasterDataRecord) {
-    const value = asReference(record);
-    if (!value) return;
-    setReferences((rows) => [
-      ...rows.filter((r) => r.id !== value.id || r.kind !== value.kind),
-      value,
-    ]);
-    setNotice(
-      'مرجع «' +
-        value.name +
-        '» از API دریافت شد و در انتخاب‌های فرم در دسترس است؛ هیچ محصولی ذخیره نشده است.',
-    );
-  }
-  function resetSession() {
-    setPreview(false);
-    setProducts([]);
-    setQuery(initialQuery);
-    setForm(null);
-    setStatusChange(null);
-    setState('ready');
-    setNotice('حافظه پیش‌نمایش این صفحه پاک شد.');
-    setProblem('');
-  }
   function save(inputs: readonly ProductInput[], editReason: string) {
-    if (!preview || !form || form.mode === 'view')
-      throw new Error('ویرایش فقط در Preview مجاز است.');
+    if (!form || form.mode === 'view') throw new Error('فرم قابل ویرایش نیست.');
     const now = new Date().toISOString();
     const current = form.product;
     if (current && inputs.length !== 1)
-      throw new Error('ویرایش یک بلیت باید روی همان بلیت انجام شود.');
-
+      throw new Error('ویرایش باید روی همان بلیت انجام شود.');
     let updated = products;
     if (current) {
       const next = reviseProduct(
@@ -150,8 +143,8 @@ export function TicketWorkspace() {
         current.version,
         resolve,
         now,
-        'کاربر نمایشی',
-        editReason,
+        actor,
+        editReason.trim() || 'ویرایش اطلاعات بلیت',
         {
           total: current.definition.totalCapacity,
           version: 0,
@@ -162,11 +155,11 @@ export function TicketWorkspace() {
     } else {
       for (const input of inputs) {
         const next = createProduct(
-          'preview-' + crypto.randomUUID(),
+          `ticket-${crypto.randomUUID()}`,
           input,
           resolve,
           now,
-          'کاربر نمایشی',
+          actor,
         );
         updated = replacePreview(updated, next);
       }
@@ -176,30 +169,66 @@ export function TicketWorkspace() {
     setProblem('');
     setNotice(
       inputs.length === 2
-        ? 'دو بلیت مستقل رفت و برگشت در پیش‌نمایش ساخته شد؛ هرکدام جداگانه یا باهم قابل فروش‌اند.'
-        : 'تغییر فقط در حافظه پیش‌نمایش اعمال شد؛ با خروج یا بازخوانی صفحه از بین می‌رود.',
+        ? 'دو بلیت مستقل رفت و برگشت ذخیره شد.'
+        : current
+          ? 'تغییرات بلیت ذخیره شد.'
+          : 'بلیت جدید ذخیره شد.',
     );
   }
-  function copy(product: Product) {
+  function openDuplicate(product: Product) {
+    const initial = structuredClone(product.definition);
+    initial.journeyRole = 'one-way';
+    initial.tripGroupId = undefined;
+    setForm({ mode: 'create', initial });
+    setNotice('تاریخ و اطلاعات کپی را تغییر دهید و بلیت جدید را ذخیره کنید.');
+  }
+  function applyRepeat() {
+    if (!repeat) return;
     try {
-      const next = copyProduct(
-        product,
-        'preview-' + crypto.randomUUID(),
-        resolve,
-        new Date().toISOString(),
-        'کاربر نمایشی',
-      );
-      setProducts(replacePreview(products, next));
+      if (
+        !Number.isSafeInteger(repeat.count) ||
+        repeat.count < 1 ||
+        repeat.count > 24
+      )
+        throw new Error('تعداد تکرار باید بین ۱ تا ۲۴ باشد.');
+      const now = new Date().toISOString();
+      let updated = products;
+      for (let occurrence = 1; occurrence <= repeat.count; occurrence += 1) {
+        const definition = repeatDefinition(
+          repeat.product.definition,
+          repeat.cadence,
+          occurrence,
+        );
+        const next = createProduct(
+          `ticket-${crypto.randomUUID()}`,
+          definition,
+          resolve,
+          now,
+          actor,
+        );
+        updated = replacePreview(updated, next);
+      }
+      setProducts(updated);
+      setRepeat(undefined);
       setProblem('');
       setNotice(
-        'کپی پیش‌نویس ساخته شد؛ بدون کپی تخصیص، Hold یا سابقه بلیت قبلی.',
+        `${repeat.count.toLocaleString('fa-IR')} بلیت ${repeat.cadence === 'weekly' ? 'هفتگی' : 'ماهانه'} جدید ساخته شد.`,
       );
     } catch (error) {
-      setProblem(error instanceof Error ? error.message : 'کپی ناموفق بود.');
+      setProblem(
+        error instanceof Error ? error.message : 'تکرار بلیت ناموفق بود.',
+      );
     }
   }
+  function removeProduct() {
+    if (!deleteProduct) return;
+    setProducts((rows) => rows.filter((row) => row.id !== deleteProduct.id));
+    setDeleteProduct(undefined);
+    setNotice('بلیت از فهرست این مرورگر حذف شد.');
+    setProblem('');
+  }
   function applyStatus() {
-    if (!statusChange || !preview) return;
+    if (!statusChange) return;
     try {
       const current = statusChange.product;
       const next = transitionProduct(
@@ -208,8 +237,8 @@ export function TicketWorkspace() {
         current.version,
         resolve,
         new Date().toISOString(),
-        'کاربر نمایشی',
-        reason,
+        actor,
+        reason.trim() || 'تغییر وضعیت بلیت',
         {
           total: current.definition.totalCapacity,
           version: 0,
@@ -219,9 +248,7 @@ export function TicketWorkspace() {
       setProducts(replacePreview(products, next, current.version));
       setStatusChange(null);
       setProblem('');
-      setNotice(
-        'وضعیت فقط در پیش‌نمایش تغییر کرد؛ هیچ عملیات فروش یا رزرو اجرا نشد.',
-      );
+      setNotice(`وضعیت بلیت به «${statusLabels[next.status]}» تغییر کرد.`);
     } catch (error) {
       setProblem(
         error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.',
@@ -230,97 +257,102 @@ export function TicketWorkspace() {
   }
   const filter = (patch: Partial<PreviewQuery>) =>
     setQuery({ ...query, ...patch, page: 1 });
+  const counts = {
+    flight: products.filter((p) => p.definition.transport === 'flight').length,
+    train: products.filter((p) => p.definition.transport === 'train').length,
+    bus: products.filter((p) => p.definition.transport === 'bus').length,
+  };
+
   return (
     <div className="space-y-5" dir="rtl">
       <PageHeader
         title="مدیریت و تعریف بلیت‌ها"
-        eyebrow="بلیت پرواز • نرخ خرید • ظرفیت"
-        description="مرجع تعریف و مدیریت بلیت‌های قابل فروش؛ مبدأ و مقصد، تاریخ و ساعت حرکت و رسیدن، اطلاعات پرواز، کلاس، بار، نوع تأمین و ظرفیت بلیت در همین بخش ثبت می‌شود. صدور بلیت برای مسافر و عملیات رزرو در بخش رزرواسیون انجام می‌شود."
+        eyebrow="هواپیما • قطار • اتوبوس"
+        description="ایجاد و مدیریت بلیت‌های قابل فروش، ظرفیت و قیمت خرید. صدور بلیت مسافر در رزرواسیون انجام می‌شود. اطلاعات این صفحه روی همین مرورگر نگهداری می‌شود."
         actions={
           <>
             <Button
               variant="outline"
-              disabled
-              title="منتظر API بلیت، مجوز خروجی و Worker"
+              onClick={() => {
+                setProducts((rows) => [
+                  ...rows.filter((row) => !row.id.startsWith('sample-ticket-')),
+                  ...catalogSamples(new Date().toISOString()),
+                ]);
+                setNotice(
+                  'بلیت‌های ساختگی هواپیما، قطار و اتوبوس بازگردانی شدند.',
+                );
+              }}
             >
-              خروجی فهرست
+              <RefreshCw className="size-4" aria-hidden />
+              افزودن نمونه‌ها
             </Button>
-            <Button
-              disabled={!preview}
-              onClick={() => setForm({ mode: 'create' })}
-            >
+            <Button onClick={() => setForm({ mode: 'create' })}>
               <Plus className="size-4" aria-hidden />
               تعریف بلیت جدید
             </Button>
           </>
         }
       />
-      <Alert
-        title="تعریف اطلاعات بلیت در همین بخش انجام می‌شود"
-        description="در نسخه فعلی، ثبت‌های پیش‌نمایش با بازخوانی صفحه پاک می‌شوند و هنوز ذخیره دائمی نیستند. اطلاعات مسیر، زمان پرواز، مشخصات بلیت و ظرفیت را از همین صفحه تعریف و مدیریت کنید."
-        tone="info"
-      />
-      <div className="flex flex-wrap items-center gap-3">
-        {!preview ? (
-          <Button
-            onClick={() => {
-              setPreview(true);
-              setNotice(
-                'پیش‌نمایش خالی آغاز شد؛ هیچ داده واقعی بارگذاری نشده است.',
-              );
-            }}
-          >
-            شروع پیش‌نمایش مستقل
-          </Button>
-        ) : (
-          <>
-            <Badge>جلسه نمایشی • بدون ذخیره دائمی</Badge>
-            <Button variant="outline" onClick={resetSession}>
-              پایان و پاک‌کردن پیش‌نمایش
-            </Button>
-            <Button
-              variant="ghost"
-              disabled={products.length > 0}
-              onClick={() => {
-                setProducts(previewSamples(new Date().toISOString()));
-                setNotice(
-                  '۸ بلیت کاملاً ساختگی بارگذاری شد؛ مراجع و شمارنده‌های واقعی ندارد.',
-                );
-              }}
-            >
-              بارگذاری بلیت‌های ساختگی
-            </Button>
-          </>
-        )}
-      </div>
       {notice ? <Alert title={notice} /> : null}
-      {problem && !statusChange ? <Alert tone="error" title={problem} /> : null}
-      <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          [
-            'بلیت‌های این پیش‌نمایش',
-            preview ? products.length.toLocaleString('fa-IR') : '—',
-          ],
-          ['موجودی قابل فروش واقعی', 'منتظر رزرواسیون'],
-          ['نرخ مالی / سود قطعی', 'ارائه نمی‌شود'],
-        ].map(([title, value]) => (
-          <Card key={title} className="p-5">
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="mt-3 text-xl font-black text-primary">{value}</p>
-          </Card>
-        ))}
+      {problem && !statusChange && !repeat ? (
+        <Alert tone="error" title={problem} />
+      ) : null}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Card className="p-5">
+          <p className="text-sm text-muted-foreground">کل بلیت‌ها</p>
+          <p className="mt-3 text-2xl font-black text-primary">
+            {hydrated ? products.length.toLocaleString('fa-IR') : '…'}
+          </p>
+        </Card>
+        {(['flight', 'train', 'bus'] as const).map((transport) => {
+          const Icon = transportIcons[transport];
+          return (
+            <Card
+              className="flex items-center justify-between p-5"
+              key={transport}
+            >
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  {transportLabels[transport]}
+                </p>
+                <p className="mt-3 text-2xl font-black text-primary">
+                  {counts[transport].toLocaleString('fa-IR')}
+                </p>
+              </div>
+              <Icon className="size-7 text-primary" aria-hidden />
+            </Card>
+          );
+        })}
       </div>
       <Card className="space-y-4 p-4">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <FormField label="جست‌وجوی بلیت و شماره پرواز" id="ticket-search">
+          <FormField label="جست‌وجوی بلیت" id="ticket-search">
             <Input
               id="ticket-search"
               value={query.search}
-              placeholder="عنوان یا شماره پرواز…"
+              placeholder="شماره، شرکت یا مسیر…"
               onChange={(e) => filter({ search: e.target.value })}
             />
           </FormField>
-          <FormField label="وضعیت فروش" id="ticket-status-filter">
+          <FormField label="نوع وسیله" id="ticket-transport-filter">
+            <Select
+              value={query.transport}
+              onValueChange={(transport) => filter({ transport })}
+            >
+              <SelectTrigger id="ticket-transport-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="all">همه</SelectItem>
+                {Object.entries(transportLabels).map(([key, value]) => (
+                  <SelectItem value={key} key={key}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+          <FormField label="وضعیت" id="ticket-status-filter">
             <Select
               value={query.status}
               onValueChange={(status) => filter({ status })}
@@ -356,36 +388,14 @@ export function TicketWorkspace() {
               </SelectContent>
             </Select>
           </FormField>
-          <FormField label="ایرلاین" id="ticket-airline-filter">
-            <Select
-              value={query.airline || 'all'}
-              onValueChange={(airline) =>
-                filter({ airline: airline === 'all' ? '' : airline })
-              }
-            >
-              <SelectTrigger id="ticket-airline-filter">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent dir="rtl">
-                <SelectItem value="all">همه ایرلاین‌ها</SelectItem>
-                {references
-                  .filter((r) => r.kind === 'airline')
-                  .map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </FormField>
-          <FormField label="حرکت از تاریخ (UTC)" id="ticket-filter-from">
+          <FormField label="حرکت از تاریخ" id="ticket-filter-from">
             <TicketDatePicker
               id="ticket-filter-from"
               value={query.from}
               onChange={(from) => filter({ from })}
             />
           </FormField>
-          <FormField label="حرکت تا تاریخ (UTC)" id="ticket-filter-to">
+          <FormField label="حرکت تا تاریخ" id="ticket-filter-to">
             <TicketDatePicker
               id="ticket-filter-to"
               value={query.to}
@@ -404,7 +414,7 @@ export function TicketWorkspace() {
               </SelectTrigger>
               <SelectContent dir="rtl">
                 <SelectItem value="departure">تاریخ حرکت</SelectItem>
-                <SelectItem value="title">نام بلیت</SelectItem>
+                <SelectItem value="title">عنوان خودکار</SelectItem>
                 <SelectItem value="updated">آخرین ویرایش</SelectItem>
               </SelectContent>
             </Select>
@@ -425,51 +435,12 @@ export function TicketWorkspace() {
             </Button>
           </div>
         </div>
-        {query.from && query.to && query.from > query.to ? (
-          <Alert tone="error" title="پایان بازه جست‌وجو قبل از شروع آن است." />
-        ) : null}
-        {preview ? (
-          <details>
-            <summary className="cursor-pointer text-xs text-muted-foreground">
-              بررسی حالت‌های رابط — فقط شبیه‌سازی
-            </summary>
-            <Select
-              value={state}
-              onValueChange={(nextState) =>
-                setState(nextState as keyof typeof previewStates)
-              }
-            >
-              <SelectTrigger
-                aria-label="حالت آزمایشی رابط"
-                className="mt-2 max-w-xs"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent dir="rtl">
-                {Object.entries(previewStates).map(([key, value]) => (
-                  <SelectItem value={key} key={key}>
-                    {value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </details>
-        ) : null}
       </Card>
-      {!preview ? (
+      {!hydrated ? (
         <EmptyState
-          icon={Plane}
-          title="فهرست عملیاتی هنوز در دسترس نیست"
-          description="برای بررسی فرم‌ها و منطق مرحله A، پیش‌نمایش مستقل را آغاز کنید. هیچ محصول واقعی از API دریافت نشده است."
+          title="در حال آماده‌سازی فهرست…"
+          description="اطلاعات ذخیره‌شده در حال بارگذاری است."
         />
-      ) : state !== 'ready' ? (
-        <>
-          <Badge>حالت شبیه‌سازی رابط</Badge>
-          <CatalogState state={state} />
-          <Button variant="outline" onClick={() => setState('ready')}>
-            بازگشت به پیش‌نمایش
-          </Button>
-        </>
       ) : result.rows.length === 0 ? (
         <EmptyState
           title="بلیتی یافت نشد"
@@ -479,37 +450,44 @@ export function TicketWorkspace() {
         <>
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[960px] text-right text-sm">
-                <caption className="border-b bg-primary/5 px-4 py-3 text-right font-semibold">
-                  بلیت‌های ساختگی • قیمت‌ها و ظرفیت‌ها آزمایشی‌اند
-                </caption>
+              <table className="w-full min-w-[1050px] text-right text-sm">
                 <thead className="bg-muted/50 text-xs text-muted-foreground">
                   <tr>
-                    {[
-                      'بلیت / ایرلاین',
-                      'مسیر / کلاس',
-                      'حرکت / رسیدن',
-                      'تأمین / وضعیت',
-                      'ظرفیت تعریف‌شده',
-                      'قیمت خرید / فروش',
-                      'عملیات',
-                    ].map((heading) => (
-                      <th className="px-4 py-3" key={heading} scope="col">
-                        {heading}
-                      </th>
-                    ))}
+                    <th className="px-4 py-3">بلیت</th>
+                    <th className="px-4 py-3">مسیر</th>
+                    <th className="px-4 py-3">حرکت / رسیدن</th>
+                    <th className="px-4 py-3">وضعیت / تأمین</th>
+                    <th className="px-4 py-3">ظرفیت / خرید</th>
+                    <th className="px-4 py-3">عملیات</th>
                   </tr>
                 </thead>
                 <tbody>
                   {result.rows.map((product) => {
                     const segment = product.definition.segments[0]!;
-                    const fare = product.fares.at(-1)!;
+                    const display = product.definition.display;
+                    const operatorKind =
+                      product.definition.transport === 'flight'
+                        ? 'airline'
+                        : product.definition.transport === 'train'
+                          ? 'railCompany'
+                          : 'busCompany';
                     return (
                       <tr
                         key={product.id}
                         className="border-t align-top hover:bg-muted/20"
                       >
                         <td className="space-y-2 px-4 py-4">
+                          <div className="flex flex-wrap gap-2">
+                            <Badge>
+                              {transportLabels[product.definition.transport]}
+                            </Badge>
+                            <Badge>
+                              {journeyLabels[product.definition.journeyRole]}
+                            </Badge>
+                            {product.id.startsWith('sample-ticket-') ? (
+                              <Badge>نمونه ساختگی</Badge>
+                            ) : null}
+                          </div>
                           <p className="font-bold">
                             {product.definition.title}
                           </p>
@@ -517,30 +495,31 @@ export function TicketWorkspace() {
                             {segment.flightNumber}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {label('airline', segment.airlineId)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            نسخه {product.version.toLocaleString('fa-IR')}
+                            {referenceLabel(
+                              operatorKind,
+                              segment.airlineId,
+                              display?.operator || 'شرکت انتخاب نشده',
+                            )}
                           </p>
                         </td>
                         <td className="space-y-2 px-4 py-4">
                           <p>
-                            {label('city', segment.originCityId)} ←{' '}
-                            {label('city', segment.destinationCityId)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {label('country', segment.originCountryId)} /{' '}
-                            {label('country', segment.destinationCountryId)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            فرودگاه: {label('airport', segment.originAirportId)}{' '}
-                            ← {label('airport', segment.destinationAirportId)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {label(
-                              'flightClass',
-                              product.definition.flightClassId,
+                            {referenceLabel(
+                              'city',
+                              segment.originCityId,
+                              display?.origin || 'مبدأ',
+                            )}{' '}
+                            ←{' '}
+                            {referenceLabel(
+                              'city',
+                              segment.destinationCityId,
+                              display?.destination || 'مقصد',
                             )}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {product.definition.transport === 'flight'
+                              ? `${referenceLabel('airport', segment.originAirportId, segment.originTerminal || 'فرودگاه مبدأ')} ← ${referenceLabel('airport', segment.destinationAirportId, segment.destinationTerminal || 'فرودگاه مقصد')}`
+                              : `${segment.originTerminal || 'پایانه مبدأ'} ← ${segment.destinationTerminal || 'پایانه مقصد'}`}
                           </p>
                         </td>
                         <td className="space-y-2 whitespace-nowrap px-4 py-4">
@@ -556,18 +535,12 @@ export function TicketWorkspace() {
                               segment.arrivalZone,
                             )}
                           </p>
-                          <p className="text-xs" dir="ltr">
-                            {segment.departureZone}
-                          </p>
                         </td>
                         <td className="space-y-2 px-4 py-4">
                           <Badge>{statusLabels[product.status]}</Badge>
                           <p>{supplyLabels[product.definition.supplyType]}</p>
                           <p className="text-xs text-muted-foreground">
-                            ورود{' '}
-                            {product.definition.entryMethod === 'manual'
-                              ? 'دستی'
-                              : 'API'}
+                            نسخه {product.version.toLocaleString('fa-IR')}
                           </p>
                         </td>
                         <td className="space-y-2 px-4 py-4">
@@ -575,25 +548,14 @@ export function TicketWorkspace() {
                             {product.definition.totalCapacity.toLocaleString(
                               'fa-IR',
                             )}{' '}
-                            <span className="text-xs font-normal">نمایشی</span>
+                            نفر
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            Hold / قطعی / باقی‌مانده: —
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            منتظر رزرواسیون
-                          </p>
-                        </td>
-                        <td className="space-y-2 px-4 py-4">
                           <p dir="ltr">
-                            {fare.purchase}{' '}
-                            {fare.currencyCode || 'ارز انتخاب نشده'}
+                            {product.fares.at(-1)?.purchase}{' '}
+                            {product.fares.at(-1)?.currencyCode || '—'}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            خرید • نسخه {fare.version.toLocaleString('fa-IR')}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            قیمت فروش: داینامیک در فروش
+                            قیمت فروش در فروش تعیین می‌شود
                           </p>
                         </td>
                         <td className="px-4 py-4">
@@ -618,10 +580,31 @@ export function TicketWorkspace() {
                             </Button>
                             <Button
                               variant="ghost"
-                              onClick={() => copy(product)}
+                              onClick={() => openDuplicate(product)}
                             >
                               <Copy className="size-4" aria-hidden />
-                              کپی
+                              کپی و تغییر تاریخ
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() =>
+                                setRepeat({
+                                  product,
+                                  cadence: 'weekly',
+                                  count: 1,
+                                })
+                              }
+                            >
+                              <RefreshCw className="size-4" aria-hidden />
+                              تکرار برنامه
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              className="text-destructive"
+                              onClick={() => setDeleteProduct(product)}
+                            >
+                              <Trash2 className="size-4" aria-hidden />
+                              حذف
                             </Button>
                             {transitions[product.status].map((status) => (
                               <Button
@@ -633,7 +616,7 @@ export function TicketWorkspace() {
                                   setStatusChange({ product, status });
                                 }}
                               >
-                                {statusLabels[status]} نمایشی
+                                {statusLabels[status]}
                               </Button>
                             ))}
                           </div>
@@ -650,7 +633,7 @@ export function TicketWorkspace() {
             className="flex flex-wrap items-center justify-between gap-3 text-sm"
           >
             <span>
-              {result.total.toLocaleString('fa-IR')} بلیت نمایشی • صفحه{' '}
+              {result.total.toLocaleString('fa-IR')} بلیت • صفحه{' '}
               {result.page.toLocaleString('fa-IR')} از{' '}
               {result.pages.toLocaleString('fa-IR')}
             </span>
@@ -673,31 +656,6 @@ export function TicketWorkspace() {
           </nav>
         </>
       )}
-      {preview ? (
-        <JourneyPreview products={products} references={references} />
-      ) : null}
-      <ReferenceBrowser onSelect={selectReference} />
-      {references.length ? (
-        <p className="text-xs text-muted-foreground">
-          مراجع انتخاب‌شده برای فرم: {references.map((r) => r.name).join('، ')}{' '}
-          — Snapshot خواندنی؛ فعال‌سازی واقعی نیازمند اعتبارسنجی دوباره سرور
-          است.
-        </p>
-      ) : null}
-      <Card className="p-5 space-y-3">
-        <h2 className="font-bold">وضعیت اتصال و توسعه بعدی</h2>
-        <div className="grid gap-3 text-sm sm:grid-cols-2">
-          <p>پیاده‌شده: اعتبارسنجی، نسخه نرخ، قواعد وضعیت و ظرفیت</p>
-          <p>نمایشی: ایجاد، مشاهده، ویرایش، کپی و تاریخچه همین جلسه</p>
-          <p>منتظر API: مراجع پرواز، مجوز بلیت و رزرواسیون</p>
-          <p>منتظر Migration: ذخیره پایدار، Audit و تراکنش ظرفیت</p>
-        </div>
-        <p className="text-xs leading-6 text-muted-foreground">
-          خروجی فهرست با همان فیلتر و دسترسی، Import/Export گروهی و برنامه
-          تکرارشونده در نقشه توسعه‌اند. خروجی فایل تا قرارداد عمومی و Worker
-          غیرفعال است. Manifest و مدارک مسافر متعلق به این ماژول نیستند.
-        </p>
-      </Card>
       <Dialog
         open={Boolean(form)}
         onOpenChange={(open) => {
@@ -716,36 +674,35 @@ export function TicketWorkspace() {
                 : 'تعریف بلیت جدید'}
           </DialogTitle>
           <DialogDescription>
-            اطلاعات همین جلسه؛ بدون ذخیره در سرور
+            اطلاعات مسیر، زمان، ظرفیت و نرخ خرید را کامل کنید.
           </DialogDescription>
           {form ? (
             <div className="mt-5">
               <TicketForm
-                initial={form.product?.definition ?? emptyInput()}
+                initial={
+                  form.initial ?? form.product?.definition ?? emptyInput()
+                }
                 references={references}
                 onReference={rememberReference}
                 onSave={save}
                 onCancel={() => setForm(null)}
                 readOnly={form.mode === 'view'}
-                allowRoundTrip={form.mode === 'create'}
+                allowRoundTrip={form.mode === 'create' && !form.initial}
               />
               {form.product ? (
                 <section className="mt-6 space-y-3 border-t pt-4">
-                  <h3 className="font-bold">
-                    تاریخچه واقعی همین پیش‌نمایش (Audit سرور نیست)
-                  </h3>
+                  <h3 className="font-bold">تاریخچه تغییرات</h3>
                   {form.product.history.map((item) => (
                     <p className="text-sm" key={item.version}>
                       نسخه {item.version} • {item.actor} •{' '}
                       {displayTime(item.at)} • {item.reason}
                     </p>
                   ))}
-                  <h3 className="font-bold">نسخه‌های نرخ — حفظ مقادیر پیشین</h3>
+                  <h3 className="font-bold">نسخه‌های نرخ خرید</h3>
                   {form.product.fares.map((fare) => (
                     <p className="text-sm" key={fare.version}>
-                      نسخه {fare.version}: خرید {fare.purchase}{' '}
-                      {fare.currencyCode || '(بدون ارز)'} •{' '}
-                      {displayTime(fare.createdAt)}
+                      نسخه {fare.version}: {fare.purchase}{' '}
+                      {fare.currencyCode || '—'} • {displayTime(fare.createdAt)}
                     </p>
                   ))}
                 </section>
@@ -755,16 +712,87 @@ export function TicketWorkspace() {
         </DialogContent>
       </Dialog>
       <Dialog
+        open={Boolean(repeat)}
+        onOpenChange={(open) => {
+          if (!open) setRepeat(undefined);
+        }}
+      >
+        <DialogContent dir="rtl" className="start-auto! left-1/2!">
+          <DialogTitle>تکرار هفتگی یا ماهانه بلیت</DialogTitle>
+          <DialogDescription>
+            هر تکرار یک بلیت مستقل با همان ساعت، ظرفیت و نرخ خرید و تاریخ‌های
+            جابه‌جا‌شده می‌سازد.
+          </DialogDescription>
+          {problem ? <Alert tone="error" title={problem} /> : null}
+          <FormField label="دوره تکرار" id="ticket-repeat-cadence">
+            <Select
+              value={repeat?.cadence ?? 'weekly'}
+              onValueChange={(cadence) =>
+                repeat &&
+                setRepeat({ ...repeat, cadence: cadence as RepeatCadence })
+              }
+            >
+              <SelectTrigger id="ticket-repeat-cadence">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="weekly">هفتگی</SelectItem>
+                <SelectItem value="monthly">ماهانه</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormField>
+          <FormField label="تعداد بلیت جدید" id="ticket-repeat-count">
+            <Input
+              id="ticket-repeat-count"
+              type="number"
+              min={1}
+              max={24}
+              value={repeat?.count ?? 1}
+              onChange={(event) =>
+                repeat &&
+                setRepeat({ ...repeat, count: Number(event.target.value) })
+              }
+            />
+          </FormField>
+          <Button className="mt-4" onClick={applyRepeat}>
+            ساخت بلیت‌های تکرارشونده
+          </Button>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={Boolean(deleteProduct)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteProduct(undefined);
+        }}
+      >
+        <DialogContent dir="rtl" className="start-auto! left-1/2!">
+          <DialogTitle>حذف بلیت</DialogTitle>
+          <DialogDescription>
+            «{deleteProduct?.definition.title}» از فهرست این مرورگر حذف شود؟
+          </DialogDescription>
+          <div className="mt-4 flex gap-2">
+            <Button variant="destructive" onClick={removeProduct}>
+              حذف بلیت
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteProduct(undefined)}
+            >
+              انصراف
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
         open={Boolean(statusChange)}
         onOpenChange={(open) => {
           if (!open) setStatusChange(null);
         }}
       >
         <DialogContent dir="rtl" className="start-auto! left-1/2!">
-          <DialogTitle>تأیید تغییر وضعیت نمایشی</DialogTitle>
+          <DialogTitle>تغییر وضعیت بلیت</DialogTitle>
           <DialogDescription>
-            فعال‌سازی به همه مراجع معتبر و نرخ دارای اعتبار نیاز دارد. توقف فروش
-            تخصیص‌ها را آزاد نمی‌کند. لغو بلیت تخصیص‌یافته مسدود است.
+            فعال‌سازی به مراجع معتبر، ظرفیت مثبت و نرخ معتبر نیاز دارد.
           </DialogDescription>
           {problem ? <Alert tone="error" title={problem} /> : null}
           <FormField label="دلیل تغییر وضعیت" id="ticket-status-reason">
@@ -775,8 +803,7 @@ export function TicketWorkspace() {
             />
           </FormField>
           <Button className="mt-4" onClick={applyStatus}>
-            اعمال {statusChange ? statusLabels[statusChange.status] : ''} فقط در
-            پیش‌نمایش
+            اعمال {statusChange ? statusLabels[statusChange.status] : ''}
           </Button>
         </DialogContent>
       </Dialog>
