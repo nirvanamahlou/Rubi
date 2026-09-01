@@ -1,5 +1,12 @@
 # وضعیت پروژه
 
+## LEGAL-ENTITY-BRAND-LOGO-001 — لوگوی پویا برای شرکت فعال — آماده بررسی
+
+- `PC-B` روی Branch مستقل `codex/pc-b-jahan-bastan-logo`، نمایش برند App Shell را به شرکت فعال متصل می‌کند تا با انتخاب «جهان باستان»، لوگوی افقی ارسالی جای برند نیایش سیر نمایش داده شود.
+- این Slice فقط Web UI، Asset و تست هدفمند را دربر می‌گیرد و هیچ تغییر Database، Migration، Seed، Backend، Contract، Dependency/Lockfile، Permission یا داده کاربر ندارد.
+- پیاده‌سازی تکمیل شد: Brand داخل Provider، تغییر Context را بلافاصله دریافت می‌کند؛ لوگو، نام و متن جایگزین برای جهان باستان پویا هستند و نیایش سیر بدون تغییر باقی می‌ماند. فایل خروجی با تصویر ورودی SHA-256 یکسان دارد.
+- هر ۵۵۲ تست Web، lint، typecheck، Production Build با ۳۴ Route و Smoke لوکال API/Web/Asset موفق‌اند. سرور Web روی پورت ۳۱۰۰ و API روی پورت ۴۰۰۰ فعال است؛ قفل‌های این کار آزاد شدند.
+
 ## CI-001 — CI مشترک PC-A و PC-B — آماده بررسی
 
 - `PC-B` روی Branch و Worktree مستقل `codex/pc-b-ci-foundation` یک GitHub Actions
