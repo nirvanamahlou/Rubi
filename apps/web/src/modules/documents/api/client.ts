@@ -9,6 +9,7 @@ import type {
 } from '@rubi/contracts';
 
 import { getPublicApiBaseUrl } from '../../../lib/environment';
+import { refreshAuthenticatedSession } from '../../../lib/auth-session';
 
 export class DocumentsApiError extends Error {
   constructor(
@@ -18,25 +19,6 @@ export class DocumentsApiError extends Error {
   ) {
     super(message);
   }
-}
-
-let refreshInFlight: Promise<LoginResponse | null> | null = null;
-
-async function refreshAccess(baseUrl: string) {
-  refreshInFlight ??= fetch(`${baseUrl}/iam/auth/refresh`, {
-    method: 'POST',
-    credentials: 'include',
-    cache: 'no-store',
-    headers: { accept: 'application/json' },
-  })
-    .then(async (response) =>
-      response.ok ? ((await response.json()) as LoginResponse) : null,
-    )
-    .catch(() => null)
-    .finally(() => {
-      refreshInFlight = null;
-    });
-  return refreshInFlight;
 }
 
 async function request<T>(
@@ -55,7 +37,7 @@ async function request<T>(
   if (
     response.status === 401 &&
     !retriedAfterRefresh &&
-    (await refreshAccess(baseUrl))
+    (await refreshAuthenticatedSession(baseUrl))
   )
     return request<T>(path, init, true);
   if (!response.ok) {
@@ -99,7 +81,7 @@ async function requestFile(
   if (
     response.status === 401 &&
     !retriedAfterRefresh &&
-    (await refreshAccess(baseUrl))
+    (await refreshAuthenticatedSession(baseUrl))
   ) {
     return requestFile(path, sensitiveReason, signal, true);
   }
@@ -161,7 +143,7 @@ export const documentsApi = {
     const baseUrl = getPublicApiBaseUrl();
     if (!baseUrl)
       throw new DocumentsApiError('نشانی API پیکربندی نشده است.', 0);
-    const session = await refreshAccess(baseUrl);
+    const session = await refreshAuthenticatedSession(baseUrl);
     if (!session?.user)
       throw new DocumentsApiError('دریافت اطلاعات کاربر ناموفق بود.', 0);
     return session.user;

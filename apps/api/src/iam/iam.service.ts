@@ -33,6 +33,7 @@ import type { CreateUserDto } from './dto/create-user.dto';
 import type { CreateRoleDto } from './dto/create-role.dto';
 import type { UpdateUserAccessDto } from './dto/update-user-access.dto';
 import { assertStrongPassword } from './password-policy';
+import { classifyRefreshFailure } from './refresh-token-policy';
 import type { RequestMetadata } from './iam.types';
 
 interface AccessClaims {
@@ -147,53 +148,56 @@ export class IamService {
       include: { user: { include: this.userAccessInclude() } },
     });
     if (!session) throw new UnauthorizedException('نشست معتبر نیست.');
+    const now = new Date();
     const supplied = Buffer.from(this.tokenHash(secret), 'hex');
     const stored = Buffer.from(session.refreshTokenHash, 'hex');
     const hashMatches =
       supplied.length === stored.length && timingSafeEqual(supplied, stored);
-    if (session.status !== SessionStatus.ACTIVE || !hashMatches) {
-      await this.revokeFamily(session.familyId, 'refresh-token-reuse');
-      await this.audit(
-        session.userId,
-        'auth.refresh.reuse',
-        'Session',
-        session.id,
-        AuditOutcome.FAILURE,
-        metadata,
-      );
-      throw new UnauthorizedException('نشست معتبر نیست.');
-    }
-    if (
-      session.expiresAt <= new Date() ||
-      session.user.status !== UserStatus.ACTIVE
-    ) {
+    if (session.status !== SessionStatus.ACTIVE || !hashMatches)
+      await this.rejectRefresh(session, hashMatches, metadata, now);
+    if (session.expiresAt <= now || session.user.status !== UserStatus.ACTIVE) {
       await this.revokeFamily(session.familyId, 'expired-or-disabled');
       throw new UnauthorizedException('نشست منقضی شده است.');
     }
     const nextId = randomUUID();
     const nextSecret = randomBytes(48).toString('base64url');
-    const expiresAt = new Date(Date.now() + REFRESH_TTL_DAYS * 86_400_000);
-    await this.database.client.$transaction([
-      this.database.client.session.update({
+    const expiresAt = new Date(now.getTime() + REFRESH_TTL_DAYS * 86_400_000);
+    const rotated = await this.database.client.$transaction(
+      async (transaction) => {
+        const claimed = await transaction.session.updateMany({
+          where: {
+            id: session.id,
+            status: SessionStatus.ACTIVE,
+            refreshTokenHash: session.refreshTokenHash,
+          },
+          data: {
+            status: SessionStatus.ROTATED,
+            revokedAt: now,
+            revokedReason: 'rotated',
+            lastUsedAt: now,
+          },
+        });
+        if (claimed.count !== 1) return false;
+        await transaction.session.create({
+          data: {
+            id: nextId,
+            familyId: session.familyId,
+            userId: session.userId,
+            refreshTokenHash: this.tokenHash(nextSecret),
+            expiresAt,
+            ...metadata,
+          },
+        });
+        return true;
+      },
+    );
+    if (!rotated) {
+      const current = await this.database.client.session.findUnique({
         where: { id: session.id },
-        data: {
-          status: SessionStatus.ROTATED,
-          revokedAt: new Date(),
-          revokedReason: 'rotated',
-          lastUsedAt: new Date(),
-        },
-      }),
-      this.database.client.session.create({
-        data: {
-          id: nextId,
-          familyId: session.familyId,
-          userId: session.userId,
-          refreshTokenHash: this.tokenHash(nextSecret),
-          expiresAt,
-          ...metadata,
-        },
-      }),
-    ]);
+      });
+      if (!current) throw new UnauthorizedException('نشست معتبر نیست.');
+      await this.rejectRefresh(current, hashMatches, metadata, new Date());
+    }
     return {
       accessToken: await this.issueAccessToken(session.userId, nextId),
       refreshToken: `${nextId}.${nextSecret}`,
@@ -514,33 +518,30 @@ export class IamService {
     password: string,
     displayName: string,
   ): Promise<string> {
-    assertStrongPassword(password);
     const username = usernameInput.trim().toLowerCase();
     const email = emailInput?.trim().toLowerCase() || null;
-    const [role, branch] = await Promise.all([
+    const [role, branch, existingUser] = await Promise.all([
       this.database.client.role.findUniqueOrThrow({
         where: { code: 'administrator' },
       }),
       this.database.client.branch.findUniqueOrThrow({ where: { code: 'HQ' } }),
+      this.database.client.user.findUnique({ where: { username } }),
     ]);
-    const passwordHash = await hash(password, {
-      type: 2,
-      memoryCost: 65_536,
-      timeCost: 3,
-      parallelism: 1,
-    });
-    const user = await this.database.client.user.upsert({
-      where: { username },
-      create: { username, email, displayName, passwordHash },
-      update: {
-        email,
-        displayName,
-        passwordHash,
-        status: UserStatus.ACTIVE,
-        failedLoginAttempts: 0,
-        lockedUntil: null,
-      },
-    });
+    let user = existingUser;
+    if (!user) {
+      assertStrongPassword(password);
+      const passwordHash = await hash(password, {
+        type: 2,
+        memoryCost: 65_536,
+        timeCost: 3,
+        parallelism: 1,
+      });
+      user = await this.database.client.user.upsert({
+        where: { username },
+        create: { username, email, displayName, passwordHash },
+        update: {},
+      });
+    }
     await this.database.client.userRole.upsert({
       where: { userId_roleId: { userId: user.id, roleId: role.id } },
       create: { userId: user.id, roleId: role.id },
@@ -558,8 +559,51 @@ export class IamService {
       user.id,
       AuditOutcome.SUCCESS,
       {},
+      { result: existingUser ? 'existing-user-preserved' : 'created' },
     );
     return user.id;
+  }
+
+  private async rejectRefresh(
+    session: {
+      familyId: string;
+      id: string;
+      revokedAt: Date | null;
+      revokedReason: string | null;
+      status: SessionStatus;
+      userId: string;
+    },
+    hashMatches: boolean,
+    metadata: RequestMetadata,
+    now: Date,
+  ): Promise<never> {
+    if (
+      classifyRefreshFailure(session, hashMatches, now) === 'CONCURRENT_REFRESH'
+    ) {
+      await this.audit(
+        session.userId,
+        'auth.refresh.concurrent',
+        'Session',
+        session.id,
+        AuditOutcome.FAILURE,
+        metadata,
+        { reason: 'concurrent-browser-refresh' },
+      );
+      throw new ConflictException({
+        code: 'AUTH_REFRESH_CONCURRENT',
+        message: 'نشست در حال تازه‌سازی است.',
+      });
+    }
+    await this.revokeFamily(session.familyId, 'refresh-token-reuse');
+    await this.audit(
+      session.userId,
+      'auth.refresh.reuse',
+      'Session',
+      session.id,
+      AuditOutcome.FAILURE,
+      metadata,
+    );
+    throw new UnauthorizedException('نشست معتبر نیست.');
   }
 
   private issueAccessToken(userId: string, sessionId: string) {

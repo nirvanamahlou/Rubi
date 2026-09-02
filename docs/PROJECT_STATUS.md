@@ -1,5 +1,21 @@
 # وضعیت پروژه
 
+## IAM-003 — پایداری ورود و نشست چندتب — آماده بررسی
+
+- `PC-B` با درخواست صریح مالک روی `codex/pc-b-iam-login-stability` و Draft PR #68، Hotfix
+  محدود IAM را از آخرین `origin/develop` پیاده کرد. اجرای مجدد Bootstrap دیگر رمز، وضعیت یا شمارنده
+  ورود کاربر موجود را بازنویسی نمی‌کند و فقط اتصال idempotent نقش مدیر/شعبه را تضمین می‌کند.
+- Rotation نشست اکنون با claim اتمیک انجام می‌شود. Token منطبق که حداکثر پنج ثانیه قبل
+  توسط تب دیگر Rotate شده، پاسخ conflict قابل‌بازیابی می‌گیرد و خانواده Session را revoke
+  نمی‌کند؛ Token نامنطبق یا reuse خارج از grace همچنان fail-closed است. Customers و
+  Documents از helper و Web Lock مشترک استفاده می‌کنند.
+- صفحه Login فقط پاسخ 401 را «نام کاربری یا رمز نادرست» نشان می‌دهد؛ Validation، محدودیت
+  تلاش، خطای سرور و قطع ارتباط پیام‌های مستقل دارند.
+- ۷۱۷ تست API و ۵۴۴ تست Web، lint، typecheck و Build کامل API/Web موفق‌اند. نسخه جدید
+  روی API4000/Web3100 فعال است؛ Health/Login برابر ۲۰۰ و Validation خالی برابر ۴۰۰ است.
+  حساب `nirvana` فعال و قفل‌نشده و زمان تغییر رمز دست‌نخورده است. جزئیات:
+  `docs/tasks/IAM-003-LOGIN-STABILITY.md`.
+
 ## DOCUMENTS-003B — پیش‌نمایش امن تصویر — آماده بررسی
 
 - `PC-B` روی شاخه فرزند `codex/pc-b-documents-image-preview` و Draft PR #67 پیش‌نمایش

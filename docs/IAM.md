@@ -45,6 +45,8 @@ password یا token خامی در metadata ثبت نمی‌شود.
    فقط در Environment تنظیم کنید.
 3. `pnpm --filter @rubi/api iam:bootstrap-admin` را یک‌بار اجرا و بلافاصله مقادیر bootstrap
    را از Environment حذف کنید. فرمان idempotent است و هیچ رمز پیش‌فرضی در Git ندارد.
+   اجرای دوباره برای نام کاربری موجود، رمز، وضعیت و شمارنده خطای ورود را تغییر نمی‌دهد؛
+   تغییر رمز فقط باید از جریان صریح مدیریت کاربر انجام شود.
 
 ## Handoff به PC-B
 

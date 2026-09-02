@@ -1,5 +1,17 @@
 # Work Assignments
 
+## IAM-003-LOGIN-STABILITY — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-08-31: خطای تکراری «رمز صحیح نیست» پس از تغییر/راه‌اندازی مجدد به‌صورت دائمی برطرف شود. `COMPUTER_ID=PC-B`.
+- Branch: `codex/pc-b-iam-login-stability` از آخرین `origin/develop`؛ Draft PR #68 به `develop`. این اصلاح مستقیم روی `develop` یا `main` انجام نمی‌شود.
+- مالکیت نهایی IAM برای PC-A محفوظ است؛ قفل‌های IAM-001/IAM-002 آزاد شده‌اند و این کار یک استثنای محدود و صریح PC-B برای پایداری Login است.
+- محدوده رزروشده: Bootstrap داخلی مدیر و Refresh نشست در `apps/api/src/iam/**`، helper مشترک Refresh و Login UI در `apps/web/src/**`، تست‌های هدفمند و `docs/tasks/IAM-003-LOGIN-STABILITY.md`؛ فقط ورودی‌های همین Work Item در اسناد مرکزی.
+- بدون Prisma Schema/Migration/Seed، بدون تغییر قرارداد عمومی یا Permission، بدون Dependency/Lockfile و بدون بازنشانی حساب/رمز/Session یا تغییر داده کاربردی در زمان پیاده‌سازی.
+- معیار پذیرش: اجرای مجدد Bootstrap رمز کاربر موجود را تغییر ندهد؛ Refresh هم‌زمان تب‌ها خانواده Session را به‌اشتباه revoke نکند؛ Login فقط پاسخ 401 را خطای نام کاربری/رمز بنامد و خطاهای اعتبارسنجی/سرور/ارتباط پیام مستقل داشته باشند؛ تست، lint، typecheck، build و Smoke لوکال موفق باشند.
+- نتیجه: Bootstrap برای کاربر موجود Credential/Status را حفظ و فقط نقش مدیر و شعبه را idempotent تضمین می‌کند. Refresh با claim اتمیک، grace پنج‌ثانیه‌ای فقط برای Token منطبقِ تازه‌چرخیده و Web Lock مشترک چندتب پایدار شد؛ Token نامنطبق یا reuse قدیمی همچنان کل خانواده را fail-closed لغو می‌کند. Login UI فقط 401 را خطای نام کاربری/رمز می‌نامد.
+- Validation: ۷۱۷ تست API با ۶۶ skip اختیاری و ۵۴۴ تست Web موفق؛ lint، typecheck و production build API/Web موفق. API health و Login لوکال ۲۰۰ و Validation ورود ناقص ۴۰۰ است. حساب `nirvana` فعال، قفل‌نشده و `passwordChangedAt` بدون تغییر باقی ماند؛ هیچ Bootstrap/Reset یا تغییر داده کاربردی اجرا نشد.
+- Final lock state: رزرو فایل‌های IAM/Web و اسناد این Hotfix با وضعیت `RELEASED — PC-B/IAM-003-LOGIN-STABILITY ready for review` تحویل می‌شود. Migration/Dependency/Contract lock در تمام کار آزاد و دست‌نخورده بود.
+
 ## DOCUMENTS-003B — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-08-31: تصویر بارگذاری‌شده باید پس از اسکن پاک و احراز مجوز، داخل تب پیش‌نمایش همان سند قابل مشاهده باشد.
@@ -33,6 +45,7 @@
 - Domain boundaries: Documents stores/version-controls final file assets and archive metadata only. Issuance/rendering stays in producer modules; no direct query to another module's tables. Finance/HR content access remains deny-by-default behind separate permissions.
 - Deferred: production antivirus engine/worker, advanced secure sharing, final retention deletion, exports and cross-module producer integrations. They require separate slices and unresolved security/operations decisions.
 - Validation: all 28 migrations on empty PostgreSQL 18, repeatable Seed, full lint/typecheck/build and 1,296 tests passed (66 opt-in PostgreSQL tests remain intentionally skipped in the ordinary suite). Authenticated browser smoke covered upload, fail-closed download, Persian/Gregorian date preservation, role isolation for Archive/Sales/Finance/HR and desktop/mobile layout. Synthetic DB/container, file, keys and ignored environment files were removed after validation.
+
 ## MASTER-003-FILTER-ACTIONS — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-08-31: کنترل‌های «پاک‌کردن» و «تازه‌سازی» در تمام فیلترهای اطلاعات پایه به دکمه‌های دارای Border و پس‌زمینه تبدیل و در ردیف پایینیِ سمت چپ سکشن فیلتر یکدست شوند.
