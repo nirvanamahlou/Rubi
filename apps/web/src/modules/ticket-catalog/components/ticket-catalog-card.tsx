@@ -58,6 +58,8 @@ export function TicketCatalogCard({
   onStatus,
 }: TicketCatalogCardProps) {
   const segment = product.definition.segments[0]!;
+  const lastSegment = product.definition.segments.at(-1)!;
+  const isCombined = product.definition.segments.length > 1;
   const display = product.definition.display;
   const TransportIcon = transportIcons[product.definition.transport];
   const operatorKind =
@@ -67,7 +69,11 @@ export function TicketCatalogCard({
         ? 'railCompany'
         : 'busCompany';
   const powerStatus: CatalogStatus | null =
-    product.status === 'active' ? 'paused' : null;
+    product.status === 'active'
+      ? 'paused'
+      : product.status === 'paused' || product.status === 'draft'
+        ? 'active'
+        : null;
 
   return (
     <Card
@@ -100,6 +106,12 @@ export function TicketCatalogCard({
           <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
             <Badge>{statusLabels[product.status]}</Badge>
             <Badge>{journeyLabels[product.definition.journeyRole]}</Badge>
+            {isCombined ? (
+              <Badge>
+                {product.definition.segments.length.toLocaleString('fa-IR')}{' '}
+                قطعه
+              </Badge>
+            ) : null}
           </div>
         </div>
       </div>
@@ -118,15 +130,15 @@ export function TicketCatalogCard({
           <span>
             {referenceLabel(
               'city',
-              segment.destinationCityId,
+              lastSegment.destinationCityId,
               display?.destination || 'مقصد',
             )}
           </span>
         </div>
         <p className="text-xs text-muted-foreground">
           {product.definition.transport === 'flight'
-            ? `${referenceLabel('airport', segment.originAirportId, segment.originTerminal || 'فرودگاه مبدأ')} ← ${referenceLabel('airport', segment.destinationAirportId, segment.destinationTerminal || 'فرودگاه مقصد')}`
-            : `${segment.originTerminal || 'پایانه مبدأ'} ← ${segment.destinationTerminal || 'پایانه مقصد'}`}
+            ? `${referenceLabel('airport', segment.originAirportId, segment.originTerminal || 'فرودگاه مبدأ')} ← ${referenceLabel('airport', lastSegment.destinationAirportId, lastSegment.destinationTerminal || 'فرودگاه مقصد')}`
+            : `${segment.originTerminal || 'پایانه مبدأ'} ← ${lastSegment.destinationTerminal || 'پایانه مقصد'}`}
         </p>
 
         <div className="grid grid-cols-2 gap-2">
@@ -139,7 +151,7 @@ export function TicketCatalogCard({
           <div className="rounded-lg bg-muted/45 p-2">
             <p className="text-xs text-muted-foreground">رسیدن</p>
             <p className="mt-1 text-sm font-bold">
-              {displayTime(segment.arrivalAt, segment.arrivalZone)}
+              {displayTime(lastSegment.arrivalAt, lastSegment.arrivalZone)}
             </p>
           </div>
         </div>
@@ -159,12 +171,7 @@ export function TicketCatalogCard({
             <Eye className="size-4" aria-hidden />
             مشاهده
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={product.status !== 'draft' && product.status !== 'paused'}
-            onClick={onEdit}
-          >
+          <Button size="sm" variant="outline" onClick={onEdit}>
             <FilePenLine className="size-4" aria-hidden />
             ویرایش
           </Button>
@@ -186,14 +193,36 @@ export function TicketCatalogCard({
             <Button
               size="icon"
               variant="outline"
-              className="text-rose-700 dark:text-rose-300"
-              title="توقف فروش بلیت"
-              aria-label="توقف فروش بلیت"
+              className={
+                powerStatus === 'active'
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300'
+                  : 'border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300'
+              }
+              title={
+                powerStatus === 'active'
+                  ? 'فعال‌کردن دوباره فروش بلیت'
+                  : 'توقف فروش بلیت'
+              }
+              aria-label={
+                powerStatus === 'active'
+                  ? 'فعال‌کردن دوباره فروش بلیت'
+                  : 'توقف فروش بلیت'
+              }
               onClick={() => onStatus(powerStatus)}
             >
               <Power className="size-4" aria-hidden />
             </Button>
-          ) : null}
+          ) : (
+            <Button
+              size="icon"
+              variant="outline"
+              disabled
+              title="فروش این بلیت متوقف است"
+              aria-label="فروش این بلیت متوقف است"
+            >
+              <Power className="size-4" aria-hidden />
+            </Button>
+          )}
         </div>
         <p className="text-xs text-muted-foreground">
           نسخه {product.version.toLocaleString('fa-IR')} • قیمت فروش هنگام فروش

@@ -387,14 +387,22 @@ export function validateProduct(
       /^[A-Za-z0-9][A-Za-z0-9 -]{0,19}$/.test(segment.flightNumber),
       'شماره حرکت معتبر (حداکثر ۲۰ نویسه) لازم است.',
     );
-    validZone(segment.departureZone);
-    validZone(segment.arrivalZone);
-    const departure = utc(segment.departureAt);
-    const arrival = utc(segment.arrivalAt);
+    const hasDeparture = Boolean(segment.departureAt);
+    const hasArrival = Boolean(segment.arrivalAt);
     ensure(
-      arrival > departure,
-      'رسیدن باید بعد از حرکت باشد؛ تاریخ عبور از نیمه‌شب را اصلاح کنید.',
+      hasDeparture === hasArrival,
+      'زمان حرکت و رسیدن باید با هم ثبت یا هر دو خالی باشند.',
     );
+    const departure = hasDeparture ? utc(segment.departureAt) : undefined;
+    const arrival = hasArrival ? utc(segment.arrivalAt) : undefined;
+    if (departure && arrival) {
+      validZone(segment.departureZone);
+      validZone(segment.arrivalZone);
+      ensure(
+        arrival > departure,
+        'رسیدن باید بعد از حرکت باشد؛ تاریخ عبور از نیمه‌شب را اصلاح کنید.',
+      );
+    }
     ensure(
       !segment.originAirportId ||
         !segment.destinationAirportId ||
@@ -402,9 +410,18 @@ export function validateProduct(
       'مبدأ و مقصد نباید یکسان باشند.',
     );
     if (previous) {
+      const previousArrival = previous.arrivalAt
+        ? utc(previous.arrivalAt)
+        : undefined;
       ensure(
-        departure >= utc(previous.arrivalAt),
+        !departure || !previousArrival || departure >= previousArrival,
         'قطعه بعدی پیش از رسیدن قطعه قبلی شروع می‌شود.',
+      );
+      ensure(
+        !previous.destinationCityId ||
+          !segment.originCityId ||
+          previous.destinationCityId === segment.originCityId,
+        'اتصال شهرهای قطعه‌ها نامعتبر است.',
       );
       ensure(
         !previous.destinationAirportId ||
@@ -482,14 +499,22 @@ export function validateProduct(
     input.fare.commission,
   ])
     decimal(amount);
+  const hasFareStart = Boolean(input.fare.validFrom);
+  const hasFareEnd = Boolean(input.fare.validTo);
   ensure(
-    utc(input.fare.validTo) > utc(input.fare.validFrom),
-    'پایان اعتبار نرخ باید بعد از شروع آن باشد.',
+    hasFareStart === hasFareEnd,
+    'شروع و پایان اعتبار نرخ باید با هم ثبت یا هر دو خالی باشند.',
   );
-  ensure(
-    utc(input.fare.validTo) <= utc(input.segments[0]!.departureAt),
-    'اعتبار نرخ خرید نباید پس از حرکت اولین پرواز باشد.',
-  );
+  if (hasFareStart && hasFareEnd) {
+    const validFrom = utc(input.fare.validFrom);
+    const validTo = utc(input.fare.validTo);
+    ensure(validTo > validFrom, 'پایان اعتبار نرخ باید بعد از شروع آن باشد.');
+    const firstDeparture = input.segments[0]!.departureAt;
+    ensure(
+      !firstDeparture || validTo <= utc(firstDeparture),
+      'اعتبار نرخ خرید نباید پس از حرکت اولین پرواز باشد.',
+    );
+  }
 }
 function history(
   version: number,
@@ -533,11 +558,6 @@ export function reviseProduct(
   inventory: Inventory,
 ): Product {
   checkVersion(product.version, expectedVersion);
-  ensure(
-    product.status === 'draft' || product.status === 'paused',
-    'برای ویرایش ابتدا فروش را متوقف کنید.',
-    'TRANSITION',
-  );
   validateProduct(input, resolve);
   ensure(
     inventory.total === product.definition.totalCapacity,
@@ -618,12 +638,7 @@ export function transitionProduct(
   const totals = inventoryTotals(inventory);
   if (status === 'active') {
     validateProduct(product.definition, resolve, true);
-    ensure(
-      totals.total > 0 &&
-        utc(at) >= utc(product.definition.fare.validFrom) &&
-        utc(at) < utc(product.definition.fare.validTo),
-      'ظرفیت مثبت و نرخ معتبر برای فعال‌سازی لازم است.',
-    );
+    ensure(totals.total > 0, 'ظرفیت مثبت برای فعال‌سازی لازم است.');
   }
   if (status === 'cancelled')
     ensure(
