@@ -5,6 +5,7 @@ import { CustomersApiError } from '../api/client';
 import {
   buildCustomerConsentRequest,
   customerListFailureState,
+  customerSensitiveRevealFeedback,
   fetchCustomerConflictSnapshot,
 } from './customer-workspace-state';
 
@@ -21,11 +22,38 @@ describe('Customer Operations workspace boundaries', () => {
   it('opens contacts for either role and offers a call only after audited reveal', () => {
     expect(source).toContain("open('view', record.id, 'contacts')");
     expect(source).toContain('setActiveTab(tab)');
-    expect(source).toContain('نمایش شماره و تماس');
+    expect(source).toContain('مشاهده تماس‌ها');
     expect(source).toContain('نمایش شماره کامل');
     expect(source).toContain('contactCallHref(item, Boolean(revealedDetail))');
     expect(source).toContain('href={callHref}');
     expect(source).toContain('پنهان‌کردن شماره‌ها');
+  });
+  it.each([
+    [new CustomersApiError('unauthorized', 401), 'unauthorized'],
+    [new CustomersApiError('forbidden', 403), 'forbidden'],
+    [
+      new CustomersApiError(
+        'decrypt failed',
+        422,
+        'CUSTOMER_SENSITIVE_DECRYPTION_FAILED',
+      ),
+      'unreadable',
+    ],
+    [new CustomersApiError('server', 500), 'error'],
+    [new TypeError('network failed'), 'error'],
+  ] as const)(
+    'shows an actionable result beside sensitive reveal for %s',
+    (error, kind) => {
+      expect(customerSensitiveRevealFeedback(error).kind).toBe(kind);
+    },
+  );
+  it('keeps reveal feedback beside the button and exposes login only for 401', () => {
+    expect(source).toContain('sensitiveFeedback.message');
+    expect(source).toContain("sensitiveFeedback.kind === 'unauthorized'");
+    expect(source).toContain('href="/login?next=%2Fcustomers"');
+    expect(source).toContain('Backend پاسخ داد، اما شماره کاملی');
+    expect(source).toContain("activeTab === 'contacts'");
+    expect(source).toContain('response.data.contacts.some');
   });
   it.each([
     [new CustomersApiError('unauthorized', 401), 'unauthorized'],
@@ -284,13 +312,28 @@ describe('Customer Operations workspace boundaries', () => {
       source.indexOf('async function exportFilteredCustomers'),
       source.indexOf('async function importCustomers'),
     );
-    expect(exportSource).toContain(
-      "record.maskedPrimaryContact ?? 'بدون تماس'",
-    );
     expect(exportSource).toContain("record.maskedNationalId ?? 'ثبت نشده'");
     expect(exportSource).toContain('کد ملی (ماسک‌شده)');
-    expect(exportSource).toContain('شماره تماس (ماسک‌شده)');
-    expect(source).toContain('همراه با شماره تماس ماسک‌شده ساخته شد');
+    expect(exportSource).not.toContain('شماره تماس (ماسک‌شده)');
+    expect(source).not.toContain('خروجی Excel (ماسک‌شده)');
+    expect(exportSource).toContain(
+      'await customersApi.detail(record.id, exportReason)',
+    );
+    expect(exportSource).toContain("contact.type === 'phone'");
+    expect(exportSource).toContain("'شماره تماس'");
+    expect(exportSource).toContain('دلیل مشاهده در Audit ثبت شد');
+    expect(source).toContain('customer-sensitive-export-reason');
+    expect(source).toContain('aria-label="دلیل خروجی شماره‌های کامل"');
+    expect(source).toContain(
+      '<SelectValue placeholder="دلیل نمایش شماره‌ها" />',
+    );
+    expect(source).not.toContain(
+      '<option value="">دلیل نمایش شماره‌ها</option>',
+    );
+    expect(source).toContain("'خروجی Excel'");
+    expect(source).toContain(
+      'disabled={records.length === 0 || exporting || !exportReason}',
+    );
   });
 
   it('shows twenty people per page with a complete page position and masked mobile number', () => {
