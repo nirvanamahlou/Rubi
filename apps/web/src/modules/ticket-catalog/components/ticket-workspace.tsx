@@ -45,6 +45,7 @@ import {
   initialQuery,
   parseCatalogSnapshot,
   queryProducts,
+  moveDefinitionToDate,
   repeatDefinition,
   replacePreview,
   statusLabels,
@@ -86,6 +87,7 @@ export function TicketWorkspace() {
     product: Product;
     cadence: RepeatCadence;
     count: number;
+    startDate: string;
   }>();
   const [reason, setReason] = useState('');
 
@@ -170,13 +172,6 @@ export function TicketWorkspace() {
           : 'بلیت جدید ذخیره شد.',
     );
   }
-  function openDuplicate(product: Product) {
-    const initial = structuredClone(product.definition);
-    initial.journeyRole = 'one-way';
-    initial.tripGroupId = undefined;
-    setForm({ mode: 'create', initial });
-    setNotice('تاریخ و اطلاعات کپی را تغییر دهید و بلیت جدید را ذخیره کنید.');
-  }
   function applyRepeat() {
     if (!repeat) return;
     try {
@@ -186,14 +181,17 @@ export function TicketWorkspace() {
         repeat.count > 24
       )
         throw new Error('تعداد تکرار باید بین ۱ تا ۲۴ باشد.');
+      const anchored = moveDefinitionToDate(
+        repeat.product.definition,
+        repeat.startDate,
+      );
       const now = new Date().toISOString();
       let updated = products;
-      for (let occurrence = 1; occurrence <= repeat.count; occurrence += 1) {
-        const definition = repeatDefinition(
-          repeat.product.definition,
-          repeat.cadence,
-          occurrence,
-        );
+      for (let occurrence = 0; occurrence < repeat.count; occurrence += 1) {
+        const definition =
+          occurrence === 0
+            ? anchored
+            : repeatDefinition(anchored, repeat.cadence, occurrence);
         const next = createProduct(
           `ticket-${crypto.randomUUID()}`,
           definition,
@@ -453,7 +451,7 @@ export function TicketWorkspace() {
         />
       ) : (
         <>
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {result.rows.map((product) => (
               <TicketCatalogCard
                 key={product.id}
@@ -461,9 +459,13 @@ export function TicketWorkspace() {
                 referenceLabel={referenceLabel}
                 onView={() => setForm({ mode: 'view', product })}
                 onEdit={() => setForm({ mode: 'edit', product })}
-                onDuplicate={() => openDuplicate(product)}
                 onRepeat={() =>
-                  setRepeat({ product, cadence: 'weekly', count: 1 })
+                  setRepeat({
+                    product,
+                    cadence: 'weekly',
+                    count: 1,
+                    startDate: '',
+                  })
                 }
                 onDelete={() => setDeleteProduct(product)}
                 onStatus={(status) => {
@@ -520,7 +522,9 @@ export function TicketWorkspace() {
                 : 'تعریف بلیت جدید'}
           </DialogTitle>
           <DialogDescription>
-            اطلاعات مسیر، زمان، ظرفیت و نرخ خرید را کامل کنید.
+            {form?.mode === 'view'
+              ? 'اطلاعات کامل مسیر، زمان، ظرفیت و نرخ این بلیت را مشاهده کنید.'
+              : 'اطلاعات مسیر، زمان، ظرفیت و نرخ خرید را کامل کنید.'}
           </DialogDescription>
           {form ? (
             <div className="mt-5">
@@ -566,10 +570,23 @@ export function TicketWorkspace() {
         <DialogContent dir="rtl" className="start-auto! left-1/2!">
           <DialogTitle>تکرار هفتگی یا ماهانه بلیت</DialogTitle>
           <DialogDescription>
-            هر تکرار یک بلیت مستقل با همان ساعت، ظرفیت و نرخ خرید و تاریخ‌های
-            جابه‌جا‌شده می‌سازد.
+            تاریخ اولین بلیت جدید را انتخاب کنید؛ تکرارهای بعدی با همان ساعت و
+            ظرفیت از این تاریخ ساخته می‌شوند.
           </DialogDescription>
           {problem ? <Alert tone="error" title={problem} /> : null}
+          <FormField
+            label="تاریخ اولین بلیت جدید"
+            id="ticket-repeat-start-date"
+          >
+            <TicketDatePicker
+              id="ticket-repeat-start-date"
+              value={repeat?.startDate ?? ''}
+              required
+              onChange={(startDate) =>
+                repeat && setRepeat({ ...repeat, startDate })
+              }
+            />
+          </FormField>
           <FormField label="دوره تکرار" id="ticket-repeat-cadence">
             <Select
               value={repeat?.cadence ?? 'weekly'}
@@ -600,7 +617,11 @@ export function TicketWorkspace() {
               }
             />
           </FormField>
-          <Button className="mt-4" onClick={applyRepeat}>
+          <Button
+            className="mt-4"
+            disabled={!repeat?.startDate}
+            onClick={applyRepeat}
+          >
             ساخت بلیت‌های تکرارشونده
           </Button>
         </DialogContent>

@@ -401,6 +401,44 @@ function shiftIso(value: string, cadence: RepeatCadence, count: number) {
   }
   return date.toISOString();
 }
+export function moveDefinitionToDate(
+  source: ProductInput,
+  departureDate: string,
+): ProductInput {
+  if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(departureDate))
+    throw new Error('تاریخ اولین بلیت جدید را انتخاب کنید.');
+  const selectedDay = new Date(departureDate + 'T00:00:00.000Z');
+  if (
+    Number.isNaN(selectedDay.getTime()) ||
+    selectedDay.toISOString().slice(0, 10) !== departureDate
+  )
+    throw new Error('تاریخ اولین بلیت جدید معتبر نیست.');
+  const firstDeparture = new Date(source.segments[0]?.departureAt ?? '');
+  if (Number.isNaN(firstDeparture.getTime()))
+    throw new Error('زمان حرکت بلیت مبدأ معتبر نیست.');
+  const sourceDay = Date.UTC(
+    firstDeparture.getUTCFullYear(),
+    firstDeparture.getUTCMonth(),
+    firstDeparture.getUTCDate(),
+  );
+  const delta = selectedDay.getTime() - sourceDay;
+  const shift = (value: string) =>
+    new Date(Date.parse(value) + delta).toISOString();
+  const next = structuredClone(source);
+  next.tripGroupId = undefined;
+  next.journeyRole = 'one-way';
+  next.segments = next.segments.map((segment) => ({
+    ...segment,
+    departureAt: shift(segment.departureAt),
+    arrivalAt: shift(segment.arrivalAt),
+  }));
+  next.fare = {
+    ...next.fare,
+    validFrom: shift(next.fare.validFrom),
+    validTo: shift(next.fare.validTo),
+  };
+  return next;
+}
 export function repeatDefinition(
   source: ProductInput,
   cadence: RepeatCadence,

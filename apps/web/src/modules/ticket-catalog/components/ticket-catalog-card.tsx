@@ -1,6 +1,5 @@
 import {
   BusFront,
-  Copy,
   Eye,
   FilePenLine,
   MapPin,
@@ -45,7 +44,6 @@ type TicketCatalogCardProps = {
   ) => string;
   onView: () => void;
   onEdit: () => void;
-  onDuplicate: () => void;
   onRepeat: () => void;
   onDelete: () => void;
   onStatus: (status: CatalogStatus) => void;
@@ -56,7 +54,6 @@ export function TicketCatalogCard({
   referenceLabel,
   onView,
   onEdit,
-  onDuplicate,
   onRepeat,
   onDelete,
   onStatus,
@@ -81,11 +78,11 @@ export function TicketCatalogCard({
     <Card
       className={`relative overflow-hidden border-s-4 p-0 transition-shadow hover:shadow-md ${accents[product.definition.transport]}`}
     >
-      <div className="border-b bg-muted/25 p-4">
+      <div className="border-b bg-muted/25 p-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <TransportIcon className="size-6" aria-hidden />
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <TransportIcon className="size-5" aria-hidden />
             </span>
             <div className="min-w-0">
               <p className="truncate font-black">{product.definition.title}</p>
@@ -106,8 +103,8 @@ export function TicketCatalogCard({
         </div>
       </div>
 
-      <div className="space-y-4 p-4">
-        <div className="flex items-center gap-2 text-lg font-black">
+      <div className="space-y-2.5 p-3">
+        <div className="flex items-center gap-2 font-black">
           <MapPin className="size-5 text-primary" aria-hidden />
           <span>
             {referenceLabel(
@@ -131,14 +128,14 @@ export function TicketCatalogCard({
             : `${segment.originTerminal || 'پایانه مبدأ'} ← ${segment.destinationTerminal || 'پایانه مقصد'}`}
         </p>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-muted/45 p-3">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-lg bg-muted/45 p-2">
             <p className="text-xs text-muted-foreground">حرکت</p>
             <p className="mt-1 text-sm font-bold">
               {displayTime(segment.departureAt, segment.departureZone)}
             </p>
           </div>
-          <div className="rounded-xl bg-muted/45 p-3">
+          <div className="rounded-lg bg-muted/45 p-2">
             <p className="text-xs text-muted-foreground">رسیدن</p>
             <p className="mt-1 text-sm font-bold">
               {displayTime(segment.arrivalAt, segment.arrivalZone)}
@@ -146,20 +143,14 @@ export function TicketCatalogCard({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 border-y py-3 text-sm">
+        <div className="flex items-center justify-between gap-3 border-y py-2 text-sm">
           <div>
             <p className="text-xs text-muted-foreground">ظرفیت</p>
-            <p className="mt-1 font-bold">
+            <p className="mt-0.5 font-bold">
               {product.definition.totalCapacity.toLocaleString('fa-IR')} نفر
             </p>
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground">نرخ خرید</p>
-            <p className="mt-1 font-bold" dir="ltr">
-              {product.fares.at(-1)?.purchase}{' '}
-              {product.fares.at(-1)?.currencyCode || '—'}
-            </p>
-          </div>
+          <Badge>{supplyLabels[product.definition.supplyType]}</Badge>
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
@@ -170,17 +161,11 @@ export function TicketCatalogCard({
           <Button
             size="sm"
             variant="outline"
-            disabled={
-              product.status !== 'draft' && product.status !== 'paused'
-            }
+            disabled={product.status !== 'draft' && product.status !== 'paused'}
             onClick={onEdit}
           >
             <FilePenLine className="size-4" aria-hidden />
             ویرایش
-          </Button>
-          <Button size="sm" variant="outline" onClick={onDuplicate}>
-            <Copy className="size-4" aria-hidden />
-            کپی
           </Button>
           <Button size="sm" variant="outline" onClick={onRepeat}>
             <RefreshCw className="size-4" aria-hidden />
@@ -201,9 +186,7 @@ export function TicketCatalogCard({
               size="icon"
               variant="outline"
               className="text-rose-700 dark:text-rose-300"
-              title={
-                powerStatus === 'paused' ? 'توقف فروش بلیت' : 'لغو بلیت'
-              }
+              title={powerStatus === 'paused' ? 'توقف فروش بلیت' : 'لغو بلیت'}
               aria-label={
                 powerStatus === 'paused' ? 'توقف فروش بلیت' : 'لغو بلیت'
               }
@@ -226,9 +209,8 @@ export function TicketCatalogCard({
             ))}
         </div>
         <p className="text-xs text-muted-foreground">
-          {supplyLabels[product.definition.supplyType]} • نسخه{' '}
-          {product.version.toLocaleString('fa-IR')} • قیمت فروش هنگام فروش تعیین
-          می‌شود
+          نسخه {product.version.toLocaleString('fa-IR')} • قیمت فروش هنگام فروش
+          تعیین می‌شود
         </p>
       </div>
     </Card>

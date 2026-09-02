@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   catalogStorageKey,
   initialQuery,
+  moveDefinitionToDate,
   parseCatalogSnapshot,
   previewSamples,
   queryProducts,
@@ -67,6 +68,21 @@ describe('Ticket catalog browser collection and query', () => {
         to: '2026-09-08',
       }).total,
     ).toBe(1);
+  });
+  it('anchors the first repeated ticket on the selected date and keeps times', () => {
+    const source = samples[0]!.definition;
+    const moved = moveDefinitionToDate(source, '2026-10-05');
+    expect(moved.segments[0]!.departureAt.slice(0, 10)).toBe('2026-10-05');
+    expect(moved.segments[0]!.departureAt.slice(11)).toBe(
+      source.segments[0]!.departureAt.slice(11),
+    );
+    expect(
+      Date.parse(moved.segments[0]!.arrivalAt) -
+        Date.parse(moved.segments[0]!.departureAt),
+    ).toBe(
+      Date.parse(source.segments[0]!.arrivalAt) -
+        Date.parse(source.segments[0]!.departureAt),
+    );
   });
   it('shifts all schedule and fare dates for weekly and monthly repeats', () => {
     const source = samples[0]!.definition;
