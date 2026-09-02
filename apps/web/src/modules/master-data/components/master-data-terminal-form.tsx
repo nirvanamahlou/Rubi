@@ -27,6 +27,7 @@ import {
 import { MasterDataClearableField } from './master-data-clearable-field';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
 import { MasterDataReferenceSelector } from './master-data-reference-selector';
+import { MasterDataNumberInput } from './master-data-number-input';
 
 export function MasterDataTerminalForm({
   record,
@@ -156,6 +157,18 @@ export function MasterDataTerminalForm({
               />
             </FormField>
           ))}
+          <FormField
+            id="terminal-displayOrder"
+            label="ترتیب نمایش"
+            {...(errors.displayOrder ? { error: errors.displayOrder } : {})}
+          >
+            <MasterDataNumberInput
+              id="terminal-displayOrder"
+              disabled={disabled}
+              value={values.displayOrder ?? '0'}
+              onChange={(value) => change('displayOrder', value)}
+            />
+          </FormField>
           <div className="sm:col-span-2">
             <FormField
               id="terminal-airportId"

@@ -5,22 +5,30 @@ import type {
 } from '@rubi/contracts';
 
 import { getMasterDataDefinition } from './catalog';
+import { getMasterDataFormFields } from './form-fields';
 import { validateMasterDataDraft } from './validation';
 
 export function currencyFormValues(
   record?: MasterDataRecord,
 ): Record<string, string> {
   return Object.fromEntries(
-    getMasterDataDefinition('currencies').fields.map(({ key }) => [
-      key,
-      key === 'code'
-        ? (record?.code ?? '')
-        : key === 'name'
-          ? (record?.name ?? '')
-          : String(
-              record?.attributes[key] ?? (key === 'decimalDigits' ? '2' : ''),
-            ),
-    ]),
+    getMasterDataFormFields(getMasterDataDefinition('currencies')).map(
+      ({ key }) => [
+        key,
+        key === 'code'
+          ? (record?.code ?? '')
+          : key === 'name'
+            ? (record?.name ?? '')
+            : String(
+                record?.attributes[key] ??
+                  (key === 'decimalDigits'
+                    ? '2'
+                    : key === 'displayOrder'
+                      ? '0'
+                      : ''),
+              ),
+      ],
+    ),
   );
 }
 
@@ -29,7 +37,9 @@ export function validateCurrencyForm(
   status?: string,
 ) {
   const allowed = new Set(
-    getMasterDataDefinition('currencies').fields.map(({ key }) => key),
+    getMasterDataFormFields(getMasterDataDefinition('currencies')).map(
+      ({ key }) => key,
+    ),
   );
   const result = validateMasterDataDraft(
     'currencies',
@@ -76,36 +86,16 @@ export function validateCurrencyQuote(
     )
       errors[key] = 'نرخ مثبت با حداکثر ۱۴ رقم صحیح و ۱۰ رقم اعشار وارد کنید.';
   const source = values.source?.trim() ?? '';
-  if (!source || source.length > 160)
-    errors.source = 'منبع نرخ الزامی و حداکثر ۱۶۰ نویسه است.';
-  const dates: Record<string, string> = {};
-  for (const key of ['observedAt', 'validFrom', 'validTo']) {
-    const value = values[key];
-    if (!value) {
-      if (key === 'observedAt') errors[key] = 'تاریخ و ساعت الزامی است.';
-      continue;
-    }
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) errors[key] = 'تاریخ و ساعت معتبر نیست.';
-    else dates[key] = date.toISOString();
-  }
-  if (
-    dates.validTo &&
-    dates.validTo <= (dates.validFrom ?? dates.observedAt ?? '')
-  )
-    errors.validTo = 'پایان اعتبار باید پس از شروع اعتبار باشد.';
+  if (source.length > 160) errors.source = 'منبع نرخ حداکثر ۱۶۰ نویسه است.';
   const correctionReason = values.correctionReason?.trim();
   if (correctionReason && correctionReason.length > 500)
     errors.correctionReason = 'حداکثر ۵۰۰ نویسه مجاز است.';
   const input: MasterCurrencyRateQuoteRequest = {
     fromCurrencyCode,
     toCurrencyCode,
-    source,
-    observedAt: dates.observedAt ?? '',
+    ...(source ? { source } : {}),
     ...(buyRate ? { buyRate } : {}),
     ...(sellRate ? { sellRate } : {}),
-    ...(dates.validFrom ? { validFrom: dates.validFrom } : {}),
-    ...(dates.validTo ? { validTo: dates.validTo } : {}),
     ...(correctionReason ? { correctionReason } : {}),
   };
   return { success: !Object.keys(errors).length, errors, input };

@@ -29,11 +29,10 @@ const configs: Partial<
 > = {
   regions: {
     countryId: { target: 'countries', payload: 'id' },
-    parentRegionId: { target: 'regions', payload: 'id', optional: true },
   },
   cities: {
     countryId: { target: 'countries', payload: 'id' },
-    regionId: { target: 'regions', payload: 'id', optional: true },
+    regionId: { target: 'regions', payload: 'id', scopeField: 'countryId' },
   },
   airports: {
     countryId: { target: 'countries', payload: 'id' },
@@ -69,11 +68,6 @@ const configs: Partial<
     currencyId: { target: 'currencies', payload: 'id' },
   },
   airlines: {
-    organizationId: {
-      target: 'organizations',
-      payload: 'id',
-      requiredRole: 'AIRLINE',
-    },
     countryId: { target: 'countries', payload: 'id', optional: true },
   },
   'baggage-rules': {
@@ -102,7 +96,6 @@ const configs: Partial<
       requiredRole: 'BUS_PROVIDER',
       optional: true,
     },
-    supplierId: { target: 'suppliers', payload: 'id', optional: true },
     countryId: { target: 'countries', payload: 'id' },
   },
   'bus-types': {
@@ -114,29 +107,66 @@ const configs: Partial<
     },
   },
   'train-types': {
-    facilityIds: { target: 'facilities', payload: 'id', multiple: true, optional: true },
+    facilityIds: {
+      target: 'facilities',
+      payload: 'id',
+      multiple: true,
+      optional: true,
+    },
   },
   brokers: {
     organizationId: {
       target: 'organizations',
       payload: 'id',
       requiredRole: 'BROKER',
+      optional: true,
     },
     countryId: { target: 'countries', payload: 'id', optional: true },
-    cityId: { target: 'cities', payload: 'id', optional: true, scopeField: 'countryId' },
-    primaryContactId: { target: 'organization-contacts', payload: 'id', optional: true, scopeField: 'organizationId' },
-    serviceCodes: { target: 'travel-services', payload: 'code', multiple: true, optional: true },
+    cityId: {
+      target: 'cities',
+      payload: 'id',
+      optional: true,
+      scopeField: 'countryId',
+    },
+    primaryContactId: {
+      target: 'organization-contacts',
+      payload: 'id',
+      optional: true,
+      scopeField: 'organizationId',
+    },
+    serviceCodes: {
+      target: 'travel-services',
+      payload: 'code',
+      multiple: true,
+      optional: true,
+    },
   },
   suppliers: {
     organizationId: {
       target: 'organizations',
       payload: 'id',
       requiredRole: 'SUPPLIER',
+      optional: true,
     },
     countryId: { target: 'countries', payload: 'id', optional: true },
-    cityId: { target: 'cities', payload: 'id', optional: true, scopeField: 'countryId' },
-    primaryContactId: { target: 'organization-contacts', payload: 'id', optional: true, scopeField: 'organizationId' },
-    serviceCodes: { target: 'travel-services', payload: 'code', multiple: true, optional: true },
+    cityId: {
+      target: 'cities',
+      payload: 'id',
+      optional: true,
+      scopeField: 'countryId',
+    },
+    primaryContactId: {
+      target: 'organization-contacts',
+      payload: 'id',
+      optional: true,
+      scopeField: 'organizationId',
+    },
+    serviceCodes: {
+      target: 'travel-services',
+      payload: 'code',
+      multiple: true,
+      optional: true,
+    },
   },
   'organization-contacts': {
     organizationId: { target: 'organizations', payload: 'id' },
@@ -150,7 +180,6 @@ const configs: Partial<
   },
   'visa-services': {
     countryId: { target: 'countries', payload: 'id' },
-    supplierId: { target: 'suppliers', payload: 'id', optional: true },
   },
   hotels: {
     cityId: { target: 'cities', payload: 'id' },

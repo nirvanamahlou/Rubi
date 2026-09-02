@@ -9,7 +9,6 @@ import { ArrowLeftRight, Coins, Save } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
 import {
   FormField,
   Input,
@@ -22,6 +21,7 @@ import {
 import { Alert, Badge, Card } from '@/components/ui/surfaces';
 import { masterDataApi } from '../api/client';
 import { getMasterDataDefinition } from '../model/catalog';
+import { getMasterDataFormFields } from '../model/form-fields';
 import {
   currencyFormValues,
   persistCurrencyForm,
@@ -31,6 +31,7 @@ import {
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
 import { MasterDataReferenceSelector } from './master-data-reference-selector';
 import { MasterDataClearableField } from './master-data-clearable-field';
+import { MasterDataNumberInput } from './master-data-number-input';
 
 const currencyDefinition = getMasterDataDefinition('currencies');
 
@@ -142,7 +143,7 @@ export function MasterDataCurrencyForm({
             className="space-y-5"
           >
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {currencyDefinition.fields.map((field) => {
+              {getMasterDataFormFields(currencyDefinition).map((field) => {
                 const id = `currency-${field.key}`;
                 return (
                   <FormField
@@ -152,31 +153,41 @@ export function MasterDataCurrencyForm({
                     {...(field.required ? { required: true } : {})}
                     {...(errors[field.key] ? { error: errors[field.key] } : {})}
                   >
-                    <Input
-                      id={id}
-                      disabled={saving}
-                      value={values[field.key] ?? ''}
-                      aria-invalid={Boolean(errors[field.key])}
-                      dir={
-                        ['code', 'englishName'].includes(field.key)
-                          ? 'ltr'
-                          : undefined
-                      }
-                      inputMode={
-                        field.type === 'number' ? 'numeric' : undefined
-                      }
-                      type={field.type === 'number' ? 'number' : 'text'}
-                      {...(field.key === 'decimalDigits'
-                        ? { min: 0, max: 6, step: 1 }
-                        : {})}
-                      placeholder={field.placeholder}
-                      onChange={(event) =>
-                        setValues((current) => ({
-                          ...current,
-                          [field.key]: event.target.value,
-                        }))
-                      }
-                    />
+                    {field.type === 'number' ? (
+                      <MasterDataNumberInput
+                        id={id}
+                        disabled={saving}
+                        value={values[field.key] ?? ''}
+                        aria-invalid={Boolean(errors[field.key])}
+                        placeholder={field.placeholder}
+                        onChange={(value) =>
+                          setValues((current) => ({
+                            ...current,
+                            [field.key]: value,
+                          }))
+                        }
+                      />
+                    ) : (
+                      <Input
+                        id={id}
+                        disabled={saving}
+                        value={values[field.key] ?? ''}
+                        aria-invalid={Boolean(errors[field.key])}
+                        dir={
+                          ['code', 'englishName'].includes(field.key)
+                            ? 'ltr'
+                            : undefined
+                        }
+                        type="text"
+                        placeholder={field.placeholder}
+                        onChange={(event) =>
+                          setValues((current) => ({
+                            ...current,
+                            [field.key]: event.target.value,
+                          }))
+                        }
+                      />
+                    )}
                   </FormField>
                 );
               })}
@@ -314,7 +325,6 @@ export function MasterDataCurrencyForm({
                         ? 'نرخ فروش'
                         : 'منبع'
                   }
-                  {...(key === 'source' ? { required: true } : {})}
                   {...(rateErrors[key] ? { error: rateErrors[key] } : {})}
                 >
                   <Input
@@ -330,49 +340,6 @@ export function MasterDataCurrencyForm({
                         } as const))}
                     onChange={(event) => updateRate(key, event.target.value)}
                   />
-                </FormField>
-              ))}
-              {(['observedAt', 'validFrom', 'validTo'] as const).map((key) => (
-                <FormField
-                  id={`quote-${key}`}
-                  key={key}
-                  label={
-                    key === 'observedAt'
-                      ? 'تاریخ و ساعت'
-                      : key === 'validFrom'
-                        ? 'شروع اعتبار (اختیاری)'
-                        : 'پایان اعتبار (اختیاری)'
-                  }
-                  {...(key === 'observedAt'
-                    ? {
-                        required: true,
-                        description: 'انتخاب به وقت محلی؛ ذخیره با UTC.',
-                      }
-                    : {})}
-                  {...(rateErrors[key] ? { error: rateErrors[key] } : {})}
-                >
-                  <MasterDataClearableField
-                    controlId={`quote-${key}`}
-                    label={
-                      key === 'observedAt'
-                        ? 'تاریخ و ساعت'
-                        : key === 'validFrom'
-                          ? 'شروع اعتبار'
-                          : 'پایان اعتبار'
-                    }
-                    value={rateValues[key] ?? ''}
-                    onClear={() => updateRate(key, '')}
-                    disabled={saving || !saved || saved.status !== 'active'}
-                  >
-                    <DatePicker
-                      id={`quote-${key}`}
-                      includeTime
-                      disabled={saving || !saved || saved.status !== 'active'}
-                      aria-invalid={Boolean(rateErrors[key])}
-                      value={rateValues[key] ?? ''}
-                      onChange={(value) => updateRate(key, value)}
-                    />
-                  </MasterDataClearableField>
                 </FormField>
               ))}
               <FormField id="quote-maker" label="ثبت‌کننده">

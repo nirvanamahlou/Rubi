@@ -6,8 +6,9 @@ import type {
 
 // Form visibility is separate from the reference/export catalog.
 export function getMasterDataFormFields(definition: MasterDataCatalogItem) {
+  let fields: readonly MasterDataFieldDefinition[] = definition.fields;
   if (isMasterTransportFormResource(definition.key)) {
-    const fields = definition.fields.map((field): MasterDataFieldDefinition =>
+    fields = definition.fields.map((field): MasterDataFieldDefinition =>
       definition.key === 'train-types' && field.key === 'amenities'
         ? {
             key: 'facilityIds',
@@ -17,12 +18,32 @@ export function getMasterDataFormFields(definition: MasterDataCatalogItem) {
           }
         : field,
     );
-    return [
+  }
+  if (definition.key === 'payment-methods')
+    fields = fields.filter(
+      (field) => field.key !== 'code' && field.key !== 'englishName',
+    );
+  if (
+    definition.key !== 'exchange-rates' &&
+    !fields.some((field) => field.key === 'displayOrder')
+  )
+    fields = [
+      ...fields,
+      {
+        key: 'displayOrder',
+        label: 'ترتیب نمایش',
+        type: 'number',
+        placeholder: '0',
+        hint: 'عدد صحیح نامنفی؛ مقدار پیش‌فرض صفر است.',
+      },
+    ];
+  if (isMasterTransportFormResource(definition.key))
+    fields = [
       ...fields,
       {
         key: 'transportStatus',
         label: 'وضعیت',
-        type: 'select' as const,
+        type: 'select',
         placeholder: '',
         options: [
           { value: 'ACTIVE', label: 'فعال' },
@@ -35,12 +56,8 @@ export function getMasterDataFormFields(definition: MasterDataCatalogItem) {
                 : 'در حال بررسی',
           },
         ],
-        hint: 'تغییر وضعیت نیازمند مجوز مدیریت وضعیت است.',
+        hint: 'مقدار پیش‌فرض فعال است؛ تغییر وضعیت نیازمند مجوز مدیریت وضعیت است.',
       },
     ];
-  }
-  if (definition.key !== 'payment-methods') return definition.fields;
-  return definition.fields.filter(
-    (field) => field.key !== 'code' && field.key !== 'englishName',
-  );
+  return fields;
 }

@@ -10,7 +10,6 @@ import {
   Max,
   Min,
   Matches,
-  IsNotEmpty,
 } from 'class-validator';
 import type { MasterCurrencyRateQuoteRequest } from '@rubi/contracts';
 
@@ -36,13 +35,14 @@ export class CurrencyRateQuoteDto implements MasterCurrencyRateQuoteRequest {
   @Matches(/^\d{1,14}(\.\d{1,10})?$/)
   sellRate?: string;
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(160)
-  source!: string;
+  source?: string;
+  @IsOptional()
   @IsISO8601({ strict: true })
   @Matches(/(?:Z|[+-]\d{2}:\d{2})$/)
-  observedAt!: string;
+  observedAt?: string;
   @IsOptional()
   @IsISO8601({ strict: true })
   @Matches(/(?:Z|[+-]\d{2}:\d{2})$/)

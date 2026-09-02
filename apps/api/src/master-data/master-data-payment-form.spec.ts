@@ -64,6 +64,7 @@ describe('payment-method form persistence', () => {
         name: existing.name,
         channel: 'CASH',
         direction: 'BOTH',
+        displayOrder: 0,
       },
       actor,
     );
@@ -78,6 +79,7 @@ describe('payment-method form persistence', () => {
         name: existing.name,
         channel: 'CASH',
         direction: 'BOTH',
+        displayOrder: 0,
       },
       actor.userId,
       actor.branchIds[0],

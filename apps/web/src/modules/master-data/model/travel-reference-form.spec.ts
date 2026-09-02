@@ -102,9 +102,7 @@ describe('travel reference form values', () => {
     { referenceValidityMode: 'OTHER' },
     { countryId: '' },
     { guidanceFileReference: 'DOC-20112' },
-    { supplierId: 'bad-id' },
     { referenceValidityDays: '3651' },
-    { referenceValidityMode: 'PASSPORT_EXPIRY' },
     { status: '' },
     { visaType: '' },
   ])('rejects invalid visa fields: %j', (invalid) => {
@@ -113,23 +111,23 @@ describe('travel reference form values', () => {
         .success,
     ).toBe(false);
   });
-  it('supports passport-expiry policy without an applicant date or days', () => {
+  it('uses day-based visa validity and does not expose passport identity policy', () => {
     expect(
       validateTravelReferenceForm('visa-services', {
         ...visa,
         referenceValidityMode: 'PASSPORT_EXPIRY',
         referenceValidityDays: '',
       }).success,
-    ).toBe(true);
+    ).toBe(false);
     expect(
       travelReferenceFormValues(
         'visa-services',
         record({ referenceValidityDays: 90 }),
       ).referenceValidityMode,
     ).toBe('DAYS');
-    expect(
-      visaValidityLabel(record({ referenceValidityMode: 'PASSPORT_EXPIRY' })),
-    ).toBe('تا پایان اعتبار پاسپورت');
+    expect(visaValidityLabel(record({ referenceValidityMode: 'DAYS' }))).toBe(
+      'مشخص نشده',
+    );
     expect(visaValidityLabel(record({ referenceValidityDays: 90 }))).toBe(
       '۹۰ روز',
     );

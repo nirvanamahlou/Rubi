@@ -29,7 +29,9 @@ function latinNumber(value: string): number {
 }
 
 function localeFor(system: CalendarSystem): string {
-  return system === 'persian' ? 'fa-IR-u-ca-persian' : 'fa-IR-u-ca-gregory';
+  return system === 'persian'
+    ? 'fa-IR-u-ca-persian'
+    : 'fa-IR-u-ca-gregory-nu-latn';
 }
 
 export function parseIsoDate(value?: string): Date | null {
@@ -132,6 +134,37 @@ export function moveCalendarMonth(
     target = next;
   }
   return target;
+}
+
+export function setCalendarMonthYear(
+  anchor: Date,
+  year: number,
+  month: number,
+  system: CalendarSystem,
+): Date {
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    month < 1 ||
+    month > 12
+  )
+    return anchor;
+  const current = calendarParts(anchor, system);
+  const delta = (year - current.year) * 12 + (month - current.month);
+  let next = anchor;
+  const direction = delta < 0 ? -1 : 1;
+  for (let index = 0; index < Math.abs(delta); index += 1)
+    next = moveCalendarMonth(next, direction, system);
+  return next;
+}
+
+export function calendarMonthName(
+  anchor: Date,
+  system: CalendarSystem,
+): string {
+  return new Intl.DateTimeFormat(localeFor(system), { month: 'long' }).format(
+    anchor,
+  );
 }
 
 export function calendarMonthDays(

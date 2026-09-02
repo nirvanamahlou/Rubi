@@ -276,7 +276,7 @@ export function MasterDataTravelServicesWorkspace() {
   const [summary, setSummary] = useState<MasterTravelServicesSummary>();
   const [countries, setCountries] = useState<readonly MasterDataRecord[]>([]);
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
   const [referenceFilter, setReferenceFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -484,7 +484,7 @@ export function MasterDataTravelServicesWorkspace() {
     setResource(next);
     setSearch('');
     resetColumnFilters();
-    setStatus('all');
+    setStatus('active');
     setReferenceFilter('all');
     setPage(1);
     setSelected(undefined);
@@ -873,7 +873,7 @@ export function MasterDataTravelServicesWorkspace() {
             setSearch('');
             resetColumnFilters();
             resetDateRange();
-            setStatus('all');
+            setStatus('active');
             setReferenceFilter('all');
             setPage(1);
           }}

@@ -101,7 +101,7 @@ export function MasterDataSalesReferencesWorkspace() {
   const [allRecords, setAllRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<MasterDataRecord>();
@@ -214,7 +214,7 @@ export function MasterDataSalesReferencesWorkspace() {
     setResource(next);
     setSearch('');
     resetColumnFilters();
-    setStatus('all');
+    setStatus('active');
     setPage(1);
     setSelected(undefined);
     setProfileOpen(false);
@@ -474,20 +474,22 @@ export function MasterDataSalesReferencesWorkspace() {
           aria-label="زیرمجموعه‌های مراجع فروش"
           className="flex min-w-max gap-1"
         >
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                aria-current={resource === tab.resource ? 'page' : undefined}
-                className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-primary aria-[current=page]:shadow-sm"
-                key={tab.resource}
-                onClick={() => changeResource(tab.resource)}
-                type="button"
-              >
-                <Icon className="size-4" /> {tab.label}
-              </button>
-            );
-          })}
+          {tabs
+            .filter((tab) => !['lost-reasons', 'tags'].includes(tab.resource))
+            .map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  aria-current={resource === tab.resource ? 'page' : undefined}
+                  className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-primary aria-[current=page]:shadow-sm"
+                  key={tab.resource}
+                  onClick={() => changeResource(tab.resource)}
+                  type="button"
+                >
+                  <Icon className="size-4" /> {tab.label}
+                </button>
+              );
+            })}
         </nav>
       </Card>
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${definition.label}`} />
@@ -535,7 +537,7 @@ export function MasterDataSalesReferencesWorkspace() {
             setSearch('');
             resetColumnFilters();
             resetDateRange();
-            setStatus('all');
+            setStatus('active');
             setPage(1);
           }}
           onRefresh={() => void Promise.all([load(), loadSummary()])}

@@ -25,6 +25,10 @@ describe('shared date picker contract', () => {
     expect(pickerSource).toContain("['persian', 'gregorian']");
     expect(pickerSource).toContain("'شمسی'");
     expect(pickerSource).toContain("'میلادی'");
+    expect(pickerSource).toContain('انتخاب مستقیم ماه و سال');
+    expect(pickerSource).toContain(
+      "calendarSystem === 'gregorian' ? 'en-US' : 'fa-IR'",
+    );
     expect(pickerSource).toContain('bg-primary');
     expect(pickerSource.indexOf('نوع تقویم')).toBeLessThan(
       pickerSource.indexOf('calendarMonthLabel(anchor'),

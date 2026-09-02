@@ -246,7 +246,7 @@ export function MasterDataAccommodationWorkspace() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<
     'all' | MasterDataStatus | 'under_review'
-  >('all');
+  >('active');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [countries, setCountries] = useState<readonly MasterDataRecord[]>([]);
@@ -594,7 +594,7 @@ export function MasterDataAccommodationWorkspace() {
     setTab(next);
     setSearch('');
     resetColumnFilters();
-    setStatus('all');
+    setStatus('active');
     setPage(1);
     setCountryFilter('all');
     setCityFilter('all');
@@ -1443,21 +1443,23 @@ export function MasterDataAccommodationWorkspace() {
           aria-label="زیرمجموعه‌های اقامت و هتل"
           className="flex min-w-max gap-1"
         >
-          {tabs.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                aria-current={tab === item.id ? 'page' : undefined}
-                className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-primary aria-[current=page]:shadow-sm"
-                key={item.id}
-                onClick={() => changeTab(item.id)}
-                type="button"
-              >
-                <Icon className="size-4" />
-                {item.label}
-              </button>
-            );
-          })}
+          {tabs
+            .filter((item) => item.id !== 'meals' && item.id !== 'facilities')
+            .map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  aria-current={tab === item.id ? 'page' : undefined}
+                  className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-primary aria-[current=page]:shadow-sm"
+                  key={item.id}
+                  onClick={() => changeTab(item.id)}
+                  type="button"
+                >
+                  <Icon className="size-4" />
+                  {item.label}
+                </button>
+              );
+            })}
         </nav>
       </Card>
       {kpis.length ? (
@@ -1512,7 +1514,7 @@ export function MasterDataAccommodationWorkspace() {
               setSearch('');
               resetColumnFilters();
               resetDateRange();
-              setStatus('all');
+              setStatus('active');
               setCountryFilter('all');
               setCityFilter('all');
               setStarFilter('all');

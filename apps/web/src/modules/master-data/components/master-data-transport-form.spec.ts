@@ -25,20 +25,13 @@ import { serializeMasterDataListQuery } from '../api/contracts';
 
 const expected = {
   airlines: [
-    'code',
+    'airlineCodes',
     'name',
     'englishName',
-    'icaoCode',
     'countryId',
-    'organizationId',
+    'logoFileReference',
   ],
-  'aircraft-types': [
-    'name',
-    'englishName',
-    'manufacturer',
-    'model',
-    'bodyType',
-  ],
+  'aircraft-types': ['name', 'englishName', 'manufacturer', 'model'],
   'baggage-rules': [
     'name',
     'airlineId',
@@ -48,8 +41,6 @@ const expected = {
     'allowance',
     'unit',
     'pieceCount',
-    'validFrom',
-    'validTo',
   ],
   'rail-companies': ['name', 'englishName', 'countryId', 'organizationId'],
   'train-types': [
@@ -65,13 +56,12 @@ const expected = {
     'englishName',
     'countryId',
     'organizationId',
-    'supplierId',
+    'logoFileReference',
   ],
   'bus-types': [
     'name',
     'englishName',
-    'manufacturer',
-    'model',
+    'manufacturerModel',
     'serviceClass',
     'facilityIds',
   ],
@@ -101,9 +91,6 @@ describe('transport mockup form coverage', () => {
       expect(html).toContain('آخرین تغییر');
       expect(html).toContain('وضعیت');
       expect(html).not.toContain('name="capacity"');
-      expect(html).not.toContain(
-        'id="live-' + resource + '-logoFileReference"',
-      );
       if (resource !== 'airlines')
         expect(html).toContain('خودکار تولید می‌شود');
       if (resource === 'bus-types' || resource === 'train-types') {

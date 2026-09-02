@@ -36,6 +36,7 @@ describe('meal/service form state and payload', () => {
       englishName: 'Bed & Breakfast',
       category: 'MEAL_PLAN',
       includedMeals: '["صبحانه"]',
+      displayOrder: '0',
       status: 'under_review',
     });
   });
