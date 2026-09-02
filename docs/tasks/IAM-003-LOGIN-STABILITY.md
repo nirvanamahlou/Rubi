@@ -4,7 +4,7 @@
 
 - Computer: `PC-B`
 - Branch: `codex/pc-b-iam-login-stability`
-- Draft PR: #68 to `develop`
+- PR: #68 merged into `develop` as `bba6cc0`
 - Base: latest `origin/develop`
 - Owner request: permanently stop the recurring incorrect-password experience after local code changes and restarts.
 
@@ -25,7 +25,7 @@ No raw password, token, cookie, hash, encryption key or private environment valu
 ## Boundaries
 
 - No Prisma schema, migration, seed, public contract, permission, dependency or lockfile change.
-- No application account, password, session, role, branch, database row or private configuration was reset during implementation.
+- No application account, password, session, role, branch, database row or private configuration was reset during code implementation. After merge, an explicit owner-requested local recovery reset only the `nirvana` credential on PC-B and revoked its old sessions; no secret entered Git.
 - PC-A remains the final IAM module owner; this is the owner-approved narrow PC-B stability exception recorded in `WORK_ASSIGNMENTS.md`.
 
 ## Validation
@@ -36,4 +36,5 @@ No raw password, token, cookie, hash, encryption key or private environment valu
 - API/Web typecheck: passed.
 - API/Web production builds: passed.
 - Live local smoke: API health 200, Login page 200, empty Login payload 400.
-- `nirvana` remains `ACTIVE`, not locked, and its existing `passwordChangedAt` was unchanged.
+- Before merge, `nirvana` remained `ACTIVE`, not locked, and its existing `passwordChangedAt` was unchanged.
+- Post-merge local recovery: a verified backup was taken, the explicit password reset completed, failed attempts and lock state were cleared, old sessions were revoked, and normal HTTP login/logout returned 200/204. No password, token, hash or private environment value was printed or committed.

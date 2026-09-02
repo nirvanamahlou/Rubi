@@ -1,16 +1,16 @@
 # Work Assignments
 
-## IAM-003-LOGIN-STABILITY — PC-B — READY_FOR_REVIEW
+## IAM-003-LOGIN-STABILITY — PC-B — DONE/MERGED
 
 - درخواست صریح مالک در 2026-08-31: خطای تکراری «رمز صحیح نیست» پس از تغییر/راه‌اندازی مجدد به‌صورت دائمی برطرف شود. `COMPUTER_ID=PC-B`.
-- Branch: `codex/pc-b-iam-login-stability` از آخرین `origin/develop`؛ Draft PR #68 به `develop`. این اصلاح مستقیم روی `develop` یا `main` انجام نمی‌شود.
+- Branch: `codex/pc-b-iam-login-stability` از آخرین `origin/develop`؛ PR #68 با Merge Commit `bba6cc0` در `develop` ادغام شد. این اصلاح مستقیم روی `develop` یا `main` انجام نشد.
 - مالکیت نهایی IAM برای PC-A محفوظ است؛ قفل‌های IAM-001/IAM-002 آزاد شده‌اند و این کار یک استثنای محدود و صریح PC-B برای پایداری Login است.
 - محدوده رزروشده: Bootstrap داخلی مدیر و Refresh نشست در `apps/api/src/iam/**`، helper مشترک Refresh و Login UI در `apps/web/src/**`، تست‌های هدفمند و `docs/tasks/IAM-003-LOGIN-STABILITY.md`؛ فقط ورودی‌های همین Work Item در اسناد مرکزی.
 - بدون Prisma Schema/Migration/Seed، بدون تغییر قرارداد عمومی یا Permission، بدون Dependency/Lockfile و بدون بازنشانی حساب/رمز/Session یا تغییر داده کاربردی در زمان پیاده‌سازی.
 - معیار پذیرش: اجرای مجدد Bootstrap رمز کاربر موجود را تغییر ندهد؛ Refresh هم‌زمان تب‌ها خانواده Session را به‌اشتباه revoke نکند؛ Login فقط پاسخ 401 را خطای نام کاربری/رمز بنامد و خطاهای اعتبارسنجی/سرور/ارتباط پیام مستقل داشته باشند؛ تست، lint، typecheck، build و Smoke لوکال موفق باشند.
 - نتیجه: Bootstrap برای کاربر موجود Credential/Status را حفظ و فقط نقش مدیر و شعبه را idempotent تضمین می‌کند. Refresh با claim اتمیک، grace پنج‌ثانیه‌ای فقط برای Token منطبقِ تازه‌چرخیده و Web Lock مشترک چندتب پایدار شد؛ Token نامنطبق یا reuse قدیمی همچنان کل خانواده را fail-closed لغو می‌کند. Login UI فقط 401 را خطای نام کاربری/رمز می‌نامد.
-- Validation: ۷۱۷ تست API با ۶۶ skip اختیاری و ۵۴۴ تست Web موفق؛ lint، typecheck و production build API/Web موفق. API health و Login لوکال ۲۰۰ و Validation ورود ناقص ۴۰۰ است. حساب `nirvana` فعال، قفل‌نشده و `passwordChangedAt` بدون تغییر باقی ماند؛ هیچ Bootstrap/Reset یا تغییر داده کاربردی اجرا نشد.
-- Final lock state: رزرو فایل‌های IAM/Web و اسناد این Hotfix با وضعیت `RELEASED — PC-B/IAM-003-LOGIN-STABILITY ready for review` تحویل می‌شود. Migration/Dependency/Contract lock در تمام کار آزاد و دست‌نخورده بود.
+- Validation: ۷۱۷ تست API با ۶۶ skip اختیاری و ۵۴۴ تست Web موفق؛ lint، typecheck و production build API/Web موفق. API health و Login لوکال ۲۰۰ و Validation ورود ناقص ۴۰۰ است. در زمان پیاده‌سازی هیچ Bootstrap/Reset یا تغییر داده کاربردی اجرا نشد. پس از Merge، بازیابی محلی صریح و جداگانه `nirvana` روی PC-B با Backup، لغو نشست‌های قبلی و ورود/خروج ۲۰۰/۲۰۴ موفق انجام شد؛ هیچ Secretی وارد Git نشد.
+- Final lock state: `RELEASED — PC-B/IAM-003-LOGIN-STABILITY merged via PR #68`. Migration/Dependency/Contract lock در تمام کار آزاد و دست‌نخورده بود؛ مالکیت نهایی IAM نزد PC-A باقی است.
 
 ## DOCUMENTS-003B — PC-B — READY_FOR_REVIEW
 
