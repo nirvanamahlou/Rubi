@@ -18,6 +18,8 @@ import type {
   MasterDataResource,
   MasterDataStatus,
   MasterDataDeleteResponse,
+  DocumentDetailResponseV1,
+  DocumentOptionsResponseV1,
 } from '@rubi/contracts';
 
 import { getPublicApiBaseUrl } from '../../../lib/environment';
@@ -96,7 +98,95 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function documentsRequest<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
+  const baseUrl = getPublicApiBaseUrl();
+  if (!baseUrl) throw new MasterDataApiError('نشانی API پیکربندی نشده است.', 0);
+  const response = await fetch(`${baseUrl}/documents${path}`, {
+    credentials: 'include',
+    ...init,
+    headers: {
+      accept: 'application/json',
+      ...(init?.body && !(init.body instanceof FormData)
+        ? { 'content-type': 'application/json' }
+        : {}),
+      ...init?.headers,
+    },
+  });
+  if (!response.ok) {
+    const envelope = (await response.json().catch(() => null)) as {
+      error?: { message?: string };
+      message?: string;
+    } | null;
+    throw new MasterDataApiError(
+      envelope?.error?.message ??
+        envelope?.message ??
+        'بارگذاری لوگو ناموفق بود.',
+      response.status,
+    );
+  }
+  return response.json() as Promise<T>;
+}
+
 export const masterDataApi = {
+  async uploadLogo(input: {
+    file: File;
+    resource: MasterDataResource;
+    recordId?: string;
+    title: string;
+  }) {
+    if (!['image/png', 'image/jpeg'].includes(input.file.type))
+      throw new MasterDataApiError('لوگو باید PNG یا JPEG باشد.', 400);
+    const options =
+      await documentsRequest<DocumentOptionsResponseV1>('/options');
+    const documentType = options.data.documentTypes.find(
+      (item) => item.code === 'BRAND_ASSET_TEMPLATE',
+    );
+    const category =
+      options.data.categories.find((item) => item.code === 'BRAND_ASSETS') ??
+      options.data.categories[0];
+    const branch = options.data.branches[0];
+    const owner =
+      options.data.owners.find(
+        (item) => item.id === options.data.currentUserId,
+      ) ?? options.data.owners[0];
+    if (!documentType || !category || !branch || !owner)
+      throw new MasterDataApiError(
+        'پیش‌نیاز بارگذاری لوگو در اسناد کامل نیست.',
+        409,
+      );
+    const form = new FormData();
+    form.set('file', input.file);
+    form.set('title', input.title.trim() || `لوگوی ${input.resource}`);
+    form.set('documentTypeId', documentType.id);
+    form.set('categoryId', category.id);
+    form.set('branchId', branch.id);
+    form.set('ownerUserId', owner.id);
+    form.set('confidentiality', 'INTERNAL');
+    form.set('sourceModule', 'master-data');
+    form.set('sourceEntityType', input.resource);
+    form.set(
+      'sourceEntityId',
+      input.recordId ?? `draft-${crypto.randomUUID()}`,
+    );
+    form.set(
+      'sourceDisplayLabel',
+      input.title.trim() || `لوگوی ${input.resource}`,
+    );
+    const response = await documentsRequest<DocumentDetailResponseV1>(
+      '/upload',
+      {
+        method: 'POST',
+        body: form,
+      },
+    );
+    return {
+      id: response.data.id,
+      scanStatus: response.data.currentVersion.scanStatus,
+    };
+  },
   list(resource: MasterDataResource, query: MasterDataListQuery) {
     return request<MasterDataListResponse>(
       `/${resource}?${serializeMasterDataListQuery(query)}`,

@@ -7,10 +7,13 @@ import { cn } from '@/lib/utils';
 import {
   calendarMonthDays,
   calendarMonthLabel,
+  calendarMonthName,
+  calendarParts,
   formatCalendarValue,
   joinDateAndTime,
   moveCalendarMonth,
   parseIsoDate,
+  setCalendarMonthYear,
   toIsoDate,
   type CalendarSystem,
 } from './date-picker.utils';
@@ -61,6 +64,26 @@ export function DatePicker({
   const rootRef = React.useRef<HTMLDivElement>(null);
   const selectedDate = currentValue.slice(0, 10);
   const days = calendarMonthDays(anchor, calendarSystem);
+  const anchorParts = calendarParts(anchor, calendarSystem);
+  const yearOptions = React.useMemo(
+    () =>
+      Array.from({ length: 121 }, (_, index) => anchorParts.year - 100 + index),
+    [anchorParts.year],
+  );
+  const monthOptions = React.useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, index) => {
+        const month = index + 1;
+        const date = setCalendarMonthYear(
+          anchor,
+          anchorParts.year,
+          month,
+          calendarSystem,
+        );
+        return { month, label: calendarMonthName(date, calendarSystem) };
+      }),
+    [anchor, anchorParts.year, calendarSystem],
+  );
 
   React.useEffect(() => {
     if (!open) return;
@@ -148,7 +171,7 @@ export function DatePicker({
             ))}
           </div>
 
-          <div className="mb-3 flex items-center justify-between rounded-xl bg-primary px-2 py-2 text-primary-foreground">
+          <div className="mb-3 flex items-center justify-between gap-2 rounded-xl bg-primary px-2 py-2 text-primary-foreground">
             <button
               aria-label="ماه قبل"
               className="flex size-9 items-center justify-center rounded-lg outline-none hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
@@ -161,9 +184,63 @@ export function DatePicker({
             >
               <ChevronRight aria-hidden="true" className="size-5" />
             </button>
-            <strong className="text-sm">
-              {calendarMonthLabel(anchor, calendarSystem)}
-            </strong>
+            <div
+              aria-label="انتخاب مستقیم ماه و سال"
+              className="grid min-w-0 flex-1 grid-cols-2 gap-1"
+            >
+              <select
+                aria-label="ماه"
+                className="h-9 min-w-0 rounded-lg border border-white/20 bg-white/10 px-2 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-white [&>option]:text-foreground"
+                onChange={(event) =>
+                  setAnchor((current) =>
+                    setCalendarMonthYear(
+                      current,
+                      anchorParts.year,
+                      Number(event.target.value),
+                      calendarSystem,
+                    ),
+                  )
+                }
+                value={anchorParts.month}
+              >
+                {monthOptions.map((option) => (
+                  <option key={option.month} value={option.month}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="سال"
+                className="h-9 min-w-0 rounded-lg border border-white/20 bg-white/10 px-2 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-white [&>option]:text-foreground"
+                dir="ltr"
+                onChange={(event) =>
+                  setAnchor((current) =>
+                    setCalendarMonthYear(
+                      current,
+                      Number(event.target.value),
+                      anchorParts.month,
+                      calendarSystem,
+                    ),
+                  )
+                }
+                value={anchorParts.year}
+              >
+                {yearOptions.map((year) => (
+                  <option key={year} value={year}>
+                    {calendarSystem === 'gregorian'
+                      ? new Intl.NumberFormat('en-US', {
+                          useGrouping: false,
+                        }).format(year)
+                      : new Intl.NumberFormat('fa-IR', {
+                          useGrouping: false,
+                        }).format(year)}
+                  </option>
+                ))}
+              </select>
+              <span className="sr-only">
+                {calendarMonthLabel(anchor, calendarSystem)}
+              </span>
+            </div>
             <button
               aria-label="ماه بعد"
               className="flex size-9 items-center justify-center rounded-lg outline-none hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
@@ -208,7 +285,10 @@ export function DatePicker({
                   onClick={() => selectDay(day.isoDate)}
                   type="button"
                 >
-                  {new Intl.NumberFormat('fa-IR').format(day.day)}
+                  {new Intl.NumberFormat(
+                    calendarSystem === 'gregorian' ? 'en-US' : 'fa-IR',
+                    { useGrouping: false },
+                  ).format(day.day)}
                 </button>
               );
             })}

@@ -36,6 +36,7 @@ export function terminalFormValues(
     airportId: String(record?.attributes.airportId ?? ''),
     terminalType: String(record?.attributes.terminalType ?? ''),
     gateCount: String(record?.attributes.gateCount ?? ''),
+    displayOrder: String(record?.attributes.displayOrder ?? '0'),
     operatingHoursMode: String(record?.attributes.operatingHoursMode ?? ''),
     opensAt: String(record?.attributes.opensAt ?? ''),
     closesAt: String(record?.attributes.closesAt ?? ''),
@@ -70,11 +71,17 @@ export function validateTerminalForm(input: Record<string, string>) {
   if (!terminalStatuses.some((item) => item.value === values.status))
     errors.status = 'وضعیت را انتخاب کنید.';
   values.gateCount = asciiDigits(values.gateCount ?? '');
+  values.displayOrder = asciiDigits(values.displayOrder ?? '0');
   if (
     values.gateCount &&
     (!/^\d+$/.test(values.gateCount) || Number(values.gateCount) > 2147483647)
   )
     errors.gateCount = 'تعداد گیت باید عدد صحیح نامنفی باشد.';
+  if (
+    !/^\d+$/.test(values.displayOrder) ||
+    Number(values.displayOrder) > 100000
+  )
+    errors.displayOrder = 'ترتیب نمایش باید عدد صحیح بین صفر تا ۱۰۰٬۰۰۰ باشد.';
   values.opensAt = asciiDigits(values.opensAt ?? '');
   values.closesAt = asciiDigits(values.closesAt ?? '');
   if (values.operatingHoursMode === 'TIME_RANGE') {

@@ -70,7 +70,7 @@ describe('MasterDataService', () => {
     await service.update('currencies', currency.id, values, 1, actor);
     expect(repository.create).toHaveBeenCalledWith(
       'currencies',
-      { ...values, decimalDigits: 2 },
+      { ...values, decimalDigits: 2, displayOrder: 0 },
       actor.userId,
       actor.branchIds[0],
     );
@@ -111,14 +111,9 @@ describe('MasterDataService', () => {
     );
   });
 
-  it('normalizes unique IATA/ICAO codes and enforces the airline organization role', async () => {
+  it('normalizes merged unique IATA/ICAO codes without requiring an organization', async () => {
     const repository = {
       fieldExists: vi.fn().mockResolvedValue(false),
-      find: vi.fn().mockResolvedValue({
-        ...row,
-        displayName: 'ایرلاین سازمانی',
-        roles: [{ roleCode: 'AIRLINE' }],
-      }),
       create: vi
         .fn()
         .mockImplementation(
@@ -133,10 +128,8 @@ describe('MasterDataService', () => {
     await service.create(
       'airlines',
       {
-        code: 'w5',
-        icaoCode: 'irm',
+        airlineCodes: 'w5 / irm',
         name: 'ایرلاین آزمایشی',
-        organizationId: row.id,
       },
       actor,
     );
@@ -206,6 +199,7 @@ describe('MasterDataService', () => {
         code: 'IR',
         name: 'ایران',
         englishName: 'Iran',
+        displayOrder: 0,
       },
       actor.userId,
       actor.branchIds[0],

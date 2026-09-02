@@ -172,7 +172,7 @@ export function MasterDataTransportationWorkspace() {
   const [allRecords, setAllRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
   const [transportStatus, setTransportStatus] = useState<
     'all' | MasterTransportStatus
   >('all');
@@ -374,7 +374,7 @@ export function MasterDataTransportationWorkspace() {
     setResource(next);
     setSearch('');
     resetColumnFilters();
-    setStatus('all');
+    setStatus('active');
     setTransportStatus('all');
     setPage(1);
     setSelected(undefined);
@@ -721,7 +721,7 @@ export function MasterDataTransportationWorkspace() {
             setSearch('');
             resetColumnFilters();
             resetDateRange();
-            setStatus('all');
+            setStatus('active');
             setTransportStatus('all');
             setPage(1);
           }}

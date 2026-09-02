@@ -293,7 +293,7 @@ export function MasterDataFinanceWorkspace({
   const [rates, setRates] = useState<readonly CurrencyRateRow[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
   const [rangeDays, setRangeDays] = useState('90');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -518,7 +518,7 @@ export function MasterDataFinanceWorkspace({
     setTab(next);
     setSearch('');
     resetColumnFilters();
-    setStatus('all');
+    setStatus('active');
     setPage(1);
     setSelected(undefined);
     setSelectedCurrency(undefined);
@@ -892,14 +892,16 @@ export function MasterDataFinanceWorkspace({
               ? 'درخواست نرخ'
               : `افزودن ${definition.singularLabel}`}
           </Button>
-          <Button
-            loading={exporting}
-            onClick={() => void exportExcel()}
-            variant="outline"
-          >
-            <FileSpreadsheet aria-hidden="true" className="size-4" />
-            خروجی اکسل
-          </Button>
+          {!['currencies', 'payment-methods'].includes(resource) ? (
+            <Button
+              loading={exporting}
+              onClick={() => void exportExcel()}
+              variant="outline"
+            >
+              <FileSpreadsheet aria-hidden="true" className="size-4" />
+              خروجی اکسل
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -989,7 +991,7 @@ export function MasterDataFinanceWorkspace({
             setSearch('');
             resetColumnFilters();
             resetDateRange();
-            setStatus('all');
+            setStatus('active');
             setPage(1);
           }}
           onRefresh={() => void load()}

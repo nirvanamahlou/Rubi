@@ -14,6 +14,7 @@ const values = {
   englishName: 'Test currency',
   symbol: '$',
   decimalDigits: '2',
+  displayOrder: '0',
 };
 const record: MasterDataRecord = {
   id: 'currency-test',
@@ -72,7 +73,7 @@ describe('currency form', () => {
       }).errors,
     ).toMatchObject({ name: expect.any(String), symbol: expect.any(String) });
   });
-  it('preserves both decimal strings, converts UTC and never submits maker/status/base fields', () => {
+  it('preserves both decimal strings and never submits removed timestamps or maker/status/base fields', () => {
     const result = validateCurrencyQuote('USD', {
       ...quote,
       createdByUserId: 'other',
@@ -87,7 +88,6 @@ describe('currency form', () => {
       buyRate: quote.buyRate,
       sellRate: quote.sellRate,
       source: quote.source,
-      observedAt: '2026-08-31T06:30:00.000Z',
     });
   });
   it.each(['0', '-1', '1e3', '1.12345678901', '100000000000000'])(
@@ -98,7 +98,7 @@ describe('currency form', () => {
       ).toBeDefined();
     },
   );
-  it('requires at least one side, different currencies, source and a valid time window', () => {
+  it('requires at least one side and different currencies while source stays optional', () => {
     expect(
       validateCurrencyQuote('USD', { ...quote, buyRate: '', sellRate: '' })
         .success,
@@ -115,15 +115,10 @@ describe('currency form', () => {
       }).errors,
     ).toMatchObject({
       toCurrencyCode: expect.any(String),
-      source: expect.any(String),
-      observedAt: expect.any(String),
     });
-    expect(
-      validateCurrencyQuote('USD', {
-        ...quote,
-        validTo: '2026-08-30T00:00:00Z',
-      }).errors.validTo,
-    ).toBeDefined();
+    expect(validateCurrencyQuote('USD', { ...quote, source: '' }).success).toBe(
+      true,
+    );
   });
   it('retains a created record and its version when the separate status permission fails', async () => {
     const api = {

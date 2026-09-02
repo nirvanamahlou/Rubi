@@ -55,6 +55,7 @@ export function mealServiceFormValues(
           parseIncludedMeals(String(record?.attributes.includedMeals ?? '')),
         ),
     ),
+    displayOrder: String(record?.attributes.displayOrder ?? '0'),
     status: mealServiceStatus(record),
   };
 }
@@ -78,6 +79,11 @@ export function validateMealServiceForm(input: Record<string, string>) {
     errors.category = 'دسته را انتخاب کنید.';
   if (!mealServiceStatuses.some((status) => status.value === values.status))
     errors.status = 'وضعیت را انتخاب کنید.';
+  if (
+    !/^\d+$/.test(values.displayOrder ?? '') ||
+    Number(values.displayOrder) > 100000
+  )
+    errors.displayOrder = 'ترتیب نمایش باید عدد صحیح بین صفر تا ۱۰۰٬۰۰۰ باشد.';
   try {
     const meals = parseIncludedMeals(values.includedMeals ?? '');
     if (meals.length > 20 || meals.some((meal) => !meal || meal.length > 80))

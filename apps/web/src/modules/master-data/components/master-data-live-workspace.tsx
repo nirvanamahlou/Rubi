@@ -84,7 +84,7 @@ function GenericMasterDataWorkspace({
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
   const [sortBy, setSortBy] = useState<'name' | 'code' | 'updatedAt'>('name');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -151,7 +151,7 @@ function GenericMasterDataWorkspace({
     if (!section.resources.includes(next)) return;
     setResource(next);
     setSearch('');
-    setStatus('all');
+    setStatus('active');
     setSortBy('name');
     setPage(1);
     setSelected(undefined);
@@ -521,7 +521,7 @@ function GenericMasterDataWorkspace({
               onClear={() => {
                 setSearch('');
                 resetDateRange();
-                setStatus('all');
+                setStatus('active');
                 setSortBy('name');
                 setPage(1);
               }}

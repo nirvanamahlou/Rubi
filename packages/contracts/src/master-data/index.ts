@@ -231,8 +231,8 @@ export interface MasterCurrencyRateQuoteRequest {
   toCurrencyCode: string;
   buyRate?: string;
   sellRate?: string;
-  source: string;
-  observedAt: string;
+  source?: string;
+  observedAt?: string;
   validFrom?: string;
   validTo?: string;
   correctionReason?: string;

@@ -165,8 +165,8 @@ const nameFields: Record<MasterDataResource, string> = {
   'meal-services': 'name',
   facilities: 'name',
   'composite-hotels': 'name',
-  organizations: 'displayName',
-  suppliers: 'code',
+  organizations: 'legalName',
+  suppliers: 'name',
   brokers: 'name',
   'travel-services': 'name',
   'organization-contacts': 'fullName',
@@ -267,8 +267,8 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
   'meal-services': ['name', 'englishName', 'code'],
   facilities: ['name', 'englishName', 'code', 'category'],
   'composite-hotels': ['name', 'englishName', 'code', 'usageCondition'],
-  organizations: ['displayName', 'legalName', 'code'],
-  suppliers: ['code', 'englishName', 'externalProviderReference'],
+  organizations: ['legalName', 'code'],
+  suppliers: ['name', 'code', 'englishName', 'externalProviderReference'],
   brokers: ['name', 'englishName', 'code'],
   'travel-services': ['name', 'englishName', 'code'],
   'organization-contacts': ['fullName', 'jobTitle', 'code'],
@@ -503,9 +503,9 @@ export function toMasterDataRecord(
         : String(row.code ?? '');
   const name =
     resource === 'organizations'
-      ? String(row.displayName ?? '')
+      ? String(row.legalName ?? row.displayName ?? '')
       : resource === 'suppliers'
-        ? String(organization?.displayName ?? '')
+        ? String(row.name ?? organization?.displayName ?? row.code ?? '')
         : resource === 'organization-contacts'
           ? String(row.fullName ?? '')
           : resource === 'exchange-rates'
@@ -1055,10 +1055,7 @@ export class MasterDataRepository {
         : query.sortBy === 'code'
           ? codeFields[resource]
           : query.sortBy;
-    const orderBy =
-      query.sortBy === 'name' && resource === 'suppliers'
-        ? { organization: { displayName: query.sortDirection } }
-        : { [sortField]: query.sortDirection };
+    const orderBy = { [sortField]: query.sortDirection };
     const args: Record<string, unknown> = {
       where,
       orderBy,

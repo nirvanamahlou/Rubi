@@ -62,12 +62,13 @@ describe('master data catalog', () => {
       'bank-branches',
       'payment-methods',
       'travel-services',
-      'airlines',
       'meal-services',
     ]);
     for (const resource of masterDataResourceKeys) {
       const definition = getMasterDataDefinition(resource);
-      expect(definition.fields.some((field) => field.required)).toBe(true);
+      if (resource === 'suppliers')
+        expect(definition.fields.some((field) => field.required)).toBe(false);
+      else expect(definition.fields.some((field) => field.required)).toBe(true);
       expect(definition.fields.some((field) => field.key === 'code')).toBe(
         explicitCodeResources.has(resource),
       );

@@ -132,20 +132,27 @@ describe('transport forms policy and API compatibility', () => {
       expect(result.attributes.vehicleTypeCount).toBeNull();
     },
   );
-  it('rejects unverified Documents references even when they are valid UUIDs', async () => {
-    const service = new MasterDataService({} as MasterDataRepository);
-    await expect(
-      service.create(
-        'airlines',
-        {
-          code: 'ZZ',
-          name: 'Test airline',
-          organizationId: id,
-          logoFileReference: id,
-        },
-        actor,
-      ),
-    ).rejects.toThrow('اسناد');
+  it('accepts a logo reference uploaded through Documents in the same form', async () => {
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      create: vi.fn().mockResolvedValue(base),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    await service.create(
+      'airlines',
+      {
+        airlineCodes: 'ZZ / ZZZ',
+        name: 'Test airline',
+        logoFileReference: id,
+      },
+      actor,
+    );
+    expect(repository.create).toHaveBeenCalledWith(
+      'airlines',
+      expect.objectContaining({ logoFileReference: id }),
+      actor.userId,
+      actor.branchIds[0],
+    );
   });
   it('validates train facilities and makes replacing/clearing atomic, preserving legacy text', async () => {
     const repository = {

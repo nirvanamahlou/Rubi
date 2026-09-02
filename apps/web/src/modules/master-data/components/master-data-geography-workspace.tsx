@@ -349,7 +349,7 @@ export function MasterDataGeographyWorkspace() {
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
   const [sortBy, setSortBy] = useState<'name' | 'code' | 'updatedAt'>('name');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -540,7 +540,7 @@ export function MasterDataGeographyWorkspace() {
     setResource(next);
     setSearch('');
     resetColumnFilters();
-    setStatus('all');
+    setStatus('active');
     setSortBy('name');
     setPage(1);
     setCountryId('all');
@@ -777,14 +777,16 @@ export function MasterDataGeographyWorkspace() {
             <Plus aria-hidden="true" className="size-4" />
             افزودن {definition.singularLabel}
           </Button>
-          <Button
-            loading={exporting}
-            onClick={() => void exportExcel()}
-            variant="outline"
-          >
-            <FileSpreadsheet aria-hidden="true" className="size-4" />
-            خروجی اکسل
-          </Button>
+          {!['countries', 'regions', 'cities'].includes(resource) ? (
+            <Button
+              loading={exporting}
+              onClick={() => void exportExcel()}
+              variant="outline"
+            >
+              <FileSpreadsheet aria-hidden="true" className="size-4" />
+              خروجی اکسل
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -1034,7 +1036,7 @@ export function MasterDataGeographyWorkspace() {
             setSearch('');
             resetColumnFilters();
             resetDateRange();
-            setStatus('all');
+            setStatus('active');
             setSortBy('name');
             setCountryId('all');
             setRegionId('all');

@@ -9,14 +9,12 @@ interface MasterDataFilterActionsProps {
   className?: string;
   onClear: () => void;
   onRefresh: () => void;
-  refreshLabel?: string;
 }
 
 export function MasterDataFilterActions({
   className,
   onClear,
   onRefresh,
-  refreshLabel = 'تازه‌سازی',
 }: MasterDataFilterActionsProps) {
   return (
     <div
@@ -37,13 +35,13 @@ export function MasterDataFilterActions({
         پاک‌کردن
       </Button>
       <Button
+        aria-label="تازه‌سازی"
         className="border-primary/25 bg-primary/5 text-primary shadow-xs hover:border-primary/40 hover:bg-primary/10"
         onClick={onRefresh}
         type="button"
         variant="outline"
       >
         <RefreshCw aria-hidden="true" className="size-4" />
-        {refreshLabel}
       </Button>
     </div>
   );

@@ -7,6 +7,7 @@ import {
   joinDateAndTime,
   moveCalendarMonth,
   parseIsoDate,
+  setCalendarMonthYear,
   toIsoDate,
 } from './date-picker.utils';
 
@@ -29,8 +30,24 @@ describe('shared blue date picker calendar utilities', () => {
     const value = '2026-03-21T09:30';
     expect(toIsoDate(parseIsoDate(value)!)).toBe('2026-03-21');
     expect(formatCalendarValue(value, 'persian', true)).toContain('۱۴۰۵');
-    expect(formatCalendarValue(value, 'gregorian', true)).toContain('۲۰۲۶');
+    expect(formatCalendarValue(value, 'gregorian', true)).toContain('2026');
     expect(joinDateAndTime('2026-03-22', value, true)).toBe('2026-03-22T09:30');
+  });
+
+  it('jumps directly to a chosen month and year in both calendars', () => {
+    const anchor = new Date(2026, 2, 21, 12);
+    expect(
+      calendarParts(
+        setCalendarMonthYear(anchor, 2027, 12, 'gregorian'),
+        'gregorian',
+      ),
+    ).toMatchObject({ year: 2027, month: 12 });
+    expect(
+      calendarParts(
+        setCalendarMonthYear(anchor, 1406, 6, 'persian'),
+        'persian',
+      ),
+    ).toMatchObject({ year: 1406, month: 6 });
   });
 
   it('creates complete six-week grids and navigates both calendars', () => {

@@ -25,10 +25,12 @@ describe('payment-method form fields', () => {
     );
   });
 
-  it('does not change any other resource form', () => {
+  it('adds display order to every resource form', () => {
     for (const definition of masterDataCatalog) {
-      if (definition.key === 'payment-methods' || ['airlines', 'aircraft-types', 'baggage-rules', 'rail-companies', 'train-types', 'bus-companies', 'bus-types'].includes(definition.key)) continue;
-      expect(getMasterDataFormFields(definition)).toBe(definition.fields);
+      if (definition.key === 'exchange-rates') continue;
+      expect(
+        getMasterDataFormFields(definition).map((field) => field.key),
+      ).toContain('displayOrder');
     }
   });
 

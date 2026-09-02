@@ -169,7 +169,7 @@ export function MasterDataInsuranceWorkspace() {
   const [insurers, setInsurers] = useState<readonly MasterDataRecord[]>([]);
   const [currencies, setCurrencies] = useState<readonly MasterDataRecord[]>([]);
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
   const [referenceFilter, setReferenceFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -376,7 +376,7 @@ export function MasterDataInsuranceWorkspace() {
     setResource(next);
     setSearch('');
     resetColumnFilters();
-    setStatus('all');
+    setStatus('active');
     setReferenceFilter('all');
     setPage(1);
     setSelected(undefined);
@@ -815,7 +815,7 @@ export function MasterDataInsuranceWorkspace() {
             setSearch('');
             resetColumnFilters();
             resetDateRange();
-            setStatus('all');
+            setStatus('active');
             setReferenceFilter('all');
             setPage(1);
           }}

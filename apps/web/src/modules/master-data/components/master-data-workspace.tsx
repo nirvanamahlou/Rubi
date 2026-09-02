@@ -68,7 +68,7 @@ export function MasterDataWorkspace({
   const [previewState, setPreviewState] =
     useState<MasterDataPreviewState>(initialPreviewState);
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [status, setStatus] = useState<'all' | 'active' | 'inactive'>('active');
   const [sort, setSort] = useState<'name' | 'code' | 'updatedAt'>('name');
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -78,7 +78,7 @@ export function MasterDataWorkspace({
     setResource(next);
     setPreviewState('empty');
     setSearch('');
-    setStatus('all');
+    setStatus('active');
     setSort('name');
     setNotice(null);
   }
@@ -246,7 +246,7 @@ export function MasterDataWorkspace({
             <MasterDataFilterActions
               onClear={() => {
                 setSearch('');
-                setStatus('all');
+                setStatus('active');
                 setSort('name');
               }}
               onRefresh={() => setPreviewState(initialPreviewState)}

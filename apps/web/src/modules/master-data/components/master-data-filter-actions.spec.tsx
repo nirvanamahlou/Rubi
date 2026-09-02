@@ -22,7 +22,8 @@ describe('MasterDataFilterActions', () => {
     expect(html).toContain('bg-background');
     expect(html).toContain('bg-primary/5');
     expect(html).toContain('پاک‌کردن');
-    expect(html).toContain('تازه‌سازی');
+    expect(html).toContain('aria-label="تازه‌سازی"');
+    expect(html).not.toContain('>تازه‌سازی</button>');
   });
 
   it.each([

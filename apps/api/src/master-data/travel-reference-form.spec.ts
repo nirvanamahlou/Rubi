@@ -114,8 +114,8 @@ describe('travel reference form persistence contract', () => {
       {
         ...visa,
         englishName: 'Test visa',
-        supplierId: referenceId,
-        referenceValidityMode: 'PASSPORT_EXPIRY',
+        referenceValidityMode: 'DAYS',
+        referenceValidityDays: '90',
         guidanceFileReference: referenceId,
         description: 'General guide',
         status: 'inactive',
@@ -123,15 +123,13 @@ describe('travel reference form persistence contract', () => {
       actor,
     );
     expect(create.mock.calls[0]?.[1]).toMatchObject({
-      referenceValidityMode: 'PASSPORT_EXPIRY',
-      referenceValidityDays: null,
+      referenceValidityMode: 'DAYS',
+      referenceValidityDays: 90,
       guidanceFileReference: referenceId,
-      supplierId: referenceId,
       isActive: false,
     });
-    expect(result.data.attributes.referenceValidityMode).toBe(
-      'PASSPORT_EXPIRY',
-    );
+    expect(result.data.attributes.referenceValidityMode).toBe('DAYS');
+    expect(result.data.attributes).not.toHaveProperty('supplierId');
   });
   it('preserves legacy numeric-only payloads and omitted lower bounds', async () => {
     const { service, create } = setup();

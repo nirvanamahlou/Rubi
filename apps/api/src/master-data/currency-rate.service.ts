@@ -86,11 +86,13 @@ export class CurrencyRateService {
       throw new BadRequestException(
         'حداقل یک نرخ مثبت با حداکثر ۱۴ رقم صحیح و ۱۰ رقم اعشار لازم است.',
       );
-    const source = input.source.trim();
-    if (!source || source.length > 160)
-      throw new BadRequestException('منبع نرخ الزامی و حداکثر ۱۶۰ نویسه است.');
-    const observedAt = new Date(input.observedAt);
-    const validFrom = new Date(input.validFrom ?? input.observedAt);
+    const source = input.source?.trim() || 'ثبت دستی';
+    if (source.length > 160)
+      throw new BadRequestException('منبع نرخ حداکثر ۱۶۰ نویسه است.');
+    const observedAt = input.observedAt
+      ? new Date(input.observedAt)
+      : new Date();
+    const validFrom = input.validFrom ? new Date(input.validFrom) : observedAt;
     const validTo = input.validTo ? new Date(input.validTo) : null;
     if (
       [input.observedAt, input.validFrom, input.validTo].some(

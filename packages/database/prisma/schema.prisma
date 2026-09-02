@@ -417,6 +417,7 @@ model MasterCity {
   code                      String                     @db.VarChar(32)
   name                      String                     @db.VarChar(160)
   englishName               String                     @db.VarChar(160)
+  displayOrder              Int                        @default(0)
   isActive                  Boolean                    @default(true)
   version                   Int                        @default(1)
   createdByUserId           String                     @db.Uuid
@@ -450,7 +451,8 @@ model MasterRegion {
   code                String           @db.VarChar(32)
   name                String           @db.VarChar(160)
   englishName         String           @db.VarChar(160)
-  type                MasterRegionType
+  type                MasterRegionType @default(PROVINCE)
+  displayOrder        Int              @default(0)
   isActive            Boolean          @default(true)
   version             Int              @default(1)
   createdByUserId     String           @db.Uuid
@@ -481,6 +483,7 @@ model MasterAirport {
   ianaTimezone        String             @db.VarChar(80)
   latitude            Decimal            @db.Decimal(9, 6)
   longitude           Decimal            @db.Decimal(9, 6)
+  displayOrder        Int                @default(0)
   isActive            Boolean            @default(true)
   version             Int                @default(1)
   createdByUserId     String             @db.Uuid
@@ -509,6 +512,7 @@ model MasterTerminal {
   operatingHoursMode  String?            @db.VarChar(16)
   opensAt             String?            @db.Char(5)
   closesAt            String?            @db.Char(5)
+  displayOrder        Int                @default(0)
   isUnderMaintenance  Boolean            @default(false)
   isActive            Boolean            @default(true)
   version             Int                @default(1)
@@ -533,6 +537,7 @@ model MasterCurrency {
   symbol              String?                     @db.VarChar(16)
   decimalDigits       Int                         @default(2)
   displayPolicy       MasterCurrencyDisplayPolicy @default(CODE_AFTER)
+  displayOrder        Int                         @default(0)
   isActive            Boolean                     @default(true)
   version             Int                         @default(1)
   createdByUserId     String                      @db.Uuid
@@ -589,6 +594,8 @@ model MasterBank {
   name                String             @db.VarChar(160)
   englishName         String?            @db.VarChar(160)
   swiftCode           String?            @unique @db.VarChar(11)
+  logoFileReference   String?            @db.Uuid
+  displayOrder        Int                @default(0)
   isActive            Boolean            @default(true)
   version             Int                @default(1)
   createdByUserId     String             @db.Uuid
@@ -613,6 +620,7 @@ model MasterBankBranch {
   englishName         String?    @db.VarChar(160)
   address             String?    @db.VarChar(500)
   phone               String?    @db.VarChar(32)
+  displayOrder        Int        @default(0)
   isActive            Boolean    @default(true)
   version             Int        @default(1)
   createdByUserId     String     @db.Uuid
@@ -660,6 +668,8 @@ model MasterOrganization {
   legalName           String                      @db.VarChar(200)
   displayName         String                      @db.VarChar(160)
   personType          String?                     @db.VarChar(16)
+  logoFileReference   String?                     @db.Uuid
+  displayOrder        Int                         @default(0)
   isActive            Boolean                     @default(true)
   version             Int                         @default(1)
   createdByUserId     String                      @db.Uuid
@@ -697,14 +707,17 @@ model MasterOrganizationRole {
 
 model MasterSupplier {
   id                        String                     @id @default(uuid()) @db.Uuid
-  organizationId            String                     @unique @db.Uuid
+  organizationId            String?                    @unique @db.Uuid
   countryId                 String?                    @db.Uuid
   cityId                    String?                    @db.Uuid
   code                      String                     @unique @db.VarChar(32)
+  name                      String?                    @db.VarChar(160)
   englishName               String?                    @db.VarChar(160)
+  logoFileReference         String?                    @db.Uuid
+  displayOrder              Int                        @default(0)
   primaryContactId          String?                    @db.Uuid
   externalProviderReference String?                    @db.VarChar(120)
-  collaborationStatus       MasterCollaborationStatus  @default(UNDER_REVIEW)
+  collaborationStatus       MasterCollaborationStatus  @default(ACTIVE)
   isActive                  Boolean                    @default(true)
   version                   Int                        @default(1)
   createdByUserId           String                     @db.Uuid
@@ -713,7 +726,7 @@ model MasterSupplier {
   deactivatedAt             DateTime?                  @db.Timestamptz(3)
   createdAt                 DateTime                   @default(now()) @db.Timestamptz(3)
   updatedAt                 DateTime                   @updatedAt @db.Timestamptz(3)
-  organization              MasterOrganization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization              MasterOrganization?        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   country                   MasterCountry?             @relation(fields: [countryId], references: [id], onDelete: Restrict)
   city                      MasterCity?                @relation(fields: [cityId], references: [id], onDelete: Restrict)
   services                  MasterSupplierService[]
@@ -734,6 +747,7 @@ model MasterTravelService {
   code                String                  @unique @db.VarChar(32)
   name                String                  @db.VarChar(160)
   englishName         String?                 @db.VarChar(160)
+  displayOrder        Int                     @default(0)
   isActive            Boolean                 @default(true)
   version             Int                     @default(1)
   createdByUserId     String                  @db.Uuid
@@ -784,6 +798,7 @@ model MasterOrganizationContact {
   preferredChannel          MasterOrganizationContactChannel @default(PHONE)
   hasWhatsapp               Boolean                          @default(false)
   isPrimary                 Boolean                          @default(false)
+  displayOrder              Int                              @default(0)
   phoneEncrypted            String?                          @db.Text
   phoneEncryptionIv         String?                          @db.VarChar(24)
   phoneEncryptionAuthTag    String?                          @db.VarChar(24)
@@ -824,6 +839,7 @@ model MasterInsurer {
   name                String                @db.VarChar(160)
   englishName         String?               @db.VarChar(160)
   logoFileReference   String?               @db.Uuid
+  displayOrder        Int                   @default(0)
   isActive            Boolean               @default(true)
   version             Int                   @default(1)
   createdByUserId     String                @db.Uuid
@@ -853,6 +869,7 @@ model MasterInsurancePlan {
   validFrom           DateTime                      @db.Timestamptz(3)
   validTo             DateTime?                     @db.Timestamptz(3)
   description         String?                       @db.VarChar(1000)
+  displayOrder        Int                           @default(0)
   isActive            Boolean                       @default(true)
   version             Int                           @default(1)
   createdByUserId     String                        @db.Uuid
@@ -879,6 +896,7 @@ model MasterInsuranceCoverage {
   coverageLimit       Decimal                       @db.Decimal(24, 10)
   deductibleAmount    Decimal                       @default(0) @db.Decimal(24, 10)
   description         String?                       @db.VarChar(1000)
+  displayOrder        Int                           @default(0)
   isActive            Boolean                       @default(true)
   version             Int                           @default(1)
   createdByUserId     String                        @db.Uuid
@@ -911,13 +929,14 @@ model MasterInsurancePlanCoverage {
 model MasterAirline {
   isUnderReview       Boolean                  @default(false)
   id                  String                   @id @default(uuid()) @db.Uuid
-  organizationId      String                   @unique @db.Uuid
+  organizationId      String?                  @unique @db.Uuid
   code                String                   @unique @db.Char(2)
   icaoCode            String?                  @unique @db.Char(3)
   name                String                   @db.VarChar(160)
   englishName         String?                  @db.VarChar(160)
   countryId           String?                  @db.Uuid
   logoFileReference   String?                  @db.Uuid
+  displayOrder        Int                      @default(0)
   isActive            Boolean                  @default(true)
   version             Int                      @default(1)
   createdByUserId     String                   @db.Uuid
@@ -926,7 +945,7 @@ model MasterAirline {
   deactivatedAt       DateTime?                @db.Timestamptz(3)
   createdAt           DateTime                 @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime                 @updatedAt @db.Timestamptz(3)
-  organization        MasterOrganization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization        MasterOrganization?      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   country             MasterCountry?           @relation(fields: [countryId], references: [id], onDelete: Restrict)
   baggageRules        MasterBaggageRule[]
   manifestTemplates   MasterManifestTemplate[]
@@ -944,7 +963,8 @@ model MasterAircraftType {
   model               String                 @db.VarChar(120)
   name                String                 @db.VarChar(160)
   englishName         String?                @db.VarChar(160)
-  bodyType            MasterAircraftBodyType
+  bodyType            MasterAircraftBodyType @default(OTHER)
+  displayOrder        Int                    @default(0)
   isActive            Boolean                @default(true)
   version             Int                    @default(1)
   createdByUserId     String                 @db.Uuid
@@ -996,6 +1016,7 @@ model MasterBaggageRule {
   validFrom           DateTime                  @db.Date
   validTo             DateTime?                 @db.Date
   description         String?                   @db.VarChar(500)
+  displayOrder        Int                       @default(0)
   isActive            Boolean                   @default(true)
   version             Int                       @default(1)
   createdByUserId     String                    @db.Uuid
@@ -1028,6 +1049,7 @@ model MasterManifestTemplate {
   validFrom           DateTime                     @db.Date
   validTo             DateTime?                    @db.Date
   publicationStatus   MasterManifestTemplateStatus @default(DRAFT)
+  displayOrder        Int                          @default(0)
   isActive            Boolean                      @default(true)
   version             Int                          @default(1)
   createdByUserId     String                       @db.Uuid
@@ -1052,6 +1074,7 @@ model MasterRailCompany {
   name                String             @db.VarChar(160)
   englishName         String?            @db.VarChar(160)
   logoFileReference   String?            @db.Uuid
+  displayOrder        Int                @default(0)
   isActive            Boolean            @default(true)
   version             Int                @default(1)
   createdByUserId     String             @db.Uuid
@@ -1078,6 +1101,7 @@ model MasterTrainType {
   englishName         String?                   @db.VarChar(160)
   category            MasterTrainCategory
   amenities           String[]
+  displayOrder        Int                       @default(0)
   isActive            Boolean                   @default(true)
   version             Int                       @default(1)
   createdByUserId     String                    @db.Uuid
@@ -1102,6 +1126,7 @@ model MasterBusCompany {
   name                String              @db.VarChar(160)
   englishName         String?             @db.VarChar(160)
   logoFileReference   String?             @db.Uuid
+  displayOrder        Int                 @default(0)
   isActive            Boolean             @default(true)
   version             Int                 @default(1)
   createdByUserId     String              @db.Uuid
@@ -1128,6 +1153,7 @@ model MasterBusType {
   englishName         String?                 @db.VarChar(160)
   serviceClass        MasterBusServiceClass
   amenities           String[]
+  displayOrder        Int                     @default(0)
   isActive            Boolean                 @default(true)
   version             Int                     @default(1)
   createdByUserId     String                  @db.Uuid
@@ -1189,6 +1215,7 @@ model MasterHotel {
   longitude            Decimal?                     @db.Decimal(9, 6)
   logoFileReference    String?                      @db.Uuid
   starRating           Int?
+  displayOrder         Int                          @default(0)
   isSaleableReference  Boolean                      @default(true)
   isActive             Boolean                      @default(true)
   version              Int                          @default(1)
@@ -1223,6 +1250,7 @@ model MasterMealService {
   englishName         String?                   @db.VarChar(160)
   category            MasterMealServiceCategory @default(MEAL_PLAN)
   includedMeals       String[]                  @default([])
+  displayOrder        Int                       @default(0)
   isActive            Boolean                   @default(true)
   isUnderReview       Boolean                   @default(false)
   version             Int                       @default(1)
@@ -1247,6 +1275,7 @@ model MasterRoomType {
   englishName         String?               @db.VarChar(160)
   referenceCapacity   Int?
   usageDescription    String?               @db.VarChar(500)
+  displayOrder        Int                   @default(0)
   isActive            Boolean               @default(true)
   version             Int                   @default(1)
   createdByUserId     String                @db.Uuid
@@ -1308,6 +1337,7 @@ model MasterHotelChain {
   englishName         String?       @db.VarChar(160)
   website             String?       @db.VarChar(320)
   logoFileReference   String?       @db.Uuid
+  displayOrder        Int           @default(0)
   isActive            Boolean       @default(true)
   version             Int           @default(1)
   createdByUserId     String        @db.Uuid
@@ -1355,7 +1385,8 @@ model MasterCompositeHotel {
   code                String                       @unique @db.VarChar(32)
   name                String                       @db.VarChar(160)
   englishName         String?                      @db.VarChar(160)
-  usageCondition      String                       @db.VarChar(2000)
+  usageCondition      String?                      @db.VarChar(2000)
+  displayOrder        Int                          @default(0)
   isSaleableReference Boolean                      @default(true)
   isActive            Boolean                      @default(true)
   version             Int                          @default(1)
@@ -1429,14 +1460,16 @@ model MasterHotelImportSession {
 
 model MasterBroker {
   id                  String                     @id @default(uuid()) @db.Uuid
-  organizationId      String                     @unique @db.Uuid
+  organizationId      String?                    @unique @db.Uuid
   countryId           String?                    @db.Uuid
   cityId              String?                    @db.Uuid
   code                String                     @unique @db.VarChar(32)
   name                String                     @db.VarChar(160)
   englishName         String?                    @db.VarChar(160)
   primaryContactId    String?                    @db.Uuid
-  collaborationStatus MasterCollaborationStatus  @default(UNDER_REVIEW)
+  logoFileReference   String?                    @db.Uuid
+  displayOrder        Int                        @default(0)
+  collaborationStatus MasterCollaborationStatus  @default(ACTIVE)
   isActive            Boolean                    @default(true)
   version             Int                        @default(1)
   createdByUserId     String                     @db.Uuid
@@ -1445,7 +1478,7 @@ model MasterBroker {
   deactivatedAt       DateTime?                  @db.Timestamptz(3)
   createdAt           DateTime                   @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime                   @updatedAt @db.Timestamptz(3)
-  organization        MasterOrganization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization        MasterOrganization?        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   country             MasterCountry?             @relation(fields: [countryId], references: [id], onDelete: Restrict)
   city                MasterCity?                @relation(fields: [cityId], references: [id], onDelete: Restrict)
   services            MasterBrokerService[]
@@ -1481,6 +1514,7 @@ model MasterLeader {
   roamingPhoneFingerprint          String?     @db.Char(64)
   welcomeSignCode                  String?     @db.VarChar(80)
   operationalNotes                 String?     @db.VarChar(1000)
+  displayOrder                     Int         @default(0)
   isActive                         Boolean     @default(true)
   version                          Int         @default(1)
   createdByUserId                  String      @db.Uuid

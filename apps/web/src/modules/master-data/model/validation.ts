@@ -37,41 +37,72 @@ export function validateMasterDataDraft(
   );
   const errors: Record<string, string> = {};
   if (isMasterTransportFormResource(resource)) {
-    if (values.transportStatus && !['ACTIVE', 'INACTIVE', 'UNDER_REVIEW'].includes(values.transportStatus))
+    if (
+      values.transportStatus &&
+      !['ACTIVE', 'INACTIVE', 'UNDER_REVIEW'].includes(values.transportStatus)
+    )
       errors.transportStatus = 'وضعیت معتبر نیست.';
     if (!values.transportStatus) delete values.transportStatus;
-    if ((values.englishName?.length ?? 0) > 160) errors.englishName = 'نام انگلیسی حداکثر ۱۶۰ نویسه است.';
+    if ((values.englishName?.length ?? 0) > 160)
+      errors.englishName = 'نام انگلیسی حداکثر ۱۶۰ نویسه است.';
   }
-  if ((resource === 'suppliers' || resource === 'brokers') && (values.englishName?.length ?? 0) > 160)
+  if (
+    (resource === 'suppliers' || resource === 'brokers') &&
+    (values.englishName?.length ?? 0) > 160
+  )
     errors.englishName = 'نام انگلیسی حداکثر ۱۶۰ نویسه است.';
-  if (resource === 'organizations' && values.personType && !['NATURAL', 'LEGAL'].includes(values.personType))
+  if (
+    resource === 'organizations' &&
+    values.personType &&
+    !['NATURAL', 'LEGAL'].includes(values.personType)
+  )
     errors.personType = 'نوع شخصیت باید حقیقی یا حقوقی باشد.';
 
   for (const field of getMasterDataFormFields(definition)) {
     if (field.required && !values[field.key]) {
       errors[field.key] = `${field.label} الزامی است.`;
     }
-    if (isMasterTransportFormResource(resource) && values[field.key] &&
-      field.options && !field.options.some((option) => option.value === values[field.key]))
+    if (
+      isMasterTransportFormResource(resource) &&
+      values[field.key] &&
+      field.options &&
+      !field.options.some((option) => option.value === values[field.key])
+    )
       errors[field.key] = `${field.label} معتبر نیست.`;
   }
   if (resource === 'airlines') {
-    for (const [key, pattern] of [['code', /^[A-Z0-9]{2}$/], ['icaoCode', /^[A-Z0-9]{3}$/]] as const) {
-      if (!values[key]) continue;
-      values[key] = values[key].toUpperCase();
-      if (!pattern.test(values[key])) errors[key] = 'کد ایرلاین معتبر نیست.';
-    }
+    const codes = (values.airlineCodes ?? '').toUpperCase().split(/\s*\/\s*/);
+    values.airlineCodes = codes.filter(Boolean).join(' / ');
+    if (!/^[A-Z0-9]{2}(?:\s*\/\s*[A-Z0-9]{3})?$/.test(values.airlineCodes))
+      errors.airlineCodes =
+        'کد ایرلاین را به‌شکل IATA یا IATA / ICAO وارد کنید.';
   }
   if (resource === 'baggage-rules') {
-    if (values.allowance && (!/^\d+(\.\d{1,2})?$/.test(values.allowance) || Number(values.allowance) <= 0 || Number(values.allowance) > 999999.99))
+    if (
+      values.allowance &&
+      (!/^\d+(\.\d{1,2})?$/.test(values.allowance) ||
+        Number(values.allowance) <= 0 ||
+        Number(values.allowance) > 999999.99)
+    )
       errors.allowance = 'مقدار بار باید مثبت و حداکثر دو رقم اعشار باشد.';
-    if (values.pieceCount && (!/^\d+$/.test(values.pieceCount) || Number(values.pieceCount) < 1 || Number(values.pieceCount) > 2147483647))
+    if (
+      values.pieceCount &&
+      (!/^\d+$/.test(values.pieceCount) ||
+        Number(values.pieceCount) < 1 ||
+        Number(values.pieceCount) > 2147483647)
+    )
       errors.pieceCount = 'تعداد قطعه باید عدد صحیح مثبت باشد.';
-    if (values.unit === 'PC' && !values.pieceCount) errors.pieceCount = 'برای واحد قطعه، تعداد قطعه الزامی است.';
+    if (values.unit === 'PC' && !values.pieceCount)
+      errors.pieceCount = 'برای واحد قطعه، تعداد قطعه الزامی است.';
     for (const key of ['validFrom', 'validTo']) {
-      if (values[key] && Number.isNaN(Date.parse(values[key]))) errors[key] = 'تاریخ معتبر نیست.';
+      if (values[key] && Number.isNaN(Date.parse(values[key])))
+        errors[key] = 'تاریخ معتبر نیست.';
     }
-    if (values.validFrom && values.validTo && Date.parse(values.validTo) < Date.parse(values.validFrom))
+    if (
+      values.validFrom &&
+      values.validTo &&
+      Date.parse(values.validTo) < Date.parse(values.validFrom)
+    )
       errors.validTo = 'پایان اعتبار باید بعد از شروع اعتبار باشد.';
   }
 
@@ -117,10 +148,15 @@ export function validateMasterDataDraft(
       errors.swiftCode = 'کد SWIFT باید ۸ یا ۱۱ نویسه بزرگ باشد.';
   }
 
-  if (resource === 'payment-methods' && values.displayOrder) {
+  if (values.displayOrder) {
     const displayOrder = Number(values.displayOrder);
-    if (!Number.isInteger(displayOrder) || displayOrder < 0)
-      errors.displayOrder = 'ترتیب نمایش باید عدد صحیح نامنفی باشد.';
+    if (
+      !Number.isSafeInteger(displayOrder) ||
+      displayOrder < 0 ||
+      displayOrder > 100000
+    )
+      errors.displayOrder =
+        'ترتیب نمایش باید عدد صحیح بین صفر تا ۱۰۰٬۰۰۰ باشد.';
   }
 
   if (resource === 'countries' && values.iso2Code) {

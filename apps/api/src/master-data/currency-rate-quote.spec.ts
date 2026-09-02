@@ -35,13 +35,11 @@ function setup() {
       ]),
     },
     masterDraftExchangeRate: {
-      create: vi
-        .fn()
-        .mockImplementation(async ({ data }) => ({
-          ...data,
-          id: `rate-${++nextId}`,
-          version: 1,
-        })),
+      create: vi.fn().mockImplementation(async ({ data }) => ({
+        ...data,
+        id: `rate-${++nextId}`,
+        version: 1,
+      })),
     },
     masterDataAuditEvent: { create: vi.fn().mockResolvedValue({}) },
   };
@@ -195,10 +193,12 @@ describe('quote runtime DTO', () => {
       { ...input, observedAt: '2026-02-31T12:00:00Z' },
       { ...input, buyRate: 1.5 },
       { ...input, buyRate: '1.12345678901' },
-      { ...input, source: ' ' },
     ])
       await expect(transform(invalid)).rejects.toBeInstanceOf(
         BadRequestException,
       );
+    await expect(transform({ ...input, source: ' ' })).resolves.toMatchObject({
+      source: '',
+    });
   });
 });

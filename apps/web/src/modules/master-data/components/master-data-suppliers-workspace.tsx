@@ -211,7 +211,7 @@ export function MasterDataSuppliersWorkspace() {
     useState<MasterOrganizationSupplierSummary>(emptySummary);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<MasterDataRecord>();
@@ -394,7 +394,7 @@ export function MasterDataSuppliersWorkspace() {
     setTab(next);
     setSearch('');
     resetColumnFilters();
-    setStatus('all');
+    setStatus('active');
     setPage(1);
     setSelected(undefined);
     setProfileOpen(false);
@@ -1027,13 +1027,10 @@ export function MasterDataSuppliersWorkspace() {
             setSearch('');
             resetColumnFilters();
             resetDateRange();
-            setStatus('all');
+            setStatus('active');
             setPage(1);
           }}
           onRefresh={() => void Promise.all([load(), loadSummary()])}
-          refreshLabel={
-            tab === 'collaboration' ? 'تازه‌سازی وضعیت‌ها' : 'تازه‌سازی'
-          }
         />
       </FilterBar>
       {content}

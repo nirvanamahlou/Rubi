@@ -1,5 +1,16 @@
 # Work Assignments
 
+## MASTER-004-FORM-ALIGNMENT — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-02: هم‌ترازسازی کامل فرم‌ها و فهرست‌های اطلاعات پایه شامل ادغام تجربه استان/شهر، حذف یا اختیاری‌کردن فیلدهای مشخص‌شده، افزودن ترتیب نمایش عمومی، یکسان‌سازی تقویم و قالب اعداد، حذف Exportهای تعیین‌شده، ورود داخلی امکانات هتل، ساده‌سازی حمل‌ونقل و افزودن Logo Reference برای شرکت‌ها و سازمان‌ها. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-master-data-form-alignment` از `origin/develop@e91cdba`؛ کار مستقیم روی `develop` یا `main`، Merge خودکار، Force Push و حذف Branch ممنوع است.
+- محدوده رزروشده: `apps/web/src/modules/master-data/**`، `apps/api/src/master-data/**`، قرارداد افزایشی `packages/contracts/src/master-data/**`، مدل‌ها و Migration افزایشی Master Data در `packages/database/prisma/**`، تست‌های همین Slice و اسناد همین Work Item.
+- مرزها: مدل Region/City در دیتابیس ادغام نمی‌شود و فقط تجربه فرم به‌صورت یک جریان وابسته استان سپس شهر یکپارچه می‌شود؛ حذف فیلدهای قدیمی از UI/Contract به روش backward-compatible انجام می‌شود و ستون داده‌ای به‌صورت مخرب حذف نخواهد شد.
+- Lock state: `Migration Owner = PC-B/MASTER-004-FORM-ALIGNMENT`، `Master Data Contract Owner = PC-B/MASTER-004-FORM-ALIGNMENT`، `Shared Calendar Owner = PC-B/MASTER-004-FORM-ALIGNMENT` و `Central Docs Owner = PC-B/MASTER-004-FORM-ALIGNMENT`. قفل Dependency/Lockfile گرفته نمی‌شود. تغییر Calendar فقط برای انتخاب مستقیم ماه/سال، رقم انگلیسی میلادی و حفظ API موجود انجام می‌شود.
+- Logo فقط به‌صورت File Reference امن و بدون ذخیره Binary/Secret در Git تعریف می‌شود؛ اتصال بین‌ماژولی Documents تنها از قرارداد عمومی موجود مجاز است.
+- پیاده‌سازی و Migration افزایشی `20260902173500_master_data_form_alignment` تکمیل و روی PostgreSQL محلی اعمال شد. Web شامل `586/586` تست و API شامل `776/776` تست موفق است؛ ۷۰ تست اختیاری PostgreSQL در اجرای API طبق تنظیم Suite رد شدند. lint، typecheck، Prisma validate، API build و Web production build موفق‌اند.
+- Handoff: Branch تحویلی `codex/pc-b-master-data-form-alignment` است. تا پایان Review قفل‌های Migration، Master Data Contract، Shared Calendar و Central Docs نزد همین Work Item می‌مانند؛ سازنده Branch آن را خودکار با `develop` ادغام نمی‌کند.
+
 ## MARKETING-001B — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک در 2026-09-02: فایل مرجع `marketing.html` به‌عنوان ظاهر و رفتار مرجع روی Workspace واقعی Rubi پیاده شود؛ همه بخش‌ها و دکمه‌ها کار کنند و فیلترها و تقویم‌ها دقیقاً از Design System مشترک Rubi مصرف شوند. `COMPUTER_ID=PC-B`.

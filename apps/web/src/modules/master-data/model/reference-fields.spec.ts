@@ -72,10 +72,10 @@ describe('master data reference field mapping', () => {
     ).toMatchObject({ target: 'hotels', multiple: true });
   });
 
-  it('publishes Provider choice and normalized facilities for buses', () => {
+  it('keeps bus providers out of Master Data and publishes normalized facilities', () => {
     expect(
       getReferenceFieldConfig('bus-companies', 'supplierId'),
-    ).toMatchObject({ target: 'suppliers', optional: true });
+    ).toBeUndefined();
     expect(getReferenceFieldConfig('bus-types', 'facilityIds')).toMatchObject({
       target: 'facilities',
       multiple: true,
