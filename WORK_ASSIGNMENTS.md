@@ -8,6 +8,7 @@
 - این Slice نمایشی و بدون Persistence است: بدون API/Contract مشترک، Prisma Schema/Migration/Seed، Dependency/Lockfile، داده واقعی مشتری یا دسترسی مستقیم به ماژول‌های Customers، Reservations و Finance.
 - معیار پذیرش: فهرست قراردادها مرحله فعلی، پیشرفت، مسافر/خدمت، وضعیت مالی و اقدام بعدی را نشان دهد؛ ساخت قرارداد جدید به‌صورت Wizard قابل تعامل باشد؛ رابط در Desktop/Mobile، RTL، Keyboard و حالت‌های جست‌وجو/فیلتر/Empty قابل استفاده باشد؛ lint، typecheck، تست هدفمند و build Web موفق باشند.
 - نتیجه: صفحه `/sales` به «قراردادهای من» تبدیل شد؛ چهار قرارداد کاملاً ساختگی با مرحله، درصد پیشرفت، تخصیص خدمت، وضعیت مالی و اقدام بعدی دارد. جست‌وجو/فیلتر، Empty state، جزئیات قرارداد و Wizard پنج‌مرحله‌ای قرارداد جدید تعاملی هستند و هیچ داده‌ای Persist نمی‌شود.
+- Follow-up مالک در 2026-09-02: نسخه مستقل و بدون سرور همین ماکاپ در `mockups/sales-contracts.html` اضافه شد؛ CSS و JavaScript داخل فایل هستند و با بازکردن مستقیم در مرورگر اجرا می‌شود.
 - Validation: Build تولیدی Web، lint کامل، typecheck و ۶ تست هدفمند موفق‌اند؛ `/sales` در خروجی Static Route ساخته شد. پیش‌نمایش محلی روی پورت مستقل ۳۱۱۲ فعال است. انتشار Sites انجام نشد، چون این سامانه احراز‌شده فاقد `.openai/hosting.json` و خروجی Cloudflare Workers سازگار است و افزودن زیرساخت میزبانی خارج از Scope این ماکاپ است.
 - Final lock state: `RELEASED — PC-A/SALES-001-MOCKUP ready for review`. Migration، Dependency/Lockfile و shared API contract در تمام کار آزاد و دست‌نخورده ماندند.
 

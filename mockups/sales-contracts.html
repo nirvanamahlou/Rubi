@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>قراردادهای من | ماکاپ فروش</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      :root {
+        --bg: #f2f6fc;
+        --card: #fff;
+        --text: #17243d;
+        --muted: #68778f;
+        --line: #dce5f1;
+        --blue: #1458b8;
+        --blue2: #2784e4;
+        --soft: #eaf2ff;
+        --green: #087d5a;
+        --amber: #a86008;
+        --shadow: 0 16px 44px #163f7d12;
+      }
+      body {
+        margin: 0;
+        min-width: 320px;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 92% -10%, #dbeaff 0, transparent 28rem),
+          var(--bg);
+        font-family: Tahoma, Arial, sans-serif;
+      }
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      .shell {
+        max-width: 1180px;
+        margin: auto;
+        padding: 28px 22px 60px;
+      }
+      .hero {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 28px;
+        border: 1px solid #cfe0f6;
+        border-radius: 26px;
+        background: var(--card);
+        box-shadow: var(--shadow);
+      }
+      .hero:after {
+        content: '';
+        position: absolute;
+        width: 230px;
+        height: 230px;
+        left: -70px;
+        top: -120px;
+        border-radius: 50%;
+        background: #2a84e51c;
+        filter: blur(18px);
+      }
+      .eyebrow {
+        margin: 0;
+        color: var(--blue);
+        font-size: 12px;
+        font-weight: 900;
+      }
+      h1 {
+        margin: 9px 0 8px;
+        font-size: 30px;
+      }
+      .sub {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.9;
+        font-size: 14px;
+      }
+      .primary {
+        border: 0;
+        border-radius: 15px;
+        padding: 13px 20px;
+        background: var(--blue);
+        color: white;
+        font-weight: 800;
+        box-shadow: 0 10px 24px #1458b82b;
+      }
+      .primary:hover {
+        background: #0d489b;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin: 18px 0;
+      }
+      .metric {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--card);
+      }
+      .metric i {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background: var(--soft);
+        color: var(--blue);
+        font-style: normal;
+        font-size: 20px;
+      }
+      .metric strong {
+        display: block;
+        font-size: 21px;
+      }
+      .metric span {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .tools {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 13px;
+        margin-bottom: 20px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--card);
+      }
+      .search {
+        flex: 1;
+        min-width: 200px;
+        height: 44px;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        outline: 0;
+        color: var(--text);
+      }
+      .search:focus {
+        border-color: var(--blue2);
+        box-shadow: 0 0 0 3px #2784e41a;
+      }
+      .filters {
+        display: flex;
+        gap: 6px;
+        overflow: auto;
+      }
+      .filter {
+        white-space: nowrap;
+        padding: 10px 13px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: white;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .filter.active {
+        border-color: var(--blue);
+        background: var(--blue);
+        color: white;
+      }
+      .list-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        margin: 0 2px 12px;
+      }
+      .list-head h2 {
+        margin: 0;
+        font-size: 18px;
+      }
+      .list-head p {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .contracts {
+        display: grid;
+        gap: 14px;
+      }
+      .contract {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: var(--card);
+        box-shadow: 0 12px 34px #163f7d0d;
+        transition: 0.2s;
+      }
+      .contract:hover {
+        transform: translateY(-2px);
+        border-color: #b9d1ee;
+      }
+      .contract-body {
+        padding: 20px;
+      }
+      .contract-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .contract h3 {
+        margin: 9px 0 5px;
+        font-size: 19px;
+      }
+      .customer {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 900;
+        border: 1px solid;
+      }
+      .urgent {
+        color: #8d5205;
+        background: #fff7e9;
+        border-color: #f2d9a6;
+      }
+      .working {
+        color: #135ca6;
+        background: #edf6ff;
+        border-color: #c8dff6;
+      }
+      .ready {
+        color: #087656;
+        background: #eafaf4;
+        border-color: #bce7d8;
+      }
+      .id {
+        margin-right: 8px;
+        direction: ltr;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .facts {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-top: 15px;
+      }
+      .fact {
+        padding: 10px 11px;
+        border-radius: 12px;
+        background: #f6f9fd;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .progress-box {
+        margin-top: 15px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: #fafdff;
+      }
+      .progress-title {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .progress-title b {
+        color: var(--blue);
+      }
+      .bar {
+        height: 7px;
+        margin-top: 9px;
+        overflow: hidden;
+        border-radius: 99px;
+        background: #e7edf5;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        border-radius: 99px;
+        background: linear-gradient(90deg, var(--blue), #37b6d3);
+      }
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+        margin-top: 12px;
+      }
+      .step {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        min-width: 0;
+        color: #8995a6;
+        font-size: 9px;
+        font-weight: 800;
+      }
+      .step i {
+        display: grid;
+        flex: 0 0 18px;
+        height: 18px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: white;
+        font-style: normal;
+      }
+      .step.done,
+      .step.now {
+        color: var(--text);
+      }
+      .step.done i {
+        color: white;
+        border-color: var(--blue);
+        background: var(--blue);
+      }
+      .step.now i {
+        color: var(--blue);
+        border-color: var(--blue);
+        background: var(--soft);
+      }
+      .next {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-top: 14px;
+        padding: 13px;
+        border: 1px solid #d5e4f7;
+        border-radius: 16px;
+        background: #f7faff;
+      }
+      .next small {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+      }
+      .next b {
+        display: block;
+        margin-top: 5px;
+        font-size: 12px;
+      }
+      .outline {
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        padding: 9px 13px;
+        background: white;
+        color: var(--text);
+        font-weight: 800;
+        font-size: 11px;
+      }
+      .contract-foot {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 11px 20px;
+        border-top: 1px solid var(--line);
+        background: #fafcff;
+        color: var(--muted);
+        font-size: 10px;
+      }
+      .empty {
+        display: none;
+        padding: 50px;
+        text-align: center;
+        border: 1px dashed var(--line);
+        border-radius: 20px;
+        background: white;
+        color: var(--muted);
+      }
+      .overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        padding: 20px;
+        background: #07132699;
+        backdrop-filter: blur(4px);
+        align-items: center;
+        justify-content: center;
+      }
+      .overlay.open {
+        display: flex;
+      }
+      .modal {
+        width: min(760px, 100%);
+        max-height: 92vh;
+        overflow: auto;
+        border-radius: 22px;
+        background: white;
+        box-shadow: 0 28px 90px #0005;
+      }
+      .modal-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 22px;
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(90deg, #fff, #edf5ff);
+      }
+      .modal-head h2 {
+        margin: 0;
+        font-size: 20px;
+      }
+      .modal-head p {
+        margin: 7px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .close {
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 10px;
+        background: #eef3f9;
+      }
+      .modal-body {
+        padding: 22px;
+      }
+      .wizard {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 5px;
+        margin-bottom: 22px;
+      }
+      .wiz {
+        text-align: center;
+        color: var(--muted);
+        font-size: 9px;
+        font-weight: 800;
+      }
+      .wiz i {
+        display: grid;
+        width: 30px;
+        height: 30px;
+        margin: 0 auto 7px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: white;
+        font-style: normal;
+      }
+      .wiz.active {
+        color: var(--blue);
+      }
+      .wiz.active i,
+      .wiz.done i {
+        color: white;
+        border-color: var(--blue);
+        background: var(--blue);
+      }
+      .panel h3 {
+        margin: 0 0 16px;
+      }
+      .fields {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      label {
+        display: grid;
+        gap: 7px;
+        color: #34445d;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 11px 12px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: white;
+        color: var(--text);
+        outline: 0;
+      }
+      textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+      .full {
+        grid-column: 1/-1;
+      }
+      .services {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .service {
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+      }
+      .service b {
+        display: block;
+        font-size: 12px;
+      }
+      .service span {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 10px;
+      }
+      .service.warn {
+        border-color: #e8c780;
+        background: #fffaf0;
+      }
+      .review {
+        padding: 16px;
+        border: 1px solid #bde4d6;
+        border-radius: 15px;
+        background: #eefaf6;
+        color: #076749;
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+      }
+      @media (max-width: 760px) {
+        .shell {
+          padding: 16px 12px 40px;
+        }
+        .hero {
+          align-items: stretch;
+          flex-direction: column;
+          padding: 20px;
+        }
+        h1 {
+          font-size: 25px;
+        }
+        .metrics {
+          grid-template-columns: 1fr 1fr;
+        }
+        .tools {
+          align-items: stretch;
+          flex-direction: column;
+        }
+        .facts {
+          grid-template-columns: 1fr 1fr;
+        }
+        .steps {
+          display: none;
+        }
+        .next {
+          align-items: stretch;
+          flex-direction: column;
+        }
+        .fields,
+        .services {
+          grid-template-columns: 1fr;
+        }
+        .full {
+          grid-column: auto;
+        }
+        .metric {
+          padding: 12px;
+        }
+        .metric i {
+          width: 38px;
+          height: 38px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">▣ فروش و تخصیص خدمات</p>
+          <h1>قراردادهای من</h1>
+          <p class="sub">
+            مرحله هر قرارداد، کارهای ناقص و اقدام بعدی را یکجا ببینید.
+          </p>
+        </div>
+        <button class="primary" id="newContract">＋ قرارداد جدید</button>
+      </section>
+      <section class="metrics">
+        <div class="metric">
+          <i>▣</i>
+          <div><strong>۱۲</strong><span>قرارداد فعال</span></div>
+        </div>
+        <div class="metric">
+          <i>!</i>
+          <div><strong>۳</strong><span>نیازمند اقدام امروز</span></div>
+        </div>
+        <div class="metric">
+          <i>✓</i>
+          <div><strong>۲</strong><span>آماده انتشار برای اجرا</span></div>
+        </div>
+        <div class="metric">
+          <i>﷼</i>
+          <div><strong>۴۸۲ م</strong><span>ارزش قراردادهای باز</span></div>
+        </div>
+      </section>
+      <section class="tools">
+        <input
+          class="search"
+          id="search"
+          placeholder="جست‌وجو در نام مشتری، مقصد یا شماره قرارداد..."
+        />
+        <div class="filters" id="filters">
+          <button class="filter active" data-filter="all">همه</button>
+          <button class="filter" data-filter="urgent">نیازمند اقدام</button>
+          <button class="filter" data-filter="working">در حال تکمیل</button>
+          <button class="filter" data-filter="ready">آماده اجرا</button>
+        </div>
+      </section>
+      <div class="list-head">
+        <div>
+          <h2>آخرین قراردادها</h2>
+          <p id="count">۳ قرارداد نمایشی</p>
+        </div>
+      </div>
+      <section class="contracts" id="contracts"></section>
+      <div class="empty" id="empty">
+        قراردادی با این جست‌وجو یا وضعیت پیدا نشد.
+      </div>
+    </main>
+    <div class="overlay" id="overlay">
+      <section
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle"
+      >
+        <header class="modal-head">
+          <div>
+            <h2 id="modalTitle">قرارداد جدید</h2>
+            <p>
+              اطلاعات را مرحله‌به‌مرحله تکمیل کنید؛ هر بخش بعداً قابل ویرایش
+              است.
+            </p>
+          </div>
+          <button class="close" id="close" aria-label="بستن">✕</button>
+        </header>
+        <div class="modal-body">
+          <div class="wizard" id="wizard"></div>
+          <div class="panel" id="panel"></div>
+          <div class="modal-actions">
+            <button class="outline" id="prev">مرحله قبل</button>
+            <button class="primary" id="next">ذخیره و ادامه</button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <script>
+      const steps = [
+        'اطلاعات قرارداد',
+        'مسافران',
+        'تخصیص خدمات',
+        'قیمت و شرایط',
+        'تأیید و امضا',
+      ];
+      const contracts = [
+        {
+          type: 'urgent',
+          tag: 'نیازمند اقدام',
+          id: 'NSS-1405-0412',
+          title: 'تور خانوادگی کیش',
+          customer: 'خانواده محمدی (نمونه)',
+          place: 'کیش',
+          date: '۲۲ شهریور ۱۴۰۵',
+          people: '۴ مسافر',
+          service: '۳ از ۵ خدمت',
+          step: 3,
+          progress: 48,
+          next: 'اتاق دو مسافر هنوز مشخص نشده است',
+          owner: 'نیایش رضایی',
+          amount: '۱۲۸٬۴۰۰٬۰۰۰ تومان',
+        },
+        {
+          type: 'working',
+          tag: 'در حال تکمیل',
+          id: 'NSS-1405-0408',
+          title: 'سفر کاری استانبول',
+          customer: 'شرکت سپهر آبی (نمونه)',
+          place: 'استانبول',
+          date: '۴ مهر ۱۴۰۵',
+          people: '۲ مسافر',
+          service: '۴ از ۴ خدمت',
+          step: 4,
+          progress: 76,
+          next: 'شرایط کنسلی و سررسید قسط را تأیید کنید',
+          owner: 'سارا احمدی',
+          amount: '۲٬۸۴۰ یورو',
+        },
+        {
+          type: 'ready',
+          tag: 'آماده اجرا',
+          id: 'NSS-1405-0399',
+          title: 'تور نمایشگاهی دبی',
+          customer: 'آژانس سفرنگار (نمونه)',
+          place: 'دبی',
+          date: '۱۸ مهر ۱۴۰۵',
+          people: '۸ مسافر',
+          service: '۳ از ۳ خدمت',
+          step: 5,
+          progress: 100,
+          next: 'انتشار Snapshot برای مالی و رزرواسیون',
+          owner: 'امیر مرادی',
+          amount: '۹٬۷۶۰ دلار',
+        },
+      ];
+      let activeFilter = 'all',
+        currentStep = 0;
+      const contractsEl = document.getElementById('contracts'),
+        search = document.getElementById('search');
+      function renderContracts() {
+        const q = search.value.trim().toLowerCase();
+        const items = contracts.filter(
+          (c) =>
+            (activeFilter === 'all' || c.type === activeFilter) &&
+            (!q ||
+              [c.title, c.customer, c.place, c.id]
+                .join(' ')
+                .toLowerCase()
+                .includes(q)),
+        );
+        contractsEl.innerHTML = items
+          .map(
+            (c) => `
+          <article class="contract" data-search="${c.title} ${c.customer} ${c.place} ${c.id}">
+            <div class="contract-body">
+              <div class="contract-top"><div><span class="tag ${c.type}">${c.tag}</span><span class="id">${c.id}</span>
+                <h3>${c.title}</h3><p class="customer">${c.customer}</p></div><b>•••</b></div>
+              <div class="facts"><div class="fact">⌖ ${c.place}</div><div class="fact">▣ ${c.date}</div>
+                <div class="fact">♙ ${c.people}</div><div class="fact">▣ ${c.service}</div></div>
+              <div class="progress-box"><div class="progress-title"><span>مرحله ${c.step} از ۵ · ${steps[c.step - 1]}</span><b>${c.progress}٪</b></div>
+                <div class="bar"><i style="width:${c.progress}%"></i></div>
+                <div class="steps">${steps.map((s, i) => `<span class="step ${i + 1 < c.step || c.progress === 100 ? 'done' : i + 1 === c.step ? 'now' : ''}"><i>${i + 1 < c.step || c.progress === 100 ? '✓' : i + 1}</i>${s}</span>`).join('')}</div>
+              </div>
+              <div class="next"><div><small>✦ اقدام بعدی پیشنهادی</small><b>${c.next}</b></div>
+                <button class="outline" onclick="alert('جزئیات قرارداد: '+this.closest('.contract').querySelector('h3').textContent)">${c.type === 'ready' ? 'انتشار برای اجرا' : 'ادامه قرارداد'} ‹</button></div>
+            </div><footer class="contract-foot"><span>کارشناس: <b>${c.owner}</b></span><b>${c.amount}</b></footer>
+          </article>`,
+          )
+          .join('');
+        document.getElementById('count').textContent =
+          items.length.toLocaleString('fa-IR') + ' قرارداد نمایشی';
+        document.getElementById('empty').style.display = items.length
+          ? 'none'
+          : 'block';
+      }
+      const panels = [
+        `<h3>اطلاعات قرارداد</h3><div class="fields">
+          <label>عنوان قرارداد<input placeholder="مثلاً تور خانوادگی کیش"></label>
+          <label>مشتری اصلی<select><option>مشتری نمونه جدید</option><option>شرکت نمونه سازمانی</option></select></label>
+          <label>پرداخت‌کننده<select><option>همان مشتری اصلی</option><option>شخص یا سازمان دیگر</option></select></label>
+          <label>کانال فروش<select><option>فروش حضوری</option><option>تلفنی</option><option>آژانس همکار</option></select></label>
+        </div>`,
+        `<h3>مسافران قرارداد</h3><div class="services">
+          <div class="service"><b>۱ · مشتری نمونه</b><span>بزرگسال · مدارک پایه کامل</span></div>
+          <div class="service"><b>۲ · همراه نمونه</b><span>بزرگسال · مدارک پایه کامل</span></div>
+        </div><p class="sub" style="margin-top:14px">مسافران از پرونده مشتری انتخاب می‌شوند و در این فایل ذخیره نخواهند شد.</p>`,
+        `<h3>تخصیص خدمات</h3><div class="services">
+          <div class="service"><b>✈ پرواز رفت‌وبرگشت</b><span>هر ۲ مسافر تخصیص یافتند</span></div>
+          <div class="service warn"><b>▣ هتل و اتاق</b><span>نوع اتاق هنوز انتخاب نشده</span></div>
+          <div class="service"><b>♧ بیمه مسافرتی</b><span>طرح پایه · ۲ مسافر</span></div>
+          <div class="service"><b>▣ ترانسفر</b><span>فرودگاه تا هتل</span></div>
+        </div>`,
+        `<h3>قیمت و شرایط</h3><div class="fields">
+          <label>ارز قرارداد<select><option>تومان</option><option>یورو</option><option>دلار</option></select></label>
+          <label>مبلغ نهایی فروش<input inputmode="numeric" placeholder="۰"></label>
+          <label>اعتبار پیشنهاد<input placeholder="مثلاً تا ۲۴ ساعت آینده"></label>
+          <label>شرایط پرداخت<select><option>۳۰٪ پیش‌پرداخت + مانده</option><option>تسویه کامل</option><option>اقساط سازمانی</option></select></label>
+          <label class="full">شرایط کنسلی و توضیحات<textarea placeholder="شرایط قابل ارائه به مشتری..."></textarea></label>
+        </div>`,
+        `<h3>تأیید و امضا</h3><div class="review"><b>✓ آماده بازبینی نهایی</b>
+          <p style="margin:8px 0 0;line-height:1.8;font-size:11px">طرفین، مسافران، خدمات و شرایط مالی در یک پیش‌نمایش جمع شده‌اند. ثبت نهایی فقط پیام نمایشی نشان می‌دهد.</p></div>
+          <div class="services" style="margin-top:12px"><div class="service"><b>۲ مسافر</b><span>هر دو دارای پرونده پایه</span></div>
+          <div class="service warn"><b>۴ خدمت</b><span>یک مورد نیازمند تکمیل</span></div></div>`,
+      ];
+      const overlay = document.getElementById('overlay'),
+        panel = document.getElementById('panel');
+      function renderWizard() {
+        document.getElementById('wizard').innerHTML = steps
+          .map(
+            (s, i) =>
+              `<div class="wiz ${i === currentStep ? 'active' : i < currentStep ? 'done' : ''}"><i>${i < currentStep ? '✓' : i + 1}</i>${s}</div>`,
+          )
+          .join('');
+        panel.innerHTML = panels[currentStep];
+        document.getElementById('prev').disabled = currentStep === 0;
+        document.getElementById('prev').style.opacity =
+          currentStep === 0 ? '.4' : '1';
+        document.getElementById('next').textContent =
+          currentStep === steps.length - 1
+            ? 'ثبت پیش‌نویس قرارداد'
+            : 'ذخیره و ادامه';
+      }
+      document.getElementById('newContract').onclick = () => {
+        currentStep = 0;
+        renderWizard();
+        overlay.classList.add('open');
+      };
+      document.getElementById('close').onclick = () =>
+        overlay.classList.remove('open');
+      overlay.onclick = (e) => {
+        if (e.target === overlay) overlay.classList.remove('open');
+      };
+      document.getElementById('prev').onclick = () => {
+        if (currentStep > 0) {
+          currentStep--;
+          renderWizard();
+        }
+      };
+      document.getElementById('next').onclick = () => {
+        if (currentStep < steps.length - 1) {
+          currentStep++;
+          renderWizard();
+        } else {
+          overlay.classList.remove('open');
+          alert('پیش‌نویس نمایشی ساخته شد؛ هیچ داده‌ای ذخیره نشد.');
+        }
+      };
+      document.getElementById('filters').onclick = (e) => {
+        const btn = e.target.closest('.filter');
+        if (!btn) return;
+        document
+          .querySelectorAll('.filter')
+          .forEach((x) => x.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.filter;
+        renderContracts();
+      };
+      search.oninput = renderContracts;
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') overlay.classList.remove('open');
+      });
+      renderContracts();
+    </script>
+  </body>
+</html>
