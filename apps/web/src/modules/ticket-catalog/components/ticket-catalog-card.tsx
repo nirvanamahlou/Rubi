@@ -68,11 +68,7 @@ export function TicketCatalogCard({
         ? 'railCompany'
         : 'busCompany';
   const powerStatus: CatalogStatus | null =
-    product.status === 'active'
-      ? 'paused'
-      : product.status === 'paused' || product.status === 'draft'
-        ? 'cancelled'
-        : null;
+    product.status === 'active' ? 'paused' : null;
 
   return (
     <Card
@@ -186,10 +182,8 @@ export function TicketCatalogCard({
               size="icon"
               variant="outline"
               className="text-rose-700 dark:text-rose-300"
-              title={powerStatus === 'paused' ? 'توقف فروش بلیت' : 'لغو بلیت'}
-              aria-label={
-                powerStatus === 'paused' ? 'توقف فروش بلیت' : 'لغو بلیت'
-              }
+              title="توقف فروش بلیت"
+              aria-label="توقف فروش بلیت"
               onClick={() => onStatus(powerStatus)}
             >
               <Power className="size-4" aria-hidden />

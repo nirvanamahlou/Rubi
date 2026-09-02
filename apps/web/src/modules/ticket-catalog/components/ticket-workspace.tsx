@@ -76,7 +76,7 @@ export function TicketWorkspace() {
     product?: Product;
     initial?: ProductInput;
   } | null>(null);
-  const [notice, setNotice] = useState('');
+  const [, setNotice] = useState('');
   const [problem, setProblem] = useState('');
   const [statusChange, setStatusChange] = useState<{
     product: Product;
@@ -261,7 +261,6 @@ export function TicketWorkspace() {
       <PageHeader
         title="مدیریت و تعریف بلیت‌ها"
         eyebrow="هواپیما • قطار • اتوبوس"
-        description="ایجاد و مدیریت بلیت‌های قابل فروش، ظرفیت و قیمت خرید. صدور بلیت مسافر در رزرواسیون انجام می‌شود. اطلاعات این صفحه روی همین مرورگر نگهداری می‌شود."
         actions={
           <>
             <Button
@@ -286,7 +285,6 @@ export function TicketWorkspace() {
           </>
         }
       />
-      {notice ? <Alert title={notice} /> : null}
       {problem && !statusChange && !repeat ? (
         <Alert tone="error" title={problem} />
       ) : null}
