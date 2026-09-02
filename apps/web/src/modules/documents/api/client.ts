@@ -1,11 +1,11 @@
 import type {
-  BranchReference,
   DocumentAuditResponseV1,
+  DocumentCaseOptionsQueryV1,
+  DocumentCaseOptionsResponseV1,
   DocumentDetailResponseV1,
   DocumentListQueryV1,
   DocumentListResponseV1,
   DocumentOptionsResponseV1,
-  LoginResponse,
 } from '@rubi/contracts';
 
 import { getPublicApiBaseUrl } from '../../../lib/environment';
@@ -101,7 +101,7 @@ async function requestFile(
   };
 }
 
-function serializeListQuery(query: DocumentListQueryV1): string {
+function serializeQuery(query: object): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
     if (value !== undefined && value !== '' && value !== 'ALL') {
@@ -113,10 +113,16 @@ function serializeListQuery(query: DocumentListQueryV1): string {
 
 export const documentsApi = {
   list(query: DocumentListQueryV1) {
-    return request<DocumentListResponseV1>(`?${serializeListQuery(query)}`);
+    return request<DocumentListResponseV1>(`?${serializeQuery(query)}`);
   },
   options() {
     return request<DocumentOptionsResponseV1>('/options');
+  },
+  caseOptions(query: DocumentCaseOptionsQueryV1, signal?: AbortSignal) {
+    return request<DocumentCaseOptionsResponseV1>(
+      `/case-options?${serializeQuery(query)}`,
+      signal ? { signal } : undefined,
+    );
   },
   detail(id: string, sensitiveReason?: string) {
     return request<DocumentDetailResponseV1>(
@@ -138,18 +144,6 @@ export const documentsApi = {
       method: 'POST',
       body: form,
     });
-  },
-  async sessionContext(): Promise<LoginResponse['user']> {
-    const baseUrl = getPublicApiBaseUrl();
-    if (!baseUrl)
-      throw new DocumentsApiError('نشانی API پیکربندی نشده است.', 0);
-    const session = await refreshAuthenticatedSession(baseUrl);
-    if (!session?.user)
-      throw new DocumentsApiError('دریافت اطلاعات کاربر ناموفق بود.', 0);
-    return session.user;
-  },
-  async branchReferences(): Promise<readonly BranchReference[]> {
-    return (await this.sessionContext()).branches;
   },
   download(id: string, sensitiveReason?: string) {
     return requestFile(`/${encodeURIComponent(id)}/download`, sensitiveReason);

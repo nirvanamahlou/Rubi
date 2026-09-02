@@ -11,6 +11,7 @@ import {
   Max,
   MaxLength,
   Min,
+  ValidateIf,
 } from 'class-validator';
 import type {
   DocumentArchiveStatusCode,
@@ -114,6 +115,24 @@ export class DocumentListQueryDto {
   pageSize?: number;
 }
 
+export class DocumentCaseOptionsQueryDto {
+  @IsUUID()
+  branchId!: string;
+
+  @IsOptional()
+  @Transform(emptyToUndefined)
+  @IsString()
+  @MaxLength(120)
+  search?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(10)
+  @Max(50)
+  limit?: number;
+}
+
 export class DocumentUploadDto {
   @IsString()
   @Length(2, 240)
@@ -137,21 +156,30 @@ export class DocumentUploadDto {
   @IsUUID()
   ownerUserId!: string;
 
+  @IsOptional()
+  @Transform(emptyToUndefined)
+  @IsUUID()
+  sourceRelationId?: string;
+
+  @ValidateIf((input: DocumentUploadDto) => !input.sourceRelationId)
   @IsString()
   @Length(2, 80)
-  sourceModule!: string;
+  sourceModule?: string;
 
+  @ValidateIf((input: DocumentUploadDto) => !input.sourceRelationId)
   @IsString()
   @Length(2, 120)
-  sourceEntityType!: string;
+  sourceEntityType?: string;
 
+  @ValidateIf((input: DocumentUploadDto) => !input.sourceRelationId)
   @IsString()
   @Length(2, 160)
-  sourceEntityId!: string;
+  sourceEntityId?: string;
 
+  @ValidateIf((input: DocumentUploadDto) => !input.sourceRelationId)
   @IsString()
   @Length(2, 240)
-  sourceDisplayLabel!: string;
+  sourceDisplayLabel?: string;
 
   @IsOptional()
   @Transform(emptyToUndefined)

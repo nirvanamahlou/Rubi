@@ -25,6 +25,16 @@
 - Phase B: Persistence، قرارداد عمومی، IAM binding، Analytics/Attribution، Provider integration و SLO/RPO/RTO فقط با Work Item، قفل و Handoff مستقل طبق `docs/tasks/MARKETING-001.md` مجازند.
 - Draft PR: `#75` به مقصد `develop`؛ سازنده Branch آن را Merge نمی‌کند.
 - Final lock state: `RELEASED — PC-B/MARKETING-001 ready for review`. Migration، Dependency/Lockfile و Shared Root Contract در تمام Task آزاد و بدون تغییر ماندند.
+## DOCUMENTS-003F-RELATED-CASE-PICKER — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-02: بخش «ارتباط با پرونده» در فرم بارگذاری به‌جای ورود دستی ماژول، نوع، شناسه و عنوان، یک Dropdown جست‌وجودار از پرونده‌های موجود و مرتبط باشد. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-documents-record-picker` از `origin/develop@45b6b11` در Worktree تمیز `C:\Users\admin\Rubi-documents-record-picker`؛ `develop`، `main` و Checkoutهای دیگر مستقیم تغییر نمی‌کنند.
+- محدوده رزروشده: API/Repository/DTO و تست‌های `apps/api/src/documents/**`، رابط و Client/Model/Testهای `apps/web/src/modules/documents/**`، قرارداد افزایشی و backward-compatible در `packages/contracts/src/documents/**` و ورودی‌های همین Work Item در `WORK_ASSIGNMENTS.md`، `docs/PROJECT_STATUS.md`، `PLANS.md` و سند Task.
+- Producer و Consumer هر دو Documents API/Web تحت مالکیت PC-B هستند. Endpoint خواندنی جدید فقط Relationهای موجود Documents را در شعبه و Domainهای مجاز جست‌وجو می‌کند و شناسه فنی منبع را برنمی‌گرداند؛ Upload جدید یک Relation داخلی مجاز را resolve می‌کند. فیلدهای قدیمی Upload برای سازگاری مصرف‌کننده‌های موجود حفظ می‌شوند.
+- بدون Schema/Migration/Seed، Permission جدید، Dependency/Lockfile، تغییر Customers یا Query مستقیم جدول ماژول دیگر. هیچ قفل Migration یا Dependency گرفته نمی‌شود.
+- نتیجه: چهار ورودی فنی «ماژول/نوع/شناسه/عنوان مبدأ» از فرم کاربر حذف شد و یک انتخاب‌گر جست‌وجویی «پرونده مربوطه» جای آن را گرفت. فهرست فقط پرونده‌های موجود، حذف‌نشده، هم‌شعبه و دارای Domain/محرمانگی قابل مشاهده را نشان می‌دهد؛ با تغییر شعبه انتخاب قبلی پاک می‌شود. Backend فقط شناسه Relation داخلی را می‌پذیرد و مرجع canonical را سمت سرور resolve می‌کند، بنابراین spoof کردن شناسه منبع یا اتصال بین شعبه‌ای ممکن نیست.
+- Validation: Full Monorepo lint، typecheck، ۱٬۳۹۵ تست موفق با ۷۰ تست PostgreSQL اختیاری skip و Production Build موفق‌اند. Smoke مرورگر احراز‌شده روی API4001/Web3101، نمایش ۱۴ پرونده، جست‌وجوی «قرارداد» تا دو نتیجه و انتخاب موفق را بدون ثبت فایل/داده تأیید کرد.
+- Final lock state: `RELEASED — PC-B/DOCUMENTS-003F-RELATED-CASE-PICKER ready for review`. هیچ قفل Migration، Dependency/Lockfile، Schema، Seed، Permission یا ماژول خارجی گرفته نشد.
 
 ## LEGAL-ENTITY-BRAND-LOGO-001 — PC-B — READY_FOR_REVIEW
 
@@ -37,6 +47,18 @@
 - Validation: پیش از Integration هر ۵۵۲ تست Web و Smoke لوکال API/Web/Asset موفق بود. پس از ادغام `origin/develop@f78e70e` شامل PR #74 PC-A، Full lint/typecheck/build و ۱٬۳۸۳ تست اجراشده Workspace موفق شدند؛ ۷۰ تست PostgreSQL اختیاری طبق Suite معمول skip ماندند و Web هر ۵۶۵ تست را گذراند.
 - مجوز انتشار: مالک در 2026-09-01 صریحاً دریافت آخرین تغییرات PC-A، Push این Branch و Merge آن با `develop` را خواست. `origin/develop@f78e70e` بدون Conflict در Branch ادغام و کنترل کیفیت کامل تکرار شد؛ انتشار فقط از مسیر PR انجام می‌شود و `main` و Force Push ممنوع می‌مانند.
 - Final lock state: `RELEASED — PC-B/LEGAL-ENTITY-BRAND-LOGO-001 ready for review`. هیچ قفل Migration، Contract، Dependency/Lockfile، Permission، Database یا Branch گرفته نشد.
+
+## DOCUMENTS-003D-LOCAL-INTERACTIONS — PC-B — DONE/MERGED
+
+- درخواست صریح مالک: داده‌های آزمایشی اسناد روی PC-A نیز قابل ایجاد و مشاهده باشند، کارت‌های مدیریت آرشیو عمل کنند و فرم بارگذاری به‌ویژه Dropdownها قابل استفاده باشد؛ پس از تست، Push و Merge به `develop` انجام شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-documents-interactions` پس از یکپارچه‌سازی با `origin/develop@0163727`، با PR #78 و Merge Commit `869a043` وارد `develop` شد؛ `main` دست‌نخورده ماند.
+- محدوده رزروشده: `apps/web/src/modules/documents/**`، `apps/api/src/documents/**`، قرارداد افزایشی Documents در `packages/contracts/src/documents/**`، Scriptهای Demo اسناد، تست‌های همین ماژول و ورودی‌های همین Work Item در `WORK_ASSIGNMENTS.md`، `docs/PROJECT_STATUS.md`، `PLANS.md` و سند Task.
+- قرارداد Options فقط اطلاعات شعبه مجاز و شناسه کاربر جاری را به producer/consumer خود Documents اضافه می‌کند تا فرم به Refresh مستقل IAM وابسته نباشد. هیچ دسترسی مستقیم به جدول ماژول دیگر خارج از Repository موجود و Scope احراز‌شده ایجاد نمی‌شود.
+- داده‌های نمایشی همچنان کاملاً ساختگی، محلی، idempotent، رمزگذاری‌شده و fail-closed در برابر Antivirus هستند. Git دیتابیس یا Secret را منتقل نمی‌کند؛ فرمان Apply باید پیش‌نیازهای محلی را قابل تشخیص و اجرای PC-A را روشن و قابل تایید کند.
+- بدون Schema/Migration، Permission جدید، Dependency/Lockfile یا تغییر Seed عمومی. Runner محلی در خطای گذرای Seed اتمیک و idempotent فقط یک‌بار آن را تکرار می‌کند. Migration و Dependency/Lockfile Owner آزاد می‌مانند.
+- نتیجه: هشت کارت آرشیو دکمه و نمای فیلترشده دارند؛ فرم بارگذاری Options احراز‌شده، مقدار اولیه واقعی، Dropdown روی Dialog، اعتبارسنجی صریح و حفظ ورودی پس از خطا دارد. Apply محلی Migration/Seed/Build را اجرا و هفت سند `CLEAN` را راستی‌آزمایی می‌کند.
+- Validation: lint، typecheck و Build کامل Monorepo موفق؛ ۱٬۳۹۰ تست موفق و ۷۰ تست PostgreSQL اختیاری skip. Apply واقعی پس از Backup خصوصی و اجرای تکراری هر بار `created=0`، `reused=7`، `readyForViewing=true` و `verifiedRecords=7` داد.
+- Final lock state: `RELEASED — PC-B/DOCUMENTS-003D-LOCAL-INTERACTIONS merged via PR #78`. هیچ قفل Migration، Dependency/Lockfile، Seed، Permission یا Schema گرفته نشد.
 
 ## DOCUMENTS-003C-CI-PORTABILITY — PC-B — READY_FOR_REVIEW
 

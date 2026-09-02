@@ -1,3 +1,5 @@
+import type { BranchReference } from '../iam';
+
 export const DOCUMENTS_CONTRACT_VERSION = 1 as const;
 
 export const DOCUMENT_DOMAIN_CODES = [
@@ -187,6 +189,8 @@ export interface DocumentListResponseV1 {
 
 export interface DocumentOptionsResponseV1 {
   data: {
+    currentUserId: string;
+    branches: readonly BranchReference[];
     documentTypes: readonly DocumentTypeOptionV1[];
     categories: readonly DocumentCategoryOptionV1[];
     owners: readonly DocumentOwnerOptionV1[];
@@ -195,6 +199,25 @@ export interface DocumentOptionsResponseV1 {
       allowedMimeTypes: readonly string[];
       antivirusAvailable: boolean;
     };
+  };
+}
+
+export interface DocumentCaseOptionV1 {
+  id: string;
+  displayLabel: string;
+}
+
+export interface DocumentCaseOptionsQueryV1 {
+  branchId: string;
+  search?: string;
+  limit?: number;
+}
+
+export interface DocumentCaseOptionsResponseV1 {
+  data: readonly DocumentCaseOptionV1[];
+  meta: {
+    hasMore: boolean;
+    limit: number;
   };
 }
 

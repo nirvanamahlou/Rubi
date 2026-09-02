@@ -3,9 +3,18 @@
 import { FileUp, FolderKanban, Link2, ShieldCheck } from 'lucide-react';
 import type {
   BranchReference,
+  DocumentCaseOptionV1,
   DocumentOptionsResponseV1,
 } from '@rubi/contracts';
 import { useMemo, useState } from 'react';
+
+import {
+  emptyDocumentUploadValues,
+  hydrateDocumentUploadDefaults,
+  type DocumentUploadValues,
+  validateDocumentUpload,
+} from '../model/document-upload-form';
+import { DocumentCasePicker } from './document-case-picker';
 
 import {
   Alert,
@@ -27,22 +36,6 @@ import {
 
 type Options = DocumentOptionsResponseV1['data'];
 
-const emptyForm = {
-  title: '',
-  description: '',
-  documentTypeId: '',
-  categoryId: '',
-  branchId: '',
-  ownerUserId: '',
-  sourceModule: '',
-  sourceEntityType: '',
-  sourceEntityId: '',
-  sourceDisplayLabel: '',
-  confidentiality: '',
-  validUntil: '',
-  versionNote: '',
-};
-
 export function DocumentUploadDialog({
   branches,
   error,
@@ -55,55 +48,67 @@ export function DocumentUploadDialog({
   branches: readonly BranchReference[];
   error: string;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (form: FormData) => Promise<void>;
+  onSubmit: (form: FormData) => Promise<boolean>;
   open: boolean;
   options: Options | null;
   submitting: boolean;
 }) {
-  const [values, setValues] = useState(emptyForm);
-  const [file, setFile] = useState<File | null>(null);
-
-  const formValues = useMemo(
-    () => ({
-      ...values,
-      documentTypeId:
-        values.documentTypeId || options?.documentTypes[0]?.id || '',
-      categoryId: values.categoryId || options?.categories[0]?.id || '',
-      ownerUserId: values.ownerUserId || options?.owners[0]?.id || '',
-      branchId: values.branchId || branches[0]?.id || '',
-    }),
-    [branches, options, values],
+  const [values, setValues] = useState<DocumentUploadValues>(() =>
+    options
+      ? hydrateDocumentUploadDefaults(
+          { ...emptyDocumentUploadValues },
+          options,
+          branches,
+        )
+      : { ...emptyDocumentUploadValues },
   );
+  const [file, setFile] = useState<File | null>(null);
+  const [selectedCase, setSelectedCase] = useState<DocumentCaseOptionV1 | null>(
+    null,
+  );
+  const [validationError, setValidationError] = useState('');
 
   const selectedType = useMemo(
     () =>
-      options?.documentTypes.find(
-        (type) => type.id === formValues.documentTypeId,
-      ),
-    [formValues.documentTypeId, options],
+      options?.documentTypes.find((type) => type.id === values.documentTypeId),
+    [options, values.documentTypeId],
   );
 
-  function update(name: keyof typeof emptyForm, value: string) {
+  function update(name: keyof DocumentUploadValues, value: string) {
+    setValidationError('');
     setValues((current) => ({ ...current, [name]: value }));
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!file) return;
+    const invalid = validateDocumentUpload(
+      values,
+      Boolean(file),
+      Boolean(selectedType?.requiresExpiry),
+    );
+    if (invalid) {
+      setValidationError(invalid);
+      return;
+    }
     const form = new FormData();
-    form.set('file', file);
-    for (const [name, value] of Object.entries(formValues)) {
+    form.set('file', file!);
+    for (const [name, value] of Object.entries(values)) {
       if (value) form.set(name, value);
     }
-    await onSubmit(form);
-    setValues(emptyForm);
-    setFile(null);
+    if (await onSubmit(form)) {
+      setValues({ ...emptyDocumentUploadValues });
+      setFile(null);
+      setSelectedCase(null);
+      setValidationError('');
+    }
   }
 
   function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen && !submitting) {
-      setValues(emptyForm);
+      setValues({ ...emptyDocumentUploadValues });
       setFile(null);
+      setSelectedCase(null);
+      setValidationError('');
     }
     onOpenChange(nextOpen);
   }
@@ -169,18 +174,19 @@ export function DocumentUploadDialog({
                   id="document-title"
                   onChange={(event) => update('title', event.target.value)}
                   required
-                  value={formValues.title}
+                  value={values.title}
                 />
               </FormField>
-              <FormField label="نوع سند" required>
+              <FormField id="document-type" label="نوع سند" required>
                 <Select
+                  disabled={!options?.documentTypes.length || submitting}
                   onValueChange={(value) => update('documentTypeId', value)}
-                  value={formValues.documentTypeId}
+                  value={values.documentTypeId}
                 >
-                  <SelectTrigger aria-label="نوع سند">
+                  <SelectTrigger aria-label="نوع سند" id="document-type">
                     <SelectValue placeholder="انتخاب نوع" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[70] max-h-72">
                     {options?.documentTypes.map((type) => (
                       <SelectItem key={type.id} value={type.id}>
                         {type.name}
@@ -189,15 +195,16 @@ export function DocumentUploadDialog({
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField label="دسته‌بندی" required>
+              <FormField id="document-category" label="دسته‌بندی" required>
                 <Select
+                  disabled={!options?.categories.length || submitting}
                   onValueChange={(value) => update('categoryId', value)}
-                  value={formValues.categoryId}
+                  value={values.categoryId}
                 >
-                  <SelectTrigger aria-label="دسته‌بندی">
+                  <SelectTrigger aria-label="دسته‌بندی" id="document-category">
                     <SelectValue placeholder="انتخاب دسته" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[70] max-h-72">
                     {options?.categories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
@@ -207,17 +214,21 @@ export function DocumentUploadDialog({
                 </Select>
               </FormField>
               <FormField
+                id="document-confidentiality"
                 label="محرمانگی"
                 description="در صورت خالی‌بودن، سیاست نوع سند اعمال می‌شود."
               >
                 <Select
                   onValueChange={(value) => update('confidentiality', value)}
-                  value={formValues.confidentiality}
+                  value={values.confidentiality}
                 >
-                  <SelectTrigger aria-label="محرمانگی">
+                  <SelectTrigger
+                    aria-label="محرمانگی"
+                    id="document-confidentiality"
+                  >
                     <SelectValue placeholder="سیاست پیش‌فرض نوع سند" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[70] max-h-72">
                     <SelectItem value="PUBLIC">عمومی</SelectItem>
                     <SelectItem value="INTERNAL">داخلی</SelectItem>
                     <SelectItem value="CONFIDENTIAL">محرمانه</SelectItem>
@@ -233,7 +244,7 @@ export function DocumentUploadDialog({
                   id="document-valid-until"
                   onChange={(value) => update('validUntil', value)}
                   required={Boolean(selectedType?.requiresExpiry)}
-                  value={formValues.validUntil}
+                  value={values.validUntil}
                 />
               </FormField>
               <FormField id="version-note" label="یادداشت نسخه">
@@ -243,7 +254,7 @@ export function DocumentUploadDialog({
                     update('versionNote', event.target.value)
                   }
                   placeholder="مثلاً بارگذاری اولیه"
-                  value={formValues.versionNote}
+                  value={values.versionNote}
                 />
               </FormField>
             </div>
@@ -251,7 +262,7 @@ export function DocumentUploadDialog({
               <Textarea
                 id="document-description"
                 onChange={(event) => update('description', event.target.value)}
-                value={formValues.description}
+                value={values.description}
               />
             </FormField>
           </section>
@@ -263,55 +274,25 @@ export function DocumentUploadDialog({
                 ۳. ارتباط با پرونده
               </h3>
             </div>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <FormField id="source-module" label="ماژول مبدأ" required>
-                <Input
-                  id="source-module"
-                  onChange={(event) =>
-                    update('sourceModule', event.target.value)
-                  }
-                  placeholder="Sales Contracts"
-                  required
-                  value={formValues.sourceModule}
-                />
-              </FormField>
+            <p className="mt-2 text-sm text-muted-foreground">
+              مشخص کنید این فایل متعلق به کدام قرارداد، رزرو یا پرونده موجود در
+              آرشیو است.
+            </p>
+            <div className="mt-4">
               <FormField
-                id="source-entity-type"
-                label="نوع رکورد مبدأ"
+                description="فقط پرونده‌های قابل‌دسترسی در شعبه انتخاب‌شده نمایش داده می‌شوند."
+                id="source-relation"
+                label="پرونده مربوطه"
                 required
               >
-                <Input
-                  id="source-entity-type"
-                  onChange={(event) =>
-                    update('sourceEntityType', event.target.value)
-                  }
-                  placeholder="sales_contract"
-                  required
-                  value={formValues.sourceEntityType}
-                />
-              </FormField>
-              <FormField
-                id="source-entity-id"
-                label="شناسه رکورد مبدأ"
-                required
-              >
-                <Input
-                  id="source-entity-id"
-                  onChange={(event) =>
-                    update('sourceEntityId', event.target.value)
-                  }
-                  required
-                  value={formValues.sourceEntityId}
-                />
-              </FormField>
-              <FormField id="source-label" label="عنوان پرونده" required>
-                <Input
-                  id="source-label"
-                  onChange={(event) =>
-                    update('sourceDisplayLabel', event.target.value)
-                  }
-                  required
-                  value={formValues.sourceDisplayLabel}
+                <DocumentCasePicker
+                  branchId={values.branchId}
+                  disabled={submitting}
+                  onSelect={(option) => {
+                    setSelectedCase(option);
+                    update('sourceRelationId', option?.id ?? '');
+                  }}
+                  selected={selectedCase}
                 />
               </FormField>
             </div>
@@ -325,15 +306,26 @@ export function DocumentUploadDialog({
               </h3>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <FormField label="شعبه" required>
+              <FormField id="document-branch" label="شعبه" required>
                 <Select
-                  onValueChange={(value) => update('branchId', value)}
-                  value={formValues.branchId}
+                  disabled={!branches.length || submitting}
+                  onValueChange={(value) => {
+                    if (value !== values.branchId) {
+                      setSelectedCase(null);
+                      setValues((current) => ({
+                        ...current,
+                        branchId: value,
+                        sourceRelationId: '',
+                      }));
+                      setValidationError('');
+                    }
+                  }}
+                  value={values.branchId}
                 >
-                  <SelectTrigger aria-label="شعبه">
+                  <SelectTrigger aria-label="شعبه" id="document-branch">
                     <SelectValue placeholder="انتخاب شعبه" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[70] max-h-72">
                     {branches.map((branch) => (
                       <SelectItem key={branch.id} value={branch.id}>
                         {branch.name}
@@ -342,15 +334,16 @@ export function DocumentUploadDialog({
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField label="مالک فایل" required>
+              <FormField id="document-owner" label="مالک فایل" required>
                 <Select
+                  disabled={!options?.owners.length || submitting}
                   onValueChange={(value) => update('ownerUserId', value)}
-                  value={formValues.ownerUserId}
+                  value={values.ownerUserId}
                 >
-                  <SelectTrigger aria-label="مالک فایل">
+                  <SelectTrigger aria-label="مالک فایل" id="document-owner">
                     <SelectValue placeholder="انتخاب مالک" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[70] max-h-72">
                     {options?.owners.map((owner) => (
                       <SelectItem key={owner.id} value={owner.id}>
                         {owner.displayName}
@@ -378,9 +371,9 @@ export function DocumentUploadDialog({
             />
           </section>
 
-          {error ? (
+          {validationError || error ? (
             <Alert
-              description={error}
+              description={validationError || error}
               title="بارگذاری ناموفق بود"
               tone="error"
             />

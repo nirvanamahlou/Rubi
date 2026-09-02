@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
@@ -131,5 +133,23 @@ describe('portable synthetic Documents demo fixtures', () => {
         {},
       ),
     ).toThrow('Preview');
+  });
+
+  it('prepares local migrations and reference seed before apply, then verifies seven clean records', () => {
+    const runner = readFileSync(
+      resolve(process.cwd(), 'scripts/run-local-documents-demo.mjs'),
+      'utf8',
+    );
+    const seed = readFileSync(
+      resolve(process.cwd(), 'scripts/seed-documents-demo.mjs'),
+      'utf8',
+    );
+    expect(runner).toContain("if (mode === '--apply')");
+    expect(runner).toContain("'migrate',");
+    expect(runner).toContain("'db:seed'");
+    expect(seed).toContain('report.records.length === 7');
+    expect(seed).toContain("row.scanStatus === 'CLEAN'");
+    expect(seed).toContain('readyForViewing');
+    expect(runner).toContain('runPnpmWithRetry');
   });
 });

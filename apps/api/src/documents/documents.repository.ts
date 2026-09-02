@@ -206,7 +206,7 @@ export class DocumentsRepository {
   }
 
   async options(branchIds: readonly string[], domains: readonly string[]) {
-    const [documentTypes, categories, owners] = await Promise.all([
+    const [documentTypes, categories, owners, branches] = await Promise.all([
       this.database.client.documentType.findMany({
         where: { isActive: true, domain: { in: [...domains] as never[] } },
         orderBy: [{ domain: 'asc' }, { name: 'asc' }],
@@ -223,8 +223,109 @@ export class DocumentsRepository {
         select: { id: true, displayName: true },
         orderBy: { displayName: 'asc' },
       }),
+      this.database.client.branch.findMany({
+        where: { id: { in: [...branchIds] }, isActive: true },
+        select: { id: true, code: true, name: true },
+        orderBy: [{ name: 'asc' }, { id: 'asc' }],
+      }),
     ]);
-    return { documentTypes, categories, owners };
+    return { documentTypes, categories, owners, branches };
+  }
+
+  async caseOptions(input: {
+    branchId: string;
+    domains: readonly DocumentDomainCode[];
+    includeSensitive: boolean;
+    search: string;
+    limit: number;
+  }) {
+    const scanLimit = Math.min(250, (input.limit + 1) * 5);
+    const rows = await this.database.client.documentRelation.findMany({
+      where: {
+        relationType: 'PRIMARY_CASE',
+        document: {
+          branchId: input.branchId,
+          archiveStatus: { not: 'DELETED' },
+          ...(input.includeSensitive
+            ? {}
+            : { confidentiality: { in: ['PUBLIC', 'INTERNAL'] } }),
+          documentType: { domain: { in: [...input.domains] as never[] } },
+        },
+        ...(input.search
+          ? {
+              OR: [
+                {
+                  displayLabel: {
+                    contains: input.search,
+                    mode: 'insensitive' as const,
+                  },
+                },
+                {
+                  sourceModule: {
+                    contains: input.search,
+                    mode: 'insensitive' as const,
+                  },
+                },
+                {
+                  sourceEntityType: {
+                    contains: input.search,
+                    mode: 'insensitive' as const,
+                  },
+                },
+              ],
+            }
+          : {}),
+      },
+      select: {
+        id: true,
+        displayLabel: true,
+        sourceModule: true,
+        sourceEntityType: true,
+        sourceEntityId: true,
+      },
+      orderBy: [{ displayLabel: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
+      take: scanLimit,
+    });
+
+    const uniqueRows = new Map<string, (typeof rows)[number]>();
+    for (const row of rows) {
+      const key = `${row.sourceModule}\u0000${row.sourceEntityType}\u0000${row.sourceEntityId}`;
+      if (!uniqueRows.has(key)) uniqueRows.set(key, row);
+      if (uniqueRows.size > input.limit) break;
+    }
+    const values = [...uniqueRows.values()];
+    return {
+      rows: values.slice(0, input.limit),
+      hasMore: values.length > input.limit || rows.length === scanLimit,
+    };
+  }
+
+  findCaseReference(input: {
+    relationId: string;
+    branchId: string;
+    domains: readonly DocumentDomainCode[];
+    includeSensitive: boolean;
+  }) {
+    return this.database.client.documentRelation.findFirst({
+      where: {
+        id: input.relationId,
+        relationType: 'PRIMARY_CASE',
+        document: {
+          branchId: input.branchId,
+          archiveStatus: { not: 'DELETED' },
+          ...(input.includeSensitive
+            ? {}
+            : { confidentiality: { in: ['PUBLIC', 'INTERNAL'] } }),
+          documentType: { domain: { in: [...input.domains] as never[] } },
+        },
+      },
+      select: {
+        sourceModule: true,
+        sourceEntityType: true,
+        sourceEntityId: true,
+        displayLabel: true,
+      },
+    });
   }
 
   async uploadReferences(input: {
