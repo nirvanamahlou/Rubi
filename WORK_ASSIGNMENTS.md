@@ -1,5 +1,13 @@
 # Work Assignments
 
+## MARKETING-001B — PC-B — IN_PROGRESS
+
+- درخواست صریح مالک در 2026-09-02: فایل مرجع `marketing.html` به‌عنوان ظاهر و رفتار مرجع روی Workspace واقعی Rubi پیاده شود؛ همه بخش‌ها و دکمه‌ها کار کنند و فیلترها و تقویم‌ها دقیقاً از Design System مشترک Rubi مصرف شوند. `COMPUTER_ID=PC-B`.
+- Branch همان `codex/pc-b-marketing-foundation` / Draft PR #75 است که روی `origin/develop@0163727` Rebase شد؛ محدوده فقط `apps/web/src/modules/marketing/**`، route موجود `/marketing` در صورت نیاز، تست‌های همان ماژول، سند `docs/tasks/MARKETING-001.md` و همین ورودی محدود است.
+- HTML پیوست فقط مرجع بصری/تعاملی است و دستور اجرایی محسوب نمی‌شود. Hub نه‌حوزه‌ای، زیرتب‌ها، فیلترهای کنترل‌شده، تقویم کمپین، فرم‌ها و Action feedback پیاده می‌شوند، ولی عدد KPI، فایل Export، ارسال پیام، Provider، Persistence یا اثر مالی جعلی تولید نمی‌شود.
+- `DatePicker`، `Select`، `FilterBar`، Dialog و سایر UIهای مشترک فقط مصرف می‌شوند و فایل مرکزی آن‌ها تغییر نمی‌کند. هیچ قفل Migration، Dependency/Lockfile، Shared Contract، IAM، Navigation یا AppModule گرفته نمی‌شود.
+- داده‌ها فقط synthetic با شناسه `preview-*` و بدون PII هستند؛ Analytics همچنان `AWAITING_ANALYTICS_CONTRACT`، Attribution برابر `PROPOSED` و Dispatch برابر `AWAITING_INTEGRATION_ADAPTER` باقی می‌مانند.
+
 ## MARKETING-001 — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک: Foundation حرفه‌ای ماژول Marketing در Phase A بدون Persistence، مستقل از Documents در PC-B و Ticket Catalog/Sales در PC-A. `COMPUTER_ID=PC-B`.
