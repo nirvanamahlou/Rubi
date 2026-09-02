@@ -3,6 +3,7 @@ import type { Reference } from '../model/catalog';
 import { emptyInput } from '../model/preview';
 import {
   buildAutomaticTicketTitle,
+  createConnectedSegment,
   createReturnTicketDraft,
   inferWallTimeOffset,
 } from './ticket-form';
@@ -48,6 +49,53 @@ describe('Round-trip ticket definition', () => {
 
     expect(outbound.fare.purchase).not.toBe('999');
     expect(outbound.segments[0]!.flightNumber).not.toBe('RETURN-1');
+  });
+});
+
+describe('Combined ticket definition', () => {
+  it('connects a new segment to the previous destination without sharing data', () => {
+    const input = emptyInput('train');
+    const first = input.segments[0]!;
+    first.destinationCountryId = 'country-ir';
+    first.destinationCityId = 'city-mhd';
+    first.destinationTerminal = 'ایستگاه مشهد';
+    first.arrivalZone = 'Asia/Tehran';
+
+    const connected = createConnectedSegment(input);
+
+    expect(connected).toMatchObject({
+      originCountryId: 'country-ir',
+      originCityId: 'city-mhd',
+      originTerminal: 'ایستگاه مشهد',
+      departureZone: 'Asia/Tehran',
+      flightNumber: '',
+      departureAt: '',
+      arrivalAt: '',
+    });
+    connected.originCityId = 'changed';
+    expect(first.destinationCityId).toBe('city-mhd');
+  });
+
+  it('uses the first origin and final destination in an automatic title', () => {
+    const input = emptyInput();
+    const first = input.segments[0]!;
+    first.flightNumber = 'IR-100';
+    first.originCityId = 'city-thr';
+    first.destinationCityId = 'city-dxb';
+    const second = createConnectedSegment(input);
+    second.flightNumber = 'IR-200';
+    second.destinationCityId = 'city-bkk';
+    input.segments = [first, second];
+    input.display = {
+      operator: '',
+      vehicle: '',
+      origin: 'تهران',
+      destination: 'بانکوک',
+    };
+
+    expect(buildAutomaticTicketTitle(input, [])).toBe(
+      'IR-100 ترکیبی • تهران به بانکوک',
+    );
   });
 });
 

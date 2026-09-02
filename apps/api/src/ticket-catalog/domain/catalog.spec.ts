@@ -157,6 +157,30 @@ describe('Decimal money proposal', () => {
     expect(() => addMoney('999999999999999999', '1')).toThrow());
 });
 describe('UTC and wall clock validation', () => {
+  it('accepts a ticket definition without schedule or fare validity dates', () => {
+    const value = input();
+    const unscheduled: ProductInput = {
+      ...value,
+      segments: [{ ...value.segments[0]!, departureAt: '', arrivalAt: '' }],
+      fare: { ...value.fare, validFrom: '', validTo: '' },
+    };
+    expect(() => validateProduct(unscheduled, resolve, true)).not.toThrow();
+    expect(() =>
+      createProduct('unscheduled', unscheduled, resolve, now, 'test-actor'),
+    ).not.toThrow();
+  });
+  it('rejects a partially entered schedule instead of requiring dates by default', () => {
+    const value = input();
+    expect(() =>
+      validateProduct(
+        {
+          ...value,
+          segments: [{ ...value.segments[0]!, arrivalAt: '' }],
+        },
+        resolve,
+      ),
+    ).toThrow('زمان حرکت و رسیدن باید با هم ثبت یا هر دو خالی باشند');
+  });
   it('supports midnight crossings and explicit timezone conversion', () => {
     expect(() => validateProduct(input(), resolve, true)).not.toThrow();
     expect(wallTimeToUtc('2026-09-04T01:30', 'Asia/Tehran', '+03:30')).toBe(
@@ -209,7 +233,11 @@ describe('UTC and wall clock validation', () => {
             value.segments[0]!,
             {
               ...value.segments[0]!,
+              originCountryId: value.segments[0]!.destinationCountryId,
+              originCityId: value.segments[0]!.destinationCityId,
               originAirportId: 'test-destination',
+              destinationCountryId: value.segments[0]!.originCountryId,
+              destinationCityId: value.segments[0]!.originCityId,
               destinationAirportId: 'test-origin',
               departureAt: '2026-09-06T10:00:00Z',
               arrivalAt: '2026-09-06T12:00:00Z',
@@ -457,7 +485,7 @@ describe('Versioning and lifecycle', () => {
       copyProduct(next, 'test-copy', resolve, now, 'test').history,
     ).toHaveLength(1);
   });
-  it('requires pause before editing and prevents restoring cancelled programs', () => {
+  it('allows editing every status and prevents restoring cancelled programs', () => {
     const active = transitionProduct(
       product(),
       'active',
@@ -468,7 +496,7 @@ describe('Versioning and lifecycle', () => {
       'activate',
       inventory,
     );
-    expect(() =>
+    expect(
       reviseProduct(
         active,
         input(),
@@ -476,10 +504,10 @@ describe('Versioning and lifecycle', () => {
         resolve,
         now,
         'test',
-        'edit',
+        'edit active',
         inventory,
       ),
-    ).toThrow();
+    ).toMatchObject({ status: 'active', version: 3 });
     const paused = transitionProduct(
       active,
       'paused',
@@ -490,6 +518,18 @@ describe('Versioning and lifecycle', () => {
       'pause',
       inventory,
     );
+    expect(
+      reviseProduct(
+        paused,
+        input(),
+        3,
+        resolve,
+        now,
+        'test',
+        'edit paused',
+        inventory,
+      ),
+    ).toMatchObject({ status: 'paused', version: 4 });
     const cancelled = transitionProduct(
       paused,
       'cancelled',
@@ -500,6 +540,18 @@ describe('Versioning and lifecycle', () => {
       'cancel',
       inventory,
     );
+    expect(
+      reviseProduct(
+        cancelled,
+        input(),
+        4,
+        resolve,
+        now,
+        'test',
+        'edit cancelled',
+        inventory,
+      ),
+    ).toMatchObject({ status: 'cancelled', version: 5 });
     expect(() =>
       transitionProduct(
         cancelled,
@@ -512,6 +564,20 @@ describe('Versioning and lifecycle', () => {
         inventory,
       ),
     ).toThrow();
+  });
+  it('activates positive capacity even when the purchase fare validity has expired', () => {
+    expect(
+      transitionProduct(
+        product(),
+        'active',
+        1,
+        resolve,
+        '2026-09-04T00:00:00.000Z',
+        'test',
+        'activate after fare validity',
+        inventory,
+      ),
+    ).toMatchObject({ status: 'active', version: 2 });
   });
   it('rejects missing permissions elsewhere, references, stale writes and blank reason here', () => {
     expect(() =>

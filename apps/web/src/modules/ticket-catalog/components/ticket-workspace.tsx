@@ -5,9 +5,9 @@ import {
   BusFront,
   Plane,
   Plus,
-  RefreshCw,
+  Ticket,
+  TicketCheck,
   TrainFront,
-  Users,
 } from 'lucide-react';
 import {
   Alert,
@@ -26,6 +26,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from '@/components/ui';
 import {
   createProduct,
@@ -41,6 +45,7 @@ import {
   activateCatalogSample,
   catalogSamples,
   catalogStorageKey,
+  countProductsByRoute,
   displayTime,
   emptyInput,
   groupProductsForCards,
@@ -61,6 +66,7 @@ import { TicketDetails } from './ticket-details';
 import { TicketForm } from './ticket-form';
 import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
+import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
 
 const actor = 'کاربر جاری';
 const transportIcons = {
@@ -70,6 +76,52 @@ const transportIcons = {
 };
 
 export function TicketWorkspace() {
+  return (
+    <Tabs defaultValue="catalog" dir="rtl" className="space-y-5">
+      <TabsList
+        aria-label="انتخاب بخش مدیریت بلیت"
+        className="grid h-auto w-full grid-cols-1 gap-2 rounded-2xl border border-primary/15 bg-primary/[0.04] p-2 sm:grid-cols-2 lg:w-fit"
+      >
+        <TabsTrigger
+          className="group min-h-20 justify-start gap-3 border border-transparent px-4 py-3 text-start transition hover:border-primary/20 hover:bg-surface/80 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+          value="catalog"
+        >
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary group-data-[state=active]:bg-primary-foreground/15 group-data-[state=active]:text-primary-foreground">
+            <Ticket className="size-5" aria-hidden />
+          </span>
+          <span>
+            <span className="block font-bold">تعریف بلیت قابل فروش</span>
+            <span className="mt-1 block text-xs opacity-75">
+              مسیر، برنامه حرکت و ظرفیت
+            </span>
+          </span>
+        </TabsTrigger>
+        <TabsTrigger
+          className="group min-h-20 justify-start gap-3 border border-transparent px-4 py-3 text-start transition hover:border-primary/20 hover:bg-surface/80 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+          value="issued"
+        >
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary group-data-[state=active]:bg-primary-foreground/15 group-data-[state=active]:text-primary-foreground">
+            <TicketCheck className="size-5" aria-hidden />
+          </span>
+          <span>
+            <span className="block font-bold">بلیت‌های صادرشده مسافران</span>
+            <span className="mt-1 block text-xs opacity-75">
+              گزارش صدور، PNR و قرارداد
+            </span>
+          </span>
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="catalog">
+        <TicketCatalogWorkspace />
+      </TabsContent>
+      <TabsContent value="issued">
+        <IssuedTicketsWorkspace connected={false} tickets={[]} />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+function TicketCatalogWorkspace() {
   const [products, setProducts] = useState<Product[]>([]);
   const [references, setReferences] = useState<Reference[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -120,6 +172,7 @@ export function TicketWorkspace() {
   }, [hydrated, products, references]);
 
   const result = queryProducts(products, query);
+  const routeCounts = countProductsByRoute(products);
   const cardGroups = groupProductsForCards(result.rows);
   const resolve: ReferenceResolver = (kind, id) =>
     references.find((r) => r.kind === kind && r.id === id);
@@ -263,6 +316,31 @@ export function TicketWorkspace() {
     train: products.filter((p) => p.definition.transport === 'train').length,
     bus: products.filter((p) => p.definition.transport === 'bus').length,
   };
+  const routeOptions = (() => {
+    const origins = new Map<string, string>();
+    const destinations = new Map<string, string>();
+    for (const product of products) {
+      const segment = product.definition.segments[0]!;
+      const lastSegment = product.definition.segments.at(-1)!;
+      origins.set(
+        segment.originCityId,
+        referenceLabel(
+          'city',
+          segment.originCityId,
+          product.definition.display?.origin || 'مبدأ نامشخص',
+        ),
+      );
+      destinations.set(
+        lastSegment.destinationCityId,
+        referenceLabel(
+          'city',
+          lastSegment.destinationCityId,
+          product.definition.display?.destination || 'مقصد نامشخص',
+        ),
+      );
+    }
+    return { origins: [...origins], destinations: [...destinations] };
+  })();
 
   return (
     <div className="space-y-5" dir="rtl">
@@ -270,27 +348,10 @@ export function TicketWorkspace() {
         title="مدیریت و تعریف بلیت‌ها"
         eyebrow="هواپیما • قطار • اتوبوس"
         actions={
-          <>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setProducts((rows) => [
-                  ...rows.filter((row) => !row.id.startsWith('sample-ticket-')),
-                  ...catalogSamples(new Date().toISOString()),
-                ]);
-                setNotice(
-                  'بلیت‌های ساختگی هواپیما، قطار و اتوبوس بازگردانی شدند.',
-                );
-              }}
-            >
-              <RefreshCw className="size-4" aria-hidden />
-              افزودن نمونه‌ها
-            </Button>
-            <Button onClick={() => setForm({ mode: 'create' })}>
-              <Plus className="size-4" aria-hidden />
-              تعریف بلیت جدید
-            </Button>
-          </>
+          <Button onClick={() => setForm({ mode: 'create' })}>
+            <Plus className="size-4" aria-hidden />
+            تعریف بلیت جدید
+          </Button>
         }
       />
       {problem && !statusChange && !repeat ? (
@@ -303,7 +364,7 @@ export function TicketWorkspace() {
             <p className="text-2xl font-black text-blue-800 dark:text-blue-200">
               {hydrated ? products.length.toLocaleString('fa-IR') : '…'}
             </p>
-            <Users className="size-7 text-blue-600" aria-hidden />
+            <Ticket className="size-7 text-blue-600" aria-hidden />
           </div>
         </Card>
         {(['flight', 'train', 'bus'] as const).map((transport) => {
@@ -333,6 +394,39 @@ export function TicketWorkspace() {
           );
         })}
       </div>
+      <Card className="p-4">
+        <h2 className="font-bold">جمع بلیت‌های تعریف‌شده در هر مسیر</h2>
+        {routeCounts.length ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {routeCounts.map((route) => (
+              <Button
+                key={route.key}
+                type="button"
+                size="sm"
+                variant={
+                  query.originCityId === route.originCityId &&
+                  query.destinationCityId === route.destinationCityId
+                    ? 'primary'
+                    : 'outline'
+                }
+                onClick={() =>
+                  filter({
+                    originCityId: route.originCityId,
+                    destinationCityId: route.destinationCityId,
+                  })
+                }
+              >
+                {route.origin} ← {route.destination} •{' '}
+                {route.count.toLocaleString('fa-IR')} بلیت
+              </Button>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-muted-foreground">
+            پس از تعریف بلیت، جمع هر مسیر اینجا نمایش داده می‌شود.
+          </p>
+        )}
+      </Card>
       <Card className="space-y-4 p-4">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <FormField label="جست‌وجوی بلیت" id="ticket-search">
@@ -392,6 +486,44 @@ export function TicketWorkspace() {
                 {Object.entries(supplyLabels).map(([key, value]) => (
                   <SelectItem value={key} key={key}>
                     {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+          <FormField label="مبدأ مسیر" id="ticket-origin-filter">
+            <Select
+              value={query.originCityId}
+              onValueChange={(originCityId) => filter({ originCityId })}
+            >
+              <SelectTrigger id="ticket-origin-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="all">همه مبدأها</SelectItem>
+                {routeOptions.origins.map(([id, name]) => (
+                  <SelectItem value={id} key={id}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+          <FormField label="مقصد مسیر" id="ticket-destination-filter">
+            <Select
+              value={query.destinationCityId}
+              onValueChange={(destinationCityId) =>
+                filter({ destinationCityId })
+              }
+            >
+              <SelectTrigger id="ticket-destination-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="all">همه مقصدها</SelectItem>
+                {routeOptions.destinations.map(([id, name]) => (
+                  <SelectItem value={id} key={id}>
+                    {name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -541,7 +673,7 @@ export function TicketWorkspace() {
           <DialogDescription>
             {form?.mode === 'view'
               ? 'اطلاعات کامل مسیر، زمان، ظرفیت و نرخ این بلیت را مشاهده کنید.'
-              : 'اطلاعات مسیر، زمان، ظرفیت و نرخ خرید را کامل کنید.'}
+              : 'اطلاعات مسیر، ظرفیت و نرخ خرید را کامل کنید.'}
           </DialogDescription>
           {form ? (
             <div className="mt-5">
@@ -680,9 +812,15 @@ export function TicketWorkspace() {
         }}
       >
         <DialogContent dir="rtl" className="start-auto! left-1/2!">
-          <DialogTitle>تغییر وضعیت بلیت</DialogTitle>
+          <DialogTitle>
+            {statusChange?.status === 'active'
+              ? 'فعال‌کردن فروش بلیت'
+              : 'توقف فروش بلیت'}
+          </DialogTitle>
           <DialogDescription>
-            فعال‌سازی به مراجع معتبر، ظرفیت مثبت و نرخ معتبر نیاز دارد.
+            {statusChange?.status === 'active'
+              ? 'پس از تأیید، این بلیت دوباره برای فروش در دسترس قرار می‌گیرد.'
+              : 'پس از تأیید، فروش این بلیت متوقف می‌شود و بعداً می‌توانید دوباره آن را فعال کنید.'}
           </DialogDescription>
           {problem ? <Alert tone="error" title={problem} /> : null}
           <FormField label="دلیل تغییر وضعیت" id="ticket-status-reason">
@@ -693,7 +831,7 @@ export function TicketWorkspace() {
             />
           </FormField>
           <Button className="mt-4" onClick={applyStatus}>
-            اعمال {statusChange ? statusLabels[statusChange.status] : ''}
+            {statusChange?.status === 'active' ? 'فعال‌کردن فروش' : 'توقف فروش'}
           </Button>
         </DialogContent>
       </Dialog>
