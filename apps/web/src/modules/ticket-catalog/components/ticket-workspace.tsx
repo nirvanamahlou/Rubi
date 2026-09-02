@@ -5,9 +5,9 @@ import {
   BusFront,
   Plane,
   Plus,
-  RefreshCw,
+  Ticket,
+  TicketCheck,
   TrainFront,
-  Users,
 } from 'lucide-react';
 import {
   Alert,
@@ -78,9 +78,38 @@ const transportIcons = {
 export function TicketWorkspace() {
   return (
     <Tabs defaultValue="catalog" dir="rtl" className="space-y-5">
-      <TabsList className="grid w-full grid-cols-2 sm:w-fit">
-        <TabsTrigger value="catalog">تعریف و ظرفیت بلیت‌ها</TabsTrigger>
-        <TabsTrigger value="issued">بلیت‌های صادرشده مسافران</TabsTrigger>
+      <TabsList
+        aria-label="انتخاب بخش مدیریت بلیت"
+        className="grid h-auto w-full grid-cols-1 gap-2 rounded-2xl border border-primary/15 bg-primary/[0.04] p-2 sm:grid-cols-2 lg:w-fit"
+      >
+        <TabsTrigger
+          className="group min-h-20 justify-start gap-3 border border-transparent px-4 py-3 text-start transition hover:border-primary/20 hover:bg-surface/80 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+          value="catalog"
+        >
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary group-data-[state=active]:bg-primary-foreground/15 group-data-[state=active]:text-primary-foreground">
+            <Ticket className="size-5" aria-hidden />
+          </span>
+          <span>
+            <span className="block font-bold">تعریف بلیت قابل فروش</span>
+            <span className="mt-1 block text-xs opacity-75">
+              مسیر، برنامه حرکت و ظرفیت
+            </span>
+          </span>
+        </TabsTrigger>
+        <TabsTrigger
+          className="group min-h-20 justify-start gap-3 border border-transparent px-4 py-3 text-start transition hover:border-primary/20 hover:bg-surface/80 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+          value="issued"
+        >
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary group-data-[state=active]:bg-primary-foreground/15 group-data-[state=active]:text-primary-foreground">
+            <TicketCheck className="size-5" aria-hidden />
+          </span>
+          <span>
+            <span className="block font-bold">بلیت‌های صادرشده مسافران</span>
+            <span className="mt-1 block text-xs opacity-75">
+              گزارش صدور، PNR و قرارداد
+            </span>
+          </span>
+        </TabsTrigger>
       </TabsList>
       <TabsContent value="catalog">
         <TicketCatalogWorkspace />
@@ -318,27 +347,10 @@ function TicketCatalogWorkspace() {
         title="مدیریت و تعریف بلیت‌ها"
         eyebrow="هواپیما • قطار • اتوبوس"
         actions={
-          <>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setProducts((rows) => [
-                  ...rows.filter((row) => !row.id.startsWith('sample-ticket-')),
-                  ...catalogSamples(new Date().toISOString()),
-                ]);
-                setNotice(
-                  'بلیت‌های ساختگی هواپیما، قطار و اتوبوس بازگردانی شدند.',
-                );
-              }}
-            >
-              <RefreshCw className="size-4" aria-hidden />
-              افزودن نمونه‌ها
-            </Button>
-            <Button onClick={() => setForm({ mode: 'create' })}>
-              <Plus className="size-4" aria-hidden />
-              تعریف بلیت جدید
-            </Button>
-          </>
+          <Button onClick={() => setForm({ mode: 'create' })}>
+            <Plus className="size-4" aria-hidden />
+            تعریف بلیت جدید
+          </Button>
         }
       />
       {problem && !statusChange && !repeat ? (
@@ -351,7 +363,7 @@ function TicketCatalogWorkspace() {
             <p className="text-2xl font-black text-blue-800 dark:text-blue-200">
               {hydrated ? products.length.toLocaleString('fa-IR') : '…'}
             </p>
-            <Users className="size-7 text-blue-600" aria-hidden />
+            <Ticket className="size-7 text-blue-600" aria-hidden />
           </div>
         </Card>
         {(['flight', 'train', 'bus'] as const).map((transport) => {

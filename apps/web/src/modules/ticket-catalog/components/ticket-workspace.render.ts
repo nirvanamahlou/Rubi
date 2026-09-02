@@ -12,10 +12,12 @@ describe('Rendered ticket UI', () => {
     const html = renderToStaticMarkup(createElement(TicketWorkspace));
     expect(html).toContain('dir="rtl"');
     expect(html).toContain('تعریف بلیت جدید');
-    expect(html).toContain('افزودن نمونه‌ها');
+    expect(html).not.toContain('افزودن نمونه‌ها');
     expect(html).toContain('هواپیما • قطار • اتوبوس');
-    expect(html).toContain('تعریف و ظرفیت بلیت‌ها');
+    expect(html).toContain('تعریف بلیت قابل فروش');
+    expect(html).toContain('مسیر، برنامه حرکت و ظرفیت');
     expect(html).toContain('بلیت‌های صادرشده مسافران');
+    expect(html).toContain('گزارش صدور، PNR و قرارداد');
     expect(html).not.toContain('شروع پیش‌نمایش');
     expect(html).not.toContain('حالت شبیه‌سازی');
   });
