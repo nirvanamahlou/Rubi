@@ -29,7 +29,37 @@ function runPnpm(args) {
     throw new Error(`pnpm ${args.join(' ')} failed with ${result.status}.`);
 }
 
+function runPnpmWithRetry(args, attempts) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      runPnpm(args);
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts)
+        process.stderr.write(
+          `Local reference seed attempt ${attempt} failed; retrying the idempotent seed.\n`,
+        );
+    }
+  }
+  throw lastError;
+}
+
 runPnpm(['db:generate']);
+if (mode === '--apply') {
+  runPnpm([
+    '--filter',
+    '@rubi/database',
+    'exec',
+    'prisma',
+    'migrate',
+    'deploy',
+    '--schema',
+    'prisma/schema.prisma',
+  ]);
+  runPnpmWithRetry(['--filter', '@rubi/database', 'db:seed'], 2);
+}
 runPnpm(['--filter', '@rubi/api...', 'build']);
 
 const seedArguments = ['apps/api/scripts/seed-documents-demo.mjs', mode];

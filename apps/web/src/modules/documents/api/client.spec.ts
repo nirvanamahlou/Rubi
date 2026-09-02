@@ -71,6 +71,38 @@ describe('documents API client', () => {
     expect(headers['content-type']).toBeUndefined();
   });
 
+  it('loads form options and allowed branches without rotating the IAM session', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            currentUserId: 'user-1',
+            branches: [{ id: 'branch-1', code: 'TEH', name: 'تهران' }],
+            documentTypes: [],
+            categories: [],
+            owners: [],
+            uploadPolicy: {
+              maxFileSizeBytes: 0,
+              allowedMimeTypes: [],
+              antivirusAvailable: true,
+            },
+          },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await documentsApi.options();
+
+    expect(response.data.currentUserId).toBe('user-1');
+    expect(response.data.branches).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0]?.[0]).toContain('/documents/options');
+    expect(fetchMock.mock.calls[0]?.[0]).not.toContain('/iam/auth/refresh');
+  });
+
   it('loads an authenticated image preview with the sensitive-read reason and abort signal', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const fetchMock = vi.fn().mockResolvedValue(

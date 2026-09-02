@@ -37,6 +37,10 @@ import type {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { documentsApi, DocumentsApiError } from '../api/client';
+import {
+  archiveTools,
+  type ArchiveToolDefinition,
+} from '../model/archive-tools';
 import { DocumentDetailDialog } from './document-detail-dialog';
 import { DocumentUploadDialog } from './document-upload-dialog';
 import {
@@ -117,17 +121,6 @@ const sections: readonly {
   { key: 'shares', label: 'اشتراک‌گذاری‌ها', icon: Link2 },
   { key: 'archive', label: 'مدیریت آرشیو', icon: Archive },
 ];
-
-const archiveSections = [
-  'دسته‌بندی و برچسب',
-  'سیاست نوع سند',
-  'بررسی و قرنطینه',
-  'مسئول و مالک فایل',
-  'نگهداری و توقف حذف',
-  'حذف منطقی و بازیابی',
-  'سلامت آرشیو',
-  'خروجی‌ها و پردازش‌ها',
-] as const;
 
 const personalViews: readonly {
   key: PersonalViewKey;
@@ -344,13 +337,20 @@ export function DocumentsWorkspace() {
   }, [load]);
 
   useEffect(() => {
-    Promise.all([documentsApi.options(), documentsApi.sessionContext()])
-      .then(([documentOptions, sessionUser]) => {
+    documentsApi
+      .options()
+      .then((documentOptions) => {
         setOptions(documentOptions.data);
-        setBranches(sessionUser.branches);
-        setCurrentUserId(sessionUser.id);
+        setBranches(documentOptions.data.branches);
+        setCurrentUserId(documentOptions.data.currentUserId);
       })
-      .catch(() => undefined);
+      .catch((caught) => {
+        setUploadError(
+          caught instanceof Error
+            ? caught.message
+            : 'گزینه‌های فرم بارگذاری قابل دریافت نیست.',
+        );
+      });
   }, []);
 
   useEffect(() => {
@@ -494,7 +494,7 @@ export function DocumentsWorkspace() {
     }
   }, [openDetail]);
 
-  async function upload(form: FormData) {
+  async function upload(form: FormData): Promise<boolean> {
     setUploading(true);
     setUploadError('');
     try {
@@ -507,13 +507,38 @@ export function DocumentsWorkspace() {
       );
       await load();
       await openDetail(response.data.id);
+      return true;
     } catch (caught) {
       setUploadError(
         caught instanceof Error ? caught.message : 'بارگذاری ناموفق بود.',
       );
+      return false;
     } finally {
       setUploading(false);
     }
+  }
+
+  function openArchiveTool(tool: ArchiveToolDefinition) {
+    const ownerFilter =
+      tool.useCurrentOwner && currentUserId
+        ? { ownerUserId: currentUserId }
+        : {};
+    setPersonalView(null);
+    setSection('all');
+    setSectionDomain(null);
+    setQuery({
+      page: 1,
+      pageSize: 25,
+      sortBy: 'updatedAt',
+      sortDirection: 'desc',
+      ...tool.query,
+      ...ownerFilter,
+    });
+    setNotice(
+      tool.useCurrentOwner && !currentUserId
+        ? 'اطلاعات کاربر جاری در دسترس نیست؛ فهرست عمومی آرشیو باز شد.'
+        : tool.notice,
+    );
   }
 
   async function download(document: DocumentDetailV1) {
@@ -1076,21 +1101,24 @@ export function DocumentsWorkspace() {
     if (section === 'archive')
       return (
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {archiveSections.map((label, index) => (
-            <Card
+          {archiveTools.map((tool, index) => (
+            <button
+              aria-label={`بازکردن ${tool.label}`}
               className={cn(
-                'group relative overflow-hidden p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md',
+                'group relative overflow-hidden rounded-2xl border p-5 text-start shadow-sm outline-none transition duration-200 hover:-translate-y-1 hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
                 archiveTone[index % archiveTone.length],
               )}
-              key={label}
+              key={tool.key}
+              onClick={() => openArchiveTool(tool)}
+              type="button"
             >
               <span className="absolute -end-7 -top-7 size-24 rounded-full bg-white/50 blur-2xl dark:bg-white/5" />
               <Settings2 aria-hidden="true" className="size-6 text-primary" />
-              <h2 className="mt-3 font-black">{label}</h2>
+              <h2 className="mt-3 font-black">{tool.label}</h2>
               <p className="mt-2 text-xs leading-6 text-muted-foreground">
-                تنظیمات و وضعیت این بخش از همین آرشیو مدیریت می‌شود.
+                {tool.description}
               </p>
-            </Card>
+            </button>
           ))}
         </section>
       );
@@ -1498,18 +1526,21 @@ export function DocumentsWorkspace() {
           {content()}
         </div>
       </div>
-      <DocumentUploadDialog
-        branches={branches}
-        error={uploadError}
-        onOpenChange={(open) => {
-          setUploadOpen(open);
-          if (!open) setUploadError('');
-        }}
-        onSubmit={upload}
-        open={uploadOpen}
-        options={options}
-        submitting={uploading}
-      />
+      {uploadOpen ? (
+        <DocumentUploadDialog
+          branches={branches}
+          error={uploadError}
+          key={options ? `ready-${options.currentUserId}` : 'loading'}
+          onOpenChange={(open) => {
+            setUploadOpen(open);
+            if (!open) setUploadError('');
+          }}
+          onSubmit={upload}
+          open
+          options={options}
+          submitting={uploading}
+        />
+      ) : null}
       <DocumentDetailDialog
         audit={audit}
         document={detail}
