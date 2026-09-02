@@ -10,8 +10,12 @@ describe('Rendered ticket UI', () => {
     const html = renderToStaticMarkup(createElement(TicketWorkspace));
     expect(html).toContain('dir="rtl"');
     expect(html).toContain('تعریف بلیت جدید');
-    expect(html).toContain('افزودن نمونه‌ها');
+    expect(html).not.toContain('افزودن نمونه‌ها');
     expect(html).toContain('هواپیما • قطار • اتوبوس');
+    expect(html).toContain('lucide-tickets');
+    expect(html).toContain('lucide-plane');
+    expect(html).toContain('lucide-train-front');
+    expect(html).toContain('lucide-bus-front');
     expect(html).not.toContain('شروع پیش‌نمایش');
     expect(html).not.toContain('حالت شبیه‌سازی');
   });
