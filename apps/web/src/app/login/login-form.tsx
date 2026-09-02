@@ -5,7 +5,6 @@ import { useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
-import { getPublicApiBaseUrl } from '@/lib/environment';
 import { loginErrorMessage, loginInputError } from './login-error';
 
 export function LoginForm() {
@@ -27,18 +26,12 @@ export function LoginForm() {
       setLoading(false);
       return;
     }
-    const api = getPublicApiBaseUrl();
-    if (!api) {
-      setError('آدرس API تنظیم نشده است.');
-      setLoading(false);
-      return;
-    }
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 15_000);
     try {
-      const response = await fetch(`${api}/iam/auth/login`, {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
-        credentials: 'include',
+        credentials: 'same-origin',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           username: String(values.get('username')).trim(),

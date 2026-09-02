@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 const ACCESS_COOKIE = 'rubi_access';
 
 export function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname === '/api/auth/login')
+    return NextResponse.next();
   const hasAccessCookie = Boolean(request.cookies.get(ACCESS_COOKIE)?.value);
   if (request.nextUrl.pathname === '/login') {
     return hasAccessCookie
