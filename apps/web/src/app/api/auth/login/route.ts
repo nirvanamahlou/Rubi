@@ -4,6 +4,21 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 
 export const dynamic = 'force-dynamic';
 
+function cookieValue(headers: Headers, name: string): string | null {
+  const getSetCookie = (
+    headers as Headers & { getSetCookie?: () => string[] }
+  ).getSetCookie;
+  const rawCookies =
+    typeof getSetCookie === 'function'
+      ? getSetCookie.call(headers)
+      : (headers.get('set-cookie') ?? '').split(
+          /,(?=\s*rubi_(?:access|refresh)=)/,
+        );
+  const prefix = `${name}=`;
+  const cookie = rawCookies.find((value) => value.trim().startsWith(prefix));
+  return cookie?.trim().slice(prefix.length).split(';', 1)[0] ?? null;
+}
+
 export async function POST(request: Request) {
   const api = getPublicApiBaseUrl();
   if (!api)
@@ -26,8 +41,29 @@ export async function POST(request: Request) {
           upstream.headers.get('content-type') ?? 'application/json',
       },
     });
-    for (const cookie of upstream.headers.getSetCookie())
-      response.headers.append('set-cookie', cookie);
+    if (upstream.ok) {
+      const access = cookieValue(upstream.headers, 'rubi_access');
+      const refresh = cookieValue(upstream.headers, 'rubi_refresh');
+      if (!access || !refresh)
+        return NextResponse.json(
+          { message: 'نشست ورود از سرور دریافت نشد.' },
+          { status: 502 },
+        );
+      const cookieOptions = {
+        httpOnly: true,
+        sameSite: 'lax' as const,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+      };
+      response.cookies.set('rubi_access', access, {
+        ...cookieOptions,
+        maxAge: 15 * 60,
+      });
+      response.cookies.set('rubi_refresh', refresh, {
+        ...cookieOptions,
+        maxAge: 14 * 24 * 60 * 60,
+      });
+    }
     return response;
   } catch {
     return NextResponse.json(
