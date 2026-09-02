@@ -733,12 +733,12 @@ function CustomerDrawer({
             kind: 'success',
             message:
               'شماره کامل برای همین مشاهده نمایش داده شد و دلیل آن در Audit ثبت شد.',
-          }
+          } as const
         : {
             kind: 'error',
             message:
               'Backend پاسخ داد، اما شماره کاملی در این پرونده برنگرداند. ثبت تماس و تنظیمات رمزگشایی را بررسی کنید.',
-          };
+          } as const;
       setSensitiveFeedback(feedback);
       if (activeTab !== 'contacts') setMessage(feedback.message);
       requestTimelines();
