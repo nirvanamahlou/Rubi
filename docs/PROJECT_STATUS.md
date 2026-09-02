@@ -1,5 +1,20 @@
 # وضعیت پروژه
 
+## DOCUMENTS-003E — تم یکپارچه تقویم‌های اسناد — آماده بررسی
+
+- `PC-B` روی Branch مستقل `codex/pc-b-documents-calendar-theme` یک Variant بصری افزایشی
+  برای DatePicker مشترک ساخته و آن را فقط روی سه تقویم Documents فعال کرده است: دو فیلتر
+  بازه ثبت و تاریخ اعتبار فرم بارگذاری. ظاهر پیش‌فرض سایر ماژول‌ها تغییر نمی‌کند.
+- تقویم اکنون با هویت آبی–فیروزه‌ای Rubi، Header گرادیانی، آیکن و Popover رنگی و وضعیت‌های
+  واضح Hover، امروز و روز انتخاب‌شده نمایش داده می‌شود. رنگ‌های زمینه و متن از Tokenهای
+  Theme استفاده می‌کنند و در حالت روشن و تیره هماهنگ می‌مانند.
+- رفتار شمسی/میلادی، مقدار ISO و API قبلی حفظ شده است. تعویض تقویم، انتخاب روز و بستن با
+  `Escape` در پیش‌نمایش واقعی مرورگر بررسی شد؛ lint، typecheck، هر ۵۷۰ تست Web و
+  Production Build موفق‌اند.
+- این Slice هیچ Backend، Database، Schema/Migration/Seed، Contract، Permission،
+  Dependency/Lockfile یا داده کاربردی را تغییر نمی‌دهد. جزئیات در
+  `docs/tasks/DOCUMENTS-003E-CALENDAR-THEME.md` ثبت شده است.
+
 ## LEGAL-ENTITY-BRAND-LOGO-001 — لوگوی پویا برای شرکت فعال — آماده بررسی
 
 - `PC-B` روی Branch مستقل `codex/pc-b-jahan-bastan-logo`، نمایش برند App Shell را به شرکت فعال متصل می‌کند تا با انتخاب «جهان باستان»، لوگوی افقی ارسالی جای برند نیایش سیر نمایش داده شود.

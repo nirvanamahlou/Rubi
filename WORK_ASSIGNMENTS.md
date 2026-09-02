@@ -1,12 +1,15 @@
 # Work Assignments
 
-## DOCUMENTS-003E-CALENDAR-THEME — PC-B — IN_PROGRESS
+## DOCUMENTS-003E-CALENDAR-THEME — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-02: تقویم‌های داخل بخش اسناد با تم بصری Rubi یکدست شوند. `COMPUTER_ID=PC-B`.
 - Branch مستقل `codex/pc-b-documents-calendar-theme` از `origin/develop@45b6b11`؛ `develop` و `main` مستقیم تغییر نمی‌کنند.
 - محدوده رزروشده: فقط ظاهر افزایشی DatePicker مشترک در `apps/web/src/components/ui/date-picker.tsx`، مصرف همان Variant در `apps/web/src/modules/documents/**`، تست‌های Web مرتبط و ورودی‌های همین Work Item در اسناد وضعیت.
 - Variant پیش‌فرض DatePicker و رفتار شمسی/میلادی، مقدار ISO، API و داده بدون تغییر می‌مانند. Documents ظاهر Rubi را صریح انتخاب می‌کند؛ هیچ ماژول دیگر ناخواسته تغییر ظاهر نمی‌دهد.
 - بدون Backend، Database، Schema/Migration/Seed، Contract، Permission، Dependency/Lockfile یا داده کاربردی. هیچ قفل Migration یا Dependency گرفته نمی‌شود.
+- نتیجه: Variant افزایشی `rubi` با پس‌زمینه و Accent آبی–فیروزه‌ای، Header گرادیانی، وضعیت‌های واضح Hover/Today/Selected، آیکن تقویم و Popover هماهنگ با Theme Tokenهای روشن/تیره ساخته شد و فقط روی دو فیلتر تاریخ و تاریخ اعتبار فرم بارگذاری Documents فعال است.
+- Validation: lint و typecheck کامل Web، هر ۵۷۰ تست Web و Production Build موفق؛ پیش‌نمایش زنده شمسی/میلادی، انتخاب روز و بستن با `Escape` نیز در مرورگر محلی بررسی شد.
+- Final lock state: `RELEASED — PC-B/DOCUMENTS-003E-CALENDAR-THEME ready for review`. هیچ قفل Migration، Dependency/Lockfile، Contract، Permission، Database یا Branch گرفته نشد.
 
 ## LEGAL-ENTITY-BRAND-LOGO-001 — PC-B — READY_FOR_REVIEW
 

@@ -77,6 +77,7 @@ describe('documents workspace contract', () => {
     expect(source).toContain('documentOptions.data.branches');
     expect(source).toContain('validateDocumentUpload');
     expect(source).toContain('z-[70] max-h-72');
+    expect(source.match(/variant="rubi"/g)).toHaveLength(3);
     expect(source).not.toContain('documentsApi.sessionContext');
     expect(source).not.toContain('dangerouslySetInnerHTML');
   });
