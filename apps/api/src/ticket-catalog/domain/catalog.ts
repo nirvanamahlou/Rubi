@@ -632,17 +632,7 @@ export function transitionProduct(
   const totals = inventoryTotals(inventory);
   if (status === 'active') {
     validateProduct(product.definition, resolve, true);
-    const { validFrom, validTo } = product.definition.fare;
-    const fareIsEffective =
-      (!validFrom && !validTo) ||
-      (Boolean(validFrom) &&
-        Boolean(validTo) &&
-        utc(at) >= utc(validFrom) &&
-        utc(at) < utc(validTo));
-    ensure(
-      totals.total > 0 && fareIsEffective,
-      'ظرفیت مثبت و نرخ معتبر برای فعال‌سازی لازم است.',
-    );
+    ensure(totals.total > 0, 'ظرفیت مثبت برای فعال‌سازی لازم است.');
   }
   if (status === 'cancelled')
     ensure(

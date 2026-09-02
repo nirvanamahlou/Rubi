@@ -561,6 +561,20 @@ describe('Versioning and lifecycle', () => {
       ),
     ).toThrow();
   });
+  it('activates positive capacity even when the purchase fare validity has expired', () => {
+    expect(
+      transitionProduct(
+        product(),
+        'active',
+        1,
+        resolve,
+        '2026-09-04T00:00:00.000Z',
+        'test',
+        'activate after fare validity',
+        inventory,
+      ),
+    ).toMatchObject({ status: 'active', version: 2 });
+  });
   it('rejects missing permissions elsewhere, references, stale writes and blank reason here', () => {
     expect(() =>
       transitionProduct(
