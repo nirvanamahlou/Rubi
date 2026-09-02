@@ -1683,7 +1683,7 @@ export class MasterDataService {
       if (Object.hasOwn(data, 'airlineCodes')) {
         const parts = String(data.airlineCodes ?? '')
           .toUpperCase()
-          .split(/[\/|،,]+/)
+          .split(/[/|،,]+/)
           .map((part) => part.trim())
           .filter(Boolean);
         data.code = parts[0] ?? '';
@@ -1738,7 +1738,7 @@ export class MasterDataService {
       data.validFrom = new Date();
     if (resource === 'bus-types' && Object.hasOwn(data, 'manufacturerModel')) {
       const raw = String(data.manufacturerModel ?? '').trim();
-      const [manufacturer = '', ...modelParts] = raw.split(/\s*[\/|،,]\s*/);
+      const [manufacturer = '', ...modelParts] = raw.split(/\s*[/|،,]\s*/);
       data.manufacturer = manufacturer.trim();
       data.model = modelParts.join(' / ').trim() || manufacturer.trim();
       delete data.manufacturerModel;
