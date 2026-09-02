@@ -1,5 +1,17 @@
 # Work Assignments
 
+## LEGAL-ENTITY-BRAND-LOGO-001 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-01: با انتخاب شرکت فعال «جهان باستان»، لوگوی افقی ارسالی همان شرکت در App Shell جای لوگوی «نیایش سیر سحر» نمایش داده شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل: `codex/pc-b-jahan-bastan-logo` از `origin/develop@0f1d7b6fd15cba995be9793e0a9686474ad8c4c9` در Worktree تمیز `C:\Users\admin\Rubi-integrated-pc-b`؛ Branchهای کاری قبلی، `develop` و `main` دست‌نخورده می‌مانند.
+- محدوده رزروشده: Asset برند جهان باستان در `apps/web/public/brand/**`، انتخاب برند در مدل Legal Entity، نمایش لوگو در `apps/web/src/components/layout/app-shell.tsx` و تست‌های هدفمند همان Web slice؛ فقط ورودی‌های همین Work Item در اسناد مرکزی.
+- بدون Backend، Database، Schema/Migration/Seed، داده کاربر، API Contract، Dependency/Lockfile یا Permission. هیچ قفل Migration، Contract، Dependency/Lockfile یا Branch گرفته نمی‌شود.
+- `LEGAL-ENTITY-CONTEXT-001` قبلاً با PR #24 ادغام و قفل‌های آن آزاد شده است؛ این تغییر فقط مصرف‌کننده Web و برندینگ نمایشی را لمس می‌کند.
+- نتیجه: App Shell برند را از Legal Entity Context موجود می‌خواند؛ انتخاب `JAHAN_BASTAN` فایل افقی دقیقاً مطابق تصویر مالک را همراه نام و متن جایگزین درست نمایش می‌دهد و انتخاب نیایش سیر رفتار قبلی را حفظ می‌کند. Asset سرو‌شده با فایل ورودی SHA-256 یکسان دارد.
+- Validation: پیش از Integration هر ۵۵۲ تست Web و Smoke لوکال API/Web/Asset موفق بود. پس از ادغام `origin/develop@f78e70e` شامل PR #74 PC-A، Full lint/typecheck/build و ۱٬۳۸۳ تست اجراشده Workspace موفق شدند؛ ۷۰ تست PostgreSQL اختیاری طبق Suite معمول skip ماندند و Web هر ۵۶۵ تست را گذراند.
+- مجوز انتشار: مالک در 2026-09-01 صریحاً دریافت آخرین تغییرات PC-A، Push این Branch و Merge آن با `develop` را خواست. `origin/develop@f78e70e` بدون Conflict در Branch ادغام و کنترل کیفیت کامل تکرار شد؛ انتشار فقط از مسیر PR انجام می‌شود و `main` و Force Push ممنوع می‌مانند.
+- Final lock state: `RELEASED — PC-B/LEGAL-ENTITY-BRAND-LOGO-001 ready for review`. هیچ قفل Migration، Contract، Dependency/Lockfile، Permission، Database یا Branch گرفته نشد.
+
 ## DOCUMENTS-003C-CI-PORTABILITY — PC-B — READY_FOR_REVIEW
 
 - CI مشترک پس از Merge PR #72 دو شکست Linux-only در محافظ Storage بسته داده نمایشی Documents کشف کرد؛ درخواست صریح مالک برای Push و Merge تمام تغییرات، مجوز اصلاح محدود این مانع یکپارچه‌سازی است. `COMPUTER_ID=PC-B`.
