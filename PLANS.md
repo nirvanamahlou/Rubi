@@ -32,6 +32,9 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 - [x] `DOCUMENTS-003C-DEMO-BOOTSTRAP`: هفت سند و تصویر کاملاً ساختگی، قابل Preview و
       قابل ایجاد تکرارپذیر روی دیتابیس/Storage محلی هر دو کامپیوتر؛ Preview بدون Write،
       Apply صریح با Antivirus واقعی و بدون Migration/Dependency/Secret.
+- [x] `DOCUMENTS-003D-LOCAL-INTERACTIONS`: کارت‌های عملیاتی آرشیو، فرم بارگذاری و
+      Dropdownهای پایدار با Options یکپارچه Documents، و Apply یک‌مرحله‌ای و قابل
+      راستی‌آزمایی برای ساخت هفت سند آزمایشی روی دیتابیس محلی PC-A/PC-B.
 - [ ] `DOCUMENTS-003`: Adapter تولیدی S3/MinIO و Antivirus Worker عملیاتی با retry،
       monitoring و recovery؛ پس از تصمیم امنیت/عملیات و رزرو تازه Migration/Dependency.
 - [ ] `DOCUMENTS-004`: اشتراک امن، نسخه‌گذاری تکمیلی، Export، retention نهایی و اتصال

@@ -154,6 +154,43 @@ describe('DocumentsService security and persistence flow', () => {
     );
   });
 
+  it('returns upload options with the authenticated user and allowed branches', async () => {
+    repository.options.mockResolvedValue({
+      documentTypes: [
+        {
+          id: '55555555-5555-4555-8555-555555555555',
+          code: 'SALES_CONTRACT',
+          name: 'قرارداد فروش',
+          domain: 'SALES',
+          defaultConfidentiality: 'INTERNAL',
+          allowedMimeTypes: ['application/pdf'],
+          maxFileSizeBytes: 1_000_000n,
+          requiresExpiry: false,
+        },
+      ],
+      categories: [
+        {
+          id: '66666666-6666-4666-8666-666666666666',
+          code: 'CONTRACTS',
+          name: 'قراردادها',
+        },
+      ],
+      owners: [{ id: actor.userId, displayName: 'کارشناس فروش' }],
+      branches: [{ id: branchId, code: 'TEH', name: 'شعبه تهران' }],
+    });
+
+    const result = await service.options(actor);
+
+    expect(repository.options).toHaveBeenCalledWith(
+      [branchId],
+      ['GENERAL', 'SALES'],
+    );
+    expect(result.data).toMatchObject({
+      currentUserId: actor.userId,
+      branches: [{ id: branchId, code: 'TEH', name: 'شعبه تهران' }],
+    });
+  });
+
   it('applies branch/domain scope server-side and masks sensitive list metadata', async () => {
     repository.list.mockResolvedValue({ rows: [row()], total: 1 });
 

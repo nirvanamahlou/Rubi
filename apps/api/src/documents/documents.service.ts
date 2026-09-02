@@ -245,6 +245,8 @@ export class DocumentsService {
     }));
     return {
       data: {
+        currentUserId: actor.userId,
+        branches: values.branches,
         documentTypes,
         categories: values.categories.map(({ id, code, name }) => ({
           id,
