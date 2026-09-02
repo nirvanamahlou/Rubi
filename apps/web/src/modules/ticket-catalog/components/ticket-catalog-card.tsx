@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/ui';
 import {
-  transitions,
   type CatalogStatus,
   type Product,
   type Reference,
@@ -82,7 +81,13 @@ export function TicketCatalogCard({
             </span>
             <div className="min-w-0">
               <p className="truncate font-black">{product.definition.title}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-xs">
+                <span className="font-bold text-primary">
+                  {product.definition.transport === 'flight'
+                    ? 'ایرلاین'
+                    : 'شرکت'}
+                  :
+                </span>{' '}
                 {referenceLabel(
                   operatorKind,
                   segment.airlineId,
@@ -189,18 +194,6 @@ export function TicketCatalogCard({
               <Power className="size-4" aria-hidden />
             </Button>
           ) : null}
-          {transitions[product.status]
-            .filter((status) => status !== powerStatus)
-            .map((status) => (
-              <Button
-                size="sm"
-                key={status}
-                variant="outline"
-                onClick={() => onStatus(status)}
-              >
-                {statusLabels[status]}
-              </Button>
-            ))}
         </div>
         <p className="text-xs text-muted-foreground">
           نسخه {product.version.toLocaleString('fa-IR')} • قیمت فروش هنگام فروش

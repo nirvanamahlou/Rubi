@@ -38,10 +38,12 @@ import {
   type ReferenceResolver,
 } from '../model/catalog';
 import {
+  activateCatalogSample,
   catalogSamples,
   catalogStorageKey,
   displayTime,
   emptyInput,
+  groupProductsForCards,
   initialQuery,
   parseCatalogSnapshot,
   queryProducts,
@@ -55,6 +57,7 @@ import {
   type RepeatCadence,
 } from '../model/preview';
 import { TicketCatalogCard } from './ticket-catalog-card';
+import { TicketDetails } from './ticket-details';
 import { TicketForm } from './ticket-form';
 import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
@@ -97,7 +100,11 @@ export function TicketWorkspace() {
         localStorage.getItem(catalogStorageKey),
       );
       if (stored) {
-        setProducts(stored.products);
+        setProducts(
+          stored.products.map((product) =>
+            activateCatalogSample(product, new Date().toISOString()),
+          ),
+        );
         setReferences(stored.references);
       } else setProducts(catalogSamples(new Date().toISOString()));
       setHydrated(true);
@@ -113,6 +120,7 @@ export function TicketWorkspace() {
   }, [hydrated, products, references]);
 
   const result = queryProducts(products, query);
+  const cardGroups = groupProductsForCards(result.rows);
   const resolve: ReferenceResolver = (kind, id) =>
     references.find((r) => r.kind === kind && r.id === id);
   const referenceLabel = (
@@ -449,29 +457,40 @@ export function TicketWorkspace() {
         />
       ) : (
         <>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {result.rows.map((product) => (
-              <TicketCatalogCard
-                key={product.id}
-                product={product}
-                referenceLabel={referenceLabel}
-                onView={() => setForm({ mode: 'view', product })}
-                onEdit={() => setForm({ mode: 'edit', product })}
-                onRepeat={() =>
-                  setRepeat({
-                    product,
-                    cadence: 'weekly',
-                    count: 1,
-                    startDate: '',
-                  })
+          <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {cardGroups.map((group) => (
+              <div
+                key={group[0]!.definition.tripGroupId ?? group[0]!.id}
+                className={
+                  group.length > 1
+                    ? 'grid gap-3 md:col-span-2 md:grid-cols-2'
+                    : undefined
                 }
-                onDelete={() => setDeleteProduct(product)}
-                onStatus={(status) => {
-                  setProblem('');
-                  setReason('');
-                  setStatusChange({ product, status });
-                }}
-              />
+              >
+                {group.map((product) => (
+                  <TicketCatalogCard
+                    key={product.id}
+                    product={product}
+                    referenceLabel={referenceLabel}
+                    onView={() => setForm({ mode: 'view', product })}
+                    onEdit={() => setForm({ mode: 'edit', product })}
+                    onRepeat={() =>
+                      setRepeat({
+                        product,
+                        cadence: 'weekly',
+                        count: 1,
+                        startDate: '',
+                      })
+                    }
+                    onDelete={() => setDeleteProduct(product)}
+                    onStatus={(status) => {
+                      setProblem('');
+                      setReason('');
+                      setStatusChange({ product, status });
+                    }}
+                  />
+                ))}
+              </div>
             ))}
           </div>
           <nav
@@ -526,17 +545,23 @@ export function TicketWorkspace() {
           </DialogDescription>
           {form ? (
             <div className="mt-5">
-              <TicketForm
-                initial={
-                  form.initial ?? form.product?.definition ?? emptyInput()
-                }
-                references={references}
-                onReference={rememberReference}
-                onSave={save}
-                onCancel={() => setForm(null)}
-                readOnly={form.mode === 'view'}
-                allowRoundTrip={form.mode === 'create' && !form.initial}
-              />
+              {form.mode === 'view' && form.product ? (
+                <TicketDetails
+                  product={form.product}
+                  referenceLabel={referenceLabel}
+                />
+              ) : (
+                <TicketForm
+                  initial={
+                    form.initial ?? form.product?.definition ?? emptyInput()
+                  }
+                  references={references}
+                  onReference={rememberReference}
+                  onSave={save}
+                  onCancel={() => setForm(null)}
+                  allowRoundTrip={form.mode === 'create' && !form.initial}
+                />
+              )}
               {form.product ? (
                 <section className="mt-6 space-y-3 border-t pt-4">
                   <h3 className="font-bold">تاریخچه تغییرات</h3>

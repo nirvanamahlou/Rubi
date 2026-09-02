@@ -242,7 +242,7 @@ export function catalogSamples(now: string): Product[] {
       Date.parse(departureAt) + sample.durationHours * 3_600_000,
     ).toISOString();
     const input = emptyInput(sample.transport);
-    return createProduct(
+    const product = createProduct(
       `sample-ticket-${index + 1}`,
       {
         ...input,
@@ -290,7 +290,60 @@ export function catalogSamples(now: string): Product[] {
       now,
       'سیستم نمونه',
     );
+    return activateCatalogSample(product, now);
   });
+}
+
+export function activateCatalogSample(product: Product, at: string): Product {
+  if (!product.id.startsWith('sample-ticket-') || product.status !== 'draft')
+    return product;
+  const version = product.version + 1;
+  return {
+    ...product,
+    status: 'active',
+    version,
+    history: [
+      ...product.history,
+      {
+        version,
+        action: 'active',
+        at,
+        actor: 'سیستم نمونه',
+        reason: 'فعال‌سازی بلیت نمونه برای نمایش کنترل توقف فروش',
+      },
+    ],
+  };
+}
+
+export function groupProductsForCards(
+  products: readonly Product[],
+): Product[][] {
+  const groups: Product[][] = [];
+  const tripGroups = new Map<string, Product[]>();
+  for (const product of products) {
+    const groupId = product.definition.tripGroupId;
+    if (!groupId) {
+      groups.push([product]);
+      continue;
+    }
+    const existing = tripGroups.get(groupId);
+    if (existing) existing.push(product);
+    else {
+      const group = [product];
+      tripGroups.set(groupId, group);
+      groups.push(group);
+    }
+  }
+  const rank = { outbound: 0, return: 1, 'one-way': 2 } as const;
+  return groups.map((group) =>
+    group.length > 1
+      ? [...group].sort(
+          (left, right) =>
+            rank[left.definition.journeyRole] -
+            rank[right.definition.journeyRole],
+        )
+      : group,
+  );
 }
 
 // Backward-compatible internal alias while existing tests and branches migrate.

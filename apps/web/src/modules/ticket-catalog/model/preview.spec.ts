@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
+  activateCatalogSample,
   catalogStorageKey,
+  groupProductsForCards,
   initialQuery,
   moveDefinitionToDate,
   parseCatalogSnapshot,
@@ -60,7 +62,7 @@ describe('Ticket catalog browser collection and query', () => {
     ).toBe('sample-ticket-5');
     expect(
       queryProducts(samples, { ...initialQuery, status: 'active' }).total,
-    ).toBe(0);
+    ).toBe(9);
     expect(
       queryProducts(samples, {
         ...initialQuery,
@@ -97,6 +99,23 @@ describe('Ticket catalog browser collection and query', () => {
     );
     expect(weekly.journeyRole).toBe('one-way');
     expect(weekly.tripGroupId).toBeUndefined();
+  });
+  it('keeps round-trip products together and activates browser samples', () => {
+    const groups = groupProductsForCards(samples);
+    expect(groups.filter((group) => group.length === 2)).toHaveLength(3);
+    expect(
+      groups
+        .filter((group) => group.length === 2)
+        .every(
+          (group) =>
+            group[0]!.definition.journeyRole === 'outbound' &&
+            group[1]!.definition.journeyRole === 'return',
+        ),
+    ).toBe(true);
+    expect(samples.every((product) => product.status === 'active')).toBe(true);
+    expect(activateCatalogSample(samples[0]!, '2026-09-02T00:00:00.000Z')).toBe(
+      samples[0],
+    );
   });
   it('round-trips valid browser storage and rejects malformed data', () => {
     const raw = JSON.stringify({ products: samples, references: [] });
