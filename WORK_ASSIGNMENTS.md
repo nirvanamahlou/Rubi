@@ -8,7 +8,7 @@
 - `DatePicker`، `Select`، `FilterBar`، Dialog و سایر UIهای مشترک فقط مصرف می‌شوند و فایل مرکزی آن‌ها تغییر نمی‌کند. هیچ قفل Migration، Dependency/Lockfile، Shared Contract، IAM، Navigation یا AppModule گرفته نمی‌شود.
 - داده‌ها فقط synthetic با شناسه `preview-*` و بدون PII هستند؛ Analytics همچنان `AWAITING_ANALYTICS_CONTRACT`، Attribution برابر `PROPOSED` و Dispatch برابر `AWAITING_INTEGRATION_ADAPTER` باقی می‌مانند.
 - نتیجه: Hub نه‌بخشی مرجع، تمام زیرتب‌ها، فهرست و تقویم ماهانه کمپین، فیلتر بازه تاریخ، ناوبری ماه/امروز، انتخاب شمسی/میلادی، Dialog جزئیات، Action feedback و فرم چندمرحله‌ای تکمیل شد. ۵ کمپین، ۴۰ رکورد زیرتب و داده‌های Segment/Offer/Coupon/Timeline/Suppression همگی synthetic و قابل تعامل‌اند.
-- Validation: lint کامل ۶ Task، typecheck کامل ۹ Task، ۱٬۴۳۴ تست موفق با ۷۰ تست PostgreSQL اختیاری skip و Production Build کامل ۶ Task موفق. Web شامل ۷۵ فایل و ۵۷۹ تست موفق است. Browser QA احراز‌شده روی `localhost` تمام ۹ بخش، جست‌وجو/پاک‌کردن، تقویم، تغییر نوع و ماه، بازکردن رویداد، زیرتب/جزئیات، Action feedback، فرم و موبایل را بدون Console error یا Overflow ماژول پوشش داد.
+- Validation: lint کامل ۶ Task، typecheck کامل ۹ Task، ۱٬۴۳۴ تست موفق با ۷۰ تست PostgreSQL اختیاری skip و Production Build کامل ۶ Task موفق. Web شامل ۷۵ فایل و ۵۷۹ تست موفق است. Browser QA محلی روی مسیر محافظت‌شده `/marketing` تمام ۹ بخش، جست‌وجو/پاک‌کردن، تقویم، تغییر نوع و ماه، بازکردن رویداد، زیرتب/جزئیات، Action feedback، فرم و موبایل را بدون Console error یا Overflow ماژول پوشش داد.
 - Final lock state: `RELEASED — PC-B/MARKETING-001B ready for review`. هیچ Migration، Dependency/Lockfile، Shared Contract، IAM، Navigation، AppModule، Persistence یا داده واقعی تغییر نکرد.
 
 ## MARKETING-001 — PC-B — READY_FOR_REVIEW
