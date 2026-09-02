@@ -418,6 +418,12 @@ export function validateProduct(
         'قطعه بعدی پیش از رسیدن قطعه قبلی شروع می‌شود.',
       );
       ensure(
+        !previous.destinationCityId ||
+          !segment.originCityId ||
+          previous.destinationCityId === segment.originCityId,
+        'اتصال شهرهای قطعه‌ها نامعتبر است.',
+      );
+      ensure(
         !previous.destinationAirportId ||
           !segment.originAirportId ||
           previous.destinationAirportId === segment.originAirportId,

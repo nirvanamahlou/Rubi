@@ -233,7 +233,11 @@ describe('UTC and wall clock validation', () => {
             value.segments[0]!,
             {
               ...value.segments[0]!,
+              originCountryId: value.segments[0]!.destinationCountryId,
+              originCityId: value.segments[0]!.destinationCityId,
               originAirportId: 'test-destination',
+              destinationCountryId: value.segments[0]!.originCountryId,
+              destinationCityId: value.segments[0]!.originCityId,
               destinationAirportId: 'test-origin',
               departureAt: '2026-09-06T10:00:00Z',
               arrivalAt: '2026-09-06T12:00:00Z',

@@ -321,6 +321,7 @@ function TicketCatalogWorkspace() {
     const destinations = new Map<string, string>();
     for (const product of products) {
       const segment = product.definition.segments[0]!;
+      const lastSegment = product.definition.segments.at(-1)!;
       origins.set(
         segment.originCityId,
         referenceLabel(
@@ -330,10 +331,10 @@ function TicketCatalogWorkspace() {
         ),
       );
       destinations.set(
-        segment.destinationCityId,
+        lastSegment.destinationCityId,
         referenceLabel(
           'city',
-          segment.destinationCityId,
+          lastSegment.destinationCityId,
           product.definition.display?.destination || 'مقصد نامشخص',
         ),
       );

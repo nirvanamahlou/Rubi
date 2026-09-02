@@ -58,6 +58,8 @@ export function TicketCatalogCard({
   onStatus,
 }: TicketCatalogCardProps) {
   const segment = product.definition.segments[0]!;
+  const lastSegment = product.definition.segments.at(-1)!;
+  const isCombined = product.definition.segments.length > 1;
   const display = product.definition.display;
   const TransportIcon = transportIcons[product.definition.transport];
   const operatorKind =
@@ -104,6 +106,12 @@ export function TicketCatalogCard({
           <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
             <Badge>{statusLabels[product.status]}</Badge>
             <Badge>{journeyLabels[product.definition.journeyRole]}</Badge>
+            {isCombined ? (
+              <Badge>
+                {product.definition.segments.length.toLocaleString('fa-IR')}{' '}
+                قطعه
+              </Badge>
+            ) : null}
           </div>
         </div>
       </div>
@@ -122,15 +130,15 @@ export function TicketCatalogCard({
           <span>
             {referenceLabel(
               'city',
-              segment.destinationCityId,
+              lastSegment.destinationCityId,
               display?.destination || 'مقصد',
             )}
           </span>
         </div>
         <p className="text-xs text-muted-foreground">
           {product.definition.transport === 'flight'
-            ? `${referenceLabel('airport', segment.originAirportId, segment.originTerminal || 'فرودگاه مبدأ')} ← ${referenceLabel('airport', segment.destinationAirportId, segment.destinationTerminal || 'فرودگاه مقصد')}`
-            : `${segment.originTerminal || 'پایانه مبدأ'} ← ${segment.destinationTerminal || 'پایانه مقصد'}`}
+            ? `${referenceLabel('airport', segment.originAirportId, segment.originTerminal || 'فرودگاه مبدأ')} ← ${referenceLabel('airport', lastSegment.destinationAirportId, lastSegment.destinationTerminal || 'فرودگاه مقصد')}`
+            : `${segment.originTerminal || 'پایانه مبدأ'} ← ${lastSegment.destinationTerminal || 'پایانه مقصد'}`}
         </p>
 
         <div className="grid grid-cols-2 gap-2">
@@ -143,7 +151,7 @@ export function TicketCatalogCard({
           <div className="rounded-lg bg-muted/45 p-2">
             <p className="text-xs text-muted-foreground">رسیدن</p>
             <p className="mt-1 text-sm font-bold">
-              {displayTime(segment.arrivalAt, segment.arrivalZone)}
+              {displayTime(lastSegment.arrivalAt, lastSegment.arrivalZone)}
             </p>
           </div>
         </div>
