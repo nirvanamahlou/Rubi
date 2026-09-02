@@ -102,3 +102,76 @@ it('maps country and city identities with their published parent relationship', 
     }),
   ).toMatchObject({ kind: 'country' });
 });
+
+it('uses v12 geographic filters and maps all ticket reference kinds', async () => {
+  vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+  const fetcher = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      data: [],
+      meta: { total: 0, page: 1, pageSize: 25 },
+    }),
+  });
+  vi.stubGlobal('fetch', fetcher);
+  await listReferences('airports', 'demo', 1, undefined, {
+    countryId: '11111111-1111-4111-8111-111111111111',
+    cityId: '22222222-2222-4222-8222-222222222222',
+  });
+  expect(fetcher.mock.calls[0]![0]).toContain(
+    'countryId=11111111-1111-4111-8111-111111111111',
+  );
+  expect(fetcher.mock.calls[0]![0]).toContain(
+    'cityId=22222222-2222-4222-8222-222222222222',
+  );
+  const base = {
+    id: 'reference-test',
+    code: 'TEST',
+    name: 'Synthetic',
+    status: 'active' as const,
+    attributes: {
+      countryId: '11111111-1111-4111-8111-111111111111',
+      cityId: '22222222-2222-4222-8222-222222222222',
+      ianaTimezone: 'Asia/Tehran',
+    },
+    version: 1,
+    createdAt: '',
+    updatedAt: '',
+  };
+  expect(asReference({ ...base, resource: 'airports' })).toMatchObject({
+    kind: 'airport',
+    cityId: '22222222-2222-4222-8222-222222222222',
+    timezone: 'Asia/Tehran',
+  });
+  expect(
+    ['aircraft-types', 'cabin-classes', 'baggage-rules'].map(
+      (resource) =>
+        asReference({
+          ...base,
+          resource: resource as
+            'aircraft-types' | 'cabin-classes' | 'baggage-rules',
+        })?.kind,
+    ),
+  ).toEqual(['aircraft', 'flightClass', 'baggage']);
+});
+it('maps published rail and bus references for ticket definitions', () => {
+  const base = {
+    id: 'transport-reference',
+    code: 'TEST',
+    name: 'Synthetic transport reference',
+    status: 'active' as const,
+    attributes: {},
+    version: 1,
+    createdAt: '',
+    updatedAt: '',
+  };
+  expect(
+    ['rail-companies', 'train-types', 'bus-companies', 'bus-types'].map(
+      (resource) =>
+        asReference({
+          ...base,
+          resource: resource as
+            'rail-companies' | 'train-types' | 'bus-companies' | 'bus-types',
+        })?.kind,
+    ),
+  ).toEqual(['railCompany', 'trainType', 'busCompany', 'busType']);
+});
