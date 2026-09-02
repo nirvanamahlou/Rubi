@@ -355,6 +355,8 @@ export interface PreviewQuery {
   supply: string;
   transport: string;
   airline: string;
+  originCityId: string;
+  destinationCityId: string;
   from: string;
   to: string;
   sort: 'departure' | 'title' | 'updated';
@@ -367,6 +369,8 @@ export const initialQuery: PreviewQuery = {
   supply: 'all',
   transport: 'all',
   airline: '',
+  originCityId: 'all',
+  destinationCityId: 'all',
   from: '',
   to: '',
   sort: 'departure',
@@ -400,6 +404,10 @@ export function queryProducts(
         (query.transport === 'all' ||
           product.definition.transport === query.transport) &&
         (!query.airline || segment.airlineId === query.airline) &&
+        (query.originCityId === 'all' ||
+          segment.originCityId === query.originCityId) &&
+        (query.destinationCityId === 'all' ||
+          segment.destinationCityId === query.destinationCityId) &&
         (!query.from ||
           (Boolean(segment.departureAt) &&
             segment.departureAt.slice(0, 10) >= query.from)) &&
@@ -427,6 +435,42 @@ export function queryProducts(
     page,
     rows: rows.slice((page - 1) * 6, page * 6),
   };
+}
+
+export interface RouteProductCount {
+  key: string;
+  originCityId: string;
+  destinationCityId: string;
+  origin: string;
+  destination: string;
+  count: number;
+}
+
+export function countProductsByRoute(
+  products: readonly Product[],
+): RouteProductCount[] {
+  const routes = new Map<string, RouteProductCount>();
+  for (const product of products) {
+    const segment = product.definition.segments[0]!;
+    const key = `${segment.originCityId}::${segment.destinationCityId}`;
+    const existing = routes.get(key);
+    if (existing) {
+      existing.count += 1;
+      continue;
+    }
+    routes.set(key, {
+      key,
+      originCityId: segment.originCityId,
+      destinationCityId: segment.destinationCityId,
+      origin: product.definition.display?.origin || 'مبدأ نامشخص',
+      destination: product.definition.display?.destination || 'مقصد نامشخص',
+      count: 1,
+    });
+  }
+  return [...routes.values()].sort(
+    (left, right) =>
+      right.count - left.count || left.key.localeCompare(right.key),
+  );
 }
 export function replacePreview(
   products: readonly Product[],

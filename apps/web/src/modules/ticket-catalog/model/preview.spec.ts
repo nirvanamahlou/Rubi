@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   activateCatalogSample,
   catalogStorageKey,
+  countProductsByRoute,
   groupProductsForCards,
   initialQuery,
   moveDefinitionToDate,
@@ -70,6 +71,36 @@ describe('Ticket catalog browser collection and query', () => {
         to: '2026-09-08',
       }).total,
     ).toBe(1);
+    const route = samples[0]!.definition.segments[0]!;
+    expect(
+      queryProducts(samples, {
+        ...initialQuery,
+        originCityId: route.originCityId,
+        destinationCityId: route.destinationCityId,
+      }).total,
+    ).toBeGreaterThan(0);
+    expect(
+      queryProducts(samples, {
+        ...initialQuery,
+        originCityId: route.destinationCityId,
+        destinationCityId: route.originCityId,
+      }).rows.every(
+        (product) =>
+          product.definition.segments[0]!.originCityId ===
+            route.destinationCityId &&
+          product.definition.segments[0]!.destinationCityId ===
+            route.originCityId,
+      ),
+    ).toBe(true);
+  });
+  it('counts every catalog product once under its route', () => {
+    const routes = countProductsByRoute(samples);
+    expect(routes.reduce((sum, route) => sum + route.count, 0)).toBe(
+      samples.length,
+    );
+    expect(routes.every((route) => route.origin && route.destination)).toBe(
+      true,
+    );
   });
   it('anchors the first repeated ticket on the selected date and keeps times', () => {
     const source = samples[0]!.definition;

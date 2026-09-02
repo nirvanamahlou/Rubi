@@ -3,6 +3,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { TicketWorkspace } from './ticket-workspace';
 import { TicketForm } from './ticket-form';
+import { TicketCatalogCard } from './ticket-catalog-card';
+import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
 import { emptyInput, previewSamples } from '../model/preview';
 
 describe('Rendered ticket UI', () => {
@@ -12,8 +14,37 @@ describe('Rendered ticket UI', () => {
     expect(html).toContain('تعریف بلیت جدید');
     expect(html).toContain('افزودن نمونه‌ها');
     expect(html).toContain('هواپیما • قطار • اتوبوس');
+    expect(html).toContain('تعریف و ظرفیت بلیت‌ها');
+    expect(html).toContain('بلیت‌های صادرشده مسافران');
     expect(html).not.toContain('شروع پیش‌نمایش');
     expect(html).not.toContain('حالت شبیه‌سازی');
+  });
+  it('renders route filters, a labeled stop-sale control and issued filters', () => {
+    const sample = previewSamples('2026-08-31T00:00:00.000Z')[0]!;
+    const card = renderToStaticMarkup(
+      createElement(TicketCatalogCard, {
+        product: sample,
+        referenceLabel: (_kind: string, _id: string, fallback: string) =>
+          fallback,
+        onView: () => {},
+        onEdit: () => {},
+        onRepeat: () => {},
+        onDelete: () => {},
+        onStatus: () => {},
+      }),
+    );
+    const issued = renderToStaticMarkup(
+      createElement(IssuedTicketsWorkspace, {
+        connected: false,
+        tickets: [],
+      }),
+    );
+    expect(card).toContain('توقف فروش');
+    expect(issued).toContain('شماره قرارداد');
+    expect(issued).toContain('شماره بلیت یا PNR');
+    expect(issued).toContain('مبدأ');
+    expect(issued).toContain('مقصد');
+    expect(issued).toContain('در انتظار اتصال قرارداد عمومی رزرواسیون');
   });
   it('renders flight fields and browser-backed save without Hold editor', () => {
     const html = renderToStaticMarkup(

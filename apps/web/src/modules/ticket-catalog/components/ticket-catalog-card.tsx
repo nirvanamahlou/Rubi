@@ -184,14 +184,15 @@ export function TicketCatalogCard({
           </Button>
           {powerStatus ? (
             <Button
-              size="icon"
+              size="sm"
               variant="outline"
-              className="text-rose-700 dark:text-rose-300"
+              className="border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300"
               title="توقف فروش بلیت"
               aria-label="توقف فروش بلیت"
               onClick={() => onStatus(powerStatus)}
             >
               <Power className="size-4" aria-hidden />
+              توقف فروش
             </Button>
           ) : null}
         </div>

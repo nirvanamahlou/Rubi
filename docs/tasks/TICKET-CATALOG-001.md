@@ -289,3 +289,13 @@ Nine synthetic examples load automatically when this browser has no saved catalo
 Validation: complete Web suite 521/521 passed; targeted Ticket Web 83/83 and Ticket API 44/44 passed; complete Web ESLint and TypeScript checks passed; the API-configured production Web build passed. Browser-client setup failed before discovery because the known Windows deny-read ACL terminated its sandbox, so no interactive visual claim is made. The exact build is active at `http://127.0.0.1:3212` (PID 2872), login returns 200 and API 4000 remained unchanged. Port 3100 had been reacquired by the main-checkout Next development service (parent PID 3188/listener PID 16696); the safety reviewer rejected force-stopping it because the original task contract protects existing 3100 services. Switching 3100 therefore remains a final explicit runtime approval/action, not an unreported replacement.
 
 Server persistence remains a separate Stage-B handoff: Prisma/Migration ownership, Ticket API/controller wiring, dedicated permission and transactional inventory/Audit must be reserved before replacing browser storage. Current CRUD is functional and persistent on this browser but is not shared among users or devices. Central status owners should carry this boundary and the transport/repeat capability forward when Stage B is authorized.
+
+## Follow-up: route operations and issued-ticket reporting — 2026-09-02
+
+At the product owner's request, every active catalog card now exposes a visible labelled `توقف فروش` action rather than an icon-only control. The existing guarded `active → paused` domain transition remains the only behavior; no inventory, reservation or passenger state is mutated by this action.
+
+Catalog filters now include independent origin and destination city selectors. A route summary counts every defined flight/train/bus product exactly once and exposes each route as a quick filter. Counts describe catalog products, not seats sold or passenger issuance.
+
+The same page has a separate `بلیت‌های صادرشده مسافران` tab with prepared read-only filters for contract number, passenger display name, ticket number/PNR, origin, destination, airline, lifecycle status and issue-date range. It also defines total and per-route issued-ticket summaries. Runtime rows intentionally remain empty until Reservations publishes a public versioned read contract. Ticket Catalog does not query Reservations tables, persist passenger data, or own issuance/refund operations; no synthetic production row is shown.
+
+Validation: 92 targeted Ticket Web tests, full lint and typecheck, 1,392 Monorepo tests and the complete production build with 34 routes passed. No Prisma schema, Migration, Seed, dependency/lockfile, public contract, permission or application database changed.

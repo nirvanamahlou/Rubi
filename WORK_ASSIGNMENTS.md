@@ -7,7 +7,9 @@
 - بدون Prisma Schema/Migration/Seed، Dependency/Lockfile، قرارداد عمومی، Permission یا تغییر ماژول Master Data/Reservations. تاریخ‌های موجود هنگام ویرایش حفظ می‌شوند و مقدار ساختگی جایگزین نمی‌شود.
 - قفل‌های Migration، Dependency/Lockfile و اسناد مرکزی رزرو نمی‌شوند؛ مالکیت این Slice فقط فایل‌های Ticket Catalog است.
 - نتیجه: فرم جدید دیگر تاریخ حرکت/رسیدن و بازه اعتبار نرخ را نمایش یا تبدیل نمی‌کند؛ جفت‌های کاملاً خالی در Web/API معتبرند، ورود ناقص همچنان رد می‌شود و کارت بلیت خالی را «بدون زمان‌بندی» نشان می‌دهد.
-- Validation: ۹۷ تست هدفمند، lint Web، typecheck کامل، ۱٬۳۸۵ تست Monorepo و Production Build کامل موفق است. Final lock state: `RELEASED — PC-A/TICKET-CATALOG-002 ready for review`.
+- Follow-up صریح مالک در 2026-09-02: دکمه متنی و واضح «توقف فروش»، فیلتر مبدأ/مقصد، شمارش بلیت‌های تعریف‌شده به تفکیک مسیر و تب گزارش بلیت‌های صادرشده با فیلتر قرارداد، مسافر، شماره بلیت/PNR، مسیر، ایرلاین، وضعیت و تاریخ اضافه شد.
+- مرز دامنه: تعریف/توقف فروش محصول در Ticket Catalog می‌ماند؛ صدور، استرداد و اطلاعات مسافر متعلق به Reservations است. تب صادرشده‌ها فقط‌خواندنی و بدون داده ساختگی آماده اتصال به قرارداد عمومی آینده Reservations است؛ هیچ دسترسی مستقیم یا Persistence جدید ایجاد نشد.
+- Validation: ۹۲ تست هدفمند Ticket Web، lint کامل، typecheck کامل، ۱٬۳۹۲ تست Monorepo و Production Build کامل با ۳۴ Route موفق است. Final lock state: `RELEASED — PC-A/TICKET-CATALOG-002 ready for review`.
 
 ## LEGAL-ENTITY-BRAND-LOGO-001 — PC-B — READY_FOR_REVIEW
 

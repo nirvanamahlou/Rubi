@@ -26,6 +26,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from '@/components/ui';
 import {
   createProduct,
@@ -41,6 +45,7 @@ import {
   activateCatalogSample,
   catalogSamples,
   catalogStorageKey,
+  countProductsByRoute,
   displayTime,
   emptyInput,
   groupProductsForCards,
@@ -61,6 +66,7 @@ import { TicketDetails } from './ticket-details';
 import { TicketForm } from './ticket-form';
 import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
+import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
 
 const actor = 'کاربر جاری';
 const transportIcons = {
@@ -70,6 +76,23 @@ const transportIcons = {
 };
 
 export function TicketWorkspace() {
+  return (
+    <Tabs defaultValue="catalog" dir="rtl" className="space-y-5">
+      <TabsList className="grid w-full grid-cols-2 sm:w-fit">
+        <TabsTrigger value="catalog">تعریف و ظرفیت بلیت‌ها</TabsTrigger>
+        <TabsTrigger value="issued">بلیت‌های صادرشده مسافران</TabsTrigger>
+      </TabsList>
+      <TabsContent value="catalog">
+        <TicketCatalogWorkspace />
+      </TabsContent>
+      <TabsContent value="issued">
+        <IssuedTicketsWorkspace connected={false} tickets={[]} />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+function TicketCatalogWorkspace() {
   const [products, setProducts] = useState<Product[]>([]);
   const [references, setReferences] = useState<Reference[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -120,6 +143,7 @@ export function TicketWorkspace() {
   }, [hydrated, products, references]);
 
   const result = queryProducts(products, query);
+  const routeCounts = countProductsByRoute(products);
   const cardGroups = groupProductsForCards(result.rows);
   const resolve: ReferenceResolver = (kind, id) =>
     references.find((r) => r.kind === kind && r.id === id);
@@ -263,6 +287,30 @@ export function TicketWorkspace() {
     train: products.filter((p) => p.definition.transport === 'train').length,
     bus: products.filter((p) => p.definition.transport === 'bus').length,
   };
+  const routeOptions = (() => {
+    const origins = new Map<string, string>();
+    const destinations = new Map<string, string>();
+    for (const product of products) {
+      const segment = product.definition.segments[0]!;
+      origins.set(
+        segment.originCityId,
+        referenceLabel(
+          'city',
+          segment.originCityId,
+          product.definition.display?.origin || 'مبدأ نامشخص',
+        ),
+      );
+      destinations.set(
+        segment.destinationCityId,
+        referenceLabel(
+          'city',
+          segment.destinationCityId,
+          product.definition.display?.destination || 'مقصد نامشخص',
+        ),
+      );
+    }
+    return { origins: [...origins], destinations: [...destinations] };
+  })();
 
   return (
     <div className="space-y-5" dir="rtl">
@@ -333,6 +381,39 @@ export function TicketWorkspace() {
           );
         })}
       </div>
+      <Card className="p-4">
+        <h2 className="font-bold">جمع بلیت‌های تعریف‌شده در هر مسیر</h2>
+        {routeCounts.length ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {routeCounts.map((route) => (
+              <Button
+                key={route.key}
+                type="button"
+                size="sm"
+                variant={
+                  query.originCityId === route.originCityId &&
+                  query.destinationCityId === route.destinationCityId
+                    ? 'primary'
+                    : 'outline'
+                }
+                onClick={() =>
+                  filter({
+                    originCityId: route.originCityId,
+                    destinationCityId: route.destinationCityId,
+                  })
+                }
+              >
+                {route.origin} ← {route.destination} •{' '}
+                {route.count.toLocaleString('fa-IR')} بلیت
+              </Button>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-muted-foreground">
+            پس از تعریف بلیت، جمع هر مسیر اینجا نمایش داده می‌شود.
+          </p>
+        )}
+      </Card>
       <Card className="space-y-4 p-4">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <FormField label="جست‌وجوی بلیت" id="ticket-search">
@@ -392,6 +473,44 @@ export function TicketWorkspace() {
                 {Object.entries(supplyLabels).map(([key, value]) => (
                   <SelectItem value={key} key={key}>
                     {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+          <FormField label="مبدأ مسیر" id="ticket-origin-filter">
+            <Select
+              value={query.originCityId}
+              onValueChange={(originCityId) => filter({ originCityId })}
+            >
+              <SelectTrigger id="ticket-origin-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="all">همه مبدأها</SelectItem>
+                {routeOptions.origins.map(([id, name]) => (
+                  <SelectItem value={id} key={id}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+          <FormField label="مقصد مسیر" id="ticket-destination-filter">
+            <Select
+              value={query.destinationCityId}
+              onValueChange={(destinationCityId) =>
+                filter({ destinationCityId })
+              }
+            >
+              <SelectTrigger id="ticket-destination-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="all">همه مقصدها</SelectItem>
+                {routeOptions.destinations.map(([id, name]) => (
+                  <SelectItem value={id} key={id}>
+                    {name}
                   </SelectItem>
                 ))}
               </SelectContent>
