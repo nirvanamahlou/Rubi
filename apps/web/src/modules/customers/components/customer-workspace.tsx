@@ -79,7 +79,12 @@ import {
   PageHeader,
   Skeleton,
 } from '@/components/ui/surfaces';
-import { masterDataApi } from '@/modules/master-data/api/client';
+import { getPublicApiBaseUrl } from '@/lib/environment';
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import {
+  masterDataApi,
+  MasterDataApiError,
+} from '@/modules/master-data/api/client';
 import { customersApi, CustomersApiError } from '../api/client';
 import {
   contactDisplayValue,
@@ -171,17 +176,31 @@ const connectedDossierSections = [
 
 const CUSTOMER_SUPPORT_REQUEST_REASON = 'support-request';
 
-function listMasterData(
+async function listMasterData(
   resource: 'organizations' | 'acquaintance-methods' | 'countries' | 'cities',
+  retriedAfterRefresh = false,
 ) {
-  return masterDataApi.list(resource, {
-    search: '',
-    status: 'active',
-    sortBy: 'name',
-    sortDirection: 'asc',
-    page: 1,
-    pageSize: 100,
-  });
+  try {
+    return await masterDataApi.list(resource, {
+      search: '',
+      status: 'active',
+      sortBy: 'name',
+      sortDirection: 'asc',
+      page: 1,
+      pageSize: 100,
+    });
+  } catch (error) {
+    const apiBaseUrl = getPublicApiBaseUrl();
+    if (
+      error instanceof MasterDataApiError &&
+      error.status === 401 &&
+      !retriedAfterRefresh &&
+      apiBaseUrl &&
+      (await refreshAuthenticatedSession(apiBaseUrl))
+    )
+      return listMasterData(resource, true);
+    throw error;
+  }
 }
 
 function safeCustomerId(value: string | null) {

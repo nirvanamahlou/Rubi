@@ -1,6 +1,18 @@
 # وضعیت پروژه
 
 ## CUSTOMER-CONNECTIONS-0905 — integration in progress
+## CUSTOMER-MASTERDATA-RETRY — بازیابی اطلاعات پایه پس از تمدید نشست
+
+- `PC-A` روی Branch مستقل `codex/pc-a-customer-masterdata-retry` خطای هم‌زمانی
+  بارگذاری Public Master Data در فرم Customers را اصلاح کرد. پاسخ 401 اکنون از همان
+  Refresh مشترک نشست استفاده می‌کند و درخواست Organization، نحوه آشنایی، کشور یا شهر
+  فقط یک بار تکرار می‌شود؛ سایر خطاها رفتار صریح قبلی را حفظ می‌کنند.
+- همه قابلیت‌های ادغام‌شده CUSTOMER-002B، نمایش/خروجی تماس و اتصال امن Documents در
+  همین مبنا موجودند. Passport/Visa ساختاری به‌دلیل بازبودن `DEC-OPEN-006` فعال نشده و
+  هیچ داده ساختگی جایگزین نشده است. ۵۶۵ تست Web، lint، typecheck و Production Build
+  موفق‌اند. جزئیات در `docs/tasks/CUSTOMER-MASTERDATA-RETRY.md`.
+
+## TICKET-CATALOG-EDIT-COMPLETENESS — نمایش کامل اطلاعات هنگام ویرایش
 
 - PC-A is validating PR #85 Customer Documents against committed Sales plus the existing master-data session-refresh retry. Separate worktree preserves active Sales changes; prior test results below do not establish validation of this integration.
 ## SALES-CONTRACTS-001 — Vertical Slice فروش — آماده بررسی

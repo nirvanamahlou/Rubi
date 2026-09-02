@@ -1,6 +1,15 @@
 # Work Assignments
 
 ## CUSTOMER-CONNECTIONS-0905 — PC-A — IN_PROGRESS
+## CUSTOMER-MASTERDATA-RETRY — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-02: کامل‌ترین نسخه قبلی Customers روی پورت ۳۱۰۰ حفظ شود و پیام نادرست «اطلاعات پایه در دسترس نیست» پس از تمدید نشست رفع گردد. `COMPUTER_ID=PC-A`.
+- Branch مستقل و Stacked: `codex/pc-a-customer-masterdata-retry` روی نسخه تحویلی Ticket/Customers؛ محدوده فقط اتصال Public Master Data در Web Customers، تست مستقیم و سند همین اصلاح است.
+- هیچ Schema/Migration/Seed، Passport/Visa persistence، API/Contract، Dependency/Lockfile یا داده‌ای تغییر نمی‌کند. `DEC-OPEN-006` همچنان باز است و قابلیت مدرک ساختگی فعال نمی‌شود.
+- نتیجه: پاسخ 401 فهرست‌های اطلاعات پایه فقط یک بار با Refresh مشترک نشست بازیابی و همان درخواست تکرار می‌شود؛ 403، Network و 5xx پنهان یا بی‌نهایت تکرار نمی‌شوند. تمام Commitهای قبلی CUSTOMER-002B و اتصال Documents در مبنای فعال حفظ شده‌اند.
+- Validation: تست هدفمند ۴۷/۴۷، همه ۵۶۵ تست Web، lint، typecheck و Production Build موفق‌اند. Final lock state: `RELEASED — PC-A/CUSTOMER-MASTERDATA-RETRY ready for review`؛ هیچ قفل مشترکی تغییر نکرد.
+
+## TICKET-CATALOG-EDIT-COMPLETENESS — PC-A — READY_FOR_REVIEW
 
 - User approved integrating PR #85 Documents/Customer 360 and the existing master-data session retry on 2026-09-05. Isolated branch `codex/pc-a-customer-connections-0905`, based on committed Sales `5ea2b32`; active Sales worktree is untouched. Scope: integration of existing Customers/Documents public API changes, customer reference retry, tests and these task entries. No schema, migration, dependency or permission changes.
 ## SALES-CONTRACTS-001 — PC-A — READY_FOR_REVIEW
