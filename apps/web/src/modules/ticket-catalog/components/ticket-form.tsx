@@ -16,11 +16,18 @@ import {
 import {
   wallTimeToUtc,
   type ProductInput,
+  type Product,
   type Reference,
   type Segment,
   type TransportType,
 } from '../model/catalog';
-import { emptyInput, supplyLabels, transportLabels } from '../model/preview';
+import {
+  emptyInput,
+  journeyLabels,
+  statusLabels,
+  supplyLabels,
+  transportLabels,
+} from '../model/preview';
 import styles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
 import { ReferencePicker } from './reference-picker';
@@ -250,6 +257,7 @@ function TransportFields({
         label={`${config.operatorLabel}${suffix}`}
         resource={config.operatorResource}
         readOnly={readOnly}
+        fallbackValue={input.display?.operator}
         value={references.find(
           (r) => r.kind === config.operatorKind && r.id === segment.airlineId,
         )}
@@ -277,6 +285,7 @@ function TransportFields({
         label={`${config.vehicleLabel}${suffix}`}
         resource={config.vehicleResource}
         readOnly={readOnly}
+        fallbackValue={input.display?.vehicle}
         value={references.find(
           (r) => r.kind === config.vehicleKind && r.id === segment.aircraftId,
         )}
@@ -371,6 +380,11 @@ function RouteFields({
               label={`شهر ${side}${suffix}`}
               resource="cities"
               readOnly={readOnly}
+              fallbackValue={
+                end === 'origin'
+                  ? input.display?.origin
+                  : input.display?.destination
+              }
               countryId={segment[`${end}CountryId`]}
               value={references.find(
                 (r) => r.kind === 'city' && r.id === segment[`${end}CityId`],
@@ -392,6 +406,7 @@ function RouteFields({
                 label={`فرودگاه ${side}${suffix}`}
                 resource="airports"
                 readOnly={readOnly}
+                fallbackValue={segment[`${end}Terminal`]}
                 countryId={segment[`${end}CountryId`]}
                 cityId={segment[`${end}CityId`]}
                 value={references.find(
@@ -436,6 +451,7 @@ export function TicketForm({
   onCancel,
   readOnly = false,
   allowRoundTrip = false,
+  editingProduct,
 }: {
   initial: ProductInput;
   references: readonly Reference[];
@@ -444,6 +460,7 @@ export function TicketForm({
   onCancel: () => void;
   readOnly?: boolean;
   allowRoundTrip?: boolean;
+  editingProduct?: Pick<Product, 'id' | 'status' | 'version'> | undefined;
 }) {
   const [input, setInput] = useState(initial);
   const [definitionMode, setDefinitionMode] = useState<TicketDefinitionMode>(
@@ -603,6 +620,38 @@ export function TicketForm({
   return (
     <form onSubmit={submit} className={`${styles.form} space-y-6`}>
       {error ? <Alert tone="error" title={error} /> : null}
+      {editingProduct ? (
+        <section
+          aria-label="خلاصه اطلاعات ثبت‌شده بلیت"
+          className="space-y-3 rounded-2xl border border-primary/20 bg-primary/5 p-4"
+        >
+          <h3 className="font-bold text-primary">اطلاعات فعلی بلیت</h3>
+          <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="text-xs text-muted-foreground">عنوان ثبت‌شده</p>
+              <p className="mt-1 font-bold">{initial.title || '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">وضعیت</p>
+              <p className="mt-1 font-bold">
+                {statusLabels[editingProduct.status]}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">نوع مسیر</p>
+              <p className="mt-1 font-bold">
+                {journeyLabels[initial.journeyRole]}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">نسخه</p>
+              <p className="mt-1 font-bold">
+                {editingProduct.version.toLocaleString('fa-IR')}
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : null}
       <fieldset disabled={readOnly} className="space-y-6 disabled:opacity-80">
         <section className="space-y-4">
           <h3 className="font-bold text-primary">۱. نوع بلیت</h3>
@@ -845,6 +894,7 @@ export function TicketForm({
               label="ارز خرید"
               resource="currencies"
               readOnly={readOnly}
+              fallbackValue={input.fare.currencyCode}
               value={references.find(
                 (r) => r.kind === 'currency' && r.id === input.fare.currencyId,
               )}

@@ -1,5 +1,15 @@
 # وضعیت پروژه
 
+## TICKET-CATALOG-EDIT-COMPLETENESS — نمایش کامل اطلاعات هنگام ویرایش
+
+- `PC-A` روی Branch مستقل `codex/pc-a-ticket-edit-completeness` ناپدیدشدن اطلاعات
+  Snapshotشده بلیت‌های قدیمی در فرم ویرایش را اصلاح کرد. فرم اکنون عنوان، وضعیت، نوع
+  مسیر و نسخه را در خلاصه ابتدایی نشان می‌دهد و مقادیر ثبت‌شده شرکت/ایرلاین، وسیله،
+  مسیر، فرودگاه و ارز را تا زمان انتخاب مرجع منتشرشده جدید حفظ می‌کند.
+- هیچ مرجع یا داده ساختگی ساخته نشد و منطق ذخیره، اعتبارسنجی، وضعیت و تاریخچه تغییر
+  نکرد. تست هدفمند ۱۰/۱۰، همه ۵۶۵ تست Web، lint، typecheck و Production Build موفق‌اند.
+  جزئیات در `docs/tasks/TICKET-CATALOG-EDIT-COMPLETENESS.md` ثبت شده است.
+
 ## CI-001 — CI مشترک PC-A و PC-B — آماده بررسی
 
 - `PC-B` روی Branch و Worktree مستقل `codex/pc-b-ci-foundation` یک GitHub Actions

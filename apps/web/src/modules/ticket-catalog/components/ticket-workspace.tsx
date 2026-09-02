@@ -536,6 +536,9 @@ export function TicketWorkspace() {
                   onSave={save}
                   onCancel={() => setForm(null)}
                   allowRoundTrip={form.mode === 'create' && !form.initial}
+                  editingProduct={
+                    form.mode === 'edit' ? form.product : undefined
+                  }
                 />
               )}
               {form.product ? (

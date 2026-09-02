@@ -79,4 +79,27 @@ describe('Rendered ticket UI', () => {
     expect(html).toContain('<fieldset disabled');
     expect(html).not.toContain('type="submit"');
   });
+  it('keeps all stored snapshot values visible while editing an existing ticket', () => {
+    const product = previewSamples('2026-08-31T00:00:00.000Z')[0]!;
+    const html = renderToStaticMarkup(
+      createElement(TicketForm, {
+        initial: product.definition,
+        references: [],
+        editingProduct: product,
+        onSave: () => {},
+        onCancel: () => {},
+      }),
+    );
+
+    expect(html).toContain('اطلاعات فعلی بلیت');
+    expect(html).toContain(product.definition.title);
+    expect(html).toContain('مقدار ثبت‌شده: هواپیمایی معراج');
+    expect(html).toContain('مقدار ثبت‌شده: ایرباس A320');
+    expect(html).toContain('مقدار ثبت‌شده: تهران');
+    expect(html).toContain('مقدار ثبت‌شده: استانبول');
+    expect(html).toContain('مقدار ثبت‌شده: فرودگاه امام خمینی');
+    expect(html).toContain('مقدار ثبت‌شده: IRR');
+    expect(html).toContain('رفت');
+    expect(html).toContain('فعال');
+  });
 });

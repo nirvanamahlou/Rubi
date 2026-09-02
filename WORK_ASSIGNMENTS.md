@@ -1,5 +1,14 @@
 # Work Assignments
 
+## TICKET-CATALOG-EDIT-COMPLETENESS — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-02: فرم ویرایش بلیت باید تمام اطلاعات ثبت‌شده بلیت را حتی برای رکوردهای قدیمی که فقط Snapshot نمایشی دارند نشان دهد. `COMPUTER_ID=PC-A`.
+- Branch مستقل: `codex/pc-a-ticket-edit-completeness`؛ محدوده فقط Web ماژول Ticket Catalog، تست‌های مستقیم و سند همین Work Item است.
+- هیچ Schema/Migration/Seed، API/Contract، Dependency/Lockfile، داده کاربردی یا ماژول دیگری تغییر نمی‌کند. اطلاعات مرجع ناقص جعل نمی‌شود و مقدار ذخیره‌شده صرفاً با برچسب روشن داخل فرم قابل مشاهده می‌ماند تا کاربر بتواند آن را با مرجع منتشرشده جایگزین کند.
+- قفل‌های Migration، Customer Contract و اسناد CUSTOMER-002B منتقل یا گسترش نمی‌یابند؛ این رزرو فقط برای اصلاح رابط Ticket Catalog است.
+- نتیجه: فرم ویرایش خلاصه عنوان، وضعیت، نوع مسیر و نسخه را نشان می‌دهد. Snapshot ثبت‌شده ایرلاین/شرکت، نوع وسیله، شهرهای مسیر، فرودگاه و ارز حتی بدون شناسه مرجع قدیمی پنهان نمی‌شود؛ انتخاب مرجع منتشرشده جدید همچنان مسیر جایگزینی معتبر است.
+- Validation: تست هدفمند ۱۰/۱۰، همه ۵۶۵ تست Web، lint، typecheck و Production Build موفق‌اند. Final lock state: `RELEASED — PC-A/TICKET-CATALOG-EDIT-COMPLETENESS ready for review`؛ هیچ قفل مشترکی تغییر نکرد.
+
 ## DOCUMENTS-003C-CI-PORTABILITY — PC-B — READY_FOR_REVIEW
 
 - CI مشترک پس از Merge PR #72 دو شکست Linux-only در محافظ Storage بسته داده نمایشی Documents کشف کرد؛ درخواست صریح مالک برای Push و Merge تمام تغییرات، مجوز اصلاح محدود این مانع یکپارچه‌سازی است. `COMPUTER_ID=PC-B`.

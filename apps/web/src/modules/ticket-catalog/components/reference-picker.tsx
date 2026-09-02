@@ -19,6 +19,7 @@ export function ReferencePicker({
   countryId,
   cityId,
   readOnly = false,
+  fallbackValue,
 }: {
   id: string;
   label: string;
@@ -28,6 +29,7 @@ export function ReferencePicker({
   countryId?: string;
   cityId?: string;
   readOnly?: boolean;
+  fallbackValue?: string | undefined;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -116,12 +118,14 @@ export function ReferencePicker({
           }}
         >
           {value
-            ? `${value.name} (${value.code ?? ''})`
-            : resource === 'cities' && !countryId
-              ? 'ابتدا کشور را انتخاب کنید'
-              : resource === 'airports' && !cityId
-                ? 'ابتدا شهر را انتخاب کنید'
-                : `انتخاب و جست‌وجوی ${label}`}
+            ? `${value.name}${value.code ? ` (${value.code})` : ''}`
+            : fallbackValue?.trim()
+              ? `مقدار ثبت‌شده: ${fallbackValue.trim()}`
+              : resource === 'cities' && !countryId
+                ? 'ابتدا کشور را انتخاب کنید'
+                : resource === 'airports' && !cityId
+                  ? 'ابتدا شهر را انتخاب کنید'
+                  : `انتخاب و جست‌وجوی ${label}`}
         </Button>
         {value && !readOnly ? (
           <Button
@@ -137,6 +141,12 @@ export function ReferencePicker({
           </Button>
         ) : null}
       </div>
+      {!value && fallbackValue?.trim() ? (
+        <p className="text-xs leading-6 text-muted-foreground">
+          این مقدار از نسخه ثبت‌شده بلیت نمایش داده می‌شود؛ برای جایگزینی، گزینه
+          جدید را جست‌وجو و انتخاب کنید.
+        </p>
+      ) : null}
       {open && enabled ? (
         <div
           id={`${id}-choices`}
