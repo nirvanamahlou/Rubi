@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       const cookieOptions = {
         httpOnly: true,
         sameSite: 'lax' as const,
-        secure: process.env.NODE_ENV === 'production',
+        secure: new URL(request.url).protocol === 'https:',
         path: '/',
       };
       response.cookies.set('rubi_access', access, {
