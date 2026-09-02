@@ -25,7 +25,8 @@
 - Phase B: Persistence، قرارداد عمومی، IAM binding، Analytics/Attribution، Provider integration و SLO/RPO/RTO فقط با Work Item، قفل و Handoff مستقل طبق `docs/tasks/MARKETING-001.md` مجازند.
 - Draft PR: `#75` به مقصد `develop`؛ سازنده Branch آن را Merge نمی‌کند.
 - Final lock state: `RELEASED — PC-B/MARKETING-001 ready for review`. Migration، Dependency/Lockfile و Shared Root Contract در تمام Task آزاد و بدون تغییر ماندند.
-## DOCUMENTS-003F-RELATED-CASE-PICKER — PC-B — READY_FOR_REVIEW
+
+## DOCUMENTS-003F-RELATED-CASE-PICKER — PC-B — DONE/MERGED
 
 - درخواست مالک در 2026-09-02: بخش «ارتباط با پرونده» در فرم بارگذاری به‌جای ورود دستی ماژول، نوع، شناسه و عنوان، یک Dropdown جست‌وجودار از پرونده‌های موجود و مرتبط باشد. `COMPUTER_ID=PC-B`.
 - Branch مستقل `codex/pc-b-documents-record-picker` از `origin/develop@45b6b11` در Worktree تمیز `C:\Users\admin\Rubi-documents-record-picker`؛ `develop`، `main` و Checkoutهای دیگر مستقیم تغییر نمی‌کنند.
@@ -34,7 +35,8 @@
 - بدون Schema/Migration/Seed، Permission جدید، Dependency/Lockfile، تغییر Customers یا Query مستقیم جدول ماژول دیگر. هیچ قفل Migration یا Dependency گرفته نمی‌شود.
 - نتیجه: چهار ورودی فنی «ماژول/نوع/شناسه/عنوان مبدأ» از فرم کاربر حذف شد و یک انتخاب‌گر جست‌وجویی «پرونده مربوطه» جای آن را گرفت. فهرست فقط پرونده‌های موجود، حذف‌نشده، هم‌شعبه و دارای Domain/محرمانگی قابل مشاهده را نشان می‌دهد؛ با تغییر شعبه انتخاب قبلی پاک می‌شود. Backend فقط شناسه Relation داخلی را می‌پذیرد و مرجع canonical را سمت سرور resolve می‌کند، بنابراین spoof کردن شناسه منبع یا اتصال بین شعبه‌ای ممکن نیست.
 - Validation: Full Monorepo lint، typecheck، ۱٬۳۹۵ تست موفق با ۷۰ تست PostgreSQL اختیاری skip و Production Build موفق‌اند. Smoke مرورگر احراز‌شده روی API4001/Web3101، نمایش ۱۴ پرونده، جست‌وجوی «قرارداد» تا دو نتیجه و انتخاب موفق را بدون ثبت فایل/داده تأیید کرد.
-- Final lock state: `RELEASED — PC-B/DOCUMENTS-003F-RELATED-CASE-PICKER ready for review`. هیچ قفل Migration، Dependency/Lockfile، Schema، Seed، Permission یا ماژول خارجی گرفته نشد.
+- انتشار: PR #81 با Merge Commit `ad6ff5d` پس از سبزشدن هر دو اجرای کامل CI در `develop` ادغام شد؛ Commit قابلیت `93166cf` در تاریخچه `origin/develop` تأیید شده است.
+- Final lock state: `RELEASED — PC-B/DOCUMENTS-003F-RELATED-CASE-PICKER merged via PR #81`. هیچ قفل Migration، Dependency/Lockfile، Schema، Seed، Permission یا ماژول خارجی گرفته نشد.
 
 ## LEGAL-ENTITY-BRAND-LOGO-001 — PC-B — READY_FOR_REVIEW
 
