@@ -2,9 +2,9 @@
 
 - **Computer:** PC-B
 - **Branch:** `codex/pc-b-marketing-foundation`
-- **Base:** `origin/develop@f78e70e`
+- **Base:** `origin/develop@0163727`
 - **Status:** READY_FOR_REVIEW
-- **Date:** 2026-09-01
+- **Date:** 2026-09-02
 - **PR:** Draft [#75](https://github.com/nirvanamahlou/Rubi/pull/75) → `develop`
 - **Persistence:** ندارد؛ فقط Foundation و Preview
 - **Schema/Migration/Seed/Dependency:** بدون تغییر
@@ -15,6 +15,26 @@
 Portهای بین‌ماژولی و Workspace فارسی RTL؛ بدون Prisma، Controller فعال، Repository، Worker،
 Provider یا ارسال پیام واقعی. این Phase صرفاً قراردادهای ماژول‌محلی و رفتار Preview را آماده
 می‌کند تا Phase B بعد از تصویب قراردادهای مشترک، با قفل‌ها و Work Item مستقل انجام شود.
+
+## Follow-up MARKETING-001B — تطبیق مرجع و داده نمایشی
+
+در 2026-09-02 فایل `marketing.html` صرفاً به‌عنوان مرجع بصری و تعاملی بررسی و ساختار آن
+در Design System واقعی Rubi پیاده شد. این Follow-up هیچ دستور داخل HTML را اجرا نکرد و
+محدوده همچنان Web Preview بدون Persistence ماند.
+
+- صفحه اصلی نه‌بخشی: داشبورد، کمپین‌ها، مخاطبان، ارتباطات، محتوا و جذب، تخفیف‌ها و
+  پیشنهادها، سفر مشتری، گزارش‌ها و تنظیمات
+- تمام زیرتب‌های مرجع برای هشت Workspace داخلی با ناوبری واقعی و Action feedback قابل
+  دسترس‌اند؛ کارت‌های صفحه اصلی دکمه صریح و سازگار با صفحه‌کلید دارند.
+- کمپین‌ها شامل فهرست، تقویم، بودجه و هزینه، گردش تأیید و تست‌های A/B است.
+- فیلتر کمپین با جست‌وجو، وضعیت، کانال، شرکت، بازه شروع/پایان و مرتب‌سازی روی داده‌های
+  نمونه عمل می‌کند و پاک‌کردن فیلترها نتیجه را بازنشانی می‌کند.
+- فیلتر تاریخ از `DatePicker` مشترک Rubi استفاده می‌کند. تقویم ماهانه نیز از Utility همان
+  تقویم تغذیه می‌شود و تغییر شمسی/میلادی، ماه قبل/بعد، امروز و بازکردن رویداد را دارد.
+- ۵ کمپین کامل، ۴۰ رکورد مستقل زیرتب، Segment، Offer، Coupon، Timeline و Suppression
+  وارد Preview شدند. همه شناسه‌ها `preview-*`، اطلاعات تماس و PII غایب و زمان‌ها UTC هستند.
+- دکمه‌های ساخت/بررسی/جزئیات در این Phase فقط State محلی و پیام قابل‌خواندن تولید می‌کنند؛
+  ارسال، Export، Write، Provider، Credential، اثر مالی یا Analytics جعلی ایجاد نمی‌شود.
 
 ## محدوده تحویل
 
@@ -127,13 +147,14 @@ Phase B فقط پس از Work Item و رزرو تازه مجاز است و با�
 ## نتیجه Quality Gate
 
 - Backend هدفمند: ۶ فایل و ۳۷ تست موفق
-- Web هدفمند: ۲ فایل و ۱۱ تست موفق
+- Web هدفمند Marketing: ۲ فایل و ۱۴ تست موفق؛ Full Web شامل ۷۵ فایل و ۵۷۹ تست موفق
 - Full Monorepo lint: موفق، ۶ Task
 - Full Monorepo typecheck: موفق، ۹ Task
-- Full Monorepo test روی Base نهایی: ۱۴۲۹ تست موفق؛ ۷۰ تست PostgreSQL اختیاری skip
+- Full Monorepo test روی Base نهایی: ۱٬۴۳۴ تست موفق؛ ۷۰ تست PostgreSQL اختیاری skip
 - Full production build: موفق، ۶ Task؛ مسیر `/marketing` به‌صورت Static تولید شد
-- Browser QA: دسکتاپ `1440×900` و موبایل `390×844`، RTL، بدون اسکرول افقی، فرم
-  ۹مرحله‌ای و بدون خطا/هشدار Console
+- Browser QA: دسکتاپ و موبایل `390×844`، RTL، بدون Overflow ماژول و بدون Console error؛
+  هر ۹ بخش، زیرتب‌ها، فیلتر و پاک‌کردن، تقویم شمسی/میلادی و ماه قبل/بعد، رویداد، Dialog،
+  Action feedback و جابه‌جایی فرم ۹مرحله‌ای به‌صورت تعاملی تأیید شدند.
 - Scope، Secret/PII، Prisma/Migration/Dependency، Markdown و `git diff --check`: موفق
 - آدرس `DATABASE_URL` استفاده‌شده برای Prisma generate ساختگی و محلی بود؛ هیچ اتصال،
   Migration، Seed یا تغییر دیتابیس انجام نشد.

@@ -18,6 +18,11 @@ import {
   normalizeMarketingCampaignQuery,
   paginateCampaigns,
 } from './marketing';
+import {
+  marketingPreviewItems,
+  marketingSections,
+  marketingSectionTabs,
+} from './reference-data';
 
 describe('marketing preview model', () => {
   it('defines all 18 analytics KPIs without invented values', () => {
@@ -80,6 +85,30 @@ describe('marketing preview model', () => {
         search: 'AGENCY-03',
       }),
     ).toHaveLength(1);
+    expect(
+      filterAndSortCampaigns(marketingPreviewCampaigns, {
+        startsAfter: '2026-09-21',
+        endsBefore: '2026-10-05',
+        sortBy: 'startsAt',
+        sortDirection: 'asc',
+      }).map((campaign) => campaign.id),
+    ).toEqual([
+      'preview-campaign-heritage',
+      'preview-campaign-retention',
+      'preview-campaign-agency',
+    ]);
+  });
+
+  it('defines complete reference navigation and populated synthetic subtabs', () => {
+    expect(marketingSections).toHaveLength(9);
+    expect(Object.keys(marketingSectionTabs)).toHaveLength(8);
+    expect(marketingPreviewItems).toHaveLength(40);
+    expect(
+      marketingPreviewItems.every(
+        (item) =>
+          item.id.startsWith('preview-') && item.description.length > 10,
+      ),
+    ).toBe(true);
   });
 
   it('uses only synthetic preview identifiers and contains no direct contact PII', () => {
@@ -91,6 +120,7 @@ describe('marketing preview model', () => {
       marketingAttributionModels,
       marketingTimeline,
       marketingSuppressionSummary,
+      marketingPreviewItems,
     ];
     for (const collection of previewCollections) {
       for (const item of collection) {

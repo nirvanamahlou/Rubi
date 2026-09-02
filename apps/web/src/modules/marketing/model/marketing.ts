@@ -217,6 +217,8 @@ export interface MarketingCampaignQuery {
   status: CampaignStatus | 'ALL';
   channel: CampaignChannel | 'ALL';
   company: ExecutionCompany | 'ALL';
+  startsAfter: string;
+  endsBefore: string;
   sortBy: 'updatedAt' | 'startsAt' | 'budgetAmount' | 'name';
   sortDirection: 'asc' | 'desc';
   page: number;
@@ -231,6 +233,8 @@ export function normalizeMarketingCampaignQuery(
     status: input.status ?? 'ALL',
     channel: input.channel ?? 'ALL',
     company: input.company ?? 'ALL',
+    startsAfter: input.startsAfter?.slice(0, 10) ?? '',
+    endsBefore: input.endsBefore?.slice(0, 10) ?? '',
     sortBy: input.sortBy ?? 'updatedAt',
     sortDirection: input.sortDirection === 'asc' ? 'asc' : 'desc',
     page: Math.max(1, Math.trunc(input.page ?? 1)),
@@ -260,7 +264,12 @@ export function filterAndSortCampaigns(
         (query.status === 'ALL' || campaign.status === query.status) &&
         (query.channel === 'ALL' ||
           campaign.channels.includes(query.channel)) &&
-        (query.company === 'ALL' || campaign.executionCompany === query.company)
+        (query.company === 'ALL' ||
+          campaign.executionCompany === query.company) &&
+        (!query.startsAfter ||
+          campaign.endsAt.slice(0, 10) >= query.startsAfter) &&
+        (!query.endsBefore ||
+          campaign.startsAt.slice(0, 10) <= query.endsBefore)
       );
     })
     .sort((left, right) => {

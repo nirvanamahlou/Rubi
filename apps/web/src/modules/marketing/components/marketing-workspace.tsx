@@ -2,30 +2,35 @@
 
 import {
   AlertTriangle,
+  ArrowRight,
   BadgePercent,
   BarChart3,
-  CalendarClock,
+  BellRing,
   ChevronLeft,
   ChevronRight,
-  CircleDollarSign,
-  ClipboardList,
   Eye,
   FilePenLine,
-  Filter,
+  FileStack,
+  FilterX,
+  Gauge,
   Megaphone,
-  MessageSquareOff,
+  MessageSquareText,
+  MousePointerClick,
   Plus,
   RefreshCw,
+  Route,
   Search,
-  Send,
+  Settings2,
   ShieldCheck,
-  Tags,
+  Sparkles,
   Target,
   UsersRound,
+  type LucideIcon,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   FormField,
   Input,
@@ -56,6 +61,7 @@ import {
   PaginationShell,
   Skeleton,
 } from '@/components/ui/surfaces';
+import { cn } from '@/lib/utils';
 import {
   MARKETING_ANALYTICS_STATUS,
   MARKETING_ATTRIBUTION_STATUS,
@@ -70,7 +76,6 @@ import {
   campaignStatusLabels,
   executionCompanyLabels,
   filterAndSortCampaigns,
-  marketingAttributionModels,
   marketingCoupons,
   marketingOffers,
   marketingPreviewCampaigns,
@@ -85,18 +90,16 @@ import {
   type ExecutionCompany,
   type MarketingCampaignQuery,
 } from '../model/marketing';
+import {
+  marketingSectionTabs,
+  marketingSections,
+  previewItemsFor,
+  type MarketingPreviewItem,
+  type MarketingSectionDefinition,
+  type MarketingSectionKey,
+} from '../model/reference-data';
+import { CampaignCalendar } from './campaign-calendar';
 import { CampaignForm, type CampaignFormMode } from './campaign-form';
-
-type WorkspaceTab =
-  | 'dashboard'
-  | 'campaigns'
-  | 'audiences'
-  | 'channels'
-  | 'offers'
-  | 'attribution'
-  | 'budget'
-  | 'timeline'
-  | 'consent';
 
 const previewStates: readonly [MarketingPreviewState, string][] = [
   ['preview', 'پیش‌نمایش'],
@@ -113,16 +116,35 @@ const statusOptions = Object.entries(campaignStatusLabels) as [
   CampaignStatus,
   string,
 ][];
-
 const channelOptions = Object.entries(campaignChannelLabels) as [
   CampaignChannel,
   string,
 ][];
-
 const companyOptions = Object.entries(executionCompanyLabels) as [
   ExecutionCompany,
   string,
 ][];
+
+const sectionIcons: Record<MarketingSectionKey, LucideIcon> = {
+  dashboard: Gauge,
+  campaigns: Megaphone,
+  audiences: UsersRound,
+  communications: MessageSquareText,
+  content: FileStack,
+  offers: BadgePercent,
+  journeys: Route,
+  reports: BarChart3,
+  settings: Settings2,
+};
+
+const toneClasses: Record<MarketingSectionDefinition['tone'], string> = {
+  blue: 'bg-blue-50 text-blue-700 ring-blue-100',
+  violet: 'bg-violet-50 text-violet-700 ring-violet-100',
+  emerald: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+  amber: 'bg-amber-50 text-amber-700 ring-amber-100',
+  rose: 'bg-rose-50 text-rose-700 ring-rose-100',
+  cyan: 'bg-cyan-50 text-cyan-700 ring-cyan-100',
+};
 
 function formatMoney(amount: string, currencyCode: string) {
   const [integer = '0', fraction] = amount.split('.');
@@ -159,10 +181,10 @@ function StateGate({
     return (
       <div
         aria-label="در حال بارگذاری"
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
       >
-        {Array.from({ length: 8 }, (_, index) => (
-          <Skeleton className="h-36" key={index} />
+        {Array.from({ length: 9 }, (_, index) => (
+          <Skeleton className="h-44" key={index} />
         ))}
       </div>
     );
@@ -170,95 +192,220 @@ function StateGate({
   if (state === 'empty') {
     return (
       <EmptyState
-        title="هنوز کمپینی وجود ندارد"
-        description="پس از اتصال Persistence، کمپین‌های مجاز اینجا نمایش داده می‌شوند."
-        action={<Button onClick={onReset}>نمایش پیش‌نمایش</Button>}
+        action={<Button onClick={onReset}>نمایش داده‌های نمونه</Button>}
+        description="پس از اتصال Persistence، داده‌های مجاز اینجا نمایش داده می‌شوند."
+        title="هنوز داده‌ای وجود ندارد"
       />
     );
   }
-
   const states: Record<
     Exclude<MarketingPreviewState, 'preview' | 'loading' | 'empty'>,
-    { title: string; description: string; tone?: 'warning' | 'error' }
+    { title: string; description: string }
   > = {
     error: {
       title: 'دریافت اطلاعات مارکتینگ ناموفق بود',
       description:
-        'خطای موقت سرور با Trace ID امن نمایش داده می‌شود؛ داده ساختگی جای پاسخ واقعی قرار نمی‌گیرد.',
-      tone: 'error',
+        'خطای موقت با Trace ID امن نمایش داده می‌شود و داده جعلی جای پاسخ واقعی قرار نمی‌گیرد.',
     },
     unauthorized: {
       title: 'ابتدا وارد حساب سازمانی شوید',
-      description:
-        'پاسخ 401 باید کاربر را به جریان ورود هدایت کند و جزئیات داخلی را افشا نکند.',
+      description: 'پاسخ 401 کاربر را به جریان ورود هدایت می‌کند.',
     },
     forbidden: {
       title: 'مجوز مشاهده مارکتینگ را ندارید',
-      description:
-        'پاسخ 403 طبق سیاست deny-by-default است؛ دسترسی را مدیر IAM تعیین می‌کند.',
+      description: 'دسترسی طبق سیاست deny-by-default توسط IAM تعیین می‌شود.',
     },
     conflict: {
-      title: 'نسخه کمپین تغییر کرده است',
-      description:
-        'پاسخ 409 یعنی expectedVersion قدیمی است. اطلاعات تازه را دریافت و تغییر را دوباره بررسی کنید.',
-      tone: 'warning',
+      title: 'نسخه اطلاعات تغییر کرده است',
+      description: 'اطلاعات تازه را دریافت و تغییر را دوباره بررسی کنید.',
     },
     'awaiting-integration': {
       title: 'ارسال واقعی هنوز متصل نیست',
-      description: `Intentها با وضعیت ${MARKETING_DISPATCH_STATUS} باقی می‌مانند؛ Provider، Credential، Retry و Delivery Receipt متعلق به Integrations/Notifications است.`,
-      tone: 'warning',
+      description: `نیت‌های ارسال با وضعیت ${MARKETING_DISPATCH_STATUS} باقی می‌مانند.`,
     },
   };
-  const selected = states[state];
   return (
     <ErrorState
-      title={selected.title}
-      description={selected.description}
       action={
         <Button onClick={onReset} variant="outline">
           <RefreshCw aria-hidden="true" className="size-4" />
           بازگشت به پیش‌نمایش
         </Button>
       }
+      description={states[state].description}
+      title={states[state].title}
     />
   );
 }
 
-function KpiGrid() {
+function MarketingHub({
+  onSelect,
+}: {
+  onSelect: (section: MarketingSectionKey) => void;
+}) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-      {marketingKpiDefinitions.map((kpi) => (
-        <Card className="p-4" key={kpi.key}>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-bold">{kpi.title}</p>
-              <p className="mt-3 text-2xl font-black text-muted-foreground">
-                —
+    <section className="grid gap-5" aria-labelledby="marketing-hub-title">
+      <div>
+        <h2 className="text-xl font-black" id="marketing-hub-title">
+          بخش‌های مارکتینگ
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          برای ورود به هر بخش، کارت مربوط را انتخاب کنید.
+        </p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {marketingSections.map((section) => {
+          const Icon = sectionIcons[section.key];
+          return (
+            <Card className="flex h-full flex-col p-5" key={section.key}>
+              <div className="flex items-start justify-between gap-4">
+                <span
+                  className={cn(
+                    'grid size-12 place-items-center rounded-2xl ring-4',
+                    toneClasses[section.tone],
+                  )}
+                >
+                  <Icon aria-hidden="true" className="size-6" />
+                </span>
+                <ChevronLeft
+                  aria-hidden="true"
+                  className="size-5 text-muted-foreground"
+                />
+              </div>
+              <h3 className="mt-5 text-lg font-black">{section.title}</h3>
+              <p className="mt-2 min-h-14 text-sm leading-7 text-muted-foreground">
+                {section.description}
               </p>
-            </div>
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-              <BarChart3 aria-hidden="true" className="size-5" />
-            </span>
-          </div>
-          <p className="mt-3 text-xs leading-6 text-muted-foreground">
-            {kpi.definition}
-          </p>
-          <details className="mt-3 rounded-xl bg-muted/60 p-3 text-xs">
-            <summary className="cursor-pointer font-semibold">
-              تعریف محاسبه
-            </summary>
-            <p className="mt-2 leading-6">صورت: {kpi.numerator}</p>
-            <p className="leading-6">مخرج: {kpi.denominator ?? 'ندارد'}</p>
-          </details>
-          <Badge
-            className="mt-3 max-w-full break-all font-mono text-[10px]"
-            dir="ltr"
+              <div className="mt-4 flex flex-wrap gap-2">
+                {section.highlights.map((highlight) => (
+                  <Badge key={highlight}>{highlight}</Badge>
+                ))}
+              </div>
+              <Button
+                className="mt-5 w-full"
+                onClick={() => onSelect(section.key)}
+                variant="outline"
+              >
+                ورود به {section.title}
+                <ChevronLeft aria-hidden="true" className="size-4" />
+              </Button>
+            </Card>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function DashboardPanel({ onNotice }: { onNotice: (message: string) => void }) {
+  const [startDate, setStartDate] = useState('2026-09-01');
+  const [endDate, setEndDate] = useState('2026-09-30');
+  const [company, setCompany] = useState<ExecutionCompany | 'ALL'>('ALL');
+  const summary: readonly [string, string, LucideIcon][] = [
+    [
+      'کمپین‌های نمونه',
+      marketingPreviewCampaigns.length.toLocaleString('fa-IR'),
+      Megaphone,
+    ],
+    [
+      'کمپین در حال اجرا',
+      marketingPreviewCampaigns
+        .filter((item) => item.status === 'RUNNING')
+        .length.toLocaleString('fa-IR'),
+      Gauge,
+    ],
+    [
+      'سگمنت تعریف‌شده',
+      marketingSegments.length.toLocaleString('fa-IR'),
+      UsersRound,
+    ],
+    ['هشدار عملیاتی', '۲', BellRing],
+  ];
+  return (
+    <section className="grid gap-5">
+      <FilterBar className="grid md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto]">
+        <FormField id="dashboard-start" label="از تاریخ">
+          <DatePicker
+            id="dashboard-start"
+            onChange={setStartDate}
+            value={startDate}
+          />
+        </FormField>
+        <FormField id="dashboard-end" label="تا تاریخ">
+          <DatePicker
+            id="dashboard-end"
+            onChange={setEndDate}
+            value={endDate}
+          />
+        </FormField>
+        <FormField id="dashboard-company" label="شرکت مجری">
+          <Select
+            value={company}
+            onValueChange={(value) => setCompany(value as typeof company)}
           >
-            {kpi.status}
-          </Badge>
-        </Card>
-      ))}
-    </div>
+            <SelectTrigger id="dashboard-company">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">هر دو شرکت</SelectItem>
+              {companyOptions.map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+        <Button
+          onClick={() =>
+            onNotice(`فیلتر داشبورد برای ${startDate} تا ${endDate} اعمال شد.`)
+          }
+        >
+          <MousePointerClick aria-hidden="true" className="size-4" />
+          اعمال فیلتر
+        </Button>
+      </FilterBar>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {summary.map(([label, value, Icon]) => (
+          <Card className="p-4" key={label}>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm text-muted-foreground">{label}</p>
+                <p className="mt-2 text-2xl font-black">{value}</p>
+              </div>
+              <span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary">
+                <Icon aria-hidden="true" className="size-5" />
+              </span>
+            </div>
+          </Card>
+        ))}
+      </div>
+      <Alert
+        description={`مقادیر تحلیلی با وضعیت ${MARKETING_ANALYTICS_STATUS} عمداً خالی‌اند؛ فقط شمارش داده‌های Preview نمایش داده می‌شود.`}
+        title="مرز داده عملیاتی و تحلیلی"
+      />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {marketingKpiDefinitions.slice(0, 6).map((kpi) => (
+          <Card className="p-4" key={kpi.key}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-bold">{kpi.title}</p>
+                <p className="mt-3 text-2xl font-black text-muted-foreground">
+                  —
+                </p>
+              </div>
+              <BarChart3 aria-hidden="true" className="size-5 text-primary" />
+            </div>
+            <p className="mt-3 text-xs leading-6 text-muted-foreground">
+              {kpi.definition}
+            </p>
+            <Badge className="mt-3 font-mono text-[10px]" dir="ltr">
+              {kpi.status}
+            </Badge>
+          </Card>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -286,7 +433,7 @@ function CampaignCard({
             {campaign.objective}
           </p>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             onClick={() => onOpen('view', campaign)}
             size="sm"
@@ -305,7 +452,6 @@ function CampaignCard({
           </Button>
         </div>
       </div>
-
       <dl className="mt-4 grid gap-3 rounded-xl bg-muted/45 p-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
         <div>
           <dt className="text-xs text-muted-foreground">نوع کمپین</dt>
@@ -331,13 +477,11 @@ function CampaignCard({
           </dd>
         </div>
       </dl>
-
       <div className="mt-4 flex flex-wrap gap-2">
         {campaign.channels.map((channel) => (
           <Badge key={channel}>{campaignChannelLabels[channel]}</Badge>
         ))}
       </div>
-
       <details className="mt-4 rounded-xl border border-border p-4 text-sm">
         <summary className="cursor-pointer font-bold">
           جزئیات کامل کمپین
@@ -348,20 +492,14 @@ function CampaignCard({
             <dd className="mt-1">{campaign.audienceSummary}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Segment Reference</dt>
-            <dd className="mt-1 break-all font-mono text-xs" dir="ltr">
-              {campaign.segmentReference}
+            <dt className="text-muted-foreground">پیشنهاد / کوپن</dt>
+            <dd className="mt-1">
+              {campaign.offerTitle} / {campaign.couponCode ?? 'ندارد'}
             </dd>
           </div>
           <div>
             <dt className="text-muted-foreground">مالک</dt>
             <dd className="mt-1">{campaign.ownerRole}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">پیشنهاد / کوپن</dt>
-            <dd className="mt-1">
-              {campaign.offerTitle} / {campaign.couponCode ?? 'ندارد'}
-            </dd>
           </div>
           <div>
             <dt className="text-muted-foreground">UTM Campaign</dt>
@@ -377,26 +515,13 @@ function CampaignCard({
             <dt className="text-muted-foreground">درآمد منتسب</dt>
             <dd className="mt-1">— ({MARKETING_ATTRIBUTION_STATUS})</dd>
           </div>
-          <div>
-            <dt className="text-muted-foreground">نسخه / به‌روزرسانی</dt>
-            <dd className="mt-1">
-              نسخه {campaign.version.toLocaleString('fa-IR')}،{' '}
-              {formatDate(campaign.updatedAt)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">شناسه Preview</dt>
-            <dd className="mt-1 break-all font-mono text-xs" dir="ltr">
-              {campaign.id}
-            </dd>
-          </div>
         </dl>
       </details>
     </Card>
   );
 }
 
-function CampaignsPanel({
+function CampaignList({
   onOpen,
 }: {
   onOpen: (mode: CampaignFormMode, campaign?: CampaignPreview) => void;
@@ -411,7 +536,6 @@ function CampaignsPanel({
   const totalPages = Math.max(1, Math.ceil(filtered.length / query.pageSize));
   const currentPage = Math.min(query.page, totalPages);
   const campaigns = paginateCampaigns(filtered, currentPage, query.pageSize);
-
   const patchQuery = (patch: Partial<MarketingCampaignQuery>) =>
     setQuery((current) =>
       normalizeMarketingCampaignQuery({
@@ -420,14 +544,13 @@ function CampaignsPanel({
         page: patch.page ?? 1,
       }),
     );
-
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-black">کمپین‌ها</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            جست‌وجو، فیلتر، مرتب‌سازی و صفحه‌بندی بدون جدول عریض
+          <h3 className="text-lg font-black">فهرست کمپین‌ها</h3>
+          <p className="text-sm text-muted-foreground">
+            جست‌وجو، فیلتر تاریخ و صفحه‌بندی واکنش‌گرا
           </p>
         </div>
         <Button onClick={() => onOpen('create')}>
@@ -435,8 +558,7 @@ function CampaignsPanel({
           کمپین جدید
         </Button>
       </div>
-
-      <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-6">
+      <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
         <FormField id="marketing-search" label="جست‌وجو">
           <div className="relative">
             <Search
@@ -446,9 +568,9 @@ function CampaignsPanel({
             <Input
               className="pe-10"
               id="marketing-search"
+              onChange={(event) => patchQuery({ search: event.target.value })}
               placeholder="نام، کد یا هدف"
               value={query.search}
-              onChange={(event) => patchQuery({ search: event.target.value })}
             />
           </div>
         </FormField>
@@ -456,7 +578,9 @@ function CampaignsPanel({
           <Select
             value={query.status}
             onValueChange={(value) =>
-              patchQuery({ status: value as MarketingCampaignQuery['status'] })
+              patchQuery({
+                status: value as MarketingCampaignQuery['status'],
+              })
             }
           >
             <SelectTrigger id="marketing-status">
@@ -516,6 +640,22 @@ function CampaignsPanel({
             </SelectContent>
           </Select>
         </FormField>
+        <FormField id="marketing-start" label="فعال از تاریخ">
+          <DatePicker
+            id="marketing-start"
+            onChange={(value) => patchQuery({ startsAfter: value })}
+            placeholder="همه تاریخ‌ها"
+            value={query.startsAfter}
+          />
+        </FormField>
+        <FormField id="marketing-end" label="فعال تا تاریخ">
+          <DatePicker
+            id="marketing-end"
+            onChange={(value) => patchQuery({ endsBefore: value })}
+            placeholder="همه تاریخ‌ها"
+            value={query.endsBefore}
+          />
+        </FormField>
         <FormField id="marketing-sort" label="مرتب‌سازی">
           <Select
             value={query.sortBy}
@@ -534,23 +674,17 @@ function CampaignsPanel({
             </SelectContent>
           </Select>
         </FormField>
-        <FormField id="marketing-page-size" label="تعداد در صفحه">
-          <Select
-            value={String(query.pageSize)}
-            onValueChange={(value) => patchQuery({ pageSize: Number(value) })}
+        <div className="flex items-end">
+          <Button
+            className="w-full"
+            onClick={() => setQuery(normalizeMarketingCampaignQuery({}))}
+            variant="outline"
           >
-            <SelectTrigger id="marketing-page-size">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="2">۲</SelectItem>
-              <SelectItem value="4">۴</SelectItem>
-              <SelectItem value="8">۸</SelectItem>
-            </SelectContent>
-          </Select>
-        </FormField>
+            <FilterX aria-hidden="true" className="size-4" />
+            پاک‌کردن
+          </Button>
+        </div>
       </FilterBar>
-
       {campaigns.length ? (
         <div className="grid gap-4">
           {campaigns.map((campaign) => (
@@ -563,20 +697,18 @@ function CampaignsPanel({
         </div>
       ) : (
         <EmptyState
-          title="نتیجه‌ای پیدا نشد"
-          description="فیلترها یا عبارت جست‌وجو را تغییر دهید."
           action={
             <Button
               onClick={() => setQuery(normalizeMarketingCampaignQuery({}))}
               variant="outline"
             >
-              <Filter aria-hidden="true" className="size-4" />
               پاک‌کردن فیلترها
             </Button>
           }
+          description="فیلترها یا بازه تاریخ را تغییر دهید."
+          title="نتیجه‌ای پیدا نشد"
         />
       )}
-
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3">
         <PaginationShell
           currentPage={currentPage}
@@ -607,211 +739,64 @@ function CampaignsPanel({
   );
 }
 
-function AudiencesPanel() {
-  return (
-    <section className="grid gap-4">
-      <Alert
-        title="Segment بدون PII"
-        description="Marketing فقط تعریف قواعد، شناسه ناشناس و شمارش تجمیعی را مصرف می‌کند؛ مالک داده مشتری ماژول Customers است."
-      />
-      <div className="grid gap-4 lg:grid-cols-3">
-        {marketingSegments.map((segment) => (
-          <Card className="p-5" key={segment.id}>
-            <div className="flex items-center justify-between gap-3">
-              <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
-                <UsersRound aria-hidden="true" className="size-5" />
-              </span>
-              <Badge>PII: {String(segment.pii)}</Badge>
-            </div>
-            <h3 className="mt-4 font-black">{segment.title}</h3>
-            <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              {segment.rules}
-            </p>
-            <p className="mt-4 text-sm font-semibold">
-              اندازه: {segment.estimatedCount}
-            </p>
-            <p
-              className="mt-2 break-all font-mono text-xs text-muted-foreground"
-              dir="ltr"
-            >
-              {segment.id}
-            </p>
-          </Card>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ChannelsPanel() {
-  return (
-    <section className="grid gap-4">
-      <Alert
-        tone="warning"
-        title="اتصال ارسال عمداً غیرفعال است"
-        description={`وضعیت همه کانال‌های ارسالی: ${MARKETING_DISPATCH_STATUS}. Marketing فقط Dispatch Intent تولید می‌کند.`}
-      />
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {channelOptions.map(([channel, label]) => (
-          <Card
-            className="flex items-center justify-between gap-3 p-4"
-            key={channel}
-          >
-            <div className="flex items-center gap-3">
-              <span className="grid size-10 place-items-center rounded-xl bg-blue-50 text-blue-700">
-                <Send aria-hidden="true" className="size-5" />
-              </span>
-              <div>
-                <p className="font-bold">{label}</p>
-                <p
-                  className="font-mono text-xs text-muted-foreground"
-                  dir="ltr"
-                >
-                  {channel}
-                </p>
-              </div>
-            </div>
-            <Badge>Preview</Badge>
-          </Card>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function OffersPanel() {
-  return (
-    <section className="grid gap-5">
-      <Alert
-        title="مالکیت قیمت نزد Sales"
-        description="Marketing فقط Offer Intent و Coupon Reference پیشنهاد می‌دهد؛ قیمت، تخفیف قابل‌اعمال و قرارداد نهایی توسط Sales قطعی می‌شوند."
-      />
-      <div className="grid gap-4 md:grid-cols-2">
-        {marketingOffers.map((offer) => (
-          <Card className="p-5" key={offer.id}>
-            <Badge>{offer.status}</Badge>
-            <h3 className="mt-3 font-black">{offer.title}</h3>
-            <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              {offer.rule}
-            </p>
-            <p className="mt-3 text-xs">مالک نهایی: {offer.owner}</p>
-          </Card>
-        ))}
-      </div>
-      <div>
-        <h3 className="mb-3 font-black">کوپن‌های پیشنهادی</h3>
-        <div className="grid gap-3 md:grid-cols-2">
-          {marketingCoupons.map((coupon) => (
-            <Card className="p-4" key={coupon.id}>
-              <div className="flex items-center justify-between gap-3">
-                <strong dir="ltr">{coupon.code}</strong>
-                <Badge>{coupon.status}</Badge>
-              </div>
-              <p className="mt-3 text-sm text-muted-foreground">
-                {coupon.limit}
-              </p>
-              <p className="mt-2 text-xs">
-                انقضا: {formatDate(coupon.expiresAt)}
-              </p>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function AttributionPanel() {
-  return (
-    <section className="grid gap-4">
-      <Alert
-        tone="warning"
-        title="Attribution هنوز تصمیم مالی نیست"
-        description={`وضعیت تمام مدل‌ها ${MARKETING_ATTRIBUTION_STATUS} است. درآمد منتسب فقط بعد از قرارداد Analytics و تایید Sales/Finance قابل نمایش خواهد بود.`}
-      />
-      <div className="grid gap-4 md:grid-cols-3">
-        {marketingAttributionModels.map((model) => (
-          <Card className="p-5" key={model.id}>
-            <div className="flex items-center justify-between">
-              <Target aria-hidden="true" className="size-6 text-primary" />
-              <Badge>{model.status}</Badge>
-            </div>
-            <h3 className="mt-4 font-black">{model.title}</h3>
-            <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              {model.definition}
-            </p>
-          </Card>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function BudgetPanel() {
   return (
-    <section className="grid gap-4">
-      <Alert
-        title="نمای عملیاتی، نه KPI تحلیلی"
-        description="مبالغ زیر داده ساختگی هر کمپین‌اند. جمع کل، CAC، ROAS و درآمد منتسب تا قرارداد Analytics با خط تیره نمایش داده می‌شوند."
-      />
-      <div className="grid gap-3">
-        {marketingPreviewCampaigns.map((campaign) => (
-          <Card
-            className="grid gap-3 p-4 sm:grid-cols-4 sm:items-center"
-            key={campaign.id}
-          >
-            <div>
-              <p className="font-bold">{campaign.name}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {executionCompanyLabels[campaign.executionCompany]}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">بودجه</p>
-              <p className="mt-1 font-semibold" dir="ltr">
-                {formatMoney(campaign.budgetAmount, campaign.currencyCode)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">
-                هزینه ثبت‌شده Preview
-              </p>
-              <p className="mt-1 font-semibold" dir="ltr">
-                {formatMoney(campaign.spendAmount, campaign.currencyCode)}
-              </p>
-            </div>
-            <Badge className="justify-self-start sm:justify-self-end">
-              Finance Reference لازم است
-            </Badge>
-          </Card>
-        ))}
-      </div>
+    <section className="grid gap-3">
+      {marketingPreviewCampaigns.map((campaign) => (
+        <Card
+          className="grid gap-3 p-4 sm:grid-cols-4 sm:items-center"
+          key={campaign.id}
+        >
+          <div>
+            <p className="font-bold">{campaign.name}</p>
+            <p className="text-xs text-muted-foreground">
+              {executionCompanyLabels[campaign.executionCompany]}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">بودجه</p>
+            <p className="font-semibold" dir="ltr">
+              {formatMoney(campaign.budgetAmount, campaign.currencyCode)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">هزینه Preview</p>
+            <p className="font-semibold" dir="ltr">
+              {formatMoney(campaign.spendAmount, campaign.currencyCode)}
+            </p>
+          </div>
+          <Badge className="justify-self-start sm:justify-self-end">
+            Finance Reference لازم است
+          </Badge>
+        </Card>
+      ))}
     </section>
   );
 }
 
-function TimelinePanel() {
+function ApprovalPanel() {
   return (
     <section className="grid gap-4">
       <Alert
-        title="Audit Timeline نسخه‌دار"
-        description="هر تغییر وضعیت با actorReference ناشناس، دلیل، نسخه مورد انتظار و Timestamp UTC ثبت خواهد شد؛ نام فرد یا PII در Preview وجود ندارد."
+        description="رویدادها با نقش ناشناس و نسخه مورد انتظار نگهداری می‌شوند."
+        title="گردش تأیید نسخه‌دار"
       />
-      <ol className="relative grid gap-4 border-s-2 border-primary/20 ps-6">
+      <ol className="grid gap-3">
         {marketingTimeline.map((event) => (
-          <li className="relative" key={event.id}>
-            <span className="absolute -start-[1.95rem] top-5 size-3 rounded-full bg-primary ring-4 ring-background" />
-            <Card className="p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <strong>{event.action}</strong>
-                <Badge>نسخه {event.version.toLocaleString('fa-IR')}</Badge>
+          <li key={event.id}>
+            <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
+              <div>
+                <p className="font-bold">{event.action}</p>
+                <p className="text-sm text-muted-foreground">
+                  نقش عامل: {event.actorRole}
+                </p>
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                نقش عامل: {event.actorRole}
-              </p>
-              <time className="mt-2 block text-xs text-muted-foreground">
-                {formatDate(event.occurredAt)}
-              </time>
+              <div className="text-end">
+                <Badge>نسخه {event.version.toLocaleString('fa-IR')}</Badge>
+                <time className="mt-2 block text-xs text-muted-foreground">
+                  {formatDate(event.occurredAt)}
+                </time>
+              </div>
             </Card>
           </li>
         ))}
@@ -820,65 +805,298 @@ function TimelinePanel() {
   );
 }
 
-function ConsentPanel() {
+function AbPanel({ onNotice }: { onNotice: (message: string) => void }) {
+  const experiments = [
+    [
+      'preview-ab-subject',
+      'نسخه عنوان پیام',
+      'عنوان کوتاه در برابر عنوان توضیحی',
+      'در حال طراحی',
+    ],
+    [
+      'preview-ab-landing',
+      'نسخه صفحه فرود',
+      'چیدمان کارت‌ها در برابر چیدمان فهرستی',
+      'آماده بررسی',
+    ],
+  ] as const;
   return (
-    <section className="grid gap-4">
-      <Alert
-        tone="warning"
-        title="کنترل سه‌گانه قبل از هر ارسال"
-        description="Consent کانال، Suppression و Frequency Cap باید دقیقاً پیش از Dispatch و با Timestamp مستقل کنترل شوند؛ نتیجه قدیمی قابل استفاده نیست."
-      />
-      <div className="grid gap-4 md:grid-cols-3">
-        {marketingSuppressionSummary.map((item) => (
-          <Card className="p-5" key={item.id}>
-            <div className="flex items-center justify-between gap-3">
-              <MessageSquareOff
-                aria-hidden="true"
-                className="size-6 text-primary"
-              />
-              <Badge
-                className="max-w-[75%] break-all font-mono text-[10px]"
-                dir="ltr"
-              >
-                {item.status}
-              </Badge>
-            </div>
-            <h3 className="mt-4 font-black">{item.title}</h3>
-            <p className="mt-3 text-2xl font-black text-muted-foreground">
-              {item.count ?? '—'}
-            </p>
-          </Card>
-        ))}
-      </div>
-      <Alert
-        title="اصل حداقل دسترسی"
-        description="نمایش خلاصه حساس به مجوز marketing.sensitive_summary.read نیاز دارد؛ مجوز عمومی read کافی نیست."
-      />
+    <section className="grid gap-4 md:grid-cols-2">
+      {experiments.map(([id, title, description, status]) => (
+        <Card className="p-5" key={id}>
+          <div className="flex items-center justify-between">
+            <Sparkles aria-hidden="true" className="size-5 text-primary" />
+            <Badge>{status}</Badge>
+          </div>
+          <h3 className="mt-4 font-black">{title}</h3>
+          <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+          <Button
+            className="mt-4"
+            onClick={() => onNotice(`جزئیات ${title} بازبینی شد.`)}
+            variant="outline"
+          >
+            مشاهده نسخه‌ها
+          </Button>
+        </Card>
+      ))}
     </section>
+  );
+}
+
+function CampaignsPanel({
+  onOpen,
+  onNotice,
+}: {
+  onOpen: (mode: CampaignFormMode, campaign?: CampaignPreview) => void;
+  onNotice: (message: string) => void;
+}) {
+  const [tab, setTab] = useState('list');
+  return (
+    <Tabs onValueChange={setTab} value={tab}>
+      <TabsList
+        aria-label="بخش‌های کمپین"
+        className="grid w-full grid-cols-2 gap-1 bg-blue-50 p-2 md:grid-cols-3 xl:grid-cols-5"
+      >
+        {marketingSectionTabs.campaigns.map(([key, label]) => (
+          <TabsTrigger key={key} value={key}>
+            {label}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      <TabsContent className="mt-5" value="list">
+        <CampaignList onOpen={onOpen} />
+      </TabsContent>
+      <TabsContent className="mt-5" value="calendar">
+        <CampaignCalendar
+          campaigns={marketingPreviewCampaigns}
+          onOpen={(campaign) => onOpen('view', campaign)}
+        />
+      </TabsContent>
+      <TabsContent className="mt-5" value="budget">
+        <BudgetPanel />
+      </TabsContent>
+      <TabsContent className="mt-5" value="approval">
+        <ApprovalPanel />
+      </TabsContent>
+      <TabsContent className="mt-5" value="ab">
+        <AbPanel onNotice={onNotice} />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+function SegmentGrid() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      {marketingSegments.map((segment) => (
+        <Card className="p-5" key={segment.id}>
+          <div className="flex items-center justify-between">
+            <UsersRound aria-hidden="true" className="size-5 text-primary" />
+            <Badge>بدون PII</Badge>
+          </div>
+          <h3 className="mt-4 font-black">{segment.title}</h3>
+          <p className="mt-2 text-sm leading-7 text-muted-foreground">
+            {segment.rules}
+          </p>
+          <p className="mt-4 text-sm font-semibold">
+            اندازه: {segment.estimatedCount}
+          </p>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function OfferGrid() {
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      {marketingOffers.map((offer) => (
+        <Card className="p-5" key={offer.id}>
+          <Badge>{offer.status}</Badge>
+          <h3 className="mt-3 font-black">{offer.title}</h3>
+          <p className="mt-2 text-sm text-muted-foreground">{offer.rule}</p>
+        </Card>
+      ))}
+      {marketingCoupons.map((coupon) => (
+        <Card className="p-5" key={coupon.id}>
+          <Badge>{coupon.status}</Badge>
+          <h3 className="mt-3 font-black" dir="ltr">
+            {coupon.code}
+          </h3>
+          <p className="mt-2 text-sm text-muted-foreground">{coupon.limit}</p>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function GenericItemGrid({
+  items,
+  onOpen,
+  onNotice,
+}: {
+  items: readonly MarketingPreviewItem[];
+  onOpen: (item: MarketingPreviewItem) => void;
+  onNotice: (message: string) => void;
+}) {
+  return (
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {items.map((item) => (
+        <Card className="p-5" key={item.id}>
+          <div className="flex items-center justify-between gap-3">
+            <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
+              <Target aria-hidden="true" className="size-5" />
+            </span>
+            <Badge>{item.status}</Badge>
+          </div>
+          <h3 className="mt-4 font-black">{item.title}</h3>
+          <p className="mt-2 min-h-12 text-sm leading-7 text-muted-foreground">
+            {item.description}
+          </p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            {item.meta} · {formatDate(item.updatedAt)}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button onClick={() => onOpen(item)} size="sm" variant="outline">
+              <Eye aria-hidden="true" className="size-4" />
+              جزئیات
+            </Button>
+            <Button
+              onClick={() =>
+                onNotice(`${item.title} در محیط Preview بررسی شد.`)
+              }
+              size="sm"
+              variant="secondary"
+            >
+              بررسی Preview
+            </Button>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+type GenericSectionKey = Exclude<
+  MarketingSectionKey,
+  'dashboard' | 'campaigns'
+>;
+
+function GenericSection({
+  section,
+  onOpen,
+  onNotice,
+}: {
+  section: GenericSectionKey;
+  onOpen: (item: MarketingPreviewItem) => void;
+  onNotice: (message: string) => void;
+}) {
+  const tabs = marketingSectionTabs[section];
+  const [tab, setTab] = useState(tabs.at(0)?.[0] ?? '');
+  const items = previewItemsFor(section, tab);
+  const special =
+    section === 'audiences' && tab === 'segments' ? (
+      <SegmentGrid />
+    ) : section === 'offers' && tab === 'discounts' ? (
+      <OfferGrid />
+    ) : null;
+  const actionLabels: Record<GenericSectionKey, string> = {
+    audiences: 'ساخت سگمنت',
+    communications: 'ساخت نیت ارسال',
+    content: 'افزودن محتوای Preview',
+    offers: 'پیشنهاد جدید',
+    journeys: 'ساخت سفر مشتری',
+    reports: 'درخواست خروجی',
+    settings: 'ثبت تنظیم Preview',
+  };
+  return (
+    <Tabs onValueChange={setTab} value={tab}>
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <TabsList
+          aria-label={`زیر‌بخش‌های ${section}`}
+          className="flex w-full flex-wrap gap-1 bg-blue-50 p-2 xl:w-auto"
+        >
+          {tabs.map(([key, label]) => (
+            <TabsTrigger key={key} value={key}>
+              {label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        <Button
+          onClick={() =>
+            onNotice(`${actionLabels[section]} به‌صورت محلی آماده شد.`)
+          }
+        >
+          <Plus aria-hidden="true" className="size-4" />
+          {actionLabels[section]}
+        </Button>
+      </div>
+      {tabs.map(([key, , description]) => (
+        <TabsContent className="mt-5" key={key} value={key}>
+          <Alert
+            className="mb-4"
+            description={description}
+            title="داده‌های ساختگی و غیرعملیاتی"
+          />
+          {special && key === tab ? (
+            special
+          ) : (
+            <GenericItemGrid
+              items={key === tab ? items : []}
+              onNotice={onNotice}
+              onOpen={onOpen}
+            />
+          )}
+          {section === 'audiences' && key === 'subscriptions' ? (
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {marketingSuppressionSummary.map((item) => (
+                <Card className="p-4" key={item.id}>
+                  <ShieldCheck
+                    aria-hidden="true"
+                    className="size-5 text-primary"
+                  />
+                  <h3 className="mt-3 font-bold">{item.title}</h3>
+                  <Badge className="mt-3 font-mono text-[9px]" dir="ltr">
+                    {item.status}
+                  </Badge>
+                </Card>
+              ))}
+            </div>
+          ) : null}
+        </TabsContent>
+      ))}
+    </Tabs>
   );
 }
 
 export function MarketingWorkspace() {
   const [state, setState] = useState<MarketingPreviewState>('preview');
-  const [tab, setTab] = useState<WorkspaceTab>('dashboard');
-  const [dialog, setDialog] = useState<{
+  const [section, setSection] = useState<MarketingSectionKey | null>(null);
+  const [notice, setNotice] = useState(
+    'داده‌های نمونه مارکتینگ آماده نمایش است.',
+  );
+  const [detailItem, setDetailItem] = useState<MarketingPreviewItem | null>(
+    null,
+  );
+  const [campaignDialog, setCampaignDialog] = useState<{
     open: boolean;
     mode: CampaignFormMode;
-    campaign?: CampaignPreview | undefined;
+    campaign?: CampaignPreview;
   }>({ open: false, mode: 'create' });
-
   const openCampaign = (mode: CampaignFormMode, campaign?: CampaignPreview) =>
-    setDialog({ open: true, mode, campaign });
-  const stateGate = (
-    <StateGate state={state} onReset={() => setState('preview')} />
+    setCampaignDialog(
+      campaign ? { open: true, mode, campaign } : { open: true, mode },
+    );
+  const selectedSection = marketingSections.find(
+    (item) => item.key === section,
   );
-
+  const genericSection =
+    section && !['dashboard', 'campaigns'].includes(section)
+      ? (section as GenericSectionKey)
+      : null;
   return (
     <main className="grid gap-6" dir="rtl">
       <PageHeader
-        eyebrow="CRM / Marketing"
-        title="مرکز عملیات مارکتینگ"
-        description="طراحی کمپین، مخاطب، پیشنهاد، بودجه و انتساب در یک محیط کنترل‌شده؛ Phase A بدون ذخیره‌سازی یا ارسال واقعی"
         actions={
           <>
             <Select
@@ -904,11 +1122,16 @@ export function MarketingWorkspace() {
             </Button>
           </>
         }
+        description={
+          selectedSection?.description ??
+          'مدیریت یکپارچه کمپین، مخاطب، ارتباطات، محتوا، پیشنهاد، سفر مشتری و گزارش‌ها'
+        }
+        eyebrow="CRM / Marketing"
+        title={selectedSection?.title ?? 'مرکز مارکتینگ'}
       />
-
       <Alert
-        title="محیط Preview غیرعملیاتی"
         description={MARKETING_PREVIEW_NOTICE}
+        title="محیط Preview غیرعملیاتی"
       >
         <div className="mt-3 flex flex-wrap gap-2">
           <Badge className="font-mono text-[10px]" dir="ltr">
@@ -922,136 +1145,125 @@ export function MarketingWorkspace() {
           </Badge>
         </div>
       </Alert>
-
+      <div
+        aria-live="polite"
+        className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950"
+        role="status"
+      >
+        <MousePointerClick aria-hidden="true" className="size-4 shrink-0" />
+        <span>{notice}</span>
+      </div>
       {state !== 'preview' ? (
-        stateGate
+        <StateGate onReset={() => setState('preview')} state={state} />
+      ) : section === null ? (
+        <MarketingHub
+          onSelect={(value) => {
+            setSection(value);
+            setNotice(
+              `بخش ${marketingSections.find((item) => item.key === value)?.title} باز شد.`,
+            );
+          }}
+        />
       ) : (
-        <Tabs
-          value={tab}
-          onValueChange={(value) => setTab(value as WorkspaceTab)}
-        >
-          <TabsList
-            aria-label="بخش‌های مارکتینگ"
-            className="grid w-full grid-cols-2 gap-1 bg-blue-50 p-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9"
-          >
-            <TabsTrigger value="dashboard">
-              <BarChart3 aria-hidden="true" className="me-1 size-4" />
-              داشبورد
-            </TabsTrigger>
-            <TabsTrigger value="campaigns">
-              <Megaphone aria-hidden="true" className="me-1 size-4" />
-              کمپین‌ها
-            </TabsTrigger>
-            <TabsTrigger value="audiences">
-              <UsersRound aria-hidden="true" className="me-1 size-4" />
-              مخاطبان
-            </TabsTrigger>
-            <TabsTrigger value="channels">
-              <Send aria-hidden="true" className="me-1 size-4" />
-              کانال‌ها
-            </TabsTrigger>
-            <TabsTrigger value="offers">
-              <BadgePercent aria-hidden="true" className="me-1 size-4" />
-              پیشنهادها
-            </TabsTrigger>
-            <TabsTrigger value="attribution">
-              <Target aria-hidden="true" className="me-1 size-4" />
-              انتساب
-            </TabsTrigger>
-            <TabsTrigger value="budget">
-              <CircleDollarSign aria-hidden="true" className="me-1 size-4" />
-              بودجه
-            </TabsTrigger>
-            <TabsTrigger value="timeline">
-              <CalendarClock aria-hidden="true" className="me-1 size-4" />
-              تاریخچه
-            </TabsTrigger>
-            <TabsTrigger value="consent">
-              <ShieldCheck aria-hidden="true" className="me-1 size-4" />
-              رضایت و منع
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent className="mt-5" value="dashboard">
-            <section className="grid gap-4">
-              <div className="flex items-center gap-3">
-                <span className="grid size-11 place-items-center rounded-2xl bg-primary text-primary-foreground">
-                  <ClipboardList aria-hidden="true" className="size-5" />
-                </span>
-                <div>
-                  <h2 className="text-xl font-black">
-                    شاخص‌های استاندارد مارکتینگ
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    ۱۸ تعریف شفاف؛ مقدار ساختگی تولید نمی‌شود.
-                  </p>
-                </div>
-              </div>
-              <KpiGrid />
-            </section>
-          </TabsContent>
-          <TabsContent className="mt-5" value="campaigns">
-            <CampaignsPanel onOpen={openCampaign} />
-          </TabsContent>
-          <TabsContent className="mt-5" value="audiences">
-            <AudiencesPanel />
-          </TabsContent>
-          <TabsContent className="mt-5" value="channels">
-            <ChannelsPanel />
-          </TabsContent>
-          <TabsContent className="mt-5" value="offers">
-            <OffersPanel />
-          </TabsContent>
-          <TabsContent className="mt-5" value="attribution">
-            <AttributionPanel />
-          </TabsContent>
-          <TabsContent className="mt-5" value="budget">
-            <BudgetPanel />
-          </TabsContent>
-          <TabsContent className="mt-5" value="timeline">
-            <TimelinePanel />
-          </TabsContent>
-          <TabsContent className="mt-5" value="consent">
-            <ConsentPanel />
-          </TabsContent>
-        </Tabs>
+        <section className="grid gap-5">
+          <div>
+            <Button
+              onClick={() => {
+                setSection(null);
+                setNotice('به صفحه اصلی مارکتینگ برگشتید.');
+              }}
+              variant="ghost"
+            >
+              <ArrowRight aria-hidden="true" className="size-4" />
+              بازگشت به بخش‌های مارکتینگ
+            </Button>
+          </div>
+          {section === 'dashboard' ? (
+            <DashboardPanel onNotice={setNotice} />
+          ) : section === 'campaigns' ? (
+            <CampaignsPanel onNotice={setNotice} onOpen={openCampaign} />
+          ) : genericSection ? (
+            <GenericSection
+              key={genericSection}
+              onNotice={setNotice}
+              onOpen={setDetailItem}
+              section={genericSection}
+            />
+          ) : null}
+        </section>
       )}
-
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
         <div className="flex items-center gap-2">
           <AlertTriangle aria-hidden="true" className="size-5" />
           <span>
-            Persistence، IAM binding، Analytics و Integration Adapter در Phase B
-            نیازمند قرارداد و رزرو مستقل‌اند.
+            Persistence، Analytics و اتصال ارسال در این نسخه فعال نیست؛ همه
+            شناسه‌ها با preview- شروع می‌شوند.
           </span>
         </div>
-        <div className="flex gap-2">
-          <Tags aria-hidden="true" className="size-4" />
-          <span>MARKETING-001 / Phase A</span>
-        </div>
+        <span>MARKETING-001B</span>
       </div>
-
       <Dialog
-        open={dialog.open}
-        onOpenChange={(open) => setDialog((current) => ({ ...current, open }))}
+        open={campaignDialog.open}
+        onOpenChange={(open) =>
+          setCampaignDialog((current) => ({ ...current, open }))
+        }
       >
         <DialogContent className="max-h-[92vh] max-w-6xl overflow-y-auto">
           <DialogTitle>
-            {dialog.mode === 'create'
+            {campaignDialog.mode === 'create'
               ? 'ساخت کمپین جدید'
-              : dialog.mode === 'edit'
+              : campaignDialog.mode === 'edit'
                 ? 'ویرایش پیش‌نمایش کمپین'
                 : 'مشاهده کمپین'}
           </DialogTitle>
           <DialogDescription>
-            {dialog.mode === 'view'
+            {campaignDialog.mode === 'view'
               ? 'اطلاعات فقط خواندنی و کاملاً ساختگی است.'
-              : 'فرم چندمرحله‌ای فقط پیش‌نویس محلی می‌سازد و هیچ داده‌ای ثبت نمی‌کند.'}
+              : 'فرم چندمرحله‌ای فقط پیش‌نویس محلی می‌سازد و داده‌ای ذخیره نمی‌کند.'}
           </DialogDescription>
           <CampaignForm
-            campaign={dialog.campaign}
-            key={`${dialog.mode}-${dialog.campaign?.id ?? 'new'}`}
-            mode={dialog.mode}
+            campaign={campaignDialog.campaign}
+            key={`${campaignDialog.mode}-${campaignDialog.campaign?.id ?? 'new'}`}
+            mode={campaignDialog.mode}
           />
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={Boolean(detailItem)}
+        onOpenChange={(open) => {
+          if (!open) setDetailItem(null);
+        }}
+      >
+        <DialogContent>
+          <DialogTitle>{detailItem?.title ?? 'جزئیات'}</DialogTitle>
+          <DialogDescription>{detailItem?.description}</DialogDescription>
+          {detailItem ? (
+            <dl className="mt-5 grid gap-3 rounded-xl bg-muted/50 p-4 text-sm">
+              <div>
+                <dt className="text-muted-foreground">وضعیت</dt>
+                <dd className="font-bold">{detailItem.status}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">شناسه</dt>
+                <dd className="break-all font-mono text-xs" dir="ltr">
+                  {detailItem.id}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">آخرین تغییر</dt>
+                <dd>{formatDate(detailItem.updatedAt)}</dd>
+              </div>
+            </dl>
+          ) : null}
+          <Button
+            className="mt-5"
+            onClick={() => {
+              if (detailItem) setNotice(`جزئیات ${detailItem.title} تأیید شد.`);
+              setDetailItem(null);
+            }}
+          >
+            تأیید و بستن
+          </Button>
         </DialogContent>
       </Dialog>
     </main>
