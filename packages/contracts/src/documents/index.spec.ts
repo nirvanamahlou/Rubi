@@ -8,6 +8,10 @@ import {
   DOCUMENT_SCAN_STATUS_CODES,
   DOCUMENTS_CONTRACT_VERSION,
 } from './index';
+import type {
+  DocumentCaseOptionsQueryV1,
+  DocumentCaseOptionsResponseV1,
+} from './index';
 
 describe('documents shared contract v1', () => {
   it('publishes stable domain, confidentiality, archive and scan allowlists', () => {
@@ -40,5 +44,24 @@ describe('documents shared contract v1', () => {
       'UPLOADED',
       'RECENTLY_VIEWED',
     ]);
+  });
+
+  it('keeps case search branch-scoped without exposing source record ids', () => {
+    const query: DocumentCaseOptionsQueryV1 = {
+      branchId: 'branch-1',
+      search: 'قرارداد',
+      limit: 20,
+    };
+    const response: DocumentCaseOptionsResponseV1 = {
+      data: [
+        {
+          id: 'relation-1',
+          displayLabel: 'قرارداد فروش ۴۲',
+        },
+      ],
+      meta: { hasMore: false, limit: query.limit ?? 20 },
+    };
+
+    expect(response.data[0]).not.toHaveProperty('sourceEntityId');
   });
 });

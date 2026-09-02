@@ -55,6 +55,9 @@ describe('documents workspace contract', () => {
       'علاقه‌مندی‌ها',
       'نمایش امن تصویر',
       'تصویر اسکن‌شده و مجاز',
+      'پرونده مربوطه',
+      'جست‌وجوی پرونده',
+      '.caseOptions(',
     ])
       expect(source).toContain(marker);
     for (const removedCopy of [
@@ -76,6 +79,9 @@ describe('documents workspace contract', () => {
     expect(source).toContain('onClick={() => openArchiveTool(tool)}');
     expect(source).toContain('documentOptions.data.branches');
     expect(source).toContain('validateDocumentUpload');
+    expect(source).toContain('sourceRelationId');
+    expect(source).not.toContain('label="ماژول مبدأ"');
+    expect(source).not.toContain('label="شناسه رکورد مبدأ"');
     expect(source).toContain('z-[70] max-h-72');
     expect(source).not.toContain('documentsApi.sessionContext');
     expect(source).not.toContain('dangerouslySetInnerHTML');

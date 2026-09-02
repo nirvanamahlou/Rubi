@@ -202,6 +202,25 @@ export interface DocumentOptionsResponseV1 {
   };
 }
 
+export interface DocumentCaseOptionV1 {
+  id: string;
+  displayLabel: string;
+}
+
+export interface DocumentCaseOptionsQueryV1 {
+  branchId: string;
+  search?: string;
+  limit?: number;
+}
+
+export interface DocumentCaseOptionsResponseV1 {
+  data: readonly DocumentCaseOptionV1[];
+  meta: {
+    hasMore: boolean;
+    limit: number;
+  };
+}
+
 export interface DocumentDetailResponseV1 {
   data: DocumentDetailV1;
 }

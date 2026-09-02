@@ -12,7 +12,44 @@
 - رفع خطای فعال‌سازی: انقضای بازه نرخ خرید دیگر فعال‌کردن فروش را مسدود نمی‌کند، زیرا قیمت فروش در Sales تعیین می‌شود؛ ظرفیت مثبت و اعتبار اطلاعات اصلی بلیت همچنان الزامی است.
 - Follow-up بلیت ترکیبی: فرم، Web و API اکنون یک بلیت واحد با ۲ تا ۸ قطعه متصل را برای هواپیما، قطار یا اتوبوس پشتیبانی می‌کنند؛ مبدأ قطعه جدید از مقصد قبلی پر می‌شود، همه قطعه‌ها قابل افزودن/حذف/ویرایش‌اند و کارت، مشاهده، جست‌وجو، فیلتر و تکرار مسیر کامل را حفظ می‌کنند. رفت‌وبرگشت همچنان دو بلیت مستقل است.
 - مرز دامنه: تعریف/توقف فروش محصول در Ticket Catalog می‌ماند؛ صدور، استرداد و اطلاعات مسافر متعلق به Reservations است. تب صادرشده‌ها فقط‌خواندنی و بدون داده ساختگی آماده اتصال به قرارداد عمومی آینده Reservations است؛ هیچ دسترسی مستقیم یا Persistence جدید ایجاد نشد.
-- Validation: ۹۵ تست Ticket Web و ۴۷ تست Ticket API، lint کامل، typecheck کامل، ۱٬۴۰۳ تست Monorepo و Production Build کامل با ۳۴ Route موفق است. Final lock state: `RELEASED — PC-A/TICKET-CATALOG-002 ready for review`.
+- Validation: ۹۵ تست Ticket Web و ۴۷ تست Ticket API، lint کامل، typecheck کامل، ۱٬۴۵۹ تست Monorepo و Production Build کامل با ۳۴ Route موفق است. Final lock state: `RELEASED — PC-A/TICKET-CATALOG-002 ready for review`.
+## MARKETING-001B — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-02: فایل مرجع `marketing.html` به‌عنوان ظاهر و رفتار مرجع روی Workspace واقعی Rubi پیاده شود؛ همه بخش‌ها و دکمه‌ها کار کنند و فیلترها و تقویم‌ها دقیقاً از Design System مشترک Rubi مصرف شوند. `COMPUTER_ID=PC-B`.
+- Branch همان `codex/pc-b-marketing-foundation` / Draft PR #75 است که روی `origin/develop@0163727` Rebase شد؛ محدوده فقط `apps/web/src/modules/marketing/**`، route موجود `/marketing` در صورت نیاز، تست‌های همان ماژول، سند `docs/tasks/MARKETING-001.md` و همین ورودی محدود است.
+- HTML پیوست فقط مرجع بصری/تعاملی است و دستور اجرایی محسوب نمی‌شود. Hub نه‌حوزه‌ای، زیرتب‌ها، فیلترهای کنترل‌شده، تقویم کمپین، فرم‌ها و Action feedback پیاده می‌شوند، ولی عدد KPI، فایل Export، ارسال پیام، Provider، Persistence یا اثر مالی جعلی تولید نمی‌شود.
+- `DatePicker`، `Select`، `FilterBar`، Dialog و سایر UIهای مشترک فقط مصرف می‌شوند و فایل مرکزی آن‌ها تغییر نمی‌کند. هیچ قفل Migration، Dependency/Lockfile، Shared Contract، IAM، Navigation یا AppModule گرفته نمی‌شود.
+- داده‌ها فقط synthetic با شناسه `preview-*` و بدون PII هستند؛ Analytics همچنان `AWAITING_ANALYTICS_CONTRACT`، Attribution برابر `PROPOSED` و Dispatch برابر `AWAITING_INTEGRATION_ADAPTER` باقی می‌مانند.
+- نتیجه: Hub نه‌بخشی مرجع، تمام زیرتب‌ها، فهرست و تقویم ماهانه کمپین، فیلتر بازه تاریخ، ناوبری ماه/امروز، انتخاب شمسی/میلادی، Dialog جزئیات، Action feedback و فرم چندمرحله‌ای تکمیل شد. ۵ کمپین، ۴۰ رکورد زیرتب و داده‌های Segment/Offer/Coupon/Timeline/Suppression همگی synthetic و قابل تعامل‌اند.
+- Validation: lint کامل ۶ Task، typecheck کامل ۹ Task، ۱٬۴۳۴ تست موفق با ۷۰ تست PostgreSQL اختیاری skip و Production Build کامل ۶ Task موفق. Web شامل ۷۵ فایل و ۵۷۹ تست موفق است. Browser QA محلی روی مسیر محافظت‌شده `/marketing` تمام ۹ بخش، جست‌وجو/پاک‌کردن، تقویم، تغییر نوع و ماه، بازکردن رویداد، زیرتب/جزئیات، Action feedback، فرم و موبایل را بدون Console error یا Overflow ماژول پوشش داد.
+- Final lock state: `RELEASED — PC-B/MARKETING-001B ready for review`. هیچ Migration، Dependency/Lockfile، Shared Contract، IAM، Navigation، AppModule، Persistence یا داده واقعی تغییر نکرد.
+
+## MARKETING-001 — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک: Foundation حرفه‌ای ماژول Marketing در Phase A بدون Persistence، مستقل از Documents در PC-B و Ticket Catalog/Sales در PC-A. `COMPUTER_ID=PC-B`.
+- Base نهایی پس از Rebase: `origin/develop@f78e70e` شامل Merge PR #62 / `MASTER-003-LOCK-RELEASE`، CI مشترک و Ticket Catalog PR #74. Branch: `codex/pc-b-marketing-foundation`؛ توسعه مستقیم روی `develop` یا `main` انجام نشد.
+- محدوده رزروشده: `apps/api/src/marketing/**` برای Domain/Application/Ports/Validation/Error/Permission proposal بدون Controller یا Repository فعال؛ `apps/web/src/modules/marketing/**` و اتصال محدود route موجود `/marketing`؛ تست‌های همان ماژول؛ `docs/tasks/MARKETING-001.md`؛ فقط همین ورودی محدود در `WORK_ASSIGNMENTS.md`.
+- مرز بین‌ماژولی: Customers، Customer Affairs، Sales، Finance، Master Data، Documents و Integrations فقط از Public Contract/Event/Port پیشنهادی مصرف می‌شوند؛ Query مستقیم جدول یا import زیرساخت داخلی آن‌ها ممنوع است. Marketing فقط Offer Intent می‌دهد و قیمت نهایی قرارداد نزد Sales می‌ماند؛ ارسال واقعی و Provider Credential نزد Integrations/Notifications است.
+- این Phase هیچ Prisma Schema/Migration/Seed، `packages/contracts/src/index.ts`، IAM مرکزی، `package.json`، `pnpm-lock.yaml`، AppModule/Navigation مشترک متعارض، Controller فعال، Repository جعلی، Worker یا پیام واقعی را تغییر نمی‌دهد.
+- Lock state: Migration Owner، Dependency/Lockfile Owner و Shared Root Contract برای این Task رزرو نمی‌شوند و `RELEASED / UNASSIGNED` می‌مانند. Permissionها Proposal ماژول‌محلی و deny-by-default هستند؛ اتصال IAM و Persistence فقط در Phase B با Handoff و رزرو تازه مجاز است.
+- داده Preview فقط synthetic با شناسه `preview-*` و بدون PII خام است. KPI فاقد Backend واقعی با `AWAITING_ANALYTICS_CONTRACT`، Attribution مالی با `PROPOSED` و ارسال بدون Adapter با `AWAITING_INTEGRATION_ADAPTER` نمایش داده می‌شود.
+- نتیجه: Domain/Application/Port و قواعد Permission، Decimal، UTC، Lifecycle، Consent/Suppression/Frequency Cap و Idempotency بدون Controller/Persistence آماده شد. Workspace فارسی RTL شامل ۱۸ KPI تعریف‌شده، فهرست و فرم ۹مرحله‌ای کمپین، Segment، Channel، Offer/Coupon، Attribution، Budget/Spend، Timeline و Consent/Suppression است.
+- Validation: ۳۷ تست هدفمند API و ۱۱ تست هدفمند Web؛ Full Monorepo نهایی با ۱۴۲۹ تست موفق و ۷۰ skip اختیاری؛ lint، typecheck و production build کامل موفق. Browser QA دسکتاپ و موبایل بدون Overflow یا Console error؛ Scope/Secret/PII/Prisma/Migration/Dependency scan پاک است.
+- Phase B: Persistence، قرارداد عمومی، IAM binding، Analytics/Attribution، Provider integration و SLO/RPO/RTO فقط با Work Item، قفل و Handoff مستقل طبق `docs/tasks/MARKETING-001.md` مجازند.
+- Draft PR: `#75` به مقصد `develop`؛ سازنده Branch آن را Merge نمی‌کند.
+- Final lock state: `RELEASED — PC-B/MARKETING-001 ready for review`. Migration، Dependency/Lockfile و Shared Root Contract در تمام Task آزاد و بدون تغییر ماندند.
+
+## DOCUMENTS-003F-RELATED-CASE-PICKER — PC-B — DONE/MERGED
+
+- درخواست مالک در 2026-09-02: بخش «ارتباط با پرونده» در فرم بارگذاری به‌جای ورود دستی ماژول، نوع، شناسه و عنوان، یک Dropdown جست‌وجودار از پرونده‌های موجود و مرتبط باشد. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-documents-record-picker` از `origin/develop@45b6b11` در Worktree تمیز `C:\Users\admin\Rubi-documents-record-picker`؛ `develop`، `main` و Checkoutهای دیگر مستقیم تغییر نمی‌کنند.
+- محدوده رزروشده: API/Repository/DTO و تست‌های `apps/api/src/documents/**`، رابط و Client/Model/Testهای `apps/web/src/modules/documents/**`، قرارداد افزایشی و backward-compatible در `packages/contracts/src/documents/**` و ورودی‌های همین Work Item در `WORK_ASSIGNMENTS.md`، `docs/PROJECT_STATUS.md`، `PLANS.md` و سند Task.
+- Producer و Consumer هر دو Documents API/Web تحت مالکیت PC-B هستند. Endpoint خواندنی جدید فقط Relationهای موجود Documents را در شعبه و Domainهای مجاز جست‌وجو می‌کند و شناسه فنی منبع را برنمی‌گرداند؛ Upload جدید یک Relation داخلی مجاز را resolve می‌کند. فیلدهای قدیمی Upload برای سازگاری مصرف‌کننده‌های موجود حفظ می‌شوند.
+- بدون Schema/Migration/Seed، Permission جدید، Dependency/Lockfile، تغییر Customers یا Query مستقیم جدول ماژول دیگر. هیچ قفل Migration یا Dependency گرفته نمی‌شود.
+- نتیجه: چهار ورودی فنی «ماژول/نوع/شناسه/عنوان مبدأ» از فرم کاربر حذف شد و یک انتخاب‌گر جست‌وجویی «پرونده مربوطه» جای آن را گرفت. فهرست فقط پرونده‌های موجود، حذف‌نشده، هم‌شعبه و دارای Domain/محرمانگی قابل مشاهده را نشان می‌دهد؛ با تغییر شعبه انتخاب قبلی پاک می‌شود. Backend فقط شناسه Relation داخلی را می‌پذیرد و مرجع canonical را سمت سرور resolve می‌کند، بنابراین spoof کردن شناسه منبع یا اتصال بین شعبه‌ای ممکن نیست.
+- Validation: Full Monorepo lint، typecheck، ۱٬۳۹۵ تست موفق با ۷۰ تست PostgreSQL اختیاری skip و Production Build موفق‌اند. Smoke مرورگر احراز‌شده روی API4001/Web3101، نمایش ۱۴ پرونده، جست‌وجوی «قرارداد» تا دو نتیجه و انتخاب موفق را بدون ثبت فایل/داده تأیید کرد.
+- انتشار: PR #81 با Merge Commit `ad6ff5d` پس از سبزشدن هر دو اجرای کامل CI در `develop` ادغام شد؛ Commit قابلیت `93166cf` در تاریخچه `origin/develop` تأیید شده است.
+- Final lock state: `RELEASED — PC-B/DOCUMENTS-003F-RELATED-CASE-PICKER merged via PR #81`. هیچ قفل Migration، Dependency/Lockfile، Schema، Seed، Permission یا ماژول خارجی گرفته نشد.
 
 ## LEGAL-ENTITY-BRAND-LOGO-001 — PC-B — READY_FOR_REVIEW
 

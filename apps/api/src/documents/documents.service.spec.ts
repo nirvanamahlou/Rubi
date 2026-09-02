@@ -117,7 +117,9 @@ describe('DocumentsService security and persistence flow', () => {
   const repository = {
     list: vi.fn(),
     options: vi.fn(),
+    caseOptions: vi.fn(),
     findDetail: vi.fn(),
+    findCaseReference: vi.fn(),
     uploadReferences: vi.fn(),
     createUploaded: vi.fn(),
     appendAudit: vi.fn(),
@@ -208,6 +210,52 @@ describe('DocumentsService security and persistence flow', () => {
     });
   });
 
+  it('searches only accessible cases and never returns their source identifier', async () => {
+    repository.caseOptions.mockResolvedValue({
+      rows: [
+        {
+          id: '99999999-9999-4999-8999-999999999999',
+          displayLabel: 'قرارداد فروش ۴۲',
+          sourceModule: 'sales',
+          sourceEntityType: 'contract',
+          sourceEntityId: 'SALES-REAL-42',
+        },
+      ],
+      hasMore: false,
+    });
+
+    const result = await service.caseOptions(
+      { branchId, search: '  فروش  ', limit: 20 },
+      actor,
+    );
+
+    expect(repository.caseOptions).toHaveBeenCalledWith({
+      branchId,
+      domains: ['GENERAL', 'SALES'],
+      includeSensitive: false,
+      search: 'فروش',
+      limit: 20,
+    });
+    expect(result.data[0]).toEqual({
+      id: '99999999-9999-4999-8999-999999999999',
+      displayLabel: 'قرارداد فروش ۴۲',
+    });
+    expect(result.data[0]).not.toHaveProperty('sourceEntityId');
+  });
+
+  it('does not search cases outside the actor branches', async () => {
+    await expect(
+      service.caseOptions(
+        {
+          branchId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          search: 'قرارداد',
+        },
+        actor,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.caseOptions).not.toHaveBeenCalled();
+  });
+
   it('reports sensitive file capabilities from the effective read permissions', async () => {
     repository.findDetail.mockResolvedValue(row());
     repository.appendAudit.mockResolvedValue({});
@@ -254,16 +302,19 @@ describe('DocumentsService security and persistence flow', () => {
     repository.createUploaded.mockResolvedValue(
       row({ confidentiality: 'INTERNAL' }),
     );
+    repository.findCaseReference.mockResolvedValue({
+      sourceModule: 'sales',
+      sourceEntityType: 'contract',
+      sourceEntityId: 'SALES-42',
+      displayLabel: 'قرارداد فروش ۴۲',
+    });
     const dto = {
       title: 'قرارداد واقعی',
       documentTypeId: '55555555-5555-4555-8555-555555555555',
       categoryId: '66666666-6666-4666-8666-666666666666',
       branchId,
       ownerUserId: actor.userId,
-      sourceModule: 'sales',
-      sourceEntityType: 'contract',
-      sourceEntityId: 'SALES-42',
-      sourceDisplayLabel: 'قرارداد فروش ۴۲',
+      sourceRelationId: '99999999-9999-4999-8999-999999999999',
     } satisfies DocumentUploadDto;
     const buffer = Buffer.from('%PDF-1.7\nreal synthetic test bytes');
 
@@ -290,6 +341,10 @@ describe('DocumentsService security and persistence flow', () => {
         title: 'قرارداد واقعی',
         detectedMimeType: 'application/pdf',
         ipSummary: '192.0.2.x',
+        sourceModule: 'sales',
+        sourceEntityType: 'contract',
+        sourceEntityId: 'SALES-42',
+        sourceDisplayLabel: 'قرارداد فروش ۴۲',
       }),
     );
     expect(result.data.currentVersion.scanStatus).toBe(
