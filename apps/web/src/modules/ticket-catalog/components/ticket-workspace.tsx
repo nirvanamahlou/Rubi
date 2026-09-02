@@ -811,9 +811,15 @@ function TicketCatalogWorkspace() {
         }}
       >
         <DialogContent dir="rtl" className="start-auto! left-1/2!">
-          <DialogTitle>تغییر وضعیت بلیت</DialogTitle>
+          <DialogTitle>
+            {statusChange?.status === 'active'
+              ? 'فعال‌کردن فروش بلیت'
+              : 'توقف فروش بلیت'}
+          </DialogTitle>
           <DialogDescription>
-            فعال‌سازی به مراجع معتبر، ظرفیت مثبت و نرخ معتبر نیاز دارد.
+            {statusChange?.status === 'active'
+              ? 'پس از تأیید، این بلیت دوباره برای فروش در دسترس قرار می‌گیرد.'
+              : 'پس از تأیید، فروش این بلیت متوقف می‌شود و بعداً می‌توانید دوباره آن را فعال کنید.'}
           </DialogDescription>
           {problem ? <Alert tone="error" title={problem} /> : null}
           <FormField label="دلیل تغییر وضعیت" id="ticket-status-reason">
@@ -824,7 +830,7 @@ function TicketCatalogWorkspace() {
             />
           </FormField>
           <Button className="mt-4" onClick={applyStatus}>
-            اعمال {statusChange ? statusLabels[statusChange.status] : ''}
+            {statusChange?.status === 'active' ? 'فعال‌کردن فروش' : 'توقف فروش'}
           </Button>
         </DialogContent>
       </Dialog>

@@ -35,6 +35,30 @@ describe('Rendered ticket UI', () => {
         onStatus: () => {},
       }),
     );
+    const pausedCard = renderToStaticMarkup(
+      createElement(TicketCatalogCard, {
+        product: { ...sample, status: 'paused' },
+        referenceLabel: (_kind: string, _id: string, fallback: string) =>
+          fallback,
+        onView: () => {},
+        onEdit: () => {},
+        onRepeat: () => {},
+        onDelete: () => {},
+        onStatus: () => {},
+      }),
+    );
+    const cancelledCard = renderToStaticMarkup(
+      createElement(TicketCatalogCard, {
+        product: { ...sample, status: 'cancelled' },
+        referenceLabel: (_kind: string, _id: string, fallback: string) =>
+          fallback,
+        onView: () => {},
+        onEdit: () => {},
+        onRepeat: () => {},
+        onDelete: () => {},
+        onStatus: () => {},
+      }),
+    );
     const issued = renderToStaticMarkup(
       createElement(IssuedTicketsWorkspace, {
         connected: false,
@@ -42,6 +66,11 @@ describe('Rendered ticket UI', () => {
       }),
     );
     expect(card).toContain('توقف فروش');
+    expect(card).not.toContain('disabled=""');
+    expect(pausedCard).toContain('فعال‌کردن فروش');
+    expect(pausedCard).not.toContain('disabled=""');
+    expect(cancelledCard).toContain('ویرایش');
+    expect(cancelledCard).not.toContain('disabled=""');
     expect(issued).toContain('شماره قرارداد');
     expect(issued).toContain('شماره بلیت یا PNR');
     expect(issued).toContain('مبدأ');

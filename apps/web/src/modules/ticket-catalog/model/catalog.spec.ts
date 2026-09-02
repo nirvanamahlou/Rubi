@@ -481,7 +481,7 @@ describe('Versioning and lifecycle', () => {
       copyProduct(next, 'test-copy', resolve, now, 'test').history,
     ).toHaveLength(1);
   });
-  it('requires pause before editing and prevents restoring cancelled programs', () => {
+  it('allows editing every status and prevents restoring cancelled programs', () => {
     const active = transitionProduct(
       product(),
       'active',
@@ -492,7 +492,7 @@ describe('Versioning and lifecycle', () => {
       'activate',
       inventory,
     );
-    expect(() =>
+    expect(
       reviseProduct(
         active,
         input(),
@@ -500,10 +500,10 @@ describe('Versioning and lifecycle', () => {
         resolve,
         now,
         'test',
-        'edit',
+        'edit active',
         inventory,
       ),
-    ).toThrow();
+    ).toMatchObject({ status: 'active', version: 3 });
     const paused = transitionProduct(
       active,
       'paused',
@@ -514,6 +514,18 @@ describe('Versioning and lifecycle', () => {
       'pause',
       inventory,
     );
+    expect(
+      reviseProduct(
+        paused,
+        input(),
+        3,
+        resolve,
+        now,
+        'test',
+        'edit paused',
+        inventory,
+      ),
+    ).toMatchObject({ status: 'paused', version: 4 });
     const cancelled = transitionProduct(
       paused,
       'cancelled',
@@ -524,6 +536,18 @@ describe('Versioning and lifecycle', () => {
       'cancel',
       inventory,
     );
+    expect(
+      reviseProduct(
+        cancelled,
+        input(),
+        4,
+        resolve,
+        now,
+        'test',
+        'edit cancelled',
+        inventory,
+      ),
+    ).toMatchObject({ status: 'cancelled', version: 5 });
     expect(() =>
       transitionProduct(
         cancelled,

@@ -552,11 +552,6 @@ export function reviseProduct(
   inventory: Inventory,
 ): Product {
   checkVersion(product.version, expectedVersion);
-  ensure(
-    product.status === 'draft' || product.status === 'paused',
-    'برای ویرایش ابتدا فروش را متوقف کنید.',
-    'TRANSITION',
-  );
   validateProduct(input, resolve);
   ensure(
     inventory.total === product.definition.totalCapacity,
