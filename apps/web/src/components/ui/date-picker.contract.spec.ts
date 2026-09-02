@@ -29,6 +29,10 @@ describe('shared date picker contract', () => {
     expect(pickerSource.indexOf('نوع تقویم')).toBeLessThan(
       pickerSource.indexOf('calendarMonthLabel(anchor'),
     );
+    expect(pickerSource).toContain("variant?: 'default' | 'rubi'");
+    expect(pickerSource).toContain("variant === 'rubi'");
+    expect(pickerSource).toContain('from-primary via-sky-500 to-cyan-400');
+    expect(pickerSource).toContain('backdrop-blur-xl');
   });
 
   it('prevents raw browser calendars from returning to application forms', () => {

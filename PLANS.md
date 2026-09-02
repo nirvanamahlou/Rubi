@@ -35,6 +35,8 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 - [x] `DOCUMENTS-003D-LOCAL-INTERACTIONS`: کارت‌های عملیاتی آرشیو، فرم بارگذاری و
       Dropdownهای پایدار با Options یکپارچه Documents، و Apply یک‌مرحله‌ای و قابل
       راستی‌آزمایی برای ساخت هفت سند آزمایشی روی دیتابیس محلی PC-A/PC-B.
+- [x] `DOCUMENTS-003E-CALENDAR-THEME`: تم آبی–فیروزه‌ای هماهنگ Rubi برای سه تقویم
+      Documents با حفظ رفتار شمسی/میلادی و ظاهر پیش‌فرض DatePicker در سایر ماژول‌ها.
 - [ ] `DOCUMENTS-003`: Adapter تولیدی S3/MinIO و Antivirus Worker عملیاتی با retry،
       monitoring و recovery؛ پس از تصمیم امنیت/عملیات و رزرو تازه Migration/Dependency.
 - [ ] `DOCUMENTS-004`: اشتراک امن، نسخه‌گذاری تکمیلی، Export، retention نهایی و اتصال
