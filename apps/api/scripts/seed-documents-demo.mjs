@@ -47,6 +47,14 @@ const report = await seedLocalDocumentsDemo({
 const byDomain = {};
 for (const row of report.records)
   byDomain[row.domain] = (byDomain[row.domain] ?? 0) + 1;
+const readyForViewing =
+  report.records.length === 7 &&
+  report.records.every((row) => row.scanStatus === 'CLEAN');
+if (command.apply && !readyForViewing) {
+  throw new Error(
+    `Documents demo verification failed: expected 7 CLEAN records, received ${report.records.length}.`,
+  );
+}
 console.log(
   JSON.stringify(
     {
@@ -55,6 +63,8 @@ console.log(
       reused: report.reused,
       repairedFiles: report.repairedFiles,
       antivirusAvailable: report.antivirusAvailable,
+      readyForViewing,
+      verifiedRecords: report.records.length,
       byDomain,
     },
     null,

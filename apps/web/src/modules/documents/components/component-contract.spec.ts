@@ -72,6 +72,12 @@ describe('documents workspace contract', () => {
     expect(source).toContain("url.searchParams.set('document', id)");
     expect(source).toContain('documentsApi.preview');
     expect(source).toContain('URL.revokeObjectURL');
+    expect(source).toContain('archiveTools.map');
+    expect(source).toContain('onClick={() => openArchiveTool(tool)}');
+    expect(source).toContain('documentOptions.data.branches');
+    expect(source).toContain('validateDocumentUpload');
+    expect(source).toContain('z-[70] max-h-72');
+    expect(source).not.toContain('documentsApi.sessionContext');
     expect(source).not.toContain('dangerouslySetInnerHTML');
   });
 

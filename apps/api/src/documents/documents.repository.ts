@@ -206,7 +206,7 @@ export class DocumentsRepository {
   }
 
   async options(branchIds: readonly string[], domains: readonly string[]) {
-    const [documentTypes, categories, owners] = await Promise.all([
+    const [documentTypes, categories, owners, branches] = await Promise.all([
       this.database.client.documentType.findMany({
         where: { isActive: true, domain: { in: [...domains] as never[] } },
         orderBy: [{ domain: 'asc' }, { name: 'asc' }],
@@ -223,8 +223,13 @@ export class DocumentsRepository {
         select: { id: true, displayName: true },
         orderBy: { displayName: 'asc' },
       }),
+      this.database.client.branch.findMany({
+        where: { id: { in: [...branchIds] }, isActive: true },
+        select: { id: true, code: true, name: true },
+        orderBy: [{ name: 'asc' }, { id: 'asc' }],
+      }),
     ]);
-    return { documentTypes, categories, owners };
+    return { documentTypes, categories, owners, branches };
   }
 
   async uploadReferences(input: {
