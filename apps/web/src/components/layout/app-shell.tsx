@@ -29,7 +29,9 @@ import { faMessages } from '@/messages/fa';
 import {
   LegalEntityContextSelector,
   LegalEntityProvider,
+  useLegalEntityContext,
 } from '@/modules/legal-entities/components/legal-entity-context';
+import { legalEntityBrand } from '@/modules/legal-entities/model/context';
 import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
 import { Input } from '../ui/form-controls';
@@ -54,25 +56,28 @@ import {
 } from '../ui/overlays';
 
 function Brand({ compact = false }: { compact?: boolean }) {
+  const { context } = useLegalEntityContext();
+  const brand = legalEntityBrand(context?.selection);
   return (
     <Link
       className={cn(
         'min-w-0 rounded-2xl bg-white p-1.5 shadow-lg shadow-blue-950/20 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
         compact ? 'grid size-11 place-items-center p-1' : 'block w-full',
       )}
+      data-active-company-brand={context?.selection ?? 'LOADING'}
       href="/dashboard"
     >
       <Image
-        alt="لوگوی شرکت نیایش سیر سحر"
+        alt={brand.alt}
         className={cn('w-full object-contain', compact ? 'h-8' : 'h-[54px]')}
-        height={710}
+        height={brand.height}
         priority
-        src="/brand/niyayesh.png"
-        width={1758}
+        src={brand.src}
+        width={brand.width}
       />
       {!compact ? (
         <span className="block truncate px-2 pb-1 text-center text-[10px] font-black text-[#25247f]">
-          {faMessages.brand.name}
+          {brand.label}
         </span>
       ) : null}
     </Link>
