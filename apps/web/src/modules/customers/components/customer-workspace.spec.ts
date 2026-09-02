@@ -482,6 +482,10 @@ describe('Customer Operations workspace boundaries', () => {
     ])
       expect(source).toContain(section);
     expect(source).toContain('در انتظار اتصال امن');
+    expect(source).toContain('href="/documents"');
+    expect(source).toContain('باز کردن اسناد و فایل‌ها');
+    expect(source).toContain('نیازمند مدل ساختاری');
+    expect(source).not.toContain("['فایل‌ها و اسناد', 'اسناد']");
     expect(source).toContain(
       'هیچ شماره مدرک یا تاریخ ساختگی نمایش داده نمی‌شود',
     );

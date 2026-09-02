@@ -179,7 +179,6 @@ const connectedDossierSections = [
   ['پرداخت‌ها', 'مالی'],
   ['چک‌ها', 'مالی'],
   ['تیکت‌های پشتیبانی', 'امور مشتریان'],
-  ['فایل‌ها و اسناد', 'اسناد'],
 ] as const;
 
 const sensitiveReasons = [
@@ -1653,14 +1652,14 @@ function CustomerDrawer({
                     >
                       <span className="text-sm font-medium">{field}</span>
                       <Badge className="bg-muted text-muted-foreground">
-                        در انتظار زیرساخت مدارک
+                        نیازمند مدل ساختاری
                       </Badge>
                     </div>
                   ))}
                 </div>
                 <Alert
-                  description="مدل امن پاسپورت، ویزا و هشدار انقضا هنوز در پایگاه داده مشتریان وجود ندارد؛ تا تکمیل آن هیچ شماره مدرک یا تاریخ ساختگی نمایش داده نمی‌شود."
-                  title="حفاظت از مدارک مسافر"
+                  description="آرشیو فایل‌های امن فعال است، اما اطلاعات ساختاری پاسپورت، ویزا و هشدار انقضا هنوز در مدل داده مشتریان وجود ندارد؛ تا تکمیل قرارداد آن هیچ شماره مدرک یا تاریخ ساختگی نمایش داده نمی‌شود."
+                  title="اطلاعات ساختاری مدارک مسافر"
                   tone="warning"
                 />
               </Card>
@@ -1688,6 +1687,26 @@ function CustomerDrawer({
                       </Badge>
                     </div>
                   ))}
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 dark:border-emerald-400/20 dark:bg-emerald-950/20">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold">فایل‌ها و اسناد</p>
+                      <Badge className="bg-emerald-100 text-emerald-800">
+                        فعال
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      مشاهده و بارگذاری امن فایل‌های هویتی از آرشیو اسناد انجام
+                      می‌شود؛ دسترسی، شعبه و وضعیت اسکن دوباره کنترل می‌شوند.
+                    </p>
+                  </div>
+                  <a
+                    className={buttonVariants({ size: 'sm' })}
+                    href="/documents"
+                  >
+                    باز کردن اسناد و فایل‌ها
+                  </a>
                 </div>
               </Card>
 
