@@ -1,5 +1,13 @@
 # Work Assignments
 
+## DOCUMENTS-003E-CALENDAR-THEME — PC-B — IN_PROGRESS
+
+- درخواست مالک در 2026-09-02: تقویم‌های داخل بخش اسناد با تم بصری Rubi یکدست شوند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-documents-calendar-theme` از `origin/develop@45b6b11`؛ `develop` و `main` مستقیم تغییر نمی‌کنند.
+- محدوده رزروشده: فقط ظاهر افزایشی DatePicker مشترک در `apps/web/src/components/ui/date-picker.tsx`، مصرف همان Variant در `apps/web/src/modules/documents/**`، تست‌های Web مرتبط و ورودی‌های همین Work Item در اسناد وضعیت.
+- Variant پیش‌فرض DatePicker و رفتار شمسی/میلادی، مقدار ISO، API و داده بدون تغییر می‌مانند. Documents ظاهر Rubi را صریح انتخاب می‌کند؛ هیچ ماژول دیگر ناخواسته تغییر ظاهر نمی‌دهد.
+- بدون Backend، Database، Schema/Migration/Seed، Contract، Permission، Dependency/Lockfile یا داده کاربردی. هیچ قفل Migration یا Dependency گرفته نمی‌شود.
+
 ## LEGAL-ENTITY-BRAND-LOGO-001 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-01: با انتخاب شرکت فعال «جهان باستان»، لوگوی افقی ارسالی همان شرکت در App Shell جای لوگوی «نیایش سیر سحر» نمایش داده شود. `COMPUTER_ID=PC-B`.
