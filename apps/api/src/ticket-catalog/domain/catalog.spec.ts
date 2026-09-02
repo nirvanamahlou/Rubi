@@ -90,6 +90,7 @@ function input(): ProductInput {
   return {
     title: 'Synthetic program',
     transport: 'flight',
+    journeyRole: 'one-way',
     segments: [
       {
         airlineId: 'test-airline',
@@ -105,6 +106,8 @@ function input(): ProductInput {
         arrivalAt: '2026-09-04T01:00:00Z',
         departureZone: 'Asia/Tehran',
         arrivalZone: 'UTC',
+        originTerminal: '',
+        destinationTerminal: '',
       },
     ],
     flightClassId: 'test-class',
@@ -277,6 +280,72 @@ describe('References and definition rules', () => {
         resolve,
       ),
     ).toThrow();
+  });
+});
+describe('Rail and bus ticket definitions', () => {
+  const landRefs: Reference[] = [
+    ...refs,
+    { id: 'rail-company', kind: 'railCompany', name: 'Rail', active: true },
+    { id: 'train-type', kind: 'trainType', name: 'Train', active: true },
+    { id: 'bus-company', kind: 'busCompany', name: 'Bus', active: true },
+    { id: 'bus-type', kind: 'busType', name: 'Coach', active: true },
+  ];
+  const landResolve: ReferenceResolver = (kind, id) =>
+    landRefs.find((ref) => ref.kind === kind && ref.id === id);
+  function land(transport: 'train' | 'bus'): ProductInput {
+    const value = input();
+    return {
+      ...value,
+      transport,
+      flightClassId: '',
+      baggageId: '',
+      segments: [
+        {
+          ...value.segments[0]!,
+          airlineId: transport === 'train' ? 'rail-company' : 'bus-company',
+          aircraftId: transport === 'train' ? 'train-type' : 'bus-type',
+          originAirportId: '',
+          destinationAirportId: '',
+          originTerminal: transport === 'train' ? 'Station A' : 'Terminal A',
+          destinationTerminal:
+            transport === 'train' ? 'Station B' : 'Terminal B',
+        },
+      ],
+    };
+  }
+  it.each(['train', 'bus'] as const)(
+    'validates a ready %s ticket through its own Master Data references',
+    (transport) =>
+      expect(() =>
+        validateProduct(land(transport), landResolve, true),
+      ).not.toThrow(),
+  );
+  it('rejects a missing rail company and identical land cities', () => {
+    const train = land('train');
+    expect(() =>
+      validateProduct(
+        {
+          ...train,
+          segments: [{ ...train.segments[0]!, airlineId: '' }],
+        },
+        landResolve,
+        true,
+      ),
+    ).toThrow();
+    expect(() =>
+      validateProduct(
+        {
+          ...train,
+          segments: [
+            {
+              ...train.segments[0]!,
+              destinationCityId: train.segments[0]!.originCityId,
+            },
+          ],
+        },
+        landResolve,
+      ),
+    ).toThrow('شهر مبدأ');
   });
 });
 describe('Inventory reducer (not database concurrency)', () => {

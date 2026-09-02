@@ -1,14 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import type { MasterDataRecord } from '@rubi/contracts';
-import { Copy, Eye, FilePenLine, Plane, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+  BusFront,
+  Plane,
+  Plus,
+  RefreshCw,
+  TrainFront,
+  Users,
+} from 'lucide-react';
 import {
   Alert,
-  Badge,
   Button,
   Card,
-  DatePicker,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -17,14 +21,16 @@ import {
   FormField,
   Input,
   PageHeader,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui';
-import { asReference } from '../api/references';
 import {
-  copyProduct,
   createProduct,
   reviseProduct,
   transitionProduct,
-  transitions,
   type CatalogStatus,
   type Product,
   type ProductInput,
@@ -32,159 +38,198 @@ import {
   type ReferenceResolver,
 } from '../model/catalog';
 import {
+  activateCatalogSample,
+  catalogSamples,
+  catalogStorageKey,
   displayTime,
   emptyInput,
+  groupProductsForCards,
   initialQuery,
-  previewSamples,
+  parseCatalogSnapshot,
   queryProducts,
+  moveDefinitionToDate,
+  repeatDefinition,
   replacePreview,
   statusLabels,
   supplyLabels,
+  transportLabels,
   type PreviewQuery,
+  type RepeatCadence,
 } from '../model/preview';
-import { ReferenceBrowser } from './reference-browser';
+import { TicketCatalogCard } from './ticket-catalog-card';
+import { TicketDetails } from './ticket-details';
 import { TicketForm } from './ticket-form';
-import { JourneyPreview } from './journey-preview';
 import formStyles from './ticket-form.module.css';
+import { TicketDatePicker } from './ticket-date-picker';
 
-export const previewStates = {
-  ready: 'عادی',
-  loading: 'در حال دریافت',
-  empty: 'خالی',
-  error: 'خطا',
-  unauthorized: 'ورود لازم',
-  forbidden: 'بدون مجوز',
-  conflict: 'تعارض نسخه',
-  success: 'اعمال تغییر آزمایشی',
-} as const;
-export function CatalogState({ state }: { state: keyof typeof previewStates }) {
-  if (state === 'ready') return null;
-  const messages = {
-    loading: 'در حال دریافت فهرست…',
-    empty: 'برنامه‌ای مطابق فیلترها وجود ندارد.',
-    error: 'دریافت فهرست ناموفق بود؛ دوباره تلاش کنید.',
-    unauthorized: 'برای مشاهده داده عملیاتی وارد شوید (401).',
-    forbidden:
-      'مجوز اختصاصی مدیریت بلیت منتشر نشده است؛ عملیات واقعی مسدود است (403).',
-    conflict:
-      'نسخه برنامه تغییر کرده است؛ فرم را ببندید و نسخه تازه را باز کنید (409).',
-    success:
-      'تغییر فقط در حافظه پیش‌نمایش اعمال شد؛ ذخیره واقعی انجام نشده است.',
-  };
-  return (
-    <Alert
-      title={messages[state]}
-      tone={state === 'error' || state === 'conflict' ? 'error' : 'info'}
-    />
-  );
-}
+const actor = 'کاربر جاری';
+const transportIcons = {
+  flight: Plane,
+  train: TrainFront,
+  bus: BusFront,
+};
+
 export function TicketWorkspace() {
-  const [preview, setPreview] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [references, setReferences] = useState<Reference[]>([]);
+  const [hydrated, setHydrated] = useState(false);
   const [query, setQuery] = useState<PreviewQuery>(initialQuery);
   const [form, setForm] = useState<{
     mode: 'create' | 'view' | 'edit';
     product?: Product;
+    initial?: ProductInput;
   } | null>(null);
-  const [notice, setNotice] = useState('');
+  const [, setNotice] = useState('');
   const [problem, setProblem] = useState('');
-  const [state, setState] = useState<keyof typeof previewStates>('ready');
   const [statusChange, setStatusChange] = useState<{
     product: Product;
     status: CatalogStatus;
   } | null>(null);
+  const [deleteProduct, setDeleteProduct] = useState<Product>();
+  const [repeat, setRepeat] = useState<{
+    product: Product;
+    cadence: RepeatCadence;
+    count: number;
+    startDate: string;
+  }>();
   const [reason, setReason] = useState('');
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const stored = parseCatalogSnapshot(
+        localStorage.getItem(catalogStorageKey),
+      );
+      if (stored) {
+        setProducts(
+          stored.products.map((product) =>
+            activateCatalogSample(product, new Date().toISOString()),
+          ),
+        );
+        setReferences(stored.references);
+      } else setProducts(catalogSamples(new Date().toISOString()));
+      setHydrated(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(
+      catalogStorageKey,
+      JSON.stringify({ products, references }),
+    );
+  }, [hydrated, products, references]);
+
   const result = queryProducts(products, query);
+  const cardGroups = groupProductsForCards(result.rows);
   const resolve: ReferenceResolver = (kind, id) =>
     references.find((r) => r.kind === kind && r.id === id);
-  const label = (kind: Reference['kind'], id: string) =>
-    resolve(kind, id)?.name ?? 'منتظر مرجع';
+  const referenceLabel = (
+    kind: Reference['kind'],
+    id: string,
+    fallback: string,
+  ) => resolve(kind, id)?.name ?? fallback;
   function rememberReference(value: Reference) {
     setReferences((rows) => [
       ...rows.filter((r) => r.id !== value.id || r.kind !== value.kind),
       value,
     ]);
   }
-  function selectReference(record: MasterDataRecord) {
-    const value = asReference(record);
-    if (!value) return;
-    setReferences((rows) => [
-      ...rows.filter((r) => r.id !== value.id || r.kind !== value.kind),
-      value,
-    ]);
-    setNotice(
-      'مرجع «' +
-        value.name +
-        '» از API دریافت شد و در انتخاب‌های فرم در دسترس است؛ هیچ محصولی ذخیره نشده است.',
-    );
-  }
-  function resetSession() {
-    setPreview(false);
-    setProducts([]);
-    setQuery(initialQuery);
-    setForm(null);
-    setStatusChange(null);
-    setState('ready');
-    setNotice('حافظه پیش‌نمایش این صفحه پاک شد.');
-    setProblem('');
-  }
-  function save(input: ProductInput, editReason: string) {
-    if (!preview || !form || form.mode === 'view')
-      throw new Error('ویرایش فقط در Preview مجاز است.');
+  function save(inputs: readonly ProductInput[], editReason: string) {
+    if (!form || form.mode === 'view') throw new Error('فرم قابل ویرایش نیست.');
     const now = new Date().toISOString();
     const current = form.product;
-    const next = current
-      ? reviseProduct(
-          current,
+    if (current && inputs.length !== 1)
+      throw new Error('ویرایش باید روی همان بلیت انجام شود.');
+    let updated = products;
+    if (current) {
+      const next = reviseProduct(
+        current,
+        inputs[0]!,
+        current.version,
+        resolve,
+        now,
+        actor,
+        editReason.trim() || 'ویرایش اطلاعات بلیت',
+        {
+          total: current.definition.totalCapacity,
+          version: 0,
+          allocations: [],
+        },
+      );
+      updated = replacePreview(updated, next, current.version);
+    } else {
+      for (const input of inputs) {
+        const next = createProduct(
+          `ticket-${crypto.randomUUID()}`,
           input,
-          current.version,
           resolve,
           now,
-          'کاربر نمایشی',
-          editReason,
-          {
-            total: current.definition.totalCapacity,
-            version: 0,
-            allocations: [],
-          },
-        )
-      : createProduct(
-          'preview-' + crypto.randomUUID(),
-          input,
-          resolve,
-          now,
-          'کاربر نمایشی',
+          actor,
         );
-    // Preview is a single mounted session. Validate against the current collection.
-    const updated = replacePreview(products, next, current?.version);
+        updated = replacePreview(updated, next);
+      }
+    }
     setProducts(updated);
     setForm(null);
     setProblem('');
     setNotice(
-      'تغییر فقط در حافظه پیش‌نمایش اعمال شد؛ با خروج یا بازخوانی صفحه از بین می‌رود.',
+      inputs.length === 2
+        ? 'دو بلیت مستقل رفت و برگشت ذخیره شد.'
+        : current
+          ? 'تغییرات بلیت ذخیره شد.'
+          : 'بلیت جدید ذخیره شد.',
     );
   }
-  function copy(product: Product) {
+  function applyRepeat() {
+    if (!repeat) return;
     try {
-      const next = copyProduct(
-        product,
-        'preview-' + crypto.randomUUID(),
-        resolve,
-        new Date().toISOString(),
-        'کاربر نمایشی',
+      if (
+        !Number.isSafeInteger(repeat.count) ||
+        repeat.count < 1 ||
+        repeat.count > 24
+      )
+        throw new Error('تعداد تکرار باید بین ۱ تا ۲۴ باشد.');
+      const anchored = moveDefinitionToDate(
+        repeat.product.definition,
+        repeat.startDate,
       );
-      setProducts(replacePreview(products, next));
+      const now = new Date().toISOString();
+      let updated = products;
+      for (let occurrence = 0; occurrence < repeat.count; occurrence += 1) {
+        const definition =
+          occurrence === 0
+            ? anchored
+            : repeatDefinition(anchored, repeat.cadence, occurrence);
+        const next = createProduct(
+          `ticket-${crypto.randomUUID()}`,
+          definition,
+          resolve,
+          now,
+          actor,
+        );
+        updated = replacePreview(updated, next);
+      }
+      setProducts(updated);
+      setRepeat(undefined);
       setProblem('');
       setNotice(
-        'کپی پیش‌نویس ساخته شد؛ بدون کپی تخصیص، Hold یا سابقه برنامه قبلی.',
+        `${repeat.count.toLocaleString('fa-IR')} بلیت ${repeat.cadence === 'weekly' ? 'هفتگی' : 'ماهانه'} جدید ساخته شد.`,
       );
     } catch (error) {
-      setProblem(error instanceof Error ? error.message : 'کپی ناموفق بود.');
+      setProblem(
+        error instanceof Error ? error.message : 'تکرار بلیت ناموفق بود.',
+      );
     }
   }
+  function removeProduct() {
+    if (!deleteProduct) return;
+    setProducts((rows) => rows.filter((row) => row.id !== deleteProduct.id));
+    setDeleteProduct(undefined);
+    setNotice('بلیت از فهرست این مرورگر حذف شد.');
+    setProblem('');
+  }
   function applyStatus() {
-    if (!statusChange || !preview) return;
+    if (!statusChange) return;
     try {
       const current = statusChange.product;
       const next = transitionProduct(
@@ -193,8 +238,8 @@ export function TicketWorkspace() {
         current.version,
         resolve,
         new Date().toISOString(),
-        'کاربر نمایشی',
-        reason,
+        actor,
+        reason.trim() || 'تغییر وضعیت بلیت',
         {
           total: current.definition.totalCapacity,
           version: 0,
@@ -204,9 +249,7 @@ export function TicketWorkspace() {
       setProducts(replacePreview(products, next, current.version));
       setStatusChange(null);
       setProblem('');
-      setNotice(
-        'وضعیت فقط در پیش‌نمایش تغییر کرد؛ هیچ عملیات فروش یا رزرو اجرا نشد.',
-      );
+      setNotice(`وضعیت بلیت به «${statusLabels[next.status]}» تغییر کرد.`);
     } catch (error) {
       setProblem(
         error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.',
@@ -215,170 +258,175 @@ export function TicketWorkspace() {
   }
   const filter = (patch: Partial<PreviewQuery>) =>
     setQuery({ ...query, ...patch, page: 1 });
+  const counts = {
+    flight: products.filter((p) => p.definition.transport === 'flight').length,
+    train: products.filter((p) => p.definition.transport === 'train').length,
+    bus: products.filter((p) => p.definition.transport === 'bus').length,
+  };
+
   return (
     <div className="space-y-5" dir="rtl">
       <PageHeader
         title="مدیریت و تعریف بلیت‌ها"
-        eyebrow="محصول • برنامه پرواز • نرخ و ظرفیت"
-        description="تعریف برنامه‌های قابل فروش؛ صدور بلیت مسافر و Manifest در رزرواسیون انجام می‌شود."
+        eyebrow="هواپیما • قطار • اتوبوس"
         actions={
           <>
             <Button
               variant="outline"
-              disabled
-              title="منتظر API بلیت، مجوز خروجی و Worker"
+              onClick={() => {
+                setProducts((rows) => [
+                  ...rows.filter((row) => !row.id.startsWith('sample-ticket-')),
+                  ...catalogSamples(new Date().toISOString()),
+                ]);
+                setNotice(
+                  'بلیت‌های ساختگی هواپیما، قطار و اتوبوس بازگردانی شدند.',
+                );
+              }}
             >
-              خروجی فهرست
+              <RefreshCw className="size-4" aria-hidden />
+              افزودن نمونه‌ها
             </Button>
-            <Button
-              disabled={!preview}
-              onClick={() => setForm({ mode: 'create' })}
-            >
+            <Button onClick={() => setForm({ mode: 'create' })}>
               <Plus className="size-4" aria-hidden />
-              برنامه جدید نمایشی
+              تعریف بلیت جدید
             </Button>
           </>
         }
       />
-      <Alert
-        title="مرحله A — ذخیره عملیاتی بلیت هنوز متصل نیست"
-        description="مجوز اختصاصی، API بلیت و Persistence منتظر Handoff هستند. پیش‌نمایش فقط داده ساختگی در حافظه همین صفحه دارد؛ ظرفیت و قیمت آن آمار واقعی شرکت نیست."
-        tone="warning"
-      />
-      <div className="flex flex-wrap items-center gap-3">
-        {!preview ? (
-          <Button
-            onClick={() => {
-              setPreview(true);
-              setNotice(
-                'پیش‌نمایش خالی آغاز شد؛ هیچ داده واقعی بارگذاری نشده است.',
-              );
-            }}
-          >
-            شروع پیش‌نمایش مستقل
-          </Button>
-        ) : (
-          <>
-            <Badge>جلسه نمایشی • بدون ذخیره دائمی</Badge>
-            <Button variant="outline" onClick={resetSession}>
-              پایان و پاک‌کردن پیش‌نمایش
-            </Button>
-            <Button
-              variant="ghost"
-              disabled={products.length > 0}
-              onClick={() => {
-                setProducts(previewSamples(new Date().toISOString()));
-                setNotice(
-                  '۸ برنامه کاملاً ساختگی بارگذاری شد؛ مراجع و شمارنده‌های واقعی ندارد.',
-                );
-              }}
+      {problem && !statusChange && !repeat ? (
+        <Alert tone="error" title={problem} />
+      ) : null}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 p-5 dark:border-blue-900 dark:from-blue-950/70 dark:to-blue-900/30">
+          <p className="text-sm text-muted-foreground">کل بلیت‌ها</p>
+          <div className="mt-3 flex items-center justify-between">
+            <p className="text-2xl font-black text-blue-800 dark:text-blue-200">
+              {hydrated ? products.length.toLocaleString('fa-IR') : '…'}
+            </p>
+            <Users className="size-7 text-blue-600" aria-hidden />
+          </div>
+        </Card>
+        {(['flight', 'train', 'bus'] as const).map((transport) => {
+          const Icon = transportIcons[transport];
+          const tone = {
+            flight:
+              'border-cyan-200 bg-gradient-to-br from-cyan-50 to-sky-100/70 dark:border-cyan-900 dark:from-cyan-950/70 dark:to-sky-900/30',
+            train:
+              'border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-100/70 dark:border-emerald-900 dark:from-emerald-950/70 dark:to-teal-900/30',
+            bus: 'border-amber-200 bg-gradient-to-br from-amber-50 to-orange-100/70 dark:border-amber-900 dark:from-amber-950/70 dark:to-orange-900/30',
+          }[transport];
+          return (
+            <Card
+              className={`flex items-center justify-between p-5 ${tone}`}
+              key={transport}
             >
-              بارگذاری برنامه‌های ساختگی
-            </Button>
-          </>
-        )}
-      </div>
-      {notice ? <Alert title={notice} /> : null}
-      {problem && !statusChange ? <Alert tone="error" title={problem} /> : null}
-      <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          [
-            'برنامه‌های این پیش‌نمایش',
-            preview ? products.length.toLocaleString('fa-IR') : '—',
-          ],
-          ['موجودی قابل فروش واقعی', 'منتظر رزرواسیون'],
-          ['نرخ مالی / سود قطعی', 'ارائه نمی‌شود'],
-        ].map(([title, value]) => (
-          <Card key={title} className="p-5">
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="mt-3 text-xl font-black text-primary">{value}</p>
-          </Card>
-        ))}
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  {transportLabels[transport]}
+                </p>
+                <p className="mt-3 text-2xl font-black text-primary">
+                  {counts[transport].toLocaleString('fa-IR')}
+                </p>
+              </div>
+              <Icon className="size-7 text-primary" aria-hidden />
+            </Card>
+          );
+        })}
       </div>
       <Card className="space-y-4 p-4">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <FormField label="جست‌وجوی برنامه و شماره پرواز" id="ticket-search">
+          <FormField label="جست‌وجوی بلیت" id="ticket-search">
             <Input
               id="ticket-search"
               value={query.search}
-              placeholder="عنوان یا شماره پرواز…"
+              placeholder="شماره، شرکت یا مسیر…"
               onChange={(e) => filter({ search: e.target.value })}
             />
           </FormField>
-          <FormField label="وضعیت فروش" id="ticket-status-filter">
-            <select
-              id="ticket-status-filter"
-              className="h-11 rounded-xl border bg-surface px-3"
-              value={query.status}
-              onChange={(e) => filter({ status: e.target.value })}
+          <FormField label="نوع وسیله" id="ticket-transport-filter">
+            <Select
+              value={query.transport}
+              onValueChange={(transport) => filter({ transport })}
             >
-              <option value="all">همه وضعیت‌ها</option>
-              {Object.entries(statusLabels).map(([key, value]) => (
-                <option value={key} key={key}>
-                  {value}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="ticket-transport-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="all">همه</SelectItem>
+                {Object.entries(transportLabels).map(([key, value]) => (
+                  <SelectItem value={key} key={key}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+          <FormField label="وضعیت" id="ticket-status-filter">
+            <Select
+              value={query.status}
+              onValueChange={(status) => filter({ status })}
+            >
+              <SelectTrigger id="ticket-status-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                {Object.entries(statusLabels).map(([key, value]) => (
+                  <SelectItem value={key} key={key}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </FormField>
           <FormField label="نوع تأمین" id="ticket-supply-filter">
-            <select
-              id="ticket-supply-filter"
-              className="h-11 rounded-xl border bg-surface px-3"
+            <Select
               value={query.supply}
-              onChange={(e) => filter({ supply: e.target.value })}
+              onValueChange={(supply) => filter({ supply })}
             >
-              <option value="all">همه انواع</option>
-              {Object.entries(supplyLabels).map(([key, value]) => (
-                <option value={key} key={key}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <FormField label="ایرلاین" id="ticket-airline-filter">
-            <select
-              id="ticket-airline-filter"
-              className="h-11 rounded-xl border bg-surface px-3"
-              value={query.airline}
-              onChange={(e) => filter({ airline: e.target.value })}
-            >
-              <option value="">همه ایرلاین‌ها</option>
-              {references
-                .filter((r) => r.kind === 'airline')
-                .map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
+              <SelectTrigger id="ticket-supply-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="all">همه انواع</SelectItem>
+                {Object.entries(supplyLabels).map(([key, value]) => (
+                  <SelectItem value={key} key={key}>
+                    {value}
+                  </SelectItem>
                 ))}
-            </select>
+              </SelectContent>
+            </Select>
           </FormField>
-          <FormField label="حرکت از تاریخ (UTC)" id="ticket-filter-from">
-            <DatePicker
+          <FormField label="حرکت از تاریخ" id="ticket-filter-from">
+            <TicketDatePicker
               id="ticket-filter-from"
               value={query.from}
               onChange={(from) => filter({ from })}
             />
           </FormField>
-          <FormField label="حرکت تا تاریخ (UTC)" id="ticket-filter-to">
-            <DatePicker
+          <FormField label="حرکت تا تاریخ" id="ticket-filter-to">
+            <TicketDatePicker
               id="ticket-filter-to"
               value={query.to}
               onChange={(to) => filter({ to })}
             />
           </FormField>
           <FormField label="مرتب‌سازی" id="ticket-sort">
-            <select
-              id="ticket-sort"
-              className="h-11 rounded-xl border bg-surface px-3"
+            <Select
               value={query.sort}
-              onChange={(e) =>
-                filter({ sort: e.target.value as PreviewQuery['sort'] })
+              onValueChange={(sort) =>
+                filter({ sort: sort as PreviewQuery['sort'] })
               }
             >
-              <option value="departure">تاریخ حرکت</option>
-              <option value="title">عنوان</option>
-              <option value="updated">آخرین ویرایش</option>
-            </select>
+              <SelectTrigger id="ticket-sort">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="departure">تاریخ حرکت</SelectItem>
+                <SelectItem value="title">عنوان خودکار</SelectItem>
+                <SelectItem value="updated">آخرین ویرایش</SelectItem>
+              </SelectContent>
+            </Select>
           </FormField>
           <div className="flex items-end gap-2">
             <Button
@@ -396,226 +444,61 @@ export function TicketWorkspace() {
             </Button>
           </div>
         </div>
-        {query.from && query.to && query.from > query.to ? (
-          <Alert tone="error" title="پایان بازه جست‌وجو قبل از شروع آن است." />
-        ) : null}
-        {preview ? (
-          <details>
-            <summary className="cursor-pointer text-xs text-muted-foreground">
-              بررسی حالت‌های رابط — فقط شبیه‌سازی
-            </summary>
-            <select
-              aria-label="حالت آزمایشی رابط"
-              className="mt-2 rounded-lg border bg-surface p-2 text-sm"
-              value={state}
-              onChange={(e) =>
-                setState(e.target.value as keyof typeof previewStates)
-              }
-            >
-              {Object.entries(previewStates).map(([key, value]) => (
-                <option value={key} key={key}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </details>
-        ) : null}
       </Card>
-      {!preview ? (
+      {!hydrated ? (
         <EmptyState
-          icon={Plane}
-          title="فهرست عملیاتی هنوز در دسترس نیست"
-          description="برای بررسی فرم‌ها و منطق مرحله A، پیش‌نمایش مستقل را آغاز کنید. هیچ محصول واقعی از API دریافت نشده است."
+          title="در حال آماده‌سازی فهرست…"
+          description="اطلاعات ذخیره‌شده در حال بارگذاری است."
         />
-      ) : state !== 'ready' ? (
-        <>
-          <Badge>حالت شبیه‌سازی رابط</Badge>
-          <CatalogState state={state} />
-          <Button variant="outline" onClick={() => setState('ready')}>
-            بازگشت به پیش‌نمایش
-          </Button>
-        </>
       ) : result.rows.length === 0 ? (
         <EmptyState
-          title="برنامه‌ای یافت نشد"
-          description="برنامه نمایشی جدید بسازید یا فیلترها را پاک کنید."
+          title="بلیتی یافت نشد"
+          description="بلیت جدید بسازید یا فیلترها را پاک کنید."
         />
       ) : (
         <>
-          <Card className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[960px] text-right text-sm">
-                <caption className="border-b bg-primary/5 px-4 py-3 text-right font-semibold">
-                  برنامه‌های ساختگی • قیمت‌ها و ظرفیت‌ها آزمایشی‌اند
-                </caption>
-                <thead className="bg-muted/50 text-xs text-muted-foreground">
-                  <tr>
-                    {[
-                      'برنامه / ایرلاین',
-                      'مسیر / کلاس',
-                      'حرکت / رسیدن',
-                      'تأمین / وضعیت',
-                      'ظرفیت تعریف‌شده',
-                      'قیمت خرید / فروش',
-                      'عملیات',
-                    ].map((heading) => (
-                      <th className="px-4 py-3" key={heading} scope="col">
-                        {heading}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.rows.map((product) => {
-                    const segment = product.definition.segments[0]!;
-                    const fare = product.fares.at(-1)!;
-                    return (
-                      <tr
-                        key={product.id}
-                        className="border-t align-top hover:bg-muted/20"
-                      >
-                        <td className="space-y-2 px-4 py-4">
-                          <p className="font-bold">
-                            {product.definition.title}
-                          </p>
-                          <p dir="ltr" className="text-right">
-                            {segment.flightNumber}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {label('airline', segment.airlineId)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            نسخه {product.version.toLocaleString('fa-IR')}
-                          </p>
-                        </td>
-                        <td className="space-y-2 px-4 py-4">
-                          <p>
-                            {label('city', segment.originCityId)} ←{' '}
-                            {label('city', segment.destinationCityId)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {label('country', segment.originCountryId)} /{' '}
-                            {label('country', segment.destinationCountryId)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            فرودگاه: {label('airport', segment.originAirportId)}{' '}
-                            ← {label('airport', segment.destinationAirportId)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {label(
-                              'flightClass',
-                              product.definition.flightClassId,
-                            )}
-                          </p>
-                        </td>
-                        <td className="space-y-2 whitespace-nowrap px-4 py-4">
-                          <p>
-                            {displayTime(
-                              segment.departureAt,
-                              segment.departureZone,
-                            )}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {displayTime(
-                              segment.arrivalAt,
-                              segment.arrivalZone,
-                            )}
-                          </p>
-                          <p className="text-xs" dir="ltr">
-                            {segment.departureZone}
-                          </p>
-                        </td>
-                        <td className="space-y-2 px-4 py-4">
-                          <Badge>{statusLabels[product.status]}</Badge>
-                          <p>{supplyLabels[product.definition.supplyType]}</p>
-                          <p className="text-xs text-muted-foreground">
-                            ورود{' '}
-                            {product.definition.entryMethod === 'manual'
-                              ? 'دستی'
-                              : 'API'}
-                          </p>
-                        </td>
-                        <td className="space-y-2 px-4 py-4">
-                          <p className="font-bold">
-                            {product.definition.totalCapacity.toLocaleString(
-                              'fa-IR',
-                            )}{' '}
-                            <span className="text-xs font-normal">نمایشی</span>
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Hold / قطعی / باقی‌مانده: —
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            منتظر رزرواسیون
-                          </p>
-                        </td>
-                        <td className="space-y-2 px-4 py-4">
-                          <p dir="ltr">
-                            {fare.purchase}{' '}
-                            {fare.currencyCode || 'ارز انتخاب نشده'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            خرید • نسخه {fare.version.toLocaleString('fa-IR')}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            قیمت فروش: داینامیک در فروش
-                          </p>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex flex-col gap-1">
-                            <Button
-                              variant="ghost"
-                              onClick={() => setForm({ mode: 'view', product })}
-                            >
-                              <Eye className="size-4" aria-hidden />
-                              مشاهده
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              disabled={
-                                product.status !== 'draft' &&
-                                product.status !== 'paused'
-                              }
-                              onClick={() => setForm({ mode: 'edit', product })}
-                            >
-                              <FilePenLine className="size-4" aria-hidden />
-                              ویرایش
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => copy(product)}
-                            >
-                              <Copy className="size-4" aria-hidden />
-                              کپی
-                            </Button>
-                            {transitions[product.status].map((status) => (
-                              <Button
-                                key={status}
-                                variant="outline"
-                                onClick={() => {
-                                  setProblem('');
-                                  setReason('');
-                                  setStatusChange({ product, status });
-                                }}
-                              >
-                                {statusLabels[status]} نمایشی
-                              </Button>
-                            ))}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+          <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {cardGroups.map((group) => (
+              <div
+                key={group[0]!.definition.tripGroupId ?? group[0]!.id}
+                className={
+                  group.length > 1
+                    ? 'grid gap-3 md:col-span-2 md:grid-cols-2'
+                    : undefined
+                }
+              >
+                {group.map((product) => (
+                  <TicketCatalogCard
+                    key={product.id}
+                    product={product}
+                    referenceLabel={referenceLabel}
+                    onView={() => setForm({ mode: 'view', product })}
+                    onEdit={() => setForm({ mode: 'edit', product })}
+                    onRepeat={() =>
+                      setRepeat({
+                        product,
+                        cadence: 'weekly',
+                        count: 1,
+                        startDate: '',
+                      })
+                    }
+                    onDelete={() => setDeleteProduct(product)}
+                    onStatus={(status) => {
+                      setProblem('');
+                      setReason('');
+                      setStatusChange({ product, status });
+                    }}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
           <nav
             aria-label="صفحه‌بندی بلیت‌ها"
             className="flex flex-wrap items-center justify-between gap-3 text-sm"
           >
             <span>
-              {result.total.toLocaleString('fa-IR')} برنامه نمایشی • صفحه{' '}
+              {result.total.toLocaleString('fa-IR')} بلیت • صفحه{' '}
               {result.page.toLocaleString('fa-IR')} از{' '}
               {result.pages.toLocaleString('fa-IR')}
             </span>
@@ -638,31 +521,6 @@ export function TicketWorkspace() {
           </nav>
         </>
       )}
-      {preview ? (
-        <JourneyPreview products={products} references={references} />
-      ) : null}
-      <ReferenceBrowser onSelect={selectReference} />
-      {references.length ? (
-        <p className="text-xs text-muted-foreground">
-          مراجع انتخاب‌شده برای فرم: {references.map((r) => r.name).join('، ')}{' '}
-          — Snapshot خواندنی؛ فعال‌سازی واقعی نیازمند اعتبارسنجی دوباره سرور
-          است.
-        </p>
-      ) : null}
-      <Card className="p-5 space-y-3">
-        <h2 className="font-bold">وضعیت اتصال و توسعه بعدی</h2>
-        <div className="grid gap-3 text-sm sm:grid-cols-2">
-          <p>پیاده‌شده: اعتبارسنجی، نسخه نرخ، قواعد وضعیت و ظرفیت</p>
-          <p>نمایشی: ایجاد، مشاهده، ویرایش، کپی و تاریخچه همین جلسه</p>
-          <p>منتظر API: مراجع پرواز، مجوز بلیت و رزرواسیون</p>
-          <p>منتظر Migration: ذخیره پایدار، Audit و تراکنش ظرفیت</p>
-        </div>
-        <p className="text-xs leading-6 text-muted-foreground">
-          خروجی فهرست با همان فیلتر و دسترسی، Import/Export گروهی و برنامه
-          تکرارشونده در نقشه توسعه‌اند. خروجی فایل تا قرارداد عمومی و Worker
-          غیرفعال است. Manifest و مدارک مسافر متعلق به این ماژول نیستند.
-        </p>
-      </Card>
       <Dialog
         open={Boolean(form)}
         onOpenChange={(open) => {
@@ -675,41 +533,49 @@ export function TicketWorkspace() {
         >
           <DialogTitle className="pe-10">
             {form?.mode === 'view'
-              ? 'مشاهده برنامه نمایشی'
+              ? 'مشاهده بلیت'
               : form?.mode === 'edit'
-                ? 'ویرایش برنامه نمایشی'
-                : 'برنامه جدید نمایشی'}
+                ? 'ویرایش بلیت'
+                : 'تعریف بلیت جدید'}
           </DialogTitle>
           <DialogDescription>
-            اطلاعات همین جلسه؛ بدون ذخیره در سرور
+            {form?.mode === 'view'
+              ? 'اطلاعات کامل مسیر، زمان، ظرفیت و نرخ این بلیت را مشاهده کنید.'
+              : 'اطلاعات مسیر، زمان، ظرفیت و نرخ خرید را کامل کنید.'}
           </DialogDescription>
           {form ? (
             <div className="mt-5">
-              <TicketForm
-                initial={form.product?.definition ?? emptyInput()}
-                references={references}
-                onReference={rememberReference}
-                onSave={save}
-                onCancel={() => setForm(null)}
-                readOnly={form.mode === 'view'}
-              />
+              {form.mode === 'view' && form.product ? (
+                <TicketDetails
+                  product={form.product}
+                  referenceLabel={referenceLabel}
+                />
+              ) : (
+                <TicketForm
+                  initial={
+                    form.initial ?? form.product?.definition ?? emptyInput()
+                  }
+                  references={references}
+                  onReference={rememberReference}
+                  onSave={save}
+                  onCancel={() => setForm(null)}
+                  allowRoundTrip={form.mode === 'create' && !form.initial}
+                />
+              )}
               {form.product ? (
                 <section className="mt-6 space-y-3 border-t pt-4">
-                  <h3 className="font-bold">
-                    تاریخچه واقعی همین پیش‌نمایش (Audit سرور نیست)
-                  </h3>
+                  <h3 className="font-bold">تاریخچه تغییرات</h3>
                   {form.product.history.map((item) => (
                     <p className="text-sm" key={item.version}>
                       نسخه {item.version} • {item.actor} •{' '}
                       {displayTime(item.at)} • {item.reason}
                     </p>
                   ))}
-                  <h3 className="font-bold">نسخه‌های نرخ — حفظ مقادیر پیشین</h3>
+                  <h3 className="font-bold">نسخه‌های نرخ خرید</h3>
                   {form.product.fares.map((fare) => (
                     <p className="text-sm" key={fare.version}>
-                      نسخه {fare.version}: خرید {fare.purchase}{' '}
-                      {fare.currencyCode || '(بدون ارز)'} •{' '}
-                      {displayTime(fare.createdAt)}
+                      نسخه {fare.version}: {fare.purchase}{' '}
+                      {fare.currencyCode || '—'} • {displayTime(fare.createdAt)}
                     </p>
                   ))}
                 </section>
@@ -719,16 +585,104 @@ export function TicketWorkspace() {
         </DialogContent>
       </Dialog>
       <Dialog
+        open={Boolean(repeat)}
+        onOpenChange={(open) => {
+          if (!open) setRepeat(undefined);
+        }}
+      >
+        <DialogContent dir="rtl" className="start-auto! left-1/2!">
+          <DialogTitle>تکرار هفتگی یا ماهانه بلیت</DialogTitle>
+          <DialogDescription>
+            تاریخ اولین بلیت جدید را انتخاب کنید؛ تکرارهای بعدی با همان ساعت و
+            ظرفیت از این تاریخ ساخته می‌شوند.
+          </DialogDescription>
+          {problem ? <Alert tone="error" title={problem} /> : null}
+          <FormField
+            label="تاریخ اولین بلیت جدید"
+            id="ticket-repeat-start-date"
+          >
+            <TicketDatePicker
+              id="ticket-repeat-start-date"
+              value={repeat?.startDate ?? ''}
+              required
+              onChange={(startDate) =>
+                repeat && setRepeat({ ...repeat, startDate })
+              }
+            />
+          </FormField>
+          <FormField label="دوره تکرار" id="ticket-repeat-cadence">
+            <Select
+              value={repeat?.cadence ?? 'weekly'}
+              onValueChange={(cadence) =>
+                repeat &&
+                setRepeat({ ...repeat, cadence: cadence as RepeatCadence })
+              }
+            >
+              <SelectTrigger id="ticket-repeat-cadence">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="weekly">هفتگی</SelectItem>
+                <SelectItem value="monthly">ماهانه</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormField>
+          <FormField label="تعداد بلیت جدید" id="ticket-repeat-count">
+            <Input
+              id="ticket-repeat-count"
+              type="number"
+              min={1}
+              max={24}
+              value={repeat?.count ?? 1}
+              onChange={(event) =>
+                repeat &&
+                setRepeat({ ...repeat, count: Number(event.target.value) })
+              }
+            />
+          </FormField>
+          <Button
+            className="mt-4"
+            disabled={!repeat?.startDate}
+            onClick={applyRepeat}
+          >
+            ساخت بلیت‌های تکرارشونده
+          </Button>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={Boolean(deleteProduct)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteProduct(undefined);
+        }}
+      >
+        <DialogContent dir="rtl" className="start-auto! left-1/2!">
+          <DialogTitle>حذف بلیت</DialogTitle>
+          <DialogDescription>
+            «{deleteProduct?.definition.title}» از فهرست این مرورگر حذف شود؟
+          </DialogDescription>
+          <div className="mt-4 flex gap-2">
+            <Button variant="destructive" onClick={removeProduct}>
+              حذف بلیت
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteProduct(undefined)}
+            >
+              انصراف
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
         open={Boolean(statusChange)}
         onOpenChange={(open) => {
           if (!open) setStatusChange(null);
         }}
       >
         <DialogContent dir="rtl" className="start-auto! left-1/2!">
-          <DialogTitle>تأیید تغییر وضعیت نمایشی</DialogTitle>
+          <DialogTitle>تغییر وضعیت بلیت</DialogTitle>
           <DialogDescription>
-            فعال‌سازی به همه مراجع معتبر و نرخ دارای اعتبار نیاز دارد. توقف فروش
-            تخصیص‌ها را آزاد نمی‌کند. لغو برنامه تخصیص‌یافته مسدود است.
+            فعال‌سازی به مراجع معتبر، ظرفیت مثبت و نرخ معتبر نیاز دارد.
           </DialogDescription>
           {problem ? <Alert tone="error" title={problem} /> : null}
           <FormField label="دلیل تغییر وضعیت" id="ticket-status-reason">
@@ -739,8 +693,7 @@ export function TicketWorkspace() {
             />
           </FormField>
           <Button className="mt-4" onClick={applyStatus}>
-            اعمال {statusChange ? statusLabels[statusChange.status] : ''} فقط در
-            پیش‌نمایش
+            اعمال {statusChange ? statusLabels[statusChange.status] : ''}
           </Button>
         </DialogContent>
       </Dialog>
