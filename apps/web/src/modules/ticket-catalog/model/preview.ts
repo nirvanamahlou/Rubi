@@ -400,8 +400,12 @@ export function queryProducts(
         (query.transport === 'all' ||
           product.definition.transport === query.transport) &&
         (!query.airline || segment.airlineId === query.airline) &&
-        (!query.from || segment.departureAt.slice(0, 10) >= query.from) &&
-        (!query.to || segment.departureAt.slice(0, 10) <= query.to)
+        (!query.from ||
+          (Boolean(segment.departureAt) &&
+            segment.departureAt.slice(0, 10) >= query.from)) &&
+        (!query.to ||
+          (Boolean(segment.departureAt) &&
+            segment.departureAt.slice(0, 10) <= query.to))
       );
     })
     .sort((a, b) => {
@@ -547,6 +551,7 @@ export function parseCatalogSnapshot(
   }
 }
 export function displayTime(value: string, zone = 'Asia/Tehran') {
+  if (!value) return 'بدون زمان‌بندی';
   return new Intl.DateTimeFormat('fa-IR', {
     dateStyle: 'medium',
     timeStyle: 'short',

@@ -541,7 +541,7 @@ export function TicketWorkspace() {
           <DialogDescription>
             {form?.mode === 'view'
               ? 'اطلاعات کامل مسیر، زمان، ظرفیت و نرخ این بلیت را مشاهده کنید.'
-              : 'اطلاعات مسیر، زمان، ظرفیت و نرخ خرید را کامل کنید.'}
+              : 'اطلاعات مسیر، ظرفیت و نرخ خرید را کامل کنید.'}
           </DialogDescription>
           {form ? (
             <div className="mt-5">

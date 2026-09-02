@@ -22,7 +22,6 @@ import {
 } from '../model/catalog';
 import { emptyInput, supplyLabels, transportLabels } from '../model/preview';
 import styles from './ticket-form.module.css';
-import { TicketDatePicker } from './ticket-date-picker';
 import { ReferencePicker } from './reference-picker';
 import type { PublishedResource } from '../api/references';
 
@@ -452,19 +451,6 @@ export function TicketForm({
   const [returnInput, setReturnInput] = useState(() =>
     createReturnTicketDraft(initial),
   );
-  const first = initial.segments[0]!;
-  const [departure, setDeparture] = useState(
-    wallValue(first.departureAt, first.departureZone),
-  );
-  const [arrival, setArrival] = useState(
-    wallValue(first.arrivalAt, first.arrivalZone),
-  );
-  const [returnDeparture, setReturnDeparture] = useState('');
-  const [returnArrival, setReturnArrival] = useState('');
-  const [validFrom, setValidFrom] = useState(
-    initial.fare.validFrom.slice(0, 16),
-  );
-  const [validTo, setValidTo] = useState(initial.fare.validTo.slice(0, 16));
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const segment = input.segments[0]!;
@@ -495,17 +481,11 @@ export function TicketForm({
         segments: [freshSegment],
       }),
     );
-    setDeparture('');
-    setArrival('');
-    setReturnDeparture('');
-    setReturnArrival('');
   }
   function chooseDefinitionMode(mode: TicketDefinitionMode) {
     setDefinitionMode(mode);
     if (mode === 'round-trip') {
       setReturnInput(createReturnTicketDraft(input));
-      setReturnDeparture('');
-      setReturnArrival('');
     }
   }
   function submit(event: FormEvent) {
@@ -525,26 +505,8 @@ export function TicketForm({
           : allowRoundTrip
             ? { tripGroupId: undefined }
             : {}),
-        segments: [
-          {
-            ...segment,
-            departureAt: wallTimeToUtc(
-              departure,
-              segment.departureZone,
-              inferWallTimeOffset(departure, segment.departureZone),
-            ),
-            arrivalAt: wallTimeToUtc(
-              arrival,
-              segment.arrivalZone,
-              inferWallTimeOffset(arrival, segment.arrivalZone),
-            ),
-          },
-        ],
-        fare: {
-          ...input.fare,
-          validFrom: wallTimeToUtc(validFrom, 'UTC', '+00:00'),
-          validTo: wallTimeToUtc(validTo, 'UTC', '+00:00'),
-        },
+        segments: [{ ...segment }],
+        fare: { ...input.fare },
       };
       const definition = withDisplaySnapshot(
         {
@@ -565,24 +527,7 @@ export function TicketForm({
           totalCapacity: definition.totalCapacity,
           rules: definition.rules,
           fare: { ...definition.fare },
-          segments: [
-            {
-              ...returnSegment,
-              departureAt: wallTimeToUtc(
-                returnDeparture,
-                returnSegment.departureZone,
-                inferWallTimeOffset(
-                  returnDeparture,
-                  returnSegment.departureZone,
-                ),
-              ),
-              arrivalAt: wallTimeToUtc(
-                returnArrival,
-                returnSegment.arrivalZone,
-                inferWallTimeOffset(returnArrival, returnSegment.arrivalZone),
-              ),
-            },
-          ],
+          segments: [{ ...returnSegment }],
         };
         const returnDefinition = withDisplaySnapshot(
           {
@@ -678,26 +623,6 @@ export function TicketForm({
             onSegment={changeSegment}
             onReference={onReference}
           />
-          <div className={styles.fields}>
-            <FormField label="تاریخ و ساعت حرکت" id="ticket-departure">
-              <TicketDatePicker
-                id="ticket-departure"
-                value={departure}
-                onChange={setDeparture}
-                includeTime
-                disabled={readOnly}
-              />
-            </FormField>
-            <FormField label="تاریخ و ساعت رسیدن" id="ticket-arrival">
-              <TicketDatePicker
-                id="ticket-arrival"
-                value={arrival}
-                onChange={setArrival}
-                includeTime
-                disabled={readOnly}
-              />
-            </FormField>
-          </div>
         </section>
         {definitionMode === 'round-trip' && allowRoundTrip ? (
           <section className="space-y-4 rounded-2xl border border-primary/20 bg-primary/5 p-4">
@@ -723,32 +648,6 @@ export function TicketForm({
               onSegment={changeReturnSegment}
               onReference={onReference}
             />
-            <div className={styles.fields}>
-              <FormField
-                label="تاریخ و ساعت حرکت برگشت"
-                id="ticket-return-departure"
-              >
-                <TicketDatePicker
-                  id="ticket-return-departure"
-                  value={returnDeparture}
-                  onChange={setReturnDeparture}
-                  includeTime
-                  disabled={readOnly}
-                />
-              </FormField>
-              <FormField
-                label="تاریخ و ساعت رسیدن برگشت"
-                id="ticket-return-arrival"
-              >
-                <TicketDatePicker
-                  id="ticket-return-arrival"
-                  value={returnArrival}
-                  onChange={setReturnArrival}
-                  includeTime
-                  disabled={readOnly}
-                />
-              </FormField>
-            </div>
           </section>
         ) : null}
         <section className="space-y-4">
@@ -882,24 +781,6 @@ export function TicketForm({
                 />
               </FormField>
             ))}
-            <FormField label="شروع اعتبار نرخ" id="ticket-valid-from">
-              <TicketDatePicker
-                id="ticket-valid-from"
-                value={validFrom}
-                onChange={setValidFrom}
-                includeTime
-                disabled={readOnly}
-              />
-            </FormField>
-            <FormField label="پایان اعتبار نرخ" id="ticket-valid-to">
-              <TicketDatePicker
-                id="ticket-valid-to"
-                value={validTo}
-                onChange={setValidTo}
-                includeTime
-                disabled={readOnly}
-              />
-            </FormField>
           </div>
         </section>
         <section className="space-y-4">

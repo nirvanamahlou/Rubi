@@ -1,5 +1,14 @@
 # Work Assignments
 
+## TICKET-CATALOG-002 — PC-A — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-02: زمان حرکت/رسیدن و بازه اعتبار نرخ از فرم تعریف بلیت حذف شود و ثبت بلیت بدون تاریخ/ساعت در منطق Web و API پذیرفته شود. `COMPUTER_ID=PC-A`.
+- Branch: `codex/pc-a-ticket-catalog-optional-schedule` از `origin/develop@f78e70e`؛ محدوده فقط Ticket Catalog Web/API، تست‌های همان ماژول و مستند Task است.
+- بدون Prisma Schema/Migration/Seed، Dependency/Lockfile، قرارداد عمومی، Permission یا تغییر ماژول Master Data/Reservations. تاریخ‌های موجود هنگام ویرایش حفظ می‌شوند و مقدار ساختگی جایگزین نمی‌شود.
+- قفل‌های Migration، Dependency/Lockfile و اسناد مرکزی رزرو نمی‌شوند؛ مالکیت این Slice فقط فایل‌های Ticket Catalog است.
+- نتیجه: فرم جدید دیگر تاریخ حرکت/رسیدن و بازه اعتبار نرخ را نمایش یا تبدیل نمی‌کند؛ جفت‌های کاملاً خالی در Web/API معتبرند، ورود ناقص همچنان رد می‌شود و کارت بلیت خالی را «بدون زمان‌بندی» نشان می‌دهد.
+- Validation: ۹۷ تست هدفمند، lint Web، typecheck کامل، ۱٬۳۸۵ تست Monorepo و Production Build کامل موفق است. Final lock state: `RELEASED — PC-A/TICKET-CATALOG-002 ready for review`.
+
 ## DOCUMENTS-003C-CI-PORTABILITY — PC-B — READY_FOR_REVIEW
 
 - CI مشترک پس از Merge PR #72 دو شکست Linux-only در محافظ Storage بسته داده نمایشی Documents کشف کرد؛ درخواست صریح مالک برای Push و Merge تمام تغییرات، مجوز اصلاح محدود این مانع یکپارچه‌سازی است. `COMPUTER_ID=PC-B`.

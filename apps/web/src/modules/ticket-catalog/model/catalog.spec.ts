@@ -157,6 +157,30 @@ describe('Decimal money proposal', () => {
     expect(() => addMoney('999999999999999999', '1')).toThrow());
 });
 describe('UTC and wall clock validation', () => {
+  it('accepts a ticket definition without schedule or fare validity dates', () => {
+    const value = input();
+    const unscheduled: ProductInput = {
+      ...value,
+      segments: [{ ...value.segments[0]!, departureAt: '', arrivalAt: '' }],
+      fare: { ...value.fare, validFrom: '', validTo: '' },
+    };
+    expect(() => validateProduct(unscheduled, resolve, true)).not.toThrow();
+    expect(() =>
+      createProduct('unscheduled', unscheduled, resolve, now, 'test-actor'),
+    ).not.toThrow();
+  });
+  it('rejects a partially entered schedule instead of requiring dates by default', () => {
+    const value = input();
+    expect(() =>
+      validateProduct(
+        {
+          ...value,
+          segments: [{ ...value.segments[0]!, arrivalAt: '' }],
+        },
+        resolve,
+      ),
+    ).toThrow('زمان حرکت و رسیدن باید با هم ثبت یا هر دو خالی باشند');
+  });
   it('supports midnight crossings and explicit timezone conversion', () => {
     expect(() => validateProduct(input(), resolve, true)).not.toThrow();
     expect(wallTimeToUtc('2026-09-04T01:30', 'Asia/Tehran', '+03:30')).toBe(

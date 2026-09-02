@@ -268,6 +268,10 @@ PC-A, existing Ticket Catalog branch and ticket-local scope. At the product owne
 
 Each ticket name is generated at save time from its flight number and selected airport/city route. The Ticket consumer now reads the published airport `ianaTimezone` attribute; selecting an airport assigns its zone internally, and changing or clearing its parent country/city clears that hidden zone to avoid stale metadata. The UTC offset is inferred and validated for the selected local departure/arrival date, including daylight-saving transitions. If Master Data lacks a usable airport zone or the local time falls in an invalid clock-transition gap, the form reports a user-facing error instead of exposing technical inputs. Empty drafts use UTC only as a neutral preselection fallback.
 
+### TICKET-CATALOG-002 — Optional schedule handoff
+
+The product owner removed movement date/time and purchase-fare validity dates from the ticket-definition form. New ticket definitions therefore persist no fabricated timestamp: `departureAt`, `arrivalAt`, `validFrom`, and `validTo` remain empty until a later scheduling flow supplies real values. Web and API validation accept the fully empty pairs, preserve existing scheduled values during edits, and still reject partial or inconsistent pairs. Existing scheduled products, filters, details and repeated definitions remain backward compatible; empty schedules display as `بدون زمان‌بندی`.
+
 Validation: all 520 Web tests passed across 67 files, targeted Ticket API tests passed 41/41, complete Web ESLint and TypeScript checks passed, and the API-configured production Web build passed. The final build is active on `127.0.0.1:3100` (PID 15376), and the login route returns 200. API port 4000 was not restarted. Browser automation remains unavailable because of the known Windows ACL failure, so no interactive visual claim is made. No database, schema, migration, dependency, Master Data producer, Sales, Reservations or shared UI change was made.
 
 ## Follow-up: complete browser-managed catalog, recurring copies and land transport — 2026-09-01
