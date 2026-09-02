@@ -1,5 +1,16 @@
 # Work Assignments
 
+## SALES-001-MOCKUP — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-02: ساخت ماکاپ تعاملی فارسی/RTL برای «قراردادهای من» با دکمه «+ قرارداد جدید»، نمایش مرحله هر قرارداد و جریان بهینه تکمیل قرارداد و تخصیص خدمات.
+- Branch: `codex/pc-a-sales-contracts-mockup` از آخرین `origin/develop`؛ توسعه مستقیم روی `develop` یا `main` انجام نمی‌شود. `COMPUTER_ID=PC-A`.
+- محدوده رزروشده: فقط رابط و تست‌های ماژول Sales در `apps/web/src/modules/sales/**`، route موجود `apps/web/src/app/(crm)/sales/**`، ثبت خروج Sales از Foundation در `apps/web/src/modules/module-foundation/model/route-foundation.spec.ts` و ورودی‌های همین Work Item در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`.
+- این Slice نمایشی و بدون Persistence است: بدون API/Contract مشترک، Prisma Schema/Migration/Seed، Dependency/Lockfile، داده واقعی مشتری یا دسترسی مستقیم به ماژول‌های Customers، Reservations و Finance.
+- معیار پذیرش: فهرست قراردادها مرحله فعلی، پیشرفت، مسافر/خدمت، وضعیت مالی و اقدام بعدی را نشان دهد؛ ساخت قرارداد جدید به‌صورت Wizard قابل تعامل باشد؛ رابط در Desktop/Mobile، RTL، Keyboard و حالت‌های جست‌وجو/فیلتر/Empty قابل استفاده باشد؛ lint، typecheck، تست هدفمند و build Web موفق باشند.
+- نتیجه: صفحه `/sales` به «قراردادهای من» تبدیل شد؛ چهار قرارداد کاملاً ساختگی با مرحله، درصد پیشرفت، تخصیص خدمت، وضعیت مالی و اقدام بعدی دارد. جست‌وجو/فیلتر، Empty state، جزئیات قرارداد و Wizard پنج‌مرحله‌ای قرارداد جدید تعاملی هستند و هیچ داده‌ای Persist نمی‌شود.
+- Validation: Build تولیدی Web، lint کامل، typecheck و ۶ تست هدفمند موفق‌اند؛ `/sales` در خروجی Static Route ساخته شد. پیش‌نمایش محلی روی پورت مستقل ۳۱۱۲ فعال است. انتشار Sites انجام نشد، چون این سامانه احراز‌شده فاقد `.openai/hosting.json` و خروجی Cloudflare Workers سازگار است و افزودن زیرساخت میزبانی خارج از Scope این ماکاپ است.
+- Final lock state: `RELEASED — PC-A/SALES-001-MOCKUP ready for review`. Migration، Dependency/Lockfile و shared API contract در تمام کار آزاد و دست‌نخورده ماندند.
+
 ## IAM-003-LOGIN-STABILITY — PC-B — DONE/MERGED
 
 - درخواست صریح مالک در 2026-08-31: خطای تکراری «رمز صحیح نیست» پس از تغییر/راه‌اندازی مجدد به‌صورت دائمی برطرف شود. `COMPUTER_ID=PC-B`.
