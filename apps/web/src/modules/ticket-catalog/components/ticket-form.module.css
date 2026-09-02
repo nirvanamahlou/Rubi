@@ -57,3 +57,14 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+@media (max-width: 39rem) {
+  /* Match the customer calendar width while keeping it inside the ticket dialog. */
+  .form [role='dialog'] {
+    inset-inline-start: auto;
+    inset-inline-end: auto;
+    left: calc(-1rem - 1px);
+    width: min(19rem, calc(100vw - 2rem));
+    max-inline-size: none;
+  }
+}

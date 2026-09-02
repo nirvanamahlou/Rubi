@@ -8,7 +8,22 @@ import { getPublicApiBaseUrl } from '../../../lib/environment';
 import type { Reference } from '../model/catalog';
 
 export type PublishedResource =
-  'airlines' | 'currencies' | 'countries' | 'cities';
+  | 'airlines'
+  | 'airports'
+  | 'aircraft-types'
+  | 'cabin-classes'
+  | 'baggage-rules'
+  | 'currencies'
+  | 'countries'
+  | 'cities'
+  | 'rail-companies'
+  | 'train-types'
+  | 'bus-companies'
+  | 'bus-types';
+export interface ReferenceFilters {
+  countryId?: string;
+  cityId?: string;
+}
 export class ReferenceApiError extends Error {
   constructor(
     readonly state:
@@ -32,6 +47,7 @@ export async function listReferences(
   search: string,
   page: number,
   signal?: AbortSignal,
+  filters: ReferenceFilters = {},
 ): Promise<MasterDataListResponse> {
   const base = getPublicApiBaseUrl();
   if (!base)
@@ -44,6 +60,8 @@ export async function listReferences(
     page: String(page),
     pageSize: '25',
   });
+  if (filters.countryId) query.set('countryId', filters.countryId);
+  if (filters.cityId) query.set('cityId', filters.cityId);
   const path = masterDataEndpoints
     .list(resource)
     .slice(MASTER_DATA_API_PREFIX.length);
@@ -89,9 +107,17 @@ export async function listReferences(
 export function asReference(record: MasterDataRecord): Reference | undefined {
   const kinds = {
     airlines: 'airline',
+    airports: 'airport',
+    'aircraft-types': 'aircraft',
+    'cabin-classes': 'flightClass',
+    'baggage-rules': 'baggage',
     currencies: 'currency',
     countries: 'country',
     cities: 'city',
+    'rail-companies': 'railCompany',
+    'train-types': 'trainType',
+    'bus-companies': 'busCompany',
+    'bus-types': 'busType',
   } as const;
   if (!(record.resource in kinds)) return undefined;
   return {
@@ -101,6 +127,12 @@ export function asReference(record: MasterDataRecord): Reference | undefined {
     kind: kinds[record.resource as PublishedResource],
     ...(typeof record.attributes.countryId === 'string'
       ? { countryId: record.attributes.countryId }
+      : {}),
+    ...(typeof record.attributes.cityId === 'string'
+      ? { cityId: record.attributes.cityId }
+      : {}),
+    ...(typeof record.attributes.ianaTimezone === 'string'
+      ? { timezone: record.attributes.ianaTimezone }
       : {}),
     code: record.code,
   };

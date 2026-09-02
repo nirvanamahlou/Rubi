@@ -83,11 +83,12 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
       branch access و Audit رخدادهای امنیتی
 - [x] `MASTER-001`: Foundation بدون Persistence اطلاعات پایه، UI، قرارداد ماژول‌محلی و
       تست‌های Sprint اول با Merge `cda0f9a`
-- [ ] CI برای lint/typecheck/test/build و migration check
+- [x] `CI-001`: CI مشترک و مستقل PC-A/PC-B برای Full lint/typecheck/test/build،
+      Prettier تغییرات و Migration/Seed روی PostgreSQL 18 موقت؛ آماده Review
 
-CI و سخت‌سازی محیط غیرمحلی قابلیت تکمیل‌شده Sprint اول محسوب نمی‌شوند و در
+سخت‌سازی محیط غیرمحلی و CD همچنان قابلیت تکمیل‌شده Sprint اول محسوب نمی‌شوند و در
 `FOUNDATION-002` باقی می‌مانند. Persistence واقعی Master Data نیز در `MASTER-002`
-انجام خواهد شد.
+انجام شده است.
 
 ## Sprint اول — Foundation (`P0`) — تکمیل‌شده
 

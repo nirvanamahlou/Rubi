@@ -2,7 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import type { MasterDataRecord } from '@rubi/contracts';
-import { Alert, Badge, Button, Card, Input } from '@/components/ui';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui';
 import {
   listReferences,
   ReferenceApiError,
@@ -11,9 +22,17 @@ import {
 
 const resourceLabels: Record<PublishedResource, string> = {
   airlines: 'ایرلاین',
+  airports: 'فرودگاه',
+  'aircraft-types': 'نوع هواپیما',
+  'cabin-classes': 'کلاس پروازی',
+  'baggage-rules': 'بار مجاز',
   currencies: 'ارز',
   countries: 'کشور',
   cities: 'شهر',
+  'rail-companies': 'شرکت ریلی',
+  'train-types': 'نوع قطار',
+  'bus-companies': 'شرکت اتوبوس‌رانی',
+  'bus-types': 'نوع اتوبوس',
 };
 export function ReferenceBrowser({
   onSelect,
@@ -63,26 +82,29 @@ export function ReferenceBrowser({
         <Badge>فقط خواندن از API موجود</Badge>
       </div>
       <p className="text-sm text-muted-foreground">
-        انتخاب و جست‌وجوی ایرلاین، ارز، کشور و شهر مستقیماً داخل فرم بلیت در
-        دسترس است. این بخش مرور مراجع است؛ کشور و شهر جایگزین فرودگاه نیستند.
+        انتخاب و جست‌وجوی ایرلاین، فرودگاه، هواپیما، کلاس، بار، ارز، کشور و شهر
+        مستقیماً از API جدید اطلاعات پایه در فرم بلیت در دسترس است.
       </p>
       <div className="flex flex-wrap gap-2">
-        <select
-          aria-label="نوع مرجع"
-          className="rounded-xl border bg-surface p-2"
+        <Select
           value={resource}
-          onChange={(event) => {
-            setResource(event.target.value as PublishedResource);
+          onValueChange={(nextResource) => {
+            setResource(nextResource as PublishedResource);
             setPage(1);
             setResult({ state: 'loading', rows: [], total: 0 });
           }}
         >
-          {Object.entries(resourceLabels).map(([key, label]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger aria-label="نوع مرجع" className="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent dir="rtl">
+            {Object.entries(resourceLabels).map(([key, label]) => (
+              <SelectItem key={key} value={key}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Input
           className="max-w-xs"
           aria-label="جست‌وجوی مرجع"
