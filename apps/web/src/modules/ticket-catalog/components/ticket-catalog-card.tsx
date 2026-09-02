@@ -69,7 +69,7 @@ export function TicketCatalogCard({
   const powerStatus: CatalogStatus | null =
     product.status === 'active'
       ? 'paused'
-      : product.status === 'paused'
+      : product.status === 'paused' || product.status === 'draft'
         ? 'active'
         : null;
 
@@ -205,7 +205,18 @@ export function TicketCatalogCard({
               <Power className="size-4" aria-hidden />
               {powerStatus === 'active' ? 'فعال‌کردن فروش' : 'توقف فروش'}
             </Button>
-          ) : null}
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled
+              title="فروش این بلیت متوقف است"
+              aria-label="فروش این بلیت متوقف است"
+            >
+              <Power className="size-4" aria-hidden />
+              فروش متوقف است
+            </Button>
+          )}
         </div>
         <p className="text-xs text-muted-foreground">
           نسخه {product.version.toLocaleString('fa-IR')} • قیمت فروش هنگام فروش
