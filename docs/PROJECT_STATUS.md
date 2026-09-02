@@ -1,20 +1,100 @@
 # وضعیت پروژه
 
-## آزادسازی نهایی قفل‌های MASTER-003 — 2026-09-01
+## IAM-003 — پایداری ورود و نشست چندتب — ادغام‌شده
 
-- مالک محصول پس از ادغام نهایی اطلاعات پایه، آزادسازی قفل‌های باقی‌مانده
-  `PC-B/MASTER-003` را صریحاً درخواست کرد.
-- PR #60 با Commit نهایی
-  `1fd22efd836e16df5a62b73430444bd3f856f5e6` در `develop` ادغام شده است؛
-  ۲۷ Migration، قرارداد پایدار Master Data و نتایج کامل Integration در تاریخچه
-  قطعی Repository حضور دارند.
-- با Merge شدن Handoff مستنداتی `MASTER-003-LOCK-RELEASE`، قفل‌های Migration،
-  Master Data shared-contract/root export و اسناد مرکزی با وضعیت
-  `RELEASED / UNASSIGNED` آزاد می‌شوند. قفل Dependency/Lockfile از قبل آزاد است.
-- این آزادسازی انتقال خودکار به Documents یا Ticket Catalog نیست. هر Task بعدی
-  باید از آخرین `origin/develop` شروع شود و قفل لازم را پیش از اولین تغییر رزرو کند.
-- این Handoff فقط مستندات است؛ کد، Prisma، Migration، Seed، Dependency، Lockfile،
-  داده محلی، Secret، Branchهای منبع و `main` را تغییر نمی‌دهد.
+- `PC-B` با درخواست صریح مالک روی `codex/pc-b-iam-login-stability`، Hotfix محدود IAM را
+  پیاده کرد و PR #68 با Merge Commit `bba6cc0` در `develop` ادغام شد. اجرای مجدد Bootstrap دیگر رمز، وضعیت یا شمارنده
+  ورود کاربر موجود را بازنویسی نمی‌کند و فقط اتصال idempotent نقش مدیر/شعبه را تضمین می‌کند.
+- Rotation نشست اکنون با claim اتمیک انجام می‌شود. Token منطبق که حداکثر پنج ثانیه قبل
+  توسط تب دیگر Rotate شده، پاسخ conflict قابل‌بازیابی می‌گیرد و خانواده Session را revoke
+  نمی‌کند؛ Token نامنطبق یا reuse خارج از grace همچنان fail-closed است. Customers و
+  Documents از helper و Web Lock مشترک استفاده می‌کنند.
+- صفحه Login فقط پاسخ 401 را «نام کاربری یا رمز نادرست» نشان می‌دهد؛ Validation، محدودیت
+  تلاش، خطای سرور و قطع ارتباط پیام‌های مستقل دارند.
+- ۷۱۷ تست API و ۵۴۴ تست Web، lint، typecheck و Build کامل API/Web موفق‌اند. نسخه جدید
+  روی API4000/Web3100 فعال است؛ Health/Login برابر ۲۰۰ و Validation خالی برابر ۴۰۰ است.
+  پس از Merge و با درخواست صریح مالک، بازیابی محلی رمز `nirvana` روی PC-B با Backup، لغو نشست‌های
+  قدیمی و ورود/خروج واقعی ۲۰۰/۲۰۴ انجام شد؛ هیچ Secretی وارد Git نشد. جزئیات:
+  `docs/tasks/IAM-003-LOGIN-STABILITY.md`.
+
+## DOCUMENTS-003B — پیش‌نمایش امن تصویر — آماده بررسی
+
+- `PC-B` روی شاخه فرزند `codex/pc-b-documents-image-preview` و Draft PR #67 پیش‌نمایش
+  واقعی JPEG/PNG را به تب جزئیات سند افزود. فایل فقط پس از Scan واقعی `CLEAN`، مجوز
+  مشاهده، Scope شعبه و کنترل محرمانگی تحویل می‌شود؛ URL عمومی یا ذخیره پایدار در مرورگر
+  ساخته نمی‌شود.
+- مسیر inline احراز‌شده، Audit مستقل `documents.file.preview`، دلیل مشاهده سند محرمانه
+  و کدگذاری امن متن فارسی تکمیل شدند. Blob URL با Abort و cleanup آزاد می‌شود؛ فایل‌های
+  غیرتصویری همچنان از دانلود مجاز استفاده می‌کنند.
+- API و Web: lint/typecheck/build موفق؛ ۷۰۸ تست API موفق با ۶۶ skip اختیاری و ۵۱۶ تست
+  Web موفق. نسخه جدید روی API4000 و Web3100 لوکال فعال است. جزئیات:
+  `docs/tasks/DOCUMENTS-003B.md`.
+
+## DOCUMENTS-003A — تجربه کامل لوکال و اسکن واقعی — آماده بررسی
+
+- `PC-B` روی شاخه مستقل `codex/pc-b-documents-usability`، فرزند
+  `codex/pc-b-documents-vertical-slice@37558aa`، Draft PR #65 را آماده کرد. نمای مستقل
+  فعالیت حذف و Timeline فقط داخل جزئیات فایل حفظ شد. این Slice به `develop` Merge نشده و
+  والدها را تغییر نمی‌دهد.
+- اشتراک‌گذاری داخلی اکنون برای تمام اسناد لینک مستقیم قابل کپی دارد؛ لینک ورود و مجوز
+  همان سند را الزام می‌کند و هیچ دسترسی عمومی یا دانلود بدون Scan نمی‌سازد.
+- چهار نمای شخصی فعال‌اند: مالکیت و بارگذاری از Backend، اخیراً دیده‌شده از Audit همان
+  کاربر و علاقه‌مندی‌ها به‌صورت شناسه‌های تفکیک‌شده کاربر در مرورگر. رابط و منوی داخلی با
+  رنگ آبی روشن، Active state، سایه و Hover یکدست شده‌اند.
+- Microsoft Defender واقعی روی PC-B به صف پردازش متصل شد. تطبیق SHA-256 قبل از اسکن و
+  رفتار fail-closed حفظ شده است. هر ۶ فایل آزمایشی لوکال واقعاً `CLEAN`، Jobها `COMPLETED`
+  و قرنطینه‌ها `RELEASED` شدند؛ Backup خصوصی پیش از پردازش تهیه شد.
+- lint/typecheck/build API، Web و Contracts موفق؛ ۱٬۲۳۴ تست موفق و ۶۶ تست اختیاری skip.
+  Smoke مرورگر احراز‌شده تمام مسیرهای شخصی، لینک، جزئیات، Timeline و وضعیت اسکن را پوشش داد.
+  جزئیات: `docs/tasks/DOCUMENTS-003A.md`.
+
+## DOCUMENTS-002 — Vertical Slice واقعی و Stacked — آماده بررسی
+
+- `PC-B` یک Slice مستقل روی `codex/pc-b-documents-vertical-slice` و والد
+  `codex/pc-b-documents-foundation@05b09e8` آماده کرده است. Phase A همچنان Draft PR #61
+  و ادغام‌نشده است؛ Draft PR #64 مستقیماً به `develop` نمی‌رود و تا Merge والد همان
+  Branch والد را هدف می‌گیرد.
+- Persistence افزایشی Documents، قرارداد `documents.v1`، ۲۸ Permission، ۱۹ نوع سند،
+  ۹ دسته، REST API واقعی، Storage محلی رمزگذاری‌شده، `/documents` متصل، Dialog بارگذاری
+  و جزئیات شش‌تب تکمیل شدند. Binary در Database نیست و دانلود تا Scan پاک fail-closed است.
+- نقش‌های Archive/Sales/Finance/HR از هم جدا هستند؛ Finance و HR به محتوای خارج از Domain
+  خود دسترسی ندارند و Archive محتوای حساس را Mask‌شده و بدون دانلود می‌بیند.
+- ۲۸ Migration از صفر و Seed دوگانه روی PostgreSQL 18، lint/typecheck/build کامل و
+  ۱٬۲۹۶ تست عمومی پاس شدند. Smoke واقعی مرورگر بارگذاری، تاریخ شمسی/میلادی، دسترسی چهار
+  نقش و Desktop/Mobile را پوشش داد؛ تمام داده‌ها و زیرساخت Synthetic پس از تست حذف شدند.
+- Adapter تولیدی S3/MinIO، Antivirus Worker، retention قطعی، اشتراک امن، Export و اتصال
+  producerها Deferred هستند. جزئیات: `docs/tasks/DOCUMENTS-002.md`.
+## یکدست‌سازی اکشن‌های فیلتر اطلاعات پایه — 2026-08-31
+
+- `MASTER-003-FILTER-ACTIONS` روی شاخه `codex/pc-b-master-data-filter-actions` به‌صورت Stacked روی تحویل حذف نوارهای قفل‌دار آماده Review است. تمام Workspaceهای تخصصی و fallback عمومی از کامپوننت مشترک «پاک‌کردن / تازه‌سازی» استفاده می‌کنند.
+- اکشن‌ها در ردیف پایینی تمام‌عرض FilterBar و سمت چپ چیدمان RTL قرار دارند؛ هر دو Button دارای Border، پس‌زمینه، آیکون و حالت‌های Hover/Focus هستند. منطق فیلترها، داده، مجوز، صفحه‌بندی و API تغییر نکرده است.
+- ۵۳۴ تست Web، Typecheck، lint کامل Web و Production Build موفق‌اند. بررسی زنده روی `localhost:3101/master-data/geography` چیدمان، فیلتر تاریخ و نبود نوار قفل را تأیید کرد. سرور PC-A روی پورت ۳۱۰۰ و Checkout آن دست‌نخورده‌اند.
+
+## تثبیت حذف نوارهای قفل‌دار زیر KPI اطلاعات پایه — 2026-08-31
+
+- `MASTER-003-REMOVE-LOCK-NOTES` روی شاخه `codex/pc-b-master-data-remove-lock-notes` و به‌صورت Stacked روی تحویل فیلتر تاریخ آماده Review است. هر هشت Workspace تخصصی و fallback عمومی مستقیماً از KPI به فیلترها می‌رسند و نوار ثابت قفل/قاعده میان آن‌ها ندارند.
+- آزمون رگرسیون از تطبیق ۱۸۰ نویسه‌ای به بررسی کامل محتوای بین `MasterDataKpiGrid` و `FilterBar` ارتقا یافت؛ `Alert`، `Card`، آیکون‌های قفل/قاعده و عنوان‌های «قاعده یکپارچگی/مرز دامنه» در این محل رد می‌شوند. پیام‌های دسترسی، نتیجه عملیات و منطق حذف امن حفظ شده‌اند.
+- ۵۲۳ تست Web، Typecheck، lint کامل Web و Production Build موفق‌اند. بررسی Process نشان داد `localhost:3100` از Checkout مستقل PC-A در `C:\Users\admin\Rubi-documents-vertical-slice` اجرا می‌شود؛ به همین علت نسخه قدیمی هنوز در آن پورت دیده می‌شود. Checkout و پردازش PC-A تغییر یا متوقف نشدند.
+
+## فیلتر بازه تاریخ اطلاعات پایه — 2026-08-31
+
+- `MASTER-003-DATE-RANGE-FILTERS` روی شاخه `codex/pc-b-master-data-date-filters` به‌صورت Stacked روی نسخه حذف نوارهای KPI آماده Review است؛ `develop`، Checkout و Web پورت ۳۱۰۰ متعلق به PC-A تغییر نکردند.
+- در مالی و پولی، جغرافیا، سازمان‌ها و تأمین‌کنندگان، اقامت، حمل‌ونقل، بیمه، تور و خدمات سفر، مراجع فروش و fallback عمومی یک گروه جمع‌وجور «از تاریخ / تا تاریخ» افزوده شد. تقویم مشترک داخل Popup کلید شمسی/میلادی دارد، تاریخ پایدار Gregorian ISO نگهداری می‌شود و بازه مستقل یا همراه پاک‌کردن همه فیلترها قابل حذف است.
+- Query افزایشی `createdFrom`/`createdTo` روی `createdAt` پیش از Pagination و Export اعمال می‌شود؛ روز پایان inclusive است. تاریخچه نرخ ارز همین کنترل را روی `observedAt` می‌گیرد. ورودی نامعتبر یا بازه معکوس در API رد می‌شود؛ نبود تاریخ دقیقاً رفتار قبلی را حفظ می‌کند. بدون Schema/Migration، Calendar، Customers، Dependency یا تغییر داده.
+- ۵۲۳ تست Web و ۶۷۱ تست API موفق؛ Typecheck، lint محدوده و Production Build Web/API/Contract پاس شدند. بررسی بصری روی پورت موقت ۳۱۰۱ چیدمان فشرده، برچسب‌ها و هر دو تقویم را تأیید کرد؛ سرور موقت سپس بسته شد.
+
+## حذف نوارهای توضیحی زیر KPI اطلاعات پایه — 2026-08-31
+
+- `MASTER-003-REMOVE-KPI-NOTES` روی شاخه `codex/pc-b-master-data-remove-kpi-notes` از `origin/develop@03e4c43` آماده Review است.
+- نوارهای قاعده/مرز دامنه بلافاصله زیر کارت‌های KPI در هفت Workspace جغرافیا، سازمان‌ها و تأمین‌کنندگان، اقامت، حمل‌ونقل، بیمه، خدمات سفر و مراجع فروش حذف شدند. صفحه مالی و پولی چنین نوار مستقلی نداشت؛ KPIها، تب‌ها، فیلترها، جدول‌ها، Popupها و پیام‌های عملیاتی حفظ شدند.
+- تغییر فقط در Presentation و آزمون Web است؛ Customers، Calendar، API/Contract، Schema/Migration، Seed، Dependency/Lockfile و داده محلی تغییر نکردند. یک آزمون سراسری از بازگشت Alert/Card توضیحی بلافاصله پس از KPI جلوگیری می‌کند.
+- ۵۱۱ تست Web، Typecheck، lint فایل‌های متاثر و Production Build موفق‌اند. API روی پورت ۴۰۰۰ پاسخ ۲۰۰ دارد و Web روی ۳۱۰۰ فعال است؛ مسیر اطلاعات پایه بدون Session مطابق قرارداد ۳۰۷ به Login هدایت می‌شود.
+
+## انتشار قابل اجرای داده نمایشی برای PC-A — 2026-08-31
+
+- پس از Merge #60، تعریف ۷۸ Fixture در `develop` موجود است اما رکوردهای PostgreSQL میان کامپیوترها با Git منتقل نمی‌شوند. `MASTER-003-DEMO-BOOTSTRAP` یک فرمان استاندارد Root برای Preview و Apply همان Fixture روی دیتابیس لوکال هر توسعه‌دهنده اضافه می‌کند.
+- محافظ‌های محیط/مقصد، تراکنش، Audit، تکرارپذیری و عدم بازنویسی داده کاربر حفظ می‌شوند. این کار Seed عمومی یا Startup را تغییر نمی‌دهد و هیچ داده نمایشی را وارد Production نمی‌کند.
+- فرمان Preview روی DB لوکال هر ۷۸ Fixture را بدون ساخت تکراری بازیابی و Rollback کرد؛ ۹ آزمون PostgreSQL روی DB مستقل و حذف‌شونده موفق بودند. ۱٬۲۵۹ تست عمومی، lint، typecheck و Production Build کامل نیز پاس شدند. Dependency/Lockfile، Migration و داده کاربردی تغییر نکردند.
 
 ## ادغام تکمیلی اطلاعات پایه با develop — 2026-08-31
 
@@ -22,7 +102,7 @@
 - نسخه ترکیبی: نصب frozen، lint و typecheck کامل، Production Build، ۱٬۲۵۷ تست عمومی و ۶۶ آزمون واقعی PostgreSQL موفق. ۲۷ Migration از صفر و Seed دوگانه روی دیتابیس مستقل پاس شدند. تنها Migration تازه نسبت به develop همان ترتیب کشور است؛ هیچ Migration تاریخی تغییر نکرده است.
 - Smoke احراز‌شده: فهرست هر ۴۵ کاتالوگ، ثبت/نمایش/فیلتر، پاور وضعیت و خطای نسخه قدیمی، وابستگی‌ها و Excel واقعی؛ همچنین ۱۱ مسیر Production فارسی RTL شامل اطلاعات پایه، Customers و Ticket Catalog موفق. این بررسی HTTP است و ادعای تست تعاملی مرورگر ندارد.
 - گزارش ابزار OpenAPI تغییر ناسازگار جدیدی نیافت؛ کمبود مستندات Swagger قبلی با امتیاز یکسان F باقی است و «بازبینی کامل و پاک API» ادعا نمی‌شود. جزئیات و خروجی‌های بررسی در `docs/tasks/MASTER-003-DEVELOP-INTEGRATION.md` ثبت شده‌اند.
-- PR #60 به‌صورت معمول با Merge Commit `1fd22ef` در `develop` ادغام شد. Checkout و سرورهای اصلی، داده و کلیدهای محلی و شاخه‌های منبع دست‌نخورده‌اند؛ تنها دیتابیس‌ها/کانتینرهای آزمایشی همین اجرا پس از آزمون حذف شدند. آزادسازی صریح قفل‌های توسعه در بخش `MASTER-003-LOCK-RELEASE` بالا ثبت شده و گزارش‌های زیر تاریخچه Snapshotهای قبلی‌اند.
+- Merge نهایی فقط با نتیجه تأییدشده PR گزارش می‌شود. Checkout و سرورهای اصلی، داده و کلیدهای محلی، شاخه‌های منبع و قفل‌های توسعه PC-B دست‌نخورده‌اند؛ تنها دیتابیس‌ها/کانتینرهای آزمایشی همین اجرا پس از آزمون حذف شدند. گزارش‌های زیر تاریخچه Snapshotهای قبلی‌اند.
 
 ## نسخه مشترک دو کامپیوتر — SHARED-INTEGRATION-0831 — در حال اعتبارسنجی
 

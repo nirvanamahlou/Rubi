@@ -679,11 +679,34 @@ type ExportInput = {
 
 const MAX_DIRECT_EXPORT_ROWS = 10_000;
 
+function assertDateRange(from: unknown, to: unknown) {
+  const values = [from, to].filter(
+    (value): value is string => value !== undefined,
+  );
+  for (const value of values) {
+    const parsed = new Date(`${value}T00:00:00.000Z`);
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
+      Number.isNaN(parsed.getTime()) ||
+      parsed.toISOString().slice(0, 10) !== value
+    )
+      throw new BadRequestException(
+        'تاریخ فیلتر باید معتبر و به صورت YYYY-MM-DD باشد.',
+      );
+  }
+  if (typeof from === 'string' && typeof to === 'string' && from > to)
+    throw new BadRequestException(
+      'تاریخ شروع فیلتر نمی‌تواند بعد از تاریخ پایان باشد.',
+    );
+}
+
 function validateExportInput(input: ExportInput): MasterDataResource {
   const resource = resourceOf(input.resource);
   const allowedFilterKeys = [
     'columnFilter1',
     'columnFilter2',
+    'createdFrom',
+    'createdTo',
     'search',
     'status',
     'transportStatus',
@@ -727,6 +750,7 @@ function validateExportInput(input: ExportInput): MasterDataResource {
       input.filters.search.length > 100)
   )
     throw new BadRequestException('جست‌وجوی خروجی معتبر نیست.');
+  assertDateRange(input.filters.createdFrom, input.filters.createdTo);
   if (
     input.filters.status !== undefined &&
     !['all', 'active', 'inactive'].includes(String(input.filters.status))
@@ -866,6 +890,12 @@ function exportQuery(input: ExportInput): MasterDataListQuery {
       : {}),
     ...(typeof input.filters.columnFilter2 === 'string'
       ? { columnFilter2: input.filters.columnFilter2 }
+      : {}),
+    ...(typeof input.filters.createdFrom === 'string'
+      ? { createdFrom: input.filters.createdFrom }
+      : {}),
+    ...(typeof input.filters.createdTo === 'string'
+      ? { createdTo: input.filters.createdTo }
       : {}),
     ...(typeof input.filters.transportStatus === 'string'
       ? {
@@ -1043,6 +1073,7 @@ export class MasterDataService {
 
   async list(resourceValue: string, query: MasterDataListQuery) {
     const resource = resourceOf(resourceValue);
+    assertDateRange(query.createdFrom, query.createdTo);
     const { rows, total } = await this.repository.list(resource, query);
     return {
       data: rows.map((row) => toMasterDataRecord(resource, row)),

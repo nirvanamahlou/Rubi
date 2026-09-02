@@ -1,22 +1,11 @@
 # برنامه اجرای Rubi
 
-## Handoff آزادسازی MASTER-003 — 2026-09-01
+## یکپارچه‌سازی مشترک — 2026-08-31
 
-- [x] ادغام نهایی اطلاعات پایه از طریق PR #60 و Merge Commit `1fd22ef` تأیید شد.
-- [ ] پس از Merge PR این Handoff، Migration Owner، Master Data contract/root export
-      و Central development docs برابر `RELEASED / UNASSIGNED` می‌شوند.
-- [x] Dependency/Lockfile بدون تغییر در وضعیت `RELEASED` باقی می‌ماند.
-- [ ] Documents و Ticket Catalog برای هر Persistence یا تغییر قرارداد مرکزی، قفل
-      لازم را جداگانه و به‌ترتیب رزرو می‌کنند؛ اجرای دو Migration Owner موازی ممنوع است.
-- ادامه اطلاعات پایه با شناسه `MASTER-004` یا Task تازه انجام می‌شود و حق استفاده
-  ضمنی از قفل‌های تاریخی MASTER-003 ندارد.
-
-## یکپارچه‌سازی مشترک — 2026-08-31 — DONE
-
-- SHARED-INTEGRATION-0831 از طریق PR #58 و تکمیل اطلاعات پایه از طریق PR #60 در یک `develop` مشترک ادغام شدند؛ Branchهای مبدأ حفظ شده‌اند.
+- SHARED-INTEGRATION-0831 در حال ترکیب Snapshotهای منتشرشده PR #55/#56/#46 در یک develop است؛ Branchهای مبدأ حفظ و نسخه ترکیبی بازبینی می‌شود.
 - بلیت Phase A باقی می‌ماند؛ قیمت نهایی فروش در Sales، قیمت خرید مرجع در Catalog و صدور/Manifest در Reservations است.
-- هر دو دستگاه باید از آخرین Commit `develop` استفاده کنند. Git کد را همگام می‌کند، نه داده یا کلید خصوصی دیتابیس محلی را.
-- توسعه بعدی در Branch ماژولی انجام می‌شود؛ Handoff صریح آزادسازی قفل‌های اطلاعات پایه در `MASTER-003-LOCK-RELEASE` ثبت شده است.
+- پس از عبور Gateها و Merge، هر دو دستگاه از همان Commit develop استفاده می‌کنند. Git کد را همگام می‌کند، نه داده یا کلید خصوصی دیتابیس محلی را.
+- توسعه بعدی در Branch ماژولی انجام می‌شود؛ قفل Migration/Contract اطلاعات پایه بدون Handoff صریح جابه‌جا نمی‌شود.
 
 ## تحویل زنجیره مشتریان — 2026-08-31
 
@@ -27,12 +16,31 @@
 این برنامه backlog سطح محصول را نگهداری می‌کند. اولویت‌ها: `P0` الزامی برای
 foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه عملیاتی، `P2` بهبود بعدی.
 
+## Documents — زنجیره Stacked فعلی
+
+- [x] `DOCUMENTS-001`: Foundation رابط و معماری ماژول روی
+      `codex/pc-b-documents-foundation` / Draft PR #61؛ هنوز به `develop` ادغام نشده است.
+- [x] `DOCUMENTS-002`: Persistence و Migration افزایشی، قرارداد/IAM، API و بارگذاری واقعی،
+      Storage محلی رمزگذاری‌شده، UI متصل، تفکیک نقش و Smoke Desktop/Mobile؛ آماده Review
+      در Draft PR #64 روی Branch والد Phase A و بدون Merge مستقیم به `develop`.
+- [x] `DOCUMENTS-003A`: تجربه لوکال Documents؛ حذف نمای مستقل Activity، لینک داخلی
+      Permission-aware، چهار نمای شخصی، رابط رنگی و اسکن واقعی Microsoft Defender با
+      تطبیق SHA-256 و fail-closed؛ روی شاخه فرزند و بدون Migration/Dependency.
+- [x] `DOCUMENTS-003B`: پیش‌نمایش امن JPEG/PNG در جزئیات فایل پس از Scan پاک؛ مسیر inline
+      احراز‌شده، مجوز مشاهده مستقل، دلیل محرمانگی، Audit و Blob URL موقت با cleanup؛
+      روی شاخه فرزند و بدون Migration/Dependency/Contract عمومی.
+- [ ] `DOCUMENTS-003`: Adapter تولیدی S3/MinIO و Antivirus Worker عملیاتی با retry،
+      monitoring و recovery؛ پس از تصمیم امنیت/عملیات و رزرو تازه Migration/Dependency.
+- [ ] `DOCUMENTS-004`: اشتراک امن، نسخه‌گذاری تکمیلی، Export، retention نهایی و اتصال
+      producerها فقط از Public Contract/Event؛ بدون query مستقیم جدول ماژول دیگر.
+
 ## Foundation رابط تمام ماژول‌ها
 
 - [x] `MODULES-FOUNDATION-001`: Foundation قابل بررسی هر ۱۷ route، Dashboard و Sidebar
 - [x] Coverage Matrix کامل PDF با وضعیت‌های `PRESERVE`، `BUILD` و `DEFERRED`
 - [x] lint، typecheck، test، production build و HTTP smoke هر ۱۷ route
-- [ ] اتصال Persistence/API/Provider/Worker/Documents و خروجی واقعی در Taskهای مالک هر ماژول
+- [ ] اتصال کامل Provider/Worker و خروجی‌های cross-module در Taskهای مالک هر ماژول؛
+      Persistence/API و بارگذاری واقعی Documents در `DOCUMENTS-002` آماده Review است
 
 ## دروازه‌های تصمیم پیش از Foundation
 

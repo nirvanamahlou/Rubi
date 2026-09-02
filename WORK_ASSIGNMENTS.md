@@ -1,36 +1,101 @@
 # Work Assignments
 
-## MASTER-003-LOCK-RELEASE — PC-A — READY_FOR_REVIEW
+## IAM-003-LOGIN-STABILITY — PC-B — DONE/MERGED
 
-- Product-owner authorization on 2026-09-01: release the remaining `PC-B/MASTER-003`
-  development locks after the verified merge of PR #60 into `develop`.
-- Verified prerequisite: PR #60 is `MERGED`; `origin/develop` contains merge commit
-  `1fd22efd836e16df5a62b73430444bd3f856f5e6`, all 27 migrations, the stable
-  Master Data contract, and the recorded integration gates.
-- On merge of this documentation-only handoff, the following locks become
-  `RELEASED / UNASSIGNED`: Migration Owner, Master Data shared-contract/root export,
-  and Central development/status docs. Dependency/Lockfile was already `RELEASED`
-  and remains unchanged.
-- No lock is automatically transferred to Documents, Ticket Catalog, or another
-  module. A later task must reserve each needed lock atomically from fresh
-  `origin/develop`; only one Migration Owner and one Dependency/Lockfile Owner may
-  exist at a time.
-- Historical MASTER-003 source branches and reports remain immutable evidence.
-  Future Master Data changes require a new work item and fresh reservations.
-- Scope is limited to `WORK_ASSIGNMENTS.md`, `PLANS.md`, `docs/PROJECT_STATUS.md`,
-  and `docs/tasks/MASTER-003-LOCK-RELEASE.md`; no application code, schema,
-  migration, dependency, lockfile, account, runtime, or database change is allowed.
+- درخواست صریح مالک در 2026-08-31: خطای تکراری «رمز صحیح نیست» پس از تغییر/راه‌اندازی مجدد به‌صورت دائمی برطرف شود. `COMPUTER_ID=PC-B`.
+- Branch: `codex/pc-b-iam-login-stability` از آخرین `origin/develop`؛ PR #68 با Merge Commit `bba6cc0` در `develop` ادغام شد. این اصلاح مستقیم روی `develop` یا `main` انجام نشد.
+- مالکیت نهایی IAM برای PC-A محفوظ است؛ قفل‌های IAM-001/IAM-002 آزاد شده‌اند و این کار یک استثنای محدود و صریح PC-B برای پایداری Login است.
+- محدوده رزروشده: Bootstrap داخلی مدیر و Refresh نشست در `apps/api/src/iam/**`، helper مشترک Refresh و Login UI در `apps/web/src/**`، تست‌های هدفمند و `docs/tasks/IAM-003-LOGIN-STABILITY.md`؛ فقط ورودی‌های همین Work Item در اسناد مرکزی.
+- بدون Prisma Schema/Migration/Seed، بدون تغییر قرارداد عمومی یا Permission، بدون Dependency/Lockfile و بدون بازنشانی حساب/رمز/Session یا تغییر داده کاربردی در زمان پیاده‌سازی.
+- معیار پذیرش: اجرای مجدد Bootstrap رمز کاربر موجود را تغییر ندهد؛ Refresh هم‌زمان تب‌ها خانواده Session را به‌اشتباه revoke نکند؛ Login فقط پاسخ 401 را خطای نام کاربری/رمز بنامد و خطاهای اعتبارسنجی/سرور/ارتباط پیام مستقل داشته باشند؛ تست، lint، typecheck، build و Smoke لوکال موفق باشند.
+- نتیجه: Bootstrap برای کاربر موجود Credential/Status را حفظ و فقط نقش مدیر و شعبه را idempotent تضمین می‌کند. Refresh با claim اتمیک، grace پنج‌ثانیه‌ای فقط برای Token منطبقِ تازه‌چرخیده و Web Lock مشترک چندتب پایدار شد؛ Token نامنطبق یا reuse قدیمی همچنان کل خانواده را fail-closed لغو می‌کند. Login UI فقط 401 را خطای نام کاربری/رمز می‌نامد.
+- Validation: ۷۱۷ تست API با ۶۶ skip اختیاری و ۵۴۴ تست Web موفق؛ lint، typecheck و production build API/Web موفق. API health و Login لوکال ۲۰۰ و Validation ورود ناقص ۴۰۰ است. در زمان پیاده‌سازی هیچ Bootstrap/Reset یا تغییر داده کاربردی اجرا نشد. پس از Merge، بازیابی محلی صریح و جداگانه `nirvana` روی PC-B با Backup، لغو نشست‌های قبلی و ورود/خروج ۲۰۰/۲۰۴ موفق انجام شد؛ هیچ Secretی وارد Git نشد.
+- Final lock state: `RELEASED — PC-B/IAM-003-LOGIN-STABILITY merged via PR #68`. Migration/Dependency/Contract lock در تمام کار آزاد و دست‌نخورده بود؛ مالکیت نهایی IAM نزد PC-A باقی است.
 
-## MASTER-003-DEVELOP-INTEGRATION — PC-B — DONE / MERGED
+## DOCUMENTS-003B — PC-B — READY_FOR_REVIEW
 
-- PR #60 merged normally into `develop` as `1fd22efd836e16df5a62b73430444bd3f856f5e6`;
-  its integration-only reservation is complete.
+- درخواست مالک در 2026-08-31: تصویر بارگذاری‌شده باید پس از اسکن پاک و احراز مجوز، داخل تب پیش‌نمایش همان سند قابل مشاهده باشد.
+- Branch: `codex/pc-b-documents-image-preview` / Draft PR #67، فرزند `codex/pc-b-documents-usability@8cbe77b` / Draft PR #65. این Slice مستقیم به `develop` نمی‌رود و والدها را Merge یا بازنویسی نمی‌کند.
+- محدوده رزروشده: `apps/api/src/documents/**`، `apps/web/src/modules/documents/**` و تست‌های همان ماژول؛ اسناد `WORK_ASSIGNMENTS.md`، `docs/PROJECT_STATUS.md`، `PLANS.md` و `docs/tasks/DOCUMENTS-003B.md`.
+- بدون Prisma Schema/Migration/Seed، بدون Dependency/Lockfile و بدون تغییر قرارداد عمومی. endpoint افزایشی و احراز‌شده `GET /documents/:id/preview` فقط producer داخلی Web را پوشش می‌دهد و backward-compatible است؛ مجوز `documents.file.read`، محرمانگی، شعبه، آرشیو فعال و Scan پاک را مستقل از مجوز دانلود کنترل می‌کند.
+- Web فقط برای تصویر JPEG/PNG پاک و مجاز، پاسخ را به Blob URL موقت تبدیل می‌کند و در cleanup آن را آزاد می‌سازد. پیش‌نمایش برای Pending/آلوده/قرنطینه، سند بدون مجوز، یا نوع غیرتصویری fail-closed می‌ماند؛ Audit مستقل مشاهده ثبت می‌شود و URL عمومی/ماندگار ساخته نمی‌شود.
+- نتیجه: پیش‌نمایش واقعی تصویر در تب جزئیات، دلیل مشاهده فایل محرمانه، مسیر inline امن، Audit مستقل، وضعیت‌های خطا/Loading/Retry و cleanup درخواست/Blob URL تکمیل شد. فایل لوکال `100.jpg` از نوع JPEG و Scan پاک برای این جریان آماده است.
+- Validation: lint/typecheck/build کامل API و Web موفق؛ ۷۰۸ تست API موفق با ۶۶ skip اختیاری و ۵۱۶ تست Web موفق. API4000 و Web3100 از همین Worktree فعال و Health برابر ۲۰۰ است. گزارش: `docs/tasks/DOCUMENTS-003B.md`.
+- Final lock state: این Slice هیچ Migration/Dependency/Contract lock نگرفت. رزرو Documents API/Web و اسناد مرکزی با وضعیت `RELEASED — PC-B/DOCUMENTS-003B ready for review` تحویل می‌شود؛ والدها، `develop` و `main` بدون Merge باقی می‌مانند.
+
+## DOCUMENTS-003A — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: حذف نمای مستقل گزارش دسترسی و نگه‌داشتن Timeline در جزئیات سند؛ تکمیل لینک اشتراک داخلی؛ فعال‌سازی اسکن واقعی فایل در محیط لوکال PC-B؛ فعال‌کردن نماهای شخصی و یکدست‌سازی افکت و رنگ رابط Documents.
+- Branch: `codex/pc-b-documents-usability` / Draft PR #65، فرزند `codex/pc-b-documents-vertical-slice@37558aa` / Draft PR #64. این Slice مستقیم به `develop` نمی‌رود و والدها را تغییر یا Merge نمی‌کند.
+- محدوده رزروشده: `apps/api/src/documents/**`، `apps/web/src/modules/documents/**`، قرارداد افزایشی Documents در `packages/contracts/src/documents/**`، مثال تنظیمات Documents، تست‌ها و اسناد `WORK_ASSIGNMENTS.md`، `docs/PROJECT_STATUS.md`، `PLANS.md` و `docs/tasks/DOCUMENTS-003A.md`.
+- بدون Prisma Schema/Migration/Seed و بدون Dependency/Lockfile. Migration Owner و Dependency/Lockfile Owner رزرو نمی‌شوند. قرارداد عمومی فقط فیلتر شخصی افزایشی و backward-compatible برای producer/consumer خود Documents API/Web است.
+- لینک اشتراک در این Slice فقط لینک داخلی احراز‌شده و Permission-aware است؛ لینک عمومی/ناشناس، دورزدن محرمانگی و دانلود بدون Scan ممنوع می‌ماند. Audit Timeline از منوی مستقل حذف می‌شود ولی داخل جزئیات هر فایل حفظ می‌شود.
+- Antivirus روی PC-B با Microsoft Defender فعال و fail-closed است؛ `CLEAN` فقط پس از اجرای واقعی موتور و تطبیق SHA-256 ثبت می‌شود. نبود/خطای موتور همچنان دانلود را مسدود می‌کند و هیچ Seed/UI وضعیت پاک جعل نمی‌کند. Adapter تولیدی S3/MinIO و Worker توزیع‌شده همچنان خارج از این Slice هستند.
+- نتیجه: منوی مستقل Activity حذف و Timeline داخل جزئیات حفظ شد؛ لینک داخلی مستقیم و قابل کپی، چهار نمای شخصی، رنگ و افکت تمام سکشن‌ها و پیام واقعی وضعیت اسکن تکمیل شدند. هر ۶ فایل لوکال با Defender واقعی `CLEAN`، Jobها `COMPLETED` و قرنطینه‌ها `RELEASED` شدند؛ Backup خصوصی پیش از اجرا معتبر است.
+- Validation: lint/typecheck/build برای API/Web/Contracts موفق؛ ۱٬۲۳۴ تست موفق و ۶۶ تست اختیاری skip. Smoke مرورگر احراز‌شده مسیرهای شخصی، Favorite، Recently Viewed، کپی/بازکردن لینک، Timeline داخل فایل و Download gate پاک را پوشش داد. گزارش: `docs/tasks/DOCUMENTS-003A.md`.
+- Final lock state: این Slice هیچ Migration/Dependency lock نگرفت. رزرو Documents API/Web/Contract و اسناد مرکزی با وضعیت `RELEASED — PC-B/DOCUMENTS-003A ready for review` تحویل می‌شود؛ Branch والد، PRها، `develop` و `main` بدون Merge باقی می‌مانند.
+
+## DOCUMENTS-002 — PC-B — READY_FOR_REVIEW
+
+- Owner confirmed on 2026-09-01 that the `PC-B/MASTER-003` Migration and central-file locks are released for this work. `COMPUTER_ID=PC-B`.
+- Branch: `codex/pc-b-documents-vertical-slice`; Draft PR #64 is stacked on `origin/codex/pc-b-documents-foundation@05b09e8` / Draft PR #61. Phase A does not need to merge into `develop` before this slice؛ #64 targets the Phase-A branch until its parent is merged.
+- Reserved scope: Documents Prisma schema and one additive migration; Documents repository/application/controller/module; versioned Documents contract and IAM permission seed; `/documents` Web module, route/navigation integration and tests; shared Dialog RTL positioning fix in `apps/web/src/components/ui/overlays.tsx`; storage environment examples in root/API `.env.example`; `WORK_ASSIGNMENTS.md`, `docs/PROJECT_STATUS.md`, `PLANS.md`, `docs/DECISIONS.md`; task report `docs/tasks/DOCUMENTS-002.md`.
+- Final lock state: Migration Owner, Documents shared-contract/root export, Documents IAM permission/seed slice, shared Dialog/environment-example files and central status/docs are `RELEASED — PC-B/DOCUMENTS-002 ready for review`. Dependency/Lockfile stayed `RELEASED`; `pnpm-lock.yaml` was not changed.
+- First vertical slice: server-side document list/search/filter/sort/pagination, document detail with six tabs, central upload dialog with real multipart/storage adapter flow, base permission enforcement, Loading/Empty/Error/Forbidden states, authenticated route/navigation/responsive smoke and database/API/Web tests.
+- Domain boundaries: Documents stores/version-controls final file assets and archive metadata only. Issuance/rendering stays in producer modules; no direct query to another module's tables. Finance/HR content access remains deny-by-default behind separate permissions.
+- Deferred: production antivirus engine/worker, advanced secure sharing, final retention deletion, exports and cross-module producer integrations. They require separate slices and unresolved security/operations decisions.
+- Validation: all 28 migrations on empty PostgreSQL 18, repeatable Seed, full lint/typecheck/build and 1,296 tests passed (66 opt-in PostgreSQL tests remain intentionally skipped in the ordinary suite). Authenticated browser smoke covered upload, fail-closed download, Persian/Gregorian date preservation, role isolation for Archive/Sales/Finance/HR and desktop/mobile layout. Synthetic DB/container, file, keys and ignored environment files were removed after validation.
+
+## MASTER-003-FILTER-ACTIONS — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: کنترل‌های «پاک‌کردن» و «تازه‌سازی» در تمام فیلترهای اطلاعات پایه به دکمه‌های دارای Border و پس‌زمینه تبدیل و در ردیف پایینیِ سمت چپ سکشن فیلتر یکدست شوند.
+- Branch: `codex/pc-b-master-data-filter-actions` به‌صورت Stacked روی نسخه تحویلی `codex/pc-b-master-data-remove-lock-notes@51aed9e`؛ توسعه مستقیم روی `develop` انجام نمی‌شود.
+- محدوده رزرو: فقط کامپوننت‌های FilterBar در `apps/web/src/modules/master-data/components/**`، کامپوننت مشترک اکشن فیلتر، آزمون رگرسیون نمایش و گزارش همین Work Item. بدون API/Contract، Schema/Migration، Seed/Data، Customers، Calendar، Dependency/Lockfile یا تغییر دیتابیس.
+- منطق فیلتر، داده، صفحه‌بندی و مجوزها ثابت می‌ماند؛ این تغییر Presentation/Interaction است و تازه‌سازی هر Workspace فقط Loader موجود همان صفحه را فراخوانی می‌کند.
+- نتیجه: اکشن مشترک تمام FilterBarهای اطلاعات پایه در یک ردیف تمام‌عرض زیر فیلدها قرار گرفت؛ در RTL با تراز انتهای ردیف در سمت چپ نمایش داده می‌شود. هر دو کنترل Button واقعی با Border، پس‌زمینه، Focus/Hover و آیکون مستقل هستند. تازه‌سازی وضعیت همکاری نیز با همان کامپوننت و عنوان تخصصی حفظ شد.
+- ۵۳۴ تست Web، Typecheck، lint کامل Web و Production Build موفق‌اند. بررسی زنده جغرافیا روی Checkout همین شاخه در پورت ۳۱۰۱ وجود فیلتر تاریخ و دو دکمه پایین-چپ و حذف نوار قفل قدیمی را تأیید کرد. پورت ۳۱۰۰ همچنان متعلق به Checkout جداگانه PC-A است و تغییر یا متوقف نشد.
+
+## MASTER-003-REMOVE-LOCK-NOTES — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: نوارهای قفل‌دار/قاعده‌ای باقی‌مانده زیر KPIهای تمام بخش‌های اطلاعات پایه، از جمله جغرافیا، حذف و از بازگشت آن‌ها جلوگیری شود.
+- Branch: `codex/pc-b-master-data-remove-lock-notes` به‌صورت Stacked روی `codex/pc-b-master-data-date-filters@49d83b8`؛ توسعه مستقیم روی `develop` انجام نمی‌شود.
+- محدوده رزرو: فقط Workspaceهای `apps/web/src/modules/master-data/components/**`، آزمون رگرسیون نمایش و گزارش همین Work Item در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`. بدون API/Contract، Schema/Migration، Seed، Customers، Calendar، Dependency/Lockfile یا تغییر دیتابیس.
+- رفتار حذف امن، کنترل وابستگی رکوردها، وضعیت/پاور، خطاهای دسترسی و پیام‌های نتیجه عملیات حفظ می‌شوند؛ این اصلاح فقط نوار اطلاع‌رسانی ثابت بین KPI و فیلترها را هدف می‌گیرد.
+- نتیجه: نسخه جاری هر هشت Workspace تخصصی و fallback عمومی فاقد Alert/Card قفل‌دار بین KPI و فیلترهاست. آزمون قبلی از بررسی فاصله ثابت به کنترل کامل بازه KPI تا FilterBar ارتقا یافت و آیکون/عنوان‌های قاعده‌ای را نیز رد می‌کند. ۵۲۳ تست Web، Typecheck، lint کامل Web و Production Build موفق‌اند. علت مشاهده نوار در `localhost:3100` اجرای Checkout مستقل PC-A از `C:\Users\admin\Rubi-documents-vertical-slice` است؛ آن پردازش و فایل‌ها دست‌نخورده ماندند.
+
+## MASTER-003-DATE-RANGE-FILTERS — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: فیلتر جمع‌وجور «از تاریخ / تا تاریخ» به همه فهرست‌های اطلاعات پایه اضافه شود و انتخاب تاریخ در هر دو تقویم شمسی و میلادی در دسترس باشد.
+- Branch: `codex/pc-b-master-data-date-filters` به‌صورت Stacked روی نسخه تحویلی `codex/pc-b-master-data-remove-kpi-notes@ccf68db`؛ توسعه مستقیم روی `develop` انجام نمی‌شود.
+- محدوده رزرو: قرارداد افزایشی Query فهرست و Export اطلاعات پایه، DTO/Repository همان ماژول، Client و هشت Workspace اطلاعات پایه، کامپوننت مشترک بازه تاریخ، آزمون‌ها و گزارش همین Work Item. بدون Calendar، Customers، Schema/Migration، داده، Dependency/Lockfile یا تغییر دیتابیس.
+- Producer/Consumer قرارداد هر دو Master Data API/Web تحت مالکیت PC-B هستند. `createdFrom` و `createdTo` اختیاری و با رفتار قبلی سازگارند؛ بازه روی `createdAt` و برای تاریخچه نرخ روی `observedAt`، پیش از Pagination اعمال می‌شود.
+- نتیجه: گروه فشرده بازه تاریخ در هشت Workspace تخصصی و fallback عمومی قرار گرفت؛ تقویم مشترک همان تاریخ را به انتخاب کاربر شمسی یا میلادی نمایش می‌دهد، بازه قابل پاک‌کردن است و Excel همان فیلتر را دریافت می‌کند. API بازه معکوس/نامعتبر را رد و روز پایان را به‌صورت کامل و inclusive محاسبه می‌کند. ۵۲۳ تست Web و ۶۷۱ تست API موفق؛ Typecheck، lint محدوده و Production Build Web/API/Contract موفق‌اند. کنترل بصری روی نسخه همین Branch در پورت موقت ۳۱۰۱، نمایش فشرده و کلیدهای شمسی/میلادی را تأیید کرد؛ پورت ۳۱۰۰ متعلق به Checkout PC-A و دست‌نخورده باقی ماند.
+
+## MASTER-003-REMOVE-KPI-NOTES — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-08-31: تمام نوارهای توضیحی/قاعده‌ای بلافاصله زیر کارت‌های KPI از همه Workspaceهای اطلاعات پایه حذف شوند؛ خود KPIها، تب‌ها، فیلترها، جدول‌ها و رفتار Backend حفظ می‌شوند.
+- Branch: `codex/pc-b-master-data-remove-kpi-notes` از `origin/develop@03e4c431f29286509cdf0e5423aae8ed3a87a788`؛ توسعه مستقیم روی `develop` انجام نمی‌شود.
+- محدوده رزرو: فقط `apps/web/src/modules/master-data/components/**`، آزمون‌های رندر مرتبط و گزارش همین Work Item در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`. بدون Customers، Calendar، API/Contract، Schema/Migration، Seed یا Dependency/Lockfile.
+- قفل‌های فعال PC-B/MASTER-003 بدون تغییر می‌مانند؛ این اصلاح صرفاً Presentation است و مالکیت یا قرارداد ماژول دیگری را تغییر نمی‌دهد.
+- نتیجه: نوارهای توضیحی زیر KPI در جغرافیا، سازمان‌ها و تأمین‌کنندگان، اقامت، حمل‌ونقل، بیمه، خدمات سفر و مراجع فروش حذف شدند؛ مالی و پولی از ابتدا چنین نوار مستقلی نداشت. ۵۱۱ تست Web، Typecheck، lint فایل‌های متاثر و Production Build موفق‌اند. API روی ۴۰۰۰ سالم و Web روی ۳۱۰۰ روشن است؛ مسیر محافظت‌شده بدون Session مطابق انتظار به Login هدایت می‌شود.
+
+## MASTER-003-DEMO-BOOTSTRAP — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-08-31: داده‌های نمایشی اطلاعات پایه به‌شکلی در Git منتشر شوند که PC-A نیز بتواند همان رکوردها را در دیتابیس لوکال خود ببیند.
+- Branch: `codex/pc-b-master-data-demo-bootstrap` از `origin/develop@1fd22ef` پس از Merge #60؛ توسعه مستقیم روی `develop` انجام نمی‌شود.
+- محدوده رزرو: فرمان‌ها و Runner ریشه برای بارگذاری Environment، Build و Preview/Apply داده نمایشی، Parser و تست CLI در Master Data API، مستند اجرای PC-A و ورودی‌های همین Task در WORK_ASSIGNMENTS/PROJECT_STATUS. `package.json` فقط برای افزودن Script رزرو است؛ Dependency و Lockfile تغییر نمی‌کنند.
+- Fixture موجود ۷۸ رکورد/۴۰ کاتالوگ بدون تغییر ماهیت استفاده می‌شود. Seed عمومی Prisma، Startup، Schema/Migration، Contract، Customers، IAM و داده عملیاتی خارج از Scope هستند.
+- Apply باید همچنان فقط با فرمان صریح، محیط development/test، PostgreSQL روی localhost:55432 و DB مجاز اجرا شود؛ Production/Remote رد می‌شوند. اجرای دوباره idempotent است و داده ویرایش‌شده کاربر را بازنویسی نمی‌کند.
+- نتیجه: `pnpm master-data:demo:preview` و `pnpm master-data:demo:apply` از Root قابل اجرا هستند؛ Runner تنظیمات خصوصی را قبل از Prisma/Build بارگذاری می‌کند و Apply تأیید صریح را به ابزار سطح پایین می‌دهد. Preview واقعی هر ۷۸ رکورد را Reuse و کامل Rollback کرد. ۱۲ تست واحد CLI/Fixture، ۹ آزمون واقعی PostgreSQL 18، ۱٬۲۵۹ تست عمومی، lint/typecheck و Build کامل موفق‌اند. PR عادی به `develop` ساخته می‌شود؛ Branch حذف یا Force Push نمی‌شود.
+
+## MASTER-003-DEVELOP-INTEGRATION — PC-B — READY_FOR_REVIEW
+
 - Owner explicitly requested push and merge to dev/develop on 2026-08-31. This authorizes this normal PR integration, superseding the earlier no-merge restriction for the delivered Master Data snapshots; no force push or source-branch deletion.
 - Base: `origin/develop@e25f2886c3e6d7e90c33ef27604bdce76dc973f0` (merged #58). Source: #59 `b04c2bd7c31b6ef85ed7357d83f4c5f548183d12`, including #57 `6abd960` and the existing #55/#54/#47 lineage already retained by #58.
 - Branch: `codex/pc-b-master-data-develop-integration`; isolated worktree preserves the original checkout, live servers, private configuration and data.
 - Reservation under PC-B/MASTER-003: integration of the published Master Data files/migration/contract; compatibility changes in Master Data tests only; WORK_ASSIGNMENTS, PROJECT_STATUS, preservation of both published DECISIONS entries, and this integration task report. No new feature, Customers/Calendar edit, historical migration rewrite, dependency/lockfile change, or application database operation.
 - #58 integration reservation ended upon its verified merge. Existing PC-B development locks remain unchanged; this does not acquire or release another module's locks. Combined checks and review must pass before normal PR merge; no invented approvals or protection bypass.
-- Combined gates passed: full lint/typecheck/build, 1,257 ordinary tests and all 66 opt-in PostgreSQL tests, 27 migrations on empty PostgreSQL 18, two seeds, 45 authenticated catalog lists and 11 authenticated production HTTP/RTL routes. No application database or account changed. Existing Swagger documentation debt remains unchanged and is explicitly reported, not marked passed. See `docs/tasks/MASTER-003-DEVELOP-INTEGRATION.md`. PR #60 completed the integration reservation; the explicit global lock release is recorded by `MASTER-003-LOCK-RELEASE` above.
+- Combined gates passed: full lint/typecheck/build, 1,257 ordinary tests and all 66 opt-in PostgreSQL tests, 27 migrations on empty PostgreSQL 18, two seeds, 45 authenticated catalog lists and 11 authenticated production HTTP/RTL routes. No application database or account changed. Existing Swagger documentation debt remains unchanged and is explicitly reported, not marked passed. See `docs/tasks/MASTER-003-DEVELOP-INTEGRATION.md`. On successful PR merge only this integration reservation becomes DONE/MERGED; source branches and PC-B development locks remain.
 
 ## SHARED-INTEGRATION-0831 — PC-A — IN_PROGRESS
 

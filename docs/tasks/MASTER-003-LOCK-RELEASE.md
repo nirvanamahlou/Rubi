@@ -1,6 +1,7 @@
 # MASTER-003-LOCK-RELEASE
 
-Owner: PC-A. Date: 2026-09-01. Type: documentation-only handoff.
+Owner: PC-A. Date: 2026-09-01. Reconciled: 2026-09-02. Type:
+documentation-only historical handoff.
 
 ## Authorization and prerequisite
 
@@ -13,9 +14,16 @@ the current stable Master Data public contract, catalog usability changes, guard
 local demo tooling, and the recorded lint, typecheck, build, ordinary test,
 PostgreSQL test, migration, seed, and authenticated smoke results.
 
+Before this PR was merged, later work was integrated into `develop`, including the
+Documents vertical slice, later Master Data presentation work, IAM login stability,
+and the PC-A Customers contact/export integration. Conflict resolution therefore
+keeps the current `develop` versions of `WORK_ASSIGNMENTS.md`, `PLANS.md`, and
+`docs/PROJECT_STATUS.md` verbatim. This report must not roll those records back.
+
 ## Atomic release
 
-This handoff releases the following only when its PR is merged into `develop`:
+This handoff records the following historical MASTER-003 release when its PR is
+merged into `develop`:
 
 | Lock | Previous owner | Result |
 | --- | --- | --- |
@@ -29,19 +37,23 @@ The next task that needs a lock must start from current `origin/develop`, reserv
 in `WORK_ASSIGNMENTS.md`, list its exact files and producer/consumer compatibility,
 and keep the one-owner invariant.
 
+This historical closeout does not release, transfer, or modify any reservation made
+after PR #60. Current ownership and lock state are defined exclusively by the latest
+`WORK_ASSIGNMENTS.md` already present in `develop`.
+
 ## Preserved history and boundaries
 
 - MASTER-003 source branches, PRs, migrations, and task reports are retained.
 - Future Master Data changes require a new task such as MASTER-004 and new locks.
-- The existing `codex/pc-b-documents-foundation` branch does not receive database,
-  shared-contract, dependency, or central-doc ownership implicitly.
+- Documents did not receive ownership implicitly from this handoff; its later
+  reservations and releases remain governed by their own merged task records.
 - PC-A Ticket Catalog work does not receive Migration ownership implicitly.
 - No application code, Prisma schema, migration, seed, dependency, lockfile,
   runtime, local database, user account, secret, `main`, or source branch is changed.
 
 ## Validation
 
-Because this is documentation-only, software lint, typecheck, test, build, Prisma,
-and migration execution are intentionally not repeated. Required gates are scoped
-Prettier, Markdown links, code-fence balance, scope verification, secret scan, and
-`git diff --check`.
+Because the resulting delta against current `develop` is documentation-only,
+software lint, typecheck, test, build, Prisma, and migration execution are not
+repeated. Required gates are scoped Prettier, Markdown links, code-fence balance,
+scope verification, secret scan, and `git diff --check`.

@@ -1,4 +1,4 @@
-export const IAM_PERMISSION_CONTRACT_VERSION = 5 as const;
+export const IAM_PERMISSION_CONTRACT_VERSION = 6 as const;
 
 export const IAM_CORE_PERMISSION_CODES = [
   'iam.users.read',
@@ -48,11 +48,43 @@ export const LEGAL_ENTITY_PERMISSION_CODES = [
   'legal-entity.document.reissue',
 ] as const;
 
+export const DOCUMENT_PERMISSION_CODES = [
+  'documents.list',
+  'documents.metadata.read',
+  'documents.file.read',
+  'documents.download',
+  'documents.upload',
+  'documents.metadata.update',
+  'documents.version.create',
+  'documents.share.create',
+  'documents.share.revoke',
+  'documents.owner.change',
+  'documents.category.manage',
+  'documents.policy.manage',
+  'documents.audit.read',
+  'documents.quarantine.manage',
+  'documents.delete',
+  'documents.restore',
+  'documents.export',
+  'documents.sensitive.read',
+  'documents.sensitive.download',
+  'documents.customer_identity.read',
+  'documents.sales.read',
+  'documents.travel.read',
+  'documents.procurement.read',
+  'documents.finance.read',
+  'documents.hr.read',
+  'documents.organization.read',
+  'documents.reporting.read',
+  'documents.brand.read',
+] as const;
+
 export const IAM_PERMISSION_CODES = [
   ...IAM_CORE_PERMISSION_CODES,
   ...MASTER_DATA_PERMISSION_CODES,
   ...CUSTOMER_PERMISSION_CODES,
   ...LEGAL_ENTITY_PERMISSION_CODES,
+  ...DOCUMENT_PERMISSION_CODES,
 ] as const;
 
 export type IamPermissionCode = (typeof IAM_PERMISSION_CODES)[number];

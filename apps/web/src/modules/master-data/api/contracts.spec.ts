@@ -37,6 +37,35 @@ describe('master data API proposal', () => {
     expect(serialized).toContain('terminalType=VIP');
   });
 
+  it('serializes an inclusive creation-date range for list and export requests', () => {
+    const query = parseMasterDataListQuery({
+      createdFrom: '2026-08-01',
+      createdTo: '2026-08-31',
+    });
+    const serialized = serializeMasterDataListQuery(query);
+    expect(serialized).toContain('createdFrom=2026-08-01');
+    expect(serialized).toContain('createdTo=2026-08-31');
+    expect(
+      masterDataExportRequestSchema.safeParse({
+        resource: 'hotels',
+        format: 'xlsx',
+        filters: query,
+        columns: ['code', 'name'],
+        locale: 'fa-IR',
+        timezone: 'Asia/Tehran',
+      }).success,
+    ).toBe(true);
+  });
+
+  it('rejects non-ISO date-only filter values', () => {
+    expect(() =>
+      parseMasterDataListQuery({ createdFrom: '1405/06/09' }),
+    ).toThrow();
+    expect(() =>
+      parseMasterDataListQuery({ createdTo: '2026-02-31' }),
+    ).toThrow();
+  });
+
   it('serializes accommodation filters without leaking unknown keys', () => {
     const query = parseMasterDataListQuery({
       starRating: 5,

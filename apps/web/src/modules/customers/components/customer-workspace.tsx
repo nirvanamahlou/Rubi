@@ -107,6 +107,7 @@ import {
 import {
   buildCustomerConsentRequest,
   customerListFailureState,
+  customerSensitiveRevealFeedback,
   fetchCustomerConflictSnapshot,
 } from './customer-workspace-state';
 
@@ -287,6 +288,10 @@ function CustomerDrawer({
   const [primaryEmail, setPrimaryEmail] = useState('');
   const [newCompanions, setNewCompanions] = useState<NewCompanionDraft[]>([]);
   const [sensitiveReason, setSensitiveReason] = useState('');
+  const [sensitiveFeedback, setSensitiveFeedback] = useState<{
+    kind: 'success' | 'unauthorized' | 'forbidden' | 'unreadable' | 'error';
+    message: string;
+  } | null>(null);
   const [revealedDetail, setRevealedDetail] = useState<CustomerDetail | null>(
     null,
   );
@@ -371,6 +376,7 @@ function CustomerDrawer({
       sensitiveRequestId.current += 1;
       setRevealedDetail(null);
       setSensitiveReason('');
+      setSensitiveFeedback(null);
     };
     const timer = revealedDetail
       ? window.setTimeout(remask, 60_000)
@@ -703,23 +709,44 @@ function CustomerDrawer({
 
   async function revealSensitive() {
     if (!customer || !sensitiveReason) {
-      setMessage('برای نمایش داده حساس، دلیل مجاز را انتخاب کنید.');
+      const feedback = {
+        kind: 'error',
+        message: 'برای نمایش شماره کامل، ابتدا دلیل مجاز را انتخاب کنید.',
+      } as const;
+      setSensitiveFeedback(feedback);
+      if (activeTab !== 'contacts') setMessage(feedback.message);
       return;
     }
     setBusy(true);
+    setSensitiveFeedback(null);
     const requestId = ++sensitiveRequestId.current;
     try {
       const response = await customersApi.detail(customer.id, sensitiveReason);
       if (requestId !== sensitiveRequestId.current) return;
       setRevealedDetail(response.data);
-      setMessage(
-        'نمایش حساس برای همین مشاهده فعال شد و دلیل آن در Audit ثبت شده است.',
-      );
+      const hasRevealedValue =
+        activeTab === 'contacts'
+          ? response.data.contacts.some((item) => Boolean(item.value))
+          : Boolean(response.data.nationalId);
+      const feedback = hasRevealedValue
+        ? {
+            kind: 'success' as const,
+            message:
+              'شماره کامل برای همین مشاهده نمایش داده شد و دلیل آن در Audit ثبت شد.',
+          }
+        : {
+            kind: 'error' as const,
+            message:
+              'Backend پاسخ داد، اما شماره کاملی در این پرونده برنگرداند. ثبت تماس و تنظیمات رمزگشایی را بررسی کنید.',
+          };
+      setSensitiveFeedback(feedback);
+      if (activeTab !== 'contacts') setMessage(feedback.message);
       requestTimelines();
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : 'نمایش داده حساس ناموفق بود.',
-      );
+      setRevealedDetail(null);
+      const feedback = customerSensitiveRevealFeedback(error);
+      setSensitiveFeedback(feedback);
+      if (activeTab !== 'contacts') setMessage(feedback.message);
     } finally {
       setBusy(false);
     }
@@ -1492,6 +1519,7 @@ function CustomerDrawer({
               sensitiveRequestId.current += 1;
               setRevealedDetail(null);
               setSensitiveReason('');
+              setSensitiveFeedback(null);
               onTabChange(tab);
             }}
             value={activeTab}
@@ -1572,7 +1600,10 @@ function CustomerDrawer({
                 <Card className="grid gap-3 p-4 sm:grid-cols-[1fr_auto]">
                   <FormField label="دلیل نمایش کد ملی">
                     <Select
-                      onValueChange={setSensitiveReason}
+                      onValueChange={(value) => {
+                        setSensitiveReason(value);
+                        setSensitiveFeedback(null);
+                      }}
                       value={sensitiveReason}
                     >
                       <SelectTrigger aria-label="دلیل نمایش کد ملی">
@@ -1687,7 +1718,10 @@ function CustomerDrawer({
               <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                 <FormField label="دلیل مشاهده شماره تماس">
                   <Select
-                    onValueChange={setSensitiveReason}
+                    onValueChange={(value) => {
+                      setSensitiveReason(value);
+                      setSensitiveFeedback(null);
+                    }}
                     value={sensitiveReason}
                   >
                     <SelectTrigger aria-label="دلیل مشاهده شماره تماس">
@@ -1713,6 +1747,30 @@ function CustomerDrawer({
                   نمایش شماره کامل
                 </Button>
               </div>
+              {sensitiveFeedback ? (
+                <Alert
+                  className="mt-3"
+                  description={sensitiveFeedback.message}
+                  title={
+                    sensitiveFeedback.kind === 'success'
+                      ? 'شماره نمایش داده شد'
+                      : 'نمایش شماره انجام نشد'
+                  }
+                  tone={sensitiveFeedback.kind === 'success' ? 'info' : 'error'}
+                >
+                  {sensitiveFeedback.kind === 'unauthorized' ? (
+                    <a
+                      className={buttonVariants({
+                        className: 'mt-3',
+                        size: 'sm',
+                      })}
+                      href="/login?next=%2Fcustomers"
+                    >
+                      ورود دوباره
+                    </a>
+                  ) : null}
+                </Alert>
+              ) : null}
               <p className="text-sm text-muted-foreground">
                 برای دیدن شماره کامل مشتری یا مسافر، دلیل مشاهده را انتخاب کنید.
                 پس از نمایش، دکمه تماس فعال می‌شود. شماره‌ها پس از یک دقیقه یا
@@ -1724,6 +1782,7 @@ function CustomerDrawer({
                     sensitiveRequestId.current += 1;
                     setRevealedDetail(null);
                     setSensitiveReason('');
+                    setSensitiveFeedback(null);
                   }}
                   type="button"
                   size="sm"
@@ -2362,6 +2421,7 @@ export function CustomerWorkspace() {
   );
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [exportReason, setExportReason] = useState('');
   const [importing, setImporting] = useState(false);
   const [importPreview, setImportPreview] = useState<
     CustomerImportPreviewRow[] | null
@@ -2533,6 +2593,10 @@ export function CustomerWorkspace() {
   }
 
   async function exportFilteredCustomers() {
+    if (!exportReason) {
+      setNotice('برای خروجی شماره‌های کامل، ابتدا دلیل مجاز را انتخاب کنید.');
+      return;
+    }
     setExporting(true);
     setNotice(null);
     try {
@@ -2562,10 +2626,27 @@ export function CustomerWorkspace() {
         });
         exportRecords.push(...response.data);
       }
+      const revealedPrimaryContacts = new Map<string, string>();
+      for (const record of exportRecords) {
+        const detail = (await customersApi.detail(record.id, exportReason))
+          .data;
+        const primaryPhone =
+          detail.contacts.find(
+            (contact) =>
+              contact.type === 'phone' && contact.isPrimary && contact.value,
+          ) ??
+          detail.contacts.find(
+            (contact) => contact.type === 'phone' && contact.value,
+          );
+        revealedPrimaryContacts.set(
+          record.id,
+          primaryPhone?.value?.trim() || 'بدون تماس',
+        );
+      }
       const rows = exportRecords.map((record) => [
         record.displayName,
         record.maskedNationalId ?? 'ثبت نشده',
-        record.maskedPrimaryContact ?? 'بدون تماس',
+        revealedPrimaryContacts.get(record.id) ?? 'بدون تماس',
         record.status === 'active' ? 'فعال' : 'غیرفعال',
         record.roles
           .map((item) => (item === 'customer' ? 'مشتری' : 'مسافر'))
@@ -2579,12 +2660,12 @@ export function CustomerWorkspace() {
         formatCustomerDate(record.updatedAt, calendarMode),
       ]);
       downloadCustomerXlsx(
-        `customers-${new Date().toISOString().slice(0, 10)}.xlsx`,
+        `customers-with-phones-${new Date().toISOString().slice(0, 10)}.xlsx`,
         [
           [
             'نام مشتری',
             'کد ملی (ماسک‌شده)',
-            'شماره تماس (ماسک‌شده)',
+            'شماره تماس',
             'وضعیت',
             'نقش‌ها',
             'رضایت',
@@ -2595,14 +2676,10 @@ export function CustomerWorkspace() {
         ],
       );
       setNotice(
-        `خروجی XLSX همه ${exportRecords.length.toLocaleString('fa-IR')} رکورد مطابق فیلترهای فعال همراه با شماره تماس ماسک‌شده ساخته شد.`,
+        `خروجی حساس XLSX همه ${exportRecords.length.toLocaleString('fa-IR')} رکورد مطابق فیلترهای فعال همراه با شماره تماس کامل ساخته و دلیل مشاهده در Audit ثبت شد.`,
       );
     } catch (error) {
-      setNotice(
-        error instanceof Error
-          ? error.message
-          : 'ساخت خروجی کامل مشتریان ناموفق بود.',
-      );
+      setNotice(customerSensitiveRevealFeedback(error).message);
     } finally {
       setExporting(false);
     }
@@ -2808,15 +2885,37 @@ export function CustomerWorkspace() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            disabled={records.length === 0 || exporting}
-            onClick={() => void exportFilteredCustomers()}
-            size="lg"
-            variant="outline"
-          >
-            <Download className="size-4" />
-            {exporting ? 'در حال ساخت خروجی کامل…' : 'خروجی Excel'}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select
+              disabled={exporting}
+              onValueChange={setExportReason}
+              value={exportReason}
+            >
+              <SelectTrigger
+                aria-label="دلیل خروجی شماره‌های کامل"
+                className="h-11 min-w-44"
+                id="customer-sensitive-export-reason"
+              >
+                <SelectValue placeholder="دلیل نمایش شماره‌ها" />
+              </SelectTrigger>
+              <SelectContent>
+                {sensitiveReasons.map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              disabled={records.length === 0 || exporting || !exportReason}
+              onClick={() => void exportFilteredCustomers()}
+              size="lg"
+              variant="outline"
+            >
+              <Download className="size-4" />
+              {exporting ? 'در حال ساخت خروجی…' : 'خروجی Excel'}
+            </Button>
+          </div>
           <Button
             onClick={() =>
               downloadCustomerXlsx('customer-import-template.xlsx', [
@@ -3170,7 +3269,7 @@ export function CustomerWorkspace() {
                       variant="outline"
                     >
                       <Phone aria-hidden="true" className="size-4" />
-                      نمایش شماره و تماس
+                      مشاهده تماس‌ها
                     </Button>
                   </td>
                   <td className="p-4">
