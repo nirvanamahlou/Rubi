@@ -3,6 +3,7 @@
 import { FileUp, FolderKanban, Link2, ShieldCheck } from 'lucide-react';
 import type {
   BranchReference,
+  DocumentCaseOptionV1,
   DocumentOptionsResponseV1,
 } from '@rubi/contracts';
 import { useMemo, useState } from 'react';
@@ -13,6 +14,7 @@ import {
   type DocumentUploadValues,
   validateDocumentUpload,
 } from '../model/document-upload-form';
+import { DocumentCasePicker } from './document-case-picker';
 
 import {
   Alert,
@@ -61,6 +63,9 @@ export function DocumentUploadDialog({
       : { ...emptyDocumentUploadValues },
   );
   const [file, setFile] = useState<File | null>(null);
+  const [selectedCase, setSelectedCase] = useState<DocumentCaseOptionV1 | null>(
+    null,
+  );
   const [validationError, setValidationError] = useState('');
 
   const selectedType = useMemo(
@@ -93,6 +98,7 @@ export function DocumentUploadDialog({
     if (await onSubmit(form)) {
       setValues({ ...emptyDocumentUploadValues });
       setFile(null);
+      setSelectedCase(null);
       setValidationError('');
     }
   }
@@ -101,6 +107,7 @@ export function DocumentUploadDialog({
     if (!nextOpen && !submitting) {
       setValues({ ...emptyDocumentUploadValues });
       setFile(null);
+      setSelectedCase(null);
       setValidationError('');
     }
     onOpenChange(nextOpen);
@@ -267,55 +274,25 @@ export function DocumentUploadDialog({
                 ۳. ارتباط با پرونده
               </h3>
             </div>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <FormField id="source-module" label="ماژول مبدأ" required>
-                <Input
-                  id="source-module"
-                  onChange={(event) =>
-                    update('sourceModule', event.target.value)
-                  }
-                  placeholder="Sales Contracts"
-                  required
-                  value={values.sourceModule}
-                />
-              </FormField>
+            <p className="mt-2 text-sm text-muted-foreground">
+              مشخص کنید این فایل متعلق به کدام قرارداد، رزرو یا پرونده موجود در
+              آرشیو است.
+            </p>
+            <div className="mt-4">
               <FormField
-                id="source-entity-type"
-                label="نوع رکورد مبدأ"
+                description="فقط پرونده‌های قابل‌دسترسی در شعبه انتخاب‌شده نمایش داده می‌شوند."
+                id="source-relation"
+                label="پرونده مربوطه"
                 required
               >
-                <Input
-                  id="source-entity-type"
-                  onChange={(event) =>
-                    update('sourceEntityType', event.target.value)
-                  }
-                  placeholder="sales_contract"
-                  required
-                  value={values.sourceEntityType}
-                />
-              </FormField>
-              <FormField
-                id="source-entity-id"
-                label="شناسه رکورد مبدأ"
-                required
-              >
-                <Input
-                  id="source-entity-id"
-                  onChange={(event) =>
-                    update('sourceEntityId', event.target.value)
-                  }
-                  required
-                  value={values.sourceEntityId}
-                />
-              </FormField>
-              <FormField id="source-label" label="عنوان پرونده" required>
-                <Input
-                  id="source-label"
-                  onChange={(event) =>
-                    update('sourceDisplayLabel', event.target.value)
-                  }
-                  required
-                  value={values.sourceDisplayLabel}
+                <DocumentCasePicker
+                  branchId={values.branchId}
+                  disabled={submitting}
+                  onSelect={(option) => {
+                    setSelectedCase(option);
+                    update('sourceRelationId', option?.id ?? '');
+                  }}
+                  selected={selectedCase}
                 />
               </FormField>
             </div>
@@ -332,7 +309,17 @@ export function DocumentUploadDialog({
               <FormField id="document-branch" label="شعبه" required>
                 <Select
                   disabled={!branches.length || submitting}
-                  onValueChange={(value) => update('branchId', value)}
+                  onValueChange={(value) => {
+                    if (value !== values.branchId) {
+                      setSelectedCase(null);
+                      setValues((current) => ({
+                        ...current,
+                        branchId: value,
+                        sourceRelationId: '',
+                      }));
+                      setValidationError('');
+                    }
+                  }}
                   value={values.branchId}
                 >
                   <SelectTrigger aria-label="شعبه" id="document-branch">

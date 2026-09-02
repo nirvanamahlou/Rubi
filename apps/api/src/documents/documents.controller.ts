@@ -16,7 +16,10 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
-import type { DocumentListQueryV1 } from '@rubi/contracts';
+import type {
+  DocumentCaseOptionsQueryV1,
+  DocumentListQueryV1,
+} from '@rubi/contracts';
 
 import { AuthGuard } from '../iam/auth.guard';
 import { RequirePermissions } from '../iam/iam.decorators';
@@ -24,7 +27,11 @@ import type { AuthenticatedRequest } from '../iam/iam.types';
 import { PermissionGuard } from '../iam/permission.guard';
 // Runtime imports are required for Nest validation metadata.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-import { DocumentListQueryDto, DocumentUploadDto } from './documents.dto';
+import {
+  DocumentCaseOptionsQueryDto,
+  DocumentListQueryDto,
+  DocumentUploadDto,
+} from './documents.dto';
 import {
   type DocumentRequestMetadata,
   DocumentsService,
@@ -84,6 +91,20 @@ export class DocumentsController {
     return this.service.options(request.actor);
   }
 
+  @Get('case-options')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @RequirePermissions('documents.list')
+  caseOptions(
+    @Query() query: DocumentCaseOptionsQueryDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.caseOptions(
+      query as DocumentCaseOptionsQueryV1,
+      request.actor,
+    );
+  }
+
   @Post('upload')
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -96,10 +117,17 @@ export class DocumentsController {
         'categoryId',
         'branchId',
         'ownerUserId',
-        'sourceModule',
-        'sourceEntityType',
-        'sourceEntityId',
-        'sourceDisplayLabel',
+      ],
+      oneOf: [
+        { required: ['sourceRelationId'] },
+        {
+          required: [
+            'sourceModule',
+            'sourceEntityType',
+            'sourceEntityId',
+            'sourceDisplayLabel',
+          ],
+        },
       ],
       properties: {
         file: { type: 'string', format: 'binary' },
@@ -108,10 +136,18 @@ export class DocumentsController {
         categoryId: { type: 'string', format: 'uuid' },
         branchId: { type: 'string', format: 'uuid' },
         ownerUserId: { type: 'string', format: 'uuid' },
-        sourceModule: { type: 'string' },
-        sourceEntityType: { type: 'string' },
-        sourceEntityId: { type: 'string' },
-        sourceDisplayLabel: { type: 'string' },
+        sourceRelationId: {
+          type: 'string',
+          format: 'uuid',
+          description: 'شناسه داخلی پرونده انتخاب‌شده از case-options',
+        },
+        sourceModule: { type: 'string', description: 'Legacy fallback' },
+        sourceEntityType: { type: 'string', description: 'Legacy fallback' },
+        sourceEntityId: { type: 'string', description: 'Legacy fallback' },
+        sourceDisplayLabel: {
+          type: 'string',
+          description: 'Legacy fallback',
+        },
       },
     },
   })

@@ -37,6 +37,10 @@ describe('Documents HTTP boundary', () => {
       meta: { page: 1, pageSize: 25, total: 0, totalPages: 1 },
     }),
     options: vi.fn().mockResolvedValue({ data: {} }),
+    caseOptions: vi.fn().mockResolvedValue({
+      data: [],
+      meta: { hasMore: false, limit: 20 },
+    }),
     upload: vi.fn().mockResolvedValue({ data: { id: 'document-id' } }),
     detail: vi.fn().mockResolvedValue({ data: { id: 'document-id' } }),
     audit: vi.fn().mockResolvedValue({ data: [] }),
@@ -140,6 +144,23 @@ describe('Documents HTTP boundary', () => {
     expect(service.list).not.toHaveBeenCalled();
   });
 
+  it('validates and forwards searchable case options with actor scope', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/documents/case-options')
+      .query({ branchId, search: 'قرارداد', limit: 20 })
+      .set('Cookie', 'rubi_access=test')
+      .expect(200);
+
+    expect(response.headers['cache-control']).toBe('private, no-store');
+    expect(service.caseOptions).toHaveBeenCalledWith(
+      { branchId, search: 'قرارداد', limit: 20 },
+      actor,
+    );
+    expect(iam.assertPermissions).toHaveBeenCalledWith(actor, [
+      'documents.list',
+    ]);
+  });
+
   it('accepts a multipart file and validated ownership/source metadata', async () => {
     await request(app.getHttpServer())
       .post('/api/v1/documents/upload')
@@ -149,10 +170,7 @@ describe('Documents HTTP boundary', () => {
       .field('categoryId', '66666666-6666-4666-8666-666666666666')
       .field('branchId', branchId)
       .field('ownerUserId', actor.userId)
-      .field('sourceModule', 'sales')
-      .field('sourceEntityType', 'contract')
-      .field('sourceEntityId', 'SALES-42')
-      .field('sourceDisplayLabel', 'قرارداد فروش ۴۲')
+      .field('sourceRelationId', '99999999-9999-4999-8999-999999999999')
       .attach('file', Buffer.from('%PDF-1.7\nhttp test'), {
         filename: 'contract.pdf',
         contentType: 'application/pdf',
