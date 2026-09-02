@@ -6,7 +6,7 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { getPublicApiBaseUrl } from '@/lib/environment';
-import { loginErrorMessage } from './login-error';
+import { loginErrorMessage, loginInputError } from './login-error';
 
 export function LoginForm() {
   const router = useRouter();
@@ -18,21 +18,33 @@ export function LoginForm() {
     setError('');
     setLoading(true);
     const values = new FormData(event.currentTarget);
+    const inputError = loginInputError(
+      values.get('username'),
+      values.get('password'),
+    );
+    if (inputError) {
+      setError(inputError);
+      setLoading(false);
+      return;
+    }
     const api = getPublicApiBaseUrl();
     if (!api) {
       setError('آدرس API تنظیم نشده است.');
       setLoading(false);
       return;
     }
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
     try {
       const response = await fetch(`${api}/iam/auth/login`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          username: values.get('username'),
+          username: String(values.get('username')).trim(),
           password: values.get('password'),
         }),
+        signal: controller.signal,
       });
       if (!response.ok) {
         setError(loginErrorMessage(response.status));
@@ -45,14 +57,19 @@ export function LoginForm() {
           : '/dashboard',
       );
       router.refresh();
-    } catch {
-      setError('ارتباط با سرور برقرار نشد.');
+    } catch (requestError) {
+      setError(
+        requestError instanceof DOMException && requestError.name === 'AbortError'
+          ? 'پاسخ سرور طول کشید. دوباره تلاش کنید.'
+          : 'ارتباط با سرور برقرار نشد.',
+      );
     } finally {
+      window.clearTimeout(timeout);
       setLoading(false);
     }
   }
   return (
-    <form className="mt-8 grid gap-5" onSubmit={submit}>
+    <form className="mt-8 grid gap-5" noValidate onSubmit={submit}>
       <FormField id="username" label="نام کاربری" required>
         <Input
           autoComplete="username"
