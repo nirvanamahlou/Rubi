@@ -1,5 +1,13 @@
 # Work Assignments
 
+## CUSTOMER-MASTERDATA-RETRY — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-02: کامل‌ترین نسخه قبلی Customers روی پورت ۳۱۰۰ حفظ شود و پیام نادرست «اطلاعات پایه در دسترس نیست» پس از تمدید نشست رفع گردد. `COMPUTER_ID=PC-A`.
+- Branch مستقل و Stacked: `codex/pc-a-customer-masterdata-retry` روی نسخه تحویلی Ticket/Customers؛ محدوده فقط اتصال Public Master Data در Web Customers، تست مستقیم و سند همین اصلاح است.
+- هیچ Schema/Migration/Seed، Passport/Visa persistence، API/Contract، Dependency/Lockfile یا داده‌ای تغییر نمی‌کند. `DEC-OPEN-006` همچنان باز است و قابلیت مدرک ساختگی فعال نمی‌شود.
+- نتیجه: پاسخ 401 فهرست‌های اطلاعات پایه فقط یک بار با Refresh مشترک نشست بازیابی و همان درخواست تکرار می‌شود؛ 403، Network و 5xx پنهان یا بی‌نهایت تکرار نمی‌شوند. تمام Commitهای قبلی CUSTOMER-002B و اتصال Documents در مبنای فعال حفظ شده‌اند.
+- Validation: تست هدفمند ۴۷/۴۷، همه ۵۶۵ تست Web، lint، typecheck و Production Build موفق‌اند. Final lock state: `RELEASED — PC-A/CUSTOMER-MASTERDATA-RETRY ready for review`؛ هیچ قفل مشترکی تغییر نکرد.
+
 ## TICKET-CATALOG-EDIT-COMPLETENESS — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-02: فرم ویرایش بلیت باید تمام اطلاعات ثبت‌شده بلیت را حتی برای رکوردهای قدیمی که فقط Snapshot نمایشی دارند نشان دهد. `COMPUTER_ID=PC-A`.

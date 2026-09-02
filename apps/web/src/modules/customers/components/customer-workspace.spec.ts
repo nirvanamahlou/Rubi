@@ -179,12 +179,15 @@ describe('Customer Operations workspace boundaries', () => {
   });
 
   it('uses public master-data APIs and keeps Legal Entity out of customer scope', () => {
-    expect(source).toContain(
-      "import { masterDataApi } from '@/modules/master-data/api/client'",
-    );
+    expect(source).toContain("from '@/modules/master-data/api/client'");
+    expect(source).toContain('masterDataApi.list(resource');
     expect(source).toContain("listMasterData('organizations')");
     expect(source).toContain("listMasterData('acquaintance-methods')");
     expect(source).toContain("listMasterData('cities')");
+    expect(source).toContain('error instanceof MasterDataApiError');
+    expect(source).toContain('error.status === 401');
+    expect(source).toContain('refreshAuthenticatedSession(apiBaseUrl)');
+    expect(source).toContain('return listMasterData(resource, true)');
     expect(source).not.toMatch(
       /legalEntityId|issuerContext|selectedLegalEntity/,
     );
