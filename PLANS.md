@@ -29,6 +29,9 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 - [x] `DOCUMENTS-003B`: پیش‌نمایش امن JPEG/PNG در جزئیات فایل پس از Scan پاک؛ مسیر inline
       احراز‌شده، مجوز مشاهده مستقل، دلیل محرمانگی، Audit و Blob URL موقت با cleanup؛
       روی شاخه فرزند و بدون Migration/Dependency/Contract عمومی.
+- [x] `DOCUMENTS-003C-DEMO-BOOTSTRAP`: هفت سند و تصویر کاملاً ساختگی، قابل Preview و
+      قابل ایجاد تکرارپذیر روی دیتابیس/Storage محلی هر دو کامپیوتر؛ Preview بدون Write،
+      Apply صریح با Antivirus واقعی و بدون Migration/Dependency/Secret.
 - [ ] `DOCUMENTS-003`: Adapter تولیدی S3/MinIO و Antivirus Worker عملیاتی با retry،
       monitoring و recovery؛ پس از تصمیم امنیت/عملیات و رزرو تازه Migration/Dependency.
 - [ ] `DOCUMENTS-004`: اشتراک امن، نسخه‌گذاری تکمیلی، Export، retention نهایی و اتصال
