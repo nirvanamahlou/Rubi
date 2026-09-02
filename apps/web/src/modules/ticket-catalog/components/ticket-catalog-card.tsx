@@ -183,7 +183,7 @@ export function TicketCatalogCard({
           </Button>
           {powerStatus ? (
             <Button
-              size="sm"
+              size="icon"
               variant="outline"
               className={
                 powerStatus === 'active'
@@ -203,18 +203,16 @@ export function TicketCatalogCard({
               onClick={() => onStatus(powerStatus)}
             >
               <Power className="size-4" aria-hidden />
-              {powerStatus === 'active' ? 'فعال‌کردن فروش' : 'توقف فروش'}
             </Button>
           ) : (
             <Button
-              size="sm"
+              size="icon"
               variant="outline"
               disabled
               title="فروش این بلیت متوقف است"
               aria-label="فروش این بلیت متوقف است"
             >
               <Power className="size-4" aria-hidden />
-              فروش متوقف است
             </Button>
           )}
         </div>

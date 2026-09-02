@@ -21,11 +21,11 @@ describe('Rendered ticket UI', () => {
     expect(html).not.toContain('شروع پیش‌نمایش');
     expect(html).not.toContain('حالت شبیه‌سازی');
   });
-  it('renders route filters, a labeled stop-sale control and issued filters', () => {
+  it('renders route filters, icon-only sale controls and issued filters', () => {
     const sample = previewSamples('2026-08-31T00:00:00.000Z')[0]!;
     const card = renderToStaticMarkup(
       createElement(TicketCatalogCard, {
-        product: sample,
+        product: { ...sample, status: 'active' },
         referenceLabel: (_kind: string, _id: string, fallback: string) =>
           fallback,
         onView: () => {},
@@ -77,14 +77,16 @@ describe('Rendered ticket UI', () => {
         tickets: [],
       }),
     );
-    expect(card).toContain('توقف فروش');
+    expect(card).toContain('aria-label="توقف فروش بلیت"');
     expect(card).not.toContain('disabled=""');
-    expect(pausedCard).toContain('فعال‌کردن فروش');
+    expect(pausedCard).toContain('aria-label="فعال‌کردن دوباره فروش بلیت"');
     expect(pausedCard).not.toContain('disabled=""');
-    expect(draftCard).toContain('فعال‌کردن فروش');
+    expect(draftCard).toContain('aria-label="فعال‌کردن دوباره فروش بلیت"');
     expect(draftCard).not.toContain('disabled=""');
+    expect(card).not.toContain('</svg>توقف فروش');
+    expect(pausedCard).not.toContain('</svg>فعال‌کردن فروش');
     expect(cancelledCard).toContain('ویرایش');
-    expect(cancelledCard).toContain('فروش متوقف است');
+    expect(cancelledCard).toContain('aria-label="فروش این بلیت متوقف است"');
     expect(cancelledCard).toContain('disabled=""');
     expect(issued).toContain('شماره قرارداد');
     expect(issued).toContain('شماره بلیت یا PNR');
