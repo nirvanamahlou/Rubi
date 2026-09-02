@@ -1,14 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  BusFront,
-  Plane,
-  Plus,
-  RefreshCw,
-  TrainFront,
-  Users,
-} from 'lucide-react';
+import { BusFront, Plane, Plus, Ticket, TrainFront } from 'lucide-react';
 import {
   Alert,
   Button,
@@ -270,27 +263,10 @@ export function TicketWorkspace() {
         title="مدیریت و تعریف بلیت‌ها"
         eyebrow="هواپیما • قطار • اتوبوس"
         actions={
-          <>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setProducts((rows) => [
-                  ...rows.filter((row) => !row.id.startsWith('sample-ticket-')),
-                  ...catalogSamples(new Date().toISOString()),
-                ]);
-                setNotice(
-                  'بلیت‌های ساختگی هواپیما، قطار و اتوبوس بازگردانی شدند.',
-                );
-              }}
-            >
-              <RefreshCw className="size-4" aria-hidden />
-              افزودن نمونه‌ها
-            </Button>
-            <Button onClick={() => setForm({ mode: 'create' })}>
-              <Plus className="size-4" aria-hidden />
-              تعریف بلیت جدید
-            </Button>
-          </>
+          <Button onClick={() => setForm({ mode: 'create' })}>
+            <Plus className="size-4" aria-hidden />
+            تعریف بلیت جدید
+          </Button>
         }
       />
       {problem && !statusChange && !repeat ? (
@@ -303,7 +279,7 @@ export function TicketWorkspace() {
             <p className="text-2xl font-black text-blue-800 dark:text-blue-200">
               {hydrated ? products.length.toLocaleString('fa-IR') : '…'}
             </p>
-            <Users className="size-7 text-blue-600" aria-hidden />
+            <Ticket className="size-7 text-blue-600" aria-hidden />
           </div>
         </Card>
         {(['flight', 'train', 'bus'] as const).map((transport) => {
