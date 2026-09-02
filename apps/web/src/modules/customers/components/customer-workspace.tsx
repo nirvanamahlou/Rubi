@@ -730,12 +730,12 @@ function CustomerDrawer({
           : Boolean(response.data.nationalId);
       const feedback = hasRevealedValue
         ? {
-            kind: 'success',
+            kind: 'success' as const,
             message:
               'شماره کامل برای همین مشاهده نمایش داده شد و دلیل آن در Audit ثبت شد.',
           }
         : {
-            kind: 'error',
+            kind: 'error' as const,
             message:
               'Backend پاسخ داد، اما شماره کاملی در این پرونده برنگرداند. ثبت تماس و تنظیمات رمزگشایی را بررسی کنید.',
           };
