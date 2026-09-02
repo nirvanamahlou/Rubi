@@ -103,7 +103,9 @@ describe('portable synthetic Documents demo fixtures', () => {
       '.data/documents',
     ],
     ['postgresql://127.0.0.1:55432/rubi', 'test', 'C:\\'],
+    ['postgresql://127.0.0.1:55432/rubi', 'test', 'C:/'],
     ['postgresql://127.0.0.1:55432/rubi', 'test', '\\\\server\\share'],
+    ['postgresql://127.0.0.1:55432/rubi', 'test', '//server/share'],
   ])('rejects unsafe database or storage targets', (url, environment, root) => {
     expect(() =>
       assertLocalDocumentsDemoTarget(url, environment, root),

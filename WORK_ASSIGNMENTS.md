@@ -1,5 +1,25 @@
 # Work Assignments
 
+## DOCUMENTS-003C-CI-PORTABILITY — PC-B — READY_FOR_REVIEW
+
+- CI مشترک پس از Merge PR #72 دو شکست Linux-only در محافظ Storage بسته داده نمایشی Documents کشف کرد؛ درخواست صریح مالک برای Push و Merge تمام تغییرات، مجوز اصلاح محدود این مانع یکپارچه‌سازی است. `COMPUTER_ID=PC-B`.
+- Branch موقت اصلاح همان `codex/pc-b-ci-foundation` است تا PR #71 فقط پس از سبزشدن آخرین `develop` Merge شود. محدوده فقط `apps/api/src/documents/demo/local-document-demo.ts`، تست موجود `document-demo-fixtures.spec.ts` در صورت نیاز و اسناد همین Work Item است.
+- هدف: مسیر ریشه Windows و UNC روی runner لینوکسی نیز fail-closed رد شوند، درحالی‌که مسیر scoped ویندوزی و مسیر scoped محلی معتبر باقی بمانند.
+- بدون Schema/Migration/Seed، Dependency/Lockfile، API Contract، Permission، داده کاربردی یا تغییر Storage. مالکیت اصلی Documents گسترش نمی‌یابد و Worktreeهای قبلی دست‌نخورده می‌مانند.
+- نتیجه: اعتبارسنجی Storage Root اکنون ورودی خام را مستقل از سیستم‌عامل برای Windows drive root و UNC بررسی می‌کند و مسیر scoped معتبر را حفظ می‌کند. دو پوشش رگرسیون برای `C:/` و UNC با slash افزوده شد؛ Prettier، lint هدفمند و هر ۱۴ تست Fixture موفق‌اند.
+- Final lock state: `RELEASED — PC-B/DOCUMENTS-003C-CI-PORTABILITY ready for review`. هیچ قفل Migration، Dependency/Lockfile، Contract، Permission یا داده‌ای گرفته نشد.
+
+## CI-001 — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-01: CI مشترک و اجباری برای Branchها و PRهای PC-A/PC-B، بدون لغو یا اختلال متقابل، پیاده‌سازی شود. `COMPUTER_ID=PC-B`.
+- Branch: `codex/pc-b-ci-foundation` از `origin/develop@8758271883bf1d9f4bb072aa31250b39f66e4e07` در Worktree مستقل `C:\Users\admin\Rubi-ci`؛ Checkoutها، Branchها، سرورها و تغییرات محلی هر دو کامپیوتر خارج از این کار هستند.
+- محدوده رزروشده: Workflow جدید `.github/workflows/ci.yml`، سند مستقل `docs/tasks/CI-001.md` و فقط ورودی‌های همین Work Item در اسناد وضعیت مرکزی.
+- این Task هیچ مالکیت Migration، Dependency/Lockfile، Schema/Seed، API Contract یا ماژول کاربردی نمی‌گیرد و هیچ فایل `package.json`، `pnpm-lock.yaml` یا Migration را تغییر نمی‌دهد.
+- CI برای Push و Pull Request شاخه‌های `codex/pc-a-*` و `codex/pc-b-*` و Push به `develop` اجرا می‌شود. کلید Concurrency بر اساس نوع رخداد و Head Branch است؛ فقط اجرای قدیمی همان رخداد و Branch لغو می‌شود، Push و PR یکدیگر را متوقف نمی‌کنند و اجرای PC-A/PC-B مستقل می‌ماند.
+- Gate اجباری این Slice: نصب frozen با Node/pnpm pin‌شده، Prisma format/validate/generate، Prettier فایل‌های تغییرکرده، Full Monorepo lint، Full typecheck/test/build و Migration/Seed دوگانه روی PostgreSQL 18 موقت. بدهی قالب‌بندی فایل‌های قدیمی به Branchهای جاری تحمیل نمی‌شود؛ هیچ Deploy، Production credential یا تغییر دیتابیس کاربردی انجام نمی‌شود.
+- نتیجه: Workflow خواندنی و بدون Deploy آماده شد. Full lint/typecheck/test/build محلی موفق است؛ ۲۸ Migration روی PostgreSQL 18 خالی اعمال و Seed دوبار موفق شد. فایل‌های همین Slice با Prettier معتبرند؛ بدهی قالب‌بندی ۵۰۷ فایل قدیمی فقط به‌عنوان سابقه ثبت و به Branchهای جاری تحمیل نشد.
+- Final lock state: `RELEASED — PC-B/CI-001 ready for review`. این Task هیچ Migration، Dependency/Lockfile، Schema/Seed، Contract یا مالکیت ماژولی نگرفت؛ Branchها، Worktreeها، Dev Serverها و دیتابیس‌های PC-A/PC-B دست‌نخورده ماندند.
+
 ## DOCUMENTS-003C-DEMO-BOOTSTRAP — PC-B — DONE/MERGED
 
 - درخواست صریح مالک: داده‌ها و فایل‌های نمایشی بخش اسناد به‌شکلی در Git منتشر شوند که PC-A و PC-B بتوانند همان بسته را روی دیتابیس و Storage محلی خود ایجاد کنند. `COMPUTER_ID=PC-B`.
