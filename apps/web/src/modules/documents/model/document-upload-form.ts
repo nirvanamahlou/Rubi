@@ -10,10 +10,7 @@ export interface DocumentUploadValues {
   categoryId: string;
   branchId: string;
   ownerUserId: string;
-  sourceModule: string;
-  sourceEntityType: string;
-  sourceEntityId: string;
-  sourceDisplayLabel: string;
+  sourceRelationId: string;
   confidentiality: string;
   validUntil: string;
   versionNote: string;
@@ -26,10 +23,7 @@ export const emptyDocumentUploadValues: DocumentUploadValues = {
   categoryId: '',
   branchId: '',
   ownerUserId: '',
-  sourceModule: '',
-  sourceEntityType: '',
-  sourceEntityId: '',
-  sourceDisplayLabel: '',
+  sourceRelationId: '',
   confidentiality: '',
   validUntil: '',
   versionNote: '',
@@ -60,10 +54,7 @@ export function validateDocumentUpload(
   if (!values.categoryId) return 'دسته‌بندی را انتخاب کنید.';
   if (!values.branchId) return 'شعبه را انتخاب کنید.';
   if (!values.ownerUserId) return 'مالک فایل را انتخاب کنید.';
-  if (!values.sourceModule.trim()) return 'ماژول مبدأ را وارد کنید.';
-  if (!values.sourceEntityType.trim()) return 'نوع رکورد مبدأ را وارد کنید.';
-  if (!values.sourceEntityId.trim()) return 'شناسه رکورد مبدأ را وارد کنید.';
-  if (!values.sourceDisplayLabel.trim()) return 'عنوان پرونده را وارد کنید.';
+  if (!values.sourceRelationId) return 'پرونده مربوطه را انتخاب کنید.';
   if (requiresExpiry && !values.validUntil)
     return 'برای این نوع سند، تاریخ اعتبار الزامی است.';
   return null;

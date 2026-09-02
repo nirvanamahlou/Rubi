@@ -1,5 +1,16 @@
 # Work Assignments
 
+## DOCUMENTS-003F-RELATED-CASE-PICKER — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-02: بخش «ارتباط با پرونده» در فرم بارگذاری به‌جای ورود دستی ماژول، نوع، شناسه و عنوان، یک Dropdown جست‌وجودار از پرونده‌های موجود و مرتبط باشد. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-documents-record-picker` از `origin/develop@45b6b11` در Worktree تمیز `C:\Users\admin\Rubi-documents-record-picker`؛ `develop`، `main` و Checkoutهای دیگر مستقیم تغییر نمی‌کنند.
+- محدوده رزروشده: API/Repository/DTO و تست‌های `apps/api/src/documents/**`، رابط و Client/Model/Testهای `apps/web/src/modules/documents/**`، قرارداد افزایشی و backward-compatible در `packages/contracts/src/documents/**` و ورودی‌های همین Work Item در `WORK_ASSIGNMENTS.md`، `docs/PROJECT_STATUS.md`، `PLANS.md` و سند Task.
+- Producer و Consumer هر دو Documents API/Web تحت مالکیت PC-B هستند. Endpoint خواندنی جدید فقط Relationهای موجود Documents را در شعبه و Domainهای مجاز جست‌وجو می‌کند و شناسه فنی منبع را برنمی‌گرداند؛ Upload جدید یک Relation داخلی مجاز را resolve می‌کند. فیلدهای قدیمی Upload برای سازگاری مصرف‌کننده‌های موجود حفظ می‌شوند.
+- بدون Schema/Migration/Seed، Permission جدید، Dependency/Lockfile، تغییر Customers یا Query مستقیم جدول ماژول دیگر. هیچ قفل Migration یا Dependency گرفته نمی‌شود.
+- نتیجه: چهار ورودی فنی «ماژول/نوع/شناسه/عنوان مبدأ» از فرم کاربر حذف شد و یک انتخاب‌گر جست‌وجویی «پرونده مربوطه» جای آن را گرفت. فهرست فقط پرونده‌های موجود، حذف‌نشده، هم‌شعبه و دارای Domain/محرمانگی قابل مشاهده را نشان می‌دهد؛ با تغییر شعبه انتخاب قبلی پاک می‌شود. Backend فقط شناسه Relation داخلی را می‌پذیرد و مرجع canonical را سمت سرور resolve می‌کند، بنابراین spoof کردن شناسه منبع یا اتصال بین شعبه‌ای ممکن نیست.
+- Validation: Full Monorepo lint، typecheck، ۱٬۳۹۵ تست موفق با ۷۰ تست PostgreSQL اختیاری skip و Production Build موفق‌اند. Smoke مرورگر احراز‌شده روی API4001/Web3101، نمایش ۱۴ پرونده، جست‌وجوی «قرارداد» تا دو نتیجه و انتخاب موفق را بدون ثبت فایل/داده تأیید کرد.
+- Final lock state: `RELEASED — PC-B/DOCUMENTS-003F-RELATED-CASE-PICKER ready for review`. هیچ قفل Migration، Dependency/Lockfile، Schema، Seed، Permission یا ماژول خارجی گرفته نشد.
+
 ## LEGAL-ENTITY-BRAND-LOGO-001 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-01: با انتخاب شرکت فعال «جهان باستان»، لوگوی افقی ارسالی همان شرکت در App Shell جای لوگوی «نیایش سیر سحر» نمایش داده شود. `COMPUTER_ID=PC-B`.

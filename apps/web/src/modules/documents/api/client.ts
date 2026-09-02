@@ -1,5 +1,7 @@
 import type {
   DocumentAuditResponseV1,
+  DocumentCaseOptionsQueryV1,
+  DocumentCaseOptionsResponseV1,
   DocumentDetailResponseV1,
   DocumentListQueryV1,
   DocumentListResponseV1,
@@ -99,7 +101,7 @@ async function requestFile(
   };
 }
 
-function serializeListQuery(query: DocumentListQueryV1): string {
+function serializeQuery(query: object): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
     if (value !== undefined && value !== '' && value !== 'ALL') {
@@ -111,10 +113,16 @@ function serializeListQuery(query: DocumentListQueryV1): string {
 
 export const documentsApi = {
   list(query: DocumentListQueryV1) {
-    return request<DocumentListResponseV1>(`?${serializeListQuery(query)}`);
+    return request<DocumentListResponseV1>(`?${serializeQuery(query)}`);
   },
   options() {
     return request<DocumentOptionsResponseV1>('/options');
+  },
+  caseOptions(query: DocumentCaseOptionsQueryV1, signal?: AbortSignal) {
+    return request<DocumentCaseOptionsResponseV1>(
+      `/case-options?${serializeQuery(query)}`,
+      signal ? { signal } : undefined,
+    );
   },
   detail(id: string, sensitiveReason?: string) {
     return request<DocumentDetailResponseV1>(

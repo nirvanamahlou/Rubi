@@ -73,10 +73,7 @@ describe('Documents upload form state', () => {
         {
           ...hydrated,
           title: 'قرارداد آزمایشی',
-          sourceModule: 'sales',
-          sourceEntityType: 'contract',
-          sourceEntityId: 'synthetic-1',
-          sourceDisplayLabel: 'پرونده آزمایشی',
+          sourceRelationId: 'relation-1',
           validUntil: '2027-01-01',
         },
         true,

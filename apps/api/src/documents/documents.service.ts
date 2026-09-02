@@ -12,6 +12,8 @@ import {
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
+  DocumentCaseOptionsQueryV1,
+  DocumentCaseOptionsResponseV1,
   DocumentAuditEventV1,
   DocumentConfidentialityCode,
   DocumentDetailV1,
@@ -268,6 +270,27 @@ export class DocumentsService {
     };
   }
 
+  async caseOptions(
+    query: DocumentCaseOptionsQueryV1,
+    actor: AuthenticatedActor,
+  ): Promise<DocumentCaseOptionsResponseV1> {
+    if (!actor.branchIds.includes(query.branchId)) {
+      throw new ForbiddenException('شعبه انتخاب‌شده خارج از دسترسی کاربر است.');
+    }
+    const limit = Math.min(50, Math.max(10, query.limit ?? 20));
+    const { rows, hasMore } = await this.repository.caseOptions({
+      branchId: query.branchId,
+      domains: allowedDocumentDomains(actor.permissions),
+      includeSensitive: actor.permissions.includes('documents.sensitive.read'),
+      search: query.search?.trim().slice(0, 120) ?? '',
+      limit,
+    });
+    return {
+      data: rows.map(({ id, displayLabel }) => ({ id, displayLabel })),
+      meta: { hasMore, limit },
+    };
+  }
+
   async detail(
     id: string,
     actor: AuthenticatedActor,
@@ -361,6 +384,36 @@ export class DocumentsService {
       throw new BadRequestException('مالک در شعبه انتخاب‌شده معتبر نیست.');
     if (!references.branch)
       throw new BadRequestException('شعبه انتخاب‌شده فعال نیست.');
+    const domains = allowedDocumentDomains(actor.permissions);
+    const selectedCase = dto.sourceRelationId
+      ? await this.repository.findCaseReference({
+          relationId: dto.sourceRelationId,
+          branchId: dto.branchId,
+          domains,
+          includeSensitive: actor.permissions.includes(
+            'documents.sensitive.read',
+          ),
+        })
+      : null;
+    if (dto.sourceRelationId && !selectedCase) {
+      throw new BadRequestException(
+        'پرونده انتخاب‌شده معتبر یا در دسترس شما نیست.',
+      );
+    }
+    const sourceReference = selectedCase ?? {
+      sourceModule: dto.sourceModule?.trim() ?? '',
+      sourceEntityType: dto.sourceEntityType?.trim() ?? '',
+      sourceEntityId: dto.sourceEntityId?.trim() ?? '',
+      displayLabel: dto.sourceDisplayLabel?.trim() ?? '',
+    };
+    if (
+      !sourceReference.sourceModule ||
+      !sourceReference.sourceEntityType ||
+      !sourceReference.sourceEntityId ||
+      !sourceReference.displayLabel
+    ) {
+      throw new BadRequestException('انتخاب پرونده مربوطه الزامی است.');
+    }
     if (references.documentType.requiresExpiry && !dto.validUntil) {
       throw new BadRequestException(
         'تاریخ اعتبار برای این نوع سند الزامی است.',
@@ -406,10 +459,10 @@ export class DocumentsService {
         categoryId: references.category.id,
         branchId: dto.branchId,
         ownerUserId: dto.ownerUserId,
-        sourceModule: dto.sourceModule.trim(),
-        sourceEntityType: dto.sourceEntityType.trim(),
-        sourceEntityId: dto.sourceEntityId.trim(),
-        sourceDisplayLabel: dto.sourceDisplayLabel.trim(),
+        sourceModule: sourceReference.sourceModule,
+        sourceEntityType: sourceReference.sourceEntityType,
+        sourceEntityId: sourceReference.sourceEntityId,
+        sourceDisplayLabel: sourceReference.displayLabel,
         confidentiality:
           dto.confidentiality ?? references.documentType.defaultConfidentiality,
         validUntil: dto.validUntil
