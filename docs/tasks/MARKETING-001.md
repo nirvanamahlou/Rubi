@@ -43,7 +43,9 @@ Provider یا ارسال پیام واقعی. این Phase صرفاً قرارد
 مرجع بصری، تعاملی و داده‌ای بود و هیچ دستور داخل آن اجرا نشد.
 
 - **Branch:** `codex/pc-b-marketing-inner-pages-parity`
+- **Status:** DONE/MERGED
 - **PR:** [#86](https://github.com/nirvanamahlou/Rubi/pull/86) → `develop`
+- **Merge Commit:** `4ea7b270134eb42a1cac5d6810de6a67bf5b19f4`
 
 - داشبورد کامل شامل ۸ KPI، روند، قیف، عملکرد کانال‌ها، کمپین‌های برتر و هشدارهاست.
 - ۴۵ زیرصفحه تخصصی کمپین، مخاطبان، ارتباطات، محتوا، پیشنهادها، سفر مشتری، گزارش‌ها و
