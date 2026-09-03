@@ -1,5 +1,13 @@
 # وضعیت پروژه
 
+## CUSTOMER-DOCUMENTS-001 — مدارک واقعی در Customer 360 — آماده بررسی
+
+- `PC-A` وضعیت «در انتظار زیرساخت مدارک» را با پنل واقعی فهرست و بارگذاری فایل جایگزین کرد. هر مشتری اکنون تعداد، کد آرشیو، نوع، نسخه، تاریخ اعتبار و وضعیت اسکن مدارک خودش را می‌بیند و می‌تواند از همان پرونده فایل جدید اضافه کند.
+- قرارداد عمومی Documents به‌صورت backward-compatible فیلتر exact source گرفت. Backend مرجع سه‌بخشی را کامل اعتبارسنجی و همراه Branch/Domain/Permission scope روی Relation اصلی اعمال می‌کند؛ پاسخ هیچ source id خامی افشا نمی‌کند.
+- Customers فقط مصرف‌کننده Public Contract/API است و هیچ دسترسی مستقیم به Repository یا جدول Documents ندارد. UI باز PR #80 و فایل‌های تقویم/اسناد PC-B نیز تغییر نکرده‌اند.
+- ذخیره ساخت‌یافته شماره پاسپورت، کشور صادرکننده و شماره ویزا همچنان تا تصمیم `DEC-OPEN-006` مسدود است؛ ولی خود فایل‌ها اکنون با قرنطینه، نسخه و کنترل دسترسی فعلی Documents عملیاتی‌اند.
+- Full lint/typecheck/build پاس و `1470` تست Monorepo موفق است؛ `70` تست PostgreSQL اختیاری skip شدند. Migration، Schema، Seed، Dependency و Lockfile تغییر نکرده‌اند. جزئیات: `docs/tasks/CUSTOMER-DOCUMENTS-001.md`.
+
 ## MASTER-004-FORM-ALIGNMENT — هم‌ترازی فرم‌های اطلاعات پایه — آماده بررسی
 
 - `PC-B` روی Branch مستقل `codex/pc-b-master-data-form-alignment` تجربه جغرافیا را در یک نمای شهر/استان یکپارچه و فرم شهر را به انتخاب اجباری کشور و سپس استان وابسته کرد؛ Schema مستقل Region/City و FK واقعی آن‌ها حفظ شده است.
