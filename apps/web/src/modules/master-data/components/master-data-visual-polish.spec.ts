@@ -79,9 +79,10 @@ describe('Master Data visual polish contract', () => {
       const filtersStart = workspace.indexOf('<FilterBar', kpiStart);
 
       expect(kpiStart, `${fileName}: KPI grid`).toBeGreaterThanOrEqual(0);
-      expect(filtersStart, `${fileName}: filters after KPI grid`).toBeGreaterThan(
-        kpiStart,
-      );
+      expect(
+        filtersStart,
+        `${fileName}: filters after KPI grid`,
+      ).toBeGreaterThan(kpiStart);
 
       const postKpiContent = workspace.slice(kpiStart, filtersStart);
       expect(postKpiContent, fileName).not.toMatch(/<(?:Alert|Card)\b/);
@@ -169,6 +170,10 @@ describe('Master Data visual polish contract', () => {
     expect(finance).toContain('toCurrencyId: selectedCurrency.id');
     expect(geographyTabs).toContain("label: 'شهرها و استان‌ها'");
     expect(geographyTabs).not.toContain("resource: 'cities'");
-    expect(geography).toContain("changeResource('cities')");
+    expect(geography).not.toContain("changeResource('cities')");
+    expect(geography).toContain("openCreate('regions')");
+    expect(geography).toContain("openCreate('cities')");
+    expect(geography).toContain("renderLocationTable('regions'");
+    expect(geography).toContain("renderLocationTable('cities'");
   });
 });

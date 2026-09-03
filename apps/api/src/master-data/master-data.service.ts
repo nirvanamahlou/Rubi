@@ -621,7 +621,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   organizations: ['legalName', 'roleCodes'],
   suppliers: [],
   brokers: ['name'],
-  'travel-services': ['code', 'name'],
+  'travel-services': ['name'],
   'organization-contacts': ['organizationId', 'fullName', 'preferredChannel'],
   leaders: ['name', 'cityId', 'languages', 'destinations'],
   'tour-types': ['name', 'scope'],
@@ -1632,8 +1632,7 @@ export class MasterDataService {
       resource !== 'banks' &&
       resource !== 'bank-branches' &&
       resource !== 'payment-methods' &&
-      resource !== 'meal-services' &&
-      resource !== 'travel-services';
+      resource !== 'meal-services';
     // IATA is the public business identifier of an airline and is never generated.
     const generatesInternalCode = usesGeneratedCode && resource !== 'airlines';
     if (generatesInternalCode) {

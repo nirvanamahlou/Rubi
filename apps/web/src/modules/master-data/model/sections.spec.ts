@@ -33,7 +33,7 @@ describe('master data sections', () => {
     expect(allResources.sort()).toEqual([...masterDataResourceKeys].sort());
   });
 
-  it('limits travel and sales cards to their four remaining subsections', () => {
+  it('limits travel and sales cards to their remaining subsections', () => {
     expect(getMasterDataSection('tours-travel-services')?.resources).toEqual([
       'leaders',
       'tour-types',
@@ -43,8 +43,6 @@ describe('master data sections', () => {
     expect(getMasterDataSection('sales-references')?.resources).toEqual([
       'acquaintance-methods',
       'sales-channels',
-      'lost-reasons',
-      'tags',
     ]);
     expect(
       getMasterDataSection('tours-travel-services')?.description,
@@ -64,6 +62,10 @@ describe('master data sections', () => {
       'lead-sources',
       'customer-types',
       'campaign-types',
+      'meal-services',
+      'facilities',
+      'lost-reasons',
+      'tags',
     ]);
     for (const resource of unlistedMasterDataResources) {
       expect(masterDataResourceKeys).toContain(resource);

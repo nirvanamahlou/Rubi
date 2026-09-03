@@ -1030,7 +1030,6 @@ export function MasterDataFinanceWorkspace({
                   <th className="p-4 text-start">نرخ</th>
                   <th className="p-4 text-start">نوع</th>
                   <th className="p-4 text-start">منبع</th>
-                  <th className="p-4 text-start">زمان UTC</th>
                   <th className="p-4 text-start">وضعیت</th>
                   <th className="p-4 text-start">مسئول ثبت</th>
                   <th className="p-4 text-start">عملیات</th>
@@ -1047,7 +1046,6 @@ export function MasterDataFinanceWorkspace({
                     </td>
                     <td className="p-4">{rateTypeLabel(row.rateType)}</td>
                     <td className="p-4">{row.source}</td>
-                    <td className="p-4">{faDate(row.observedAt)}</td>
                     <td className="p-4">
                       <Badge>{statusLabel(row.status)}</Badge>
                     </td>

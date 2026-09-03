@@ -86,6 +86,7 @@ describe('MasterDataService', () => {
   it('normalizes a Tag color and generates its internal code', async () => {
     const repository = {
       codeExists: vi.fn().mockResolvedValue(false),
+      fieldExists: vi.fn().mockResolvedValue(false),
       create: vi
         .fn()
         .mockImplementation(
@@ -106,6 +107,39 @@ describe('MasterDataService', () => {
     expect(repository.create).toHaveBeenCalledWith(
       'tags',
       expect.objectContaining({ colorHex: '#AABBCC', displayOrder: 2 }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it('generates the supplier and broker service code in the backend', async () => {
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      fieldExists: vi.fn().mockResolvedValue(false),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create(
+      'travel-services',
+      { name: 'رزرو هتل', englishName: 'Hotel booking' },
+      actor,
+    );
+
+    expect(repository.create).toHaveBeenCalledWith(
+      'travel-services',
+      expect.objectContaining({
+        code: expect.stringMatching(/^SERVICE_[A-Z0-9]{12}$/),
+        name: 'رزرو هتل',
+        displayOrder: 0,
+      }),
       actor.userId,
       actor.branchIds[0],
     );

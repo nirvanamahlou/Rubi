@@ -90,12 +90,6 @@ const configs: Partial<
     countryId: { target: 'countries', payload: 'id' },
   },
   'bus-companies': {
-    organizationId: {
-      target: 'organizations',
-      payload: 'id',
-      requiredRole: 'BUS_PROVIDER',
-      optional: true,
-    },
     countryId: { target: 'countries', payload: 'id' },
   },
   'bus-types': {

@@ -51,13 +51,7 @@ const expected = {
     'category',
     'facilityIds',
   ],
-  'bus-companies': [
-    'name',
-    'englishName',
-    'countryId',
-    'organizationId',
-    'logoFileReference',
-  ],
+  'bus-companies': ['name', 'englishName', 'countryId', 'logoFileReference'],
   'bus-types': [
     'name',
     'englishName',

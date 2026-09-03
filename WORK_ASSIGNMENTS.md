@@ -9,7 +9,17 @@
 - بدون Schema/Migration/Seed، Persistence، API/Shared Contract، IAM، Navigation، AppModule، Dependency/Lockfile یا تغییر فایل‌های UI مرکزی. PR #83 مربوط به قفل قبلی Central Docs در `origin/develop@9608607` ادغام شده و پایان یافته است؛ تقویم مشترک فقط مصرف می‌شود.
 - Lock state: `PC-B/MARKETING-001C` فقط روی محدوده Web ماژول مارکتینگ فعال است؛ Migration و Dependency/Lockfile آزاد می‌مانند.
 
-## MASTER-004-FORM-ALIGNMENT — PC-B — READY_FOR_REVIEW
+## MASTER-004-FORM-FOLLOWUP — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-03: خروجی واقعی تمام فرم‌های اطلاعات پایه دوباره با فهرست اصلاحات هم‌ترازی کنترل شود و مواردی که ناقص یا فقط ظاهری پیاده شده‌اند، به‌ویژه جریان یکپارچه استان/شهر و حذف کاتالوگ‌های مستقل هتل، تکمیل شوند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-master-data-form-followup` از `origin/develop@9608607`؛ `develop` و `main` مستقیم تغییر نمی‌کنند.
+- محدوده رزروشده: `apps/web/src/modules/master-data/**`، در صورت نیاز منطق سازگار `apps/api/src/master-data/**` و `packages/contracts/src/master-data/**`، تست‌های همین Slice و اسناد همین Work Item.
+- هدف این Follow-up اصلاح رفتار و نمایش واقعی است. Schema/Migration/Seed، Dependency/Lockfile و قرارداد ماژول‌های دیگر تا زمان اثبات نیاز تغییر نمی‌کنند؛ داده و ستون قدیمی حذف مخرب نمی‌شود.
+- `Master Data Web/API = PC-B/MASTER-004-FORM-FOLLOWUP`. قفل `Central Docs` پس از تکمیل و تحویل این Follow-up آزاد شد؛ Migration، Dependency/Lockfile و Shared Root Contract نیز `RELEASED / UNASSIGNED` می‌مانند.
+- نتیجه: نمای استان و شهر در یک سکشن و دو جدول پیوسته قرار گرفت؛ فیلدها، ستون‌ها و کاتالوگ‌های حذف‌شده واقعاً از UI حذف شدند؛ کد خدمت تأمین‌کننده/کارگزار در Backend خودکار تولید می‌شود و فیلدهای فرم، Exportها و نمایش نرخ/اقامت/حمل‌ونقل با درخواست نهایی هم‌تراز شدند.
+- اعتبارسنجی: Web Master Data برابر `42/42` فایل و `327/327` تست، API Master Data برابر `27/27` فایل و `402/402` تست، lint و typecheck هر دو برنامه و Production Build هر دو موفق‌اند. API روی `4000` و Web تازه‌ساخته‌شده روی `3100` فعال‌اند؛ Health هر دو پاسخ `200` دارند. Schema/Migration/Seed/Dependency/Lockfile تغییر نکرد.
+
+## MASTER-004-FORM-ALIGNMENT — PC-B — DONE/MERGED
 
 - درخواست مالک در 2026-09-02: هم‌ترازسازی کامل فرم‌ها و فهرست‌های اطلاعات پایه شامل ادغام تجربه استان/شهر، حذف یا اختیاری‌کردن فیلدهای مشخص‌شده، افزودن ترتیب نمایش عمومی، یکسان‌سازی تقویم و قالب اعداد، حذف Exportهای تعیین‌شده، ورود داخلی امکانات هتل، ساده‌سازی حمل‌ونقل و افزودن Logo Reference برای شرکت‌ها و سازمان‌ها. `COMPUTER_ID=PC-B`.
 - Branch مستقل `codex/pc-b-master-data-form-alignment` از `origin/develop@e91cdba`؛ کار مستقیم روی `develop` یا `main`، Merge خودکار، Force Push و حذف Branch ممنوع است.
@@ -18,7 +28,7 @@
 - Lock state: `Migration Owner = PC-B/MASTER-004-FORM-ALIGNMENT`، `Master Data Contract Owner = PC-B/MASTER-004-FORM-ALIGNMENT`، `Shared Calendar Owner = PC-B/MASTER-004-FORM-ALIGNMENT` و `Central Docs Owner = PC-B/MASTER-004-FORM-ALIGNMENT`. قفل Dependency/Lockfile گرفته نمی‌شود. تغییر Calendar فقط برای انتخاب مستقیم ماه/سال، رقم انگلیسی میلادی و حفظ API موجود انجام می‌شود.
 - Logo فقط به‌صورت File Reference امن و بدون ذخیره Binary/Secret در Git تعریف می‌شود؛ اتصال بین‌ماژولی Documents تنها از قرارداد عمومی موجود مجاز است.
 - پیاده‌سازی و Migration افزایشی `20260902173500_master_data_form_alignment` تکمیل و روی PostgreSQL محلی اعمال شد. Web شامل `586/586` تست و API شامل `776/776` تست موفق است؛ ۷۰ تست اختیاری PostgreSQL در اجرای API طبق تنظیم Suite رد شدند. lint، typecheck، Prisma validate، API build و Web production build موفق‌اند.
-- Handoff: Branch تحویلی `codex/pc-b-master-data-form-alignment` است. تا پایان Review قفل‌های Migration، Master Data Contract، Shared Calendar و Central Docs نزد همین Work Item می‌مانند؛ سازنده Branch آن را خودکار با `develop` ادغام نمی‌کند.
+- انتشار: PR #83 با Merge Commit `9608607` وارد `develop` شد. قفل‌های Migration، Master Data Contract، Shared Calendar و Central Docs این Work Item آزاد شدند؛ Follow-up مستقل بالا فقط پس از این Merge آغاز شده است.
 
 ## TICKET-CATALOG-002 — PC-A — READY_FOR_REVIEW
 

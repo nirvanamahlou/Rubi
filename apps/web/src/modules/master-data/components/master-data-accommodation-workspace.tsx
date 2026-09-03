@@ -911,7 +911,6 @@ export function MasterDataAccommodationWorkspace() {
             'وب‌سایت',
             'ساعت ورود / خروج',
             'آدرس',
-            'مختصات',
             'آخرین تغییر',
             'عملیات',
           ]
@@ -1031,10 +1030,6 @@ export function MasterDataAccommodationWorkspace() {
                     </td>
                     <td className="p-4 min-w-64">
                       {attribute(record, 'address')}
-                    </td>
-                    <td className="p-4" dir="ltr">
-                      {attribute(record, 'latitude')} /{' '}
-                      {attribute(record, 'longitude')}
                     </td>
                     <td className="p-4">
                       {new Date(record.updatedAt).toLocaleString('fa-IR')}
@@ -1227,10 +1222,6 @@ export function MasterDataAccommodationWorkspace() {
               <Detail
                 label="شهر / منطقه"
                 value={`${attribute(selected, 'cityName')} · ${attribute(selected, 'regionName')}`}
-              />
-              <Detail
-                label="مختصات"
-                value={`${attribute(selected, 'latitude')}, ${attribute(selected, 'longitude')}`}
               />
               <Detail label="آدرس" value={attribute(selected, 'address')} />
             </dl>

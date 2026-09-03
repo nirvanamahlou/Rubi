@@ -15,7 +15,6 @@ import {
   ArrowRight,
   CheckCircle2,
   CircleAlert,
-  CircleX,
   Database,
   Eye,
   FilePenLine,
@@ -26,7 +25,6 @@ import {
   Search,
   ShieldCheck,
   Store,
-  Tags,
   UserRoundSearch,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -76,8 +74,6 @@ const tabs = [
     icon: UserRoundSearch,
   },
   { resource: 'sales-channels', label: 'کانال فروش', icon: Store },
-  { resource: 'lost-reasons', label: 'دلیل از دست رفتن', icon: CircleX },
-  { resource: 'tags', label: 'Tag', icon: Tags },
 ] as const satisfies readonly {
   resource: MasterDataResource;
   label: string;
@@ -363,16 +359,6 @@ export function MasterDataSalesReferencesWorkspace() {
                     onClick={() => openProfile(record)}
                     type="button"
                   >
-                    {resource === 'tags' &&
-                    /^#[0-9A-F]{6}$/.test(attribute(record, 'colorHex', '')) ? (
-                      <span
-                        aria-hidden="true"
-                        className="size-3 rounded-full border border-border"
-                        style={{
-                          backgroundColor: attribute(record, 'colorHex'),
-                        }}
-                      />
-                    ) : null}
                     {record.name}
                   </button>
                 </td>
@@ -474,22 +460,20 @@ export function MasterDataSalesReferencesWorkspace() {
           aria-label="زیرمجموعه‌های مراجع فروش"
           className="flex min-w-max gap-1"
         >
-          {tabs
-            .filter((tab) => !['lost-reasons', 'tags'].includes(tab.resource))
-            .map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  aria-current={resource === tab.resource ? 'page' : undefined}
-                  className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-primary aria-[current=page]:shadow-sm"
-                  key={tab.resource}
-                  onClick={() => changeResource(tab.resource)}
-                  type="button"
-                >
-                  <Icon className="size-4" /> {tab.label}
-                </button>
-              );
-            })}
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                aria-current={resource === tab.resource ? 'page' : undefined}
+                className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-primary aria-[current=page]:shadow-sm"
+                key={tab.resource}
+                onClick={() => changeResource(tab.resource)}
+                type="button"
+              >
+                <Icon className="size-4" /> {tab.label}
+              </button>
+            );
+          })}
         </nav>
       </Card>
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${definition.label}`} />
@@ -639,14 +623,6 @@ export function MasterDataSalesReferencesWorkspace() {
                       {attribute(selected, 'displayOrder', '0')}
                     </dd>
                   </div>
-                  {resource === 'tags' ? (
-                    <div className="border-b border-border/70 pb-3">
-                      <dt className="text-xs text-muted-foreground">رنگ</dt>
-                      <dd className="mt-1 font-semibold" dir="ltr">
-                        {attribute(selected, 'colorHex')}
-                      </dd>
-                    </div>
-                  ) : null}
                   <div className="border-b border-border/70 pb-3 sm:col-span-2">
                     <dt className="text-xs text-muted-foreground">توضیحات</dt>
                     <dd className="mt-1 font-semibold">
