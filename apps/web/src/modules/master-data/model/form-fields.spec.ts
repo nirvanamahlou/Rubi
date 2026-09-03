@@ -34,6 +34,38 @@ describe('payment-method form fields', () => {
     }
   });
 
+  it('omits the fields explicitly removed from the requested forms', () => {
+    const omitted: Partial<
+      Record<(typeof masterDataCatalog)[number]['key'], readonly string[]>
+    > = {
+      regions: ['type', 'parentRegionId'],
+      hotels: ['latitude', 'longitude'],
+      organizations: ['displayName'],
+      suppliers: ['displayName'],
+      brokers: ['displayName'],
+      airlines: ['organizationId', 'iataCode', 'icaoCode'],
+      'cabin-classes': ['bodyType', 'cabinType'],
+      'baggage-rules': ['validFrom', 'validTo'],
+      'bus-companies': ['supplierId', 'organizationId'],
+      'visa-services': [
+        'supplierId',
+        'providerId',
+        'passportId',
+        'passportIdentifier',
+      ],
+      'exchange-rates': ['observedAt', 'validFrom', 'validTo'],
+      'travel-services': ['code'],
+    };
+    for (const [resource, hidden] of Object.entries(omitted)) {
+      const visible = getMasterDataFormFields(
+        getMasterDataDefinition(
+          resource as (typeof masterDataCatalog)[number]['key'],
+        ),
+      ).map((field) => field.key);
+      for (const key of hidden ?? []) expect(visible).not.toContain(key);
+    }
+  });
+
   it('accepts visible fields while retaining the remaining required fields', () => {
     const values = { name: 'روش آزمایشی', channel: 'CASH', direction: 'BOTH' };
     const result = validateMasterDataDraft('payment-methods', values);
