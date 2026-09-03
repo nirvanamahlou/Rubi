@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  Save,
-  ShieldCheck,
-} from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Eye, Save } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -24,7 +17,6 @@ import {
   Textarea,
 } from '@/components/ui/form-controls';
 import { Alert, Badge, Card } from '@/components/ui/surfaces';
-import { MARKETING_DISPATCH_STATUS } from '../api/contracts';
 import {
   campaignChannelLabels,
   executionCompanyLabels,
@@ -48,7 +40,6 @@ const steps = [
   'مخاطب',
   'زمان‌بندی',
   'بودجه',
-  'پیشنهاد',
   'ردیابی و ارسال',
   'تایید و پیش‌نمایش',
 ] as const;
@@ -79,8 +70,6 @@ interface CampaignDraft {
   endsAt: string;
   budgetAmount: string;
   currencyCode: 'IRR' | 'USD' | 'EUR';
-  offerTitle: string;
-  couponCode: string;
   utmSource: string;
   utmMedium: string;
   utmCampaign: string;
@@ -101,8 +90,6 @@ function initialDraft(campaign?: CampaignPreview): CampaignDraft {
     endsAt: campaign?.endsAt ?? '',
     budgetAmount: campaign?.budgetAmount ?? '',
     currencyCode: campaign?.currencyCode ?? 'IRR',
-    offerTitle: campaign?.offerTitle ?? '',
-    couponCode: campaign?.couponCode ?? '',
     utmSource: 'rubi-preview',
     utmMedium: 'campaign-workspace',
     utmCampaign: campaign?.utmCampaign ?? '',
@@ -168,7 +155,7 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
     <div className="mt-5 grid gap-5" dir="rtl">
       <ol
         aria-label="مراحل فرم کمپین"
-        className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-9"
+        className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8"
       >
         {steps.map((label, index) => (
           <li key={label}>
@@ -196,12 +183,7 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
       <Card className="min-h-80 p-5">
         {step === 0 ? (
           <div className="grid gap-4 md:grid-cols-2">
-            <FormField
-              id="campaign-code"
-              label="کد داخلی"
-              required
-              description="الگوی مجاز: MKT-NAME-01"
-            >
+            <FormField id="campaign-code" label="کد داخلی" required>
               <Input
                 id="campaign-code"
                 dir="ltr"
@@ -228,11 +210,7 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
                 onChange={(event) => update('campaignType', event.target.value)}
               />
             </FormField>
-            <FormField
-              id="campaign-version"
-              label="نسخه مورد انتظار"
-              description="برای کنترل هم‌زمانی Optimistic Lock"
-            >
+            <FormField id="campaign-version" label="نسخه مورد انتظار">
               <Input
                 id="campaign-version"
                 dir="ltr"
@@ -285,10 +263,6 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
         {step === 2 ? (
           <fieldset disabled={readOnly}>
             <legend className="font-bold">کانال‌های کمپین</legend>
-            <p className="mt-1 text-sm text-muted-foreground">
-              انتخاب کانال فقط Intent می‌سازد؛ هیچ پیامی در Phase A ارسال
-              نمی‌شود.
-            </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {selectableChannels.map((channel) => {
                 const checked = draft.channels.includes(channel);
@@ -313,12 +287,7 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
 
         {step === 3 ? (
           <div className="grid gap-4">
-            <FormField
-              id="campaign-segment"
-              label="Segment مخاطب"
-              required
-              description="فقط مرجع Segment و شمارش تجمیعی؛ بدون PII خام"
-            >
+            <FormField id="campaign-segment" label="Segment مخاطب" required>
               <Select
                 disabled={readOnly}
                 value={draft.segmentReference}
@@ -336,20 +305,12 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
                 </SelectContent>
               </Select>
             </FormField>
-            <Alert
-              title="محافظت از حریم خصوصی"
-              description="شمارش مخاطب، رضایت کانال و Suppression باید در زمان اجرا از قرارداد Customers دریافت شوند. نگهداری شماره، ایمیل یا نام مشتری در Marketing مجاز نیست."
-            />
           </div>
         ) : null}
 
         {step === 4 ? (
           <div className="grid gap-4 md:grid-cols-2">
-            <FormField
-              id="campaign-starts-at"
-              label="شروع (ذخیره به UTC)"
-              required
-            >
+            <FormField id="campaign-starts-at" label="زمان شروع" required>
               <DatePicker
                 id="campaign-starts-at"
                 includeTime
@@ -358,11 +319,7 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
                 onChange={(value) => update('startsAt', value)}
               />
             </FormField>
-            <FormField
-              id="campaign-ends-at"
-              label="پایان (ذخیره به UTC)"
-              required
-            >
+            <FormField id="campaign-ends-at" label="زمان پایان" required>
               <DatePicker
                 id="campaign-ends-at"
                 includeTime
@@ -371,22 +328,12 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
                 onChange={(value) => update('endsAt', value)}
               />
             </FormField>
-            <Alert
-              className="md:col-span-2"
-              title="قاعده زمانی"
-              description="نمایش می‌تواند شمسی یا میلادی باشد؛ قرارداد دامنه فقط Timestamp معتبر UTC و پایان بعد از شروع را می‌پذیرد."
-            />
           </div>
         ) : null}
 
         {step === 5 ? (
           <div className="grid gap-4 md:grid-cols-2">
-            <FormField
-              id="campaign-budget"
-              label="بودجه مصوب"
-              required
-              description="Decimal متنی؛ از Number/Float برای محاسبه پول استفاده نمی‌شود."
-            >
+            <FormField id="campaign-budget" label="بودجه مصوب" required>
               <Input
                 id="campaign-budget"
                 dir="ltr"
@@ -414,52 +361,10 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
                 </SelectContent>
               </Select>
             </FormField>
-            <Alert
-              className="md:col-span-2"
-              title="مرز مالی"
-              description="هزینه فقط با مرجع Finance ثبت می‌شود و از بودجه مصوب همان ارز بیشتر نمی‌شود؛ این فرم هیچ سند مالی ایجاد نمی‌کند."
-            />
           </div>
         ) : null}
 
         {step === 6 ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            <FormField
-              id="campaign-offer"
-              label="Offer Intent"
-              description="قیمت و تخفیف نهایی فقط نزد Sales قطعی می‌شود."
-            >
-              <Input
-                id="campaign-offer"
-                readOnly={readOnly}
-                value={draft.offerTitle}
-                onChange={(event) => update('offerTitle', event.target.value)}
-              />
-            </FormField>
-            <FormField
-              id="campaign-coupon"
-              label="کد کوپن پیشنهادی"
-              description="اعتبارسنجی و اعمال نهایی توسط Sales"
-            >
-              <Input
-                id="campaign-coupon"
-                dir="ltr"
-                readOnly={readOnly}
-                value={draft.couponCode}
-                onChange={(event) =>
-                  update('couponCode', event.target.value.toUpperCase())
-                }
-              />
-            </FormField>
-            <Alert
-              className="md:col-span-2"
-              title="وضعیت انتساب و پیشنهاد"
-              description="تمام مدل‌های Attribution و Offer/Coupon در Phase A با وضعیت PROPOSED نمایش داده می‌شوند."
-            />
-          </div>
-        ) : null}
-
-        {step === 7 ? (
           <div className="grid gap-4 md:grid-cols-2">
             <FormField id="campaign-utm-source" label="UTM Source">
               <Input
@@ -500,15 +405,10 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
                 onChange={(event) => update('frequencyCap', event.target.value)}
               />
             </FormField>
-            <Alert
-              className="md:col-span-2"
-              title="ارسال غیرفعال"
-              description={`Consent، Suppression و Frequency Cap باید بلافاصله پیش از Dispatch دوباره کنترل شوند. وضعیت فعلی: ${MARKETING_DISPATCH_STATUS}`}
-            />
           </div>
         ) : null}
 
-        {step === 8 ? (
+        {step === 7 ? (
           <div className="grid gap-4">
             <div className="flex items-center gap-3">
               <span className="grid size-11 place-items-center rounded-2xl bg-primary/10 text-primary">
@@ -516,9 +416,6 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
               </span>
               <div>
                 <h3 className="font-black">پیش‌نمایش نهایی</h3>
-                <p className="text-sm text-muted-foreground">
-                  ثبت و ارسال در این مرحله عمداً غیرفعال است.
-                </p>
               </div>
             </div>
             <dl className="grid gap-3 rounded-2xl bg-muted/50 p-4 text-sm sm:grid-cols-2">
@@ -571,26 +468,14 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
                 </ul>
               </Alert>
             ) : (
-              <Alert
-                title="اعتبارسنجی پیش‌نمایش موفق"
-                description="این نتیجه فقط در حافظه مرورگر است و مجوز اجرای واقعی محسوب نمی‌شود."
-              />
+              <Alert title="اعتبارسنجی پیش‌نمایش موفق" />
             )}
-            {submitted ? (
-              <Alert
-                title="پیش‌نویس آماده شد"
-                description="هیچ Write، ارسال پیام یا اثر مالی رخ نداد. پیاده‌سازی ذخیره‌سازی به Phase B موکول شده است."
-              />
-            ) : null}
+            {submitted ? <Alert title="پیش‌نویس آماده شد" /> : null}
           </div>
         ) : null}
       </Card>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-        <Badge className="gap-1.5">
-          <ShieldCheck aria-hidden="true" className="size-3.5" />
-          Preview امن و بدون PII
-        </Badge>
+      <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
         <div className="flex flex-wrap gap-2">
           <Button
             disabled={step === 0}
