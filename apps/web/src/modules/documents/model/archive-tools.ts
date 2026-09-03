@@ -8,7 +8,6 @@ export interface ArchiveToolDefinition {
   description: string;
   notice: string;
   query: Partial<DocumentListQueryV1>;
-  useCurrentOwner?: boolean;
 }
 
 export const archiveTools: readonly ArchiveToolDefinition[] = [
@@ -26,8 +25,7 @@ export const archiveTools: readonly ArchiveToolDefinition[] = [
     label: 'اسناد تحت مسئولیت من',
     description: 'فقط اسنادی را نشان می‌دهد که مالک آن‌ها کاربر جاری است.',
     notice: 'فیلتر مالک فایل روی کاربر جاری فعال شد.',
-    query: {},
-    useCurrentOwner: true,
+    query: { personalView: 'OWNED' },
   },
   {
     key: 'retention',

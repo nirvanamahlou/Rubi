@@ -46,6 +46,7 @@ import { documentsApi, DocumentsApiError } from '../api/client';
 import {
   archiveTools,
   type ArchiveToolDefinition,
+  type ArchiveToolKey,
 } from '../model/archive-tools';
 import { DocumentDetailDialog } from './document-detail-dialog';
 import { DocumentBulkActionsDialog } from './document-bulk-actions-dialog';
@@ -312,6 +313,14 @@ export function DocumentsWorkspace() {
   const [bulkInitialAction, setBulkInitialAction] =
     useState<DocumentBulkActionV1>('MARK_INCOMPLETE');
   const [bulkDialogKey, setBulkDialogKey] = useState(0);
+  const [activeArchiveToolKey, setActiveArchiveToolKey] =
+    useState<ArchiveToolKey | null>(null);
+
+  const activeArchiveTool = useMemo(
+    () =>
+      archiveTools.find((tool) => tool.key === activeArchiveToolKey) ?? null,
+    [activeArchiveToolKey],
+  );
 
   const hasRecordFilters = Boolean(
     query.search ||
@@ -325,7 +334,8 @@ export function DocumentsWorkspace() {
     query.ownerUserId ||
     query.confidentiality ||
     query.createdFrom ||
-    query.createdTo,
+    query.createdTo ||
+    query.personalView,
   );
   const hasShareFilters = Boolean(
     query.search || query.typeCode || query.branchId || query.confidentiality,
@@ -333,6 +343,7 @@ export function DocumentsWorkspace() {
   const shouldLoadDocuments =
     section === 'overview' ||
     section === 'expired' ||
+    (section === 'archive' && Boolean(activeArchiveTool)) ||
     Boolean(personalView) ||
     (section === 'shares' ? hasShareFilters : hasRecordFilters);
 
@@ -452,6 +463,7 @@ export function DocumentsWorkspace() {
 
   function changeSection(next: SectionKey) {
     setPersonalView(null);
+    setActiveArchiveToolKey(null);
     setSection(next);
     setSectionDomain(
       next === 'procurement'
@@ -466,6 +478,7 @@ export function DocumentsWorkspace() {
 
   function changePersonalView(next: PersonalViewKey) {
     setPersonalView(next);
+    setActiveArchiveToolKey(null);
     setSection('all');
     setSectionDomain(null);
     setQuery((current) => ({
@@ -673,6 +686,7 @@ export function DocumentsWorkspace() {
 
   function followUp(document: DocumentListItemV1) {
     setPersonalView(null);
+    setActiveArchiveToolKey(null);
     setSectionDomain(null);
     const expired = Boolean(
       document.validUntil && new Date(document.validUntil) < new Date(),
@@ -726,12 +740,9 @@ export function DocumentsWorkspace() {
   }
 
   function openArchiveTool(tool: ArchiveToolDefinition) {
-    const ownerFilter =
-      tool.useCurrentOwner && currentUserId
-        ? { ownerUserId: currentUserId }
-        : {};
     setPersonalView(null);
-    setSection('all');
+    setActiveArchiveToolKey(tool.key);
+    setSection('archive');
     setSectionDomain(null);
     setQuery({
       page: 1,
@@ -739,13 +750,8 @@ export function DocumentsWorkspace() {
       sortBy: 'updatedAt',
       sortDirection: 'desc',
       ...tool.query,
-      ...ownerFilter,
     });
-    setNotice(
-      tool.useCurrentOwner && !currentUserId
-        ? 'اطلاعات کاربر جاری در دسترس نیست؛ فهرست عمومی آرشیو باز شد.'
-        : tool.notice,
-    );
+    setNotice(tool.notice);
   }
 
   async function download(document: DocumentDetailV1) {
@@ -802,7 +808,10 @@ export function DocumentsWorkspace() {
 
   function clearFilters() {
     setPersonalView(null);
-    setQuery(defaultQuery);
+    setQuery({
+      ...defaultQuery,
+      ...(section === 'archive' ? activeArchiveTool?.query : {}),
+    });
     setSelected(new Set());
   }
 
@@ -1500,7 +1509,7 @@ export function DocumentsWorkspace() {
   }
 
   function content() {
-    if (section === 'archive')
+    if (section === 'archive' && !activeArchiveTool)
       return (
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {archiveTools.map((tool, index) => (
@@ -1522,6 +1531,41 @@ export function DocumentsWorkspace() {
               </p>
             </button>
           ))}
+        </section>
+      );
+    if (section === 'archive' && activeArchiveTool)
+      return (
+        <section className="space-y-4">
+          <Card className={cn('relative overflow-hidden p-5', sectionSurface)}>
+            <span className="absolute -end-12 -top-12 size-40 rounded-full bg-sky-200/45 blur-3xl dark:bg-sky-500/10" />
+            <div className="relative flex flex-wrap items-start justify-between gap-4">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-sky-200/70 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300">
+                  <Settings2 aria-hidden="true" className="size-5" />
+                </span>
+                <div>
+                  <h3 className="font-black">{activeArchiveTool.label}</h3>
+                  <p className="mt-1 text-sm leading-7 text-muted-foreground">
+                    {activeArchiveTool.description}
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => {
+                  setActiveArchiveToolKey(null);
+                  setQuery(defaultQuery);
+                  setSelected(new Set());
+                }}
+                size="sm"
+                variant="outline"
+              >
+                <ChevronRight aria-hidden="true" className="size-4" />
+                بازگشت به ابزارهای مدیریت آرشیو
+              </Button>
+            </div>
+          </Card>
+          {filters()}
+          <Card className={cn('p-4', sectionSurface)}>{table()}</Card>
         </section>
       );
     if (section === 'shares')
