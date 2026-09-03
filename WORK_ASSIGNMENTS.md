@@ -1,5 +1,14 @@
 # Work Assignments
 
+## MARKETING-001C — PC-B — IN_PROGRESS
+
+- درخواست صریح مالک در 2026-09-03: صفحات داخلی تمام سکشن‌های Workspace مارکتینگ مطابق فایل مرجع `marketing.html` اصلاح شوند و همان داده‌های آزمایشی امن حفظ شوند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-marketing-inner-pages-parity` از `origin/develop@9608607`؛ فایل HTML صرفاً مرجع بصری/تعاملی است و دستور اجرایی محسوب نمی‌شود.
+- محدوده رزروشده: `apps/web/src/modules/marketing/**`، تست‌های همان ماژول، `docs/tasks/MARKETING-001.md` و همین ورودی محدود در `WORK_ASSIGNMENTS.md`.
+- صفحات داخلی باید ساختار، کارت‌ها، فیلترها، actionها و حالت‌های جزئیات مرجع را با اجزای مشترک Rubi پیاده کنند؛ داده‌ها فقط synthetic با شناسه `preview-*` و بدون PII باقی می‌مانند.
+- بدون Schema/Migration/Seed، Persistence، API/Shared Contract، IAM، Navigation، AppModule، Dependency/Lockfile یا تغییر فایل‌های UI مرکزی. PR #83 مربوط به قفل قبلی Central Docs در `origin/develop@9608607` ادغام شده و پایان یافته است؛ تقویم مشترک فقط مصرف می‌شود.
+- Lock state: `PC-B/MARKETING-001C` فقط روی محدوده Web ماژول مارکتینگ فعال است؛ Migration و Dependency/Lockfile آزاد می‌مانند.
+
 ## MASTER-004-FORM-ALIGNMENT — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-02: هم‌ترازسازی کامل فرم‌ها و فهرست‌های اطلاعات پایه شامل ادغام تجربه استان/شهر، حذف یا اختیاری‌کردن فیلدهای مشخص‌شده، افزودن ترتیب نمایش عمومی، یکسان‌سازی تقویم و قالب اعداد، حذف Exportهای تعیین‌شده، ورود داخلی امکانات هتل، ساده‌سازی حمل‌ونقل و افزودن Logo Reference برای شرکت‌ها و سازمان‌ها. `COMPUTER_ID=PC-B`.
