@@ -94,6 +94,9 @@ describe('Documents HTTP boundary', () => {
       .get('/api/v1/documents')
       .query({
         domain: 'SALES',
+        sourceModule: 'customers',
+        sourceEntityType: 'Customer',
+        sourceEntityId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
         categoryId: '66666666-6666-4666-8666-666666666666',
         branchId,
         scanStatus: 'CLEAN',
@@ -112,6 +115,9 @@ describe('Documents HTTP boundary', () => {
     expect(service.list).toHaveBeenCalledWith(
       expect.objectContaining({
         domain: 'SALES',
+        sourceModule: 'customers',
+        sourceEntityType: 'Customer',
+        sourceEntityId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
         categoryId: '66666666-6666-4666-8666-666666666666',
         branchId,
         scanStatus: 'CLEAN',
