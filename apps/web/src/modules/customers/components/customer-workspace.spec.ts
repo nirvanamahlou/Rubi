@@ -194,14 +194,17 @@ describe('Customer Operations workspace boundaries', () => {
     );
   });
 
-  it('requires an allowlisted reason before sensitive reveal', () => {
-    expect(source).toContain("'customer-verification'");
-    expect(source).toContain("'support-request'");
-    expect(source).toContain("'data-correction'");
+  it('uses the fixed support-request reason for every audited sensitive reveal', () => {
     expect(source).toContain(
-      'customersApi.detail(customer.id, sensitiveReason)',
+      "const CUSTOMER_SUPPORT_REQUEST_REASON = 'support-request'",
     );
-    expect(source).toContain('disabled={busy || !sensitiveReason}');
+    expect(source).toContain(
+      'customer.id,\n        CUSTOMER_SUPPORT_REQUEST_REASON',
+    );
+    expect(source).not.toContain("'customer-verification'");
+    expect(source).not.toContain("'data-correction'");
+    expect(source).not.toContain('sensitiveReason');
+    expect(source).not.toContain('دلیل مشاهده شماره تماس');
   });
 
   it('uses real customer timelines without crossing module boundaries or enabling merge', () => {
@@ -226,9 +229,9 @@ describe('Customer Operations workspace boundaries', () => {
   it('reveals national ID only through the audited sensitive flow', () => {
     expect(source).toContain('revealedDetail?.nationalId');
     expect(source).toContain('customer.maskedNationalId');
-    expect(source).toContain('دلیل نمایش کد ملی');
+    expect(source).toContain('دلیل ثبت‌شده در Audit: درخواست پشتیبانی');
     expect(source).toContain('نمایش کد ملی');
-    expect(source).toContain('disabled={busy || !sensitiveReason}');
+    expect(source).toContain('disabled={busy}');
   });
 
   it('provides secure filters and a UUID-only customer deep link', () => {
@@ -316,28 +319,22 @@ describe('Customer Operations workspace boundaries', () => {
       source.indexOf('async function exportFilteredCustomers'),
       source.indexOf('async function importCustomers'),
     );
-    expect(exportSource).toContain("record.maskedNationalId ?? 'ثبت نشده'");
-    expect(exportSource).toContain('کد ملی (ماسک‌شده)');
+    expect(exportSource).toContain(
+      "nationalId: detail.nationalId?.trim() || 'ثبت نشده'",
+    );
+    expect(exportSource).toContain("'کد ملی'");
+    expect(exportSource).not.toContain('maskedNationalId');
     expect(exportSource).not.toContain('شماره تماس (ماسک‌شده)');
     expect(source).not.toContain('خروجی Excel (ماسک‌شده)');
-    expect(exportSource).toContain(
-      'await customersApi.detail(record.id, exportReason)',
-    );
+    expect(exportSource).toContain('CUSTOMER_SUPPORT_REQUEST_REASON');
     expect(exportSource).toContain("contact.type === 'phone'");
     expect(exportSource).toContain("'شماره تماس'");
-    expect(exportSource).toContain('دلیل مشاهده در Audit ثبت شد');
-    expect(source).toContain('customer-sensitive-export-reason');
-    expect(source).toContain('aria-label="دلیل خروجی شماره‌های کامل"');
-    expect(source).toContain(
-      '<SelectValue placeholder="دلیل نمایش شماره‌ها" />',
-    );
-    expect(source).not.toContain(
-      '<option value="">دلیل نمایش شماره‌ها</option>',
-    );
+    expect(exportSource).toContain('درخواست پشتیبانی');
+    expect(exportSource).toContain('برای هر مشاهده در Audit ثبت شد');
+    expect(source).not.toContain('customer-sensitive-export-reason');
+    expect(source).not.toContain('aria-label="دلیل خروجی شماره‌های کامل"');
     expect(source).toContain("'خروجی Excel'");
-    expect(source).toContain(
-      'disabled={records.length === 0 || exporting || !exportReason}',
-    );
+    expect(source).toContain('disabled={records.length === 0 || exporting}');
   });
 
   it('shows twenty people per page with a complete page position and masked mobile number', () => {
