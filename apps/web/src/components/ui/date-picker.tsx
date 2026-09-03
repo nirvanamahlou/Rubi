@@ -23,6 +23,14 @@ const weekdayLabels = {
   gregorian: ['ی', 'د', 'س', 'چ', 'پ', 'ج', 'ش'],
 } satisfies Record<CalendarSystem, string[]>;
 
+type CalendarView = 'days' | 'months' | 'years';
+
+function formatCalendarNumber(value: number, system: CalendarSystem): string {
+  return new Intl.NumberFormat(system === 'gregorian' ? 'en-US' : 'fa-IR', {
+    useGrouping: false,
+  }).format(value);
+}
+
 export interface DatePickerProps {
   id?: string;
   name?: string;
@@ -57,6 +65,8 @@ export function DatePicker({
   const currentValue = value ?? internalValue;
   const [calendarSystem, setCalendarSystem] =
     React.useState<CalendarSystem>('persian');
+  const [calendarView, setCalendarView] = React.useState<CalendarView>('days');
+  const [yearGridStart, setYearGridStart] = React.useState(0);
   const [open, setOpen] = React.useState(false);
   const [anchor, setAnchor] = React.useState(
     () => parseIsoDate(currentValue) ?? new Date(),
@@ -66,9 +76,8 @@ export function DatePicker({
   const days = calendarMonthDays(anchor, calendarSystem);
   const anchorParts = calendarParts(anchor, calendarSystem);
   const yearOptions = React.useMemo(
-    () =>
-      Array.from({ length: 121 }, (_, index) => anchorParts.year - 100 + index),
-    [anchorParts.year],
+    () => Array.from({ length: 12 }, (_, index) => yearGridStart + index),
+    [yearGridStart],
   );
   const monthOptions = React.useMemo(
     () =>
@@ -111,6 +120,62 @@ export function DatePicker({
     if (!includeTime) setOpen(false);
   };
 
+  const changeCalendarSystem = (system: CalendarSystem) => {
+    setCalendarSystem(system);
+    setCalendarView('days');
+  };
+
+  const navigateBackward = () => {
+    if (calendarView === 'years') {
+      setYearGridStart((current) => current - 12);
+      return;
+    }
+    if (calendarView === 'months') {
+      setAnchor((current) =>
+        setCalendarMonthYear(
+          current,
+          anchorParts.year - 1,
+          anchorParts.month,
+          calendarSystem,
+        ),
+      );
+      return;
+    }
+    setAnchor((current) => moveCalendarMonth(current, -1, calendarSystem));
+  };
+
+  const navigateForward = () => {
+    if (calendarView === 'years') {
+      setYearGridStart((current) => current + 12);
+      return;
+    }
+    if (calendarView === 'months') {
+      setAnchor((current) =>
+        setCalendarMonthYear(
+          current,
+          anchorParts.year + 1,
+          anchorParts.month,
+          calendarSystem,
+        ),
+      );
+      return;
+    }
+    setAnchor((current) => moveCalendarMonth(current, 1, calendarSystem));
+  };
+
+  const previousLabel =
+    calendarView === 'days'
+      ? 'ماه قبل'
+      : calendarView === 'months'
+        ? 'سال قبل'
+        : '۱۲ سال قبل';
+  const nextLabel =
+    calendarView === 'days'
+      ? 'ماه بعد'
+      : calendarView === 'months'
+        ? 'سال بعد'
+        : '۱۲ سال بعد';
+
   return (
     <div className={cn('relative w-full', className)} ref={rootRef}>
       <input name={name} type="hidden" value={currentValue} />
@@ -128,6 +193,7 @@ export function DatePicker({
           if (!open) {
             const parsed = parseIsoDate(currentValue);
             if (parsed) setAnchor(parsed);
+            setCalendarView('days');
           }
           setOpen((current) => !current);
         }}
@@ -163,7 +229,7 @@ export function DatePicker({
                     : 'text-secondary-foreground hover:bg-primary/10',
                 )}
                 key={system}
-                onClick={() => setCalendarSystem(system)}
+                onClick={() => changeCalendarSystem(system)}
                 type="button"
               >
                 {system === 'persian' ? 'شمسی' : 'میلادی'}
@@ -173,126 +239,165 @@ export function DatePicker({
 
           <div className="mb-3 flex items-center justify-between gap-2 rounded-xl bg-primary px-2 py-2 text-primary-foreground">
             <button
-              aria-label="ماه قبل"
+              aria-label={previousLabel}
               className="flex size-9 items-center justify-center rounded-lg outline-none hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
-              onClick={() =>
-                setAnchor((current) =>
-                  moveCalendarMonth(current, -1, calendarSystem),
-                )
-              }
+              onClick={navigateBackward}
               type="button"
             >
               <ChevronRight aria-hidden="true" className="size-5" />
             </button>
-            <div
-              aria-label="انتخاب مستقیم ماه و سال"
-              className="grid min-w-0 flex-1 grid-cols-2 gap-1"
-            >
-              <select
-                aria-label="ماه"
-                className="h-9 min-w-0 rounded-lg border border-white/20 bg-white/10 px-2 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-white [&>option]:text-foreground"
-                onChange={(event) =>
-                  setAnchor((current) =>
-                    setCalendarMonthYear(
-                      current,
-                      anchorParts.year,
-                      Number(event.target.value),
-                      calendarSystem,
-                    ),
-                  )
-                }
-                value={anchorParts.month}
-              >
-                {monthOptions.map((option) => (
-                  <option key={option.month} value={option.month}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="سال"
-                className="h-9 min-w-0 rounded-lg border border-white/20 bg-white/10 px-2 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-white [&>option]:text-foreground"
-                dir="ltr"
-                onChange={(event) =>
-                  setAnchor((current) =>
-                    setCalendarMonthYear(
-                      current,
-                      Number(event.target.value),
-                      anchorParts.month,
-                      calendarSystem,
-                    ),
-                  )
-                }
-                value={anchorParts.year}
-              >
-                {yearOptions.map((year) => (
-                  <option key={year} value={year}>
-                    {calendarSystem === 'gregorian'
-                      ? new Intl.NumberFormat('en-US', {
-                          useGrouping: false,
-                        }).format(year)
-                      : new Intl.NumberFormat('fa-IR', {
-                          useGrouping: false,
-                        }).format(year)}
-                  </option>
-                ))}
-              </select>
+            <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
+              {calendarView === 'years' ? (
+                <span className="px-2 text-sm font-bold" dir="ltr">
+                  {formatCalendarNumber(yearGridStart, calendarSystem)} –{' '}
+                  {formatCalendarNumber(yearGridStart + 11, calendarSystem)}
+                </span>
+              ) : (
+                <>
+                  <button
+                    aria-label="نمایش شبکه ماه‌ها"
+                    aria-pressed={calendarView === 'months'}
+                    className={cn(
+                      'h-9 min-w-0 flex-1 rounded-lg px-2 text-sm font-bold outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white',
+                      calendarView === 'months' && 'bg-white/20 shadow-sm',
+                    )}
+                    onClick={() => setCalendarView('months')}
+                    type="button"
+                  >
+                    {calendarMonthName(anchor, calendarSystem)}
+                  </button>
+                  <button
+                    aria-label="نمایش شبکه سال‌ها"
+                    className="h-9 min-w-0 flex-1 rounded-lg px-2 text-sm font-bold outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
+                    dir="ltr"
+                    onClick={() => {
+                      setYearGridStart(anchorParts.year - 5);
+                      setCalendarView('years');
+                    }}
+                    type="button"
+                  >
+                    {formatCalendarNumber(anchorParts.year, calendarSystem)}
+                  </button>
+                </>
+              )}
               <span className="sr-only">
                 {calendarMonthLabel(anchor, calendarSystem)}
               </span>
             </div>
             <button
-              aria-label="ماه بعد"
+              aria-label={nextLabel}
               className="flex size-9 items-center justify-center rounded-lg outline-none hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
-              onClick={() =>
-                setAnchor((current) =>
-                  moveCalendarMonth(current, 1, calendarSystem),
-                )
-              }
+              onClick={navigateForward}
               type="button"
             >
               <ChevronLeft aria-hidden="true" className="size-5" />
             </button>
           </div>
 
-          <div className="grid grid-cols-7 gap-1 text-center">
-            {weekdayLabels[calendarSystem].map((label, index) => (
-              <span
-                className="py-1 text-xs font-bold text-primary"
-                key={`${label}-${index}`}
-              >
-                {label}
-              </span>
-            ))}
-            {days.map((day) => {
-              const selected = day.isoDate === selectedDate;
-              return (
+          {calendarView === 'months' ? (
+            <div
+              aria-label="شبکه انتخاب ماه"
+              className="grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-2"
+              role="group"
+            >
+              {monthOptions.map((option) => (
                 <button
-                  aria-label={`${day.year}/${day.month}/${day.day}`}
-                  aria-pressed={selected}
+                  aria-label={`ماه ${option.label}`}
+                  aria-pressed={option.month === anchorParts.month}
                   className={cn(
-                    'flex aspect-square items-center justify-center rounded-lg text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
-                    day.isCurrentMonth
-                      ? 'text-foreground hover:bg-primary/10'
-                      : 'text-muted-foreground/45',
-                    day.isToday &&
-                      !selected &&
-                      'border border-primary font-bold text-primary',
-                    selected &&
-                      'bg-primary font-bold text-primary-foreground shadow-sm hover:bg-primary/90',
+                    'min-h-12 rounded-xl border border-primary/15 bg-surface px-2 text-sm font-semibold text-foreground shadow-xs outline-none transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
+                    option.month === anchorParts.month &&
+                      'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90',
                   )}
-                  key={day.isoDate}
-                  onClick={() => selectDay(day.isoDate)}
+                  key={option.month}
+                  onClick={() => {
+                    setAnchor((current) =>
+                      setCalendarMonthYear(
+                        current,
+                        anchorParts.year,
+                        option.month,
+                        calendarSystem,
+                      ),
+                    );
+                    setCalendarView('days');
+                  }}
                   type="button"
                 >
-                  {new Intl.NumberFormat(
-                    calendarSystem === 'gregorian' ? 'en-US' : 'fa-IR',
-                    { useGrouping: false },
-                  ).format(day.day)}
+                  {option.label}
                 </button>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          ) : calendarView === 'years' ? (
+            <div
+              aria-label="شبکه انتخاب سال"
+              className="grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-2"
+              role="group"
+            >
+              {yearOptions.map((year) => (
+                <button
+                  aria-label={`سال ${formatCalendarNumber(year, calendarSystem)}`}
+                  aria-pressed={year === anchorParts.year}
+                  className={cn(
+                    'min-h-12 rounded-xl border border-primary/15 bg-surface px-2 text-sm font-semibold text-foreground shadow-xs outline-none transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
+                    year === anchorParts.year &&
+                      'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90',
+                  )}
+                  dir="ltr"
+                  key={year}
+                  onClick={() => {
+                    setAnchor((current) =>
+                      setCalendarMonthYear(
+                        current,
+                        year,
+                        anchorParts.month,
+                        calendarSystem,
+                      ),
+                    );
+                    setCalendarView('months');
+                  }}
+                  type="button"
+                >
+                  {formatCalendarNumber(year, calendarSystem)}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-7 gap-1 text-center">
+              {weekdayLabels[calendarSystem].map((label, index) => (
+                <span
+                  className="py-1 text-xs font-bold text-primary"
+                  key={`${label}-${index}`}
+                >
+                  {label}
+                </span>
+              ))}
+              {days.map((day) => {
+                const selected = day.isoDate === selectedDate;
+                return (
+                  <button
+                    aria-label={`${day.year}/${day.month}/${day.day}`}
+                    aria-pressed={selected}
+                    className={cn(
+                      'flex aspect-square items-center justify-center rounded-lg text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
+                      day.isCurrentMonth
+                        ? 'text-foreground hover:bg-primary/10'
+                        : 'text-muted-foreground/45',
+                      day.isToday &&
+                        !selected &&
+                        'border border-primary font-bold text-primary',
+                      selected &&
+                        'bg-primary font-bold text-primary-foreground shadow-sm hover:bg-primary/90',
+                    )}
+                    key={day.isoDate}
+                    onClick={() => selectDay(day.isoDate)}
+                    type="button"
+                  >
+                    {formatCalendarNumber(day.day, calendarSystem)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {includeTime ? (
             <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-2">

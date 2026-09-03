@@ -1,14 +1,6 @@
 import type { DocumentListQueryV1 } from '@rubi/contracts';
 
-export type ArchiveToolKey =
-  | 'categories'
-  | 'types'
-  | 'quarantine'
-  | 'owners'
-  | 'retention'
-  | 'recovery'
-  | 'health'
-  | 'processing';
+export type ArchiveToolKey = 'categories' | 'owners' | 'retention' | 'recovery';
 
 export interface ArchiveToolDefinition {
   key: ArchiveToolKey;
@@ -22,59 +14,35 @@ export interface ArchiveToolDefinition {
 export const archiveTools: readonly ArchiveToolDefinition[] = [
   {
     key: 'categories',
-    label: 'دسته‌بندی و برچسب',
-    description: 'فهرست اسناد را برای انتخاب دسته‌بندی باز می‌کند.',
-    notice: 'فهرست اسناد باز شد؛ دسته‌بندی موردنظر را از فیلتر انتخاب کنید.',
-    query: {},
-  },
-  {
-    key: 'types',
-    label: 'سیاست نوع سند',
-    description: 'نوع سند، اعتبار و سیاست‌های مرتبط را بررسی کنید.',
-    notice: 'فهرست سیاست نوع سند باز شد؛ نوع موردنظر را از فیلتر انتخاب کنید.',
-    query: { sortBy: 'title' },
-  },
-  {
-    key: 'quarantine',
-    label: 'بررسی و قرنطینه',
-    description: 'فایل‌های قرنطینه‌شده و نیازمند بررسی را نشان می‌دهد.',
-    notice: 'فیلتر قرنطینه فعال شد.',
-    query: { scanStatus: 'QUARANTINED' },
+    label: 'مدارک ناقص و دسته‌بندی',
+    description:
+      'مدارک علامت‌گذاری‌شده به‌عنوان ناقص را برای تکمیل اطلاعات باز می‌کند.',
+    notice:
+      'فهرست مدارک ناقص باز شد؛ از ویرایش برای تکمیل یا تغییر دسته‌بندی استفاده کنید.',
+    query: { completion: 'INCOMPLETE' },
   },
   {
     key: 'owners',
-    label: 'مسئول و مالک فایل',
-    description: 'اسناد متعلق به کاربر جاری را برای کنترل مالکیت باز می‌کند.',
+    label: 'اسناد تحت مسئولیت من',
+    description: 'فقط اسنادی را نشان می‌دهد که مالک آن‌ها کاربر جاری است.',
     notice: 'فیلتر مالک فایل روی کاربر جاری فعال شد.',
     query: {},
     useCurrentOwner: true,
   },
   {
     key: 'retention',
-    label: 'نگهداری و توقف حذف',
-    description: 'اسناد نزدیک انقضا را برای پیگیری نگهداری نشان می‌دهد.',
+    label: 'نگهداری و انقضا',
+    description:
+      'اسناد نزدیک انقضا را برای تمدید یا تکمیل اطلاعات نشان می‌دهد.',
     notice: 'فیلتر اسناد نزدیک انقضا فعال شد.',
     query: { validity: 'EXPIRING' },
   },
   {
     key: 'recovery',
-    label: 'حذف منطقی و بازیابی',
-    description: 'اسناد آرشیوشده و قابل بررسی برای بازیابی را نشان می‌دهد.',
+    label: 'بازیابی اسناد آرشیوشده',
+    description:
+      'اسناد آرشیوشده را نشان می‌دهد تا با عملیات بازیابی دوباره فعال شوند.',
     notice: 'فیلتر اسناد آرشیوشده فعال شد.',
     query: { archiveStatus: 'ARCHIVED' },
-  },
-  {
-    key: 'health',
-    label: 'سلامت آرشیو',
-    description: 'فایل‌های اسکن‌شده و پاک آرشیو را نشان می‌دهد.',
-    notice: 'فیلتر فایل‌های سالم و اسکن‌شده فعال شد.',
-    query: { scanStatus: 'CLEAN' },
-  },
-  {
-    key: 'processing',
-    label: 'خروجی‌ها و پردازش‌ها',
-    description: 'فایل‌های در صف اسکن و پردازش را نشان می‌دهد.',
-    notice: 'فیلتر فایل‌های در حال پردازش فعال شد.',
-    query: { scanStatus: 'PENDING_SCAN' },
   },
 ] as const;

@@ -58,6 +58,19 @@ describe('documents workspace contract', () => {
       'پرونده مربوطه',
       'جست‌وجوی پرونده',
       '.caseOptions(',
+      'عملیات گروهی',
+      'حذف دائمی',
+      'مدرک ناقص',
+      'ابتدا فیلتر را انتخاب کنید',
+      'ابتدا فیلتر اشتراک‌گذاری را انتخاب کنید',
+      'تاریخچه فعالیت‌ها',
+      'سیاست نگهداری',
+      'نوع فایل',
+      'DocumentEditDialog',
+      'DocumentDeleteDialog',
+      'DocumentBulkActionsDialog',
+      'documentsApi.permanentlyDelete',
+      'documentsApi.bulk',
     ])
       expect(source).toContain(marker);
     for (const removedCopy of [
@@ -66,6 +79,15 @@ describe('documents workspace contract', () => {
       'نتیجه عملیات',
       'SavedDocumentView',
       "{ key: 'activity', label: 'فعالیت و گزارش دسترسی'",
+      'مسیرهای پیشنهادی برای بررسی',
+      'SHA-256 پوشیده',
+      'MIME تشخیص‌داده‌شده',
+      'منبع سند:',
+      'Documents فقط Reference دامنه را نگه می‌دارد',
+      'خروجی و پردازش‌ها',
+      'حذف منطقی',
+      'بررسی و قرنطینه',
+      'سلامت آرشیو',
     ])
       expect(source).not.toContain(removedCopy);
     expect(source).toContain('bg-gradient-to-br');

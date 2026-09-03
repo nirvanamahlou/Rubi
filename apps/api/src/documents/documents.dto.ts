@@ -1,5 +1,10 @@
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  ArrayUnique,
+  IsArray,
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsIn,
@@ -65,6 +70,14 @@ export class DocumentListQueryDto {
   @IsOptional()
   @IsIn(['ALL', 'VALID', 'EXPIRING', 'EXPIRED', 'WITHOUT_EXPIRY'])
   validity?: DocumentValidityFilter;
+
+  @IsOptional()
+  @IsIn(['COMPLETE', 'INCOMPLETE'])
+  completion?: 'COMPLETE' | 'INCOMPLETE';
+
+  @IsOptional()
+  @IsIn(['INCOMPLETE_OR_EXPIRED'])
+  attention?: 'INCOMPLETE_OR_EXPIRED';
 
   @IsOptional()
   @IsUUID()
@@ -196,4 +209,67 @@ export class DocumentUploadDto {
   @IsString()
   @MaxLength(500)
   versionNote?: string;
+}
+
+export class DocumentUpdateDto {
+  @IsString()
+  @Length(2, 240)
+  title!: string;
+
+  @IsOptional()
+  @Transform(emptyToUndefined)
+  @IsString()
+  @MaxLength(1000)
+  description?: string;
+
+  @IsUUID()
+  categoryId!: string;
+
+  @IsUUID()
+  ownerUserId!: string;
+
+  @IsEnum(DOCUMENT_CONFIDENTIALITY_CODES)
+  confidentiality!: DocumentConfidentialityCode;
+
+  @IsOptional()
+  @Transform(emptyToUndefined)
+  @IsDateString({ strict: true })
+  validUntil?: string;
+
+  @IsBoolean()
+  isIncomplete!: boolean;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  version!: number;
+}
+
+export class DocumentArchiveActionDto {
+  @IsString()
+  @Length(5, 500)
+  reason!: string;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  version!: number;
+}
+
+export class DocumentDeleteDto extends DocumentArchiveActionDto {}
+
+export class DocumentBulkActionDto {
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(100)
+  @ArrayUnique()
+  @IsUUID('4', { each: true })
+  ids!: string[];
+
+  @IsIn(['MARK_INCOMPLETE', 'MARK_COMPLETE', 'ARCHIVE', 'RESTORE'])
+  action!: 'MARK_INCOMPLETE' | 'MARK_COMPLETE' | 'ARCHIVE' | 'RESTORE';
+
+  @IsString()
+  @Length(5, 500)
+  reason!: string;
 }
