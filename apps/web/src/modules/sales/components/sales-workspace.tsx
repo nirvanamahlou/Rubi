@@ -14,7 +14,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import type { SalesContractPage, SalesDashboard } from '@rubi/contracts';
 
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Badge,
   Card,
@@ -74,12 +74,10 @@ export function SalesWorkspace() {
         title="فروش و قراردادها"
         description="قراردادهای واقعی، مانده تأییدشده مالی و وضعیت درخواست‌های رزرو"
         actions={
-          <Button asChild>
-            <Link href="/sales/contracts/new">
-              <FilePlus2 className="size-4" />
-              قرارداد جدید
-            </Link>
-          </Button>
+          <Link className={buttonVariants()} href="/sales/contracts/new">
+            <FilePlus2 className="size-4" />
+            قرارداد جدید
+          </Link>
         }
       />
       {loading ? (

@@ -1,4 +1,18 @@
-import { Body, Controller, Get, Header, Headers, Inject, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  Headers,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import type {
   SalesContractCommandRequest,
@@ -27,7 +41,10 @@ export class SalesController {
 
   @Get('contracts')
   @Header('Cache-Control', 'private, no-store')
-  list(@Query() query: SalesContractListQuery, @Req() request: AuthenticatedRequest) {
+  list(
+    @Query() query: SalesContractListQuery,
+    @Req() request: AuthenticatedRequest,
+  ) {
     return this.service.list(query, request.actor);
   }
 
@@ -39,30 +56,45 @@ export class SalesController {
     @Headers('idempotency-key') idempotencyKey?: string,
     @Headers('x-request-id') traceId?: string,
   ) {
-    return this.service.create(input, request.actor, branchId, idempotencyKey, traceId);
+    return this.service.create(
+      input,
+      request.actor,
+      branchId,
+      idempotencyKey,
+      traceId,
+    );
   }
 
   @Get('contracts/:id/status-history')
   @Header('Cache-Control', 'private, no-store')
-  history(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+  history(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
     return this.service.history(id, request.actor);
   }
 
   @Get('contracts/:id/audit')
   @Header('Cache-Control', 'private, no-store')
-  audit(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+  audit(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
     return this.service.audit(id, request.actor);
   }
 
   @Get('contracts/:id')
   @Header('Cache-Control', 'private, no-store')
-  detail(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+  detail(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
     return this.service.detail(id, request.actor);
   }
 
   @Patch('contracts/:id')
   update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() input: SalesContractUpdateRequest,
     @Req() request: AuthenticatedRequest,
     @Headers('x-request-id') traceId?: string,
@@ -72,44 +104,70 @@ export class SalesController {
 
   @Post('contracts/:id/payments')
   addPayment(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() input: SalesPaymentCreateRequest,
     @Req() request: AuthenticatedRequest,
     @Headers('idempotency-key') idempotencyKey?: string,
     @Headers('x-request-id') traceId?: string,
   ) {
-    return this.service.addPayment(id, input, request.actor, idempotencyKey, traceId);
+    return this.service.addPayment(
+      id,
+      input,
+      request.actor,
+      idempotencyKey,
+      traceId,
+    );
   }
 
   @Post('contracts/:id/confirm')
   confirm(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() input: SalesContractCommandRequest,
     @Req() request: AuthenticatedRequest,
     @Headers('idempotency-key') idempotencyKey?: string,
     @Headers('x-request-id') traceId?: string,
   ) {
-    return this.service.confirm(id, input.version, input.reason, request.actor, idempotencyKey, traceId);
+    return this.service.confirm(
+      id,
+      input.version,
+      input.reason,
+      request.actor,
+      idempotencyKey,
+      traceId,
+    );
   }
 
   @Post('contracts/:id/reservation-request')
   reservationRequest(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() input: SalesContractCommandRequest,
     @Req() request: AuthenticatedRequest,
     @Headers('idempotency-key') idempotencyKey?: string,
     @Headers('x-request-id') traceId?: string,
   ) {
-    return this.service.confirm(id, input.version, input.reason, request.actor, idempotencyKey, traceId);
+    return this.service.confirm(
+      id,
+      input.version,
+      input.reason,
+      request.actor,
+      idempotencyKey,
+      traceId,
+    );
   }
 
   @Post('contracts/:id/cancel')
   cancel(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() input: SalesContractCommandRequest,
     @Req() request: AuthenticatedRequest,
     @Headers('x-request-id') traceId?: string,
   ) {
-    return this.service.cancel(id, input.version, input.reason, request.actor, traceId);
+    return this.service.cancel(
+      id,
+      input.version,
+      input.reason,
+      request.actor,
+      traceId,
+    );
   }
 }

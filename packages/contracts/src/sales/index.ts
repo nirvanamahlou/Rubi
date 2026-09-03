@@ -49,10 +49,7 @@ export type SalesReservationStatus =
   | 'FULFILLED'
   | 'REJECTED';
 export type SalesSettlementStatus =
-  | 'UNPAID'
-  | 'PARTIALLY_SETTLED'
-  | 'SETTLED'
-  | 'OVERPAID';
+  'UNPAID' | 'PARTIALLY_SETTLED' | 'SETTLED' | 'OVERPAID';
 export type SalesServiceKind =
   | 'FLIGHT'
   | 'HOTEL'
@@ -91,7 +88,8 @@ export interface SalesServiceInput {
   kind: SalesServiceKind;
   referenceId?: string | null;
   titleSnapshot: string;
-  status?: 'SELECTED' | 'AWAITING_PUBLIC_API' | 'NEEDS_RESERVATION_CONFIRMATION';
+  status?:
+    'SELECTED' | 'AWAITING_PUBLIC_API' | 'NEEDS_RESERVATION_CONFIRMATION';
   metadata?: Readonly<Record<string, string | number | boolean | null>>;
 }
 
@@ -171,8 +169,7 @@ export interface SalesContractCreateRequest {
   pricingNotes?: string | null;
 }
 
-export interface SalesContractUpdateRequest
-  extends SalesContractCreateRequest {
+export interface SalesContractUpdateRequest extends SalesContractCreateRequest {
   version: number;
   reason?: string | null;
 }
@@ -274,7 +271,11 @@ export interface SalesDashboard {
     outstanding: readonly SalesMoney[];
     pendingFinancePayments: number;
     pendingReservationActions: number;
-    salesByCounter: readonly { ownerUserId: string; amount: string; currencyCode: string }[];
+    salesByCounter: readonly {
+      ownerUserId: string;
+      amount: string;
+      currencyCode: string;
+    }[];
     conversionRate: null;
     conversionRateStatus: 'AWAITING_CUSTOMER_AFFAIRS_PUBLIC_CONTRACT';
   };
@@ -315,12 +316,19 @@ export interface SalesFinancePaymentConfirmedV1 {
 
 export const salesEndpoints = {
   contracts: `${SALES_API_PREFIX}/contracts`,
-  contract: (id: string) => `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}`,
-  confirm: (id: string) => `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}/confirm`,
-  cancel: (id: string) => `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}/cancel`,
-  payments: (id: string) => `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}/payments`,
-  reservationRequest: (id: string) => `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}/reservation-request`,
-  audit: (id: string) => `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}/audit`,
-  statusHistory: (id: string) => `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}/status-history`,
+  contract: (id: string) =>
+    `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}`,
+  confirm: (id: string) =>
+    `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}/confirm`,
+  cancel: (id: string) =>
+    `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}/cancel`,
+  payments: (id: string) =>
+    `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}/payments`,
+  reservationRequest: (id: string) =>
+    `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}/reservation-request`,
+  audit: (id: string) =>
+    `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}/audit`,
+  statusHistory: (id: string) =>
+    `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}/status-history`,
   dashboard: `${SALES_API_PREFIX}/dashboard`,
 } as const;

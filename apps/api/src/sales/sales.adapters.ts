@@ -3,10 +3,14 @@ import type { AuthenticatedActor } from '@rubi/contracts';
 
 import { CustomerService } from '../customers/customer.service';
 
-export const SALES_TICKET_AVAILABILITY_PORT = Symbol('SALES_TICKET_AVAILABILITY_PORT');
+export const SALES_TICKET_AVAILABILITY_PORT = Symbol(
+  'SALES_TICKET_AVAILABILITY_PORT',
+);
 
 export interface SalesTicketAvailabilityPort {
-  revalidate(offerIds: readonly string[]): Promise<{ available: boolean; unavailableOfferIds: readonly string[] }>;
+  revalidate(
+    offerIds: readonly string[],
+  ): Promise<{ available: boolean; unavailableOfferIds: readonly string[] }>;
 }
 
 @Injectable()
@@ -18,7 +22,9 @@ export class AwaitingTicketCatalogPublicApi implements SalesTicketAvailabilityPo
 
 @Injectable()
 export class SalesCustomersPublicAdapter {
-  constructor(@Inject(CustomerService) private readonly customers: CustomerService) {}
+  constructor(
+    @Inject(CustomerService) private readonly customers: CustomerService,
+  ) {}
 
   async resolveSnapshot(customerId: string, actor: AuthenticatedActor) {
     const response = await this.customers.maskedDetail(customerId, actor);

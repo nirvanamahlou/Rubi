@@ -21,7 +21,10 @@ import { SalesService } from './sales.service';
     SalesService,
     SalesCustomersPublicAdapter,
     AwaitingTicketCatalogPublicApi,
-    { provide: SALES_TICKET_AVAILABILITY_PORT, useExisting: AwaitingTicketCatalogPublicApi },
+    {
+      provide: SALES_TICKET_AVAILABILITY_PORT,
+      useExisting: AwaitingTicketCatalogPublicApi,
+    },
   ],
   exports: [SalesService],
 })
