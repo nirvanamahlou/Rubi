@@ -3,7 +3,7 @@
 - Status: `READY_FOR_REVIEW`
 - Owner: `PC-A`
 - Branch: `codex/pc-a-sales-contracts`
-- Base: `origin/develop@b69b7fac8ea5e04cb2a737a0a60c89cdcc6674ee`
+- Base: `origin/develop@85204a427ee575df1e81493e531418830b250abc`
 - Worktree: isolated from the dirty primary workspace
 
 ## Reserved scope
@@ -16,7 +16,8 @@
 ## Active lock state
 
 - PR #91 merged as `b69b7fa`; the atomic `DOCUMENTS-004-HANDOFF` is present in this
-  branch through merge commit `8d3b89d`.
+  branch through merge commit `8d3b89d`. آخرین `origin/develop@85204a4` نیز با Merge
+  معمولی `dbaf450` وارد شد و تعارض اسناد با حفظ کامل Handoff فروش و Marketing حل شد.
 - `Migration Owner`: `PC-A/SALES-CONTRACTS-001`.
 - `Central Docs Owner`: `PC-A/SALES-CONTRACTS-001`.
 - `Dependency/Lockfile Owner`: `RELEASED / UNASSIGNED`; this task does not reserve it
@@ -43,6 +44,6 @@
 - Prisma format/validate/generate: موفق.
 - PostgreSQL `18.1-alpine` خالی: هر ۳۱ Migration اعمال و `migrate status` به‌روز؛ Seed دو بار پیاپی موفق. کانتینر اختصاصی تست پس از Gate حذف شد.
 - Full lint: ۶ Task موفق. Full typecheck: ۹ Task موفق.
-- Full test: ۱٬۴۸۳ تست موفق؛ ۷۰ تست PostgreSQL اختیاری موجود طبق Suite skip شدند و Gate مستقل PostgreSQL بالا موفق است.
+- Full test پس از آخرین Merge: ۱٬۴۸۵ تست موفق؛ ۷۰ تست PostgreSQL اختیاری موجود طبق Suite skip شدند و Gate مستقل PostgreSQL بالا موفق است.
 - Full Production Build: ۶ Task موفق؛ ۳۵ صفحه تولید و `/sales` و `/sales/contracts/new` موفق prerender شدند.
 - Dependency و `pnpm-lock.yaml` تغییر نکرد؛ `main` و `develop` مستقیم تغییر نکردند و Rebase/Force Push انجام نشد.

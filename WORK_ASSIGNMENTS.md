@@ -3,14 +3,15 @@
 ## SALES-CONTRACTS-001 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-03: Vertical Slice واقعی قراردادها، فروش و تخصیص خدمات روی Branch مستقل `codex/pc-a-sales-contracts` و Draft PR #90 ادامه یابد. `COMPUTER_ID=PC-A`.
-- Base جاری `origin/develop@b69b7fa` شامل Merge PR #89 و Handoff رسمی PR #91 است؛ Merge معمولی با Commit `8d3b89d` وارد Branch فروش شد و Rebase/Force Push انجام نشد.
+- Base جاری `origin/develop@85204a4` شامل Merge PR #89، Handoff رسمی PR #91 و PR #92 است؛ Mergeهای معمولی `8d3b89d` و `dbaf450` وارد Branch فروش شدند، تعارض اسناد با حفظ هر دو Handoff حل شد و Rebase/Force Push انجام نشد.
 - محدوده رزروشده: Prisma Schema و Migration افزایشی Sales، Permission Seed، قرارداد عمومی versioned و root export فروش، `apps/api/src/sales/**`، `apps/web/src/modules/sales/**`، Routeهای `/sales` و `/sales/contracts/new`، تست‌ها و اسناد همین Task.
 - Lock state: `Migration Owner = PC-A/SALES-CONTRACTS-001`، `Central Docs Owner = PC-A/SALES-CONTRACTS-001` و `Sales shared-contract/root export Owner = PC-A/SALES-CONTRACTS-001`. Dependency/Lockfile برابر `RELEASED` می‌ماند و تغییر نمی‌کند.
 - مرز بین‌ماژولی: Customers، Ticket Catalog، Master Data، Finance، Reservations، Documents و Legal Entity فقط از Public Contract/Port مصرف می‌شوند؛ Query مستقیم جدول یا Import Repository/Infrastructure خصوصی ممنوع است.
 - PR #85، کد PC-B، `main` و `develop` دست‌نخورده می‌مانند؛ Merge، Cherry-pick، Rebase و Force Push مجاز نیست.
 - نتیجه: قرارداد عمومی v1، Prisma/Migration افزایشی، Permission Seed، Repository/API واقعی، Audit/Scope/Lock/Idempotency، محاسبه مانده فقط از تأیید Finance، صف پایدار ReservationRequest و فرم تمام‌صفحه هفت‌مرحله‌ای تکمیل شد.
-- Gate: ۳۱ Migration روی PostgreSQL 18 خالی، Seed دوباره‌پذیر، Full lint/typecheck، ۱٬۴۸۳ تست و Full Production Build موفق‌اند. Ticket offer در زمان تأیید تا انتشار Runtime Public API ماژول مالک به‌صورت fail-closed رد می‌شود و داده ساختگی وجود ندارد.
+- Gate پس از آخرین Merge: ۳۱ Migration روی PostgreSQL 18 خالی، Seed دوباره‌پذیر، Full lint/typecheck، ۱٬۴۸۵ تست و Full Production Build موفق‌اند. Ticket offer در زمان تأیید تا انتشار Runtime Public API ماژول مالک به‌صورت fail-closed رد می‌شود و داده ساختگی وجود ندارد.
 - Commits: `7eba1b2` (contract/database)، `d1ecb63` (backend/API)، `fc61a4e` (full-page web) به‌همراه Commit نهایی hardening/docs. انتشار فقط روی همان Draft PR #90 انجام می‌شود.
+
 ## MARKETING-001D — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک در 2026-09-03: حذف اعلان‌ها و برچسب‌های Preview از صفحات مارکتینگ، هم‌ترازی Hub با رنگ و حرکت اطلاعات پایه، اصلاح RTL و History مرورگر، تکمیل دو سری نمودار داشبورد و ساده‌سازی فرم ساخت کمپین. `COMPUTER_ID=PC-B`.
