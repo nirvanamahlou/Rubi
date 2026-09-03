@@ -1,6 +1,14 @@
 # وضعیت پروژه
 
-## DOCUMENTS-004 — عملیات واقعی اسناد و آرشیو — آماده بررسی
+## DOCUMENTS-004-HANDOFF — انتقال اتمیک قفل‌ها به Sales — آماده بررسی
+
+- PR [#89](https://github.com/nirvanamahlou/Rubi/pull/89) با Merge Commit `1e5c55e3b2d9dcc58c407d0ca205abed86b4c605` وارد `develop` شده است؛ `DOCUMENTS-004-OPERATIONS` اکنون `DONE/MERGED` است.
+- قفل‌های Documents با این وضعیت پایان می‌یابند: Documents shared-contract و Shared Calendar برابر `RELEASED / STABLE` و Dependency/Lockfile برابر `RELEASED`.
+- انتقال اتمیک برای ادامه کار: Migration، Central Docs و Sales shared-contract/root export به `PC-A/SALES-CONTRACTS-001` رزرو می‌شوند. Dependency/Lockfile برای Sales آزاد می‌ماند و فقط پس از اثبات نیاز واقعی و رزرو جداگانه قابل تغییر است.
+- Documents فقط مالک نگهداری، نسخه‌بندی و دسترسی فایل است. Sales فقط قرارداد عمومی Documents را مصرف می‌کند و حق Query مستقیم جدول‌ها یا استفاده از Repository/زیرساخت داخلی Documents را ندارد.
+- این Handoff فقط چهار فایل مستنداتی را تغییر می‌دهد؛ PR #90، Branch فروش، `main`، کد، Schema، Migration، Seed، Dependency، Lockfile و فایل‌های ماژولی دست‌نخورده می‌مانند. جزئیات: `docs/tasks/DOCUMENTS-004-HANDOFF.md`.
+
+## DOCUMENTS-004 — عملیات واقعی اسناد و آرشیو — ادغام‌شده
 
 - `PC-B` روی Branch مستقل `codex/pc-b-documents-workflows` جزئیات سند را ساده و فارسی کرد؛ مسیر پیشنهادی، SHA/MIME و توضیح فنی منبع از UI حذف و نوع فایل به شکل پسوندی مانند `.PNG` نمایش داده می‌شود.
 - فهرست‌های عملیاتی و اشتراک‌گذاری تا انتخاب فیلتر خالی می‌مانند. اشتراک‌گذاری جست‌وجو و فیلتر فشرده دارد؛ پاک‌سازی با آیکون سطل قرمز انجام می‌شود و Export رابط حذف شده است.
@@ -8,7 +16,8 @@
 - مدیریت آرشیو به چهار مسیر واقعی مدارک ناقص، اسناد تحت مسئولیت کاربر، نگهداری/انقضا و بازیابی اسناد آرشیوشده محدود شد. «پیگیری» نمای کلی و همه نماهای شخصی نیز به Queryهای واقعی وصل‌اند.
 - تقویم فرم‌های اسناد دیگر Dropdown ماه/سال ندارد: ماه‌ها و سال‌ها در شبکه‌های ۱۲تایی هم‌تم Rubi انتخاب می‌شوند و پیمایش بازه سال، شمسی/میلادی و ذخیره Gregorian ISO حفظ شده است. ۵۹۸ تست Web، lint، typecheck و Production Build موفق و انتخاب واقعی `۱۴۰۶ / مهر / ۱` در مرورگر تأیید شد.
 - Migration افزایشی `20260903110000_documents_incomplete_status` روی PostgreSQL خالی و دیتابیس محلی اعمال شد. ۷ Fixture تصویری آماده مشاهده‌اند؛ Full lint/typecheck/build و ۱٬۴۷۰ تست موفق است و ۷۰ تست PostgreSQL اختیاری skip شدند. Smoke مرورگر بدون تغییر داده تمام رفتارهای اصلی را تأیید کرد.
-- این Slice هنوز به `develop` یا `main` Merge نشده و Branch مستقل برای Review/انتشار آماده است. جزئیات: `docs/tasks/DOCUMENTS-004-OPERATIONS.md`.
+- PR [#89](https://github.com/nirvanamahlou/Rubi/pull/89) با Merge Commit `1e5c55e3b2d9dcc58c407d0ca205abed86b4c605` وارد `develop` شد؛ `main` دست‌نخورده ماند و Task برابر `DONE/MERGED` است. جزئیات: `docs/tasks/DOCUMENTS-004-OPERATIONS.md`.
+
 ## TICKET-CATALOG-003 — نمایش ظرفیت باقی‌مانده روی کارت بلیت — آماده بررسی
 
 - `PC-A` روی Branch مستقل `codex/pc-a-ticket-card-remaining-capacity` کارت بلیت را به مدل موجودی Ticket Catalog متصل کرد؛ کارت اکنون ظرفیت کل و مانده را کنار هم و با تفکیک دیداری روشن نمایش می‌دهد.
@@ -186,6 +195,7 @@
   نقش و Desktop/Mobile را پوشش داد؛ تمام داده‌ها و زیرساخت Synthetic پس از تست حذف شدند.
 - Adapter تولیدی S3/MinIO، Antivirus Worker، retention قطعی، اشتراک امن، Export و اتصال
   producerها Deferred هستند. جزئیات: `docs/tasks/DOCUMENTS-002.md`.
+
 ## یکدست‌سازی اکشن‌های فیلتر اطلاعات پایه — 2026-08-31
 
 - `MASTER-003-FILTER-ACTIONS` روی شاخه `codex/pc-b-master-data-filter-actions` به‌صورت Stacked روی تحویل حذف نوارهای قفل‌دار آماده Review است. تمام Workspaceهای تخصصی و fallback عمومی از کامپوننت مشترک «پاک‌کردن / تازه‌سازی» استفاده می‌کنند.
@@ -234,7 +244,6 @@
 - نصب frozen، lint، typecheck، ۱۲۲۱ تست عمومی، ۵۷ تست واقعی PostgreSQL، Seed دوگانه، Build کامل و Smoke احراز‌شده مشترک پاس شدند. Dependency/Lockfile تغییر نکرده است. اختلاف قدیمی نام Constraint/Indexها و Default لیدر در گزارش Task ثبت شده؛ هیچ Migration تاریخی بازنویسی نشد.
 - بلیت همچنان Phase A/Preview است. قیمت نهایی فروش متعلق به Sales است؛ صدور و Manifest در Reservations می‌مانند. تغییر رمز IAM موجود در PR #46 برابر حداقل ۱۰ نویسه همراه همه شروط نوع نویسه است؛ این Task حسابی ایجاد نمی‌کند.
 - گزارش‌های پایین تاریخی‌اند. قفل‌های توسعه اطلاعات پایه نزد PC-B باقی می‌مانند و این ادغام قفل توسعه جدیدی منتقل نمی‌کند.
-
 
 آخرین به‌روزرسانی: 2026-08-31 — اصلاح نمایش فهرست مالی و جغرافیا پس از ثبت فرم
 
@@ -311,7 +320,6 @@
 - ۵۲ تست API Customers، ۱۴ تست Web Customers، ۱۵ تست Contract و ۲۶۹ تست کامل پاس شدند؛ lint، typecheck، Production Build و Smoke احراز‌شده `/customers` نیز پاس شدند.
 - نام لاتین، جنسیت، note، business code، idempotency persistence، Address Masking کامل، cross-module timeline و Merge واقعی در `BLOCKED_FOR_CUSTOMER_002B` باقی ماندند.
 - Draft Stacked PR #27 با Base اولیه `codex/pc-a-customer-operations` باز شد؛ به #26 وابسته است، پیش از Parent Merge نمی‌شود و پس از Merge والد Base آن به `develop` تغییر می‌کند.
-
 
 - مرحله جاری: **Advanced Master Data Management Full-Stack**
 - وضعیت: **انتشار اصلاحات محلی در Sliceهای مستقل و تجمیع نسخه اجرایی کامل**
@@ -491,6 +499,7 @@
 - `DEC-OPEN-006` و `DEC-OPEN-011` باز می‌مانند. نگهداری مدرک حساس، auto-merge و
   merge واقعی ممنوع‌اند؛ فقط Candidate Detection و Review دستی ثبت و Audit می‌شوند.
 - نرخ ارز authoritative و تولید واقعی Excel/PDF خارج از این Handoff باقی می‌مانند.
+
 ### `CUSTOMER001-FINANCE-HANDOFF-001` — PC-A — `DONE`
 
 - PR شماره ۲۰ با Merge Commit `11fc875` وارد `origin/develop` شد.
@@ -503,7 +512,6 @@
 - Finance فقط قرارداد عمومی ماژول‌های دیگر را مصرف می‌کند؛ query مستقیم جدول‌های Customers،
   Sales، Reservations، Procurement یا HR ممنوع است.
 - این Handoff فقط مستندات است و هیچ dependency، lockfile، Schema یا Migration تغییر نمی‌دهد.
-
 
 ### FINANCE-001 — PC-A — DONE/MERGED
 
@@ -528,6 +536,7 @@
 - Dependency/Lockfile، Prisma، Migration و Seed تغییر نکردند. داده‌ها فقط synthetic هستند.
 - QA مرورگر داخلی به‌دلیل خطای ACL ابزار Windows و redirect احراز هویت انجام نشد؛ HTTP
   redirect و Production Build route تایید شدند و dev server موقت متوقف شد.
+
 ### `LEGAL-ENTITY-CONTEXT-001` — PC-A — `DONE/MERGED`
 
 - PR #24 با Source HEAD `6f475c03eebc6379fc8be47a48eb0751d58f2d89` و Merge Commit
@@ -573,6 +582,7 @@
   `RELEASED` و Dependency/Lockfile همچنان `RELEASED` خواهد بود.
 - مرجع Handoff: [MASTER-003-HANDOFF.md](tasks/MASTER-003-HANDOFF.md). برنامه ادامه:
   [MASTER-004.md](tasks/MASTER-004.md).
+
 ### `MASTER-003B-GEO` — PC-B — `READY_FOR_REVIEW`
 
 - Branch مستقل `codex/pc-b-master-data-next` دقیقاً از Remote Parent
@@ -765,7 +775,6 @@
   Smoke احراز‌شده API و `/master-data/sales-references` هر دو پاسخ ۲۰۰ دادند. Lint
   فایل‌های دو Workspace حمل‌ونقل و مراجع فروش موفق است؛ Full lint فقط به‌دلیل ایراد
   قدیمی DatePicker خارج از این Slice متوقف می‌شود.
-
 
 ### `MASTER-003J-INSURANCE` — PC-B — `READY_FOR_REVIEW`
 

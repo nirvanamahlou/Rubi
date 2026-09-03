@@ -1,4 +1,8 @@
-# DOCUMENTS-004 — عملیات واقعی اسناد و آرشیو
+# DOCUMENTS-004-OPERATIONS — عملیات واقعی اسناد و آرشیو
+
+- وضعیت نهایی: `DONE/MERGED`
+- Pull Request: [#89](https://github.com/nirvanamahlou/Rubi/pull/89)
+- Merge Commit: `1e5c55e3b2d9dcc58c407d0ca205abed86b4c605`
 
 ## هدف
 
@@ -37,3 +41,18 @@
 - دیتابیس محلی PC-B: Migration جدید اعمال و ۷ Fixture تصویری Documents با `readyForViewing=true` تأیید شد.
 - Browser Smoke روی `http://localhost:3100/documents`: حالت خالی بدون فیلتر، ۱۳ نتیجه با جست‌وجوی «آزمایشی»، دکمه‌های ویرایش/حذف، Dialog عملیات گروهی، Dropdownهای ویرایش، پسوند `.PNG`، ارتباط ساده و چهار کارت آرشیو تأیید شدند؛ هیچ رکوردی در Smoke تغییر یا حذف نشد.
 - Follow-up تقویم: ۵۹۸ تست Web، lint، typecheck و Production Build موفق؛ Browser QA فرم بارگذاری، Grid هر ۱۲ ماه، Grid صفحه‌بندی‌شده ۱۲ سال، انتخاب `۱۴۰۶ / مهر / ۱` و نمایش میلادی با رقم انگلیسی را تأیید کرد.
+
+## Handoff نهایی قفل‌ها
+
+| قفل                                     | وضعیت نهایی                |
+| --------------------------------------- | -------------------------- |
+| Documents shared-contract Owner         | `RELEASED / STABLE`        |
+| Shared Calendar Owner                   | `RELEASED / STABLE`        |
+| Dependency/Lockfile Owner               | `RELEASED`                 |
+| Migration Owner                         | `PC-A/SALES-CONTRACTS-001` |
+| Central Docs Owner                      | `PC-A/SALES-CONTRACTS-001` |
+| Sales shared-contract/root export Owner | `PC-A/SALES-CONTRACTS-001` |
+
+Documents فقط مالک نگهداری، نسخه‌بندی و دسترسی فایل است. Sales فقط از قرارداد عمومی Documents استفاده می‌کند و حق Query مستقیم جدول‌ها، Repository یا زیرساخت داخلی Documents را ندارد. Dependency/Lockfile برای Sales آزاد می‌ماند مگر نیاز واقعی بعداً اثبات و با Work Item مستقل، دلیل و فایل‌های دقیق رزرو شود.
+
+مرجع رسمی انتقال: `docs/tasks/DOCUMENTS-004-HANDOFF.md`.
