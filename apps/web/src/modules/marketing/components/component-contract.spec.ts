@@ -46,6 +46,17 @@ const referenceDataSource = readFileSync(
   ),
   'utf8',
 );
+const referencePagesSource = readFileSync(
+  join(
+    process.cwd(),
+    'src',
+    'modules',
+    'marketing',
+    'components',
+    'marketing-reference-pages.tsx',
+  ),
+  'utf8',
+);
 const pageSource = readFileSync(
   join(process.cwd(), 'src', 'app', '(crm)', 'marketing', 'page.tsx'),
   'utf8',
@@ -85,7 +96,7 @@ describe('marketing workspace component contract', () => {
     }
   });
 
-  it('includes every reference subtab and routes generic sections to data', () => {
+  it('implements every reference subtab with its dedicated inner page', () => {
     for (const label of [
       'تقویم کمپین‌ها',
       'بودجه و هزینه‌ها',
@@ -101,15 +112,31 @@ describe('marketing workspace component contract', () => {
     ]) {
       expect(referenceDataSource).toContain(label);
     }
-    expect(workspaceSource).toContain('previewItemsFor(section, tab)');
+    for (const pageMarker of [
+      'سازنده سگمنت پویا',
+      'سرنخ‌های مارکتینگ',
+      'ارسال پیام',
+      'قالب‌های پیام',
+      'کتابخانه محتوا',
+      'صفحات فرود',
+      'پیشنهادهای ویژه',
+      'سازنده سفر مشتری',
+      'نمای ذخیره‌شده: گزارش هفتگی مدیر',
+      'کانال‌ها و سرویس‌ها',
+      'لاگ‌ها و خطاهای عملیاتی',
+    ]) {
+      expect(referencePagesSource).toContain(pageMarker);
+    }
+    expect(workspaceSource).toContain('MarketingReferenceSection');
     expect(workspaceSource).toContain('setDetailItem');
   });
 
-  it('provides responsive campaign cards without a horizontal table', () => {
+  it('provides responsive campaign cards and Rubi-styled reference tables', () => {
     expect(workspaceSource).toContain('جزئیات کامل کمپین');
     expect(workspaceSource).toContain('sm:grid-cols-2');
-    expect(workspaceSource).not.toContain('overflow-x-auto');
-    expect(workspaceSource).not.toContain('<table');
+    expect(referencePagesSource).toContain('overflow-x-auto');
+    expect(referencePagesSource).toContain('<table');
+    expect(referencePagesSource).toContain('PaginationShell');
   });
 
   it('uses Rubi filters and calendars for date-aware campaign controls', () => {
@@ -139,7 +166,17 @@ describe('marketing workspace component contract', () => {
     expect(workspaceSource).toContain("openCampaign('create')");
     expect(workspaceSource).toContain("onOpen('view', campaign)");
     expect(workspaceSource).toContain("onOpen('edit', campaign)");
+    expect(workspaceSource).toContain('CampaignDetailReference');
+    expect(referencePagesSource).toContain('صفحات جزئیات کمپین');
     expect(workspaceSource).toContain('aria-live="polite"');
+  });
+
+  it('keeps reference filters, forms and interactive actions on shared Rubi controls', () => {
+    expect(referencePagesSource).toContain('@/components/ui/date-picker');
+    expect(referencePagesSource).toContain('FilterBar');
+    expect(referencePagesSource).toContain('onValueChange={setTab}');
+    expect(referencePagesSource).toContain('role="switch"');
+    expect(referencePagesSource).toContain('onClick={() => onNotice');
   });
 
   it('labels analytics, attribution and dispatch as contract-gated', () => {

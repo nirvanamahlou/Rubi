@@ -13,6 +13,27 @@
 - وضعیت انتشار: تغییرات روی Branch مستقل محلی آماده Commit/Review است؛ `develop` و `main` تغییر نکرده‌اند و قفل‌های Migration، Documents Contract و Central Docs تا تعیین تکلیف انتشار نزد همین Work Item باقی می‌مانند.
 - Follow-up مالک در 2026-09-03: انتخاب ماه و سال در تقویم فرم‌های اسناد نباید Dropdown باشد و باید با Grid هم‌تم Rubi انجام شود. `Shared Calendar Owner = PC-B/DOCUMENTS-004-OPERATIONS`؛ API عمومی DatePicker، مقدار ISO Gregorian، Dependency و Lockfile بدون تغییر می‌مانند.
 - نتیجه Follow-up تقویم: دو Select ماه/سال حذف شدند؛ ماه‌ها در Grid دوازده‌تایی و سال‌ها در Grid دوازده‌تایی صفحه‌بندی‌شده نمایش داده می‌شوند. انتخاب شمسی/میلادی، ارقام انگلیسی حالت میلادی، انتخاب روز و مقدار ذخیره‌شده Gregorian ISO حفظ شدند. Web شامل ۵۹۸ تست موفق است و lint، typecheck و Production Build موفق‌اند؛ Browser QA در فرم بارگذاری اسناد انتخاب شبکه‌ای `۱۴۰۶ / مهر / ۱` و حالت میلادی را تأیید کرد.
+## TICKET-CATALOG-003 — PC-A — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-03: کارت هر بلیت علاوه بر ظرفیت کل، ظرفیت باقی‌مانده همان بلیت را نیز نمایش دهد. `COMPUTER_ID=PC-A`.
+- Branch مستقل `codex/pc-a-ticket-card-remaining-capacity` از `origin/develop@fc68ce1`؛ محدوده فقط کارت/Workspace و تست‌های Ticket Catalog و اسناد همین Work Item است.
+- مقدار مانده از مدل موجودی Ticket Catalog محاسبه می‌شود؛ تا زمان اتصال تخصیص‌های Reservations، Snapshot بدون تخصیص مانده‌ای برابر ظرفیت کل دارد. هیچ داده رزرو ساختگی ساخته نمی‌شود.
+- بدون Schema/Migration/Seed، Dependency/Lockfile، Shared Contract، IAM یا تغییر ماژول Reservations.
+- نتیجه: کارت بلیت اکنون «ظرفیت کل» و «مانده» را کنار هم نشان می‌دهد؛ مانده با `inventoryTotals` و پس از کسر تخصیص‌های نگهداری‌شده و تأییدشده محاسبه می‌شود. Workspace فعلی تا اتصال قرارداد Reservations از Snapshot بدون تخصیص استفاده می‌کند، بنابراین برای داده‌های فعلی مانده برابر کل است.
+- اعتبارسنجی: هر ۹۵ تست Ticket Catalog Web، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند.
+
+## MARKETING-001C — PC-B — DONE/MERGED
+
+- درخواست صریح مالک در 2026-09-03: صفحات داخلی تمام سکشن‌های Workspace مارکتینگ مطابق فایل مرجع `marketing.html` اصلاح شوند و همان داده‌های آزمایشی امن حفظ شوند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-marketing-inner-pages-parity` از `origin/develop@9608607`؛ فایل HTML صرفاً مرجع بصری/تعاملی است و دستور اجرایی محسوب نمی‌شود.
+- محدوده رزروشده: `apps/web/src/modules/marketing/**`، تست‌های همان ماژول، `docs/tasks/MARKETING-001.md` و ورودی محدود همین Task در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`.
+- صفحات داخلی باید ساختار، کارت‌ها، فیلترها، actionها و حالت‌های جزئیات مرجع را با اجزای مشترک Rubi پیاده کنند؛ داده‌ها فقط synthetic با شناسه `preview-*` و بدون PII باقی می‌مانند.
+- بدون Schema/Migration/Seed، Persistence، API/Shared Contract، IAM، Navigation، AppModule، Dependency/Lockfile یا تغییر فایل‌های UI مرکزی. PR #83 مربوط به قفل قبلی Central Docs در `origin/develop@9608607` ادغام شده و پایان یافته است؛ تقویم مشترک فقط مصرف می‌شود.
+- نتیجه: ۴۵ زیرصفحه تخصصی، داشبورد کامل، ۹ تب جزئیات کمپین و داده‌های synthetic دقیق مرجع جای صفحات عمومی قبلی را گرفتند. فیلتر، جست‌وجو، صفحه‌بندی، سازنده سگمنت، پیش‌نمایش پیام، سفر مشتری، Switch، Dialog و Action feedback در State محلی کار می‌کنند؛ فیلتر و تقویم از Design System مشترک Rubi هستند.
+- ادغام مبنا: `origin/develop@6ac2dfc` در Branch ادغام شد. Web lint و `599/599` تست موفق؛ Full lint برابر ۶ Task و Full test برابر `1,464` تست موفق با ۷۰ skip اختیاری است. Browser QA تمام تب‌ها/فرم‌ها و Mobile `390×844` را بدون Overflow یا Console error تأیید کرد.
+- Typecheck محلی با غیرفعال‌کردن کش افزایشی موفق شد. CI تمیز PR #86 نیز Full Typecheck، Full Production Build، Full Test و Gate کامل PostgreSQL 18/Migration/Seed را سبز کرد؛ خطای موقت `observedAt` ناشی از کش قدیمی محلی بود و هیچ فایل Master Data در این Task تغییر نکرد.
+- انتشار: PR [#86](https://github.com/nirvanamahlou/Rubi/pull/86) با Merge Commit `4ea7b27` وارد `develop` شد. هر چهار Job اجباری CI پیش از ادغام و اجرای کامل CI پس از ادغام روی خود `develop` موفق‌اند.
+- Final lock state: `RELEASED — PC-B/MARKETING-001C merged via PR #86`. Migration، Dependency/Lockfile، Shared Contract و Central UI در تمام Task آزاد و بدون تغییر ماندند.
 
 ## MASTER-004-FORM-FOLLOWUP — PC-B — READY_FOR_REVIEW
 

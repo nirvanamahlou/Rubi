@@ -9,6 +9,28 @@
 - تقویم فرم‌های اسناد دیگر Dropdown ماه/سال ندارد: ماه‌ها و سال‌ها در شبکه‌های ۱۲تایی هم‌تم Rubi انتخاب می‌شوند و پیمایش بازه سال، شمسی/میلادی و ذخیره Gregorian ISO حفظ شده است. ۵۹۸ تست Web، lint، typecheck و Production Build موفق و انتخاب واقعی `۱۴۰۶ / مهر / ۱` در مرورگر تأیید شد.
 - Migration افزایشی `20260903110000_documents_incomplete_status` روی PostgreSQL خالی و دیتابیس محلی اعمال شد. ۷ Fixture تصویری آماده مشاهده‌اند؛ Full lint/typecheck/build و ۱٬۴۷۰ تست موفق است و ۷۰ تست PostgreSQL اختیاری skip شدند. Smoke مرورگر بدون تغییر داده تمام رفتارهای اصلی را تأیید کرد.
 - این Slice هنوز به `develop` یا `main` Merge نشده و Branch مستقل برای Review/انتشار آماده است. جزئیات: `docs/tasks/DOCUMENTS-004-OPERATIONS.md`.
+## TICKET-CATALOG-003 — نمایش ظرفیت باقی‌مانده روی کارت بلیت — آماده بررسی
+
+- `PC-A` روی Branch مستقل `codex/pc-a-ticket-card-remaining-capacity` کارت بلیت را به مدل موجودی Ticket Catalog متصل کرد؛ کارت اکنون ظرفیت کل و مانده را کنار هم و با تفکیک دیداری روشن نمایش می‌دهد.
+- مانده با تابع دامنه `inventoryTotals` محاسبه می‌شود و تخصیص‌های `held` و `confirmed` را کسر می‌کند. Workspace مرورگر فعلی تا اتصال قرارداد عمومی Reservations تخصیص ساختگی ایجاد نمی‌کند، بنابراین در داده‌های فعلی مانده با کل برابر است.
+- هر ۹۵ تست Ticket Catalog Web، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند. هیچ Schema/Migration/Seed، Dependency/Lockfile، قرارداد عمومی، IAM یا فایل ماژول Reservations تغییر نکرد.
+
+## MARKETING-001C — تکمیل صفحات داخلی مارکتینگ — ادغام‌شده
+
+- `PC-B` روی `codex/pc-b-marketing-inner-pages-parity` صفحات عمومی داخل سکشن‌ها را با
+  ۴۵ زیرصفحه تخصصی همان مرجع جایگزین کرد؛ داشبورد کامل، ۹ تب جزئیات کمپین و همه داده‌های
+  آزمایشی مرجع نیز وارد Workspace واقعی Rubi شدند.
+- جست‌وجو، فیلتر، صفحه‌بندی، سگمنت‌ساز، پیش‌نمایش زنده پیام، کتابخانه محتوا، پیشنهادها،
+  سفر مشتری، گزارش‌های ده‌گانه و تنظیمات تعاملی‌اند. تقویم و فیلترها فقط از کامپوننت‌های
+  مشترک Rubi استفاده می‌کنند و هیچ Persistence، API، ارسال واقعی یا اثر مالی ندارند.
+- Web lint و `599/599` تست، Full lint با ۶ Task و Full test با `1,464` تست موفق و ۷۰
+  تست PostgreSQL اختیاری skip شدند. Browser QA همه تب‌ها، فرم ۹مرحله‌ای و Mobile
+  `390×844` را بدون Overflow یا Console warning/error تأیید کرد.
+- Typecheck محلی بدون کش و هر چهار Job تمیز CI شامل Full Typecheck، Full Production
+  Build، Full Test و PostgreSQL 18/Migration/Seed موفق‌اند. خطای موقت `observedAt` فقط
+  از کش افزایشی قدیمی محلی بود و فایل Master Data در این Task تغییر نکرد.
+- PR [#86](https://github.com/nirvanamahlou/Rubi/pull/86) با Merge Commit `4ea7b27`
+  وارد `develop` شد؛ اجرای کامل CI پس از ادغام روی خود `develop` نیز سبز است.
 
 ## MASTER-004-FORM-ALIGNMENT — هم‌ترازی فرم‌های اطلاعات پایه — آماده بررسی
 
