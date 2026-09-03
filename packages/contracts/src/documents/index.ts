@@ -47,6 +47,9 @@ export type DocumentScanStatusCode =
 export type DocumentValidityFilter =
   'ALL' | 'VALID' | 'EXPIRING' | 'EXPIRED' | 'WITHOUT_EXPIRY';
 
+export type DocumentCompletionFilter = 'COMPLETE' | 'INCOMPLETE';
+export type DocumentAttentionFilter = 'INCOMPLETE_OR_EXPIRED';
+
 export const DOCUMENT_PERSONAL_VIEW_CODES = [
   'OWNED',
   'UPLOADED',
@@ -72,6 +75,8 @@ export interface DocumentListQueryV1 {
   archiveStatus?: DocumentArchiveStatusCode;
   scanStatus?: DocumentScanStatusCode;
   validity?: DocumentValidityFilter;
+  completion?: DocumentCompletionFilter;
+  attention?: DocumentAttentionFilter;
   ownerUserId?: string;
   confidentiality?: DocumentConfidentialityCode;
   createdFrom?: string;
@@ -140,8 +145,11 @@ export interface DocumentListItemV1 {
   branchId: string;
   confidentiality: DocumentConfidentialityCode;
   archiveStatus: DocumentArchiveStatusCode;
+  isIncomplete: boolean;
   validUntil: string | null;
+  version: number;
   currentVersion: DocumentVersionV1;
+  capabilities: DocumentCapabilitiesV1;
   createdAt: string;
   updatedAt: string;
 }
@@ -154,6 +162,8 @@ export interface DocumentCapabilitiesV1 {
   viewAudit: boolean;
   archive: boolean;
   restore: boolean;
+  markIncomplete: boolean;
+  permanentDelete: boolean;
 }
 
 export interface DocumentDetailV1 extends DocumentListItemV1 {
@@ -227,4 +237,40 @@ export interface DocumentDetailResponseV1 {
 
 export interface DocumentAuditResponseV1 {
   data: readonly DocumentAuditEventV1[];
+}
+
+export interface DocumentUpdateInputV1 {
+  title: string;
+  description?: string;
+  categoryId: string;
+  ownerUserId: string;
+  confidentiality: DocumentConfidentialityCode;
+  validUntil?: string;
+  isIncomplete: boolean;
+  version: number;
+}
+
+export type DocumentBulkActionV1 =
+  'MARK_INCOMPLETE' | 'MARK_COMPLETE' | 'ARCHIVE' | 'RESTORE';
+
+export interface DocumentBulkActionInputV1 {
+  ids: readonly string[];
+  action: DocumentBulkActionV1;
+  reason: string;
+}
+
+export interface DocumentBulkActionResponseV1 {
+  data: {
+    updatedCount: number;
+  };
+}
+
+export interface DocumentArchiveActionInputV1 {
+  reason: string;
+  version: number;
+}
+
+export interface DocumentDeleteInputV1 {
+  reason: string;
+  version: number;
 }

@@ -1,6 +1,6 @@
 # Work Assignments
 
-## DOCUMENTS-004-OPERATIONS — PC-B — IN_PROGRESS
+## DOCUMENTS-004-OPERATIONS — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-03: ساده‌سازی جزئیات سند، فارسی‌سازی فعالیت/نگهداری، فیلترمحورشدن فهرست‌ها و اشتراک‌گذاری، فعال‌کردن پیگیری و عملیات گروهی، ویرایش و حذف دائمی امن همه رکوردها، برچسب «ناقص» و تکمیل Backend ابزارهای باقی‌مانده مدیریت آرشیو. `COMPUTER_ID=PC-B`.
 - Branch مستقل `codex/pc-b-documents-workflows` از `origin/develop@9608607` در Worktree تمیز `C:\Users\admin\Rubi-documents-workflows` ساخته و سپس با `origin/develop@6ac2dfc` همگام شد؛ `develop`، `main` و Worktreeهای دیگر مستقیم تغییر نمی‌کنند.
@@ -8,6 +8,9 @@
 - هماهنگی قفل: Task `MASTER-004-FORM-FOLLOWUP` با Commit `34066f6` قفل Central Docs را صریحاً آزاد کرده و هیچ فایل Documents را تغییر نداده است. `Migration Owner = PC-B/DOCUMENTS-004-OPERATIONS`، `Documents shared-contract Owner = PC-B/DOCUMENTS-004-OPERATIONS` و `Central Docs Owner = PC-B/DOCUMENTS-004-OPERATIONS`؛ Dependency/Lockfile آزاد و بدون تغییر می‌ماند.
 - حذف دائمی فقط با مجوز مدیریت نگهداری، تأیید صریح کاربر، کنترل Branch/Domain، رد Legal Hold و پاک‌سازی رکوردهای وابسته و Object ذخیره‌شده مجاز است. حذف منطقی جدید ساخته نمی‌شود؛ بازیابی فقط برای اسناد `ARCHIVED` باقی می‌ماند.
 - فهرست‌های عملیاتی تا انتخاب حداقل یک فیلتر داده نشان نمی‌دهند؛ نمای کلی KPI/کارهای من مستثنا است. خروجی از UI حذف می‌شود و اشتراک‌گذاری همچنان لینک داخلی احراز‌شده و Permission-aware است، نه لینک عمومی.
+- نتیجه: جزئیات سند ساده و فارسی شد؛ نوع فایل به‌صورت پسوند نمایش داده می‌شود و متن‌های SHA/MIME/منبع فنی و مسیر پیشنهادی حذف شدند. ویرایش، حذف دائمی، آرشیو/بازیابی، برچسب ناقص و عملیات گروهی به API و دیتابیس واقعی متصل‌اند. اشتراک‌گذاری فیلتر و جست‌وجو دارد و ابزارهای باقی‌مانده آرشیو به فهرست‌های واقعی متصل شدند.
+- اعتبارسنجی: ۱٬۴۷۰ تست موفق و ۷۰ تست اختیاری PostgreSQL رد شدند؛ lint، typecheck و Production Build کامل Monorepo موفق است. هر ۳۰ Migration روی PostgreSQL خالی و Migration جدید روی دیتابیس محلی اعمال شد. بسته آزمایشی ۷ سند `readyForViewing=true` است و Smoke مرورگر فیلترمحوربودن، ۱۳ نتیجه جست‌وجو، عملیات گروهی، Dropdown ویرایش، `.PNG` و حذف متن‌های فنی را تأیید کرد.
+- وضعیت انتشار: تغییرات روی Branch مستقل محلی آماده Commit/Review است؛ `develop` و `main` تغییر نکرده‌اند و قفل‌های Migration، Documents Contract و Central Docs تا تعیین تکلیف انتشار نزد همین Work Item باقی می‌مانند.
 
 ## MASTER-004-FORM-FOLLOWUP — PC-B — READY_FOR_REVIEW
 

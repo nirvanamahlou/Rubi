@@ -1,11 +1,14 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Header,
   Headers,
+  HttpCode,
   Inject,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -28,8 +31,12 @@ import { PermissionGuard } from '../iam/permission.guard';
 // Runtime imports are required for Nest validation metadata.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import {
+  DocumentArchiveActionDto,
+  DocumentBulkActionDto,
   DocumentCaseOptionsQueryDto,
+  DocumentDeleteDto,
   DocumentListQueryDto,
+  DocumentUpdateDto,
   DocumentUploadDto,
 } from './documents.dto';
 import {
@@ -168,6 +175,71 @@ export class DocumentsController {
       request.actor,
       requestMetadata(request),
     );
+  }
+
+  @Post('bulk')
+  @RequirePermissions('documents.list')
+  bulk(
+    @Body() dto: DocumentBulkActionDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.bulk(dto, request.actor, requestMetadata(request));
+  }
+
+  @Patch(':id')
+  @RequirePermissions('documents.metadata.update')
+  update(
+    @Param('id') id: string,
+    @Body() dto: DocumentUpdateDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.update(
+      id,
+      dto,
+      request.actor,
+      requestMetadata(request),
+    );
+  }
+
+  @Post(':id/archive')
+  @RequirePermissions('documents.delete')
+  archive(
+    @Param('id') id: string,
+    @Body() dto: DocumentArchiveActionDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.archive(
+      id,
+      dto,
+      request.actor,
+      requestMetadata(request),
+    );
+  }
+
+  @Post(':id/restore')
+  @RequirePermissions('documents.restore')
+  restore(
+    @Param('id') id: string,
+    @Body() dto: DocumentArchiveActionDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.restore(
+      id,
+      dto,
+      request.actor,
+      requestMetadata(request),
+    );
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @RequirePermissions('documents.delete')
+  async permanentlyDelete(
+    @Param('id') id: string,
+    @Body() dto: DocumentDeleteDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    await this.service.permanentlyDelete(id, dto, request.actor);
   }
 
   @Get(':id/audit')
