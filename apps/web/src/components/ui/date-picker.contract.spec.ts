@@ -21,13 +21,18 @@ function productionTsx(directory: string): string {
 }
 
 describe('shared date picker contract', () => {
-  it('uses the blue theme and exposes the calendar switch above the grid', () => {
+  it('uses the blue theme and exposes grid month and year selection', () => {
     expect(pickerSource).toContain("['persian', 'gregorian']");
     expect(pickerSource).toContain("'شمسی'");
     expect(pickerSource).toContain("'میلادی'");
-    expect(pickerSource).toContain('انتخاب مستقیم ماه و سال');
+    expect(pickerSource).toContain('شبکه انتخاب ماه');
+    expect(pickerSource).toContain('شبکه انتخاب سال');
     expect(pickerSource).toContain(
-      "calendarSystem === 'gregorian' ? 'en-US' : 'fa-IR'",
+      "type CalendarView = 'days' | 'months' | 'years'",
+    );
+    expect(pickerSource).not.toContain('<select');
+    expect(pickerSource).toContain(
+      "system === 'gregorian' ? 'en-US' : 'fa-IR'",
     );
     expect(pickerSource).toContain('bg-primary');
     expect(pickerSource.indexOf('نوع تقویم')).toBeLessThan(

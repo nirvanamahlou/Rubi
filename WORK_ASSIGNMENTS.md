@@ -1,5 +1,30 @@
 # Work Assignments
 
+## DOCUMENTS-004-HANDOFF — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-03: پس از Merge موفق PR #89، پایان رسمی `DOCUMENTS-004-OPERATIONS` و انتقال اتمیک قفل‌های بعدی به `PC-A/SALES-CONTRACTS-001` فقط در اسناد ثبت شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-documents-004-handoff` از `origin/develop@1e5c55e3b2d9dcc58c407d0ca205abed86b4c605`؛ محدوده فقط `WORK_ASSIGNMENTS.md`، `docs/PROJECT_STATUS.md`، `docs/tasks/DOCUMENTS-004-OPERATIONS.md` و `docs/tasks/DOCUMENTS-004-HANDOFF.md` است.
+- Merge مرجع: PR [#89](https://github.com/nirvanamahlou/Rubi/pull/89) با Merge Commit `1e5c55e3b2d9dcc58c407d0ca205abed86b4c605` وارد `develop` شده و `DOCUMENTS-004-OPERATIONS` برابر `DONE/MERGED` است.
+- آزادسازی قطعی Documents: `Documents shared-contract Owner = RELEASED / STABLE`، `Shared Calendar Owner = RELEASED / STABLE` و `Dependency/Lockfile Owner = RELEASED`.
+- انتقال اتمیک بعدی: `Migration Owner = PC-A/SALES-CONTRACTS-001`، `Central Docs Owner = PC-A/SALES-CONTRACTS-001` و `Sales shared-contract/root export Owner = PC-A/SALES-CONTRACTS-001`.
+- `Dependency/Lockfile Owner` برای Sales رزرو نمی‌شود و `RELEASED` می‌ماند؛ هر نیاز واقعی آینده باید با دلیل، فایل دقیق و Work Item جداگانه رزرو شود.
+- مرز بین‌ماژولی: Documents فقط مالک نگهداری، نسخه‌بندی و دسترسی فایل است. Sales فقط قرارداد عمومی Documents را مصرف می‌کند و Query مستقیم جدول‌ها، Repository یا زیرساخت داخلی Documents ممنوع است.
+- این Handoff هیچ کد، Prisma Schema، Migration، Seed، Dependency، Lockfile، فایل ماژولی، داده محلی یا Branch دیگری را تغییر نمی‌دهد. PR #90، Branch فروش، `main` و Source Branchهای Documents دست‌نخورده می‌مانند.
+
+## DOCUMENTS-004-OPERATIONS — PC-B — DONE/MERGED
+
+- درخواست مالک در 2026-09-03: ساده‌سازی جزئیات سند، فارسی‌سازی فعالیت/نگهداری، فیلترمحورشدن فهرست‌ها و اشتراک‌گذاری، فعال‌کردن پیگیری و عملیات گروهی، ویرایش و حذف دائمی امن همه رکوردها، برچسب «ناقص» و تکمیل Backend ابزارهای باقی‌مانده مدیریت آرشیو. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-documents-workflows` از `origin/develop@9608607` در Worktree تمیز `C:\Users\admin\Rubi-documents-workflows` ساخته و سپس با `origin/develop@6ac2dfc` همگام شد؛ PR #89 با Merge Commit `1e5c55e3b2d9dcc58c407d0ca205abed86b4c605` آن را وارد `develop` کرد و `main` دست‌نخورده ماند.
+- محدوده رزروشده: `apps/web/src/modules/documents/**`، `apps/api/src/documents/**`، قرارداد افزایشی Documents در `packages/contracts/src/documents/**`، مدل و Migration افزایشی Documents در `packages/database/prisma/**`، تقویم مشترک `apps/web/src/components/ui/date-picker*`، تست‌های همین Slice و اسناد همین Work Item.
+- هماهنگی قفل: Task `MASTER-004-FORM-FOLLOWUP` با Commit `34066f6` قفل Central Docs را صریحاً آزاد کرد و هیچ فایل Documents را تغییر نداد. قفل‌های Migration، Documents shared-contract و Central Docs تا Merge PR #89 نزد `PC-B/DOCUMENTS-004-OPERATIONS` بودند؛ اکنون مالکیت Documents contract برابر `RELEASED / STABLE` و Dependency/Lockfile برابر `RELEASED` است و Migration/Central Docs طبق Handoff بالا به `PC-A/SALES-CONTRACTS-001` منتقل می‌شوند.
+- حذف دائمی فقط با مجوز مدیریت نگهداری، تأیید صریح کاربر، کنترل Branch/Domain، رد Legal Hold و پاک‌سازی رکوردهای وابسته و Object ذخیره‌شده مجاز است. حذف منطقی جدید ساخته نمی‌شود؛ بازیابی فقط برای اسناد `ARCHIVED` باقی می‌ماند.
+- فهرست‌های عملیاتی تا انتخاب حداقل یک فیلتر داده نشان نمی‌دهند؛ نمای کلی KPI/کارهای من مستثنا است. خروجی از UI حذف می‌شود و اشتراک‌گذاری همچنان لینک داخلی احراز‌شده و Permission-aware است، نه لینک عمومی.
+- نتیجه: جزئیات سند ساده و فارسی شد؛ نوع فایل به‌صورت پسوند نمایش داده می‌شود و متن‌های SHA/MIME/منبع فنی و مسیر پیشنهادی حذف شدند. ویرایش، حذف دائمی، آرشیو/بازیابی، برچسب ناقص و عملیات گروهی به API و دیتابیس واقعی متصل‌اند. اشتراک‌گذاری فیلتر و جست‌وجو دارد و ابزارهای باقی‌مانده آرشیو به فهرست‌های واقعی متصل شدند.
+- اعتبارسنجی: ۱٬۴۷۰ تست موفق و ۷۰ تست اختیاری PostgreSQL رد شدند؛ lint، typecheck و Production Build کامل Monorepo موفق است. هر ۳۰ Migration روی PostgreSQL خالی و Migration جدید روی دیتابیس محلی اعمال شد. بسته آزمایشی ۷ سند `readyForViewing=true` است و Smoke مرورگر فیلترمحوربودن، ۱۳ نتیجه جست‌وجو، عملیات گروهی، Dropdown ویرایش، `.PNG` و حذف متن‌های فنی را تأیید کرد.
+- وضعیت انتشار: PR [#89](https://github.com/nirvanamahlou/Rubi/pull/89) با Merge Commit `1e5c55e3b2d9dcc58c407d0ca205abed86b4c605` وارد `develop` شد؛ Task برابر `DONE/MERGED` و قفل‌های اجرایی آن پایان‌یافته‌اند.
+- Follow-up مالک در 2026-09-03: انتخاب ماه و سال در تقویم فرم‌های اسناد نباید Dropdown باشد و باید با Grid هم‌تم Rubi انجام شود. `Shared Calendar Owner` تا Merge PR #89 برابر `PC-B/DOCUMENTS-004-OPERATIONS` بود و اکنون `RELEASED / STABLE` است؛ API عمومی DatePicker، مقدار ISO Gregorian، Dependency و Lockfile بدون تغییر ماندند.
+- نتیجه Follow-up تقویم: دو Select ماه/سال حذف شدند؛ ماه‌ها در Grid دوازده‌تایی و سال‌ها در Grid دوازده‌تایی صفحه‌بندی‌شده نمایش داده می‌شوند. انتخاب شمسی/میلادی، ارقام انگلیسی حالت میلادی، انتخاب روز و مقدار ذخیره‌شده Gregorian ISO حفظ شدند. Web شامل ۵۹۸ تست موفق است و lint، typecheck و Production Build موفق‌اند؛ Browser QA در فرم بارگذاری اسناد انتخاب شبکه‌ای `۱۴۰۶ / مهر / ۱` و حالت میلادی را تأیید کرد.
+
 ## TICKET-CATALOG-003 — PC-A — READY_FOR_REVIEW
 
 - درخواست صریح مالک در 2026-09-03: کارت هر بلیت علاوه بر ظرفیت کل، ظرفیت باقی‌مانده همان بلیت را نیز نمایش دهد. `COMPUTER_ID=PC-A`.
@@ -727,13 +752,15 @@ Schema/Migration افزایشی و تست‌های همان قابلیت است.
 Customers، Finance، Procurement، Reservations، Integrations و Documents خارج از مالکیت
 این Task می‌مانند و فقط از Public Contract یا Port نسخه‌دار مصرف می‌شوند.
 
-### قفل فعال PC-B/CALENDAR-001
+### قفل تحویلی PC-B/DOCUMENTS-004-OPERATIONS — Calendar follow-up
 
-- محدوده: `apps/web/src/components/ui/date-picker*`، export همان UI و جایگزینی
-  ورودی‌های `date`/`datetime-local` در ماژول‌های Web.
+- محدوده: فقط `apps/web/src/components/ui/date-picker*` برای جایگزینی Dropdown ماه/سال
+  با انتخاب شبکه‌ای هم‌تم Rubi؛ مصرف‌کننده‌های فعلی بدون تغییر API باقی می‌مانند.
 - تغییر Dependency/Lockfile، API، Database، Contract و Migration مجاز نیست.
 - مقدار ذخیره‌شده همچنان ISO Gregorian باقی می‌ماند؛ سوییچ شمسی/میلادی فقط لایه
   نمایش و انتخاب تاریخ است.
+- وضعیت: `RELEASED — PC-B/DOCUMENTS-004-OPERATIONS ready for review`؛ Grid ماه/سال
+  بدون تغییر API عمومی یا Dependency تحویل شد.
 
 ## قفل‌های آزادشده Sprint دوم
 

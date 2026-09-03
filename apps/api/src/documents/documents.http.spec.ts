@@ -26,6 +26,9 @@ const actor: AuthenticatedActor = {
     'documents.upload',
     'documents.audit.read',
     'documents.sales.read',
+    'documents.metadata.update',
+    'documents.delete',
+    'documents.restore',
   ],
 };
 
@@ -42,6 +45,11 @@ describe('Documents HTTP boundary', () => {
       meta: { hasMore: false, limit: 20 },
     }),
     upload: vi.fn().mockResolvedValue({ data: { id: 'document-id' } }),
+    update: vi.fn().mockResolvedValue({ data: { id: 'document-id' } }),
+    archive: vi.fn().mockResolvedValue({ data: { id: 'document-id' } }),
+    restore: vi.fn().mockResolvedValue({ data: { id: 'document-id' } }),
+    bulk: vi.fn().mockResolvedValue({ data: { updatedCount: 1 } }),
+    permanentlyDelete: vi.fn().mockResolvedValue(undefined),
     detail: vi.fn().mockResolvedValue({ data: { id: 'document-id' } }),
     audit: vi.fn().mockResolvedValue({ data: [] }),
     download: vi.fn().mockResolvedValue({
@@ -185,6 +193,68 @@ describe('Documents HTTP boundary', () => {
       }),
       actor,
       expect.objectContaining({ ipAddress: expect.any(String) }),
+    );
+  });
+
+  it('validates and forwards document editing and incomplete status', async () => {
+    const id = '44444444-4444-4444-8444-444444444444';
+    await request(app.getHttpServer())
+      .patch(`/api/v1/documents/${id}`)
+      .set('Cookie', 'rubi_access=test')
+      .send({
+        title: 'قرارداد اصلاح‌شده',
+        description: 'نسخه تکمیل‌نشده',
+        categoryId: '66666666-6666-4666-8666-666666666666',
+        ownerUserId: actor.userId,
+        confidentiality: 'INTERNAL',
+        validUntil: '2026-12-01',
+        isIncomplete: true,
+        version: 1,
+      })
+      .expect(200);
+
+    expect(iam.assertPermissions).toHaveBeenCalledWith(actor, [
+      'documents.metadata.update',
+    ]);
+    expect(service.update).toHaveBeenCalledWith(
+      id,
+      expect.objectContaining({ isIncomplete: true, version: 1 }),
+      actor,
+      expect.any(Object),
+    );
+  });
+
+  it('forwards a validated bulk operation and permanently deletes a record', async () => {
+    const id = '44444444-4444-4444-8444-444444444444';
+    await request(app.getHttpServer())
+      .post('/api/v1/documents/bulk')
+      .set('Cookie', 'rubi_access=test')
+      .send({
+        ids: [id],
+        action: 'MARK_INCOMPLETE',
+        reason: 'مدارک پرونده کامل نیست',
+      })
+      .expect(201);
+
+    expect(service.bulk).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'MARK_INCOMPLETE', ids: [id] }),
+      actor,
+      expect.any(Object),
+    );
+
+    await request(app.getHttpServer())
+      .delete(`/api/v1/documents/${id}`)
+      .set('Cookie', 'rubi_access=test')
+      .send({ reason: 'حذف قطعی رکورد اشتباه', version: 1 })
+      .expect(204);
+
+    expect(iam.assertPermissions).toHaveBeenCalledWith(actor, [
+      'documents.delete',
+    ]);
+    expect(service.permanentlyDelete).toHaveBeenCalledWith(
+      id,
+      expect.objectContaining({ version: 1 }),
+      actor,
     );
   });
 

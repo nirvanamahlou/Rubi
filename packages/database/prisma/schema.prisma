@@ -2284,6 +2284,7 @@ model Document {
   validUntil           DateTime?               @map("valid_until") @db.Timestamptz(3)
   currentVersionId     String?                 @unique @map("current_version_id") @db.Uuid
   currentVersionNumber Int                     @default(0) @map("current_version_number")
+  isIncomplete         Boolean                 @default(false) @map("is_incomplete")
   legalHoldActive      Boolean                 @default(false) @map("legal_hold_active")
   deletedAt            DateTime?               @map("deleted_at") @db.Timestamptz(3)
   version              Int                     @default(1)
@@ -2308,6 +2309,7 @@ model Document {
   @@index([ownerUserId, updatedAt])
   @@index([createdByUserId, createdAt])
   @@index([validUntil, archiveStatus])
+  @@index([isIncomplete, archiveStatus, updatedAt])
   @@map("documents")
 }
 

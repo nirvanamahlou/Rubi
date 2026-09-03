@@ -15,6 +15,8 @@ import type {
   DocumentCaseOptionsQueryV1,
   DocumentCaseOptionsResponseV1,
   DocumentAuditEventV1,
+  DocumentBulkActionInputV1,
+  DocumentBulkActionResponseV1,
   DocumentConfidentialityCode,
   DocumentDetailV1,
   DocumentDomainCode,
@@ -25,7 +27,12 @@ import type {
   DocumentVersionV1,
 } from '@rubi/contracts';
 
-import type { DocumentUploadDto } from './documents.dto';
+import type {
+  DocumentArchiveActionDto,
+  DocumentDeleteDto,
+  DocumentUpdateDto,
+  DocumentUploadDto,
+} from './documents.dto';
 import {
   allowedDocumentDomains,
   type DocumentDetailRow,
@@ -170,10 +177,32 @@ function mapListItem(
     branchId: row.branchId,
     confidentiality: row.confidentiality,
     archiveStatus: row.archiveStatus,
+    isIncomplete: row.isIncomplete,
     validUntil: row.validUntil?.toISOString() ?? null,
+    version: row.version,
     currentVersion: mapVersion(
       row.currentVersion as DocumentDetailRow['versions'][number],
     ),
+    capabilities: {
+      viewFile: permissions.includes('documents.file.read') && sensitiveAllowed,
+      download:
+        permissions.includes('documents.file.read') &&
+        permissions.includes('documents.download') &&
+        sensitiveAllowed,
+      uploadVersion: permissions.includes('documents.version.create'),
+      editMetadata: permissions.includes('documents.metadata.update'),
+      viewAudit: permissions.includes('documents.audit.read'),
+      archive:
+        permissions.includes('documents.delete') &&
+        row.archiveStatus === 'ACTIVE',
+      restore:
+        permissions.includes('documents.restore') &&
+        row.archiveStatus === 'ARCHIVED' &&
+        !row.legalHoldActive,
+      markIncomplete: permissions.includes('documents.metadata.update'),
+      permanentDelete:
+        permissions.includes('documents.delete') && !row.legalHoldActive,
+    },
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -344,19 +373,225 @@ export class DocumentsService {
           : 'پرونده محرمانه',
       })),
       capabilities: {
-        viewFile:
-          permissions.includes('documents.file.read') && sensitiveAllowed,
+        ...base.capabilities,
         download:
-          permissions.includes('documents.file.read') &&
-          permissions.includes('documents.download') &&
+          base.capabilities.download &&
           (!sensitive || permissions.includes('documents.sensitive.download')),
-        uploadVersion: permissions.includes('documents.version.create'),
-        editMetadata: permissions.includes('documents.metadata.update'),
-        viewAudit: permissions.includes('documents.audit.read'),
-        archive: permissions.includes('documents.delete'),
-        restore: permissions.includes('documents.restore'),
       },
     };
+  }
+
+  private assertPermission(
+    permissions: readonly string[],
+    permission: string,
+  ): void {
+    if (!permissions.includes(permission)) {
+      throw new ForbiddenException('مجوز لازم برای این عملیات وجود ندارد.');
+    }
+  }
+
+  async update(
+    id: string,
+    dto: DocumentUpdateDto,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<{ data: DocumentDetailV1 }> {
+    this.assertPermission(actor.permissions, 'documents.metadata.update');
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row) throw new NotFoundException('سند پیدا نشد.');
+    this.assertDomain(row.documentType.domain, actor.permissions);
+    if (row.archiveStatus === 'DELETED') {
+      throw new ConflictException('سند حذف‌شده قابل ویرایش نیست.');
+    }
+    if (row.documentType.requiresExpiry && !dto.validUntil) {
+      throw new BadRequestException(
+        'تاریخ اعتبار برای این نوع سند الزامی است.',
+      );
+    }
+    const references = await this.repository.editReferences({
+      categoryId: dto.categoryId,
+      ownerUserId: dto.ownerUserId,
+      branchId: row.branchId,
+    });
+    if (!references.category)
+      throw new BadRequestException('دسته‌بندی معتبر نیست.');
+    if (!references.owner)
+      throw new BadRequestException('مالک در شعبه سند معتبر نیست.');
+    const updated = await this.repository.updateMetadata({
+      documentId: id,
+      expectedVersion: dto.version,
+      title: dto.title.trim(),
+      description: dto.description?.trim() || null,
+      categoryId: dto.categoryId,
+      ownerUserId: dto.ownerUserId,
+      confidentiality: dto.confidentiality,
+      validUntil: dto.validUntil
+        ? new Date(`${dto.validUntil.slice(0, 10)}T23:59:59.999Z`)
+        : null,
+      isIncomplete: dto.isIncomplete,
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      ipSummary: summarizeIp(metadata.ipAddress),
+      userAgentSummary: summarizeUserAgent(metadata.userAgent),
+    });
+    if (!updated) {
+      throw new ConflictException(
+        'سند هم‌زمان تغییر کرده است؛ اطلاعات را دوباره باز کنید.',
+      );
+    }
+    return { data: this.mapDetail(updated, actor.permissions) };
+  }
+
+  async archive(
+    id: string,
+    dto: DocumentArchiveActionDto,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<{ data: DocumentDetailV1 }> {
+    this.assertPermission(actor.permissions, 'documents.delete');
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row) throw new NotFoundException('سند پیدا نشد.');
+    this.assertDomain(row.documentType.domain, actor.permissions);
+    if (row.archiveStatus !== 'ACTIVE') {
+      throw new ConflictException('فقط سند فعال قابل آرشیو است.');
+    }
+    const updated = await this.repository.changeArchiveStatus({
+      documentId: id,
+      expectedVersion: dto.version,
+      expectedStatus: 'ACTIVE',
+      nextStatus: 'ARCHIVED',
+      action: 'documents.archive',
+      reason: dto.reason.trim(),
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      ipSummary: summarizeIp(metadata.ipAddress),
+      userAgentSummary: summarizeUserAgent(metadata.userAgent),
+    });
+    if (!updated) throw new ConflictException('سند هم‌زمان تغییر کرده است.');
+    return { data: this.mapDetail(updated, actor.permissions) };
+  }
+
+  async restore(
+    id: string,
+    dto: DocumentArchiveActionDto,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<{ data: DocumentDetailV1 }> {
+    this.assertPermission(actor.permissions, 'documents.restore');
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row) throw new NotFoundException('سند پیدا نشد.');
+    this.assertDomain(row.documentType.domain, actor.permissions);
+    if (row.archiveStatus !== 'ARCHIVED') {
+      throw new ConflictException('فقط سند آرشیوشده قابل بازیابی است.');
+    }
+    if (row.legalHoldActive) {
+      throw new ConflictException('به‌دلیل توقف حقوقی، بازیابی مجاز نیست.');
+    }
+    const updated = await this.repository.changeArchiveStatus({
+      documentId: id,
+      expectedVersion: dto.version,
+      expectedStatus: 'ARCHIVED',
+      nextStatus: 'ACTIVE',
+      action: 'documents.restore',
+      reason: dto.reason.trim(),
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      ipSummary: summarizeIp(metadata.ipAddress),
+      userAgentSummary: summarizeUserAgent(metadata.userAgent),
+    });
+    if (!updated) throw new ConflictException('سند هم‌زمان تغییر کرده است.');
+    return { data: this.mapDetail(updated, actor.permissions) };
+  }
+
+  async bulk(
+    dto: DocumentBulkActionInputV1,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<DocumentBulkActionResponseV1> {
+    const ids = [...new Set(dto.ids)];
+    const permission =
+      dto.action === 'ARCHIVE'
+        ? 'documents.delete'
+        : dto.action === 'RESTORE'
+          ? 'documents.restore'
+          : 'documents.metadata.update';
+    this.assertPermission(actor.permissions, permission);
+    const rows = await this.repository.findDetails(ids, actor.branchIds);
+    if (rows.length !== ids.length) {
+      throw new NotFoundException('یک یا چند سند انتخاب‌شده پیدا نشد.');
+    }
+    for (const row of rows) {
+      this.assertDomain(row.documentType.domain, actor.permissions);
+      if (dto.action === 'ARCHIVE' && row.archiveStatus !== 'ACTIVE') {
+        throw new ConflictException('همه اسناد انتخاب‌شده باید فعال باشند.');
+      }
+      if (dto.action === 'RESTORE' && row.archiveStatus !== 'ARCHIVED') {
+        throw new ConflictException(
+          'همه اسناد انتخاب‌شده باید آرشیوشده باشند.',
+        );
+      }
+      if (dto.action === 'RESTORE' && row.legalHoldActive) {
+        throw new ConflictException(
+          'یکی از اسناد انتخاب‌شده دارای توقف حقوقی است.',
+        );
+      }
+    }
+    try {
+      const updatedCount = await this.repository.bulkAction({
+        rows,
+        action: dto.action,
+        reason: dto.reason.trim(),
+        actorUserId: actor.userId,
+        ipSummary: summarizeIp(metadata.ipAddress),
+        userAgentSummary: summarizeUserAgent(metadata.userAgent),
+      });
+      return { data: { updatedCount } };
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === 'DOCUMENT_VERSION_CONFLICT'
+      ) {
+        throw new ConflictException(
+          'یکی از اسناد هم‌زمان تغییر کرده است؛ فهرست را تازه کنید.',
+        );
+      }
+      throw error;
+    }
+  }
+
+  async permanentlyDelete(
+    id: string,
+    dto: DocumentDeleteDto,
+    actor: AuthenticatedActor,
+  ): Promise<void> {
+    this.assertPermission(actor.permissions, 'documents.delete');
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row) throw new NotFoundException('سند پیدا نشد.');
+    this.assertDomain(row.documentType.domain, actor.permissions);
+    if (row.legalHoldActive) {
+      throw new ConflictException(
+        'سند دارای توقف حقوقی است و حذف دائمی آن مجاز نیست.',
+      );
+    }
+    if (dto.reason.trim().length < 5) {
+      throw new BadRequestException('دلیل حذف دائمی الزامی است.');
+    }
+    if (row.version !== dto.version) {
+      throw new ConflictException(
+        'سند هم‌زمان تغییر کرده است؛ فهرست را تازه کنید.',
+      );
+    }
+    await Promise.all(
+      row.versions.map((version) =>
+        this.storage.removeQuarantined(version.storageObjectKey),
+      ),
+    );
+    const deleted = await this.repository.permanentlyDelete(id, dto.version);
+    if (!deleted) {
+      throw new ConflictException(
+        'سند هم‌زمان تغییر کرده است؛ فهرست را تازه کنید.',
+      );
+    }
   }
 
   async upload(

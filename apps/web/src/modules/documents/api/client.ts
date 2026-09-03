@@ -1,11 +1,16 @@
 import type {
   DocumentAuditResponseV1,
+  DocumentArchiveActionInputV1,
+  DocumentBulkActionInputV1,
+  DocumentBulkActionResponseV1,
   DocumentCaseOptionsQueryV1,
   DocumentCaseOptionsResponseV1,
   DocumentDetailResponseV1,
   DocumentListQueryV1,
   DocumentListResponseV1,
   DocumentOptionsResponseV1,
+  DocumentDeleteInputV1,
+  DocumentUpdateInputV1,
 } from '@rubi/contracts';
 
 import { getPublicApiBaseUrl } from '../../../lib/environment';
@@ -54,6 +59,7 @@ async function request<T>(
       envelope?.error?.code ?? envelope?.code,
     );
   }
+  if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
 
@@ -143,6 +149,47 @@ export const documentsApi = {
     return request<DocumentDetailResponseV1>('/upload', {
       method: 'POST',
       body: form,
+    });
+  },
+  update(id: string, input: DocumentUpdateInputV1) {
+    return request<DocumentDetailResponseV1>(`/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+  },
+  archive(id: string, input: DocumentArchiveActionInputV1) {
+    return request<DocumentDetailResponseV1>(
+      `/${encodeURIComponent(id)}/archive`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      },
+    );
+  },
+  restore(id: string, input: DocumentArchiveActionInputV1) {
+    return request<DocumentDetailResponseV1>(
+      `/${encodeURIComponent(id)}/restore`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      },
+    );
+  },
+  bulk(input: DocumentBulkActionInputV1) {
+    return request<DocumentBulkActionResponseV1>('/bulk', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+  },
+  permanentlyDelete(id: string, input: DocumentDeleteInputV1) {
+    return request<void>(`/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(input),
     });
   },
   download(id: string, sensitiveReason?: string) {

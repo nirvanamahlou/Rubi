@@ -2,6 +2,7 @@
 
 import {
   Archive,
+  ArchiveRestore,
   Building2,
   Check,
   ChevronLeft,
@@ -11,10 +12,12 @@ import {
   FileLock2,
   Files,
   FileSearch,
+  FileWarning,
   HeartHandshake,
   LayoutDashboard,
   Link2,
   PackageSearch,
+  Pencil,
   RefreshCw,
   Search,
   Settings2,
@@ -22,17 +25,20 @@ import {
   Sparkles,
   ShoppingCart,
   Star,
+  Trash2,
   UploadCloud,
   UserRound,
 } from 'lucide-react';
 import type {
   BranchReference,
   DocumentAuditEventV1,
+  DocumentBulkActionV1,
   DocumentDetailV1,
   DocumentDomainCode,
   DocumentListItemV1,
   DocumentListQueryV1,
   DocumentOptionsResponseV1,
+  DocumentUpdateInputV1,
 } from '@rubi/contracts';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -42,6 +48,9 @@ import {
   type ArchiveToolDefinition,
 } from '../model/archive-tools';
 import { DocumentDetailDialog } from './document-detail-dialog';
+import { DocumentBulkActionsDialog } from './document-bulk-actions-dialog';
+import { DocumentDeleteDialog } from './document-delete-dialog';
+import { DocumentEditDialog } from './document-edit-dialog';
 import { DocumentUploadDialog } from './document-upload-dialog';
 import {
   Alert,
@@ -142,6 +151,13 @@ const archiveTone = [
   'border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-100/70 dark:border-emerald-400/20 dark:from-emerald-950/45 dark:to-teal-950/30',
   'border-amber-200 bg-gradient-to-br from-amber-50 to-orange-100/70 dark:border-amber-400/20 dark:from-amber-950/45 dark:to-orange-950/30',
 ] as const;
+
+const defaultQuery: DocumentListQueryV1 = {
+  page: 1,
+  pageSize: 25,
+  sortBy: 'updatedAt',
+  sortDirection: 'desc',
+};
 
 const confidentialityLabel = {
   PUBLIC: 'عمومی',
@@ -253,12 +269,7 @@ export function DocumentsWorkspace() {
   const [sectionDomain, setSectionDomain] = useState<DocumentDomainCode | null>(
     null,
   );
-  const [query, setQuery] = useState<DocumentListQueryV1>({
-    page: 1,
-    pageSize: 25,
-    sortBy: 'updatedAt',
-    sortDirection: 'desc',
-  });
+  const [query, setQuery] = useState<DocumentListQueryV1>(defaultQuery);
   const [documents, setDocuments] = useState<readonly DocumentListItemV1[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -285,6 +296,45 @@ export function DocumentsWorkspace() {
   );
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [copiedDocumentId, setCopiedDocumentId] = useState('');
+  const [editingDocument, setEditingDocument] =
+    useState<DocumentDetailV1 | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [deletingDocument, setDeletingDocument] =
+    useState<DocumentListItemV1 | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+  const [bulkError, setBulkError] = useState('');
+  const [bulkInitialAction, setBulkInitialAction] =
+    useState<DocumentBulkActionV1>('MARK_INCOMPLETE');
+  const [bulkDialogKey, setBulkDialogKey] = useState(0);
+
+  const hasRecordFilters = Boolean(
+    query.search ||
+    query.typeCode ||
+    query.categoryId ||
+    query.branchId ||
+    query.archiveStatus ||
+    query.scanStatus ||
+    query.validity ||
+    query.completion ||
+    query.ownerUserId ||
+    query.confidentiality ||
+    query.createdFrom ||
+    query.createdTo,
+  );
+  const hasShareFilters = Boolean(
+    query.search || query.typeCode || query.branchId || query.confidentiality,
+  );
+  const shouldLoadDocuments =
+    section === 'overview' ||
+    section === 'expired' ||
+    Boolean(personalView) ||
+    (section === 'shares' ? hasShareFilters : hasRecordFilters);
 
   const effectiveQuery = useMemo(() => {
     const active = sections.find((item) => item.key === section);
@@ -301,12 +351,23 @@ export function DocumentsWorkspace() {
       ...query,
       ...(personalView === 'favorites' ? { page: 1, pageSize: 100 } : {}),
       ...(domain ? { domain } : {}),
-      ...(section === 'expired' ? { validity: 'EXPIRED' as const } : {}),
+      ...(section === 'expired'
+        ? { attention: 'INCOMPLETE_OR_EXPIRED' as const }
+        : {}),
       ...(serverPersonalView ? { personalView: serverPersonalView } : {}),
     };
   }, [personalView, query, section, sectionDomain]);
 
   const load = useCallback(async () => {
+    if (!shouldLoadDocuments) {
+      setDocuments([]);
+      setTotal(0);
+      setTotalPages(1);
+      setSelected(new Set());
+      setError('');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -330,7 +391,7 @@ export function DocumentsWorkspace() {
     } finally {
       setLoading(false);
     }
-  }, [effectiveQuery, favoriteIds, personalView]);
+  }, [effectiveQuery, favoriteIds, personalView, shouldLoadDocuments]);
 
   useEffect(() => {
     void load();
@@ -399,7 +460,8 @@ export function DocumentsWorkspace() {
           ? 'HUMAN_RESOURCES'
           : null,
     );
-    setQuery((current) => ({ ...current, page: 1 }));
+    setQuery(defaultQuery);
+    setSelected(new Set());
   }
 
   function changePersonalView(next: PersonalViewKey) {
@@ -483,6 +545,151 @@ export function DocumentsWorkspace() {
       setDetailLoading(false);
     }
   }, []);
+
+  async function openEdit(document: DocumentListItemV1 | DocumentDetailV1) {
+    if (!document.capabilities.editMetadata) {
+      setNotice('مجوز ویرایش اطلاعات این سند وجود ندارد.');
+      return;
+    }
+    setEditError('');
+    setEditOpen(true);
+    if ('versions' in document) {
+      setEditingDocument(document);
+      return;
+    }
+    setEditingDocument(null);
+    try {
+      const response = await documentsApi.detail(document.id);
+      setEditingDocument(response.data);
+    } catch (caught) {
+      setEditError(
+        caught instanceof Error ? caught.message : 'اطلاعات سند دریافت نشد.',
+      );
+      setEditOpen(false);
+    }
+  }
+
+  async function submitEdit(input: DocumentUpdateInputV1): Promise<boolean> {
+    if (!editingDocument) return false;
+    setEditSubmitting(true);
+    setEditError('');
+    try {
+      const response = await documentsApi.update(editingDocument.id, input);
+      setEditingDocument(response.data);
+      if (detail?.id === response.data.id) setDetail(response.data);
+      setEditOpen(false);
+      setNotice(`تغییرات «${response.data.title}» ذخیره شد.`);
+      await load();
+      return true;
+    } catch (caught) {
+      setEditError(
+        caught instanceof Error ? caught.message : 'ویرایش سند ناموفق بود.',
+      );
+      return false;
+    } finally {
+      setEditSubmitting(false);
+    }
+  }
+
+  function openDelete(document: DocumentListItemV1 | DocumentDetailV1) {
+    if (!document.capabilities.permanentDelete) {
+      setNotice('مجوز حذف دائمی وجود ندارد یا توقف حقوقی فعال است.');
+      return;
+    }
+    setDeletingDocument(document);
+    setDeleteError('');
+    setDeleteOpen(true);
+  }
+
+  async function confirmDelete(reason: string) {
+    if (!deletingDocument) return;
+    setDeleteSubmitting(true);
+    setDeleteError('');
+    try {
+      await documentsApi.permanentlyDelete(deletingDocument.id, {
+        reason,
+        version: deletingDocument.version,
+      });
+      setDeleteOpen(false);
+      setNotice(`سند «${deletingDocument.title}» به‌صورت دائمی حذف شد.`);
+      if (detail?.id === deletingDocument.id) changeDetailOpen(false);
+      setFavoriteIds((current) => {
+        const next = new Set(current);
+        next.delete(deletingDocument.id);
+        return next;
+      });
+      setDeletingDocument(null);
+      await load();
+    } catch (caught) {
+      setDeleteError(
+        caught instanceof Error ? caught.message : 'حذف دائمی ناموفق بود.',
+      );
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  }
+
+  function openBulk(action: DocumentBulkActionV1 = 'MARK_INCOMPLETE') {
+    if (!selected.size) return;
+    setBulkError('');
+    setBulkInitialAction(action);
+    setBulkDialogKey((current) => current + 1);
+    setBulkOpen(true);
+  }
+
+  function openSingleBulk(
+    document: DocumentListItemV1,
+    action: DocumentBulkActionV1,
+  ) {
+    setSelected(new Set([document.id]));
+    setBulkError('');
+    setBulkInitialAction(action);
+    setBulkDialogKey((current) => current + 1);
+    setBulkOpen(true);
+  }
+
+  async function submitBulk(action: DocumentBulkActionV1, reason: string) {
+    setBulkSubmitting(true);
+    setBulkError('');
+    try {
+      const response = await documentsApi.bulk({
+        ids: [...selected],
+        action,
+        reason,
+      });
+      setBulkOpen(false);
+      setNotice(
+        `عملیات روی ${response.data.updatedCount.toLocaleString('fa-IR')} سند انجام شد.`,
+      );
+      await load();
+    } catch (caught) {
+      setBulkError(
+        caught instanceof Error ? caught.message : 'عملیات گروهی ناموفق بود.',
+      );
+    } finally {
+      setBulkSubmitting(false);
+    }
+  }
+
+  function followUp(document: DocumentListItemV1) {
+    setPersonalView(null);
+    setSectionDomain(null);
+    const expired = Boolean(
+      document.validUntil && new Date(document.validUntil) < new Date(),
+    );
+    if (document.isIncomplete || expired) {
+      setSection('expired');
+      setQuery(defaultQuery);
+      setNotice('فهرست مدارک ناقص و منقضی برای پیگیری باز شد.');
+      return;
+    }
+    setSection('all');
+    setQuery({
+      ...defaultQuery,
+      scanStatus: document.currentVersion.scanStatus,
+    });
+    setNotice('فهرست اسناد نیازمند بررسی امنیتی باز شد.');
+  }
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -571,23 +778,10 @@ export function DocumentsWorkspace() {
     [],
   );
 
-  const hasFilters = Boolean(
-    query.search ||
-    query.typeCode ||
-    query.categoryId ||
-    query.branchId ||
-    query.archiveStatus ||
-    query.scanStatus ||
-    query.validity ||
-    query.ownerUserId ||
-    query.confidentiality ||
-    query.createdFrom ||
-    query.createdTo ||
-    personalView,
-  );
+  const hasFilters = hasRecordFilters || Boolean(personalView);
   const page = query.page ?? 1;
   const visibleQuarantine = documents.filter(
-    (item) => item.currentVersion.scanStatus !== 'CLEAN',
+    (item) => item.isIncomplete || item.currentVersion.scanStatus !== 'CLEAN',
   ).length;
   const visibleExpired = documents.filter(
     (item) => item.validUntil && new Date(item.validUntil) < new Date(),
@@ -600,12 +794,27 @@ export function DocumentsWorkspace() {
   const followUpDocuments = documents
     .filter(
       (item) =>
+        item.isIncomplete ||
         item.currentVersion.scanStatus !== 'CLEAN' ||
         (item.validUntil && new Date(item.validUntil) < new Date()),
     )
     .slice(0, 3);
 
+  function clearFilters() {
+    setPersonalView(null);
+    setQuery(defaultQuery);
+    setSelected(new Set());
+  }
+
   function table() {
+    if (!shouldLoadDocuments)
+      return (
+        <EmptyState
+          description="برای نمایش رکوردها، حداقل یک فیلتر انتخاب کنید."
+          icon={Search}
+          title="ابتدا فیلتر را انتخاب کنید"
+        />
+      );
     if (loading)
       return (
         <div className="space-y-3" aria-label="در حال بارگذاری اسناد">
@@ -641,18 +850,7 @@ export function DocumentsWorkspace() {
         <EmptyState
           action={
             hasFilters ? (
-              <Button
-                onClick={() => {
-                  setPersonalView(null);
-                  setQuery({
-                    page: 1,
-                    pageSize: 25,
-                    sortBy: 'updatedAt',
-                    sortDirection: 'desc',
-                  });
-                }}
-                variant="outline"
-              >
+              <Button onClick={clearFilters} variant="outline">
                 پاک‌کردن فیلترها
               </Button>
             ) : (
@@ -676,24 +874,12 @@ export function DocumentsWorkspace() {
           <div className="flex gap-2">
             <Button
               disabled={!selected.size}
-              onClick={() =>
-                setNotice(
-                  'عملیات گروهی پس از کنترل مجوز تک‌تک اسناد در Slice بعد فعال می‌شود.',
-                )
-              }
+              onClick={() => openBulk()}
               size="sm"
               variant="outline"
             >
+              <Check aria-hidden="true" className="size-4" />
               عملیات گروهی
-            </Button>
-            <Button
-              onClick={() =>
-                setNotice('خروجی Excel/PDF به Export Worker مستقل نیاز دارد.')
-              }
-              size="sm"
-              variant="outline"
-            >
-              خروجی
             </Button>
           </div>
         </div>
@@ -702,7 +888,19 @@ export function DocumentsWorkspace() {
             <thead className="bg-blue-50/80 text-xs text-blue-950 dark:bg-blue-950/30 dark:text-blue-100">
               <tr>
                 <th className="px-3 py-3 text-start">
-                  <span className="sr-only">انتخاب</span>
+                  <Checkbox
+                    aria-label="انتخاب همه اسناد این صفحه"
+                    checked={
+                      documents.length > 0 && selected.size === documents.length
+                    }
+                    onCheckedChange={(checked) =>
+                      setSelected(
+                        checked
+                          ? new Set(documents.map((document) => document.id))
+                          : new Set(),
+                      )
+                    }
+                  />
                 </th>
                 {[
                   'عنوان و فایل',
@@ -713,6 +911,7 @@ export function DocumentsWorkspace() {
                   'وضعیت اسکن',
                   'اعتبار',
                   'آخرین تغییر',
+                  'عملیات',
                 ].map((column) => (
                   <th className="px-3 py-3 text-start" key={column}>
                     {column}
@@ -767,6 +966,11 @@ export function DocumentsWorkspace() {
                       >
                         {document.title}
                       </button>
+                      {document.isIncomplete ? (
+                        <Badge className="shrink-0 bg-amber-100 text-amber-800">
+                          ناقص
+                        </Badge>
+                      ) : null}
                     </div>
                     <p className="mt-1 truncate text-xs text-muted-foreground">
                       {document.currentVersion.safeDownloadName} · v
@@ -794,6 +998,94 @@ export function DocumentsWorkspace() {
                   </td>
                   <td className="px-3 py-4">{date(document.validUntil)}</td>
                   <td className="px-3 py-4">{date(document.updatedAt)}</td>
+                  <td className="px-3 py-4">
+                    <div className="flex items-center gap-1">
+                      <Button
+                        aria-label={`ویرایش ${document.title}`}
+                        disabled={!document.capabilities.editMetadata}
+                        onClick={() => void openEdit(document)}
+                        size="icon"
+                        title="ویرایش"
+                        variant="ghost"
+                      >
+                        <Pencil aria-hidden="true" className="size-4" />
+                      </Button>
+                      <Button
+                        aria-label={
+                          document.isIncomplete
+                            ? `علامت‌گذاری ${document.title} به‌عنوان کامل`
+                            : `علامت‌گذاری ${document.title} به‌عنوان ناقص`
+                        }
+                        disabled={!document.capabilities.markIncomplete}
+                        onClick={() =>
+                          openSingleBulk(
+                            document,
+                            document.isIncomplete
+                              ? 'MARK_COMPLETE'
+                              : 'MARK_INCOMPLETE',
+                          )
+                        }
+                        size="icon"
+                        title={document.isIncomplete ? 'تکمیل شد' : 'مدرک ناقص'}
+                        variant="ghost"
+                      >
+                        <FileWarning
+                          aria-hidden="true"
+                          className={cn(
+                            'size-4',
+                            document.isIncomplete && 'text-amber-600',
+                          )}
+                        />
+                      </Button>
+                      <Button
+                        aria-label={
+                          document.archiveStatus === 'ARCHIVED'
+                            ? `بازیابی ${document.title}`
+                            : `آرشیو ${document.title}`
+                        }
+                        disabled={
+                          document.archiveStatus === 'ARCHIVED'
+                            ? !document.capabilities.restore
+                            : !document.capabilities.archive
+                        }
+                        onClick={() =>
+                          openSingleBulk(
+                            document,
+                            document.archiveStatus === 'ARCHIVED'
+                              ? 'RESTORE'
+                              : 'ARCHIVE',
+                          )
+                        }
+                        size="icon"
+                        title={
+                          document.archiveStatus === 'ARCHIVED'
+                            ? 'بازیابی از آرشیو'
+                            : 'انتقال به آرشیو'
+                        }
+                        variant="ghost"
+                      >
+                        {document.archiveStatus === 'ARCHIVED' ? (
+                          <ArchiveRestore
+                            aria-hidden="true"
+                            className="size-4"
+                          />
+                        ) : (
+                          <Archive aria-hidden="true" className="size-4" />
+                        )}
+                      </Button>
+                      <Button
+                        aria-label={`حذف دائمی ${document.title}`}
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
+                        disabled={!document.capabilities.permanentDelete}
+                        onClick={() => openDelete(document)}
+                        size="icon"
+                        title="حذف دائمی"
+                        variant="ghost"
+                      >
+                        <Trash2 aria-hidden="true" className="size-4" />
+                      </Button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -889,7 +1181,6 @@ export function DocumentsWorkspace() {
               <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
               <SelectItem value="ACTIVE">فعال</SelectItem>
               <SelectItem value="ARCHIVED">آرشیوی</SelectItem>
-              <SelectItem value="DELETED">حذف منطقی</SelectItem>
             </SelectContent>
           </Select>
         </FormField>
@@ -983,6 +1274,25 @@ export function DocumentsWorkspace() {
             </SelectContent>
           </Select>
         </FormField>
+        <FormField label="وضعیت مدرک">
+          <Select
+            onValueChange={(value) =>
+              value === 'ALL'
+                ? removeQuery('completion')
+                : updateQuery({ completion: value as never })
+            }
+            value={query.completion ?? 'ALL'}
+          >
+            <SelectTrigger aria-label="وضعیت کامل بودن مدرک">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">همه مدارک</SelectItem>
+              <SelectItem value="INCOMPLETE">ناقص</SelectItem>
+              <SelectItem value="COMPLETE">کامل</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
         <FormField label="مالک">
           <Select
             onValueChange={(value) =>
@@ -1070,19 +1380,14 @@ export function DocumentsWorkspace() {
         </FormField>
         <div className="flex gap-2 pb-0.5">
           <Button
-            className="flex-1"
-            onClick={() => {
-              setPersonalView(null);
-              setQuery({
-                page: 1,
-                pageSize: 25,
-                sortBy: 'updatedAt',
-                sortDirection: 'desc',
-              });
-            }}
+            aria-label="پاک‌کردن همه فیلترها"
+            className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-400/30 dark:hover:bg-red-950/30"
+            onClick={clearFilters}
+            size="icon"
+            title="پاک‌کردن فیلترها"
             variant="outline"
           >
-            پاک‌کردن
+            <Trash2 aria-hidden="true" className="size-4" />
           </Button>
           <Button
             aria-label="بازخوانی"
@@ -1093,6 +1398,103 @@ export function DocumentsWorkspace() {
             <RefreshCw aria-hidden="true" className="size-4" />
           </Button>
         </div>
+      </FilterBar>
+    );
+  }
+
+  function shareFilters() {
+    return (
+      <FilterBar className="grid items-end gap-3 md:grid-cols-2 xl:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
+        <FormField id="share-search" label="جست‌وجوی سند">
+          <div className="relative">
+            <Search
+              aria-hidden="true"
+              className="absolute end-3 top-3.5 size-4 text-muted-foreground"
+            />
+            <Input
+              className="pe-10"
+              id="share-search"
+              onChange={(event) => updateQuery({ search: event.target.value })}
+              placeholder="عنوان، کد آرشیو یا نام فایل"
+              value={query.search ?? ''}
+            />
+          </div>
+        </FormField>
+        <FormField label="نوع سند">
+          <Select
+            onValueChange={(value) =>
+              value === 'ALL'
+                ? removeQuery('typeCode')
+                : updateQuery({ typeCode: value })
+            }
+            value={query.typeCode ?? 'ALL'}
+          >
+            <SelectTrigger aria-label="نوع سند برای اشتراک">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">انتخاب نوع</SelectItem>
+              {options?.documentTypes.map((type) => (
+                <SelectItem key={type.id} value={type.code}>
+                  {type.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+        <FormField label="شعبه">
+          <Select
+            onValueChange={(value) =>
+              value === 'ALL'
+                ? removeQuery('branchId')
+                : updateQuery({ branchId: value })
+            }
+            value={query.branchId ?? 'ALL'}
+          >
+            <SelectTrigger aria-label="شعبه برای اشتراک">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">انتخاب شعبه</SelectItem>
+              {branches.map((branch) => (
+                <SelectItem key={branch.id} value={branch.id}>
+                  {branch.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+        <FormField label="محرمانگی">
+          <Select
+            onValueChange={(value) =>
+              value === 'ALL'
+                ? removeQuery('confidentiality')
+                : updateQuery({ confidentiality: value as never })
+            }
+            value={query.confidentiality ?? 'ALL'}
+          >
+            <SelectTrigger aria-label="محرمانگی برای اشتراک">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">انتخاب سطح</SelectItem>
+              <SelectItem value="PUBLIC">عمومی</SelectItem>
+              <SelectItem value="INTERNAL">داخلی</SelectItem>
+              <SelectItem value="CONFIDENTIAL">محرمانه</SelectItem>
+              <SelectItem value="RESTRICTED">بسیار محدود</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
+        <Button
+          aria-label="پاک‌کردن فیلترهای اشتراک‌گذاری"
+          className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-400/30 dark:hover:bg-red-950/30"
+          onClick={clearFilters}
+          size="icon"
+          title="پاک‌کردن فیلترها"
+          variant="outline"
+        >
+          <Trash2 aria-hidden="true" className="size-4" />
+        </Button>
       </FilterBar>
     );
   }
@@ -1140,7 +1542,14 @@ export function DocumentsWorkspace() {
               </div>
             </div>
           </Card>
-          {loading ? (
+          {shareFilters()}
+          {!hasShareFilters ? (
+            <EmptyState
+              description="برای نمایش لینک‌ها، حداقل یک فیلتر یا عبارت جست‌وجو انتخاب کنید."
+              icon={Search}
+              title="ابتدا فیلتر اشتراک‌گذاری را انتخاب کنید"
+            />
+          ) : loading ? (
             <div className="grid gap-3 md:grid-cols-2">
               <Skeleton className="h-36" />
               <Skeleton className="h-36" />
@@ -1167,6 +1576,29 @@ export function DocumentsWorkspace() {
                           'fa-IR',
                         )}
                       </p>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      <Button
+                        aria-label={`ویرایش ${item.title}`}
+                        disabled={!item.capabilities.editMetadata}
+                        onClick={() => void openEdit(item)}
+                        size="icon"
+                        title="ویرایش"
+                        variant="ghost"
+                      >
+                        <Pencil aria-hidden="true" className="size-4" />
+                      </Button>
+                      <Button
+                        aria-label={`حذف دائمی ${item.title}`}
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
+                        disabled={!item.capabilities.permanentDelete}
+                        onClick={() => openDelete(item)}
+                        size="icon"
+                        title="حذف دائمی"
+                        variant="ghost"
+                      >
+                        <Trash2 aria-hidden="true" className="size-4" />
+                      </Button>
                     </div>
                   </div>
                   <div className="mt-4 flex gap-2">
@@ -1255,17 +1687,19 @@ export function DocumentsWorkspace() {
               {documents.length ? (
                 <div className="mt-4 divide-y divide-border">
                   {documents.slice(0, 5).map((item) => (
-                    <button
-                      className="flex w-full items-center gap-3 py-4 text-start hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    <div
+                      className="flex w-full items-center gap-3 py-4 text-start"
                       key={item.id}
-                      onClick={() => void openDetail(item.id)}
-                      type="button"
                     >
                       <Files
                         aria-hidden="true"
                         className="size-5 shrink-0 text-primary"
                       />
-                      <span className="min-w-0 flex-1">
+                      <button
+                        className="min-w-0 flex-1 rounded-lg text-start hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => void openDetail(item.id)}
+                        type="button"
+                      >
                         <span className="block truncate font-bold">
                           {item.title}
                         </span>
@@ -1275,11 +1709,38 @@ export function DocumentsWorkspace() {
                             'fa-IR',
                           )}
                         </span>
-                      </span>
-                      <Badge className="bg-emerald-100 text-emerald-700">
-                        فعال
-                      </Badge>
-                    </button>
+                      </button>
+                      {item.isIncomplete ? (
+                        <Badge className="bg-amber-100 text-amber-800">
+                          ناقص
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-emerald-100 text-emerald-700">
+                          کامل
+                        </Badge>
+                      )}
+                      <Button
+                        aria-label={`ویرایش ${item.title}`}
+                        disabled={!item.capabilities.editMetadata}
+                        onClick={() => void openEdit(item)}
+                        size="icon"
+                        title="ویرایش"
+                        variant="ghost"
+                      >
+                        <Pencil aria-hidden="true" className="size-4" />
+                      </Button>
+                      <Button
+                        aria-label={`حذف دائمی ${item.title}`}
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
+                        disabled={!item.capabilities.permanentDelete}
+                        onClick={() => openDelete(item)}
+                        size="icon"
+                        title="حذف دائمی"
+                        variant="ghost"
+                      >
+                        <Trash2 aria-hidden="true" className="size-4" />
+                      </Button>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -1306,23 +1767,50 @@ export function DocumentsWorkspace() {
                       >
                         <div className="min-w-0">
                           <p className="truncate font-bold">
-                            {expired
-                              ? `تمدید ${item.title}`
-                              : `پیگیری بررسی ${item.title}`}
+                            {item.isIncomplete
+                              ? `تکمیل ${item.title}`
+                              : expired
+                                ? `تمدید ${item.title}`
+                                : `پیگیری بررسی ${item.title}`}
                           </p>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            {expired
-                              ? `منقضی در ${date(item.validUntil)}`
-                              : scanLabel[item.currentVersion.scanStatus]}
+                            {item.isIncomplete
+                              ? 'مدرک ناقص علامت‌گذاری شده است'
+                              : expired
+                                ? `منقضی در ${date(item.validUntil)}`
+                                : scanLabel[item.currentVersion.scanStatus]}
                           </p>
                         </div>
-                        <button
-                          className="shrink-0 text-sm font-bold text-primary hover:underline"
-                          onClick={() => void openDetail(item.id)}
-                          type="button"
-                        >
-                          پیگیری
-                        </button>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <button
+                            className="px-2 text-sm font-bold text-primary hover:underline"
+                            onClick={() => followUp(item)}
+                            type="button"
+                          >
+                            پیگیری
+                          </button>
+                          <Button
+                            aria-label={`ویرایش ${item.title}`}
+                            disabled={!item.capabilities.editMetadata}
+                            onClick={() => void openEdit(item)}
+                            size="icon"
+                            title="ویرایش"
+                            variant="ghost"
+                          >
+                            <Pencil aria-hidden="true" className="size-4" />
+                          </Button>
+                          <Button
+                            aria-label={`حذف دائمی ${item.title}`}
+                            className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
+                            disabled={!item.capabilities.permanentDelete}
+                            onClick={() => openDelete(item)}
+                            size="icon"
+                            title="حذف دائمی"
+                            variant="ghost"
+                          >
+                            <Trash2 aria-hidden="true" className="size-4" />
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}
@@ -1332,30 +1820,6 @@ export function DocumentsWorkspace() {
                   کار بازی برای پیگیری ندارید.
                 </p>
               )}
-              <div className="mt-5 border-t border-border pt-5">
-                <h3 className="font-black">مسیرهای پیشنهادی برای بررسی</h3>
-                <p className="mt-2 text-xs leading-6 text-muted-foreground">
-                  از منوی آرشیو وارد هر بخش شوید یا روی عنوان سند کلیک کنید.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button
-                    onClick={() => setUploadOpen(true)}
-                    size="sm"
-                    variant="outline"
-                  >
-                    <UploadCloud aria-hidden="true" className="size-4" />
-                    فرم بارگذاری
-                  </Button>
-                  <Button
-                    onClick={() => changeSection('all')}
-                    size="sm"
-                    variant="outline"
-                  >
-                    <Files aria-hidden="true" className="size-4" />
-                    همه اسناد
-                  </Button>
-                </div>
-              </div>
             </Card>
           </div>
         </div>
@@ -1549,12 +2013,64 @@ export function DocumentsWorkspace() {
         loading={detailLoading}
         onCopyLink={(document) => void copyInternalLink(document)}
         onDownload={(document) => void download(document)}
+        onEdit={(document) => {
+          changeDetailOpen(false);
+          void openEdit(document);
+        }}
+        onDelete={(document) => {
+          changeDetailOpen(false);
+          openDelete(document);
+        }}
         onLoadPreview={loadDocumentPreview}
         onOpenChange={changeDetailOpen}
         onToggleFavorite={toggleFavorite}
         open={detailOpen}
         shareLink={detail ? internalShareLink(detail.id) : ''}
       />
+      {editingDocument && editOpen ? (
+        <DocumentEditDialog
+          document={editingDocument}
+          error={editError}
+          key={`${editingDocument.id}-${editingDocument.version}`}
+          onOpenChange={(open) => {
+            setEditOpen(open);
+            if (!open) setEditError('');
+          }}
+          onSubmit={submitEdit}
+          open
+          options={options}
+          submitting={editSubmitting}
+        />
+      ) : null}
+      {deletingDocument && deleteOpen ? (
+        <DocumentDeleteDialog
+          document={deletingDocument}
+          error={deleteError}
+          key={`${deletingDocument.id}-${deletingDocument.version}`}
+          onConfirm={confirmDelete}
+          onOpenChange={(open) => {
+            setDeleteOpen(open);
+            if (!open) setDeleteError('');
+          }}
+          open
+          submitting={deleteSubmitting}
+        />
+      ) : null}
+      {bulkOpen ? (
+        <DocumentBulkActionsDialog
+          count={selected.size}
+          error={bulkError}
+          initialAction={bulkInitialAction}
+          key={bulkDialogKey}
+          onOpenChange={(open) => {
+            setBulkOpen(open);
+            if (!open) setBulkError('');
+          }}
+          onSubmit={submitBulk}
+          open
+          submitting={bulkSubmitting}
+        />
+      ) : null}
     </main>
   );
 }

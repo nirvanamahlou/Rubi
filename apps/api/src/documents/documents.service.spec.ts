@@ -33,10 +33,15 @@ const actor: AuthenticatedActor = {
 
 function row(
   overrides: Partial<{
+    archiveStatus: DocumentDetailRow['archiveStatus'];
     confidentiality: DocumentDetailRow['confidentiality'];
     domain: DocumentDetailRow['documentType']['domain'];
+    isIncomplete: boolean;
+    legalHoldActive: boolean;
     mimeType: string;
+    requiresExpiry: boolean;
     scanStatus: NonNullable<DocumentDetailRow['currentVersion']>['scanStatus'];
+    version: number;
   }> = {},
 ): DocumentDetailRow {
   const now = new Date('2026-09-01T08:00:00.000Z');
@@ -71,12 +76,13 @@ function row(
     sourceEntityType: 'contract',
     sourceEntityId: 'SALES-REAL-42',
     confidentiality: overrides.confidentiality ?? 'CONFIDENTIAL',
-    archiveStatus: 'ACTIVE',
+    archiveStatus: overrides.archiveStatus ?? 'ACTIVE',
     validUntil: null,
     currentVersionNumber: 1,
     currentVersionId: version.id,
-    version: 1,
-    legalHoldActive: false,
+    isIncomplete: overrides.isIncomplete ?? false,
+    version: overrides.version ?? 1,
+    legalHoldActive: overrides.legalHoldActive ?? false,
     proposedDeletionAt: null,
     archivedAt: null,
     deletedAt: null,
@@ -89,6 +95,7 @@ function row(
       code: 'SALES_CONTRACT',
       name: 'قرارداد فروش',
       domain: overrides.domain ?? 'SALES',
+      requiresExpiry: overrides.requiresExpiry ?? false,
     },
     category: {
       id: '66666666-6666-4666-8666-666666666666',
@@ -120,7 +127,13 @@ describe('DocumentsService security and persistence flow', () => {
     caseOptions: vi.fn(),
     findDetail: vi.fn(),
     findCaseReference: vi.fn(),
+    findDetails: vi.fn(),
     uploadReferences: vi.fn(),
+    editReferences: vi.fn(),
+    updateMetadata: vi.fn(),
+    changeArchiveStatus: vi.fn(),
+    bulkAction: vi.fn(),
+    permanentlyDelete: vi.fn(),
     createUploaded: vi.fn(),
     appendAudit: vi.fn(),
     audit: vi.fn(),
@@ -483,5 +496,119 @@ describe('DocumentsService security and persistence flow', () => {
       }),
     );
     expect(storage.openQuarantined).not.toHaveBeenCalled();
+  });
+
+  it('updates editable metadata and the incomplete flag with optimistic locking', async () => {
+    const editableActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [...actor.permissions, 'documents.metadata.update'],
+    };
+    repository.findDetail.mockResolvedValue(row());
+    repository.editReferences.mockResolvedValue({
+      category: { id: row().categoryId },
+      owner: { id: row().ownerUserId },
+    });
+    repository.updateMetadata.mockResolvedValue(
+      row({ isIncomplete: true, version: 2 }),
+    );
+
+    const result = await service.update(
+      row().id,
+      {
+        title: ' قرارداد اصلاح‌شده ',
+        description: ' توضیح تازه ',
+        categoryId: row().categoryId!,
+        ownerUserId: row().ownerUserId,
+        confidentiality: 'INTERNAL',
+        validUntil: '2026-12-01',
+        isIncomplete: true,
+        version: 1,
+      },
+      editableActor,
+      { ipAddress: '192.0.2.44', userAgent: 'vitest' },
+    );
+
+    expect(repository.updateMetadata).toHaveBeenCalledWith(
+      expect.objectContaining({
+        documentId: row().id,
+        expectedVersion: 1,
+        title: 'قرارداد اصلاح‌شده',
+        description: 'توضیح تازه',
+        isIncomplete: true,
+      }),
+    );
+    expect(result.data.isIncomplete).toBe(true);
+    expect(result.data.version).toBe(2);
+  });
+
+  it('restores only an archived document without legal hold', async () => {
+    const restoreActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [...actor.permissions, 'documents.restore'],
+    };
+    const archived = row({ archiveStatus: 'ARCHIVED' });
+    repository.findDetail.mockResolvedValue(archived);
+    repository.changeArchiveStatus.mockResolvedValue(row({ version: 2 }));
+
+    await service.restore(
+      archived.id,
+      { reason: 'بازگشت به چرخه فعال', version: 1 },
+      restoreActor,
+      { ipAddress: '192.0.2.44' },
+    );
+
+    expect(repository.changeArchiveStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        expectedStatus: 'ARCHIVED',
+        nextStatus: 'ACTIVE',
+        action: 'documents.restore',
+      }),
+    );
+  });
+
+  it('runs a real bulk incomplete action for every selected document', async () => {
+    const editableActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [...actor.permissions, 'documents.metadata.update'],
+    };
+    repository.findDetails.mockResolvedValue([row()]);
+    repository.bulkAction.mockResolvedValue(1);
+
+    const result = await service.bulk(
+      {
+        ids: [row().id],
+        action: 'MARK_INCOMPLETE',
+        reason: 'مدارک پرونده کامل نیست',
+      },
+      editableActor,
+      { ipAddress: '192.0.2.44' },
+    );
+
+    expect(repository.bulkAction).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'MARK_INCOMPLETE' }),
+    );
+    expect(result.data.updatedCount).toBe(1);
+  });
+
+  it('permanently removes database records and every stored version', async () => {
+    const deleteActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [...actor.permissions, 'documents.delete'],
+    };
+    const document = row();
+    repository.findDetail.mockResolvedValue(document);
+    repository.permanentlyDelete.mockResolvedValue(true);
+    storage.removeQuarantined.mockResolvedValue(undefined);
+
+    await service.permanentlyDelete(
+      document.id,
+      { reason: 'حذف قطعی رکورد اشتباه', version: 1 },
+      deleteActor,
+    );
+
+    expect(storage.removeQuarantined).toHaveBeenCalledWith(
+      document.versions[0]?.storageObjectKey,
+    );
+    expect(repository.permanentlyDelete).toHaveBeenCalledWith(document.id, 1);
   });
 });

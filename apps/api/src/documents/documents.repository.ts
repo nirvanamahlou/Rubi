@@ -7,7 +7,13 @@ import type { LocalAntivirusResult } from './documents.antivirus';
 
 export const documentListInclude = {
   documentType: {
-    select: { id: true, code: true, name: true, domain: true },
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      domain: true,
+      requiresExpiry: true,
+    },
   },
   category: { select: { id: true, code: true, name: true } },
   owner: { select: { id: true, displayName: true } },
@@ -119,6 +125,9 @@ export class DocumentsRepository {
         ? { archiveStatus: query.archiveStatus }
         : { archiveStatus: { not: 'DELETED' } }),
       ...(query.ownerUserId ? { ownerUserId: query.ownerUserId } : {}),
+      ...(query.completion
+        ? { isIncomplete: query.completion === 'INCOMPLETE' }
+        : {}),
       ...(query.personalView === 'OWNED' ? { ownerUserId: actorUserId } : {}),
       ...(query.personalView === 'UPLOADED'
         ? { createdByUserId: actorUserId }
@@ -158,23 +167,32 @@ export class DocumentsRepository {
             },
           }
         : {}),
+      ...(query.attention === 'INCOMPLETE_OR_EXPIRED'
+        ? {
+            OR: [{ isIncomplete: true }, { validUntil: { lt: now } }],
+          }
+        : {}),
       ...(query.search
         ? {
-            OR: [
-              { title: { contains: query.search, mode: 'insensitive' } },
+            AND: [
               {
-                archiveCode: {
-                  contains: query.search,
-                  mode: 'insensitive',
-                },
-              },
-              {
-                currentVersion: {
-                  originalFileName: {
-                    contains: query.search,
-                    mode: 'insensitive',
+                OR: [
+                  { title: { contains: query.search, mode: 'insensitive' } },
+                  {
+                    archiveCode: {
+                      contains: query.search,
+                      mode: 'insensitive',
+                    },
                   },
-                },
+                  {
+                    currentVersion: {
+                      originalFileName: {
+                        contains: query.search,
+                        mode: 'insensitive',
+                      },
+                    },
+                  },
+                ],
               },
             ],
           }
@@ -202,6 +220,14 @@ export class DocumentsRepository {
     return this.database.client.document.findFirst({
       where: { id, branchId: { in: [...branchIds] } },
       include: documentDetailInclude,
+    });
+  }
+
+  findDetails(ids: readonly string[], branchIds: readonly string[]) {
+    return this.database.client.document.findMany({
+      where: { id: { in: [...ids] }, branchId: { in: [...branchIds] } },
+      include: documentDetailInclude,
+      orderBy: { id: 'asc' },
     });
   }
 
@@ -357,6 +383,213 @@ export class DocumentsRepository {
       }),
     ]);
     return { documentType, category, owner, branch };
+  }
+
+  async editReferences(input: {
+    categoryId: string;
+    ownerUserId: string;
+    branchId: string;
+  }) {
+    const [category, owner] = await Promise.all([
+      this.database.client.documentCategory.findFirst({
+        where: { id: input.categoryId, isActive: true },
+        select: { id: true },
+      }),
+      this.database.client.user.findFirst({
+        where: {
+          id: input.ownerUserId,
+          status: 'ACTIVE',
+          branches: { some: { branchId: input.branchId } },
+        },
+        select: { id: true },
+      }),
+    ]);
+    return { category, owner };
+  }
+
+  async updateMetadata(input: {
+    documentId: string;
+    expectedVersion: number;
+    title: string;
+    description: string | null;
+    categoryId: string;
+    ownerUserId: string;
+    confidentiality: string;
+    validUntil: Date | null;
+    isIncomplete: boolean;
+    actorUserId: string;
+    actorBranchId: string;
+    ipSummary: string;
+    userAgentSummary: string;
+  }): Promise<DocumentDetailRow | null> {
+    return this.database.client.$transaction(async (transaction) => {
+      const updated = await transaction.document.updateMany({
+        where: { id: input.documentId, version: input.expectedVersion },
+        data: {
+          title: input.title,
+          description: input.description,
+          categoryId: input.categoryId,
+          ownerUserId: input.ownerUserId,
+          confidentiality: input.confidentiality as never,
+          validUntil: input.validUntil,
+          isIncomplete: input.isIncomplete,
+          updatedByUserId: input.actorUserId,
+          version: { increment: 1 },
+        },
+      });
+      if (updated.count !== 1) return null;
+      await transaction.documentAuditEvent.create({
+        data: {
+          documentId: input.documentId,
+          actorUserId: input.actorUserId,
+          actorBranchId: input.actorBranchId,
+          action: 'documents.metadata.update',
+          outcome: AuditOutcome.SUCCESS,
+          reason: input.isIncomplete
+            ? 'DOCUMENT_MARKED_INCOMPLETE'
+            : 'DOCUMENT_METADATA_UPDATED',
+          ipSummary: input.ipSummary,
+          userAgentSummary: input.userAgentSummary,
+        },
+      });
+      return transaction.document.findUniqueOrThrow({
+        where: { id: input.documentId },
+        include: documentDetailInclude,
+      });
+    });
+  }
+
+  async changeArchiveStatus(input: {
+    documentId: string;
+    expectedVersion: number;
+    expectedStatus: 'ACTIVE' | 'ARCHIVED';
+    nextStatus: 'ACTIVE' | 'ARCHIVED';
+    action: 'documents.archive' | 'documents.restore';
+    reason: string;
+    actorUserId: string;
+    actorBranchId: string;
+    ipSummary: string;
+    userAgentSummary: string;
+  }): Promise<DocumentDetailRow | null> {
+    return this.database.client.$transaction(async (transaction) => {
+      const updated = await transaction.document.updateMany({
+        where: {
+          id: input.documentId,
+          version: input.expectedVersion,
+          archiveStatus: input.expectedStatus,
+        },
+        data: {
+          archiveStatus: input.nextStatus,
+          deletedAt: null,
+          updatedByUserId: input.actorUserId,
+          version: { increment: 1 },
+        },
+      });
+      if (updated.count !== 1) return null;
+      await transaction.documentAuditEvent.create({
+        data: {
+          documentId: input.documentId,
+          actorUserId: input.actorUserId,
+          actorBranchId: input.actorBranchId,
+          action: input.action,
+          outcome: AuditOutcome.SUCCESS,
+          reason: input.reason,
+          ipSummary: input.ipSummary,
+          userAgentSummary: input.userAgentSummary,
+        },
+      });
+      return transaction.document.findUniqueOrThrow({
+        where: { id: input.documentId },
+        include: documentDetailInclude,
+      });
+    });
+  }
+
+  async bulkAction(input: {
+    rows: readonly DocumentDetailRow[];
+    action: 'MARK_INCOMPLETE' | 'MARK_COMPLETE' | 'ARCHIVE' | 'RESTORE';
+    reason: string;
+    actorUserId: string;
+    ipSummary: string;
+    userAgentSummary: string;
+  }): Promise<number> {
+    return this.database.client.$transaction(async (transaction) => {
+      for (const row of input.rows) {
+        const isArchiveAction =
+          input.action === 'ARCHIVE' || input.action === 'RESTORE';
+        const updated = await transaction.document.updateMany({
+          where: { id: row.id, version: row.version },
+          data: {
+            ...(input.action === 'MARK_INCOMPLETE'
+              ? { isIncomplete: true }
+              : input.action === 'MARK_COMPLETE'
+                ? { isIncomplete: false }
+                : input.action === 'ARCHIVE'
+                  ? { archiveStatus: 'ARCHIVED' as const, deletedAt: null }
+                  : { archiveStatus: 'ACTIVE' as const, deletedAt: null }),
+            updatedByUserId: input.actorUserId,
+            version: { increment: 1 },
+          },
+        });
+        if (updated.count !== 1) throw new Error('DOCUMENT_VERSION_CONFLICT');
+        await transaction.documentAuditEvent.create({
+          data: {
+            documentId: row.id,
+            actorUserId: input.actorUserId,
+            actorBranchId: row.branchId,
+            action: isArchiveAction
+              ? input.action === 'ARCHIVE'
+                ? 'documents.archive'
+                : 'documents.restore'
+              : 'documents.completion.update',
+            outcome: AuditOutcome.SUCCESS,
+            reason: input.reason,
+            ipSummary: input.ipSummary,
+            userAgentSummary: input.userAgentSummary,
+          },
+        });
+      }
+      return input.rows.length;
+    });
+  }
+
+  async permanentlyDelete(
+    documentId: string,
+    expectedVersion: number,
+  ): Promise<boolean> {
+    return this.database.client.$transaction(async (transaction) => {
+      const current = await transaction.document.findUnique({
+        where: { id: documentId },
+        select: { version: true },
+      });
+      if (!current || current.version !== expectedVersion) return false;
+      const versions = await transaction.documentVersion.findMany({
+        where: { documentId },
+        select: { id: true },
+      });
+      const versionIds = versions.map(({ id }) => id);
+      await transaction.document.update({
+        where: { id: documentId },
+        data: { currentVersionId: null },
+      });
+      await transaction.documentProcessingJob.deleteMany({
+        where: { versionId: { in: versionIds } },
+      });
+      await transaction.documentQuarantine.deleteMany({
+        where: { versionId: { in: versionIds } },
+      });
+      await transaction.documentAuditEvent.deleteMany({
+        where: { documentId },
+      });
+      await transaction.documentRelation.deleteMany({
+        where: { documentId },
+      });
+      await transaction.documentVersion.deleteMany({
+        where: { documentId },
+      });
+      await transaction.document.delete({ where: { id: documentId } });
+      return true;
+    });
   }
 
   async createUploaded(input: {

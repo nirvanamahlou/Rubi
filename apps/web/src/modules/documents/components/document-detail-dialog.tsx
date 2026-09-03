@@ -7,8 +7,10 @@ import {
   FileClock,
   Link2,
   LockKeyhole,
+  Pencil,
   ShieldCheck,
   Star,
+  Trash2,
 } from 'lucide-react';
 import type { DocumentAuditEventV1, DocumentDetailV1 } from '@rubi/contracts';
 
@@ -45,6 +47,48 @@ const scanLabel = {
   QUARANTINED: 'قرنطینه',
   AWAITING_ANTIVIRUS_ADAPTER: 'نیازمند بررسی امنیتی',
 } as const;
+
+const archiveStatusLabel = {
+  ACTIVE: 'فعال',
+  ARCHIVED: 'آرشیوشده',
+  DELETED: 'حذف‌شده',
+} as const;
+
+const capabilityLabel: Record<string, string> = {
+  viewFile: 'مشاهده فایل',
+  download: 'دانلود',
+  uploadVersion: 'ثبت نسخه جدید',
+  editMetadata: 'ویرایش اطلاعات',
+  viewAudit: 'مشاهده فعالیت‌ها',
+  archive: 'آرشیوکردن',
+  restore: 'بازیابی',
+  markIncomplete: 'تعیین وضعیت نقص',
+  permanentDelete: 'حذف دائمی',
+};
+
+const auditActionLabel: Record<string, string> = {
+  'documents.upload': 'بارگذاری سند',
+  'documents.metadata.view': 'مشاهده اطلاعات سند',
+  'documents.metadata.update': 'ویرایش اطلاعات سند',
+  'documents.download': 'دانلود فایل',
+  'documents.file.preview': 'مشاهده پیش‌نمایش',
+  'documents.antivirus.scan': 'بررسی امنیتی فایل',
+  'documents.archive': 'انتقال به آرشیو',
+  'documents.restore': 'بازیابی از آرشیو',
+  'documents.completion.update': 'تغییر وضعیت کامل‌بودن مدرک',
+};
+
+const auditReasonLabel: Record<string, string> = {
+  UPLOAD_ACCEPTED_TO_QUARANTINE: 'فایل برای بررسی امنیتی پذیرفته شد',
+  WINDOWS_DEFENDER_CLEAN: 'فایل پاک تشخیص داده شد',
+  DOCUMENT_MARKED_INCOMPLETE: 'مدرک به‌عنوان ناقص علامت‌گذاری شد',
+  DOCUMENT_METADATA_UPDATED: 'اطلاعات سند به‌روزرسانی شد',
+  SENSITIVE_METADATA_MASKED: 'اطلاعات حساس پوشانده شد',
+  DOWNLOAD_POLICY_DENIED: 'دانلود طبق سطح دسترسی رد شد',
+  PREVIEW_SCAN_BLOCKED: 'پیش‌نمایش تا پایان بررسی امنیتی بسته است',
+  PREVIEW_TYPE_UNSUPPORTED: 'این نوع فایل پیش‌نمایش ندارد',
+  PREVIEW_POLICY_DENIED: 'پیش‌نمایش طبق سطح دسترسی رد شد',
+};
 
 function date(value: string | null) {
   return value
@@ -83,6 +127,8 @@ export function DocumentDetailDialog({
   onDownload,
   onLoadPreview,
   onOpenChange,
+  onDelete,
+  onEdit,
   onToggleFavorite,
   open,
   shareLink,
@@ -100,6 +146,8 @@ export function DocumentDetailDialog({
     signal: AbortSignal,
   ) => Promise<Blob>;
   onOpenChange: (open: boolean) => void;
+  onDelete: (document: DocumentDetailV1) => void;
+  onEdit: (document: DocumentDetailV1) => void;
   onToggleFavorite: (document: DocumentDetailV1) => void;
   open: boolean;
   shareLink: string;
@@ -111,21 +159,46 @@ export function DocumentDetailDialog({
           <div className="flex items-center gap-3">
             <DialogTitle>{document?.title ?? 'جزئیات سند'}</DialogTitle>
             {document ? (
-              <Button
-                aria-label={
-                  favorite ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'
-                }
-                onClick={() => onToggleFavorite(document)}
-                size="icon"
-                variant="ghost"
-              >
-                <Star
-                  aria-hidden="true"
-                  className={
-                    favorite ? 'size-5 fill-amber-400 text-amber-500' : 'size-5'
+              <div className="flex items-center gap-1">
+                <Button
+                  aria-label="ویرایش سند"
+                  disabled={!document.capabilities.editMetadata}
+                  onClick={() => onEdit(document)}
+                  size="icon"
+                  variant="ghost"
+                >
+                  <Pencil aria-hidden="true" className="size-4" />
+                </Button>
+                <Button
+                  aria-label="حذف دائمی سند"
+                  className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
+                  disabled={!document.capabilities.permanentDelete}
+                  onClick={() => onDelete(document)}
+                  size="icon"
+                  variant="ghost"
+                >
+                  <Trash2 aria-hidden="true" className="size-4" />
+                </Button>
+                <Button
+                  aria-label={
+                    favorite
+                      ? 'حذف از علاقه‌مندی‌ها'
+                      : 'افزودن به علاقه‌مندی‌ها'
                   }
-                />
-              </Button>
+                  onClick={() => onToggleFavorite(document)}
+                  size="icon"
+                  variant="ghost"
+                >
+                  <Star
+                    aria-hidden="true"
+                    className={
+                      favorite
+                        ? 'size-5 fill-amber-400 text-amber-500'
+                        : 'size-5'
+                    }
+                  />
+                </Button>
+              </div>
             ) : null}
           </div>
           <DialogDescription>
@@ -206,7 +279,8 @@ export function DocumentDetailDialog({
                       'محرمانگی',
                       confidentialityLabel[document.confidentiality],
                     ],
-                    ['وضعیت آرشیو', document.archiveStatus],
+                    ['وضعیت آرشیو', archiveStatusLabel[document.archiveStatus]],
+                    ['وضعیت مدرک', document.isIncomplete ? 'ناقص' : 'کامل'],
                     ['اعتبار', date(document.validUntil)],
                     ['نام فایل', document.currentVersion.safeDownloadName],
                     [
@@ -214,10 +288,9 @@ export function DocumentDetailDialog({
                       `${(document.currentVersion.sizeBytes / 1024).toLocaleString('fa-IR')} KB`,
                     ],
                     [
-                      'MIME تشخیص‌داده‌شده',
-                      document.currentVersion.detectedMimeType,
+                      'نوع فایل',
+                      `.${document.currentVersion.extension.replace(/^\./, '').toUpperCase()}`,
                     ],
-                    ['SHA-256 پوشیده', document.currentVersion.sha256Masked],
                     ['آخرین به‌روزرسانی', date(document.updatedAt)],
                   ]}
                 />
@@ -225,10 +298,6 @@ export function DocumentDetailDialog({
 
               <TabsContent value="relations">
                 <div className="space-y-3">
-                  <Alert
-                    description="Documents فقط Reference دامنه را نگه می‌دارد و به جدول ماژول مبدأ Query مستقیم نمی‌زند."
-                    title={`منبع سند: ${document.sourceModule}`}
-                  />
                   {document.relations.map((relation) => (
                     <div
                       className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50/70 p-4 shadow-sm dark:border-emerald-400/20 dark:from-emerald-950/35 dark:to-teal-950/25"
@@ -241,8 +310,7 @@ export function DocumentDetailDialog({
                       <div>
                         <p className="font-bold">{relation.displayLabel}</p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {relation.sourceModule} · {relation.sourceEntityType}{' '}
-                          · {relation.sourceEntityIdMasked}
+                          پرونده مرتبط با این سند
                         </p>
                       </div>
                     </div>
@@ -299,7 +367,8 @@ export function DocumentDetailDialog({
                             }
                             key={key}
                           >
-                            {key}: {allowed ? 'مجاز' : 'غیرمجاز'}
+                            {capabilityLabel[key] ?? 'عملیات سند'}:{' '}
+                            {allowed ? 'مجاز' : 'غیرمجاز'}
                           </Badge>
                         ),
                       )}
@@ -343,7 +412,7 @@ export function DocumentDetailDialog({
                         className="size-5 text-primary"
                         aria-hidden="true"
                       />
-                      <h3 className="font-black">Audit Timeline</h3>
+                      <h3 className="font-black">تاریخچه فعالیت‌ها</h3>
                     </div>
                     {audit.length ? (
                       audit.map((event) => (
@@ -351,16 +420,24 @@ export function DocumentDetailDialog({
                           className="rounded-xl border-s-4 border-sky-300 bg-sky-50/70 p-3 ps-4 dark:bg-sky-950/25"
                           key={event.id}
                         >
-                          <p className="text-sm font-bold">{event.action}</p>
+                          <p className="text-sm font-bold">
+                            {auditActionLabel[event.action] ?? 'فعالیت سند'}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {event.actor.displayName} · {date(event.occurredAt)}{' '}
-                            · {event.outcome}
+                            · {event.outcome === 'SUCCESS' ? 'موفق' : 'ناموفق'}
                           </p>
+                          {event.reason ? (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {auditReasonLabel[event.reason] ??
+                                'توضیحات این فعالیت ثبت شده است.'}
+                            </p>
+                          ) : null}
                         </div>
                       ))
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        Audit برای این نقش در دسترس نیست یا رویدادی ثبت نشده
+                        تاریخچه برای این نقش در دسترس نیست یا رویدادی ثبت نشده
                         است.
                       </p>
                     )}
@@ -372,7 +449,7 @@ export function DocumentDetailDialog({
                           ? 'توقف حذف فعال است.'
                           : 'توقف حذف فعال نیست.'
                       }
-                      title="Legal Hold"
+                      title="توقف حقوقی حذف"
                       tone={document.legalHoldActive ? 'warning' : 'info'}
                     />
                     <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-4 dark:border-emerald-400/20 dark:from-emerald-950/35 dark:to-teal-950/25">
@@ -380,9 +457,10 @@ export function DocumentDetailDialog({
                         className="size-5 text-primary"
                         aria-hidden="true"
                       />
-                      <p className="mt-2 font-bold">Retention Policy</p>
+                      <p className="mt-2 font-bold">سیاست نگهداری</p>
                       <p className="mt-1 text-xs leading-6 text-muted-foreground">
-                        حذف دائمی تا تصویب سیاست نگهداری غیرفعال است.
+                        حذف دائمی فقط با مجوز، تأیید صریح و در نبود توقف حقوقی
+                        انجام می‌شود.
                       </p>
                     </div>
                   </div>
