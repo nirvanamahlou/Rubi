@@ -10,6 +10,7 @@ import { HealthService } from './health/health.service';
 import { IamModule } from './iam/iam.module';
 import { LegalEntitiesModule } from './legal-entities/legal-entities.module';
 import { MasterDataModule } from './master-data/master-data.module';
+import { SalesModule } from './sales/sales.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { MasterDataModule } from './master-data/master-data.module';
     MasterDataModule,
     IamModule,
     LegalEntitiesModule,
+    SalesModule,
   ],
   controllers: [HealthController],
   providers: [HealthService],

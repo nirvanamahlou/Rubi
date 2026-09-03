@@ -5,3 +5,4 @@ export * from './health';
 export * from './iam';
 export * from './legal-entities';
 export * from './master-data';
+export * from './sales';
