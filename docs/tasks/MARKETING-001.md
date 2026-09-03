@@ -67,6 +67,22 @@ Provider یا ارسال پیام واقعی. این Phase صرفاً قرارد
 - این Follow-up همچنان هیچ Persistence، API، Schema/Migration/Seed، Dependency،
   Permission، Provider، ارسال واقعی، Export واقعی یا اثر مالی اضافه نمی‌کند.
 
+## Follow-up MARKETING-001D — پالایش ناوبری، RTL و فرم کمپین
+
+در 2026-09-03 پوسته و تعامل صفحات مارکتینگ براساس بازخورد نهایی مالک ساده و با الگوی
+اطلاعات پایه هم‌تراز شد.
+
+- **Branch:** `codex/pc-b-marketing-navigation-polish`
+- **Base:** `origin/develop@1e5c55e`
+- **Status:** READY_FOR_REVIEW
+- اعلان Preview، Badgeهای فنی، پیام آماده‌بودن داده، Eyebrow آبی و توضیح نمایشی داشبورد حذف شدند؛ بازخورد عملیات فقط پس از کلیک و پایین محتوای جاری نمایش داده می‌شود.
+- کارت‌های Hub از رنگ، Glow، حرکت Hover و ساختار ورود کارت‌های اطلاعات پایه استفاده می‌کنند و کل کارت با صفحه‌کلید و اشاره‌گر قابل انتخاب است.
+- سکشن در Query String ثبت و با `popstate` همگام می‌شود؛ Back مرورگر به Hub قبلی برمی‌گردد و دکمه داخلی بازگشت URL را بدون حلقه History پاک می‌کند.
+- داشبورد دو سری واقعی و واضح «سرنخ جدید» و «فروش منتسب» دارد و ساخت کمپین فقط در Hub و بخش کمپین‌ها باقی مانده است.
+- Workspace، جدول‌ها، تب‌ها و جزئیات کمپین RTL و راست‌چین‌اند. فرم ساخت/ویرایش از ۹ به ۸ مرحله کاهش یافت و مرحله Offer/Coupon، عبارت UTC، اعلان‌های حریم خصوصی/Preview و همه توضیحات زیر فیلدها حذف شدند.
+- `602/602` تست Web، lint، typecheck و Production Build با ۳۴ Route موفق‌اند. Browser QA روی Desktop و Mobile `390×844` ناوبری History، RTL، نمودار و فرم را تأیید کرد.
+- API، Persistence، Schema/Migration/Seed، Dependency/Lockfile، Shared Contract، UI مرکزی و داده واقعی بدون تغییر ماندند.
+
 ## محدوده تحویل
 
 ### Backend ماژول‌محلی
