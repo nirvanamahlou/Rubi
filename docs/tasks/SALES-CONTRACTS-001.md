@@ -1,9 +1,9 @@
 # SALES-CONTRACTS-001
 
-- Status: `IN_PROGRESS / PERSISTENCE_BLOCKED`
+- Status: `READY_FOR_REVIEW`
 - Owner: `PC-A`
 - Branch: `codex/pc-a-sales-contracts`
-- Base: `origin/develop@708ffb6f87598f0a92925399e9d3cc3ed0ec73a6`
+- Base: `origin/develop@b69b7fac8ea5e04cb2a737a0a60c89cdcc6674ee`
 - Worktree: isolated from the dirty primary workspace
 
 ## Reserved scope
@@ -13,21 +13,36 @@
 - Module-local contracts, Sales tests, and this task-local document
 - Cross-module access only through public contracts/ports; no direct table query or internal infrastructure import
 
-## Lock state at start
+## Active lock state
 
-- `Migration Owner`: held by `PC-B/DOCUMENTS-004-OPERATIONS` on
-  `origin/codex/pc-b-documents-workflows@ba1aea9`; this task will not add Prisma
-  schema, migrations, seeds, or substitute/fake persistence until the lock is released.
-- `Central Docs Owner`: held by the same work item; `WORK_ASSIGNMENTS.md`,
-  `docs/PROJECT_STATUS.md`, and `PLANS.md` remain unchanged during this phase, so the
-  reservation is recorded only in this task-local document.
+- PR #91 merged as `b69b7fa`; the atomic `DOCUMENTS-004-HANDOFF` is present in this
+  branch through merge commit `8d3b89d`.
+- `Migration Owner`: `PC-A/SALES-CONTRACTS-001`.
+- `Central Docs Owner`: `PC-A/SALES-CONTRACTS-001`.
 - `Dependency/Lockfile Owner`: `RELEASED / UNASSIGNED`; this task does not reserve it
   and will not change dependencies or lockfiles.
-- `Sales shared-contract`: remains module-local until producer/consumer coordination
-  and the central-file lock permit publishing under `packages/contracts/**`.
+- `Sales shared-contract/root export Owner`: `PC-A/SALES-CONTRACTS-001`.
 
 ## Non-interference boundary
 
 - PR #85 and all Customers/Documents files in it remain unchanged.
 - PC-B Master Data/Documents work remains untouched: no merge, cherry-pick, copy, or rewrite.
 - No direct changes to `main` or `develop`; merge and force-push are prohibited.
+
+## Delivered vertical slice
+
+- قرارداد عمومی `sales.v1` و endpointهای versioned برای Dashboard، فهرست، جزئیات، ایجاد، ویرایش، پرداخت، تأیید، لغو، ReservationRequest، Audit و تاریخچه وضعیت منتشر شد.
+- Prisma و Migration افزایشی `20260903123000_sales_contracts_vertical_slice` مالک Contract، Passenger، Service، Allocation، Ticket/Hotel selection، Price component، Payment schedule، Reservation request، Audit و Status history است. شناسه ماژول‌های بیرونی opaque است و FK یا Query مستقیم بیرونی وجود ندارد.
+- Permissionهای Sales به‌صورت deny-by-default Seed شدند و نقش `sales_staff` فقط Permissionهای عملیاتی Sales و Public Contractهای لازم Customers، Master Data، Legal Entity و Documents را دریافت می‌کند.
+- Repository و API واقعی با Branch scope، مالک/کانتر قرارداد، Optimistic Lock، Idempotency و Audit پیاده شد. مانده با Decimal دقیق و فقط از `FINANCE_CONFIRMED` کم می‌شود؛ برنامه و پرداخت pending مانده را کم نمی‌کند.
+- تأیید قرارداد، Snapshot تغییرناپذیر `SalesReservationRequestV1` را در صف پایدار Sales ثبت می‌کند. تا انتشار Runtime Public API در Ticket Management، قرارداد دارای Offer بلیت هنگام تأیید fail-closed است و هیچ موجودی یا پاسخ ساختگی تولید نمی‌شود.
+- صفحه `/sales` از placeholder به داشبورد واقعی API ارتقا یافت و `/sales/contracts/new` فرم تمام‌صفحه هفت‌مرحله‌ای مشتری، مسیر، خدمات، رفت‌وبرگشت، هتل، ویزا، مسافر، قرارداد چندارزی، چندپرداختی و چک است. تاریخ/زمان از DatePicker مشترک و payload زمان از UTC استفاده می‌کند.
+
+## Verification
+
+- Prisma format/validate/generate: موفق.
+- PostgreSQL `18.1-alpine` خالی: هر ۳۱ Migration اعمال و `migrate status` به‌روز؛ Seed دو بار پیاپی موفق. کانتینر اختصاصی تست پس از Gate حذف شد.
+- Full lint: ۶ Task موفق. Full typecheck: ۹ Task موفق.
+- Full test: ۱٬۴۸۳ تست موفق؛ ۷۰ تست PostgreSQL اختیاری موجود طبق Suite skip شدند و Gate مستقل PostgreSQL بالا موفق است.
+- Full Production Build: ۶ Task موفق؛ ۳۵ صفحه تولید و `/sales` و `/sales/contracts/new` موفق prerender شدند.
+- Dependency و `pnpm-lock.yaml` تغییر نکرد؛ `main` و `develop` مستقیم تغییر نکردند و Rebase/Force Push انجام نشد.

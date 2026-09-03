@@ -1,5 +1,15 @@
 # وضعیت پروژه
 
+## SALES-CONTRACTS-001 — Vertical Slice فروش — آماده بررسی
+
+- PR #91 با Merge Commit `b69b7fa` قفل‌های Migration، Central Docs و Sales shared-contract/root export را به `PC-A/SALES-CONTRACTS-001` منتقل کرد؛ Merge معمولی `8d3b89d` این Handoff را بدون تعارض وارد Branch فروش کرد.
+- Branch `codex/pc-a-sales-contracts` و Draft PR #90 مالک Prisma/Migration افزایشی Sales، Permission Seed، قرارداد عمومی، Backend، UI و تست‌های این Slice هستند؛ Dependency/Lockfile تغییر نمی‌کند.
+- تمام ارتباط‌های Customers، Ticket Catalog، Master Data، Finance، Reservations، Documents و Legal Entity فقط از Public Contract/Port انجام می‌شود و هیچ Query مستقیم جدول خصوصی مجاز نیست.
+- PR #85 و خروجی PC-B دست‌نخورده‌اند؛ `main`/`develop` مستقیم تغییر نمی‌کنند و Merge/Rebase/Force Push انجام نمی‌شود.
+- Slice واقعی تکمیل است: قرارداد عمومی Sales v1، ۱۱ جدول مالک Sales با Migration افزایشی، Permission Seed، Repository/API، Scope مالک/شعبه، Audit، Optimistic Lock، Idempotency، صف نسخه‌دار ReservationRequest و داشبورد/فرم تمام‌صفحه قرارداد تحویل شد.
+- مانده فقط از پرداخت `FINANCE_CONFIRMED` کم می‌شود؛ پرداخت pending/scheduled اثر ندارد. تأیید Offer بلیت تا انتشار Public API اجرایی Ticket Management fail-closed است و پاسخ ساختگی ساخته نمی‌شود.
+- Gate نهایی: Prisma معتبر، ۳۱ Migration روی PostgreSQL 18 خالی، Seed دوباره‌پذیر، Full lint/typecheck، ۱٬۴۸۳ تست و Full Production Build با ۳۵ صفحه موفق است. Draft PR #90 همان PR جاری باقی می‌ماند.
+
 ## DOCUMENTS-004-HANDOFF — انتقال اتمیک قفل‌ها به Sales — آماده بررسی
 
 - PR [#89](https://github.com/nirvanamahlou/Rubi/pull/89) با Merge Commit `1e5c55e3b2d9dcc58c407d0ca205abed86b4c605` وارد `develop` شده است؛ `DOCUMENTS-004-OPERATIONS` اکنون `DONE/MERGED` است.
