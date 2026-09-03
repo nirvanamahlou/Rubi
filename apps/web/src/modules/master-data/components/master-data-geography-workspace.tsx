@@ -347,6 +347,10 @@ export function MasterDataGeographyWorkspace() {
     return () => controller.abort();
   }, [resource]);
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
+  const [locationRecords, setLocationRecords] = useState<{
+    regions: readonly MasterDataRecord[];
+    cities: readonly MasterDataRecord[];
+  }>({ regions: [], cities: [] });
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
@@ -377,11 +381,15 @@ export function MasterDataGeographyWorkspace() {
     >
   >({ countries: [], regions: [], cities: [], airports: [] });
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
+  const [formResource, setFormResource] = useState<GeographyResource | null>(
+    null,
+  );
   const [selected, setSelected] = useState<MasterDataRecord | undefined>();
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const definition = getMasterDataDefinition(resource);
   const isLocationView = resource === 'regions' || resource === 'cities';
+  const formDefinition = getMasterDataDefinition(formResource ?? resource);
 
   const scopedFilters = useMemo(
     () => ({
@@ -422,6 +430,53 @@ export function MasterDataGeographyWorkspace() {
       ...scopedFilters,
     };
     try {
+      if (isLocationView) {
+        const locationQuery: MasterDataListQuery = {
+          ...dateFilters,
+          search,
+          status,
+          sortBy,
+          sortDirection: 'asc',
+          page: 1,
+          pageSize: 100,
+          ...(countryId !== 'all' ? { countryId } : {}),
+        };
+        const [regionsResult, citiesResult, activeRegions, activeCities] =
+          await Promise.all([
+            masterDataApi.list('regions', locationQuery),
+            masterDataApi.list('cities', {
+              ...locationQuery,
+              ...(regionId !== 'all' ? { regionId } : {}),
+            }),
+            masterDataApi.listSummary('regions', {
+              ...locationQuery,
+              search: '',
+              status: 'active',
+            }),
+            masterDataApi.listSummary('cities', {
+              ...locationQuery,
+              search: '',
+              status: 'active',
+              ...(regionId !== 'all' ? { regionId } : {}),
+            }),
+          ]);
+        setLocationRecords({
+          regions: regionsResult.data,
+          cities: citiesResult.data,
+        });
+        setRecords(regionsResult.data);
+        setLocationTotals({
+          regions: regionsResult.meta.total,
+          activeRegions: activeRegions.meta.total,
+          cities: citiesResult.meta.total,
+          activeCities: activeCities.meta.total,
+        });
+        setTotal(regionsResult.meta.total + citiesResult.meta.total);
+        setActiveTotal(activeRegions.meta.total + activeCities.meta.total);
+        setInternationalTotal(0);
+        setRequestState('ready');
+        return;
+      }
       const requests: Promise<unknown>[] = [
         masterDataApi.list(resource as MasterDataResource, baseQuery),
         masterDataApi.listSummary(resource as MasterDataResource, {
@@ -440,54 +495,16 @@ export function MasterDataGeographyWorkspace() {
           }),
         );
       } else requests.push(Promise.resolve(undefined));
-      if (resource === 'regions' || resource === 'cities') {
-        const pairedResource = resource === 'regions' ? 'cities' : 'regions';
-        requests.push(
-          masterDataApi.listSummary(pairedResource, {
-            search: '',
-            status: 'all',
-            sortBy: 'name',
-            sortDirection: 'asc',
-          }),
-          masterDataApi.listSummary(pairedResource, {
-            search: '',
-            status: 'active',
-            sortBy: 'name',
-            sortDirection: 'asc',
-          }),
-        );
-      }
-      const [
-        listResult,
-        activeResult,
-        internationalResult,
-        pairedResult,
-        pairedActiveResult,
-      ] = (await Promise.all(requests)) as [
-        Awaited<ReturnType<typeof masterDataApi.list>>,
-        Awaited<ReturnType<typeof masterDataApi.list>>,
-        Awaited<ReturnType<typeof masterDataApi.list>> | undefined,
-        Awaited<ReturnType<typeof masterDataApi.list>> | undefined,
-        Awaited<ReturnType<typeof masterDataApi.list>> | undefined,
-      ];
+      const [listResult, activeResult, internationalResult] =
+        (await Promise.all(requests)) as [
+          Awaited<ReturnType<typeof masterDataApi.list>>,
+          Awaited<ReturnType<typeof masterDataApi.list>>,
+          Awaited<ReturnType<typeof masterDataApi.list>> | undefined,
+        ];
       setRecords(listResult.data);
       setTotal(listResult.meta.total);
       setActiveTotal(activeResult.meta.total);
       setInternationalTotal(internationalResult?.meta.total ?? 0);
-      if (resource === 'regions')
-        setLocationTotals({
-          regions: listResult.meta.total,
-          activeRegions: activeResult.meta.total,
-          cities: pairedResult?.meta.total ?? 0,
-          activeCities: pairedActiveResult?.meta.total ?? 0,
-        });
-      else if (resource === 'cities')
-        setLocationTotals({
-          regions: pairedResult?.meta.total ?? 0,
-          activeRegions: pairedActiveResult?.meta.total ?? 0,
-          cities: listResult.meta.total,
-          activeCities: activeResult.meta.total,
-        });
       setRequestState('ready');
     } catch (error) {
       setRecords([]);
@@ -499,8 +516,11 @@ export function MasterDataGeographyWorkspace() {
     }
   }, [
     columnFilters,
+    countryId,
     dateFilters,
+    isLocationView,
     page,
+    regionId,
     resource,
     scopedFilters,
     search,
@@ -538,6 +558,7 @@ export function MasterDataGeographyWorkspace() {
 
   function changeResource(next: GeographyResource) {
     setResource(next);
+    setFormResource(null);
     setSearch('');
     resetColumnFilters();
     setStatus('active');
@@ -553,17 +574,20 @@ export function MasterDataGeographyWorkspace() {
   }
 
   async function persist(values: Record<string, string>) {
+    const target = formResource ?? resource;
+    const targetDefinition = getMasterDataDefinition(target);
     if (formMode === 'edit' && selected) {
-      await masterDataApi.update(resource, selected.id, {
+      await masterDataApi.update(target, selected.id, {
         values,
         version: selected.version,
       });
-      setNotice(`${definition.singularLabel} با موفقیت ویرایش شد.`);
+      setNotice(`${targetDefinition.singularLabel} با موفقیت ویرایش شد.`);
     } else {
-      await masterDataApi.create(resource, { values });
-      setNotice(`${definition.singularLabel} با موفقیت ایجاد شد.`);
+      await masterDataApi.create(target, { values });
+      setNotice(`${targetDefinition.singularLabel} با موفقیت ایجاد شد.`);
     }
     setFormMode(null);
+    setFormResource(null);
     await load();
   }
 
@@ -744,6 +768,100 @@ export function MasterDataGeographyWorkspace() {
 
   const columns = geographyColumns(resource);
 
+  function openCreate(target: GeographyResource) {
+    setSelected(undefined);
+    setFormResource(target);
+    setFormMode('create');
+  }
+
+  function openRecord(record: MasterDataRecord, mode: MasterDataFormMode) {
+    setSelected(record);
+    setFormResource(record.resource as GeographyResource);
+    setFormMode(mode);
+  }
+
+  function renderLocationTable(
+    target: Extract<GeographyResource, 'regions' | 'cities'>,
+    rows: readonly MasterDataRecord[],
+  ) {
+    const tableColumns = geographyColumns(target);
+    const label = target === 'regions' ? 'استان‌ها' : 'شهرهای وابسته';
+    const Icon = target === 'regions' ? Layers3 : MapPin;
+    return (
+      <Card className="overflow-x-auto">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div className="flex items-center gap-2 font-black">
+            <Icon aria-hidden="true" className="size-4 text-sky-600" />
+            {label}
+          </div>
+          <Badge>{rows.length.toLocaleString('fa-IR')} رکورد</Badge>
+        </div>
+        {rows.length ? (
+          <table className="w-full min-w-[64rem] text-sm">
+            <thead className="bg-muted/50 text-muted-foreground">
+              <tr>
+                {tableColumns.map((column) => (
+                  <th className="p-4 text-start" key={column}>
+                    {column}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((record) => (
+                <tr
+                  className="border-t border-border transition hover:bg-sky-500/[0.035]"
+                  key={record.id}
+                >
+                  {recordCells(target, record, actorNames).map(
+                    (cell, index) => (
+                      <td className="p-4" key={tableColumns[index]}>
+                        {cell}
+                      </td>
+                    ),
+                  )}
+                  <td className="p-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        aria-label={`مشاهده ${record.name}`}
+                        onClick={() => openRecord(record, 'view')}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Eye aria-hidden="true" className="size-4" /> مشاهده
+                      </Button>
+                      <Button
+                        aria-label={`ویرایش ${record.name}`}
+                        onClick={() => openRecord(record, 'edit')}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <FilePenLine aria-hidden="true" className="size-4" />
+                        ویرایش
+                      </Button>
+                      <MasterDataDeleteButton
+                        record={record}
+                        onDeleted={afterDelete}
+                      />
+                      <MasterDataPowerButton
+                        record={record}
+                        onChanged={afterStatusChange}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="p-5 text-sm text-muted-foreground">
+            با فیلتر فعلی {label}ی پیدا نشد.
+          </div>
+        )}
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-5" dir="rtl">
       <PageHeader
@@ -768,15 +886,21 @@ export function MasterDataGeographyWorkspace() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={() => {
-              setSelected(undefined);
-              setFormMode('create');
-            }}
-          >
-            <Plus aria-hidden="true" className="size-4" />
-            افزودن {definition.singularLabel}
-          </Button>
+          {isLocationView ? (
+            <>
+              <Button onClick={() => openCreate('regions')}>
+                <Plus aria-hidden="true" className="size-4" /> افزودن استان
+              </Button>
+              <Button onClick={() => openCreate('cities')} variant="outline">
+                <Plus aria-hidden="true" className="size-4" /> افزودن شهر
+              </Button>
+            </>
+          ) : (
+            <Button onClick={() => openCreate(resource)}>
+              <Plus aria-hidden="true" className="size-4" />
+              افزودن {definition.singularLabel}
+            </Button>
+          )}
           {!['countries', 'regions', 'cities'].includes(resource) ? (
             <Button
               loading={exporting}
@@ -816,33 +940,6 @@ export function MasterDataGeographyWorkspace() {
             );
           })}
         </nav>
-        {isLocationView ? (
-          <div
-            aria-label="انتخاب نوع داده شهر و استان"
-            className="mt-2 flex flex-wrap gap-2 border-t border-border/70 px-2 pt-3"
-            role="group"
-          >
-            <Button
-              aria-pressed={resource === 'cities'}
-              onClick={() => changeResource('cities')}
-              size="sm"
-              variant={resource === 'cities' ? 'primary' : 'ghost'}
-            >
-              <MapPin aria-hidden="true" className="size-4" /> شهرها
-            </Button>
-            <Button
-              aria-pressed={resource === 'regions'}
-              onClick={() => changeResource('regions')}
-              size="sm"
-              variant={resource === 'regions' ? 'primary' : 'ghost'}
-            >
-              <Layers3 aria-hidden="true" className="size-4" /> استان‌ها و نواحی
-            </Button>
-            <span className="self-center text-xs text-muted-foreground">
-              یک بخش مشترک با دو نوع رکورد ساختاری
-            </span>
-          </div>
-        ) : null}
       </Card>
 
       <MasterDataKpiGrid
@@ -907,9 +1004,7 @@ export function MasterDataGeographyWorkspace() {
             </SelectContent>
           </Select>
         </FormField>
-        {resource === 'regions' ||
-        resource === 'cities' ||
-        resource === 'airports' ? (
+        {isLocationView || resource === 'airports' ? (
           <FormField label="کشور">
             <Select
               onValueChange={(value) => {
@@ -934,7 +1029,7 @@ export function MasterDataGeographyWorkspace() {
             </Select>
           </FormField>
         ) : null}
-        {resource === 'cities' || resource === 'airports' ? (
+        {isLocationView || resource === 'airports' ? (
           <FormField label="استان/ناحیه">
             <Select
               onValueChange={(value) => {
@@ -1072,13 +1167,17 @@ export function MasterDataGeographyWorkspace() {
           description="دریافت اطلاعات جغرافیا از Backend ناموفق بود."
           title="دریافت جغرافیا ناموفق بود"
         />
+      ) : isLocationView ? (
+        <div className="space-y-4">
+          {renderLocationTable('regions', locationRecords.regions)}
+          {renderLocationTable('cities', locationRecords.cities)}
+        </div>
       ) : records.length === 0 ? (
         <EmptyState
           action={
             <Button
               onClick={() => {
-                setSelected(undefined);
-                setFormMode('create');
+                openCreate(resource);
               }}
               size="sm"
             >
@@ -1124,10 +1223,7 @@ export function MasterDataGeographyWorkspace() {
                     <div className="flex flex-wrap gap-2">
                       <Button
                         aria-label={`مشاهده ${record.name}`}
-                        onClick={() => {
-                          setSelected(record);
-                          setFormMode('view');
-                        }}
+                        onClick={() => openRecord(record, 'view')}
                         size="sm"
                         variant="outline"
                       >
@@ -1136,10 +1232,7 @@ export function MasterDataGeographyWorkspace() {
                       </Button>
                       <Button
                         aria-label={`ویرایش ${record.name}`}
-                        onClick={() => {
-                          setSelected(record);
-                          setFormMode('edit');
-                        }}
+                        onClick={() => openRecord(record, 'edit')}
                         size="sm"
                         variant="outline"
                       >
@@ -1163,32 +1256,34 @@ export function MasterDataGeographyWorkspace() {
         </Card>
       )}
 
-      <div className="flex items-center justify-between gap-3">
-        <PaginationShell
-          currentPage={page}
-          totalLabel={`${total.toLocaleString('fa-IR')} رکورد`}
-        />
-        <div className="flex gap-2">
-          <Button
-            disabled={page === 1}
-            onClick={() => setPage((value) => Math.max(1, value - 1))}
-            size="sm"
-            variant="outline"
-          >
-            قبلی
-          </Button>
-          <Button
-            disabled={page * 25 >= total}
-            onClick={() => setPage((value) => value + 1)}
-            size="sm"
-            variant="outline"
-          >
-            بعدی
-          </Button>
+      {!isLocationView ? (
+        <div className="flex items-center justify-between gap-3">
+          <PaginationShell
+            currentPage={page}
+            totalLabel={`${total.toLocaleString('fa-IR')} رکورد`}
+          />
+          <div className="flex gap-2">
+            <Button
+              disabled={page === 1}
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+              size="sm"
+              variant="outline"
+            >
+              قبلی
+            </Button>
+            <Button
+              disabled={page * 25 >= total}
+              onClick={() => setPage((value) => value + 1)}
+              size="sm"
+              variant="outline"
+            >
+              بعدی
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : null}
 
-      {formMode && resource === 'terminals' ? (
+      {formMode && formDefinition.key === 'terminals' ? (
         <MasterDataTerminalForm
           key={`${formMode}-${selected?.id ?? 'new'}`}
           mode={formMode}
@@ -1199,11 +1294,14 @@ export function MasterDataGeographyWorkspace() {
         />
       ) : formMode ? (
         <MasterDataLiveForm
-          definition={definition}
-          key={`${resource}-${formMode}-${selected?.id ?? 'new'}`}
+          definition={formDefinition}
+          key={`${formDefinition.key}-${formMode}-${selected?.id ?? 'new'}`}
           mode={formMode}
           onOpenChange={(open) => {
-            if (!open) setFormMode(null);
+            if (!open) {
+              setFormMode(null);
+              setFormResource(null);
+            }
           }}
           onPersist={persist}
           open

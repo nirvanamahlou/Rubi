@@ -327,19 +327,24 @@ export function MasterDataCurrencyForm({
                   }
                   {...(rateErrors[key] ? { error: rateErrors[key] } : {})}
                 >
-                  <Input
-                    id={`quote-${key}`}
-                    aria-invalid={Boolean(rateErrors[key])}
-                    value={rateValues[key] ?? ''}
-                    {...(key === 'source'
-                      ? { maxLength: 160 }
-                      : ({
-                          dir: 'ltr',
-                          inputMode: 'decimal',
-                          maxLength: 25,
-                        } as const))}
-                    onChange={(event) => updateRate(key, event.target.value)}
-                  />
+                  {key === 'source' ? (
+                    <Input
+                      id={`quote-${key}`}
+                      aria-invalid={Boolean(rateErrors[key])}
+                      maxLength={160}
+                      value={rateValues[key] ?? ''}
+                      onChange={(event) => updateRate(key, event.target.value)}
+                    />
+                  ) : (
+                    <MasterDataNumberInput
+                      id={`quote-${key}`}
+                      aria-invalid={Boolean(rateErrors[key])}
+                      dir="ltr"
+                      maxLength={25}
+                      value={rateValues[key] ?? ''}
+                      onChange={(value) => updateRate(key, value)}
+                    />
+                  )}
                 </FormField>
               ))}
               <FormField id="quote-maker" label="ثبت‌کننده">
@@ -396,19 +401,13 @@ export function MasterDataCurrencyForm({
               <table className="w-full min-w-[40rem] text-sm">
                 <thead>
                   <tr>
-                    {[
-                      'ارز',
-                      'نوع',
-                      'نرخ',
-                      'منبع',
-                      'تاریخ و ساعت',
-                      'ثبت‌کننده',
-                      'وضعیت',
-                    ].map((label) => (
-                      <th className="p-2 text-start" key={label}>
-                        {label}
-                      </th>
-                    ))}
+                    {['ارز', 'نوع', 'نرخ', 'منبع', 'ثبت‌کننده', 'وضعیت'].map(
+                      (label) => (
+                        <th className="p-2 text-start" key={label}>
+                          {label}
+                        </th>
+                      ),
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -424,9 +423,6 @@ export function MasterDataCurrencyForm({
                         {rate.rate}
                       </td>
                       <td className="p-2">{rate.source}</td>
-                      <td className="p-2">
-                        {new Date(rate.observedAt).toLocaleString('fa-IR')}
-                      </td>
                       <td className="p-2 font-mono text-xs" dir="ltr">
                         {rate.createdByUserId}
                       </td>

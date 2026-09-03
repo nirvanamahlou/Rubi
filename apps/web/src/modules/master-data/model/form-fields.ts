@@ -2,13 +2,39 @@ import { isMasterTransportFormResource } from '@rubi/contracts';
 import type {
   MasterDataCatalogItem,
   MasterDataFieldDefinition,
+  MasterDataResourceKey,
 } from './catalog';
+
+const hiddenFormFields: Partial<
+  Record<MasterDataResourceKey, ReadonlySet<string>>
+> = {
+  regions: new Set(['type', 'parentRegionId']),
+  hotels: new Set(['latitude', 'longitude']),
+  organizations: new Set(['displayName']),
+  suppliers: new Set(['displayName']),
+  brokers: new Set(['displayName']),
+  airlines: new Set(['organizationId', 'iataCode', 'icaoCode']),
+  'cabin-classes': new Set(['bodyType', 'cabinType']),
+  'baggage-rules': new Set(['validFrom', 'validTo']),
+  'bus-companies': new Set(['supplierId', 'organizationId']),
+  'visa-services': new Set([
+    'supplierId',
+    'providerId',
+    'passportId',
+    'passportIdentifier',
+  ]),
+  'exchange-rates': new Set(['observedAt', 'validFrom', 'validTo']),
+  'travel-services': new Set(['code']),
+};
 
 // Form visibility is separate from the reference/export catalog.
 export function getMasterDataFormFields(definition: MasterDataCatalogItem) {
-  let fields: readonly MasterDataFieldDefinition[] = definition.fields;
+  const hidden = hiddenFormFields[definition.key];
+  let fields: readonly MasterDataFieldDefinition[] = hidden
+    ? definition.fields.filter((field) => !hidden.has(field.key))
+    : definition.fields;
   if (isMasterTransportFormResource(definition.key)) {
-    fields = definition.fields.map((field): MasterDataFieldDefinition =>
+    fields = fields.map((field): MasterDataFieldDefinition =>
       definition.key === 'train-types' && field.key === 'amenities'
         ? {
             key: 'facilityIds',
