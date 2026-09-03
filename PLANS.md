@@ -38,6 +38,8 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 - [x] `DOCUMENTS-003F-RELATED-CASE-PICKER`: جایگزینی چهار ورودی فنی ارتباط سند با
       Dropdown جست‌وجویی پرونده‌های موجود؛ Scope شعبه/Domain/محرمانگی و resolve امن
       Relation در Backend، بدون Migration یا دسترسی مستقیم به ماژول دیگر.
+- [x] Follow-up تقویم اسناد: حذف Dropdown ماه/سال و جایگزینی با Gridهای ۱۲تایی
+      هم‌تم Rubi با حفظ شمسی/میلادی و مقدار ذخیره‌شده Gregorian ISO.
 - [ ] `DOCUMENTS-003`: Adapter تولیدی S3/MinIO و Antivirus Worker عملیاتی با retry،
       monitoring و recovery؛ پس از تصمیم امنیت/عملیات و رزرو تازه Migration/Dependency.
 - [ ] `DOCUMENTS-004`: اشتراک امن، نسخه‌گذاری تکمیلی، Export، retention نهایی و اتصال
