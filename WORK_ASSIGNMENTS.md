@@ -1,5 +1,14 @@
 # Work Assignments
 
+## DOCUMENTS-004-OPERATIONS — PC-B — IN_PROGRESS
+
+- درخواست مالک در 2026-09-03: ساده‌سازی جزئیات سند، فارسی‌سازی فعالیت/نگهداری، فیلترمحورشدن فهرست‌ها و اشتراک‌گذاری، فعال‌کردن پیگیری و عملیات گروهی، ویرایش و حذف دائمی امن همه رکوردها، برچسب «ناقص» و تکمیل Backend ابزارهای باقی‌مانده مدیریت آرشیو. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-documents-workflows` از `origin/develop@9608607` در Worktree تمیز `C:\Users\admin\Rubi-documents-workflows`؛ `develop`، `main` و Worktreeهای دیگر مستقیم تغییر نمی‌کنند.
+- محدوده رزروشده: `apps/web/src/modules/documents/**`، `apps/api/src/documents/**`، قرارداد افزایشی Documents در `packages/contracts/src/documents/**`، مدل و Migration افزایشی Documents در `packages/database/prisma/**`، تست‌های همین Slice و اسناد همین Work Item.
+- هماهنگی قفل: Task `MASTER-004-FORM-FOLLOWUP` با Commit `34066f6` قفل Central Docs را صریحاً آزاد کرده و هیچ فایل Documents را تغییر نداده است. `Migration Owner = PC-B/DOCUMENTS-004-OPERATIONS`، `Documents shared-contract Owner = PC-B/DOCUMENTS-004-OPERATIONS` و `Central Docs Owner = PC-B/DOCUMENTS-004-OPERATIONS`؛ Dependency/Lockfile آزاد و بدون تغییر می‌ماند.
+- حذف دائمی فقط با مجوز مدیریت نگهداری، تأیید صریح کاربر، کنترل Branch/Domain، رد Legal Hold و پاک‌سازی رکوردهای وابسته و Object ذخیره‌شده مجاز است. حذف منطقی جدید ساخته نمی‌شود؛ بازیابی فقط برای اسناد `ARCHIVED` باقی می‌ماند.
+- فهرست‌های عملیاتی تا انتخاب حداقل یک فیلتر داده نشان نمی‌دهند؛ نمای کلی KPI/کارهای من مستثنا است. خروجی از UI حذف می‌شود و اشتراک‌گذاری همچنان لینک داخلی احراز‌شده و Permission-aware است، نه لینک عمومی.
+
 ## MASTER-004-FORM-ALIGNMENT — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-02: هم‌ترازسازی کامل فرم‌ها و فهرست‌های اطلاعات پایه شامل ادغام تجربه استان/شهر، حذف یا اختیاری‌کردن فیلدهای مشخص‌شده، افزودن ترتیب نمایش عمومی، یکسان‌سازی تقویم و قالب اعداد، حذف Exportهای تعیین‌شده، ورود داخلی امکانات هتل، ساده‌سازی حمل‌ونقل و افزودن Logo Reference برای شرکت‌ها و سازمان‌ها. `COMPUTER_ID=PC-B`.
