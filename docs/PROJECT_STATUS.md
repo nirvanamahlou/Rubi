@@ -9,6 +9,13 @@
 - Slice واقعی تکمیل است: قرارداد عمومی Sales v1، ۱۱ جدول مالک Sales با Migration افزایشی، Permission Seed، Repository/API، Scope مالک/شعبه، Audit، Optimistic Lock، Idempotency، صف نسخه‌دار ReservationRequest و داشبورد/فرم تمام‌صفحه قرارداد تحویل شد.
 - مانده فقط از پرداخت `FINANCE_CONFIRMED` کم می‌شود؛ پرداخت pending/scheduled اثر ندارد. تأیید Offer بلیت تا انتشار Public API اجرایی Ticket Management fail-closed است و پاسخ ساختگی ساخته نمی‌شود.
 - Gate نهایی: Prisma معتبر، ۳۱ Migration روی PostgreSQL 18 خالی، Seed دوباره‌پذیر، Full lint/typecheck، ۱٬۴۸۳ تست و Full Production Build با ۳۵ صفحه موفق است. Draft PR #90 همان PR جاری باقی می‌ماند.
+## MARKETING-001D — پالایش ناوبری و فرم مارکتینگ — آماده بررسی
+
+- `PC-B` روی Branch مستقل `codex/pc-b-marketing-navigation-polish` اعلان‌ها و شناسه‌های فنی Preview، Eyebrow آبی `CRM / Marketing` و توضیحات نمایشی داشبورد را حذف کرد. صفحه اصلی مارکتینگ اکنون همان رنگ، Glow و حرکت کارت‌های Hub اطلاعات پایه را دارد.
+- انتخاب هر سکشن در History مرورگر ثبت می‌شود؛ Back مرورگر واقعاً به نمای قبلی برمی‌گردد. تمام Workspace، جدول‌ها، تب‌ها و Dialog کمپین RTL و راست‌چین‌اند و بازخورد دکمه‌ها بدون نوار اولیه مزاحم، بعد از عمل نمایش داده می‌شود.
+- داشبورد دیگر دکمه «ایجاد کمپین» ندارد و نمودار ۳۰روزه دو سری مستقل و قابل‌تشخیص «سرنخ جدید» و «فروش منتسب» با خط، نقطه و راهنما نمایش می‌دهد.
+- فرم کمپین هشت‌مرحله‌ای است: مرحله پیشنهاد حذف شد؛ عبارت UTC، اعلان حریم خصوصی، Badge امن Preview و توضیحات زیر فیلدها/سکشن‌ها حذف شدند. DatePicker، اعتبارسنجی و مسیرهای Create/Edit/View فعال باقی مانده‌اند.
+- Web lint، typecheck، Production Build با ۳۴ Route و همه `602/602` تست Web موفق‌اند. Browser QA دسکتاپ و موبایل `390×844`، Back واقعی، RTL، دو سری نمودار و نبود متن‌های حذف‌شده را تأیید کرد. هیچ API، Persistence، Schema/Migration/Seed، Dependency/Lockfile، Shared Contract، UI مرکزی یا داده واقعی تغییر نکرد.
 
 ## DOCUMENTS-004-HANDOFF — انتقال اتمیک قفل‌ها به Sales — آماده بررسی
 

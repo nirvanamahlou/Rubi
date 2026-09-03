@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  AlertTriangle,
   ArrowRight,
   BadgePercent,
   BarChart3,
@@ -24,7 +23,7 @@ import {
   UsersRound,
   type LucideIcon,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -48,7 +47,6 @@ import {
   TabsTrigger,
 } from '@/components/ui/overlays';
 import {
-  Alert,
   Badge,
   Card,
   EmptyState,
@@ -60,11 +58,8 @@ import {
 } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
 import {
-  MARKETING_ANALYTICS_STATUS,
   MARKETING_ATTRIBUTION_STATUS,
   MARKETING_DISPATCH_STATUS,
-  MARKETING_PREVIEW_NOTICE,
-  MARKETING_UI_VERSION,
   type MarketingPreviewState,
 } from '../api/contracts';
 import {
@@ -132,13 +127,34 @@ const sectionIcons: Record<MarketingSectionKey, LucideIcon> = {
   settings: Settings2,
 };
 
-const toneClasses: Record<MarketingSectionDefinition['tone'], string> = {
-  blue: 'bg-blue-50 text-blue-700 ring-blue-100',
-  violet: 'bg-violet-50 text-violet-700 ring-violet-100',
-  emerald: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-  amber: 'bg-amber-50 text-amber-700 ring-amber-100',
-  rose: 'bg-rose-50 text-rose-700 ring-rose-100',
-  cyan: 'bg-cyan-50 text-cyan-700 ring-cyan-100',
+const toneClasses: Record<
+  MarketingSectionDefinition['tone'],
+  { icon: string; glow: string }
+> = {
+  blue: {
+    icon: 'bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300',
+    glow: 'from-blue-400/14',
+  },
+  violet: {
+    icon: 'bg-violet-100 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300',
+    glow: 'from-violet-400/14',
+  },
+  emerald: {
+    icon: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300',
+    glow: 'from-emerald-400/14',
+  },
+  amber: {
+    icon: 'bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300',
+    glow: 'from-amber-400/14',
+  },
+  rose: {
+    icon: 'bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300',
+    glow: 'from-rose-400/14',
+  },
+  cyan: {
+    icon: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-400/15 dark:text-cyan-300',
+    glow: 'from-cyan-400/14',
+  },
 };
 
 function formatMoney(amount: string, currencyCode: string) {
@@ -238,7 +254,11 @@ function MarketingHub({
   onSelect: (section: MarketingSectionKey) => void;
 }) {
   return (
-    <section className="grid gap-5" aria-labelledby="marketing-hub-title">
+    <section
+      aria-labelledby="marketing-hub-title"
+      className="grid gap-5 text-right"
+      dir="rtl"
+    >
       <div>
         <h2 className="text-xl font-black" id="marketing-hub-title">
           بخش‌های مارکتینگ
@@ -250,43 +270,65 @@ function MarketingHub({
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {marketingSections.map((section) => {
           const Icon = sectionIcons[section.key];
+          const tone = toneClasses[section.tone];
           return (
-            <Card
-              className="flex h-full flex-col overflow-hidden p-5 transition hover:-translate-y-0.5 hover:shadow-lg"
+            <button
+              aria-label={`ورود به بخش ${section.title}`}
+              className="group rounded-2xl text-right outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               key={section.key}
+              onClick={() => onSelect(section.key)}
+              type="button"
             >
-              <div className="flex items-start justify-between gap-4">
+              <Card className="relative flex h-full min-h-64 flex-col overflow-hidden p-5 transition duration-200 group-hover:-translate-y-1 group-hover:border-primary/35 group-hover:shadow-[var(--shadow-card)]">
                 <span
-                  className={cn(
-                    'grid size-12 place-items-center rounded-2xl ring-4',
-                    toneClasses[section.tone],
-                  )}
-                >
-                  <Icon aria-hidden="true" className="size-6" />
-                </span>
-                <ChevronLeft
                   aria-hidden="true"
-                  className="size-5 text-muted-foreground"
+                  className={cn(
+                    'absolute inset-x-0 top-0 h-24 bg-gradient-to-b to-transparent opacity-80',
+                    tone.glow,
+                  )}
                 />
-              </div>
-              <h3 className="mt-5 text-lg font-black">{section.title}</h3>
-              <p className="mt-2 min-h-14 text-sm leading-7 text-muted-foreground">
-                {section.description}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {section.highlights.map((highlight) => (
-                  <Badge key={highlight}>{highlight}</Badge>
-                ))}
-              </div>
-              <Button
-                className="mt-5 w-full"
-                onClick={() => onSelect(section.key)}
-                variant="outline"
-              >
-                ورود به {section.title}
-                <ChevronLeft aria-hidden="true" className="size-4" />
-              </Button>
-            </Card>
+                <div className="relative flex h-full flex-col">
+                  <div className="flex items-start gap-4">
+                    <span
+                      className={cn(
+                        'grid size-14 shrink-0 place-items-center rounded-2xl transition group-hover:scale-105',
+                        tone.icon,
+                      )}
+                    >
+                      <Icon aria-hidden="true" className="size-7" />
+                    </span>
+                    <div className="min-w-0 pt-1">
+                      <h3 className="text-base font-black leading-7 text-foreground">
+                        {section.title}
+                      </h3>
+                      <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                        {section.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex flex-wrap gap-1.5">
+                    {section.highlights.map((highlight) => (
+                      <Badge key={highlight}>{highlight}</Badge>
+                    ))}
+                  </div>
+
+                  <div className="mt-auto flex items-center justify-between border-t border-border/70 pt-4 text-sm">
+                    <span className="font-semibold text-muted-foreground">
+                      {section.highlights.length.toLocaleString('fa-IR')}{' '}
+                      زیرمجموعه
+                    </span>
+                    <span className="flex items-center gap-2 font-bold text-primary">
+                      ورود به بخش
+                      <ChevronLeft
+                        aria-hidden="true"
+                        className="size-4 transition-transform group-hover:-translate-x-1"
+                      />
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            </button>
           );
         })}
       </div>
@@ -948,9 +990,7 @@ type GenericSectionKey = Exclude<
 export function MarketingWorkspace() {
   const [state, setState] = useState<MarketingPreviewState>('preview');
   const [section, setSection] = useState<MarketingSectionKey | null>(null);
-  const [notice, setNotice] = useState(
-    'داده‌های آزمایشی مرجع مارکتینگ آماده نمایش است.',
-  );
+  const [notice, setNotice] = useState('');
   const [detailItem, setDetailItem] = useState<MarketingPreviewItem | null>(
     null,
   );
@@ -959,6 +999,41 @@ export function MarketingWorkspace() {
     mode: CampaignFormMode;
     campaign?: CampaignPreview;
   }>({ open: false, mode: 'create' });
+  const syncSectionFromHistory = useCallback(() => {
+    const requestedSection = new URL(window.location.href).searchParams.get(
+      'section',
+    );
+    setSection(
+      marketingSections.some((item) => item.key === requestedSection)
+        ? (requestedSection as MarketingSectionKey)
+        : null,
+    );
+    setNotice('');
+  }, []);
+  useEffect(() => {
+    const initialSyncFrame = window.requestAnimationFrame(
+      syncSectionFromHistory,
+    );
+    window.addEventListener('popstate', syncSectionFromHistory);
+    return () => {
+      window.cancelAnimationFrame(initialSyncFrame);
+      window.removeEventListener('popstate', syncSectionFromHistory);
+    };
+  }, [syncSectionFromHistory]);
+  const navigateToSection = useCallback(
+    (nextSection: MarketingSectionKey | null, replace = false) => {
+      const url = new URL(window.location.href);
+      if (nextSection) url.searchParams.set('section', nextSection);
+      else url.searchParams.delete('section');
+      const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+      const method = replace ? 'replaceState' : 'pushState';
+      window.history[method](window.history.state, '', nextUrl);
+      setSection(nextSection);
+      setNotice('');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [],
+  );
   const openCampaign = (mode: CampaignFormMode, campaign?: CampaignPreview) =>
     setCampaignDialog(
       campaign ? { open: true, mode, campaign } : { open: true, mode },
@@ -989,7 +1064,10 @@ export function MarketingWorkspace() {
                     ? 'خروجی تنظیمات'
                     : null;
   return (
-    <main className="grid gap-6" dir="rtl">
+    <main
+      className="grid gap-6 text-right [&_td]:text-right [&_th]:text-right"
+      dir="rtl"
+    >
       <PageHeader
         actions={
           <>
@@ -1020,9 +1098,7 @@ export function MarketingWorkspace() {
                 {secondaryHeaderAction}
               </Button>
             ) : null}
-            {section === null ||
-            section === 'dashboard' ||
-            section === 'campaigns' ? (
+            {section === null || section === 'campaigns' ? (
               <Button onClick={() => openCampaign('create')}>
                 <Plus aria-hidden="true" className="size-4" /> ایجاد کمپین
               </Button>
@@ -1033,42 +1109,14 @@ export function MarketingWorkspace() {
           selectedSection?.description ??
           'مدیریت یکپارچه کمپین، مخاطب، ارتباطات، محتوا، پیشنهاد، سفر مشتری و گزارش‌ها'
         }
-        eyebrow="CRM / Marketing"
         title={selectedSection?.title ?? 'مرکز مارکتینگ'}
       />
-      <Alert
-        description={MARKETING_PREVIEW_NOTICE}
-        title="محیط Preview غیرعملیاتی"
-      >
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Badge className="font-mono text-[10px]" dir="ltr">
-            {MARKETING_UI_VERSION}
-          </Badge>
-          <Badge className="font-mono text-[10px]" dir="ltr">
-            {MARKETING_ANALYTICS_STATUS}
-          </Badge>
-          <Badge className="font-mono text-[10px]" dir="ltr">
-            {MARKETING_DISPATCH_STATUS}
-          </Badge>
-        </div>
-      </Alert>
-      <div
-        aria-live="polite"
-        className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-100"
-        role="status"
-      >
-        <MousePointerClick aria-hidden="true" className="size-4 shrink-0" />
-        <span>{notice}</span>
-      </div>
       {state !== 'preview' ? (
         <StateGate onReset={() => setState('preview')} state={state} />
       ) : section === null ? (
         <MarketingHub
           onSelect={(value) => {
-            setSection(value);
-            setNotice(
-              `بخش ${marketingSections.find((item) => item.key === value)?.title} باز شد.`,
-            );
+            navigateToSection(value);
           }}
         />
       ) : (
@@ -1076,8 +1124,7 @@ export function MarketingWorkspace() {
           <div>
             <Button
               onClick={() => {
-                setSection(null);
-                setNotice('به صفحه اصلی مارکتینگ برگشتید.');
+                navigateToSection(null, true);
               }}
               variant="ghost"
             >
@@ -1102,16 +1149,19 @@ export function MarketingWorkspace() {
           ) : null}
         </section>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-100">
-        <div className="flex items-center gap-2">
-          <AlertTriangle aria-hidden="true" className="size-5" />
-          <span>
-            Persistence و اتصال ارسال در این نسخه فعال نیست؛ داده‌های نمایشی
-            دقیقاً از مرجع و با شناسه preview- هستند.
-          </span>
+      {notice ? (
+        <div
+          aria-live="polite"
+          className="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground shadow-sm"
+          role="status"
+        >
+          <MousePointerClick
+            aria-hidden="true"
+            className="size-4 shrink-0 text-primary"
+          />
+          <span>{notice}</span>
         </div>
-        <span>MARKETING-001C</span>
-      </div>
+      ) : null}
       <Dialog
         open={campaignDialog.open}
         onOpenChange={(open) =>
@@ -1126,11 +1176,11 @@ export function MarketingWorkspace() {
                 ? 'ویرایش پیش‌نمایش کمپین'
                 : 'جزئیات کمپین'}
           </DialogTitle>
-          <DialogDescription>
-            {campaignDialog.mode === 'view'
-              ? 'نمای ۳۶۰ درجه کمپین با داده‌های کاملاً آزمایشی مرجع.'
-              : 'فرم چندمرحله‌ای فقط پیش‌نویس محلی می‌سازد و داده‌ای ذخیره نمی‌کند.'}
-          </DialogDescription>
+          {campaignDialog.mode === 'view' ? (
+            <DialogDescription>
+              نمای ۳۶۰ درجه کمپین با داده‌های کاملاً آزمایشی مرجع.
+            </DialogDescription>
+          ) : null}
           {campaignDialog.mode === 'view' && campaignDialog.campaign ? (
             <CampaignDetailReference
               campaign={campaignDialog.campaign}
