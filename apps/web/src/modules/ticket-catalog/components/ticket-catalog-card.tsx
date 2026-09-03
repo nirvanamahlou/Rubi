@@ -11,7 +11,9 @@ import {
 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/ui';
 import {
+  inventoryTotals,
   type CatalogStatus,
+  type Inventory,
   type Product,
   type Reference,
 } from '../model/catalog';
@@ -36,6 +38,7 @@ const accents = {
 
 type TicketCatalogCardProps = {
   product: Product;
+  inventory: Inventory;
   referenceLabel: (
     kind: Reference['kind'],
     id: string,
@@ -50,6 +53,7 @@ type TicketCatalogCardProps = {
 
 export function TicketCatalogCard({
   product,
+  inventory,
   referenceLabel,
   onView,
   onEdit,
@@ -57,6 +61,7 @@ export function TicketCatalogCard({
   onDelete,
   onStatus,
 }: TicketCatalogCardProps) {
+  const capacity = inventoryTotals(inventory);
   const segment = product.definition.segments[0]!;
   const lastSegment = product.definition.segments.at(-1)!;
   const isCombined = product.definition.segments.length > 1;
@@ -156,11 +161,17 @@ export function TicketCatalogCard({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-y py-2 text-sm">
+        <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-2 border-y py-2 text-sm">
           <div>
-            <p className="text-xs text-muted-foreground">ظرفیت</p>
+            <p className="text-xs text-muted-foreground">ظرفیت کل</p>
             <p className="mt-0.5 font-bold">
-              {product.definition.totalCapacity.toLocaleString('fa-IR')} نفر
+              {capacity.total.toLocaleString('fa-IR')} نفر
+            </p>
+          </div>
+          <div className="rounded-lg bg-emerald-50 px-2 py-1.5 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+            <p className="text-xs">مانده</p>
+            <p className="mt-0.5 font-black">
+              {capacity.remaining.toLocaleString('fa-IR')} نفر
             </p>
           </div>
           <Badge>{supplyLabels[product.definition.supplyType]}</Badge>

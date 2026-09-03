@@ -1,5 +1,11 @@
 # وضعیت پروژه
 
+## TICKET-CATALOG-003 — نمایش ظرفیت باقی‌مانده روی کارت بلیت — آماده بررسی
+
+- `PC-A` روی Branch مستقل `codex/pc-a-ticket-card-remaining-capacity` کارت بلیت را به مدل موجودی Ticket Catalog متصل کرد؛ کارت اکنون ظرفیت کل و مانده را کنار هم و با تفکیک دیداری روشن نمایش می‌دهد.
+- مانده با تابع دامنه `inventoryTotals` محاسبه می‌شود و تخصیص‌های `held` و `confirmed` را کسر می‌کند. Workspace مرورگر فعلی تا اتصال قرارداد عمومی Reservations تخصیص ساختگی ایجاد نمی‌کند، بنابراین در داده‌های فعلی مانده با کل برابر است.
+- هر ۹۵ تست Ticket Catalog Web، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند. هیچ Schema/Migration/Seed، Dependency/Lockfile، قرارداد عمومی، IAM یا فایل ماژول Reservations تغییر نکرد.
+
 ## MARKETING-001C — تکمیل صفحات داخلی مارکتینگ — ادغام‌شده
 
 - `PC-B` روی `codex/pc-b-marketing-inner-pages-parity` صفحات عمومی داخل سکشن‌ها را با

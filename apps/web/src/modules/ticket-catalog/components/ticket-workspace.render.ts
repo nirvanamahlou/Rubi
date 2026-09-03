@@ -23,9 +23,18 @@ describe('Rendered ticket UI', () => {
   });
   it('renders route filters, icon-only sale controls and issued filters', () => {
     const sample = previewSamples('2026-08-31T00:00:00.000Z')[0]!;
+    const inventory = {
+      total: sample.definition.totalCapacity,
+      version: sample.version,
+      allocations: [
+        { id: 'held', quantity: 2, state: 'held' as const },
+        { id: 'confirmed', quantity: 3, state: 'confirmed' as const },
+      ],
+    };
     const card = renderToStaticMarkup(
       createElement(TicketCatalogCard, {
         product: { ...sample, status: 'active' },
+        inventory,
         referenceLabel: (_kind: string, _id: string, fallback: string) =>
           fallback,
         onView: () => {},
@@ -38,6 +47,7 @@ describe('Rendered ticket UI', () => {
     const pausedCard = renderToStaticMarkup(
       createElement(TicketCatalogCard, {
         product: { ...sample, status: 'paused' },
+        inventory,
         referenceLabel: (_kind: string, _id: string, fallback: string) =>
           fallback,
         onView: () => {},
@@ -50,6 +60,7 @@ describe('Rendered ticket UI', () => {
     const draftCard = renderToStaticMarkup(
       createElement(TicketCatalogCard, {
         product: { ...sample, status: 'draft' },
+        inventory,
         referenceLabel: (_kind: string, _id: string, fallback: string) =>
           fallback,
         onView: () => {},
@@ -62,6 +73,7 @@ describe('Rendered ticket UI', () => {
     const cancelledCard = renderToStaticMarkup(
       createElement(TicketCatalogCard, {
         product: { ...sample, status: 'cancelled' },
+        inventory,
         referenceLabel: (_kind: string, _id: string, fallback: string) =>
           fallback,
         onView: () => {},
@@ -76,6 +88,11 @@ describe('Rendered ticket UI', () => {
         connected: false,
         tickets: [],
       }),
+    );
+    expect(card).toContain('ظرفیت کل');
+    expect(card).toContain('مانده');
+    expect(card).toContain(
+      `${(sample.definition.totalCapacity - 5).toLocaleString('fa-IR')} نفر`,
     );
     expect(card).toContain('aria-label="توقف فروش بلیت"');
     expect(card).not.toContain('disabled=""');
