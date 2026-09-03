@@ -13,6 +13,8 @@
   `390×844` را بدون Overflow یا Console warning/error تأیید کرد.
 - Typecheck و Build فقط به‌علت خطای از قبل موجود `observedAt` در فرم نرخ ارز Master Data
   روی `origin/develop@6ac2dfc` متوقف است؛ فایل نامرتبط در این Task تغییر نکرده است.
+- PR [#86](https://github.com/nirvanamahlou/Rubi/pull/86) برای ادغام کنترل‌شده با
+  `develop` باز است.
 
 ## MASTER-004-FORM-ALIGNMENT — هم‌ترازی فرم‌های اطلاعات پایه — آماده بررسی
 

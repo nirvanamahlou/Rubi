@@ -10,6 +10,7 @@
 - نتیجه: ۴۵ زیرصفحه تخصصی، داشبورد کامل، ۹ تب جزئیات کمپین و داده‌های synthetic دقیق مرجع جای صفحات عمومی قبلی را گرفتند. فیلتر، جست‌وجو، صفحه‌بندی، سازنده سگمنت، پیش‌نمایش پیام، سفر مشتری، Switch، Dialog و Action feedback در State محلی کار می‌کنند؛ فیلتر و تقویم از Design System مشترک Rubi هستند.
 - ادغام مبنا: `origin/develop@6ac2dfc` در Branch ادغام شد. Web lint و `599/599` تست موفق؛ Full lint برابر ۶ Task و Full test برابر `1,464` تست موفق با ۷۰ skip اختیاری است. Browser QA تمام تب‌ها/فرم‌ها و Mobile `390×844` را بدون Overflow یا Console error تأیید کرد.
 - مانع موجود در مبنا: Typecheck و Build پس از Compile موفق فقط روی `apps/web/src/modules/master-data/model/currency-form.ts:93` متوقف می‌شوند؛ payload نرخ ارز در خود `origin/develop@6ac2dfc` فیلد اجباری `observedAt` را ندارد. این فایل خارج از Scope و بدون تفاوت نسبت به `origin/develop` باقی مانده است.
+- انتشار: PR [#86](https://github.com/nirvanamahlou/Rubi/pull/86) به مقصد `develop` باز شد؛ ادغام فقط پس از عبور Gateهای Repository انجام می‌شود.
 - Final lock state: `RELEASED — PC-B/MARKETING-001C ready for review`. Migration، Dependency/Lockfile، Shared Contract و Central UI در تمام Task آزاد و بدون تغییر ماندند.
 
 ## MASTER-004-FORM-FOLLOWUP — PC-B — READY_FOR_REVIEW
