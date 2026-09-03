@@ -17,6 +17,10 @@ const dateFieldSource = readFileSync(
   new URL('./customer-date-field.tsx', import.meta.url),
   'utf8',
 );
+const customerDocumentsPanelSource = readFileSync(
+  new URL('./customer-documents-panel.tsx', import.meta.url),
+  'utf8',
+);
 
 describe('Customer Operations workspace boundaries', () => {
   it('opens contacts for either role and offers a call only after audited reveal', () => {
@@ -461,13 +465,8 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('پرونده ۳۶۰ درجه');
   });
 
-  it('shows the full 360 dossier catalog without inventing cross-module data', () => {
+  it('shows the full 360 dossier catalog while Documents is operational and other modules remain explicit', () => {
     for (const section of [
-      'شماره پاسپورت',
-      'نام انگلیسی مطابق پاسپورت (اجباری)',
-      'نام خانوادگی انگلیسی مطابق پاسپورت (اجباری)',
-      'کشور صادرکننده',
-      'هشدار انقضای مدارک',
       'درخواست‌ها',
       'قراردادها',
       'خدمات خریداری‌شده',
@@ -477,13 +476,15 @@ describe('Customer Operations workspace boundaries', () => {
       'پرداخت‌ها',
       'چک‌ها',
       'تیکت‌های پشتیبانی',
-      'فایل‌ها و اسناد',
       'Timeline کامل فعالیت‌ها',
     ])
       expect(source).toContain(section);
     expect(source).toContain('در انتظار اتصال امن');
-    expect(source).toContain(
-      'هیچ شماره مدرک یا تاریخ ساختگی نمایش داده نمی‌شود',
-    );
+    expect(source).toContain('<CustomerDocumentsPanel customer={customer} />');
+    expect(source).not.toContain('در انتظار زیرساخت مدارک');
+    expect(customerDocumentsPanelSource).toContain('شماره پاسپورت');
+    expect(customerDocumentsPanelSource).toContain('کشور صادرکننده');
+    expect(customerDocumentsPanelSource).toContain('افزودن مدرک');
+    expect(customerDocumentsPanelSource).toContain('DEC-OPEN-006');
   });
 });

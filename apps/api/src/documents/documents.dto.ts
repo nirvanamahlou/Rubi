@@ -38,6 +38,24 @@ export class DocumentListQueryDto {
   search?: string;
 
   @IsOptional()
+  @Transform(emptyToUndefined)
+  @IsString()
+  @Length(2, 80)
+  sourceModule?: string;
+
+  @IsOptional()
+  @Transform(emptyToUndefined)
+  @IsString()
+  @Length(2, 120)
+  sourceEntityType?: string;
+
+  @IsOptional()
+  @Transform(emptyToUndefined)
+  @IsString()
+  @Length(2, 160)
+  sourceEntityId?: string;
+
+  @IsOptional()
   @IsString()
   @MaxLength(80)
   typeCode?: string;

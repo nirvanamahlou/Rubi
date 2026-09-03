@@ -1,5 +1,15 @@
 # Work Assignments
 
+## CUSTOMER-DOCUMENTS-001 — PC-A — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-03: جایگزینی وضعیت «در انتظار زیرساخت مدارک» در پرونده ۳۶۰ مشتری با اتصال واقعی به ماژول ادغام‌شده Documents. `COMPUTER_ID=PC-A`.
+- Branch مستقل `codex/pc-a-customer-documents-integration` از `origin/develop@9608607`؛ کار مستقیم روی `develop` یا `main`، Merge خودکار، Force Push و حذف Branch ممنوع است.
+- محدوده رزروشده: رابط و Client ماژول Customers، فیلتر افزایشی و backward-compatible قرارداد عمومی Documents، DTO/Service/Repository و تست‌های محدود Documents برای فهرست منبع، سند Task و ورودی‌های همین Work Item در اسناد مرکزی.
+- مرز دامنه: Customers فقط مصرف‌کننده قرارداد عمومی Documents است؛ Binary، metadata، version، confidentiality، scan و archive نزد Documents می‌ماند. Query مستقیم جدول Documents از Customers و import کد داخلی Web ماژول Documents ممنوع است.
+- امنیت: فهرست و بارگذاری فقط با Session، Permission، Domain و Branch scope موجود Documents انجام می‌شود؛ فایل تا نتیجه اسکن معتبر قابل دریافت نیست. شماره پاسپورت و داده semantic هویتی در Customers ذخیره نمی‌شود و `DEC-OPEN-006` همچنان Gate آن داده‌هاست.
+- قفل‌ها: `Documents public list-filter contract = PC-A/CUSTOMER-DOCUMENTS-001` و `Central Docs Owner = PC-A/CUSTOMER-DOCUMENTS-001`. قفل‌های Migration، Schema، Seed و Dependency/Lockfile رزرو نمی‌شوند. قفل‌های `MASTER-004-FORM-ALIGNMENT` با Merge PR #83 / Commit `9608607` پایان یافته‌اند.
+- نتیجه: فهرست exact-source، کنترل all-or-none، پنل Customer 360، بارگذاری امن و Stateهای Loading/Empty/Unauthorized/Forbidden/Error تکمیل شد. Full lint/typecheck/build و ۱۴۷۰ تست پاس؛ ۷۰ تست PostgreSQL اختیاری skip شد. قفل‌های این Work Item تا Merge/Handoff فعال می‌مانند.
+
 ## MASTER-004-FORM-ALIGNMENT — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-02: هم‌ترازسازی کامل فرم‌ها و فهرست‌های اطلاعات پایه شامل ادغام تجربه استان/شهر، حذف یا اختیاری‌کردن فیلدهای مشخص‌شده، افزودن ترتیب نمایش عمومی، یکسان‌سازی تقویم و قالب اعداد، حذف Exportهای تعیین‌شده، ورود داخلی امکانات هتل، ساده‌سازی حمل‌ونقل و افزودن Logo Reference برای شرکت‌ها و سازمان‌ها. `COMPUTER_ID=PC-B`.

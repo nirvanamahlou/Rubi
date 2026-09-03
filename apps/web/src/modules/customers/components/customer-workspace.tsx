@@ -104,6 +104,7 @@ import {
   CustomerDateField,
   type CustomerCalendarMode,
 } from './customer-date-field';
+import { CustomerDocumentsPanel } from './customer-documents-panel';
 import {
   buildCustomerConsentRequest,
   customerListFailureState,
@@ -149,19 +150,6 @@ const customerTabs: readonly CustomerTab[] = [
   'audit',
 ];
 
-const travelDocumentFields = [
-  'پاسپورت',
-  'نام انگلیسی مطابق پاسپورت (اجباری)',
-  'نام خانوادگی انگلیسی مطابق پاسپورت (اجباری)',
-  'شماره پاسپورت',
-  'کشور صادرکننده',
-  'تاریخ صدور',
-  'تاریخ انقضا',
-  'ویزا',
-  'مدارک هویتی',
-  'هشدار انقضای مدارک',
-] as const;
-
 function customerRoleLabel(roles: readonly CustomerRole[]) {
   const customer = roles.includes('customer');
   const passenger = roles.includes('passenger');
@@ -179,7 +167,6 @@ const connectedDossierSections = [
   ['پرداخت‌ها', 'مالی'],
   ['چک‌ها', 'مالی'],
   ['تیکت‌های پشتیبانی', 'امور مشتریان'],
-  ['فایل‌ها و اسناد', 'اسناد'],
 ] as const;
 
 const sensitiveReasons = [
@@ -1637,33 +1624,7 @@ function CustomerDrawer({
               />
             </TabsContent>
             <TabsContent className="space-y-4" value="dossier">
-              <Card className="space-y-4 p-4">
-                <div>
-                  <p className="font-bold">مدارک سفر و هویتی</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    اطلاعات حساس مدارک فقط با نگهداری رمزنگاری‌شده، دسترسی مجاز
-                    و ثبت مشاهده نمایش داده می‌شود.
-                  </p>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {travelDocumentFields.map((field) => (
-                    <div
-                      className="flex items-center justify-between gap-3 rounded-xl border bg-muted/20 p-3"
-                      key={field}
-                    >
-                      <span className="text-sm font-medium">{field}</span>
-                      <Badge className="bg-muted text-muted-foreground">
-                        در انتظار زیرساخت مدارک
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-                <Alert
-                  description="مدل امن پاسپورت، ویزا و هشدار انقضا هنوز در پایگاه داده مشتریان وجود ندارد؛ تا تکمیل آن هیچ شماره مدرک یا تاریخ ساختگی نمایش داده نمی‌شود."
-                  title="حفاظت از مدارک مسافر"
-                  tone="warning"
-                />
-              </Card>
+              {customer ? <CustomerDocumentsPanel customer={customer} /> : null}
 
               <Card className="space-y-4 p-4">
                 <div>
