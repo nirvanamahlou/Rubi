@@ -32,7 +32,6 @@ const approvedRoutes = [
 
 const foundationRoutes = [
   'reservations',
-  'sales',
   'purchases',
   'marketing',
   'organizations',
@@ -74,6 +73,9 @@ describe('17-route module foundation', () => {
     expect(
       readFileSync(resolve(crmRoot, 'finance/page.tsx'), 'utf8'),
     ).toContain('FinanceWorkspace');
+    expect(readFileSync(resolve(crmRoot, 'sales/page.tsx'), 'utf8')).toContain(
+      'SalesWorkspace',
+    );
     expect(
       readFileSync(resolve(crmRoot, 'master-data/page.tsx'), 'utf8'),
     ).toContain('MasterDataHub');
