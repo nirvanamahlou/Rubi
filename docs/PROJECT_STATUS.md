@@ -1,5 +1,22 @@
 # وضعیت پروژه
 
+## MARKETING-001C — تکمیل صفحات داخلی مارکتینگ — آماده بررسی
+
+- `PC-B` روی `codex/pc-b-marketing-inner-pages-parity` صفحات عمومی داخل سکشن‌ها را با
+  ۴۵ زیرصفحه تخصصی همان مرجع جایگزین کرد؛ داشبورد کامل، ۹ تب جزئیات کمپین و همه داده‌های
+  آزمایشی مرجع نیز وارد Workspace واقعی Rubi شدند.
+- جست‌وجو، فیلتر، صفحه‌بندی، سگمنت‌ساز، پیش‌نمایش زنده پیام، کتابخانه محتوا، پیشنهادها،
+  سفر مشتری، گزارش‌های ده‌گانه و تنظیمات تعاملی‌اند. تقویم و فیلترها فقط از کامپوننت‌های
+  مشترک Rubi استفاده می‌کنند و هیچ Persistence، API، ارسال واقعی یا اثر مالی ندارند.
+- Web lint و `599/599` تست، Full lint با ۶ Task و Full test با `1,464` تست موفق و ۷۰
+  تست PostgreSQL اختیاری skip شدند. Browser QA همه تب‌ها، فرم ۹مرحله‌ای و Mobile
+  `390×844` را بدون Overflow یا Console warning/error تأیید کرد.
+- Typecheck محلی بدون کش و هر چهار Job تمیز CI شامل Full Typecheck، Full Production
+  Build، Full Test و PostgreSQL 18/Migration/Seed موفق‌اند. خطای موقت `observedAt` فقط
+  از کش افزایشی قدیمی محلی بود و فایل Master Data در این Task تغییر نکرد.
+- PR [#86](https://github.com/nirvanamahlou/Rubi/pull/86) با CI کاملاً سبز برای ادغام
+  کنترل‌شده با `develop` باز است.
+
 ## MASTER-004-FORM-ALIGNMENT — هم‌ترازی فرم‌های اطلاعات پایه — آماده بررسی
 
 - `PC-B` روی Branch مستقل `codex/pc-b-master-data-form-alignment` تجربه جغرافیا را در یک نمای شهر/استان یکپارچه و فرم شهر را به انتخاب اجباری کشور و سپس استان وابسته کرد؛ Schema مستقل Region/City و FK واقعی آن‌ها حفظ شده است.

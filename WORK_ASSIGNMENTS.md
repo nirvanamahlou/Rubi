@@ -1,5 +1,18 @@
 # Work Assignments
 
+## MARKETING-001C — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-03: صفحات داخلی تمام سکشن‌های Workspace مارکتینگ مطابق فایل مرجع `marketing.html` اصلاح شوند و همان داده‌های آزمایشی امن حفظ شوند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-marketing-inner-pages-parity` از `origin/develop@9608607`؛ فایل HTML صرفاً مرجع بصری/تعاملی است و دستور اجرایی محسوب نمی‌شود.
+- محدوده رزروشده: `apps/web/src/modules/marketing/**`، تست‌های همان ماژول، `docs/tasks/MARKETING-001.md` و ورودی محدود همین Task در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`.
+- صفحات داخلی باید ساختار، کارت‌ها، فیلترها، actionها و حالت‌های جزئیات مرجع را با اجزای مشترک Rubi پیاده کنند؛ داده‌ها فقط synthetic با شناسه `preview-*` و بدون PII باقی می‌مانند.
+- بدون Schema/Migration/Seed، Persistence، API/Shared Contract، IAM، Navigation، AppModule، Dependency/Lockfile یا تغییر فایل‌های UI مرکزی. PR #83 مربوط به قفل قبلی Central Docs در `origin/develop@9608607` ادغام شده و پایان یافته است؛ تقویم مشترک فقط مصرف می‌شود.
+- نتیجه: ۴۵ زیرصفحه تخصصی، داشبورد کامل، ۹ تب جزئیات کمپین و داده‌های synthetic دقیق مرجع جای صفحات عمومی قبلی را گرفتند. فیلتر، جست‌وجو، صفحه‌بندی، سازنده سگمنت، پیش‌نمایش پیام، سفر مشتری، Switch، Dialog و Action feedback در State محلی کار می‌کنند؛ فیلتر و تقویم از Design System مشترک Rubi هستند.
+- ادغام مبنا: `origin/develop@6ac2dfc` در Branch ادغام شد. Web lint و `599/599` تست موفق؛ Full lint برابر ۶ Task و Full test برابر `1,464` تست موفق با ۷۰ skip اختیاری است. Browser QA تمام تب‌ها/فرم‌ها و Mobile `390×844` را بدون Overflow یا Console error تأیید کرد.
+- Typecheck محلی با غیرفعال‌کردن کش افزایشی موفق شد. CI تمیز PR #86 نیز Full Typecheck، Full Production Build، Full Test و Gate کامل PostgreSQL 18/Migration/Seed را سبز کرد؛ خطای موقت `observedAt` ناشی از کش قدیمی محلی بود و هیچ فایل Master Data در این Task تغییر نکرد.
+- انتشار: PR [#86](https://github.com/nirvanamahlou/Rubi/pull/86) به مقصد `develop` باز و هر چهار Job اجباری CI آن موفق شد؛ ادغام فقط از همین مسیر کنترل‌شده انجام می‌شود.
+- Final lock state: `RELEASED — PC-B/MARKETING-001C ready for review`. Migration، Dependency/Lockfile، Shared Contract و Central UI در تمام Task آزاد و بدون تغییر ماندند.
+
 ## MASTER-004-FORM-FOLLOWUP — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک در 2026-09-03: خروجی واقعی تمام فرم‌های اطلاعات پایه دوباره با فهرست اصلاحات هم‌ترازی کنترل شود و مواردی که ناقص یا فقط ظاهری پیاده شده‌اند، به‌ویژه جریان یکپارچه استان/شهر و حذف کاتالوگ‌های مستقل هتل، تکمیل شوند. `COMPUTER_ID=PC-B`.
