@@ -59,10 +59,9 @@ Provider یا ارسال پیام واقعی. این Phase صرفاً قرارد
   و Mobile `390×844` بدون Page-level overflow یا Console warning/error تأیید کرد.
 - Web lint موفق و `599/599` تست Web پاس شد. Full lint شامل ۶ Task و Full test شامل
   `1,464` تست موفق با ۷۰ تست PostgreSQL اختیاری skip بود.
-- Typecheck و Production Build پس از Compile موفق Web فقط به‌علت خطای از قبل موجود در
-  `master-data/model/currency-form.ts` روی `origin/develop@6ac2dfc` متوقف می‌شوند:
-  payload نرخ ارز فیلد اجباری `observedAt` را ندارد. فایل Master Data در این Task تغییر
-  نکرده و رفع آن نیازمند Work Item مستقل مالک همان ماژول است.
+- Typecheck محلی بدون کش افزایشی موفق شد. CI تمیز PR #86 نیز Full Typecheck، Full
+  Production Build، همه تست‌ها و Gate کامل PostgreSQL 18/Migration/Seed را سبز کرد؛
+  خطای موقت `observedAt` فقط از کش افزایشی قدیمی محیط محلی بود و تغییر کدی لازم نداشت.
 - این Follow-up همچنان هیچ Persistence، API، Schema/Migration/Seed، Dependency،
   Permission، Provider، ارسال واقعی، Export واقعی یا اثر مالی اضافه نمی‌کند.
 

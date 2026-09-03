@@ -9,8 +9,8 @@
 - بدون Schema/Migration/Seed، Persistence، API/Shared Contract، IAM، Navigation، AppModule، Dependency/Lockfile یا تغییر فایل‌های UI مرکزی. PR #83 مربوط به قفل قبلی Central Docs در `origin/develop@9608607` ادغام شده و پایان یافته است؛ تقویم مشترک فقط مصرف می‌شود.
 - نتیجه: ۴۵ زیرصفحه تخصصی، داشبورد کامل، ۹ تب جزئیات کمپین و داده‌های synthetic دقیق مرجع جای صفحات عمومی قبلی را گرفتند. فیلتر، جست‌وجو، صفحه‌بندی، سازنده سگمنت، پیش‌نمایش پیام، سفر مشتری، Switch، Dialog و Action feedback در State محلی کار می‌کنند؛ فیلتر و تقویم از Design System مشترک Rubi هستند.
 - ادغام مبنا: `origin/develop@6ac2dfc` در Branch ادغام شد. Web lint و `599/599` تست موفق؛ Full lint برابر ۶ Task و Full test برابر `1,464` تست موفق با ۷۰ skip اختیاری است. Browser QA تمام تب‌ها/فرم‌ها و Mobile `390×844` را بدون Overflow یا Console error تأیید کرد.
-- مانع موجود در مبنا: Typecheck و Build پس از Compile موفق فقط روی `apps/web/src/modules/master-data/model/currency-form.ts:93` متوقف می‌شوند؛ payload نرخ ارز در خود `origin/develop@6ac2dfc` فیلد اجباری `observedAt` را ندارد. این فایل خارج از Scope و بدون تفاوت نسبت به `origin/develop` باقی مانده است.
-- انتشار: PR [#86](https://github.com/nirvanamahlou/Rubi/pull/86) به مقصد `develop` باز شد؛ ادغام فقط پس از عبور Gateهای Repository انجام می‌شود.
+- Typecheck محلی با غیرفعال‌کردن کش افزایشی موفق شد. CI تمیز PR #86 نیز Full Typecheck، Full Production Build، Full Test و Gate کامل PostgreSQL 18/Migration/Seed را سبز کرد؛ خطای موقت `observedAt` ناشی از کش قدیمی محلی بود و هیچ فایل Master Data در این Task تغییر نکرد.
+- انتشار: PR [#86](https://github.com/nirvanamahlou/Rubi/pull/86) به مقصد `develop` باز و هر چهار Job اجباری CI آن موفق شد؛ ادغام فقط از همین مسیر کنترل‌شده انجام می‌شود.
 - Final lock state: `RELEASED — PC-B/MARKETING-001C ready for review`. Migration، Dependency/Lockfile، Shared Contract و Central UI در تمام Task آزاد و بدون تغییر ماندند.
 
 ## MASTER-004-FORM-FOLLOWUP — PC-B — READY_FOR_REVIEW
