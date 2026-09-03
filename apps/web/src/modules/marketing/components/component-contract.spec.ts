@@ -150,25 +150,67 @@ describe('marketing workspace component contract', () => {
     expect(calendarSource).toContain('onOpen(campaign)');
   });
 
-  it('provides create, view and edit flows with campaign safety fields', () => {
+  it('provides the simplified eight-step create, view and edit flows', () => {
     for (const field of [
       'expectedVersion',
       'Segment مخاطب',
       'بودجه مصوب',
-      'Offer Intent',
       'UTM Campaign',
       'محدودیت تکرار ارسال',
-      'Suppression',
       'پیش‌نمایش نهایی',
     ]) {
       expect(formSource).toContain(field);
     }
+    for (const removedCopy of [
+      'Preview امن و بدون PII',
+      'محافظت از حریم خصوصی',
+      'ذخیره به UTC',
+      'Offer Intent',
+      'campaign-offer',
+      'campaign-coupon',
+      'description=',
+    ]) {
+      expect(formSource).not.toContain(removedCopy);
+    }
+    expect(formSource).toContain('lg:grid-cols-8');
+    expect(formSource).toContain('{step === 7 ? (');
+    expect(formSource).not.toContain('{step === 8 ? (');
     expect(workspaceSource).toContain("openCampaign('create')");
     expect(workspaceSource).toContain("onOpen('view', campaign)");
     expect(workspaceSource).toContain("onOpen('edit', campaign)");
     expect(workspaceSource).toContain('CampaignDetailReference');
     expect(referencePagesSource).toContain('صفحات جزئیات کمپین');
     expect(workspaceSource).toContain('aria-live="polite"');
+  });
+
+  it('keeps marketing chrome clean and pushes section changes into browser history', () => {
+    for (const removedCopy of [
+      'محیط Preview غیرعملیاتی',
+      'داده‌های آزمایشی مرجع مارکتینگ آماده نمایش است.',
+      'CRM / Marketing',
+      'MARKETING_UI_VERSION',
+      'MARKETING_PREVIEW_NOTICE',
+      'MARKETING-001C',
+    ]) {
+      expect(workspaceSource).not.toContain(removedCopy);
+    }
+    expect(workspaceSource).toContain("window.addEventListener('popstate'");
+    expect(workspaceSource).toContain("url.searchParams.set('section'");
+    expect(workspaceSource).toContain("'pushState'");
+    expect(workspaceSource).toContain("'replaceState'");
+    expect(workspaceSource).toContain(
+      "section === null || section === 'campaigns'",
+    );
+  });
+
+  it('renders every marketing page RTL and shows two dashboard chart series', () => {
+    expect(workspaceSource).toContain('[&_td]:text-right [&_th]:text-right');
+    expect(referencePagesSource).toContain('className="text-right" dir="rtl"');
+    expect(referencePagesSource).toContain('data-series="leads"');
+    expect(referencePagesSource).toContain('data-series="attributed-sales"');
+    expect(referencePagesSource).toContain('سرنخ جدید');
+    expect(referencePagesSource).toContain('فروش منتسب');
+    expect(referencePagesSource).not.toContain('title="داشبورد نمایشی"');
   });
 
   it('keeps reference filters, forms and interactive actions on shared Rubi controls', () => {
@@ -179,8 +221,7 @@ describe('marketing workspace component contract', () => {
     expect(referencePagesSource).toContain('onClick={() => onNotice');
   });
 
-  it('labels analytics, attribution and dispatch as contract-gated', () => {
-    expect(workspaceSource).toContain('MARKETING_ANALYTICS_STATUS');
+  it('keeps attribution and dispatch contract gates in their relevant details', () => {
     expect(workspaceSource).toContain('MARKETING_ATTRIBUTION_STATUS');
     expect(workspaceSource).toContain('MARKETING_DISPATCH_STATUS');
   });

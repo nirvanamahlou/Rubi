@@ -1,5 +1,13 @@
 # وضعیت پروژه
 
+## MARKETING-001D — پالایش ناوبری و فرم مارکتینگ — آماده بررسی
+
+- `PC-B` روی Branch مستقل `codex/pc-b-marketing-navigation-polish` اعلان‌ها و شناسه‌های فنی Preview، Eyebrow آبی `CRM / Marketing` و توضیحات نمایشی داشبورد را حذف کرد. صفحه اصلی مارکتینگ اکنون همان رنگ، Glow و حرکت کارت‌های Hub اطلاعات پایه را دارد.
+- انتخاب هر سکشن در History مرورگر ثبت می‌شود؛ Back مرورگر واقعاً به نمای قبلی برمی‌گردد. تمام Workspace، جدول‌ها، تب‌ها و Dialog کمپین RTL و راست‌چین‌اند و بازخورد دکمه‌ها بدون نوار اولیه مزاحم، بعد از عمل نمایش داده می‌شود.
+- داشبورد دیگر دکمه «ایجاد کمپین» ندارد و نمودار ۳۰روزه دو سری مستقل و قابل‌تشخیص «سرنخ جدید» و «فروش منتسب» با خط، نقطه و راهنما نمایش می‌دهد.
+- فرم کمپین هشت‌مرحله‌ای است: مرحله پیشنهاد حذف شد؛ عبارت UTC، اعلان حریم خصوصی، Badge امن Preview و توضیحات زیر فیلدها/سکشن‌ها حذف شدند. DatePicker، اعتبارسنجی و مسیرهای Create/Edit/View فعال باقی مانده‌اند.
+- Web lint، typecheck، Production Build با ۳۴ Route و همه `602/602` تست Web موفق‌اند. Browser QA دسکتاپ و موبایل `390×844`، Back واقعی، RTL، دو سری نمودار و نبود متن‌های حذف‌شده را تأیید کرد. هیچ API، Persistence، Schema/Migration/Seed، Dependency/Lockfile، Shared Contract، UI مرکزی یا داده واقعی تغییر نکرد.
+
 ## DOCUMENTS-004-HANDOFF — انتقال اتمیک قفل‌ها به Sales — آماده بررسی
 
 - PR [#89](https://github.com/nirvanamahlou/Rubi/pull/89) با Merge Commit `1e5c55e3b2d9dcc58c407d0ca205abed86b4c605` وارد `develop` شده است؛ `DOCUMENTS-004-OPERATIONS` اکنون `DONE/MERGED` است.

@@ -61,7 +61,6 @@ import {
   TabsTrigger,
 } from '@/components/ui/overlays';
 import {
-  Alert,
   Badge,
   Card,
   EmptyState,
@@ -339,7 +338,7 @@ function PreviewTable({
       ) : null}
       {visibleRows.length ? (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[64rem] text-sm">
+          <table className="w-full min-w-[64rem] text-right text-sm" dir="rtl">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
                 {columns.map((column) => (
@@ -521,7 +520,7 @@ export function MarketingDashboardReference({
     },
   ];
   return (
-    <section className="grid gap-5">
+    <section className="grid gap-5 text-right" dir="rtl">
       <FilterBar className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_12rem_12rem_auto]">
         <FormField id="dashboard-reference-start" label="از تاریخ">
           <DatePicker
@@ -624,26 +623,83 @@ export function MarketingDashboardReference({
           },
         ]}
       />
-      <Alert
-        description="همه اعداد این صفحه دقیقاً داده آزمایشی مرجع هستند و به Analytics یا مالی متصل نیستند."
-        title="داشبورد نمایشی"
-      />
       <div className="grid gap-4 xl:grid-cols-3">
         <Panel className="xl:col-span-2" title="روند ایجاد سرنخ و فروش منتسب">
           <div className="p-5">
+            <div className="mb-4 flex flex-wrap items-center gap-5 text-xs font-bold">
+              <span className="flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="size-2.5 rounded-full bg-blue-500"
+                />
+                سرنخ جدید
+              </span>
+              <span className="flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="size-2.5 rounded-full bg-emerald-500"
+                />
+                فروش منتسب
+              </span>
+            </div>
             <svg
-              aria-label="روند آزمایشی ۳۰ روز اخیر"
+              aria-label="روند ۳۰ روز اخیر؛ سرنخ جدید و فروش منتسب"
               className="h-52 w-full"
+              role="img"
               viewBox="0 0 700 220"
             >
+              <defs>
+                <linearGradient
+                  id="marketing-leads-area"
+                  x1="0"
+                  x2="0"
+                  y1="0"
+                  y2="1"
+                >
+                  <stop offset="0" stopColor="#3b82f6" stopOpacity="0.22" />
+                  <stop offset="1" stopColor="#3b82f6" stopOpacity="0" />
+                </linearGradient>
+              </defs>
               <path
-                className="stroke-border"
+                className="fill-none stroke-border [stroke-width:1]"
                 d="M20 30H680M20 80H680M20 130H680M20 180H680"
               />
               <path
-                className="fill-none stroke-primary [stroke-width:4]"
+                d="M20 172 C90 158 110 120 170 135 S260 78 320 104 S410 55 470 82 S570 42 680 48 L680 180 L20 180 Z"
+                fill="url(#marketing-leads-area)"
+              />
+              <path
+                className="fill-none stroke-blue-500 [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:4]"
+                data-series="leads"
                 d="M20 172 C90 158 110 120 170 135 S260 78 320 104 S410 55 470 82 S570 42 680 48"
               />
+              <path
+                className="fill-none stroke-emerald-500 [stroke-dasharray:8_7] [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:4]"
+                data-series="attributed-sales"
+                d="M20 190 C90 184 110 166 170 174 S260 130 320 148 S410 104 470 116 S570 76 680 91"
+              />
+              {[
+                [20, 172, 'blue'],
+                [170, 135, 'blue'],
+                [320, 104, 'blue'],
+                [470, 82, 'blue'],
+                [680, 48, 'blue'],
+                [20, 190, 'emerald'],
+                [170, 174, 'emerald'],
+                [320, 148, 'emerald'],
+                [470, 116, 'emerald'],
+                [680, 91, 'emerald'],
+              ].map(([cx, cy, tone]) => (
+                <circle
+                  className={
+                    tone === 'blue' ? 'fill-blue-500' : 'fill-emerald-500'
+                  }
+                  cx={cx}
+                  cy={cy}
+                  key={`${tone}-${cx}`}
+                  r="4.5"
+                />
+              ))}
             </svg>
           </div>
         </Panel>
@@ -3137,7 +3193,7 @@ export function MarketingReferenceSection({
     onNotice(`${sectionActionLabels[section]} در محیط آزمایشی باز شد.`);
   };
   return (
-    <Tabs onValueChange={setTab} value={tab}>
+    <Tabs className="text-right" dir="rtl" onValueChange={setTab} value={tab}>
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <TabsList
           aria-label={`زیر‌بخش‌های ${section}`}
@@ -3209,7 +3265,7 @@ export function CampaignDetailReference({
   const noopOpen = () => undefined;
   const status = campaignStatusLabels[campaign.status];
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-5 text-right" dir="rtl">
       <Card className="flex flex-col gap-4 bg-gradient-to-l from-blue-50 to-surface p-5 dark:from-blue-950/40 lg:flex-row lg:items-center">
         <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
           <Megaphone aria-hidden="true" className="size-8" />
@@ -3241,7 +3297,7 @@ export function CampaignDetailReference({
           </Button>
         </div>
       </Card>
-      <Tabs onValueChange={setTab} value={tab}>
+      <Tabs dir="rtl" onValueChange={setTab} value={tab}>
         <TabsList
           aria-label="صفحات جزئیات کمپین"
           className="flex h-auto w-full flex-wrap justify-start gap-1 bg-blue-50 p-2 dark:bg-blue-950/40"

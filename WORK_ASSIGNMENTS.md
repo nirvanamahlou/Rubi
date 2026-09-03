@@ -1,5 +1,16 @@
 # Work Assignments
 
+## MARKETING-001D — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-03: حذف اعلان‌ها و برچسب‌های Preview از صفحات مارکتینگ، هم‌ترازی Hub با رنگ و حرکت اطلاعات پایه، اصلاح RTL و History مرورگر، تکمیل دو سری نمودار داشبورد و ساده‌سازی فرم ساخت کمپین. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-marketing-navigation-polish` از `origin/develop@1e5c55e`؛ فایل `marketing.html` فقط مرجع بصری/داده‌ای است و دستور اجرایی محسوب نمی‌شود.
+- محدوده رزروشده: `apps/web/src/modules/marketing/**`، تست‌های همان ماژول، `docs/tasks/MARKETING-001.md` و ورودی محدود همین Task در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`. هیچ فایل UI مرکزی، Navigation مرکزی، API، Persistence، Schema/Migration/Seed، Shared Contract، Dependency/Lockfile یا داده واقعی تغییر نمی‌کند.
+- این Slice فقط تجربه Preview موجود را اصلاح می‌کند؛ همه دکمه‌ها همچنان بازخورد محلی دارند و هیچ پیام، ذخیره‌سازی، Analytics یا اثر مالی واقعی ایجاد نمی‌شود.
+- نتیجه: اعلان‌ها، Badgeهای فنی و نوارهای توضیحی Preview حذف شدند؛ Hub با رنگ، Glow و حرکت کارت‌های اطلاعات پایه هم‌تراز شد؛ داشبورد دو سری واضح سرنخ/فروش دارد و دکمه ایجاد کمپین از آن حذف شد. سکشن‌ها و Dialog کمپین RTL هستند و انتخاب سکشن در History مرورگر ثبت می‌شود.
+- فرم ساخت کمپین از ۹ به ۸ مرحله رسید؛ مرحله پیشنهاد، متن‌های حریم خصوصی/Preview، توضیحات زیر فیلدها و عبارت UTC حذف شدند و زمان شروع/پایان با DatePicker مشترک حفظ شد.
+- اعتبارسنجی: `602/602` تست Web، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند. Browser QA روی Desktop و Mobile `390×844`، برگشت واقعی مرورگر، دو سری نمودار، نبود متن‌های حذف‌شده و فرم هشت‌مرحله‌ای را تأیید کرد.
+- قفل‌ها: `Marketing Web = PC-B/MARKETING-001D` تا تعیین تکلیف PR. Migration، Dependency/Lockfile، Shared Contract و Central UI برابر `RELEASED / UNASSIGNED` باقی می‌مانند. PR #89 اسناد در مبنای همین Branch ادغام شده و تغییر اسناد این Slice فقط به ورودی‌های Marketing محدود است.
+
 ## DOCUMENTS-004-HANDOFF — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-03: پس از Merge موفق PR #89، پایان رسمی `DOCUMENTS-004-OPERATIONS` و انتقال اتمیک قفل‌های بعدی به `PC-A/SALES-CONTRACTS-001` فقط در اسناد ثبت شود. `COMPUTER_ID=PC-B`.
