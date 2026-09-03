@@ -1,6 +1,6 @@
 # وضعیت پروژه
 
-## MARKETING-001C — تکمیل صفحات داخلی مارکتینگ — آماده بررسی
+## MARKETING-001C — تکمیل صفحات داخلی مارکتینگ — ادغام‌شده
 
 - `PC-B` روی `codex/pc-b-marketing-inner-pages-parity` صفحات عمومی داخل سکشن‌ها را با
   ۴۵ زیرصفحه تخصصی همان مرجع جایگزین کرد؛ داشبورد کامل، ۹ تب جزئیات کمپین و همه داده‌های
@@ -14,8 +14,8 @@
 - Typecheck محلی بدون کش و هر چهار Job تمیز CI شامل Full Typecheck، Full Production
   Build، Full Test و PostgreSQL 18/Migration/Seed موفق‌اند. خطای موقت `observedAt` فقط
   از کش افزایشی قدیمی محلی بود و فایل Master Data در این Task تغییر نکرد.
-- PR [#86](https://github.com/nirvanamahlou/Rubi/pull/86) با CI کاملاً سبز برای ادغام
-  کنترل‌شده با `develop` باز است.
+- PR [#86](https://github.com/nirvanamahlou/Rubi/pull/86) با Merge Commit `4ea7b27`
+  وارد `develop` شد؛ اجرای کامل CI پس از ادغام روی خود `develop` نیز سبز است.
 
 ## MASTER-004-FORM-ALIGNMENT — هم‌ترازی فرم‌های اطلاعات پایه — آماده بررسی
 
