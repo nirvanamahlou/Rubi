@@ -27,7 +27,9 @@ describe('shared date picker contract', () => {
     expect(pickerSource).toContain("'میلادی'");
     expect(pickerSource).toContain('شبکه انتخاب ماه');
     expect(pickerSource).toContain('شبکه انتخاب سال');
-    expect(pickerSource).toContain("type CalendarView = 'days' | 'months' | 'years'");
+    expect(pickerSource).toContain(
+      "type CalendarView = 'days' | 'months' | 'years'",
+    );
     expect(pickerSource).not.toContain('<select');
     expect(pickerSource).toContain(
       "system === 'gregorian' ? 'en-US' : 'fa-IR'",

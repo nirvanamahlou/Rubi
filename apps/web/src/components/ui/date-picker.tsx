@@ -65,8 +65,7 @@ export function DatePicker({
   const currentValue = value ?? internalValue;
   const [calendarSystem, setCalendarSystem] =
     React.useState<CalendarSystem>('persian');
-  const [calendarView, setCalendarView] =
-    React.useState<CalendarView>('days');
+  const [calendarView, setCalendarView] = React.useState<CalendarView>('days');
   const [yearGridStart, setYearGridStart] = React.useState(0);
   const [open, setOpen] = React.useState(false);
   const [anchor, setAnchor] = React.useState(

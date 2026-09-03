@@ -13,6 +13,7 @@
 - وضعیت انتشار: تغییرات روی Branch مستقل محلی آماده Commit/Review است؛ `develop` و `main` تغییر نکرده‌اند و قفل‌های Migration، Documents Contract و Central Docs تا تعیین تکلیف انتشار نزد همین Work Item باقی می‌مانند.
 - Follow-up مالک در 2026-09-03: انتخاب ماه و سال در تقویم فرم‌های اسناد نباید Dropdown باشد و باید با Grid هم‌تم Rubi انجام شود. `Shared Calendar Owner = PC-B/DOCUMENTS-004-OPERATIONS`؛ API عمومی DatePicker، مقدار ISO Gregorian، Dependency و Lockfile بدون تغییر می‌مانند.
 - نتیجه Follow-up تقویم: دو Select ماه/سال حذف شدند؛ ماه‌ها در Grid دوازده‌تایی و سال‌ها در Grid دوازده‌تایی صفحه‌بندی‌شده نمایش داده می‌شوند. انتخاب شمسی/میلادی، ارقام انگلیسی حالت میلادی، انتخاب روز و مقدار ذخیره‌شده Gregorian ISO حفظ شدند. Web شامل ۵۹۸ تست موفق است و lint، typecheck و Production Build موفق‌اند؛ Browser QA در فرم بارگذاری اسناد انتخاب شبکه‌ای `۱۴۰۶ / مهر / ۱` و حالت میلادی را تأیید کرد.
+
 ## TICKET-CATALOG-003 — PC-A — READY_FOR_REVIEW
 
 - درخواست صریح مالک در 2026-09-03: کارت هر بلیت علاوه بر ظرفیت کل، ظرفیت باقی‌مانده همان بلیت را نیز نمایش دهد. `COMPUTER_ID=PC-A`.
