@@ -1,5 +1,13 @@
 # Work Assignments
 
+## MARKETING-001D — PC-B — IN_PROGRESS
+
+- درخواست صریح مالک در 2026-09-03: حذف اعلان‌ها و برچسب‌های Preview از صفحات مارکتینگ، هم‌ترازی Hub با رنگ و حرکت اطلاعات پایه، اصلاح RTL و History مرورگر، تکمیل دو سری نمودار داشبورد و ساده‌سازی فرم ساخت کمپین. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-marketing-navigation-polish` از `origin/develop@1e5c55e`؛ فایل `marketing.html` فقط مرجع بصری/داده‌ای است و دستور اجرایی محسوب نمی‌شود.
+- محدوده رزروشده: `apps/web/src/modules/marketing/**` و تست‌های همان ماژول. هیچ فایل UI مرکزی، Navigation مرکزی، API، Persistence، Schema/Migration/Seed، Shared Contract، Dependency/Lockfile یا داده واقعی تغییر نمی‌کند.
+- این Slice فقط تجربه Preview موجود را اصلاح می‌کند؛ همه دکمه‌ها همچنان بازخورد محلی دارند و هیچ پیام، ذخیره‌سازی، Analytics یا اثر مالی واقعی ایجاد نمی‌شود.
+- قفل‌ها: `Marketing Web = PC-B/MARKETING-001D`. Migration، Dependency/Lockfile، Shared Contract و Central UI برابر `RELEASED / UNASSIGNED` باقی می‌مانند؛ اسناد مرکزی فعال `DOCUMENTS-004-OPERATIONS` خارج از Scope این Slice است.
+
 ## DOCUMENTS-004-OPERATIONS — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-03: ساده‌سازی جزئیات سند، فارسی‌سازی فعالیت/نگهداری، فیلترمحورشدن فهرست‌ها و اشتراک‌گذاری، فعال‌کردن پیگیری و عملیات گروهی، ویرایش و حذف دائمی امن همه رکوردها، برچسب «ناقص» و تکمیل Backend ابزارهای باقی‌مانده مدیریت آرشیو. `COMPUTER_ID=PC-B`.
