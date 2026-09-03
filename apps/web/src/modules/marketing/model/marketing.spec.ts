@@ -71,18 +71,18 @@ describe('marketing preview model', () => {
   it('filters, sorts and paginates campaigns deterministically', () => {
     const results = filterAndSortCampaigns(marketingPreviewCampaigns, {
       company: 'NIAYESH_SEIR_SAHAR',
-      channel: 'WEBSITE',
+      channel: 'SMS',
       sortBy: 'name',
       sortDirection: 'asc',
     });
     expect(results).toHaveLength(2);
-    expect(
-      results.every((campaign) => campaign.channels.includes('WEBSITE')),
-    ).toBe(true);
+    expect(results.every((campaign) => campaign.channels.includes('SMS'))).toBe(
+      true,
+    );
     expect(paginateCampaigns(results, 1, 2)).toHaveLength(2);
     expect(
       filterAndSortCampaigns(marketingPreviewCampaigns, {
-        search: 'AGENCY-03',
+        search: 'CMP-1405-040',
       }),
     ).toHaveLength(1);
     expect(
@@ -93,9 +93,20 @@ describe('marketing preview model', () => {
         sortDirection: 'asc',
       }).map((campaign) => campaign.id),
     ).toEqual([
-      'preview-campaign-heritage',
+      'preview-campaign-dubai',
+      'preview-campaign-spring',
       'preview-campaign-retention',
-      'preview-campaign-agency',
+      'preview-campaign-return',
+    ]);
+  });
+
+  it('uses the exact synthetic campaigns from the marketing reference', () => {
+    expect(marketingPreviewCampaigns.map((campaign) => campaign.name)).toEqual([
+      'جشنواره تابستان اروپا',
+      'پرواز استانبول شهریور',
+      'هتل‌های دبی پاییز',
+      'تورهای نوروز ۱۴۰۶',
+      'بازگشت مشتریان غیرفعال',
     ]);
   });
 

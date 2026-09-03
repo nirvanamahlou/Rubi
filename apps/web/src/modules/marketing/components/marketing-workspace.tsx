@@ -5,9 +5,9 @@ import {
   ArrowRight,
   BadgePercent,
   BarChart3,
-  BellRing,
   ChevronLeft,
   ChevronRight,
+  Download,
   Eye,
   FilePenLine,
   FileStack,
@@ -21,9 +21,6 @@ import {
   Route,
   Search,
   Settings2,
-  ShieldCheck,
-  Sparkles,
-  Target,
   UsersRound,
   type LucideIcon,
 } from 'lucide-react';
@@ -68,7 +65,6 @@ import {
   MARKETING_DISPATCH_STATUS,
   MARKETING_PREVIEW_NOTICE,
   MARKETING_UI_VERSION,
-  marketingKpiDefinitions,
   type MarketingPreviewState,
 } from '../api/contracts';
 import {
@@ -76,12 +72,7 @@ import {
   campaignStatusLabels,
   executionCompanyLabels,
   filterAndSortCampaigns,
-  marketingCoupons,
-  marketingOffers,
   marketingPreviewCampaigns,
-  marketingSegments,
-  marketingSuppressionSummary,
-  marketingTimeline,
   normalizeMarketingCampaignQuery,
   paginateCampaigns,
   type CampaignChannel,
@@ -93,13 +84,17 @@ import {
 import {
   marketingSectionTabs,
   marketingSections,
-  previewItemsFor,
   type MarketingPreviewItem,
   type MarketingSectionDefinition,
   type MarketingSectionKey,
 } from '../model/reference-data';
 import { CampaignCalendar } from './campaign-calendar';
 import { CampaignForm, type CampaignFormMode } from './campaign-form';
+import {
+  CampaignDetailReference,
+  MarketingDashboardReference,
+  MarketingReferenceSection,
+} from './marketing-reference-pages';
 
 const previewStates: readonly [MarketingPreviewState, string][] = [
   ['preview', 'پیش‌نمایش'],
@@ -155,7 +150,6 @@ function formatMoney(amount: string, currencyCode: string) {
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('fa-IR', {
     dateStyle: 'medium',
-    timeStyle: 'short',
     timeZone: 'Asia/Tehran',
   }).format(new Date(value));
 }
@@ -228,8 +222,8 @@ function StateGate({
     <ErrorState
       action={
         <Button onClick={onReset} variant="outline">
-          <RefreshCw aria-hidden="true" className="size-4" />
-          بازگشت به پیش‌نمایش
+          <RefreshCw aria-hidden="true" className="size-4" /> بازگشت به
+          پیش‌نمایش
         </Button>
       }
       description={states[state].description}
@@ -257,7 +251,10 @@ function MarketingHub({
         {marketingSections.map((section) => {
           const Icon = sectionIcons[section.key];
           return (
-            <Card className="flex h-full flex-col p-5" key={section.key}>
+            <Card
+              className="flex h-full flex-col overflow-hidden p-5 transition hover:-translate-y-0.5 hover:shadow-lg"
+              key={section.key}
+            >
               <div className="flex items-start justify-between gap-4">
                 <span
                   className={cn(
@@ -297,118 +294,6 @@ function MarketingHub({
   );
 }
 
-function DashboardPanel({ onNotice }: { onNotice: (message: string) => void }) {
-  const [startDate, setStartDate] = useState('2026-09-01');
-  const [endDate, setEndDate] = useState('2026-09-30');
-  const [company, setCompany] = useState<ExecutionCompany | 'ALL'>('ALL');
-  const summary: readonly [string, string, LucideIcon][] = [
-    [
-      'کمپین‌های نمونه',
-      marketingPreviewCampaigns.length.toLocaleString('fa-IR'),
-      Megaphone,
-    ],
-    [
-      'کمپین در حال اجرا',
-      marketingPreviewCampaigns
-        .filter((item) => item.status === 'RUNNING')
-        .length.toLocaleString('fa-IR'),
-      Gauge,
-    ],
-    [
-      'سگمنت تعریف‌شده',
-      marketingSegments.length.toLocaleString('fa-IR'),
-      UsersRound,
-    ],
-    ['هشدار عملیاتی', '۲', BellRing],
-  ];
-  return (
-    <section className="grid gap-5">
-      <FilterBar className="grid md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto]">
-        <FormField id="dashboard-start" label="از تاریخ">
-          <DatePicker
-            id="dashboard-start"
-            onChange={setStartDate}
-            value={startDate}
-          />
-        </FormField>
-        <FormField id="dashboard-end" label="تا تاریخ">
-          <DatePicker
-            id="dashboard-end"
-            onChange={setEndDate}
-            value={endDate}
-          />
-        </FormField>
-        <FormField id="dashboard-company" label="شرکت مجری">
-          <Select
-            value={company}
-            onValueChange={(value) => setCompany(value as typeof company)}
-          >
-            <SelectTrigger id="dashboard-company">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">هر دو شرکت</SelectItem>
-              {companyOptions.map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormField>
-        <Button
-          onClick={() =>
-            onNotice(`فیلتر داشبورد برای ${startDate} تا ${endDate} اعمال شد.`)
-          }
-        >
-          <MousePointerClick aria-hidden="true" className="size-4" />
-          اعمال فیلتر
-        </Button>
-      </FilterBar>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {summary.map(([label, value, Icon]) => (
-          <Card className="p-4" key={label}>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm text-muted-foreground">{label}</p>
-                <p className="mt-2 text-2xl font-black">{value}</p>
-              </div>
-              <span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary">
-                <Icon aria-hidden="true" className="size-5" />
-              </span>
-            </div>
-          </Card>
-        ))}
-      </div>
-      <Alert
-        description={`مقادیر تحلیلی با وضعیت ${MARKETING_ANALYTICS_STATUS} عمداً خالی‌اند؛ فقط شمارش داده‌های Preview نمایش داده می‌شود.`}
-        title="مرز داده عملیاتی و تحلیلی"
-      />
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {marketingKpiDefinitions.slice(0, 6).map((kpi) => (
-          <Card className="p-4" key={kpi.key}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-bold">{kpi.title}</p>
-                <p className="mt-3 text-2xl font-black text-muted-foreground">
-                  —
-                </p>
-              </div>
-              <BarChart3 aria-hidden="true" className="size-5 text-primary" />
-            </div>
-            <p className="mt-3 text-xs leading-6 text-muted-foreground">
-              {kpi.definition}
-            </p>
-            <Badge className="mt-3 font-mono text-[10px]" dir="ltr">
-              {kpi.status}
-            </Badge>
-          </Card>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function CampaignCard({
   campaign,
   onOpen,
@@ -439,16 +324,14 @@ function CampaignCard({
             size="sm"
             variant="outline"
           >
-            <Eye aria-hidden="true" className="size-4" />
-            مشاهده
+            <Eye aria-hidden="true" className="size-4" /> مشاهده
           </Button>
           <Button
             onClick={() => onOpen('edit', campaign)}
             size="sm"
             variant="secondary"
           >
-            <FilePenLine aria-hidden="true" className="size-4" />
-            ویرایش Preview
+            <FilePenLine aria-hidden="true" className="size-4" /> ویرایش Preview
           </Button>
         </div>
       </div>
@@ -513,7 +396,9 @@ function CampaignCard({
           </div>
           <div>
             <dt className="text-muted-foreground">درآمد منتسب</dt>
-            <dd className="mt-1">— ({MARKETING_ATTRIBUTION_STATUS})</dd>
+            <dd className="mt-1">
+              داده آزمایشی ({MARKETING_ATTRIBUTION_STATUS})
+            </dd>
           </div>
         </dl>
       </details>
@@ -554,8 +439,7 @@ function CampaignList({
           </p>
         </div>
         <Button onClick={() => onOpen('create')}>
-          <Plus aria-hidden="true" className="size-4" />
-          کمپین جدید
+          <Plus aria-hidden="true" className="size-4" /> کمپین جدید
         </Button>
       </div>
       <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
@@ -578,9 +462,7 @@ function CampaignList({
           <Select
             value={query.status}
             onValueChange={(value) =>
-              patchQuery({
-                status: value as MarketingCampaignQuery['status'],
-              })
+              patchQuery({ status: value as MarketingCampaignQuery['status'] })
             }
           >
             <SelectTrigger id="marketing-status">
@@ -680,8 +562,7 @@ function CampaignList({
             onClick={() => setQuery(normalizeMarketingCampaignQuery({}))}
             variant="outline"
           >
-            <FilterX aria-hidden="true" className="size-4" />
-            پاک‌کردن
+            <FilterX aria-hidden="true" className="size-4" /> پاک‌کردن
           </Button>
         </div>
       </FilterBar>
@@ -712,7 +593,7 @@ function CampaignList({
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3">
         <PaginationShell
           currentPage={currentPage}
-          totalLabel={`${filtered.length.toLocaleString('fa-IR')} کمپین ساختگی`}
+          totalLabel={`${filtered.length.toLocaleString('fa-IR')} کمپین آزمایشی`}
         />
         <div className="flex gap-2">
           <Button
@@ -739,68 +620,191 @@ function CampaignList({
   );
 }
 
-function BudgetPanel() {
+function BudgetPanel({ onNotice }: { onNotice: (message: string) => void }) {
+  const rows = [
+    ['جشنواره تابستان اروپا', 66, '۲.۱ از ۳.۲ میلیارد'],
+    ['پرواز استانبول', 70, '۱.۴ از ۲ میلیارد'],
+    ['هتل‌های دبی', 65, '۹۸۰ از ۱٬۵۰۰ میلیون'],
+    ['معرفی تور نوروز', 18, '۹۰۰ از ۵ میلیارد'],
+  ] as const;
   return (
-    <section className="grid gap-3">
-      {marketingPreviewCampaigns.map((campaign) => (
-        <Card
-          className="grid gap-3 p-4 sm:grid-cols-4 sm:items-center"
-          key={campaign.id}
-        >
-          <div>
-            <p className="font-bold">{campaign.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {executionCompanyLabels[campaign.executionCompany]}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">بودجه</p>
-            <p className="font-semibold" dir="ltr">
-              {formatMoney(campaign.budgetAmount, campaign.currencyCode)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">هزینه Preview</p>
-            <p className="font-semibold" dir="ltr">
-              {formatMoney(campaign.spendAmount, campaign.currencyCode)}
-            </p>
-          </div>
-          <Badge className="justify-self-start sm:justify-self-end">
-            Finance Reference لازم است
-          </Badge>
-        </Card>
-      ))}
-    </section>
+    <div className="grid gap-4 xl:grid-cols-3">
+      <Card className="p-5 xl:col-span-2">
+        <h3 className="font-black">مصرف بودجه کمپین‌ها</h3>
+        <div className="mt-5 grid gap-4">
+          {rows.map(([label, percent, value]) => (
+            <button
+              className="grid gap-2 text-start sm:grid-cols-[12rem_1fr_10rem] sm:items-center"
+              key={label}
+              onClick={() => onNotice(`جزئیات بودجه ${label} باز شد.`)}
+              type="button"
+            >
+              <strong>{label}</strong>
+              <span className="h-2.5 overflow-hidden rounded-full bg-muted">
+                <span
+                  className="block h-full rounded-full bg-primary"
+                  style={{ width: `${percent}%` }}
+                />
+              </span>
+              <small className="text-muted-foreground">{value}</small>
+            </button>
+          ))}
+        </div>
+      </Card>
+      <Card className="p-5">
+        <h3 className="font-black">کنترل هزینه</h3>
+        <dl className="mt-4 grid gap-3">
+          {[
+            ['بودجه مصوب', '۱۱.۷ میلیارد'],
+            ['هزینه قطعی', '۵.۳۸ میلیارد'],
+            ['تعهد باز', '۱.۲ میلیارد'],
+          ].map(([label, value]) => (
+            <div
+              className="flex justify-between border-b border-dashed border-border py-3 last:border-0"
+              key={label}
+            >
+              <dt className="text-muted-foreground">{label}</dt>
+              <dd className="font-black">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </Card>
+      <Card className="overflow-x-auto xl:col-span-3">
+        <table className="w-full min-w-[54rem] text-sm">
+          <thead className="bg-muted/50 text-muted-foreground">
+            <tr>
+              {[
+                'کمپین',
+                'نوع هزینه',
+                'تأمین‌کننده',
+                'مبلغ',
+                'تاریخ',
+                'سند مالی',
+                'وضعیت',
+              ].map((header) => (
+                <th className="p-4 text-start" key={header}>
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              [
+                'جشنواره تابستان اروپا',
+                'پیامک',
+                'کاوه‌نگار',
+                '۴۲۰ میلیون',
+                '۱۴۰۵/۰۶/۱۰',
+                'FIN-8821',
+                'قطعی',
+              ],
+              [
+                'جشنواره تابستان اروپا',
+                'تبلیغ کلیکی',
+                'گوگل ادز',
+                '۸۸۰ میلیون',
+                '۱۴۰۵/۰۶/۱۲',
+                'FIN-8848',
+                'قطعی',
+              ],
+              [
+                'پرواز استانبول',
+                'بنر سایت',
+                'تیم محتوا',
+                '۱۲۰ میلیون',
+                '۱۴۰۵/۰۶/۱۵',
+                '—',
+                'برآوردی',
+              ],
+            ].map((row) => (
+              <tr className="border-t border-border" key={row.join('-')}>
+                {row.map((cell) => (
+                  <td className="p-4" key={cell}>
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+    </div>
   );
 }
 
-function ApprovalPanel() {
+function ApprovalPanel({
+  onOpen,
+  onNotice,
+}: {
+  onOpen: (mode: CampaignFormMode, campaign?: CampaignPreview) => void;
+  onNotice: (message: string) => void;
+}) {
+  const requests = [
+    ['تورهای نوروز ۱۴۰۶', '۵ میلیارد', 'حسین موسوی', '۲ ساعت پیش'],
+    ['بازگشت مشتریان غیرفعال', '۸۰۰ میلیون', 'مریم احمدی', '۵ ساعت پیش'],
+    ['پیشنهاد ویژه کیش', '۱.۲ میلیارد', 'علی رضایی', 'دیروز'],
+  ] as const;
   return (
-    <section className="grid gap-4">
-      <Alert
-        description="رویدادها با نقش ناشناس و نسخه مورد انتظار نگهداری می‌شوند."
-        title="گردش تأیید نسخه‌دار"
-      />
-      <ol className="grid gap-3">
-        {marketingTimeline.map((event) => (
-          <li key={event.id}>
-            <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
-              <div>
-                <p className="font-bold">{event.action}</p>
-                <p className="text-sm text-muted-foreground">
-                  نقش عامل: {event.actorRole}
-                </p>
-              </div>
-              <div className="text-end">
-                <Badge>نسخه {event.version.toLocaleString('fa-IR')}</Badge>
-                <time className="mt-2 block text-xs text-muted-foreground">
-                  {formatDate(event.occurredAt)}
-                </time>
-              </div>
-            </Card>
-          </li>
-        ))}
-      </ol>
+    <section className="grid gap-4 md:grid-cols-2">
+      {requests.map(([name, budget, owner, time], index) => (
+        <Card className="p-5" key={name}>
+          <div className="flex justify-between gap-3">
+            <div>
+              <h3 className="font-black">{name}</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                درخواست فعال‌سازی کمپین
+              </p>
+            </div>
+            <Badge className="bg-amber-100 text-amber-800">
+              در انتظار تأیید
+            </Badge>
+          </div>
+          <dl className="mt-4 grid grid-cols-3 gap-2 text-sm">
+            <div className="rounded-lg bg-muted/40 p-3">
+              <dt className="text-xs text-muted-foreground">بودجه</dt>
+              <dd className="mt-1 font-bold">{budget}</dd>
+            </div>
+            <div className="rounded-lg bg-muted/40 p-3">
+              <dt className="text-xs text-muted-foreground">درخواست‌کننده</dt>
+              <dd className="mt-1 font-bold">{owner}</dd>
+            </div>
+            <div className="rounded-lg bg-muted/40 p-3">
+              <dt className="text-xs text-muted-foreground">زمان</dt>
+              <dd className="mt-1 font-bold">{time}</dd>
+            </div>
+          </dl>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              onClick={() => onNotice(`${name} در Preview تأیید شد.`)}
+              size="sm"
+            >
+              تأیید
+            </Button>
+            <Button
+              onClick={() => onNotice(`${name} برای اصلاح بازگردانده شد.`)}
+              size="sm"
+              variant="destructive"
+            >
+              بازگشت برای اصلاح
+            </Button>
+            <Button
+              onClick={() =>
+                onOpen(
+                  'view',
+                  marketingPreviewCampaigns[
+                    index % marketingPreviewCampaigns.length
+                  ],
+                )
+              }
+              size="sm"
+              variant="outline"
+            >
+              مشاهده جزئیات
+            </Button>
+          </div>
+        </Card>
+      ))}
     </section>
   );
 }
@@ -808,38 +812,89 @@ function ApprovalPanel() {
 function AbPanel({ onNotice }: { onNotice: (message: string) => void }) {
   const experiments = [
     [
-      'preview-ab-subject',
-      'نسخه عنوان پیام',
-      'عنوان کوتاه در برابر عنوان توضیحی',
-      'در حال طراحی',
+      'عنوان پیام اروپا',
+      'جشنواره تابستان اروپا',
+      'عنوان پیامک',
+      'سفر اروپا با نرخ ویژه',
+      'تابستانت را در اروپا بساز',
+      '۲۰٬۰۰۰',
+      'B · بهبود ۱۴٪',
+      'فعال',
     ],
     [
-      'preview-ab-landing',
-      'نسخه صفحه فرود',
-      'چیدمان کارت‌ها در برابر چیدمان فهرستی',
-      'آماده بررسی',
+      'بنر پرواز استانبول',
+      'پرواز استانبول شهریور',
+      'تصویر',
+      'بنر شهر',
+      'بنر قیمت',
+      '۳۴٬۸۰۰',
+      'A · بهبود ۸٪',
+      'پایان‌یافته',
+    ],
+    [
+      'CTA هتل دبی',
+      'هتل‌های دبی پاییز',
+      'متن دکمه',
+      'مشاهده هتل‌ها',
+      'رزرو با تخفیف',
+      '۱۲٬۴۰۰',
+      'هنوز معنادار نیست',
+      'درحال جمع‌آوری',
     ],
   ] as const;
   return (
-    <section className="grid gap-4 md:grid-cols-2">
-      {experiments.map(([id, title, description, status]) => (
-        <Card className="p-5" key={id}>
-          <div className="flex items-center justify-between">
-            <Sparkles aria-hidden="true" className="size-5 text-primary" />
-            <Badge>{status}</Badge>
-          </div>
-          <h3 className="mt-4 font-black">{title}</h3>
-          <p className="mt-2 text-sm text-muted-foreground">{description}</p>
-          <Button
-            className="mt-4"
-            onClick={() => onNotice(`جزئیات ${title} بازبینی شد.`)}
-            variant="outline"
-          >
-            مشاهده نسخه‌ها
-          </Button>
-        </Card>
-      ))}
-    </section>
+    <Card className="overflow-hidden">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
+        <h3 className="font-black">تست‌های A/B</h3>
+        <Button onClick={() => onNotice('فرم تست A/B جدید باز شد.')}>
+          <Plus aria-hidden="true" className="size-4" /> تست جدید
+        </Button>
+      </header>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[72rem] text-sm">
+          <thead className="bg-muted/50 text-muted-foreground">
+            <tr>
+              {[
+                'نام تست',
+                'کمپین',
+                'متغیر',
+                'نسخه A',
+                'نسخه B',
+                'نمونه',
+                'نتیجه فعلی',
+                'وضعیت',
+                'عملیات',
+              ].map((header) => (
+                <th className="p-4 text-start" key={header}>
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {experiments.map((row) => (
+              <tr className="border-t border-border" key={row[0]}>
+                {row.map((cell) => (
+                  <td className="p-4" key={cell}>
+                    {cell}
+                  </td>
+                ))}
+                <td className="p-4">
+                  <Button
+                    aria-label={`مشاهده ${row[0]}`}
+                    onClick={() => onNotice(`نسخه‌های ${row[0]} باز شد.`)}
+                    size="icon"
+                    variant="outline"
+                  >
+                    <Eye aria-hidden="true" className="size-4" />
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }
 
@@ -855,7 +910,7 @@ function CampaignsPanel({
     <Tabs onValueChange={setTab} value={tab}>
       <TabsList
         aria-label="بخش‌های کمپین"
-        className="grid w-full grid-cols-2 gap-1 bg-blue-50 p-2 md:grid-cols-3 xl:grid-cols-5"
+        className="flex h-auto w-full flex-wrap justify-start gap-1 bg-blue-50 p-2 dark:bg-blue-950/40"
       >
         {marketingSectionTabs.campaigns.map(([key, label]) => (
           <TabsTrigger key={key} value={key}>
@@ -873,10 +928,10 @@ function CampaignsPanel({
         />
       </TabsContent>
       <TabsContent className="mt-5" value="budget">
-        <BudgetPanel />
+        <BudgetPanel onNotice={onNotice} />
       </TabsContent>
       <TabsContent className="mt-5" value="approval">
-        <ApprovalPanel />
+        <ApprovalPanel onNotice={onNotice} onOpen={onOpen} />
       </TabsContent>
       <TabsContent className="mt-5" value="ab">
         <AbPanel onNotice={onNotice} />
@@ -885,195 +940,16 @@ function CampaignsPanel({
   );
 }
 
-function SegmentGrid() {
-  return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      {marketingSegments.map((segment) => (
-        <Card className="p-5" key={segment.id}>
-          <div className="flex items-center justify-between">
-            <UsersRound aria-hidden="true" className="size-5 text-primary" />
-            <Badge>بدون PII</Badge>
-          </div>
-          <h3 className="mt-4 font-black">{segment.title}</h3>
-          <p className="mt-2 text-sm leading-7 text-muted-foreground">
-            {segment.rules}
-          </p>
-          <p className="mt-4 text-sm font-semibold">
-            اندازه: {segment.estimatedCount}
-          </p>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-function OfferGrid() {
-  return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {marketingOffers.map((offer) => (
-        <Card className="p-5" key={offer.id}>
-          <Badge>{offer.status}</Badge>
-          <h3 className="mt-3 font-black">{offer.title}</h3>
-          <p className="mt-2 text-sm text-muted-foreground">{offer.rule}</p>
-        </Card>
-      ))}
-      {marketingCoupons.map((coupon) => (
-        <Card className="p-5" key={coupon.id}>
-          <Badge>{coupon.status}</Badge>
-          <h3 className="mt-3 font-black" dir="ltr">
-            {coupon.code}
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground">{coupon.limit}</p>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-function GenericItemGrid({
-  items,
-  onOpen,
-  onNotice,
-}: {
-  items: readonly MarketingPreviewItem[];
-  onOpen: (item: MarketingPreviewItem) => void;
-  onNotice: (message: string) => void;
-}) {
-  return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {items.map((item) => (
-        <Card className="p-5" key={item.id}>
-          <div className="flex items-center justify-between gap-3">
-            <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
-              <Target aria-hidden="true" className="size-5" />
-            </span>
-            <Badge>{item.status}</Badge>
-          </div>
-          <h3 className="mt-4 font-black">{item.title}</h3>
-          <p className="mt-2 min-h-12 text-sm leading-7 text-muted-foreground">
-            {item.description}
-          </p>
-          <p className="mt-3 text-xs text-muted-foreground">
-            {item.meta} · {formatDate(item.updatedAt)}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button onClick={() => onOpen(item)} size="sm" variant="outline">
-              <Eye aria-hidden="true" className="size-4" />
-              جزئیات
-            </Button>
-            <Button
-              onClick={() =>
-                onNotice(`${item.title} در محیط Preview بررسی شد.`)
-              }
-              size="sm"
-              variant="secondary"
-            >
-              بررسی Preview
-            </Button>
-          </div>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
 type GenericSectionKey = Exclude<
   MarketingSectionKey,
   'dashboard' | 'campaigns'
 >;
 
-function GenericSection({
-  section,
-  onOpen,
-  onNotice,
-}: {
-  section: GenericSectionKey;
-  onOpen: (item: MarketingPreviewItem) => void;
-  onNotice: (message: string) => void;
-}) {
-  const tabs = marketingSectionTabs[section];
-  const [tab, setTab] = useState(tabs.at(0)?.[0] ?? '');
-  const items = previewItemsFor(section, tab);
-  const special =
-    section === 'audiences' && tab === 'segments' ? (
-      <SegmentGrid />
-    ) : section === 'offers' && tab === 'discounts' ? (
-      <OfferGrid />
-    ) : null;
-  const actionLabels: Record<GenericSectionKey, string> = {
-    audiences: 'ساخت سگمنت',
-    communications: 'ساخت نیت ارسال',
-    content: 'افزودن محتوای Preview',
-    offers: 'پیشنهاد جدید',
-    journeys: 'ساخت سفر مشتری',
-    reports: 'درخواست خروجی',
-    settings: 'ثبت تنظیم Preview',
-  };
-  return (
-    <Tabs onValueChange={setTab} value={tab}>
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <TabsList
-          aria-label={`زیر‌بخش‌های ${section}`}
-          className="flex w-full flex-wrap gap-1 bg-blue-50 p-2 xl:w-auto"
-        >
-          {tabs.map(([key, label]) => (
-            <TabsTrigger key={key} value={key}>
-              {label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        <Button
-          onClick={() =>
-            onNotice(`${actionLabels[section]} به‌صورت محلی آماده شد.`)
-          }
-        >
-          <Plus aria-hidden="true" className="size-4" />
-          {actionLabels[section]}
-        </Button>
-      </div>
-      {tabs.map(([key, , description]) => (
-        <TabsContent className="mt-5" key={key} value={key}>
-          <Alert
-            className="mb-4"
-            description={description}
-            title="داده‌های ساختگی و غیرعملیاتی"
-          />
-          {special && key === tab ? (
-            special
-          ) : (
-            <GenericItemGrid
-              items={key === tab ? items : []}
-              onNotice={onNotice}
-              onOpen={onOpen}
-            />
-          )}
-          {section === 'audiences' && key === 'subscriptions' ? (
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              {marketingSuppressionSummary.map((item) => (
-                <Card className="p-4" key={item.id}>
-                  <ShieldCheck
-                    aria-hidden="true"
-                    className="size-5 text-primary"
-                  />
-                  <h3 className="mt-3 font-bold">{item.title}</h3>
-                  <Badge className="mt-3 font-mono text-[9px]" dir="ltr">
-                    {item.status}
-                  </Badge>
-                </Card>
-              ))}
-            </div>
-          ) : null}
-        </TabsContent>
-      ))}
-    </Tabs>
-  );
-}
-
 export function MarketingWorkspace() {
   const [state, setState] = useState<MarketingPreviewState>('preview');
   const [section, setSection] = useState<MarketingSectionKey | null>(null);
   const [notice, setNotice] = useState(
-    'داده‌های نمونه مارکتینگ آماده نمایش است.',
+    'داده‌های آزمایشی مرجع مارکتینگ آماده نمایش است.',
   );
   const [detailItem, setDetailItem] = useState<MarketingPreviewItem | null>(
     null,
@@ -1094,32 +970,63 @@ export function MarketingWorkspace() {
     section && !['dashboard', 'campaigns'].includes(section)
       ? (section as GenericSectionKey)
       : null;
+  const secondaryHeaderAction =
+    section === 'dashboard'
+      ? 'خروجی داشبورد'
+      : section === 'campaigns'
+        ? 'خروجی اکسل'
+        : section === 'audiences'
+          ? 'ورود گروهی Excel'
+          : section === 'communications'
+            ? 'گزارش ارسال'
+            : section === 'content'
+              ? 'خروجی فایل‌ها'
+              : section === 'offers'
+                ? 'گزارش استفاده'
+                : section === 'journeys'
+                  ? 'گزارش اجرا'
+                  : section === 'settings'
+                    ? 'خروجی تنظیمات'
+                    : null;
   return (
     <main className="grid gap-6" dir="rtl">
       <PageHeader
         actions={
           <>
-            <Select
-              value={state}
-              onValueChange={(value) =>
-                setState(value as MarketingPreviewState)
-              }
-            >
-              <SelectTrigger aria-label="انتخاب حالت نمایش" className="w-52">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {previewStates.map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={() => openCampaign('create')}>
-              <Plus aria-hidden="true" className="size-4" />
-              کمپین جدید
-            </Button>
+            {section === null ? (
+              <Select
+                value={state}
+                onValueChange={(value) =>
+                  setState(value as MarketingPreviewState)
+                }
+              >
+                <SelectTrigger aria-label="انتخاب حالت نمایش" className="w-52">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {previewStates.map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : secondaryHeaderAction ? (
+              <Button
+                onClick={() => setNotice(`${secondaryHeaderAction} آماده شد.`)}
+                variant="outline"
+              >
+                <Download aria-hidden="true" className="size-4" />{' '}
+                {secondaryHeaderAction}
+              </Button>
+            ) : null}
+            {section === null ||
+            section === 'dashboard' ||
+            section === 'campaigns' ? (
+              <Button onClick={() => openCampaign('create')}>
+                <Plus aria-hidden="true" className="size-4" /> ایجاد کمپین
+              </Button>
+            ) : null}
           </>
         }
         description={
@@ -1147,7 +1054,7 @@ export function MarketingWorkspace() {
       </Alert>
       <div
         aria-live="polite"
-        className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950"
+        className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-100"
         role="status"
       >
         <MousePointerClick aria-hidden="true" className="size-4 shrink-0" />
@@ -1174,16 +1081,19 @@ export function MarketingWorkspace() {
               }}
               variant="ghost"
             >
-              <ArrowRight aria-hidden="true" className="size-4" />
-              بازگشت به بخش‌های مارکتینگ
+              <ArrowRight aria-hidden="true" className="size-4" /> بازگشت به
+              بخش‌های مارکتینگ
             </Button>
           </div>
           {section === 'dashboard' ? (
-            <DashboardPanel onNotice={setNotice} />
+            <MarketingDashboardReference
+              onNotice={setNotice}
+              onOpen={setDetailItem}
+            />
           ) : section === 'campaigns' ? (
             <CampaignsPanel onNotice={setNotice} onOpen={openCampaign} />
           ) : genericSection ? (
-            <GenericSection
+            <MarketingReferenceSection
               key={genericSection}
               onNotice={setNotice}
               onOpen={setDetailItem}
@@ -1192,15 +1102,15 @@ export function MarketingWorkspace() {
           ) : null}
         </section>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-100">
         <div className="flex items-center gap-2">
           <AlertTriangle aria-hidden="true" className="size-5" />
           <span>
-            Persistence، Analytics و اتصال ارسال در این نسخه فعال نیست؛ همه
-            شناسه‌ها با preview- شروع می‌شوند.
+            Persistence و اتصال ارسال در این نسخه فعال نیست؛ داده‌های نمایشی
+            دقیقاً از مرجع و با شناسه preview- هستند.
           </span>
         </div>
-        <span>MARKETING-001B</span>
+        <span>MARKETING-001C</span>
       </div>
       <Dialog
         open={campaignDialog.open}
@@ -1208,24 +1118,31 @@ export function MarketingWorkspace() {
           setCampaignDialog((current) => ({ ...current, open }))
         }
       >
-        <DialogContent className="max-h-[92vh] max-w-6xl overflow-y-auto">
+        <DialogContent className="max-h-[92vh] max-w-7xl overflow-y-auto">
           <DialogTitle>
             {campaignDialog.mode === 'create'
               ? 'ساخت کمپین جدید'
               : campaignDialog.mode === 'edit'
                 ? 'ویرایش پیش‌نمایش کمپین'
-                : 'مشاهده کمپین'}
+                : 'جزئیات کمپین'}
           </DialogTitle>
           <DialogDescription>
             {campaignDialog.mode === 'view'
-              ? 'اطلاعات فقط خواندنی و کاملاً ساختگی است.'
+              ? 'نمای ۳۶۰ درجه کمپین با داده‌های کاملاً آزمایشی مرجع.'
               : 'فرم چندمرحله‌ای فقط پیش‌نویس محلی می‌سازد و داده‌ای ذخیره نمی‌کند.'}
           </DialogDescription>
-          <CampaignForm
-            campaign={campaignDialog.campaign}
-            key={`${campaignDialog.mode}-${campaignDialog.campaign?.id ?? 'new'}`}
-            mode={campaignDialog.mode}
-          />
+          {campaignDialog.mode === 'view' && campaignDialog.campaign ? (
+            <CampaignDetailReference
+              campaign={campaignDialog.campaign}
+              onNotice={setNotice}
+            />
+          ) : (
+            <CampaignForm
+              campaign={campaignDialog.campaign}
+              key={`${campaignDialog.mode}-${campaignDialog.campaign?.id ?? 'new'}`}
+              mode={campaignDialog.mode}
+            />
+          )}
         </DialogContent>
       </Dialog>
       <Dialog
@@ -1244,7 +1161,7 @@ export function MarketingWorkspace() {
                 <dd className="font-bold">{detailItem.status}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">شناسه</dt>
+                <dt className="text-muted-foreground">شناسه آزمایشی</dt>
                 <dd className="break-all font-mono text-xs" dir="ltr">
                   {detailItem.id}
                 </dd>
