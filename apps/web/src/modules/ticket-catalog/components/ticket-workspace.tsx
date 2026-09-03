@@ -36,6 +36,7 @@ import {
   reviseProduct,
   transitionProduct,
   type CatalogStatus,
+  type Inventory,
   type Product,
   type ProductInput,
   type Reference,
@@ -74,6 +75,14 @@ const transportIcons = {
   train: TrainFront,
   bus: BusFront,
 };
+
+function availableInventory(product: Product): Inventory {
+  return {
+    total: product.definition.totalCapacity,
+    version: product.version,
+    allocations: [],
+  };
+}
 
 export function TicketWorkspace() {
   return (
@@ -603,6 +612,7 @@ function TicketCatalogWorkspace() {
                   <TicketCatalogCard
                     key={product.id}
                     product={product}
+                    inventory={availableInventory(product)}
                     referenceLabel={referenceLabel}
                     onView={() => setForm({ mode: 'view', product })}
                     onEdit={() => setForm({ mode: 'edit', product })}

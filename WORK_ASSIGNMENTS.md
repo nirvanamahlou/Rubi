@@ -1,5 +1,14 @@
 # Work Assignments
 
+## TICKET-CATALOG-003 — PC-A — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-03: کارت هر بلیت علاوه بر ظرفیت کل، ظرفیت باقی‌مانده همان بلیت را نیز نمایش دهد. `COMPUTER_ID=PC-A`.
+- Branch مستقل `codex/pc-a-ticket-card-remaining-capacity` از `origin/develop@fc68ce1`؛ محدوده فقط کارت/Workspace و تست‌های Ticket Catalog و اسناد همین Work Item است.
+- مقدار مانده از مدل موجودی Ticket Catalog محاسبه می‌شود؛ تا زمان اتصال تخصیص‌های Reservations، Snapshot بدون تخصیص مانده‌ای برابر ظرفیت کل دارد. هیچ داده رزرو ساختگی ساخته نمی‌شود.
+- بدون Schema/Migration/Seed، Dependency/Lockfile، Shared Contract، IAM یا تغییر ماژول Reservations.
+- نتیجه: کارت بلیت اکنون «ظرفیت کل» و «مانده» را کنار هم نشان می‌دهد؛ مانده با `inventoryTotals` و پس از کسر تخصیص‌های نگهداری‌شده و تأییدشده محاسبه می‌شود. Workspace فعلی تا اتصال قرارداد Reservations از Snapshot بدون تخصیص استفاده می‌کند، بنابراین برای داده‌های فعلی مانده برابر کل است.
+- اعتبارسنجی: هر ۹۵ تست Ticket Catalog Web، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند.
+
 ## MARKETING-001C — PC-B — DONE/MERGED
 
 - درخواست صریح مالک در 2026-09-03: صفحات داخلی تمام سکشن‌های Workspace مارکتینگ مطابق فایل مرجع `marketing.html` اصلاح شوند و همان داده‌های آزمایشی امن حفظ شوند. `COMPUTER_ID=PC-B`.
