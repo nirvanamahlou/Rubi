@@ -34,7 +34,7 @@ export function transportColumns(
         ['code', 'کد'],
         ['name', 'عنوان فارسی'],
         ['englishName', 'عنوان انگلیسی'],
-        ['cabinType', 'Cabin'],
+        ['bookingCode', 'کد رزرو'],
         ['displayOrder', 'ترتیب'],
         ['usage', 'استفاده در Ticket Catalog'],
       ];
@@ -46,8 +46,6 @@ export function transportColumns(
         ['allowance', 'مقدار'],
         ['unit', 'واحد'],
         ['pieceCount', 'تعداد قطعه'],
-        ['validFrom', 'اعتبار از'],
-        ['validTo', 'اعتبار تا'],
         ['version', 'Version'],
       ];
     case 'manifest-templates':
@@ -79,7 +77,9 @@ export function transportColumns(
       return [
         ['code', 'کد'],
         ['name', 'شرکت اتوبوس'],
-        ...operator,
+        ['countryName', 'کشور'],
+        ['logoFileReference', 'لوگو Reference'],
+        ['integrationConnectionReference', 'Integration Connection'],
         ['vehicleTypeCount', 'انواع اتوبوس'],
         ['versionAudit', 'Version / Audit'],
       ];
@@ -96,8 +96,7 @@ export function transportColumns(
     case 'bus-types':
       return [
         ['code', 'کد'],
-        ['manufacturer', 'سازنده'],
-        ['model', 'مدل'],
+        ['manufacturerModel', 'سازنده / مدل'],
         ['name', 'عنوان فارسی'],
         ['englishName', 'عنوان انگلیسی'],
         ['serviceClass', 'نوع بدنه / کلاس'],

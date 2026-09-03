@@ -879,7 +879,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'قاعده بار',
     group: 'حمل‌ونقل',
     description:
-      'نسخه مستقل قواعد بار براساس ایرلاین، کلاس، مسافر، مسیر و بازه اعتبار.',
+      'قاعده بار براساس ایرلاین، کلاس، نوع مسافر، مسیر، مقدار و تعداد قطعه.',
     fields: [
       nameField,
       {
@@ -1163,7 +1163,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'شرکت اتوبوس',
     group: 'حمل‌ونقل',
     description:
-      'شرکت اتوبوس مرجع متصل به یک Organization یا Provider؛ فروش و تسویه در ماژول‌های مالک باقی می‌ماند.',
+      'شرکت اتوبوس مرجع با کشور و لوگو؛ فروش و تسویه در ماژول‌های مالک باقی می‌ماند.',
     fields: [
       nameField,
       {
@@ -1171,12 +1171,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'نام انگلیسی',
         type: 'text',
         placeholder: 'Bus Company',
-      },
-      {
-        key: 'organizationId',
-        label: 'سازمان اتوبوس',
-        type: 'text',
-        placeholder: '',
       },
       {
         key: 'countryId',
@@ -1194,7 +1188,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     ],
     preview: {
       name: 'شرکت اتوبوس',
-      organizationId: 'UUID',
       countryId: 'UUID',
     },
   },
@@ -1758,8 +1751,8 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         key: 'code',
         label: 'کد خدمت',
         type: 'text',
-        placeholder: 'HOTEL',
-        required: true,
+        placeholder: 'خودکار',
+        hint: 'هنگام ذخیره به‌صورت خودکار تولید می‌شود.',
       },
       nameField,
       {
@@ -1769,7 +1762,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: 'Hotel',
       },
     ],
-    preview: { code: 'HOTEL', name: 'هتل', englishName: 'Hotel' },
+    preview: { code: 'AUTO', name: 'هتل', englishName: 'Hotel' },
   },
   {
     key: 'organization-contacts',

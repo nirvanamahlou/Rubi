@@ -29,6 +29,10 @@ export const unlistedMasterDataResources = [
   'lead-sources',
   'customer-types',
   'campaign-types',
+  'meal-services',
+  'facilities',
+  'lost-reasons',
+  'tags',
 ] as const satisfies readonly MasterDataResourceKey[];
 
 export const masterDataSections: readonly MasterDataSectionDefinition[] = [
@@ -71,14 +75,7 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
     slug: 'accommodation',
     title: 'اقامت',
     description: 'هتل‌ها و اطلاعات مرجع خدمات اقامتی',
-    resources: [
-      'hotels',
-      'hotel-chains',
-      'room-types',
-      'meal-services',
-      'facilities',
-      'composite-hotels',
-    ],
+    resources: ['hotels', 'hotel-chains', 'room-types', 'composite-hotels'],
     tone: 'orange',
   },
   {
@@ -116,13 +113,8 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
   {
     slug: 'sales-references',
     title: 'مراجع فروش',
-    description: 'نحوه آشنایی، کانال فروش، دلیل از دست رفتن و Tag',
-    resources: [
-      'acquaintance-methods',
-      'sales-channels',
-      'lost-reasons',
-      'tags',
-    ],
+    description: 'نحوه آشنایی و کانال فروش',
+    resources: ['acquaintance-methods', 'sales-channels'],
     tone: 'purple',
   },
 ];
