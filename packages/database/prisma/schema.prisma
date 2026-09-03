@@ -2415,3 +2415,343 @@ model DocumentProcessingJob {
   @@index([status, availableAt])
   @@map("document_processing_jobs")
 }
+
+enum SalesTripType {
+  ONE_WAY
+  ROUND_TRIP
+}
+
+enum SalesContractStatus {
+  DRAFT
+  PENDING_CONFIRMATION
+  CONFIRMED
+  SENT_TO_RESERVATIONS
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum SalesReservationStatus {
+  NOT_SENT
+  QUEUED
+  ACCEPTED
+  NEEDS_REVIEW
+  PARTIALLY_FULFILLED
+  FULFILLED
+  REJECTED
+}
+
+enum SalesSettlementStatus {
+  UNPAID
+  PARTIALLY_SETTLED
+  SETTLED
+  OVERPAID
+}
+
+enum SalesServiceKind {
+  FLIGHT
+  HOTEL
+  VISA
+  INSURANCE
+  TRANSFER
+  TOUR
+  BUS
+  TRAIN
+  CIP
+  OTHER
+}
+
+enum SalesServiceStatus {
+  SELECTED
+  AWAITING_PUBLIC_API
+  NEEDS_RESERVATION_CONFIRMATION
+}
+
+enum SalesPassengerAgeCategory {
+  ADT
+  CHD
+  INF
+}
+
+enum SalesTicketDirection {
+  OUTBOUND
+  RETURN
+}
+
+enum SalesPriceComponentType {
+  BASE
+  DISCOUNT
+  TAX
+  SURCHARGE
+}
+
+enum SalesPaymentMethod {
+  CASH
+  POS
+  BANK_TRANSFER
+  ONLINE_GATEWAY
+  REMITTANCE
+  CUSTOMER_CREDIT
+  CHECK
+  OTHER
+}
+
+enum SalesPaymentStatus {
+  SCHEDULED
+  PENDING_FINANCE_CONFIRMATION
+  FINANCE_CONFIRMED
+  FINANCE_REJECTED
+}
+
+enum SalesReservationRequestStatus {
+  QUEUED
+  ACCEPTED
+  FAILED
+}
+
+model SalesContract {
+  id                        String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contractNumber            String                         @unique @map("contract_number") @db.VarChar(40)
+  branchId                  String                         @map("branch_id") @db.Uuid
+  ownerUserId               String                         @map("owner_user_id") @db.Uuid
+  assignedUserId            String?                        @map("assigned_user_id") @db.Uuid
+  customerId                String                         @map("customer_id") @db.Uuid
+  payerCustomerId           String                         @map("payer_customer_id") @db.Uuid
+  customerNameSnapshot      String                         @map("customer_name_snapshot") @db.VarChar(200)
+  tripType                  SalesTripType                  @map("trip_type")
+  originId                  String                         @map("origin_id") @db.Uuid
+  destinationId             String                         @map("destination_id") @db.Uuid
+  departureDate             DateTime                       @map("departure_date") @db.Date
+  returnNotBefore           DateTime?                      @map("return_not_before") @db.Date
+  status                    SalesContractStatus            @default(DRAFT)
+  settlementStatus          SalesSettlementStatus          @default(UNPAID) @map("settlement_status")
+  reservationStatus         SalesReservationStatus         @default(NOT_SENT) @map("reservation_status")
+  fxRate                    Decimal?                       @map("fx_rate") @db.Decimal(24, 10)
+  fxSource                  String?                        @map("fx_source") @db.VarChar(160)
+  fxObservedAt              DateTime?                      @map("fx_observed_at") @db.Timestamptz(3)
+  pricingNotes              String?                        @map("pricing_notes") @db.VarChar(1000)
+  createIdempotencyKey      String                         @map("create_idempotency_key") @db.VarChar(160)
+  createRequestFingerprint  String                         @map("create_request_fingerprint") @db.Char(64)
+  confirmIdempotencyKey     String?                        @map("confirm_idempotency_key") @db.VarChar(160)
+  confirmRequestFingerprint String?                        @map("confirm_request_fingerprint") @db.Char(64)
+  confirmedAt               DateTime?                      @map("confirmed_at") @db.Timestamptz(3)
+  cancelledAt               DateTime?                      @map("cancelled_at") @db.Timestamptz(3)
+  version                   Int                            @default(1)
+  createdAt                 DateTime                       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                 DateTime                       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  passengers                SalesContractPassenger[]
+  services                  SalesContractService[]
+  ticketSelections          SalesContractTicketSelection[]
+  hotelSelection            SalesContractHotelSelection?
+  priceComponents           SalesContractPriceComponent[]
+  payments                  SalesContractPaymentEntry[]
+  reservationRequests       SalesReservationRequest[]
+  statusHistory             SalesContractStatusHistory[]
+  auditEvents               SalesContractAuditEvent[]
+
+  @@unique([ownerUserId, createIdempotencyKey])
+  @@unique([ownerUserId, confirmIdempotencyKey])
+  @@index([ownerUserId, updatedAt])
+  @@index([assignedUserId, updatedAt])
+  @@index([branchId, status, updatedAt])
+  @@index([status, settlementStatus, reservationStatus])
+  @@index([customerId, updatedAt])
+  @@index([departureDate, originId, destinationId])
+  @@map("sales_contracts")
+}
+
+model SalesContractPassenger {
+  id                  String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contractId          String                            @map("contract_id") @db.Uuid
+  customerId          String                            @map("customer_id") @db.Uuid
+  displayNameSnapshot String                            @map("display_name_snapshot") @db.VarChar(200)
+  birthDate           DateTime                          @map("birth_date") @db.Date
+  ageCategory         SalesPassengerAgeCategory         @map("age_category")
+  createdAt           DateTime                          @default(now()) @map("created_at") @db.Timestamptz(3)
+  contract            SalesContract                     @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  allocations         SalesPassengerServiceAllocation[]
+
+  @@unique([contractId, customerId])
+  @@index([customerId])
+  @@map("sales_contract_passengers")
+}
+
+model SalesContractService {
+  id               String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contractId       String                            @map("contract_id") @db.Uuid
+  clientKey        String                            @map("client_key") @db.VarChar(80)
+  kind             SalesServiceKind
+  referenceId      String?                           @map("reference_id") @db.VarChar(160)
+  titleSnapshot    String                            @map("title_snapshot") @db.VarChar(240)
+  status           SalesServiceStatus                @default(SELECTED)
+  metadata         Json?
+  createdAt        DateTime                          @default(now()) @map("created_at") @db.Timestamptz(3)
+  contract         SalesContract                     @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  allocations      SalesPassengerServiceAllocation[]
+  ticketSelections SalesContractTicketSelection[]
+  hotelSelection   SalesContractHotelSelection?
+
+  @@unique([contractId, clientKey])
+  @@index([contractId, kind])
+  @@map("sales_contract_services")
+}
+
+model SalesPassengerServiceAllocation {
+  id          String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  passengerId String                 @map("passenger_id") @db.Uuid
+  serviceId   String                 @map("service_id") @db.Uuid
+  createdAt   DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  passenger   SalesContractPassenger @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+  service     SalesContractService   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([passengerId, serviceId])
+  @@index([serviceId])
+  @@map("sales_passenger_service_allocations")
+}
+
+model SalesContractTicketSelection {
+  id                     String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contractId             String               @map("contract_id") @db.Uuid
+  serviceId              String               @map("service_id") @db.Uuid
+  direction              SalesTicketDirection
+  offerId                String               @map("offer_id") @db.VarChar(160)
+  originId               String               @map("origin_id") @db.Uuid
+  destinationId          String               @map("destination_id") @db.Uuid
+  departureAt            DateTime             @map("departure_at") @db.Timestamptz(3)
+  arrivalAt              DateTime             @map("arrival_at") @db.Timestamptz(3)
+  carrierNameSnapshot    String               @map("carrier_name_snapshot") @db.VarChar(200)
+  serviceNumberSnapshot  String               @map("service_number_snapshot") @db.VarChar(80)
+  cabinClassCode         String               @map("cabin_class_code") @db.VarChar(80)
+  quotedAmount           Decimal              @map("quoted_amount") @db.Decimal(20, 4)
+  quotedCurrencyCode     String               @map("quoted_currency_code") @db.VarChar(3)
+  availabilityObservedAt DateTime?            @map("availability_observed_at") @db.Timestamptz(3)
+  createdAt              DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  contract               SalesContract        @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  service                SalesContractService @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@unique([contractId, direction])
+  @@index([offerId])
+  @@index([originId, destinationId, departureAt])
+  @@map("sales_contract_ticket_selections")
+}
+
+model SalesContractHotelSelection {
+  id                String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contractId        String               @unique @map("contract_id") @db.Uuid
+  serviceId         String               @unique @map("service_id") @db.Uuid
+  hotelId           String               @map("hotel_id") @db.Uuid
+  hotelNameSnapshot String               @map("hotel_name_snapshot") @db.VarChar(240)
+  cityId            String               @map("city_id") @db.Uuid
+  checkInDate       DateTime             @map("check_in_date") @db.Date
+  checkOutDate      DateTime             @map("check_out_date") @db.Date
+  roomCount         Int                  @map("room_count")
+  roomTypeId        String               @map("room_type_id") @db.Uuid
+  mealServiceId     String?              @map("meal_service_id") @db.Uuid
+  occupancy         Int
+  inventoryStatus   String               @map("inventory_status") @db.VarChar(80)
+  createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  contract          SalesContract        @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  service           SalesContractService @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@index([hotelId, checkInDate])
+  @@map("sales_contract_hotel_selections")
+}
+
+model SalesContractPriceComponent {
+  id           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contractId   String                  @map("contract_id") @db.Uuid
+  type         SalesPriceComponentType
+  title        String                  @db.VarChar(160)
+  amount       Decimal                 @db.Decimal(20, 4)
+  currencyCode String                  @map("currency_code") @db.VarChar(3)
+  createdAt    DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  contract     SalesContract           @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId, currencyCode])
+  @@map("sales_contract_price_components")
+}
+
+model SalesContractPaymentEntry {
+  id                      String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contractId              String             @map("contract_id") @db.Uuid
+  amount                  Decimal            @db.Decimal(20, 4)
+  currencyCode            String             @map("currency_code") @db.VarChar(3)
+  dueAt                   DateTime           @map("due_at") @db.Timestamptz(3)
+  method                  SalesPaymentMethod
+  status                  SalesPaymentStatus @default(PENDING_FINANCE_CONFIRMATION)
+  description             String?            @db.VarChar(500)
+  paymentReference        String?            @map("payment_reference") @db.VarChar(160)
+  bankId                  String?            @map("bank_id") @db.Uuid
+  checkSecureIdentifier   String?            @map("check_secure_identifier") @db.VarChar(160)
+  checkOwnerName          String?            @map("check_owner_name") @db.VarChar(200)
+  checkDueDate            DateTime?          @map("check_due_date") @db.Date
+  idempotencyKey          String             @map("idempotency_key") @db.VarChar(160)
+  requestFingerprint      String             @map("request_fingerprint") @db.Char(64)
+  createdByUserId         String             @map("created_by_user_id") @db.Uuid
+  financePaymentReference String?            @map("finance_payment_reference") @db.VarChar(160)
+  financeConfirmedByRef   String?            @map("finance_confirmed_by_ref") @db.VarChar(160)
+  financeConfirmedAt      DateTime?          @map("finance_confirmed_at") @db.Timestamptz(3)
+  createdAt               DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  contract                SalesContract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@unique([contractId, idempotencyKey])
+  @@index([contractId, status, dueAt])
+  @@index([financePaymentReference])
+  @@map("sales_contract_payment_entries")
+}
+
+model SalesReservationRequest {
+  id                 String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contractId         String                        @map("contract_id") @db.Uuid
+  contractVersion    Int                           @map("contract_version")
+  requestVersion     Int                           @default(1) @map("request_version")
+  idempotencyKey     String                        @map("idempotency_key") @db.VarChar(160)
+  requestFingerprint String                        @map("request_fingerprint") @db.Char(64)
+  snapshot           Json
+  status             SalesReservationRequestStatus @default(QUEUED)
+  externalReference  String?                       @map("external_reference") @db.VarChar(160)
+  createdByUserId    String                        @map("created_by_user_id") @db.Uuid
+  createdAt          DateTime                      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime                      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  contract           SalesContract                 @relation(fields: [contractId], references: [id], onDelete: Restrict)
+
+  @@unique([contractId, contractVersion])
+  @@unique([contractId, idempotencyKey])
+  @@index([status, createdAt])
+  @@map("sales_reservation_requests")
+}
+
+model SalesContractStatusHistory {
+  id              String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contractId      String               @map("contract_id") @db.Uuid
+  fromStatus      SalesContractStatus? @map("from_status")
+  toStatus        SalesContractStatus  @map("to_status")
+  reason          String               @db.VarChar(500)
+  changedByUserId String               @map("changed_by_user_id") @db.Uuid
+  changedAt       DateTime             @default(now()) @map("changed_at") @db.Timestamptz(3)
+  contract        SalesContract        @relation(fields: [contractId], references: [id], onDelete: Restrict)
+
+  @@index([contractId, changedAt])
+  @@map("sales_contract_status_history")
+}
+
+model SalesContractAuditEvent {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contractId     String        @map("contract_id") @db.Uuid
+  actorUserId    String        @map("actor_user_id") @db.Uuid
+  actorBranchId  String        @map("actor_branch_id") @db.Uuid
+  action         String        @db.VarChar(120)
+  outcome        AuditOutcome
+  reason         String?       @db.VarChar(500)
+  beforeSnapshot Json?         @map("before_snapshot")
+  afterSnapshot  Json?         @map("after_snapshot")
+  traceId        String?       @map("trace_id") @db.VarChar(160)
+  occurredAt     DateTime      @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  contract       SalesContract @relation(fields: [contractId], references: [id], onDelete: Restrict)
+
+  @@index([contractId, occurredAt])
+  @@index([actorUserId, occurredAt])
+  @@index([actorBranchId, occurredAt])
+  @@map("sales_contract_audit_events")
+}
