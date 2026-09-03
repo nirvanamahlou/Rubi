@@ -1,13 +1,16 @@
 # Work Assignments
 
-## MARKETING-001C — PC-B — IN_PROGRESS
+## MARKETING-001C — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک در 2026-09-03: صفحات داخلی تمام سکشن‌های Workspace مارکتینگ مطابق فایل مرجع `marketing.html` اصلاح شوند و همان داده‌های آزمایشی امن حفظ شوند. `COMPUTER_ID=PC-B`.
 - Branch مستقل `codex/pc-b-marketing-inner-pages-parity` از `origin/develop@9608607`؛ فایل HTML صرفاً مرجع بصری/تعاملی است و دستور اجرایی محسوب نمی‌شود.
-- محدوده رزروشده: `apps/web/src/modules/marketing/**`، تست‌های همان ماژول، `docs/tasks/MARKETING-001.md` و همین ورودی محدود در `WORK_ASSIGNMENTS.md`.
+- محدوده رزروشده: `apps/web/src/modules/marketing/**`، تست‌های همان ماژول، `docs/tasks/MARKETING-001.md` و ورودی محدود همین Task در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`.
 - صفحات داخلی باید ساختار، کارت‌ها، فیلترها، actionها و حالت‌های جزئیات مرجع را با اجزای مشترک Rubi پیاده کنند؛ داده‌ها فقط synthetic با شناسه `preview-*` و بدون PII باقی می‌مانند.
 - بدون Schema/Migration/Seed، Persistence، API/Shared Contract، IAM، Navigation، AppModule، Dependency/Lockfile یا تغییر فایل‌های UI مرکزی. PR #83 مربوط به قفل قبلی Central Docs در `origin/develop@9608607` ادغام شده و پایان یافته است؛ تقویم مشترک فقط مصرف می‌شود.
-- Lock state: `PC-B/MARKETING-001C` فقط روی محدوده Web ماژول مارکتینگ فعال است؛ Migration و Dependency/Lockfile آزاد می‌مانند.
+- نتیجه: ۴۵ زیرصفحه تخصصی، داشبورد کامل، ۹ تب جزئیات کمپین و داده‌های synthetic دقیق مرجع جای صفحات عمومی قبلی را گرفتند. فیلتر، جست‌وجو، صفحه‌بندی، سازنده سگمنت، پیش‌نمایش پیام، سفر مشتری، Switch، Dialog و Action feedback در State محلی کار می‌کنند؛ فیلتر و تقویم از Design System مشترک Rubi هستند.
+- ادغام مبنا: `origin/develop@6ac2dfc` در Branch ادغام شد. Web lint و `599/599` تست موفق؛ Full lint برابر ۶ Task و Full test برابر `1,464` تست موفق با ۷۰ skip اختیاری است. Browser QA تمام تب‌ها/فرم‌ها و Mobile `390×844` را بدون Overflow یا Console error تأیید کرد.
+- مانع موجود در مبنا: Typecheck و Build پس از Compile موفق فقط روی `apps/web/src/modules/master-data/model/currency-form.ts:93` متوقف می‌شوند؛ payload نرخ ارز در خود `origin/develop@6ac2dfc` فیلد اجباری `observedAt` را ندارد. این فایل خارج از Scope و بدون تفاوت نسبت به `origin/develop` باقی مانده است.
+- Final lock state: `RELEASED — PC-B/MARKETING-001C ready for review`. Migration، Dependency/Lockfile، Shared Contract و Central UI در تمام Task آزاد و بدون تغییر ماندند.
 
 ## MASTER-004-FORM-FOLLOWUP — PC-B — READY_FOR_REVIEW
 
