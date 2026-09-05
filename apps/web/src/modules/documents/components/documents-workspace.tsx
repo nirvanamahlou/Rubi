@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import {
   Archive,
   ArchiveRestore,
@@ -48,6 +49,12 @@ import {
   type ArchiveToolDefinition,
   type ArchiveToolKey,
 } from '../model/archive-tools';
+import {
+  createDocumentConnectionHref,
+  DOCUMENT_CONNECTIONS,
+  getDocumentConnection,
+  type DocumentConnectionDefinition,
+} from '../model/document-connections';
 import { DocumentDetailDialog } from './document-detail-dialog';
 import { DocumentBulkActionsDialog } from './document-bulk-actions-dialog';
 import { DocumentDeleteDialog } from './document-delete-dialog';
@@ -57,6 +64,7 @@ import {
   Alert,
   Badge,
   Button,
+  buttonVariants,
   Card,
   Checkbox,
   DatePicker,
@@ -152,6 +160,27 @@ const archiveTone = [
   'border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-100/70 dark:border-emerald-400/20 dark:from-emerald-950/45 dark:to-teal-950/30',
   'border-amber-200 bg-gradient-to-br from-amber-50 to-orange-100/70 dark:border-amber-400/20 dark:from-amber-950/45 dark:to-orange-950/30',
 ] as const;
+
+const connectionTone = [
+  'border-sky-200 bg-gradient-to-br from-sky-50 to-blue-100/70 dark:border-sky-400/20 dark:from-sky-950/45 dark:to-blue-950/30',
+  'border-violet-200 bg-gradient-to-br from-violet-50 to-purple-100/70 dark:border-violet-400/20 dark:from-violet-950/45 dark:to-purple-950/30',
+  'border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-100/70 dark:border-emerald-400/20 dark:from-emerald-950/45 dark:to-teal-950/30',
+  'border-amber-200 bg-gradient-to-br from-amber-50 to-orange-100/70 dark:border-amber-400/20 dark:from-amber-950/45 dark:to-orange-950/30',
+  'border-rose-200 bg-gradient-to-br from-rose-50 to-pink-100/70 dark:border-rose-400/20 dark:from-rose-950/45 dark:to-pink-950/30',
+] as const;
+
+const connectionIcon: Readonly<Record<DocumentDomainCode, typeof Files>> = {
+  CUSTOMER_IDENTITY: UserRound,
+  SALES: ShoppingCart,
+  TRAVEL: PackageSearch,
+  PROCUREMENT: Building2,
+  FINANCE: Building2,
+  HUMAN_RESOURCES: HeartHandshake,
+  ORGANIZATION: Building2,
+  REPORTING: FileSearch,
+  BRAND: Sparkles,
+  GENERAL: Archive,
+};
 
 const defaultQuery: DocumentListQueryV1 = {
   page: 1,
@@ -321,6 +350,13 @@ export function DocumentsWorkspace() {
       archiveTools.find((tool) => tool.key === activeArchiveToolKey) ?? null,
     [activeArchiveToolKey],
   );
+  const activeSectionDomain =
+    sectionDomain ??
+    sections.find((item) => item.key === section)?.domain ??
+    null;
+  const activeConnection = activeSectionDomain
+    ? getDocumentConnection(activeSectionDomain)
+    : null;
 
   const hasRecordFilters = Boolean(
     query.search ||
@@ -472,6 +508,17 @@ export function DocumentsWorkspace() {
           ? 'HUMAN_RESOURCES'
           : null,
     );
+    setQuery(defaultQuery);
+    setSelected(new Set());
+  }
+
+  function openConnectionArchive(
+    connection: DocumentConnectionDefinition,
+  ): void {
+    setPersonalView(null);
+    setActiveArchiveToolKey(null);
+    setSection(connection.documentsSection);
+    setSectionDomain(connection.domain);
     setQuery(defaultQuery);
     setSelected(new Set());
   }
@@ -1713,6 +1760,78 @@ export function DocumentsWorkspace() {
               value={visibleExpired}
             />
           </section>
+          <Card className={cn('relative overflow-hidden p-5', sectionSurface)}>
+            <span className="absolute -end-16 -top-16 size-48 rounded-full bg-sky-200/45 blur-3xl dark:bg-sky-500/10" />
+            <div className="relative flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2
+                  className="flex items-center gap-2 text-lg font-black"
+                  id="documents-connections-title"
+                >
+                  <Link2 aria-hidden="true" className="size-5" />
+                  ارتباط اسناد با بخش‌های روبی
+                </h2>
+                <p className="mt-1 text-sm leading-7 text-muted-foreground">
+                  اسناد هر بخش را در آرشیو ببینید یا برای ادامه کار به ماژول
+                  مبدأ بروید.
+                </p>
+              </div>
+              <Badge>همه مسیرهای آرشیو</Badge>
+            </div>
+            <section
+              aria-labelledby="documents-connections-title"
+              className="relative mt-4 grid gap-3 md:grid-cols-2 2xl:grid-cols-3"
+            >
+              {DOCUMENT_CONNECTIONS.map((connection, index) => {
+                const Icon = connectionIcon[connection.domain];
+                const moduleHref = createDocumentConnectionHref(connection);
+                return (
+                  <article
+                    className={cn(
+                      'flex min-h-52 flex-col rounded-2xl border p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md',
+                      connectionTone[index % connectionTone.length],
+                    )}
+                    key={connection.domain}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white/75 text-primary shadow-sm dark:bg-white/10">
+                        <Icon aria-hidden="true" className="size-5" />
+                      </span>
+                      <Badge>
+                        {moduleHref ? 'متصل به ماژول' : 'داخل آرشیو'}
+                      </Badge>
+                    </div>
+                    <h3 className="mt-3 font-black">
+                      {connection.sectionLabel}
+                    </h3>
+                    <p className="mt-2 flex-1 text-xs leading-6 text-muted-foreground">
+                      {connection.description}
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button
+                        onClick={() => openConnectionArchive(connection)}
+                        size="sm"
+                        type="button"
+                        variant="outline"
+                      >
+                        <Files aria-hidden="true" className="size-4" />
+                        اسناد این بخش
+                      </Button>
+                      {moduleHref ? (
+                        <Link
+                          className={buttonVariants({ size: 'sm' })}
+                          href={moduleHref}
+                        >
+                          رفتن به {connection.moduleLabel}
+                          <ChevronLeft aria-hidden="true" className="size-4" />
+                        </Link>
+                      ) : null}
+                    </div>
+                  </article>
+                );
+              })}
+            </section>
+          </Card>
           <div className="grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
             <Card className={cn('p-5', sectionSurface)}>
               <div className="flex items-center justify-between gap-3">
@@ -1920,6 +2039,45 @@ export function DocumentsWorkspace() {
             </Button>
           </Card>
         ) : null}
+        {activeConnection ? (
+          <Card className={cn('relative overflow-hidden p-5', sectionSurface)}>
+            <span className="absolute -end-12 -top-12 size-40 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-500/10" />
+            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-emerald-200/70 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200">
+                  <Link2 aria-hidden="true" className="size-5" />
+                </span>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-black">
+                      ارتباط با {activeConnection.moduleLabel}
+                    </h3>
+                    <Badge>
+                      {activeConnection.moduleHref
+                        ? 'متصل به ماژول'
+                        : 'داخل آرشیو'}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
+                    {activeConnection.description}
+                  </p>
+                </div>
+              </div>
+              {activeConnection.moduleHref ? (
+                <Link
+                  className={buttonVariants({
+                    className: 'shrink-0',
+                    size: 'sm',
+                  })}
+                  href={activeConnection.moduleHref}
+                >
+                  رفتن به {activeConnection.moduleLabel}
+                  <ChevronLeft aria-hidden="true" className="size-4" />
+                </Link>
+              ) : null}
+            </div>
+          </Card>
+        ) : null}
         {filters()}
         <Card className={cn('p-4', sectionSurface)}>{table()}</Card>
       </div>
@@ -2019,7 +2177,9 @@ export function DocumentsWorkspace() {
                 {personalView
                   ? personalViews.find((item) => item.key === personalView)
                       ?.label
-                  : sections.find((item) => item.key === section)?.label}
+                  : section === 'all' && activeConnection
+                    ? activeConnection.sectionLabel
+                    : sections.find((item) => item.key === section)?.label}
               </h2>
               <Button
                 onClick={() => changeSection('overview')}
