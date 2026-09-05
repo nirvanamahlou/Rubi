@@ -85,8 +85,8 @@ export function DocumentEditDialog({
       confidentiality: values.confidentiality,
       isIncomplete: values.isIncomplete,
       version: values.version,
-      ...(description ? { description } : {}),
-      ...(validUntil ? { validUntil } : {}),
+      description: description ?? '',
+      validUntil: validUntil ?? '',
     });
   }
 
