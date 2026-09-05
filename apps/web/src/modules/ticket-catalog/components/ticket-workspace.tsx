@@ -68,7 +68,6 @@ import { TicketForm } from './ticket-form';
 import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
 import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
-import { PublishedOffers } from './published-offers';
 
 const actor = 'کاربر جاری';
 const transportIcons = {
@@ -88,7 +87,6 @@ function availableInventory(product: Product): Inventory {
 export function TicketWorkspace() {
   return (
     <>
-      <PublishedOffers />
       <Tabs defaultValue="catalog" dir="rtl" className="space-y-5">
         <TabsList
           aria-label="انتخاب بخش مدیریت بلیت"

@@ -2,6 +2,13 @@
 
 - Status: `READY_FOR_REVIEW`
 
+## Turkey/Antalya maintenance and ticket panel removal — 2026-09-05
+
+- Resolved the earlier reference-data blocker using an offline Nest context for the owner Master Data service, following the module's existing local-maintenance attribution pattern. Only the explicitly named local Rubi database was permitted. No HTTP auth weakening, IAM user/session/branch/permission creation, direct private-table queries or repository imports were used by the maintenance caller.
+- Created active Turkey (`TR`), the required Antalya region, and active Antalya city linked to that country/region. Read-back through the owner service verified the links/status; repeating the operation reused all three records without creating duplicates. Writes retain the owner's validation and audit path with explicit offline maintenance identifiers, not a real logged-in user identity.
+- Removed only the PublishedOffers panel mount/import from TicketWorkspace. Existing offer records, public API, sale revalidation and the component source remain intact. The existing weekly/monthly Repeat Ticket action is unchanged. Repeat Ticket remains the pre-existing local catalog workflow; removing this panel does not newly wire that workflow to offer publication.
+- Ticket Catalog tests: 96 passed; Ticket Catalog lint, Web typecheck and production build (35 routes) passed. No schema/migration/dependency or other module source changes in this follow-up. Concurrent Customers/Documents/Prisma changes are not part of these commits.
+
 ## Parent service selection/dashboard follow-up
 
 - Selecting the Flight or Transfer parent checkbox now selects both OUTBOUND/RETURN and expands the two independent child checkboxes underneath. Disabling the parent clears its directions without changing the other service. Re-enabling starts with both directions again.

@@ -2,6 +2,8 @@
 
 ## SALES-CONTRACTS-001 — PC-A — READY_FOR_REVIEW
 
+- Current follow-up: PC-A reserves Ticket Catalog workspace mount/test and task docs to remove only the scheduled-offer publication panel while retaining Repeat Ticket. Existing published offers/API remain intact. Authorized Turkey/Antalya local reference maintenance runs through the owner service with explicit offline audit attribution; no IAM grants/sessions or direct private-table writes.
+
 - Current follow-up (PC-A): reserve Sales form/model/tests and task docs for parent service selection (both directions initially selected, then expandable independent choices) and a persistent dashboard return link. Turkey/Antalya reference creation is authorized through the existing Master Data public interface only; no private table writes or Master Data code ownership transfer.
 
 - Follow-up route/directional services: PC-A reserves Sales Web/model/tests, Sales domain validation/tests and task docs on the same branch/PR #90. Searchable country/city inputs with reference-backed Tehran/Antalya defaults; independent flight/transfer directions use existing `SalesServiceInput.metadata.direction` (OUTBOUND/RETURN), produced by Sales and preserved in the Reservations v1 snapshot. Legacy services without direction retain their prior trip-type behavior. No schema, migration, dependency or other module changes.
