@@ -33,6 +33,7 @@ import { TicketOfferPicker } from './ticket-offer-picker';
 import { SearchableReference } from './searchable-reference';
 import { FlightTicketPreview } from './flight-ticket-preview';
 import { SalesPersonCreate } from './sales-person-create';
+import { SalesOrganizationCustomer } from './sales-organization-customer';
 import {
   FlightDateRangeFilter,
   type FlightDateRange,
@@ -256,7 +257,7 @@ export function SalesContractForm() {
     try {
       const response = await customersApi.list({
         search: customerSearch,
-        kind: 'all',
+        kind: 'person',
         status: 'active',
         role: 'all',
         branchId: 'all',
@@ -515,17 +516,71 @@ export function SalesContractForm() {
         {step === 2 ? (
           <div className="grid gap-5">
             <h2 className="text-xl font-black">انتخاب مشتری و مسافران</h2>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
+            <div
+              className="flex gap-2"
+              role="group"
+              aria-label="نوع مشتری قرارداد"
+            >
+              {(['person', 'organization'] as const).map((kind) => (
+                <Button
+                  key={kind}
+                  type="button"
+                  disabled={busy}
+                  variant={
+                    (state.customerKind ?? 'person') === kind
+                      ? 'primary'
+                      : 'outline'
+                  }
+                  aria-pressed={(state.customerKind ?? 'person') === kind}
+                  onClick={() => {
+                    if ((state.customerKind ?? 'person') === kind) return;
+                    setCreatePersonMode(null);
+                    patchState({
+                      customerKind: kind,
+                      customerId: '',
+                      customerName: '',
+                      customerOrganizationId: '',
+                      firstPassengerIsCustomer: false,
+                    });
+                  }}
+                >
+                  {kind === 'person' ? 'مشتری حقیقی' : 'مشتری حقوقی / آژانس'}
+                </Button>
+              ))}
+            </div>
+            {state.customerKind === 'organization' ? (
+              <SalesOrganizationCustomer
                 disabled={busy}
-                onClick={() => setCreatePersonMode('customer')}
-              >
-                <Plus className="size-4" />
-                مشتری جدید
-              </Button>
+                selectedOrganizationId={state.customerOrganizationId ?? ''}
+                onClear={() =>
+                  patchState({
+                    customerId: '',
+                    customerName: '',
+                    customerOrganizationId: '',
+                  })
+                }
+                onBusyChange={setBusy}
+                onSelected={(person) =>
+                  patchState({
+                    ...selectSalesPerson(state, person, true),
+                    firstPassengerIsCustomer: false,
+                  })
+                }
+              />
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              {state.customerKind !== 'organization' ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => setCreatePersonMode('customer')}
+                >
+                  <Plus className="size-4" />
+                  مشتری جدید
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 size="sm"
@@ -598,15 +653,17 @@ export function SalesContractForm() {
                     {customer.roles.join('، ')}
                   </p>
                   <div className="mt-3 flex gap-2">
-                    <Button
-                      size="sm"
-                      type="button"
-                      onClick={() => selectCustomer(customer)}
-                    >
-                      {state.customerId === customer.id
-                        ? 'مشتری انتخاب‌شده'
-                        : 'انتخاب مشتری قرارداد'}
-                    </Button>
+                    {state.customerKind !== 'organization' ? (
+                      <Button
+                        size="sm"
+                        type="button"
+                        onClick={() => selectCustomer(customer)}
+                      >
+                        {state.customerId === customer.id
+                          ? 'مشتری انتخاب‌شده'
+                          : 'انتخاب مشتری قرارداد'}
+                      </Button>
+                    ) : null}
                     {customer.roles.includes('passenger') ? (
                       <Button
                         size="sm"
@@ -1092,7 +1149,7 @@ export function SalesContractForm() {
               <input
                 type="checkbox"
                 className="size-4 accent-primary"
-                disabled={busy}
+                disabled={busy || state.customerKind === 'organization'}
                 checked={state.firstPassengerIsCustomer === true}
                 onChange={(event) =>
                   patchState({

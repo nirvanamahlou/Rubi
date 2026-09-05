@@ -12,15 +12,23 @@ import type {
 
 export function selectSalesPerson(
   state: SalesFormState,
-  person: Pick<CustomerSummary, 'id' | 'displayName' | 'roles'>,
+  person: Pick<CustomerSummary, 'id' | 'displayName' | 'roles'> &
+    Partial<Pick<CustomerSummary, 'kind' | 'organizationId'>>,
   asCustomer: boolean,
   birthDate = '',
 ): Partial<SalesFormState> {
   return {
     ...(asCustomer
-      ? { customerId: person.id, customerName: person.displayName }
+      ? {
+          customerId: person.id,
+          customerName: person.displayName,
+          customerKind: person.kind ?? 'person',
+          customerOrganizationId: person.organizationId ?? '',
+          firstPassengerIsCustomer: false,
+        }
       : {}),
     passengers:
+      person.kind !== 'organization' &&
       person.roles.includes('passenger') &&
       !state.passengers.some((item) => item.customerId === person.id)
         ? [
@@ -44,6 +52,8 @@ export const salesSteps = [
 ] as const;
 
 export interface SalesFormState {
+  customerKind?: 'person' | 'organization';
+  customerOrganizationId?: string;
   firstPassengerIsCustomer?: boolean;
   businessOutput?: boolean;
   outboundOffer?: TicketOfferV1 | undefined;
@@ -152,6 +162,8 @@ export const emptySalesForm: SalesFormState = {
 export function withFirstPassengerCustomer(
   state: SalesFormState,
 ): SalesFormState {
+  if (state.customerKind === 'organization')
+    return { ...state, firstPassengerIsCustomer: false };
   if (!state.firstPassengerIsCustomer) return state;
   const first = state.passengers[0];
   return {

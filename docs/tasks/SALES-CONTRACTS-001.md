@@ -1,5 +1,14 @@
 # SALES-CONTRACTS-001
 
+## Organization customer selection — PC-A — 2026-09-05
+
+- Validation: 64 Sales tests, scoped lint, Web typecheck and production build (35 routes) passed. Rebuilt Web is running on 3100; API unchanged. Local commit only pending public-push approval.
+
+- Sales-local legal/person mode. Public Master Data organizations are fetched with pagination and searchable selection. Public Customers organization profiles are fetched with pagination and branch authorization unchanged. On explicit selection, re-read and reuse a matching active customer; if none exists, explicitly create only an organization-kind Customer linked to the stable MasterOrganization ID. Inactive/non-customer profiles block duplicate creation and require owner correction.
+- No organization/agency entity duplication, direct table query, permission grant, migration or public contract change. Concurrent cross-client profile uniqueness remains owned by Customers; no cross-module uniqueness claim is made. All network errors remain visible and no placeholder customer IDs are generated.
+- Sales receives the Customer ID, not a MasterOrganization ID in the customerId field. Corporate customers never become passengers; existing passenger assignments survive selection and person/legal toggles. First-passenger-as-customer is disabled for legal customers. Changing an organization clears the previous customer until explicitly selected.
+- This delivers legal customer selection only, not Agency agreed rates, organization aggregates or Finance credit summary. No real customer created for QA; authenticated visual and end-to-end creation checks remain unclaimed. Public push is still awaiting user approval for Sales changes.
+
 ## Passenger rows — PC-A — 2026-09-05
 
 - Validation: 58 Sales Web tests, scoped lint, Web typecheck and production build with 35 routes passed. Web 3100 restarted with this build; API unchanged.

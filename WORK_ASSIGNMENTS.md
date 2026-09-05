@@ -1,5 +1,10 @@
 # Work Assignments
 
+## SALES-ORGANIZATION-CUSTOMER-0905 — PC-A — COMPLETE_LOCAL
+
+- Reserve Sales Web organization selector/form/model/tests and task docs. Consume existing Customers organization kind and stable MasterOrganization references through their public APIs only. Reuse accessible existing legal customers or explicitly register a customer profile linked to an existing organization; never create another organization. Passengers remain separate; no schema/API/permission/root-export changes. Public push remains awaiting explicit approval.
+- Validation: 64 Sales Web tests, scoped lint, Web typecheck and production build (35 routes) passed; Web restarted on 3100. No real profiles created for QA and no authenticated visual test claimed. Same Sales branch; no PR, Merge or lock release.
+
 ## SALES-PASSENGER-ROWS-0905 — PC-A — SALES_COMPLETE
 
 - Reserve Sales Web form/person-entry/model/tests and task documentation only: add/remove independent passenger rows, required ten-digit national ID for new passengers, optional first passenger as contract customer. Raw national IDs stay only in transient entry state and are sent to the Customers public API, not the Sales draft/payload. No Customers internals, shared contracts, schema, migration or permissions changed.
