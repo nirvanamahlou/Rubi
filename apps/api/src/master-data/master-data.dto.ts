@@ -169,6 +169,45 @@ export class MasterDataMutationDto {
   version?: number;
 }
 
+export class MasterOrganizationAddressDto {
+  @IsUUID()
+  countryId!: string;
+
+  @IsUUID()
+  cityId!: string;
+
+  @IsString()
+  @MaxLength(80)
+  label!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(24)
+  postalCode?: string | null;
+
+  @IsString()
+  @MaxLength(500)
+  addressLine!: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isPrimary = false;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  displayOrder = 0;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive = true;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  version?: number;
+}
+
 export class MasterDataDeleteDto {
   @IsInt()
   @Min(1)

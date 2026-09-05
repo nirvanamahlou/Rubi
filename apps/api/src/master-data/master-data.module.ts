@@ -14,6 +14,8 @@ import { MasterDataController } from './master-data.controller';
 import { MasterDataContactCrypto } from './master-data-contact.crypto';
 import { MasterDataRepository } from './master-data.repository';
 import { MasterDataService } from './master-data.service';
+import { MasterOrganizationDirectory } from './master-organization-directory';
+import { OrganizationAddressController } from './organization-address.controller';
 
 @Module({
   imports: [IamModule],
@@ -22,6 +24,7 @@ import { MasterDataService } from './master-data.service';
     MasterDataAuditController,
     HotelImportController,
     MasterDataController,
+    OrganizationAddressController,
   ],
   providers: [
     AuthGuard,
@@ -29,8 +32,10 @@ import { MasterDataService } from './master-data.service';
     MasterDataRepository,
     MasterDataContactCrypto,
     MasterDataService,
+    MasterOrganizationDirectory,
     CurrencyRateService,
     HotelImportService,
   ],
+  exports: [MasterOrganizationDirectory],
 })
 export class MasterDataModule {}
