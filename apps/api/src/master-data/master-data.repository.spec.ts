@@ -124,6 +124,43 @@ describe('MasterDataRepository geography listing', () => {
   });
 });
 
+describe('MasterDataRepository organization role listing', () => {
+  it('filters the shared Organization entity by its canonical AGENCY role', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const count = vi.fn().mockResolvedValue(0);
+    const database = {
+      client: { masterOrganization: { findMany, count } },
+    } as unknown as DatabaseService;
+    const repository = new MasterDataRepository(database);
+
+    await repository.list('organizations', {
+      search: '',
+      status: 'active',
+      organizationRole: 'AGENCY',
+      sortBy: 'updatedAt',
+      sortDirection: 'desc',
+      page: 1,
+      pageSize: 20,
+    });
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          isActive: true,
+          roles: { some: { roleCode: 'AGENCY' } },
+        },
+        include: { roles: true },
+      }),
+    );
+    expect(count).toHaveBeenCalledWith({
+      where: {
+        isActive: true,
+        roles: { some: { roleCode: 'AGENCY' } },
+      },
+    });
+  });
+});
+
 describe('MasterDataRepository financial reference listing', () => {
   it('filters bank branches by bank/city and eager-loads display references', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
