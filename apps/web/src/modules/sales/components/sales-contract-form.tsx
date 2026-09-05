@@ -32,12 +32,14 @@ import { salesApi } from '../api/client';
 import { TicketOfferPicker } from './ticket-offer-picker';
 import { SearchableReference } from './searchable-reference';
 import { FlightTicketPreview } from './flight-ticket-preview';
+import { SalesPersonCreate } from './sales-person-create';
 import {
   FlightDateRangeFilter,
   type FlightDateRange,
 } from './flight-date-range';
 import {
   emptySalesForm,
+  selectSalesPerson,
   salesPayload,
   salesSteps,
   salesPassengerAgeLabel,
@@ -106,6 +108,9 @@ export function SalesContractForm() {
   const [state, setState] = useState<SalesFormState>(emptySalesForm);
   const [customers, setCustomers] = useState<readonly CustomerSummary[]>([]);
   const [customerSearch, setCustomerSearch] = useState('');
+  const [createPersonMode, setCreatePersonMode] = useState<
+    'customer' | 'passenger' | null
+  >(null);
   const [references, setReferences] = useState<{
     countries: readonly MasterDataRecord[];
     cities: readonly MasterDataRecord[];
@@ -264,19 +269,10 @@ export function SalesContractForm() {
     }
   };
   const selectCustomer = (customer: CustomerSummary) => {
-    patchState({
-      customerId: customer.id,
-      customerName: customer.displayName,
-      passengers: customer.roles.includes('passenger')
-        ? [
-            {
-              customerId: customer.id,
-              displayName: customer.displayName,
-              birthDate: '',
-            },
-          ]
-        : state.passengers,
-    });
+    setState((current) => ({
+      ...current,
+      ...selectSalesPerson(current, customer, true),
+    }));
   };
   const addPassenger = (customer: CustomerSummary) => {
     if (
@@ -284,16 +280,10 @@ export function SalesContractForm() {
       state.passengers.some(({ customerId }) => customerId === customer.id)
     )
       return;
-    patchState({
-      passengers: [
-        ...state.passengers,
-        {
-          customerId: customer.id,
-          displayName: customer.displayName,
-          birthDate: '',
-        },
-      ],
-    });
+    setState((current) => ({
+      ...current,
+      ...selectSalesPerson(current, customer, false),
+    }));
   };
   const toggleService = (kind: SalesServiceKind) =>
     patchState({
@@ -395,20 +385,21 @@ export function SalesContractForm() {
       if (activeDetail === 'VISA') return Boolean(state.visaReferenceId);
       return true;
     }
-    if (step === 2) return Boolean(state.customerId);
-    if (step === 3)
+    if (step === 2)
       return (
+        Boolean(state.customerId) &&
+        !createPersonMode &&
         Boolean(salesTravelDate(state)) &&
         state.passengers.length > 0 &&
         state.passengers.every((item) => item.birthDate)
       );
-    if (step === 4)
+    if (step === 3)
       return (
         state.priceComponents.length > 0 &&
         state.priceComponents.every((item) => item.amount && item.currencyCode)
       );
     return true;
-  }, [state, step, activeDetail]);
+  }, [state, step, activeDetail, createPersonMode]);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (step !== salesSteps.length - 1 || busy) return;
@@ -514,11 +505,57 @@ export function SalesContractForm() {
         {step === 2 ? (
           <div className="grid gap-5">
             <h2 className="text-xl font-black">انتخاب مشتری و مسافران</h2>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => setCreatePersonMode('customer')}
+              >
+                <Plus className="size-4" />
+                مشتری جدید
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => setCreatePersonMode('passenger')}
+              >
+                <Plus className="size-4" />
+                مسافر جدید
+              </Button>
+            </div>
+            {createPersonMode ? (
+              <SalesPersonCreate
+                key={createPersonMode}
+                mode={createPersonMode}
+                onBusyChange={setBusy}
+                onCancel={() => setCreatePersonMode(null)}
+                onCreated={(person, birthDate) => {
+                  setState((current) => ({
+                    ...current,
+                    ...selectSalesPerson(
+                      current,
+                      person,
+                      createPersonMode === 'customer',
+                      birthDate,
+                    ),
+                  }));
+                  setCustomers((current) => [
+                    person,
+                    ...current.filter((item) => item.id !== person.id),
+                  ]);
+                  setCreatePersonMode(null);
+                }}
+              />
+            ) : null}
             <div className="flex gap-2">
               <Input
                 value={customerSearch}
                 onChange={(event) => setCustomerSearch(event.target.value)}
-                placeholder="نام یا شناسه مشتری"
+                placeholder="جست‌وجوی مشتری یا مسافر موجود"
               />
               <Button
                 type="button"
@@ -552,16 +589,25 @@ export function SalesContractForm() {
                       type="button"
                       onClick={() => selectCustomer(customer)}
                     >
-                      مشتری قرارداد
+                      {state.customerId === customer.id
+                        ? 'مشتری انتخاب‌شده'
+                        : 'انتخاب مشتری قرارداد'}
                     </Button>
                     {customer.roles.includes('passenger') ? (
                       <Button
                         size="sm"
                         type="button"
                         variant="outline"
+                        disabled={state.passengers.some(
+                          (item) => item.customerId === customer.id,
+                        )}
                         onClick={() => addPassenger(customer)}
                       >
-                        افزودن مسافر
+                        {state.passengers.some(
+                          (item) => item.customerId === customer.id,
+                        )
+                          ? 'مسافر اضافه شده'
+                          : 'افزودن مسافر'}
                       </Button>
                     ) : null}
                   </div>
@@ -950,8 +996,8 @@ export function SalesContractForm() {
             ) : null}
           </div>
         ) : null}
-        {step === 3 ? (
-          <div className="grid gap-5">
+        {step === 2 ? (
+          <div className="mt-5 grid gap-5 border-t border-border pt-4">
             <div>
               <h2 className="text-xl font-black">مسافران و تخصیص خدمات</h2>
               <p className="text-sm text-muted-foreground">
@@ -1017,11 +1063,11 @@ export function SalesContractForm() {
             </div>
             <Alert
               title="افزودن مسافر دیگر"
-              description="در گام مشتری جستجو کنید و رکوردهای دارای نقش مسافر را انتخاب کنید؛ مشتری اصلی در صورت داشتن نقش مسافر خودکار افزوده می‌شود."
+              description="از جست‌وجوی بالای همین بخش، مسافر موجود را انتخاب کنید یا دکمه مسافر جدید را بزنید."
             />
           </div>
         ) : null}
-        {step === 4 ? (
+        {step === 3 ? (
           <div className="grid gap-6">
             <section className="grid gap-3">
               <div className="flex items-center justify-between">
@@ -1314,7 +1360,7 @@ export function SalesContractForm() {
             </FormField>
           </div>
         ) : null}
-        {step === 5 ? (
+        {step === 4 ? (
           <div className="grid gap-5">
             {state.serviceKinds.includes('FLIGHT') ? (
               <FlightTicketPreview state={state} cities={references.cities} />

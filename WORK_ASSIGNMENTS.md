@@ -2,6 +2,8 @@
 
 ## SALES-CONTRACTS-001 — PC-A — READY_FOR_REVIEW
 
+- PC-A people-step follow-up READY_FOR_REVIEW: customer and passenger selection/birthdates share one step; inline customer/passenger creation uses existing Customers public API, preserving existing passengers and deduplicating selections. 35 Sales Web tests, scoped lint/typecheck and production build passed. No edits to concurrent Customers/Contracts/Prisma work or IAM permissions; authenticated UI creation not claimed.
+
 - PC-A compact-form/dashboard follow-up READY_FOR_REVIEW: bounded compact form, compact service choices, independent dashboard/list loading and explicit network/session errors. Production build lacked NEXT_PUBLIC_API_BASE_URL; configured the public localhost API in ignored apps/web/.env.local. 27 Sales Web tests, scoped lint and production typecheck/build passed; no IAM, shared UI, schema or other task edits.
 
 - Latest follow-up verified: 20 Web Sales tests, 28 API Sales tests, scoped lint, Web/API typecheck and production builds passed; updated Web running on port 3100. No migration/dependency changes; same branch and Draft PR #90.

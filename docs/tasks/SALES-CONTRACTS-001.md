@@ -2,6 +2,13 @@
 
 - Status: `READY_FOR_REVIEW`
 
+## Combined people step and inline creation
+
+- Five steps now combine customer lookup/selection and passenger birthdates/age display. Selecting another customer preserves all existing passengers and birthdates; duplicate selections are ignored.
+- Sales-local inline person editor offers customer/passenger creation through existing customersApi.create only. Names are required; passenger birthdate is required; national ID is optional and is not stored in the contract draft. Customer creation can include passenger role via an explicit checkbox. Successful owner-API response supplies the real ID; failures never fabricate people.
+- The entered birthdate populates the contract passenger even when the create response masks it. Creation uses existing session/permission/branch checks with no grants or bypasses. An in-flight guard prevents double-click submissions; ambiguous network errors advise searching before retrying since the owner endpoint has no create idempotency contract. Canceling the contract does not delete an already created person; the UI explains separate persistence.
+- 35 Sales Web tests, scoped lint, typecheck and production build pass. Tests cover roles, validation, preservation, duplicate selection, public API success/failure and no nested form. No actual person records were created during verification; authenticated browser QA remains unclaimed. Concurrent Customers/Contracts/Prisma edits remain excluded.
+
 ## Compact entry and dashboard connectivity follow-up
 
 - Replaced oversized form header, stepper and minimum-height card with a bounded compact layout; country/city pairs share one desktop row, services use small selectable controls, directional options stay independent, and footer actions remain accessible. Shared UI files are unchanged.

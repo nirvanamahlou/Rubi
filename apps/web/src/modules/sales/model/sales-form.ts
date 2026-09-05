@@ -1,4 +1,5 @@
 import type {
+  CustomerSummary,
   MasterDataRecord,
   SalesContractCreateRequest,
   SalesPaymentInput,
@@ -9,11 +10,35 @@ import type {
   TicketOfferV1,
 } from '@rubi/contracts';
 
+export function selectSalesPerson(
+  state: SalesFormState,
+  person: Pick<CustomerSummary, 'id' | 'displayName' | 'roles'>,
+  asCustomer: boolean,
+  birthDate = '',
+): Partial<SalesFormState> {
+  return {
+    ...(asCustomer
+      ? { customerId: person.id, customerName: person.displayName }
+      : {}),
+    passengers:
+      person.roles.includes('passenger') &&
+      !state.passengers.some((item) => item.customerId === person.id)
+        ? [
+            ...state.passengers,
+            {
+              customerId: person.id,
+              displayName: person.displayName,
+              birthDate,
+            },
+          ]
+        : state.passengers,
+  };
+}
+
 export const salesSteps = [
   'مسیر و خدمات',
   'جزئیات سفر',
-  'مشتری',
-  'مسافران',
+  'مشتری و مسافران',
   'قیمت و پرداخت',
   'بازبینی',
 ] as const;
