@@ -27,6 +27,7 @@ import {
   Route,
   Save,
   Search,
+  Send,
   ShoppingCart,
   Target,
   Upload,
@@ -46,6 +47,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
+  Checkbox,
   FormField,
   Input,
   Select,
@@ -2238,6 +2240,480 @@ function AudiencePage({
   );
 }
 
+function CommunicationChannelOption({
+  checked,
+  id,
+  icon: Icon,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  id: string;
+  icon: LucideIcon;
+  label: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3 transition hover:bg-muted/30">
+      <Icon aria-hidden="true" className="size-5 text-primary" />
+      <Checkbox
+        aria-label={label}
+        checked={checked}
+        id={id}
+        onCheckedChange={(value) => onChange(value === true)}
+      />
+      <label className="cursor-pointer font-bold" htmlFor={id}>
+        {label}
+      </label>
+    </div>
+  );
+}
+
+function MessageComposer({ onNotice }: { onNotice: NoticeHandler }) {
+  const [message, setMessage] = useState(
+    'تا ۳۱ شهریور، سفر اروپا را با نرخ ویژه رزرو کنید. مشاهده پیشنهادها: {{short_link}}',
+  );
+  const [campaign, setCampaign] = useState('europe');
+  const [audience, setAudience] = useState('europe-fans');
+  const [template, setTemplate] = useState('wave-2');
+  const [sendMode, setSendMode] = useState('now');
+  const [scheduledDate, setScheduledDate] = useState('2026-09-12');
+  const [channels, setChannels] = useState({
+    sms: true,
+    email: false,
+    whatsapp: false,
+    push: false,
+  });
+  const toggleChannel = (key: keyof typeof channels, value: boolean) =>
+    setChannels((current) => ({ ...current, [key]: value }));
+  const selectedChannelCount = Object.values(channels).filter(Boolean).length;
+  return (
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
+      <Card className="p-5">
+        <h3 className="text-lg font-black">ارسال پیام</h3>
+        <form
+          className="mt-5 grid gap-4 md:grid-cols-2"
+          id="marketing-message-composer"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!selectedChannelCount) {
+              onNotice('حداقل یک کانال برای ارسال انتخاب کنید.');
+              return;
+            }
+            if (!message.trim()) {
+              onNotice('متن پیام را وارد کنید.');
+              return;
+            }
+            if (sendMode === 'scheduled' && !scheduledDate) {
+              onNotice('تاریخ ارسال را انتخاب کنید.');
+              return;
+            }
+            onNotice(
+              sendMode === 'scheduled'
+                ? `پیام برای تاریخ ${scheduledDate} زمان‌بندی شد.`
+                : 'نیت ارسال پیام ثبت شد.',
+            );
+          }}
+        >
+          <FormField id="message-campaign" label="کمپین" required>
+            <SimpleSelect
+              ariaLabel="انتخاب کمپین پیام"
+              onChange={setCampaign}
+              options={[
+                ['europe', 'جشنواره تابستان اروپا'],
+                ['istanbul', 'پرواز استانبول شهریور'],
+                ['dubai', 'هتل‌های دبی پاییز'],
+              ]}
+              value={campaign}
+            />
+          </FormField>
+          <FormField id="message-audience" label="مخاطبان" required>
+            <SimpleSelect
+              ariaLabel="انتخاب مخاطبان پیام"
+              onChange={setAudience}
+              options={[
+                ['europe-fans', 'علاقه‌مندان اروپا · ۱۲٬۸۴۰'],
+                ['vip', 'مشتریان VIP · ۲٬۴۸۰'],
+                ['inactive', 'مشتریان غیرفعال · ۶٬۳۲۰'],
+              ]}
+              value={audience}
+            />
+          </FormField>
+          <div className="grid gap-2 md:col-span-2">
+            <span className="text-sm font-bold">کانال‌ها</span>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              <CommunicationChannelOption
+                checked={channels.sms}
+                id="communication-channel-sms"
+                icon={Phone}
+                label="پیامک"
+                onChange={(value) => toggleChannel('sms', value)}
+              />
+              <CommunicationChannelOption
+                checked={channels.email}
+                id="communication-channel-email"
+                icon={Mail}
+                label="ایمیل"
+                onChange={(value) => toggleChannel('email', value)}
+              />
+              <CommunicationChannelOption
+                checked={channels.whatsapp}
+                id="communication-channel-whatsapp"
+                icon={MessageCircle}
+                label="واتساپ"
+                onChange={(value) => toggleChannel('whatsapp', value)}
+              />
+              <CommunicationChannelOption
+                checked={channels.push}
+                id="communication-channel-push"
+                icon={BellRing}
+                label="پوش"
+                onChange={(value) => toggleChannel('push', value)}
+              />
+            </div>
+          </div>
+          <FormField id="message-template" label="قالب پیام" required>
+            <SimpleSelect
+              ariaLabel="انتخاب قالب پیام"
+              onChange={setTemplate}
+              options={[
+                ['wave-2', 'اروپا — موج دوم'],
+                ['flight-reminder', 'یادآوری پرواز'],
+                ['hotel-offer', 'پیشنهاد هتل دبی'],
+              ]}
+              value={template}
+            />
+          </FormField>
+          <FormField id="message-mode" label="روش ارسال" required>
+            <SimpleSelect
+              ariaLabel="روش ارسال"
+              onChange={setSendMode}
+              options={[
+                ['now', 'ارسال فوری'],
+                ['scheduled', 'زمان‌بندی'],
+              ]}
+              value={sendMode}
+            />
+          </FormField>
+          {sendMode === 'scheduled' ? (
+            <FormField id="message-date" label="تاریخ ارسال" required>
+              <DatePicker
+                id="message-date"
+                onChange={setScheduledDate}
+                value={scheduledDate}
+              />
+            </FormField>
+          ) : null}
+          <div className="md:col-span-2">
+            <FormField id="message-body" label="متن پیام" required>
+              <Textarea
+                id="message-body"
+                onChange={(event) => setMessage(event.target.value)}
+                rows={6}
+                value={message}
+              />
+            </FormField>
+          </div>
+          <div className="flex flex-wrap gap-2 border-t border-border pt-4 md:col-span-2">
+            <Button
+              onClick={() => onNotice('پیش‌نویس پیام ذخیره شد.')}
+              type="button"
+              variant="outline"
+            >
+              <Save aria-hidden="true" className="size-4" /> ذخیره پیش‌نویس
+            </Button>
+            <Button
+              onClick={() => onNotice('پیش‌نمایش پیام بروزرسانی شد.')}
+              type="button"
+              variant="outline"
+            >
+              <Eye aria-hidden="true" className="size-4" /> پیش‌نمایش
+            </Button>
+          </div>
+        </form>
+      </Card>
+      <Card className="bg-slate-100 p-5 dark:bg-slate-950">
+        <p className="text-center text-sm text-muted-foreground">
+          پیش‌نمایش پیام
+        </p>
+        <div className="mt-5 rounded-2xl rounded-br-sm bg-emerald-100 p-4 text-sm leading-7 text-emerald-950 shadow-sm dark:bg-emerald-950 dark:text-emerald-100">
+          <strong>نیایش سیر</strong>
+          <p className="mt-2 whitespace-pre-wrap">
+            {message.replace('{{short_link}}', 'nys.ir/eu25')}
+          </p>
+          <small className="mt-2 block text-emerald-700 dark:text-emerald-300">
+            {selectedChannelCount.toLocaleString('fa-IR')} کانال انتخاب‌شده
+          </small>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+const scheduledCommunicationRows: readonly PreviewRow[] = [
+  {
+    id: 'preview-communication-scheduled-europe',
+    cells: [
+      'یادآوری جشنواره اروپا',
+      'جشنواره تابستان اروپا',
+      'پیامک',
+      '۱۲٬۸۴۰',
+      '۱۴۰۵/۰۶/۱۴ · ۱۰:۰۰',
+      'اروپا — موج دوم',
+      'زمان‌بندی‌شده',
+    ],
+    occurredAt: '2026-09-05',
+    statusIndex: 6,
+  },
+  {
+    id: 'preview-communication-scheduled-dubai',
+    cells: [
+      'پیشنهاد اقامت دبی',
+      'هتل‌های دبی پاییز',
+      'ایمیل',
+      '۸٬۲۱۰',
+      '۱۴۰۵/۰۶/۱۶ · ۱۲:۳۰',
+      'پیشنهاد هتل دبی',
+      'زمان‌بندی‌شده',
+    ],
+    occurredAt: '2026-09-07',
+    statusIndex: 6,
+  },
+  {
+    id: 'preview-communication-scheduled-retention',
+    cells: [
+      'بازگشت مشتری غیرفعال',
+      'فعال‌سازی مجدد',
+      'پوش',
+      '۶٬۳۲۰',
+      '۱۴۰۵/۰۶/۲۰ · ۱۸:۰۰',
+      'بازگشت دوباره',
+      'در انتظار تأیید',
+    ],
+    occurredAt: '2026-09-11',
+    statusIndex: 6,
+  },
+];
+
+const communicationHistoryRows: readonly PreviewRow[] = [
+  {
+    id: 'preview-communication-history-europe',
+    cells: [
+      'موج اول جشنواره اروپا',
+      'پیامک',
+      '۲۲٬۴۸۰',
+      '۲۱٬۹۸۴',
+      '۴۹۶',
+      '۱٬۸۴۲',
+      '۱۴۰۵/۰۶/۰۵ · ۱۰:۰۰',
+      'پایان‌یافته',
+    ],
+    occurredAt: '2026-08-27',
+    statusIndex: 7,
+  },
+  {
+    id: 'preview-communication-history-istanbul',
+    cells: [
+      'یادآوری پرواز استانبول',
+      'پوش',
+      '۹٬۸۴۰',
+      '۹٬۶۸۲',
+      '۱۵۸',
+      '۸۶۴',
+      '۱۴۰۵/۰۶/۰۴ · ۱۸:۳۰',
+      'پایان‌یافته',
+    ],
+    occurredAt: '2026-08-26',
+    statusIndex: 7,
+  },
+  {
+    id: 'preview-communication-history-survey',
+    cells: [
+      'نظرسنجی پس از سفر',
+      'ایمیل',
+      '۴٬۲۴۰',
+      '۴٬۰۸۸',
+      '۱۵۲',
+      '۵۱۲',
+      '۱۴۰۵/۰۶/۰۲ · ۰۹:۱۵',
+      'پایان‌یافته',
+    ],
+    occurredAt: '2026-08-24',
+    statusIndex: 7,
+  },
+];
+
+const communicationTemplateRows: readonly PreviewRow[] = [
+  {
+    id: 'preview-template-europe',
+    cells: [
+      'اروپا — موج دوم',
+      'پیامک',
+      'تا ۳۱ شهریور، سفر اروپا...',
+      'نسخه ۳',
+      'امروز',
+      'تأییدشده',
+      'فعال',
+    ],
+    statusIndex: 6,
+  },
+  {
+    id: 'preview-template-flight',
+    cells: [
+      'یادآوری پرواز',
+      'پوش',
+      'زمان پرواز شما نزدیک است...',
+      'نسخه ۲',
+      'دیروز',
+      'تأییدشده',
+      'فعال',
+    ],
+    statusIndex: 6,
+  },
+  {
+    id: 'preview-template-dubai',
+    cells: [
+      'پیشنهاد هتل دبی',
+      'ایمیل',
+      'اقامت ویژه در دبی',
+      'نسخه ۴',
+      '۳ روز پیش',
+      'داخلی',
+      'فعال',
+    ],
+    statusIndex: 6,
+  },
+];
+
+function CommunicationsPage({
+  tab,
+  onOpen,
+  onNotice,
+}: {
+  tab: string;
+  onOpen: (item: MarketingPreviewItem) => void;
+  onNotice: NoticeHandler;
+}) {
+  if (tab === 'send') return <MessageComposer onNotice={onNotice} />;
+  if (tab === 'templates') {
+    return (
+      <div className="grid gap-5">
+        <MetricGrid
+          metrics={[
+            { label: 'همه قالب‌ها', value: '۶۸', icon: FileText },
+            {
+              label: 'تأییدشده',
+              value: '۵۲',
+              icon: CheckCircle2,
+              tone: 'emerald',
+            },
+            {
+              label: 'در انتظار تأیید',
+              value: '۹',
+              icon: Clock3,
+              tone: 'amber',
+            },
+            { label: 'منقضی', value: '۷', icon: AlertTriangle, tone: 'rose' },
+          ]}
+        />
+        <PreviewTable
+          columns={[
+            'نام قالب',
+            'کانال',
+            'موضوع / آغاز متن',
+            'نسخه',
+            'آخرین استفاده',
+            'تأیید محتوا',
+            'وضعیت',
+          ]}
+          onNotice={onNotice}
+          onOpen={onOpen}
+          rows={communicationTemplateRows}
+          section="communications"
+          tab={tab}
+          title="قالب‌های پیام"
+          totalLabel="۳ نمونه از ۶۸ قالب"
+        />
+      </div>
+    );
+  }
+  const isScheduled = tab === 'scheduled';
+  return (
+    <div className="grid gap-5">
+      <MetricGrid
+        metrics={
+          isScheduled
+            ? [
+                { label: 'در صف ارسال', value: '۱۷', icon: Clock3 },
+                {
+                  label: 'تأییدشده',
+                  value: '۱۲',
+                  icon: CheckCircle2,
+                  tone: 'emerald',
+                },
+                {
+                  label: 'در انتظار تأیید',
+                  value: '۵',
+                  icon: AlertTriangle,
+                  tone: 'amber',
+                },
+                { label: 'کانال فعال', value: '۳', icon: Send, tone: 'violet' },
+              ]
+            : [
+                { label: 'کل ارسال', value: '۱٫۲۸ میلیون', icon: Send },
+                {
+                  label: 'تحویل‌شده',
+                  value: '۱٫۱۸ میلیون',
+                  icon: CheckCircle2,
+                  tone: 'emerald',
+                },
+                { label: 'کلیک', value: '۸۴٬۲۱۰', icon: Mail, tone: 'violet' },
+                {
+                  label: 'ناموفق',
+                  value: '۳۱ هزار',
+                  icon: AlertTriangle,
+                  tone: 'rose',
+                },
+              ]
+        }
+      />
+      <PreviewTable
+        columns={
+          isScheduled
+            ? [
+                'عنوان ارسال',
+                'کمپین',
+                'کانال',
+                'مخاطبان',
+                'زمان ارسال',
+                'قالب',
+                'وضعیت',
+              ]
+            : [
+                'عنوان ارسال',
+                'کانال',
+                'مخاطبان',
+                'تحویل‌شده',
+                'ناموفق',
+                'کلیک',
+                'زمان',
+                'وضعیت',
+              ]
+        }
+        onNotice={onNotice}
+        onOpen={onOpen}
+        rows={
+          isScheduled ? scheduledCommunicationRows : communicationHistoryRows
+        }
+        section="communications"
+        tab={tab}
+        title={isScheduled ? 'ارسال‌های زمان‌بندی‌شده' : 'تاریخچه ارسال‌ها'}
+        totalLabel={isScheduled ? '۳ نمونه از ۱۷ ارسال' : '۳ نمونه از ۴۲ ارسال'}
+      />
+    </div>
+  );
+}
+
 const contentTableRows = {
   forms: [
     {
@@ -3954,7 +4430,7 @@ function SettingsPage({
   );
 }
 
-type SectionFormKind = 'content' | 'offer' | 'journey';
+type SectionFormKind = 'content' | 'offer' | 'journey' | 'template';
 
 const sectionFormDefinitions: Record<
   SectionFormKind,
@@ -3999,6 +4475,17 @@ const sectionFormDefinitions: Record<
     ],
     hasDateRange: true,
   },
+  template: {
+    title: 'قالب پیام جدید',
+    nameLabel: 'نام قالب',
+    types: [
+      ['sms', 'پیامک'],
+      ['email', 'ایمیل'],
+      ['whatsapp', 'واتساپ'],
+      ['push', 'پوش'],
+    ],
+    hasDateRange: false,
+  },
 };
 
 function SectionEntityFormDialog({
@@ -4016,6 +4503,7 @@ function SectionEntityFormDialog({
 }) {
   const definition = sectionFormDefinitions[kind];
   const isOffer = kind === 'offer';
+  const isTemplate = kind === 'template';
   const isDiscountCode = isOffer && tab === 'discounts';
   const entityTypes: readonly (readonly [string, string])[] = isOffer
     ? isDiscountCode
@@ -4060,6 +4548,7 @@ function SectionEntityFormDialog({
           onSubmit={(event) => {
             event.preventDefault();
             if (name.trim().length < 3) return;
+            if (isTemplate && description.trim().length < 3) return;
             if (isDiscountCode && couponCode.trim().length < 3) return;
             if (
               isOffer &&
@@ -4233,10 +4722,16 @@ function SectionEntityFormDialog({
             </>
           ) : null}
           <div className="sm:col-span-2">
-            <FormField id={`${kind}-entity-description`} label="توضیحات">
+            <FormField
+              id={`${kind}-entity-description`}
+              label={isTemplate ? 'متن قالب' : 'توضیحات'}
+              required={isTemplate}
+            >
               <Textarea
                 id={`${kind}-entity-description`}
+                minLength={isTemplate ? 3 : undefined}
                 onChange={(event) => setDescription(event.target.value)}
+                required={isTemplate}
                 rows={4}
                 value={description}
               />
@@ -4262,12 +4757,23 @@ function SectionEntityFormDialog({
 
 type PrimarySectionAction =
   | { label: string; behavior: 'builder' }
-  | { label: string; behavior: 'form'; formKind: SectionFormKind };
+  | { label: string; behavior: 'form'; formKind: SectionFormKind }
+  | { label: string; behavior: 'submit'; formId: string };
 
 function getPrimarySectionAction(
   section: DetailSection,
   tab: string,
 ): PrimarySectionAction | null {
+  if (section === 'communications' && tab === 'send') {
+    return {
+      label: 'ارسال پیام',
+      behavior: 'submit',
+      formId: 'marketing-message-composer',
+    };
+  }
+  if (section === 'communications' && tab === 'templates') {
+    return { label: 'قالب جدید', behavior: 'form', formKind: 'template' };
+  }
   if (section === 'content') {
     return { label: 'محتوای جدید', behavior: 'form', formKind: 'content' };
   }
@@ -4302,6 +4808,7 @@ export function MarketingReferenceSection({
   const primaryAction = getPrimarySectionAction(section, tab);
   const runPrimaryAction = () => {
     if (!primaryAction) return;
+    if (primaryAction.behavior === 'submit') return;
     if (primaryAction.behavior === 'builder') {
       setTab('builder');
       onNotice('سازنده سفر مشتری باز شد.');
@@ -4325,7 +4832,12 @@ export function MarketingReferenceSection({
               </TabsTrigger>
             ))}
           </TabsList>
-          {primaryAction ? (
+          {primaryAction?.behavior === 'submit' ? (
+            <Button form={primaryAction.formId} type="submit">
+              <Send aria-hidden="true" className="size-4" />
+              {primaryAction.label}
+            </Button>
+          ) : primaryAction ? (
             <Button onClick={runPrimaryAction}>
               <Plus aria-hidden="true" className="size-4" />
               {primaryAction.label}
@@ -4337,6 +4849,13 @@ export function MarketingReferenceSection({
             <p className="mb-4 text-sm text-muted-foreground">{description}</p>
             {section === 'audiences' ? (
               <AudiencePage onNotice={onNotice} onOpen={onOpen} tab={key} />
+            ) : null}
+            {section === 'communications' ? (
+              <CommunicationsPage
+                onNotice={onNotice}
+                onOpen={onOpen}
+                tab={key}
+              />
             ) : null}
             {section === 'content' ? (
               <ContentPage onNotice={onNotice} onOpen={onOpen} tab={key} />
