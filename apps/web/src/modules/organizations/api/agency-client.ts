@@ -1,7 +1,4 @@
-import type {
-  MasterDataListResponse,
-  MasterDataStatus,
-} from '@rubi/contracts';
+import type { MasterDataListResponse, MasterDataStatus } from '@rubi/contracts';
 
 import { masterDataApi } from '@/modules/master-data/api/client';
 
