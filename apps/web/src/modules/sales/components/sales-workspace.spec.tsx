@@ -1,9 +1,33 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { salesApi } from '../api/client';
-import { loadSalesWorkspace, SalesWorkspace } from './sales-workspace';
+import { formatMoney, loadSalesWorkspace, SalesWorkspace } from './sales-workspace';
 
 describe('sales dashboard loading', () => {
+  it('passes filters and pagination to the API rather than filtering only the loaded page', async () => {
+    const api = {
+      dashboard: vi.fn().mockResolvedValue({ data: {} }),
+      list: vi.fn().mockResolvedValue({ data: [], meta: { total: 0 } }),
+    } satisfies Pick<typeof salesApi, 'dashboard' | 'list'>;
+    await loadSalesWorkspace(api, { search: 'Example', settlementStatus: 'SETTLED', page: 3 });
+    expect(api.list).toHaveBeenCalledWith({
+      search: 'Example', settlementStatus: 'SETTLED', page: 3,
+      pageSize: 20, sortBy: 'updatedAt', sortDirection: 'desc',
+    });
+    expect(api.dashboard).toHaveBeenCalledWith();
+  });
+  it('formats money without lossy floating point conversion or mixing currencies', () => {
+    expect(formatMoney('9007199254740993.25', 'IRR')).toBe('۹٬۰۰۷٬۱۹۹٬۲۵۴٬۷۴۰٬۹۹۳٫۲۵ ریال');
+    expect(formatMoney('-1234.50', 'USD')).toBe('-۱٬۲۳۴٫۵۰ USD');
+    expect(formatMoney('0', 'IRR')).toBe('۰ ریال');
+  });
+  it('exposes labelled server-backed search and settlement controls', () => {
+    const html = renderToStaticMarkup(<SalesWorkspace />);
+    expect(html).toContain('جست‌وجوی قرارداد');
+    expect(html).toContain('وضعیت تسویه');
+    expect(html).toContain('شماره قرارداد یا نام مشتری');
+    expect(html).not.toContain('اولین قرارداد سفر را ثبت کنید');
+  });
   it('keeps an empty successful contract list separate from unavailable statistics', async () => {
     const api = {
       dashboard: vi.fn().mockRejectedValue(new Error('statistics unavailable')),

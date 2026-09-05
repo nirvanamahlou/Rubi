@@ -6,12 +6,15 @@ import {
   FilePlus2,
   RefreshCw,
   WalletCards,
+  Search,
+  ArrowLeft,
+  CheckCheck,
   type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { SalesContractPage, SalesDashboard } from '@rubi/contracts';
+import type { SalesContractListQuery, SalesContractPage, SalesDashboard } from '@rubi/contracts';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -26,6 +29,7 @@ import { ContractPayments } from './contract-payments';
 
 export async function loadSalesWorkspace(
   api: Pick<typeof salesApi, 'dashboard' | 'list'> = salesApi,
+  query: SalesContractListQuery = {},
 ) {
   const [dashboard, contracts] = await Promise.allSettled([
     api.dashboard(),
@@ -34,6 +38,7 @@ export async function loadSalesWorkspace(
       pageSize: 20,
       sortBy: 'updatedAt',
       sortDirection: 'desc',
+      ...query,
     }),
   ]);
   return { dashboard, contracts };
@@ -45,9 +50,9 @@ function failureMessage(reason: unknown): string {
     : 'دریافت اطلاعات فروش ناموفق بود.';
 }
 
-function formatMoney(amount: string, currencyCode: string) {
+export function formatMoney(amount: string, currencyCode: string) {
   const [integer = '0', fraction] = amount.split('.');
-  return `${integer.replace(/\B(?=(\d{3})+(?!\d))/g, '٬')}${fraction ? `٫${fraction}` : ''} ${currencyCode}`;
+  return `${integer.replace(/\B(?=(\d{3})+(?!\d))/g, '٬')}${fraction ? `٫${fraction}` : ''} ${currencyCode === 'IRR' ? 'ریال' : currencyCode}`.replace(/\d/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]!);
 }
 
 export function SalesWorkspace() {
@@ -58,38 +63,47 @@ export function SalesWorkspace() {
     null,
   );
   const [contracts, setContracts] = useState<SalesContractPage['data']>([]);
+  const [query, setQuery] = useState<SalesContractListQuery>({});
+  const [search, setSearch] = useState('');
+  const [total, setTotal] = useState(0);
+  const requestVersion = useRef(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [dashboardError, setDashboardError] = useState('');
   const load = useCallback(async () => {
+    const version = ++requestVersion.current;
     setLoading(true);
     setError('');
     setDashboardError('');
-    const result = await loadSalesWorkspace();
+    const result = await loadSalesWorkspace(salesApi, query);
+    if (version !== requestVersion.current) return;
     if (result.dashboard.status === 'fulfilled')
       setDashboard(result.dashboard.value.data);
     else {
       setDashboard(null);
       setDashboardError(failureMessage(result.dashboard.reason));
     }
-    if (result.contracts.status === 'fulfilled')
+    if (result.contracts.status === 'fulfilled') {
       setContracts(result.contracts.value.data);
+      setTotal(result.contracts.value.meta.total);
+    }
     else {
       setContracts([]);
       setError(failureMessage(result.contracts.reason));
     }
     setLoading(false);
-  }, []);
+  }, [query]);
   useEffect(() => {
     const timer = globalThis.setTimeout(() => void load(), 0);
     return () => globalThis.clearTimeout(timer);
   }, [load]);
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+    <div className="mx-auto grid w-full max-w-7xl gap-5">
+      <header className="relative flex flex-wrap items-center justify-between gap-5 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-l from-primary/10 via-surface to-surface p-6">
         <div>
-          <h1 className="text-xl font-black">داشبورد قراردادها</h1>
+          <p className="mb-2 text-xs font-bold tracking-wide text-primary">فروش و پیگیری سفر</p>
+          <h1 className="text-2xl font-black">داشبورد قراردادها</h1>
           <p className="mt-1 text-xs text-muted-foreground">
             قراردادهای قابل‌دسترسی شما · مانده بر اساس پرداخت تأییدشده مالی
           </p>
@@ -105,7 +119,7 @@ export function SalesWorkspace() {
             <RefreshCw className="size-4" />
           </Button>
           <Link
-            className={buttonVariants({ size: 'sm' })}
+            className={`${buttonVariants({ size: 'sm' })} !text-white`}
             href="/sales/contracts/new"
           >
             <FilePlus2 className="size-4" />
@@ -147,40 +161,84 @@ export function SalesWorkspace() {
             [
               [
                 'قرارداد امروز',
-                String(dashboard.todayContracts),
+                dashboard.todayContracts.toLocaleString('fa-IR'),
                 CalendarCheck,
               ],
-              ['قرارداد فعال', String(dashboard.activeContracts), FilePlus2],
+              ['قرارداد فعال', dashboard.activeContracts.toLocaleString('fa-IR'), FilePlus2],
               [
-                'تسویه نشده / ناقص',
-                String(
-                  dashboard.unpaidContracts +
-                    dashboard.partiallySettledContracts,
-                ),
+                'نیازمند تسویه',
+                (dashboard.unpaidContracts + dashboard.partiallySettledContracts).toLocaleString('fa-IR'),
                 WalletCards,
               ],
               ['فروش ریالی', formatMoney(dashboard.rialSales, 'IRR'), Banknote],
             ] satisfies ReadonlyArray<readonly [string, string, LucideIcon]>
           ).map(([label, value, Icon]) => (
-            <Card className="p-4" key={label}>
+            <Card className="relative overflow-hidden p-5" key={label}>
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{label}</p>
                   <p className="mt-2 text-2xl font-black">{value}</p>
                 </div>
-                <Icon className="size-5 text-primary" />
+                <span className="rounded-xl bg-primary/10 p-3"><Icon className="size-5 text-primary" /></span>
               </div>
             </Card>
           ))}
         </div>
       ) : null}
+      {dashboard && !loading ? (
+        <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+          <Card className="border-primary/20 bg-primary/5 p-5">
+            <div className="flex items-center gap-2 font-bold"><WalletCards className="size-5 text-primary" />مانده قابل دریافت</div>
+            <div className="mt-4 flex flex-wrap gap-3">
+              {dashboard.outstanding.length ? dashboard.outstanding.map((balance) => (
+                <span key={balance.currencyCode} className="rounded-xl border border-primary/15 bg-surface px-4 py-2 text-lg font-black">
+                  {formatMoney(balance.amount, balance.currencyCode)}
+                </span>
+              )) : <span className="text-sm text-muted-foreground">مانده‌ای ثبت نشده است</span>}
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">فقط پرداخت تأییدشده مالی از مانده کم می‌شود؛ ارزها جدا محاسبه می‌شوند.</p>
+          </Card>
+          <Card className="p-5">
+            <h2 className="font-bold">پیگیری‌های فروش</h2>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+              {[
+                ['منتظر تأیید مالی', dashboard.pendingFinancePayments],
+                ['پیگیری رزرواسیون', dashboard.pendingReservationActions],
+                ['تسویه‌شده', dashboard.settledContracts],
+              ].map(([label, value]) => <div key={label} className="rounded-xl bg-muted/50 p-3">
+                <p className="mb-2 text-xl font-black">{Number(value).toLocaleString('fa-IR')}</p>
+                <p className="text-muted-foreground">{label}</p>
+              </div>)}
+            </div>
+          </Card>
+        </div>
+      ) : null}
+      <section aria-label="جست‌وجو و فهرست قراردادها" className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-bold">قراردادها <span className="mr-2 text-xs font-normal text-muted-foreground">{!loading && !error ? `${total.toLocaleString('fa-IR')} نتیجه` : ''}</span></h2>
+          <span className="text-xs text-muted-foreground">مرتب‌شده بر اساس آخرین تغییر</span>
+        </div>
+        <form className="flex flex-wrap gap-2" onSubmit={(event) => { event.preventDefault(); setQuery((current) => ({ ...current, search: search.trim(), page: 1 })); }}>
+          <div className="flex min-w-48 flex-1 items-center gap-2 rounded-xl border border-border px-3 focus-within:ring-2 focus-within:ring-primary/30">
+            <Search className="size-4 shrink-0 text-muted-foreground" />
+            <input aria-label="جست‌وجوی قرارداد" placeholder="شماره قرارداد یا نام مشتری…" maxLength={160} value={search} onChange={(event) => setSearch(event.target.value)} className="h-11 w-full bg-transparent text-sm outline-none" />
+          </div>
+          <select aria-label="وضعیت تسویه" className="rounded-xl border border-border bg-surface px-3 text-sm" value={query.settlementStatus ?? ''} onChange={(event) => setQuery((current) => { const next = { ...current, page: 1 }; if (event.target.value) next.settlementStatus = event.target.value as NonNullable<SalesContractListQuery['settlementStatus']>; else delete next.settlementStatus; return next; })}>
+            <option value="">همه وضعیت‌های تسویه</option>
+            <option value="UNPAID">تسویه نشده</option><option value="PARTIALLY_SETTLED">تسویه ناقص</option><option value="SETTLED">تسویه شده</option><option value="OVERPAID">بستانکار</option>
+          </select>
+          <Button type="submit" variant="outline" disabled={loading}>جست‌وجو</Button>
+          {query.search || query.settlementStatus ? <Button type="button" variant="ghost" onClick={() => { setSearch(''); setQuery({}); }}>پاک کردن فیلترها</Button> : null}
+        </form>
+      </section>
       {!loading && !error && contracts.length === 0 ? (
         <EmptyState
-          title="هنوز قراردادی ثبت نشده"
-          description="قراردادهای شما پس از ثبت در این بخش نمایش داده می‌شوند."
+          title={query.search || query.settlementStatus ? 'قراردادی با این فیلترها پیدا نشد' : 'اولین قرارداد سفر را ثبت کنید'}
+          description={query.search || query.settlementStatus ? 'عبارت جست‌وجو یا وضعیت تسویه را تغییر دهید.' : 'مشتری و خدمات سفر را انتخاب کنید؛ قرارداد و پیگیری پرداخت‌ها از همین‌جا در دسترس خواهند بود.'}
+          action={query.search || query.settlementStatus ? <Button variant="outline" onClick={() => { setSearch(''); setQuery({}); }}>نمایش همه قراردادها</Button> : <Link className={`${buttonVariants({})} !text-white`} href="/sales/contracts/new"><FilePlus2 className="size-4" />ثبت قرارداد جدید<ArrowLeft className="size-4" /></Link>}
         />
       ) : null}
-      {contracts.length ? (
+      {contracts.length && !loading ? (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -189,8 +247,7 @@ export function SalesWorkspace() {
                   {[
                     'شماره',
                     'مشتری',
-                    'مسافران',
-                    'خدمات',
+                    'مسافران و خدمات',
                     'وضعیت',
                     'تسویه',
                     'مانده',
@@ -213,16 +270,15 @@ export function SalesWorkspace() {
                       {contract.customerNameSnapshot}
                     </td>
                     <td className="px-4 py-3">
-                      {contract.passengerNames.join('، ')}
+                      <p>{contract.passengerNames.length.toLocaleString('fa-IR')} مسافر</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{contract.services.map((kind) => ({ FLIGHT: 'پرواز', HOTEL: 'هتل', VISA: 'ویزا', TRANSFER: 'ترانسفر', INSURANCE: 'بیمه', TOUR: 'تور', BUS: 'اتوبوس', TRAIN: 'قطار', CIP: 'CIP', OTHER: 'سایر' })[kind]).join('، ')}</p>
                     </td>
                     <td className="px-4 py-3">
-                      {contract.services.join('، ')}
+                      <Badge>{({ DRAFT: 'پیش‌نویس', PENDING_CONFIRMATION: 'منتظر تأیید', CONFIRMED: 'تأییدشده', SENT_TO_RESERVATIONS: 'ارسال به رزرواسیون', IN_PROGRESS: 'در حال انجام', COMPLETED: 'تکمیل‌شده', CANCELLED: 'لغوشده' })[contract.status]}</Badge>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge>{contract.status}</Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge>
+                      <Badge className={contract.settlementStatus === 'SETTLED' ? 'bg-emerald-500/10 text-emerald-700' : 'bg-amber-500/10 text-amber-700'}>
+                        {contract.settlementStatus === 'SETTLED' ? <CheckCheck className="ml-1 size-3" /> : null}
                         {(
                           {
                             UNPAID: 'تسویه نشده',
@@ -262,6 +318,13 @@ export function SalesWorkspace() {
             </table>
           </div>
         </Card>
+      ) : null}
+      {!loading && !error && total > 20 ? (
+        <nav aria-label="صفحه‌بندی قراردادها" className="flex items-center justify-between">
+          <Button variant="outline" disabled={(query.page ?? 1) <= 1} onClick={() => setQuery((current) => ({ ...current, page: (current.page ?? 1) - 1 }))}>صفحه قبل</Button>
+          <span className="text-sm text-muted-foreground">صفحه {(query.page ?? 1).toLocaleString('fa-IR')} از {Math.ceil(total / 20).toLocaleString('fa-IR')}</span>
+          <Button variant="outline" disabled={(query.page ?? 1) * 20 >= total} onClick={() => setQuery((current) => ({ ...current, page: (current.page ?? 1) + 1 }))}>صفحه بعد</Button>
+        </nav>
       ) : null}
       {paymentContractId ? (
         <ContractPayments

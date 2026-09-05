@@ -1,5 +1,10 @@
 # Work Assignments
 
+## SALES-DASHBOARD-REDESIGN-0905 — PC-A — COMPLETE_LOCAL
+
+- Reserve Sales workspace, presentation/tests and task status docs only. Redesign summary, server-backed search/settlement filters, pagination and empty state. Preserve API authorization and Finance-confirmed balances; no schema, shared UI, IAM or dependency changes. Local delivery only; public publication remains unapproved.
+- Validation: 72 Sales Web tests, scoped lint, Web typecheck and production build (35 routes) passed. Existing public list filters/pagination and independent summary errors preserved; Persian labels and precision-safe decimal display. No authenticated browser QA claimed.
+
 ## SALES-PEOPLE-REDESIGN-0905 — PC-A — COMPLETE_LOCAL
 
 - Reserve Sales people-step UI/search/person form/model/tests and Sales adapter/domain/service tests. Separate contract buyer from passenger selection, mutually exclusive search/create, compact results and clear selected state. Align national ID requiredness with Customers producer; validate passenger references via its public masked API on Sales writes/confirmation. No Customers internals, schema or shared contract changes; public push remains unapproved.
