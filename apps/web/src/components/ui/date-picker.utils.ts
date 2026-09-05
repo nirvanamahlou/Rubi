@@ -28,10 +28,12 @@ function latinNumber(value: string): number {
   return Number(normalized);
 }
 
-function localeFor(system: CalendarSystem): string {
+function localeFor(system: CalendarSystem, gregorianEnglish = false): string {
   return system === 'persian'
     ? 'fa-IR-u-ca-persian'
-    : 'fa-IR-u-ca-gregory-nu-latn';
+    : gregorianEnglish
+      ? 'en-GB-u-ca-gregory-nu-latn'
+      : 'fa-IR-u-ca-gregory-nu-latn';
 }
 
 export function parseIsoDate(value?: string): Date | null {
@@ -161,10 +163,11 @@ export function setCalendarMonthYear(
 export function calendarMonthName(
   anchor: Date,
   system: CalendarSystem,
+  gregorianEnglish = false,
 ): string {
-  return new Intl.DateTimeFormat(localeFor(system), { month: 'long' }).format(
-    anchor,
-  );
+  return new Intl.DateTimeFormat(localeFor(system, gregorianEnglish), {
+    month: 'long',
+  }).format(anchor);
 }
 
 export function calendarMonthDays(
@@ -196,8 +199,9 @@ export function calendarMonthDays(
 export function calendarMonthLabel(
   anchor: Date,
   system: CalendarSystem,
+  gregorianEnglish = false,
 ): string {
-  return new Intl.DateTimeFormat(localeFor(system), {
+  return new Intl.DateTimeFormat(localeFor(system, gregorianEnglish), {
     year: 'numeric',
     month: 'long',
   }).format(anchor);
@@ -207,17 +211,23 @@ export function formatCalendarValue(
   value: string,
   system: CalendarSystem,
   includeTime = false,
+  gregorianEnglish = false,
 ): string {
   const date = parseIsoDate(value);
   if (!date) return '';
-  const formattedDate = new Intl.DateTimeFormat(localeFor(system), {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(date);
+  const formattedDate = new Intl.DateTimeFormat(
+    localeFor(system, gregorianEnglish),
+    {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    },
+  ).format(date);
   if (!includeTime) return formattedDate;
   const time = /T(\d{2}:\d{2})/.exec(value)?.[1];
-  return time ? `${formattedDate}، ساعت ${time}` : formattedDate;
+  return time
+    ? `${formattedDate}${system === 'gregorian' && gregorianEnglish ? ', ' : '، ساعت '}${time}`
+    : formattedDate;
 }
 
 export function joinDateAndTime(

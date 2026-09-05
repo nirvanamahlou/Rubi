@@ -7,7 +7,7 @@ import type {
   SalesPaymentMethod,
 } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
+import { SalesDatePicker as DatePicker } from './sales-date-picker';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { Alert, Card } from '@/components/ui/surfaces';
 import { masterDataApi } from '@/modules/master-data/api/client';

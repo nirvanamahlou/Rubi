@@ -32,6 +32,7 @@ function formatCalendarNumber(value: number, system: CalendarSystem): string {
 }
 
 export interface DatePickerProps {
+  gregorianEnglish?: boolean;
   id?: string;
   name?: string;
   value?: string;
@@ -49,6 +50,7 @@ export interface DatePickerProps {
 
 export function DatePicker({
   className,
+  gregorianEnglish = false,
   defaultValue = '',
   disabled,
   id,
@@ -65,6 +67,8 @@ export function DatePicker({
   const currentValue = value ?? internalValue;
   const [calendarSystem, setCalendarSystem] =
     React.useState<CalendarSystem>('persian');
+  const english = gregorianEnglish && calendarSystem === 'gregorian';
+  const t = (fa: string, en: string) => (english ? en : fa);
   const [calendarView, setCalendarView] = React.useState<CalendarView>('days');
   const [yearGridStart, setYearGridStart] = React.useState(0);
   const [open, setOpen] = React.useState(false);
@@ -89,9 +93,12 @@ export function DatePicker({
           month,
           calendarSystem,
         );
-        return { month, label: calendarMonthName(date, calendarSystem) };
+        return {
+          month,
+          label: calendarMonthName(date, calendarSystem, gregorianEnglish),
+        };
       }),
-    [anchor, anchorParts.year, calendarSystem],
+    [anchor, anchorParts.year, calendarSystem, gregorianEnglish],
   );
 
   React.useEffect(() => {
@@ -165,16 +172,16 @@ export function DatePicker({
 
   const previousLabel =
     calendarView === 'days'
-      ? 'ماه قبل'
+      ? t('ماه قبل', 'Previous month')
       : calendarView === 'months'
-        ? 'سال قبل'
-        : '۱۲ سال قبل';
+        ? t('سال قبل', 'Previous year')
+        : t('۱۲ سال قبل', 'Previous 12 years');
   const nextLabel =
     calendarView === 'days'
-      ? 'ماه بعد'
+      ? t('ماه بعد', 'Next month')
       : calendarView === 'months'
-        ? 'سال بعد'
-        : '۱۲ سال بعد';
+        ? t('سال بعد', 'Next year')
+        : t('۱۲ سال بعد', 'Next 12 years');
 
   return (
     <div className={cn('relative w-full', className)} ref={rootRef}>
@@ -201,21 +208,28 @@ export function DatePicker({
       >
         <span>
           {currentValue
-            ? formatCalendarValue(currentValue, calendarSystem, includeTime)
-            : placeholder}
+            ? formatCalendarValue(
+                currentValue,
+                calendarSystem,
+                includeTime,
+                gregorianEnglish,
+              )
+            : english && placeholder === 'انتخاب تاریخ'
+              ? 'Select date'
+              : placeholder}
         </span>
         <CalendarDays aria-hidden="true" className="size-5 text-primary" />
       </button>
 
       {open ? (
         <div
-          aria-label="انتخاب تاریخ"
+          aria-label={t('انتخاب تاریخ', 'Select date')}
           className="absolute start-0 top-[calc(100%+0.5rem)] z-[70] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15"
-          dir="rtl"
+          dir={english ? 'ltr' : 'rtl'}
           role="dialog"
         >
           <div
-            aria-label="نوع تقویم"
+            aria-label={t('نوع تقویم', 'Calendar system')}
             className="mb-3 grid grid-cols-2 rounded-xl bg-secondary p-1"
             role="group"
           >
@@ -232,7 +246,9 @@ export function DatePicker({
                 onClick={() => changeCalendarSystem(system)}
                 type="button"
               >
-                {system === 'persian' ? 'شمسی' : 'میلادی'}
+                {system === 'persian'
+                  ? t('شمسی', 'Persian')
+                  : t('میلادی', 'Gregorian')}
               </button>
             ))}
           </div>
@@ -244,7 +260,10 @@ export function DatePicker({
               onClick={navigateBackward}
               type="button"
             >
-              <ChevronRight aria-hidden="true" className="size-5" />
+              <ChevronRight
+                aria-hidden="true"
+                className={`size-5 ${english ? 'rotate-180' : ''}`}
+              />
             </button>
             <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
               {calendarView === 'years' ? (
@@ -255,7 +274,7 @@ export function DatePicker({
               ) : (
                 <>
                   <button
-                    aria-label="نمایش شبکه ماه‌ها"
+                    aria-label={t('نمایش شبکه ماه‌ها', 'Choose month')}
                     aria-pressed={calendarView === 'months'}
                     className={cn(
                       'h-9 min-w-0 flex-1 rounded-lg px-2 text-sm font-bold outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white',
@@ -264,10 +283,14 @@ export function DatePicker({
                     onClick={() => setCalendarView('months')}
                     type="button"
                   >
-                    {calendarMonthName(anchor, calendarSystem)}
+                    {calendarMonthName(
+                      anchor,
+                      calendarSystem,
+                      gregorianEnglish,
+                    )}
                   </button>
                   <button
-                    aria-label="نمایش شبکه سال‌ها"
+                    aria-label={t('نمایش شبکه سال‌ها', 'Choose year')}
                     className="h-9 min-w-0 flex-1 rounded-lg px-2 text-sm font-bold outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
                     dir="ltr"
                     onClick={() => {
@@ -281,7 +304,7 @@ export function DatePicker({
                 </>
               )}
               <span className="sr-only">
-                {calendarMonthLabel(anchor, calendarSystem)}
+                {calendarMonthLabel(anchor, calendarSystem, gregorianEnglish)}
               </span>
             </div>
             <button
@@ -290,19 +313,22 @@ export function DatePicker({
               onClick={navigateForward}
               type="button"
             >
-              <ChevronLeft aria-hidden="true" className="size-5" />
+              <ChevronLeft
+                aria-hidden="true"
+                className={`size-5 ${english ? 'rotate-180' : ''}`}
+              />
             </button>
           </div>
 
           {calendarView === 'months' ? (
             <div
-              aria-label="شبکه انتخاب ماه"
+              aria-label={t('شبکه انتخاب ماه', 'Choose month')}
               className="grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-2"
               role="group"
             >
               {monthOptions.map((option) => (
                 <button
-                  aria-label={`ماه ${option.label}`}
+                  aria-label={`${t('ماه', 'Month')} ${option.label}`}
                   aria-pressed={option.month === anchorParts.month}
                   className={cn(
                     'min-h-12 rounded-xl border border-primary/15 bg-surface px-2 text-sm font-semibold text-foreground shadow-xs outline-none transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
@@ -329,13 +355,13 @@ export function DatePicker({
             </div>
           ) : calendarView === 'years' ? (
             <div
-              aria-label="شبکه انتخاب سال"
+              aria-label={t('شبکه انتخاب سال', 'Choose year')}
               className="grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-2"
               role="group"
             >
               {yearOptions.map((year) => (
                 <button
-                  aria-label={`سال ${formatCalendarNumber(year, calendarSystem)}`}
+                  aria-label={`${t('سال', 'Year')} ${formatCalendarNumber(year, calendarSystem)}`}
                   aria-pressed={year === anchorParts.year}
                   className={cn(
                     'min-h-12 rounded-xl border border-primary/15 bg-surface px-2 text-sm font-semibold text-foreground shadow-xs outline-none transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
@@ -363,7 +389,10 @@ export function DatePicker({
             </div>
           ) : (
             <div className="grid grid-cols-7 gap-1 text-center">
-              {weekdayLabels[calendarSystem].map((label, index) => (
+              {(english
+                ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                : weekdayLabels[calendarSystem]
+              ).map((label, index) => (
                 <span
                   className="py-1 text-xs font-bold text-primary"
                   key={`${label}-${index}`}
@@ -403,7 +432,7 @@ export function DatePicker({
             <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-2">
               <Clock3 aria-hidden="true" className="size-4 text-primary" />
               <label className="text-xs font-semibold" htmlFor={`${id}-time`}>
-                ساعت
+                {t('ساعت', 'Time')}
               </label>
               <input
                 className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-surface px-2 text-center text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
@@ -420,13 +449,15 @@ export function DatePicker({
                 onClick={() => setOpen(false)}
                 type="button"
               >
-                تأیید
+                {t('تأیید', 'Confirm')}
               </button>
             </div>
           ) : null}
 
           {required ? (
-            <span className="sr-only">انتخاب تاریخ الزامی است.</span>
+            <span className="sr-only">
+              {t('انتخاب تاریخ الزامی است.', 'A date is required.')}
+            </span>
           ) : null}
         </div>
       ) : null}

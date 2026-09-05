@@ -54,6 +54,8 @@ export function FlightDateRangeFilter({
     () => parseIsoDate(value.from) ?? new Date(),
   );
   const [system, setSystem] = useState<CalendarSystem>('persian');
+  const english = system === 'gregorian';
+  const t = (fa: string, en: string) => (english ? en : fa);
   const [view, setView] = useState<'days' | 'months' | 'years'>('days');
   const [yearStart, setYearStart] = useState(0);
   const [placement, setPlacement] = useState({ above: false, maxHeight: 520 });
@@ -131,9 +133,9 @@ export function FlightDateRangeFilter({
         }}
       >
         <span>
-          بازه تاریخ اختیاری
+          {t('بازه تاریخ اختیاری', 'Optional date range')}
           {value.from
-            ? ': ' + format(value.from) + ' تا ' + format(value.to)
+            ? ': ' + format(value.from) + t(' تا ', ' to ') + format(value.to)
             : ''}
         </span>
         <CalendarDays
@@ -150,25 +152,28 @@ export function FlightDateRangeFilter({
             setOpen(false);
           }}
         >
-          پاک کردن فیلتر تاریخ
+          {t('پاک کردن فیلتر تاریخ', 'Clear date filter')}
         </Button>
       ) : (
         <span className="text-xs text-muted-foreground">
-          همه بلیت‌های آینده، از نزدیک‌ترین تاریخ
+          {t(
+            'همه بلیت‌های آینده، از نزدیک‌ترین تاریخ',
+            'All upcoming flights, earliest first',
+          )}
         </span>
       )}
       {open ? (
         <div
           role="dialog"
-          dir="rtl"
-          aria-label="فیلتر بازه تاریخ پرواز"
+          dir={english ? 'ltr' : 'rtl'}
+          aria-label={t('فیلتر بازه تاریخ پرواز', 'Flight date range')}
           style={{ maxHeight: placement.maxHeight }}
           className={`absolute start-0 z-[70] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15 ${placement.above ? 'bottom-[calc(100%+0.5rem)]' : 'top-[3.25rem]'}`}
         >
           <div
             className="mb-3 grid grid-cols-2 rounded-xl bg-secondary p-1"
             role="group"
-            aria-label="نوع تقویم"
+            aria-label={t('نوع تقویم', 'Calendar system')}
           >
             {(['persian', 'gregorian'] as const).map((item) => (
               <button
@@ -181,7 +186,9 @@ export function FlightDateRangeFilter({
                   setView('days');
                 }}
               >
-                {item === 'persian' ? 'شمسی' : 'میلادی'}
+                {item === 'persian'
+                  ? t('شمسی', 'Persian')
+                  : t('میلادی', 'Gregorian')}
               </button>
             ))}
           </div>
@@ -191,14 +198,16 @@ export function FlightDateRangeFilter({
               className="grid size-9 place-items-center rounded-lg hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
               aria-label={
                 view === 'days'
-                  ? 'ماه قبل'
+                  ? t('ماه قبل', 'Previous month')
                   : view === 'months'
-                    ? 'سال قبل'
-                    : '۱۲ سال قبل'
+                    ? t('سال قبل', 'Previous year')
+                    : t('۱۲ سال قبل', 'Previous 12 years')
               }
               onClick={() => navigate(-1)}
             >
-              <ChevronRight className="size-5" />
+              <ChevronRight
+                className={`size-5 ${english ? 'rotate-180' : ''}`}
+              />
             </button>
             <div className="flex flex-1 justify-center gap-1">
               {view === 'years' ? (
@@ -210,15 +219,15 @@ export function FlightDateRangeFilter({
                   <button
                     type="button"
                     className="h-9 rounded-lg px-2 text-sm font-bold hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
-                    aria-label="نمایش شبکه ماه‌ها"
+                    aria-label={t('نمایش شبکه ماه‌ها', 'Choose month')}
                     onClick={() => setView('months')}
                   >
-                    {calendarMonthName(anchor, system)}
+                    {calendarMonthName(anchor, system, true)}
                   </button>
                   <button
                     type="button"
                     className="h-9 rounded-lg px-2 text-sm font-bold hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
-                    aria-label="نمایش شبکه سال‌ها"
+                    aria-label={t('نمایش شبکه سال‌ها', 'Choose year')}
                     onClick={() => {
                       setYearStart(parts.year - 5);
                       setView('years');
@@ -229,7 +238,7 @@ export function FlightDateRangeFilter({
                 </>
               )}
               <span className="sr-only">
-                {calendarMonthLabel(anchor, system)}
+                {calendarMonthLabel(anchor, system, true)}
               </span>
             </div>
             <button
@@ -237,27 +246,37 @@ export function FlightDateRangeFilter({
               className="grid size-9 place-items-center rounded-lg hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
               aria-label={
                 view === 'days'
-                  ? 'ماه بعد'
+                  ? t('ماه بعد', 'Next month')
                   : view === 'months'
-                    ? 'سال بعد'
-                    : '۱۲ سال بعد'
+                    ? t('سال بعد', 'Next year')
+                    : t('۱۲ سال بعد', 'Next 12 years')
               }
               onClick={() => navigate(1)}
             >
-              <ChevronLeft className="size-5" />
+              <ChevronLeft
+                className={`size-5 ${english ? 'rotate-180' : ''}`}
+              />
             </button>
           </div>
           <p className="mb-3 text-xs" aria-live="polite">
             {draft.from && !draft.to
-              ? 'اکنون روز پایان بازه را انتخاب کنید'
-              : 'روز شروع و پایان بازه را در همین تقویم انتخاب کنید'}
+              ? t(
+                  'اکنون روز پایان بازه را انتخاب کنید',
+                  'Now select the end date',
+                )
+              : t(
+                  'روز شروع و پایان بازه را در همین تقویم انتخاب کنید',
+                  'Select the start and end dates in this calendar',
+                )}
           </p>
           {view !== 'days' ? (
             <div
               className="grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-2"
               role="group"
               aria-label={
-                view === 'months' ? 'شبکه انتخاب ماه' : 'شبکه انتخاب سال'
+                view === 'months'
+                  ? t('شبکه انتخاب ماه', 'Choose month')
+                  : t('شبکه انتخاب سال', 'Choose year')
               }
             >
               {Array.from({ length: 12 }, (_, index) => {
@@ -269,6 +288,7 @@ export function FlightDateRangeFilter({
                     ? calendarMonthName(
                         setCalendarMonthYear(anchor, parts.year, value, system),
                         system,
+                        true,
                       )
                     : number(value);
                 return (
@@ -298,7 +318,7 @@ export function FlightDateRangeFilter({
             <div className="grid grid-cols-7 gap-1">
               {(system === 'persian'
                 ? ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج']
-                : ['ی', 'د', 'س', 'چ', 'پ', 'ج', 'ش']
+                : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
               ).map((day, index) => (
                 <span
                   key={index}
@@ -356,7 +376,7 @@ export function FlightDateRangeFilter({
               setOpen(false);
             }}
           >
-            اعمال فیلتر
+            {t('اعمال فیلتر', 'Apply filter')}
           </Button>
         </div>
       ) : null}

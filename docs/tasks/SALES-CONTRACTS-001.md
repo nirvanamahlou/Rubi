@@ -2,6 +2,12 @@
 
 - Status: `READY_FOR_REVIEW`
 
+## Vertical route pairs and English Gregorian Sales calendars
+
+- Origin/destination each group country above city, with two desktop columns and a stacked mobile layout. Search/filter/reference semantics unchanged.
+- Additive gregorianEnglish option on shared DatePicker and display helpers defaults to false. SalesDatePicker opts in for all Sales date fields, and the Sales range picker uses the same English month names. Gregorian panels have English labels/weekdays/digits and LTR navigation; Persian mode and other consumers remain unchanged. Stored ISO date/time values do not change.
+- Shared Calendar Owner reserved by PC-A for these clean shared files pending review. No dependency, API, schema or IAM modifications. 48 Sales/shared-calendar tests, scoped lint/typecheck and Web production build passed. Authenticated visual QA remains unclaimed.
+
 ## Calendar parity and ticket presentation
 
 - Final Web production build passed (35 routes), with the configured public API URL retained for local runtime.

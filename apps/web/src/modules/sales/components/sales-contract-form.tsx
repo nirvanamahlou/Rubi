@@ -23,7 +23,7 @@ import type {
 } from '@rubi/contracts';
 
 import { Button, buttonVariants } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
+import { SalesDatePicker as DatePicker } from './sales-date-picker';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import { Alert, Badge, Card } from '@/components/ui/surfaces';
 import { customersApi } from '@/modules/customers/api/client';
@@ -619,42 +619,47 @@ export function SalesContractForm() {
         {step === 0 ? (
           <div className="grid gap-5">
             <h2 className="text-sm font-bold">مسیر سفر</h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <SearchableReference
-                label="کشور مبدأ"
-                value={state.originCountryId}
-                options={references.countries}
-                onChange={(originCountryId) =>
-                  patchState({ originCountryId, originId: '' })
-                }
-              />
-              <SearchableReference
-                label="شهر مبدأ"
-                value={state.originId}
-                disabled={!state.originCountryId}
-                options={references.cities.filter(
-                  (item) => item.attributes.countryId === state.originCountryId,
-                )}
-                onChange={(originId) => patchState({ originId })}
-              />
-              <SearchableReference
-                label="کشور مقصد"
-                value={state.destinationCountryId}
-                options={references.countries}
-                onChange={(destinationCountryId) =>
-                  patchState({ destinationCountryId, destinationId: '' })
-                }
-              />
-              <SearchableReference
-                label="شهر مقصد"
-                value={state.destinationId}
-                disabled={!state.destinationCountryId}
-                options={references.cities.filter(
-                  (item) =>
-                    item.attributes.countryId === state.destinationCountryId,
-                )}
-                onChange={(destinationId) => patchState({ destinationId })}
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3" role="group" aria-label="مبدأ سفر">
+                <SearchableReference
+                  label="کشور مبدأ"
+                  value={state.originCountryId}
+                  options={references.countries}
+                  onChange={(originCountryId) =>
+                    patchState({ originCountryId, originId: '' })
+                  }
+                />
+                <SearchableReference
+                  label="شهر مبدأ"
+                  value={state.originId}
+                  disabled={!state.originCountryId}
+                  options={references.cities.filter(
+                    (item) =>
+                      item.attributes.countryId === state.originCountryId,
+                  )}
+                  onChange={(originId) => patchState({ originId })}
+                />
+              </div>
+              <div className="grid gap-3" role="group" aria-label="مقصد سفر">
+                <SearchableReference
+                  label="کشور مقصد"
+                  value={state.destinationCountryId}
+                  options={references.countries}
+                  onChange={(destinationCountryId) =>
+                    patchState({ destinationCountryId, destinationId: '' })
+                  }
+                />
+                <SearchableReference
+                  label="شهر مقصد"
+                  value={state.destinationId}
+                  disabled={!state.destinationCountryId}
+                  options={references.cities.filter(
+                    (item) =>
+                      item.attributes.countryId === state.destinationCountryId,
+                  )}
+                  onChange={(destinationId) => patchState({ destinationId })}
+                />
+              </div>
             </div>
           </div>
         ) : null}

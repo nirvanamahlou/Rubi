@@ -2,6 +2,8 @@
 
 ## SALES-CONTRACTS-001 — PC-A — READY_FOR_REVIEW
 
+- PC-A route/calendar-language follow-up READY_FOR_REVIEW: origin/destination each have vertically paired country/city fields. Sales calendar wrapper opts into English Gregorian month/day names, labels, digits and LTR; default shared behavior and ISO values unchanged. Shared Calendar Owner = PC-A/SALES-CONTRACTS-001 for the additive option pending review. 48 Sales/shared-calendar tests, scoped lint/typecheck and Web production build passed; no schema/dependency/API changes.
+
 - PC-A calendar/ticket presentation follow-up READY_FOR_REVIEW: Sales-local range calendar matches shared palette/trigger/month-year grids and chooses above/below with scroll-bounded height. Ticket cards show named route, separate Tehran departure/arrival dates and minute-only times, duration, cabin, total capacity and blue selected state. 39 Web Sales tests and scoped lint/typecheck pass; shared UI, range semantics and return query unchanged.
 
 - PC-A people-step follow-up READY_FOR_REVIEW: customer and passenger selection/birthdates share one step; inline customer/passenger creation uses existing Customers public API, preserving existing passengers and deduplicating selections. 35 Sales Web tests, scoped lint/typecheck and production build passed. No edits to concurrent Customers/Contracts/Prisma work or IAM permissions; authenticated UI creation not claimed.

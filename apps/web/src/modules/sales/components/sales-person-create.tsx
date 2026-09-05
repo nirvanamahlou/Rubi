@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import type { CustomerMutationRequest, CustomerSummary } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
+import { SalesDatePicker as DatePicker } from './sales-date-picker';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { Alert } from '@/components/ui/surfaces';
 import { customersApi } from '@/modules/customers/api/client';
