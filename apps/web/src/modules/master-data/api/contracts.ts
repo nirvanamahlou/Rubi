@@ -52,6 +52,20 @@ export const masterDataListQuerySchema = z.object({
     .optional(),
   paymentDirection: z.enum(['RECEIPT', 'PAYMENT', 'BOTH']).optional(),
   organizationId: z.string().uuid().optional(),
+  organizationRole: z
+    .enum([
+      'AGENCY',
+      'CORPORATE_CUSTOMER',
+      'SUPPLIER',
+      'AIRLINE',
+      'HOTEL_PROVIDER',
+      'INSURANCE_PROVIDER',
+      'BUS_PROVIDER',
+      'TOUR_OPERATOR',
+      'BROKER',
+      'RAIL_OPERATOR',
+    ])
+    .optional(),
   serviceId: z.string().uuid().optional(),
   collaborationStatus: z
     .enum(['ACTIVE', 'UNDER_REVIEW', 'PURCHASE_SUSPENDED', 'ENDED'])
@@ -181,6 +195,7 @@ export function serializeMasterDataListQuery(query: MasterDataListQuery) {
     'paymentChannel',
     'paymentDirection',
     'organizationId',
+    'organizationRole',
     'serviceId',
     'collaborationStatus',
     'contactCompleteness',

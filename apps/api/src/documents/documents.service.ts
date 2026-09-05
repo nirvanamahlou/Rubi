@@ -229,6 +229,27 @@ export class DocumentsService {
   }
 
   async list(query: DocumentListQueryV1, actor: AuthenticatedActor) {
+    const sourceReference = [
+      query.sourceModule,
+      query.sourceEntityType,
+      query.sourceEntityId,
+    ];
+    const suppliedSourceFields = sourceReference.filter(
+      (value) => value !== undefined,
+    ).length;
+    const normalizedSourceReference = sourceReference.map((value) =>
+      value?.trim(),
+    );
+    if (
+      suppliedSourceFields !== 0 &&
+      (suppliedSourceFields !== 3 ||
+        normalizedSourceReference.some((value) => !value))
+    ) {
+      throw new BadRequestException({
+        code: 'DOCUMENT_SOURCE_FILTER_INCOMPLETE',
+        message: 'مرجع پرونده برای فیلتر اسناد باید کامل باشد.',
+      });
+    }
     const page = Math.max(1, query.page ?? 1);
     const pageSize = Math.min(100, Math.max(10, query.pageSize ?? 25));
     const sortBy = validSortFields.has(query.sortBy ?? 'updatedAt')
@@ -237,6 +258,13 @@ export class DocumentsService {
     const normalized = {
       ...query,
       ...(query.search ? { search: query.search.trim().slice(0, 120) } : {}),
+      ...(suppliedSourceFields === 3
+        ? {
+            sourceModule: normalizedSourceReference[0]!,
+            sourceEntityType: normalizedSourceReference[1]!,
+            sourceEntityId: normalizedSourceReference[2]!,
+          }
+        : {}),
       page,
       pageSize,
       sortBy,

@@ -36,7 +36,7 @@ describe('Master Data visual polish contract', () => {
     expect(form).toContain('<DialogTitle>');
     expect(form).toContain("'aria-describedby': undefined");
     expect(form).toContain('validateMasterDataDraft(definition.key, values)');
-    expect(form).toContain('await onPersist(result.values)');
+    expect(form).toContain('await onPersist(result.values, logoChange)');
     expect(form).toContain("record.version.toLocaleString('fa-IR')");
     expect(source('master-data-form.tsx')).toContain(
       'Blocked by Migration Lock',

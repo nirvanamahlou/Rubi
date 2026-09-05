@@ -1,5 +1,17 @@
 # Work Assignments
 
+## CUSTOMER-DOCUMENTS-AGENCIES-INTEGRATION-001 — PC-B — READY_FOR_REVIEW
+
+- واگذاری صریح مالک محصول در 2026-09-05: نجات و سازگارکردن قابلیت‌های سالم PR #85 با آخرین Documents، اتصال واقعی Customer 360 به اسناد، اتصال عملیاتی آژانس‌ها به Organizationهای اطلاعات پایه و حذف شناسه موقت از جریان Logo. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-customer-documents-agencies-integration` از `origin/develop@a56b62e`؛ این Branch جایگزین فنی و به‌روز PR #85 است و Branch اصلی PR #85 بازنویسی، Merge یا Force Push نمی‌شود.
+- محدوده رزروشده: reconciliation اتصال Customer/Documents، مصرف Public Contract اسناد در Customer 360، اتصال Agency UI/API به Master Organization از مسیر عمومی، جریان امن Logo Reference، Adapterها و تست‌ها و سند اختصاصی همین Task.
+- محدوده ممنوع: Prisma Schema/Migration/Seed، فایل‌ها و Branch فروش، Sales shared contract، Finance، Reservations، Ticket Catalog، Query مستقیم جدول ماژول دیگر، تغییر مستقیم `main`/`develop`، Force Push و داده واقعی مشتری/مسافر/سند.
+- قفل‌های `Migration Owner`، `Central Docs Owner` و `Sales shared-contract/root export Owner` همچنان نزد `PC-A/SALES-CONTRACTS-001` باقی می‌مانند. Dependency/Lockfile آزاد است و در این Task تغییر نمی‌کند.
+- قراردادهای بین‌ماژولی فقط versioned و عمومی مصرف می‌شوند؛ تغییر افزایشی احتمالی باید backward-compatible، دارای Contract Test و محدود به Documents/Master Data مرتبط باشد.
+- نتیجه: فیلتر canonical اسناد و پنل واقعی Customer 360 بازیابی و با Documents فعلی سازگار شد؛ مراجع غیرفعال قدیمی مشتری بدون ورود به انتخاب‌های جدید حفظ می‌شوند؛ صفحه آژانس‌ها Organizationهای نقش `AGENCY` و تماس ماسک‌شده را از API عمومی اطلاعات پایه مصرف می‌کند؛ جریان Logo فقط پس از ایجاد شناسه پایدار Upload و با Optimistic Lock متصل می‌شود و retry فایل تکراری نمی‌سازد.
+- موارد فاقد مدل مالک: آدرس پایه سازمان و پروفایل عملیاتی آژانس شامل قرارداد/اعتبار/نرخ توافقی فقط در سند اختصاصی با وضعیت `BLOCKED_FOR_MIGRATION` ثبت شدند و هیچ Schema یا داده ساختگی ساخته نشد.
+- اعتبارسنجی: Prisma format/validate/generate بدون تغییر Schema، lint، typecheck، تست کامل Monorepo و تست رفتاری Adapter آژانس (`1,500` تست موفق و `70` تست اختیاری PostgreSQL skip) و Production Build با `34` Route موفق‌اند. `package.json` و Lockfile تغییری ندارند.
+
 ## DOCUMENTS-006-CROSS-MODULE-CONNECTIONS — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک در 2026-09-05: تمام ارتباط‌های داخلی و خارجی «اسناد و فایل‌ها» کامل و قابل استفاده شوند. `COMPUTER_ID=PC-B`؛ پیام پیگیری مالک مجوز تحویل‌گرفتن اتصال‌های Documents از کارهای باز PC-A است، اما Branchهای PC-A حفظ و فقط‌خواندنی می‌مانند.

@@ -30,7 +30,7 @@ import {
   getMasterDataDefinition,
   type MasterDataCatalogItem,
 } from '../model/catalog';
-import { masterDataApi } from '../api/client';
+import { masterDataApi, type MasterDataLogoChange } from '../api/client';
 import { getMasterDataFormFields } from '../model/form-fields';
 import { validateMasterDataDraft } from '../model/validation';
 import { getReferenceFieldConfig } from '../model/reference-fields';
@@ -123,7 +123,10 @@ function GenericMasterDataLiveForm({
   definition: MasterDataCatalogItem;
   mode: MasterDataFormMode;
   onOpenChange: (open: boolean) => void;
-  onPersist: (values: Record<string, string>) => Promise<void>;
+  onPersist: (
+    values: Record<string, string>,
+    logoChange?: MasterDataLogoChange,
+  ) => Promise<void>;
   open: boolean;
   record?: MasterDataRecord;
   initialValues?: Record<string, string>;
@@ -141,6 +144,7 @@ function GenericMasterDataLiveForm({
   } | null>(null);
   const [referenceRevision, setReferenceRevision] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [logoChange, setLogoChange] = useState<MasterDataLogoChange>();
   const [saving, setSaving] = useState(false);
   const readonly = mode === 'view';
 
@@ -161,7 +165,7 @@ function GenericMasterDataLiveForm({
     }
     setSaving(true);
     try {
-      await onPersist(result.values);
+      await onPersist(result.values, logoChange);
     } catch (error) {
       setErrors({
         form:
@@ -298,10 +302,8 @@ function GenericMasterDataLiveForm({
                 <MasterDataLogoUpload
                   disabled={readonly || saving}
                   label={field.label}
-                  onChange={updateValue}
-                  {...(record ? { recordId: record.id } : {})}
-                  resource={definition.key}
-                  title={`${definition.singularLabel} ${values.name || values.legalName || record?.name || ''}`.trim()}
+                  onChange={setLogoChange}
+                  {...(logoChange ? { pending: logoChange } : {})}
                   value={values[field.key] ?? ''}
                 />
               ) : field.type === 'select' ? (
@@ -422,14 +424,18 @@ function GenericMasterDataLiveForm({
           onOpenChange={(next) => {
             if (!next) setReferenceForm(null);
           }}
-          onPersist={async (draft) => {
+          onPersist={async (draft, nestedLogoChange) => {
             const resource = referenceForm.definition.key;
-            const response = referenceForm.record
-              ? await masterDataApi.update(resource, referenceForm.record.id, {
-                  values: draft,
-                  version: referenceForm.record.version,
-                })
-              : await masterDataApi.create(resource, { values: draft });
+            const response = await masterDataApi.persistWithLogo({
+              resource,
+              values: draft,
+              title:
+                `${referenceForm.definition.singularLabel} ${draft.name ?? draft.legalName ?? referenceForm.record?.name ?? ''}`.trim(),
+              ...(referenceForm.record
+                ? { existing: referenceForm.record }
+                : {}),
+              ...(nestedLogoChange ? { logoChange: nestedLogoChange } : {}),
+            });
             const field = referenceForm.field;
             const config = getReferenceFieldConfig(definition.key, field)!;
             const selectedValue =

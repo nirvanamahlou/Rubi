@@ -92,6 +92,20 @@ export type MasterOrganizationContactChannel =
 export const MASTER_ORGANIZATION_PERSON_TYPES = ['NATURAL', 'LEGAL'] as const;
 export type MasterOrganizationPersonType =
   (typeof MASTER_ORGANIZATION_PERSON_TYPES)[number];
+export const MASTER_ORGANIZATION_ROLE_CODES = [
+  'AGENCY',
+  'CORPORATE_CUSTOMER',
+  'SUPPLIER',
+  'AIRLINE',
+  'HOTEL_PROVIDER',
+  'INSURANCE_PROVIDER',
+  'BUS_PROVIDER',
+  'TOUR_OPERATOR',
+  'BROKER',
+  'RAIL_OPERATOR',
+] as const;
+export type MasterOrganizationRoleCode =
+  (typeof MASTER_ORGANIZATION_ROLE_CODES)[number];
 /** Additive v12 fields; omitted PATCH fields retain their saved values. */
 export interface MasterPartnerProfileFields {
   englishName?: string | null;
@@ -147,6 +161,8 @@ export interface MasterDataListQuery {
   paymentChannel?: MasterPaymentMethodChannel;
   paymentDirection?: MasterPaymentMethodDirection;
   organizationId?: string;
+  /** Exact shared-organization role filter; additive for operational consumers. */
+  organizationRole?: MasterOrganizationRoleCode;
   serviceId?: string;
   collaborationStatus?: MasterCollaborationStatus;
   providerConnected?: boolean;
