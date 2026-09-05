@@ -3,6 +3,7 @@
 - Computer: `PC-B`
 - Branch: `codex/pc-b-documents-connections`
 - Base: `origin/develop@a56b62e`
+- Pull Request: [#95](https://github.com/nirvanamahlou/Rubi/pull/95) → `develop`
 - Status: `READY_FOR_REVIEW`
 
 ## هدف
