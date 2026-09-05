@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { emptySalesForm, salesPayload } from './sales-form';
+import {
+  emptySalesForm,
+  salesPayload,
+  salesPassengerAgeLabel,
+  salesSteps,
+} from './sales-form';
 
 describe('sales contract form payload', () => {
+  it('starts with route/services and derives age at travel date', () => {
+    expect(salesSteps[0]).toBe('مسیر و خدمات');
+    expect(salesPassengerAgeLabel('2025-10-02', '2027-10-01')).toBe('نوزاد');
+    expect(salesPassengerAgeLabel('2025-10-01', '2027-10-01')).toBe('کودک');
+    expect(salesPassengerAgeLabel('2015-10-01', '2027-10-01')).toBe('بزرگسال');
+  });
   it('builds a mixed-currency contract and UTC payment schedule', () => {
     const payload = salesPayload({
       ...emptySalesForm,

@@ -68,6 +68,7 @@ import { TicketForm } from './ticket-form';
 import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
 import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
+import { PublishedOffers } from './published-offers';
 
 const actor = 'کاربر جاری';
 const transportIcons = {
@@ -86,47 +87,50 @@ function availableInventory(product: Product): Inventory {
 
 export function TicketWorkspace() {
   return (
-    <Tabs defaultValue="catalog" dir="rtl" className="space-y-5">
-      <TabsList
-        aria-label="انتخاب بخش مدیریت بلیت"
-        className="grid h-auto w-full grid-cols-1 gap-2 rounded-2xl border border-primary/15 bg-primary/[0.04] p-2 sm:grid-cols-2 lg:w-fit"
-      >
-        <TabsTrigger
-          className="group min-h-20 justify-start gap-3 border border-transparent px-4 py-3 text-start transition hover:border-primary/20 hover:bg-surface/80 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
-          value="catalog"
+    <>
+      <PublishedOffers />
+      <Tabs defaultValue="catalog" dir="rtl" className="space-y-5">
+        <TabsList
+          aria-label="انتخاب بخش مدیریت بلیت"
+          className="grid h-auto w-full grid-cols-1 gap-2 rounded-2xl border border-primary/15 bg-primary/[0.04] p-2 sm:grid-cols-2 lg:w-fit"
         >
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary group-data-[state=active]:bg-primary-foreground/15 group-data-[state=active]:text-primary-foreground">
-            <Ticket className="size-5" aria-hidden />
-          </span>
-          <span>
-            <span className="block font-bold">تعریف بلیت قابل فروش</span>
-            <span className="mt-1 block text-xs opacity-75">
-              مسیر، برنامه حرکت و ظرفیت
+          <TabsTrigger
+            className="group min-h-20 justify-start gap-3 border border-transparent px-4 py-3 text-start transition hover:border-primary/20 hover:bg-surface/80 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            value="catalog"
+          >
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary group-data-[state=active]:bg-primary-foreground/15 group-data-[state=active]:text-primary-foreground">
+              <Ticket className="size-5" aria-hidden />
             </span>
-          </span>
-        </TabsTrigger>
-        <TabsTrigger
-          className="group min-h-20 justify-start gap-3 border border-transparent px-4 py-3 text-start transition hover:border-primary/20 hover:bg-surface/80 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
-          value="issued"
-        >
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary group-data-[state=active]:bg-primary-foreground/15 group-data-[state=active]:text-primary-foreground">
-            <TicketCheck className="size-5" aria-hidden />
-          </span>
-          <span>
-            <span className="block font-bold">بلیت‌های صادرشده مسافران</span>
-            <span className="mt-1 block text-xs opacity-75">
-              گزارش صدور، PNR و قرارداد
+            <span>
+              <span className="block font-bold">تعریف بلیت قابل فروش</span>
+              <span className="mt-1 block text-xs opacity-75">
+                مسیر، برنامه حرکت و ظرفیت
+              </span>
             </span>
-          </span>
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value="catalog">
-        <TicketCatalogWorkspace />
-      </TabsContent>
-      <TabsContent value="issued">
-        <IssuedTicketsWorkspace connected={false} tickets={[]} />
-      </TabsContent>
-    </Tabs>
+          </TabsTrigger>
+          <TabsTrigger
+            className="group min-h-20 justify-start gap-3 border border-transparent px-4 py-3 text-start transition hover:border-primary/20 hover:bg-surface/80 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            value="issued"
+          >
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary group-data-[state=active]:bg-primary-foreground/15 group-data-[state=active]:text-primary-foreground">
+              <TicketCheck className="size-5" aria-hidden />
+            </span>
+            <span>
+              <span className="block font-bold">بلیت‌های صادرشده مسافران</span>
+              <span className="mt-1 block text-xs opacity-75">
+                گزارش صدور، PNR و قرارداد
+              </span>
+            </span>
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="catalog">
+          <TicketCatalogWorkspace />
+        </TabsContent>
+        <TabsContent value="issued">
+          <IssuedTicketsWorkspace connected={false} tickets={[]} />
+        </TabsContent>
+      </Tabs>
+    </>
   );
 }
 

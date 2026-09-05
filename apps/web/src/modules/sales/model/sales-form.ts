@@ -3,19 +3,21 @@ import type {
   SalesPaymentInput,
   SalesPriceComponentInput,
   SalesServiceKind,
+  TicketOfferV1,
 } from '@rubi/contracts';
 
 export const salesSteps = [
-  'مشتری',
-  'مسیر',
-  'خدمات',
+  'مسیر و خدمات',
   'جزئیات سفر',
+  'مشتری',
   'مسافران',
   'قیمت و پرداخت',
   'بازبینی',
 ] as const;
 
 export interface SalesFormState {
+  outboundOffer?: TicketOfferV1 | undefined;
+  returnOffer?: TicketOfferV1 | undefined;
   customerId: string;
   customerName: string;
   tripType: 'ONE_WAY' | 'ROUND_TRIP';
@@ -104,6 +106,29 @@ export const emptySalesForm: SalesFormState = {
   pricingNotes: '',
 };
 
+export function salesPassengerAgeLabel(
+  birthDate: string,
+  departureDate: string,
+): string {
+  if (!birthDate || !departureDate) return 'تاریخ تولد را وارد کنید';
+  const birth = new Date(`${birthDate.slice(0, 10)}T00:00:00Z`);
+  const travel = new Date(`${departureDate.slice(0, 10)}T00:00:00Z`);
+  if (
+    !Number.isFinite(birth.getTime()) ||
+    !Number.isFinite(travel.getTime()) ||
+    birth > travel
+  )
+    return 'تاریخ نامعتبر';
+  let age = travel.getUTCFullYear() - birth.getUTCFullYear();
+  if (
+    travel.getUTCMonth() < birth.getUTCMonth() ||
+    (travel.getUTCMonth() === birth.getUTCMonth() &&
+      travel.getUTCDate() < birth.getUTCDate())
+  )
+    age--;
+  return age < 2 ? 'نوزاد' : age < 12 ? 'کودک' : 'بزرگسال';
+}
+
 export function salesPayload(
   state: SalesFormState,
 ): SalesContractCreateRequest {
@@ -122,7 +147,6 @@ export function salesPayload(
     ...(kind === 'VISA' && state.visaReferenceId
       ? { referenceId: state.visaReferenceId }
       : {}),
-    ...(kind === 'FLIGHT' ? { status: 'AWAITING_PUBLIC_API' as const } : {}),
   }));
   const ticketSelections =
     state.serviceKinds.includes('FLIGHT') && state.ticket.outboundOfferId
@@ -138,10 +162,14 @@ export function salesPayload(
             carrierNameSnapshot: state.ticket.carrier,
             serviceNumberSnapshot: state.ticket.outboundNumber,
             cabinClassCode: state.ticket.cabinClassCode,
-            quotedPrice: {
-              amount: state.ticket.amount,
-              currencyCode: state.ticket.currencyCode,
-            },
+            ...(state.ticket.amount
+              ? {
+                  quotedPrice: {
+                    amount: state.ticket.amount,
+                    currencyCode: state.ticket.currencyCode,
+                  },
+                }
+              : {}),
           },
           ...(state.tripType === 'ROUND_TRIP'
             ? [
@@ -153,13 +181,18 @@ export function salesPayload(
                   destinationId: state.originId,
                   departureAt: utc(state.ticket.returnDepartureAt),
                   arrivalAt: utc(state.ticket.returnArrivalAt),
-                  carrierNameSnapshot: state.ticket.carrier,
+                  carrierNameSnapshot:
+                    state.returnOffer?.carrierName ?? state.ticket.carrier,
                   serviceNumberSnapshot: state.ticket.returnNumber,
                   cabinClassCode: state.ticket.cabinClassCode,
-                  quotedPrice: {
-                    amount: state.ticket.amount,
-                    currencyCode: state.ticket.currencyCode,
-                  },
+                  ...(state.ticket.amount
+                    ? {
+                        quotedPrice: {
+                          amount: state.ticket.amount,
+                          currencyCode: state.ticket.currencyCode,
+                        },
+                      }
+                    : {}),
                 },
               ]
             : []),
@@ -171,7 +204,10 @@ export function salesPayload(
     originId: state.originId,
     destinationId: state.destinationId,
     departureDate: state.departureDate,
-    returnNotBefore: state.tripType === 'ROUND_TRIP' ? state.returnDate : null,
+    returnNotBefore:
+      state.tripType === 'ROUND_TRIP'
+        ? state.returnDate || state.departureDate
+        : null,
     services,
     passengers: state.passengers.map((item) => ({
       customerId: item.customerId,

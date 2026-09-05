@@ -6,6 +6,7 @@ import type {
   SalesContractListQuery,
   SalesContractPage,
   SalesDashboard,
+  SalesPaymentCreateRequest,
 } from '@rubi/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -68,13 +69,34 @@ function queryString(query: SalesContractListQuery): string {
 
 export const salesApi = {
   dashboard: () => request<SalesDashboard>('/dashboard'),
+  addPayment: (id: string, input: SalesPaymentCreateRequest, key: string) =>
+    request<{ data: SalesContractDetail }>(
+      `/contracts/${encodeURIComponent(id)}/payments`,
+      {
+        method: 'POST',
+        headers: { 'idempotency-key': key },
+        body: JSON.stringify(input),
+      },
+    ),
   list: (query: SalesContractListQuery) =>
     request<SalesContractPage>(`/contracts?${queryString(query)}`),
   detail: (id: string) =>
     request<{ data: SalesContractDetail }>(
       `/contracts/${encodeURIComponent(id)}`,
     ),
-  async create(input: SalesContractCreateRequest) {
+  confirm: (id: string, version: number) =>
+    request<{ data: SalesContractDetail }>(
+      `/contracts/${encodeURIComponent(id)}/confirm`,
+      {
+        method: 'POST',
+        headers: { 'idempotency-key': `confirm-${id}-${version}` },
+        body: JSON.stringify({ version }),
+      },
+    ),
+  async create(
+    input: SalesContractCreateRequest,
+    idempotencyKey: string = crypto.randomUUID(),
+  ) {
     const baseUrl = getPublicApiBaseUrl();
     if (!baseUrl) throw new SalesApiError('نشانی API پیکربندی نشده است.', 0);
     const session = await refreshAuthenticatedSession(baseUrl);
@@ -88,7 +110,7 @@ export const salesApi = {
       method: 'POST',
       headers: {
         'x-branch-id': branchId,
-        'idempotency-key': crypto.randomUUID(),
+        'idempotency-key': idempotencyKey,
       },
       body: JSON.stringify(input),
     });

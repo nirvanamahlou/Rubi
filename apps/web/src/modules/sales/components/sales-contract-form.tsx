@@ -10,11 +10,12 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
 import type {
   CustomerSummary,
   MasterDataRecord,
+  MasterDataResource,
   SalesPaymentMethod,
   SalesPriceComponentInput,
   SalesServiceKind,
@@ -27,10 +28,12 @@ import { Alert, Badge, Card, PageHeader } from '@/components/ui/surfaces';
 import { customersApi } from '@/modules/customers/api/client';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { salesApi } from '../api/client';
+import { TicketOfferPicker } from './ticket-offer-picker';
 import {
   emptySalesForm,
   salesPayload,
   salesSteps,
+  salesPassengerAgeLabel,
   type SalesFormState,
 } from '../model/sales-form';
 
@@ -91,11 +94,42 @@ export function SalesContractForm() {
     visaServices: readonly MasterDataRecord[];
     banks: readonly MasterDataRecord[];
   }>({ cities: [], hotels: [], roomTypes: [], visaServices: [], banks: [] });
+  const [hotelSearch, setHotelSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [savedNumber, setSavedNumber] = useState('');
+  const submission = useRef({ fingerprint: '', key: '' });
   const patchState = (patch: Partial<SalesFormState>) =>
-    setState((current) => ({ ...current, ...patch }));
+    setState((current) => {
+      const changedRoute = [
+        'originId',
+        'destinationId',
+        'departureDate',
+        'tripType',
+      ].some(
+        (key) =>
+          key in patch &&
+          patch[key as keyof SalesFormState] !==
+            current[key as keyof SalesFormState],
+      );
+      return {
+        ...current,
+        ...patch,
+        ...(changedRoute
+          ? {
+              outboundOffer: undefined,
+              returnOffer: undefined,
+              ticket: {
+                ...current.ticket,
+                outboundOfferId: '',
+                returnOfferId: '',
+              },
+              hotel: { ...current.hotel, hotelId: '', name: '' },
+              visaReferenceId: '',
+            }
+          : {}),
+      };
+    });
 
   useEffect(() => {
     const saved = globalThis.localStorage?.getItem(
@@ -118,12 +152,21 @@ export function SalesContractForm() {
       page: 1,
       pageSize: 100,
     };
+    const loadReferences = async (resource: MasterDataResource) => {
+      const data: MasterDataRecord[] = [];
+      for (let page = 1; ; page++) {
+        const response = await masterDataApi.list(resource, { ...query, page });
+        data.push(...response.data);
+        if (!response.data.length || data.length >= response.meta.total)
+          return { data };
+      }
+    };
     void Promise.all([
-      masterDataApi.list('cities', query),
-      masterDataApi.list('hotels', query),
-      masterDataApi.list('room-types', query),
-      masterDataApi.list('visa-services', query),
-      masterDataApi.list('banks', query),
+      loadReferences('cities'),
+      loadReferences('hotels'),
+      loadReferences('room-types'),
+      loadReferences('visa-services'),
+      loadReferences('banks'),
     ])
       .then(([cities, hotels, roomTypes, visaServices, banks]) =>
         setReferences({
@@ -224,23 +267,36 @@ export function SalesContractForm() {
       ),
     });
   const canContinue = useMemo(() => {
-    if (step === 0) return Boolean(state.customerId);
-    if (step === 1)
+    if (step === 0)
       return Boolean(
         state.originId &&
         state.destinationId &&
+        state.originId !== state.destinationId &&
         state.departureDate &&
-        (state.tripType === 'ONE_WAY' || state.returnDate),
+        state.serviceKinds.length,
       );
-    if (step === 2) return state.serviceKinds.length > 0;
-    if (step === 4)
+    if (step === 1)
+      return Boolean(
+        (!state.serviceKinds.includes('FLIGHT') ||
+          (state.outboundOffer &&
+            (state.tripType === 'ONE_WAY' || state.returnOffer))) &&
+        (!state.serviceKinds.includes('HOTEL') ||
+          (state.hotel.hotelId &&
+            state.hotel.checkIn &&
+            state.hotel.checkOut &&
+            state.hotel.roomTypeId)) &&
+        (!state.serviceKinds.includes('VISA') || state.visaReferenceId),
+      );
+    if (step === 2) return Boolean(state.customerId);
+    if (step === 3)
       return (
         state.passengers.length > 0 &&
         state.passengers.every((item) => item.birthDate)
       );
-    if (step === 5)
-      return state.priceComponents.every(
-        (item) => item.amount && item.currencyCode,
+    if (step === 4)
+      return (
+        state.priceComponents.length > 0 &&
+        state.priceComponents.every((item) => item.amount && item.currencyCode)
       );
     return true;
   }, [state, step]);
@@ -249,7 +305,13 @@ export function SalesContractForm() {
     setBusy(true);
     setError('');
     try {
-      const response = await salesApi.create(salesPayload(state));
+      const payload = salesPayload(state);
+      const fingerprint = JSON.stringify(payload);
+      if (submission.current.fingerprint !== fingerprint)
+        submission.current = { fingerprint, key: crypto.randomUUID() };
+      const response = await salesApi.create(payload, submission.current.key);
+      if (response.data.status !== 'SENT_TO_RESERVATIONS')
+        await salesApi.confirm(response.data.id, response.data.version);
       globalThis.localStorage?.removeItem('rubi.sales.contract.draft.v1');
       setSavedNumber(response.data.contractNumber);
     } catch (reason) {
@@ -261,13 +323,35 @@ export function SalesContractForm() {
     }
   };
 
+  const destinationCountryId = references.cities.find(
+    ({ id }) => id === state.destinationId,
+  )?.attributes.countryId;
+  const destinationVisas = references.visaServices.filter(
+    (item) =>
+      item.attributes.countryId === destinationCountryId &&
+      Boolean(destinationCountryId),
+  );
+  const autoVisaId =
+    destinationVisas.length === 1 ? destinationVisas[0]?.id : undefined;
+  useEffect(() => {
+    if (!state.serviceKinds.includes('VISA') || !autoVisaId) return;
+    const timer = setTimeout(
+      () =>
+        setState((current) => ({ ...current, visaReferenceId: autoVisaId })),
+      0,
+    );
+    return () => clearTimeout(timer);
+  }, [autoVisaId, state.serviceKinds]);
+
   if (savedNumber)
     return (
       <Card className="mx-auto max-w-2xl p-8 text-center">
         <span className="mx-auto grid size-14 place-items-center rounded-full bg-emerald-500/10 text-emerald-700">
           <Check className="size-7" />
         </span>
-        <h1 className="mt-4 text-2xl font-black">قرارداد ثبت شد</h1>
+        <h1 className="mt-4 text-2xl font-black">
+          قرارداد ثبت و برای رزرواسیون صف‌بندی شد
+        </h1>
         <p className="mt-2 text-muted-foreground">
           شماره قرارداد: <strong dir="ltr">{savedNumber}</strong>
         </p>
@@ -280,11 +364,11 @@ export function SalesContractForm() {
   return (
     <form className="grid gap-6" onSubmit={submit}>
       <PageHeader
-        eyebrow="Sales Contract · v1"
+        eyebrow="فروش"
         title="قرارداد جدید"
-        description="فرم تمام‌صفحه با ذخیره خودکار پیش‌نویس محلی؛ ثبت نهایی فقط در API واقعی انجام می‌شود."
+        description="مسیر و خدمات سفر را انتخاب کنید و قرارداد مشتری را تکمیل کنید."
       />
-      <ol className="grid grid-cols-2 gap-2 md:grid-cols-7">
+      <ol className="grid grid-cols-2 gap-2 md:grid-cols-6">
         {salesSteps.map((label, index) => (
           <li
             className={`rounded-xl border px-3 py-2 text-center text-xs font-bold ${index === step ? 'border-primary bg-primary/10 text-primary' : index < step ? 'border-emerald-500/30 text-emerald-700' : 'border-border text-muted-foreground'}`}
@@ -298,7 +382,7 @@ export function SalesContractForm() {
         <Alert tone="error" title="عملیات کامل نشد" description={error} />
       ) : null}
       <Card className="min-h-[420px] p-5 md:p-7">
-        {step === 0 ? (
+        {step === 2 ? (
           <div className="grid gap-5">
             <h2 className="text-xl font-black">انتخاب مشتری و مسافران</h2>
             <div className="flex gap-2">
@@ -357,7 +441,7 @@ export function SalesContractForm() {
             </div>
           </div>
         ) : null}
-        {step === 1 ? (
+        {step === 0 ? (
           <div className="grid gap-5">
             <h2 className="text-xl font-black">مسیر و تاریخ سفر</h2>
             <div className="grid gap-4 md:grid-cols-2">
@@ -405,7 +489,7 @@ export function SalesContractForm() {
             </div>
           </div>
         ) : null}
-        {step === 2 ? (
+        {step === 0 ? (
           <div className="grid gap-5">
             <h2 className="text-xl font-black">خدمات قرارداد</h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -425,156 +509,129 @@ export function SalesContractForm() {
             </div>
           </div>
         ) : null}
-        {step === 3 ? (
+        {step === 1 ? (
           <div className="grid gap-6">
             <h2 className="text-xl font-black">جزئیات خدمات</h2>
             {state.serviceKinds.includes('FLIGHT') ? (
               <section className="grid gap-4 rounded-xl border p-4">
-                <div>
-                  <h3 className="font-bold">بلیت رفت‌وبرگشت</h3>
-                  <p className="text-xs text-amber-700">
-                    شناسه پیشنهاد از Public Contract Ticket Management است؛
-                    هنگام تأیید دوباره بررسی می‌شود.
-                  </p>
-                </div>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <FormField label="Offer رفت">
-                    <Input
-                      value={state.ticket.outboundOfferId}
-                      onChange={(event) =>
-                        patchState({
-                          ticket: {
-                            ...state.ticket,
-                            outboundOfferId: event.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </FormField>
-                  <FormField label="حرکت رفت">
+                <h3 className="font-bold">انتخاب بلیت رفت</h3>
+                <FormField label="کلاس پرواز">
+                  <select
+                    className={fieldClass}
+                    value={state.ticket.cabinClassCode}
+                    onChange={(event) =>
+                      patchState({
+                        outboundOffer: undefined,
+                        returnOffer: undefined,
+                        ticket: {
+                          ...state.ticket,
+                          outboundOfferId: '',
+                          returnOfferId: '',
+                          cabinClassCode: event.target.value,
+                        },
+                      })
+                    }
+                  >
+                    <option value="ECONOMY">اکونومی</option>
+                    <option value="BUSINESS">بیزینس</option>
+                    <option value="FIRST">فرست</option>
+                  </select>
+                </FormField>
+                <TicketOfferPicker
+                  key={`out-${state.originId}-${state.destinationId}-${state.departureDate}-${state.ticket.cabinClassCode}`}
+                  query={{
+                    originId: state.originId,
+                    destinationId: state.destinationId,
+                    departureFrom: state.departureDate,
+                    departureTo: state.departureDate,
+                    cabinClassCode: state.ticket.cabinClassCode as
+                      'ECONOMY' | 'BUSINESS' | 'FIRST',
+                  }}
+                  selectedId={state.ticket.outboundOfferId}
+                  onSelect={(offer) =>
+                    patchState({
+                      outboundOffer: offer,
+                      returnOffer: undefined,
+                      ticket: {
+                        ...state.ticket,
+                        outboundOfferId: offer.id,
+                        outboundDepartureAt: offer.departureAt,
+                        outboundArrivalAt: offer.arrivalAt,
+                        outboundNumber: offer.serviceNumber,
+                        carrier: offer.carrierName,
+                        returnOfferId: '',
+                      },
+                    })
+                  }
+                />
+                {state.tripType === 'ROUND_TRIP' && state.outboundOffer ? (
+                  <>
+                    <h3 className="font-bold">انتخاب بلیت برگشت</h3>
+                    <p className="text-sm text-muted-foreground">
+                      همه بلیت‌های مسیر برگشت از تاریخ زیر به بعد نمایش داده
+                      می‌شوند.
+                    </p>
                     <DatePicker
-                      includeTime
-                      value={state.ticket.outboundDepartureAt}
-                      onChange={(outboundDepartureAt) =>
+                      value={state.returnDate || state.departureDate}
+                      onChange={(returnDate) =>
                         patchState({
+                          returnDate,
+                          returnOffer: undefined,
+                          ticket: { ...state.ticket, returnOfferId: '' },
+                        })
+                      }
+                    />
+                    <TicketOfferPicker
+                      key={`return-${state.outboundOffer.id}-${state.returnDate}-${state.ticket.cabinClassCode}`}
+                      query={{
+                        originId: state.destinationId,
+                        destinationId: state.originId,
+                        departureFrom:
+                          new Date(
+                            state.returnDate || state.departureDate,
+                          ).getTime() >
+                          new Date(state.outboundOffer.arrivalAt).getTime()
+                            ? state.returnDate
+                            : state.outboundOffer.arrivalAt,
+                        cabinClassCode: state.ticket.cabinClassCode as
+                          'ECONOMY' | 'BUSINESS' | 'FIRST',
+                      }}
+                      selectedId={state.ticket.returnOfferId}
+                      onSelect={(offer) =>
+                        patchState({
+                          returnOffer: offer,
                           ticket: {
                             ...state.ticket,
-                            outboundDepartureAt,
+                            returnOfferId: offer.id,
+                            returnDepartureAt: offer.departureAt,
+                            returnArrivalAt: offer.arrivalAt,
+                            returnNumber: offer.serviceNumber,
                           },
                         })
                       }
                     />
-                  </FormField>
-                  <FormField label="رسیدن رفت">
-                    <DatePicker
-                      includeTime
-                      value={state.ticket.outboundArrivalAt}
-                      onChange={(outboundArrivalAt) =>
-                        patchState({
-                          ticket: {
-                            ...state.ticket,
-                            outboundArrivalAt,
-                          },
-                        })
-                      }
-                    />
-                  </FormField>
-                  {state.tripType === 'ROUND_TRIP' ? (
-                    <>
-                      <FormField label="Offer برگشت">
-                        <Input
-                          value={state.ticket.returnOfferId}
-                          onChange={(event) =>
-                            patchState({
-                              ticket: {
-                                ...state.ticket,
-                                returnOfferId: event.target.value,
-                              },
-                            })
-                          }
-                        />
-                      </FormField>
-                      <FormField label="حرکت برگشت">
-                        <DatePicker
-                          includeTime
-                          value={state.ticket.returnDepartureAt}
-                          onChange={(returnDepartureAt) =>
-                            patchState({
-                              ticket: {
-                                ...state.ticket,
-                                returnDepartureAt,
-                              },
-                            })
-                          }
-                        />
-                      </FormField>
-                      <FormField label="رسیدن برگشت">
-                        <DatePicker
-                          includeTime
-                          value={state.ticket.returnArrivalAt}
-                          onChange={(returnArrivalAt) =>
-                            patchState({
-                              ticket: {
-                                ...state.ticket,
-                                returnArrivalAt,
-                              },
-                            })
-                          }
-                        />
-                      </FormField>
-                    </>
-                  ) : null}
-                  <FormField label="شرکت حمل‌کننده">
-                    <Input
-                      value={state.ticket.carrier}
-                      onChange={(event) =>
-                        patchState({
-                          ticket: {
-                            ...state.ticket,
-                            carrier: event.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </FormField>
-                  <FormField label="شماره رفت">
-                    <Input
-                      value={state.ticket.outboundNumber}
-                      onChange={(event) =>
-                        patchState({
-                          ticket: {
-                            ...state.ticket,
-                            outboundNumber: event.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </FormField>
-                  <FormField label="مبلغ هر مسیر">
-                    <Input
-                      dir="ltr"
-                      value={state.ticket.amount}
-                      onChange={(event) =>
-                        patchState({
-                          ticket: {
-                            ...state.ticket,
-                            amount: event.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </FormField>
-                </div>
+                  </>
+                ) : null}
               </section>
             ) : null}
             {state.serviceKinds.includes('HOTEL') ? (
               <section className="grid gap-4 rounded-xl border p-4">
                 <h3 className="font-bold">هتل مقصد</h3>
+                <Input
+                  aria-label="جست‌وجوی هتل مقصد"
+                  placeholder="جست‌وجوی نام هتل"
+                  value={hotelSearch}
+                  onChange={(event) => setHotelSearch(event.target.value)}
+                />
                 <div className="grid gap-4 md:grid-cols-3">
                   <ReferenceSelect
                     label="هتل"
                     value={state.hotel.hotelId}
-                    options={references.hotels}
+                    options={references.hotels.filter(
+                      (hotel) =>
+                        hotel.attributes.cityId === state.destinationId &&
+                        hotel.name.includes(hotelSearch),
+                    )}
                     onChange={(hotelId) =>
                       patchState({
                         hotel: {
@@ -648,13 +705,13 @@ export function SalesContractForm() {
               <ReferenceSelect
                 label="خدمت ویزا"
                 value={state.visaReferenceId}
-                options={references.visaServices}
+                options={destinationVisas}
                 onChange={(visaReferenceId) => patchState({ visaReferenceId })}
               />
             ) : null}
           </div>
         ) : null}
-        {step === 4 ? (
+        {step === 3 ? (
           <div className="grid gap-5">
             <div>
               <h2 className="text-xl font-black">مسافران و تخصیص خدمات</h2>
@@ -670,6 +727,12 @@ export function SalesContractForm() {
                 >
                   <div>
                     <strong>{passenger.displayName}</strong>
+                    <p className="text-sm text-primary">
+                      {salesPassengerAgeLabel(
+                        passenger.birthDate,
+                        state.departureDate,
+                      )}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {passenger.customerId}
                     </p>
@@ -710,7 +773,7 @@ export function SalesContractForm() {
             />
           </div>
         ) : null}
-        {step === 5 ? (
+        {step === 4 ? (
           <div className="grid gap-6">
             <section className="grid gap-3">
               <div className="flex items-center justify-between">
@@ -771,7 +834,7 @@ export function SalesContractForm() {
                     onChange={(event) =>
                       updatePrice(index, { amount: event.target.value })
                     }
-                    placeholder="Decimal"
+                    placeholder="مبلغ توافقی"
                   />
                   <Input
                     dir="ltr"
@@ -814,7 +877,7 @@ export function SalesContractForm() {
                   }
                 >
                   <Plus className="size-4" />
-                  قسط
+                  افزودن پرداخت
                 </Button>
               </div>
               {state.payments.map((payment, index) => (
@@ -976,6 +1039,20 @@ export function SalesContractForm() {
                       />
                     </>
                   ) : null}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    aria-label={`حذف پرداخت ${index + 1}`}
+                    onClick={() =>
+                      patchState({
+                        payments: state.payments.filter(
+                          (_, position) => position !== index,
+                        ),
+                      })
+                    }
+                  >
+                    حذف پرداخت
+                  </Button>
                 </div>
               ))}
             </section>
@@ -989,7 +1066,7 @@ export function SalesContractForm() {
             </FormField>
           </div>
         ) : null}
-        {step === 6 ? (
+        {step === 5 ? (
           <div className="grid gap-5">
             <h2 className="text-xl font-black">بازبینی و ثبت</h2>
             <div className="grid gap-3 md:grid-cols-2">
@@ -1025,7 +1102,7 @@ export function SalesContractForm() {
               <Alert
                 tone="warning"
                 title="کنترل موجودی بلیت در تأیید نهایی"
-                description="ثبت پیش‌نویس ممکن است؛ تأیید و ارسال رزرو تا پاسخ مثبت Public API بلیت fail-closed است."
+                description="پیش از ارسال، بلیت انتخاب‌شده دوباره بررسی می‌شود. ظرفیت و اجرای خدمات در رزرواسیون پیگیری می‌شود."
               />
             ) : null}
           </div>
@@ -1047,12 +1124,12 @@ export function SalesContractForm() {
             disabled={!canContinue || busy}
             onClick={() => setStep((value) => value + 1)}
           >
-            بعدی
+            {step === 0 ? 'تأیید مسیر و خدمات' : 'بعدی'}
             <ChevronLeft className="size-4" />
           </Button>
         ) : (
           <Button type="submit" loading={busy} disabled={!canContinue}>
-            ثبت قرارداد
+            ثبت و ارسال به رزرواسیون
           </Button>
         )}
       </div>

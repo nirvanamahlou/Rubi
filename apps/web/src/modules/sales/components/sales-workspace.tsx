@@ -24,6 +24,7 @@ import {
   Skeleton,
 } from '@/components/ui/surfaces';
 import { salesApi } from '../api/client';
+import { ContractPayments } from './contract-payments';
 
 function formatMoney(amount: string, currencyCode: string) {
   const [integer = '0', fraction] = amount.split('.');
@@ -31,6 +32,9 @@ function formatMoney(amount: string, currencyCode: string) {
 }
 
 export function SalesWorkspace() {
+  const [paymentContractId, setPaymentContractId] = useState<string | null>(
+    null,
+  );
   const [dashboard, setDashboard] = useState<SalesDashboard['data'] | null>(
     null,
   );
@@ -155,8 +159,10 @@ export function SalesWorkspace() {
                     'مسافران',
                     'خدمات',
                     'وضعیت',
+                    'تسویه',
                     'مانده',
                     'آخرین تغییر',
+                    'پرداخت‌ها',
                   ].map((label) => (
                     <th className="px-4 py-3 text-start" key={label}>
                       {label}
@@ -183,6 +189,19 @@ export function SalesWorkspace() {
                       <Badge>{contract.status}</Badge>
                     </td>
                     <td className="px-4 py-3">
+                      <Badge>
+                        {(
+                          {
+                            UNPAID: 'تسویه نشده',
+                            PARTIALLY_SETTLED: 'تسویه ناقص',
+                            SETTLED: 'تسویه شده',
+                            OVERPAID: 'بستانکار',
+                          } as Record<string, string>
+                        )[contract.settlementStatus] ??
+                          contract.settlementStatus}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3">
                       {contract.balances
                         .map((balance) =>
                           formatMoney(
@@ -195,12 +214,29 @@ export function SalesWorkspace() {
                     <td className="px-4 py-3">
                       {new Date(contract.updatedAt).toLocaleDateString('fa-IR')}
                     </td>
+                    <td className="px-4 py-3">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setPaymentContractId(contract.id)}
+                      >
+                        پرداخت‌ها و اقساط
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </Card>
+      ) : null}
+      {paymentContractId ? (
+        <ContractPayments
+          key={paymentContractId}
+          id={paymentContractId}
+          onClose={() => setPaymentContractId(null)}
+          onSaved={() => void load()}
+        />
       ) : null}
     </div>
   );
