@@ -10,13 +10,14 @@ import {
   emptySalesForm,
   salesSteps,
   selectSalesPerson,
+  withFirstPassengerCustomer,
 } from '../model/sales-form';
 
 const draft: SalesPersonDraft = {
   firstName: 'Test',
   lastName: 'Person',
   birthDate: '1995-01-01',
-  nationalId: '',
+  nationalId: '0000000019',
   alsoPassenger: false,
 };
 
@@ -75,9 +76,9 @@ describe('combined sales people step', () => {
     expect(
       salesPersonInput({ ...draft, alsoPassenger: true }, 'customer').roles,
     ).toEqual(['customer', 'passenger']);
-    expect(salesPersonInput(draft, 'customer')).not.toHaveProperty(
-      'nationalId',
-    );
+    expect(
+      salesPersonInput({ ...draft, nationalId: '' }, 'customer'),
+    ).not.toHaveProperty('nationalId');
   });
   it('requires a passenger birthdate and names before calling the API', async () => {
     const api = { create: vi.fn() };
@@ -88,6 +89,101 @@ describe('combined sales people step', () => {
       createSalesPerson({ ...draft, firstName: ' ' }, 'customer', api),
     ).rejects.toThrow('نام');
     expect(api.create).not.toHaveBeenCalled();
+  });
+  it.each(['', '123456789', '12345678901', '12345x7890'])(
+    'rejects missing or non-ten-digit passenger national ID %s before API',
+    async (nationalId) => {
+      const api = { create: vi.fn() };
+      await expect(
+        createSalesPerson({ ...draft, nationalId }, 'passenger', api),
+      ).rejects.toThrow('۱۰ رقم');
+      expect(api.create).not.toHaveBeenCalled();
+    },
+  );
+  it('normalizes Persian and Arabic national ID digits while retaining leading zeros', () => {
+    expect(
+      salesPersonInput({ ...draft, nationalId: '۰۰۰۰۰۰۰۰۱۹' }, 'passenger')
+        .nationalId,
+    ).toBe('0000000019');
+    expect(
+      salesPersonInput({ ...draft, nationalId: '٠٠٠٠٠٠٠٠١٩' }, 'passenger')
+        .nationalId,
+    ).toBe('0000000019');
+  });
+  it('follows the first passenger when enabled, including after removal', () => {
+    const first = {
+      customerId: 'first',
+      displayName: 'First',
+      birthDate: draft.birthDate,
+    };
+    const second = {
+      customerId: 'second',
+      displayName: 'Second',
+      birthDate: draft.birthDate,
+    };
+    const base = {
+      ...emptySalesForm,
+      firstPassengerIsCustomer: true,
+      passengers: [first, second],
+    };
+    expect(withFirstPassengerCustomer(base).customerId).toBe('first');
+    expect(
+      withFirstPassengerCustomer({ ...base, passengers: [second] }).customerId,
+    ).toBe('second');
+    expect(
+      withFirstPassengerCustomer({ ...base, passengers: [] }).customerId,
+    ).toBe('');
+    expect(
+      withFirstPassengerCustomer({
+        ...base,
+        firstPassengerIsCustomer: false,
+        customerId: 'separate',
+      }).customerId,
+    ).toBe('separate');
+  });
+  it('supports repeated additions and removals without duplicating a person or storing national IDs in Sales', () => {
+    let state = emptySalesForm;
+    for (let index = 0; index < 30; index++) {
+      state = {
+        ...state,
+        ...selectSalesPerson(
+          state,
+          {
+            id: `person-${index}`,
+            displayName: 'Synthetic',
+            roles: ['passenger'],
+          },
+          false,
+          draft.birthDate,
+        ),
+      };
+    }
+    expect(state.passengers).toHaveLength(30);
+    expect(JSON.stringify(state)).not.toContain('nationalId');
+    const reduced = { ...state, passengers: state.passengers.slice(0, 10) };
+    expect(
+      selectSalesPerson(
+        reduced,
+        { id: 'person-0', displayName: 'Synthetic', roles: ['passenger'] },
+        false,
+      ).passengers,
+    ).toHaveLength(10);
+  });
+  it('renders numbered passenger rows with mandatory national ID and a removable draft', () => {
+    const html = renderToStaticMarkup(
+      <SalesPersonCreate
+        mode="passenger"
+        title="مسافر ۲"
+        saveDisabled
+        onCreated={vi.fn()}
+        onCancel={vi.fn()}
+        onBusyChange={vi.fn()}
+      />,
+    );
+    expect(html).toContain('مسافر ۲');
+    expect(html).toContain('کد ملی ۱۰رقمی');
+    expect(html).toContain('maxLength="10"');
+    expect(html).not.toContain('کد ملی (اختیاری)');
   });
   it('uses the public API result and retains the entered birthdate when the response masks it', async () => {
     const person = {

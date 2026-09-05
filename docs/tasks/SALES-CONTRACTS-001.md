@@ -1,5 +1,14 @@
 # SALES-CONTRACTS-001
 
+## Passenger rows — PC-A — 2026-09-05
+
+- Validation: 58 Sales Web tests, scoped lint, Web typecheck and production build with 35 routes passed. Web 3100 restarted with this build; API unchanged.
+
+- Independent numbered new-passenger entry rows can be added/removed repeatedly with a visible total/registered/pending count. Existing public Customers search remains available. Pending rows save in order and block advancing until saved or removed; failures retain their entry fields, and removing a selected passenger never deletes the Customers entity.
+- New passengers require a ten-digit national ID. Persian/Arabic digits normalize to ASCII with leading zeros preserved; Customers remains authoritative for checksum, encryption and uniqueness. National IDs never enter Sales state/localStorage or its public payload. Raw pending entry values are transient and are not restored after leaving the step/reloading.
+- Optional first-passenger-as-customer derives contract customer from the current first passenger, follows removal, and clears on empty. A newly created first passenger requests both roles through Customers; selecting a separate customer turns off the option. Existing-person roles are not silently mutated.
+- No API, shared contract, schema, migration, permission or other-owner changes. No real people created for testing; authenticated creation/visual QA is not claimed.
+
 - Status: `READY_FOR_REVIEW`
 
 ## Combined flight/hotel details — PC-A — 2026-09-05

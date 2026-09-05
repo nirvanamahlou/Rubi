@@ -1,5 +1,10 @@
 # Work Assignments
 
+## SALES-PASSENGER-ROWS-0905 — PC-A — SALES_COMPLETE
+
+- Reserve Sales Web form/person-entry/model/tests and task documentation only: add/remove independent passenger rows, required ten-digit national ID for new passengers, optional first passenger as contract customer. Raw national IDs stay only in transient entry state and are sent to the Customers public API, not the Sales draft/payload. No Customers internals, shared contracts, schema, migration or permissions changed.
+- Validation: 58 Sales Web tests, scoped lint, Web typecheck and production build (35 routes) passed; rebuilt Web restarted on port 3100. Same Draft PR #90; locks remain held. No real person creation or authenticated UI QA claimed.
+
 ## SALES-FOREIGN-ISOLATION-0905 — PC-A — COMPLETE_LOCAL
 
 - User authorized separation of all 27 pre-existing foreign changes. Preserved as local commit 75afc50751b3d5db16003c3e551bc3778e047eda on codex/pc-a-customer-passport-preservation-0905, plus raw backup at ../.worktrees/sales-foreign-backup-20260905. Three-way SHA256 equality checked before cleaning Sales; 20 tracked paths restored and 7 duplicate untracked files removed only from Sales.

@@ -27,6 +27,12 @@ export function salesPersonInput(
     throw new Error('نام و نام خانوادگی را وارد کنید.');
   if (passenger && !draft.birthDate)
     throw new Error('تاریخ تولد مسافر الزامی است.');
+  const nationalId = draft.nationalId
+    .trim()
+    .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+    .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
+  if ((passenger || nationalId) && !/^\d{10}$/.test(nationalId))
+    throw new Error('کد ملی باید دقیقاً ۱۰ رقم باشد.');
   return {
     kind: 'person',
     firstName,
@@ -39,7 +45,7 @@ export function salesPersonInput(
           ? ['customer', 'passenger']
           : ['customer'],
     ...(draft.birthDate ? { birthDate: draft.birthDate } : {}),
-    ...(draft.nationalId.trim() ? { nationalId: draft.nationalId.trim() } : {}),
+    ...(nationalId ? { nationalId } : {}),
   };
 }
 
@@ -57,11 +63,17 @@ export function SalesPersonCreate({
   onCreated,
   onCancel,
   onBusyChange,
+  title,
+  saveDisabled = false,
+  alsoCustomer = false,
 }: {
   mode: 'customer' | 'passenger';
   onCreated: (person: CustomerSummary, birthDate: string) => void;
   onCancel: () => void;
   onBusyChange: (busy: boolean) => void;
+  title?: string;
+  saveDisabled?: boolean;
+  alsoCustomer?: boolean;
 }) {
   const [draft, setDraft] = useState<SalesPersonDraft>({
     firstName: '',
@@ -75,13 +87,16 @@ export function SalesPersonCreate({
   const inFlight = useRef(false);
   const passenger = mode === 'passenger' || draft.alsoPassenger;
   const save = async () => {
-    if (inFlight.current) return;
+    if (inFlight.current || saveDisabled) return;
     inFlight.current = true;
     setBusy(true);
     onBusyChange(true);
     setError('');
     try {
-      const result = await createSalesPerson(draft, mode);
+      const result = await createSalesPerson(
+        alsoCustomer ? { ...draft, alsoPassenger: true } : draft,
+        alsoCustomer ? 'customer' : mode,
+      );
       onCreated(result.person, result.birthDate);
     } catch (reason) {
       setError(
@@ -102,7 +117,7 @@ export function SalesPersonCreate({
       }
     >
       <h3 className="text-sm font-bold">
-        {mode === 'customer' ? 'مشتری جدید' : 'مسافر جدید'}
+        {title ?? (mode === 'customer' ? 'مشتری جدید' : 'مسافر جدید')}
       </h3>
       <p className="text-xs text-muted-foreground">
         فرد در بخش مشتریان ثبت و به همین قرارداد اضافه می‌شود. ثبت قرارداد در
@@ -137,9 +152,14 @@ export function SalesPersonCreate({
             onChange={(birthDate) => setDraft({ ...draft, birthDate })}
           />
         </FormField>
-        <FormField label="کد ملی (اختیاری)">
+        <FormField
+          label={passenger ? 'کد ملی ۱۰رقمی' : 'کد ملی (اختیاری)'}
+          required={passenger}
+        >
           <Input
-            aria-label="کد ملی (اختیاری)"
+            aria-label={passenger ? 'کد ملی ۱۰رقمی' : 'کد ملی (اختیاری)'}
+            dir="ltr"
+            autoComplete="off"
             disabled={busy}
             inputMode="numeric"
             maxLength={10}
@@ -167,6 +187,7 @@ export function SalesPersonCreate({
           type="button"
           size="sm"
           loading={busy}
+          disabled={saveDisabled}
           onClick={() => void save()}
         >
           ثبت و افزودن به قرارداد
@@ -178,7 +199,7 @@ export function SalesPersonCreate({
           disabled={busy}
           onClick={onCancel}
         >
-          انصراف
+          {mode === 'passenger' ? 'حذف ردیف مسافر' : 'انصراف'}
         </Button>
       </div>
     </section>

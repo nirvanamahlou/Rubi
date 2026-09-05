@@ -46,6 +46,7 @@ import {
   salesDirections,
   salesTravelDate,
   withSalesHotelDates,
+  withFirstPassengerCustomer,
   salesHotelValid,
   salesDetailSteps,
   salesReturnSearchFrom,
@@ -110,6 +111,12 @@ export function SalesContractForm() {
   const [state, setState] = useState<SalesFormState>(emptySalesForm);
   const [customers, setCustomers] = useState<readonly CustomerSummary[]>([]);
   const [customerSearch, setCustomerSearch] = useState('');
+  const [pendingPassengers, setPendingPassengers] = useState<number[]>([]);
+  const nextPassengerKey = useRef(0);
+  const addPassengerRow = () => {
+    const key = nextPassengerKey.current++;
+    setPendingPassengers((current) => [...current, key]);
+  };
   const [createPersonMode, setCreatePersonMode] = useState<
     'customer' | 'passenger' | null
   >(null);
@@ -147,23 +154,25 @@ export function SalesContractForm() {
           patch[key as keyof SalesFormState] !==
             current[key as keyof SalesFormState],
       );
-      return withSalesHotelDates(current, {
-        ...current,
-        ...patch,
-        ...(changedRoute
-          ? {
-              outboundOffer: undefined,
-              returnOffer: undefined,
-              ticket: {
-                ...current.ticket,
-                outboundOfferId: '',
-                returnOfferId: '',
-              },
-              hotel: { ...current.hotel, hotelId: '', name: '' },
-              visaReferenceId: '',
-            }
-          : {}),
-      });
+      return withFirstPassengerCustomer(
+        withSalesHotelDates(current, {
+          ...current,
+          ...patch,
+          ...(changedRoute
+            ? {
+                outboundOffer: undefined,
+                returnOffer: undefined,
+                ticket: {
+                  ...current.ticket,
+                  outboundOfferId: '',
+                  returnOfferId: '',
+                },
+                hotel: { ...current.hotel, hotelId: '', name: '' },
+                visaReferenceId: '',
+              }
+            : {}),
+        }),
+      );
     });
 
   useEffect(() => {
@@ -273,6 +282,7 @@ export function SalesContractForm() {
     setState((current) => ({
       ...current,
       ...selectSalesPerson(current, customer, true),
+      firstPassengerIsCustomer: false,
     }));
   };
   const addPassenger = (customer: CustomerSummary) => {
@@ -281,10 +291,12 @@ export function SalesContractForm() {
       state.passengers.some(({ customerId }) => customerId === customer.id)
     )
       return;
-    setState((current) => ({
-      ...current,
-      ...selectSalesPerson(current, customer, false),
-    }));
+    setState((current) =>
+      withFirstPassengerCustomer({
+        ...current,
+        ...selectSalesPerson(current, customer, false),
+      }),
+    );
   };
   const toggleService = (kind: SalesServiceKind) =>
     patchState({
@@ -386,6 +398,7 @@ export function SalesContractForm() {
       return (
         Boolean(state.customerId) &&
         !createPersonMode &&
+        pendingPassengers.length === 0 &&
         Boolean(salesTravelDate(state)) &&
         state.passengers.length > 0 &&
         state.passengers.every((item) => item.birthDate)
@@ -396,7 +409,7 @@ export function SalesContractForm() {
         state.priceComponents.every((item) => item.amount && item.currencyCode)
       );
     return true;
-  }, [state, step, activeDetail, createPersonMode]);
+  }, [state, step, activeDetail, createPersonMode, pendingPassengers.length]);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (step !== salesSteps.length - 1 || busy) return;
@@ -518,28 +531,32 @@ export function SalesContractForm() {
                 size="sm"
                 variant="outline"
                 disabled={busy}
-                onClick={() => setCreatePersonMode('passenger')}
+                onClick={addPassengerRow}
               >
                 <Plus className="size-4" />
-                مسافر جدید
+                افزودن ردیف مسافر
               </Button>
             </div>
             {createPersonMode ? (
               <SalesPersonCreate
                 key={createPersonMode}
                 mode={createPersonMode}
+                saveDisabled={busy}
                 onBusyChange={setBusy}
                 onCancel={() => setCreatePersonMode(null)}
                 onCreated={(person, birthDate) => {
-                  setState((current) => ({
-                    ...current,
-                    ...selectSalesPerson(
-                      current,
-                      person,
-                      createPersonMode === 'customer',
-                      birthDate,
-                    ),
-                  }));
+                  setState((current) =>
+                    withFirstPassengerCustomer({
+                      ...current,
+                      ...selectSalesPerson(
+                        current,
+                        person,
+                        createPersonMode === 'customer',
+                        birthDate,
+                      ),
+                      firstPassengerIsCustomer: false,
+                    }),
+                  );
                   setCustomers((current) => [
                     person,
                     ...current.filter((item) => item.id !== person.id),
@@ -1061,10 +1078,33 @@ export function SalesContractForm() {
           <div className="mt-5 grid gap-5 border-t border-border pt-4">
             <div>
               <h2 className="text-xl font-black">مسافران و تخصیص خدمات</h2>
+              <p className="mt-2 text-sm font-bold">
+                تعداد مسافران:{' '}
+                {state.passengers.length + pendingPassengers.length} (
+                {state.passengers.length} ثبت‌شده، {pendingPassengers.length} در
+                حال ورود)
+              </p>
               <p className="text-sm text-muted-foreground">
                 در این نسخه همه خدمات انتخاب‌شده به هر مسافر تخصیص می‌یابد.
               </p>
             </div>
+            <label className="flex items-center gap-2 rounded-xl bg-primary/5 p-3 text-sm">
+              <input
+                type="checkbox"
+                className="size-4 accent-primary"
+                disabled={busy}
+                checked={state.firstPassengerIsCustomer === true}
+                onChange={(event) =>
+                  patchState({
+                    firstPassengerIsCustomer: event.target.checked,
+                    ...(event.target.checked
+                      ? {}
+                      : { customerId: '', customerName: '' }),
+                  })
+                }
+              />
+              مسافر اول، مشتری قرارداد هم هست
+            </label>
             {!state.serviceKinds.includes('FLIGHT') &&
             !(state.serviceKinds.includes('HOTEL') && state.hotel.checkIn) ? (
               <FormField label="تاریخ شروع خدمات (برای سن مسافر)" required>
@@ -1081,7 +1121,12 @@ export function SalesContractForm() {
                   key={`${passenger.customerId}-${index}`}
                 >
                   <div>
-                    <strong>{passenger.displayName}</strong>
+                    <strong>
+                      مسافر {index + 1}: {passenger.displayName}
+                    </strong>
+                    {index === 0 && state.firstPassengerIsCustomer ? (
+                      <Badge>مشتری قرارداد</Badge>
+                    ) : null}
                     <p className="text-sm text-primary">
                       {salesPassengerAgeLabel(
                         passenger.birthDate,
@@ -1106,6 +1151,7 @@ export function SalesContractForm() {
                   </FormField>
                   <Button
                     aria-label="حذف مسافر"
+                    disabled={busy}
                     size="icon"
                     type="button"
                     variant="ghost"
@@ -1122,9 +1168,48 @@ export function SalesContractForm() {
                 </div>
               ))}
             </div>
+            {pendingPassengers.map((key, index) => (
+              <SalesPersonCreate
+                key={key}
+                title={`مسافر ${state.passengers.length + index + 1}`}
+                mode="passenger"
+                alsoCustomer={
+                  state.firstPassengerIsCustomer === true &&
+                  state.passengers.length === 0 &&
+                  index === 0
+                }
+                saveDisabled={busy || index > 0}
+                onBusyChange={setBusy}
+                onCancel={() =>
+                  setPendingPassengers((current) =>
+                    current.filter((item) => item !== key),
+                  )
+                }
+                onCreated={(person, birthDate) => {
+                  setState((current) =>
+                    withFirstPassengerCustomer({
+                      ...current,
+                      ...selectSalesPerson(current, person, false, birthDate),
+                    }),
+                  );
+                  setPendingPassengers((current) =>
+                    current.filter((item) => item !== key),
+                  );
+                }}
+              />
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              className="justify-self-start"
+              disabled={busy}
+              onClick={addPassengerRow}
+            >
+              <Plus className="size-4" /> افزودن مسافر دیگر
+            </Button>
             <Alert
               title="افزودن مسافر دیگر"
-              description="از جست‌وجوی بالای همین بخش، مسافر موجود را انتخاب کنید یا دکمه مسافر جدید را بزنید."
+              description="به تعداد لازم ردیف اضافه کنید؛ اطلاعات هر مسافر و کد ملی ۱۰رقمی او را وارد و ردیف‌ها را به ترتیب ثبت کنید. حذف ردیف فقط او را از قرارداد کنار می‌گذارد و پرونده مشتری را پاک نمی‌کند. برای مسافر موجود، از جست‌وجوی بالای صفحه استفاده کنید."
             />
           </div>
         ) : null}

@@ -44,6 +44,7 @@ export const salesSteps = [
 ] as const;
 
 export interface SalesFormState {
+  firstPassengerIsCustomer?: boolean;
   businessOutput?: boolean;
   outboundOffer?: TicketOfferV1 | undefined;
   returnOffer?: TicketOfferV1 | undefined;
@@ -147,6 +148,18 @@ export const emptySalesForm: SalesFormState = {
   payments: [],
   pricingNotes: '',
 };
+
+export function withFirstPassengerCustomer(
+  state: SalesFormState,
+): SalesFormState {
+  if (!state.firstPassengerIsCustomer) return state;
+  const first = state.passengers[0];
+  return {
+    ...state,
+    customerId: first?.customerId ?? '',
+    customerName: first?.displayName ?? '',
+  };
+}
 
 export function salesPassengerAgeLabel(
   birthDate: string,
