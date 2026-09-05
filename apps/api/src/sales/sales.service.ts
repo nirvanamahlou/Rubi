@@ -377,6 +377,7 @@ export class SalesService {
       input.customerId,
       actor,
     );
+    await this.customers.assertPassengers(input.passengers, actor);
     const row = await this.repository.create(
       input,
       customer.displayName,
@@ -413,6 +414,7 @@ export class SalesService {
       input.customerId,
       actor,
     );
+    await this.customers.assertPassengers(input.passengers, actor);
     const changed = await this.repository.updateDraft(
       id,
       input,
@@ -509,6 +511,8 @@ export class SalesService {
         meta: { idempotentReplay: true },
       };
     }
+    await this.customers.resolveSnapshot(row.customerId, actor);
+    await this.customers.assertPassengers(row.passengers, actor);
     const ticketCheck = await this.tickets.revalidate(
       row.ticketSelections.map(({ offerId }) => offerId),
       row.branchId,

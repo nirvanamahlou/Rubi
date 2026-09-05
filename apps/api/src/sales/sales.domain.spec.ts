@@ -67,6 +67,11 @@ const draft: SalesContractCreateRequest = {
 };
 
 describe('Sales contract domain', () => {
+  it('rejects duplicate passengers before persistence', () => {
+    const input = structuredClone(draft);
+    input.passengers = [...input.passengers, ...input.passengers];
+    expect(() => validateSalesContract(input)).toThrow('دوبار');
+  });
   it.each(Array.from({ length: 15 }, (_, index) => index + 1))(
     'accepts independent flight/transfer combination %s',
     (flags) => {

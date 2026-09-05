@@ -181,6 +181,14 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
       'SALES_SERVICE_INVALID',
       'مشخصات خدمت کامل نیست.',
     );
+  if (
+    new Set(input.passengers.map((passenger) => passenger.customerId)).size !==
+    input.passengers.length
+  )
+    throw new SalesDomainError(
+      'SALES_PASSENGER_DUPLICATE',
+      'یک مسافر نمی‌تواند دوبار به قرارداد اضافه شود.',
+    );
   for (const passenger of input.passengers) {
     if (
       !UUID.test(passenger.customerId) ||
