@@ -13,8 +13,61 @@ export interface CalendarDay extends CalendarParts {
   isToday: boolean;
 }
 
+export interface CalendarPopoverRect {
+  bottom: number;
+  height: number;
+  left: number;
+  top: number;
+  width: number;
+}
+
+export interface CalendarViewport {
+  height: number;
+  width: number;
+}
+
+export interface CalendarPopoverPosition {
+  left: number;
+  maxHeight: number;
+  top: number;
+}
+
 const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
 const arabicDigits = '٠١٢٣٤٥٦٧٨٩';
+
+export function resolveCalendarPopoverPosition(
+  trigger: CalendarPopoverRect,
+  popover: Pick<CalendarPopoverRect, 'height' | 'width'>,
+  viewport: CalendarViewport,
+  gap = 8,
+  padding = 16,
+): CalendarPopoverPosition {
+  const maxHeight = Math.max(0, viewport.height - padding * 2);
+  const renderedHeight = Math.min(popover.height, maxHeight);
+  const renderedWidth = Math.min(
+    popover.width,
+    Math.max(0, viewport.width - padding * 2),
+  );
+  const maximumLeft = Math.max(
+    padding,
+    viewport.width - padding - renderedWidth,
+  );
+  const left = Math.min(Math.max(trigger.left, padding), maximumLeft);
+  const below = trigger.bottom + gap;
+  const above = trigger.top - gap - renderedHeight;
+  const maximumTop = Math.max(
+    padding,
+    viewport.height - padding - renderedHeight,
+  );
+  const top =
+    below + renderedHeight <= viewport.height - padding
+      ? below
+      : above >= padding
+        ? above
+        : Math.min(Math.max(below, padding), maximumTop);
+
+  return { left, maxHeight, top };
+}
 
 function latinNumber(value: string): number {
   const normalized = [...value]

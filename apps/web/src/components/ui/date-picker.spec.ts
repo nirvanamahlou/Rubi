@@ -7,6 +7,7 @@ import {
   joinDateAndTime,
   moveCalendarMonth,
   parseIsoDate,
+  resolveCalendarPopoverPosition,
   setCalendarMonthYear,
   toIsoDate,
 } from './date-picker.utils';
@@ -61,5 +62,32 @@ describe('shared blue date picker calendar utilities', () => {
         calendarParts(anchor, system).month,
       );
     }
+  });
+
+  it('keeps the calendar beside edge triggers and inside the viewport', () => {
+    const leftEdge = resolveCalendarPopoverPosition(
+      { bottom: 540, height: 36, left: -20, top: 504, width: 120 },
+      { height: 420, width: 352 },
+      { height: 1080, width: 1920 },
+    );
+    expect(leftEdge).toMatchObject({ left: 16, top: 548 });
+
+    const rightEdge = resolveCalendarPopoverPosition(
+      { bottom: 240, height: 40, left: 1840, top: 200, width: 64 },
+      { height: 420, width: 352 },
+      { height: 1080, width: 1920 },
+    );
+    expect(rightEdge.left).toBe(1552);
+    expect(rightEdge.left + 352).toBeLessThanOrEqual(1904);
+  });
+
+  it('moves the calendar above a bottom-edge trigger', () => {
+    expect(
+      resolveCalendarPopoverPosition(
+        { bottom: 764, height: 44, left: 300, top: 720, width: 180 },
+        { height: 420, width: 352 },
+        { height: 800, width: 1280 },
+      ),
+    ).toMatchObject({ left: 300, top: 292 });
   });
 });
