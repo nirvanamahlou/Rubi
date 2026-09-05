@@ -206,12 +206,30 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
         'TICKET_NOT_AVAILABLE',
         'زمان رسیدن باید پس از حرکت باشد.',
       );
-    currency(ticket.quotedPrice.currencyCode);
-    decimalUnits(ticket.quotedPrice.amount);
+    if (ticket.quotedPrice) {
+      currency(ticket.quotedPrice.currencyCode);
+      decimalUnits(ticket.quotedPrice.amount);
+    }
   }
   const outbound = tickets.find(({ direction }) => direction === 'OUTBOUND');
   const inbound = tickets.find(({ direction }) => direction === 'RETURN');
-  if (input.tripType === 'ROUND_TRIP' && (!outbound || !inbound))
+  if (
+    tickets.length > 2 ||
+    new Set(tickets.map(({ direction }) => direction)).size !==
+      tickets.length ||
+    (input.tripType === 'ONE_WAY' && inbound) ||
+    (outbound &&
+      (outbound.originId !== input.originId ||
+        outbound.destinationId !== input.destinationId))
+  )
+    throw new SalesDomainError(
+      'RETURN_TICKET_INVALID',
+      'تعداد یا مسیر بلیت‌ها با قرارداد سازگار نیست.',
+    );
+  if (
+    input.services.some(({ kind }) => kind === 'FLIGHT') &&
+    (!outbound || (input.tripType === 'ROUND_TRIP' && !inbound))
+  )
     throw new SalesDomainError(
       'RETURN_TICKET_INVALID',
       'هر دو بلیت رفت و برگشت الزامی است.',

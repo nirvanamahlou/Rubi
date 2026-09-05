@@ -177,10 +177,14 @@ export function presentSalesContract(
       carrierNameSnapshot: ticket.carrierNameSnapshot,
       serviceNumberSnapshot: ticket.serviceNumberSnapshot,
       cabinClassCode: ticket.cabinClassCode,
-      quotedPrice: {
-        amount: money(ticket.quotedAmount),
-        currencyCode: ticket.quotedCurrencyCode,
-      },
+      ...(ticket.quotedAmount !== null && ticket.quotedCurrencyCode
+        ? {
+            quotedPrice: {
+              amount: money(ticket.quotedAmount),
+              currencyCode: ticket.quotedCurrencyCode,
+            },
+          }
+        : {}),
     })),
     hotelSelection: row.hotelSelection
       ? {
@@ -507,6 +511,8 @@ export class SalesService {
     }
     const ticketCheck = await this.tickets.revalidate(
       row.ticketSelections.map(({ offerId }) => offerId),
+      row.branchId,
+      presentSalesContract(row).ticketSelections,
     );
     if (!ticketCheck.available)
       throw new ConflictException({
@@ -517,6 +523,14 @@ export class SalesService {
       });
     const requestId = randomUUID();
     const snapshot: SalesReservationRequestV1 = {
+      passengerAssignments: presentSalesContract(row).passengersDetail.map(
+        (passenger) => ({
+          customerId: passenger.customerId,
+          ageCategory: passenger.ageCategory,
+          serviceClientKeys: passenger.serviceClientKeys,
+        }),
+      ),
+      ticketSelections: presentSalesContract(row).ticketSelections,
       version: 1,
       requestId,
       contractId: row.id,

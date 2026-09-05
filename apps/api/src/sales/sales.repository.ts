@@ -61,6 +61,39 @@ export class SalesRepository {
     });
   }
 
+  pendingReservationRequests() {
+    return this.database.client.salesReservationRequest.findMany({
+      where: {
+        dispatchedAt: null,
+        contract: { status: 'SENT_TO_RESERVATIONS' },
+      },
+      include: { contract: { select: { branchId: true } } },
+      orderBy: { createdAt: 'asc' },
+      take: 50,
+    });
+  }
+
+  acknowledgeReservationRequest(id: string, externalReference: string) {
+    return this.database.client.$transaction(async (tx) => {
+      const request = await tx.salesReservationRequest.findUniqueOrThrow({
+        where: { id },
+      });
+      const changed = await tx.salesReservationRequest.updateMany({
+        where: { id, dispatchedAt: null },
+        data: {
+          dispatchedAt: new Date(),
+          status: 'ACCEPTED',
+          externalReference,
+        },
+      });
+      if (changed.count)
+        await tx.salesContract.updateMany({
+          where: { id: request.contractId, status: 'SENT_TO_RESERVATIONS' },
+          data: { reservationStatus: 'ACCEPTED', version: { increment: 1 } },
+        });
+    });
+  }
+
   findByCreateKey(
     ownerUserId: string,
     createIdempotencyKey: string,
@@ -259,8 +292,9 @@ export class SalesRepository {
               carrierNameSnapshot: ticket.carrierNameSnapshot,
               serviceNumberSnapshot: ticket.serviceNumberSnapshot,
               cabinClassCode: ticket.cabinClassCode,
-              quotedAmount: ticket.quotedPrice.amount,
-              quotedCurrencyCode: ticket.quotedPrice.currencyCode.toUpperCase(),
+              quotedAmount: ticket.quotedPrice?.amount ?? null,
+              quotedCurrencyCode:
+                ticket.quotedPrice?.currencyCode.toUpperCase() ?? null,
             },
           });
         if (input.hotelSelection) {
@@ -450,8 +484,9 @@ export class SalesRepository {
               carrierNameSnapshot: ticket.carrierNameSnapshot,
               serviceNumberSnapshot: ticket.serviceNumberSnapshot,
               cabinClassCode: ticket.cabinClassCode,
-              quotedAmount: ticket.quotedPrice.amount,
-              quotedCurrencyCode: ticket.quotedPrice.currencyCode.toUpperCase(),
+              quotedAmount: ticket.quotedPrice?.amount ?? null,
+              quotedCurrencyCode:
+                ticket.quotedPrice?.currencyCode.toUpperCase() ?? null,
             },
           });
         if (input.hotelSelection) {
@@ -701,13 +736,13 @@ export class SalesRepository {
         await tx.salesContract.update({
           where: { id: event.contractId },
           data: {
-            settlementStatus: hasOverpaid
-              ? 'OVERPAID'
-              : !hasOutstanding
-                ? 'SETTLED'
-                : hasPaid
-                  ? 'PARTIALLY_SETTLED'
-                  : 'UNPAID',
+            settlementStatus: hasOutstanding
+              ? hasPaid
+                ? 'PARTIALLY_SETTLED'
+                : 'UNPAID'
+              : hasOverpaid
+                ? 'OVERPAID'
+                : 'SETTLED',
             version: { increment: 1 },
           },
         });
