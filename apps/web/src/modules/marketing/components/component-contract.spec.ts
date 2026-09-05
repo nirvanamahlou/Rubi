@@ -273,6 +273,9 @@ describe('marketing workspace component contract', () => {
     expect(referencePagesSource).toContain('ثبت در محتوا و اسناد');
     expect(referencePagesSource).toContain('افزودن مخاطبان کمپین');
     expect(referencePagesSource).toContain('افزودن منبع ورود');
+    expect(referencePagesSource).toContain('headerActions');
+    expect(referencePagesSource).toContain('افزودن کد تخفیف');
+    expect(referencePagesSource).toContain('افزودن پیشنهاد ویژه');
     expect(referencePagesSource).toContain('حداقل مبلغ خرید');
     expect(referencePagesSource).toContain('سقف استفاده هر مشتری');
     expect(referencePagesSource).not.toContain('قوانین استفاده');
@@ -281,6 +284,33 @@ describe('marketing workspace component contract', () => {
     expect(referencePagesSource).toContain('غیرفعال‌سازی');
     expect(referencePagesSource).toContain('segmentFieldOptions');
     expect(referencePagesSource).toContain('LeadScoringPage');
+    for (const journeyMarker of [
+      'سناریو جدید',
+      'marketing-scenario-form',
+      'scenario-trigger',
+      'scenario-audience',
+      'scenario-channel',
+      'scenario-start',
+      'scenario-end',
+      'ویرایش اتوماسیون',
+      'journey-automation-edit-form',
+      'journey-step-form',
+      'ایجاد مرحله',
+    ]) {
+      expect(referencePagesSource).toContain(journeyMarker);
+    }
+    for (const contentMarker of [
+      'بنر کمپین',
+      'بروشور',
+      'کاتالوگ',
+      'فایل صوتی',
+      'قالب ایمیل',
+      'قالب پیام',
+      'نیایش سیر سحر',
+      'جهان باستان',
+    ]) {
+      expect(referencePagesSource).toContain(contentMarker);
+    }
     expect(workspaceSource).not.toContain('خروجی داشبورد');
     expect(referencePagesSource).not.toContain('در محیط آزمایشی باز شد');
   });
