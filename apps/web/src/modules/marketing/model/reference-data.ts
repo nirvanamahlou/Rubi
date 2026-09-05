@@ -2,11 +2,9 @@ export type MarketingSectionKey =
   | 'dashboard'
   | 'campaigns'
   | 'audiences'
-  | 'communications'
   | 'content'
   | 'offers'
   | 'journeys'
-  | 'reports'
   | 'settings';
 
 export interface MarketingSectionDefinition {
@@ -25,7 +23,7 @@ export interface MarketingSubtabDefinition {
 
 export interface MarketingPreviewItem {
   id: `preview-${string}`;
-  section: Exclude<MarketingSectionKey, 'dashboard' | 'campaigns'>;
+  section: Exclude<MarketingSectionKey, 'dashboard'>;
   tab: string;
   title: string;
   description: string;
@@ -57,13 +55,6 @@ export const marketingSections: readonly MarketingSectionDefinition[] = [
     tone: 'emerald',
   },
   {
-    key: 'communications',
-    title: 'ارتباطات',
-    description: 'ارسال، زمان‌بندی، تاریخچه و پایش کانال‌های ارتباطی',
-    highlights: ['ارسال', 'زمان‌بندی', 'تاریخچه'],
-    tone: 'cyan',
-  },
-  {
     key: 'content',
     title: 'محتوا و جذب',
     description: 'کتابخانه محتوا، فرم‌ها، صفحات فرود و لینک‌های رهگیری',
@@ -85,13 +76,6 @@ export const marketingSections: readonly MarketingSectionDefinition[] = [
     tone: 'violet',
   },
   {
-    key: 'reports',
-    title: 'گزارش‌ها',
-    description: 'عملکرد، قیف تبدیل، هزینه جذب، ROI و خروجی‌های کنترل‌شده',
-    highlights: ['عملکرد', 'قیف', 'ROI'],
-    tone: 'blue',
-  },
-  {
     key: 'settings',
     title: 'تنظیمات',
     description: 'کانال‌ها، سایت‌ها، دسترسی‌ها، هشدارها و لاگ‌های امن',
@@ -106,7 +90,6 @@ export const marketingSectionTabs = {
     ['calendar', 'تقویم کمپین‌ها', 'نمای ماهانه بازه اجرای کمپین‌ها'],
     ['budget', 'بودجه و هزینه‌ها', 'مقایسه بودجه مصوب و هزینه ثبت‌شده'],
     ['approval', 'گردش تأیید', 'صف وضعیت و سوابق تأیید'],
-    ['ab', 'تست‌های A/B', 'فرضیه‌ها و نسخه‌های آزمایشی'],
   ],
   audiences: [
     ['segments', 'گروه‌ها و سگمنت‌ها', 'قواعد مخاطب بدون نگهداری PII'],
@@ -114,14 +97,6 @@ export const marketingSectionTabs = {
     ['leads', 'سرنخ‌های مارکتینگ', 'نمای تجمیعی سرنخ‌های ورودی'],
     ['scoring', 'امتیازدهی سرنخ', 'قواعد پیشنهادی امتیازدهی'],
     ['sources', 'منابع ورود', 'کانال و منبع اولیه ورود'],
-    ['subscriptions', 'عضویت‌های تبلیغاتی', 'رضایت، منع و محدودیت تکرار'],
-  ],
-  communications: [
-    ['send', 'ارسال پیام', 'ساخت نیت ارسال بدون اتصال به ارائه‌دهنده'],
-    ['scheduled', 'ارسال‌های زمان‌بندی‌شده', 'صف زمان‌بندی نمایشی'],
-    ['history', 'تاریخچه ارسال‌ها', 'رسیدهای ساختگی و وضعیت تحویل'],
-    ['channels', 'عملکرد کانال‌ها', 'آمادگی و وضعیت کانال‌ها'],
-    ['templates', 'قالب‌های پیام', 'قالب‌های نسخه‌دار و قابل پیش‌نمایش'],
   ],
   content: [
     ['library', 'کتابخانه محتوا و فایل‌ها', 'دارایی‌های نسخه‌دار بازاریابی'],
@@ -132,7 +107,6 @@ export const marketingSectionTabs = {
   offers: [
     ['discounts', 'کدهای تخفیف', 'پیشنهادهای نیازمند اعتبارسنجی Sales'],
     ['specials', 'پیشنهادهای ویژه', 'بسته‌های پیشنهادی فروش'],
-    ['rules', 'قوانین استفاده', 'سقف‌ها و قواعد کنترل استفاده'],
     ['usage', 'گزارش استفاده', 'نمای تجمیعی بدون داده مشتری'],
   ],
   journeys: [
@@ -141,18 +115,6 @@ export const marketingSectionTabs = {
     ['runs', 'اجرای اتوماسیون‌ها', 'اجرای ساختگی و بدون ارسال واقعی'],
     ['scenarios', 'سناریوهای آماده', 'الگوهای قابل کپی'],
     ['history', 'تاریخچه اجرا', 'خط زمانی نسخه‌دار'],
-  ],
-  reports: [
-    ['campaign', 'عملکرد کمپین', 'تعریف شاخص‌ها بدون مقدار تحلیلی جعلی'],
-    ['funnel', 'قیف تبدیل', 'مراحل تبدیل و قراردادهای لازم'],
-    ['leads', 'سرنخ‌ها', 'گزارش تجمیعی سرنخ'],
-    ['sales', 'فروش و درآمد', 'در انتظار قرارداد Sales و Finance'],
-    ['cac', 'هزینه جذب', 'تعریف CAC و اجزای هزینه'],
-    ['roi', 'ROI و ROAS', 'تعریف بازده بدون انتساب قطعی'],
-    ['channels', 'عملکرد کانال‌ها', 'مقایسه کانال‌های نمایشی'],
-    ['sources', 'منابع ورود', 'منبع و مدیوم رهگیری'],
-    ['discounts', 'تخفیف‌ها', 'اثر پیشنهادی تخفیف‌ها'],
-    ['exports', 'خروجی‌ها', 'صف خروجی امن و خنثی‌سازی فرمول'],
   ],
   settings: [
     ['channels', 'کانال‌ها و سرویس‌ها', 'وضعیت Adapterهای موردنیاز'],
@@ -184,21 +146,6 @@ const itemOverrides: Readonly<
     'سرنخ‌های ورودی هفته',
     'نمای تجمیعی؛ رکورد فردی نمایش داده نمی‌شود',
     'در انتظار قرارداد',
-  ],
-  'communications-send': [
-    'پیام معرفی سفر بهاری',
-    'نیت ارسال برای کانال پیامک و وب‌سایت',
-    'پیش‌نویس',
-  ],
-  'communications-scheduled': [
-    'یادآوری شروع کمپین',
-    'زمان‌بندی نمایشی برای ۱۴ شهریور',
-    'زمان‌بندی‌شده',
-  ],
-  'communications-templates': [
-    'قالب معرفی مسیر فرهنگی',
-    'نسخه ۳ با جای‌نگهدارهای غیرشخصی',
-    'تأیید محتوا',
   ],
   'content-library': [
     'راهنمای تصویری سفر پاییز',
@@ -244,21 +191,6 @@ const itemOverrides: Readonly<
     'سناریوی خوش‌آمدگویی سرنخ',
     'الگوی چهارمرحله‌ای قابل کپی',
     'آماده استفاده',
-  ],
-  'reports-campaign': [
-    'گزارش کمپین‌های شهریور',
-    'مقادیر تحلیلی تا اتصال Analytics نمایش داده نمی‌شوند',
-    'قراردادگرا',
-  ],
-  'reports-funnel': [
-    'قیف آگاهی تا قرارداد',
-    'تعریف مراحل آماده؛ شمارش در انتظار Analytics',
-    'تعریف‌شده',
-  ],
-  'reports-exports': [
-    'خروجی فیلترشده کمپین‌ها',
-    'CSV نمایشی با خنثی‌سازی فرمول سلول',
-    'آماده Preview',
   ],
   'settings-channels': [
     'Adapter پیامک سازمانی',

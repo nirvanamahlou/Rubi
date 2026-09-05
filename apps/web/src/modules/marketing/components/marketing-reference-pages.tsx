@@ -20,7 +20,6 @@ import {
   Mail,
   Megaphone,
   MessageCircle,
-  MoreHorizontal,
   Pencil,
   Phone,
   Plus,
@@ -28,8 +27,6 @@ import {
   Route,
   Save,
   Search,
-  Send,
-  ShieldCheck,
   ShoppingCart,
   Target,
   Upload,
@@ -39,12 +36,16 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
+import type {
+  DocumentDetailV1,
+  DocumentOptionsResponseV1,
+} from '@rubi/contracts';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
-  Checkbox,
   FormField,
   Input,
   Select,
@@ -55,6 +56,10 @@ import {
   Textarea,
 } from '@/components/ui/form-controls';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
   Tabs,
   TabsContent,
   TabsList,
@@ -68,11 +73,16 @@ import {
   PaginationShell,
 } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
+import {
+  documentsApi,
+  DocumentsApiError,
+} from '@/modules/documents/api/client';
 import { campaignStatusLabels, type CampaignPreview } from '../model/marketing';
 import {
   marketingSectionTabs,
   type MarketingPreviewItem,
 } from '../model/reference-data';
+import { downloadRowsAsExcel } from '../utils/excel-export';
 
 type DetailSection = MarketingPreviewItem['section'];
 type NoticeHandler = (message: string) => void;
@@ -81,6 +91,7 @@ interface PreviewRow {
   id: `preview-${string}`;
   cells: readonly string[];
   statusIndex?: number;
+  occurredAt?: string;
 }
 
 interface MetricDefinition {
@@ -228,6 +239,7 @@ function PreviewTable({
   onNotice,
   searchable = true,
   actions = true,
+  exportable = true,
 }: {
   title: string;
   columns: readonly string[];
@@ -239,10 +251,19 @@ function PreviewTable({
   onNotice: NoticeHandler;
   searchable?: boolean;
   actions?: boolean;
+  exportable?: boolean;
 }) {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
+  const [disabledRows, setDisabledRows] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [editedTitles, setEditedTitles] = useState<Record<string, string>>({});
+  const [editingRow, setEditingRow] = useState<PreviewRow | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
   const statuses = useMemo(
     () =>
       Array.from(
@@ -256,15 +277,24 @@ function PreviewTable({
   );
   const filtered = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase('fa-IR');
-    return rows.filter(
-      (row) =>
+    return rows.filter((row, index) => {
+      const occurredAt =
+        row.occurredAt ??
+        `2026-${index < 3 ? '09' : '08'}-${String(index < 3 ? 5 - index * 2 : 30 - index).padStart(2, '0')}`;
+      return (
         (!needle ||
-          row.cells.join(' ').toLocaleLowerCase('fa-IR').includes(needle)) &&
+          [editedTitles[row.id] ?? row.cells[0], ...row.cells.slice(1)]
+            .join(' ')
+            .toLocaleLowerCase('fa-IR')
+            .includes(needle)) &&
         (status === 'all' ||
           (row.statusIndex !== undefined &&
-            row.cells[row.statusIndex] === status)),
-    );
-  }, [rows, search, status]);
+            row.cells[row.statusIndex] === status)) &&
+        (!startDate || occurredAt >= startDate) &&
+        (!endDate || occurredAt <= endDate)
+      );
+    });
+  }, [editedTitles, endDate, rows, search, startDate, status]);
   const pageSize = 3;
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pages);
@@ -287,9 +317,33 @@ function PreviewTable({
       updatedAt: '2026-09-03T08:30:00.000Z',
     });
   return (
-    <Panel title={title}>
+    <Panel
+      actions={
+        rows.length && exportable ? (
+          <Button
+            onClick={() => {
+              downloadRowsAsExcel({
+                filename: title,
+                sheetName: title,
+                columns,
+                rows: filtered.map((row) => [
+                  editedTitles[row.id] ?? row.cells[0] ?? '',
+                  ...row.cells.slice(1),
+                ]),
+              });
+              onNotice(`خروجی اکسل «${title}» دانلود شد.`);
+            }}
+            size="sm"
+            variant="outline"
+          >
+            <Download aria-hidden="true" className="size-4" /> خروجی اکسل
+          </Button>
+        ) : undefined
+      }
+      title={title}
+    >
       {searchable ? (
-        <FilterBar className="m-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_14rem_auto]">
+        <FilterBar className="m-4 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_12rem_12rem_12rem_auto]">
           <FormField id={`${section}-${tab}-search`} label="جست‌وجو">
             <div className="relative">
               <Search
@@ -322,10 +376,34 @@ function PreviewTable({
               value={status}
             />
           </FormField>
+          <FormField id={`${section}-${tab}-start`} label="از تاریخ">
+            <DatePicker
+              id={`${section}-${tab}-start`}
+              onChange={(value) => {
+                setStartDate(value);
+                setPage(1);
+              }}
+              placeholder="همه تاریخ‌ها"
+              value={startDate}
+            />
+          </FormField>
+          <FormField id={`${section}-${tab}-end`} label="تا تاریخ">
+            <DatePicker
+              id={`${section}-${tab}-end`}
+              onChange={(value) => {
+                setEndDate(value);
+                setPage(1);
+              }}
+              placeholder="همه تاریخ‌ها"
+              value={endDate}
+            />
+          </FormField>
           <Button
             onClick={() => {
               setSearch('');
               setStatus('all');
+              setStartDate('');
+              setEndDate('');
               setPage(1);
               onNotice(`فیلترهای ${title} پاک شد.`);
             }}
@@ -352,13 +430,18 @@ function PreviewTable({
             <tbody>
               {visibleRows.map((row) => (
                 <tr
-                  className="border-t border-border transition hover:bg-muted/30"
+                  className={cn(
+                    'border-t border-border transition hover:bg-muted/30',
+                    disabledRows.has(row.id) && 'opacity-55',
+                  )}
                   key={row.id}
                 >
                   {row.cells.map((cell, index) => (
                     <td className="p-4" key={`${row.id}-${columns[index]}`}>
                       {index === row.statusIndex ? (
                         <Badge className={statusClass(cell)}>{cell}</Badge>
+                      ) : index === 0 ? (
+                        (editedTitles[row.id] ?? cell)
                       ) : (
                         cell
                       )}
@@ -377,26 +460,51 @@ function PreviewTable({
                         </Button>
                         <Button
                           aria-label={`ویرایش ${row.cells[0]}`}
-                          onClick={() =>
-                            onNotice(`فرم ویرایش ${row.cells[0]} باز شد.`)
-                          }
+                          onClick={() => {
+                            setEditingRow(row);
+                            setEditingTitle(
+                              editedTitles[row.id] ?? row.cells[0] ?? '',
+                            );
+                          }}
                           size="icon"
                           variant="outline"
                         >
                           <Pencil aria-hidden="true" className="size-4" />
                         </Button>
                         <Button
-                          aria-label={`عملیات بیشتر ${row.cells[0]}`}
-                          onClick={() =>
-                            onNotice(`منوی عملیات ${row.cells[0]} باز شد.`)
+                          aria-label={
+                            disabledRows.has(row.id)
+                              ? `فعال‌سازی ${row.cells[0]}`
+                              : `غیرفعال‌سازی ${row.cells[0]}`
                           }
+                          className={cn(
+                            disabledRows.has(row.id)
+                              ? 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                              : 'border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive',
+                          )}
+                          onClick={() => {
+                            const isDisabled = disabledRows.has(row.id);
+                            setDisabledRows((current) => {
+                              const next = new Set(current);
+                              if (next.has(row.id)) next.delete(row.id);
+                              else next.add(row.id);
+                              return next;
+                            });
+                            onNotice(
+                              isDisabled
+                                ? `«${row.cells[0]}» فعال شد.`
+                                : `«${row.cells[0]}» غیرفعال شد.`,
+                            );
+                          }}
                           size="icon"
-                          variant="ghost"
+                          title={
+                            disabledRows.has(row.id)
+                              ? 'فعال‌سازی'
+                              : 'غیرفعال‌سازی'
+                          }
+                          variant="outline"
                         >
-                          <MoreHorizontal
-                            aria-hidden="true"
-                            className="size-4"
-                          />
+                          <Power aria-hidden="true" className="size-4" />
                         </Button>
                       </div>
                     </td>
@@ -437,6 +545,59 @@ function PreviewTable({
           </Button>
         </div>
       </div>
+      <Dialog
+        open={Boolean(editingRow)}
+        onOpenChange={(open) => {
+          if (!open) setEditingRow(null);
+        }}
+      >
+        <DialogContent className="max-w-xl text-right" dir="rtl">
+          <DialogTitle>ویرایش {title}</DialogTitle>
+          <DialogDescription>
+            عنوان رکورد را ویرایش کنید؛ تغییر در همین فضای کاری اعمال می‌شود.
+          </DialogDescription>
+          <form
+            className="mt-5 grid gap-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!editingRow || editingTitle.trim().length < 2) return;
+              setEditedTitles((current) => ({
+                ...current,
+                [editingRow.id]: editingTitle.trim(),
+              }));
+              onNotice(`«${editingTitle.trim()}» ویرایش شد.`);
+              setEditingRow(null);
+            }}
+          >
+            <FormField
+              id={`${section}-${tab}-edit-title`}
+              label="عنوان"
+              required
+            >
+              <Input
+                autoFocus
+                id={`${section}-${tab}-edit-title`}
+                minLength={2}
+                onChange={(event) => setEditingTitle(event.target.value)}
+                required
+                value={editingTitle}
+              />
+            </FormField>
+            <div className="flex justify-end gap-2">
+              <Button
+                onClick={() => setEditingRow(null)}
+                type="button"
+                variant="outline"
+              >
+                انصراف
+              </Button>
+              <Button type="submit">
+                <Save aria-hidden="true" className="size-4" /> ذخیره تغییرات
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </Panel>
   );
 }
@@ -727,17 +888,6 @@ export function MarketingDashboardReference({
             ))}
           </div>
         </Panel>
-        <Panel title="عملکرد کانال‌ها">
-          <ProgressRows
-            rows={[
-              ['پیامک', 84, '۳۴٪'],
-              ['ایمیل', 68, '۲۷٪'],
-              ['شبکه اجتماعی', 55, '۲۲٪'],
-              ['پوش', 31, '۱۲٪'],
-              ['سایر', 14, '۵٪'],
-            ]}
-          />
-        </Panel>
         <div className="xl:col-span-2">
           <PreviewTable
             actions={false}
@@ -752,9 +902,10 @@ export function MarketingDashboardReference({
             ]}
             onNotice={onNotice}
             onOpen={onOpen}
+            exportable={false}
             rows={topCampaigns}
             searchable={false}
-            section="reports"
+            section="campaigns"
             tab="dashboard"
             title="کمپین‌های برتر"
             totalLabel="۳ کمپین آزمایشی"
@@ -800,109 +951,323 @@ export function MarketingDashboardReference({
   );
 }
 
-function SegmentBuilder({ onNotice }: { onNotice: NoticeHandler }) {
-  const [rules, setRules] = useState([
-    ['شهر', 'برابر است با', 'تهران'],
-    ['مقصد موردعلاقه', 'یکی از', 'اروپا'],
-    ['آخرین خرید', 'بیشتر از', '۶ ماه'],
+const segmentFieldOptions = [
+  ['city', 'شهر'],
+  ['favorite-destination', 'مقصد موردعلاقه'],
+  ['last-purchase', 'آخرین خرید'],
+  ['customer-type', 'نوع مشتری'],
+  ['trip-count', 'تعداد سفر'],
+  ['preferred-channel', 'کانال ترجیحی'],
+  ['lead-score', 'امتیاز سرنخ'],
+] as const;
+
+const segmentOperatorOptions = [
+  ['equals', 'برابر است با'],
+  ['not-equals', 'برابر نیست با'],
+  ['one-of', 'یکی از'],
+  ['not-one-of', 'هیچ‌کدام از'],
+  ['greater-than', 'بیشتر از'],
+  ['less-than', 'کمتر از'],
+] as const;
+
+const segmentValueOptions: Record<
+  string,
+  readonly (readonly [string, string])[]
+> = {
+  city: [
+    ['tehran', 'تهران'],
+    ['mashhad', 'مشهد'],
+    ['shiraz', 'شیراز'],
+    ['isfahan', 'اصفهان'],
+    ['tabriz', 'تبریز'],
+  ],
+  'favorite-destination': [
+    ['europe', 'اروپا'],
+    ['istanbul', 'استانبول'],
+    ['dubai', 'دبی'],
+    ['kish', 'کیش'],
+    ['mashhad', 'مشهد'],
+  ],
+  'last-purchase': [
+    ['one-month', '۱ ماه'],
+    ['three-months', '۳ ماه'],
+    ['six-months', '۶ ماه'],
+    ['twelve-months', '۱۲ ماه'],
+  ],
+  'customer-type': [
+    ['active', 'فعال'],
+    ['vip', 'VIP'],
+    ['corporate', 'سازمانی'],
+    ['inactive', 'غیرفعال'],
+  ],
+  'trip-count': [
+    ['one', '۱ سفر'],
+    ['two', '۲ سفر'],
+    ['three', '۳ سفر'],
+    ['five-plus', '۵ سفر یا بیشتر'],
+  ],
+  'preferred-channel': [
+    ['sms', 'پیامک'],
+    ['email', 'ایمیل'],
+    ['whatsapp', 'واتساپ'],
+    ['push', 'پوش'],
+  ],
+  'lead-score': [
+    ['twenty', '۲۰'],
+    ['forty', '۴۰'],
+    ['sixty', '۶۰'],
+    ['eighty', '۸۰'],
+  ],
+};
+
+interface SegmentRule {
+  field: string;
+  operator: string;
+  value: string;
+}
+
+function SegmentBuilder({
+  onNotice,
+  onCreate,
+}: {
+  onNotice: NoticeHandler;
+  onCreate: (row: PreviewRow) => void;
+}) {
+  const [rules, setRules] = useState<SegmentRule[]>([
+    { field: 'city', operator: 'equals', value: 'tehran' },
+    {
+      field: 'favorite-destination',
+      operator: 'one-of',
+      value: 'europe',
+    },
+    { field: 'last-purchase', operator: 'greater-than', value: 'six-months' },
   ]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [segmentName, setSegmentName] = useState('');
+  const [segmentType, setSegmentType] = useState('dynamic');
+  const [segmentOwner, setSegmentOwner] = useState('marketing');
+  const [segmentStatus, setSegmentStatus] = useState('active');
+  const updateRule = (index: number, patch: Partial<SegmentRule>) =>
+    setRules((items) =>
+      items.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...patch } : item,
+      ),
+    );
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(16rem,1fr)]">
-      <Panel
-        actions={
-          <>
+    <>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(16rem,1fr)]">
+        <Panel
+          actions={
+            <>
+              <Button onClick={() => setDialogOpen(true)} size="sm">
+                <Plus aria-hidden="true" className="size-4" /> سگمنت جدید
+              </Button>
+              <Button
+                onClick={() =>
+                  onNotice('پیش‌نمایش سگمنت با ۴٬۲۸۰ عضو نمایش داده شد.')
+                }
+                size="sm"
+                variant="outline"
+              >
+                پیش‌نمایش
+              </Button>
+              <Button
+                disabled={!rules.length}
+                onClick={() => onNotice('قواعد سگمنت ذخیره شدند.')}
+                size="sm"
+              >
+                ذخیره سگمنت
+              </Button>
+            </>
+          }
+          title="سازنده سگمنت پویا"
+        >
+          <div className="grid gap-3 p-5">
+            <strong>همه شرایط زیر برقرار باشد (AND)</strong>
+            {rules.map((rule, index) => (
+              <div
+                className="grid gap-2 rounded-xl border border-border bg-muted/25 p-3 md:grid-cols-[1fr_1fr_1fr_auto]"
+                key={`${rule.field}-${index}`}
+              >
+                <SimpleSelect
+                  ariaLabel={`فیلد شرط ${index + 1}`}
+                  onChange={(field) => {
+                    const values = segmentValueOptions[field] ?? [];
+                    updateRule(index, {
+                      field,
+                      value: values[0]?.[0] ?? '',
+                    });
+                  }}
+                  options={segmentFieldOptions}
+                  value={rule.field}
+                />
+                <SimpleSelect
+                  ariaLabel={`عملگر شرط ${index + 1}`}
+                  onChange={(operator) => updateRule(index, { operator })}
+                  options={segmentOperatorOptions}
+                  value={rule.operator}
+                />
+                <SimpleSelect
+                  ariaLabel={`مقدار شرط ${index + 1}`}
+                  onChange={(value) => updateRule(index, { value })}
+                  options={segmentValueOptions[rule.field] ?? []}
+                  value={rule.value}
+                />
+                <Button
+                  aria-label={`حذف شرط ${index + 1}`}
+                  onClick={() =>
+                    setRules((items) =>
+                      items.filter((_, itemIndex) => itemIndex !== index),
+                    )
+                  }
+                  size="icon"
+                  variant="outline"
+                >
+                  <X aria-hidden="true" className="size-4" />
+                </Button>
+              </div>
+            ))}
             <Button
+              className="justify-self-start"
               onClick={() =>
-                onNotice('پیش‌نمایش سگمنت با ۴٬۲۸۰ عضو نمایش داده شد.')
+                setRules((items) => [
+                  ...items,
+                  {
+                    field: 'customer-type',
+                    operator: 'equals',
+                    value: 'active',
+                  },
+                ])
               }
               size="sm"
               variant="outline"
             >
-              پیش‌نمایش
+              <Plus aria-hidden="true" className="size-4" /> افزودن شرط
             </Button>
-            <Button
-              onClick={() => onNotice('سگمنت آزمایشی ذخیره شد.')}
-              size="sm"
-            >
-              ذخیره سگمنت
-            </Button>
-          </>
-        }
-        title="سازنده سگمنت پویا"
-      >
-        <div className="grid gap-3 p-5">
-          <strong>همه شرایط زیر برقرار باشد (AND)</strong>
-          {rules.map((rule, index) => (
-            <div
-              className="grid gap-2 rounded-xl border border-border bg-muted/25 p-3 md:grid-cols-[1fr_1fr_1fr_auto]"
-              key={`${rule[0]}-${index}`}
-            >
-              <SimpleSelect
-                ariaLabel={`فیلد شرط ${index + 1}`}
-                onChange={() => undefined}
-                options={[[rule[0] ?? '', rule[0] ?? '']]}
-                value={rule[0] ?? ''}
-              />
-              <SimpleSelect
-                ariaLabel={`عملگر شرط ${index + 1}`}
-                onChange={() => undefined}
-                options={[[rule[1] ?? '', rule[1] ?? '']]}
-                value={rule[1] ?? ''}
-              />
+          </div>
+        </Panel>
+        <Card className="grid place-items-center bg-gradient-to-br from-blue-50 to-cyan-50 p-6 text-center dark:from-blue-950/45 dark:to-cyan-950/35">
+          <div>
+            <span className="text-sm text-muted-foreground">اعضای برآوردی</span>
+            <strong className="mt-2 block text-4xl font-black text-primary">
+              ۴٬۲۸۰
+            </strong>
+            <small className="mt-2 block text-muted-foreground">
+              بروزرسانی امروز ۱۰:۲۰
+            </small>
+            <div className="my-4 border-t border-border" />
+            <p className="leading-7">
+              ۳٬۹۴۰ مشتری
+              <br />
+              ۳۴۰ سرنخ
+              <br />
+              ۱۲۶ مورد محدودیت ارسال
+            </p>
+          </div>
+        </Card>
+      </div>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl text-right" dir="rtl">
+          <DialogTitle>سگمنت جدید</DialogTitle>
+          <DialogDescription>
+            مشخصات سگمنت را وارد کنید؛ قواعد آن در سازنده بالای فهرست قابل تنظیم
+            است.
+          </DialogDescription>
+          <form
+            className="mt-5 grid gap-4 sm:grid-cols-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (segmentName.trim().length < 3) {
+                onNotice('نام سگمنت باید حداقل ۳ نویسه باشد.');
+                return;
+              }
+              const typeLabel = segmentType === 'dynamic' ? 'پویا' : 'دستی';
+              const ownerLabel =
+                segmentOwner === 'marketing'
+                  ? 'تیم مارکتینگ'
+                  : segmentOwner === 'sales'
+                    ? 'تیم فروش'
+                    : 'سیستم';
+              const statusLabel =
+                segmentStatus === 'active' ? 'فعال' : 'پیش‌نویس';
+              onCreate({
+                id: `preview-segment-${Date.now()}`,
+                cells: [
+                  segmentName.trim(),
+                  typeLabel,
+                  '۰',
+                  '۰',
+                  'اکنون',
+                  ownerLabel,
+                  statusLabel,
+                ],
+                occurredAt: '2026-09-05',
+                statusIndex: 6,
+              });
+              onNotice(`سگمنت «${segmentName.trim()}» ایجاد شد.`);
+              setDialogOpen(false);
+              setSegmentName('');
+            }}
+          >
+            <FormField id="new-segment-name" label="نام سگمنت" required>
               <Input
-                aria-label={`مقدار شرط ${index + 1}`}
-                readOnly
-                value={rule[2]}
+                autoFocus
+                id="new-segment-name"
+                onChange={(event) => setSegmentName(event.target.value)}
+                placeholder="مثلاً مشتریان سفرهای پاییزی"
+                value={segmentName}
               />
+            </FormField>
+            <FormField id="new-segment-type" label="نوع سگمنت" required>
+              <SimpleSelect
+                ariaLabel="نوع سگمنت جدید"
+                onChange={setSegmentType}
+                options={[
+                  ['dynamic', 'پویا'],
+                  ['manual', 'دستی'],
+                ]}
+                value={segmentType}
+              />
+            </FormField>
+            <FormField id="new-segment-owner" label="مالک" required>
+              <SimpleSelect
+                ariaLabel="مالک سگمنت جدید"
+                onChange={setSegmentOwner}
+                options={[
+                  ['marketing', 'تیم مارکتینگ'],
+                  ['sales', 'تیم فروش'],
+                  ['system', 'سیستم'],
+                ]}
+                value={segmentOwner}
+              />
+            </FormField>
+            <FormField id="new-segment-status" label="وضعیت" required>
+              <SimpleSelect
+                ariaLabel="وضعیت سگمنت جدید"
+                onChange={setSegmentStatus}
+                options={[
+                  ['active', 'فعال'],
+                  ['draft', 'پیش‌نویس'],
+                ]}
+                value={segmentStatus}
+              />
+            </FormField>
+            <div className="flex justify-end gap-2 sm:col-span-2">
               <Button
-                aria-label={`حذف شرط ${index + 1}`}
-                onClick={() =>
-                  setRules((items) =>
-                    items.filter((_, itemIndex) => itemIndex !== index),
-                  )
-                }
-                size="icon"
+                onClick={() => setDialogOpen(false)}
+                type="button"
                 variant="outline"
               >
-                <X aria-hidden="true" className="size-4" />
+                انصراف
+              </Button>
+              <Button type="submit">
+                <Save aria-hidden="true" className="size-4" /> ذخیره سگمنت
               </Button>
             </div>
-          ))}
-          <Button
-            className="justify-self-start"
-            onClick={() =>
-              setRules((items) => [
-                ...items,
-                ['نوع مشتری', 'برابر است با', 'فعال'],
-              ])
-            }
-            size="sm"
-            variant="outline"
-          >
-            <Plus aria-hidden="true" className="size-4" /> افزودن شرط
-          </Button>
-        </div>
-      </Panel>
-      <Card className="grid place-items-center bg-gradient-to-br from-blue-50 to-cyan-50 p-6 text-center dark:from-blue-950/45 dark:to-cyan-950/35">
-        <div>
-          <span className="text-sm text-muted-foreground">اعضای برآوردی</span>
-          <strong className="mt-2 block text-4xl font-black text-primary">
-            ۴٬۲۸۰
-          </strong>
-          <small className="mt-2 block text-muted-foreground">
-            بروزرسانی امروز ۱۰:۲۰
-          </small>
-          <div className="my-4 border-t border-border" />
-          <p className="leading-7">
-            ۳٬۹۴۰ مشتری
-            <br />
-            ۳۴۰ سرنخ
-            <br />
-            ۱۲۶ لغو عضویت
-          </p>
-        </div>
-      </Card>
-    </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -961,6 +1326,628 @@ const segmentRows: readonly PreviewRow[] = [
   },
 ];
 
+interface ScoringRule {
+  id: string;
+  label: string;
+  score: number;
+  polarity: 'positive' | 'negative';
+  active: boolean;
+}
+
+const initialScoringRules: readonly ScoringRule[] = [
+  {
+    id: 'form-completed',
+    label: 'تکمیل فرم درخواست سفر',
+    score: 20,
+    polarity: 'positive',
+    active: true,
+  },
+  {
+    id: 'price-viewed',
+    label: 'بازدید صفحه قیمت بیش از ۲ بار',
+    score: 12,
+    polarity: 'positive',
+    active: true,
+  },
+  {
+    id: 'email-opened',
+    label: 'بازکردن ایمیل کمپین',
+    score: 5,
+    polarity: 'positive',
+    active: true,
+  },
+  {
+    id: 'short-link-clicked',
+    label: 'کلیک روی لینک کوتاه',
+    score: 8,
+    polarity: 'positive',
+    active: true,
+  },
+  {
+    id: 'no-response',
+    label: 'عدم پاسخ در ۳ پیگیری',
+    score: 15,
+    polarity: 'negative',
+    active: true,
+  },
+  {
+    id: 'channel-unsubscribed',
+    label: 'لغو رضایت کانال',
+    score: 30,
+    polarity: 'negative',
+    active: true,
+  },
+  {
+    id: 'invalid-phone',
+    label: 'شماره تماس نامعتبر',
+    score: 50,
+    polarity: 'negative',
+    active: true,
+  },
+  {
+    id: 'inactive-90-days',
+    label: 'بدون تعامل در ۹۰ روز',
+    score: 20,
+    polarity: 'negative',
+    active: true,
+  },
+];
+
+function LeadScoringPage({ onNotice }: { onNotice: NoticeHandler }) {
+  const [rules, setRules] = useState<ScoringRule[]>(() => [
+    ...initialScoringRules,
+  ]);
+  const [editor, setEditor] = useState<{
+    open: boolean;
+    id?: string;
+    label: string;
+    score: string;
+    polarity: ScoringRule['polarity'];
+  }>({ open: false, label: '', score: '10', polarity: 'positive' });
+  const openEditor = (polarity: ScoringRule['polarity'], rule?: ScoringRule) =>
+    setEditor({
+      open: true,
+      ...(rule ? { id: rule.id } : {}),
+      label: rule?.label ?? '',
+      score: String(rule?.score ?? 10),
+      polarity,
+    });
+  const scoringGroups = [
+    ['positive', 'قواعد امتیاز مثبت'],
+    ['negative', 'قواعد امتیاز منفی'],
+  ] as const;
+  return (
+    <>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {scoringGroups.map(([polarity, title]) => (
+          <Panel
+            actions={
+              <Button
+                onClick={() => openEditor(polarity)}
+                size="sm"
+                variant="outline"
+              >
+                <Plus aria-hidden="true" className="size-4" /> قانون جدید
+              </Button>
+            }
+            key={polarity}
+            title={title}
+          >
+            <div className="grid gap-3 p-4">
+              {rules
+                .filter((rule) => rule.polarity === polarity)
+                .map((rule) => (
+                  <div
+                    className={cn(
+                      'flex items-center justify-between gap-3 rounded-xl border border-border p-4 transition',
+                      !rule.active && 'opacity-55',
+                    )}
+                    key={rule.id}
+                  >
+                    <button
+                      className="min-w-0 flex-1 text-right"
+                      onClick={() => openEditor(polarity, rule)}
+                      type="button"
+                    >
+                      <span className="font-bold">{rule.label}</span>
+                      <strong
+                        className={cn(
+                          'me-3 whitespace-nowrap',
+                          polarity === 'negative'
+                            ? 'text-destructive'
+                            : 'text-emerald-700',
+                        )}
+                      >
+                        {polarity === 'negative' ? '−' : '+'}
+                        {rule.score.toLocaleString('fa-IR')} امتیاز
+                      </strong>
+                    </button>
+                    <div className="flex gap-1">
+                      <Button
+                        aria-label={`ویرایش قانون ${rule.label}`}
+                        onClick={() => openEditor(polarity, rule)}
+                        size="icon"
+                        variant="outline"
+                      >
+                        <Pencil aria-hidden="true" className="size-4" />
+                      </Button>
+                      <Button
+                        aria-label={
+                          rule.active
+                            ? `غیرفعال‌سازی قانون ${rule.label}`
+                            : `فعال‌سازی قانون ${rule.label}`
+                        }
+                        className={cn(
+                          rule.active
+                            ? 'border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive'
+                            : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50',
+                        )}
+                        onClick={() => {
+                          setRules((items) =>
+                            items.map((item) =>
+                              item.id === rule.id
+                                ? { ...item, active: !item.active }
+                                : item,
+                            ),
+                          );
+                          onNotice(
+                            rule.active
+                              ? `قانون «${rule.label}» غیرفعال شد.`
+                              : `قانون «${rule.label}» فعال شد.`,
+                          );
+                        }}
+                        size="icon"
+                        variant="outline"
+                      >
+                        <Power aria-hidden="true" className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </Panel>
+        ))}
+      </div>
+      <Dialog
+        open={editor.open}
+        onOpenChange={(open) => setEditor((current) => ({ ...current, open }))}
+      >
+        <DialogContent className="max-w-xl text-right" dir="rtl">
+          <DialogTitle>{editor.id ? 'ویرایش قانون' : 'قانون جدید'}</DialogTitle>
+          <DialogDescription>
+            شرط و میزان امتیاز را مشخص کنید؛ تغییر بلافاصله در فهرست اعمال
+            می‌شود.
+          </DialogDescription>
+          <form
+            className="mt-5 grid gap-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const score = Number(editor.score);
+              if (
+                editor.label.trim().length < 3 ||
+                !Number.isFinite(score) ||
+                score <= 0
+              ) {
+                onNotice('عنوان قانون و امتیاز مثبت معتبر وارد کنید.');
+                return;
+              }
+              if (editor.id) {
+                setRules((items) =>
+                  items.map((item) =>
+                    item.id === editor.id
+                      ? {
+                          ...item,
+                          label: editor.label.trim(),
+                          score,
+                          polarity: editor.polarity,
+                        }
+                      : item,
+                  ),
+                );
+              } else {
+                setRules((items) => [
+                  ...items,
+                  {
+                    id: `rule-${Date.now()}`,
+                    label: editor.label.trim(),
+                    score,
+                    polarity: editor.polarity,
+                    active: true,
+                  },
+                ]);
+              }
+              onNotice(
+                editor.id
+                  ? 'قانون امتیازدهی ویرایش شد.'
+                  : 'قانون امتیازدهی ایجاد شد.',
+              );
+              setEditor((current) => ({ ...current, open: false }));
+            }}
+          >
+            <FormField id="scoring-rule-label" label="شرط قانون" required>
+              <Input
+                autoFocus
+                id="scoring-rule-label"
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    label: event.target.value,
+                  }))
+                }
+                placeholder="مثلاً مشاهده صفحه پیشنهاد"
+                value={editor.label}
+              />
+            </FormField>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField id="scoring-rule-polarity" label="نوع امتیاز" required>
+                <SimpleSelect
+                  ariaLabel="نوع امتیاز قانون"
+                  onChange={(value) =>
+                    setEditor((current) => ({
+                      ...current,
+                      polarity: value as ScoringRule['polarity'],
+                    }))
+                  }
+                  options={[
+                    ['positive', 'مثبت'],
+                    ['negative', 'منفی'],
+                  ]}
+                  value={editor.polarity}
+                />
+              </FormField>
+              <FormField id="scoring-rule-score" label="مقدار امتیاز" required>
+                <Input
+                  dir="ltr"
+                  id="scoring-rule-score"
+                  min="1"
+                  onChange={(event) =>
+                    setEditor((current) => ({
+                      ...current,
+                      score: event.target.value,
+                    }))
+                  }
+                  type="number"
+                  value={editor.score}
+                />
+              </FormField>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                onClick={() =>
+                  setEditor((current) => ({ ...current, open: false }))
+                }
+                type="button"
+                variant="outline"
+              >
+                انصراف
+              </Button>
+              <Button type="submit">
+                <Save aria-hidden="true" className="size-4" /> ذخیره قانون
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+type AudienceInputKind = 'campaign-audience' | 'source';
+
+function AudienceInputDialog({
+  kind,
+  open,
+  onOpenChange,
+  onCreate,
+  onNotice,
+}: {
+  kind: AudienceInputKind;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreate: (row: PreviewRow) => void;
+  onNotice: NoticeHandler;
+}) {
+  const [name, setName] = useState('');
+  const [type, setType] = useState(
+    kind === 'campaign-audience' ? 'segment' : 'search',
+  );
+  const [campaign, setCampaign] = useState('europe');
+  const [source, setSource] = useState('customers');
+  const [memberCount, setMemberCount] = useState('1000');
+  const [utmSource, setUtmSource] = useState('google');
+  const [utmMedium, setUtmMedium] = useState('cpc');
+  const [attributionWindow, setAttributionWindow] = useState('30');
+  const [status, setStatus] = useState('active');
+  const isCampaignAudience = kind === 'campaign-audience';
+  const campaignLabels: Record<string, string> = {
+    europe: 'جشنواره تابستان اروپا',
+    istanbul: 'پرواز استانبول',
+    dubai: 'هتل‌های دبی',
+    corporate: 'کمپین B2B پاییز',
+  };
+  const statusLabel = status === 'active' ? 'فعال' : 'پیش‌نویس';
+
+  return (
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogContent className="max-w-3xl text-right" dir="rtl">
+        <DialogTitle>
+          {isCampaignAudience ? 'افزودن مخاطبان کمپین' : 'افزودن منبع ورود'}
+        </DialogTitle>
+        <DialogDescription>
+          {isCampaignAudience
+            ? 'یک گروه تجمیعی را به کمپین متصل کنید؛ اطلاعات هویتی مخاطبان در مارکتینگ نگهداری نمی‌شود.'
+            : 'مشخصات کانال و پارامترهای رهگیری منبع ورودی را ثبت کنید.'}
+        </DialogDescription>
+        <form
+          className="mt-5 grid gap-4 sm:grid-cols-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (name.trim().length < 3) {
+              onNotice('نام باید حداقل ۳ نویسه باشد.');
+              return;
+            }
+            if (isCampaignAudience) {
+              const count = Number(memberCount);
+              if (!Number.isFinite(count) || count < 1) {
+                onNotice('تعداد برآوردی مخاطبان را درست وارد کنید.');
+                return;
+              }
+              const typeLabels: Record<string, string> = {
+                segment: 'سگمنت پویا',
+                corporate: 'سازمانی',
+                partner: 'آژانس همکار',
+              };
+              const sourceLabels: Record<string, string> = {
+                customers: 'قرارداد Customers',
+                organizations: 'CRM سازمانی',
+                marketing: 'سگمنت مارکتینگ',
+              };
+              onCreate({
+                id: `preview-campaign-audience-${Date.now()}`,
+                cells: [
+                  name.trim(),
+                  typeLabels[type] ?? type,
+                  campaignLabels[campaign] ?? campaign,
+                  count.toLocaleString('fa-IR'),
+                  sourceLabels[source] ?? source,
+                  'اکنون',
+                  statusLabel,
+                ],
+                occurredAt: '2026-09-05',
+                statusIndex: 6,
+              });
+              onNotice(`گروه مخاطبان «${name.trim()}» به کمپین افزوده شد.`);
+            } else {
+              if (utmSource.trim().length < 2 || utmMedium.trim().length < 2) {
+                onNotice('UTM Source و UTM Medium را کامل وارد کنید.');
+                return;
+              }
+              const typeLabels: Record<string, string> = {
+                search: 'جست‌وجوی پولی',
+                social: 'شبکه اجتماعی',
+                referral: 'معرفی',
+                event: 'رویداد و نمایشگاه',
+                direct: 'ورود مستقیم',
+              };
+              onCreate({
+                id: `preview-source-${Date.now()}`,
+                cells: [
+                  name.trim(),
+                  typeLabels[type] ?? type,
+                  utmSource.trim(),
+                  utmMedium.trim(),
+                  campaignLabels[campaign] ?? campaign,
+                  `${Number(attributionWindow).toLocaleString('fa-IR')} روز`,
+                  statusLabel,
+                ],
+                occurredAt: '2026-09-05',
+                statusIndex: 6,
+              });
+              onNotice(`منبع ورود «${name.trim()}» افزوده شد.`);
+            }
+            onOpenChange(false);
+          }}
+        >
+          <FormField
+            id={`${kind}-name`}
+            label={isCampaignAudience ? 'نام گروه مخاطبان' : 'نام منبع'}
+            required
+          >
+            <Input
+              autoFocus
+              id={`${kind}-name`}
+              minLength={3}
+              onChange={(event) => setName(event.target.value)}
+              placeholder={
+                isCampaignAudience
+                  ? 'مثلاً علاقه‌مندان سفر پاییزی'
+                  : 'مثلاً تبلیغات جست‌وجوی پاییز'
+              }
+              required
+              value={name}
+            />
+          </FormField>
+          <FormField
+            id={`${kind}-type`}
+            label={isCampaignAudience ? 'نوع مخاطب' : 'نوع کانال'}
+            required
+          >
+            <SimpleSelect
+              ariaLabel={isCampaignAudience ? 'نوع مخاطب' : 'نوع کانال ورودی'}
+              onChange={setType}
+              options={
+                isCampaignAudience
+                  ? [
+                      ['segment', 'سگمنت پویا'],
+                      ['corporate', 'مخاطب سازمانی'],
+                      ['partner', 'آژانس همکار'],
+                    ]
+                  : [
+                      ['search', 'جست‌وجوی پولی'],
+                      ['social', 'شبکه اجتماعی'],
+                      ['referral', 'معرفی'],
+                      ['event', 'رویداد و نمایشگاه'],
+                      ['direct', 'ورود مستقیم'],
+                    ]
+              }
+              value={type}
+            />
+          </FormField>
+          <FormField id={`${kind}-campaign`} label="کمپین مرتبط" required>
+            <SimpleSelect
+              ariaLabel="کمپین مرتبط"
+              onChange={setCampaign}
+              options={[
+                ['europe', 'جشنواره تابستان اروپا'],
+                ['istanbul', 'پرواز استانبول'],
+                ['dubai', 'هتل‌های دبی'],
+                ['corporate', 'کمپین B2B پاییز'],
+              ]}
+              value={campaign}
+            />
+          </FormField>
+          {isCampaignAudience ? (
+            <>
+              <FormField
+                id="campaign-audience-source"
+                label="منبع داده"
+                required
+              >
+                <SimpleSelect
+                  ariaLabel="منبع داده مخاطبان"
+                  onChange={setSource}
+                  options={[
+                    ['customers', 'قرارداد Customers'],
+                    ['organizations', 'CRM سازمانی'],
+                    ['marketing', 'سگمنت مارکتینگ'],
+                  ]}
+                  value={source}
+                />
+              </FormField>
+              <FormField
+                id="campaign-audience-count"
+                label="تعداد برآوردی"
+                required
+              >
+                <Input
+                  dir="ltr"
+                  id="campaign-audience-count"
+                  min="1"
+                  onChange={(event) => setMemberCount(event.target.value)}
+                  required
+                  type="number"
+                  value={memberCount}
+                />
+              </FormField>
+            </>
+          ) : (
+            <>
+              <FormField id="source-utm-source" label="UTM Source" required>
+                <Input
+                  dir="ltr"
+                  id="source-utm-source"
+                  onChange={(event) => setUtmSource(event.target.value)}
+                  required
+                  value={utmSource}
+                />
+              </FormField>
+              <FormField id="source-utm-medium" label="UTM Medium" required>
+                <Input
+                  dir="ltr"
+                  id="source-utm-medium"
+                  onChange={(event) => setUtmMedium(event.target.value)}
+                  required
+                  value={utmMedium}
+                />
+              </FormField>
+              <FormField
+                id="source-attribution-window"
+                label="پنجره انتساب (روز)"
+                required
+              >
+                <Input
+                  dir="ltr"
+                  id="source-attribution-window"
+                  min="1"
+                  onChange={(event) => setAttributionWindow(event.target.value)}
+                  required
+                  type="number"
+                  value={attributionWindow}
+                />
+              </FormField>
+            </>
+          )}
+          <FormField id={`${kind}-status`} label="وضعیت" required>
+            <SimpleSelect
+              ariaLabel="وضعیت رکورد"
+              onChange={setStatus}
+              options={[
+                ['active', 'فعال'],
+                ['draft', 'پیش‌نویس'],
+              ]}
+              value={status}
+            />
+          </FormField>
+          <div className="flex justify-end gap-2 sm:col-span-2">
+            <Button
+              onClick={() => onOpenChange(false)}
+              type="button"
+              variant="outline"
+            >
+              انصراف
+            </Button>
+            <Button type="submit">
+              <Save aria-hidden="true" className="size-4" /> ذخیره
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const sourceRows: readonly PreviewRow[] = [
+  {
+    id: 'preview-source-google',
+    cells: [
+      'جست‌وجوی گوگل اروپا',
+      'جست‌وجوی پولی',
+      'google',
+      'cpc',
+      'جشنواره تابستان اروپا',
+      '۳۰ روز',
+      'فعال',
+    ],
+    statusIndex: 6,
+  },
+  {
+    id: 'preview-source-instagram',
+    cells: [
+      'اینستاگرام هتل دبی',
+      'شبکه اجتماعی',
+      'instagram',
+      'social',
+      'هتل‌های دبی',
+      '۱۴ روز',
+      'فعال',
+    ],
+    statusIndex: 6,
+  },
+  {
+    id: 'preview-source-exhibition',
+    cells: [
+      'نمایشگاه گردشگری',
+      'رویداد و نمایشگاه',
+      'tourism-expo',
+      'offline',
+      'کمپین B2B پاییز',
+      '۶۰ روز',
+      'فعال',
+    ],
+    statusIndex: 6,
+  },
+];
+
 function AudiencePage({
   tab,
   onOpen,
@@ -970,10 +1957,19 @@ function AudiencePage({
   onOpen: (item: MarketingPreviewItem) => void;
   onNotice: NoticeHandler;
 }) {
+  const [createdSegments, setCreatedSegments] = useState<PreviewRow[]>([]);
+  const [createdCampaignAudiences, setCreatedCampaignAudiences] = useState<
+    PreviewRow[]
+  >([]);
+  const [createdSources, setCreatedSources] = useState<PreviewRow[]>([]);
+  const [inputKind, setInputKind] = useState<AudienceInputKind | null>(null);
   if (tab === 'segments') {
     return (
       <div className="grid gap-5">
-        <SegmentBuilder onNotice={onNotice} />
+        <SegmentBuilder
+          onCreate={(row) => setCreatedSegments((items) => [row, ...items])}
+          onNotice={onNotice}
+        />
         <PreviewTable
           columns={[
             'نام سگمنت',
@@ -986,7 +1982,7 @@ function AudiencePage({
           ]}
           onNotice={onNotice}
           onOpen={onOpen}
-          rows={segmentRows}
+          rows={[...createdSegments, ...segmentRows]}
           section="audiences"
           tab={tab}
           title="فهرست سگمنت‌ها"
@@ -1087,648 +2083,158 @@ function AudiencePage({
     );
   }
   if (tab === 'scoring') {
-    const scoringGroups = [
-      [
-        'قواعد امتیاز مثبت',
-        [
-          ['تکمیل فرم درخواست سفر', '+۲۰ امتیاز'],
-          ['بازدید صفحه قیمت بیش از ۲ بار', '+۱۲ امتیاز'],
-          ['بازکردن ایمیل کمپین', '+۵ امتیاز'],
-          ['کلیک روی لینک کوتاه', '+۸ امتیاز'],
-        ],
-      ],
-      [
-        'قواعد امتیاز منفی',
-        [
-          ['عدم پاسخ در ۳ پیگیری', '-۱۵ امتیاز'],
-          ['لغو عضویت از کانال', '-۳۰ امتیاز'],
-          ['شماره تماس نامعتبر', '-۵۰ امتیاز'],
-          ['بدون تعامل در ۹۰ روز', '-۲۰ امتیاز'],
-        ],
-      ],
-    ] as const;
-    return (
-      <div className="grid gap-4 lg:grid-cols-2">
-        {scoringGroups.map(([title, rules]) => (
-          <Panel
-            actions={
-              <Button
-                onClick={() => onNotice(`فرم قانون جدید برای ${title} باز شد.`)}
-                size="sm"
-                variant="outline"
-              >
-                <Plus aria-hidden="true" className="size-4" /> قانون
-              </Button>
-            }
-            key={title}
-            title={title}
-          >
-            <div className="grid gap-3 p-4">
-              {rules.map(([label, score]) => (
-                <button
-                  className="flex items-center justify-between rounded-xl border border-border p-4 text-start hover:bg-muted/30"
-                  key={label}
-                  onClick={() =>
-                    onNotice(`قانون «${label}» برای ویرایش باز شد.`)
-                  }
-                  type="button"
-                >
-                  <span className="font-bold">{label}</span>
-                  <strong
-                    className={
-                      score.startsWith('-')
-                        ? 'text-destructive'
-                        : 'text-emerald-700'
-                    }
-                  >
-                    {score}
-                  </strong>
-                </button>
-              ))}
-            </div>
-          </Panel>
-        ))}
-      </div>
-    );
+    return <LeadScoringPage onNotice={onNotice} />;
   }
   if (tab === 'sources') {
     return (
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="منابع ورود سرنخ" description="۳۰ روز اخیر">
-          <ProgressRows
-            rows={[
-              ['جستجوی گوگل', 86, '۳۴٪'],
-              ['کمپین پیامک', 62, '۲۵٪'],
-              ['شبکه اجتماعی', 48, '۱۹٪'],
-              ['معرفی', 31, '۱۲٪'],
-            ]}
-          />
-        </Panel>
-        <Panel title="اولین و آخرین منبع">
-          <dl className="p-5">
-            {[
-              ['سرنخ‌های چندمنبعی', '۳۸٪'],
-              ['تغییر منبع تا تبدیل', '۲۱٪'],
-              ['میانگین نقاط تماس', '۳.۴'],
-              ['منبع بدون UTM', '۶٪'],
-            ].map(([label, value]) => (
-              <div
-                className="flex justify-between border-b border-dashed border-border py-3 last:border-0"
-                key={label}
-              >
-                <dt className="text-muted-foreground">{label}</dt>
-                <dd className="font-black">{value}</dd>
-              </div>
-            ))}
-          </dl>
-        </Panel>
-      </div>
-    );
-  }
-  if (tab === 'subscriptions') {
-    return (
-      <div className="grid gap-5">
-        <MetricGrid
-          metrics={[
-            { label: 'عضویت فعال', value: '۸۶٬۴۲۰', icon: MessageCircle },
-            {
-              label: 'لغو عضویت ۳۰ روز',
-              value: '۶۲۸',
-              icon: Power,
-              tone: 'rose',
-            },
-            {
-              label: 'لیست عدم ارسال',
-              value: '۱٬۸۴۲',
-              icon: AlertTriangle,
-              tone: 'amber',
-            },
-            {
-              label: 'رضایت ثبت‌شده',
-              value: '۹۴٪',
-              icon: ShieldCheck,
-              tone: 'emerald',
-            },
-          ]}
-        />
+      <>
+        <div className="flex justify-end">
+          <Button onClick={() => setInputKind('source')}>
+            <Plus aria-hidden="true" className="size-4" /> افزودن منبع ورود
+          </Button>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Panel title="منابع ورود سرنخ" description="۳۰ روز اخیر">
+            <ProgressRows
+              rows={[
+                ['جستجوی گوگل', 86, '۳۴٪'],
+                ['کمپین پیامک', 62, '۲۵٪'],
+                ['شبکه اجتماعی', 48, '۱۹٪'],
+                ['معرفی', 31, '۱۲٪'],
+              ]}
+            />
+          </Panel>
+          <Panel title="اولین و آخرین منبع">
+            <dl className="p-5">
+              {[
+                ['سرنخ‌های چندمنبعی', '۳۸٪'],
+                ['تغییر منبع تا تبدیل', '۲۱٪'],
+                ['میانگین نقاط تماس', '۳.۴'],
+                ['منبع بدون UTM', '۶٪'],
+              ].map(([label, value]) => (
+                <div
+                  className="flex justify-between border-b border-dashed border-border py-3 last:border-0"
+                  key={label}
+                >
+                  <dt className="text-muted-foreground">{label}</dt>
+                  <dd className="font-black">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </Panel>
+        </div>
         <PreviewTable
           columns={[
-            'مخاطب',
-            'پیامک',
-            'ایمیل',
-            'واتساپ',
-            'پوش',
-            'آخرین تغییر',
-            'منبع رضایت',
+            'نام منبع',
+            'نوع کانال',
+            'UTM Source',
+            'UTM Medium',
+            'کمپین پیش‌فرض',
+            'پنجره انتساب',
             'وضعیت',
           ]}
           onNotice={onNotice}
           onOpen={onOpen}
-          rows={[
-            {
-              id: 'preview-subscription-sara',
-              cells: [
-                'سارا محمدی',
-                'فعال',
-                'فعال',
-                'فعال',
-                'فعال',
-                'امروز',
-                'فرم سایت',
-                'مجاز',
-              ],
-              statusIndex: 7,
-            },
-            {
-              id: 'preview-subscription-reza',
-              cells: [
-                'رضا کریمی',
-                'فعال',
-                'لغو',
-                'فعال',
-                'فعال',
-                'دیروز',
-                'مرکز تماس',
-                'محدود',
-              ],
-              statusIndex: 7,
-            },
-            {
-              id: 'preview-subscription-maryam',
-              cells: [
-                'مریم شریفی',
-                'عدم ارسال',
-                'عدم ارسال',
-                'عدم ارسال',
-                'عدم ارسال',
-                '۲ روز پیش',
-                'درخواست مشتری',
-                'مسدود',
-              ],
-              statusIndex: 7,
-            },
-          ]}
+          rows={[...createdSources, ...sourceRows]}
           section="audiences"
           tab={tab}
-          title="عضویت‌ها و رضایت مشتری"
-          totalLabel="۳ نمونه از ۸۶٬۴۲۰ عضویت"
+          title="فهرست منابع ورود"
+          totalLabel="۳ نمونه مرجع"
         />
-      </div>
+        {inputKind === 'source' ? (
+          <AudienceInputDialog
+            kind="source"
+            onCreate={(row) => setCreatedSources((items) => [row, ...items])}
+            onNotice={onNotice}
+            onOpenChange={(open) => {
+              if (!open) setInputKind(null);
+            }}
+            open
+          />
+        ) : null}
+      </>
     );
   }
   return (
-    <PreviewTable
-      columns={[
-        'نام',
-        'نوع',
-        'کمپین / سازمان',
-        'تعداد',
-        'منبع',
-        'آخرین تغییر',
-        'وضعیت',
-      ]}
-      onNotice={onNotice}
-      onOpen={onOpen}
-      rows={[
-        {
-          id: 'preview-campaign-audience-agencies',
-          cells: [
-            'گروه آژانس‌های همکار',
-            'آژانس‌ها',
-            'کمپین B2B پاییز',
-            '۳۴۲',
-            'B2B',
-            'امروز',
-            'فعال',
-          ],
-          statusIndex: 6,
-        },
-        {
-          id: 'preview-campaign-audience-pars',
-          cells: [
-            'کارکنان شرکت پارس',
-            'سازمانی',
-            'پیشنهاد سفر شرکتی',
-            '۱٬۲۸۰',
-            'مشتریان سازمانی',
-            'دیروز',
-            'فعال',
-          ],
-          statusIndex: 6,
-        },
-        {
-          id: 'preview-campaign-audience-europe',
-          cells: [
-            'مشتریان تور اروپا',
-            'مشتریان',
-            'تابستان اروپا',
-            '۱۲٬۸۴۰',
-            'Customers',
-            'امروز',
-            'فعال',
-          ],
-          statusIndex: 6,
-        },
-      ]}
-      section="audiences"
-      tab={tab}
-      title="مخاطبان کمپین‌ها"
-      totalLabel="۳ نمونه از ۱۸ گروه"
-    />
-  );
-}
-
-function ChannelCheckbox({
-  checked,
-  icon: Icon,
-  label,
-  onChange,
-}: {
-  checked: boolean;
-  icon: LucideIcon;
-  label: string;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface p-3 hover:bg-muted/30">
-      <Icon aria-hidden="true" className="size-5 text-primary" />
-      <Checkbox
-        checked={checked}
-        onCheckedChange={(value) => onChange(value === true)}
-      />
-      <span className="font-bold">{label}</span>
-    </label>
-  );
-}
-
-function MessageComposer({ onNotice }: { onNotice: NoticeHandler }) {
-  const [message, setMessage] = useState(
-    'تا ۳۱ شهریور، سفر اروپا را با نرخ ویژه رزرو کنید. مشاهده پیشنهادها: {{short_link}}',
-  );
-  const [campaign, setCampaign] = useState('europe');
-  const [audience, setAudience] = useState('europe-fans');
-  const [sendMode, setSendMode] = useState('now');
-  const [channels, setChannels] = useState({
-    sms: true,
-    email: false,
-    whatsapp: false,
-    push: false,
-  });
-  const toggle = (key: keyof typeof channels, value: boolean) =>
-    setChannels((current) => ({ ...current, [key]: value }));
-  return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
-      <Card className="p-5">
-        <h3 className="text-lg font-black">ارسال پیام</h3>
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <FormField id="message-campaign" label="کمپین">
-            <SimpleSelect
-              ariaLabel="انتخاب کمپین پیام"
-              onChange={setCampaign}
-              options={[
-                ['europe', 'جشنواره تابستان اروپا'],
-                ['istanbul', 'پرواز استانبول'],
-              ]}
-              value={campaign}
-            />
-          </FormField>
-          <FormField id="message-audience" label="مخاطبان">
-            <SimpleSelect
-              ariaLabel="انتخاب مخاطبان پیام"
-              onChange={setAudience}
-              options={[
-                ['europe-fans', 'علاقه‌مندان اروپا · ۱۲٬۸۴۰'],
-                ['vip', 'مشتریان VIP · ۲٬۴۸۰'],
-              ]}
-              value={audience}
-            />
-          </FormField>
-          <div className="grid gap-2 md:col-span-2">
-            <span className="text-sm font-bold">کانال‌ها</span>
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-              <ChannelCheckbox
-                checked={channels.sms}
-                icon={Phone}
-                label="پیامک"
-                onChange={(value) => toggle('sms', value)}
-              />
-              <ChannelCheckbox
-                checked={channels.email}
-                icon={Mail}
-                label="ایمیل"
-                onChange={(value) => toggle('email', value)}
-              />
-              <ChannelCheckbox
-                checked={channels.whatsapp}
-                icon={MessageCircle}
-                label="واتساپ"
-                onChange={(value) => toggle('whatsapp', value)}
-              />
-              <ChannelCheckbox
-                checked={channels.push}
-                icon={BellRing}
-                label="پوش"
-                onChange={(value) => toggle('push', value)}
-              />
-            </div>
-          </div>
-          <FormField id="message-template" label="قالب پیام">
-            <SimpleSelect
-              ariaLabel="انتخاب قالب پیام"
-              onChange={() => undefined}
-              options={[['wave-2', 'اروپا — موج دوم']]}
-              value="wave-2"
-            />
-          </FormField>
-          <FormField id="message-mode" label="روش ارسال">
-            <SimpleSelect
-              ariaLabel="روش ارسال"
-              onChange={setSendMode}
-              options={[
-                ['now', 'ارسال فوری'],
-                ['scheduled', 'زمان‌بندی'],
-              ]}
-              value={sendMode}
-            />
-          </FormField>
-          {sendMode === 'scheduled' ? (
-            <FormField id="message-date" label="تاریخ ارسال">
-              <DatePicker
-                id="message-date"
-                onChange={() => undefined}
-                value="2026-09-12"
-              />
-            </FormField>
-          ) : null}
-          <FormField id="message-body" label="متن پیام">
-            <Textarea
-              id="message-body"
-              onChange={(event) => setMessage(event.target.value)}
-              rows={6}
-              value={message}
-            />
-          </FormField>
-          <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm">
-            <span className="text-muted-foreground">هزینه برآوردی</span>
-            <strong className="mt-2 block">۲۴۹ میلیون تومان</strong>
-            <small className="mt-1 block text-muted-foreground">
-              ۱۲٬۴۵۴ مخاطب مجاز
-            </small>
-          </div>
-          <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm">
-            <span className="text-muted-foreground">وضعیت تأیید</span>
-            <Badge className="mt-2 block w-fit bg-emerald-100 text-emerald-800">
-              قالب و بودجه تأییدشده
-            </Badge>
-          </div>
-        </div>
-        <div className="mt-5 flex flex-wrap justify-between gap-2 border-t border-border pt-4">
-          <Button
-            onClick={() => onNotice('پیش‌نویس پیام به‌صورت محلی ذخیره شد.')}
-            variant="outline"
-          >
-            <Save aria-hidden="true" className="size-4" /> ذخیره پیش‌نویس
-          </Button>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              onClick={() => onNotice('پیش‌نمایش پیام بروزرسانی شد.')}
-              variant="outline"
-            >
-              <Eye aria-hidden="true" className="size-4" /> پیش‌نمایش
-            </Button>
-            <Button
-              onClick={() =>
-                onNotice(
-                  'نیت ارسال برای تأیید نهایی ثبت شد؛ ارسال واقعی انجام نشد.',
-                )
-              }
-            >
-              <Send aria-hidden="true" className="size-4" /> تأیید و ارسال
-            </Button>
-          </div>
-        </div>
-      </Card>
-      <Card className="bg-slate-100 p-5 dark:bg-slate-950">
-        <p className="text-center text-sm text-muted-foreground">
-          پیش‌نمایش پیامک
-        </p>
-        <div className="mt-5 rounded-2xl rounded-br-sm bg-emerald-100 p-4 text-sm leading-7 text-emerald-950 shadow-sm dark:bg-emerald-950 dark:text-emerald-100">
-          <strong>نیایش سیر</strong>
-          <p className="mt-2 whitespace-pre-wrap">
-            {message.replace('{{short_link}}', 'nys.ir/eu25')}
-          </p>
-          <small className="mt-2 block text-emerald-700 dark:text-emerald-300">
-            اکنون · ۱۰:۲۸
-          </small>
-        </div>
-      </Card>
-    </div>
-  );
-}
-
-const communicationRows: readonly PreviewRow[] = [
-  {
-    id: 'preview-communication-europe',
-    cells: [
-      'جشنواره تابستان اروپا',
-      'پیامک',
-      '۲۲٬۴۸۰',
-      'امروز ۱۰:۰۰',
-      '۲۱٬۹۸۴',
-      '۴۹۶',
-      '۲۱٬۶۴۰',
-      '—',
-      '۱٬۸۴۲',
-      '۱۸',
-      '۴۳۸ میلیون',
-      'پایان‌یافته',
-    ],
-    statusIndex: 11,
-  },
-  {
-    id: 'preview-communication-istanbul',
-    cells: [
-      'پرواز استانبول',
-      'پوش',
-      '۹٬۸۴۰',
-      'دیروز ۱۸:۳۰',
-      '۹٬۶۸۲',
-      '۱۵۸',
-      '۹٬۵۴۰',
-      '۴٬۲۱۲',
-      '۸۶۴',
-      '۲۴',
-      '۳۲ میلیون',
-      'پایان‌یافته',
-    ],
-    statusIndex: 11,
-  },
-  {
-    id: 'preview-communication-dubai',
-    cells: [
-      'هتل‌های دبی',
-      'ایمیل',
-      '۱۸٬۲۱۰',
-      'فردا ۱۲:۰۰',
-      '—',
-      '—',
-      '—',
-      '—',
-      '—',
-      '—',
-      '۲۸ میلیون',
-      'زمان‌بندی‌شده',
-    ],
-    statusIndex: 11,
-  },
-];
-
-function CommunicationsPage({
-  tab,
-  onOpen,
-  onNotice,
-}: {
-  tab: string;
-  onOpen: (item: MarketingPreviewItem) => void;
-  onNotice: NoticeHandler;
-}) {
-  if (tab === 'send') return <MessageComposer onNotice={onNotice} />;
-  if (tab === 'templates') {
-    return (
-      <div className="grid gap-5">
-        <MetricGrid
-          metrics={[
-            { label: 'همه قالب‌ها', value: '۶۸', icon: FileText },
-            {
-              label: 'تأییدشده',
-              value: '۵۲',
-              icon: CheckCircle2,
-              tone: 'emerald',
-            },
-            {
-              label: 'در انتظار تأیید',
-              value: '۹',
-              icon: Clock3,
-              tone: 'amber',
-            },
-            { label: 'منقضی', value: '۷', icon: AlertTriangle, tone: 'rose' },
-          ]}
-        />
-        <PreviewTable
-          columns={[
-            'نام قالب',
-            'کانال',
-            'موضوع / آغاز متن',
-            'سرویس‌دهنده',
-            'نسخه',
-            'آخرین استفاده',
-            'تأیید سرویس',
-            'وضعیت',
-          ]}
-          onNotice={onNotice}
-          onOpen={onOpen}
-          rows={[
-            {
-              id: 'preview-template-europe',
-              cells: [
-                'اروپا — موج دوم',
-                'پیامک',
-                'تا ۳۱ شهریور، سفر اروپا...',
-                'کاوه‌نگار',
-                'v3',
-                'امروز',
-                'تأییدشده',
-                'فعال',
-              ],
-              statusIndex: 7,
-            },
-            {
-              id: 'preview-template-dubai',
-              cells: [
-                'پیشنهاد هتل دبی',
-                'ایمیل',
-                'اقامت ویژه در دبی',
-                'SendGrid',
-                'v2',
-                'دیروز',
-                'داخلی',
-                'فعال',
-              ],
-              statusIndex: 7,
-            },
-            {
-              id: 'preview-template-cart',
-              cells: [
-                'یادآوری سبد خرید',
-                'واتساپ',
-                'رزرو شما هنوز کامل نشده...',
-                'Meta',
-                'v4',
-                '۲ روز پیش',
-                'تأییدشده',
-                'فعال',
-              ],
-              statusIndex: 7,
-            },
-          ]}
-          section="communications"
-          tab={tab}
-          title="قالب‌های پیام"
-          totalLabel="۳ نمونه از ۶۸ قالب"
-        />
+    <>
+      <div className="flex justify-end">
+        <Button onClick={() => setInputKind('campaign-audience')}>
+          <Plus aria-hidden="true" className="size-4" /> افزودن مخاطبان کمپین
+        </Button>
       </div>
-    );
-  }
-  const title =
-    tab === 'scheduled'
-      ? 'ارسال‌های زمان‌بندی‌شده'
-      : tab === 'channels'
-        ? 'عملکرد کانال‌ها'
-        : 'تاریخچه ارسال‌ها';
-  return (
-    <div className="grid gap-5">
-      <MetricGrid
-        metrics={[
-          { label: 'کل ارسال', value: '۱.۲۸ میلیون', icon: Send },
-          {
-            label: 'تحویل‌شده',
-            value: '۱.۱۸ میلیون',
-            icon: CheckCircle2,
-            tone: 'emerald',
-          },
-          { label: 'بازشده', value: '۴۲۱ هزار', icon: Mail, tone: 'violet' },
-          {
-            label: 'ناموفق',
-            value: '۳۱ هزار',
-            icon: AlertTriangle,
-            tone: 'rose',
-          },
-        ]}
-      />
       <PreviewTable
         columns={[
-          'کمپین',
-          'کانال',
-          'مخاطب',
-          'زمان',
-          'موفق',
-          'ناموفق',
-          'تحویل',
-          'بازشدن',
-          'کلیک',
-          'لغو عضویت',
-          'هزینه',
+          'نام',
+          'نوع',
+          'کمپین / سازمان',
+          'تعداد',
+          'منبع',
+          'آخرین تغییر',
           'وضعیت',
         ]}
         onNotice={onNotice}
         onOpen={onOpen}
-        rows={communicationRows}
-        section="communications"
+        rows={[
+          ...createdCampaignAudiences,
+          {
+            id: 'preview-campaign-audience-agencies',
+            cells: [
+              'گروه آژانس‌های همکار',
+              'آژانس‌ها',
+              'کمپین B2B پاییز',
+              '۳۴۲',
+              'B2B',
+              'امروز',
+              'فعال',
+            ],
+            statusIndex: 6,
+          },
+          {
+            id: 'preview-campaign-audience-pars',
+            cells: [
+              'کارکنان شرکت پارس',
+              'سازمانی',
+              'پیشنهاد سفر شرکتی',
+              '۱٬۲۸۰',
+              'مشتریان سازمانی',
+              'دیروز',
+              'فعال',
+            ],
+            statusIndex: 6,
+          },
+          {
+            id: 'preview-campaign-audience-europe',
+            cells: [
+              'مشتریان تور اروپا',
+              'مشتریان',
+              'تابستان اروپا',
+              '۱۲٬۸۴۰',
+              'Customers',
+              'امروز',
+              'فعال',
+            ],
+            statusIndex: 6,
+          },
+        ]}
+        section="audiences"
         tab={tab}
-        title={title}
-        totalLabel="۳ نمونه از ۴۲ ارسال"
+        title="مخاطبان کمپین‌ها"
+        totalLabel="۳ نمونه از ۱۸ گروه"
       />
-    </div>
+      {inputKind === 'campaign-audience' ? (
+        <AudienceInputDialog
+          kind="campaign-audience"
+          onCreate={(row) =>
+            setCreatedCampaignAudiences((items) => [row, ...items])
+          }
+          onNotice={onNotice}
+          onOpenChange={(open) => {
+            if (!open) setInputKind(null);
+          }}
+          open
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -1870,6 +2376,211 @@ const contentTableRows = {
   ],
 } satisfies Record<string, readonly PreviewRow[]>;
 
+type MarketingAsset = {
+  title: string;
+  meta: string;
+  icon: LucideIcon;
+  documentId?: string;
+};
+
+function MarketingAssetUploadDialog({
+  open,
+  options,
+  submitting,
+  error,
+  onOpenChange,
+  onSubmit,
+}: {
+  open: boolean;
+  options: DocumentOptionsResponseV1['data'];
+  submitting: boolean;
+  error: string;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (form: FormData) => Promise<boolean>;
+}) {
+  const brandTypes = options.documentTypes.filter(
+    (type) => type.domain === 'BRAND',
+  );
+  const [file, setFile] = useState<File | null>(null);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [documentTypeId, setDocumentTypeId] = useState(
+    brandTypes.find((type) => type.code === 'BRAND_ASSET_TEMPLATE')?.id ??
+      brandTypes[0]?.id ??
+      '',
+  );
+  const [categoryId, setCategoryId] = useState(
+    options.categories.find((category) => category.code === 'BRAND_ASSETS')
+      ?.id ??
+      options.categories[0]?.id ??
+      '',
+  );
+  const [branchId, setBranchId] = useState(options.branches[0]?.id ?? '');
+  const [ownerUserId, setOwnerUserId] = useState(
+    options.currentUserId || options.owners[0]?.id || '',
+  );
+  const [confidentiality, setConfidentiality] = useState('INTERNAL');
+  const [validationError, setValidationError] = useState('');
+  const selectedType = brandTypes.find((type) => type.id === documentTypeId);
+
+  return (
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogContent
+        className="max-h-[92dvh] max-w-3xl overflow-y-auto text-right"
+        dir="rtl"
+      >
+        <DialogTitle>بارگذاری فایل محتوای مارکتینگ</DialogTitle>
+        <DialogDescription>
+          فایل پس از ثبت در کتابخانه محتوا، در «اسناد و فایل‌ها» نیز با دسته
+          دارایی‌های برند ذخیره می‌شود.
+        </DialogDescription>
+        <form
+          className="mt-5 grid gap-4 sm:grid-cols-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!file) {
+              setValidationError('ابتدا فایل را انتخاب کنید.');
+              return;
+            }
+            if (title.trim().length < 2) {
+              setValidationError('عنوان فایل را کامل وارد کنید.');
+              return;
+            }
+            if (!documentTypeId || !categoryId || !branchId || !ownerUserId) {
+              setValidationError('نوع سند، دسته‌بندی، شعبه و مالک الزامی است.');
+              return;
+            }
+            const form = new FormData();
+            form.set('file', file);
+            form.set('title', title.trim());
+            if (description.trim()) form.set('description', description.trim());
+            form.set('documentTypeId', documentTypeId);
+            form.set('categoryId', categoryId);
+            form.set('branchId', branchId);
+            form.set('ownerUserId', ownerUserId);
+            form.set('confidentiality', confidentiality);
+            form.set('sourceModule', 'marketing');
+            form.set('sourceEntityType', 'content-asset');
+            form.set('sourceEntityId', `marketing-asset-${Date.now()}`);
+            form.set('sourceDisplayLabel', `دارایی مارکتینگ: ${title.trim()}`);
+            form.set('versionNote', 'ثبت از کتابخانه محتوای مارکتینگ');
+            void onSubmit(form);
+          }}
+        >
+          <div className="sm:col-span-2">
+            <FormField id="marketing-asset-file" label="فایل" required>
+              <Input
+                accept={selectedType?.allowedMimeTypes.join(',')}
+                id="marketing-asset-file"
+                onChange={(event) => {
+                  setFile(event.target.files?.[0] ?? null);
+                  setValidationError('');
+                }}
+                required
+                type="file"
+              />
+            </FormField>
+          </div>
+          <FormField id="marketing-asset-title" label="عنوان محتوا" required>
+            <Input
+              autoFocus
+              id="marketing-asset-title"
+              onChange={(event) => {
+                setTitle(event.target.value);
+                setValidationError('');
+              }}
+              required
+              value={title}
+            />
+          </FormField>
+          <FormField id="marketing-asset-type" label="نوع سند" required>
+            <SimpleSelect
+              ariaLabel="نوع سند محتوای مارکتینگ"
+              onChange={setDocumentTypeId}
+              options={brandTypes.map((type) => [type.id, type.name] as const)}
+              value={documentTypeId}
+            />
+          </FormField>
+          <FormField id="marketing-asset-category" label="دسته‌بندی" required>
+            <SimpleSelect
+              ariaLabel="دسته‌بندی سند مارکتینگ"
+              onChange={setCategoryId}
+              options={options.categories.map(
+                (category) => [category.id, category.name] as const,
+              )}
+              value={categoryId}
+            />
+          </FormField>
+          <FormField id="marketing-asset-branch" label="شعبه" required>
+            <SimpleSelect
+              ariaLabel="شعبه مالک فایل مارکتینگ"
+              onChange={setBranchId}
+              options={options.branches.map(
+                (branch) => [branch.id, branch.name] as const,
+              )}
+              value={branchId}
+            />
+          </FormField>
+          <FormField id="marketing-asset-owner" label="مالک فایل" required>
+            <SimpleSelect
+              ariaLabel="مالک فایل مارکتینگ"
+              onChange={setOwnerUserId}
+              options={options.owners.map(
+                (owner) => [owner.id, owner.displayName] as const,
+              )}
+              value={ownerUserId}
+            />
+          </FormField>
+          <FormField id="marketing-asset-confidentiality" label="محرمانگی">
+            <SimpleSelect
+              ariaLabel="محرمانگی فایل مارکتینگ"
+              onChange={setConfidentiality}
+              options={[
+                ['PUBLIC', 'عمومی'],
+                ['INTERNAL', 'داخلی'],
+                ['CONFIDENTIAL', 'محرمانه'],
+              ]}
+              value={confidentiality}
+            />
+          </FormField>
+          <div className="sm:col-span-2">
+            <FormField id="marketing-asset-description" label="توضیحات">
+              <Textarea
+                id="marketing-asset-description"
+                onChange={(event) => setDescription(event.target.value)}
+                rows={3}
+                value={description}
+              />
+            </FormField>
+          </div>
+          {validationError || error ? (
+            <p
+              className="text-sm font-bold text-destructive sm:col-span-2"
+              role="alert"
+            >
+              {validationError || error}
+            </p>
+          ) : null}
+          <div className="flex justify-end gap-2 sm:col-span-2">
+            <Button
+              disabled={submitting}
+              onClick={() => onOpenChange(false)}
+              type="button"
+              variant="outline"
+            >
+              انصراف
+            </Button>
+            <Button disabled={submitting || !file} type="submit">
+              <Upload aria-hidden="true" className="size-4" />
+              {submitting ? 'در حال بارگذاری…' : 'ثبت در محتوا و اسناد'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ContentPage({
   tab,
   onOpen,
@@ -1879,85 +2590,204 @@ function ContentPage({
   onOpen: (item: MarketingPreviewItem) => void;
   onNotice: NoticeHandler;
 }) {
+  const router = useRouter();
+  const [uploadedAssets, setUploadedAssets] = useState<MarketingAsset[]>([]);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [loadingOptions, setLoadingOptions] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [documentOptions, setDocumentOptions] = useState<
+    DocumentOptionsResponseV1['data'] | null
+  >(null);
+
+  const openUpload = async () => {
+    setLoadingOptions(true);
+    setUploadError('');
+    try {
+      const response = await documentsApi.options();
+      const hasBrandType = response.data.documentTypes.some(
+        (type) => type.domain === 'BRAND',
+      );
+      if (!hasBrandType) {
+        throw new DocumentsApiError(
+          'نوع سند دارایی برند در دسترسی فعلی شما موجود نیست.',
+          403,
+        );
+      }
+      setDocumentOptions(response.data);
+      setUploadOpen(true);
+    } catch (caught) {
+      const message =
+        caught instanceof Error
+          ? caught.message
+          : 'گزینه‌های بارگذاری اسناد دریافت نشد.';
+      setUploadError(message);
+      onNotice(message);
+    } finally {
+      setLoadingOptions(false);
+    }
+  };
+
+  const uploadAsset = async (form: FormData): Promise<boolean> => {
+    setUploading(true);
+    setUploadError('');
+    try {
+      const response = await documentsApi.upload(form);
+      const document: DocumentDetailV1 = response.data;
+      const extension = document.currentVersion.extension
+        ? document.currentVersion.extension.toUpperCase()
+        : 'فایل';
+      setUploadedAssets((items) => [
+        {
+          title: document.title,
+          meta: `${extension} · v${document.version.toLocaleString('fa-IR')} · ${document.archiveCode}`,
+          icon: FileText,
+          documentId: document.id,
+        },
+        ...items,
+      ]);
+      setUploadOpen(false);
+      onNotice(
+        `«${document.title}» بارگذاری شد و در بخش اسناد و فایل‌ها نیز ثبت شد.`,
+      );
+      return true;
+    } catch (caught) {
+      setUploadError(
+        caught instanceof Error ? caught.message : 'بارگذاری فایل ناموفق بود.',
+      );
+      return false;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const downloadAsset = async (asset: MarketingAsset) => {
+    if (!asset.documentId) {
+      onNotice(`دانلود آزمایشی «${asset.title}» آماده شد.`);
+      return;
+    }
+    try {
+      const response = await documentsApi.download(asset.documentId);
+      const url = URL.createObjectURL(response.blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = asset.title;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      onNotice(`دانلود «${asset.title}» آغاز شد.`);
+    } catch (caught) {
+      onNotice(
+        caught instanceof Error
+          ? caught.message
+          : 'دریافت فایل از اسناد ناموفق بود.',
+      );
+    }
+  };
+
   if (tab === 'library') {
-    const assets = [
-      ['بنر اروپا — دسکتاپ', 'تصویر · v4', FileImage],
-      ['ویدئوی هتل دبی', 'ویدئو · v2', FileImage],
-      ['راهنمای سفر استانبول', 'PDF · v3', FileText],
-      ['بنر نوروز سازمانی', 'تصویر · v1', FileImage],
-      ['قالب ایمیل تابستان', 'HTML · v5', Mail],
-      ['QR بروشور نمایشگاه', 'تصویر · v2', Target],
-      ['لوگوی کمپین اروپا', 'SVG · v1', FileImage],
-      ['فایل بودجه رسانه', 'Excel · v6', FileText],
-    ] as const;
+    const assets: readonly MarketingAsset[] = [
+      ...uploadedAssets,
+      { title: 'بنر اروپا — دسکتاپ', meta: 'تصویر · v4', icon: FileImage },
+      { title: 'ویدئوی هتل دبی', meta: 'ویدئو · v2', icon: FileImage },
+      { title: 'راهنمای سفر استانبول', meta: 'PDF · v3', icon: FileText },
+      { title: 'بنر نوروز سازمانی', meta: 'تصویر · v1', icon: FileImage },
+      { title: 'قالب ایمیل تابستان', meta: 'HTML · v5', icon: Mail },
+      { title: 'QR بروشور نمایشگاه', meta: 'تصویر · v2', icon: Target },
+      { title: 'لوگوی کمپین اروپا', meta: 'SVG · v1', icon: FileImage },
+      { title: 'فایل بودجه رسانه', meta: 'Excel · v6', icon: FileText },
+    ];
     return (
-      <Panel
-        actions={
-          <Button
-            onClick={() =>
-              onNotice('انتخاب‌گر فایل آزمایشی باز شد؛ فایلی ارسال نشد.')
-            }
-          >
-            <Upload aria-hidden="true" className="size-4" /> بارگذاری فایل
-          </Button>
-        }
-        title="کتابخانه محتوا"
-      >
-        <div className="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-4">
-          {assets.map(([title, meta, Icon], index) => (
-            <Card className="overflow-hidden" key={title}>
-              <div className="grid h-28 place-items-center bg-gradient-to-br from-blue-50 to-violet-50 dark:from-blue-950/40 dark:to-violet-950/40">
-                <Icon aria-hidden="true" className="size-10 text-primary" />
-              </div>
-              <div className="p-4">
-                <strong>{title}</strong>
-                <small className="mt-1 block text-muted-foreground">
-                  {meta} · تأییدشده
-                </small>
-                <div className="mt-3 flex gap-1">
-                  <Button
-                    aria-label={`مشاهده ${title}`}
-                    onClick={() =>
-                      onOpen({
-                        id: `preview-asset-${index}`,
-                        section: 'content',
-                        tab,
-                        title,
-                        description: meta,
-                        status: 'تأییدشده',
-                        meta,
-                        updatedAt: '2026-09-03T08:30:00.000Z',
-                      })
-                    }
-                    size="icon"
-                    variant="outline"
-                  >
-                    <Eye aria-hidden="true" className="size-4" />
-                  </Button>
-                  <Button
-                    aria-label={`دانلود ${title}`}
-                    onClick={() =>
-                      onNotice(`دانلود آزمایشی «${title}» آماده شد.`)
-                    }
-                    size="icon"
-                    variant="outline"
-                  >
-                    <Download aria-hidden="true" className="size-4" />
-                  </Button>
-                  <Button
-                    aria-label={`عملیات بیشتر ${title}`}
-                    onClick={() => onNotice(`منوی عملیات «${title}» باز شد.`)}
-                    size="icon"
-                    variant="ghost"
-                  >
-                    <MoreHorizontal aria-hidden="true" className="size-4" />
-                  </Button>
+      <>
+        <Panel
+          actions={
+            <Button disabled={loadingOptions} onClick={() => void openUpload()}>
+              <Upload aria-hidden="true" className="size-4" />
+              {loadingOptions ? 'در حال آماده‌سازی…' : 'بارگذاری فایل'}
+            </Button>
+          }
+          title="کتابخانه محتوا"
+        >
+          <div className="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-4">
+            {assets.map(({ title, meta, icon: Icon, documentId }, index) => (
+              <Card className="overflow-hidden" key={documentId ?? title}>
+                <div className="grid h-28 place-items-center bg-gradient-to-br from-blue-50 to-violet-50 dark:from-blue-950/40 dark:to-violet-950/40">
+                  <Icon aria-hidden="true" className="size-10 text-primary" />
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </Panel>
+                <div className="p-4">
+                  <strong>{title}</strong>
+                  <small className="mt-1 block text-muted-foreground">
+                    {meta} · تأییدشده
+                  </small>
+                  <div className="mt-3 flex gap-1">
+                    <Button
+                      aria-label={`مشاهده ${title}`}
+                      onClick={() =>
+                        documentId
+                          ? router.push(
+                              `/documents?document=${encodeURIComponent(documentId)}`,
+                            )
+                          : onOpen({
+                              id: `preview-asset-${index}`,
+                              section: 'content',
+                              tab,
+                              title,
+                              description: meta,
+                              status: 'تأییدشده',
+                              meta,
+                              updatedAt: '2026-09-03T08:30:00.000Z',
+                            })
+                      }
+                      size="icon"
+                      variant="outline"
+                    >
+                      <Eye aria-hidden="true" className="size-4" />
+                    </Button>
+                    <Button
+                      aria-label={`دانلود ${title}`}
+                      onClick={() =>
+                        void downloadAsset({
+                          title,
+                          meta,
+                          icon: Icon,
+                          ...(documentId ? { documentId } : {}),
+                        })
+                      }
+                      size="icon"
+                      variant="outline"
+                    >
+                      <Download aria-hidden="true" className="size-4" />
+                    </Button>
+                    <Button
+                      aria-label={`غیرفعال‌سازی ${title}`}
+                      className="border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => onNotice(`«${title}» غیرفعال شد.`)}
+                      size="icon"
+                      title="غیرفعال‌سازی"
+                      variant="outline"
+                    >
+                      <Power aria-hidden="true" className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </Panel>
+        {uploadOpen && documentOptions ? (
+          <MarketingAssetUploadDialog
+            error={uploadError}
+            key={`${documentOptions.currentUserId}-${uploadOpen ? 'open' : 'closed'}`}
+            onOpenChange={(open) => {
+              setUploadOpen(open);
+              if (!open) setUploadError('');
+            }}
+            onSubmit={uploadAsset}
+            open
+            options={documentOptions}
+            submitting={uploading}
+          />
+        ) : null}
+      </>
     );
   }
   const config =
@@ -2101,6 +2931,48 @@ const discountRows: readonly PreviewRow[] = [
   },
 ];
 
+const discountUsageRows: readonly PreviewRow[] = [
+  {
+    id: 'preview-discount-usage-europe10',
+    cells: [
+      'EUROPE10',
+      '۳٬۸۴۲ بار',
+      '۱۸.۶ میلیارد',
+      '۱.۹ میلیارد',
+      '۴۸.۴ میلیون',
+      'امروز ۱۰:۱۸',
+      'فعال',
+    ],
+    statusIndex: 6,
+  },
+  {
+    id: 'preview-discount-usage-ist5m',
+    cells: [
+      'IST5M',
+      '۱٬۲۸۴ بار',
+      '۷.۲ میلیارد',
+      '۶۴۲ میلیون',
+      '۵۶.۱ میلیون',
+      'امروز ۰۹:۴۰',
+      'فعال',
+    ],
+    statusIndex: 6,
+  },
+  {
+    id: 'preview-discount-usage-vipdubai',
+    cells: [
+      'VIPDUBAI',
+      '۳۴۸ بار',
+      '۳.۸ میلیارد',
+      '۴۵۶ میلیون',
+      '۱۰۹ میلیون',
+      'دیروز ۱۷:۲۵',
+      'فعال',
+    ],
+    statusIndex: 6,
+  },
+];
+
 function OffersPage({
   tab,
   onOpen,
@@ -2122,6 +2994,9 @@ function OffersPage({
           'ظرفیت',
           'سایت',
           'بازه اعتبار',
+          'حداقل خرید',
+          'سقف هر مشتری',
+          'ترکیب‌پذیری',
           'کمپین',
           'وضعیت',
         ]}
@@ -2139,10 +3014,13 @@ function OffersPage({
               '۲۴',
               'هر دو سایت',
               '۱ تا ۳۱ شهریور',
+              '۵۰ میلیون',
+              '۱ بار',
+              'غیرقابل ترکیب',
               'تابستان اروپا',
               'فعال',
             ],
-            statusIndex: 9,
+            statusIndex: 12,
           },
           {
             id: 'preview-special-dubai',
@@ -2155,10 +3033,13 @@ function OffersPage({
               '۱۸',
               'سایت اصلی',
               '۱۵ شهریور تا ۱۵ مهر',
+              '۴۰ میلیون',
+              '۲ بار',
+              'قابل ترکیب با امتیاز',
               'هتل‌های دبی',
               'فعال',
             ],
-            statusIndex: 9,
+            statusIndex: 12,
           },
           {
             id: 'preview-special-istanbul',
@@ -2171,10 +3052,13 @@ function OffersPage({
               '۶۰',
               'سایت دوم',
               '۵ تا ۲۵ شهریور',
+              '۳۰ میلیون',
+              '۱ بار',
+              'غیرقابل ترکیب',
               'پرواز استانبول',
               'فعال',
             ],
-            statusIndex: 9,
+            statusIndex: 12,
           },
         ]}
         section="offers"
@@ -2184,12 +3068,40 @@ function OffersPage({
       />
     );
   }
-  const title =
+  const config =
     tab === 'usage'
-      ? 'گزارش استفاده از تخفیف‌ها'
-      : tab === 'rules'
-        ? 'قوانین استفاده'
-        : 'کدهای تخفیف';
+      ? {
+          title: 'استفاده از تخفیف‌ها',
+          columns: [
+            'کد',
+            'تعداد استفاده',
+            'فروش حاصل',
+            'ارزش تخفیف',
+            'میانگین سبد',
+            'آخرین استفاده',
+            'وضعیت',
+          ],
+          rows: discountUsageRows,
+          total: '۳ نمونه از ۶٬۸۴۰ استفاده',
+        }
+      : {
+          title: 'کدهای تخفیف',
+          columns: [
+            'کد',
+            'عنوان',
+            'نوع',
+            'مقدار',
+            'خدمت / مقصد',
+            'حداقل خرید',
+            'سقف استفاده',
+            'مصرف‌شده',
+            'اعتبار',
+            'کمپین',
+            'وضعیت',
+          ],
+          rows: discountRows,
+          total: '۳ نمونه از ۳۸ کد',
+        };
   return (
     <div className="grid gap-5">
       <MetricGrid
@@ -2216,26 +3128,14 @@ function OffersPage({
         ]}
       />
       <PreviewTable
-        columns={[
-          'کد',
-          'عنوان',
-          'نوع',
-          'مقدار',
-          'خدمت / مقصد',
-          'حداقل خرید',
-          'سقف استفاده',
-          'مصرف‌شده',
-          'اعتبار',
-          'کمپین',
-          'وضعیت',
-        ]}
+        columns={config.columns}
         onNotice={onNotice}
         onOpen={onOpen}
-        rows={discountRows}
+        rows={config.rows}
         section="offers"
         tab={tab}
-        title={title}
-        totalLabel="۳ نمونه از ۳۸ کد"
+        title={config.title}
+        totalLabel={config.total}
       />
     </div>
   );
@@ -2297,6 +3197,84 @@ const journeyRows: readonly PreviewRow[] = [
       'متوقف',
     ],
     statusIndex: 7,
+  },
+];
+
+const journeyRunRows: readonly PreviewRow[] = [
+  {
+    id: 'preview-journey-run-europe-1204',
+    cells: [
+      'RUN-1204',
+      'پیگیری سرنخ اروپا',
+      'ثبت فرم اروپا',
+      'مرحله ۳ از ۴',
+      '۲ دقیقه پیش',
+      'موفق',
+    ],
+    statusIndex: 5,
+  },
+  {
+    id: 'preview-journey-run-cart-882',
+    cells: [
+      'RUN-0882',
+      'سبد خرید رهاشده',
+      'عدم تکمیل رزرو',
+      'مرحله ۲ از ۵',
+      '۵ دقیقه پیش',
+      'درحال تلاش',
+    ],
+    statusIndex: 5,
+  },
+  {
+    id: 'preview-journey-run-survey-431',
+    cells: [
+      'RUN-0431',
+      'پس از سفر استانبول',
+      'پایان رزرو',
+      'مرحله ۴ از ۴',
+      '۱۰ دقیقه پیش',
+      'پایان‌یافته',
+    ],
+    statusIndex: 5,
+  },
+];
+
+const journeyHistoryRows: readonly PreviewRow[] = [
+  {
+    id: 'preview-journey-history-published',
+    cells: [
+      'انتشار نسخه ۸',
+      'پیگیری سرنخ اروپا',
+      'مریم احمدی',
+      'امروز ۱۰:۱۲',
+      '۴ مرحله',
+      'موفق',
+    ],
+    statusIndex: 5,
+  },
+  {
+    id: 'preview-journey-history-paused',
+    cells: [
+      'توقف خودکار',
+      'بازگشت مشتری غیرفعال',
+      'سیستم',
+      'دیروز ۱۸:۴۰',
+      'عبور خطا از آستانه',
+      'نیازمند اقدام',
+    ],
+    statusIndex: 5,
+  },
+  {
+    id: 'preview-journey-history-edited',
+    cells: [
+      'ویرایش شرط',
+      'سبد خرید رهاشده',
+      'علی رضایی',
+      '۲ روز پیش',
+      'تأخیر ۲۴ ساعته',
+      'ثبت‌شده',
+    ],
+    statusIndex: 5,
   },
 ];
 
@@ -2395,10 +3373,12 @@ function JourneysPage({
   tab,
   onOpen,
   onNotice,
+  onUseScenario,
 }: {
   tab: string;
   onOpen: (item: MarketingPreviewItem) => void;
   onNotice: NoticeHandler;
+  onUseScenario: (title: string) => void;
 }) {
   if (tab === 'builder') return <JourneyBuilder onNotice={onNotice} />;
   if (tab === 'scenarios') {
@@ -2422,25 +3402,67 @@ function JourneysPage({
               <p className="mt-2 text-sm text-muted-foreground">
                 {meta as string}
               </p>
-              <Button
-                className="mt-4"
-                onClick={() => onNotice(`سناریوی «${title}» در سازنده کپی شد.`)}
-                size="sm"
-              >
-                استفاده از سناریو
-              </Button>
+              <div className="mt-4 flex gap-2">
+                <Button
+                  onClick={() => onUseScenario(title as string)}
+                  size="sm"
+                >
+                  استفاده از سناریو
+                </Button>
+                <Button
+                  aria-label={`غیرفعال‌سازی سناریوی ${title}`}
+                  className="border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => onNotice(`سناریوی «${title}» غیرفعال شد.`)}
+                  size="icon"
+                  title="غیرفعال‌سازی"
+                  variant="outline"
+                >
+                  <Power aria-hidden="true" className="size-4" />
+                </Button>
+              </div>
             </Card>
           );
         })}
       </div>
     );
   }
-  const title =
+  const config =
     tab === 'runs'
-      ? 'اجرای اتوماسیون‌ها'
+      ? {
+          title: 'اجرای اتوماسیون‌ها',
+          columns: [
+            'شناسه اجرا',
+            'سفر مشتری',
+            'رویداد شروع',
+            'مرحله فعلی',
+            'آخرین تغییر',
+            'وضعیت',
+          ],
+          rows: journeyRunRows,
+          total: '۳ نمونه از ۲٬۴۵۶ اجرا',
+        }
       : tab === 'history'
-        ? 'تاریخچه اجرا'
-        : 'همه سفرهای مشتری';
+        ? {
+            title: 'تاریخچه اجرا',
+            columns: ['رویداد', 'سفر مشتری', 'عامل', 'زمان', 'جزئیات', 'وضعیت'],
+            rows: journeyHistoryRows,
+            total: '۳ نمونه از ۸۴ رویداد',
+          }
+        : {
+            title: 'همه سفرهای مشتری',
+            columns: [
+              'نام سفر',
+              'رویداد شروع',
+              'مخاطب فعال',
+              'ورودی ۳۰ روز',
+              'نرخ تکمیل',
+              'آخرین اجرا',
+              'مالک',
+              'وضعیت',
+            ],
+            rows: journeyRows,
+            total: '۴ نمونه از ۱۸ سفر',
+          };
   return (
     <div className="grid gap-5">
       <MetricGrid
@@ -2467,240 +3489,14 @@ function JourneysPage({
         ]}
       />
       <PreviewTable
-        columns={[
-          'نام سفر',
-          'رویداد شروع',
-          'مخاطب فعال',
-          'ورودی ۳۰ روز',
-          'نرخ تکمیل',
-          'آخرین اجرا',
-          'مالک',
-          'وضعیت',
-        ]}
+        columns={config.columns}
         onNotice={onNotice}
         onOpen={onOpen}
-        rows={journeyRows}
+        rows={config.rows}
         section="journeys"
         tab={tab}
-        title={title}
-        totalLabel="۴ نمونه از ۱۸ سفر"
-      />
-    </div>
-  );
-}
-
-const reportRows: readonly PreviewRow[] = [
-  {
-    id: 'preview-report-europe',
-    cells: [
-      'جشنواره تابستان اروپا',
-      '۲.۱ میلیارد',
-      '۱٬۴۸۲',
-      '۳۵۲',
-      '۶.۴ میلیارد',
-      '۵.۸ میلیارد',
-      '۱.۴ میلیون',
-      '۱۷۶٪',
-      '۳.۰۵×',
-    ],
-  },
-  {
-    id: 'preview-report-istanbul',
-    cells: [
-      'پرواز استانبول',
-      '۱.۴ میلیارد',
-      '۹۶۸',
-      '۲۱۸',
-      '۵.۲ میلیارد',
-      '۴.۹ میلیارد',
-      '۱.۵ میلیون',
-      '۲۵۰٪',
-      '۳.۷۱×',
-    ],
-  },
-  {
-    id: 'preview-report-dubai',
-    cells: [
-      'هتل‌های دبی',
-      '۹۸۰ میلیون',
-      '۷۴۱',
-      '۱۶۵',
-      '۳.۱ میلیارد',
-      '۲.۸ میلیارد',
-      '۱.۳ میلیون',
-      '۱۸۶٪',
-      '۳.۱۶×',
-    ],
-  },
-];
-
-function ReportsPage({
-  tab,
-  onOpen,
-  onNotice,
-}: {
-  tab: string;
-  onOpen: (item: MarketingPreviewItem) => void;
-  onNotice: NoticeHandler;
-}) {
-  const [startDate, setStartDate] = useState('2026-08-03');
-  const [endDate, setEndDate] = useState('2026-09-03');
-  const [site, setSite] = useState('all');
-  const [channel, setChannel] = useState('all');
-  const title =
-    marketingSectionTabs.reports.find(([key]) => key === tab)?.[1] ??
-    'عملکرد کمپین';
-  return (
-    <div className="grid gap-5">
-      <FilterBar className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_12rem_12rem_auto]">
-        <FormField id="reports-start" label="از تاریخ">
-          <DatePicker
-            id="reports-start"
-            onChange={setStartDate}
-            value={startDate}
-          />
-        </FormField>
-        <FormField id="reports-end" label="تا تاریخ">
-          <DatePicker id="reports-end" onChange={setEndDate} value={endDate} />
-        </FormField>
-        <FormField id="reports-site" label="سایت">
-          <SimpleSelect
-            ariaLabel="سایت گزارش"
-            onChange={setSite}
-            options={[
-              ['all', 'هر دو سایت'],
-              ['main', 'سایت اصلی'],
-              ['second', 'سایت دوم'],
-            ]}
-            value={site}
-          />
-        </FormField>
-        <FormField id="reports-channel" label="کانال">
-          <SimpleSelect
-            ariaLabel="کانال گزارش"
-            onChange={setChannel}
-            options={[
-              ['all', 'همه کانال‌ها'],
-              ['sms', 'پیامک'],
-              ['email', 'ایمیل'],
-              ['social', 'شبکه اجتماعی'],
-            ]}
-            value={channel}
-          />
-        </FormField>
-        <Button
-          onClick={() =>
-            onNotice(
-              `گزارش ${title} از ${startDate} تا ${endDate} بروزرسانی شد.`,
-            )
-          }
-        >
-          <Filter aria-hidden="true" className="size-4" /> اعمال فیلتر
-        </Button>
-      </FilterBar>
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-950 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-100">
-        <span>نمای ذخیره‌شده: گزارش هفتگی مدیر</span>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={() => onNotice('فیلتر گزارش به‌صورت محلی ذخیره شد.')}
-            size="sm"
-            variant="outline"
-          >
-            <Save aria-hidden="true" className="size-4" /> ذخیره فیلتر
-          </Button>
-          <Button
-            onClick={() => onNotice('فرم زمان‌بندی گزارش باز شد.')}
-            size="sm"
-            variant="outline"
-          >
-            <CalendarDays aria-hidden="true" className="size-4" /> زمان‌بندی
-            گزارش
-          </Button>
-          <Button
-            onClick={() => onNotice(`خروجی آزمایشی ${title} آماده شد.`)}
-            size="sm"
-          >
-            <Download aria-hidden="true" className="size-4" /> خروجی
-          </Button>
-        </div>
-      </div>
-      <MetricGrid
-        metrics={[
-          {
-            label: 'فروش منتسب',
-            value: '۲۶.۸ میلیارد',
-            icon: CircleDollarSign,
-            detail: '+۲۳٪',
-            tone: 'emerald',
-          },
-          {
-            label: 'سرنخ',
-            value: '۳٬۸۴۲',
-            icon: Target,
-            detail: '+۱۸٪',
-            tone: 'violet',
-          },
-          {
-            label: 'CAC',
-            value: '۱.۹ میلیون',
-            icon: BarChart3,
-            detail: '-۸٪',
-            tone: 'amber',
-          },
-          { label: 'ROAS', value: '۳.۱۹×', icon: Gauge, detail: '+۰.۴×' },
-        ]}
-      />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title={title} description="مقایسه با دوره قبل">
-          <div className="p-5">
-            <svg
-              aria-label={`نمودار آزمایشی ${title}`}
-              className="h-52 w-full"
-              viewBox="0 0 700 220"
-            >
-              <path
-                className="stroke-border"
-                d="M20 30H680M20 80H680M20 130H680M20 180H680"
-              />
-              <path
-                className="fill-none stroke-primary [stroke-width:4]"
-                d="M20 172 C90 158 110 120 170 135 S260 78 320 104 S410 55 470 82 S570 42 680 48"
-              />
-            </svg>
-          </div>
-        </Panel>
-        <Panel title="مقایسه کانال‌ها" description="سهم از نتیجه">
-          <ProgressRows
-            rows={[
-              ['پیامک', 84, '۳۴٪'],
-              ['ایمیل', 68, '۲۷٪'],
-              ['شبکه اجتماعی', 55, '۲۲٪'],
-              ['پوش', 31, '۱۲٪'],
-            ]}
-          />
-        </Panel>
-      </div>
-      <PreviewTable
-        actions={false}
-        columns={[
-          'کمپین',
-          'هزینه',
-          'سرنخ',
-          'مشتری جدید',
-          'فروش ناخالص',
-          'فروش خالص',
-          'CAC',
-          'ROI',
-          'ROAS',
-        ]}
-        onNotice={onNotice}
-        onOpen={onOpen}
-        rows={reportRows}
-        searchable={false}
-        section="reports"
-        tab={tab}
-        title="جزئیات گزارش"
-        totalLabel="۳ نمونه از ۲۴ ردیف"
+        title={config.title}
+        totalLabel={config.total}
       />
     </div>
   );
@@ -3158,15 +3954,338 @@ function SettingsPage({
   );
 }
 
-const sectionActionLabels: Record<DetailSection, string> = {
-  audiences: 'سگمنت جدید',
-  communications: 'ارسال پیام',
-  content: 'محتوای جدید',
-  offers: 'پیشنهاد جدید',
-  journeys: 'ساخت اتوماسیون',
-  reports: 'خروجی گزارش',
-  settings: 'خروجی تنظیمات',
+type SectionFormKind = 'content' | 'offer' | 'journey';
+
+const sectionFormDefinitions: Record<
+  SectionFormKind,
+  {
+    title: string;
+    nameLabel: string;
+    types: readonly (readonly [string, string])[];
+    hasDateRange: boolean;
+  }
+> = {
+  content: {
+    title: 'محتوای جدید',
+    nameLabel: 'عنوان محتوا',
+    types: [
+      ['image', 'تصویر'],
+      ['video', 'ویدئو'],
+      ['document', 'سند'],
+      ['landing', 'صفحه فرود'],
+      ['form', 'فرم جذب'],
+    ],
+    hasDateRange: true,
+  },
+  offer: {
+    title: 'پیشنهاد جدید',
+    nameLabel: 'عنوان پیشنهاد',
+    types: [
+      ['discount-percent', 'تخفیف درصدی'],
+      ['discount-amount', 'تخفیف مبلغی'],
+      ['bundle', 'بسته ویژه'],
+      ['coupon', 'کد تخفیف'],
+    ],
+    hasDateRange: true,
+  },
+  journey: {
+    title: 'اتوماسیون جدید',
+    nameLabel: 'نام سفر مشتری',
+    types: [
+      ['lead', 'پیگیری سرنخ'],
+      ['cart', 'سبد خرید رهاشده'],
+      ['post-trip', 'پس از سفر'],
+      ['reactivation', 'فعال‌سازی مجدد'],
+    ],
+    hasDateRange: true,
+  },
 };
+
+function SectionEntityFormDialog({
+  kind,
+  tab,
+  open,
+  onOpenChange,
+  onSaved,
+}: {
+  kind: SectionFormKind;
+  tab: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSaved: (name: string) => void;
+}) {
+  const definition = sectionFormDefinitions[kind];
+  const isOffer = kind === 'offer';
+  const isDiscountCode = isOffer && tab === 'discounts';
+  const entityTypes: readonly (readonly [string, string])[] = isOffer
+    ? isDiscountCode
+      ? [
+          ['discount-percent', 'تخفیف درصدی'],
+          ['discount-amount', 'تخفیف مبلغی'],
+        ]
+      : [
+          ['tour', 'تور ویژه'],
+          ['flight', 'پرواز ویژه'],
+          ['hotel', 'هتل ویژه'],
+          ['bundle', 'بسته ترکیبی'],
+        ]
+    : definition.types;
+  const [name, setName] = useState('');
+  const [type, setType] = useState(entityTypes[0]?.[0] ?? '');
+  const [status, setStatus] = useState('draft');
+  const [startDate, setStartDate] = useState('2026-09-05');
+  const [endDate, setEndDate] = useState('2026-10-05');
+  const [description, setDescription] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [offerValue, setOfferValue] = useState('10');
+  const [applicableService, setApplicableService] = useState('all');
+  const [minimumPurchase, setMinimumPurchase] = useState('0');
+  const [totalUsageLimit, setTotalUsageLimit] = useState('1000');
+  const [perCustomerLimit, setPerCustomerLimit] = useState('1');
+  const [combinability, setCombinability] = useState('exclusive');
+  const dialogTitle = isDiscountCode
+    ? 'افزودن کد تخفیف'
+    : isOffer && tab === 'specials'
+      ? 'افزودن پیشنهاد ویژه'
+      : definition.title;
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl text-right" dir="rtl">
+        <DialogTitle>{dialogTitle}</DialogTitle>
+        <DialogDescription>
+          اطلاعات لازم را وارد کنید و برای افزودن به فضای کاری ذخیره کنید.
+        </DialogDescription>
+        <form
+          className="mt-5 grid gap-4 sm:grid-cols-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (name.trim().length < 3) return;
+            if (isDiscountCode && couponCode.trim().length < 3) return;
+            if (
+              isOffer &&
+              [offerValue, minimumPurchase, totalUsageLimit, perCustomerLimit]
+                .map(Number)
+                .some((value) => !Number.isFinite(value) || value < 0)
+            )
+              return;
+            onSaved(name.trim());
+            onOpenChange(false);
+            setName('');
+            setDescription('');
+          }}
+        >
+          <FormField
+            id={`${kind}-entity-name`}
+            label={definition.nameLabel}
+            required
+          >
+            <Input
+              autoFocus
+              id={`${kind}-entity-name`}
+              minLength={3}
+              onChange={(event) => setName(event.target.value)}
+              placeholder={`${definition.nameLabel} را وارد کنید`}
+              required
+              value={name}
+            />
+          </FormField>
+          <FormField id={`${kind}-entity-type`} label="نوع" required>
+            <SimpleSelect
+              ariaLabel={`نوع ${definition.title}`}
+              onChange={setType}
+              options={entityTypes}
+              value={type}
+            />
+          </FormField>
+          <FormField id={`${kind}-entity-status`} label="وضعیت" required>
+            <SimpleSelect
+              ariaLabel={`وضعیت ${definition.title}`}
+              onChange={setStatus}
+              options={[
+                ['draft', 'پیش‌نویس'],
+                ['active', 'فعال'],
+                ['review', 'در انتظار تأیید'],
+              ]}
+              value={status}
+            />
+          </FormField>
+          {isOffer ? (
+            <>
+              {isDiscountCode ? (
+                <FormField id="offer-coupon-code" label="کد تخفیف" required>
+                  <Input
+                    dir="ltr"
+                    id="offer-coupon-code"
+                    minLength={3}
+                    onChange={(event) =>
+                      setCouponCode(event.target.value.toUpperCase())
+                    }
+                    placeholder="مثلاً AUTUMN10"
+                    required
+                    value={couponCode}
+                  />
+                </FormField>
+              ) : null}
+              <FormField
+                id="offer-value"
+                label={isDiscountCode ? 'مقدار تخفیف' : 'قیمت ویژه'}
+                required
+              >
+                <Input
+                  dir="ltr"
+                  id="offer-value"
+                  min="0"
+                  onChange={(event) => setOfferValue(event.target.value)}
+                  required
+                  type="number"
+                  value={offerValue}
+                />
+              </FormField>
+              <FormField id="offer-service" label="خدمت قابل استفاده" required>
+                <SimpleSelect
+                  ariaLabel="خدمت قابل استفاده پیشنهاد"
+                  onChange={setApplicableService}
+                  options={[
+                    ['all', 'همه خدمات'],
+                    ['tour', 'تور'],
+                    ['flight', 'پرواز'],
+                    ['hotel', 'هتل'],
+                    ['visa', 'ویزا'],
+                  ]}
+                  value={applicableService}
+                />
+              </FormField>
+              <FormField
+                id="offer-minimum-purchase"
+                label="حداقل مبلغ خرید"
+                required
+              >
+                <Input
+                  dir="ltr"
+                  id="offer-minimum-purchase"
+                  min="0"
+                  onChange={(event) => setMinimumPurchase(event.target.value)}
+                  required
+                  type="number"
+                  value={minimumPurchase}
+                />
+              </FormField>
+              <FormField
+                id="offer-total-limit"
+                label={isDiscountCode ? 'سقف کل استفاده' : 'ظرفیت کل پیشنهاد'}
+                required
+              >
+                <Input
+                  dir="ltr"
+                  id="offer-total-limit"
+                  min="1"
+                  onChange={(event) => setTotalUsageLimit(event.target.value)}
+                  required
+                  type="number"
+                  value={totalUsageLimit}
+                />
+              </FormField>
+              <FormField
+                id="offer-customer-limit"
+                label="سقف استفاده هر مشتری"
+                required
+              >
+                <Input
+                  dir="ltr"
+                  id="offer-customer-limit"
+                  min="1"
+                  onChange={(event) => setPerCustomerLimit(event.target.value)}
+                  required
+                  type="number"
+                  value={perCustomerLimit}
+                />
+              </FormField>
+              <FormField id="offer-combinability" label="ترکیب‌پذیری" required>
+                <SimpleSelect
+                  ariaLabel="قاعده ترکیب پیشنهاد"
+                  onChange={setCombinability}
+                  options={[
+                    ['exclusive', 'غیرقابل ترکیب'],
+                    ['points', 'قابل ترکیب با امتیاز'],
+                    ['offers', 'قابل ترکیب با پیشنهاد دیگر'],
+                  ]}
+                  value={combinability}
+                />
+              </FormField>
+            </>
+          ) : null}
+          {definition.hasDateRange ? (
+            <>
+              <FormField id={`${kind}-entity-start`} label="از تاریخ" required>
+                <DatePicker
+                  id={`${kind}-entity-start`}
+                  onChange={setStartDate}
+                  value={startDate}
+                />
+              </FormField>
+              <FormField id={`${kind}-entity-end`} label="تا تاریخ" required>
+                <DatePicker
+                  id={`${kind}-entity-end`}
+                  onChange={setEndDate}
+                  value={endDate}
+                />
+              </FormField>
+            </>
+          ) : null}
+          <div className="sm:col-span-2">
+            <FormField id={`${kind}-entity-description`} label="توضیحات">
+              <Textarea
+                id={`${kind}-entity-description`}
+                onChange={(event) => setDescription(event.target.value)}
+                rows={4}
+                value={description}
+              />
+            </FormField>
+          </div>
+          <div className="flex justify-end gap-2 sm:col-span-2">
+            <Button
+              onClick={() => onOpenChange(false)}
+              type="button"
+              variant="outline"
+            >
+              انصراف
+            </Button>
+            <Button type="submit">
+              <Save aria-hidden="true" className="size-4" /> ذخیره
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type PrimarySectionAction =
+  | { label: string; behavior: 'builder' }
+  | { label: string; behavior: 'form'; formKind: SectionFormKind };
+
+function getPrimarySectionAction(
+  section: DetailSection,
+  tab: string,
+): PrimarySectionAction | null {
+  if (section === 'content') {
+    return { label: 'محتوای جدید', behavior: 'form', formKind: 'content' };
+  }
+  if (section === 'offers' && tab === 'discounts') {
+    return { label: 'افزودن کد تخفیف', behavior: 'form', formKind: 'offer' };
+  }
+  if (section === 'offers' && tab === 'specials') {
+    return {
+      label: 'افزودن پیشنهاد ویژه',
+      behavior: 'form',
+      formKind: 'offer',
+    };
+  }
+  if (section === 'journeys' && tab === 'all') {
+    return { label: 'ساخت اتوماسیون', behavior: 'builder' };
+  }
+  return null;
+}
 
 export function MarketingReferenceSection({
   section,
@@ -3179,66 +4298,84 @@ export function MarketingReferenceSection({
 }) {
   const tabs = marketingSectionTabs[section];
   const [tab, setTab] = useState(tabs.at(0)?.[0] ?? '');
+  const [formKind, setFormKind] = useState<SectionFormKind | null>(null);
+  const primaryAction = getPrimarySectionAction(section, tab);
   const runPrimaryAction = () => {
-    if (section === 'communications') {
-      setTab('send');
-      onNotice('فرم ارسال پیام باز شد.');
-      return;
-    }
-    if (section === 'journeys') {
+    if (!primaryAction) return;
+    if (primaryAction.behavior === 'builder') {
       setTab('builder');
       onNotice('سازنده سفر مشتری باز شد.');
       return;
     }
-    onNotice(`${sectionActionLabels[section]} در محیط آزمایشی باز شد.`);
+    if (primaryAction.behavior === 'form') {
+      setFormKind(primaryAction.formKind);
+    }
   };
   return (
-    <Tabs className="text-right" dir="rtl" onValueChange={setTab} value={tab}>
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <TabsList
-          aria-label={`زیر‌بخش‌های ${section}`}
-          className="flex h-auto w-full flex-wrap justify-start gap-1 bg-blue-50 p-2 dark:bg-blue-950/40 xl:w-auto"
-        >
-          {tabs.map(([key, label]) => (
-            <TabsTrigger key={key} value={key}>
-              {label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        {section !== 'reports' && section !== 'settings' ? (
-          <Button onClick={runPrimaryAction}>
-            <Plus aria-hidden="true" className="size-4" />
-            {sectionActionLabels[section]}
-          </Button>
-        ) : null}
-      </div>
-      {tabs.map(([key, , description]) => (
-        <TabsContent className="mt-5" key={key} value={key}>
-          <p className="mb-4 text-sm text-muted-foreground">{description}</p>
-          {section === 'audiences' ? (
-            <AudiencePage onNotice={onNotice} onOpen={onOpen} tab={key} />
+    <>
+      <Tabs className="text-right" dir="rtl" onValueChange={setTab} value={tab}>
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <TabsList
+            aria-label={`زیر‌بخش‌های ${section}`}
+            className="flex h-auto w-full flex-wrap justify-start gap-1 bg-blue-50 p-2 dark:bg-blue-950/40 xl:w-auto"
+          >
+            {tabs.map(([key, label]) => (
+              <TabsTrigger key={key} value={key}>
+                {label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {primaryAction ? (
+            <Button onClick={runPrimaryAction}>
+              <Plus aria-hidden="true" className="size-4" />
+              {primaryAction.label}
+            </Button>
           ) : null}
-          {section === 'communications' ? (
-            <CommunicationsPage onNotice={onNotice} onOpen={onOpen} tab={key} />
-          ) : null}
-          {section === 'content' ? (
-            <ContentPage onNotice={onNotice} onOpen={onOpen} tab={key} />
-          ) : null}
-          {section === 'offers' ? (
-            <OffersPage onNotice={onNotice} onOpen={onOpen} tab={key} />
-          ) : null}
-          {section === 'journeys' ? (
-            <JourneysPage onNotice={onNotice} onOpen={onOpen} tab={key} />
-          ) : null}
-          {section === 'reports' ? (
-            <ReportsPage onNotice={onNotice} onOpen={onOpen} tab={key} />
-          ) : null}
-          {section === 'settings' ? (
-            <SettingsPage onNotice={onNotice} onOpen={onOpen} tab={key} />
-          ) : null}
-        </TabsContent>
-      ))}
-    </Tabs>
+        </div>
+        {tabs.map(([key, , description]) => (
+          <TabsContent className="mt-5" key={key} value={key}>
+            <p className="mb-4 text-sm text-muted-foreground">{description}</p>
+            {section === 'audiences' ? (
+              <AudiencePage onNotice={onNotice} onOpen={onOpen} tab={key} />
+            ) : null}
+            {section === 'content' ? (
+              <ContentPage onNotice={onNotice} onOpen={onOpen} tab={key} />
+            ) : null}
+            {section === 'offers' ? (
+              <OffersPage onNotice={onNotice} onOpen={onOpen} tab={key} />
+            ) : null}
+            {section === 'journeys' ? (
+              <JourneysPage
+                onNotice={onNotice}
+                onOpen={onOpen}
+                onUseScenario={(title) => {
+                  setTab('builder');
+                  onNotice(`سناریوی «${title}» در سازنده بارگذاری شد.`);
+                }}
+                tab={key}
+              />
+            ) : null}
+            {section === 'settings' ? (
+              <SettingsPage onNotice={onNotice} onOpen={onOpen} tab={key} />
+            ) : null}
+          </TabsContent>
+        ))}
+      </Tabs>
+      {formKind ? (
+        <SectionEntityFormDialog
+          key={formKind}
+          kind={formKind}
+          tab={tab}
+          onOpenChange={(open) => {
+            if (!open) setFormKind(null);
+          }}
+          onSaved={(name) => {
+            onNotice(`«${name}» ذخیره شد.`);
+          }}
+          open
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -3250,7 +4387,6 @@ const campaignDetailTabs = [
   ['links', 'لینک‌ها و UTM'],
   ['leads', 'سرنخ‌ها'],
   ['sales', 'فروش'],
-  ['report', 'گزارش'],
   ['activity', 'فعالیت‌ها'],
 ] as const;
 
@@ -3281,13 +4417,6 @@ export function CampaignDetailReference({
         </div>
         <Badge className={statusClass(status)}>{status}</Badge>
         <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={() => onNotice('گزارش سریع کمپین باز شد.')}
-            size="sm"
-            variant="outline"
-          >
-            <BarChart3 aria-hidden="true" className="size-4" /> گزارش سریع
-          </Button>
           <Button
             onClick={() => onNotice('یک کپی آزمایشی از کمپین ساخته شد.')}
             size="sm"
@@ -3528,7 +4657,7 @@ export function CampaignDetailReference({
                 },
               ]}
               searchable={false}
-              section="communications"
+              section="campaigns"
               tab="campaign-detail-channels"
               title="برنامه زمان‌بندی ارسال"
               totalLabel="۳ نمونه از ۸ ارسال"
@@ -3619,7 +4748,7 @@ export function CampaignDetailReference({
                 },
               ]}
               searchable={false}
-              section="reports"
+              section="campaigns"
               tab="campaign-detail-budget"
               title="ریز هزینه‌های کمپین"
               totalLabel="۳ نمونه از ۸ هزینه"
@@ -3864,43 +4993,11 @@ export function CampaignDetailReference({
                 },
               ]}
               searchable={false}
-              section="reports"
+              section="campaigns"
               tab="campaign-detail-sales"
               title="فروش منتسب به کمپین"
               totalLabel="۳ نمونه از ۳۵۲ فروش"
             />
-          </div>
-        </TabsContent>
-        <TabsContent className="mt-5" value="report">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Panel title="هدف در برابر نتیجه">
-              <ProgressRows
-                rows={[
-                  ['فروش', 72, '۷۲٪'],
-                  ['سرنخ', 91, '۹۱٪'],
-                  ['نرخ تبدیل', 100, '۱۰۶٪'],
-                  ['ROAS', 97, '۹۷٪'],
-                ]}
-              />
-            </Panel>
-            <Panel title="شاخص‌های نهایی">
-              <dl className="p-5">
-                {[
-                  ['نرخ تبدیل', '۲۳.۸٪'],
-                  ['CAC', '۱.۹ میلیون تومان'],
-                  ['ROI', '۱۷۶٪'],
-                  ['ROAS', '۳.۱۹×'],
-                ].map(([label, value]) => (
-                  <div
-                    className="flex justify-between border-b border-dashed border-border py-3 last:border-0"
-                    key={label}
-                  >
-                    <dt className="text-muted-foreground">{label}</dt>
-                    <dd className="font-black">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </Panel>
           </div>
         </TabsContent>
         <TabsContent className="mt-5" value="activity">

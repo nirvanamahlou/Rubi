@@ -16,12 +16,13 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import {
   getNavigationBreadcrumbs,
   isNavigationItemActive,
+  MARKETING_SECTION_CHANGE_EVENT,
   navigationItems,
 } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
@@ -316,7 +317,37 @@ function HeaderActions() {
 
 function Breadcrumb() {
   const pathname = usePathname();
-  const breadcrumbs = getNavigationBreadcrumbs(pathname);
+  const searchParams = useSearchParams();
+  const sectionFromRouter =
+    pathname === '/marketing' ? searchParams.get('section') : null;
+  const [marketingSectionKey, setMarketingSectionKey] =
+    useState(sectionFromRouter);
+  useEffect(() => {
+    const syncFromLocation = () => {
+      setMarketingSectionKey(
+        window.location.pathname === '/marketing'
+          ? new URL(window.location.href).searchParams.get('section')
+          : null,
+      );
+    };
+    const syncFromWorkspace = (event: Event) => {
+      setMarketingSectionKey((event as CustomEvent<string | null>).detail);
+    };
+    syncFromLocation();
+    window.addEventListener('popstate', syncFromLocation);
+    window.addEventListener(MARKETING_SECTION_CHANGE_EVENT, syncFromWorkspace);
+    return () => {
+      window.removeEventListener('popstate', syncFromLocation);
+      window.removeEventListener(
+        MARKETING_SECTION_CHANGE_EVENT,
+        syncFromWorkspace,
+      );
+    };
+  }, [pathname, sectionFromRouter]);
+  const breadcrumbs = getNavigationBreadcrumbs(
+    pathname,
+    pathname === '/marketing' ? marketingSectionKey : null,
+  );
   return (
     <nav
       aria-label="مسیر صفحه"
@@ -458,7 +489,9 @@ function AppShellContent({ children }: { children: ReactNode }) {
           </div>
         </header>
         <div className="px-4 pt-3 sm:px-6 lg:px-7">
-          <Breadcrumb />
+          <Suspense fallback={<div aria-hidden="true" className="h-4" />}>
+            <Breadcrumb />
+          </Suspense>
         </div>
         <main className="px-4 pb-6 pt-3 sm:px-6 lg:px-7" id="main-content">
           {children}
