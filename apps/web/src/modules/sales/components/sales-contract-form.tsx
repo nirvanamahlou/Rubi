@@ -25,7 +25,7 @@ import type {
 import { Button, buttonVariants } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
-import { Alert, Badge, Card, PageHeader } from '@/components/ui/surfaces';
+import { Alert, Badge, Card } from '@/components/ui/surfaces';
 import { customersApi } from '@/modules/customers/api/client';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { salesApi } from '../api/client';
@@ -408,11 +408,7 @@ export function SalesContractForm() {
         state.priceComponents.every((item) => item.amount && item.currencyCode)
       );
     return true;
-  }, [
-    state,
-    step,
-    activeDetail,
-  ]);
+  }, [state, step, activeDetail]);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (step !== salesSteps.length - 1 || busy) return;
@@ -481,25 +477,30 @@ export function SalesContractForm() {
     );
 
   return (
-    <form className="grid gap-6" onSubmit={submit}>
-      <PageHeader
-        eyebrow="فروش"
-        title="قرارداد جدید"
-        description="مسیر و خدمات سفر را انتخاب کنید و قرارداد مشتری را تکمیل کنید."
-        actions={
-          <Link
-            href="/sales"
-            className={buttonVariants({ variant: 'outline' })}
-          >
-            <ChevronRight className="size-4" />
-            بازگشت به داشبورد قراردادها
-          </Link>
-        }
-      />
-      <ol className="grid grid-cols-2 gap-2 md:grid-cols-6">
+    <form className="mx-auto grid w-full max-w-6xl gap-4" onSubmit={submit}>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-black">قرارداد جدید</h1>
+          <p className="mt-1 text-xs text-muted-foreground">
+            مرحله {step + 1} از {salesSteps.length} · {salesSteps[step]}
+          </p>
+        </div>
+        <Link
+          href="/sales"
+          className={buttonVariants({ variant: 'outline', size: 'sm' })}
+        >
+          <ChevronRight className="size-4" />
+          داشبورد قراردادها
+        </Link>
+      </header>
+      <ol
+        className="flex gap-1 overflow-x-auto rounded-xl bg-muted/50 p-1"
+        aria-label="مراحل ثبت قرارداد"
+      >
         {salesSteps.map((label, index) => (
           <li
-            className={`rounded-xl border px-3 py-2 text-center text-xs font-bold ${index === step ? 'border-primary bg-primary/10 text-primary' : index < step ? 'border-emerald-500/30 text-emerald-700' : 'border-border text-muted-foreground'}`}
+            aria-current={index === step ? 'step' : undefined}
+            className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-center text-xs font-bold ${index === step ? 'bg-primary/10 text-primary' : index < step ? 'text-emerald-700' : 'text-muted-foreground'}`}
             key={label}
           >
             {index + 1}. {label}
@@ -509,7 +510,7 @@ export function SalesContractForm() {
       {error ? (
         <Alert tone="error" title="عملیات کامل نشد" description={error} />
       ) : null}
-      <Card className="min-h-[420px] p-5 md:p-7">
+      <Card className="p-4 sm:p-5">
         {step === 2 ? (
           <div className="grid gap-5">
             <h2 className="text-xl font-black">انتخاب مشتری و مسافران</h2>
@@ -571,22 +572,14 @@ export function SalesContractForm() {
         ) : null}
         {step === 0 ? (
           <div className="grid gap-5">
-            <h2 className="text-xl font-black">مسیر و تاریخ سفر</h2>
-            <div className="grid gap-4 md:grid-cols-2">
+            <h2 className="text-sm font-bold">مسیر سفر</h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <SearchableReference
                 label="کشور مبدأ"
                 value={state.originCountryId}
                 options={references.countries}
                 onChange={(originCountryId) =>
                   patchState({ originCountryId, originId: '' })
-                }
-              />
-              <SearchableReference
-                label="کشور مقصد"
-                value={state.destinationCountryId}
-                options={references.countries}
-                onChange={(destinationCountryId) =>
-                  patchState({ destinationCountryId, destinationId: '' })
                 }
               />
               <SearchableReference
@@ -597,6 +590,14 @@ export function SalesContractForm() {
                   (item) => item.attributes.countryId === state.originCountryId,
                 )}
                 onChange={(originId) => patchState({ originId })}
+              />
+              <SearchableReference
+                label="کشور مقصد"
+                value={state.destinationCountryId}
+                options={references.countries}
+                onChange={(destinationCountryId) =>
+                  patchState({ destinationCountryId, destinationId: '' })
+                }
               />
               <SearchableReference
                 label="شهر مقصد"
@@ -612,27 +613,23 @@ export function SalesContractForm() {
           </div>
         ) : null}
         {step === 0 ? (
-          <div className="mt-6 grid gap-5">
-            <h2 className="text-xl font-black">خدمات قرارداد</h2>
+          <div className="mt-5 grid gap-3 border-t border-border pt-4">
+            <h2 className="text-sm font-bold">خدمات قرارداد</h2>
             <p className="text-xs text-muted-foreground">
               با انتخاب پرواز، قطار و اتوبوس قابل انتخاب نیستند. ترانسفر فقط روی
               خروجی بلیت درج می‌شود.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              ابتدا خدمت را انتخاب کنید؛ رفت و برگشت با هم فعال می‌شوند و سپس
-              می‌توانید هر جهت را جدا تغییر دهید.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               {(['FLIGHT', 'TRANSFER'] as const).map((kind) => (
                 <fieldset
                   key={kind}
-                  className="rounded-2xl border border-border p-4"
+                  className="rounded-xl border border-border p-3 text-sm"
                 >
                   <label className="flex cursor-pointer items-center justify-between gap-3 font-bold">
                     <span>{kind === 'FLIGHT' ? 'بلیت پرواز' : 'ترانسفر'}</span>
                     <input
                       type="checkbox"
-                      className="size-5 accent-primary"
+                      className="size-4 accent-primary"
                       checked={state.serviceKinds.includes(kind)}
                       aria-controls={`sales-directions-${kind}`}
                       aria-expanded={state.serviceKinds.includes(kind)}
@@ -644,12 +641,12 @@ export function SalesContractForm() {
                   {state.serviceKinds.includes(kind) ? (
                     <div
                       id={`sales-directions-${kind}`}
-                      className="mt-4 grid grid-cols-2 gap-3 border-t border-border pt-4"
+                      className="mt-2 flex gap-2 border-t border-border pt-2"
                     >
                       {(['OUTBOUND', 'RETURN'] as const).map((direction) => (
                         <label
                           key={direction}
-                          className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 ${salesDirections(state, kind).includes(direction) ? 'border-primary bg-primary/10 text-primary' : 'border-border'}`}
+                          className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 ${salesDirections(state, kind).includes(direction) ? 'border-primary bg-primary/10 text-primary' : 'border-border'}`}
                         >
                           <input
                             type="checkbox"
@@ -667,12 +664,12 @@ export function SalesContractForm() {
                 </fieldset>
               ))}
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {serviceOptions
                 .filter(([kind]) => kind !== 'FLIGHT' && kind !== 'TRANSFER')
                 .map(([kind, label]) => (
                   <button
-                    className={`flex items-center justify-between rounded-xl border p-4 text-start ${state.serviceKinds.includes(kind) ? 'border-primary bg-primary/5' : 'border-border'}`}
+                    className={`flex min-h-10 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-start text-sm disabled:cursor-not-allowed disabled:opacity-40 ${state.serviceKinds.includes(kind) ? 'border-primary bg-primary/5' : 'border-border'}`}
                     key={kind}
                     role="checkbox"
                     aria-checked={state.serviceKinds.includes(kind)}
@@ -1388,7 +1385,7 @@ export function SalesContractForm() {
           </div>
         ) : null}
       </Card>
-      <div className="flex items-center justify-between">
+      <div className="sticky bottom-3 z-20 flex items-center justify-between rounded-xl border border-border bg-surface/95 p-3 shadow-sm backdrop-blur">
         <Button
           type="button"
           variant="outline"

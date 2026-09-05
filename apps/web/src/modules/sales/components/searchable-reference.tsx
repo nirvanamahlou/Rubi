@@ -63,7 +63,7 @@ export function SearchableReference({
             placeholder={
               disabled ? 'ابتدا کشور را انتخاب کنید' : 'جست‌وجو و انتخاب…'
             }
-            className="rounded-2xl pe-10 ps-10"
+            className="h-10 rounded-xl pe-9 ps-9 text-sm"
             value={open ? search : (selected?.name ?? '')}
             onFocus={() => {
               setOpen(true);

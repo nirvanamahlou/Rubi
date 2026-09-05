@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  AlertTriangle,
   Banknote,
   CalendarCheck,
   FilePlus2,
@@ -20,11 +19,31 @@ import {
   Card,
   EmptyState,
   ErrorState,
-  PageHeader,
   Skeleton,
 } from '@/components/ui/surfaces';
 import { salesApi } from '../api/client';
 import { ContractPayments } from './contract-payments';
+
+export async function loadSalesWorkspace(
+  api: Pick<typeof salesApi, 'dashboard' | 'list'> = salesApi,
+) {
+  const [dashboard, contracts] = await Promise.allSettled([
+    api.dashboard(),
+    api.list({
+      page: 1,
+      pageSize: 20,
+      sortBy: 'updatedAt',
+      sortDirection: 'desc',
+    }),
+  ]);
+  return { dashboard, contracts };
+}
+
+function failureMessage(reason: unknown): string {
+  return reason instanceof Error
+    ? reason.message
+    : 'دریافت اطلاعات فروش ناموفق بود.';
+}
 
 function formatMoney(amount: string, currencyCode: string) {
   const [integer = '0', fraction] = amount.split('.');
@@ -41,30 +60,25 @@ export function SalesWorkspace() {
   const [contracts, setContracts] = useState<SalesContractPage['data']>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [dashboardError, setDashboardError] = useState('');
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
-    try {
-      const [dashboardResponse, contractResponse] = await Promise.all([
-        salesApi.dashboard(),
-        salesApi.list({
-          page: 1,
-          pageSize: 20,
-          sortBy: 'updatedAt',
-          sortDirection: 'desc',
-        }),
-      ]);
-      setDashboard(dashboardResponse.data);
-      setContracts(contractResponse.data);
-    } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : 'دریافت اطلاعات فروش ناموفق بود.',
-      );
-    } finally {
-      setLoading(false);
+    setDashboardError('');
+    const result = await loadSalesWorkspace();
+    if (result.dashboard.status === 'fulfilled')
+      setDashboard(result.dashboard.value.data);
+    else {
+      setDashboard(null);
+      setDashboardError(failureMessage(result.dashboard.reason));
     }
+    if (result.contracts.status === 'fulfilled')
+      setContracts(result.contracts.value.data);
+    else {
+      setContracts([]);
+      setError(failureMessage(result.contracts.reason));
+    }
+    setLoading(false);
   }, []);
   useEffect(() => {
     const timer = globalThis.setTimeout(() => void load(), 0);
@@ -72,29 +86,53 @@ export function SalesWorkspace() {
   }, [load]);
 
   return (
-    <div className="grid gap-6">
-      <PageHeader
-        eyebrow="Sales · v1"
-        title="فروش و قراردادها"
-        description="قراردادهای واقعی، مانده تأییدشده مالی و وضعیت درخواست‌های رزرو"
-        actions={
-          <Link className={buttonVariants()} href="/sales/contracts/new">
+    <div className="mx-auto grid w-full max-w-6xl gap-4">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-black">داشبورد قراردادها</h1>
+          <p className="mt-1 text-xs text-muted-foreground">
+            قراردادهای قابل‌دسترسی شما · مانده بر اساس پرداخت تأییدشده مالی
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={loading}
+            onClick={() => void load()}
+            aria-label="به‌روزرسانی قراردادها"
+          >
+            <RefreshCw className="size-4" />
+          </Button>
+          <Link
+            className={buttonVariants({ size: 'sm' })}
+            href="/sales/contracts/new"
+          >
             <FilePlus2 className="size-4" />
             قرارداد جدید
           </Link>
-        }
-      />
+        </div>
+      </header>
       {loading ? (
         <div className="grid gap-4 md:grid-cols-4">
           {Array.from({ length: 4 }, (_, index) => (
-            <Skeleton className="h-28" key={index} />
+            <Skeleton className="h-24" key={index} />
           ))}
         </div>
       ) : null}
-      {error ? (
+      {error || dashboardError ? (
         <ErrorState
-          title="دریافت داشبورد ناموفق بود"
-          description={error}
+          title={
+            error
+              ? 'فهرست قراردادها در دسترس نیست'
+              : 'آمار قراردادها در دسترس نیست'
+          }
+          description={[error, dashboardError]
+            .filter(
+              (message, index, all) =>
+                message && all.indexOf(message) === index,
+            )
+            .join(' · ')}
           action={
             <Button onClick={() => void load()} variant="outline">
               <RefreshCw className="size-4" />
@@ -114,14 +152,17 @@ export function SalesWorkspace() {
               ],
               ['قرارداد فعال', String(dashboard.activeContracts), FilePlus2],
               [
-                'در انتظار Finance',
-                String(dashboard.pendingFinancePayments),
+                'تسویه نشده / ناقص',
+                String(
+                  dashboard.unpaidContracts +
+                    dashboard.partiallySettledContracts,
+                ),
                 WalletCards,
               ],
               ['فروش ریالی', formatMoney(dashboard.rialSales, 'IRR'), Banknote],
             ] satisfies ReadonlyArray<readonly [string, string, LucideIcon]>
           ).map(([label, value, Icon]) => (
-            <Card className="p-5" key={label}>
+            <Card className="p-4" key={label}>
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{label}</p>
@@ -133,18 +174,10 @@ export function SalesWorkspace() {
           ))}
         </div>
       ) : null}
-      {dashboard?.conversionRateStatus ===
-      'AWAITING_CUSTOMER_AFFAIRS_PUBLIC_CONTRACT' ? (
-        <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-amber-800">
-          <AlertTriangle className="size-4" />
-          نرخ تبدیل لید به قرارداد تا انتشار Public Contract امور مشتریان محاسبه
-          نمی‌شود.
-        </div>
-      ) : null}
       {!loading && !error && contracts.length === 0 ? (
         <EmptyState
           title="هنوز قراردادی ثبت نشده"
-          description="برای شروع، قرارداد جدید بسازید؛ عدد نمایشی یا داده ساختگی نشان داده نمی‌شود."
+          description="قراردادهای شما پس از ثبت در این بخش نمایش داده می‌شوند."
         />
       ) : null}
       {contracts.length ? (

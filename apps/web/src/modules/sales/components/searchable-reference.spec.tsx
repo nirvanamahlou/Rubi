@@ -27,7 +27,8 @@ describe('Sales searchable country/city reference', () => {
     expect(markup).toContain('role="combobox"');
     expect(markup).toContain('aria-expanded="false"');
     expect(markup).toContain('value="تهران"');
-    expect(markup).toContain('rounded-2xl');
+    expect(markup).toContain('rounded-xl');
+    expect(markup).toContain('h-10');
     expect(markup).toContain('شهر مبدأ');
   });
   it('disables city selection until a country is chosen', () => {

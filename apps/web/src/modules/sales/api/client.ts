@@ -38,6 +38,12 @@ async function request<T>(
       ...(init?.body ? { 'content-type': 'application/json' } : {}),
       ...init?.headers,
     },
+  }).catch(() => {
+    throw new SalesApiError(
+      'ارتباط با سرور برقرار نشد؛ اتصال را بررسی و دوباره تلاش کنید.',
+      0,
+      'NETWORK_ERROR',
+    );
   });
   if (
     response.status === 401 &&
@@ -52,7 +58,11 @@ async function request<T>(
       error?: { code?: string; message?: string };
     } | null;
     throw new SalesApiError(
-      payload?.error?.message ?? payload?.message ?? 'عملیات فروش ناموفق بود.',
+      response.status === 401
+        ? 'نشست شما پایان یافته است؛ دوباره وارد حساب شوید.'
+        : (payload?.error?.message ??
+            payload?.message ??
+            'عملیات فروش ناموفق بود.'),
       response.status,
       payload?.error?.code ?? payload?.code,
     );

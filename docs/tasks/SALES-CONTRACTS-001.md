@@ -2,6 +2,13 @@
 
 - Status: `READY_FOR_REVIEW`
 
+## Compact entry and dashboard connectivity follow-up
+
+- Replaced oversized form header, stepper and minimum-height card with a bounded compact layout; country/city pairs share one desktop row, services use small selectable controls, directional options stay independent, and footer actions remain accessible. Shared UI files are unchanged.
+- Diagnosed the prior production bundle: NEXT_PUBLIC_API_BASE_URL was unresolved, preventing browser API calls. Added only the public local API address to ignored apps/web/.env.local and rebuilt. Local environment files are not committed; each other environment must supply its own public API URL at build time.
+- Read-only SalesRepository dashboard/list probes with a nonexistent-contract scope succeeded without exposing user records. API health returns 200 and CORS accepts localhost:3100. Dashboard/list use independent settled results; genuine network/session errors stay explicit rather than being replaced by fake zero counts.
+- 27 Sales Web tests pass, including compact form structure, dashboard partial failure, configured authenticated fetch and expired-session/network errors. Scoped lint and production typecheck/build pass. No schema, migration, IAM or other module changes. Browser tool failed at initialization; authenticated UI/visual verification remains unclaimed.
+
 ## Optional flight dates and flag-only transfers
 
 - Verification: 20 Sales Web tests and 28 Sales API tests passed; scoped ESLint, Web/API typecheck and both production builds passed. Web restarted on localhost:3100 and the contract page returned HTTP 200. No authenticated visual verification is claimed.
