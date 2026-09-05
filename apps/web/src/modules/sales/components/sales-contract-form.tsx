@@ -29,11 +29,16 @@ import { customersApi } from '@/modules/customers/api/client';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { salesApi } from '../api/client';
 import { TicketOfferPicker } from './ticket-offer-picker';
+import { SearchableReference } from './searchable-reference';
 import {
   emptySalesForm,
   salesPayload,
   salesSteps,
   salesPassengerAgeLabel,
+  salesDirections,
+  salesDetailSteps,
+  salesReturnSearchFrom,
+  withSalesRouteDefaults,
   type SalesFormState,
 } from '../model/sales-form';
 
@@ -84,16 +89,25 @@ function ReferenceSelect({
 export function SalesContractForm() {
   const router = useRouter();
   const [step, setStep] = useState(0);
+  const [detailStep, setDetailStep] = useState(0);
   const [state, setState] = useState<SalesFormState>(emptySalesForm);
   const [customers, setCustomers] = useState<readonly CustomerSummary[]>([]);
   const [customerSearch, setCustomerSearch] = useState('');
   const [references, setReferences] = useState<{
+    countries: readonly MasterDataRecord[];
     cities: readonly MasterDataRecord[];
     hotels: readonly MasterDataRecord[];
     roomTypes: readonly MasterDataRecord[];
     visaServices: readonly MasterDataRecord[];
     banks: readonly MasterDataRecord[];
-  }>({ cities: [], hotels: [], roomTypes: [], visaServices: [], banks: [] });
+  }>({
+    countries: [],
+    cities: [],
+    hotels: [],
+    roomTypes: [],
+    visaServices: [],
+    banks: [],
+  });
   const [hotelSearch, setHotelSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -103,6 +117,8 @@ export function SalesContractForm() {
     setState((current) => {
       const changedRoute = [
         'originId',
+        'originCountryId',
+        'destinationCountryId',
         'destinationId',
         'departureDate',
         'tripType',
@@ -138,7 +154,10 @@ export function SalesContractForm() {
     const restoreTimer = saved
       ? globalThis.setTimeout(() => {
           try {
-            setState(JSON.parse(saved) as SalesFormState);
+            setState({
+              ...emptySalesForm,
+              ...JSON.parse(saved),
+            } as SalesFormState);
           } catch {
             globalThis.localStorage.removeItem('rubi.sales.contract.draft.v1');
           }
@@ -162,21 +181,26 @@ export function SalesContractForm() {
       }
     };
     void Promise.all([
+      loadReferences('countries'),
       loadReferences('cities'),
       loadReferences('hotels'),
       loadReferences('room-types'),
       loadReferences('visa-services'),
       loadReferences('banks'),
     ])
-      .then(([cities, hotels, roomTypes, visaServices, banks]) =>
+      .then(([countries, cities, hotels, roomTypes, visaServices, banks]) => {
         setReferences({
+          countries: countries.data,
           cities: cities.data,
           hotels: hotels.data,
           roomTypes: roomTypes.data,
           visaServices: visaServices.data,
           banks: banks.data,
-        }),
-      )
+        });
+        setState((current) =>
+          withSalesRouteDefaults(current, countries.data, cities.data),
+        );
+      })
       .catch(() =>
         setError('بخشی از Public Contract اطلاعات پایه در دسترس نیست.'),
       );
@@ -257,6 +281,62 @@ export function SalesContractForm() {
         ? state.serviceKinds.filter((item) => item !== kind)
         : [...state.serviceKinds, kind],
     });
+  const toggleDirection = (
+    kind: 'FLIGHT' | 'TRANSFER',
+    direction: 'OUTBOUND' | 'RETURN',
+  ) => {
+    const previous = salesDirections(state, kind);
+    const next = previous.includes(direction)
+      ? previous.filter((item) => item !== direction)
+      : [...previous, direction];
+    patchState({
+      serviceKinds: next.length
+        ? [...new Set([...state.serviceKinds, kind])]
+        : state.serviceKinds.filter((item) => item !== kind),
+      tripType:
+        next.includes('RETURN') ||
+        salesDirections(
+          state,
+          kind === 'FLIGHT' ? 'TRANSFER' : 'FLIGHT',
+        ).includes('RETURN')
+          ? 'ROUND_TRIP'
+          : 'ONE_WAY',
+      serviceDirections: { ...state.serviceDirections, [kind]: next },
+      ...(kind === 'FLIGHT'
+        ? {
+            outboundOffer: undefined,
+            returnOffer: undefined,
+            ticket: { ...state.ticket, outboundOfferId: '', returnOfferId: '' },
+          }
+        : {}),
+    });
+  };
+  const detailSteps = salesDetailSteps(state);
+  const activeDetail = detailSteps[detailStep];
+  const serviceDetail = activeDetail
+    ? (state.serviceDetails?.[activeDetail] ?? {})
+    : {};
+  const patchServiceDetail = (patch: {
+    date?: string;
+    pickup?: string;
+    dropoff?: string;
+    notes?: string;
+  }) => {
+    if (activeDetail)
+      patchState({
+        serviceDetails: {
+          ...state.serviceDetails,
+          [activeDetail]: { ...serviceDetail, ...patch },
+        },
+      });
+  };
+  const flightDirections = salesDirections(state, 'FLIGHT');
+  const detailLabel = (key: string) =>
+    key.startsWith('FLIGHT-')
+      ? `بلیت ${key.endsWith('OUTBOUND') ? 'رفت' : 'برگشت'}`
+      : key.startsWith('TRANSFER-')
+        ? `ترانسفر ${key.endsWith('OUTBOUND') ? 'رفت' : 'برگشت'}`
+        : (serviceOptions.find(([kind]) => kind === key)?.[1] ?? key);
   const updatePrice = (
     index: number,
     patch: Partial<SalesPriceComponentInput>,
@@ -270,23 +350,35 @@ export function SalesContractForm() {
     if (step === 0)
       return Boolean(
         state.originId &&
+        state.originCountryId &&
+        state.destinationCountryId &&
         state.destinationId &&
         state.originId !== state.destinationId &&
         state.departureDate &&
         state.serviceKinds.length,
       );
-    if (step === 1)
-      return Boolean(
-        (!state.serviceKinds.includes('FLIGHT') ||
-          (state.outboundOffer &&
-            (state.tripType === 'ONE_WAY' || state.returnOffer))) &&
-        (!state.serviceKinds.includes('HOTEL') ||
-          (state.hotel.hotelId &&
-            state.hotel.checkIn &&
-            state.hotel.checkOut &&
-            state.hotel.roomTypeId)) &&
-        (!state.serviceKinds.includes('VISA') || state.visaReferenceId),
-      );
+    if (step === 1) {
+      if (activeDetail === 'FLIGHT-OUTBOUND')
+        return Boolean(state.outboundOffer);
+      if (activeDetail === 'FLIGHT-RETURN') return Boolean(state.returnOffer);
+      if (activeDetail === 'HOTEL')
+        return Boolean(
+          state.hotel.hotelId &&
+          state.hotel.checkIn &&
+          state.hotel.checkOut &&
+          state.hotel.checkOut > state.hotel.checkIn &&
+          state.hotel.roomTypeId,
+        );
+      if (activeDetail === 'VISA') return Boolean(state.visaReferenceId);
+      if (activeDetail?.startsWith('TRANSFER-'))
+        return Boolean(
+          serviceDetail.date &&
+          serviceDetail.date >= state.departureDate &&
+          serviceDetail.pickup?.trim() &&
+          serviceDetail.dropoff?.trim(),
+        );
+      return true;
+    }
     if (step === 2) return Boolean(state.customerId);
     if (step === 3)
       return (
@@ -299,9 +391,17 @@ export function SalesContractForm() {
         state.priceComponents.every((item) => item.amount && item.currencyCode)
       );
     return true;
-  }, [state, step]);
+  }, [
+    state,
+    step,
+    activeDetail,
+    serviceDetail.date,
+    serviceDetail.pickup,
+    serviceDetail.dropoff,
+  ]);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (step !== salesSteps.length - 1 || busy) return;
     setBusy(true);
     setError('');
     try {
@@ -445,80 +545,140 @@ export function SalesContractForm() {
           <div className="grid gap-5">
             <h2 className="text-xl font-black">مسیر و تاریخ سفر</h2>
             <div className="grid gap-4 md:grid-cols-2">
-              <ReferenceSelect
-                label="مبدأ"
+              <SearchableReference
+                label="کشور مبدأ"
+                value={state.originCountryId}
+                options={references.countries}
+                onChange={(originCountryId) =>
+                  patchState({ originCountryId, originId: '' })
+                }
+              />
+              <SearchableReference
+                label="کشور مقصد"
+                value={state.destinationCountryId}
+                options={references.countries}
+                onChange={(destinationCountryId) =>
+                  patchState({ destinationCountryId, destinationId: '' })
+                }
+              />
+              <SearchableReference
+                label="شهر مبدأ"
                 value={state.originId}
-                options={references.cities}
+                disabled={!state.originCountryId}
+                options={references.cities.filter(
+                  (item) => item.attributes.countryId === state.originCountryId,
+                )}
                 onChange={(originId) => patchState({ originId })}
               />
-              <ReferenceSelect
-                label="مقصد"
+              <SearchableReference
+                label="شهر مقصد"
                 value={state.destinationId}
-                options={references.cities}
+                disabled={!state.destinationCountryId}
+                options={references.cities.filter(
+                  (item) =>
+                    item.attributes.countryId === state.destinationCountryId,
+                )}
                 onChange={(destinationId) => patchState({ destinationId })}
               />
-              <FormField label="نوع سفر" required>
-                <select
-                  className={fieldClass}
-                  value={state.tripType}
-                  onChange={(event) =>
-                    patchState({
-                      tripType: event.target
-                        .value as SalesFormState['tripType'],
-                    })
-                  }
-                >
-                  <option value="ONE_WAY">یک‌طرفه</option>
-                  <option value="ROUND_TRIP">رفت‌وبرگشت</option>
-                </select>
-              </FormField>
               <FormField label="تاریخ رفت" required>
                 <DatePicker
                   value={state.departureDate}
                   onChange={(departureDate) => patchState({ departureDate })}
                 />
               </FormField>
-              {state.tripType === 'ROUND_TRIP' ? (
-                <FormField label="تاریخ بازگشت" required>
-                  <DatePicker
-                    value={state.returnDate}
-                    onChange={(returnDate) => patchState({ returnDate })}
-                  />
-                </FormField>
-              ) : null}
             </div>
           </div>
         ) : null}
         {step === 0 ? (
-          <div className="grid gap-5">
+          <div className="mt-6 grid gap-5">
             <h2 className="text-xl font-black">خدمات قرارداد</h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {serviceOptions.map(([kind, label]) => (
-                <button
-                  className={`flex items-center justify-between rounded-xl border p-4 text-start ${state.serviceKinds.includes(kind) ? 'border-primary bg-primary/5' : 'border-border'}`}
+            <p className="text-sm text-muted-foreground">
+              بلیت و ترانسفر هر مسیر را مستقل تیک بزنید؛ انتخاب یکی، دیگری را
+              الزامی نمی‌کند.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(['FLIGHT', 'TRANSFER'] as const).map((kind) => (
+                <fieldset
                   key={kind}
-                  onClick={() => toggleService(kind)}
-                  type="button"
+                  className="rounded-2xl border border-border p-4"
                 >
-                  <span>{label}</span>
-                  {state.serviceKinds.includes(kind) ? (
-                    <Check className="size-4 text-primary" />
-                  ) : null}
-                </button>
+                  <legend className="px-2 font-bold">
+                    {kind === 'FLIGHT' ? 'بلیت پرواز' : 'ترانسفر'}
+                  </legend>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['OUTBOUND', 'RETURN'] as const).map((direction) => (
+                      <label
+                        key={direction}
+                        className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 ${salesDirections(state, kind).includes(direction) ? 'border-primary bg-primary/10 text-primary' : 'border-border'}`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="size-4 accent-primary"
+                          checked={salesDirections(state, kind).includes(
+                            direction,
+                          )}
+                          onChange={() => toggleDirection(kind, direction)}
+                        />
+                        {direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
               ))}
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {serviceOptions
+                .filter(([kind]) => kind !== 'FLIGHT' && kind !== 'TRANSFER')
+                .map(([kind, label]) => (
+                  <button
+                    className={`flex items-center justify-between rounded-xl border p-4 text-start ${state.serviceKinds.includes(kind) ? 'border-primary bg-primary/5' : 'border-border'}`}
+                    key={kind}
+                    role="checkbox"
+                    aria-checked={state.serviceKinds.includes(kind)}
+                    onClick={() => toggleService(kind)}
+                    type="button"
+                  >
+                    <span>{label}</span>
+                    {state.serviceKinds.includes(kind) ? (
+                      <Check className="size-4 text-primary" />
+                    ) : null}
+                  </button>
+                ))}
             </div>
           </div>
         ) : null}
         {step === 1 ? (
           <div className="grid gap-6">
             <h2 className="text-xl font-black">جزئیات خدمات</h2>
-            {state.serviceKinds.includes('FLIGHT') ? (
+            <ol className="flex flex-wrap gap-2">
+              {detailSteps.map((key, index) => (
+                <li
+                  key={key}
+                  aria-current={index === detailStep ? 'step' : undefined}
+                  className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm ${index === detailStep ? 'border-primary bg-primary/10 text-primary' : 'border-border'}`}
+                >
+                  {index < detailStep ? (
+                    <Check className="size-4 text-emerald-600" />
+                  ) : (
+                    <span>{index + 1}</span>
+                  )}
+                  {detailLabel(key)}
+                </li>
+              ))}
+            </ol>
+            {activeDetail?.startsWith('FLIGHT-') ? (
               <section className="grid gap-4 rounded-xl border p-4">
-                <h3 className="font-bold">انتخاب بلیت رفت</h3>
+                <h3 className="font-bold">
+                  انتخاب {detailLabel(activeDetail)}
+                </h3>
                 <FormField label="کلاس پرواز">
                   <select
                     className={fieldClass}
                     value={state.ticket.cabinClassCode}
+                    disabled={
+                      activeDetail === 'FLIGHT-RETURN' &&
+                      flightDirections.includes('OUTBOUND')
+                    }
                     onChange={(event) =>
                       patchState({
                         outboundOffer: undefined,
@@ -537,67 +697,66 @@ export function SalesContractForm() {
                     <option value="FIRST">فرست</option>
                   </select>
                 </FormField>
-                <TicketOfferPicker
-                  key={`out-${state.originId}-${state.destinationId}-${state.departureDate}-${state.ticket.cabinClassCode}`}
-                  query={{
-                    originId: state.originId,
-                    destinationId: state.destinationId,
-                    departureFrom: state.departureDate,
-                    departureTo: state.departureDate,
-                    cabinClassCode: state.ticket.cabinClassCode as
-                      'ECONOMY' | 'BUSINESS' | 'FIRST',
-                  }}
-                  selectedId={state.ticket.outboundOfferId}
-                  onSelect={(offer) =>
-                    patchState({
-                      outboundOffer: offer,
-                      returnOffer: undefined,
-                      ticket: {
-                        ...state.ticket,
-                        outboundOfferId: offer.id,
-                        outboundDepartureAt: offer.departureAt,
-                        outboundArrivalAt: offer.arrivalAt,
-                        outboundNumber: offer.serviceNumber,
-                        carrier: offer.carrierName,
-                        returnOfferId: '',
-                      },
-                    })
-                  }
-                />
-                {state.tripType === 'ROUND_TRIP' && state.outboundOffer ? (
+                {activeDetail === 'FLIGHT-OUTBOUND' ? (
+                  <TicketOfferPicker
+                    key={`out-${state.originId}-${state.destinationId}-${state.departureDate}-${state.ticket.cabinClassCode}`}
+                    query={{
+                      originId: state.originId,
+                      destinationId: state.destinationId,
+                      departureFrom: state.departureDate,
+                      departureTo: state.departureDate,
+                      cabinClassCode: state.ticket.cabinClassCode as
+                        'ECONOMY' | 'BUSINESS' | 'FIRST',
+                    }}
+                    selectedId={state.ticket.outboundOfferId}
+                    onSelect={(offer) =>
+                      patchState({
+                        outboundOffer: offer,
+                        returnOffer: undefined,
+                        ticket: {
+                          ...state.ticket,
+                          outboundOfferId: offer.id,
+                          outboundDepartureAt: offer.departureAt,
+                          outboundArrivalAt: offer.arrivalAt,
+                          outboundNumber: offer.serviceNumber,
+                          carrier: offer.carrierName,
+                          returnOfferId: '',
+                        },
+                      })
+                    }
+                  />
+                ) : null}
+                {activeDetail === 'FLIGHT-RETURN' &&
+                (!flightDirections.includes('OUTBOUND') ||
+                  state.outboundOffer) ? (
                   <>
                     <h3 className="font-bold">انتخاب بلیت برگشت</h3>
                     <p className="text-sm text-muted-foreground">
-                      همه بلیت‌های مسیر برگشت از تاریخ زیر به بعد نمایش داده
-                      می‌شوند.
+                      همه بلیت‌های مقصد به مبدأ از تاریخ بلیت رفت به بعد نمایش
+                      داده می‌شوند؛ سقف تاریخ ندارند.
                     </p>
-                    <DatePicker
-                      value={state.returnDate || state.departureDate}
-                      onChange={(returnDate) =>
-                        patchState({
-                          returnDate,
-                          returnOffer: undefined,
-                          ticket: { ...state.ticket, returnOfferId: '' },
-                        })
-                      }
-                    />
                     <TicketOfferPicker
-                      key={`return-${state.outboundOffer.id}-${state.returnDate}-${state.ticket.cabinClassCode}`}
+                      key={`return-${state.outboundOffer?.id ?? state.departureDate}-${state.ticket.cabinClassCode}`}
                       query={{
                         originId: state.destinationId,
                         destinationId: state.originId,
-                        departureFrom:
-                          new Date(
-                            state.returnDate || state.departureDate,
-                          ).getTime() >
-                          new Date(state.outboundOffer.arrivalAt).getTime()
-                            ? state.returnDate
-                            : state.outboundOffer.arrivalAt,
+                        departureFrom: salesReturnSearchFrom(state),
                         cabinClassCode: state.ticket.cabinClassCode as
                           'ECONOMY' | 'BUSINESS' | 'FIRST',
                       }}
                       selectedId={state.ticket.returnOfferId}
-                      onSelect={(offer) =>
+                      onSelect={(offer) => {
+                        if (
+                          state.outboundOffer &&
+                          Date.parse(offer.departureAt) <
+                            Date.parse(state.outboundOffer.arrivalAt)
+                        ) {
+                          setError(
+                            'زمان حرکت برگشت باید پس از رسیدن بلیت رفت باشد.',
+                          );
+                          return;
+                        }
+                        setError('');
                         patchState({
                           returnOffer: offer,
                           ticket: {
@@ -607,14 +766,72 @@ export function SalesContractForm() {
                             returnArrivalAt: offer.arrivalAt,
                             returnNumber: offer.serviceNumber,
                           },
-                        })
-                      }
+                        });
+                      }}
                     />
                   </>
                 ) : null}
               </section>
             ) : null}
-            {state.serviceKinds.includes('HOTEL') ? (
+            {activeDetail?.startsWith('TRANSFER-') ? (
+              <section className="grid gap-4 rounded-2xl border border-border p-4">
+                <h3 className="font-bold">{detailLabel(activeDetail)}</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField label="تاریخ ترانسفر" required>
+                    <DatePicker
+                      value={serviceDetail.date ?? ''}
+                      onChange={(date) => patchServiceDetail({ date })}
+                    />
+                  </FormField>
+                  <FormField label="محل سوار شدن" required>
+                    <Input
+                      value={serviceDetail.pickup ?? ''}
+                      onChange={(event) =>
+                        patchServiceDetail({ pickup: event.target.value })
+                      }
+                      placeholder="فرودگاه، هتل یا نشانی"
+                    />
+                  </FormField>
+                  <FormField label="محل پیاده شدن" required>
+                    <Input
+                      value={serviceDetail.dropoff ?? ''}
+                      onChange={(event) =>
+                        patchServiceDetail({ dropoff: event.target.value })
+                      }
+                      placeholder="فرودگاه، هتل یا نشانی"
+                    />
+                  </FormField>
+                </div>
+                <FormField label="توضیحات ترانسفر">
+                  <Textarea
+                    value={serviceDetail.notes ?? ''}
+                    onChange={(event) =>
+                      patchServiceDetail({ notes: event.target.value })
+                    }
+                  />
+                </FormField>
+              </section>
+            ) : null}
+            {activeDetail &&
+            !activeDetail.startsWith('FLIGHT-') &&
+            !activeDetail.startsWith('TRANSFER-') &&
+            !['HOTEL', 'VISA'].includes(activeDetail) ? (
+              <section className="grid gap-4 rounded-2xl border border-border p-4">
+                <h3 className="font-bold">{detailLabel(activeDetail)}</h3>
+                <p className="text-sm text-muted-foreground">
+                  این خدمت برای مسافران قرارداد به رزرواسیون ارسال می‌شود.
+                </p>
+                <FormField label="توضیحات و نیازهای مشتری">
+                  <Textarea
+                    value={serviceDetail.notes ?? ''}
+                    onChange={(event) =>
+                      patchServiceDetail({ notes: event.target.value })
+                    }
+                  />
+                </FormField>
+              </section>
+            ) : null}
+            {activeDetail === 'HOTEL' ? (
               <section className="grid gap-4 rounded-xl border p-4">
                 <h3 className="font-bold">هتل مقصد</h3>
                 <Input
@@ -701,7 +918,7 @@ export function SalesContractForm() {
                 </div>
               </section>
             ) : null}
-            {state.serviceKinds.includes('VISA') ? (
+            {activeDetail === 'VISA' ? (
               <ReferenceSelect
                 label="خدمت ویزا"
                 value={state.visaReferenceId}
@@ -1077,14 +1294,35 @@ export function SalesContractForm() {
               <Card className="p-4">
                 <p className="text-xs text-muted-foreground">نوع و مسیر</p>
                 <p className="mt-1 font-bold">
-                  {state.tripType} · {state.originId} ← {state.destinationId}
+                  {
+                    references.countries.find(
+                      (item) => item.id === state.originCountryId,
+                    )?.name
+                  }{' '}
+                  /{' '}
+                  {
+                    references.cities.find((item) => item.id === state.originId)
+                      ?.name
+                  }{' '}
+                  ←{' '}
+                  {
+                    references.countries.find(
+                      (item) => item.id === state.destinationCountryId,
+                    )?.name
+                  }{' '}
+                  /{' '}
+                  {
+                    references.cities.find(
+                      (item) => item.id === state.destinationId,
+                    )?.name
+                  }
                 </p>
               </Card>
               <Card className="p-4">
                 <p className="text-xs text-muted-foreground">خدمات</p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {state.serviceKinds.map((kind) => (
-                    <Badge key={kind}>{kind}</Badge>
+                  {detailSteps.map((key) => (
+                    <Badge key={key}>{detailLabel(key)}</Badge>
                   ))}
                 </div>
               </Card>
@@ -1113,7 +1351,15 @@ export function SalesContractForm() {
           type="button"
           variant="outline"
           disabled={step === 0 || busy}
-          onClick={() => setStep((value) => value - 1)}
+          onClick={() => {
+            if (step === 1 && detailStep > 0)
+              setDetailStep((value) => value - 1);
+            else {
+              if (step === 2)
+                setDetailStep(Math.max(0, detailSteps.length - 1));
+              setStep((value) => value - 1);
+            }
+          }}
         >
           <ChevronRight className="size-4" />
           قبلی
@@ -1122,7 +1368,14 @@ export function SalesContractForm() {
           <Button
             type="button"
             disabled={!canContinue || busy}
-            onClick={() => setStep((value) => value + 1)}
+            onClick={() => {
+              if (step === 1 && detailStep < detailSteps.length - 1)
+                setDetailStep((value) => value + 1);
+              else {
+                if (step === 0) setDetailStep(0);
+                setStep((value) => value + 1);
+              }
+            }}
           >
             {step === 0 ? 'تأیید مسیر و خدمات' : 'بعدی'}
             <ChevronLeft className="size-4" />

@@ -1,8 +1,21 @@
 # SALES-CONTRACTS-001
 
-- Status: `IN_PROGRESS`
+- Status: `READY_FOR_REVIEW`
 
 ## Authorized continuation — 2026-09-05
+
+Latest follow-up supersedes the earlier activation gate and route UI limitations; historical verification below is retained.
+
+## Searchable route and independent directions — 2026-09-05
+
+- Added required country/city selectors for both ends, country-filtered cities, Persian/English search, rounded themed menus with keyboard selection, and reference-backed Iran/Tehran → Turkey/Antalya defaults. Existing drafts retain their route; unavailable reference records are not fabricated.
+- Flight outbound/return and transfer outbound/return are independent checkboxes. Trip type follows selected directions. Selected services get ordered detail substeps; transfer date/pickup/dropoff/notes persist in existing service metadata. Other optional services can carry customer notes.
+- Return search reverses the route and starts at the outbound ticket date (or travel date for a return-only booking), without an upper date bound. A chronological overlap with an outbound arrival is rejected. Return-only flights do not require a fabricated outbound ticket.
+- Sales v1 metadata.direction is OUTBOUND/RETURN for directional services. Distinct service keys flow through passenger assignments and the existing immutable Reservations snapshot. Legacy services without direction retain their original trip-type validation. No schema, migration, shared contract shape, dependency, Finance or permission changes in this follow-up.
+- Verification: 9 Web Sales tests; 26 API Sales tests including all 15 non-empty combinations; Web/API typecheck; Sales lint; Web/API production builds (35 routes). Local build includes unrelated concurrent changes, which are excluded from Sales commits. No authenticated visual browser QA claim.
+- Operational activation from the previous continuation completed after explicit user approval: four approved role-permission links added to local Rubi with IAM audit records; branch membership hashes unchanged and grants verified. This resolves the historical approval blocker below.
+
+## Earlier authorized runtime continuation
 
 - Owner explicitly approved Ticket Catalog persistence/public API and Reservations intake to support selectable offers and versioned Sales dispatch.
 - PC-A reserves Ticket Catalog/Reservations runtime, their versioned public contracts/root exports, additive Prisma migration, permission seed and module wiring under this task; existing Migration/Central Docs locks remain in force. No dependency changes.

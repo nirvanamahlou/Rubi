@@ -1,8 +1,11 @@
 import type {
+  MasterDataRecord,
   SalesContractCreateRequest,
   SalesPaymentInput,
   SalesPriceComponentInput,
   SalesServiceKind,
+  SalesServiceInput,
+  SalesTicketDirection,
   TicketOfferV1,
 } from '@rubi/contracts';
 
@@ -21,6 +24,15 @@ export interface SalesFormState {
   customerId: string;
   customerName: string;
   tripType: 'ONE_WAY' | 'ROUND_TRIP';
+  originCountryId: string;
+  destinationCountryId: string;
+  serviceDirections?: Partial<
+    Record<'FLIGHT' | 'TRANSFER', SalesTicketDirection[]>
+  >;
+  serviceDetails?: Record<
+    string,
+    { date?: string; pickup?: string; dropoff?: string; notes?: string }
+  >;
   originId: string;
   destinationId: string;
   departureDate: string;
@@ -64,6 +76,8 @@ export const emptySalesForm: SalesFormState = {
   customerId: '',
   customerName: '',
   tripType: 'ONE_WAY',
+  originCountryId: '',
+  destinationCountryId: '',
   originId: '',
   destinationId: '',
   departureDate: '',
@@ -129,75 +143,186 @@ export function salesPassengerAgeLabel(
   return age < 2 ? 'نوزاد' : age < 12 ? 'کودک' : 'بزرگسال';
 }
 
+export function salesDirections(
+  state: SalesFormState,
+  kind: 'FLIGHT' | 'TRANSFER',
+): SalesTicketDirection[] {
+  if (!state.serviceKinds.includes(kind)) return [];
+  const directions =
+    state.serviceDirections?.[kind] ??
+    (state.tripType === 'ROUND_TRIP' ? ['OUTBOUND', 'RETURN'] : ['OUTBOUND']);
+  return (['OUTBOUND', 'RETURN'] as const).filter((direction) =>
+    directions.includes(direction),
+  );
+}
+
+export function normalizeRouteSearch(value: string): string {
+  return value
+    .normalize('NFKC')
+    .replace(/ي/g, 'ی')
+    .replace(/ك/g, 'ک')
+    .replace(/[أإآ]/g, 'ا')
+    .trim()
+    .toLocaleLowerCase();
+}
+
+export function withSalesRouteDefaults(
+  state: SalesFormState,
+  countries: readonly MasterDataRecord[],
+  cities: readonly MasterDataRecord[],
+): SalesFormState {
+  const resolveSide = (
+    countryId: string,
+    cityId: string,
+    iso: string,
+    aliases: string[],
+  ) => {
+    const existingCity = cities.find((item) => item.id === cityId);
+    const country =
+      countries.find(
+        (item) => item.id === (countryId || existingCity?.attributes.countryId),
+      ) ??
+      (!countryId && !cityId
+        ? countries.find(
+            (item) => item.attributes.iso2Code === iso || item.code === iso,
+          )
+        : undefined);
+    const city =
+      existingCity ??
+      (!cityId && !countryId
+        ? cities.find(
+            (item) =>
+              item.attributes.countryId === country?.id &&
+              aliases.includes(normalizeRouteSearch(item.name)),
+          )
+        : undefined);
+    return { countryId: country?.id ?? countryId, cityId: city?.id ?? cityId };
+  };
+  const origin = resolveSide(state.originCountryId, state.originId, 'IR', [
+    'تهران',
+    'tehran',
+  ]);
+  const destination = resolveSide(
+    state.destinationCountryId,
+    state.destinationId,
+    'TR',
+    ['انتالیا', 'antalya'],
+  );
+  return {
+    ...state,
+    originCountryId: origin.countryId,
+    originId: origin.cityId,
+    destinationCountryId: destination.countryId,
+    destinationId: destination.cityId,
+  };
+}
+
+export function salesDetailSteps(state: SalesFormState): string[] {
+  return state.serviceKinds.flatMap((kind) =>
+    kind === 'FLIGHT' || kind === 'TRANSFER'
+      ? salesDirections(state, kind).map((direction) => `${kind}-${direction}`)
+      : [kind],
+  );
+}
+
+export function salesReturnSearchFrom(state: SalesFormState): string {
+  return state.outboundOffer?.departureAt.slice(0, 10) || state.departureDate;
+}
+
 export function salesPayload(
   state: SalesFormState,
 ): SalesContractCreateRequest {
   const utc = (value: string) => new Date(value).toISOString();
-  const services = state.serviceKinds.map((kind) => ({
-    clientKey: kind.toLowerCase(),
-    kind,
-    titleSnapshot:
-      (
-        {
-          FLIGHT: 'بلیت پرواز',
-          HOTEL: 'اقامت هتل',
-          VISA: 'خدمات ویزا',
-        } as Partial<Record<SalesServiceKind, string>>
-      )[kind] ?? kind,
-    ...(kind === 'VISA' && state.visaReferenceId
-      ? { referenceId: state.visaReferenceId }
-      : {}),
-  }));
-  const ticketSelections =
-    state.serviceKinds.includes('FLIGHT') && state.ticket.outboundOfferId
-      ? [
-          {
-            serviceClientKey: 'flight',
-            direction: 'OUTBOUND' as const,
-            offerId: state.ticket.outboundOfferId,
-            originId: state.originId,
-            destinationId: state.destinationId,
-            departureAt: utc(state.ticket.outboundDepartureAt),
-            arrivalAt: utc(state.ticket.outboundArrivalAt),
-            carrierNameSnapshot: state.ticket.carrier,
-            serviceNumberSnapshot: state.ticket.outboundNumber,
-            cabinClassCode: state.ticket.cabinClassCode,
-            ...(state.ticket.amount
-              ? {
-                  quotedPrice: {
-                    amount: state.ticket.amount,
-                    currencyCode: state.ticket.currencyCode,
-                  },
-                }
-              : {}),
-          },
-          ...(state.tripType === 'ROUND_TRIP'
-            ? [
-                {
-                  serviceClientKey: 'flight',
-                  direction: 'RETURN' as const,
-                  offerId: state.ticket.returnOfferId,
-                  originId: state.destinationId,
-                  destinationId: state.originId,
-                  departureAt: utc(state.ticket.returnDepartureAt),
-                  arrivalAt: utc(state.ticket.returnArrivalAt),
-                  carrierNameSnapshot:
-                    state.returnOffer?.carrierName ?? state.ticket.carrier,
-                  serviceNumberSnapshot: state.ticket.returnNumber,
-                  cabinClassCode: state.ticket.cabinClassCode,
-                  ...(state.ticket.amount
-                    ? {
-                        quotedPrice: {
-                          amount: state.ticket.amount,
-                          currencyCode: state.ticket.currencyCode,
-                        },
-                      }
-                    : {}),
-                },
-              ]
-            : []),
-        ]
-      : [];
+  const services: SalesServiceInput[] = state.serviceKinds.flatMap(
+    (kind): SalesServiceInput[] =>
+      kind === 'FLIGHT' || kind === 'TRANSFER'
+        ? salesDirections(state, kind).map((direction) => ({
+            clientKey: `${kind.toLowerCase()}-${direction.toLowerCase()}`,
+            kind,
+            titleSnapshot: `${kind === 'FLIGHT' ? 'بلیت' : 'ترانسفر'} ${direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}`,
+            metadata: {
+              ...state.serviceDetails?.[`${kind}-${direction}`],
+              direction,
+              originId:
+                direction === 'OUTBOUND' ? state.originId : state.destinationId,
+              destinationId:
+                direction === 'OUTBOUND' ? state.destinationId : state.originId,
+            },
+          }))
+        : [
+            {
+              clientKey: kind.toLowerCase(),
+              kind,
+              metadata: { ...state.serviceDetails?.[kind] },
+              titleSnapshot:
+                (
+                  {
+                    FLIGHT: 'بلیت پرواز',
+                    HOTEL: 'اقامت هتل',
+                    VISA: 'خدمات ویزا',
+                  } as Partial<Record<SalesServiceKind, string>>
+                )[kind] ?? kind,
+              ...(kind === 'VISA' && state.visaReferenceId
+                ? { referenceId: state.visaReferenceId }
+                : {}),
+            },
+          ],
+  );
+  const ticketSelections = state.serviceKinds.includes('FLIGHT')
+    ? [
+        ...(salesDirections(state, 'FLIGHT').includes('OUTBOUND') &&
+        state.ticket.outboundOfferId
+          ? [
+              {
+                serviceClientKey: 'flight-outbound',
+                direction: 'OUTBOUND' as const,
+                offerId: state.ticket.outboundOfferId,
+                originId: state.originId,
+                destinationId: state.destinationId,
+                departureAt: utc(state.ticket.outboundDepartureAt),
+                arrivalAt: utc(state.ticket.outboundArrivalAt),
+                carrierNameSnapshot: state.ticket.carrier,
+                serviceNumberSnapshot: state.ticket.outboundNumber,
+                cabinClassCode: state.ticket.cabinClassCode,
+                ...(state.ticket.amount
+                  ? {
+                      quotedPrice: {
+                        amount: state.ticket.amount,
+                        currencyCode: state.ticket.currencyCode,
+                      },
+                    }
+                  : {}),
+              },
+            ]
+          : []),
+        ...(salesDirections(state, 'FLIGHT').includes('RETURN') &&
+        state.ticket.returnOfferId
+          ? [
+              {
+                serviceClientKey: 'flight-return',
+                direction: 'RETURN' as const,
+                offerId: state.ticket.returnOfferId,
+                originId: state.destinationId,
+                destinationId: state.originId,
+                departureAt: utc(state.ticket.returnDepartureAt),
+                arrivalAt: utc(state.ticket.returnArrivalAt),
+                carrierNameSnapshot:
+                  state.returnOffer?.carrierName ?? state.ticket.carrier,
+                serviceNumberSnapshot: state.ticket.returnNumber,
+                cabinClassCode: state.ticket.cabinClassCode,
+                ...(state.ticket.amount
+                  ? {
+                      quotedPrice: {
+                        amount: state.ticket.amount,
+                        currencyCode: state.ticket.currencyCode,
+                      },
+                    }
+                  : {}),
+              },
+            ]
+          : []),
+      ]
+    : [];
   return {
     customerId: state.customerId,
     tripType: state.tripType,
@@ -205,9 +330,7 @@ export function salesPayload(
     destinationId: state.destinationId,
     departureDate: state.departureDate,
     returnNotBefore:
-      state.tripType === 'ROUND_TRIP'
-        ? state.returnDate || state.departureDate
-        : null,
+      state.tripType === 'ROUND_TRIP' ? salesReturnSearchFrom(state) : null,
     services,
     passengers: state.passengers.map((item) => ({
       customerId: item.customerId,
