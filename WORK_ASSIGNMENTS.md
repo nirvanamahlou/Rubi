@@ -1,5 +1,10 @@
 # Work Assignments
 
+## SALES-PEOPLE-REDESIGN-0905 — PC-A — COMPLETE_LOCAL
+
+- Reserve Sales people-step UI/search/person form/model/tests and Sales adapter/domain/service tests. Separate contract buyer from passenger selection, mutually exclusive search/create, compact results and clear selected state. Align national ID requiredness with Customers producer; validate passenger references via its public masked API on Sales writes/confirmation. No Customers internals, schema or shared contract changes; public push remains unapproved.
+- Validation: 69 Web Sales and 35 API Sales tests passed; scoped Web/API lint, both typechecks and both production builds passed. Web 3100 and API 4000 restarted. No real person creation, authenticated visual QA or migration claimed; locks remain held.
+
 ## SALES-TICKET-DATE-SIZE-0905 — PC-A — COMPLETE_LOCAL
 
 - Reserve Sales ticket-offer-card and its tests/docs only: increase departure/arrival date typography from 11px muted to 14–16px bold, full contrast and wrapping. No date logic, shared UI, API or schema changes. Local delivery; public push still awaiting approval.

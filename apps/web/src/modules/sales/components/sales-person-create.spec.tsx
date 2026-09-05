@@ -70,15 +70,15 @@ describe('combined sales people step', () => {
       ).passengers,
     ).toEqual([]);
   });
-  it('creates the requested roles with optional national ID omitted', () => {
+  it('creates requested roles and requires national ID for customers too', () => {
     expect(salesPersonInput(draft, 'customer').roles).toEqual(['customer']);
     expect(salesPersonInput(draft, 'passenger').roles).toEqual(['passenger']);
     expect(
       salesPersonInput({ ...draft, alsoPassenger: true }, 'customer').roles,
     ).toEqual(['customer', 'passenger']);
-    expect(
+    expect(() =>
       salesPersonInput({ ...draft, nationalId: '' }, 'customer'),
-    ).not.toHaveProperty('nationalId');
+    ).toThrow('۱۰ رقم');
   });
   it('requires a passenger birthdate and names before calling the API', async () => {
     const api = { create: vi.fn() };

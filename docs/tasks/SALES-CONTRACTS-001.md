@@ -1,5 +1,12 @@
 # SALES-CONTRACTS-001
 
+## People step redesign and producer validation — PC-A — 2026-09-05
+
+- Numbered buyer/passenger sections; person/legal/first-passenger buyer choice, compact selected buyer with explicit change, scoped search/create panels and bounded paginated results. A buyer-only selection no longer silently adds a passenger. Passenger IDs and English roles removed from presentation; birth dates and age remain explicit. Extra creation rows queue behind the current row, with add/remove controls and clear next-step blocking reason.
+- National ID is mandatory for every newly created person, matching Customers prepareMutation; masked references only in search results. Raw IDs are not persisted in Sales drafts. Existing duplicate names are not merged/deduplicated by name; Customers remains the identity owner.
+- SalesCustomersPublicAdapter checks active buyer and each passenger through CustomerService.maskedDetail with the authenticated actor, on create/update/confirm. Passenger must be active PERSON with passenger role; inaccessible records propagate the producer's denial. Domain rejects duplicate passenger IDs before persistence. No Customers private repository/table access, shared contract, schema, migration or permission changes.
+- Validation: 69 Sales Web + 35 Sales API tests, scoped lint, typechecks and production builds for both apps passed. Web 3100/API 4000 restarted. No authenticated visual/end-to-end creation QA or real person creation claimed. Public push remains awaiting approval; same Sales branch and existing locks retained.
+
 ## Organization customer selection — PC-A — 2026-09-05
 
 - Validation: 64 Sales tests, scoped lint, Web typecheck and production build (35 routes) passed. Rebuilt Web is running on 3100; API unchanged. Local commit only pending public-push approval.

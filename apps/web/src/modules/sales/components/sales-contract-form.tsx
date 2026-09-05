@@ -6,7 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
-  Search,
   Trash2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -26,13 +25,13 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import { Alert, Badge, Card } from '@/components/ui/surfaces';
-import { customersApi } from '@/modules/customers/api/client';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { salesApi } from '../api/client';
 import { TicketOfferPicker } from './ticket-offer-picker';
 import { SearchableReference } from './searchable-reference';
 import { FlightTicketPreview } from './flight-ticket-preview';
 import { SalesPersonCreate } from './sales-person-create';
+import { SalesPersonSearch } from './sales-person-search';
 import { SalesOrganizationCustomer } from './sales-organization-customer';
 import {
   FlightDateRangeFilter,
@@ -110,11 +109,14 @@ export function SalesContractForm() {
   });
   const [futureFrom, setFutureFrom] = useState(() => new Date().toISOString());
   const [state, setState] = useState<SalesFormState>(emptySalesForm);
-  const [customers, setCustomers] = useState<readonly CustomerSummary[]>([]);
-  const [customerSearch, setCustomerSearch] = useState('');
+  const [lookupPurpose, setLookupPurpose] = useState<
+    'customer' | 'passenger' | null
+  >(null);
   const [pendingPassengers, setPendingPassengers] = useState<number[]>([]);
   const nextPassengerKey = useRef(0);
   const addPassengerRow = () => {
+    setCreatePersonMode(null);
+    setLookupPurpose(null);
     const key = nextPassengerKey.current++;
     setPendingPassengers((current) => [...current, key]);
   };
@@ -251,42 +253,17 @@ export function SalesContractForm() {
     );
   }, [state]);
 
-  const lookupCustomers = async () => {
-    setBusy(true);
-    setError('');
-    try {
-      const response = await customersApi.list({
-        search: customerSearch,
-        kind: 'person',
-        status: 'active',
-        role: 'all',
-        branchId: 'all',
-        createdFrom: null,
-        createdTo: null,
-        updatedFrom: null,
-        updatedTo: null,
-        sortBy: 'displayName',
-        sortDirection: 'asc',
-        page: 1,
-        pageSize: 20,
-      });
-      setCustomers(response.data);
-    } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : 'جستجوی مشتری ناموفق بود.',
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
   const selectCustomer = (customer: CustomerSummary) => {
+    setLookupPurpose(null);
     setState((current) => ({
       ...current,
       ...selectSalesPerson(current, customer, true),
+      passengers: current.passengers,
       firstPassengerIsCustomer: false,
     }));
   };
   const addPassenger = (customer: CustomerSummary) => {
+    setLookupPurpose(null);
     if (
       !customer.roles.includes('passenger') ||
       state.passengers.some(({ customerId }) => customerId === customer.id)
@@ -514,41 +491,89 @@ export function SalesContractForm() {
       ) : null}
       <Card className="p-4 sm:p-5">
         {step === 2 ? (
-          <div className="grid gap-5">
-            <h2 className="text-xl font-black">انتخاب مشتری و مسافران</h2>
+          <section className="grid gap-4" aria-label="مشتری قرارداد">
+            <div>
+              <h2 className="text-lg font-black">۱. مشتری قرارداد</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                قرارداد به نام چه شخص یا سازمانی ثبت می‌شود؟
+              </p>
+            </div>
             <div
-              className="flex gap-2"
+              className="flex flex-wrap gap-2"
               role="group"
               aria-label="نوع مشتری قرارداد"
             >
-              {(['person', 'organization'] as const).map((kind) => (
-                <Button
-                  key={kind}
-                  type="button"
-                  disabled={busy}
-                  variant={
-                    (state.customerKind ?? 'person') === kind
-                      ? 'primary'
-                      : 'outline'
-                  }
-                  aria-pressed={(state.customerKind ?? 'person') === kind}
-                  onClick={() => {
-                    if ((state.customerKind ?? 'person') === kind) return;
-                    setCreatePersonMode(null);
-                    patchState({
-                      customerKind: kind,
-                      customerId: '',
-                      customerName: '',
-                      customerOrganizationId: '',
-                      firstPassengerIsCustomer: false,
-                    });
-                  }}
-                >
-                  {kind === 'person' ? 'مشتری حقیقی' : 'مشتری حقوقی / آژانس'}
-                </Button>
-              ))}
+              {(['person', 'organization', 'first-passenger'] as const).map(
+                (kind) => {
+                  const selected =
+                    kind === 'first-passenger'
+                      ? state.firstPassengerIsCustomer === true
+                      : !state.firstPassengerIsCustomer &&
+                        (state.customerKind ?? 'person') === kind;
+                  return (
+                    <Button
+                      key={kind}
+                      type="button"
+                      disabled={busy}
+                      variant={selected ? 'primary' : 'outline'}
+                      aria-pressed={selected}
+                      onClick={() => {
+                        if (selected) return;
+                        setCreatePersonMode(null);
+                        setLookupPurpose(null);
+                        patchState({
+                          customerKind:
+                            kind === 'organization' ? 'organization' : 'person',
+                          customerId: '',
+                          customerName: '',
+                          customerOrganizationId: '',
+                          firstPassengerIsCustomer: kind === 'first-passenger',
+                        });
+                      }}
+                    >
+                      {kind === 'person'
+                        ? 'شخص حقیقی'
+                        : kind === 'organization'
+                          ? 'حقوقی / آژانس'
+                          : 'همان مسافر اول'}
+                    </Button>
+                  );
+                },
+              )}
             </div>
-            {state.customerKind === 'organization' ? (
+            {state.customerId ? (
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
+                <div className="flex items-center gap-2">
+                  <Check className="size-5 text-emerald-600" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      مشتری انتخاب‌شده
+                    </p>
+                    <strong>{state.customerName}</strong>
+                  </div>
+                </div>
+                {!state.firstPassengerIsCustomer ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => {
+                      patchState({ customerId: '', customerName: '' });
+                      setLookupPurpose(null);
+                    }}
+                  >
+                    تغییر مشتری
+                  </Button>
+                ) : null}
+              </div>
+            ) : state.firstPassengerIsCustomer ? (
+              <p className="rounded-xl bg-primary/5 p-3 text-sm">
+                اولین مسافر را در بخش پایین اضافه کنید؛ همان شخص مشتری قرارداد
+                می‌شود.
+              </p>
+            ) : null}
+            {!state.customerId && state.customerKind === 'organization' ? (
               <SalesOrganizationCustomer
                 disabled={busy}
                 selectedOrganizationId={state.customerOrganizationId ?? ''}
@@ -568,124 +593,60 @@ export function SalesContractForm() {
                 }
               />
             ) : null}
-            <div className="flex flex-wrap gap-2">
-              {state.customerKind !== 'organization' ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() => setCreatePersonMode('customer')}
-                >
-                  <Plus className="size-4" />
-                  مشتری جدید
-                </Button>
-              ) : null}
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={busy}
-                onClick={addPassengerRow}
-              >
-                <Plus className="size-4" />
-                افزودن ردیف مسافر
-              </Button>
-            </div>
-            {createPersonMode ? (
-              <SalesPersonCreate
-                key={createPersonMode}
-                mode={createPersonMode}
-                saveDisabled={busy}
-                onBusyChange={setBusy}
-                onCancel={() => setCreatePersonMode(null)}
-                onCreated={(person, birthDate) => {
-                  setState((current) =>
-                    withFirstPassengerCustomer({
-                      ...current,
-                      ...selectSalesPerson(
-                        current,
-                        person,
-                        createPersonMode === 'customer',
-                        birthDate,
-                      ),
-                      firstPassengerIsCustomer: false,
-                    }),
-                  );
-                  setCustomers((current) => [
-                    person,
-                    ...current.filter((item) => item.id !== person.id),
-                  ]);
-                  setCreatePersonMode(null);
-                }}
-              />
-            ) : null}
-            <div className="flex gap-2">
-              <Input
-                value={customerSearch}
-                onChange={(event) => setCustomerSearch(event.target.value)}
-                placeholder="جست‌وجوی مشتری یا مسافر موجود"
-              />
-              <Button
-                type="button"
-                loading={busy}
-                onClick={() => void lookupCustomers()}
-              >
-                <Search className="size-4" />
-                جستجو
-              </Button>
-            </div>
-            {state.customerId ? (
-              <Alert
-                title={`مشتری انتخاب‌شده: ${state.customerName}`}
-                description={`${state.customerId} · ${state.passengers.length} مسافر`}
-              />
-            ) : null}
-            <div className="grid gap-2 md:grid-cols-2">
-              {customers.map((customer) => (
-                <div
-                  className="rounded-xl border border-border p-4"
-                  key={customer.id}
-                >
-                  <strong>{customer.displayName}</strong>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {customer.maskedPrimaryContact ?? 'بدون تماس قابل نمایش'} ·{' '}
-                    {customer.roles.join('، ')}
-                  </p>
-                  <div className="mt-3 flex gap-2">
-                    {state.customerKind !== 'organization' ? (
-                      <Button
-                        size="sm"
-                        type="button"
-                        onClick={() => selectCustomer(customer)}
-                      >
-                        {state.customerId === customer.id
-                          ? 'مشتری انتخاب‌شده'
-                          : 'انتخاب مشتری قرارداد'}
-                      </Button>
-                    ) : null}
-                    {customer.roles.includes('passenger') ? (
-                      <Button
-                        size="sm"
-                        type="button"
-                        variant="outline"
-                        disabled={state.passengers.some(
-                          (item) => item.customerId === customer.id,
-                        )}
-                        onClick={() => addPassenger(customer)}
-                      >
-                        {state.passengers.some(
-                          (item) => item.customerId === customer.id,
-                        )
-                          ? 'مسافر اضافه شده'
-                          : 'افزودن مسافر'}
-                      </Button>
-                    ) : null}
-                  </div>
+            {!state.customerId &&
+            state.customerKind !== 'organization' &&
+            !state.firstPassengerIsCustomer ? (
+              <>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={busy || pendingPassengers.length > 0}
+                    onClick={() => {
+                      setCreatePersonMode(null);
+                      setLookupPurpose('customer');
+                    }}
+                  >
+                    انتخاب مشتری موجود
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={busy || pendingPassengers.length > 0}
+                    onClick={() => {
+                      setLookupPurpose(null);
+                      setCreatePersonMode('customer');
+                    }}
+                  >
+                    <Plus className="size-4" /> ثبت مشتری جدید
+                  </Button>
                 </div>
-              ))}
-            </div>
-          </div>
+                {lookupPurpose === 'customer' ? (
+                  <SalesPersonSearch
+                    purpose="customer"
+                    selectedIds={[]}
+                    onCancel={() => setLookupPurpose(null)}
+                    onSelect={selectCustomer}
+                  />
+                ) : null}
+                {createPersonMode === 'customer' ? (
+                  <SalesPersonCreate
+                    mode="customer"
+                    saveDisabled={busy}
+                    onBusyChange={setBusy}
+                    onCancel={() => setCreatePersonMode(null)}
+                    onCreated={(person, birthDate) => {
+                      patchState({
+                        ...selectSalesPerson(state, person, true, birthDate),
+                        firstPassengerIsCustomer: false,
+                      });
+                      setCreatePersonMode(null);
+                    }}
+                  />
+                ) : null}
+              </>
+            ) : null}
+          </section>
         ) : null}
         {step === 0 ? (
           <div className="grid gap-5">
@@ -1132,71 +1093,99 @@ export function SalesContractForm() {
           </div>
         ) : null}
         {step === 2 ? (
-          <div className="mt-5 grid gap-5 border-t border-border pt-4">
-            <div>
-              <h2 className="text-xl font-black">مسافران و تخصیص خدمات</h2>
-              <p className="mt-2 text-sm font-bold">
-                تعداد مسافران:{' '}
-                {state.passengers.length + pendingPassengers.length} (
-                {state.passengers.length} ثبت‌شده، {pendingPassengers.length} در
-                حال ورود)
-              </p>
-              <p className="text-sm text-muted-foreground">
-                در این نسخه همه خدمات انتخاب‌شده به هر مسافر تخصیص می‌یابد.
-              </p>
+          <section
+            className="mt-6 grid gap-4 border-t border-border pt-5"
+            aria-label="مسافران قرارداد"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-black">۲. مسافران سفر</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {state.passengers.length} مسافر اضافه‌شده
+                  {pendingPassengers.length
+                    ? ` · ${pendingPassengers.length} ردیف در انتظار ثبت`
+                    : ''}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={
+                    busy ||
+                    pendingPassengers.length > 0 ||
+                    createPersonMode !== null
+                  }
+                  onClick={() => {
+                    setCreatePersonMode(null);
+                    setLookupPurpose('passenger');
+                  }}
+                >
+                  انتخاب مسافر موجود
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy || createPersonMode !== null}
+                  onClick={addPassengerRow}
+                >
+                  <Plus className="size-4" /> مسافر جدید
+                </Button>
+              </div>
             </div>
-            <label className="flex items-center gap-2 rounded-xl bg-primary/5 p-3 text-sm">
-              <input
-                type="checkbox"
-                className="size-4 accent-primary"
-                disabled={busy || state.customerKind === 'organization'}
-                checked={state.firstPassengerIsCustomer === true}
-                onChange={(event) =>
-                  patchState({
-                    firstPassengerIsCustomer: event.target.checked,
-                    ...(event.target.checked
-                      ? {}
-                      : { customerId: '', customerName: '' }),
-                  })
-                }
-              />
-              مسافر اول، مشتری قرارداد هم هست
-            </label>
             {!state.serviceKinds.includes('FLIGHT') &&
             !(state.serviceKinds.includes('HOTEL') && state.hotel.checkIn) ? (
-              <FormField label="تاریخ شروع خدمات (برای سن مسافر)" required>
+              <FormField label="تاریخ شروع سفر برای محاسبه سن" required>
                 <DatePicker
                   value={state.departureDate}
                   onChange={(departureDate) => patchState({ departureDate })}
                 />
               </FormField>
             ) : null}
-            <div className="grid gap-3">
+            {lookupPurpose === 'passenger' ? (
+              <SalesPersonSearch
+                purpose="passenger"
+                selectedIds={state.passengers.map(
+                  (person) => person.customerId,
+                )}
+                onCancel={() => setLookupPurpose(null)}
+                onSelect={addPassenger}
+              />
+            ) : null}
+            {!state.passengers.length &&
+            !pendingPassengers.length &&
+            lookupPurpose !== 'passenger' ? (
+              <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
+                هنوز مسافری اضافه نشده است. از یکی از دو دکمه بالا استفاده کنید.
+              </p>
+            ) : null}
+            <div className="grid gap-2">
               {state.passengers.map((passenger, index) => (
                 <div
-                  className="grid gap-3 rounded-xl border p-4 md:grid-cols-[1fr_220px_auto]"
-                  key={`${passenger.customerId}-${index}`}
+                  className="grid items-center gap-3 rounded-xl border p-3 sm:grid-cols-[1fr_220px_auto]"
+                  key={passenger.customerId}
                 >
                   <div>
-                    <strong>
-                      مسافر {index + 1}: {passenger.displayName}
+                    <p className="text-xs text-muted-foreground">
+                      مسافر {index + 1}
+                    </p>
+                    <strong className="break-words">
+                      {passenger.displayName}
                     </strong>
-                    {index === 0 && state.firstPassengerIsCustomer ? (
-                      <Badge>مشتری قرارداد</Badge>
-                    ) : null}
-                    <p className="text-sm text-primary">
+                    <p className="mt-1 text-sm text-primary">
                       {salesPassengerAgeLabel(
                         passenger.birthDate,
                         salesTravelDate(state),
                       )}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {passenger.customerId}
-                    </p>
+                    {state.customerId === passenger.customerId ? (
+                      <Badge>مشتری قرارداد</Badge>
+                    ) : null}
                   </div>
-                  <FormField label="تاریخ تولد" required>
+                  <FormField label="تاریخ تولد مسافر" required>
                     <DatePicker
                       value={passenger.birthDate}
+                      disabled={busy}
                       onChange={(birthDate) =>
                         patchState({
                           passengers: state.passengers.map((item, position) =>
@@ -1207,11 +1196,10 @@ export function SalesContractForm() {
                     />
                   </FormField>
                   <Button
-                    aria-label="حذف مسافر"
-                    disabled={busy}
-                    size="icon"
                     type="button"
                     variant="ghost"
+                    disabled={busy}
+                    aria-label={`حذف مسافر ${index + 1}`}
                     onClick={() =>
                       patchState({
                         passengers: state.passengers.filter(
@@ -1220,55 +1208,84 @@ export function SalesContractForm() {
                       })
                     }
                   >
-                    <Trash2 className="size-4" />
+                    <Trash2 className="size-4" /> حذف
                   </Button>
                 </div>
               ))}
             </div>
-            {pendingPassengers.map((key, index) => (
-              <SalesPersonCreate
-                key={key}
-                title={`مسافر ${state.passengers.length + index + 1}`}
-                mode="passenger"
-                alsoCustomer={
-                  state.firstPassengerIsCustomer === true &&
-                  state.passengers.length === 0 &&
-                  index === 0
-                }
-                saveDisabled={busy || index > 0}
-                onBusyChange={setBusy}
-                onCancel={() =>
-                  setPendingPassengers((current) =>
-                    current.filter((item) => item !== key),
-                  )
-                }
-                onCreated={(person, birthDate) => {
-                  setState((current) =>
-                    withFirstPassengerCustomer({
-                      ...current,
-                      ...selectSalesPerson(current, person, false, birthDate),
-                    }),
-                  );
-                  setPendingPassengers((current) =>
-                    current.filter((item) => item !== key),
-                  );
-                }}
-              />
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              className="justify-self-start"
-              disabled={busy}
-              onClick={addPassengerRow}
-            >
-              <Plus className="size-4" /> افزودن مسافر دیگر
-            </Button>
-            <Alert
-              title="افزودن مسافر دیگر"
-              description="به تعداد لازم ردیف اضافه کنید؛ اطلاعات هر مسافر و کد ملی ۱۰رقمی او را وارد و ردیف‌ها را به ترتیب ثبت کنید. حذف ردیف فقط او را از قرارداد کنار می‌گذارد و پرونده مشتری را پاک نمی‌کند. برای مسافر موجود، از جست‌وجوی بالای صفحه استفاده کنید."
-            />
-          </div>
+            {pendingPassengers.map((key, index) =>
+              index === 0 ? (
+                <SalesPersonCreate
+                  key={key}
+                  title={`ثبت مسافر ${state.passengers.length + 1}`}
+                  mode="passenger"
+                  alsoCustomer={
+                    state.firstPassengerIsCustomer === true &&
+                    state.passengers.length === 0
+                  }
+                  saveDisabled={busy}
+                  onBusyChange={setBusy}
+                  onCancel={() =>
+                    setPendingPassengers((current) =>
+                      current.filter((item) => item !== key),
+                    )
+                  }
+                  onCreated={(person, birthDate) => {
+                    setState((current) =>
+                      withFirstPassengerCustomer({
+                        ...current,
+                        ...selectSalesPerson(current, person, false, birthDate),
+                      }),
+                    );
+                    setPendingPassengers((current) =>
+                      current.filter((item) => item !== key),
+                    );
+                  }}
+                />
+              ) : (
+                <div
+                  key={key}
+                  className="flex items-center justify-between rounded-xl border border-dashed px-3 py-2 text-sm"
+                >
+                  <span>
+                    مسافر {state.passengers.length + index + 1} · بعد از ثبت
+                    ردیف قبل
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={busy}
+                    onClick={() =>
+                      setPendingPassengers((current) =>
+                        current.filter((item) => item !== key),
+                      )
+                    }
+                  >
+                    حذف ردیف
+                  </Button>
+                </div>
+              ),
+            )}
+            <p className="text-xs text-muted-foreground">
+              حذف مسافر فقط از همین قرارداد است؛ پرونده او در مشتریان باقی
+              می‌ماند.
+            </p>
+            {!canContinue ? (
+              <p
+                role="status"
+                className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900"
+              >
+                {!state.customerId
+                  ? 'مشتری قرارداد را مشخص کنید.'
+                  : !state.passengers.length
+                    ? 'حداقل یک مسافر اضافه کنید.'
+                    : pendingPassengers.length || createPersonMode
+                      ? 'ردیف باز را ثبت یا لغو کنید.'
+                      : 'تاریخ تولد مسافران و تاریخ سفر را کامل کنید.'}
+              </p>
+            ) : null}
+          </section>
         ) : null}
         {step === 3 ? (
           <div className="grid gap-6">

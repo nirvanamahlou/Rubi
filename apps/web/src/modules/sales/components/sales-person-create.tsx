@@ -31,7 +31,7 @@ export function salesPersonInput(
     .trim()
     .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
     .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
-  if ((passenger || nationalId) && !/^\d{10}$/.test(nationalId))
+  if (!/^\d{10}$/.test(nationalId))
     throw new Error('کد ملی باید دقیقاً ۱۰ رقم باشد.');
   return {
     kind: 'person',
@@ -152,12 +152,9 @@ export function SalesPersonCreate({
             onChange={(birthDate) => setDraft({ ...draft, birthDate })}
           />
         </FormField>
-        <FormField
-          label={passenger ? 'کد ملی ۱۰رقمی' : 'کد ملی (اختیاری)'}
-          required={passenger}
-        >
+        <FormField label="کد ملی ۱۰رقمی" required>
           <Input
-            aria-label={passenger ? 'کد ملی ۱۰رقمی' : 'کد ملی (اختیاری)'}
+            aria-label="کد ملی ۱۰رقمی"
             dir="ltr"
             autoComplete="off"
             disabled={busy}
