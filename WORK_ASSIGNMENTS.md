@@ -2,6 +2,8 @@
 
 ## SALES-CONTRACTS-001 — PC-A — READY_FOR_REVIEW
 
+- Flight UX/output follow-up: PC-A reserves Sales form/model/print-template/tests and docs. Combine flight directions in one detail step; business is output-only service metadata, not an inventory/cabin override. Add four explicitly synthetic Tehran/Antalya offers through Ticket public service on existing HQ branch, without IAM mutations. Printable output is a clearly labelled draft until Reservations supplies real issuance identifiers; no fabricated PNR/e-ticket or Finance release.
+
 - Current follow-up: PC-A reserves Ticket Catalog workspace mount/test and task docs to remove only the scheduled-offer publication panel while retaining Repeat Ticket. Existing published offers/API remain intact. Authorized Turkey/Antalya local reference maintenance runs through the owner service with explicit offline audit attribution; no IAM grants/sessions or direct private-table writes.
 
 - Current follow-up (PC-A): reserve Sales form/model/tests and task docs for parent service selection (both directions initially selected, then expandable independent choices) and a persistent dashboard return link. Turkey/Antalya reference creation is authorized through the existing Master Data public interface only; no private table writes or Master Data code ownership transfer.

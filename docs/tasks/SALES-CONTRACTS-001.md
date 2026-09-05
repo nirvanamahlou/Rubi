@@ -2,6 +2,15 @@
 
 - Status: `READY_FOR_REVIEW`
 
+## Combined flight selection, synthetic offers and output template
+
+- Flight details are one step, with outbound and return columns on desktop (stacked within the same step on narrow screens). Selecting outbound reveals return options in the adjacent column; both required choices must be completed before continuing. Return-only remains supported.
+- The business checkbox persists `businessOutput` in each selected Flight service's existing metadata. It affects only the output label; inventory queries do not filter by that checkbox, and ticket snapshots retain each authoritative offer's real cabinClassCode for revalidation. No actual fare/class upgrade is implied.
+- Added a print-preview template based on the supplied Flight ticket.png layout: navy/teal header, existing Niyayesh brand asset, identity/passenger fields, itinerary table, fare/payment and notice sections, with optional BUSINESS label. Available during review and after creation, per selected passenger. Printing uses a separate body portal to omit CRM navigation/form content.
+- This is explicitly DRAFT / NOT VALID FOR TRAVEL. No source-image passenger, sample e-ticket number, PNR, airline logo, baggage allowance, airport code or payment/issuance confirmation is fabricated. Current Sales offers expose cities/times, not official airport/issuance data; those remain placeholders or labelled cities. Actual issuance/document release remains owned by Reservations/Finance/Documents. Visual browser/physical print QA has not been performed.
+- User-authorized local synthetic offers published through TicketPublicService on existing HQ, with offline audit attribution and no IAM changes: TEST-AYT-01/02 outbound Tehran → Antalya on 2026-09-10 at 07:00/12:00 UTC; TEST-AYT-03/04 return on 2026-09-17 08:00 and 2026-09-20 09:00 UTC. Each capacity 20, duration three hours, TEST AIRLINE, ECONOMY. No traveler, real booking or Finance confirmation created. Stable publication keys replay to the same four IDs; all four verified through public search.
+- Sales Web tests: 15 passed; scoped lint, Web typecheck and final production build (35 routes), including print isolation, passed. No schema/migration/dependency changes. Unrelated concurrent Customers/Documents/Prisma changes excluded from task commits.
+
 ## Turkey/Antalya maintenance and ticket panel removal — 2026-09-05
 
 - Resolved the earlier reference-data blocker using an offline Nest context for the owner Master Data service, following the module's existing local-maintenance attribution pattern. Only the explicitly named local Rubi database was permitted. No HTTP auth weakening, IAM user/session/branch/permission creation, direct private-table queries or repository imports were used by the maintenance caller.

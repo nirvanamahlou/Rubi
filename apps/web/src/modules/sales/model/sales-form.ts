@@ -19,6 +19,7 @@ export const salesSteps = [
 ] as const;
 
 export interface SalesFormState {
+  businessOutput?: boolean;
   outboundOffer?: TicketOfferV1 | undefined;
   returnOffer?: TicketOfferV1 | undefined;
   customerId: string;
@@ -219,9 +220,13 @@ export function withSalesRouteDefaults(
 
 export function salesDetailSteps(state: SalesFormState): string[] {
   return state.serviceKinds.flatMap((kind) =>
-    kind === 'FLIGHT' || kind === 'TRANSFER'
-      ? salesDirections(state, kind).map((direction) => `${kind}-${direction}`)
-      : [kind],
+    kind === 'FLIGHT'
+      ? ['FLIGHT']
+      : kind === 'TRANSFER'
+        ? salesDirections(state, kind).map(
+            (direction) => `${kind}-${direction}`,
+          )
+        : [kind],
   );
 }
 
@@ -271,6 +276,9 @@ export function salesPayload(
             kind,
             titleSnapshot: `${kind === 'FLIGHT' ? 'بلیت' : 'ترانسفر'} ${direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}`,
             metadata: {
+              ...(kind === 'FLIGHT'
+                ? { businessOutput: state.businessOutput === true }
+                : {}),
               ...state.serviceDetails?.[`${kind}-${direction}`],
               direction,
               originId:
@@ -313,7 +321,9 @@ export function salesPayload(
                 arrivalAt: utc(state.ticket.outboundArrivalAt),
                 carrierNameSnapshot: state.ticket.carrier,
                 serviceNumberSnapshot: state.ticket.outboundNumber,
-                cabinClassCode: state.ticket.cabinClassCode,
+                cabinClassCode:
+                  state.outboundOffer?.cabinClassCode ??
+                  state.ticket.cabinClassCode,
                 ...(state.ticket.amount
                   ? {
                       quotedPrice: {
@@ -339,7 +349,9 @@ export function salesPayload(
                 carrierNameSnapshot:
                   state.returnOffer?.carrierName ?? state.ticket.carrier,
                 serviceNumberSnapshot: state.ticket.returnNumber,
-                cabinClassCode: state.ticket.cabinClassCode,
+                cabinClassCode:
+                  state.returnOffer?.cabinClassCode ??
+                  state.ticket.cabinClassCode,
                 ...(state.ticket.amount
                   ? {
                       quotedPrice: {

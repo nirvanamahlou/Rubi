@@ -15,6 +15,25 @@ import {
 } from './sales-form';
 
 describe('sales contract form payload', () => {
+  it('stores business as output metadata without changing selected inventory cabin', () => {
+    const state = {
+      ...emptySalesForm,
+      businessOutput: true,
+      serviceKinds: ['FLIGHT' as const],
+      ticket: {
+        ...emptySalesForm.ticket,
+        outboundOfferId: 'offer',
+        outboundDepartureAt: '2026-09-10T07:00:00Z',
+        outboundArrivalAt: '2026-09-10T10:00:00Z',
+      },
+    };
+    const payload = salesPayload(state);
+    expect(payload.services[0]?.metadata?.businessOutput).toBe(true);
+    expect(payload.ticketSelections?.[0]?.cabinClassCode).toBe('ECONOMY');
+    expect(salesDetailSteps({ ...state, tripType: 'ROUND_TRIP' })).toEqual([
+      'FLIGHT',
+    ]);
+  });
   it.each(['FLIGHT', 'TRANSFER'] as const)(
     'selects both directions when enabling %s and clears them when disabling it',
     (kind) => {
@@ -159,10 +178,7 @@ describe('sales contract form payload', () => {
       'flight-outbound',
       'transfer-return',
     ]);
-    expect(salesDetailSteps(input)).toEqual([
-      'FLIGHT-OUTBOUND',
-      'TRANSFER-RETURN',
-    ]);
+    expect(salesDetailSteps(input)).toEqual(['FLIGHT', 'TRANSFER-RETURN']);
   });
   it('supports a return-only flight without an outbound offer', () => {
     const input = {
@@ -202,7 +218,7 @@ describe('sales contract form payload', () => {
         tripType: 'ROUND_TRIP',
         serviceKinds: ['FLIGHT', 'VISA'],
       }),
-    ).toEqual(['FLIGHT-OUTBOUND', 'FLIGHT-RETURN', 'VISA']);
+    ).toEqual(['FLIGHT', 'VISA']);
     expect(
       salesDetailSteps({ ...emptySalesForm, serviceKinds: ['HOTEL'] }),
     ).toEqual(['HOTEL']);
