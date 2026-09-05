@@ -22,6 +22,30 @@ const offer: TicketOfferV1 = {
   status: 'ACTIVE',
 };
 describe('readable sales ticket card', () => {
+  it.each([true, false])(
+    'shows both dates larger, bold and full-contrast (selected=%s)',
+    (selected) => {
+      const html = renderToStaticMarkup(
+        <TicketOfferCard
+          offer={offer}
+          selected={selected}
+          onSelect={vi.fn()}
+        />,
+      );
+      const dates = html.match(/<time[^>]*>/g) ?? [];
+      expect(dates).toHaveLength(2);
+      for (const date of dates) {
+        expect(date).toContain(
+          'text-sm font-bold leading-relaxed sm:text-base',
+        );
+        expect(date).toContain('break-words');
+        expect(date).not.toContain('opacity');
+        expect(date).not.toContain('truncate');
+      }
+      expect(dates[0]).toContain(offer.departureAt);
+      expect(dates[1]).toContain(offer.arrivalAt);
+    },
+  );
   it('separates departure and arrival with the actual route and selected state', () => {
     const html = renderToStaticMarkup(
       <TicketOfferCard

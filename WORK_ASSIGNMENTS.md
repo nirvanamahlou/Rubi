@@ -1,5 +1,10 @@
 # Work Assignments
 
+## SALES-TICKET-DATE-SIZE-0905 — PC-A — COMPLETE_LOCAL
+
+- Reserve Sales ticket-offer-card and its tests/docs only: increase departure/arrival date typography from 11px muted to 14–16px bold, full contrast and wrapping. No date logic, shared UI, API or schema changes. Local delivery; public push still awaiting approval.
+- 66 Sales tests, scoped lint, Web typecheck and production build passed. Updated Web 3100; no authenticated visual QA claimed.
+
 ## SALES-ORGANIZATION-CUSTOMER-0905 — PC-A — COMPLETE_LOCAL
 
 - Reserve Sales Web organization selector/form/model/tests and task docs. Consume existing Customers organization kind and stable MasterOrganization references through their public APIs only. Reuse accessible existing legal customers or explicitly register a customer profile linked to an existing organization; never create another organization. Passengers remain separate; no schema/API/permission/root-export changes. Public push remains awaiting explicit approval.

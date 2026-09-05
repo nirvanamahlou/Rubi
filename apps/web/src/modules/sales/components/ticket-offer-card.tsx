@@ -101,9 +101,12 @@ export function TicketOfferCard({
           <span className="block truncate text-sm font-bold">
             {originLabel}
           </span>
-          <span className="mt-1 block text-[11px] opacity-80">
+          <time
+            dateTime={offer.departureAt}
+            className="mt-2 block break-words text-sm font-bold leading-relaxed sm:text-base"
+          >
             {departure.date}
-          </span>
+          </time>
         </span>
         <span className="grid justify-items-center gap-2 text-center">
           <span className="text-[10px] opacity-80">
@@ -126,9 +129,12 @@ export function TicketOfferCard({
           <span className="block truncate text-sm font-bold">
             {destinationLabel}
           </span>
-          <span className="mt-1 block text-[11px] opacity-80">
+          <time
+            dateTime={offer.arrivalAt}
+            className="mt-2 block break-words text-sm font-bold leading-relaxed sm:text-base"
+          >
             {arrival.date}
-          </span>
+          </time>
         </span>
       </span>
       <span
