@@ -16,6 +16,9 @@ export function customerDraft(
     ...(!customer?.birthDateMasked
       ? { birthDate: customer?.birthDate ?? null }
       : {}),
+    ...(customer?.passportNumber
+      ? { passportNumber: customer.passportNumber }
+      : {}),
     roles: customer?.roles ?? ['customer'],
     acquaintanceMethodId: customer?.acquaintanceMethodId ?? null,
     ...(customer ? { version: customer.version } : {}),

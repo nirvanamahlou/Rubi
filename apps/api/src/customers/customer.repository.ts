@@ -40,6 +40,11 @@ export interface CustomerRow {
   nationalIdAuthTag: string | null;
   nationalIdKeyVersion: number | null;
   nationalIdMasked: string | null;
+  passportNumberEncrypted?: string | null;
+  passportNumberIv?: string | null;
+  passportNumberAuthTag?: string | null;
+  passportNumberKeyVersion?: number | null;
+  passportNumberMasked?: string | null;
   isActive: boolean;
   isCustomer: boolean;
   isPassenger: boolean;
@@ -160,6 +165,7 @@ export function toCustomerSummary(row: CustomerRow): CustomerSummary {
     ],
     maskedPrimaryContact: primary?.maskedValue ?? null,
     maskedNationalId: row.nationalIdMasked ?? null,
+    maskedPassportNumber: row.passportNumberMasked ?? null,
     currentConsentStatus: latestConsent
       ? (lower(latestConsent.status) as 'granted' | 'revoked')
       : 'not-recorded',
@@ -185,6 +191,7 @@ export function toCustomerDetail(
         : null,
     birthDateMasked: Boolean(row.birthDate) && !sensitive,
     nationalId: null,
+    passportNumber: null,
     acquaintanceMethodId: row.acquaintanceMethodId,
     contacts: (row.contacts ?? []).map((contact) => ({
       id: contact.id,

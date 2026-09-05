@@ -56,6 +56,15 @@ function createService(
       nationalIdMasked: '******7891',
     }),
     decrypt: vi.fn().mockReturnValue('1234567891'),
+    protectPassportNumber: vi.fn().mockReturnValue({
+      passportNumberEncrypted: 'encrypted-passport-number',
+      passportNumberIv: 'passport-iv-val',
+      passportNumberAuthTag: 'passport-auth-tag-val',
+      passportNumberKeyVersion: 1,
+      passportNumberFingerprint: 'p'.repeat(64),
+      passportNumberMasked: 'A*******78',
+    }),
+    decryptPassportNumber: vi.fn().mockReturnValue(null),
   } as unknown as CustomerNationalIdProtector;
   return {
     service: new CustomerService(
@@ -73,6 +82,7 @@ const mutation: CustomerMutationRequest = {
   lastName: 'آزمایشی',
   displayName: 'مشتری ساختگی',
   nationalId: '1234567891',
+  birthDate: '1990-01-01',
   roles: ['customer', 'passenger'],
 };
 
@@ -112,6 +122,7 @@ describe('CustomerService', () => {
     const { service, nationalIdProtector } = createService(repository);
     const edit = { ...mutation, version: 1 };
     delete edit.nationalId;
+    delete edit.birthDate;
     await service.update(row.id, edit, actor);
     const data = vi.mocked(repository.update).mock.calls[0]?.[2];
     expect(data).not.toHaveProperty('birthDate');

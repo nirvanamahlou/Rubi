@@ -1,5 +1,9 @@
 # Work Assignments
 
+## CUSTOMERS-PRESERVATION-0905 — PC-A — RECOVERY_ONLY
+
+- Authorized isolation of 27 foreign Sales-worktree files onto codex/pc-a-customer-passport-preservation-0905; exact snapshot, not feature completion. See docs/tasks/CUSTOMERS-PRESERVATION-0905.md and byte manifest. No schema redesign, migration application, lock transfer, new PR or modification of active owner branches.
+
 ## SALES-CONTRACTS-001-HOTEL-DETAILS — PC-A — SALES_COMPLETE / RESERVATIONS_BLOCKED
 
 - Reserve Sales Web form/model/tests and this task's documentation on codex/pc-a-sales-contracts / PR #90: combined flight/hotel details, destination hotel search, editable flight-derived hotel dates. No shared UI, API, schema, migration or unrelated local changes.

@@ -1876,6 +1876,12 @@ model Customer {
   nationalIdKeyVersion  Int?
   nationalIdFingerprint String?                      @unique @db.Char(64)
   nationalIdMasked      String?                      @db.VarChar(16)
+  passportNumberEncrypted   String?                  @db.Text
+  passportNumberIv          String?                  @db.Char(16)
+  passportNumberAuthTag     String?                  @db.Char(24)
+  passportNumberKeyVersion  Int?
+  passportNumberFingerprint String?                  @unique @db.Char(64)
+  passportNumberMasked      String?                  @db.VarChar(24)
   isActive              Boolean                      @default(true)
   isCustomer            Boolean                      @default(true)
   isPassenger           Boolean                      @default(false)

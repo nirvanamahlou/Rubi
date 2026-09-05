@@ -12,9 +12,13 @@ import {
 const source = readFileSync(
   new URL('./customer-workspace.tsx', import.meta.url),
   'utf8',
-);
+).replace(/\r\n/g, '\n');
 const dateFieldSource = readFileSync(
   new URL('./customer-date-field.tsx', import.meta.url),
+  'utf8',
+);
+const customerDocumentsPanelSource = readFileSync(
+  new URL('./customer-documents-panel.tsx', import.meta.url),
   'utf8',
 );
 
@@ -179,25 +183,31 @@ describe('Customer Operations workspace boundaries', () => {
   });
 
   it('uses public master-data APIs and keeps Legal Entity out of customer scope', () => {
-    expect(source).toContain(
-      "import { masterDataApi } from '@/modules/master-data/api/client'",
-    );
+    expect(source).toContain("from '@/modules/master-data/api/client'");
+    expect(source).toContain('masterDataApi.list(resource');
     expect(source).toContain("listMasterData('organizations')");
     expect(source).toContain("listMasterData('acquaintance-methods')");
     expect(source).toContain("listMasterData('cities')");
+    expect(source).toContain('error instanceof MasterDataApiError');
+    expect(source).toContain('error.status === 401');
+    expect(source).toContain('refreshAuthenticatedSession(apiBaseUrl)');
+    expect(source).toContain('return listMasterData(resource, true)');
     expect(source).not.toMatch(
       /legalEntityId|issuerContext|selectedLegalEntity/,
     );
   });
 
-  it('requires an allowlisted reason before sensitive reveal', () => {
-    expect(source).toContain("'customer-verification'");
-    expect(source).toContain("'support-request'");
-    expect(source).toContain("'data-correction'");
+  it('uses the fixed support-request reason for every audited sensitive reveal', () => {
     expect(source).toContain(
-      'customersApi.detail(customer.id, sensitiveReason)',
+      "const CUSTOMER_SUPPORT_REQUEST_REASON = 'support-request'",
     );
-    expect(source).toContain('disabled={busy || !sensitiveReason}');
+    expect(source).toContain(
+      'customer.id,\n        CUSTOMER_SUPPORT_REQUEST_REASON',
+    );
+    expect(source).not.toContain("'customer-verification'");
+    expect(source).not.toContain("'data-correction'");
+    expect(source).not.toContain('sensitiveReason');
+    expect(source).not.toContain('دلیل مشاهده شماره تماس');
   });
 
   it('uses real customer timelines without crossing module boundaries or enabling merge', () => {
@@ -222,9 +232,9 @@ describe('Customer Operations workspace boundaries', () => {
   it('reveals national ID only through the audited sensitive flow', () => {
     expect(source).toContain('revealedDetail?.nationalId');
     expect(source).toContain('customer.maskedNationalId');
-    expect(source).toContain('دلیل نمایش کد ملی');
+    expect(source).toContain('دلیل ثبت‌شده در Audit: درخواست پشتیبانی');
     expect(source).toContain('نمایش کد ملی');
-    expect(source).toContain('disabled={busy || !sensitiveReason}');
+    expect(source).toContain('disabled={busy}');
   });
 
   it('provides secure filters and a UUID-only customer deep link', () => {
@@ -262,10 +272,12 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain(
       'organizationId: companion.organizationId || null',
     );
-    expect(source).toContain('اطلاعات ۳۶۰ مسافر (اختیاری)');
-    expect(source).toContain('<details className=');
-    expect(source).toContain('<summary className=');
-    expect(source).toContain('تاریخ تولد، تماس، ایمیل، شرکت و مدارک سفر');
+    expect(source).toContain('اطلاعات ۳۶۰ مسافر');
+    expect(source).not.toContain('<details className=');
+    expect(source).not.toContain('<summary className=');
+    expect(source).toContain('تاریخ تولد (اجباری)');
+    expect(source).toContain('شماره پاسپورت');
+    expect(source).toContain('تصویر یا فایل مدرک (اختیاری)');
     expect(source).toContain('companion-${companion.key}-email');
     expect(source).toContain('value: companion.email.trim().toLowerCase()');
     expect(source).toContain('مدارک سفر مسافر');
@@ -312,28 +324,22 @@ describe('Customer Operations workspace boundaries', () => {
       source.indexOf('async function exportFilteredCustomers'),
       source.indexOf('async function importCustomers'),
     );
-    expect(exportSource).toContain("record.maskedNationalId ?? 'ثبت نشده'");
-    expect(exportSource).toContain('کد ملی (ماسک‌شده)');
+    expect(exportSource).toContain(
+      "nationalId: detail.nationalId?.trim() || 'ثبت نشده'",
+    );
+    expect(exportSource).toContain("'کد ملی'");
+    expect(exportSource).not.toContain('maskedNationalId');
     expect(exportSource).not.toContain('شماره تماس (ماسک‌شده)');
     expect(source).not.toContain('خروجی Excel (ماسک‌شده)');
-    expect(exportSource).toContain(
-      'await customersApi.detail(record.id, exportReason)',
-    );
+    expect(exportSource).toContain('CUSTOMER_SUPPORT_REQUEST_REASON');
     expect(exportSource).toContain("contact.type === 'phone'");
     expect(exportSource).toContain("'شماره تماس'");
-    expect(exportSource).toContain('دلیل مشاهده در Audit ثبت شد');
-    expect(source).toContain('customer-sensitive-export-reason');
-    expect(source).toContain('aria-label="دلیل خروجی شماره‌های کامل"');
-    expect(source).toContain(
-      '<SelectValue placeholder="دلیل نمایش شماره‌ها" />',
-    );
-    expect(source).not.toContain(
-      '<option value="">دلیل نمایش شماره‌ها</option>',
-    );
+    expect(exportSource).toContain('درخواست پشتیبانی');
+    expect(exportSource).toContain('برای هر مشاهده در Audit ثبت شد');
+    expect(source).not.toContain('customer-sensitive-export-reason');
+    expect(source).not.toContain('aria-label="دلیل خروجی شماره‌های کامل"');
     expect(source).toContain("'خروجی Excel'");
-    expect(source).toContain(
-      'disabled={records.length === 0 || exporting || !exportReason}',
-    );
+    expect(source).toContain('disabled={records.length === 0 || exporting}');
   });
 
   it('shows twenty people per page with a complete page position and masked mobile number', () => {
@@ -461,13 +467,8 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('پرونده ۳۶۰ درجه');
   });
 
-  it('shows the full 360 dossier catalog without inventing cross-module data', () => {
+  it('shows the full 360 dossier catalog while Documents is operational and other modules remain explicit', () => {
     for (const section of [
-      'شماره پاسپورت',
-      'نام انگلیسی مطابق پاسپورت (اجباری)',
-      'نام خانوادگی انگلیسی مطابق پاسپورت (اجباری)',
-      'کشور صادرکننده',
-      'هشدار انقضای مدارک',
       'درخواست‌ها',
       'قراردادها',
       'خدمات خریداری‌شده',
@@ -477,13 +478,15 @@ describe('Customer Operations workspace boundaries', () => {
       'پرداخت‌ها',
       'چک‌ها',
       'تیکت‌های پشتیبانی',
-      'فایل‌ها و اسناد',
       'Timeline کامل فعالیت‌ها',
     ])
       expect(source).toContain(section);
     expect(source).toContain('در انتظار اتصال امن');
-    expect(source).toContain(
-      'هیچ شماره مدرک یا تاریخ ساختگی نمایش داده نمی‌شود',
-    );
+    expect(source).toContain('<CustomerDocumentsPanel customer={customer} />');
+    expect(source).not.toContain('در انتظار زیرساخت مدارک');
+    expect(customerDocumentsPanelSource).toContain('شماره پاسپورت');
+    expect(customerDocumentsPanelSource).toContain('کشور صادرکننده');
+    expect(customerDocumentsPanelSource).toContain('افزودن مدرک');
+    expect(customerDocumentsPanelSource).toContain('DEC-OPEN-006');
   });
 });
