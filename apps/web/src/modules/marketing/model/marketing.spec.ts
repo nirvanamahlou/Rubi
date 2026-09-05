@@ -111,9 +111,9 @@ describe('marketing preview model', () => {
   });
 
   it('defines complete reference navigation and populated synthetic subtabs', () => {
-    expect(marketingSections).toHaveLength(7);
-    expect(Object.keys(marketingSectionTabs)).toHaveLength(6);
-    expect(marketingPreviewItems).toHaveLength(23);
+    expect(marketingSections).toHaveLength(8);
+    expect(Object.keys(marketingSectionTabs)).toHaveLength(7);
+    expect(marketingPreviewItems).toHaveLength(27);
     expect(
       marketingPreviewItems.every(
         (item) =>
