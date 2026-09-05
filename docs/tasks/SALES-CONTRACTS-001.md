@@ -2,6 +2,14 @@
 
 - Status: `READY_FOR_REVIEW`
 
+## Combined flight/hotel details — PC-A — 2026-09-05
+
+- Flight and hotel share one detail step regardless of checkbox selection order; flights precede the hotel section. Hotel options are destination-city-filtered public Master Data references with normalized Persian/English name/code search.
+- Suggested check-in is outbound departure calendar day +1; suggested check-out is return departure day -1, using the same Asia/Tehran date displayed by Sales ticket cards. Missing directions do not fabricate dates. Invalid/zero-night stays block continuation with an explicit warning.
+- Per-field manual provenance stays local to the draft, survives subsequent ticket changes and permits intentionally clearing a field; legacy dates are preserved. Reset action explicitly re-enables both suggestions. Existing SalesHotelSelectionInput carries only the final dates to the immutable Reservations intake snapshot.
+- Reservations editing is BLOCKED pending a versioned operational amendment API, authorization/audit/concurrency design and resolution of the existing unrelated dirty Prisma ownership. No direct Sales table writes from Reservations, mutation of the intake fingerprint/snapshot, fabricated save or schema change.
+- 50 Sales Web tests, scoped lint, Web typecheck and production build (35 routes) passed. No authenticated visual QA claimed; stopped runtime servers stay stopped. Existing Customers/Documents/Passport/Button changes are excluded; PR #90 remains Draft, not globally ready for review.
+
 ## Vertical route pairs and English Gregorian Sales calendars
 
 - Origin/destination each group country above city, with two desktop columns and a stacked mobile layout. Search/filter/reference semantics unchanged.

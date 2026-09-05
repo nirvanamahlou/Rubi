@@ -79,6 +79,8 @@ export interface SalesFormState {
     currencyCode: string;
   };
   hotel: {
+    checkInManual?: boolean;
+    checkOutManual?: boolean;
     hotelId: string;
     name: string;
     checkIn: string;
@@ -245,7 +247,71 @@ export function withSalesRouteDefaults(
 
 export function salesDetailSteps(state: SalesFormState): string[] {
   return state.serviceKinds.flatMap((kind) =>
-    kind === 'FLIGHT' ? ['FLIGHT'] : kind === 'TRANSFER' ? [] : [kind],
+    kind === 'TRANSFER' ||
+    (kind === 'HOTEL' && state.serviceKinds.includes('FLIGHT'))
+      ? []
+      : [kind],
+  );
+}
+
+/** Match the Tehran calendar dates displayed on Sales ticket cards. */
+export function salesHotelDate(
+  departureAt: string | undefined,
+  days: number,
+): string {
+  if (!departureAt || !Number.isFinite(Date.parse(departureAt))) return '';
+  const date = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tehran',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(departureAt));
+  const shifted = new Date(`${date}T00:00:00Z`);
+  shifted.setUTCDate(shifted.getUTCDate() + days);
+  return shifted.toISOString().slice(0, 10);
+}
+
+export function withSalesHotelDates(
+  previous: SalesFormState,
+  next: SalesFormState,
+): SalesFormState {
+  const suggestion = (state: SalesFormState, field: 'checkIn' | 'checkOut') =>
+    salesHotelDate(
+      salesDirections(state, 'FLIGHT').includes(
+        field === 'checkIn' ? 'OUTBOUND' : 'RETURN',
+      )
+        ? (field === 'checkIn' ? state.outboundOffer : state.returnOffer)
+            ?.departureAt
+        : undefined,
+      field === 'checkIn' ? 1 : -1,
+    );
+  const hotel = { ...next.hotel };
+  for (const field of ['checkIn', 'checkOut'] as const) {
+    const manualKey = field === 'checkIn' ? 'checkInManual' : 'checkOutManual';
+    // Existing drafts without provenance keep user-entered dates intact.
+    const manual =
+      hotel[manualKey] ??
+      Boolean(
+        previous.hotel[field] &&
+        previous.hotel[field] !== suggestion(previous, field),
+      );
+    hotel[manualKey] = manual;
+    if (!manual) hotel[field] = suggestion(next, field);
+  }
+  return { ...next, hotel };
+}
+
+export function salesHotelValid(state: SalesFormState): boolean {
+  return Boolean(
+    state.hotel.hotelId &&
+    state.hotel.checkIn &&
+    state.hotel.checkOut &&
+    state.hotel.checkOut > state.hotel.checkIn &&
+    state.hotel.roomTypeId &&
+    Number.isInteger(state.hotel.roomCount) &&
+    state.hotel.roomCount > 0 &&
+    Number.isInteger(state.hotel.occupancy) &&
+    state.hotel.occupancy > 0,
   );
 }
 

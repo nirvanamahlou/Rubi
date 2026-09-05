@@ -45,6 +45,8 @@ import {
   salesPassengerAgeLabel,
   salesDirections,
   salesTravelDate,
+  withSalesHotelDates,
+  salesHotelValid,
   salesDetailSteps,
   salesReturnSearchFrom,
   withSalesRouteDefaults,
@@ -126,7 +128,6 @@ export function SalesContractForm() {
     visaServices: [],
     banks: [],
   });
-  const [hotelSearch, setHotelSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [savedNumber, setSavedNumber] = useState('');
@@ -146,7 +147,7 @@ export function SalesContractForm() {
           patch[key as keyof SalesFormState] !==
             current[key as keyof SalesFormState],
       );
-      return {
+      return withSalesHotelDates(current, {
         ...current,
         ...patch,
         ...(changedRoute
@@ -162,7 +163,7 @@ export function SalesContractForm() {
               visaReferenceId: '',
             }
           : {}),
-      };
+      });
     });
 
   useEffect(() => {
@@ -342,11 +343,13 @@ export function SalesContractForm() {
   };
   const flightDirections = salesDirections(state, 'FLIGHT');
   const detailLabel = (key: string) =>
-    key.startsWith('FLIGHT-')
-      ? `بلیت ${key.endsWith('OUTBOUND') ? 'رفت' : 'برگشت'}`
-      : key.startsWith('TRANSFER-')
-        ? `ترانسفر ${key.endsWith('OUTBOUND') ? 'رفت' : 'برگشت'}`
-        : (serviceOptions.find(([kind]) => kind === key)?.[1] ?? key);
+    key === 'FLIGHT' && state.serviceKinds.includes('HOTEL')
+      ? 'بلیت و هتل'
+      : key.startsWith('FLIGHT-')
+        ? `بلیت ${key.endsWith('OUTBOUND') ? 'رفت' : 'برگشت'}`
+        : key.startsWith('TRANSFER-')
+          ? `ترانسفر ${key.endsWith('OUTBOUND') ? 'رفت' : 'برگشت'}`
+          : (serviceOptions.find(([kind]) => kind === key)?.[1] ?? key);
   const updatePrice = (
     index: number,
     patch: Partial<SalesPriceComponentInput>,
@@ -372,16 +375,10 @@ export function SalesContractForm() {
           (!salesDirections(state, 'FLIGHT').includes('OUTBOUND') ||
             Boolean(state.outboundOffer)) &&
           (!salesDirections(state, 'FLIGHT').includes('RETURN') ||
-            Boolean(state.returnOffer))
+            Boolean(state.returnOffer)) &&
+          (!state.serviceKinds.includes('HOTEL') || salesHotelValid(state))
         );
-      if (activeDetail === 'HOTEL')
-        return Boolean(
-          state.hotel.hotelId &&
-          state.hotel.checkIn &&
-          state.hotel.checkOut &&
-          state.hotel.checkOut > state.hotel.checkIn &&
-          state.hotel.roomTypeId,
-        );
+      if (activeDetail === 'HOTEL') return salesHotelValid(state);
       if (activeDetail === 'VISA') return Boolean(state.visaReferenceId);
       return true;
     }
@@ -761,9 +758,7 @@ export function SalesContractForm() {
             </ol>
             {activeDetail === 'FLIGHT' ? (
               <section className="grid gap-4 rounded-xl border p-4">
-                <h3 className="font-bold">
-                  انتخاب {detailLabel(activeDetail)}
-                </h3>
+                <h3 className="font-bold">انتخاب بلیت پرواز</h3>
                 <label className="flex items-center gap-3 rounded-xl bg-primary/5 p-3">
                   <input
                     type="checkbox"
@@ -924,23 +919,26 @@ export function SalesContractForm() {
                 </FormField>
               </section>
             ) : null}
-            {activeDetail === 'HOTEL' ? (
+            {activeDetail === 'HOTEL' ||
+            (activeDetail === 'FLIGHT' &&
+              state.serviceKinds.includes('HOTEL')) ? (
               <section className="grid gap-4 rounded-xl border p-4">
                 <h3 className="font-bold">هتل مقصد</h3>
-                <Input
-                  aria-label="جست‌وجوی هتل مقصد"
-                  placeholder="جست‌وجوی نام هتل"
-                  value={hotelSearch}
-                  onChange={(event) => setHotelSearch(event.target.value)}
-                />
+                <p className="text-xs text-muted-foreground">
+                  هتل‌های شهر{' '}
+                  {references.cities.find(
+                    (city) => city.id === state.destinationId,
+                  )?.name ?? 'مقصد'}
+                  ؛ نام هتل را جست‌وجو کنید. ورود پیشنهادی روز بعد از پرواز رفت
+                  و خروج روز قبل از پرواز برگشت است؛ هر دو تاریخ قابل تغییرند.
+                </p>
                 <div className="grid gap-4 md:grid-cols-3">
-                  <ReferenceSelect
+                  <SearchableReference
                     label="هتل"
                     value={state.hotel.hotelId}
                     options={references.hotels.filter(
                       (hotel) =>
-                        hotel.attributes.cityId === state.destinationId &&
-                        hotel.name.includes(hotelSearch),
+                        hotel.attributes.cityId === state.destinationId,
                     )}
                     onChange={(hotelId) =>
                       patchState({
@@ -962,19 +960,31 @@ export function SalesContractForm() {
                       patchState({ hotel: { ...state.hotel, roomTypeId } })
                     }
                   />
-                  <FormField label="ورود">
+                  <FormField label="ورود (چک‌این)" required>
                     <DatePicker
                       value={state.hotel.checkIn}
                       onChange={(checkIn) =>
-                        patchState({ hotel: { ...state.hotel, checkIn } })
+                        patchState({
+                          hotel: {
+                            ...state.hotel,
+                            checkIn,
+                            checkInManual: true,
+                          },
+                        })
                       }
                     />
                   </FormField>
-                  <FormField label="خروج">
+                  <FormField label="خروج (چک‌اوت)" required>
                     <DatePicker
                       value={state.hotel.checkOut}
                       onChange={(checkOut) =>
-                        patchState({ hotel: { ...state.hotel, checkOut } })
+                        patchState({
+                          hotel: {
+                            ...state.hotel,
+                            checkOut,
+                            checkOutManual: true,
+                          },
+                        })
                       }
                     />
                   </FormField>
@@ -1009,6 +1019,32 @@ export function SalesContractForm() {
                     />
                   </FormField>
                 </div>
+                {state.hotel.checkIn &&
+                state.hotel.checkOut &&
+                state.hotel.checkOut <= state.hotel.checkIn ? (
+                  <Alert
+                    tone="warning"
+                    title="تاریخ خروج باید بعد از ورود باشد؛ تاریخ‌های اقامت را اصلاح کنید."
+                  />
+                ) : null}
+                {state.serviceKinds.includes('FLIGHT') ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="justify-self-start"
+                    onClick={() =>
+                      patchState({
+                        hotel: {
+                          ...state.hotel,
+                          checkInManual: false,
+                          checkOutManual: false,
+                        },
+                      })
+                    }
+                  >
+                    تنظیم دوباره تاریخ‌ها از بلیت
+                  </Button>
+                ) : null}
               </section>
             ) : null}
             {activeDetail === 'VISA' ? (

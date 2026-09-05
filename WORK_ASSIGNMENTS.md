@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-CONTRACTS-001-HOTEL-DETAILS — PC-A — SALES_COMPLETE / RESERVATIONS_BLOCKED
+
+- Reserve Sales Web form/model/tests and this task's documentation on codex/pc-a-sales-contracts / PR #90: combined flight/hotel details, destination hotel search, editable flight-derived hotel dates. No shared UI, API, schema, migration or unrelated local changes.
+- Reservations hotel amendment remains blocked pending an owned versioned execution-update API and resolution of the pre-existing dirty Prisma ownership; never mutate the immutable Sales intake snapshot or fake a saved amendment.
+- Sales validation: 50 Web Sales tests, scoped lint, Web typecheck and production build (35 routes) passed. Foreign dirty changes excluded; PR #90 remains Draft and locks remain held.
+
 ## SALES-CONTRACTS-001 — PC-A — READY_FOR_REVIEW
 
 - PC-A route/calendar-language follow-up READY_FOR_REVIEW: origin/destination each have vertically paired country/city fields. Sales calendar wrapper opts into English Gregorian month/day names, labels, digits and LTR; default shared behavior and ISO values unchanged. Shared Calendar Owner = PC-A/SALES-CONTRACTS-001 for the additive option pending review. 48 Sales/shared-calendar tests, scoped lint/typecheck and Web production build passed; no schema/dependency/API changes.
