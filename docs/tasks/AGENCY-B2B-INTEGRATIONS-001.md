@@ -74,3 +74,46 @@ commitments.
    contact data, primary address and operational/commercial details.
 7. Contract tests protect the versioned DTOs and boundary tests reject direct
    Sales/Finance repository access.
+
+## Delivery status
+
+- Implemented an additive migration for organization addresses, branch-scoped
+  agency profiles, agreements, credit policies, agreed rates and B2B audit
+  events. No Sales or Finance table is referenced.
+- Published versioned B2B contracts and IAM permission codes. The API enforces
+  authenticated permissions, authorized branch scope, optimistic versions,
+  UTC/date ranges and audited writes.
+- Added Master Data organization-address endpoints with a real city/country
+  integrity check and one active primary address per organization.
+- Connected the existing Agency popup to the public Master Data and B2B APIs.
+  It shows masked contacts, base address, branch profile, agreements, credit and
+  rates; the shared Persian/Gregorian DatePicker is used for every date.
+- Finance exposure is consumed only through `FinancePartyExposurePortV1`. Until
+  Finance registers a producer adapter, the UI reports `UNAVAILABLE`; it never
+  invents a zero balance.
+
+## Database review
+
+The schema-analysis input is stored beside this document. The bundled analyzer
+confirmed six primary-keyed tables and eleven foreign-key relationships. Its
+JSON parser does not ingest the declared index arrays, so its missing-index
+output is a tooling false positive; the Prisma schema and SQL migration contain
+the query/FK-supporting indexes and were reviewed directly.
+
+All repository migrations, including `20260905150000_agency_b2b_integrations`,
+were then applied in order to a new disposable PostgreSQL database. The six new
+tables, constraints and twenty-two indexes were verified, after which only that
+disposable validation database was removed.
+
+## Validation
+
+- Prisma format, validate and generate: passed.
+- Monorepo lint and typecheck: passed.
+- Targeted migration, B2B/Master Data contract, API-boundary and Web
+  integration tests: 21 passed.
+- Web production build: passed with 34 routes. API and Worker builds also passed
+  in the full build run.
+- The full test run passed every changed package and all B2B tests. One existing
+  Windows-only Customer Workspace source-text assertion remains red because it
+  matches LF whitespace against a CRLF checkout; neither Customer file is
+  changed by this task.

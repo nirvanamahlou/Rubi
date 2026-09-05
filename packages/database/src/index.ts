@@ -2,6 +2,9 @@ export { Prisma } from './generated/prisma/client';
 export { createDatabaseClient, type DatabaseClient } from './client';
 export {
   AuditOutcome,
+  AgencyOperationalStatus,
+  B2bAgreementStatus,
+  B2bAgreedRateKind,
   CustomerAddressType,
   CustomerConsentChannel,
   CustomerConsentPurpose,

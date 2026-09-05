@@ -10,6 +10,10 @@ const client = readFileSync(
   new URL('../api/agency-client.ts', import.meta.url),
   'utf8',
 );
+const connections = readFileSync(
+  new URL('./agency-connections-panel.tsx', import.meta.url),
+  'utf8',
+);
 
 describe('agency to Master Organization integration', () => {
   it('uses the public Master Data client and the canonical AGENCY role', () => {
@@ -34,9 +38,16 @@ describe('agency to Master Organization integration', () => {
     expect(source).toContain('setPage');
   });
 
-  it('does not invent unavailable operational or address data', () => {
-    expect(source).toContain('BLOCKED_FOR_MIGRATION');
-    expect(source).toContain('داده ساختگی نمایش داده نمی‌شود');
+  it('loads operational and address data through public APIs without inventing Finance exposure', () => {
+    expect(source).not.toContain('BLOCKED_FOR_MIGRATION');
+    expect(client).toContain('workspace(organizationId');
+    expect(connections).toContain('agencyClient.workspace');
+    expect(connections).toContain('createOrganizationAddress');
+    expect(connections).toContain('upsertCreditPolicy');
+    expect(connections).toContain('createAgreedRate');
+    expect(connections).toContain(
+      'درگاه Finance هنوز Snapshot منتشر نکرده است',
+    );
     expect(source).toContain('phoneMasked');
     expect(source).toContain('emailMasked');
   });

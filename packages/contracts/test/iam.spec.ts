@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  B2B_PERMISSION_CODES,
   CUSTOMER_PERMISSION_CODES,
   DOCUMENT_PERMISSION_CODES,
   IAM_PERMISSION_CODES,
@@ -12,8 +13,8 @@ import {
 } from '../src';
 
 describe('IAM public permission contract', () => {
-  it('publishes the version 6 domain permission catalogs without duplicates', () => {
-    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(6);
+  it('publishes the version 7 domain permission catalogs without duplicates', () => {
+    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(7);
     expect(MASTER_DATA_PERMISSION_CODES).toEqual([
       'master_data.read',
       'master_data.create',
@@ -35,6 +36,16 @@ describe('IAM public permission contract', () => {
       'customers.merge',
       'customers.consent.manage',
       'customers.sensitive.read',
+    ]);
+    expect(B2B_PERMISSION_CODES).toEqual([
+      'b2b.agency.read',
+      'b2b.agency.manage',
+      'b2b.agreement.read',
+      'b2b.agreement.manage',
+      'b2b.credit.read',
+      'b2b.credit.manage',
+      'b2b.rate.read',
+      'b2b.rate.manage',
     ]);
     expect(LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES).toEqual([
       'legal-entity.read',
