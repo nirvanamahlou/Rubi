@@ -12,6 +12,19 @@
 - موارد فاقد مدل مالک: آدرس پایه سازمان و پروفایل عملیاتی آژانس شامل قرارداد/اعتبار/نرخ توافقی فقط در سند اختصاصی با وضعیت `BLOCKED_FOR_MIGRATION` ثبت شدند و هیچ Schema یا داده ساختگی ساخته نشد.
 - اعتبارسنجی: Prisma format/validate/generate بدون تغییر Schema، lint، typecheck، تست کامل Monorepo و تست رفتاری Adapter آژانس (`1,500` تست موفق و `70` تست اختیاری PostgreSQL skip) و Production Build با `34` Route موفق‌اند. `package.json` و Lockfile تغییری ندارند.
 
+## DOCUMENTS-006-CROSS-MODULE-CONNECTIONS — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-05: تمام ارتباط‌های داخلی و خارجی «اسناد و فایل‌ها» کامل و قابل استفاده شوند. `COMPUTER_ID=PC-B`؛ پیام پیگیری مالک مجوز تحویل‌گرفتن اتصال‌های Documents از کارهای باز PC-A است، اما Branchهای PC-A حفظ و فقط‌خواندنی می‌مانند.
+- Branch مستقل `codex/pc-b-documents-connections` از `origin/develop@a56b62e` در Worktree `C:\Users\admin\Rubi-documents-connections`؛ توسعه مستقیم روی `develop` یا `main` ممنوع است.
+- Pull Request: [#95](https://github.com/nirvanamahlou/Rubi/pull/95) به `develop`؛ Merge خودکار انجام نمی‌شود و انتشار نهایی منوط به Review و CI است.
+- Phase A رزروشده فقط `apps/web/src/modules/documents/**`، تست‌های همان ماژول و `docs/tasks/DOCUMENTS-006-CROSS-MODULE-CONNECTIONS.md` است: ارتباط هر دامنه با مقصد داخلی، کارت ارتباط قابل‌کلیک، نام‌های فارسی، بازگشت امن و حالت روشن برای مقصدهای هنوز منتشرنشده.
+- PRهای فعال PC-A یعنی #85 اتصال Customer Documents و #90 Sales Contracts در این Phase دست‌نخورده‌اند. پس از انتشار قراردادهای آن‌ها، Phase B فقط Public Contract/Port نسخه‌دار را مصرف می‌کند؛ Query مستقیم جدول/Repository ماژول دیگر ممنوع است.
+- این Phase هیچ Schema/Migration/Seed، Documents shared contract، API، Dependency/Lockfile، Shared Calendar یا فایل ماژول Customer/Sales/Reservations/Finance را تغییر نمی‌دهد. `Migration Owner` و `Central Docs Owner` فعال PC-A بازپس‌گیری نمی‌شوند؛ تغییر این entry و سند Task تنها ثبت محدوده Documents است.
+- پذیرش Phase A: تمام دامنه‌های CUSTOMER_IDENTITY، SALES، TRAVEL، PROCUREMENT، FINANCE، HUMAN_RESOURCES، ORGANIZATION، REPORTING، BRAND و GENERAL مقصد فارسی مشخص دارند؛ کاربر از سکشن یا تب ارتباطات با کنترل کیبورد به بخش مرتبط می‌رود؛ مقصد ناموجود هرگز به‌عنوان اتصال واقعی نمایش داده نمی‌شود؛ تست، lint، typecheck، build و Browser QA موفق‌اند.
+- نتیجه Phase A: نمای کلی اکنون ۱۰ کارت رنگی برای مسیرهای آرشیو دارد؛ هر کارت آرشیو داخلی Domain را باز می‌کند و ۹ Domain دارای دکمه رفتن به Route واقعی ماژول‌اند. `GENERAL` صریحاً «داخل آرشیو» است و اتصال خارجی جعلی ندارد. تب ارتباطات جزئیات سند، نام فارسی ماژول و نوع Relation، حالت بدون پرونده و لینک احراز‌شده مقصد را نمایش می‌دهد؛ source فنی `documents-demo` به کاربر نشان داده نمی‌شود.
+- اعتبارسنجی: هر ۶۰۶ تست Web (شامل ۷ تست هدفمند ارتباطات)، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند. Browser QA روی `http://localhost:3100/documents` نمایش ۱۵ سند آزمایشی، هر ۱۰ کارت، بازشدن آرشیو مشتری، الزام فیلتر، رفتن واقعی به `/customers` و نمایش/لینک تب ارتباطات یک سند را تأیید کرد.
+- Handoff: لینک مقصد فقط `Document`/`Relation` opaque را حمل می‌کند و هیچ `sourceEntityId` را افشا نمی‌کند؛ مقصد مجوز خودش را دوباره کنترل می‌کند. اتصال exact-record و case picker بین‌ماژولی در Phase B تنها پس از انتشار Public Reference Port ماژول مالک افزوده می‌شود و PRهای فعال PC-A #85/#90 دست‌نخورده‌اند.
+
 ## DOCUMENTS-005-ARCHIVE-ACTIONS-FIX — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-03: ابزارهای مدیریت آرشیو باید داخل همان بخش، فهرست اختصاصی و واقعی خود را باز کنند و فرم‌های عملیات رکورد پس از تکمیل فیلدها بازخورد روشن و ارسال قابل اتکا داشته باشند. `COMPUTER_ID=PC-B`.
