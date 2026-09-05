@@ -12,8 +12,8 @@ import {
 } from '../src';
 
 describe('IAM public permission contract', () => {
-  it('publishes the version 6 domain permission catalogs without duplicates', () => {
-    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(6);
+  it('publishes the version 7 domain permission catalogs without duplicates', () => {
+    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(7);
     expect(MASTER_DATA_PERMISSION_CODES).toEqual([
       'master_data.read',
       'master_data.create',

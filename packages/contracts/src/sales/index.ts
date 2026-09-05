@@ -111,7 +111,7 @@ export interface SalesTicketSelectionInput {
   carrierNameSnapshot: string;
   serviceNumberSnapshot: string;
   cabinClassCode: string;
-  quotedPrice: SalesMoney;
+  quotedPrice?: SalesMoney;
 }
 
 export interface SalesHotelSelectionInput {
@@ -282,6 +282,12 @@ export interface SalesDashboard {
 }
 
 export interface SalesReservationRequestV1 {
+  passengerAssignments?: readonly {
+    customerId: string;
+    ageCategory: SalesPassengerAgeCategory;
+    serviceClientKeys: readonly string[];
+  }[];
+  ticketSelections?: readonly SalesTicketSelectionInput[];
   version: 1;
   requestId: string;
   contractId: string;

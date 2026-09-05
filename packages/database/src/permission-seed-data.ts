@@ -88,4 +88,7 @@ export const PERMISSION_SEED_DATA = [
   ['sales.reservation_request.create', 'sales', 'ارسال درخواست رزرواسیون'],
   ['sales.audit.read', 'sales', 'مشاهده Audit فروش'],
   ['sales.export', 'sales', 'خروجی قراردادهای فروش'],
+  ['ticket_catalog.read', 'ticket_catalog', 'مشاهده بلیت قابل فروش'],
+  ['ticket_catalog.manage', 'ticket_catalog', 'مدیریت بلیت قابل فروش'],
+  ['reservations.read', 'reservations', 'مشاهده صف رزرواسیون شعبه'],
 ] as const;

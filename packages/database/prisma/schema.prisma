@@ -2622,8 +2622,8 @@ model SalesContractTicketSelection {
   carrierNameSnapshot    String               @map("carrier_name_snapshot") @db.VarChar(200)
   serviceNumberSnapshot  String               @map("service_number_snapshot") @db.VarChar(80)
   cabinClassCode         String               @map("cabin_class_code") @db.VarChar(80)
-  quotedAmount           Decimal              @map("quoted_amount") @db.Decimal(20, 4)
-  quotedCurrencyCode     String               @map("quoted_currency_code") @db.VarChar(3)
+  quotedAmount           Decimal?             @map("quoted_amount") @db.Decimal(20, 4)
+  quotedCurrencyCode     String?              @map("quoted_currency_code") @db.VarChar(3)
   availabilityObservedAt DateTime?            @map("availability_observed_at") @db.Timestamptz(3)
   createdAt              DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
   contract               SalesContract        @relation(fields: [contractId], references: [id], onDelete: Cascade)
@@ -2702,6 +2702,7 @@ model SalesContractPaymentEntry {
 }
 
 model SalesReservationRequest {
+  dispatchedAt       DateTime?                     @db.Timestamptz(3)
   id                 String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   contractId         String                        @map("contract_id") @db.Uuid
   contractVersion    Int                           @map("contract_version")
@@ -2734,6 +2735,56 @@ model SalesContractStatusHistory {
 
   @@index([contractId, changedAt])
   @@map("sales_contract_status_history")
+}
+
+model TicketPublishedOffer {
+  id              String             @id @default(uuid()) @db.Uuid
+  version         Int                @default(1)
+  branchId        String             @db.Uuid
+  originId        String             @db.Uuid
+  destinationId   String             @db.Uuid
+  departureAt     DateTime           @db.Timestamptz(3)
+  arrivalAt       DateTime           @db.Timestamptz(3)
+  carrierName     String             @db.VarChar(160)
+  serviceNumber   String             @db.VarChar(80)
+  cabinClassCode  String             @db.VarChar(20)
+  totalCapacity   Int
+  status          String             @default("ACTIVE") @db.VarChar(20)
+  createdByUserId String             @db.Uuid
+  createKey       String             @db.VarChar(160)
+  fingerprint     String             @db.VarChar(64)
+  createdAt       DateTime           @default(now()) @db.Timestamptz(3)
+  audit           TicketOfferAudit[]
+
+  @@unique([createdByUserId, createKey])
+  @@index([branchId, originId, destinationId, departureAt])
+}
+
+model TicketOfferAudit {
+  id          String               @id @default(uuid()) @db.Uuid
+  offerId     String               @db.Uuid
+  actorUserId String               @db.Uuid
+  action      String               @db.VarChar(80)
+  version     Int
+  occurredAt  DateTime             @default(now()) @db.Timestamptz(3)
+  offer       TicketPublishedOffer @relation(fields: [offerId], references: [id], onDelete: Restrict)
+
+  @@index([offerId, occurredAt])
+}
+
+model ReservationIntake {
+  id              String   @id @default(uuid()) @db.Uuid
+  requestId       String   @unique @db.Uuid
+  contractId      String   @db.Uuid
+  contractVersion Int
+  branchId        String   @db.Uuid
+  fingerprint     String   @db.VarChar(64)
+  snapshot        Json
+  status          String   @default("QUEUED") @db.VarChar(40)
+  receivedAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([contractId, contractVersion])
+  @@index([branchId, receivedAt])
 }
 
 model SalesContractAuditEvent {
