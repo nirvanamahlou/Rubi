@@ -158,7 +158,7 @@ describe('Sales contract domain', () => {
       'مسیر یا زمان بلیت برگشت',
     );
   });
-  it('rejects missing legacy return tickets and incomplete directional transfers', () => {
+  it('rejects missing legacy return tickets but accepts a transfer flag without details', () => {
     const input = structuredClone(draft);
     input.ticketSelections = [input.ticketSelections![0]!];
     expect(() => validateSalesContract(input)).toThrow('بلیت جهت انتخاب‌شده');
@@ -171,8 +171,21 @@ describe('Sales contract domain', () => {
       },
     ];
     input.ticketSelections = [];
-    expect(() => validateSalesContract(input)).toThrow('ترانسفر الزامی');
+    expect(() => validateSalesContract(input)).not.toThrow();
   });
+  it.each(['BUS', 'TRAIN'] as const)(
+    'rejects %s together with flight',
+    (kind) => {
+      const input = structuredClone(draft);
+      input.services = [
+        ...input.services,
+        { clientKey: 'other-transport', kind, titleSnapshot: 'وسیله دیگر' },
+      ];
+      expect(() => validateSalesContract(input)).toThrow(
+        'پرواز با قطار یا اتوبوس',
+      );
+    },
+  );
   it('validates a round-trip contract and deterministically fingerprints it', () => {
     expect(() => validateSalesContract(draft)).not.toThrow();
     expect(salesFingerprint({ b: 2, a: 1 })).toBe(

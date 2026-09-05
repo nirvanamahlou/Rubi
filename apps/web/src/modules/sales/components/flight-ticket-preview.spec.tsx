@@ -4,6 +4,21 @@ import { FlightTicketDocument } from './flight-ticket-preview';
 import { emptySalesForm } from '../model/sales-form';
 
 describe('flight ticket output template', () => {
+  it('prints directional transfer inclusion without requiring details', () => {
+    const html = renderToStaticMarkup(
+      <FlightTicketDocument
+        state={{
+          ...emptySalesForm,
+          serviceKinds: ['TRANSFER'],
+          serviceDirections: { TRANSFER: ['RETURN'] },
+        }}
+        cities={[]}
+        passengerName="Synthetic Passenger"
+      />,
+    );
+    expect(html).toContain('TRANSFER INCLUDED:');
+    expect(html).toContain('RETURN');
+  });
   it('renders reference sections without fabricating issuance or sample passenger data', () => {
     const html = renderToStaticMarkup(
       <FlightTicketDocument

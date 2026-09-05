@@ -12,9 +12,33 @@ import {
   withSalesRouteDefaults,
   normalizeRouteSearch,
   toggleSalesDirectionalService,
+  salesTravelDate,
 } from './sales-form';
 
 describe('sales contract form payload', () => {
+  it('enabling flight clears bus/train and transfer has no detail step', () => {
+    const base = {
+      ...emptySalesForm,
+      serviceKinds: ['BUS', 'TRAIN', 'TRANSFER'] as (
+        'BUS' | 'TRAIN' | 'TRANSFER'
+      )[],
+    };
+    const state = { ...base, ...toggleSalesDirectionalService(base, 'FLIGHT') };
+    expect(state.serviceKinds).toEqual(['TRANSFER', 'FLIGHT']);
+    expect(salesDetailSteps(state)).toEqual(['FLIGHT']);
+    expect(
+      salesDetailSteps({ ...emptySalesForm, serviceKinds: ['TRANSFER'] }),
+    ).toEqual([]);
+  });
+  it('uses hotel check-in as the travel date when no flight is selected', () => {
+    const state = {
+      ...emptySalesForm,
+      serviceKinds: ['HOTEL' as const],
+      hotel: { ...emptySalesForm.hotel, checkIn: '2026-10-10' },
+    };
+    expect(salesTravelDate(state)).toBe('2026-10-10');
+    expect(salesPayload(state).departureDate).toBe('2026-10-10');
+  });
   it('stores business as output metadata without changing selected inventory cabin', () => {
     const state = {
       ...emptySalesForm,
@@ -169,16 +193,14 @@ describe('sales contract form payload', () => {
       clientKey: 'transfer-return',
       metadata: {
         direction: 'RETURN',
-        date: '2027-01-10',
-        pickup: 'هتل',
-        dropoff: 'فرودگاه',
       },
     });
     expect(payload.passengers[0]?.serviceClientKeys).toEqual([
       'flight-outbound',
       'transfer-return',
     ]);
-    expect(salesDetailSteps(input)).toEqual(['FLIGHT', 'TRANSFER-RETURN']);
+    expect(salesDetailSteps(input)).toEqual(['FLIGHT']);
+    expect(payload.services[1]?.metadata).not.toHaveProperty('pickup');
   });
   it('supports a return-only flight without an outbound offer', () => {
     const input = {

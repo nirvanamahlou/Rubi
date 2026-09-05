@@ -79,6 +79,12 @@ export function FlightTicketDocument({
           <b className={styles.business}>BUSINESS</b>
         ) : null}
       </p>
+      {state.serviceKinds.includes('TRANSFER') ? (
+        <p className={styles.passenger}>
+          TRANSFER INCLUDED:{' '}
+          <strong>{salesDirections(state, 'TRANSFER').join(' / ')}</strong>
+        </p>
+      ) : null}
       <section className={styles.section}>
         <h3>
           <i>1</i> FLIGHT INFORMATION

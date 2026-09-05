@@ -2,6 +2,15 @@
 
 - Status: `READY_FOR_REVIEW`
 
+## Optional flight dates and flag-only transfers
+
+- Verification: 20 Sales Web tests and 28 Sales API tests passed; scoped ESLint, Web/API typecheck and both production builds passed. Web restarted on localhost:3100 and the contract page returned HTTP 200. No authenticated visual verification is claimed.
+
+- FLIGHT deselects/disables BUS and TRAIN; Sales domain rejects the same combination at the API boundary. Transfer remains independently directional, has no detail step or pickup/dropoff/date requirements, and prints TRANSFER INCLUDED with the chosen directions.
+- The route/services step no longer asks for departure date. Public flight search defaults to future offers ordered by departure; a Sales-local single-calendar Persian/Gregorian optional range can be applied/cleared. Past range endpoints cannot be selected. The outbound upper bound never restricts return flights.
+- Payload travel date derives from the selected outbound/return offer, then hotel check-in, then explicit service start for non-flight/non-hotel passenger-age calculation. Search filters do not change the contracted travel date. Earlier transfer-detail requirements in this document are superseded.
+- No schema, migration, seed, dependency, shared-calendar or other module implementation changes. Concurrent Customers/Documents changes remain outside these commits. Authenticated browser/visual QA remains unavailable due to the previously reported Windows tool failures.
+
 ## Combined flight selection, synthetic offers and output template
 
 - Flight details are one step, with outbound and return columns on desktop (stacked within the same step on narrow screens). Selecting outbound reveals return options in the adjacent column; both required choices must be completed before continuing. Return-only remains supported.

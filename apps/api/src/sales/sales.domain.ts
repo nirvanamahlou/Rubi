@@ -159,6 +159,14 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
       'خدمت، مسافر و جزء قیمت الزامی است.',
     );
   const serviceKeys = new Set(input.services.map(({ clientKey }) => clientKey));
+  if (
+    input.services.some((item) => item.kind === 'FLIGHT') &&
+    input.services.some((item) => item.kind === 'BUS' || item.kind === 'TRAIN')
+  )
+    throw new SalesDomainError(
+      'SALES_SERVICE_INVALID',
+      'پرواز با قطار یا اتوبوس هم‌زمان قابل انتخاب نیست.',
+    );
   if (serviceKeys.size !== input.services.length)
     throw new SalesDomainError(
       'SALES_SERVICE_DUPLICATE',
@@ -277,21 +285,6 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
         throw new SalesDomainError(
           'RETURN_TICKET_INVALID',
           'بلیت جهت انتخاب‌شده الزامی است.',
-        );
-    }
-    if (service.kind === 'TRANSFER' && direction) {
-      const metadata = service.metadata;
-      if (
-        typeof metadata?.date !== 'string' ||
-        typeof metadata.pickup !== 'string' ||
-        !metadata.pickup.trim() ||
-        typeof metadata.dropoff !== 'string' ||
-        !metadata.dropoff.trim() ||
-        validDate(metadata.date, 'تاریخ ترانسفر') < departure
-      )
-        throw new SalesDomainError(
-          'SALES_SERVICE_INVALID',
-          'تاریخ و محل سوار و پیاده شدن ترانسفر الزامی است.',
         );
     }
   }

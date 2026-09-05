@@ -220,13 +220,7 @@ export function withSalesRouteDefaults(
 
 export function salesDetailSteps(state: SalesFormState): string[] {
   return state.serviceKinds.flatMap((kind) =>
-    kind === 'FLIGHT'
-      ? ['FLIGHT']
-      : kind === 'TRANSFER'
-        ? salesDirections(state, kind).map(
-            (direction) => `${kind}-${direction}`,
-          )
-        : [kind],
+    kind === 'FLIGHT' ? ['FLIGHT'] : kind === 'TRANSFER' ? [] : [kind],
   );
 }
 
@@ -239,7 +233,15 @@ export function toggleSalesDirectionalService(
     : ['OUTBOUND', 'RETURN'];
   return {
     serviceKinds: next.length
-      ? [...new Set([...state.serviceKinds, kind])]
+      ? [
+          ...new Set([
+            ...state.serviceKinds.filter(
+              (item) =>
+                kind !== 'FLIGHT' || (item !== 'BUS' && item !== 'TRAIN'),
+            ),
+            kind,
+          ]),
+        ]
       : state.serviceKinds.filter((item) => item !== kind),
     serviceDirections: { ...state.serviceDirections, [kind]: next },
     tripType:
@@ -264,6 +266,15 @@ export function salesReturnSearchFrom(state: SalesFormState): string {
   return state.outboundOffer?.departureAt.slice(0, 10) || state.departureDate;
 }
 
+export function salesTravelDate(state: SalesFormState): string {
+  return (
+    state.outboundOffer?.departureAt.slice(0, 10) ||
+    state.returnOffer?.departureAt.slice(0, 10) ||
+    (state.serviceKinds.includes('HOTEL') ? state.hotel.checkIn : '') ||
+    state.departureDate
+  );
+}
+
 export function salesPayload(
   state: SalesFormState,
 ): SalesContractCreateRequest {
@@ -279,7 +290,9 @@ export function salesPayload(
               ...(kind === 'FLIGHT'
                 ? { businessOutput: state.businessOutput === true }
                 : {}),
-              ...state.serviceDetails?.[`${kind}-${direction}`],
+              ...(kind === 'FLIGHT'
+                ? state.serviceDetails?.[`${kind}-${direction}`]
+                : {}),
               direction,
               originId:
                 direction === 'OUTBOUND' ? state.originId : state.destinationId,
@@ -370,9 +383,9 @@ export function salesPayload(
     tripType: state.tripType,
     originId: state.originId,
     destinationId: state.destinationId,
-    departureDate: state.departureDate,
+    departureDate: salesTravelDate(state),
     returnNotBefore:
-      state.tripType === 'ROUND_TRIP' ? salesReturnSearchFrom(state) : null,
+      state.tripType === 'ROUND_TRIP' ? salesTravelDate(state) : null,
     services,
     passengers: state.passengers.map((item) => ({
       customerId: item.customerId,

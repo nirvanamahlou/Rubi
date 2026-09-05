@@ -33,11 +33,16 @@ import { TicketOfferPicker } from './ticket-offer-picker';
 import { SearchableReference } from './searchable-reference';
 import { FlightTicketPreview } from './flight-ticket-preview';
 import {
+  FlightDateRangeFilter,
+  type FlightDateRange,
+} from './flight-date-range';
+import {
   emptySalesForm,
   salesPayload,
   salesSteps,
   salesPassengerAgeLabel,
   salesDirections,
+  salesTravelDate,
   salesDetailSteps,
   salesReturnSearchFrom,
   withSalesRouteDefaults,
@@ -93,6 +98,11 @@ export function SalesContractForm() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [detailStep, setDetailStep] = useState(0);
+  const [flightRange, setFlightRange] = useState<FlightDateRange>({
+    from: '',
+    to: '',
+  });
+  const [futureFrom, setFutureFrom] = useState(() => new Date().toISOString());
   const [state, setState] = useState<SalesFormState>(emptySalesForm);
   const [customers, setCustomers] = useState<readonly CustomerSummary[]>([]);
   const [customerSearch, setCustomerSearch] = useState('');
@@ -157,9 +167,16 @@ export function SalesContractForm() {
     const restoreTimer = saved
       ? globalThis.setTimeout(() => {
           try {
-            setState({
+            const restored = {
               ...emptySalesForm,
               ...JSON.parse(saved),
+            } as SalesFormState;
+            if (restored.serviceKinds.includes('FLIGHT'))
+              restored.serviceKinds = restored.serviceKinds.filter(
+                (kind) => kind !== 'BUS' && kind !== 'TRAIN',
+              );
+            setState({
+              ...restored,
             } as SalesFormState);
           } catch {
             globalThis.localStorage.removeItem('rubi.sales.contract.draft.v1');
@@ -357,7 +374,6 @@ export function SalesContractForm() {
         state.destinationCountryId &&
         state.destinationId &&
         state.originId !== state.destinationId &&
-        state.departureDate &&
         state.serviceKinds.length,
       );
     if (step === 1) {
@@ -377,18 +393,12 @@ export function SalesContractForm() {
           state.hotel.roomTypeId,
         );
       if (activeDetail === 'VISA') return Boolean(state.visaReferenceId);
-      if (activeDetail?.startsWith('TRANSFER-'))
-        return Boolean(
-          serviceDetail.date &&
-          serviceDetail.date >= state.departureDate &&
-          serviceDetail.pickup?.trim() &&
-          serviceDetail.dropoff?.trim(),
-        );
       return true;
     }
     if (step === 2) return Boolean(state.customerId);
     if (step === 3)
       return (
+        Boolean(salesTravelDate(state)) &&
         state.passengers.length > 0 &&
         state.passengers.every((item) => item.birthDate)
       );
@@ -402,9 +412,6 @@ export function SalesContractForm() {
     state,
     step,
     activeDetail,
-    serviceDetail.date,
-    serviceDetail.pickup,
-    serviceDetail.dropoff,
   ]);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -601,18 +608,16 @@ export function SalesContractForm() {
                 )}
                 onChange={(destinationId) => patchState({ destinationId })}
               />
-              <FormField label="تاریخ رفت" required>
-                <DatePicker
-                  value={state.departureDate}
-                  onChange={(departureDate) => patchState({ departureDate })}
-                />
-              </FormField>
             </div>
           </div>
         ) : null}
         {step === 0 ? (
           <div className="mt-6 grid gap-5">
             <h2 className="text-xl font-black">خدمات قرارداد</h2>
+            <p className="text-xs text-muted-foreground">
+              با انتخاب پرواز، قطار و اتوبوس قابل انتخاب نیستند. ترانسفر فقط روی
+              خروجی بلیت درج می‌شود.
+            </p>
             <p className="text-sm text-muted-foreground">
               ابتدا خدمت را انتخاب کنید؛ رفت و برگشت با هم فعال می‌شوند و سپس
               می‌توانید هر جهت را جدا تغییر دهید.
@@ -672,6 +677,10 @@ export function SalesContractForm() {
                     role="checkbox"
                     aria-checked={state.serviceKinds.includes(kind)}
                     onClick={() => toggleService(kind)}
+                    disabled={
+                      state.serviceKinds.includes('FLIGHT') &&
+                      (kind === 'BUS' || kind === 'TRAIN')
+                    }
                     type="button"
                   >
                     <span>{label}</span>
@@ -722,13 +731,23 @@ export function SalesContractForm() {
                   {flightDirections.includes('OUTBOUND') ? (
                     <section className="grid gap-3 min-w-0">
                       <h3 className="font-bold">بلیت رفت</h3>
+                      <FlightDateRangeFilter
+                        value={flightRange}
+                        onChange={setFlightRange}
+                      />
                       <TicketOfferPicker
-                        key={`out-${state.originId}-${state.destinationId}-${state.departureDate}-${state.ticket.cabinClassCode}`}
+                        key={`out-${state.originId}-${state.destinationId}-${flightRange.from}-${flightRange.to}`}
                         query={{
                           originId: state.originId,
                           destinationId: state.destinationId,
-                          departureFrom: state.departureDate,
-                          departureTo: state.departureDate,
+                          departureFrom:
+                            flightRange.from &&
+                            flightRange.from > futureFrom.slice(0, 10)
+                              ? flightRange.from
+                              : futureFrom,
+                          ...(flightRange.to
+                            ? { departureTo: flightRange.to }
+                            : {}),
                         }}
                         selectedId={state.ticket.outboundOfferId}
                         onSelect={(offer) =>
@@ -752,6 +771,12 @@ export function SalesContractForm() {
                   {flightDirections.includes('RETURN') ? (
                     <section className="grid gap-3 min-w-0">
                       <h3 className="font-bold">انتخاب بلیت برگشت</h3>
+                      {!flightDirections.includes('OUTBOUND') ? (
+                        <FlightDateRangeFilter
+                          value={flightRange}
+                          onChange={setFlightRange}
+                        />
+                      ) : null}
                       <p className="text-sm text-muted-foreground">
                         همه بلیت‌های مقصد به مبدأ از تاریخ بلیت رفت به بعد نمایش
                         داده می‌شوند؛ سقف تاریخ ندارند.
@@ -759,11 +784,23 @@ export function SalesContractForm() {
                       {!flightDirections.includes('OUTBOUND') ||
                       state.outboundOffer ? (
                         <TicketOfferPicker
-                          key={`return-${state.outboundOffer?.id ?? state.departureDate}-${state.ticket.cabinClassCode}`}
+                          key={`return-${state.outboundOffer?.id ?? futureFrom}-${!flightDirections.includes('OUTBOUND') ? flightRange.from + '-' + flightRange.to : ''}`}
                           query={{
                             originId: state.destinationId,
                             destinationId: state.originId,
-                            departureFrom: salesReturnSearchFrom(state),
+                            departureFrom: flightDirections.includes('OUTBOUND')
+                              ? salesReturnSearchFrom(state) >
+                                futureFrom.slice(0, 10)
+                                ? salesReturnSearchFrom(state)
+                                : futureFrom
+                              : flightRange.from &&
+                                  flightRange.from > futureFrom.slice(0, 10)
+                                ? flightRange.from
+                                : futureFrom,
+                            ...(!flightDirections.includes('OUTBOUND') &&
+                            flightRange.to
+                              ? { departureTo: flightRange.to }
+                              : {}),
                           }}
                           selectedId={state.ticket.returnOfferId}
                           onSelect={(offer) => {
@@ -798,45 +835,6 @@ export function SalesContractForm() {
                     </section>
                   ) : null}
                 </div>
-              </section>
-            ) : null}
-            {activeDetail?.startsWith('TRANSFER-') ? (
-              <section className="grid gap-4 rounded-2xl border border-border p-4">
-                <h3 className="font-bold">{detailLabel(activeDetail)}</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <FormField label="تاریخ ترانسفر" required>
-                    <DatePicker
-                      value={serviceDetail.date ?? ''}
-                      onChange={(date) => patchServiceDetail({ date })}
-                    />
-                  </FormField>
-                  <FormField label="محل سوار شدن" required>
-                    <Input
-                      value={serviceDetail.pickup ?? ''}
-                      onChange={(event) =>
-                        patchServiceDetail({ pickup: event.target.value })
-                      }
-                      placeholder="فرودگاه، هتل یا نشانی"
-                    />
-                  </FormField>
-                  <FormField label="محل پیاده شدن" required>
-                    <Input
-                      value={serviceDetail.dropoff ?? ''}
-                      onChange={(event) =>
-                        patchServiceDetail({ dropoff: event.target.value })
-                      }
-                      placeholder="فرودگاه، هتل یا نشانی"
-                    />
-                  </FormField>
-                </div>
-                <FormField label="توضیحات ترانسفر">
-                  <Textarea
-                    value={serviceDetail.notes ?? ''}
-                    onChange={(event) =>
-                      patchServiceDetail({ notes: event.target.value })
-                    }
-                  />
-                </FormField>
               </section>
             ) : null}
             {activeDetail &&
@@ -963,6 +961,15 @@ export function SalesContractForm() {
                 در این نسخه همه خدمات انتخاب‌شده به هر مسافر تخصیص می‌یابد.
               </p>
             </div>
+            {!state.serviceKinds.includes('FLIGHT') &&
+            !(state.serviceKinds.includes('HOTEL') && state.hotel.checkIn) ? (
+              <FormField label="تاریخ شروع خدمات (برای سن مسافر)" required>
+                <DatePicker
+                  value={state.departureDate}
+                  onChange={(departureDate) => patchState({ departureDate })}
+                />
+              </FormField>
+            ) : null}
             <div className="grid gap-3">
               {state.passengers.map((passenger, index) => (
                 <div
@@ -974,7 +981,7 @@ export function SalesContractForm() {
                     <p className="text-sm text-primary">
                       {salesPassengerAgeLabel(
                         passenger.birthDate,
-                        state.departureDate,
+                        salesTravelDate(state),
                       )}
                     </p>
                     <p className="text-xs text-muted-foreground">
@@ -1351,7 +1358,12 @@ export function SalesContractForm() {
               <Card className="p-4">
                 <p className="text-xs text-muted-foreground">خدمات</p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {detailSteps.map((key) => (
+                  {[
+                    ...detailSteps,
+                    ...salesDirections(state, 'TRANSFER').map(
+                      (direction) => 'TRANSFER-' + direction,
+                    ),
+                  ].map((key) => (
                     <Badge key={key}>{detailLabel(key)}</Badge>
                   ))}
                 </div>
@@ -1387,7 +1399,9 @@ export function SalesContractForm() {
             else {
               if (step === 2)
                 setDetailStep(Math.max(0, detailSteps.length - 1));
-              setStep((value) => value - 1);
+              setStep((value) =>
+                value === 2 && !detailSteps.length ? 0 : value - 1,
+              );
             }
           }}
         >
@@ -1402,8 +1416,13 @@ export function SalesContractForm() {
               if (step === 1 && detailStep < detailSteps.length - 1)
                 setDetailStep((value) => value + 1);
               else {
-                if (step === 0) setDetailStep(0);
-                setStep((value) => value + 1);
+                if (step === 0) {
+                  setDetailStep(0);
+                  setFutureFrom(new Date().toISOString());
+                }
+                setStep((value) =>
+                  value === 0 && !detailSteps.length ? 2 : value + 1,
+                );
               }
             }}
           >

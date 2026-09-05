@@ -2,6 +2,10 @@
 
 ## SALES-CONTRACTS-001 — PC-A — READY_FOR_REVIEW
 
+- Latest follow-up verified: 20 Web Sales tests, 28 API Sales tests, scoped lint, Web/API typecheck and production builds passed; updated Web running on port 3100. No migration/dependency changes; same branch and Draft PR #90.
+
+- Current PC-A follow-up reserves Sales form/model/tests, local date-range filter and Sales domain tests/validation: FLIGHT excludes BUS/TRAIN, transfer is a direction flag without detail requirements, first step has no travel date, available flights are ascending future offers with an optional single-calendar date-range filter. Contract travel date still derives from selected travel/service dates for passenger age and validation. No shared calendar/schema/dependency changes.
+
 - Flight UX/output follow-up: PC-A reserves Sales form/model/print-template/tests and docs. Combine flight directions in one detail step; business is output-only service metadata, not an inventory/cabin override. Add four explicitly synthetic Tehran/Antalya offers through Ticket public service on existing HQ branch, without IAM mutations. Printable output is a clearly labelled draft until Reservations supplies real issuance identifiers; no fabricated PNR/e-ticket or Finance release.
 
 - Current follow-up: PC-A reserves Ticket Catalog workspace mount/test and task docs to remove only the scheduled-offer publication panel while retaining Repeat Ticket. Existing published offers/API remain intact. Authorized Turkey/Antalya local reference maintenance runs through the owner service with explicit offline audit attribution; no IAM grants/sessions or direct private-table writes.
