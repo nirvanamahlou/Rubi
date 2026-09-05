@@ -20,7 +20,10 @@ import {
 } from 'lucide-react';
 
 import { navigationMessages, type NavigationHref } from '../messages/fa';
+import { marketingSections } from '../modules/marketing/model/reference-data';
 import { getMasterDataSection } from '../modules/master-data/model/sections';
+
+export const MARKETING_SECTION_CHANGE_EVENT = 'rubi:marketing-section-change';
 
 const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/dashboard': Gauge,
@@ -76,7 +79,10 @@ export function isNavigationItemActive(href: NavigationHref, pathname: string) {
   return getNavigationItem(pathname)?.href === href;
 }
 
-export function getNavigationBreadcrumbs(pathname: string) {
+export function getNavigationBreadcrumbs(
+  pathname: string,
+  marketingSectionKey?: string | null,
+) {
   if (pathname.startsWith('/master-data/')) {
     const sectionSlug = pathname.slice('/master-data/'.length).split('/')[0];
     const section = getMasterDataSection(sectionSlug ?? '');
@@ -86,6 +92,22 @@ export function getNavigationBreadcrumbs(pathname: string) {
         ...(parent ? [{ href: parent.href, title: parent.title }] : []),
         {
           href: `/master-data/${section.slug}`,
+          title: section.title,
+        },
+      ];
+    }
+  }
+
+  if (pathname === '/marketing' && marketingSectionKey) {
+    const parent = navigationItems.find((item) => item.href === '/marketing');
+    const section = marketingSections.find(
+      (item) => item.key === marketingSectionKey,
+    );
+    if (parent && section) {
+      return [
+        { href: parent.href, title: parent.title },
+        {
+          href: `/marketing?section=${encodeURIComponent(section.key)}`,
           title: section.title,
         },
       ];
