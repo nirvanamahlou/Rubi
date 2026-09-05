@@ -7,10 +7,5 @@ export default async function Page({
   searchParams: Promise<{ section?: string }>;
 }) {
   const { section } = await searchParams;
-  return (
-    <HrWorkspace
-      key={section ?? 'dashboard'}
-      sectionId={section ?? 'dashboard'}
-    />
-  );
+  return <HrWorkspace key={section ?? 'home'} sectionId={section ?? 'home'} />;
 }

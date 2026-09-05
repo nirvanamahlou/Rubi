@@ -1,25 +1,30 @@
 'use client';
 
 import {
-  Award,
-  Bell,
-  Boxes,
-  Building2,
+  AlertTriangle,
+  ArrowLeft,
+  BadgeCheck,
   CalendarDays,
-  ChartNoAxesCombined,
-  CheckCheck,
-  Clock3,
+  Download,
+  FileArchive,
   FileText,
+  Filter,
+  History,
+  Info,
   LockKeyhole,
+  MonitorCog,
+  Plane,
   Plus,
   Search,
-  Settings2,
-  Users,
-  Wallet,
+  ShieldCheck,
+  TimerReset,
+  UserRound,
+  UsersRound,
+  WalletCards,
+  type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState, type FormEvent } from 'react';
-import { Button } from '@/components/ui/button';
+import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
@@ -28,581 +33,1595 @@ import {
   DialogTitle,
 } from '@/components/ui/overlays';
 import {
-  applyPreview,
-  kpis,
-  previewRecords,
-  queryRecords,
-  sections,
-  uiStates,
-  validatePreview,
-  type PreviewRecord,
-  type Section,
-  type UiState,
+  employeeTabs,
+  hrHubCards,
+  normalizeSection,
+  previewId,
+  screenMeta,
+  sectionTabs,
+  type HrSectionId,
+  type HrTab,
 } from './hr.model';
+import styles from './hr-workspace.module.css';
 
-const icons = {
-  chart: ChartNoAxesCombined,
-  users: Users,
-  building: Building2,
-  file: FileText,
-  clock: Clock3,
-  calendar: CalendarDays,
-  check: CheckCheck,
-  award: Award,
-  wallet: Wallet,
-  box: Boxes,
-  bell: Bell,
-  settings: Settings2,
+type UiState = 'loading' | 'empty' | 'error' | 'unauthorized' | 'forbidden';
+type BadgeTone = 'success' | 'warning' | 'danger' | 'neutral';
+
+interface PreviewEmployee {
+  id: string;
+  name: string;
+  initial: string;
+  employment: string;
+  kind: string;
+  unit: string;
+  position: string;
+  manager: string;
+  startedAt: string;
+  status: string;
+  tone: BadgeTone;
+}
+
+interface PreviewTableData {
+  columns: readonly string[];
+  rows: readonly (readonly ReactNode[])[];
+  totalLabel: string;
+}
+
+const previewEmployees: readonly PreviewEmployee[] = [
+  {
+    id: 'preview-employee-1',
+    name: 'همکار نمایشی الف',
+    initial: 'الف',
+    employment: 'preview-employment-1',
+    kind: 'تمام‌وقت',
+    unit: 'شعبه نمایشی / عملیات سفر',
+    position: 'کارشناس ارشد عملیات',
+    manager: 'مدیر نمایشی الف',
+    startedAt: '۱۴۰۳/۰۲/۰۱',
+    status: 'فعال',
+    tone: 'success',
+  },
+  {
+    id: 'preview-employee-2',
+    name: 'همکار نمایشی ب',
+    initial: 'ب',
+    employment: 'preview-employment-2',
+    kind: 'تمام‌وقت',
+    unit: 'شعبه نمایشی / فروش',
+    position: 'سرپرست فروش سازمانی',
+    manager: 'مدیر نمایشی ب',
+    startedAt: '۱۴۰۱/۰۸/۱۵',
+    status: 'فعال',
+    tone: 'success',
+  },
+  {
+    id: 'preview-employee-3',
+    name: 'همکار نمایشی پ',
+    initial: 'پ',
+    employment: 'preview-employment-3',
+    kind: 'پاره‌وقت',
+    unit: 'شعبه نمایشی / مالی',
+    position: 'کارشناس حسابداری',
+    manager: 'مدیر نمایشی پ',
+    startedAt: '۱۴۰۲/۰۶/۱۰',
+    status: 'فعال',
+    tone: 'success',
+  },
+  {
+    id: 'preview-employee-4',
+    name: 'همکار نمایشی ت',
+    initial: 'ت',
+    employment: 'preview-employment-4',
+    kind: 'پاره‌وقت',
+    unit: 'شعبه نمایشی / عملیات فرودگاهی',
+    position: 'کارشناس خدمات فرودگاهی',
+    manager: 'مدیر نمایشی ت',
+    startedAt: '۱۴۰۵/۰۶/۲۰',
+    status: 'در حال تکمیل',
+    tone: 'warning',
+  },
+];
+
+const dashboardKpis: readonly (readonly [string, string, LucideIcon])[] = [
+  ['کارکنان فعال', 'فرد یکتا', UsersRound],
+  ['حاضر امروز', 'پس از دریافت کارکرد', BadgeCheck],
+  ['در مرخصی یا مأموریت', 'پس از تأیید درخواست', Plane],
+  ['نیازمند رسیدگی', 'بر پایه SLA', AlertTriangle],
+  ['قرارداد نزدیک پایان', 'در بازه انتخابی', FileText],
+  ['درخواست در انتظار', 'کارتابل مجاز', FileArchive],
+  ['اضافه‌کاری مصوب', 'ساعت مصوب دوره', TimerReset],
+  ['کیفیت داده', 'پس از کنترل منبع', ShieldCheck],
+];
+
+const requestKinds = [
+  ['مرخصی', CalendarDays, 'blue'],
+  ['مأموریت', Plane, 'violet'],
+  ['اصلاح تردد', TimerReset, 'orange'],
+  ['تجهیزات', MonitorCog, 'green'],
+] as const;
+
+const stateMessages: Record<UiState, [string, string]> = {
+  loading: [
+    'در حال دریافت اطلاعات',
+    'اطلاعات منابع انسانی در حال بارگذاری است.',
+  ],
+  empty: [
+    'رکوردی پیدا نشد',
+    'فیلترها را تغییر دهید یا پس از اتصال منبع دوباره بررسی کنید.',
+  ],
+  error: [
+    'دریافت اطلاعات انجام نشد',
+    'ارتباط با سرویس برقرار نشد. دوباره تلاش کنید.',
+  ],
+  unauthorized: ['ورود لازم است', 'برای ادامه وارد حساب کاربری شوید.'],
+  forbidden: ['دسترسی مجاز نیست', 'مجوز مشاهده این بخش یا شعبه را ندارید.'],
 };
-const statusLabels = {
-  DRAFT: 'پیش‌نویس',
-  ACTIVE: 'فعال',
-  PENDING: 'در انتظار تأیید',
-};
-const control =
-  'min-h-11 w-full min-w-0 rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500';
-const panel = 'rounded-2xl border border-border bg-surface p-5 shadow-sm';
+
+function ActionButton({
+  children,
+  disabled,
+  primary,
+  small,
+  onClick,
+  type = 'button',
+}: {
+  children: ReactNode;
+  disabled?: boolean;
+  primary?: boolean;
+  small?: boolean;
+  onClick?: () => void;
+  type?: 'button' | 'submit';
+}) {
+  return (
+    <button
+      className={`${styles.button} ${primary ? styles.buttonPrimary : ''} ${small ? styles.buttonSmall : ''}`}
+      disabled={disabled}
+      onClick={onClick}
+      type={type}
+    >
+      {children}
+    </button>
+  );
+}
+
+function PageHead({
+  actions,
+  section,
+}: {
+  actions?: ReactNode;
+  section: HrSectionId;
+}) {
+  const meta = screenMeta[section];
+  return (
+    <header className={styles.pageHead}>
+      <div className={styles.title}>
+        <div className={styles.crumb}>
+          خانه ‹ منابع انسانی{section === 'home' ? '' : ` ‹ ${meta.title}`}
+        </div>
+        <h1>{meta.title}</h1>
+        <p>{meta.description}</p>
+      </div>
+      {actions ? <div className={styles.actions}>{actions}</div> : null}
+    </header>
+  );
+}
+
+function DateRangeBar() {
+  const [from, setFrom] = useState('2026-08-23');
+  const [to, setTo] = useState('2026-09-22');
+  const [applied, setApplied] = useState(false);
+  return (
+    <section aria-label="بازه زمانی" className={styles.dateBar}>
+      <div className={styles.dateLead}>بازه زمانی گزارش</div>
+      <label className={styles.fieldLabel}>
+        <span>از تاریخ</span>
+        <DatePicker id="hr-from-date" onChange={setFrom} value={from} />
+      </label>
+      <label className={styles.fieldLabel}>
+        <span>تا تاریخ</span>
+        <DatePicker id="hr-to-date" onChange={setTo} value={to} />
+      </label>
+      <span className={styles.dateSummary}>
+        {applied ? 'بازه نمایشی اعمال شد' : 'شهریور ۱۴۰۵ · داده نمایشی'}
+      </span>
+      <ActionButton onClick={() => setApplied(true)}>
+        <Filter aria-hidden="true" size={15} /> اعمال بازه
+      </ActionButton>
+    </section>
+  );
+}
+
+function Badge({
+  children,
+  tone = 'neutral',
+}: {
+  children: ReactNode;
+  tone?: BadgeTone;
+}) {
+  const toneClass = {
+    success: styles.badgeSuccess,
+    warning: styles.badgeWarning,
+    danger: styles.badgeDanger,
+    neutral: styles.badgeNeutral,
+  }[tone];
+  return <span className={`${styles.badge} ${toneClass}`}>{children}</span>;
+}
+
+function Tabs({
+  active,
+  items,
+  onChange,
+}: {
+  active: string;
+  items: readonly HrTab[];
+  onChange: (id: string) => void;
+}) {
+  return (
+    <div aria-label="زیرصفحه‌های بخش" className={styles.tabs} role="tablist">
+      {items.map((item) => {
+        const Icon = item.icon;
+        const selected = active === item.id;
+        return (
+          <button
+            aria-selected={selected}
+            className={`${styles.tab} ${selected ? styles.tabActive : ''}`}
+            key={item.id}
+            onClick={() => onChange(item.id)}
+            role="tab"
+            type="button"
+          >
+            <Icon aria-hidden="true" size={15} />
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Panel({
+  action,
+  children,
+  icon,
+  note,
+  title,
+}: {
+  action?: ReactNode;
+  children: ReactNode;
+  icon?: ReactNode;
+  note?: string;
+  title: string;
+}) {
+  return (
+    <section className={styles.panel}>
+      <header className={styles.panelHead}>
+        <div>
+          <div className={styles.panelTitle}>
+            {icon}
+            {title}
+          </div>
+          {note ? <div className={styles.panelNote}>{note}</div> : null}
+        </div>
+        {action}
+      </header>
+      {children}
+    </section>
+  );
+}
+
+function PreviewTable({ data }: { data: PreviewTableData }) {
+  return (
+    <>
+      <div className={styles.tableWrap} tabIndex={0}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              {data.columns.map((column) => (
+                <th key={column}>{column}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.rows.map((row, rowIndex) => (
+              <tr key={`preview-row-${rowIndex + 1}`}>
+                {row.map((cell, cellIndex) => (
+                  <td key={`${rowIndex}-${cellIndex}`}>{cell}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className={styles.panelBody}>
+        <span className={styles.source}>
+          {data.totalLabel} · همه موارد این نما داده نمایشی هستند.
+        </span>
+      </div>
+    </>
+  );
+}
+
+function Person({ employee }: { employee: PreviewEmployee }) {
+  return (
+    <div className={styles.person}>
+      <span className={styles.avatar}>{employee.initial}</span>
+      <span>
+        <b>{employee.name}</b>
+        <small dir="ltr">employment: {employee.employment}</small>
+      </span>
+    </div>
+  );
+}
 
 export function HrState({ state }: { state: UiState }) {
-  const messages: Record<UiState, string> = {
-    preview: 'داده نمایشی؛ هیچ اطلاعات واقعی دریافت نشده است.',
-    loading: 'در حال دریافت اطلاعات منابع انسانی…',
-    empty: 'هنوز رکوردی برای نمایش وجود ندارد.',
-    error: 'دریافت اطلاعات انجام نشد. دوباره تلاش کنید.',
-    unauthorized: 'برای ادامه باید وارد حساب کاربری شوید.',
-    forbidden: 'مجوز مشاهده این بخش یا شعبه را ندارید.',
-    conflict:
-      'نسخه رکورد تغییر کرده است. اطلاعات را دوباره دریافت و بررسی کنید.',
-    success:
-      'اعتبارسنجی نمایشی موفق بود؛ هیچ اطلاعاتی در سامانه ذخیره نشده است.',
-  };
+  const [title, message] = stateMessages[state];
   return (
-    <div
-      className={`${panel} py-12 text-center`}
-      role={state === 'error' || state === 'conflict' ? 'alert' : 'status'}
+    <section
+      className={`${styles.panel} ${styles.fallback}`}
+      role={state === 'error' ? 'alert' : 'status'}
     >
-      <LockKeyhole
-        aria-hidden="true"
-        className="mx-auto mb-3 size-8 text-blue-600"
-      />
-      <h2 className="font-bold">{uiStates[state]}</h2>
-      <p className="mt-3 text-sm text-muted-foreground">{messages[state]}</p>
+      <LockKeyhole aria-hidden="true" size={31} />
+      <h2>{title}</h2>
+      <p>{message}</p>
       {state === 'unauthorized' ? (
-        <Link
-          className="mt-4 inline-block text-blue-700 underline"
-          href="/login?next=/hr"
-        >
-          ورود به سامانه
-        </Link>
+        <Link href="/login?next=/hr">ورود به سامانه</Link>
       ) : null}
-    </div>
+    </section>
   );
 }
 
-export function HrDashboard() {
+function HubScreen() {
   return (
-    <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {kpis.map((label, index) => (
-          <div key={label} className={panel}>
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-sm text-muted-foreground">{label}</span>
-              <ChartNoAxesCombined
-                aria-hidden="true"
-                className={`size-5 shrink-0 ${index % 2 ? 'text-cyan-600' : 'text-blue-600'}`}
-              />
-            </div>
-            <p
-              className="my-4 text-3xl font-bold"
-              aria-label="داده متصل موجود نیست"
-            >
-              —
-            </p>
-            <p className="text-xs text-muted-foreground">
-              پس از اتصال منبع تأییدشده
-            </p>
-          </div>
-        ))}
+    <>
+      <PageHead section="home" />
+      <DateRangeBar />
+      <div className={styles.boundary}>
+        <Info aria-hidden="true" size={17} />
+        اطلاعات شخص، کاربر، مشتری و سازمان هویت‌های مستقل‌اند؛ داده مالی و فایل
+        باینری از قرارداد عمومی ماژول مالک دریافت می‌شود.
       </div>
-      <div className="grid gap-5 lg:grid-cols-2">
-        <section className={panel}>
-          <h2 className="font-bold">رسیدگی‌های روزانه</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            برای بررسی درخواست‌ها به بخش مربوط بروید.
-          </p>
-          <div className="mt-4 grid gap-2">
-            {sections
-              .filter((item) =>
-                ['leave', 'contracts', 'reminders'].includes(item.id),
-              )
-              .map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/hr?section=${item.id}`}
-                  className="rounded-xl bg-blue-50 p-3 text-sm font-medium text-blue-900 focus-visible:ring-2 focus-visible:ring-blue-600"
-                >
-                  {item.title} ←
-                </Link>
-              ))}
-          </div>
-        </section>
-        <section className={panel}>
-          <h2 className="font-bold">پرونده امن هر همکار</h2>
-          <p className="mt-3 text-sm leading-8 text-muted-foreground">
-            کد ملی، اطلاعات بانکی، حقوق، مدارک، اطلاعات پزشکی و انضباطی پیش‌فرض
-            پوشیده‌اند. نمایش واقعی به مجوز مستقل، دلیل مشاهده و ثبت رخداد نیاز
-            دارد.
-          </p>
-          <p className="mt-4 rounded-xl bg-slate-50 p-3 text-sm text-slate-700">
-            انتخاب شرکت صادرکننده، دسترسی شعبه یا کارکنان را تغییر نمی‌دهد.
-          </p>
-        </section>
-      </div>
-    </div>
-  );
-}
-
-export function HrPreviewForm({
-  section,
-  record,
-  mode,
-  onSubmit,
-}: {
-  section: Section;
-  record?: PreviewRecord;
-  mode: 'create' | 'view' | 'edit';
-  onSubmit: (values: Record<string, string>) => void;
-}) {
-  const [values, setValues] = useState<Record<string, string>>(
-    record ? { ...record.values, title: record.title } : {},
-  );
-  const [error, setError] = useState<string | null>(null);
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const invalid = validatePreview(section, values);
-    setError(invalid);
-    if (!invalid) onSubmit(values);
-  }
-  return (
-    <form onSubmit={submit} className="mt-5 space-y-4">
-      <p className="rounded-xl bg-amber-50 p-3 text-sm leading-7 text-amber-950">
-        فقط داده نمایشی وارد کنید. این فرم برای بررسی طراحی است و با بستن یا
-        بارگذاری مجدد صفحه، تغییرات از بین می‌روند.
-      </p>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {section.fields.map((field) => (
-          <div key={field.key} className="min-w-0">
-            <label
-              htmlFor={`hr-${field.key}`}
-              className="mb-2 block text-sm font-medium"
-            >
-              {field.label}
-              {field.required ? ' *' : ''}
-            </label>
-            {field.type === 'sensitive' ? (
-              <>
-                <input
-                  id={`hr-${field.key}`}
-                  className={control}
-                  value="••••••••"
-                  disabled
-                  aria-label={`${field.label} پوشیده`}
-                />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  نمایش و ورود پس از اتصال امن سرویس
-                </p>
-              </>
-            ) : field.type === 'date' ? (
-              <DatePicker
-                id={`hr-${field.key}`}
-                value={values[field.key] ?? ''}
-                onChange={(value) =>
-                  setValues({ ...values, [field.key]: value })
-                }
-                disabled={mode === 'view'}
-              />
-            ) : field.type === 'select' ? (
-              <select
-                id={`hr-${field.key}`}
-                className={control}
-                value={values[field.key] ?? ''}
-                disabled={mode === 'view'}
-                onChange={(event) =>
-                  setValues({ ...values, [field.key]: event.target.value })
-                }
-              >
-                <option value="">انتخاب کنید</option>
-                {field.options?.map((option) => (
-                  <option key={option}>{option}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                id={`hr-${field.key}`}
-                className={control}
-                maxLength={500}
-                value={values[field.key] ?? ''}
-                readOnly={mode === 'view'}
-                inputMode={
-                  field.type === 'number' || field.type === 'money'
-                    ? 'decimal'
-                    : 'text'
-                }
-                onChange={(event) =>
-                  setValues({ ...values, [field.key]: event.target.value })
-                }
-              />
-            )}
-          </div>
-        ))}
-      </div>
-      {section.id === 'employees' && mode === 'view' ? (
-        <section className="space-y-2 border-t border-border pt-4">
-          <h3 className="font-bold">سوابق و فعالیت‌ها</h3>
-          <p className="text-sm text-muted-foreground">
-            قراردادها، مرخصی‌ها، آموزش‌ها، تجهیزات، ارزیابی‌ها و تاریخچه فعالیت
-            پس از اتصال سرویس نمایش داده می‌شوند.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            {['contracts', 'leave', 'training', 'assets', 'performance'].map(
-              (id) => (
-                <Link
-                  className="text-sm text-blue-700 underline"
-                  href={`/hr?section=${id}`}
-                  key={id}
-                >
-                  {sections.find((item) => item.id === id)?.title}
-                </Link>
-              ),
-            )}
-          </div>
-        </section>
-      ) : null}
-      {error ? (
-        <p role="alert" className="text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-      {mode !== 'view' ? (
-        <Button type="submit">اعمال در پیش‌نمایش</Button>
-      ) : null}
-    </form>
-  );
-}
-
-export function HrWorkspace({
-  sectionId = 'dashboard',
-}: {
-  sectionId?: string;
-}) {
-  const section =
-    sections.find((item) => item.id === sectionId) ?? sections[0]!;
-  const [state, setState] = useState<UiState>('preview');
-  const [records, setRecords] = useState(previewRecords);
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
-  const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
-  const [page, setPage] = useState(1);
-  const [notice, setNotice] = useState('');
-  const [dialog, setDialog] = useState<{
-    mode: 'create' | 'view' | 'edit';
-    record?: PreviewRecord;
-  } | null>(null);
-  const result = queryRecords(records, {
-    section: section.id,
-    search,
-    status,
-    direction,
-    page,
-  });
-  function apply(values: Record<string, string>) {
-    if (!dialog) return;
-    const row: PreviewRecord = {
-      id: dialog.record?.id ?? `preview-${section.id}-${crypto.randomUUID()}`,
-      section: section.id,
-      title: values.title ?? 'رکورد نمایشی',
-      unit: dialog.record?.unit ?? 'واحد نمایشی',
-      status: dialog.record?.status ?? 'DRAFT',
-      version: dialog.record?.version ?? 0,
-      values,
-    };
-    try {
-      setRecords(applyPreview(records, row, dialog.record?.version ?? 0));
-      setNotice('تغییر فقط در پیش‌نمایش اعمال شد؛ ذخیره دائمی انجام نشده است.');
-      setDialog(null);
-    } catch {
-      setState('conflict');
-      setDialog(null);
-    }
-  }
-  return (
-    <div
-      dir="rtl"
-      lang="fa"
-      className="min-w-0 space-y-6"
-      data-hr-mode="preview"
-    >
-      <header className="rounded-3xl bg-gradient-to-l from-blue-950 via-blue-900 to-blue-700 p-6 text-white sm:p-8">
-        <p className="text-xs text-blue-200">RUBI / منابع انسانی</p>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-extrabold sm:text-3xl">
-              {section.title}
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100">
-              {section.description}
-            </p>
-          </div>
-          <Users aria-hidden="true" className="size-12 text-blue-200" />
-        </div>
-        <div className="mt-5 inline-flex rounded-full border border-blue-300/40 bg-white/10 px-3 py-1 text-xs">
-          داده نمایشی · بدون ذخیره دائمی
-        </div>
-      </header>
-      <nav
-        aria-label="بخش‌های منابع انسانی"
-        className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4"
-      >
-        {sections.map((item) => {
-          const Icon = icons[item.icon as keyof typeof icons] ?? FileText;
+      <section aria-label="بخش‌های منابع انسانی" className={styles.hubGrid}>
+        {hrHubCards.map((card) => {
+          const Icon = card.icon;
           return (
             <Link
-              key={item.id}
-              href={`/hr?section=${item.id}`}
-              aria-current={item.id === section.id ? 'page' : undefined}
-              className={`flex min-w-0 items-center gap-2 rounded-xl border p-3 text-sm transition focus-visible:ring-2 focus-visible:ring-blue-500 ${item.id === section.id ? 'border-blue-700 bg-blue-700 font-bold text-white' : 'border-border bg-surface hover:border-blue-400 hover:bg-blue-50 hover:text-blue-950'}`}
+              className={`${styles.hubCard} ${styles[card.tone]}`}
+              href={`/hr?section=${card.id}`}
+              key={card.id}
             >
-              <Icon aria-hidden="true" className="size-4 shrink-0" />
-              <span>{item.title}</span>
+              <div className={styles.hubTop}>
+                <span className={styles.hubIcon}>
+                  <Icon aria-hidden="true" size={26} />
+                </span>
+                <div className={styles.hubCopy}>
+                  <h2>{card.title}</h2>
+                  <p>{card.description}</p>
+                </div>
+              </div>
+              <div className={styles.pills}>
+                {card.pills.map((pill) => (
+                  <span className={styles.pill} key={pill}>
+                    {pill}
+                  </span>
+                ))}
+              </div>
+              <div className={styles.hubFoot}>
+                <small>{card.footer}</small>
+                <span className={styles.hubLink}>ورود به بخش ←</span>
+              </div>
             </Link>
           );
         })}
-      </nav>
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-        <p>اتصال عملیاتی هنوز آماده نیست. اطلاعات واقعی کارکنان وارد نکنید.</p>
-        <label className="flex items-center gap-2">
-          بررسی حالت رابط
-          <select
-            className="max-w-40 rounded-lg border border-amber-300 bg-white p-2"
-            value={state}
-            onChange={(event) => setState(event.target.value as UiState)}
-          >
-            {Object.entries(uiStates).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      {notice ? (
-        <p
-          role="status"
-          className="rounded-xl bg-blue-50 p-4 text-sm text-blue-950"
+      </section>
+    </>
+  );
+}
+
+function KpiGrid({
+  items = dashboardKpis,
+}: {
+  items?: readonly (readonly [string, string, LucideIcon])[];
+}) {
+  return (
+    <section aria-label="شاخص‌ها" className={styles.kpis}>
+      {items.map(([label, hint, Icon]) => (
+        <article className={styles.kpi} key={label}>
+          <div className={styles.kpiTop}>
+            <span className={styles.kpiLabel}>{label}</span>
+            <span className={styles.kpiIcon}>
+              <Icon aria-hidden="true" size={17} />
+            </span>
+          </div>
+          <div aria-label="داده متصل موجود نیست" className={styles.kpiValue}>
+            —
+          </div>
+          <div className={styles.kpiHint}>{hint} · پس از اتصال منبع</div>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function Dashboard({ openAction }: { openAction: (title: string) => void }) {
+  const inbox: PreviewTableData = {
+    columns: ['موضوع', 'کارمند', 'واحد', 'مرحله', 'موعد', 'وضعیت'],
+    rows: [
+      [
+        'تغییر حساب مقصد',
+        'همکار نمایشی الف',
+        'عملیات سفر',
+        'تأییدکننده دوم',
+        'امروز',
+        <Badge key="1" tone="danger">
+          فوری
+        </Badge>,
+      ],
+      [
+        'تمدید قرارداد',
+        'همکار نمایشی ب',
+        'فروش سازمانی',
+        'بررسی HR',
+        '۲ روز دیگر',
+        <Badge key="2" tone="warning">
+          نزدیک موعد
+        </Badge>,
+      ],
+      [
+        'اصلاح تردد',
+        'همکار نمایشی پ',
+        'مالی',
+        'مدیر مستقیم',
+        'امروز',
+        <Badge key="3">در انتظار</Badge>,
+      ],
+    ],
+    totalLabel: '۳ ردیف پیش‌نمایش',
+  };
+  return (
+    <>
+      <PageHead
+        actions={
+          <>
+            <ActionButton disabled>
+              <Download size={15} /> خروجی داشبورد
+            </ActionButton>
+            <ActionButton onClick={() => openAction('ورود کارمند')} primary>
+              <Plus size={15} /> ورود کارمند
+            </ActionButton>
+          </>
+        }
+        section="dashboard"
+      />
+      <DateRangeBar />
+      <section className={`${styles.panel} ${styles.filterBar}`}>
+        <select
+          aria-label="دوره"
+          className={styles.control}
+          defaultValue="today"
         >
-          {notice}
-        </p>
-      ) : null}
-      {state !== 'preview' ? (
-        <>
-          <HrState state={state} />
-          <Button onClick={() => setState('preview')}>
-            بازگشت به پیش‌نمایش
-          </Button>
-        </>
-      ) : section.id === 'dashboard' ? (
-        <HrDashboard />
-      ) : section.id === 'reports' ? (
-        <section className={panel}>
-          <h2 className="font-bold">گزارش‌ها و خروجی‌ها</h2>
-          <p className="mt-3 text-sm leading-7 text-muted-foreground">
-            گزارش نیروی انسانی، حضور و مرخصی، پایان قرارداد، آموزش، تجهیزات و
-            ورودی مالی پس از اتصال داده تأییدشده آماده می‌شود. در حال حاضر فایل
-            قابل دریافت وجود ندارد.
-          </p>
-          <div className="mt-5 flex gap-3">
-            <Button disabled>دریافت Excel</Button>
-            <Button disabled>دریافت PDF</Button>
+          <option value="today">امروز</option>
+          <option value="month">این ماه</option>
+        </select>
+        <select aria-label="شعبه" className={styles.control} defaultValue="all">
+          <option value="all">همه شعب</option>
+          <option value="preview">شعبه نمایشی</option>
+        </select>
+        <select aria-label="واحد" className={styles.control} defaultValue="all">
+          <option value="all">همه واحدها</option>
+          <option value="operations">عملیات سفر</option>
+          <option value="finance">مالی</option>
+        </select>
+        <ActionButton>
+          <Filter size={15} /> اعمال فیلتر
+        </ActionButton>
+        <span className={styles.source}>منبع عملیاتی متصل نیست</span>
+      </section>
+      <div style={{ height: 14 }} />
+      <KpiGrid />
+      <section className={styles.grid3}>
+        <div className={`${styles.panel} ${styles.chart} ${styles.span2}`}>
+          <div className={styles.chartHead}>
+            <b>روند تعداد کارکنان و ورود/خروج</b>
+            <small>پس از اتصال منبع</small>
           </div>
-        </section>
-      ) : (
-        <section className={panel}>
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-bold">فهرست {section.title}</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                همه رکوردهای این فهرست داده نمایشی هستند.
-              </p>
-            </div>
-            <Button onClick={() => setDialog({ mode: 'create' })}>
-              <Plus aria-hidden="true" className="size-4" />
-              افزودن نمونه
-            </Button>
+          <svg
+            aria-label="نمودار فاقد داده عملیاتی"
+            role="img"
+            viewBox="0 0 700 220"
+          >
+            <defs>
+              <linearGradient id="hrArea" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stopColor="#1674e8" stopOpacity=".2" />
+                <stop offset="1" stopColor="#1674e8" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path
+              className={styles.chartGrid}
+              d="M20 30H680M20 80H680M20 130H680M20 180H680"
+            />
+            <path
+              className={styles.chartArea}
+              d="M20 170 C90 163 110 145 170 150 S260 110 320 122 S410 82 470 96 S570 58 680 62 V200 H20Z"
+            />
+            <path
+              className={styles.chartLine}
+              d="M20 170 C90 163 110 145 170 150 S260 110 320 122 S410 82 470 96 S570 58 680 62"
+            />
+            {[
+              ['170', '150'],
+              ['320', '122'],
+              ['470', '96'],
+              ['680', '62'],
+            ].map(([cx, cy]) => (
+              <circle
+                className={styles.chartDot}
+                cx={cx}
+                cy={cy}
+                key={cx}
+                r="5"
+              />
+            ))}
+          </svg>
+        </div>
+        <div className={`${styles.panel} ${styles.chart}`}>
+          <div className={styles.chartHead}>
+            <b>ترکیب کارکنان</b>
+            <small>داده نمایشی</small>
           </div>
-          {section.id === 'organization' ? (
-            <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
-              <h3 className="mb-3 font-bold">چارت نمایشی</h3>
-              <ul className="space-y-2">
-                <li>
-                  شعبه نمایشی
-                  <ul className="ms-5 mt-2 border-s-2 border-blue-300 ps-4">
-                    <li>واحد عملیات · سمت مدیر · ظرفیت پس از اتصال</li>
-                    <li className="mt-2">
-                      تیم پشتیبانی · سمت کارشناس · جانشین تعیین‌نشده
-                    </li>
-                  </ul>
-                </li>
-              </ul>
-            </div>
-          ) : null}
-          <div className="mb-5 grid gap-3 md:grid-cols-3">
-            <label className="text-sm">
-              <span className="mb-2 flex items-center gap-2">
-                <Search aria-hidden="true" className="size-4" />
-                جست‌وجو
-              </span>
+          <div className={styles.barList}>
+            {[
+              ['تمام‌وقت', '82%'],
+              ['پاره‌وقت', '38%'],
+              ['مشاور', '17%'],
+            ].map(([label, width]) => (
+              <div className={styles.barRow} key={label}>
+                <span>{label}</span>
+                <div className={styles.bar}>
+                  <i style={{ width }} />
+                </div>
+                <b>—</b>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section className={styles.grid3}>
+        <div className={styles.span2}>
+          <Panel
+            action={<Link href="/hr?section=requests">مشاهده همه</Link>}
+            icon={<FileArchive size={17} />}
+            title="کارتابل فوری مدیر HR"
+          >
+            <PreviewTable data={inbox} />
+          </Panel>
+        </div>
+        <Panel icon={<AlertTriangle size={17} />} title="هشدارها">
+          <div className={`${styles.panelBody} ${styles.alertList}`}>
+            {(
+              [
+                ['قراردادهای نزدیک پایان', 'پس از اتصال قراردادها', FileText],
+                ['مدارک منقضی', 'پس از کنترل نسخه سند', FileArchive],
+                ['مغایرت‌های تردد', 'پس از دریافت کارکرد', TimerReset],
+              ] as const
+            ).map(([title, hint, Icon]) => (
+              <div className={styles.alert} key={String(title)}>
+                <span className={styles.alertIcon}>
+                  <Icon size={16} />
+                </span>
+                <div>
+                  <b>{String(title)}</b>
+                  <small>{String(hint)}</small>
+                </div>
+                <button
+                  className={styles.textButton}
+                  onClick={() => openAction(String(title))}
+                  type="button"
+                >
+                  بررسی
+                </button>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </section>
+    </>
+  );
+}
+
+function Employees({ openAction }: { openAction: (title: string) => void }) {
+  const [query, setQuery] = useState('');
+  const filtered = useMemo(
+    () =>
+      previewEmployees.filter((employee) =>
+        `${employee.name} ${employee.id} ${employee.position}`.includes(
+          query.trim(),
+        ),
+      ),
+    [query],
+  );
+  const data: PreviewTableData = {
+    columns: [
+      'کارمند',
+      'کد پرسنلی',
+      'نوع همکاری',
+      'شعبه و واحد',
+      'سمت',
+      'مدیر مستقیم',
+      'تاریخ شروع',
+      'وضعیت',
+      'عملیات',
+    ],
+    rows: filtered.map((employee) => [
+      <Person employee={employee} key={employee.id} />,
+      employee.id,
+      employee.kind,
+      employee.unit,
+      employee.position,
+      employee.manager,
+      employee.startedAt,
+      <Badge key={`${employee.id}-status`} tone={employee.tone}>
+        {employee.status}
+      </Badge>,
+      <Link
+        className={`${styles.button} ${styles.buttonSmall}`}
+        href={`/hr?section=employee&employee=${employee.id}`}
+        key={`${employee.id}-link`}
+      >
+        مشاهده پرونده <ArrowLeft size={14} />
+      </Link>,
+    ]),
+    totalLabel: `${filtered.length.toLocaleString('fa-IR')} پرونده نمایشی`,
+  };
+  return (
+    <>
+      <PageHead
+        actions={
+          <>
+            <ActionButton disabled>
+              <Download size={15} /> خروجی مجاز
+            </ActionButton>
+            <ActionButton onClick={() => openAction('ورود گروهی')}>
+              ورود گروهی
+            </ActionButton>
+            <ActionButton onClick={() => openAction('کارمند جدید')} primary>
+              <Plus size={15} /> کارمند جدید
+            </ActionButton>
+          </>
+        }
+        section="employees"
+      />
+      <DateRangeBar />
+      <Panel title="فهرست کارکنان">
+        <div className={styles.filterBar}>
+          <label className={styles.fieldLabel}>
+            <span>جست‌وجو</span>
+            <span style={{ position: 'relative' }}>
+              <Search
+                aria-hidden="true"
+                size={15}
+                style={{ insetInlineStart: 10, position: 'absolute', top: 12 }}
+              />
               <input
-                className={control}
-                value={search}
-                placeholder="عنوان، شناسه یا واحد"
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                }}
+                className={`${styles.control} ${styles.searchControl}`}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="نام، کد پرسنلی یا سمت"
+                style={{ paddingInlineStart: 32 }}
+                value={query}
+              />
+            </span>
+          </label>
+          <select
+            aria-label="وضعیت"
+            className={styles.control}
+            defaultValue="all"
+          >
+            <option value="all">همه وضعیت‌ها</option>
+            <option value="active">فعال</option>
+          </select>
+          <select
+            aria-label="شعبه"
+            className={styles.control}
+            defaultValue="all"
+          >
+            <option value="all">همه شعب</option>
+            <option value="preview">شعبه نمایشی</option>
+          </select>
+          <select
+            aria-label="واحد"
+            className={styles.control}
+            defaultValue="all"
+          >
+            <option value="all">همه واحدها</option>
+            <option value="operations">عملیات سفر</option>
+          </select>
+          <ActionButton>
+            <Filter size={15} /> فیلتر
+          </ActionButton>
+        </div>
+        {filtered.length ? (
+          <PreviewTable data={data} />
+        ) : (
+          <div className={styles.empty}>
+            رکورد نمایشی مطابق جست‌وجو پیدا نشد.
+          </div>
+        )}
+      </Panel>
+    </>
+  );
+}
+
+function EmployeeProfile({
+  openAction,
+}: {
+  openAction: (title: string) => void;
+}) {
+  const [tab, setTab] = useState('summary');
+  const active =
+    employeeTabs.find((item) => item.id === tab) ?? employeeTabs[0];
+  const ActiveIcon = active?.icon ?? UserRound;
+  const summaryItems = [
+    ['کد پرسنلی', 'preview-employee-1'],
+    ['نوع همکاری', 'تمام‌وقت'],
+    ['شعبه', 'شعبه نمایشی'],
+    ['واحد', 'عملیات سفر'],
+    ['سمت', 'کارشناس ارشد عملیات'],
+    ['مدیر مستقیم', 'مدیر نمایشی الف'],
+    ['اطلاعات بانکی', '••••••••'],
+    ['شناسه هویتی', '••••••••'],
+  ];
+  return (
+    <>
+      <PageHead
+        actions={
+          <ActionButton onClick={() => openAction('تاریخچه پرونده')}>
+            <History size={15} /> تاریخچه
+          </ActionButton>
+        }
+        section="employee"
+      />
+      <DateRangeBar />
+      <section className={styles.employeeBanner}>
+        <span className={styles.profileAvatar}>الف</span>
+        <div className={styles.employeeMain}>
+          <h2>همکار نمایشی الف</h2>
+          <div className={styles.employeeMeta}>
+            <Badge tone="success">همکاری فعال</Badge>
+            <span dir="ltr">preview-employee-1</span>
+            <span>•</span>
+            <span>کارشناس ارشد عملیات سفر</span>
+            <span>•</span>
+            <span>مدیر: مدیر نمایشی الف</span>
+          </div>
+        </div>
+        <div className={styles.employeeActions}>
+          <Link className={styles.button} href="/hr?section=employees">
+            تغییر کارمند
+          </Link>
+          <ActionButton onClick={() => openAction('پرونده ۳۶۰ درجه')} primary>
+            <UserRound size={15} /> پرونده ۳۶۰ درجه
+          </ActionButton>
+        </div>
+      </section>
+      <Tabs active={tab} items={employeeTabs} onChange={setTab} />
+      <Panel
+        icon={<ActiveIcon size={17} />}
+        note="دسترسی این نما بر اساس نقش و دامنه سازمانی کنترل می‌شود."
+        title={active?.label ?? 'مشخصات'}
+      >
+        <div className={styles.panelBody}>
+          {tab === 'summary' ? (
+            <div className={styles.summaryGrid}>
+              {summaryItems.map(([label, value]) => (
+                <div className={styles.summaryItem} key={label}>
+                  <span>{label}</span>
+                  <b>{value}</b>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              <div className={styles.previewNote}>
+                <Info size={16} />
+                محتوای این تب پس از اتصال قرارداد عمومی ماژول مالک نمایش داده
+                می‌شود. این نما هیچ داده حساس یا عملیاتی را شبیه‌سازی نمی‌کند.
+              </div>
+              <div className={styles.empty}>
+                هنوز رکورد متصل برای «{active?.label}» وجود ندارد.
+              </div>
+            </>
+          )}
+        </div>
+      </Panel>
+    </>
+  );
+}
+
+function genericTable(
+  section: HrSectionId,
+  tab: string,
+  openAction: (title: string) => void,
+): PreviewTableData {
+  const operation = (
+    <ActionButton
+      key="action"
+      onClick={() => openAction('مشاهده جزئیات')}
+      small
+    >
+      مشاهده
+    </ActionButton>
+  );
+  const id = (index: number) => (
+    <span dir="ltr">{previewId(section, index)}</span>
+  );
+  if (section === 'organization')
+    return {
+      columns: [
+        'شناسه',
+        'عنوان',
+        'والد',
+        'مسئول',
+        'تاریخ اثر',
+        'وضعیت',
+        'عملیات',
+      ],
+      rows: [
+        [
+          id(0),
+          tab === 'positions' ? 'سمت نمایشی' : 'واحد نمایشی الف',
+          'ساختار نمایشی',
+          'همکار نمایشی الف',
+          '۱۴۰۵/۰۱/۰۱',
+          <Badge key="s" tone="success">
+            فعال
+          </Badge>,
+          operation,
+        ],
+        [
+          id(1),
+          tab === 'positions' ? 'شغل نمایشی' : 'واحد نمایشی ب',
+          'ساختار نمایشی',
+          'تعیین نشده',
+          '۱۴۰۵/۰۱/۰۱',
+          <Badge key="w" tone="warning">
+            نیازمند تکمیل
+          </Badge>,
+          operation,
+        ],
+      ],
+      totalLabel: '۲ ردیف پیش‌نمایش',
+    };
+  if (section === 'contracts')
+    return {
+      columns: [
+        'شناسه',
+        'کارمند',
+        'نوع',
+        'شروع',
+        'پایان',
+        'نسخه',
+        'وضعیت',
+        'عملیات',
+      ],
+      rows: [
+        [
+          id(0),
+          'همکار نمایشی الف',
+          tab === 'templates' ? 'قالب قرارداد' : 'تمام‌وقت',
+          '۱۴۰۵/۰۱/۰۱',
+          '۱۴۰۵/۱۲/۲۹',
+          'preview-v1',
+          <Badge key="s" tone="success">
+            فعال
+          </Badge>,
+          operation,
+        ],
+        [
+          id(1),
+          'همکار نمایشی ب',
+          'پاره‌وقت',
+          '۱۴۰۴/۰۷/۰۱',
+          '۱۴۰۵/۰۷/۳۰',
+          'preview-v2',
+          <Badge key="w" tone="warning">
+            نیازمند بررسی
+          </Badge>,
+          operation,
+        ],
+      ],
+      totalLabel: '۲ قرارداد نمایشی',
+    };
+  if (section === 'time')
+    return {
+      columns: [
+        'شناسه',
+        'کارمند',
+        'دوره',
+        'نوع',
+        'مقدار معتبر',
+        'نسخه منبع',
+        'وضعیت',
+        'عملیات',
+      ],
+      rows: [
+        [
+          id(0),
+          'همکار نمایشی الف',
+          'شهریور ۱۴۰۵',
+          tab,
+          '—',
+          'preview-source-v1',
+          <Badge key="s" tone="success">
+            تأیید نمایشی
+          </Badge>,
+          operation,
+        ],
+        [
+          id(1),
+          'همکار نمایشی ب',
+          'شهریور ۱۴۰۵',
+          tab,
+          '—',
+          'preview-source-v1',
+          <Badge key="w" tone="warning">
+            در انتظار
+          </Badge>,
+          operation,
+        ],
+      ],
+      totalLabel: '۲ ردیف پیش‌نمایش',
+    };
+  if (section === 'development')
+    return {
+      columns: [
+        'شناسه',
+        'کارمند',
+        'موضوع',
+        'دوره',
+        'مسئول',
+        'نتیجه',
+        'وضعیت',
+        'عملیات',
+      ],
+      rows: [
+        [
+          id(0),
+          'همکار نمایشی الف',
+          tab === 'skills' ? 'مهارت نمایشی' : 'برنامه توسعه نمایشی',
+          'فصل جاری',
+          'مدیر نمایشی الف',
+          '—',
+          <Badge key="w" tone="warning">
+            در جریان
+          </Badge>,
+          operation,
+        ],
+        [
+          id(1),
+          'همکار نمایشی ب',
+          'هدف نمایشی',
+          'فصل جاری',
+          'مدیر نمایشی ب',
+          '—',
+          <Badge key="n">پیش‌نویس</Badge>,
+          operation,
+        ],
+      ],
+      totalLabel: '۲ مورد پیش‌نمایش',
+    };
+  if (section === 'assets')
+    return {
+      columns: [
+        'شناسه',
+        'کارمند',
+        'تجهیز',
+        'برچسب دارایی',
+        'تحویل',
+        'وضعیت',
+        'عملیات',
+      ],
+      rows: [
+        [
+          id(0),
+          'همکار نمایشی الف',
+          'تجهیز نمایشی الف',
+          'preview-asset-1',
+          '۱۴۰۵/۰۱/۱۵',
+          <Badge key="s" tone="success">
+            تحویل‌شده
+          </Badge>,
+          operation,
+        ],
+        [
+          id(1),
+          'همکار نمایشی ب',
+          'تجهیز نمایشی ب',
+          'preview-asset-2',
+          '—',
+          <Badge key="w" tone="warning">
+            درخواست باز
+          </Badge>,
+          operation,
+        ],
+      ],
+      totalLabel: '۲ تجهیز پیش‌نمایش',
+    };
+  if (section === 'documents')
+    return {
+      columns: [
+        'شناسه',
+        'کارمند',
+        'نوع مدرک',
+        'نسخه',
+        'انقضا',
+        'سطح دسترسی',
+        'وضعیت',
+        'عملیات',
+      ],
+      rows: [
+        [
+          id(0),
+          'همکار نمایشی الف',
+          'مدرک نمایشی الف',
+          'preview-v1',
+          '۱۴۰۶/۰۱/۱۵',
+          'محرمانه',
+          <Badge key="s" tone="success">
+            بررسی‌شده
+          </Badge>,
+          operation,
+        ],
+        [
+          id(1),
+          'همکار نمایشی ب',
+          'مدرک نمایشی ب',
+          'preview-v1',
+          '—',
+          'محرمانه',
+          <Badge key="w" tone="warning">
+            نیازمند تکمیل
+          </Badge>,
+          operation,
+        ],
+      ],
+      totalLabel: '۲ مدرک پیش‌نمایش',
+    };
+  if (section === 'finance')
+    return {
+      columns: [
+        'شناسه',
+        'دوره',
+        'نسخه',
+        'حساب مقصد',
+        'مبلغ',
+        'مالک',
+        'وضعیت',
+        'عملیات',
+      ],
+      rows: [
+        [
+          id(0),
+          'شهریور ۱۴۰۵',
+          'preview-v1',
+          '••••••••',
+          '—',
+          'منابع انسانی',
+          <Badge key="w" tone="warning">
+            پیش‌نمایش
+          </Badge>,
+          operation,
+        ],
+        [
+          id(1),
+          'مرداد ۱۴۰۵',
+          'preview-v1',
+          '••••••••',
+          '—',
+          'مالی',
+          <Badge key="n">فاقد اتصال</Badge>,
+          operation,
+        ],
+      ],
+      totalLabel: '۲ بسته پیش‌نمایش',
+    };
+  if (section === 'reports')
+    return {
+      columns: [
+        'شناسه',
+        'عنوان',
+        'دامنه',
+        'تاریخ مبنا',
+        'مالک',
+        'خروجی',
+        'وضعیت',
+        'عملیات',
+      ],
+      rows: [
+        [
+          id(0),
+          'گزارش نیروی انسانی',
+          'شعبه مجاز',
+          'بازه انتخابی',
+          'HR',
+          'غیرفعال',
+          <Badge key="n">بدون داده</Badge>,
+          operation,
+        ],
+        [
+          id(1),
+          tab === 'access' ? 'کنترل دسترسی محرمانه' : 'Audit اختصاصی',
+          'دامنه نقش',
+          'بازه انتخابی',
+          'امنیت',
+          'غیرفعال',
+          <Badge key="w" tone="warning">
+            نیازمند منبع
+          </Badge>,
+          operation,
+        ],
+      ],
+      totalLabel: '۲ گزارش پیش‌نمایش',
+    };
+  return {
+    columns: ['شناسه', 'عنوان', 'دوره', 'نسخه', 'مقدار', 'وضعیت', 'عملیات'],
+    rows: [
+      [
+        id(0),
+        `رکورد نمایشی ${tab}`,
+        'شهریور ۱۴۰۵',
+        'preview-v1',
+        '—',
+        <Badge key="n">پیش‌نمایش</Badge>,
+        operation,
+      ],
+    ],
+    totalLabel: '۱ ردیف پیش‌نمایش',
+  };
+}
+
+function OrganizationChart() {
+  return (
+    <div className={styles.orgChart}>
+      <div className={`${styles.orgNode} ${styles.orgNodePrimary}`}>
+        <b>مدیریت نمایشی</b>
+        <small>همکار نمایشی الف</small>
+      </div>
+      <div className={styles.orgLevel}>
+        <div className={styles.orgNode}>
+          <b>واحد عملیات سفر</b>
+          <small>۲ سمت نمایشی</small>
+        </div>
+        <div className={styles.orgNode}>
+          <b>واحد فروش</b>
+          <small>۲ سمت نمایشی</small>
+        </div>
+        <div className={styles.orgNode}>
+          <b>واحد مالی</b>
+          <small>۱ سمت نمایشی</small>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Requests({ openAction }: { openAction: (title: string) => void }) {
+  const data: PreviewTableData = {
+    columns: [
+      'شناسه',
+      'نوع',
+      'درخواست‌کننده',
+      'ثبت',
+      'مالک مرحله',
+      'موعد',
+      'مرحله فعلی',
+      'اثر مالی',
+      'وضعیت',
+      'عملیات',
+    ],
+    rows: [
+      [
+        <span dir="ltr" key="i1">
+          preview-request-1
+        </span>,
+        'تغییر حساب مقصد',
+        'همکار نمایشی الف',
+        'امروز',
+        'تأییدکننده دوم',
+        'امروز',
+        'تأیید حساس',
+        'نسخه مقصد بعدی',
+        <Badge key="s1" tone="danger">
+          فوری
+        </Badge>,
+        <ActionButton
+          key="a1"
+          onClick={() => openAction('درخواست نمایشی')}
+          small
+        >
+          مشاهده
+        </ActionButton>,
+      ],
+      [
+        <span dir="ltr" key="i2">
+          preview-request-2
+        </span>,
+        'مرخصی',
+        'همکار نمایشی ب',
+        'دیروز',
+        'مدیر مستقیم',
+        'امروز',
+        'تأیید مدیر',
+        'رزرو نمایشی',
+        <Badge key="s2" tone="warning">
+          در انتظار
+        </Badge>,
+        <ActionButton
+          key="a2"
+          onClick={() => openAction('درخواست نمایشی')}
+          small
+        >
+          مشاهده
+        </ActionButton>,
+      ],
+      [
+        <span dir="ltr" key="i3">
+          preview-request-3
+        </span>,
+        'مأموریت',
+        'همکار نمایشی پ',
+        'دیروز',
+        'مالی',
+        'فردا',
+        'کنترل بودجه',
+        '—',
+        <Badge key="s3">در جریان</Badge>,
+        <ActionButton
+          key="a3"
+          onClick={() => openAction('درخواست نمایشی')}
+          small
+        >
+          مشاهده
+        </ActionButton>,
+      ],
+    ],
+    totalLabel: '۳ درخواست پیش‌نمایش',
+  };
+  return (
+    <>
+      <PageHead
+        actions={
+          <ActionButton onClick={() => openAction('درخواست جدید')} primary>
+            <Plus size={15} /> درخواست جدید
+          </ActionButton>
+        }
+        section="requests"
+      />
+      <DateRangeBar />
+      <section className={styles.requestCards}>
+        {requestKinds.map(([title, Icon, tone]) => (
+          <article className={styles.requestCard} key={title}>
+            <span className={`${styles.hubIcon} ${styles[tone]}`}>
+              <Icon size={21} />
+            </span>
+            <div>
+              <b>{title}</b>
+              <small>تعداد پس از اتصال منبع</small>
+            </div>
+          </article>
+        ))}
+      </section>
+      <Panel title="کارتابل درخواست‌ها">
+        <div className={styles.filterBar}>
+          <input
+            aria-label="جست‌وجوی درخواست"
+            className={`${styles.control} ${styles.searchControl}`}
+            placeholder="جست‌وجو در درخواست یا کارمند"
+          />
+          <select
+            aria-label="کارتابل"
+            className={styles.control}
+            defaultValue="mine"
+          >
+            <option value="mine">کارتابل من</option>
+            <option value="all">همه موارد مجاز</option>
+          </select>
+          <select
+            aria-label="نوع درخواست"
+            className={styles.control}
+            defaultValue="all"
+          >
+            <option value="all">همه انواع</option>
+            <option value="leave">مرخصی</option>
+          </select>
+          <ActionButton>
+            <Filter size={15} /> فیلتر
+          </ActionButton>
+        </div>
+        <PreviewTable data={data} />
+      </Panel>
+    </>
+  );
+}
+
+function PayrollOverview({
+  openAction,
+}: {
+  openAction: (title: string) => void;
+}) {
+  const data: PreviewTableData = {
+    columns: ['مرحله', 'ورودی', 'نسخه', 'مسئول', 'تکمیل', 'وضعیت'],
+    rows: [
+      [
+        'دریافت کارکرد',
+        '—',
+        'preview-calc-v1',
+        'منابع انسانی',
+        '—',
+        <Badge key="n1">فاقد اتصال</Badge>,
+      ],
+      [
+        'قرارداد و احکام',
+        '—',
+        'preview-hc-v1',
+        'کارگزینی',
+        '—',
+        <Badge key="n2">فاقد اتصال</Badge>,
+      ],
+      [
+        'محاسبه آزمایشی',
+        '—',
+        'preview-payrun-v1',
+        'حقوق و دستمزد',
+        '—',
+        <Badge key="w" tone="warning">
+          متوقف
+        </Badge>,
+      ],
+      ['ارسال مالی', '—', '—', 'مالی', '—', <Badge key="n3">در انتظار</Badge>],
+    ],
+    totalLabel: 'چرخه نمایشی؛ اجرای حقوق غیرفعال است',
+  };
+  const payrollKpis: readonly (readonly [string, string, LucideIcon])[] = [
+    ['ناخالص دوره', 'ارز و Decimal', WalletCards],
+    ['کسورات', 'محاسبه قانونی', FileText],
+    ['خالص پرداخت', 'پس از تأیید', BadgeCheck],
+    ['مغایرت باز', 'کنترل مسدودکننده', AlertTriangle],
+  ];
+  return (
+    <>
+      <section className={styles.payrollHero}>
+        <div>
+          <h2>چرخه حقوق شهریور ۱۴۰۵</h2>
+          <p>
+            این نمای کنترل برای بررسی طراحی است. محاسبه قانونی، ثبت حقوق یا
+            ارسال مالی تا اتصال سرویس‌های تأییدشده انجام نمی‌شود.
+          </p>
+        </div>
+        <div className={styles.heroMetrics}>
+          <div className={styles.heroMetric}>
+            <small>کارکنان</small>
+            <b>—</b>
+          </div>
+          <div className={styles.heroMetric}>
+            <small>مرحله</small>
+            <b>پیش‌نمایش</b>
+          </div>
+          <div className={styles.heroMetric}>
+            <small>نسخه</small>
+            <b dir="ltr">preview-v1</b>
+          </div>
+        </div>
+      </section>
+      <KpiGrid items={payrollKpis} />
+      <Panel
+        action={
+          <ActionButton
+            disabled
+            onClick={() => openAction('اجرای حقوق')}
+            primary
+          >
+            <Plus size={15} /> اجرای حقوق
+          </ActionButton>
+        }
+        icon={<WalletCards size={17} />}
+        note="محاسبه جاری، معوق و بین‌ماه با نسخه فرمول و تاریخ اثر مستقل"
+        title="مراحل پردازش حقوق"
+      >
+        <PreviewTable data={data} />
+      </Panel>
+    </>
+  );
+}
+
+function TabbedSection({
+  section,
+  openAction,
+}: {
+  section: Exclude<
+    HrSectionId,
+    'home' | 'dashboard' | 'employees' | 'employee' | 'requests'
+  >;
+  openAction: (title: string) => void;
+}) {
+  const tabs = sectionTabs[section] ?? [];
+  const [tab, setTab] = useState(tabs[0]?.id ?? 'list');
+  const active = tabs.find((item) => item.id === tab);
+  const ActiveIcon = active?.icon ?? FileText;
+  const isPayrollOverview = section === 'payroll' && tab === 'overview';
+  const data = genericTable(section, tab, openAction);
+  return (
+    <>
+      <PageHead
+        actions={
+          <>
+            <ActionButton disabled>
+              <Download size={15} /> خروجی مجاز
+            </ActionButton>
+            <ActionButton
+              onClick={() =>
+                openAction(`ایجاد در ${screenMeta[section].title}`)
+              }
+              primary
+            >
+              <Plus size={15} /> مورد جدید
+            </ActionButton>
+          </>
+        }
+        section={section}
+      />
+      <DateRangeBar />
+      {tabs.length ? (
+        <Tabs active={tab} items={tabs} onChange={setTab} />
+      ) : null}
+      {isPayrollOverview ? (
+        <PayrollOverview openAction={openAction} />
+      ) : (
+        <Panel
+          icon={<ActiveIcon size={17} />}
+          note="فقط شناسه‌ها و ردیف‌های صریحاً نمایشی نمایش داده شده‌اند."
+          title={active?.label ?? screenMeta[section].title}
+        >
+          {section === 'organization' && tab === 'orgchart' ? (
+            <OrganizationChart />
+          ) : (
+            <>
+              <div className={styles.filterBar}>
+                <input
+                  aria-label="جست‌وجو"
+                  className={`${styles.control} ${styles.searchControl}`}
+                  placeholder="جست‌وجو در داده نمایشی"
+                />
+                <select
+                  aria-label="وضعیت"
+                  className={styles.control}
+                  defaultValue="all"
+                >
+                  <option value="all">همه وضعیت‌ها</option>
+                  <option value="active">فعال</option>
+                </select>
+                <ActionButton>
+                  <Filter size={15} /> فیلتر
+                </ActionButton>
+              </div>
+              <PreviewTable data={data} />
+            </>
+          )}
+        </Panel>
+      )}
+    </>
+  );
+}
+
+function PreviewDialog({ close, title }: { close: () => void; title: string }) {
+  const [date, setDate] = useState('');
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    close();
+  }
+  return (
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) close();
+      }}
+      open
+    >
+      <DialogContent className={styles.modal} dir="rtl">
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription>
+          این فرم فقط رفتار رابط را نمایش می‌دهد و هیچ اطلاعاتی ذخیره یا به
+          سرویس دیگری ارسال نمی‌کند.
+        </DialogDescription>
+        <form onSubmit={submit}>
+          <div className={styles.previewNote}>
+            <Info size={16} />
+            فقط داده نمایشی وارد کنید. اطلاعات واقعی کارکنان در این پیش‌نمایش
+            مجاز نیست.
+          </div>
+          <div className={styles.formGrid}>
+            <label className={styles.fieldLabel}>
+              <span>عنوان نمایشی</span>
+              <input
+                className={styles.control}
+                defaultValue="رکورد نمایشی"
+                maxLength={100}
+                required
               />
             </label>
-            <label className="text-sm">
-              <span className="mb-2 block">وضعیت</span>
-              <select
-                className={control}
-                value={status}
-                onChange={(event) => {
-                  setStatus(event.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="">همه وضعیت‌ها</option>
-                {Object.entries(statusLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+            <label className={styles.fieldLabel}>
+              <span>شناسه</span>
+              <input
+                className={styles.control}
+                dir="ltr"
+                disabled
+                value="preview-new-record"
+              />
             </label>
-            <label className="text-sm">
-              <span className="mb-2 block">مرتب‌سازی عنوان</span>
-              <select
-                className={control}
-                value={direction}
-                onChange={(event) => {
-                  setDirection(event.target.value as 'asc' | 'desc');
-                  setPage(1);
-                }}
-              >
-                <option value="asc">صعودی</option>
-                <option value="desc">نزولی</option>
-              </select>
+            <label className={styles.fieldLabel}>
+              <span>تاریخ اثر</span>
+              <DatePicker id="hr-dialog-date" onChange={setDate} value={date} />
+            </label>
+            <label className={styles.fieldLabel}>
+              <span>اطلاعات حساس</span>
+              <input
+                aria-label="اطلاعات حساس پوشیده"
+                className={styles.control}
+                disabled
+                value="••••••••"
+              />
             </label>
           </div>
-          {result.items.length === 0 ? (
-            <HrState state="empty" />
-          ) : (
-            <ul className="space-y-3">
-              {result.items.map((record) => (
-                <li
-                  key={record.id}
-                  className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border p-4"
-                >
-                  <div className="min-w-0">
-                    <h3 className="break-words font-semibold">
-                      {record.title}
-                    </h3>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      {record.unit} · {statusLabels[record.status]} · داده
-                      نمایشی
-                    </p>
-                    <p
-                      className="mt-1 break-all text-xs text-muted-foreground"
-                      dir="ltr"
-                    >
-                      {record.id}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setDialog({ mode: 'view', record })}
-                    >
-                      مشاهده
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setDialog({ mode: 'edit', record })}
-                    >
-                      ویرایش نمونه
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-            <span className="text-sm text-muted-foreground">
-              {result.total.toLocaleString('fa-IR')} رکورد نمایشی · صفحه{' '}
-              {result.page.toLocaleString('fa-IR')} از{' '}
-              {result.pages.toLocaleString('fa-IR')}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                disabled={result.page <= 1}
-                onClick={() => setPage(result.page - 1)}
-              >
-                قبلی
-              </Button>
-              <Button
-                variant="outline"
-                disabled={result.page >= result.pages}
-                onClick={() => setPage(result.page + 1)}
-              >
-                بعدی
-              </Button>
-            </div>
+          <div className={styles.modalFooter}>
+            <ActionButton onClick={close}>انصراف</ActionButton>
+            <ActionButton primary type="submit">
+              اعمال در پیش‌نمایش
+            </ActionButton>
           </div>
-        </section>
-      )}
-      <Dialog
-        open={Boolean(dialog)}
-        onOpenChange={(open) => {
-          if (!open) setDialog(null);
-        }}
-      >
-        <DialogContent
-          dir="rtl"
-          className="max-h-[85vh] max-w-3xl overflow-y-auto"
-        >
-          <DialogTitle>
-            {dialog?.mode === 'view'
-              ? 'مشاهده'
-              : dialog?.mode === 'edit'
-                ? 'ویرایش نمونه'
-                : 'افزودن نمونه'}{' '}
-            · {section.title}
-          </DialogTitle>
-          <DialogDescription>
-            داده نمایشی؛ اطلاعات حساس قابل نمایش یا ثبت نیست.
-          </DialogDescription>
-          {dialog ? (
-            <HrPreviewForm
-              key={`${dialog.mode}-${dialog.record?.id ?? 'new'}`}
-              section={section}
-              {...(dialog.record ? { record: dialog.record } : {})}
-              mode={dialog.mode}
-              onSubmit={apply}
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
-    </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function HrWorkspace({ sectionId }: { sectionId?: string }) {
+  const section = normalizeSection(sectionId);
+  const [dialogTitle, setDialogTitle] = useState<string | null>(null);
+  const [notice, setNotice] = useState('');
+  function closeDialog() {
+    if (dialogTitle)
+      setNotice('عملیات فقط در پیش‌نمایش بررسی شد؛ ذخیره دائمی انجام نشد.');
+    setDialogTitle(null);
+  }
+  const openAction = (title: string) => {
+    setNotice('');
+    setDialogTitle(title);
+  };
+  let screen: ReactNode;
+  if (section === 'home') screen = <HubScreen />;
+  else if (section === 'dashboard')
+    screen = <Dashboard openAction={openAction} />;
+  else if (section === 'employees')
+    screen = <Employees openAction={openAction} />;
+  else if (section === 'employee')
+    screen = <EmployeeProfile openAction={openAction} />;
+  else if (section === 'requests')
+    screen = <Requests openAction={openAction} />;
+  else screen = <TabbedSection openAction={openAction} section={section} />;
+  return (
+    <main
+      className={styles.workspace}
+      data-hr-mode="preview"
+      dir="rtl"
+      lang="fa"
+    >
+      {notice ? (
+        <div className={styles.notice} role="status">
+          <BadgeCheck aria-hidden="true" size={17} />
+          {notice}
+        </div>
+      ) : null}
+      {screen}
+      {dialogTitle ? (
+        <PreviewDialog close={closeDialog} title={dialogTitle} />
+      ) : null}
+    </main>
   );
 }
