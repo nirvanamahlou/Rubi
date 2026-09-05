@@ -10,7 +10,7 @@
 - فرض ظرفیت: نسبت خواندن به نوشتن حدود `20:1` و اوج کمتر از `50 QPS`؛ هدف پیشنهادی `p50<150ms`، `p95<300ms`، `p99<600ms`، SLO برابر `99.9%`، `RPO<=24h` و `RTO<=4h`. هویت سازمان مشترک است و پروفایل عملیاتی با Branch scope و deny-by-default کنترل می‌شود.
 - نتیجه: آدرس پایه سازمان، پروفایل عملیاتی شعبه‌ای، قرارداد B2B، سیاست اعتبار و نرخ توافقی با Migration افزایشی، قرارداد عمومی نسخه‌دار، API مجوزمحور و Popup آژانس پیاده‌سازی شدند. تماس‌ها ماسک‌شده می‌مانند، تاریخ‌ها از DatePicker مشترک‌اند و exposure مالی تا انتشار Adapter مالک Finance صریحاً `UNAVAILABLE` است و صفر ساختگی نمایش داده نمی‌شود.
 - اعتبارسنجی: تمام Migrationها روی PostgreSQL موقت خالی اعمال شدند و ۶ جدول، قیود و ۲۲ Index جدید تأیید شدند؛ Prisma format/validate/generate، lint، typecheck، ۲۱ تست هدفمند و Production Build وب با ۳۴ Route موفق‌اند. Full Test همه بسته‌های تغییریافته را عبور داد؛ تنها شکست باقی‌مانده assertion متنی قدیمی Customer روی CRLF ویندوز است و هیچ فایل Customer در این Task تغییر نکرده است.
-- تحویل: Branch برای Review آماده و قفل‌های Migration، B2B shared-contract/root export و Central Docs تا تعیین تکلیف PR نزد `PC-B/AGENCY-B2B-INTEGRATIONS-001` باقی می‌مانند؛ Dependency/Lockfile آزاد است. Merge خودکار انجام نمی‌شود.
+- تحویل: PR [#98](https://github.com/nirvanamahlou/Rubi/pull/98) به `develop` برای Review آماده است و قفل‌های Migration، B2B shared-contract/root export و Central Docs تا تعیین تکلیف PR نزد `PC-B/AGENCY-B2B-INTEGRATIONS-001` باقی می‌مانند؛ Dependency/Lockfile آزاد است. Merge خودکار انجام نمی‌شود.
 
 ## CUSTOMER-DOCUMENTS-AGENCIES-INTEGRATION-001 — PC-B — READY_FOR_REVIEW
 

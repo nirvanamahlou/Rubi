@@ -2,7 +2,7 @@
 
 ## AGENCY-B2B-INTEGRATIONS-001 — اتصال عملیاتی و تجاری آژانس — آماده بررسی
 
-- `PC-B` روی Branch مستقل `codex/pc-b-agency-b2b-integrations` مانع ثبت‌شده در PR #90 را پس از اعلام رفع قفل از سوی مالک محصول تکمیل کرد. هویت آژانس همان `MasterOrganization` دارای نقش `AGENCY` باقی می‌ماند و هیچ موجودیت موازی یا Query مستقیم Sales/Finance ساخته نشده است.
+- `PC-B` روی Branch مستقل `codex/pc-b-agency-b2b-integrations` و PR [#98](https://github.com/nirvanamahlou/Rubi/pull/98) مانع ثبت‌شده در PR #90 را پس از اعلام رفع قفل از سوی مالک محصول تکمیل کرد. هویت آژانس همان `MasterOrganization` دارای نقش `AGENCY` باقی می‌ماند و هیچ موجودیت موازی یا Query مستقیم Sales/Finance ساخته نشده است.
 - آدرس پایه سازمان با FK واقعی کشور/شهر، پروفایل عملیاتی شعبه‌ای، قرارداد B2B، سیاست اعتبار، نرخ توافقی و Audit افزایشی پیاده‌سازی شدند. قراردادهای عمومی نسخه‌دار، Permissionهای deny-by-default، Branch scope و Optimistic Version در API اعمال می‌شوند.
 - Popup موجود آژانس اطلاعات واقعی آدرس، تماس ماسک‌شده، پروفایل، قرارداد، اعتبار و نرخ را از APIهای عمومی می‌گیرد. تاریخ‌ها از تقویم مشترک شمسی/میلادی استفاده می‌کنند و Finance exposure تا انتشار Adapter مالک Finance صریحاً ناموجود است؛ مقدار صفر ساختگی تولید نمی‌شود.
 - Migrationها روی PostgreSQL موقت خالی از ابتدا تا انتها اجرا و ۶ جدول و ۲۲ Index جدید بررسی شدند. Prisma، lint، typecheck، ۲۱ تست هدفمند و Production Build وب با ۳۴ Route موفق‌اند. Full Test فقط روی assertion قدیمی و تغییرنیافته Customer که در Checkout ویندوز LF را با CRLF مقایسه می‌کند قرمز است.

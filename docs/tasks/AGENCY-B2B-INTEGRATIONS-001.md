@@ -11,6 +11,8 @@ credit policies and agreed rates.
 
 - Owner: `PC-B`
 - Branch: `codex/pc-b-agency-b2b-integrations`
+- Pull request: [#98](https://github.com/nirvanamahlou/Rubi/pull/98) to
+  `develop`
 - Base: `origin/develop@092109d8b8c020c802a9ac3faa27f4f6571d2994`
 - Migration owner: `PC-B/AGENCY-B2B-INTEGRATIONS-001`
 - B2B shared-contract/root export owner: `PC-B/AGENCY-B2B-INTEGRATIONS-001`
