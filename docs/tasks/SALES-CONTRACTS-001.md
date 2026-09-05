@@ -2,6 +2,13 @@
 
 - Status: `READY_FOR_REVIEW`
 
+## Parent service selection/dashboard follow-up
+
+- Selecting the Flight or Transfer parent checkbox now selects both OUTBOUND/RETURN and expands the two independent child checkboxes underneath. Disabling the parent clears its directions without changing the other service. Re-enabling starts with both directions again.
+- `/sales` remains the contract dashboard with its New Contract action. The new-contract page now has a visible link back to that dashboard; existing local draft persistence is retained.
+- Web Sales tests: 12 passed; Sales lint and Web typecheck passed. No API/schema/migration/permission changes for this follow-up. Unrelated local changes remain excluded.
+- User also authorized adding Turkey and Antalya to Master Data. This data operation is NOT completed or verified: browser runtime failed with Windows ACL errors, the Computer Use Node runtime also failed, and unauthenticated public Master Data API access returned 401. No authentication bypass or private-table write was used. Reference creation still needs a working authenticated public interface.
+
 ## Authorized continuation — 2026-09-05
 
 Latest follow-up supersedes the earlier activation gate and route UI limitations; historical verification below is retained.

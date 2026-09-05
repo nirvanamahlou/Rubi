@@ -2,6 +2,8 @@
 
 ## SALES-CONTRACTS-001 — PC-A — READY_FOR_REVIEW
 
+- Current follow-up (PC-A): reserve Sales form/model/tests and task docs for parent service selection (both directions initially selected, then expandable independent choices) and a persistent dashboard return link. Turkey/Antalya reference creation is authorized through the existing Master Data public interface only; no private table writes or Master Data code ownership transfer.
+
 - Follow-up route/directional services: PC-A reserves Sales Web/model/tests, Sales domain validation/tests and task docs on the same branch/PR #90. Searchable country/city inputs with reference-backed Tehran/Antalya defaults; independent flight/transfer directions use existing `SalesServiceInput.metadata.direction` (OUTBOUND/RETURN), produced by Sales and preserved in the Reservations v1 snapshot. Legacy services without direction retain their prior trip-type behavior. No schema, migration, dependency or other module changes.
 
 - Route/directional follow-up delivered: country-filtered searchable city menus, reference-backed Iran/Tehran and Turkey/Antalya defaults, independent direction checkboxes, selected-service substeps and transfer date/pickup/dropoff details. Web Sales 9 tests and API Sales 26 tests (all 15 flight/transfer combinations), Web/API typecheck, Sales lint and Web/API production builds passed. Earlier operational role approval gate resolved by explicit user approval and four audited local grants, without changing branch memberships. Authenticated browser QA is not claimed; unrelated local Customers/Documents changes remain excluded.

@@ -11,9 +11,45 @@ import {
   salesReturnSearchFrom,
   withSalesRouteDefaults,
   normalizeRouteSearch,
+  toggleSalesDirectionalService,
 } from './sales-form';
 
 describe('sales contract form payload', () => {
+  it.each(['FLIGHT', 'TRANSFER'] as const)(
+    'selects both directions when enabling %s and clears them when disabling it',
+    (kind) => {
+      const enabled = {
+        ...emptySalesForm,
+        ...toggleSalesDirectionalService(emptySalesForm, kind),
+      };
+      expect(salesDirections(enabled, kind)).toEqual(['OUTBOUND', 'RETURN']);
+      expect(enabled.tripType).toBe('ROUND_TRIP');
+      const disabled = {
+        ...enabled,
+        ...toggleSalesDirectionalService(enabled, kind),
+      };
+      expect(salesDirections(disabled, kind)).toEqual([]);
+      expect(disabled.serviceKinds).not.toContain(kind);
+      expect(disabled.tripType).toBe('ONE_WAY');
+    },
+  );
+  it('preserves the independent directions of the other service', () => {
+    const state = {
+      ...emptySalesForm,
+      serviceKinds: ['TRANSFER' as const],
+      serviceDirections: { TRANSFER: ['RETURN' as const] },
+    };
+    const enabled = {
+      ...state,
+      ...toggleSalesDirectionalService(state, 'FLIGHT'),
+    };
+    const disabled = {
+      ...enabled,
+      ...toggleSalesDirectionalService(enabled, 'FLIGHT'),
+    };
+    expect(salesDirections(disabled, 'TRANSFER')).toEqual(['RETURN']);
+    expect(disabled.tripType).toBe('ROUND_TRIP');
+  });
   const reference = (
     id: string,
     name: string,

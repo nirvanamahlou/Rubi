@@ -225,6 +225,36 @@ export function salesDetailSteps(state: SalesFormState): string[] {
   );
 }
 
+export function toggleSalesDirectionalService(
+  state: SalesFormState,
+  kind: 'FLIGHT' | 'TRANSFER',
+): Partial<SalesFormState> {
+  const next: SalesTicketDirection[] = state.serviceKinds.includes(kind)
+    ? []
+    : ['OUTBOUND', 'RETURN'];
+  return {
+    serviceKinds: next.length
+      ? [...new Set([...state.serviceKinds, kind])]
+      : state.serviceKinds.filter((item) => item !== kind),
+    serviceDirections: { ...state.serviceDirections, [kind]: next },
+    tripType:
+      next.includes('RETURN') ||
+      salesDirections(
+        state,
+        kind === 'FLIGHT' ? 'TRANSFER' : 'FLIGHT',
+      ).includes('RETURN')
+        ? 'ROUND_TRIP'
+        : 'ONE_WAY',
+    ...(kind === 'FLIGHT'
+      ? {
+          outboundOffer: undefined,
+          returnOffer: undefined,
+          ticket: { ...state.ticket, outboundOfferId: '', returnOfferId: '' },
+        }
+      : {}),
+  };
+}
+
 export function salesReturnSearchFrom(state: SalesFormState): string {
   return state.outboundOffer?.departureAt.slice(0, 10) || state.departureDate;
 }

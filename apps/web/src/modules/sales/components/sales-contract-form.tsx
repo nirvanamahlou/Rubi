@@ -10,6 +10,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
 import type {
@@ -21,7 +22,7 @@ import type {
   SalesServiceKind,
 } from '@rubi/contracts';
 
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import { Alert, Badge, Card, PageHeader } from '@/components/ui/surfaces';
@@ -39,6 +40,7 @@ import {
   salesDetailSteps,
   salesReturnSearchFrom,
   withSalesRouteDefaults,
+  toggleSalesDirectionalService,
   type SalesFormState,
 } from '../model/sales-form';
 
@@ -467,6 +469,15 @@ export function SalesContractForm() {
         eyebrow="فروش"
         title="قرارداد جدید"
         description="مسیر و خدمات سفر را انتخاب کنید و قرارداد مشتری را تکمیل کنید."
+        actions={
+          <Link
+            href="/sales"
+            className={buttonVariants({ variant: 'outline' })}
+          >
+            <ChevronRight className="size-4" />
+            بازگشت به داشبورد قراردادها
+          </Link>
+        }
       />
       <ol className="grid grid-cols-2 gap-2 md:grid-cols-6">
         {salesSteps.map((label, index) => (
@@ -593,8 +604,8 @@ export function SalesContractForm() {
           <div className="mt-6 grid gap-5">
             <h2 className="text-xl font-black">خدمات قرارداد</h2>
             <p className="text-sm text-muted-foreground">
-              بلیت و ترانسفر هر مسیر را مستقل تیک بزنید؛ انتخاب یکی، دیگری را
-              الزامی نمی‌کند.
+              ابتدا خدمت را انتخاب کنید؛ رفت و برگشت با هم فعال می‌شوند و سپس
+              می‌توانید هر جهت را جدا تغییر دهید.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               {(['FLIGHT', 'TRANSFER'] as const).map((kind) => (
@@ -602,27 +613,42 @@ export function SalesContractForm() {
                   key={kind}
                   className="rounded-2xl border border-border p-4"
                 >
-                  <legend className="px-2 font-bold">
-                    {kind === 'FLIGHT' ? 'بلیت پرواز' : 'ترانسفر'}
-                  </legend>
-                  <div className="grid grid-cols-2 gap-3">
-                    {(['OUTBOUND', 'RETURN'] as const).map((direction) => (
-                      <label
-                        key={direction}
-                        className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 ${salesDirections(state, kind).includes(direction) ? 'border-primary bg-primary/10 text-primary' : 'border-border'}`}
-                      >
-                        <input
-                          type="checkbox"
-                          className="size-4 accent-primary"
-                          checked={salesDirections(state, kind).includes(
-                            direction,
-                          )}
-                          onChange={() => toggleDirection(kind, direction)}
-                        />
-                        {direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}
-                      </label>
-                    ))}
-                  </div>
+                  <label className="flex cursor-pointer items-center justify-between gap-3 font-bold">
+                    <span>{kind === 'FLIGHT' ? 'بلیت پرواز' : 'ترانسفر'}</span>
+                    <input
+                      type="checkbox"
+                      className="size-5 accent-primary"
+                      checked={state.serviceKinds.includes(kind)}
+                      aria-controls={`sales-directions-${kind}`}
+                      aria-expanded={state.serviceKinds.includes(kind)}
+                      onChange={() =>
+                        patchState(toggleSalesDirectionalService(state, kind))
+                      }
+                    />
+                  </label>
+                  {state.serviceKinds.includes(kind) ? (
+                    <div
+                      id={`sales-directions-${kind}`}
+                      className="mt-4 grid grid-cols-2 gap-3 border-t border-border pt-4"
+                    >
+                      {(['OUTBOUND', 'RETURN'] as const).map((direction) => (
+                        <label
+                          key={direction}
+                          className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 ${salesDirections(state, kind).includes(direction) ? 'border-primary bg-primary/10 text-primary' : 'border-border'}`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="size-4 accent-primary"
+                            checked={salesDirections(state, kind).includes(
+                              direction,
+                            )}
+                            onChange={() => toggleDirection(kind, direction)}
+                          />
+                          {direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}
+                        </label>
+                      ))}
+                    </div>
+                  ) : null}
                 </fieldset>
               ))}
             </div>
