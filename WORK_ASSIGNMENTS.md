@@ -1,5 +1,14 @@
 # Work Assignments
 
+## AGENCY-B2B-INTEGRATIONS-001 — PC-B — IN_PROGRESS
+
+- درخواست و واگذاری صریح مالک محصول در 2026-09-05: مانع قبلی PR #90 رفع‌شده تلقی شود و اتصال عملیاتی آژانس‌ها شامل آدرس پایه، پروفایل شعبه‌ای، قرارداد B2B، سیاست اعتبار و نرخ توافقی پیاده‌سازی شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-agency-b2b-integrations` از `origin/develop@092109d`؛ Branch و تغییرات PC-A/PR #90 دست‌نخورده و فقط از قراردادهای عمومی مصرف می‌شوند.
+- محدوده رزروشده: `MasterOrganizationAddress` در مالکیت Master Data؛ مدل‌ها، API و UI ماژول B2B/Agencies برای پروفایل شعبه‌ای، قرارداد، سیاست اعتبار و نرخ توافقی؛ قراردادهای عمومی نسخه‌دار؛ Migration افزایشی؛ تست و اسناد همین واحد کار.
+- انتقال قفل محدود: `Migration Owner = PC-B/AGENCY-B2B-INTEGRATIONS-001`، `B2B shared-contract/root export Owner = PC-B/AGENCY-B2B-INTEGRATIONS-001` و `Central Docs Owner = PC-B/AGENCY-B2B-INTEGRATIONS-001`. قفل Dependency/Lockfile رزرو نمی‌شود. هماهنگی انتقال در PR #90 ثبت شده است.
+- مرز ممنوع: Query یا FK مستقیم به جدول‌های Sales/Finance، تغییر Migrationهای PR #90، تغییر Branchهای PC-A، داده ساختگی مالی یا PII واقعی. B2B مالک قرارداد/سیاست اعتبار/نرخ توافقی است و exposure مالی فقط از Port عمومی Finance خوانده می‌شود.
+- فرض ظرفیت: نسبت خواندن به نوشتن حدود `20:1` و اوج کمتر از `50 QPS`؛ هدف پیشنهادی `p50<150ms`، `p95<300ms`، `p99<600ms`، SLO برابر `99.9%`، `RPO<=24h` و `RTO<=4h`. هویت سازمان مشترک است و پروفایل عملیاتی با Branch scope و deny-by-default کنترل می‌شود.
+
 ## CUSTOMER-DOCUMENTS-AGENCIES-INTEGRATION-001 — PC-B — READY_FOR_REVIEW
 
 - واگذاری صریح مالک محصول در 2026-09-05: نجات و سازگارکردن قابلیت‌های سالم PR #85 با آخرین Documents، اتصال واقعی Customer 360 به اسناد، اتصال عملیاتی آژانس‌ها به Organizationهای اطلاعات پایه و حذف شناسه موقت از جریان Logo. `COMPUTER_ID=PC-B`.
