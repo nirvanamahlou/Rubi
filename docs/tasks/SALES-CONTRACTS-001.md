@@ -1,6 +1,14 @@
 # SALES-CONTRACTS-001
 
-- Status: `READY_FOR_REVIEW`
+- Status: `IN_PROGRESS`
+
+## Authorized continuation — 2026-09-05
+
+- Owner explicitly approved Ticket Catalog persistence/public API and Reservations intake to support selectable offers and versioned Sales dispatch.
+- PC-A reserves Ticket Catalog/Reservations runtime, their versioned public contracts/root exports, additive Prisma migration, permission seed and module wiring under this task; existing Migration/Central Docs locks remain in force. No dependency changes.
+- Ticket Catalog produces branch-scoped offers/revalidation; Sales consumes only its public service. Sales produces immutable sales.v1 requests; Reservations consumes them idempotently and owns execution records. Changes are additive and preserve existing contracts.
+- Acceptance: route/services first, selectable outbound/independent return search, destination hotel search/visa, age categories, negotiated IRR/foreign totals, payment rows/check dates, owner scope and Finance-confirmed settlement.
+- Earlier verification applies only to the earlier slice, not this continuation.
 - Owner: `PC-A`
 - Branch: `codex/pc-a-sales-contracts`
 - Base: `origin/develop@85204a427ee575df1e81493e531418830b250abc`
@@ -32,6 +40,8 @@
 
 ## Delivered vertical slice
 
+The following section records the original slice. The 2026-09-05 continuation below supersedes its runtime and seven-step UI limitations.
+
 - قرارداد عمومی `sales.v1` و endpointهای versioned برای Dashboard، فهرست، جزئیات، ایجاد، ویرایش، پرداخت، تأیید، لغو، ReservationRequest، Audit و تاریخچه وضعیت منتشر شد.
 - Prisma و Migration افزایشی `20260903123000_sales_contracts_vertical_slice` مالک Contract، Passenger، Service، Allocation، Ticket/Hotel selection، Price component، Payment schedule، Reservation request، Audit و Status history است. شناسه ماژول‌های بیرونی opaque است و FK یا Query مستقیم بیرونی وجود ندارد.
 - Permissionهای Sales به‌صورت deny-by-default Seed شدند و نقش `sales_staff` فقط Permissionهای عملیاتی Sales و Public Contractهای لازم Customers، Master Data، Legal Entity و Documents را دریافت می‌کند.
@@ -47,3 +57,22 @@
 - Full test پس از آخرین Merge: ۱٬۴۸۵ تست موفق؛ ۷۰ تست PostgreSQL اختیاری موجود طبق Suite skip شدند و Gate مستقل PostgreSQL بالا موفق است.
 - Full Production Build: ۶ Task موفق؛ ۳۵ صفحه تولید و `/sales` و `/sales/contracts/new` موفق prerender شدند.
 - Dependency و `pnpm-lock.yaml` تغییر نکرد؛ `main` و `develop` مستقیم تغییر نکردند و Rebase/Force Push انجام نشد.
+
+## Continuation delivery and verification — 2026-09-05
+
+- Commits: `1d145c4` (public contracts/schema/seed), `914450d` (runtime/API/outbox), `aeef6be` (route-first UI/payments). Same Draft PR #90; no unrelated Customers/Documents changes included.
+- Ticket Catalog owns immutable published offers, permission/branch-scoped search, idempotent publication and audit. Sales validates the selected snapshot through its public service; no cross-module private-table access. Capacity is checked, not held or allocated.
+- Reservations owns idempotent request intake and a branch-scoped inbox. Sales durable outbox retries until receipt, then records acknowledgement. Passenger assignments and ticket selections travel with the versioned snapshot. Intake does not implement ticket issuance, vouchers or procurement.
+- Six-step full-page form: route/services, travel selection, customer, passengers, totals/installments, review. Blue selectable offer cards, paginated independent return search from the lower date without an upper cap, destination hotel search and visa selection, cabin class, and age bands are connected to real APIs. Outbound currently uses one departure date, not a date range.
+- Contract payments can be added from the contract list, including check dates/details. Multi-currency settlement remains outstanding while any currency is unpaid; pending schedules do not count as Finance-confirmed receipts.
+- Additive migration `20260905070000_travel_runtime_intake`: all 32 migrations succeeded on a second fresh PostgreSQL 18 database; seed ran twice successfully. Permission-only operational definitions, no real traveler or offer data. Seed transaction has a bounded 30-second timeout.
+- Dedicated integration suite: 5 passed, including 4 real PostgreSQL tests for publication/idempotency/scope, return search/revalidation, concurrent immutable intake, mixed-currency settlement and durable dispatch acknowledgement. Full workspace tests, typecheck, lint and production build passed. Full tests include 74 optional database skips, with the four new database tests separately executed successfully. Build produced 35 routes.
+- Full local checks included independently modified Customers/Documents/shared button files; these were preserved and excluded from this task's commits. CI should validate the committed branch independently.
+- Existing local database reported migrations up to date. Web `http://localhost:3100/sales/contracts/new` and API health returned HTTP 200; ticket API CORS preflight returned 204 for port 3100. This is not authenticated end-to-end verification. Browser automation failed with host ACL errors.
+
+## Remaining activation and limits
+
+- Auto-review denied operational role grants because the earlier authorization did not identify exact recipient roles/resources/scope. No new role grants were applied to the operational database. Explicit approval is required for `sales_staff: ticket_catalog.read` and `administrator: ticket_catalog.read, ticket_catalog.manage, reservations.read`, limited to each role/user's already authorized branches; no new branch access.
+- Standard seed definitions were verified only in the isolated database; do not run them on operational data to bypass the denied grant action. Existing role grants for these resources were observed as zero.
+- Legacy browser-local ticket definitions are not automatically published/migrated. Operators must publish real scheduled offers through the new authorized interface. No synthetic production data was created.
+- State remains IN_PROGRESS pending access activation and authenticated browser verification; receipt in Reservations means queued for execution, not fulfillment.

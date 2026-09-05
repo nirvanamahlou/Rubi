@@ -1,6 +1,8 @@
 # Work Assignments
 
-## SALES-CONTRACTS-001 — PC-A — READY_FOR_REVIEW
+## SALES-CONTRACTS-001 — PC-A — IN_PROGRESS
+
+- Follow-up 2026-09-05 approved by owner: Ticket Catalog persistence/public API, Reservations intake and route-first Sales UX. PC-A/SALES-CONTRACTS-001 reserves Ticket Catalog/Reservations runtime, versioned contracts/root exports, additive Migration, permission seed and AppModule wiring; existing Migration/Central Docs locks remain assigned. No dependency changes. Compatibility/producer-consumer plan: docs/tasks/SALES-CONTRACTS-001.md.
 
 - درخواست مالک در 2026-09-03: Vertical Slice واقعی قراردادها، فروش و تخصیص خدمات روی Branch مستقل `codex/pc-a-sales-contracts` و Draft PR #90 ادامه یابد. `COMPUTER_ID=PC-A`.
 - Base جاری `origin/develop@85204a4` شامل Merge PR #89، Handoff رسمی PR #91 و PR #92 است؛ Mergeهای معمولی `8d3b89d` و `dbaf450` وارد Branch فروش شدند، تعارض اسناد با حفظ هر دو Handoff حل شد و Rebase/Force Push انجام نشد.
