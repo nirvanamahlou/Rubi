@@ -67,6 +67,112 @@ const draft: SalesContractCreateRequest = {
 };
 
 describe('Sales contract domain', () => {
+  it.each(Array.from({ length: 15 }, (_, index) => index + 1))(
+    'accepts independent flight/transfer combination %s',
+    (flags) => {
+      const input = structuredClone(draft);
+      const choices = [
+        { kind: 'FLIGHT' as const, direction: 'OUTBOUND' as const },
+        { kind: 'FLIGHT' as const, direction: 'RETURN' as const },
+        { kind: 'TRANSFER' as const, direction: 'OUTBOUND' as const },
+        { kind: 'TRANSFER' as const, direction: 'RETURN' as const },
+      ].filter((_, index) => (flags & (1 << index)) !== 0);
+      input.tripType = choices.some((item) => item.direction === 'RETURN')
+        ? 'ROUND_TRIP'
+        : 'ONE_WAY';
+      input.services = choices.map((item) => ({
+        clientKey: `${item.kind}-${item.direction}`,
+        kind: item.kind,
+        titleSnapshot: 'خدمت آزمون',
+        metadata: {
+          direction: item.direction,
+          ...(item.kind === 'TRANSFER'
+            ? { date: '2026-10-10', pickup: 'هتل', dropoff: 'فرودگاه' }
+            : {}),
+        },
+      }));
+      input.ticketSelections = choices
+        .filter((item) => item.kind === 'FLIGHT')
+        .map((item) => ({
+          ...draft.ticketSelections!.find(
+            (ticket) => ticket.direction === item.direction,
+          )!,
+          serviceClientKey: `FLIGHT-${item.direction}`,
+        }));
+      input.passengers = [
+        {
+          ...input.passengers[0]!,
+          serviceClientKeys: input.services.map((item) => item.clientKey),
+        },
+      ];
+      expect(() => validateSalesContract(input)).not.toThrow();
+    },
+  );
+  it.each(['OUTBOUND', 'RETURN'] as const)(
+    'allows a %s-only flight on a round trip with an independent opposite transfer',
+    (direction) => {
+      const input = structuredClone(draft);
+      input.services = [
+        {
+          clientKey: 'flight',
+          kind: 'FLIGHT',
+          titleSnapshot: 'بلیت',
+          metadata: { direction },
+        },
+        {
+          clientKey: 'transfer',
+          kind: 'TRANSFER',
+          titleSnapshot: 'ترانسفر',
+          metadata: {
+            direction: direction === 'OUTBOUND' ? 'RETURN' : 'OUTBOUND',
+            date: '2026-10-10',
+            pickup: 'هتل',
+            dropoff: 'فرودگاه',
+          },
+        },
+      ];
+      input.ticketSelections = input.ticketSelections!.filter(
+        (item) => item.direction === direction,
+      );
+      expect(() => validateSalesContract(input)).not.toThrow();
+      input.ticketSelections = [];
+      expect(() => validateSalesContract(input)).toThrow('بلیت جهت انتخاب‌شده');
+    },
+  );
+  it('rejects mismatched ticket directions and a return-only ticket on the wrong route', () => {
+    const input = structuredClone(draft);
+    input.services = [
+      {
+        clientKey: 'flight',
+        kind: 'FLIGHT',
+        titleSnapshot: 'برگشت',
+        metadata: { direction: 'RETURN' },
+      },
+    ];
+    input.ticketSelections = [input.ticketSelections![0]!];
+    expect(() => validateSalesContract(input)).toThrow('خدمت بلیت');
+    input.ticketSelections = [
+      { ...draft.ticketSelections![1]!, originId: draft.originId },
+    ];
+    expect(() => validateSalesContract(input)).toThrow(
+      'مسیر یا زمان بلیت برگشت',
+    );
+  });
+  it('rejects missing legacy return tickets and incomplete directional transfers', () => {
+    const input = structuredClone(draft);
+    input.ticketSelections = [input.ticketSelections![0]!];
+    expect(() => validateSalesContract(input)).toThrow('بلیت جهت انتخاب‌شده');
+    input.services = [
+      {
+        clientKey: 'flight',
+        kind: 'TRANSFER',
+        titleSnapshot: 'ترانسفر',
+        metadata: { direction: 'OUTBOUND' },
+      },
+    ];
+    input.ticketSelections = [];
+    expect(() => validateSalesContract(input)).toThrow('ترانسفر الزامی');
+  });
   it('validates a round-trip contract and deterministically fingerprints it', () => {
     expect(() => validateSalesContract(draft)).not.toThrow();
     expect(salesFingerprint({ b: 2, a: 1 })).toBe(

@@ -194,7 +194,16 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
   }
   const tickets = input.ticketSelections ?? [];
   for (const ticket of tickets) {
-    if (!serviceKeys.has(ticket.serviceClientKey))
+    const service = input.services.find(
+      (item) => item.clientKey === ticket.serviceClientKey,
+    );
+    if (
+      !service ||
+      service.kind !== 'FLIGHT' ||
+      (service.metadata?.direction &&
+        service.metadata.direction !== ticket.direction) ||
+      !['OUTBOUND', 'RETURN'].includes(ticket.direction)
+    )
       throw new SalesDomainError(
         'TICKET_NOT_AVAILABLE',
         'خدمت بلیت انتخاب‌شده معتبر نیست.',
@@ -226,22 +235,73 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
       'RETURN_TICKET_INVALID',
       'تعداد یا مسیر بلیت‌ها با قرارداد سازگار نیست.',
     );
+  for (const service of input.services) {
+    const direction = service.metadata?.direction;
+    if (
+      direction &&
+      input.services.filter(
+        (item) =>
+          item.kind === service.kind && item.metadata?.direction === direction,
+      ).length > 1
+    )
+      throw new SalesDomainError(
+        'SALES_SERVICE_DUPLICATE',
+        'خدمت هر جهت فقط یک بار قابل انتخاب است.',
+      );
+    if (
+      (service.kind === 'FLIGHT' || service.kind === 'TRANSFER') &&
+      direction !== undefined &&
+      (!['OUTBOUND', 'RETURN'].includes(String(direction)) ||
+        (direction === 'RETURN' && input.tripType !== 'ROUND_TRIP'))
+    )
+      throw new SalesDomainError(
+        'SALES_SERVICE_INVALID',
+        'جهت خدمت با قرارداد سازگار نیست.',
+      );
+    if (service.kind === 'FLIGHT') {
+      const required = direction
+        ? [direction]
+        : input.tripType === 'ROUND_TRIP'
+          ? ['OUTBOUND', 'RETURN']
+          : ['OUTBOUND'];
+      if (
+        required.some(
+          (expected) =>
+            !tickets.some(
+              (ticket) =>
+                ticket.direction === expected &&
+                ticket.serviceClientKey === service.clientKey,
+            ),
+        )
+      )
+        throw new SalesDomainError(
+          'RETURN_TICKET_INVALID',
+          'بلیت جهت انتخاب‌شده الزامی است.',
+        );
+    }
+    if (service.kind === 'TRANSFER' && direction) {
+      const metadata = service.metadata;
+      if (
+        typeof metadata?.date !== 'string' ||
+        typeof metadata.pickup !== 'string' ||
+        !metadata.pickup.trim() ||
+        typeof metadata.dropoff !== 'string' ||
+        !metadata.dropoff.trim() ||
+        validDate(metadata.date, 'تاریخ ترانسفر') < departure
+      )
+        throw new SalesDomainError(
+          'SALES_SERVICE_INVALID',
+          'تاریخ و محل سوار و پیاده شدن ترانسفر الزامی است.',
+        );
+    }
+  }
   if (
-    input.services.some(({ kind }) => kind === 'FLIGHT') &&
-    (!outbound || (input.tripType === 'ROUND_TRIP' && !inbound))
-  )
-    throw new SalesDomainError(
-      'RETURN_TICKET_INVALID',
-      'هر دو بلیت رفت و برگشت الزامی است.',
-    );
-  if (
-    outbound &&
     inbound &&
     (inbound.originId !== input.destinationId ||
       inbound.destinationId !== input.originId ||
       Date.parse(inbound.departureAt) <
         Math.max(
-          Date.parse(outbound.arrivalAt),
+          outbound ? Date.parse(outbound.arrivalAt) : departure,
           Date.parse(input.returnNotBefore ?? input.departureDate),
         ))
   )
