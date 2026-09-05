@@ -2,6 +2,15 @@
 
 - Status: `READY_FOR_REVIEW`
 
+## Calendar parity and ticket presentation
+
+- Final Web production build passed (35 routes), with the configured public API URL retained for local runtime.
+
+- Sales-local range picker now follows shared DatePicker styling: input-like calendar trigger, segmented calendar-system control, primary header and month/year grids. Existing shared date utilities power all calculations. Above/below placement and bounded scrolling prevent the low-screen clipping shown in the reference. Shared calendar implementation remains untouched.
+- Range stays optional, clearable, single-calendar and inclusive; filter query semantics and return lower-bound/independent upper-bound behavior remain unchanged.
+- Ticket cards expose actual carrier/service number, reference-backed city names, separate departure/arrival dates and minute-only times, derived elapsed duration, authoritative cabin and total capacity. Display timezone is explicitly Asia/Tehran for both endpoints; stored UTC values stay unchanged. Blue selection also uses an icon/text and aria-pressed. No price, airport code, or remaining capacity is invented.
+- 39 Web Sales tests cover placement bounds, range selection, real card labels, selection accessibility, duration and overnight Tehran date rollover; scoped lint/typecheck pass. Authenticated visual/browser QA remains unclaimed due to the previously reported tool failures. No schema, API or IAM changes.
+
 ## Combined people step and inline creation
 
 - Five steps now combine customer lookup/selection and passenger birthdates/age display. Selecting another customer preserves all existing passengers and birthdates; duplicate selections are ignored.

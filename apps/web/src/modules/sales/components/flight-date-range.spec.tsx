@@ -1,7 +1,25 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { FlightDateRangeFilter, selectFlightRange } from './flight-date-range';
+import {
+  FlightDateRangeFilter,
+  selectFlightRange,
+  flightCalendarPlacement,
+} from './flight-date-range';
 describe('optional flight range', () => {
+  it('opens above low controls and bounds panel height to visible space', () => {
+    expect(flightCalendarPlacement(750, 794, 900)).toEqual({
+      above: true,
+      maxHeight: 520,
+    });
+    expect(flightCalendarPlacement(120, 164, 800)).toEqual({
+      above: false,
+      maxHeight: 520,
+    });
+    expect(flightCalendarPlacement(300, 344, 800)).toEqual({
+      above: false,
+      maxHeight: 440,
+    });
+  });
   it('selects both endpoints in one calendar, including reverse and same-day ranges', () => {
     const start = selectFlightRange({ from: '', to: '' }, '2026-10-10');
     expect(start).toEqual({ from: '2026-10-10', to: '' });

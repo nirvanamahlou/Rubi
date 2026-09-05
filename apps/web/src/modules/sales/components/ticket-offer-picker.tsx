@@ -6,15 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/surfaces';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { TicketOfferCard } from './ticket-offer-card';
 
 export function TicketOfferPicker({
   query,
   selectedId,
   onSelect,
+  originLabel,
+  destinationLabel,
 }: {
   query: TicketOfferSearchV1;
   selectedId: string;
   onSelect: (offer: TicketOfferV1) => void;
+  originLabel?: string;
+  destinationLabel?: string;
 }) {
   const [offers, setOffers] = useState<TicketOfferV1[]>([]);
   const [page, setPage] = useState(1);
@@ -76,6 +81,9 @@ export function TicketOfferPicker({
   }, [filters, page]);
   return (
     <div className="grid gap-3">
+      <p className="text-[11px] text-muted-foreground">
+        ساعت‌ها به وقت تهران · مرتب‌شده از نزدیک‌ترین تاریخ
+      </p>
       {busy ? (
         <p>در حال جست‌وجوی بلیت…</p>
       ) : error ? (
@@ -84,29 +92,14 @@ export function TicketOfferPicker({
         <p>بلیتی برای این مسیر و تاریخ پیدا نشد.</p>
       ) : (
         offers.map((offer) => (
-          <button
+          <TicketOfferCard
             key={offer.id}
-            type="button"
-            aria-pressed={selectedId === offer.id}
-            className={`rounded-xl border p-4 text-start ${selectedId === offer.id ? 'border-blue-600 bg-blue-600 text-white' : 'border-border bg-surface'}`}
-            onClick={() => onSelect(offer)}
-          >
-            <strong>
-              {offer.carrierName} · {offer.serviceNumber}
-            </strong>
-            <p>
-              {new Date(offer.departureAt).toLocaleString('fa-IR')} ←{' '}
-              {new Date(offer.arrivalAt).toLocaleString('fa-IR')}
-            </p>
-            <p>
-              {offer.cabinClassCode === 'BUSINESS'
-                ? 'بیزینس'
-                : offer.cabinClassCode === 'FIRST'
-                  ? 'فرست'
-                  : 'اکونومی'}{' '}
-              · ظرفیت کل {offer.totalCapacity}
-            </p>
-          </button>
+            offer={offer}
+            selected={selectedId === offer.id}
+            onSelect={onSelect}
+            {...(originLabel ? { originLabel } : {})}
+            {...(destinationLabel ? { destinationLabel } : {})}
+          />
         ))
       )}
       <div className="flex gap-2">

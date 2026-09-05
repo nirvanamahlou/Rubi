@@ -779,6 +779,16 @@ export function SalesContractForm() {
                         onChange={setFlightRange}
                       />
                       <TicketOfferPicker
+                        originLabel={
+                          references.cities.find(
+                            (city) => city.id === state.originId,
+                          )?.name ?? 'مبدأ'
+                        }
+                        destinationLabel={
+                          references.cities.find(
+                            (city) => city.id === state.destinationId,
+                          )?.name ?? 'مقصد'
+                        }
                         key={`out-${state.originId}-${state.destinationId}-${flightRange.from}-${flightRange.to}`}
                         query={{
                           originId: state.originId,
@@ -827,6 +837,16 @@ export function SalesContractForm() {
                       {!flightDirections.includes('OUTBOUND') ||
                       state.outboundOffer ? (
                         <TicketOfferPicker
+                          originLabel={
+                            references.cities.find(
+                              (city) => city.id === state.destinationId,
+                            )?.name ?? 'مقصد'
+                          }
+                          destinationLabel={
+                            references.cities.find(
+                              (city) => city.id === state.originId,
+                            )?.name ?? 'مبدأ'
+                          }
                           key={`return-${state.outboundOffer?.id ?? futureFrom}-${!flightDirections.includes('OUTBOUND') ? flightRange.from + '-' + flightRange.to : ''}`}
                           query={{
                             originId: state.destinationId,
