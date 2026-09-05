@@ -1,5 +1,8 @@
 # وضعیت پروژه
 
+## CUSTOMER-CONNECTIONS-0905 — integration in progress
+
+- PC-A is validating PR #85 Customer Documents against committed Sales plus the existing master-data session-refresh retry. Separate worktree preserves active Sales changes; prior test results below do not establish validation of this integration.
 ## SALES-CONTRACTS-001 — Vertical Slice فروش — آماده بررسی
 
 - PR #91 با Merge Commit `b69b7fa` قفل‌های Migration، Central Docs و Sales shared-contract/root export را به `PC-A/SALES-CONTRACTS-001` منتقل کرد؛ Merge معمولی `8d3b89d` این Handoff را وارد Branch فروش کرد. آخرین `origin/develop@85204a4` نیز با Merge معمولی `dbaf450` وارد و تعارض اسناد با حفظ هر دو Handoff حل شد.
@@ -57,6 +60,13 @@
   از کش افزایشی قدیمی محلی بود و فایل Master Data در این Task تغییر نکرد.
 - PR [#86](https://github.com/nirvanamahlou/Rubi/pull/86) با Merge Commit `4ea7b27`
   وارد `develop` شد؛ اجرای کامل CI پس از ادغام روی خود `develop` نیز سبز است.
+## CUSTOMER-DOCUMENTS-001 — مدارک واقعی در Customer 360 — آماده بررسی
+
+- `PC-A` وضعیت «در انتظار زیرساخت مدارک» را با پنل واقعی فهرست و بارگذاری فایل جایگزین کرد. هر مشتری اکنون تعداد، کد آرشیو، نوع، نسخه، تاریخ اعتبار و وضعیت اسکن مدارک خودش را می‌بیند و می‌تواند از همان پرونده فایل جدید اضافه کند.
+- قرارداد عمومی Documents به‌صورت backward-compatible فیلتر exact source گرفت. Backend مرجع سه‌بخشی را کامل اعتبارسنجی و همراه Branch/Domain/Permission scope روی Relation اصلی اعمال می‌کند؛ پاسخ هیچ source id خامی افشا نمی‌کند.
+- Customers فقط مصرف‌کننده Public Contract/API است و هیچ دسترسی مستقیم به Repository یا جدول Documents ندارد. UI باز PR #80 و فایل‌های تقویم/اسناد PC-B نیز تغییر نکرده‌اند.
+- ذخیره ساخت‌یافته شماره پاسپورت، کشور صادرکننده و شماره ویزا همچنان تا تصمیم `DEC-OPEN-006` مسدود است؛ ولی خود فایل‌ها اکنون با قرنطینه، نسخه و کنترل دسترسی فعلی Documents عملیاتی‌اند.
+- Full lint/typecheck/build پاس و `1470` تست Monorepo موفق است؛ `70` تست PostgreSQL اختیاری skip شدند. Migration، Schema، Seed، Dependency و Lockfile تغییر نکرده‌اند. جزئیات: `docs/tasks/CUSTOMER-DOCUMENTS-001.md`.
 
 ## MASTER-004-FORM-ALIGNMENT — هم‌ترازی فرم‌های اطلاعات پایه — آماده بررسی
 

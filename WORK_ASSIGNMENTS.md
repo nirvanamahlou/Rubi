@@ -1,5 +1,8 @@
 # Work Assignments
 
+## CUSTOMER-CONNECTIONS-0905 — PC-A — IN_PROGRESS
+
+- User approved integrating PR #85 Documents/Customer 360 and the existing master-data session retry on 2026-09-05. Isolated branch `codex/pc-a-customer-connections-0905`, based on committed Sales `5ea2b32`; active Sales worktree is untouched. Scope: integration of existing Customers/Documents public API changes, customer reference retry, tests and these task entries. No schema, migration, dependency or permission changes.
 ## SALES-CONTRACTS-001 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-03: Vertical Slice واقعی قراردادها، فروش و تخصیص خدمات روی Branch مستقل `codex/pc-a-sales-contracts` و Draft PR #90 ادامه یابد. `COMPUTER_ID=PC-A`.
@@ -81,6 +84,17 @@
 - اعتبارسنجی: Web Master Data برابر `42/42` فایل و `327/327` تست، API Master Data برابر `27/27` فایل و `402/402` تست، lint و typecheck هر دو برنامه و Production Build هر دو موفق‌اند. API روی `4000` و Web تازه‌ساخته‌شده روی `3100` فعال‌اند؛ Health هر دو پاسخ `200` دارند. Schema/Migration/Seed/Dependency/Lockfile تغییر نکرد.
 
 ## MASTER-004-FORM-ALIGNMENT — PC-B — DONE/MERGED
+## CUSTOMER-DOCUMENTS-001 — PC-A — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-03: جایگزینی وضعیت «در انتظار زیرساخت مدارک» در پرونده ۳۶۰ مشتری با اتصال واقعی به ماژول ادغام‌شده Documents. `COMPUTER_ID=PC-A`.
+- Branch مستقل `codex/pc-a-customer-documents-integration` از `origin/develop@9608607`؛ کار مستقیم روی `develop` یا `main`، Merge خودکار، Force Push و حذف Branch ممنوع است.
+- محدوده رزروشده: رابط و Client ماژول Customers، فیلتر افزایشی و backward-compatible قرارداد عمومی Documents، DTO/Service/Repository و تست‌های محدود Documents برای فهرست منبع، سند Task و ورودی‌های همین Work Item در اسناد مرکزی.
+- مرز دامنه: Customers فقط مصرف‌کننده قرارداد عمومی Documents است؛ Binary، metadata، version، confidentiality، scan و archive نزد Documents می‌ماند. Query مستقیم جدول Documents از Customers و import کد داخلی Web ماژول Documents ممنوع است.
+- امنیت: فهرست و بارگذاری فقط با Session، Permission، Domain و Branch scope موجود Documents انجام می‌شود؛ فایل تا نتیجه اسکن معتبر قابل دریافت نیست. شماره پاسپورت و داده semantic هویتی در Customers ذخیره نمی‌شود و `DEC-OPEN-006` همچنان Gate آن داده‌هاست.
+- قفل‌ها: `Documents public list-filter contract = PC-A/CUSTOMER-DOCUMENTS-001` و `Central Docs Owner = PC-A/CUSTOMER-DOCUMENTS-001`. قفل‌های Migration، Schema، Seed و Dependency/Lockfile رزرو نمی‌شوند. قفل‌های `MASTER-004-FORM-ALIGNMENT` با Merge PR #83 / Commit `9608607` پایان یافته‌اند.
+- نتیجه: فهرست exact-source، کنترل all-or-none، پنل Customer 360، بارگذاری امن و Stateهای Loading/Empty/Unauthorized/Forbidden/Error تکمیل شد. Full lint/typecheck/build و ۱۴۷۰ تست پاس؛ ۷۰ تست PostgreSQL اختیاری skip شد. قفل‌های این Work Item تا Merge/Handoff فعال می‌مانند.
+
+## MASTER-004-FORM-ALIGNMENT — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-02: هم‌ترازسازی کامل فرم‌ها و فهرست‌های اطلاعات پایه شامل ادغام تجربه استان/شهر، حذف یا اختیاری‌کردن فیلدهای مشخص‌شده، افزودن ترتیب نمایش عمومی، یکسان‌سازی تقویم و قالب اعداد، حذف Exportهای تعیین‌شده، ورود داخلی امکانات هتل، ساده‌سازی حمل‌ونقل و افزودن Logo Reference برای شرکت‌ها و سازمان‌ها. `COMPUTER_ID=PC-B`.
 - Branch مستقل `codex/pc-b-master-data-form-alignment` از `origin/develop@e91cdba`؛ کار مستقیم روی `develop` یا `main`، Merge خودکار، Force Push و حذف Branch ممنوع است.

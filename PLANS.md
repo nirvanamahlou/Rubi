@@ -18,6 +18,8 @@ foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه 
 
 ## Documents — زنجیره Stacked فعلی
 
+- [x] `CUSTOMER-DOCUMENTS-001`: اتصال واقعی Customer 360 به فهرست و بارگذاری امن Documents با exact source + Branch/Domain scope، بدون Query مستقیم بین ماژول‌ها و بدون Migration. داده semantic پاسپورت/ویزا تا `DEC-OPEN-006` مسدود می‌ماند.
+
 - [x] `DOCUMENTS-001`: Foundation رابط و معماری ماژول روی
       `codex/pc-b-documents-foundation` / Draft PR #61؛ هنوز به `develop` ادغام نشده است.
 - [x] `DOCUMENTS-002`: Persistence و Migration افزایشی، قرارداد/IAM، API و بارگذاری واقعی،

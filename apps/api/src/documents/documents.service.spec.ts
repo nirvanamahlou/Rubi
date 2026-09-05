@@ -2,6 +2,7 @@ import { Readable } from 'node:stream';
 
 import type { AuthenticatedActor } from '@rubi/contracts';
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   UnsupportedMediaTypeException,
@@ -221,6 +222,56 @@ describe('DocumentsService security and persistence flow', () => {
       title: 'سند محرمانه ••••••',
       description: null,
     });
+  });
+
+  it('normalizes a complete source reference before applying branch and domain scope', async () => {
+    repository.list.mockResolvedValue({ rows: [], total: 0 });
+
+    await service.list(
+      {
+        sourceModule: ' customers ',
+        sourceEntityType: ' Customer ',
+        sourceEntityId: ' aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa ',
+      },
+      actor,
+    );
+
+    expect(repository.list).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceModule: 'customers',
+        sourceEntityType: 'Customer',
+        sourceEntityId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      }),
+      [branchId],
+      ['GENERAL', 'SALES'],
+      actor.userId,
+    );
+  });
+
+  it('rejects partial source filters before querying the repository', async () => {
+    await expect(
+      service.list({ sourceModule: 'customers' }, actor),
+    ).rejects.toMatchObject({
+      constructor: BadRequestException,
+      response: expect.objectContaining({
+        code: 'DOCUMENT_SOURCE_FILTER_INCOMPLETE',
+      }),
+    });
+    expect(repository.list).not.toHaveBeenCalled();
+  });
+
+  it('rejects blank canonical source parts for direct service callers', async () => {
+    await expect(
+      service.list(
+        {
+          sourceModule: 'customers',
+          sourceEntityType: 'Customer',
+          sourceEntityId: '   ',
+        },
+        actor,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(repository.list).not.toHaveBeenCalled();
   });
 
   it('searches only accessible cases and never returns their source identifier', async () => {
