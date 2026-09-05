@@ -12,7 +12,7 @@ import {
 const source = readFileSync(
   new URL('./customer-workspace.tsx', import.meta.url),
   'utf8',
-);
+).replace(/\r\n/g, '\n');
 const dateFieldSource = readFileSync(
   new URL('./customer-date-field.tsx', import.meta.url),
   'utf8',

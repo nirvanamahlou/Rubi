@@ -1,6 +1,11 @@
 # وضعیت پروژه
 
-## CUSTOMER-CONNECTIONS-0905 — integration in progress
+## CUSTOMER-CONNECTIONS-0905 — local integration ready for review
+
+- Customer Documents and master-data reference refresh are integrated and validated (163 tests; lint/typecheck/build successful). Independent local runtime: Web 3101 / API 4101. Existing 3 pending additive migrations were applied to localhost:5432; no reset, new migration or seed. Persistent protected local Documents key is configured. Authenticated user upload/download has not been manually exercised in this session.
+
+- Customer Documents and master-data session retry are integrated in an isolated checkout based on committed Sales. The following historical entries retain their original scope; this task does not change Ticket Catalog.
+
 ## CUSTOMER-MASTERDATA-RETRY — بازیابی اطلاعات پایه پس از تمدید نشست
 
 - `PC-A` روی Branch مستقل `codex/pc-a-customer-masterdata-retry` خطای هم‌زمانی

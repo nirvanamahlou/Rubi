@@ -1,6 +1,11 @@
 # Work Assignments
 
-## CUSTOMER-CONNECTIONS-0905 — PC-A — IN_PROGRESS
+## CUSTOMER-CONNECTIONS-0905 — PC-A — READY_FOR_REVIEW
+
+- Completed integration validation: 163 targeted tests and all affected lint/typecheck/build passed. Local Web 3101 and API 4101 launched independently. Existing localhost:5432 database had 28/31 migrations; the three existing additive migrations were deployed successfully to resolve missing Master Data/Documents columns. No new migration or seed was authored. New persistent DPAPI-protected Documents key and local storage are in ignored tmp; previous configured database had zero Documents records.
+
+- Integration work is isolated from active Sales. Existing headings below are retained as historical context; they do not reserve Ticket Catalog work in this task. Only Customer Documents integration and master-data retry are being validated here.
+
 ## CUSTOMER-MASTERDATA-RETRY — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-02: کامل‌ترین نسخه قبلی Customers روی پورت ۳۱۰۰ حفظ شود و پیام نادرست «اطلاعات پایه در دسترس نیست» پس از تمدید نشست رفع گردد. `COMPUTER_ID=PC-A`.
