@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { SalesContractCreateRequest } from '@rubi/contracts';
+import { servicePriceComponents } from '@rubi/contracts';
 
 import {
   calculateSalesBalances,
@@ -67,6 +68,24 @@ const draft: SalesContractCreateRequest = {
 };
 
 describe('Sales contract domain', () => {
+  it('validates versioned service pricing and rejects a tampered bill', () => {
+    const input = structuredClone(draft);
+    input.services[0]!.pricing = [
+      {
+        version: 1,
+        currencyCode: 'USD',
+        daySale: { basis: 'TOTAL', amount: '300' },
+        agreed: { basis: 'TOTAL', amount: '250' },
+      },
+    ];
+    input.priceComponents = servicePriceComponents(input.services)!;
+    expect(() => validateSalesContract(input)).not.toThrow();
+    input.priceComponents = input.priceComponents.map((price) => ({
+      ...price,
+      amount: '1',
+    }));
+    expect(() => validateSalesContract(input)).toThrow('مطابقت');
+  });
   it('rejects duplicate passengers before persistence', () => {
     const input = structuredClone(draft);
     input.passengers = [...input.passengers, ...input.passengers];

@@ -9,6 +9,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type {
+  SalesServicePricingV1,
   AuthenticatedActor,
   SalesContractCreateRequest,
   SalesContractDetail,
@@ -144,6 +145,11 @@ export function presentSalesContract(
       referenceId: service.referenceId,
       titleSnapshot: service.titleSnapshot,
       status: service.status,
+      ...(Array.isArray(service.pricing)
+        ? {
+            pricing: service.pricing as unknown as SalesServicePricingV1[],
+          }
+        : {}),
       ...(service.metadata &&
       typeof service.metadata === 'object' &&
       !Array.isArray(service.metadata)

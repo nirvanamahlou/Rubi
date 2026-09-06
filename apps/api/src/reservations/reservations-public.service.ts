@@ -37,6 +37,20 @@ export class ReservationsPublicService {
   list(branchIds: readonly string[]) {
     return this.database.client.reservationIntake.findMany({
       where: { branchId: { in: [...branchIds] } },
+      include: {
+        hotelPurchases: {
+          orderBy: { version: 'desc' },
+          distinct: ['currencyCode'],
+          select: {
+            id: true,
+            version: true,
+            amount: true,
+            currencyCode: true,
+            actorUserId: true,
+            createdAt: true,
+          },
+        },
+      },
       orderBy: [{ receivedAt: 'desc' }, { id: 'asc' }],
       take: 100,
     });

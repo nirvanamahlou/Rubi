@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { servicePriceComponents } from '@rubi/contracts';
 
 import type {
   SalesBalance,
@@ -333,6 +334,25 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
         'SALES_HOTEL_INVALID',
         'تعداد اتاق و ظرفیت باید مثبت باشد.',
       );
+  }
+  try {
+    const derived = servicePriceComponents(
+      input.services,
+      input.hotelSelection,
+    );
+    if (
+      derived &&
+      salesFingerprint(derived.map(salesFingerprint).sort()) !==
+        salesFingerprint(input.priceComponents.map(salesFingerprint).sort())
+    )
+      throw new Error(
+        'مجموع قیمت‌ها با قیمت روز و مبلغ توافقی خدمات مطابقت ندارد.',
+      );
+  } catch (error) {
+    throw new SalesDomainError(
+      'SALES_MONEY_INVALID',
+      error instanceof Error ? error.message : 'قیمت خدمات معتبر نیست.',
+    );
   }
   for (const price of input.priceComponents) {
     currency(price.currencyCode);

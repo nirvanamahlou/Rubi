@@ -251,6 +251,7 @@ export class SalesRepository {
               referenceId: service.referenceId ?? null,
               titleSnapshot: service.titleSnapshot,
               status: service.status ?? 'SELECTED',
+              pricing: service.pricing ? json(service.pricing) : Prisma.DbNull,
               metadata: service.metadata
                 ? json(service.metadata)
                 : Prisma.JsonNull,
@@ -443,6 +444,7 @@ export class SalesRepository {
               referenceId: service.referenceId ?? null,
               titleSnapshot: service.titleSnapshot,
               status: service.status ?? 'SELECTED',
+              pricing: service.pricing ? json(service.pricing) : Prisma.DbNull,
               metadata: service.metadata
                 ? json(service.metadata)
                 : Prisma.JsonNull,
