@@ -1,4 +1,5 @@
 'use client';
+import { PassengerCountField } from './passenger-count-field';
 
 import {
   AlertTriangle,
@@ -102,36 +103,6 @@ function ReferenceSelect({
         ))}
       </select>
     </FormField>
-  );
-}
-
-function PassengerCountField({
-  label,
-  hint,
-  value,
-  onChange,
-}: {
-  label: string;
-  hint: string;
-  value: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <label className="grid gap-1 rounded-xl border border-border bg-surface p-3">
-      <span className="font-bold">{label}</span>
-      <span className="text-xs text-muted-foreground">{hint}</span>
-      <select
-        className={fieldClass}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-      >
-        {Array.from({ length: 31 }, (_, count) => (
-          <option key={count} value={count}>
-            {count.toLocaleString('fa-IR')} نفر
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }
 

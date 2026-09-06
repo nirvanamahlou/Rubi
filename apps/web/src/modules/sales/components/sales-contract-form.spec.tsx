@@ -15,6 +15,10 @@ describe('compact sales contract form', () => {
     expect(html).toContain('بزرگسال');
     expect(html).toContain('کودک');
     expect(html).toContain('نوزاد');
+    expect(html.match(/type="number"/g)).toHaveLength(3);
+    for (const label of ['بزرگسال', 'کودک', 'نوزاد']) {
+      expect(html).toContain(`aria-label="تعداد ${label}"`);
+    }
     expect(html).toContain('نوزاد لازم نیست در تعداد صندلی بلیت شمرده شود');
     expect(html).toContain('aria-label="مبدأ سفر"');
     expect(html).toContain('aria-label="مقصد سفر"');
