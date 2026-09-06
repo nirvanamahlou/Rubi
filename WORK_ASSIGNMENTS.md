@@ -1,9 +1,10 @@
 # Work Assignments
 
-## SALES-CURRENCY-INCLUDED-TRANSFER-0906 — PC-A — IN_PROGRESS
+## SALES-CURRENCY-INCLUDED-TRANSFER-0906 — PC-A — COMPLETE_LOCAL
 
 - User requested registered-currency selection, themed Sales dropdowns, and included outbound/return transfers with no additional charge. Reserve Sales Web/model/tests, Sales public pricing helper and API validation tests, and central task documentation on codex/pc-a-sales-currency-included-transfer-0906 from 0ded773. No migration, IAM, dependencies, producer branch edits or public publication.
 - Compatibility: new Sales payloads mark included TRANSFER through existing metadata; public pricing calculation excludes these and rejects attached charges. Historical unmarked transfer prices remain unchanged. Master Data currencies are consumed only through its public API; transfer directions remain in ticket output and reservation snapshot.
+- Delivered locally in 13baaf6 and aed55fc. 41 Contracts, 91 Sales Web, 44 Sales/Reservations API tests passed (5 optional integration tests skipped); all 11 affected lint/typecheck/dependency gates, API build and 36-route Web production build passed. Web3100/API4000 restarted; health/login/bundle 200, unauthenticated redirect 307/API denial 401 and credentialed origin checks passed. Prior Web is retained at ignored tmp/currency-transfer-web-before-0906. No migration, operational seed, permission changes, public push or authenticated visual QA. Task-specific reservations released; producer ownership unchanged.
 
 ## SALES-PASSENGER-NUMBER-INPUT-0906 — PC-A — COMPLETE_LOCAL
 
