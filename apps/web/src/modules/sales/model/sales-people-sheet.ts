@@ -17,10 +17,13 @@ export interface PeopleRow {
   values: PeopleValues;
   person?: { id: string; displayName: string };
   reviewRequired?: boolean;
+  profile?: CustomerDetail;
+  savedPassportNumber?: string;
 }
 export interface SalesPeopleDraft {
   mode: 'person' | 'first-passenger' | 'organization';
   rows: Record<string, PeopleRow>;
+  displacedFirst?: PeopleRow;
   organization: {
     id: string;
     displayName: string;
@@ -33,6 +36,7 @@ export const emptyPeopleValues = (): PeopleValues => ({
   nationalId: '',
   birthDate: '',
   passportNumber: '',
+  passportExpiryDate: '',
   phone: '',
   email: '',
 });
@@ -55,6 +59,7 @@ export function initialSalesPeopleDraft(
       person: { id: state.customerId, displayName: state.customerName },
       values: { ...emptyPeopleValues(), firstName: state.customerName },
     };
+  if (state.firstPassengerIsCustomer && rows.p0) rows.primary = rows.p0;
   return {
     mode:
       state.customerKind === 'organization'
@@ -83,6 +88,9 @@ export const peopleRow = (draft: SalesPeopleDraft, key: string): PeopleRow =>
 export function selectedPeopleRow(person: CustomerDetail): PeopleRow {
   return {
     person: { id: person.id, displayName: person.displayName },
+    profile: person,
+    savedPassportNumber:
+      person.passportNumber ?? person.maskedPassportNumber ?? '',
     values: {
       ...emptyPeopleValues(),
       firstName: person.firstName ?? person.displayName,
@@ -91,16 +99,77 @@ export function selectedPeopleRow(person: CustomerDetail): PeopleRow {
         ? ''
         : (person.birthDate?.slice(0, 10) ?? ''),
       nationalId: person.maskedNationalId ?? '',
-      passportNumber: person.maskedPassportNumber ?? '',
+      passportNumber:
+        person.passportNumber ?? person.maskedPassportNumber ?? '',
+      passportExpiryDate: person.passportExpiryDate ?? '',
       phone: person.maskedPrimaryContact ?? '',
     },
   };
+}
+export function linkCustomerAsFirst(
+  draft: SalesPeopleDraft,
+  linked: boolean,
+): SalesPeopleDraft {
+  if (linked) {
+    if (draft.mode === 'organization')
+      throw new Error('مشتری حقوقی نمی‌تواند مسافر باشد.');
+    if (draft.mode === 'first-passenger') return draft;
+    return {
+      ...draft,
+      mode: 'first-passenger',
+      displacedFirst: peopleRow(draft, 'p0'),
+      rows: { ...draft.rows, p0: peopleRow(draft, 'primary') },
+    };
+  }
+  return {
+    ...draft,
+    mode: 'person',
+    rows: {
+      ...draft.rows,
+      primary: peopleRow(draft, 'p0'),
+      p0: draft.displacedFirst ?? { values: emptyPeopleValues() },
+    },
+  };
+}
+export function editPeopleRow(
+  draft: SalesPeopleDraft,
+  key: string,
+  row: PeopleRow,
+): SalesPeopleDraft {
+  const rows = { ...draft.rows, [key]: row };
+  if (draft.mode === 'first-passenger' && (key === 'primary' || key === 'p0')) {
+    rows.primary = row;
+    rows.p0 = row;
+  }
+  return { ...draft, rows };
+}
+function validatePassport(row: PeopleRow) {
+  const expiry = row.values.passportExpiryDate;
+  if (
+    expiry &&
+    (!/^\d{4}-\d{2}-\d{2}$/.test(expiry) ||
+      Number.isNaN(Date.parse(expiry)) ||
+      new Date(expiry).toISOString().slice(0, 10) !== expiry)
+  )
+    throw new Error('تاریخ انقضای پاسپورت معتبر نیست.');
+  const number = row.values.passportNumber.trim();
+  if (row.person && row.savedPassportNumber && !number)
+    throw new Error(
+      'برای تغییر پاسپورت، شماره جدید را وارد کنید؛ حذف مدرک از این فرم انجام نمی‌شود.',
+    );
+  if (
+    number &&
+    number !== row.profile?.maskedPassportNumber &&
+    !/^[A-Z0-9-]{4,24}$/i.test(number)
+  )
+    throw new Error('شماره پاسپورت معتبر نیست.');
 }
 export function peopleCreateInput(
   row: PeopleRow,
   customer: boolean,
   passenger: boolean,
 ): CustomerMutationRequest {
+  validatePassport(row);
   const v = row.values;
   if (!v.firstName.trim() || !v.lastName.trim())
     throw new Error('نام و نام خانوادگی را کامل کنید.');
@@ -132,6 +201,9 @@ export function peopleCreateInput(
       : ['passenger'],
     ...(v.birthDate ? { birthDate: v.birthDate } : {}),
     ...(passportNumber ? { passportNumber } : {}),
+    ...(v.passportExpiryDate
+      ? { passportExpiryDate: v.passportExpiryDate }
+      : {}),
   };
 }
 export function validateSalesPeopleDraft(
@@ -155,6 +227,7 @@ export function validateSalesPeopleDraft(
       throw new Error(
         `${label}: نتیجه ثبت قبلی نیازمند بررسی است؛ پرونده موجود را انتخاب کنید.`,
       );
+    validatePassport(row);
     if (row.person) {
       if (ids.has(row.person.id))
         throw new Error(
@@ -201,7 +274,8 @@ export async function saveSalesPeopleDraft(
   state: SalesFormState,
   draft: SalesPeopleDraft,
   onProgress: (draft: SalesPeopleDraft) => void,
-  api: Pick<typeof customersApi, 'create' | 'addContact'> = customersApi,
+  api: Pick<typeof customersApi, 'create' | 'addContact'> &
+    Partial<Pick<typeof customersApi, 'update' | 'detail'>> = customersApi,
 ) {
   validateSalesPeopleDraft(state, draft);
   let current = { ...draft, rows: { ...draft.rows } };
@@ -211,7 +285,63 @@ export async function saveSalesPeopleDraft(
     ...keys,
   ]) {
     const row = peopleRow(current, key);
-    if (row.person) continue;
+    if (row.person) {
+      const customerRole =
+        key === 'primary' || (draft.mode === 'first-passenger' && key === 'p0');
+      const profile = row.profile;
+      const passportChanged =
+        profile &&
+        (row.values.passportExpiryDate !== (profile.passportExpiryDate ?? '') ||
+          row.values.passportNumber !==
+            (row.savedPassportNumber ??
+              profile.passportNumber ??
+              profile.maskedPassportNumber ??
+              ''));
+      const needsRole =
+        profile &&
+        ((customerRole && !profile.roles.includes('customer')) ||
+          (key !== 'primary' && !profile.roles.includes('passenger')));
+      if (passportChanged || needsRole) {
+        if (!api.update) throw new Error('اتصال ویرایش مشتری در دسترس نیست.');
+        const roles = [
+          ...new Set([
+            ...profile.roles,
+            ...(customerRole ? ['customer' as const] : []),
+            ...(key !== 'primary' ? ['passenger' as const] : []),
+          ]),
+        ];
+        const number = row.values.passportNumber.trim();
+        const updated = (
+          await api.update(row.person.id, {
+            kind: 'person',
+            displayName: profile.displayName,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            acquaintanceMethodId: profile.acquaintanceMethodId,
+            roles,
+            version: profile.version,
+            ...(row.values.birthDate
+              ? { birthDate: row.values.birthDate }
+              : {}),
+            ...(passportChanged
+              ? { passportExpiryDate: row.values.passportExpiryDate || null }
+              : {}),
+            ...(number &&
+            number !== profile.maskedPassportNumber &&
+            number !== profile.passportNumber
+              ? { passportNumber: number }
+              : {}),
+          })
+        ).data;
+        current = editPeopleRow(current, key, {
+          ...row,
+          profile: updated,
+          savedPassportNumber: row.values.passportNumber,
+        });
+        onProgress(current);
+      }
+      continue;
+    }
     let created: CustomerDetail;
     try {
       created = (
@@ -225,10 +355,7 @@ export async function saveSalesPeopleDraft(
         )
       ).data;
     } catch (error) {
-      current = {
-        ...current,
-        rows: { ...current.rows, [key]: { ...row, reviewRequired: true } },
-      };
+      current = editPeopleRow(current, key, { ...row, reviewRequired: true });
       onProgress(current);
       throw new Error(
         'ثبت شخص قطعی نشد؛ قبل از تلاش دوباره، همین ردیف را از «انتخاب موجود» بررسی کنید. ' +
@@ -242,6 +369,8 @@ export async function saveSalesPeopleDraft(
         [key]: {
           ...row,
           person: { id: created.id, displayName: created.displayName },
+          profile: created,
+          savedPassportNumber: row.values.passportNumber,
         },
       },
     };
@@ -258,21 +387,25 @@ export async function saveSalesPeopleDraft(
           })
         ).data;
       if (row.values.email.trim())
-        await api.addContact(created.id, {
-          type: 'email',
-          value: row.values.email.trim().toLowerCase(),
-          label: 'اصلی',
-          isPrimary: !row.values.phone.trim(),
-          version: created.version,
-        });
+        created = (
+          await api.addContact(created.id, {
+            type: 'email',
+            value: row.values.email.trim().toLowerCase(),
+            label: 'اصلی',
+            isPrimary: !row.values.phone.trim(),
+            version: created.version,
+          })
+        ).data;
+      current = editPeopleRow(current, key, {
+        ...current.rows[key]!,
+        profile: created,
+      });
+      onProgress(current);
     } catch (error) {
-      current = {
-        ...current,
-        rows: {
-          ...current.rows,
-          [key]: { ...current.rows[key]!, reviewRequired: true },
-        },
-      };
+      current = editPeopleRow(current, key, {
+        ...current.rows[key]!,
+        reviewRequired: true,
+      });
       onProgress(current);
       throw new Error(
         'پرونده شخص ایجاد شد ولی ثبت تماس کامل نشد؛ تماس را در مشتریان بررسی و سپس همین پرونده را انتخاب کنید. ' +
@@ -280,6 +413,8 @@ export async function saveSalesPeopleDraft(
       );
     }
   }
+  if (draft.mode === 'first-passenger')
+    current = editPeopleRow(current, 'p0', peopleRow(current, 'p0'));
   validateSalesPeopleDraft(state, current);
   const passengers = keys.map((key) => {
     const row = peopleRow(current, key);

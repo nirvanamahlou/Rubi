@@ -9,6 +9,8 @@ import {
   selectedPeopleRow,
   validateSalesPeopleDraft,
   saveSalesPeopleDraft,
+  linkCustomerAsFirst,
+  editPeopleRow,
   type SalesPeopleDraft,
 } from './sales-people-sheet';
 const state: SalesFormState = {
@@ -60,6 +62,117 @@ const detail = (id: string, input: Partial<CustomerDetail> = {}) =>
     ...input,
   }) as CustomerDetail;
 describe('fixed Sales people-entry slots', () => {
+  it('updates an existing customer passport and adds only the passenger role with optimistic version', async () => {
+    const one = {
+      ...state,
+      passengerComposition: { adults: 1, children: 0, infants: 0 },
+    };
+    const profile = detail('existing', {
+      roles: ['customer'],
+      version: 5,
+      passportExpiryDate: '2030-01-01',
+    });
+    const draft = initialSalesPeopleDraft(one);
+    draft.rows.p0 = selectedPeopleRow(profile);
+    draft.rows.p0.values.passportNumber = 'TEST1234';
+    draft.rows.p0.values.passportExpiryDate = '2032-01-01';
+    const api = {
+      create: vi.fn(),
+      addContact: vi.fn(),
+      update: vi.fn(async (_id: string, input: CustomerMutationRequest) => ({
+        data: detail('existing', {
+          roles: input.roles,
+          version: 6,
+              passportExpiryDate: input.passportExpiryDate ?? null,
+          maskedPassportNumber: 'T*****34',
+        }),
+      })),
+    };
+    const result = await saveSalesPeopleDraft(one, draft, vi.fn(), api);
+    expect(api.create).not.toHaveBeenCalled();
+    expect(api.update).toHaveBeenCalledWith(
+      'existing',
+      expect.objectContaining({
+        version: 5,
+        roles: ['customer', 'passenger'],
+        passportNumber: 'TEST1234',
+        passportExpiryDate: '2032-01-01',
+      }),
+    );
+    await saveSalesPeopleDraft(one, result.draft, vi.fn(), api);
+    expect(api.update).toHaveBeenCalledTimes(1);
+  });
+  it('keeps a failed linked creation guarded when the customer row is edited', async () => {
+    let draft = linkCustomerAsFirst(
+      {
+        ...filled(),
+        mode: 'person',
+        rows: { ...filled().rows, primary: filled().rows.p0! },
+      },
+      true,
+    );
+    const api = {
+      create: vi.fn().mockRejectedValue(new Error('network')),
+      addContact: vi.fn(),
+    };
+    await expect(
+      saveSalesPeopleDraft(
+        state,
+        draft,
+        (next) => {
+          draft = next;
+        },
+        api,
+      ),
+    ).rejects.toThrow('قطعی نشد');
+    draft = editPeopleRow(draft, 'primary', {
+      ...draft.rows.primary!,
+      values: { ...draft.rows.primary!.values, firstName: 'Changed' },
+    });
+    await expect(
+      saveSalesPeopleDraft(state, draft, vi.fn(), api),
+    ).rejects.toThrow('نیازمند بررسی');
+    expect(api.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('copies payer into the first slot, synchronizes edits and restores the displaced passenger', () => {
+    const draft = { ...filled(), mode: 'person' as const };
+    draft.rows.primary = {
+      values: {
+        ...emptyPeopleValues(),
+        firstName: 'Payer',
+        passportNumber: 'TEST1234',
+        passportExpiryDate: '2031-01-01',
+      },
+    };
+    const previous = draft.rows.p0;
+    let linked = linkCustomerAsFirst(draft, true);
+    expect(linked.rows.p0).toEqual(draft.rows.primary);
+    expect(passengerSlotKeys(state)).toHaveLength(4);
+    linked = editPeopleRow(linked, 'primary', {
+      values: { ...linked.rows.primary!.values, lastName: 'Updated' },
+    });
+    expect(linked.rows.p0?.values.lastName).toBe('Updated');
+    const detached = linkCustomerAsFirst(linked, false);
+    expect(detached.rows.p0).toEqual(previous);
+    expect(detached.rows.primary?.values.passportExpiryDate).toBe('2031-01-01');
+  });
+  it('passes passport expiry to the existing public customer create API', async () => {
+    const draft = filled();
+    draft.rows.p0!.values.passportNumber = 'TEST1234';
+    draft.rows.p0!.values.passportExpiryDate = '2031-02-03';
+    const api = {
+      create: vi.fn(async (input: CustomerMutationRequest) => ({
+        data: detail(input.nationalId!, { roles: input.roles }),
+      })),
+      addContact: vi.fn(),
+    };
+    await saveSalesPeopleDraft(state, draft, vi.fn(), api);
+    expect(api.create.mock.calls[0]![0]).toMatchObject({
+      passportNumber: 'TEST1234',
+      passportExpiryDate: '2031-02-03',
+    });
+  });
   it('opens exactly the selected count and adds only one slot when an infant is added', () => {
     expect(passengerSlotKeys(state)).toEqual(['p0', 'p1', 'p2', 'p3']);
     expect(

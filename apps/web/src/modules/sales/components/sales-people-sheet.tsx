@@ -28,6 +28,8 @@ import {
   emptyPeopleValues,
   selectedPeopleRow,
   saveSalesPeopleDraft,
+  linkCustomerAsFirst,
+  editPeopleRow,
   type SalesPeopleDraft,
 } from '../model/sales-people-sheet';
 
@@ -54,6 +56,7 @@ export function SalesPeopleSheet({
   const [calendar, setCalendar] = useState<CustomerCalendarMode>('persian');
   const [lookup, setLookup] = useState<string | null>(null);
   const [clearKey, setClearKey] = useState<string | null>(null);
+  const [linkPending, setLinkPending] = useState(false);
   const [error, setError] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const inFlight = useRef(false);
@@ -64,6 +67,24 @@ export function SalesPeopleSheet({
     setError('');
     onDraftChange(next);
   };
+  const reveal = async (key: string) => {
+    const row = peopleRow(draft, key);
+    if (!row.person || busy) return;
+    onBusyChange(true);
+    setError('');
+    try {
+      const detail = (
+        await customersApi.detail(row.person.id, 'customer-verification')
+      ).data;
+      change(editPeopleRow(draft, key, selectedPeopleRow(detail)));
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : 'نمایش اطلاعات مجاز نیست.',
+      );
+    } finally {
+      onBusyChange(false);
+    }
+  };
   const choose = async (person: CustomerSummary) => {
     if (!lookup || inFlight.current) return;
     setClearKey(null);
@@ -73,10 +94,7 @@ export function SalesPeopleSheet({
     setError('');
     try {
       const detail = (await customersApi.detail(person.id)).data;
-      change({
-        ...draft,
-        rows: { ...draft.rows, [key]: selectedPeopleRow(detail) },
-      });
+      change(editPeopleRow(draft, key, selectedPeopleRow(detail)));
       setLookup(null);
     } catch (reason) {
       setError(
@@ -91,6 +109,7 @@ export function SalesPeopleSheet({
     if (inFlight.current) return;
     setClearKey(null);
     setLookup(null);
+    setLinkPending(false);
     inFlight.current = true;
     onBusyChange(true);
     setError('');
@@ -108,7 +127,10 @@ export function SalesPeopleSheet({
       onBusyChange(false);
     }
   };
-  const keys = [...(draft.mode === 'person' ? ['primary'] : []), ...slots];
+  const keys = [
+    ...(draft.mode !== 'organization' ? ['primary'] : []),
+    ...slots,
+  ];
   const rows: CustomerEntryRow[] = keys.map((key) => {
     const row = peopleRow(draft, key);
     const label =
@@ -119,8 +141,15 @@ export function SalesPeopleSheet({
       key: 'sales-entry-' + key,
       label,
       values: row.values,
-      readOnly: Boolean(row.person),
-      editableFields: ['birthDate'],
+      readOnly:
+        Boolean(row.person) ||
+        (key === 'p0' && draft.mode === 'first-passenger'),
+      editableFields:
+        key === 'p0' && draft.mode === 'first-passenger'
+          ? []
+          : row.person && !row.profile
+            ? ['birthDate']
+            : ['birthDate', 'passportNumber', 'passportExpiryDate'],
       role: (
         <div className="space-y-1 text-xs text-muted-foreground">
           <p>
@@ -150,36 +179,49 @@ export function SalesPeopleSheet({
         </div>
       ),
       onChange: (field, value) =>
-        change({
-          ...draft,
-          rows: {
-            ...draft.rows,
-            [key]: { ...row, values: { ...row.values, [field]: value } },
-          },
-        }),
-      actions: (
-        <div className="flex flex-col gap-1">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={busy}
-            onClick={() => setLookup(key)}
-          >
-            <Search className="size-3" />
-            انتخاب موجود
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            disabled={busy}
-            onClick={() => setClearKey(key)}
-          >
-            پاک‌کردن ردیف
-          </Button>
-        </div>
-      ),
+        change(
+          editPeopleRow(draft, key, {
+            ...row,
+            values: { ...row.values, [field]: value },
+          }),
+        ),
+      actions:
+        key === 'p0' && draft.mode === 'first-passenger' ? (
+          <span className="text-xs text-primary">از اطلاعات مشتری</span>
+        ) : (
+          <div className="flex flex-col gap-1">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => setLookup(key)}
+            >
+              <Search className="size-3" />
+              انتخاب موجود
+            </Button>
+            {row.person && (!row.profile || row.profile.birthDateMasked) ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => void reveal(key)}
+              >
+                خواندن اطلاعات برای قرارداد
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={busy}
+              onClick={() => setClearKey(key)}
+            >
+              پاک‌کردن ردیف
+            </Button>
+          </div>
+        ),
     };
   });
   return (
@@ -200,7 +242,10 @@ export function SalesPeopleSheet({
           size="sm"
           variant={draft.mode !== 'organization' ? 'primary' : 'outline'}
           disabled={busy}
-          onClick={() => change({ ...draft, mode: 'person' })}
+          onClick={() =>
+            draft.mode === 'organization' &&
+            change({ ...draft, mode: 'person' })
+          }
         >
           مشتری حقیقی
         </Button>
@@ -209,7 +254,14 @@ export function SalesPeopleSheet({
           size="sm"
           variant={draft.mode === 'organization' ? 'primary' : 'outline'}
           disabled={busy}
-          onClick={() => change({ ...draft, mode: 'organization' })}
+          onClick={() =>
+            change({
+              ...(draft.mode === 'first-passenger'
+                ? linkCustomerAsFirst(draft, false)
+                : draft),
+              mode: 'organization',
+            })
+          }
         >
           حقوقی / آژانس
         </Button>
@@ -220,17 +272,44 @@ export function SalesPeopleSheet({
               className="size-4 accent-primary"
               checked={draft.mode === 'first-passenger'}
               disabled={busy}
-              onChange={(event) =>
-                change({
-                  ...draft,
-                  mode: event.target.checked ? 'first-passenger' : 'person',
-                })
-              }
+              onChange={(event) => {
+                if (!event.target.checked)
+                  return change(linkCustomerAsFirst(draft, false));
+                const first = peopleRow(draft, 'p0');
+                if (first.person || Object.values(first.values).some(Boolean))
+                  setLinkPending(true);
+                else change(linkCustomerAsFirst(draft, true));
+              }}
             />
-            مشتری همان مسافر اول است
+            این مشتری مسافر اول هم هست
           </label>
         ) : null}
       </div>
+      {linkPending ? (
+        <div role="alert" className="rounded-xl border p-3 text-sm">
+          اطلاعات مشتری جایگزین ردیف اول شود؟ اطلاعات فعلی با برداشتن تیک
+          برمی‌گردد.
+          <Button
+            type="button"
+            size="sm"
+            disabled={busy}
+            onClick={() => {
+              change(linkCustomerAsFirst(draft, true));
+              setLinkPending(false);
+            }}
+          >
+            تأیید جایگزینی
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => setLinkPending(false)}
+          >
+            انصراف
+          </Button>
+        </div>
+      ) : null}
       {draft.mode === 'organization' ? (
         draft.organization ? (
           <div className="flex items-center justify-between rounded-xl border p-3">
@@ -308,7 +387,11 @@ export function SalesPeopleSheet({
         <SalesPersonSearch
           purpose={lookup === 'primary' ? 'customer' : 'passenger'}
           selectedIds={keys
-            .filter((key) => key !== lookup)
+            .filter(
+              (key) =>
+                key !== lookup &&
+                !(draft.mode === 'first-passenger' && key === 'p0'),
+            )
             .flatMap((key) =>
               peopleRow(draft, key).person?.id
                 ? [peopleRow(draft, key).person!.id]
@@ -338,13 +421,11 @@ export function SalesPeopleSheet({
               size="sm"
               variant="outline"
               onClick={() => {
-                change({
-                  ...draft,
-                  rows: {
-                    ...draft.rows,
-                    [clearKey]: { values: emptyPeopleValues() },
-                  },
-                });
+                change(
+                  editPeopleRow(draft, clearKey, {
+                    values: emptyPeopleValues(),
+                  }),
+                );
                 setClearKey(null);
               }}
             >
@@ -355,6 +436,7 @@ export function SalesPeopleSheet({
       ) : null}
       <CustomerEntrySheet
         rows={rows}
+        showPassportExpiry
         calendarMode={calendar}
         onCalendarModeChange={setCalendar}
         disabled={busy}
@@ -363,7 +445,8 @@ export function SalesPeopleSheet({
         <p className="max-w-2xl text-xs leading-6 text-muted-foreground">
           ثبت افراد از همین‌جا در بخش مشتریان انجام می‌شود؛ قرارداد در مرحله
           نهایی ثبت خواهد شد. ویرایش نام و مدارک پرونده‌های موجود از بخش مشتریان
-          انجام می‌شود.
+          انجام می‌شود. شماره و انقضای پاسپورت از همین جدول در پرونده مشتری
+          ذخیره می‌شود.
         </p>
         <Button
           type="button"

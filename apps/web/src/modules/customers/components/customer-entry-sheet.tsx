@@ -22,13 +22,16 @@ export type EntryField =
   | 'nationalId'
   | 'birthDate'
   | 'passportNumber'
+  | 'passportExpiryDate'
   | 'phone'
   | 'email';
 export interface CustomerEntryRow {
   key: string;
   label: string;
   role: ReactNode;
-  values: Record<EntryField, string>;
+  values: Record<Exclude<EntryField, 'passportExpiryDate'>, string> & {
+    passportExpiryDate?: string;
+  };
   readOnly?: boolean;
   editableFields?: readonly EntryField[];
   actions?: ReactNode;
@@ -40,7 +43,8 @@ const columns = [
   ['lastName', 'نام خانوادگی *', 'last-name'],
   ['nationalId', 'کد ملی *', 'national-id'],
   ['birthDate', 'تاریخ تولد مسافر *', 'birth-date'],
-  ['passportNumber', 'پاسپورت', 'passport-number'],
+  ['passportNumber', 'شماره پاسپورت', 'passport-number'],
+  ['passportExpiryDate', 'انقضای پاسپورت', 'passport-expiry'],
   ['phone', 'تلفن', 'phone'],
   ['email', 'ایمیل', 'email'],
 ] as const;
@@ -50,13 +54,22 @@ export function CustomerEntrySheet({
   calendarMode,
   onCalendarModeChange,
   disabled = false,
+  showPassportExpiry = false,
 }: {
   rows: readonly CustomerEntryRow[];
   calendarMode: CustomerCalendarMode;
   onCalendarModeChange: (mode: CustomerCalendarMode) => void;
   disabled?: boolean;
+  showPassportExpiry?: boolean;
 }) {
   const [dateRowKey, setDateRowKey] = useState<string | null>(null);
+  const [dateField, setDateField] = useState<
+    'birthDate' | 'passportExpiryDate'
+  >('birthDate');
+  const visibleColumns = columns.filter(
+    ([field]) => field !== 'passportExpiryDate' || showPassportExpiry,
+  );
+  const dateLabel = dateField === 'birthDate' ? 'تاریخ تولد' : 'انقضای پاسپورت';
   const dateRow = rows.find((row) => row.key === dateRowKey);
   return (
     <>
@@ -76,7 +89,7 @@ export function CustomerEntrySheet({
               <th scope="col" className="w-40 border-e p-3 text-start">
                 پرونده / نقش
               </th>
-              {columns.map(([field, label]) => (
+              {visibleColumns.map(([field, label]) => (
                 <th
                   scope="col"
                   className="border-e p-3 text-start whitespace-nowrap"
@@ -103,25 +116,25 @@ export function CustomerEntrySheet({
                   <p className="mb-2 font-bold">{row.label}</p>
                   {row.role}
                 </th>
-                {columns.map(([field, label, suffix]) => (
+                {visibleColumns.map(([field, label, suffix]) => (
                   <td className="border-e p-1.5" key={field}>
-                    {field === 'birthDate' ? (
+                    {field === 'birthDate' || field === 'passportExpiryDate' ? (
                       <Button
-                        aria-label={`تاریخ تولد ${row.label}`}
+                        aria-label={`${field === 'birthDate' ? 'تاریخ تولد' : 'انقضای پاسپورت'} ${row.label}`}
                         className="h-10 w-full min-w-36 justify-start text-xs"
                         disabled={
                           disabled ||
                           (row.readOnly && !row.editableFields?.includes(field))
                         }
-                        onClick={() => setDateRowKey(row.key)}
+                        onClick={() => {
+                          setDateField(field);
+                          setDateRowKey(row.key);
+                        }}
                         type="button"
                         variant="outline"
                       >
-                        {row.values.birthDate
-                          ? formatCustomerDate(
-                              row.values.birthDate,
-                              calendarMode,
-                            )
+                        {row.values[field]
+                          ? formatCustomerDate(row.values[field]!, calendarMode)
                           : 'انتخاب تاریخ'}
                       </Button>
                     ) : (
@@ -204,21 +217,23 @@ export function CustomerEntrySheet({
       {dateRow ? (
         <Dialog open onOpenChange={(open) => !open && setDateRowKey(null)}>
           <DialogContent className="min-h-[32rem] max-w-lg overflow-visible">
-            <DialogTitle>تاریخ تولد {dateRow.label}</DialogTitle>
+            <DialogTitle>
+              {dateLabel} {dateRow.label}
+            </DialogTitle>
             <DialogDescription>
               تاریخ را از تقویم شمسی یا میلادی انتخاب کنید.
             </DialogDescription>
             <CustomerDateField
               initialOpen
-              id={`${dateRow.key}-birth-date-picker`}
-              label="تاریخ تولد"
+              id={`${dateRow.key}-${dateField}-picker`}
+              label={dateLabel}
               mode={calendarMode}
               onModeChange={onCalendarModeChange}
               onChange={(value) => {
-                dateRow.onChange('birthDate', value);
+                dateRow.onChange(dateField, value);
                 setDateRowKey(null);
               }}
-              value={dateRow.values.birthDate}
+              value={dateRow.values[dateField] ?? ''}
               disabled={disabled}
             />
           </DialogContent>

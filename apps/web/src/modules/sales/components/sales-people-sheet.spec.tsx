@@ -46,7 +46,9 @@ describe('Sales uses the Customers entry spreadsheet', () => {
       />,
     );
     expect(html).toContain('مشتری و مسافر اول');
-    expect(html).not.toContain('sales-entry-primary-first-name');
+    expect(html).toContain('sales-entry-primary-first-name');
+    expect(html).toContain('انقضای پاسپورت');
+    expect(html).toContain('این مشتری مسافر اول هم هست');
     expect(html.match(/id="sales-entry-p\d+-first-name"/g)).toHaveLength(1);
   });
 });
