@@ -9,7 +9,6 @@ export default async function Page({
   const { section, tab, workspace } = await searchParams;
   return (
     <HrWorkspace
-      key={`${workspace ?? section ?? 'home'}:${tab ?? ''}`}
       sectionId={section ?? 'home'}
       tabId={tab}
       workspaceId={workspace}

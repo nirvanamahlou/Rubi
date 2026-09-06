@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   HrState,
   HrWorkspace,
+  parseHrPreviewDatasetOverrides,
   removeHrPreviewRow,
   saveHrPreviewRow,
 } from './hr-workspace';
@@ -504,6 +505,28 @@ describe('HR reference implementation', () => {
       { label: 'تکمیل‌شده', tone: 'success' },
     ]);
     expect(removeHrPreviewRow(updated, 0)).toEqual([rows[1]]);
+  });
+
+  it('restores valid recruitment rows from session storage data', () => {
+    const stored = {
+      'recruitment:staffing': [
+        [
+          'HR-RECRUITMENT-STAFFING-123456',
+          '۱۴۰۶',
+          'نیایش سیر',
+          { label: 'فعال', tone: 'success' },
+        ],
+      ],
+    };
+    expect(parseHrPreviewDatasetOverrides(JSON.stringify(stored))).toEqual(
+      stored,
+    );
+    expect(parseHrPreviewDatasetOverrides('{invalid')).toEqual({});
+    expect(
+      parseHrPreviewDatasetOverrides(
+        JSON.stringify({ 'recruitment:staffing': [['ok', { unsafe: true }]] }),
+      ),
+    ).toEqual({});
   });
 
   it('keeps payroll and exports in a truthful preview state', () => {

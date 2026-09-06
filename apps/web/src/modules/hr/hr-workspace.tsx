@@ -26,7 +26,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
@@ -169,6 +169,41 @@ const previewEmployees: readonly PreviewEmployee[] = [
 ];
 
 type PreviewDatasetOverrides = Record<string, readonly (readonly HrPreviewCell[])[]>;
+
+const previewDatasetStorageKey = 'rubi.hr.preview-dataset-overrides.v1';
+
+const isPreviewCell = (value: unknown): value is HrPreviewCell => {
+  if (typeof value === 'string') return true;
+  if (!value || typeof value !== 'object') return false;
+  const cell = value as Record<string, unknown>;
+  return (
+    typeof cell.label === 'string' &&
+    ['neutral', 'success', 'warning', 'danger'].includes(String(cell.tone))
+  );
+};
+
+export function parseHrPreviewDatasetOverrides(
+  serialized: string | null,
+): PreviewDatasetOverrides {
+  if (!serialized) return {};
+  try {
+    const parsed: unknown = JSON.parse(serialized);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    const result: PreviewDatasetOverrides = {};
+    for (const [key, rows] of Object.entries(parsed)) {
+      if (
+        Array.isArray(rows) &&
+        rows.every(
+          (row) => Array.isArray(row) && row.every((cell) => isPreviewCell(cell)),
+        )
+      )
+        result[key] = rows as readonly (readonly HrPreviewCell[])[];
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
 
 interface PreviewDatasetStore {
   getDataset: (section: HrSectionId, tab: string) => HrPreviewDataset;
@@ -2040,10 +2075,26 @@ export function HrWorkspace({
     useState<PreviewEmployee | null>(null);
   const [previewDatasetOverrides, setPreviewDatasetOverrides] =
     useState<PreviewDatasetOverrides>({});
+  const [previewStorageReady, setPreviewStorageReady] = useState(false);
   const [dialogTitle, setDialogTitle] = useState<string | null>(null);
   const [contextualForm, setContextualForm] =
     useState<ContextualHrFormContext | null>(null);
   const [notice, setNotice] = useState('');
+  useEffect(() => {
+    const serialized = window.sessionStorage.getItem(previewDatasetStorageKey);
+    const timer = window.setTimeout(() => {
+      setPreviewDatasetOverrides(parseHrPreviewDatasetOverrides(serialized));
+      setPreviewStorageReady(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+    if (!previewStorageReady) return;
+    window.sessionStorage.setItem(
+      previewDatasetStorageKey,
+      JSON.stringify(previewDatasetOverrides),
+    );
+  }, [previewDatasetOverrides, previewStorageReady]);
   function closeDialog() {
     if (dialogTitle)
       setNotice('عملیات فقط در پیش‌نمایش بررسی شد؛ ذخیره دائمی انجام نشد.');
@@ -2136,7 +2187,10 @@ export function HrWorkspace({
     );
   };
   let screen: ReactNode;
-  if (workspace) screen = <FrappeWorkspaceScreen workspaceId={workspace} />;
+  if (workspace)
+    screen = (
+      <FrappeWorkspaceScreen key={workspace} workspaceId={workspace} />
+    );
   else if (section === 'home') screen = <HubScreen />;
   else if (section === 'dashboard')
     screen = <Dashboard openAction={openAction} />;
@@ -2172,7 +2226,12 @@ export function HrWorkspace({
       />
     );
   else if (section === 'organization')
-    screen = <OrganizationSection initialTab={tabId} />;
+    screen = (
+      <OrganizationSection
+        initialTab={tabId}
+        key={`organization:${tabId ?? ''}`}
+      />
+    );
   else if (section === 'requests')
     screen = <Requests datasetStore={datasetStore} openForm={openForm} />;
   else
@@ -2180,6 +2239,7 @@ export function HrWorkspace({
       <TabbedSection
         datasetStore={datasetStore}
         initialTab={tabId}
+        key={`${section}:${tabId ?? ''}`}
         openAction={openAction}
         openForm={openForm}
         section={section}
