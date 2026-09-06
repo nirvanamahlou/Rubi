@@ -62,6 +62,7 @@ export function CustomerDateField({
   onChange,
   value,
   disabled = false,
+  initialOpen = false,
 }: {
   id: string;
   label: string;
@@ -70,9 +71,10 @@ export function CustomerDateField({
   onChange: (value: string) => void;
   value: string;
   disabled?: boolean;
+  initialOpen?: boolean;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   const [calendarView, setCalendarView] =
     useState<CustomerCalendarView>('days');
   const selected = useMemo(

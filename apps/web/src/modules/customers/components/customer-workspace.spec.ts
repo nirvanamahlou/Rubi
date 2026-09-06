@@ -267,18 +267,19 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain(
       'organizationId: companion.organizationId || null',
     );
-    expect(source).toContain('اطلاعات ۳۶۰ مسافر');
+    expect(source).toContain('<CustomerEntrySheet');
+    expect(source).toContain('validateCustomerEntryRows');
     expect(source).not.toContain('<details className=');
     expect(source).not.toContain('<summary className=');
     expect(source).toContain('تاریخ تولد (اجباری)');
     expect(source).toContain('شماره پاسپورت');
     expect(source).toContain('تصویر یا فایل مدرک (اختیاری)');
-    expect(source).toContain('companion-${companion.key}-email');
+    expect(source).toContain('onChange: (field, value) =>');
     expect(source).toContain('value: companion.email.trim().toLowerCase()');
     expect(source).toContain('مدارک سفر مسافر');
     expect(source).toContain('فیلتر شعبه مجاز');
     expect(source).toContain('id="customer-national-id"');
-    expect(source).toContain('companion-${companion.key}-national-id');
+    expect(source).toContain('nationalId: draft.nationalId');
     expect(source).toContain(
       'nationalId: normalizeNationalId(companion.nationalId)',
     );
