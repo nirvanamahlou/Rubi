@@ -48,6 +48,7 @@ import {
 import { MasterDataLiveForm } from '@/modules/master-data/components/master-data-live-form';
 import { getMasterDataDefinition } from '@/modules/master-data/model/catalog';
 import { agencyClient } from '../api/agency-client';
+import { AgencyConnectionsPanel } from './agency-connections-panel';
 
 type RequestState =
   'loading' | 'ready' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
@@ -274,7 +275,7 @@ export function OrganizationsWorkspace() {
                     برای مشاهده، پروفایل را باز کنید
                   </td>
                   <td className="p-4">
-                    <Badge>BLOCKED_FOR_MIGRATION</Badge>
+                    <Badge>در پروفایل</Badge>
                   </td>
                   <td className="p-4">
                     <Badge
@@ -344,7 +345,7 @@ export function OrganizationsWorkspace() {
       </div>
 
       <Dialog onOpenChange={setProfileOpen} open={profileOpen}>
-        <DialogContent className="start-auto left-1/2 max-w-xl">
+        <DialogContent className="start-auto left-1/2 max-h-[90vh] max-w-5xl overflow-y-auto">
           <DialogTitle>پروفایل سازمان آژانس</DialogTitle>
           <DialogDescription>
             اطلاعات پایه از Master Organization و تماس‌ها فقط به‌صورت ماسک‌شده
@@ -385,11 +386,7 @@ export function OrganizationsWorkspace() {
                   </p>
                 )}
               </Card>
-              <Alert
-                description="آدرس سازمان و پروفایل عملیاتی قرارداد، اعتبار و نرخ توافقی هنوز ستون عمومی ندارند و تا Migration مستقل، داده ساختگی نمایش داده نمی‌شود."
-                title="بخش‌های عملیاتی در انتظار مدل داده"
-                tone="warning"
-              />
+              <AgencyConnectionsPanel organizationId={selected.id} />
             </div>
           ) : null}
         </DialogContent>

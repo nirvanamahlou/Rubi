@@ -1,4 +1,5 @@
 export * from './customers';
+export * from './b2b';
 export * from './documents';
 export * from './finance';
 export * from './health';

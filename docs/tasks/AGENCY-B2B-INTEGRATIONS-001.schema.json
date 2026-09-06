@@ -1,0 +1,107 @@
+{
+  "tables": {
+    "master_organization_addresses": {
+      "columns": {
+        "id": { "type": "UUID", "nullable": false, "unique": true },
+        "organization_id": { "type": "UUID", "nullable": false, "foreign_key": "master_organizations.id" },
+        "country_id": { "type": "UUID", "nullable": false, "foreign_key": "master_countries.id" },
+        "city_id": { "type": "UUID", "nullable": false, "foreign_key": "master_cities.id" },
+        "is_primary": { "type": "BOOLEAN", "nullable": false, "default": false },
+        "is_active": { "type": "BOOLEAN", "nullable": false, "default": true },
+        "display_order": { "type": "INTEGER", "nullable": false, "default": 0 },
+        "version": { "type": "INTEGER", "nullable": false, "default": 1 },
+        "created_at": { "type": "TIMESTAMPTZ", "nullable": false, "default": "CURRENT_TIMESTAMP" }
+      },
+      "primary_key": ["id"],
+      "indexes": [
+        { "name": "organization_primary_active", "columns": ["organization_id", "is_primary", "is_active", "display_order"] },
+        { "name": "country_city", "columns": ["country_id", "city_id"] }
+      ]
+    },
+    "b2b_agency_profiles": {
+      "columns": {
+        "id": { "type": "UUID", "nullable": false, "unique": true },
+        "organization_id": { "type": "UUID", "nullable": false, "foreign_key": "master_organizations.id" },
+        "branch_id": { "type": "UUID", "nullable": false, "foreign_key": "branches.id" },
+        "account_manager_user_id": { "type": "UUID", "nullable": true, "foreign_key": "iam_users.id" },
+        "status": { "type": "VARCHAR(24)", "nullable": false, "default": "ACTIVE" },
+        "is_active": { "type": "BOOLEAN", "nullable": false, "default": true },
+        "version": { "type": "INTEGER", "nullable": false, "default": 1 },
+        "created_at": { "type": "TIMESTAMPTZ", "nullable": false, "default": "CURRENT_TIMESTAMP" }
+      },
+      "primary_key": ["id"],
+      "unique_constraints": [["organization_id", "branch_id"]],
+      "indexes": [
+        { "name": "branch_status_active", "columns": ["branch_id", "status", "is_active"] },
+        { "name": "account_manager_active", "columns": ["account_manager_user_id", "is_active"] }
+      ]
+    },
+    "b2b_agency_agreements": {
+      "columns": {
+        "id": { "type": "UUID", "nullable": false, "unique": true },
+        "profile_id": { "type": "UUID", "nullable": false, "foreign_key": "b2b_agency_profiles.id" },
+        "code": { "type": "VARCHAR(32)", "nullable": false, "unique": true },
+        "status": { "type": "VARCHAR(24)", "nullable": false, "default": "DRAFT" },
+        "starts_at": { "type": "DATE", "nullable": false },
+        "ends_at": { "type": "DATE", "nullable": true },
+        "version": { "type": "INTEGER", "nullable": false, "default": 1 }
+      },
+      "primary_key": ["id"],
+      "indexes": [
+        { "name": "profile_status_dates", "columns": ["profile_id", "status", "starts_at", "ends_at"] }
+      ]
+    },
+    "b2b_agency_credit_policies": {
+      "columns": {
+        "id": { "type": "UUID", "nullable": false, "unique": true },
+        "profile_id": { "type": "UUID", "nullable": false, "foreign_key": "b2b_agency_profiles.id", "unique": true },
+        "credit_limit": { "type": "DECIMAL(20,2)", "nullable": false },
+        "currency_code": { "type": "CHAR(3)", "nullable": false },
+        "effective_from": { "type": "DATE", "nullable": false },
+        "expires_at": { "type": "DATE", "nullable": true },
+        "is_active": { "type": "BOOLEAN", "nullable": false, "default": true },
+        "version": { "type": "INTEGER", "nullable": false, "default": 1 }
+      },
+      "primary_key": ["id"],
+      "indexes": [
+        { "name": "currency_active_expiry", "columns": ["currency_code", "is_active", "expires_at"] }
+      ]
+    },
+    "b2b_agency_agreed_rates": {
+      "columns": {
+        "id": { "type": "UUID", "nullable": false, "unique": true },
+        "profile_id": { "type": "UUID", "nullable": false, "foreign_key": "b2b_agency_profiles.id" },
+        "code": { "type": "VARCHAR(32)", "nullable": false, "unique": true },
+        "service_reference": { "type": "VARCHAR(120)", "nullable": false },
+        "kind": { "type": "VARCHAR(24)", "nullable": false },
+        "value": { "type": "DECIMAL(20,4)", "nullable": false },
+        "currency_code": { "type": "CHAR(3)", "nullable": true },
+        "valid_from": { "type": "DATE", "nullable": false },
+        "valid_to": { "type": "DATE", "nullable": true },
+        "is_active": { "type": "BOOLEAN", "nullable": false, "default": true },
+        "version": { "type": "INTEGER", "nullable": false, "default": 1 }
+      },
+      "primary_key": ["id"],
+      "indexes": [
+        { "name": "profile_active_dates", "columns": ["profile_id", "is_active", "valid_from", "valid_to"] },
+        { "name": "service_active", "columns": ["service_reference", "is_active"] }
+      ]
+    },
+    "b2b_audit_events": {
+      "columns": {
+        "id": { "type": "UUID", "nullable": false, "unique": true },
+        "actor_user_id": { "type": "UUID", "nullable": false, "foreign_key": "iam_users.id" },
+        "branch_id": { "type": "UUID", "nullable": false, "foreign_key": "branches.id" },
+        "entity_type": { "type": "VARCHAR(80)", "nullable": false },
+        "entity_id": { "type": "UUID", "nullable": false },
+        "occurred_at": { "type": "TIMESTAMPTZ", "nullable": false, "default": "CURRENT_TIMESTAMP" }
+      },
+      "primary_key": ["id"],
+      "indexes": [
+        { "name": "entity_occurred", "columns": ["entity_type", "entity_id", "occurred_at"] },
+        { "name": "actor_occurred", "columns": ["actor_user_id", "occurred_at"] },
+        { "name": "branch_occurred", "columns": ["branch_id", "occurred_at"] }
+      ]
+    }
+  }
+}
