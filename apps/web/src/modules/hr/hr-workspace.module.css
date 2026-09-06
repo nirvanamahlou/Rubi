@@ -494,6 +494,52 @@
   flex: 2;
 }
 
+.employeeFilters {
+  display: grid;
+  grid-template-columns: minmax(230px, 1.5fr) repeat(3, minmax(150px, 1fr)) auto;
+  align-items: end;
+}
+
+.employeeFilters .fieldLabel {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.employeeFilters .control,
+.employeeFilters .searchControl {
+  width: 100%;
+  height: 40px;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.employeeFilters .button {
+  height: 40px;
+  min-height: 40px;
+  align-self: end;
+  white-space: nowrap;
+}
+
+.searchInputWrap {
+  position: relative;
+  display: block;
+}
+
+.searchInputIcon {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: 50%;
+  inset-inline-start: 10px;
+  transform: translateY(-50%);
+  color: #6f829d;
+  pointer-events: none;
+}
+
+.employeeFilters .searchControl {
+  padding-inline-start: 32px;
+}
+
 .kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1158,6 +1204,9 @@
   .filterBar {
     align-items: stretch;
     flex-direction: column;
+  }
+  .employeeFilters {
+    grid-template-columns: 1fr;
   }
   .filterStatus {
     margin-inline-start: 0;

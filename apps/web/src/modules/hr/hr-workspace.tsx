@@ -998,48 +998,56 @@ function Employees({
       />
       <DateRangeBar />
       <Panel title="فهرست کارکنان">
-        <div className={styles.filterBar}>
+        <div className={`${styles.filterBar} ${styles.employeeFilters}`}>
           <label className={styles.fieldLabel}>
             <span>جست‌وجو</span>
-            <span style={{ position: 'relative' }}>
+            <div className={styles.searchInputWrap}>
               <Search
                 aria-hidden="true"
+                className={styles.searchInputIcon}
                 size={15}
-                style={{ insetInlineStart: 10, position: 'absolute', top: 12 }}
               />
               <input
                 className={`${styles.control} ${styles.searchControl}`}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="نام، کد پرسنلی یا سمت"
-                style={{ paddingInlineStart: 32 }}
                 value={query}
               />
-            </span>
+            </div>
           </label>
-          <select
-            aria-label="وضعیت"
-            className={styles.control}
-            defaultValue="all"
-          >
-            <option value="all">همه وضعیت‌ها</option>
-            <option value="active">فعال</option>
-          </select>
-          <select
-            aria-label="شعبه"
-            className={styles.control}
-            defaultValue="all"
-          >
-            <option value="all">همه شعب</option>
-            <option value="preview">شعبه نمایشی</option>
-          </select>
-          <select
-            aria-label="واحد"
-            className={styles.control}
-            defaultValue="all"
-          >
-            <option value="all">همه واحدها</option>
-            <option value="operations">عملیات سفر</option>
-          </select>
+          <label className={styles.fieldLabel}>
+            <span>وضعیت</span>
+            <select
+              aria-label="وضعیت"
+              className={styles.control}
+              defaultValue="all"
+            >
+              <option value="all">همه وضعیت‌ها</option>
+              <option value="active">فعال</option>
+            </select>
+          </label>
+          <label className={styles.fieldLabel}>
+            <span>شعبه</span>
+            <select
+              aria-label="شعبه"
+              className={styles.control}
+              defaultValue="all"
+            >
+              <option value="all">همه شعب</option>
+              <option value="preview">شعبه نمایشی</option>
+            </select>
+          </label>
+          <label className={styles.fieldLabel}>
+            <span>واحد</span>
+            <select
+              aria-label="واحد"
+              className={styles.control}
+              defaultValue="all"
+            >
+              <option value="all">همه واحدها</option>
+              <option value="operations">عملیات سفر</option>
+            </select>
+          </label>
           <ActionButton>
             <Filter size={15} /> فیلتر
           </ActionButton>
