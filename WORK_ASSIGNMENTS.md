@@ -1,5 +1,15 @@
 # Work Assignments
 
+## HOTEL-SALES-PRICING-0906 — PC-A — IMPLEMENTED_LOCAL / ROLLOUT_BLOCKED
+
+- Shared UI reservation: additive money-input used by Sales and Reservations. User explicitly approved granting only reservations.hotel_purchase.write to Ramtin; shared role memberships and other users must remain unchanged.
+
+- User explicitly approved transferring the Migration lock for persistent hotel purchase entry in Reservations. Migration Owner = PC-A/HOTEL-SALES-PRICING-0906 for this additive change; existing PC-B producer branches are untouched. Reserve Sales/Reservations pricing contracts, Web/API, additive schema/migration, necessary permission seed and task docs on codex/pc-a-hotel-sales-pricing-0906. No dependency change or public publication.
+- Day-sale and agreed totals are distinct from purchase cost. Hotel nightly/total entry preserves the explicitly entered source, UTC calendar nights and exact totals. Reservations owns append-only purchase revisions with branch permissions, optimistic version, actor audit and idempotency. Never alter intake snapshots or derive a fabricated supplier discount. Ticket purchase requires an authoritative offer-to-catalog link; no route/name matching.
+- Code gates passed: all 15 lint/typecheck tasks, 727 Web tests plus final three pricing-panel tests, 882 API tests (78 optional skipped), 38 Contracts tests, 71 Database tests, API build and 36-route Web production build. All 35 migrations on a fresh isolated database and seed twice passed; 37 focused domain/PostgreSQL tests passed.
+- Operational preflight detected already-applied migrations 20260906095000_ticket_offer_capacity_allocations and 20260906113000_reservation_arrangements from codex/pc-a-sales-contracts (6f827d1, da2e5fe; latest reviewed tip 3d3095e), absent from this integration base. No pricing migration or API replacement performed; do not bypass this gate. Their overlapping Sales/Reservations/schema work must be reconciled with owner authorization. Migration handoff is pending this coordination, not silently reassigned.
+- Independently completed the explicitly approved Ramtin-only permission grant through dedicated role ramtin_hotel_purchase_local, with backup and audit. Other users and shared-role permissions verified unchanged. Prior Web build restored on 3100; existing API 4000 left running; both HTTP checks passed. New pricing build retained in ignored tmp/hotel-pricing-web-built-0906. No public push or authenticated visual QA.
+
 ## CUSTOMER-ENTRY-SHEET-0906 — PC-A — COMPLETE_LOCAL
 
 - User requested spreadsheet-like Customer 360 entry. Reserve Customers Web entry UI, its tests and this local task documentation on codex/pc-a-customer-entry-sheet-0906, based on the verified local integration. Producer branches remain untouched; no merge, publication, schema, API, IAM or dependency changes.

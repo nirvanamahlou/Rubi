@@ -1,5 +1,11 @@
 # مدل داده و ERD اولیه
 
+## HOTEL-SALES-PRICING-0906 — مدل افزایشی
+
+- SalesContractService.pricing: JSON نسخه‌دار اختیاری شامل ارز، قیمت روز فروش و قیمت توافقی، هر کدام با مبنای NIGHT یا TOTAL. مبنای هر شب فقط برای هتل است و همه اتاق‌های انتخاب‌شده را پوشش می‌دهد؛ کلِ واردشده مرجع دقیق می‌ماند. قیمت‌های نسخه‌های قدیمی بدون تغییر باقی می‌مانند.
+- ReservationIntake.purchaseVersion کنترل هم‌زمانی ثبت خرید هتل است؛ snapshot اولیه تغییر نمی‌کند. ReservationHotelPurchase تاریخچه افزایشی مبلغ Decimal(24,4)، ارز، نسخه، ثبت‌کننده و زمان UTC است، با FK به intake، یکتایی intake/version و actor/idempotencyKey و fingerprint.
+- رکورد خرید رزرواسیون ورودی عملیاتی است، نه تأیید Procurement یا پرداخت Finance. جمع چند ارز یا ادعای سود نهایی بدون هزینه‌های مرجع ممنوع است.
+
 وضعیت: Conceptual/Logical v0.1؛ این سند Migration نیست. نام نهایی field، enum و index
 در Foundation با ADR و Prisma schema تثبیت می‌شود.
 
