@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   calendarMonthDays,
   calendarParts,
+  calculateCalendarPopoverPosition,
   formatCalendarValue,
   joinDateAndTime,
   moveCalendarMonth,
@@ -61,5 +62,23 @@ describe('shared blue date picker calendar utilities', () => {
         calendarParts(anchor, system).month,
       );
     }
+  });
+
+  it('keeps the calendar in the viewport and opens above low fields', () => {
+    expect(
+      calculateCalendarPopoverPosition(
+        { top: 690, right: 980, bottom: 734 },
+        { width: 352, height: 420 },
+        { width: 1024, height: 768 },
+      ),
+    ).toEqual({ top: 262, left: 628, placement: 'above' });
+
+    expect(
+      calculateCalendarPopoverPosition(
+        { top: 40, right: 220, bottom: 84 },
+        { width: 352, height: 420 },
+        { width: 1024, height: 768 },
+      ),
+    ).toEqual({ top: 92, left: 16, placement: 'below' });
   });
 });

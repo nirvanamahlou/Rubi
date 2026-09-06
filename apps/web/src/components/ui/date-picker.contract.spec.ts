@@ -35,6 +35,8 @@ describe('shared date picker contract', () => {
       "system === 'gregorian' ? 'en-US' : 'fa-IR'",
     );
     expect(pickerSource).toContain('bg-primary');
+    expect(pickerSource).toContain('createPortal');
+    expect(pickerSource).toContain('data-placement');
     expect(pickerSource.indexOf('نوع تقویم')).toBeLessThan(
       pickerSource.indexOf('calendarMonthLabel(anchor'),
     );

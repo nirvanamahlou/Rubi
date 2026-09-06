@@ -2,6 +2,7 @@
 
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from 'lucide-react';
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 
 import { cn } from '@/lib/utils';
 import {
@@ -9,6 +10,7 @@ import {
   calendarMonthLabel,
   calendarMonthName,
   calendarParts,
+  calculateCalendarPopoverPosition,
   formatCalendarValue,
   joinDateAndTime,
   moveCalendarMonth,
@@ -72,6 +74,13 @@ export function DatePicker({
     () => parseIsoDate(currentValue) ?? new Date(),
   );
   const rootRef = React.useRef<HTMLDivElement>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const popoverRef = React.useRef<HTMLDivElement>(null);
+  const popoverId = `${React.useId()}-calendar`;
+  const [popoverPosition, setPopoverPosition] =
+    React.useState<ReturnType<typeof calculateCalendarPopoverPosition> | null>(
+      null,
+    );
   const selectedDate = currentValue.slice(0, 10);
   const days = calendarMonthDays(anchor, calendarSystem);
   const anchorParts = calendarParts(anchor, calendarSystem);
@@ -97,7 +106,12 @@ export function DatePicker({
   React.useEffect(() => {
     if (!open) return;
     const closeOnOutside = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (
+        !rootRef.current?.contains(target) &&
+        !popoverRef.current?.contains(target)
+      )
+        setOpen(false);
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpen(false);
@@ -109,6 +123,54 @@ export function DatePicker({
       document.removeEventListener('keydown', closeOnEscape);
     };
   }, [open]);
+
+  const updatePopoverPosition = React.useCallback(() => {
+    const trigger = triggerRef.current;
+    const popover = popoverRef.current;
+    if (!trigger || !popover) return;
+    const triggerRect = trigger.getBoundingClientRect();
+    const popoverRect = popover.getBoundingClientRect();
+    const next = calculateCalendarPopoverPosition(
+      {
+        top: triggerRect.top,
+        right: triggerRect.right,
+        bottom: triggerRect.bottom,
+      },
+      { width: popoverRect.width, height: popoverRect.height },
+      { width: window.innerWidth, height: window.innerHeight },
+    );
+    setPopoverPosition((current) =>
+      current &&
+      current.top === next.top &&
+      current.left === next.left &&
+      current.placement === next.placement
+        ? current
+        : next,
+    );
+  }, []);
+
+  React.useLayoutEffect(() => {
+    if (!open) return;
+    let animationFrame = 0;
+    const schedulePosition = () => {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = window.requestAnimationFrame(updatePopoverPosition);
+    };
+    updatePopoverPosition();
+    window.addEventListener('resize', schedulePosition);
+    window.addEventListener('scroll', schedulePosition, true);
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(schedulePosition);
+    if (popoverRef.current) observer?.observe(popoverRef.current);
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.removeEventListener('resize', schedulePosition);
+      window.removeEventListener('scroll', schedulePosition, true);
+      observer?.disconnect();
+    };
+  }, [calendarSystem, calendarView, includeTime, open, updatePopoverPosition]);
 
   const emit = (nextValue: string) => {
     if (value === undefined) setInternalValue(nextValue);
@@ -181,6 +243,7 @@ export function DatePicker({
       <input name={name} type="hidden" value={currentValue} />
       <button
         {...ariaProps}
+        aria-controls={open ? popoverId : undefined}
         aria-expanded={open}
         aria-haspopup="dialog"
         className={cn(
@@ -190,13 +253,17 @@ export function DatePicker({
         disabled={disabled || readOnly}
         id={id}
         onClick={() => {
-          if (!open) {
-            const parsed = parseIsoDate(currentValue);
-            if (parsed) setAnchor(parsed);
-            setCalendarView('days');
+          if (open) {
+            setOpen(false);
+            return;
           }
-          setOpen((current) => !current);
+          const parsed = parseIsoDate(currentValue);
+          if (parsed) setAnchor(parsed);
+          setCalendarView('days');
+          setPopoverPosition(null);
+          setOpen(true);
         }}
+        ref={triggerRef}
         type="button"
       >
         <span>
@@ -207,13 +274,25 @@ export function DatePicker({
         <CalendarDays aria-hidden="true" className="size-5 text-primary" />
       </button>
 
-      {open ? (
-        <div
-          aria-label="انتخاب تاریخ"
-          className="absolute start-0 top-[calc(100%+0.5rem)] z-[70] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15"
-          dir="rtl"
-          role="dialog"
-        >
+      {open && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              aria-label="انتخاب تاریخ"
+              className="fixed z-[70] max-h-[calc(100dvh-2rem)] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15"
+              data-placement={popoverPosition?.placement}
+              dir="rtl"
+              id={popoverId}
+              ref={popoverRef}
+              role="dialog"
+              style={
+                popoverPosition
+                  ? {
+                      left: popoverPosition.left,
+                      top: popoverPosition.top,
+                    }
+                  : { left: 0, top: 0, visibility: 'hidden' }
+              }
+            >
           <div
             aria-label="نوع تقویم"
             className="mb-3 grid grid-cols-2 rounded-xl bg-secondary p-1"
@@ -428,8 +507,10 @@ export function DatePicker({
           {required ? (
             <span className="sr-only">انتخاب تاریخ الزامی است.</span>
           ) : null}
-        </div>
-      ) : null}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

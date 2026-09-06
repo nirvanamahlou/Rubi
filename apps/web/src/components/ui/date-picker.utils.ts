@@ -229,3 +229,55 @@ export function joinDateAndTime(
   const time = /T(\d{2}:\d{2})/.exec(currentValue)?.[1] ?? '00:00';
   return `${isoDate}T${time}`;
 }
+
+export interface CalendarPopoverAnchor {
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+export interface CalendarPopoverSize {
+  width: number;
+  height: number;
+}
+
+export interface CalendarViewportSize {
+  width: number;
+  height: number;
+}
+
+export interface CalendarPopoverPosition {
+  top: number;
+  left: number;
+  placement: 'above' | 'below';
+}
+
+export function calculateCalendarPopoverPosition(
+  anchor: CalendarPopoverAnchor,
+  popover: CalendarPopoverSize,
+  viewport: CalendarViewportSize,
+  margin = 16,
+  gap = 8,
+): CalendarPopoverPosition {
+  const clamp = (value: number, minimum: number, maximum: number) =>
+    Math.min(Math.max(value, minimum), maximum);
+  const maximumLeft = Math.max(margin, viewport.width - margin - popover.width);
+  const left = clamp(anchor.right - popover.width, margin, maximumLeft);
+  const belowTop = anchor.bottom + gap;
+  const aboveTop = anchor.top - gap - popover.height;
+  const fitsBelow = belowTop + popover.height <= viewport.height - margin;
+  const fitsAbove = aboveTop >= margin;
+  const spaceBelow = viewport.height - anchor.bottom - gap - margin;
+  const spaceAbove = anchor.top - gap - margin;
+  const placeAbove = !fitsBelow && (fitsAbove || spaceAbove > spaceBelow);
+  const maximumTop = Math.max(
+    margin,
+    viewport.height - margin - popover.height,
+  );
+
+  return {
+    top: clamp(placeAbove ? aboveTop : belowTop, margin, maximumTop),
+    left,
+    placement: placeAbove ? 'above' : 'below',
+  };
+}
