@@ -2032,54 +2032,54 @@ enum CustomerDuplicateReviewStatus {
 }
 
 model Customer {
-  id                    String                       @id @default(uuid()) @db.Uuid
-  kind                  CustomerKind
-  organizationId        String?                      @db.Uuid
-  firstName             String?                      @db.VarChar(120)
-  lastName              String?                      @db.VarChar(120)
-  displayName           String                       @db.VarChar(200)
-  birthDate             DateTime?                    @db.Date
-  nationalIdEncrypted   String?                      @db.Text
-  nationalIdIv          String?                      @db.Char(16)
-  nationalIdAuthTag     String?                      @db.Char(24)
-  nationalIdKeyVersion  Int?
-  nationalIdFingerprint String?                      @unique @db.Char(64)
-  nationalIdMasked      String?                      @db.VarChar(16)
-  passportNumberEncrypted   String?                  @db.Text
-  passportNumberIv          String?                  @db.Char(16)
-  passportNumberAuthTag     String?                  @db.Char(24)
+  id                        String                       @id @default(uuid()) @db.Uuid
+  kind                      CustomerKind
+  organizationId            String?                      @db.Uuid
+  firstName                 String?                      @db.VarChar(120)
+  lastName                  String?                      @db.VarChar(120)
+  displayName               String                       @db.VarChar(200)
+  birthDate                 DateTime?                    @db.Date
+  nationalIdEncrypted       String?                      @db.Text
+  nationalIdIv              String?                      @db.Char(16)
+  nationalIdAuthTag         String?                      @db.Char(24)
+  nationalIdKeyVersion      Int?
+  nationalIdFingerprint     String?                      @unique @db.Char(64)
+  nationalIdMasked          String?                      @db.VarChar(16)
+  passportNumberEncrypted   String?                      @db.Text
+  passportNumberIv          String?                      @db.Char(16)
+  passportNumberAuthTag     String?                      @db.Char(24)
   passportNumberKeyVersion  Int?
-  passportNumberFingerprint String?                  @unique @db.Char(64)
-  passportNumberMasked      String?                  @db.VarChar(24)
-  isActive              Boolean                      @default(true)
-  isCustomer            Boolean                      @default(true)
-  isPassenger           Boolean                      @default(false)
-  acquaintanceMethodId  String?                      @db.Uuid
-  ownerBranchId         String                       @db.Uuid
-  version               Int                          @default(1)
-  mergedIntoId          String?                      @db.Uuid
-  createdByUserId       String                       @db.Uuid
-  updatedByUserId       String                       @db.Uuid
-  deactivatedByUserId   String?                      @db.Uuid
-  deactivatedAt         DateTime?                    @db.Timestamptz(3)
-  createdAt             DateTime                     @default(now()) @db.Timestamptz(3)
-  updatedAt             DateTime                     @updatedAt @db.Timestamptz(3)
-  organization          MasterOrganization?          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  acquaintanceMethod    MasterAcquaintanceMethod?    @relation(fields: [acquaintanceMethodId], references: [id], onDelete: Restrict)
-  ownerBranch           Branch                       @relation("CustomerOwnerBranch", fields: [ownerBranchId], references: [id], onDelete: Restrict)
-  createdBy             User                         @relation("CustomerCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  updatedBy             User                         @relation("CustomerUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: Restrict)
-  deactivatedBy         User?                        @relation("CustomerDeactivatedBy", fields: [deactivatedByUserId], references: [id], onDelete: Restrict)
-  mergedInto            Customer?                    @relation("CustomerMergeTrace", fields: [mergedIntoId], references: [id], onDelete: Restrict)
-  mergedCustomers       Customer[]                   @relation("CustomerMergeTrace")
-  contacts              CustomerContact[]
-  addresses             CustomerAddress[]
-  consents              CustomerConsent[]
-  relationships         CustomerRelationship[]       @relation("CustomerRelationshipFrom")
-  relatedFrom           CustomerRelationship[]       @relation("CustomerRelationshipTo")
-  duplicateCandidates   CustomerDuplicateCandidate[] @relation("DuplicateSourceCustomer")
-  duplicateMatches      CustomerDuplicateCandidate[] @relation("DuplicateCandidateCustomer")
-  statusHistory         CustomerStatusHistory[]
+  passportNumberFingerprint String?                      @unique @db.Char(64)
+  passportNumberMasked      String?                      @db.VarChar(24)
+  isActive                  Boolean                      @default(true)
+  isCustomer                Boolean                      @default(true)
+  isPassenger               Boolean                      @default(false)
+  acquaintanceMethodId      String?                      @db.Uuid
+  ownerBranchId             String                       @db.Uuid
+  version                   Int                          @default(1)
+  mergedIntoId              String?                      @db.Uuid
+  createdByUserId           String                       @db.Uuid
+  updatedByUserId           String                       @db.Uuid
+  deactivatedByUserId       String?                      @db.Uuid
+  deactivatedAt             DateTime?                    @db.Timestamptz(3)
+  createdAt                 DateTime                     @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime                     @updatedAt @db.Timestamptz(3)
+  organization              MasterOrganization?          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  acquaintanceMethod        MasterAcquaintanceMethod?    @relation(fields: [acquaintanceMethodId], references: [id], onDelete: Restrict)
+  ownerBranch               Branch                       @relation("CustomerOwnerBranch", fields: [ownerBranchId], references: [id], onDelete: Restrict)
+  createdBy                 User                         @relation("CustomerCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedBy                 User                         @relation("CustomerUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  deactivatedBy             User?                        @relation("CustomerDeactivatedBy", fields: [deactivatedByUserId], references: [id], onDelete: Restrict)
+  mergedInto                Customer?                    @relation("CustomerMergeTrace", fields: [mergedIntoId], references: [id], onDelete: Restrict)
+  mergedCustomers           Customer[]                   @relation("CustomerMergeTrace")
+  contacts                  CustomerContact[]
+  addresses                 CustomerAddress[]
+  consents                  CustomerConsent[]
+  relationships             CustomerRelationship[]       @relation("CustomerRelationshipFrom")
+  relatedFrom               CustomerRelationship[]       @relation("CustomerRelationshipTo")
+  duplicateCandidates       CustomerDuplicateCandidate[] @relation("DuplicateSourceCustomer")
+  duplicateMatches          CustomerDuplicateCandidate[] @relation("DuplicateCandidateCustomer")
+  statusHistory             CustomerStatusHistory[]
 
   @@index([ownerBranchId, isActive, updatedAt])
   @@index([displayName])
@@ -2752,6 +2752,7 @@ model SalesContractPassenger {
 }
 
 model SalesContractService {
+  pricing          Json?
   id               String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   contractId       String                            @map("contract_id") @db.Uuid
   clientKey        String                            @map("client_key") @db.VarChar(80)
@@ -2948,18 +2949,36 @@ model TicketOfferAudit {
 }
 
 model ReservationIntake {
-  id              String   @id @default(uuid()) @db.Uuid
-  requestId       String   @unique @db.Uuid
-  contractId      String   @db.Uuid
+  purchaseVersion Int                        @default(0)
+  hotelPurchases  ReservationHotelPurchase[]
+  id              String                     @id @default(uuid()) @db.Uuid
+  requestId       String                     @unique @db.Uuid
+  contractId      String                     @db.Uuid
   contractVersion Int
-  branchId        String   @db.Uuid
-  fingerprint     String   @db.VarChar(64)
+  branchId        String                     @db.Uuid
+  fingerprint     String                     @db.VarChar(64)
   snapshot        Json
-  status          String   @default("QUEUED") @db.VarChar(40)
-  receivedAt      DateTime @default(now()) @db.Timestamptz(3)
+  status          String                     @default("QUEUED") @db.VarChar(40)
+  receivedAt      DateTime                   @default(now()) @db.Timestamptz(3)
 
   @@unique([contractId, contractVersion])
   @@index([branchId, receivedAt])
+}
+
+model ReservationHotelPurchase {
+  id             String            @id @default(uuid()) @db.Uuid
+  intakeId       String            @db.Uuid
+  intake         ReservationIntake @relation(fields: [intakeId], references: [id], onDelete: Restrict)
+  version        Int
+  amount         Decimal           @db.Decimal(24, 4)
+  currencyCode   String            @db.VarChar(3)
+  actorUserId    String            @db.Uuid
+  idempotencyKey String            @db.VarChar(160)
+  fingerprint    String            @db.VarChar(64)
+  createdAt      DateTime          @default(now()) @db.Timestamptz(3)
+
+  @@unique([intakeId, version])
+  @@unique([actorUserId, idempotencyKey])
 }
 
 model SalesContractAuditEvent {

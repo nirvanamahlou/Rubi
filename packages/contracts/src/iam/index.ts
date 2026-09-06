@@ -117,6 +117,7 @@ export const IAM_PERMISSION_CODES = [
   'ticket_catalog.read',
   'ticket_catalog.manage',
   'reservations.read',
+  'reservations.hotel_purchase.write',
 ] as const;
 
 export type IamPermissionCode = (typeof IAM_PERMISSION_CODES)[number];

@@ -32,6 +32,8 @@ export interface TicketOfferSearchV1 {
 }
 
 export interface ReservationIntakeV1 {
+  purchaseVersion?: number;
+  hotelPurchases?: readonly ReservationHotelPurchaseV1[];
   id: string;
   requestId: string;
   contractId: string;
@@ -40,4 +42,19 @@ export interface ReservationIntakeV1 {
   status: 'QUEUED';
   receivedAt: string;
   snapshot: SalesReservationRequestV1;
+}
+
+export interface ReservationHotelPurchaseV1 {
+  id: string;
+  version: number;
+  amount: string;
+  currencyCode: string;
+  actorUserId: string;
+  createdAt: string;
+}
+export interface ReservationHotelPurchaseInputV1 {
+  version: 1;
+  expectedVersion: number;
+  amount: string;
+  currencyCode: string;
 }
