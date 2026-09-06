@@ -1,5 +1,11 @@
 # Work Assignments
 
+## CUSTOMER-ENTRY-SHEET-0906 — PC-A — COMPLETE_LOCAL
+
+- User requested spreadsheet-like Customer 360 entry. Reserve Customers Web entry UI, its tests and this local task documentation on codex/pc-a-customer-entry-sheet-0906, based on the verified local integration. Producer branches remain untouched; no merge, publication, schema, API, IAM or dependency changes.
+- Preserve required identity validation, public Customers/Documents APIs and encrypted/masked persistence. Simplify core person entry into rows and show optional details only for the selected row.
+- Delivered editable table, confirmable row removal/source changes, unclipped calendar and preflight duplicate/name checks. 100 Customers tests / all 725 Web tests, scoped lint, typecheck and 36-route production build passed. Web 3100 restarted; Web/API HTTP checks passed (unauthenticated Customers redirects to login). No authenticated visual QA or real-record creation claimed. No public push.
+
 ## LOCAL-INTEGRATION-0906 — PC-A — COMPLETE_LOCAL
 
 - User explicitly authorized isolated local integration of latest module work and preserved passport changes. Branch codex/pc-a-local-integration-0906 starts at local Sales 2cc7a9c, retaining all six local commits. No source branch, main/develop, public push or PR mutation authorized.
