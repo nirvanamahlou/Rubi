@@ -295,7 +295,6 @@ export const sectionTabs: Readonly<
     { id: 'interviews', label: 'مصاحبه‌ها', icon: CalendarClock },
     { id: 'feedback', label: 'امتیاز و بازخورد', icon: Target },
     { id: 'offers', label: 'پیشنهاد استخدام', icon: FileText },
-    { id: 'referrals', label: 'معرفی کارکنان', icon: UserRoundCheck },
   ],
   lifecycle: [
     { id: 'onboarding', label: 'ورود نیروی جدید', icon: UserRoundCheck },

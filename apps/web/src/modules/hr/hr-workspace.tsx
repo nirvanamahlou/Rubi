@@ -24,7 +24,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
@@ -71,6 +71,10 @@ import {
   type OrganizationCatalogRecords,
   type OrganizationCatalogTab,
 } from './organization-catalog';
+import {
+  ContextualHrFormDialog,
+  type ContextualHrFormContext,
+} from './contextual-hr-form';
 
 type UiState = 'loading' | 'empty' | 'error' | 'unauthorized' | 'forbidden';
 type BadgeTone = 'success' | 'warning' | 'danger' | 'neutral';
@@ -1141,15 +1145,15 @@ function EmployeeProfile({
 function genericTable(
   section: HrSectionId,
   tab: string,
-  openAction: (title: string) => void,
+  openRecord: () => void,
 ): PreviewTableData {
   const operation = (
     <ActionButton
       key="action"
-      onClick={() => openAction('مشاهده جزئیات')}
+      onClick={openRecord}
       small
     >
-      مشاهده
+      ویرایش
     </ActionButton>
   );
   const id = (index: number) => (
@@ -1182,7 +1186,7 @@ function genericTable(
         ],
         [
           id(1),
-          tab === 'referrals' ? 'معرفی نمایشی کارکنان' : 'متقاضی نمایشی ب',
+          'متقاضی نمایشی ب',
           'فروش',
           tab === 'offers' ? 'پیشنهاد' : 'غربالگری',
           '—',
@@ -1941,22 +1945,37 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
   );
 }
 
-function Requests({ openAction }: { openAction: (title: string) => void }) {
+function Requests({
+  openForm,
+}: {
+  openForm: (context: ContextualHrFormContext) => void;
+}) {
   const tabs = sectionTabs.requests ?? [];
   const [tab, setTab] = useState(tabs[0]?.id ?? 'inbox');
+  const active = tabs.find((item) => item.id === tab);
+  const columns = [
+    'شناسه',
+    'نوع',
+    'درخواست‌کننده',
+    'ثبت',
+    'مالک مرحله',
+    'موعد',
+    'مرحله فعلی',
+    'اثر مالی',
+    'وضعیت',
+    'عملیات',
+  ] as const;
+  const openCurrentForm = (mode: ContextualHrFormContext['mode']) =>
+    openForm({
+      section: 'requests',
+      tab,
+      title: active?.label ?? 'درخواست منابع انسانی',
+      description: screenMeta.requests.description,
+      columns,
+      mode,
+    });
   const data: PreviewTableData = {
-    columns: [
-      'شناسه',
-      'نوع',
-      'درخواست‌کننده',
-      'ثبت',
-      'مالک مرحله',
-      'موعد',
-      'مرحله فعلی',
-      'اثر مالی',
-      'وضعیت',
-      'عملیات',
-    ],
+    columns,
     rows: [
       [
         <span dir="ltr" key="i1">
@@ -1974,10 +1993,10 @@ function Requests({ openAction }: { openAction: (title: string) => void }) {
         </Badge>,
         <ActionButton
           key="a1"
-          onClick={() => openAction('درخواست نمایشی')}
+          onClick={() => openCurrentForm('edit')}
           small
         >
-          مشاهده
+          ویرایش
         </ActionButton>,
       ],
       [
@@ -1996,10 +2015,10 @@ function Requests({ openAction }: { openAction: (title: string) => void }) {
         </Badge>,
         <ActionButton
           key="a2"
-          onClick={() => openAction('درخواست نمایشی')}
+          onClick={() => openCurrentForm('edit')}
           small
         >
-          مشاهده
+          ویرایش
         </ActionButton>,
       ],
       [
@@ -2016,10 +2035,10 @@ function Requests({ openAction }: { openAction: (title: string) => void }) {
         <Badge key="s3">در جریان</Badge>,
         <ActionButton
           key="a3"
-          onClick={() => openAction('درخواست نمایشی')}
+          onClick={() => openCurrentForm('edit')}
           small
         >
-          مشاهده
+          ویرایش
         </ActionButton>,
       ],
     ],
@@ -2029,8 +2048,8 @@ function Requests({ openAction }: { openAction: (title: string) => void }) {
     <>
       <PageHead
         actions={
-          <ActionButton onClick={() => openAction('درخواست جدید')} primary>
-            <Plus size={15} /> درخواست جدید
+          <ActionButton onClick={() => openCurrentForm('create')} primary>
+            <Plus size={15} /> افزودن {active?.label ?? 'درخواست'}
           </ActionButton>
         }
         section="requests"
@@ -2186,6 +2205,7 @@ function PayrollOverview({
 function TabbedSection({
   section,
   openAction,
+  openForm,
   initialTab,
 }: {
   section: Exclude<
@@ -2198,6 +2218,7 @@ function TabbedSection({
     | 'requests'
   >;
   openAction: (title: string) => void;
+  openForm: (context: ContextualHrFormContext) => void;
   initialTab?: string | undefined;
 }) {
   const tabs = sectionTabs[section] ?? [];
@@ -2209,7 +2230,16 @@ function TabbedSection({
   const active = tabs.find((item) => item.id === tab);
   const ActiveIcon = active?.icon ?? FileText;
   const isPayrollOverview = section === 'payroll' && tab === 'overview';
-  const data = genericTable(section, tab, openAction);
+  const openCurrentForm = (mode: ContextualHrFormContext['mode']) =>
+    openForm({
+      section,
+      tab,
+      title: active?.label ?? screenMeta[section].title,
+      description: screenMeta[section].description,
+      columns: data.columns,
+      mode,
+    });
+  const data = genericTable(section, tab, () => openCurrentForm('edit'));
   return (
     <>
       <PageHead
@@ -2219,12 +2249,11 @@ function TabbedSection({
               <Download size={15} /> خروجی مجاز
             </ActionButton>
             <ActionButton
-              onClick={() =>
-                openAction(`ایجاد در ${screenMeta[section].title}`)
-              }
+              onClick={() => openCurrentForm('create')}
               primary
             >
-              <Plus size={15} /> مورد جدید
+              <Plus size={15} /> افزودن{' '}
+              {active?.label ?? screenMeta[section].title}
             </ActionButton>
           </>
         }
@@ -2283,12 +2312,7 @@ function TabbedSection({
   );
 }
 
-function PreviewDialog({ close, title }: { close: () => void; title: string }) {
-  const [date, setDate] = useState('');
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    close();
-  }
+function DetailDialog({ close, title }: { close: () => void; title: string }) {
   return (
     <Dialog
       onOpenChange={(open) => {
@@ -2299,55 +2323,19 @@ function PreviewDialog({ close, title }: { close: () => void; title: string }) {
       <DialogContent className={styles.modal} dir="rtl">
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription>
-          این فرم فقط رفتار رابط را نمایش می‌دهد و هیچ اطلاعاتی ذخیره یا به
-          سرویس دیگری ارسال نمی‌کند.
+          جزئیات این مورد در حالت پیش‌نمایش نمایش داده می‌شود و داده عملیاتی
+          ذخیره یا ارسال نمی‌شود.
         </DialogDescription>
-        <form onSubmit={submit}>
-          <div className={styles.previewNote}>
-            <Info size={16} />
-            فقط داده نمایشی وارد کنید. اطلاعات واقعی کارکنان در این پیش‌نمایش
-            مجاز نیست.
-          </div>
-          <div className={styles.formGrid}>
-            <label className={styles.fieldLabel}>
-              <span>عنوان نمایشی</span>
-              <input
-                className={styles.control}
-                defaultValue="رکورد نمایشی"
-                maxLength={100}
-                required
-              />
-            </label>
-            <label className={styles.fieldLabel}>
-              <span>شناسه</span>
-              <input
-                className={styles.control}
-                dir="ltr"
-                disabled
-                value="preview-new-record"
-              />
-            </label>
-            <label className={styles.fieldLabel}>
-              <span>تاریخ اثر</span>
-              <DatePicker id="hr-dialog-date" onChange={setDate} value={date} />
-            </label>
-            <label className={styles.fieldLabel}>
-              <span>اطلاعات حساس</span>
-              <input
-                aria-label="اطلاعات حساس پوشیده"
-                className={styles.control}
-                disabled
-                value="••••••••"
-              />
-            </label>
-          </div>
-          <div className={styles.modalFooter}>
-            <ActionButton onClick={close}>انصراف</ActionButton>
-            <ActionButton primary type="submit">
-              اعمال در پیش‌نمایش
-            </ActionButton>
-          </div>
-        </form>
+        <div className={styles.previewNote}>
+          <Info aria-hidden="true" size={16} />
+          این پنجره فقط برای مشاهده است. ایجاد و ویرایش از فرم اختصاصی هر
+          زیرصفحه انجام می‌شود.
+        </div>
+        <div className={styles.modalFooter}>
+          <ActionButton onClick={close} primary>
+            بستن
+          </ActionButton>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -2367,6 +2355,8 @@ export function HrWorkspace({
   const [employees, setEmployees] =
     useState<readonly PreviewEmployee[]>(previewEmployees);
   const [dialogTitle, setDialogTitle] = useState<string | null>(null);
+  const [contextualForm, setContextualForm] =
+    useState<ContextualHrFormContext | null>(null);
   const [notice, setNotice] = useState('');
   function closeDialog() {
     if (dialogTitle)
@@ -2375,7 +2365,13 @@ export function HrWorkspace({
   }
   const openAction = (title: string) => {
     setNotice('');
+    setContextualForm(null);
     setDialogTitle(title);
+  };
+  const openForm = (context: ContextualHrFormContext) => {
+    setNotice('');
+    setDialogTitle(null);
+    setContextualForm(context);
   };
   const addEmployee = (value: NewEmployeeFormValue) => {
     const name = `${value.firstName} ${value.lastName}`.trim();
@@ -2424,12 +2420,13 @@ export function HrWorkspace({
   else if (section === 'organization')
     screen = <OrganizationSection initialTab={tabId} />;
   else if (section === 'requests')
-    screen = <Requests openAction={openAction} />;
+    screen = <Requests openForm={openForm} />;
   else
     screen = (
       <TabbedSection
         initialTab={tabId}
         openAction={openAction}
+        openForm={openForm}
         section={section}
       />
     );
@@ -2447,7 +2444,18 @@ export function HrWorkspace({
         </div>
       ) : null}
       {screen}
-      {dialogTitle === 'کارمند جدید' ? (
+      {contextualForm ? (
+        <ContextualHrFormDialog
+          context={contextualForm}
+          onClose={() => setContextualForm(null)}
+          onSubmit={() => {
+            setNotice(
+              `${contextualForm.title} در پیش‌نمایش این نشست ثبت شد.`,
+            );
+            setContextualForm(null);
+          }}
+        />
+      ) : dialogTitle === 'کارمند جدید' ? (
         <NewEmployeeDialog
           existingPersonnelCodes={employees.map((employee) => employee.id)}
           managerOptions={employees.map((employee) => employee.name)}
@@ -2455,7 +2463,7 @@ export function HrWorkspace({
           onSubmit={addEmployee}
         />
       ) : dialogTitle ? (
-        <PreviewDialog close={closeDialog} title={dialogTitle} />
+        <DetailDialog close={closeDialog} title={dialogTitle} />
       ) : null}
     </main>
   );

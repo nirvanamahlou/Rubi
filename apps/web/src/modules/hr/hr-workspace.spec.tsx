@@ -24,6 +24,11 @@ import {
   type OrganizationCatalogTab,
 } from './organization-catalog';
 import {
+  buildContextualHrFields,
+  ContextualHrForm,
+  type ContextualHrFormContext,
+} from './contextual-hr-form';
+import {
   employeeTabs,
   hrHubCards,
   iranLocalizationStatus,
@@ -62,7 +67,10 @@ describe('HR reference implementation', () => {
   it('provides the complete employee profile and section tab sets', () => {
     expect(employeeTabs).toHaveLength(15);
     expect(sectionTabs.organization).toHaveLength(6);
-    expect(sectionTabs.recruitment).toHaveLength(8);
+    expect(sectionTabs.recruitment).toHaveLength(7);
+    expect(sectionTabs.recruitment?.map((tab) => tab.label)).not.toContain(
+      'معرفی کارکنان',
+    );
     expect(sectionTabs.lifecycle).toHaveLength(7);
     expect(sectionTabs.contracts).toHaveLength(5);
     expect(sectionTabs.time).toHaveLength(13);
@@ -297,6 +305,49 @@ describe('HR reference implementation', () => {
     expect(errors.city).toBe('شهر الزامی است.');
     expect(errors.effectiveFrom).toBe('تاریخ اثر الزامی است.');
     expect(errors.status).toBe('وضعیت الزامی است.');
+  });
+
+  it('builds contextual HR forms from each section data columns', () => {
+    const columns = [
+      'شناسه',
+      'کارمند',
+      'نوع',
+      'ارز',
+      'مبلغ',
+      'مرحله تأیید',
+      'وضعیت مالی',
+      'عملیات',
+    ] as const;
+    const fields = buildContextualHrFields(columns);
+    expect(fields.map((field) => field.label)).toEqual(columns.slice(0, -1));
+    expect(fields.find((field) => field.label === 'کارمند')?.type).toBe(
+      'select',
+    );
+    expect(fields.find((field) => field.label === 'مبلغ')?.type).toBe(
+      'number',
+    );
+    expect(fields.find((field) => field.label === 'وضعیت مالی')?.type).toBe(
+      'select',
+    );
+
+    const context: ContextualHrFormContext = {
+      section: 'expenses',
+      tab: 'claims',
+      title: 'بازپرداخت هزینه',
+      description: 'ثبت بازپرداخت هزینه کارکنان',
+      columns,
+      mode: 'create',
+    };
+    const html = renderToStaticMarkup(
+      <ContextualHrForm
+        context={context}
+        onCancel={() => undefined}
+        onSubmit={() => undefined}
+      />,
+    );
+    for (const column of columns.slice(0, -1)) expect(html).toContain(column);
+    expect(html).toContain('افزودن بازپرداخت هزینه');
+    expect(html).not.toContain('عنوان نمایشی');
   });
 
   it('keeps payroll and exports in a truthful preview state', () => {

@@ -520,11 +520,6 @@ export const frappeWorkspaces: readonly FrappeWorkspaceDefinition[] = [
           { label: 'فرصت شغلی', section: 'recruitment', tab: 'openings' },
           { label: 'متقاضی شغل', section: 'recruitment', tab: 'applicants' },
           { label: 'پیشنهاد استخدام', section: 'recruitment', tab: 'offers' },
-          {
-            label: 'معرفی توسط کارکنان',
-            section: 'recruitment',
-            tab: 'referrals',
-          },
         ],
       },
       {

@@ -21,6 +21,7 @@ describe('Frappe-style HR workspaces', () => {
     );
     expect(html).not.toContain('id="frappe-workspaces-title"');
     expect(html).toContain('امکانات Frappe HR');
+    expect(JSON.stringify(frappeWorkspaces)).not.toContain('معرفی توسط کارکنان');
     for (const workspace of frappeWorkspaces) {
       expect(html).toContain(workspace.shortTitle);
       expect(html).toContain(`/hr?workspace=${workspace.id}`);
