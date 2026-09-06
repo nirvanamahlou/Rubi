@@ -21,7 +21,13 @@ export interface ContextualHrFormContext {
   mode: 'create' | 'edit';
 }
 
-type ContextualFieldType = 'text' | 'number' | 'date' | 'select' | 'textarea';
+type ContextualFieldType =
+  | 'text'
+  | 'number'
+  | 'date'
+  | 'time'
+  | 'select'
+  | 'textarea';
 
 export interface ContextualHrField {
   id: string;
@@ -66,6 +72,7 @@ const fieldOptions = (label: string): readonly string[] | undefined => {
   if (label.includes('وضعیت'))
     return ['پیش‌نویس', 'در انتظار تأیید', 'فعال', 'تکمیل‌شده', 'غیرفعال'];
   if (label.includes('ارز')) return ['IRR', 'USD', 'EUR', 'AED'];
+  if (/مشمول|قابل انتقال|الزامی/.test(label)) return ['بله', 'خیر'];
   if (label.includes('کارمند') || label.includes('درخواست‌کننده'))
     return [
       'همکار نمایشی الف',
@@ -81,10 +88,25 @@ const fieldOptions = (label: string): readonly string[] | undefined => {
     return ['منابع انسانی', 'مدیر مستقیم', 'مالی', 'مدیر سیستم'];
   if (label.includes('واحد'))
     return ['عملیات سفر', 'فروش', 'مالی', 'منابع انسانی'];
-  if (label.includes('شعبه')) return ['شعبه مرکزی', 'شعبه فرودگاه'];
-  if (label === 'نوع') return ['عادی', 'ویژه', 'موقت'];
+  if (label.includes('شعبه'))
+    return ['شعبه مرکزی', 'شعبه فرودگاه', 'همه شعبه‌ها'];
+  if (label.includes('نوع همکاری'))
+    return ['تمام‌وقت', 'پاره‌وقت', 'پروژه‌ای', 'کارآموزی'];
+  if (label.includes('نوع مرخصی'))
+    return ['استحقاقی', 'استعلاجی', 'بدون حقوق', 'جبرانی'];
+  if (label.includes('نوع تردد')) return ['ورود', 'خروج'];
+  if (label.includes('نوع مؤلفه')) return ['دریافتی', 'کسورات'];
+  if (/نوع پایان همکاری|نوع خاتمه/.test(label))
+    return ['پایان مدت', 'استعفا', 'فسخ', 'بازنشستگی'];
+  if (label.includes('نوع خروجی')) return ['نمایش', 'PDF', 'Excel'];
+  if (label.startsWith('نوع ')) return ['عادی', 'ویژه', 'موقت'];
   if (label.includes('مرحله'))
     return ['ثبت اولیه', 'بررسی مدیر', 'تأیید منابع انسانی', 'تکمیل'];
+  if (/سطح فعلی|سطح هدف|سطح موجود|سطح موردنیاز/.test(label))
+    return ['مقدماتی', 'متوسط', 'پیشرفته', 'خبره'];
+  if (label.includes('رتبه'))
+    return ['نیازمند بهبود', 'مطابق انتظار', 'فراتر از انتظار'];
+  if (label.includes('تقویم')) return ['شمسی', 'میلادی', 'تقویم تهران'];
   if (label.includes('سطح دسترسی'))
     return ['داخلی', 'محرمانه', 'خیلی محرمانه'];
   if (label.includes('خروجی')) return ['نمایش', 'PDF', 'Excel'];
@@ -92,14 +114,18 @@ const fieldOptions = (label: string): readonly string[] | undefined => {
 };
 
 const fieldType = (label: string): ContextualFieldType => {
-  if (
-    /تاریخ|شروع|پایان|موعد|ثبت|تولد|تحویل|انقضا|زمان/.test(label) &&
-    !label.includes('بازه')
-  )
+  if (/ساعت (شروع|پایان|مصاحبه|تردد|تحویل|عودت)/.test(label)) return 'time';
+  if (/تاریخ|موعد|تولد|انقضا|مهلت/.test(label) && !label.includes('بازه'))
     return 'date';
-  if (/مبلغ|امتیاز|تعداد|ظرفیت|ساعت|روز|نرخ/.test(label)) return 'number';
+  if (
+    /مبلغ|امتیاز|تعداد|ظرفیت|بودجه|حقوق|درصد|وزن|نرخ|سهمیه|مسافت|کیلومتر|ترتیب|روز باقی‌مانده|کارکرد فعلی/.test(
+      label,
+    )
+  )
+    return 'number';
   if (fieldOptions(label)) return 'select';
-  if (/شرح|توضیح|بازخورد|نتیجه/.test(label)) return 'textarea';
+  if (/شرح|توضیح|بازخورد|نتیجه|دلیل|هدف|نقاط|دستاورد|چالش/.test(label))
+    return 'textarea';
   return 'text';
 };
 

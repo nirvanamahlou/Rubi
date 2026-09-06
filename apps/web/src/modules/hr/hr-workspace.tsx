@@ -37,7 +37,6 @@ import {
   hrHubCards,
   iranLocalizationStatus,
   normalizeSection,
-  previewId,
   screenMeta,
   sectionTabs,
   type HrSectionId,
@@ -75,6 +74,7 @@ import {
   ContextualHrFormDialog,
   type ContextualHrFormContext,
 } from './contextual-hr-form';
+import { getHrPreviewDataset } from './hr-preview-data';
 
 type UiState = 'loading' | 'empty' | 'error' | 'unauthorized' | 'forbidden';
 type BadgeTone = 'success' | 'warning' | 'danger' | 'neutral';
@@ -1065,6 +1065,15 @@ function EmployeeProfile({
   const active =
     employeeTabs.find((item) => item.id === tab) ?? employeeTabs[0];
   const ActiveIcon = active?.icon ?? UserRound;
+  const profileData =
+    tab === 'summary'
+      ? null
+      : genericTable(
+          'employee',
+          tab,
+          () => openAction(`جزئیات ${active?.label ?? 'پرونده کارمند'}`),
+          'مشاهده',
+        );
   const summaryItems = [
     ['کد پرسنلی', 'preview-employee-1'],
     ['نوع همکاری', 'تمام‌وقت'],
@@ -1125,16 +1134,7 @@ function EmployeeProfile({
               ))}
             </div>
           ) : (
-            <>
-              <div className={styles.previewNote}>
-                <Info size={16} />
-                محتوای این تب پس از اتصال قرارداد عمومی ماژول مالک نمایش داده
-                می‌شود. این نما هیچ داده حساس یا عملیاتی را شبیه‌سازی نمی‌کند.
-              </div>
-              <div className={styles.empty}>
-                هنوز رکورد متصل برای «{active?.label}» وجود ندارد.
-              </div>
-            </>
+            profileData && <PreviewTable data={profileData} />
           )}
         </div>
       </Panel>
@@ -1146,571 +1146,38 @@ function genericTable(
   section: HrSectionId,
   tab: string,
   openRecord: () => void,
+  actionLabel = 'ویرایش',
 ): PreviewTableData {
-  const operation = (
-    <ActionButton
-      key="action"
-      onClick={openRecord}
-      small
-    >
-      ویرایش
-    </ActionButton>
-  );
-  const id = (index: number) => (
-    <span dir="ltr">{previewId(section, index)}</span>
-  );
-  if (section === 'recruitment')
-    return {
-      columns: [
-        'شناسه',
-        'عنوان',
-        'واحد',
-        'تعداد/مرحله',
-        'بودجه',
-        'مالک',
-        'وضعیت',
-        'عملیات',
-      ],
-      rows: [
-        [
-          id(0),
-          tab === 'staffing' ? 'برنامه نیروی انسانی نمایشی' : 'فرصت نمایشی الف',
-          'عملیات سفر',
-          tab === 'interviews' ? 'مرحله فنی' : '—',
-          '—',
-          'کارشناس نمایشی HR',
-          <Badge key="w" tone="warning">
-            در جریان
-          </Badge>,
-          operation,
-        ],
-        [
-          id(1),
-          'متقاضی نمایشی ب',
-          'فروش',
-          tab === 'offers' ? 'پیشنهاد' : 'غربالگری',
-          '—',
-          'مدیر نمایشی ب',
-          <Badge key="n">پیش‌نویس</Badge>,
-          operation,
-        ],
-      ],
-      totalLabel: '۲ ردیف جذب پیش‌نمایش',
-    };
-  if (section === 'lifecycle')
-    return {
-      columns: [
-        'شناسه',
-        'کارمند',
-        'فرایند',
-        'تاریخ اثر',
-        'مسئول',
-        'تسویه/دسترسی',
-        'وضعیت',
-        'عملیات',
-      ],
-      rows: [
-        [
-          id(0),
-          'همکار نمایشی الف',
-          tab,
-          '۱۴۰۵/۰۶/۱۵',
-          'کارشناس نمایشی HR',
-          'در انتظار قرارداد عمومی',
-          <Badge key="w" tone="warning">
-            در جریان
-          </Badge>,
-          operation,
-        ],
-        [
-          id(1),
-          'همکار نمایشی ب',
-          tab === 'settlement' ? 'تسویه نهایی نمایشی' : 'چک‌لیست نمایشی',
-          '۱۴۰۵/۰۶/۲۰',
-          'مدیر نمایشی ب',
-          '—',
-          <Badge key="n">پیش‌نویس</Badge>,
-          operation,
-        ],
-      ],
-      totalLabel: '۲ فرایند چرخه همکاری',
-    };
-  if (section === 'expenses')
-    return {
-      columns: [
-        'شناسه',
-        'کارمند',
-        'نوع',
-        'ارز',
-        'مبلغ',
-        'مرحله تأیید',
-        'وضعیت مالی',
-        'عملیات',
-      ],
-      rows: [
-        [
-          id(0),
-          'همکار نمایشی الف',
-          tab === 'advances' ? 'مساعده نمایشی' : 'هزینه سفر نمایشی',
-          'IRR',
-          '—',
-          'تأیید مدیر',
-          <Badge key="w" tone="warning">
-            ارسال‌نشده
-          </Badge>,
-          operation,
-        ],
-        [
-          id(1),
-          'همکار نمایشی ب',
-          tab === 'claims' ? 'بازپرداخت نمایشی' : 'مأموریت نمایشی',
-          'USD',
-          '—',
-          'کنترل مالی',
-          <Badge key="n">نیازمند نرخ معتبر</Badge>,
-          operation,
-        ],
-      ],
-      totalLabel: '۲ درخواست هزینه چندارزی',
-    };
-  if (section === 'benefits')
-    return {
-      columns: [
-        'شناسه',
-        'عنوان',
-        'کارمند/دامنه',
-        'تاریخ اثر',
-        'مبلغ/نرخ',
-        'مدرک',
-        'وضعیت',
-        'عملیات',
-      ],
-      rows: [
-        [
-          id(0),
-          tab === 'taxSlabs' ? 'پله مالیاتی نمایشی' : 'قاعده مزایای نمایشی',
-          'دامنه نمایشی',
-          '۱۴۰۵/۰۱/۰۱',
-          '—',
-          'سند مرجع تأییدنشده',
-          <Badge key="w" tone="warning">
-            غیرفعال
-          </Badge>,
-          operation,
-        ],
-        [
-          id(1),
-          tab === 'loans' ? 'وام نمایشی' : 'درخواست نمایشی مزایا',
-          'همکار نمایشی الف',
-          '۱۴۰۵/۰۶/۱۵',
-          '—',
-          '••••••••',
-          <Badge key="n">پیش‌نمایش</Badge>,
-          operation,
-        ],
-      ],
-      totalLabel: '۲ ردیف مالیات و مزایا',
-    };
-  if (section === 'fleet')
-    return {
-      columns: [
-        'شناسه',
-        'خودرو',
-        'پلاک/شناسه حساس',
-        'استفاده‌کننده',
-        'بازه',
-        'کیلومتر/هزینه',
-        'وضعیت',
-        'عملیات',
-      ],
-      rows: [
-        [
-          id(0),
-          'خودروی نمایشی الف',
-          '••••••••',
-          'همکار نمایشی الف',
-          'بازه نمایشی',
-          '—',
-          <Badge key="s" tone="success">
-            تخصیص نمایشی
-          </Badge>,
-          operation,
-        ],
-        [
-          id(1),
-          'خودروی نمایشی ب',
-          '••••••••',
-          'تخصیص‌نیافته',
-          '—',
-          '—',
-          <Badge key="n">آزاد</Badge>,
-          operation,
-        ],
-      ],
-      totalLabel: '۲ خودرو/سابقه پیش‌نمایش',
-    };
-  if (section === 'hrSettings')
-    return {
-      columns: [
-        'شناسه',
-        'قابلیت',
-        'دامنه',
-        'کنترل امنیتی',
-        'وابستگی',
-        'وضعیت',
-        'عملیات',
-      ],
-      rows: [
-        [
-          id(0),
-          tab === 'integrations' ? 'REST API و Webhook' : 'تنظیم نمایشی HR',
-          'شرکت و شعبه',
-          'IAM + Audit',
-          'قرارداد عمومی',
-          <Badge key="w" tone="warning">
-            نیازمند اتصال
-          </Badge>,
-          operation,
-        ],
-        [
-          id(1),
-          tab === 'companies'
-            ? 'تقویم شمسی و بومی‌سازی ایران'
-            : 'گردش‌کار نمایشی',
-          'چندشرکتی',
-          'Deny by default',
-          'تصمیم قانونی مصوب',
-          <Badge key="n">Phase A</Badge>,
-          operation,
-        ],
-      ],
-      totalLabel: '۲ قابلیت تنظیمات پیش‌نمایش',
-    };
-  if (section === 'organization')
-    return {
-      columns: [
-        'شناسه',
-        'عنوان',
-        'والد',
-        'مسئول',
-        'تاریخ اثر',
-        'وضعیت',
-        'عملیات',
-      ],
-      rows: [
-        [
-          id(0),
-          tab === 'positions' ? 'سمت نمایشی' : 'واحد نمایشی الف',
-          'ساختار نمایشی',
-          'همکار نمایشی الف',
-          '۱۴۰۵/۰۱/۰۱',
-          <Badge key="s" tone="success">
-            فعال
-          </Badge>,
-          operation,
-        ],
-        [
-          id(1),
-          tab === 'positions' ? 'شغل نمایشی' : 'واحد نمایشی ب',
-          'ساختار نمایشی',
-          'تعیین نشده',
-          '۱۴۰۵/۰۱/۰۱',
-          <Badge key="w" tone="warning">
-            نیازمند تکمیل
-          </Badge>,
-          operation,
-        ],
-      ],
-      totalLabel: '۲ ردیف پیش‌نمایش',
-    };
-  if (section === 'contracts')
-    return {
-      columns: [
-        'شناسه',
-        'کارمند',
-        'نوع',
-        'شروع',
-        'پایان',
-        'نسخه',
-        'وضعیت',
-        'عملیات',
-      ],
-      rows: [
-        [
-          id(0),
-          'همکار نمایشی الف',
-          tab === 'templates' ? 'قالب قرارداد' : 'تمام‌وقت',
-          '۱۴۰۵/۰۱/۰۱',
-          '۱۴۰۵/۱۲/۲۹',
-          'preview-v1',
-          <Badge key="s" tone="success">
-            فعال
-          </Badge>,
-          operation,
-        ],
-        [
-          id(1),
-          'همکار نمایشی ب',
-          'پاره‌وقت',
-          '۱۴۰۴/۰۷/۰۱',
-          '۱۴۰۵/۰۷/۳۰',
-          'preview-v2',
-          <Badge key="w" tone="warning">
-            نیازمند بررسی
-          </Badge>,
-          operation,
-        ],
-      ],
-      totalLabel: '۲ قرارداد نمایشی',
-    };
-  if (section === 'time')
-    return {
-      columns: [
-        'شناسه',
-        'کارمند',
-        'دوره',
-        'نوع',
-        'مقدار معتبر',
-        'نسخه منبع',
-        'وضعیت',
-        'عملیات',
-      ],
-      rows: [
-        [
-          id(0),
-          'همکار نمایشی الف',
-          'شهریور ۱۴۰۵',
-          tab,
-          '—',
-          'preview-source-v1',
-          <Badge key="s" tone="success">
-            تأیید نمایشی
-          </Badge>,
-          operation,
-        ],
-        [
-          id(1),
-          'همکار نمایشی ب',
-          'شهریور ۱۴۰۵',
-          tab,
-          '—',
-          'preview-source-v1',
-          <Badge key="w" tone="warning">
-            در انتظار
-          </Badge>,
-          operation,
-        ],
-      ],
-      totalLabel: '۲ ردیف پیش‌نمایش',
-    };
-  if (section === 'development')
-    return {
-      columns: [
-        'شناسه',
-        'کارمند',
-        'موضوع',
-        'دوره',
-        'مسئول',
-        'نتیجه',
-        'وضعیت',
-        'عملیات',
-      ],
-      rows: [
-        [
-          id(0),
-          'همکار نمایشی الف',
-          tab === 'skills' ? 'مهارت نمایشی' : 'برنامه توسعه نمایشی',
-          'فصل جاری',
-          'مدیر نمایشی الف',
-          '—',
-          <Badge key="w" tone="warning">
-            در جریان
-          </Badge>,
-          operation,
-        ],
-        [
-          id(1),
-          'همکار نمایشی ب',
-          'هدف نمایشی',
-          'فصل جاری',
-          'مدیر نمایشی ب',
-          '—',
-          <Badge key="n">پیش‌نویس</Badge>,
-          operation,
-        ],
-      ],
-      totalLabel: '۲ مورد پیش‌نمایش',
-    };
-  if (section === 'assets')
-    return {
-      columns: [
-        'شناسه',
-        'کارمند',
-        'تجهیز',
-        'برچسب دارایی',
-        'تحویل',
-        'وضعیت',
-        'عملیات',
-      ],
-      rows: [
-        [
-          id(0),
-          'همکار نمایشی الف',
-          'تجهیز نمایشی الف',
-          'preview-asset-1',
-          '۱۴۰۵/۰۱/۱۵',
-          <Badge key="s" tone="success">
-            تحویل‌شده
-          </Badge>,
-          operation,
-        ],
-        [
-          id(1),
-          'همکار نمایشی ب',
-          'تجهیز نمایشی ب',
-          'preview-asset-2',
-          '—',
-          <Badge key="w" tone="warning">
-            درخواست باز
-          </Badge>,
-          operation,
-        ],
-      ],
-      totalLabel: '۲ تجهیز پیش‌نمایش',
-    };
-  if (section === 'documents')
-    return {
-      columns: [
-        'شناسه',
-        'کارمند',
-        'نوع مدرک',
-        'نسخه',
-        'انقضا',
-        'سطح دسترسی',
-        'وضعیت',
-        'عملیات',
-      ],
-      rows: [
-        [
-          id(0),
-          'همکار نمایشی الف',
-          'مدرک نمایشی الف',
-          'preview-v1',
-          '۱۴۰۶/۰۱/۱۵',
-          'محرمانه',
-          <Badge key="s" tone="success">
-            بررسی‌شده
-          </Badge>,
-          operation,
-        ],
-        [
-          id(1),
-          'همکار نمایشی ب',
-          'مدرک نمایشی ب',
-          'preview-v1',
-          '—',
-          'محرمانه',
-          <Badge key="w" tone="warning">
-            نیازمند تکمیل
-          </Badge>,
-          operation,
-        ],
-      ],
-      totalLabel: '۲ مدرک پیش‌نمایش',
-    };
-  if (section === 'finance')
-    return {
-      columns: [
-        'شناسه',
-        'دوره',
-        'نسخه',
-        'حساب مقصد',
-        'مبلغ',
-        'مالک',
-        'وضعیت',
-        'عملیات',
-      ],
-      rows: [
-        [
-          id(0),
-          'شهریور ۱۴۰۵',
-          'preview-v1',
-          '••••••••',
-          '—',
-          'منابع انسانی',
-          <Badge key="w" tone="warning">
-            پیش‌نمایش
-          </Badge>,
-          operation,
-        ],
-        [
-          id(1),
-          'مرداد ۱۴۰۵',
-          'preview-v1',
-          '••••••••',
-          '—',
-          'مالی',
-          <Badge key="n">فاقد اتصال</Badge>,
-          operation,
-        ],
-      ],
-      totalLabel: '۲ بسته پیش‌نمایش',
-    };
-  if (section === 'reports')
-    return {
-      columns: [
-        'شناسه',
-        'عنوان',
-        'دامنه',
-        'تاریخ مبنا',
-        'مالک',
-        'خروجی',
-        'وضعیت',
-        'عملیات',
-      ],
-      rows: [
-        [
-          id(0),
-          'گزارش نیروی انسانی',
-          'شعبه مجاز',
-          'بازه انتخابی',
-          'HR',
-          'غیرفعال',
-          <Badge key="n">بدون داده</Badge>,
-          operation,
-        ],
-        [
-          id(1),
-          tab === 'access' ? 'کنترل دسترسی محرمانه' : 'Audit اختصاصی',
-          'دامنه نقش',
-          'بازه انتخابی',
-          'امنیت',
-          'غیرفعال',
-          <Badge key="w" tone="warning">
-            نیازمند منبع
-          </Badge>,
-          operation,
-        ],
-      ],
-      totalLabel: '۲ گزارش پیش‌نمایش',
-    };
+  const dataset = getHrPreviewDataset(section, tab);
   return {
-    columns: ['شناسه', 'عنوان', 'دوره', 'نسخه', 'مقدار', 'وضعیت', 'عملیات'],
-    rows: [
-      [
-        id(0),
-        `رکورد نمایشی ${tab}`,
-        'شهریور ۱۴۰۵',
-        'preview-v1',
-        '—',
-        <Badge key="n">پیش‌نمایش</Badge>,
-        operation,
-      ],
-    ],
-    totalLabel: '۱ ردیف پیش‌نمایش',
+    columns: [...dataset.columns, 'عملیات'],
+    rows: dataset.rows.map((row, rowIndex) => [
+      ...row.map((cell, cellIndex) => {
+        if (typeof cell !== 'string')
+          return (
+            <Badge key={`status-${rowIndex}`} tone={cell.tone}>
+              {cell.label}
+            </Badge>
+          );
+        if (cellIndex === 0)
+          return (
+            <span dir="ltr" key={`id-${rowIndex}`}>
+              {cell}
+            </span>
+          );
+        return cell;
+      }),
+      <ActionButton
+        key={`action-${rowIndex}`}
+        onClick={openRecord}
+        small
+      >
+        {actionLabel}
+      </ActionButton>,
+    ]),
+    totalLabel: dataset.totalLabel,
   };
 }
-
 function OrganizationSection({ initialTab }: { initialTab?: string | undefined }) {
   const tabs = sectionTabs.organization ?? [];
   const [tab, setTab] = useState(
@@ -1953,18 +1420,7 @@ function Requests({
   const tabs = sectionTabs.requests ?? [];
   const [tab, setTab] = useState(tabs[0]?.id ?? 'inbox');
   const active = tabs.find((item) => item.id === tab);
-  const columns = [
-    'شناسه',
-    'نوع',
-    'درخواست‌کننده',
-    'ثبت',
-    'مالک مرحله',
-    'موعد',
-    'مرحله فعلی',
-    'اثر مالی',
-    'وضعیت',
-    'عملیات',
-  ] as const;
+  const columns = [...getHrPreviewDataset('requests', tab).columns, 'عملیات'];
   const openCurrentForm = (mode: ContextualHrFormContext['mode']) =>
     openForm({
       section: 'requests',
@@ -1974,76 +1430,7 @@ function Requests({
       columns,
       mode,
     });
-  const data: PreviewTableData = {
-    columns,
-    rows: [
-      [
-        <span dir="ltr" key="i1">
-          preview-request-1
-        </span>,
-        'تغییر حساب مقصد',
-        'همکار نمایشی الف',
-        'امروز',
-        'تأییدکننده دوم',
-        'امروز',
-        'تأیید حساس',
-        'نسخه مقصد بعدی',
-        <Badge key="s1" tone="danger">
-          فوری
-        </Badge>,
-        <ActionButton
-          key="a1"
-          onClick={() => openCurrentForm('edit')}
-          small
-        >
-          ویرایش
-        </ActionButton>,
-      ],
-      [
-        <span dir="ltr" key="i2">
-          preview-request-2
-        </span>,
-        'مرخصی',
-        'همکار نمایشی ب',
-        'دیروز',
-        'مدیر مستقیم',
-        'امروز',
-        'تأیید مدیر',
-        'رزرو نمایشی',
-        <Badge key="s2" tone="warning">
-          در انتظار
-        </Badge>,
-        <ActionButton
-          key="a2"
-          onClick={() => openCurrentForm('edit')}
-          small
-        >
-          ویرایش
-        </ActionButton>,
-      ],
-      [
-        <span dir="ltr" key="i3">
-          preview-request-3
-        </span>,
-        'مأموریت',
-        'همکار نمایشی پ',
-        'دیروز',
-        'مالی',
-        'فردا',
-        'کنترل بودجه',
-        '—',
-        <Badge key="s3">در جریان</Badge>,
-        <ActionButton
-          key="a3"
-          onClick={() => openCurrentForm('edit')}
-          small
-        >
-          ویرایش
-        </ActionButton>,
-      ],
-    ],
-    totalLabel: '۳ درخواست پیش‌نمایش',
-  };
+  const data = genericTable('requests', tab, () => openCurrentForm('edit'));
   return (
     <>
       <PageHead
@@ -2069,7 +1456,7 @@ function Requests({
           </article>
         ))}
       </section>
-      <Panel title="کارتابل درخواست‌ها">
+      <Panel title={active?.label ?? 'کارتابل درخواست‌ها'}>
         {tab === 'mobile' ? (
           <div className={styles.panelBody}>
             <div className={styles.boundary}>
@@ -2084,7 +1471,7 @@ function Requests({
           <input
             aria-label="جست‌وجوی درخواست"
             className={`${styles.control} ${styles.searchControl}`}
-            placeholder="جست‌وجو در درخواست یا کارمند"
+            placeholder={`جست‌وجو در ${active?.label ?? 'درخواست‌ها'}`}
           />
           <select
             aria-label="کارتابل"
@@ -2095,12 +1482,13 @@ function Requests({
             <option value="all">همه موارد مجاز</option>
           </select>
           <select
-            aria-label="نوع درخواست"
+            aria-label="وضعیت درخواست"
             className={styles.control}
             defaultValue="all"
           >
-            <option value="all">همه انواع</option>
-            <option value="leave">مرخصی</option>
+            <option value="all">همه وضعیت‌ها</option>
+            <option value="pending">در انتظار</option>
+            <option value="completed">تکمیل‌شده</option>
           </select>
           <ActionButton>
             <Filter size={15} /> فیلتر
@@ -2111,7 +1499,6 @@ function Requests({
     </>
   );
 }
-
 function PayrollOverview({
   openAction,
 }: {

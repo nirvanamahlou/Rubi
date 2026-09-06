@@ -360,12 +360,12 @@ describe('HR reference implementation', () => {
   });
 
   it.each([
-    ['recruitment', 'جذب و استخدام', 'preview-recruitment-1'],
-    ['lifecycle', 'چرخه همکاری', 'preview-lifecycle-1'],
-    ['expenses', 'مأموریت و هزینه‌ها', 'preview-expenses-1'],
-    ['benefits', 'مالیات و مزایا', 'preview-benefits-1'],
-    ['fleet', 'خودروهای سازمانی', 'preview-fleet-1'],
-    ['hrSettings', 'تنظیمات و یکپارچگی', 'preview-hrSettings-1'],
+    ['recruitment', 'جذب و استخدام', 'preview-recruitment-staffing-1'],
+    ['lifecycle', 'چرخه همکاری', 'preview-lifecycle-onboarding-1'],
+    ['expenses', 'مأموریت و هزینه‌ها', 'preview-expenses-travel-1'],
+    ['benefits', 'مالیات و مزایا', 'preview-benefits-tax-slab-1'],
+    ['fleet', 'خودروهای سازمانی', 'preview-fleet-vehicle-1'],
+    ['hrSettings', 'تنظیمات و یکپارچگی', 'preview-settings-workflow-1'],
   ] as const)('renders the %s capability preview', (section, title, id) => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId={section} />);
     expect(html).toContain(title);
@@ -374,9 +374,12 @@ describe('HR reference implementation', () => {
   });
 
   it('states the exact Iran localization boundary', () => {
-    const html = renderToStaticMarkup(<HrWorkspace sectionId="hrSettings" />);
+    const html = renderToStaticMarkup(
+      <HrWorkspace sectionId="hrSettings" tabId="companies" />,
+    );
     expect(html).toContain('چندشرکتی و بومی‌سازی');
-    expect(html).toContain('نیازمند اتصال');
+    expect(html).toContain('در انتظار تأیید قانونی');
+    expect(html).toContain('BLOCKED_FOR_APPROVED_RULES');
     expect(iranLocalizationStatus).toEqual([
       {
         id: 'persian-calendar',
