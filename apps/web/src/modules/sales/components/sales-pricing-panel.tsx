@@ -6,7 +6,11 @@ import {
   type SalesServicePricingV1,
 } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
-import { FormField, Input } from '@/components/ui/form-controls';
+import {
+  SalesCurrencySelect,
+  defaultSalesCurrency,
+  type SalesCurrency,
+} from './sales-currency-select';
 import {
   MoneyInput as SalesMoneyInput,
   formatSalesMoney,
@@ -16,11 +20,13 @@ export function SalesPricingPanel({
   services,
   nights,
   values,
+  currencies,
   onChange,
 }: {
   services: readonly { key: string; title: string; hotel: boolean }[];
   nights: number;
   values: Record<string, SalesServicePricingV1[]>;
+  currencies: readonly SalesCurrency[];
   onChange: (key: string, prices: SalesServicePricingV1[]) => void;
 }) {
   const [editingBasis, setEditingBasis] = useState<
@@ -36,7 +42,7 @@ export function SalesPricingPanel({
       {services.map((service) => {
         const defaults: SalesServicePricingV1 = {
           version: 1,
-          currencyCode: 'IRR',
+          currencyCode: defaultSalesCurrency(currencies),
           daySale: { basis: service.hotel ? 'NIGHT' : 'TOTAL', amount: '' },
           agreed: { basis: service.hotel ? 'NIGHT' : 'TOTAL', amount: '' },
         };
@@ -91,22 +97,20 @@ export function SalesPricingPanel({
                   className="space-y-3 rounded-lg bg-muted/20 p-3"
                 >
                   <div className="flex items-end gap-2">
-                    <FormField label="ارز">
-                      <Input
-                        aria-label={`ارز ${service.title} ${index + 1}`}
-                        dir="ltr"
-                        className="w-28"
-                        maxLength={3}
-                        placeholder="IRR"
-                        value={price.currencyCode}
-                        onChange={(event) =>
-                          change({
-                            ...price,
-                            currencyCode: event.target.value.toUpperCase(),
-                          })
-                        }
-                      />
-                    </FormField>
+                    <SalesCurrencySelect
+                      label={`ارز ${service.title} ${index + 1}`}
+                      currencies={currencies.filter(
+                        (currency) =>
+                          currency.code === price.currencyCode ||
+                          !prices.some(
+                            (other) => other.currencyCode === currency.code,
+                          ),
+                      )}
+                      value={price.currencyCode}
+                      onChange={(currencyCode) =>
+                        change({ ...price, currencyCode })
+                      }
+                    />
                     {prices.length > 1 ? (
                       <Button
                         type="button"

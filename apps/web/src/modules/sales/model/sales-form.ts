@@ -530,8 +530,14 @@ export function salesPayload(
           ],
   );
   if (state.servicePricing)
-    for (const service of services)
-      service.pricing = state.servicePricing[service.clientKey] ?? [];
+    for (const service of services) {
+      if (service.kind === 'TRANSFER') {
+        service.metadata = { ...service.metadata, includedWithoutCharge: true };
+        service.pricing = [];
+      } else {
+        service.pricing = state.servicePricing[service.clientKey] ?? [];
+      }
+    }
   const ticketSelections = state.serviceKinds.includes('FLIGHT')
     ? [
         ...(salesDirections(state, 'FLIGHT').includes('OUTBOUND') &&

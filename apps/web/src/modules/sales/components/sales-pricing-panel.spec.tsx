@@ -41,6 +41,7 @@ describe('sales pricing entry', () => {
   it('offers nightly and total entry, shows derived totals and removes manual discount selection', () => {
     const html = renderToStaticMarkup(
       <SalesPricingPanel
+        currencies={[{ code: 'IRR', name: 'ریال', status: 'active' }]}
         services={[{ key: 'hotel', title: 'هتل', hotel: true }]}
         nights={3}
         values={{

@@ -20,6 +20,41 @@ import {
 } from './sales-form';
 
 describe('sales contract form payload', () => {
+  it('removes stale transfer draft prices while preserving included directions and assignments', () => {
+    const price = {
+      version: 1 as const,
+      currencyCode: 'IRR',
+      daySale: { basis: 'TOTAL' as const, amount: '100' },
+      agreed: { basis: 'TOTAL' as const, amount: '90' },
+    };
+    const payload = salesPayload({
+      ...emptySalesForm,
+      serviceKinds: ['OTHER', 'TRANSFER'],
+      serviceDirections: { TRANSFER: ['OUTBOUND', 'RETURN'] },
+      servicePricing: {
+        other: [price],
+        'transfer-outbound': [price],
+        'transfer-return': [price],
+      },
+    });
+    expect(
+      payload.services.filter((service) => service.kind === 'TRANSFER'),
+    ).toMatchObject([
+      {
+        pricing: [],
+        metadata: { direction: 'OUTBOUND', includedWithoutCharge: true },
+      },
+      {
+        pricing: [],
+        metadata: { direction: 'RETURN', includedWithoutCharge: true },
+      },
+    ]);
+    expect(payload.priceComponents).toHaveLength(2);
+    expect(payload.priceComponents.map((item) => item.amount)).toEqual([
+      '100',
+      '10',
+    ]);
+  });
   it('enabling flight clears bus/train and transfer has no detail step', () => {
     const base = {
       ...emptySalesForm,

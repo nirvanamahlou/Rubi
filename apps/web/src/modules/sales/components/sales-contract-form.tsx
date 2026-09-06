@@ -23,6 +23,11 @@ import type {
 
 import { hotelNights } from '@rubi/contracts';
 import { SalesPricingPanel, SalesPricingSummary } from './sales-pricing-panel';
+import {
+  SalesCurrencySelect,
+  defaultSalesCurrency,
+  validateSalesCurrencySelection,
+} from './sales-currency-select';
 import { MoneyInput as SalesMoneyInput } from '@/components/ui/money-input';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
@@ -74,37 +79,14 @@ const serviceOptions: readonly [SalesServiceKind, string][] = [
   ['CIP', 'CIP'],
   ['OTHER', 'سایر'],
 ];
-const fieldClass =
-  'h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30';
-
-function ReferenceSelect({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: readonly MasterDataRecord[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <FormField label={label} required>
-      <select
-        className={fieldClass}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        <option value="">انتخاب کنید</option>
-        {options.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.name} ({item.code})
-          </option>
-        ))}
-      </select>
-    </FormField>
-  );
-}
+const ReferenceSelect = SearchableReference;
+const paymentMethodOptions = [
+  { id: 'BANK_TRANSFER', name: 'حواله بانکی', code: '' },
+  { id: 'CASH', name: 'نقد', code: '' },
+  { id: 'POS', name: 'کارت‌خوان', code: '' },
+  { id: 'ONLINE_GATEWAY', name: 'درگاه', code: '' },
+  { id: 'CHECK', name: 'چک', code: '' },
+];
 
 function HotelCountField({
   label,
@@ -183,6 +165,7 @@ export function SalesContractForm() {
     roomTypes: readonly MasterDataRecord[];
     visaServices: readonly MasterDataRecord[];
     banks: readonly MasterDataRecord[];
+    currencies: readonly MasterDataRecord[];
   }>({
     countries: [],
     cities: [],
@@ -190,6 +173,7 @@ export function SalesContractForm() {
     roomTypes: [],
     visaServices: [],
     banks: [],
+    currencies: [],
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -285,20 +269,32 @@ export function SalesContractForm() {
       loadReferences('room-types'),
       loadReferences('visa-services'),
       loadReferences('banks'),
+      loadReferences('currencies'),
     ])
-      .then(([countries, cities, hotels, roomTypes, visaServices, banks]) => {
-        setReferences({
-          countries: countries.data,
-          cities: cities.data,
-          hotels: hotels.data,
-          roomTypes: roomTypes.data,
-          visaServices: visaServices.data,
-          banks: banks.data,
-        });
-        setState((current) =>
-          withSalesRouteDefaults(current, countries.data, cities.data),
-        );
-      })
+      .then(
+        ([
+          countries,
+          cities,
+          hotels,
+          roomTypes,
+          visaServices,
+          banks,
+          currencies,
+        ]) => {
+          setReferences({
+            countries: countries.data,
+            cities: cities.data,
+            hotels: hotels.data,
+            roomTypes: roomTypes.data,
+            visaServices: visaServices.data,
+            banks: banks.data,
+            currencies: currencies.data,
+          });
+          setState((current) =>
+            withSalesRouteDefaults(current, countries.data, cities.data),
+          );
+        },
+      )
       .catch(() =>
         setError('بخشی از Public Contract اطلاعات پایه در دسترس نیست.'),
       );
@@ -401,21 +397,23 @@ export function SalesContractForm() {
         : key.startsWith('TRANSFER-')
           ? `ترانسفر ${key.endsWith('OUTBOUND') ? 'رفت' : 'برگشت'}`
           : (serviceOptions.find(([kind]) => kind === key)?.[1] ?? key);
-  const pricingServices = state.serviceKinds.flatMap((kind) =>
-    kind === 'FLIGHT' || kind === 'TRANSFER'
-      ? salesDirections(state, kind).map((direction) => ({
-          key: `${kind.toLowerCase()}-${direction.toLowerCase()}`,
-          title: `${kind === 'FLIGHT' ? 'بلیت' : 'ترانسفر'} ${direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}`,
-          hotel: false,
-        }))
-      : [
-          {
-            key: kind.toLowerCase(),
-            title: serviceOptions.find(([key]) => key === kind)?.[1] ?? kind,
-            hotel: kind === 'HOTEL',
-          },
-        ],
-  );
+  const pricingServices = state.serviceKinds
+    .filter((kind) => kind !== 'TRANSFER')
+    .flatMap((kind) =>
+      kind === 'FLIGHT'
+        ? salesDirections(state, kind).map((direction) => ({
+            key: `${kind.toLowerCase()}-${direction.toLowerCase()}`,
+            title: `${kind === 'FLIGHT' ? 'بلیت' : 'ترانسفر'} ${direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}`,
+            hotel: false,
+          }))
+        : [
+            {
+              key: kind.toLowerCase(),
+              title: serviceOptions.find(([key]) => key === kind)?.[1] ?? kind,
+              hotel: kind === 'HOTEL',
+            },
+          ],
+    );
   let pricingNights = 0;
   try {
     pricingNights = hotelNights(state.hotel.checkIn, state.hotel.checkOut);
@@ -510,9 +508,16 @@ export function SalesContractForm() {
       );
     if (step === 3) {
       try {
+        const payload = salesPayload({
+          ...state,
+          servicePricing: state.servicePricing ?? {},
+        });
+        validateSalesCurrencySelection(payload, references.currencies);
         return (
-          salesPayload({ ...state, servicePricing: state.servicePricing ?? {} })
-            .priceComponents.length > 0
+          payload.priceComponents.length > 0 ||
+          (payload.services.length > 0 &&
+            payload.services.every((service) => service.kind === 'TRANSFER') &&
+            !payload.payments?.length)
         );
       } catch {
         return false;
@@ -525,6 +530,7 @@ export function SalesContractForm() {
     activeDetail,
     createPersonMode,
     pendingPassengers.length,
+    references.currencies,
     passengerCounts,
     hotelGuestIds,
   ]);
@@ -535,6 +541,7 @@ export function SalesContractForm() {
     setError('');
     try {
       const payload = salesPayload(state);
+      validateSalesCurrencySelection(payload, references.currencies);
       const fingerprint = JSON.stringify(payload);
       if (submission.current.fingerprint !== fingerprint)
         submission.current = { fingerprint, key: crypto.randomUUID() };
@@ -1627,7 +1634,19 @@ export function SalesContractForm() {
         ) : null}
         {step === 3 ? (
           <div className="grid gap-6">
+            {state.serviceKinds.includes('TRANSFER') ? (
+              <p className="rounded-xl bg-primary/5 p-3 text-sm text-primary">
+                ترانسفر{' '}
+                {salesDirections(state, 'TRANSFER')
+                  .map((direction) =>
+                    direction === 'OUTBOUND' ? 'رفت' : 'برگشت',
+                  )
+                  .join(' و ')}{' '}
+                همراه خدمات است؛ هزینهٔ اضافه ندارد و در خروجی بلیت درج می‌شود.
+              </p>
+            ) : null}
             <SalesPricingPanel
+              currencies={references.currencies}
               services={pricingServices}
               nights={pricingNights}
               values={state.servicePricing ?? {}}
@@ -1655,13 +1674,16 @@ export function SalesContractForm() {
                         ...state.payments,
                         {
                           amount: '',
-                          currencyCode: 'IRR',
+                          currencyCode: defaultSalesCurrency(
+                            references.currencies,
+                          ),
                           dueAt: '',
                           method: 'BANK_TRANSFER',
                         },
                       ],
                     })
                   }
+                  disabled={!pricingServices.length}
                 >
                   <Plus className="size-4" />
                   افزودن پرداخت
@@ -1669,7 +1691,7 @@ export function SalesContractForm() {
               </div>
               {state.payments.map((payment, index) => (
                 <div
-                  className="grid gap-3 rounded-xl border p-4 md:grid-cols-4"
+                  className="grid items-end gap-3 rounded-xl border p-4 md:grid-cols-4"
                   key={index}
                 >
                   <SalesMoneyInput
@@ -1684,19 +1706,14 @@ export function SalesContractForm() {
                     }
                     placeholder="مبلغ"
                   />
-                  <Input
-                    dir="ltr"
-                    maxLength={3}
+                  <SalesCurrencySelect
+                    label={`ارز پرداخت ${index + 1}`}
+                    currencies={references.currencies}
                     value={payment.currencyCode}
-                    onChange={(event) =>
+                    onChange={(currencyCode) =>
                       patchState({
                         payments: state.payments.map((item, position) =>
-                          position === index
-                            ? {
-                                ...item,
-                                currencyCode: event.target.value.toUpperCase(),
-                              }
-                            : item,
+                          position === index ? { ...item, currencyCode } : item,
                         ),
                       })
                     }
@@ -1712,29 +1729,20 @@ export function SalesContractForm() {
                       })
                     }
                   />
-                  <select
-                    className={fieldClass}
+                  <SearchableReference
+                    label={`روش پرداخت ${index + 1}`}
+                    options={paymentMethodOptions}
                     value={payment.method}
-                    onChange={(event) =>
+                    onChange={(method) =>
                       patchState({
                         payments: state.payments.map((item, position) =>
                           position === index
-                            ? {
-                                ...item,
-                                method: event.target
-                                  .value as SalesPaymentMethod,
-                              }
+                            ? { ...item, method: method as SalesPaymentMethod }
                             : item,
                         ),
                       })
                     }
-                  >
-                    <option value="BANK_TRANSFER">حواله بانکی</option>
-                    <option value="CASH">نقد</option>
-                    <option value="POS">کارت‌خوان</option>
-                    <option value="ONLINE_GATEWAY">درگاه</option>
-                    <option value="CHECK">چک</option>
-                  </select>
+                  />
                   {payment.method === 'CHECK' ? (
                     <>
                       <Input

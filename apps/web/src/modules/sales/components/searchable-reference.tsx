@@ -15,7 +15,8 @@ export function SearchableReference({
 }: {
   label: string;
   value: string;
-  options: readonly MasterDataRecord[];
+  options: readonly (Pick<MasterDataRecord, 'id' | 'name' | 'code'> &
+    Partial<MasterDataRecord>)[];
   onChange: (value: string) => void;
   disabled?: boolean;
 }) {
@@ -27,7 +28,7 @@ export function SearchableReference({
   const selected = options.find((item) => item.id === value);
   const matches = options.filter((item) =>
     normalizeRouteSearch(
-      `${item.name} ${item.code} ${item.attributes.englishName ?? ''}`,
+      `${item.name} ${item.code} ${item.attributes?.englishName ?? ''}`,
     ).includes(normalizeRouteSearch(search)),
   );
   const choose = (next: string) => {
