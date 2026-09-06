@@ -30,6 +30,7 @@ export interface CustomerEntryRow {
   role: ReactNode;
   values: Record<EntryField, string>;
   readOnly?: boolean;
+  editableFields?: readonly EntryField[];
   actions?: ReactNode;
   onChange: (field: EntryField, value: string) => void;
 }
@@ -108,7 +109,10 @@ export function CustomerEntrySheet({
                       <Button
                         aria-label={`تاریخ تولد ${row.label}`}
                         className="h-10 w-full min-w-36 justify-start text-xs"
-                        disabled={disabled || row.readOnly}
+                        disabled={
+                          disabled ||
+                          (row.readOnly && !row.editableFields?.includes(field))
+                        }
                         onClick={() => setDateRowKey(row.key)}
                         type="button"
                         variant="outline"
@@ -125,7 +129,10 @@ export function CustomerEntrySheet({
                         aria-label={`${label.replace(' *', '')} ${row.label}`}
                         autoComplete="off"
                         className="h-10 min-w-28 rounded-md border-transparent bg-transparent px-2 shadow-none focus:border-primary"
-                        disabled={disabled || row.readOnly}
+                        disabled={
+                          disabled ||
+                          (row.readOnly && !row.editableFields?.includes(field))
+                        }
                         dir={
                           [
                             'nationalId',

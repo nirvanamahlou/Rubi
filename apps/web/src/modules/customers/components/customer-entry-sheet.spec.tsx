@@ -32,6 +32,19 @@ const render = (rows: CustomerEntryRow[], disabled = false) =>
   );
 
 describe('Customer entry spreadsheet', () => {
+  it('allows only an explicitly opted-in field on existing Sales rows', () => {
+    expect(
+      render([{ ...row, readOnly: true, editableFields: ['birthDate'] }]).match(
+        /disabled=""/g,
+      ),
+    ).toHaveLength(6);
+    expect(
+      render(
+        [{ ...row, readOnly: true, editableFields: ['birthDate'] }],
+        true,
+      ).match(/disabled=""/g),
+    ).toHaveLength(7);
+  });
   it('renders a real labelled table with independent stable rows and essential columns', () => {
     const html = render([
       row,
