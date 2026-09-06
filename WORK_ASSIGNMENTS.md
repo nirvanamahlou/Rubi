@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-PASSPORT-EXPIRY-0906 — PC-A — COMPLETE_LOCAL
+
+- User explicitly approved persistent passport expiry and transfer of the Migration lock to this task. Reserve Customer nullable passportExpiryDate, additive migration, Customers public contract/API/presentation, Sales people-sheet linking and tests, and central task docs on codex/pc-a-sales-passport-expiry-0906. Producer Customers and consumer Sales are both PC-A; optional field preserves old requests and omitted updates. No other producer worktree, dependencies, IAM grants or public push.
+- Customer checkbox copies the entered/selected payer into passenger slot one without increasing count; preserve displaced row until unlinking and confirm replacement. Passport number stays encrypted in Customers; expiry is a date-only Customer field, not raw Sales localStorage or a fabricated Documents file. Fresh migration tests and backup precede local rollout.
+- Delivered and activated on Web3100/API4000. 211 combined Web tests plus 11 final people-model tests, 88 Customers API, 41 Contracts and 71 Database tests passed; scoped lint/typecheck and API/Web production builds (36 routes) passed. All 38 migrations and seed twice passed on an empty database; restored-copy upgrade and repository persistence/version/scope checks passed. A new operational backup preceded the single additive migration; counts and historical checksums unchanged. HTTP login/bundle/API 200, protected page 307 and unauthenticated Customers 401. No new grants, operational seed, public push or authenticated visual QA. Task-specific Migration/contract/docs reservations released.
+
 ## SALES-PEOPLE-SHEET-0906 — PC-A — COMPLETE_LOCAL
 
 - User requested the same Customers/Passengers entry sheet inside Sales and exactly the passenger count chosen earlier, with infant-only extra rows. Reserve Sales people-entry UI/model/tests and form, a narrow public Customers presentation export plus backward-compatible per-field editing on its existing sheet, and task docs on codex/pc-a-sales-people-sheet-0906 from f984cdc. Preserve existing Customers public API, branch/identity protections, organization payer, Finance and capacity rules. No migration, IAM, dependencies, producer edits or public push.
