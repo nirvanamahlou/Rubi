@@ -1,6 +1,11 @@
 # Work Assignments
 
-## HOTEL-SALES-PRICING-0906 — PC-A — IN_PROGRESS / AUTHORIZED_LOCAL_INTEGRATION
+## HOTEL-SALES-PRICING-0906 — PC-A — COMPLETE_LOCAL
+
+- Final approved integration: normal merge e31b8d1 retains parents 43111fd and 3d3095e. Both handoffs and all capacity/arrangement work preserved. Purchase and arrangement versions coexist in the public presenter; nullable legacy room composition is omitted, not fabricated. Producer branch/worktree remains clean at 3d3095e.
+- Combined gates: 15 lint/typecheck tasks, 733 Web tests, 883 API tests (81 optional skipped in the full run), 38 Contracts and 71 Database tests passed. Fresh 37 migrations, seed twice (86 permission definitions), and 46 focused PostgreSQL/domain tests passed, including oversell, independent purchase/arrangement revisions and immutable snapshots. API and 36-route Web production builds passed.
+- Restored-backup upgrade passed, then a fresh backup preceded the single pending additive pricing migration on local rubi. Existing business counts and all historical migration checksums were preserved. Local Web 3100/API 4000 now run the combined build; health, login redirect, served pricing bundle, credentialed CORS and unauthorized-write denial passed. Existing Documents key/storage and Ramtin-only grant preserved; no operational seed or extra grant.
+- This task's integration/Migration/shared-contract/central-doc/UI reservations are released on local completion; producer review responsibilities remain unchanged. Public publication is still unapproved. No authenticated browser walkthrough or real-contract creation is claimed. The older rollout blocker below is historical and superseded by this successful integration.
 
 - Follow-up user approval: reconcile the three committed Sales/Reservations changes through 3d3095e into this pricing branch with a normal local merge, retaining both histories. Reserve overlapping Sales/Reservations/Ticket public contracts, schema, UI/API and central documentation for reconciliation; preserve both producer handoffs. No producer worktree edits, main/develop changes, public push, additional grants or dependency changes. Validate combined migrations, restore-copy upgrade, tests/build and activate locally on 3100/4000 only after a fresh backup.
 

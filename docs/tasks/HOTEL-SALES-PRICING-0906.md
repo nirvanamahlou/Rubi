@@ -3,6 +3,48 @@
 User approved local implementation and explicit Migration lock transfer.
 Base: verified local integration plus Customer entry sheet. No remote publication.
 
+## Final status — COMPLETE_LOCAL
+
+User approved resolving the rollout gate. Merge e31b8d1 joins the prior pricing
+history (43111fd) and Sales owner tip 3d3095e without rebasing or changing the
+producer branch. The earlier blocked-rollout account below is retained as history.
+Both work assignments/handoffs survive. Ticket capacity code is unchanged from
+the producer. The public Reservations presenter now includes both independent
+arrangement and purchase revisions; cost writes do not replace arrangements,
+arrangement writes retain costs, and neither changes the Sales snapshot.
+Legacy nullable room composition is omitted from the public contract instead
+of inventing zeroes.
+
+Final gates:
+
+- All 15 lint/typecheck tasks; 733 Web tests, 883 API tests (81 optional cases
+  skipped in the full run), 38 Contracts tests, 71 Database tests passed.
+- 37 migrations passed on fresh rubi_combined_pricing_test_0906. Seed twice
+  passed with 86 permissions. One earlier seed attempt under concurrent
+  test/build load timed out; the independent rerun succeeded without altering
+  seed behavior or running it on the operational database.
+- All 46 focused tests passed on that isolated database: domain, actual
+  reservation purchase/arrangement persistence, immutable snapshot, idempotency,
+  branch scope and concurrent ticket oversell protection.
+- API build and direct Web production build (36 routes) passed.
+- Fresh backup restored to rubi_hotel_integration_upgrade_0906 and the pending
+  migration was applied successfully there. Operational rollout then took
+  another backup and applied only 20260906100000_hotel_service_pricing. All
+  historical checksums and existing customer/user/contract/intake/arrangement/
+  capacity-allocation row counts remained unchanged.
+- Backups retained locally, ignored by Git:
+  tmp/rubi-before-pricing-integration-rehearsal-0906.dump and
+  tmp/rubi-before-pricing-integration-live-0906.dump, each 660386 bytes.
+  Earlier Web output remains in tmp/hotel-pricing-integrated-web-before-0906.
+- Combined Web3100 and API4000 are active. HTTP health and login redirect,
+  the new pricing chunk, CORS credentials/preflight and 401 denial of an
+  unauthenticated purchase request passed. Ramtin's effective reservations.read
+  and reservations.hotel_purchase.write were checked; his dedicated new role
+  has one user and one permission. No further permission assignment occurred.
+- Existing Documents key/storage preserved. No authenticated browser walkthrough,
+  live business-record creation, public push or main/develop update is claimed.
+  Local task reservations are released; new work needs a fresh reservation.
+
 ## Contract and storage design
 
 Sales owns versioned day-sale and agreed prices per service/currency, persisted in
