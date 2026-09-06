@@ -1769,7 +1769,7 @@ export function DocumentsWorkspace() {
                   id="documents-connections-title"
                 >
                   <Link2 aria-hidden="true" className="size-5" />
-                  ارتباط اسناد با بخش‌های روبی
+                  ارتباط اسناد با بخش‌های سامانه
                 </h2>
                 <p className="mt-1 text-sm leading-7 text-muted-foreground">
                   اسناد هر بخش را در آرشیو ببینید یا برای ادامه کار به ماژول
