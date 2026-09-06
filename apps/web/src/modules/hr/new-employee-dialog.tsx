@@ -19,7 +19,7 @@ const employmentTypes = [
   'مشاور',
 ] as const;
 
-const previewBranches = ['شعبه نمایشی', 'شعبه نمایشی فرودگاه'] as const;
+const previewBranches = ['نیایش سیر', 'جهان باستان'] as const;
 
 const previewUnits = [
   'عملیات سفر',

@@ -141,7 +141,7 @@ export const frappeWorkspaces: readonly FrappeWorkspaceDefinition[] = [
     icon: Settings2,
     tone: 'teal',
     metrics: [
-      { label: 'شرکت و شعبه', value: '۱ / ۳', hint: 'سه شعبه آزمایشی' },
+      { label: 'شرکت و شعبه', value: '۲ / ۲', hint: 'نیایش سیر و جهان باستان' },
       { label: 'واحد سازمانی', value: '۱۲', hint: 'همه دارای مدیر' },
       { label: 'رده و سمت', value: '۲۸', hint: '۲ مورد در حال بازبینی' },
     ],

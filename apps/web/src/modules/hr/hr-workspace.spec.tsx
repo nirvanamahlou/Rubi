@@ -133,7 +133,7 @@ describe('HR reference implementation', () => {
       lastName: '',
       personnelCode: ' PREVIEW-EMPLOYEE-1 ',
       employmentType: 'تمام‌وقت',
-      branch: 'شعبه نمایشی',
+      branch: 'نیایش سیر',
       unit: 'عملیات سفر',
       position: '',
       manager: 'بدون مدیر مستقیم',
@@ -176,7 +176,7 @@ describe('HR reference implementation', () => {
 
     const form = renderToStaticMarkup(
       <OrganizationNodeForm
-        branchOptions={['شعبه مرکزی', 'شعبه فرودگاه']}
+        branchOptions={['نیایش سیر', 'جهان باستان']}
         initialNode={initialOrganizationNodes[1]}
         managerOptions={['همکار نمایشی الف', 'همکار نمایشی ب']}
         nodes={initialOrganizationNodes}
@@ -267,7 +267,8 @@ describe('HR reference implementation', () => {
       <HrWorkspace sectionId="organization" tabId="branches" />,
     );
     expect(html).toContain('افزودن شعبه');
-    expect(html).toContain('شعبه مرکزی');
+    expect(html).toContain('نیایش سیر');
+    expect(html).toContain('جهان باستان');
     expect(html).toContain('ویرایش');
   });
 
@@ -293,7 +294,7 @@ describe('HR reference implementation', () => {
         'status',
       ].map((key) => [key, '']),
     ) as OrganizationCatalogFormValue;
-    value.id = ' PREVIEW-BRANCH-CENTRAL ';
+    value.id = ' PREVIEW-BRANCH-NIYAYESH-SEIR ';
     const errors = validateOrganizationCatalogForm(
       'branches' satisfies OrganizationCatalogTab,
       value,

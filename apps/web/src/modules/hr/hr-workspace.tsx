@@ -107,7 +107,7 @@ const previewEmployees: readonly PreviewEmployee[] = [
     initial: 'الف',
     employment: 'preview-employment-1',
     kind: 'تمام‌وقت',
-    unit: 'شعبه نمایشی / عملیات سفر',
+    unit: 'نیایش سیر / عملیات سفر',
     position: 'کارشناس ارشد عملیات',
     manager: 'مدیر نمایشی الف',
     startedAt: '۱۴۰۳/۰۲/۰۱',
@@ -120,7 +120,7 @@ const previewEmployees: readonly PreviewEmployee[] = [
     initial: 'ب',
     employment: 'preview-employment-2',
     kind: 'تمام‌وقت',
-    unit: 'شعبه نمایشی / فروش',
+    unit: 'نیایش سیر / فروش',
     position: 'سرپرست فروش سازمانی',
     manager: 'مدیر نمایشی ب',
     startedAt: '۱۴۰۱/۰۸/۱۵',
@@ -133,7 +133,7 @@ const previewEmployees: readonly PreviewEmployee[] = [
     initial: 'پ',
     employment: 'preview-employment-3',
     kind: 'پاره‌وقت',
-    unit: 'شعبه نمایشی / مالی',
+    unit: 'جهان باستان / مالی',
     position: 'کارشناس حسابداری',
     manager: 'مدیر نمایشی پ',
     startedAt: '۱۴۰۲/۰۶/۱۰',
@@ -146,7 +146,7 @@ const previewEmployees: readonly PreviewEmployee[] = [
     initial: 'ت',
     employment: 'preview-employment-4',
     kind: 'پاره‌وقت',
-    unit: 'شعبه نمایشی / عملیات فرودگاهی',
+    unit: 'جهان باستان / عملیات فرودگاهی',
     position: 'کارشناس خدمات فرودگاهی',
     manager: 'مدیر نمایشی ت',
     startedAt: '۱۴۰۵/۰۶/۲۰',
@@ -156,7 +156,7 @@ const previewEmployees: readonly PreviewEmployee[] = [
 ];
 
 type DashboardPeriod = 'monthToDate' | 'week' | 'month';
-type DashboardBranch = 'all' | 'central' | 'airport';
+type DashboardBranch = 'all' | 'niyayeshSeir' | 'jahanBastan';
 type DashboardUnit = 'all' | 'operations' | 'sales' | 'finance';
 type DashboardTone = 'blue' | 'green' | 'violet' | 'orange' | 'rose';
 
@@ -197,7 +197,11 @@ const formatFa = (value: number) =>
 
 function buildDashboardSnapshot(filters: DashboardFilters): DashboardSnapshot {
   const branchFactor =
-    filters.branch === 'all' ? 1 : filters.branch === 'central' ? 0.64 : 0.36;
+    filters.branch === 'all'
+      ? 1
+      : filters.branch === 'niyayeshSeir'
+        ? 0.64
+        : 0.36;
   const unitFactor =
     filters.unit === 'all'
       ? 1
@@ -219,7 +223,7 @@ function buildDashboardSnapshot(filters: DashboardFilters): DashboardSnapshot {
   const quality = Math.max(
     88,
     94 -
-      (filters.branch === 'airport' ? 2 : 0) -
+      (filters.branch === 'jahanBastan' ? 2 : 0) -
       (filters.unit === 'finance' ? 1 : 0),
   );
   const fullTime = Math.max(1, Math.round(active * 0.8));
@@ -776,8 +780,8 @@ function Dashboard({ openAction }: { openAction: (title: string) => void }) {
           value={draftFilters.branch}
         >
           <option value="all">همه شعب</option>
-          <option value="central">دفتر مرکزی</option>
-          <option value="airport">شعبه فرودگاه</option>
+          <option value="niyayeshSeir">نیایش سیر</option>
+          <option value="jahanBastan">جهان باستان</option>
         </select>
         <select
           aria-label="واحد سازمانی"
@@ -1031,7 +1035,8 @@ function Employees({
               defaultValue="all"
             >
               <option value="all">همه شعب</option>
-              <option value="preview">شعبه نمایشی</option>
+              <option value="niyayeshSeir">نیایش سیر</option>
+              <option value="jahanBastan">جهان باستان</option>
             </select>
           </label>
           <label className={styles.fieldLabel}>
@@ -1082,7 +1087,7 @@ function EmployeeProfile({
   const summaryItems = [
     ['کد پرسنلی', 'preview-employee-1'],
     ['نوع همکاری', 'تمام‌وقت'],
-    ['شعبه', 'شعبه نمایشی'],
+    ['شعبه', 'نیایش سیر'],
     ['واحد', 'عملیات سفر'],
     ['سمت', 'کارشناس ارشد عملیات'],
     ['مدیر مستقیم', 'مدیر نمایشی الف'],

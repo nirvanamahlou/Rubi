@@ -241,17 +241,17 @@ const record = (
 export const initialOrganizationCatalogRecords: OrganizationCatalogRecords = {
   branches: [
     record({
-      id: 'preview-branch-central',
-      title: 'شعبه مرکزی',
+      id: 'preview-branch-niyayesh-seir',
+      title: 'نیایش سیر',
       company: 'شرکت نیایش سیر',
       city: 'تهران',
       manager: 'همکار نمایشی الف',
       effectiveFrom: '2026-03-21',
     }),
     record({
-      id: 'preview-branch-airport',
-      title: 'شعبه فرودگاه',
-      company: 'شرکت نیایش سیر',
+      id: 'preview-branch-jahan-bastan',
+      title: 'جهان باستان',
+      company: 'شرکت جهان باستان',
       city: 'تهران',
       manager: 'همکار نمایشی ت',
       effectiveFrom: '2026-03-21',
@@ -261,14 +261,14 @@ export const initialOrganizationCatalogRecords: OrganizationCatalogRecords = {
     record({
       id: 'preview-unit-travel',
       title: 'عملیات سفر',
-      branch: 'شعبه مرکزی',
+      branch: 'نیایش سیر',
       manager: 'همکار نمایشی الف',
       effectiveFrom: '2026-03-21',
     }),
     record({
       id: 'preview-unit-sales',
       title: 'فروش',
-      branch: 'شعبه مرکزی',
+      branch: 'نیایش سیر',
       parent: 'عملیات سفر',
       manager: 'همکار نمایشی ب',
       effectiveFrom: '2026-03-21',
@@ -276,7 +276,7 @@ export const initialOrganizationCatalogRecords: OrganizationCatalogRecords = {
     record({
       id: 'preview-unit-finance',
       title: 'مالی',
-      branch: 'شعبه مرکزی',
+      branch: 'جهان باستان',
       manager: 'همکار نمایشی پ',
       effectiveFrom: '2026-03-21',
     }),

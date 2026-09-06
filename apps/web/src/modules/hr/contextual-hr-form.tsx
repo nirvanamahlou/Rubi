@@ -89,7 +89,7 @@ const fieldOptions = (label: string): readonly string[] | undefined => {
   if (label.includes('واحد'))
     return ['عملیات سفر', 'فروش', 'مالی', 'منابع انسانی'];
   if (label.includes('شعبه'))
-    return ['شعبه مرکزی', 'شعبه فرودگاه', 'همه شعبه‌ها'];
+    return ['نیایش سیر', 'جهان باستان'];
   if (label.includes('نوع همکاری'))
     return ['تمام‌وقت', 'پاره‌وقت', 'پروژه‌ای', 'کارآموزی'];
   if (label.includes('نوع مرخصی'))
