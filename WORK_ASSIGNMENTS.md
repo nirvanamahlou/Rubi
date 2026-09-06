@@ -1,6 +1,8 @@
 # Work Assignments
 
-## HOTEL-SALES-PRICING-0906 — PC-A — IMPLEMENTED_LOCAL / ROLLOUT_BLOCKED
+## HOTEL-SALES-PRICING-0906 — PC-A — IN_PROGRESS / AUTHORIZED_LOCAL_INTEGRATION
+
+- Follow-up user approval: reconcile the three committed Sales/Reservations changes through 3d3095e into this pricing branch with a normal local merge, retaining both histories. Reserve overlapping Sales/Reservations/Ticket public contracts, schema, UI/API and central documentation for reconciliation; preserve both producer handoffs. No producer worktree edits, main/develop changes, public push, additional grants or dependency changes. Validate combined migrations, restore-copy upgrade, tests/build and activate locally on 3100/4000 only after a fresh backup.
 
 - Shared UI reservation: additive money-input used by Sales and Reservations. User explicitly approved granting only reservations.hotel_purchase.write to Ramtin; shared role memberships and other users must remain unchanged.
 
