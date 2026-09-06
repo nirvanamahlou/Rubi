@@ -1,4 +1,5 @@
 'use client';
+import { SalesThemedSelect } from './sales-themed-select';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type {
   MasterDataRecord,
@@ -176,39 +177,41 @@ export function ContractPayments({
           />
         </FormField>
         <FormField label="روش پرداخت">
-          <select
-            className="h-11 rounded-xl border bg-surface px-3"
+          <SalesThemedSelect
+            label="روش پرداخت"
             value={payment.method}
-            onChange={(event) =>
+            onValueChange={(method) =>
               setPayment({
                 ...payment,
                 check: null,
-                method: event.target.value as SalesPaymentMethod,
+                method: method as SalesPaymentMethod,
               })
             }
-          >
-            <option value="BANK_TRANSFER">حواله بانکی</option>
-            <option value="CASH">نقد</option>
-            <option value="POS">کارت‌خوان</option>
-            <option value="ONLINE_GATEWAY">درگاه</option>
-            <option value="CHECK">چک</option>
-          </select>
+            options={[
+              { value: 'BANK_TRANSFER', label: 'حواله بانکی' },
+              { value: 'CASH', label: 'نقد' },
+              { value: 'POS', label: 'کارت‌خوان' },
+              { value: 'ONLINE_GATEWAY', label: 'درگاه' },
+              { value: 'CHECK', label: 'چک' },
+            ]}
+          />
         </FormField>
         {payment.method === 'CHECK' ? (
           <>
             <FormField label="بانک" required>
-              <select
+              <SalesThemedSelect
+                label="بانک"
                 required
                 value={payment.check?.bankId ?? ''}
-                onChange={(event) => patchCheck('bankId', event.target.value)}
-              >
-                <option value="">انتخاب بانک</option>
-                {banks.map((bank) => (
-                  <option key={bank.id} value={bank.id}>
-                    {bank.name}
-                  </option>
-                ))}
-              </select>
+                onValueChange={(bankId) => patchCheck('bankId', bankId)}
+                options={[
+                  { value: '', label: 'انتخاب بانک' },
+                  ...banks.map((bank) => ({
+                    value: bank.id,
+                    label: bank.name,
+                  })),
+                ]}
+              />
             </FormField>
             <FormField label="شناسه چک" required>
               <Input

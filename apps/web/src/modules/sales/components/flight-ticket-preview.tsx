@@ -1,4 +1,5 @@
 'use client';
+import { SalesThemedSelect } from './sales-themed-select';
 
 import Image from 'next/image';
 import { useState } from 'react';
@@ -191,20 +192,16 @@ export function FlightTicketPreview({
         </Button>
         {open ? (
           <>
-            <select
-              aria-label="مسافر پیش‌نمایش بلیت"
-              className="rounded-xl border bg-surface p-2"
-              value={passengerIndex}
-              onChange={(event) =>
-                setPassengerIndex(Number(event.target.value))
-              }
-            >
-              {state.passengers.map((passenger, index) => (
-                <option key={passenger.customerId} value={index}>
-                  {passenger.displayName}
-                </option>
-              ))}
-            </select>
+            <SalesThemedSelect
+              label="مسافر پیش‌نمایش بلیت"
+              value={String(passengerIndex)}
+              disabled={!state.passengers.length}
+              onValueChange={(value) => setPassengerIndex(Number(value))}
+              options={state.passengers.map((passenger, index) => ({
+                value: String(index),
+                label: passenger.displayName,
+              }))}
+            />
             <Button type="button" onClick={() => window.print()}>
               چاپ پیش‌نمایش
             </Button>
