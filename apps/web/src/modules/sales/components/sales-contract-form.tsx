@@ -133,6 +133,49 @@ function PassengerCountField({
   );
 }
 
+function HotelCountField({
+  label,
+  hint,
+  unit,
+  value,
+  min = 0,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  unit: 'باب' | 'نفر';
+  value: number;
+  min?: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="grid gap-1 rounded-xl border border-border bg-surface p-3">
+      <span className="font-bold">{label}</span>
+      <span className="text-xs text-muted-foreground">{hint}</span>
+      <span className="flex items-center overflow-hidden rounded-xl border border-input bg-surface focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/30">
+        <Input
+          className="h-11 flex-1 border-0 bg-transparent text-center shadow-none focus-visible:ring-0"
+          type="number"
+          inputMode="numeric"
+          min={min}
+          max={999}
+          value={value}
+          onChange={(event) => {
+            const parsed = Number(event.target.value);
+            onChange(
+              Number.isFinite(parsed)
+                ? Math.min(999, Math.max(min, Math.trunc(parsed)))
+                : min,
+            );
+          }}
+        />
+        <span className="border-r border-border px-3 text-sm font-bold text-muted-foreground">
+          {unit}
+        </span>
+      </span>
+    </label>
+  );
+}
 export function SalesContractForm() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -1170,9 +1213,11 @@ export function SalesContractForm() {
                       }
                     />
                   </FormField>
-                  <PassengerCountField
+                  <HotelCountField
                     label="تعداد اتاق"
                     hint="کل اتاق‌های درخواستی"
+                    unit="باب"
+                    min={1}
                     value={state.hotel.roomCount}
                     onChange={(roomCount) =>
                       patchState({
@@ -1195,9 +1240,10 @@ export function SalesContractForm() {
                       })
                     }
                   />
-                  <PassengerCountField
+                  <HotelCountField
                     label="یک‌تخته"
                     hint="تعداد اتاق یک‌نفره"
+                    unit="باب"
                     value={state.hotel.singleRoomCount}
                     onChange={(singleRoomCount) =>
                       patchState({
@@ -1218,9 +1264,10 @@ export function SalesContractForm() {
                       })
                     }
                   />
-                  <PassengerCountField
+                  <HotelCountField
                     label="دوتخته"
                     hint="تعداد اتاق دونفره"
+                    unit="باب"
                     value={state.hotel.doubleRoomCount}
                     onChange={(doubleRoomCount) =>
                       patchState({
@@ -1238,9 +1285,10 @@ export function SalesContractForm() {
                       })
                     }
                   />
-                  <PassengerCountField
+                  <HotelCountField
                     label="تخت اضافه"
                     hint="نفر اضافه هتل"
+                    unit="نفر"
                     value={state.hotel.extraBedCount}
                     onChange={(extraBedCount) =>
                       patchState({
@@ -1249,12 +1297,25 @@ export function SalesContractForm() {
                     }
                   />
                   <div className="rounded-xl border border-border bg-muted/30 p-3 sm:col-span-2">
-                    <p className="text-xs text-muted-foreground">تعداد مهمان</p>
-                    <p className="mt-1 font-black">
-                      {passengerCounts.total.toLocaleString('fa-IR')} نفر
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      اعضای مهمان در مرحله مسافران مشخص می‌شوند.
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-bold">ترکیب مسافران</p>
+                      <Badge>
+                        مجموع {passengerCounts.total.toLocaleString('fa-IR')} نفر
+                      </Badge>
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-center text-sm">
+                      <span className="rounded-lg bg-surface px-2 py-2">
+                        بزرگسال: <strong>{passengerCounts.adults.toLocaleString('fa-IR')}</strong>
+                      </span>
+                      <span className="rounded-lg bg-surface px-2 py-2">
+                        کودک: <strong>{passengerCounts.children.toLocaleString('fa-IR')}</strong>
+                      </span>
+                      <span className="rounded-lg bg-surface px-2 py-2">
+                        نوزاد: <strong>{passengerCounts.infants.toLocaleString('fa-IR')}</strong>
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      نوزاد در ظرفیت صندلی بلیت شمرده نمی‌شود.
                     </p>
                   </div>
                 </div>

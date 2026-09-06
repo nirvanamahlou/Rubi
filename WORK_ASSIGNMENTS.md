@@ -2,7 +2,7 @@
 
 ## RESERVATION-ARRANGEMENT-0906 — PC-A — READY_FOR_REVIEW
 
-- درخواست صریح مالک در 2026-09-06: کنترل‌های تعداد بلیت/هتل مانند نمونه جمع‌وجور شوند و رزرواسیون پس از ثبت قرارداد، دسترسی مجاز به اصلاح چیدمان داشته باشد. ادامه همان Branch/PR فروش؛ `COMPUTER_ID=PC-A`.
+- درخواست صریح مالک در 2026-09-06: کنترل‌های تعداد بلیت/هتل مانند نمونه جمع‌وجور شوند و رزرواسیون پس از ثبت قرارداد، دسترسی مجاز به اصلاح چیدمان داشته باشد. پیگیری مالک: شمارنده هتل ورودی عددی مستقیم، واحد اتاق «باب» و خلاصه هتل نمایش‌دهنده ترکیب سنی مسافران باشد. ادامه همان Branch/PR فروش؛ `COMPUTER_ID=PC-A`.
 - محدوده: Sales room composition UI/persistence، Reservations public API/UI، قراردادهای IAM/Sales/Travel، Permission seed، Migration افزایشی و اسناد معماری/وضعیت. قفل Migration/Central Docs/Shared Contracts از Task فعال نزد PC-A است؛ Dependency/Lockfile و داده واقعی تغییر نمی‌کند.
 - مرز: Reservations فقط نسخه اجرایی تعداد اتاق، یک‌تخته، دوتخته، تخت اضافه و اعضای هتل را از میان passengerهای Snapshot ثبت می‌کند. ایجاد/تعویض مسافر و افزایش صندلی همچنان اصلاح قرارداد Sales و کنترل دوباره Ticket Catalog است؛ Snapshot ورودی حذف یا بازنویسی نمی‌شود.
 - Validation: 680 Web tests, 823 API tests (76 optional skipped), 18 Contracts tests, Web/API lint and typecheck, and Web/API production builds passed. All 34 migrations passed on fresh PostgreSQL 18; the focused reservation arrangement integration test passed on the backed-up operational local database. Migration applied locally after pg_dump backup. Permission definition is implemented, but assigning it to roles remains pending explicit security approval. No authenticated browser QA claim.
