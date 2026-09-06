@@ -35,11 +35,9 @@ export function withPaymentMethod(
   payment: SalesPaymentInput,
   method: SalesPaymentMethod,
 ): SalesPaymentInput {
-  return {
-    ...payment,
-    method,
-    check: method === 'CHECK' ? payment.check : undefined,
-  };
+  const next = { ...payment, method };
+  if (method !== 'CHECK') delete next.check;
+  return next;
 }
 
 export function SalesPaymentPlan({

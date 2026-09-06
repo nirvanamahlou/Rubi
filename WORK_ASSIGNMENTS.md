@@ -1,5 +1,10 @@
 # Work Assignments
 
+## SALES-PAYMENT-LAYOUT-0906 — PC-A — COMPLETE_LOCAL
+
+- User requested a professional redesign of contract payment entry. Reserve Sales payment-plan UI/form/tests and task status docs on codex/pc-a-sales-payment-layout-0906 from 4646ad4. Compact numbered rows, explicit labels and distinct check details; preserve currency lookup, payment payload, Finance confirmation rules and local drafts. No API, database, permissions, dependencies, producer changes or public publication.
+- Delivered numbered responsive payment cards, count/check summary, labeled fields, isolated check details, controlled draft inputs and confirmable removal. Switching away from CHECK removes inactive check metadata, with visible guidance, to keep the existing API payload valid. 96 Sales tests, scoped lint, final Web typecheck and 36-route production build passed; five payment tests repeated after the optional-property correction. Web3100 restarted; login and served payment bundle 200. API remained unchanged/healthy. Prior Web retained in ignored tmp/payment-layout-web-before-0906. No authenticated visual QA or public publication; task reservation released.
+
 ## SALES-CURRENCY-INCLUDED-TRANSFER-0906 — PC-A — COMPLETE_LOCAL
 
 - User requested registered-currency selection, themed Sales dropdowns, and included outbound/return transfers with no additional charge. Reserve Sales Web/model/tests, Sales public pricing helper and API validation tests, and central task documentation on codex/pc-a-sales-currency-included-transfer-0906 from 0ded773. No migration, IAM, dependencies, producer branch edits or public publication.
