@@ -1,11 +1,12 @@
 # Work Assignments
 
-## LOCAL-INTEGRATION-0906 — PC-A — CODE_INTEGRATED / RUNTIME_BLOCKED
+## LOCAL-INTEGRATION-0906 — PC-A — COMPLETE_LOCAL
 
 - User explicitly authorized isolated local integration of latest module work and preserved passport changes. Branch codex/pc-a-local-integration-0906 starts at local Sales 2cc7a9c, retaining all six local commits. No source branch, main/develop, public push or PR mutation authorized.
 - Reserve integration conflict resolution and additive compatibility fixes in this worktree only, including central docs/contracts/schema consistency. Existing producer locks remain held; no concurrent producer worktree is edited. Merge current develop first; assess current module tips and preservation snapshot separately. No blanket merge of obsolete/demo/recovery branches.
 - Runtime replacement and operational migrations are gated by schema/security review, empty-database migrations, tests and builds. Existing local data and keys must remain intact. Recovery snapshot is not assumed production-ready.
 - Integrated current module tips and recovery with compatibility resolution; full lint/typecheck/tests/build and 34 empty-DB migrations plus seed twice passed. Existing rubi has two unexplained historical migration checksums; operational migration and runtime replacement stopped before mutation. Local backup retained. Details: docs/tasks/LOCAL-INTEGRATION-0906.md.
+- Follow-up authorized: restored-copy upgrade passed, fresh backup retained, only pending additive B2B migration applied without rewriting history. Integrated Web/API activated on 3100/4000; HTTP smoke passed. Historical provenance concern retained; no new IAM grants or public push.
 
 ## SALES-DASHBOARD-REDESIGN-0905 — PC-A — COMPLETE_LOCAL
 

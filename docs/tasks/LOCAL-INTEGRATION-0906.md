@@ -1,5 +1,23 @@
 # Local integration — PC-A — 2026-09-06
 
+## Runtime activated after restored-copy upgrade — 2026-09-06
+
+- User explicitly requested resolving the blocker and starting the integrated version.
+- Restored the preserved backup into rubi_upgrade_0906_copy; normal migrate deploy
+  successfully applied only 20260905150000_agency_b2b_integrations.
+- Took a fresh local backup at tmp/integration-backup-0906/rubi-before-launch.dump,
+  then applied the same additive migration to local rubi. All 33 old migration names
+  and checksums were preserved; customer/user/document row counts were unchanged.
+  No checksum rewrite, reset, operational seed or generated schema-diff SQL was used.
+- Historical checksum provenance remains a documented maintenance concern, not
+  silently claimed repaired. Successful restored-copy upgrade removed the rollout blocker.
+- Integrated API now runs on 4000 and Production Web on 3100 from this worktree.
+  Existing Documents encryption key and storage root retained; no new key generated.
+- API health, /customers and /sales returned HTTP 200 (unauthenticated Web checks
+  can redirect to login). Authenticated visual/document-upload QA still not claimed.
+- No new IAM grants were made; newly introduced B2B permissions need explicit
+  operational role provisioning rather than running the global seed.
+
 ## Authorization and scope
 
 The user explicitly approved a separate local integration branch combining the latest
@@ -35,7 +53,7 @@ producer locks or authorize future changes to their branches.
   No operational seed was run.
 - Authenticated browser/real document upload QA is not claimed.
 
-## Runtime blocked: operational migration history
+## Historical blocker and investigation (resolved for this local rollout above)
 
 The existing local rubi database already has the passport migration. Its old API/Web
 remain running; no process replacement or operational migration was performed.
