@@ -168,7 +168,22 @@ const previewEmployees: readonly PreviewEmployee[] = [
   },
 ];
 
-type PreviewDatasetOverrides = Record<string, readonly (readonly HrPreviewCell[])[]>;
+type PreviewDatasetOverrides = Record<
+  string,
+  readonly (readonly HrPreviewCell[])[]
+>;
+
+type HrMutationAction = 'create' | 'edit' | 'delete';
+
+export interface AutomaticHrHistoryEvent {
+  action: HrMutationAction;
+  section: HrSectionId;
+  tab: string;
+  title: string;
+  subject: string;
+  occurredAt?: string;
+  eventId?: string;
+}
 
 const previewDatasetStorageKey = 'rubi.hr.preview-dataset-overrides.v1';
 
@@ -188,13 +203,15 @@ export function parseHrPreviewDatasetOverrides(
   if (!serialized) return {};
   try {
     const parsed: unknown = JSON.parse(serialized);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+      return {};
     const result: PreviewDatasetOverrides = {};
     for (const [key, rows] of Object.entries(parsed)) {
       if (
         Array.isArray(rows) &&
         rows.every(
-          (row) => Array.isArray(row) && row.every((cell) => isPreviewCell(cell)),
+          (row) =>
+            Array.isArray(row) && row.every((cell) => isPreviewCell(cell)),
         )
       )
         result[key] = rows as readonly (readonly HrPreviewCell[])[];
@@ -212,6 +229,15 @@ interface PreviewDatasetStore {
 
 const previewDatasetKey = (section: HrSectionId, tab: string) =>
   `${section}:${tab}`;
+
+const automaticHrHistoryTabs = new Set([
+  previewDatasetKey('employee', 'audit'),
+  previewDatasetKey('fleet', 'logs'),
+  previewDatasetKey('reports', 'audit'),
+]);
+
+export const isAutomaticHrHistoryTab = (section: HrSectionId, tab: string) =>
+  automaticHrHistoryTabs.has(previewDatasetKey(section, tab));
 
 const previewCellText = (cell: HrPreviewCell) =>
   typeof cell === 'string' ? cell : cell.label;
@@ -250,8 +276,89 @@ export function saveHrPreviewRow(
     : rows.map((row, index) => (index === rowIndex ? nextRow : row));
 }
 
+const mutationActionLabel: Readonly<Record<HrMutationAction, string>> = {
+  create: 'ایجاد',
+  edit: 'ویرایش',
+  delete: 'حذف',
+};
+
+const automaticHistoryStatus: HrPreviewCell = {
+  label: 'ثبت‌شده',
+  tone: 'success',
+};
+
+const appendHistoryRow = (
+  overrides: PreviewDatasetOverrides,
+  section: HrSectionId,
+  tab: string,
+  row: readonly HrPreviewCell[],
+): PreviewDatasetOverrides => {
+  const key = previewDatasetKey(section, tab);
+  const rows = overrides[key] ?? getHrPreviewDataset(section, tab).rows;
+  return { ...overrides, [key]: [row, ...rows] };
+};
+
+const formatHistoryTimestamp = (date: Date) =>
+  new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(date);
+
+export function appendAutomaticHrHistory(
+  overrides: PreviewDatasetOverrides,
+  event: AutomaticHrHistoryEvent,
+): PreviewDatasetOverrides {
+  const eventId =
+    event.eventId ?? `HR-AUDIT-${Date.now().toString(36).toUpperCase()}`;
+  const timestamp = event.occurredAt ?? formatHistoryTimestamp(new Date());
+  const action = mutationActionLabel[event.action];
+  const eventLabel = `${action} ${event.title}`;
+  const traceId = `trace-${eventId.slice(-8)}`;
+  let next = appendHistoryRow(overrides, 'reports', 'audit', [
+    eventId,
+    eventLabel,
+    'کاربر جاری',
+    screenMeta[event.section].title,
+    timestamp,
+    traceId,
+    'موفق',
+    automaticHistoryStatus,
+  ]);
+
+  if (event.section === 'employees' || event.section === 'employee')
+    next = appendHistoryRow(next, 'employee', 'audit', [
+      `HR-EMP-AUDIT-${eventId.slice(-8)}`,
+      `${eventLabel}: ${event.subject}`,
+      'کاربر جاری',
+      timestamp,
+      'عملیات پرونده کارکنان',
+      traceId,
+      automaticHistoryStatus,
+    ]);
+
+  if (event.section === 'fleet' && event.tab === 'vehicles')
+    next = appendHistoryRow(next, 'fleet', 'logs', [
+      `HR-FLEET-LOG-${eventId.slice(-8)}`,
+      event.subject,
+      'ثبت سیستمی',
+      timestamp.split('،')[0] ?? timestamp,
+      '—',
+      '—',
+      '—',
+      `${eventLabel} در رجیستر خودرو`,
+      automaticHistoryStatus,
+    ]);
+
+  return next;
+}
+
 const employeeFormValue = (employee: PreviewEmployee): NewEmployeeFormValue => {
-  const [branch = 'نیایش سیر', unit = 'عملیات سفر'] = employee.unit.split(' / ');
+  const [branch = 'نیایش سیر', unit = 'عملیات سفر'] =
+    employee.unit.split(' / ');
   const nameParts = employee.name.trim().split(/\s+/);
   return {
     firstName: nameParts.shift() ?? '',
@@ -1195,34 +1302,43 @@ function EmployeeProfile({
   openAction,
   openForm,
   datasetStore,
+  initialTab,
 }: {
   openAction: (title: string) => void;
   openForm: (context: ContextualHrFormContext) => void;
   datasetStore: PreviewDatasetStore;
+  initialTab?: string | undefined;
 }) {
-  const [tab, setTab] = useState('summary');
+  const [tab, setTab] = useState(
+    employeeTabs.some((item) => item.id === initialTab)
+      ? (initialTab ?? 'summary')
+      : 'summary',
+  );
   const active =
     employeeTabs.find((item) => item.id === tab) ?? employeeTabs[0];
   const ActiveIcon = active?.icon ?? UserRound;
   const dataset = datasetStore.getDataset('employee', tab);
+  const isAutomaticHistory = isAutomaticHrHistoryTab('employee', tab);
   const profileData =
     tab === 'summary'
       ? null
-      : genericTable(
-          dataset,
-          (rowIndex, row) =>
-            openForm({
-              section: 'employee',
-              tab,
-              title: active?.label ?? 'پرونده کارمند',
-              description: screenMeta.employee.description,
-              columns: dataset.columns,
-              mode: 'edit',
-              rowIndex,
-              initialValues: row.map(previewCellText),
-            }),
-          (rowIndex) => datasetStore.deleteRow('employee', tab, rowIndex),
-        );
+      : isAutomaticHistory
+        ? readonlyTable(dataset)
+        : genericTable(
+            dataset,
+            (rowIndex, row) =>
+              openForm({
+                section: 'employee',
+                tab,
+                title: active?.label ?? 'پرونده کارمند',
+                description: screenMeta.employee.description,
+                columns: dataset.columns,
+                mode: 'edit',
+                rowIndex,
+                initialValues: row.map(previewCellText),
+              }),
+            (rowIndex) => datasetStore.deleteRow('employee', tab, rowIndex),
+          );
   const summaryItems = [
     ['کد پرسنلی', 'preview-employee-1'],
     ['نوع همکاری', 'تمام‌وقت'],
@@ -1237,7 +1353,7 @@ function EmployeeProfile({
     <>
       <PageHead
         actions={
-          <ActionButton onClick={() => openAction('تاریخچه پرونده')}>
+          <ActionButton onClick={() => setTab('audit')}>
             <History size={15} /> تاریخچه
           </ActionButton>
         }
@@ -1269,10 +1385,15 @@ function EmployeeProfile({
       <Tabs active={tab} items={employeeTabs} onChange={setTab} />
       <Panel
         icon={<ActiveIcon size={17} />}
-        note="دسترسی این نما بر اساس نقش و دامنه سازمانی کنترل می‌شود."
+        note={
+          isAutomaticHistory
+            ? 'این سابقه به‌صورت خودکار از عملیات پرونده ساخته می‌شود.'
+            : 'دسترسی این نما بر اساس نقش و دامنه سازمانی کنترل می‌شود.'
+        }
         title={active?.label ?? 'مشخصات'}
       >
         <div className={styles.panelBody}>
+          {isAutomaticHistory ? <AutomaticHistoryNotice /> : null}
           {tab === 'summary' ? (
             <div className={styles.summaryGrid}>
               {summaryItems.map(([label, value]) => (
@@ -1296,24 +1417,11 @@ function genericTable(
   editRow: (rowIndex: number, row: readonly HrPreviewCell[]) => void,
   deleteRow: (rowIndex: number) => void,
 ): PreviewTableData {
+  const readonlyData = readonlyTable(dataset);
   return {
-    columns: [...dataset.columns, 'عملیات'],
+    columns: [...readonlyData.columns, 'عملیات'],
     rows: dataset.rows.map((row, rowIndex) => [
-      ...row.map((cell, cellIndex) => {
-        if (typeof cell !== 'string')
-          return (
-            <Badge key={`status-${rowIndex}`} tone={cell.tone}>
-              {cell.label}
-            </Badge>
-          );
-        if (cellIndex === 0)
-          return (
-            <span dir="ltr" key={`id-${rowIndex}`}>
-              {cell}
-            </span>
-          );
-        return cell;
-      }),
+      ...(readonlyData.rows[rowIndex] ?? []),
       <div className={styles.rowActions} key={`actions-${rowIndex}`}>
         <ActionButton onClick={() => editRow(rowIndex, row)} small>
           <PencilLine aria-hidden="true" size={13} /> ویرایش
@@ -1338,19 +1446,69 @@ function genericTable(
     totalLabel: dataset.totalLabel,
   };
 }
-function OrganizationSection({ initialTab }: { initialTab?: string | undefined }) {
+
+function readonlyTable(dataset: HrPreviewDataset): PreviewTableData {
+  return {
+    columns: dataset.columns,
+    rows: dataset.rows.map((row, rowIndex) =>
+      row.map((cell, cellIndex) => {
+        if (typeof cell !== 'string')
+          return (
+            <Badge key={`status-${rowIndex}`} tone={cell.tone}>
+              {cell.label}
+            </Badge>
+          );
+        if (cellIndex === 0)
+          return (
+            <span dir="ltr" key={`id-${rowIndex}`}>
+              {cell}
+            </span>
+          );
+        return cell;
+      }),
+    ),
+    totalLabel: dataset.totalLabel,
+  };
+}
+
+function AutomaticHistoryNotice() {
+  return (
+    <div className={styles.previewNote} role="note">
+      <History aria-hidden="true" size={16} />
+      <span>
+        رکوردهای این بخش از عملیات مرتبط به‌صورت خودکار ثبت می‌شوند و افزودن،
+        ویرایش یا حذف دستی ندارند.
+      </span>
+    </div>
+  );
+}
+function OrganizationSection({
+  initialTab,
+  onMutation,
+}: {
+  initialTab?: string | undefined;
+  onMutation: (
+    action: HrMutationAction,
+    tab: string,
+    title: string,
+    subject: string,
+  ) => void;
+}) {
   const tabs = sectionTabs.organization ?? [];
   const [tab, setTab] = useState(
     tabs.some((item) => item.id === initialTab)
       ? (initialTab ?? 'orgchart')
       : 'orgchart',
   );
-  const [nodes, setNodes] =
-    useState<readonly OrganizationNode[]>(initialOrganizationNodes);
+  const [nodes, setNodes] = useState<readonly OrganizationNode[]>(
+    initialOrganizationNodes,
+  );
   const [catalogRecords, setCatalogRecords] =
     useState<OrganizationCatalogRecords>(initialOrganizationCatalogRecords);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingNode, setEditingNode] = useState<OrganizationNode | undefined>();
+  const [editingNode, setEditingNode] = useState<
+    OrganizationNode | undefined
+  >();
   const [catalogDialogOpen, setCatalogDialogOpen] = useState(false);
   const [catalogDialogTab, setCatalogDialogTab] =
     useState<OrganizationCatalogTab>('branches');
@@ -1400,11 +1558,8 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
           ...sourceRecord,
           title: value.name,
           branch:
-            editingNode.catalogSource === 'branch'
-              ? value.name
-              : value.branch,
-          parent:
-            parentNode?.catalogSource === 'unit' ? parentNode.name : '',
+            editingNode.catalogSource === 'branch' ? value.name : value.branch,
+          parent: parentNode?.catalogSource === 'unit' ? parentNode.name : '',
           manager: value.manager,
           effectiveFrom: value.effectiveFrom,
           status: value.status,
@@ -1447,6 +1602,12 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
         setOrganizationNotice(
           `گره «${nextRecord.title}» و داده ساختاری مرتبط به‌روزرسانی شدند.`,
         );
+        onMutation(
+          'edit',
+          sourceTab,
+          organizationCatalogSchemas[sourceTab].singular,
+          nextRecord.title,
+        );
         setDialogOpen(false);
         setEditingNode(undefined);
         return;
@@ -1466,6 +1627,12 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
       editingNode
         ? `گره «${node.name}» در چارت این نشست ویرایش شد.`
         : `گره «${node.name}» به چارت این نشست اضافه شد.`,
+    );
+    onMutation(
+      editingNode ? 'edit' : 'create',
+      'orgchart',
+      'گره سازمانی',
+      node.name,
     );
     setDialogOpen(false);
     setEditingNode(undefined);
@@ -1501,7 +1668,9 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
               : item,
           ),
           positions: nextRecords.positions.map((item) =>
-            item.unit === previous.title ? { ...item, unit: value.title } : item,
+            item.unit === previous.title
+              ? { ...item, unit: value.title }
+              : item,
           ),
         };
       if (catalogDialogTab === 'grades')
@@ -1531,6 +1700,12 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
           ? `${schema.singular} «${value.title}» در فهرست این نشست ویرایش شد.`
           : `${schema.singular} «${value.title}» به فهرست این نشست اضافه شد.`,
     );
+    onMutation(
+      editingCatalogRecord ? 'edit' : 'create',
+      catalogDialogTab,
+      schema.singular,
+      value.title,
+    );
     setCatalogDialogOpen(false);
     setEditingCatalogRecord(undefined);
   };
@@ -1551,7 +1726,11 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
       while (changed) {
         changed = false;
         current.forEach((item) => {
-          if (item.parentId && deletedIds.has(item.parentId) && !deletedIds.has(item.id)) {
+          if (
+            item.parentId &&
+            deletedIds.has(item.parentId) &&
+            !deletedIds.has(item.id)
+          ) {
             deletedIds.add(item.id);
             changed = true;
           }
@@ -1562,6 +1741,7 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
     setOrganizationNotice(
       `گره «${node.name}» و زیرشاخه‌های آن از چارت موقت این نشست حذف شد.`,
     );
+    onMutation('delete', 'orgchart', 'گره سازمانی', node.name);
   };
   function deleteCatalogRecord(
     nextTab: OrganizationCatalogTab,
@@ -1569,7 +1749,9 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
   ) {
     let nextRecords: OrganizationCatalogRecords = {
       ...catalogRecords,
-      [nextTab]: catalogRecords[nextTab].filter((item) => item.id !== record.id),
+      [nextTab]: catalogRecords[nextTab].filter(
+        (item) => item.id !== record.id,
+      ),
     };
     if (nextTab === 'branches') {
       const removedUnits = new Set(
@@ -1579,7 +1761,9 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
       );
       nextRecords = {
         ...nextRecords,
-        units: nextRecords.units.filter((unit) => !removedUnits.has(unit.title)),
+        units: nextRecords.units.filter(
+          (unit) => !removedUnits.has(unit.title),
+        ),
         positions: nextRecords.positions.filter(
           (position) => !removedUnits.has(position.unit),
         ),
@@ -1599,7 +1783,9 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
       }
       nextRecords = {
         ...nextRecords,
-        units: nextRecords.units.filter((unit) => !removedUnits.has(unit.title)),
+        units: nextRecords.units.filter(
+          (unit) => !removedUnits.has(unit.title),
+        ),
         positions: nextRecords.positions.filter(
           (position) => !removedUnits.has(position.unit),
         ),
@@ -1615,6 +1801,12 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
       chartChanged
         ? `${organizationCatalogSchemas[nextTab].singular} «${record.title}» حذف و چارت سازمانی به‌روزرسانی شد.`
         : `${organizationCatalogSchemas[nextTab].singular} «${record.title}» از فهرست موقت این نشست حذف شد.`,
+    );
+    onMutation(
+      'delete',
+      nextTab,
+      organizationCatalogSchemas[nextTab].singular,
+      record.title,
     );
   }
 
@@ -1662,7 +1854,11 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
         title={active?.label ?? 'ساختار سازمانی'}
       >
         {tab === 'orgchart' ? (
-          <OrganizationChart nodes={nodes} onDelete={deleteNode} onEdit={openEdit} />
+          <OrganizationChart
+            nodes={nodes}
+            onDelete={deleteNode}
+            onEdit={openEdit}
+          />
         ) : (
           <>
             <div className={styles.filterBar}>
@@ -1936,6 +2132,7 @@ function TabbedSection({
   const active = tabs.find((item) => item.id === tab);
   const ActiveIcon = active?.icon ?? FileText;
   const isPayrollOverview = section === 'payroll' && tab === 'overview';
+  const isAutomaticHistory = isAutomaticHrHistoryTab(section, tab);
   const dataset = datasetStore.getDataset(section, tab);
   const openCurrentForm = (
     mode: ContextualHrFormContext['mode'],
@@ -1952,11 +2149,13 @@ function TabbedSection({
       ...(rowIndex === undefined ? {} : { rowIndex }),
       ...(row ? { initialValues: row.map(previewCellText) } : {}),
     });
-  const data = genericTable(
-    dataset,
-    (rowIndex, row) => openCurrentForm('edit', rowIndex, row),
-    (rowIndex) => datasetStore.deleteRow(section, tab, rowIndex),
-  );
+  const data = isAutomaticHistory
+    ? readonlyTable(dataset)
+    : genericTable(
+        dataset,
+        (rowIndex, row) => openCurrentForm('edit', rowIndex, row),
+        (rowIndex) => datasetStore.deleteRow(section, tab, rowIndex),
+      );
   return (
     <>
       <PageHead
@@ -1965,13 +2164,12 @@ function TabbedSection({
             <ActionButton disabled>
               <Download size={15} /> خروجی مجاز
             </ActionButton>
-            <ActionButton
-              onClick={() => openCurrentForm('create')}
-              primary
-            >
-              <Plus size={15} /> افزودن{' '}
-              {active?.label ?? screenMeta[section].title}
-            </ActionButton>
+            {isAutomaticHistory ? null : (
+              <ActionButton onClick={() => openCurrentForm('create')} primary>
+                <Plus size={15} /> افزودن{' '}
+                {active?.label ?? screenMeta[section].title}
+              </ActionButton>
+            )}
           </>
         }
         section={section}
@@ -1985,9 +2183,18 @@ function TabbedSection({
       ) : (
         <Panel
           icon={<ActiveIcon size={17} />}
-          note="فقط شناسه‌ها و ردیف‌های صریحاً نمایشی نمایش داده شده‌اند."
+          note={
+            isAutomaticHistory
+              ? 'این سابقه از عملیات مرتبط به‌صورت خودکار ساخته می‌شود.'
+              : 'فقط شناسه‌ها و ردیف‌های صریحاً نمایشی نمایش داده شده‌اند.'
+          }
           title={active?.label ?? screenMeta[section].title}
         >
+          {isAutomaticHistory ? (
+            <div className={styles.panelBody}>
+              <AutomaticHistoryNotice />
+            </div>
+          ) : null}
           {section === 'hrSettings' && tab === 'companies' ? (
             <div className={styles.panelBody}>
               <div className={styles.previewNote}>
@@ -2127,12 +2334,25 @@ export function HrWorkspace({
     rowIndex: number,
   ) => {
     const key = previewDatasetKey(datasetSection, tab);
+    const row = getDataset(datasetSection, tab).rows[rowIndex];
+    const subject = previewCellText(row?.[1] ?? row?.[0] ?? 'رکورد');
+    const title =
+      sectionTabs[datasetSection]?.find((item) => item.id === tab)?.label ??
+      screenMeta[datasetSection].title;
     setPreviewDatasetOverrides((current) => {
-      const rows = current[key] ?? getHrPreviewDataset(datasetSection, tab).rows;
-      return {
+      const rows =
+        current[key] ?? getHrPreviewDataset(datasetSection, tab).rows;
+      const next = {
         ...current,
         [key]: removeHrPreviewRow(rows, rowIndex),
       };
+      return appendAutomaticHrHistory(next, {
+        action: 'delete',
+        section: datasetSection,
+        tab,
+        title,
+        subject,
+      });
     });
     setNotice('رکورد از مجموعه‌داده موقت این نشست حذف شد.');
   };
@@ -2141,11 +2361,12 @@ export function HrWorkspace({
     deleteRow: deleteDatasetRow,
   };
   const saveEmployee = (value: NewEmployeeFormValue) => {
+    const wasEditing = Boolean(editingEmployee);
     const name = `${value.firstName} ${value.lastName}`.trim();
     const statusTone: Record<NewEmployeeFormValue['status'], BadgeTone> = {
       فعال: 'success',
       'در حال تکمیل': 'warning',
-      'تعلیق‌شده': 'neutral',
+      تعلیق‌شده: 'neutral',
     };
     const date = new Date(`${value.startedAt}T12:00:00.000Z`);
     const startedAt = Number.isNaN(date.getTime())
@@ -2156,27 +2377,37 @@ export function HrWorkspace({
           year: 'numeric',
         }).format(date);
     const nextEmployee: PreviewEmployee = {
-        id: value.personnelCode,
-        name,
-        initial: value.firstName.charAt(0),
-        employment:
-          editingEmployee?.employment ?? `preview-employment-${value.personnelCode}`,
-        kind: value.employmentType,
-        unit: `${value.branch} / ${value.unit}`,
-        position: value.position,
-        manager: value.manager,
-        startedAt,
-        startedAtValue: value.startedAt,
-        status: value.status,
-        tone: statusTone[value.status],
-        local: true,
-      };
+      id: value.personnelCode,
+      name,
+      initial: value.firstName.charAt(0),
+      employment:
+        editingEmployee?.employment ??
+        `preview-employment-${value.personnelCode}`,
+      kind: value.employmentType,
+      unit: `${value.branch} / ${value.unit}`,
+      position: value.position,
+      manager: value.manager,
+      startedAt,
+      startedAtValue: value.startedAt,
+      status: value.status,
+      tone: statusTone[value.status],
+      local: true,
+    };
     setEmployees((current) =>
       editingEmployee
         ? current.map((employee) =>
             employee.id === editingEmployee.id ? nextEmployee : employee,
           )
         : [nextEmployee, ...current],
+    );
+    setPreviewDatasetOverrides((current) =>
+      appendAutomaticHrHistory(current, {
+        action: wasEditing ? 'edit' : 'create',
+        section: 'employees',
+        tab: 'list',
+        title: 'کارمند',
+        subject: name,
+      }),
     );
     setDialogTitle(null);
     setEditingEmployee(null);
@@ -2188,9 +2419,7 @@ export function HrWorkspace({
   };
   let screen: ReactNode;
   if (workspace)
-    screen = (
-      <FrappeWorkspaceScreen key={workspace} workspaceId={workspace} />
-    );
+    screen = <FrappeWorkspaceScreen key={workspace} workspaceId={workspace} />;
   else if (section === 'home') screen = <HubScreen />;
   else if (section === 'dashboard')
     screen = <Dashboard openAction={openAction} />;
@@ -2206,9 +2435,16 @@ export function HrWorkspace({
           setEmployees((current) =>
             current.filter((item) => item.id !== employee.id),
           );
-          setNotice(
-            `کارمند «${employee.name}» از فهرست موقت این نشست حذف شد.`,
+          setPreviewDatasetOverrides((current) =>
+            appendAutomaticHrHistory(current, {
+              action: 'delete',
+              section: 'employees',
+              tab: 'list',
+              title: 'کارمند',
+              subject: employee.name,
+            }),
           );
+          setNotice(`کارمند «${employee.name}» از فهرست موقت این نشست حذف شد.`);
         }}
         onEdit={(employee) => {
           setNotice('');
@@ -2221,6 +2457,8 @@ export function HrWorkspace({
     screen = (
       <EmployeeProfile
         datasetStore={datasetStore}
+        initialTab={tabId}
+        key={`employee:${tabId ?? ''}`}
         openAction={openAction}
         openForm={openForm}
       />
@@ -2230,6 +2468,17 @@ export function HrWorkspace({
       <OrganizationSection
         initialTab={tabId}
         key={`organization:${tabId ?? ''}`}
+        onMutation={(action, tab, title, subject) =>
+          setPreviewDatasetOverrides((current) =>
+            appendAutomaticHrHistory(current, {
+              action,
+              section: 'organization',
+              tab,
+              title,
+              subject,
+            }),
+          )
+        }
       />
     );
   else if (section === 'requests')
@@ -2271,11 +2520,9 @@ export function HrWorkspace({
             setPreviewDatasetOverrides((current) => {
               const rows =
                 current[key] ??
-                getHrPreviewDataset(
-                  contextualForm.section,
-                  contextualForm.tab,
-                ).rows;
-              return {
+                getHrPreviewDataset(contextualForm.section, contextualForm.tab)
+                  .rows;
+              const next = {
                 ...current,
                 [key]: saveHrPreviewRow(
                   rows,
@@ -2284,6 +2531,13 @@ export function HrWorkspace({
                   contextualForm.rowIndex,
                 ),
               };
+              return appendAutomaticHrHistory(next, {
+                action: contextualForm.mode,
+                section: contextualForm.section,
+                tab: contextualForm.tab,
+                title: contextualForm.title,
+                subject: values[1] ?? values[0] ?? contextualForm.title,
+              });
             });
             setNotice(
               contextualForm.mode === 'edit'

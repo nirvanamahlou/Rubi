@@ -2,8 +2,10 @@ import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import {
+  appendAutomaticHrHistory,
   HrState,
   HrWorkspace,
+  isAutomaticHrHistoryTab,
   parseHrPreviewDatasetOverrides,
   removeHrPreviewRow,
   saveHrPreviewRow,
@@ -456,9 +458,7 @@ describe('HR reference implementation', () => {
     expect(fields.find((field) => field.label === 'کارمند')?.type).toBe(
       'select',
     );
-    expect(fields.find((field) => field.label === 'مبلغ')?.type).toBe(
-      'number',
-    );
+    expect(fields.find((field) => field.label === 'مبلغ')?.type).toBe('number');
     expect(fields.find((field) => field.label === 'وضعیت مالی')?.type).toBe(
       'select',
     );
@@ -505,6 +505,59 @@ describe('HR reference implementation', () => {
       { label: 'تکمیل‌شده', tone: 'success' },
     ]);
     expect(removeHrPreviewRow(updated, 0)).toEqual([rows[1]]);
+  });
+
+  it('keeps automatic history sections read-only', () => {
+    expect(isAutomaticHrHistoryTab('employee', 'audit')).toBe(true);
+    expect(isAutomaticHrHistoryTab('fleet', 'logs')).toBe(true);
+    expect(isAutomaticHrHistoryTab('reports', 'audit')).toBe(true);
+    expect(isAutomaticHrHistoryTab('contracts', 'amendments')).toBe(false);
+
+    for (const [section, tab, title] of [
+      ['employee', 'audit', 'تاریخچه'],
+      ['fleet', 'logs', 'سوابق استفاده'],
+      ['reports', 'audit', 'Audit اختصاصی'],
+    ] as const) {
+      const html = renderToStaticMarkup(
+        <HrWorkspace sectionId={section} tabId={tab} />,
+      );
+      expect(html).toContain(title);
+      expect(html).toContain('افزودن، ویرایش یا حذف دستی ندارند');
+      expect(html).not.toContain(`افزودن ${title}`);
+      expect(html).not.toContain('>ویرایش<');
+      expect(html).not.toContain('>حذف<');
+    }
+  });
+
+  it('appends mutations to automatic audit and related history feeds', () => {
+    const employeeHistory = appendAutomaticHrHistory(
+      {},
+      {
+        action: 'create',
+        section: 'employees',
+        tab: 'list',
+        title: 'کارمند',
+        subject: 'نگار بهرامی',
+        occurredAt: '۱۴۰۵/۰۶/۱۵، ۱۰:۳۰',
+        eventId: 'HR-AUDIT-TEST-EMP',
+      },
+    );
+    expect(employeeHistory['reports:audit']?.[0]).toContain('ایجاد کارمند');
+    expect(employeeHistory['employee:audit']?.[0]).toContain(
+      'ایجاد کارمند: نگار بهرامی',
+    );
+
+    const fleetHistory = appendAutomaticHrHistory(employeeHistory, {
+      action: 'edit',
+      section: 'fleet',
+      tab: 'vehicles',
+      title: 'خودروها',
+      subject: 'خودروی عملیات ۲',
+      occurredAt: '۱۴۰۵/۰۶/۱۵، ۱۰:۳۵',
+      eventId: 'HR-AUDIT-TEST-FLEET',
+    });
+    expect(fleetHistory['fleet:logs']?.[0]).toContain('خودروی عملیات ۲');
+    expect(fleetHistory['reports:audit']?.[0]).toContain('ویرایش خودروها');
   });
 
   it('restores valid recruitment rows from session storage data', () => {
