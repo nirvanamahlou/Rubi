@@ -110,6 +110,9 @@ export interface SalesFormState {
     checkOut: string;
     roomTypeId: string;
     roomCount: number;
+    singleRoomCount: number;
+    doubleRoomCount: number;
+    extraBedCount: number;
     occupancy: number;
     guestCustomerIds?: string[];
   };
@@ -157,6 +160,9 @@ export const emptySalesForm: SalesFormState = {
     checkOut: '',
     roomTypeId: '',
     roomCount: 1,
+    singleRoomCount: 0,
+    doubleRoomCount: 1,
+    extraBedCount: 0,
     occupancy: 1,
     guestCustomerIds: [],
   },
@@ -410,6 +416,14 @@ export function salesHotelValid(state: SalesFormState): boolean {
     state.hotel.roomTypeId &&
     Number.isInteger(state.hotel.roomCount) &&
     state.hotel.roomCount > 0 &&
+    Number.isInteger(state.hotel.singleRoomCount) &&
+    state.hotel.singleRoomCount >= 0 &&
+    Number.isInteger(state.hotel.doubleRoomCount) &&
+    state.hotel.doubleRoomCount >= 0 &&
+    state.hotel.singleRoomCount + state.hotel.doubleRoomCount <=
+      state.hotel.roomCount &&
+    Number.isInteger(state.hotel.extraBedCount) &&
+    state.hotel.extraBedCount >= 0 &&
     Number.isInteger(state.hotel.occupancy) &&
     state.hotel.occupancy > 0,
   );
@@ -601,6 +615,9 @@ export function salesPayload(
             checkInDate: state.hotel.checkIn,
             checkOutDate: state.hotel.checkOut,
             roomCount: state.hotel.roomCount,
+            singleRoomCount: state.hotel.singleRoomCount,
+            doubleRoomCount: state.hotel.doubleRoomCount,
+            extraBedCount: state.hotel.extraBedCount,
             roomTypeId: state.hotel.roomTypeId,
             occupancy: salesHotelGuestIds(state).length,
             inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',

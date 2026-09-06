@@ -105,6 +105,7 @@ export const IAM_PERMISSION_CODES = [
   'ticket_catalog.read',
   'ticket_catalog.manage',
   'reservations.read',
+  'reservations.arrangements.update',
 ] as const;
 
 export type IamPermissionCode = (typeof IAM_PERMISSION_CODES)[number];

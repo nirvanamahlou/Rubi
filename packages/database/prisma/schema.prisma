@@ -2645,6 +2645,9 @@ model SalesContractHotelSelection {
   checkInDate       DateTime             @map("check_in_date") @db.Date
   checkOutDate      DateTime             @map("check_out_date") @db.Date
   roomCount         Int                  @map("room_count")
+  singleRoomCount   Int?                 @map("single_room_count")
+  doubleRoomCount   Int?                 @map("double_room_count")
+  extraBedCount     Int?                 @map("extra_bed_count")
   roomTypeId        String               @map("room_type_id") @db.Uuid
   mealServiceId     String?              @map("meal_service_id") @db.Uuid
   occupancy         Int
@@ -2790,18 +2793,37 @@ model TicketOfferCapacityAllocation {
 }
 
 model ReservationIntake {
-  id              String   @id @default(uuid()) @db.Uuid
-  requestId       String   @unique @db.Uuid
-  contractId      String   @db.Uuid
+  id              String                           @id @default(uuid()) @db.Uuid
+  requestId       String                           @unique @db.Uuid
+  contractId      String                           @db.Uuid
   contractVersion Int
-  branchId        String   @db.Uuid
-  fingerprint     String   @db.VarChar(64)
+  branchId        String                           @db.Uuid
+  fingerprint     String                           @db.VarChar(64)
   snapshot        Json
-  status          String   @default("QUEUED") @db.VarChar(40)
-  receivedAt      DateTime @default(now()) @db.Timestamptz(3)
+  status          String                           @default("QUEUED") @db.VarChar(40)
+  receivedAt      DateTime                         @default(now()) @db.Timestamptz(3)
+  arrangements    ReservationArrangementRevision[]
 
   @@unique([contractId, contractVersion])
   @@index([branchId, receivedAt])
+}
+
+model ReservationArrangementRevision {
+  id                    String            @id @default(uuid()) @db.Uuid
+  intakeId              String            @db.Uuid
+  version               Int
+  roomCount             Int
+  singleRoomCount       Int
+  doubleRoomCount       Int
+  extraBedCount         Int
+  hotelGuestCustomerIds Json
+  reason                String            @db.VarChar(500)
+  updatedByUserId       String            @db.Uuid
+  updatedAt             DateTime          @default(now()) @db.Timestamptz(3)
+  intake                ReservationIntake @relation(fields: [intakeId], references: [id], onDelete: Restrict)
+
+  @@unique([intakeId, version])
+  @@index([intakeId, updatedAt])
 }
 
 model SalesContractAuditEvent {

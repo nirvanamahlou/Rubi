@@ -32,6 +32,28 @@ export interface TicketOfferSearchV1 {
   page?: number;
 }
 
+export interface ReservationArrangementV1 {
+  version: number;
+  roomCount: number;
+  singleRoomCount: number;
+  doubleRoomCount: number;
+  extraBedCount: number;
+  hotelGuestCustomerIds: readonly string[];
+  reason: string;
+  updatedAt: string;
+  updatedByUserId: string;
+}
+
+export interface ReservationArrangementUpdateV1 {
+  expectedVersion: number;
+  roomCount: number;
+  singleRoomCount: number;
+  doubleRoomCount: number;
+  extraBedCount: number;
+  hotelGuestCustomerIds: readonly string[];
+  reason: string;
+}
+
 export interface ReservationIntakeV1 {
   id: string;
   requestId: string;
@@ -41,4 +63,5 @@ export interface ReservationIntakeV1 {
   status: 'QUEUED';
   receivedAt: string;
   snapshot: SalesReservationRequestV1;
+  arrangement: ReservationArrangementV1 | null;
 }

@@ -201,6 +201,9 @@ export function presentSalesContract(
             .toISOString()
             .slice(0, 10),
           roomCount: row.hotelSelection.roomCount,
+          singleRoomCount: row.hotelSelection.singleRoomCount,
+          doubleRoomCount: row.hotelSelection.doubleRoomCount,
+          extraBedCount: row.hotelSelection.extraBedCount,
           roomTypeId: row.hotelSelection.roomTypeId,
           mealServiceId: row.hotelSelection.mealServiceId,
           occupancy: row.hotelSelection.occupancy,

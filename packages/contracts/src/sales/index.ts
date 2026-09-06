@@ -123,6 +123,9 @@ export interface SalesHotelSelectionInput {
   checkInDate: string;
   checkOutDate: string;
   roomCount: number;
+  singleRoomCount?: number;
+  doubleRoomCount?: number;
+  extraBedCount?: number;
   roomTypeId: string;
   mealServiceId?: string | null;
   occupancy: number;
@@ -285,6 +288,7 @@ export interface SalesDashboard {
 export interface SalesReservationRequestV1 {
   passengerAssignments?: readonly {
     customerId: string;
+    displayNameSnapshot?: string;
     ageCategory: SalesPassengerAgeCategory;
     serviceClientKeys: readonly string[];
   }[];

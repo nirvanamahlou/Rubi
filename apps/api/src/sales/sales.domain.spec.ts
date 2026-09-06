@@ -215,6 +215,10 @@ describe('Sales contract domain', () => {
     expect(() => validateSalesContract(input)).not.toThrow();
     input.hotelSelection.occupancy = 2;
     expect(() => validateSalesContract(input)).toThrow('اعضای انتخاب‌شده');
+    input.hotelSelection.occupancy = 1;
+    input.hotelSelection.singleRoomCount = 1;
+    input.hotelSelection.doubleRoomCount = 1;
+    expect(() => validateSalesContract(input)).toThrow('ترکیب اتاق');
   });
   it('validates a round-trip contract and deterministically fingerprints it', () => {
     expect(() => validateSalesContract(draft)).not.toThrow();

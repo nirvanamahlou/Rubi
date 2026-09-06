@@ -118,15 +118,17 @@ function PassengerCountField({
     <label className="grid gap-1 rounded-xl border border-border bg-surface p-3">
       <span className="font-bold">{label}</span>
       <span className="text-xs text-muted-foreground">{hint}</span>
-      <Input
-        type="number"
-        min={0}
-        max={30}
+      <select
+        className={fieldClass}
         value={value}
-        onChange={(event) =>
-          onChange(Math.min(30, Math.max(0, Number(event.target.value) || 0)))
-        }
-      />
+        onChange={(event) => onChange(Number(event.target.value))}
+      >
+        {Array.from({ length: 31 }, (_, count) => (
+          <option key={count} value={count}>
+            {count.toLocaleString('fa-IR')} نفر
+          </option>
+        ))}
+      </select>
     </label>
   );
 }
@@ -1168,22 +1170,85 @@ export function SalesContractForm() {
                       }
                     />
                   </FormField>
-                  <FormField label="تعداد اتاق">
-                    <Input
-                      min={1}
-                      type="number"
-                      value={state.hotel.roomCount}
-                      onChange={(event) =>
-                        patchState({
-                          hotel: {
-                            ...state.hotel,
-                            roomCount: Number(event.target.value),
-                          },
-                        })
-                      }
-                    />
-                  </FormField>
-                  <div className="rounded-xl border border-border bg-muted/30 p-3">
+                  <PassengerCountField
+                    label="تعداد اتاق"
+                    hint="کل اتاق‌های درخواستی"
+                    value={state.hotel.roomCount}
+                    onChange={(roomCount) =>
+                      patchState({
+                        hotel: {
+                          ...state.hotel,
+                          roomCount: Math.max(1, roomCount),
+                          singleRoomCount: Math.min(
+                            state.hotel.singleRoomCount,
+                            Math.max(1, roomCount),
+                          ),
+                          doubleRoomCount: Math.min(
+                            state.hotel.doubleRoomCount,
+                            Math.max(
+                              0,
+                              Math.max(1, roomCount) -
+                                state.hotel.singleRoomCount,
+                            ),
+                          ),
+                        },
+                      })
+                    }
+                  />
+                  <PassengerCountField
+                    label="یک‌تخته"
+                    hint="تعداد اتاق یک‌نفره"
+                    value={state.hotel.singleRoomCount}
+                    onChange={(singleRoomCount) =>
+                      patchState({
+                        hotel: {
+                          ...state.hotel,
+                          singleRoomCount: Math.min(
+                            singleRoomCount,
+                            state.hotel.roomCount,
+                          ),
+                          doubleRoomCount: Math.min(
+                            state.hotel.doubleRoomCount,
+                            Math.max(
+                              0,
+                              state.hotel.roomCount - singleRoomCount,
+                            ),
+                          ),
+                        },
+                      })
+                    }
+                  />
+                  <PassengerCountField
+                    label="دوتخته"
+                    hint="تعداد اتاق دونفره"
+                    value={state.hotel.doubleRoomCount}
+                    onChange={(doubleRoomCount) =>
+                      patchState({
+                        hotel: {
+                          ...state.hotel,
+                          doubleRoomCount: Math.min(
+                            doubleRoomCount,
+                            Math.max(
+                              0,
+                              state.hotel.roomCount -
+                                state.hotel.singleRoomCount,
+                            ),
+                          ),
+                        },
+                      })
+                    }
+                  />
+                  <PassengerCountField
+                    label="تخت اضافه"
+                    hint="نفر اضافه هتل"
+                    value={state.hotel.extraBedCount}
+                    onChange={(extraBedCount) =>
+                      patchState({
+                        hotel: { ...state.hotel, extraBedCount },
+                      })
+                    }
+                  />
+                  <div className="rounded-xl border border-border bg-muted/30 p-3 sm:col-span-2">
                     <p className="text-xs text-muted-foreground">تعداد مهمان</p>
                     <p className="mt-1 font-black">
                       {passengerCounts.total.toLocaleString('fa-IR')} نفر

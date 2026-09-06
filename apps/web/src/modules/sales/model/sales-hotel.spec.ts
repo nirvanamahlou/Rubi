@@ -136,6 +136,10 @@ describe('combined flight and hotel details', () => {
     expect(payload.hotelSelection).toMatchObject({
       checkInDate: '2026-09-12',
       checkOutDate: '2026-09-18',
+      roomCount: 1,
+      singleRoomCount: 0,
+      doubleRoomCount: 1,
+      extraBedCount: 0,
     });
     expect(payload.hotelSelection).not.toHaveProperty('checkInManual');
   });
