@@ -154,6 +154,63 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
       ).toBe(false);
     });
 
+    it('atomically prevents overselling and reports remaining capacity', async () => {
+      const offerDefinition = { ...definition, totalCapacity: 3 };
+      const published = await tickets.publish(
+        offerDefinition,
+        actor,
+        branchId,
+        randomUUID(),
+      );
+      const selection = {
+        serviceClientKey: 'flight-outbound',
+        direction: 'OUTBOUND' as const,
+        offerId: published.data.id,
+        originId: offerDefinition.originId,
+        destinationId: offerDefinition.destinationId,
+        departureAt: offerDefinition.departureAt,
+        arrivalAt: offerDefinition.arrivalAt,
+        carrierNameSnapshot: offerDefinition.carrierName,
+        serviceNumberSnapshot: offerDefinition.serviceNumber,
+        cabinClassCode: offerDefinition.cabinClassCode,
+      };
+      const reservations = await Promise.all([
+        tickets.reserve([selection], branchId, randomUUID(), 2),
+        tickets.reserve([selection], branchId, randomUUID(), 2),
+      ]);
+      expect(reservations.filter(({ available }) => available)).toHaveLength(1);
+      expect(reservations.filter(({ available }) => !available)).toHaveLength(
+        1,
+      );
+      const result = await tickets.search(
+        {
+          originId: offerDefinition.originId,
+          destinationId: offerDefinition.destinationId,
+          departureFrom: '2099-10-01',
+        },
+        actor,
+      );
+      expect(
+        result.data.find(({ id }) => id === published.data.id),
+      ).toMatchObject({
+        totalCapacity: 3,
+        remainingCapacity: 1,
+      });
+      const successful = reservations.find(({ available }) => available)!;
+      await tickets.release(successful.createdAllocationIds);
+      const released = await tickets.search(
+        {
+          originId: offerDefinition.originId,
+          destinationId: offerDefinition.destinationId,
+          departureFrom: '2099-10-01',
+        },
+        actor,
+      );
+      expect(
+        released.data.find(({ id }) => id === published.data.id)
+          ?.remainingCapacity,
+      ).toBe(3);
+    });
     it('receives a versioned immutable request once across concurrent retries', async () => {
       const snapshot: SalesReservationRequestV1 = {
         version: 1,
@@ -192,6 +249,123 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
         ),
       ).toBe(true);
       expect(await reservations.list([randomUUID()])).toEqual([]);
+    });
+    it('versions hotel arrangements within the reservation branch and existing passengers', async () => {
+      const guestOne = randomUUID();
+      const guestTwo = randomUUID();
+      const snapshot: SalesReservationRequestV1 = {
+        version: 1,
+        requestId: randomUUID(),
+        contractId: randomUUID(),
+        contractNumber: 'HOTEL-ARRANGEMENT',
+        contractVersion: 1,
+        customerId: randomUUID(),
+        passengerIds: [guestOne, guestTwo],
+        passengerAssignments: [
+          {
+            customerId: guestOne,
+            displayNameSnapshot: 'Guest One',
+            ageCategory: 'ADT',
+            serviceClientKeys: ['hotel'],
+          },
+          {
+            customerId: guestTwo,
+            displayNameSnapshot: 'Guest Two',
+            ageCategory: 'CHD',
+            serviceClientKeys: ['hotel'],
+          },
+        ],
+        serviceSelections: [
+          { clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'Test hotel' },
+        ],
+        selectedTicketOfferIds: [],
+        hotelSelection: {
+          serviceClientKey: 'hotel',
+          hotelId: randomUUID(),
+          hotelNameSnapshot: 'Test hotel',
+          cityId: randomUUID(),
+          checkInDate: '2099-10-01',
+          checkOutDate: '2099-10-03',
+          roomCount: 1,
+          roomTypeId: randomUUID(),
+          occupancy: 2,
+          inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+        },
+        createdAt: new Date().toISOString(),
+      };
+      await reservations.receive(snapshot, branchId);
+      const intake = (await reservations.list([branchId])).find(
+        ({ requestId }) => requestId === snapshot.requestId,
+      )!;
+      const updated = await reservations.updateArrangement(
+        intake.id,
+        {
+          expectedVersion: 0,
+          roomCount: 2,
+          singleRoomCount: 1,
+          doubleRoomCount: 1,
+          extraBedCount: 0,
+          hotelGuestCustomerIds: [guestOne, guestTwo],
+          reason: 'Operational room split',
+        },
+        [branchId],
+        actor.userId,
+      );
+      expect(updated.arrangement).toMatchObject({
+        version: 1,
+        roomCount: 2,
+        singleRoomCount: 1,
+        doubleRoomCount: 1,
+        hotelGuestCustomerIds: [guestOne, guestTwo],
+      });
+      await expect(
+        reservations.updateArrangement(
+          intake.id,
+          {
+            expectedVersion: 0,
+            roomCount: 1,
+            singleRoomCount: 0,
+            doubleRoomCount: 1,
+            extraBedCount: 0,
+            hotelGuestCustomerIds: [guestOne],
+            reason: 'Stale change',
+          },
+          [branchId],
+          actor.userId,
+        ),
+      ).rejects.toThrow('هم‌زمان');
+      await expect(
+        reservations.updateArrangement(
+          intake.id,
+          {
+            expectedVersion: 1,
+            roomCount: 1,
+            singleRoomCount: 0,
+            doubleRoomCount: 1,
+            extraBedCount: 0,
+            hotelGuestCustomerIds: [randomUUID()],
+            reason: 'Invalid guest',
+          },
+          [branchId],
+          actor.userId,
+        ),
+      ).rejects.toThrow('همین قرارداد');
+      await expect(
+        reservations.updateArrangement(
+          intake.id,
+          {
+            expectedVersion: 1,
+            roomCount: 1,
+            singleRoomCount: 0,
+            doubleRoomCount: 1,
+            extraBedCount: 0,
+            hotelGuestCustomerIds: [guestOne],
+            reason: 'Wrong branch',
+          },
+          [randomUUID()],
+          actor.userId,
+        ),
+      ).rejects.toThrow('یافت نشد');
     });
     it('keeps mixed-currency contracts unsettled until every currency is covered, and dispatches the durable outbox', async () => {
       const context = { userId: actor.userId, branchId };

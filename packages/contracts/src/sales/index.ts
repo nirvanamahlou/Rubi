@@ -26,6 +26,7 @@ export const SALES_ERROR_CODES = [
   'CONCURRENT_MODIFICATION',
   'IDEMPOTENCY_CONFLICT',
   'TICKET_NOT_AVAILABLE',
+  'TICKET_CAPACITY_INSUFFICIENT',
   'RETURN_TICKET_INVALID',
   'PAYMENT_CURRENCY_MISMATCH',
   'FINANCE_CONFIRMATION_REQUIRED',
@@ -125,6 +126,9 @@ export interface SalesHotelSelectionInput {
   checkInDate: string;
   checkOutDate: string;
   roomCount: number;
+  singleRoomCount?: number;
+  doubleRoomCount?: number;
+  extraBedCount?: number;
   roomTypeId: string;
   mealServiceId?: string | null;
   occupancy: number;
@@ -287,6 +291,7 @@ export interface SalesDashboard {
 export interface SalesReservationRequestV1 {
   passengerAssignments?: readonly {
     customerId: string;
+    displayNameSnapshot?: string;
     ageCategory: SalesPassengerAgeCategory;
     serviceClientKeys: readonly string[];
   }[];

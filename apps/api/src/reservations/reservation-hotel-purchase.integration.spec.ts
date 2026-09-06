@@ -6,6 +6,7 @@ import type {
   SalesReservationRequestV1,
 } from '@rubi/contracts';
 import type { DatabaseService } from '../database/database.service';
+import { ReservationsPublicService } from './reservations-public.service';
 import {
   ReservationHotelPurchaseService,
   validateHotelPurchase,
@@ -51,7 +52,7 @@ describe.skipIf(!process.env.HOTEL_PRICING_TEST_DATABASE_URL)(
       contractNumber: 'SYNTHETIC-TEST',
       contractVersion: 1,
       customerId: randomUUID(),
-      passengerIds: [],
+      passengerIds: [randomUUID()],
       selectedTicketOfferIds: [],
       createdAt: new Date().toISOString(),
       serviceSelections: [
@@ -103,6 +104,9 @@ describe.skipIf(!process.env.HOTEL_PRICING_TEST_DATABASE_URL)(
       return row;
     }
     afterAll(async () => {
+      await client.reservationArrangementRevision.deleteMany({
+        where: { intakeId: { in: ids } },
+      });
       await client.reservationHotelPurchase.deleteMany({
         where: { intakeId: { in: ids } },
       });
@@ -183,6 +187,48 @@ describe.skipIf(!process.env.HOTEL_PRICING_TEST_DATABASE_URL)(
       await expect(
         service.record(row.id, input, actor, randomUUID()),
       ).rejects.toMatchObject({ status: 400 });
+    });
+    it('preserves both purchase and arrangement versions through the public read/update boundary', async () => {
+      const row = await intake();
+      const reservations = new ReservationsPublicService({
+        client,
+      } as DatabaseService);
+      await service.record(row.id, input, actor, randomUUID());
+      const updated = await reservations.updateArrangement(
+        row.id,
+        {
+          expectedVersion: 0,
+          roomCount: 2,
+          singleRoomCount: 1,
+          doubleRoomCount: 1,
+          extraBedCount: 0,
+          hotelGuestCustomerIds: snapshot.passengerIds,
+          reason: 'Synthetic integration check',
+        },
+        actor.branchIds,
+        actor.userId,
+      );
+      expect(updated.purchaseVersion).toBe(1);
+      expect(updated.hotelPurchases).toMatchObject([
+        { amount: '700', currencyCode: 'IRR', version: 1 },
+      ]);
+      expect(updated.arrangement).toMatchObject({ version: 1, roomCount: 2 });
+      await service.record(
+        row.id,
+        { ...input, expectedVersion: 1, amount: '650' },
+        actor,
+        randomUUID(),
+      );
+      const listed = (await reservations.list(actor.branchIds)).find(
+        (item) => item.id === row.id,
+      )!;
+      expect(listed.purchaseVersion).toBe(2);
+      expect(listed.hotelPurchases).toMatchObject([
+        { amount: '650', version: 2 },
+      ]);
+      expect(listed.arrangement).toMatchObject({ version: 1, roomCount: 2 });
+      expect(listed.snapshot).toEqual(row.snapshot);
+      expect(await reservations.list([randomUUID()])).toEqual([]);
     });
     it('only lets one concurrent expected version win', async () => {
       const row = await intake();

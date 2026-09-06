@@ -17,6 +17,18 @@ export interface SalesTicketAvailabilityPort {
     branchId: string,
     selections?: readonly SalesTicketSelectionInput[],
   ): Promise<{ available: boolean; unavailableOfferIds: readonly string[] }>;
+  reserve(
+    selections: readonly SalesTicketSelectionInput[],
+    branchId: string,
+    contractId: string,
+    seatCount: number,
+  ): Promise<{
+    available: boolean;
+    unavailableOfferIds: readonly string[];
+    createdAllocationIds: readonly string[];
+  }>;
+  release(allocationIds: readonly string[]): Promise<void>;
+  releaseContract(contractId: string): Promise<void>;
 }
 
 @Injectable()
@@ -31,10 +43,33 @@ export class SalesTicketsPublicAdapter implements SalesTicketAvailabilityPort {
   ) {
     return this.catalog.revalidate(offerIds, branchId, selections);
   }
+  reserve(
+    selections: readonly SalesTicketSelectionInput[],
+    branchId: string,
+    contractId: string,
+    seatCount: number,
+  ) {
+    return this.catalog.reserve(selections, branchId, contractId, seatCount);
+  }
+  release(allocationIds: readonly string[]) {
+    return this.catalog.release(allocationIds);
+  }
+  releaseContract(contractId: string) {
+    return this.catalog.releaseContract(contractId);
+  }
 }
 
 @Injectable()
 export class AwaitingTicketCatalogPublicApi implements SalesTicketAvailabilityPort {
+  async reserve(selections: readonly SalesTicketSelectionInput[]) {
+    return {
+      available: selections.length === 0,
+      unavailableOfferIds: selections.map(({ offerId }) => offerId),
+      createdAllocationIds: [],
+    };
+  }
+  async release() {}
+  async releaseContract() {}
   async revalidate(offerIds: readonly string[]) {
     return { available: offerIds.length === 0, unavailableOfferIds: offerIds };
   }

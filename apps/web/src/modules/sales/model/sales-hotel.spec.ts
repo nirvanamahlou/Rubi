@@ -22,6 +22,7 @@ const offer = (departureAt: string): TicketOfferV1 => ({
   serviceNumber: 'TEST',
   cabinClassCode: 'ECONOMY',
   totalCapacity: 20,
+  remainingCapacity: 20,
   status: 'ACTIVE',
 });
 const base: SalesFormState = {
@@ -135,6 +136,10 @@ describe('combined flight and hotel details', () => {
     expect(payload.hotelSelection).toMatchObject({
       checkInDate: '2026-09-12',
       checkOutDate: '2026-09-18',
+      roomCount: 1,
+      singleRoomCount: 0,
+      doubleRoomCount: 1,
+      extraBedCount: 0,
     });
     expect(payload.hotelSelection).not.toHaveProperty('checkInManual');
   });

@@ -334,6 +334,27 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
         'SALES_HOTEL_INVALID',
         'تعداد اتاق و ظرفیت باید مثبت باشد.',
       );
+    const singleRooms = hotel.singleRoomCount ?? 0;
+    const doubleRooms = hotel.doubleRoomCount ?? hotel.roomCount;
+    const extraBeds = hotel.extraBedCount ?? 0;
+    if (
+      ![singleRooms, doubleRooms, extraBeds].every(
+        (value) => Number.isInteger(value) && value >= 0,
+      ) ||
+      singleRooms + doubleRooms > hotel.roomCount
+    )
+      throw new SalesDomainError(
+        'SALES_HOTEL_INVALID',
+        'ترکیب اتاق یک‌تخته، دوتخته و تخت اضافه معتبر نیست.',
+      );
+    const hotelGuestCount = input.passengers.filter((passenger) =>
+      passenger.serviceClientKeys.includes(hotel.serviceClientKey),
+    ).length;
+    if (hotelGuestCount < 1 || hotel.occupancy !== hotelGuestCount)
+      throw new SalesDomainError(
+        'SALES_HOTEL_INVALID',
+        'تعداد اعضای انتخاب‌شده برای اقامت باید با تعداد مسافران هتل برابر باشد.',
+      );
   }
   try {
     const derived = servicePriceComponents(

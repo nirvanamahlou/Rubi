@@ -184,6 +184,7 @@ erDiagram
 ### Reservation/Issue
 
 - Reservation Execution از contract version تاییدشده snapshot فقط‌خواندنی دارد.
+- اصلاح چیدمان اجرایی هتل در Reservation append-only و versioned است و فقط به passenger IDهای همان Snapshot اجازه می‌دهد؛ Snapshot و تخصیص Sales بازنویسی نمی‌شوند.
 - هر عملیات صدور به contract service item و passenger allocation معتبر متصل است.
 - هر Provider operation یک `idempotency_key`، request fingerprint، attempt و status دارد.
 - official document number در صورت وجود با source Provider و external reference ذخیره می‌شود.

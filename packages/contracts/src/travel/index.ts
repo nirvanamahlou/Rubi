@@ -15,12 +15,13 @@ export interface TicketOfferV1 {
   serviceNumber: string;
   cabinClassCode: 'ECONOMY' | 'BUSINESS' | 'FIRST';
   totalCapacity: number;
+  remainingCapacity: number;
   status: 'ACTIVE' | 'PAUSED';
 }
 
 export type TicketOfferCreateV1 = Omit<
   TicketOfferV1,
-  'id' | 'version' | 'branchId' | 'status'
+  'id' | 'version' | 'branchId' | 'remainingCapacity' | 'status'
 >;
 export interface TicketOfferSearchV1 {
   originId: string;
@@ -29,6 +30,28 @@ export interface TicketOfferSearchV1 {
   departureTo?: string;
   cabinClassCode?: TicketOfferV1['cabinClassCode'];
   page?: number;
+}
+
+export interface ReservationArrangementV1 {
+  version: number;
+  roomCount: number;
+  singleRoomCount: number;
+  doubleRoomCount: number;
+  extraBedCount: number;
+  hotelGuestCustomerIds: readonly string[];
+  reason: string;
+  updatedAt: string;
+  updatedByUserId: string;
+}
+
+export interface ReservationArrangementUpdateV1 {
+  expectedVersion: number;
+  roomCount: number;
+  singleRoomCount: number;
+  doubleRoomCount: number;
+  extraBedCount: number;
+  hotelGuestCustomerIds: readonly string[];
+  reason: string;
 }
 
 export interface ReservationIntakeV1 {
@@ -42,6 +65,7 @@ export interface ReservationIntakeV1 {
   status: 'QUEUED';
   receivedAt: string;
   snapshot: SalesReservationRequestV1;
+  arrangement: ReservationArrangementV1 | null;
 }
 
 export interface ReservationHotelPurchaseV1 {

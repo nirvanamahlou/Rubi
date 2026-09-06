@@ -99,5 +99,15 @@ export const PERMISSION_SEED_DATA = [
   ['ticket_catalog.read', 'ticket_catalog', 'مشاهده بلیت قابل فروش'],
   ['ticket_catalog.manage', 'ticket_catalog', 'مدیریت بلیت قابل فروش'],
   ['reservations.read', 'reservations', 'مشاهده صف رزرواسیون شعبه'],
-  ['reservations.hotel_purchase.write', 'reservations', 'ثبت هزینه خرید هتل با سابقه تغییرات'],
+  [
+    'reservations.hotel_purchase.write',
+    'reservations',
+    'ثبت هزینه خرید هتل با سابقه تغییرات',
+  ],
+
+  [
+    'reservations.arrangements.update',
+    'reservations',
+    'ویرایش نسخه‌دار چیدمان اجرایی هتل در رزرواسیون',
+  ],
 ] as const;

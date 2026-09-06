@@ -210,6 +210,35 @@ describe('Sales contract domain', () => {
       );
     },
   );
+  it('requires hotel occupancy to match the selected passenger members', () => {
+    const input = structuredClone(draft);
+    input.services = [
+      { clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'هتل' },
+    ];
+    input.ticketSelections = [];
+    input.passengers = [
+      { ...input.passengers[0]!, serviceClientKeys: ['hotel'] },
+    ];
+    input.hotelSelection = {
+      serviceClientKey: 'hotel',
+      hotelId: 'hotel',
+      hotelNameSnapshot: 'هتل آزمون',
+      cityId: input.destinationId,
+      checkInDate: '2026-10-01',
+      checkOutDate: '2026-10-03',
+      roomCount: 1,
+      roomTypeId: 'room',
+      occupancy: 1,
+      inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+    };
+    expect(() => validateSalesContract(input)).not.toThrow();
+    input.hotelSelection.occupancy = 2;
+    expect(() => validateSalesContract(input)).toThrow('اعضای انتخاب‌شده');
+    input.hotelSelection.occupancy = 1;
+    input.hotelSelection.singleRoomCount = 1;
+    input.hotelSelection.doubleRoomCount = 1;
+    expect(() => validateSalesContract(input)).toThrow('ترکیب اتاق');
+  });
   it('validates a round-trip contract and deterministically fingerprints it', () => {
     expect(() => validateSalesContract(draft)).not.toThrow();
     expect(salesFingerprint({ b: 2, a: 1 })).toBe(
