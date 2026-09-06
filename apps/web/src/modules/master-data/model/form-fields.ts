@@ -16,7 +16,7 @@ const hiddenFormFields: Partial<
   airlines: new Set(['organizationId', 'iataCode', 'icaoCode']),
   'cabin-classes': new Set(['bodyType', 'cabinType']),
   'baggage-rules': new Set(['validFrom', 'validTo']),
-  'bus-companies': new Set(['supplierId', 'organizationId']),
+  'bus-companies': new Set(['supplierId']),
   'visa-services': new Set([
     'supplierId',
     'providerId',

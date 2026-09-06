@@ -140,7 +140,6 @@ describe.skipIf(!enabled)('transport forms on isolated PostgreSQL 18', () => {
           'organizations',
           {
             legalName: `Test ${role}`,
-            displayName: `Test ${role}`,
             roleCodes: role,
           },
           actor,
@@ -155,11 +154,9 @@ describe.skipIf(!enabled)('transport forms on isolated PostgreSQL 18', () => {
     ).data.id;
     const input: Record<string, Record<string, string>> = {
       airlines: {
-        code: 'ZZ',
+        airlineCodes: 'ZZ / ZZZ',
         name: 'Test airline',
         englishName: 'Test airline',
-        icaoCode: 'ZZZ',
-        organizationId: await org('AIRLINE'),
         countryId: country.id,
       },
       'aircraft-types': {
@@ -167,7 +164,6 @@ describe.skipIf(!enabled)('transport forms on isolated PostgreSQL 18', () => {
         englishName: 'Test aircraft',
         manufacturer: 'Test',
         model: 'Aircraft',
-        bodyType: 'NARROW_BODY',
       },
       'rail-companies': {
         name: 'Test rail',
@@ -192,8 +188,7 @@ describe.skipIf(!enabled)('transport forms on isolated PostgreSQL 18', () => {
       'bus-types': {
         name: 'Test bus type',
         englishName: 'Test bus type',
-        manufacturer: 'Test',
-        model: 'Bus',
+        manufacturerModel: 'Test / Bus',
         serviceClass: 'VIP',
         facilityIds: facilityId,
       },
@@ -217,8 +212,6 @@ describe.skipIf(!enabled)('transport forms on isolated PostgreSQL 18', () => {
           allowance: '23.50',
           unit: 'KG',
           pieceCount: '2',
-          validFrom: '2026-01-01',
-          validTo: '2027-01-01',
           transportStatus: 'ACTIVE',
         },
         actor,

@@ -76,6 +76,13 @@ describe('master data reference field mapping', () => {
     expect(
       getReferenceFieldConfig('bus-companies', 'supplierId'),
     ).toBeUndefined();
+    expect(
+      getReferenceFieldConfig('bus-companies', 'organizationId'),
+    ).toMatchObject({
+      target: 'organizations',
+      payload: 'id',
+      requiredRole: 'BUS_PROVIDER',
+    });
     expect(getReferenceFieldConfig('bus-types', 'facilityIds')).toMatchObject({
       target: 'facilities',
       multiple: true,

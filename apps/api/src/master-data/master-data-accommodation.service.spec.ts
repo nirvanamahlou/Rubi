@@ -123,6 +123,54 @@ describe('MasterDataService accommodation', () => {
     });
   });
 
+  it('creates a hotel without optional meal, room-type, or facility selections', async () => {
+    const create = vi
+      .fn()
+      .mockImplementation(
+        async (_resource: string, data: Record<string, unknown>) =>
+          row('89999999-9999-4999-8999-999999999998', {
+            ...data,
+            mealServices: [],
+            roomTypes: [],
+            facilities: [],
+          }),
+      );
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      find: vi
+        .fn()
+        .mockImplementation((resource: string, id: string) =>
+          resource === 'cities' && id === ids.city ? row(id) : null,
+        ),
+      create,
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.create(
+      'hotels',
+      {
+        name: 'هتل بدون کاتالوگ اختیاری',
+        cityId: ids.city,
+        mealServiceIds: '',
+        roomTypeIds: '',
+        facilityIds: '',
+      },
+      actor,
+    );
+
+    expect(repository.find).toHaveBeenCalledWith('cities', ids.city);
+    expect(create).toHaveBeenCalledOnce();
+    expect(create.mock.calls[0]?.[1]).toMatchObject({
+      name: 'هتل بدون کاتالوگ اختیاری',
+      cityId: ids.city,
+      mealServiceId: null,
+      defaultRoomTypeId: null,
+      mealServices: { create: [] },
+      roomTypes: { create: [] },
+      facilities: { create: [] },
+    });
+  });
+
   it('rejects an incomplete coordinate pair before persistence', async () => {
     const repository = {
       codeExists: vi.fn().mockResolvedValue(false),

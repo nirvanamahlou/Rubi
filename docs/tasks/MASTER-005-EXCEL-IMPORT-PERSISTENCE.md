@@ -17,9 +17,12 @@
 
 ## Verification
 
-- Parser و Permission: `20/20`
-- Service persistence: `1/1`؛ ایجاد هتل و Auditهای `master_data.hotel_import.create` و `master_data.hotel_import.commit`
-- Accommodation Workspace: `5/5`
+- Master Data API: `405/405`
+- Master Data Web: `336/336`
+- PostgreSQL integration: `66/66` در ۷ Suite؛ شامل Demo، حذف، فرم‌های حمل‌ونقل، وعده/سرویس، مراجع فروش، تأمین‌کننده/کارگزار و ترمینال
+- Service persistence: ایجاد هتل و Auditهای `master_data.hotel_import.create` و `master_data.hotel_import.commit`
+- Required fields: ستارهٔ UI، semantics کنترل و اعتبارسنجی Draft/Backend هماهنگ‌اند
+- Hotel catalogs: وعده/سرویس، نوع اتاق و امکانات اختیاری‌اند و Payload خالی ثبت می‌شود
 - API/Web lint و typecheck: موفق
 - API/Web production build: موفق؛ Web شامل ۳۴ Route
 

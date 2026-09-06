@@ -25,6 +25,7 @@ export function MasterDataReferenceSelector({
   id,
   label = 'انتخاب',
   onChange,
+  required,
   value,
   scopeValue,
   refreshKey = 0,
@@ -35,6 +36,7 @@ export function MasterDataReferenceSelector({
   id: string;
   label?: string;
   onChange: (value: string) => void;
+  required?: boolean;
   value: string;
   scopeValue?: string;
   refreshKey?: number;
@@ -211,6 +213,7 @@ export function MasterDataReferenceSelector({
           aria-autocomplete="list"
           aria-controls={`${id}-options`}
           aria-expanded={state === 'ready'}
+          aria-required={required || undefined}
           className="pe-10"
           id={id}
           onChange={(event) => setQuery(event.target.value)}
@@ -284,16 +287,21 @@ export function OrganizationRoleSelector({
   disabled,
   id,
   onChange,
+  required,
   value,
 }: {
   disabled: boolean;
   id: string;
   onChange: (value: string) => void;
+  required?: boolean;
   value: string;
 }) {
   const selected = new Set(value.split(',').filter(Boolean));
   return (
-    <fieldset className="grid gap-2 rounded-xl border border-border p-3">
+    <fieldset
+      aria-required={required || undefined}
+      className="grid gap-2 rounded-xl border border-border p-3"
+    >
       <legend className="px-1 text-xs font-semibold text-muted-foreground">
         یک یا چند Role را انتخاب کنید
       </legend>
