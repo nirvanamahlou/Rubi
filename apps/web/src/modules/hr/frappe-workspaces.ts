@@ -804,6 +804,19 @@ export const frappeWorkspaces: readonly FrappeWorkspaceDefinition[] = [
   },
 ] as const;
 
+export const frappeWorkspaceIdsByHubSection: Readonly<
+  Partial<Record<HrSectionId, readonly FrappeWorkspaceId[]>>
+> = {
+  recruitment: ['recruitment'],
+  lifecycle: ['tenure'],
+  time: ['shift-attendance', 'leaves'],
+  development: ['performance'],
+  expenses: ['expenses'],
+  benefits: ['tax-benefits'],
+  payroll: ['payroll'],
+  hrSettings: ['hr-setup'],
+};
+
 const validWorkspaceIds = new Set<FrappeWorkspaceId>(
   frappeWorkspaces.map(({ id }) => id),
 );

@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { HrWorkspace } from './hr-workspace';
 import {
+  frappeWorkspaceIdsByHubSection,
   frappeWorkspaces,
   hrWorkspaceLinkHref,
   normalizeFrappeWorkspace,
@@ -9,12 +10,19 @@ import {
 import { sectionTabs } from './hr.model';
 
 describe('Frappe-style HR workspaces', () => {
-  it('renders the nine requested workspaces in the HR launcher', () => {
+  it('merges the nine requested workspaces into the complete HR hub', () => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId="home" />);
+    const linkedWorkspaceIds = Object.values(
+      frappeWorkspaceIdsByHubSection,
+    ).flatMap((ids) => ids ?? []);
     expect(frappeWorkspaces).toHaveLength(9);
-    expect(html).toContain('فضاهای کاری منابع انسانی');
+    expect(new Set(linkedWorkspaceIds)).toEqual(
+      new Set(frappeWorkspaces.map(({ id }) => id)),
+    );
+    expect(html).not.toContain('id="frappe-workspaces-title"');
+    expect(html).toContain('امکانات Frappe HR');
     for (const workspace of frappeWorkspaces) {
-      expect(html).toContain(workspace.title);
+      expect(html).toContain(workspace.shortTitle);
       expect(html).toContain(`/hr?workspace=${workspace.id}`);
     }
   });

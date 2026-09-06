@@ -43,11 +43,12 @@ import {
   type HrSectionId,
   type HrTab,
 } from './hr.model';
+import { FrappeWorkspaceScreen } from './frappe-workspace';
 import {
-  FrappeWorkspaceLauncher,
-  FrappeWorkspaceScreen,
-} from './frappe-workspace';
-import { normalizeFrappeWorkspace } from './frappe-workspaces';
+  frappeWorkspaceIdsByHubSection,
+  getFrappeWorkspace,
+  normalizeFrappeWorkspace,
+} from './frappe-workspaces';
 import styles from './hr-workspace.module.css';
 
 type UiState = 'loading' | 'empty' | 'error' | 'unauthorized' | 'forbidden';
@@ -531,7 +532,6 @@ function HubScreen() {
   return (
     <>
       <PageHead section="home" />
-      <FrappeWorkspaceLauncher />
       <DateRangeBar />
       <div className={styles.boundary}>
         <Info aria-hidden="true" size={17} />
@@ -541,33 +541,70 @@ function HubScreen() {
       <section aria-label="بخش‌های منابع انسانی" className={styles.hubGrid}>
         {hrHubCards.map((card) => {
           const Icon = card.icon;
+          const relatedWorkspaces = (
+            frappeWorkspaceIdsByHubSection[card.id] ?? []
+          ).map(getFrappeWorkspace);
           return (
-            <Link
+            <article
               className={`${styles.hubCard} ${styles[card.tone]}`}
-              href={`/hr?section=${card.id}`}
               key={card.id}
             >
-              <div className={styles.hubTop}>
-                <span className={styles.hubIcon}>
-                  <Icon aria-hidden="true" size={26} />
-                </span>
-                <div className={styles.hubCopy}>
-                  <h2>{card.title}</h2>
-                  <p>{card.description}</p>
-                </div>
-              </div>
-              <div className={styles.pills}>
-                {card.pills.map((pill) => (
-                  <span className={styles.pill} key={pill}>
-                    {pill}
+              <Link className={styles.hubMain} href={`/hr?section=${card.id}`}>
+                <div className={styles.hubTop}>
+                  <span className={styles.hubIcon}>
+                    <Icon aria-hidden="true" size={26} />
                   </span>
-                ))}
-              </div>
+                  <div className={styles.hubCopy}>
+                    <h2>{card.title}</h2>
+                    <p>{card.description}</p>
+                  </div>
+                </div>
+                <div className={styles.pills}>
+                  {card.pills.map((pill) => (
+                    <span className={styles.pill} key={pill}>
+                      {pill}
+                    </span>
+                  ))}
+                </div>
+              </Link>
+              {relatedWorkspaces.length ? (
+                <div
+                  aria-label={`فضاهای کاری Frappe مرتبط با ${card.title}`}
+                  className={styles.hubWorkspaces}
+                >
+                  <span className={styles.hubWorkspacesLabel}>
+                    امکانات Frappe HR
+                  </span>
+                  {relatedWorkspaces.map((workspace) => {
+                    const WorkspaceIcon = workspace.icon;
+                    const itemCount = workspace.groups.reduce(
+                      (sum, group) => sum + group.items.length,
+                      0,
+                    );
+                    return (
+                      <Link
+                        className={styles.hubWorkspaceLink}
+                        href={`/hr?workspace=${workspace.id}`}
+                        key={workspace.id}
+                      >
+                        <WorkspaceIcon aria-hidden="true" size={14} />
+                        <span>{workspace.shortTitle}</span>
+                        <small>{formatFa(itemCount)} امکان</small>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : null}
               <div className={styles.hubFoot}>
                 <small>{card.footer}</small>
-                <span className={styles.hubLink}>ورود به بخش ←</span>
+                <Link
+                  className={styles.hubSectionLink}
+                  href={`/hr?section=${card.id}`}
+                >
+                  ورود به بخش ←
+                </Link>
               </div>
-            </Link>
+            </article>
           );
         })}
       </section>
