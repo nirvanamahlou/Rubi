@@ -20,6 +20,7 @@ import {
   initialOrganizationCatalogRecords,
   type OrganizationCatalogRecords,
 } from './organization-catalog';
+import { RequiredFieldLabel } from './required-field-label';
 
 export type OrganizationNodeKind = 'MANAGEMENT' | 'UNIT';
 export type OrganizationNodeStatus = 'فعال' | 'غیرفعال';
@@ -348,7 +349,7 @@ export function OrganizationNodeForm({
         <legend className={styles.formLegend}>مشخصات ساختار</legend>
         <div className={styles.formGrid}>
           <label className={styles.fieldLabel} htmlFor="hr-org-id">
-            <span>شناسه ساختاری *</span>
+            <RequiredFieldLabel required>شناسه ساختاری</RequiredFieldLabel>
             <input
               {...errorProps('id')}
               className={styles.control}
@@ -356,13 +357,14 @@ export function OrganizationNodeForm({
               name="id"
               placeholder="مانند HR-UNIT-04"
               readOnly
+              required
               value={value.id}
             />
             <small className={styles.fieldHint}>این شناسه به‌صورت خودکار تخصیص داده می‌شود.</small>
             <FieldError errors={errors} field="id" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-org-name">
-            <span>عنوان *</span>
+            <RequiredFieldLabel required>عنوان</RequiredFieldLabel>
             <input
               {...errorProps('name')}
               autoFocus
@@ -371,12 +373,13 @@ export function OrganizationNodeForm({
               name="name"
               onChange={(event) => update('name', event.target.value)}
               placeholder="عنوان مدیریت یا واحد"
+              required
               value={value.name}
             />
             <FieldError errors={errors} field="name" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-org-kind">
-            <span>نوع گره *</span>
+            <RequiredFieldLabel required>نوع گره</RequiredFieldLabel>
             <select
               className={styles.control}
               disabled={Boolean(initialNode?.catalogSource)}
@@ -385,6 +388,7 @@ export function OrganizationNodeForm({
               onChange={(event) =>
                 update('kind', event.target.value as OrganizationNodeKind)
               }
+              required
               value={value.kind}
             >
               <option value="MANAGEMENT">مدیریت</option>
@@ -392,7 +396,7 @@ export function OrganizationNodeForm({
             </select>
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-org-status">
-            <span>وضعیت *</span>
+            <RequiredFieldLabel required>وضعیت</RequiredFieldLabel>
             <select
               className={styles.control}
               id="hr-org-status"
@@ -400,6 +404,7 @@ export function OrganizationNodeForm({
               onChange={(event) =>
                 update('status', event.target.value as OrganizationNodeStatus)
               }
+              required
               value={value.status}
             >
               <option value="فعال">فعال</option>
@@ -413,7 +418,7 @@ export function OrganizationNodeForm({
         <legend className={styles.formLegend}>جایگاه در چارت</legend>
         <div className={styles.formGrid}>
           <label className={styles.fieldLabel} htmlFor="hr-org-branch">
-            <span>شعبه *</span>
+            <RequiredFieldLabel required>شعبه</RequiredFieldLabel>
             <select
               {...errorProps('branch')}
               className={styles.control}
@@ -421,6 +426,7 @@ export function OrganizationNodeForm({
               id="hr-org-branch"
               name="branch"
               onChange={(event) => update('branch', event.target.value)}
+              required
               value={value.branch}
             >
               {branchOptions.map((branch) => (
@@ -430,7 +436,9 @@ export function OrganizationNodeForm({
             <FieldError errors={errors} field="branch" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-org-parent">
-            <span>واحد والد *</span>
+            <RequiredFieldLabel required={value.kind === 'UNIT'}>
+              واحد والد
+            </RequiredFieldLabel>
             <select
               {...errorProps('parentId')}
               className={styles.control}
@@ -438,6 +446,7 @@ export function OrganizationNodeForm({
               id="hr-org-parent"
               name="parentId"
               onChange={(event) => update('parentId', event.target.value)}
+              required={value.kind === 'UNIT'}
               value={value.kind === 'MANAGEMENT' ? '' : value.parentId}
             >
               <option value="">
@@ -452,7 +461,7 @@ export function OrganizationNodeForm({
             <FieldError errors={errors} field="parentId" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-org-manager">
-            <span>مسئول / مدیر</span>
+            <RequiredFieldLabel>مسئول / مدیر</RequiredFieldLabel>
             <select
               className={styles.control}
               id="hr-org-manager"
@@ -467,7 +476,7 @@ export function OrganizationNodeForm({
             </select>
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-org-capacity">
-            <span>ظرفیت سمت‌ها *</span>
+            <RequiredFieldLabel required>ظرفیت سمت‌ها</RequiredFieldLabel>
             <input
               {...errorProps('positionCapacity')}
               className={styles.control}
@@ -478,6 +487,7 @@ export function OrganizationNodeForm({
               name="positionCapacity"
               onChange={(event) => update('positionCapacity', event.target.value)}
               readOnly={Boolean(initialNode?.catalogSource)}
+              required
               type="number"
               value={value.positionCapacity}
             />
@@ -489,13 +499,14 @@ export function OrganizationNodeForm({
             <FieldError errors={errors} field="positionCapacity" />
           </label>
           <label className={`${styles.fieldLabel} ${styles.full}`} htmlFor="hr-org-effective-from">
-            <span>تاریخ اثر *</span>
+            <RequiredFieldLabel required>تاریخ اثر</RequiredFieldLabel>
             <DatePicker
               {...errorProps('effectiveFrom')}
               id="hr-org-effective-from"
               name="effectiveFrom"
               onChange={(nextValue) => update('effectiveFrom', nextValue)}
               placeholder="انتخاب تاریخ اثر"
+              required
               value={value.effectiveFrom}
             />
             <FieldError errors={errors} field="effectiveFrom" />

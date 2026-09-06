@@ -122,18 +122,19 @@ describe('HR reference implementation', () => {
       />,
     );
     for (const label of [
-      'نام *',
-      'نام خانوادگی *',
-      'کد پرسنلی *',
-      'نوع همکاری *',
-      'شعبه *',
-      'واحد *',
-      'سمت *',
+      'نام',
+      'نام خانوادگی',
+      'کد پرسنلی',
+      'نوع همکاری',
+      'شعبه',
+      'واحد',
+      'سمت',
       'مدیر مستقیم',
-      'تاریخ شروع *',
-      'وضعیت *',
+      'تاریخ شروع',
+      'وضعیت',
     ])
       expect(html).toContain(label);
+    expect(html.match(/data-required-indicator="true"/g)?.length ?? 0).toBe(9);
     expect(html).not.toContain('عنوان نمایشی');
     expect(html).toContain('name="firstName"');
     expect(html).toContain('name="lastName"');
@@ -238,17 +239,18 @@ describe('HR reference implementation', () => {
       />,
     );
     for (const label of [
-      'شناسه ساختاری *',
-      'عنوان *',
-      'نوع گره *',
-      'وضعیت *',
-      'شعبه *',
-      'واحد والد *',
+      'شناسه ساختاری',
+      'عنوان',
+      'نوع گره',
+      'وضعیت',
+      'شعبه',
+      'واحد والد',
       'مسئول / مدیر',
-      'ظرفیت سمت‌ها *',
-      'تاریخ اثر *',
+      'ظرفیت سمت‌ها',
+      'تاریخ اثر',
     ])
       expect(form).toContain(label);
+    expect(form.match(/data-required-indicator="true"/g)?.length ?? 0).toBe(8);
     expect(form).toContain('value="preview-unit-travel"');
     expect(form).toContain('ذخیره ویرایش');
   });
@@ -360,6 +362,10 @@ describe('HR reference implementation', () => {
       expect(form).toContain(submitLabel);
       expect(form).toContain(`value="${generatedCode}"`);
       expect(form).toContain('readOnly');
+      expect(form.match(/data-required-indicator="true"/g)?.length ?? 0).toBe(
+        organizationCatalogSchemas[tab].fields.filter((field) => field.required)
+          .length,
+      );
       const table = renderToStaticMarkup(
         <OrganizationCatalogTable
           onDelete={() => undefined}
@@ -461,6 +467,9 @@ describe('HR reference implementation', () => {
       />,
     );
     for (const column of columns.slice(0, -1)) expect(html).toContain(column);
+    expect(html.match(/data-required-indicator="true"/g)?.length ?? 0).toBe(
+      fields.filter((field) => field.required).length,
+    );
     expect(html).toContain('افزودن بازپرداخت هزینه');
     expect(html).toContain('HR-EXPENSES-CLAIMS-');
     expect(html).toContain('readOnly');

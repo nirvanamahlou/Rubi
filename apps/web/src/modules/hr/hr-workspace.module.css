@@ -204,6 +204,15 @@
   margin-bottom: 5px;
 }
 
+.requiredMark {
+  color: #dc2626;
+  display: inline-block;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-inline-start: 0.25rem;
+}
+
 .dateSummary {
   align-self: center;
   margin-inline-start: auto;

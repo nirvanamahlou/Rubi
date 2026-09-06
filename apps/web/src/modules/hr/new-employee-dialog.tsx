@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/overlays';
 import styles from './hr-workspace.module.css';
+import { RequiredFieldLabel } from './required-field-label';
 
 const employmentTypes = [
   'تمام‌وقت',
@@ -192,7 +193,7 @@ export function NewEmployeeForm({
         <legend className={styles.formLegend}>مشخصات پایه</legend>
         <div className={styles.formGrid}>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-first-name">
-            <span>نام *</span>
+            <RequiredFieldLabel required>نام</RequiredFieldLabel>
             <input
               {...errorProps('firstName')}
               autoComplete="given-name"
@@ -202,12 +203,13 @@ export function NewEmployeeForm({
               maxLength={80}
               name="firstName"
               onChange={(event) => update('firstName', event.target.value)}
+              required
               value={value.firstName}
             />
             <FieldError errors={errors} field="firstName" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-last-name">
-            <span>نام خانوادگی *</span>
+            <RequiredFieldLabel required>نام خانوادگی</RequiredFieldLabel>
             <input
               {...errorProps('lastName')}
               autoComplete="family-name"
@@ -216,12 +218,13 @@ export function NewEmployeeForm({
               maxLength={100}
               name="lastName"
               onChange={(event) => update('lastName', event.target.value)}
+              required
               value={value.lastName}
             />
             <FieldError errors={errors} field="lastName" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-code">
-            <span>کد پرسنلی *</span>
+            <RequiredFieldLabel required>کد پرسنلی</RequiredFieldLabel>
             <input
               {...errorProps('personnelCode')}
               className={styles.control}
@@ -231,18 +234,20 @@ export function NewEmployeeForm({
               name="personnelCode"
               placeholder="برای نمونه HR-1001"
               readOnly
+              required
               value={value.personnelCode}
             />
             <small className={styles.fieldHint}>این کد به‌صورت خودکار تخصیص داده می‌شود.</small>
             <FieldError errors={errors} field="personnelCode" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-type">
-            <span>نوع همکاری *</span>
+            <RequiredFieldLabel required>نوع همکاری</RequiredFieldLabel>
             <select
               className={styles.control}
               id="hr-new-employee-type"
               name="employmentType"
               onChange={(event) => update('employmentType', event.target.value)}
+              required
               value={value.employmentType}
             >
               {employmentTypes.map((option) => (
@@ -259,12 +264,13 @@ export function NewEmployeeForm({
         <legend className={styles.formLegend}>جایگاه سازمانی</legend>
         <div className={styles.formGrid}>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-branch">
-            <span>شعبه *</span>
+            <RequiredFieldLabel required>شعبه</RequiredFieldLabel>
             <select
               className={styles.control}
               id="hr-new-employee-branch"
               name="branch"
               onChange={(event) => update('branch', event.target.value)}
+              required
               value={value.branch}
             >
               {previewBranches.map((option) => (
@@ -275,12 +281,13 @@ export function NewEmployeeForm({
             </select>
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-unit">
-            <span>واحد *</span>
+            <RequiredFieldLabel required>واحد</RequiredFieldLabel>
             <select
               className={styles.control}
               id="hr-new-employee-unit"
               name="unit"
               onChange={(event) => update('unit', event.target.value)}
+              required
               value={value.unit}
             >
               {previewUnits.map((option) => (
@@ -291,7 +298,7 @@ export function NewEmployeeForm({
             </select>
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-position">
-            <span>سمت *</span>
+            <RequiredFieldLabel required>سمت</RequiredFieldLabel>
             <input
               {...errorProps('position')}
               className={styles.control}
@@ -300,12 +307,13 @@ export function NewEmployeeForm({
               name="position"
               onChange={(event) => update('position', event.target.value)}
               placeholder="برای نمونه کارشناس عملیات"
+              required
               value={value.position}
             />
             <FieldError errors={errors} field="position" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-manager">
-            <span>مدیر مستقیم</span>
+            <RequiredFieldLabel>مدیر مستقیم</RequiredFieldLabel>
             <select
               className={styles.control}
               id="hr-new-employee-manager"
@@ -328,24 +336,26 @@ export function NewEmployeeForm({
         <legend className={styles.formLegend}>وضعیت همکاری</legend>
         <div className={styles.formGrid}>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-started-at">
-            <span>تاریخ شروع *</span>
+            <RequiredFieldLabel required>تاریخ شروع</RequiredFieldLabel>
             <DatePicker
               {...errorProps('startedAt')}
               id="hr-new-employee-started-at"
               name="startedAt"
               onChange={(nextValue) => update('startedAt', nextValue)}
               placeholder="انتخاب تاریخ شروع"
+              required
               value={value.startedAt}
             />
             <FieldError errors={errors} field="startedAt" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-status">
-            <span>وضعیت *</span>
+            <RequiredFieldLabel required>وضعیت</RequiredFieldLabel>
             <select
               className={styles.control}
               id="hr-new-employee-status"
               name="status"
               onChange={(event) => update('status', event.target.value)}
+              required
               value={value.status}
             >
               {employeeStatuses.map((option) => (

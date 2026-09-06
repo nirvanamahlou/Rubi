@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/overlays';
 import type { HrSectionId } from './hr.model';
 import styles from './hr-workspace.module.css';
+import { RequiredFieldLabel } from './required-field-label';
 
 export interface ContextualHrFormContext {
   section: HrSectionId;
@@ -258,13 +259,17 @@ export function ContextualHrForm({
             const commonProps = {
               'aria-describedby': errors[field.id] ? errorId : undefined,
               'aria-invalid': Boolean(errors[field.id]),
+              'aria-required': field.required,
               className: styles.control ?? '',
               id: inputId,
               name: field.id,
+              required: field.required,
             };
             return (
               <label className={styles.fieldLabel} htmlFor={inputId} key={field.id}>
-                <span>{field.label}{field.required ? ' *' : ''}</span>
+                <RequiredFieldLabel required={field.required}>
+                  {field.label}
+                </RequiredFieldLabel>
                 {field.type === 'select' ? (
                   <select
                     {...commonProps}

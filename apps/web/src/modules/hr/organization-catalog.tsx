@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/overlays';
 import styles from './hr-workspace.module.css';
+import { RequiredFieldLabel } from './required-field-label';
 
 export type OrganizationCatalogTab =
   | 'branches'
@@ -514,9 +515,11 @@ export function OrganizationCatalogForm({
             const commonProps = {
               'aria-describedby': errors[field.key] ? errorId : undefined,
               'aria-invalid': Boolean(errors[field.key]),
+              'aria-required': Boolean(field.required),
               className: styles.control ?? '',
               id,
               name: field.key,
+              required: Boolean(field.required),
             };
             const sourceOptions =
               field.options ?? optionsFor(field.optionSource, records, managers);
@@ -533,7 +536,9 @@ export function OrganizationCatalogForm({
                 htmlFor={id}
                 key={field.key}
               >
-                <span>{field.label}{field.required ? ' *' : ''}</span>
+                <RequiredFieldLabel required={Boolean(field.required)}>
+                  {field.label}
+                </RequiredFieldLabel>
                 {field.type === 'select' ? (
                   <select
                     {...commonProps}
