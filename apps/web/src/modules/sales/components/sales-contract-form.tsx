@@ -17,18 +17,13 @@ import type {
   CustomerSummary,
   MasterDataRecord,
   MasterDataResource,
-  SalesPaymentMethod,
   SalesServiceKind,
 } from '@rubi/contracts';
 
 import { hotelNights } from '@rubi/contracts';
 import { SalesPricingPanel, SalesPricingSummary } from './sales-pricing-panel';
-import {
-  SalesCurrencySelect,
-  defaultSalesCurrency,
-  validateSalesCurrencySelection,
-} from './sales-currency-select';
-import { MoneyInput as SalesMoneyInput } from '@/components/ui/money-input';
+import { validateSalesCurrencySelection } from './sales-currency-select';
+import { SalesPaymentPlan } from './sales-payment-plan';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
@@ -80,13 +75,6 @@ const serviceOptions: readonly [SalesServiceKind, string][] = [
   ['OTHER', 'سایر'],
 ];
 const ReferenceSelect = SearchableReference;
-const paymentMethodOptions = [
-  { id: 'BANK_TRANSFER', name: 'حواله بانکی', code: '' },
-  { id: 'CASH', name: 'نقد', code: '' },
-  { id: 'POS', name: 'کارت‌خوان', code: '' },
-  { id: 'ONLINE_GATEWAY', name: 'درگاه', code: '' },
-  { id: 'CHECK', name: 'چک', code: '' },
-];
 
 function HotelCountField({
   label,
@@ -1656,199 +1644,13 @@ export function SalesContractForm() {
                 })
               }
             />
-            <section className="grid gap-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold">برنامه چندپرداختی و چک</h3>
-                  <p className="text-xs text-muted-foreground">
-                    این برنامه مانده را کم نمی‌کند تا Finance پرداخت را تأیید
-                    کند.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    patchState({
-                      payments: [
-                        ...state.payments,
-                        {
-                          amount: '',
-                          currencyCode: defaultSalesCurrency(
-                            references.currencies,
-                          ),
-                          dueAt: '',
-                          method: 'BANK_TRANSFER',
-                        },
-                      ],
-                    })
-                  }
-                  disabled={!pricingServices.length}
-                >
-                  <Plus className="size-4" />
-                  افزودن پرداخت
-                </Button>
-              </div>
-              {state.payments.map((payment, index) => (
-                <div
-                  className="grid items-end gap-3 rounded-xl border p-4 md:grid-cols-4"
-                  key={index}
-                >
-                  <SalesMoneyInput
-                    dir="ltr"
-                    value={payment.amount}
-                    onValueChange={(amount) =>
-                      patchState({
-                        payments: state.payments.map((item, position) =>
-                          position === index ? { ...item, amount } : item,
-                        ),
-                      })
-                    }
-                    placeholder="مبلغ"
-                  />
-                  <SalesCurrencySelect
-                    label={`ارز پرداخت ${index + 1}`}
-                    currencies={references.currencies}
-                    value={payment.currencyCode}
-                    onChange={(currencyCode) =>
-                      patchState({
-                        payments: state.payments.map((item, position) =>
-                          position === index ? { ...item, currencyCode } : item,
-                        ),
-                      })
-                    }
-                  />
-                  <DatePicker
-                    includeTime
-                    value={payment.dueAt}
-                    onChange={(dueAt) =>
-                      patchState({
-                        payments: state.payments.map((item, position) =>
-                          position === index ? { ...item, dueAt } : item,
-                        ),
-                      })
-                    }
-                  />
-                  <SearchableReference
-                    label={`روش پرداخت ${index + 1}`}
-                    options={paymentMethodOptions}
-                    value={payment.method}
-                    onChange={(method) =>
-                      patchState({
-                        payments: state.payments.map((item, position) =>
-                          position === index
-                            ? { ...item, method: method as SalesPaymentMethod }
-                            : item,
-                        ),
-                      })
-                    }
-                  />
-                  {payment.method === 'CHECK' ? (
-                    <>
-                      <Input
-                        placeholder="شناسه امن چک"
-                        onChange={(event) =>
-                          patchState({
-                            payments: state.payments.map((item, position) =>
-                              position === index
-                                ? {
-                                    ...item,
-                                    check: {
-                                      bankId: item.check?.bankId ?? '',
-                                      secureIdentifier: event.target.value,
-                                      ownerName: item.check?.ownerName ?? '',
-                                      dueDate: item.check?.dueDate ?? '',
-                                    },
-                                  }
-                                : item,
-                            ),
-                          })
-                        }
-                      />
-                      <ReferenceSelect
-                        label="بانک"
-                        value={payment.check?.bankId ?? ''}
-                        options={references.banks}
-                        onChange={(bankId) =>
-                          patchState({
-                            payments: state.payments.map((item, position) =>
-                              position === index
-                                ? {
-                                    ...item,
-                                    check: {
-                                      bankId,
-                                      secureIdentifier:
-                                        item.check?.secureIdentifier ?? '',
-                                      ownerName: item.check?.ownerName ?? '',
-                                      dueDate: item.check?.dueDate ?? '',
-                                    },
-                                  }
-                                : item,
-                            ),
-                          })
-                        }
-                      />
-                      <Input
-                        placeholder="نام صاحب چک"
-                        onChange={(event) =>
-                          patchState({
-                            payments: state.payments.map((item, position) =>
-                              position === index
-                                ? {
-                                    ...item,
-                                    check: {
-                                      bankId: item.check?.bankId ?? '',
-                                      secureIdentifier:
-                                        item.check?.secureIdentifier ?? '',
-                                      ownerName: event.target.value,
-                                      dueDate: item.check?.dueDate ?? '',
-                                    },
-                                  }
-                                : item,
-                            ),
-                          })
-                        }
-                      />
-                      <DatePicker
-                        value={payment.check?.dueDate ?? ''}
-                        onChange={(dueDate) =>
-                          patchState({
-                            payments: state.payments.map((item, position) =>
-                              position === index
-                                ? {
-                                    ...item,
-                                    check: {
-                                      bankId: item.check?.bankId ?? '',
-                                      secureIdentifier:
-                                        item.check?.secureIdentifier ?? '',
-                                      ownerName: item.check?.ownerName ?? '',
-                                      dueDate,
-                                    },
-                                  }
-                                : item,
-                            ),
-                          })
-                        }
-                      />
-                    </>
-                  ) : null}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    aria-label={`حذف پرداخت ${index + 1}`}
-                    onClick={() =>
-                      patchState({
-                        payments: state.payments.filter(
-                          (_, position) => position !== index,
-                        ),
-                      })
-                    }
-                  >
-                    حذف پرداخت
-                  </Button>
-                </div>
-              ))}
-            </section>
+            <SalesPaymentPlan
+              payments={state.payments}
+              currencies={references.currencies}
+              banks={references.banks}
+              disabled={!pricingServices.length}
+              onChange={(payments) => patchState({ payments })}
+            />
             <FormField label="یادداشت قیمت‌گذاری">
               <Textarea
                 value={state.pricingNotes}
