@@ -13,6 +13,7 @@ import {
   joinDateAndTime,
   moveCalendarMonth,
   parseIsoDate,
+  resolveCalendarPopoverPosition,
   setCalendarMonthYear,
   toIsoDate,
   type CalendarSystem,
@@ -72,10 +73,14 @@ export function DatePicker({
   const [calendarView, setCalendarView] = React.useState<CalendarView>('days');
   const [yearGridStart, setYearGridStart] = React.useState(0);
   const [open, setOpen] = React.useState(false);
+  const [popoverPosition, setPopoverPosition] =
+    React.useState<React.CSSProperties | null>(null);
   const [anchor, setAnchor] = React.useState(
     () => parseIsoDate(currentValue) ?? new Date(),
   );
   const rootRef = React.useRef<HTMLDivElement>(null);
+  const popoverRef = React.useRef<HTMLDivElement>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
   const selectedDate = currentValue.slice(0, 10);
   const days = calendarMonthDays(anchor, calendarSystem);
   const anchorParts = calendarParts(anchor, calendarSystem);
@@ -116,6 +121,40 @@ export function DatePicker({
       document.removeEventListener('keydown', closeOnEscape);
     };
   }, [open]);
+
+  const positionPopover = React.useCallback(() => {
+    const trigger = triggerRef.current?.getBoundingClientRect();
+    const popover = popoverRef.current;
+    if (!trigger || !popover) return;
+
+    const position = resolveCalendarPopoverPosition(
+      {
+        bottom: trigger.bottom,
+        height: trigger.height,
+        left: trigger.left,
+        top: trigger.top,
+        width: trigger.width,
+      },
+      { height: popover.scrollHeight, width: popover.offsetWidth },
+      { height: window.innerHeight, width: window.innerWidth },
+    );
+    setPopoverPosition({
+      left: position.left,
+      maxHeight: position.maxHeight,
+      top: position.top,
+    });
+  }, []);
+
+  React.useLayoutEffect(() => {
+    if (!open) return;
+    positionPopover();
+    window.addEventListener('resize', positionPopover);
+    window.addEventListener('scroll', positionPopover, true);
+    return () => {
+      window.removeEventListener('resize', positionPopover);
+      window.removeEventListener('scroll', positionPopover, true);
+    };
+  }, [calendarSystem, calendarView, includeTime, open, positionPopover]);
 
   const emit = (nextValue: string) => {
     if (value === undefined) setInternalValue(nextValue);
@@ -201,9 +240,11 @@ export function DatePicker({
             const parsed = parseIsoDate(currentValue);
             if (parsed) setAnchor(parsed);
             setCalendarView('days');
+            setPopoverPosition(null);
           }
           setOpen((current) => !current);
         }}
+        ref={triggerRef}
         type="button"
       >
         <span>
@@ -224,9 +265,17 @@ export function DatePicker({
       {open ? (
         <div
           aria-label={t('انتخاب تاریخ', 'Select date')}
-          className="absolute start-0 top-[calc(100%+0.5rem)] z-[70] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15"
+          className="fixed z-[70] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15"
           dir={english ? 'ltr' : 'rtl'}
+          ref={popoverRef}
           role="dialog"
+          style={
+            popoverPosition ?? {
+              left: '1rem',
+              top: '1rem',
+              visibility: 'hidden',
+            }
+          }
         >
           <div
             aria-label={t('نوع تقویم', 'Calendar system')}

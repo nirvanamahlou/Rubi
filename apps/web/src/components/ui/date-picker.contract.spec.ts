@@ -40,6 +40,16 @@ describe('shared date picker contract', () => {
     );
   });
 
+  it('positions the popup against the viewport instead of an RTL page edge', () => {
+    expect(pickerSource).toContain('resolveCalendarPopoverPosition');
+    expect(pickerSource).toContain('getBoundingClientRect()');
+    expect(pickerSource).toContain("window.addEventListener('scroll'");
+    expect(pickerSource).toContain('className="fixed z-[70]');
+    expect(pickerSource).not.toContain(
+      'absolute start-0 top-[calc(100%+0.5rem)]',
+    );
+  });
+
   it('prevents raw browser calendars from returning to application forms', () => {
     expect(productionTsx(sourceRoot)).not.toMatch(
       /type=["'](?:date|datetime-local)["']/,
