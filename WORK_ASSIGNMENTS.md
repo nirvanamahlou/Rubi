@@ -1,5 +1,11 @@
 # Work Assignments
 
+## LOCAL-INTEGRATION-0906 — PC-A — IN_PROGRESS
+
+- User explicitly authorized isolated local integration of latest module work and preserved passport changes. Branch codex/pc-a-local-integration-0906 starts at local Sales 2cc7a9c, retaining all six local commits. No source branch, main/develop, public push or PR mutation authorized.
+- Reserve integration conflict resolution and additive compatibility fixes in this worktree only, including central docs/contracts/schema consistency. Existing producer locks remain held; no concurrent producer worktree is edited. Merge current develop first; assess current module tips and preservation snapshot separately. No blanket merge of obsolete/demo/recovery branches.
+- Runtime replacement and operational migrations are gated by schema/security review, empty-database migrations, tests and builds. Existing local data and keys must remain intact. Recovery snapshot is not assumed production-ready.
+
 ## SALES-DASHBOARD-REDESIGN-0905 — PC-A — COMPLETE_LOCAL
 
 - Reserve Sales workspace, presentation/tests and task status docs only. Redesign summary, server-backed search/settlement filters, pagination and empty state. Preserve API authorization and Finance-confirmed balances; no schema, shared UI, IAM or dependency changes. Local delivery only; public publication remains unapproved.
