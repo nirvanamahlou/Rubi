@@ -378,7 +378,7 @@ function DateRangeBar({
   initialFrom = '2026-08-23',
   initialTo = '2026-09-22',
   onApply,
-  summary = 'شهریور ۱۴۰۵ · داده نمایشی',
+  summary,
 }: {
   initialFrom?: string;
   initialTo?: string;
@@ -400,7 +400,7 @@ function DateRangeBar({
         <DatePicker id="hr-to-date" onChange={setTo} value={to} />
       </label>
       <span className={styles.dateSummary}>
-        {applied ? 'بازه آزمایشی اعمال شد' : summary}
+        {summary ? (applied ? 'بازه آزمایشی اعمال شد' : summary) : null}
       </span>
       <ActionButton
         onClick={() => {
