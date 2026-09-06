@@ -1,5 +1,10 @@
 # Work Assignments
 
+## SALES-DASHBOARD-THEME-0906 — PC-A — COMPLETE_LOCAL
+
+- User requested app-themed open dropdowns and Sales KPI styling matching Customers/Passengers. Reserve Sales Web selectors/workspace/payment drawer/ticket preview and tests plus status docs on codex/pc-a-sales-dashboard-theme-0906 from 24f7cbb. Reuse existing UI select primitives and customer gradient tokens; no metric definition, API, database, IAM, dependency or producer changes. Local-only delivery.
+- Delivered d7cf782: app Select primitives for settlement filter, payment method, check bank and ticket-preview passenger. Empty/all selection, RTL, required and disabled semantics retained. Four KPI cards reuse Customers gradient/typography tokens without changing sources/calculations or implying list-filter-scoped statistics. 99 Sales tests, scoped lint, Web typecheck and 36-route production build passed. Web3100 restarted; login/bundle 200, Sales auth redirect 307, API health 200. Prior Web retained at ignored tmp/dashboard-theme-web-before-0906. No authenticated visual QA or public push; task reservations released.
+
 ## SALES-PAYMENT-LAYOUT-0906 — PC-A — COMPLETE_LOCAL
 
 - User requested a professional redesign of contract payment entry. Reserve Sales payment-plan UI/form/tests and task status docs on codex/pc-a-sales-payment-layout-0906 from 4646ad4. Compact numbered rows, explicit labels and distinct check details; preserve currency lookup, payment payload, Finance confirmation rules and local drafts. No API, database, permissions, dependencies, producer changes or public publication.
