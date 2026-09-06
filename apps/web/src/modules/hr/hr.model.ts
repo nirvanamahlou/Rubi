@@ -285,7 +285,7 @@ export const sectionTabs: Readonly<
     { id: 'units', label: 'واحدها', icon: Building2 },
     { id: 'positions', label: 'شغل و سمت', icon: WalletCards },
     { id: 'grades', label: 'رده شغلی', icon: Gauge },
-    { id: 'groups', label: 'گروه کارکنان', icon: UsersRound },
+    { id: 'groups', label: 'نوع کارکنان', icon: UsersRound },
   ],
   recruitment: [
     { id: 'staffing', label: 'برنامه نیروی انسانی', icon: BarChart3 },

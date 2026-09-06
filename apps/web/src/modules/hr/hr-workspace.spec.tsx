@@ -344,7 +344,13 @@ describe('HR reference implementation', () => {
     ['units', 'کد واحد', 'نام واحد', 'افزودن واحد سازمانی', 'UNIT-001'],
     ['positions', 'کد سمت', 'عنوان شغل', 'افزودن شغل و سمت', 'POS-001'],
     ['grades', 'کد رده', 'سطح سازمانی', 'افزودن رده شغلی', 'GR-001'],
-    ['groups', 'کد گروه', 'معیار عضویت', 'افزودن گروه کارکنان', 'GROUP-001'],
+    [
+      'groups',
+      'کد نوع کارکنان',
+      'نام نوع کارکنان',
+      'افزودن نوع کارکنان',
+      'GROUP-001',
+    ],
   ] as const)(
     'renders the %s catalog with its own create form',
     (tab, firstLabel, secondLabel, submitLabel, generatedCode) => {
@@ -366,6 +372,11 @@ describe('HR reference implementation', () => {
         organizationCatalogSchemas[tab].fields.filter((field) => field.required)
           .length,
       );
+      if (tab === 'groups') {
+        expect(form).not.toContain('نوع گروه');
+        expect(form).not.toContain('شرح و معیار عضویت');
+        expect(organizationCatalogSchemas.groups.fields).toHaveLength(2);
+      }
       const table = renderToStaticMarkup(
         <OrganizationCatalogTable
           onDelete={() => undefined}
