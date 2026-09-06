@@ -363,9 +363,6 @@ function PageHead({
   return (
     <header className={styles.pageHead}>
       <div className={styles.title}>
-        <div className={styles.crumb}>
-          خانه ‹ منابع انسانی{section === 'home' ? '' : ` ‹ ${meta.title}`}
-        </div>
         <h1>{meta.title}</h1>
         <p>{meta.description}</p>
       </div>
