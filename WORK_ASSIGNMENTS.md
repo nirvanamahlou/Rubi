@@ -1,5 +1,10 @@
 # Work Assignments
 
+## SALES-PASSENGER-NUMBER-INPUT-0906 — PC-A — COMPLETE_LOCAL
+
+- User requested directly typed integer fields for adults/children/infants in the new contract. Reserve Sales Web count component/form/tests and task status docs on codex/pc-a-sales-passenger-number-input-0906 from integrated 0fd6311. Replace the 0–30 dropdown without changing capacity, age composition, API, schema, IAM or other modules. Local delivery only; preserve producer branches and previous builds.
+- Delivered in 5e7e60c: three typed number inputs (min 0, step 1), select-on-focus, clear/retype support and rejection of negative/fractional/unsafe values. The prior 30-person menu limit is gone; existing seat/age checks remain. 85 Sales tests, scoped lint, Web typecheck and 36-route production build passed. Web3100 restarted and Web/API HTTP checks passed. No API restart, migration, grant, public push or authenticated visual QA. Prior Web retained in ignored tmp/passenger-number-web-before-0906; task-specific reservation released.
+
 ## HOTEL-SALES-PRICING-0906 — PC-A — COMPLETE_LOCAL
 
 - Final approved integration: normal merge e31b8d1 retains parents 43111fd and 3d3095e. Both handoffs and all capacity/arrangement work preserved. Purchase and arrangement versions coexist in the public presenter; nullable legacy room composition is omitted, not fabricated. Producer branch/worktree remains clean at 3d3095e.
