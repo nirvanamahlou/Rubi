@@ -46,7 +46,7 @@ describe('payment-method form fields', () => {
       airlines: ['organizationId', 'iataCode', 'icaoCode'],
       'cabin-classes': ['bodyType', 'cabinType'],
       'baggage-rules': ['validFrom', 'validTo'],
-      'bus-companies': ['supplierId', 'organizationId'],
+      'bus-companies': ['supplierId'],
       'visa-services': [
         'supplierId',
         'providerId',
@@ -88,6 +88,32 @@ describe('payment-method form fields', () => {
         source.match(/getMasterDataFormFields\(definition\)\.map/g),
       ).toHaveLength(3);
       expect(source).not.toContain('definition.fields.map');
+    }
+  });
+
+  it('marks every catalog-required field and forwards required semantics to each control kind', () => {
+    const source = readFileSync(
+      resolve(
+        process.cwd(),
+        'src/modules/master-data/components/master-data-live-form.tsx',
+      ),
+      'utf8',
+    );
+    expect(source).toContain('{...(field.required ? { required: true } : {})}');
+    expect(
+      source.match(/required=\{Boolean\(field\.required\)\}/g),
+    ).toHaveLength(6);
+
+    for (const definition of masterDataCatalog) {
+      for (const field of getMasterDataFormFields(definition)) {
+        if (!field.required) continue;
+        expect(
+          validateMasterDataDraft(definition.key, { [field.key]: '' }).errors[
+            field.key
+          ],
+          `${definition.key}.${field.key}`,
+        ).toBeTruthy();
+      }
     }
   });
 });

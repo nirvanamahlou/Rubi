@@ -289,6 +289,7 @@ function GenericMasterDataLiveForm({
                   id={controlId}
                   label={field.label}
                   onChange={updateValue}
+                  required={Boolean(field.required)}
                   value={values[field.key] ?? ''}
                 />
               ) : field.key === 'roleCodes' ? (
@@ -296,6 +297,7 @@ function GenericMasterDataLiveForm({
                   disabled={readonly || saving}
                   id={controlId}
                   onChange={updateValue}
+                  required={Boolean(field.required)}
                   value={values[field.key] ?? ''}
                 />
               ) : field.key === 'logoFileReference' ? (
@@ -310,6 +312,7 @@ function GenericMasterDataLiveForm({
                 <Select
                   disabled={readonly || saving}
                   onValueChange={updateValue}
+                  required={Boolean(field.required)}
                   value={values[field.key] ?? ''}
                 >
                   <SelectTrigger aria-invalid={Boolean(error)} id={controlId}>
@@ -332,6 +335,7 @@ function GenericMasterDataLiveForm({
                   onChange={updateValue}
                   placeholder={field.placeholder}
                   readOnly={readonly}
+                  required={Boolean(field.required)}
                   value={values[field.key] ?? ''}
                 />
               ) : field.type === 'number' ? (
@@ -342,6 +346,7 @@ function GenericMasterDataLiveForm({
                   onChange={updateValue}
                   placeholder={field.placeholder}
                   readOnly={readonly}
+                  required={Boolean(field.required)}
                   value={values[field.key] ?? ''}
                 />
               ) : (
@@ -355,6 +360,7 @@ function GenericMasterDataLiveForm({
                   onChange={(event) => updateValue(event.target.value)}
                   placeholder={field.placeholder}
                   readOnly={readonly}
+                  required={Boolean(field.required)}
                   type={field.type}
                   value={values[field.key] ?? ''}
                 />

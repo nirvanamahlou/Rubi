@@ -40,7 +40,7 @@ describe('explicit local Master Data demo fixtures', () => {
         return '11111111-1111-4111-8111-111111111111';
       });
       if (row.resource !== 'suppliers')
-        expect(values.name ?? values.displayName ?? values.fullName).toContain(
+        expect(values.name ?? values.legalName ?? values.fullName).toContain(
           'آزمایشی',
         );
       expect(JSON.stringify(values)).not.toMatch(

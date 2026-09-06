@@ -126,4 +126,15 @@ describe('master data catalog', () => {
         ),
       ).toBe(false);
   });
+
+  it('keeps hotel catalogs optional while requiring only the hotel identity and city', () => {
+    const hotel = getMasterDataDefinition('hotels');
+    expect(
+      hotel.fields.filter((field) => field.required).map((field) => field.key),
+    ).toEqual(['name', 'cityId']);
+    for (const field of ['mealServiceIds', 'roomTypeIds', 'facilityIds'])
+      expect(
+        hotel.fields.find((item) => item.key === field)?.required,
+      ).not.toBe(true);
+  });
 });
