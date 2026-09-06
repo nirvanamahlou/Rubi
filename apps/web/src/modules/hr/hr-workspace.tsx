@@ -43,6 +43,11 @@ import {
   type HrSectionId,
   type HrTab,
 } from './hr.model';
+import {
+  FrappeWorkspaceLauncher,
+  FrappeWorkspaceScreen,
+} from './frappe-workspace';
+import { normalizeFrappeWorkspace } from './frappe-workspaces';
 import styles from './hr-workspace.module.css';
 
 type UiState = 'loading' | 'empty' | 'error' | 'unauthorized' | 'forbidden';
@@ -526,6 +531,7 @@ function HubScreen() {
   return (
     <>
       <PageHead section="home" />
+      <FrappeWorkspaceLauncher />
       <DateRangeBar />
       <div className={styles.boundary}>
         <Info aria-hidden="true" size={17} />
@@ -1897,15 +1903,21 @@ function PayrollOverview({
 function TabbedSection({
   section,
   openAction,
+  initialTab,
 }: {
   section: Exclude<
     HrSectionId,
     'home' | 'dashboard' | 'employees' | 'employee' | 'requests'
   >;
   openAction: (title: string) => void;
+  initialTab?: string | undefined;
 }) {
   const tabs = sectionTabs[section] ?? [];
-  const [tab, setTab] = useState(tabs[0]?.id ?? 'list');
+  const [tab, setTab] = useState(
+    tabs.some((item) => item.id === initialTab)
+      ? (initialTab ?? 'list')
+      : (tabs[0]?.id ?? 'list'),
+  );
   const active = tabs.find((item) => item.id === tab);
   const ActiveIcon = active?.icon ?? FileText;
   const isPayrollOverview = section === 'payroll' && tab === 'overview';
@@ -2059,8 +2071,17 @@ function PreviewDialog({ close, title }: { close: () => void; title: string }) {
   );
 }
 
-export function HrWorkspace({ sectionId }: { sectionId?: string }) {
+export function HrWorkspace({
+  sectionId,
+  tabId,
+  workspaceId,
+}: {
+  sectionId?: string | undefined;
+  tabId?: string | undefined;
+  workspaceId?: string | undefined;
+}) {
   const section = normalizeSection(sectionId);
+  const workspace = normalizeFrappeWorkspace(workspaceId);
   const [dialogTitle, setDialogTitle] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   function closeDialog() {
@@ -2073,7 +2094,8 @@ export function HrWorkspace({ sectionId }: { sectionId?: string }) {
     setDialogTitle(title);
   };
   let screen: ReactNode;
-  if (section === 'home') screen = <HubScreen />;
+  if (workspace) screen = <FrappeWorkspaceScreen workspaceId={workspace} />;
+  else if (section === 'home') screen = <HubScreen />;
   else if (section === 'dashboard')
     screen = <Dashboard openAction={openAction} />;
   else if (section === 'employees')
@@ -2082,7 +2104,14 @@ export function HrWorkspace({ sectionId }: { sectionId?: string }) {
     screen = <EmployeeProfile openAction={openAction} />;
   else if (section === 'requests')
     screen = <Requests openAction={openAction} />;
-  else screen = <TabbedSection openAction={openAction} section={section} />;
+  else
+    screen = (
+      <TabbedSection
+        initialTab={tabId}
+        openAction={openAction}
+        section={section}
+      />
+    );
   return (
     <main
       className={styles.workspace}
