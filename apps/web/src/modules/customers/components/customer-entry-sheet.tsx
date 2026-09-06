@@ -1,16 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from '@/components/ui/overlays';
-import { formatCustomerDate } from '../model/customer-calendar';
 import {
   CustomerDateField,
   type CustomerCalendarMode,
@@ -62,15 +53,9 @@ export function CustomerEntrySheet({
   disabled?: boolean;
   showPassportExpiry?: boolean;
 }) {
-  const [dateRowKey, setDateRowKey] = useState<string | null>(null);
-  const [dateField, setDateField] = useState<
-    'birthDate' | 'passportExpiryDate'
-  >('birthDate');
   const visibleColumns = columns.filter(
     ([field]) => field !== 'passportExpiryDate' || showPassportExpiry,
   );
-  const dateLabel = dateField === 'birthDate' ? 'تاریخ تولد' : 'انقضای پاسپورت';
-  const dateRow = rows.find((row) => row.key === dateRowKey);
   return (
     <>
       <div
@@ -119,24 +104,20 @@ export function CustomerEntrySheet({
                 {visibleColumns.map(([field, label, suffix]) => (
                   <td className="border-e p-1.5" key={field}>
                     {field === 'birthDate' || field === 'passportExpiryDate' ? (
-                      <Button
-                        aria-label={`${field === 'birthDate' ? 'تاریخ تولد' : 'انقضای پاسپورت'} ${row.label}`}
-                        className="h-10 w-full min-w-36 justify-start text-xs"
-                        disabled={
+                      <CustomerDateField
+                        compact
+                        id={`${row.key}-${suffix}`}
+                        label={`${field === 'birthDate' ? 'تاریخ تولد' : 'انقضای پاسپورت'} ${row.label}`}
+                        mode={calendarMode}
+                        onModeChange={onCalendarModeChange}
+                        value={row.values[field] ?? ''}
+                        onChange={(value) => row.onChange(field, value)}
+                        disabled={Boolean(
                           disabled ||
-                          (row.readOnly && !row.editableFields?.includes(field))
-                        }
-                        onClick={() => {
-                          setDateField(field);
-                          setDateRowKey(row.key);
-                        }}
-                        type="button"
-                        variant="outline"
-                      >
-                        {row.values[field]
-                          ? formatCustomerDate(row.values[field]!, calendarMode)
-                          : 'انتخاب تاریخ'}
-                      </Button>
+                          (row.readOnly &&
+                            !row.editableFields?.includes(field)),
+                        )}
+                      />
                     ) : (
                       <Input
                         aria-label={`${label.replace(' *', '')} ${row.label}`}
@@ -214,31 +195,6 @@ export function CustomerEntrySheet({
           </tbody>
         </table>
       </div>
-      {dateRow ? (
-        <Dialog open onOpenChange={(open) => !open && setDateRowKey(null)}>
-          <DialogContent className="min-h-[32rem] max-w-lg overflow-visible">
-            <DialogTitle>
-              {dateLabel} {dateRow.label}
-            </DialogTitle>
-            <DialogDescription>
-              تاریخ را از تقویم شمسی یا میلادی انتخاب کنید.
-            </DialogDescription>
-            <CustomerDateField
-              initialOpen
-              id={`${dateRow.key}-${dateField}-picker`}
-              label={dateLabel}
-              mode={calendarMode}
-              onModeChange={onCalendarModeChange}
-              onChange={(value) => {
-                dateRow.onChange(dateField, value);
-                setDateRowKey(null);
-              }}
-              value={dateRow.values[dateField] ?? ''}
-              disabled={disabled}
-            />
-          </DialogContent>
-        </Dialog>
-      ) : null}
     </>
   );
 }
