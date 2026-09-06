@@ -296,6 +296,36 @@ export interface MasterOrganizationContactUnmasked {
   email: string | null;
 }
 
+export interface MasterOrganizationAddressV1 {
+  id: string;
+  organizationId: string;
+  countryId: string;
+  countryName: string;
+  cityId: string;
+  cityName: string;
+  label: string;
+  postalCode: string | null;
+  addressLine: string;
+  isPrimary: boolean;
+  displayOrder: number;
+  isActive: boolean;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MasterOrganizationAddressMutationV1 {
+  countryId: string;
+  cityId: string;
+  label: string;
+  postalCode?: string | null;
+  addressLine: string;
+  isPrimary?: boolean;
+  displayOrder?: number;
+  isActive?: boolean;
+  version?: number;
+}
+
 export interface MasterOrganizationSupplierSummary {
   suppliers: {
     total: number;
@@ -511,6 +541,10 @@ export const masterDataEndpoints = {
     `${MASTER_DATA_API_PREFIX}/audit/${encodeURIComponent(resource)}/${encodeURIComponent(entityId)}` as const,
   unmaskOrganizationContact: (id: string) =>
     `${MASTER_DATA_API_PREFIX}/organization-contacts/${encodeURIComponent(id)}/unmask` as const,
+  organizationAddresses: (organizationId: string) =>
+    `${MASTER_DATA_API_PREFIX}/organizations/${encodeURIComponent(organizationId)}/addresses` as const,
+  organizationAddress: (organizationId: string, addressId: string) =>
+    `${MASTER_DATA_API_PREFIX}/organizations/${encodeURIComponent(organizationId)}/addresses/${encodeURIComponent(addressId)}` as const,
   organizationSupplierSummary:
     `${MASTER_DATA_API_PREFIX}/organizations-suppliers/summary` as const,
   accommodationSummary:

@@ -68,6 +68,8 @@ model User {
   documentVersionsCreated      DocumentVersion[]            @relation("DocumentVersionCreatedBy")
   documentAuditEvents          DocumentAuditEvent[]         @relation("DocumentAuditActor")
   documentQuarantinesReviewed  DocumentQuarantine[]         @relation("DocumentQuarantineReviewer")
+  agencyProfilesManaged        AgencyOperationalProfile[]   @relation("AgencyAccountManager")
+  b2bAuditEvents               B2bAuditEvent[]              @relation("B2bAuditActor")
 
   @@map("iam_users")
 }
@@ -124,18 +126,20 @@ model RolePermission {
 }
 
 model Branch {
-  id                    String                  @id @default(uuid()) @db.Uuid
-  code                  String                  @unique @db.VarChar(40)
-  name                  String                  @db.VarChar(160)
-  isActive              Boolean                 @default(true)
-  createdAt             DateTime                @default(now()) @db.Timestamptz(3)
-  updatedAt             DateTime                @updatedAt @db.Timestamptz(3)
+  id                    String                     @id @default(uuid()) @db.Uuid
+  code                  String                     @unique @db.VarChar(40)
+  name                  String                     @db.VarChar(160)
+  isActive              Boolean                    @default(true)
+  createdAt             DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime                   @updatedAt @db.Timestamptz(3)
   users                 UserBranch[]
-  ownedCustomers        Customer[]              @relation("CustomerOwnerBranch")
+  ownedCustomers        Customer[]                 @relation("CustomerOwnerBranch")
   customerStatusHistory CustomerStatusHistory[]
   customerAuditEvents   CustomerAuditEvent[]
   documents             Document[]
   documentAuditEvents   DocumentAuditEvent[]
+  agencyProfiles        AgencyOperationalProfile[]
+  b2bAuditEvents        B2bAuditEvent[]
 
   @@map("branches")
 }
@@ -203,6 +207,27 @@ enum MasterOrganizationRoleCode {
   RAIL_OPERATOR
   TOUR_OPERATOR
   BROKER
+}
+
+enum AgencyOperationalStatus {
+  ACTIVE
+  UNDER_REVIEW
+  SUSPENDED
+  ENDED
+}
+
+enum B2bAgreementStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+  EXPIRED
+  TERMINATED
+}
+
+enum B2bAgreedRateKind {
+  FIXED_AMOUNT
+  DISCOUNT_PERCENT
+  COMMISSION_PERCENT
 }
 
 enum MasterCurrencyRateType {
@@ -380,54 +405,55 @@ enum MasterOrganizationContactChannel {
 }
 
 model MasterCountry {
-  id                  String                     @id @default(uuid()) @db.Uuid
-  code                String                     @unique @db.Char(2)
-  name                String                     @db.VarChar(160)
-  englishName         String                     @db.VarChar(160)
-  displayOrder        Int                        @default(0)
-  isActive            Boolean                    @default(true)
-  version             Int                        @default(1)
-  createdByUserId     String                     @db.Uuid
-  updatedByUserId     String                     @db.Uuid
-  deactivatedByUserId String?                    @db.Uuid
-  deactivatedAt       DateTime?                  @db.Timestamptz(3)
-  createdAt           DateTime                   @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime                   @updatedAt @db.Timestamptz(3)
-  cities              MasterCity[]
-  regions             MasterRegion[]
-  banks               MasterBank[]
-  suppliers           MasterSupplier[]
-  brokers             MasterBroker[]
-  hotelChains         MasterHotelChain[]
-  hotelImports        MasterHotelImportSession[]
-  airlines            MasterAirline[]
-  railCompanies       MasterRailCompany[]
-  busCompanies        MasterBusCompany[]
-  insurers            MasterInsurer[]
-  visaServices        MasterVisaService[]
+  id                    String                      @id @default(uuid()) @db.Uuid
+  code                  String                      @unique @db.Char(2)
+  name                  String                      @db.VarChar(160)
+  englishName           String                      @db.VarChar(160)
+  displayOrder          Int                         @default(0)
+  isActive              Boolean                     @default(true)
+  version               Int                         @default(1)
+  createdByUserId       String                      @db.Uuid
+  updatedByUserId       String                      @db.Uuid
+  deactivatedByUserId   String?                     @db.Uuid
+  deactivatedAt         DateTime?                   @db.Timestamptz(3)
+  createdAt             DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime                    @updatedAt @db.Timestamptz(3)
+  cities                MasterCity[]
+  regions               MasterRegion[]
+  banks                 MasterBank[]
+  suppliers             MasterSupplier[]
+  brokers               MasterBroker[]
+  hotelChains           MasterHotelChain[]
+  hotelImports          MasterHotelImportSession[]
+  airlines              MasterAirline[]
+  railCompanies         MasterRailCompany[]
+  busCompanies          MasterBusCompany[]
+  insurers              MasterInsurer[]
+  visaServices          MasterVisaService[]
+  organizationAddresses MasterOrganizationAddress[]
 
   @@index([isActive, name])
   @@map("master_countries")
 }
 
 model MasterCity {
-  id                        String                     @id @default(uuid()) @db.Uuid
-  countryId                 String                     @db.Uuid
-  regionId                  String?                    @db.Uuid
-  code                      String                     @db.VarChar(32)
-  name                      String                     @db.VarChar(160)
-  englishName               String                     @db.VarChar(160)
-  displayOrder              Int                        @default(0)
-  isActive                  Boolean                    @default(true)
-  version                   Int                        @default(1)
-  createdByUserId           String                     @db.Uuid
-  updatedByUserId           String                     @db.Uuid
-  deactivatedByUserId       String?                    @db.Uuid
-  deactivatedAt             DateTime?                  @db.Timestamptz(3)
-  createdAt                 DateTime                   @default(now()) @db.Timestamptz(3)
-  updatedAt                 DateTime                   @updatedAt @db.Timestamptz(3)
-  country                   MasterCountry              @relation(fields: [countryId], references: [id], onDelete: Restrict)
-  region                    MasterRegion?              @relation(fields: [regionId, countryId], references: [id, countryId], onDelete: Restrict)
+  id                        String                      @id @default(uuid()) @db.Uuid
+  countryId                 String                      @db.Uuid
+  regionId                  String?                     @db.Uuid
+  code                      String                      @db.VarChar(32)
+  name                      String                      @db.VarChar(160)
+  englishName               String                      @db.VarChar(160)
+  displayOrder              Int                         @default(0)
+  isActive                  Boolean                     @default(true)
+  version                   Int                         @default(1)
+  createdByUserId           String                      @db.Uuid
+  updatedByUserId           String                      @db.Uuid
+  deactivatedByUserId       String?                     @db.Uuid
+  deactivatedAt             DateTime?                   @db.Timestamptz(3)
+  createdAt                 DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime                    @updatedAt @db.Timestamptz(3)
+  country                   MasterCountry               @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  region                    MasterRegion?               @relation(fields: [regionId, countryId], references: [id, countryId], onDelete: Restrict)
   hotels                    MasterHotel[]
   airports                  MasterAirport[]
   bankBranches              MasterBankBranch[]
@@ -437,8 +463,10 @@ model MasterCity {
   customerAddresses         CustomerAddress[]
   masterHotelImportSessions MasterHotelImportSession[]
   leaders                   MasterLeader[]
+  organizationAddresses     MasterOrganizationAddress[]
 
   @@unique([countryId, code])
+  @@unique([id, countryId])
   @@index([countryId, isActive, name])
   @@index([regionId, isActive, name])
   @@map("master_cities")
@@ -688,6 +716,8 @@ model MasterOrganization {
   broker              MasterBroker?
   hotel               MasterHotel?
   customers           Customer[]
+  addresses           MasterOrganizationAddress[]
+  agencyProfiles      AgencyOperationalProfile[]
 
   @@index([isActive, displayName])
   @@map("master_organizations")
@@ -703,6 +733,145 @@ model MasterOrganizationRole {
   @@id([organizationId, roleCode])
   @@index([roleCode])
   @@map("master_organization_roles")
+}
+
+model MasterOrganizationAddress {
+  id                  String             @id @default(uuid()) @db.Uuid
+  organizationId      String             @db.Uuid
+  countryId           String             @db.Uuid
+  cityId              String             @db.Uuid
+  label               String             @db.VarChar(80)
+  postalCode          String?            @db.VarChar(24)
+  addressLine         String             @db.VarChar(500)
+  isPrimary           Boolean            @default(false)
+  displayOrder        Int                @default(0)
+  isActive            Boolean            @default(true)
+  version             Int                @default(1)
+  createdByUserId     String             @db.Uuid
+  updatedByUserId     String             @db.Uuid
+  deactivatedByUserId String?            @db.Uuid
+  deactivatedAt       DateTime?          @db.Timestamptz(3)
+  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
+  organization        MasterOrganization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  country             MasterCountry      @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  city                MasterCity         @relation(fields: [cityId, countryId], references: [id, countryId], onDelete: Restrict)
+
+  @@index([organizationId, isPrimary, isActive, displayOrder])
+  @@index([countryId, cityId])
+  @@map("master_organization_addresses")
+}
+
+model AgencyOperationalProfile {
+  id                   String                  @id @default(uuid()) @db.Uuid
+  organizationId       String                  @db.Uuid
+  branchId             String                  @db.Uuid
+  accountManagerUserId String?                 @db.Uuid
+  status               AgencyOperationalStatus @default(ACTIVE)
+  displayOrder         Int                     @default(0)
+  isActive             Boolean                 @default(true)
+  version              Int                     @default(1)
+  createdByUserId      String                  @db.Uuid
+  updatedByUserId      String                  @db.Uuid
+  deactivatedByUserId  String?                 @db.Uuid
+  deactivatedAt        DateTime?               @db.Timestamptz(3)
+  createdAt            DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime                @updatedAt @db.Timestamptz(3)
+  organization         MasterOrganization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  branch               Branch                  @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  accountManager       User?                   @relation("AgencyAccountManager", fields: [accountManagerUserId], references: [id], onDelete: Restrict)
+  agreements           B2bAgencyAgreement[]
+  creditPolicy         B2bAgencyCreditPolicy?
+  agreedRates          B2bAgencyAgreedRate[]
+
+  @@unique([organizationId, branchId])
+  @@index([branchId, status, isActive])
+  @@index([accountManagerUserId, isActive])
+  @@map("b2b_agency_profiles")
+}
+
+model B2bAgencyAgreement {
+  id                String                   @id @default(uuid()) @db.Uuid
+  profileId         String                   @db.Uuid
+  code              String                   @unique @db.VarChar(32)
+  title             String                   @db.VarChar(160)
+  documentReference String?                  @db.Uuid
+  startsAt          DateTime                 @db.Date
+  endsAt            DateTime?                @db.Date
+  status            B2bAgreementStatus       @default(DRAFT)
+  notes             String?                  @db.VarChar(500)
+  isActive          Boolean                  @default(true)
+  version           Int                      @default(1)
+  createdByUserId   String                   @db.Uuid
+  updatedByUserId   String                   @db.Uuid
+  createdAt         DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime                 @updatedAt @db.Timestamptz(3)
+  profile           AgencyOperationalProfile @relation(fields: [profileId], references: [id], onDelete: Restrict)
+
+  @@index([profileId, status, startsAt, endsAt])
+  @@map("b2b_agency_agreements")
+}
+
+model B2bAgencyCreditPolicy {
+  id              String                   @id @default(uuid()) @db.Uuid
+  profileId       String                   @unique @db.Uuid
+  creditLimit     Decimal                  @db.Decimal(20, 2)
+  currencyCode    String                   @db.Char(3)
+  effectiveFrom   DateTime                 @db.Date
+  expiresAt       DateTime?                @db.Date
+  isActive        Boolean                  @default(true)
+  version         Int                      @default(1)
+  createdByUserId String                   @db.Uuid
+  updatedByUserId String                   @db.Uuid
+  createdAt       DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime                 @updatedAt @db.Timestamptz(3)
+  profile         AgencyOperationalProfile @relation(fields: [profileId], references: [id], onDelete: Restrict)
+
+  @@index([currencyCode, isActive, expiresAt])
+  @@map("b2b_agency_credit_policies")
+}
+
+model B2bAgencyAgreedRate {
+  id               String                   @id @default(uuid()) @db.Uuid
+  profileId        String                   @db.Uuid
+  code             String                   @unique @db.VarChar(32)
+  serviceReference String                   @db.VarChar(120)
+  title            String                   @db.VarChar(160)
+  kind             B2bAgreedRateKind
+  value            Decimal                  @db.Decimal(20, 4)
+  currencyCode     String?                  @db.Char(3)
+  validFrom        DateTime                 @db.Date
+  validTo          DateTime?                @db.Date
+  isActive         Boolean                  @default(true)
+  version          Int                      @default(1)
+  createdByUserId  String                   @db.Uuid
+  updatedByUserId  String                   @db.Uuid
+  createdAt        DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime                 @updatedAt @db.Timestamptz(3)
+  profile          AgencyOperationalProfile @relation(fields: [profileId], references: [id], onDelete: Restrict)
+
+  @@index([profileId, isActive, validFrom, validTo])
+  @@index([serviceReference, isActive])
+  @@map("b2b_agency_agreed_rates")
+}
+
+model B2bAuditEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  actorUserId    String   @db.Uuid
+  branchId       String   @db.Uuid
+  action         String   @db.VarChar(120)
+  entityType     String   @db.VarChar(80)
+  entityId       String   @db.Uuid
+  beforeSnapshot Json?
+  afterSnapshot  Json?
+  occurredAt     DateTime @default(now()) @db.Timestamptz(3)
+  actor          User     @relation("B2bAuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  branch         Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+
+  @@index([entityType, entityId, occurredAt])
+  @@index([actorUserId, occurredAt])
+  @@index([branchId, occurredAt])
+  @@map("b2b_audit_events")
 }
 
 model MasterSupplier {

@@ -23,9 +23,9 @@
 | Customer Master Data references | IMPLEMENTED | Active choices come from the public Master Data API; an already referenced inactive value remains visible but cannot become a new choice. |
 | Agency list | IMPLEMENTED | /organizations consumes shared MasterOrganization records with role AGENCY; no parallel Agency entity exists. |
 | Agency contacts | IMPLEMENTED | Masked phone/email are loaded from public organization-contacts; protected values are not requested. |
-| Agency base address | BLOCKED_FOR_MIGRATION | The current shared Organization schema has no owned address relation. |
-| Agency operational profile | BLOCKED_FOR_MIGRATION | No branch-scoped B2B profile table exists and no substitute schema is created here. |
-| Agency contracts, credit and agreed rates | BLOCKED_FOR_PUBLIC_CONTRACT | Sales/Finance owner contracts are not public yet and cannot be simulated or queried directly. |
+| Agency base address | IMPLEMENTED_BY_SUCCESSOR | `AGENCY-B2B-INTEGRATIONS-001` adds the Master Data-owned address relation and public endpoints. |
+| Agency operational profile | IMPLEMENTED_BY_SUCCESSOR | `AGENCY-B2B-INTEGRATIONS-001` adds the branch-scoped B2B profile and popup integration. |
+| Agency contracts, credit and agreed rates | IMPLEMENTED_BY_SUCCESSOR | `AGENCY-B2B-INTEGRATIONS-001` owns these B2B records and consumes Finance exposure through a public port without direct table access. |
 | Master Data logo flow | IMPLEMENTED | Persisted entity first, canonical Documents upload second, optimistic attach third; temporary IDs are rejected and retry reuses the canonical file. |
 | Logo MIME, size, permission, audit and CLEAN-only delivery | ALREADY_AVAILABLE | The public Documents producer remains the single policy owner; Master Data stores only its stable file reference. |
 
@@ -70,7 +70,13 @@ Inactive reference policy:
 3. the existing inactive item is labelled and retained;
 4. only active alternatives can replace it.
 
-## Proposed migrations (not implemented)
+## Successor implementation
+
+The proposals below were implemented additively by
+`AGENCY-B2B-INTEGRATIONS-001` after the product owner released the former PR #90
+blocker. This historical task still contains no schema change of its own.
+
+## Implemented migration design
 
 ### Organization base address
 

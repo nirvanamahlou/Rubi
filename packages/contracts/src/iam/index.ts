@@ -33,6 +33,17 @@ export const CUSTOMER_PERMISSION_CODES = [
   'customers.sensitive.read',
 ] as const;
 
+export const B2B_PERMISSION_CODES = [
+  'b2b.agency.read',
+  'b2b.agency.manage',
+  'b2b.agreement.read',
+  'b2b.agreement.manage',
+  'b2b.credit.read',
+  'b2b.credit.manage',
+  'b2b.rate.read',
+  'b2b.rate.manage',
+] as const;
+
 export const LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES = [
   'legal-entity.read',
   'legal-entity.switch',
@@ -99,6 +110,7 @@ export const IAM_PERMISSION_CODES = [
   ...IAM_CORE_PERMISSION_CODES,
   ...MASTER_DATA_PERMISSION_CODES,
   ...CUSTOMER_PERMISSION_CODES,
+  ...B2B_PERMISSION_CODES,
   ...LEGAL_ENTITY_PERMISSION_CODES,
   ...DOCUMENT_PERMISSION_CODES,
   ...IAM_SALES_PERMISSION_CODES,
