@@ -347,6 +347,12 @@ function Breadcrumb() {
   const breadcrumbs = getNavigationBreadcrumbs(
     pathname,
     pathname === '/marketing' ? marketingSectionKey : null,
+    pathname === '/hr'
+      ? {
+          sectionKey: searchParams.get('section'),
+          workspaceKey: searchParams.get('workspace'),
+        }
+      : null,
   );
   return (
     <nav

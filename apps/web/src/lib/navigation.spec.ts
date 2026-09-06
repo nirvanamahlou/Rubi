@@ -67,6 +67,33 @@ describe('CRM navigation', () => {
     ]);
   });
 
+  it('shows the active Human Resources section or workspace in breadcrumbs', () => {
+    expect(
+      getNavigationBreadcrumbs('/hr', null, {
+        sectionKey: 'employees',
+        workspaceKey: null,
+      }),
+    ).toEqual([
+      { href: '/hr', title: 'منابع انسانی' },
+      { href: '/hr?section=employees', title: 'کارکنان' },
+    ]);
+    expect(
+      getNavigationBreadcrumbs('/hr', null, {
+        sectionKey: null,
+        workspaceKey: 'payroll',
+      }),
+    ).toEqual([
+      { href: '/hr', title: 'منابع انسانی' },
+      { href: '/hr?workspace=payroll', title: 'حقوق و دستمزد' },
+    ]);
+    expect(
+      getNavigationBreadcrumbs('/hr', null, {
+        sectionKey: 'unknown',
+        workspaceKey: 'unknown',
+      }),
+    ).toEqual([{ href: '/hr', title: 'منابع انسانی' }]);
+  });
+
   it('does not create disallowed standalone sections', () => {
     const titles = navigationItems.map((item) => item.title).join(' ');
     expect(titles).not.toContain('جست‌وجو و فروش آنلاین');
