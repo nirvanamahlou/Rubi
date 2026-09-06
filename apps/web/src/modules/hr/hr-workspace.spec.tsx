@@ -24,16 +24,7 @@ describe('HR reference implementation', () => {
 
   it('fills the overview with explicit preview metrics and working filters', () => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId="dashboard" />);
-    for (const value of [
-      '۸۶',
-      '۷۳',
-      '۹',
-      '۱۴',
-      '۷',
-      '۲۳',
-      '۲۸۶ ساعت',
-      '۹۴٪',
-    ]) {
+    for (const value of ['۸۶', '۷۳', '۹', '۱۴', '۷', '۲۳', '۲۸۶ ساعت', '۹۴٪']) {
       expect(html).toContain(value);
     }
     expect(html).toContain('امروز — ۱۴ شهریور ۱۴۰۵');

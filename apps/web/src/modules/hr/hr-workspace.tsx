@@ -160,7 +160,8 @@ const defaultDashboardFilters: DashboardFilters = {
   unit: 'all',
 };
 
-const formatFa = (value: number) => new Intl.NumberFormat('fa-IR').format(value);
+const formatFa = (value: number) =>
+  new Intl.NumberFormat('fa-IR').format(value);
 
 function buildDashboardSnapshot(filters: DashboardFilters): DashboardSnapshot {
   const branchFactor =
@@ -185,7 +186,9 @@ function buildDashboardSnapshot(filters: DashboardFilters): DashboardSnapshot {
   const overtime = Math.max(12, Math.round(overtimeBase * factor));
   const quality = Math.max(
     88,
-    94 - (filters.branch === 'airport' ? 2 : 0) - (filters.unit === 'finance' ? 1 : 0),
+    94 -
+      (filters.branch === 'airport' ? 2 : 0) -
+      (filters.unit === 'finance' ? 1 : 0),
   );
   const fullTime = Math.max(1, Math.round(active * 0.8));
   const partTime = Math.max(1, Math.round(active * 0.13));
@@ -198,8 +201,8 @@ function buildDashboardSnapshot(filters: DashboardFilters): DashboardSnapshot {
     ...item,
     percentage: Math.max(4, Math.round((item.count / active) * 100)),
   }));
-  const trend = [72, 73, 75, 74, 77, 79, 78, 81, 83, 82, 85, 86].map(
-    (value) => Math.max(6, Math.round((value / 86) * active)),
+  const trend = [72, 73, 75, 74, 77, 79, 78, 81, 83, 82, 85, 86].map((value) =>
+    Math.max(6, Math.round((value / 86) * active)),
   );
 
   return {
@@ -814,7 +817,11 @@ function Dashboard({ openAction }: { openAction: (title: string) => void }) {
           <div className={`${styles.panelBody} ${styles.alertList}`}>
             {(
               [
-                ['قراردادهای نزدیک پایان', '۷ قرارداد · ۲۰ روز آینده', FileText],
+                [
+                  'قراردادهای نزدیک پایان',
+                  '۷ قرارداد · ۲۰ روز آینده',
+                  FileText,
+                ],
                 ['مدارک منقضی', '۵ مدرک · بررسی این هفته', FileArchive],
                 ['مغایرت‌های تردد', '۲ مغایرت · نیازمند تأیید', TimerReset],
               ] as const
