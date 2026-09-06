@@ -1,0 +1,115 @@
+{
+  "sourceBranch": "codex/pc-a-sales-contracts",
+  "sourceHead": "8dbc5f45b7ff1b0fa958c2cbfe35c312ee0c8f80",
+  "preservationOnly": true,
+  "files": [
+    {
+      "path": "apps/api/src/documents/documents.repository.spec.ts",
+      "sha256": "3E891A8A478D35C987AAEC75775E1F8DCF3248D2CB97A24C36F6189F6B306B65"
+    },
+    {
+      "path": "apps/web/src/components/ui/button.spec.tsx",
+      "sha256": "8FB370D2E52E59188C565FA67FF95CFD6CEDD64CF9A2F31E0B2D04D11FD917D3"
+    },
+    {
+      "path": "apps/web/src/modules/customers/api/customer-documents-client.spec.ts",
+      "sha256": "FA966B42973DEE98F90251E7522630F4028EC353E99DDB61C0BBF7D61D40467C"
+    },
+    {
+      "path": "apps/web/src/modules/customers/api/customer-documents-client.ts",
+      "sha256": "98FE1297CD08ECA420ED4A5B00EB30722171FEC03877F5E6D26E3D2EF5E5B08D"
+    },
+    {
+      "path": "apps/web/src/modules/customers/components/customer-documents-panel.spec.ts",
+      "sha256": "0F4EB9AE90D6ECC293F5D578CBDB0AA14D70CF4353CC71D3C4123A6F9D86BD6D"
+    },
+    {
+      "path": "apps/web/src/modules/customers/components/customer-documents-panel.tsx",
+      "sha256": "625823D81D4AD73045D34DB1B11C23DB47309F7F43F0DE03D6CF8B13BC37BE4A"
+    },
+    {
+      "path": "packages/database/prisma/migrations/20260905113000_customer_passport_number/migration.sql",
+      "sha256": "B17534787CC71462581F74629E8350A43269A522C23209FA06BE853BD4DE19F1"
+    },
+    {
+      "path": "apps/api/src/customers/customer-national-id.spec.ts",
+      "sha256": "A0594A45F5CF5F077E5609345D7B773E818E314C6CB2A9D7E212323D51AD6E1D"
+    },
+    {
+      "path": "apps/api/src/customers/customer-national-id.ts",
+      "sha256": "DA54F55E52B51F64C827C4EFAD30173F2F942E7E8A14A01289420166602359D7"
+    },
+    {
+      "path": "apps/api/src/customers/customer.dto.ts",
+      "sha256": "FF44E69097D03244E9CADFB012864D6B5013E59F140371AF66CF2A7F8DD8D468"
+    },
+    {
+      "path": "apps/api/src/customers/customer.repository.ts",
+      "sha256": "59CD28311F40A4EBBD4379E2200FE1FA4DB30F256CBBC6506C66C2CF5895E74D"
+    },
+    {
+      "path": "apps/api/src/customers/customer.service.spec.ts",
+      "sha256": "FEBAA301E545566A34B63C8C55D639C490FB9531C39D060E3FBE4846D100D880"
+    },
+    {
+      "path": "apps/api/src/customers/customer.service.ts",
+      "sha256": "1E41715E3D5ECAA97F19217158B1CB42A010453B0D40FABAF7B8B3774325E3B2"
+    },
+    {
+      "path": "apps/api/src/documents/documents.dto.ts",
+      "sha256": "B52FA256CDE32AE0EFD6BD8101323E44562E5B9FD30577A589542406A1E8D2AD"
+    },
+    {
+      "path": "apps/api/src/documents/documents.http.spec.ts",
+      "sha256": "135535E4F390836C1FE867A84945F8FC009AF1AABD53BFDDFB0505C9EB9BD696"
+    },
+    {
+      "path": "apps/api/src/documents/documents.repository.ts",
+      "sha256": "B78D1A3BBE45D9929C6208F4B7CB2161BE8C9360E4BBD5A78B4DC085FA0C17C8"
+    },
+    {
+      "path": "apps/api/src/documents/documents.service.spec.ts",
+      "sha256": "1A94BE38DA19B39D611D944540DB2E175CCDADCDF178A88DAE5063F001C1EF29"
+    },
+    {
+      "path": "apps/api/src/documents/documents.service.ts",
+      "sha256": "0437BA772D1A179846D4AFCA3A69BE37C607A42B3028670D7C4E80958AEB69D0"
+    },
+    {
+      "path": "apps/web/src/components/ui/button.tsx",
+      "sha256": "30A50E8160304128394769EE7252280FDA1B5DD153B3622A37F2133844095522"
+    },
+    {
+      "path": "apps/web/src/modules/customers/components/customer-workspace.spec.ts",
+      "sha256": "E82450F373FA8F4D93696C96CBC74AF00A8034F37D005644DB2FAE7691887881"
+    },
+    {
+      "path": "apps/web/src/modules/customers/components/customer-workspace.tsx",
+      "sha256": "A89391EED9A8EFEB44030F7807D15FED841D354022EACA744CE8C172F24FF1EE"
+    },
+    {
+      "path": "apps/web/src/modules/customers/model/customer.ts",
+      "sha256": "39DC87FEEFCE8ABF161FB0561C6FBEC25C51482F5439E82E67E4D463AA930822"
+    },
+    {
+      "path": "docs/DECISIONS.md",
+      "sha256": "6EFF878FE63D2A225CF415D4DF4E11CB441F973AAF5F809468C35942BE0486D9"
+    },
+    {
+      "path": "packages/contracts/src/customers/index.ts",
+      "sha256": "E37C557EAF66830131C104A7284945274E9CA6C25C059624F1100241344D61D1"
+    },
+    {
+      "path": "packages/contracts/src/documents/index.spec.ts",
+      "sha256": "8E3D3AA83C9050DF2D9906E0A6664532D97EABA58747213997B20FAF600BDBAC"
+    },
+    {
+      "path": "packages/contracts/src/documents/index.ts",
+      "sha256": "B7D14846BCC0A24D6E11DC924EFFCFD1CC832EA47F14F45A059B9668242E94AF"
+    },
+    {
+      "path": "packages/database/prisma/schema.prisma",
+      "sha256": "7E5755F96BEAA52CDED2F86FB9925D2B40A61B6D1E862E7CFAFCDEF544D3063D"
+    }
+  ]
+}

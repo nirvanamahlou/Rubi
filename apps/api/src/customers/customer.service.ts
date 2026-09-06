@@ -26,6 +26,7 @@ import { CustomerKind } from '@rubi/database';
 import { CustomerContactCrypto } from './customer-contact.crypto';
 import {
   CustomerNationalIdProtector,
+  type ProtectedPassportNumber,
   type ProtectedNationalId,
 } from './customer-national-id';
 import {
@@ -128,10 +129,17 @@ function prismaCode(error: unknown): string | undefined {
     : undefined;
 }
 
+function passportUniqueConflict(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null || !('meta' in error))
+    return false;
+  return JSON.stringify(error.meta).includes('passportNumberFingerprint');
+}
+
 function prepareMutation(
   input: CustomerMutationRequest,
   update: boolean,
   protectedNationalId?: ProtectedNationalId,
+  protectedPassportNumber?: ProtectedPassportNumber,
 ) {
   const roles = new Set(input.roles);
   if (!roles.size)
@@ -154,6 +162,16 @@ function prepareMutation(
     throw new BadRequestException({
       code: 'CUSTOMER_NATIONAL_ID_PERSON_ONLY',
       message: 'کد ملی فقط برای اشخاص حقیقی ثبت می‌شود.',
+    });
+  if (input.kind === 'organization' && input.passportNumber)
+    throw new BadRequestException({
+      code: 'CUSTOMER_PASSPORT_NUMBER_PERSON_ONLY',
+      message: 'شماره پاسپورت فقط برای اشخاص حقیقی ثبت می‌شود.',
+    });
+  if (!update && roles.has('passenger') && !input.birthDate)
+    throw new BadRequestException({
+      code: 'CUSTOMER_PASSENGER_BIRTH_DATE_REQUIRED',
+      message: 'تاریخ تولد مسافر الزامی است.',
     });
   if (input.kind === 'person' && input.organizationId)
     throw new BadRequestException({
@@ -184,6 +202,7 @@ function prepareMutation(
     isPassenger: roles.has('passenger'),
     acquaintanceMethodId: input.acquaintanceMethodId ?? null,
     ...(protectedNationalId ?? {}),
+    ...(protectedPassportNumber ?? {}),
   };
   if (update) {
     delete data.kind;
@@ -339,6 +358,7 @@ export class CustomerService {
     const detail = toCustomerDetail(row, true);
     let contacts;
     let nationalId;
+    let passportNumber;
     try {
       contacts = detail.contacts.map((contact, index) => ({
         ...contact,
@@ -353,6 +373,12 @@ export class CustomerService {
         ),
       }));
       nationalId = this.nationalIdProtector.decrypt(row);
+      passportNumber = this.nationalIdProtector.decryptPassportNumber({
+        passportNumberEncrypted: row.passportNumberEncrypted ?? null,
+        passportNumberIv: row.passportNumberIv ?? null,
+        passportNumberAuthTag: row.passportNumberAuthTag ?? null,
+        passportNumberKeyVersion: row.passportNumberKeyVersion ?? null,
+      });
     } catch {
       throw new UnprocessableEntityException({
         code: 'CUSTOMER_SENSITIVE_DECRYPTION_FAILED',
@@ -366,7 +392,7 @@ export class CustomerService {
       reason,
       traceId,
     );
-    return { ...detail, contacts, nationalId };
+    return { ...detail, contacts, nationalId, passportNumber };
   }
 
   async list(query: CustomerListQuery, actor: AuthenticatedActor) {
@@ -508,6 +534,11 @@ export class CustomerService {
           input.kind === 'person' && input.nationalId
             ? this.nationalIdProtector.protect(input.nationalId)
             : undefined,
+          input.kind === 'person' && input.passportNumber
+            ? this.nationalIdProtector.protectPassportNumber(
+                input.passportNumber,
+              )
+            : undefined,
         ),
         actor.userId,
         branchOf(actor, requestedBranch),
@@ -521,8 +552,12 @@ export class CustomerService {
         });
       if (prismaCode(error) === 'P2002')
         throw new ConflictException({
-          code: 'CUSTOMER_NATIONAL_ID_EXISTS',
-          message: 'برای این کد ملی قبلاً پرونده ثبت شده است.',
+          code: passportUniqueConflict(error)
+            ? 'CUSTOMER_PASSPORT_NUMBER_EXISTS'
+            : 'CUSTOMER_NATIONAL_ID_EXISTS',
+          message: passportUniqueConflict(error)
+            ? 'برای این شماره پاسپورت قبلاً پرونده ثبت شده است.'
+            : 'برای این کد ملی قبلاً پرونده ثبت شده است.',
         });
       throw error;
     }
@@ -549,6 +584,11 @@ export class CustomerService {
           input.nationalId
             ? this.nationalIdProtector.protect(input.nationalId)
             : undefined,
+          input.passportNumber
+            ? this.nationalIdProtector.protectPassportNumber(
+                input.passportNumber,
+              )
+            : undefined,
         ),
         input.version,
         actor.userId,
@@ -558,8 +598,12 @@ export class CustomerService {
     } catch (error) {
       if (prismaCode(error) === 'P2002')
         throw new ConflictException({
-          code: 'CUSTOMER_NATIONAL_ID_EXISTS',
-          message: 'برای این کد ملی قبلاً پرونده ثبت شده است.',
+          code: passportUniqueConflict(error)
+            ? 'CUSTOMER_PASSPORT_NUMBER_EXISTS'
+            : 'CUSTOMER_NATIONAL_ID_EXISTS',
+          message: passportUniqueConflict(error)
+            ? 'برای این شماره پاسپورت قبلاً پرونده ثبت شده است.'
+            : 'برای این کد ملی قبلاً پرونده ثبت شده است.',
         });
       throw error;
     }

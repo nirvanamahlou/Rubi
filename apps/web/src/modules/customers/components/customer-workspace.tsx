@@ -15,6 +15,7 @@ import type {
   CustomerRole,
   CustomerSummary,
   CustomerStatusHistoryEntry,
+  DocumentOptionsResponseV1,
   DuplicateCandidate,
   MasterDataRecord,
 } from '@rubi/contracts';
@@ -79,8 +80,14 @@ import {
   PageHeader,
   Skeleton,
 } from '@/components/ui/surfaces';
-import { masterDataApi } from '@/modules/master-data/api/client';
+import { getPublicApiBaseUrl } from '@/lib/environment';
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import {
+  masterDataApi,
+  MasterDataApiError,
+} from '@/modules/master-data/api/client';
 import { customersApi, CustomersApiError } from '../api/client';
+import { customerDocumentsApi } from '../api/customer-documents-client';
 import {
   isMasterReferenceSelectable,
   loadCustomerMasterData,
@@ -175,17 +182,31 @@ const connectedDossierSections = [
 
 const CUSTOMER_SUPPORT_REQUEST_REASON = 'support-request';
 
-function listMasterData(
+async function listMasterData(
   resource: 'organizations' | 'acquaintance-methods' | 'countries' | 'cities',
+  retriedAfterRefresh = false,
 ) {
-  return masterDataApi.list(resource, {
-    search: '',
-    status: 'active',
-    sortBy: 'name',
-    sortDirection: 'asc',
-    page: 1,
-    pageSize: 100,
-  });
+  try {
+    return await masterDataApi.list(resource, {
+      search: '',
+      status: 'active',
+      sortBy: 'name',
+      sortDirection: 'asc',
+      page: 1,
+      pageSize: 100,
+    });
+  } catch (error) {
+    const apiBaseUrl = getPublicApiBaseUrl();
+    if (
+      error instanceof MasterDataApiError &&
+      error.status === 401 &&
+      !retriedAfterRefresh &&
+      apiBaseUrl &&
+      (await refreshAuthenticatedSession(apiBaseUrl))
+    )
+      return listMasterData(resource, true);
+    throw error;
+  }
 }
 
 function safeCustomerId(value: string | null) {
@@ -204,13 +225,28 @@ interface NewCompanionDraft {
   lastName: string;
   nationalId: string;
   birthDate: string;
+  passportNumber: string;
   phone: string;
   email: string;
   organizationId: string;
   relationshipType: CustomerRelationshipType;
+  documents: NewPassengerDocumentDraft[];
 }
 
+interface NewPassengerDocumentDraft {
+  key: number;
+  file: File | null;
+  title: string;
+  documentTypeId: string;
+  categoryId: string;
+  confidentiality: string;
+  validUntil: string;
+}
+
+type PassengerDocumentOptions = DocumentOptionsResponseV1['data'];
+
 let companionDraftKey = 0;
+let passengerDocumentDraftKey = 0;
 
 function emptyCompanionDraft(): NewCompanionDraft {
   companionDraftKey += 1;
@@ -221,10 +257,12 @@ function emptyCompanionDraft(): NewCompanionDraft {
     lastName: '',
     nationalId: '',
     birthDate: '',
+    passportNumber: '',
     phone: '',
     email: '',
     organizationId: '',
     relationshipType: 'companion',
+    documents: [],
   };
 }
 
@@ -274,6 +312,10 @@ function CustomerDrawer({
   const [primaryPhone, setPrimaryPhone] = useState('');
   const [primaryEmail, setPrimaryEmail] = useState('');
   const [newCompanions, setNewCompanions] = useState<NewCompanionDraft[]>([]);
+  const [passengerDocumentOptions, setPassengerDocumentOptions] =
+    useState<PassengerDocumentOptions | null>(null);
+  const [passengerDocumentOptionsLoading, setPassengerDocumentOptionsLoading] =
+    useState(false);
   const [sensitiveFeedback, setSensitiveFeedback] = useState<{
     kind: 'success' | 'unauthorized' | 'forbidden' | 'unreadable' | 'error';
     message: string;
@@ -471,6 +513,124 @@ function CustomerDrawer({
     }
   }
 
+  async function loadPassengerDocumentOptions() {
+    if (passengerDocumentOptions) return passengerDocumentOptions;
+    setPassengerDocumentOptionsLoading(true);
+    try {
+      const response = await customerDocumentsApi.options();
+      setPassengerDocumentOptions(response.data);
+      return response.data;
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'دریافت گزینه‌های مدارک مسافر ناموفق بود.',
+      );
+      return null;
+    } finally {
+      setPassengerDocumentOptionsLoading(false);
+    }
+  }
+
+  async function addPassengerDocument(companionIndex: number) {
+    const options = await loadPassengerDocumentOptions();
+    if (!options) return;
+    const identityTypes = options.documentTypes.filter(
+      (documentType) => documentType.domain === 'CUSTOMER_IDENTITY',
+    );
+    const firstType =
+      identityTypes.find((documentType) => documentType.code === 'PASSPORT') ??
+      identityTypes[0];
+    const firstCategory =
+      options.categories.find(
+        (category) => category.code === 'CUSTOMER_IDENTITY',
+      ) ?? options.categories[0];
+    if (!firstType || !firstCategory) {
+      setMessage('نوع یا دسته‌بندی مناسب برای مدارک مسافر تعریف نشده است.');
+      return;
+    }
+    passengerDocumentDraftKey += 1;
+    const document: NewPassengerDocumentDraft = {
+      key: passengerDocumentDraftKey,
+      file: null,
+      title: firstType.name,
+      documentTypeId: firstType.id,
+      categoryId: firstCategory.id,
+      confidentiality: firstType.defaultConfidentiality,
+      validUntil: '',
+    };
+    setNewCompanions((current) =>
+      current.map((companion, index) =>
+        index === companionIndex
+          ? { ...companion, documents: [...companion.documents, document] }
+          : companion,
+      ),
+    );
+  }
+
+  function updatePassengerDocument(
+    companionIndex: number,
+    documentKey: number,
+    patch: Partial<Omit<NewPassengerDocumentDraft, 'key'>>,
+  ) {
+    setNewCompanions((current) =>
+      current.map((companion, index) =>
+        index === companionIndex
+          ? {
+              ...companion,
+              documents: companion.documents.map((document) =>
+                document.key === documentKey
+                  ? { ...document, ...patch }
+                  : document,
+              ),
+            }
+          : companion,
+      ),
+    );
+  }
+
+  function removePassengerDocument(
+    companionIndex: number,
+    documentKey: number,
+  ) {
+    setNewCompanions((current) =>
+      current.map((companion, index) =>
+        index === companionIndex
+          ? {
+              ...companion,
+              documents: companion.documents.filter(
+                (document) => document.key !== documentKey,
+              ),
+            }
+          : companion,
+      ),
+    );
+  }
+
+  async function uploadPassengerDocuments(
+    passenger: CustomerDetail,
+    documents: readonly NewPassengerDocumentDraft[],
+  ) {
+    for (const document of documents) {
+      if (!document.file) continue;
+      const form = new FormData();
+      form.set('file', document.file);
+      form.set('title', document.title.trim());
+      form.set('documentTypeId', document.documentTypeId);
+      form.set('categoryId', document.categoryId);
+      form.set('branchId', passenger.ownerBranchId);
+      form.set('ownerUserId', passengerDocumentOptions!.currentUserId);
+      form.set('sourceModule', 'customers');
+      form.set('sourceEntityType', 'Customer');
+      form.set('sourceEntityId', passenger.id);
+      form.set('sourceDisplayLabel', `پرونده مسافر ${passenger.displayName}`);
+      form.set('confidentiality', document.confidentiality);
+      form.set('versionNote', 'ثبت هم‌زمان با ایجاد پرونده مسافر');
+      if (document.validUntil) form.set('validUntil', document.validUntil);
+      await customerDocumentsApi.upload(form);
+    }
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (
@@ -492,8 +652,87 @@ function CustomerDrawer({
       );
       return;
     }
+    if (
+      mode === 'create' &&
+      draft.roles.includes('passenger') &&
+      !draft.birthDate
+    ) {
+      setMessage('تاریخ تولد مسافر الزامی است.');
+      return;
+    }
+    if (
+      draft.passportNumber?.trim() &&
+      !/^[A-Z0-9-]{4,24}$/.test(
+        draft.passportNumber.trim().toUpperCase().replace(/\s+/g, ''),
+      )
+    ) {
+      setMessage('شماره پاسپورت معتبر نیست.');
+      return;
+    }
+    const missingBirthDateIndex = newCompanions.findIndex((companion) =>
+      companion.source === 'primaryCustomer'
+        ? !draft.birthDate
+        : !companion.birthDate,
+    );
+    if (missingBirthDateIndex >= 0) {
+      setMessage(
+        `تاریخ تولد مسافر شماره ${(missingBirthDateIndex + 1).toLocaleString('fa-IR')} الزامی است.`,
+      );
+      return;
+    }
+    const invalidPassportIndex = newCompanions.findIndex(
+      (companion) =>
+        companion.passportNumber.trim() &&
+        !/^[A-Z0-9-]{4,24}$/.test(
+          companion.passportNumber.trim().toUpperCase().replace(/\s+/g, ''),
+        ),
+    );
+    if (invalidPassportIndex >= 0) {
+      setMessage(
+        `شماره پاسپورت مسافر شماره ${(invalidPassportIndex + 1).toLocaleString('fa-IR')} معتبر نیست.`,
+      );
+      return;
+    }
+    for (const [companionIndex, companion] of newCompanions.entries()) {
+      for (const document of companion.documents) {
+        const documentType = passengerDocumentOptions?.documentTypes.find(
+          (item) => item.id === document.documentTypeId,
+        );
+        const passengerNumber = (companionIndex + 1).toLocaleString('fa-IR');
+        if (!document.file) continue;
+        if (document.title.trim().length < 2) {
+          setMessage(`عنوان مدرک مسافر شماره ${passengerNumber} معتبر نیست.`);
+          return;
+        }
+        if (!documentType || !document.categoryId) {
+          setMessage(
+            `نوع یا دسته‌بندی مدرک مسافر شماره ${passengerNumber} معتبر نیست.`,
+          );
+          return;
+        }
+        if (documentType.requiresExpiry && !document.validUntil) {
+          setMessage(
+            `تاریخ انقضای مدرک مسافر شماره ${passengerNumber} الزامی است.`,
+          );
+          return;
+        }
+        if (document.file.size > documentType.maxFileSizeBytes) {
+          setMessage(
+            `حجم مدرک مسافر شماره ${passengerNumber} بیش از حد مجاز است.`,
+          );
+          return;
+        }
+        if (!documentType.allowedMimeTypes.includes(document.file.type)) {
+          setMessage(`نوع فایل مدرک مسافر شماره ${passengerNumber} مجاز نیست.`);
+          return;
+        }
+      }
+    }
     const primaryCustomerIsPassenger =
       mode === 'create' && newCompanions[0]?.source === 'primaryCustomer';
+    const primaryPassenger = newCompanions.find(
+      (companion) => companion.source === 'primaryCustomer',
+    );
     const submittedDraft: CustomerMutationRequest = {
       ...draft,
       ...(draft.nationalId
@@ -506,8 +745,18 @@ function CustomerDrawer({
       roles: primaryCustomerIsPassenger
         ? Array.from(new Set([...draft.roles, 'passenger' as const]))
         : draft.roles,
+      ...(primaryPassenger?.passportNumber.trim()
+        ? {
+            passportNumber: primaryPassenger.passportNumber
+              .trim()
+              .toUpperCase()
+              .replace(/\s+/g, ''),
+          }
+        : {}),
     };
     if (!draft.nationalId?.trim()) delete submittedDraft.nationalId;
+    if (!submittedDraft.passportNumber?.trim())
+      delete submittedDraft.passportNumber;
     if (!submittedDraft.roles.length) {
       setMessage('حداقل یک نقش مشتری یا مسافر انتخاب کنید.');
       return;
@@ -553,6 +802,13 @@ function CustomerDrawer({
           ).data;
         }
 
+        if (primaryPassenger?.documents.length) {
+          await uploadPassengerDocuments(
+            createdCustomer,
+            primaryPassenger.documents,
+          );
+        }
+
         for (const companion of newCompanions) {
           if (companion.source === 'primaryCustomer') continue;
           let createdCompanion = (
@@ -565,6 +821,12 @@ function CustomerDrawer({
               nationalId: normalizeNationalId(companion.nationalId),
               organizationId: companion.organizationId || null,
               birthDate: companion.birthDate || null,
+              passportNumber: companion.passportNumber.trim()
+                ? companion.passportNumber
+                    .trim()
+                    .toUpperCase()
+                    .replace(/\s+/g, '')
+                : null,
               roles: ['passenger'],
               acquaintanceMethodId: null,
             })
@@ -589,6 +851,12 @@ function CustomerDrawer({
               isPrimary: !companion.phone.trim(),
               version: createdCompanion.version,
             });
+          }
+          if (companion.documents.length) {
+            await uploadPassengerDocuments(
+              createdCompanion,
+              companion.documents,
+            );
           }
           createdCustomer = (
             await customersApi.addCompanion(createdCustomer.id, {
@@ -895,6 +1163,7 @@ function CustomerDrawer({
                     kind: value as CustomerMutationRequest['kind'],
                     organizationId: null,
                     nationalId: '',
+                    passportNumber: '',
                     firstName: '',
                     lastName: '',
                     displayName: '',
@@ -985,7 +1254,11 @@ function CustomerDrawer({
                 <CustomerDateField
                   disabled={readonly}
                   id="customer-birth-date"
-                  label="تاریخ تولد"
+                  label={
+                    draft.roles.includes('passenger')
+                      ? 'تاریخ تولد (اجباری)'
+                      : 'تاریخ تولد'
+                  }
                   mode={calendarMode}
                   onModeChange={onCalendarModeChange}
                   onChange={(value) =>
@@ -996,6 +1269,36 @@ function CustomerDrawer({
                   }
                   value={draft.birthDate ?? ''}
                 />
+                <FormField
+                  description={
+                    customer?.maskedPassportNumber
+                      ? `ثبت‌شده: ${customer.maskedPassportNumber} — فقط برای تغییر دوباره وارد کنید`
+                      : 'اختیاری؛ با حروف لاتین و عدد'
+                  }
+                  id="customer-passport-number"
+                  label="شماره پاسپورت"
+                >
+                  <Input
+                    autoComplete="off"
+                    disabled={readonly}
+                    dir="ltr"
+                    id="customer-passport-number"
+                    maxLength={24}
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        passportNumber: event.target.value.toUpperCase(),
+                      }))
+                    }
+                    pattern="[A-Za-z0-9-]{4,24}"
+                    placeholder={customer?.maskedPassportNumber ?? 'A12345678'}
+                    value={
+                      readonly
+                        ? (customer?.maskedPassportNumber ?? 'ثبت نشده')
+                        : (draft.passportNumber ?? '')
+                    }
+                  />
+                </FormField>
               </>
             ) : (
               <FormField label="سازمان مرجع" required>
@@ -1344,25 +1647,18 @@ function CustomerDrawer({
                               value={companion.nationalId}
                             />
                           </FormField>
-                          <details className="group rounded-xl border bg-background p-3 sm:col-span-2">
-                            <summary className="cursor-pointer list-none font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                              <span className="flex items-center justify-between gap-3">
-                                اطلاعات ۳۶۰ مسافر (اختیاری)
-                                <span
-                                  aria-hidden="true"
-                                  className="text-muted-foreground transition-transform group-open:rotate-180"
-                                >
-                                  ▾
-                                </span>
-                              </span>
-                              <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                                تاریخ تولد، تماس، ایمیل، شرکت و مدارک سفر
-                              </span>
-                            </summary>
+                          <div className="rounded-xl border bg-background p-3 sm:col-span-2">
+                            <div>
+                              <p className="font-semibold">اطلاعات ۳۶۰ مسافر</p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                تاریخ تولد الزامی است؛ تماس، ایمیل و شرکت
+                                اختیاری هستند.
+                              </p>
+                            </div>
                             <div className="mt-4 grid gap-3 border-t pt-4 sm:grid-cols-2">
                               <CustomerDateField
                                 id={`companion-${companion.key}-birth-date`}
-                                label="تاریخ تولد"
+                                label="تاریخ تولد (اجباری)"
                                 mode={calendarMode}
                                 onModeChange={onCalendarModeChange}
                                 onChange={(value) =>
@@ -1451,16 +1747,242 @@ function CustomerDrawer({
                                   </SelectContent>
                                 </Select>
                               </FormField>
-                              <Alert
-                                className="sm:col-span-2"
-                                description="نام و نام خانوادگی انگلیسی، شماره پاسپورت، کشور صادرکننده و تاریخ‌های صدور/انقضا پس از فعال‌شدن نگهداری امن مدارک در همین بخش قابل ثبت خواهند بود."
-                                title="مدارک سفر مسافر"
-                                tone="warning"
-                              />
                             </div>
-                          </details>
+                          </div>
                         </>
                       )}
+                      <FormField
+                        description="اختیاری؛ با حروف لاتین و عدد وارد شود و به‌صورت رمزنگاری‌شده نگهداری می‌شود."
+                        id={`companion-${companion.key}-passport-number`}
+                        label="شماره پاسپورت"
+                      >
+                        <Input
+                          autoComplete="off"
+                          dir="ltr"
+                          id={`companion-${companion.key}-passport-number`}
+                          maxLength={24}
+                          onChange={(event) =>
+                            updateCompanion(index, {
+                              passportNumber: event.target.value.toUpperCase(),
+                            })
+                          }
+                          pattern="[A-Za-z0-9-]{4,24}"
+                          placeholder="مثلاً A12345678"
+                          value={companion.passportNumber}
+                        />
+                      </FormField>
+                      <div className="space-y-3 rounded-xl border bg-muted/10 p-3 sm:col-span-2">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="font-bold">مدارک سفر مسافر</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              پاسپورت، ویزا و مدارک هویتی پس از ثبت به پرونده
+                              همین مسافر متصل می‌شوند.
+                            </p>
+                          </div>
+                          <Button
+                            disabled={passengerDocumentOptionsLoading}
+                            onClick={() => void addPassengerDocument(index)}
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                          >
+                            <Upload className="size-4" />
+                            {passengerDocumentOptionsLoading
+                              ? 'در حال دریافت…'
+                              : 'افزودن مدرک'}
+                          </Button>
+                        </div>
+                        {companion.documents.length === 0 ? (
+                          <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+                            مدرکی انتخاب نشده است. افزودن مدرک اختیاری است.
+                          </p>
+                        ) : null}
+                        {companion.documents.map((document, documentIndex) => {
+                          const identityTypes =
+                            passengerDocumentOptions?.documentTypes.filter(
+                              (item) => item.domain === 'CUSTOMER_IDENTITY',
+                            ) ?? [];
+                          const selectedType = identityTypes.find(
+                            (item) => item.id === document.documentTypeId,
+                          );
+                          return (
+                            <Card
+                              className="grid gap-3 p-3 md:grid-cols-2"
+                              key={document.key}
+                            >
+                              <div className="flex items-center justify-between md:col-span-2">
+                                <p className="text-sm font-bold">
+                                  مدرک{' '}
+                                  {(documentIndex + 1).toLocaleString('fa-IR')}
+                                </p>
+                                <Button
+                                  onClick={() =>
+                                    removePassengerDocument(index, document.key)
+                                  }
+                                  size="sm"
+                                  type="button"
+                                  variant="ghost"
+                                >
+                                  حذف مدرک
+                                </Button>
+                              </div>
+                              <FormField
+                                id={`passenger-${companion.key}-document-${document.key}-file`}
+                                label="تصویر یا فایل مدرک (اختیاری)"
+                              >
+                                <Input
+                                  accept={selectedType?.allowedMimeTypes.join(
+                                    ',',
+                                  )}
+                                  id={`passenger-${companion.key}-document-${document.key}-file`}
+                                  onChange={(event) => {
+                                    const file =
+                                      event.target.files?.[0] ?? null;
+                                    updatePassengerDocument(
+                                      index,
+                                      document.key,
+                                      {
+                                        file,
+                                        title:
+                                          document.title ||
+                                          file?.name.replace(/\.[^.]+$/, '') ||
+                                          '',
+                                      },
+                                    );
+                                  }}
+                                  type="file"
+                                />
+                              </FormField>
+                              <FormField
+                                id={`passenger-${companion.key}-document-${document.key}-title`}
+                                label="عنوان مدرک"
+                                required
+                              >
+                                <Input
+                                  id={`passenger-${companion.key}-document-${document.key}-title`}
+                                  onChange={(event) =>
+                                    updatePassengerDocument(
+                                      index,
+                                      document.key,
+                                      { title: event.target.value },
+                                    )
+                                  }
+                                  required
+                                  value={document.title}
+                                />
+                              </FormField>
+                              <FormField label="نوع مدرک" required>
+                                <Select
+                                  onValueChange={(value) => {
+                                    const nextType = identityTypes.find(
+                                      (item) => item.id === value,
+                                    );
+                                    updatePassengerDocument(
+                                      index,
+                                      document.key,
+                                      {
+                                        documentTypeId: value,
+                                        confidentiality:
+                                          nextType?.defaultConfidentiality ??
+                                          document.confidentiality,
+                                        validUntil: nextType?.requiresExpiry
+                                          ? document.validUntil
+                                          : '',
+                                      },
+                                    );
+                                  }}
+                                  value={document.documentTypeId}
+                                >
+                                  <SelectTrigger
+                                    aria-label={`نوع مدرک مسافر ${index + 1}`}
+                                  >
+                                    <SelectValue placeholder="انتخاب نوع مدرک" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {identityTypes.map((type) => (
+                                      <SelectItem key={type.id} value={type.id}>
+                                        {type.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </FormField>
+                              <FormField label="دسته‌بندی" required>
+                                <Select
+                                  onValueChange={(value) =>
+                                    updatePassengerDocument(
+                                      index,
+                                      document.key,
+                                      { categoryId: value },
+                                    )
+                                  }
+                                  value={document.categoryId}
+                                >
+                                  <SelectTrigger
+                                    aria-label={`دسته‌بندی مدرک مسافر ${index + 1}`}
+                                  >
+                                    <SelectValue placeholder="انتخاب دسته‌بندی" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {passengerDocumentOptions?.categories.map(
+                                      (category) => (
+                                        <SelectItem
+                                          key={category.id}
+                                          value={category.id}
+                                        >
+                                          {category.name}
+                                        </SelectItem>
+                                      ),
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </FormField>
+                              <CustomerDateField
+                                id={`passenger-${companion.key}-document-${document.key}-expiry`}
+                                label="تاریخ انقضا"
+                                mode={calendarMode}
+                                onModeChange={onCalendarModeChange}
+                                onChange={(value) =>
+                                  updatePassengerDocument(index, document.key, {
+                                    validUntil: value,
+                                  })
+                                }
+                                value={document.validUntil}
+                              />
+                              <FormField label="محرمانگی" required>
+                                <Select
+                                  onValueChange={(value) =>
+                                    updatePassengerDocument(
+                                      index,
+                                      document.key,
+                                      { confidentiality: value },
+                                    )
+                                  }
+                                  value={document.confidentiality}
+                                >
+                                  <SelectTrigger
+                                    aria-label={`محرمانگی مدرک مسافر ${index + 1}`}
+                                  >
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="INTERNAL">
+                                      داخلی
+                                    </SelectItem>
+                                    <SelectItem value="CONFIDENTIAL">
+                                      محرمانه
+                                    </SelectItem>
+                                    <SelectItem value="RESTRICTED">
+                                      بسیار محدود
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormField>
+                            </Card>
+                          );
+                        })}
+                      </div>
                       <FormField label="رابطه با مشتری">
                         <Select
                           onValueChange={(value) =>
@@ -1564,6 +2086,21 @@ function CustomerDrawer({
                   {customer.maskedNationalId ? (
                     <Badge className="mt-2">
                       {revealedDetail?.nationalId
+                        ? 'نمایش Audit‌شده'
+                        : 'ماسک‌شده'}
+                    </Badge>
+                  ) : null}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">شماره پاسپورت</p>
+                  <p dir="ltr" className="text-right font-mono">
+                    {revealedDetail?.passportNumber ??
+                      customer.maskedPassportNumber ??
+                      'ثبت نشده'}
+                  </p>
+                  {customer.maskedPassportNumber ? (
+                    <Badge className="mt-2">
+                      {revealedDetail?.passportNumber
                         ? 'نمایش Audit‌شده'
                         : 'ماسک‌شده'}
                     </Badge>

@@ -10,6 +10,11 @@
   آن fail-closed است. تغییر دستی Scan به `CLEAN` یا جعل پاسخ Scanner در Seed/UI ممنوع است.
 - تصمیم `DEC-OPEN-006` درباره retention، residency و key management همچنان باز است؛ این
   Slice حذف دائمی، گردش کلید تولید یا تعهد نگهداری را حدس نمی‌زند.
+- درخواست صریح مالک محصول در 2026-09-05 ورود دستی اختیاری شماره پاسپورت و تصویر
+  اختیاری آن را برای Development/Test مجاز کرد. شماره فقط در مرز Customers با
+  AES-256-GCM، HMAC دامنه‌جدا، Mask و Sensitive-read Audit نگهداری می‌شود و فایل از
+  Public Contract ماژول Documents عبور می‌کند. این مجوز محدود، `DEC-OPEN-006` را برای
+  Production، retention، residency یا گردش کلید حل‌شده اعلام نمی‌کند.
 
 ## Clarifications carried from the approved source tasks — 2026-08-31
 

@@ -12,7 +12,7 @@ import {
 const source = readFileSync(
   new URL('./customer-workspace.tsx', import.meta.url),
   'utf8',
-);
+).replace(/\r\n/g, '\n');
 const dateFieldSource = readFileSync(
   new URL('./customer-date-field.tsx', import.meta.url),
   'utf8',
@@ -267,10 +267,12 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain(
       'organizationId: companion.organizationId || null',
     );
-    expect(source).toContain('اطلاعات ۳۶۰ مسافر (اختیاری)');
-    expect(source).toContain('<details className=');
-    expect(source).toContain('<summary className=');
-    expect(source).toContain('تاریخ تولد، تماس، ایمیل، شرکت و مدارک سفر');
+    expect(source).toContain('اطلاعات ۳۶۰ مسافر');
+    expect(source).not.toContain('<details className=');
+    expect(source).not.toContain('<summary className=');
+    expect(source).toContain('تاریخ تولد (اجباری)');
+    expect(source).toContain('شماره پاسپورت');
+    expect(source).toContain('تصویر یا فایل مدرک (اختیاری)');
     expect(source).toContain('companion-${companion.key}-email');
     expect(source).toContain('value: companion.email.trim().toLowerCase()');
     expect(source).toContain('مدارک سفر مسافر');

@@ -36,6 +36,9 @@
 - User authorized separation of all 27 pre-existing foreign changes. Preserved as local commit 75afc50751b3d5db16003c3e551bc3778e047eda on codex/pc-a-customer-passport-preservation-0905, plus raw backup at ../.worktrees/sales-foreign-backup-20260905. Three-way SHA256 equality checked before cleaning Sales; 20 tracked paths restored and 7 duplicate untracked files removed only from Sales.
 - This is recovery-only, not feature approval or reconciliation into the active Customers branch. Twelve files match customer-connections-0905; fifteen require owner reconciliation. Existing owner branches/worktrees remain untouched. Publishing the unreviewed preservation payload was blocked by safety review; no remote preservation branch or new PR was created.
 - Sales worktree is clean at 8dbc5f4 after isolation. Prisma foreign-file blocker is resolved; Reservations amendment API and Agency public contracts are still unfinished. Migration/Central Docs/Sales Contract locks remain held; PR #90 is not promoted or merged.
+## CUSTOMERS-PRESERVATION-0905 — PC-A — RECOVERY_ONLY
+
+- Authorized isolation of 27 foreign Sales-worktree files onto codex/pc-a-customer-passport-preservation-0905; exact snapshot, not feature completion. See docs/tasks/CUSTOMERS-PRESERVATION-0905.md and byte manifest. No schema redesign, migration application, lock transfer, new PR or modification of active owner branches.
 
 ## SALES-CONTRACTS-001-HOTEL-DETAILS — PC-A — SALES_COMPLETE / RESERVATIONS_BLOCKED
 

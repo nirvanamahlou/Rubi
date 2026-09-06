@@ -86,6 +86,15 @@ export class CustomerMutationDto {
   @IsString()
   @Matches(/^\d{10}$/)
   nationalId?: string | null;
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string'
+      ? value.trim().toUpperCase().replace(/\s+/g, '')
+      : value,
+  )
+  @IsString()
+  @Matches(/^[A-Z0-9-]{4,24}$/)
+  passportNumber?: string | null;
   @IsArray() @IsIn(['customer', 'passenger'], { each: true }) roles!: (
     'customer' | 'passenger'
   )[];
