@@ -27,6 +27,7 @@ import {
   Route,
   Save,
   Search,
+  Send,
   ShoppingCart,
   Target,
   Upload,
@@ -46,6 +47,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
+  Checkbox,
   FormField,
   Input,
   Select,
@@ -237,6 +239,7 @@ function PreviewTable({
   tab,
   onOpen,
   onNotice,
+  headerActions,
   searchable = true,
   actions = true,
   exportable = true,
@@ -249,6 +252,7 @@ function PreviewTable({
   tab: string;
   onOpen: (item: MarketingPreviewItem) => void;
   onNotice: NoticeHandler;
+  headerActions?: React.ReactNode;
   searchable?: boolean;
   actions?: boolean;
   exportable?: boolean;
@@ -319,25 +323,30 @@ function PreviewTable({
   return (
     <Panel
       actions={
-        rows.length && exportable ? (
-          <Button
-            onClick={() => {
-              downloadRowsAsExcel({
-                filename: title,
-                sheetName: title,
-                columns,
-                rows: filtered.map((row) => [
-                  editedTitles[row.id] ?? row.cells[0] ?? '',
-                  ...row.cells.slice(1),
-                ]),
-              });
-              onNotice(`خروجی اکسل «${title}» دانلود شد.`);
-            }}
-            size="sm"
-            variant="outline"
-          >
-            <Download aria-hidden="true" className="size-4" /> خروجی اکسل
-          </Button>
+        headerActions || (rows.length && exportable) ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {headerActions}
+            {rows.length && exportable ? (
+              <Button
+                onClick={() => {
+                  downloadRowsAsExcel({
+                    filename: title,
+                    sheetName: title,
+                    columns,
+                    rows: filtered.map((row) => [
+                      editedTitles[row.id] ?? row.cells[0] ?? '',
+                      ...row.cells.slice(1),
+                    ]),
+                  });
+                  onNotice(`خروجی اکسل «${title}» دانلود شد.`);
+                }}
+                size="sm"
+                variant="outline"
+              >
+                <Download aria-hidden="true" className="size-4" /> خروجی اکسل
+              </Button>
+            ) : null}
+          </div>
         ) : undefined
       }
       title={title}
@@ -2087,12 +2096,7 @@ function AudiencePage({
   }
   if (tab === 'sources') {
     return (
-      <>
-        <div className="flex justify-end">
-          <Button onClick={() => setInputKind('source')}>
-            <Plus aria-hidden="true" className="size-4" /> افزودن منبع ورود
-          </Button>
-        </div>
+      <div className="grid gap-5">
         <div className="grid gap-4 lg:grid-cols-2">
           <Panel title="منابع ورود سرنخ" description="۳۰ روز اخیر">
             <ProgressRows
@@ -2133,6 +2137,11 @@ function AudiencePage({
             'پنجره انتساب',
             'وضعیت',
           ]}
+          headerActions={
+            <Button onClick={() => setInputKind('source')} size="sm">
+              <Plus aria-hidden="true" className="size-4" /> افزودن منبع ورود
+            </Button>
+          }
           onNotice={onNotice}
           onOpen={onOpen}
           rows={[...createdSources, ...sourceRows]}
@@ -2152,16 +2161,11 @@ function AudiencePage({
             open
           />
         ) : null}
-      </>
+      </div>
     );
   }
   return (
     <>
-      <div className="flex justify-end">
-        <Button onClick={() => setInputKind('campaign-audience')}>
-          <Plus aria-hidden="true" className="size-4" /> افزودن مخاطبان کمپین
-        </Button>
-      </div>
       <PreviewTable
         columns={[
           'نام',
@@ -2172,6 +2176,11 @@ function AudiencePage({
           'آخرین تغییر',
           'وضعیت',
         ]}
+        headerActions={
+          <Button onClick={() => setInputKind('campaign-audience')} size="sm">
+            <Plus aria-hidden="true" className="size-4" /> افزودن مخاطبان کمپین
+          </Button>
+        }
         onNotice={onNotice}
         onOpen={onOpen}
         rows={[
@@ -2235,6 +2244,480 @@ function AudiencePage({
         />
       ) : null}
     </>
+  );
+}
+
+function CommunicationChannelOption({
+  checked,
+  id,
+  icon: Icon,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  id: string;
+  icon: LucideIcon;
+  label: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3 transition hover:bg-muted/30">
+      <Icon aria-hidden="true" className="size-5 text-primary" />
+      <Checkbox
+        aria-label={label}
+        checked={checked}
+        id={id}
+        onCheckedChange={(value) => onChange(value === true)}
+      />
+      <label className="cursor-pointer font-bold" htmlFor={id}>
+        {label}
+      </label>
+    </div>
+  );
+}
+
+function MessageComposer({ onNotice }: { onNotice: NoticeHandler }) {
+  const [message, setMessage] = useState(
+    'تا ۳۱ شهریور، سفر اروپا را با نرخ ویژه رزرو کنید. مشاهده پیشنهادها: {{short_link}}',
+  );
+  const [campaign, setCampaign] = useState('europe');
+  const [audience, setAudience] = useState('europe-fans');
+  const [template, setTemplate] = useState('wave-2');
+  const [sendMode, setSendMode] = useState('now');
+  const [scheduledDate, setScheduledDate] = useState('2026-09-12');
+  const [channels, setChannels] = useState({
+    sms: true,
+    email: false,
+    whatsapp: false,
+    push: false,
+  });
+  const toggleChannel = (key: keyof typeof channels, value: boolean) =>
+    setChannels((current) => ({ ...current, [key]: value }));
+  const selectedChannelCount = Object.values(channels).filter(Boolean).length;
+  return (
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
+      <Card className="p-5">
+        <h3 className="text-lg font-black">ارسال پیام</h3>
+        <form
+          className="mt-5 grid gap-4 md:grid-cols-2"
+          id="marketing-message-composer"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!selectedChannelCount) {
+              onNotice('حداقل یک کانال برای ارسال انتخاب کنید.');
+              return;
+            }
+            if (!message.trim()) {
+              onNotice('متن پیام را وارد کنید.');
+              return;
+            }
+            if (sendMode === 'scheduled' && !scheduledDate) {
+              onNotice('تاریخ ارسال را انتخاب کنید.');
+              return;
+            }
+            onNotice(
+              sendMode === 'scheduled'
+                ? `پیام برای تاریخ ${scheduledDate} زمان‌بندی شد.`
+                : 'نیت ارسال پیام ثبت شد.',
+            );
+          }}
+        >
+          <FormField id="message-campaign" label="کمپین" required>
+            <SimpleSelect
+              ariaLabel="انتخاب کمپین پیام"
+              onChange={setCampaign}
+              options={[
+                ['europe', 'جشنواره تابستان اروپا'],
+                ['istanbul', 'پرواز استانبول شهریور'],
+                ['dubai', 'هتل‌های دبی پاییز'],
+              ]}
+              value={campaign}
+            />
+          </FormField>
+          <FormField id="message-audience" label="مخاطبان" required>
+            <SimpleSelect
+              ariaLabel="انتخاب مخاطبان پیام"
+              onChange={setAudience}
+              options={[
+                ['europe-fans', 'علاقه‌مندان اروپا · ۱۲٬۸۴۰'],
+                ['vip', 'مشتریان VIP · ۲٬۴۸۰'],
+                ['inactive', 'مشتریان غیرفعال · ۶٬۳۲۰'],
+              ]}
+              value={audience}
+            />
+          </FormField>
+          <div className="grid gap-2 md:col-span-2">
+            <span className="text-sm font-bold">کانال‌ها</span>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              <CommunicationChannelOption
+                checked={channels.sms}
+                id="communication-channel-sms"
+                icon={Phone}
+                label="پیامک"
+                onChange={(value) => toggleChannel('sms', value)}
+              />
+              <CommunicationChannelOption
+                checked={channels.email}
+                id="communication-channel-email"
+                icon={Mail}
+                label="ایمیل"
+                onChange={(value) => toggleChannel('email', value)}
+              />
+              <CommunicationChannelOption
+                checked={channels.whatsapp}
+                id="communication-channel-whatsapp"
+                icon={MessageCircle}
+                label="واتساپ"
+                onChange={(value) => toggleChannel('whatsapp', value)}
+              />
+              <CommunicationChannelOption
+                checked={channels.push}
+                id="communication-channel-push"
+                icon={BellRing}
+                label="پوش"
+                onChange={(value) => toggleChannel('push', value)}
+              />
+            </div>
+          </div>
+          <FormField id="message-template" label="قالب پیام" required>
+            <SimpleSelect
+              ariaLabel="انتخاب قالب پیام"
+              onChange={setTemplate}
+              options={[
+                ['wave-2', 'اروپا — موج دوم'],
+                ['flight-reminder', 'یادآوری پرواز'],
+                ['hotel-offer', 'پیشنهاد هتل دبی'],
+              ]}
+              value={template}
+            />
+          </FormField>
+          <FormField id="message-mode" label="روش ارسال" required>
+            <SimpleSelect
+              ariaLabel="روش ارسال"
+              onChange={setSendMode}
+              options={[
+                ['now', 'ارسال فوری'],
+                ['scheduled', 'زمان‌بندی'],
+              ]}
+              value={sendMode}
+            />
+          </FormField>
+          {sendMode === 'scheduled' ? (
+            <FormField id="message-date" label="تاریخ ارسال" required>
+              <DatePicker
+                id="message-date"
+                onChange={setScheduledDate}
+                value={scheduledDate}
+              />
+            </FormField>
+          ) : null}
+          <div className="md:col-span-2">
+            <FormField id="message-body" label="متن پیام" required>
+              <Textarea
+                id="message-body"
+                onChange={(event) => setMessage(event.target.value)}
+                rows={6}
+                value={message}
+              />
+            </FormField>
+          </div>
+          <div className="flex flex-wrap gap-2 border-t border-border pt-4 md:col-span-2">
+            <Button
+              onClick={() => onNotice('پیش‌نویس پیام ذخیره شد.')}
+              type="button"
+              variant="outline"
+            >
+              <Save aria-hidden="true" className="size-4" /> ذخیره پیش‌نویس
+            </Button>
+            <Button
+              onClick={() => onNotice('پیش‌نمایش پیام بروزرسانی شد.')}
+              type="button"
+              variant="outline"
+            >
+              <Eye aria-hidden="true" className="size-4" /> پیش‌نمایش
+            </Button>
+          </div>
+        </form>
+      </Card>
+      <Card className="bg-slate-100 p-5 dark:bg-slate-950">
+        <p className="text-center text-sm text-muted-foreground">
+          پیش‌نمایش پیام
+        </p>
+        <div className="mt-5 rounded-2xl rounded-br-sm bg-emerald-100 p-4 text-sm leading-7 text-emerald-950 shadow-sm dark:bg-emerald-950 dark:text-emerald-100">
+          <strong>نیایش سیر</strong>
+          <p className="mt-2 whitespace-pre-wrap">
+            {message.replace('{{short_link}}', 'nys.ir/eu25')}
+          </p>
+          <small className="mt-2 block text-emerald-700 dark:text-emerald-300">
+            {selectedChannelCount.toLocaleString('fa-IR')} کانال انتخاب‌شده
+          </small>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+const scheduledCommunicationRows: readonly PreviewRow[] = [
+  {
+    id: 'preview-communication-scheduled-europe',
+    cells: [
+      'یادآوری جشنواره اروپا',
+      'جشنواره تابستان اروپا',
+      'پیامک',
+      '۱۲٬۸۴۰',
+      '۱۴۰۵/۰۶/۱۴ · ۱۰:۰۰',
+      'اروپا — موج دوم',
+      'زمان‌بندی‌شده',
+    ],
+    occurredAt: '2026-09-05',
+    statusIndex: 6,
+  },
+  {
+    id: 'preview-communication-scheduled-dubai',
+    cells: [
+      'پیشنهاد اقامت دبی',
+      'هتل‌های دبی پاییز',
+      'ایمیل',
+      '۸٬۲۱۰',
+      '۱۴۰۵/۰۶/۱۶ · ۱۲:۳۰',
+      'پیشنهاد هتل دبی',
+      'زمان‌بندی‌شده',
+    ],
+    occurredAt: '2026-09-07',
+    statusIndex: 6,
+  },
+  {
+    id: 'preview-communication-scheduled-retention',
+    cells: [
+      'بازگشت مشتری غیرفعال',
+      'فعال‌سازی مجدد',
+      'پوش',
+      '۶٬۳۲۰',
+      '۱۴۰۵/۰۶/۲۰ · ۱۸:۰۰',
+      'بازگشت دوباره',
+      'در انتظار تأیید',
+    ],
+    occurredAt: '2026-09-11',
+    statusIndex: 6,
+  },
+];
+
+const communicationHistoryRows: readonly PreviewRow[] = [
+  {
+    id: 'preview-communication-history-europe',
+    cells: [
+      'موج اول جشنواره اروپا',
+      'پیامک',
+      '۲۲٬۴۸۰',
+      '۲۱٬۹۸۴',
+      '۴۹۶',
+      '۱٬۸۴۲',
+      '۱۴۰۵/۰۶/۰۵ · ۱۰:۰۰',
+      'پایان‌یافته',
+    ],
+    occurredAt: '2026-08-27',
+    statusIndex: 7,
+  },
+  {
+    id: 'preview-communication-history-istanbul',
+    cells: [
+      'یادآوری پرواز استانبول',
+      'پوش',
+      '۹٬۸۴۰',
+      '۹٬۶۸۲',
+      '۱۵۸',
+      '۸۶۴',
+      '۱۴۰۵/۰۶/۰۴ · ۱۸:۳۰',
+      'پایان‌یافته',
+    ],
+    occurredAt: '2026-08-26',
+    statusIndex: 7,
+  },
+  {
+    id: 'preview-communication-history-survey',
+    cells: [
+      'نظرسنجی پس از سفر',
+      'ایمیل',
+      '۴٬۲۴۰',
+      '۴٬۰۸۸',
+      '۱۵۲',
+      '۵۱۲',
+      '۱۴۰۵/۰۶/۰۲ · ۰۹:۱۵',
+      'پایان‌یافته',
+    ],
+    occurredAt: '2026-08-24',
+    statusIndex: 7,
+  },
+];
+
+const communicationTemplateRows: readonly PreviewRow[] = [
+  {
+    id: 'preview-template-europe',
+    cells: [
+      'اروپا — موج دوم',
+      'پیامک',
+      'تا ۳۱ شهریور، سفر اروپا...',
+      'نسخه ۳',
+      'امروز',
+      'تأییدشده',
+      'فعال',
+    ],
+    statusIndex: 6,
+  },
+  {
+    id: 'preview-template-flight',
+    cells: [
+      'یادآوری پرواز',
+      'پوش',
+      'زمان پرواز شما نزدیک است...',
+      'نسخه ۲',
+      'دیروز',
+      'تأییدشده',
+      'فعال',
+    ],
+    statusIndex: 6,
+  },
+  {
+    id: 'preview-template-dubai',
+    cells: [
+      'پیشنهاد هتل دبی',
+      'ایمیل',
+      'اقامت ویژه در دبی',
+      'نسخه ۴',
+      '۳ روز پیش',
+      'داخلی',
+      'فعال',
+    ],
+    statusIndex: 6,
+  },
+];
+
+function CommunicationsPage({
+  tab,
+  onOpen,
+  onNotice,
+}: {
+  tab: string;
+  onOpen: (item: MarketingPreviewItem) => void;
+  onNotice: NoticeHandler;
+}) {
+  if (tab === 'send') return <MessageComposer onNotice={onNotice} />;
+  if (tab === 'templates') {
+    return (
+      <div className="grid gap-5">
+        <MetricGrid
+          metrics={[
+            { label: 'همه قالب‌ها', value: '۶۸', icon: FileText },
+            {
+              label: 'تأییدشده',
+              value: '۵۲',
+              icon: CheckCircle2,
+              tone: 'emerald',
+            },
+            {
+              label: 'در انتظار تأیید',
+              value: '۹',
+              icon: Clock3,
+              tone: 'amber',
+            },
+            { label: 'منقضی', value: '۷', icon: AlertTriangle, tone: 'rose' },
+          ]}
+        />
+        <PreviewTable
+          columns={[
+            'نام قالب',
+            'کانال',
+            'موضوع / آغاز متن',
+            'نسخه',
+            'آخرین استفاده',
+            'تأیید محتوا',
+            'وضعیت',
+          ]}
+          onNotice={onNotice}
+          onOpen={onOpen}
+          rows={communicationTemplateRows}
+          section="communications"
+          tab={tab}
+          title="قالب‌های پیام"
+          totalLabel="۳ نمونه از ۶۸ قالب"
+        />
+      </div>
+    );
+  }
+  const isScheduled = tab === 'scheduled';
+  return (
+    <div className="grid gap-5">
+      <MetricGrid
+        metrics={
+          isScheduled
+            ? [
+                { label: 'در صف ارسال', value: '۱۷', icon: Clock3 },
+                {
+                  label: 'تأییدشده',
+                  value: '۱۲',
+                  icon: CheckCircle2,
+                  tone: 'emerald',
+                },
+                {
+                  label: 'در انتظار تأیید',
+                  value: '۵',
+                  icon: AlertTriangle,
+                  tone: 'amber',
+                },
+                { label: 'کانال فعال', value: '۳', icon: Send, tone: 'violet' },
+              ]
+            : [
+                { label: 'کل ارسال', value: '۱٫۲۸ میلیون', icon: Send },
+                {
+                  label: 'تحویل‌شده',
+                  value: '۱٫۱۸ میلیون',
+                  icon: CheckCircle2,
+                  tone: 'emerald',
+                },
+                { label: 'کلیک', value: '۸۴٬۲۱۰', icon: Mail, tone: 'violet' },
+                {
+                  label: 'ناموفق',
+                  value: '۳۱ هزار',
+                  icon: AlertTriangle,
+                  tone: 'rose',
+                },
+              ]
+        }
+      />
+      <PreviewTable
+        columns={
+          isScheduled
+            ? [
+                'عنوان ارسال',
+                'کمپین',
+                'کانال',
+                'مخاطبان',
+                'زمان ارسال',
+                'قالب',
+                'وضعیت',
+              ]
+            : [
+                'عنوان ارسال',
+                'کانال',
+                'مخاطبان',
+                'تحویل‌شده',
+                'ناموفق',
+                'کلیک',
+                'زمان',
+                'وضعیت',
+              ]
+        }
+        onNotice={onNotice}
+        onOpen={onOpen}
+        rows={
+          isScheduled ? scheduledCommunicationRows : communicationHistoryRows
+        }
+        section="communications"
+        tab={tab}
+        title={isScheduled ? 'ارسال‌های زمان‌بندی‌شده' : 'تاریخچه ارسال‌ها'}
+        totalLabel={isScheduled ? '۳ نمونه از ۱۷ ارسال' : '۳ نمونه از ۴۲ ارسال'}
+      />
+    </div>
   );
 }
 
@@ -2383,6 +2866,24 @@ type MarketingAsset = {
   documentId?: string;
 };
 
+const marketingAssetKinds = [
+  ['campaign-banner', 'بنر کمپین'],
+  ['brochure', 'بروشور'],
+  ['catalog', 'کاتالوگ'],
+  ['video', 'ویدئوی تبلیغاتی'],
+  ['audio', 'فایل صوتی'],
+  ['email-template', 'قالب ایمیل'],
+  ['message-template', 'قالب پیام'],
+  ['landing-asset', 'دارایی صفحه فرود'],
+  ['brand-identity', 'لوگو و هویت بصری'],
+  ['media-plan', 'برنامه رسانه‌ای'],
+] as const;
+
+const marketingBranches = [
+  ['niyayesh-seir-sahar', 'نیایش سیر سحر'],
+  ['jahan-bastan', 'جهان باستان'],
+] as const;
+
 function MarketingAssetUploadDialog({
   open,
   options,
@@ -2404,24 +2905,37 @@ function MarketingAssetUploadDialog({
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [documentTypeId, setDocumentTypeId] = useState(
-    brandTypes.find((type) => type.code === 'BRAND_ASSET_TEMPLATE')?.id ??
-      brandTypes[0]?.id ??
-      '',
+  const [assetKind, setAssetKind] = useState<string>(marketingAssetKinds[0][0]);
+  const [marketingBranch, setMarketingBranch] = useState<string>(
+    marketingBranches[0][0],
   );
+  const documentTypeId =
+    brandTypes.find((type) => type.code === 'BRAND_ASSET_TEMPLATE')?.id ??
+    brandTypes[0]?.id ??
+    '';
   const [categoryId, setCategoryId] = useState(
     options.categories.find((category) => category.code === 'BRAND_ASSETS')
       ?.id ??
       options.categories[0]?.id ??
       '',
   );
-  const [branchId, setBranchId] = useState(options.branches[0]?.id ?? '');
   const [ownerUserId, setOwnerUserId] = useState(
     options.currentUserId || options.owners[0]?.id || '',
   );
   const [confidentiality, setConfidentiality] = useState('INTERNAL');
   const [validationError, setValidationError] = useState('');
   const selectedType = brandTypes.find((type) => type.id === documentTypeId);
+  const selectedAssetKind = marketingAssetKinds.find(
+    ([value]) => value === assetKind,
+  );
+  const selectedMarketingBranch = marketingBranches.find(
+    ([value]) => value === marketingBranch,
+  );
+  const branchIndex = marketingBranches.findIndex(
+    ([value]) => value === marketingBranch,
+  );
+  const branchId =
+    options.branches[branchIndex]?.id ?? options.branches[0]?.id ?? '';
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
@@ -2461,9 +2975,18 @@ function MarketingAssetUploadDialog({
             form.set('confidentiality', confidentiality);
             form.set('sourceModule', 'marketing');
             form.set('sourceEntityType', 'content-asset');
-            form.set('sourceEntityId', `marketing-asset-${Date.now()}`);
-            form.set('sourceDisplayLabel', `دارایی مارکتینگ: ${title.trim()}`);
-            form.set('versionNote', 'ثبت از کتابخانه محتوای مارکتینگ');
+            form.set(
+              'sourceEntityId',
+              `marketing-asset-${file.lastModified}-${file.size}`,
+            );
+            form.set(
+              'sourceDisplayLabel',
+              `${selectedAssetKind?.[1] ?? 'دارایی مارکتینگ'} «${title.trim()}» — ${selectedMarketingBranch?.[1] ?? 'مارکتینگ'}`,
+            );
+            form.set(
+              'versionNote',
+              `ثبت از کتابخانه محتوای مارکتینگ برای ${selectedMarketingBranch?.[1] ?? 'شعبه مارکتینگ'}`,
+            );
             void onSubmit(form);
           }}
         >
@@ -2496,9 +3019,9 @@ function MarketingAssetUploadDialog({
           <FormField id="marketing-asset-type" label="نوع سند" required>
             <SimpleSelect
               ariaLabel="نوع سند محتوای مارکتینگ"
-              onChange={setDocumentTypeId}
-              options={brandTypes.map((type) => [type.id, type.name] as const)}
-              value={documentTypeId}
+              onChange={setAssetKind}
+              options={marketingAssetKinds}
+              value={assetKind}
             />
           </FormField>
           <FormField id="marketing-asset-category" label="دسته‌بندی" required>
@@ -2514,11 +3037,9 @@ function MarketingAssetUploadDialog({
           <FormField id="marketing-asset-branch" label="شعبه" required>
             <SimpleSelect
               ariaLabel="شعبه مالک فایل مارکتینگ"
-              onChange={setBranchId}
-              options={options.branches.map(
-                (branch) => [branch.id, branch.name] as const,
-              )}
-              value={branchId}
+              onChange={setMarketingBranch}
+              options={marketingBranches}
+              value={marketingBranch}
             />
           </FormField>
           <FormField id="marketing-asset-owner" label="مالک فایل" required>
@@ -2977,10 +3498,12 @@ function OffersPage({
   tab,
   onOpen,
   onNotice,
+  onCreate,
 }: {
   tab: string;
   onOpen: (item: MarketingPreviewItem) => void;
   onNotice: NoticeHandler;
+  onCreate: () => void;
 }) {
   if (tab === 'specials') {
     return (
@@ -3000,6 +3523,11 @@ function OffersPage({
           'کمپین',
           'وضعیت',
         ]}
+        headerActions={
+          <Button onClick={onCreate} size="sm">
+            <Plus aria-hidden="true" className="size-4" /> افزودن پیشنهاد ویژه
+          </Button>
+        }
         onNotice={onNotice}
         onOpen={onOpen}
         rows={[
@@ -3129,6 +3657,13 @@ function OffersPage({
       />
       <PreviewTable
         columns={config.columns}
+        headerActions={
+          tab === 'discounts' ? (
+            <Button onClick={onCreate} size="sm">
+              <Plus aria-hidden="true" className="size-4" /> افزودن کد تخفیف
+            </Button>
+          ) : undefined
+        }
         onNotice={onNotice}
         onOpen={onOpen}
         rows={config.rows}
@@ -3278,94 +3813,852 @@ const journeyHistoryRows: readonly PreviewRow[] = [
   },
 ];
 
-function JourneyBuilder({ onNotice }: { onNotice: NoticeHandler }) {
+interface JourneyScenario {
+  id: string;
+  title: string;
+  meta: string;
+  trigger: string;
+  audience: string;
+  channel: string;
+  goal: string;
+  owner: string;
+  status: string;
+  schedule?: string;
+  description?: string;
+  icon: LucideIcon;
+}
+
+const journeyScenarios: readonly JourneyScenario[] = [
+  {
+    id: 'scenario-welcome',
+    title: 'خوش‌آمدگویی سرنخ جدید',
+    meta: '۳ مرحله · پیامک و ایمیل',
+    trigger: 'ایجاد سرنخ جدید',
+    audience: 'سرنخ‌های واجد شرایط',
+    channel: 'پیامک و ایمیل',
+    goal: 'پیگیری و تبدیل سرنخ',
+    owner: 'مریم احمدی',
+    status: 'فعال',
+    icon: Target,
+  },
+  {
+    id: 'scenario-reservation',
+    title: 'رهاکردن فرم رزرو',
+    meta: '۵ مرحله · پوش و تماس',
+    trigger: 'عدم تکمیل رزرو',
+    audience: 'بازدیدکنندگان صفحه رزرو',
+    channel: 'پوش و تماس',
+    goal: 'تکمیل رزرو',
+    owner: 'علی رضایی',
+    status: 'فعال',
+    icon: ShoppingCart,
+  },
+  {
+    id: 'scenario-post-trip',
+    title: 'پیگیری پس از سفر',
+    meta: '۴ مرحله · ایمیل و نظرسنجی',
+    trigger: 'پایان سفر',
+    audience: 'مسافران بازگشته',
+    channel: 'ایمیل',
+    goal: 'وفادارسازی',
+    owner: 'سمیرا نادری',
+    status: 'فعال',
+    icon: Mail,
+  },
+  {
+    id: 'scenario-reactivation',
+    title: 'فعال‌سازی مشتری غیرفعال',
+    meta: '۶ مرحله · چندکاناله',
+    trigger: '۱۲ ماه بدون خرید',
+    audience: 'مشتریان غیرفعال',
+    channel: 'چندکاناله',
+    goal: 'بازگشت مشتری',
+    owner: 'سمیرا نادری',
+    status: 'پیش‌نویس',
+    icon: UsersRound,
+  },
+  {
+    id: 'scenario-visa',
+    title: 'یادآوری انقضای ویزا',
+    meta: '۳ مرحله · پیامک',
+    trigger: '۳۰ روز مانده به انقضا',
+    audience: 'دارندگان ویزا',
+    channel: 'پیامک',
+    goal: 'تمدید خدمت',
+    owner: 'مریم احمدی',
+    status: 'فعال',
+    icon: CalendarDays,
+  },
+  {
+    id: 'scenario-birthday',
+    title: 'تبریک تولد مشتری VIP',
+    meta: '۲ مرحله · پیشنهاد ویژه',
+    trigger: 'تاریخ تولد',
+    audience: 'مشتریان VIP',
+    channel: 'پیامک',
+    goal: 'وفادارسازی',
+    owner: 'علی رضایی',
+    status: 'فعال',
+    icon: BadgePercent,
+  },
+];
+
+function ScenarioFormDialog({
+  open,
+  onOpenChange,
+  onCreate,
+  onNotice,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreate: (scenario: JourneyScenario) => void;
+  onNotice: NoticeHandler;
+}) {
+  const [name, setName] = useState('');
+  const [trigger, setTrigger] = useState('lead-created');
+  const [audience, setAudience] = useState('qualified-leads');
+  const [channel, setChannel] = useState('sms');
+  const [goal, setGoal] = useState('lead-conversion');
+  const [firstAction, setFirstAction] = useState('welcome-message');
+  const [delay, setDelay] = useState('1');
+  const [delayUnit, setDelayUnit] = useState('hour');
+  const [owner, setOwner] = useState('maryam');
+  const [status, setStatus] = useState('draft');
+  const [startDate, setStartDate] = useState('2026-09-05');
+  const [endDate, setEndDate] = useState('2026-12-29');
+  const [description, setDescription] = useState('');
+  const [error, setError] = useState('');
+  const triggerLabels: Record<string, string> = {
+    'lead-created': 'ایجاد سرنخ جدید',
+    'form-submitted': 'ثبت فرم جذب',
+    'reservation-incomplete': 'عدم تکمیل رزرو',
+    'trip-completed': 'پایان سفر',
+    'date-reached': 'رسیدن تاریخ مشخص',
+    'customer-inactive': 'غیرفعال‌شدن مشتری',
+  };
+  const audienceLabels: Record<string, string> = {
+    'qualified-leads': 'سرنخ‌های واجد شرایط',
+    europe: 'علاقه‌مندان تور اروپا',
+    vip: 'مشتریان VIP',
+    inactive: 'مشتریان غیرفعال',
+    corporate: 'مشتریان سازمانی',
+  };
+  const channelLabels: Record<string, string> = {
+    sms: 'پیامک',
+    email: 'ایمیل',
+    push: 'پوش',
+    whatsapp: 'واتساپ',
+  };
+  const goalLabels: Record<string, string> = {
+    'lead-conversion': 'پیگیری و تبدیل سرنخ',
+    reservation: 'تکمیل رزرو',
+    retention: 'وفادارسازی',
+    reactivation: 'بازگشت مشتری',
+    'post-trip': 'پیگیری پس از سفر',
+  };
+  const firstActionLabels: Record<string, string> = {
+    'welcome-message': 'ارسال پیام خوش‌آمدگویی',
+    'reservation-reminder': 'یادآوری تکمیل رزرو',
+    'sales-assignment': 'تخصیص به کارشناس فروش',
+    'special-offer': 'ارسال پیشنهاد ویژه',
+    survey: 'ارسال نظرسنجی',
+  };
+  const ownerLabels: Record<string, string> = {
+    maryam: 'مریم احمدی',
+    ali: 'علی رضایی',
+    samira: 'سمیرا نادری',
+  };
+  const delayUnitLabels: Record<string, string> = {
+    minute: 'دقیقه',
+    hour: 'ساعت',
+    day: 'روز',
+  };
+
   return (
-    <Panel
-      actions={
-        <>
-          <Button
-            onClick={() => onNotice('پیش‌نویس سفر مشتری ذخیره شد.')}
-            variant="outline"
-          >
-            <Save aria-hidden="true" className="size-4" /> ذخیره پیش‌نویس
-          </Button>
-          <Button
-            onClick={() =>
-              onNotice('اتوماسیون آزمایشی فعال شد؛ پیام واقعی ارسال نمی‌شود.')
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogContent
+        className="max-h-[92dvh] max-w-4xl overflow-y-auto text-right"
+        dir="rtl"
+      >
+        <DialogTitle>سناریو جدید</DialogTitle>
+        <DialogDescription>
+          رویداد شروع، مخاطب، اقدام نخست و بازه اجرای سناریو را مشخص کنید.
+        </DialogDescription>
+        <form
+          className="mt-5 grid gap-4 sm:grid-cols-2"
+          id="marketing-scenario-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (name.trim().length < 3) {
+              setError('نام سناریو باید حداقل ۳ نویسه باشد.');
+              return;
             }
-          >
-            <Power aria-hidden="true" className="size-4" /> فعال‌سازی
-          </Button>
-        </>
-      }
-      title="سازنده سفر مشتری"
-    >
-      <div className="min-h-[32rem] overflow-x-auto bg-[radial-gradient(circle,_hsl(var(--border))_1px,_transparent_1px)] bg-[size:20px_20px] p-8">
-        <div className="mx-auto grid min-w-[48rem] max-w-5xl grid-cols-[1fr_5rem_1fr_5rem_1fr] items-center gap-3">
-          <button
-            className="rounded-2xl border border-emerald-300 bg-surface p-5 text-start shadow-sm"
-            onClick={() => onNotice('تنظیمات رویداد شروع باز شد.')}
-            type="button"
-          >
-            <strong>شروع</strong>
-            <p className="mt-2 text-sm text-muted-foreground">
-              ثبت فرم درخواست اروپا
+            const numericDelay = Number(delay);
+            if (!Number.isFinite(numericDelay) || numericDelay < 0) {
+              setError('مقدار تأخیر را درست وارد کنید.');
+              return;
+            }
+            if (startDate > endDate) {
+              setError('تاریخ پایان باید پس از تاریخ شروع باشد.');
+              return;
+            }
+            const scenario: JourneyScenario = {
+              id: `scenario-created-${Date.now()}`,
+              title: name.trim(),
+              meta: `${channelLabels[channel] ?? channel} · ${firstActionLabels[firstAction] ?? firstAction} · تأخیر ${numericDelay.toLocaleString('fa-IR')} ${delayUnitLabels[delayUnit] ?? delayUnit}`,
+              trigger: triggerLabels[trigger] ?? trigger,
+              audience: audienceLabels[audience] ?? audience,
+              channel: channelLabels[channel] ?? channel,
+              goal: goalLabels[goal] ?? goal,
+              owner: ownerLabels[owner] ?? owner,
+              status: status === 'active' ? 'فعال' : 'پیش‌نویس',
+              schedule: `${startDate} تا ${endDate}`,
+              ...(description.trim()
+                ? { description: description.trim() }
+                : {}),
+              icon: Route,
+            };
+            onCreate(scenario);
+            onNotice(`سناریوی «${scenario.title}» ساخته شد.`);
+            onOpenChange(false);
+          }}
+        >
+          <FormField id="scenario-name" label="نام سناریو" required>
+            <Input
+              autoFocus
+              id="scenario-name"
+              minLength={3}
+              onChange={(event) => {
+                setName(event.target.value);
+                setError('');
+              }}
+              placeholder="مثلاً پیگیری درخواست ویزای اروپا"
+              required
+              value={name}
+            />
+          </FormField>
+          <FormField id="scenario-trigger" label="رویداد شروع" required>
+            <SimpleSelect
+              ariaLabel="رویداد شروع سناریو"
+              onChange={setTrigger}
+              options={[
+                ['lead-created', 'ایجاد سرنخ جدید'],
+                ['form-submitted', 'ثبت فرم جذب'],
+                ['reservation-incomplete', 'عدم تکمیل رزرو'],
+                ['trip-completed', 'پایان سفر'],
+                ['date-reached', 'رسیدن تاریخ مشخص'],
+                ['customer-inactive', 'غیرفعال‌شدن مشتری'],
+              ]}
+              value={trigger}
+            />
+          </FormField>
+          <FormField id="scenario-audience" label="مخاطب هدف" required>
+            <SimpleSelect
+              ariaLabel="مخاطب هدف سناریو"
+              onChange={setAudience}
+              options={[
+                ['qualified-leads', 'سرنخ‌های واجد شرایط'],
+                ['europe', 'علاقه‌مندان تور اروپا'],
+                ['vip', 'مشتریان VIP'],
+                ['inactive', 'مشتریان غیرفعال'],
+                ['corporate', 'مشتریان سازمانی'],
+              ]}
+              value={audience}
+            />
+          </FormField>
+          <FormField id="scenario-channel" label="کانال اصلی" required>
+            <SimpleSelect
+              ariaLabel="کانال اصلی سناریو"
+              onChange={setChannel}
+              options={[
+                ['sms', 'پیامک'],
+                ['email', 'ایمیل'],
+                ['push', 'پوش'],
+                ['whatsapp', 'واتساپ'],
+              ]}
+              value={channel}
+            />
+          </FormField>
+          <FormField id="scenario-goal" label="هدف سناریو" required>
+            <SimpleSelect
+              ariaLabel="هدف سناریو"
+              onChange={setGoal}
+              options={[
+                ['lead-conversion', 'پیگیری و تبدیل سرنخ'],
+                ['reservation', 'تکمیل رزرو'],
+                ['retention', 'وفادارسازی'],
+                ['reactivation', 'بازگشت مشتری'],
+                ['post-trip', 'پیگیری پس از سفر'],
+              ]}
+              value={goal}
+            />
+          </FormField>
+          <FormField id="scenario-first-action" label="اقدام نخست" required>
+            <SimpleSelect
+              ariaLabel="اقدام نخست سناریو"
+              onChange={setFirstAction}
+              options={[
+                ['welcome-message', 'ارسال پیام خوش‌آمدگویی'],
+                ['reservation-reminder', 'یادآوری تکمیل رزرو'],
+                ['sales-assignment', 'تخصیص به کارشناس فروش'],
+                ['special-offer', 'ارسال پیشنهاد ویژه'],
+                ['survey', 'ارسال نظرسنجی'],
+              ]}
+              value={firstAction}
+            />
+          </FormField>
+          <FormField id="scenario-delay" label="تأخیر اجرای اقدام" required>
+            <div className="grid grid-cols-[1fr_1fr] gap-2">
+              <Input
+                dir="ltr"
+                id="scenario-delay"
+                min="0"
+                onChange={(event) => setDelay(event.target.value)}
+                required
+                type="number"
+                value={delay}
+              />
+              <SimpleSelect
+                ariaLabel="واحد تأخیر سناریو"
+                onChange={setDelayUnit}
+                options={[
+                  ['minute', 'دقیقه'],
+                  ['hour', 'ساعت'],
+                  ['day', 'روز'],
+                ]}
+                value={delayUnit}
+              />
+            </div>
+          </FormField>
+          <FormField id="scenario-owner" label="مالک" required>
+            <SimpleSelect
+              ariaLabel="مالک سناریو"
+              onChange={setOwner}
+              options={[
+                ['maryam', 'مریم احمدی'],
+                ['ali', 'علی رضایی'],
+                ['samira', 'سمیرا نادری'],
+              ]}
+              value={owner}
+            />
+          </FormField>
+          <FormField id="scenario-status" label="وضعیت" required>
+            <SimpleSelect
+              ariaLabel="وضعیت سناریو"
+              onChange={setStatus}
+              options={[
+                ['draft', 'پیش‌نویس'],
+                ['active', 'فعال'],
+              ]}
+              value={status}
+            />
+          </FormField>
+          <FormField id="scenario-start" label="از تاریخ" required>
+            <DatePicker
+              id="scenario-start"
+              onChange={setStartDate}
+              value={startDate}
+            />
+          </FormField>
+          <FormField id="scenario-end" label="تا تاریخ" required>
+            <DatePicker
+              id="scenario-end"
+              onChange={setEndDate}
+              value={endDate}
+            />
+          </FormField>
+          <div className="sm:col-span-2">
+            <FormField id="scenario-description" label="توضیحات">
+              <Textarea
+                id="scenario-description"
+                onChange={(event) => setDescription(event.target.value)}
+                rows={3}
+                value={description}
+              />
+            </FormField>
+          </div>
+          {error ? (
+            <p
+              className="text-sm font-bold text-destructive sm:col-span-2"
+              role="alert"
+            >
+              {error}
             </p>
-            <Badge className="mt-3 bg-emerald-100 text-emerald-800">
-              رویداد سایت
-            </Badge>
-          </button>
-          <div className="h-0.5 bg-border" />
-          <button
-            className="rounded-2xl border border-amber-300 bg-surface p-5 text-start shadow-sm"
-            onClick={() => onNotice('تنظیمات شرط امتیاز باز شد.')}
-            type="button"
-          >
-            <strong>شرط</strong>
-            <p className="mt-2 text-sm text-muted-foreground">
-              امتیاز سرنخ بیشتر از ۶۰؟
-            </p>
-            <Badge className="mt-3 bg-amber-100 text-amber-800">
-              شاخه تصمیم
-            </Badge>
-          </button>
-          <div className="h-0.5 bg-border" />
-          <div className="grid gap-5">
+          ) : null}
+          <div className="flex justify-end gap-2 sm:col-span-2">
+            <Button
+              onClick={() => onOpenChange(false)}
+              type="button"
+              variant="outline"
+            >
+              انصراف
+            </Button>
+            <Button type="submit">
+              <Save aria-hidden="true" className="size-4" /> ذخیره سناریو
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function JourneyBuilder({ onNotice }: { onNotice: NoticeHandler }) {
+  const initialAutomation = {
+    name: 'پیگیری سرنخ اروپا',
+    trigger: 'form-submitted',
+    audience: 'europe-leads',
+    owner: 'maryam',
+    status: 'draft',
+    startDate: '2026-09-05',
+    endDate: '2026-12-29',
+  };
+  const [automation, setAutomation] = useState(initialAutomation);
+  const [automationDraft, setAutomationDraft] = useState(initialAutomation);
+  const [editOpen, setEditOpen] = useState(false);
+  const [stepOpen, setStepOpen] = useState(false);
+  const [stepTitle, setStepTitle] = useState('');
+  const [stepType, setStepType] = useState('send');
+  const [stepAction, setStepAction] = useState('sms');
+  const [stepDelay, setStepDelay] = useState('1');
+  const [stepDelayUnit, setStepDelayUnit] = useState('hour');
+  const [stepCondition, setStepCondition] = useState('');
+  const [stepError, setStepError] = useState('');
+  const [steps, setSteps] = useState<
+    Array<{ id: string; title: string; detail: string; type: string }>
+  >([]);
+  const automationTriggerLabels: Record<string, string> = {
+    'form-submitted': 'ثبت فرم درخواست اروپا',
+    'lead-created': 'ایجاد سرنخ جدید',
+    'reservation-incomplete': 'عدم تکمیل رزرو',
+    'trip-completed': 'پایان سفر',
+    'customer-inactive': 'غیرفعال‌شدن مشتری',
+  };
+  const stepTypeLabels: Record<string, string> = {
+    send: 'ارسال پیام',
+    wait: 'انتظار',
+    condition: 'شرط',
+    assign: 'تخصیص کارشناس',
+    task: 'ایجاد کار',
+    webhook: 'وب‌هوک',
+  };
+  const stepActionLabels: Record<string, string> = {
+    sms: 'پیامک',
+    email: 'ایمیل',
+    push: 'پوش',
+    whatsapp: 'واتساپ',
+    sales: 'تیم فروش',
+    support: 'تیم پشتیبانی',
+  };
+
+  return (
+    <>
+      <Panel
+        actions={
+          <>
+            <Button
+              onClick={() => {
+                setAutomationDraft(automation);
+                setEditOpen(true);
+              }}
+              variant="outline"
+            >
+              <Pencil aria-hidden="true" className="size-4" /> ویرایش اتوماسیون
+            </Button>
+            <Button
+              onClick={() => onNotice('پیش‌نویس سفر مشتری ذخیره شد.')}
+              variant="outline"
+            >
+              <Save aria-hidden="true" className="size-4" /> ذخیره پیش‌نویس
+            </Button>
+            <Button
+              onClick={() =>
+                onNotice('اتوماسیون آزمایشی فعال شد؛ پیام واقعی ارسال نمی‌شود.')
+              }
+            >
+              <Power aria-hidden="true" className="size-4" /> فعال‌سازی
+            </Button>
+          </>
+        }
+        description={`${automationTriggerLabels[automation.trigger]} · ${automation.status === 'active' ? 'فعال' : 'پیش‌نویس'}`}
+        title={automation.name}
+      >
+        <div className="min-h-[32rem] overflow-x-auto bg-[radial-gradient(circle,_hsl(var(--border))_1px,_transparent_1px)] bg-[size:20px_20px] p-8">
+          <div className="mx-auto grid min-w-[48rem] max-w-5xl grid-cols-[1fr_5rem_1fr_5rem_1fr] items-center gap-3">
             <button
-              className="rounded-2xl border border-blue-300 bg-surface p-5 text-start shadow-sm"
-              onClick={() => onNotice('اقدام مسیر بله باز شد.')}
+              className="rounded-2xl border border-emerald-300 bg-surface p-5 text-start shadow-sm"
+              onClick={() => {
+                setAutomationDraft(automation);
+                setEditOpen(true);
+              }}
               type="button"
             >
-              <strong>اگر بله</strong>
+              <strong>شروع</strong>
               <p className="mt-2 text-sm text-muted-foreground">
-                ارسال پیامک + تخصیص فروش
+                {automationTriggerLabels[automation.trigger]}
               </p>
-              <Badge className="mt-3">اقدام</Badge>
-            </button>
-            <button
-              className="rounded-2xl border border-violet-300 bg-surface p-5 text-start shadow-sm"
-              onClick={() => onNotice('اقدام مسیر خیر باز شد.')}
-              type="button"
-            >
-              <strong>اگر خیر</strong>
-              <p className="mt-2 text-sm text-muted-foreground">
-                ارسال ایمیل آموزشی پس از ۲۴ ساعت
-              </p>
-              <Badge className="mt-3 bg-violet-100 text-violet-800">
-                تأخیر
+              <Badge className="mt-3 bg-emerald-100 text-emerald-800">
+                رویداد شروع
               </Badge>
             </button>
+            <div className="h-0.5 bg-border" />
+            <button
+              className="rounded-2xl border border-amber-300 bg-surface p-5 text-start shadow-sm"
+              onClick={() => onNotice('تنظیمات شرط امتیاز باز شد.')}
+              type="button"
+            >
+              <strong>شرط</strong>
+              <p className="mt-2 text-sm text-muted-foreground">
+                امتیاز سرنخ بیشتر از ۶۰؟
+              </p>
+              <Badge className="mt-3 bg-amber-100 text-amber-800">
+                شاخه تصمیم
+              </Badge>
+            </button>
+            <div className="h-0.5 bg-border" />
+            <div className="grid gap-5">
+              <button
+                className="rounded-2xl border border-blue-300 bg-surface p-5 text-start shadow-sm"
+                onClick={() => onNotice('اقدام مسیر بله باز شد.')}
+                type="button"
+              >
+                <strong>اگر بله</strong>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  ارسال پیامک + تخصیص فروش
+                </p>
+                <Badge className="mt-3">اقدام</Badge>
+              </button>
+              <button
+                className="rounded-2xl border border-violet-300 bg-surface p-5 text-start shadow-sm"
+                onClick={() => onNotice('اقدام مسیر خیر باز شد.')}
+                type="button"
+              >
+                <strong>اگر خیر</strong>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  ارسال ایمیل آموزشی پس از ۲۴ ساعت
+                </p>
+                <Badge className="mt-3 bg-violet-100 text-violet-800">
+                  تأخیر
+                </Badge>
+              </button>
+            </div>
           </div>
+          {steps.length ? (
+            <div className="mx-auto mt-8 grid min-w-[48rem] max-w-5xl gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {steps.map((step, index) => (
+                <Card
+                  className="border-primary/25 bg-surface p-4"
+                  key={step.id}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <small className="text-primary">
+                        مرحله {(index + 4).toLocaleString('fa-IR')}
+                      </small>
+                      <h4 className="mt-1 font-black">{step.title}</h4>
+                    </div>
+                    <Badge>{step.type}</Badge>
+                  </div>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {step.detail}
+                  </p>
+                </Card>
+              ))}
+            </div>
+          ) : null}
+          <Button
+            className="mt-8"
+            onClick={() => {
+              setStepError('');
+              setStepOpen(true);
+            }}
+            variant="outline"
+          >
+            <Plus aria-hidden="true" className="size-4" /> افزودن مرحله
+          </Button>
         </div>
-        <Button
-          className="mt-8"
-          onClick={() => onNotice('انتخاب‌گر مرحله جدید باز شد.')}
-          variant="outline"
-        >
-          <Plus aria-hidden="true" className="size-4" /> افزودن مرحله
-        </Button>
-      </div>
-    </Panel>
+      </Panel>
+
+      <Dialog onOpenChange={setEditOpen} open={editOpen}>
+        <DialogContent className="max-w-3xl text-right" dir="rtl">
+          <DialogTitle>ویرایش اتوماسیون</DialogTitle>
+          <DialogDescription>
+            مشخصات، رویداد شروع و بازه اجرای سفر مشتری را ویرایش کنید.
+          </DialogDescription>
+          <form
+            className="mt-5 grid gap-4 sm:grid-cols-2"
+            id="journey-automation-edit-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (automationDraft.name.trim().length < 3) return;
+              if (automationDraft.startDate > automationDraft.endDate) return;
+              setAutomation(automationDraft);
+              setEditOpen(false);
+              onNotice(`اتوماسیون «${automationDraft.name.trim()}» ویرایش شد.`);
+            }}
+          >
+            <FormField
+              id="journey-automation-name"
+              label="نام اتوماسیون"
+              required
+            >
+              <Input
+                autoFocus
+                id="journey-automation-name"
+                minLength={3}
+                onChange={(event) =>
+                  setAutomationDraft((current) => ({
+                    ...current,
+                    name: event.target.value,
+                  }))
+                }
+                required
+                value={automationDraft.name}
+              />
+            </FormField>
+            <FormField
+              id="journey-automation-trigger"
+              label="رویداد شروع"
+              required
+            >
+              <SimpleSelect
+                ariaLabel="رویداد شروع اتوماسیون"
+                onChange={(trigger) =>
+                  setAutomationDraft((current) => ({ ...current, trigger }))
+                }
+                options={[
+                  ['form-submitted', 'ثبت فرم درخواست اروپا'],
+                  ['lead-created', 'ایجاد سرنخ جدید'],
+                  ['reservation-incomplete', 'عدم تکمیل رزرو'],
+                  ['trip-completed', 'پایان سفر'],
+                  ['customer-inactive', 'غیرفعال‌شدن مشتری'],
+                ]}
+                value={automationDraft.trigger}
+              />
+            </FormField>
+            <FormField
+              id="journey-automation-audience"
+              label="مخاطب هدف"
+              required
+            >
+              <SimpleSelect
+                ariaLabel="مخاطب هدف اتوماسیون"
+                onChange={(audience) =>
+                  setAutomationDraft((current) => ({ ...current, audience }))
+                }
+                options={[
+                  ['europe-leads', 'سرنخ‌های اروپا'],
+                  ['vip', 'مشتریان VIP'],
+                  ['inactive', 'مشتریان غیرفعال'],
+                  ['corporate', 'مشتریان سازمانی'],
+                ]}
+                value={automationDraft.audience}
+              />
+            </FormField>
+            <FormField id="journey-automation-owner" label="مالک" required>
+              <SimpleSelect
+                ariaLabel="مالک اتوماسیون"
+                onChange={(owner) =>
+                  setAutomationDraft((current) => ({ ...current, owner }))
+                }
+                options={[
+                  ['maryam', 'مریم احمدی'],
+                  ['ali', 'علی رضایی'],
+                  ['samira', 'سمیرا نادری'],
+                ]}
+                value={automationDraft.owner}
+              />
+            </FormField>
+            <FormField id="journey-automation-status" label="وضعیت" required>
+              <SimpleSelect
+                ariaLabel="وضعیت اتوماسیون"
+                onChange={(status) =>
+                  setAutomationDraft((current) => ({ ...current, status }))
+                }
+                options={[
+                  ['draft', 'پیش‌نویس'],
+                  ['active', 'فعال'],
+                  ['paused', 'متوقف'],
+                ]}
+                value={automationDraft.status}
+              />
+            </FormField>
+            <FormField id="journey-automation-start" label="از تاریخ" required>
+              <DatePicker
+                id="journey-automation-start"
+                onChange={(startDate) =>
+                  setAutomationDraft((current) => ({ ...current, startDate }))
+                }
+                value={automationDraft.startDate}
+              />
+            </FormField>
+            <FormField id="journey-automation-end" label="تا تاریخ" required>
+              <DatePicker
+                id="journey-automation-end"
+                onChange={(endDate) =>
+                  setAutomationDraft((current) => ({ ...current, endDate }))
+                }
+                value={automationDraft.endDate}
+              />
+            </FormField>
+            <div className="flex justify-end gap-2 sm:col-span-2">
+              <Button
+                onClick={() => setEditOpen(false)}
+                type="button"
+                variant="outline"
+              >
+                انصراف
+              </Button>
+              <Button type="submit">
+                <Save aria-hidden="true" className="size-4" /> ذخیره تغییرات
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog onOpenChange={setStepOpen} open={stepOpen}>
+        <DialogContent className="max-w-3xl text-right" dir="rtl">
+          <DialogTitle>افزودن مرحله</DialogTitle>
+          <DialogDescription>
+            نوع مرحله، اقدام و زمان اجرای آن را به جریان اتوماسیون اضافه کنید.
+          </DialogDescription>
+          <form
+            className="mt-5 grid gap-4 sm:grid-cols-2"
+            id="journey-step-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (stepTitle.trim().length < 3) {
+                setStepError('عنوان مرحله باید حداقل ۳ نویسه باشد.');
+                return;
+              }
+              const numericDelay = Number(stepDelay);
+              if (!Number.isFinite(numericDelay) || numericDelay < 0) {
+                setStepError('مقدار تأخیر را درست وارد کنید.');
+                return;
+              }
+              const delayLabels: Record<string, string> = {
+                minute: 'دقیقه',
+                hour: 'ساعت',
+                day: 'روز',
+              };
+              setSteps((items) => [
+                ...items,
+                {
+                  id: `journey-step-${Date.now()}`,
+                  title: stepTitle.trim(),
+                  type: stepTypeLabels[stepType] ?? stepType,
+                  detail: `${stepActionLabels[stepAction] ?? stepAction} · پس از ${numericDelay.toLocaleString('fa-IR')} ${delayLabels[stepDelayUnit] ?? stepDelayUnit}${stepCondition.trim() ? ` · ${stepCondition.trim()}` : ''}`,
+                },
+              ]);
+              setStepOpen(false);
+              setStepTitle('');
+              setStepCondition('');
+              onNotice(`مرحله «${stepTitle.trim()}» به اتوماسیون افزوده شد.`);
+            }}
+          >
+            <FormField id="journey-step-title" label="عنوان مرحله" required>
+              <Input
+                autoFocus
+                id="journey-step-title"
+                minLength={3}
+                onChange={(event) => {
+                  setStepTitle(event.target.value);
+                  setStepError('');
+                }}
+                placeholder="مثلاً ارسال یادآوری رزرو"
+                required
+                value={stepTitle}
+              />
+            </FormField>
+            <FormField id="journey-step-type" label="نوع مرحله" required>
+              <SimpleSelect
+                ariaLabel="نوع مرحله اتوماسیون"
+                onChange={setStepType}
+                options={[
+                  ['send', 'ارسال پیام'],
+                  ['wait', 'انتظار'],
+                  ['condition', 'شرط'],
+                  ['assign', 'تخصیص کارشناس'],
+                  ['task', 'ایجاد کار'],
+                  ['webhook', 'وب‌هوک'],
+                ]}
+                value={stepType}
+              />
+            </FormField>
+            <FormField id="journey-step-action" label="اقدام یا مقصد" required>
+              <SimpleSelect
+                ariaLabel="اقدام مرحله اتوماسیون"
+                onChange={setStepAction}
+                options={[
+                  ['sms', 'پیامک'],
+                  ['email', 'ایمیل'],
+                  ['push', 'پوش'],
+                  ['whatsapp', 'واتساپ'],
+                  ['sales', 'تیم فروش'],
+                  ['support', 'تیم پشتیبانی'],
+                ]}
+                value={stepAction}
+              />
+            </FormField>
+            <FormField id="journey-step-delay" label="تأخیر اجرا" required>
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  dir="ltr"
+                  id="journey-step-delay"
+                  min="0"
+                  onChange={(event) => setStepDelay(event.target.value)}
+                  required
+                  type="number"
+                  value={stepDelay}
+                />
+                <SimpleSelect
+                  ariaLabel="واحد تأخیر مرحله"
+                  onChange={setStepDelayUnit}
+                  options={[
+                    ['minute', 'دقیقه'],
+                    ['hour', 'ساعت'],
+                    ['day', 'روز'],
+                  ]}
+                  value={stepDelayUnit}
+                />
+              </div>
+            </FormField>
+            <div className="sm:col-span-2">
+              <FormField id="journey-step-condition" label="شرط اجرا">
+                <Textarea
+                  id="journey-step-condition"
+                  onChange={(event) => setStepCondition(event.target.value)}
+                  placeholder="مثلاً فقط برای سرنخ‌هایی با امتیاز بیشتر از ۶۰"
+                  rows={3}
+                  value={stepCondition}
+                />
+              </FormField>
+            </div>
+            {stepError ? (
+              <p
+                className="text-sm font-bold text-destructive sm:col-span-2"
+                role="alert"
+              >
+                {stepError}
+              </p>
+            ) : null}
+            <div className="flex justify-end gap-2 sm:col-span-2">
+              <Button
+                onClick={() => setStepOpen(false)}
+                type="button"
+                variant="outline"
+              >
+                انصراف
+              </Button>
+              <Button type="submit">
+                <Plus aria-hidden="true" className="size-4" /> ایجاد مرحله
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -3380,50 +4673,102 @@ function JourneysPage({
   onNotice: NoticeHandler;
   onUseScenario: (title: string) => void;
 }) {
+  const [scenarioOpen, setScenarioOpen] = useState(false);
+  const [createdScenarios, setCreatedScenarios] = useState<JourneyScenario[]>(
+    [],
+  );
   if (tab === 'builder') return <JourneyBuilder onNotice={onNotice} />;
   if (tab === 'scenarios') {
     return (
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {[
-          ['خوش‌آمدگویی سرنخ جدید', '۳ مرحله · پیامک و ایمیل', Target],
-          ['رهاکردن فرم رزرو', '۵ مرحله · پوش و تماس', ShoppingCart],
-          ['پیگیری پس از سفر', '۴ مرحله · ایمیل و نظرسنجی', Mail],
-          ['فعال‌سازی مشتری غیرفعال', '۶ مرحله · چندکاناله', UsersRound],
-          ['یادآوری انقضای ویزا', '۳ مرحله · پیامک', CalendarDays],
-          ['تبریک تولد مشتری VIP', '۲ مرحله · پیشنهاد ویژه', BadgePercent],
-        ].map(([title, meta, Icon]) => {
-          const ScenarioIcon = Icon as LucideIcon;
-          return (
-            <Card className="p-5" key={title as string}>
-              <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
-                <ScenarioIcon aria-hidden="true" className="size-6" />
-              </span>
-              <h3 className="mt-4 font-black">{title as string}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {meta as string}
-              </p>
-              <div className="mt-4 flex gap-2">
-                <Button
-                  onClick={() => onUseScenario(title as string)}
-                  size="sm"
-                >
-                  استفاده از سناریو
-                </Button>
-                <Button
-                  aria-label={`غیرفعال‌سازی سناریوی ${title}`}
-                  className="border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => onNotice(`سناریوی «${title}» غیرفعال شد.`)}
-                  size="icon"
-                  title="غیرفعال‌سازی"
-                  variant="outline"
-                >
-                  <Power aria-hidden="true" className="size-4" />
-                </Button>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+      <>
+        <Panel
+          actions={
+            <Button onClick={() => setScenarioOpen(true)}>
+              <Plus aria-hidden="true" className="size-4" /> سناریو جدید
+            </Button>
+          }
+          title="سناریوهای آماده"
+        >
+          <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
+            {[...createdScenarios, ...journeyScenarios].map((scenario) => {
+              const ScenarioIcon = scenario.icon;
+              return (
+                <Card className="p-5" key={scenario.id}>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+                      <ScenarioIcon aria-hidden="true" className="size-6" />
+                    </span>
+                    <Badge className={statusClass(scenario.status)}>
+                      {scenario.status}
+                    </Badge>
+                  </div>
+                  <h3 className="mt-4 font-black">{scenario.title}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {scenario.meta}
+                  </p>
+                  <dl className="mt-4 grid gap-2 border-t border-border pt-3 text-xs">
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-muted-foreground">رویداد شروع</dt>
+                      <dd>{scenario.trigger}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-muted-foreground">مخاطب</dt>
+                      <dd>{scenario.audience}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-muted-foreground">هدف</dt>
+                      <dd>{scenario.goal}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-muted-foreground">مالک</dt>
+                      <dd>{scenario.owner}</dd>
+                    </div>
+                    {scenario.schedule ? (
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">بازه اجرا</dt>
+                        <dd dir="ltr">{scenario.schedule}</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                  {scenario.description ? (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      {scenario.description}
+                    </p>
+                  ) : null}
+                  <div className="mt-4 flex gap-2">
+                    <Button
+                      onClick={() => onUseScenario(scenario.title)}
+                      size="sm"
+                    >
+                      استفاده از سناریو
+                    </Button>
+                    <Button
+                      aria-label={`غیرفعال‌سازی سناریوی ${scenario.title}`}
+                      className="border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() =>
+                        onNotice(`سناریوی «${scenario.title}» غیرفعال شد.`)
+                      }
+                      size="icon"
+                      title="غیرفعال‌سازی"
+                      variant="outline"
+                    >
+                      <Power aria-hidden="true" className="size-4" />
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </Panel>
+        <ScenarioFormDialog
+          onCreate={(scenario) =>
+            setCreatedScenarios((items) => [scenario, ...items])
+          }
+          onNotice={onNotice}
+          onOpenChange={setScenarioOpen}
+          open={scenarioOpen}
+        />
+      </>
     );
   }
   const config =
@@ -3954,7 +5299,7 @@ function SettingsPage({
   );
 }
 
-type SectionFormKind = 'content' | 'offer' | 'journey';
+type SectionFormKind = 'content' | 'offer' | 'journey' | 'template';
 
 const sectionFormDefinitions: Record<
   SectionFormKind,
@@ -3969,11 +5314,17 @@ const sectionFormDefinitions: Record<
     title: 'محتوای جدید',
     nameLabel: 'عنوان محتوا',
     types: [
-      ['image', 'تصویر'],
-      ['video', 'ویدئو'],
-      ['document', 'سند'],
+      ['campaign-banner', 'بنر کمپین'],
+      ['brochure', 'بروشور'],
+      ['catalog', 'کاتالوگ'],
+      ['video', 'ویدئوی تبلیغاتی'],
+      ['audio', 'فایل صوتی'],
+      ['email-template', 'قالب ایمیل'],
+      ['message-template', 'قالب پیام'],
       ['landing', 'صفحه فرود'],
       ['form', 'فرم جذب'],
+      ['brand-identity', 'لوگو و هویت بصری'],
+      ['media-plan', 'برنامه رسانه‌ای'],
     ],
     hasDateRange: true,
   },
@@ -3999,6 +5350,17 @@ const sectionFormDefinitions: Record<
     ],
     hasDateRange: true,
   },
+  template: {
+    title: 'قالب پیام جدید',
+    nameLabel: 'نام قالب',
+    types: [
+      ['sms', 'پیامک'],
+      ['email', 'ایمیل'],
+      ['whatsapp', 'واتساپ'],
+      ['push', 'پوش'],
+    ],
+    hasDateRange: false,
+  },
 };
 
 function SectionEntityFormDialog({
@@ -4016,6 +5378,8 @@ function SectionEntityFormDialog({
 }) {
   const definition = sectionFormDefinitions[kind];
   const isOffer = kind === 'offer';
+  const isContent = kind === 'content';
+  const isTemplate = kind === 'template';
   const isDiscountCode = isOffer && tab === 'discounts';
   const entityTypes: readonly (readonly [string, string])[] = isOffer
     ? isDiscountCode
@@ -4036,6 +5400,7 @@ function SectionEntityFormDialog({
   const [startDate, setStartDate] = useState('2026-09-05');
   const [endDate, setEndDate] = useState('2026-10-05');
   const [description, setDescription] = useState('');
+  const [branch, setBranch] = useState<string>(marketingBranches[0][0]);
   const [couponCode, setCouponCode] = useState('');
   const [offerValue, setOfferValue] = useState('10');
   const [applicableService, setApplicableService] = useState('all');
@@ -4060,6 +5425,7 @@ function SectionEntityFormDialog({
           onSubmit={(event) => {
             event.preventDefault();
             if (name.trim().length < 3) return;
+            if (isTemplate && description.trim().length < 3) return;
             if (isDiscountCode && couponCode.trim().length < 3) return;
             if (
               isOffer &&
@@ -4089,7 +5455,11 @@ function SectionEntityFormDialog({
               value={name}
             />
           </FormField>
-          <FormField id={`${kind}-entity-type`} label="نوع" required>
+          <FormField
+            id={`${kind}-entity-type`}
+            label={isContent ? 'نوع سند' : 'نوع'}
+            required
+          >
             <SimpleSelect
               ariaLabel={`نوع ${definition.title}`}
               onChange={setType}
@@ -4097,6 +5467,16 @@ function SectionEntityFormDialog({
               value={type}
             />
           </FormField>
+          {isContent ? (
+            <FormField id="content-entity-branch" label="شعبه" required>
+              <SimpleSelect
+                ariaLabel="شعبه محتوای مارکتینگ"
+                onChange={setBranch}
+                options={marketingBranches}
+                value={branch}
+              />
+            </FormField>
+          ) : null}
           <FormField id={`${kind}-entity-status`} label="وضعیت" required>
             <SimpleSelect
               ariaLabel={`وضعیت ${definition.title}`}
@@ -4233,10 +5613,16 @@ function SectionEntityFormDialog({
             </>
           ) : null}
           <div className="sm:col-span-2">
-            <FormField id={`${kind}-entity-description`} label="توضیحات">
+            <FormField
+              id={`${kind}-entity-description`}
+              label={isTemplate ? 'متن قالب' : 'توضیحات'}
+              required={isTemplate}
+            >
               <Textarea
                 id={`${kind}-entity-description`}
+                minLength={isTemplate ? 3 : undefined}
                 onChange={(event) => setDescription(event.target.value)}
+                required={isTemplate}
                 rows={4}
                 value={description}
               />
@@ -4262,24 +5648,25 @@ function SectionEntityFormDialog({
 
 type PrimarySectionAction =
   | { label: string; behavior: 'builder' }
-  | { label: string; behavior: 'form'; formKind: SectionFormKind };
+  | { label: string; behavior: 'form'; formKind: SectionFormKind }
+  | { label: string; behavior: 'submit'; formId: string };
 
 function getPrimarySectionAction(
   section: DetailSection,
   tab: string,
 ): PrimarySectionAction | null {
+  if (section === 'communications' && tab === 'send') {
+    return {
+      label: 'ارسال پیام',
+      behavior: 'submit',
+      formId: 'marketing-message-composer',
+    };
+  }
+  if (section === 'communications' && tab === 'templates') {
+    return { label: 'قالب جدید', behavior: 'form', formKind: 'template' };
+  }
   if (section === 'content') {
     return { label: 'محتوای جدید', behavior: 'form', formKind: 'content' };
-  }
-  if (section === 'offers' && tab === 'discounts') {
-    return { label: 'افزودن کد تخفیف', behavior: 'form', formKind: 'offer' };
-  }
-  if (section === 'offers' && tab === 'specials') {
-    return {
-      label: 'افزودن پیشنهاد ویژه',
-      behavior: 'form',
-      formKind: 'offer',
-    };
   }
   if (section === 'journeys' && tab === 'all') {
     return { label: 'ساخت اتوماسیون', behavior: 'builder' };
@@ -4302,6 +5689,7 @@ export function MarketingReferenceSection({
   const primaryAction = getPrimarySectionAction(section, tab);
   const runPrimaryAction = () => {
     if (!primaryAction) return;
+    if (primaryAction.behavior === 'submit') return;
     if (primaryAction.behavior === 'builder') {
       setTab('builder');
       onNotice('سازنده سفر مشتری باز شد.');
@@ -4325,7 +5713,12 @@ export function MarketingReferenceSection({
               </TabsTrigger>
             ))}
           </TabsList>
-          {primaryAction ? (
+          {primaryAction?.behavior === 'submit' ? (
+            <Button form={primaryAction.formId} type="submit">
+              <Send aria-hidden="true" className="size-4" />
+              {primaryAction.label}
+            </Button>
+          ) : primaryAction ? (
             <Button onClick={runPrimaryAction}>
               <Plus aria-hidden="true" className="size-4" />
               {primaryAction.label}
@@ -4338,11 +5731,23 @@ export function MarketingReferenceSection({
             {section === 'audiences' ? (
               <AudiencePage onNotice={onNotice} onOpen={onOpen} tab={key} />
             ) : null}
+            {section === 'communications' ? (
+              <CommunicationsPage
+                onNotice={onNotice}
+                onOpen={onOpen}
+                tab={key}
+              />
+            ) : null}
             {section === 'content' ? (
               <ContentPage onNotice={onNotice} onOpen={onOpen} tab={key} />
             ) : null}
             {section === 'offers' ? (
-              <OffersPage onNotice={onNotice} onOpen={onOpen} tab={key} />
+              <OffersPage
+                onCreate={() => setFormKind('offer')}
+                onNotice={onNotice}
+                onOpen={onOpen}
+                tab={key}
+              />
             ) : null}
             {section === 'journeys' ? (
               <JourneysPage
