@@ -1,6 +1,6 @@
 'use client';
 
-import { Info, PencilLine } from 'lucide-react';
+import { Info, PencilLine, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -592,10 +592,12 @@ export function OrganizationCatalogTable({
   tab,
   records,
   onEdit,
+  onDelete,
 }: {
   tab: OrganizationCatalogTab;
   records: readonly OrganizationCatalogFormValue[];
   onEdit: (record: OrganizationCatalogFormValue) => void;
+  onDelete: (record: OrganizationCatalogFormValue) => void;
 }) {
   const schema = organizationCatalogSchemas[tab];
   const displayValue = (key: CatalogFieldKey, value: string) => {
@@ -631,14 +633,31 @@ export function OrganizationCatalogTable({
                   </td>
                 ))}
                 <td>
-                  <button
-                    aria-label={`ویرایش ${schema.singular} ${item.title}`}
-                    className={`${styles.button} ${styles.buttonSmall}`}
-                    onClick={() => onEdit(item)}
-                    type="button"
-                  >
-                    <PencilLine aria-hidden="true" size={13} /> ویرایش
-                  </button>
+                  <div className={styles.rowActions}>
+                    <button
+                      aria-label={`ویرایش ${schema.singular} ${item.title}`}
+                      className={`${styles.button} ${styles.buttonSmall}`}
+                      onClick={() => onEdit(item)}
+                      type="button"
+                    >
+                      <PencilLine aria-hidden="true" size={13} /> ویرایش
+                    </button>
+                    <button
+                      aria-label={`حذف ${schema.singular} ${item.title}`}
+                      className={`${styles.button} ${styles.buttonSmall} ${styles.buttonDanger}`}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `«${item.title}» از داده‌های موقت این نشست حذف شود؟`,
+                          )
+                        )
+                          onDelete(item);
+                      }}
+                      type="button"
+                    >
+                      <Trash2 aria-hidden="true" size={13} /> حذف
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

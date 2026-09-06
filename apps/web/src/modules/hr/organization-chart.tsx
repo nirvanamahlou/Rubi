@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, Info, PencilLine } from 'lucide-react';
+import { Building2, Info, PencilLine, Trash2 } from 'lucide-react';
 import {
   useCallback,
   useLayoutEffect,
@@ -465,9 +465,11 @@ export function OrganizationNodeForm({
 export function OrganizationChart({
   nodes,
   onEdit,
+  onDelete,
 }: {
   nodes: readonly OrganizationNode[];
   onEdit: (node: OrganizationNode) => void;
+  onDelete: (node: OrganizationNode) => void;
 }) {
   const chartRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef(new Map<string, HTMLElement>());
@@ -558,15 +560,33 @@ export function OrganizationChart({
             else nodeRefs.current.delete(node.id);
           }}
         >
-          <button
-            aria-label={`ویرایش ${node.name}`}
-            className={styles.orgEditButton}
-            onClick={() => onEdit(node)}
-            type="button"
-          >
-            <PencilLine aria-hidden="true" size={14} />
-            ویرایش
-          </button>
+          <div className={styles.orgNodeActions}>
+            <button
+              aria-label={`ویرایش ${node.name}`}
+              className={styles.orgEditButton}
+              onClick={() => onEdit(node)}
+              type="button"
+            >
+              <PencilLine aria-hidden="true" size={14} />
+              ویرایش
+            </button>
+            <button
+              aria-label={`حذف ${node.name}`}
+              className={`${styles.orgEditButton} ${styles.orgDeleteButton}`}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    `«${node.name}» و همه زیرشاخه‌های آن از چارت موقت حذف شوند؟`,
+                  )
+                )
+                  onDelete(node);
+              }}
+              type="button"
+            >
+              <Trash2 aria-hidden="true" size={14} />
+              حذف
+            </button>
+          </div>
           <div className={styles.orgNodeTitle}>
             <Building2 aria-hidden="true" size={17} />
             <b>{node.name}</b>

@@ -14,10 +14,12 @@ import {
   LockKeyhole,
   MonitorCog,
   Plane,
+  PencilLine,
   Plus,
   Search,
   ShieldCheck,
   TimerReset,
+  Trash2,
   UserRound,
   UsersRound,
   WalletCards,
@@ -74,7 +76,12 @@ import {
   ContextualHrFormDialog,
   type ContextualHrFormContext,
 } from './contextual-hr-form';
-import { getHrPreviewDataset } from './hr-preview-data';
+import {
+  getHrPreviewDataset,
+  type HrPreviewCell,
+  type HrPreviewDataset,
+  type HrPreviewTone,
+} from './hr-preview-data';
 
 type UiState = 'loading' | 'empty' | 'error' | 'unauthorized' | 'forbidden';
 type BadgeTone = 'success' | 'warning' | 'danger' | 'neutral';
@@ -89,6 +96,7 @@ interface PreviewEmployee {
   position: string;
   manager: string;
   startedAt: string;
+  startedAtValue: string;
   status: string;
   tone: BadgeTone;
   local?: boolean;
@@ -111,6 +119,7 @@ const previewEmployees: readonly PreviewEmployee[] = [
     position: 'کارشناس ارشد عملیات',
     manager: 'مدیر نمایشی الف',
     startedAt: '۱۴۰۳/۰۲/۰۱',
+    startedAtValue: '2024-04-20',
     status: 'فعال',
     tone: 'success',
   },
@@ -124,6 +133,7 @@ const previewEmployees: readonly PreviewEmployee[] = [
     position: 'سرپرست فروش سازمانی',
     manager: 'مدیر نمایشی ب',
     startedAt: '۱۴۰۱/۰۸/۱۵',
+    startedAtValue: '2022-11-06',
     status: 'فعال',
     tone: 'success',
   },
@@ -137,6 +147,7 @@ const previewEmployees: readonly PreviewEmployee[] = [
     position: 'کارشناس حسابداری',
     manager: 'مدیر نمایشی پ',
     startedAt: '۱۴۰۲/۰۶/۱۰',
+    startedAtValue: '2023-09-01',
     status: 'فعال',
     tone: 'success',
   },
@@ -150,10 +161,75 @@ const previewEmployees: readonly PreviewEmployee[] = [
     position: 'کارشناس خدمات فرودگاهی',
     manager: 'مدیر نمایشی ت',
     startedAt: '۱۴۰۵/۰۶/۲۰',
+    startedAtValue: '2026-09-11',
     status: 'در حال تکمیل',
     tone: 'warning',
   },
 ];
+
+type PreviewDatasetOverrides = Record<string, readonly (readonly HrPreviewCell[])[]>;
+
+interface PreviewDatasetStore {
+  getDataset: (section: HrSectionId, tab: string) => HrPreviewDataset;
+  deleteRow: (section: HrSectionId, tab: string, rowIndex: number) => void;
+}
+
+const previewDatasetKey = (section: HrSectionId, tab: string) =>
+  `${section}:${tab}`;
+
+const previewCellText = (cell: HrPreviewCell) =>
+  typeof cell === 'string' ? cell : cell.label;
+
+const previewToneForStatus = (label: string): HrPreviewTone => {
+  if (/فوری|رد|خطا|مسدود|لغو/.test(label)) return 'danger';
+  if (/فعال|تأیید|تکمیل|آماده|منتشر|معتبر|مصوب|برگزار/.test(label))
+    return 'success';
+  if (/انتظار|بررسی|در حال|نیازمند|متوقف/.test(label)) return 'warning';
+  return 'neutral';
+};
+
+export function removeHrPreviewRow(
+  rows: readonly (readonly HrPreviewCell[])[],
+  rowIndex: number,
+): readonly (readonly HrPreviewCell[])[] {
+  return rows.filter((_, index) => index !== rowIndex);
+}
+
+export function saveHrPreviewRow(
+  rows: readonly (readonly HrPreviewCell[])[],
+  columns: readonly string[],
+  values: readonly string[],
+  rowIndex?: number,
+): readonly (readonly HrPreviewCell[])[] {
+  const existingRow = rowIndex === undefined ? undefined : rows[rowIndex];
+  const nextRow = values.map((value, index): HrPreviewCell => {
+    const column = columns[index] ?? '';
+    const previous = existingRow?.[index];
+    if (typeof previous === 'object' || column.includes('وضعیت'))
+      return { label: value, tone: previewToneForStatus(value) };
+    return value;
+  });
+  return rowIndex === undefined
+    ? [nextRow, ...rows]
+    : rows.map((row, index) => (index === rowIndex ? nextRow : row));
+}
+
+const employeeFormValue = (employee: PreviewEmployee): NewEmployeeFormValue => {
+  const [branch = 'نیایش سیر', unit = 'عملیات سفر'] = employee.unit.split(' / ');
+  const nameParts = employee.name.trim().split(/\s+/);
+  return {
+    firstName: nameParts.shift() ?? '',
+    lastName: nameParts.join(' '),
+    personnelCode: employee.id,
+    employmentType: employee.kind,
+    branch,
+    unit,
+    position: employee.position,
+    manager: employee.manager,
+    startedAt: employee.startedAtValue,
+    status: employee.status as NewEmployeeFormValue['status'],
+  };
+};
 
 type DashboardPeriod = 'monthToDate' | 'week' | 'month';
 type DashboardBranch = 'all' | 'niyayeshSeir' | 'jahanBastan';
@@ -922,10 +998,14 @@ function Dashboard({ openAction }: { openAction: (title: string) => void }) {
 
 function Employees({
   employees,
-  openAction,
+  onCreate,
+  onDelete,
+  onEdit,
 }: {
   employees: readonly PreviewEmployee[];
-  openAction: (title: string) => void;
+  onCreate: () => void;
+  onDelete: (employee: PreviewEmployee) => void;
+  onEdit: (employee: PreviewEmployee) => void;
 }) {
   const [query, setQuery] = useState('');
   const filtered = useMemo(
@@ -960,25 +1040,34 @@ function Employees({
       <Badge key={`${employee.id}-status`} tone={employee.tone}>
         {employee.status}
       </Badge>,
-      employee.local ? (
+      <div className={styles.rowActions} key={`${employee.id}-actions`}>
+        {!employee.local ? (
+          <Link
+            className={`${styles.button} ${styles.buttonSmall}`}
+            href={`/hr?section=employee&employee=${employee.id}`}
+          >
+            مشاهده <ArrowLeft size={14} />
+          </Link>
+        ) : null}
+        <ActionButton onClick={() => onEdit(employee)} small>
+          <PencilLine aria-hidden="true" size={13} /> ویرایش
+        </ActionButton>
         <button
-          className={`${styles.button} ${styles.buttonSmall}`}
-          disabled
-          key={`${employee.id}-local`}
-          title="پرونده موقت پس از اتصال API قابل مشاهده خواهد بود"
+          aria-label={`حذف کارمند ${employee.name}`}
+          className={`${styles.button} ${styles.buttonSmall} ${styles.buttonDanger}`}
+          onClick={() => {
+            if (
+              window.confirm(
+                `«${employee.name}» از فهرست موقت کارکنان حذف شود؟`,
+              )
+            )
+              onDelete(employee);
+          }}
           type="button"
         >
-          ثبت‌شده در نشست
+          <Trash2 aria-hidden="true" size={13} /> حذف
         </button>
-      ) : (
-        <Link
-          className={`${styles.button} ${styles.buttonSmall}`}
-          href={`/hr?section=employee&employee=${employee.id}`}
-          key={`${employee.id}-link`}
-        >
-          مشاهده پرونده <ArrowLeft size={14} />
-        </Link>
-      ),
+      </div>,
     ]),
     totalLabel: `${filtered.length.toLocaleString('fa-IR')} پرونده نمایشی`,
   };
@@ -990,7 +1079,7 @@ function Employees({
             <ActionButton disabled>
               <Download size={15} /> خروجی مجاز
             </ActionButton>
-            <ActionButton onClick={() => openAction('کارمند جدید')} primary>
+            <ActionButton onClick={onCreate} primary>
               <Plus size={15} /> کارمند جدید
             </ActionButton>
           </>
@@ -1068,21 +1157,35 @@ function Employees({
 
 function EmployeeProfile({
   openAction,
+  openForm,
+  datasetStore,
 }: {
   openAction: (title: string) => void;
+  openForm: (context: ContextualHrFormContext) => void;
+  datasetStore: PreviewDatasetStore;
 }) {
   const [tab, setTab] = useState('summary');
   const active =
     employeeTabs.find((item) => item.id === tab) ?? employeeTabs[0];
   const ActiveIcon = active?.icon ?? UserRound;
+  const dataset = datasetStore.getDataset('employee', tab);
   const profileData =
     tab === 'summary'
       ? null
       : genericTable(
-          'employee',
-          tab,
-          () => openAction(`جزئیات ${active?.label ?? 'پرونده کارمند'}`),
-          'مشاهده',
+          dataset,
+          (rowIndex, row) =>
+            openForm({
+              section: 'employee',
+              tab,
+              title: active?.label ?? 'پرونده کارمند',
+              description: screenMeta.employee.description,
+              columns: dataset.columns,
+              mode: 'edit',
+              rowIndex,
+              initialValues: row.map(previewCellText),
+            }),
+          (rowIndex) => datasetStore.deleteRow('employee', tab, rowIndex),
         );
   const summaryItems = [
     ['کد پرسنلی', 'preview-employee-1'],
@@ -1153,12 +1256,10 @@ function EmployeeProfile({
 }
 
 function genericTable(
-  section: HrSectionId,
-  tab: string,
-  openRecord: () => void,
-  actionLabel = 'ویرایش',
+  dataset: HrPreviewDataset,
+  editRow: (rowIndex: number, row: readonly HrPreviewCell[]) => void,
+  deleteRow: (rowIndex: number) => void,
 ): PreviewTableData {
-  const dataset = getHrPreviewDataset(section, tab);
   return {
     columns: [...dataset.columns, 'عملیات'],
     rows: dataset.rows.map((row, rowIndex) => [
@@ -1177,13 +1278,26 @@ function genericTable(
           );
         return cell;
       }),
-      <ActionButton
-        key={`action-${rowIndex}`}
-        onClick={openRecord}
-        small
-      >
-        {actionLabel}
-      </ActionButton>,
+      <div className={styles.rowActions} key={`actions-${rowIndex}`}>
+        <ActionButton onClick={() => editRow(rowIndex, row)} small>
+          <PencilLine aria-hidden="true" size={13} /> ویرایش
+        </ActionButton>
+        <button
+          aria-label={`حذف ${previewCellText(row[0] ?? '')}`}
+          className={`${styles.button} ${styles.buttonSmall} ${styles.buttonDanger}`}
+          onClick={() => {
+            if (
+              window.confirm(
+                `«${previewCellText(row[0] ?? '')}» از داده‌های موقت این نشست حذف شود؟`,
+              )
+            )
+              deleteRow(rowIndex);
+          }}
+          type="button"
+        >
+          <Trash2 aria-hidden="true" size={13} /> حذف
+        </button>
+      </div>,
     ]),
     totalLabel: dataset.totalLabel,
   };
@@ -1323,6 +1437,39 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
     setCatalogDialogOpen(false);
     setEditingCatalogRecord(undefined);
   };
+  const deleteNode = (node: OrganizationNode) => {
+    setNodes((current) => {
+      const deletedIds = new Set([node.id]);
+      let changed = true;
+      while (changed) {
+        changed = false;
+        current.forEach((item) => {
+          if (item.parentId && deletedIds.has(item.parentId) && !deletedIds.has(item.id)) {
+            deletedIds.add(item.id);
+            changed = true;
+          }
+        });
+      }
+      return current.filter((item) => !deletedIds.has(item.id));
+    });
+    setOrganizationNotice(
+      `گره «${node.name}» و زیرشاخه‌های آن از چارت موقت این نشست حذف شد.`,
+    );
+  };
+  const deleteCatalogRecord = (
+    nextTab: OrganizationCatalogTab,
+    record: OrganizationCatalogFormValue,
+  ) => {
+    setCatalogRecords((current) => ({
+      ...current,
+      [nextTab]: current[nextTab].filter((item) => item.id !== record.id),
+    }));
+    if (nextTab === 'branches')
+      setNodes((current) => current.filter((node) => node.branch !== record.title));
+    setOrganizationNotice(
+      `${organizationCatalogSchemas[nextTab].singular} «${record.title}» از فهرست موقت این نشست حذف شد.`,
+    );
+  };
 
   return (
     <>
@@ -1368,7 +1515,7 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
         title={active?.label ?? 'ساختار سازمانی'}
       >
         {tab === 'orgchart' ? (
-          <OrganizationChart nodes={nodes} onEdit={openEdit} />
+          <OrganizationChart nodes={nodes} onDelete={deleteNode} onEdit={openEdit} />
         ) : (
           <>
             <div className={styles.filterBar}>
@@ -1391,6 +1538,7 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
             </div>
             {catalogTab ? (
               <OrganizationCatalogTable
+                onDelete={(record) => deleteCatalogRecord(catalogTab, record)}
                 onEdit={(record) => openCatalogEdit(catalogTab, record)}
                 records={catalogRecords[catalogTab]}
                 tab={catalogTab}
@@ -1424,23 +1572,35 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
 
 function Requests({
   openForm,
+  datasetStore,
 }: {
   openForm: (context: ContextualHrFormContext) => void;
+  datasetStore: PreviewDatasetStore;
 }) {
   const tabs = sectionTabs.requests ?? [];
   const [tab, setTab] = useState(tabs[0]?.id ?? 'inbox');
   const active = tabs.find((item) => item.id === tab);
-  const columns = [...getHrPreviewDataset('requests', tab).columns, 'عملیات'];
-  const openCurrentForm = (mode: ContextualHrFormContext['mode']) =>
+  const dataset = datasetStore.getDataset('requests', tab);
+  const openCurrentForm = (
+    mode: ContextualHrFormContext['mode'],
+    rowIndex?: number,
+    row?: readonly HrPreviewCell[],
+  ) =>
     openForm({
       section: 'requests',
       tab,
       title: active?.label ?? 'درخواست منابع انسانی',
       description: screenMeta.requests.description,
-      columns,
+      columns: dataset.columns,
       mode,
+      ...(rowIndex === undefined ? {} : { rowIndex }),
+      ...(row ? { initialValues: row.map(previewCellText) } : {}),
     });
-  const data = genericTable('requests', tab, () => openCurrentForm('edit'));
+  const data = genericTable(
+    dataset,
+    (rowIndex, row) => openCurrentForm('edit', rowIndex, row),
+    (rowIndex) => datasetStore.deleteRow('requests', tab, rowIndex),
+  );
   return (
     <>
       <PageHead
@@ -1603,6 +1763,7 @@ function TabbedSection({
   section,
   openAction,
   openForm,
+  datasetStore,
   initialTab,
 }: {
   section: Exclude<
@@ -1616,6 +1777,7 @@ function TabbedSection({
   >;
   openAction: (title: string) => void;
   openForm: (context: ContextualHrFormContext) => void;
+  datasetStore: PreviewDatasetStore;
   initialTab?: string | undefined;
 }) {
   const tabs = sectionTabs[section] ?? [];
@@ -1627,16 +1789,27 @@ function TabbedSection({
   const active = tabs.find((item) => item.id === tab);
   const ActiveIcon = active?.icon ?? FileText;
   const isPayrollOverview = section === 'payroll' && tab === 'overview';
-  const openCurrentForm = (mode: ContextualHrFormContext['mode']) =>
+  const dataset = datasetStore.getDataset(section, tab);
+  const openCurrentForm = (
+    mode: ContextualHrFormContext['mode'],
+    rowIndex?: number,
+    row?: readonly HrPreviewCell[],
+  ) =>
     openForm({
       section,
       tab,
       title: active?.label ?? screenMeta[section].title,
       description: screenMeta[section].description,
-      columns: data.columns,
+      columns: dataset.columns,
       mode,
+      ...(rowIndex === undefined ? {} : { rowIndex }),
+      ...(row ? { initialValues: row.map(previewCellText) } : {}),
     });
-  const data = genericTable(section, tab, () => openCurrentForm('edit'));
+  const data = genericTable(
+    dataset,
+    (rowIndex, row) => openCurrentForm('edit', rowIndex, row),
+    (rowIndex) => datasetStore.deleteRow(section, tab, rowIndex),
+  );
   return (
     <>
       <PageHead
@@ -1751,6 +1924,10 @@ export function HrWorkspace({
   const workspace = normalizeFrappeWorkspace(workspaceId);
   const [employees, setEmployees] =
     useState<readonly PreviewEmployee[]>(previewEmployees);
+  const [editingEmployee, setEditingEmployee] =
+    useState<PreviewEmployee | null>(null);
+  const [previewDatasetOverrides, setPreviewDatasetOverrides] =
+    useState<PreviewDatasetOverrides>({});
   const [dialogTitle, setDialogTitle] = useState<string | null>(null);
   const [contextualForm, setContextualForm] =
     useState<ContextualHrFormContext | null>(null);
@@ -1770,7 +1947,37 @@ export function HrWorkspace({
     setDialogTitle(null);
     setContextualForm(context);
   };
-  const addEmployee = (value: NewEmployeeFormValue) => {
+  const getDataset = (datasetSection: HrSectionId, tab: string) => {
+    const base = getHrPreviewDataset(datasetSection, tab);
+    const key = previewDatasetKey(datasetSection, tab);
+    const rows = previewDatasetOverrides[key];
+    if (!rows) return base;
+    return {
+      ...base,
+      rows,
+      totalLabel: `${rows.length.toLocaleString('fa-IR')} رکورد نمایشی در نشست`,
+    };
+  };
+  const deleteDatasetRow = (
+    datasetSection: HrSectionId,
+    tab: string,
+    rowIndex: number,
+  ) => {
+    const key = previewDatasetKey(datasetSection, tab);
+    setPreviewDatasetOverrides((current) => {
+      const rows = current[key] ?? getHrPreviewDataset(datasetSection, tab).rows;
+      return {
+        ...current,
+        [key]: removeHrPreviewRow(rows, rowIndex),
+      };
+    });
+    setNotice('رکورد از مجموعه‌داده موقت این نشست حذف شد.');
+  };
+  const datasetStore: PreviewDatasetStore = {
+    getDataset,
+    deleteRow: deleteDatasetRow,
+  };
+  const saveEmployee = (value: NewEmployeeFormValue) => {
     const name = `${value.firstName} ${value.lastName}`.trim();
     const statusTone: Record<NewEmployeeFormValue['status'], BadgeTone> = {
       فعال: 'success',
@@ -1785,25 +1992,36 @@ export function HrWorkspace({
           month: '2-digit',
           year: 'numeric',
         }).format(date);
-    setEmployees((current) => [
-      {
+    const nextEmployee: PreviewEmployee = {
         id: value.personnelCode,
         name,
         initial: value.firstName.charAt(0),
-        employment: `preview-employment-${value.personnelCode}`,
+        employment:
+          editingEmployee?.employment ?? `preview-employment-${value.personnelCode}`,
         kind: value.employmentType,
         unit: `${value.branch} / ${value.unit}`,
         position: value.position,
         manager: value.manager,
         startedAt,
+        startedAtValue: value.startedAt,
         status: value.status,
         tone: statusTone[value.status],
         local: true,
-      },
-      ...current,
-    ]);
+      };
+    setEmployees((current) =>
+      editingEmployee
+        ? current.map((employee) =>
+            employee.id === editingEmployee.id ? nextEmployee : employee,
+          )
+        : [nextEmployee, ...current],
+    );
     setDialogTitle(null);
-    setNotice(`کارمند «${name}» به فهرست موقت این نشست اضافه شد.`);
+    setEditingEmployee(null);
+    setNotice(
+      editingEmployee
+        ? `اطلاعات کارمند «${name}» در فهرست موقت این نشست ویرایش شد.`
+        : `کارمند «${name}» به فهرست موقت این نشست اضافه شد.`,
+    );
   };
   let screen: ReactNode;
   if (workspace) screen = <FrappeWorkspaceScreen workspaceId={workspace} />;
@@ -1811,16 +2029,44 @@ export function HrWorkspace({
   else if (section === 'dashboard')
     screen = <Dashboard openAction={openAction} />;
   else if (section === 'employees')
-    screen = <Employees employees={employees} openAction={openAction} />;
+    screen = (
+      <Employees
+        employees={employees}
+        onCreate={() => {
+          setEditingEmployee(null);
+          openAction('کارمند جدید');
+        }}
+        onDelete={(employee) => {
+          setEmployees((current) =>
+            current.filter((item) => item.id !== employee.id),
+          );
+          setNotice(
+            `کارمند «${employee.name}» از فهرست موقت این نشست حذف شد.`,
+          );
+        }}
+        onEdit={(employee) => {
+          setNotice('');
+          setDialogTitle(null);
+          setEditingEmployee(employee);
+        }}
+      />
+    );
   else if (section === 'employee')
-    screen = <EmployeeProfile openAction={openAction} />;
+    screen = (
+      <EmployeeProfile
+        datasetStore={datasetStore}
+        openAction={openAction}
+        openForm={openForm}
+      />
+    );
   else if (section === 'organization')
     screen = <OrganizationSection initialTab={tabId} />;
   else if (section === 'requests')
-    screen = <Requests openForm={openForm} />;
+    screen = <Requests datasetStore={datasetStore} openForm={openForm} />;
   else
     screen = (
       <TabbedSection
+        datasetStore={datasetStore}
         initialTab={tabId}
         openAction={openAction}
         openForm={openForm}
@@ -1845,19 +2091,50 @@ export function HrWorkspace({
         <ContextualHrFormDialog
           context={contextualForm}
           onClose={() => setContextualForm(null)}
-          onSubmit={() => {
+          onSubmit={(values) => {
+            const key = previewDatasetKey(
+              contextualForm.section,
+              contextualForm.tab,
+            );
+            setPreviewDatasetOverrides((current) => {
+              const rows =
+                current[key] ??
+                getHrPreviewDataset(
+                  contextualForm.section,
+                  contextualForm.tab,
+                ).rows;
+              return {
+                ...current,
+                [key]: saveHrPreviewRow(
+                  rows,
+                  contextualForm.columns,
+                  values,
+                  contextualForm.rowIndex,
+                ),
+              };
+            });
             setNotice(
-              `${contextualForm.title} در پیش‌نمایش این نشست ثبت شد.`,
+              contextualForm.mode === 'edit'
+                ? `${contextualForm.title} در مجموعه‌داده موقت این نشست ویرایش شد.`
+                : `${contextualForm.title} به مجموعه‌داده موقت این نشست اضافه شد.`,
             );
             setContextualForm(null);
           }}
         />
-      ) : dialogTitle === 'کارمند جدید' ? (
+      ) : dialogTitle === 'کارمند جدید' || editingEmployee ? (
         <NewEmployeeDialog
-          existingPersonnelCodes={employees.map((employee) => employee.id)}
+          existingPersonnelCodes={employees
+            .filter((employee) => employee.id !== editingEmployee?.id)
+            .map((employee) => employee.id)}
+          initialValue={
+            editingEmployee ? employeeFormValue(editingEmployee) : undefined
+          }
           managerOptions={employees.map((employee) => employee.name)}
-          onClose={() => setDialogTitle(null)}
-          onSubmit={addEmployee}
+          onClose={() => {
+            setDialogTitle(null);
+            setEditingEmployee(null);
+          }}
+          onSubmit={saveEmployee}
         />
       ) : dialogTitle ? (
         <DetailDialog close={closeDialog} title={dialogTitle} />

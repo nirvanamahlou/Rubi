@@ -1,7 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { HrState, HrWorkspace } from './hr-workspace';
+import {
+  HrState,
+  HrWorkspace,
+  removeHrPreviewRow,
+  saveHrPreviewRow,
+} from './hr-workspace';
 import {
   NewEmployeeForm,
   validateNewEmployeeForm,
@@ -94,9 +99,11 @@ describe('HR reference implementation', () => {
     );
     expect(employees).toContain('preview-employee-1');
     expect(employees).toContain('همکار نمایشی الف');
-    expect(employees.match(/همکار نمایشی/g)?.length ?? 0).toBe(4);
+    expect(employees.match(/<b>همکار نمایشی/g)?.length ?? 0).toBe(4);
     expect(employees).not.toContain('ورود گروهی');
     expect(employees).not.toMatch(/EMP-\d|EMPLOY-\d/);
+    expect(employees).toContain('ویرایش');
+    expect(employees).toContain('حذف');
   });
 
   it('uses first and last name in the new employee form and covers list fields', () => {
@@ -125,6 +132,33 @@ describe('HR reference implementation', () => {
     expect(html).toContain('name="firstName"');
     expect(html).toContain('name="lastName"');
     expect(html).toContain('id="hr-new-employee-started-at"');
+  });
+
+  it('prefills the employee form when editing an existing record', () => {
+    const initialValue: NewEmployeeFormValue = {
+      firstName: 'سارا',
+      lastName: 'محمدی',
+      personnelCode: 'HR-1002',
+      employmentType: 'تمام‌وقت',
+      branch: 'نیایش سیر',
+      unit: 'عملیات سفر',
+      position: 'کارشناس عملیات',
+      manager: 'مدیر نمایشی الف',
+      startedAt: '2026-09-06',
+      status: 'فعال',
+    };
+    const html = renderToStaticMarkup(
+      <NewEmployeeForm
+        existingPersonnelCodes={[]}
+        initialValue={initialValue}
+        managerOptions={['مدیر نمایشی الف']}
+        onCancel={() => undefined}
+        onSubmit={() => undefined}
+      />,
+    );
+    expect(html).toContain('value="سارا"');
+    expect(html).toContain('value="HR-1002"');
+    expect(html).toContain('ذخیره ویرایش');
   });
 
   it('rejects incomplete and duplicate employee identity fields', () => {
@@ -166,12 +200,14 @@ describe('HR reference implementation', () => {
     const chart = renderToStaticMarkup(
       <OrganizationChart
         nodes={initialOrganizationNodes}
+        onDelete={() => undefined}
         onEdit={() => undefined}
       />,
     );
     expect(chart).toContain('مدیریت نمایشی');
     expect(chart).toContain('واحد عملیات سفر');
     expect(chart.match(/ویرایش /g)?.length ?? 0).toBe(4);
+    expect(chart.match(/حذف /g)?.length ?? 0).toBe(4);
     expect(chart).toContain('۲ سمت');
     expect(chart).toContain('data-edge-count="3"');
 
@@ -251,12 +287,14 @@ describe('HR reference implementation', () => {
       expect(form).toContain(submitLabel);
       const table = renderToStaticMarkup(
         <OrganizationCatalogTable
+          onDelete={() => undefined}
           onEdit={() => undefined}
           records={initialOrganizationCatalogRecords[tab]}
           tab={tab}
         />,
       );
       expect(table).toContain('ویرایش');
+      expect(table).toContain('حذف');
       expect(table).toContain(
         organizationCatalogSchemas[tab].columns[0]?.label,
       );
@@ -352,6 +390,25 @@ describe('HR reference implementation', () => {
     expect(html).not.toContain('عنوان نمایشی');
   });
 
+  it('updates and removes rows from the active preview dataset', () => {
+    const rows = [
+      ['preview-row-1', 'عنوان قدیمی', { label: 'پیش‌نویس', tone: 'neutral' }],
+      ['preview-row-2', 'عنوان دوم', { label: 'فعال', tone: 'success' }],
+    ] as const;
+    const updated = saveHrPreviewRow(
+      rows,
+      ['شناسه', 'عنوان', 'وضعیت'],
+      ['preview-row-1', 'عنوان ویرایش‌شده', 'تکمیل‌شده'],
+      0,
+    );
+    expect(updated[0]).toEqual([
+      'preview-row-1',
+      'عنوان ویرایش‌شده',
+      { label: 'تکمیل‌شده', tone: 'success' },
+    ]);
+    expect(removeHrPreviewRow(updated, 0)).toEqual([rows[1]]);
+  });
+
   it('keeps payroll and exports in a truthful preview state', () => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId="payroll" />);
     expect(html).toContain('اجرای حقوق غیرفعال است');
@@ -373,6 +430,8 @@ describe('HR reference implementation', () => {
     expect(html).toContain(title);
     expect(html).toContain(id);
     expect(html).toContain('فقط شناسه‌ها و ردیف‌های صریحاً نمایشی');
+    expect(html).toContain('ویرایش');
+    expect(html).toContain('حذف');
   });
 
   it('states the exact Iran localization boundary', () => {

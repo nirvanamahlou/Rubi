@@ -49,7 +49,7 @@ export interface NewEmployeeFormValue {
 type FormField = keyof NewEmployeeFormValue;
 export type NewEmployeeFormErrors = Partial<Record<FormField, string>>;
 
-const initialValue: NewEmployeeFormValue = {
+const defaultEmployeeValue: NewEmployeeFormValue = {
   firstName: '',
   lastName: '',
   personnelCode: '',
@@ -115,6 +115,7 @@ function FieldError({
 
 interface NewEmployeeFormProps {
   existingPersonnelCodes: readonly string[];
+  initialValue?: NewEmployeeFormValue | undefined;
   managerOptions: readonly string[];
   onCancel: () => void;
   onSubmit: (value: NewEmployeeFormValue) => void;
@@ -122,11 +123,14 @@ interface NewEmployeeFormProps {
 
 export function NewEmployeeForm({
   existingPersonnelCodes,
+  initialValue,
   managerOptions,
   onCancel,
   onSubmit,
 }: NewEmployeeFormProps) {
-  const [value, setValue] = useState<NewEmployeeFormValue>(initialValue);
+  const [value, setValue] = useState<NewEmployeeFormValue>(
+    initialValue ?? defaultEmployeeValue,
+  );
   const [errors, setErrors] = useState<NewEmployeeFormErrors>({});
 
   const update = (field: FormField, nextValue: string) => {
@@ -349,7 +353,7 @@ export function NewEmployeeForm({
           className={`${styles.button} ${styles.buttonPrimary}`}
           type="submit"
         >
-          افزودن به فهرست
+          {initialValue ? 'ذخیره ویرایش' : 'افزودن به فهرست'}
         </button>
       </div>
     </form>
@@ -358,6 +362,7 @@ export function NewEmployeeForm({
 
 interface NewEmployeeDialogProps {
   existingPersonnelCodes: readonly string[];
+  initialValue?: NewEmployeeFormValue | undefined;
   managerOptions: readonly string[];
   onClose: () => void;
   onSubmit: (value: NewEmployeeFormValue) => void;
@@ -365,6 +370,7 @@ interface NewEmployeeDialogProps {
 
 export function NewEmployeeDialog({
   existingPersonnelCodes,
+  initialValue,
   managerOptions,
   onClose,
   onSubmit,
@@ -372,12 +378,15 @@ export function NewEmployeeDialog({
   return (
     <Dialog onOpenChange={(open) => !open && onClose()} open>
       <DialogContent className={`${styles.modal} ${styles.employeeModal}`} dir="rtl">
-        <DialogTitle>افزودن کارمند جدید</DialogTitle>
+        <DialogTitle>
+          {initialValue ? 'ویرایش کارمند' : 'افزودن کارمند جدید'}
+        </DialogTitle>
         <DialogDescription>
           مشخصات پایه و جایگاه سازمانی کارمند را مطابق فهرست کارکنان تکمیل کنید.
         </DialogDescription>
         <NewEmployeeForm
           existingPersonnelCodes={existingPersonnelCodes}
+          initialValue={initialValue}
           managerOptions={managerOptions}
           onCancel={onClose}
           onSubmit={onSubmit}

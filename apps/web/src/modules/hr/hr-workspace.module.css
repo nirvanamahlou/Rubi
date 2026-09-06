@@ -118,6 +118,24 @@
   font-size: 11px;
 }
 
+.rowActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.buttonDanger {
+  border-color: #fecdd3;
+  color: #be123c;
+}
+
+.buttonDanger:hover:not(:disabled) {
+  border-color: #e11d48;
+  background: #fff1f2;
+  color: #9f1239;
+}
+
 .boundary,
 .previewNote,
 .notice {
@@ -1009,10 +1027,14 @@
   background: rgb(255 255 255 / 16%);
   color: #fff;
 }
-.orgEditButton {
+.orgNodeActions {
   position: absolute;
   inset-block-start: 8px;
   inset-inline-end: 8px;
+  display: flex;
+  gap: 5px;
+}
+.orgEditButton {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -1036,6 +1058,15 @@
   border-color: rgb(255 255 255 / 38%);
   background: rgb(255 255 255 / 14%);
   color: #fff;
+}
+.orgDeleteButton {
+  border-color: #fecdd3;
+  color: #be123c;
+}
+.orgDeleteButton:hover,
+.orgDeleteButton:focus-visible {
+  border-color: #e11d48;
+  box-shadow: 0 0 0 3px rgb(225 29 72 / 12%);
 }
 
 .payrollHero {
