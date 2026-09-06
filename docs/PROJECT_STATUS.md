@@ -111,6 +111,26 @@
 - وب پورت 3100 و Health API پورت 4000 پاسخ 200 دادند؛ بررسی تعاملی مرورگر به‌علت خطای ACL ابزار ممکن نشد. اعطای مجوزهای جدید روی دیتابیس عملیاتی اجرا نشده: بررسی خودکار مجوز، تأیید صریح نقش/دسترسی/محدوده را لازم دانست. فعال‌سازی تا این تأیید باز می‌ماند.
 - همان Branch و Draft PR #90 ادامه دارد؛ Rebase، Force Push، Merge و تغییر main/develop انجام نشده است. گزارش قبلی زیر، سابقه Slice پیش از این ادامه است.
 
+## CUSTOMER-CONNECTIONS-0905 — local integration ready for review
+
+- Customer Documents and master-data reference refresh are integrated and validated (163 tests; lint/typecheck/build successful). Independent local runtime: Web 3101 / API 4101. Existing 3 pending additive migrations were applied to localhost:5432; no reset, new migration or seed. Persistent protected local Documents key is configured. Authenticated user upload/download has not been manually exercised in this session.
+
+- Customer Documents and master-data session retry are integrated in an isolated checkout based on committed Sales. The following historical entries retain their original scope; this task does not change Ticket Catalog.
+
+## CUSTOMER-MASTERDATA-RETRY — بازیابی اطلاعات پایه پس از تمدید نشست
+
+- `PC-A` روی Branch مستقل `codex/pc-a-customer-masterdata-retry` خطای هم‌زمانی
+  بارگذاری Public Master Data در فرم Customers را اصلاح کرد. پاسخ 401 اکنون از همان
+  Refresh مشترک نشست استفاده می‌کند و درخواست Organization، نحوه آشنایی، کشور یا شهر
+  فقط یک بار تکرار می‌شود؛ سایر خطاها رفتار صریح قبلی را حفظ می‌کنند.
+- همه قابلیت‌های ادغام‌شده CUSTOMER-002B، نمایش/خروجی تماس و اتصال امن Documents در
+  همین مبنا موجودند. Passport/Visa ساختاری به‌دلیل بازبودن `DEC-OPEN-006` فعال نشده و
+  هیچ داده ساختگی جایگزین نشده است. ۵۶۵ تست Web، lint، typecheck و Production Build
+  موفق‌اند. جزئیات در `docs/tasks/CUSTOMER-MASTERDATA-RETRY.md`.
+
+## TICKET-CATALOG-EDIT-COMPLETENESS — نمایش کامل اطلاعات هنگام ویرایش
+
+- PC-A is validating PR #85 Customer Documents against committed Sales plus the existing master-data session-refresh retry. Separate worktree preserves active Sales changes; prior test results below do not establish validation of this integration.
 ## SALES-CONTRACTS-001 — Vertical Slice فروش — آماده بررسی
 
 - PR #91 با Merge Commit `b69b7fa` قفل‌های Migration، Central Docs و Sales shared-contract/root export را به `PC-A/SALES-CONTRACTS-001` منتقل کرد؛ Merge معمولی `8d3b89d` این Handoff را وارد Branch فروش کرد. آخرین `origin/develop@85204a4` نیز با Merge معمولی `dbaf450` وارد و تعارض اسناد با حفظ هر دو Handoff حل شد.
@@ -191,6 +211,13 @@
   از کش افزایشی قدیمی محلی بود و فایل Master Data در این Task تغییر نکرد.
 - PR [#86](https://github.com/nirvanamahlou/Rubi/pull/86) با Merge Commit `4ea7b27`
   وارد `develop` شد؛ اجرای کامل CI پس از ادغام روی خود `develop` نیز سبز است.
+## CUSTOMER-DOCUMENTS-001 — مدارک واقعی در Customer 360 — آماده بررسی
+
+- `PC-A` وضعیت «در انتظار زیرساخت مدارک» را با پنل واقعی فهرست و بارگذاری فایل جایگزین کرد. هر مشتری اکنون تعداد، کد آرشیو، نوع، نسخه، تاریخ اعتبار و وضعیت اسکن مدارک خودش را می‌بیند و می‌تواند از همان پرونده فایل جدید اضافه کند.
+- قرارداد عمومی Documents به‌صورت backward-compatible فیلتر exact source گرفت. Backend مرجع سه‌بخشی را کامل اعتبارسنجی و همراه Branch/Domain/Permission scope روی Relation اصلی اعمال می‌کند؛ پاسخ هیچ source id خامی افشا نمی‌کند.
+- Customers فقط مصرف‌کننده Public Contract/API است و هیچ دسترسی مستقیم به Repository یا جدول Documents ندارد. UI باز PR #80 و فایل‌های تقویم/اسناد PC-B نیز تغییر نکرده‌اند.
+- ذخیره ساخت‌یافته شماره پاسپورت، کشور صادرکننده و شماره ویزا همچنان تا تصمیم `DEC-OPEN-006` مسدود است؛ ولی خود فایل‌ها اکنون با قرنطینه، نسخه و کنترل دسترسی فعلی Documents عملیاتی‌اند.
+- Full lint/typecheck/build پاس و `1470` تست Monorepo موفق است؛ `70` تست PostgreSQL اختیاری skip شدند. Migration، Schema، Seed، Dependency و Lockfile تغییر نکرده‌اند. جزئیات: `docs/tasks/CUSTOMER-DOCUMENTS-001.md`.
 
 ## MASTER-004-FORM-ALIGNMENT — هم‌ترازی فرم‌های اطلاعات پایه — آماده بررسی
 
