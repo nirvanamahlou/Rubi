@@ -359,13 +359,6 @@
   margin: 0 0 12px;
 }
 
-.hubWorkspacesLabel {
-  flex-basis: 100%;
-  color: #7487a3;
-  font-size: 10px;
-  font-weight: 750;
-}
-
 .hubWorkspaceLink {
   display: flex;
   min-height: 31px;

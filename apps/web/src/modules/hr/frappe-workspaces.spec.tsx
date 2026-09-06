@@ -20,7 +20,7 @@ describe('Frappe-style HR workspaces', () => {
       new Set(frappeWorkspaces.map(({ id }) => id)),
     );
     expect(html).not.toContain('id="frappe-workspaces-title"');
-    expect(html).toContain('امکانات Frappe HR');
+    expect(html).not.toContain('امکانات Frappe HR');
     expect(JSON.stringify(frappeWorkspaces)).not.toContain('معرفی توسط کارکنان');
     for (const workspace of frappeWorkspaces) {
       expect(html).toContain(workspace.shortTitle);

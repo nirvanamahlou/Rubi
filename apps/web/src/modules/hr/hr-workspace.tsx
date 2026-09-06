@@ -818,9 +818,6 @@ function HubScreen() {
                   aria-label={`فضاهای کاری Frappe مرتبط با ${card.title}`}
                   className={styles.hubWorkspaces}
                 >
-                  <span className={styles.hubWorkspacesLabel}>
-                    امکانات Frappe HR
-                  </span>
                   {relatedWorkspaces.map((workspace) => {
                     const WorkspaceIcon = workspace.icon;
                     const itemCount = workspace.groups.reduce(
