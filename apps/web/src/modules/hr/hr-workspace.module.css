@@ -887,6 +887,11 @@
   gap: 24px;
   padding: 24px 15px 32px;
 }
+.orgBranch {
+  display: grid;
+  justify-items: center;
+  gap: 22px;
+}
 .orgLevel {
   display: flex;
   flex-wrap: wrap;
@@ -895,11 +900,11 @@
 }
 .orgNode {
   position: relative;
-  min-width: 180px;
+  min-width: 210px;
   border: 1px solid #c9dcf2;
   border-radius: 12px;
   background: #f5f9ff;
-  padding: 13px;
+  padding: 42px 13px 13px;
   text-align: center;
 }
 .orgNode b,
@@ -917,6 +922,59 @@
 }
 .orgNodePrimary small {
   color: #dcecff;
+}
+.orgNodeTitle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.orgNodeMeta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 10px;
+}
+.orgNodeMeta span {
+  border-radius: 20px;
+  background: #e5effc;
+  padding: 3px 7px;
+  color: #37638f;
+  font-size: 9px;
+  font-weight: 800;
+}
+.orgNodePrimary .orgNodeMeta span {
+  background: rgb(255 255 255 / 16%);
+  color: #fff;
+}
+.orgEditButton {
+  position: absolute;
+  inset-block-start: 8px;
+  inset-inline-end: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #bad2ee;
+  border-radius: 8px;
+  background: #fff;
+  padding: 5px 7px;
+  color: #176fcf;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.orgEditButton:hover,
+.orgEditButton:focus-visible {
+  border-color: #1674e8;
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(22 116 232 / 12%);
+}
+.orgNodePrimary .orgEditButton {
+  border-color: rgb(255 255 255 / 38%);
+  background: rgb(255 255 255 / 14%);
+  color: #fff;
 }
 
 .payrollHero {

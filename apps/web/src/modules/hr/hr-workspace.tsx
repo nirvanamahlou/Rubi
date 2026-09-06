@@ -54,6 +54,13 @@ import {
   NewEmployeeDialog,
   type NewEmployeeFormValue,
 } from './new-employee-dialog';
+import {
+  initialOrganizationNodes,
+  OrganizationChart,
+  OrganizationNodeDialog,
+  type OrganizationNode,
+  type OrganizationNodeFormValue,
+} from './organization-chart';
 
 type UiState = 'loading' | 'empty' | 'error' | 'unauthorized' | 'forbidden';
 type BadgeTone = 'success' | 'warning' | 'danger' | 'neutral';
@@ -1690,28 +1697,133 @@ function genericTable(
   };
 }
 
-function OrganizationChart() {
+function OrganizationSection({
+  openAction,
+  initialTab,
+}: {
+  openAction: (title: string) => void;
+  initialTab?: string | undefined;
+}) {
+  const tabs = sectionTabs.organization ?? [];
+  const [tab, setTab] = useState(
+    tabs.some((item) => item.id === initialTab)
+      ? (initialTab ?? 'orgchart')
+      : 'orgchart',
+  );
+  const [nodes, setNodes] =
+    useState<readonly OrganizationNode[]>(initialOrganizationNodes);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingNode, setEditingNode] = useState<OrganizationNode | undefined>();
+  const [organizationNotice, setOrganizationNotice] = useState('');
+  const active = tabs.find((item) => item.id === tab);
+  const ActiveIcon = active?.icon ?? FileText;
+  const data = genericTable('organization', tab, openAction);
+
+  const openCreate = () => {
+    setEditingNode(undefined);
+    setOrganizationNotice('');
+    setDialogOpen(true);
+  };
+  const openEdit = (node: OrganizationNode) => {
+    setEditingNode(node);
+    setOrganizationNotice('');
+    setDialogOpen(true);
+  };
+  const saveNode = (value: OrganizationNodeFormValue) => {
+    const node: OrganizationNode = {
+      ...value,
+      parentId: value.parentId || null,
+      positionCapacity: Number(value.positionCapacity),
+    };
+    setNodes((current) =>
+      editingNode
+        ? current.map((item) => (item.id === editingNode.id ? node : item))
+        : [...current, node],
+    );
+    setOrganizationNotice(
+      editingNode
+        ? `گره «${node.name}» در چارت این نشست ویرایش شد.`
+        : `گره «${node.name}» به چارت این نشست اضافه شد.`,
+    );
+    setDialogOpen(false);
+    setEditingNode(undefined);
+  };
+
   return (
-    <div className={styles.orgChart}>
-      <div className={`${styles.orgNode} ${styles.orgNodePrimary}`}>
-        <b>مدیریت نمایشی</b>
-        <small>همکار نمایشی الف</small>
-      </div>
-      <div className={styles.orgLevel}>
-        <div className={styles.orgNode}>
-          <b>واحد عملیات سفر</b>
-          <small>۲ سمت نمایشی</small>
+    <>
+      <PageHead
+        actions={
+          <>
+            <ActionButton disabled>
+              <Download size={15} /> خروجی مجاز
+            </ActionButton>
+            <ActionButton
+              onClick={() =>
+                tab === 'orgchart'
+                  ? openCreate()
+                  : openAction(`ایجاد در ${active?.label ?? 'ساختار سازمانی'}`)
+              }
+              primary
+            >
+              <Plus size={15} /> {tab === 'orgchart' ? 'گره جدید' : 'مورد جدید'}
+            </ActionButton>
+          </>
+        }
+        section="organization"
+      />
+      <DateRangeBar />
+      <Tabs active={tab} items={tabs} onChange={setTab} />
+      {organizationNotice ? (
+        <div className={styles.notice} role="status">
+          <BadgeCheck aria-hidden="true" size={17} />
+          {organizationNotice}
         </div>
-        <div className={styles.orgNode}>
-          <b>واحد فروش</b>
-          <small>۲ سمت نمایشی</small>
-        </div>
-        <div className={styles.orgNode}>
-          <b>واحد مالی</b>
-          <small>۱ سمت نمایشی</small>
-        </div>
-      </div>
-    </div>
+      ) : null}
+      <Panel
+        icon={<ActiveIcon size={17} />}
+        note={
+          tab === 'orgchart'
+            ? 'هر گره را از روی کارت ویرایش کنید؛ تغییرات این پیش‌نمایش در همان نشست می‌ماند.'
+            : 'فقط شناسه‌ها و ردیف‌های صریحاً نمایشی نمایش داده شده‌اند.'
+        }
+        title={active?.label ?? 'ساختار سازمانی'}
+      >
+        {tab === 'orgchart' ? (
+          <OrganizationChart nodes={nodes} onEdit={openEdit} />
+        ) : (
+          <>
+            <div className={styles.filterBar}>
+              <input
+                aria-label="جست‌وجو"
+                className={`${styles.control} ${styles.searchControl}`}
+                placeholder="جست‌وجو در داده نمایشی"
+              />
+              <select
+                aria-label="وضعیت"
+                className={styles.control}
+                defaultValue="all"
+              >
+                <option value="all">همه وضعیت‌ها</option>
+                <option value="active">فعال</option>
+              </select>
+              <ActionButton>
+                <Filter size={15} /> فیلتر
+              </ActionButton>
+            </div>
+            <PreviewTable data={data} />
+          </>
+        )}
+      </Panel>
+      {dialogOpen ? (
+        <OrganizationNodeDialog
+          initialNode={editingNode}
+          managerOptions={previewEmployees.map((employee) => employee.name)}
+          nodes={nodes}
+          onClose={() => setDialogOpen(false)}
+          onSubmit={saveNode}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -1964,7 +2076,12 @@ function TabbedSection({
 }: {
   section: Exclude<
     HrSectionId,
-    'home' | 'dashboard' | 'employees' | 'employee' | 'requests'
+    | 'home'
+    | 'dashboard'
+    | 'employees'
+    | 'employee'
+    | 'organization'
+    | 'requests'
   >;
   openAction: (title: string) => void;
   initialTab?: string | undefined;
@@ -2011,47 +2128,41 @@ function TabbedSection({
           note="فقط شناسه‌ها و ردیف‌های صریحاً نمایشی نمایش داده شده‌اند."
           title={active?.label ?? screenMeta[section].title}
         >
-          {section === 'organization' && tab === 'orgchart' ? (
-            <OrganizationChart />
-          ) : (
-            <>
-              {section === 'hrSettings' && tab === 'companies' ? (
-                <div className={styles.panelBody}>
-                  <div className={styles.previewNote}>
-                    <Info aria-hidden="true" size={16} />
-                    <span>
-                      تقویم شمسی رابط فعال است. خروجی بیمه، مالیات و بانک ایران
-                      تا دریافت قواعد قانونی نسخه‌دار و قراردادهای عمومی
-                      تأییدشده غیرفعال می‌ماند.
-                      <br />
-                      {iranLocalizationStatus
-                        .map((item) => `${item.label}: ${item.status}`)
-                        .join(' · ')}
-                    </span>
-                  </div>
-                </div>
-              ) : null}
-              <div className={styles.filterBar}>
-                <input
-                  aria-label="جست‌وجو"
-                  className={`${styles.control} ${styles.searchControl}`}
-                  placeholder="جست‌وجو در داده نمایشی"
-                />
-                <select
-                  aria-label="وضعیت"
-                  className={styles.control}
-                  defaultValue="all"
-                >
-                  <option value="all">همه وضعیت‌ها</option>
-                  <option value="active">فعال</option>
-                </select>
-                <ActionButton>
-                  <Filter size={15} /> فیلتر
-                </ActionButton>
+          {section === 'hrSettings' && tab === 'companies' ? (
+            <div className={styles.panelBody}>
+              <div className={styles.previewNote}>
+                <Info aria-hidden="true" size={16} />
+                <span>
+                  تقویم شمسی رابط فعال است. خروجی بیمه، مالیات و بانک ایران تا
+                  دریافت قواعد قانونی نسخه‌دار و قراردادهای عمومی تأییدشده
+                  غیرفعال می‌ماند.
+                  <br />
+                  {iranLocalizationStatus
+                    .map((item) => `${item.label}: ${item.status}`)
+                    .join(' · ')}
+                </span>
               </div>
-              <PreviewTable data={data} />
-            </>
-          )}
+            </div>
+          ) : null}
+          <div className={styles.filterBar}>
+            <input
+              aria-label="جست‌وجو"
+              className={`${styles.control} ${styles.searchControl}`}
+              placeholder="جست‌وجو در داده نمایشی"
+            />
+            <select
+              aria-label="وضعیت"
+              className={styles.control}
+              defaultValue="all"
+            >
+              <option value="all">همه وضعیت‌ها</option>
+              <option value="active">فعال</option>
+            </select>
+            <ActionButton>
+              <Filter size={15} /> فیلتر
+            </ActionButton>
+          </div>
+          <PreviewTable data={data} />
         </Panel>
       )}
     </>
@@ -2196,6 +2307,8 @@ export function HrWorkspace({
     screen = <Employees employees={employees} openAction={openAction} />;
   else if (section === 'employee')
     screen = <EmployeeProfile openAction={openAction} />;
+  else if (section === 'organization')
+    screen = <OrganizationSection initialTab={tabId} openAction={openAction} />;
   else if (section === 'requests')
     screen = <Requests openAction={openAction} />;
   else

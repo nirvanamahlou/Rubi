@@ -8,6 +8,13 @@ import {
   type NewEmployeeFormValue,
 } from './new-employee-dialog';
 import {
+  initialOrganizationNodes,
+  OrganizationChart,
+  OrganizationNodeForm,
+  validateOrganizationNodeForm,
+  type OrganizationNodeFormValue,
+} from './organization-chart';
+import {
   employeeTabs,
   hrHubCards,
   iranLocalizationStatus,
@@ -136,6 +143,70 @@ describe('HR reference implementation', () => {
         ['preview-employee-1'],
       ),
     ).toEqual({});
+  });
+
+  it('renders an editable organization chart and a structure-aware form', () => {
+    const chart = renderToStaticMarkup(
+      <OrganizationChart
+        nodes={initialOrganizationNodes}
+        onEdit={() => undefined}
+      />,
+    );
+    expect(chart).toContain('مدیریت نمایشی');
+    expect(chart).toContain('واحد عملیات سفر');
+    expect(chart.match(/ویرایش /g)?.length ?? 0).toBe(4);
+    expect(chart).toContain('۲ سمت');
+
+    const form = renderToStaticMarkup(
+      <OrganizationNodeForm
+        initialNode={initialOrganizationNodes[1]}
+        managerOptions={['همکار نمایشی الف', 'همکار نمایشی ب']}
+        nodes={initialOrganizationNodes}
+        onCancel={() => undefined}
+        onSubmit={() => undefined}
+      />,
+    );
+    for (const label of [
+      'شناسه ساختاری *',
+      'عنوان *',
+      'نوع گره *',
+      'وضعیت *',
+      'شعبه *',
+      'واحد والد *',
+      'مسئول / مدیر',
+      'ظرفیت سمت‌ها *',
+      'تاریخ اثر *',
+    ])
+      expect(form).toContain(label);
+    expect(form).toContain('value="preview-org-travel"');
+    expect(form).toContain('ذخیره ویرایش');
+  });
+
+  it('validates organization identity, hierarchy and position capacity', () => {
+    const value: OrganizationNodeFormValue = {
+      id: ' PREVIEW-ORG-TRAVEL ',
+      name: '',
+      kind: 'UNIT',
+      branch: '',
+      parentId: '',
+      manager: 'تعیین نشده',
+      positionCapacity: '-1',
+      effectiveFrom: '',
+      status: 'فعال',
+    };
+    expect(
+      validateOrganizationNodeForm(
+        value,
+        initialOrganizationNodes.map((node) => node.id),
+      ),
+    ).toEqual({
+      id: 'این شناسه ساختاری قبلاً استفاده شده است.',
+      name: 'عنوان ساختار الزامی است.',
+      branch: 'شعبه الزامی است.',
+      parentId: 'واحد سازمانی باید یک والد داشته باشد.',
+      positionCapacity: 'ظرفیت سمت باید عددی بین صفر تا ۹۹۹۹ باشد.',
+      effectiveFrom: 'تاریخ اثر الزامی است.',
+    });
   });
 
   it('keeps payroll and exports in a truthful preview state', () => {
