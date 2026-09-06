@@ -173,6 +173,7 @@ describe('HR reference implementation', () => {
     expect(chart).toContain('واحد عملیات سفر');
     expect(chart.match(/ویرایش /g)?.length ?? 0).toBe(4);
     expect(chart).toContain('۲ سمت');
+    expect(chart).toContain('data-edge-count="3"');
 
     const form = renderToStaticMarkup(
       <OrganizationNodeForm

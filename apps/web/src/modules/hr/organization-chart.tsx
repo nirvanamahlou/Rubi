@@ -1,7 +1,13 @@
 'use client';
 
 import { Building2, Info, PencilLine } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
@@ -36,6 +42,30 @@ export interface OrganizationNodeFormValue {
   positionCapacity: string;
   effectiveFrom: string;
   status: OrganizationNodeStatus;
+}
+
+interface OrganizationChartEdge {
+  id: string;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+}
+
+interface OrganizationChartSize {
+  width: number;
+  height: number;
+}
+
+export function getOrganizationRelationships(
+  nodes: readonly OrganizationNode[],
+) {
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  return nodes.flatMap((node) =>
+    node.parentId && nodeIds.has(node.parentId)
+      ? [{ id: `${node.parentId}-${node.id}`, parentId: node.parentId, childId: node.id }]
+      : [],
+  );
 }
 
 type OrganizationNodeFormField = keyof OrganizationNodeFormValue;
@@ -439,13 +469,94 @@ export function OrganizationChart({
   nodes: readonly OrganizationNode[];
   onEdit: (node: OrganizationNode) => void;
 }) {
+  const chartRef = useRef<HTMLDivElement>(null);
+  const nodeRefs = useRef(new Map<string, HTMLElement>());
+  const [edges, setEdges] = useState<readonly OrganizationChartEdge[]>([]);
+  const [chartSize, setChartSize] = useState<OrganizationChartSize>({
+    width: 1,
+    height: 1,
+  });
   const roots = nodes.filter((node) => !node.parentId);
+
+  const updateEdges = useCallback(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const chartRect = chart.getBoundingClientRect();
+    const nextEdges = getOrganizationRelationships(nodes).flatMap((relationship) => {
+      const parent = nodeRefs.current.get(relationship.parentId);
+      const child = nodeRefs.current.get(relationship.childId);
+      if (!parent || !child) return [];
+      const parentRect = parent.getBoundingClientRect();
+      const childRect = child.getBoundingClientRect();
+      return [
+        {
+          id: relationship.id,
+          startX: parentRect.left - chartRect.left + parentRect.width / 2,
+          startY: parentRect.bottom - chartRect.top,
+          endX: childRect.left - chartRect.left + childRect.width / 2,
+          endY: childRect.top - chartRect.top,
+        },
+      ];
+    });
+    const nextSize = {
+      width: Math.max(1, chart.clientWidth),
+      height: Math.max(1, chart.scrollHeight),
+    };
+    setChartSize((current) =>
+      current.width === nextSize.width && current.height === nextSize.height
+        ? current
+        : nextSize,
+    );
+    setEdges((current) =>
+      current.length === nextEdges.length &&
+      current.every((edge, index) => {
+        const next = nextEdges[index];
+        return (
+          next !== undefined &&
+          edge.id === next.id &&
+          edge.startX === next.startX &&
+          edge.startY === next.startY &&
+          edge.endX === next.endX &&
+          edge.endY === next.endY
+        );
+      })
+        ? current
+        : nextEdges,
+    );
+  }, [nodes]);
+
+  useLayoutEffect(() => {
+    let animationFrame = 0;
+    const scheduleUpdate = () => {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = window.requestAnimationFrame(updateEdges);
+    };
+    updateEdges();
+    window.addEventListener('resize', scheduleUpdate);
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(scheduleUpdate);
+    if (chartRef.current) observer?.observe(chartRef.current);
+    nodeRefs.current.forEach((element) => observer?.observe(element));
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.removeEventListener('resize', scheduleUpdate);
+      observer?.disconnect();
+    };
+  }, [updateEdges]);
+
   const renderNode = (node: OrganizationNode, primary = false) => {
     const children = nodes.filter((item) => item.parentId === node.id);
     return (
       <div className={styles.orgBranch} key={node.id}>
         <article
           className={`${styles.orgNode} ${primary ? styles.orgNodePrimary : ''}`}
+          data-org-node={node.id}
+          ref={(element) => {
+            if (element) nodeRefs.current.set(node.id, element);
+            else nodeRefs.current.delete(node.id);
+          }}
         >
           <button
             aria-label={`ویرایش ${node.name}`}
@@ -477,7 +588,25 @@ export function OrganizationChart({
   };
 
   return (
-    <div className={styles.orgChart}>
+    <div className={styles.orgChart} ref={chartRef}>
+      <svg
+        aria-hidden="true"
+        className={styles.orgEdges}
+        data-edge-count={getOrganizationRelationships(nodes).length}
+        preserveAspectRatio="none"
+        viewBox={`0 0 ${chartSize.width} ${chartSize.height}`}
+      >
+        {edges.map((edge) => {
+          const middleY = edge.startY + (edge.endY - edge.startY) / 2;
+          return (
+            <path
+              className={styles.orgEdge}
+              d={`M ${edge.startX} ${edge.startY} V ${middleY} H ${edge.endX} V ${edge.endY}`}
+              key={edge.id}
+            />
+          );
+        })}
+      </svg>
       {roots.map((node) => renderNode(node, true))}
     </div>
   );
