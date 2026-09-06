@@ -15,12 +15,13 @@ export interface TicketOfferV1 {
   serviceNumber: string;
   cabinClassCode: 'ECONOMY' | 'BUSINESS' | 'FIRST';
   totalCapacity: number;
+  remainingCapacity: number;
   status: 'ACTIVE' | 'PAUSED';
 }
 
 export type TicketOfferCreateV1 = Omit<
   TicketOfferV1,
-  'id' | 'version' | 'branchId' | 'status'
+  'id' | 'version' | 'branchId' | 'remainingCapacity' | 'status'
 >;
 export interface TicketOfferSearchV1 {
   originId: string;

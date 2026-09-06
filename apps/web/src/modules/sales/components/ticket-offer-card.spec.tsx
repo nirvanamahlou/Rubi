@@ -19,6 +19,7 @@ const offer: TicketOfferV1 = {
   serviceNumber: 'TEST-1',
   cabinClassCode: 'ECONOMY',
   totalCapacity: 20,
+  remainingCapacity: 12,
   status: 'ACTIVE',
 };
 describe('readable sales ticket card', () => {
@@ -69,7 +70,7 @@ describe('readable sales ticket card', () => {
       'bg-blue-600',
     ])
       expect(html).toContain(text);
-    expect(html).not.toContain('ظرفیت باقی');
+    expect(html).toContain('مانده');
     expect(html).not.toContain('قیمت');
   });
   it('uses fixed Tehran times without seconds and shows overnight arrival date', () => {
@@ -88,5 +89,17 @@ describe('readable sales ticket card', () => {
     expect(html).toContain('aria-pressed="false"');
     expect(html).toContain('اکونومی');
     expect(html).not.toContain('بیزینس');
+  });
+  it('disables an offer whose remaining seats are below the passenger count', () => {
+    const html = renderToStaticMarkup(
+      <TicketOfferCard
+        offer={{ ...offer, remainingCapacity: 2 }}
+        selected={false}
+        requiredSeats={3}
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(html).toContain('disabled=""');
+    expect(html).toContain('برای ۳ صندلی کافی نیست');
   });
 });

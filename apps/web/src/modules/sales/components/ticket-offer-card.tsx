@@ -49,22 +49,26 @@ export function TicketOfferCard({
   onSelect,
   originLabel = 'مبدأ',
   destinationLabel = 'مقصد',
+  requiredSeats = 1,
 }: {
   offer: TicketOfferV1;
   selected: boolean;
   onSelect: (offer: TicketOfferV1) => void;
   originLabel?: string;
   destinationLabel?: string;
+  requiredSeats?: number;
 }) {
   const departure = ticketDisplayTime(offer.departureAt);
+  const insufficient = offer.remainingCapacity < requiredSeats;
   const arrival = ticketDisplayTime(offer.arrivalAt);
   return (
     <button
       type="button"
       aria-pressed={selected}
+      disabled={insufficient}
       aria-label={`${offer.carrierName}، پرواز ${offer.serviceNumber}، ${originLabel} به ${destinationLabel}، ${departure.date} ساعت ${departure.time}${selected ? '، انتخاب‌شده' : ''}`}
       onClick={() => onSelect(offer)}
-      className={`w-full overflow-hidden rounded-2xl border text-start shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-border bg-surface hover:border-primary/60 hover:shadow-md'}`}
+      className={`w-full disabled:cursor-not-allowed disabled:opacity-60 overflow-hidden rounded-2xl border text-start shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-border bg-surface hover:border-primary/60 hover:shadow-md'}`}
     >
       <span className="flex items-start justify-between gap-3 px-4 pt-3">
         <span className="min-w-0">
@@ -147,9 +151,21 @@ export function TicketOfferCard({
               ? 'فرست'
               : 'اکونومی'}
         </span>
-        <span>
-          ظرفیت کل: {new Intl.NumberFormat('fa-IR').format(offer.totalCapacity)}{' '}
-          نفر
+        <span className="flex flex-wrap gap-x-3 gap-y-1">
+          <span>
+            ظرفیت کل:{' '}
+            {new Intl.NumberFormat('fa-IR').format(offer.totalCapacity)} نفر
+          </span>
+          <strong className={insufficient ? 'text-rose-600' : ''}>
+            مانده:{' '}
+            {new Intl.NumberFormat('fa-IR').format(offer.remainingCapacity)} نفر
+          </strong>
+          {insufficient ? (
+            <span className="w-full text-rose-600">
+              برای {new Intl.NumberFormat('fa-IR').format(requiredSeats)} صندلی
+              کافی نیست
+            </span>
+          ) : null}
         </span>
       </span>
     </button>

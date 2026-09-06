@@ -22,6 +22,7 @@ const offer = (departureAt: string): TicketOfferV1 => ({
   serviceNumber: 'TEST',
   cabinClassCode: 'ECONOMY',
   totalCapacity: 20,
+  remainingCapacity: 20,
   status: 'ACTIVE',
 });
 const base: SalesFormState = {

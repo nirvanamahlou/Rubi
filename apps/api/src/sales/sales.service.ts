@@ -513,28 +513,30 @@ export class SalesService {
     }
     await this.customers.resolveSnapshot(row.customerId, actor);
     await this.customers.assertPassengers(row.passengers, actor);
-    const ticketCheck = await this.tickets.revalidate(
-      row.ticketSelections.map(({ offerId }) => offerId),
+    const presented = presentSalesContract(row);
+    const seatCount = presented.passengersDetail.filter(
+      ({ ageCategory }) => ageCategory !== 'INF',
+    ).length;
+    const ticketCheck = await this.tickets.reserve(
+      presented.ticketSelections,
       row.branchId,
-      presentSalesContract(row).ticketSelections,
+      row.id,
+      seatCount,
     );
     if (!ticketCheck.available)
       throw new ConflictException({
-        code: 'TICKET_NOT_AVAILABLE',
-        message:
-          'Public API کاتالوگ بلیت در دسترس نیست یا پیشنهاد منقضی شده است.',
+        code: 'TICKET_CAPACITY_INSUFFICIENT',
+        message: 'ظرفیت باقی‌مانده بلیت برای تعداد بزرگسال و کودک کافی نیست.',
         unavailableOfferIds: ticketCheck.unavailableOfferIds,
       });
     const requestId = randomUUID();
     const snapshot: SalesReservationRequestV1 = {
-      passengerAssignments: presentSalesContract(row).passengersDetail.map(
-        (passenger) => ({
-          customerId: passenger.customerId,
-          ageCategory: passenger.ageCategory,
-          serviceClientKeys: passenger.serviceClientKeys,
-        }),
-      ),
-      ticketSelections: presentSalesContract(row).ticketSelections,
+      passengerAssignments: presented.passengersDetail.map((passenger) => ({
+        customerId: passenger.customerId,
+        ageCategory: passenger.ageCategory,
+        serviceClientKeys: passenger.serviceClientKeys,
+      })),
+      ticketSelections: presented.ticketSelections,
       version: 1,
       requestId,
       contractId: row.id,
@@ -542,30 +544,38 @@ export class SalesService {
       contractVersion: version + 1,
       customerId: row.customerId,
       passengerIds: row.passengers.map(({ customerId }) => customerId),
-      serviceSelections: presentSalesContract(row).servicesDetail,
+      serviceSelections: presented.servicesDetail,
       selectedTicketOfferIds: row.ticketSelections.map(
         ({ offerId }) => offerId,
       ),
-      hotelSelection: presentSalesContract(row).hotelSelection,
+      hotelSelection: presented.hotelSelection,
       createdAt: new Date().toISOString(),
     };
-    const changed = await this.repository.transition(
-      id,
-      version,
-      ['DRAFT', 'PENDING_CONFIRMATION'],
-      'SENT_TO_RESERVATIONS',
-      reason?.trim() || 'تأیید و ارسال خودکار درخواست رزرو',
-      this.context(actor, row.branchId, traceId),
-      idempotencyKey,
-      fingerprint,
-      snapshot as unknown as Prisma.InputJsonValue,
-      requestId,
-    );
-    if (!changed)
+    let changed = false;
+    try {
+      changed = await this.repository.transition(
+        id,
+        version,
+        ['DRAFT', 'PENDING_CONFIRMATION'],
+        'SENT_TO_RESERVATIONS',
+        reason?.trim() || 'تأیید و ارسال خودکار درخواست رزرو',
+        this.context(actor, row.branchId, traceId),
+        idempotencyKey,
+        fingerprint,
+        snapshot as unknown as Prisma.InputJsonValue,
+        requestId,
+      );
+    } catch (cause) {
+      await this.tickets.release(ticketCheck.createdAllocationIds);
+      throw cause;
+    }
+    if (!changed) {
+      await this.tickets.release(ticketCheck.createdAllocationIds);
       throw new ConflictException({
         code: 'CONCURRENT_MODIFICATION',
         message: 'قرارداد هم‌زمان تغییر کرده است.',
       });
+    }
     return {
       ...(await this.detail(id, actor)),
       meta: { reservationRequest: snapshot, idempotentReplay: false },
@@ -604,6 +614,7 @@ export class SalesService {
         code: 'CONCURRENT_MODIFICATION',
         message: 'قرارداد هم‌زمان تغییر کرده یا قابل لغو نیست.',
       });
+    await this.tickets.releaseContract(id);
     return this.detail(id, actor);
   }
 

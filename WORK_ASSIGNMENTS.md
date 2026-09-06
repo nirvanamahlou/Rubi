@@ -1,5 +1,14 @@
 # Work Assignments
 
+## SALES-PASSENGER-CAPACITY-HOTEL-0906 — PC-A — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-06: ترکیب تعداد مسافران پیش از انتخاب بلیت ثبت شود، نوزاد در ظرفیت صندلی محاسبه نشود، انتخاب بلیت بیش از مانده ظرفیت هم در UI و هم هنگام تأیید اتمیک رد شود و هتل با تعداد اتاق و اعضای مهمان انتخاب شود. `COMPUTER_ID=PC-A`.
+- ادامه همان Branch/PR فعال `codex/pc-a-sales-contracts` / PR #90؛ محدوده Sales Web/API، قرارداد عمومی Travel/Sales، Ticket Catalog Public Service، Migration افزایشی ظرفیت، تست‌ها و اسناد همین Task است. قفل‌های Migration، Central Docs و Sales/Travel Contract از قبل نزد `PC-A/SALES-CONTRACTS-001` هستند.
+- Ticket Catalog مالک ظرفیت بلیت می‌ماند و Sales فقط Public Service آن را مصرف می‌کند؛ تخصیص ظرفیت با کلید قرارداد/جهت اتمیک و تکرارپذیر است. اطلاعات مسافر از Customers و ارسال نهایی از Reservations عبور می‌کند؛ Query مستقیم جدول ماژول دیگر در Sales ممنوع است.
+- هتل در این مرحله تعداد اتاق، نوع اتاق، تعداد مهمان و اعضای انتخاب‌شده را در Snapshot قرارداد نگه می‌دارد؛ موجودی قطعی هتل همچنان هنگام Reservation Confirmation بررسی می‌شود و موجودی ساختگی تولید نمی‌شود.
+- بدون Dependency/Lockfile، تغییر IAM، حذف Migration قبلی، داده واقعی یا دست‌کاری Branchهای دیگر.
+- Validation: 678 Web tests and 823 API tests passed (75 optional API tests skipped); 46 focused Web tests and 31 focused API tests also passed independently; Web/API lint, typecheck and production builds passed. Prisma format/generate/validate and all 33 migrations on fresh PostgreSQL 18 passed; the dedicated concurrent oversell test passed independently. Existing Reservations concurrent-upsert race remains outside this unit. Operational local migration applied after an in-container pg_dump backup; Web 3100, API 4000 and CORS returned 200/200/204. No authenticated browser QA claim.
+
 ## SALES-DASHBOARD-REDESIGN-0905 — PC-A — COMPLETE_LOCAL
 
 - Reserve Sales workspace, presentation/tests and task status docs only. Redesign summary, server-backed search/settlement filters, pagination and empty state. Preserve API authorization and Finance-confirmed balances; no schema, shared UI, IAM or dependency changes. Local delivery only; public publication remains unapproved.

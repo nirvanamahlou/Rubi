@@ -14,12 +14,14 @@ export function TicketOfferPicker({
   onSelect,
   originLabel,
   destinationLabel,
+  requiredSeats,
 }: {
   query: TicketOfferSearchV1;
   selectedId: string;
   onSelect: (offer: TicketOfferV1) => void;
   originLabel?: string;
   destinationLabel?: string;
+  requiredSeats: number;
 }) {
   const [offers, setOffers] = useState<TicketOfferV1[]>([]);
   const [page, setPage] = useState(1);
@@ -96,6 +98,7 @@ export function TicketOfferPicker({
             key={offer.id}
             offer={offer}
             selected={selectedId === offer.id}
+            requiredSeats={requiredSeats}
             onSelect={onSelect}
             {...(originLabel ? { originLabel } : {})}
             {...(destinationLabel ? { destinationLabel } : {})}

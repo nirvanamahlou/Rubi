@@ -7,6 +7,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import * as Joi from 'joi';
+import { Prisma } from '@rubi/database';
 import type {
   AuthenticatedActor,
   SalesTicketSelectionInput,
@@ -82,6 +83,12 @@ export class TicketPublicService {
           : {}),
         totalCapacity: { gt: 0 },
       },
+      include: {
+        capacityAllocations: {
+          where: { status: 'ACTIVE' },
+          select: { quantity: true },
+        },
+      },
       orderBy: [{ departureAt: 'asc' }, { id: 'asc' }],
       skip: ((query.page ?? 1) - 1) * 50,
       take: 51,
@@ -100,6 +107,12 @@ export class TicketPublicService {
         serviceNumber: row.serviceNumber,
         cabinClassCode: row.cabinClassCode as TicketOfferV1['cabinClassCode'],
         totalCapacity: row.totalCapacity,
+        remainingCapacity:
+          row.totalCapacity -
+          row.capacityAllocations.reduce(
+            (sum, allocation) => sum + allocation.quantity,
+            0,
+          ),
         status: row.status as TicketOfferV1['status'],
       })),
       hasMore: rows.length > 50,
@@ -190,5 +203,144 @@ export class TicketPublicService {
     );
     const unavailableOfferIds = offerIds.filter((id) => !found.has(id));
     return { available: unavailableOfferIds.length === 0, unavailableOfferIds };
+  }
+
+  /** Atomically reserves one seat per non-infant passenger for every selected direction. */
+  async reserve(
+    selections: readonly SalesTicketSelectionInput[],
+    branchId: string,
+    contractId: string,
+    seatCount: number,
+  ) {
+    if (!selections.length)
+      return {
+        available: true,
+        unavailableOfferIds: [] as string[],
+        createdAllocationIds: [] as string[],
+      };
+    const validation = Joi.object({
+      branchId: uuid.required(),
+      contractId: uuid.required(),
+      seatCount: Joi.number().integer().min(1).max(100000).required(),
+      selections: Joi.array()
+        .items(
+          Joi.object({
+            offerId: uuid.required(),
+            direction: Joi.string().valid('OUTBOUND', 'RETURN').required(),
+          }).unknown(true),
+        )
+        .min(1)
+        .max(2)
+        .required(),
+    }).validate(
+      { branchId, contractId, seatCount, selections },
+      { convert: false },
+    );
+    if (validation.error)
+      throw new BadRequestException('تعداد مسافر یا انتخاب بلیت معتبر نیست.');
+    if (
+      new Set(selections.map(({ direction }) => direction)).size !==
+      selections.length
+    )
+      throw new BadRequestException('برای هر جهت فقط یک بلیت قابل رزرو است.');
+
+    return this.database.client.$transaction(async (transaction) => {
+      const offerIds = [
+        ...new Set(selections.map(({ offerId }) => offerId)),
+      ].sort();
+      await transaction.$queryRaw(
+        Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" IN (${Prisma.join(
+          offerIds,
+        )}) ORDER BY "id" FOR UPDATE`,
+      );
+      const offers = await transaction.ticketPublishedOffer.findMany({
+        where: {
+          id: { in: offerIds },
+          branchId,
+          status: 'ACTIVE',
+          departureAt: { gt: new Date() },
+        },
+        include: {
+          capacityAllocations: {
+            where: { status: 'ACTIVE' },
+            select: { contractId: true, direction: true, quantity: true },
+          },
+        },
+      });
+      const byId = new Map(offers.map((offer) => [offer.id, offer]));
+      const existing = await transaction.ticketOfferCapacityAllocation.findMany(
+        {
+          where: { contractId },
+        },
+      );
+      const existingByDirection = new Map(
+        existing.map((allocation) => [allocation.direction, allocation]),
+      );
+      const unavailableOfferIds = selections
+        .filter((selection) => {
+          const offer = byId.get(selection.offerId);
+          const replay = existingByDirection.get(selection.direction);
+          if (
+            !offer ||
+            selection.originId !== offer.originId ||
+            selection.destinationId !== offer.destinationId ||
+            new Date(selection.departureAt).getTime() !==
+              offer.departureAt.getTime() ||
+            new Date(selection.arrivalAt).getTime() !==
+              offer.arrivalAt.getTime() ||
+            selection.cabinClassCode !== offer.cabinClassCode ||
+            selection.carrierNameSnapshot !== offer.carrierName ||
+            selection.serviceNumberSnapshot !== offer.serviceNumber
+          )
+            return true;
+          if (replay)
+            return (
+              replay.status !== 'ACTIVE' ||
+              replay.offerId !== offer.id ||
+              replay.quantity !== seatCount
+            );
+          const allocated = offer.capacityAllocations.reduce(
+            (sum, allocation) => sum + allocation.quantity,
+            0,
+          );
+          return offer.totalCapacity - allocated < seatCount;
+        })
+        .map(({ offerId }) => offerId);
+      if (unavailableOfferIds.length)
+        return {
+          available: false,
+          unavailableOfferIds,
+          createdAllocationIds: [] as string[],
+        };
+      const createdAllocationIds: string[] = [];
+      for (const selection of selections) {
+        if (existingByDirection.has(selection.direction)) continue;
+        const created = await transaction.ticketOfferCapacityAllocation.create({
+          data: {
+            offerId: selection.offerId,
+            contractId,
+            direction: selection.direction,
+            quantity: seatCount,
+          },
+          select: { id: true },
+        });
+        createdAllocationIds.push(created.id);
+      }
+      return { available: true, unavailableOfferIds: [], createdAllocationIds };
+    });
+  }
+
+  async release(allocationIds: readonly string[]) {
+    if (!allocationIds.length) return;
+    await this.database.client.ticketOfferCapacityAllocation.updateMany({
+      where: { id: { in: [...allocationIds] }, status: 'ACTIVE' },
+      data: { status: 'RELEASED', releasedAt: new Date() },
+    });
+  }
+  async releaseContract(contractId: string) {
+    await this.database.client.ticketOfferCapacityAllocation.updateMany({
+      where: { contractId, status: 'ACTIVE' },
+      data: { status: 'RELEASED', releasedAt: new Date() },
+    });
   }
 }

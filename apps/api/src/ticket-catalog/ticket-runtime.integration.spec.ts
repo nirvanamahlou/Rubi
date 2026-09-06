@@ -154,6 +154,63 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
       ).toBe(false);
     });
 
+    it('atomically prevents overselling and reports remaining capacity', async () => {
+      const offerDefinition = { ...definition, totalCapacity: 3 };
+      const published = await tickets.publish(
+        offerDefinition,
+        actor,
+        branchId,
+        randomUUID(),
+      );
+      const selection = {
+        serviceClientKey: 'flight-outbound',
+        direction: 'OUTBOUND' as const,
+        offerId: published.data.id,
+        originId: offerDefinition.originId,
+        destinationId: offerDefinition.destinationId,
+        departureAt: offerDefinition.departureAt,
+        arrivalAt: offerDefinition.arrivalAt,
+        carrierNameSnapshot: offerDefinition.carrierName,
+        serviceNumberSnapshot: offerDefinition.serviceNumber,
+        cabinClassCode: offerDefinition.cabinClassCode,
+      };
+      const reservations = await Promise.all([
+        tickets.reserve([selection], branchId, randomUUID(), 2),
+        tickets.reserve([selection], branchId, randomUUID(), 2),
+      ]);
+      expect(reservations.filter(({ available }) => available)).toHaveLength(1);
+      expect(reservations.filter(({ available }) => !available)).toHaveLength(
+        1,
+      );
+      const result = await tickets.search(
+        {
+          originId: offerDefinition.originId,
+          destinationId: offerDefinition.destinationId,
+          departureFrom: '2099-10-01',
+        },
+        actor,
+      );
+      expect(
+        result.data.find(({ id }) => id === published.data.id),
+      ).toMatchObject({
+        totalCapacity: 3,
+        remainingCapacity: 1,
+      });
+      const successful = reservations.find(({ available }) => available)!;
+      await tickets.release(successful.createdAllocationIds);
+      const released = await tickets.search(
+        {
+          originId: offerDefinition.originId,
+          destinationId: offerDefinition.destinationId,
+          departureFrom: '2099-10-01',
+        },
+        actor,
+      );
+      expect(
+        released.data.find(({ id }) => id === published.data.id)
+          ?.remainingCapacity,
+      ).toBe(3);
+    });
     it('receives a versioned immutable request once across concurrent retries', async () => {
       const snapshot: SalesReservationRequestV1 = {
         version: 1,

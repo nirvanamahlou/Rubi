@@ -2738,23 +2738,24 @@ model SalesContractStatusHistory {
 }
 
 model TicketPublishedOffer {
-  id              String             @id @default(uuid()) @db.Uuid
-  version         Int                @default(1)
-  branchId        String             @db.Uuid
-  originId        String             @db.Uuid
-  destinationId   String             @db.Uuid
-  departureAt     DateTime           @db.Timestamptz(3)
-  arrivalAt       DateTime           @db.Timestamptz(3)
-  carrierName     String             @db.VarChar(160)
-  serviceNumber   String             @db.VarChar(80)
-  cabinClassCode  String             @db.VarChar(20)
-  totalCapacity   Int
-  status          String             @default("ACTIVE") @db.VarChar(20)
-  createdByUserId String             @db.Uuid
-  createKey       String             @db.VarChar(160)
-  fingerprint     String             @db.VarChar(64)
-  createdAt       DateTime           @default(now()) @db.Timestamptz(3)
-  audit           TicketOfferAudit[]
+  id                  String                          @id @default(uuid()) @db.Uuid
+  version             Int                             @default(1)
+  branchId            String                          @db.Uuid
+  originId            String                          @db.Uuid
+  destinationId       String                          @db.Uuid
+  departureAt         DateTime                        @db.Timestamptz(3)
+  arrivalAt           DateTime                        @db.Timestamptz(3)
+  carrierName         String                          @db.VarChar(160)
+  serviceNumber       String                          @db.VarChar(80)
+  cabinClassCode      String                          @db.VarChar(20)
+  totalCapacity       Int
+  status              String                          @default("ACTIVE") @db.VarChar(20)
+  createdByUserId     String                          @db.Uuid
+  createKey           String                          @db.VarChar(160)
+  fingerprint         String                          @db.VarChar(64)
+  createdAt           DateTime                        @default(now()) @db.Timestamptz(3)
+  audit               TicketOfferAudit[]
+  capacityAllocations TicketOfferCapacityAllocation[]
 
   @@unique([createdByUserId, createKey])
   @@index([branchId, originId, destinationId, departureAt])
@@ -2770,6 +2771,22 @@ model TicketOfferAudit {
   offer       TicketPublishedOffer @relation(fields: [offerId], references: [id], onDelete: Restrict)
 
   @@index([offerId, occurredAt])
+}
+
+model TicketOfferCapacityAllocation {
+  id         String               @id @default(uuid()) @db.Uuid
+  offerId    String               @db.Uuid
+  contractId String               @db.Uuid
+  direction  String               @db.VarChar(20)
+  quantity   Int
+  status     String               @default("ACTIVE") @db.VarChar(20)
+  createdAt  DateTime             @default(now()) @db.Timestamptz(3)
+  releasedAt DateTime?            @db.Timestamptz(3)
+  offer      TicketPublishedOffer @relation(fields: [offerId], references: [id], onDelete: Restrict)
+
+  @@unique([contractId, direction])
+  @@index([offerId, status])
+  @@index([contractId, status])
 }
 
 model ReservationIntake {

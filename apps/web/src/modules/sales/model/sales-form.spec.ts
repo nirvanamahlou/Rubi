@@ -5,6 +5,10 @@ import {
   emptySalesForm,
   salesPayload,
   salesPassengerAgeLabel,
+  salesPassengerCompositionMatches,
+  salesPassengerCounts,
+  salesHotelGuestIds,
+  salesOfferHasCapacity,
   salesSteps,
   salesDirections,
   salesDetailSteps,
@@ -261,6 +265,10 @@ describe('sales contract form payload', () => {
       departureDate: '2026-10-01',
       serviceKinds: ['VISA', 'HOTEL'],
       visaReferenceId: 'visa-public-reference',
+      hotel: {
+        ...emptySalesForm.hotel,
+        guestCustomerIds: ['10000000-0000-4000-8000-000000000004'],
+      },
       passengers: [
         {
           customerId: '10000000-0000-4000-8000-000000000004',
@@ -299,5 +307,76 @@ describe('sales contract form payload', () => {
     ).toEqual(['IRR', 'USD']);
     expect(payload.payments?.[0]?.dueAt).toMatch(/Z$/);
     expect(payload.passengers[0]?.serviceClientKeys).toEqual(['visa', 'hotel']);
+  });
+  it('counts adults and children as seats while keeping infants in the traveller total', () => {
+    const state = {
+      ...emptySalesForm,
+      passengerComposition: { adults: 2, children: 1, infants: 1 },
+      departureDate: '2027-10-01',
+      passengers: [
+        { customerId: 'adult-1', displayName: 'A1', birthDate: '1990-01-01' },
+        { customerId: 'adult-2', displayName: 'A2', birthDate: '2000-01-01' },
+        { customerId: 'child', displayName: 'C', birthDate: '2020-01-01' },
+        { customerId: 'infant', displayName: 'I', birthDate: '2026-01-01' },
+      ],
+    };
+    expect(salesPassengerCounts(state)).toEqual({
+      adults: 2,
+      children: 1,
+      infants: 1,
+      seated: 3,
+      total: 4,
+    });
+    expect(salesPassengerCompositionMatches(state)).toBe(true);
+    expect(
+      salesOfferHasCapacity(
+        {
+          id: 'offer',
+          version: 1,
+          branchId: 'branch',
+          originId: 'origin',
+          destinationId: 'destination',
+          departureAt: '2027-10-01T08:00:00Z',
+          arrivalAt: '2027-10-01T10:00:00Z',
+          carrierName: 'Carrier',
+          serviceNumber: '1',
+          cabinClassCode: 'ECONOMY',
+          totalCapacity: 10,
+          remainingCapacity: 2,
+          status: 'ACTIVE',
+        },
+        salesPassengerCounts(state).seated,
+      ),
+    ).toBe(false);
+  });
+  it('assigns only selected hotel guests and derives occupancy from those members', () => {
+    const state = {
+      ...emptySalesForm,
+      destinationId: 'city',
+      departureDate: '2027-10-01',
+      serviceKinds: ['HOTEL' as const],
+      passengers: [
+        { customerId: 'guest', displayName: 'Guest', birthDate: '1990-01-01' },
+        {
+          customerId: 'visitor',
+          displayName: 'Visitor',
+          birthDate: '1990-01-01',
+        },
+      ],
+      hotel: {
+        ...emptySalesForm.hotel,
+        hotelId: 'hotel',
+        name: 'Hotel',
+        checkIn: '2027-10-01',
+        checkOut: '2027-10-03',
+        roomTypeId: 'room',
+        guestCustomerIds: ['guest'],
+      },
+    };
+    const payload = salesPayload(state);
+    expect(salesHotelGuestIds(state)).toEqual(['guest']);
+    expect(payload.hotelSelection?.occupancy).toBe(1);
+    expect(payload.passengers[0]?.serviceClientKeys).toEqual(['hotel']);
+    expect(payload.passengers[1]?.serviceClientKeys).toEqual([]);
   });
 });

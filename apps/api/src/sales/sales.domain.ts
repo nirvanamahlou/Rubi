@@ -333,6 +333,14 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
         'SALES_HOTEL_INVALID',
         'تعداد اتاق و ظرفیت باید مثبت باشد.',
       );
+    const hotelGuestCount = input.passengers.filter((passenger) =>
+      passenger.serviceClientKeys.includes(hotel.serviceClientKey),
+    ).length;
+    if (hotelGuestCount < 1 || hotel.occupancy !== hotelGuestCount)
+      throw new SalesDomainError(
+        'SALES_HOTEL_INVALID',
+        'تعداد اعضای انتخاب‌شده برای اقامت باید با تعداد مسافران هتل برابر باشد.',
+      );
   }
   for (const price of input.priceComponents) {
     currency(price.currencyCode);

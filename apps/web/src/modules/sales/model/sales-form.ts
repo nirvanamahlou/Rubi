@@ -17,6 +17,10 @@ export function selectSalesPerson(
   asCustomer: boolean,
   birthDate = '',
 ): Partial<SalesFormState> {
+  const isNewPassenger =
+    person.kind !== 'organization' &&
+    person.roles.includes('passenger') &&
+    !state.passengers.some((item) => item.customerId === person.id);
   return {
     ...(asCustomer
       ? {
@@ -27,19 +31,26 @@ export function selectSalesPerson(
           firstPassengerIsCustomer: false,
         }
       : {}),
-    passengers:
-      person.kind !== 'organization' &&
-      person.roles.includes('passenger') &&
-      !state.passengers.some((item) => item.customerId === person.id)
-        ? [
-            ...state.passengers,
-            {
-              customerId: person.id,
-              displayName: person.displayName,
-              birthDate,
-            },
-          ]
-        : state.passengers,
+    passengers: isNewPassenger
+      ? [
+          ...state.passengers,
+          {
+            customerId: person.id,
+            displayName: person.displayName,
+            birthDate,
+          },
+        ]
+      : state.passengers,
+    ...(isNewPassenger && state.serviceKinds.includes('HOTEL')
+      ? {
+          hotel: {
+            ...state.hotel,
+            guestCustomerIds: [
+              ...new Set([...(state.hotel.guestCustomerIds ?? []), person.id]),
+            ],
+          },
+        }
+      : {}),
   };
 }
 
@@ -56,6 +67,7 @@ export interface SalesFormState {
   customerOrganizationId?: string;
   firstPassengerIsCustomer?: boolean;
   businessOutput?: boolean;
+  passengerComposition: { adults: number; children: number; infants: number };
   outboundOffer?: TicketOfferV1 | undefined;
   returnOffer?: TicketOfferV1 | undefined;
   customerId: string;
@@ -99,6 +111,7 @@ export interface SalesFormState {
     roomTypeId: string;
     roomCount: number;
     occupancy: number;
+    guestCustomerIds?: string[];
   };
   visaReferenceId: string;
   passengers: Array<{
@@ -115,6 +128,7 @@ export const emptySalesForm: SalesFormState = {
   customerId: '',
   customerName: '',
   tripType: 'ONE_WAY',
+  passengerComposition: { adults: 1, children: 0, infants: 0 },
   originCountryId: '',
   destinationCountryId: '',
   originId: '',
@@ -144,6 +158,7 @@ export const emptySalesForm: SalesFormState = {
     roomTypeId: '',
     roomCount: 1,
     occupancy: 1,
+    guestCustomerIds: [],
   },
   visaReferenceId: '',
   passengers: [],
@@ -158,6 +173,66 @@ export const emptySalesForm: SalesFormState = {
   payments: [],
   pricingNotes: '',
 };
+
+export function salesPassengerCounts(state: SalesFormState) {
+  const composition = state.passengerComposition ?? {
+    adults: 1,
+    children: 0,
+    infants: 0,
+  };
+  const adults = Number.isInteger(composition.adults)
+    ? Math.max(0, composition.adults)
+    : 0;
+  const children = Number.isInteger(composition.children)
+    ? Math.max(0, composition.children)
+    : 0;
+  const infants = Number.isInteger(composition.infants)
+    ? Math.max(0, composition.infants)
+    : 0;
+  return {
+    adults,
+    children,
+    infants,
+    seated: adults + children,
+    total: adults + children + infants,
+  };
+}
+
+export function salesPassengerCompositionMatches(state: SalesFormState) {
+  const expected = salesPassengerCounts(state);
+  const actual = { adults: 0, children: 0, infants: 0 };
+  for (const passenger of state.passengers) {
+    const category = salesPassengerAgeLabel(
+      passenger.birthDate,
+      salesTravelDate(state),
+    );
+    if (category === 'بزرگسال') actual.adults += 1;
+    else if (category === 'کودک') actual.children += 1;
+    else if (category === 'نوزاد') actual.infants += 1;
+    else return false;
+  }
+  return (
+    actual.adults === expected.adults &&
+    actual.children === expected.children &&
+    actual.infants === expected.infants
+  );
+}
+
+export function salesHotelGuestIds(state: SalesFormState): string[] {
+  const configured = state.hotel.guestCustomerIds;
+  return configured === undefined
+    ? state.passengers.map(({ customerId }) => customerId)
+    : configured.filter((id) =>
+        state.passengers.some(({ customerId }) => customerId === id),
+      );
+}
+
+export function salesOfferHasCapacity(
+  offer: TicketOfferV1 | undefined,
+  seatCount: number,
+): boolean {
+  return Boolean(offer && offer.remainingCapacity >= seatCount);
+}
 
 export function withFirstPassengerCustomer(
   state: SalesFormState,
@@ -507,7 +582,13 @@ export function salesPayload(
       customerId: item.customerId,
       displayNameSnapshot: item.displayName,
       birthDate: item.birthDate,
-      serviceClientKeys: services.map(({ clientKey }) => clientKey),
+      serviceClientKeys: services
+        .filter(
+          ({ clientKey }) =>
+            clientKey !== 'hotel' ||
+            salesHotelGuestIds(state).includes(item.customerId),
+        )
+        .map(({ clientKey }) => clientKey),
     })),
     ticketSelections,
     hotelSelection:
@@ -521,7 +602,7 @@ export function salesPayload(
             checkOutDate: state.hotel.checkOut,
             roomCount: state.hotel.roomCount,
             roomTypeId: state.hotel.roomTypeId,
-            occupancy: state.hotel.occupancy,
+            occupancy: salesHotelGuestIds(state).length,
             inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
           }
         : null,

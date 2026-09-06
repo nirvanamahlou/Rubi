@@ -43,6 +43,10 @@ import {
   salesPayload,
   salesSteps,
   salesPassengerAgeLabel,
+  salesPassengerCompositionMatches,
+  salesPassengerCounts,
+  salesHotelGuestIds,
+  salesOfferHasCapacity,
   salesDirections,
   salesTravelDate,
   withSalesHotelDates,
@@ -96,6 +100,34 @@ function ReferenceSelect({
         ))}
       </select>
     </FormField>
+  );
+}
+
+function PassengerCountField({
+  label,
+  hint,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="grid gap-1 rounded-xl border border-border bg-surface p-3">
+      <span className="font-bold">{label}</span>
+      <span className="text-xs text-muted-foreground">{hint}</span>
+      <Input
+        type="number"
+        min={0}
+        max={30}
+        value={value}
+        onChange={(event) =>
+          onChange(Math.min(30, Math.max(0, Number(event.target.value) || 0)))
+        }
+      />
+    </label>
   );
 }
 
@@ -185,9 +217,15 @@ export function SalesContractForm() {
     const restoreTimer = saved
       ? globalThis.setTimeout(() => {
           try {
+            const parsed = JSON.parse(saved) as Partial<SalesFormState>;
             const restored = {
               ...emptySalesForm,
-              ...JSON.parse(saved),
+              ...parsed,
+              passengerComposition: {
+                ...emptySalesForm.passengerComposition,
+                ...parsed.passengerComposition,
+              },
+              hotel: { ...emptySalesForm.hotel, ...parsed.hotel },
             } as SalesFormState;
             if (restored.serviceKinds.includes('FLIGHT'))
               restored.serviceKinds = restored.serviceKinds.filter(
@@ -259,6 +297,7 @@ export function SalesContractForm() {
       ...current,
       ...selectSalesPerson(current, customer, true),
       passengers: current.passengers,
+      hotel: current.hotel,
       firstPassengerIsCustomer: false,
     }));
   };
@@ -349,6 +388,46 @@ export function SalesContractForm() {
         position === index ? { ...item, ...patch } : item,
       ),
     });
+  const passengerCounts = salesPassengerCounts(state);
+  const hotelGuestIds = salesHotelGuestIds(state);
+  const updatePassengerCount = (
+    kind: keyof SalesFormState['passengerComposition'],
+    value: number,
+  ) => {
+    const passengerComposition = {
+      ...state.passengerComposition,
+      [kind]: value,
+    };
+    const nextCounts = salesPassengerCounts({ ...state, passengerComposition });
+    const outboundAvailable = salesOfferHasCapacity(
+      state.outboundOffer,
+      nextCounts.seated,
+    );
+    const returnAvailable = salesOfferHasCapacity(
+      state.returnOffer,
+      nextCounts.seated,
+    );
+    patchState({
+      passengerComposition,
+      hotel: { ...state.hotel, occupancy: nextCounts.total },
+      ...(!outboundAvailable && state.outboundOffer
+        ? {
+            outboundOffer: undefined,
+            returnOffer: undefined,
+            ticket: {
+              ...state.ticket,
+              outboundOfferId: '',
+              returnOfferId: '',
+            },
+          }
+        : !returnAvailable && state.returnOffer
+          ? {
+              returnOffer: undefined,
+              ticket: { ...state.ticket, returnOfferId: '' },
+            }
+          : {}),
+    });
+  };
   const canContinue = useMemo(() => {
     if (step === 0)
       return Boolean(
@@ -357,15 +436,22 @@ export function SalesContractForm() {
         state.destinationCountryId &&
         state.destinationId &&
         state.originId !== state.destinationId &&
-        state.serviceKinds.length,
+        state.serviceKinds.length &&
+        passengerCounts.total > 0 &&
+        (!state.serviceKinds.includes('FLIGHT') ||
+          passengerCounts.seated > 0) &&
+        (passengerCounts.infants === 0 || passengerCounts.adults > 0),
       );
     if (step === 1) {
       if (activeDetail === 'FLIGHT')
         return (
           (!salesDirections(state, 'FLIGHT').includes('OUTBOUND') ||
-            Boolean(state.outboundOffer)) &&
+            salesOfferHasCapacity(
+              state.outboundOffer,
+              passengerCounts.seated,
+            )) &&
           (!salesDirections(state, 'FLIGHT').includes('RETURN') ||
-            Boolean(state.returnOffer)) &&
+            salesOfferHasCapacity(state.returnOffer, passengerCounts.seated)) &&
           (!state.serviceKinds.includes('HOTEL') || salesHotelValid(state))
         );
       if (activeDetail === 'HOTEL') return salesHotelValid(state);
@@ -379,7 +465,14 @@ export function SalesContractForm() {
         pendingPassengers.length === 0 &&
         Boolean(salesTravelDate(state)) &&
         state.passengers.length > 0 &&
-        state.passengers.every((item) => item.birthDate)
+        state.passengers.every((item) => item.birthDate) &&
+        salesPassengerCompositionMatches(state) &&
+        (!state.serviceKinds.includes('HOTEL') || hotelGuestIds.length > 0) &&
+        state.passengers.every(
+          ({ customerId }) =>
+            state.serviceKinds.some((kind) => kind !== 'HOTEL') ||
+            hotelGuestIds.includes(customerId),
+        )
       );
     if (step === 3)
       return (
@@ -387,7 +480,15 @@ export function SalesContractForm() {
         state.priceComponents.every((item) => item.amount && item.currencyCode)
       );
     return true;
-  }, [state, step, activeDetail, createPersonMode, pendingPassengers.length]);
+  }, [
+    state,
+    step,
+    activeDetail,
+    createPersonMode,
+    pendingPassengers.length,
+    passengerCounts,
+    hotelGuestIds,
+  ]);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (step !== salesSteps.length - 1 || busy) return;
@@ -772,6 +873,48 @@ export function SalesContractForm() {
             </div>
           </div>
         ) : null}
+        {step === 0 ? (
+          <section className="mt-5 grid gap-3 border-t border-border pt-4">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-bold">تعداد مسافران</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  این تعداد پیش از انتخاب بلیت کنترل می‌شود تا بیشتر از ظرفیت
+                  باقی‌مانده فروخته نشود.
+                </p>
+              </div>
+              <Badge>
+                {passengerCounts.seated.toLocaleString('fa-IR')} صندلی ·{' '}
+                {passengerCounts.total.toLocaleString('fa-IR')} مسافر
+              </Badge>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <PassengerCountField
+                label="بزرگسال"
+                hint="۱۲ سال و بیشتر"
+                value={passengerCounts.adults}
+                onChange={(value) => updatePassengerCount('adults', value)}
+              />
+              <PassengerCountField
+                label="کودک"
+                hint="۲ تا ۱۲ سال"
+                value={passengerCounts.children}
+                onChange={(value) => updatePassengerCount('children', value)}
+              />
+              <PassengerCountField
+                label="نوزاد"
+                hint="کمتر از ۲ سال"
+                value={passengerCounts.infants}
+                onChange={(value) => updatePassengerCount('infants', value)}
+              />
+            </div>
+            <p className="rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-900 dark:bg-sky-950/40 dark:text-sky-200">
+              نوزاد لازم نیست در تعداد صندلی بلیت شمرده شود؛ فقط بزرگسال و کودک
+              از ظرفیت بلیت کم می‌شوند. هر نوزاد باید همراه حداقل یک بزرگسال
+              باشد.
+            </p>
+          </section>
+        ) : null}
         {step === 1 ? (
           <div className="grid gap-6">
             <h2 className="text-xl font-black">جزئیات خدمات</h2>
@@ -837,6 +980,7 @@ export function SalesContractForm() {
                             ? { departureTo: flightRange.to }
                             : {}),
                         }}
+                        requiredSeats={passengerCounts.seated}
                         selectedId={state.ticket.outboundOfferId}
                         onSelect={(offer) =>
                           patchState({
@@ -900,6 +1044,7 @@ export function SalesContractForm() {
                               ? { departureTo: flightRange.to }
                               : {}),
                           }}
+                          requiredSeats={passengerCounts.seated}
                           selectedId={state.ticket.returnOfferId}
                           onSelect={(offer) => {
                             if (
@@ -1038,21 +1183,15 @@ export function SalesContractForm() {
                       }
                     />
                   </FormField>
-                  <FormField label="تعداد نفر">
-                    <Input
-                      min={1}
-                      type="number"
-                      value={state.hotel.occupancy}
-                      onChange={(event) =>
-                        patchState({
-                          hotel: {
-                            ...state.hotel,
-                            occupancy: Number(event.target.value),
-                          },
-                        })
-                      }
-                    />
-                  </FormField>
+                  <div className="rounded-xl border border-border bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground">تعداد مهمان</p>
+                    <p className="mt-1 font-black">
+                      {passengerCounts.total.toLocaleString('fa-IR')} نفر
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      اعضای مهمان در مرحله مسافران مشخص می‌شوند.
+                    </p>
+                  </div>
                 </div>
                 {state.hotel.checkIn &&
                 state.hotel.checkOut &&
@@ -1205,6 +1344,12 @@ export function SalesContractForm() {
                         passengers: state.passengers.filter(
                           (_, position) => position !== index,
                         ),
+                        hotel: {
+                          ...state.hotel,
+                          guestCustomerIds: hotelGuestIds.filter(
+                            (id) => id !== passenger.customerId,
+                          ),
+                        },
                       })
                     }
                   >
@@ -1267,6 +1412,61 @@ export function SalesContractForm() {
                 </div>
               ),
             )}
+            {state.serviceKinds.includes('HOTEL') && state.passengers.length ? (
+              <fieldset className="grid gap-3 rounded-xl border border-primary/20 bg-primary/[0.03] p-4">
+                <legend className="px-2 font-bold">اعضای اقامت هتل</legend>
+                <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                  <span>
+                    {hotelGuestIds.length.toLocaleString('fa-IR')} مهمان در{' '}
+                    {state.hotel.roomCount.toLocaleString('fa-IR')} اتاق
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    فقط افراد انتخاب‌شده برای هتل به رزرواسیون ارسال می‌شوند.
+                  </span>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {state.passengers.map((passenger) => (
+                    <label
+                      key={passenger.customerId}
+                      className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 ${
+                        hotelGuestIds.includes(passenger.customerId)
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border bg-surface'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="size-4 accent-primary"
+                        checked={hotelGuestIds.includes(passenger.customerId)}
+                        onChange={() =>
+                          patchState({
+                            hotel: {
+                              ...state.hotel,
+                              guestCustomerIds: hotelGuestIds.includes(
+                                passenger.customerId,
+                              )
+                                ? hotelGuestIds.filter(
+                                    (id) => id !== passenger.customerId,
+                                  )
+                                : [...hotelGuestIds, passenger.customerId],
+                            },
+                          })
+                        }
+                      />
+                      <span>
+                        <strong>{passenger.displayName}</strong>
+                        <span className="block text-xs text-muted-foreground">
+                          {salesPassengerAgeLabel(
+                            passenger.birthDate,
+                            salesTravelDate(state),
+                          )}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            ) : null}
             <p className="text-xs text-muted-foreground">
               حذف مسافر فقط از همین قرارداد است؛ پرونده او در مشتریان باقی
               می‌ماند.
@@ -1282,7 +1482,15 @@ export function SalesContractForm() {
                     ? 'حداقل یک مسافر اضافه کنید.'
                     : pendingPassengers.length || createPersonMode
                       ? 'ردیف باز را ثبت یا لغو کنید.'
-                      : 'تاریخ تولد مسافران و تاریخ سفر را کامل کنید.'}
+                      : !state.passengers.every((item) => item.birthDate) ||
+                          !salesTravelDate(state)
+                        ? 'تاریخ تولد مسافران و تاریخ سفر را کامل کنید.'
+                        : !salesPassengerCompositionMatches(state)
+                          ? 'تعداد و رده سنی مسافران باید با ترکیب ثبت‌شده در مرحله اول یکسان باشد.'
+                          : state.serviceKinds.includes('HOTEL') &&
+                              hotelGuestIds.length === 0
+                            ? 'حداقل یک مهمان برای هتل انتخاب کنید.'
+                            : 'هر مسافر باید حداقل یک خدمت انتخاب‌شده داشته باشد.'}
               </p>
             ) : null}
           </section>
