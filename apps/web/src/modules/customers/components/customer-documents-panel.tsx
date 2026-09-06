@@ -512,6 +512,7 @@ export function CustomerDocumentsPanel({
                       <SelectValue placeholder="انتخاب محرمانگی" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="PUBLIC">عمومی</SelectItem>
                       <SelectItem value="INTERNAL">داخلی</SelectItem>
                       <SelectItem value="CONFIDENTIAL">محرمانه</SelectItem>
                       <SelectItem value="RESTRICTED">بسیار محدود</SelectItem>
@@ -524,6 +525,7 @@ export function CustomerDocumentsPanel({
                 >
                   <DatePicker
                     id="customer-document-valid-until"
+                    inlineCalendar
                     onChange={(value) => update('validUntil', value)}
                     required={Boolean(selectedType?.requiresExpiry)}
                     value={values.validUntil}

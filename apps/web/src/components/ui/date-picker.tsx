@@ -43,6 +43,7 @@ export interface DatePickerProps {
   required?: boolean;
   className?: string;
   placeholder?: string;
+  inlineCalendar?: boolean;
   'aria-describedby'?: string | undefined;
   'aria-invalid'?: boolean;
 }
@@ -53,6 +54,7 @@ export function DatePicker({
   disabled,
   id,
   includeTime = false,
+  inlineCalendar = false,
   name,
   onChange,
   placeholder = 'انتخاب تاریخ',
@@ -210,7 +212,13 @@ export function DatePicker({
       {open ? (
         <div
           aria-label="انتخاب تاریخ"
-          className="absolute start-0 top-[calc(100%+0.5rem)] z-[70] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15"
+          className={cn(
+            'z-[70] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15',
+            inlineCalendar
+              ? 'relative mt-2 max-h-[min(28rem,70dvh)] w-full overflow-y-auto'
+              : 'absolute start-0 top-[calc(100%+0.5rem)]',
+          )}
+          data-rubi-calendar={inlineCalendar ? 'inline' : 'popover'}
           dir="rtl"
           role="dialog"
         >

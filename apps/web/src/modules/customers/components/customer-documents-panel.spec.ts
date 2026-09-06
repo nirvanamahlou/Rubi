@@ -20,6 +20,8 @@ describe('Customer 360 documents integration boundary', () => {
     expect(source).toContain('مدارک سفر و هویتی');
     expect(source).toContain('افزودن مدرک');
     expect(source).toContain('آرشیو اسناد');
+    expect(source).toContain('<SelectItem value="PUBLIC">عمومی</SelectItem>');
+    expect(source).toContain('inlineCalendar');
   });
 
   it('uses only the public API consumer and preserves the Documents ownership boundary', () => {
