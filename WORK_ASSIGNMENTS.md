@@ -1,5 +1,13 @@
 # Work Assignments
 
+## TICKET-CATALOG-004 — PC-A — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-06: فضای خالی میان کارت‌های بلیت در چیدمان فهرست حذف شود و گروه رفت‌وبرگشت همچنان کنار هم بماند. `COMPUTER_ID=PC-A`.
+- Branch مستقل `codex/pc-a-ticket-card-dense-layout` از `origin/develop@733a24d`؛ محدوده فقط چیدمان Workspace و تست رندر Ticket Catalog و ثبت همین Work Item است.
+- راهکار باید ترتیب منطقی کارت‌ها و گروه‌بندی رفت/برگشت را حفظ کند و هیچ Schema/Migration/Seed، API، Contract، Dependency/Lockfile یا ماژول دیگری را تغییر ندهد.
+- نتیجه: Grid فهرست به جای‌گذاری Dense مجهز شد؛ خانه تک‌ستونه خالی کنار گروه‌های دوکارته با کارت بعدی پر می‌شود و Wrapper دو ستونه رفت/برگشت دست‌نخورده باقی می‌ماند.
+- اعتبارسنجی: ۹۵/۹۵ تست Ticket Catalog Web، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند؛ build قانون `.grid-flow-row-dense{grid-auto-flow:dense}` را تولید می‌کند و سرویس پورت ۳۱۰۰ پاسخ ۲۰۰ دارد. بازبینی خودکار پنجره به‌علت خطای ACL ابزار Windows ممکن نشد.
+
 ## AGENCY-B2B-INTEGRATIONS-001 — PC-B — READY_FOR_REVIEW
 
 - درخواست و واگذاری صریح مالک محصول در 2026-09-05: مانع قبلی PR #90 رفع‌شده تلقی شود و اتصال عملیاتی آژانس‌ها شامل آدرس پایه، پروفایل شعبه‌ای، قرارداد B2B، سیاست اعتبار و نرخ توافقی پیاده‌سازی شود. `COMPUTER_ID=PC-B`.

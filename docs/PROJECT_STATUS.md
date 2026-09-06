@@ -1,5 +1,11 @@
 # وضعیت پروژه
 
+## TICKET-CATALOG-004 — حذف فضای خالی میان کارت‌های بلیت — آماده بررسی
+
+- `PC-A` روی Branch مستقل `codex/pc-a-ticket-card-dense-layout` جای‌گذاری Grid کارت‌ها را Dense کرد؛ کارت‌های تک‌مسیر خانه‌های خالی کنار گروه‌های دو ستونه را پر می‌کنند و کارت‌های رفت‌وبرگشت همچنان در یک Wrapper و کنار هم می‌مانند.
+- ۹۵/۹۵ تست Ticket Catalog Web، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند. قانون Dense در CSS تولیدشده موجود است و نسخه جدید روی پورت ۳۱۰۰ پاسخ ۲۰۰ دارد. Browser QA خودکار به‌علت خطای ACL ابزار Windows ممکن نشد.
+- هیچ Schema/Migration/Seed، API، Contract، Dependency/Lockfile یا ماژول دیگری تغییر نکرد.
+
 ## AGENCY-B2B-INTEGRATIONS-001 — اتصال عملیاتی و تجاری آژانس — آماده بررسی
 
 - `PC-B` روی Branch مستقل `codex/pc-b-agency-b2b-integrations` و PR [#98](https://github.com/nirvanamahlou/Rubi/pull/98) مانع ثبت‌شده در PR #90 را پس از اعلام رفع قفل از سوی مالک محصول تکمیل کرد. هویت آژانس همان `MasterOrganization` دارای نقش `AGENCY` باقی می‌ماند و هیچ موجودیت موازی یا Query مستقیم Sales/Finance ساخته نشده است.
