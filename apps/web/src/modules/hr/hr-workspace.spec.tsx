@@ -3,6 +3,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { HrState, HrWorkspace } from './hr-workspace';
 import {
+  NewEmployeeForm,
+  validateNewEmployeeForm,
+  type NewEmployeeFormValue,
+} from './new-employee-dialog';
+import {
   employeeTabs,
   hrHubCards,
   iranLocalizationStatus,
@@ -67,6 +72,69 @@ describe('HR reference implementation', () => {
     expect(employees).toContain('همکار نمایشی الف');
     expect(employees.match(/همکار نمایشی/g)?.length ?? 0).toBe(4);
     expect(employees).not.toMatch(/EMP-\d|EMPLOY-\d/);
+  });
+
+  it('uses first and last name in the new employee form and covers list fields', () => {
+    const html = renderToStaticMarkup(
+      <NewEmployeeForm
+        existingPersonnelCodes={['preview-employee-1']}
+        managerOptions={['مدیر نمایشی الف']}
+        onCancel={() => undefined}
+        onSubmit={() => undefined}
+      />,
+    );
+    for (const label of [
+      'نام *',
+      'نام خانوادگی *',
+      'کد پرسنلی *',
+      'نوع همکاری *',
+      'شعبه *',
+      'واحد *',
+      'سمت *',
+      'مدیر مستقیم',
+      'تاریخ شروع *',
+      'وضعیت *',
+    ])
+      expect(html).toContain(label);
+    expect(html).not.toContain('عنوان نمایشی');
+    expect(html).toContain('name="firstName"');
+    expect(html).toContain('name="lastName"');
+    expect(html).toContain('id="hr-new-employee-started-at"');
+  });
+
+  it('rejects incomplete and duplicate employee identity fields', () => {
+    const value: NewEmployeeFormValue = {
+      firstName: '',
+      lastName: '',
+      personnelCode: ' PREVIEW-EMPLOYEE-1 ',
+      employmentType: 'تمام‌وقت',
+      branch: 'شعبه نمایشی',
+      unit: 'عملیات سفر',
+      position: '',
+      manager: 'بدون مدیر مستقیم',
+      startedAt: '',
+      status: 'فعال',
+    };
+    expect(validateNewEmployeeForm(value, ['preview-employee-1'])).toEqual({
+      firstName: 'نام الزامی است.',
+      lastName: 'نام خانوادگی الزامی است.',
+      personnelCode: 'این کد پرسنلی قبلاً استفاده شده است.',
+      position: 'سمت الزامی است.',
+      startedAt: 'تاریخ شروع همکاری الزامی است.',
+    });
+    expect(
+      validateNewEmployeeForm(
+        {
+          ...value,
+          firstName: 'نگار',
+          lastName: 'زمانی',
+          personnelCode: 'HR-1001',
+          position: 'کارشناس عملیات',
+          startedAt: '2026-09-06',
+        },
+        ['preview-employee-1'],
+      ),
+    ).toEqual({});
   });
 
   it('keeps payroll and exports in a truthful preview state', () => {

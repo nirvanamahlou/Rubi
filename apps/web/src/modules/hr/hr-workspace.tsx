@@ -50,6 +50,10 @@ import {
   normalizeFrappeWorkspace,
 } from './frappe-workspaces';
 import styles from './hr-workspace.module.css';
+import {
+  NewEmployeeDialog,
+  type NewEmployeeFormValue,
+} from './new-employee-dialog';
 
 type UiState = 'loading' | 'empty' | 'error' | 'unauthorized' | 'forbidden';
 type BadgeTone = 'success' | 'warning' | 'danger' | 'neutral';
@@ -66,6 +70,7 @@ interface PreviewEmployee {
   startedAt: string;
   status: string;
   tone: BadgeTone;
+  local?: boolean;
 }
 
 interface PreviewTableData {
@@ -893,16 +898,22 @@ function Dashboard({ openAction }: { openAction: (title: string) => void }) {
   );
 }
 
-function Employees({ openAction }: { openAction: (title: string) => void }) {
+function Employees({
+  employees,
+  openAction,
+}: {
+  employees: readonly PreviewEmployee[];
+  openAction: (title: string) => void;
+}) {
   const [query, setQuery] = useState('');
   const filtered = useMemo(
     () =>
-      previewEmployees.filter((employee) =>
+      employees.filter((employee) =>
         `${employee.name} ${employee.id} ${employee.position}`.includes(
           query.trim(),
         ),
       ),
-    [query],
+    [employees, query],
   );
   const data: PreviewTableData = {
     columns: [
@@ -927,13 +938,25 @@ function Employees({ openAction }: { openAction: (title: string) => void }) {
       <Badge key={`${employee.id}-status`} tone={employee.tone}>
         {employee.status}
       </Badge>,
-      <Link
-        className={`${styles.button} ${styles.buttonSmall}`}
-        href={`/hr?section=employee&employee=${employee.id}`}
-        key={`${employee.id}-link`}
-      >
-        مشاهده پرونده <ArrowLeft size={14} />
-      </Link>,
+      employee.local ? (
+        <button
+          className={`${styles.button} ${styles.buttonSmall}`}
+          disabled
+          key={`${employee.id}-local`}
+          title="پرونده موقت پس از اتصال API قابل مشاهده خواهد بود"
+          type="button"
+        >
+          ثبت‌شده در نشست
+        </button>
+      ) : (
+        <Link
+          className={`${styles.button} ${styles.buttonSmall}`}
+          href={`/hr?section=employee&employee=${employee.id}`}
+          key={`${employee.id}-link`}
+        >
+          مشاهده پرونده <ArrowLeft size={14} />
+        </Link>
+      ),
     ]),
     totalLabel: `${filtered.length.toLocaleString('fa-IR')} پرونده نمایشی`,
   };
@@ -2119,6 +2142,8 @@ export function HrWorkspace({
 }) {
   const section = normalizeSection(sectionId);
   const workspace = normalizeFrappeWorkspace(workspaceId);
+  const [employees, setEmployees] =
+    useState<readonly PreviewEmployee[]>(previewEmployees);
   const [dialogTitle, setDialogTitle] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   function closeDialog() {
@@ -2130,13 +2155,48 @@ export function HrWorkspace({
     setNotice('');
     setDialogTitle(title);
   };
+  const addEmployee = (value: NewEmployeeFormValue) => {
+    const name = `${value.firstName} ${value.lastName}`.trim();
+    const statusTone: Record<NewEmployeeFormValue['status'], BadgeTone> = {
+      فعال: 'success',
+      'در حال تکمیل': 'warning',
+      'تعلیق‌شده': 'neutral',
+    };
+    const date = new Date(`${value.startedAt}T12:00:00.000Z`);
+    const startedAt = Number.isNaN(date.getTime())
+      ? value.startedAt
+      : new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        }).format(date);
+    setEmployees((current) => [
+      {
+        id: value.personnelCode,
+        name,
+        initial: value.firstName.charAt(0),
+        employment: `preview-employment-${value.personnelCode}`,
+        kind: value.employmentType,
+        unit: `${value.branch} / ${value.unit}`,
+        position: value.position,
+        manager: value.manager,
+        startedAt,
+        status: value.status,
+        tone: statusTone[value.status],
+        local: true,
+      },
+      ...current,
+    ]);
+    setDialogTitle(null);
+    setNotice(`کارمند «${name}» به فهرست موقت این نشست اضافه شد.`);
+  };
   let screen: ReactNode;
   if (workspace) screen = <FrappeWorkspaceScreen workspaceId={workspace} />;
   else if (section === 'home') screen = <HubScreen />;
   else if (section === 'dashboard')
     screen = <Dashboard openAction={openAction} />;
   else if (section === 'employees')
-    screen = <Employees openAction={openAction} />;
+    screen = <Employees employees={employees} openAction={openAction} />;
   else if (section === 'employee')
     screen = <EmployeeProfile openAction={openAction} />;
   else if (section === 'requests')
@@ -2163,7 +2223,14 @@ export function HrWorkspace({
         </div>
       ) : null}
       {screen}
-      {dialogTitle ? (
+      {dialogTitle === 'کارمند جدید' ? (
+        <NewEmployeeDialog
+          existingPersonnelCodes={employees.map((employee) => employee.id)}
+          managerOptions={employees.map((employee) => employee.name)}
+          onClose={() => setDialogTitle(null)}
+          onSubmit={addEmployee}
+        />
+      ) : dialogTitle ? (
         <PreviewDialog close={closeDialog} title={dialogTitle} />
       ) : null}
     </main>

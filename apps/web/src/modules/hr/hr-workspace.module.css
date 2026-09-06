@@ -965,14 +965,48 @@
 }
 
 .modal {
+  --hr-blue: #1674e8;
+  --hr-line: #d5e2f1;
+  --hr-muted: #71839b;
   max-height: 85vh;
   overflow-y: auto;
+}
+.employeeModal {
+  width: min(calc(100% - 2rem), 760px);
+  max-width: 760px;
+}
+.formFieldset {
+  min-width: 0;
+  margin: 16px 0 0;
+  border: 1px solid var(--hr-line);
+  border-radius: 13px;
+  padding: 13px;
+}
+.formLegend {
+  padding: 0 7px;
+  color: #173e70;
+  font-size: 12px;
+  font-weight: 850;
 }
 .formGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 13px;
   margin-top: 16px;
+}
+.formFieldset .formGrid {
+  margin-top: 0;
+}
+.fieldError {
+  display: block;
+  margin-top: 5px;
+  color: #be123c;
+  font-size: 10px;
+  font-weight: 750;
+}
+.control[aria-invalid='true'] {
+  border-color: #e11d48;
+  box-shadow: 0 0 0 3px rgb(225 29 72 / 9%);
 }
 .full {
   grid-column: 1 / -1;
