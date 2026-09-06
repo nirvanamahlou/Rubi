@@ -16,6 +16,10 @@ import {
   DialogTitle,
 } from '@/components/ui/overlays';
 import styles from './hr-workspace.module.css';
+import {
+  initialOrganizationCatalogRecords,
+  type OrganizationCatalogRecords,
+} from './organization-catalog';
 
 export type OrganizationNodeKind = 'MANAGEMENT' | 'UNIT';
 export type OrganizationNodeStatus = 'فعال' | 'غیرفعال';
@@ -30,6 +34,7 @@ export interface OrganizationNode {
   positionCapacity: number;
   effectiveFrom: string;
   status: OrganizationNodeStatus;
+  catalogSource?: 'branch' | 'unit';
 }
 
 export interface OrganizationNodeFormValue {
@@ -73,52 +78,84 @@ export type OrganizationNodeFormErrors = Partial<
   Record<OrganizationNodeFormField, string>
 >;
 
-export const initialOrganizationNodes: readonly OrganizationNode[] = [
-  {
-    id: 'preview-org-management',
-    name: 'مدیریت نمایشی',
+const catalogStatus = (status: string): OrganizationNodeStatus =>
+  status === 'غیرفعال' ? 'غیرفعال' : 'فعال';
+
+const catalogCapacity = (capacity: string) => {
+  const value = Number(capacity);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+};
+
+export function synchronizeOrganizationChartWithCatalog(
+  nodes: readonly OrganizationNode[],
+  records: OrganizationCatalogRecords,
+): readonly OrganizationNode[] {
+  const branchIds = new Map(
+    records.branches.map((branch) => [branch.title, branch.id]),
+  );
+  const unitIds = new Map(records.units.map((unit) => [unit.title, unit.id]));
+  const capacityByUnit = new Map<string, number>();
+
+  for (const position of records.positions) {
+    capacityByUnit.set(
+      position.unit,
+      (capacityByUnit.get(position.unit) ?? 0) +
+        catalogCapacity(position.capacity),
+    );
+  }
+
+  const branchNodes = records.branches.map<OrganizationNode>((branch) => ({
+    id: branch.id,
+    name: branch.title,
     kind: 'MANAGEMENT',
-    branch: 'نیایش سیر',
+    branch: branch.title,
     parentId: null,
-    manager: 'همکار نمایشی الف',
-    positionCapacity: 1,
-    effectiveFrom: '2026-03-21',
-    status: 'فعال',
-  },
-  {
-    id: 'preview-org-travel',
-    name: 'واحد عملیات سفر',
+    manager: branch.manager || 'تعیین نشده',
+    positionCapacity: records.units
+      .filter((unit) => unit.branch === branch.title)
+      .reduce(
+        (total, unit) => total + (capacityByUnit.get(unit.title) ?? 0),
+        0,
+      ),
+    effectiveFrom: branch.effectiveFrom,
+    status: catalogStatus(branch.status),
+    catalogSource: 'branch',
+  }));
+  const unitNodes = records.units.map<OrganizationNode>((unit) => ({
+    id: unit.id,
+    name: unit.title,
     kind: 'UNIT',
-    branch: 'نیایش سیر',
-    parentId: 'preview-org-management',
-    manager: 'همکار نمایشی الف',
-    positionCapacity: 2,
-    effectiveFrom: '2026-03-21',
-    status: 'فعال',
-  },
-  {
-    id: 'preview-org-sales',
-    name: 'واحد فروش',
-    kind: 'UNIT',
-    branch: 'نیایش سیر',
-    parentId: 'preview-org-management',
-    manager: 'همکار نمایشی ب',
-    positionCapacity: 2,
-    effectiveFrom: '2026-03-21',
-    status: 'فعال',
-  },
-  {
-    id: 'preview-org-finance',
-    name: 'واحد مالی',
-    kind: 'UNIT',
-    branch: 'جهان باستان',
-    parentId: 'preview-org-management',
-    manager: 'همکار نمایشی پ',
-    positionCapacity: 1,
-    effectiveFrom: '2026-03-21',
-    status: 'فعال',
-  },
-];
+    branch: unit.branch,
+    parentId: unit.parent
+      ? (unitIds.get(unit.parent) ?? branchIds.get(unit.branch) ?? null)
+      : (branchIds.get(unit.branch) ?? null),
+    manager: unit.manager || 'تعیین نشده',
+    positionCapacity: capacityByUnit.get(unit.title) ?? 0,
+    effectiveFrom: unit.effectiveFrom,
+    status: catalogStatus(unit.status),
+    catalogSource: 'unit',
+  }));
+  const catalogNodes = [...branchNodes, ...unitNodes];
+  const catalogNodeIds = new Set(catalogNodes.map((node) => node.id));
+  const manualNodeIds = new Set(
+    nodes.filter((node) => !node.catalogSource).map((node) => node.id),
+  );
+  const manualNodes = nodes
+    .filter((node) => !node.catalogSource && !catalogNodeIds.has(node.id))
+    .map((node) => ({
+      ...node,
+      parentId:
+        node.parentId &&
+        (catalogNodeIds.has(node.parentId) || manualNodeIds.has(node.parentId))
+          ? node.parentId
+          : null,
+    }));
+
+  return [...catalogNodes, ...manualNodes];
+}
+
+export const initialOrganizationNodes: readonly OrganizationNode[] =
+  synchronizeOrganizationChartWithCatalog([], initialOrganizationCatalogRecords);
 
 const emptyValue: OrganizationNodeFormValue = {
   id: '',
@@ -342,6 +379,7 @@ export function OrganizationNodeForm({
             <span>نوع گره *</span>
             <select
               className={styles.control}
+              disabled={Boolean(initialNode?.catalogSource)}
               id="hr-org-kind"
               name="kind"
               onChange={(event) =>
@@ -379,6 +417,7 @@ export function OrganizationNodeForm({
             <select
               {...errorProps('branch')}
               className={styles.control}
+              disabled={initialNode?.catalogSource === 'branch'}
               id="hr-org-branch"
               name="branch"
               onChange={(event) => update('branch', event.target.value)}
@@ -438,9 +477,15 @@ export function OrganizationNodeForm({
               min="0"
               name="positionCapacity"
               onChange={(event) => update('positionCapacity', event.target.value)}
+              readOnly={Boolean(initialNode?.catalogSource)}
               type="number"
               value={value.positionCapacity}
             />
+            {initialNode?.catalogSource ? (
+              <small className={styles.fieldHint}>
+                ظرفیت از مجموع سمت‌های ثبت‌شده برای این ساختار محاسبه می‌شود.
+              </small>
+            ) : null}
             <FieldError errors={errors} field="positionCapacity" />
           </label>
           <label className={`${styles.fieldLabel} ${styles.full}`} htmlFor="hr-org-effective-from">

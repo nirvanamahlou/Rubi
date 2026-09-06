@@ -59,6 +59,7 @@ import {
   initialOrganizationNodes,
   OrganizationChart,
   OrganizationNodeDialog,
+  synchronizeOrganizationChartWithCatalog,
   type OrganizationNode,
   type OrganizationNodeFormValue,
 } from './organization-chart';
@@ -1352,6 +1353,70 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
     setCatalogDialogOpen(true);
   };
   const saveNode = (value: OrganizationNodeFormValue) => {
+    if (editingNode?.catalogSource) {
+      const sourceTab =
+        editingNode.catalogSource === 'branch' ? 'branches' : 'units';
+      const sourceRecord = catalogRecords[sourceTab].find(
+        (record) => record.id === editingNode.id,
+      );
+      if (sourceRecord) {
+        const parentNode = nodes.find((node) => node.id === value.parentId);
+        const nextRecord: OrganizationCatalogFormValue = {
+          ...sourceRecord,
+          title: value.name,
+          branch:
+            editingNode.catalogSource === 'branch'
+              ? value.name
+              : value.branch,
+          parent:
+            parentNode?.catalogSource === 'unit' ? parentNode.name : '',
+          manager: value.manager,
+          effectiveFrom: value.effectiveFrom,
+          status: value.status,
+        };
+        let nextRecords: OrganizationCatalogRecords = {
+          ...catalogRecords,
+          [sourceTab]: catalogRecords[sourceTab].map((record) =>
+            record.id === sourceRecord.id ? nextRecord : record,
+          ),
+        };
+        if (sourceRecord.title !== nextRecord.title) {
+          if (sourceTab === 'branches')
+            nextRecords = {
+              ...nextRecords,
+              units: nextRecords.units.map((unit) =>
+                unit.branch === sourceRecord.title
+                  ? { ...unit, branch: nextRecord.title }
+                  : unit,
+              ),
+            };
+          else
+            nextRecords = {
+              ...nextRecords,
+              units: nextRecords.units.map((unit) =>
+                unit.parent === sourceRecord.title
+                  ? { ...unit, parent: nextRecord.title }
+                  : unit,
+              ),
+              positions: nextRecords.positions.map((position) =>
+                position.unit === sourceRecord.title
+                  ? { ...position, unit: nextRecord.title }
+                  : position,
+              ),
+            };
+        }
+        setCatalogRecords(nextRecords);
+        setNodes((current) =>
+          synchronizeOrganizationChartWithCatalog(current, nextRecords),
+        );
+        setOrganizationNotice(
+          `گره «${nextRecord.title}» و داده ساختاری مرتبط به‌روزرسانی شدند.`,
+        );
+        setDialogOpen(false);
+        setEditingNode(undefined);
+        return;
+      }
+    }
     const node: OrganizationNode = {
       ...value,
       parentId: value.parentId || null,
@@ -1372,72 +1437,79 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
   };
   const saveCatalogRecord = (value: OrganizationCatalogFormValue) => {
     const schema = organizationCatalogSchemas[catalogDialogTab];
-    if (
-      editingCatalogRecord?.title &&
-      editingCatalogRecord.title !== value.title &&
-      catalogDialogTab === 'branches'
-    )
+    const previous = editingCatalogRecord;
+    const items = previous
+      ? catalogRecords[catalogDialogTab].map((item) =>
+          item.id === previous.id ? value : item,
+        )
+      : [...catalogRecords[catalogDialogTab], value];
+    let nextRecords: OrganizationCatalogRecords = {
+      ...catalogRecords,
+      [catalogDialogTab]: items,
+    };
+    if (previous?.title && previous.title !== value.title) {
+      if (catalogDialogTab === 'branches')
+        nextRecords = {
+          ...nextRecords,
+          units: nextRecords.units.map((item) =>
+            item.branch === previous.title
+              ? { ...item, branch: value.title }
+              : item,
+          ),
+        };
+      if (catalogDialogTab === 'units')
+        nextRecords = {
+          ...nextRecords,
+          units: nextRecords.units.map((item) =>
+            item.parent === previous.title
+              ? { ...item, parent: value.title }
+              : item,
+          ),
+          positions: nextRecords.positions.map((item) =>
+            item.unit === previous.title ? { ...item, unit: value.title } : item,
+          ),
+        };
+      if (catalogDialogTab === 'grades')
+        nextRecords = {
+          ...nextRecords,
+          positions: nextRecords.positions.map((item) =>
+            item.grade === previous.title
+              ? { ...item, grade: value.title }
+              : item,
+          ),
+        };
+    }
+    setCatalogRecords(nextRecords);
+    const chartChanged = ['branches', 'units', 'positions'].includes(
+      catalogDialogTab,
+    );
+    if (chartChanged)
       setNodes((current) =>
-        current.map((node) =>
-          node.branch === editingCatalogRecord.title
-            ? { ...node, branch: value.title }
-            : node,
-        ),
+        synchronizeOrganizationChartWithCatalog(current, nextRecords),
       );
-    setCatalogRecords((current) => {
-      const previous = editingCatalogRecord;
-      const items = previous
-        ? current[catalogDialogTab].map((item) =>
-            item.id === previous.id ? value : item,
-          )
-        : [...current[catalogDialogTab], value];
-      let next: OrganizationCatalogRecords = {
-        ...current,
-        [catalogDialogTab]: items,
-      };
-      if (previous?.title && previous.title !== value.title) {
-        if (catalogDialogTab === 'branches')
-          next = {
-            ...next,
-            units: next.units.map((item) =>
-              item.branch === previous.title
-                ? { ...item, branch: value.title }
-                : item,
-            ),
-          };
-        if (catalogDialogTab === 'units')
-          next = {
-            ...next,
-            units: next.units.map((item) =>
-              item.parent === previous.title
-                ? { ...item, parent: value.title }
-                : item,
-            ),
-            positions: next.positions.map((item) =>
-              item.unit === previous.title ? { ...item, unit: value.title } : item,
-            ),
-          };
-        if (catalogDialogTab === 'grades')
-          next = {
-            ...next,
-            positions: next.positions.map((item) =>
-              item.grade === previous.title
-                ? { ...item, grade: value.title }
-                : item,
-            ),
-          };
-      }
-      return next;
-    });
     setOrganizationNotice(
-      editingCatalogRecord
-        ? `${schema.singular} «${value.title}» در فهرست این نشست ویرایش شد.`
-        : `${schema.singular} «${value.title}» به فهرست این نشست اضافه شد.`,
+      chartChanged
+        ? editingCatalogRecord
+          ? `${schema.singular} «${value.title}» و چارت سازمانی این نشست به‌روزرسانی شدند.`
+          : `${schema.singular} «${value.title}» به فهرست اضافه و چارت سازمانی به‌روزرسانی شد.`
+        : editingCatalogRecord
+          ? `${schema.singular} «${value.title}» در فهرست این نشست ویرایش شد.`
+          : `${schema.singular} «${value.title}» به فهرست این نشست اضافه شد.`,
     );
     setCatalogDialogOpen(false);
     setEditingCatalogRecord(undefined);
   };
   const deleteNode = (node: OrganizationNode) => {
+    if (node.catalogSource) {
+      const sourceTab = node.catalogSource === 'branch' ? 'branches' : 'units';
+      const sourceRecord = catalogRecords[sourceTab].find(
+        (record) => record.id === node.id,
+      );
+      if (sourceRecord) {
+        deleteCatalogRecord(sourceTab, sourceRecord);
+        return;
+      }
+    }
     setNodes((current) => {
       const deletedIds = new Set([node.id]);
       let changed = true;
@@ -1456,20 +1528,60 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
       `گره «${node.name}» و زیرشاخه‌های آن از چارت موقت این نشست حذف شد.`,
     );
   };
-  const deleteCatalogRecord = (
+  function deleteCatalogRecord(
     nextTab: OrganizationCatalogTab,
     record: OrganizationCatalogFormValue,
-  ) => {
-    setCatalogRecords((current) => ({
-      ...current,
-      [nextTab]: current[nextTab].filter((item) => item.id !== record.id),
-    }));
-    if (nextTab === 'branches')
-      setNodes((current) => current.filter((node) => node.branch !== record.title));
+  ) {
+    let nextRecords: OrganizationCatalogRecords = {
+      ...catalogRecords,
+      [nextTab]: catalogRecords[nextTab].filter((item) => item.id !== record.id),
+    };
+    if (nextTab === 'branches') {
+      const removedUnits = new Set(
+        nextRecords.units
+          .filter((unit) => unit.branch === record.title)
+          .map((unit) => unit.title),
+      );
+      nextRecords = {
+        ...nextRecords,
+        units: nextRecords.units.filter((unit) => !removedUnits.has(unit.title)),
+        positions: nextRecords.positions.filter(
+          (position) => !removedUnits.has(position.unit),
+        ),
+      };
+    }
+    if (nextTab === 'units') {
+      const removedUnits = new Set([record.title]);
+      let changed = true;
+      while (changed) {
+        changed = false;
+        nextRecords.units.forEach((unit) => {
+          if (removedUnits.has(unit.parent) && !removedUnits.has(unit.title)) {
+            removedUnits.add(unit.title);
+            changed = true;
+          }
+        });
+      }
+      nextRecords = {
+        ...nextRecords,
+        units: nextRecords.units.filter((unit) => !removedUnits.has(unit.title)),
+        positions: nextRecords.positions.filter(
+          (position) => !removedUnits.has(position.unit),
+        ),
+      };
+    }
+    setCatalogRecords(nextRecords);
+    const chartChanged = ['branches', 'units', 'positions'].includes(nextTab);
+    if (chartChanged)
+      setNodes((current) =>
+        synchronizeOrganizationChartWithCatalog(current, nextRecords),
+      );
     setOrganizationNotice(
-      `${organizationCatalogSchemas[nextTab].singular} «${record.title}» از فهرست موقت این نشست حذف شد.`,
+      chartChanged
+        ? `${organizationCatalogSchemas[nextTab].singular} «${record.title}» حذف و چارت سازمانی به‌روزرسانی شد.`
+        : `${organizationCatalogSchemas[nextTab].singular} «${record.title}» از فهرست موقت این نشست حذف شد.`,
     );
-  };
+  }
 
   return (
     <>
@@ -1509,7 +1621,7 @@ function OrganizationSection({ initialTab }: { initialTab?: string | undefined }
         icon={<ActiveIcon size={17} />}
         note={
           tab === 'orgchart'
-            ? 'هر گره را از روی کارت ویرایش کنید؛ تغییرات این پیش‌نمایش در همان نشست می‌ماند.'
+            ? 'چارت با ثبت شعبه، واحد یا سمت خودکار به‌روزرسانی می‌شود؛ هر گره را نیز می‌توانید از روی کارت ویرایش کنید.'
             : 'فقط شناسه‌ها و ردیف‌های صریحاً نمایشی نمایش داده شده‌اند.'
         }
         title={active?.label ?? 'ساختار سازمانی'}

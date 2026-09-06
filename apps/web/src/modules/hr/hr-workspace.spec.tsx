@@ -14,10 +14,12 @@ import {
   type NewEmployeeFormValue,
 } from './new-employee-dialog';
 import {
+  getOrganizationRelationships,
   initialOrganizationNodes,
   nextOrganizationNodeId,
   OrganizationChart,
   OrganizationNodeForm,
+  synchronizeOrganizationChartWithCatalog,
   validateOrganizationNodeForm,
   type OrganizationNodeFormValue,
 } from './organization-chart';
@@ -29,6 +31,7 @@ import {
   OrganizationCatalogTable,
   validateOrganizationCatalogForm,
   type OrganizationCatalogFormValue,
+  type OrganizationCatalogRecords,
   type OrganizationCatalogTab,
 } from './organization-catalog';
 import {
@@ -215,17 +218,19 @@ describe('HR reference implementation', () => {
         onEdit={() => undefined}
       />,
     );
-    expect(chart).toContain('مدیریت نمایشی');
-    expect(chart).toContain('واحد عملیات سفر');
-    expect(chart.match(/ویرایش /g)?.length ?? 0).toBe(4);
-    expect(chart.match(/حذف /g)?.length ?? 0).toBe(4);
+    expect(chart).toContain('نیایش سیر');
+    expect(chart).toContain('عملیات سفر');
+    expect(chart.match(/ویرایش /g)?.length ?? 0).toBe(5);
+    expect(chart.match(/حذف /g)?.length ?? 0).toBe(5);
     expect(chart).toContain('۲ سمت');
     expect(chart).toContain('data-edge-count="3"');
 
     const form = renderToStaticMarkup(
       <OrganizationNodeForm
         branchOptions={['نیایش سیر', 'جهان باستان']}
-        initialNode={initialOrganizationNodes[1]}
+        initialNode={initialOrganizationNodes.find(
+          (node) => node.id === 'preview-unit-travel',
+        )}
         managerOptions={['همکار نمایشی الف', 'همکار نمایشی ب']}
         nodes={initialOrganizationNodes}
         onCancel={() => undefined}
@@ -244,13 +249,70 @@ describe('HR reference implementation', () => {
       'تاریخ اثر *',
     ])
       expect(form).toContain(label);
-    expect(form).toContain('value="preview-org-travel"');
+    expect(form).toContain('value="preview-unit-travel"');
     expect(form).toContain('ذخیره ویرایش');
+  });
+
+  it('synchronizes new organization catalog data with chart hierarchy and capacity', () => {
+    const records: OrganizationCatalogRecords = {
+      ...initialOrganizationCatalogRecords,
+      branches: [
+        ...initialOrganizationCatalogRecords.branches,
+        {
+          ...initialOrganizationCatalogRecords.branches[0]!,
+          id: 'BR-001',
+          title: 'شعبه جدید',
+          manager: 'مدیر جدید',
+        },
+      ],
+      units: [
+        ...initialOrganizationCatalogRecords.units,
+        {
+          ...initialOrganizationCatalogRecords.units[0]!,
+          id: 'UNIT-001',
+          title: 'واحد جدید',
+          branch: 'شعبه جدید',
+          parent: '',
+        },
+      ],
+      positions: [
+        ...initialOrganizationCatalogRecords.positions,
+        {
+          ...initialOrganizationCatalogRecords.positions[0]!,
+          id: 'POS-001',
+          title: 'سمت جدید',
+          unit: 'واحد جدید',
+          capacity: '4',
+        },
+      ],
+    };
+    const nodes = synchronizeOrganizationChartWithCatalog(
+      initialOrganizationNodes,
+      records,
+    );
+    const branch = nodes.find((node) => node.id === 'BR-001');
+    const unit = nodes.find((node) => node.id === 'UNIT-001');
+
+    expect(branch).toMatchObject({
+      name: 'شعبه جدید',
+      kind: 'MANAGEMENT',
+      positionCapacity: 4,
+    });
+    expect(unit).toMatchObject({
+      name: 'واحد جدید',
+      parentId: 'BR-001',
+      positionCapacity: 4,
+    });
+    expect(getOrganizationRelationships(nodes)).toContainEqual({
+      id: 'BR-001-UNIT-001',
+      parentId: 'BR-001',
+      childId: 'UNIT-001',
+    });
   });
 
   it('validates organization identity, hierarchy and position capacity', () => {
     const value: OrganizationNodeFormValue = {
-      id: ' PREVIEW-ORG-TRAVEL ',
+      id: ' PREVIEW-UNIT-TRAVEL ',
       name: '',
       kind: 'UNIT',
       branch: '',
