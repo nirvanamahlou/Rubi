@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, Card, PageHeader } from '@/components/ui/surfaces';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { ReservationHotelPurchase } from './reservation-hotel-purchase';
 
 export function ReservationInbox() {
   const [requests, setRequests] = useState<ReservationIntakeV1[]>([]);
@@ -85,6 +86,11 @@ export function ReservationInbox() {
                 .join('، ')}
             </p>
             <p>{new Date(request.receivedAt).toLocaleString('fa-IR')}</p>
+            <ReservationHotelPurchase
+              key={request.purchaseVersion ?? 0}
+              request={request}
+              onSaved={() => setRefresh((value) => value + 1)}
+            />
           </Card>
         ))
       )}

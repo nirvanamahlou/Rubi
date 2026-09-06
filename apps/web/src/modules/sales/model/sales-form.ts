@@ -1,3 +1,7 @@
+import {
+  servicePriceComponents,
+  type SalesServicePricingV1,
+} from '@rubi/contracts';
 import type {
   CustomerSummary,
   MasterDataRecord,
@@ -52,6 +56,7 @@ export const salesSteps = [
 ] as const;
 
 export interface SalesFormState {
+  servicePricing?: Record<string, SalesServicePricingV1[]>;
   customerKind?: 'person' | 'organization';
   customerOrganizationId?: string;
   firstPassengerIsCustomer?: boolean;
@@ -435,6 +440,9 @@ export function salesPayload(
             },
           ],
   );
+  if (state.servicePricing)
+    for (const service of services)
+      service.pricing = state.servicePricing[service.clientKey] ?? [];
   const ticketSelections = state.serviceKinds.includes('FLIGHT')
     ? [
         ...(salesDirections(state, 'FLIGHT').includes('OUTBOUND') &&
@@ -525,7 +533,16 @@ export function salesPayload(
             inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
           }
         : null,
-    priceComponents: state.priceComponents,
+    priceComponents:
+      servicePriceComponents(
+        services,
+        state.serviceKinds.includes('HOTEL')
+          ? {
+              checkInDate: state.hotel.checkIn,
+              checkOutDate: state.hotel.checkOut,
+            }
+          : null,
+      ) ?? state.priceComponents,
     payments: state.payments.map((payment) => ({
       ...payment,
       dueAt: utc(payment.dueAt),

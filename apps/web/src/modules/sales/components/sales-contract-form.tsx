@@ -17,10 +17,12 @@ import type {
   MasterDataRecord,
   MasterDataResource,
   SalesPaymentMethod,
-  SalesPriceComponentInput,
   SalesServiceKind,
 } from '@rubi/contracts';
 
+import { hotelNights } from '@rubi/contracts';
+import { SalesPricingPanel, SalesPricingSummary } from './sales-pricing-panel';
+import { MoneyInput as SalesMoneyInput } from '@/components/ui/money-input';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
@@ -108,7 +110,10 @@ export function SalesContractForm() {
     to: '',
   });
   const [futureFrom, setFutureFrom] = useState(() => new Date().toISOString());
-  const [state, setState] = useState<SalesFormState>(emptySalesForm);
+  const [state, setState] = useState<SalesFormState>({
+    ...emptySalesForm,
+    servicePricing: {},
+  });
   const [lookupPurpose, setLookupPurpose] = useState<
     'customer' | 'passenger' | null
   >(null);
@@ -195,6 +200,7 @@ export function SalesContractForm() {
               );
             setState({
               ...restored,
+              servicePricing: restored.servicePricing ?? {},
             } as SalesFormState);
           } catch {
             globalThis.localStorage.removeItem('rubi.sales.contract.draft.v1');
@@ -340,15 +346,27 @@ export function SalesContractForm() {
         : key.startsWith('TRANSFER-')
           ? `ترانسفر ${key.endsWith('OUTBOUND') ? 'رفت' : 'برگشت'}`
           : (serviceOptions.find(([kind]) => kind === key)?.[1] ?? key);
-  const updatePrice = (
-    index: number,
-    patch: Partial<SalesPriceComponentInput>,
-  ) =>
-    patchState({
-      priceComponents: state.priceComponents.map((item, position) =>
-        position === index ? { ...item, ...patch } : item,
-      ),
-    });
+  const pricingServices = state.serviceKinds.flatMap((kind) =>
+    kind === 'FLIGHT' || kind === 'TRANSFER'
+      ? salesDirections(state, kind).map((direction) => ({
+          key: `${kind.toLowerCase()}-${direction.toLowerCase()}`,
+          title: `${kind === 'FLIGHT' ? 'بلیت' : 'ترانسفر'} ${direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}`,
+          hotel: false,
+        }))
+      : [
+          {
+            key: kind.toLowerCase(),
+            title: serviceOptions.find(([key]) => key === kind)?.[1] ?? kind,
+            hotel: kind === 'HOTEL',
+          },
+        ],
+  );
+  let pricingNights = 0;
+  try {
+    pricingNights = hotelNights(state.hotel.checkIn, state.hotel.checkOut);
+  } catch {
+    /* No valid stay selected yet. */
+  }
   const canContinue = useMemo(() => {
     if (step === 0)
       return Boolean(
@@ -381,11 +399,16 @@ export function SalesContractForm() {
         state.passengers.length > 0 &&
         state.passengers.every((item) => item.birthDate)
       );
-    if (step === 3)
-      return (
-        state.priceComponents.length > 0 &&
-        state.priceComponents.every((item) => item.amount && item.currencyCode)
-      );
+    if (step === 3) {
+      try {
+        return (
+          salesPayload({ ...state, servicePricing: state.servicePricing ?? {} })
+            .priceComponents.length > 0
+        );
+      } catch {
+        return false;
+      }
+    }
     return true;
   }, [state, step, activeDetail, createPersonMode, pendingPassengers.length]);
   const submit = async (event: FormEvent) => {
@@ -1289,81 +1312,16 @@ export function SalesContractForm() {
         ) : null}
         {step === 3 ? (
           <div className="grid gap-6">
-            <section className="grid gap-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-black">
-                  قرارداد ریالی، ارزی یا ترکیبی
-                </h2>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    patchState({
-                      priceComponents: [
-                        ...state.priceComponents,
-                        {
-                          type: 'BASE',
-                          title: 'جزء قیمت',
-                          amount: '',
-                          currencyCode: 'IRR',
-                        },
-                      ],
-                    })
-                  }
-                >
-                  <Plus className="size-4" />
-                  جزء قیمت
-                </Button>
-              </div>
-              {state.priceComponents.map((price, index) => (
-                <div
-                  className="grid gap-3 rounded-xl border p-4 md:grid-cols-4"
-                  key={index}
-                >
-                  <select
-                    className={fieldClass}
-                    value={price.type}
-                    onChange={(event) =>
-                      updatePrice(index, {
-                        type: event.target
-                          .value as SalesPriceComponentInput['type'],
-                      })
-                    }
-                  >
-                    <option value="BASE">مبلغ پایه</option>
-                    <option value="DISCOUNT">تخفیف</option>
-                    <option value="TAX">مالیات</option>
-                    <option value="SURCHARGE">افزوده</option>
-                  </select>
-                  <Input
-                    value={price.title}
-                    onChange={(event) =>
-                      updatePrice(index, { title: event.target.value })
-                    }
-                    placeholder="عنوان"
-                  />
-                  <Input
-                    dir="ltr"
-                    value={price.amount}
-                    onChange={(event) =>
-                      updatePrice(index, { amount: event.target.value })
-                    }
-                    placeholder="مبلغ توافقی"
-                  />
-                  <Input
-                    dir="ltr"
-                    maxLength={3}
-                    value={price.currencyCode}
-                    onChange={(event) =>
-                      updatePrice(index, {
-                        currencyCode: event.target.value.toUpperCase(),
-                      })
-                    }
-                    placeholder="IRR"
-                  />
-                </div>
-              ))}
-            </section>
+            <SalesPricingPanel
+              services={pricingServices}
+              nights={pricingNights}
+              values={state.servicePricing ?? {}}
+              onChange={(key, prices) =>
+                patchState({
+                  servicePricing: { ...state.servicePricing, [key]: prices },
+                })
+              }
+            />
             <section className="grid gap-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -1399,15 +1357,13 @@ export function SalesContractForm() {
                   className="grid gap-3 rounded-xl border p-4 md:grid-cols-4"
                   key={index}
                 >
-                  <Input
+                  <SalesMoneyInput
                     dir="ltr"
                     value={payment.amount}
-                    onChange={(event) =>
+                    onValueChange={(amount) =>
                       patchState({
                         payments: state.payments.map((item, position) =>
-                          position === index
-                            ? { ...item, amount: event.target.value }
-                            : item,
+                          position === index ? { ...item, amount } : item,
                         ),
                       })
                     }
@@ -1641,6 +1597,11 @@ export function SalesContractForm() {
                 </p>
               </Card>
             </div>
+            <SalesPricingSummary
+              services={pricingServices}
+              nights={pricingNights}
+              values={state.servicePricing ?? {}}
+            />
             {state.serviceKinds.includes('FLIGHT') ? (
               <Alert
                 tone="warning"
