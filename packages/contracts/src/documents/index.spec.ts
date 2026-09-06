@@ -11,6 +11,7 @@ import {
 import type {
   DocumentCaseOptionsQueryV1,
   DocumentCaseOptionsResponseV1,
+  DocumentListQueryV1,
 } from './index';
 
 describe('documents shared contract v1', () => {
@@ -63,5 +64,22 @@ describe('documents shared contract v1', () => {
     };
 
     expect(response.data[0]).not.toHaveProperty('sourceEntityId');
+  });
+
+  it('supports an exact canonical source filter without changing contract v1', () => {
+    const query: DocumentListQueryV1 = {
+      domain: 'CUSTOMER_IDENTITY',
+      branchId: 'branch-1',
+      sourceModule: 'customers',
+      sourceEntityType: 'Customer',
+      sourceEntityId: 'customer-1',
+    };
+
+    expect(DOCUMENTS_CONTRACT_VERSION).toBe(1);
+    expect(query).toMatchObject({
+      sourceModule: 'customers',
+      sourceEntityType: 'Customer',
+      sourceEntityId: 'customer-1',
+    });
   });
 });

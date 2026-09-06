@@ -65,7 +65,11 @@ import {
   PaginationShell,
   Skeleton,
 } from '@/components/ui/surfaces';
-import { masterDataApi, MasterDataApiError } from '../api/client';
+import {
+  masterDataApi,
+  MasterDataApiError,
+  type MasterDataLogoChange,
+} from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { getMasterDataDefinition } from '../model/catalog';
@@ -383,17 +387,22 @@ export function MasterDataTransportationWorkspace() {
     setNotice(null);
   }
 
-  async function persist(values: Record<string, string>) {
-    if (formMode === 'edit' && selected) {
-      await masterDataApi.update(resource, selected.id, {
-        values,
-        version: selected.version,
-      });
-      setNotice(`${definition.singularLabel} با نسخه جدید و Audit ویرایش شد.`);
-    } else {
-      await masterDataApi.create(resource, { values });
-      setNotice(`${definition.singularLabel} ثبت شد.`);
-    }
+  async function persist(
+    values: Record<string, string>,
+    logoChange?: MasterDataLogoChange,
+  ) {
+    const result = await masterDataApi.persistWithLogo({
+      resource,
+      values,
+      title:
+        `${definition.singularLabel} ${values.name ?? selected?.name ?? ''}`.trim(),
+      ...(formMode === 'edit' && selected ? { existing: selected } : {}),
+      ...(logoChange ? { logoChange } : {}),
+    });
+    setNotice(
+      result.warning ??
+        `${definition.singularLabel} با نسخه جدید و Audit ${formMode === 'edit' ? 'ویرایش' : 'ثبت'} شد.`,
+    );
     setFormMode(null);
     await Promise.all([load(), loadSummary()]);
   }

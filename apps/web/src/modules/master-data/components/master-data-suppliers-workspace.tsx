@@ -58,7 +58,11 @@ import {
   PaginationShell,
   Skeleton,
 } from '@/components/ui/surfaces';
-import { masterDataApi, MasterDataApiError } from '../api/client';
+import {
+  masterDataApi,
+  MasterDataApiError,
+  type MasterDataLogoChange,
+} from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { getMasterDataDefinition } from '../model/catalog';
@@ -407,18 +411,25 @@ export function MasterDataSuppliersWorkspace() {
     setProfileOpen(true);
   }
 
-  async function persist(values: Record<string, string>) {
+  async function persist(
+    values: Record<string, string>,
+    logoChange?: MasterDataLogoChange,
+  ) {
     if (tab === 'collaboration') return;
-    if (formMode === 'edit' && selected) {
-      await masterDataApi.update(selected.resource, selected.id, {
-        values,
-        version: selected.version,
-      });
-      setNotice(`${formDefinition.singularLabel} با موفقیت ویرایش شد.`);
-    } else {
-      await masterDataApi.create(resource, { values });
-      setNotice(`${definition.singularLabel} با موفقیت ایجاد شد.`);
-    }
+    const target =
+      formMode === 'edit' && selected ? selected.resource : resource;
+    const result = await masterDataApi.persistWithLogo({
+      resource: target,
+      values,
+      title:
+        `${formDefinition.singularLabel} ${values.name ?? values.legalName ?? selected?.name ?? ''}`.trim(),
+      ...(formMode === 'edit' && selected ? { existing: selected } : {}),
+      ...(logoChange ? { logoChange } : {}),
+    });
+    setNotice(
+      result.warning ??
+        `${formDefinition.singularLabel} با موفقیت ${formMode === 'edit' ? 'ویرایش' : 'ایجاد'} شد.`,
+    );
     setFormMode(null);
     await Promise.all([load(), loadSummary()]);
   }

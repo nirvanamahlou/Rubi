@@ -210,14 +210,6 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
                 onChange={(event) => update('campaignType', event.target.value)}
               />
             </FormField>
-            <FormField id="campaign-version" label="نسخه مورد انتظار">
-              <Input
-                id="campaign-version"
-                dir="ltr"
-                readOnly
-                value={draft.expectedVersion}
-              />
-            </FormField>
           </div>
         ) : null}
 
@@ -447,12 +439,6 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
                 <dt className="text-muted-foreground">بودجه</dt>
                 <dd className="mt-1 font-bold" dir="ltr">
                   {draft.budgetAmount || '—'} {draft.currencyCode}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">نسخه</dt>
-                <dd className="mt-1 font-bold">
-                  {draft.expectedVersion.toLocaleString('fa-IR')}
                 </dd>
               </div>
             </dl>

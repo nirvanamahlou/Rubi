@@ -7,6 +7,18 @@ export const metadata: Metadata = { title: 'مارکتینگ' };
 // Graduation marker for the shared route-foundation contract: this page replaces
 // ModuleFoundationWorkspace configured with foundationModules['marketing'].
 
-export default function Page() {
-  return <MarketingWorkspace />;
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ section?: string | string[] }>;
+}) {
+  const { section } = await searchParams;
+  const initialSection = typeof section === 'string' ? section : null;
+
+  return (
+    <MarketingWorkspace
+      key={initialSection ?? 'marketing-hub'}
+      initialSection={initialSection}
+    />
+  );
 }

@@ -144,6 +144,18 @@ export class DocumentsRepository {
           }
         : {}),
       ...(query.categoryId ? { categoryId: query.categoryId } : {}),
+      ...(query.sourceModule && query.sourceEntityType && query.sourceEntityId
+        ? {
+            relations: {
+              some: {
+                relationType: 'PRIMARY_CASE',
+                sourceModule: query.sourceModule,
+                sourceEntityType: query.sourceEntityType,
+                sourceEntityId: query.sourceEntityId,
+              },
+            },
+          }
+        : {}),
       ...(query.confidentiality
         ? { confidentiality: query.confidentiality }
         : {}),

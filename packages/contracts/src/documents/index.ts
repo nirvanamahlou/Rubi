@@ -68,6 +68,10 @@ export type DocumentSortCode =
 
 export interface DocumentListQueryV1 {
   search?: string;
+  /** Exact canonical source reference. All three source fields must be supplied together. */
+  sourceModule?: string;
+  sourceEntityType?: string;
+  sourceEntityId?: string;
   typeCode?: string;
   categoryId?: string;
   branchId?: string;

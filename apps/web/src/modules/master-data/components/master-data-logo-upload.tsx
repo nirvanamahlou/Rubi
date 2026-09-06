@@ -1,33 +1,33 @@
 'use client';
 
-import { ImageUp, LoaderCircle, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import type { MasterDataResource } from '@rubi/contracts';
+import { ImageUp, Trash2 } from 'lucide-react';
+import type { ChangeEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import { Badge } from '@/components/ui/surfaces';
-import { masterDataApi } from '../api/client';
+import type { MasterDataLogoChange } from '../api/client';
 
 export function MasterDataLogoUpload({
   disabled,
   label,
   onChange,
-  recordId,
-  resource,
-  title,
+  pending,
   value,
 }: {
   disabled?: boolean;
   label: string;
-  onChange: (value: string) => void;
-  recordId?: string;
-  resource: MasterDataResource;
-  title: string;
+  onChange: (change: MasterDataLogoChange | undefined) => void;
+  pending?: MasterDataLogoChange;
   value: string;
 }) {
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
+  const selectedFile = pending?.kind === 'replace' ? pending.file : undefined;
+  const hasSavedLogo = Boolean(value) && pending?.kind !== 'remove';
+
+  function selectFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (file) onChange({ kind: 'replace', file });
+  }
 
   return (
     <div className="space-y-2 rounded-xl border border-dashed border-primary/30 bg-primary/5 p-3">
@@ -36,57 +36,46 @@ export function MasterDataLogoUpload({
           <ImageUp aria-hidden="true" className="size-4" />
           PNG یا JPEG
         </span>
-        {value ? <Badge>لوگو بارگذاری شده</Badge> : null}
+        {selectedFile ? (
+          <Badge>آماده بارگذاری پس از ذخیره</Badge>
+        ) : hasSavedLogo ? (
+          <Badge>لوگو بارگذاری شده</Badge>
+        ) : pending?.kind === 'remove' ? (
+          <Badge>حذف پس از ذخیره</Badge>
+        ) : null}
       </div>
       <Input
         accept="image/png,image/jpeg"
         aria-label={label}
         className="cursor-pointer pt-2"
-        disabled={disabled || uploading}
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (!file) return;
-          setUploading(true);
-          setError('');
-          void masterDataApi
-            .uploadLogo({
-              file,
-              resource,
-              title,
-              ...(recordId ? { recordId } : {}),
-            })
-            .then((result) => onChange(result.id))
-            .catch((caught) =>
-              setError(
-                caught instanceof Error
-                  ? caught.message
-                  : 'بارگذاری لوگو ناموفق بود.',
-              ),
-            )
-            .finally(() => setUploading(false));
-        }}
+        disabled={disabled}
+        onChange={selectFile}
         type="file"
       />
       <div className="flex min-h-8 items-center justify-between gap-2">
-        <span
-          className="text-xs text-destructive"
-          role={error ? 'alert' : undefined}
-        >
-          {error}
+        <span className="truncate text-xs text-muted-foreground">
+          {selectedFile?.name ??
+            (pending?.kind === 'remove'
+              ? 'لوگو پس از ذخیره از رکورد جدا می‌شود.'
+              : 'فایل بعد از دریافت شناسه واقعی رکورد به اسناد ارسال می‌شود.')}
         </span>
-        {uploading ? (
-          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-            <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-            در حال بارگذاری امن
-          </span>
-        ) : value && !disabled ? (
+        {(selectedFile || hasSavedLogo) && !disabled ? (
           <Button
-            onClick={() => onChange('')}
+            onClick={() => onChange(value ? { kind: 'remove' } : undefined)}
             size="sm"
             type="button"
             variant="outline"
           >
             <Trash2 aria-hidden="true" className="size-4" /> حذف لوگو
+          </Button>
+        ) : pending?.kind === 'remove' && !disabled ? (
+          <Button
+            onClick={() => onChange(undefined)}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            انصراف از حذف
           </Button>
         ) : null}
       </div>

@@ -15,8 +15,8 @@ describe('Documents archive tools', () => {
         archiveStatus: 'ARCHIVED',
       },
     );
-    expect(archiveTools.find((tool) => tool.key === 'owners')).toMatchObject({
-      useCurrentOwner: true,
+    expect(archiveTools.find((tool) => tool.key === 'owners')?.query).toEqual({
+      personalView: 'OWNED',
     });
     expect(archiveTools.map((tool) => tool.key)).not.toEqual(
       expect.arrayContaining(['types', 'quarantine', 'health', 'processing']),

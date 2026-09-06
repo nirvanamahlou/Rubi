@@ -7,6 +7,18 @@ const overlaysSource = readFileSync(
   join(process.cwd(), 'src', 'components', 'ui', 'overlays.tsx'),
   'utf8',
 );
+const bulkDialogSource = readFileSync(
+  join(moduleRoot, 'components', 'document-bulk-actions-dialog.tsx'),
+  'utf8',
+);
+const deleteDialogSource = readFileSync(
+  join(moduleRoot, 'components', 'document-delete-dialog.tsx'),
+  'utf8',
+);
+const editDialogSource = readFileSync(
+  join(moduleRoot, 'components', 'document-edit-dialog.tsx'),
+  'utf8',
+);
 
 function moduleSources(directory: string): string {
   return readdirSync(directory, { withFileTypes: true })
@@ -47,6 +59,12 @@ describe('documents workspace contract', () => {
       'دسترسی به اسناد مجاز نیست',
       'تازه‌های آرشیو',
       'کارهای من',
+      'ارتباط اسناد با بخش‌های روبی',
+      'همه مسیرهای آرشیو',
+      'اسناد این بخش',
+      'متصل به ماژول',
+      'بازکردن بخش مربوطه',
+      'پرونده‌ای برای این فایل ثبت نشده است',
       'بازگشت به نمای کلی',
       'لینک‌های داخلی اسناد',
       'اسناد من',
@@ -99,6 +117,9 @@ describe('documents workspace contract', () => {
     expect(source).toContain('URL.revokeObjectURL');
     expect(source).toContain('archiveTools.map');
     expect(source).toContain('onClick={() => openArchiveTool(tool)}');
+    expect(source).toContain('setActiveArchiveToolKey(tool.key)');
+    expect(source).toContain("setSection('archive')");
+    expect(source).toContain('بازگشت به ابزارهای مدیریت آرشیو');
     expect(source).toContain('documentOptions.data.branches');
     expect(source).toContain('validateDocumentUpload');
     expect(source).toContain('sourceRelationId');
@@ -107,6 +128,17 @@ describe('documents workspace contract', () => {
     expect(source).toContain('z-[70] max-h-72');
     expect(source).not.toContain('documentsApi.sessionContext');
     expect(source).not.toContain('dangerouslySetInnerHTML');
+  });
+
+  it('submits record operations as forms with visible Persian validation', () => {
+    expect(bulkDialogSource).toContain('<form');
+    expect(bulkDialogSource).toContain('type="submit"');
+    expect(bulkDialogSource).toContain('حداقل ۵ نویسه');
+    expect(deleteDialogSource).toContain('<form');
+    expect(deleteDialogSource).toContain('type="submit"');
+    expect(deleteDialogSource).toContain('کد آرشیو واردشده');
+    expect(editDialogSource).toContain("description: description ?? ''");
+    expect(editDialogSource).toContain("validUntil: validUntil ?? ''");
   });
 
   it('uses the versioned backend and contains no production preview records', () => {

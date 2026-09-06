@@ -1004,6 +1004,8 @@ export class MasterDataRepository {
       if (query.contactCompleteness === 'incomplete')
         where.AND = [{ OR: [{ phoneMasked: null }, { emailMasked: null }] }];
     }
+    if (resource === 'organizations' && query.organizationRole)
+      where.roles = { some: { roleCode: query.organizationRole } };
     if (isMasterTransportFormResource(resource) && query.transportStatus) {
       where.isUnderReview = query.transportStatus === 'UNDER_REVIEW';
       where.isActive = query.transportStatus === 'ACTIVE';

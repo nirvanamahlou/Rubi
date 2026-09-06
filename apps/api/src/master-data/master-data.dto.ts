@@ -14,6 +14,7 @@ import {
   Matches,
   Min,
 } from 'class-validator';
+import { MASTER_ORGANIZATION_ROLE_CODES } from '@rubi/contracts';
 
 export class MasterDataListQueryDto {
   @IsOptional() @IsString() @MaxLength(100) columnFilter1?: string;
@@ -82,6 +83,9 @@ export class MasterDataListQueryDto {
   @IsOptional()
   @IsUUID()
   organizationId?: string;
+  @IsOptional()
+  @IsIn(MASTER_ORGANIZATION_ROLE_CODES)
+  organizationRole?: (typeof MASTER_ORGANIZATION_ROLE_CODES)[number];
   @IsOptional()
   @IsUUID()
   serviceId?: string;

@@ -2,6 +2,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import {
+  marketingSections,
+  marketingSectionTabs,
+} from '../model/reference-data';
+
 const workspaceSource = readFileSync(
   join(
     process.cwd(),
@@ -61,23 +66,27 @@ const pageSource = readFileSync(
   join(process.cwd(), 'src', 'app', '(crm)', 'marketing', 'page.tsx'),
   'utf8',
 );
+const appShellSource = readFileSync(
+  join(process.cwd(), 'src', 'components', 'layout', 'app-shell.tsx'),
+  'utf8',
+);
 
 describe('marketing workspace component contract', () => {
   it('routes marketing to its dedicated workspace', () => {
     expect(pageSource).toContain('MarketingWorkspace');
-    expect(pageSource).toContain('return <MarketingWorkspace />');
+    expect(pageSource).toContain('initialSection=');
+    expect(pageSource).toContain("typeof section === 'string'");
+    expect(pageSource).toContain("key={initialSection ?? 'marketing-hub'}");
   });
 
-  it('covers the nine reference sections and all required preview states', () => {
+  it('covers the seven active sections and all required preview states', () => {
     for (const label of [
       'داشبورد',
       'کمپین‌ها',
       'مخاطبان',
-      'ارتباطات',
       'محتوا و جذب',
       'تخفیف‌ها و پیشنهادها',
       'سفر مشتری',
-      'گزارش‌ها',
       'تنظیمات',
     ]) {
       expect(referenceDataSource).toContain(label);
@@ -94,6 +103,12 @@ describe('marketing workspace component contract', () => {
     ]) {
       expect(workspaceSource).toContain(state);
     }
+    expect(marketingSections.map((section) => section.key)).not.toContain(
+      'reports',
+    );
+    expect(marketingSections.map((section) => section.key)).not.toContain(
+      'communications',
+    );
   });
 
   it('implements every reference subtab with its dedicated inner page', () => {
@@ -101,13 +116,11 @@ describe('marketing workspace component contract', () => {
       'تقویم کمپین‌ها',
       'بودجه و هزینه‌ها',
       'گردش تأیید',
-      'تست‌های A/B',
       'گروه‌ها و سگمنت‌ها',
-      'ارسال‌های زمان‌بندی‌شده',
+      'مخاطبان کمپین',
+      'منابع ورود',
       'کتابخانه محتوا و فایل‌ها',
-      'قوانین استفاده',
       'ساخت اتوماسیون',
-      'ROI و ROAS',
       'کانال‌ها و سرویس‌ها',
     ]) {
       expect(referenceDataSource).toContain(label);
@@ -115,13 +128,12 @@ describe('marketing workspace component contract', () => {
     for (const pageMarker of [
       'سازنده سگمنت پویا',
       'سرنخ‌های مارکتینگ',
-      'ارسال پیام',
-      'قالب‌های پیام',
+      'افزودن مخاطبان کمپین',
+      'افزودن منبع ورود',
       'کتابخانه محتوا',
       'صفحات فرود',
       'پیشنهادهای ویژه',
       'سازنده سفر مشتری',
-      'نمای ذخیره‌شده: گزارش هفتگی مدیر',
       'کانال‌ها و سرویس‌ها',
       'لاگ‌ها و خطاهای عملیاتی',
     ]) {
@@ -129,6 +141,13 @@ describe('marketing workspace component contract', () => {
     }
     expect(workspaceSource).toContain('MarketingReferenceSection');
     expect(workspaceSource).toContain('setDetailItem');
+    expect(marketingSectionTabs.audiences.map((item) => item[0])).not.toContain(
+      'subscriptions',
+    );
+    expect('communications' in marketingSectionTabs).toBe(false);
+    expect(marketingSectionTabs.offers.map((item) => item[0])).not.toContain(
+      'rules',
+    );
   });
 
   it('provides responsive campaign cards and Rubi-styled reference tables', () => {
@@ -152,7 +171,6 @@ describe('marketing workspace component contract', () => {
 
   it('provides the simplified eight-step create, view and edit flows', () => {
     for (const field of [
-      'expectedVersion',
       'Segment مخاطب',
       'بودجه مصوب',
       'UTM Campaign',
@@ -168,6 +186,8 @@ describe('marketing workspace component contract', () => {
       'Offer Intent',
       'campaign-offer',
       'campaign-coupon',
+      'نسخه مورد انتظار',
+      'campaign-version',
       'description=',
     ]) {
       expect(formSource).not.toContain(removedCopy);
@@ -175,7 +195,7 @@ describe('marketing workspace component contract', () => {
     expect(formSource).toContain('lg:grid-cols-8');
     expect(formSource).toContain('{step === 7 ? (');
     expect(formSource).not.toContain('{step === 8 ? (');
-    expect(workspaceSource).toContain("openCampaign('create')");
+    expect(workspaceSource).toContain("onOpen('create')");
     expect(workspaceSource).toContain("onOpen('view', campaign)");
     expect(workspaceSource).toContain("onOpen('edit', campaign)");
     expect(workspaceSource).toContain('CampaignDetailReference');
@@ -195,12 +215,25 @@ describe('marketing workspace component contract', () => {
       expect(workspaceSource).not.toContain(removedCopy);
     }
     expect(workspaceSource).toContain("window.addEventListener('popstate'");
-    expect(workspaceSource).toContain("url.searchParams.set('section'");
-    expect(workspaceSource).toContain("'pushState'");
-    expect(workspaceSource).toContain("'replaceState'");
+    expect(workspaceSource).not.toContain('requestAnimationFrame');
     expect(workspaceSource).toContain(
-      "section === null || section === 'campaigns'",
+      'resolveMarketingSection(initialSection)',
     );
+    expect(workspaceSource).toContain("url.searchParams.set('section'");
+    expect(workspaceSource).toContain('const router = useRouter()');
+    expect(workspaceSource).toContain('router.push(nextUrl');
+    expect(workspaceSource).toContain('router.replace(nextUrl');
+    expect(workspaceSource).toContain(
+      'new CustomEvent(MARKETING_SECTION_CHANGE_EVENT',
+    );
+    expect(appShellSource).toContain('window.addEventListener(');
+    expect(appShellSource).toContain('MARKETING_SECTION_CHANGE_EVENT');
+    expect(appShellSource).toContain('new URL(window.location.href)');
+    expect(workspaceSource).not.toContain('window.history[method]');
+    expect(workspaceSource).not.toContain('ایجاد کمپین');
+    expect(workspaceSource).toContain('افزودن کمپین جدید');
+    expect(workspaceSource).not.toContain('بازگشت به بخش‌های مارکتینگ');
+    expect(referenceDataSource).not.toContain('تست‌های A/B');
   });
 
   it('renders every marketing page RTL and shows two dashboard chart series', () => {
@@ -219,6 +252,24 @@ describe('marketing workspace component contract', () => {
     expect(referencePagesSource).toContain('onValueChange={setTab}');
     expect(referencePagesSource).toContain('role="switch"');
     expect(referencePagesSource).toContain('onClick={() => onNotice');
+    expect(referencePagesSource).toContain('محتوای جدید');
+    expect(referencePagesSource).toContain('documentsApi.upload');
+    expect(referencePagesSource).toContain(
+      "form.set('sourceModule', 'marketing')",
+    );
+    expect(referencePagesSource).toContain('ثبت در محتوا و اسناد');
+    expect(referencePagesSource).toContain('افزودن مخاطبان کمپین');
+    expect(referencePagesSource).toContain('افزودن منبع ورود');
+    expect(referencePagesSource).toContain('حداقل مبلغ خرید');
+    expect(referencePagesSource).toContain('سقف استفاده هر مشتری');
+    expect(referencePagesSource).not.toContain('قوانین استفاده');
+    expect(referencePagesSource).not.toContain('MoreHorizontal');
+    expect(referencePagesSource).toContain('downloadRowsAsExcel');
+    expect(referencePagesSource).toContain('غیرفعال‌سازی');
+    expect(referencePagesSource).toContain('segmentFieldOptions');
+    expect(referencePagesSource).toContain('LeadScoringPage');
+    expect(workspaceSource).not.toContain('خروجی داشبورد');
+    expect(referencePagesSource).not.toContain('در محیط آزمایشی باز شد');
   });
 
   it('keeps attribution and dispatch contract gates in their relevant details', () => {

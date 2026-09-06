@@ -1,9 +1,7 @@
 'use client';
 
 import {
-  ArrowRight,
   BadgePercent,
-  BarChart3,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -13,9 +11,9 @@ import {
   FilterX,
   Gauge,
   Megaphone,
-  MessageSquareText,
   MousePointerClick,
   Plus,
+  Power,
   RefreshCw,
   Route,
   Search,
@@ -23,6 +21,7 @@ import {
   UsersRound,
   type LucideIcon,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -57,6 +56,7 @@ import {
   Skeleton,
 } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
+import { MARKETING_SECTION_CHANGE_EVENT } from '@/lib/navigation';
 import {
   MARKETING_ATTRIBUTION_STATUS,
   MARKETING_DISPATCH_STATUS,
@@ -83,6 +83,7 @@ import {
   type MarketingSectionDefinition,
   type MarketingSectionKey,
 } from '../model/reference-data';
+import { downloadRowsAsExcel } from '../utils/excel-export';
 import { CampaignCalendar } from './campaign-calendar';
 import { CampaignForm, type CampaignFormMode } from './campaign-form';
 import {
@@ -119,11 +120,9 @@ const sectionIcons: Record<MarketingSectionKey, LucideIcon> = {
   dashboard: Gauge,
   campaigns: Megaphone,
   audiences: UsersRound,
-  communications: MessageSquareText,
   content: FileStack,
   offers: BadgePercent,
   journeys: Route,
-  reports: BarChart3,
   settings: Settings2,
 };
 
@@ -338,13 +337,17 @@ function MarketingHub({
 
 function CampaignCard({
   campaign,
+  disabled,
   onOpen,
+  onToggleActive,
 }: {
   campaign: CampaignPreview;
+  disabled: boolean;
   onOpen: (mode: CampaignFormMode, campaign: CampaignPreview) => void;
+  onToggleActive: () => void;
 }) {
   return (
-    <Card className="p-4">
+    <Card className={cn('p-4 transition', disabled && 'opacity-60')}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -362,6 +365,24 @@ function CampaignCard({
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
+            aria-label={
+              disabled
+                ? `فعال‌سازی ${campaign.name}`
+                : `غیرفعال‌سازی ${campaign.name}`
+            }
+            className={cn(
+              disabled
+                ? 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                : 'border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive',
+            )}
+            onClick={onToggleActive}
+            size="icon"
+            title={disabled ? 'فعال‌سازی' : 'غیرفعال‌سازی'}
+            variant="outline"
+          >
+            <Power aria-hidden="true" className="size-4" />
+          </Button>
+          <Button
             onClick={() => onOpen('view', campaign)}
             size="sm"
             variant="outline"
@@ -373,7 +394,7 @@ function CampaignCard({
             size="sm"
             variant="secondary"
           >
-            <FilePenLine aria-hidden="true" className="size-4" /> ویرایش Preview
+            <FilePenLine aria-hidden="true" className="size-4" /> ویرایش
           </Button>
         </div>
       </div>
@@ -450,11 +471,16 @@ function CampaignCard({
 
 function CampaignList({
   onOpen,
+  onNotice,
 }: {
   onOpen: (mode: CampaignFormMode, campaign?: CampaignPreview) => void;
+  onNotice: (message: string) => void;
 }) {
   const [query, setQuery] = useState<MarketingCampaignQuery>(() =>
     normalizeMarketingCampaignQuery({}),
+  );
+  const [disabledCampaigns, setDisabledCampaigns] = useState<Set<string>>(
+    () => new Set(),
   );
   const filtered = useMemo(
     () => filterAndSortCampaigns(marketingPreviewCampaigns, query),
@@ -480,9 +506,41 @@ function CampaignList({
             جست‌وجو، فیلتر تاریخ و صفحه‌بندی واکنش‌گرا
           </p>
         </div>
-        <Button onClick={() => onOpen('create')}>
-          <Plus aria-hidden="true" className="size-4" /> کمپین جدید
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            onClick={() => {
+              downloadRowsAsExcel({
+                filename: 'کمپین‌های-مارکتینگ',
+                sheetName: 'کمپین‌ها',
+                columns: [
+                  'کد',
+                  'نام',
+                  'نوع',
+                  'شرکت مجری',
+                  'شروع',
+                  'پایان',
+                  'وضعیت',
+                ],
+                rows: filtered.map((item) => [
+                  item.internalCode,
+                  item.name,
+                  item.campaignType,
+                  executionCompanyLabels[item.executionCompany],
+                  formatDate(item.startsAt),
+                  formatDate(item.endsAt),
+                  campaignStatusLabels[item.status],
+                ]),
+              });
+              onNotice('خروجی اکسل کمپین‌های فیلترشده دانلود شد.');
+            }}
+            variant="outline"
+          >
+            <Download aria-hidden="true" className="size-4" /> خروجی اکسل
+          </Button>
+          <Button onClick={() => onOpen('create')}>
+            <Plus aria-hidden="true" className="size-4" /> افزودن کمپین جدید
+          </Button>
+        </div>
       </div>
       <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
         <FormField id="marketing-search" label="جست‌وجو">
@@ -613,8 +671,23 @@ function CampaignList({
           {campaigns.map((campaign) => (
             <CampaignCard
               campaign={campaign}
+              disabled={disabledCampaigns.has(campaign.id)}
               key={campaign.id}
               onOpen={(mode, item) => onOpen(mode, item)}
+              onToggleActive={() => {
+                const isDisabled = disabledCampaigns.has(campaign.id);
+                setDisabledCampaigns((current) => {
+                  const next = new Set(current);
+                  if (next.has(campaign.id)) next.delete(campaign.id);
+                  else next.add(campaign.id);
+                  return next;
+                });
+                onNotice(
+                  isDisabled
+                    ? `کمپین «${campaign.name}» فعال شد.`
+                    : `کمپین «${campaign.name}» غیرفعال شد.`,
+                );
+              }}
             />
           ))}
         </div>
@@ -851,95 +924,6 @@ function ApprovalPanel({
   );
 }
 
-function AbPanel({ onNotice }: { onNotice: (message: string) => void }) {
-  const experiments = [
-    [
-      'عنوان پیام اروپا',
-      'جشنواره تابستان اروپا',
-      'عنوان پیامک',
-      'سفر اروپا با نرخ ویژه',
-      'تابستانت را در اروپا بساز',
-      '۲۰٬۰۰۰',
-      'B · بهبود ۱۴٪',
-      'فعال',
-    ],
-    [
-      'بنر پرواز استانبول',
-      'پرواز استانبول شهریور',
-      'تصویر',
-      'بنر شهر',
-      'بنر قیمت',
-      '۳۴٬۸۰۰',
-      'A · بهبود ۸٪',
-      'پایان‌یافته',
-    ],
-    [
-      'CTA هتل دبی',
-      'هتل‌های دبی پاییز',
-      'متن دکمه',
-      'مشاهده هتل‌ها',
-      'رزرو با تخفیف',
-      '۱۲٬۴۰۰',
-      'هنوز معنادار نیست',
-      'درحال جمع‌آوری',
-    ],
-  ] as const;
-  return (
-    <Card className="overflow-hidden">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
-        <h3 className="font-black">تست‌های A/B</h3>
-        <Button onClick={() => onNotice('فرم تست A/B جدید باز شد.')}>
-          <Plus aria-hidden="true" className="size-4" /> تست جدید
-        </Button>
-      </header>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[72rem] text-sm">
-          <thead className="bg-muted/50 text-muted-foreground">
-            <tr>
-              {[
-                'نام تست',
-                'کمپین',
-                'متغیر',
-                'نسخه A',
-                'نسخه B',
-                'نمونه',
-                'نتیجه فعلی',
-                'وضعیت',
-                'عملیات',
-              ].map((header) => (
-                <th className="p-4 text-start" key={header}>
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {experiments.map((row) => (
-              <tr className="border-t border-border" key={row[0]}>
-                {row.map((cell) => (
-                  <td className="p-4" key={cell}>
-                    {cell}
-                  </td>
-                ))}
-                <td className="p-4">
-                  <Button
-                    aria-label={`مشاهده ${row[0]}`}
-                    onClick={() => onNotice(`نسخه‌های ${row[0]} باز شد.`)}
-                    size="icon"
-                    variant="outline"
-                  >
-                    <Eye aria-hidden="true" className="size-4" />
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
-  );
-}
-
 function CampaignsPanel({
   onOpen,
   onNotice,
@@ -949,7 +933,12 @@ function CampaignsPanel({
 }) {
   const [tab, setTab] = useState('list');
   return (
-    <Tabs onValueChange={setTab} value={tab}>
+    <Tabs
+      className="grid gap-0 text-right"
+      dir="rtl"
+      onValueChange={setTab}
+      value={tab}
+    >
       <TabsList
         aria-label="بخش‌های کمپین"
         className="flex h-auto w-full flex-wrap justify-start gap-1 bg-blue-50 p-2 dark:bg-blue-950/40"
@@ -961,7 +950,7 @@ function CampaignsPanel({
         ))}
       </TabsList>
       <TabsContent className="mt-5" value="list">
-        <CampaignList onOpen={onOpen} />
+        <CampaignList onNotice={onNotice} onOpen={onOpen} />
       </TabsContent>
       <TabsContent className="mt-5" value="calendar">
         <CampaignCalendar
@@ -975,9 +964,6 @@ function CampaignsPanel({
       <TabsContent className="mt-5" value="approval">
         <ApprovalPanel onNotice={onNotice} onOpen={onOpen} />
       </TabsContent>
-      <TabsContent className="mt-5" value="ab">
-        <AbPanel onNotice={onNotice} />
-      </TabsContent>
     </Tabs>
   );
 }
@@ -987,9 +973,24 @@ type GenericSectionKey = Exclude<
   'dashboard' | 'campaigns'
 >;
 
-export function MarketingWorkspace() {
+function resolveMarketingSection(
+  requestedSection: string | null,
+): MarketingSectionKey | null {
+  return marketingSections.some((item) => item.key === requestedSection)
+    ? (requestedSection as MarketingSectionKey)
+    : null;
+}
+
+export function MarketingWorkspace({
+  initialSection = null,
+}: {
+  initialSection?: string | null;
+}) {
+  const router = useRouter();
   const [state, setState] = useState<MarketingPreviewState>('preview');
-  const [section, setSection] = useState<MarketingSectionKey | null>(null);
+  const [section, setSection] = useState<MarketingSectionKey | null>(() =>
+    resolveMarketingSection(initialSection),
+  );
   const [notice, setNotice] = useState('');
   const [detailItem, setDetailItem] = useState<MarketingPreviewItem | null>(
     null,
@@ -1003,20 +1004,12 @@ export function MarketingWorkspace() {
     const requestedSection = new URL(window.location.href).searchParams.get(
       'section',
     );
-    setSection(
-      marketingSections.some((item) => item.key === requestedSection)
-        ? (requestedSection as MarketingSectionKey)
-        : null,
-    );
+    setSection(resolveMarketingSection(requestedSection));
     setNotice('');
   }, []);
   useEffect(() => {
-    const initialSyncFrame = window.requestAnimationFrame(
-      syncSectionFromHistory,
-    );
     window.addEventListener('popstate', syncSectionFromHistory);
     return () => {
-      window.cancelAnimationFrame(initialSyncFrame);
       window.removeEventListener('popstate', syncSectionFromHistory);
     };
   }, [syncSectionFromHistory]);
@@ -1026,13 +1019,18 @@ export function MarketingWorkspace() {
       if (nextSection) url.searchParams.set('section', nextSection);
       else url.searchParams.delete('section');
       const nextUrl = `${url.pathname}${url.search}${url.hash}`;
-      const method = replace ? 'replaceState' : 'pushState';
-      window.history[method](window.history.state, '', nextUrl);
+      if (replace) router.replace(nextUrl, { scroll: false });
+      else router.push(nextUrl, { scroll: false });
+      window.dispatchEvent(
+        new CustomEvent(MARKETING_SECTION_CHANGE_EVENT, {
+          detail: nextSection,
+        }),
+      );
       setSection(nextSection);
       setNotice('');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
-    [],
+    [router],
   );
   const openCampaign = (mode: CampaignFormMode, campaign?: CampaignPreview) =>
     setCampaignDialog(
@@ -1045,24 +1043,6 @@ export function MarketingWorkspace() {
     section && !['dashboard', 'campaigns'].includes(section)
       ? (section as GenericSectionKey)
       : null;
-  const secondaryHeaderAction =
-    section === 'dashboard'
-      ? 'خروجی داشبورد'
-      : section === 'campaigns'
-        ? 'خروجی اکسل'
-        : section === 'audiences'
-          ? 'ورود گروهی Excel'
-          : section === 'communications'
-            ? 'گزارش ارسال'
-            : section === 'content'
-              ? 'خروجی فایل‌ها'
-              : section === 'offers'
-                ? 'گزارش استفاده'
-                : section === 'journeys'
-                  ? 'گزارش اجرا'
-                  : section === 'settings'
-                    ? 'خروجی تنظیمات'
-                    : null;
   return (
     <main
       className="grid gap-6 text-right [&_td]:text-right [&_th]:text-right"
@@ -1089,25 +1069,12 @@ export function MarketingWorkspace() {
                   ))}
                 </SelectContent>
               </Select>
-            ) : secondaryHeaderAction ? (
-              <Button
-                onClick={() => setNotice(`${secondaryHeaderAction} آماده شد.`)}
-                variant="outline"
-              >
-                <Download aria-hidden="true" className="size-4" />{' '}
-                {secondaryHeaderAction}
-              </Button>
-            ) : null}
-            {section === null || section === 'campaigns' ? (
-              <Button onClick={() => openCampaign('create')}>
-                <Plus aria-hidden="true" className="size-4" /> ایجاد کمپین
-              </Button>
             ) : null}
           </>
         }
         description={
           selectedSection?.description ??
-          'مدیریت یکپارچه کمپین، مخاطب، ارتباطات، محتوا، پیشنهاد، سفر مشتری و گزارش‌ها'
+          'مدیریت یکپارچه کمپین، مخاطب، محتوا، پیشنهاد و سفر مشتری'
         }
         title={selectedSection?.title ?? 'مرکز مارکتینگ'}
       />
@@ -1121,17 +1088,6 @@ export function MarketingWorkspace() {
         />
       ) : (
         <section className="grid gap-5">
-          <div>
-            <Button
-              onClick={() => {
-                navigateToSection(null, true);
-              }}
-              variant="ghost"
-            >
-              <ArrowRight aria-hidden="true" className="size-4" /> بازگشت به
-              بخش‌های مارکتینگ
-            </Button>
-          </div>
           {section === 'dashboard' ? (
             <MarketingDashboardReference
               onNotice={setNotice}
@@ -1152,7 +1108,7 @@ export function MarketingWorkspace() {
       {notice ? (
         <div
           aria-live="polite"
-          className="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground shadow-sm"
+          className="fixed bottom-6 left-6 z-[80] flex max-w-md items-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground shadow-lg"
           role="status"
         >
           <MousePointerClick

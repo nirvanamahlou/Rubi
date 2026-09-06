@@ -82,6 +82,10 @@ import {
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { customersApi, CustomersApiError } from '../api/client';
 import {
+  isMasterReferenceSelectable,
+  loadCustomerMasterData,
+} from '../api/customer-master-data';
+import {
   contactDisplayValue,
   contactCallHref,
   customerDraft,
@@ -104,6 +108,7 @@ import {
   CustomerDateField,
   type CustomerCalendarMode,
 } from './customer-date-field';
+import { CustomerDocumentsPanel } from './customer-documents-panel';
 import {
   buildCustomerConsentRequest,
   customerListFailureState,
@@ -149,19 +154,6 @@ const customerTabs: readonly CustomerTab[] = [
   'audit',
 ];
 
-const travelDocumentFields = [
-  'پاسپورت',
-  'نام انگلیسی مطابق پاسپورت (اجباری)',
-  'نام خانوادگی انگلیسی مطابق پاسپورت (اجباری)',
-  'شماره پاسپورت',
-  'کشور صادرکننده',
-  'تاریخ صدور',
-  'تاریخ انقضا',
-  'ویزا',
-  'مدارک هویتی',
-  'هشدار انقضای مدارک',
-] as const;
-
 function customerRoleLabel(roles: readonly CustomerRole[]) {
   const customer = roles.includes('customer');
   const passenger = roles.includes('passenger');
@@ -179,14 +171,9 @@ const connectedDossierSections = [
   ['پرداخت‌ها', 'مالی'],
   ['چک‌ها', 'مالی'],
   ['تیکت‌های پشتیبانی', 'امور مشتریان'],
-  ['فایل‌ها و اسناد', 'اسناد'],
 ] as const;
 
-const sensitiveReasons = [
-  ['customer-verification', 'احراز مشتری'],
-  ['support-request', 'درخواست پشتیبانی'],
-  ['data-correction', 'اصلاح داده'],
-] as const;
+const CUSTOMER_SUPPORT_REQUEST_REASON = 'support-request';
 
 function listMasterData(
   resource: 'organizations' | 'acquaintance-methods' | 'countries' | 'cities',
@@ -287,7 +274,6 @@ function CustomerDrawer({
   const [primaryPhone, setPrimaryPhone] = useState('');
   const [primaryEmail, setPrimaryEmail] = useState('');
   const [newCompanions, setNewCompanions] = useState<NewCompanionDraft[]>([]);
-  const [sensitiveReason, setSensitiveReason] = useState('');
   const [sensitiveFeedback, setSensitiveFeedback] = useState<{
     kind: 'success' | 'unauthorized' | 'forbidden' | 'unreadable' | 'error';
     message: string;
@@ -375,7 +361,6 @@ function CustomerDrawer({
     const remask = () => {
       sensitiveRequestId.current += 1;
       setRevealedDetail(null);
-      setSensitiveReason('');
       setSensitiveFeedback(null);
     };
     const timer = revealedDetail
@@ -412,20 +397,10 @@ function CustomerDrawer({
 
   useEffect(() => {
     let active = true;
-    void Promise.all([
-      listMasterData('organizations'),
-      listMasterData('acquaintance-methods'),
-      listMasterData('countries'),
-      listMasterData('cities'),
-    ])
-      .then(([organizations, acquaintanceMethods, countries, cities]) => {
+    void loadCustomerMasterData(initialCustomer)
+      .then((loaded) => {
         if (!active) return;
-        setMasters({
-          organizations: organizations.data,
-          acquaintanceMethods: acquaintanceMethods.data,
-          countries: countries.data,
-          cities: cities.data,
-        });
+        setMasters(loaded);
       })
       .catch(() => {
         if (active) {
@@ -437,7 +412,7 @@ function CustomerDrawer({
     return () => {
       active = false;
     };
-  }, []);
+  }, [initialCustomer]);
 
   useEffect(() => {
     if (!companionSearch.trim() || !customer) return;
@@ -708,20 +683,15 @@ function CustomerDrawer({
   }
 
   async function revealSensitive() {
-    if (!customer || !sensitiveReason) {
-      const feedback = {
-        kind: 'error',
-        message: 'برای نمایش شماره کامل، ابتدا دلیل مجاز را انتخاب کنید.',
-      } as const;
-      setSensitiveFeedback(feedback);
-      if (activeTab !== 'contacts') setMessage(feedback.message);
-      return;
-    }
+    if (!customer) return;
     setBusy(true);
     setSensitiveFeedback(null);
     const requestId = ++sensitiveRequestId.current;
     try {
-      const response = await customersApi.detail(customer.id, sensitiveReason);
+      const response = await customersApi.detail(
+        customer.id,
+        CUSTOMER_SUPPORT_REQUEST_REASON,
+      );
       if (requestId !== sensitiveRequestId.current) return;
       setRevealedDetail(response.data);
       const hasRevealedValue =
@@ -1047,8 +1017,18 @@ function CustomerDrawer({
                   </SelectTrigger>
                   <SelectContent>
                     {masters.organizations.map((record) => (
-                      <SelectItem key={record.id} value={record.id}>
+                      <SelectItem
+                        disabled={
+                          !isMasterReferenceSelectable(
+                            record,
+                            draft.organizationId,
+                          )
+                        }
+                        key={record.id}
+                        value={record.id}
+                      >
                         {record.name}
+                        {record.status === 'inactive' ? ' (غیرفعال)' : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1073,8 +1053,18 @@ function CustomerDrawer({
                 <SelectContent>
                   <SelectItem value="not-selected">ثبت نشده</SelectItem>
                   {masters.acquaintanceMethods.map((record) => (
-                    <SelectItem key={record.id} value={record.id}>
+                    <SelectItem
+                      disabled={
+                        !isMasterReferenceSelectable(
+                          record,
+                          draft.acquaintanceMethodId,
+                        )
+                      }
+                      key={record.id}
+                      value={record.id}
+                    >
                       {record.name}
+                      {record.status === 'inactive' ? ' (غیرفعال)' : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1445,16 +1435,19 @@ function CustomerDrawer({
                                     <SelectItem value="not-selected">
                                       مسافر شخصی
                                     </SelectItem>
-                                    {masters.organizations.map(
-                                      (organization) => (
+                                    {masters.organizations
+                                      .filter(
+                                        (organization) =>
+                                          organization.status === 'active',
+                                      )
+                                      .map((organization) => (
                                         <SelectItem
                                           key={organization.id}
                                           value={organization.id}
                                         >
                                           {organization.name}
                                         </SelectItem>
-                                      ),
-                                    )}
+                                      ))}
                                   </SelectContent>
                                 </Select>
                               </FormField>
@@ -1518,7 +1511,6 @@ function CustomerDrawer({
               const tab = value as CustomerTab;
               sensitiveRequestId.current += 1;
               setRevealedDetail(null);
-              setSensitiveReason('');
               setSensitiveFeedback(null);
               onTabChange(tab);
             }}
@@ -1598,29 +1590,15 @@ function CustomerDrawer({
               </Card>
               {customer.maskedNationalId && !revealedDetail?.nationalId ? (
                 <Card className="grid gap-3 p-4 sm:grid-cols-[1fr_auto]">
-                  <FormField label="دلیل نمایش کد ملی">
-                    <Select
-                      onValueChange={(value) => {
-                        setSensitiveReason(value);
-                        setSensitiveFeedback(null);
-                      }}
-                      value={sensitiveReason}
-                    >
-                      <SelectTrigger aria-label="دلیل نمایش کد ملی">
-                        <SelectValue placeholder="انتخاب دلیل مجاز" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {sensitiveReasons.map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormField>
+                  <div>
+                    <p className="font-semibold">نمایش امن کد ملی</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      دلیل ثبت‌شده در Audit: درخواست پشتیبانی
+                    </p>
+                  </div>
                   <Button
                     className="self-end"
-                    disabled={busy || !sensitiveReason}
+                    disabled={busy}
                     onClick={() => void revealSensitive()}
                     type="button"
                     variant="outline"
@@ -1637,33 +1615,7 @@ function CustomerDrawer({
               />
             </TabsContent>
             <TabsContent className="space-y-4" value="dossier">
-              <Card className="space-y-4 p-4">
-                <div>
-                  <p className="font-bold">مدارک سفر و هویتی</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    اطلاعات حساس مدارک فقط با نگهداری رمزنگاری‌شده، دسترسی مجاز
-                    و ثبت مشاهده نمایش داده می‌شود.
-                  </p>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {travelDocumentFields.map((field) => (
-                    <div
-                      className="flex items-center justify-between gap-3 rounded-xl border bg-muted/20 p-3"
-                      key={field}
-                    >
-                      <span className="text-sm font-medium">{field}</span>
-                      <Badge className="bg-muted text-muted-foreground">
-                        در انتظار زیرساخت مدارک
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-                <Alert
-                  description="مدل امن پاسپورت، ویزا و هشدار انقضا هنوز در پایگاه داده مشتریان وجود ندارد؛ تا تکمیل آن هیچ شماره مدرک یا تاریخ ساختگی نمایش داده نمی‌شود."
-                  title="حفاظت از مدارک مسافر"
-                  tone="warning"
-                />
-              </Card>
+              {customer ? <CustomerDocumentsPanel customer={customer} /> : null}
 
               <Card className="space-y-4 p-4">
                 <div>
@@ -1704,7 +1656,6 @@ function CustomerDrawer({
                   onClick={() => {
                     sensitiveRequestId.current += 1;
                     setRevealedDetail(null);
-                    setSensitiveReason('');
                     onTabChange('activity');
                   }}
                   type="button"
@@ -1715,30 +1666,15 @@ function CustomerDrawer({
               </Card>
             </TabsContent>
             <TabsContent className="space-y-3" value="contacts">
-              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                <FormField label="دلیل مشاهده شماره تماس">
-                  <Select
-                    onValueChange={(value) => {
-                      setSensitiveReason(value);
-                      setSensitiveFeedback(null);
-                    }}
-                    value={sensitiveReason}
-                  >
-                    <SelectTrigger aria-label="دلیل مشاهده شماره تماس">
-                      <SelectValue placeholder="انتخاب دلیل مجاز" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sensitiveReasons.map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormField>
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3">
+                <div>
+                  <p className="font-semibold">نمایش امن شماره تماس</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    دلیل ثبت‌شده در Audit: درخواست پشتیبانی
+                  </p>
+                </div>
                 <Button
-                  className="self-end"
-                  disabled={busy || !sensitiveReason}
+                  disabled={busy}
                   onClick={() => void revealSensitive()}
                   type="button"
                   variant="outline"
@@ -1772,16 +1708,15 @@ function CustomerDrawer({
                 </Alert>
               ) : null}
               <p className="text-sm text-muted-foreground">
-                برای دیدن شماره کامل مشتری یا مسافر، دلیل مشاهده را انتخاب کنید.
                 پس از نمایش، دکمه تماس فعال می‌شود. شماره‌ها پس از یک دقیقه یا
-                خروج از صفحه دوباره پنهان می‌شوند.
+                خروج از صفحه دوباره پنهان می‌شوند و مشاهده با دلیل درخواست
+                پشتیبانی در Audit ثبت می‌شود.
               </p>
               {revealedDetail ? (
                 <Button
                   onClick={() => {
                     sensitiveRequestId.current += 1;
                     setRevealedDetail(null);
-                    setSensitiveReason('');
                     setSensitiveFeedback(null);
                   }}
                   type="button"
@@ -1924,11 +1859,13 @@ function CustomerDrawer({
                         <SelectValue placeholder="انتخاب کشور" />
                       </SelectTrigger>
                       <SelectContent>
-                        {masters.countries.map((record) => (
-                          <SelectItem key={record.id} value={record.id}>
-                            {record.name}
-                          </SelectItem>
-                        ))}
+                        {masters.countries
+                          .filter((record) => record.status === 'active')
+                          .map((record) => (
+                            <SelectItem key={record.id} value={record.id}>
+                              {record.name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </FormField>
@@ -1941,9 +1878,10 @@ function CustomerDrawer({
                         {masters.cities
                           .filter(
                             (record) =>
-                              !countryId ||
-                              String(record.attributes.countryId ?? '') ===
-                                countryId,
+                              record.status === 'active' &&
+                              (!countryId ||
+                                String(record.attributes.countryId ?? '') ===
+                                  countryId),
                           )
                           .map((record) => (
                             <SelectItem key={record.id} value={record.id}>
@@ -2421,7 +2359,6 @@ export function CustomerWorkspace() {
   );
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
-  const [exportReason, setExportReason] = useState('');
   const [importing, setImporting] = useState(false);
   const [importPreview, setImportPreview] = useState<
     CustomerImportPreviewRow[] | null
@@ -2593,10 +2530,6 @@ export function CustomerWorkspace() {
   }
 
   async function exportFilteredCustomers() {
-    if (!exportReason) {
-      setNotice('برای خروجی شماره‌های کامل، ابتدا دلیل مجاز را انتخاب کنید.');
-      return;
-    }
     setExporting(true);
     setNotice(null);
     try {
@@ -2626,10 +2559,14 @@ export function CustomerWorkspace() {
         });
         exportRecords.push(...response.data);
       }
-      const revealedPrimaryContacts = new Map<string, string>();
+      const revealedSensitiveValues = new Map<
+        string,
+        { nationalId: string; primaryPhone: string }
+      >();
       for (const record of exportRecords) {
-        const detail = (await customersApi.detail(record.id, exportReason))
-          .data;
+        const detail = (
+          await customersApi.detail(record.id, CUSTOMER_SUPPORT_REQUEST_REASON)
+        ).data;
         const primaryPhone =
           detail.contacts.find(
             (contact) =>
@@ -2638,15 +2575,15 @@ export function CustomerWorkspace() {
           detail.contacts.find(
             (contact) => contact.type === 'phone' && contact.value,
           );
-        revealedPrimaryContacts.set(
-          record.id,
-          primaryPhone?.value?.trim() || 'بدون تماس',
-        );
+        revealedSensitiveValues.set(record.id, {
+          nationalId: detail.nationalId?.trim() || 'ثبت نشده',
+          primaryPhone: primaryPhone?.value?.trim() || 'بدون تماس',
+        });
       }
       const rows = exportRecords.map((record) => [
         record.displayName,
-        record.maskedNationalId ?? 'ثبت نشده',
-        revealedPrimaryContacts.get(record.id) ?? 'بدون تماس',
+        revealedSensitiveValues.get(record.id)?.nationalId ?? 'ثبت نشده',
+        revealedSensitiveValues.get(record.id)?.primaryPhone ?? 'بدون تماس',
         record.status === 'active' ? 'فعال' : 'غیرفعال',
         record.roles
           .map((item) => (item === 'customer' ? 'مشتری' : 'مسافر'))
@@ -2660,11 +2597,11 @@ export function CustomerWorkspace() {
         formatCustomerDate(record.updatedAt, calendarMode),
       ]);
       downloadCustomerXlsx(
-        `customers-with-phones-${new Date().toISOString().slice(0, 10)}.xlsx`,
+        `customers-sensitive-${new Date().toISOString().slice(0, 10)}.xlsx`,
         [
           [
             'نام مشتری',
-            'کد ملی (ماسک‌شده)',
+            'کد ملی',
             'شماره تماس',
             'وضعیت',
             'نقش‌ها',
@@ -2676,7 +2613,7 @@ export function CustomerWorkspace() {
         ],
       );
       setNotice(
-        `خروجی حساس XLSX همه ${exportRecords.length.toLocaleString('fa-IR')} رکورد مطابق فیلترهای فعال همراه با شماره تماس کامل ساخته و دلیل مشاهده در Audit ثبت شد.`,
+        `خروجی حساس XLSX همه ${exportRecords.length.toLocaleString('fa-IR')} رکورد مطابق فیلترهای فعال، همراه با کد ملی و شماره تماس کامل ساخته شد؛ دلیل «درخواست پشتیبانی» برای هر مشاهده در Audit ثبت شد.`,
       );
     } catch (error) {
       setNotice(customerSensitiveRevealFeedback(error).message);
@@ -2885,37 +2822,15 @@ export function CustomerWorkspace() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <Select
-              disabled={exporting}
-              onValueChange={setExportReason}
-              value={exportReason}
-            >
-              <SelectTrigger
-                aria-label="دلیل خروجی شماره‌های کامل"
-                className="h-11 min-w-44"
-                id="customer-sensitive-export-reason"
-              >
-                <SelectValue placeholder="دلیل نمایش شماره‌ها" />
-              </SelectTrigger>
-              <SelectContent>
-                {sensitiveReasons.map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              disabled={records.length === 0 || exporting || !exportReason}
-              onClick={() => void exportFilteredCustomers()}
-              size="lg"
-              variant="outline"
-            >
-              <Download className="size-4" />
-              {exporting ? 'در حال ساخت خروجی…' : 'خروجی Excel'}
-            </Button>
-          </div>
+          <Button
+            disabled={records.length === 0 || exporting}
+            onClick={() => void exportFilteredCustomers()}
+            size="lg"
+            variant="outline"
+          >
+            <Download className="size-4" />
+            {exporting ? 'در حال ساخت خروجی…' : 'خروجی Excel'}
+          </Button>
           <Button
             onClick={() =>
               downloadCustomerXlsx('customer-import-template.xlsx', [
