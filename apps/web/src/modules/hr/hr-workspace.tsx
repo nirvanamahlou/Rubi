@@ -35,6 +35,7 @@ import {
 import {
   employeeTabs,
   hrHubCards,
+  iranLocalizationStatus,
   normalizeSection,
   previewId,
   screenMeta,
@@ -853,6 +854,233 @@ function genericTable(
   const id = (index: number) => (
     <span dir="ltr">{previewId(section, index)}</span>
   );
+  if (section === 'recruitment')
+    return {
+      columns: [
+        'شناسه',
+        'عنوان',
+        'واحد',
+        'تعداد/مرحله',
+        'بودجه',
+        'مالک',
+        'وضعیت',
+        'عملیات',
+      ],
+      rows: [
+        [
+          id(0),
+          tab === 'staffing' ? 'برنامه نیروی انسانی نمایشی' : 'فرصت نمایشی الف',
+          'عملیات سفر',
+          tab === 'interviews' ? 'مرحله فنی' : '—',
+          '—',
+          'کارشناس نمایشی HR',
+          <Badge key="w" tone="warning">
+            در جریان
+          </Badge>,
+          operation,
+        ],
+        [
+          id(1),
+          tab === 'referrals' ? 'معرفی نمایشی کارکنان' : 'متقاضی نمایشی ب',
+          'فروش',
+          tab === 'offers' ? 'پیشنهاد' : 'غربالگری',
+          '—',
+          'مدیر نمایشی ب',
+          <Badge key="n">پیش‌نویس</Badge>,
+          operation,
+        ],
+      ],
+      totalLabel: '۲ ردیف جذب پیش‌نمایش',
+    };
+  if (section === 'lifecycle')
+    return {
+      columns: [
+        'شناسه',
+        'کارمند',
+        'فرایند',
+        'تاریخ اثر',
+        'مسئول',
+        'تسویه/دسترسی',
+        'وضعیت',
+        'عملیات',
+      ],
+      rows: [
+        [
+          id(0),
+          'همکار نمایشی الف',
+          tab,
+          '۱۴۰۵/۰۶/۱۵',
+          'کارشناس نمایشی HR',
+          'در انتظار قرارداد عمومی',
+          <Badge key="w" tone="warning">
+            در جریان
+          </Badge>,
+          operation,
+        ],
+        [
+          id(1),
+          'همکار نمایشی ب',
+          tab === 'settlement' ? 'تسویه نهایی نمایشی' : 'چک‌لیست نمایشی',
+          '۱۴۰۵/۰۶/۲۰',
+          'مدیر نمایشی ب',
+          '—',
+          <Badge key="n">پیش‌نویس</Badge>,
+          operation,
+        ],
+      ],
+      totalLabel: '۲ فرایند چرخه همکاری',
+    };
+  if (section === 'expenses')
+    return {
+      columns: [
+        'شناسه',
+        'کارمند',
+        'نوع',
+        'ارز',
+        'مبلغ',
+        'مرحله تأیید',
+        'وضعیت مالی',
+        'عملیات',
+      ],
+      rows: [
+        [
+          id(0),
+          'همکار نمایشی الف',
+          tab === 'advances' ? 'مساعده نمایشی' : 'هزینه سفر نمایشی',
+          'IRR',
+          '—',
+          'تأیید مدیر',
+          <Badge key="w" tone="warning">
+            ارسال‌نشده
+          </Badge>,
+          operation,
+        ],
+        [
+          id(1),
+          'همکار نمایشی ب',
+          tab === 'claims' ? 'بازپرداخت نمایشی' : 'مأموریت نمایشی',
+          'USD',
+          '—',
+          'کنترل مالی',
+          <Badge key="n">نیازمند نرخ معتبر</Badge>,
+          operation,
+        ],
+      ],
+      totalLabel: '۲ درخواست هزینه چندارزی',
+    };
+  if (section === 'benefits')
+    return {
+      columns: [
+        'شناسه',
+        'عنوان',
+        'کارمند/دامنه',
+        'تاریخ اثر',
+        'مبلغ/نرخ',
+        'مدرک',
+        'وضعیت',
+        'عملیات',
+      ],
+      rows: [
+        [
+          id(0),
+          tab === 'taxSlabs' ? 'پله مالیاتی نمایشی' : 'قاعده مزایای نمایشی',
+          'دامنه نمایشی',
+          '۱۴۰۵/۰۱/۰۱',
+          '—',
+          'سند مرجع تأییدنشده',
+          <Badge key="w" tone="warning">
+            غیرفعال
+          </Badge>,
+          operation,
+        ],
+        [
+          id(1),
+          tab === 'loans' ? 'وام نمایشی' : 'درخواست نمایشی مزایا',
+          'همکار نمایشی الف',
+          '۱۴۰۵/۰۶/۱۵',
+          '—',
+          '••••••••',
+          <Badge key="n">پیش‌نمایش</Badge>,
+          operation,
+        ],
+      ],
+      totalLabel: '۲ ردیف مالیات و مزایا',
+    };
+  if (section === 'fleet')
+    return {
+      columns: [
+        'شناسه',
+        'خودرو',
+        'پلاک/شناسه حساس',
+        'استفاده‌کننده',
+        'بازه',
+        'کیلومتر/هزینه',
+        'وضعیت',
+        'عملیات',
+      ],
+      rows: [
+        [
+          id(0),
+          'خودروی نمایشی الف',
+          '••••••••',
+          'همکار نمایشی الف',
+          'بازه نمایشی',
+          '—',
+          <Badge key="s" tone="success">
+            تخصیص نمایشی
+          </Badge>,
+          operation,
+        ],
+        [
+          id(1),
+          'خودروی نمایشی ب',
+          '••••••••',
+          'تخصیص‌نیافته',
+          '—',
+          '—',
+          <Badge key="n">آزاد</Badge>,
+          operation,
+        ],
+      ],
+      totalLabel: '۲ خودرو/سابقه پیش‌نمایش',
+    };
+  if (section === 'hrSettings')
+    return {
+      columns: [
+        'شناسه',
+        'قابلیت',
+        'دامنه',
+        'کنترل امنیتی',
+        'وابستگی',
+        'وضعیت',
+        'عملیات',
+      ],
+      rows: [
+        [
+          id(0),
+          tab === 'integrations' ? 'REST API و Webhook' : 'تنظیم نمایشی HR',
+          'شرکت و شعبه',
+          'IAM + Audit',
+          'قرارداد عمومی',
+          <Badge key="w" tone="warning">
+            نیازمند اتصال
+          </Badge>,
+          operation,
+        ],
+        [
+          id(1),
+          tab === 'companies'
+            ? 'تقویم شمسی و بومی‌سازی ایران'
+            : 'گردش‌کار نمایشی',
+          'چندشرکتی',
+          'Deny by default',
+          'تصمیم قانونی مصوب',
+          <Badge key="n">Phase A</Badge>,
+          operation,
+        ],
+      ],
+      totalLabel: '۲ قابلیت تنظیمات پیش‌نمایش',
+    };
   if (section === 'organization')
     return {
       columns: [
@@ -1204,6 +1432,8 @@ function OrganizationChart() {
 }
 
 function Requests({ openAction }: { openAction: (title: string) => void }) {
+  const tabs = sectionTabs.requests ?? [];
+  const [tab, setTab] = useState(tabs[0]?.id ?? 'inbox');
   const data: PreviewTableData = {
     columns: [
       'شناسه',
@@ -1296,6 +1526,7 @@ function Requests({ openAction }: { openAction: (title: string) => void }) {
         section="requests"
       />
       <DateRangeBar />
+      <Tabs active={tab} items={tabs} onChange={setTab} />
       <section className={styles.requestCards}>
         {requestKinds.map(([title, Icon, tone]) => (
           <article className={styles.requestCard} key={title}>
@@ -1310,6 +1541,16 @@ function Requests({ openAction }: { openAction: (title: string) => void }) {
         ))}
       </section>
       <Panel title="کارتابل درخواست‌ها">
+        {tab === 'mobile' ? (
+          <div className={styles.panelBody}>
+            <div className={styles.boundary}>
+              <Info aria-hidden="true" size={17} />
+              نمای موبایل برای ثبت و تأیید درخواست، مشاهده حضور و دریافت فیش
+              آماده است؛ فعال‌سازی اعلان Push و داده عملیاتی به قرارداد IAM و
+              سرویس‌های عمومی وابسته است.
+            </div>
+          </div>
+        ) : null}
         <div className={styles.filterBar}>
           <input
             aria-label="جست‌وجوی درخواست"
@@ -1484,6 +1725,22 @@ function TabbedSection({
             <OrganizationChart />
           ) : (
             <>
+              {section === 'hrSettings' && tab === 'companies' ? (
+                <div className={styles.panelBody}>
+                  <div className={styles.previewNote}>
+                    <Info aria-hidden="true" size={16} />
+                    <span>
+                      تقویم شمسی رابط فعال است. خروجی بیمه، مالیات و بانک ایران
+                      تا دریافت قواعد قانونی نسخه‌دار و قراردادهای عمومی
+                      تأییدشده غیرفعال می‌ماند.
+                      <br />
+                      {iranLocalizationStatus
+                        .map((item) => `${item.label}: ${item.status}`)
+                        .join(' · ')}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
               <div className={styles.filterBar}>
                 <input
                   aria-label="جست‌وجو"
