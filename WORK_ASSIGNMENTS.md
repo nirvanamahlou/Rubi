@@ -1,5 +1,14 @@
 # Work Assignments
 
+## MASTER-005-EXCEL-IMPORT-PERSISTENCE — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-06: مسیر خواندن Excel در اطلاعات پایه بررسی شود و رکوردهای معتبر پس از خواندن، در بخش مالک خود ثبت و بلافاصله قابل مشاهده باشند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-master-data-excel-import` از `origin/develop@bf6b387` در Worktree `C:\Users\admin\Rubi-master-data-excel-import`؛ محدوده فقط جریان Import اقامت، تست‌های هدفمند و اسناد همین واحد کار است.
+- معیار پذیرش: فایل فقط پس از Preview و اعتبارسنجی Backend به‌صورت اتمیک Commit شود؛ نتیجه ثبت شامل تعداد ایجاد/ویرایش/رد نمایش داده شود؛ پس از Commit کاربر به فهرست هتل‌های کشور/شهر انتخاب‌شده هدایت شود و فیلتر وضعیت مانع مشاهده رکورد تازه نشود.
+- این Task هیچ Schema/Migration/Seed، Shared Contract، Dependency/Lockfile، Customer Excel Import یا فایل‌های تحت مالکیت PC-A را تغییر نمی‌دهد.
+- نتیجه: callback ثبت نهایی اکنون Scope کشور/شهر و شمارنده‌های Commit را به Workspace می‌دهد؛ Workspace فیلترهای پنهان‌کننده را پاک می‌کند، وضعیت را روی «همه» می‌گذارد، فهرست هتل‌های همان Scope را باز می‌کند و پیام نتیجه را بعد از خروج از تب Import نگه می‌دارد.
+- اعتبارسنجی: تست سرویس با Workbook معتبر، ایجاد هتل و Auditهای create/commit را داخل تراکنش تأیید می‌کند؛ ۲۱ تست هدفمند API و ۵ تست Workspace، lint و typecheck هر دو بسته و Production Build API/Web با ۳۴ Route موفق‌اند.
+
 ## TICKET-CATALOG-004 — PC-A — READY_FOR_REVIEW
 
 - درخواست صریح مالک در 2026-09-06: فضای خالی میان کارت‌های بلیت در چیدمان فهرست حذف شود و گروه رفت‌وبرگشت همچنان کنار هم بماند. `COMPUTER_ID=PC-A`.
