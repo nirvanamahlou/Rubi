@@ -61,6 +61,10 @@ describe('CRM navigation', () => {
 
   it('resolves the Human Resources owner route', () => {
     expect(getNavigationItem('/human-resources')?.title).toBe('منابع انسانی');
+    expect(getNavigationItem('/hr')?.title).toBe('منابع انسانی');
+    expect(getNavigationBreadcrumbs('/hr')).toEqual([
+      { href: '/hr', title: 'منابع انسانی' },
+    ]);
   });
 
   it('does not create disallowed standalone sections', () => {

@@ -51,6 +51,10 @@ export const navigationItems = navigationMessages.map((item) => ({
 }));
 
 export const navigationAliases = {
+  '/hr': {
+    parentHref: '/human-resources',
+    title: 'منابع انسانی',
+  },
   '/users': {
     parentHref: '/system',
     title: 'مدیریت کاربران، نقش‌ها و دسترسی‌ها',
@@ -119,6 +123,9 @@ export function getNavigationBreadcrumbs(
     const parent = navigationItems.find(
       (item) => item.href === alias.parentHref,
     );
+    if (parent?.title === alias.title) {
+      return [{ href: pathname, title: alias.title }];
+    }
     return [
       ...(parent ? [{ href: parent.href, title: parent.title }] : []),
       { href: pathname, title: alias.title },
