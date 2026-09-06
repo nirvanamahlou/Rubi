@@ -968,9 +968,6 @@ function Employees({
             <ActionButton disabled>
               <Download size={15} /> خروجی مجاز
             </ActionButton>
-            <ActionButton onClick={() => openAction('ورود گروهی')}>
-              ورود گروهی
-            </ActionButton>
             <ActionButton onClick={() => openAction('کارمند جدید')} primary>
               <Plus size={15} /> کارمند جدید
             </ActionButton>

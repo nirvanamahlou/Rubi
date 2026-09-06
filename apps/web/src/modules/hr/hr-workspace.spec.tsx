@@ -71,6 +71,7 @@ describe('HR reference implementation', () => {
     expect(employees).toContain('preview-employee-1');
     expect(employees).toContain('همکار نمایشی الف');
     expect(employees.match(/همکار نمایشی/g)?.length ?? 0).toBe(4);
+    expect(employees).not.toContain('ورود گروهی');
     expect(employees).not.toMatch(/EMP-\d|EMPLOY-\d/);
   });
 
