@@ -1066,6 +1066,10 @@
   border-color: #e11d48;
   box-shadow: 0 0 0 3px rgb(225 29 72 / 9%);
 }
+.textArea {
+  min-height: 84px;
+  resize: vertical;
+}
 .full {
   grid-column: 1 / -1;
 }

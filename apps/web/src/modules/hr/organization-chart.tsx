@@ -48,7 +48,7 @@ export const initialOrganizationNodes: readonly OrganizationNode[] = [
     id: 'preview-org-management',
     name: 'مدیریت نمایشی',
     kind: 'MANAGEMENT',
-    branch: 'شعبه نمایشی',
+    branch: 'شعبه مرکزی',
     parentId: null,
     manager: 'همکار نمایشی الف',
     positionCapacity: 1,
@@ -59,7 +59,7 @@ export const initialOrganizationNodes: readonly OrganizationNode[] = [
     id: 'preview-org-travel',
     name: 'واحد عملیات سفر',
     kind: 'UNIT',
-    branch: 'شعبه نمایشی',
+    branch: 'شعبه مرکزی',
     parentId: 'preview-org-management',
     manager: 'همکار نمایشی الف',
     positionCapacity: 2,
@@ -70,7 +70,7 @@ export const initialOrganizationNodes: readonly OrganizationNode[] = [
     id: 'preview-org-sales',
     name: 'واحد فروش',
     kind: 'UNIT',
-    branch: 'شعبه نمایشی',
+    branch: 'شعبه مرکزی',
     parentId: 'preview-org-management',
     manager: 'همکار نمایشی ب',
     positionCapacity: 2,
@@ -81,7 +81,7 @@ export const initialOrganizationNodes: readonly OrganizationNode[] = [
     id: 'preview-org-finance',
     name: 'واحد مالی',
     kind: 'UNIT',
-    branch: 'شعبه نمایشی',
+    branch: 'شعبه مرکزی',
     parentId: 'preview-org-management',
     manager: 'همکار نمایشی پ',
     positionCapacity: 1,
@@ -94,7 +94,7 @@ const emptyValue: OrganizationNodeFormValue = {
   id: '',
   name: '',
   kind: 'UNIT',
-  branch: 'شعبه نمایشی',
+  branch: 'شعبه مرکزی',
   parentId: 'preview-org-management',
   manager: 'تعیین نشده',
   positionCapacity: '1',
@@ -182,6 +182,7 @@ function FieldError({
 interface OrganizationNodeFormProps {
   initialNode?: OrganizationNode | undefined;
   nodes: readonly OrganizationNode[];
+  branchOptions: readonly string[];
   managerOptions: readonly string[];
   onCancel: () => void;
   onSubmit: (value: OrganizationNodeFormValue) => void;
@@ -190,6 +191,7 @@ interface OrganizationNodeFormProps {
 export function OrganizationNodeForm({
   initialNode,
   nodes,
+  branchOptions,
   managerOptions,
   onCancel,
   onSubmit,
@@ -202,6 +204,7 @@ export function OrganizationNodeForm({
       }
     : {
         ...emptyValue,
+        branch: branchOptions[0] ?? '',
         parentId: nodes.find((node) => node.kind === 'MANAGEMENT')?.id ?? '',
       };
   const [value, setValue] = useState(initialFormValue);
@@ -340,8 +343,9 @@ export function OrganizationNodeForm({
               onChange={(event) => update('branch', event.target.value)}
               value={value.branch}
             >
-              <option>شعبه نمایشی</option>
-              <option>شعبه نمایشی فرودگاه</option>
+              {branchOptions.map((branch) => (
+                <option key={branch}>{branch}</option>
+              ))}
             </select>
             <FieldError errors={errors} field="branch" />
           </label>
@@ -486,6 +490,7 @@ type OrganizationNodeDialogProps = Omit<OrganizationNodeFormProps, 'onCancel'> &
 export function OrganizationNodeDialog({
   initialNode,
   nodes,
+  branchOptions,
   managerOptions,
   onClose,
   onSubmit,
@@ -501,6 +506,7 @@ export function OrganizationNodeDialog({
         </DialogDescription>
         <OrganizationNodeForm
           initialNode={initialNode}
+          branchOptions={branchOptions}
           managerOptions={managerOptions}
           nodes={nodes}
           onCancel={onClose}

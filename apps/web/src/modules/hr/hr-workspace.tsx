@@ -61,6 +61,16 @@ import {
   type OrganizationNode,
   type OrganizationNodeFormValue,
 } from './organization-chart';
+import {
+  initialOrganizationCatalogRecords,
+  isOrganizationCatalogTab,
+  OrganizationCatalogDialog,
+  organizationCatalogSchemas,
+  OrganizationCatalogTable,
+  type OrganizationCatalogFormValue,
+  type OrganizationCatalogRecords,
+  type OrganizationCatalogTab,
+} from './organization-catalog';
 
 type UiState = 'loading' | 'empty' | 'error' | 'unauthorized' | 'forbidden';
 type BadgeTone = 'success' | 'warning' | 'danger' | 'neutral';
@@ -1697,13 +1707,7 @@ function genericTable(
   };
 }
 
-function OrganizationSection({
-  openAction,
-  initialTab,
-}: {
-  openAction: (title: string) => void;
-  initialTab?: string | undefined;
-}) {
+function OrganizationSection({ initialTab }: { initialTab?: string | undefined }) {
   const tabs = sectionTabs.organization ?? [];
   const [tab, setTab] = useState(
     tabs.some((item) => item.id === initialTab)
@@ -1712,12 +1716,20 @@ function OrganizationSection({
   );
   const [nodes, setNodes] =
     useState<readonly OrganizationNode[]>(initialOrganizationNodes);
+  const [catalogRecords, setCatalogRecords] =
+    useState<OrganizationCatalogRecords>(initialOrganizationCatalogRecords);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingNode, setEditingNode] = useState<OrganizationNode | undefined>();
+  const [catalogDialogOpen, setCatalogDialogOpen] = useState(false);
+  const [catalogDialogTab, setCatalogDialogTab] =
+    useState<OrganizationCatalogTab>('branches');
+  const [editingCatalogRecord, setEditingCatalogRecord] = useState<
+    OrganizationCatalogFormValue | undefined
+  >();
   const [organizationNotice, setOrganizationNotice] = useState('');
   const active = tabs.find((item) => item.id === tab);
   const ActiveIcon = active?.icon ?? FileText;
-  const data = genericTable('organization', tab, openAction);
+  const catalogTab = isOrganizationCatalogTab(tab) ? tab : null;
 
   const openCreate = () => {
     setEditingNode(undefined);
@@ -1728,6 +1740,21 @@ function OrganizationSection({
     setEditingNode(node);
     setOrganizationNotice('');
     setDialogOpen(true);
+  };
+  const openCatalogCreate = (nextTab: OrganizationCatalogTab) => {
+    setCatalogDialogTab(nextTab);
+    setEditingCatalogRecord(undefined);
+    setOrganizationNotice('');
+    setCatalogDialogOpen(true);
+  };
+  const openCatalogEdit = (
+    nextTab: OrganizationCatalogTab,
+    record: OrganizationCatalogFormValue,
+  ) => {
+    setCatalogDialogTab(nextTab);
+    setEditingCatalogRecord(record);
+    setOrganizationNotice('');
+    setCatalogDialogOpen(true);
   };
   const saveNode = (value: OrganizationNodeFormValue) => {
     const node: OrganizationNode = {
@@ -1748,6 +1775,73 @@ function OrganizationSection({
     setDialogOpen(false);
     setEditingNode(undefined);
   };
+  const saveCatalogRecord = (value: OrganizationCatalogFormValue) => {
+    const schema = organizationCatalogSchemas[catalogDialogTab];
+    if (
+      editingCatalogRecord?.title &&
+      editingCatalogRecord.title !== value.title &&
+      catalogDialogTab === 'branches'
+    )
+      setNodes((current) =>
+        current.map((node) =>
+          node.branch === editingCatalogRecord.title
+            ? { ...node, branch: value.title }
+            : node,
+        ),
+      );
+    setCatalogRecords((current) => {
+      const previous = editingCatalogRecord;
+      const items = previous
+        ? current[catalogDialogTab].map((item) =>
+            item.id === previous.id ? value : item,
+          )
+        : [...current[catalogDialogTab], value];
+      let next: OrganizationCatalogRecords = {
+        ...current,
+        [catalogDialogTab]: items,
+      };
+      if (previous?.title && previous.title !== value.title) {
+        if (catalogDialogTab === 'branches')
+          next = {
+            ...next,
+            units: next.units.map((item) =>
+              item.branch === previous.title
+                ? { ...item, branch: value.title }
+                : item,
+            ),
+          };
+        if (catalogDialogTab === 'units')
+          next = {
+            ...next,
+            units: next.units.map((item) =>
+              item.parent === previous.title
+                ? { ...item, parent: value.title }
+                : item,
+            ),
+            positions: next.positions.map((item) =>
+              item.unit === previous.title ? { ...item, unit: value.title } : item,
+            ),
+          };
+        if (catalogDialogTab === 'grades')
+          next = {
+            ...next,
+            positions: next.positions.map((item) =>
+              item.grade === previous.title
+                ? { ...item, grade: value.title }
+                : item,
+            ),
+          };
+      }
+      return next;
+    });
+    setOrganizationNotice(
+      editingCatalogRecord
+        ? `${schema.singular} «${value.title}» در فهرست این نشست ویرایش شد.`
+        : `${schema.singular} «${value.title}» به فهرست این نشست اضافه شد.`,
+    );
+    setCatalogDialogOpen(false);
+    setEditingCatalogRecord(undefined);
+  };
 
   return (
     <>
@@ -1758,14 +1852,18 @@ function OrganizationSection({
               <Download size={15} /> خروجی مجاز
             </ActionButton>
             <ActionButton
-              onClick={() =>
-                tab === 'orgchart'
-                  ? openCreate()
-                  : openAction(`ایجاد در ${active?.label ?? 'ساختار سازمانی'}`)
-              }
+              onClick={() => {
+                if (tab === 'orgchart') openCreate();
+                else if (catalogTab) openCatalogCreate(catalogTab);
+              }}
               primary
             >
-              <Plus size={15} /> {tab === 'orgchart' ? 'گره جدید' : 'مورد جدید'}
+              <Plus size={15} />{' '}
+              {tab === 'orgchart'
+                ? 'گره جدید'
+                : catalogTab
+                  ? `افزودن ${organizationCatalogSchemas[catalogTab].singular}`
+                  : 'مورد جدید'}
             </ActionButton>
           </>
         }
@@ -1810,19 +1908,35 @@ function OrganizationSection({
                 <Filter size={15} /> فیلتر
               </ActionButton>
             </div>
-            <PreviewTable data={data} />
+            {catalogTab ? (
+              <OrganizationCatalogTable
+                onEdit={(record) => openCatalogEdit(catalogTab, record)}
+                records={catalogRecords[catalogTab]}
+                tab={catalogTab}
+              />
+            ) : null}
           </>
         )}
       </Panel>
       {dialogOpen ? (
         <OrganizationNodeDialog
           initialNode={editingNode}
+          branchOptions={catalogRecords.branches.map((branch) => branch.title)}
           managerOptions={previewEmployees.map((employee) => employee.name)}
           nodes={nodes}
           onClose={() => setDialogOpen(false)}
           onSubmit={saveNode}
         />
       ) : null}
+      <OrganizationCatalogDialog
+        initialRecord={editingCatalogRecord}
+        managers={previewEmployees.map((employee) => employee.name)}
+        onClose={() => setCatalogDialogOpen(false)}
+        onSubmit={saveCatalogRecord}
+        open={catalogDialogOpen}
+        records={catalogRecords}
+        tab={catalogDialogTab}
+      />
     </>
   );
 }
@@ -2308,7 +2422,7 @@ export function HrWorkspace({
   else if (section === 'employee')
     screen = <EmployeeProfile openAction={openAction} />;
   else if (section === 'organization')
-    screen = <OrganizationSection initialTab={tabId} openAction={openAction} />;
+    screen = <OrganizationSection initialTab={tabId} />;
   else if (section === 'requests')
     screen = <Requests openAction={openAction} />;
   else

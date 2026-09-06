@@ -15,6 +15,15 @@ import {
   type OrganizationNodeFormValue,
 } from './organization-chart';
 import {
+  initialOrganizationCatalogRecords,
+  OrganizationCatalogForm,
+  organizationCatalogSchemas,
+  OrganizationCatalogTable,
+  validateOrganizationCatalogForm,
+  type OrganizationCatalogFormValue,
+  type OrganizationCatalogTab,
+} from './organization-catalog';
+import {
   employeeTabs,
   hrHubCards,
   iranLocalizationStatus,
@@ -159,6 +168,7 @@ describe('HR reference implementation', () => {
 
     const form = renderToStaticMarkup(
       <OrganizationNodeForm
+        branchOptions={['شعبه مرکزی', 'شعبه فرودگاه']}
         initialNode={initialOrganizationNodes[1]}
         managerOptions={['همکار نمایشی الف', 'همکار نمایشی ب']}
         nodes={initialOrganizationNodes}
@@ -207,6 +217,86 @@ describe('HR reference implementation', () => {
       positionCapacity: 'ظرفیت سمت باید عددی بین صفر تا ۹۹۹۹ باشد.',
       effectiveFrom: 'تاریخ اثر الزامی است.',
     });
+  });
+
+  it.each([
+    ['branches', 'کد شعبه', 'نام شعبه', 'افزودن شعبه'],
+    ['units', 'کد واحد', 'نام واحد', 'افزودن واحد سازمانی'],
+    ['positions', 'کد سمت', 'عنوان شغل', 'افزودن شغل و سمت'],
+    ['grades', 'کد رده', 'سطح سازمانی', 'افزودن رده شغلی'],
+    ['groups', 'کد گروه', 'معیار عضویت', 'افزودن گروه کارکنان'],
+  ] as const)(
+    'renders the %s catalog with its own create form',
+    (tab, firstLabel, secondLabel, submitLabel) => {
+      const form = renderToStaticMarkup(
+        <OrganizationCatalogForm
+          managers={['همکار نمایشی الف']}
+          onCancel={() => undefined}
+          onSubmit={() => undefined}
+          records={initialOrganizationCatalogRecords}
+          tab={tab}
+        />,
+      );
+      expect(form).toContain(firstLabel);
+      expect(form).toContain(secondLabel);
+      expect(form).toContain(submitLabel);
+      const table = renderToStaticMarkup(
+        <OrganizationCatalogTable
+          onEdit={() => undefined}
+          records={initialOrganizationCatalogRecords[tab]}
+          tab={tab}
+        />,
+      );
+      expect(table).toContain('ویرایش');
+      expect(table).toContain(
+        organizationCatalogSchemas[tab].columns[0]?.label,
+      );
+    },
+  );
+
+  it('connects the branch tab to its specific add action and populated list', () => {
+    const html = renderToStaticMarkup(
+      <HrWorkspace sectionId="organization" tabId="branches" />,
+    );
+    expect(html).toContain('افزودن شعبه');
+    expect(html).toContain('شعبه مرکزی');
+    expect(html).toContain('ویرایش');
+  });
+
+  it('validates required fields and duplicate identifiers in organization catalogs', () => {
+    const value = Object.fromEntries(
+      [
+        'id',
+        'title',
+        'company',
+        'city',
+        'manager',
+        'branch',
+        'parent',
+        'jobTitle',
+        'unit',
+        'grade',
+        'capacity',
+        'level',
+        'rank',
+        'groupType',
+        'description',
+        'effectiveFrom',
+        'status',
+      ].map((key) => [key, '']),
+    ) as OrganizationCatalogFormValue;
+    value.id = ' PREVIEW-BRANCH-CENTRAL ';
+    const errors = validateOrganizationCatalogForm(
+      'branches' satisfies OrganizationCatalogTab,
+      value,
+      initialOrganizationCatalogRecords.branches.map((item) => item.id),
+    );
+    expect(errors.id).toBe('این شناسه قبلاً استفاده شده است.');
+    expect(errors.title).toBe('نام شعبه الزامی است.');
+    expect(errors.company).toBe('شرکت / شخصیت حقوقی الزامی است.');
+    expect(errors.city).toBe('شهر الزامی است.');
+    expect(errors.effectiveFrom).toBe('تاریخ اثر الزامی است.');
+    expect(errors.status).toBe('وضعیت الزامی است.');
   });
 
   it('keeps payroll and exports in a truthful preview state', () => {
