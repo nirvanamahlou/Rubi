@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-PEOPLE-SHEET-0906 — PC-A — COMPLETE_LOCAL
+
+- User requested the same Customers/Passengers entry sheet inside Sales and exactly the passenger count chosen earlier, with infant-only extra rows. Reserve Sales people-entry UI/model/tests and form, a narrow public Customers presentation export plus backward-compatible per-field editing on its existing sheet, and task docs on codex/pc-a-sales-people-sheet-0906 from f984cdc. Preserve existing Customers public API, branch/identity protections, organization payer, Finance and capacity rules. No migration, IAM, dependencies, producer edits or public push.
+- Reuse the existing Customers entry sheet through a public Web export. Unsaved identity/contact/passport values stay in component memory, not Sales localStorage. Validate all rows before creation; retain successful row identities on partial failure, never blindly retry an uncertain creation. Fixed count slots replace the sequential pending-row queue.
+- Delivered the actual Customers table with all target passenger rows open, infant-only additions, individual existing-record selection and one confirmation action. Organization payer and first-passenger-as-customer remain supported. 208 combined Sales/Customers tests and 7 final shared-table tests, scoped lint, Web typecheck and 36-route production build passed. Web3100 serves the new bundle (200); login 200, unauthenticated contract redirect 307 and API health 200. API unchanged; prior Web retained at ignored tmp/people-sheet-web-before-0906. No real test records, authenticated visual QA or public push. Task reservations released; see docs/tasks/SALES-PEOPLE-SHEET-0906.md.
+
 ## SALES-DASHBOARD-THEME-0906 — PC-A — COMPLETE_LOCAL
 
 - User requested app-themed open dropdowns and Sales KPI styling matching Customers/Passengers. Reserve Sales Web selectors/workspace/payment drawer/ticket preview and tests plus status docs on codex/pc-a-sales-dashboard-theme-0906 from 24f7cbb. Reuse existing UI select primitives and customer gradient tokens; no metric definition, API, database, IAM, dependency or producer changes. Local-only delivery.
