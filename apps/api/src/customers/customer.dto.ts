@@ -95,6 +95,10 @@ export class CustomerMutationDto {
   @IsString()
   @Matches(/^[A-Z0-9-]{4,24}$/)
   passportNumber?: string | null;
+  @IsOptional()
+  @IsDateString({ strict: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  passportExpiryDate?: string | null;
   @IsArray() @IsIn(['customer', 'passenger'], { each: true }) roles!: (
     'customer' | 'passenger'
   )[];

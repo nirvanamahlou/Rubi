@@ -168,6 +168,16 @@ function prepareMutation(
       code: 'CUSTOMER_PASSPORT_NUMBER_PERSON_ONLY',
       message: 'شماره پاسپورت فقط برای اشخاص حقیقی ثبت می‌شود.',
     });
+  if (input.passportExpiryDate) {
+    const expiry = new Date(input.passportExpiryDate + 'T00:00:00.000Z');
+    if (
+      input.kind !== 'person' ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(input.passportExpiryDate) ||
+      Number.isNaN(expiry.getTime()) ||
+      expiry.toISOString().slice(0, 10) !== input.passportExpiryDate
+    )
+      throw new BadRequestException('تاریخ انقضای پاسپورت معتبر نیست.');
+  }
   if (!update && roles.has('passenger') && !input.birthDate)
     throw new BadRequestException({
       code: 'CUSTOMER_PASSENGER_BIRTH_DATE_REQUIRED',
@@ -198,6 +208,13 @@ function prepareMutation(
     birthDate: input.birthDate
       ? new Date(`${input.birthDate}T00:00:00.000Z`)
       : null,
+    ...(input.passportExpiryDate !== undefined
+      ? {
+          passportExpiryDate: input.passportExpiryDate
+            ? new Date(input.passportExpiryDate + 'T00:00:00.000Z')
+            : null,
+        }
+      : {}),
     isCustomer: roles.has('customer'),
     isPassenger: roles.has('passenger'),
     acquaintanceMethodId: input.acquaintanceMethodId ?? null,

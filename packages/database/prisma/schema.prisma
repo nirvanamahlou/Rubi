@@ -2051,6 +2051,7 @@ model Customer {
   passportNumberKeyVersion  Int?
   passportNumberFingerprint String?                      @unique @db.Char(64)
   passportNumberMasked      String?                      @db.VarChar(24)
+  passportExpiryDate        DateTime?                    @db.Date
   isActive                  Boolean                      @default(true)
   isCustomer                Boolean                      @default(true)
   isPassenger               Boolean                      @default(false)

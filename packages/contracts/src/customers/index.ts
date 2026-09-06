@@ -132,6 +132,7 @@ export interface CustomerDetail extends CustomerSummary {
   birthDateMasked: boolean;
   nationalId?: string | null;
   passportNumber?: string | null;
+  passportExpiryDate?: string | null;
   acquaintanceMethodId: string | null;
   contacts: readonly CustomerContact[];
   addresses: readonly CustomerAddress[];
@@ -224,6 +225,7 @@ export interface CustomerMutationRequest {
   birthDate?: string | null;
   nationalId?: string | null;
   passportNumber?: string | null;
+  passportExpiryDate?: string | null;
   roles: CustomerRole[];
   acquaintanceMethodId?: string | null;
   version?: number;

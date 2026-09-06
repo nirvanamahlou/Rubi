@@ -115,6 +115,32 @@ const row = {
 };
 
 describe('CustomerService', () => {
+  it('persists expiry as a date and preserves omitted values on legacy updates', async () => {
+    const repository = {
+      update: vi.fn().mockResolvedValue(row),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    await service.update(
+      row.id,
+      { ...mutation, version: 1, passportExpiryDate: '2031-02-03' },
+      actor,
+    );
+    expect(vi.mocked(repository.update).mock.calls[0]?.[2]).toHaveProperty(
+      'passportExpiryDate',
+      new Date('2031-02-03T00:00:00.000Z'),
+    );
+    await service.update(row.id, { ...mutation, version: 1 }, actor);
+    expect(vi.mocked(repository.update).mock.calls[1]?.[2]).not.toHaveProperty(
+      'passportExpiryDate',
+    );
+    await expect(
+      service.update(
+        row.id,
+        { ...mutation, version: 1, passportExpiryDate: '2031-02-30' },
+        actor,
+      ),
+    ).rejects.toThrow('انقضای پاسپورت');
+  });
   it('preserves omitted birthday and national ID during unrelated legacy edits', async () => {
     const repository = {
       update: vi.fn().mockResolvedValue(row),

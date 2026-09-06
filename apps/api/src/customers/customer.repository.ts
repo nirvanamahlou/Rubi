@@ -45,6 +45,7 @@ export interface CustomerRow {
   passportNumberAuthTag?: string | null;
   passportNumberKeyVersion?: number | null;
   passportNumberMasked?: string | null;
+  passportExpiryDate?: Date | null;
   isActive: boolean;
   isCustomer: boolean;
   isPassenger: boolean;
@@ -192,6 +193,8 @@ export function toCustomerDetail(
     birthDateMasked: Boolean(row.birthDate) && !sensitive,
     nationalId: null,
     passportNumber: null,
+    passportExpiryDate:
+      row.passportExpiryDate?.toISOString().slice(0, 10) ?? null,
     acquaintanceMethodId: row.acquaintanceMethodId,
     contacts: (row.contacts ?? []).map((contact) => ({
       id: contact.id,
