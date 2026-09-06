@@ -1,5 +1,11 @@
 # Work Assignments
 
+## CUSTOMER-INLINE-CALENDAR-0906 — PC-A — COMPLETE_LOCAL
+
+- Reserve Customers entry-sheet/date-field UI and focused tests plus task status docs on codex/pc-a-customer-inline-calendar-0906 from fc9177b. Remove the intermediate date Dialog and open the existing themed calendar directly at each table date field, including the shared Sales consumer. Preserve ISO values, calendar modes, read-only rules and entered rows. No API, schema, dependencies, shared UI edits, producer branch changes or public push.
+- Fetch completed; HR remote advanced to 6f9bb14 and is outside scope. Previous passport task reservations are released. PDF pricing clarification remains separate and unresolved for commission treatment; no PDF or financial changes here.
+- Delivered direct themed birthday/passport-expiry calendars without the intermediate Dialog. 222 focused Web tests, scoped lint, Web typecheck and 36-route production build passed. Synthetic interactive Chromium checks passed with the final CSS, including Escape retaining the form, row/field isolation, clipping, mobile bounds and focus return. Web3100 is active; login/API health 200 and protected Customers 307. Prior build retained at tmp/inline-calendar-web-before-0906. No authenticated data walkthrough, API restart or public push. Task-specific reservations released.
+
 ## SALES-PASSPORT-EXPIRY-0906 — PC-A — COMPLETE_LOCAL
 
 - User explicitly approved persistent passport expiry and transfer of the Migration lock to this task. Reserve Customer nullable passportExpiryDate, additive migration, Customers public contract/API/presentation, Sales people-sheet linking and tests, and central task docs on codex/pc-a-sales-passport-expiry-0906. Producer Customers and consumer Sales are both PC-A; optional field preserves old requests and omitted updates. No other producer worktree, dependencies, IAM grants or public push.
