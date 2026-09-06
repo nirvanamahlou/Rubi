@@ -410,6 +410,17 @@
   padding: 13px;
 }
 
+.filterStatus {
+  margin-inline-start: auto;
+  border-radius: 999px;
+  background: #eaf3ff;
+  padding: 7px 10px;
+  color: #176fcf;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .control {
   min-width: 145px;
   min-height: 40px;
@@ -441,6 +452,8 @@
 }
 
 .kpi {
+  --kpi-color: #1674e8;
+  --kpi-tint: #edf5ff;
   position: relative;
   min-height: 119px;
   overflow: hidden;
@@ -458,8 +471,25 @@
   width: 74px;
   height: 74px;
   border-radius: 99px;
-  background: rgb(22 116 232 / 5%);
+  background: color-mix(in srgb, var(--kpi-color) 6%, transparent);
   content: '';
+}
+
+.kpi[data-tone='green'] {
+  --kpi-color: #10a77d;
+  --kpi-tint: #e4f8f1;
+}
+.kpi[data-tone='violet'] {
+  --kpi-color: #7a57dd;
+  --kpi-tint: #f0ebff;
+}
+.kpi[data-tone='orange'] {
+  --kpi-color: #e79320;
+  --kpi-tint: #fff3dd;
+}
+.kpi[data-tone='rose'] {
+  --kpi-color: #e25579;
+  --kpi-tint: #ffedf2;
 }
 
 .kpiTop {
@@ -476,14 +506,22 @@
   width: 31px;
   height: 31px;
   border-radius: 9px;
-  background: #edf5ff;
-  color: #1674e8;
+  background: var(--kpi-tint);
+  color: var(--kpi-color);
 }
 .kpiValue {
   margin: 7px 0 2px;
   color: #143d70;
   font-size: 27px;
   font-weight: 900;
+}
+.kpiValueCompact {
+  font-size: 22px;
+}
+.kpiTrend {
+  color: #11986f;
+  font-size: 10px;
+  font-weight: 750;
 }
 .kpiHint {
   color: #8695a9;
@@ -547,6 +585,14 @@
   fill: #fff;
   stroke: #1674e8;
   stroke-width: 3;
+}
+
+.chartLabels {
+  display: flex;
+  justify-content: space-between;
+  margin: -14px 12px 0;
+  color: #8a98ab;
+  font-size: 9px;
 }
 
 .barList {
@@ -966,6 +1012,11 @@
   .filterBar {
     align-items: stretch;
     flex-direction: column;
+  }
+  .filterStatus {
+    margin-inline-start: 0;
+    text-align: center;
+    white-space: normal;
   }
   .control,
   .searchControl {

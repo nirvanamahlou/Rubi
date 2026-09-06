@@ -123,16 +123,148 @@ const previewEmployees: readonly PreviewEmployee[] = [
   },
 ];
 
-const dashboardKpis: readonly (readonly [string, string, LucideIcon])[] = [
-  ['کارکنان فعال', 'فرد یکتا', UsersRound],
-  ['حاضر امروز', 'پس از دریافت کارکرد', BadgeCheck],
-  ['در مرخصی یا مأموریت', 'پس از تأیید درخواست', Plane],
-  ['نیازمند رسیدگی', 'بر پایه SLA', AlertTriangle],
-  ['قرارداد نزدیک پایان', 'در بازه انتخابی', FileText],
-  ['درخواست در انتظار', 'کارتابل مجاز', FileArchive],
-  ['اضافه‌کاری مصوب', 'ساعت مصوب دوره', TimerReset],
-  ['کیفیت داده', 'پس از کنترل منبع', ShieldCheck],
-];
+type DashboardPeriod = 'monthToDate' | 'week' | 'month';
+type DashboardBranch = 'all' | 'central' | 'airport';
+type DashboardUnit = 'all' | 'operations' | 'sales' | 'finance';
+type DashboardTone = 'blue' | 'green' | 'violet' | 'orange' | 'rose';
+
+interface DashboardFilters {
+  period: DashboardPeriod;
+  branch: DashboardBranch;
+  unit: DashboardUnit;
+}
+
+interface DashboardMetric {
+  label: string;
+  value: string;
+  hint: string;
+  icon: LucideIcon;
+  tone: DashboardTone;
+}
+
+interface DashboardComposition {
+  label: string;
+  count: number;
+  percentage: number;
+}
+
+interface DashboardSnapshot {
+  metrics: readonly DashboardMetric[];
+  trend: readonly number[];
+  composition: readonly DashboardComposition[];
+}
+
+const defaultDashboardFilters: DashboardFilters = {
+  period: 'monthToDate',
+  branch: 'all',
+  unit: 'all',
+};
+
+const formatFa = (value: number) => new Intl.NumberFormat('fa-IR').format(value);
+
+function buildDashboardSnapshot(filters: DashboardFilters): DashboardSnapshot {
+  const branchFactor =
+    filters.branch === 'all' ? 1 : filters.branch === 'central' ? 0.64 : 0.36;
+  const unitFactor =
+    filters.unit === 'all'
+      ? 1
+      : filters.unit === 'operations'
+        ? 0.42
+        : filters.unit === 'sales'
+          ? 0.31
+          : 0.18;
+  const factor = branchFactor * unitFactor;
+  const active = Math.max(8, Math.round(86 * factor));
+  const present = Math.max(6, Math.round(active * 0.85));
+  const away = Math.max(1, Math.round(active * 0.1));
+  const attention = Math.max(1, Math.round(14 * factor));
+  const contracts = Math.max(1, Math.round(7 * branchFactor));
+  const requests = Math.max(2, Math.round(23 * factor));
+  const overtimeBase =
+    filters.period === 'week' ? 84 : filters.period === 'month' ? 312 : 286;
+  const overtime = Math.max(12, Math.round(overtimeBase * factor));
+  const quality = Math.max(
+    88,
+    94 - (filters.branch === 'airport' ? 2 : 0) - (filters.unit === 'finance' ? 1 : 0),
+  );
+  const fullTime = Math.max(1, Math.round(active * 0.8));
+  const partTime = Math.max(1, Math.round(active * 0.13));
+  const consultants = Math.max(1, active - fullTime - partTime);
+  const composition = [
+    { label: 'تمام‌وقت', count: fullTime },
+    { label: 'پاره‌وقت', count: partTime },
+    { label: 'مشاور', count: consultants },
+  ].map((item) => ({
+    ...item,
+    percentage: Math.max(4, Math.round((item.count / active) * 100)),
+  }));
+  const trend = [72, 73, 75, 74, 77, 79, 78, 81, 83, 82, 85, 86].map(
+    (value) => Math.max(6, Math.round((value / 86) * active)),
+  );
+
+  return {
+    metrics: [
+      {
+        label: 'کارکنان فعال',
+        value: formatFa(active),
+        hint: `+${formatFa(Math.max(1, Math.round(4 * factor)))} این فصل`,
+        icon: UsersRound,
+        tone: 'blue',
+      },
+      {
+        label: 'حاضر امروز',
+        value: formatFa(present),
+        hint: `${formatFa(Math.round((present / active) * 100))}٪ کارکنان فعال`,
+        icon: BadgeCheck,
+        tone: 'green',
+      },
+      {
+        label: 'در مرخصی',
+        value: formatFa(away),
+        hint: `${formatFa(Math.max(1, away - 3))} مرخصی · ${formatFa(Math.min(3, away))} مأموریت`,
+        icon: Plane,
+        tone: 'violet',
+      },
+      {
+        label: 'نیازمند رسیدگی',
+        value: formatFa(attention),
+        hint: `${formatFa(Math.max(1, Math.round(attention * 0.36)))} مورد فوری`,
+        icon: AlertTriangle,
+        tone: 'orange',
+      },
+      {
+        label: 'قرارداد نزدیک پایان',
+        value: formatFa(contracts),
+        hint: '۲۰ روز آینده',
+        icon: FileText,
+        tone: 'rose',
+      },
+      {
+        label: 'درخواست در انتظار',
+        value: formatFa(requests),
+        hint: 'میانگین پاسخ ۱٫۸ روز',
+        icon: FileArchive,
+        tone: 'blue',
+      },
+      {
+        label: 'اضافه‌کاری مصوب',
+        value: `${formatFa(overtime)} ساعت`,
+        hint: filters.period === 'week' ? 'هفته جاری' : 'ماه جاری',
+        icon: TimerReset,
+        tone: 'violet',
+      },
+      {
+        label: 'کیفیت داده',
+        value: `${formatFa(quality)}٪`,
+        hint: 'هدف ۹۸٪',
+        icon: ShieldCheck,
+        tone: 'green',
+      },
+    ],
+    trend,
+    composition,
+  };
+}
 
 const requestKinds = [
   ['مرخصی', CalendarDays, 'blue'],
@@ -207,9 +339,19 @@ function PageHead({
   );
 }
 
-function DateRangeBar() {
-  const [from, setFrom] = useState('2026-08-23');
-  const [to, setTo] = useState('2026-09-22');
+function DateRangeBar({
+  initialFrom = '2026-08-23',
+  initialTo = '2026-09-22',
+  onApply,
+  summary = 'شهریور ۱۴۰۵ · داده نمایشی',
+}: {
+  initialFrom?: string;
+  initialTo?: string;
+  onApply?: (range: { from: string; to: string }) => void;
+  summary?: string;
+}) {
+  const [from, setFrom] = useState(initialFrom);
+  const [to, setTo] = useState(initialTo);
   const [applied, setApplied] = useState(false);
   return (
     <section aria-label="بازه زمانی" className={styles.dateBar}>
@@ -223,9 +365,15 @@ function DateRangeBar() {
         <DatePicker id="hr-to-date" onChange={setTo} value={to} />
       </label>
       <span className={styles.dateSummary}>
-        {applied ? 'بازه نمایشی اعمال شد' : 'شهریور ۱۴۰۵ · داده نمایشی'}
+        {applied ? 'بازه آزمایشی اعمال شد' : summary}
       </span>
-      <ActionButton onClick={() => setApplied(true)}>
+      <ActionButton
+        onClick={() => {
+          setApplied(true);
+          onApply?.({ from, to });
+        }}
+        primary
+      >
         <Filter aria-hidden="true" size={15} /> اعمال بازه
       </ActionButton>
     </section>
@@ -418,10 +566,34 @@ function HubScreen() {
   );
 }
 
+function DashboardKpiGrid({ items }: { items: readonly DashboardMetric[] }) {
+  return (
+    <section aria-label="شاخص‌های آزمایشی منابع انسانی" className={styles.kpis}>
+      {items.map(({ hint, icon: Icon, label, tone, value }) => (
+        <article className={styles.kpi} data-tone={tone} key={label}>
+          <div className={styles.kpiTop}>
+            <span className={styles.kpiLabel}>{label}</span>
+            <span className={styles.kpiIcon}>
+              <Icon aria-hidden="true" size={18} />
+            </span>
+          </div>
+          <div
+            aria-label={`${label}: ${value}، داده آزمایشی`}
+            className={`${styles.kpiValue} ${value.includes(' ') ? styles.kpiValueCompact : ''}`}
+          >
+            {value}
+          </div>
+          <div className={styles.kpiTrend}>{hint}</div>
+        </article>
+      ))}
+    </section>
+  );
+}
+
 function KpiGrid({
-  items = dashboardKpis,
+  items,
 }: {
-  items?: readonly (readonly [string, string, LucideIcon])[];
+  items: readonly (readonly [string, string, LucideIcon])[];
 }) {
   return (
     <section aria-label="شاخص‌ها" className={styles.kpis}>
@@ -444,6 +616,24 @@ function KpiGrid({
 }
 
 function Dashboard({ openAction }: { openAction: (title: string) => void }) {
+  const [draftFilters, setDraftFilters] = useState(defaultDashboardFilters);
+  const [appliedFilters, setAppliedFilters] = useState(defaultDashboardFilters);
+  const [filterStatus, setFilterStatus] = useState(
+    'آخرین بروزرسانی: ۱۰:۳۸ · داده آزمایشی',
+  );
+  const snapshot = useMemo(
+    () => buildDashboardSnapshot(appliedFilters),
+    [appliedFilters],
+  );
+  const trendMin = Math.min(...snapshot.trend) - 2;
+  const trendMax = Math.max(...snapshot.trend) + 2;
+  const trendPoints = snapshot.trend.map((value, index) => {
+    const x = 20 + (660 / (snapshot.trend.length - 1)) * index;
+    const y = 180 - ((value - trendMin) / (trendMax - trendMin)) * 130;
+    return { value, x: Math.round(x), y: Math.round(y) };
+  });
+  const linePoints = trendPoints.map(({ x, y }) => `${x},${y}`).join(' ');
+  const areaPoints = `20,200 ${linePoints} 680,200`;
   const inbox: PreviewTableData = {
     columns: ['موضوع', 'کارمند', 'واحد', 'مرحله', 'موعد', 'وضعیت'],
     rows: [
@@ -480,53 +670,84 @@ function Dashboard({ openAction }: { openAction: (title: string) => void }) {
   };
   return (
     <>
-      <PageHead
-        actions={
-          <>
-            <ActionButton disabled>
-              <Download size={15} /> خروجی داشبورد
-            </ActionButton>
-            <ActionButton onClick={() => openAction('ورود کارمند')} primary>
-              <Plus size={15} /> ورود کارمند
-            </ActionButton>
-          </>
+      <PageHead section="dashboard" />
+      <DateRangeBar
+        initialFrom="2026-03-21"
+        initialTo="2026-09-03"
+        onApply={() =>
+          setFilterStatus('بازه زمانی اعمال شد · داده آزمایشی بروزرسانی شد')
         }
-        section="dashboard"
+        summary="انتخاب ماه و سال به‌صورت گردشی"
       />
-      <DateRangeBar />
       <section className={`${styles.panel} ${styles.filterBar}`}>
         <select
-          aria-label="دوره"
+          aria-label="بازه گزارش"
           className={styles.control}
-          defaultValue="today"
+          onChange={(event) =>
+            setDraftFilters((current) => ({
+              ...current,
+              period: event.target.value as DashboardPeriod,
+            }))
+          }
+          value={draftFilters.period}
         >
-          <option value="today">امروز</option>
-          <option value="month">این ماه</option>
+          <option value="monthToDate">امروز — ۱۴ شهریور ۱۴۰۵</option>
+          <option value="week">۷ روز اخیر</option>
+          <option value="month">ماه کامل</option>
         </select>
-        <select aria-label="شعبه" className={styles.control} defaultValue="all">
+        <select
+          aria-label="شعبه"
+          className={styles.control}
+          onChange={(event) =>
+            setDraftFilters((current) => ({
+              ...current,
+              branch: event.target.value as DashboardBranch,
+            }))
+          }
+          value={draftFilters.branch}
+        >
           <option value="all">همه شعب</option>
-          <option value="preview">شعبه نمایشی</option>
+          <option value="central">دفتر مرکزی</option>
+          <option value="airport">شعبه فرودگاه</option>
         </select>
-        <select aria-label="واحد" className={styles.control} defaultValue="all">
+        <select
+          aria-label="واحد سازمانی"
+          className={styles.control}
+          onChange={(event) =>
+            setDraftFilters((current) => ({
+              ...current,
+              unit: event.target.value as DashboardUnit,
+            }))
+          }
+          value={draftFilters.unit}
+        >
           <option value="all">همه واحدها</option>
           <option value="operations">عملیات سفر</option>
+          <option value="sales">فروش سازمانی</option>
           <option value="finance">مالی</option>
         </select>
-        <ActionButton>
+        <ActionButton
+          onClick={() => {
+            setAppliedFilters(draftFilters);
+            setFilterStatus('فیلترها اعمال شد · داده آزمایشی بروزرسانی شد');
+          }}
+        >
           <Filter size={15} /> اعمال فیلتر
         </ActionButton>
-        <span className={styles.source}>منبع عملیاتی متصل نیست</span>
+        <span aria-live="polite" className={styles.filterStatus}>
+          {filterStatus}
+        </span>
       </section>
       <div style={{ height: 14 }} />
-      <KpiGrid />
+      <DashboardKpiGrid items={snapshot.metrics} />
       <section className={styles.grid3}>
         <div className={`${styles.panel} ${styles.chart} ${styles.span2}`}>
           <div className={styles.chartHead}>
             <b>روند تعداد کارکنان و ورود/خروج</b>
-            <small>پس از اتصال منبع</small>
+            <small>۱۲ ماه اخیر · داده آزمایشی</small>
           </div>
           <svg
-            aria-label="نمودار فاقد داده عملیاتی"
+            aria-label={`نمودار آزمایشی روند کارکنان؛ آخرین مقدار ${formatFa(snapshot.trend.at(-1) ?? 0)} نفر`}
             role="img"
             viewBox="0 0 700 220"
           >
@@ -540,47 +761,40 @@ function Dashboard({ openAction }: { openAction: (title: string) => void }) {
               className={styles.chartGrid}
               d="M20 30H680M20 80H680M20 130H680M20 180H680"
             />
-            <path
-              className={styles.chartArea}
-              d="M20 170 C90 163 110 145 170 150 S260 110 320 122 S410 82 470 96 S570 58 680 62 V200 H20Z"
-            />
-            <path
-              className={styles.chartLine}
-              d="M20 170 C90 163 110 145 170 150 S260 110 320 122 S410 82 470 96 S570 58 680 62"
-            />
-            {[
-              ['170', '150'],
-              ['320', '122'],
-              ['470', '96'],
-              ['680', '62'],
-            ].map(([cx, cy]) => (
+            <polygon className={styles.chartArea} points={areaPoints} />
+            <polyline className={styles.chartLine} points={linePoints} />
+            {trendPoints.map(({ value, x, y }, index) => (
               <circle
+                aria-label={`${formatFa(value)} نفر`}
                 className={styles.chartDot}
-                cx={cx}
-                cy={cy}
-                key={cx}
-                r="5"
+                cx={x}
+                cy={y}
+                key={`${x}-${value}`}
+                r={index === trendPoints.length - 1 ? 6 : 4}
               />
             ))}
           </svg>
+          <div aria-hidden="true" className={styles.chartLabels}>
+            {['مهر', 'آذر', 'بهمن', 'فروردین', 'خرداد', 'شهریور'].map(
+              (month) => (
+                <span key={month}>{month}</span>
+              ),
+            )}
+          </div>
         </div>
         <div className={`${styles.panel} ${styles.chart}`}>
           <div className={styles.chartHead}>
             <b>ترکیب کارکنان</b>
-            <small>داده نمایشی</small>
+            <small>{formatFa(snapshot.trend.at(-1) ?? 0)} همکار آزمایشی</small>
           </div>
           <div className={styles.barList}>
-            {[
-              ['تمام‌وقت', '82%'],
-              ['پاره‌وقت', '38%'],
-              ['مشاور', '17%'],
-            ].map(([label, width]) => (
+            {snapshot.composition.map(({ count, label, percentage }) => (
               <div className={styles.barRow} key={label}>
                 <span>{label}</span>
                 <div className={styles.bar}>
-                  <i style={{ width }} />
+                  <i style={{ width: `${percentage}%` }} />
                 </div>
-                <b>—</b>
+                <b>{formatFa(count)}</b>
               </div>
             ))}
           </div>
@@ -600,9 +814,9 @@ function Dashboard({ openAction }: { openAction: (title: string) => void }) {
           <div className={`${styles.panelBody} ${styles.alertList}`}>
             {(
               [
-                ['قراردادهای نزدیک پایان', 'پس از اتصال قراردادها', FileText],
-                ['مدارک منقضی', 'پس از کنترل نسخه سند', FileArchive],
-                ['مغایرت‌های تردد', 'پس از دریافت کارکرد', TimerReset],
+                ['قراردادهای نزدیک پایان', '۷ قرارداد · ۲۰ روز آینده', FileText],
+                ['مدارک منقضی', '۵ مدرک · بررسی این هفته', FileArchive],
+                ['مغایرت‌های تردد', '۲ مغایرت · نیازمند تأیید', TimerReset],
               ] as const
             ).map(([title, hint, Icon]) => (
               <div className={styles.alert} key={String(title)}>

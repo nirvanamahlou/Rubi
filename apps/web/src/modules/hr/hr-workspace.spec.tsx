@@ -22,12 +22,29 @@ describe('HR reference implementation', () => {
     }
   });
 
-  it('keeps dashboard metrics unclaimed until an approved source exists', () => {
+  it('fills the overview with explicit preview metrics and working filters', () => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId="dashboard" />);
-    expect(html.match(/داده متصل موجود نیست/g) ?? []).toHaveLength(8);
-    expect(html).toContain('منبع عملیاتی متصل نیست');
-    expect(html).toContain('خروجی داشبورد');
-    expect(html).toContain('disabled');
+    for (const value of [
+      '۸۶',
+      '۷۳',
+      '۹',
+      '۱۴',
+      '۷',
+      '۲۳',
+      '۲۸۶ ساعت',
+      '۹۴٪',
+    ]) {
+      expect(html).toContain(value);
+    }
+    expect(html).toContain('امروز — ۱۴ شهریور ۱۴۰۵');
+    expect(html).toContain('همه شعب');
+    expect(html).toContain('همه واحدها');
+    expect(html).toContain('اعمال فیلتر');
+    expect(html).toContain('داده آزمایشی');
+    expect(html).not.toContain('داده متصل موجود نیست');
+    expect(html).not.toContain('منبع عملیاتی متصل نیست');
+    expect(html).not.toContain('خروجی داشبورد');
+    expect(html).not.toContain('ورود کارمند');
   });
 
   it('provides the complete employee profile and section tab sets', () => {
