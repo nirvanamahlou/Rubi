@@ -80,8 +80,23 @@ export function servicePriceComponents(
   services: readonly SalesServiceInput[],
   stay?: { checkInDate: string; checkOutDate: string } | null,
 ): SalesPriceComponentInput[] | null {
-  if (!services.some((service) => service.pricing !== undefined)) return null;
+  // Explicit inclusion is opt-in: historical, unmarked prices retain their meaning.
+  if (
+    !services.some(
+      (service) =>
+        service.pricing !== undefined ||
+        service.metadata?.includedWithoutCharge === true,
+    )
+  )
+    return null;
   return services.flatMap((service) => {
+    if (service.metadata?.includedWithoutCharge === true) {
+      if (service.kind !== 'TRANSFER' || service.pricing?.length)
+        throw new Error(
+          'ترانسفر همراه بدون هزینه، نباید قیمت جداگانه داشته باشد.',
+        );
+      return [];
+    }
     if (!service.pricing?.length || service.pricing.length > 10)
       throw new Error('قیمت تمام خدمات را کامل کنید.');
     const codes = new Set<string>();

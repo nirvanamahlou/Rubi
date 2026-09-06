@@ -13,6 +13,52 @@ const price: SalesServicePricingV1 = {
   agreed: { basis: 'TOTAL', amount: '5500000' },
 };
 describe('versioned hotel sale pricing', () => {
+  const transfer = {
+    clientKey: 'transfer-return',
+    kind: 'TRANSFER' as const,
+    titleSnapshot: 'ترانسفر برگشت',
+    metadata: { direction: 'RETURN', includedWithoutCharge: true },
+  };
+  const ticketPrice = {
+    ...price,
+    daySale: { basis: 'TOTAL' as const, amount: '6000000' },
+  };
+  it('keeps included transfers out of billing alongside priced services', () => {
+    const flight = {
+      clientKey: 'flight',
+      kind: 'FLIGHT' as const,
+      titleSnapshot: 'پرواز',
+      pricing: [ticketPrice],
+    };
+    expect(servicePriceComponents([flight, transfer])).toEqual(
+      servicePriceComponents([flight]),
+    );
+    expect(servicePriceComponents([transfer])).toEqual([]);
+  });
+  it('rejects prices on included transfers and inclusion of a chargeable kind', () => {
+    expect(() =>
+      servicePriceComponents([{ ...transfer, pricing: [ticketPrice] }]),
+    ).toThrow('نباید قیمت');
+    expect(() =>
+      servicePriceComponents([{ ...transfer, kind: 'HOTEL' }]),
+    ).toThrow();
+  });
+  it('preserves historical unmarked transfer billing', () => {
+    expect(
+      servicePriceComponents([
+        { ...transfer, metadata: { direction: 'RETURN' } },
+      ]),
+    ).toBeNull();
+    expect(
+      servicePriceComponents([
+        {
+          ...transfer,
+          metadata: { direction: 'RETURN' },
+          pricing: [ticketPrice],
+        },
+      ]),
+    ).toHaveLength(2);
+  });
   it('computes exclusive UTC calendar nights, independent of timezone/DST', () => {
     expect(hotelNights('2026-03-20', '2026-03-23')).toBe(3);
     expect(hotelNights('2028-02-28', '2028-03-01')).toBe(2);

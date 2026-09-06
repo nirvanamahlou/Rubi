@@ -1,5 +1,10 @@
 # Work Assignments
 
+## SALES-CURRENCY-INCLUDED-TRANSFER-0906 — PC-A — IN_PROGRESS
+
+- User requested registered-currency selection, themed Sales dropdowns, and included outbound/return transfers with no additional charge. Reserve Sales Web/model/tests, Sales public pricing helper and API validation tests, and central task documentation on codex/pc-a-sales-currency-included-transfer-0906 from 0ded773. No migration, IAM, dependencies, producer branch edits or public publication.
+- Compatibility: new Sales payloads mark included TRANSFER through existing metadata; public pricing calculation excludes these and rejects attached charges. Historical unmarked transfer prices remain unchanged. Master Data currencies are consumed only through its public API; transfer directions remain in ticket output and reservation snapshot.
+
 ## SALES-PASSENGER-NUMBER-INPUT-0906 — PC-A — COMPLETE_LOCAL
 
 - User requested directly typed integer fields for adults/children/infants in the new contract. Reserve Sales Web count component/form/tests and task status docs on codex/pc-a-sales-passenger-number-input-0906 from integrated 0fd6311. Replace the 0–30 dropdown without changing capacity, age composition, API, schema, IAM or other modules. Local delivery only; preserve producer branches and previous builds.

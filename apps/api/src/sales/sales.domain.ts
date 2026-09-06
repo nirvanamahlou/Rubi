@@ -153,7 +153,12 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
   if (
     !input.services.length ||
     !input.passengers.length ||
-    !input.priceComponents.length
+    (!input.priceComponents.length &&
+      !input.services.every(
+        (service) =>
+          service.kind === 'TRANSFER' &&
+          service.metadata?.includedWithoutCharge === true,
+      ))
   )
     throw new SalesDomainError(
       'SALES_CONTRACT_INCOMPLETE',
@@ -383,6 +388,11 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
         'مبلغ جزء قیمت باید مثبت باشد.',
       );
   }
+  if (!input.priceComponents.length && input.payments?.length)
+    throw new SalesDomainError(
+      'SALES_PAYMENT_INVALID',
+      'خدمات بدون هزینه نباید برنامه پرداخت داشته باشند.',
+    );
   for (const payment of input.payments ?? []) validateSalesPayment(payment);
 }
 

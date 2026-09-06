@@ -68,6 +68,68 @@ const draft: SalesContractCreateRequest = {
 };
 
 describe('Sales contract domain', () => {
+  it('accepts included transfers but rejects adding their price to the bill', () => {
+    const input = structuredClone(draft);
+    input.services[0]!.pricing = [
+      {
+        version: 1,
+        currencyCode: 'USD',
+        daySale: { basis: 'TOTAL', amount: '300' },
+        agreed: { basis: 'TOTAL', amount: '250' },
+      },
+    ];
+    input.services = [
+      ...input.services,
+      {
+        clientKey: 'transfer-return',
+        kind: 'TRANSFER',
+        titleSnapshot: 'ترانسفر',
+        metadata: { direction: 'RETURN', includedWithoutCharge: true },
+      },
+    ];
+    input.priceComponents = servicePriceComponents(input.services)!;
+    expect(() => validateSalesContract(input)).not.toThrow();
+    input.services[1]!.pricing = input.services[0]!.pricing;
+    expect(() => validateSalesContract(input)).toThrow('نباید قیمت');
+    input.services[1]!.pricing = [];
+    input.priceComponents = [
+      ...input.priceComponents,
+      {
+        type: 'BASE',
+        title: 'ترانسفر',
+        amount: '10',
+        currencyCode: 'USD',
+      },
+    ];
+    expect(() => validateSalesContract(input)).toThrow('مطابقت');
+  });
+  it('only permits an empty bill for explicitly included transfers, without payments', () => {
+    const input = structuredClone(draft);
+    input.services = [
+      {
+        clientKey: 'transfer-return',
+        kind: 'TRANSFER',
+        titleSnapshot: 'ترانسفر',
+        metadata: { direction: 'RETURN', includedWithoutCharge: true },
+      },
+    ];
+    input.passengers[0]!.serviceClientKeys = ['transfer-return'];
+    input.ticketSelections = [];
+    input.priceComponents = [];
+    expect(() => validateSalesContract(input)).not.toThrow();
+    input.payments = [
+      {
+        amount: '10',
+        currencyCode: 'USD',
+        method: 'CASH',
+        dueAt: '2026-10-01T00:00:00Z',
+      },
+    ];
+    expect(() => validateSalesContract(input)).toThrow('برنامه پرداخت');
+    input.payments = [];
+    input.services[0]!.metadata = { direction: 'RETURN' };
+    expect(() => validateSalesContract(input)).toThrow('الزامی');
+  });
   it('validates versioned service pricing and rejects a tampered bill', () => {
     const input = structuredClone(draft);
     input.services[0]!.pricing = [
