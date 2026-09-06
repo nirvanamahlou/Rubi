@@ -185,6 +185,9 @@ function persianDateToIso(value: string): string {
   return value;
 }
 
+const isAutomaticCodeField = (field: ContextualHrField, index: number) =>
+  index === 0 && (field.label.includes('شناسه') || field.label.startsWith('کد'));
+
 export function ContextualHrForm({
   context,
   onCancel,
@@ -207,8 +210,8 @@ export function ContextualHrForm({
             ? persianDateToIso(context.initialValues[index] ?? '')
             : (context.initialValues[index] ?? '')
           : field.options?.[0] ??
-            (field.label.includes('شناسه')
-              ? `preview-${context.section}-${context.tab}-${Date.now()}`
+            (isAutomaticCodeField(field, index)
+              ? `HR-${context.section}-${context.tab}-${String(Date.now()).slice(-6)}`.toUpperCase()
               : field.label.includes('نسخه')
                 ? 'preview-v1'
                 : ''),
@@ -296,14 +299,20 @@ export function ContextualHrForm({
                 ) : (
                   <input
                     {...commonProps}
-                    autoFocus={index === 0}
+                    autoFocus={index === 1}
                     min={field.type === 'number' ? '0' : undefined}
                     onChange={(event) => update(field.id, event.target.value)}
                     placeholder={field.placeholder}
+                    readOnly={isAutomaticCodeField(field, index)}
                     type={field.type}
                     value={values[field.id] ?? ''}
                   />
                 )}
+                {isAutomaticCodeField(field, index) ? (
+                  <small className={styles.fieldHint}>
+                    این کد به‌صورت خودکار تخصیص داده می‌شود.
+                  </small>
+                ) : null}
                 {errors[field.id] ? (
                   <small className={styles.fieldError} id={errorId}>
                     {errors[field.id]}

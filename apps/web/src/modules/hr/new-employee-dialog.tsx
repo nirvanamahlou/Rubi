@@ -65,6 +65,15 @@ const defaultEmployeeValue: NewEmployeeFormValue = {
 const normalizePersonnelCode = (value: string) =>
   value.trim().toLocaleLowerCase('fa-IR');
 
+export function nextEmployeePersonnelCode(
+  existingPersonnelCodes: readonly string[],
+): string {
+  const existing = new Set(existingPersonnelCodes.map(normalizePersonnelCode));
+  let sequence = 1001;
+  while (existing.has(`hr-${sequence}`)) sequence += 1;
+  return `HR-${sequence}`;
+}
+
 export function validateNewEmployeeForm(
   value: NewEmployeeFormValue,
   existingPersonnelCodes: readonly string[],
@@ -128,8 +137,11 @@ export function NewEmployeeForm({
   onCancel,
   onSubmit,
 }: NewEmployeeFormProps) {
-  const [value, setValue] = useState<NewEmployeeFormValue>(
-    initialValue ?? defaultEmployeeValue,
+  const [value, setValue] = useState<NewEmployeeFormValue>(() =>
+    initialValue ?? {
+      ...defaultEmployeeValue,
+      personnelCode: nextEmployeePersonnelCode(existingPersonnelCodes),
+    },
   );
   const [errors, setErrors] = useState<NewEmployeeFormErrors>({});
 
@@ -217,10 +229,11 @@ export function NewEmployeeForm({
               id="hr-new-employee-code"
               maxLength={50}
               name="personnelCode"
-              onChange={(event) => update('personnelCode', event.target.value)}
               placeholder="برای نمونه HR-1001"
+              readOnly
               value={value.personnelCode}
             />
+            <small className={styles.fieldHint}>این کد به‌صورت خودکار تخصیص داده می‌شود.</small>
             <FieldError errors={errors} field="personnelCode" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-type">

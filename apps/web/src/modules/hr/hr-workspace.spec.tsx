@@ -9,11 +9,13 @@ import {
 } from './hr-workspace';
 import {
   NewEmployeeForm,
+  nextEmployeePersonnelCode,
   validateNewEmployeeForm,
   type NewEmployeeFormValue,
 } from './new-employee-dialog';
 import {
   initialOrganizationNodes,
+  nextOrganizationNodeId,
   OrganizationChart,
   OrganizationNodeForm,
   validateOrganizationNodeForm,
@@ -21,6 +23,7 @@ import {
 } from './organization-chart';
 import {
   initialOrganizationCatalogRecords,
+  nextOrganizationCatalogId,
   OrganizationCatalogForm,
   organizationCatalogSchemas,
   OrganizationCatalogTable,
@@ -132,6 +135,8 @@ describe('HR reference implementation', () => {
     expect(html).toContain('name="firstName"');
     expect(html).toContain('name="lastName"');
     expect(html).toContain('id="hr-new-employee-started-at"');
+    expect(html).toContain('value="HR-1001"');
+    expect(html).toContain('readOnly');
   });
 
   it('prefills the employee form when editing an existing record', () => {
@@ -194,6 +199,12 @@ describe('HR reference implementation', () => {
         ['preview-employee-1'],
       ),
     ).toEqual({});
+  });
+
+  it('increments employee and organization codes from existing records', () => {
+    expect(nextEmployeePersonnelCode(['HR-1001', 'HR-1002'])).toBe('HR-1003');
+    expect(nextOrganizationNodeId([{ id: 'HR-ORG-001' }])).toBe('HR-ORG-002');
+    expect(nextOrganizationCatalogId('branches', ['BR-001'])).toBe('BR-002');
   });
 
   it('renders an editable organization chart and a structure-aware form', () => {
@@ -265,14 +276,14 @@ describe('HR reference implementation', () => {
   });
 
   it.each([
-    ['branches', 'کد شعبه', 'نام شعبه', 'افزودن شعبه'],
-    ['units', 'کد واحد', 'نام واحد', 'افزودن واحد سازمانی'],
-    ['positions', 'کد سمت', 'عنوان شغل', 'افزودن شغل و سمت'],
-    ['grades', 'کد رده', 'سطح سازمانی', 'افزودن رده شغلی'],
-    ['groups', 'کد گروه', 'معیار عضویت', 'افزودن گروه کارکنان'],
+    ['branches', 'کد شعبه', 'نام شعبه', 'افزودن شعبه', 'BR-001'],
+    ['units', 'کد واحد', 'نام واحد', 'افزودن واحد سازمانی', 'UNIT-001'],
+    ['positions', 'کد سمت', 'عنوان شغل', 'افزودن شغل و سمت', 'POS-001'],
+    ['grades', 'کد رده', 'سطح سازمانی', 'افزودن رده شغلی', 'GR-001'],
+    ['groups', 'کد گروه', 'معیار عضویت', 'افزودن گروه کارکنان', 'GROUP-001'],
   ] as const)(
     'renders the %s catalog with its own create form',
-    (tab, firstLabel, secondLabel, submitLabel) => {
+    (tab, firstLabel, secondLabel, submitLabel, generatedCode) => {
       const form = renderToStaticMarkup(
         <OrganizationCatalogForm
           managers={['همکار نمایشی الف']}
@@ -285,6 +296,8 @@ describe('HR reference implementation', () => {
       expect(form).toContain(firstLabel);
       expect(form).toContain(secondLabel);
       expect(form).toContain(submitLabel);
+      expect(form).toContain(`value="${generatedCode}"`);
+      expect(form).toContain('readOnly');
       const table = renderToStaticMarkup(
         <OrganizationCatalogTable
           onDelete={() => undefined}
@@ -387,6 +400,8 @@ describe('HR reference implementation', () => {
     );
     for (const column of columns.slice(0, -1)) expect(html).toContain(column);
     expect(html).toContain('افزودن بازپرداخت هزینه');
+    expect(html).toContain('HR-EXPENSES-CLAIMS-');
+    expect(html).toContain('readOnly');
     expect(html).not.toContain('عنوان نمایشی');
   });
 

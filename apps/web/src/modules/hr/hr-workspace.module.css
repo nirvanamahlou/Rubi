@@ -1154,6 +1154,12 @@
   font-size: 10px;
   font-weight: 750;
 }
+.fieldHint {
+  display: block;
+  margin-top: 5px;
+  color: var(--hr-muted);
+  font-size: 10px;
+}
 .control[aria-invalid='true'] {
   border-color: #e11d48;
   box-shadow: 0 0 0 3px rgb(225 29 72 / 9%);

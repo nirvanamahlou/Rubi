@@ -82,6 +82,30 @@ interface CatalogSchema {
 
 const statusOptions = ['فعال', 'غیرفعال'] as const;
 
+const catalogCodePrefixes: Record<OrganizationCatalogTab, string> = {
+  branches: 'BR',
+  units: 'UNIT',
+  positions: 'POS',
+  grades: 'GR',
+  groups: 'GROUP',
+};
+
+export function nextOrganizationCatalogId(
+  tab: OrganizationCatalogTab,
+  existingIds: readonly string[],
+): string {
+  const prefix = catalogCodePrefixes[tab];
+  const existing = new Set(
+    existingIds.map((id) => id.trim().toLocaleLowerCase('fa-IR')),
+  );
+  let sequence = 1;
+  while (
+    existing.has(`${prefix}-${String(sequence).padStart(3, '0')}`.toLowerCase())
+  )
+    sequence += 1;
+  return `${prefix}-${String(sequence).padStart(3, '0')}`;
+}
+
 export const organizationCatalogSchemas: Record<
   OrganizationCatalogTab,
   CatalogSchema
@@ -432,6 +456,10 @@ export function OrganizationCatalogForm({
   const [value, setValue] = useState<OrganizationCatalogFormValue>(() => {
     if (initialRecord) return initialRecord;
     const next = blankRecord();
+    next.id = nextOrganizationCatalogId(
+      tab,
+      records[tab].map((record) => record.id),
+    );
     for (const field of schema.fields) {
       const options = field.options ?? optionsFor(field.optionSource, records, managers);
       if (field.type === 'select' && options[0]) next[field.key] = options[0];
@@ -537,15 +565,20 @@ export function OrganizationCatalogForm({
                 ) : (
                   <input
                     {...commonProps}
-                    autoFocus={index === 0}
-                    disabled={field.key === 'id' && Boolean(initialRecord)}
+                    autoFocus={index === 1}
                     min={field.type === 'number' ? '0' : undefined}
                     onChange={(event) => update(field.key, event.target.value)}
                     placeholder={field.placeholder}
+                    readOnly={field.key === 'id'}
                     type={field.type}
                     value={value[field.key]}
                   />
                 )}
+                {field.key === 'id' ? (
+                  <small className={styles.fieldHint}>
+                    این کد به‌صورت خودکار تخصیص داده می‌شود.
+                  </small>
+                ) : null}
                 {errors[field.key] ? (
                   <small className={styles.fieldError} id={errorId}>
                     {errors[field.key]}

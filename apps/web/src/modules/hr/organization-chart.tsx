@@ -134,6 +134,16 @@ const emptyValue: OrganizationNodeFormValue = {
 
 const normalizeId = (value: string) => value.trim().toLocaleLowerCase('fa-IR');
 
+export function nextOrganizationNodeId(
+  nodes: readonly Pick<OrganizationNode, 'id'>[],
+): string {
+  const existing = new Set(nodes.map((node) => normalizeId(node.id)));
+  let sequence = 1;
+  while (existing.has(`hr-org-${String(sequence).padStart(3, '0')}`))
+    sequence += 1;
+  return `HR-ORG-${String(sequence).padStart(3, '0')}`;
+}
+
 function blockedParentIds(
   nodes: readonly OrganizationNode[],
   currentId?: string,
@@ -234,6 +244,7 @@ export function OrganizationNodeForm({
       }
     : {
         ...emptyValue,
+        id: nextOrganizationNodeId(nodes),
         branch: branchOptions[0] ?? '',
         parentId: nodes.find((node) => node.kind === 'MANAGEMENT')?.id ?? '',
       };
@@ -303,21 +314,21 @@ export function OrganizationNodeForm({
             <span>شناسه ساختاری *</span>
             <input
               {...errorProps('id')}
-              autoFocus
               className={styles.control}
-              disabled={Boolean(initialNode)}
               id="hr-org-id"
               name="id"
-              onChange={(event) => update('id', event.target.value)}
               placeholder="مانند HR-UNIT-04"
+              readOnly
               value={value.id}
             />
+            <small className={styles.fieldHint}>این شناسه به‌صورت خودکار تخصیص داده می‌شود.</small>
             <FieldError errors={errors} field="id" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-org-name">
             <span>عنوان *</span>
             <input
               {...errorProps('name')}
+              autoFocus
               className={styles.control}
               id="hr-org-name"
               name="name"
