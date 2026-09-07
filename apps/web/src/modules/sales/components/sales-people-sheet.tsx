@@ -203,7 +203,9 @@ export function SalesPeopleSheet({
             <p>اطلاعات قابل ویرایش؛ ذخیره با «ثبت و تأیید افراد»</p>
           ) : null}
           {row.reviewRequired ? (
-            <p className="text-destructive">نتیجه ثبت را بررسی کنید</p>
+            <p className="text-amber-700">
+              با تأیید دوباره، ثبت قبلی خودکار بررسی می‌شود
+            </p>
           ) : null}
         </div>
       ),
@@ -485,7 +487,9 @@ export function SalesPeopleSheet({
           onClick={() => void save()}
         >
           <Check className="size-4" />
-          ثبت و تأیید افراد
+          {Object.values(draft.rows).some((row) => row.reviewRequired)
+            ? 'بررسی و ادامه ثبت افراد'
+            : 'ثبت و تأیید افراد'}
         </Button>
       </div>
       {confirmed ? (

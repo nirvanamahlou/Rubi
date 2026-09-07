@@ -1,6 +1,7 @@
 import type { CustomerDetail, CustomerMutationRequest } from '@rubi/contracts';
 import {
   customersApi,
+  CustomersApiError,
   isValidIranianNationalId,
   normalizeNationalId,
   type EntryField,
@@ -17,6 +18,7 @@ export interface PeopleRow {
   values: PeopleValues;
   person?: { id: string; displayName: string };
   reviewRequired?: boolean;
+  pendingNationalId?: string;
   profile?: CustomerDetail;
   savedPassportNumber?: string;
   savedValues?: PeopleValues;
@@ -333,16 +335,61 @@ export function validateSalesPeopleDraft(
       'تاریخ تولد همه مسافران را کامل کنید؛ تعداد بزرگسال، کودک و نوزاد باید با مرحله اول یکسان باشد.',
     );
 }
+function mutationNeedsReview(error: unknown) {
+  return !(
+    error instanceof CustomersApiError &&
+    [400, 401, 403, 404, 413, 415, 422, 429].includes(error.status)
+  );
+}
+
 export async function saveSalesPeopleDraft(
   state: SalesFormState,
   draft: SalesPeopleDraft,
   onProgress: (draft: SalesPeopleDraft) => void,
   api: Pick<typeof customersApi, 'create' | 'addContact'> &
-    Partial<Pick<typeof customersApi, 'update' | 'detail'>> = customersApi,
+    Partial<
+      Pick<typeof customersApi, 'update' | 'detail' | 'registrationLookup'>
+    > = customersApi,
 ) {
-  validateSalesPeopleDraft(state, draft);
   let current = { ...draft, rows: { ...draft.rows } };
   const keys = passengerSlotKeys(state);
+  for (const key of [
+    ...(draft.mode === 'person' ? ['primary'] : []),
+    ...keys,
+  ]) {
+    const row = peopleRow(current, key);
+    if (!row.reviewRequired) continue;
+    if (!api.detail || (!row.person && !api.registrationLookup))
+      throw new Error(
+        'نتیجه ثبت قبلی نیازمند بررسی است؛ اتصال بازیابی در دسترس نیست.',
+      );
+    let profile: CustomerDetail | null;
+    if (row.person)
+      profile = (await api.detail(row.person.id, 'customer-verification')).data;
+    else {
+      const nationalId = normalizeNationalId(row.values.nationalId);
+      if (row.pendingNationalId && row.pendingNationalId !== nationalId)
+        throw new Error(
+          'برای بررسی ثبت قبلی، کد ملی قبلی همین ردیف را برگردانید یا پرونده موجود را انتخاب کنید.',
+        );
+      profile = (
+        await api.registrationLookup!({
+          nationalId,
+          firstName: row.values.firstName.trim(),
+          lastName: row.values.lastName.trim(),
+          ...(row.values.birthDate ? { birthDate: row.values.birthDate } : {}),
+        })
+      ).data;
+    }
+    const next = profile
+      ? row.person
+        ? refreshPeopleRow(row, profile)
+        : { ...selectedPeopleRow(profile), values: { ...row.values } }
+      : { ...row, reviewRequired: false };
+    current = editPeopleRow(current, key, next);
+    onProgress(current);
+  }
+  validateSalesPeopleDraft(state, current);
   for (const key of [
     ...(draft.mode === 'person' ? ['primary'] : []),
     ...keys,
@@ -421,7 +468,11 @@ export async function saveSalesPeopleDraft(
       }
       if (profile) {
         for (const field of ['phone', 'email'] as const) {
-          if (row.values[field] === baseline[field]) continue;
+          if (
+            row.values[field].trim().toLowerCase() ===
+            baseline[field].trim().toLowerCase()
+          )
+            continue;
           try {
             const latest = peopleRow(current, key);
             const updated = (
@@ -445,11 +496,11 @@ export async function saveSalesPeopleDraft(
           } catch (error) {
             current = editPeopleRow(current, key, {
               ...peopleRow(current, key),
-              reviewRequired: true,
+              reviewRequired: mutationNeedsReview(error),
             });
             onProgress(current);
             throw new Error(
-              'ثبت تماس قطعی نشد؛ پرونده را دوباره بررسی و انتخاب کنید. ' +
+              'ثبت تماس کامل نشد؛ با تأیید دوباره، ثبت قبلی خودکار بررسی می‌شود. ' +
                 (error instanceof Error ? error.message : ''),
             );
           }
@@ -470,10 +521,19 @@ export async function saveSalesPeopleDraft(
         )
       ).data;
     } catch (error) {
-      current = editPeopleRow(current, key, { ...row, reviewRequired: true });
+      const uncertain = mutationNeedsReview(error);
+      current = editPeopleRow(current, key, {
+        ...row,
+        reviewRequired: uncertain,
+        ...(uncertain
+          ? { pendingNationalId: normalizeNationalId(row.values.nationalId) }
+          : {}),
+      });
       onProgress(current);
       throw new Error(
-        'ثبت شخص قطعی نشد؛ قبل از تلاش دوباره، همین ردیف را از «انتخاب موجود» بررسی کنید. ' +
+        (uncertain
+          ? 'ثبت شخص قطعی نشد؛ با تأیید دوباره، پرونده قبلی خودکار بررسی می‌شود. '
+          : 'ثبت شخص انجام نشد؛ مورد زیر را اصلاح و دوباره تأیید کنید. ') +
           (error instanceof Error ? error.message : ''),
       );
     }
@@ -486,12 +546,13 @@ export async function saveSalesPeopleDraft(
           person: { id: created.id, displayName: created.displayName },
           profile: created,
           savedPassportNumber: row.values.passportNumber,
+          savedValues: { ...row.values, phone: '', email: '' },
         },
       },
     };
     onProgress(current);
     try {
-      if (row.values.phone.trim())
+      if (row.values.phone.trim()) {
         created = (
           await api.addContact(created.id, {
             type: 'phone',
@@ -501,7 +562,17 @@ export async function saveSalesPeopleDraft(
             version: created.version,
           })
         ).data;
-      if (row.values.email.trim())
+        current = editPeopleRow(current, key, {
+          ...peopleRow(current, key),
+          profile: created,
+          savedValues: {
+            ...existingPeopleBaseline(peopleRow(current, key)),
+            phone: row.values.phone,
+          },
+        });
+        onProgress(current);
+      }
+      if (row.values.email.trim()) {
         created = (
           await api.addContact(created.id, {
             type: 'email',
@@ -511,6 +582,7 @@ export async function saveSalesPeopleDraft(
             version: created.version,
           })
         ).data;
+      }
       current = editPeopleRow(current, key, {
         ...current.rows[key]!,
         profile: created,
@@ -520,11 +592,11 @@ export async function saveSalesPeopleDraft(
     } catch (error) {
       current = editPeopleRow(current, key, {
         ...current.rows[key]!,
-        reviewRequired: true,
+        reviewRequired: mutationNeedsReview(error),
       });
       onProgress(current);
       throw new Error(
-        'پرونده شخص ایجاد شد ولی ثبت تماس کامل نشد؛ تماس را در مشتریان بررسی و سپس همین پرونده را انتخاب کنید. ' +
+        'پرونده شخص ایجاد شد ولی ثبت تماس کامل نشد؛ با تأیید دوباره از همین‌جا ادامه دهید. ' +
           (error instanceof Error ? error.message : ''),
       );
     }

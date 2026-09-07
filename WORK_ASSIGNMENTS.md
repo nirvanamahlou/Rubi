@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-PEOPLE-RECOVERY-0907 — PC-A — COMPLETE_LOCAL
+
+- Removed permanent review locks after definitive 4xx rejection; unknown/duplicate creates recover on the next confirmation through exact identity lookup, known people refresh saved contact/version state, and successful contact checkpoints persist between retries. National-ID uniqueness, sensitive-read permission/audit and branch scoping remain. 243 combined Web tests plus final eight client tests, 91 Customers API tests plus final sixteen permission tests, 48 Contracts tests, scoped lint/typechecks and production API/Web builds passed. Local Web3100/API4000 updated; no migration, real data edits, IAM change or public push. Task-specific contracts/docs reservations released.
+
+- Reserve Sales people-sheet model/UI/tests, Customers producer registration-lookup API/repository/DTO/tests and public browser entry/client, additive Customers public request type and task docs from b69511c. Distinguish rejected mutations from unknown outcomes; recover exact identities via branch-scoped Customers public API and refresh confirmed contacts/versions without blind duplicate creation. PC-A owns both producer/consumer; optional endpoint preserves old clients. No migration, dependencies, IAM grants, producer worktree edits or public push. Reserve only these shared-contract/Central Docs paths; prior scoped locks released.
+
 ## SALES-OUTPUT-TERMS-0907 — PC-A — COMPLETE_LOCAL
 
 - Added the user's three notices in readable 8.5pt B Nazanin below signatures and above the site in shared print/PDF output. Compact whitespace and wider hotel-name column keep the two-passenger sample on one A4 page. Fourteen print/PDF-route tests, scoped lint, production TypeScript/build and all four rendered QA pages pass. Presentation only; API/database and receipt/consent logic unchanged. Local-only; task-specific docs/template reservations released.

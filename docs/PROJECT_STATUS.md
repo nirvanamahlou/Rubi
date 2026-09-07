@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-PEOPLE-RECOVERY-0907 — COMPLETE_LOCAL
+
+Sales people confirmation now separates definite rejection from unknown creation/contact outcomes. The same confirmation action recovers an exact existing identity or refreshes a known saved profile, preserving successful records/contact checkpoints. New public Customers registration lookup is POST-only, branch-scoped and sensitive-read permission/audit protected; no fuzzy identity binding or blind changed-national-ID retry. 243 combined Web + final 8 client tests, 91 Customers API + final 16 permission tests, 48 Contracts tests, scoped lint/typechecks and API/Web production builds pass. Local services updated; no migration/seed/IAM or real-customer walkthrough. See docs/tasks/SALES-PEOPLE-RECOVERY-0907.md.
+
 ## SALES-OUTPUT-TERMS-0907 — COMPLETE_LOCAL
 
 Three user-supplied notices (similar hotel substitution, cashier receipt requirement, and overseas contract-conditions acceptance statement) are displayed below signatures and above Nystkt.ir in print/PDF. Persian spacing/spelling normalized without added terms; no legal review or automated consent/receipt-state change. Fourteen focused tests, scoped lint and production TypeScript/build passed. One-page normal and three-page large samples visually checked. Local Web3100 updated; API/database unchanged. No public push. See docs/tasks/SALES-OUTPUT-TERMS-0907.md.

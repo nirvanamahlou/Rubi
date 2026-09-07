@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CustomerDetail, CustomerMutationRequest } from '@rubi/contracts';
 import { emptySalesForm, type SalesFormState } from './sales-form';
+import { CustomersApiError } from '@/modules/customers/public/entry';
 import {
   emptyPeopleValues,
   initialSalesPeopleDraft,
@@ -63,6 +64,191 @@ const detail = (id: string, input: Partial<CustomerDetail> = {}) =>
     ...input,
   }) as CustomerDetail;
 describe('fixed Sales people-entry slots', () => {
+  const one = {
+    ...state,
+    passengerComposition: { adults: 1, children: 0, infants: 0 },
+  };
+  const savedPerson = (values = filled().rows.p0!.values) =>
+    detail('saved', {
+      ...values,
+      roles: ['customer', 'passenger'],
+      contacts: [],
+      nationalId: values.nationalId,
+      displayName: values.firstName + ' ' + values.lastName,
+    });
+  it('allows corrected retry after a definitive server rejection', async () => {
+    let progress = filled();
+    const api = {
+      create: vi
+        .fn()
+        .mockRejectedValueOnce(new CustomersApiError('invalid', 400))
+        .mockResolvedValue({ data: savedPerson() }),
+      addContact: vi.fn(),
+    };
+    await expect(
+      saveSalesPeopleDraft(
+        one,
+        progress,
+        (next) => {
+          progress = next;
+        },
+        api,
+      ),
+    ).rejects.toThrow('invalid');
+    expect(progress.rows.p0?.reviewRequired).toBe(false);
+    await expect(
+      saveSalesPeopleDraft(one, progress, vi.fn(), api),
+    ).resolves.toMatchObject({ patch: { customerId: 'saved' } });
+    expect(api.create).toHaveBeenCalledTimes(2);
+  });
+  it('recovers a committed creation after lost response without creating twice', async () => {
+    let progress = filled();
+    const api = {
+      create: vi.fn().mockRejectedValue(new Error('network')),
+      addContact: vi.fn(),
+      detail: vi.fn(),
+      registrationLookup: vi.fn().mockResolvedValue({ data: savedPerson() }),
+    };
+    await expect(
+      saveSalesPeopleDraft(
+        one,
+        progress,
+        (next) => {
+          progress = next;
+        },
+        api,
+      ),
+    ).rejects.toThrow('قطعی نشد');
+    const result = await saveSalesPeopleDraft(one, progress, vi.fn(), api);
+    expect(result.patch.customerId).toBe('saved');
+    expect(api.create).toHaveBeenCalledTimes(1);
+    expect(api.registrationLookup).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nationalId: progress.rows.p0!.values.nationalId,
+      }),
+    );
+  });
+  it('retries the same identity only after an authorized lookup found no previous record', async () => {
+    let progress = filled();
+    const api = {
+      create: vi
+        .fn()
+        .mockRejectedValueOnce(new Error('network'))
+        .mockResolvedValue({ data: savedPerson() }),
+      addContact: vi.fn(),
+      detail: vi.fn(),
+      registrationLookup: vi.fn().mockResolvedValue({ data: null }),
+    };
+    await expect(
+      saveSalesPeopleDraft(
+        one,
+        progress,
+        (next) => {
+          progress = next;
+        },
+        api,
+      ),
+    ).rejects.toThrow('قطعی نشد');
+    await saveSalesPeopleDraft(one, progress, vi.fn(), api);
+    expect(api.create).toHaveBeenCalledTimes(2);
+    expect(api.create.mock.calls[0]).toEqual(api.create.mock.calls[1]);
+  });
+  it('does not recreate when recovery fails or the uncertain national ID was changed', async () => {
+    let progress = filled();
+    const api = {
+      create: vi.fn().mockRejectedValue(new Error('network')),
+      addContact: vi.fn(),
+      detail: vi.fn(),
+      registrationLookup: vi
+        .fn()
+        .mockRejectedValue(new CustomersApiError('forbidden', 403)),
+    };
+    await expect(
+      saveSalesPeopleDraft(
+        one,
+        progress,
+        (next) => {
+          progress = next;
+        },
+        api,
+      ),
+    ).rejects.toThrow('قطعی نشد');
+    await expect(
+      saveSalesPeopleDraft(one, progress, vi.fn(), api),
+    ).rejects.toThrow('forbidden');
+    progress.rows.p0!.values.nationalId = national('009000009');
+    await expect(
+      saveSalesPeopleDraft(one, progress, vi.fn(), api),
+    ).rejects.toThrow('کد ملی قبلی');
+    expect(api.create).toHaveBeenCalledTimes(1);
+  });
+  it('continues only the unfinished email after phone succeeds and email is rejected', async () => {
+    let progress = filled();
+    progress.rows.p0!.values.phone = '09120000000';
+    progress.rows.p0!.values.email = 'synthetic@example.test';
+    const profile = savedPerson();
+    const api = {
+      create: vi.fn().mockResolvedValue({ data: profile }),
+      addContact: vi
+        .fn()
+        .mockResolvedValueOnce({ data: { ...profile, version: 2 } })
+        .mockRejectedValueOnce(new CustomersApiError('email invalid', 400))
+        .mockResolvedValueOnce({ data: { ...profile, version: 3 } }),
+    };
+    await expect(
+      saveSalesPeopleDraft(
+        one,
+        progress,
+        (next) => {
+          progress = next;
+        },
+        api,
+      ),
+    ).rejects.toThrow('email invalid');
+    expect(progress.rows.p0?.savedValues?.phone).toBe('09120000000');
+    await saveSalesPeopleDraft(one, progress, vi.fn(), api);
+    expect(api.create).toHaveBeenCalledTimes(1);
+    expect(api.addContact.mock.calls.map((c) => c[1].type)).toEqual([
+      'phone',
+      'email',
+      'email',
+    ]);
+    expect(api.addContact.mock.calls[2]?.[1].version).toBe(2);
+  });
+  it('refreshes a known person after lost contact response and skips the committed contact', async () => {
+    let progress = filled();
+    progress.rows.p0!.values.phone = '09120000000';
+    const profile = savedPerson();
+    const api = {
+      create: vi.fn().mockResolvedValue({ data: profile }),
+      addContact: vi.fn().mockRejectedValue(new Error('network')),
+      detail: vi
+        .fn()
+        .mockResolvedValue({
+          data: {
+            ...profile,
+            version: 2,
+            contacts: [
+              { type: 'phone', value: '09120000000', isPrimary: true },
+            ],
+          },
+        }),
+    };
+    await expect(
+      saveSalesPeopleDraft(
+        one,
+        progress,
+        (next) => {
+          progress = next;
+        },
+        api,
+      ),
+    ).rejects.toThrow('پرونده شخص ایجاد شد');
+    await saveSalesPeopleDraft(one, progress, vi.fn(), api);
+    expect(api.create).toHaveBeenCalledTimes(1);
+    expect(api.addContact).toHaveBeenCalledTimes(1);
+    expect(api.detail).toHaveBeenCalledWith('saved', 'customer-verification');
+  });
   it('updates an existing customer passport and adds only the passenger role with optimistic version', async () => {
     const one = {
       ...state,
@@ -256,16 +442,14 @@ describe('fixed Sales people-entry slots', () => {
           version: 8,
         } as CustomerDetail,
       })),
-      addContact: vi
-        .fn()
-        .mockResolvedValue({
-          data: {
-            ...profile,
-            firstName: 'Edited',
-            displayName: 'Edited Person',
-            version: 9,
-          },
-        }),
+      addContact: vi.fn().mockResolvedValue({
+        data: {
+          ...profile,
+          firstName: 'Edited',
+          displayName: 'Edited Person',
+          version: 9,
+        },
+      }),
     };
     const result = await saveSalesPeopleDraft(one, draft, vi.fn(), api);
     const input = api.update.mock.calls[0]![1];
