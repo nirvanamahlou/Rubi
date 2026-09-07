@@ -760,6 +760,24 @@ export class SalesRepository {
     );
   }
 
+  recordOutputPreview(
+    contractId: string,
+    actor: SalesActorContext,
+    snapshot: Prisma.InputJsonValue,
+  ) {
+    return this.database.client.salesContractAuditEvent.create({
+      data: {
+        contractId,
+        actorUserId: actor.userId,
+        actorBranchId: actor.branchId,
+        action: 'sales.contract.output_preview',
+        outcome: AuditOutcome.SUCCESS,
+        afterSnapshot: snapshot,
+        traceId: actor.traceId ?? null,
+      },
+    });
+  }
+
   audit(contractId: string) {
     return this.database.client.salesContractAuditEvent.findMany({
       where: { contractId },

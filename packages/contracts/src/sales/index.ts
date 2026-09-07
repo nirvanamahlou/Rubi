@@ -261,6 +261,22 @@ export interface SalesContractDetail extends SalesContractSummary {
   pricingNotes: string | null;
 }
 
+export interface SalesContractOutputV1 {
+  version: 1;
+  generatedAt: string;
+  contract: SalesContractDetail;
+  customer: { kind: 'person' | 'organization'; address: string | null };
+  ownerName: string | null;
+  company: {
+    id: string;
+    code: 'NIYAYESH_SEIR_SAHAR' | 'JAHAN_BASTAN';
+    persianName: string;
+    latinName: string | null;
+    website: string | null;
+    brandingVersion: number;
+  };
+}
+
 export interface SalesContractPage {
   data: readonly SalesContractSummary[];
   meta: { page: number; pageSize: number; total: number };

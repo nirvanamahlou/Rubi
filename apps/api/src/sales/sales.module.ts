@@ -11,6 +11,8 @@ import {
 import { SalesController } from './sales.controller';
 import { SalesRepository } from './sales.repository';
 import { SalesService } from './sales.service';
+import { SalesOutputService } from './sales-output.service';
+import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
 import { TicketRuntimeModule } from '../ticket-catalog/ticket-runtime.module';
 import { ReservationsRuntimeModule } from '../reservations/reservations-runtime.module';
 import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
@@ -18,6 +20,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
 @Module({
   imports: [
     IamModule,
+    LegalEntitiesModule,
     CustomersModule,
     TicketRuntimeModule,
     ReservationsRuntimeModule,
@@ -27,6 +30,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
     AuthGuard,
     SalesRepository,
     SalesService,
+    SalesOutputService,
     SalesCustomersPublicAdapter,
     SalesTicketsPublicAdapter,
     SalesReservationDispatcher,

@@ -25,13 +25,27 @@ import type {
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { SalesService } from './sales.service';
+import { SalesOutputService } from './sales-output.service';
 
 @ApiTags('Sales')
 @ApiCookieAuth('rubi_access')
 @UseGuards(AuthGuard)
 @Controller('sales')
 export class SalesController {
-  constructor(@Inject(SalesService) private readonly service: SalesService) {}
+  constructor(
+    @Inject(SalesService) private readonly service: SalesService,
+    @Inject(SalesOutputService) private readonly output: SalesOutputService,
+  ) {}
+
+  @Get('contracts/:id/output')
+  @Header('Cache-Control', 'private, no-store')
+  printOutput(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-request-id') traceId?: string,
+  ) {
+    return this.output.prepare(id, request.actor, traceId);
+  }
 
   @Get('dashboard')
   @Header('Cache-Control', 'private, no-store')
