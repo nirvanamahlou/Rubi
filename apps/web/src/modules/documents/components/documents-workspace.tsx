@@ -801,9 +801,17 @@ export function DocumentsWorkspace() {
     setNotice(tool.notice);
   }
 
-  async function download(document: DocumentDetailV1) {
+  async function download(
+    document: DocumentDetailV1,
+    sensitiveReason?: string,
+    accessGrantToken?: string,
+  ) {
     try {
-      const response = await documentsApi.download(document.id);
+      const response = await documentsApi.download(
+        document.id,
+        sensitiveReason,
+        accessGrantToken,
+      );
       const url = URL.createObjectURL(response.blob);
       const anchor = window.document.createElement('a');
       anchor.href = url;
@@ -812,6 +820,7 @@ export function DocumentsWorkspace() {
       URL.revokeObjectURL(url);
     } catch (caught) {
       setNotice(caught instanceof Error ? caught.message : 'دانلود مجاز نیست.');
+      throw caught;
     }
   }
 
@@ -820,11 +829,13 @@ export function DocumentsWorkspace() {
       document: DocumentDetailV1,
       sensitiveReason: string | undefined,
       signal: AbortSignal,
+      accessGrantToken: string | undefined,
     ) => {
       const response = await documentsApi.preview(
         document.id,
         sensitiveReason,
         signal,
+        accessGrantToken,
       );
       return response.blob;
     },
@@ -2216,7 +2227,7 @@ export function DocumentsWorkspace() {
         favorite={Boolean(detail && favoriteIds.has(detail.id))}
         loading={detailLoading}
         onCopyLink={(document) => void copyInternalLink(document)}
-        onDownload={(document) => void download(document)}
+        onDownload={download}
         onEdit={(document) => {
           changeDetailOpen(false);
           void openEdit(document);

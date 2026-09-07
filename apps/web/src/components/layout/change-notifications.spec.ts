@@ -61,14 +61,14 @@ describe('global change notifications', () => {
     );
 
     await expect(
-      trackedFetch(`${apiBaseUrl}/documents/document-1/archive`, {
-        method: 'POST',
+      trackedFetch(`${apiBaseUrl}/customers/customer-1`, {
+        method: 'PATCH',
       }),
     ).resolves.toBe(response);
     expect(onNotification).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'بایگانی در اسناد و فایل‌ها',
-        href: '/documents',
+        title: 'ویرایش در مشتریان',
+        href: '/customers',
       }),
     );
   });
@@ -79,6 +79,8 @@ describe('global change notifications', () => {
     ['POST', `${apiBaseUrl}/iam/auth/refresh`, true],
     ['POST', `${apiBaseUrl}/master-data/imports/preview`, true],
     ['POST', `${apiBaseUrl}/master-data/exports/xlsx`, true],
+    ['POST', `${apiBaseUrl}/documents/document-1/archive`, true],
+    ['PATCH', `${apiBaseUrl}/notifications/read-all`, true],
     ['POST', 'https://other.example/api/v1/customers', true],
   ])('ignores non-change request %s %s', (method, requestUrl, responseOk) => {
     expect(

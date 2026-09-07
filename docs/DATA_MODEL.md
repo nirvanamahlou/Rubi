@@ -140,6 +140,15 @@ erDiagram
 - reference پایه `Branch` قرارداد مشترک IAM/Master Data است؛ توسعه چرخه عمر آن در مالکیت
   Master Data و مصرف access mapping در مالکیت IAM باقی می‌ماند.
 
+### Notifications
+
+- `notifications` رکورد پایدار اعلان را با FK گیرنده، Actor اختیاری، source/event، مرجع
+  موجودیت، Deep Link داخلی، `read_at` و `occurred_at` در UTC نگه می‌دارد.
+- Query و تغییر `read_at` همیشه با `recipient_user_id` کاربر احراز‌شده محدود می‌شود؛ اعلان
+  کاربر دیگر حتی با دانستن UUID قابل خواندن یا تغییر نیست.
+- مرجع موجودیت عمداً FK دامنه‌ای نیست تا اعلان حذف دائمی باقی بماند. ماژول تولیدکننده فقط
+  Service عمومی Notifications را در transaction خود فراخوانی می‌کند و مالک جدول اعلان نیست.
+
 ### Legal Entity و Issuer Context
 
 - `legal_entities` دو شرکت صادرکننده واقعی با `code` یکتا، وضعیت فعال، Version خوش‌بینانه

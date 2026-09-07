@@ -21,6 +21,9 @@ import {
 } from './iam.constants';
 import { Public } from './iam.decorators';
 import { LoginDto } from './dto/login.dto';
+// Runtime imports are required for Nest validation metadata.
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { MfaCodeDto, MfaSetupBeginDto } from './dto/mfa.dto';
 import { AuthGuard, readCookie } from './auth.guard';
 import { IamService } from './iam.service';
 import type { AuthenticatedRequest, RequestMetadata } from './iam.types';
@@ -95,6 +98,41 @@ export class AuthController {
   @Get('sessions')
   sessions(@Req() request: AuthenticatedRequest) {
     return this.iam.listSessions(request.actor);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth(ACCESS_COOKIE)
+  @Get('mfa/status')
+  mfaStatus(@Req() request: AuthenticatedRequest) {
+    return this.iam.mfaStatus(request.actor);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth(ACCESS_COOKIE)
+  @Post('mfa/setup')
+  beginMfaSetup(
+    @Body() dto: MfaSetupBeginDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.iam.beginMfaSetup(
+      request.actor,
+      dto.currentPassword,
+      requestMetadata(request),
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth(ACCESS_COOKIE)
+  @Post('mfa/confirm')
+  confirmMfaSetup(
+    @Body() dto: MfaCodeDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.iam.confirmMfaSetup(
+      request.actor,
+      dto.code,
+      requestMetadata(request),
+    );
   }
 
   @UseGuards(AuthGuard)

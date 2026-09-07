@@ -1,12 +1,12 @@
 # Work Assignments
 
-## NOTIFICATIONS-001-ACTIVITY-BELL — PC-B — READY_FOR_REVIEW
+## NOTIFICATIONS-001-ACTIVITY-BELL — PC-B — DONE/MERGED
 
 - درخواست صریح مالک محصول در 2026-09-07: هر تغییر موفقی که در سامانه انجام می‌شود در بخش زنگوله به‌صورت Notification نمایش داده شود. `COMPUTER_ID=PC-B` بر مبنای مالکیت فعلی این Workspace و ماژول‌های افقی رابط.
 - Branch مستقل `codex/pc-b-global-change-notifications` از `origin/develop@9b9d7a4`. محدوده رزروشده: یک Notification Center مستقل در `apps/web/src/components/layout/**`، اتصال محدود زنگوله موجود در `app-shell.tsx`، تست‌های همان Slice و ورودی‌های همین Task در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`.
 - نسخه اول بدون Schema/Migration/Seed و بدون تغییر API/Shared Contract/Dependency/Lockfile است: Mutationهای موفق `POST/PUT/PATCH/DELETE` که از Web احراز‌شده Rubi به API تنظیم‌شده ارسال می‌شوند در مرورگر ثبت می‌شوند. Auth/refresh/logout و عملیات غیرتغییردهنده Preview/Search/Export از Feed تغییر حذف‌اند.
 - اعلان‌ها فاقد PII و Payload درخواست‌اند و فقط نوع عملیات، نام بخش، زمان و مسیر داخلی را نگه می‌دارند. نگهداری محدود، خوانده/خوانده‌نشده، پاک‌سازی اعلان‌های خوانده‌شده، Sync بین Tabها و fallback امن برای LocalStorage الزامی است.
-- این Slice فقط تغییرات انجام‌شده از همان Browser Profile را پوشش می‌دهد. اعلان بین کاربران/دستگاه‌ها و رویدادهای Background نیازمند Notifications/Outbox Backend مستقل است و به‌علت نبود قرارداد تاییدشده و قفل‌های Schema فعال در این Task جعل نمی‌شود.
+- این Slice تغییرات عمومی را از همان Browser Profile پوشش می‌دهد. پیگیری DOCUMENTS-007 اعلان تغییرات اسناد را با قرارداد و Persistence مستقل Backend به همین مرکز متصل کرده است؛ بنابراین مسیرهای `documents/**` از رهگیری مرورگری حذف‌اند تا اعلان تکراری ساخته نشود. سایر ماژول‌ها تا پیگیری Backend خود، مرورگرمحور باقی می‌مانند.
 - نتیجه: زنگوله موجود به Notification Center واقعی تبدیل شد؛ Mutation موفق پس از دریافت Response به اعلان فارسیِ بخش و عملیات تبدیل می‌شود. Badge تعداد خوانده‌نشده، Empty State، زمان، Deep Link، خواندن تکی/همه، پاک‌کردن خوانده‌شده‌ها، سقف ۶۰ رکورد و همگام‌سازی Tabها فعال است؛ خطای Storage هرگز نتیجه درخواست اصلی را تغییر نمی‌دهد.
 - اعتبارسنجی: Web lint و typecheck، ۲۲ تست هدفمند و Production Build با ۳۴ Route موفق‌اند؛ Web/API روی ۳۱۰۰/۴۰۰۰ پاسخ ۲۰۰ دارند. Full Web برابر ۶۴۱ تست موفق از ۶۴۲ است و فقط assertion قدیمی و تغییرنیافته Customers درباره LF/CRLF روی Windows شکست دارد؛ فایل Customers خارج Scope دست‌نخورده ماند.
 
@@ -19,6 +19,24 @@
 - معیار پذیرش: فیلد «مخاطب هدف (اختیاری)» در هر دو فرم وجود داشته باشد؛ حالت عمومی، مشتری و آژانس را پشتیبانی کند؛ جست‌وجو و انتخاب رکورد از API واقعی با stateهای loading/empty/error کار کند؛ انتخاب نوع بدون انتخاب رکورد ذخیره نشود و مرجع انتخاب‌شده در نتیجه عملیات دیده شود.
 - نتیجه: Selector مشترک هر دو فرم به `customersApi` و `masterDataApi` متصل شد؛ فقط مشتری فعال دارای رضایت جاری و Organization فعال با نقش `AGENCY` قابل انتخاب است. جست‌وجوی debounce، Retry، پیام خطای نشست/مجوز و Deep Link به بخش مالک نیز تکمیل شد.
 - اعتبارسنجی: Web lint بدون هشدار، Web typecheck، ۲۱ تست هدفمند مارکتینگ و Production Build با ۳۴ Route موفق‌اند. Build اجرایی با `NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api/v1` ساخته و جای نسخه قدیمی پورت ۳۱۰۰ اجرا شد؛ Health API پاسخ ۲۰۰ و Endpointهای محافظت‌شده مشتری/آژانس بدون نشست پاسخ صحیح ۴۰۱ دارند.
+
+## DOCUMENTS-007-STEP-UP-SECURITY — PC-B — DONE/MERGED
+
+- درخواست و واگذاری صریح مالک محصول در 2026-09-07: PC-B در کنار PC-A به مرز عمومی IAM دسترسی داشته باشد تا برای سندهایی که هنگام بارگذاری علامت «نیازمند اعتبارسنجی دومرحله‌ای» می‌خورند، مشاهده و دانلود فقط پس از Step-up واقعی انجام شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-documents-step-up-security` از `origin/develop@7b84040` در Worktree `C:\Users\admin\Rubi-documents-step-up-security`؛ Branch و تغییرات PC-A/PR #90 حفظ و بازنویسی نمی‌شوند.
+- محدوده رزروشده: قابلیت عمومی و نسخه‌دار Step-up در IAM، Schema/Migration افزایشی و غیرمخرب همان قابلیت، Policy و Access Grant یک‌بارمصرف Documents، Upload/Preview/Download، قراردادهای عمومی IAM/Documents، رابط کاربری و تست‌ها و مستندات همین واحد کار.
+- انتقال محدود قفل پس از Merge PR #98: `Migration Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY`، `IAM shared-contract Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY`، `Documents shared-contract Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY` و `Central Docs Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY`. قفل Dependency/Lockfile فقط در صورت ضرورت و ثبت فایل دقیق گرفته می‌شود.
+- مرز تداخل: فایل‌ها و Migrationهای فروش در PR #90 تغییر نمی‌کنند؛ Documents فقط از Public Step-up Contract/Port IAM استفاده می‌کند و به Repository یا جدول داخلی IAM Query مستقیم نمی‌زند. PC-A همچنان مالک Sales است و این واگذاری دسترسی آن را حذف نمی‌کند.
+- فرض ظرفیت و امنیت: نسبت خواندن به نوشتن `20:1`، اوج کمتر از `50 QPS`، سامانه ورودمحور با Branch Scope و داده در سطح PII/Restricted؛ هدف `p50<150ms`، `p95<300ms`، `p99<600ms`، SLO برابر `99.9%`، `RPO<=24h` و `RTO<=4h` است.
+- معیار پذیرش: Checkbox از Upload تا DB حفظ شود؛ کد ثابت، کد نمایشی در UI یا Secret داخل Git ممنوع است؛ کد Authenticator با Rate Limit و جلوگیری از Replay اعتبارسنجی شود؛ Grant کوتاه‌عمر و یک‌بارمصرف به همان کاربر/سند/عملیات محدود باشد؛ Preview/Download بدون Grant به‌صورت fail-closed رد و همه موفقیت/ردها Audit شوند.
+- نتیجه: فعال‌سازی Authenticator با رمز جاری و TOTP واقعی، Secret رمز‌شده، Replay Guard و Rate Limit تکمیل شد. سند علامت‌خورده فقط با Grant هش‌شده دو دقیقه‌ای و یک‌بارمصرفِ وابسته به User/Session/Document/Purpose نمایش یا دانلود می‌شود؛ Scan، Permission و Audit نیز سمت Backend fail-closed باقی می‌مانند.
+- رابط: Checkbox در Upload اصلی و Customer وجود دارد؛ فرم فعال‌سازی/ورود کد فارسی است و پیش‌نمایش تصویری مجاز در Browser به PNG کم‌حجم دارای واترمارک سامانه، کد آرشیو و زمان تبدیل می‌شود. جلوگیری مطلق از Screenshot ادعا نمی‌شود.
+- اعتبارسنجی: Prisma format/validate/generate، lint کامل API/Web/Database، typecheck API/Web، Production Build کامل و ۳۴ Route، `812` تست API، `633` تست Web سالم و تست‌های هدفمند Migration موفق‌اند. زنجیره Migrationها روی PostgreSQL 18 خالی و ارتقای دیتابیس دارای User/Document آزمایشی پاس شد؛ تنها شکست Full Web همان Assertion قدیمی Customer وابسته به LF/CRLF و خارج از Scope است.
+- مرجع طراحی و Handoff: `docs/tasks/DOCUMENTS-007-STEP-UP-SECURITY.md`.
+- پیگیری صریح مالک محصول در 2026-09-07: همه تغییرات عملیاتی سند در زنگوله سامانه به‌صورت اعلان پایدار دیده شوند. محدوده افزوده شامل قرارداد عمومی نسخه‌دار Notifications، Persistence و API ماژول مستقل Notifications، Service عمومی ثبت اعلان برای Documents، Bell مرکزی App Shell و تست/مستندات همین قابلیت است. گیرنده امن هر تغییر، Actor و مالک سند است و در صورت یکی‌بودن فقط یک اعلان ساخته می‌شود؛ دسترسی کاربران یا شعب دیگر گسترش نمی‌یابد.
+- انتقال محدود قفل پیگیری: `Notifications shared-contract/root export Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY` و فایل مرکزی `apps/web/src/components/layout/app-shell.tsx` فقط برای Bell همین Task نزد PC-B رزرو است. Migration و Central Docs همان قفل موجود Task باقی می‌مانند و Dependency/Lockfile همچنان آزاد است.
+- نتیجه پیگیری: Persistence و API گیرنده‌محور `notifications.v1`، وضعیت خواندن/پاک‌کردن خوانده‌شده‌ها و ثبت اتمیک اعلان برای Upload، ویرایش، آرشیو، بازیابی، کامل/ناقص، عملیات گروهی و حذف دائمی تکمیل شد. Feed پایدار اسناد با Notification Center سراسری ادغام شد؛ Documents فقط Service عمومی Notifications را مصرف می‌کند و دسترسی مستقیم جدول بین ماژول‌ها ایجاد نشد.
+- اعتبارسنجی پیگیری: Prisma format/validate/generate، lint و typecheck API/Web، ۲۷ تست هدفمند API، ۸ تست هدفمند Web و اجرای ۴ تست PostgreSQL زنجیره Migrationها پاس شد. Full API برابر ۸۱۲ تست پاس و ۷۰ skip است؛ Full Web فقط Assertion قدیمی Customer وابسته به LF/CRLF خارج از Scope را قرمز دارد.
 
 ## MASTER-005-EXCEL-IMPORT-PERSISTENCE — PC-B — DONE/MERGED
 

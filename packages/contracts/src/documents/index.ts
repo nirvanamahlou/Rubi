@@ -1,6 +1,7 @@
 import type { BranchReference } from '../iam';
 
 export const DOCUMENTS_CONTRACT_VERSION = 1 as const;
+export const DOCUMENTS_STEP_UP_CONTRACT_VERSION = 1 as const;
 
 export const DOCUMENT_DOMAIN_CODES = [
   'CUSTOMER_IDENTITY',
@@ -65,6 +66,10 @@ export type DocumentSortCode =
   | 'archiveCode'
   | 'validUntil'
   | 'sizeBytes';
+
+export const DOCUMENT_ACCESS_PURPOSE_CODES = ['PREVIEW', 'DOWNLOAD'] as const;
+export type DocumentAccessPurposeCode =
+  (typeof DOCUMENT_ACCESS_PURPOSE_CODES)[number];
 
 export interface DocumentListQueryV1 {
   search?: string;
@@ -150,6 +155,7 @@ export interface DocumentListItemV1 {
   confidentiality: DocumentConfidentialityCode;
   archiveStatus: DocumentArchiveStatusCode;
   isIncomplete: boolean;
+  requiresStepUpVerification: boolean;
   validUntil: string | null;
   version: number;
   currentVersion: DocumentVersionV1;
@@ -277,4 +283,17 @@ export interface DocumentArchiveActionInputV1 {
 export interface DocumentDeleteInputV1 {
   reason: string;
   version: number;
+}
+
+export interface DocumentAccessGrantInputV1 {
+  code: string;
+  purpose: DocumentAccessPurposeCode;
+}
+
+export interface DocumentAccessGrantResponseV1 {
+  data: {
+    token: string;
+    purpose: DocumentAccessPurposeCode;
+    expiresAt: string;
+  };
 }

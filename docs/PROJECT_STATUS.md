@@ -1,10 +1,21 @@
 # وضعیت پروژه
 
-## NOTIFICATIONS-001 — مرکز اعلان تغییرات — آماده بررسی
+## NOTIFICATIONS-001 — مرکز اعلان تغییرات — ادغام‌شده
 
 - `PC-B` روی Branch مستقل `codex/pc-b-global-change-notifications` زنگوله App Shell را به Notification Center سراسری Web تبدیل کرد. هر Mutation موفق `POST/PUT/PATCH/DELETE` به API تنظیم‌شده Rubi پس از موفقیت Response، یک اعلان فارسی شامل نوع عملیات، بخش، زمان و لینک داخلی می‌سازد؛ عملیات ناموفق، Auth، Preview، Search، Validation و Export اعلان تغییر تولید نمی‌کنند.
-- اعلان‌ها Payload درخواست یا PII نگه نمی‌دارند و در Browser Profile با سقف ۶۰ رکورد ذخیره می‌شوند. Badge خوانده‌نشده، فهرست RTL، Empty State، خواندن تکی/همه، پاک‌کردن خوانده‌شده‌ها، Sync بین Tabها و fallback امن Storage تکمیل است. این فاز تغییرات همان مرورگر را پوشش می‌دهد؛ اعلان cross-user/device و Background Event به Notifications/Outbox Backend آینده واگذار شده است.
-- هیچ Schema/Migration/Seed، API/Shared Contract، Permission، Dependency/Lockfile یا Repository ماژول‌های دامنه تغییر نکرد. Web lint/typecheck، ۲۲ تست هدفمند و Production Build با ۳۴ Route موفق‌اند؛ ۶۴۱/۶۴۲ تست کامل Web پاس شد و تنها شکست، assertion قدیمی Customers برای LF/CRLF در Windows است. نسخه متصل به API روی پورت‌های ۳۱۰۰/۴۰۰۰ فعال است.
+- اعلان‌ها Payload درخواست یا PII نگه نمی‌دارند و در Browser Profile با سقف ۶۰ رکورد ذخیره می‌شوند. Badge خوانده‌نشده، فهرست RTL، Empty State، خواندن تکی/همه، پاک‌کردن خوانده‌شده‌ها، Sync بین Tabها و fallback امن Storage تکمیل است. اتصال DOCUMENTS-007، اعلان اسناد را از Backend پایدار می‌گیرد و برای آن مسیر اعلان مرورگری تکراری نمی‌سازد.
+- PR #104 با همه Gateهای CI سبز روی `develop` ادغام شد. پیگیری DOCUMENTS-007 قرارداد، Persistence و API اعلان‌های اسناد را به همین مرکز اضافه می‌کند؛ Dependency/Lockfile تغییر نکرده است.
+
+## DOCUMENTS-007 — اعتبارسنجی دومرحله‌ای نمایش اسناد — ادغام‌شده
+
+- `PC-B` روی Branch مستقل `codex/pc-b-documents-step-up-security` دسترسی محدود IAM، Migration و Documents را برای همین Task گرفت؛ مالکیت Sales و PR #90 نزد PC-A دست‌نخورده ماند.
+- فرم‌های بارگذاری اصلی و Customer گزینه «نیازمند اعتبارسنجی دومرحله‌ای» دارند. فعال‌سازی Authenticator با تأیید رمز جاری، TOTP واقعی، Secret رمز‌شده با کلید مستقل production، جلوگیری از Replay و قفل موقت تلاش‌های ناموفق انجام می‌شود.
+- Preview/Download سند محافظت‌شده به Grant تصادفی و هش‌شده دو دقیقه‌ای محدود است که به همان User، Session، Document و Purpose متصل و اتمیک فقط یک بار مصرف می‌شود. کنترل Scan، Permission، Branch/Domain و Audit سمت Backend fail-closed است.
+- پیش‌نمایش تصویر مجاز در Browser به PNG کم‌حجم واترمارک‌شده با نام سامانه، کد آرشیو و زمان تبدیل می‌شود و Headerهای امنیتی پاسخ/صفحه سخت‌تر شده‌اند؛ جلوگیری مطلق از Screenshot ممکن نیست.
+- زنگوله مرکزی اکنون داده واقعی `notifications.v1` را نشان می‌دهد: Badge تعداد خوانده‌نشده، فهرست و Deep Link، خواندن تکی/همه و stateهای Loading/Empty/Error فعال‌اند. Upload، ویرایش، آرشیو، بازیابی، تغییر کامل/ناقص، عملیات گروهی و حذف دائمی سند در همان تراکنش تغییر، برای Actor و مالک سند اعلان پایدار و بدون گیرنده تکراری می‌سازند.
+- ماژول مستقل Notifications مالک جدول و API است و همه List/Readها با User احراز‌شده Scope می‌شوند؛ Documents فقط Service عمومی ثبت را مصرف می‌کند. Migration افزایشی همراه Rollback و قرارداد عمومی نسخه‌دار اضافه شد و هیچ Dependency/Lockfile یا داده واقعی تغییر نکرد.
+- Prisma، lint، typecheck و Production Build کامل با ۳۴ Route موفق است؛ `812` تست API و `633` تست Web سالم پاس شدند. Full Web فقط Assertion قدیمی و تغییرنیافته Customer وابسته به LF/CRLF را قرمز دارد. همه Migrationها روی PostgreSQL 18 خالی و ارتقای نمونه دارای User/Document موفق بود؛ Container موقت حذف شد و هیچ Secret واقعی در Git نیست.
+- پیگیری اعلان با ۲۷ تست هدفمند API، ۸ تست هدفمند Web، Contract test و ۴ تست PostgreSQL واقعی Migration پاس شد؛ اجرای کامل API اکنون ۸۱۲ تست پاس و ۷۰ skip دارد.
 
 ## MARKETING-001F — اتصال مخاطب هدف پیشنهاد و تخفیف — آماده بررسی
 

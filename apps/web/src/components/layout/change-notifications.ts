@@ -107,6 +107,13 @@ function relativeApiPath(requestUrl: string, apiBaseUrl: string) {
 function isIgnoredMutation(path: string) {
   if (['iam/auth/login', 'iam/auth/logout', 'iam/auth/refresh'].includes(path))
     return true;
+  if (
+    path === 'documents' ||
+    path.startsWith('documents/') ||
+    path === 'notifications' ||
+    path.startsWith('notifications/')
+  )
+    return true;
   return path
     .split('/')
     .some((segment) => ignoredPathSegments.has(segment.toLowerCase()));
