@@ -1,5 +1,15 @@
 # Work Assignments
 
+## MARKETING-001F-OFFER-AUDIENCE-TARGETS — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-07: در فرم‌های «پیشنهاد ویژه» و «کد تخفیف» یک انتخاب اختیاری مخاطب هدف اضافه شود که بتواند به مشتریان یا آژانس‌ها متصل شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-marketing-offer-targets` از `origin/develop@7b84040`؛ محدوده فقط `apps/web/src/modules/marketing/**`، تست‌های همان ماژول و ثبت همین Work Item در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` است.
+- اتصال فقط خواندنی از Client عمومی Customers و Master Data Organizations انجام می‌شود: مشتریان فعال دارای رضایت جاری مارکتینگ و Organizationهای فعال با نقش canonical `AGENCY`. هیچ جدول، Repository یا زیرساخت داخلی ماژول دیگر مستقیماً مصرف نمی‌شود.
+- این Task هیچ Schema/Migration/Seed، API/Shared Contract، Dependency/Lockfile، فایل مرکزی UI یا داده واقعی را تغییر نمی‌دهد. قفل‌های فعال `AGENCY-B2B-INTEGRATIONS-001` و مالکیت Customers نزد PC-A دست‌نخورده‌اند.
+- معیار پذیرش: فیلد «مخاطب هدف (اختیاری)» در هر دو فرم وجود داشته باشد؛ حالت عمومی، مشتری و آژانس را پشتیبانی کند؛ جست‌وجو و انتخاب رکورد از API واقعی با stateهای loading/empty/error کار کند؛ انتخاب نوع بدون انتخاب رکورد ذخیره نشود و مرجع انتخاب‌شده در نتیجه عملیات دیده شود.
+- نتیجه: Selector مشترک هر دو فرم به `customersApi` و `masterDataApi` متصل شد؛ فقط مشتری فعال دارای رضایت جاری و Organization فعال با نقش `AGENCY` قابل انتخاب است. جست‌وجوی debounce، Retry، پیام خطای نشست/مجوز و Deep Link به بخش مالک نیز تکمیل شد.
+- اعتبارسنجی: Web lint بدون هشدار، Web typecheck، ۲۱ تست هدفمند مارکتینگ و Production Build با ۳۴ Route موفق‌اند. Build اجرایی با `NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api/v1` ساخته و جای نسخه قدیمی پورت ۳۱۰۰ اجرا شد؛ Health API پاسخ ۲۰۰ و Endpointهای محافظت‌شده مشتری/آژانس بدون نشست پاسخ صحیح ۴۰۱ دارند.
+
 ## MASTER-005-EXCEL-IMPORT-PERSISTENCE — PC-B — DONE/MERGED
 
 - درخواست صریح مالک محصول در 2026-09-06: مسیر خواندن Excel در اطلاعات پایه بررسی شود و رکوردهای معتبر پس از خواندن، در بخش مالک خود ثبت و بلافاصله قابل مشاهده باشند. `COMPUTER_ID=PC-B`.

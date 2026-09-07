@@ -85,6 +85,11 @@ import {
   type MarketingPreviewItem,
 } from '../model/reference-data';
 import { downloadRowsAsExcel } from '../utils/excel-export';
+import {
+  OfferAudienceTargetSelector,
+  type OfferAudienceTargetKind,
+  type OfferAudienceTargetReference,
+} from './offer-audience-target-selector';
 
 type DetailSection = MarketingPreviewItem['section'];
 type NoticeHandler = (message: string) => void;
@@ -5374,7 +5379,7 @@ function SectionEntityFormDialog({
   tab: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaved: (name: string) => void;
+  onSaved: (name: string, target?: OfferAudienceTargetReference | null) => void;
 }) {
   const definition = sectionFormDefinitions[kind];
   const isOffer = kind === 'offer';
@@ -5408,6 +5413,11 @@ function SectionEntityFormDialog({
   const [totalUsageLimit, setTotalUsageLimit] = useState('1000');
   const [perCustomerLimit, setPerCustomerLimit] = useState('1');
   const [combinability, setCombinability] = useState('exclusive');
+  const [offerAudienceKind, setOfferAudienceKind] =
+    useState<OfferAudienceTargetKind>('none');
+  const [offerAudienceTarget, setOfferAudienceTarget] =
+    useState<OfferAudienceTargetReference | null>(null);
+  const [validationError, setValidationError] = useState('');
   const dialogTitle = isDiscountCode
     ? 'افزودن کد تخفیف'
     : isOffer && tab === 'specials'
@@ -5415,7 +5425,10 @@ function SectionEntityFormDialog({
       : definition.title;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl text-right" dir="rtl">
+      <DialogContent
+        className="max-h-[92dvh] max-w-2xl overflow-y-auto text-right"
+        dir="rtl"
+      >
         <DialogTitle>{dialogTitle}</DialogTitle>
         <DialogDescription>
           اطلاعات لازم را وارد کنید و برای افزودن به فضای کاری ذخیره کنید.
@@ -5429,12 +5442,25 @@ function SectionEntityFormDialog({
             if (isDiscountCode && couponCode.trim().length < 3) return;
             if (
               isOffer &&
+              offerAudienceKind !== 'none' &&
+              !offerAudienceTarget
+            ) {
+              setValidationError(
+                offerAudienceKind === 'customer'
+                  ? 'یک مشتری را به‌عنوان مخاطب هدف انتخاب کنید.'
+                  : 'یک آژانس را به‌عنوان مخاطب هدف انتخاب کنید.',
+              );
+              return;
+            }
+            if (
+              isOffer &&
               [offerValue, minimumPurchase, totalUsageLimit, perCustomerLimit]
                 .map(Number)
                 .some((value) => !Number.isFinite(value) || value < 0)
             )
               return;
-            onSaved(name.trim());
+            if (isOffer) onSaved(name.trim(), offerAudienceTarget);
+            else onSaved(name.trim());
             onOpenChange(false);
             setName('');
             setDescription('');
@@ -5491,6 +5517,18 @@ function SectionEntityFormDialog({
           </FormField>
           {isOffer ? (
             <>
+              <OfferAudienceTargetSelector
+                kind={offerAudienceKind}
+                onChange={(target) => {
+                  setOfferAudienceTarget(target);
+                  setValidationError('');
+                }}
+                onKindChange={(targetKind) => {
+                  setOfferAudienceKind(targetKind);
+                  setValidationError('');
+                }}
+                value={offerAudienceTarget}
+              />
               {isDiscountCode ? (
                 <FormField id="offer-coupon-code" label="کد تخفیف" required>
                   <Input
@@ -5593,6 +5631,14 @@ function SectionEntityFormDialog({
                 />
               </FormField>
             </>
+          ) : null}
+          {validationError ? (
+            <p
+              className="text-sm font-bold text-destructive sm:col-span-2"
+              role="alert"
+            >
+              {validationError}
+            </p>
           ) : null}
           {definition.hasDateRange ? (
             <>
@@ -5774,8 +5820,14 @@ export function MarketingReferenceSection({
           onOpenChange={(open) => {
             if (!open) setFormKind(null);
           }}
-          onSaved={(name) => {
-            onNotice(`«${name}» ذخیره شد.`);
+          onSaved={(name, target) => {
+            onNotice(
+              formKind === 'offer'
+                ? target
+                  ? `«${name}» برای مخاطب هدف «${target.label}» ذخیره شد.`
+                  : `«${name}» بدون مخاطب هدف مشخص ذخیره شد.`
+                : `«${name}» ذخیره شد.`,
+            );
           }}
           open
         />
