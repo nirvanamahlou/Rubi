@@ -10,6 +10,15 @@
 - نتیجه: زنگوله موجود به Notification Center واقعی تبدیل شد؛ Mutation موفق پس از دریافت Response به اعلان فارسیِ بخش و عملیات تبدیل می‌شود. Badge تعداد خوانده‌نشده، Empty State، زمان، Deep Link، خواندن تکی/همه، پاک‌کردن خوانده‌شده‌ها، سقف ۶۰ رکورد و همگام‌سازی Tabها فعال است؛ خطای Storage هرگز نتیجه درخواست اصلی را تغییر نمی‌دهد.
 - اعتبارسنجی: Web lint و typecheck، ۲۲ تست هدفمند و Production Build با ۳۴ Route موفق‌اند؛ Web/API روی ۳۱۰۰/۴۰۰۰ پاسخ ۲۰۰ دارند. Full Web برابر ۶۴۱ تست موفق از ۶۴۲ است و فقط assertion قدیمی و تغییرنیافته Customers درباره LF/CRLF روی Windows شکست دارد؛ فایل Customers خارج Scope دست‌نخورده ماند.
 
+## MASTER-006-AUDIT-NOTIFICATIONS — PC-B — IN_PROGRESS
+
+- درخواست صریح مالک محصول در 2026-09-07: هر تغییر موفق اطلاعات پایه در زنگوله سراسری به‌صورت اعلان قابل مشاهده باشد. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-master-data-notifications` از `origin/develop@9b9d7a4` در Worktree `C:\Users\admin\Rubi-master-data-notifications`؛ محدوده فقط خواندن امن رویدادهای موجود `MasterDataAuditEvent`، API اعلان، Client و زنگوله Header، تست‌های هدفمند و ثبت همین Work Item است.
+- هیچ Schema/Migration/Seed، Shared Contract، Dependency/Lockfile یا جدول اعلان جدیدی تغییر نمی‌کند. اعلان‌ها metadata-only هستند و Snapshot، PII، Credential و دلیل داخلی Audit را افشا نمی‌کنند؛ وضعیت خوانده‌شدن فقط در مرورگر کاربر نگه‌داری می‌شود.
+- هماهنگی فایل مشترک: مرکز اعلان `NOTIFICATIONS-001` حین اجرا وارد `develop` شد؛ این Task زنگوله دوم نمی‌سازد و Feed پایدار و cross-device اطلاعات پایه را به همان `NotificationCenter` متصل می‌کند. PR #99 نیز `app-shell.tsx` را فقط در محدوده Breadcrumb تغییر می‌دهد و دست‌نخورده می‌ماند.
+- معیار پذیرش: ایجاد، ویرایش، حذف، فعال/غیرفعال‌سازی و تصمیم نرخ موفق از هر کاربر/PC در Feed سراسری دیده شود؛ رویدادهای صرفاً خواندنی و Preview/Export اعلان نسازند؛ شمارنده خوانده‌نشده، تازه‌سازی، Empty/Error/Loading، مسیر بخش مالک و دسترس‌پذیری صفحه‌کلید/Screen Reader کامل باشند.
+- فرض ظرفیت و کیفیت: Master Data مشترک و read-heavy با اوج کمتر از `50 QPS`؛ هدف `p50<150ms`، `p95<300ms`، `p99<600ms`، SLO `99.9%`، `RPO<=24h` و `RTO<=4h`. UI در برنامه داخلی احراز هویت‌شده و با Design System فعلی پیاده می‌شود.
+
 ## MARKETING-001F-OFFER-AUDIENCE-TARGETS — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک محصول در 2026-09-07: در فرم‌های «پیشنهاد ویژه» و «کد تخفیف» یک انتخاب اختیاری مخاطب هدف اضافه شود که بتواند به مشتریان یا آژانس‌ها متصل شود. `COMPUTER_ID=PC-B`.

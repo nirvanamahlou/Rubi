@@ -1,11 +1,17 @@
 'use client';
 
-import { Bell, BellRing, CheckCheck, Trash2 } from 'lucide-react';
+import { Bell, BellRing, CheckCheck, RefreshCw, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { cn } from '@/lib/utils';
+import {
+  MASTER_DATA_CHANGED_EVENT,
+  masterDataApi,
+  type MasterDataNotification,
+} from '@/modules/master-data/api/client';
+import { getMasterDataNotificationPresentation } from '@/modules/master-data/model/notifications';
 import { Button } from '../ui/button';
 import {
   DropdownMenu,
@@ -61,13 +67,55 @@ function formatNotificationTime(value: string) {
   }).format(new Date(value));
 }
 
+function mergeMasterDataFeed(
+  current: readonly ChangeNotification[],
+  events: readonly MasterDataNotification[],
+) {
+  const currentById = new Map(current.map((item) => [item.id, item]));
+  const fromAudit = events.map((event): ChangeNotification => {
+    const id = `master-data:${event.id}`;
+    const existing = currentById.get(id);
+    const presentation = getMasterDataNotificationPresentation(event);
+    return {
+      id,
+      title: presentation.title,
+      description: `تغییر در ${presentation.sectionLabel} ثبت شد.`,
+      href: presentation.href,
+      occurredAt: event.occurredAt,
+      readAt: existing?.readAt ?? null,
+    };
+  });
+  const auditIds = new Set(fromAudit.map((item) => item.id));
+  return limitChangeNotifications([
+    ...fromAudit,
+    ...current.filter((item) => !auditIds.has(item.id)),
+  ]);
+}
+
 export function NotificationCenter() {
   const [notifications, setNotifications] = useState<ChangeNotification[]>([]);
+  const [refreshingMasterData, setRefreshingMasterData] = useState(false);
   const apiBaseUrl = getPublicApiBaseUrl();
   const unreadCount = useMemo(
     () => notifications.filter((notification) => !notification.readAt).length,
     [notifications],
   );
+
+  const syncMasterDataFeed = useCallback(async (showProgress = false) => {
+    if (showProgress) setRefreshingMasterData(true);
+    try {
+      const response = await masterDataApi.notifications(25);
+      const next = writeStoredNotifications(
+        mergeMasterDataFeed(readStoredNotifications(), response.data),
+      );
+      setNotifications(next);
+    } catch {
+      // The global center keeps local notifications available if Audit is
+      // temporarily unreachable or the current role cannot read Master Data.
+    } finally {
+      if (showProgress) setRefreshingMasterData(false);
+    }
+  }, []);
 
   useEffect(() => {
     const sync = () => setNotifications(readStoredNotifications());
@@ -105,6 +153,19 @@ export function NotificationCenter() {
     };
   }, [apiBaseUrl]);
 
+  useEffect(() => {
+    if (!apiBaseUrl) return;
+    const refresh = () => void syncMasterDataFeed();
+    const initialLoad = window.setTimeout(refresh, 0);
+    const interval = window.setInterval(refresh, 30_000);
+    window.addEventListener(MASTER_DATA_CHANGED_EVENT, refresh);
+    return () => {
+      window.clearTimeout(initialLoad);
+      window.clearInterval(interval);
+      window.removeEventListener(MASTER_DATA_CHANGED_EVENT, refresh);
+    };
+  }, [apiBaseUrl, syncMasterDataFeed]);
+
   const updateNotifications = (
     updater: (current: readonly ChangeNotification[]) => ChangeNotification[],
   ) => {
@@ -136,7 +197,10 @@ export function NotificationCenter() {
   };
 
   return (
-    <DropdownMenu dir="rtl">
+    <DropdownMenu
+      dir="rtl"
+      onOpenChange={(open) => open && void syncMasterDataFeed(true)}
+    >
       <DropdownMenuTrigger asChild>
         <Button
           aria-label={
@@ -170,17 +234,32 @@ export function NotificationCenter() {
                 : 'همه اعلان‌ها خوانده شده‌اند'}
             </p>
           </div>
-          {unreadCount ? (
+          <div className="flex items-center gap-1">
             <Button
-              onClick={markAllRead}
-              size="sm"
+              aria-label="تازه‌سازی اعلان‌های اطلاعات پایه"
+              disabled={refreshingMasterData}
+              onClick={() => void syncMasterDataFeed(true)}
+              size="icon"
               type="button"
               variant="ghost"
             >
-              <CheckCheck aria-hidden="true" className="size-4" />
-              خواندن همه
+              <RefreshCw
+                aria-hidden="true"
+                className={cn('size-4', refreshingMasterData && 'animate-spin')}
+              />
             </Button>
-          ) : null}
+            {unreadCount ? (
+              <Button
+                onClick={markAllRead}
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                <CheckCheck aria-hidden="true" className="size-4" />
+                خواندن همه
+              </Button>
+            ) : null}
+          </div>
         </div>
 
         {notifications.length ? (

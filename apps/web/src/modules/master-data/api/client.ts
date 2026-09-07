@@ -53,6 +53,28 @@ export interface MasterDataPersistWithLogoResult {
   warning?: string;
 }
 
+export type MasterDataNotificationChangeKind =
+  | 'created'
+  | 'updated'
+  | 'activated'
+  | 'deactivated'
+  | 'deleted'
+  | 'approved'
+  | 'rejected';
+
+export interface MasterDataNotification {
+  id: string;
+  action: string;
+  changeKind: MasterDataNotificationChangeKind;
+  resource: string;
+  entityId: string | null;
+  entityVersion: number | null;
+  recordLabel: string | null;
+  occurredAt: string;
+}
+
+export const MASTER_DATA_CHANGED_EVENT = 'rubi:master-data-changed';
+
 const UNSAVED_SOURCE_ID = /^(?:draft|temp|preview)(?:-|$)/i;
 
 function assertPersistedSourceId(recordId: string) {
@@ -139,7 +161,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       response.status,
     );
   }
-  return response.json() as Promise<T>;
+  const payload = (await response.json()) as T;
+  const method = (init?.method ?? 'GET').toUpperCase();
+  if (typeof window !== 'undefined' && method !== 'GET' && method !== 'HEAD')
+    window.dispatchEvent(new Event(MASTER_DATA_CHANGED_EVENT));
+  return payload;
 }
 
 async function documentsRequest<T>(
@@ -479,6 +505,12 @@ export const masterDataApi = {
       data: readonly Record<string, unknown>[];
       meta: { total: number };
     }>(`/audit/${resource}/${encodeURIComponent(entityId)}?page=${page}`);
+  },
+  notifications(limit = 25) {
+    return request<{
+      data: readonly MasterDataNotification[];
+      meta: { limit: number };
+    }>(`/audit/notifications?limit=${Math.min(50, Math.max(1, limit))}`);
   },
   unmaskOrganizationContact(id: string) {
     return request<{ data: MasterOrganizationContactUnmasked }>(
