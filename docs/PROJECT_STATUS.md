@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-PAYMENT-CURRENCY-0907 — COMPLETE_LOCAL
+
+Replaced the remaining free-text currency in saved-contract dashboard payments with a button-only themed registered-currency dropdown. Active references load across pages; failures/empty lists block submission with retry, and arbitrary codes cannot be entered. Existing new-contract currency selections remain unchanged. 158 Sales Web tests, scoped lint/typecheck and 36-route production build pass; synthetic actual-component browser tests cover retry, disabled submit, USD selection, inactive filtering and retention. Local Web3100 updated; API/database unchanged, no real payment created or public push. See docs/tasks/SALES-PAYMENT-CURRENCY-0907.md.
+
 ## RESERVATIONS-TICKET-ACCESS-0907 — COMPLETE_LOCAL
 
 Reservations contract cards now reopen saved passenger ticket snapshots, select one passenger or print all (one A4 page each), and offer browser Save as PDF. Contract-number search and paging make requests older than the latest 100 accessible within existing permission/branch scope. Sales exposes a presentation-only public ticket entry; no live inventory reconstruction or private-module queries. 162 Web tests, 15 API tests, scoped lint/typechecks, API/Web production builds, synthetic interactive browser and both rendered PDF pages passed. Five unrelated PostgreSQL hotel-purchase tests skipped without their dedicated test database; an empty-authorized-scope history query was independently checked on local PostgreSQL without business-row access. Local Web3100/API4000 updated. Existing templates remain DRAFT/not issued; no direct ticket-PDF download endpoint or real issuance added. No migration/data/IAM/public push. See docs/tasks/RESERVATIONS-TICKET-ACCESS-0907.md.

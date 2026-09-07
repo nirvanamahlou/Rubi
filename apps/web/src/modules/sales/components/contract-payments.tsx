@@ -13,13 +13,53 @@ import { FormField, Input } from '@/components/ui/form-controls';
 import { Alert, Card } from '@/components/ui/surfaces';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { salesApi } from '../api/client';
+import { loadPaymentCurrencies } from '../api/payment-currencies';
+import {
+  defaultSalesCurrency,
+  salesCurrencyOptions,
+  validateSalesCurrencySelection,
+} from './sales-currency-select';
 
 const empty: SalesPaymentInput = {
   amount: '',
-  currencyCode: 'IRR',
+  currencyCode: '',
   method: 'BANK_TRANSFER',
   dueAt: '',
 };
+export function ContractPaymentCurrencySelect({
+  currencies,
+  value,
+  onChange,
+}: {
+  currencies: readonly MasterDataRecord[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const options = salesCurrencyOptions(currencies);
+  return (
+    <FormField label="ارز" required>
+      <SalesThemedSelect
+        label="ارز پرداخت"
+        required
+        disabled={!options.length}
+        value={value}
+        onValueChange={onChange}
+        options={[
+          { value: '', label: 'انتخاب ارز' },
+          ...options.map((option) => ({
+            value: option.id,
+            label: option.name,
+          })),
+        ]}
+      />
+      {!options.length ? (
+        <p role="status" className="text-xs text-muted-foreground">
+          فهرست ارزهای فعال در دسترس نیست.
+        </p>
+      ) : null}
+    </FormField>
+  );
+}
 export function ContractPayments({
   id,
   onClose,
@@ -32,9 +72,45 @@ export function ContractPayments({
   const [contract, setContract] = useState<SalesContractDetail | null>(null);
   const [payment, setPayment] = useState(empty);
   const [banks, setBanks] = useState<readonly MasterDataRecord[]>([]);
+  const [currencies, setCurrencies] = useState<readonly MasterDataRecord[]>([]);
+  const [currencyLoading, setCurrencyLoading] = useState(true);
+  const [currencyError, setCurrencyError] = useState('');
+  const [currencyRetry, setCurrencyRetry] = useState(0);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const attempt = useRef({ fingerprint: '', key: '' });
+  useEffect(() => {
+    let active = true;
+    void loadPaymentCurrencies()
+      .then((records) => {
+        if (!active) return;
+        setCurrencies(records);
+        setPayment((current) => ({
+          ...current,
+          currencyCode: salesCurrencyOptions(records).some(
+            (option) => option.id === current.currencyCode,
+          )
+            ? current.currencyCode
+            : defaultSalesCurrency(records),
+        }));
+      })
+      .catch(() => {
+        if (active)
+          setCurrencyError('دریافت فهرست ارزها ناموفق بود؛ دوباره تلاش کنید.');
+      })
+      .finally(() => {
+        if (active) setCurrencyLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [id, currencyRetry]);
+  const validCurrency =
+    !currencyLoading &&
+    !currencyError &&
+    salesCurrencyOptions(currencies).some(
+      (option) => option.id === payment.currencyCode,
+    );
   useEffect(() => {
     let active = true;
     void salesApi
@@ -70,6 +146,12 @@ export function ContractPayments({
     setBusy(true);
     setError('');
     try {
+      if (!validCurrency)
+        throw new Error('ارز پرداخت را از فهرست ارزهای فعال انتخاب کنید.');
+      validateSalesCurrencySelection(
+        { priceComponents: [], payments: [payment] },
+        currencies,
+      );
       const input = {
         ...payment,
         dueAt: new Date(payment.dueAt).toISOString(),
@@ -84,7 +166,7 @@ export function ContractPayments({
         attempt.current.key,
       );
       setContract(response.data);
-      setPayment(empty);
+      setPayment({ ...empty, currencyCode: defaultSalesCurrency(currencies) });
       onSaved();
     } catch (reason) {
       setError(
@@ -157,19 +239,43 @@ export function ContractPayments({
             }
           />
         </FormField>
-        <FormField label="ارز" required>
-          <Input
-            required
-            maxLength={3}
-            value={payment.currencyCode}
-            onChange={(event) =>
-              setPayment({
-                ...payment,
-                currencyCode: event.target.value.toUpperCase(),
-              })
-            }
-          />
-        </FormField>
+        <div>
+          {currencyLoading ? (
+            <p role="status" className="text-sm text-muted-foreground">
+              در حال دریافت فهرست ارزها…
+            </p>
+          ) : (
+            <ContractPaymentCurrencySelect
+              currencies={currencies}
+              value={payment.currencyCode}
+              onChange={(currencyCode) =>
+                setPayment({ ...payment, currencyCode })
+              }
+            />
+          )}
+          {!currencyLoading &&
+          (currencyError || !salesCurrencyOptions(currencies).length) ? (
+            <div className="mt-2 space-y-2">
+              {currencyError ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {currencyError}
+                </p>
+              ) : null}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setCurrencyLoading(true);
+                  setCurrencyError('');
+                  setCurrencies([]);
+                  setCurrencyRetry((value) => value + 1);
+                }}
+              >
+                دریافت دوبارهٔ ارزها
+              </Button>
+            </div>
+          ) : null}
+        </div>
         <FormField label="سررسید پرداخت" required>
           <DatePicker
             value={payment.dueAt}
@@ -239,7 +345,11 @@ export function ContractPayments({
             </FormField>
           </>
         ) : null}
-        <Button type="submit" loading={busy} disabled={!contract}>
+        <Button
+          type="submit"
+          loading={busy}
+          disabled={!contract || !validCurrency}
+        >
           افزودن پرداخت
         </Button>
       </form>

@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-PAYMENT-CURRENCY-0907 — PC-A — COMPLETE_LOCAL
+
+- Dashboard payment currency is now a registered-active, button-only themed dropdown with paginated loading, retry and submission validation. 158 Sales tests, scoped lint/typecheck and 36-route production build pass; actual-component synthetic browser selection/error/retry checks pass. Web3100 updated. No payment/data/API/IAM/migration changes or public push. Scoped reservations released.
+
+- Reserve ContractPayments UI, local currency loader/validation tests and task/central docs from 106ca1b. Replace the remaining free-text dashboard payment currency with the existing themed registered-currency selector; load active reference pages, block missing/invalid selections and support retry. Other Sales currency editors already use registered selections. No API/schema/IAM/dependency/producer changes or public push.
+
 ## RESERVATIONS-TICKET-ACCESS-0907 — PC-A — COMPLETE_LOCAL
 
 - Delivered saved per-passenger ticket reopening and individual/all-passenger print/browser PDF, with contract reference, assigned flights/transfers and no fabricated issuance. History search/pagination preserves reservations.read and branch scope. 162 Web tests, 15 API tests (5 unrelated DB-dependent tests skipped), scoped lint/typechecks and API/Web production builds pass. Synthetic browser reopening/selection/printing/cleanup and both A4 PDF pages verified; live PostgreSQL empty-scope read check passed. Web3100/API4000 updated; no migration/data/IAM changes or public push. Scoped presentation and task-doc reservations released.
