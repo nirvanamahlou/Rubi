@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-OUTPUT-TERMS-0907 — PC-A — COMPLETE_LOCAL
+
+- Added the user's three notices in readable 8.5pt B Nazanin below signatures and above the site in shared print/PDF output. Compact whitespace and wider hotel-name column keep the two-passenger sample on one A4 page. Fourteen print/PDF-route tests, scoped lint, production TypeScript/build and all four rendered QA pages pass. Presentation only; API/database and receipt/consent logic unchanged. Local-only; task-specific docs/template reservations released.
+
+- Reserve Sales print template/tests and task/central status docs from 148fdf8 on the current Sales branch. User-supplied three notices below signatures, above Nystkt.ir, in small readable B Nazanin. Presentation only: no legal validation, consent workflow, API, database, payment/release or producer changes. Prior scoped reservations released. No public push.
+
 ## SALES-OUTPUT-HOTEL-CURRENCY-0907 — PC-A — COMPLETE_LOCAL
 
 - Delivered on the current local Sales branch: explicit age-compatible hotel accommodation per guest, Latin hotel/site public references, Nystkt.ir footer, IRR/foreign passenger cells and exact per-currency passenger totals. Empty PostgreSQL migration/seed-twice, restored-data rehearsal, DB CHECK/roundtrip, 132 Web Sales + 45 API Sales + 48 Contracts tests, scoped lint/typechecks/API-Web production builds passed. Local additive migration activated with fresh backup and historical rows/counts unchanged; Web3100/API4000 healthy. No public push. Task-specific Migration/Sales public contract/Central Docs reservations released. See docs/tasks/SALES-OUTPUT-HOTEL-CURRENCY-0907.md.

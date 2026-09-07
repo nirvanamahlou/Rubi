@@ -2,6 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { contractPrintHtml, contractMoney } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
+  it('includes the three user-supplied notices below signatures and above the site', () => {
+    const html = contractPrintHtml(printFixture, printReferences);
+    expect(html).toContain('در صورت تأیید نشدن هتل درخواستی، هتل مشابه جایگزین می‌گردد.');
+    expect(html).toContain('این برگه بدون قبض رسید صندوق فاقد هرگونه اعتبار می‌باشد.');
+    expect(html).toContain('با آگاهی از مفاد قراردادهای خارج از کشور');
+    expect(html).toContain('ارسال درخواست به آژانس نیایش سیر سحر');
+    expect(html).toContain('قبول تمامی شرایط، مواد و تبصره‌های قرارداد فوق می‌باشد.');
+    const terms = html.indexOf('<div class="customer-terms">');
+    expect(terms).toBeGreaterThan(html.indexOf('<div class="signatures">'));
+    expect(terms).toBeLessThan(html.indexOf('<footer>'));
+    expect(html).toContain('.customer-terms{font-size:8.5pt;line-height:1.35');
+  });
   it('separates passenger IRR and foreign amounts, sums each currency and prints hotel references', () => {
     const output = structuredClone(printFixture);
     output.contract.passengersDetail = output.contract.passengersDetail.map(
