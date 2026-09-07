@@ -1,4 +1,4 @@
-import { ArrowUpLeft, ChevronLeft, Sparkles } from 'lucide-react';
+import { ArrowUpLeft, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import {
   frappeWorkspaces,
@@ -45,9 +45,6 @@ export function FrappeWorkspaceLauncher() {
     >
       <div className={styles.launcherHead}>
         <div>
-          <span className={styles.eyebrow}>
-            <Sparkles aria-hidden="true" size={15} /> الگوی امکانات Frappe HR
-          </span>
           <h2 id="frappe-workspaces-title">فضاهای کاری منابع انسانی</h2>
           <p>
             ۹ فضای کاری با شاخص‌های پر، اطلاعات پایه و گزارش‌های متصل به صفحات

@@ -172,7 +172,10 @@
 
 .dateBar {
   display: grid;
-  grid-template-columns: auto minmax(150px, 220px) minmax(150px, 220px) 1fr auto;
+  grid-template-columns: auto minmax(150px, 220px) minmax(
+      150px,
+      220px
+    ) 1fr auto auto;
   align-items: end;
   gap: 10px;
   margin-bottom: 15px;
@@ -202,6 +205,12 @@
 .fieldLabel > span {
   display: block;
   margin-bottom: 5px;
+}
+
+.dateActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .requiredMark {
@@ -1036,6 +1045,48 @@
   display: flex;
   gap: 5px;
 }
+
+.avatarPhoto {
+  background-color: #eaf3ff;
+  background-position: center;
+  background-size: cover;
+}
+
+.photoUploadButton {
+  position: relative;
+}
+
+.visuallyHiddenInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.integrationLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  border: 1px solid #cfe2f8;
+  border-radius: 10px;
+  background: #f5f9ff;
+  padding: 9px 11px;
+  color: #607895;
+  font-size: 11px;
+}
+
+.integrationLinks a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #176fcf;
+  font-weight: 800;
+}
 .orgEditButton {
   display: inline-flex;
   align-items: center;
@@ -1213,7 +1264,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .dateBar {
-    grid-template-columns: auto minmax(140px, 1fr) minmax(140px, 1fr) auto;
+    grid-template-columns: auto minmax(140px, 1fr) minmax(140px, 1fr) auto auto;
   }
   .dateSummary {
     display: none;
@@ -1240,6 +1291,10 @@
   }
   .dateLead {
     white-space: normal;
+  }
+  .dateActions {
+    align-items: stretch;
+    flex-direction: column;
   }
   .hubGrid,
   .kpis,

@@ -165,7 +165,6 @@ export const frappeWorkspaces: readonly FrappeWorkspaceDefinition[] = [
         title: 'کارکنان',
         items: [
           { label: 'فهرست کارکنان', section: 'employees' },
-          { label: 'نوع کارکنان', section: 'organization', tab: 'groups' },
           { label: 'رده شغلی', section: 'organization', tab: 'grades' },
         ],
       },

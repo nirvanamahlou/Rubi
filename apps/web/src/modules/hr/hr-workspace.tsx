@@ -10,6 +10,7 @@ import {
   FileText,
   Filter,
   History,
+  ImageUp,
   Info,
   LockKeyhole,
   MonitorCog,
@@ -75,8 +76,11 @@ import {
 } from './organization-catalog';
 import {
   ContextualHrFormDialog,
+  openHrAttachment,
+  parseHrAttachmentReference,
   type ContextualHrFormContext,
 } from './contextual-hr-form';
+import { downloadHrXlsx } from './hr-xlsx';
 import {
   getHrPreviewDataset,
   type HrPreviewCell,
@@ -101,6 +105,7 @@ interface PreviewEmployee {
   status: string;
   tone: BadgeTone;
   local?: boolean;
+  photoDataUrl?: string;
 }
 
 interface PreviewTableData {
@@ -595,11 +600,13 @@ function PageHead({
 }
 
 function DateRangeBar({
+  actions,
   initialFrom = '2026-08-23',
   initialTo = '2026-09-22',
   onApply,
   summary,
 }: {
+  actions?: ReactNode;
   initialFrom?: string;
   initialTo?: string;
   onApply?: (range: { from: string; to: string }) => void;
@@ -631,6 +638,7 @@ function DateRangeBar({
       >
         <Filter aria-hidden="true" size={15} /> اعمال بازه
       </ActionButton>
+      {actions ? <div className={styles.dateActions}>{actions}</div> : null}
     </section>
   );
 }
@@ -748,7 +756,16 @@ function PreviewTable({ data }: { data: PreviewTableData }) {
 function Person({ employee }: { employee: PreviewEmployee }) {
   return (
     <div className={styles.person}>
-      <span className={styles.avatar}>{employee.initial}</span>
+      <span
+        className={`${styles.avatar} ${employee.photoDataUrl ? styles.avatarPhoto : ''}`}
+        style={
+          employee.photoDataUrl
+            ? { backgroundImage: `url(${employee.photoDataUrl})` }
+            : undefined
+        }
+      >
+        {employee.photoDataUrl ? null : employee.initial}
+      </span>
       <span>
         <b>{employee.name}</b>
         <small dir="ltr">employment: {employee.employment}</small>
@@ -779,11 +796,6 @@ function HubScreen() {
     <>
       <PageHead section="home" />
       <DateRangeBar />
-      <div className={styles.boundary}>
-        <Info aria-hidden="true" size={17} />
-        اطلاعات شخص، کاربر، مشتری و سازمان هویت‌های مستقل‌اند؛ داده مالی و فایل
-        باینری از قرارداد عمومی ماژول مالک دریافت می‌شود.
-      </div>
       <section aria-label="بخش‌های منابع انسانی" className={styles.hubGrid}>
         {hrHubCards.map((card) => {
           const Icon = card.icon;
@@ -966,7 +978,6 @@ function Dashboard({ openAction }: { openAction: (title: string) => void }) {
         onApply={() =>
           setFilterStatus('بازه زمانی اعمال شد · داده آزمایشی بروزرسانی شد')
         }
-        summary="انتخاب ماه و سال به‌صورت گردشی"
       />
       <section className={`${styles.panel} ${styles.filterBar}`}>
         <select
@@ -1148,15 +1159,57 @@ function Employees({
   onEdit: (employee: PreviewEmployee) => void;
 }) {
   const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [branchFilter, setBranchFilter] = useState('all');
+  const [unitFilter, setUnitFilter] = useState('all');
   const filtered = useMemo(
     () =>
-      employees.filter((employee) =>
-        `${employee.name} ${employee.id} ${employee.position}`.includes(
-          query.trim(),
-        ),
-      ),
-    [employees, query],
+      employees.filter((employee) => {
+        const [branch = '', unit = ''] = employee.unit.split(' / ');
+        return (
+          `${employee.name} ${employee.id} ${employee.position}`.includes(
+            query.trim(),
+          ) &&
+          (statusFilter === 'all' || employee.status === statusFilter) &&
+          (branchFilter === 'all' || branch === branchFilter) &&
+          (unitFilter === 'all' || unit === unitFilter)
+        );
+      }),
+    [branchFilter, employees, query, statusFilter, unitFilter],
   );
+  const exportEmployees = () => {
+    const rows = [
+      [
+        'نام و نام خانوادگی',
+        'کد پرسنلی',
+        'نوع همکاری',
+        'شعبه',
+        'واحد',
+        'سمت',
+        'مدیر مستقیم',
+        'تاریخ شروع',
+        'وضعیت',
+      ],
+      ...filtered.map((employee) => {
+        const [branch = '', unit = ''] = employee.unit.split(' / ');
+        return [
+          employee.name,
+          employee.id,
+          employee.kind,
+          branch,
+          unit,
+          employee.position,
+          employee.manager,
+          employee.startedAt,
+          employee.status,
+        ];
+      }),
+    ];
+    downloadHrXlsx(
+      `hr-employees-${new Date().toISOString().slice(0, 10)}.xlsx`,
+      rows,
+    );
+  };
   const data: PreviewTableData = {
     columns: [
       'کارمند',
@@ -1181,14 +1234,12 @@ function Employees({
         {employee.status}
       </Badge>,
       <div className={styles.rowActions} key={`${employee.id}-actions`}>
-        {!employee.local ? (
-          <Link
-            className={`${styles.button} ${styles.buttonSmall}`}
-            href={`/hr?section=employee&employee=${employee.id}`}
-          >
-            مشاهده <ArrowLeft size={14} />
-          </Link>
-        ) : null}
+        <Link
+          className={`${styles.button} ${styles.buttonSmall}`}
+          href={`/hr?section=employee&employee=${employee.id}`}
+        >
+          پرونده ۳۶۰ <ArrowLeft size={14} />
+        </Link>
         <ActionButton onClick={() => onEdit(employee)} small>
           <PencilLine aria-hidden="true" size={13} /> ویرایش
         </ActionButton>
@@ -1213,20 +1264,19 @@ function Employees({
   };
   return (
     <>
-      <PageHead
+      <PageHead section="employees" />
+      <DateRangeBar
         actions={
           <>
-            <ActionButton disabled>
-              <Download size={15} /> خروجی مجاز
+            <ActionButton disabled={!filtered.length} onClick={exportEmployees}>
+              <Download size={15} /> خروجی اکسل
             </ActionButton>
             <ActionButton onClick={onCreate} primary>
               <Plus size={15} /> کارمند جدید
             </ActionButton>
           </>
         }
-        section="employees"
       />
-      <DateRangeBar />
       <Panel title="فهرست کارکنان">
         <div className={`${styles.filterBar} ${styles.employeeFilters}`}>
           <label className={styles.fieldLabel}>
@@ -1250,10 +1300,13 @@ function Employees({
             <select
               aria-label="وضعیت"
               className={styles.control}
-              defaultValue="all"
+              onChange={(event) => setStatusFilter(event.target.value)}
+              value={statusFilter}
             >
               <option value="all">همه وضعیت‌ها</option>
-              <option value="active">فعال</option>
+              <option value="فعال">فعال</option>
+              <option value="در حال تکمیل">در حال تکمیل</option>
+              <option value="تعلیق‌شده">تعلیق‌شده</option>
             </select>
           </label>
           <label className={styles.fieldLabel}>
@@ -1261,11 +1314,12 @@ function Employees({
             <select
               aria-label="شعبه"
               className={styles.control}
-              defaultValue="all"
+              onChange={(event) => setBranchFilter(event.target.value)}
+              value={branchFilter}
             >
               <option value="all">همه شعب</option>
-              <option value="niyayeshSeir">نیایش سیر</option>
-              <option value="jahanBastan">جهان باستان</option>
+              <option value="نیایش سیر">نیایش سیر</option>
+              <option value="جهان باستان">جهان باستان</option>
             </select>
           </label>
           <label className={styles.fieldLabel}>
@@ -1273,10 +1327,14 @@ function Employees({
             <select
               aria-label="واحد"
               className={styles.control}
-              defaultValue="all"
+              onChange={(event) => setUnitFilter(event.target.value)}
+              value={unitFilter}
             >
               <option value="all">همه واحدها</option>
-              <option value="operations">عملیات سفر</option>
+              <option value="عملیات سفر">عملیات سفر</option>
+              <option value="فروش">فروش</option>
+              <option value="مالی">مالی</option>
+              <option value="عملیات فرودگاهی">عملیات فرودگاهی</option>
             </select>
           </label>
           <ActionButton>
@@ -1296,13 +1354,15 @@ function Employees({
 }
 
 function EmployeeProfile({
-  openAction,
+  employee,
   openForm,
+  onPhotoChange,
   datasetStore,
   initialTab,
 }: {
-  openAction: (title: string) => void;
+  employee: PreviewEmployee;
   openForm: (context: ContextualHrFormContext) => void;
+  onPhotoChange: (employeeId: string, photoDataUrl: string) => void;
   datasetStore: PreviewDatasetStore;
   initialTab?: string | undefined;
 }) {
@@ -1316,6 +1376,16 @@ function EmployeeProfile({
   const ActiveIcon = active?.icon ?? UserRound;
   const dataset = datasetStore.getDataset('employee', tab);
   const isAutomaticHistory = isAutomaticHrHistoryTab('employee', tab);
+  const [photoError, setPhotoError] = useState('');
+  const openCurrentForm = (mode: ContextualHrFormContext['mode']) =>
+    openForm({
+      section: 'employee',
+      tab,
+      title: active?.label ?? 'پرونده کارمند',
+      description: screenMeta.employee.description,
+      columns: dataset.columns,
+      mode,
+    });
   const profileData =
     tab === 'summary'
       ? null
@@ -1337,46 +1407,93 @@ function EmployeeProfile({
             (rowIndex) => datasetStore.deleteRow('employee', tab, rowIndex),
           );
   const summaryItems = [
-    ['کد پرسنلی', 'preview-employee-1'],
-    ['نوع همکاری', 'تمام‌وقت'],
-    ['شعبه', 'نیایش سیر'],
-    ['واحد', 'عملیات سفر'],
-    ['سمت', 'کارشناس ارشد عملیات'],
-    ['مدیر مستقیم', 'مدیر نمایشی الف'],
+    ['کد پرسنلی', employee.id],
+    ['نوع همکاری', employee.kind],
+    ['شعبه', employee.unit.split(' / ')[0] ?? '—'],
+    ['واحد', employee.unit.split(' / ')[1] ?? '—'],
+    ['سمت', employee.position],
+    ['مدیر مستقیم', employee.manager],
     ['اطلاعات بانکی', '••••••••'],
     ['شناسه هویتی', '••••••••'],
   ];
   return (
     <>
-      <PageHead
+      <PageHead section="employee" />
+      <DateRangeBar
         actions={
-          <ActionButton onClick={() => setTab('audit')}>
-            <History size={15} /> تاریخچه
-          </ActionButton>
+          <>
+            <ActionButton onClick={() => setTab('audit')}>
+              <History size={15} /> تاریخچه
+            </ActionButton>
+            {tab !== 'summary' && !isAutomaticHistory ? (
+              <ActionButton onClick={() => openCurrentForm('create')} primary>
+                <Plus size={15} /> افزودن {active?.label}
+              </ActionButton>
+            ) : null}
+          </>
         }
-        section="employee"
       />
-      <DateRangeBar />
       <section className={styles.employeeBanner}>
-        <span className={styles.profileAvatar}>الف</span>
+        <span
+          className={`${styles.profileAvatar} ${employee.photoDataUrl ? styles.avatarPhoto : ''}`}
+          style={
+            employee.photoDataUrl
+              ? { backgroundImage: `url(${employee.photoDataUrl})` }
+              : undefined
+          }
+        >
+          {employee.photoDataUrl ? null : employee.initial}
+        </span>
         <div className={styles.employeeMain}>
-          <h2>همکار نمایشی الف</h2>
+          <h2>{employee.name}</h2>
           <div className={styles.employeeMeta}>
-            <Badge tone="success">همکاری فعال</Badge>
-            <span dir="ltr">preview-employee-1</span>
+            <Badge tone={employee.tone}>{employee.status}</Badge>
+            <span dir="ltr">{employee.id}</span>
             <span>•</span>
-            <span>کارشناس ارشد عملیات سفر</span>
+            <span>{employee.position}</span>
             <span>•</span>
-            <span>مدیر: مدیر نمایشی الف</span>
+            <span>مدیر: {employee.manager}</span>
           </div>
+          {photoError ? (
+            <small className={styles.fieldError}>{photoError}</small>
+          ) : null}
         </div>
         <div className={styles.employeeActions}>
           <Link className={styles.button} href="/hr?section=employees">
             تغییر کارمند
           </Link>
-          <ActionButton onClick={() => openAction('پرونده ۳۶۰ درجه')} primary>
-            <UserRound size={15} /> پرونده ۳۶۰ درجه
-          </ActionButton>
+          <label className={`${styles.button} ${styles.photoUploadButton}`}>
+            <ImageUp aria-hidden="true" size={15} /> بارگذاری عکس
+            <input
+              accept="image/jpeg,image/png,image/webp"
+              aria-label={`بارگذاری عکس پروفایل ${employee.name}`}
+              className={styles.visuallyHiddenInput}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                if (
+                  !['image/jpeg', 'image/png', 'image/webp'].includes(
+                    file.type,
+                  ) ||
+                  file.size > 2 * 1024 * 1024
+                ) {
+                  setPhotoError(
+                    'عکس باید JPG، PNG یا WebP و حداکثر ۲ مگابایت باشد.',
+                  );
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onerror = () =>
+                  setPhotoError('خواندن فایل عکس انجام نشد.');
+                reader.onload = () => {
+                  setPhotoError('');
+                  onPhotoChange(employee.id, String(reader.result ?? ''));
+                };
+                reader.readAsDataURL(file);
+              }}
+              type="file"
+            />
+          </label>
         </div>
       </section>
       <Tabs active={tab} items={employeeTabs} onChange={setTab} />
@@ -1390,7 +1507,6 @@ function EmployeeProfile({
         title={active?.label ?? 'مشخصات'}
       >
         <div className={styles.panelBody}>
-          {isAutomaticHistory ? <AutomaticHistoryNotice /> : null}
           {tab === 'summary' ? (
             <div className={styles.summaryGrid}>
               {summaryItems.map(([label, value]) => (
@@ -1445,6 +1561,9 @@ function genericTable(
 }
 
 function readonlyTable(dataset: HrPreviewDataset): PreviewTableData {
+  const attachmentIndex = dataset.columns.findIndex((column) =>
+    /رزومه|فایل/.test(column),
+  );
   return {
     columns: dataset.columns,
     rows: dataset.rows.map((row, rowIndex) =>
@@ -1454,6 +1573,54 @@ function readonlyTable(dataset: HrPreviewDataset): PreviewTableData {
             <Badge key={`status-${rowIndex}`} tone={cell.tone}>
               {cell.label}
             </Badge>
+          );
+        const column = dataset.columns[cellIndex] ?? '';
+        const attachment = parseHrAttachmentReference(cell);
+        const rowAttachmentValue =
+          attachmentIndex >= 0 && typeof row[attachmentIndex] === 'string'
+            ? row[attachmentIndex]
+            : '';
+        const rowAttachment = parseHrAttachmentReference(rowAttachmentValue);
+        if (attachment)
+          return (
+            <button
+              className={styles.textButton}
+              key={`attachment-${rowIndex}-${cellIndex}`}
+              onClick={() => {
+                if (!openHrAttachment(cell))
+                  window.alert('فایل در این نشست مرورگر در دسترس نیست.');
+              }}
+              type="button"
+            >
+              نمایش {attachment.name}
+            </button>
+          );
+        if (column === 'نام و نام خانوادگی' && rowAttachment)
+          return (
+            <button
+              className={styles.textButton}
+              key={`applicant-${rowIndex}`}
+              onClick={() => {
+                if (!openHrAttachment(rowAttachmentValue))
+                  window.alert(
+                    'رزومه متقاضی در این نشست مرورگر در دسترس نیست.',
+                  );
+              }}
+              type="button"
+            >
+              {cell}
+            </button>
+          );
+        if (/^https?:\/\//.test(cell))
+          return (
+            <a
+              href={cell}
+              key={`url-${rowIndex}-${cellIndex}`}
+              rel="noreferrer"
+              target="_blank"
+            >
+              مشاهده منبع
+            </a>
           );
         if (cellIndex === 0)
           return (
@@ -1468,21 +1635,12 @@ function readonlyTable(dataset: HrPreviewDataset): PreviewTableData {
   };
 }
 
-function AutomaticHistoryNotice() {
-  return (
-    <div className={styles.previewNote} role="note">
-      <History aria-hidden="true" size={16} />
-      <span>
-        رکوردهای این بخش از عملیات مرتبط به‌صورت خودکار ثبت می‌شوند و افزودن،
-        ویرایش یا حذف دستی ندارند.
-      </span>
-    </div>
-  );
-}
 function OrganizationSection({
+  employeeOptions,
   initialTab,
   onMutation,
 }: {
+  employeeOptions: readonly string[];
   initialTab?: string | undefined;
   onMutation: (
     action: HrMutationAction,
@@ -1809,7 +1967,8 @@ function OrganizationSection({
 
   return (
     <>
-      <PageHead
+      <PageHead section="organization" />
+      <DateRangeBar
         actions={
           <>
             <ActionButton disabled>
@@ -1831,9 +1990,7 @@ function OrganizationSection({
             </ActionButton>
           </>
         }
-        section="organization"
       />
-      <DateRangeBar />
       <Tabs active={tab} items={tabs} onChange={setTab} />
       {organizationNotice ? (
         <div className={styles.notice} role="status">
@@ -1891,7 +2048,7 @@ function OrganizationSection({
         <OrganizationNodeDialog
           initialNode={editingNode}
           branchOptions={catalogRecords.branches.map((branch) => branch.title)}
-          managerOptions={previewEmployees.map((employee) => employee.name)}
+          managerOptions={employeeOptions}
           nodes={nodes}
           onClose={() => setDialogOpen(false)}
           onSubmit={saveNode}
@@ -1899,7 +2056,7 @@ function OrganizationSection({
       ) : null}
       <OrganizationCatalogDialog
         initialRecord={editingCatalogRecord}
-        managers={previewEmployees.map((employee) => employee.name)}
+        managers={employeeOptions}
         onClose={() => setCatalogDialogOpen(false)}
         onSubmit={saveCatalogRecord}
         open={catalogDialogOpen}
@@ -1943,15 +2100,14 @@ function Requests({
   );
   return (
     <>
-      <PageHead
+      <PageHead section="requests" />
+      <DateRangeBar
         actions={
           <ActionButton onClick={() => openCurrentForm('create')} primary>
             <Plus size={15} /> افزودن {active?.label ?? 'درخواست'}
           </ActionButton>
         }
-        section="requests"
       />
-      <DateRangeBar />
       <Tabs active={tab} items={tabs} onChange={setTab} />
       <section className={styles.requestCards}>
         {requestKinds.map(([title, Icon, tone]) => (
@@ -2155,7 +2311,8 @@ function TabbedSection({
       );
   return (
     <>
-      <PageHead
+      <PageHead section={section} />
+      <DateRangeBar
         actions={
           <>
             <ActionButton disabled>
@@ -2169,9 +2326,7 @@ function TabbedSection({
             )}
           </>
         }
-        section={section}
       />
-      <DateRangeBar />
       {tabs.length ? (
         <Tabs active={tab} items={tabs} onChange={setTab} />
       ) : null}
@@ -2187,11 +2342,6 @@ function TabbedSection({
           }
           title={active?.label ?? screenMeta[section].title}
         >
-          {isAutomaticHistory ? (
-            <div className={styles.panelBody}>
-              <AutomaticHistoryNotice />
-            </div>
-          ) : null}
           {section === 'hrSettings' && tab === 'companies' ? (
             <div className={styles.panelBody}>
               <div className={styles.previewNote}>
@@ -2263,10 +2413,12 @@ function DetailDialog({ close, title }: { close: () => void; title: string }) {
 }
 
 export function HrWorkspace({
+  employeeId,
   sectionId,
   tabId,
   workspaceId,
 }: {
+  employeeId?: string | undefined;
   sectionId?: string | undefined;
   tabId?: string | undefined;
   workspaceId?: string | undefined;
@@ -2284,6 +2436,10 @@ export function HrWorkspace({
   const [contextualForm, setContextualForm] =
     useState<ContextualHrFormContext | null>(null);
   const [notice, setNotice] = useState('');
+  const selectedEmployee =
+    employees.find((employee) => employee.id === employeeId) ??
+    employees[0] ??
+    previewEmployees[0]!;
   useEffect(() => {
     const serialized = window.sessionStorage.getItem(previewDatasetStorageKey);
     const timer = window.setTimeout(() => {
@@ -2312,7 +2468,10 @@ export function HrWorkspace({
   const openForm = (context: ContextualHrFormContext) => {
     setNotice('');
     setDialogTitle(null);
-    setContextualForm(context);
+    setContextualForm({
+      ...context,
+      peopleOptions: employees.map((employee) => employee.name),
+    });
   };
   const getDataset = (datasetSection: HrSectionId, tab: string) => {
     const base = getHrPreviewDataset(datasetSection, tab);
@@ -2389,6 +2548,9 @@ export function HrWorkspace({
       status: value.status,
       tone: statusTone[value.status],
       local: true,
+      ...(editingEmployee?.photoDataUrl
+        ? { photoDataUrl: editingEmployee.photoDataUrl }
+        : {}),
     };
     setEmployees((current) =>
       editingEmployee
@@ -2453,16 +2615,27 @@ export function HrWorkspace({
   else if (section === 'employee')
     screen = (
       <EmployeeProfile
+        employee={selectedEmployee}
         datasetStore={datasetStore}
         initialTab={tabId}
         key={`employee:${tabId ?? ''}`}
-        openAction={openAction}
         openForm={openForm}
+        onPhotoChange={(targetEmployeeId, photoDataUrl) => {
+          setEmployees((current) =>
+            current.map((employee) =>
+              employee.id === targetEmployeeId
+                ? { ...employee, photoDataUrl }
+                : employee,
+            ),
+          );
+          setNotice(`عکس پروفایل «${selectedEmployee.name}» به‌روزرسانی شد.`);
+        }}
       />
     );
   else if (section === 'organization')
     screen = (
       <OrganizationSection
+        employeeOptions={employees.map((employee) => employee.name)}
         initialTab={tabId}
         key={`organization:${tabId ?? ''}`}
         onMutation={(action, tab, title, subject) =>
@@ -2519,7 +2692,7 @@ export function HrWorkspace({
                 current[key] ??
                 getHrPreviewDataset(contextualForm.section, contextualForm.tab)
                   .rows;
-              const next = {
+              let next: PreviewDatasetOverrides = {
                 ...current,
                 [key]: saveHrPreviewRow(
                   rows,
@@ -2528,6 +2701,47 @@ export function HrWorkspace({
                   contextualForm.rowIndex,
                 ),
               };
+              if (
+                contextualForm.section === 'recruitment' &&
+                contextualForm.tab === 'applicants'
+              ) {
+                const resumeIndex = contextualForm.columns.indexOf('رزومه');
+                const applicantIndex =
+                  contextualForm.columns.indexOf('نام و نام خانوادگی');
+                const resume = values[resumeIndex] ?? '';
+                const applicant = values[applicantIndex] ?? 'متقاضی';
+                const attachment = parseHrAttachmentReference(resume);
+                if (attachment) {
+                  const documentsKey = previewDatasetKey('documents', 'list');
+                  const documentsRows =
+                    next[documentsKey] ??
+                    getHrPreviewDataset('documents', 'list').rows;
+                  if (
+                    !documentsRows.some((row) =>
+                      row.some(
+                        (cell) => typeof cell === 'string' && cell === resume,
+                      ),
+                    )
+                  )
+                    next = {
+                      ...next,
+                      [documentsKey]: [
+                        [
+                          `HR-DOC-${Date.now().toString(36).toUpperCase()}`,
+                          applicant,
+                          'رزومه متقاضی',
+                          '••••',
+                          'v1',
+                          '—',
+                          'محرمانه',
+                          resume,
+                          { label: 'ثبت‌شده', tone: 'success' },
+                        ],
+                        ...documentsRows,
+                      ],
+                    };
+                }
+              }
               return appendAutomaticHrHistory(next, {
                 action: contextualForm.mode,
                 section: contextualForm.section,

@@ -13,16 +13,12 @@ import styles from './hr-workspace.module.css';
 import { RequiredFieldLabel } from './required-field-label';
 
 export type OrganizationCatalogTab =
-  | 'branches'
-  | 'units'
-  | 'positions'
-  | 'grades'
-  | 'groups';
+  'branches' | 'units' | 'positions' | 'grades';
 
 export function isOrganizationCatalogTab(
   value: string,
 ): value is OrganizationCatalogTab {
-  return ['branches', 'units', 'positions', 'grades', 'groups'].includes(value);
+  return ['branches', 'units', 'positions', 'grades'].includes(value);
 }
 
 type CatalogFieldKey =
@@ -39,7 +35,6 @@ type CatalogFieldKey =
   | 'capacity'
   | 'level'
   | 'rank'
-  | 'groupType'
   | 'description'
   | 'effectiveFrom'
   | 'status';
@@ -52,11 +47,7 @@ export type OrganizationCatalogRecords = Record<
 
 type FieldType = 'text' | 'number' | 'date' | 'select' | 'textarea';
 type OptionSource =
-  | 'managers'
-  | 'branches'
-  | 'units'
-  | 'parentUnits'
-  | 'grades';
+  'managers' | 'branches' | 'units' | 'parentUnits' | 'grades';
 
 interface CatalogField {
   key: CatalogFieldKey;
@@ -88,7 +79,6 @@ const catalogCodePrefixes: Record<OrganizationCatalogTab, string> = {
   units: 'UNIT',
   positions: 'POS',
   grades: 'GR',
-  groups: 'GROUP',
 };
 
 export function nextOrganizationCatalogId(
@@ -115,7 +105,13 @@ export const organizationCatalogSchemas: Record<
     singular: 'شعبه',
     plural: 'شعبه‌ها',
     fields: [
-      { key: 'id', label: 'کد شعبه', required: true, type: 'text', placeholder: 'مانند BR-03' },
+      {
+        key: 'id',
+        label: 'کد شعبه',
+        required: true,
+        type: 'text',
+        placeholder: 'مانند BR-03',
+      },
       { key: 'title', label: 'نام شعبه', required: true, type: 'text' },
       {
         key: 'company',
@@ -125,9 +121,25 @@ export const organizationCatalogSchemas: Record<
         options: ['شرکت نیایش سیر', 'شرکت جهان باستان'],
       },
       { key: 'city', label: 'شهر', required: true, type: 'text' },
-      { key: 'manager', label: 'مدیر شعبه', type: 'select', optionSource: 'managers' },
-      { key: 'effectiveFrom', label: 'تاریخ اثر', required: true, type: 'date' },
-      { key: 'status', label: 'وضعیت', required: true, type: 'select', options: statusOptions },
+      {
+        key: 'manager',
+        label: 'مدیر شعبه',
+        type: 'select',
+        optionSource: 'managers',
+      },
+      {
+        key: 'effectiveFrom',
+        label: 'تاریخ اثر',
+        required: true,
+        type: 'date',
+      },
+      {
+        key: 'status',
+        label: 'وضعیت',
+        required: true,
+        type: 'select',
+        options: statusOptions,
+      },
     ],
     columns: [
       { key: 'id', label: 'کد شعبه' },
@@ -143,13 +155,46 @@ export const organizationCatalogSchemas: Record<
     singular: 'واحد سازمانی',
     plural: 'واحدها',
     fields: [
-      { key: 'id', label: 'کد واحد', required: true, type: 'text', placeholder: 'مانند UNIT-04' },
+      {
+        key: 'id',
+        label: 'کد واحد',
+        required: true,
+        type: 'text',
+        placeholder: 'مانند UNIT-04',
+      },
       { key: 'title', label: 'نام واحد', required: true, type: 'text' },
-      { key: 'branch', label: 'شعبه', required: true, type: 'select', optionSource: 'branches' },
-      { key: 'parent', label: 'واحد والد', type: 'select', optionSource: 'parentUnits' },
-      { key: 'manager', label: 'مدیر واحد', type: 'select', optionSource: 'managers' },
-      { key: 'effectiveFrom', label: 'تاریخ اثر', required: true, type: 'date' },
-      { key: 'status', label: 'وضعیت', required: true, type: 'select', options: statusOptions },
+      {
+        key: 'branch',
+        label: 'شعبه',
+        required: true,
+        type: 'select',
+        optionSource: 'branches',
+      },
+      {
+        key: 'parent',
+        label: 'واحد والد',
+        type: 'select',
+        optionSource: 'parentUnits',
+      },
+      {
+        key: 'manager',
+        label: 'مدیر واحد',
+        type: 'select',
+        optionSource: 'managers',
+      },
+      {
+        key: 'effectiveFrom',
+        label: 'تاریخ اثر',
+        required: true,
+        type: 'date',
+      },
+      {
+        key: 'status',
+        label: 'وضعیت',
+        required: true,
+        type: 'select',
+        options: statusOptions,
+      },
     ],
     columns: [
       { key: 'id', label: 'کد واحد' },
@@ -165,14 +210,43 @@ export const organizationCatalogSchemas: Record<
     singular: 'شغل و سمت',
     plural: 'شغل‌ها و سمت‌ها',
     fields: [
-      { key: 'id', label: 'کد سمت', required: true, type: 'text', placeholder: 'مانند POS-06' },
+      {
+        key: 'id',
+        label: 'کد سمت',
+        required: true,
+        type: 'text',
+        placeholder: 'مانند POS-06',
+      },
       { key: 'jobTitle', label: 'عنوان شغل', required: true, type: 'text' },
       { key: 'title', label: 'عنوان سمت', required: true, type: 'text' },
-      { key: 'unit', label: 'واحد سازمانی', required: true, type: 'select', optionSource: 'units' },
-      { key: 'grade', label: 'رده شغلی', required: true, type: 'select', optionSource: 'grades' },
+      {
+        key: 'unit',
+        label: 'واحد سازمانی',
+        required: true,
+        type: 'select',
+        optionSource: 'units',
+      },
+      {
+        key: 'grade',
+        label: 'رده شغلی',
+        required: true,
+        type: 'select',
+        optionSource: 'grades',
+      },
       { key: 'capacity', label: 'ظرفیت', required: true, type: 'number' },
-      { key: 'effectiveFrom', label: 'تاریخ اثر', required: true, type: 'date' },
-      { key: 'status', label: 'وضعیت', required: true, type: 'select', options: statusOptions },
+      {
+        key: 'effectiveFrom',
+        label: 'تاریخ اثر',
+        required: true,
+        type: 'date',
+      },
+      {
+        key: 'status',
+        label: 'وضعیت',
+        required: true,
+        type: 'select',
+        options: statusOptions,
+      },
     ],
     columns: [
       { key: 'id', label: 'کد سمت' },
@@ -188,19 +262,46 @@ export const organizationCatalogSchemas: Record<
     singular: 'رده شغلی',
     plural: 'رده‌های شغلی',
     fields: [
-      { key: 'id', label: 'کد رده', required: true, type: 'text', placeholder: 'مانند GR-04' },
+      {
+        key: 'id',
+        label: 'کد رده',
+        required: true,
+        type: 'text',
+        placeholder: 'مانند GR-04',
+      },
       { key: 'title', label: 'عنوان رده', required: true, type: 'text' },
       {
         key: 'level',
         label: 'سطح سازمانی',
         required: true,
         type: 'select',
-        options: ['کارشناسی', 'کارشناس ارشد', 'سرپرستی', 'مدیریت'],
+        options: [
+          'کارآموزی',
+          'کمک‌کارشناس',
+          'کارشناسی',
+          'کارشناس ارشد',
+          'سرپرستی',
+          'مدیریت میانی',
+          'مدیریت ارشد',
+          'معاونت',
+          'مدیرعامل',
+        ],
       },
       { key: 'rank', label: 'ترتیب نمایش', required: true, type: 'number' },
       { key: 'description', label: 'شرح رده', type: 'textarea', full: true },
-      { key: 'effectiveFrom', label: 'تاریخ اثر', required: true, type: 'date' },
-      { key: 'status', label: 'وضعیت', required: true, type: 'select', options: statusOptions },
+      {
+        key: 'effectiveFrom',
+        label: 'تاریخ اثر',
+        required: true,
+        type: 'date',
+      },
+      {
+        key: 'status',
+        label: 'وضعیت',
+        required: true,
+        type: 'select',
+        options: statusOptions,
+      },
     ],
     columns: [
       { key: 'id', label: 'کد رده' },
@@ -209,18 +310,6 @@ export const organizationCatalogSchemas: Record<
       { key: 'rank', label: 'ترتیب نمایش' },
       { key: 'effectiveFrom', label: 'تاریخ اثر' },
       { key: 'status', label: 'وضعیت' },
-    ],
-  },
-  groups: {
-    singular: 'نوع کارکنان',
-    plural: 'انواع کارکنان',
-    fields: [
-      { key: 'id', label: 'کد نوع کارکنان', required: true, type: 'text' },
-      { key: 'title', label: 'نام نوع کارکنان', required: true, type: 'text' },
-    ],
-    columns: [
-      { key: 'id', label: 'کد نوع کارکنان' },
-      { key: 'title', label: 'نام نوع کارکنان' },
     ],
   },
 };
@@ -239,7 +328,6 @@ const blankRecord = (): OrganizationCatalogFormValue => ({
   capacity: '1',
   level: '',
   rank: '1',
-  groupType: '',
   description: '',
   effectiveFrom: '',
   status: 'فعال',
@@ -327,22 +415,6 @@ export const initialOrganizationCatalogRecords: OrganizationCatalogRecords = {
       level: 'سرپرستی',
       rank: '3',
       description: 'مسئولان تیم و سرپرستان واحد',
-      effectiveFrom: '2026-03-21',
-    }),
-  ],
-  groups: [
-    record({
-      id: 'preview-group-fulltime',
-      title: 'کارکنان تمام‌وقت',
-      groupType: 'نوع همکاری',
-      description: 'همکاری فعال با نوع تمام‌وقت',
-      effectiveFrom: '2026-03-21',
-    }),
-    record({
-      id: 'preview-group-operations',
-      title: 'تیم عملیات',
-      groupType: 'سازمانی',
-      description: 'کارکنان واحدهای عملیاتی سفر و فرودگاه',
       effectiveFrom: '2026-03-21',
     }),
   ],
@@ -448,7 +520,8 @@ export function OrganizationCatalogForm({
       records[tab].map((record) => record.id),
     );
     for (const field of schema.fields) {
-      const options = field.options ?? optionsFor(field.optionSource, records, managers);
+      const options =
+        field.options ?? optionsFor(field.optionSource, records, managers);
       if (field.type === 'select' && options[0]) next[field.key] = options[0];
     }
     if (tab === 'units' && next.parent === 'بدون والد') next.parent = '';
@@ -508,7 +581,8 @@ export function OrganizationCatalogForm({
               required: Boolean(field.required),
             };
             const sourceOptions =
-              field.options ?? optionsFor(field.optionSource, records, managers);
+              field.options ??
+              optionsFor(field.optionSource, records, managers);
             const options =
               field.key === 'parent'
                 ? sourceOptions.filter(
@@ -531,9 +605,14 @@ export function OrganizationCatalogForm({
                     onChange={(event) => update(field.key, event.target.value)}
                     value={value[field.key]}
                   >
-                    {!field.required && field.key !== 'parent' ? <option value="">انتخاب نشده</option> : null}
+                    {!field.required && field.key !== 'parent' ? (
+                      <option value="">انتخاب نشده</option>
+                    ) : null}
                     {options.map((option) => (
-                      <option key={option} value={option === 'بدون والد' ? '' : option}>
+                      <option
+                        key={option}
+                        value={option === 'بدون والد' ? '' : option}
+                      >
                         {option}
                       </option>
                     ))}
@@ -581,8 +660,13 @@ export function OrganizationCatalogForm({
         </div>
       </fieldset>
       <div className={styles.modalFooter}>
-        <button className={styles.button} onClick={onCancel} type="button">انصراف</button>
-        <button className={`${styles.button} ${styles.buttonPrimary}`} type="submit">
+        <button className={styles.button} onClick={onCancel} type="button">
+          انصراف
+        </button>
+        <button
+          className={`${styles.button} ${styles.buttonPrimary}`}
+          type="submit"
+        >
           {initialRecord ? 'ذخیره ویرایش' : `افزودن ${schema.singular}`}
         </button>
       </div>
@@ -594,17 +678,26 @@ export function OrganizationCatalogDialog({
   open,
   onClose,
   ...formProps
-}: Omit<CatalogFormProps, 'onCancel'> & { open: boolean; onClose: () => void }) {
+}: Omit<CatalogFormProps, 'onCancel'> & {
+  open: boolean;
+  onClose: () => void;
+}) {
   if (!open) return null;
   const schema = organizationCatalogSchemas[formProps.tab];
   return (
     <Dialog onOpenChange={(nextOpen) => !nextOpen && onClose()} open>
-      <DialogContent className={`${styles.modal} ${styles.employeeModal}`} dir="rtl">
+      <DialogContent
+        className={`${styles.modal} ${styles.employeeModal}`}
+        dir="rtl"
+      >
         <DialogTitle>
-          {formProps.initialRecord ? `ویرایش ${schema.singular}` : `افزودن ${schema.singular}`}
+          {formProps.initialRecord
+            ? `ویرایش ${schema.singular}`
+            : `افزودن ${schema.singular}`}
         </DialogTitle>
         <DialogDescription>
-          فیلدهای {schema.singular} را مطابق ارتباط آن با ساختار سازمانی تکمیل کنید.
+          فیلدهای {schema.singular} را مطابق ارتباط آن با ساختار سازمانی تکمیل
+          کنید.
         </DialogDescription>
         <OrganizationCatalogForm {...formProps} onCancel={onClose} />
       </DialogContent>
@@ -640,7 +733,9 @@ export function OrganizationCatalogTable({
         <table className={styles.table}>
           <thead>
             <tr>
-              {schema.columns.map((column) => <th key={column.key}>{column.label}</th>)}
+              {schema.columns.map((column) => (
+                <th key={column.key}>{column.label}</th>
+              ))}
               <th>عملیات</th>
             </tr>
           </thead>
@@ -650,10 +745,14 @@ export function OrganizationCatalogTable({
                 {schema.columns.map((column) => (
                   <td key={column.key}>
                     {column.key === 'status' ? (
-                      <span className={`${styles.badge} ${item.status === 'فعال' ? styles.badgeSuccess : styles.badgeNeutral}`}>
+                      <span
+                        className={`${styles.badge} ${item.status === 'فعال' ? styles.badgeSuccess : styles.badgeNeutral}`}
+                      >
                         {item.status}
                       </span>
-                    ) : displayValue(column.key, item[column.key])}
+                    ) : (
+                      displayValue(column.key, item[column.key])
+                    )}
                   </td>
                 ))}
                 <td>

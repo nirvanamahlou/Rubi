@@ -76,11 +76,15 @@ describe('HR reference implementation', () => {
     expect(html).not.toContain('منبع عملیاتی متصل نیست');
     expect(html).not.toContain('خروجی داشبورد');
     expect(html).not.toContain('ورود کارمند');
+    expect(html).not.toContain('انتخاب ماه و سال به‌صورت گردشی');
   });
 
   it('provides the complete employee profile and section tab sets', () => {
     expect(employeeTabs).toHaveLength(15);
-    expect(sectionTabs.organization).toHaveLength(6);
+    expect(sectionTabs.organization).toHaveLength(5);
+    expect(sectionTabs.organization?.map((tab) => tab.label)).not.toContain(
+      'نوع کارکنان',
+    );
     expect(sectionTabs.recruitment).toHaveLength(7);
     expect(sectionTabs.recruitment?.map((tab) => tab.label)).not.toContain(
       'معرفی کارکنان',
@@ -113,6 +117,8 @@ describe('HR reference implementation', () => {
     expect(employees).not.toMatch(/EMP-\d|EMPLOY-\d/);
     expect(employees).toContain('ویرایش');
     expect(employees).toContain('حذف');
+    expect(employees).toContain('خروجی اکسل');
+    expect(employees).toContain('پرونده ۳۶۰');
   });
 
   it('uses first and last name in the new employee form and covers list fields', () => {
@@ -347,13 +353,6 @@ describe('HR reference implementation', () => {
     ['units', 'کد واحد', 'نام واحد', 'افزودن واحد سازمانی', 'UNIT-001'],
     ['positions', 'کد سمت', 'عنوان شغل', 'افزودن شغل و سمت', 'POS-001'],
     ['grades', 'کد رده', 'سطح سازمانی', 'افزودن رده شغلی', 'GR-001'],
-    [
-      'groups',
-      'کد نوع کارکنان',
-      'نام نوع کارکنان',
-      'افزودن نوع کارکنان',
-      'GROUP-001',
-    ],
   ] as const)(
     'renders the %s catalog with its own create form',
     (tab, firstLabel, secondLabel, submitLabel, generatedCode) => {
@@ -375,11 +374,6 @@ describe('HR reference implementation', () => {
         organizationCatalogSchemas[tab].fields.filter((field) => field.required)
           .length,
       );
-      if (tab === 'groups') {
-        expect(form).not.toContain('نوع گروه');
-        expect(form).not.toContain('شرح و معیار عضویت');
-        expect(organizationCatalogSchemas.groups.fields).toHaveLength(2);
-      }
       const table = renderToStaticMarkup(
         <OrganizationCatalogTable
           onDelete={() => undefined}
@@ -488,6 +482,28 @@ describe('HR reference implementation', () => {
     expect(html).not.toContain('عنوان نمایشی');
   });
 
+  it('uses people, recruiting units, job boards and resume fields in recruitment forms', () => {
+    const fields = buildContextualHrFields(
+      [
+        'واحد درخواست‌کننده',
+        'منبع جذب',
+        'ارزیاب',
+        'لینک پروفایل در منبع',
+        'رزومه',
+      ],
+      ['نگار بهرامی'],
+    );
+    expect(fields[0]?.options).toContain('خدمات فرودگاهی');
+    expect(fields[1]?.options).toEqual(
+      expect.arrayContaining(['جابینجا', 'جاب‌ویژن']),
+    );
+    expect(fields[2]).toMatchObject({ type: 'combobox' });
+    expect(fields[2]?.options).toContain('نگار بهرامی');
+    expect(fields[2]?.options).not.toContain('IRR');
+    expect(fields[3]?.type).toBe('url');
+    expect(fields[4]?.type).toBe('file');
+  });
+
   it('updates and removes rows from the active preview dataset', () => {
     const rows = [
       ['preview-row-1', 'عنوان قدیمی', { label: 'پیش‌نویس', tone: 'neutral' }],
@@ -522,7 +538,9 @@ describe('HR reference implementation', () => {
         <HrWorkspace sectionId={section} tabId={tab} />,
       );
       expect(html).toContain(title);
-      expect(html).toContain('افزودن، ویرایش یا حذف دستی ندارند');
+      expect(html).not.toContain(
+        'رکوردهای این بخش از عملیات مرتبط به‌صورت خودکار ثبت می‌شوند',
+      );
       expect(html).not.toContain(`افزودن ${title}`);
       expect(html).not.toContain('>ویرایش<');
       expect(html).not.toContain('>حذف<');
