@@ -107,6 +107,9 @@ function relativeApiPath(requestUrl: string, apiBaseUrl: string) {
 function isIgnoredMutation(path: string) {
   if (['iam/auth/login', 'iam/auth/logout', 'iam/auth/refresh'].includes(path))
     return true;
+  // Master Data is sourced from its persistent Audit feed so changes made by
+  // another browser or device are visible and local mutations are not doubled.
+  if (path === 'master-data' || path.startsWith('master-data/')) return true;
   return path
     .split('/')
     .some((segment) => ignoredPathSegments.has(segment.toLowerCase()));

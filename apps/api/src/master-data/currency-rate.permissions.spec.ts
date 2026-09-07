@@ -20,6 +20,7 @@ describe('MASTER-003 controller permission metadata', () => {
     [CurrencyRateController, 'current', 'master_data.read'],
     [CurrencyRateController, 'approve', 'master_data.currency_rate.approve'],
     [CurrencyRateController, 'reject', 'master_data.currency_rate.approve'],
+    [MasterDataAuditController, 'notifications', 'master_data.read'],
     [MasterDataAuditController, 'history', 'master_data.audit.read'],
   ] as const)('protects %s.%s with %s', (controller, method, permission) => {
     expect(

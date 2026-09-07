@@ -40,6 +40,69 @@ function redactedRate(row: Record<string, unknown>) {
   };
 }
 
+const nonMutatingAuditActions = [
+  'master_data.export.requested',
+  'master_data.export.downloaded',
+  'master_data.organization_contact.unmask',
+  'master_data.hotel_import.preview',
+  'master_data.hotel_import.commit',
+] as const;
+
+type NotificationChangeKind =
+  | 'created'
+  | 'updated'
+  | 'activated'
+  | 'deactivated'
+  | 'deleted'
+  | 'approved'
+  | 'rejected';
+
+function snapshotObject(
+  value: Prisma.JsonValue | null,
+): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function notificationChangeKind(event: {
+  action: string;
+  beforeSnapshot: Prisma.JsonValue | null;
+  afterSnapshot: Prisma.JsonValue | null;
+}): NotificationChangeKind {
+  if (event.action.endsWith('.approve')) return 'approved';
+  if (event.action.endsWith('.reject')) return 'rejected';
+  if (event.action.endsWith('.delete')) return 'deleted';
+  if (event.action.endsWith('.create')) return 'created';
+
+  const before = snapshotObject(event.beforeSnapshot);
+  const after = snapshotObject(event.afterSnapshot);
+  if (before.isActive !== after.isActive && typeof after.isActive === 'boolean')
+    return after.isActive ? 'activated' : 'deactivated';
+  return 'updated';
+}
+
+function notificationRecordLabel(value: Prisma.JsonValue | null) {
+  const snapshot = snapshotObject(value);
+  for (const key of [
+    'name',
+    'legalName',
+    'englishName',
+    'label',
+    'code',
+    'iso2Code',
+  ]) {
+    const candidate = snapshot[key];
+    if (typeof candidate === 'string' && candidate.trim())
+      return candidate.trim().slice(0, 120);
+  }
+  const from = snapshot.fromCurrencyCode;
+  const to = snapshot.toCurrencyCode;
+  if (typeof from === 'string' && typeof to === 'string')
+    return `${from}/${to}`.slice(0, 120);
+  return null;
+}
+
 @Injectable()
 export class CurrencyRateService {
   constructor(
@@ -378,5 +441,42 @@ export class CurrencyRateService {
       }),
     ]);
     return { data, meta: { page, pageSize, total } };
+  }
+
+  async notifications(limit = 25) {
+    const take = Math.min(60, Math.max(1, Math.trunc(limit) || 25));
+    const events = await this.database.client.masterDataAuditEvent.findMany({
+      where: {
+        outcome: AuditOutcome.SUCCESS,
+        action: { notIn: [...nonMutatingAuditActions] },
+      },
+      orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
+      take,
+      select: {
+        id: true,
+        action: true,
+        resource: true,
+        entityId: true,
+        entityVersion: true,
+        occurredAt: true,
+        beforeSnapshot: true,
+        afterSnapshot: true,
+      },
+    });
+    return {
+      data: events.map((event) => ({
+        id: event.id,
+        action: event.action,
+        changeKind: notificationChangeKind(event),
+        resource: event.resource,
+        entityId: event.entityId,
+        entityVersion: event.entityVersion,
+        recordLabel: notificationRecordLabel(
+          event.afterSnapshot ?? event.beforeSnapshot,
+        ),
+        occurredAt: event.occurredAt.toISOString(),
+      })),
+      meta: { limit: take },
+    };
   }
 }
