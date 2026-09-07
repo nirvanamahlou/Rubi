@@ -10,7 +10,7 @@
 - نتیجه: Selector مشترک هر دو فرم به `customersApi` و `masterDataApi` متصل شد؛ فقط مشتری فعال دارای رضایت جاری و Organization فعال با نقش `AGENCY` قابل انتخاب است. جست‌وجوی debounce، Retry، پیام خطای نشست/مجوز و Deep Link به بخش مالک نیز تکمیل شد.
 - اعتبارسنجی: Web lint بدون هشدار، Web typecheck، ۲۱ تست هدفمند مارکتینگ و Production Build با ۳۴ Route موفق‌اند. Build اجرایی با `NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api/v1` ساخته و جای نسخه قدیمی پورت ۳۱۰۰ اجرا شد؛ Health API پاسخ ۲۰۰ و Endpointهای محافظت‌شده مشتری/آژانس بدون نشست پاسخ صحیح ۴۰۱ دارند.
 
-## DOCUMENTS-007-STEP-UP-SECURITY — PC-B — IN_PROGRESS
+## DOCUMENTS-007-STEP-UP-SECURITY — PC-B — READY_FOR_REVIEW
 
 - درخواست و واگذاری صریح مالک محصول در 2026-09-07: PC-B در کنار PC-A به مرز عمومی IAM دسترسی داشته باشد تا برای سندهایی که هنگام بارگذاری علامت «نیازمند اعتبارسنجی دومرحله‌ای» می‌خورند، مشاهده و دانلود فقط پس از Step-up واقعی انجام شود. `COMPUTER_ID=PC-B`.
 - Branch مستقل `codex/pc-b-documents-step-up-security` از `origin/develop@7b84040` در Worktree `C:\Users\admin\Rubi-documents-step-up-security`؛ Branch و تغییرات PC-A/PR #90 حفظ و بازنویسی نمی‌شوند.
@@ -21,10 +21,12 @@
 - معیار پذیرش: Checkbox از Upload تا DB حفظ شود؛ کد ثابت، کد نمایشی در UI یا Secret داخل Git ممنوع است؛ کد Authenticator با Rate Limit و جلوگیری از Replay اعتبارسنجی شود؛ Grant کوتاه‌عمر و یک‌بارمصرف به همان کاربر/سند/عملیات محدود باشد؛ Preview/Download بدون Grant به‌صورت fail-closed رد و همه موفقیت/ردها Audit شوند.
 - نتیجه: فعال‌سازی Authenticator با رمز جاری و TOTP واقعی، Secret رمز‌شده، Replay Guard و Rate Limit تکمیل شد. سند علامت‌خورده فقط با Grant هش‌شده دو دقیقه‌ای و یک‌بارمصرفِ وابسته به User/Session/Document/Purpose نمایش یا دانلود می‌شود؛ Scan، Permission و Audit نیز سمت Backend fail-closed باقی می‌مانند.
 - رابط: Checkbox در Upload اصلی و Customer وجود دارد؛ فرم فعال‌سازی/ورود کد فارسی است و پیش‌نمایش تصویری مجاز در Browser به PNG کم‌حجم دارای واترمارک سامانه، کد آرشیو و زمان تبدیل می‌شود. جلوگیری مطلق از Screenshot ادعا نمی‌شود.
-- اعتبارسنجی: Prisma format/validate/generate، lint کامل API/Web/Database، typecheck API/Web، Production Build کامل و ۳۴ Route، `808` تست API، `592` تست Web سالم و تست‌های هدفمند Migration موفق‌اند. زنجیره Migrationها روی PostgreSQL 18 خالی و ارتقای دیتابیس دارای User/Document آزمایشی پاس شد؛ تنها شکست Full Web همان Assertion قدیمی Customer وابسته به LF/CRLF و خارج از Scope است.
+- اعتبارسنجی: Prisma format/validate/generate، lint کامل API/Web/Database، typecheck API/Web، Production Build کامل و ۳۴ Route، `812` تست API، `633` تست Web سالم و تست‌های هدفمند Migration موفق‌اند. زنجیره Migrationها روی PostgreSQL 18 خالی و ارتقای دیتابیس دارای User/Document آزمایشی پاس شد؛ تنها شکست Full Web همان Assertion قدیمی Customer وابسته به LF/CRLF و خارج از Scope است.
 - مرجع طراحی و Handoff: `docs/tasks/DOCUMENTS-007-STEP-UP-SECURITY.md`.
-- پیگیری صریح مالک محصول در 2026-09-07: همه تغییرات عملیاتی سند در زنگوله سامانه به‌صورت اعلان پایدار دیده شوند. محدوده افزوده شامل قرارداد عمومی نسخه‌دار Notifications، Persistence و API ماژول مستقل Notifications، Port عمومی ثبت اعلان برای Documents، Bell مرکزی App Shell و تست/مستندات همین قابلیت است. گیرنده امن هر تغییر، Actor و مالک سند است و در صورت یکی‌بودن فقط یک اعلان ساخته می‌شود؛ دسترسی کاربران یا شعب دیگر گسترش نمی‌یابد.
+- پیگیری صریح مالک محصول در 2026-09-07: همه تغییرات عملیاتی سند در زنگوله سامانه به‌صورت اعلان پایدار دیده شوند. محدوده افزوده شامل قرارداد عمومی نسخه‌دار Notifications، Persistence و API ماژول مستقل Notifications، Service عمومی ثبت اعلان برای Documents، Bell مرکزی App Shell و تست/مستندات همین قابلیت است. گیرنده امن هر تغییر، Actor و مالک سند است و در صورت یکی‌بودن فقط یک اعلان ساخته می‌شود؛ دسترسی کاربران یا شعب دیگر گسترش نمی‌یابد.
 - انتقال محدود قفل پیگیری: `Notifications shared-contract/root export Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY` و فایل مرکزی `apps/web/src/components/layout/app-shell.tsx` فقط برای Bell همین Task نزد PC-B رزرو است. Migration و Central Docs همان قفل موجود Task باقی می‌مانند و Dependency/Lockfile همچنان آزاد است.
+- نتیجه پیگیری: Persistence و API گیرنده‌محور `notifications.v1`، وضعیت خواندن، Bell واقعی و ثبت اتمیک اعلان برای Upload، ویرایش، آرشیو، بازیابی، کامل/ناقص، عملیات گروهی و حذف دائمی تکمیل شد. Documents فقط Service عمومی Notifications را مصرف می‌کند؛ دسترسی مستقیم جدول بین ماژول‌ها ایجاد نشد.
+- اعتبارسنجی پیگیری: Prisma format/validate/generate، lint و typecheck API/Web، ۲۷ تست هدفمند API، ۸ تست هدفمند Web و اجرای ۴ تست PostgreSQL زنجیره Migrationها پاس شد. Full API برابر ۸۱۲ تست پاس و ۷۰ skip است؛ Full Web فقط Assertion قدیمی Customer وابسته به LF/CRLF خارج از Scope را قرمز دارد.
 
 ## MASTER-005-EXCEL-IMPORT-PERSISTENCE — PC-B — DONE/MERGED
 

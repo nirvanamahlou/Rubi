@@ -76,6 +76,8 @@ model User {
   documentAuditEvents            DocumentAuditEvent[]         @relation("DocumentAuditActor")
   documentQuarantinesReviewed    DocumentQuarantine[]         @relation("DocumentQuarantineReviewer")
   documentAccessGrants           DocumentAccessGrant[]        @relation("DocumentAccessGrantActor")
+  notificationsReceived         Notification[]                @relation("NotificationRecipient")
+  notificationsActed            Notification[]                @relation("NotificationActor")
   agencyProfilesManaged          AgencyOperationalProfile[]   @relation("AgencyAccountManager")
   b2bAuditEvents                 B2bAuditEvent[]              @relation("B2bAuditActor")
 
@@ -203,6 +205,28 @@ model AuditEvent {
   @@index([actorUserId, occurredAt])
   @@index([action, occurredAt])
   @@map("iam_audit_events")
+}
+
+model Notification {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipientUserId String    @map("recipient_user_id") @db.Uuid
+  actorUserId     String?   @map("actor_user_id") @db.Uuid
+  sourceModule    String    @map("source_module") @db.VarChar(80)
+  eventType       String    @map("event_type") @db.VarChar(120)
+  title           String    @db.VarChar(200)
+  message         String    @db.VarChar(500)
+  entityType      String    @map("entity_type") @db.VarChar(80)
+  entityId        String    @map("entity_id") @db.VarChar(160)
+  href            String?   @db.VarChar(500)
+  readAt          DateTime? @map("read_at") @db.Timestamptz(3)
+  occurredAt      DateTime  @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  recipient       User      @relation("NotificationRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  actor           User?     @relation("NotificationActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([recipientUserId, readAt, occurredAt])
+  @@index([recipientUserId, occurredAt])
+  @@index([sourceModule, entityType, entityId, occurredAt])
+  @@map("notifications")
 }
 
 enum MasterOrganizationRoleCode {

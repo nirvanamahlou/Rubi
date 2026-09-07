@@ -785,6 +785,12 @@ describe('DocumentsService security and persistence flow', () => {
     expect(storage.removeQuarantined).toHaveBeenCalledWith(
       document.versions[0]?.storageObjectKey,
     );
-    expect(repository.permanentlyDelete).toHaveBeenCalledWith(document.id, 1);
+    expect(repository.permanentlyDelete).toHaveBeenCalledWith({
+      documentId: document.id,
+      expectedVersion: 1,
+      actorUserId: deleteActor.userId,
+      ownerUserId: document.ownerUserId,
+      documentTitle: document.title,
+    });
   });
 });

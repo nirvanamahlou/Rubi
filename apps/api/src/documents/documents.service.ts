@@ -500,6 +500,8 @@ export class DocumentsService {
       reason: dto.reason.trim(),
       actorUserId: actor.userId,
       actorBranchId: row.branchId,
+      ownerUserId: row.ownerUserId,
+      documentTitle: row.title,
       ipSummary: summarizeIp(metadata.ipAddress),
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
@@ -532,6 +534,8 @@ export class DocumentsService {
       reason: dto.reason.trim(),
       actorUserId: actor.userId,
       actorBranchId: row.branchId,
+      ownerUserId: row.ownerUserId,
+      documentTitle: row.title,
       ipSummary: summarizeIp(metadata.ipAddress),
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
@@ -622,7 +626,13 @@ export class DocumentsService {
         this.storage.removeQuarantined(version.storageObjectKey),
       ),
     );
-    const deleted = await this.repository.permanentlyDelete(id, dto.version);
+    const deleted = await this.repository.permanentlyDelete({
+      documentId: id,
+      expectedVersion: dto.version,
+      actorUserId: actor.userId,
+      ownerUserId: row.ownerUserId,
+      documentTitle: row.title,
+    });
     if (!deleted) {
       throw new ConflictException(
         'سند هم‌زمان تغییر کرده است؛ فهرست را تازه کنید.',

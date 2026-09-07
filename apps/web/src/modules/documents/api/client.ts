@@ -17,6 +17,7 @@ import type {
 
 import { getPublicApiBaseUrl } from '../../../lib/environment';
 import { refreshAuthenticatedSession } from '../../../lib/auth-session';
+import { notifyNotificationFeedChanged } from '../../notifications/api/client';
 
 export class DocumentsApiError extends Error {
   constructor(
@@ -125,6 +126,12 @@ function serializeQuery(query: object): string {
   return params.toString();
 }
 
+async function refreshNotificationsAfter<T>(operation: Promise<T>): Promise<T> {
+  const result = await operation;
+  notifyNotificationFeedChanged();
+  return result;
+}
+
 export const documentsApi = {
   list(query: DocumentListQueryV1) {
     return request<DocumentListResponseV1>(`?${serializeQuery(query)}`);
@@ -154,51 +161,57 @@ export const documentsApi = {
     return request<DocumentAuditResponseV1>(`/${encodeURIComponent(id)}/audit`);
   },
   upload(form: FormData) {
-    return request<DocumentDetailResponseV1>('/upload', {
-      method: 'POST',
-      body: form,
-    });
+    return refreshNotificationsAfter(
+      request<DocumentDetailResponseV1>('/upload', {
+        method: 'POST',
+        body: form,
+      }),
+    );
   },
   update(id: string, input: DocumentUpdateInputV1) {
-    return request<DocumentDetailResponseV1>(`/${encodeURIComponent(id)}`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(input),
-    });
+    return refreshNotificationsAfter(
+      request<DocumentDetailResponseV1>(`/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    );
   },
   archive(id: string, input: DocumentArchiveActionInputV1) {
-    return request<DocumentDetailResponseV1>(
-      `/${encodeURIComponent(id)}/archive`,
-      {
+    return refreshNotificationsAfter(
+      request<DocumentDetailResponseV1>(`/${encodeURIComponent(id)}/archive`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(input),
-      },
+      }),
     );
   },
   restore(id: string, input: DocumentArchiveActionInputV1) {
-    return request<DocumentDetailResponseV1>(
-      `/${encodeURIComponent(id)}/restore`,
-      {
+    return refreshNotificationsAfter(
+      request<DocumentDetailResponseV1>(`/${encodeURIComponent(id)}/restore`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(input),
-      },
+      }),
     );
   },
   bulk(input: DocumentBulkActionInputV1) {
-    return request<DocumentBulkActionResponseV1>('/bulk', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(input),
-    });
+    return refreshNotificationsAfter(
+      request<DocumentBulkActionResponseV1>('/bulk', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    );
   },
   permanentlyDelete(id: string, input: DocumentDeleteInputV1) {
-    return request<void>(`/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(input),
-    });
+    return refreshNotificationsAfter(
+      request<void>(`/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    );
   },
   createAccessGrant(id: string, input: DocumentAccessGrantInputV1) {
     return request<DocumentAccessGrantResponseV1>(

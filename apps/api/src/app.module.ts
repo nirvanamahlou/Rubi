@@ -11,6 +11,7 @@ import { HealthService } from './health/health.service';
 import { IamModule } from './iam/iam.module';
 import { LegalEntitiesModule } from './legal-entities/legal-entities.module';
 import { MasterDataModule } from './master-data/master-data.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { MasterDataModule } from './master-data/master-data.module';
     MasterDataModule,
     IamModule,
     LegalEntitiesModule,
+    NotificationsModule,
   ],
   controllers: [HealthController],
   providers: [HealthService],

@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  Bell,
   Check,
   ChevronsLeft,
   ChevronsRight,
@@ -33,6 +32,7 @@ import {
   useLegalEntityContext,
 } from '@/modules/legal-entities/components/legal-entity-context';
 import { legalEntityBrand } from '@/modules/legal-entities/model/context';
+import { NotificationsBell } from '@/modules/notifications/components/notifications-bell';
 import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
 import { Input } from '../ui/form-controls';
@@ -279,15 +279,7 @@ function HeaderActions() {
           <Sun aria-hidden="true" className="size-5" />
         )}
       </Button>
-      <Button
-        aria-label={faMessages.shell.notifications}
-        className="relative"
-        size="icon"
-        variant="ghost"
-      >
-        <Bell aria-hidden="true" className="size-5" />
-        <span className="absolute end-2 top-2 size-2 rounded-full bg-destructive ring-2 ring-surface" />
-      </Button>
+      <NotificationsBell />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button

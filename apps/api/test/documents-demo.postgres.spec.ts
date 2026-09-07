@@ -21,6 +21,7 @@ import { DocumentsRepository } from '../src/documents/documents.repository';
 import type { DocumentsScanProcessor } from '../src/documents/documents.scan-processor';
 import { DocumentsService } from '../src/documents/documents.service';
 import { LocalDocumentStorage } from '../src/documents/documents.storage';
+import type { NotificationsService } from '../src/notifications/notifications.service';
 
 const databaseName = `rubi_documents_demo_test_${randomUUID().replaceAll('-', '')}`;
 const encryptionKey = randomBytes(32).toString('base64');
@@ -283,7 +284,12 @@ describe.skipIf(process.env.RUBI_RUN_DOCUMENTS_DEMO_POSTGRES_TESTS !== '1')(
           ?.title,
       ).toBe('عنوان ویرایش‌شده کاربر');
 
-      const repository = new DocumentsRepository({ client } as DatabaseService);
+      const repository = new DocumentsRepository(
+        { client } as DatabaseService,
+        {
+          createWithinTransaction: async () => undefined,
+        } as unknown as NotificationsService,
+      );
       const service = new DocumentsService(
         repository,
         storage,

@@ -1,6 +1,6 @@
 # DOCUMENTS-007 — اعتبارسنجی دومرحله‌ای نمایش اسناد
 
-وضعیت: `IN_PROGRESS`
+وضعیت: `READY_FOR_REVIEW`
 مالک: `PC-B`
 شاخه: `codex/pc-b-documents-step-up-security`
 
@@ -64,7 +64,7 @@ Authenticator و دریافت مجوز کوتاه‌عمر و یک‌بارمص�
 
 - Prisma format/validate/generate، lint کامل API/Web/Database، typecheck API/Web و Production
   Build همه بسته‌ها و ۳۴ Route وب موفق‌اند.
-- `808` تست API، `592` تست Web با کنارگذاشتن فقط Assertion قدیمی Customer وابسته به LF/CRLF،
+- `812` تست API، `633` تست Web با کنارگذاشتن فقط Assertion قدیمی Customer وابسته به LF/CRLF،
   و تست‌های هدفمند Contract/Service/HTTP/Migration موفق‌اند. Full Web فقط همان تست قدیمی و
   تغییرنیافته Customer را روی Checkout ویندوز قرمز گزارش می‌کند.
 - زنجیره تمام Migrationها روی PostgreSQL 18 موقت خالی اجرا شد؛ ارتقای دیتابیس دارای User و
@@ -77,9 +77,25 @@ Authenticator و دریافت مجوز کوتاه‌عمر و یک‌بارمص�
 
 - هر تغییر موفق سند شامل بارگذاری، ویرایش، آرشیو، بازیابی، حذف و عملیات گروهی باید یک
   اعلان پایدار ایجاد کند.
-- Notifications مالک رکورد اعلان، خوانده/خوانده‌نشده و API است؛ Documents فقط از Port عمومی
+- Notifications مالک رکورد اعلان، خوانده/خوانده‌نشده و API است؛ Documents فقط از Service عمومی
   ثبت اعلان استفاده می‌کند و جدول داخلی Notifications را Query نمی‌کند.
 - گیرنده Actor و مالک سند است؛ گیرنده تکراری حذف می‌شود و کاربر خارج از Scope سند اعلان
   دریافت نمی‌کند. متن اعلان داده فنی یا Secret ندارد.
 - Bell مرکزی تعداد خوانده‌نشده، فهرست Loading/Empty/Error، بازکردن سند و «خواندن همه» را
   با keyboard و screen reader پشتیبانی می‌کند.
+
+## نتیجه پیگیری اعلان
+
+- جدول مستقل `notifications` با FK واقعی گیرنده/Actor، زمان UTC، وضعیت خواندن، مرجع امن
+  موجودیت و Indexهای فهرست گیرنده اضافه شد. اعلان به خود Document وابستگی FK ندارد تا رخداد
+  حذف دائمی نیز پس از حذف سند باقی بماند.
+- API احراز‌شده فقط اعلان‌های User جاری را فهرست و فقط همان رکوردها را خوانده‌شده می‌کند.
+  Payload عمومی `notifications.v1` جزئیات فنی، Secret یا Scope کاربر دیگر را برنمی‌گرداند.
+- Documents در همان تراکنش تغییر سند از Service عمومی Notifications استفاده می‌کند؛ Upload،
+  ویرایش Metadata، آرشیو، بازیابی، تغییر کامل/ناقص تکی یا گروهی و حذف دائمی پوشش داده شدند.
+- Bell مرکزی Badge واقعی، خواندن تکی/همه، Deep Link سند، Poll دوره‌ای، تازه‌سازی پس از تغییر
+  محلی و stateهای Loading/Empty/Error دارد؛ نقطه قرمز نمایشی ثابت حذف شد.
+- Migration جدید همراه Rollback روی PostgreSQL 18 موقت و زنجیره کامل Migrationها پاس شد.
+  تست‌های هدفمند اعلان/API/Documents برابر `27 API + 8 Web + 22 Contract/related` پاس‌اند؛
+  lint و typecheck بخش‌های متاثر و Prisma validate نیز موفق‌اند. اجرای کامل Web همچنان فقط
+  Assertion قدیمی Customer وابسته به LF/CRLF و خارج از Scope را قرمز گزارش می‌کند.
