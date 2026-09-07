@@ -129,7 +129,7 @@ export const hrHubCards: readonly HrHubCard[] = [
     icon: UserRoundCheck,
     tone: 'violet',
     pills: ['Onboarding', 'انتقال', 'Offboarding'],
-    footer: '۷ زیرصفحه',
+    footer: '۶ زیرصفحه',
   },
   {
     id: 'contracts',
@@ -210,7 +210,7 @@ export const hrHubCards: readonly HrHubCard[] = [
     description: 'کارتابل یکپارچه مرخصی، مأموریت، اصلاح تردد و سایر درخواست‌ها',
     icon: ListChecks,
     tone: 'orange',
-    pills: ['کارتابل من', 'تأیید مدیر', 'SLA'],
+    pills: ['کارتابل و درخواست‌های من', 'تأیید مدیر', 'SLA'],
     footer: '۹ زیرصفحه',
   },
   {
@@ -299,7 +299,6 @@ export const sectionTabs: Readonly<
     { id: 'onboarding', label: 'ورود نیروی جدید', icon: UserRoundCheck },
     { id: 'promotion', label: 'ارتقا', icon: Target },
     { id: 'transfer', label: 'انتقال', icon: Network },
-    { id: 'skills', label: 'نقشه مهارت', icon: Gauge },
     { id: 'separation', label: 'پایان همکاری', icon: FileClock },
     { id: 'exit', label: 'مصاحبه خروج', icon: ListChecks },
     { id: 'settlement', label: 'تسویه نهایی', icon: ReceiptText },
@@ -355,21 +354,14 @@ export const sectionTabs: Readonly<
     { id: 'logs', label: 'سوابق استفاده', icon: History },
   ],
   requests: [
-    { id: 'inbox', label: 'کارتابل من', icon: ListChecks },
-    { id: 'mine', label: 'درخواست‌های من', icon: UserRoundCheck },
-    { id: 'leave', label: 'مرخصی', icon: CalendarClock },
-    { id: 'attendance', label: 'اصلاح تردد', icon: TimerReset },
-    { id: 'shift', label: 'شیفت', icon: CalendarClock },
-    { id: 'travel', label: 'مأموریت و هزینه', icon: ReceiptText },
-    { id: 'profile', label: 'تغییر اطلاعات', icon: Fingerprint },
-    { id: 'payslips', label: 'فیش حقوقی', icon: BadgeDollarSign },
-    { id: 'mobile', label: 'دسترسی موبایل', icon: UsersRound },
+    { id: 'inbox', label: 'کارتابل و درخواست‌های من', icon: ListChecks },
   ],
   finance: [
     { id: 'batch', label: 'بسته مبانی پرداخت', icon: FileText },
     { id: 'results', label: 'نتیجه حقوق', icon: ReceiptText },
     { id: 'payments', label: 'پرداخت و مغایرت', icon: BadgeDollarSign },
     { id: 'bank', label: 'کنترل حساب مقصد', icon: WalletCards },
+    { id: 'settlements', label: 'تأیید تسویه کارکنان', icon: ListChecks },
   ],
   reports: [
     { id: 'dashboard', label: 'گزارش‌ها و شاخص‌ها', icon: BarChart3 },
@@ -434,7 +426,7 @@ export const screenMeta: Readonly<
   lifecycle: {
     title: 'چرخه همکاری',
     description:
-      'ورود نیروی جدید، ارتقا، انتقال، مهارت، پایان همکاری، مصاحبه خروج و تسویه نهایی',
+      'ورود نیروی جدید، ارتقا، انتقال، پایان همکاری، مصاحبه خروج و تسویه نهایی',
   },
   contracts: {
     title: 'قراردادهای کاری',
@@ -474,7 +466,7 @@ export const screenMeta: Readonly<
   documents: {
     title: 'مدارک پرسنلی',
     description:
-      'مدارک الزامی، بارگذاری امن، نسخه، بررسی، انقضا، Retention و Legal Hold',
+      'مدارک الزامی، بارگذاری امن، بررسی، انقضا، نگهداری و سطح دسترسی',
   },
   requests: {
     title: 'مرکز درخواست‌ها',

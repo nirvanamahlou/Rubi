@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   ArrowLeft,
   BadgeCheck,
-  CalendarDays,
   Download,
   FileArchive,
   FileText,
@@ -13,7 +12,6 @@ import {
   ImageUp,
   Info,
   LockKeyhole,
-  MonitorCog,
   Plane,
   PencilLine,
   Plus,
@@ -82,6 +80,10 @@ import {
 } from './contextual-hr-form';
 import { downloadHrXlsx } from './hr-xlsx';
 import {
+  contractRecordFromRow,
+  downloadContractPdf,
+} from './hr-contract-pdf';
+import {
   HrNotificationCenter,
   publishHrMutationNotification,
   type HrNotificationAction,
@@ -104,6 +106,7 @@ interface PreviewEmployee {
   kind: string;
   unit: string;
   position: string;
+  grade: string;
   manager: string;
   startedAt: string;
   startedAtValue: string;
@@ -128,6 +131,7 @@ const previewEmployees: readonly PreviewEmployee[] = [
     kind: 'تمام‌وقت',
     unit: 'نیایش سیر / عملیات سفر',
     position: 'کارشناس ارشد عملیات',
+    grade: 'G5',
     manager: 'مدیر نمایشی الف',
     startedAt: '۱۴۰۳/۰۲/۰۱',
     startedAtValue: '2024-04-20',
@@ -142,6 +146,7 @@ const previewEmployees: readonly PreviewEmployee[] = [
     kind: 'تمام‌وقت',
     unit: 'نیایش سیر / فروش',
     position: 'سرپرست فروش سازمانی',
+    grade: 'G5',
     manager: 'مدیر نمایشی ب',
     startedAt: '۱۴۰۱/۰۸/۱۵',
     startedAtValue: '2022-11-06',
@@ -156,6 +161,7 @@ const previewEmployees: readonly PreviewEmployee[] = [
     kind: 'پاره‌وقت',
     unit: 'جهان باستان / مالی',
     position: 'کارشناس حسابداری',
+    grade: 'G4',
     manager: 'مدیر نمایشی پ',
     startedAt: '۱۴۰۲/۰۶/۱۰',
     startedAtValue: '2023-09-01',
@@ -170,6 +176,7 @@ const previewEmployees: readonly PreviewEmployee[] = [
     kind: 'پاره‌وقت',
     unit: 'جهان باستان / عملیات فرودگاهی',
     position: 'کارشناس خدمات فرودگاهی',
+    grade: 'G3',
     manager: 'مدیر نمایشی ت',
     startedAt: '۱۴۰۵/۰۶/۲۰',
     startedAtValue: '2026-09-11',
@@ -378,11 +385,58 @@ const employeeFormValue = (employee: PreviewEmployee): NewEmployeeFormValue => {
     branch,
     unit,
     position: employee.position,
+    grade: employee.grade,
     manager: employee.manager,
     startedAt: employee.startedAtValue,
     status: employee.status as NewEmployeeFormValue['status'],
   };
 };
+
+const formValueByColumn = (
+  context: ContextualHrFormContext,
+  values: readonly string[],
+  column: string,
+) => values[context.columns.indexOf(column)] ?? '';
+
+const employeeDateLabel = (value: string) => {
+  const date = new Date(`${value}T12:00:00.000Z`);
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }).format(date);
+};
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
+function employeeFromOnboarding(
+  context: ContextualHrFormContext,
+  values: readonly string[],
+): PreviewEmployee {
+  const name = formValueByColumn(context, values, 'نام و نام خانوادگی').trim();
+  const id = formValueByColumn(context, values, 'شناسه');
+  const branch = formValueByColumn(context, values, 'شرکت یا شعبه');
+  const unit = formValueByColumn(context, values, 'واحد');
+  const startedAtValue = formValueByColumn(context, values, 'تاریخ شروع');
+  return {
+    id,
+    name,
+    initial: name.charAt(0),
+    employment: `preview-employment-${id}`,
+    kind: formValueByColumn(context, values, 'نوع همکاری'),
+    unit: `${branch} / ${unit}`,
+    position: formValueByColumn(context, values, 'سمت'),
+    grade: formValueByColumn(context, values, 'رده شغلی'),
+    manager: formValueByColumn(context, values, 'مدیر مستقیم'),
+    startedAt: employeeDateLabel(startedAtValue),
+    startedAtValue,
+    status: 'فعال',
+    tone: 'success',
+    local: true,
+  };
+}
 
 type DashboardPeriod = 'monthToDate' | 'week' | 'month';
 type DashboardBranch = 'all' | 'niyayeshSeir' | 'jahanBastan';
@@ -533,13 +587,6 @@ function buildDashboardSnapshot(filters: DashboardFilters): DashboardSnapshot {
     composition,
   };
 }
-
-const requestKinds = [
-  ['مرخصی', CalendarDays, 'blue'],
-  ['مأموریت', Plane, 'violet'],
-  ['اصلاح تردد', TimerReset, 'orange'],
-  ['تجهیزات', MonitorCog, 'green'],
-] as const;
 
 const stateMessages: Record<UiState, [string, string]> = {
   loading: [
@@ -1191,6 +1238,7 @@ function Employees({
         'شعبه',
         'واحد',
         'سمت',
+        'رده شغلی',
         'مدیر مستقیم',
         'تاریخ شروع',
         'وضعیت',
@@ -1204,6 +1252,7 @@ function Employees({
           branch,
           unit,
           employee.position,
+          employee.grade,
           employee.manager,
           employee.startedAt,
           employee.status,
@@ -1222,6 +1271,7 @@ function Employees({
       'نوع همکاری',
       'شعبه و واحد',
       'سمت',
+      'رده شغلی',
       'مدیر مستقیم',
       'تاریخ شروع',
       'وضعیت',
@@ -1233,6 +1283,7 @@ function Employees({
       employee.kind,
       employee.unit,
       employee.position,
+      employee.grade,
       employee.manager,
       employee.startedAt,
       <Badge key={`${employee.id}-status`} tone={employee.tone}>
@@ -1390,6 +1441,7 @@ function EmployeeProfile({
       description: screenMeta.employee.description,
       columns: dataset.columns,
       mode,
+      linkedEmployeeName: employee.name,
     });
   const profileData =
     tab === 'summary'
@@ -1408,6 +1460,7 @@ function EmployeeProfile({
                 mode: 'edit',
                 rowIndex,
                 initialValues: row.map(previewCellText),
+                linkedEmployeeName: employee.name,
               }),
             (rowIndex) => datasetStore.deleteRow('employee', tab, rowIndex),
           );
@@ -1534,6 +1587,10 @@ function genericTable(
   dataset: HrPreviewDataset,
   editRow: (rowIndex: number, row: readonly HrPreviewCell[]) => void,
   deleteRow: (rowIndex: number) => void,
+  extraActions?: (
+    rowIndex: number,
+    row: readonly HrPreviewCell[],
+  ) => ReactNode,
 ): PreviewTableData {
   const readonlyData = readonlyTable(dataset);
   return {
@@ -1541,6 +1598,7 @@ function genericTable(
     rows: dataset.rows.map((row, rowIndex) => [
       ...(readonlyData.rows[rowIndex] ?? []),
       <div className={styles.rowActions} key={`actions-${rowIndex}`}>
+        {extraActions?.(rowIndex, row)}
         <ActionButton onClick={() => editRow(rowIndex, row)} small>
           <PencilLine aria-hidden="true" size={13} /> ویرایش
         </ActionButton>
@@ -2114,30 +2172,7 @@ function Requests({
         }
       />
       <Tabs active={tab} items={tabs} onChange={setTab} />
-      <section className={styles.requestCards}>
-        {requestKinds.map(([title, Icon, tone]) => (
-          <article className={styles.requestCard} key={title}>
-            <span className={`${styles.hubIcon} ${styles[tone]}`}>
-              <Icon size={21} />
-            </span>
-            <div>
-              <b>{title}</b>
-              <small>تعداد پس از اتصال منبع</small>
-            </div>
-          </article>
-        ))}
-      </section>
       <Panel title={active?.label ?? 'کارتابل درخواست‌ها'}>
-        {tab === 'mobile' ? (
-          <div className={styles.panelBody}>
-            <div className={styles.boundary}>
-              <Info aria-hidden="true" size={17} />
-              نمای موبایل برای ثبت و تأیید درخواست، مشاهده حضور و دریافت فیش
-              آماده است؛ فعال‌سازی اعلان Push و داده عملیاتی به قرارداد IAM و
-              سرویس‌های عمومی وابسته است.
-            </div>
-          </div>
-        ) : null}
         <div className={styles.filterBar}>
           <input
             aria-label="جست‌وجوی درخواست"
@@ -2266,6 +2301,7 @@ function TabbedSection({
   openForm,
   datasetStore,
   initialTab,
+  onApproveSettlement,
 }: {
   section: Exclude<
     HrSectionId,
@@ -2280,6 +2316,10 @@ function TabbedSection({
   openForm: (context: ContextualHrFormContext) => void;
   datasetStore: PreviewDatasetStore;
   initialTab?: string | undefined;
+  onApproveSettlement: (
+    rowIndex: number,
+    row: readonly HrPreviewCell[],
+  ) => void;
 }) {
   const tabs = sectionTabs[section] ?? [];
   const [tab, setTab] = useState(
@@ -2307,12 +2347,40 @@ function TabbedSection({
       ...(rowIndex === undefined ? {} : { rowIndex }),
       ...(row ? { initialValues: row.map(previewCellText) } : {}),
     });
+  const exportContract = (row: readonly HrPreviewCell[]) => {
+    void downloadContractPdf(contractRecordFromRow(dataset.columns, row)).catch(
+      (error: unknown) =>
+        window.alert(
+          error instanceof Error ? error.message : 'ساخت PDF قرارداد انجام نشد.',
+        ),
+    );
+  };
+  const extraActions =
+    section === 'contracts' && tab === 'active'
+      ? (_rowIndex: number, row: readonly HrPreviewCell[]) => (
+          <ActionButton onClick={() => exportContract(row)} small>
+            <Download aria-hidden="true" size={13} /> PDF قرارداد
+          </ActionButton>
+        )
+      : section === 'finance' && tab === 'settlements'
+        ? (rowIndex: number, row: readonly HrPreviewCell[]) =>
+            previewCellText(row.at(-1) ?? '').includes('تأییدشده') ? null : (
+              <ActionButton
+                onClick={() => onApproveSettlement(rowIndex, row)}
+                primary
+                small
+              >
+                <BadgeCheck aria-hidden="true" size={13} /> تأیید مالی
+              </ActionButton>
+            )
+        : undefined;
   const data = isAutomaticHistory
     ? readonlyTable(dataset)
     : genericTable(
         dataset,
         (rowIndex, row) => openCurrentForm('edit', rowIndex, row),
         (rowIndex) => datasetStore.deleteRow(section, tab, rowIndex),
+        extraActions,
       );
   return (
     <>
@@ -2320,9 +2388,21 @@ function TabbedSection({
       <DateRangeBar
         actions={
           <>
-            <ActionButton disabled>
-              <Download size={15} /> خروجی مجاز
-            </ActionButton>
+            {section === 'contracts' && tab === 'active' ? (
+              <ActionButton
+                disabled={!dataset.rows.length}
+                onClick={() => {
+                  const first = dataset.rows[0];
+                  if (first) exportContract(first);
+                }}
+              >
+                <Download size={15} /> خروجی PDF قرارداد
+              </ActionButton>
+            ) : (
+              <ActionButton disabled>
+                <Download size={15} /> خروجی مجاز
+              </ActionButton>
+            )}
             {isAutomaticHistory ? null : (
               <ActionButton onClick={() => openCurrentForm('create')} primary>
                 <Plus size={15} /> افزودن{' '}
@@ -2487,11 +2567,29 @@ export function HrWorkspace({
     setDialogTitle(title);
   };
   const openForm = (context: ContextualHrFormContext) => {
+    const contractDataset = getDataset('contracts', 'active');
+    const contractEmployeeIndex = contractDataset.columns.indexOf('کارمند');
+    const contractNumberIndex =
+      contractDataset.columns.indexOf('شماره قرارداد');
+    const contractNumbersByEmployee = Object.fromEntries(
+      contractDataset.rows
+        .map((row) => [
+          previewCellText(row[contractEmployeeIndex] ?? ''),
+          previewCellText(row[contractNumberIndex] ?? ''),
+        ])
+        .filter(([employee, number]) => employee && number),
+    );
     setNotice('');
     setDialogTitle(null);
     setContextualForm({
       ...context,
       peopleOptions: employees.map((employee) => employee.name),
+      employeeDetails: employees.map((employee) => ({
+        name: employee.name,
+        position: employee.position,
+        grade: employee.grade,
+      })),
+      contractNumbersByEmployee,
     });
   };
   const getDataset = (datasetSection: HrSectionId, tab: string) => {
@@ -2519,10 +2617,23 @@ export function HrWorkspace({
     setPreviewDatasetOverrides((current) => {
       const rows =
         current[key] ?? getHrPreviewDataset(datasetSection, tab).rows;
-      const next = {
+      let next: PreviewDatasetOverrides = {
         ...current,
         [key]: removeHrPreviewRow(rows, rowIndex),
       };
+      if (datasetSection === 'employee' && tab === 'docs') {
+        const documentsKey = previewDatasetKey('documents', 'list');
+        const documentsRows =
+          current[documentsKey] ?? getHrPreviewDataset('documents', 'list').rows;
+        const documentId = previewCellText(row?.[0] ?? '');
+        next = {
+          ...next,
+          [documentsKey]: documentsRows.filter(
+            (documentRow) =>
+              previewCellText(documentRow[0] ?? '') !== documentId,
+          ),
+        };
+      }
       return appendAutomaticHrHistory(next, {
         action: 'delete',
         section: datasetSection,
@@ -2538,6 +2649,68 @@ export function HrWorkspace({
       tab,
       title,
       subject,
+    });
+  };
+  const approveSettlement = (
+    rowIndex: number,
+    row: readonly HrPreviewCell[],
+  ) => {
+    const financeDataset = getDataset('finance', 'settlements');
+    const lifecycleDataset = getDataset('lifecycle', 'settlement');
+    const employee = previewCellText(
+      row[financeDataset.columns.indexOf('کارمند')] ?? '',
+    );
+    const approvedStatus: HrPreviewCell = {
+      label: 'تأییدشده',
+      tone: 'success',
+    };
+    setPreviewDatasetOverrides((current) => {
+      const financeKey = previewDatasetKey('finance', 'settlements');
+      const lifecycleKey = previewDatasetKey('lifecycle', 'settlement');
+      const financeRows = current[financeKey] ?? financeDataset.rows;
+      const lifecycleRows = current[lifecycleKey] ?? lifecycleDataset.rows;
+      const financeStatusIndex = financeDataset.columns.indexOf('وضعیت');
+      const lifecycleEmployeeIndex =
+        lifecycleDataset.columns.indexOf('کارمند');
+      const lifecycleApprovalIndex =
+        lifecycleDataset.columns.indexOf('وضعیت تأیید مالی');
+      const lifecycleStatusIndex = lifecycleDataset.columns.indexOf('وضعیت');
+      let next: PreviewDatasetOverrides = {
+        ...current,
+        [financeKey]: financeRows.map((item, index) =>
+          index === rowIndex
+            ? item.map((cell, cellIndex) =>
+                cellIndex === financeStatusIndex ? approvedStatus : cell,
+              )
+            : item,
+        ),
+        [lifecycleKey]: lifecycleRows.map((item) =>
+          previewCellText(item[lifecycleEmployeeIndex] ?? '') === employee
+            ? item.map((cell, cellIndex) =>
+                cellIndex === lifecycleApprovalIndex ||
+                cellIndex === lifecycleStatusIndex
+                  ? approvedStatus
+                  : cell,
+              )
+            : item,
+        ),
+      };
+      next = appendAutomaticHrHistory(next, {
+        action: 'edit',
+        section: 'finance',
+        tab: 'settlements',
+        title: 'تأیید تسویه کارکنان',
+        subject: employee,
+      });
+      return next;
+    });
+    setNotice(`تسویه «${employee}» در مالی تأیید و وضعیت چرخه همکاری به‌روزرسانی شد.`);
+    notifyMutation({
+      action: 'update',
+      section: 'finance',
+      tab: 'settlements',
+      title: 'تأیید مالی تسویه',
+      subject: employee,
     });
   };
   const datasetStore: PreviewDatasetStore = {
@@ -2570,6 +2743,7 @@ export function HrWorkspace({
       kind: value.employmentType,
       unit: `${value.branch} / ${value.unit}`,
       position: value.position,
+      grade: value.grade,
       manager: value.manager,
       startedAt,
       startedAtValue: value.startedAt,
@@ -2611,6 +2785,227 @@ export function HrWorkspace({
       subject: name,
       employeeId: value.personnelCode,
     });
+  };
+  const submitContextualForm = (values: readonly string[]) => {
+    if (!contextualForm) return;
+    const context = contextualForm;
+    const key = previewDatasetKey(context.section, context.tab);
+    const value = (column: string) => formValueByColumn(context, values, column);
+    const subject =
+      value('نام و نام خانوادگی') ||
+      value('کارمند') ||
+      values[1] ||
+      values[0] ||
+      context.title;
+
+    if (context.section === 'lifecycle' && context.tab === 'onboarding') {
+      const nextEmployee = employeeFromOnboarding(context, values);
+      const previousName = context.initialValues
+        ? formValueByColumn(context, context.initialValues, 'نام و نام خانوادگی')
+        : '';
+      setEmployees((current) => {
+        const previous = current.find(
+          (employee) =>
+            employee.id === nextEmployee.id || employee.name === previousName,
+        );
+        const merged = previous?.photoDataUrl
+          ? { ...nextEmployee, photoDataUrl: previous.photoDataUrl }
+          : nextEmployee;
+        return previous
+          ? current.map((employee) =>
+              employee.id === previous.id ? merged : employee,
+            )
+          : [merged, ...current];
+      });
+    }
+
+    if (context.section === 'lifecycle' && context.tab === 'promotion') {
+      const employeeName = value('کارمند');
+      setEmployees((current) =>
+        current.map((employee) =>
+          employee.name === employeeName
+            ? {
+                ...employee,
+                position: value('سمت جدید'),
+                grade: value('رده جدید'),
+              }
+            : employee,
+        ),
+      );
+    }
+
+    setPreviewDatasetOverrides((current) => {
+      const rows =
+        current[key] ?? getHrPreviewDataset(context.section, context.tab).rows;
+      let next: PreviewDatasetOverrides = {
+        ...current,
+        [key]: saveHrPreviewRow(
+          rows,
+          context.columns,
+          values,
+          context.rowIndex,
+        ),
+      };
+
+      if (context.section === 'recruitment' && context.tab === 'applicants') {
+        const resume = value('رزومه');
+        const attachment = parseHrAttachmentReference(resume);
+        if (attachment) {
+          const documentsKey = previewDatasetKey('documents', 'list');
+          const documentsRows =
+            next[documentsKey] ?? getHrPreviewDataset('documents', 'list').rows;
+          if (
+            !documentsRows.some((row) =>
+              row.some((cell) => typeof cell === 'string' && cell === resume),
+            )
+          )
+            next = {
+              ...next,
+              [documentsKey]: [
+                [
+                  `HR-DOC-${Date.now().toString(36).toUpperCase()}`,
+                  value('نام و نام خانوادگی') || 'متقاضی',
+                  'رزومه متقاضی',
+                  attachment.name,
+                  value('منبع جذب') || 'سامانه جذب',
+                  todayIso(),
+                  '—',
+                  todayIso(),
+                  'محرمانه',
+                  resume,
+                  { label: 'ثبت‌شده', tone: 'success' },
+                ],
+                ...documentsRows,
+              ],
+            };
+        }
+      }
+
+      if (context.section === 'employee' && context.tab === 'docs') {
+        const file = value('فایل');
+        const attachment = parseHrAttachmentReference(file);
+        if (attachment) {
+          const documentsKey = previewDatasetKey('documents', 'list');
+          const documentsRows =
+            next[documentsKey] ?? getHrPreviewDataset('documents', 'list').rows;
+          const documentId = value('شناسه');
+          const documentRow: readonly HrPreviewCell[] = [
+            documentId,
+            context.linkedEmployeeName ?? 'کارمند',
+            value('نوع مدرک'),
+            value('عنوان مدرک'),
+            value('مرجع صادرکننده'),
+            value('تاریخ صدور'),
+            value('تاریخ انقضا'),
+            value('تاریخ ثبت'),
+            value('سطح دسترسی'),
+            file,
+            { label: 'ثبت‌شده', tone: 'success' },
+          ];
+          const existingIndex = documentsRows.findIndex(
+            (row) => previewCellText(row[0] ?? '') === documentId,
+          );
+          next = {
+            ...next,
+            [documentsKey]:
+              existingIndex < 0
+                ? [documentRow, ...documentsRows]
+                : documentsRows.map((row, index) =>
+                    index === existingIndex ? documentRow : row,
+                  ),
+          };
+        }
+      }
+
+      if (context.section === 'lifecycle' && context.tab === 'promotion') {
+        const promotedEmployee = employees.find(
+          (employee) => employee.name === value('کارمند'),
+        );
+        const [branch = 'نیایش سیر', unit = 'عملیات سفر'] =
+          promotedEmployee?.unit.split(' / ') ?? [];
+        const assignmentKey = previewDatasetKey('employee', 'assignment');
+        const assignmentRows =
+          next[assignmentKey] ?? getHrPreviewDataset('employee', 'assignment').rows;
+        next = {
+          ...next,
+          [assignmentKey]: [
+            [
+              `HR-ASSIGN-${Date.now().toString(36).toUpperCase()}`,
+              branch,
+              unit,
+              value('سمت جدید'),
+              promotedEmployee?.manager ?? 'مدیر مستقیم',
+              value('تاریخ اثر'),
+              { label: 'فعال', tone: 'success' },
+            ],
+            ...assignmentRows,
+          ],
+        };
+      }
+
+      if (context.section === 'lifecycle' && context.tab === 'settlement') {
+        const financeKey = previewDatasetKey('finance', 'settlements');
+        const financeRows =
+          next[financeKey] ?? getHrPreviewDataset('finance', 'settlements').rows;
+        const reference = value('شناسه');
+        const financeRow: readonly HrPreviewCell[] = [
+          `HR-FIN-SET-${Date.now().toString(36).toUpperCase()}`,
+          value('کارمند'),
+          value('مبلغ نهایی'),
+          reference,
+          todayIso(),
+          'مدیر مالی',
+          { label: 'در انتظار تأیید مالی', tone: 'warning' },
+        ];
+        const withoutSameReference = financeRows.filter(
+          (row) => previewCellText(row[3] ?? '') !== reference,
+        );
+        next = { ...next, [financeKey]: [financeRow, ...withoutSameReference] };
+      }
+
+      return appendAutomaticHrHistory(next, {
+        action: context.mode,
+        section: context.section,
+        tab: context.tab,
+        title: context.title,
+        subject,
+      });
+    });
+
+    setNotice(
+      context.section === 'lifecycle' && context.tab === 'onboarding'
+        ? `نیروی جدید «${subject}» ثبت و به فهرست کارکنان اضافه شد.`
+        : context.section === 'lifecycle' && context.tab === 'promotion'
+          ? `سمت و رده شغلی «${subject}» در پرونده کارکنان به‌روزرسانی شد.`
+          : context.section === 'lifecycle' && context.tab === 'settlement'
+            ? `تسویه «${subject}» برای تأیید به کارتابل مالی ارسال شد.`
+            : context.mode === 'edit'
+              ? `${context.title} در مجموعه‌داده موقت این نشست ویرایش شد.`
+              : `${context.title} به مجموعه‌داده موقت این نشست اضافه شد.`,
+    );
+    notifyMutation({
+      action: context.mode,
+      section: context.section,
+      tab: context.tab,
+      title: context.title,
+      subject,
+    });
+    if (
+      (context.section === 'recruitment' && context.tab === 'applicants') ||
+      (context.section === 'employee' && context.tab === 'docs')
+    ) {
+      const fileColumn = context.tab === 'applicants' ? 'رزومه' : 'فایل';
+      const attachment = parseHrAttachmentReference(value(fileColumn));
+      if (attachment)
+        notifyMutation({
+          action: 'create',
+          section: 'documents',
+          tab: 'list',
+          title: 'اسناد و فایل‌ها',
+          subject: attachment.name,
+        });
+    }
+    setContextualForm(null);
   };
   let screen: ReactNode;
   if (workspace)
@@ -2719,6 +3114,7 @@ export function HrWorkspace({
         key={`${section}:${tabId ?? ''}`}
         openAction={openAction}
         openForm={openForm}
+        onApproveSettlement={approveSettlement}
         section={section}
       />
     );
@@ -2741,107 +3137,7 @@ export function HrWorkspace({
         <ContextualHrFormDialog
           context={contextualForm}
           onClose={() => setContextualForm(null)}
-          onSubmit={(values) => {
-            const key = previewDatasetKey(
-              contextualForm.section,
-              contextualForm.tab,
-            );
-            setPreviewDatasetOverrides((current) => {
-              const rows =
-                current[key] ??
-                getHrPreviewDataset(contextualForm.section, contextualForm.tab)
-                  .rows;
-              let next: PreviewDatasetOverrides = {
-                ...current,
-                [key]: saveHrPreviewRow(
-                  rows,
-                  contextualForm.columns,
-                  values,
-                  contextualForm.rowIndex,
-                ),
-              };
-              if (
-                contextualForm.section === 'recruitment' &&
-                contextualForm.tab === 'applicants'
-              ) {
-                const resumeIndex = contextualForm.columns.indexOf('رزومه');
-                const applicantIndex =
-                  contextualForm.columns.indexOf('نام و نام خانوادگی');
-                const resume = values[resumeIndex] ?? '';
-                const applicant = values[applicantIndex] ?? 'متقاضی';
-                const attachment = parseHrAttachmentReference(resume);
-                if (attachment) {
-                  const documentsKey = previewDatasetKey('documents', 'list');
-                  const documentsRows =
-                    next[documentsKey] ??
-                    getHrPreviewDataset('documents', 'list').rows;
-                  if (
-                    !documentsRows.some((row) =>
-                      row.some(
-                        (cell) => typeof cell === 'string' && cell === resume,
-                      ),
-                    )
-                  )
-                    next = {
-                      ...next,
-                      [documentsKey]: [
-                        [
-                          `HR-DOC-${Date.now().toString(36).toUpperCase()}`,
-                          applicant,
-                          'رزومه متقاضی',
-                          '••••',
-                          'v1',
-                          '—',
-                          'محرمانه',
-                          resume,
-                          { label: 'ثبت‌شده', tone: 'success' },
-                        ],
-                        ...documentsRows,
-                      ],
-                    };
-                }
-              }
-              return appendAutomaticHrHistory(next, {
-                action: contextualForm.mode,
-                section: contextualForm.section,
-                tab: contextualForm.tab,
-                title: contextualForm.title,
-                subject: values[1] ?? values[0] ?? contextualForm.title,
-              });
-            });
-            setNotice(
-              contextualForm.mode === 'edit'
-                ? `${contextualForm.title} در مجموعه‌داده موقت این نشست ویرایش شد.`
-                : `${contextualForm.title} به مجموعه‌داده موقت این نشست اضافه شد.`,
-            );
-            const notificationSubject =
-              values[1] ?? values[0] ?? contextualForm.title;
-            notifyMutation({
-              action: contextualForm.mode,
-              section: contextualForm.section,
-              tab: contextualForm.tab,
-              title: contextualForm.title,
-              subject: notificationSubject,
-            });
-            if (
-              contextualForm.section === 'recruitment' &&
-              contextualForm.tab === 'applicants'
-            ) {
-              const resumeIndex = contextualForm.columns.indexOf('رزومه');
-              const attachment = parseHrAttachmentReference(
-                values[resumeIndex] ?? '',
-              );
-              if (attachment)
-                notifyMutation({
-                  action: 'create',
-                  section: 'documents',
-                  tab: 'list',
-                  title: 'اسناد و فایل‌ها',
-                  subject: attachment.name,
-                });
-            }
-            setContextualForm(null);
-          }}
+          onSubmit={submitContextualForm}
         />
       ) : dialogTitle === 'کارمند جدید' || editingEmployee ? (
         <NewEmployeeDialog

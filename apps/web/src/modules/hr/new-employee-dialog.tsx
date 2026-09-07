@@ -42,6 +42,7 @@ export interface NewEmployeeFormValue {
   branch: string;
   unit: string;
   position: string;
+  grade: string;
   manager: string;
   startedAt: string;
   status: NewEmployeeStatus;
@@ -58,6 +59,7 @@ const defaultEmployeeValue: NewEmployeeFormValue = {
   branch: previewBranches[0],
   unit: previewUnits[0],
   position: '',
+  grade: 'G4',
   manager: 'بدون مدیر مستقیم',
   startedAt: '',
   status: employeeStatuses[0],
@@ -103,6 +105,7 @@ export function validateNewEmployeeForm(
     errors.personnelCode = 'این کد پرسنلی قبلاً استفاده شده است.';
 
   if (!value.position.trim()) errors.position = 'سمت الزامی است.';
+  if (!value.grade.trim()) errors.grade = 'رده شغلی الزامی است.';
   if (!value.startedAt) errors.startedAt = 'تاریخ شروع همکاری الزامی است.';
 
   return errors;
@@ -311,6 +314,27 @@ export function NewEmployeeForm({
               value={value.position}
             />
             <FieldError errors={errors} field="position" />
+          </label>
+          <label className={styles.fieldLabel} htmlFor="hr-new-employee-grade">
+            <RequiredFieldLabel required>رده شغلی</RequiredFieldLabel>
+            <select
+              {...errorProps('grade')}
+              className={styles.control}
+              id="hr-new-employee-grade"
+              name="grade"
+              onChange={(event) => update('grade', event.target.value)}
+              required
+              value={value.grade}
+            >
+              {['G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'مدیریتی'].map(
+                (option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ),
+              )}
+            </select>
+            <FieldError errors={errors} field="grade" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-manager">
             <RequiredFieldLabel>مدیر مستقیم</RequiredFieldLabel>

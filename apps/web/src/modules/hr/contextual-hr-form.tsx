@@ -23,6 +23,13 @@ export interface ContextualHrFormContext {
   rowIndex?: number;
   initialValues?: readonly string[];
   peopleOptions?: readonly string[];
+  employeeDetails?: readonly {
+    name: string;
+    position: string;
+    grade: string;
+  }[];
+  contractNumbersByEmployee?: Readonly<Record<string, string>>;
+  linkedEmployeeName?: string;
 }
 
 type ContextualFieldType =
@@ -86,19 +93,59 @@ const fieldOptions = (
   label: string,
   peopleOptions: readonly string[] = defaultPeopleOptions,
 ): readonly string[] | undefined => {
+  if (label === 'نوع مدرک')
+    return [
+      'کارت ملی',
+      'شناسنامه',
+      'گذرنامه',
+      'مدرک تحصیلی',
+      'گواهی آموزشی',
+      'گواهی مهارت',
+      'گواهی عدم سوءپیشینه',
+      'گواهی سلامت و طب کار',
+      'کارت پایان خدمت یا معافیت',
+      'رزومه متقاضی',
+      'سایر مدارک پرسنلی',
+    ];
+  if (label.includes('نوع قرارداد'))
+    return [
+      'تمام‌وقت',
+      'پاره‌وقت',
+      'مدت‌معین',
+      'پروژه‌ای و پیمانکاری',
+      'مشاوره',
+      'کارآموزی',
+      'عدم افشای اطلاعات (NDA)',
+      'عدم رقابت',
+      'محرمانگی و مالکیت فکری',
+    ];
   if (label.includes('وضعیت'))
-    return ['پیش‌نویس', 'در انتظار تأیید', 'فعال', 'تکمیل‌شده', 'غیرفعال'];
+    return [
+      'پیش‌نویس',
+      'در انتظار تأیید',
+      'در انتظار تأیید مالی',
+      'ارسال‌شده به مالی',
+      'تأییدشده',
+      'فعال',
+      'تکمیل‌شده',
+      'غیرفعال',
+    ];
   if (/ارزیاب|مصاحبه‌کننده|تأییدکننده/.test(label))
     return Array.from(new Set([...peopleOptions, ...defaultPeopleOptions]));
   if (label === 'ارز' || /کد ارز|ارز پرداخت|ارز هزینه|ارز مبنا/.test(label))
     return ['IRR', 'USD', 'EUR', 'AED'];
-  if (/مشمول|قابل انتقال|الزامی/.test(label)) return ['بله', 'خیر'];
+  if (/مشمول|قابل انتقال|الزامی|تحویل دارایی|قطع دسترسی/.test(label))
+    return ['بله', 'خیر'];
   if (
     label.includes('کارمند') ||
     label === 'درخواست‌کننده' ||
     label.includes('نام درخواست‌کننده')
   )
     return Array.from(new Set([...peopleOptions, ...defaultPeopleOptions]));
+  if (label === 'مدیر مستقیم')
+    return Array.from(
+      new Set(['بدون مدیر مستقیم', ...peopleOptions, ...defaultPeopleOptions]),
+    );
   if (
     label.includes('مسئول') ||
     label.includes('مالک') ||
@@ -116,6 +163,9 @@ const fieldOptions = (
       'فناوری اطلاعات',
     ];
   if (label.includes('شعبه')) return ['نیایش سیر', 'جهان باستان'];
+  if (label === 'شرکت') return ['نیایش سیر', 'جهان باستان'];
+  if (/رده (شغلی|فعلی|جدید)/.test(label))
+    return ['G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'مدیریتی'];
   if (label.includes('نوع همکاری'))
     return ['تمام‌وقت', 'پاره‌وقت', 'پروژه‌ای', 'کارآموزی'];
   if (label.includes('منبع جذب'))
@@ -144,6 +194,8 @@ const fieldOptions = (
   if (/نوع پایان همکاری|نوع خاتمه/.test(label))
     return ['پایان مدت', 'استعفا', 'فسخ', 'بازنشستگی'];
   if (label.includes('نوع خروجی')) return ['نمایش', 'PDF', 'Excel'];
+  if (/سطح دسترسی|نوع دسترسی/.test(label))
+    return ['عمومی', 'داخلی', 'محرمانه', 'خیلی محرمانه'];
   if (label.startsWith('نوع ')) return ['عادی', 'ویژه', 'موقت'];
   if (label.includes('مرحله'))
     return ['ثبت اولیه', 'بررسی مدیر', 'تأیید منابع انسانی', 'تکمیل'];
@@ -152,17 +204,19 @@ const fieldOptions = (
   if (label.includes('رتبه'))
     return ['نیازمند بهبود', 'مطابق انتظار', 'فراتر از انتظار'];
   if (label.includes('تقویم')) return ['شمسی', 'میلادی', 'تقویم تهران'];
-  if (label.includes('سطح دسترسی')) return ['داخلی', 'محرمانه', 'خیلی محرمانه'];
   if (label.includes('خروجی')) return ['نمایش', 'PDF', 'Excel'];
   return undefined;
 };
 
 const fieldType = (label: string): ContextualFieldType => {
-  if (/رزومه|فایل پیوست/.test(label)) return 'file';
+  if (/رزومه|فایل پیوست|^فایل$/.test(label)) return 'file';
   if (label.includes('لینک')) return 'url';
   if (/ارزیاب|مصاحبه‌کننده|تأییدکننده/.test(label)) return 'combobox';
   if (/ساعت (شروع|پایان|مصاحبه|تردد|تحویل|عودت)/.test(label)) return 'time';
-  if (/تاریخ|موعد|تولد|انقضا|مهلت/.test(label) && !label.includes('بازه'))
+  if (
+    /تاریخ|موعد|تولد|انقضا|مهلت|آخرین روز کاری/.test(label) &&
+    !label.includes('بازه')
+  )
     return 'date';
   if (
     /مبلغ|امتیاز|تعداد|ظرفیت|بودجه|حقوق|درصد|وزن|نرخ|سهمیه|مسافت|کیلومتر|ترتیب|روز باقی‌مانده|کارکرد فعلی/.test(
@@ -177,7 +231,7 @@ const fieldType = (label: string): ContextualFieldType => {
 };
 
 const optionalField = (label: string) =>
-  /نتیجه|خروجی|پایان|انقضا|تکمیل|وابستگی|اثر مالی|حساب مقصد|لینک|رزومه|فایل پیوست/.test(
+  /نتیجه|خروجی|پایان|انقضا|تکمیل|وابستگی|اثر مالی|حساب مقصد|لینک|رزومه|فایل پیوست|مدت محرمانگی|مرجع حل اختلاف/.test(
     label,
   );
 
@@ -228,18 +282,21 @@ async function storeHrAttachment(file: File): Promise<string> {
     'application/pdf',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
   ]);
-  if (!allowed.has(file.type) || !/\.(pdf|doc|docx)$/i.test(file.name))
-    throw new Error('رزومه باید فایل PDF، DOC یا DOCX باشد.');
-  if (file.size > 2 * 1024 * 1024)
-    throw new Error('حجم رزومه باید حداکثر ۲ مگابایت باشد.');
+  if (!allowed.has(file.type) || !/\.(pdf|doc|docx|jpg|jpeg|png|webp)$/i.test(file.name))
+    throw new Error('فایل باید PDF، DOC، DOCX، JPG، PNG یا WEBP باشد.');
+  if (file.size > 5 * 1024 * 1024)
+    throw new Error('حجم فایل باید حداکثر ۵ مگابایت باشد.');
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error('خواندن فایل رزومه انجام نشد.'));
+    reader.onerror = () => reject(new Error('خواندن فایل انجام نشد.'));
     reader.onload = () => resolve(String(reader.result ?? ''));
     reader.readAsDataURL(file);
   });
-  const id = `resume-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const id = `document-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   try {
     window.sessionStorage.setItem(`${hrAttachmentStoragePrefix}${id}`, dataUrl);
   } catch {
@@ -293,8 +350,70 @@ function persianDateToIso(value: string): string {
 }
 
 const isAutomaticCodeField = (field: ContextualHrField, index: number) =>
-  index === 0 &&
-  (field.label.includes('شناسه') || field.label.startsWith('کد'));
+  (index === 0 && field.label.includes('شناسه')) ||
+  field.label.startsWith('کد') ||
+  /شماره (قرارداد|حکم|درخواست)/.test(field.label);
+
+const isAutomaticRegistrationDate = (label: string) =>
+  /^(تاریخ|زمان) (ثبت|ایجاد)$/.test(label);
+
+const isContextDerivedField = (
+  context: ContextualHrFormContext,
+  field: ContextualHrField,
+) =>
+  (context.section === 'lifecycle' &&
+    context.tab === 'promotion' &&
+    /^(سمت فعلی|رده فعلی)$/.test(field.label)) ||
+  (context.section === 'contracts' &&
+    context.tab === 'alerts' &&
+    field.label === 'شماره قرارداد') ||
+  (context.section === 'lifecycle' &&
+    context.tab === 'settlement' &&
+    field.label === 'وضعیت تأیید مالی');
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
+function buildInitialFormValues(
+  context: ContextualHrFormContext,
+  fields: readonly ContextualHrField[],
+): Record<string, string> {
+  const initial = Object.fromEntries(
+    fields.map((field, index) => [
+      field.id,
+      context.initialValues?.[index] !== undefined
+        ? field.type === 'date'
+          ? persianDateToIso(context.initialValues[index] ?? '')
+          : (context.initialValues[index] ?? '')
+        : isAutomaticRegistrationDate(field.label)
+          ? todayIso()
+          : context.section === 'lifecycle' &&
+              context.tab === 'settlement' &&
+              field.label === 'وضعیت تأیید مالی'
+            ? 'در انتظار تأیید مالی'
+            : (field.options?.[0] ??
+              (isAutomaticCodeField(field, index)
+                ? `HR-${context.section}-${context.tab}-${String(Date.now()).slice(-6)}`.toUpperCase()
+                : '')),
+    ]),
+  );
+  const employeeField = fields.find((field) => field.label === 'کارمند');
+  const selectedEmployee = context.employeeDetails?.find(
+    (employee) => employee.name === initial[employeeField?.id ?? ''],
+  );
+  if (selectedEmployee) {
+    const position = fields.find((field) => field.label === 'سمت فعلی');
+    const grade = fields.find((field) => field.label === 'رده فعلی');
+    if (position) initial[position.id] = selectedEmployee.position;
+    if (grade) initial[grade.id] = selectedEmployee.grade;
+  }
+  if (context.section === 'contracts' && context.tab === 'alerts') {
+    const contract = fields.find((field) => field.label === 'شماره قرارداد');
+    if (contract && employeeField)
+      initial[contract.id] =
+        context.contractNumbersByEmployee?.[initial[employeeField.id] ?? ''] ?? '';
+  }
+  return initial;
+}
 
 export function ContextualHrForm({
   context,
@@ -310,27 +429,31 @@ export function ContextualHrForm({
     [context.columns, context.peopleOptions],
   );
   const [values, setValues] = useState<Record<string, string>>(() =>
-    Object.fromEntries(
-      fields.map((field, index) => [
-        field.id,
-        context.initialValues?.[index] !== undefined
-          ? field.type === 'date'
-            ? persianDateToIso(context.initialValues[index] ?? '')
-            : (context.initialValues[index] ?? '')
-          : (field.options?.[0] ??
-            (isAutomaticCodeField(field, index)
-              ? `HR-${context.section}-${context.tab}-${String(Date.now()).slice(-6)}`.toUpperCase()
-              : field.label.includes('نسخه')
-                ? 'preview-v1'
-                : '')),
-      ]),
-    ),
+    buildInitialFormValues(context, fields),
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [fileLoading, setFileLoading] = useState(false);
 
   const update = (id: string, value: string) => {
-    setValues((current) => ({ ...current, [id]: value }));
+    setValues((current) => {
+      const next = { ...current, [id]: value };
+      const changedField = fields.find((field) => field.id === id);
+      if (changedField?.label === 'کارمند') {
+        const employee = context.employeeDetails?.find(
+          (item) => item.name === value,
+        );
+        const position = fields.find((field) => field.label === 'سمت فعلی');
+        const grade = fields.find((field) => field.label === 'رده فعلی');
+        const contract = fields.find(
+          (field) => field.label === 'شماره قرارداد',
+        );
+        if (position) next[position.id] = employee?.position ?? '';
+        if (grade) next[grade.id] = employee?.grade ?? '';
+        if (contract)
+          next[contract.id] = context.contractNumbersByEmployee?.[value] ?? '';
+      }
+      return next;
+    });
     setErrors((current) => {
       if (!current[id]) return current;
       const next = { ...current };
@@ -384,6 +507,10 @@ export function ContextualHrForm({
               name: field.id,
               required: field.required,
             };
+            const readOnly =
+              isAutomaticCodeField(field, index) ||
+              isAutomaticRegistrationDate(field.label) ||
+              isContextDerivedField(context, field);
             return (
               <label
                 className={styles.fieldLabel}
@@ -396,6 +523,7 @@ export function ContextualHrForm({
                 {field.type === 'select' ? (
                   <select
                     {...commonProps}
+                    disabled={readOnly}
                     onChange={(event) => update(field.id, event.target.value)}
                     value={values[field.id] ?? ''}
                   >
@@ -430,13 +558,14 @@ export function ContextualHrForm({
                     {...commonProps}
                     onChange={(value) => update(field.id, value)}
                     placeholder={`انتخاب ${field.label}`}
+                    readOnly={readOnly}
                     value={values[field.id] ?? ''}
                   />
                 ) : field.type === 'file' ? (
                   <>
                     <input
                       {...commonProps}
-                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png,image/webp"
                       onChange={(event) => {
                         const file = event.target.files?.[0];
                         if (!file) return;
@@ -449,7 +578,7 @@ export function ContextualHrForm({
                               [field.id]:
                                 error instanceof Error
                                   ? error.message
-                                  : 'بارگذاری رزومه انجام نشد.',
+                                  : 'بارگذاری فایل انجام نشد.',
                             })),
                           )
                           .finally(() => setFileLoading(false));
@@ -459,7 +588,7 @@ export function ContextualHrForm({
                     <small className={styles.fieldHint}>
                       <Upload aria-hidden="true" size={13} />{' '}
                       {parseHrAttachmentReference(values[field.id] ?? '')
-                        ?.name ?? 'PDF، DOC یا DOCX تا ۲ مگابایت'}
+                        ?.name ?? 'PDF، DOC، DOCX یا تصویر تا ۵ مگابایت'}
                     </small>
                   </>
                 ) : field.type === 'textarea' ? (
@@ -477,14 +606,14 @@ export function ContextualHrForm({
                     min={field.type === 'number' ? '0' : undefined}
                     onChange={(event) => update(field.id, event.target.value)}
                     placeholder={field.placeholder}
-                    readOnly={isAutomaticCodeField(field, index)}
+                    readOnly={readOnly}
                     type={field.type}
                     value={values[field.id] ?? ''}
                   />
                 )}
-                {isAutomaticCodeField(field, index) ? (
+                {readOnly ? (
                   <small className={styles.fieldHint}>
-                    این کد به‌صورت خودکار تخصیص داده می‌شود.
+                    این مقدار به‌صورت خودکار تکمیل می‌شود.
                   </small>
                 ) : null}
                 {errors[field.id] ? (

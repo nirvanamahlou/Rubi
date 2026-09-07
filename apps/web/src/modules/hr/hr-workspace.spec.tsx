@@ -49,6 +49,7 @@ import {
   normalizeSection,
   sectionTabs,
 } from './hr.model';
+import { getHrPreviewDataset } from './hr-preview-data';
 
 describe('HR reference implementation', () => {
   it('renders the eighteen capability hub cards as deep links', () => {
@@ -89,15 +90,15 @@ describe('HR reference implementation', () => {
     expect(sectionTabs.recruitment?.map((tab) => tab.label)).not.toContain(
       'معرفی کارکنان',
     );
-    expect(sectionTabs.lifecycle).toHaveLength(7);
+    expect(sectionTabs.lifecycle).toHaveLength(6);
     expect(sectionTabs.contracts).toHaveLength(5);
     expect(sectionTabs.time).toHaveLength(13);
     expect(sectionTabs.development).toHaveLength(8);
     expect(sectionTabs.expenses).toHaveLength(4);
     expect(sectionTabs.benefits).toHaveLength(6);
     expect(sectionTabs.fleet).toHaveLength(2);
-    expect(sectionTabs.requests).toHaveLength(9);
-    expect(sectionTabs.finance).toHaveLength(4);
+    expect(sectionTabs.requests).toHaveLength(1);
+    expect(sectionTabs.finance).toHaveLength(5);
     expect(sectionTabs.reports).toHaveLength(3);
     expect(sectionTabs.payroll).toHaveLength(10);
     expect(sectionTabs.hrSettings).toHaveLength(6);
@@ -138,12 +139,13 @@ describe('HR reference implementation', () => {
       'شعبه',
       'واحد',
       'سمت',
+      'رده شغلی',
       'مدیر مستقیم',
       'تاریخ شروع',
       'وضعیت',
     ])
       expect(html).toContain(label);
-    expect(html.match(/data-required-indicator="true"/g)?.length ?? 0).toBe(9);
+    expect(html.match(/data-required-indicator="true"/g)?.length ?? 0).toBe(10);
     expect(html).not.toContain('عنوان نمایشی');
     expect(html).toContain('name="firstName"');
     expect(html).toContain('name="lastName"');
@@ -161,6 +163,7 @@ describe('HR reference implementation', () => {
       branch: 'نیایش سیر',
       unit: 'عملیات سفر',
       position: 'کارشناس عملیات',
+      grade: 'G4',
       manager: 'مدیر نمایشی الف',
       startedAt: '2026-09-06',
       status: 'فعال',
@@ -188,6 +191,7 @@ describe('HR reference implementation', () => {
       branch: 'نیایش سیر',
       unit: 'عملیات سفر',
       position: '',
+      grade: 'G4',
       manager: 'بدون مدیر مستقیم',
       startedAt: '',
       status: 'فعال',
@@ -502,6 +506,91 @@ describe('HR reference implementation', () => {
     expect(fields[2]?.options).not.toContain('IRR');
     expect(fields[3]?.type).toBe('url');
     expect(fields[4]?.type).toBe('file');
+  });
+
+  it('uses the new-hire record as the source of a future employee', () => {
+    const dataset = getHrPreviewDataset('lifecycle', 'onboarding');
+    expect(dataset.columns).toEqual(
+      expect.arrayContaining([
+        'نام و نام خانوادگی',
+        'شرکت یا شعبه',
+        'واحد',
+        'سمت',
+        'رده شغلی',
+      ]),
+    );
+    expect(dataset.columns).not.toEqual(
+      expect.arrayContaining(['کارمند', 'الگوی ورود', 'پیشرفت']),
+    );
+    expect(
+      buildContextualHrFields(dataset.columns).find(
+        (field) => field.label === 'نام و نام خانوادگی',
+      )?.type,
+    ).toBe('text');
+  });
+
+  it('prefills promotion and contract alert values from employee records', () => {
+    const promotion = renderToStaticMarkup(
+      <ContextualHrForm
+        context={{
+          section: 'lifecycle',
+          tab: 'promotion',
+          title: 'ارتقا',
+          description: 'ارتقای کارمند',
+          columns: getHrPreviewDataset('lifecycle', 'promotion').columns,
+          mode: 'create',
+          peopleOptions: ['سارا محمدی'],
+          employeeDetails: [
+            { name: 'سارا محمدی', position: 'کارشناس فروش', grade: 'G4' },
+          ],
+        }}
+        onCancel={() => undefined}
+        onSubmit={() => undefined}
+      />,
+    );
+    expect(promotion).toContain('value="کارشناس فروش"');
+    expect(promotion).toContain('<option selected="">G4</option>');
+    expect(promotion).toContain('disabled');
+
+    const alert = renderToStaticMarkup(
+      <ContextualHrForm
+        context={{
+          section: 'contracts',
+          tab: 'alerts',
+          title: 'هشدار پایان',
+          description: 'هشدار قرارداد',
+          columns: getHrPreviewDataset('contracts', 'alerts').columns,
+          mode: 'create',
+          peopleOptions: ['سارا محمدی'],
+          contractNumbersByEmployee: {
+            'سارا محمدی': 'HR-CON-1405-101',
+          },
+        }}
+        onCancel={() => undefined}
+        onSubmit={() => undefined}
+      />,
+    );
+    expect(alert).toContain('value="HR-CON-1405-101"');
+    expect(alert).toContain('readOnly');
+  });
+
+  it('uses calendar, yes-no, document upload and public access fields', () => {
+    const fields = buildContextualHrFields([
+      'آخرین روز کاری',
+      'تحویل دارایی',
+      'قطع دسترسی',
+      'نوع مدرک',
+      'سطح دسترسی',
+      'فایل',
+      'تاریخ ثبت',
+    ]);
+    expect(fields[0]?.type).toBe('date');
+    expect(fields[1]?.options).toEqual(['بله', 'خیر']);
+    expect(fields[2]?.options).toEqual(['بله', 'خیر']);
+    expect(fields[3]?.options).toContain('گواهی سلامت و طب کار');
+    expect(fields[4]?.options).toContain('عمومی');
+    expect(fields[5]?.type).toBe('file');
+    expect(fields[6]?.type).toBe('date');
   });
 
   it('updates and removes rows from the active preview dataset', () => {

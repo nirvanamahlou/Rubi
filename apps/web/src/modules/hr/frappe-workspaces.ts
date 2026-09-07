@@ -428,7 +428,7 @@ export const frappeWorkspaces: readonly FrappeWorkspaceDefinition[] = [
     title: 'عملکرد و آموزش',
     shortTitle: 'عملکرد',
     description:
-      'دوره ارزیابی، هدف و KRA، خودارزیابی، بازخورد، آموزش و نقشه مهارت',
+      'دوره ارزیابی، هدف و KRA، خودارزیابی، بازخورد و آموزش',
     icon: CircleGauge,
     tone: 'violet',
     metrics: [
@@ -720,7 +720,7 @@ export const frappeWorkspaces: readonly FrappeWorkspaceDefinition[] = [
     id: 'tenure',
     title: 'چرخه همکاری',
     shortTitle: 'چرخه همکاری',
-    description: 'ورود و خروج کارکنان، شکایت، آموزش، مهارت و خلاصه کار روزانه',
+    description: 'ورود و خروج کارکنان، شکایت، آموزش و خلاصه کار روزانه',
     icon: HeartHandshake,
     tone: 'teal',
     metrics: [
@@ -734,13 +734,7 @@ export const frappeWorkspaces: readonly FrappeWorkspaceDefinition[] = [
       {
         title: 'ورود به سازمان',
         items: [
-          {
-            label: 'قالب ورود کارمند',
-            section: 'lifecycle',
-            tab: 'onboarding',
-          },
           { label: 'ورود نیروی جدید', section: 'lifecycle', tab: 'onboarding' },
-          { label: 'نقشه مهارت کارکنان', section: 'lifecycle', tab: 'skills' },
         ],
       },
       {
