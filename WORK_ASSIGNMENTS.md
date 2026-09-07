@@ -855,3 +855,7 @@ HR-002 follow-up / PC-B: standalone personnel documents navigation removal; HR-o
 HR-003 / PC-B / IN_PROGRESS: per-section overview and PDF reporting, HR-owned files only; existing branch continuation. No shared contracts or dependencies.
 
 HR-003 / READY_FOR_REVIEW: HR section overview/PDF reports implemented, no shared locks acquired.
+
+HR-004 / PC-B / IN_PROGRESS: employee-specific profile, related records and reporting scope; HR-owned files, no migration or shared dependency.
+
+HR-004 / READY_FOR_REVIEW: employee profile isolation and linked records complete within current HR session model.

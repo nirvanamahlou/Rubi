@@ -80,6 +80,11 @@ import {
   type ContextualHrFormContext,
 } from './contextual-hr-form';
 import { parseWeightedGoals } from './weighted-goals';
+import {
+  employeeProfileSources,
+  employeeProfileKey,
+  filterEmployeeRecords,
+} from './employee-profile-data';
 import { SectionReports, type SectionReport } from './section-reports';
 import { ShiftCalendar } from './shift-calendar';
 import { downloadHrXlsx, readHrXlsx } from './hr-xlsx';
@@ -1324,7 +1329,12 @@ function Employees({
       'عملیات',
     ],
     rows: filtered.map((employee) => [
-      <Person employee={employee} key={employee.id} />,
+      <Link
+        href={`/hr?section=employee&employee=${encodeURIComponent(employee.id)}`}
+        key={employee.id}
+      >
+        <Person employee={employee} />
+      </Link>,
       employee.id,
       employee.kind,
       employee.unit,
@@ -1477,7 +1487,9 @@ function EmployeeProfile({
     employeeTabs.find((item) => item.id === tab) ?? employeeTabs[0];
   const ActiveIcon = active?.icon ?? UserRound;
   const dataset = datasetStore.getDataset('employee', tab);
-  const isAutomaticHistory = isAutomaticHrHistoryTab('employee', tab);
+  const isAutomaticHistory =
+    Boolean(employeeProfileSources[tab]) ||
+    isAutomaticHrHistoryTab('employee', tab);
   const [photoError, setPhotoError] = useState('');
   const openCurrentForm = (mode: ContextualHrFormContext['mode']) =>
     openForm({
@@ -1488,6 +1500,7 @@ function EmployeeProfile({
       columns: dataset.columns,
       mode,
       linkedEmployeeName: employee.name,
+      linkedEmployeeId: employee.id,
     });
   const profileData =
     tab === 'summary'
@@ -1507,6 +1520,7 @@ function EmployeeProfile({
                 rowIndex,
                 initialValues: row.map(previewCellText),
                 linkedEmployeeName: employee.name,
+                linkedEmployeeId: employee.id,
               }),
             (rowIndex) => datasetStore.deleteRow('employee', tab, rowIndex),
           );
@@ -1606,20 +1620,63 @@ function EmployeeProfile({
         note={
           isAutomaticHistory
             ? 'این سابقه به‌صورت خودکار از عملیات پرونده ساخته می‌شود.'
-            : 'دسترسی این نما بر اساس نقش و دامنه سازمانی کنترل می‌شود.'
+            : 'اطلاعات مربوط به کارمند انتخاب‌شده'
         }
         title={active?.label ?? 'مشخصات'}
       >
         <div className={styles.panelBody}>
           {tab === 'summary' ? (
-            <div className={styles.summaryGrid}>
-              {summaryItems.map(([label, value]) => (
-                <div className={styles.summaryItem} key={label}>
-                  <span>{label}</span>
-                  <b>{value}</b>
-                </div>
-              ))}
-            </div>
+            <>
+              <div className={styles.hubGrid}>
+                {[
+                  ['leave', 'مرخصی‌ها'],
+                  ['attendance', 'کارکرد'],
+                  ['financial', 'حقوق و کسورات'],
+                  ['requests', 'درخواست‌های من'],
+                ].map(([target, label]) => (
+                  <button
+                    key={target}
+                    type="button"
+                    className={styles.button}
+                    onClick={() => setTab(target!)}
+                  >
+                    {label} ·{' '}
+                    {datasetStore
+                      .getDataset('employee', target!)
+                      .rows.length.toLocaleString('fa-IR')}{' '}
+                    رکورد
+                  </button>
+                ))}
+              </div>
+              <div className={styles.summaryGrid}>
+                {summaryItems.map(([label, value]) => (
+                  <div className={styles.summaryItem} key={label}>
+                    <span>{label}</span>
+                    <b>{value}</b>
+                  </div>
+                ))}
+              </div>
+              <h3>مرخصی‌های من</h3>
+              {datasetStore.getDataset('employee', 'leave').rows.length ? (
+                <PreviewTable
+                  data={readonlyTable(
+                    datasetStore.getDataset('employee', 'leave'),
+                  )}
+                />
+              ) : (
+                <p>درخواست مرخصی برای این کارمند ثبت نشده است.</p>
+              )}
+              <h3>حقوق و کسورات</h3>
+              {datasetStore.getDataset('employee', 'financial').rows.length ? (
+                <PreviewTable
+                  data={readonlyTable(
+                    datasetStore.getDataset('employee', 'financial'),
+                  )}
+                />
+              ) : (
+                <p>اطلاعات حقوق و کسورات این کارمند هنوز ثبت نشده است.</p>
+              )}
+            </>
           ) : (
             profileData && <PreviewTable data={profileData} />
           )}
@@ -2839,6 +2896,32 @@ export function HrWorkspace({
   };
   const getDataset = (datasetSection: HrSectionId, tab: string) => {
     const base = getHrPreviewDataset(datasetSection, tab);
+    if (datasetSection === 'employee') {
+      const source = employeeProfileSources[tab];
+      if (source) {
+        const sourceBase = getHrPreviewDataset(source[0], source[1]);
+        const sourceData = {
+          ...sourceBase,
+          rows:
+            previewDatasetOverrides[previewDatasetKey(source[0], source[1])] ??
+            sourceBase.rows,
+        };
+        return filterEmployeeRecords(
+          sourceData,
+          selectedEmployee,
+          employees.filter((item) => item.name === selectedEmployee.name)
+            .length === 1,
+        );
+      }
+      return {
+        ...base,
+        rows:
+          previewDatasetOverrides[
+            employeeProfileKey(selectedEmployee.id, tab)
+          ] ?? [],
+        totalLabel: 'رکوردهای اختصاصی این کارمند',
+      };
+    }
     const key = previewDatasetKey(datasetSection, tab);
     const rows = previewDatasetOverrides[key];
     if (!rows) return base;
@@ -2870,7 +2953,10 @@ export function HrWorkspace({
     tab: string,
     rowIndex: number,
   ) => {
-    const key = previewDatasetKey(datasetSection, tab);
+    const key =
+      datasetSection === 'employee'
+        ? employeeProfileKey(selectedEmployee.id, tab)
+        : previewDatasetKey(datasetSection, tab);
     const row = getDataset(datasetSection, tab).rows[rowIndex];
     const subject = previewCellText(row?.[1] ?? row?.[0] ?? 'رکورد');
     const title =
@@ -2878,7 +2964,10 @@ export function HrWorkspace({
       screenMeta[datasetSection].title;
     setPreviewDatasetOverrides((current) => {
       const rows =
-        current[key] ?? getHrPreviewDataset(datasetSection, tab).rows;
+        current[key] ??
+        (datasetSection === 'employee'
+          ? []
+          : getHrPreviewDataset(datasetSection, tab).rows);
       let next: PreviewDatasetOverrides = {
         ...current,
         [key]: removeHrPreviewRow(rows, rowIndex),
@@ -3086,7 +3175,10 @@ export function HrWorkspace({
   const submitContextualForm = (values: readonly string[]) => {
     if (!contextualForm) return;
     const context = contextualForm;
-    const key = previewDatasetKey(context.section, context.tab);
+    const key =
+      context.section === 'employee' && context.linkedEmployeeId
+        ? employeeProfileKey(context.linkedEmployeeId, context.tab)
+        : previewDatasetKey(context.section, context.tab);
     const value = (column: string) =>
       formValueByColumn(context, values, column);
     const subject =
@@ -3138,7 +3230,10 @@ export function HrWorkspace({
 
     setPreviewDatasetOverrides((current) => {
       const rows =
-        current[key] ?? getHrPreviewDataset(context.section, context.tab).rows;
+        current[key] ??
+        (context.section === 'employee'
+          ? []
+          : getHrPreviewDataset(context.section, context.tab).rows);
       let next: PreviewDatasetOverrides = {
         ...current,
         [key]: saveHrPreviewRow(
@@ -3225,10 +3320,11 @@ export function HrWorkspace({
         );
         const [branch = 'نیایش سیر', unit = 'عملیات سفر'] =
           promotedEmployee?.unit.split(' / ') ?? [];
-        const assignmentKey = previewDatasetKey('employee', 'assignment');
-        const assignmentRows =
-          next[assignmentKey] ??
-          getHrPreviewDataset('employee', 'assignment').rows;
+        const assignmentKey = employeeProfileKey(
+          promotedEmployee?.id ?? 'unassigned',
+          'assignment',
+        );
+        const assignmentRows = next[assignmentKey] ?? [];
         next = {
           ...next,
           [assignmentKey]: [
@@ -3347,8 +3443,10 @@ export function HrWorkspace({
         ? formValueByColumn(context, context.initialValues, 'فایل')
         : '';
       const attachment = parseHrAttachmentReference(fileReference);
-      const employee = employees.find(
-        (item) => item.name === context.linkedEmployeeName,
+      const employee = employees.find((item) =>
+        context.linkedEmployeeId
+          ? item.id === context.linkedEmployeeId
+          : item.name === context.linkedEmployeeName,
       );
       if (attachment && employee && fileReference !== previousFile) {
         void uploadEmployeeDocumentToArchive({
@@ -3428,13 +3526,23 @@ export function HrWorkspace({
         }}
       />
     );
+  else if (
+    section === 'employee' &&
+    employeeId &&
+    !employees.some((employee) => employee.id === employeeId)
+  )
+    screen = (
+      <p role="status">
+        پرونده این کارمند پیدا نشد یا در این نشست در دسترس نیست.
+      </p>
+    );
   else if (section === 'employee')
     screen = (
       <EmployeeProfile
         employee={selectedEmployee}
         datasetStore={datasetStore}
         initialTab={tabId}
-        key={`employee:${tabId ?? ''}`}
+        key={`employee:${selectedEmployee.id}:${tabId ?? ''}`}
         openForm={openForm}
         onPhotoChange={(targetEmployeeId, photoDataUrl) => {
           setEmployees((current) =>
@@ -3564,7 +3672,10 @@ export function HrWorkspace({
           {notice}
         </div>
       ) : null}
-      {section === 'home' && !workspace ? (
+      {(section === 'home' && !workspace) ||
+      (section === 'employee' &&
+        employeeId &&
+        !employees.some((employee) => employee.id === employeeId)) ? (
         screen
       ) : (
         <SectionReports

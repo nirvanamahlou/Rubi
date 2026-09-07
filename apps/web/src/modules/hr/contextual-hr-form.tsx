@@ -31,6 +31,7 @@ export interface ContextualHrFormContext {
   }[];
   contractNumbersByEmployee?: Readonly<Record<string, string>>;
   linkedEmployeeName?: string;
+  linkedEmployeeId?: string;
   attendance?: readonly { employee: string; date: string; value: string }[];
   holidayOptions?: readonly string[];
 }

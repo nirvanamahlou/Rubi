@@ -247,7 +247,9 @@ export const employeeTabs: readonly HrTab[] = [
   { id: 'training', label: 'آموزش', icon: GraduationCap },
   { id: 'assets', label: 'تجهیزات', icon: Boxes },
   { id: 'docs', label: 'مدارک', icon: FileArchive },
-  { id: 'financial', label: 'مالی', icon: BadgeDollarSign },
+  { id: 'financial', label: 'حقوق و کسورات', icon: BadgeDollarSign },
+  { id: 'payslips', label: 'فیش حقوقی', icon: ReceiptText },
+  { id: 'requests', label: 'درخواست‌های من', icon: ListChecks },
   { id: 'audit', label: 'تاریخچه', icon: History },
 ];
 

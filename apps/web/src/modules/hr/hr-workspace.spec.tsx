@@ -82,7 +82,7 @@ describe('HR reference implementation', () => {
   });
 
   it('provides the complete employee profile and section tab sets', () => {
-    expect(employeeTabs).toHaveLength(15);
+    expect(employeeTabs).toHaveLength(17);
     expect(sectionTabs.organization).toHaveLength(5);
     expect(sectionTabs.organization?.map((tab) => tab.label)).not.toContain(
       'نوع کارکنان',
