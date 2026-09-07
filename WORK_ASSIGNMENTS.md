@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-OUTPUT-HOTEL-CURRENCY-0907 — PC-A — COMPLETE_LOCAL
+
+- Delivered on the current local Sales branch: explicit age-compatible hotel accommodation per guest, Latin hotel/site public references, Nystkt.ir footer, IRR/foreign passenger cells and exact per-currency passenger totals. Empty PostgreSQL migration/seed-twice, restored-data rehearsal, DB CHECK/roundtrip, 132 Web Sales + 45 API Sales + 48 Contracts tests, scoped lint/typechecks/API-Web production builds passed. Local additive migration activated with fresh backup and historical rows/counts unchanged; Web3100/API4000 healthy. No public push. Task-specific Migration/Sales public contract/Central Docs reservations released. See docs/tasks/SALES-OUTPUT-HOTEL-CURRENCY-0907.md.
+
+- Reserve Sales passenger accommodation field/additive migration, public types, validation/persistence/UI, print/reference loading/tests and task docs from 1c1acd2 on the current Sales branch. Prior local scoped locks are released; Migration/Sales contract/Central Docs owner is PC-A for this change only. No producer, IAM, dependency, remote or historical-migration rewrite. User asks Nystkt.ir footer, Latin hotel/site, explicit passenger room/child-bed designation, separate IRR/foreign columns and passenger-summed agreement total. No age/bed or FX guessing.
+
 ## SALES-OUTPUT-CLEANUP-0907 — PC-A — COMPLETE_LOCAL
 
 - Delivered marked-note/footer cleanup in print/PDF with operator guidance outside the document. Eleven focused tests, scoped lint, production TypeScript/build and four-page rendered QA passed. Web3100 restarted; no API/database change. Reservations released; local-only. Browser header/footer preference remains explicit; see task document.

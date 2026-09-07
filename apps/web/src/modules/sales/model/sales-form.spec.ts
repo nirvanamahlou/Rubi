@@ -5,6 +5,8 @@ import {
   emptySalesForm,
   salesPayload,
   salesPassengerAgeLabel,
+  salesAccommodationOptions,
+  salesAccommodationsComplete,
   salesPassengerCompositionMatches,
   salesPassengerCounts,
   salesHotelGuestIds,
@@ -20,9 +22,56 @@ import {
 } from './sales-form';
 
 describe('sales contract form payload', () => {
+  it('keeps only explicit current hotel guest accommodation and requires an age-compatible selection', () => {
+    const state = {
+      ...emptySalesForm,
+      departureDate: '2026-10-01',
+      serviceKinds: ['HOTEL' as const],
+      hotel: { ...emptySalesForm.hotel, guestCustomerIds: ['person'] },
+      passengers: [
+        {
+          customerId: 'person',
+          displayName: 'Sample',
+          birthDate: '1990-01-01',
+        },
+      ],
+      passengerAccommodations: { person: 'SINGLE' as const },
+    };
+    expect(
+      salesAccommodationOptions('2025-01-01', '2026-10-01').map((x) => x.id),
+    ).toEqual(['INFANT']);
+    expect(
+      salesAccommodationOptions('2020-01-01', '2026-10-01').map((x) => x.id),
+    ).toEqual(['CHILD_WITH_BED', 'CHILD_WITHOUT_BED']);
+    expect(salesAccommodationsComplete(state)).toBe(true);
+    expect(
+      salesAccommodationsComplete({
+        ...state,
+        passengerAccommodations: { person: 'INFANT' },
+      }),
+    ).toBe(false);
+    expect(salesPayload(state).passengers[0]?.accommodationKind).toBe('SINGLE');
+    expect(
+      salesPayload({ ...state, serviceKinds: ['OTHER'] }).passengers[0]
+        ?.accommodationKind,
+    ).toBeUndefined();
+  });
   it('sends only entered package amounts for current passengers, without allocating by age', () => {
-    const prices = [{amount:'12500000.25',currencyCode:'IRR'}];
-    const payload = salesPayload({...emptySalesForm,passengers:[{customerId:'person-1',displayName:'Test',birthDate:'1990-01-01'}],passengerPrices:{'person-1':prices,'removed-person':[{amount:'999',currencyCode:'USD'}]}});
+    const prices = [{ amount: '12500000.25', currencyCode: 'IRR' }];
+    const payload = salesPayload({
+      ...emptySalesForm,
+      passengers: [
+        {
+          customerId: 'person-1',
+          displayName: 'Test',
+          birthDate: '1990-01-01',
+        },
+      ],
+      passengerPrices: {
+        'person-1': prices,
+        'removed-person': [{ amount: '999', currencyCode: 'USD' }],
+      },
+    });
     expect(payload.passengers[0]?.agreedPrices).toEqual(prices);
     expect(JSON.stringify(payload.passengers)).not.toContain('removed-person');
     expect(JSON.stringify(payload.passengers)).not.toContain('999');

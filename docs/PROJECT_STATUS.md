@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-OUTPUT-HOTEL-CURRENCY-0907 — COMPLETE_LOCAL
+
+Contract print/PDF now shows Nystkt.ir, hotel Latin name and website from public Master Data, explicit guest accommodation categories, separate IRR and foreign amount columns, and exact passenger-summed totals per currency. Existing missing data remains unrecorded, not inferred. Additive Sales passenger accommodation migration is live locally after empty/seed-twice and backup-restore gates; old records/history preserved. 132 Web Sales / 45 API Sales / 48 Contracts tests, scoped lint/typechecks and production builds passed. All four synthetic PDF pages inspected. Web3100/API4000 return 200; authenticated real-customer walkthrough not performed. Local-only; scoped ownership released. See docs/tasks/SALES-OUTPUT-HOTEL-CURRENCY-0907.md.
+
 ## SALES-OUTPUT-CLEANUP-0907 — COMPLETE_LOCAL
 
 Removed the user-marked operator notes under signatures and technical generation footer from customer print/PDF, preserving company/signatures and all amounts. Operator disclosures and browser header/footer instructions remain in the preview dialog. Eleven tests, scoped lint and Web production TypeScript/build passed; all four synthetic PDF pages inspected. Web3100 restarted; API/database unchanged. Local-only; scoped locks released. See docs/tasks/SALES-OUTPUT-CLEANUP-0907.md.

@@ -70,6 +70,12 @@ export async function GET(
         refs.names[key] = data.name;
         if (resource === 'hotels' && data.attributes.starRating != null)
           refs.hotelGrade = String(data.attributes.starRating);
+        if (resource === 'hotels') {
+          if (typeof data.attributes.englishName === 'string')
+            refs.hotelLatinName = data.attributes.englishName.trim();
+          if (typeof data.attributes.website === 'string')
+            refs.hotelWebsite = data.attributes.website.trim();
+        }
       }),
     );
     const logo = legalEntityBrand(output.company.code).src;

@@ -11,6 +11,7 @@ import type {
   MasterDataRecord,
   MasterDataResource,
   SalesServiceKind,
+  SalesAccommodationKind,
 } from '@rubi/contracts';
 
 import { hotelNights } from '@rubi/contracts';
@@ -39,6 +40,8 @@ import {
   salesPayload,
   salesSteps,
   salesPassengerAgeLabel,
+  salesAccommodationOptions,
+  salesAccommodationsComplete,
   salesPassengerCompositionMatches,
   salesPassengerCounts,
   salesHotelGuestIds,
@@ -444,6 +447,7 @@ export function SalesContractForm() {
         state.passengers.length > 0 &&
         state.passengers.every((item) => item.birthDate) &&
         salesPassengerCompositionMatches(state) &&
+        salesAccommodationsComplete(state) &&
         (!state.serviceKinds.includes('HOTEL') || hotelGuestIds.length > 0) &&
         state.passengers.every(
           ({ customerId }) =>
@@ -490,6 +494,8 @@ export function SalesContractForm() {
     setError('');
     try {
       const payload = salesPayload(state);
+      if (!salesAccommodationsComplete(state))
+        throw new Error('نوع اقامت هر مسافر هتل را مشخص کنید.');
       validateSalesCurrencySelection(payload, references.currencies);
       validatePassengerPackagePrices(
         payload.passengers,
@@ -1251,6 +1257,34 @@ export function SalesContractForm() {
                     </label>
                   ))}
                 </div>
+                <div className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
+                  {state.passengers
+                    .filter((p) => hotelGuestIds.includes(p.customerId))
+                    .map((passenger) => (
+                      <SearchableReference
+                        key={passenger.customerId}
+                        label={'نوع اقامت · ' + passenger.displayName}
+                        value={
+                          state.passengerAccommodations?.[
+                            passenger.customerId
+                          ] ?? ''
+                        }
+                        options={salesAccommodationOptions(
+                          passenger.birthDate,
+                          salesTravelDate(state),
+                        )}
+                        onChange={(value) =>
+                          patchState({
+                            passengerAccommodations: {
+                              ...state.passengerAccommodations,
+                              [passenger.customerId]:
+                                value as SalesAccommodationKind,
+                            },
+                          })
+                        }
+                      />
+                    ))}
+                </div>
               </fieldset>
             ) : null}
             <p className="text-xs text-muted-foreground">
@@ -1276,7 +1310,9 @@ export function SalesContractForm() {
                           : state.serviceKinds.includes('HOTEL') &&
                               hotelGuestIds.length === 0
                             ? 'حداقل یک مهمان برای هتل انتخاب کنید.'
-                            : 'هر مسافر باید حداقل یک خدمت انتخاب‌شده داشته باشد.'}
+                            : !salesAccommodationsComplete(state)
+                              ? 'نوع اقامت هر مسافر هتل را مشخص کنید.'
+                              : 'هر مسافر باید حداقل یک خدمت انتخاب‌شده داشته باشد.'}
               </p>
             ) : null}
           </section>

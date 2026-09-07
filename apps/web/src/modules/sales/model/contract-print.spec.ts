@@ -2,10 +2,67 @@ import { describe, expect, it } from 'vitest';
 import { contractPrintHtml, contractMoney } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
+  it('separates passenger IRR and foreign amounts, sums each currency and prints hotel references', () => {
+    const output = structuredClone(printFixture);
+    output.contract.passengersDetail = output.contract.passengersDetail.map(
+      (p, i) => ({
+        ...p,
+        accommodationKind: i ? 'CHILD_WITHOUT_BED' : 'DBL',
+        agreedPrices: i
+          ? [{ currencyCode: 'IRR', amount: '2.25' }]
+          : [
+              { currencyCode: 'IRR', amount: '9007199254740993.12' },
+              { currencyCode: 'EUR', amount: '50.25' },
+            ],
+      }),
+    );
+    const html = contractPrintHtml(output, {
+      ...printReferences,
+      hotelLatinName: 'SAMPLE HOTEL',
+      hotelWebsite: 'https://hotel.example',
+    });
+    expect(html).toContain('9,007,199,254,740,995.37');
+    expect(html).toContain('50.25 EUR');
+    expect(html).toContain(
+      '<td class="contract-total"><div><bdi class="money">2.25</bdi></div></td><td></td>',
+    );
+    expect(html).toContain('کودک بدون تخت');
+    expect(html).toContain('DBL');
+    expect(html).toContain('SAMPLE HOTEL');
+    expect(html).toContain('https://hotel.example');
+    expect(html).toContain('Nystkt.ir');
+    expect(html).not.toContain('>هتل نمونه<');
+  });
+  it('leaves the IRR cell blank for a foreign-only passenger and escapes hotel fields', () => {
+    const output = structuredClone(printFixture);
+    output.contract.passengersDetail = output.contract.passengersDetail.map(
+      (p) => ({
+        ...p,
+        agreedPrices: [{ currencyCode: 'USD', amount: '100' }],
+      }),
+    );
+    const html = contractPrintHtml(output, {
+      ...printReferences,
+      hotelLatinName: '<script>',
+      hotelWebsite: '<img>',
+    });
+    expect(html).toContain(
+      '<td class="contract-total"></td><td><div><bdi class="money">100 USD',
+    );
+    expect(html).toContain('&lt;script&gt;');
+    expect(html).not.toContain('<img>');
+  });
   it('prints entered whole-package passenger amounts with English money glyphs', () => {
-    const output=structuredClone(printFixture);
-    output.contract.passengersDetail=output.contract.passengersDetail.map((p,i)=>({...p,agreedPrices:[{currencyCode:'IRR',amount:i?'23456789.25':'100000000'}]}));
-    const html=contractPrintHtml(output,printReferences);
+    const output = structuredClone(printFixture);
+    output.contract.passengersDetail = output.contract.passengersDetail.map(
+      (p, i) => ({
+        ...p,
+        agreedPrices: [
+          { currencyCode: 'IRR', amount: i ? '23456789.25' : '100000000' },
+        ],
+      }),
+    );
+    const html = contractPrintHtml(output, printReferences);
     expect(html).toContain('100,000,000');
     expect(html).toContain('23,456,789.25');
     expect(html).toContain('font-family:Arial,sans-serif!important');

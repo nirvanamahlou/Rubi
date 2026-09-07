@@ -1,10 +1,13 @@
 import {
   servicePriceComponents,
+  SALES_ACCOMMODATION_LABELS,
+  salesAccommodationValid,
   type SalesServicePricingV1,
 } from '@rubi/contracts';
 import type {
   CustomerSummary,
   SalesMoney,
+  SalesAccommodationKind,
   MasterDataRecord,
   SalesContractCreateRequest,
   SalesPaymentInput,
@@ -132,6 +135,7 @@ export interface SalesFormState {
   payments: SalesPaymentInput[];
   pricingNotes: string;
   passengerPrices?: Record<string, SalesMoney[]>;
+  passengerAccommodations?: Record<string, SalesAccommodationKind>;
 }
 
 export const emptySalesForm: SalesFormState = {
@@ -282,6 +286,40 @@ export function salesPassengerAgeLabel(
   )
     age--;
   return age < 2 ? 'نوزاد' : age < 12 ? 'کودک' : 'بزرگسال';
+}
+
+export function salesAccommodationOptions(
+  birthDate: string,
+  departureDate: string,
+) {
+  const label = salesPassengerAgeLabel(birthDate, departureDate);
+  const age =
+    label === 'نوزاد'
+      ? 'INF'
+      : label === 'کودک'
+        ? 'CHD'
+        : label === 'بزرگسال'
+          ? 'ADT'
+          : null;
+  return Object.entries(SALES_ACCOMMODATION_LABELS)
+    .filter(([id]) => age && salesAccommodationValid(id, age))
+    .map(([id, name]) => ({ id, name, code: id }));
+}
+
+export function salesAccommodationsComplete(state: SalesFormState) {
+  return (
+    !state.serviceKinds.includes('HOTEL') ||
+    salesHotelGuestIds(state).every((id) => {
+      const passenger = state.passengers.find((p) => p.customerId === id);
+      return (
+        passenger &&
+        salesAccommodationOptions(
+          passenger.birthDate,
+          salesTravelDate(state),
+        ).some((option) => option.id === state.passengerAccommodations?.[id])
+      );
+    })
+  );
 }
 
 export function salesDirections(
@@ -611,6 +649,11 @@ export function salesPayload(
     passengers: state.passengers.map((item) => ({
       customerId: item.customerId,
       displayNameSnapshot: item.displayName,
+      ...(state.serviceKinds.includes('HOTEL') &&
+      salesHotelGuestIds(state).includes(item.customerId) &&
+      state.passengerAccommodations?.[item.customerId]
+        ? { accommodationKind: state.passengerAccommodations[item.customerId] }
+        : {}),
       ...(state.passengerPrices
         ? { agreedPrices: state.passengerPrices[item.customerId] ?? [] }
         : {}),
