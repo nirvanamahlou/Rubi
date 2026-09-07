@@ -10,7 +10,7 @@
 - نتیجه: Selector مشترک هر دو فرم به `customersApi` و `masterDataApi` متصل شد؛ فقط مشتری فعال دارای رضایت جاری و Organization فعال با نقش `AGENCY` قابل انتخاب است. جست‌وجوی debounce، Retry، پیام خطای نشست/مجوز و Deep Link به بخش مالک نیز تکمیل شد.
 - اعتبارسنجی: Web lint بدون هشدار، Web typecheck، ۲۱ تست هدفمند مارکتینگ و Production Build با ۳۴ Route موفق‌اند. Build اجرایی با `NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api/v1` ساخته و جای نسخه قدیمی پورت ۳۱۰۰ اجرا شد؛ Health API پاسخ ۲۰۰ و Endpointهای محافظت‌شده مشتری/آژانس بدون نشست پاسخ صحیح ۴۰۱ دارند.
 
-## DOCUMENTS-007-STEP-UP-SECURITY — PC-B — IN_PROGRESS
+## DOCUMENTS-007-STEP-UP-SECURITY — PC-B — READY_FOR_REVIEW
 
 - درخواست و واگذاری صریح مالک محصول در 2026-09-07: PC-B در کنار PC-A به مرز عمومی IAM دسترسی داشته باشد تا برای سندهایی که هنگام بارگذاری علامت «نیازمند اعتبارسنجی دومرحله‌ای» می‌خورند، مشاهده و دانلود فقط پس از Step-up واقعی انجام شود. `COMPUTER_ID=PC-B`.
 - Branch مستقل `codex/pc-b-documents-step-up-security` از `origin/develop@7b84040` در Worktree `C:\Users\admin\Rubi-documents-step-up-security`؛ Branch و تغییرات PC-A/PR #90 حفظ و بازنویسی نمی‌شوند.
@@ -19,6 +19,9 @@
 - مرز تداخل: فایل‌ها و Migrationهای فروش در PR #90 تغییر نمی‌کنند؛ Documents فقط از Public Step-up Contract/Port IAM استفاده می‌کند و به Repository یا جدول داخلی IAM Query مستقیم نمی‌زند. PC-A همچنان مالک Sales است و این واگذاری دسترسی آن را حذف نمی‌کند.
 - فرض ظرفیت و امنیت: نسبت خواندن به نوشتن `20:1`، اوج کمتر از `50 QPS`، سامانه ورودمحور با Branch Scope و داده در سطح PII/Restricted؛ هدف `p50<150ms`، `p95<300ms`، `p99<600ms`، SLO برابر `99.9%`، `RPO<=24h` و `RTO<=4h` است.
 - معیار پذیرش: Checkbox از Upload تا DB حفظ شود؛ کد ثابت، کد نمایشی در UI یا Secret داخل Git ممنوع است؛ کد Authenticator با Rate Limit و جلوگیری از Replay اعتبارسنجی شود؛ Grant کوتاه‌عمر و یک‌بارمصرف به همان کاربر/سند/عملیات محدود باشد؛ Preview/Download بدون Grant به‌صورت fail-closed رد و همه موفقیت/ردها Audit شوند.
+- نتیجه: فعال‌سازی Authenticator با رمز جاری و TOTP واقعی، Secret رمز‌شده، Replay Guard و Rate Limit تکمیل شد. سند علامت‌خورده فقط با Grant هش‌شده دو دقیقه‌ای و یک‌بارمصرفِ وابسته به User/Session/Document/Purpose نمایش یا دانلود می‌شود؛ Scan، Permission و Audit نیز سمت Backend fail-closed باقی می‌مانند.
+- رابط: Checkbox در Upload اصلی و Customer وجود دارد؛ فرم فعال‌سازی/ورود کد فارسی است و پیش‌نمایش تصویری مجاز در Browser به PNG کم‌حجم دارای واترمارک سامانه، کد آرشیو و زمان تبدیل می‌شود. جلوگیری مطلق از Screenshot ادعا نمی‌شود.
+- اعتبارسنجی: Prisma format/validate/generate، lint کامل API/Web/Database، typecheck API/Web، Production Build کامل و ۳۴ Route، `808` تست API، `592` تست Web سالم و تست‌های هدفمند Migration موفق‌اند. زنجیره Migrationها روی PostgreSQL 18 خالی و ارتقای دیتابیس دارای User/Document آزمایشی پاس شد؛ تنها شکست Full Web همان Assertion قدیمی Customer وابسته به LF/CRLF و خارج از Scope است.
 - مرجع طراحی و Handoff: `docs/tasks/DOCUMENTS-007-STEP-UP-SECURITY.md`.
 
 ## MASTER-005-EXCEL-IMPORT-PERSISTENCE — PC-B — DONE/MERGED

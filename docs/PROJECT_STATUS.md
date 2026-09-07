@@ -1,5 +1,13 @@
 # وضعیت پروژه
 
+## DOCUMENTS-007 — اعتبارسنجی دومرحله‌ای نمایش اسناد — آماده بررسی
+
+- `PC-B` روی Branch مستقل `codex/pc-b-documents-step-up-security` دسترسی محدود IAM، Migration و Documents را برای همین Task گرفت؛ مالکیت Sales و PR #90 نزد PC-A دست‌نخورده ماند.
+- فرم‌های بارگذاری اصلی و Customer گزینه «نیازمند اعتبارسنجی دومرحله‌ای» دارند. فعال‌سازی Authenticator با تأیید رمز جاری، TOTP واقعی، Secret رمز‌شده با کلید مستقل production، جلوگیری از Replay و قفل موقت تلاش‌های ناموفق انجام می‌شود.
+- Preview/Download سند محافظت‌شده به Grant تصادفی و هش‌شده دو دقیقه‌ای محدود است که به همان User، Session، Document و Purpose متصل و اتمیک فقط یک بار مصرف می‌شود. کنترل Scan، Permission، Branch/Domain و Audit سمت Backend fail-closed است.
+- پیش‌نمایش تصویر مجاز در Browser به PNG کم‌حجم واترمارک‌شده با نام سامانه، کد آرشیو و زمان تبدیل می‌شود و Headerهای امنیتی پاسخ/صفحه سخت‌تر شده‌اند؛ جلوگیری مطلق از Screenshot ممکن نیست.
+- Prisma، lint، typecheck و Production Build کامل با ۳۴ Route موفق است؛ `808` تست API و `592` تست Web سالم پاس شدند. Full Web فقط Assertion قدیمی و تغییرنیافته Customer وابسته به LF/CRLF را قرمز دارد. همه Migrationها روی PostgreSQL 18 خالی و ارتقای نمونه دارای User/Document موفق بود؛ Container موقت حذف شد و هیچ Secret واقعی در Git نیست.
+
 ## MARKETING-001F — اتصال مخاطب هدف پیشنهاد و تخفیف — آماده بررسی
 
 - `PC-B` روی Branch مستقل `codex/pc-b-marketing-offer-targets` فیلد اختیاری «مخاطب هدف» را به هر دو فرم «پیشنهاد ویژه» و «کد تخفیف» افزود. کاربر می‌تواند پیشنهاد را عمومی نگه دارد یا یک مشتری/آژانس مشخص را انتخاب کند؛ اگر نوع هدف را انتخاب کند، ذخیره بدون انتخاب رکورد مجاز نیست.
