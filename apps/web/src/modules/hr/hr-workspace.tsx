@@ -83,6 +83,7 @@ import {
   contractRecordFromRow,
   downloadContractPdf,
 } from './hr-contract-pdf';
+import { uploadEmployeeDocumentToArchive } from './hr-documents-integration';
 import {
   HrNotificationCenter,
   publishHrMutationNotification,
@@ -3004,6 +3005,48 @@ export function HrWorkspace({
           title: 'اسناد و فایل‌ها',
           subject: attachment.name,
         });
+    }
+    if (context.section === 'employee' && context.tab === 'docs') {
+      const fileReference = value('فایل');
+      const previousFile = context.initialValues
+        ? formValueByColumn(context, context.initialValues, 'فایل')
+        : '';
+      const attachment = parseHrAttachmentReference(fileReference);
+      const employee = employees.find(
+        (item) => item.name === context.linkedEmployeeName,
+      );
+      if (attachment && employee && fileReference !== previousFile) {
+        void uploadEmployeeDocumentToArchive({
+          employeeId: employee.id,
+          employeeName: employee.name,
+          branchName: employee.unit.split(' / ')[0] ?? 'نیایش سیر',
+          title: value('عنوان مدرک'),
+          documentType: value('نوع مدرک'),
+          issuer: value('مرجع صادرکننده'),
+          confidentiality: value('سطح دسترسی'),
+          validUntil: value('تاریخ انقضا'),
+          fileReference,
+        })
+          .then(({ archiveCode }) => {
+            setNotice(
+              `مدرک «${attachment.name}» با کد ${archiveCode} در اسناد و فایل‌ها نیز ثبت شد.`,
+            );
+            notifyMutation({
+              action: 'create',
+              section: 'documents',
+              tab: 'list',
+              title: 'ثبت واقعی در اسناد و فایل‌ها',
+              subject: attachment.name,
+            });
+          })
+          .catch((error: unknown) =>
+            setNotice(
+              `مدرک در پرونده HR ثبت شد؛ ارسال به اسناد و فایل‌ها انجام نشد: ${
+                error instanceof Error ? error.message : 'خطای نامشخص'
+              }`,
+            ),
+          );
+      }
     }
     setContextualForm(null);
   };

@@ -316,6 +316,18 @@ export function openHrAttachment(value: string): boolean {
   return true;
 }
 
+export async function readHrAttachmentFile(value: string): Promise<File> {
+  const reference = parseHrAttachmentReference(value);
+  if (!reference || typeof window === 'undefined')
+    throw new Error('فایل انتخاب‌شده در این نشست در دسترس نیست.');
+  const dataUrl = window.sessionStorage.getItem(
+    `${hrAttachmentStoragePrefix}${reference.id}`,
+  );
+  if (!dataUrl) throw new Error('فایل انتخاب‌شده در این نشست پیدا نشد.');
+  const blob = await fetch(dataUrl).then((response) => response.blob());
+  return new File([blob], reference.name, { type: blob.type });
+}
+
 const normalizeDigits = (value: string) =>
   value
     .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
@@ -425,8 +437,17 @@ export function ContextualHrForm({
   onSubmit: (values: readonly string[]) => void;
 }) {
   const fields = useMemo(
-    () => buildContextualHrFields(context.columns, context.peopleOptions),
-    [context.columns, context.peopleOptions],
+    () =>
+      buildContextualHrFields(context.columns, context.peopleOptions).map(
+        (field) =>
+          (context.section === 'employee' && context.tab === 'docs') ||
+          context.section === 'documents'
+            ? field.label === 'تاریخ انقضا'
+              ? { ...field, required: true }
+              : field
+            : field,
+      ),
+    [context.columns, context.peopleOptions, context.section, context.tab],
   );
   const [values, setValues] = useState<Record<string, string>>(() =>
     buildInitialFormValues(context, fields),
@@ -479,7 +500,9 @@ export function ContextualHrForm({
     <form noValidate onSubmit={submit}>
       <div className={styles.previewNote}>
         <Info aria-hidden="true" size={16} />
-        داده این فرم فقط برای بررسی رابط در همین نشست استفاده می‌شود.
+        {context.section === 'employee' && context.tab === 'docs'
+          ? 'فایل در نشست جاری نگهداری می‌شود و پس از ذخیره از طریق API عمومی به اسناد و فایل‌ها نیز ارسال خواهد شد.'
+          : 'داده این فرم فقط برای بررسی رابط در همین نشست استفاده می‌شود.'}
       </div>
       {context.section === 'recruitment' && context.tab === 'applicants' ? (
         <div className={styles.integrationLinks}>
