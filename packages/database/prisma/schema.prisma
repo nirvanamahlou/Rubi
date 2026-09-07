@@ -76,8 +76,8 @@ model User {
   documentAuditEvents            DocumentAuditEvent[]         @relation("DocumentAuditActor")
   documentQuarantinesReviewed    DocumentQuarantine[]         @relation("DocumentQuarantineReviewer")
   documentAccessGrants           DocumentAccessGrant[]        @relation("DocumentAccessGrantActor")
-  notificationsReceived         Notification[]                @relation("NotificationRecipient")
-  notificationsActed            Notification[]                @relation("NotificationActor")
+  notificationsReceived          Notification[]               @relation("NotificationRecipient")
+  notificationsActed             Notification[]               @relation("NotificationActor")
   agencyProfilesManaged          AgencyOperationalProfile[]   @relation("AgencyAccountManager")
   b2bAuditEvents                 B2bAuditEvent[]              @relation("B2bAuditActor")
 
