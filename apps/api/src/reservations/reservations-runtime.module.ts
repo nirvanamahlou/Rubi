@@ -11,6 +11,7 @@ import {
   Module,
   Patch,
   Req,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import type { ReservationArrangementUpdateV1 } from '@rubi/contracts';
@@ -23,7 +24,7 @@ import type { ReservationHotelPurchaseInputV1 } from '@rubi/contracts';
 
 @Controller('reservations/requests')
 @UseGuards(AuthGuard)
-class ReservationRequestsController {
+export class ReservationRequestsController {
   constructor(
     @Inject(ReservationsPublicService)
     private readonly service: ReservationsPublicService,
@@ -42,10 +43,20 @@ class ReservationRequestsController {
   }
   @Get()
   @Header('Cache-Control', 'private, no-store')
-  async list(@Req() req: AuthenticatedRequest) {
+  async list(
+    @Req() req: AuthenticatedRequest,
+    @Query('page') page?: string,
+    @Query('contractNumber') contractNumber?: string,
+  ) {
     if (!req.actor.permissions.includes('reservations.read'))
       throw new ForbiddenException('مجوز مشاهده رزرواسیون وجود ندارد.');
-    return { version: 1, data: await this.service.list(req.actor.branchIds) };
+    return {
+      version: 1,
+      data: await this.service.list(req.actor.branchIds, {
+        page,
+        contractNumber,
+      }),
+    };
   }
 
   @Patch(':id/arrangement')

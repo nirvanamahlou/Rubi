@@ -1,5 +1,11 @@
 # Work Assignments
 
+## RESERVATIONS-TICKET-ACCESS-0907 — PC-A — COMPLETE_LOCAL
+
+- Delivered saved per-passenger ticket reopening and individual/all-passenger print/browser PDF, with contract reference, assigned flights/transfers and no fabricated issuance. History search/pagination preserves reservations.read and branch scope. 162 Web tests, 15 API tests (5 unrelated DB-dependent tests skipped), scoped lint/typechecks and API/Web production builds pass. Synthetic browser reopening/selection/printing/cleanup and both A4 PDF pages verified; live PostgreSQL empty-scope read check passed. Web3100/API4000 updated; no migration/data/IAM changes or public push. Scoped presentation and task-doc reservations released.
+
+- Reserve Reservations inbox/list API/tests, Sales public ticket presentation entry and template refactor/tests, task and central docs from e0159f8. Reopen saved per-passenger ticket snapshots, print/save through browser PDF, and search/page older requests under existing reservations.read + branch scope. No issuance claims, fabricated live inventory, migration, IAM, dependency, producer-worktree edits or public push. Public presentation boundary only; persisted contracts unchanged.
+
 ## SALES-TICKET-THEME-0907 — PC-A — COMPLETE_LOCAL
 
 - Contract-blue ticket preview/print, larger eager-loaded agency logo, test airline Plane mark and explicit demo-only 7143/DEMO01 delivered; payment section removed. 153 Sales Web tests plus final seven template/visual checks, lint/typecheck/build pass. Actual CSS/component screenshot reviewed, 3100 restarted, Web/API 200. No issuance/data/API/IAM changes or public push; scoped locks released.

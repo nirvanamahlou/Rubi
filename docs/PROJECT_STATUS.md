@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## RESERVATIONS-TICKET-ACCESS-0907 — COMPLETE_LOCAL
+
+Reservations contract cards now reopen saved passenger ticket snapshots, select one passenger or print all (one A4 page each), and offer browser Save as PDF. Contract-number search and paging make requests older than the latest 100 accessible within existing permission/branch scope. Sales exposes a presentation-only public ticket entry; no live inventory reconstruction or private-module queries. 162 Web tests, 15 API tests, scoped lint/typechecks, API/Web production builds, synthetic interactive browser and both rendered PDF pages passed. Five unrelated PostgreSQL hotel-purchase tests skipped without their dedicated test database; an empty-authorized-scope history query was independently checked on local PostgreSQL without business-row access. Local Web3100/API4000 updated. Existing templates remain DRAFT/not issued; no direct ticket-PDF download endpoint or real issuance added. No migration/data/IAM/public push. See docs/tasks/RESERVATIONS-TICKET-ACCESS-0907.md.
+
 ## SALES-TICKET-THEME-0907 — COMPLETE_LOCAL
 
 Passenger ticket preview/print uses contract blue, larger agency branding and no payment section. Recognized test flights show a test-airline icon plus explicitly sample-only e-ticket 7143/RLOC DEMO01; actual issuance remains blank and all copies remain DRAFT. 153 Sales tests plus seven final template/visual checks, scoped lint/typecheck/production build pass. Chromium screenshot verified; Web3100 active, Web/API 200. No schema/API/IAM/real-data changes or public push. See docs/tasks/SALES-TICKET-THEME-0907.md.

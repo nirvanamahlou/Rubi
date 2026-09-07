@@ -113,12 +113,45 @@ export class ReservationsPublicService {
     return { id: row.id, requestId: row.requestId, status: row.status };
   }
 
-  async list(branchIds: readonly string[]) {
+  async list(
+    branchIds: readonly string[],
+    options: {
+      page?: string | undefined;
+      contractNumber?: string | undefined;
+    } = {},
+  ) {
+    if (
+      options.contractNumber !== undefined &&
+      typeof options.contractNumber !== 'string'
+    )
+      throw new BadRequestException('جست‌وجوی قرارداد باید متن باشد.');
+    const page = options.page === undefined ? 1 : Number(options.page);
+    if (
+      !Number.isInteger(page) ||
+      page < 1 ||
+      page > 1000000 ||
+      (options.contractNumber?.length ?? 0) > 100
+    )
+      throw new BadRequestException(
+        'شماره صفحه یا جست‌وجوی قرارداد معتبر نیست.',
+      );
+    const contractNumber = options.contractNumber?.trim();
     const rows = await this.database.client.reservationIntake.findMany({
-      where: { branchId: { in: [...branchIds] } },
+      where: {
+        branchId: { in: [...branchIds] },
+        ...(contractNumber
+          ? {
+              snapshot: {
+                path: ['contractNumber'],
+                string_contains: contractNumber,
+              },
+            }
+          : {}),
+      },
       include: intakeInclude,
       orderBy: [{ receivedAt: 'desc' }, { id: 'asc' }],
       take: 100,
+      skip: (page - 1) * 100,
     });
     return rows.map(present);
   }

@@ -5,11 +5,27 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Plane } from 'lucide-react';
-import type { MasterDataRecord } from '@rubi/contracts';
+import type { MasterDataRecord, TicketOfferV1 } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
 import type { SalesFormState } from '../model/sales-form';
 import { salesDirections } from '../model/sales-form';
 import styles from './flight-ticket-preview.module.css';
+
+export interface FlightTicketSheetData {
+  passengerName: string;
+  businessOutput?: boolean;
+  contractNumber?: string;
+  offers: readonly (Pick<
+    TicketOfferV1,
+    | 'id'
+    | 'originId'
+    | 'destinationId'
+    | 'departureAt'
+    | 'carrierName'
+    | 'serviceNumber'
+  > & { cabinClassCode: string; businessOutput?: boolean })[];
+  transferDirections: readonly string[];
+}
 
 export function FlightTicketDocument({
   state,
@@ -32,6 +48,33 @@ export function FlightTicketDocument({
       ? state.returnOffer
       : undefined,
   ].filter((item) => item !== undefined);
+  return (
+    <FlightTicketSheet
+      data={{
+        passengerName,
+        businessOutput: state.businessOutput === true,
+        offers: offers.map((offer) => ({
+          ...offer,
+          businessOutput: state.businessOutput === true,
+        })),
+        transferDirections: state.serviceKinds.includes('TRANSFER')
+          ? salesDirections(state, 'TRANSFER')
+          : [],
+      }}
+      cityName={city}
+    />
+  );
+}
+
+/** Presentation-only public document; issuance is intentionally not inferred. */
+export function FlightTicketSheet({
+  data,
+  cityName,
+}: {
+  data: FlightTicketSheetData;
+  cityName: (id: string) => string;
+}) {
+  const { offers, passengerName } = data;
   const demo =
     offers.length > 0 &&
     offers.every(
@@ -101,14 +144,19 @@ export function FlightTicketDocument({
       </div>
       <p className={styles.passenger}>
         Passenger Name <strong>{passengerName || '—'}</strong>
-        {state.businessOutput ? (
+        {data.businessOutput || offers.some((offer) => offer.businessOutput) ? (
           <b className={styles.business}>BUSINESS</b>
         ) : null}
       </p>
-      {state.serviceKinds.includes('TRANSFER') ? (
+      {data.contractNumber ? (
+        <p className={styles.passenger}>
+          Contract <strong>{data.contractNumber}</strong>
+        </p>
+      ) : null}
+      {data.transferDirections.length ? (
         <p className={styles.passenger}>
           TRANSFER INCLUDED:{' '}
-          <strong>{salesDirections(state, 'TRANSFER').join(' / ')}</strong>
+          <strong>{data.transferDirections.join(' / ')}</strong>
         </p>
       ) : null}
       <section className={styles.section}>
@@ -138,11 +186,11 @@ export function FlightTicketDocument({
                 <tr key={offer.id}>
                   <td>{offer.departureAt.slice(0, 10)}</td>
                   <td>{offer.serviceNumber}</td>
-                  <td>{city(offer.originId)}</td>
-                  <td>{city(offer.destinationId)}</td>
+                  <td>{cityName(offer.originId)}</td>
+                  <td>{cityName(offer.destinationId)}</td>
                   <td>{offer.departureAt.slice(11, 16)}</td>
                   <td>
-                    {state.businessOutput ? 'BUSINESS' : offer.cabinClassCode}
+                    {offer.businessOutput ? 'BUSINESS' : offer.cabinClassCode}
                   </td>
                   <td>DRAFT</td>
                   <td>—</td>

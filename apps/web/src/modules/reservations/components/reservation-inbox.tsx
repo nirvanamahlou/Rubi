@@ -5,11 +5,12 @@ import type {
   ReservationIntakeV1,
 } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/form-controls';
+import { Input, Textarea } from '@/components/ui/form-controls';
 import { Alert, Badge, Card, PageHeader } from '@/components/ui/surfaces';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { ReservationHotelPurchase } from './reservation-hotel-purchase';
+import { ReservationTickets } from './reservation-tickets';
 
 type ArrangementDraft = ReservationArrangementUpdateV1 & { requestId: string };
 const countOptions = Array.from({ length: 31 }, (_, value) => value);
@@ -79,6 +80,11 @@ export function ReservationInbox() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(true);
   const [refresh, setRefresh] = useState(0);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [ticketRequest, setTicketRequest] =
+    useState<ReservationIntakeV1 | null>(null);
   useEffect(() => {
     let active = true;
     const timer = setTimeout(() => {
@@ -88,10 +94,13 @@ export function ReservationInbox() {
         const base = getPublicApiBaseUrl();
         if (!base) throw new Error('نشانی سرور پیکربندی نشده است.');
         const get = () =>
-          fetch(`${base}/reservations/requests`, {
-            credentials: 'include',
-            cache: 'no-store',
-          });
+          fetch(
+            `${base}/reservations/requests?${new URLSearchParams({ page: String(page), contractNumber: filter })}`,
+            {
+              credentials: 'include',
+              cache: 'no-store',
+            },
+          );
         let response = await get();
         if (
           response.status === 401 &&
@@ -108,10 +117,13 @@ export function ReservationInbox() {
         if (active) setRequests(result.data);
       })()
         .catch((reason: unknown) => {
-          if (active)
+          if (active) {
+            setRequests([]);
+            setTicketRequest(null);
             setError(
               reason instanceof Error ? reason.message : 'دریافت ناموفق بود.',
             );
+          }
         })
         .finally(() => {
           if (active) setBusy(false);
@@ -121,7 +133,7 @@ export function ReservationInbox() {
       active = false;
       clearTimeout(timer);
     };
-  }, [refresh]);
+  }, [refresh, page, filter]);
 
   const save = async (request: ReservationIntakeV1) => {
     if (!draft || draft.requestId !== request.id) return;
@@ -174,6 +186,57 @@ export function ReservationInbox() {
           </Button>
         }
       />
+      <form
+        className="flex gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          setFilter(search.trim());
+          setPage(1);
+          setRefresh((value) => value + 1);
+          setTicketRequest(null);
+        }}
+      >
+        <Input
+          aria-label="جست‌وجوی شماره قرارداد"
+          placeholder="شماره قرارداد؛ جست‌وجو در تمام درخواست‌های قدیمی و جدید…"
+          value={search}
+          maxLength={100}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+        <Button type="submit" disabled={busy}>
+          جست‌وجو
+        </Button>
+      </form>
+      <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          disabled={busy || page === 1}
+          onClick={() => {
+            setPage(page - 1);
+            setTicketRequest(null);
+          }}
+        >
+          صفحهٔ قبل
+        </Button>
+        <span className="text-sm">صفحهٔ {page.toLocaleString('fa-IR')}</span>
+        <Button
+          variant="outline"
+          disabled={busy || requests.length < 100}
+          onClick={() => {
+            setPage(page + 1);
+            setTicketRequest(null);
+          }}
+        >
+          صفحهٔ بعد
+        </Button>
+      </div>
+      {ticketRequest ? (
+        <ReservationTickets
+          key={ticketRequest.id}
+          request={ticketRequest}
+          onClose={() => setTicketRequest(null)}
+        />
+      ) : null}
       {error ? <Alert tone="error" title={error} /> : null}
       {busy && !requests.length ? (
         <p>در حال دریافت…</p>
@@ -198,6 +261,19 @@ export function ReservationInbox() {
           const hotel = request.snapshot.hotelSelection;
           return (
             <Card key={request.id} className="grid gap-4 p-5">
+              {request.snapshot.serviceSelections.some(
+                (service) => service.kind === 'FLIGHT',
+              ) ? (
+                <div>
+                  <Button
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => setTicketRequest(request)}
+                  >
+                    بلیت‌های مسافران · مشاهده و چاپ
+                  </Button>
+                </div>
+              ) : null}
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="font-black">
