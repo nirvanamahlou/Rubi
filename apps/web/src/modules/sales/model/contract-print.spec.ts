@@ -2,6 +2,28 @@ import { describe, expect, it } from 'vitest';
 import { contractPrintHtml, contractMoney } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
+  it('applies the reference palette while preserving field and section order', () => {
+    const html = contractPrintHtml(printFixture, printReferences);
+    expect(html).toContain('background:#10386b');
+    expect(html).toContain('background:#dce6ee;color:#15375c');
+    const body = html.slice(html.indexOf('<body>'));
+    const labels = [
+      'CONTRACT PARTIES',
+      'PASSENGERS & PRICING',
+      'FLIGHT INFORMATION',
+      'HOTEL INFORMATION',
+      'OTHER SERVICES',
+      'APPROVAL & SIGNATURE',
+    ];
+    for (const label of labels) expect(body).toContain(label);
+    expect(labels.map((label) => body.indexOf(label))).toEqual(
+      labels.map((label) => body.indexOf(label)).sort((a, b) => a - b),
+    );
+    expect(body).toContain('نشانی:');
+    expect(body).toContain('مبلغ توافق‌شده قرارداد');
+    expect(body).not.toContain('021-72075000');
+    expect(body).not.toContain('support@');
+  });
   it.each([6, 42, 100, 250])(
     'renders every passenger and complete totals for %s people without truncation',
     (count) => {

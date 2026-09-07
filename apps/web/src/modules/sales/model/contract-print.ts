@@ -203,6 +203,33 @@ export function contractPrintHtml(
   header .brand{display:grid;grid-template-columns:auto auto;align-items:center;column-gap:2mm;font-size:11pt}
   header .brand img{grid-column:1;grid-row:1/3;max-width:28mm;max-height:13mm}header .brand>div,header .brand>small{grid-column:2}
   h2{padding:.5mm 1.5mm}h2 em{font-size:12pt;padding:.2mm 1.5mm}
+  /* Reference theme only: preserve the existing document structure and field order. */
+  .document{border:0;border-radius:0;padding:2mm;color:#102d54}
+  header{background:#10386b;border-bottom:1mm solid #15999e;color:white;padding:3mm;margin:0;min-height:22mm}
+  header h1{color:white;font-size:18pt;letter-spacing:.6px}header p{color:white;font-size:12pt;margin-top:1mm}
+  header .brand{color:white}header .brand small{color:#e5edf5}header .brand img{background:white;padding:1mm;border-radius:1mm;max-height:16mm;max-width:30mm}
+  .meta{gap:0;background:#eaf0f4;margin:0 0 2mm;padding:1.5mm 0;border-bottom:1px solid #cbd6e0}
+  .meta>div{background:transparent;color:#15375c;border-radius:0;padding:.5mm 1mm;border-left:1px solid #bdcad7}.meta>div:last-child{border-left:0}
+  .meta strong{font-size:11pt;margin-top:.5mm}
+  section{border-color:#bac9d8;border-radius:0;margin-top:2mm;padding-bottom:1.5mm}
+  h2{background:white;color:#173b65;border-radius:0;border-bottom:1px solid #bac9d8;padding:0 0 .5mm;margin:0 -2mm 1mm;gap:2mm;min-height:6mm}
+  h2 em{background:#10386b;color:white;border-radius:0;font-style:normal;min-width:8mm;text-align:center;padding:1mm;font-size:11pt}
+  h2 span{color:#385574;font-size:9pt}h2 small{color:#102d54;font-size:12pt;font-weight:bold;padding-inline-end:1mm}
+  th{background:#dce6ee;color:#15375c;border-color:#edf2f6}td{border-color:#ced8e3;color:#102d54}.contract-total{background:#fff}
+  .fields{background:#f8fafc}.fields>div{border-bottom:1px solid #e0e7ef;padding:.6mm 1mm}
+  .totals{background:#10386b;color:white;padding:1.3mm 2mm;border-radius:.5mm}.totals b{font-size:11pt}
+  .financial{background:#edf2f6;padding:1mm 2mm;color:#15375c}
+  .signatures{gap:3mm;padding:0;min-height:12mm}.signatures>div{border:1px solid #bac9d8;padding:1mm;border-radius:.5mm}
+  .customer-terms{border-top:1px solid #466785;padding-top:1mm;margin-top:2mm;color:#24415f}
+  footer{background:white;color:#15375c;border-top:.5mm solid #244f7e;text-align:center;padding:1.5mm 0;margin-top:1.5mm;break-inside:avoid}
+  @media print{.document{border:0}}
+  @page{margin:6mm}
+  .document{padding:1mm}
+  header{padding:1.5mm 2mm;min-height:17mm}header h1{font-size:15pt}header p{font-size:10pt;margin:.5mm 0}header .brand img{max-height:13mm}
+  .meta{padding:.5mm 0;margin-bottom:1mm}.meta strong{font-size:10pt}
+  section{margin-top:.8mm;padding-bottom:1mm}h2{min-height:4mm;margin-bottom:.6mm;padding-bottom:0}h2 em{font-size:9pt;min-width:7mm;padding:.5mm 1mm}h2 small{font-size:11pt}
+  .fields{gap:.3mm 3mm}.fields>div{padding:.15mm 1mm}.totals{padding:.7mm 2mm}.financial{padding:.5mm 2mm}
+  .signatures{min-height:9mm}.signatures>div{padding:.5mm}.customer-terms{line-height:1.2;margin-top:1mm;padding-top:.5mm}
   </style></head><body><article class="document">
   <header><div class="brand">${logo}<div>${e(output.company.persianName)}</div><small>${e(output.company.latinName ?? '')}</small></div><div dir="ltr"><h1>TRAVEL SERVICES<br>CONTRACT</h1><p dir="rtl">قرارداد فروش خدمات مسافرتی</p></div></header>
   ${c.status === 'CANCELLED' ? '<div class="cancelled">این قرارداد لغو شده است</div>' : ''}

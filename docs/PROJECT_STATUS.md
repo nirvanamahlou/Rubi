@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-CONTRACT-REFERENCE-THEME-0907 — THEME_COMPLETE_LOCAL / QR_DEFERRED_TO_SERVER
+
+Contract print/PDF follows the supplied navy-header, teal-rule and soft-gray-table reference theme without changing fields, section order or business calculations. B Nazanin, English monetary digits, saved passenger amounts and notices remain. 159 Sales tests plus final 17 print tests, scoped lint/typecheck and 36-route production build pass; all five pages of four synthetic PDFs visually inspected (2/6/agency-6 passengers: one page; 42: two pages). Web3100 updated and Web/API health 200. User wants QR to open this specific contract online, like file viewing, after future server deployment. No public viewer/verification capability or QR is claimed or added now. No migration, API/IAM/data change or public push. See docs/tasks/SALES-CONTRACT-REFERENCE-THEME-0907.md.
+
 ## SALES-PAYMENT-CURRENCY-0907 — COMPLETE_LOCAL
 
 Replaced the remaining free-text currency in saved-contract dashboard payments with a button-only themed registered-currency dropdown. Active references load across pages; failures/empty lists block submission with retry, and arbitrary codes cannot be entered. Existing new-contract currency selections remain unchanged. 158 Sales Web tests, scoped lint/typecheck and 36-route production build pass; synthetic actual-component browser tests cover retry, disabled submit, USD selection, inactive filtering and retention. Local Web3100 updated; API/database unchanged, no real payment created or public push. See docs/tasks/SALES-PAYMENT-CURRENCY-0907.md.

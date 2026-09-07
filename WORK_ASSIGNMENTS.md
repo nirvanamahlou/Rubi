@@ -1,5 +1,9 @@
 # Work Assignments
 
+## SALES-CONTRACT-REFERENCE-THEME-0907 — PC-A — THEME_COMPLETE_LOCAL / QR_DEFERRED_TO_SERVER
+
+- Reference navy/soft-gray theme applied to the shared print/PDF template; existing fields, order, B Nazanin, English monetary digits and calculations preserved. 159 Sales tests plus final 17 print tests, scoped lint/typecheck and 36-route build pass. All five pages of four synthetic PDFs visually verified; six passengers fit one page and 42 use two. Web3100 updated; Web/API health 200. User deferred per-contract online viewing/verification QR until server deployment; no localhost, website-substitute or fabricated verification QR added. No API/schema/dependency/IAM/data/producer changes or public push. Scoped template/central-doc reservations released; see docs/tasks/SALES-CONTRACT-REFERENCE-THEME-0907.md.
+
 ## SALES-PAYMENT-CURRENCY-0907 — PC-A — COMPLETE_LOCAL
 
 - Dashboard payment currency is now a registered-active, button-only themed dropdown with paginated loading, retry and submission validation. 158 Sales tests, scoped lint/typecheck and 36-route production build pass; actual-component synthetic browser selection/error/retry checks pass. Web3100 updated. No payment/data/API/IAM/migration changes or public push. Scoped reservations released.
