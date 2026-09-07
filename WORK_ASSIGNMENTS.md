@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-OUTPUT-LAYOUT-0907 — PC-A — COMPLETE_LOCAL
+
+- Reserve Sales Web/API output and tests, additive Sales public output type, navigation alias/tests and task docs on codex/pc-a-sales-output-layout-0907 from c63318a. User requests breadcrumb, overflow and customer-shareable contract output. Existing producer public APIs only; no schema/migration, grants, dependencies, producer changes or public push.
+- Provide a permission-scoped saved-data print/PDF view after confirmation and in dashboard. No official issuance-policy bypass, tax invoice or payment receipt; the browser Save as PDF flow is explicit. Agreed amounts only; no fabricated per-passenger allocation or commission deduction. No automatic sending.
+- Delivered breadcrumb alias, min-content grid containment and saved-output preview buttons. 233 Sales/Customers/navigation Web tests, 44 Sales API tests and 41 Contracts tests passed; scoped lint, all affected typechecks and API/Web production builds (36 routes) passed. Synthetic Chromium verified B Nazanin in the sandboxed iframe, print action and desktop/mobile containment with final CSS. PDF QA: two passengers/two currencies fit one A4 page; 42 passengers span three pages with repeating headers. No authenticated real-contract walkthrough. Web3100/API4000 active; login/bundle/health 200, protected Sales 307, unauthenticated output 401 and CORS 204. Prior Web retained under tmp/sales-output-web-before-0907. Local-only; task-specific reservations released. See docs/tasks/SALES-OUTPUT-LAYOUT-0907.md for issuance and commission limits.
+
 ## CUSTOMER-INLINE-CALENDAR-0906 — PC-A — COMPLETE_LOCAL
 
 - Reserve Customers entry-sheet/date-field UI and focused tests plus task status docs on codex/pc-a-customer-inline-calendar-0906 from fc9177b. Remove the intermediate date Dialog and open the existing themed calendar directly at each table date field, including the shared Sales consumer. Preserve ISO values, calendar modes, read-only rules and entered rows. No API, schema, dependencies, shared UI edits, producer branch changes or public push.

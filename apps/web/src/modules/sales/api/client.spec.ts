@@ -10,6 +10,19 @@ vi.mock('@/lib/auth-session', () => ({
 
 afterEach(() => vi.unstubAllGlobals());
 describe('sales API dashboard connection', () => {
+  it('loads a saved contract output with authentication and no cache', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ data: { version: 1 } })),
+      );
+    vi.stubGlobal('fetch', fetch);
+    await salesApi.output('saved-id');
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/sales/contracts/saved-id/output',
+      expect.objectContaining({ credentials: 'include', cache: 'no-store' }),
+    );
+  });
   it('loads the configured public endpoint with session credentials and no cache', async () => {
     const fetch = vi
       .fn()

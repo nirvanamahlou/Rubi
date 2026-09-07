@@ -1,5 +1,6 @@
 'use client';
 import { PassengerCountField } from './passenger-count-field';
+import { ContractOutputButton } from './contract-output';
 
 import { AlertTriangle, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -144,6 +145,7 @@ export function SalesContractForm() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [savedNumber, setSavedNumber] = useState('');
+  const [savedId, setSavedId] = useState('');
   const submission = useRef({ fingerprint: '', key: '' });
   const patchState = (patch: Partial<SalesFormState>) =>
     setState((current) => {
@@ -490,6 +492,7 @@ export function SalesContractForm() {
         await salesApi.confirm(response.data.id, response.data.version);
       globalThis.localStorage?.removeItem('rubi.sales.contract.draft.v1');
       setSavedNumber(response.data.contractNumber);
+      setSavedId(response.data.id);
     } catch (reason) {
       setError(
         reason instanceof Error ? reason.message : 'ثبت قرارداد ناموفق بود.',
@@ -534,6 +537,11 @@ export function SalesContractForm() {
         <Button className="mt-6" onClick={() => router.push('/sales')}>
           بازگشت به فروش
         </Button>
+        {savedId && (
+          <div className="mt-4">
+            <ContractOutputButton contractId={savedId} />
+          </div>
+        )}
         {state.serviceKinds.includes('FLIGHT') ? (
           <div className="mt-5">
             <FlightTicketPreview state={state} cities={references.cities} />
@@ -543,7 +551,10 @@ export function SalesContractForm() {
     );
 
   return (
-    <form className="mx-auto grid w-full max-w-6xl gap-4" onSubmit={submit}>
+    <form
+      className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-[minmax(0,1fr)] gap-4"
+      onSubmit={submit}
+    >
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-black">قرارداد جدید</h1>
@@ -576,7 +587,7 @@ export function SalesContractForm() {
       {error ? (
         <Alert tone="error" title="عملیات کامل نشد" description={error} />
       ) : null}
-      <Card className="p-4 sm:p-5">
+      <Card className="min-w-0 p-4 sm:p-5">
         {step === 2 ? (
           <SalesPeopleSheet
             state={state}

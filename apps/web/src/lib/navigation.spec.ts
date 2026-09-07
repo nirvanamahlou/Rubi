@@ -93,6 +93,14 @@ describe('CRM navigation', () => {
   });
 
   it('identifies users and settings beneath system management', () => {
+    expect(
+      getNavigationBreadcrumbs('/sales/contracts/new')
+        .map((item) => item.title)
+        .at(-1),
+    ).toBe('قرارداد جدید');
+    expect(
+      getNavigationBreadcrumbs('/sales/contracts/new').map((item) => item.href),
+    ).toEqual(['/sales', '/sales/contracts/new']);
     expect(getNavigationBreadcrumbs('/users').map((item) => item.href)).toEqual(
       ['/system', '/users'],
     );

@@ -8,6 +8,8 @@ describe('compact sales contract form', () => {
   it('shows a bounded form and compact services without asking for a route date', () => {
     const html = renderToStaticMarkup(<SalesContractForm />);
     expect(html).toContain('max-w-6xl');
+    expect(html).toContain('min-w-0');
+    expect(html).toContain('grid-cols-[minmax(0,1fr)]');
     expect(html).toContain('داشبورد قراردادها');
     expect(html).toContain('مراحل ثبت قرارداد');
     expect(html).toContain('مسیر سفر');

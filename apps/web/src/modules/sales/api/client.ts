@@ -2,6 +2,7 @@
 
 import type {
   SalesContractCreateRequest,
+  SalesContractOutputV1,
   SalesContractDetail,
   SalesContractListQuery,
   SalesContractPage,
@@ -78,6 +79,10 @@ function queryString(query: SalesContractListQuery): string {
 }
 
 export const salesApi = {
+  output: (id: string) =>
+    request<{ data: SalesContractOutputV1 }>(
+      `/contracts/${encodeURIComponent(id)}/output`,
+    ),
   dashboard: () => request<SalesDashboard>('/dashboard'),
   addPayment: (id: string, input: SalesPaymentCreateRequest, key: string) =>
     request<{ data: SalesContractDetail }>(

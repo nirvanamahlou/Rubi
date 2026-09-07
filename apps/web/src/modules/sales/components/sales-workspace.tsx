@@ -31,6 +31,7 @@ import {
 import { salesApi } from '../api/client';
 import { SalesThemedSelect } from './sales-themed-select';
 import { ContractPayments } from './contract-payments';
+import { ContractOutputButton } from './contract-output';
 
 export async function loadSalesWorkspace(
   api: Pick<typeof salesApi, 'dashboard' | 'list'> = salesApi,
@@ -442,6 +443,9 @@ export function SalesWorkspace() {
                       >
                         پرداخت‌ها و اقساط
                       </Button>
+                      <div className="mt-2">
+                        <ContractOutputButton contractId={contract.id} />
+                      </div>
                     </td>
                   </tr>
                 ))}

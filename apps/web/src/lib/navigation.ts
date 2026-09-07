@@ -51,6 +51,10 @@ export const navigationItems = navigationMessages.map((item) => ({
 }));
 
 export const navigationAliases = {
+  '/sales/contracts/new': {
+    parentHref: '/sales',
+    title: 'قرارداد جدید',
+  },
   '/users': {
     parentHref: '/system',
     title: 'مدیریت کاربران، نقش‌ها و دسترسی‌ها',
