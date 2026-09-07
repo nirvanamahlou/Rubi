@@ -7,6 +7,7 @@ import {
   HrWorkspace,
   isAutomaticHrHistoryTab,
   parseHrPreviewDatasetOverrides,
+  parsePreviewEmployees,
   removeHrPreviewRow,
   saveHrPreviewRow,
 } from './hr-workspace';
@@ -120,6 +121,28 @@ describe('HR reference implementation', () => {
     expect(employees).toContain('حذف');
     expect(employees).toContain('خروجی اکسل');
     expect(employees).toContain('پرونده ۳۶۰');
+  });
+
+  it('restores only structurally valid session employees', () => {
+    const valid = {
+      id: 'HR-1001',
+      name: 'سارا محمدی',
+      initial: 'س',
+      employment: 'preview-employment-HR-1001',
+      kind: 'تمام‌وقت',
+      unit: 'نیایش سیر / فروش',
+      position: 'کارشناس فروش',
+      grade: 'G4',
+      manager: 'مدیر فروش',
+      startedAt: '۱۴۰۵/۰۶/۱۶',
+      startedAtValue: '2026-09-07',
+      status: 'فعال',
+      tone: 'success',
+    };
+    expect(parsePreviewEmployees(JSON.stringify([valid, { id: 1 }]))).toEqual([
+      valid,
+    ]);
+    expect(parsePreviewEmployees('{invalid')).toEqual([]);
   });
 
   it('uses first and last name in the new employee form and covers list fields', () => {

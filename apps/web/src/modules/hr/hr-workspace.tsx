@@ -204,6 +204,40 @@ export interface AutomaticHrHistoryEvent {
 }
 
 const previewDatasetStorageKey = 'rubi.hr.preview-dataset-overrides.v1';
+const previewEmployeeStorageKey = 'rubi.hr.preview-employees.v1';
+
+export function parsePreviewEmployees(
+  serialized: string | null,
+): readonly PreviewEmployee[] {
+  if (!serialized) return [];
+  try {
+    const value: unknown = JSON.parse(serialized);
+    if (!Array.isArray(value)) return [];
+    return value.filter((item): item is PreviewEmployee => {
+      if (!item || typeof item !== 'object') return false;
+      const employee = item as Record<string, unknown>;
+      return (
+        typeof employee.id === 'string' &&
+        typeof employee.name === 'string' &&
+        typeof employee.initial === 'string' &&
+        typeof employee.employment === 'string' &&
+        typeof employee.kind === 'string' &&
+        typeof employee.unit === 'string' &&
+        typeof employee.position === 'string' &&
+        typeof employee.grade === 'string' &&
+        typeof employee.manager === 'string' &&
+        typeof employee.startedAt === 'string' &&
+        typeof employee.startedAtValue === 'string' &&
+        typeof employee.status === 'string' &&
+        ['success', 'warning', 'danger', 'neutral'].includes(
+          String(employee.tone),
+        )
+      );
+    });
+  } catch {
+    return [];
+  }
+}
 
 const isPreviewCell = (value: unknown): value is HrPreviewCell => {
   if (typeof value === 'string') return true;
@@ -2518,6 +2552,7 @@ export function HrWorkspace({
   const [previewDatasetOverrides, setPreviewDatasetOverrides] =
     useState<PreviewDatasetOverrides>({});
   const [previewStorageReady, setPreviewStorageReady] = useState(false);
+  const [employeeStorageReady, setEmployeeStorageReady] = useState(false);
   const [dialogTitle, setDialogTitle] = useState<string | null>(null);
   const [contextualForm, setContextualForm] =
     useState<ContextualHrFormContext | null>(null);
@@ -2557,6 +2592,23 @@ export function HrWorkspace({
       JSON.stringify(previewDatasetOverrides),
     );
   }, [previewDatasetOverrides, previewStorageReady]);
+  useEffect(() => {
+    const restored = parsePreviewEmployees(
+      window.sessionStorage.getItem(previewEmployeeStorageKey),
+    );
+    const timer = window.setTimeout(() => {
+      if (restored.length) setEmployees(restored);
+      setEmployeeStorageReady(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+    if (!employeeStorageReady) return;
+    window.sessionStorage.setItem(
+      previewEmployeeStorageKey,
+      JSON.stringify(employees),
+    );
+  }, [employeeStorageReady, employees]);
   function closeDialog() {
     if (dialogTitle)
       setNotice('عملیات فقط در پیش‌نمایش بررسی شد؛ ذخیره دائمی انجام نشد.');
