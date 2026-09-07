@@ -1,5 +1,15 @@
 # Work Assignments
 
+## LEGAL-ENTITY-BRAND-HEADER-002 — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-07: با انتخاب شرکت فعال «جهان باستان»، هدر اصلی سامانه سورمه‌ای شود و نام کاربر همراه ساعت ورود در همان هدر نمایش داده شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-jahan-bastan-header-identity` از `origin/develop@8c445ccb21bdef441b051aa34fb93e5c94379fcf`؛ محدوده فقط `apps/web/src/modules/legal-entities/components/legal-entity-context.tsx`، `apps/web/src/app/login/login-form.tsx`، `apps/web/src/lib/header-session.ts`، `apps/web/src/app/globals.css`، تست‌های هدفمند Web و اسناد همین Work Item است.
+- `Central UI Owner = PC-B/LEGAL-ENTITY-BRAND-HEADER-002` فقط برای `apps/web/src/app/globals.css`. فایل `apps/web/src/components/layout/app-shell.tsx` به‌علت مالکیت فعال PR #99 تغییر نمی‌کند و تغییر Breadcrumb منابع انسانی دست‌نخورده می‌ماند.
+- نام نمایشی کاربر فقط از پاسخ احرازشده عمومی IAM در Login/Refresh گرفته می‌شود و همراه زمان ورود در Session Storage همان Tab ثبت می‌شود؛ شناسه کاربر، نام کاربری، Password، Token، Cookie یا PII اضافی ذخیره یا نمایش داده نمی‌شود.
+- هیچ Backend، API/Shared Contract، Schema/Migration/Seed، Dependency/Lockfile، Navigation مرکزی، داده کاربر یا Branch دیگری تغییر نمی‌کند. معیار پذیرش شامل تغییر فوری تم هدر هنگام Switch شرکت، خوانایی کنترل‌ها، نمایش نام/ساعت ورود، RTL/Responsive، تست هدفمند، lint، typecheck و Production Build Web است.
+- پیاده‌سازی تکمیل شد: Header با Context `JAHAN_BASTAN` سورمه‌ای می‌شود، نام نمایشی کاربر و ساعت ورود همان Tab را نشان می‌دهد و Login موفق Cache نمایشی را مقداردهی می‌کند. ۱۳ تست هدفمند، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند؛ Preview ایزوله روی پورت ۳۱۰۱ بدون توقف سرویس‌های فعال ۳۱۰۰/۴۰۰۰ بالا آمد و تا صفحه Login سالم پاسخ داد.
+- `Central UI Owner = RELEASED — PC-B/LEGAL-ENTITY-BRAND-HEADER-002 ready for review`. هیچ قفل Migration، Contract، Dependency/Lockfile، Database، Permission یا Branch دیگری گرفته نشد.
+
 ## NOTIFICATIONS-001-ACTIVITY-BELL — PC-B — DONE/MERGED
 
 - درخواست صریح مالک محصول در 2026-09-07: هر تغییر موفقی که در سامانه انجام می‌شود در بخش زنگوله به‌صورت Notification نمایش داده شود. `COMPUTER_ID=PC-B` بر مبنای مالکیت فعلی این Workspace و ماژول‌های افقی رابط.

@@ -1,5 +1,11 @@
 # وضعیت پروژه
 
+## LEGAL-ENTITY-BRAND-HEADER-002 — هدر جهان باستان و اطلاعات ورود — آماده بررسی
+
+- `PC-B` روی Branch مستقل `codex/pc-b-jahan-bastan-header-identity` تم Header را به Context موجود شرکت فعال متصل کرد. با انتخاب «جهان باستان»، Header بدون تغییر فایل مرکزی درگیر PR #99 به طیف سورمه‌ای تغییر می‌کند و کنترل‌های انتخاب شرکت، جست‌وجو و عملیات Header خوانا می‌مانند؛ سایر Contextها ظاهر پیشین را حفظ می‌کنند.
+- نام نمایشی کاربر و ساعت ورود در Header دسکتاپ نمایش داده می‌شود. داده فقط از پاسخ عمومی و احرازشده Login/Refresh می‌آید و در Session Storage همان Tab نگه‌داری می‌شود؛ شناسه کاربر، نام کاربری، Password، Token، Cookie یا PII اضافی ذخیره نمی‌شود.
+- ۱۳ تست هدفمند Legal Entity/Auth/Header، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند. Preview ایزوله روی پورت ۳۱۰۱ به Login سالم رسید؛ سرویس‌های فعال Task دیگر روی ۳۱۰۰/۴۰۰۰ متوقف یا تغییر داده نشدند. هیچ Backend، Schema/Migration/Seed، API/Contract، Dependency/Lockfile یا داده کاربر تغییر نکرد.
+
 ## NOTIFICATIONS-001 — مرکز اعلان تغییرات — ادغام‌شده
 
 - `PC-B` روی Branch مستقل `codex/pc-b-global-change-notifications` زنگوله App Shell را به Notification Center سراسری Web تبدیل کرد. هر Mutation موفق `POST/PUT/PATCH/DELETE` به API تنظیم‌شده Rubi پس از موفقیت Response، یک اعلان فارسی شامل نوع عملیات، بخش، زمان و لینک داخلی می‌سازد؛ عملیات ناموفق، Auth، Preview، Search، Validation و Export اعلان تغییر تولید نمی‌کنند.

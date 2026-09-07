@@ -4,9 +4,11 @@ import {
   AlertCircle,
   Building2,
   CheckCircle2,
+  Clock3,
   Layers3,
   LoaderCircle,
   RefreshCw,
+  UserRound,
 } from 'lucide-react';
 import Image from 'next/image';
 import {
@@ -15,6 +17,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -32,6 +35,14 @@ import {
   SelectTrigger,
 } from '@/components/ui/form-controls';
 import { Badge } from '@/components/ui/surfaces';
+import { getPublicApiBaseUrl } from '@/lib/environment';
+import {
+  formatHeaderLoginTime,
+  readHeaderSession,
+  rememberHeaderSession,
+  type HeaderSessionIdentity,
+} from '@/lib/header-session';
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { cn } from '@/lib/utils';
 import { legalEntitiesApi } from '../api/client';
 import {
@@ -198,12 +209,68 @@ function IssuerMark({
   return <Building2 aria-hidden="true" className="size-4 text-primary" />;
 }
 
+function HeaderSessionSummary() {
+  const [identity, setIdentity] = useState<HeaderSessionIdentity | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(async () => {
+      const cached = readHeaderSession();
+      if (cached) {
+        if (active) setIdentity(cached);
+        return;
+      }
+      const api = getPublicApiBaseUrl();
+      if (!api) return;
+      const response = await refreshAuthenticatedSession(api);
+      if (active && response) setIdentity(rememberHeaderSession(response.user));
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <div
+      aria-label="اطلاعات نشست کاربر"
+      className="hidden h-10 shrink-0 items-center gap-2 rounded-xl border border-border/70 bg-surface/80 px-3 text-xs shadow-sm xl:flex"
+      data-header-session-summary
+      dir="rtl"
+    >
+      <UserRound aria-hidden="true" className="size-4 shrink-0" />
+      <span className="max-w-32 truncate font-bold">
+        {identity?.displayName ?? 'در حال دریافت کاربر'}
+      </span>
+      {identity ? (
+        <span className="flex items-center gap-1 border-s border-border/70 ps-2 text-muted-foreground">
+          <Clock3 aria-hidden="true" className="size-3.5" />
+          ورود {formatHeaderLoginTime(identity.loggedInAt)}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 export function LegalEntityContextSelector() {
   const state = useLegalEntityContext();
   const choices = legalEntityChoices(state.entities, state.canAggregate);
   const selection = state.context?.selection;
-  if (state.loading)
-    return (
+  const headerAnchor = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const header = headerAnchor.current?.closest('header');
+    if (!header) return;
+    if (selection) header.dataset.rubiActiveCompany = selection;
+    else delete header.dataset.rubiActiveCompany;
+    return () => {
+      if (header.dataset.rubiActiveCompany === selection)
+        delete header.dataset.rubiActiveCompany;
+    };
+  }, [selection]);
+
+  let selector: ReactNode;
+  if (state.loading) {
+    selector = (
       <div
         aria-label="در حال دریافت شرکت فعال"
         className="flex h-11 min-w-36 items-center gap-2 rounded-xl bg-muted/70 px-3 text-xs text-muted-foreground"
@@ -212,8 +279,8 @@ export function LegalEntityContextSelector() {
         شرکت فعال
       </div>
     );
-  if (state.error && !state.context)
-    return (
+  } else if (state.error && !state.context) {
+    selector = (
       <Button
         aria-label="تلاش دوباره برای دریافت شرکت فعال"
         onClick={() => void state.reload()}
@@ -225,67 +292,83 @@ export function LegalEntityContextSelector() {
         <RefreshCw className="size-3" />
       </Button>
     );
-  return (
-    <div className="relative min-w-0 max-w-[210px] sm:min-w-52">
-      <Select
-        disabled={state.switching}
-        onValueChange={(value) =>
-          void state.switchTo(value as LegalEntitySelection)
-        }
-        value={selection ?? ''}
+  } else {
+    selector = (
+      <div
+        className="relative min-w-0 max-w-[210px] sm:min-w-52"
+        data-legal-entity-selector
       >
-        <SelectTrigger
-          aria-label="انتخاب شرکت فعال"
-          className={cn(
-            'border-0 bg-muted/70 px-2.5',
-            state.error && 'ring-1 ring-destructive',
-          )}
+        <Select
+          disabled={state.switching}
+          onValueChange={(value) =>
+            void state.switchTo(value as LegalEntitySelection)
+          }
+          value={selection ?? ''}
         >
-          <span className="flex min-w-0 items-center gap-2">
-            <IssuerMark selection={selection} />
-            <span className="min-w-0 text-start">
-              <span className="block text-[10px] text-muted-foreground">
-                شرکت فعال
+          <SelectTrigger
+            aria-label="انتخاب شرکت فعال"
+            className={cn(
+              'border-0 bg-muted/70 px-2.5',
+              state.error && 'ring-1 ring-destructive',
+            )}
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <IssuerMark selection={selection} />
+              <span className="min-w-0 text-start">
+                <span className="block text-[10px] text-muted-foreground">
+                  شرکت فعال
+                </span>
+                <span className="block truncate text-xs font-bold sm:text-sm">
+                  {selection
+                    ? legalEntitySelectionLabel(selection, state.entities)
+                    : 'انتخاب شرکت'}
+                </span>
               </span>
-              <span className="block truncate text-xs font-bold sm:text-sm">
-                {selection
-                  ? legalEntitySelectionLabel(selection, state.entities)
-                  : 'انتخاب شرکت'}
-              </span>
+              {selection === 'ALL' ? (
+                <Badge className="hidden bg-violet-100 text-[10px] text-violet-700 sm:inline-flex">
+                  تجمیعی
+                </Badge>
+              ) : null}
             </span>
-            {selection === 'ALL' ? (
-              <Badge className="hidden bg-violet-100 text-[10px] text-violet-700 sm:inline-flex">
-                تجمیعی
-              </Badge>
-            ) : null}
-          </span>
-        </SelectTrigger>
-        <SelectContent>
-          {choices.map((choice) => (
-            <SelectItem key={choice.value} value={choice.value}>
-              <span className="flex items-center gap-2">
-                {choice.aggregate ? (
-                  <Layers3 className="size-4 text-violet-600" />
-                ) : (
-                  <Building2 className="size-4 text-primary" />
-                )}
-                {choice.label}
-              </span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <span aria-live="polite" className="sr-only">
-        {state.switching
-          ? 'در حال تغییر شرکت فعال'
-          : (state.feedback ?? state.error)}
-      </span>
-      {state.feedback ? (
-        <CheckCircle2
-          aria-hidden="true"
-          className="absolute -start-1 -top-1 size-4 rounded-full bg-surface text-emerald-600"
-        />
-      ) : null}
+          </SelectTrigger>
+          <SelectContent>
+            {choices.map((choice) => (
+              <SelectItem key={choice.value} value={choice.value}>
+                <span className="flex items-center gap-2">
+                  {choice.aggregate ? (
+                    <Layers3 className="size-4 text-violet-600" />
+                  ) : (
+                    <Building2 className="size-4 text-primary" />
+                  )}
+                  {choice.label}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span aria-live="polite" className="sr-only">
+          {state.switching
+            ? 'در حال تغییر شرکت فعال'
+            : (state.feedback ?? state.error)}
+        </span>
+        {state.feedback ? (
+          <CheckCircle2
+            aria-hidden="true"
+            className="absolute -start-1 -top-1 size-4 rounded-full bg-surface text-emerald-600"
+          />
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex shrink-0 items-center gap-2"
+      data-legal-entity-header-controls
+      ref={headerAnchor}
+    >
+      {selector}
+      <HeaderSessionSummary />
     </div>
   );
 }

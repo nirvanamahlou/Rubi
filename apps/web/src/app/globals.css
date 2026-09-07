@@ -104,6 +104,41 @@ a {
   text-decoration: none;
 }
 
+header[data-rubi-active-company='JAHAN_BASTAN'] {
+  border-color: rgb(125 169 234 / 0.38);
+  background: linear-gradient(110deg, #061a3f 0%, #092b68 58%, #0f438e 100%);
+  color: #f8fbff;
+  box-shadow: 0 12px 30px rgb(4 20 52 / 0.2);
+}
+
+header[data-rubi-active-company='JAHAN_BASTAN'] button {
+  color: #f8fbff;
+}
+
+header[data-rubi-active-company='JAHAN_BASTAN'] button:hover {
+  background-color: rgb(255 255 255 / 0.12);
+}
+
+header[data-rubi-active-company='JAHAN_BASTAN']
+  [data-legal-entity-selector]
+  button,
+header[data-rubi-active-company='JAHAN_BASTAN'] #global-search-trigger,
+header[data-rubi-active-company='JAHAN_BASTAN'] [data-header-session-summary] {
+  border-color: rgb(219 234 254 / 0.24);
+  background-color: rgb(255 255 255 / 0.11);
+  color: #ffffff;
+}
+
+header[data-rubi-active-company='JAHAN_BASTAN'] .text-muted-foreground {
+  color: #dbeafe;
+}
+
+header[data-rubi-active-company='JAHAN_BASTAN']
+  [data-header-session-summary]
+  span {
+  border-color: rgb(219 234 254 / 0.24);
+}
+
 ::selection {
   background: color-mix(in srgb, var(--primary) 25%, transparent);
 }
