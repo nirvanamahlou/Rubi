@@ -32,7 +32,7 @@ import {
   useLegalEntityContext,
 } from '@/modules/legal-entities/components/legal-entity-context';
 import { legalEntityBrand } from '@/modules/legal-entities/model/context';
-import { NotificationsBell } from '@/modules/notifications/components/notifications-bell';
+import { NotificationCenter } from './notification-center';
 import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
 import { Input } from '../ui/form-controls';
@@ -279,7 +279,7 @@ function HeaderActions() {
           <Sun aria-hidden="true" className="size-5" />
         )}
       </Button>
-      <NotificationsBell />
+      <NotificationCenter />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button

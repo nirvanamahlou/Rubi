@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   Header,
   Inject,
@@ -48,5 +49,12 @@ export class NotificationsController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.service.markRead(id, request.actor.userId);
+  }
+
+  @Delete('read')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  clearRead(@Req() request: AuthenticatedRequest) {
+    return this.service.clearRead(request.actor.userId);
   }
 }

@@ -51,4 +51,11 @@ export class NotificationsRepository {
     });
     return result.count;
   }
+
+  async clearRead(recipientUserId: string): Promise<number> {
+    const result = await this.database.client.notification.deleteMany({
+      where: { recipientUserId, readAt: { not: null } },
+    });
+    return result.count;
+  }
 }

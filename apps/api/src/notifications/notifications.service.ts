@@ -79,6 +79,13 @@ export class NotificationsService {
     return { data: { updatedCount } };
   }
 
+  async clearRead(
+    recipientUserId: string,
+  ): Promise<NotificationReadResponseV1> {
+    const updatedCount = await this.repository.clearRead(recipientUserId);
+    return { data: { updatedCount } };
+  }
+
   async createWithinTransaction(
     transaction: NotificationTransaction,
     command: NotificationCommand,

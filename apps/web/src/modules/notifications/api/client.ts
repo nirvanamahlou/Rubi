@@ -63,4 +63,9 @@ export const notificationsApi = {
       method: 'PATCH',
     });
   },
+  clearRead() {
+    return request<NotificationReadResponseV1>('/read', {
+      method: 'DELETE',
+    });
+  },
 };

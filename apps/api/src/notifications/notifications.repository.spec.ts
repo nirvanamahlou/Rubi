@@ -46,4 +46,20 @@ describe('NotificationsRepository recipient scoping', () => {
       }),
     );
   });
+
+  it('clears only read notifications belonging to the authenticated user', async () => {
+    const deleteMany = vi.fn().mockResolvedValue({ count: 2 });
+    const database = {
+      client: { notification: { deleteMany } },
+    } as unknown as DatabaseService;
+    const repository = new NotificationsRepository(database);
+
+    expect(await repository.clearRead('user-a')).toBe(2);
+    expect(deleteMany).toHaveBeenCalledWith({
+      where: {
+        recipientUserId: 'user-a',
+        readAt: { not: null },
+      },
+    });
+  });
 });

@@ -93,8 +93,10 @@ Authenticator و دریافت مجوز کوتاه‌عمر و یک‌بارمص�
   Payload عمومی `notifications.v1` جزئیات فنی، Secret یا Scope کاربر دیگر را برنمی‌گرداند.
 - Documents در همان تراکنش تغییر سند از Service عمومی Notifications استفاده می‌کند؛ Upload،
   ویرایش Metadata، آرشیو، بازیابی، تغییر کامل/ناقص تکی یا گروهی و حذف دائمی پوشش داده شدند.
-- Bell مرکزی Badge واقعی، خواندن تکی/همه، Deep Link سند، Poll دوره‌ای، تازه‌سازی پس از تغییر
-  محلی و stateهای Loading/Empty/Error دارد؛ نقطه قرمز نمایشی ثابت حذف شد.
+- Notification Center مرکزی، Feed پایدار اسناد و اعلان‌های عمومی مرورگر را یکجا نمایش می‌دهد؛
+  Badge واقعی، خواندن تکی/همه، پاک‌کردن خوانده‌شده‌ها، Deep Link سند، Poll دوره‌ای،
+  تازه‌سازی پس از تغییر محلی و stateهای Loading/Empty/Error دارد. مسیرهای سند از رهگیری
+  مرورگری حذف شده‌اند تا اعلان تکراری ساخته نشود.
 - Migration جدید همراه Rollback روی PostgreSQL 18 موقت و زنجیره کامل Migrationها پاس شد.
   تست‌های هدفمند اعلان/API/Documents برابر `27 API + 8 Web + 22 Contract/related` پاس‌اند؛
   lint و typecheck بخش‌های متاثر و Prisma validate نیز موفق‌اند. اجرای کامل Web همچنان فقط
