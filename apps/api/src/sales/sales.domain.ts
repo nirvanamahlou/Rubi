@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { salesAccommodationValid } from '@rubi/contracts';
 import {
   servicePriceComponents,
   validatePassengerPackagePrices,
@@ -207,7 +208,20 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
         'SALES_PASSENGER_INVALID',
         'مشخصات مسافر کامل نیست.',
       );
-    passengerAgeCategory(passenger.birthDate, input.departureDate);
+    const age = passengerAgeCategory(passenger.birthDate, input.departureDate);
+    if (
+      passenger.accommodationKind !== undefined &&
+      (!salesAccommodationValid(passenger.accommodationKind, age) ||
+        !input.services.some(
+          (s) =>
+            s.kind === 'HOTEL' &&
+            passenger.serviceClientKeys.includes(s.clientKey),
+        ))
+    )
+      throw new SalesDomainError(
+        'SALES_ACCOMMODATION_INVALID',
+        'نوع اقامت باید با سن مسافر و تخصیص هتل مطابقت داشته باشد.',
+      );
     if (
       !passenger.serviceClientKeys.length ||
       passenger.serviceClientKeys.some((key) => !serviceKeys.has(key))

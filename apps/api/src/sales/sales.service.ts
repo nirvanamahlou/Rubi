@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import type {
   SalesServicePricingV1,
+  SalesAccommodationKind,
   AuthenticatedActor,
   SalesContractCreateRequest,
   SalesContractDetail,
@@ -168,6 +169,12 @@ export function presentSalesContract(
       displayNameSnapshot: passenger.displayNameSnapshot,
       birthDate: passenger.birthDate.toISOString().slice(0, 10),
       ageCategory: passenger.ageCategory,
+      ...(passenger.accommodationKind
+        ? {
+            accommodationKind:
+              passenger.accommodationKind as SalesAccommodationKind,
+          }
+        : {}),
       ...(passenger.agreedPrices?.length
         ? {
             agreedPrices: passenger.agreedPrices.map((price) => ({
@@ -434,6 +441,23 @@ export class SalesService {
         message: 'قرارداد یافت نشد.',
       });
     this.assertUpdate(row, actor);
+    for (const passenger of row.passengers) {
+      const next = input.passengers.find(
+        (p) => p.customerId === passenger.customerId,
+      );
+      if (
+        passenger.accommodationKind &&
+        next &&
+        !next.accommodationKind &&
+        input.services.some(
+          (s) =>
+            s.kind === 'HOTEL' && next.serviceClientKeys.includes(s.clientKey),
+        )
+      )
+        throw new BadRequestException(
+          'نوع اقامت ذخیره‌شده مسافر را مشخص کنید؛ حذف ضمنی آن مجاز نیست.',
+        );
+    }
     if (row.passengers.some((passenger) => passenger.agreedPrices?.length))
       domainCall(() => {
         try {

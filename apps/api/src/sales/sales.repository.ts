@@ -267,6 +267,7 @@ export class SalesRepository {
             data: {
               contractId: contract.id,
               customerId: passenger.customerId,
+              accommodationKind: passenger.accommodationKind ?? null,
               agreedPrices: { create: [...(passenger.agreedPrices ?? [])] },
               displayNameSnapshot: passenger.displayNameSnapshot,
               birthDate: startOfDay(passenger.birthDate),
@@ -464,6 +465,7 @@ export class SalesRepository {
             data: {
               contractId: id,
               customerId: passenger.customerId,
+              accommodationKind: passenger.accommodationKind ?? null,
               agreedPrices: { create: [...(passenger.agreedPrices ?? [])] },
               displayNameSnapshot: passenger.displayNameSnapshot,
               birthDate: startOfDay(passenger.birthDate),

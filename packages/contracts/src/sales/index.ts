@@ -98,12 +98,34 @@ export interface SalesServiceInput {
 }
 
 export interface SalesPassengerInput {
+  accommodationKind?: SalesAccommodationKind;
   /** Explicit agreed total of all services for this person; absent on legacy contracts. */
   agreedPrices?: readonly SalesMoney[];
   customerId: string;
   displayNameSnapshot: string;
   birthDate: string;
   serviceClientKeys: readonly string[];
+}
+
+export const SALES_ACCOMMODATION_LABELS = {
+  DBL: 'DBL',
+  SINGLE: 'سینگل',
+  INFANT: 'زیر ۲ سال',
+  CHILD_WITH_BED: 'کودک با تخت',
+  CHILD_WITHOUT_BED: 'کودک بدون تخت',
+} as const;
+export type SalesAccommodationKind = keyof typeof SALES_ACCOMMODATION_LABELS;
+export function salesAccommodationValid(
+  value: unknown,
+  age: SalesPassengerAgeCategory,
+): value is SalesAccommodationKind {
+  return (
+    age === 'INF'
+      ? ['INFANT']
+      : age === 'CHD'
+        ? ['CHILD_WITH_BED', 'CHILD_WITHOUT_BED']
+        : ['DBL', 'SINGLE']
+  ).includes(value as string);
 }
 
 export interface SalesTicketSelectionInput {

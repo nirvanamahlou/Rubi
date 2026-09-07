@@ -68,6 +68,11 @@ const draft: SalesContractCreateRequest = {
 };
 
 describe('Sales contract domain', () => {
+  it('rejects accommodation without a hotel allocation', () => {
+    const input = structuredClone(draft);
+    input.passengers[0]!.accommodationKind = 'DBL';
+    expect(() => validateSalesContract(input)).toThrow('نوع اقامت');
+  });
   it('accepts included transfers but rejects adding their price to the bill', () => {
     const input = structuredClone(draft);
     input.services[0]!.pricing = [

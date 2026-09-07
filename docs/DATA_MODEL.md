@@ -1,5 +1,9 @@
 # مدل داده و ERD اولیه
 
+## SALES-OUTPUT-HOTEL-CURRENCY-0907
+
+Add nullable SalesContractPassenger.accommodationKind (varchar24, constrained to DBL/SINGLE/INFANT/CHILD_WITH_BED/CHILD_WITHOUT_BED). It describes that passenger's hotel occupancy category, not a room inventory reservation. New Sales hotel guests select an age-compatible value; legacy values remain null. Existing room counts/allocations, supplier prices, Finance balances and no-cost transfers remain unchanged. Print sums explicit passenger agreedPrices per currency; never converts currencies or fabricates legacy allocation.
+
 ## SALES-CUSTOMER-PRICING-0907 — individual package amounts
 
 Sales owns additive `sales_contract_passenger_prices`: passenger FK (cascade), currency code, non-negative Decimal(24,4), unique passenger/currency. Entered values cover all allocated services for that person, not purchase cost or inferred age discounts. When supplied, every passenger has explicit prices and their currency totals equal final service-agreed contract amounts. Legacy rows have no invented backfill. Finance-confirmed payments remain the sole settlement source.

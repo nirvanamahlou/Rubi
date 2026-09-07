@@ -2737,6 +2737,7 @@ model SalesContract {
 }
 
 model SalesContractPassenger {
+  accommodationKind   String? @map("accommodation_kind") @db.VarChar(24)
   id                  String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   contractId          String                            @map("contract_id") @db.Uuid
   customerId          String                            @map("customer_id") @db.Uuid
