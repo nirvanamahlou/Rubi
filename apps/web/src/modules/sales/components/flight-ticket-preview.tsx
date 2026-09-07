@@ -4,6 +4,7 @@ import { SalesThemedSelect } from './sales-themed-select';
 import Image from 'next/image';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Plane } from 'lucide-react';
 import type { MasterDataRecord } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
 import type { SalesFormState } from '../model/sales-form';
@@ -31,6 +32,13 @@ export function FlightTicketDocument({
       ? state.returnOffer
       : undefined,
   ].filter((item) => item !== undefined);
+  const demo =
+    offers.length > 0 &&
+    offers.every(
+      (offer) =>
+        /^TEST-AYT-0[1-4]$/.test(offer.serviceNumber) &&
+        /^TEST AIRLINE(?:\s|$)/i.test(offer.carrierName.trim()),
+    );
   return (
     <article className={styles.paper} dir="ltr">
       <header className={styles.header}>
@@ -41,18 +49,35 @@ export function FlightTicketDocument({
         <Image
           src="/brand/niyayesh-seir-full.png"
           alt="Niyayesh Seir"
-          width={165}
-          height={110}
+          width={210}
+          height={140}
+          loading="eager"
           unoptimized
         />
       </header>
       <p className={styles.draft}>
         DRAFT — NOT VALID FOR TRAVEL / پیش‌نمایش، فاقد اعتبار سفر
       </p>
-      <h2 className={styles.airline}>
-        {[...new Set(offers.map((item) => item.carrierName))].join(' / ') ||
-          'AIRLINE'}
-      </h2>
+      <div className={styles.airlineBrand}>
+        {demo ? (
+          <span
+            className={styles.airlineLogo}
+            role="img"
+            aria-label="TEST AIRLINE — لوگوی آزمایشی"
+          >
+            <Plane size={42} strokeWidth={1.6} />
+          </span>
+        ) : null}
+        <h2 className={styles.airline}>
+          {[...new Set(offers.map((item) => item.carrierName))].join(' / ') ||
+            'AIRLINE'}
+        </h2>
+      </div>
+      {demo ? (
+        <p className={styles.sample}>
+          SAMPLE DATA — نمونهٔ نمایشی؛ شماره‌ها واقعی و صادرشده نیستند.
+        </p>
+      ) : null}
       <div className={styles.identity}>
         <div>
           <p>
@@ -67,10 +92,10 @@ export function FlightTicketDocument({
             Date Of Issue<strong>—</strong>
           </p>
           <p>
-            RLOC<strong>—</strong>
+            RLOC<strong>{demo ? 'DEMO01' : '—'}</strong>
           </p>
           <p>
-            E-Ticket No<strong>—</strong>
+            E-Ticket No<strong>{demo ? '7143' : '—'}</strong>
           </p>
         </div>
       </div>
@@ -129,35 +154,16 @@ export function FlightTicketDocument({
       </section>
       <section className={styles.section}>
         <h3>
-          <i>2</i> FARE &amp; PAYMENT DETAILS
-        </h3>
-        <dl>
-          {[
-            'Restrictions',
-            'Form Of Payment',
-            'Fare Base',
-            'Tax/Fee/Charge',
-            'Total',
-          ].map((label) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd>—</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-      <section className={styles.section}>
-        <h3>
-          <i>3</i> NOTICE
+          <i>2</i> NOTICE
         </h3>
         <p>
           NOTICE 1: This preview is not an issued ticket. Reservation
-          confirmation, ticket number, airport codes, baggage and fare details
-          must come from the issuing system.
+          confirmation, ticket number, airport codes and baggage must come from
+          the issuing system.
         </p>
         <p dir="rtl">
-          اطلاعات صدور و پرداخت در این پیش‌نمایش تأیید نشده‌اند. درج بیزینس فقط
-          برچسب خروجی انتخاب‌شده است.
+          اطلاعات صدور در این پیش‌نمایش تأیید نشده‌اند. درج بیزینس فقط برچسب
+          خروجی انتخاب‌شده است.
         </p>
       </section>
       <footer>

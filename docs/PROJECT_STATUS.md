@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-TICKET-THEME-0907 — COMPLETE_LOCAL
+
+Passenger ticket preview/print uses contract blue, larger agency branding and no payment section. Recognized test flights show a test-airline icon plus explicitly sample-only e-ticket 7143/RLOC DEMO01; actual issuance remains blank and all copies remain DRAFT. 153 Sales tests plus seven final template/visual checks, scoped lint/typecheck/production build pass. Chromium screenshot verified; Web3100 active, Web/API 200. No schema/API/IAM/real-data changes or public push. See docs/tasks/SALES-TICKET-THEME-0907.md.
+
 ## SALES-OUTPUT-PAGINATION-0907 — COMPLETE_LOCAL
 
 Contract print and PDF now fit standard 5–6 passenger examples (including agency, hotel, return flight and IRR/USD) on one A4 page. Wider room/currency columns and compact branding/section badges preserve legibility. All rows continue across pages with repeated headings, grouped totals and page counters; 42/100-person samples use 2/3 pages. Eight final pages visually checked, row/page counts verified, 150 Sales Web tests plus scoped lint/typecheck/production build pass. Web3100 active and Web/API health 200. No migration, API, IAM, real data change or public push; scoped locks released. See docs/tasks/SALES-OUTPUT-PAGINATION-0907.md.

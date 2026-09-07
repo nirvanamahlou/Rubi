@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-TICKET-THEME-0907 — PC-A — COMPLETE_LOCAL
+
+- Contract-blue ticket preview/print, larger eager-loaded agency logo, test airline Plane mark and explicit demo-only 7143/DEMO01 delivered; payment section removed. 153 Sales Web tests plus final seven template/visual checks, lint/typecheck/build pass. Actual CSS/component screenshot reviewed, 3100 restarted, Web/API 200. No issuance/data/API/IAM changes or public push; scoped locks released.
+
+- Reserve flight-ticket-preview TSX/CSS/tests and task/central docs from 3046b0b. Professional contract-blue theme, larger agency logo, code-native test airline mark, no payment section. Sample 4-digit e-ticket and RLOC only for recognized TEST-AYT demo offers, prominently labelled sample/not-issued; no real issuance values or data mutations. No schema/API/dependency/IAM/producer changes or public push.
+
 ## SALES-OUTPUT-PAGINATION-0907 — PC-A — COMPLETE_LOCAL
 
 - Delivered compact print/PDF with complete passenger rows, repeated table headings, unsplit summary and LTR page counters. Actual 5/6-person and 6-person agency fixtures fit one A4; 42/100-person fixtures paginate to 2/3 pages. All eight PDF pages visually checked, exact row/page counts verified, 150 Sales Web tests/scoped lint/typecheck/build pass. Web3100 updated, Web/API health 200. No data/schema/API/IAM change or public push. Scoped central-doc/template locks released.

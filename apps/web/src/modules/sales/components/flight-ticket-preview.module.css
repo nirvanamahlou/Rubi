@@ -11,11 +11,11 @@
   margin: auto;
   padding: 30px 38px;
   line-height: 1.25;
-  border: 2px solid #09174f;
-  border-top: 12px solid #008e8d;
-  border-bottom: 16px solid #09174f;
+  border: 2px solid #07164b;
+  border-top: 12px solid #173d7a;
+  border-bottom: 16px solid #07164b;
   border-radius: 70px 0 70px 0;
-  color: #081443;
+  color: #07164b;
   background: white;
   font-family: Arial, sans-serif;
 }
@@ -31,8 +31,8 @@
   margin: 0;
 }
 .header img {
-  height: 85px;
-  width: 140px;
+  height: 125px;
+  width: 205px;
   object-fit: contain;
 }
 .printOnly {
@@ -41,7 +41,7 @@
 .rule {
   width: 145px;
   height: 3px;
-  background: #008e8d;
+  background: #173d7a;
   margin-top: 14px;
 }
 .draft {
@@ -66,7 +66,7 @@
   margin-top: 18px;
 }
 .identity > div + div {
-  border-left: 2px solid #009b94;
+  border-left: 2px solid #173d7a;
   padding-left: 28px;
 }
 .identity p {
@@ -88,12 +88,12 @@
 .business {
   margin-left: 16px;
   padding: 5px 10px;
-  border: 1px solid #008e8d;
+  border: 1px solid #173d7a;
   border-radius: 5px;
-  color: #008e8d;
+  color: #173d7a;
 }
 .section {
-  border: 1.5px solid #09174f;
+  border: 1.5px solid #07164b;
   border-radius: 15px;
   margin-top: 32px;
   padding: 24px 12px 14px;
@@ -103,7 +103,7 @@
   position: absolute;
   top: -16px;
   left: -1px;
-  background: #09174f;
+  background: #07164b;
   border-radius: 8px 20px 20px 0;
   color: white;
   font-size: 14px;
@@ -111,7 +111,7 @@
   margin: 0;
 }
 .section i {
-  background: #008e8d;
+  background: #173d7a;
   padding: 9px 12px;
   border-radius: 8px 0 12px 0;
   margin-right: 8px;
@@ -129,7 +129,7 @@
 }
 .paper th {
   color: white;
-  background: #008e8d;
+  background: #173d7a;
   padding: 10px 5px;
 }
 .paper td {
@@ -137,19 +137,6 @@
   text-align: center;
   border: 1px dashed #c4c8cd;
   color: #111827;
-}
-.section dl {
-  margin: 0;
-}
-.section dl div {
-  display: grid;
-  grid-template-columns: 45% 55%;
-  border-bottom: 1px dashed #bfc4ca;
-  padding: 7px 12px;
-  font-size: 14px;
-}
-.section dd {
-  font-weight: bold;
 }
 .section p {
   font-size: 13px;
@@ -187,4 +174,30 @@
     overflow: visible;
     padding: 0;
   }
+}
+.airlineBrand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 20px 0 8px;
+}
+.airlineLogo {
+  display: grid;
+  place-items: center;
+  width: 78px;
+  height: 78px;
+  border: 2px solid #173d7a;
+  border-radius: 50%;
+  color: #173d7a;
+  background: #f4f7fb;
+  flex-shrink: 0;
+}
+.sample {
+  text-align: center;
+  color: #173d7a;
+  font-size: 12px;
+  border: 1px dashed #173d7a;
+  border-radius: 6px;
+  padding: 8px;
 }
