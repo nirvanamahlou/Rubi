@@ -17,6 +17,7 @@ import type {
   CustomerContactRequest,
   CustomerListQuery,
   CustomerMutationRequest,
+  CustomerRegistrationLookupRequest,
   CustomerStatusRequest,
   DuplicateCandidate,
   DuplicateReviewRequest,
@@ -524,6 +525,43 @@ export class CustomerService {
         traceId,
         requestedSensitiveReadReason,
       ),
+    };
+  }
+
+  async registrationLookup(
+    input: CustomerRegistrationLookupRequest,
+    actor: AuthenticatedActor,
+    traceId?: string,
+  ) {
+    if (
+      !actor.permissions.includes('customers.read') ||
+      !actor.permissions.includes('customers.sensitive.read')
+    )
+      throw new ForbiddenException('مجوز بررسی اطلاعات مشتری وجود ندارد.');
+    const fingerprint = this.nationalIdProtector.protect(
+      input.nationalId,
+    ).nationalIdFingerprint;
+    const row = await this.repository.findRegistration(
+      fingerprint,
+      actor.branchIds,
+    );
+    if (!row) return { data: null };
+    const normalize = (value: string) =>
+      value.trim().replace(/\s+/g, ' ').normalize('NFC');
+    if (
+      normalize(row.firstName ?? '') !== normalize(input.firstName) ||
+      normalize(row.lastName ?? '') !== normalize(input.lastName) ||
+      (input.birthDate &&
+        row.birthDate?.toISOString().slice(0, 10) !==
+          input.birthDate.slice(0, 10))
+    )
+      throw new ConflictException({
+        code: 'CUSTOMER_REGISTRATION_IDENTITY_MISMATCH',
+        message:
+          'پرونده‌ای با این کد ملی و اطلاعات متفاوت وجود دارد؛ اطلاعات را اصلاح یا پرونده موجود را انتخاب کنید.',
+      });
+    return {
+      data: await this.present(row, actor, traceId, 'customer-verification'),
     };
   }
 

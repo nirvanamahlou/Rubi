@@ -51,6 +51,13 @@ export const CUSTOMER_ERROR_CODES = [
 ] as const;
 export type CustomerErrorCode = (typeof CUSTOMER_ERROR_CODES)[number];
 
+export interface CustomerRegistrationLookupRequest {
+  nationalId: string;
+  firstName: string;
+  lastName: string;
+  birthDate?: string;
+}
+
 export interface CustomerListQuery {
   search: string;
   kind?: 'all' | CustomerKind;

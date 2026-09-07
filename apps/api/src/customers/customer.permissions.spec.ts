@@ -3,6 +3,14 @@ import { PERMISSIONS_KEY } from '../iam/iam.constants';
 import { CustomersController } from './customers.controller';
 
 describe('CustomersController permission metadata', () => {
+  it('requires customer read and sensitive read for registration recovery', () => {
+    expect(
+      Reflect.getMetadata(
+        PERMISSIONS_KEY,
+        CustomersController.prototype.registrationLookup,
+      ),
+    ).toEqual(['customers.read', 'customers.sensitive.read']);
+  });
   it.each([
     ['list', 'customers.read'],
     ['create', 'customers.create'],

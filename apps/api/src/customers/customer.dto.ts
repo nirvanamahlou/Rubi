@@ -17,6 +17,13 @@ import {
   ValidateIf,
 } from 'class-validator';
 
+export class CustomerRegistrationLookupDto {
+  @IsString() @MaxLength(16) nationalId!: string;
+  @IsString() @MinLength(1) @MaxLength(120) firstName!: string;
+  @IsString() @MinLength(1) @MaxLength(120) lastName!: string;
+  @IsOptional() @IsDateString({ strict: true }) birthDate?: string;
+}
+
 export class CustomerListQueryDto {
   @IsOptional() @IsString() @MaxLength(100) search = '';
   @IsOptional() @IsIn(['all', 'person', 'organization']) kind:

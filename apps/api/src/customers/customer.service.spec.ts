@@ -115,6 +115,60 @@ const row = {
 };
 
 describe('CustomerService', () => {
+  it('recovers only exact branch-scoped identity and audits sensitive output', async () => {
+    const repository = {
+      findRegistration: vi.fn().mockResolvedValue(row),
+      auditSensitiveRead: vi.fn(),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    const result = await service.registrationLookup(
+      {
+        nationalId: '1234567891',
+        firstName: 'نمونه',
+        lastName: 'آزمایشی',
+        birthDate: '1990-01-01',
+      },
+      {
+        ...actor,
+        permissions: [...actor.permissions, 'customers.sensitive.read'],
+      },
+    );
+    expect(repository.findRegistration).toHaveBeenCalledWith(
+      'n'.repeat(64),
+      actor.branchIds,
+    );
+    expect(result.data?.id).toBe(row.id);
+    expect(repository.auditSensitiveRead).toHaveBeenCalledTimes(1);
+  });
+  it('does not expose or bind mismatching registration and requires sensitive read permission', async () => {
+    const repository = {
+      findRegistration: vi.fn().mockResolvedValue(row),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    const input = {
+      nationalId: '1234567891',
+      firstName: 'Different',
+      lastName: 'آزمایشی',
+      birthDate: '1990-01-01',
+    };
+    await expect(
+      service.registrationLookup(input, actor),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.findRegistration).not.toHaveBeenCalled();
+    await expect(
+      service.registrationLookup(input, {
+        ...actor,
+        permissions: [...actor.permissions, 'customers.sensitive.read'],
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    vi.mocked(repository.findRegistration).mockResolvedValue(null);
+    await expect(
+      service.registrationLookup(input, {
+        ...actor,
+        permissions: [...actor.permissions, 'customers.sensitive.read'],
+      }),
+    ).resolves.toEqual({ data: null });
+  });
   it('persists expiry as a date and preserves omitted values on legacy updates', async () => {
     const repository = {
       update: vi.fn().mockResolvedValue(row),

@@ -345,6 +345,20 @@ export class CustomerRepository {
     }) as unknown as Promise<CustomerRow | null>;
   }
 
+  async findRegistration(fingerprint: string, branchIds: readonly string[]) {
+    const match = await this.database.client.customer.findFirst({
+      where: {
+        nationalIdFingerprint: fingerprint,
+        ownerBranchId: { in: [...branchIds] },
+        mergedIntoId: null,
+        isActive: true,
+        kind: 'PERSON',
+      },
+      select: { id: true },
+    });
+    return match ? this.find(match.id, branchIds) : null;
+  }
+
   async statusHistory(id: string, branchIds: readonly string[]) {
     const customer = await this.database.client.customer.findFirst({
       where: { id, ownerBranchId: { in: [...branchIds] }, mergedIntoId: null },
