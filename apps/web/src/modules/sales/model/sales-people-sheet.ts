@@ -19,6 +19,7 @@ export interface PeopleRow {
   person?: { id: string; displayName: string };
   reviewRequired?: boolean;
   pendingNationalId?: string;
+  previousRegistrationRetained?: boolean;
   profile?: CustomerDetail;
   savedPassportNumber?: string;
   savedValues?: PeopleValues;
@@ -342,6 +343,19 @@ function mutationNeedsReview(error: unknown) {
   );
 }
 
+function adoptRegisteredPerson(
+  row: PeopleRow,
+  profile: CustomerDetail,
+): PeopleRow {
+  const next = selectedPeopleRow(profile);
+  for (const field of Object.keys(row.values) as EntryField[])
+    if (row.values[field].trim()) next.values[field] = row.values[field];
+  return {
+    ...next,
+    previousRegistrationRetained: Boolean(row.previousRegistrationRetained),
+  };
+}
+
 export async function saveSalesPeopleDraft(
   state: SalesFormState,
   draft: SalesPeopleDraft,
@@ -357,23 +371,38 @@ export async function saveSalesPeopleDraft(
     ...(draft.mode === 'person' ? ['primary'] : []),
     ...keys,
   ]) {
-    const row = peopleRow(current, key);
+    let row = peopleRow(current, key);
     if (!row.reviewRequired) continue;
-    if (!api.detail || (!row.person && !api.registrationLookup))
+    if (row.person ? !api.detail : !api.registrationLookup)
       throw new Error(
         'نتیجه ثبت قبلی نیازمند بررسی است؛ اتصال بازیابی در دسترس نیست.',
       );
     let profile: CustomerDetail | null;
     if (row.person)
-      profile = (await api.detail(row.person.id, 'customer-verification')).data;
+      profile = (await api.detail!(row.person.id, 'customer-verification'))
+        .data;
     else {
       const nationalId = normalizeNationalId(row.values.nationalId);
-      if (row.pendingNationalId && row.pendingNationalId !== nationalId)
-        throw new Error(
-          'برای بررسی ثبت قبلی، کد ملی قبلی همین ردیف را برگردانید یا پرونده موجود را انتخاب کنید.',
-        );
+      if (row.pendingNationalId && row.pendingNationalId !== nationalId) {
+        const previous = (
+          await api.registrationLookup!({
+            nationalId: row.pendingNationalId,
+            firstName: row.values.firstName.trim(),
+            lastName: row.values.lastName.trim(),
+            matchByNationalId: true,
+          })
+        ).data;
+        row = {
+          ...row,
+          previousRegistrationRetained:
+            Boolean(previous) || Boolean(row.previousRegistrationRetained),
+        };
+        current = editPeopleRow(current, key, row);
+        onProgress(current);
+      }
       profile = (
         await api.registrationLookup!({
+          matchByNationalId: true,
           nationalId,
           firstName: row.values.firstName.trim(),
           lastName: row.values.lastName.trim(),
@@ -384,8 +413,8 @@ export async function saveSalesPeopleDraft(
     const next = profile
       ? row.person
         ? refreshPeopleRow(row, profile)
-        : { ...selectedPeopleRow(profile), values: { ...row.values } }
-      : { ...row, reviewRequired: false };
+        : adoptRegisteredPerson(row, profile)
+      : { ...row, reviewRequired: false, pendingNationalId: '' };
     current = editPeopleRow(current, key, next);
     onProgress(current);
   }
@@ -530,6 +559,33 @@ export async function saveSalesPeopleDraft(
           : {}),
       });
       onProgress(current);
+      if (
+        error instanceof CustomersApiError &&
+        error.status === 409 &&
+        error.code === 'CUSTOMER_NATIONAL_ID_EXISTS' &&
+        api.registrationLookup
+      ) {
+        const existing = (
+          await api.registrationLookup({
+            nationalId: normalizeNationalId(row.values.nationalId),
+            firstName: row.values.firstName.trim(),
+            lastName: row.values.lastName.trim(),
+            matchByNationalId: true,
+            ...(row.values.birthDate
+              ? { birthDate: row.values.birthDate }
+              : {}),
+          })
+        ).data;
+        if (existing) {
+          current = editPeopleRow(
+            current,
+            key,
+            adoptRegisteredPerson(row, existing),
+          );
+          onProgress(current);
+          return saveSalesPeopleDraft(state, current, onProgress, api);
+        }
+      }
       throw new Error(
         (uncertain
           ? 'ثبت شخص قطعی نشد؛ با تأیید دوباره، پرونده قبلی خودکار بررسی می‌شود. '

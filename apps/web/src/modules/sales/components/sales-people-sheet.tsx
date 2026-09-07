@@ -207,6 +207,12 @@ export function SalesPeopleSheet({
               با تأیید دوباره، ثبت قبلی خودکار بررسی می‌شود
             </p>
           ) : null}
+          {row.previousRegistrationRetained ? (
+            <p className="text-amber-700">
+              پرونده کد ملی قبلی بدون تغییر در مشتریان باقی ماند؛ این ردیف با کد
+              ملی فعلی ادامه می‌یابد.
+            </p>
+          ) : null}
         </div>
       ),
       onChange: (field, value) =>

@@ -153,7 +153,7 @@ describe('fixed Sales people-entry slots', () => {
     expect(api.create).toHaveBeenCalledTimes(2);
     expect(api.create.mock.calls[0]).toEqual(api.create.mock.calls[1]);
   });
-  it('does not recreate when recovery fails or the uncertain national ID was changed', async () => {
+  it('does not recreate when recovery is forbidden, including after changing national ID', async () => {
     let progress = filled();
     const api = {
       create: vi.fn().mockRejectedValue(new Error('network')),
@@ -179,8 +179,140 @@ describe('fixed Sales people-entry slots', () => {
     progress.rows.p0!.values.nationalId = national('009000009');
     await expect(
       saveSalesPeopleDraft(one, progress, vi.fn(), api),
-    ).rejects.toThrow('کد ملی قبلی');
+    ).rejects.toThrow('forbidden');
     expect(api.create).toHaveBeenCalledTimes(1);
+  });
+  it.each([true, false])(
+    'resolves the current national ID and updates it without mutating the previous record (previous exists: %s)',
+    async (previousExists) => {
+      const draft = filled();
+      const previousId = draft.rows.p0!.values.nationalId;
+      const values = {
+        ...draft.rows.p0!.values,
+        nationalId: national('009000009'),
+        firstName: 'Corrected',
+      };
+      draft.rows.p0 = {
+        values,
+        reviewRequired: true,
+        pendingNationalId: previousId,
+      };
+      const existing = {
+        ...savedPerson(values),
+        id: 'current',
+        firstName: 'Old',
+        version: 7,
+        contacts: [{ type: 'phone', value: '09120000000', isPrimary: true }],
+        passportNumber: 'A12345678',
+        passportExpiryDate: '2031-01-01',
+      } as unknown as CustomerDetail;
+      const api = {
+        create: vi.fn(),
+        addContact: vi.fn(),
+        detail: vi.fn(),
+        registrationLookup: vi
+          .fn()
+          .mockResolvedValueOnce({
+            data: previousExists ? { ...existing, id: 'previous' } : null,
+          })
+          .mockResolvedValueOnce({ data: existing }),
+        update: vi.fn().mockResolvedValue({
+          data: { ...existing, firstName: 'Corrected', version: 8 },
+        }),
+      };
+      let progress = draft;
+      const result = await saveSalesPeopleDraft(
+        one,
+        draft,
+        (next) => {
+          progress = next;
+        },
+        api,
+      );
+      expect(
+        api.registrationLookup.mock.calls.map((call) => call[0].nationalId),
+      ).toEqual([previousId, values.nationalId]);
+      expect(api.update).toHaveBeenCalledExactlyOnceWith(
+        'current',
+        expect.objectContaining({ firstName: 'Corrected', version: 7 }),
+      );
+      expect(api.create).not.toHaveBeenCalled();
+      expect(api.addContact).not.toHaveBeenCalled();
+      expect(result.patch.customerId).toBe('current');
+      expect(progress.rows.p0!.values.phone).toBe('09120000000');
+      expect(progress.rows.p0!.values.passportNumber).toBe('A12345678');
+      expect(Boolean(progress.rows.p0!.previousRegistrationRetained)).toBe(
+        previousExists,
+      );
+    },
+  );
+  it('creates the corrected identity if absent and retains the earlier registration without editing it', async () => {
+    const draft = filled();
+    const previousId = draft.rows.p0!.values.nationalId;
+    draft.rows.p0 = {
+      values: { ...draft.rows.p0!.values, nationalId: national('009000009') },
+      reviewRequired: true,
+      pendingNationalId: previousId,
+    };
+    const api = {
+      create: vi
+        .fn()
+        .mockResolvedValue({ data: savedPerson(draft.rows.p0.values) }),
+      addContact: vi.fn(),
+      detail: vi.fn(),
+      update: vi.fn(),
+      registrationLookup: vi
+        .fn()
+        .mockResolvedValueOnce({ data: savedPerson() })
+        .mockResolvedValueOnce({ data: null }),
+    };
+    await saveSalesPeopleDraft(one, draft, vi.fn(), api);
+    expect(api.create).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ nationalId: draft.rows.p0.values.nationalId }),
+    );
+    expect(api.update).not.toHaveBeenCalled();
+  });
+  it('automatically reuses and updates an existing national ID on the same confirmation', async () => {
+    const draft = filled();
+    const existing = { ...savedPerson(), firstName: 'Old', version: 4 };
+    const api = {
+      create: vi
+        .fn()
+        .mockRejectedValue(
+          new CustomersApiError('exists', 409, 'CUSTOMER_NATIONAL_ID_EXISTS'),
+        ),
+      addContact: vi.fn(),
+      registrationLookup: vi.fn().mockResolvedValue({ data: existing }),
+      update: vi
+        .fn()
+        .mockResolvedValue({ data: { ...savedPerson(), version: 5 } }),
+    };
+    const result = await saveSalesPeopleDraft(one, draft, vi.fn(), api);
+    expect(result.patch.customerId).toBe('saved');
+    expect(api.create).toHaveBeenCalledTimes(1);
+    expect(api.update).toHaveBeenCalledExactlyOnceWith(
+      'saved',
+      expect.objectContaining({ firstName: 'Synthetic', version: 4 }),
+    );
+    expect(api.registrationLookup).toHaveBeenCalledWith(
+      expect.objectContaining({ matchByNationalId: true }),
+    );
+  });
+  it('does not loop or recreate when a duplicate is outside accessible scope', async () => {
+    const api = {
+      create: vi
+        .fn()
+        .mockRejectedValue(
+          new CustomersApiError('exists', 409, 'CUSTOMER_NATIONAL_ID_EXISTS'),
+        ),
+      addContact: vi.fn(),
+      registrationLookup: vi.fn().mockResolvedValue({ data: null }),
+    };
+    await expect(
+      saveSalesPeopleDraft(one, filled(), vi.fn(), api),
+    ).rejects.toThrow('exists');
+    expect(api.create).toHaveBeenCalledTimes(1);
+    expect(api.registrationLookup).toHaveBeenCalledTimes(1);
   });
   it('continues only the unfinished email after phone succeeds and email is rejected', async () => {
     let progress = filled();
@@ -222,17 +354,13 @@ describe('fixed Sales people-entry slots', () => {
     const api = {
       create: vi.fn().mockResolvedValue({ data: profile }),
       addContact: vi.fn().mockRejectedValue(new Error('network')),
-      detail: vi
-        .fn()
-        .mockResolvedValue({
-          data: {
-            ...profile,
-            version: 2,
-            contacts: [
-              { type: 'phone', value: '09120000000', isPrimary: true },
-            ],
-          },
-        }),
+      detail: vi.fn().mockResolvedValue({
+        data: {
+          ...profile,
+          version: 2,
+          contacts: [{ type: 'phone', value: '09120000000', isPrimary: true }],
+        },
+      }),
     };
     await expect(
       saveSalesPeopleDraft(

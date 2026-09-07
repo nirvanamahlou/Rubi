@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-PEOPLE-CORRECTION-0907 — PC-A — COMPLETE_LOCAL
+
+- Current-ID recovery and same-confirmation duplicate reuse/update implemented with existing permissions, branch scope, sensitive-read audit and optimistic locking. Previous-ID record retained; no blind merge/deletion. 249 Web + final 25 focused, 93 Customers API, 48 Contracts tests, scoped lint/typechecks and API/Web builds pass. Local 3100/4000 healthy. No migration, IAM, real-customer mutation or public push. Task-specific public-contract and central-doc reservations released.
+
+- Reserve Sales recovery model/UI/tests, additive Customers lookup opt-in type/DTO/service/tests and task docs from 0cc22a0. User authorizes current national-ID matching and updating entered details of an existing customer instead of blocking on previous identity/name. Preserve branch/sensitive-read audit and optimistic update permission; inspect but never mutate a superseded prior-ID registration. No migration/dependency/IAM/public push; previous task locks released.
+
 ## SALES-PEOPLE-RECOVERY-0907 — PC-A — COMPLETE_LOCAL
 
 - Removed permanent review locks after definitive 4xx rejection; unknown/duplicate creates recover on the next confirmation through exact identity lookup, known people refresh saved contact/version state, and successful contact checkpoints persist between retries. National-ID uniqueness, sensitive-read permission/audit and branch scoping remain. 243 combined Web tests plus final eight client tests, 91 Customers API tests plus final sixteen permission tests, 48 Contracts tests, scoped lint/typechecks and production API/Web builds passed. Local Web3100/API4000 updated; no migration, real data edits, IAM change or public push. Task-specific contracts/docs reservations released.

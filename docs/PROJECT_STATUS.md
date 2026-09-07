@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-PEOPLE-CORRECTION-0907 — COMPLETE_LOCAL
+
+Current national-ID corrections no longer require restoring an earlier attempted ID. Confirmation reads but never mutates the previous registration, then adopts/updates the accessible exact current-ID profile using existing permissions/version. Duplicate creates resolve on the same confirmation; blank optional entries preserve existing details. Optional Customers matchByNationalId retains strict legacy default, branch scope and sensitive-read audit. 249 Web + final 25 focused, 93 API Customers, 48 Contracts tests, scoped lint/typechecks and API/Web production builds passed. Local Web3100/API4000 updated and healthy; no migration/IAM/real-data walkthrough/public push. See docs/tasks/SALES-PEOPLE-CORRECTION-0907.md.
+
 ## SALES-PEOPLE-RECOVERY-0907 — COMPLETE_LOCAL
 
 Sales people confirmation now separates definite rejection from unknown creation/contact outcomes. The same confirmation action recovers an exact existing identity or refreshes a known saved profile, preserving successful records/contact checkpoints. New public Customers registration lookup is POST-only, branch-scoped and sensitive-read permission/audit protected; no fuzzy identity binding or blind changed-national-ID retry. 243 combined Web + final 8 client tests, 91 Customers API + final 16 permission tests, 48 Contracts tests, scoped lint/typechecks and API/Web production builds pass. Local services updated; no migration/seed/IAM or real-customer walkthrough. See docs/tasks/SALES-PEOPLE-RECOVERY-0907.md.
