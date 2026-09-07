@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-OUTPUT-PAGINATION-0907 — COMPLETE_LOCAL
+
+Contract print and PDF now fit standard 5–6 passenger examples (including agency, hotel, return flight and IRR/USD) on one A4 page. Wider room/currency columns and compact branding/section badges preserve legibility. All rows continue across pages with repeated headings, grouped totals and page counters; 42/100-person samples use 2/3 pages. Eight final pages visually checked, row/page counts verified, 150 Sales Web tests plus scoped lint/typecheck/production build pass. Web3100 active and Web/API health 200. No migration, API, IAM, real data change or public push; scoped locks released. See docs/tasks/SALES-OUTPUT-PAGINATION-0907.md.
+
 ## SALES-PEOPLE-CORRECTION-0907 — COMPLETE_LOCAL
 
 Current national-ID corrections no longer require restoring an earlier attempted ID. Confirmation reads but never mutates the previous registration, then adopts/updates the accessible exact current-ID profile using existing permissions/version. Duplicate creates resolve on the same confirmation; blank optional entries preserve existing details. Optional Customers matchByNationalId retains strict legacy default, branch scope and sensitive-read audit. 249 Web + final 25 focused, 93 API Customers, 48 Contracts tests, scoped lint/typechecks and API/Web production builds passed. Local Web3100/API4000 updated and healthy; no migration/IAM/real-data walkthrough/public push. See docs/tasks/SALES-PEOPLE-CORRECTION-0907.md.

@@ -98,6 +98,11 @@ export function contractPrintHtml(
   const heading = (n: number, en: string, fa: string) =>
     `<h2><em>${n}</em><span dir="ltr">${en}</span><small>${fa}</small></h2>`;
   const agency = output.customer.kind === 'organization';
+  const passengerColumns = (
+    agency ? [5, 20, 8, 5, 14, 18, 14, 8, 8] : [5, 22, 9, 5, 15, 20, 15, 9]
+  )
+    .map((width) => `<col style="width:${width}%">`)
+    .join('');
   const hotel = c.hotelSelection;
   const room = hotel
     ? [
@@ -188,12 +193,22 @@ export function contractPrintHtml(
   .money,.totals bdi,.financial bdi{font-family:Arial,sans-serif!important;direction:ltr;font-size:9.5pt;font-variant-numeric:tabular-nums}
   .customer-terms{font-size:8.5pt;line-height:1.35;text-align:right;margin-top:2mm;color:#082053;break-inside:avoid}.customer-terms p{margin:.6mm 0}
   .document{padding:3mm}section{margin-top:1mm}header img{max-height:13mm}.signatures{min-height:10mm}
+  @page{margin:8mm;@bottom-center{content:counter(page) " / " counter(pages);direction:ltr;unicode-bidi:isolate;font-family:Arial,sans-serif;font-size:8pt;color:#596781}}
+  .passengers .money{font-size:9pt;overflow-wrap:anywhere}
+  .passengers th{font-size:9pt}.passengers td{padding:.7mm .6mm}
+  .passengers h2{break-after:avoid}.passengers thead{display:table-header-group}
+  .passengers tr{break-inside:avoid;page-break-inside:avoid}
+  .financial-summary{break-inside:avoid}
+  header .brand small{margin:0}header{padding-bottom:1mm;margin-bottom:1mm}
+  header .brand{display:grid;grid-template-columns:auto auto;align-items:center;column-gap:2mm;font-size:11pt}
+  header .brand img{grid-column:1;grid-row:1/3;max-width:28mm;max-height:13mm}header .brand>div,header .brand>small{grid-column:2}
+  h2{padding:.5mm 1.5mm}h2 em{font-size:12pt;padding:.2mm 1.5mm}
   </style></head><body><article class="document">
   <header><div class="brand">${logo}<div>${e(output.company.persianName)}</div><small>${e(output.company.latinName ?? '')}</small></div><div dir="ltr"><h1>TRAVEL SERVICES<br>CONTRACT</h1><p dir="rtl">قرارداد فروش خدمات مسافرتی</p></div></header>
   ${c.status === 'CANCELLED' ? '<div class="cancelled">این قرارداد لغو شده است</div>' : ''}
   <div class="meta"><div>شماره قرارداد<strong><bdi>${e(c.contractNumber)}</bdi></strong></div><div>تاریخ ثبت<strong>${e(date(c.createdAt))}</strong></div><div>ساعت<strong>${e(time(c.createdAt))}</strong></div><div>مسئول فروش<strong>${e(output.ownerName)}</strong></div></div>
   <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(c.customerNameSnapshot)}</b></div><div>مدیر: —</div><div class="wide">نشانی: ${e(output.customer.address)}</div><div>مقصد: ${e(name(c.destinationId))}</div><div>تعداد: ${c.passengersDetail.length} نفر</div><div>درخواست‌کننده: ${e(c.customerNameSnapshot)}</div><div>خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>
-<section class="passengers">${heading(2, 'PASSENGERS & PRICING', 'مسافران و قیمت')}<table><thead><tr><th style="width:6%">ردیف</th><th style="width:22%">نام مسافر</th><th>رده سنی</th><th>ویزا</th><th>اتاق</th><th style="width:22%">مبلغ فروش</th><th>ارز</th>${agency ? '<th>کمیسیون</th>' : ''}<th>توضیحات</th></tr></thead><tbody>${rows}</tbody></table><p class="note">${c.passengersDetail.every((p) => p.agreedPrices?.length) ? 'مبلغ فروش هر مسافر، کل خدمات توافق‌شده همان نفر است.' : 'برای ردیف‌های قدیمی قیمت تفکیکی مسافر ثبت نشده؛ مبلغ حدسی درج نمی‌شود.'}</p><div class="totals"><b>مبلغ توافق‌شده قرارداد</b><div>${agreementTotal ?? moneyRows('amount')}</div></div><div class="financial"><div>پرداخت تأییدشده مالی: ${moneyRows('confirmedPaid')}</div><div>مانده: ${moneyRows('outstanding')}</div></div>${agency ? '<p class="note">کمیسیون آژانس در این قرارداد ثبت نشده؛ هیچ مبلغی بابت آن از جمع قرارداد کسر نشده است.</p>' : ''}</section>
+<section class="passengers">${heading(2, 'PASSENGERS & PRICING', 'مسافران و قیمت')}<table><colgroup>${passengerColumns}</colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>ویزا</th><th>اتاق</th><th>مبلغ فروش</th><th>ارز</th>${agency ? '<th>کمیسیون</th>' : ''}<th>توضیحات</th></tr></thead><tbody>${rows}</tbody></table><div class="financial-summary"><p class="note">${c.passengersDetail.every((p) => p.agreedPrices?.length) ? 'مبلغ فروش هر مسافر، کل خدمات توافق‌شده همان نفر است.' : 'برای ردیف‌های قدیمی قیمت تفکیکی مسافر ثبت نشده؛ مبلغ حدسی درج نمی‌شود.'}</p><div class="totals"><b>مبلغ توافق‌شده قرارداد</b><div>${agreementTotal ?? moneyRows('amount')}</div></div><div class="financial"><div>پرداخت تأییدشده مالی: ${moneyRows('confirmedPaid')}</div><div>مانده: ${moneyRows('outstanding')}</div></div>${agency ? '<p class="note">کمیسیون آژانس در این قرارداد ثبت نشده؛ هیچ مبلغی بابت آن از جمع قرارداد کسر نشده است.</p>' : ''}</div></section>
   <section>${heading(3, 'FLIGHT INFORMATION', 'اطلاعات پرواز')}<table><thead><tr><th>مسیر</th><th>ایرلاین</th><th>شماره</th><th>تاریخ</th><th>ساعت</th><th>کلاس</th></tr></thead><tbody>${flights || '<tr><td colspan="6">پرواز در این قرارداد انتخاب نشده است.</td></tr>'}</tbody></table></section>
   <section>${heading(4, 'HOTEL INFORMATION', 'اطلاعات هتل')}${hotel ? `<table><thead><tr><th style="width:30%">نام هتل</th><th>درجه</th><th>خدمات</th><th>ورود</th><th>خروج</th><th>نوع اتاق</th></tr></thead><tbody><tr><td><bdi>${e(refs.hotelLatinName || 'ثبت نشده')}</bdi><small><bdi>${e(refs.hotelWebsite || 'وب‌سایت ثبت نشده')}</bdi></small></td><td>${e(refs.hotelGrade)}</td><td>${e(name(hotel.mealServiceId))}</td><td>${e(date(hotel.checkInDate))}</td><td>${e(date(hotel.checkOutDate))}</td><td>${e(room)}</td></tr></tbody></table>` : 'هتل در این قرارداد انتخاب نشده است.'}</section>
   <section>${heading(5, 'OTHER SERVICES', 'سایر خدمات')}<div class="fields"><div>ترانسفر: ${e(transfers || 'ندارد')}</div><div>گشت شهری: ${e(

@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-OUTPUT-PAGINATION-0907 — PC-A — COMPLETE_LOCAL
+
+- Delivered compact print/PDF with complete passenger rows, repeated table headings, unsplit summary and LTR page counters. Actual 5/6-person and 6-person agency fixtures fit one A4; 42/100-person fixtures paginate to 2/3 pages. All eight PDF pages visually checked, exact row/page counts verified, 150 Sales Web tests/scoped lint/typecheck/build pass. Web3100 updated, Web/API health 200. No data/schema/API/IAM change or public push. Scoped central-doc/template locks released.
+
+- Reserve Sales contract-print template/tests, synthetic PDF QA and task/central docs from 5f4e7bf on the current local Sales branch. Compact six-passenger A4 output, preserve every row and naturally paginate larger contracts with readable repeated table headings. No pricing, API, schema, passenger-count validation, dependency, IAM or producer changes. Central-doc scope only; previous scoped locks released. Local-only, no public push.
+
 ## SALES-PEOPLE-CORRECTION-0907 — PC-A — COMPLETE_LOCAL
 
 - Current-ID recovery and same-confirmation duplicate reuse/update implemented with existing permissions, branch scope, sensitive-read audit and optimistic locking. Previous-ID record retained; no blind merge/deletion. 249 Web + final 25 focused, 93 Customers API, 48 Contracts tests, scoped lint/typechecks and API/Web builds pass. Local 3100/4000 healthy. No migration, IAM, real-customer mutation or public push. Task-specific public-contract and central-doc reservations released.

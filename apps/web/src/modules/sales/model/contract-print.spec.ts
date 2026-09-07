@@ -2,13 +2,61 @@ import { describe, expect, it } from 'vitest';
 import { contractPrintHtml, contractMoney } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
+  it.each([6, 42, 100, 250])(
+    'renders every passenger and complete totals for %s people without truncation',
+    (count) => {
+      const output = structuredClone(printFixture);
+      output.contract.passengersDetail = Array.from(
+        { length: count },
+        (_, i) => ({
+          ...printFixture.contract.passengersDetail[0]!,
+          id: 'test-' + i,
+          displayNameSnapshot: 'PASSENGER-' + String(i).padStart(4, '0'),
+          agreedPrices: [
+            { currencyCode: 'IRR', amount: '100000000' },
+            { currencyCode: 'USD', amount: '900.50' },
+          ],
+        }),
+      );
+      const html = contractPrintHtml(output, printReferences);
+      for (const p of output.contract.passengersDetail)
+        expect(html.split(p.displayNameSnapshot).length - 1).toBe(1);
+      expect(html).toContain(contractMoney(String(count * 100000000)));
+      expect(html).toContain('thead{display:table-header-group}');
+      expect(html).toContain('.financial-summary{break-inside:avoid}');
+      expect(html).toContain(
+        'counter(page) " / " counter(pages);direction:ltr',
+      );
+      expect(html).not.toContain('max-height:297');
+    },
+  );
+  it.each(['person', 'organization'] as const)(
+    'allocates the complete passenger table width for %s contracts',
+    (kind) => {
+      const output = structuredClone(printFixture);
+      output.customer.kind = kind;
+      const html = contractPrintHtml(output, printReferences);
+      const cols = [...html.matchAll(/<col style="width:(\d+)%">/g)].map(
+        (match) => Number(match[1]),
+      );
+      expect(cols).toHaveLength(kind === 'person' ? 8 : 9);
+      expect(cols.reduce((sum, width) => sum + width, 0)).toBe(100);
+      expect(html).toContain('overflow-wrap:anywhere');
+    },
+  );
   it('includes the three user-supplied notices below signatures and above the site', () => {
     const html = contractPrintHtml(printFixture, printReferences);
-    expect(html).toContain('در صورت تأیید نشدن هتل درخواستی، هتل مشابه جایگزین می‌گردد.');
-    expect(html).toContain('این برگه بدون قبض رسید صندوق فاقد هرگونه اعتبار می‌باشد.');
+    expect(html).toContain(
+      'در صورت تأیید نشدن هتل درخواستی، هتل مشابه جایگزین می‌گردد.',
+    );
+    expect(html).toContain(
+      'این برگه بدون قبض رسید صندوق فاقد هرگونه اعتبار می‌باشد.',
+    );
     expect(html).toContain('با آگاهی از مفاد قراردادهای خارج از کشور');
     expect(html).toContain('ارسال درخواست به آژانس نیایش سیر سحر');
-    expect(html).toContain('قبول تمامی شرایط، مواد و تبصره‌های قرارداد فوق می‌باشد.');
+    expect(html).toContain(
+      'قبول تمامی شرایط، مواد و تبصره‌های قرارداد فوق می‌باشد.',
+    );
     const terms = html.indexOf('<div class="customer-terms">');
     expect(terms).toBeGreaterThan(html.indexOf('<div class="signatures">'));
     expect(terms).toBeLessThan(html.indexOf('<footer>'));
