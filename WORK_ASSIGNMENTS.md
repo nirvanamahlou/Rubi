@@ -10,7 +10,7 @@
 - نتیجه: Selector مشترک هر دو فرم به `customersApi` و `masterDataApi` متصل شد؛ فقط مشتری فعال دارای رضایت جاری و Organization فعال با نقش `AGENCY` قابل انتخاب است. جست‌وجوی debounce، Retry، پیام خطای نشست/مجوز و Deep Link به بخش مالک نیز تکمیل شد.
 - اعتبارسنجی: Web lint بدون هشدار، Web typecheck، ۲۱ تست هدفمند مارکتینگ و Production Build با ۳۴ Route موفق‌اند. Build اجرایی با `NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api/v1` ساخته و جای نسخه قدیمی پورت ۳۱۰۰ اجرا شد؛ Health API پاسخ ۲۰۰ و Endpointهای محافظت‌شده مشتری/آژانس بدون نشست پاسخ صحیح ۴۰۱ دارند.
 
-## DOCUMENTS-007-STEP-UP-SECURITY — PC-B — READY_FOR_REVIEW
+## DOCUMENTS-007-STEP-UP-SECURITY — PC-B — IN_PROGRESS
 
 - درخواست و واگذاری صریح مالک محصول در 2026-09-07: PC-B در کنار PC-A به مرز عمومی IAM دسترسی داشته باشد تا برای سندهایی که هنگام بارگذاری علامت «نیازمند اعتبارسنجی دومرحله‌ای» می‌خورند، مشاهده و دانلود فقط پس از Step-up واقعی انجام شود. `COMPUTER_ID=PC-B`.
 - Branch مستقل `codex/pc-b-documents-step-up-security` از `origin/develop@7b84040` در Worktree `C:\Users\admin\Rubi-documents-step-up-security`؛ Branch و تغییرات PC-A/PR #90 حفظ و بازنویسی نمی‌شوند.
@@ -23,6 +23,8 @@
 - رابط: Checkbox در Upload اصلی و Customer وجود دارد؛ فرم فعال‌سازی/ورود کد فارسی است و پیش‌نمایش تصویری مجاز در Browser به PNG کم‌حجم دارای واترمارک سامانه، کد آرشیو و زمان تبدیل می‌شود. جلوگیری مطلق از Screenshot ادعا نمی‌شود.
 - اعتبارسنجی: Prisma format/validate/generate، lint کامل API/Web/Database، typecheck API/Web، Production Build کامل و ۳۴ Route، `808` تست API، `592` تست Web سالم و تست‌های هدفمند Migration موفق‌اند. زنجیره Migrationها روی PostgreSQL 18 خالی و ارتقای دیتابیس دارای User/Document آزمایشی پاس شد؛ تنها شکست Full Web همان Assertion قدیمی Customer وابسته به LF/CRLF و خارج از Scope است.
 - مرجع طراحی و Handoff: `docs/tasks/DOCUMENTS-007-STEP-UP-SECURITY.md`.
+- پیگیری صریح مالک محصول در 2026-09-07: همه تغییرات عملیاتی سند در زنگوله سامانه به‌صورت اعلان پایدار دیده شوند. محدوده افزوده شامل قرارداد عمومی نسخه‌دار Notifications، Persistence و API ماژول مستقل Notifications، Port عمومی ثبت اعلان برای Documents، Bell مرکزی App Shell و تست/مستندات همین قابلیت است. گیرنده امن هر تغییر، Actor و مالک سند است و در صورت یکی‌بودن فقط یک اعلان ساخته می‌شود؛ دسترسی کاربران یا شعب دیگر گسترش نمی‌یابد.
+- انتقال محدود قفل پیگیری: `Notifications shared-contract/root export Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY` و فایل مرکزی `apps/web/src/components/layout/app-shell.tsx` فقط برای Bell همین Task نزد PC-B رزرو است. Migration و Central Docs همان قفل موجود Task باقی می‌مانند و Dependency/Lockfile همچنان آزاد است.
 
 ## MASTER-005-EXCEL-IMPORT-PERSISTENCE — PC-B — DONE/MERGED
 
