@@ -247,7 +247,7 @@ export function SalesWorkspace() {
             <Search className="size-4 shrink-0 text-muted-foreground" />
             <input
               aria-label="جست‌وجوی قرارداد"
-              placeholder="شماره قرارداد یا نام مشتری…"
+              placeholder="شماره قرارداد، نام مشتری یا شماره پیگیری پرداخت…"
               maxLength={160}
               value={search}
               onChange={(event) => setSearch(event.target.value)}

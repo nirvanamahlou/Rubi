@@ -334,6 +334,13 @@ export class SalesService {
   }
 
   async list(query: SalesContractListQuery, actor: AuthenticatedActor) {
+    if (
+      query.search != null &&
+      (typeof query.search !== 'string' || query.search.length > 160)
+    )
+      throw new BadRequestException(
+        'عبارت جست‌وجو باید متن و حداکثر ۱۶۰ نویسه باشد.',
+      );
     let scope: Prisma.SalesContractWhereInput;
     if (has(actor, 'sales.contracts.read.all')) scope = {};
     else if (has(actor, 'sales.contracts.read.branch'))
@@ -348,7 +355,11 @@ export class SalesService {
         code: 'SALES_CONTRACT_FORBIDDEN',
         message: 'مجوز مشاهده قرارداد وجود ندارد.',
       });
-    const result = await this.repository.list(query, scope);
+    const result = await this.repository.list(
+      query,
+      scope,
+      has(actor, 'sales.payments.read'),
+    );
     return {
       data: result.data.map((row) => summary(presentSalesContract(row))),
       meta: {

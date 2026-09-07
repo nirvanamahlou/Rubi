@@ -112,6 +112,7 @@ export class SalesRepository {
   async list(
     query: SalesContractListQuery,
     whereScope: Prisma.SalesContractWhereInput,
+    searchPaymentReferences = false,
   ) {
     const where: Prisma.SalesContractWhereInput = {
       AND: [
@@ -119,6 +120,20 @@ export class SalesRepository {
         query.search
           ? {
               OR: [
+                ...(searchPaymentReferences
+                  ? [
+                      {
+                        payments: {
+                          some: {
+                            paymentReference: {
+                              contains: query.search.trim(),
+                              mode: 'insensitive' as const,
+                            },
+                          },
+                        },
+                      },
+                    ]
+                  : []),
                 {
                   contractNumber: {
                     contains: query.search,

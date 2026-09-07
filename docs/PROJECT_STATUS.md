@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-PAYMENT-EVIDENCE-0907 — COMPLETE_LOCAL
+
+Contract payments now accept optional tracking references in both creation and dashboard flows. Authorized dashboard search finds payment references within existing contract ownership/branch scope; payment rows can be filtered and show distinct Finance states. Saved payments expose receipt upload/list/download using public Documents APIs, registered FINANCE receipts, restricted confidentiality and unchanged scan/permission gates. Upload does not confirm payment; search is not a bank inquiry. 164 Web Sales tests, 62 API Sales/Documents tests, scoped lint/typechecks and API/Web production builds pass; synthetic browser workflow verified. Web3100/API4000 return 200; unauthenticated contract/document APIs return 401. No migration, grants, real-data upload or public push. See docs/tasks/SALES-PAYMENT-EVIDENCE-0907.md.
+
 ## SALES-CONTRACT-THEME-ROOM-0907 — COMPLETE_LOCAL
 
 Hotel section now uses the selected room-type name from the existing public Master Data lookup, not passenger DBL/child accommodation labels. Updated reference-style Persian/navy header, left number badges, pale table headings, three-column financial summary, signatures and contact footer. User-requested phone/email apply only to Niyayesh issuer; prior terms, passenger/currency totals and finance logic are preserved. B Nazanin bold rendering corrected in print and PDF. 161 Sales tests, scoped lint/typecheck and 36-route build pass; all five final synthetic PDF pages inspected (2/6/agency-6: one page; 42: two). Web3100 updated; Web/API 200. QR remains deferred to server-hosted contract viewing. No migration/API/IAM/data change or public push. See docs/tasks/SALES-CONTRACT-THEME-ROOM-0907.md.

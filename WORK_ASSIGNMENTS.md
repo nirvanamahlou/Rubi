@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-PAYMENT-EVIDENCE-0907 — PC-A — COMPLETE_LOCAL
+
+- Delivered payment tracking inputs/search and per-saved-payment receipt attachments through public Documents APIs; Finance status remains independent. 164 Web Sales tests, 62 API Sales/Documents tests, scoped lint/typechecks and API/Web production builds pass. Synthetic actual-component browser upload/list/download/search and uncertain-response checks pass; Web3100/API4000 updated and healthy. No migration, IAM grant, real receipt/payment mutation or public push. Scoped reservation released. See docs/tasks/SALES-PAYMENT-EVIDENCE-0907.md.
+
+- Reserve Sales payment UI/model/tests, payment-reference validation and scoped repository search, task/central docs from 54774eb. Existing paymentReference column/public type only; no migration. Attach files through existing Documents public upload/list/download with canonical sales/SalesContractPaymentEntry/payment-id reference, permissions/branch/scan gates unchanged. Upload after payment persistence; never imply upload or tracking search confirms Finance/bank settlement. No Documents producer edits, grants, dependencies, real data mutation or public push.
+
 ## SALES-CONTRACT-THEME-ROOM-0907 — PC-A — COMPLETE_LOCAL
 
 - Delivered Master Data room-type output, reference-aligned Persian header/section badges/financial cards and issuer-scoped contact footer; previous rules/amounts and deferred QR preserved. 161 Sales tests, scoped lint/typecheck, 36-route production build and all five final synthetic PDF pages pass. 6/agency-6 fit one A4, 42 use two. Web3100 updated; Web/API health 200. No data/schema/API/IAM changes or public push. Scoped reservations released; see docs/tasks/SALES-CONTRACT-THEME-ROOM-0907.md.

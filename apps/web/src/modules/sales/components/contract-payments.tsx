@@ -1,5 +1,6 @@
 'use client';
 import { SalesThemedSelect } from './sales-themed-select';
+import { PaymentDocuments } from './payment-documents';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type {
   MasterDataRecord,
@@ -78,6 +79,7 @@ export function ContractPayments({
   const [currencyRetry, setCurrencyRetry] = useState(0);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [referenceSearch, setReferenceSearch] = useState('');
   const attempt = useRef({ fingerprint: '', key: '' });
   useEffect(() => {
     let active = true;
@@ -208,21 +210,58 @@ export function ContractPayments({
           {balance.confirmedPaid}
         </p>
       ))}
-      {contract?.payments.map((item) => (
-        <div key={item.id} className="rounded-xl border p-3">
-          <strong>
-            {item.amount} {item.currencyCode}
-          </strong>{' '}
-          ·{' '}
-          {item.status === 'FINANCE_CONFIRMED'
-            ? 'تأییدشده مالی'
-            : 'در انتظار تأیید مالی'}
-          <p>
-            سررسید: {new Date(item.dueAt).toLocaleDateString('fa-IR')}
-            {item.check ? ` · تاریخ چک: ${item.check.dueDate}` : ''}
-          </p>
-        </div>
-      ))}
+      <FormField label="جست‌وجوی شماره پیگیری در پرداخت‌های این قرارداد">
+        <Input
+          value={referenceSearch}
+          maxLength={160}
+          onChange={(event) => setReferenceSearch(event.target.value)}
+        />
+      </FormField>
+      {contract?.payments
+        .filter(
+          (item) =>
+            !referenceSearch.trim() ||
+            item.paymentReference
+              ?.toLocaleLowerCase()
+              .includes(referenceSearch.trim().toLocaleLowerCase()),
+        )
+        .map((item) => (
+          <div key={item.id} className="rounded-xl border p-3">
+            <strong>
+              {item.amount} {item.currencyCode}
+            </strong>{' '}
+            ·{' '}
+            {
+              {
+                FINANCE_CONFIRMED: 'تأییدشده مالی',
+                FINANCE_REJECTED: 'ردشده توسط مالی',
+                SCHEDULED: 'برنامه‌ریزی‌شده',
+                PENDING_FINANCE_CONFIRMATION: 'در انتظار تأیید مالی',
+              }[item.status]
+            }
+            <p>
+              شماره پیگیری: <bdi>{item.paymentReference || 'ثبت نشده'}</bdi>
+            </p>
+            <p>
+              سررسید: {new Date(item.dueAt).toLocaleDateString('fa-IR')}
+              {item.check ? ` · تاریخ چک: ${item.check.dueDate}` : ''}
+            </p>
+            <PaymentDocuments
+              key={item.id}
+              contract={contract}
+              paymentId={item.id}
+            />
+          </div>
+        ))}
+      {contract &&
+      referenceSearch.trim() &&
+      !contract.payments.some((item) =>
+        item.paymentReference
+          ?.toLocaleLowerCase()
+          .includes(referenceSearch.trim().toLocaleLowerCase()),
+      ) ? (
+        <p role="status">پرداختی با این شماره پیگیری یافت نشد.</p>
+      ) : null}
       <p className="text-sm text-muted-foreground">
         افزودن ردیف پرداخت به‌تنهایی مانده را کم نمی‌کند؛ تأیید مالی لازم است.
       </p>
@@ -282,6 +321,21 @@ export function ContractPayments({
             onChange={(dueAt) => setPayment({ ...payment, dueAt })}
           />
         </FormField>
+        <FormField label="شماره پیگیری پرداخت (اختیاری)">
+          <Input
+            dir="ltr"
+            maxLength={160}
+            value={payment.paymentReference ?? ''}
+            onChange={(event) =>
+              setPayment({ ...payment, paymentReference: event.target.value })
+            }
+          />
+        </FormField>
+        <p className="text-xs text-muted-foreground md:col-span-2">
+          پس از افزودن پرداخت، دکمهٔ «مدارک پرداخت» در همان ردیف برای بارگذاری
+          رسید فعال است. شماره پیگیری را در جست‌وجوی داشبورد فروش هم می‌توانید
+          پیدا کنید؛ این جست‌وجو استعلام بانکی نیست.
+        </p>
         <FormField label="روش پرداخت">
           <SalesThemedSelect
             label="روش پرداخت"

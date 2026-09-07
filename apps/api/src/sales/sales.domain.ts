@@ -420,6 +420,19 @@ export function validateSalesPayment(payment: SalesPaymentInput): void {
       'SALES_PAYMENT_INVALID',
       'ساختار پرداخت معتبر نیست.',
     );
+  if (
+    payment.paymentReference != null &&
+    (typeof payment.paymentReference !== 'string' ||
+      payment.paymentReference.length > 160 ||
+      [...payment.paymentReference].some(
+        (character) =>
+          character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
+      ))
+  )
+    throw new SalesDomainError(
+      'SALES_PAYMENT_REFERENCE_INVALID',
+      'شماره پیگیری باید متن معتبر و حداکثر ۱۶۰ نویسه باشد.',
+    );
   currency(payment.currencyCode);
   if (decimalUnits(payment.amount) <= 0n)
     throw new SalesDomainError(

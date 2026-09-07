@@ -25,7 +25,7 @@ describe('sales dashboard loading', () => {
     const html = renderToStaticMarkup(<SalesWorkspace />);
     expect(html).toContain('جست‌وجوی قرارداد');
     expect(html).toContain('وضعیت تسویه');
-    expect(html).toContain('شماره قرارداد یا نام مشتری');
+    expect(html).toContain('شماره قرارداد، نام مشتری یا شماره پیگیری پرداخت');
     expect(html).not.toContain('اولین قرارداد سفر را ثبت کنید');
   });
   it('keeps an empty successful contract list separate from unavailable statistics', async () => {

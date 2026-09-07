@@ -88,7 +88,9 @@ export function SalesPaymentPlan({
             <h3 className="font-bold">برنامه پرداخت قرارداد</h3>
             <p className="mt-1 text-xs text-muted-foreground">
               {payments.length.toLocaleString('fa-IR')} پرداخت
-              {checkCount ? ` · ${checkCount.toLocaleString('fa-IR')} چک` : ''}{' '}
+              {checkCount
+                ? ` · ${checkCount.toLocaleString('fa-IR')} چک`
+                : ''}{' '}
               · مبلغ و سررسید هر پرداخت را مشخص کنید.
             </p>
           </div>
@@ -233,6 +235,25 @@ export function SalesPaymentPlan({
                     onChange={(dueAt) => change(index, { ...payment, dueAt })}
                   />
                 </FormField>
+              </div>
+              <div className="px-3 pb-3">
+                <FormField label="شماره پیگیری پرداخت (اختیاری)">
+                  <Input
+                    maxLength={160}
+                    dir="ltr"
+                    value={payment.paymentReference ?? ''}
+                    onChange={(event) =>
+                      change(index, {
+                        ...payment,
+                        paymentReference: event.target.value,
+                      })
+                    }
+                  />
+                </FormField>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  پس از ثبت قرارداد، از «پرداخت‌ها و اقساط» می‌توانید مدرک هر
+                  پرداخت را بارگذاری کنید.
+                </p>
               </div>
               {payment.method === 'CHECK' ? (
                 <section
