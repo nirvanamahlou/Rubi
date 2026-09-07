@@ -851,3 +851,7 @@ Customers، Finance، Procurement، Reservations، Integrations و Documents خ�
 Branch: codex/pc-b-hr-time-development; base a44d622 (existing HR work preserved). Scope: apps/web/src/modules/hr/** and HR task/status documentation. Navigation, time imports/exports, derived fields, weighted goals and training. No migration, dependency or shared contract changes.
 
 HR-002 follow-up / PC-B: standalone personnel documents navigation removal; HR-owned model only, no data deletion.
+
+HR-003 / PC-B / IN_PROGRESS: per-section overview and PDF reporting, HR-owned files only; existing branch continuation. No shared contracts or dependencies.
+
+HR-003 / READY_FOR_REVIEW: HR section overview/PDF reports implemented, no shared locks acquired.

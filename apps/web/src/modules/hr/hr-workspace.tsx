@@ -80,6 +80,7 @@ import {
   type ContextualHrFormContext,
 } from './contextual-hr-form';
 import { parseWeightedGoals } from './weighted-goals';
+import { SectionReports, type SectionReport } from './section-reports';
 import { ShiftCalendar } from './shift-calendar';
 import { downloadHrXlsx, readHrXlsx } from './hr-xlsx';
 import { contractRecordFromRow, downloadContractPdf } from './hr-contract-pdf';
@@ -1641,6 +1642,7 @@ function genericTable(
       cells.map((cell, index) =>
         index === programIndex ? (
           <button
+            key={`program-${rowIndex}`}
             type="button"
             className={styles.textButton}
             onClick={() => editRow(rowIndex, dataset.rows[rowIndex]!)}
@@ -1768,7 +1770,9 @@ function OrganizationSection({
   employeeOptions,
   initialTab,
   onMutation,
+  onReportData,
 }: {
+  onReportData: (reports: readonly SectionReport[]) => void;
   employeeOptions: readonly string[];
   initialTab?: string | undefined;
   onMutation: (
@@ -1789,6 +1793,42 @@ function OrganizationSection({
   );
   const [catalogRecords, setCatalogRecords] =
     useState<OrganizationCatalogRecords>(initialOrganizationCatalogRecords);
+  useEffect(() => {
+    onReportData([
+      {
+        id: 'orgchart',
+        title: 'چارت سازمانی',
+        data: {
+          columns: ['عنوان', 'شرکت', 'مدیر', 'والد', 'وضعیت'],
+          rows: nodes.map((node) => [
+            node.name,
+            node.branch,
+            node.manager,
+            nodes.find((parent) => parent.id === node.parentId)?.name ?? '—',
+            node.status,
+          ]),
+          totalLabel: '',
+        },
+      },
+      ...Object.entries(catalogRecords).map(([id, rows]) => ({
+        id,
+        title:
+          sectionTabs.organization?.find((tab) => tab.id === id)?.label ?? id,
+        data: {
+          columns: organizationCatalogSchemas[
+            id as OrganizationCatalogTab
+          ].columns.map((column) => column.label),
+          rows: rows.map((row) =>
+            organizationCatalogSchemas[
+              id as OrganizationCatalogTab
+            ].columns.map((column) => row[column.key]),
+          ),
+          totalLabel: '',
+        },
+      })),
+    ]);
+  }, [nodes, catalogRecords, onReportData]);
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingNode, setEditingNode] = useState<
     OrganizationNode | undefined
@@ -2674,6 +2714,9 @@ export function HrWorkspace({
 }) {
   const section = normalizeSection(sectionId);
   const workspace = normalizeFrappeWorkspace(workspaceId);
+  const [organizationReports, setOrganizationReports] = useState<
+    readonly SectionReport[]
+  >([]);
   const [employees, setEmployees] =
     useState<readonly PreviewEmployee[]>(previewEmployees);
   const [editingEmployee, setEditingEmployee] =
@@ -3416,6 +3459,7 @@ export function HrWorkspace({
   else if (section === 'organization')
     screen = (
       <OrganizationSection
+        onReportData={setOrganizationReports}
         employeeOptions={employees.map((employee) => employee.name)}
         initialTab={tabId}
         key={`organization:${tabId ?? ''}`}
@@ -3453,6 +3497,59 @@ export function HrWorkspace({
         section={section}
       />
     );
+  const reports: readonly SectionReport[] = workspace
+    ? getFrappeWorkspace(workspace)
+        .groups.flatMap((group) =>
+          group.items
+            .filter((item) => item.tab)
+            .map((item) => ({
+              id: `${item.section}-${item.tab}`,
+              title: item.label,
+              data: getDataset(item.section, item.tab!),
+            })),
+        )
+        .filter(
+          (item, index, items) =>
+            items.findIndex((other) => other.id === item.id) === index,
+        )
+    : section === 'organization'
+      ? organizationReports
+      : section === 'employees' || section === 'dashboard'
+        ? [
+            {
+              id: 'employees',
+              title: 'کارکنان',
+              data: {
+                columns: [
+                  'نام و نام خانوادگی',
+                  'کد پرسنلی',
+                  'شرکت و واحد',
+                  'سمت',
+                  'مدیر مستقیم',
+                  'وضعیت',
+                ],
+                rows: employees.map((employee) => [
+                  employee.name,
+                  employee.id,
+                  employee.unit,
+                  employee.position,
+                  employee.manager,
+                  employee.status,
+                ]),
+                totalLabel: '',
+              },
+            },
+          ]
+        : (section === 'employee'
+            ? employeeTabs.filter((tab) => tab.id !== 'summary')
+            : (sectionTabs[section] ?? [
+                { id: 'list', label: screenMeta[section].title },
+              ])
+          ).map((tab) => ({
+            id: tab.id,
+            title: tab.label,
+            data: getDataset(section, tab.id),
+          }));
   return (
     <main
       className={styles.workspace}
@@ -3467,7 +3564,21 @@ export function HrWorkspace({
           {notice}
         </div>
       ) : null}
-      {screen}
+      {section === 'home' && !workspace ? (
+        screen
+      ) : (
+        <SectionReports
+          key={section}
+          title={
+            workspace
+              ? getFrappeWorkspace(workspace).title
+              : screenMeta[section].title
+          }
+          reports={reports}
+        >
+          {screen}
+        </SectionReports>
+      )}
       {contextualForm ? (
         <ContextualHrFormDialog
           context={contextualForm}
