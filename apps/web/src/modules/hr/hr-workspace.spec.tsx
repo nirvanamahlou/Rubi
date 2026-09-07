@@ -55,7 +55,7 @@ import { getHrPreviewDataset } from './hr-preview-data';
 describe('HR reference implementation', () => {
   it('renders the eighteen capability hub cards as deep links', () => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId="home" />);
-    expect(hrHubCards).toHaveLength(16);
+    expect(hrHubCards).toHaveLength(15);
     expect(html).toContain('dir="rtl"');
     expect(html).toContain('data-hr-mode="preview"');
     for (const card of hrHubCards) {

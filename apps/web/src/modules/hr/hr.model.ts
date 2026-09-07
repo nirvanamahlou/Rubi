@@ -180,15 +180,6 @@ export const hrHubCards: readonly HrHubCard[] = [
   },
 
   {
-    id: 'documents',
-    title: 'مدارک پرسنلی',
-    description: 'مدارک الزامی، نسخه، بررسی، انقضا و دسترسی محرمانه',
-    icon: FileArchive,
-    tone: 'green',
-    pills: ['HR15', 'نسخه سند', 'انقضا'],
-    footer: '۵ دسته مدرک',
-  },
-  {
     id: 'requests',
     title: 'مرکز درخواست‌ها',
     description: 'کارتابل یکپارچه مرخصی، مأموریت، اصلاح تردد و سایر درخواست‌ها',
@@ -483,7 +474,7 @@ const validSectionIds = new Set<HrSectionId>(
   Object.keys(screenMeta) as HrSectionId[],
 );
 export function normalizeSection(value?: string): HrSectionId {
-  if (value === 'benefits') return 'home';
+  if (value === 'benefits' || value === 'documents') return 'home';
   if (value === 'fleet') return 'assets';
   return validSectionIds.has(value as HrSectionId)
     ? (value as HrSectionId)
