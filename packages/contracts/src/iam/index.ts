@@ -1,4 +1,5 @@
 export const IAM_PERMISSION_CONTRACT_VERSION = 7 as const;
+export const IAM_STEP_UP_CONTRACT_VERSION = 1 as const;
 
 export const IAM_CORE_PERMISSION_CODES = [
   'iam.users.read',
@@ -123,4 +124,34 @@ export interface LoginResponse {
     permissions: IamPermissionCode[];
     branches: BranchReference[];
   };
+}
+
+export interface IamMfaStatusV1 {
+  enabled: boolean;
+  setupPending: boolean;
+  lockedUntil: string | null;
+}
+
+export interface IamMfaStatusResponseV1 {
+  data: IamMfaStatusV1;
+}
+
+export interface IamMfaSetupBeginInputV1 {
+  currentPassword: string;
+}
+
+export interface IamMfaSetupBeginResponseV1 {
+  data: {
+    manualKey: string;
+    otpAuthUri: string;
+    expiresAt: string;
+  };
+}
+
+export interface IamMfaSetupConfirmInputV1 {
+  code: string;
+}
+
+export interface IamMfaSetupConfirmResponseV1 {
+  data: IamMfaStatusV1;
 }

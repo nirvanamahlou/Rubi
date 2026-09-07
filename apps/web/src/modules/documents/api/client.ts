@@ -1,5 +1,7 @@
 import type {
   DocumentAuditResponseV1,
+  DocumentAccessGrantInputV1,
+  DocumentAccessGrantResponseV1,
   DocumentArchiveActionInputV1,
   DocumentBulkActionInputV1,
   DocumentBulkActionResponseV1,
@@ -67,6 +69,7 @@ async function requestFile(
   path: string,
   sensitiveReason?: string,
   signal?: AbortSignal,
+  accessGrantToken?: string,
   retriedAfterRefresh = false,
 ): Promise<{ blob: Blob; disposition: string | null }> {
   const baseUrl = getPublicApiBaseUrl();
@@ -82,6 +85,9 @@ async function requestFile(
             'x-sensitive-read-reason': encodeURIComponent(sensitiveReason),
           }
         : {}),
+      ...(accessGrantToken
+        ? { 'x-document-access-grant': accessGrantToken }
+        : {}),
     },
   });
   if (
@@ -89,16 +95,18 @@ async function requestFile(
     !retriedAfterRefresh &&
     (await refreshAuthenticatedSession(baseUrl))
   ) {
-    return requestFile(path, sensitiveReason, signal, true);
+    return requestFile(path, sensitiveReason, signal, accessGrantToken, true);
   }
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
+      code?: string;
       message?: string;
-      error?: { message?: string };
+      error?: { code?: string; message?: string };
     } | null;
     throw new DocumentsApiError(
       envelope?.error?.message ?? envelope?.message ?? 'دریافت فایل مجاز نیست.',
       response.status,
+      envelope?.error?.code ?? envelope?.code,
     );
   }
   return {
@@ -192,14 +200,35 @@ export const documentsApi = {
       body: JSON.stringify(input),
     });
   },
-  download(id: string, sensitiveReason?: string) {
-    return requestFile(`/${encodeURIComponent(id)}/download`, sensitiveReason);
+  createAccessGrant(id: string, input: DocumentAccessGrantInputV1) {
+    return request<DocumentAccessGrantResponseV1>(
+      `/${encodeURIComponent(id)}/access-grants`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      },
+    );
   },
-  preview(id: string, sensitiveReason?: string, signal?: AbortSignal) {
+  download(id: string, sensitiveReason?: string, accessGrantToken?: string) {
+    return requestFile(
+      `/${encodeURIComponent(id)}/download`,
+      sensitiveReason,
+      undefined,
+      accessGrantToken,
+    );
+  },
+  preview(
+    id: string,
+    sensitiveReason?: string,
+    signal?: AbortSignal,
+    accessGrantToken?: string,
+  ) {
     return requestFile(
       `/${encodeURIComponent(id)}/preview`,
       sensitiveReason,
       signal,
+      accessGrantToken,
     );
   },
 };

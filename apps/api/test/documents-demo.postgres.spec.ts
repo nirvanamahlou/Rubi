@@ -284,9 +284,16 @@ describe.skipIf(process.env.RUBI_RUN_DOCUMENTS_DEMO_POSTGRES_TESTS !== '1')(
       ).toBe('عنوان ویرایش‌شده کاربر');
 
       const repository = new DocumentsRepository({ client } as DatabaseService);
-      const service = new DocumentsService(repository, storage, {
-        available: true,
-      } as DocumentsScanProcessor);
+      const service = new DocumentsService(
+        repository,
+        storage,
+        {
+          available: true,
+        } as DocumentsScanProcessor,
+        {
+          verifyStepUp: async () => undefined,
+        },
+      );
       const actor: AuthenticatedActor = {
         userId,
         sessionId: userId,

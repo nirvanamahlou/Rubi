@@ -13,6 +13,7 @@ import {
   IsString,
   IsUUID,
   Length,
+  Matches,
   Max,
   MaxLength,
   Min,
@@ -20,6 +21,7 @@ import {
 } from 'class-validator';
 import type {
   DocumentArchiveStatusCode,
+  DocumentAccessPurposeCode,
   DocumentConfidentialityCode,
   DocumentDomainCode,
   DocumentSortCode,
@@ -27,6 +29,7 @@ import type {
 } from '@rubi/contracts';
 import {
   DOCUMENT_ARCHIVE_STATUS_CODES,
+  DOCUMENT_ACCESS_PURPOSE_CODES,
   DOCUMENT_CONFIDENTIALITY_CODES,
   DOCUMENT_DOMAIN_CODES,
   DOCUMENT_PERSONAL_VIEW_CODES,
@@ -35,6 +38,13 @@ import {
 
 const emptyToUndefined = ({ value }: { value: unknown }) =>
   typeof value === 'string' && value.trim() === '' ? undefined : value;
+
+const multipartBoolean = ({ value }: { value: unknown }) => {
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false' || value === '' || value === undefined) return false;
+  return value;
+};
 
 export class DocumentListQueryDto {
   @IsOptional()
@@ -227,6 +237,21 @@ export class DocumentUploadDto {
   @IsString()
   @MaxLength(500)
   versionNote?: string;
+
+  @IsOptional()
+  @Transform(multipartBoolean)
+  @IsBoolean()
+  requiresStepUpVerification?: boolean;
+}
+
+export class DocumentAccessGrantDto {
+  @IsString()
+  @Length(6, 6)
+  @Matches(/^\d{6}$/u)
+  code!: string;
+
+  @IsEnum(DOCUMENT_ACCESS_PURPOSE_CODES)
+  purpose!: DocumentAccessPurposeCode;
 }
 
 export class DocumentUpdateDto {

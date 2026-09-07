@@ -18,6 +18,7 @@ import { allowedDocumentDomains } from './documents.repository';
 import { DocumentsService } from './documents.service';
 import type { DocumentsScanProcessor } from './documents.scan-processor';
 import type { LocalDocumentStorage } from './documents.storage';
+import type { IamStepUpPort } from '../iam/iam-step-up.port';
 
 const branchId = '33333333-3333-4333-8333-333333333333';
 const actor: AuthenticatedActor = {
@@ -38,6 +39,7 @@ function row(
     confidentiality: DocumentDetailRow['confidentiality'];
     domain: DocumentDetailRow['documentType']['domain'];
     isIncomplete: boolean;
+    requiresStepUpVerification: boolean;
     legalHoldActive: boolean;
     mimeType: string;
     requiresExpiry: boolean;
@@ -82,6 +84,7 @@ function row(
     currentVersionNumber: 1,
     currentVersionId: version.id,
     isIncomplete: overrides.isIncomplete ?? false,
+    requiresStepUpVerification: overrides.requiresStepUpVerification ?? false,
     version: overrides.version ?? 1,
     legalHoldActive: overrides.legalHoldActive ?? false,
     proposedDeletionAt: null,
@@ -137,6 +140,8 @@ describe('DocumentsService security and persistence flow', () => {
     permanentlyDelete: vi.fn(),
     createUploaded: vi.fn(),
     appendAudit: vi.fn(),
+    createAccessGrant: vi.fn(),
+    consumeAccessGrant: vi.fn(),
     audit: vi.fn(),
   };
   const storage = {
@@ -148,6 +153,7 @@ describe('DocumentsService security and persistence flow', () => {
     available: true,
     processVersion: vi.fn().mockResolvedValue(false),
   };
+  const iamStepUp = { verifyStepUp: vi.fn() };
   let service: DocumentsService;
 
   beforeEach(() => {
@@ -156,6 +162,7 @@ describe('DocumentsService security and persistence flow', () => {
       repository as unknown as DocumentsRepository,
       storage as unknown as LocalDocumentStorage,
       scanProcessor as unknown as DocumentsScanProcessor,
+      iamStepUp as unknown as IamStepUpPort,
     );
   });
 
@@ -347,6 +354,124 @@ describe('DocumentsService security and persistence flow', () => {
 
     expect(denied.data.capabilities.viewFile).toBe(false);
     expect(allowed.data.capabilities.viewFile).toBe(true);
+  });
+
+  it('exchanges a valid TOTP code for a short-lived hashed one-time grant', async () => {
+    const protectedActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.file.read',
+        'documents.sensitive.read',
+      ],
+    };
+    repository.findDetail.mockResolvedValue(
+      row({
+        mimeType: 'image/jpeg',
+        scanStatus: 'CLEAN',
+        requiresStepUpVerification: true,
+      }),
+    );
+    repository.createAccessGrant.mockResolvedValue(undefined);
+    repository.appendAudit.mockResolvedValue({});
+    iamStepUp.verifyStepUp.mockResolvedValue(undefined);
+
+    const result = await service.createAccessGrant(
+      row().id,
+      { code: '123456', purpose: 'PREVIEW' },
+      protectedActor,
+      { ipAddress: '192.0.2.44', userAgent: 'vitest' },
+    );
+
+    expect(iamStepUp.verifyStepUp).toHaveBeenCalledWith(
+      protectedActor,
+      '123456',
+      expect.any(Object),
+    );
+    expect(result.data.token).toMatch(/^[A-Za-z0-9_-]{40,}$/u);
+    expect(result.data.token).not.toContain('123456');
+    expect(repository.createAccessGrant).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        actorUserId: protectedActor.userId,
+        actorSessionId: protectedActor.sessionId,
+        purpose: 'PREVIEW',
+      }),
+    );
+    expect(repository.createAccessGrant.mock.calls[0]?.[0].tokenHash).not.toBe(
+      result.data.token,
+    );
+  });
+
+  it('fails closed when a protected preview has no one-time grant', async () => {
+    const protectedActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.file.read',
+        'documents.sensitive.read',
+      ],
+    };
+    repository.findDetail.mockResolvedValue(
+      row({
+        mimeType: 'image/jpeg',
+        scanStatus: 'CLEAN',
+        requiresStepUpVerification: true,
+      }),
+    );
+    repository.appendAudit.mockResolvedValue({});
+
+    await expect(
+      service.preview(row().id, protectedActor, {
+        sensitiveReason: 'بررسی پرونده',
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.consumeAccessGrant).not.toHaveBeenCalled();
+    expect(storage.openQuarantined).not.toHaveBeenCalled();
+    expect(repository.appendAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        outcome: 'FAILURE',
+        reason: 'PREVIEW_STEP_UP_DENIED',
+      }),
+    );
+  });
+
+  it('consumes a protected preview grant bound to user and session', async () => {
+    const protectedActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.file.read',
+        'documents.sensitive.read',
+      ],
+    };
+    repository.findDetail.mockResolvedValue(
+      row({
+        mimeType: 'image/jpeg',
+        scanStatus: 'CLEAN',
+        requiresStepUpVerification: true,
+      }),
+    );
+    repository.consumeAccessGrant.mockResolvedValue(true);
+    repository.appendAudit.mockResolvedValue({});
+    storage.openQuarantined.mockResolvedValue(
+      Readable.from(Buffer.from([0xff, 0xd8, 0xff, 0xd9])),
+    );
+
+    await service.preview(row().id, protectedActor, {
+      sensitiveReason: 'بررسی پرونده',
+      accessGrantToken: 'one-time-grant',
+    });
+
+    expect(repository.consumeAccessGrant).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: protectedActor.userId,
+        actorSessionId: protectedActor.sessionId,
+        purpose: 'PREVIEW',
+        tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(storage.openQuarantined).toHaveBeenCalledOnce();
   });
 
   it('stores a valid upload under an opaque key and records it as quarantined', async () => {

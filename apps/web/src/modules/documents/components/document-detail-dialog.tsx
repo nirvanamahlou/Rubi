@@ -16,6 +16,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { DocumentAuditEventV1, DocumentDetailV1 } from '@rubi/contracts';
+import { useState } from 'react';
 
 import {
   createDocumentConnectionHref,
@@ -25,6 +26,7 @@ import {
   getDocumentRelationConnection,
 } from '../model/document-connections';
 import { DocumentImagePreview } from './document-image-preview';
+import { DocumentStepUpForm } from './document-step-up-form';
 
 import {
   Alert,
@@ -83,6 +85,7 @@ const auditActionLabel: Record<string, string> = {
   'documents.metadata.update': 'ویرایش اطلاعات سند',
   'documents.download': 'دانلود فایل',
   'documents.file.preview': 'مشاهده پیش‌نمایش',
+  'documents.access_grant.create': 'صدور مجوز یک‌بارمصرف',
   'documents.antivirus.scan': 'بررسی امنیتی فایل',
   'documents.archive': 'انتقال به آرشیو',
   'documents.restore': 'بازیابی از آرشیو',
@@ -99,6 +102,11 @@ const auditReasonLabel: Record<string, string> = {
   PREVIEW_SCAN_BLOCKED: 'پیش‌نمایش تا پایان بررسی امنیتی بسته است',
   PREVIEW_TYPE_UNSUPPORTED: 'این نوع فایل پیش‌نمایش ندارد',
   PREVIEW_POLICY_DENIED: 'پیش‌نمایش طبق سطح دسترسی رد شد',
+  DOWNLOAD_STEP_UP_DENIED: 'اعتبارسنجی دومرحله‌ای دانلود انجام نشد',
+  PREVIEW_STEP_UP_DENIED: 'اعتبارسنجی دومرحله‌ای نمایش انجام نشد',
+  STEP_UP_VERIFICATION_FAILED: 'کد دومرحله‌ای نامعتبر بود',
+  PREVIEW: 'مجوز موقت پیش‌نمایش صادر شد',
+  DOWNLOAD: 'مجوز موقت دانلود صادر شد',
 };
 
 function date(value: string | null) {
@@ -150,11 +158,16 @@ export function DocumentDetailDialog({
   loading: boolean;
   favorite: boolean;
   onCopyLink: (document: DocumentDetailV1) => void;
-  onDownload: (document: DocumentDetailV1) => void;
+  onDownload: (
+    document: DocumentDetailV1,
+    sensitiveReason?: string,
+    accessGrantToken?: string,
+  ) => Promise<void>;
   onLoadPreview: (
     document: DocumentDetailV1,
     sensitiveReason: string | undefined,
     signal: AbortSignal,
+    accessGrantToken: string | undefined,
   ) => Promise<Blob>;
   onOpenChange: (open: boolean) => void;
   onDelete: (document: DocumentDetailV1) => void;
@@ -163,6 +176,8 @@ export function DocumentDetailDialog({
   open: boolean;
   shareLink: string;
 }) {
+  const [downloadStepUpVisible, setDownloadStepUpVisible] = useState(false);
+  const [downloadReason, setDownloadReason] = useState('');
   const documentConnection = document
     ? getDocumentConnection(document.type.domain)
     : null;
@@ -174,7 +189,16 @@ export function DocumentDetailDialog({
       : null;
 
   return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
+    <Dialog
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          setDownloadStepUpVisible(false);
+          setDownloadReason('');
+        }
+        onOpenChange(nextOpen);
+      }}
+      open={open}
+    >
       <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto p-0">
         <div className="sticky top-0 z-10 border-b border-sky-200 bg-gradient-to-l from-sky-50 via-white to-blue-50 px-6 py-5 pe-14 dark:border-sky-400/20 dark:from-sky-950/70 dark:via-surface dark:to-blue-950/50">
           <div className="flex items-center gap-3">
@@ -274,17 +298,56 @@ export function DocumentDetailDialog({
                       title="کنترل امنیت فایل"
                       tone="warning"
                     />
+                    {document.confidentiality === 'CONFIDENTIAL' ||
+                    document.confidentiality === 'RESTRICTED' ? (
+                      <Input
+                        aria-label="دلیل دانلود سند محرمانه"
+                        onChange={(event) =>
+                          setDownloadReason(event.target.value)
+                        }
+                        placeholder="دلیل دانلود، مثلاً بررسی پرونده"
+                        value={downloadReason}
+                      />
+                    ) : null}
                     <Button
                       className="w-full"
                       disabled={
                         !document.capabilities.download ||
-                        document.currentVersion.scanStatus !== 'CLEAN'
+                        document.currentVersion.scanStatus !== 'CLEAN' ||
+                        ((document.confidentiality === 'CONFIDENTIAL' ||
+                          document.confidentiality === 'RESTRICTED') &&
+                          downloadReason.trim().length < 5)
                       }
-                      onClick={() => onDownload(document)}
+                      onClick={() => {
+                        if (document.requiresStepUpVerification) {
+                          setDownloadStepUpVisible(true);
+                          return;
+                        }
+                        void onDownload(
+                          document,
+                          downloadReason.trim() || undefined,
+                        ).catch(() => undefined);
+                      }}
                     >
                       <Download className="size-4" aria-hidden="true" />
                       دانلود نسخه مجاز
                     </Button>
+                    {downloadStepUpVisible ? (
+                      <div className="rounded-2xl border border-sky-200 bg-surface p-3 shadow-sm lg:col-span-2">
+                        <DocumentStepUpForm
+                          document={document}
+                          onGranted={async (token) => {
+                            await onDownload(
+                              document,
+                              downloadReason.trim() || undefined,
+                              token,
+                            );
+                            setDownloadStepUpVisible(false);
+                          }}
+                          purpose="DOWNLOAD"
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </TabsContent>
@@ -302,6 +365,12 @@ export function DocumentDetailDialog({
                     ],
                     ['وضعیت آرشیو', archiveStatusLabel[document.archiveStatus]],
                     ['وضعیت مدرک', document.isIncomplete ? 'ناقص' : 'کامل'],
+                    [
+                      'اعتبارسنجی نمایش',
+                      document.requiresStepUpVerification
+                        ? 'کد دومرحله‌ای الزامی'
+                        : 'مجوز عادی',
+                    ],
                     ['اعتبار', date(document.validUntil)],
                     ['نام فایل', document.currentVersion.safeDownloadName],
                     [

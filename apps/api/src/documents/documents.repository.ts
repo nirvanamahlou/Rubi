@@ -1,5 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { DocumentDomainCode, DocumentListQueryV1 } from '@rubi/contracts';
+import type {
+  DocumentAccessPurposeCode,
+  DocumentDomainCode,
+  DocumentListQueryV1,
+} from '@rubi/contracts';
 import { AuditOutcome, type Prisma } from '@rubi/database';
 
 import { DatabaseService } from '../database/database.service';
@@ -619,6 +623,7 @@ export class DocumentsRepository {
     sourceEntityId: string;
     sourceDisplayLabel: string;
     confidentiality: string;
+    requiresStepUpVerification: boolean;
     validUntil: Date | null;
     originalFileName: string;
     safeDownloadName: string;
@@ -646,6 +651,7 @@ export class DocumentsRepository {
           sourceEntityType: input.sourceEntityType,
           sourceEntityId: input.sourceEntityId,
           confidentiality: input.confidentiality as never,
+          requiresStepUpVerification: input.requiresStepUpVerification,
           validUntil: input.validUntil,
           createdByUserId: input.actorUserId,
           updatedByUserId: input.actorUserId,
@@ -729,6 +735,48 @@ export class DocumentsRepository {
         outcome: input.outcome,
       },
     });
+  }
+
+  async createAccessGrant(input: {
+    tokenHash: string;
+    documentId: string;
+    actorUserId: string;
+    actorSessionId: string;
+    purpose: DocumentAccessPurposeCode;
+    expiresAt: Date;
+  }): Promise<void> {
+    await this.database.client.$transaction([
+      this.database.client.documentAccessGrant.deleteMany({
+        where: {
+          expiresAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
+      }),
+      this.database.client.documentAccessGrant.create({
+        data: input,
+      }),
+    ]);
+  }
+
+  async consumeAccessGrant(input: {
+    tokenHash: string;
+    documentId: string;
+    actorUserId: string;
+    actorSessionId: string;
+    purpose: DocumentAccessPurposeCode;
+  }): Promise<boolean> {
+    const claimed = await this.database.client.documentAccessGrant.updateMany({
+      where: {
+        tokenHash: input.tokenHash,
+        documentId: input.documentId,
+        actorUserId: input.actorUserId,
+        actorSessionId: input.actorSessionId,
+        purpose: input.purpose,
+        consumedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      data: { consumedAt: new Date() },
+    });
+    return claimed.count === 1;
   }
 
   audit(documentId: string) {

@@ -15,14 +15,32 @@ export const environmentValidationSchema = Joi.object({
     .uri({ scheme: ['postgresql', 'postgres'] })
     .required(),
   IAM_ACCESS_TOKEN_SECRET: Joi.string().min(32).required(),
+  IAM_TOTP_ENCRYPTION_KEY_BASE64: Joi.string()
+    .pattern(/^[A-Za-z0-9+/]{43}=$/)
+    .invalid(
+      Joi.ref('IAM_ACCESS_TOKEN_SECRET'),
+      Joi.ref('CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64'),
+      Joi.ref('CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64'),
+      Joi.ref('MASTER_DATA_IMPORT_TOKEN_KEY_BASE64'),
+      Joi.ref('DOCUMENTS_STORAGE_ENCRYPTION_KEY_BASE64'),
+    )
+    .when('NODE_ENV', {
+      is: 'production',
+      then: Joi.string().required(),
+      otherwise: Joi.string().optional(),
+    }),
   CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64: Joi.string()
     .pattern(/^[A-Za-z0-9+/]{43}=$/)
-    .invalid(Joi.ref('IAM_ACCESS_TOKEN_SECRET'))
+    .invalid(
+      Joi.ref('IAM_ACCESS_TOKEN_SECRET'),
+      Joi.ref('IAM_TOTP_ENCRYPTION_KEY_BASE64'),
+    )
     .required(),
   CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64: Joi.string()
     .pattern(/^[A-Za-z0-9+/]{43}=$/)
     .invalid(
       Joi.ref('IAM_ACCESS_TOKEN_SECRET'),
+      Joi.ref('IAM_TOTP_ENCRYPTION_KEY_BASE64'),
       Joi.ref('CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64'),
     )
     .required(),
@@ -33,6 +51,7 @@ export const environmentValidationSchema = Joi.object({
   MASTER_DATA_IMPORT_TOKEN_KEY_BASE64: Joi.string()
     .pattern(/^[A-Za-z0-9+/]{43}=$/)
     .invalid(
+      Joi.ref('IAM_TOTP_ENCRYPTION_KEY_BASE64'),
       Joi.ref('CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64'),
       Joi.ref('CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64'),
     )
@@ -47,6 +66,7 @@ export const environmentValidationSchema = Joi.object({
   DOCUMENTS_STORAGE_ENCRYPTION_KEY_BASE64: Joi.string()
     .pattern(/^[A-Za-z0-9+/]{43}=$/)
     .invalid(
+      Joi.ref('IAM_TOTP_ENCRYPTION_KEY_BASE64'),
       Joi.ref('CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64'),
       Joi.ref('CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64'),
       Joi.ref('MASTER_DATA_IMPORT_TOKEN_KEY_BASE64'),
