@@ -2,14 +2,23 @@ import { describe, expect, it } from 'vitest';
 import { contractPrintHtml, contractMoney } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
+  it('prints entered whole-package passenger amounts with English money glyphs', () => {
+    const output=structuredClone(printFixture);
+    output.contract.passengersDetail=output.contract.passengersDetail.map((p,i)=>({...p,agreedPrices:[{currencyCode:'IRR',amount:i?'23456789.25':'100000000'}]}));
+    const html=contractPrintHtml(output,printReferences);
+    expect(html).toContain('100,000,000');
+    expect(html).toContain('23,456,789.25');
+    expect(html).toContain('font-family:Arial,sans-serif!important');
+    expect(html).not.toContain('قیمت تفکیکی مسافر ثبت نشده');
+  });
   it('uses agreed totals and confirmed Finance values without offer or purchase prices', () => {
     const html = contractPrintHtml(printFixture, printReferences);
-    expect(html).toContain('123٬456٬789٫25');
-    expect(html).toContain('103٬456٬789٫25');
-    expect(html).toContain('20٬000٬000');
-    expect(html).not.toContain('999٬999٬999');
-    expect(html).not.toContain('40٬000٬000');
-    expect(html).toContain('900٫50');
+    expect(html).toContain('123,456,789.25');
+    expect(html).toContain('103,456,789.25');
+    expect(html).toContain('20,000,000');
+    expect(html).not.toContain('999,999,999');
+    expect(html).not.toContain('40,000,000');
+    expect(html).toContain('900.50');
     expect(html).toContain('USD');
     expect(html).toContain('BUSINESS');
     expect(html).toContain('ترانسفر رفت');
@@ -25,7 +34,7 @@ describe('Saved contract print output', () => {
     );
     expect(html).toContain('<th>کمیسیون</th>');
     expect(html).toContain('هیچ مبلغی بابت آن');
-    expect(html).toContain('123٬456٬789٫25');
+    expect(html).toContain('123,456,789.25');
   });
   it('escapes all dynamic content and rejects active logo sources', () => {
     const html = contractPrintHtml(
@@ -48,7 +57,7 @@ describe('Saved contract print output', () => {
   });
   it('formats large decimals without floating point loss', () => {
     expect(contractMoney('9007199254740993.12')).toBe(
-      '9٬007٬199٬254٬740٬993٫12',
+      '9,007,199,254,740,993.12',
     );
     expect(() => contractMoney('Infinity')).toThrow();
   });

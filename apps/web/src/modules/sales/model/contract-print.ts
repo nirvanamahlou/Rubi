@@ -21,8 +21,8 @@ export function contractMoney(amount: string): string {
     throw new Error('مبلغ قرارداد معتبر نیست.');
   const [integer = '', fraction] = amount.split('.');
   return (
-    integer.replace(/\B(?=(\d{3})+(?!\d))/g, '٬') +
-    (fraction && /[1-9]/.test(fraction) ? '٫' + fraction : '')
+    integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',') +
+    (fraction && /[1-9]/.test(fraction) ? '.' + fraction : '')
   );
 }
 const date = (value: string) =>
@@ -78,7 +78,21 @@ export function contractPrintHtml(
       const allocated = c.servicesDetail.filter((s) =>
         p.serviceClientKeys.includes(s.clientKey),
       );
-      const sales = '<td class="contract-total">در جمع قرارداد</td>';
+      const sales =
+        '<td class="contract-total">' +
+        (p.agreedPrices?.length
+          ? p.agreedPrices
+              .map(
+                (price) =>
+                  '<div><bdi class="money">' +
+                  contractMoney(price.amount) +
+                  '</bdi> ' +
+                  e(price.currencyCode) +
+                  '</div>',
+              )
+              .join('')
+          : 'ثبت نشده') +
+        '</td>';
       return `<tr><td>${i + 1}</td><td>${e(p.displayNameSnapshot)}</td><td>${{ ADT: 'بزرگسال', CHD: 'کودک', INF: 'نوزاد' }[p.ageCategory]}</td><td>${allocated.some((s) => s.kind === 'VISA') ? 'دارد' : '—'}</td><td>${allocated.some((s) => s.kind === 'HOTEL') ? e(room) : '—'}</td>${sales}<td>${c.balances.map((b) => e(b.currencyCode)).join('<br>')}</td>${agency ? '<td>ثبت نشده</td>' : ''}<td>—</td></tr>`;
     })
     .join('');
@@ -142,12 +156,13 @@ export function contractPrintHtml(
   .totals>div>div,.financial>div>div{display:inline-block;margin-inline-start:3mm}.financial{padding-block:1mm}
   header{border-color:#173d7a}header p{color:#173d7a}.meta>div{background:#173d7a;color:#fff}
   th,h2 em{background:#173d7a}.contract-total{background:#fff}
+  .money,.totals bdi,.financial bdi{font-family:Arial,sans-serif!important;direction:ltr;font-size:9.5pt;font-variant-numeric:tabular-nums}
   </style></head><body><article class="document">
   <header><div class="brand">${logo}<div>${e(output.company.persianName)}</div><small>${e(output.company.latinName ?? '')}</small></div><div dir="ltr"><h1>TRAVEL SERVICES<br>CONTRACT</h1><p dir="rtl">قرارداد فروش خدمات مسافرتی</p></div></header>
   ${c.status === 'CANCELLED' ? '<div class="cancelled">این قرارداد لغو شده است</div>' : ''}
   <div class="meta"><div>شماره قرارداد<strong><bdi>${e(c.contractNumber)}</bdi></strong></div><div>تاریخ ثبت<strong>${e(date(c.createdAt))}</strong></div><div>ساعت<strong>${e(time(c.createdAt))}</strong></div><div>مسئول فروش<strong>${e(output.ownerName)}</strong></div></div>
   <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(c.customerNameSnapshot)}</b></div><div>مدیر: —</div><div class="wide">نشانی: ${e(output.customer.address)}</div><div>مقصد: ${e(name(c.destinationId))}</div><div>تعداد: ${c.passengersDetail.length} نفر</div><div>درخواست‌کننده: ${e(c.customerNameSnapshot)}</div><div>خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>
-  <section class="passengers">${heading(2, 'PASSENGERS & PRICING', 'مسافران و قیمت')}<table><thead><tr><th style="width:6%">ردیف</th><th style="width:22%">نام مسافر</th><th>رده سنی</th><th>ویزا</th><th>اتاق</th><th style="width:22%">مبلغ فروش</th><th>ارز</th>${agency ? '<th>کمیسیون</th>' : ''}<th>توضیحات</th></tr></thead><tbody>${rows}</tbody></table><p class="note">قیمت تفکیکی مسافر ثبت نشده؛ مبلغ فروش، جمع توافق‌شده برای کل قرارداد است.</p><div class="totals"><b>مبلغ توافق‌شده قرارداد</b><div>${moneyRows('amount')}</div></div><div class="financial"><div>پرداخت تأییدشده مالی: ${moneyRows('confirmedPaid')}</div><div>مانده: ${moneyRows('outstanding')}</div></div>${agency ? '<p class="note">کمیسیون آژانس در این قرارداد ثبت نشده؛ هیچ مبلغی بابت آن از جمع قرارداد کسر نشده است.</p>' : ''}</section>
+<section class="passengers">${heading(2, 'PASSENGERS & PRICING', 'مسافران و قیمت')}<table><thead><tr><th style="width:6%">ردیف</th><th style="width:22%">نام مسافر</th><th>رده سنی</th><th>ویزا</th><th>اتاق</th><th style="width:22%">مبلغ فروش</th><th>ارز</th>${agency ? '<th>کمیسیون</th>' : ''}<th>توضیحات</th></tr></thead><tbody>${rows}</tbody></table><p class="note">${c.passengersDetail.every((p) => p.agreedPrices?.length) ? 'مبلغ فروش هر مسافر، کل خدمات توافق‌شده همان نفر است.' : 'برای ردیف‌های قدیمی قیمت تفکیکی مسافر ثبت نشده؛ مبلغ حدسی درج نمی‌شود.'}</p><div class="totals"><b>مبلغ توافق‌شده قرارداد</b><div>${moneyRows('amount')}</div></div><div class="financial"><div>پرداخت تأییدشده مالی: ${moneyRows('confirmedPaid')}</div><div>مانده: ${moneyRows('outstanding')}</div></div>${agency ? '<p class="note">کمیسیون آژانس در این قرارداد ثبت نشده؛ هیچ مبلغی بابت آن از جمع قرارداد کسر نشده است.</p>' : ''}</section>
   <section>${heading(3, 'FLIGHT INFORMATION', 'اطلاعات پرواز')}<table><thead><tr><th>مسیر</th><th>ایرلاین</th><th>شماره</th><th>تاریخ</th><th>ساعت</th><th>کلاس</th></tr></thead><tbody>${flights || '<tr><td colspan="6">پرواز در این قرارداد انتخاب نشده است.</td></tr>'}</tbody></table></section>
   <section>${heading(4, 'HOTEL INFORMATION', 'اطلاعات هتل')}${hotel ? `<table><thead><tr><th>نام هتل</th><th>درجه</th><th>خدمات</th><th>ورود</th><th>خروج</th><th>نوع اتاق</th></tr></thead><tbody><tr><td>${e(hotel.hotelNameSnapshot)}</td><td>${e(refs.hotelGrade)}</td><td>${e(name(hotel.mealServiceId))}</td><td>${e(date(hotel.checkInDate))}</td><td>${e(date(hotel.checkOutDate))}</td><td>${e(room)}</td></tr></tbody></table>` : 'هتل در این قرارداد انتخاب نشده است.'}</section>
   <section>${heading(5, 'OTHER SERVICES', 'سایر خدمات')}<div class="fields"><div>ترانسفر: ${e(transfers || 'ندارد')}</div><div>گشت شهری: ${e(

@@ -1,5 +1,9 @@
 # برنامه اجرای Rubi
 
+## SALES-CUSTOMER-PRICING-0907 — completed locally
+
+Delivered explicit per-passenger whole-service agreement totals and saved-data direct PDF download with English monetary digits. Reconciliation preserves existing service pricing and Finance settlement. Local upgrade, rollback-safe rehearsal, tests and production builds passed; user can review on localhost:3100. Historical migration-file differences remain untouched (see DECISIONS). No remote publication or official issuance/archive policy expansion. Scoped locks released.
+
 ## یکپارچه‌سازی مشترک — 2026-08-31
 
 - SHARED-INTEGRATION-0831 در حال ترکیب Snapshotهای منتشرشده PR #55/#56/#46 در یک develop است؛ Branchهای مبدأ حفظ و نسخه ترکیبی بازبینی می‌شود.

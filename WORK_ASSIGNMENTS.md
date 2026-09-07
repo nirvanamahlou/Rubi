@@ -1,6 +1,8 @@
 # Work Assignments
 
-## SALES-CUSTOMER-PRICING-0907 — PC-A — IN_PROGRESS
+## SALES-CUSTOMER-PRICING-0907 — PC-A — COMPLETE_LOCAL
+
+- Final clarification and delivery supersede the pending-decision notes below. Whole-package agreed amounts are entered and persisted per passenger/currency, reconciled exactly with service-agreed totals. Added direct saved-data PDF download next to Print, English monetary glyphs, and legacy unrecorded-price disclosure. 129 Sales Web, 44 Sales API, 47 Contracts tests passed; scoped lint, affected typechecks, API/Web production builds passed. Empty PostgreSQL migrations + seed twice (86 permissions), restored-backup upgrade and exact-money/FK/unique/check guards passed. Only the additive Sales migration activated; all historical checksums and checked business counts unchanged. Web3100/API4000 healthy; no authenticated real-contract walkthrough. Migration, Sales shared contract and task docs reservations released. Local commits only; no public push. See task doc for runtime configuration and retained backups.
 
 - 2026-09-07 clarification: individual passenger totals cover all selected services, per currency, reconciled to the saved agreed contract total; no age-based or equal allocation. Reserve Sales passenger money schema/additive migration, Sales public types/validation/persistence/UI, direct PDF Web route and task/central docs for this local follow-up. Prior scoped local migration reservations are released; no producer worktree, dependency lockfile or public push changes. Existing contract service pricing and Finance settlement remain authoritative. Legacy passenger amounts are not backfilled.
 

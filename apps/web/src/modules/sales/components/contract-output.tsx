@@ -68,6 +68,7 @@ export function ContractOutputButton({ contractId }: { contractId: string }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [html, setHtml] = useState('');
   const [output, setOutput] = useState<SalesContractOutputV1 | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -116,6 +117,40 @@ export function ContractOutputButton({ contractId }: { contractId: string }) {
       setError(reason instanceof Error ? reason.message : 'چاپ ناموفق بود.');
     }
   }
+  async function download() {
+    setDownloading(true);
+    setError('');
+    try {
+      const response = await fetch(
+        '/sales/contracts/' + encodeURIComponent(contractId) + '/pdf',
+        { credentials: 'include', cache: 'no-store' },
+      );
+      if (
+        !response.ok ||
+        !response.headers.get('content-type')?.includes('application/pdf')
+      ) {
+        const body = (await response.json().catch(() => null)) as {
+          message?: string;
+        } | null;
+        throw new Error(
+          body?.message ??
+            'دریافت PDF ناموفق بود؛ ورود به حساب و دسترسی را بررسی کنید.',
+        );
+      }
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'contract-' + contractId + '.pdf';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'دانلود ناموفق بود.');
+    } finally {
+      setDownloading(false);
+    }
+  }
   return (
     <>
       <Button size="sm" variant="outline" onClick={() => void load()}>
@@ -135,9 +170,9 @@ export function ContractOutputButton({ contractId }: { contractId: string }) {
         <DialogContent className="flex max-h-[94vh] max-w-5xl flex-col gap-3 overflow-hidden">
           <DialogTitle>خروجی قرارداد برای مشتری</DialogTitle>
           <DialogDescription>
-            مبلغ‌ها از قرارداد ثبت‌شده خوانده می‌شوند. برای دریافت فایل، در
-            پنجره چاپ گزینه Save as PDF را انتخاب کنید. این نسخه رسید پرداخت یا
-            فاکتور رسمی مالیاتی نیست.
+            مبلغ‌ها از قرارداد ثبت‌شده خوانده می‌شوند. فایل PDF را مستقیم دانلود
+            کنید یا نسخه را چاپ کنید. این نسخه رسید پرداخت یا فاکتور رسمی
+            مالیاتی نیست.
           </DialogDescription>
           {output && (
             <p className="text-sm">
@@ -174,7 +209,13 @@ export function ContractOutputButton({ contractId }: { contractId: string }) {
               disabled={!html || busy || !ready}
               onClick={() => void print()}
             >
-              چاپ / ذخیره PDF
+              چاپ
+            </Button>
+            <Button
+              disabled={!output || busy || downloading}
+              onClick={() => void download()}
+            >
+              {downloading ? 'در حال ساخت PDF…' : 'دانلود PDF'}
             </Button>
             <Button
               variant="outline"

@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-CUSTOMER-PRICING-0907 — COMPLETE_LOCAL — 2026-09-07
+
+Individual agreed package totals per passenger/currency are persisted with exact reconciliation, without inferred age allocation. Direct PDF download is beside Print; amounts use English digits while Persian prose retains B Nazanin. Latest local Web3100/API4000 are active. 129 Web Sales / 44 API Sales / 47 Contracts tests, scoped lint, typechecks and production builds passed. Additive migration passed empty/seed-twice and backup-restore gates; operational historical checksums/business counts unchanged. No historical rebaseline, IAM grant, producer modification or public push. Legacy per-passenger amounts remain unrecorded; no fabrication. Task-specific locks released. Details: docs/tasks/SALES-CUSTOMER-PRICING-0907.md.
+
 ## رنگ خروجی و ویرایش مشتری از فروش — 2026-09-07 — تحویل جزئی در لوکال
 
 - آبی جدول‌ها و کارت‌های خروجی قرارداد به آبی تیره هماهنگ شد؛ ب‌نازنین و جمع مالی قبلی حفظ شدند و همه صفحات PDF آزمایشی بازبینی شدند.
