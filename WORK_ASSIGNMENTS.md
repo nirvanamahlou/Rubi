@@ -1,6 +1,6 @@
 # Work Assignments
 
-## LEGAL-ENTITY-BRAND-HEADER-002 — PC-B — READY_FOR_REVIEW
+## LEGAL-ENTITY-BRAND-HEADER-002 — PC-B — DONE/MERGED
 
 - درخواست صریح مالک محصول در 2026-09-07: با انتخاب شرکت فعال «جهان باستان»، هدر اصلی سامانه سورمه‌ای شود و نام کاربر همراه ساعت ورود در همان هدر نمایش داده شود. `COMPUTER_ID=PC-B`.
 - Branch مستقل `codex/pc-b-jahan-bastan-header-identity` از `origin/develop@8c445ccb21bdef441b051aa34fb93e5c94379fcf`؛ محدوده فقط `apps/web/src/modules/legal-entities/components/legal-entity-context.tsx`، `apps/web/src/app/login/login-form.tsx`، `apps/web/src/lib/header-session.ts`، `apps/web/src/app/globals.css`، تست‌های هدفمند Web و اسناد همین Work Item است.
@@ -15,7 +15,8 @@
 - نتیجه Follow-up: قرارداد `legal-entities.v3` چهار کد واقعی را منتشر می‌کند، DTO سوییچ مستقیماً همان قرارداد را اعتبارسنجی می‌کند، انتخاب‌گر «جهان آکادمیا» و «قسطی رو» را نشان می‌دهد و عنوان تجمیعی به «همه شرکت‌ها» اصلاح شد. تا دریافت لوگوی اختصاصی، دو شرکت جدید نشان خنثی و نام صحیح خود را دارند و لوگوی نیایش سیر به آن‌ها نسبت داده نمی‌شود.
 - دیتابیس مشترک Task فعال ۳۱۰۰/۴۰۰۰ پس از تشخیص ناسازگاری نسخه قدیمی دقیقاً به دو شرکت قبلی بازگردانده شد. Preview ایزوله از Backup تأییدشده روی PostgreSQL پورت ۵۵۴۳۳ شامل هر چهار شرکت فعال است و API/Web جدید روی `127.0.0.1:4001` و `127.0.0.1:3101` اجرا می‌شوند؛ Cookieهای `localhost` Task دیگر نیز به‌علت Host ایزوله دست‌نخورده می‌مانند.
 - کنترل کیفیت Follow-up: ۲۷ تست هدفمند Contract/API/Web، lint و typecheck بسته‌های متاثر، Build تولیدی API/Web با ۳۴ Route و `git diff --check` موفق‌اند؛ Health و Login هر دو سرویس ایزوله HTTP 200 و CORS احرازشده صحیح است.
-- `Legal Entities shared-contract Owner = PC-B/LEGAL-ENTITY-BRAND-HEADER-002` تا Merge یا Handoff باقی می‌ماند. `Central UI Owner = RELEASED` است؛ Migration، Seed مشترک، Dependency/Lockfile و Database مشترک رزرو نشده‌اند.
+- PR #106 با Merge Commit `10fc98b1dd0f6df7ed006dfc65e952cac1d421dd` وارد `develop` شد و همه ۸ Gate ثبت‌شده CI موفق‌اند. نسخه Merge‌شده روی `localhost:3100` و API روی `localhost:4000` با چهار شرکت فعال در دیتابیس ایزوله محلی PC-B پاسخ سالم دارند.
+- `Legal Entities shared-contract Owner = RELEASED / STABLE`. `Central UI Owner = RELEASED` است؛ Migration، Seed مشترک، Dependency/Lockfile و Database مشترک رزرو نشده‌اند.
 
 ## NOTIFICATIONS-001-ACTIVITY-BELL — PC-B — DONE/MERGED
 
