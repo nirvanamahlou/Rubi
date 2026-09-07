@@ -846,3 +846,6 @@ Customers، Finance، Procurement، Reservations، Integrations و Documents خ�
 - وضعیت `DONE` یعنی Commit و Push شده و گزارش تست/ریسک در Project Status ثبت شده
   است؛ ادغام‌شدن را تضمین نمی‌کند.
 - آزادکردن کار بدون تکمیل با تغییر مالک به `تخصیص‌نیافته` و ثبت دلیل انجام می‌شود.
+
+## HR-002 — PC-B — IN_PROGRESS
+Branch: codex/pc-b-hr-time-development; base a44d622 (existing HR work preserved). Scope: apps/web/src/modules/hr/** and HR task/status documentation. Navigation, time imports/exports, derived fields, weighted goals and training. No migration, dependency or shared contract changes.

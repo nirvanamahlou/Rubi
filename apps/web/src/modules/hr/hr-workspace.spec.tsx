@@ -55,7 +55,7 @@ import { getHrPreviewDataset } from './hr-preview-data';
 describe('HR reference implementation', () => {
   it('renders the eighteen capability hub cards as deep links', () => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId="home" />);
-    expect(hrHubCards).toHaveLength(18);
+    expect(hrHubCards).toHaveLength(16);
     expect(html).toContain('dir="rtl"');
     expect(html).toContain('data-hr-mode="preview"');
     for (const card of hrHubCards) {
@@ -93,8 +93,8 @@ describe('HR reference implementation', () => {
     );
     expect(sectionTabs.lifecycle).toHaveLength(6);
     expect(sectionTabs.contracts).toHaveLength(5);
-    expect(sectionTabs.time).toHaveLength(13);
-    expect(sectionTabs.development).toHaveLength(8);
+    expect(sectionTabs.time).toHaveLength(10);
+    expect(sectionTabs.development).toHaveLength(6);
     expect(sectionTabs.expenses).toHaveLength(4);
     expect(sectionTabs.benefits).toHaveLength(6);
     expect(sectionTabs.fleet).toHaveLength(2);
@@ -643,7 +643,7 @@ describe('HR reference implementation', () => {
 
     for (const [section, tab, title] of [
       ['employee', 'audit', 'تاریخچه'],
-      ['fleet', 'logs', 'سوابق استفاده'],
+      ['assets', 'logs', 'سوابق خودرو'],
       ['reports', 'audit', 'Audit اختصاصی'],
     ] as const) {
       const html = renderToStaticMarkup(
@@ -724,9 +724,8 @@ describe('HR reference implementation', () => {
   it.each([
     ['recruitment', 'جذب و استخدام', 'preview-recruitment-staffing-1'],
     ['lifecycle', 'چرخه همکاری', 'preview-lifecycle-onboarding-1'],
-    ['expenses', 'مأموریت و هزینه‌ها', 'preview-expenses-travel-1'],
-    ['benefits', 'مالیات و مزایا', 'preview-benefits-tax-slab-1'],
-    ['fleet', 'خودروهای سازمانی', 'preview-fleet-vehicle-1'],
+    ['expenses', 'مأموریت و هزینه‌ها', 'preview-time-mission-1'],
+    ['assets', 'تجهیزات تحویلی', 'preview-assets-list-1'],
     ['hrSettings', 'تنظیمات و یکپارچگی', 'preview-settings-workflow-1'],
   ] as const)('renders the %s capability preview', (section, title, id) => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId={section} />);

@@ -168,15 +168,7 @@ export const hrHubCards: readonly HrHubCard[] = [
     pills: ['Travel', 'Advance', 'Expense'],
     footer: '۴ زیرصفحه',
   },
-  {
-    id: 'benefits',
-    title: 'مالیات و مزایا',
-    description: 'پله مالیاتی، معافیت، مزایا، وام، پایان خدمت و مدارک قانونی',
-    icon: BadgeDollarSign,
-    tone: 'green',
-    pills: ['Tax', 'Benefits', 'Loan'],
-    footer: '۶ زیرصفحه',
-  },
+
   {
     id: 'assets',
     title: 'تجهیزات تحویلی',
@@ -186,15 +178,7 @@ export const hrHubCards: readonly HrHubCard[] = [
     pills: ['HR14', 'تحویل', 'عودت'],
     footer: 'رجیستر تحویل',
   },
-  {
-    id: 'fleet',
-    title: 'خودروهای سازمانی',
-    description: 'ثبت خودرو، تخصیص مجاز، سوابق استفاده، کیلومتر و هزینه سفر',
-    icon: CarFront,
-    tone: 'slate',
-    pills: ['Vehicle', 'Log', 'Assignment'],
-    footer: '۲ زیرصفحه',
-  },
+
   {
     id: 'documents',
     title: 'مدارک پرسنلی',
@@ -313,16 +297,13 @@ export const sectionTabs: Readonly<
   time: [
     { id: 'attendance', label: 'حضور و غیاب', icon: Activity },
     { id: 'checkins', label: 'ورود و خروج', icon: TimerReset },
-    { id: 'biometric', label: 'دستگاه و موقعیت', icon: Fingerprint },
+    { id: 'biometric', label: 'دستگاه و شرکت', icon: Fingerprint },
     { id: 'corrections', label: 'اصلاح حضور', icon: History },
-    { id: 'import', label: 'ورود گروهی', icon: FileArchive },
     { id: 'shift', label: 'تعریف شیفت', icon: CalendarClock },
-    { id: 'shiftRequests', label: 'درخواست شیفت', icon: ListChecks },
     { id: 'roster', label: 'تقویم شیفت', icon: CalendarClock },
     { id: 'leave', label: 'مرخصی', icon: CalendarClock },
     { id: 'leavePolicies', label: 'سیاست و سهمیه', icon: ShieldCheck },
     { id: 'holidays', label: 'تعطیلات', icon: CalendarClock },
-    { id: 'mission', label: 'مأموریت', icon: CalendarClock },
     { id: 'overtime', label: 'اضافه‌کاری', icon: TimerReset },
   ],
   development: [
@@ -330,16 +311,19 @@ export const sectionTabs: Readonly<
     { id: 'cycles', label: 'دوره ارزیابی', icon: CalendarClock },
     { id: 'goals', label: 'هدف و KRA', icon: Target },
     { id: 'selfReview', label: 'خودارزیابی', icon: UserRoundCheck },
-    { id: 'feedback', label: 'بازخورد', icon: ListChecks },
     { id: 'training', label: 'برنامه آموزشی', icon: GraduationCap },
-    { id: 'trainingEvents', label: 'رویداد و نتیجه', icon: GraduationCap },
     { id: 'skills', label: 'مهارت و شکاف', icon: Gauge },
   ],
+  assets: [
+    { id: 'list', label: 'تجهیزات', icon: Boxes },
+    { id: 'vehicles', label: 'خودروهای سازمانی', icon: CarFront },
+    { id: 'logs', label: 'سوابق خودرو', icon: History },
+  ],
   expenses: [
+    { id: 'mission', label: 'مأموریت', icon: CalendarClock },
     { id: 'travel', label: 'درخواست سفر', icon: CalendarClock },
     { id: 'advances', label: 'مساعده هزینه', icon: WalletCards },
     { id: 'claims', label: 'بازپرداخت هزینه', icon: ReceiptText },
-    { id: 'approvals', label: 'تأیید و تطبیق', icon: ListChecks },
   ],
   benefits: [
     { id: 'taxSlabs', label: 'پله‌های مالیاتی', icon: BarChart3 },
@@ -499,6 +483,8 @@ const validSectionIds = new Set<HrSectionId>(
   Object.keys(screenMeta) as HrSectionId[],
 );
 export function normalizeSection(value?: string): HrSectionId {
+  if (value === 'benefits') return 'home';
+  if (value === 'fleet') return 'assets';
   return validSectionIds.has(value as HrSectionId)
     ? (value as HrSectionId)
     : 'home';

@@ -74,15 +74,15 @@ import {
 } from './organization-catalog';
 import {
   ContextualHrFormDialog,
+  persianDateToIso,
   openHrAttachment,
   parseHrAttachmentReference,
   type ContextualHrFormContext,
 } from './contextual-hr-form';
-import { downloadHrXlsx } from './hr-xlsx';
-import {
-  contractRecordFromRow,
-  downloadContractPdf,
-} from './hr-contract-pdf';
+import { parseWeightedGoals } from './weighted-goals';
+import { ShiftCalendar } from './shift-calendar';
+import { downloadHrXlsx, readHrXlsx } from './hr-xlsx';
+import { contractRecordFromRow, downloadContractPdf } from './hr-contract-pdf';
 import { uploadEmployeeDocumentToArchive } from './hr-documents-integration';
 import {
   HrNotificationCenter,
@@ -275,6 +275,11 @@ export function parseHrPreviewDatasetOverrides(
 }
 
 interface PreviewDatasetStore {
+  importRows: (
+    section: HrSectionId,
+    tab: string,
+    rows: readonly (readonly string[])[],
+  ) => void;
   getDataset: (section: HrSectionId, tab: string) => HrPreviewDataset;
   deleteRow: (section: HrSectionId, tab: string, rowIndex: number) => void;
 }
@@ -285,6 +290,8 @@ const previewDatasetKey = (section: HrSectionId, tab: string) =>
 const automaticHrHistoryTabs = new Set([
   previewDatasetKey('employee', 'audit'),
   previewDatasetKey('fleet', 'logs'),
+  previewDatasetKey('assets', 'logs'),
+  previewDatasetKey('time', 'roster'),
   previewDatasetKey('reports', 'audit'),
 ]);
 
@@ -392,8 +399,11 @@ export function appendAutomaticHrHistory(
       automaticHistoryStatus,
     ]);
 
-  if (event.section === 'fleet' && event.tab === 'vehicles')
-    next = appendHistoryRow(next, 'fleet', 'logs', [
+  if (
+    (event.section === 'fleet' || event.section === 'assets') &&
+    event.tab === 'vehicles'
+  )
+    next = appendHistoryRow(next, event.section, 'logs', [
       `HR-FLEET-LOG-${eventId.slice(-8)}`,
       event.subject,
       'ثبت سیستمی',
@@ -1622,12 +1632,26 @@ function genericTable(
   dataset: HrPreviewDataset,
   editRow: (rowIndex: number, row: readonly HrPreviewCell[]) => void,
   deleteRow: (rowIndex: number) => void,
-  extraActions?: (
-    rowIndex: number,
-    row: readonly HrPreviewCell[],
-  ) => ReactNode,
+  extraActions?: (rowIndex: number, row: readonly HrPreviewCell[]) => ReactNode,
 ): PreviewTableData {
   const readonlyData = readonlyTable(dataset);
+  const programIndex = dataset.columns.indexOf('عنوان برنامه');
+  if (programIndex >= 0)
+    readonlyData.rows = readonlyData.rows.map((cells, rowIndex) =>
+      cells.map((cell, index) =>
+        index === programIndex ? (
+          <button
+            type="button"
+            className={styles.textButton}
+            onClick={() => editRow(rowIndex, dataset.rows[rowIndex]!)}
+          >
+            {cell}
+          </button>
+        ) : (
+          cell
+        ),
+      ),
+    );
   return {
     columns: [...readonlyData.columns, 'عملیات'],
     rows: dataset.rows.map((row, rowIndex) => [
@@ -1673,6 +1697,13 @@ function readonlyTable(dataset: HrPreviewDataset): PreviewTableData {
             </Badge>
           );
         const column = dataset.columns[cellIndex] ?? '';
+        if (column === 'عنوان هدف' && cell.startsWith('['))
+          return parseWeightedGoals(cell)
+            .map(
+              (goal) =>
+                `${goal.achieved ? '✓' : '○'} ${goal.title} (وزن ${goal.weight})`,
+            )
+            .join(' · ');
         const attachment = parseHrAttachmentReference(cell);
         const rowAttachmentValue =
           attachmentIndex >= 0 && typeof row[attachmentIndex] === 'string'
@@ -2357,6 +2388,7 @@ function TabbedSection({
   ) => void;
 }) {
   const tabs = sectionTabs[section] ?? [];
+  const [importMessage, setImportMessage] = useState('');
   const [tab, setTab] = useState(
     tabs.some((item) => item.id === initialTab)
       ? (initialTab ?? 'list')
@@ -2366,7 +2398,10 @@ function TabbedSection({
   const ActiveIcon = active?.icon ?? FileText;
   const isPayrollOverview = section === 'payroll' && tab === 'overview';
   const isAutomaticHistory = isAutomaticHrHistoryTab(section, tab);
-  const dataset = datasetStore.getDataset(section, tab);
+  const dataset =
+    section === 'time' && tab === 'roster'
+      ? datasetStore.getDataset('time', 'shift')
+      : datasetStore.getDataset(section, tab);
   const openCurrentForm = (
     mode: ContextualHrFormContext['mode'],
     rowIndex?: number,
@@ -2386,29 +2421,40 @@ function TabbedSection({
     void downloadContractPdf(contractRecordFromRow(dataset.columns, row)).catch(
       (error: unknown) =>
         window.alert(
-          error instanceof Error ? error.message : 'ساخت PDF قرارداد انجام نشد.',
+          error instanceof Error
+            ? error.message
+            : 'ساخت PDF قرارداد انجام نشد.',
         ),
     );
   };
   const extraActions =
-    section === 'contracts' && tab === 'active'
-      ? (_rowIndex: number, row: readonly HrPreviewCell[]) => (
-          <ActionButton onClick={() => exportContract(row)} small>
-            <Download aria-hidden="true" size={13} /> PDF قرارداد
+    section === 'development' && tab === 'training'
+      ? (rowIndex: number, row: readonly HrPreviewCell[]) => (
+          <ActionButton
+            small
+            onClick={() => openCurrentForm('edit', rowIndex, row)}
+          >
+            مشخصات برنامه و نتیجه
           </ActionButton>
         )
-      : section === 'finance' && tab === 'settlements'
-        ? (rowIndex: number, row: readonly HrPreviewCell[]) =>
-            previewCellText(row.at(-1) ?? '').includes('تأییدشده') ? null : (
-              <ActionButton
-                onClick={() => onApproveSettlement(rowIndex, row)}
-                primary
-                small
-              >
-                <BadgeCheck aria-hidden="true" size={13} /> تأیید مالی
-              </ActionButton>
-            )
-        : undefined;
+      : section === 'contracts' && tab === 'active'
+        ? (_rowIndex: number, row: readonly HrPreviewCell[]) => (
+            <ActionButton onClick={() => exportContract(row)} small>
+              <Download aria-hidden="true" size={13} /> PDF قرارداد
+            </ActionButton>
+          )
+        : section === 'finance' && tab === 'settlements'
+          ? (rowIndex: number, row: readonly HrPreviewCell[]) =>
+              previewCellText(row.at(-1) ?? '').includes('تأییدشده') ? null : (
+                <ActionButton
+                  onClick={() => onApproveSettlement(rowIndex, row)}
+                  primary
+                  small
+                >
+                  <BadgeCheck aria-hidden="true" size={13} /> تأیید مالی
+                </ActionButton>
+              )
+          : undefined;
   const data = isAutomaticHistory
     ? readonlyTable(dataset)
     : genericTable(
@@ -2417,6 +2463,14 @@ function TabbedSection({
         (rowIndex) => datasetStore.deleteRow(section, tab, rowIndex),
         extraActions,
       );
+  const displayedData =
+    section === 'time' && tab === 'biometric'
+      ? {
+          ...data,
+          columns: data.columns.slice(1),
+          rows: data.rows.map((row) => row.slice(1)),
+        }
+      : data;
   return (
     <>
       <PageHead section={section} />
@@ -2434,10 +2488,80 @@ function TabbedSection({
                 <Download size={15} /> خروجی PDF قرارداد
               </ActionButton>
             ) : (
-              <ActionButton disabled>
-                <Download size={15} /> خروجی مجاز
+              <ActionButton
+                onClick={() =>
+                  downloadHrXlsx(`hr-${section}-${tab}.xlsx`, [
+                    dataset.columns,
+                    ...dataset.rows.map((row) => row.map(previewCellText)),
+                  ])
+                }
+              >
+                <Download size={15} /> خروجی اکسل
               </ActionButton>
             )}
+            {!isAutomaticHistory &&
+            section !== 'finance' &&
+            section !== 'payroll' ? (
+              <label className={styles.button}>
+                ورودی اکسل
+                <input
+                  type="file"
+                  accept=".xlsx"
+                  hidden
+                  onChange={async (event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = '';
+                    if (!file) return;
+                    try {
+                      const [headers, ...rows] = await readHrXlsx(file);
+                      if (
+                        !headers ||
+                        headers.length !== dataset.columns.length ||
+                        headers.some(
+                          (header, index) =>
+                            header.trim() !== dataset.columns[index],
+                        )
+                      )
+                        throw new Error(
+                          'ستون‌های فایل باید با خروجی اکسل همین بخش یکسان باشند.',
+                        );
+                      const valid = rows.filter((row) =>
+                        row.some((cell) => cell.trim()),
+                      );
+                      if (
+                        !valid.length ||
+                        valid.some(
+                          (row) => row.length !== dataset.columns.length,
+                        )
+                      )
+                        throw new Error('ردیف خالی یا تعداد ستون نامعتبر است.');
+                      const ids = new Set(
+                        dataset.rows.map((row) =>
+                          previewCellText(row[0] ?? ''),
+                        ),
+                      );
+                      for (const row of valid) {
+                        if (!row[0] || ids.has(row[0]))
+                          throw new Error(
+                            'شناسه خالی یا تکراری در فایل وجود دارد.',
+                          );
+                        ids.add(row[0]);
+                      }
+                      datasetStore.importRows(section, tab, valid);
+                      setImportMessage(
+                        `${valid.length.toLocaleString('fa-IR')} رکورد وارد شد.`,
+                      );
+                    } catch (error) {
+                      setImportMessage(
+                        error instanceof Error
+                          ? error.message
+                          : 'ورود فایل انجام نشد.',
+                      );
+                    }
+                  }}
+                />
+              </label>
+            ) : null}
             {isAutomaticHistory ? null : (
               <ActionButton onClick={() => openCurrentForm('create')} primary>
                 <Plus size={15} /> افزودن{' '}
@@ -2447,6 +2571,7 @@ function TabbedSection({
           </>
         }
       />
+      {importMessage ? <p role="status">{importMessage}</p> : null}
       {tabs.length ? (
         <Tabs active={tab} items={tabs} onChange={setTab} />
       ) : null}
@@ -2496,7 +2621,11 @@ function TabbedSection({
               <Filter size={15} /> فیلتر
             </ActionButton>
           </div>
-          <PreviewTable data={data} />
+          {section === 'time' && tab === 'roster' ? (
+            <ShiftCalendar shifts={datasetStore.getDataset('time', 'shift')} />
+          ) : (
+            <PreviewTable data={displayedData} />
+          )}
         </Panel>
       )}
     </>
@@ -2643,6 +2772,26 @@ export function HrWorkspace({
         grade: employee.grade,
       })),
       contractNumbersByEmployee,
+      holidayOptions: Array.from(
+        new Set(
+          getDataset('time', 'holidays')
+            .rows.map((row) =>
+              previewCellText(
+                row[getDataset('time', 'holidays').columns.indexOf('تقویم')] ??
+                  '',
+              ),
+            )
+            .filter(Boolean),
+        ),
+      ),
+      attendance: getDataset('time', 'attendance').rows.map((row) => {
+        const columns = getDataset('time', 'attendance').columns;
+        return {
+          employee: previewCellText(row[columns.indexOf('کارمند')] ?? ''),
+          date: previewCellText(row[columns.indexOf('تاریخ کارکرد')] ?? ''),
+          value: previewCellText(row[columns.indexOf('ساعت کارکرد')] ?? ''),
+        };
+      }),
     });
   };
   const getDataset = (datasetSection: HrSectionId, tab: string) => {
@@ -2650,9 +2799,26 @@ export function HrWorkspace({
     const key = previewDatasetKey(datasetSection, tab);
     const rows = previewDatasetOverrides[key];
     if (!rows) return base;
+    const compatibleRows = rows.map((row) => {
+      if (row.length === base.columns.length) return row;
+      if (
+        (datasetSection === 'time' && tab === 'shift' && row.length === 8) ||
+        (datasetSection === 'development' &&
+          tab === 'training' &&
+          row.length === 8)
+      ) {
+        const additions = base.columns.length - row.length;
+        return [
+          ...row.slice(0, -1),
+          ...Array.from({ length: additions }, () => ''),
+          row[row.length - 1]!,
+        ];
+      }
+      return row;
+    });
     return {
       ...base,
-      rows,
+      rows: compatibleRows,
       totalLabel: `${rows.length.toLocaleString('fa-IR')} رکورد نمایشی در نشست`,
     };
   };
@@ -2677,7 +2843,8 @@ export function HrWorkspace({
       if (datasetSection === 'employee' && tab === 'docs') {
         const documentsKey = previewDatasetKey('documents', 'list');
         const documentsRows =
-          current[documentsKey] ?? getHrPreviewDataset('documents', 'list').rows;
+          current[documentsKey] ??
+          getHrPreviewDataset('documents', 'list').rows;
         const documentId = previewCellText(row?.[0] ?? '');
         next = {
           ...next,
@@ -2723,8 +2890,7 @@ export function HrWorkspace({
       const financeRows = current[financeKey] ?? financeDataset.rows;
       const lifecycleRows = current[lifecycleKey] ?? lifecycleDataset.rows;
       const financeStatusIndex = financeDataset.columns.indexOf('وضعیت');
-      const lifecycleEmployeeIndex =
-        lifecycleDataset.columns.indexOf('کارمند');
+      const lifecycleEmployeeIndex = lifecycleDataset.columns.indexOf('کارمند');
       const lifecycleApprovalIndex =
         lifecycleDataset.columns.indexOf('وضعیت تأیید مالی');
       const lifecycleStatusIndex = lifecycleDataset.columns.indexOf('وضعیت');
@@ -2757,7 +2923,9 @@ export function HrWorkspace({
       });
       return next;
     });
-    setNotice(`تسویه «${employee}» در مالی تأیید و وضعیت چرخه همکاری به‌روزرسانی شد.`);
+    setNotice(
+      `تسویه «${employee}» در مالی تأیید و وضعیت چرخه همکاری به‌روزرسانی شد.`,
+    );
     notifyMutation({
       action: 'update',
       section: 'finance',
@@ -2769,6 +2937,39 @@ export function HrWorkspace({
   const datasetStore: PreviewDatasetStore = {
     getDataset,
     deleteRow: deleteDatasetRow,
+    importRows: (targetSection, targetTab, imported) => {
+      const dataset = getDataset(targetSection, targetTab);
+      const key = previewDatasetKey(targetSection, targetTab);
+      const normalized = imported.map((source) => {
+        const row = [...source];
+        const index = (label: string) => dataset.columns.indexOf(label);
+        const read = (label: string) => row[index(label)] ?? '';
+        const set = (label: string, value: string) => {
+          if (index(label) >= 0) row[index(label)] = value;
+        };
+        if (targetSection === 'time' && targetTab === 'leave') {
+          const start = Date.parse(persianDateToIso(read('از تاریخ'))),
+            end = Date.parse(persianDateToIso(read('تا تاریخ')));
+          if (!Number.isFinite(start) || !Number.isFinite(end) || end < start)
+            throw new Error('بازه مرخصی یکی از ردیف‌ها معتبر نیست.');
+          set('تعداد روز', String(Math.round((end - start) / 86400000) + 1));
+        }
+        if (targetSection === 'time' && targetTab === 'biometric')
+          set('آخرین همگام‌سازی', 'هنوز همگام‌سازی نشده');
+        return row;
+      });
+      setPreviewDatasetOverrides((current) => ({
+        ...current,
+        [key]: [...normalized, ...(current[key] ?? dataset.rows)],
+      }));
+      notifyMutation({
+        action: 'create',
+        section: targetSection,
+        tab: targetTab,
+        title: 'ورود اکسل',
+        subject: `${imported.length} رکورد`,
+      });
+    },
   };
   const saveEmployee = (value: NewEmployeeFormValue) => {
     const wasEditing = Boolean(editingEmployee);
@@ -2843,7 +3044,8 @@ export function HrWorkspace({
     if (!contextualForm) return;
     const context = contextualForm;
     const key = previewDatasetKey(context.section, context.tab);
-    const value = (column: string) => formValueByColumn(context, values, column);
+    const value = (column: string) =>
+      formValueByColumn(context, values, column);
     const subject =
       value('نام و نام خانوادگی') ||
       value('کارمند') ||
@@ -2854,7 +3056,11 @@ export function HrWorkspace({
     if (context.section === 'lifecycle' && context.tab === 'onboarding') {
       const nextEmployee = employeeFromOnboarding(context, values);
       const previousName = context.initialValues
-        ? formValueByColumn(context, context.initialValues, 'نام و نام خانوادگی')
+        ? formValueByColumn(
+            context,
+            context.initialValues,
+            'نام و نام خانوادگی',
+          )
         : '';
       setEmployees((current) => {
         const previous = current.find(
@@ -2978,7 +3184,8 @@ export function HrWorkspace({
           promotedEmployee?.unit.split(' / ') ?? [];
         const assignmentKey = previewDatasetKey('employee', 'assignment');
         const assignmentRows =
-          next[assignmentKey] ?? getHrPreviewDataset('employee', 'assignment').rows;
+          next[assignmentKey] ??
+          getHrPreviewDataset('employee', 'assignment').rows;
         next = {
           ...next,
           [assignmentKey]: [
@@ -2999,7 +3206,8 @@ export function HrWorkspace({
       if (context.section === 'lifecycle' && context.tab === 'settlement') {
         const financeKey = previewDatasetKey('finance', 'settlements');
         const financeRows =
-          next[financeKey] ?? getHrPreviewDataset('finance', 'settlements').rows;
+          next[financeKey] ??
+          getHrPreviewDataset('finance', 'settlements').rows;
         const reference = value('شناسه');
         const financeRow: readonly HrPreviewCell[] = [
           `HR-FIN-SET-${Date.now().toString(36).toUpperCase()}`,
@@ -3016,6 +3224,38 @@ export function HrWorkspace({
         next = { ...next, [financeKey]: [financeRow, ...withoutSameReference] };
       }
 
+      if (
+        (context.section === 'time' &&
+          ['leave', 'corrections', 'overtime'].includes(context.tab)) ||
+        context.section === 'expenses'
+      ) {
+        const requestKey = previewDatasetKey('requests', 'inbox');
+        const requestId = `HR-REQ-${value('شناسه')}`;
+        const requestRows =
+          next[requestKey] ?? getHrPreviewDataset('requests', 'inbox').rows;
+        next = {
+          ...next,
+          [requestKey]: [
+            [
+              requestId,
+              context.title,
+              context.title,
+              value('کارمند'),
+              todayIso(),
+              `${value('از تاریخ') || value('تاریخ رفت') || value('تاریخ کارکرد')} — ${value('تا تاریخ') || value('تاریخ برگشت')}`,
+              value('تأییدکننده') || value('مسئول تأیید') || 'مدیر مستقیم',
+              value('تا تاریخ') || value('تاریخ برگشت') || todayIso(),
+              'بررسی درخواست',
+              context.mode === 'edit' ? 'ویرایش درخواست' : 'ثبت درخواست',
+              value('وضعیت'),
+              { label: value('وضعیت') || 'در انتظار بررسی', tone: 'neutral' },
+            ],
+            ...requestRows.filter(
+              (row) => previewCellText(row[0] ?? '') !== requestId,
+            ),
+          ],
+        };
+      }
       return appendAutomaticHrHistory(next, {
         action: context.mode,
         section: context.section,

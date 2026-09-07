@@ -3,11 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { HrWorkspace } from './hr-workspace';
 import {
   frappeWorkspaceIdsByHubSection,
-  frappeWorkspaces,
+  frappeWorkspaces as allWorkspaces,
+  getFrappeWorkspace,
   hrWorkspaceLinkHref,
   normalizeFrappeWorkspace,
 } from './frappe-workspaces';
 import { sectionTabs } from './hr.model';
+
+const frappeWorkspaces = allWorkspaces
+  .filter((item) => item.id !== 'tax-benefits')
+  .map((item) => getFrappeWorkspace(item.id));
 
 describe('Frappe-style HR workspaces', () => {
   it('merges the nine requested workspaces into the complete HR hub', () => {
@@ -15,13 +20,15 @@ describe('Frappe-style HR workspaces', () => {
     const linkedWorkspaceIds = Object.values(
       frappeWorkspaceIdsByHubSection,
     ).flatMap((ids) => ids ?? []);
-    expect(frappeWorkspaces).toHaveLength(9);
+    expect(frappeWorkspaces).toHaveLength(8);
     expect(new Set(linkedWorkspaceIds)).toEqual(
       new Set(frappeWorkspaces.map(({ id }) => id)),
     );
     expect(html).not.toContain('id="frappe-workspaces-title"');
     expect(html).not.toContain('امکانات Frappe HR');
-    expect(JSON.stringify(frappeWorkspaces)).not.toContain('معرفی توسط کارکنان');
+    expect(JSON.stringify(frappeWorkspaces)).not.toContain(
+      'معرفی توسط کارکنان',
+    );
     for (const workspace of frappeWorkspaces) {
       expect(html).toContain(workspace.shortTitle);
       expect(html).toContain(`/hr?workspace=${workspace.id}`);

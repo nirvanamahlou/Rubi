@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/overlays';
 import type { HrSectionId } from './hr.model';
 import styles from './hr-workspace.module.css';
+import { parseWeightedGoals, weightedProgress } from './weighted-goals';
 import { RequiredFieldLabel } from './required-field-label';
 
 export interface ContextualHrFormContext {
@@ -30,6 +31,8 @@ export interface ContextualHrFormContext {
   }[];
   contractNumbersByEmployee?: Readonly<Record<string, string>>;
   linkedEmployeeName?: string;
+  attendance?: readonly { employee: string; date: string; value: string }[];
+  holidayOptions?: readonly string[];
 }
 
 type ContextualFieldType =
@@ -93,6 +96,17 @@ const fieldOptions = (
   label: string,
   peopleOptions: readonly string[] = defaultPeopleOptions,
 ): readonly string[] | undefined => {
+  if (label === 'وضعیت تجهیز')
+    return [
+      'سالم',
+      'نیازمند تعمیر',
+      'در حال تعمیر',
+      'معیوب',
+      'اسقاط‌شده',
+      'مفقود',
+    ];
+  if (label === 'تقویم تعطیلات')
+    return ['ایران ۱۴۰۵', 'ایران ۱۴۰۶', 'نیایش سیر', 'جهان باستان'];
   if (label === 'نوع مدرک')
     return [
       'کارت ملی',
@@ -202,7 +216,17 @@ const fieldOptions = (
   if (/سطح فعلی|سطح هدف|سطح موجود|سطح موردنیاز/.test(label))
     return ['مقدماتی', 'متوسط', 'پیشرفته', 'خبره'];
   if (label.includes('رتبه'))
-    return ['نیازمند بهبود', 'مطابق انتظار', 'فراتر از انتظار'];
+    return [
+      'بسیار ضعیف',
+      'ضعیف',
+      'نیازمند بهبود',
+      'قابل قبول',
+      'مطابق انتظار',
+      'خوب',
+      'بسیار خوب',
+      'فراتر از انتظار',
+      'ممتاز',
+    ];
   if (label.includes('تقویم')) return ['شمسی', 'میلادی', 'تقویم تهران'];
   if (label.includes('خروجی')) return ['نمایش', 'PDF', 'Excel'];
   return undefined;
@@ -286,7 +310,10 @@ async function storeHrAttachment(file: File): Promise<string> {
     'image/png',
     'image/webp',
   ]);
-  if (!allowed.has(file.type) || !/\.(pdf|doc|docx|jpg|jpeg|png|webp)$/i.test(file.name))
+  if (
+    !allowed.has(file.type) ||
+    !/\.(pdf|doc|docx|jpg|jpeg|png|webp)$/i.test(file.name)
+  )
     throw new Error('فایل باید PDF، DOC، DOCX، JPG، PNG یا WEBP باشد.');
   if (file.size > 5 * 1024 * 1024)
     throw new Error('حجم فایل باید حداکثر ۵ مگابایت باشد.');
@@ -333,7 +360,7 @@ const normalizeDigits = (value: string) =>
     .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
     .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
 
-function persianDateToIso(value: string): string {
+export function persianDateToIso(value: string): string {
   if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value;
   const match = /^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/.exec(
     normalizeDigits(value.trim()),
@@ -373,6 +400,8 @@ const isContextDerivedField = (
   context: ContextualHrFormContext,
   field: ContextualHrField,
 ) =>
+  (context.section === 'time' &&
+    /^(مقدار فعلی|آخرین همگام‌سازی|تعداد روز)$/.test(field.label)) ||
   (context.section === 'lifecycle' &&
     context.tab === 'promotion' &&
     /^(سمت فعلی|رده فعلی)$/.test(field.label)) ||
@@ -422,7 +451,8 @@ function buildInitialFormValues(
     const contract = fields.find((field) => field.label === 'شماره قرارداد');
     if (contract && employeeField)
       initial[contract.id] =
-        context.contractNumbersByEmployee?.[initial[employeeField.id] ?? ''] ?? '';
+        context.contractNumbersByEmployee?.[initial[employeeField.id] ?? ''] ??
+        '';
   }
   return initial;
 }
@@ -440,18 +470,80 @@ export function ContextualHrForm({
     () =>
       buildContextualHrFields(context.columns, context.peopleOptions).map(
         (field) =>
-          (context.section === 'employee' && context.tab === 'docs') ||
-          context.section === 'documents'
-            ? field.label === 'تاریخ انقضا'
-              ? { ...field, required: true }
-              : field
-            : field,
+          field.label === 'تقویم تعطیلات' && context.holidayOptions?.length
+            ? {
+                ...field,
+                type: 'select' as const,
+                options: context.holidayOptions,
+              }
+            : (context.section === 'employee' && context.tab === 'docs') ||
+                context.section === 'documents'
+              ? field.label === 'تاریخ انقضا'
+                ? { ...field, required: true }
+                : field
+              : field,
       ),
-    [context.columns, context.peopleOptions, context.section, context.tab],
+    [
+      context.columns,
+      context.peopleOptions,
+      context.section,
+      context.tab,
+      context.holidayOptions,
+    ],
   );
   const [values, setValues] = useState<Record<string, string>>(() =>
     buildInitialFormValues(context, fields),
   );
+  const deriveValues = (input: Record<string, string>) => {
+    const next = { ...input };
+    const field = (label: string) =>
+      fields.find((item) => item.label === label);
+    const read = (label: string) => next[field(label)?.id ?? ''] ?? '';
+    const write = (label: string, value: string) => {
+      const target = field(label);
+      if (target) next[target.id] = value;
+    };
+    if (context.section === 'time' && context.tab === 'leave') {
+      const start = Date.parse(persianDateToIso(read('از تاریخ')));
+      const end = Date.parse(persianDateToIso(read('تا تاریخ')));
+      write(
+        'تعداد روز',
+        Number.isFinite(start) && end >= start
+          ? String(Math.round((end - start) / 86400000) + 1)
+          : '',
+      );
+    }
+    if (context.section === 'time' && context.tab === 'corrections') {
+      const record = context.attendance?.find(
+        (item) =>
+          item.employee === read('کارمند') &&
+          persianDateToIso(item.date) ===
+            persianDateToIso(read('تاریخ کارکرد')),
+      );
+      write('مقدار فعلی', record?.value ?? 'رکورد حضور یافت نشد');
+    }
+    if (context.section === 'time' && context.tab === 'biometric')
+      write(
+        'آخرین همگام‌سازی',
+        read('آخرین همگام‌سازی') || 'هنوز همگام‌سازی نشده',
+      );
+    return next;
+  };
+  const derivedValues = deriveValues(values);
+  const goalField = fields.find((field) => field.label === 'عنوان هدف');
+  const [goals, setGoals] = useState(() =>
+    parseWeightedGoals(values[goalField?.id ?? ''] ?? ''),
+  );
+  if (context.section === 'development' && context.tab === 'goals') {
+    if (goalField) derivedValues[goalField.id] = JSON.stringify(goals);
+    const progress = fields.find((field) => field.label === 'پیشرفت');
+    const weight = fields.find((field) => field.label === 'وزن');
+    if (progress) derivedValues[progress.id] = `${weightedProgress(goals)}%`;
+    if (weight)
+      derivedValues[weight.id] = String(
+        goals.reduce((sum, goal) => sum + goal.weight, 0),
+      );
+  }
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [fileLoading, setFileLoading] = useState(false);
 
@@ -484,16 +576,43 @@ export function ContextualHrForm({
   };
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (
+      context.section === 'development' &&
+      context.tab === 'goals' &&
+      (!goals.length ||
+        goals.some(
+          (goal) =>
+            !goal.title.trim() ||
+            !Number.isFinite(goal.weight) ||
+            goal.weight <= 0,
+        ))
+    ) {
+      setErrors({ goals: 'برای هر هدف، عنوان و وزن مثبت وارد کنید.' });
+      return;
+    }
     const nextErrors = Object.fromEntries(
       fields
-        .filter((field) => field.required && !values[field.id]?.trim())
+        .filter((field) => field.required && !derivedValues[field.id]?.trim())
         .map((field) => [field.id, `${field.label} الزامی است.`]),
     );
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors);
       return;
     }
-    onSubmit(fields.map((field) => values[field.id] ?? ''));
+    if (
+      context.section === 'time' &&
+      context.tab === 'leave' &&
+      !derivedValues[
+        fields.find((field) => field.label === 'تعداد روز')?.id ?? ''
+      ]
+    ) {
+      setErrors({
+        [fields.find((field) => field.label === 'تا تاریخ')?.id ?? '']:
+          'بازه مرخصی معتبر نیست.',
+      });
+      return;
+    }
+    onSubmit(fields.map((field) => derivedValues[field.id] ?? ''));
   };
 
   return (
@@ -515,10 +634,106 @@ export function ContextualHrForm({
           </a>
         </div>
       ) : null}
+      {context.section === 'development' && context.tab === 'goals' ? (
+        <fieldset className={styles.formFieldset}>
+          <legend>اهداف و وزن هر هدف</legend>
+          {goals.map((goal, index) => (
+            <div className={styles.formGrid} key={index}>
+              <label>
+                عنوان هدف *
+                <input
+                  className={styles.control}
+                  value={goal.title}
+                  onChange={(event) =>
+                    setGoals((items) =>
+                      items.map((item, i) =>
+                        i === index
+                          ? { ...item, title: event.target.value }
+                          : item,
+                      ),
+                    )
+                  }
+                />
+              </label>
+              <label>
+                وزن *
+                <input
+                  className={styles.control}
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={goal.weight}
+                  onChange={(event) =>
+                    setGoals((items) =>
+                      items.map((item, i) =>
+                        i === index
+                          ? { ...item, weight: Number(event.target.value) }
+                          : item,
+                      ),
+                    )
+                  }
+                />
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={goal.achieved}
+                  onChange={(event) =>
+                    setGoals((items) =>
+                      items.map((item, i) =>
+                        i === index
+                          ? { ...item, achieved: event.target.checked }
+                          : item,
+                      ),
+                    )
+                  }
+                />{' '}
+                تحقق هدف (ارزیابی مدیر)
+              </label>
+              <button
+                type="button"
+                onClick={() =>
+                  setGoals((items) => items.filter((_, i) => i !== index))
+                }
+              >
+                حذف هدف
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            className={styles.button}
+            onClick={() =>
+              setGoals((items) => [
+                ...items,
+                { title: '', weight: 1, achieved: false },
+              ])
+            }
+          >
+            افزودن هدف
+          </button>
+          <output>
+            پیشرفت وزنی: {weightedProgress(goals).toLocaleString('fa-IR')}٪
+          </output>
+          {errors.goals ? <p role="alert">{errors.goals}</p> : null}
+        </fieldset>
+      ) : null}
       <fieldset className={styles.formFieldset}>
         <legend className={styles.formLegend}>مشخصات {context.title}</legend>
         <div className={styles.formGrid}>
           {fields.map((field, index) => {
+            if (
+              context.section === 'development' &&
+              context.tab === 'goals' &&
+              /^(عنوان هدف|وزن|پیشرفت)$/.test(field.label)
+            )
+              return null;
+            if (
+              context.section === 'time' &&
+              ((context.tab === 'leave' && field.label === 'تعداد روز') ||
+                (context.tab === 'biometric' && field.label === 'شناسه'))
+            )
+              return null;
             const inputId = `hr-${context.section}-${context.tab}-${field.id}`;
             const errorId = `${inputId}-error`;
             const commonProps = {
@@ -548,7 +763,7 @@ export function ContextualHrForm({
                     {...commonProps}
                     disabled={readOnly}
                     onChange={(event) => update(field.id, event.target.value)}
-                    value={values[field.id] ?? ''}
+                    value={derivedValues[field.id] ?? ''}
                   >
                     {Array.from(
                       new Set(
@@ -568,7 +783,7 @@ export function ContextualHrForm({
                       list={`${inputId}-options`}
                       onChange={(event) => update(field.id, event.target.value)}
                       placeholder={`انتخاب یا تایپ ${field.label}`}
-                      value={values[field.id] ?? ''}
+                      value={derivedValues[field.id] ?? ''}
                     />
                     <datalist id={`${inputId}-options`}>
                       {(field.options ?? []).map((option) => (
@@ -582,7 +797,7 @@ export function ContextualHrForm({
                     onChange={(value) => update(field.id, value)}
                     placeholder={`انتخاب ${field.label}`}
                     readOnly={readOnly}
-                    value={values[field.id] ?? ''}
+                    value={derivedValues[field.id] ?? ''}
                   />
                 ) : field.type === 'file' ? (
                   <>
@@ -620,7 +835,7 @@ export function ContextualHrForm({
                     className={`${styles.control} ${styles.textArea}`}
                     onChange={(event) => update(field.id, event.target.value)}
                     rows={3}
-                    value={values[field.id] ?? ''}
+                    value={derivedValues[field.id] ?? ''}
                   />
                 ) : (
                   <input
@@ -631,7 +846,7 @@ export function ContextualHrForm({
                     placeholder={field.placeholder}
                     readOnly={readOnly}
                     type={field.type}
-                    value={values[field.id] ?? ''}
+                    value={derivedValues[field.id] ?? ''}
                   />
                 )}
                 {readOnly ? (

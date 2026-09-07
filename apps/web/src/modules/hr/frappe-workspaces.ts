@@ -427,8 +427,7 @@ export const frappeWorkspaces: readonly FrappeWorkspaceDefinition[] = [
     id: 'performance',
     title: 'عملکرد و آموزش',
     shortTitle: 'عملکرد',
-    description:
-      'دوره ارزیابی، هدف و KRA، خودارزیابی، بازخورد و آموزش',
+    description: 'دوره ارزیابی، هدف و KRA، خودارزیابی، بازخورد و آموزش',
     icon: CircleGauge,
     tone: 'violet',
     metrics: [
@@ -800,7 +799,6 @@ export const frappeWorkspaceIdsByHubSection: Readonly<
   time: ['shift-attendance', 'leaves'],
   development: ['performance'],
   expenses: ['expenses'],
-  benefits: ['tax-benefits'],
   payroll: ['payroll'],
   hrSettings: ['hr-setup'],
 };
@@ -812,6 +810,7 @@ const validWorkspaceIds = new Set<FrappeWorkspaceId>(
 export function normalizeFrappeWorkspace(
   value?: string,
 ): FrappeWorkspaceId | null {
+  if (value === 'tax-benefits') return null;
   return validWorkspaceIds.has(value as FrappeWorkspaceId)
     ? (value as FrappeWorkspaceId)
     : null;
@@ -820,7 +819,36 @@ export function normalizeFrappeWorkspace(
 export function getFrappeWorkspace(
   id: FrappeWorkspaceId,
 ): FrappeWorkspaceDefinition {
-  return frappeWorkspaces.find((workspace) => workspace.id === id)!;
+  const workspace = frappeWorkspaces.find((workspace) => workspace.id === id)!;
+  return {
+    ...workspace,
+    groups: workspace.groups
+      .map((group) => ({
+        ...group,
+        items: group.items
+          .filter(
+            (item) =>
+              item.section !== 'benefits' &&
+              !(item.section === 'development' && item.tab === 'feedback') &&
+              !(
+                item.section === 'time' &&
+                ['import', 'shiftRequests'].includes(item.tab ?? '')
+              ) &&
+              !(item.section === 'expenses' && item.tab === 'approvals'),
+          )
+          .map((item) =>
+            item.section === 'fleet'
+              ? { ...item, section: 'assets' as const }
+              : item.section === 'time' && item.tab === 'mission'
+                ? { ...item, section: 'expenses' as const }
+                : item.section === 'development' &&
+                    item.tab === 'trainingEvents'
+                  ? { ...item, tab: 'training' }
+                  : item,
+          ),
+      }))
+      .filter((group) => group.items.length),
+  };
 }
 
 export function hrWorkspaceLinkHref(link: FrappeWorkspaceLink): string {
