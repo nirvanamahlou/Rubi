@@ -4,6 +4,7 @@ import {
   SALES_ACCOMMODATION_LABELS,
   type SalesContractOutputV1,
 } from '@rubi/contracts';
+import { contractPendingQrHtml } from './contract-pending-qr';
 
 export interface ContractPrintReferences {
   names: Record<string, string>;
@@ -183,7 +184,8 @@ export function contractPrintHtml(
   .signatures{display:grid;grid-template-columns:1fr 1fr;gap:3mm;text-align:center;min-height:13mm}
   .signatures>div{border:1px solid #b8c7d8;padding:1.2mm}.signature-line{display:block;margin-top:3mm}
   .customer-terms{font-size:8.5pt;line-height:1.35;text-align:right;border-top:1px solid #486582;padding-top:1mm;margin-top:1.5mm;color:#24415f;break-inside:avoid}.customer-terms p{margin:.3mm 0}
-  footer{border-top:.5mm solid #244f7e;margin-top:1.5mm;padding-top:1.5mm;color:#102d54;break-inside:avoid;display:flex;justify-content:flex-end}
+  footer{border-top:.5mm solid #244f7e;margin-top:1.5mm;padding-top:1.5mm;color:#102d54;break-inside:avoid;display:flex;direction:rtl;align-items:center;justify-content:space-between;gap:4mm}
+  .footer-qr{flex:0 0 49mm;text-align:right}.footer-qr svg{display:block;width:20mm;height:20mm;margin-left:auto}.footer-qr small{font-size:7.5pt;line-height:1.1;margin-top:0}
   .footer-contact{direction:ltr;text-align:left;font-size:10pt;min-width:62mm}.footer-contact strong{display:block;direction:rtl;text-align:left;font-size:13pt;margin-bottom:.7mm}
   .contact-row{display:flex;align-items:center;gap:2mm;margin:.4mm 0}.contact-row svg{width:3.5mm;height:3.5mm;fill:none;stroke:currentColor;stroke-width:1.7;flex-shrink:0}.contact-row bdi{font-family:Arial,sans-serif;font-size:9pt}
   .cancelled{padding:2mm;margin:2mm 0;border:2px solid #a02020;color:#a02020;text-align:center;font-weight:bold}
@@ -224,6 +226,6 @@ export function contractPrintHtml(
     <p>توجه داشته باشید این برگه بدون قبض رسید صندوق فاقد هرگونه اعتبار می‌باشد.</p>
     <p>با آگاهی از مفاد قراردادهای خارج از کشور که توسط سازمان میراث فرهنگی و گردشگری تهیه گردیده است، نسبت به ارسال درخواست به آژانس نیایش سیر سحر اقدام نموده و ارسال درخواست به منزله قبول تمامی شرایط، مواد و تبصره‌های قرارداد فوق می‌باشد.</p>
   </div>
-  <footer><div class="footer-contact"><strong>${e(output.company.persianName)}</strong><div class="contact-row">${websiteIcon}<bdi>Nystkt.ir</bdi></div>${niyayeshIssuer ? `<div class="contact-row">${phoneIcon}<bdi>021-72075000</bdi></div><div class="contact-row">${emailIcon}<bdi>support@niyayeshseir.com</bdi></div>` : ''}</div></footer>
+  <footer>${contractPendingQrHtml()}<div class="footer-contact"><strong>${e(output.company.persianName)}</strong><div class="contact-row">${websiteIcon}<bdi>Nystkt.ir</bdi></div>${niyayeshIssuer ? `<div class="contact-row">${phoneIcon}<bdi>021-72075000</bdi></div><div class="contact-row">${emailIcon}<bdi>support@niyayeshseir.com</bdi></div>` : ''}</div></footer>
   </article></body></html>`;
 }

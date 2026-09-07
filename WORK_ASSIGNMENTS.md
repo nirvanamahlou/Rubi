@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-CONTRACT-QR-PLACEHOLDER-0907 — PC-A — COMPLETE_LOCAL
+
+- Added explicitly pending, offline vector QR to bottom-right print/PDF footer; contacts/notices preserved. 166 Sales tests, scoped lint/typecheck, 36-route production build and all five synthetic PDF pages pass (2/6/agency-6: one page; 42: two). Web3100 updated; Web/API health 200. Placeholder is non-sensitive plain text, not an online viewer; future secure server links require regenerated output. No API/schema/dependency/IAM/data/public-push change. Scoped reservation released; see docs/tasks/SALES-CONTRACT-QR-PLACEHOLDER-0907.md.
+
+- Reserve Sales print/PDF footer helper and tests plus task/central docs from 5e305c6 on the current local Sales branch. User explicitly requests a currently non-working QR at the bottom right. Embed an offline-generated, non-sensitive pending-status QR with a visible activation notice; no localhost URL, public viewer, guessed domain, access token or verification claim. Preserve contacts, notices, six-passenger pagination and pricing. Server-phase activation requires a secure viewer/public origin and regenerated outputs. No dependency, schema, API, IAM, producer or real-data edits; no public push.
+
 ## SALES-PAYMENT-EVIDENCE-0907 — PC-A — COMPLETE_LOCAL
 
 - Delivered payment tracking inputs/search and per-saved-payment receipt attachments through public Documents APIs; Finance status remains independent. 164 Web Sales tests, 62 API Sales/Documents tests, scoped lint/typechecks and API/Web production builds pass. Synthetic actual-component browser upload/list/download/search and uncertain-response checks pass; Web3100/API4000 updated and healthy. No migration, IAM grant, real receipt/payment mutation or public push. Scoped reservation released. See docs/tasks/SALES-PAYMENT-EVIDENCE-0907.md.

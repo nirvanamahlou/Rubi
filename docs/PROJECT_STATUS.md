@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-CONTRACT-QR-PLACEHOLDER-0907 — COMPLETE_LOCAL
+
+User explicitly requested a non-working QR now. Print/PDF footer now has a sharp black/white QR at bottom right, with a small pending-server notice and existing contact details at left. QR contains only fixed pending-status text, no personal data, URL or access credential. It is not contract verification and existing copies will need regeneration after secure public-server viewing is implemented. 166 Sales tests, scoped lint/typecheck and 36-route build pass; all five synthetic PDF pages visually reviewed (six-person one-page layout retained). Web3100 updated; Web/API 200. No API, schema, dependency, IAM, real-data or public-push change. See docs/tasks/SALES-CONTRACT-QR-PLACEHOLDER-0907.md.
+
 ## SALES-PAYMENT-EVIDENCE-0907 — COMPLETE_LOCAL
 
 Contract payments now accept optional tracking references in both creation and dashboard flows. Authorized dashboard search finds payment references within existing contract ownership/branch scope; payment rows can be filtered and show distinct Finance states. Saved payments expose receipt upload/list/download using public Documents APIs, registered FINANCE receipts, restricted confidentiality and unchanged scan/permission gates. Upload does not confirm payment; search is not a bank inquiry. 164 Web Sales tests, 62 API Sales/Documents tests, scoped lint/typechecks and API/Web production builds pass; synthetic browser workflow verified. Web3100/API4000 return 200; unauthenticated contract/document APIs return 401. No migration, grants, real-data upload or public push. See docs/tasks/SALES-PAYMENT-EVIDENCE-0907.md.
