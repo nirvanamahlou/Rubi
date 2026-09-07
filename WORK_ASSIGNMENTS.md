@@ -10,6 +10,17 @@
 - نتیجه: Selector مشترک هر دو فرم به `customersApi` و `masterDataApi` متصل شد؛ فقط مشتری فعال دارای رضایت جاری و Organization فعال با نقش `AGENCY` قابل انتخاب است. جست‌وجوی debounce، Retry، پیام خطای نشست/مجوز و Deep Link به بخش مالک نیز تکمیل شد.
 - اعتبارسنجی: Web lint بدون هشدار، Web typecheck، ۲۱ تست هدفمند مارکتینگ و Production Build با ۳۴ Route موفق‌اند. Build اجرایی با `NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api/v1` ساخته و جای نسخه قدیمی پورت ۳۱۰۰ اجرا شد؛ Health API پاسخ ۲۰۰ و Endpointهای محافظت‌شده مشتری/آژانس بدون نشست پاسخ صحیح ۴۰۱ دارند.
 
+## DOCUMENTS-007-STEP-UP-SECURITY — PC-B — IN_PROGRESS
+
+- درخواست و واگذاری صریح مالک محصول در 2026-09-07: PC-B در کنار PC-A به مرز عمومی IAM دسترسی داشته باشد تا برای سندهایی که هنگام بارگذاری علامت «نیازمند اعتبارسنجی دومرحله‌ای» می‌خورند، مشاهده و دانلود فقط پس از Step-up واقعی انجام شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-documents-step-up-security` از `origin/develop@7b84040` در Worktree `C:\Users\admin\Rubi-documents-step-up-security`؛ Branch و تغییرات PC-A/PR #90 حفظ و بازنویسی نمی‌شوند.
+- محدوده رزروشده: قابلیت عمومی و نسخه‌دار Step-up در IAM، Schema/Migration افزایشی و غیرمخرب همان قابلیت، Policy و Access Grant یک‌بارمصرف Documents، Upload/Preview/Download، قراردادهای عمومی IAM/Documents، رابط کاربری و تست‌ها و مستندات همین واحد کار.
+- انتقال محدود قفل پس از Merge PR #98: `Migration Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY`، `IAM shared-contract Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY`، `Documents shared-contract Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY` و `Central Docs Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY`. قفل Dependency/Lockfile فقط در صورت ضرورت و ثبت فایل دقیق گرفته می‌شود.
+- مرز تداخل: فایل‌ها و Migrationهای فروش در PR #90 تغییر نمی‌کنند؛ Documents فقط از Public Step-up Contract/Port IAM استفاده می‌کند و به Repository یا جدول داخلی IAM Query مستقیم نمی‌زند. PC-A همچنان مالک Sales است و این واگذاری دسترسی آن را حذف نمی‌کند.
+- فرض ظرفیت و امنیت: نسبت خواندن به نوشتن `20:1`، اوج کمتر از `50 QPS`، سامانه ورودمحور با Branch Scope و داده در سطح PII/Restricted؛ هدف `p50<150ms`، `p95<300ms`، `p99<600ms`، SLO برابر `99.9%`، `RPO<=24h` و `RTO<=4h` است.
+- معیار پذیرش: Checkbox از Upload تا DB حفظ شود؛ کد ثابت، کد نمایشی در UI یا Secret داخل Git ممنوع است؛ کد Authenticator با Rate Limit و جلوگیری از Replay اعتبارسنجی شود؛ Grant کوتاه‌عمر و یک‌بارمصرف به همان کاربر/سند/عملیات محدود باشد؛ Preview/Download بدون Grant به‌صورت fail-closed رد و همه موفقیت/ردها Audit شوند.
+- مرجع طراحی و Handoff: `docs/tasks/DOCUMENTS-007-STEP-UP-SECURITY.md`.
+
 ## MASTER-005-EXCEL-IMPORT-PERSISTENCE — PC-B — DONE/MERGED
 
 - درخواست صریح مالک محصول در 2026-09-06: مسیر خواندن Excel در اطلاعات پایه بررسی شود و رکوردهای معتبر پس از خواندن، در بخش مالک خود ثبت و بلافاصله قابل مشاهده باشند. `COMPUTER_ID=PC-B`.
