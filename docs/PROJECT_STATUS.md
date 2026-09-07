@@ -1,5 +1,11 @@
 # وضعیت پروژه
 
+## NOTIFICATIONS-001 — مرکز اعلان تغییرات — آماده بررسی
+
+- `PC-B` روی Branch مستقل `codex/pc-b-global-change-notifications` زنگوله App Shell را به Notification Center سراسری Web تبدیل کرد. هر Mutation موفق `POST/PUT/PATCH/DELETE` به API تنظیم‌شده Rubi پس از موفقیت Response، یک اعلان فارسی شامل نوع عملیات، بخش، زمان و لینک داخلی می‌سازد؛ عملیات ناموفق، Auth، Preview، Search، Validation و Export اعلان تغییر تولید نمی‌کنند.
+- اعلان‌ها Payload درخواست یا PII نگه نمی‌دارند و در Browser Profile با سقف ۶۰ رکورد ذخیره می‌شوند. Badge خوانده‌نشده، فهرست RTL، Empty State، خواندن تکی/همه، پاک‌کردن خوانده‌شده‌ها، Sync بین Tabها و fallback امن Storage تکمیل است. این فاز تغییرات همان مرورگر را پوشش می‌دهد؛ اعلان cross-user/device و Background Event به Notifications/Outbox Backend آینده واگذار شده است.
+- هیچ Schema/Migration/Seed، API/Shared Contract، Permission، Dependency/Lockfile یا Repository ماژول‌های دامنه تغییر نکرد. Web lint/typecheck، ۲۲ تست هدفمند و Production Build با ۳۴ Route موفق‌اند؛ ۶۴۱/۶۴۲ تست کامل Web پاس شد و تنها شکست، assertion قدیمی Customers برای LF/CRLF در Windows است. نسخه متصل به API روی پورت‌های ۳۱۰۰/۴۰۰۰ فعال است.
+
 ## MARKETING-001F — اتصال مخاطب هدف پیشنهاد و تخفیف — آماده بررسی
 
 - `PC-B` روی Branch مستقل `codex/pc-b-marketing-offer-targets` فیلد اختیاری «مخاطب هدف» را به هر دو فرم «پیشنهاد ویژه» و «کد تخفیف» افزود. کاربر می‌تواند پیشنهاد را عمومی نگه دارد یا یک مشتری/آژانس مشخص را انتخاب کند؛ اگر نوع هدف را انتخاب کند، ذخیره بدون انتخاب رکورد مجاز نیست.
