@@ -7,10 +7,15 @@ import {
   LEGAL_ENTITY_PERMISSION_CODES,
 } from '../src';
 
-describe('legal-entities.v2 public contract', () => {
-  it('publishes only the two real issuer records and keeps ALL virtual', () => {
-    expect(LEGAL_ENTITIES_CONTRACT_VERSION).toBe(2);
-    expect(LEGAL_ENTITY_CODES).toEqual(['NIYAYESH_SEIR_SAHAR', 'JAHAN_BASTAN']);
+describe('legal-entities.v3 public contract', () => {
+  it('publishes all four real issuer records and keeps ALL virtual', () => {
+    expect(LEGAL_ENTITIES_CONTRACT_VERSION).toBe(3);
+    expect(LEGAL_ENTITY_CODES).toEqual([
+      'NIYAYESH_SEIR_SAHAR',
+      'JAHAN_BASTAN',
+      'JAHAN_ACADEMIA',
+      'GHESATI_RO',
+    ]);
     expect(LEGAL_ENTITY_CODES).not.toContain(LEGAL_ENTITY_CONTEXT_ALL);
   });
 
