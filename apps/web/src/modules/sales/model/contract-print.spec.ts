@@ -40,6 +40,7 @@ describe('Saved contract print output', () => {
   it('uses B Nazanin and distinguishes a contract copy from a receipt and official issuance', () => {
     const html = contractPrintHtml(printFixture, printReferences);
     expect(html).toContain("local('B Nazanin')");
+    expect(html).toContain('th,h2 em{background:#173d7a}');
     expect(html).toContain('رسید پرداخت');
     expect(html).toContain('شرکت فعال انتخاب‌شده');
     expect(html).toContain('قیمت تفکیکی مسافر ثبت نشده');

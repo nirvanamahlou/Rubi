@@ -27,6 +27,7 @@ import {
   peopleRow,
   emptyPeopleValues,
   selectedPeopleRow,
+  refreshPeopleRow,
   saveSalesPeopleDraft,
   linkCustomerAsFirst,
   editPeopleRow,
@@ -76,7 +77,7 @@ export function SalesPeopleSheet({
       const detail = (
         await customersApi.detail(row.person.id, 'customer-verification')
       ).data;
-      change(editPeopleRow(draft, key, selectedPeopleRow(detail)));
+      change(editPeopleRow(draft, key, refreshPeopleRow(row, detail)));
     } catch (reason) {
       setError(
         reason instanceof Error ? reason.message : 'نمایش اطلاعات مجاز نیست.',
@@ -93,9 +94,25 @@ export function SalesPeopleSheet({
     onBusyChange(true);
     setError('');
     try {
-      const detail = (await customersApi.detail(person.id)).data;
+      let detail;
+      try {
+        detail = (await customersApi.detail(person.id, 'customer-verification'))
+          .data;
+      } catch (reason) {
+        if (!(
+          reason &&
+          typeof reason === 'object' &&
+          'status' in reason &&
+          reason.status === 403
+        ))
+          throw reason;
+        detail = (await customersApi.detail(person.id)).data;
+      }
       change(editPeopleRow(draft, key, selectedPeopleRow(detail)));
       setLookup(null);
+      requestAnimationFrame(() => {
+        document.getElementById('sales-entry-' + key + '-first-name')?.focus();
+      });
     } catch (reason) {
       setError(
         reason instanceof Error ? reason.message : 'پرونده در دسترس نیست.',
@@ -149,7 +166,16 @@ export function SalesPeopleSheet({
           ? []
           : row.person && !row.profile
             ? ['birthDate']
-            : ['birthDate', 'passportNumber', 'passportExpiryDate'],
+            : [
+                'firstName',
+                'lastName',
+                'nationalId',
+                'birthDate',
+                'passportNumber',
+                'passportExpiryDate',
+                'phone',
+                'email',
+              ],
       role: (
         <div className="space-y-1 text-xs text-muted-foreground">
           <p>
@@ -172,6 +198,9 @@ export function SalesPeopleSheet({
               <Check className="size-3" />
               پرونده موجود
             </p>
+          ) : null}
+          {row.profile ? (
+            <p>اطلاعات قابل ویرایش؛ ذخیره با «ثبت و تأیید افراد»</p>
           ) : null}
           {row.reviewRequired ? (
             <p className="text-destructive">نتیجه ثبت را بررسی کنید</p>
@@ -444,9 +473,10 @@ export function SalesPeopleSheet({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-xs leading-6 text-muted-foreground">
           ثبت افراد از همین‌جا در بخش مشتریان انجام می‌شود؛ قرارداد در مرحله
-          نهایی ثبت خواهد شد. ویرایش نام و مدارک پرونده‌های موجود از بخش مشتریان
-          انجام می‌شود. شماره و انقضای پاسپورت از همین جدول در پرونده مشتری
-          ذخیره می‌شود.
+          نهایی ثبت خواهد شد. اصلاح اطلاعات پرونده موجود با «ثبت و تأیید افراد»
+          در مشتریان ذخیره می‌شود و نیازمند مجوز ویرایش است. اطلاعات حساس فقط با
+          مجوز خوانده می‌شوند؛ تماس جدید جای تماس اصلی قرار می‌گیرد و سابقه قبلی
+          حذف نمی‌شود.
         </p>
         <Button
           type="button"

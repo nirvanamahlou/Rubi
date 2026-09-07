@@ -11,6 +11,7 @@ import {
   saveSalesPeopleDraft,
   linkCustomerAsFirst,
   editPeopleRow,
+  refreshPeopleRow,
   type SalesPeopleDraft,
 } from './sales-people-sheet';
 const state: SalesFormState = {
@@ -83,7 +84,7 @@ describe('fixed Sales people-entry slots', () => {
         data: detail('existing', {
           roles: input.roles,
           version: 6,
-              passportExpiryDate: input.passportExpiryDate ?? null,
+          passportExpiryDate: input.passportExpiryDate ?? null,
           maskedPassportNumber: 'T*****34',
         }),
       })),
@@ -203,10 +204,116 @@ describe('fixed Sales people-entry slots', () => {
       selectedPeopleRow(
         detail('masked', {
           birthDateMasked: true,
-          nationalId: 'sensitive-raw',
         }),
       ).values,
     ).toMatchObject({ nationalId: '***1234', birthDate: '' });
+  });
+  it('uses only server-authorized revealed identity and contacts and retains dirty edits on refresh', () => {
+    const masked = selectedPeopleRow(detail('existing'));
+    masked.values.firstName = 'Edited';
+    const revealed = detail('existing', {
+      nationalId: national('009000001'),
+      contacts: [
+        {
+          id: 'phone',
+          type: 'phone',
+          value: '00000000000',
+          maskedValue: '***0000',
+          isPrimary: true,
+          label: null,
+          verifiedAt: null,
+          createdAt: '2026-01-01',
+        },
+      ],
+    });
+    const refreshed = refreshPeopleRow(masked, revealed);
+    expect(refreshed.values.firstName).toBe('Edited');
+    expect(refreshed.values.nationalId).toBe(revealed.nationalId);
+    expect(refreshed.values.phone).toBe('00000000000');
+    expect(refreshed.savedValues?.firstName).toBe('Synthetic');
+  });
+  it('updates selected identity once with version, omits untouched masks and preserves other roles', async () => {
+    const one = {
+      ...state,
+      passengerComposition: { adults: 1, children: 0, infants: 0 },
+    };
+    const profile = detail('existing', {
+      roles: ['customer', 'passenger'],
+      version: 7,
+      contacts: [],
+    });
+    const draft = initialSalesPeopleDraft(one);
+    draft.rows.p0 = selectedPeopleRow(profile);
+    draft.rows.p0.values.firstName = 'Edited';
+    draft.rows.p0.values.phone = '00000000000';
+    const api = {
+      create: vi.fn(),
+      update: vi.fn(async (_id: string, input: CustomerMutationRequest) => ({
+        data: {
+          ...profile,
+          firstName: input.firstName,
+          displayName: input.displayName,
+          version: 8,
+        } as CustomerDetail,
+      })),
+      addContact: vi
+        .fn()
+        .mockResolvedValue({
+          data: {
+            ...profile,
+            firstName: 'Edited',
+            displayName: 'Edited Person',
+            version: 9,
+          },
+        }),
+    };
+    const result = await saveSalesPeopleDraft(one, draft, vi.fn(), api);
+    const input = api.update.mock.calls[0]![1];
+    expect(input).toMatchObject({
+      firstName: 'Edited',
+      displayName: 'Edited Person',
+      version: 7,
+      roles: ['customer', 'passenger'],
+    });
+    expect(input).not.toHaveProperty('nationalId');
+    expect(input).not.toHaveProperty('passportNumber');
+    expect(api.addContact).toHaveBeenCalledWith(
+      'existing',
+      expect.objectContaining({ version: 8, value: '00000000000' }),
+    );
+    expect(result.patch.customerName).toBe('Edited Person');
+    expect(result.patch.passengers[0]?.displayName).toBe('Edited Person');
+    await saveSalesPeopleDraft(one, result.draft, vi.fn(), api);
+    expect(api.update).toHaveBeenCalledTimes(1);
+    expect(api.addContact).toHaveBeenCalledTimes(1);
+    expect(api.create).not.toHaveBeenCalled();
+  });
+  it('blocks an invalid replacement ID before writing and propagates a version conflict', async () => {
+    const one = {
+      ...state,
+      passengerComposition: { adults: 1, children: 0, infants: 0 },
+    };
+    const draft = initialSalesPeopleDraft(one);
+    draft.rows.p0 = selectedPeopleRow(
+      detail('existing', { roles: ['customer', 'passenger'] }),
+    );
+    const api = {
+      create: vi.fn(),
+      addContact: vi.fn(),
+      update: vi.fn().mockRejectedValue(new Error('VERSION_CONFLICT')),
+    };
+    draft.rows.p0.values.nationalId = '123';
+    await expect(
+      saveSalesPeopleDraft(one, draft, vi.fn(), api),
+    ).rejects.toThrow('۱۰رقمی');
+    expect(api.update).not.toHaveBeenCalled();
+    draft.rows.p0.values.nationalId = draft.rows.p0.savedValues!.nationalId;
+    draft.rows.p0.values.firstName = 'Changed';
+    await expect(
+      saveSalesPeopleDraft(one, draft, vi.fn(), api),
+    ).rejects.toThrow('VERSION_CONFLICT');
+    expect(api.addContact).not.toHaveBeenCalled();
+    expect(draft.rows.p0.values.firstName).toBe('Changed');
   });
   it('validates every row, age composition and duplicate IDs before creating anything', async () => {
     const draft = filled();

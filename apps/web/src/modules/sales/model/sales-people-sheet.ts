@@ -19,6 +19,7 @@ export interface PeopleRow {
   reviewRequired?: boolean;
   profile?: CustomerDetail;
   savedPassportNumber?: string;
+  savedValues?: PeopleValues;
 }
 export interface SalesPeopleDraft {
   mode: 'person' | 'first-passenger' | 'organization';
@@ -86,25 +87,86 @@ export const passengerSlotKeys = (state: SalesFormState) =>
 export const peopleRow = (draft: SalesPeopleDraft, key: string): PeopleRow =>
   draft.rows[key] ?? { values: emptyPeopleValues() };
 export function selectedPeopleRow(person: CustomerDetail): PeopleRow {
+  const contact = (type: 'phone' | 'email') => {
+    const items = person.contacts?.filter((c) => c.type === type) ?? [];
+    const item = items.find((c) => c.isPrimary) ?? items[0];
+    return item?.value ?? item?.maskedValue ?? '';
+  };
+  const values: PeopleValues = {
+    ...emptyPeopleValues(),
+    firstName: person.firstName ?? person.displayName,
+    lastName: person.lastName ?? '',
+    birthDate: person.birthDateMasked
+      ? ''
+      : (person.birthDate?.slice(0, 10) ?? ''),
+    nationalId: person.nationalId ?? person.maskedNationalId ?? '',
+    passportNumber: person.passportNumber ?? person.maskedPassportNumber ?? '',
+    passportExpiryDate: person.passportExpiryDate ?? '',
+    phone: contact('phone'),
+    email: contact('email'),
+  };
   return {
     person: { id: person.id, displayName: person.displayName },
     profile: person,
     savedPassportNumber:
       person.passportNumber ?? person.maskedPassportNumber ?? '',
-    values: {
-      ...emptyPeopleValues(),
-      firstName: person.firstName ?? person.displayName,
-      lastName: person.lastName ?? '',
-      birthDate: person.birthDateMasked
-        ? ''
-        : (person.birthDate?.slice(0, 10) ?? ''),
-      nationalId: person.maskedNationalId ?? '',
-      passportNumber:
-        person.passportNumber ?? person.maskedPassportNumber ?? '',
-      passportExpiryDate: person.passportExpiryDate ?? '',
-      phone: person.maskedPrimaryContact ?? '',
-    },
+    values,
+    savedValues: { ...values },
   };
+}
+export function existingPeopleBaseline(row: PeopleRow): PeopleValues {
+  return (
+    row.savedValues ??
+    (row.profile ? selectedPeopleRow(row.profile).values : row.values)
+  );
+}
+export function refreshPeopleRow(
+  row: PeopleRow,
+  profile: CustomerDetail,
+): PeopleRow {
+  const next = selectedPeopleRow(profile);
+  const baseline = existingPeopleBaseline(row);
+  for (const field of Object.keys(row.values) as EntryField[]) {
+    if (row.values[field] !== baseline[field])
+      next.values[field] = row.values[field];
+  }
+  return next;
+}
+function validateExistingPerson(row: PeopleRow) {
+  if (!row.profile) return;
+  const baseline = existingPeopleBaseline(row),
+    values = row.values;
+  if (!values.firstName.trim() || !values.lastName.trim())
+    throw new Error('نام و نام خانوادگی پرونده موجود را کامل کنید.');
+  if (baseline.birthDate && !values.birthDate)
+    throw new Error('برای اصلاح تاریخ تولد، تاریخ جدید را وارد کنید.');
+  if (values.nationalId !== baseline.nationalId) {
+    const id = normalizeNationalId(values.nationalId);
+    if (!/^\d{10}$/.test(id) || !isValidIranianNationalId(id))
+      throw new Error('برای اصلاح کد ملی، مقدار معتبر ۱۰رقمی وارد کنید.');
+  }
+  if (
+    values.phone !== baseline.phone &&
+    !/^\+?[0-9]{10,15}$/.test(values.phone.trim())
+  )
+    throw new Error(
+      'شماره تلفن جدید معتبر وارد کنید؛ حذف تماس از بخش مشتریان انجام می‌شود.',
+    );
+  if (
+    values.email !== baseline.email &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())
+  )
+    throw new Error(
+      'ایمیل جدید معتبر وارد کنید؛ حذف تماس از بخش مشتریان انجام می‌شود.',
+    );
+  if (
+    values.birthDate &&
+    (!/^\d{4}-\d{2}-\d{2}$/.test(values.birthDate) ||
+      Number.isNaN(Date.parse(values.birthDate)) ||
+      new Date(values.birthDate).toISOString().slice(0, 10) !==
+        values.birthDate)
+  )
+    throw new Error('تاریخ تولد معتبر نیست.');
 }
 export function linkCustomerAsFirst(
   draft: SalesPeopleDraft,
@@ -229,6 +291,7 @@ export function validateSalesPeopleDraft(
       );
     validatePassport(row);
     if (row.person) {
+      validateExistingPerson(row);
       if (ids.has(row.person.id))
         throw new Error(
           'یک شخص دوبار انتخاب شده؛ برای مشتری از گزینه «همان مسافر اول» استفاده کنید.',
@@ -289,6 +352,12 @@ export async function saveSalesPeopleDraft(
       const customerRole =
         key === 'primary' || (draft.mode === 'first-passenger' && key === 'p0');
       const profile = row.profile;
+      const baseline = existingPeopleBaseline(row);
+      const identityChanged =
+        profile &&
+        (['firstName', 'lastName', 'nationalId', 'birthDate'] as const).some(
+          (field) => row.values[field] !== baseline[field],
+        );
       const passportChanged =
         profile &&
         (row.values.passportExpiryDate !== (profile.passportExpiryDate ?? '') ||
@@ -301,7 +370,7 @@ export async function saveSalesPeopleDraft(
         profile &&
         ((customerRole && !profile.roles.includes('customer')) ||
           (key !== 'primary' && !profile.roles.includes('passenger')));
-      if (passportChanged || needsRole) {
+      if (passportChanged || needsRole || identityChanged) {
         if (!api.update) throw new Error('اتصال ویرایش مشتری در دسترس نیست.');
         const roles = [
           ...new Set([
@@ -314,12 +383,16 @@ export async function saveSalesPeopleDraft(
         const updated = (
           await api.update(row.person.id, {
             kind: 'person',
-            displayName: profile.displayName,
-            firstName: profile.firstName,
-            lastName: profile.lastName,
+            displayName:
+              row.values.firstName.trim() + ' ' + row.values.lastName.trim(),
+            firstName: row.values.firstName.trim(),
+            lastName: row.values.lastName.trim(),
             acquaintanceMethodId: profile.acquaintanceMethodId,
             roles,
             version: profile.version,
+            ...(row.values.nationalId !== baseline.nationalId
+              ? { nationalId: normalizeNationalId(row.values.nationalId) }
+              : {}),
             ...(row.values.birthDate
               ? { birthDate: row.values.birthDate }
               : {}),
@@ -336,9 +409,51 @@ export async function saveSalesPeopleDraft(
         current = editPeopleRow(current, key, {
           ...row,
           profile: updated,
+          person: { id: updated.id, displayName: updated.displayName },
           savedPassportNumber: row.values.passportNumber,
+          savedValues: {
+            ...row.values,
+            phone: baseline.phone,
+            email: baseline.email,
+          },
         });
         onProgress(current);
+      }
+      if (profile) {
+        for (const field of ['phone', 'email'] as const) {
+          if (row.values[field] === baseline[field]) continue;
+          try {
+            const latest = peopleRow(current, key);
+            const updated = (
+              await api.addContact(row.person.id, {
+                type: field,
+                value: row.values[field].trim(),
+                label: 'اصلاح از قرارداد',
+                isPrimary: true,
+                version: latest.profile!.version,
+              })
+            ).data;
+            current = editPeopleRow(current, key, {
+              ...latest,
+              profile: updated,
+              savedValues: {
+                ...existingPeopleBaseline(latest),
+                [field]: row.values[field],
+              },
+            });
+            onProgress(current);
+          } catch (error) {
+            current = editPeopleRow(current, key, {
+              ...peopleRow(current, key),
+              reviewRequired: true,
+            });
+            onProgress(current);
+            throw new Error(
+              'ثبت تماس قطعی نشد؛ پرونده را دوباره بررسی و انتخاب کنید. ' +
+                (error instanceof Error ? error.message : ''),
+            );
+          }
+        }
       }
       continue;
     }
@@ -399,6 +514,7 @@ export async function saveSalesPeopleDraft(
       current = editPeopleRow(current, key, {
         ...current.rows[key]!,
         profile: created,
+        savedValues: { ...row.values },
       });
       onProgress(current);
     } catch (error) {

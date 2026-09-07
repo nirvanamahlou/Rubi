@@ -140,6 +140,8 @@ export function contractPrintHtml(
   body{font-size:10.5pt;line-height:1.12}header h1{font-size:18pt}header img{max-height:15mm}
   section{margin-top:2mm;padding-bottom:1.5mm}table{font-size:9.5pt}td,th{padding:.8mm}.fields{gap:.5mm 3mm}
   .totals>div>div,.financial>div>div{display:inline-block;margin-inline-start:3mm}.financial{padding-block:1mm}
+  header{border-color:#173d7a}header p{color:#173d7a}.meta>div{background:#173d7a;color:#fff}
+  th,h2 em{background:#173d7a}.contract-total{background:#fff}
   </style></head><body><article class="document">
   <header><div class="brand">${logo}<div>${e(output.company.persianName)}</div><small>${e(output.company.latinName ?? '')}</small></div><div dir="ltr"><h1>TRAVEL SERVICES<br>CONTRACT</h1><p dir="rtl">قرارداد فروش خدمات مسافرتی</p></div></header>
   ${c.status === 'CANCELLED' ? '<div class="cancelled">این قرارداد لغو شده است</div>' : ''}

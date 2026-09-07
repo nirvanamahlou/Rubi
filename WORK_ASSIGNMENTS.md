@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-CUSTOMER-PRICING-0907 — PC-A — IN_PROGRESS
+
+- Reserve Sales people-sheet UI/model/tests, print template/tests and task docs on codex/pc-a-sales-customer-pricing-0907 from 206635c. Use existing Customers public API with its permissions, branch scope, sensitive-read audit and optimistic version; no producer worktree changes, grants or public push.
+- User requests dark-blue print styling, actual passenger/age fare amounts and editing selected existing customers. Passenger fare entry granularity is awaiting clarification; no invented division or age discount. Persisted pricing changes will be separately scoped after inspection; no migration lock is taken by this entry.
+- Customer/print slices implemented: existing person selection loads authorized detail, focuses the editable row, preserves linked passenger identity, and saves changed fields through versioned Customers APIs. Untouched masks are omitted; contact revisions use the existing per-type primary-contact action without deleting history. Print uses dark professional blue. Fare amounts remain unchanged pending the age-category-versus-individual entry decision; this task is not wholly complete.
+
 ## SALES-OUTPUT-LAYOUT-0907 — PC-A — COMPLETE_LOCAL
 
 - Reserve Sales Web/API output and tests, additive Sales public output type, navigation alias/tests and task docs on codex/pc-a-sales-output-layout-0907 from c63318a. User requests breadcrumb, overflow and customer-shareable contract output. Existing producer public APIs only; no schema/migration, grants, dependencies, producer changes or public push.
