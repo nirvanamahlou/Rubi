@@ -444,7 +444,7 @@ export class CurrencyRateService {
   }
 
   async notifications(limit = 25) {
-    const take = Math.min(50, Math.max(1, Math.trunc(limit) || 25));
+    const take = Math.min(60, Math.max(1, Math.trunc(limit) || 25));
     const events = await this.database.client.masterDataAuditEvent.findMany({
       where: {
         outcome: AuditOutcome.SUCCESS,

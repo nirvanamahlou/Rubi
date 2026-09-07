@@ -510,7 +510,7 @@ export const masterDataApi = {
     return request<{
       data: readonly MasterDataNotification[];
       meta: { limit: number };
-    }>(`/audit/notifications?limit=${Math.min(50, Math.max(1, limit))}`);
+    }>(`/audit/notifications?limit=${Math.min(60, Math.max(1, limit))}`);
   },
   unmaskOrganizationContact(id: string) {
     return request<{ data: MasterOrganizationContactUnmasked }>(

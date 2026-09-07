@@ -67,7 +67,7 @@ function formatNotificationTime(value: string) {
   }).format(new Date(value));
 }
 
-function mergeMasterDataFeed(
+export function mergeMasterDataFeed(
   current: readonly ChangeNotification[],
   events: readonly MasterDataNotification[],
 ) {
@@ -104,7 +104,7 @@ export function NotificationCenter() {
   const syncMasterDataFeed = useCallback(async (showProgress = false) => {
     if (showProgress) setRefreshingMasterData(true);
     try {
-      const response = await masterDataApi.notifications(25);
+      const response = await masterDataApi.notifications(60);
       const next = writeStoredNotifications(
         mergeMasterDataFeed(readStoredNotifications(), response.data),
       );

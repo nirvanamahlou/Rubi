@@ -117,7 +117,7 @@ describe('CurrencyRateService decisions', () => {
           occurredAt: occurredAt.toISOString(),
         },
       ],
-      meta: { limit: 50 },
+      meta: { limit: 60 },
     });
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -130,7 +130,7 @@ describe('CurrencyRateService decisions', () => {
             ]),
           },
         },
-        take: 50,
+        take: 60,
       }),
     );
   });
