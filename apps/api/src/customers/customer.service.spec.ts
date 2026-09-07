@@ -115,6 +115,36 @@ const row = {
 };
 
 describe('CustomerService', () => {
+  it('allows explicit national-ID matching for authorized correction while preserving scope and audit', async () => {
+    const repository = {
+      findRegistration: vi.fn().mockResolvedValue(row),
+      auditSensitiveRead: vi.fn(),
+      update: vi.fn(),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    const input = {
+      nationalId: '1234567891',
+      firstName: 'Corrected',
+      lastName: 'Name',
+      birthDate: '1991-02-03',
+      matchByNationalId: true,
+    };
+    await expect(
+      service.registrationLookup(input, actor),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.findRegistration).not.toHaveBeenCalled();
+    const result = await service.registrationLookup(input, {
+      ...actor,
+      permissions: [...actor.permissions, 'customers.sensitive.read'],
+    });
+    expect(result.data?.id).toBe(row.id);
+    expect(repository.findRegistration).toHaveBeenCalledExactlyOnceWith(
+      'n'.repeat(64),
+      actor.branchIds,
+    );
+    expect(repository.auditSensitiveRead).toHaveBeenCalledTimes(1);
+    expect(repository.update).not.toHaveBeenCalled();
+  });
   it('recovers only exact branch-scoped identity and audits sensitive output', async () => {
     const repository = {
       findRegistration: vi.fn().mockResolvedValue(row),

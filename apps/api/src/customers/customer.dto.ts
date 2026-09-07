@@ -18,6 +18,7 @@ import {
 } from 'class-validator';
 
 export class CustomerRegistrationLookupDto {
+  @IsOptional() @IsBoolean() matchByNationalId?: boolean;
   @IsString() @MaxLength(16) nationalId!: string;
   @IsString() @MinLength(1) @MaxLength(120) firstName!: string;
   @IsString() @MinLength(1) @MaxLength(120) lastName!: string;

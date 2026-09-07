@@ -549,11 +549,12 @@ export class CustomerService {
     const normalize = (value: string) =>
       value.trim().replace(/\s+/g, ' ').normalize('NFC');
     if (
-      normalize(row.firstName ?? '') !== normalize(input.firstName) ||
-      normalize(row.lastName ?? '') !== normalize(input.lastName) ||
-      (input.birthDate &&
-        row.birthDate?.toISOString().slice(0, 10) !==
-          input.birthDate.slice(0, 10))
+      !input.matchByNationalId &&
+      (normalize(row.firstName ?? '') !== normalize(input.firstName) ||
+        normalize(row.lastName ?? '') !== normalize(input.lastName) ||
+        (input.birthDate &&
+          row.birthDate?.toISOString().slice(0, 10) !==
+            input.birthDate.slice(0, 10)))
     )
       throw new ConflictException({
         code: 'CUSTOMER_REGISTRATION_IDENTITY_MISMATCH',
