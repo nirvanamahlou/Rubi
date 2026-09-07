@@ -1,5 +1,9 @@
 # تصمیم‌های معماری
 
+## SALES-CUSTOMER-PRICING-0907 — local additive upgrade gate
+
+The operational database has pre-existing file/checksum differences for master_data_foundation (20260823084001), legal_entity_context (20260825123000), and reservation_arrangements (20260906113000), plus LF/CRLF differences elsewhere. This task does not repair/rebaseline/rewrite any historical migration or owner data. Like the previous local rollout, permit only the single reviewed additive Sales passenger-price migration after a fresh backup restore rehearsal. Require every historical migration to be known/finished, reject any other pending migration, and compare all stored historical checksums plus business counts before/after. The new table depends only on the existing Sales passenger UUID key. Broader historical reconciliation remains outside this task.
+
 ## HOTEL-SALES-PRICING-0906 — 2026-09-06
 
 - مالک محصول ورود قیمت روز فروش/توافقی هتل به‌صورت هر شب یا کل و ثبت بعدی هزینه خرید در رزرواسیون را تأیید کرد. انتقال محدود قفل Migration نیز صریحاً تأیید شد.

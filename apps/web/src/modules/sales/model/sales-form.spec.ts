@@ -20,6 +20,13 @@ import {
 } from './sales-form';
 
 describe('sales contract form payload', () => {
+  it('sends only entered package amounts for current passengers, without allocating by age', () => {
+    const prices = [{amount:'12500000.25',currencyCode:'IRR'}];
+    const payload = salesPayload({...emptySalesForm,passengers:[{customerId:'person-1',displayName:'Test',birthDate:'1990-01-01'}],passengerPrices:{'person-1':prices,'removed-person':[{amount:'999',currencyCode:'USD'}]}});
+    expect(payload.passengers[0]?.agreedPrices).toEqual(prices);
+    expect(JSON.stringify(payload.passengers)).not.toContain('removed-person');
+    expect(JSON.stringify(payload.passengers)).not.toContain('999');
+  });
   it('removes stale transfer draft prices while preserving included directions and assignments', () => {
     const price = {
       version: 1 as const,

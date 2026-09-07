@@ -1,5 +1,8 @@
 import { createHash } from 'node:crypto';
-import { servicePriceComponents } from '@rubi/contracts';
+import {
+  servicePriceComponents,
+  validatePassengerPackagePrices,
+} from '@rubi/contracts';
 
 import type {
   SalesBalance,
@@ -366,6 +369,7 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
       input.services,
       input.hotelSelection,
     );
+    validatePassengerPackagePrices(input.passengers, input.priceComponents);
     if (
       derived &&
       salesFingerprint(derived.map(salesFingerprint).sort()) !==

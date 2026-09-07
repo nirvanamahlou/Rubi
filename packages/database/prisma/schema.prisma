@@ -2746,10 +2746,22 @@ model SalesContractPassenger {
   createdAt           DateTime                          @default(now()) @map("created_at") @db.Timestamptz(3)
   contract            SalesContract                     @relation(fields: [contractId], references: [id], onDelete: Cascade)
   allocations         SalesPassengerServiceAllocation[]
+  agreedPrices        SalesContractPassengerPrice[]
 
   @@unique([contractId, customerId])
   @@index([customerId])
   @@map("sales_contract_passengers")
+}
+
+model SalesContractPassengerPrice {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  passengerId  String @map("passenger_id") @db.Uuid
+  currencyCode String @map("currency_code") @db.VarChar(3)
+  amount       Decimal @db.Decimal(24, 4)
+  passenger    SalesContractPassenger @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+
+  @@unique([passengerId, currencyCode])
+  @@map("sales_contract_passenger_prices")
 }
 
 model SalesContractService {

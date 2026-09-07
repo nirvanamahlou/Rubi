@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { validatePassengerPackagePrices } from '@rubi/contracts';
 
 import {
   BadRequestException,
@@ -167,6 +168,14 @@ export function presentSalesContract(
       displayNameSnapshot: passenger.displayNameSnapshot,
       birthDate: passenger.birthDate.toISOString().slice(0, 10),
       ageCategory: passenger.ageCategory,
+      ...(passenger.agreedPrices?.length
+        ? {
+            agreedPrices: passenger.agreedPrices.map((price) => ({
+              currencyCode: price.currencyCode,
+              amount: price.amount.toString(),
+            })),
+          }
+        : {}),
       serviceClientKeys: passenger.allocations.map(
         ({ service }) => service.clientKey,
       ),
@@ -425,6 +434,21 @@ export class SalesService {
         message: 'قرارداد یافت نشد.',
       });
     this.assertUpdate(row, actor);
+    if (row.passengers.some((passenger) => passenger.agreedPrices?.length))
+      domainCall(() => {
+        try {
+          validatePassengerPackagePrices(
+            input.passengers,
+            input.priceComponents,
+            true,
+          );
+        } catch (error) {
+          throw new SalesDomainError(
+            'SALES_MONEY_INVALID',
+            error instanceof Error ? error.message : 'مبلغ مسافر معتبر نیست.',
+          );
+        }
+      });
     const customer = await this.customers.resolveSnapshot(
       input.customerId,
       actor,

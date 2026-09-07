@@ -98,6 +98,8 @@ export interface SalesServiceInput {
 }
 
 export interface SalesPassengerInput {
+  /** Explicit agreed total of all services for this person; absent on legacy contracts. */
+  agreedPrices?: readonly SalesMoney[];
   customerId: string;
   displayNameSnapshot: string;
   birthDate: string;

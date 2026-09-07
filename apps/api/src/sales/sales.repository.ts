@@ -11,7 +11,10 @@ import { calculateSalesBalances, passengerAgeCategory } from './sales.domain';
 
 export const salesDetailInclude = {
   passengers: {
-    include: { allocations: { include: { service: true } } },
+    include: {
+      agreedPrices: { orderBy: { currencyCode: 'asc' } },
+      allocations: { include: { service: true } },
+    },
     orderBy: { createdAt: 'asc' },
   },
   services: { orderBy: { createdAt: 'asc' } },
@@ -264,6 +267,7 @@ export class SalesRepository {
             data: {
               contractId: contract.id,
               customerId: passenger.customerId,
+              agreedPrices: { create: [...(passenger.agreedPrices ?? [])] },
               displayNameSnapshot: passenger.displayNameSnapshot,
               birthDate: startOfDay(passenger.birthDate),
               ageCategory: passengerAgeCategory(
@@ -460,6 +464,7 @@ export class SalesRepository {
             data: {
               contractId: id,
               customerId: passenger.customerId,
+              agreedPrices: { create: [...(passenger.agreedPrices ?? [])] },
               displayNameSnapshot: passenger.displayNameSnapshot,
               birthDate: startOfDay(passenger.birthDate),
               ageCategory: passengerAgeCategory(

@@ -2,6 +2,8 @@
 
 ## SALES-CUSTOMER-PRICING-0907 — PC-A — IN_PROGRESS
 
+- 2026-09-07 clarification: individual passenger totals cover all selected services, per currency, reconciled to the saved agreed contract total; no age-based or equal allocation. Reserve Sales passenger money schema/additive migration, Sales public types/validation/persistence/UI, direct PDF Web route and task/central docs for this local follow-up. Prior scoped local migration reservations are released; no producer worktree, dependency lockfile or public push changes. Existing contract service pricing and Finance settlement remain authoritative. Legacy passenger amounts are not backfilled.
+
 - Reserve Sales people-sheet UI/model/tests, print template/tests and task docs on codex/pc-a-sales-customer-pricing-0907 from 206635c. Use existing Customers public API with its permissions, branch scope, sensitive-read audit and optimistic version; no producer worktree changes, grants or public push.
 - User requests dark-blue print styling, actual passenger/age fare amounts and editing selected existing customers. Passenger fare entry granularity is awaiting clarification; no invented division or age discount. Persisted pricing changes will be separately scoped after inspection; no migration lock is taken by this entry.
 - Customer/print slices implemented: existing person selection loads authorized detail, focuses the editable row, preserves linked passenger identity, and saves changed fields through versioned Customers APIs. Untouched masks are omitted; contact revisions use the existing per-type primary-contact action without deleting history. Print uses dark professional blue. Fare amounts remain unchanged pending the age-category-versus-individual entry decision; this task is not wholly complete.

@@ -1,4 +1,58 @@
-import type { SalesPriceComponentInput, SalesServiceInput } from './index';
+import type { SalesPassengerInput, SalesPriceComponentInput, SalesServiceInput } from './index';
+
+/** No allocation is inferred: legacy callers may omit prices, new forms require them. */
+export function validatePassengerPackagePrices(
+  passengers: readonly SalesPassengerInput[],
+  components: readonly SalesPriceComponentInput[],
+  required = false,
+): void {
+  if (!required && passengers.every((p) => p.agreedPrices === undefined))
+    return;
+  const expected = new Map<string, bigint>();
+  for (const p of components)
+    expected.set(
+      p.currencyCode,
+      (expected.get(p.currencyCode) ?? 0n) +
+        moneyUnits(p.amount) * (p.type === 'DISCOUNT' ? -1n : 1n),
+    );
+  const actual = new Map<string, bigint>();
+  for (const passenger of passengers) {
+    const prices = passenger.agreedPrices;
+    if (expected.size === 0 && prices === undefined) continue;
+    if (
+      !Array.isArray(prices) ||
+      prices.length > 10 ||
+      (expected.size > 0 && prices.length === 0)
+    )
+      throw new Error(
+        'مبلغ کل خدمات هر مسافر را وارد کنید؛ برای مسافر رایگان صفر وارد کنید.',
+      );
+    const seen = new Set<string>();
+    for (const price of prices) {
+      if (
+        !price ||
+        !/^[A-Z]{3}$/.test(price.currencyCode) ||
+        seen.has(price.currencyCode) ||
+        !expected.has(price.currencyCode)
+      )
+        throw new Error(
+          'ارز مبلغ مسافر باید یکتا و از ارزهای همین قرارداد باشد.',
+        );
+      seen.add(price.currencyCode);
+      actual.set(
+        price.currencyCode,
+        (actual.get(price.currencyCode) ?? 0n) + moneyUnits(price.amount),
+      );
+    }
+  }
+  for (const [code, amount] of expected)
+    if (amount < 0n || amount !== (actual.get(code) ?? 0n))
+      throw new Error(
+        'جمع مبلغ مسافران در ارز ' +
+          code +
+          ' باید با مبلغ توافقی کل قرارداد برابر باشد.',
+      );
+}
 
 export interface SalesServicePricingV1 {
   version: 1;

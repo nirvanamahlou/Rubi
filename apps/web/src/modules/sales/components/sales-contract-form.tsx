@@ -16,6 +16,8 @@ import type {
 import { hotelNights } from '@rubi/contracts';
 import { SalesPricingPanel, SalesPricingSummary } from './sales-pricing-panel';
 import { validateSalesCurrencySelection } from './sales-currency-select';
+import { validatePassengerPackagePrices } from '@rubi/contracts';
+import { PassengerPackagePrices } from './passenger-package-prices';
 import { SalesPaymentPlan } from './sales-payment-plan';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
@@ -456,6 +458,11 @@ export function SalesContractForm() {
           servicePricing: state.servicePricing ?? {},
         });
         validateSalesCurrencySelection(payload, references.currencies);
+        validatePassengerPackagePrices(
+          payload.passengers,
+          payload.priceComponents,
+          true,
+        );
         return (
           payload.priceComponents.length > 0 ||
           (payload.services.length > 0 &&
@@ -484,6 +491,11 @@ export function SalesContractForm() {
     try {
       const payload = salesPayload(state);
       validateSalesCurrencySelection(payload, references.currencies);
+      validatePassengerPackagePrices(
+        payload.passengers,
+        payload.priceComponents,
+        true,
+      );
       const fingerprint = JSON.stringify(payload);
       if (submission.current.fingerprint !== fingerprint)
         submission.current = { fingerprint, key: crypto.randomUUID() };
@@ -1292,6 +1304,10 @@ export function SalesContractForm() {
                   servicePricing: { ...state.servicePricing, [key]: prices },
                 })
               }
+            />
+            <PassengerPackagePrices
+              state={state}
+              onChange={(passengerPrices) => patchState({ passengerPrices })}
             />
             <SalesPaymentPlan
               payments={state.payments}

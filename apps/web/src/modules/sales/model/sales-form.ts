@@ -4,6 +4,7 @@ import {
 } from '@rubi/contracts';
 import type {
   CustomerSummary,
+  SalesMoney,
   MasterDataRecord,
   SalesContractCreateRequest,
   SalesPaymentInput,
@@ -130,6 +131,7 @@ export interface SalesFormState {
   priceComponents: SalesPriceComponentInput[];
   payments: SalesPaymentInput[];
   pricingNotes: string;
+  passengerPrices?: Record<string, SalesMoney[]>;
 }
 
 export const emptySalesForm: SalesFormState = {
@@ -609,6 +611,9 @@ export function salesPayload(
     passengers: state.passengers.map((item) => ({
       customerId: item.customerId,
       displayNameSnapshot: item.displayName,
+      ...(state.passengerPrices
+        ? { agreedPrices: state.passengerPrices[item.customerId] ?? [] }
+        : {}),
       birthDate: item.birthDate,
       serviceClientKeys: services
         .filter(
