@@ -1,5 +1,9 @@
 # تصمیم‌های معماری
 
+## SALES-OUTPUT-CLEANUP-0907 — customer copy vs operator guidance
+
+At the user's request, operational issuance/context disclaimers and template generation metadata are removed from the customer-facing printed/PDF page. The same disclosures stay in the operator dialog; this layout-only change does not establish historical issuer binding, official issuance, archive completion, Finance payment confirmation or reservation fulfillment. Existing fail-closed API policies remain unchanged.
+
 ## SALES-CUSTOMER-PRICING-0907 — local additive upgrade gate
 
 The operational database has pre-existing file/checksum differences for master_data_foundation (20260823084001), legal_entity_context (20260825123000), and reservation_arrangements (20260906113000), plus LF/CRLF differences elsewhere. This task does not repair/rebaseline/rewrite any historical migration or owner data. Like the previous local rollout, permit only the single reviewed additive Sales passenger-price migration after a fresh backup restore rehearsal. Require every historical migration to be known/finished, reject any other pending migration, and compare all stored historical checksums plus business counts before/after. The new table depends only on the existing Sales passenger UUID key. Broader historical reconciliation remains outside this task.

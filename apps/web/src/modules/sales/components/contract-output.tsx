@@ -181,6 +181,12 @@ export function ContractOutputButton({ contractId }: { contractId: string }) {
               <bdi>{output.contract.contractNumber}</bdi>
             </p>
           )}
+          <p className="text-xs text-muted-foreground">
+            شرکت این نسخه، شرکت فعال هنگام تهیه خروجی است. این برگه رسید پرداخت یا تأیید نهایی خدمات رزرواسیون نیست؛ صدور رسمی نسخهٔ بایگانی‌شده جداگانه انجام می‌شود.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            برای چاپ بدون آدرس سایت و تاریخ مرورگر، در More settings گزینهٔ Headers and footers را خاموش کنید؛ فایل «دانلود PDF» این موارد را ندارد.
+          </p>
           {busy && <p role="status">دریافت اطلاعات قرارداد…</p>}
           {warnings.length > 0 && html && (
             <p className="text-xs text-amber-700">

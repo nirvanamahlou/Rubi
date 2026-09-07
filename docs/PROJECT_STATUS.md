@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-OUTPUT-CLEANUP-0907 — COMPLETE_LOCAL
+
+Removed the user-marked operator notes under signatures and technical generation footer from customer print/PDF, preserving company/signatures and all amounts. Operator disclosures and browser header/footer instructions remain in the preview dialog. Eleven tests, scoped lint and Web production TypeScript/build passed; all four synthetic PDF pages inspected. Web3100 restarted; API/database unchanged. Local-only; scoped locks released. See docs/tasks/SALES-OUTPUT-CLEANUP-0907.md.
+
 ## SALES-CUSTOMER-PRICING-0907 — COMPLETE_LOCAL — 2026-09-07
 
 Individual agreed package totals per passenger/currency are persisted with exact reconciliation, without inferred age allocation. Direct PDF download is beside Print; amounts use English digits while Persian prose retains B Nazanin. Latest local Web3100/API4000 are active. 129 Web Sales / 44 API Sales / 47 Contracts tests, scoped lint, typechecks and production builds passed. Additive migration passed empty/seed-twice and backup-restore gates; operational historical checksums/business counts unchanged. No historical rebaseline, IAM grant, producer modification or public push. Legacy per-passenger amounts remain unrecorded; no fabrication. Task-specific locks released. Details: docs/tasks/SALES-CUSTOMER-PRICING-0907.md.

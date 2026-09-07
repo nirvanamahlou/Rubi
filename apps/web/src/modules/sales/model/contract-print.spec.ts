@@ -46,12 +46,17 @@ describe('Saved contract print output', () => {
     expect(html).not.toContain('https://invalid.example');
     expect(html).toContain("default-src 'none'");
   });
-  it('uses B Nazanin and distinguishes a contract copy from a receipt and official issuance', () => {
+  it('keeps B Nazanin and signatures but excludes operator notes and technical footer metadata', () => {
     const html = contractPrintHtml(printFixture, printReferences);
     expect(html).toContain("local('B Nazanin')");
     expect(html).toContain('th,h2 em{background:#173d7a}');
-    expect(html).toContain('رسید پرداخت');
-    expect(html).toContain('شرکت فعال انتخاب‌شده');
+    expect(html).not.toContain('رسید پرداخت');
+    expect(html).not.toContain('شرکت فعال انتخاب‌شده');
+    expect(html).not.toContain('travel-services-v1');
+    expect(html).not.toContain('تهیه خروجی:');
+    expect(html).not.toContain('localhost');
+    expect(html).toContain('نام و امضای مسافر / نماینده');
+    expect(html).toContain('نام و امضای مسئول فروش');
     expect(html).toContain('قیمت تفکیکی مسافر ثبت نشده');
     expect((html.match(/<section/g) || []).length).toBe(6);
   });

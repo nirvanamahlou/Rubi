@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-OUTPUT-CLEANUP-0907 — PC-A — COMPLETE_LOCAL
+
+- Delivered marked-note/footer cleanup in print/PDF with operator guidance outside the document. Eleven focused tests, scoped lint, production TypeScript/build and four-page rendered QA passed. Web3100 restarted; no API/database change. Reservations released; local-only. Browser header/footer preference remains explicit; see task document.
+
+- Reserve Sales print template/tests and output-dialog guidance plus task docs on the current Sales branch from 8bb1fdf. Remove the user-marked internal notes and template/time metadata from the customer document, retaining operator disclosures in the dialog. No API, pricing, schema, IAM, dependency, producer or remote changes. Browser-added headers/footers remain a print preference; direct PDF already suppresses them.
+
 ## SALES-CUSTOMER-PRICING-0907 — PC-A — COMPLETE_LOCAL
 
 - Final clarification and delivery supersede the pending-decision notes below. Whole-package agreed amounts are entered and persisted per passenger/currency, reconciled exactly with service-agreed totals. Added direct saved-data PDF download next to Print, English monetary glyphs, and legacy unrecorded-price disclosure. 129 Sales Web, 44 Sales API, 47 Contracts tests passed; scoped lint, affected typechecks, API/Web production builds passed. Empty PostgreSQL migrations + seed twice (86 permissions), restored-backup upgrade and exact-money/FK/unique/check guards passed. Only the additive Sales migration activated; all historical checksums and checked business counts unchanged. Web3100/API4000 healthy; no authenticated real-contract walkthrough. Migration, Sales shared contract and task docs reservations released. Local commits only; no public push. See task doc for runtime configuration and retained backups.

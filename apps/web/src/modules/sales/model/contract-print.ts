@@ -113,15 +113,6 @@ export function contractPrintHtml(
     /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(refs.logoDataUrl)
       ? `<img alt="" src="${refs.logoDataUrl}">`
       : '';
-  const status = {
-    DRAFT: 'پیش‌نویس',
-    PENDING_CONFIRMATION: 'در انتظار تأیید',
-    CONFIRMED: 'تأیید شده',
-    SENT_TO_RESERVATIONS: 'ارسال به رزرواسیون',
-    IN_PROGRESS: 'در حال اجرا',
-    COMPLETED: 'تکمیل شده',
-    CANCELLED: 'لغو شده',
-  }[c.status];
   return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; font-src data:; img-src data:"><title>قرارداد ${e(c.contractNumber)}</title><style>
   @font-face{font-family:ContractNazanin;src:local('B Nazanin'),local('BNazanin');font-weight:100 900}
   @page{size:A4 portrait;margin:9mm}
@@ -178,7 +169,7 @@ export function contractPrintHtml(
       .map((s) => s.titleSnapshot)
       .join('، ') || '—',
   )}</div></div></section>
-  <section>${heading(6, 'APPROVAL & SIGNATURE', 'تأیید و امضا')}<div class="signatures"><div>نام و امضای مسافر / نماینده<br>....................................</div><div>نام و امضای مسئول فروش<br>....................................</div></div><p class="note">نسخه اطلاعات ثبت‌شده قرارداد؛ این برگه رسید پرداخت یا تأیید نهایی خدمات رزرواسیون نیست. وضعیت قرارداد: ${e(status)}. نسخه قرارداد: ${c.version}.</p><p class="note">نام شرکت، شرکت فعال انتخاب‌شده هنگام تهیه این خروجی است؛ صدور رسمیِ نسخه بایگانی‌شده جداگانه انجام می‌شود.</p></section>
-  <footer>${e(output.company.persianName)} · ${e(output.company.website ?? '')}<br>قالب ${contractOutputTemplateVersion} · تهیه خروجی: ${e(date(output.generatedAt))}</footer>
+  <section>${heading(6, 'APPROVAL & SIGNATURE', 'تأیید و امضا')}<div class="signatures"><div>نام و امضای مسافر / نماینده<br>....................................</div><div>نام و امضای مسئول فروش<br>....................................</div></div></section>
+  <footer>${e(output.company.persianName)}${output.company.website ? ' · ' + e(output.company.website) : ''}</footer>
   </article></body></html>`;
 }
