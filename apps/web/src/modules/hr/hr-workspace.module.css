@@ -1066,6 +1066,164 @@
   white-space: nowrap;
 }
 
+.notificationBellConnected > span {
+  display: none;
+}
+
+.notificationBellHasUnread::after {
+  position: absolute;
+  inset-block-start: -0.25rem;
+  inset-inline-end: -0.35rem;
+  display: grid;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding-inline: 0.2rem;
+  place-items: center;
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  background: var(--destructive);
+  color: white;
+  content: attr(data-unread);
+  font-size: 0.58rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.notificationPanel {
+  position: fixed;
+  z-index: 110;
+  inset-block-start: 4.25rem;
+  inset-inline-start: 1rem;
+  width: min(25rem, calc(100vw - 2rem));
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  background: var(--surface);
+  box-shadow: 0 1.5rem 4rem rgb(15 52 96 / 18%);
+}
+
+.notificationHeader,
+.notificationToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.notificationHeader {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.notificationHeader strong,
+.notificationHeader > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.notificationHeader > div {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.notificationHeader small,
+.notificationItem small,
+.notificationItem time {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+}
+
+.notificationIconButton {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: transparent;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.notificationToolbar {
+  padding: 0.65rem 1rem;
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+}
+
+.notificationToolbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.notificationToolbar button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.notificationList {
+  display: grid;
+  max-height: min(31rem, calc(100dvh - 12rem));
+  overflow-y: auto;
+}
+
+.notificationItem {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.65rem;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+.notificationItem[data-unread='true'] {
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+}
+
+.notificationItem:hover {
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+}
+
+.notificationItem > span:last-child {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.notificationItemIcon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+  color: var(--primary);
+}
+
+.notificationItem time {
+  direction: rtl;
+}
+
+.notificationEmpty {
+  display: grid;
+  min-height: 10rem;
+  place-items: center;
+  gap: 0.65rem;
+  padding: 1.5rem;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
 .integrationLinks {
   display: flex;
   flex-wrap: wrap;

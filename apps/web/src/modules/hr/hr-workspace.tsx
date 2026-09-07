@@ -82,6 +82,11 @@ import {
 } from './contextual-hr-form';
 import { downloadHrXlsx } from './hr-xlsx';
 import {
+  HrNotificationCenter,
+  publishHrMutationNotification,
+  type HrNotificationAction,
+} from './hr-notifications';
+import {
   getHrPreviewDataset,
   type HrPreviewCell,
   type HrPreviewDataset,
@@ -2440,6 +2445,22 @@ export function HrWorkspace({
     employees.find((employee) => employee.id === employeeId) ??
     employees[0] ??
     previewEmployees[0]!;
+  const notifyMutation = (input: {
+    action: HrNotificationAction;
+    section: HrSectionId;
+    tab: string;
+    title: string;
+    subject: string;
+    employeeId?: string;
+  }) => {
+    const params = new URLSearchParams({ section: input.section });
+    if (input.tab) params.set('tab', input.tab);
+    if (input.employeeId) params.set('employee', input.employeeId);
+    publishHrMutationNotification({
+      ...input,
+      href: `/hr?${params.toString()}`,
+    });
+  };
   useEffect(() => {
     const serialized = window.sessionStorage.getItem(previewDatasetStorageKey);
     const timer = window.setTimeout(() => {
@@ -2511,6 +2532,13 @@ export function HrWorkspace({
       });
     });
     setNotice('رکورد از مجموعه‌داده موقت این نشست حذف شد.');
+    notifyMutation({
+      action: 'delete',
+      section: datasetSection,
+      tab,
+      title,
+      subject,
+    });
   };
   const datasetStore: PreviewDatasetStore = {
     getDataset,
@@ -2575,6 +2603,14 @@ export function HrWorkspace({
         ? `اطلاعات کارمند «${name}» در فهرست موقت این نشست ویرایش شد.`
         : `کارمند «${name}» به فهرست موقت این نشست اضافه شد.`,
     );
+    notifyMutation({
+      action: wasEditing ? 'edit' : 'create',
+      section: 'employees',
+      tab: 'list',
+      title: 'کارکنان',
+      subject: name,
+      employeeId: value.personnelCode,
+    });
   };
   let screen: ReactNode;
   if (workspace)
@@ -2604,6 +2640,13 @@ export function HrWorkspace({
             }),
           );
           setNotice(`کارمند «${employee.name}» از فهرست موقت این نشست حذف شد.`);
+          notifyMutation({
+            action: 'delete',
+            section: 'employees',
+            tab: 'list',
+            title: 'کارکنان',
+            subject: employee.name,
+          });
         }}
         onEdit={(employee) => {
           setNotice('');
@@ -2629,6 +2672,14 @@ export function HrWorkspace({
             ),
           );
           setNotice(`عکس پروفایل «${selectedEmployee.name}» به‌روزرسانی شد.`);
+          notifyMutation({
+            action: 'update',
+            section: 'employee',
+            tab: tabId ?? 'summary',
+            title: 'عکس پروفایل کارمند',
+            subject: selectedEmployee.name,
+            employeeId: selectedEmployee.id,
+          });
         }}
       />
     );
@@ -2638,7 +2689,7 @@ export function HrWorkspace({
         employeeOptions={employees.map((employee) => employee.name)}
         initialTab={tabId}
         key={`organization:${tabId ?? ''}`}
-        onMutation={(action, tab, title, subject) =>
+        onMutation={(action, tab, title, subject) => {
           setPreviewDatasetOverrides((current) =>
             appendAutomaticHrHistory(current, {
               action,
@@ -2647,8 +2698,15 @@ export function HrWorkspace({
               title,
               subject,
             }),
-          )
-        }
+          );
+          notifyMutation({
+            action,
+            section: 'organization',
+            tab,
+            title,
+            subject,
+          });
+        }}
       />
     );
   else if (section === 'requests')
@@ -2671,6 +2729,7 @@ export function HrWorkspace({
       dir="rtl"
       lang="fa"
     >
+      <HrNotificationCenter />
       {notice ? (
         <div className={styles.notice} role="status">
           <BadgeCheck aria-hidden="true" size={17} />
@@ -2755,6 +2814,32 @@ export function HrWorkspace({
                 ? `${contextualForm.title} در مجموعه‌داده موقت این نشست ویرایش شد.`
                 : `${contextualForm.title} به مجموعه‌داده موقت این نشست اضافه شد.`,
             );
+            const notificationSubject =
+              values[1] ?? values[0] ?? contextualForm.title;
+            notifyMutation({
+              action: contextualForm.mode,
+              section: contextualForm.section,
+              tab: contextualForm.tab,
+              title: contextualForm.title,
+              subject: notificationSubject,
+            });
+            if (
+              contextualForm.section === 'recruitment' &&
+              contextualForm.tab === 'applicants'
+            ) {
+              const resumeIndex = contextualForm.columns.indexOf('رزومه');
+              const attachment = parseHrAttachmentReference(
+                values[resumeIndex] ?? '',
+              );
+              if (attachment)
+                notifyMutation({
+                  action: 'create',
+                  section: 'documents',
+                  tab: 'list',
+                  title: 'اسناد و فایل‌ها',
+                  subject: attachment.name,
+                });
+            }
             setContextualForm(null);
           }}
         />
