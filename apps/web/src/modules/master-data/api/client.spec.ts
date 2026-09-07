@@ -79,6 +79,48 @@ describe('master data browser client', () => {
     );
   });
 
+  it('loads the safe Master Data notification feed', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const response = { data: [], meta: { limit: 25 } };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => response });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(masterDataApi.notifications(25)).resolves.toEqual(response);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/master-data/audit/notifications?limit=25',
+      expect.objectContaining({ credentials: 'include' }),
+    );
+  });
+
+  it('signals the bell after a successful Master Data mutation', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const dispatchEvent = vi.fn();
+    vi.stubGlobal('window', { dispatchEvent });
+    vi.stubGlobal(
+      'Event',
+      class TestEvent {
+        constructor(readonly type: string) {}
+      },
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: { id: 'country-1' } }),
+      }),
+    );
+
+    await masterDataApi.create('countries', {
+      values: { iso2Code: 'IR', name: 'ایران', englishName: 'Iran' },
+    });
+
+    expect(dispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'rubi:master-data-changed' }),
+    );
+  });
+
   it('downloads a credentialed XLSX file from the direct endpoint', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const blob = new Blob(['xlsx']);
