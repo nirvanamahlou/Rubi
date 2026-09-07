@@ -33,7 +33,7 @@ export async function renderContractPdf(
       '</style>',
       '@font-face{font-family:ContractNazanin;src:url(data:font/ttf;base64,' +
         fontBytes.toString('base64') +
-        ') format("truetype");font-weight:100 900}</style>',
+        ') format("truetype");font-weight:normal}</style>',
     );
     if (Buffer.byteLength(html) > 10_000_000) throw new Error('PDF_TOO_LARGE');
     directory = await mkdtemp(join(tmpdir(), 'rubi-contract-pdf-'));

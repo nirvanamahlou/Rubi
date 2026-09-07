@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-CONTRACT-THEME-ROOM-0907 — COMPLETE_LOCAL
+
+Hotel section now uses the selected room-type name from the existing public Master Data lookup, not passenger DBL/child accommodation labels. Updated reference-style Persian/navy header, left number badges, pale table headings, three-column financial summary, signatures and contact footer. User-requested phone/email apply only to Niyayesh issuer; prior terms, passenger/currency totals and finance logic are preserved. B Nazanin bold rendering corrected in print and PDF. 161 Sales tests, scoped lint/typecheck and 36-route build pass; all five final synthetic PDF pages inspected (2/6/agency-6: one page; 42: two). Web3100 updated; Web/API 200. QR remains deferred to server-hosted contract viewing. No migration/API/IAM/data change or public push. See docs/tasks/SALES-CONTRACT-THEME-ROOM-0907.md.
+
 ## SALES-CONTRACT-REFERENCE-THEME-0907 — THEME_COMPLETE_LOCAL / QR_DEFERRED_TO_SERVER
 
 Contract print/PDF follows the supplied navy-header, teal-rule and soft-gray-table reference theme without changing fields, section order or business calculations. B Nazanin, English monetary digits, saved passenger amounts and notices remain. 159 Sales tests plus final 17 print tests, scoped lint/typecheck and 36-route production build pass; all five pages of four synthetic PDFs visually inspected (2/6/agency-6 passengers: one page; 42: two pages). Web3100 updated and Web/API health 200. User wants QR to open this specific contract online, like file viewing, after future server deployment. No public viewer/verification capability or QR is claimed or added now. No migration, API/IAM/data change or public push. See docs/tasks/SALES-CONTRACT-REFERENCE-THEME-0907.md.

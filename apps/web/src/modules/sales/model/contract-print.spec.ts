@@ -21,8 +21,30 @@ describe('Saved contract print output', () => {
     );
     expect(body).toContain('نشانی:');
     expect(body).toContain('مبلغ توافق‌شده قرارداد');
-    expect(body).not.toContain('021-72075000');
-    expect(body).not.toContain('support@');
+    expect(body).toContain('021-72075000');
+    expect(body).toContain('support@niyayeshseir.com');
+    expect(body).toContain('<em>01</em>');
+    expect(body).toContain('<h1>قرارداد فروش خدمات مسافرتی</h1>');
+    expect(body).toContain('class="summary-grid"');
+  });
+  it('uses the selected Master Data room type only in the hotel section', () => {
+    const output = structuredClone(printFixture);
+    output.contract.passengersDetail[0]!.accommodationKind = 'DBL';
+    const html = contractPrintHtml(output, { ...printReferences, names: { ...printReferences.names, double: 'DELUXE SEA VIEW' } });
+    const hotel = html.split('HOTEL INFORMATION')[1]!.split('</section>')[0]!;
+    expect(hotel).toContain('DELUXE SEA VIEW');
+    expect(hotel).not.toContain('DBL');
+    expect(html.split('HOTEL INFORMATION')[0]).toContain('DBL');
+    const missing = contractPrintHtml(output, { names: {} }).split('HOTEL INFORMATION')[1]!.split('</section>')[0]!;
+    expect(missing).toContain('نام مرجع در دسترس نیست');
+    expect(missing).not.toContain('DBL');
+  });
+  it('does not assign Niyayesh contact details to another issuer', () => {
+    const output = structuredClone(printFixture);
+    output.company.code = 'JAHAN_BASTAN';
+    const html = contractPrintHtml(output, printReferences);
+    expect(html).not.toContain('021-72075000');
+    expect(html).not.toContain('support@niyayeshseir.com');
   });
   it.each([6, 42, 100, 250])(
     'renders every passenger and complete totals for %s people without truncation',
@@ -188,7 +210,7 @@ describe('Saved contract print output', () => {
   it('keeps B Nazanin and signatures but excludes operator notes and technical footer metadata', () => {
     const html = contractPrintHtml(printFixture, printReferences);
     expect(html).toContain("local('B Nazanin')");
-    expect(html).toContain('th,h2 em{background:#173d7a}');
+    expect(html).toContain('h2 em{background:#10386b;color:white');
     expect(html).not.toContain('رسید پرداخت');
     expect(html).not.toContain('شرکت فعال انتخاب‌شده');
     expect(html).not.toContain('travel-services-v1');

@@ -1,5 +1,13 @@
 # Work Assignments
 
+## SALES-CONTRACT-THEME-ROOM-0907 — PC-A — COMPLETE_LOCAL
+
+- Delivered Master Data room-type output, reference-aligned Persian header/section badges/financial cards and issuer-scoped contact footer; previous rules/amounts and deferred QR preserved. 161 Sales tests, scoped lint/typecheck, 36-route production build and all five final synthetic PDF pages pass. 6/agency-6 fit one A4, 42 use two. Web3100 updated; Web/API health 200. No data/schema/API/IAM changes or public push. Scoped reservations released; see docs/tasks/SALES-CONTRACT-THEME-ROOM-0907.md.
+
+- Include the PDF renderer's font-face weight descriptor: B Nazanin is a static regular face, not a variable 100–900 font; allow matching browser/PDF synthetic bold headings. Renderer isolation, paths and data flow unchanged.
+
+- Reserve Sales print/PDF template and tests plus task/central docs from 5daa1a4. Resolve hotel-section room type through the already loaded public Master Data reference instead of passenger accommodation labels. Match the supplied header/section/financial/footer appearance more closely, including user-requested sample contact details only for the matching issuer. Preserve passenger categories, amounts, existing notices, pagination and deferred online QR. No producer/API/schema/dependency/IAM/data changes or public push.
+
 ## SALES-CONTRACT-REFERENCE-THEME-0907 — PC-A — THEME_COMPLETE_LOCAL / QR_DEFERRED_TO_SERVER
 
 - Reference navy/soft-gray theme applied to the shared print/PDF template; existing fields, order, B Nazanin, English monetary digits and calculations preserved. 159 Sales tests plus final 17 print tests, scoped lint/typecheck and 36-route build pass. All five pages of four synthetic PDFs visually verified; six passengers fit one page and 42 use two. Web3100 updated; Web/API health 200. User deferred per-contract online viewing/verification QR until server deployment; no localhost, website-substitute or fabricated verification QR added. No API/schema/dependency/IAM/data/producer changes or public push. Scoped template/central-doc reservations released; see docs/tasks/SALES-CONTRACT-REFERENCE-THEME-0907.md.
