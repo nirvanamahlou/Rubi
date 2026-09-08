@@ -1,4 +1,10 @@
 # Work Assignments
+## SIDEBAR-REFERENCE-SIZE-0908 — PC-A — COMPLETE_LOCAL
+
+- Follow-up to 93a4c0d: owner requests reference3200 row sizing/icons and only slightly larger group headings. Reserve app-shell Navigation classes, new sidebar-icons.ts and this task's docs. Sales integration owner confirmed separate checkout and no edits to these files; no restart, HMR only. Keep original collapse, widths, mobile behavior and all business pages. Local-only; prior remote gate remains unresolved.
+
+- Delivered sidebar-only reference icon mapping (17px, stroke1.7), 12px semibold row labels with 40px minimum height, 3px row gaps, and 14px group headings. Original sidebar widths, collapse, drawer and non-sidebar icons preserved. Typecheck, scoped lint, 11 navigation tests and authenticated browser menu QA passed. No server restart; production build result recorded in status. No push/merge or data changes.
+
 ## GROUPED-SIDEBAR-0908 — PC-A — COMPLETE_LOCAL
 
 - Explicit owner approval to apply the reviewed team grouping to the actual Web3100 sidebar, preserving prior collapse/drawer behavior, styling, routes and all module content; slightly larger navigation labels. COMPUTER_ID=PC-A. Branch codex/pc-a-grouped-sidebar-0908 from active Web3100 f2cc52a; clean checkout before starting. No prototype pricing or sample pages are transferred.
