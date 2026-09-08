@@ -1,17 +1,16 @@
 'use client';
 import { useId, useState, type ReactNode } from 'react';
 import {
-  ArrowLeft,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
   Download,
+  Eye,
+  FilePenLine,
   FileText,
   Filter,
   Inbox,
   LoaderCircle,
-  MoreHorizontal,
-  Pencil,
   Trash2,
 } from 'lucide-react';
 import { Button, type ButtonProps } from '@/components/ui/button';
@@ -23,10 +22,6 @@ import {
   DialogContent,
   DialogTitle,
   DialogDescription,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
 } from '@/components/ui/overlays';
 import type { HrPreviewDataset } from './hr-preview-data';
 import { cellText, recordKey } from './hr-data-utils';
@@ -326,45 +321,45 @@ export function HrTable({
                     <td className={ui.operationCell}>
                       <div className={ui.rowActions}>
                         {onOpen && showOpenButton ? (
-                          <HrButton
-                            variant="ghost"
+                          <Button
+                            type="button"
+                            variant="outline"
                             size="sm"
+                            aria-label={`مشاهده ${cellText(row[1]) || cellText(row[0])}`}
+                            disabled={busy}
                             onClick={() => onOpen(index)}
                           >
-                            مشاهده <ArrowLeft size={14} aria-hidden="true" />
-                          </HrButton>
+                            <Eye className="size-4" aria-hidden="true" /> مشاهده
+                          </Button>
                         ) : null}
-                        {onEdit || onDelete ? (
-                          <DropdownMenu dir="rtl">
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label={`عملیات ${cellText(row[1])}`}
-                              >
-                                <MoreHorizontal size={18} aria-hidden="true" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              {onEdit ? (
-                                <DropdownMenuItem
-                                  onSelect={() => onEdit(index)}
-                                >
-                                  <Pencil size={15} aria-hidden="true" />
-                                  ویرایش
-                                </DropdownMenuItem>
-                              ) : null}
-                              {onDelete ? (
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onSelect={() => onDelete(index)}
-                                >
-                                  <Trash2 size={15} aria-hidden="true" />
-                                  حذف رکورد
-                                </DropdownMenuItem>
-                              ) : null}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                        {onEdit ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            aria-label={`ویرایش ${cellText(row[1]) || cellText(row[0])}`}
+                            disabled={busy}
+                            onClick={() => onEdit(index)}
+                          >
+                            <FilePenLine
+                              className="size-4"
+                              aria-hidden="true"
+                            />
+                            ویرایش
+                          </Button>
+                        ) : null}
+                        {onDelete ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            aria-label={`حذف ${cellText(row[1]) || cellText(row[0])}`}
+                            disabled={busy}
+                            onClick={() => onDelete(index)}
+                          >
+                            <Trash2 className="size-4" aria-hidden="true" /> حذف
+                          </Button>
                         ) : null}
                       </div>
                     </td>

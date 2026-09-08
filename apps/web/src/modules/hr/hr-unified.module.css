@@ -323,11 +323,11 @@
 }
 .rowActions {
   display: flex;
-  gap: 4px;
+  min-width: max-content;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
   align-items: center;
-}
-.rowActions button {
-  color: var(--primary);
 }
 .link {
   border: 0;
