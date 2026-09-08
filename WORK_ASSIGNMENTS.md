@@ -1,10 +1,11 @@
 # Work Assignments
 
-## B2B-BREADCRUMB-001 — PC-B — IN_PROGRESS
+## B2B-BREADCRUMB-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests one working breadcrumb at the top of Organizations and its contract/terms dossier section. Branch `codex/pc-b-b2b-breadcrumb` continues the clean combined runtime source 92e7a81 (PR132); fetched develop e07c0c6 is already included. Reserve Organizations' directory/profile presentation, a small shared page-breadcrumb context and the breadcrumb/provider integration in `components/layout/app-shell.tsx`, plus task documentation. PC-B Uniting confirms no active conflicting shell/breadcrumb/runtime reservation in its coordination; the shared edit is limited to this breadcrumb connection, preserving HR/Marketing trails and other header controls.
 - Keep the existing global route breadcrumb as the default; register the active organization/section only while its dossier is mounted. Ancestor actions return to the directory or dossier overview without discarding the directory filters. Remove duplicate local breadcrumb rows. No API, schema, migration, permission, dependency, or operational data changes.
 - Verify parent navigation, section changes, unmount cleanup and responsive layout with the actual React components, then run affected Web checks/build and refresh only the verified owned Web3100 listener. API4190 and the existing runtime database/Documents storage remain in place.
+- Completed: 137 targeted tests, Web lint/typecheck and 40-route production build pass; all four GitHub gates for source 0aca6c1 also pass. Browser StrictMode verifies the contract trail and both parent actions/cleanup with actual components. Web3100 PID8140 serves source 0aca6c1 / hr005-6f6f8acf19ba25a8, with API4190 PID17316 unchanged and healthy. Only the test harness was used for authenticated-content UI checks; production session needs re-login. No migration/data/permissions change. Release Organizations/shared breadcrumb implementation reservations; coordinate future runtime changes with this task.
 
 ## B2B-CONTRACT-CREDIT-001 — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_ACTIVE
 
