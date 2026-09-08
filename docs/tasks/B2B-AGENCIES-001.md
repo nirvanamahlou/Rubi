@@ -4,6 +4,9 @@ Status: partial implementation ready for review; B2B-AGENCIES-001B blocked by
 owner contracts and shared locks. Base: `origin/develop@30d67ec`.
 Branch: `codex/pc-b-agencies-organizations`.
 Worktree: `C:/Users/admin/Rubi-agencies-organizations`.
+Published: [Draft PR #113](https://github.com/nirvanamahlou/Rubi/pull/113) to
+`develop`. API commit: `889512c`; Web commit: `0ceaa12`; scoped reservation and
+handoff commit: `4d4b409`. Normal push succeeded; no merge was performed.
 
 Baseline: [existing agency integration](AGENCY-B2B-INTEGRATIONS-001.md) and
 [module boundaries](../MODULE_BOUNDARIES.md).
