@@ -16,6 +16,7 @@ import { recordsDataset } from './hr-live-data';
 import { HrButton, HrPanel, HrTable, HrStatus } from './hr-controls';
 import type { HrFormTarget } from './hr-record-form';
 import { reportCellText } from './hr-report-text';
+import { isMissionExpense } from './hr-mission-reference';
 import ui from './hr-unified.module.css';
 
 export function HrRecordDetail({
@@ -120,6 +121,11 @@ export function HrRecordDetail({
           {record.employeeId && record.section !== 'contracts' ? (
             <Link href={`/hr?section=employee&employee=${record.employeeId}`}>
               پرونده کارمند
+            </Link>
+          ) : null}
+          {record.parentId && isMissionExpense(record.section, record.tab) ? (
+            <Link href={`/hr?section=expenses&record=${record.parentId}`}>
+              پرونده مأموریت
             </Link>
           ) : null}
           {canEdit && record.section !== 'contracts' ? (

@@ -1,5 +1,12 @@
 # Work Assignments
 
+## HR-011-EXPENSE-MISSION-LINK — PC-B — READY_FOR_REVIEW
+
+- Owner reports the mission-reference selector in independent expense entry is not connected to recorded missions. Branch `codex/pc-b-hr-expense-mission-link` starts from the clean current HR-010 runtime `40c362e` (PR #125), preserving its operation buttons and develop `0261b91`.
+- Reserve HR-local form/model and related tests, plus HR service/tests only if needed to persist permitted expense-parent edits. Scope mission references for travel/advances/claims to existing canonical or legacy HR missions and matching company/employee; retain independent expenses, approval restrictions, permission checks, audit and optimistic versions. No shared contract/schema/migration, IAM grant, dependency or other module change.
+- PC-B retains the handed-over local runtime at `C:/Users/admin/Rubi-hr115-integration`, Web3100/API4190 with the existing database and document root. Read-only diagnostics only; do not seed or change business data for QA. Build affected services before coordinated local activation, commit/push and open a stacked review PR without merging.
+- Result: current/legacy mission choices identify destination/dates and respect company/employee scope; permitted draft expense references now persist on create/edit/clear and link back to their mission. API validation preserves permissions, optimistic versions, approval/final-state guards and audit. All 99 HR Web tests and 80 HR API tests (21 isolated PostgreSQL) passed after resolving initial environment timeouts by rerunning sequentially. Source reservation is released for review; local activation and runtime handoff are recorded with `docs/tasks/HR-011.md` and the PR. No migration or merge.
+
 ## HR-010-OPERATION-BUTTONS — PC-B — READY_FOR_REVIEW
 
 - Owner requests HR record operation buttons to match Master Data. Branch `codex/pc-b-hr-operation-buttons` starts from current runtime and `origin/develop@0261b91`; checkout is `C:/Users/admin/Rubi-hr115-integration`.
