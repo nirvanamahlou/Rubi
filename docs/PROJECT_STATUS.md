@@ -1,9 +1,9 @@
 # وضعیت پروژه
 
-## DOCUMENTS-008 — سفیدشدن متن دکمه‌های آبی ارتباطات — تکمیل محلی
+## DOCUMENTS-008 — سفیدشدن متن دکمه‌های آبی ارتباطات — آماده ادغام تأییدشده
 
 - `PC-B` روی شاخه مستقل `codex/pc-b-documents-button-contrast` متن و آیکن CTAهای آبی «رفتن به بخش مربوطه» را در کارت‌های ارتباطات اسناد، در حالت عادی و Hover، سفید کرد. تغییر فقط Presentation است و رفتار لینک‌ها یا سایر دکمه‌های سامانه را عوض نمی‌کند.
-- نسبت کنتراست سفید روی رنگ آبی اصلی `6.80:1` و مطابق WCAG AA است. ۵ تست قراردادی Documents، Web lint/typecheck و Production Build با ۴۰ Route موفق‌اند؛ Schema/Migration/API/Dependency/Data و Runtime تغییر نکرده‌اند.
+- نسبت کنتراست سفید روی رنگ آبی اصلی `6.80:1` و مطابق WCAG AA است. ۵ تست قراردادی Documents، Web lint/typecheck و Production Build با ۴۰ Route موفق‌اند؛ Schema/Migration/API/Dependency/Data و Runtime تغییر نکرده‌اند. مالک محصول در 2026-09-09 Push و Merge با `develop` را تأیید کرد و CI نسخه دقیق شاخه شرط ادغام است.
 
 ## B2B-AGENCIES-001 — ادغام تأییدشده PR #113
 
