@@ -1,4 +1,8 @@
 # Work Assignments
+## SIDEBAR-GROUP-TOGGLE-0908 — PC-A — COMPLETE_LOCAL
+
+Explicit user follow-up: group headings toggle their own links like3200, whole-sidebar collapse unchanged. Branch from integrated f4b033b; Sales owner handed off runtime/build, no further concurrent writes. Reserve app-shell Navigation only and this task's docs. Preserve integrated Sales/Customers/Notifications, API4000, database, PDF config and all original routes. Build then restart only Web3100 from this integration checkout; no old checkout activation. No push due existing destination gate.
+
 ## SIDEBAR-REFERENCE-SIZE-0908 — PC-A — COMPLETE_LOCAL
 
 - Follow-up to 93a4c0d: owner requests reference3200 row sizing/icons and only slightly larger group headings. Reserve app-shell Navigation classes, new sidebar-icons.ts and this task's docs. Sales integration owner confirmed separate checkout and no edits to these files; no restart, HMR only. Keep original collapse, widths, mobile behavior and all business pages. Local-only; prior remote gate remains unresolved.

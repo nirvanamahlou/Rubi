@@ -2,6 +2,8 @@
 
 import {
   Check,
+  ChevronDown,
+  ChevronLeft,
   ChevronsLeft,
   ChevronsRight,
   Command,
@@ -16,7 +18,14 @@ import {
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  Suspense,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import {
   getNavigationBreadcrumbs,
@@ -95,6 +104,24 @@ function Navigation({
   mobile?: boolean;
 }) {
   const pathname = usePathname();
+  const groupId = useId();
+  const [closedGroups, setClosedGroups] = useState<{
+    pathname: string;
+    ids: string[];
+  }>({ pathname, ids: [] });
+  const isGroupClosed = (id: string) =>
+    closedGroups.pathname === pathname && closedGroups.ids.includes(id);
+  function toggleGroup(id: string) {
+    setClosedGroups((previous) => {
+      const ids = previous.pathname === pathname ? previous.ids : [];
+      return {
+        pathname,
+        ids: ids.includes(id)
+          ? ids.filter((value) => value !== id)
+          : [...ids, id],
+      };
+    });
+  }
   function renderItem({ href, title }: (typeof navigationItems)[number]) {
     const active = isNavigationItemActive(href, pathname);
     const Icon = sidebarIcons[href];
@@ -103,9 +130,7 @@ function Navigation({
         aria-current={active ? 'page' : undefined}
         className={cn(
           'group flex min-w-0 items-center gap-2.5 overflow-hidden rounded-[10px] px-[11px] font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300',
-          compact
-            ? 'h-full min-h-8'
-            : 'min-h-10 py-2 text-xs leading-[1.8]',
+          compact ? 'h-full min-h-8' : 'min-h-10 py-2 text-xs leading-[1.8]',
           mobile
             ? active
               ? 'bg-primary text-primary-foreground shadow-sm'
@@ -165,22 +190,45 @@ function Navigation({
               aria-label={group.title}
               className="min-w-0"
             >
-              <h2
-                className={cn(
-                  'mb-1 flex items-center gap-2 px-[9px] pb-[5px] pt-[9px] text-sm font-semibold leading-6',
-                  mobile ? 'text-muted-foreground' : 'text-blue-200',
-                )}
-              >
-                <span
-                  aria-hidden="true"
+              <h2>
+                <button
+                  type="button"
+                  aria-expanded={!isGroupClosed(group.id)}
+                  aria-controls={groupId + group.id}
+                  onClick={() => toggleGroup(group.id)}
                   className={cn(
-                    'size-1.5 shrink-0 rounded-full',
-                    mobile ? 'bg-primary/50' : 'bg-cyan-200/70',
+                    'mb-1 flex w-full items-center gap-2 rounded-lg text-start outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-[9px] pb-[5px] pt-[9px] text-sm font-semibold leading-6',
+                    mobile ? 'text-muted-foreground' : 'text-blue-200',
                   )}
-                />
-                {group.title}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'size-1.5 shrink-0 rounded-full',
+                      mobile ? 'bg-primary/50' : 'bg-cyan-200/70',
+                    )}
+                  />
+                  {group.title}
+                  {isGroupClosed(group.id) ? (
+                    <ChevronLeft
+                      aria-hidden="true"
+                      className="ms-auto size-3.5 shrink-0"
+                    />
+                  ) : (
+                    <ChevronDown
+                      aria-hidden="true"
+                      className="ms-auto size-3.5 shrink-0"
+                    />
+                  )}
+                </button>
               </h2>
-              <div className="grid gap-[3px]">
+              <div
+                id={groupId + group.id}
+                hidden={isGroupClosed(group.id)}
+                className={
+                  isGroupClosed(group.id) ? 'hidden' : 'grid gap-[3px]'
+                }
+              >
                 {group.items.map(renderItem)}
               </div>
             </section>

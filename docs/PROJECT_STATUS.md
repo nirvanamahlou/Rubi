@@ -1,4 +1,8 @@
 # وضعیت پروژه
+## SIDEBAR-GROUP-TOGGLE-0908 — COMPLETE_LOCAL
+
+Independent accessible group buttons now run on integrated Web3100; whole-sidebar collapse and latest Sales preserved. Scoped lint/typecheck, 15 navigation/foundation tests, 36-route build and authenticated keyboard/desktop/mobile QA passed. Only Web restarted with existing PDF configuration; no API/data/migration change. See docs/tasks/SIDEBAR-GROUP-TOGGLE-0908.md. No remote push.
+
 
 ## SALES-RUNTIME-INTEGRATION-0908 — COMPLETE_LOCAL
 
