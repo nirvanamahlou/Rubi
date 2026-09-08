@@ -1,5 +1,10 @@
 # وضعیت پروژه
 
+## MARKETING-001G — حذف معرفی Hub مارکتینگ — آماده بررسی
+
+- `PC-B` روی Branch مستقل `codex/pc-b-marketing-remove-section-intro` بلوک نمایشی شامل عنوان «بخش‌های مارکتینگ» و راهنمای انتخاب کارت را از Hub حذف کرد. فاصله اضافه Wrapper نیز حذف شد و Grid کارت‌ها مستقیماً نمایش داده می‌شود؛ نام دسترس‌پذیر Section بدون متن دیداری حفظ شده است.
+- هیچ Backend، Schema/Migration/Seed، API/Contract، Dependency/Lockfile، داده یا فایل مرکزی UI تغییر نکرد. ۱۸ تست هدفمند، Contracts build، Web typecheck/lint و Production Build با ۳۴ Route موفق‌اند و نسخه جدید روی پورت ۳۱۰۰ فعال است.
+
 ## LEGAL-ENTITY-BRAND-HEADER-002 — هدر جهان باستان و اطلاعات ورود — ادغام‌شده
 
 - `PC-B` روی Branch مستقل `codex/pc-b-jahan-bastan-header-identity` تم Header را به Context موجود شرکت فعال متصل کرد. با انتخاب «جهان باستان»، Header بدون تغییر فایل مرکزی درگیر PR #99 به طیف سورمه‌ای تغییر می‌کند و کنترل‌های انتخاب شرکت، جست‌وجو و عملیات Header خوانا می‌مانند؛ سایر Contextها ظاهر پیشین را حفظ می‌کنند.

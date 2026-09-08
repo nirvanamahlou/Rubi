@@ -246,6 +246,13 @@ describe('marketing workspace component contract', () => {
     expect(workspaceSource).not.toContain('ایجاد کمپین');
     expect(workspaceSource).toContain('افزودن کمپین جدید');
     expect(workspaceSource).not.toContain('بازگشت به بخش‌های مارکتینگ');
+    expect(workspaceSource).not.toContain('بخش‌های مارکتینگ');
+    expect(workspaceSource).not.toContain(
+      'برای ورود به هر بخش، کارت مربوط را انتخاب کنید.',
+    );
+    expect(workspaceSource).toContain(
+      'aria-label="فهرست کارت‌های ماژول مارکتینگ"',
+    );
     expect(referenceDataSource).not.toContain('تست‌های A/B');
   });
 
