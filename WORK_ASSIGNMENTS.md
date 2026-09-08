@@ -1,5 +1,11 @@
 # Work Assignments
 
+## HR-PUBLISH-012 — PC-B — IN_PROGRESS / OWNER_APPROVED_MERGE
+
+- The owner explicitly requests push, merge and availability to PC-A on 2026-09-09. Continue the published HR-010/HR-011 stack (PR125/127); reserve only merge conflict reconciliation and this work item's publication/status/handoff documentation. No new feature, contract, dependency, schema/migration or runtime change.
+- Integrate current develop with normal merge commits, preserving both histories and unrelated module code. Existing HR task branches remain intact and are pushed without force. Exact-head GitHub quality, test, build and PostgreSQL gates must pass before each merge; verify the final develop run as well.
+- PC-B Uniting confirms no concurrent merge and no direct access to PC-A. Verify repository publication and provide a PC-A fetch/integration handoff; do not claim its checkout or running app was updated without device evidence. Active Web3100/API4190, the B2B worktree, its migration reservation, database and document storage remain with the B2B owner.
+
 ## HR-010-OPERATION-BUTTONS — PC-B — READY_FOR_REVIEW
 
 - Owner requests HR record operation buttons to match Master Data. Branch `codex/pc-b-hr-operation-buttons` starts from current runtime and `origin/develop@0261b91`; checkout is `C:/Users/admin/Rubi-hr115-integration`.
