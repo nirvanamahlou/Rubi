@@ -234,7 +234,7 @@ export function HotelImportPanel({
         </label>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <Button
           type="button"
           onClick={() => void makePreview()}
@@ -362,6 +362,7 @@ export function HotelImportPanel({
               ساخت نوع خدمات، نوع اتاق و امکاناتِ موجود در فایل
             </label>
             <Button
+              className="ms-auto"
               type="button"
               onClick={() => void commit()}
               disabled={

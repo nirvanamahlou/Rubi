@@ -9,6 +9,17 @@
 - Schema/Migration، Seed مشترک زیر مالکیت فروش، Dependency/Lockfile و IAM grants تغییر نمی‌کنند. آماده‌سازی محلی فقط شرکت مفقود را در تراکنش ایجاد می‌کند و رکورد موجود را بازنویسی نمی‌کند؛ پیش‌فرض read-only و Apply پس از Backup است.
 - نتیجه: چهار رنگ مستقل، ۹ تست Web و ۴ تست ابزار محلی، lint/typecheck و Build API/Web موفق‌اند. Apply روی کپی مستقل PostgreSQL بار اول دو شرکت و بار دوم صفر شرکت ساخت؛ هر چهار شرکت فعال‌اند. Preview روی `127.0.0.1:3101/4001` است و اجرای قدیمی HR روی 3100/4000 تغییر نمی‌کند. `Central UI Owner = RELEASED — LEGAL-ENTITY-HEADER-003 ready for review`؛ جزئیات در `docs/tasks/LEGAL-ENTITY-HEADER-003.md`.
 
+## MASTER-006-PAYMENT-LEFT-ACTIONS — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-08: فیلد «کانال» فقط از فرم افزودن روش پرداخت حذف شود و گروه‌های دکمه در همه بخش‌های اطلاعات پایه در سمت چپ فیزیکی صفحه قرار بگیرند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-master-data-left-actions`، بازپایه‌شده روی `origin/develop@1cb96ae`؛ محدوده رزروشده فقط `apps/web/src/modules/master-data/**`، تست‌های هدفمند همان ماژول و همین Work Item است.
+- سازگاری: رکوردها و قرارداد موجود روش پرداخت تغییر نمی‌کنند؛ مقدار کانال در مشاهده/ویرایش رکوردهای قبلی حفظ می‌شود و در ایجاد از رفتار سازگار فعلی Backend استفاده خواهد شد. هیچ Schema/Migration/Seed، API/Shared Contract، Dependency/Lockfile، داده محلی یا فایل درگیر PR #105 تغییر نمی‌کند.
+- معیار پذیرش: ورودی «کانال» در حالت ایجاد روش پرداخت دیده یا Focus نشود؛ تمام Action groupهای صفحه، فیلتر، فرم و جدول اطلاعات پایه در Desktop و Mobile به سمت چپ فیزیکی هم‌تراز شوند؛ ترتیب تب، نام دسترس‌پذیر و Focus ring دکمه‌ها حفظ شود.
+- بودجه غیررگرسیونی Web داخلی: `LCP p75 <= 2500ms`، `INP p75 <= 200ms`، `CLS <= 0.1`، JavaScript اولیه `<= 200KB gzip` و سهم Route `<= 80KB gzip`، Lighthouse Performance `>= 85` و Accessibility `>= 90`. این Slice Dependency یا بارگذاری Route جدید اضافه نمی‌کند.
+- نتیجه: فیلد «کانال» در ایجاد روش پرداخت دیده یا Focus نمی‌شود و مقدار سازگار `OTHER` فقط در State داخلی ایجاد نگه داشته می‌شود؛ مشاهده/ویرایش کانال رکوردهای قبلی بدون تغییر است. گروه‌های عملیات در Workspaceهای مالی، جغرافیا، اقامت، سازمان‌ها و تأمین‌کنندگان، مراجع فروش، حمل‌ونقل، بیمه و خدمات سفر در سمت چپ فیزیکی هم‌تراز شدند.
+- اعتبارسنجی: Contracts build، تمام ۳۳۸ تست Master Data در ۴۲ فایل، Web lint، Web typecheck، Production Build با ۳۶ Route و `git diff --check` موفق‌اند. Dependency/Route جدیدی اضافه نشده است.
+- Lock state: `Master Data Web = RELEASED — MASTER-006-PAYMENT-LEFT-ACTIONS ready for review`. Migration، Shared Contract، API، Central UI و Dependency/Lockfile برابر `RELEASED / UNASSIGNED` می‌مانند.
+
 ## MARKETING-001G-REMOVE-HUB-INTRO — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک محصول در 2026-09-08: بلوک نمایشی «بخش‌های مارکتینگ / برای ورود به هر بخش، کارت مربوط را انتخاب کنید.» از Hub مارکتینگ حذف شود. `COMPUTER_ID=PC-B`.

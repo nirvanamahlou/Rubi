@@ -27,8 +27,13 @@ const hiddenFormFields: Partial<
   'travel-services': new Set(['code']),
 };
 
+export type MasterDataFormFieldMode = 'create' | 'edit' | 'view';
+
 // Form visibility is separate from the reference/export catalog.
-export function getMasterDataFormFields(definition: MasterDataCatalogItem) {
+export function getMasterDataFormFields(
+  definition: MasterDataCatalogItem,
+  mode?: MasterDataFormFieldMode,
+) {
   const hidden = hiddenFormFields[definition.key];
   let fields: readonly MasterDataFieldDefinition[] = hidden
     ? definition.fields.filter((field) => !hidden.has(field.key))
@@ -47,7 +52,10 @@ export function getMasterDataFormFields(definition: MasterDataCatalogItem) {
   }
   if (definition.key === 'payment-methods')
     fields = fields.filter(
-      (field) => field.key !== 'code' && field.key !== 'englishName',
+      (field) =>
+        field.key !== 'code' &&
+        field.key !== 'englishName' &&
+        !(mode === 'create' && field.key === 'channel'),
     );
   if (
     definition.key !== 'exchange-rates' &&

@@ -152,6 +152,33 @@ describe('Master Data visual polish contract', () => {
     expect(hub).not.toContain('group-hover:scale-x-100');
   });
 
+  it('aligns navigation and action button groups to the physical left in RTL sections', () => {
+    const sectionFiles = [
+      'master-data-finance-workspace.tsx',
+      'master-data-geography-workspace.tsx',
+      'master-data-suppliers-workspace.tsx',
+      'master-data-accommodation-workspace.tsx',
+      'master-data-transportation-workspace.tsx',
+      'master-data-insurance-workspace.tsx',
+      'master-data-travel-services-workspace.tsx',
+      'master-data-sales-references-workspace.tsx',
+      'master-data-live-workspace.tsx',
+    ];
+
+    for (const fileName of sectionFiles) {
+      const workspace = source(fileName);
+      expect(workspace, `${fileName}: all-sections action`).toContain(
+        'ms-auto`}',
+      );
+      expect(workspace, `${fileName}: left-aligned actions`).toContain(
+        'justify-end gap-2',
+      );
+      expect(workspace, `${fileName}: unaligned button group`).not.toMatch(
+        /<div className="flex flex-wrap gap-2">\s*<(?:Button|MasterData)/,
+      );
+    }
+  });
+
   it('consolidates currency history and the city/region navigation', () => {
     const finance = source('master-data-finance-workspace.tsx');
     const financeTabs = finance.slice(

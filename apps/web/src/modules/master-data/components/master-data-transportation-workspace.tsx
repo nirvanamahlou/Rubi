@@ -574,7 +574,7 @@ export function MasterDataTransportationWorkspace() {
                   </Badge>
                 </td>
                 <td className="p-4">
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap justify-end gap-2">
                     <Button
                       aria-label={`مشاهده ${record.name}`}
                       onClick={() => openProfile(record)}
@@ -616,7 +616,7 @@ export function MasterDataTransportationWorkspace() {
       <PageHeader
         actions={
           <Link
-            className={buttonVariants({ variant: 'outline' })}
+            className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
             href="/master-data"
           >
             <ArrowRight className="size-4" /> همه بخش‌ها
@@ -625,7 +625,7 @@ export function MasterDataTransportationWorkspace() {
         description={definition.description}
         title={definition.label}
       />
-      <div className="flex flex-wrap gap-2">
+      <div className="flex w-full flex-wrap justify-end gap-2">
         <Button
           loading={exporting}
           onClick={() => void downloadExcel()}
