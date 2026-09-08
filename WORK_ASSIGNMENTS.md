@@ -1,5 +1,12 @@
 # Work Assignments
 
+## HR-010-OPERATION-BUTTONS — PC-B — READY_FOR_REVIEW
+
+- Owner requests HR record operation buttons to match Master Data. Branch `codex/pc-b-hr-operation-buttons` starts from current runtime and `origin/develop@0261b91`; checkout is `C:/Users/admin/Rubi-hr115-integration`.
+- Reserve only the shared HR table controls/styles under `apps/web/src/modules/hr/**` and this task's status/report entries. Reuse the existing public UI Button appearance used by Master Data; keep existing permission checks, edit/detail callbacks, soft-delete confirmation, selection and export behavior. Master Data, app shell, API, IAM, database/schema/migrations and dependencies remain unchanged.
+- PC-B Uniting confirmed no active checkout/listener work and handed over Web3100 for this additive change after validation. Preserve API4190, `rubi_hr_current_20260908`, `hr007-documents` and all current develop changes; recheck listener ownership before restarting Web. Commit/push and open a review PR; no merge is requested for this work item.
+- HR tables now use direct outlined View/Edit/Delete buttons with Master Data's shared Button sizing/icons, 8px spacing and destructive text color. Existing callbacks, detail visibility, soft-delete confirmation and capability gating remain unchanged; buttons are disabled while the table loads. All 97 existing HR/shared-Button tests, full Web lint and typecheck passed. Browser attachment timed out, so interactive visual QA is not asserted; build/runtime results accompany the review handoff in `docs/tasks/HR-010.md` and PR. Implementation reservation is released; coordinate any later listener replacement.
+
 ## CI-002-MULTI-COMPUTER — PC-B — READY_FOR_REVIEW
 
 - User reports four computers and authorizes checking/fixing CI, normal push and merge. Base origin/develop@679e516; independent branch/worktree codex/pc-b-ci-multi-computer. CI-001 released its workflow reservation; current module owners and other PRs remain untouched.

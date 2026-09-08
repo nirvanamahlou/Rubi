@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## HR-010 — دکمه‌های عملیات منابع انسانی — آماده بررسی
+
+دکمه‌های ویرایش و حذف از منوی سه‌نقطه به عملیات مستقیم هر ردیف منتقل شدند؛ همان Button حاشیه‌دار کوچک، آیکن‌ها، فاصله و رنگ حذف اطلاعات پایه استفاده می‌شود. مشاهده فقط در محل‌های قبلی خود باقی است و تأیید حذف منطقی و مجوزها حفظ شده‌اند. ۹۷ تست موجود، lint و typecheck موفق‌اند؛ اتصال مرورگر برای آزمون تصویری برقرار نشد. تغییر فقط در UI منابع انسانی است؛ بدون Migration یا Merge. جزئیات: [HR-010](tasks/HR-010.md).
+
 ## CI-002-MULTI-COMPUTER — PC-B — READY_FOR_REVIEW
 
 CI push and stacked-PR base filters now cover `codex/pc-*`, including PC-A/B/C/D and future IDs. Existing main/develop triggers, all four hosted jobs, read-only credentials, disposable PostgreSQL and event/head-branch isolation are retained. Five dependency-free regression tests cover triggers, concurrency and retained safety/quality gates. Contributor IDs and branch instructions are aligned without transferring module ownership or granting account access. No application, migration, dependency, database or runtime changes. Final-head PR CI and post-merge develop CI are required; details: [CI-002](tasks/CI-002-MULTI-COMPUTER.md).
