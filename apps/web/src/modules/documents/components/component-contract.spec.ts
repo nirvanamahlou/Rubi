@@ -40,7 +40,7 @@ function moduleSources(directory: string): string {
 describe('documents workspace contract', () => {
   it('keeps document connection CTA labels and icons white on blue', () => {
     expect(
-      documentsWorkspaceSource.match(/text-white hover:text-white/g),
+      documentsWorkspaceSource.match(/style=\{\{ color: '#ffffff' \}\}/g),
     ).toHaveLength(2);
   });
 
