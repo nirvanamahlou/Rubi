@@ -1,23 +1,63 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { salesApi } from '../api/client';
-import { formatMoney, loadSalesWorkspace, SalesWorkspace } from './sales-workspace';
+import {
+  formatMoney,
+  loadSalesWorkspace,
+  paymentReferenceSearchQuery,
+  SalesWorkspace,
+} from './sales-workspace';
 
 describe('sales dashboard loading', () => {
+  it('searches tracking references server-side across contracts without a current contract or stale settlement filter', async () => {
+    const query = paymentReferenceSearchQuery('  OTHER-CONTRACT-TRACK  ');
+    expect(query).toEqual({ search: 'OTHER-CONTRACT-TRACK', page: 1 });
+    const api = {
+      dashboard: vi.fn().mockResolvedValue({ data: {} }),
+      list: vi
+        .fn()
+        .mockResolvedValue({
+          data: [{ id: 'other-contract' }],
+          meta: { total: 1 },
+        }),
+    };
+    const result = await loadSalesWorkspace(api, query);
+    expect(api.list).toHaveBeenCalledWith({
+      search: 'OTHER-CONTRACT-TRACK',
+      page: 1,
+      pageSize: 20,
+      sortBy: 'updatedAt',
+      sortDirection: 'desc',
+    });
+    expect(result.contracts).toMatchObject({
+      status: 'fulfilled',
+      value: { data: [{ id: 'other-contract' }] },
+    });
+  });
   it('passes filters and pagination to the API rather than filtering only the loaded page', async () => {
     const api = {
       dashboard: vi.fn().mockResolvedValue({ data: {} }),
       list: vi.fn().mockResolvedValue({ data: [], meta: { total: 0 } }),
     } satisfies Pick<typeof salesApi, 'dashboard' | 'list'>;
-    await loadSalesWorkspace(api, { search: 'Example', settlementStatus: 'SETTLED', page: 3 });
+    await loadSalesWorkspace(api, {
+      search: 'Example',
+      settlementStatus: 'SETTLED',
+      page: 3,
+    });
     expect(api.list).toHaveBeenCalledWith({
-      search: 'Example', settlementStatus: 'SETTLED', page: 3,
-      pageSize: 20, sortBy: 'updatedAt', sortDirection: 'desc',
+      search: 'Example',
+      settlementStatus: 'SETTLED',
+      page: 3,
+      pageSize: 20,
+      sortBy: 'updatedAt',
+      sortDirection: 'desc',
     });
     expect(api.dashboard).toHaveBeenCalledWith();
   });
   it('formats money without lossy floating point conversion or mixing currencies', () => {
-    expect(formatMoney('9007199254740993.25', 'IRR')).toBe('۹٬۰۰۷٬۱۹۹٬۲۵۴٬۷۴۰٬۹۹۳٫۲۵ ریال');
+    expect(formatMoney('9007199254740993.25', 'IRR')).toBe(
+      '۹٬۰۰۷٬۱۹۹٬۲۵۴٬۷۴۰٬۹۹۳٫۲۵ ریال',
+    );
     expect(formatMoney('-1234.50', 'USD')).toBe('-۱٬۲۳۴٫۵۰ USD');
     expect(formatMoney('0', 'IRR')).toBe('۰ ریال');
   });
@@ -31,12 +71,10 @@ describe('sales dashboard loading', () => {
   it('keeps an empty successful contract list separate from unavailable statistics', async () => {
     const api = {
       dashboard: vi.fn().mockRejectedValue(new Error('statistics unavailable')),
-      list: vi
-        .fn()
-        .mockResolvedValue({
-          data: [],
-          meta: { page: 1, pageSize: 20, total: 0 },
-        }),
+      list: vi.fn().mockResolvedValue({
+        data: [],
+        meta: { page: 1, pageSize: 20, total: 0 },
+      }),
     } satisfies Pick<typeof salesApi, 'dashboard' | 'list'>;
     const result = await loadSalesWorkspace(api);
     expect(result.dashboard.status).toBe('rejected');

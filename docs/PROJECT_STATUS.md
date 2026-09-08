@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-PAYMENT-SEARCH-UPLOAD-0908 — COMPLETE_LOCAL
+
+Tracking search in contract payments now opens the main server-backed search across authorized contracts rather than filtering only the current contract's payment rows. It clears old settlement filters/page and shows matching contracts under unchanged payment-read/ownership/branch gates. A prominent receipt section offers saved-payment selection and direct file upload/list/download through public Documents APIs; new payments select their saved ID automatically. Finance state, restricted confidentiality, scan/download and uncertain-upload guards are unchanged. 188 Web Sales and 5 API reference tests, scoped lint/typecheck, synthetic browser QA and 36-route build pass. Web3100 updated; Web/API health 200. No schema/API/IAM/real-data/public-push change. See docs/tasks/SALES-PAYMENT-SEARCH-UPLOAD-0908.md.
+
 ## SALES-INSURANCE-SELECTION-0908 — COMPLETE_LOCAL / ISSUANCE_DEFERRED
 
 New Sales contracts select an active registered insurance plan from a themed dropdown instead of free-text description. Public Master Data lookup supports pagination, retry and empty/inactive states. Plan reference/name/record version and insurer selection metadata persist in the existing Sales service and version-1 reservation snapshot with passenger assignments; no issued-policy claim. User explicitly deferred insurer API connection to later Reservations/Integrations work. 185 Sales tests, scoped lint/typecheck, synthetic browser checks and 36-route Web production build pass. Web3100 updated; Web/API health 200. No schema, API, producer, IAM, real-data or public-push change. See docs/tasks/SALES-INSURANCE-SELECTION-0908.md.

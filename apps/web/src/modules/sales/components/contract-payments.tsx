@@ -65,10 +65,12 @@ export function ContractPayments({
   id,
   onClose,
   onSaved,
+  onSearchContracts,
 }: {
   id: string;
   onClose: () => void;
   onSaved: () => void;
+  onSearchContracts: (reference: string) => void;
 }) {
   const [contract, setContract] = useState<SalesContractDetail | null>(null);
   const [payment, setPayment] = useState(empty);
@@ -80,6 +82,8 @@ export function ContractPayments({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [referenceSearch, setReferenceSearch] = useState('');
+  const [receiptPaymentId, setReceiptPaymentId] = useState('');
+  const receiptPanel = useRef<HTMLElement>(null);
   const attempt = useRef({ fingerprint: '', key: '' });
   useEffect(() => {
     let active = true;
@@ -168,7 +172,16 @@ export function ContractPayments({
         attempt.current.key,
       );
       setContract(response.data);
+      const previousIds = new Set(contract.payments.map((item) => item.id));
+      const added = response.data.payments.find(
+        (item) => !previousIds.has(item.id),
+      );
+      if (added) setReceiptPaymentId(added.id);
       setPayment({ ...empty, currencyCode: defaultSalesCurrency(currencies) });
+      receiptPanel.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
       onSaved();
     } catch (reason) {
       setError(
@@ -210,58 +223,107 @@ export function ContractPayments({
           {balance.confirmedPaid}
         </p>
       ))}
-      <FormField label="جست‌وجوی شماره پیگیری در پرداخت‌های این قرارداد">
-        <Input
-          value={referenceSearch}
-          maxLength={160}
-          onChange={(event) => setReferenceSearch(event.target.value)}
-        />
-      </FormField>
-      {contract?.payments
-        .filter(
-          (item) =>
-            !referenceSearch.trim() ||
-            item.paymentReference
-              ?.toLocaleLowerCase()
-              .includes(referenceSearch.trim().toLocaleLowerCase()),
-        )
-        .map((item) => (
-          <div key={item.id} className="rounded-xl border p-3">
-            <strong>
-              {item.amount} {item.currencyCode}
-            </strong>{' '}
-            ·{' '}
-            {
-              {
-                FINANCE_CONFIRMED: 'تأییدشده مالی',
-                FINANCE_REJECTED: 'ردشده توسط مالی',
-                SCHEDULED: 'برنامه‌ریزی‌شده',
-                PENDING_FINANCE_CONFIRMATION: 'در انتظار تأیید مالی',
-              }[item.status]
-            }
-            <p>
-              شماره پیگیری: <bdi>{item.paymentReference || 'ثبت نشده'}</bdi>
-            </p>
-            <p>
-              سررسید: {new Date(item.dueAt).toLocaleDateString('fa-IR')}
-              {item.check ? ` · تاریخ چک: ${item.check.dueDate}` : ''}
-            </p>
-            <PaymentDocuments
-              key={item.id}
-              contract={contract}
-              paymentId={item.id}
+      <form
+        className="flex flex-wrap items-end gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (referenceSearch.trim()) onSearchContracts(referenceSearch.trim());
+        }}
+      >
+        <div className="min-w-48 flex-1">
+          <FormField label="جست‌وجوی شماره پیگیری در همه قراردادها">
+            <Input
+              value={referenceSearch}
+              maxLength={160}
+              onChange={(event) => setReferenceSearch(event.target.value)}
             />
-          </div>
-        ))}
-      {contract &&
-      referenceSearch.trim() &&
-      !contract.payments.some((item) =>
-        item.paymentReference
-          ?.toLocaleLowerCase()
-          .includes(referenceSearch.trim().toLocaleLowerCase()),
-      ) ? (
-        <p role="status">پرداختی با این شماره پیگیری یافت نشد.</p>
-      ) : null}
+          </FormField>
+        </div>
+        <Button
+          type="submit"
+          variant="outline"
+          disabled={!referenceSearch.trim()}
+        >
+          پیدا کردن قرارداد
+        </Button>
+        <p className="w-full text-xs text-muted-foreground">
+          جست‌وجو بین همهٔ قراردادهای مجاز شما انجام می‌شود، نه فقط این قرارداد؛
+          نتیجه در فهرست اصلی نمایش داده می‌شود.
+        </p>
+      </form>
+      <section
+        ref={receiptPanel}
+        aria-label="مدارک پرداخت قرارداد"
+        className="space-y-3 rounded-xl border border-primary/25 bg-primary/5 p-4"
+      >
+        <h3 className="font-bold">آپلود رسید و مدارک پرداخت قرارداد</h3>
+        <p className="text-sm text-muted-foreground">
+          پرداخت مربوط به رسید را انتخاب کنید؛ فایل به همان پرداخت این قرارداد
+          پیوست می‌شود.
+        </p>
+        {contract?.payments.length ? (
+          <>
+            <SalesThemedSelect
+              label="پرداخت مربوط به مدرک"
+              value={receiptPaymentId || contract.payments[0]!.id}
+              onValueChange={setReceiptPaymentId}
+              options={contract.payments.map((item, index) => ({
+                value: item.id,
+                label: `پرداخت ${index + 1} · ${item.amount} ${item.currencyCode} · پیگیری: ${item.paymentReference || 'ثبت نشده'}`,
+              }))}
+            />
+            <PaymentDocuments
+              key={receiptPaymentId || contract.payments[0]!.id}
+              contract={contract}
+              paymentId={receiptPaymentId || contract.payments[0]!.id}
+              expanded
+            />
+          </>
+        ) : (
+          <p role="status" className="text-sm">
+            ابتدا یک پرداخت در فرم پایین ثبت کنید؛ سپس همین‌جا رسید PDF یا تصویر
+            آن را آپلود کنید.
+          </p>
+        )}
+      </section>
+      {contract?.payments.map((item) => (
+        <div key={item.id} className="rounded-xl border p-3">
+          <strong>
+            {item.amount} {item.currencyCode}
+          </strong>{' '}
+          ·{' '}
+          {
+            {
+              FINANCE_CONFIRMED: 'تأییدشده مالی',
+              FINANCE_REJECTED: 'ردشده توسط مالی',
+              SCHEDULED: 'برنامه‌ریزی‌شده',
+              PENDING_FINANCE_CONFIRMATION: 'در انتظار تأیید مالی',
+            }[item.status]
+          }
+          <p>
+            شماره پیگیری: <bdi>{item.paymentReference || 'ثبت نشده'}</bdi>
+          </p>
+          <p>
+            سررسید: {new Date(item.dueAt).toLocaleDateString('fa-IR')}
+            {item.check ? ` · تاریخ چک: ${item.check.dueDate}` : ''}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={() => {
+              setReceiptPaymentId(item.id);
+              receiptPanel.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+              });
+            }}
+          >
+            آپلود رسید / مشاهده مدارک
+          </Button>
+        </div>
+      ))}
       <p className="text-sm text-muted-foreground">
         افزودن ردیف پرداخت به‌تنهایی مانده را کم نمی‌کند؛ تأیید مالی لازم است.
       </p>
@@ -332,9 +394,9 @@ export function ContractPayments({
           />
         </FormField>
         <p className="text-xs text-muted-foreground md:col-span-2">
-          پس از افزودن پرداخت، دکمهٔ «مدارک پرداخت» در همان ردیف برای بارگذاری
-          رسید فعال است. شماره پیگیری را در جست‌وجوی داشبورد فروش هم می‌توانید
-          پیدا کنید؛ این جست‌وجو استعلام بانکی نیست.
+          پس از افزودن پرداخت، بخش «مدارک پرداخت قرارداد» برای بارگذاری رسید
+          آماده است. شماره پیگیری را در جست‌وجوی داشبورد فروش هم می‌توانید پیدا
+          کنید؛ این جست‌وجو استعلام بانکی نیست.
         </p>
         <FormField label="روش پرداخت">
           <SalesThemedSelect

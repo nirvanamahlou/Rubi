@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   DocumentListItemV1,
   DocumentOptionsResponseV1,
@@ -20,11 +20,14 @@ import {
 export function PaymentDocuments({
   contract,
   paymentId,
+  expanded = false,
 }: {
   contract: SalesContractDetail;
   paymentId: string;
+  expanded?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(expanded);
+  const initialSource = useRef({ contract, paymentId });
   const [items, setItems] = useState<readonly DocumentListItemV1[]>([]);
   const [options, setOptions] = useState<
     DocumentOptionsResponseV1['data'] | null
@@ -32,12 +35,43 @@ export function PaymentDocuments({
   const [file, setFile] = useState<File | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [inputKey, setInputKey] = useState(0);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(expanded);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [unknown, setUnknown] = useState(false);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
+  useEffect(() => {
+    if (!expanded) return;
+    let active = true;
+    const source = initialSource.current;
+    Promise.all([
+      documentsApi.list(
+        paymentDocumentQuery(source.contract, source.paymentId, 1),
+      ),
+      documentsApi.options(),
+    ])
+      .then(([result, available]) => {
+        if (!active) return;
+        setItems(result.data);
+        setPages(result.meta.totalPages);
+        setOptions(available.data);
+      })
+      .catch((reason: unknown) => {
+        if (active)
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : 'دریافت مدارک ناموفق بود.',
+          );
+      })
+      .finally(() => {
+        if (active) setBusy(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [expanded]);
   const message = (reason: unknown) =>
     reason instanceof Error ? reason.message : 'عملیات مدرک ناموفق بود.';
   async function refresh(nextPage = 1) {
@@ -124,18 +158,20 @@ export function PaymentDocuments({
   }
   return (
     <div className="mt-3 border-t pt-3">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={busy}
-        onClick={() => {
-          setOpen(!open);
-          if (!open) void load();
-        }}
-      >
-        مدارک پرداخت
-      </Button>
+      {!expanded ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={busy}
+          onClick={() => {
+            setOpen(!open);
+            if (!open) void load();
+          }}
+        >
+          آپلود رسید / مدارک پرداخت
+        </Button>
+      ) : null}
       {open ? (
         <div className="mt-3 space-y-3 rounded-xl bg-primary/5 p-3">
           <p className="text-xs text-muted-foreground">
@@ -143,6 +179,11 @@ export function PaymentDocuments({
             بارگذاری نکنید. فایل تا عبور از بررسی امنیتی قابل دریافت نیست؛ تأیید
             مالی مستقل است.
           </p>
+          {busy ? (
+            <p role="status" className="text-sm">
+              در حال دریافت یا ذخیره مدارک…
+            </p>
+          ) : null}
           {error ? (
             <p role="alert" className="text-sm text-destructive">
               {error}

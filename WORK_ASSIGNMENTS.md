@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-PAYMENT-SEARCH-UPLOAD-0908 — PC-A — COMPLETE_LOCAL
+
+- Replaced current-payment filtering with main server-backed all-authorized-contract tracking search, clearing stale filters/page. Added visible saved-payment selector and expanded receipt upload/list/download area, with row shortcuts and newly saved payment selection. 188 Web Sales tests, 5 backend reference tests, scoped lint/typecheck, synthetic browser QA and 36-route build pass. Web3100 updated; Web/API health 200. No API/schema/IAM/real-data/public-push changes. Scoped reservation released; see docs/tasks/SALES-PAYMENT-SEARCH-UPLOAD-0908.md.
+
+- Reserve Sales workspace/payment/document presentation and tests plus scoped docs from 54c4e6a. Replace misleading current-contract tracking filter with a global authorized-contract search action and provide a prominent payment-receipt attachment area using existing public Documents APIs. Preserve permissions, branch/ownership, Finance state, idempotency and scan gates. No API/schema/IAM/real-data changes, merge or public push.
+
 ## SALES-INSURANCE-SELECTION-0908 — PC-A — COMPLETE_LOCAL / ISSUANCE_DEFERRED
 
 - Delivered active registered-plan dropdown without description, reference/versioned selection metadata and passenger service assignments; existing reservation snapshot preserves the selection, not an issued policy. 185 Sales tests, scoped lint/typecheck, synthetic actual-component browser checks and 36-route production build pass. Updated Web3100/API4000 health 200. No schema/API/producer/IAM/real-data/public-push changes. User deferred insurer connection to later Reservations work. Scoped reservation released; see docs/tasks/SALES-INSURANCE-SELECTION-0908.md.

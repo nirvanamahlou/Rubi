@@ -64,7 +64,15 @@ export function formatMoney(amount: string, currencyCode: string) {
   );
 }
 
+export function paymentReferenceSearchQuery(
+  reference: string,
+): SalesContractListQuery {
+  // Start a server-side search across authorized contracts, without stale filters/page.
+  return { search: reference.trim(), page: 1 };
+}
+
 export function SalesWorkspace() {
+  const contractsSearchPanel = useRef<HTMLElement>(null);
   const [paymentContractId, setPaymentContractId] = useState<string | null>(
     null,
   );
@@ -216,6 +224,7 @@ export function SalesWorkspace() {
         </div>
       ) : null}
       <section
+        ref={contractsSearchPanel}
         aria-label="جست‌وجو و فهرست قراردادها"
         className="rounded-2xl border border-border bg-surface p-4 sm:p-5"
       >
@@ -495,6 +504,15 @@ export function SalesWorkspace() {
           id={paymentContractId}
           onClose={() => setPaymentContractId(null)}
           onSaved={() => void load()}
+          onSearchContracts={(reference) => {
+            setSearch(reference);
+            setQuery(paymentReferenceSearchQuery(reference));
+            setPaymentContractId(null);
+            contractsSearchPanel.current?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+            });
+          }}
         />
       ) : null}
     </div>
