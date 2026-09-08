@@ -1,6 +1,6 @@
 # Work Assignments
 
-## B2B-CONTRACT-CREDIT-001 — PC-B — IN_PROGRESS
+## B2B-CONTRACT-CREDIT-001 — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_ACTIVE
 
 - Owner asks to complete Screenshot527's contract/credit wizard step. Explicit decisions: one independent reviewer with the appropriate contract/credit permission; proposer cannot approve; separate limits per currency without automatic FX.
 - Continue clean 8853c27 on codex/pc-b-b2b-contract-credit in the owned combined runtime worktree. Reserve B2B API/Web, additive B2B contracts and scoped task/status/decision documentation. Extend existing profile/agreement/credit tables and routes; preserve legacy records/API defaults, HR and other module work. No parallel organization or agreement module.
@@ -8,6 +8,7 @@
 - Coordinator confirms no remaining lock in its task; latest develop/open PRs and published reservations work show no active conflicting B2B implementation. Reserve Migration Owner = PC-B/B2B-CONTRACT-CREDIT-001 for this B2B migration; B2B contracts, the two approval permission catalog entries and the public Master Data lookup are limited shared reservations. Preserve unrelated unmerged PC-A migrations and never apply them implicitly to this runtime.
 - Implement draft/edit/reload, contract conditions and per-currency policy/guarantee fields for both roles, immutable submitted versions, independent approval/rejection, optimistic concurrency, conflict checks and transactional audit. Financial balances remain owner projections. Build/test with disposable data before any coordinated local migration; back up and rehearse first, preserving current runtime data/storage.
 - Public Documents version-reference lookup is part of this scope: only DocumentsService/Repository and its focused test are extended; B2B reads pinned reference IDs through the owner service rather than joining Documents tables. The Documents owner's completed Web contrast scope remains byte-identical to merged develop.
+- Completed implementation and additive migration after backup, restore rehearsal and explicit Documents runtime handoff. Current Web3100 PID7740 serves a8c986d / hr005-54d77a794617c989 with the correct `/api/v1` base; API4190 PID17316 is healthy. Existing business rows and all 177 IAM role grants are preserved. All four GitHub gates pass on a8c986d. PR132 is ready for review; no merge or actual B2B account grant. Final authenticated browser verification awaits re-login, and writer/reviewer account selection has been requested. Release B2B/shared-code and migration implementation reservations; coordinate any subsequent runtime change with this task.
 
 ## B2B-FONT-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
