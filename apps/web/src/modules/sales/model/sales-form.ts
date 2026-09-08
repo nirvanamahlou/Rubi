@@ -376,10 +376,10 @@ export function withFirstPassengerCustomer(
 ): SalesFormState {
   if (state.customerKind === 'organization')
     return { ...state, firstPassengerIsCustomer: false };
-  if (!state.firstPassengerIsCustomer) return state;
   const first = state.passengers[0];
   return {
     ...state,
+    firstPassengerIsCustomer: true,
     customerId: first?.customerId ?? '',
     customerName: first?.displayName ?? '',
   };
@@ -654,6 +654,7 @@ export function salesTravelDate(state: SalesFormState): string {
 export function salesPayload(
   state: SalesFormState,
 ): SalesContractCreateRequest {
+  state = withFirstPassengerCustomer(state);
   const utc = (value: string) => new Date(value).toISOString();
   const services: SalesServiceInput[] = state.serviceKinds.flatMap(
     (kind): SalesServiceInput[] =>

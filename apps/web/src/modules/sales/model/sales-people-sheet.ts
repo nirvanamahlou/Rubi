@@ -13,7 +13,9 @@ import {
   type SalesFormState,
 } from './sales-form';
 
-export type PeopleValues = Record<EntryField, string>;
+export type PeopleValues = Record<EntryField, string> & {
+  acquaintanceMethodId?: string;
+};
 export interface PeopleRow {
   values: PeopleValues;
   person?: { id: string; displayName: string };
@@ -28,6 +30,7 @@ export interface SalesPeopleDraft {
   mode: 'person' | 'first-passenger' | 'organization';
   rows: Record<string, PeopleRow>;
   displacedFirst?: PeopleRow;
+  previousSeparateCustomer?: PeopleRow;
   organization: {
     id: string;
     displayName: string;
@@ -43,6 +46,7 @@ export const emptyPeopleValues = (): PeopleValues => ({
   passportExpiryDate: '',
   phone: '',
   email: '',
+  acquaintanceMethodId: '',
 });
 export function initialSalesPeopleDraft(
   state: SalesFormState,
@@ -58,19 +62,16 @@ export function initialSalesPeopleDraft(
       },
     };
   });
-  if (state.customerId)
+  if (state.customerId && state.customerKind !== 'organization')
     rows.primary = {
       person: { id: state.customerId, displayName: state.customerName },
       values: { ...emptyPeopleValues(), firstName: state.customerName },
     };
-  if (state.firstPassengerIsCustomer && rows.p0) rows.primary = rows.p0;
-  return {
+  return normalizeSalesPeopleDraft({
     mode:
       state.customerKind === 'organization'
         ? 'organization'
-        : state.firstPassengerIsCustomer
-          ? 'first-passenger'
-          : 'person',
+        : 'first-passenger',
     rows,
     organization:
       state.customerKind === 'organization' && state.customerId
@@ -80,6 +81,23 @@ export function initialSalesPeopleDraft(
             organizationId: state.customerOrganizationId ?? null,
           }
         : null,
+  });
+}
+export function normalizeSalesPeopleDraft(
+  draft: SalesPeopleDraft,
+): SalesPeopleDraft {
+  if (draft.mode === 'organization') return draft;
+  const first = draft.rows.p0;
+  const hasFirst =
+    first && (first.person || Object.values(first.values).some(Boolean));
+  const payer = hasFirst ? first : (draft.rows.primary ?? first);
+  return {
+    ...draft,
+    mode: 'first-passenger',
+    ...(draft.rows.primary && draft.rows.primary !== payer
+      ? { previousSeparateCustomer: draft.rows.primary }
+      : {}),
+    rows: { ...draft.rows, ...(payer ? { p0: payer, primary: payer } : {}) },
   };
 }
 export const passengerSlotKeys = (state: SalesFormState) =>
@@ -107,6 +125,7 @@ export function selectedPeopleRow(person: CustomerDetail): PeopleRow {
     passportExpiryDate: person.passportExpiryDate ?? '',
     phone: contact('phone'),
     email: contact('email'),
+    acquaintanceMethodId: person.acquaintanceMethodId ?? '',
   };
   return {
     person: { id: person.id, displayName: person.displayName },
@@ -129,9 +148,9 @@ export function refreshPeopleRow(
 ): PeopleRow {
   const next = selectedPeopleRow(profile);
   const baseline = existingPeopleBaseline(row);
-  for (const field of Object.keys(row.values) as EntryField[]) {
+  for (const field of Object.keys(row.values) as (keyof PeopleValues)[]) {
     if (row.values[field] !== baseline[field])
-      next.values[field] = row.values[field];
+      next.values[field] = row.values[field] ?? '';
   }
   return next;
 }
@@ -259,6 +278,9 @@ export function peopleCreateInput(
     lastName: v.lastName.trim(),
     displayName: `${v.firstName.trim()} ${v.lastName.trim()}`,
     nationalId,
+    ...(v.acquaintanceMethodId
+      ? { acquaintanceMethodId: v.acquaintanceMethodId }
+      : {}),
     roles: customer
       ? passenger
         ? ['customer', 'passenger']
@@ -297,7 +319,7 @@ export function validateSalesPeopleDraft(
       validateExistingPerson(row);
       if (ids.has(row.person.id))
         throw new Error(
-          'یک شخص دوبار انتخاب شده؛ برای مشتری از گزینه «همان مسافر اول» استفاده کنید.',
+          'یک شخص دوبار انتخاب شده؛ مشتری حقیقی همان مسافر اول است و ردیف جدا نمی‌خواهد.',
         );
       ids.add(row.person.id);
     } else {
@@ -348,8 +370,8 @@ function adoptRegisteredPerson(
   profile: CustomerDetail,
 ): PeopleRow {
   const next = selectedPeopleRow(profile);
-  for (const field of Object.keys(row.values) as EntryField[])
-    if (row.values[field].trim()) next.values[field] = row.values[field];
+  for (const field of Object.keys(row.values) as (keyof PeopleValues)[])
+    if (row.values[field]?.trim()) next.values[field] = row.values[field] ?? '';
   return {
     ...next,
     previousRegistrationRetained: Boolean(row.previousRegistrationRetained),
@@ -365,6 +387,7 @@ export async function saveSalesPeopleDraft(
       Pick<typeof customersApi, 'update' | 'detail' | 'registrationLookup'>
     > = customersApi,
 ) {
+  draft = normalizeSalesPeopleDraft(draft);
   let current = { ...draft, rows: { ...draft.rows } };
   const keys = passengerSlotKeys(state);
   for (const key of [
@@ -446,7 +469,17 @@ export async function saveSalesPeopleDraft(
         profile &&
         ((customerRole && !profile.roles.includes('customer')) ||
           (key !== 'primary' && !profile.roles.includes('passenger')));
-      if (passportChanged || needsRole || identityChanged) {
+      const acquaintanceChanged =
+        profile &&
+        row.values.acquaintanceMethodId !== undefined &&
+        row.values.acquaintanceMethodId !==
+          (baseline.acquaintanceMethodId ?? profile.acquaintanceMethodId ?? '');
+      if (
+        passportChanged ||
+        needsRole ||
+        identityChanged ||
+        acquaintanceChanged
+      ) {
         if (!api.update) throw new Error('اتصال ویرایش مشتری در دسترس نیست.');
         const roles = [
           ...new Set([
@@ -463,7 +496,9 @@ export async function saveSalesPeopleDraft(
               row.values.firstName.trim() + ' ' + row.values.lastName.trim(),
             firstName: row.values.firstName.trim(),
             lastName: row.values.lastName.trim(),
-            acquaintanceMethodId: profile.acquaintanceMethodId,
+            acquaintanceMethodId: acquaintanceChanged
+              ? row.values.acquaintanceMethodId || null
+              : profile.acquaintanceMethodId,
             roles,
             version: profile.version,
             ...(row.values.nationalId !== baseline.nationalId

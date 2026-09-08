@@ -110,7 +110,7 @@ describe('combined sales people step', () => {
         .nationalId,
     ).toBe('0000000019');
   });
-  it('follows the first passenger when enabled, including after removal', () => {
+  it('always follows the first passenger for a natural person, including legacy unchecked drafts', () => {
     const first = {
       customerId: 'first',
       displayName: 'First',
@@ -139,7 +139,7 @@ describe('combined sales people step', () => {
         firstPassengerIsCustomer: false,
         customerId: 'separate',
       }).customerId,
-    ).toBe('separate');
+    ).toBe('first');
   });
   it('supports repeated additions and removals without duplicating a person or storing national IDs in Sales', () => {
     let state = emptySalesForm;

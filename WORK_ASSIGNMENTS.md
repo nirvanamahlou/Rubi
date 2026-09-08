@@ -1,5 +1,9 @@
 # Work Assignments
 
+## SALES-FIRST-PASSENGER-ACQUAINTANCE-0908 — PC-A — IN_PROGRESS
+
+- Reserve Sales people-entry model/UI/form/targeted tests and scoped docs from 8274131. New natural-person contracts always use passenger 1 as customer without a separate payer row/toggle; organizations remain separate. Add per-person registered Master Data acquaintance-method selection through existing Customers public mutations. Preserve old draft entries, customer permissions/optimistic updates, passenger counts and identity recovery. No producer/schema/API/IAM/real-data edits, merge or public push.
+
 ## SALES-PAYMENT-SEARCH-UPLOAD-0908 — PC-A — COMPLETE_LOCAL
 
 - Replaced current-payment filtering with main server-backed all-authorized-contract tracking search, clearing stale filters/page. Added visible saved-payment selector and expanded receipt upload/list/download area, with row shortcuts and newly saved payment selection. 188 Web Sales tests, 5 backend reference tests, scoped lint/typecheck, synthetic browser QA and 36-route build pass. Web3100 updated; Web/API health 200. No API/schema/IAM/real-data/public-push changes. Scoped reservation released; see docs/tasks/SALES-PAYMENT-SEARCH-UPLOAD-0908.md.

@@ -20,7 +20,9 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     );
     expect(html).toContain('جدول ورود اطلاعات مشتری و مسافران');
     expect(html.match(/id="sales-entry-p\d+-first-name"/g)).toHaveLength(4);
-    expect(html).toContain('sales-entry-primary-first-name');
+    expect(html).not.toContain('sales-entry-primary-first-name');
+    expect(html.match(/aria-label="نحوه آشنایی مسافر/g)).toHaveLength(4);
+    expect(html).not.toContain('type="checkbox"');
     expect(html).toContain('پاسپورت');
     expect(html).toContain('تلفن');
     expect(html).toContain('ایمیل');
@@ -46,9 +48,10 @@ describe('Sales uses the Customers entry spreadsheet', () => {
       />,
     );
     expect(html).toContain('مشتری و مسافر اول');
-    expect(html).toContain('sales-entry-primary-first-name');
+    expect(html).not.toContain('sales-entry-primary-first-name');
     expect(html).toContain('انقضای پاسپورت');
-    expect(html).toContain('این مشتری مسافر اول هم هست');
+    expect(html).toContain('قرارداد به نام مسافر اول ثبت می‌شود');
+    expect(html).not.toContain('این مشتری مسافر اول هم هست');
     expect(html.match(/id="sales-entry-p\d+-first-name"/g)).toHaveLength(1);
   });
 });

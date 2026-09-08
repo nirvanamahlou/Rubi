@@ -1,7 +1,7 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Check, Search } from 'lucide-react';
-import type { CustomerSummary } from '@rubi/contracts';
+import type { CustomerSummary, MasterDataRecord } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-controls';
 import { Alert } from '@/components/ui/surfaces';
@@ -15,6 +15,8 @@ import {
 import { SalesOrganizationCustomer } from './sales-organization-customer';
 import { SalesPersonSearch } from './sales-person-search';
 import { SalesDatePicker } from './sales-date-picker';
+import { SalesThemedSelect } from './sales-themed-select';
+import { loadSalesAcquaintanceMethods } from '../api/acquaintance-methods';
 import {
   salesPassengerAgeLabel,
   salesPassengerCounts,
@@ -29,7 +31,7 @@ import {
   selectedPeopleRow,
   refreshPeopleRow,
   saveSalesPeopleDraft,
-  linkCustomerAsFirst,
+  normalizeSalesPeopleDraft,
   editPeopleRow,
   type SalesPeopleDraft,
 } from '../model/sales-people-sheet';
@@ -53,11 +55,34 @@ export function SalesPeopleSheet({
   onTravelDateChange: (value: string) => void;
   busy?: boolean;
 }) {
-  const draft = savedDraft ?? initialSalesPeopleDraft(state);
+  const draft = normalizeSalesPeopleDraft(
+    savedDraft ?? initialSalesPeopleDraft(state),
+  );
   const [calendar, setCalendar] = useState<CustomerCalendarMode>('persian');
   const [lookup, setLookup] = useState<string | null>(null);
   const [clearKey, setClearKey] = useState<string | null>(null);
-  const [linkPending, setLinkPending] = useState(false);
+  const [acquaintanceMethods, setAcquaintanceMethods] = useState<
+    MasterDataRecord[]
+  >([]);
+  const [methodsLoading, setMethodsLoading] = useState(true);
+  const [methodsError, setMethodsError] = useState('');
+  const [methodsRetry, setMethodsRetry] = useState(0);
+  useEffect(() => {
+    let active = true;
+    loadSalesAcquaintanceMethods()
+      .then((items) => {
+        if (active) setAcquaintanceMethods(items);
+      })
+      .catch(() => {
+        if (active) setMethodsError('دریافت فهرست نحوه آشنایی ناموفق بود.');
+      })
+      .finally(() => {
+        if (active) setMethodsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [methodsRetry]);
   const [error, setError] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const inFlight = useRef(false);
@@ -126,7 +151,6 @@ export function SalesPeopleSheet({
     if (inFlight.current) return;
     setClearKey(null);
     setLookup(null);
-    setLinkPending(false);
     inFlight.current = true;
     onBusyChange(true);
     setError('');
@@ -144,10 +168,7 @@ export function SalesPeopleSheet({
       onBusyChange(false);
     }
   };
-  const keys = [
-    ...(draft.mode !== 'organization' ? ['primary'] : []),
-    ...slots,
-  ];
+  const keys = slots;
   const rows: CustomerEntryRow[] = keys.map((key) => {
     const row = peopleRow(draft, key);
     const label =
@@ -158,24 +179,20 @@ export function SalesPeopleSheet({
       key: 'sales-entry-' + key,
       label,
       values: row.values,
-      readOnly:
-        Boolean(row.person) ||
-        (key === 'p0' && draft.mode === 'first-passenger'),
+      readOnly: Boolean(row.person),
       editableFields:
-        key === 'p0' && draft.mode === 'first-passenger'
-          ? []
-          : row.person && !row.profile
-            ? ['birthDate']
-            : [
-                'firstName',
-                'lastName',
-                'nationalId',
-                'birthDate',
-                'passportNumber',
-                'passportExpiryDate',
-                'phone',
-                'email',
-              ],
+        row.person && !row.profile
+          ? ['birthDate']
+          : [
+              'firstName',
+              'lastName',
+              'nationalId',
+              'birthDate',
+              'passportNumber',
+              'passportExpiryDate',
+              'phone',
+              'email',
+            ],
       role: (
         <div className="space-y-1 text-xs text-muted-foreground">
           <p>
@@ -213,6 +230,46 @@ export function SalesPeopleSheet({
               ملی فعلی ادامه می‌یابد.
             </p>
           ) : null}
+          <div className="mt-3 space-y-1">
+            <span className="text-xs font-semibold">نحوه آشنایی</span>
+            <SalesThemedSelect
+              label={`نحوه آشنایی ${label}`}
+              value={row.values.acquaintanceMethodId ?? ''}
+              disabled={
+                busy ||
+                methodsLoading ||
+                Boolean(methodsError) ||
+                !acquaintanceMethods.length ||
+                Boolean(row.person && !row.profile)
+              }
+              options={[
+                { value: '', label: 'انتخاب نحوه آشنایی' },
+                ...acquaintanceMethods.map((item) => ({
+                  value: item.id,
+                  label: item.name,
+                })),
+                ...(row.values.acquaintanceMethodId &&
+                !acquaintanceMethods.some(
+                  (item) => item.id === row.values.acquaintanceMethodId,
+                )
+                  ? [
+                      {
+                        value: row.values.acquaintanceMethodId,
+                        label: 'نحوه آشنایی ثبت‌شده در پرونده',
+                      },
+                    ]
+                  : []),
+              ]}
+              onValueChange={(acquaintanceMethodId) =>
+                change(
+                  editPeopleRow(draft, key, {
+                    ...row,
+                    values: { ...row.values, acquaintanceMethodId },
+                  }),
+                )
+              }
+            />
+          </div>
         </div>
       ),
       onChange: (field, value) =>
@@ -222,43 +279,40 @@ export function SalesPeopleSheet({
             values: { ...row.values, [field]: value },
           }),
         ),
-      actions:
-        key === 'p0' && draft.mode === 'first-passenger' ? (
-          <span className="text-xs text-primary">از اطلاعات مشتری</span>
-        ) : (
-          <div className="flex flex-col gap-1">
+      actions: (
+        <div className="flex flex-col gap-1">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => setLookup(key)}
+          >
+            <Search className="size-3" />
+            انتخاب موجود
+          </Button>
+          {row.person && (!row.profile || row.profile.birthDateMasked) ? (
             <Button
               type="button"
               size="sm"
               variant="outline"
               disabled={busy}
-              onClick={() => setLookup(key)}
+              onClick={() => void reveal(key)}
             >
-              <Search className="size-3" />
-              انتخاب موجود
+              خواندن اطلاعات برای قرارداد
             </Button>
-            {row.person && (!row.profile || row.profile.birthDateMasked) ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={busy}
-                onClick={() => void reveal(key)}
-              >
-                خواندن اطلاعات برای قرارداد
-              </Button>
-            ) : null}
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={busy}
-              onClick={() => setClearKey(key)}
-            >
-              پاک‌کردن ردیف
-            </Button>
-          </div>
-        ),
+          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => setClearKey(key)}
+          >
+            پاک‌کردن ردیف
+          </Button>
+        </div>
+      ),
     };
   });
   return (
@@ -281,7 +335,16 @@ export function SalesPeopleSheet({
           disabled={busy}
           onClick={() =>
             draft.mode === 'organization' &&
-            change({ ...draft, mode: 'person' })
+            change(
+              normalizeSalesPeopleDraft({
+                ...draft,
+                mode: 'first-passenger',
+                ...(draft.rows.primary
+                  ? { previousSeparateCustomer: draft.rows.primary }
+                  : {}),
+                rows: { ...draft.rows, primary: peopleRow(draft, 'p0') },
+              }),
+            )
           }
         >
           مشتری حقیقی
@@ -291,62 +354,17 @@ export function SalesPeopleSheet({
           size="sm"
           variant={draft.mode === 'organization' ? 'primary' : 'outline'}
           disabled={busy}
-          onClick={() =>
-            change({
-              ...(draft.mode === 'first-passenger'
-                ? linkCustomerAsFirst(draft, false)
-                : draft),
-              mode: 'organization',
-            })
-          }
+          onClick={() => change({ ...draft, mode: 'organization' })}
         >
           حقوقی / آژانس
         </Button>
         {draft.mode !== 'organization' ? (
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="size-4 accent-primary"
-              checked={draft.mode === 'first-passenger'}
-              disabled={busy}
-              onChange={(event) => {
-                if (!event.target.checked)
-                  return change(linkCustomerAsFirst(draft, false));
-                const first = peopleRow(draft, 'p0');
-                if (first.person || Object.values(first.values).some(Boolean))
-                  setLinkPending(true);
-                else change(linkCustomerAsFirst(draft, true));
-              }}
-            />
-            این مشتری مسافر اول هم هست
-          </label>
+          <p className="text-sm text-primary">
+            قرارداد به نام مسافر اول ثبت می‌شود؛ اطلاعات او را فقط یک‌بار وارد
+            کنید.
+          </p>
         ) : null}
       </div>
-      {linkPending ? (
-        <div role="alert" className="rounded-xl border p-3 text-sm">
-          اطلاعات مشتری جایگزین ردیف اول شود؟ اطلاعات فعلی با برداشتن تیک
-          برمی‌گردد.
-          <Button
-            type="button"
-            size="sm"
-            disabled={busy}
-            onClick={() => {
-              change(linkCustomerAsFirst(draft, true));
-              setLinkPending(false);
-            }}
-          >
-            تأیید جایگزینی
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={() => setLinkPending(false)}
-          >
-            انصراف
-          </Button>
-        </div>
-      ) : null}
       {draft.mode === 'organization' ? (
         draft.organization ? (
           <div className="flex items-center justify-between rounded-xl border p-3">
@@ -420,15 +438,39 @@ export function SalesPeopleSheet({
       {error ? (
         <Alert tone="error" title="ثبت افراد کامل نشد" description={error} />
       ) : null}
+      {methodsLoading ? (
+        <p role="status" className="text-xs text-muted-foreground">
+          در حال دریافت نحوه‌های آشنایی…
+        </p>
+      ) : methodsError || !acquaintanceMethods.length ? (
+        <div className="flex items-center gap-2 text-sm">
+          <p role={methodsError ? 'alert' : 'status'}>
+            {methodsError ||
+              'نحوه آشنایی فعالی ثبت نشده است؛ فهرست را در اطلاعات پایه تکمیل کنید.'}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setMethodsLoading(true);
+              setMethodsError('');
+              setMethodsRetry((n) => n + 1);
+            }}
+          >
+            دریافت دوباره نحوه آشنایی
+          </Button>
+        </div>
+      ) : null}
       {lookup ? (
         <SalesPersonSearch
-          purpose={lookup === 'primary' ? 'customer' : 'passenger'}
+          purpose={
+            lookup === 'p0' && draft.mode !== 'organization'
+              ? 'customer'
+              : 'passenger'
+          }
           selectedIds={keys
-            .filter(
-              (key) =>
-                key !== lookup &&
-                !(draft.mode === 'first-passenger' && key === 'p0'),
-            )
+            .filter((key) => key !== lookup)
             .flatMap((key) =>
               peopleRow(draft, key).person?.id
                 ? [peopleRow(draft, key).person!.id]

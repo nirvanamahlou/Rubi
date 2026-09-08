@@ -5,6 +5,7 @@ import { CustomersApiError } from '@/modules/customers/public/entry';
 import {
   emptyPeopleValues,
   initialSalesPeopleDraft,
+  normalizeSalesPeopleDraft,
   passengerSlotKeys,
   peopleRow,
   selectedPeopleRow,
@@ -64,6 +65,38 @@ const detail = (id: string, input: Partial<CustomerDetail> = {}) =>
     ...input,
   }) as CustomerDetail;
 describe('fixed Sales people-entry slots', () => {
+  it('never seeds an organization record into an empty passenger slot', () => {
+    const agency = initialSalesPeopleDraft({
+      ...emptySalesForm,
+      customerKind: 'organization',
+      customerId: 'agency-person',
+      customerName: 'Sample Agency',
+      customerOrganizationId: 'agency',
+    });
+    expect(agency.mode).toBe('organization');
+    expect(agency.rows.primary).toBeUndefined();
+    expect(
+      normalizeSalesPeopleDraft({ ...agency, mode: 'first-passenger' }).rows.p0,
+    ).toBeUndefined();
+  });
+  it('normalizes old separate payers without overwriting passenger one or the archived payer', () => {
+    const first = filled().rows.p0!;
+    const primary = {
+      values: { ...emptyPeopleValues(), firstName: 'Previous payer' },
+    };
+    const normalized = normalizeSalesPeopleDraft({
+      ...filled(),
+      mode: 'person',
+      rows: { p0: first, primary },
+    });
+    expect(normalized.mode).toBe('first-passenger');
+    expect(normalized.rows.p0).toEqual(first);
+    expect(normalized.rows.primary).toEqual(first);
+    expect(normalized.previousSeparateCustomer).toEqual(primary);
+    expect(normalizeSalesPeopleDraft(normalized)).toEqual(normalized);
+    const agency = { ...normalized, mode: 'organization' as const };
+    expect(normalizeSalesPeopleDraft(agency)).toBe(agency);
+  });
   const one = {
     ...state,
     passengerComposition: { adults: 1, children: 0, infants: 0 },
@@ -76,6 +109,67 @@ describe('fixed Sales people-entry slots', () => {
       nationalId: values.nationalId,
       displayName: values.firstName + ' ' + values.lastName,
     });
+  it('saves acquaintance selection for new passengers, with first passenger as customer even for a legacy separate draft', async () => {
+    const draft = filled();
+    draft.mode = 'person';
+    draft.rows.p0!.values.acquaintanceMethodId = 'registered-method';
+    const create = vi.fn(async (input: CustomerMutationRequest) => ({
+      data: {
+        ...savedPerson(),
+        acquaintanceMethodId: input.acquaintanceMethodId ?? null,
+      },
+    }));
+    const result = await saveSalesPeopleDraft(one, draft, vi.fn(), {
+      create,
+      addContact: vi.fn(),
+    });
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        acquaintanceMethodId: 'registered-method',
+        roles: ['customer', 'passenger'],
+      }),
+    );
+    expect(result.patch.customerId).toBe(
+      result.patch.passengers[0]?.customerId,
+    );
+    expect(result.patch.firstPassengerIsCustomer).toBe(true);
+  });
+  it('updates only an explicitly changed acquaintance method through the versioned customer API and preserves it on retry', async () => {
+    const profile = {
+      ...savedPerson(),
+      acquaintanceMethodId: 'old-method',
+      version: 7,
+    };
+    const selected = selectedPeopleRow(profile);
+    expect(selected.values.acquaintanceMethodId).toBe('old-method');
+    const draft = {
+      ...filled(),
+      rows: {
+        p0: {
+          ...selected,
+          values: { ...selected.values, acquaintanceMethodId: 'new-method' },
+        },
+      },
+    };
+    const update = vi.fn(
+      async (_id: string, input: CustomerMutationRequest) => ({
+        data: { ...profile, ...input, version: 8 } as CustomerDetail,
+      }),
+    );
+    const api = { create: vi.fn(), addContact: vi.fn(), update };
+    const result = await saveSalesPeopleDraft(one, draft, vi.fn(), api);
+    expect(update).toHaveBeenCalledWith(
+      'saved',
+      expect.objectContaining({
+        acquaintanceMethodId: 'new-method',
+        version: 7,
+      }),
+    );
+    await saveSalesPeopleDraft(one, result.draft, vi.fn(), api);
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(api.create).not.toHaveBeenCalled();
+  });
   it('allows corrected retry after a definitive server rejection', async () => {
     let progress = filled();
     const api = {
