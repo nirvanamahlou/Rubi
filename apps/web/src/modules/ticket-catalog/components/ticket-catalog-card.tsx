@@ -194,8 +194,8 @@ export function TicketCatalogCard({
             size="icon"
             variant="outline"
             className="text-destructive"
-            title="حذف بلیت"
-            aria-label="حذف بلیت"
+            title="حذف بلیط"
+            aria-label="حذف بلیط"
             onClick={onDelete}
           >
             <Trash2 className="size-4" aria-hidden />
@@ -211,13 +211,13 @@ export function TicketCatalogCard({
               }
               title={
                 powerStatus === 'active'
-                  ? 'فعال‌کردن دوباره فروش بلیت'
-                  : 'توقف فروش بلیت'
+                  ? 'فعال‌کردن دوباره فروش بلیط'
+                  : 'توقف فروش بلیط'
               }
               aria-label={
                 powerStatus === 'active'
-                  ? 'فعال‌کردن دوباره فروش بلیت'
-                  : 'توقف فروش بلیت'
+                  ? 'فعال‌کردن دوباره فروش بلیط'
+                  : 'توقف فروش بلیط'
               }
               onClick={() => onStatus(powerStatus)}
             >
@@ -228,8 +228,8 @@ export function TicketCatalogCard({
               size="icon"
               variant="outline"
               disabled
-              title="فروش این بلیت متوقف است"
-              aria-label="فروش این بلیت متوقف است"
+              title="فروش این بلیط متوقف است"
+              aria-label="فروش این بلیط متوقف است"
             >
               <Power className="size-4" aria-hidden />
             </Button>

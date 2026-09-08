@@ -1,6 +1,22 @@
 export function getPublicApiBaseUrl(): string | null {
   const configuredValue = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
-  if (configuredValue) return configuredValue.replace(/\/$/, '');
+  if (configuredValue) {
+    if (
+      typeof window !== 'undefined' &&
+      isLocalHostname(window.location.hostname)
+    ) {
+      try {
+        const localApiUrl = new URL(configuredValue);
+        if (isLocalHostname(localApiUrl.hostname)) {
+          localApiUrl.hostname = window.location.hostname;
+          return localApiUrl.toString().replace(/\/$/, '');
+        }
+      } catch {
+        // Preserve configured relative API addresses.
+      }
+    }
+    return configuredValue.replace(/\/$/, '');
+  }
 
   if (
     typeof window !== 'undefined' &&

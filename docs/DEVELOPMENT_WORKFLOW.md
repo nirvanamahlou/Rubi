@@ -1,20 +1,25 @@
-# قرارداد توسعه دوکامپیوتری
+# قرارداد توسعه چندکامپیوتری
 
 ## هدف
 
-PC-A و PC-B روی یک Repository و بدون تکیه بر حافظه گفتگو کار می‌کنند. Git history،
+PC-A، PC-B، PC-C و PC-D روی یک Repository و بدون تکیه بر حافظه گفتگو کار می‌کنند. Git history،
 اسناد وضعیت و migrations تنها مرجع هماهنگی هستند. `origin` باید Repository مشترک
 `Rubi` باقی بماند و هیچ Agentی مجاز به حذف یا جایگزینی Remote موجود نیست.
 
-هر دو کامپیوتر Full-Stack هستند. هرکدام مدل داده، Backend، Frontend و Test ماژول‌های
+همه کامپیوترها Full-Stack هستند. هرکدام مدل داده، Backend، Frontend و Test ماژول‌های
 تحت مالکیت خود را توسعه می‌دهد؛ تقسیم قبلی «PC-A فقط Backend / PC-B فقط Frontend»
 معتبر نیست. نگاشت قطعی مالکیت در [MODULE_OWNERSHIP.md](MODULE_OWNERSHIP.md) است.
+اضافه‌شدن کامپیوتر جدید، مالکیت موجود را خودکار تغییر نمی‌دهد؛ PC-C/PC-D نیز پیش از
+هر تغییر، واحد کار مستقل و محدوده هماهنگ‌شده با مالک فعلی را رزرو می‌کنند.
 
 ## شناسه و الگوی شاخه
 
 - PC-A: `COMPUTER_ID=PC-A` و `codex/pc-a-<task-name>`
 - PC-B: `COMPUTER_ID=PC-B` و `codex/pc-b-<task-name>`
+- PC-C: `COMPUTER_ID=PC-C` و `codex/pc-c-<task-name>`
+- PC-D: `COMPUTER_ID=PC-D` و `codex/pc-d-<task-name>`
 - هر واحد کار مستقل یک شاخه دارد؛ ماژول‌های مستقل در شاخه‌های جدا توسعه می‌یابند.
+- یک شاخه کاری را هم‌زمان از چند کامپیوتر تغییر ندهید؛ شناسه کامپیوتر حساب IAM نیست.
 - `main` فقط production-ready و `develop` محل یکپارچه‌سازی staging است.
 - تغییر مستقیم، force-push یا merge روی `main`/`develop` بدون تایید صریح ممنوع است.
 
@@ -62,13 +67,26 @@ PC-A و PC-B روی یک Repository و بدون تکیه بر حافظه گفت�
 
 ## Quality Gate
 
+CI برای Push به `main`، `develop` و `codex/pc-*` اجرا می‌شود. در Pull Request این
+فیلتر **شاخه مقصد** است؛ بنابراین PR به develop/main از هر کامپیوتر و PRهای stacked
+به شاخه‌های هر چهار کامپیوتر پوشش دارند. الگو به تعداد ثابتی کامپیوتر محدود نیست.
+هر کامپیوتر ابتدا آخرین develop را fetch و تغییر CI را به شاخه قدیمی خود منتقل کند؛
+فایل Workflow قدیمی با اضافه‌شدن کامپیوتر خودکار به‌روز نمی‌شود.
+
+Jobها روی GitHub-hosted runner مستقل با PostgreSQL موقت اجرا می‌شوند؛ هیچ دسترسی به
+سرور، پورت یا دیتابیس محلی کامپیوترها ندارند. Concurrency بر اساس رخداد و Head Branch
+است؛ فقط اجرای قدیمی همان رخداد/شاخه لغو می‌شود. چند کامپیوتر نیازمند Matrix جداگانه
+نیستند؛ محدودیت اجرای هم‌زمان حساب GitHub ممکن است Runها را در صف قرار دهد.
+شناسه‌های جدید نیازمند دسترسی عادی Repository هستند؛ این تنظیم CI هیچ دسترسی یا
+Secret جدیدی ایجاد نمی‌کند. جزئیات: [CI-002](tasks/CI-002-MULTI-COMPUTER.md).
+
 با توجه به نوع تغییر: format/lint، typecheck، unit/integration/contract/E2E، migration
 test، permission test، affected build و smoke test اجرا می‌شود. برای اسناد، کنترل
 لینک‌ها، Mermaid، سازگاری اصطلاحات و `git diff --check` حداقل gate است.
 
 ## برخورد با تعارض یا حادثه
 
-- اگر هر دو سیستم یک محدوده را رزرو کرده‌اند، کار جدید متوقف و مالک زودتر ثبت‌شده
+- اگر چند سیستم یک محدوده را رزرو کرده‌اند، کار جدید متوقف و مالک زودتر ثبت‌شده
   حفظ می‌شود.
 - Secret یا PII commit‌شده یک incident است: Push متوقف، credential rotate و روش
   پاک‌سازی تاریخچه با مالک Repository هماهنگ می‌شود.
@@ -80,4 +98,4 @@ test، permission test، affected build و smoke test اجرا می‌شود. ب
 ## Handoff اجباری
 
 گزارش پایان شامل: محدوده تکمیل‌شده، فایل‌ها، تست/نتیجه، Migration، Commit/branch،
-تصمیم یا ریسک باز، و آنچه سیستم دوم باید fetch/بررسی کند است.
+تصمیم یا ریسک باز، و آنچه سایر سیستم‌ها باید fetch/بررسی کنند است.

@@ -469,6 +469,24 @@ Validation:
 
 ## Current integration handoff
 
+The owner explicitly authorized merge/push of PR #113. The task branch integrates
+develop@0261b91 using a normal merge. Its B2B/Organizations code and task report
+were verified identical to the earlier copied fc573ac snapshot; the later task
+changes are preserved, with no behavioral source edits during reconciliation.
+Unrelated develop code, new multi-computer CI and both central-document histories
+are retained. Scope against develop has no schema/migration, dependency or producer
+delta. Existing migration files imported from develop were not rewritten.
+
+Combined local validation: 97 targeted Web tests and all 54 B2B tests passed,
+including five cases on a newly created/removed disposable PostgreSQL instance;
+full monorepo lint/typecheck and production builds passed (40 Web routes).
+Prisma generation initially lacked a build-only
+DATABASE_URL and exposed stale generated enums; a synthetic unreachable URL was
+used for generation, then database build passed. No operational database was
+accessed. Git checkout line endings were normalized in the conflict files for
+Prettier. Exact-head GitHub quality, test, production
+build and migration/seed gates must pass before the authorized PR merge.
+
 Fetch `codex/pc-b-agencies-organizations` and review its independent draft PR;
 do not merge or rebase the Sales/Reservations branches as part of this delivery.
 Coordinate B2B-AGENCIES-001B with the current producer owners and resolve the

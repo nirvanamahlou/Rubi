@@ -1,4 +1,6 @@
-export const IAM_PERMISSION_CONTRACT_VERSION = 7 as const;
+import { HR_PERMISSION_CODES } from '../hr';
+
+export const IAM_PERMISSION_CONTRACT_VERSION = 8 as const;
 export const IAM_STEP_UP_CONTRACT_VERSION = 1 as const;
 
 export const IAM_CORE_PERMISSION_CODES = [
@@ -91,6 +93,22 @@ export const DOCUMENT_PERMISSION_CODES = [
   'documents.brand.read',
 ] as const;
 
+export const IAM_SALES_PERMISSION_CODES = [
+  'sales.contracts.read.own',
+  'sales.contracts.read.branch',
+  'sales.contracts.read.all',
+  'sales.contracts.create',
+  'sales.contracts.update.own',
+  'sales.contracts.update.branch',
+  'sales.contracts.confirm',
+  'sales.contracts.cancel',
+  'sales.payments.create',
+  'sales.payments.read',
+  'sales.reservation_request.create',
+  'sales.audit.read',
+  'sales.export',
+] as const;
+
 export const IAM_PERMISSION_CODES = [
   ...IAM_CORE_PERMISSION_CODES,
   ...MASTER_DATA_PERMISSION_CODES,
@@ -98,6 +116,14 @@ export const IAM_PERMISSION_CODES = [
   ...B2B_PERMISSION_CODES,
   ...LEGAL_ENTITY_PERMISSION_CODES,
   ...DOCUMENT_PERMISSION_CODES,
+  ...HR_PERMISSION_CODES,
+  ...IAM_SALES_PERMISSION_CODES,
+  'ticket_catalog.read',
+  'ticket_catalog.manage',
+  'reservations.read',
+  'reservations.hotel_purchase.write',
+
+  'reservations.arrangements.update',
 ] as const;
 
 export type IamPermissionCode = (typeof IAM_PERMISSION_CODES)[number];

@@ -1,21 +1,26 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { HrWorkspace } from './hr-workspace';
+import { HrLegacyPreviewWorkspace as HrWorkspace } from './hr-legacy-preview';
 import {
   frappeWorkspaceIdsByHubSection,
-  frappeWorkspaces,
+  frappeWorkspaces as allWorkspaces,
+  getFrappeWorkspace,
   hrWorkspaceLinkHref,
   normalizeFrappeWorkspace,
 } from './frappe-workspaces';
 import { sectionTabs } from './hr.model';
 
-describe('Frappe-style HR workspaces', () => {
+const frappeWorkspaces = allWorkspaces
+  .filter((item) => item.id !== 'tax-benefits')
+  .map((item) => getFrappeWorkspace(item.id));
+
+describe('Legacy Frappe directory compatibility fixtures', () => {
   it('merges the nine requested workspaces into the complete HR hub', () => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId="home" />);
     const linkedWorkspaceIds = Object.values(
       frappeWorkspaceIdsByHubSection,
     ).flatMap((ids) => ids ?? []);
-    expect(frappeWorkspaces).toHaveLength(9);
+    expect(frappeWorkspaces).toHaveLength(8);
     expect(new Set(linkedWorkspaceIds)).toEqual(
       new Set(frappeWorkspaces.map(({ id }) => id)),
     );

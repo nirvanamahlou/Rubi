@@ -1,0 +1,42 @@
+import {
+  Archive,
+  Banknote,
+  Building2,
+  ChartColumn,
+  ClipboardCheck,
+  Database,
+  FileText,
+  Headphones,
+  LayoutGrid,
+  Megaphone,
+  Package,
+  Plug,
+  Send,
+  Settings,
+  Ticket,
+  UserRoundCheck,
+  UsersRound,
+  type LucideIcon,
+} from 'lucide-react';
+import type { NavigationHref } from '@/messages/fa';
+
+/** Sidebar-only icons matching the approved compact navigation reference. */
+export const sidebarIcons: Record<NavigationHref, LucideIcon> = {
+  '/dashboard': LayoutGrid,
+  '/tasks': ClipboardCheck,
+  '/sales': FileText,
+  '/customers': UsersRound,
+  '/customer-affairs': Headphones,
+  '/organizations': Building2,
+  '/marketing': Megaphone,
+  '/reservations': Send,
+  '/ticket-management': Ticket,
+  '/purchases': Package,
+  '/finance': Banknote,
+  '/human-resources': UserRoundCheck,
+  '/documents': Archive,
+  '/reports': ChartColumn,
+  '/master-data': Database,
+  '/integrations': Plug,
+  '/system': Settings,
+};

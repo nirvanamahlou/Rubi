@@ -1,0 +1,98 @@
+.panel {
+  position: sticky;
+  top: 16px;
+  align-self: start;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--primary);
+  border-radius: 10px;
+  padding: 12px;
+  min-width: 0;
+}
+.selection {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  background: var(--secondary);
+  border-radius: 8px;
+  color: var(--foreground);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.selection strong {
+  font-size: 17px;
+}
+.group {
+  margin-top: 16px;
+}
+.group h2 {
+  font-size: 13px !important;
+  color: var(--muted-foreground);
+  margin-bottom: 8px !important;
+}
+.buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.panel .action {
+  min-height: 40px;
+  padding: 7px 4px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.action:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+.details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+.details dt {
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+.details dd {
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+.placeholder {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  margin-top: 24px;
+  text-align: center;
+}
+.placeholder p {
+  margin-top: 12px;
+  color: var(--muted-foreground);
+}
+.passengers {
+  margin-top: 24px;
+  padding-inline-start: 24px;
+  display: grid;
+  gap: 12px;
+}
+@media (max-width: 760px) {
+  .panel {
+    position: static;
+    max-height: none;
+  }
+  .buttons {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .group {
+    margin-top: 12px;
+  }
+}
+@media (max-width: 460px) {
+  .buttons,
+  .details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -1,5 +1,23 @@
 # مدل داده و ERD اولیه
 
+## TOUR-PACKAGES-0908
+
+Ticket Catalog owns immutable TourPackage definitions and TourDeparture dated occurrences. Each departure has real restrictive foreign keys to its package and outbound/optional return TicketPublishedOffer. Definition JSON contains versioned public reference IDs and included services, not pricing or inventory. Branch, actor, UTC creation time, idempotency key and fingerprint form the append-only creation audit. Package version is checked on occurrence creation. No update/delete API is exposed. Capacity is always derived from existing active TicketOfferCapacityAllocation rows; no separate tour stock is created. Repeating must create new dated ticket occurrences or explicitly link existing ones, never change prior offers.
+
+## SALES-OUTPUT-HOTEL-CURRENCY-0907
+
+Add nullable SalesContractPassenger.accommodationKind (varchar24, constrained to DBL/SINGLE/INFANT/CHILD_WITH_BED/CHILD_WITHOUT_BED). It describes that passenger's hotel occupancy category, not a room inventory reservation. New Sales hotel guests select an age-compatible value; legacy values remain null. Existing room counts/allocations, supplier prices, Finance balances and no-cost transfers remain unchanged. Print sums explicit passenger agreedPrices per currency; never converts currencies or fabricates legacy allocation.
+
+## SALES-CUSTOMER-PRICING-0907 — individual package amounts
+
+Sales owns additive `sales_contract_passenger_prices`: passenger FK (cascade), currency code, non-negative Decimal(24,4), unique passenger/currency. Entered values cover all allocated services for that person, not purchase cost or inferred age discounts. When supplied, every passenger has explicit prices and their currency totals equal final service-agreed contract amounts. Legacy rows have no invented backfill. Finance-confirmed payments remain the sole settlement source.
+
+## HOTEL-SALES-PRICING-0906 — مدل افزایشی
+
+- SalesContractService.pricing: JSON نسخه‌دار اختیاری شامل ارز، قیمت روز فروش و قیمت توافقی، هر کدام با مبنای NIGHT یا TOTAL. مبنای هر شب فقط برای هتل است و همه اتاق‌های انتخاب‌شده را پوشش می‌دهد؛ کلِ واردشده مرجع دقیق می‌ماند. قیمت‌های نسخه‌های قدیمی بدون تغییر باقی می‌مانند.
+- ReservationIntake.purchaseVersion کنترل هم‌زمانی ثبت خرید هتل است؛ snapshot اولیه تغییر نمی‌کند. ReservationHotelPurchase تاریخچه افزایشی مبلغ Decimal(24,4)، ارز، نسخه، ثبت‌کننده و زمان UTC است، با FK به intake، یکتایی intake/version و actor/idempotencyKey و fingerprint.
+- رکورد خرید رزرواسیون ورودی عملیاتی است، نه تأیید Procurement یا پرداخت Finance. جمع چند ارز یا ادعای سود نهایی بدون هزینه‌های مرجع ممنوع است.
+
 وضعیت: Conceptual/Logical v0.1؛ این سند Migration نیست. نام نهایی field، enum و index
 در Foundation با ADR و Prisma schema تثبیت می‌شود.
 
@@ -187,6 +205,7 @@ erDiagram
 ### Reservation/Issue
 
 - Reservation Execution از contract version تاییدشده snapshot فقط‌خواندنی دارد.
+- اصلاح چیدمان اجرایی هتل در Reservation append-only و versioned است و فقط به passenger IDهای همان Snapshot اجازه می‌دهد؛ Snapshot و تخصیص Sales بازنویسی نمی‌شوند.
 - هر عملیات صدور به contract service item و passenger allocation معتبر متصل است.
 - هر Provider operation یک `idempotency_key`، request fingerprint، attempt و status دارد.
 - official document number در صورت وجود با source Provider و external reference ذخیره می‌شود.

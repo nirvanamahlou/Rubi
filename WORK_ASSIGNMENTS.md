@@ -1,10 +1,11 @@
 # Work Assignments
 
-## B2B-AGENCIES-001 / approved PR113 integration — PC-B — IN_PROGRESS
+## B2B-AGENCIES-001 / approved PR113 integration — PC-B — READY_FOR_APPROVED_MERGE
 
 - Owner explicitly authorizes merge and push. Continue clean published 122945b on the existing task branch; fetch origin/develop@0261b91 and integrate it with a normal merge, preserving both histories.
 - Reserve conflict reconciliation only in B2B API, Organizations Web and this task's status/decision/report entries. The B2B/Organizations code in develop is byte-identical to the previously copied source fc573ac; retain this branch's later validated changes and all unrelated develop changes.
 - No new domain feature, dependency, schema/migration, IAM grant, operational database or runtime change. Final combined tests, builds and GitHub checks gate the explicitly authorized PR merge; no force push or branch deletion.
+- Resolved the copied-baseline conflicts without changing this branch's B2B/Organizations source behavior; all unrelated develop code and both documentation histories are preserved. Combined validation: 97 targeted Web tests, 54 B2B tests (including five disposable PostgreSQL cases), full monorepo lint/typecheck and production build passed (40 Web routes). Exact-head GitHub gates are required before merge. The implementation reservation is released; runtime ownership is not transferred.
 
 ## B2B-AGENCIES-001 / organization logo — PC-B — READY_FOR_REVIEW
 
@@ -25,6 +26,99 @@
 - Consume the public Documents Service/client for organization files and draft attachments. No Documents implementation, Master Data, IAM, HR, shared API contract, schema/migration/seed or dependency/lockfile changes. Full PRD acceptance still requires the documented business decisions, persistent B2B workflows and owner projections; unavailable states are not completion.
 - Scope, evidence and remaining acceptance criteria: `docs/tasks/B2B-AGENCIES-001-PRD-COVERAGE.md`. No migration lock or runtime handoff is claimed by this slice.
 - Validation: 62 organization Web tests, 49 B2B API tests and 5 isolated PostgreSQL tests passed; affected lint/typechecks and production builds passed. New browser visual QA was unavailable due webview attachment timeout. This slice's implementation reservations are released for review; full PRD acceptance and runtime integration remain incomplete.
+
+## CI-002-MULTI-COMPUTER — PC-B — READY_FOR_REVIEW
+
+- User reports four computers and authorizes checking/fixing CI, normal push and merge. Base origin/develop@679e516; independent branch/worktree codex/pc-b-ci-multi-computer. CI-001 released its workflow reservation; current module owners and other PRs remain untouched.
+- Reserve only .github/workflows/ci.yml, .github/tests/ci-policy.test.mjs, contributor-ID wording in AGENTS.md and docs/DEVELOPMENT_WORKFLOW.md, docs/tasks/CI-002-MULTI-COMPUTER.md and this task's central status entries. Cover A/B/C/D and future computer branch prefixes without multiplying jobs or weakening gates. No broad Central Docs lock or module ownership transfer.
+- No Migration, Dependency/Lockfile, shared contract, IAM, database, port or runtime lock. Existing 3100/4190 deployment remains unchanged. Final PR CI and post-merge develop CI gate completion.
+- Five policy regression tests and Node syntax checks passed locally. Implementation scope is released for review; final CI gates the authorized merge. PC-C/PC-D setup or collaborator access is not asserted without inspecting those computers/accounts.
+
+## HEADER-TODAY-001 / PR115 integration — PC-B — READY_FOR_REVIEW
+
+- Owner explicitly approved merging both the date change and PR #115, and receiving latest develop. Integration worktree codex/pc-b-hr115-integration starts from published PR115@628012a and incorporates develop@130606d without modifying source worktrees.
+- Temporary integration-only ownership: conflicting status/plans, IAM permission catalog union and Prisma model union. Preserve HR, Sales, Ticket/Reservations, current company/profile/notifications and both histories; no new domain feature, dependency, migration file or IAM grant.
+- HR owner handed over runtime3100/4190. Keep rubi_hr_current_20260908 and hr007-documents as active data/storage; no reset, seed or password changes. Rehearse existing pending migrations on a restored private backup before live cutover. Historical checksum differences remain unchanged and documented.
+- Combined production build, full lint/typecheck, 61 Contract tests, 150 targeted Web tests and 1001 API tests passed (107 opt-in API tests skipped). Restored-data rehearsal applied all ten pending existing migrations: 45 applied, preserving 6 employees, 144 HR records, 2 customers, 18 documents and 4 companies. Date PR #118 merged as e12c397; PR #115 receives that date before final CI/merge. Integration implementation reservation is released; operational runtime handoff remains with PC-B until cutover verification.
+
+## LOCAL-HR-AGENCIES-009 — PC-B — READY_FOR_REVIEW
+
+- Owner explicitly requests the current Agencies section alongside HR on the same local port 3100. Branch `codex/pc-b-hr-agencies-local` starts from HR-008 `838c1eb`; source agency implementation is the clean, published `codex/pc-b-agencies-organizations@fc573ac` (PR #113), based on the same develop `30d67ec`.
+- Reserve only the already implemented delta under `apps/api/src/b2b/**`, `apps/web/src/modules/organizations/**`, its task report and this local integration handoff. No new feature design, schema/migration, shared contract, IAM grant, dependency/lockfile or other module change. Preserve HR-008, current app shell and the existing independent HR database/document snapshot.
+- Apply the source module delta in this checkout, validate both sections, rebuild the owned web3100/API4190 listeners, and push a review branch without merging main/develop. The source agency worktree and its preview remain untouched. Existing B2B approval gates/unavailable producer projections must be retained.
+- Imported source modules are unchanged from the published agency branch. Fourteen Web and 28 API tests (including four PostgreSQL cases), full lint/typecheck and API build passed. Local startup and production handoff checks are documented in `docs/tasks/LOCAL-HR-AGENCIES-009.md`; browser/runtime evidence stays outside Git. No migration or merge.
+
+## HR-008-CONNECTED-FORMS — PC-B — READY_FOR_REVIEW
+
+- Owner request: simplify HR forms and populated tables, remove duplicate employee/company inputs, use stored reference data in dropdowns, enable selected-row exports and expense-document upload. Preserve current sections, workflow permissions and the active 3100 runtime's database.
+- Branch `codex/pc-b-hr-connected-forms` from HR-007 `54c5ed7`; reserve `apps/web/src/modules/hr/**`, `apps/api/src/hr/**` and the HR-only resource registry/columns slice in `packages/contracts/src/hr/**` if needed for compatible field metadata. Producer/consumer remain HR API/Web; retain stored column positions and current transport contracts for existing records/imports. No shared IAM, Documents, App Shell, dependency, schema or migration changes are planned.
+- Runtime remains the HR-007 checkout on web3100/API4190 with database `rubi_hr_current_20260908`; validate before rebuilding the owned listeners. Commit/push this branch and open a review PR without merging main/develop.
+- Result: stored-reference dropdowns and applicant/opening FK, deduplicated forms, selectable chart placement, selected-row XLSX/PDF, real expense receipt archiving and simplified tables/detail header. Retired fields retain stored positions for compatibility; no migration or shared IAM/Documents change. Web/API lint/typecheck/build, 94 HR Web tests, 79 HR API tests (20 PostgreSQL), 22 Contract tests and production browser checks passed. Details: `docs/tasks/HR-008.md`.
+- Implementation reservations are released for review. Operational ownership of web3100/API4190 and its independent data snapshot remains PC-B/HR-008; do not replace its listener with an older checkout. No merge performed.
+
+## HR-007-LOCAL-CURRENT — PC-B — READY_FOR_REVIEW
+
+- Owner request 2026-09-08: run the current HR experience on port 3100 while retaining the current Rubi application. Branch `codex/pc-b-hr3100-current` starts at `origin/develop@30d67ec`; port 3100 was handed over by Task «PC-B Uniting» after confirming no active work on its listener.
+- Scope: carry the already reviewed HR-005/HR-006 implementation from `b9b525d` into this isolated checkout, adapting only additive HR registration, HR permission exports/seed, Prisma HR relations and the local launcher. Preserve current IAM/MFA, Documents, four-company header, Profile, Notifications, Master Data and other modules. No merge to main/develop and no edits to other checkouts.
+- Reserve `HR shared-contract/root export`, `IAM HR permission slice`, `AppModule HR registration`, HR proxy/runtime paths and the existing additive HR schema/migrations for this work item. The owner previously transferred the completed PC-A migration lock for HR; no new or destructive migration is planned. Dependency/lockfile and other module contracts remain unchanged.
+- Runtime/data: prepare and validate separately before replacing only the handed-over web listener. Preserve API4000, its integrated database copy and the original HR database; prepare a separate database copy if schema reconciliation is needed. Record the exact runtime/commit and complete authentication, HR and current-shell smoke checks before handoff.
+- Acceptance: port 3100 serves the current HR UI/API, legacy HR URL redirects correctly, four companies/profile/notifications and document step-up remain available, and no business data is reset or silently downgraded.
+- Compatibility reservation: `Central UI Owner = PC-B/HR-007-LOCAL-CURRENT` only for the existing notification-center/change-notifications integration. Consume the public HR notification client in the common bell and remove the legacy HR listener to avoid two popups; all current non-HR feeds/actions stay intact.
+- Local runtime reserves `apps/web/src/lib/environment.ts` and its focused tests to keep local API/web hostnames aligned (`localhost` or `127.0.0.1`) and prevent host-scoped login cookies from causing another login loop. Remote API addresses retain their existing behavior.
+- Browser compatibility found a 14px overflow in the current shared header at 390px; reserve only the header container layout class in `app-shell.tsx` to arrange the existing controls into two mobile rows. Current desktop layout, company branding, user menu and actions remain present.
+- Result: the current HR production build is active on `localhost:3100`, with API4190 and the isolated `rubi_hr_current_20260908` database/document snapshot. Real browser login, all four companies, Profile/MFA, one notification bell, the legacy HR redirect, six employees and reload passed on both `localhost:3100` and `127.0.0.1:3100`. Lint/typecheck/build and targeted Web/API/Contracts/PostgreSQL checks passed; details and restart command are in `docs/tasks/HR-007.md`.
+- Implementation reservations are released for review. Operational ownership of web3100/API4190 remains PC-B/HR-007 until an explicit runtime handoff; preserve its database/document snapshot when replacing the listener. No merge to main/develop was performed.
+
+## HEADER-TODAY-001 — PC-B — DONE / MERGED
+
+- Owner requests today's date in the header, normal push/merge and fetching current changes; separately approves merging PR #115. Date slice starts at origin/develop@130606d on codex/pc-b-header-today.
+- Reserve only app-shell Header date insertion, header-today component/helper/tests and this task's documentation. Existing navigation, company colors, IAM identity and notifications remain unchanged. HR owner released Header scope and handed off runtime3100/4190; preserve its current HR/Agencies data and Documents storage.
+- No schema, migration, seed, dependencies, grants or credential changes in the date slice. PR #115 integration is validated separately; no source branches are deleted or force-pushed.
+- Date implementation complete: 12 focused date/session/company tests, Web lint and production build passed. Header-only implementation reservation released for review; final CI and runtime verification gate merge/handoff.
+- Desktop authenticated RTL app, responsive to320px; Persian calendar and numerals, Asia/Tehran. Targets (not measured claims): LCP p75<=2500ms, INP<=200ms, CLS<=0.1, route JS<=200KB gzip, incremental date code<=3KB gzip, Lighthouse accessibility>=95/performance>=90. PC-B verifies this slice; reuse existing theme and WCAG AA contrast.
+
+## CONTRACT-OUTPUT-SUMMARY-0908 — PC-A — COMPLETE_LOCAL
+
+User marked confirmed-paid and outstanding cards for removal from the contract PDF. Branch codex/pc-a-contract-output-summary-0908 from36ebb12. Reserve only Sales contract-print template/test and task status entries. Retain agreed total, passenger prices, notices, QR, all application balances and Excel output. No API, database, dependency or permission changes; preserve integrated local runtime. Local-only publication gate unchanged.
+
+Delivered: customer print/PDF now shows only the agreed-total summary card. 199 Sales Web tests, scoped lint, Web typecheck and production build (36 routes) passed. Actual synthetic PDF rendered and visually checked: one page with all remaining sections intact. Web3100 PID14136 and unchanged API4000 respond200; no authenticated real-contract QA claimed. Existing downloaded PDFs require regeneration. Task reservations released; no migration, data changes or remote push.
+
+## SALES-EXCEL-0908 — PC-A — COMPLETE_LOCAL
+
+User requested a clean Excel export beside the Sales contract list. Branch codex/pc-a-sales-excel-0908 from local runtime ac063f5; preserve all integrated tours and Sales features. Reserve Sales API/controller/repository/export renderer/tests, Sales Web client/workspace/tests and this task's docs only. Additive authenticated XLSX download uses existing list permissions, owner/branch/payment-search scope and applied filters; ignores pagination, bounded export with explicit refusal rather than truncation. No schema, migration, grants, dependency/lockfile or other module edits. No public push until the existing destination gate is resolved.
+
+Delivered with existing sales.export permission and per-contract audit; 67 Sales API and 198 Sales Web tests, scoped lint/typechecks and API/Web production builds passed. Independent XLSX readers verified numbers/dates/RTL and synthetic preview inspected. Active Web3100/API4000, health and updated bundle 200; unauthenticated export 401. No business data/keys/migrations changed. This task's reservations released. Details: docs/tasks/SALES-EXCEL-0908.md.
+
+## TOUR-PACKAGES-0908 — PC-A — COMPLETE_LOCAL
+
+Explicit user request: persistent tour packages and dated departures in Ticket Management, repeat next week with editable flight times, and a single ticket inventory shared with standalone sales. Branch codex/pc-a-tour-packages-0908 from verified runtime 8b15b4d. Ticket owner explicitly released ticket-catalog/shared-contract/migration scope on 2026-09-08. Prior pricing migration reservation is released.
+
+Reserve Ticket Catalog Web/API/tests, additive travel public contracts/root export, TourPackage/TourDeparture schema and migration, scoped Sales consumer and task documentation. No dependency, permission grant, producer worktree changes or public publication. Current runtime remains active until verified cutover. No tour-specific capacity ledger: existing TicketOfferCapacityAllocation is authoritative. New dated departures never mutate existing tickets/contracts. Operational migration requires private backup and isolated rehearsal; historical migration checksums remain untouched.
+
+Additive producer boundary scope: MasterTravelDirectory and its module export only, validating public active city/hotel/insurance references for tours. Existing MasterDataService/repository/controllers/forms remain unchanged; no cross-module direct query. Ticket Catalog provides public immutable departure selection validation to Sales. Expanded services keep the existing pricing model; the tour label adds no second charge.
+
+Delivered in fd325c7, 7844907 and 3949878. Tour definitions, dated departures, hotel/insurance selectors, included transfers/visa, repeat-week prefill with editable flight times, real offer publication and Sales selection are active locally. Shared stock/concurrent reservation, idempotency/replay, branch and reference tests passed. Forty-three migrations applied to an empty isolated DB and restored backup; seed twice passed only on isolated DB. Fresh private backup preceded the one additive migration on rubi; existing business counts and historical checksums unchanged. Web3100/API4000 serve the new build. This task's reservations released; no producer branch, grants, operational seed or public push. Details and exact QA limits are in the task document.
+
+## SIDEBAR-LABELS-DOTS-0908 — PC-A — COMPLETE_LOCAL
+
+User requests colored group dots and rename Sales to قرارداد and Tasks to میز کار. Reserve navigation metadata/messages/spec, group-dot class in app-shell and scoped docs. Current integrated branch from2e48ceb; no route/content/API/data/permission/collapse changes. Local-only, preserve PDF env and restart only Web after build.
+
+## SIDEBAR-GROUP-TOGGLE-0908 — PC-A — COMPLETE_LOCAL
+
+Explicit user follow-up: group headings toggle their own links like3200, whole-sidebar collapse unchanged. Branch from integrated f4b033b; Sales owner handed off runtime/build, no further concurrent writes. Reserve app-shell Navigation only and this task's docs. Preserve integrated Sales/Customers/Notifications, API4000, database, PDF config and all original routes. Build then restart only Web3100 from this integration checkout; no old checkout activation. No push due existing destination gate.
+
+## SIDEBAR-REFERENCE-SIZE-0908 — PC-A — COMPLETE_LOCAL
+
+- Follow-up to 93a4c0d: owner requests reference3200 row sizing/icons and only slightly larger group headings. Reserve app-shell Navigation classes, new sidebar-icons.ts and this task's docs. Sales integration owner confirmed separate checkout and no edits to these files; no restart, HMR only. Keep original collapse, widths, mobile behavior and all business pages. Local-only; prior remote gate remains unresolved.
+
+- Delivered sidebar-only reference icon mapping (17px, stroke1.7), 12px semibold row labels with 40px minimum height, 3px row gaps, and 14px group headings. Original sidebar widths, collapse, drawer and non-sidebar icons preserved. Typecheck, scoped lint, 11 navigation tests and authenticated browser menu QA passed. No server restart; production build result recorded in status. No push/merge or data changes.
+
+## GROUPED-SIDEBAR-0908 — PC-A — COMPLETE_LOCAL
+
+- Explicit owner approval to apply the reviewed team grouping to the actual Web3100 sidebar, preserving prior collapse/drawer behavior, styling, routes and all module content; slightly larger navigation labels. COMPUTER_ID=PC-A. Branch codex/pc-a-grouped-sidebar-0908 from active Web3100 f2cc52a; clean checkout before starting. No prototype pricing or sample pages are transferred.
+- Reserve app-shell.tsx Navigation rendering and scrolling wrapper, additive navigation group metadata and focused navigation tests, plus this task's status/docs entries. Earlier integrated breadcrumb, branding and notification changes stay unchanged. No globals, API, database, schema, dependency, permission or business-data edits. Prototype3200 remains separate. Authorizes updating the local running application, not an unrelated bulk merge.
+
+- Completed: 7 visual groups, original 17 links/names/icons, 15px expanded labels and 13px group headings; expanded navigation scrolls with footer/collapse reachable. Original compact/tooltips and mobile DrawerClose preserved. 11 navigation tests, scoped lint, Web typecheck and 34-route build passed; real Web3100 browser QA passed. No data or migration. Local commit only: remote push requires destination verification. Scope released; Sales integration is a separate task.
 
 ## LEGAL-ENTITY-HEADER-003 — PC-B — READY_FOR_REVIEW
 
@@ -128,6 +222,324 @@
 - راهکار باید ترتیب منطقی کارت‌ها و گروه‌بندی رفت/برگشت را حفظ کند و هیچ Schema/Migration/Seed، API، Contract، Dependency/Lockfile یا ماژول دیگری را تغییر ندهد.
 - نتیجه: Grid فهرست به جای‌گذاری Dense مجهز شد؛ خانه تک‌ستونه خالی کنار گروه‌های دوکارته با کارت بعدی پر می‌شود و Wrapper دو ستونه رفت/برگشت دست‌نخورده باقی می‌ماند.
 - اعتبارسنجی: ۹۵/۹۵ تست Ticket Catalog Web، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند؛ build قانون `.grid-flow-row-dense{grid-auto-flow:dense}` را تولید می‌کند و سرویس پورت ۳۱۰۰ پاسخ ۲۰۰ دارد. بازبینی خودکار پنجره به‌علت خطای ACL ابزار Windows ممکن نشد.
+
+## SALES-RUNTIME-INTEGRATION-0908 — PC-A — COMPLETE_LOCAL
+
+- Activated combined Sales5380719/current-CRM f2cc52a with both released sidebar93a4c0d/0f9ff4e changes through normal local merges bd4fb50/a9223e0. API/Web production builds and source lint/typechecks pass; API934 and Contracts60 tests pass, final Sales/navigation/foundation209 and output7 pass. Web3100/API4000 healthy, protected routes401; previous checkout preserved. All42 migrations already present; no DB/seed/key/permission change. Historical migration checksum/name/default drift recorded, not rewritten. Integration lock released; runtime is local-integration-0906, not pc-b-sync-0908. No public push. See docs/tasks/SALES-RUNTIME-INTEGRATION-0908.md.
+
+- User explicitly approved local integration of latest Sales with current Web3100, preserving Customers and grouped navigation. Branch codex/pc-a-sales-runtime-integration-0908 starts at Sales 5380719, isolated from the active pc-b-sync-0908 checkout. Integrate released grouped-sidebar 93a4c0d (baseline f2cc52a). Reserve integration conflict resolution in AppModule, public root exports, additive combined Prisma schema and status/assignment docs; no new domain design, permission grants, seed data, dependency changes or public push. Existing source branches and uncommitted work remain untouched.
+- Runtime changes only after owner handoff, combined tests/build and database compatibility checks. Preserve local data, document encryption keys and storage; any additive migration requires a verified private backup first. No reset, destructive migration, main/develop change or remote merge.
+
+## SALES-FIRST-PASSENGER-ACQUAINTANCE-0908 — PC-A — COMPLETE_CODE / LOCAL_ACTIVATION_PENDING
+
+- Delivered first-passenger natural-person contract identity and per-passenger registered acquaintance selection through public Customers APIs. 194 Sales tests, scoped lint/typecheck, synthetic browser QA and 36-route production build pass. Web3100 currently belongs to customer-direct-contact-0908 and was left running unchanged; coordinate activation with its owner. No schema, real-data, IAM or public push. Scoped code reservation released; see docs/tasks/SALES-FIRST-PASSENGER-ACQUAINTANCE-0908.md.
+
+- Reserve Sales people-entry model/UI/form/targeted tests and scoped docs from 8274131. New natural-person contracts always use passenger 1 as customer without a separate payer row/toggle; organizations remain separate. Add per-person registered Master Data acquaintance-method selection through existing Customers public mutations. Preserve old draft entries, customer permissions/optimistic updates, passenger counts and identity recovery. No producer/schema/API/IAM/real-data edits, merge or public push.
+
+## SALES-PAYMENT-SEARCH-UPLOAD-0908 — PC-A — COMPLETE_LOCAL
+
+- Replaced current-payment filtering with main server-backed all-authorized-contract tracking search, clearing stale filters/page. Added visible saved-payment selector and expanded receipt upload/list/download area, with row shortcuts and newly saved payment selection. 188 Web Sales tests, 5 backend reference tests, scoped lint/typecheck, synthetic browser QA and 36-route build pass. Web3100 updated; Web/API health 200. No API/schema/IAM/real-data/public-push changes. Scoped reservation released; see docs/tasks/SALES-PAYMENT-SEARCH-UPLOAD-0908.md.
+
+- Reserve Sales workspace/payment/document presentation and tests plus scoped docs from 54c4e6a. Replace misleading current-contract tracking filter with a global authorized-contract search action and provide a prominent payment-receipt attachment area using existing public Documents APIs. Preserve permissions, branch/ownership, Finance state, idempotency and scan gates. No API/schema/IAM/real-data changes, merge or public push.
+
+## SALES-INSURANCE-SELECTION-0908 — PC-A — COMPLETE_LOCAL / ISSUANCE_DEFERRED
+
+- Delivered active registered-plan dropdown without description, reference/versioned selection metadata and passenger service assignments; existing reservation snapshot preserves the selection, not an issued policy. 185 Sales tests, scoped lint/typecheck, synthetic actual-component browser checks and 36-route production build pass. Updated Web3100/API4000 health 200. No schema/API/producer/IAM/real-data/public-push changes. User deferred insurer connection to later Reservations work. Scoped reservation released; see docs/tasks/SALES-INSURANCE-SELECTION-0908.md.
+
+- Reserve Sales insurance picker/model/payload/form tests and scoped task/central docs from 3b82a72 on the current local Sales branch. Select an active registered Master Data insurance plan, no free-text description; persist its reference and versioned selection metadata in the existing Sales service/reservation snapshot. User explicitly defers insurer API issuance to Reservations later. No schema, provider integration, producer edits, credentials, permissions, real-data mutation, merge or public push.
+
+## SALES-CONTRACT-ROOM-LOCATION-0908 — PC-A — COMPLETE_LOCAL
+
+- Purchased room totals now sit below the Hotel Information table (section 4), not Other Services. 34 focused tests, scoped lint/typecheck and 36-route production build pass; all four synthetic PDF pages visually inspected. Web3100 updated; Web/API 200. No data/API/schema/public-push change. Scoped reservation released; see docs/tasks/SALES-CONTRACT-ROOM-LOCATION-0908.md.
+
+- Reserve Sales print template/room-summary regression tests and scoped docs from f86c42d. Move purchased room quantities from Other Services into Hotel Information as explicitly corrected by user. No calculations, inputs, schema, API, ownership, real-data or public-push changes.
+
+## SALES-CONTRACT-ROOM-SUMMARY-0908 — PC-A — COMPLETE_LOCAL
+
+- Removed passenger room column and added saved contract-level room/extra-bed quantities to Other Services. Master Data hotel product, prices and prior terms/QR unchanged; no passenger-based room inference. 181 Sales tests, scoped lint/typecheck and 36-route Web build pass; all four pages of synthetic six/agency-six/42 passenger PDFs reviewed. Web3100 updated, Web/API health 200. No schema/API/IAM/real-data/public-push change. Scoped reservation released; see docs/tasks/SALES-CONTRACT-ROOM-SUMMARY-0908.md.
+
+- Reserve Sales print/PDF template and tests plus task/central docs from 05c5945 on current local Sales branch. Remove passenger room column; show purchased contract-level single/double room and extra-bed counts in Other Services from saved hotel selection only, without passenger allocation inference. Preserve hotel Master Data product type, pricing, QR, terms and pagination. No API/schema/dependency/producer/IAM/real-data edits, merge or public push.
+
+## SALES-CONTRACT-ONLY-FLIGHT-0907 — PC-A — COMPLETE_LOCAL
+
+- Completed contract-only outbound/return editor and additive versioned Sales snapshot with route/time/source validation, no Ticket Management publish/allocation, reservation reopening and print/PDF support. 59 public-contract, 54 API Sales and 181 Web Sales/Reservations tests pass, with scoped lint/typechecks and API/36-route Web production builds. Synthetic browser and both six-passenger one-page PDFs verified. Web3100/API4000 updated; database SELECT 1 passed after restoring existing Docker runtime September 8. No migration/dependency/IAM/real-data/public-push change. Scoped reservation released; see docs/tasks/SALES-CONTRACT-ONLY-FLIGHT-0907.md.
+
+- Reserve Sales form/model/print/ticket presentation, Sales validation/confirmation tests, Reservations ticket snapshot consumer, additive Sales public metadata helpers/tests and central/task docs from e1e8532 on the current local Sales branch. Persist versioned contract-only flight details in the existing Sales service metadata snapshot, not catalog selections; no fake offer ID, catalog publish or capacity allocation. Validate mutually exclusive published/manual sources and route/timing on the server, retain pending-reservation state, ownership, audit and idempotency. Published-ticket behavior unchanged. No migration, dependency, producer Master Data edits, IAM grants, real business mutations or public push.
+
+## SALES-CONTRACT-QR-PLACEHOLDER-0907 — PC-A — COMPLETE_LOCAL
+
+- Added explicitly pending, offline vector QR to bottom-right print/PDF footer; contacts/notices preserved. 166 Sales tests, scoped lint/typecheck, 36-route production build and all five synthetic PDF pages pass (2/6/agency-6: one page; 42: two). Web3100 updated; Web/API health 200. Placeholder is non-sensitive plain text, not an online viewer; future secure server links require regenerated output. No API/schema/dependency/IAM/data/public-push change. Scoped reservation released; see docs/tasks/SALES-CONTRACT-QR-PLACEHOLDER-0907.md.
+
+- Reserve Sales print/PDF footer helper and tests plus task/central docs from 5e305c6 on the current local Sales branch. User explicitly requests a currently non-working QR at the bottom right. Embed an offline-generated, non-sensitive pending-status QR with a visible activation notice; no localhost URL, public viewer, guessed domain, access token or verification claim. Preserve contacts, notices, six-passenger pagination and pricing. Server-phase activation requires a secure viewer/public origin and regenerated outputs. No dependency, schema, API, IAM, producer or real-data edits; no public push.
+
+## SALES-PAYMENT-EVIDENCE-0907 — PC-A — COMPLETE_LOCAL
+
+- Delivered payment tracking inputs/search and per-saved-payment receipt attachments through public Documents APIs; Finance status remains independent. 164 Web Sales tests, 62 API Sales/Documents tests, scoped lint/typechecks and API/Web production builds pass. Synthetic actual-component browser upload/list/download/search and uncertain-response checks pass; Web3100/API4000 updated and healthy. No migration, IAM grant, real receipt/payment mutation or public push. Scoped reservation released. See docs/tasks/SALES-PAYMENT-EVIDENCE-0907.md.
+
+- Reserve Sales payment UI/model/tests, payment-reference validation and scoped repository search, task/central docs from 54774eb. Existing paymentReference column/public type only; no migration. Attach files through existing Documents public upload/list/download with canonical sales/SalesContractPaymentEntry/payment-id reference, permissions/branch/scan gates unchanged. Upload after payment persistence; never imply upload or tracking search confirms Finance/bank settlement. No Documents producer edits, grants, dependencies, real data mutation or public push.
+
+## SALES-CONTRACT-THEME-ROOM-0907 — PC-A — COMPLETE_LOCAL
+
+- Delivered Master Data room-type output, reference-aligned Persian header/section badges/financial cards and issuer-scoped contact footer; previous rules/amounts and deferred QR preserved. 161 Sales tests, scoped lint/typecheck, 36-route production build and all five final synthetic PDF pages pass. 6/agency-6 fit one A4, 42 use two. Web3100 updated; Web/API health 200. No data/schema/API/IAM changes or public push. Scoped reservations released; see docs/tasks/SALES-CONTRACT-THEME-ROOM-0907.md.
+
+- Include the PDF renderer's font-face weight descriptor: B Nazanin is a static regular face, not a variable 100–900 font; allow matching browser/PDF synthetic bold headings. Renderer isolation, paths and data flow unchanged.
+
+- Reserve Sales print/PDF template and tests plus task/central docs from 5daa1a4. Resolve hotel-section room type through the already loaded public Master Data reference instead of passenger accommodation labels. Match the supplied header/section/financial/footer appearance more closely, including user-requested sample contact details only for the matching issuer. Preserve passenger categories, amounts, existing notices, pagination and deferred online QR. No producer/API/schema/dependency/IAM/data changes or public push.
+
+## SALES-CONTRACT-REFERENCE-THEME-0907 — PC-A — THEME_COMPLETE_LOCAL / QR_DEFERRED_TO_SERVER
+
+- Reference navy/soft-gray theme applied to the shared print/PDF template; existing fields, order, B Nazanin, English monetary digits and calculations preserved. 159 Sales tests plus final 17 print tests, scoped lint/typecheck and 36-route build pass. All five pages of four synthetic PDFs visually verified; six passengers fit one page and 42 use two. Web3100 updated; Web/API health 200. User deferred per-contract online viewing/verification QR until server deployment; no localhost, website-substitute or fabricated verification QR added. No API/schema/dependency/IAM/data/producer changes or public push. Scoped template/central-doc reservations released; see docs/tasks/SALES-CONTRACT-REFERENCE-THEME-0907.md.
+
+## SALES-PAYMENT-CURRENCY-0907 — PC-A — COMPLETE_LOCAL
+
+- Dashboard payment currency is now a registered-active, button-only themed dropdown with paginated loading, retry and submission validation. 158 Sales tests, scoped lint/typecheck and 36-route production build pass; actual-component synthetic browser selection/error/retry checks pass. Web3100 updated. No payment/data/API/IAM/migration changes or public push. Scoped reservations released.
+
+- Reserve ContractPayments UI, local currency loader/validation tests and task/central docs from 106ca1b. Replace the remaining free-text dashboard payment currency with the existing themed registered-currency selector; load active reference pages, block missing/invalid selections and support retry. Other Sales currency editors already use registered selections. No API/schema/IAM/dependency/producer changes or public push.
+
+## RESERVATIONS-TICKET-ACCESS-0907 — PC-A — COMPLETE_LOCAL
+
+- Delivered saved per-passenger ticket reopening and individual/all-passenger print/browser PDF, with contract reference, assigned flights/transfers and no fabricated issuance. History search/pagination preserves reservations.read and branch scope. 162 Web tests, 15 API tests (5 unrelated DB-dependent tests skipped), scoped lint/typechecks and API/Web production builds pass. Synthetic browser reopening/selection/printing/cleanup and both A4 PDF pages verified; live PostgreSQL empty-scope read check passed. Web3100/API4000 updated; no migration/data/IAM changes or public push. Scoped presentation and task-doc reservations released.
+
+- Reserve Reservations inbox/list API/tests, Sales public ticket presentation entry and template refactor/tests, task and central docs from e0159f8. Reopen saved per-passenger ticket snapshots, print/save through browser PDF, and search/page older requests under existing reservations.read + branch scope. No issuance claims, fabricated live inventory, migration, IAM, dependency, producer-worktree edits or public push. Public presentation boundary only; persisted contracts unchanged.
+
+## SALES-TICKET-THEME-0907 — PC-A — COMPLETE_LOCAL
+
+- Contract-blue ticket preview/print, larger eager-loaded agency logo, test airline Plane mark and explicit demo-only 7143/DEMO01 delivered; payment section removed. 153 Sales Web tests plus final seven template/visual checks, lint/typecheck/build pass. Actual CSS/component screenshot reviewed, 3100 restarted, Web/API 200. No issuance/data/API/IAM changes or public push; scoped locks released.
+
+- Reserve flight-ticket-preview TSX/CSS/tests and task/central docs from 3046b0b. Professional contract-blue theme, larger agency logo, code-native test airline mark, no payment section. Sample 4-digit e-ticket and RLOC only for recognized TEST-AYT demo offers, prominently labelled sample/not-issued; no real issuance values or data mutations. No schema/API/dependency/IAM/producer changes or public push.
+
+## SALES-OUTPUT-PAGINATION-0907 — PC-A — COMPLETE_LOCAL
+
+- Delivered compact print/PDF with complete passenger rows, repeated table headings, unsplit summary and LTR page counters. Actual 5/6-person and 6-person agency fixtures fit one A4; 42/100-person fixtures paginate to 2/3 pages. All eight PDF pages visually checked, exact row/page counts verified, 150 Sales Web tests/scoped lint/typecheck/build pass. Web3100 updated, Web/API health 200. No data/schema/API/IAM change or public push. Scoped central-doc/template locks released.
+
+- Reserve Sales contract-print template/tests, synthetic PDF QA and task/central docs from 5f4e7bf on the current local Sales branch. Compact six-passenger A4 output, preserve every row and naturally paginate larger contracts with readable repeated table headings. No pricing, API, schema, passenger-count validation, dependency, IAM or producer changes. Central-doc scope only; previous scoped locks released. Local-only, no public push.
+
+## SALES-PEOPLE-CORRECTION-0907 — PC-A — COMPLETE_LOCAL
+
+- Current-ID recovery and same-confirmation duplicate reuse/update implemented with existing permissions, branch scope, sensitive-read audit and optimistic locking. Previous-ID record retained; no blind merge/deletion. 249 Web + final 25 focused, 93 Customers API, 48 Contracts tests, scoped lint/typechecks and API/Web builds pass. Local 3100/4000 healthy. No migration, IAM, real-customer mutation or public push. Task-specific public-contract and central-doc reservations released.
+
+- Reserve Sales recovery model/UI/tests, additive Customers lookup opt-in type/DTO/service/tests and task docs from 0cc22a0. User authorizes current national-ID matching and updating entered details of an existing customer instead of blocking on previous identity/name. Preserve branch/sensitive-read audit and optimistic update permission; inspect but never mutate a superseded prior-ID registration. No migration/dependency/IAM/public push; previous task locks released.
+
+## SALES-PEOPLE-RECOVERY-0907 — PC-A — COMPLETE_LOCAL
+
+- Removed permanent review locks after definitive 4xx rejection; unknown/duplicate creates recover on the next confirmation through exact identity lookup, known people refresh saved contact/version state, and successful contact checkpoints persist between retries. National-ID uniqueness, sensitive-read permission/audit and branch scoping remain. 243 combined Web tests plus final eight client tests, 91 Customers API tests plus final sixteen permission tests, 48 Contracts tests, scoped lint/typechecks and production API/Web builds passed. Local Web3100/API4000 updated; no migration, real data edits, IAM change or public push. Task-specific contracts/docs reservations released.
+
+- Reserve Sales people-sheet model/UI/tests, Customers producer registration-lookup API/repository/DTO/tests and public browser entry/client, additive Customers public request type and task docs from b69511c. Distinguish rejected mutations from unknown outcomes; recover exact identities via branch-scoped Customers public API and refresh confirmed contacts/versions without blind duplicate creation. PC-A owns both producer/consumer; optional endpoint preserves old clients. No migration, dependencies, IAM grants, producer worktree edits or public push. Reserve only these shared-contract/Central Docs paths; prior scoped locks released.
+
+## SALES-OUTPUT-TERMS-0907 — PC-A — COMPLETE_LOCAL
+
+- Added the user's three notices in readable 8.5pt B Nazanin below signatures and above the site in shared print/PDF output. Compact whitespace and wider hotel-name column keep the two-passenger sample on one A4 page. Fourteen print/PDF-route tests, scoped lint, production TypeScript/build and all four rendered QA pages pass. Presentation only; API/database and receipt/consent logic unchanged. Local-only; task-specific docs/template reservations released.
+
+- Reserve Sales print template/tests and task/central status docs from 148fdf8 on the current Sales branch. User-supplied three notices below signatures, above Nystkt.ir, in small readable B Nazanin. Presentation only: no legal validation, consent workflow, API, database, payment/release or producer changes. Prior scoped reservations released. No public push.
+
+## SALES-OUTPUT-HOTEL-CURRENCY-0907 — PC-A — COMPLETE_LOCAL
+
+- Delivered on the current local Sales branch: explicit age-compatible hotel accommodation per guest, Latin hotel/site public references, Nystkt.ir footer, IRR/foreign passenger cells and exact per-currency passenger totals. Empty PostgreSQL migration/seed-twice, restored-data rehearsal, DB CHECK/roundtrip, 132 Web Sales + 45 API Sales + 48 Contracts tests, scoped lint/typechecks/API-Web production builds passed. Local additive migration activated with fresh backup and historical rows/counts unchanged; Web3100/API4000 healthy. No public push. Task-specific Migration/Sales public contract/Central Docs reservations released. See docs/tasks/SALES-OUTPUT-HOTEL-CURRENCY-0907.md.
+
+- Reserve Sales passenger accommodation field/additive migration, public types, validation/persistence/UI, print/reference loading/tests and task docs from 1c1acd2 on the current Sales branch. Prior local scoped locks are released; Migration/Sales contract/Central Docs owner is PC-A for this change only. No producer, IAM, dependency, remote or historical-migration rewrite. User asks Nystkt.ir footer, Latin hotel/site, explicit passenger room/child-bed designation, separate IRR/foreign columns and passenger-summed agreement total. No age/bed or FX guessing.
+
+## SALES-OUTPUT-CLEANUP-0907 — PC-A — COMPLETE_LOCAL
+
+- Delivered marked-note/footer cleanup in print/PDF with operator guidance outside the document. Eleven focused tests, scoped lint, production TypeScript/build and four-page rendered QA passed. Web3100 restarted; no API/database change. Reservations released; local-only. Browser header/footer preference remains explicit; see task document.
+
+- Reserve Sales print template/tests and output-dialog guidance plus task docs on the current Sales branch from 8bb1fdf. Remove the user-marked internal notes and template/time metadata from the customer document, retaining operator disclosures in the dialog. No API, pricing, schema, IAM, dependency, producer or remote changes. Browser-added headers/footers remain a print preference; direct PDF already suppresses them.
+
+## SALES-CUSTOMER-PRICING-0907 — PC-A — COMPLETE_LOCAL
+
+- Final clarification and delivery supersede the pending-decision notes below. Whole-package agreed amounts are entered and persisted per passenger/currency, reconciled exactly with service-agreed totals. Added direct saved-data PDF download next to Print, English monetary glyphs, and legacy unrecorded-price disclosure. 129 Sales Web, 44 Sales API, 47 Contracts tests passed; scoped lint, affected typechecks, API/Web production builds passed. Empty PostgreSQL migrations + seed twice (86 permissions), restored-backup upgrade and exact-money/FK/unique/check guards passed. Only the additive Sales migration activated; all historical checksums and checked business counts unchanged. Web3100/API4000 healthy; no authenticated real-contract walkthrough. Migration, Sales shared contract and task docs reservations released. Local commits only; no public push. See task doc for runtime configuration and retained backups.
+
+- 2026-09-07 clarification: individual passenger totals cover all selected services, per currency, reconciled to the saved agreed contract total; no age-based or equal allocation. Reserve Sales passenger money schema/additive migration, Sales public types/validation/persistence/UI, direct PDF Web route and task/central docs for this local follow-up. Prior scoped local migration reservations are released; no producer worktree, dependency lockfile or public push changes. Existing contract service pricing and Finance settlement remain authoritative. Legacy passenger amounts are not backfilled.
+
+- Reserve Sales people-sheet UI/model/tests, print template/tests and task docs on codex/pc-a-sales-customer-pricing-0907 from 206635c. Use existing Customers public API with its permissions, branch scope, sensitive-read audit and optimistic version; no producer worktree changes, grants or public push.
+- User requests dark-blue print styling, actual passenger/age fare amounts and editing selected existing customers. Passenger fare entry granularity is awaiting clarification; no invented division or age discount. Persisted pricing changes will be separately scoped after inspection; no migration lock is taken by this entry.
+- Customer/print slices implemented: existing person selection loads authorized detail, focuses the editable row, preserves linked passenger identity, and saves changed fields through versioned Customers APIs. Untouched masks are omitted; contact revisions use the existing per-type primary-contact action without deleting history. Print uses dark professional blue. Fare amounts remain unchanged pending the age-category-versus-individual entry decision; this task is not wholly complete.
+
+## SALES-OUTPUT-LAYOUT-0907 — PC-A — COMPLETE_LOCAL
+
+- Reserve Sales Web/API output and tests, additive Sales public output type, navigation alias/tests and task docs on codex/pc-a-sales-output-layout-0907 from c63318a. User requests breadcrumb, overflow and customer-shareable contract output. Existing producer public APIs only; no schema/migration, grants, dependencies, producer changes or public push.
+- Provide a permission-scoped saved-data print/PDF view after confirmation and in dashboard. No official issuance-policy bypass, tax invoice or payment receipt; the browser Save as PDF flow is explicit. Agreed amounts only; no fabricated per-passenger allocation or commission deduction. No automatic sending.
+- Delivered breadcrumb alias, min-content grid containment and saved-output preview buttons. 233 Sales/Customers/navigation Web tests, 44 Sales API tests and 41 Contracts tests passed; scoped lint, all affected typechecks and API/Web production builds (36 routes) passed. Synthetic Chromium verified B Nazanin in the sandboxed iframe, print action and desktop/mobile containment with final CSS. PDF QA: two passengers/two currencies fit one A4 page; 42 passengers span three pages with repeating headers. No authenticated real-contract walkthrough. Web3100/API4000 active; login/bundle/health 200, protected Sales 307, unauthenticated output 401 and CORS 204. Prior Web retained under tmp/sales-output-web-before-0907. Local-only; task-specific reservations released. See docs/tasks/SALES-OUTPUT-LAYOUT-0907.md for issuance and commission limits.
+
+## CUSTOMER-INLINE-CALENDAR-0906 — PC-A — COMPLETE_LOCAL
+
+- Reserve Customers entry-sheet/date-field UI and focused tests plus task status docs on codex/pc-a-customer-inline-calendar-0906 from fc9177b. Remove the intermediate date Dialog and open the existing themed calendar directly at each table date field, including the shared Sales consumer. Preserve ISO values, calendar modes, read-only rules and entered rows. No API, schema, dependencies, shared UI edits, producer branch changes or public push.
+- Fetch completed; HR remote advanced to 6f9bb14 and is outside scope. Previous passport task reservations are released. PDF pricing clarification remains separate and unresolved for commission treatment; no PDF or financial changes here.
+- Delivered direct themed birthday/passport-expiry calendars without the intermediate Dialog. 222 focused Web tests, scoped lint, Web typecheck and 36-route production build passed. Synthetic interactive Chromium checks passed with the final CSS, including Escape retaining the form, row/field isolation, clipping, mobile bounds and focus return. Web3100 is active; login/API health 200 and protected Customers 307. Prior build retained at tmp/inline-calendar-web-before-0906. No authenticated data walkthrough, API restart or public push. Task-specific reservations released.
+
+## SALES-PASSPORT-EXPIRY-0906 — PC-A — COMPLETE_LOCAL
+
+- User explicitly approved persistent passport expiry and transfer of the Migration lock to this task. Reserve Customer nullable passportExpiryDate, additive migration, Customers public contract/API/presentation, Sales people-sheet linking and tests, and central task docs on codex/pc-a-sales-passport-expiry-0906. Producer Customers and consumer Sales are both PC-A; optional field preserves old requests and omitted updates. No other producer worktree, dependencies, IAM grants or public push.
+- Customer checkbox copies the entered/selected payer into passenger slot one without increasing count; preserve displaced row until unlinking and confirm replacement. Passport number stays encrypted in Customers; expiry is a date-only Customer field, not raw Sales localStorage or a fabricated Documents file. Fresh migration tests and backup precede local rollout.
+- Delivered and activated on Web3100/API4000. 211 combined Web tests plus 11 final people-model tests, 88 Customers API, 41 Contracts and 71 Database tests passed; scoped lint/typecheck and API/Web production builds (36 routes) passed. All 38 migrations and seed twice passed on an empty database; restored-copy upgrade and repository persistence/version/scope checks passed. A new operational backup preceded the single additive migration; counts and historical checksums unchanged. HTTP login/bundle/API 200, protected page 307 and unauthenticated Customers 401. No new grants, operational seed, public push or authenticated visual QA. Task-specific Migration/contract/docs reservations released.
+
+## SALES-PEOPLE-SHEET-0906 — PC-A — COMPLETE_LOCAL
+
+- User requested the same Customers/Passengers entry sheet inside Sales and exactly the passenger count chosen earlier, with infant-only extra rows. Reserve Sales people-entry UI/model/tests and form, a narrow public Customers presentation export plus backward-compatible per-field editing on its existing sheet, and task docs on codex/pc-a-sales-people-sheet-0906 from f984cdc. Preserve existing Customers public API, branch/identity protections, organization payer, Finance and capacity rules. No migration, IAM, dependencies, producer edits or public push.
+- Reuse the existing Customers entry sheet through a public Web export. Unsaved identity/contact/passport values stay in component memory, not Sales localStorage. Validate all rows before creation; retain successful row identities on partial failure, never blindly retry an uncertain creation. Fixed count slots replace the sequential pending-row queue.
+- Delivered the actual Customers table with all target passenger rows open, infant-only additions, individual existing-record selection and one confirmation action. Organization payer and first-passenger-as-customer remain supported. 208 combined Sales/Customers tests and 7 final shared-table tests, scoped lint, Web typecheck and 36-route production build passed. Web3100 serves the new bundle (200); login 200, unauthenticated contract redirect 307 and API health 200. API unchanged; prior Web retained at ignored tmp/people-sheet-web-before-0906. No real test records, authenticated visual QA or public push. Task reservations released; see docs/tasks/SALES-PEOPLE-SHEET-0906.md.
+
+## SALES-DASHBOARD-THEME-0906 — PC-A — COMPLETE_LOCAL
+
+- User requested app-themed open dropdowns and Sales KPI styling matching Customers/Passengers. Reserve Sales Web selectors/workspace/payment drawer/ticket preview and tests plus status docs on codex/pc-a-sales-dashboard-theme-0906 from 24f7cbb. Reuse existing UI select primitives and customer gradient tokens; no metric definition, API, database, IAM, dependency or producer changes. Local-only delivery.
+- Delivered d7cf782: app Select primitives for settlement filter, payment method, check bank and ticket-preview passenger. Empty/all selection, RTL, required and disabled semantics retained. Four KPI cards reuse Customers gradient/typography tokens without changing sources/calculations or implying list-filter-scoped statistics. 99 Sales tests, scoped lint, Web typecheck and 36-route production build passed. Web3100 restarted; login/bundle 200, Sales auth redirect 307, API health 200. Prior Web retained at ignored tmp/dashboard-theme-web-before-0906. No authenticated visual QA or public push; task reservations released.
+
+## SALES-PAYMENT-LAYOUT-0906 — PC-A — COMPLETE_LOCAL
+
+- User requested a professional redesign of contract payment entry. Reserve Sales payment-plan UI/form/tests and task status docs on codex/pc-a-sales-payment-layout-0906 from 4646ad4. Compact numbered rows, explicit labels and distinct check details; preserve currency lookup, payment payload, Finance confirmation rules and local drafts. No API, database, permissions, dependencies, producer changes or public publication.
+- Delivered numbered responsive payment cards, count/check summary, labeled fields, isolated check details, controlled draft inputs and confirmable removal. Switching away from CHECK removes inactive check metadata, with visible guidance, to keep the existing API payload valid. 96 Sales tests, scoped lint, final Web typecheck and 36-route production build passed; five payment tests repeated after the optional-property correction. Web3100 restarted; login and served payment bundle 200. API remained unchanged/healthy. Prior Web retained in ignored tmp/payment-layout-web-before-0906. No authenticated visual QA or public publication; task reservation released.
+
+## SALES-CURRENCY-INCLUDED-TRANSFER-0906 — PC-A — COMPLETE_LOCAL
+
+- User requested registered-currency selection, themed Sales dropdowns, and included outbound/return transfers with no additional charge. Reserve Sales Web/model/tests, Sales public pricing helper and API validation tests, and central task documentation on codex/pc-a-sales-currency-included-transfer-0906 from 0ded773. No migration, IAM, dependencies, producer branch edits or public publication.
+- Compatibility: new Sales payloads mark included TRANSFER through existing metadata; public pricing calculation excludes these and rejects attached charges. Historical unmarked transfer prices remain unchanged. Master Data currencies are consumed only through its public API; transfer directions remain in ticket output and reservation snapshot.
+- Delivered locally in 13baaf6 and aed55fc. 41 Contracts, 91 Sales Web, 44 Sales/Reservations API tests passed (5 optional integration tests skipped); all 11 affected lint/typecheck/dependency gates, API build and 36-route Web production build passed. Web3100/API4000 restarted; health/login/bundle 200, unauthenticated redirect 307/API denial 401 and credentialed origin checks passed. Prior Web is retained at ignored tmp/currency-transfer-web-before-0906. No migration, operational seed, permission changes, public push or authenticated visual QA. Task-specific reservations released; producer ownership unchanged.
+
+## SALES-PASSENGER-NUMBER-INPUT-0906 — PC-A — COMPLETE_LOCAL
+
+- User requested directly typed integer fields for adults/children/infants in the new contract. Reserve Sales Web count component/form/tests and task status docs on codex/pc-a-sales-passenger-number-input-0906 from integrated 0fd6311. Replace the 0–30 dropdown without changing capacity, age composition, API, schema, IAM or other modules. Local delivery only; preserve producer branches and previous builds.
+- Delivered in 5e7e60c: three typed number inputs (min 0, step 1), select-on-focus, clear/retype support and rejection of negative/fractional/unsafe values. The prior 30-person menu limit is gone; existing seat/age checks remain. 85 Sales tests, scoped lint, Web typecheck and 36-route production build passed. Web3100 restarted and Web/API HTTP checks passed. No API restart, migration, grant, public push or authenticated visual QA. Prior Web retained in ignored tmp/passenger-number-web-before-0906; task-specific reservation released.
+
+## HOTEL-SALES-PRICING-0906 — PC-A — COMPLETE_LOCAL
+
+- Final approved integration: normal merge e31b8d1 retains parents 43111fd and 3d3095e. Both handoffs and all capacity/arrangement work preserved. Purchase and arrangement versions coexist in the public presenter; nullable legacy room composition is omitted, not fabricated. Producer branch/worktree remains clean at 3d3095e.
+- Combined gates: 15 lint/typecheck tasks, 733 Web tests, 883 API tests (81 optional skipped in the full run), 38 Contracts and 71 Database tests passed. Fresh 37 migrations, seed twice (86 permission definitions), and 46 focused PostgreSQL/domain tests passed, including oversell, independent purchase/arrangement revisions and immutable snapshots. API and 36-route Web production builds passed.
+- Restored-backup upgrade passed, then a fresh backup preceded the single pending additive pricing migration on local rubi. Existing business counts and all historical migration checksums were preserved. Local Web 3100/API 4000 now run the combined build; health, login redirect, served pricing bundle, credentialed CORS and unauthorized-write denial passed. Existing Documents key/storage and Ramtin-only grant preserved; no operational seed or extra grant.
+- This task's integration/Migration/shared-contract/central-doc/UI reservations are released on local completion; producer review responsibilities remain unchanged. Public publication is still unapproved. No authenticated browser walkthrough or real-contract creation is claimed. The older rollout blocker below is historical and superseded by this successful integration.
+
+- Follow-up user approval: reconcile the three committed Sales/Reservations changes through 3d3095e into this pricing branch with a normal local merge, retaining both histories. Reserve overlapping Sales/Reservations/Ticket public contracts, schema, UI/API and central documentation for reconciliation; preserve both producer handoffs. No producer worktree edits, main/develop changes, public push, additional grants or dependency changes. Validate combined migrations, restore-copy upgrade, tests/build and activate locally on 3100/4000 only after a fresh backup.
+
+- Shared UI reservation: additive money-input used by Sales and Reservations. User explicitly approved granting only reservations.hotel_purchase.write to Ramtin; shared role memberships and other users must remain unchanged.
+
+- User explicitly approved transferring the Migration lock for persistent hotel purchase entry in Reservations. Migration Owner = PC-A/HOTEL-SALES-PRICING-0906 for this additive change; existing PC-B producer branches are untouched. Reserve Sales/Reservations pricing contracts, Web/API, additive schema/migration, necessary permission seed and task docs on codex/pc-a-hotel-sales-pricing-0906. No dependency change or public publication.
+- Day-sale and agreed totals are distinct from purchase cost. Hotel nightly/total entry preserves the explicitly entered source, UTC calendar nights and exact totals. Reservations owns append-only purchase revisions with branch permissions, optimistic version, actor audit and idempotency. Never alter intake snapshots or derive a fabricated supplier discount. Ticket purchase requires an authoritative offer-to-catalog link; no route/name matching.
+- Code gates passed: all 15 lint/typecheck tasks, 727 Web tests plus final three pricing-panel tests, 882 API tests (78 optional skipped), 38 Contracts tests, 71 Database tests, API build and 36-route Web production build. All 35 migrations on a fresh isolated database and seed twice passed; 37 focused domain/PostgreSQL tests passed.
+- Operational preflight detected already-applied migrations 20260906095000_ticket_offer_capacity_allocations and 20260906113000_reservation_arrangements from codex/pc-a-sales-contracts (6f827d1, da2e5fe; latest reviewed tip 3d3095e), absent from this integration base. No pricing migration or API replacement performed; do not bypass this gate. Their overlapping Sales/Reservations/schema work must be reconciled with owner authorization. Migration handoff is pending this coordination, not silently reassigned.
+- Independently completed the explicitly approved Ramtin-only permission grant through dedicated role ramtin_hotel_purchase_local, with backup and audit. Other users and shared-role permissions verified unchanged. Prior Web build restored on 3100; existing API 4000 left running; both HTTP checks passed. New pricing build retained in ignored tmp/hotel-pricing-web-built-0906. No public push or authenticated visual QA.
+
+## CUSTOMER-ENTRY-SHEET-0906 — PC-A — COMPLETE_LOCAL
+
+- User requested spreadsheet-like Customer 360 entry. Reserve Customers Web entry UI, its tests and this local task documentation on codex/pc-a-customer-entry-sheet-0906, based on the verified local integration. Producer branches remain untouched; no merge, publication, schema, API, IAM or dependency changes.
+- Preserve required identity validation, public Customers/Documents APIs and encrypted/masked persistence. Simplify core person entry into rows and show optional details only for the selected row.
+- Delivered editable table, confirmable row removal/source changes, unclipped calendar and preflight duplicate/name checks. 100 Customers tests / all 725 Web tests, scoped lint, typecheck and 36-route production build passed. Web 3100 restarted; Web/API HTTP checks passed (unauthenticated Customers redirects to login). No authenticated visual QA or real-record creation claimed. No public push.
+
+## LOCAL-INTEGRATION-0906 — PC-A — COMPLETE_LOCAL
+
+- User explicitly authorized isolated local integration of latest module work and preserved passport changes. Branch codex/pc-a-local-integration-0906 starts at local Sales 2cc7a9c, retaining all six local commits. No source branch, main/develop, public push or PR mutation authorized.
+- Reserve integration conflict resolution and additive compatibility fixes in this worktree only, including central docs/contracts/schema consistency. Existing producer locks remain held; no concurrent producer worktree is edited. Merge current develop first; assess current module tips and preservation snapshot separately. No blanket merge of obsolete/demo/recovery branches.
+- Runtime replacement and operational migrations are gated by schema/security review, empty-database migrations, tests and builds. Existing local data and keys must remain intact. Recovery snapshot is not assumed production-ready.
+- Integrated current module tips and recovery with compatibility resolution; full lint/typecheck/tests/build and 34 empty-DB migrations plus seed twice passed. Existing rubi has two unexplained historical migration checksums; operational migration and runtime replacement stopped before mutation. Local backup retained. Details: docs/tasks/LOCAL-INTEGRATION-0906.md.
+- Follow-up authorized: restored-copy upgrade passed, fresh backup retained, only pending additive B2B migration applied without rewriting history. Integrated Web/API activated on 3100/4000; HTTP smoke passed. Historical provenance concern retained; no new IAM grants or public push.
+
+## RESERVATION-ARRANGEMENT-0906 — PC-A — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-06: کنترل‌های تعداد بلیت/هتل مانند نمونه جمع‌وجور شوند و رزرواسیون پس از ثبت قرارداد، دسترسی مجاز به اصلاح چیدمان داشته باشد. پیگیری مالک: شمارنده هتل ورودی عددی مستقیم، واحد اتاق «باب» و خلاصه هتل نمایش‌دهنده ترکیب سنی مسافران باشد. ادامه همان Branch/PR فروش؛ `COMPUTER_ID=PC-A`.
+- محدوده: Sales room composition UI/persistence، Reservations public API/UI، قراردادهای IAM/Sales/Travel، Permission seed، Migration افزایشی و اسناد معماری/وضعیت. قفل Migration/Central Docs/Shared Contracts از Task فعال نزد PC-A است؛ Dependency/Lockfile و داده واقعی تغییر نمی‌کند.
+- مرز: Reservations فقط نسخه اجرایی تعداد اتاق، یک‌تخته، دوتخته، تخت اضافه و اعضای هتل را از میان passengerهای Snapshot ثبت می‌کند. ایجاد/تعویض مسافر و افزایش صندلی همچنان اصلاح قرارداد Sales و کنترل دوباره Ticket Catalog است؛ Snapshot ورودی حذف یا بازنویسی نمی‌شود.
+- Validation: 680 Web tests, 823 API tests (76 optional skipped), 18 Contracts tests, Web/API lint and typecheck, and Web/API production builds passed. All 34 migrations passed on fresh PostgreSQL 18; the focused reservation arrangement integration test passed on the backed-up operational local database. Migration applied locally after pg_dump backup. Permission definition is implemented, but assigning it to roles remains pending explicit security approval. No authenticated browser QA claim.
+
+## SALES-PASSENGER-CAPACITY-HOTEL-0906 — PC-A — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-06: ترکیب تعداد مسافران پیش از انتخاب بلیت ثبت شود، نوزاد در ظرفیت صندلی محاسبه نشود، انتخاب بلیت بیش از مانده ظرفیت هم در UI و هم هنگام تأیید اتمیک رد شود و هتل با تعداد اتاق و اعضای مهمان انتخاب شود. `COMPUTER_ID=PC-A`.
+- ادامه همان Branch/PR فعال `codex/pc-a-sales-contracts` / PR #90؛ محدوده Sales Web/API، قرارداد عمومی Travel/Sales، Ticket Catalog Public Service، Migration افزایشی ظرفیت، تست‌ها و اسناد همین Task است. قفل‌های Migration، Central Docs و Sales/Travel Contract از قبل نزد `PC-A/SALES-CONTRACTS-001` هستند.
+- Ticket Catalog مالک ظرفیت بلیت می‌ماند و Sales فقط Public Service آن را مصرف می‌کند؛ تخصیص ظرفیت با کلید قرارداد/جهت اتمیک و تکرارپذیر است. اطلاعات مسافر از Customers و ارسال نهایی از Reservations عبور می‌کند؛ Query مستقیم جدول ماژول دیگر در Sales ممنوع است.
+- هتل در این مرحله تعداد اتاق، نوع اتاق، تعداد مهمان و اعضای انتخاب‌شده را در Snapshot قرارداد نگه می‌دارد؛ موجودی قطعی هتل همچنان هنگام Reservation Confirmation بررسی می‌شود و موجودی ساختگی تولید نمی‌شود.
+- بدون Dependency/Lockfile، تغییر IAM، حذف Migration قبلی، داده واقعی یا دست‌کاری Branchهای دیگر.
+- Validation: 678 Web tests and 823 API tests passed (75 optional API tests skipped); 46 focused Web tests and 31 focused API tests also passed independently; Web/API lint, typecheck and production builds passed. Prisma format/generate/validate and all 33 migrations on fresh PostgreSQL 18 passed; the dedicated concurrent oversell test passed independently. Existing Reservations concurrent-upsert race remains outside this unit. Operational local migration applied after an in-container pg_dump backup; Web 3100, API 4000 and CORS returned 200/200/204. No authenticated browser QA claim.
+
+## SALES-DASHBOARD-REDESIGN-0905 — PC-A — COMPLETE_LOCAL
+
+- Reserve Sales workspace, presentation/tests and task status docs only. Redesign summary, server-backed search/settlement filters, pagination and empty state. Preserve API authorization and Finance-confirmed balances; no schema, shared UI, IAM or dependency changes. Local delivery only; public publication remains unapproved.
+- Validation: 72 Sales Web tests, scoped lint, Web typecheck and production build (35 routes) passed. Existing public list filters/pagination and independent summary errors preserved; Persian labels and precision-safe decimal display. No authenticated browser QA claimed.
+
+## SALES-PEOPLE-REDESIGN-0905 — PC-A — COMPLETE_LOCAL
+
+- Reserve Sales people-step UI/search/person form/model/tests and Sales adapter/domain/service tests. Separate contract buyer from passenger selection, mutually exclusive search/create, compact results and clear selected state. Align national ID requiredness with Customers producer; validate passenger references via its public masked API on Sales writes/confirmation. No Customers internals, schema or shared contract changes; public push remains unapproved.
+- Validation: 69 Web Sales and 35 API Sales tests passed; scoped Web/API lint, both typechecks and both production builds passed. Web 3100 and API 4000 restarted. No real person creation, authenticated visual QA or migration claimed; locks remain held.
+
+## SALES-TICKET-DATE-SIZE-0905 — PC-A — COMPLETE_LOCAL
+
+- Reserve Sales ticket-offer-card and its tests/docs only: increase departure/arrival date typography from 11px muted to 14–16px bold, full contrast and wrapping. No date logic, shared UI, API or schema changes. Local delivery; public push still awaiting approval.
+- 66 Sales tests, scoped lint, Web typecheck and production build passed. Updated Web 3100; no authenticated visual QA claimed.
+
+## SALES-ORGANIZATION-CUSTOMER-0905 — PC-A — COMPLETE_LOCAL
+
+- Reserve Sales Web organization selector/form/model/tests and task docs. Consume existing Customers organization kind and stable MasterOrganization references through their public APIs only. Reuse accessible existing legal customers or explicitly register a customer profile linked to an existing organization; never create another organization. Passengers remain separate; no schema/API/permission/root-export changes. Public push remains awaiting explicit approval.
+- Validation: 64 Sales Web tests, scoped lint, Web typecheck and production build (35 routes) passed; Web restarted on 3100. No real profiles created for QA and no authenticated visual test claimed. Same Sales branch; no PR, Merge or lock release.
+
+## SALES-PASSENGER-ROWS-0905 — PC-A — SALES_COMPLETE
+
+- Reserve Sales Web form/person-entry/model/tests and task documentation only: add/remove independent passenger rows, required ten-digit national ID for new passengers, optional first passenger as contract customer. Raw national IDs stay only in transient entry state and are sent to the Customers public API, not the Sales draft/payload. No Customers internals, shared contracts, schema, migration or permissions changed.
+- Validation: 58 Sales Web tests, scoped lint, Web typecheck and production build (35 routes) passed; rebuilt Web restarted on port 3100. Same Draft PR #90; locks remain held. No real person creation or authenticated UI QA claimed.
+
+## SALES-FOREIGN-ISOLATION-0905 — PC-A — COMPLETE_LOCAL
+
+- User authorized separation of all 27 pre-existing foreign changes. Preserved as local commit 75afc50751b3d5db16003c3e551bc3778e047eda on codex/pc-a-customer-passport-preservation-0905, plus raw backup at ../.worktrees/sales-foreign-backup-20260905. Three-way SHA256 equality checked before cleaning Sales; 20 tracked paths restored and 7 duplicate untracked files removed only from Sales.
+- This is recovery-only, not feature approval or reconciliation into the active Customers branch. Twelve files match customer-connections-0905; fifteen require owner reconciliation. Existing owner branches/worktrees remain untouched. Publishing the unreviewed preservation payload was blocked by safety review; no remote preservation branch or new PR was created.
+- Sales worktree is clean at 8dbc5f4 after isolation. Prisma foreign-file blocker is resolved; Reservations amendment API and Agency public contracts are still unfinished. Migration/Central Docs/Sales Contract locks remain held; PR #90 is not promoted or merged.
+
+## CUSTOMERS-PRESERVATION-0905 — PC-A — RECOVERY_ONLY
+
+- Authorized isolation of 27 foreign Sales-worktree files onto codex/pc-a-customer-passport-preservation-0905; exact snapshot, not feature completion. See docs/tasks/CUSTOMERS-PRESERVATION-0905.md and byte manifest. No schema redesign, migration application, lock transfer, new PR or modification of active owner branches.
+
+## SALES-CONTRACTS-001-HOTEL-DETAILS — PC-A — SALES_COMPLETE / RESERVATIONS_BLOCKED
+
+- Reserve Sales Web form/model/tests and this task's documentation on codex/pc-a-sales-contracts / PR #90: combined flight/hotel details, destination hotel search, editable flight-derived hotel dates. No shared UI, API, schema, migration or unrelated local changes.
+- Reservations hotel amendment remains blocked pending an owned versioned execution-update API and resolution of the pre-existing dirty Prisma ownership; never mutate the immutable Sales intake snapshot or fake a saved amendment.
+- Sales validation: 50 Web Sales tests, scoped lint, Web typecheck and production build (35 routes) passed. Foreign dirty changes excluded; PR #90 remains Draft and locks remain held.
+
+## CUSTOMER-CONNECTIONS-0905 — PC-A — READY_FOR_REVIEW
+
+- Completed integration validation: 163 targeted tests and all affected lint/typecheck/build passed. Local Web 3101 and API 4101 launched independently. Existing localhost:5432 database had 28/31 migrations; the three existing additive migrations were deployed successfully to resolve missing Master Data/Documents columns. No new migration or seed was authored. New persistent DPAPI-protected Documents key and local storage are in ignored tmp; previous configured database had zero Documents records.
+
+- Integration work is isolated from active Sales. Existing headings below are retained as historical context; they do not reserve Ticket Catalog work in this task. Only Customer Documents integration and master-data retry are being validated here.
+
+## CUSTOMER-MASTERDATA-RETRY — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-02: کامل‌ترین نسخه قبلی Customers روی پورت ۳۱۰۰ حفظ شود و پیام نادرست «اطلاعات پایه در دسترس نیست» پس از تمدید نشست رفع گردد. `COMPUTER_ID=PC-A`.
+- Branch مستقل و Stacked: `codex/pc-a-customer-masterdata-retry` روی نسخه تحویلی Ticket/Customers؛ محدوده فقط اتصال Public Master Data در Web Customers، تست مستقیم و سند همین اصلاح است.
+- هیچ Schema/Migration/Seed، Passport/Visa persistence، API/Contract، Dependency/Lockfile یا داده‌ای تغییر نمی‌کند. `DEC-OPEN-006` همچنان باز است و قابلیت مدرک ساختگی فعال نمی‌شود.
+- نتیجه: پاسخ 401 فهرست‌های اطلاعات پایه فقط یک بار با Refresh مشترک نشست بازیابی و همان درخواست تکرار می‌شود؛ 403، Network و 5xx پنهان یا بی‌نهایت تکرار نمی‌شوند. تمام Commitهای قبلی CUSTOMER-002B و اتصال Documents در مبنای فعال حفظ شده‌اند.
+- Validation: تست هدفمند ۴۷/۴۷، همه ۵۶۵ تست Web، lint، typecheck و Production Build موفق‌اند. Final lock state: `RELEASED — PC-A/CUSTOMER-MASTERDATA-RETRY ready for review`؛ هیچ قفل مشترکی تغییر نکرد.
+
+## TICKET-CATALOG-EDIT-COMPLETENESS — PC-A — READY_FOR_REVIEW
+
+- User approved integrating PR #85 Documents/Customer 360 and the existing master-data session retry on 2026-09-05. Isolated branch `codex/pc-a-customer-connections-0905`, based on committed Sales `5ea2b32`; active Sales worktree is untouched. Scope: integration of existing Customers/Documents public API changes, customer reference retry, tests and these task entries. No schema, migration, dependency or permission changes.
+
+## SALES-CONTRACTS-001 — PC-A — READY_FOR_REVIEW
+
+- PC-A route/calendar-language follow-up READY_FOR_REVIEW: origin/destination each have vertically paired country/city fields. Sales calendar wrapper opts into English Gregorian month/day names, labels, digits and LTR; default shared behavior and ISO values unchanged. Shared Calendar Owner = PC-A/SALES-CONTRACTS-001 for the additive option pending review. 48 Sales/shared-calendar tests, scoped lint/typecheck and Web production build passed; no schema/dependency/API changes.
+
+- PC-A calendar/ticket presentation follow-up READY_FOR_REVIEW: Sales-local range calendar matches shared palette/trigger/month-year grids and chooses above/below with scroll-bounded height. Ticket cards show named route, separate Tehran departure/arrival dates and minute-only times, duration, cabin, total capacity and blue selected state. 39 Web Sales tests and scoped lint/typecheck pass; shared UI, range semantics and return query unchanged.
+
+- PC-A people-step follow-up READY_FOR_REVIEW: customer and passenger selection/birthdates share one step; inline customer/passenger creation uses existing Customers public API, preserving existing passengers and deduplicating selections. 35 Sales Web tests, scoped lint/typecheck and production build passed. No edits to concurrent Customers/Contracts/Prisma work or IAM permissions; authenticated UI creation not claimed.
+
+- PC-A compact-form/dashboard follow-up READY_FOR_REVIEW: bounded compact form, compact service choices, independent dashboard/list loading and explicit network/session errors. Production build lacked NEXT_PUBLIC_API_BASE_URL; configured the public localhost API in ignored apps/web/.env.local. 27 Sales Web tests, scoped lint and production typecheck/build passed; no IAM, shared UI, schema or other task edits.
+
+- Latest follow-up verified: 20 Web Sales tests, 28 API Sales tests, scoped lint, Web/API typecheck and production builds passed; updated Web running on port 3100. No migration/dependency changes; same branch and Draft PR #90.
+
+- Current PC-A follow-up reserves Sales form/model/tests, local date-range filter and Sales domain tests/validation: FLIGHT excludes BUS/TRAIN, transfer is a direction flag without detail requirements, first step has no travel date, available flights are ascending future offers with an optional single-calendar date-range filter. Contract travel date still derives from selected travel/service dates for passenger age and validation. No shared calendar/schema/dependency changes.
+
+- Flight UX/output follow-up: PC-A reserves Sales form/model/print-template/tests and docs. Combine flight directions in one detail step; business is output-only service metadata, not an inventory/cabin override. Add four explicitly synthetic Tehran/Antalya offers through Ticket public service on existing HQ branch, without IAM mutations. Printable output is a clearly labelled draft until Reservations supplies real issuance identifiers; no fabricated PNR/e-ticket or Finance release.
+
+- Current follow-up: PC-A reserves Ticket Catalog workspace mount/test and task docs to remove only the scheduled-offer publication panel while retaining Repeat Ticket. Existing published offers/API remain intact. Authorized Turkey/Antalya local reference maintenance runs through the owner service with explicit offline audit attribution; no IAM grants/sessions or direct private-table writes.
+
+- Current follow-up (PC-A): reserve Sales form/model/tests and task docs for parent service selection (both directions initially selected, then expandable independent choices) and a persistent dashboard return link. Turkey/Antalya reference creation is authorized through the existing Master Data public interface only; no private table writes or Master Data code ownership transfer.
+
+- Follow-up route/directional services: PC-A reserves Sales Web/model/tests, Sales domain validation/tests and task docs on the same branch/PR #90. Searchable country/city inputs with reference-backed Tehran/Antalya defaults; independent flight/transfer directions use existing `SalesServiceInput.metadata.direction` (OUTBOUND/RETURN), produced by Sales and preserved in the Reservations v1 snapshot. Legacy services without direction retain their prior trip-type behavior. No schema, migration, dependency or other module changes.
+
+- Route/directional follow-up delivered: country-filtered searchable city menus, reference-backed Iran/Tehran and Turkey/Antalya defaults, independent direction checkboxes, selected-service substeps and transfer date/pickup/dropoff details. Web Sales 9 tests and API Sales 26 tests (all 15 flight/transfer combinations), Web/API typecheck, Sales lint and Web/API production builds passed. Earlier operational role approval gate resolved by explicit user approval and four audited local grants, without changing branch memberships. Authenticated browser QA is not claimed; unrelated local Customers/Documents changes remain excluded.
+
+- Follow-up 2026-09-05 approved by owner: Ticket Catalog persistence/public API, Reservations intake and route-first Sales UX. PC-A/SALES-CONTRACTS-001 reserves Ticket Catalog/Reservations runtime, versioned contracts/root exports, additive Migration, permission seed and AppModule wiring; existing Migration/Central Docs locks remain assigned. No dependency changes. Compatibility/producer-consumer plan: docs/tasks/SALES-CONTRACTS-001.md.
+
+- درخواست مالک در 2026-09-03: Vertical Slice واقعی قراردادها، فروش و تخصیص خدمات روی Branch مستقل `codex/pc-a-sales-contracts` و Draft PR #90 ادامه یابد. `COMPUTER_ID=PC-A`.
+- Base جاری `origin/develop@85204a4` شامل Merge PR #89، Handoff رسمی PR #91 و PR #92 است؛ Mergeهای معمولی `8d3b89d` و `dbaf450` وارد Branch فروش شدند، تعارض اسناد با حفظ هر دو Handoff حل شد و Rebase/Force Push انجام نشد.
+- محدوده رزروشده: Prisma Schema و Migration افزایشی Sales، Permission Seed، قرارداد عمومی versioned و root export فروش، `apps/api/src/sales/**`، `apps/web/src/modules/sales/**`، Routeهای `/sales` و `/sales/contracts/new`، تست‌ها و اسناد همین Task.
+- Lock state: `Migration Owner = PC-A/SALES-CONTRACTS-001`، `Central Docs Owner = PC-A/SALES-CONTRACTS-001` و `Sales shared-contract/root export Owner = PC-A/SALES-CONTRACTS-001`. Dependency/Lockfile برابر `RELEASED` می‌ماند و تغییر نمی‌کند.
+- مرز بین‌ماژولی: Customers، Ticket Catalog، Master Data، Finance، Reservations، Documents و Legal Entity فقط از Public Contract/Port مصرف می‌شوند؛ Query مستقیم جدول یا Import Repository/Infrastructure خصوصی ممنوع است.
+- PR #85، کد PC-B، `main` و `develop` دست‌نخورده می‌مانند؛ Merge، Cherry-pick، Rebase و Force Push مجاز نیست.
+- نتیجه: قرارداد عمومی v1، Prisma/Migration افزایشی، Permission Seed، Repository/API واقعی، Audit/Scope/Lock/Idempotency، محاسبه مانده فقط از تأیید Finance، صف پایدار ReservationRequest و فرم تمام‌صفحه هفت‌مرحله‌ای تکمیل شد.
+- Gate پس از آخرین Merge: ۳۱ Migration روی PostgreSQL 18 خالی، Seed دوباره‌پذیر، Full lint/typecheck، ۱٬۴۸۵ تست و Full Production Build موفق‌اند. Ticket offer در زمان تأیید تا انتشار Runtime Public API ماژول مالک به‌صورت fail-closed رد می‌شود و داده ساختگی وجود ندارد.
+- Commits: `7eba1b2` (contract/database)، `d1ecb63` (backend/API)، `fc61a4e` (full-page web) به‌همراه Commit نهایی hardening/docs. انتشار فقط روی همان Draft PR #90 انجام می‌شود.
 
 ## AGENCY-B2B-INTEGRATIONS-001 — PC-B — READY_FOR_REVIEW
 
@@ -267,6 +679,18 @@
 - اعتبارسنجی: Web Master Data برابر `42/42` فایل و `327/327` تست، API Master Data برابر `27/27` فایل و `402/402` تست، lint و typecheck هر دو برنامه و Production Build هر دو موفق‌اند. API روی `4000` و Web تازه‌ساخته‌شده روی `3100` فعال‌اند؛ Health هر دو پاسخ `200` دارند. Schema/Migration/Seed/Dependency/Lockfile تغییر نکرد.
 
 ## MASTER-004-FORM-ALIGNMENT — PC-B — DONE/MERGED
+
+## CUSTOMER-DOCUMENTS-001 — PC-A — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-03: جایگزینی وضعیت «در انتظار زیرساخت مدارک» در پرونده ۳۶۰ مشتری با اتصال واقعی به ماژول ادغام‌شده Documents. `COMPUTER_ID=PC-A`.
+- Branch مستقل `codex/pc-a-customer-documents-integration` از `origin/develop@9608607`؛ کار مستقیم روی `develop` یا `main`، Merge خودکار، Force Push و حذف Branch ممنوع است.
+- محدوده رزروشده: رابط و Client ماژول Customers، فیلتر افزایشی و backward-compatible قرارداد عمومی Documents، DTO/Service/Repository و تست‌های محدود Documents برای فهرست منبع، سند Task و ورودی‌های همین Work Item در اسناد مرکزی.
+- مرز دامنه: Customers فقط مصرف‌کننده قرارداد عمومی Documents است؛ Binary، metadata، version، confidentiality، scan و archive نزد Documents می‌ماند. Query مستقیم جدول Documents از Customers و import کد داخلی Web ماژول Documents ممنوع است.
+- امنیت: فهرست و بارگذاری فقط با Session، Permission، Domain و Branch scope موجود Documents انجام می‌شود؛ فایل تا نتیجه اسکن معتبر قابل دریافت نیست. شماره پاسپورت و داده semantic هویتی در Customers ذخیره نمی‌شود و `DEC-OPEN-006` همچنان Gate آن داده‌هاست.
+- قفل‌ها: `Documents public list-filter contract = PC-A/CUSTOMER-DOCUMENTS-001` و `Central Docs Owner = PC-A/CUSTOMER-DOCUMENTS-001`. قفل‌های Migration، Schema، Seed و Dependency/Lockfile رزرو نمی‌شوند. قفل‌های `MASTER-004-FORM-ALIGNMENT` با Merge PR #83 / Commit `9608607` پایان یافته‌اند.
+- نتیجه: فهرست exact-source، کنترل all-or-none، پنل Customer 360، بارگذاری امن و Stateهای Loading/Empty/Unauthorized/Forbidden/Error تکمیل شد. Full lint/typecheck/build و ۱۴۷۰ تست پاس؛ ۷۰ تست PostgreSQL اختیاری skip شد. قفل‌های این Work Item تا Merge/Handoff فعال می‌مانند.
+
+## MASTER-004-FORM-ALIGNMENT — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-02: هم‌ترازسازی کامل فرم‌ها و فهرست‌های اطلاعات پایه شامل ادغام تجربه استان/شهر، حذف یا اختیاری‌کردن فیلدهای مشخص‌شده، افزودن ترتیب نمایش عمومی، یکسان‌سازی تقویم و قالب اعداد، حذف Exportهای تعیین‌شده، ورود داخلی امکانات هتل، ساده‌سازی حمل‌ونقل و افزودن Logo Reference برای شرکت‌ها و سازمان‌ها. `COMPUTER_ID=PC-B`.
 - Branch مستقل `codex/pc-b-master-data-form-alignment` از `origin/develop@e91cdba`؛ کار مستقیم روی `develop` یا `main`، Merge خودکار، Force Push و حذف Branch ممنوع است.
@@ -1000,3 +1424,41 @@ Customers، Finance، Procurement، Reservations، Integrations و Documents خ�
 - وضعیت `DONE` یعنی Commit و Push شده و گزارش تست/ریسک در Project Status ثبت شده
   است؛ ادغام‌شدن را تضمین نمی‌کند.
 - آزادکردن کار بدون تکمیل با تغییر مالک به `تخصیص‌نیافته` و ثبت دلیل انجام می‌شود.
+
+## LOCAL-UNIFIED-3100-0909 — PC-A — IN_PROGRESS
+
+User-authorized local composition on codex/pc-a-local-unified-3100-0909. Base 385efaa (latest local Sales); consume sidebar handoff efe6287 and Reservations 0946bdd. Scope: isolated Web shell, reservation routes/projections and task status. Preserve source worktrees, shared contracts, schema and dependencies. No merge or database mutation.
+
+LOCAL-UNIFIED-3100-0909: READY_FOR_REVIEW. Independent branch; local Web 3100/API 4000 bind loopback. Verification recorded in PROJECT_STATUS.
+
+## RESERVATIONS-ACTION-PANEL-003 — PC-A — IN_PROGRESS
+
+User selected preview option 3. Scope: foundation Web action panel, selected-contract dialogs, workspace layout and tests on current isolated branch. No API, database, Sales or shared UI changes. Unknown forms remain explicit placeholders.
+
+RESERVATIONS-ACTION-PANEL-003: READY_FOR_REVIEW; 34 tests, targeted lint, TypeScript and Web production build passed. Port 3100 restarted with option 3; primary API/database unchanged.
+
+## PUBLISH-LATEST-0909 — PC-A — IN_PROGRESS
+
+User explicitly authorized merging the complete latest local version, including global changes, into develop. Integration preserves grouped sidebar, Sales/Customers/Tour stack and Reservations option 3, plus develop UserMenu/profile, HR route alias and portal calendar fixes. No live database change. Final PR checks gate merge.
+
+## NAV-FINANCE-TICKET-LABELS-0909 — PC-A — IN_PROGRESS
+
+User requested moving Purchases into the Finance navigation group and using بلیط in visible Web copy. Scope: navigation grouping, Persian Web strings and corresponding existing test expectations. No domain/API/schema changes.
+
+NAV-FINANCE-TICKET-LABELS-0909: READY_FOR_REVIEW. 57 targeted tests, Web lint, TypeScript and build passed; local port 3100 refreshed.
+
+## NEUTRAL-DARK-MODE-0909 — PC-A — READY_FOR_REVIEW
+
+User requests neutral dark surfaces with legible text and controls. Scope: shared theme tokens, shell backgrounds and Reservations theme-aware surfaces/status colors. Preserve current Finance grouping and ticket labels. No API/data changes.
+
+Validation: 66 targeted tests passed, including seven contrast assertions; Web lint, TypeScript and production build (40 routes) passed. Local Web 3100 refreshed. Browser visual QA unavailable because the browser tool failed to start. Branch codex/pc-a-neutral-dark-mode builds on Finance/ticket-labels PR #117. No migration or API/database changes.
+
+## HR-DARK-NAVIGATION-0909 — PC-A — READY_FOR_REVIEW
+
+User follow-up to neutral dark mode. Reserve HR workspace/Frappe CSS, Navigation collapse state and scoped tests on codex/pc-a-hr-dark-navigation-fix from 3d08f07. Preserve existing light design and local latest stack. No domain/API/data changes; header date work stays outside scope.
+
+Validation: 87 scoped tests, Web lint, TypeScript and production build (40 routes) passed; Web 3100 refreshed. No API/database restart or changes. Scoped reservations released.
+
+## PUBLISH-DARK-HR-0909 — PC-A — READY_FOR_REVIEW
+
+User explicitly authorized merging the latest Finance labels, dark theme and HR/navigation corrections into develop. Integrate current develop 679e516, retaining PC-B HR/agencies and header date; resolve shared shell conflict with both responsive header and neutral dark border. Synchronize three ticket validation strings in API with the mirrored Web proposal to satisfy the existing parity test. No local database migration or runtime switch. Final combined CI gates must pass before merge.

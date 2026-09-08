@@ -2,6 +2,8 @@
 
 import {
   Check,
+  ChevronDown,
+  ChevronLeft,
   ChevronsLeft,
   ChevronsRight,
   Command,
@@ -14,10 +16,18 @@ import {
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  Suspense,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import {
   getNavigationBreadcrumbs,
+  groupedNavigationItems,
   isNavigationItemActive,
   MARKETING_SECTION_CHANGE_EVENT,
   navigationItems,
@@ -31,7 +41,9 @@ import {
 } from '@/modules/legal-entities/components/legal-entity-context';
 import { legalEntityBrand } from '@/modules/legal-entities/model/context';
 import { NotificationCenter } from './notification-center';
+import { sidebarIcons } from './sidebar-icons';
 import { UserMenu } from './user-menu';
+import { HeaderToday } from './header-today';
 import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
 import { Input } from '../ui/form-controls';
@@ -92,67 +104,125 @@ function Navigation({
   mobile?: boolean;
 }) {
   const pathname = usePathname();
+  const groupId = useId();
+  const [closedGroups, setClosedGroups] = useState<string[]>([]);
+  const isGroupClosed = (id: string) => closedGroups.includes(id);
+  function toggleGroup(id: string) {
+    setClosedGroups((ids) =>
+      ids.includes(id) ? ids.filter((value) => value !== id) : [...ids, id],
+    );
+  }
+  function renderItem({ href, title }: (typeof navigationItems)[number]) {
+    const active = isNavigationItemActive(href, pathname);
+    const Icon = sidebarIcons[href];
+    const link = (
+      <Link
+        aria-current={active ? 'page' : undefined}
+        className={cn(
+          'group flex min-w-0 items-center gap-2.5 overflow-hidden rounded-[10px] px-[11px] font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300',
+          compact ? 'h-full min-h-8' : 'min-h-10 py-2 text-xs leading-[1.8]',
+          mobile
+            ? active
+              ? 'bg-primary text-primary-foreground shadow-sm'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            : active
+              ? 'bg-cyan-300/20 text-white ring-1 ring-inset ring-cyan-100/30 shadow-md shadow-blue-950/20'
+              : 'text-blue-50/75 hover:bg-white/10 hover:text-white',
+          compact && 'justify-center px-0',
+        )}
+        href={href}
+        title={!compact ? title : undefined}
+      >
+        <Icon
+          strokeWidth={1.7}
+          aria-hidden="true"
+          className={cn(
+            'size-[17px] shrink-0',
+            !mobile && (active ? 'text-cyan-100' : 'text-[#adcaed]'),
+          )}
+        />
+        {!compact ? (
+          <span className="min-w-0 whitespace-normal break-words">{title}</span>
+        ) : (
+          <span className="sr-only">{title}</span>
+        )}
+      </Link>
+    );
+    if (mobile)
+      return (
+        <DrawerClose asChild key={href}>
+          {link}
+        </DrawerClose>
+      );
+    if (!compact) return <div key={href}>{link}</div>;
+    return (
+      <Tooltip key={href}>
+        <TooltipTrigger asChild>{link}</TooltipTrigger>
+        <TooltipContent side="left">{title}</TooltipContent>
+      </Tooltip>
+    );
+  }
   return (
     <nav
       aria-label="منوی اصلی"
       className={cn(
-        'grid min-w-0 content-start gap-0.5 overflow-x-hidden',
-        mobile
-          ? 'auto-rows-[44px]'
-          : 'h-full grid-rows-[repeat(17,minmax(32px,1fr))]',
+        'grid min-w-0 content-start overflow-x-hidden',
+        compact
+          ? 'h-full grid-rows-[repeat(17,minmax(32px,1fr))] gap-0.5'
+          : 'gap-[7px] py-2',
       )}
     >
-      {navigationItems.map(({ href, icon: Icon, title }) => {
-        const active = isNavigationItemActive(href, pathname);
-        const link = (
-          <Link
-            aria-current={active ? 'page' : undefined}
-            className={cn(
-              'group flex min-w-0 items-center gap-3 overflow-hidden rounded-xl px-3 font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300',
-              mobile
-                ? 'h-11 text-sm'
-                : 'h-full min-h-8 text-[clamp(12px,1.35vh,15px)]',
-              mobile
-                ? active
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                : active
-                  ? 'bg-cyan-300/20 text-white ring-1 ring-inset ring-cyan-100/30 shadow-md shadow-blue-950/20'
-                  : 'text-blue-50/75 hover:bg-white/10 hover:text-white',
-              compact && 'justify-center px-0',
-            )}
-            href={href}
-          >
-            <Icon
-              aria-hidden="true"
-              className={cn(
-                'shrink-0',
-                mobile ? 'size-[18px]' : 'size-[clamp(17px,1.7vh,21px)]',
-              )}
-            />
-            {!compact ? (
-              <span className="min-w-0 truncate whitespace-nowrap">
-                {title}
-              </span>
-            ) : (
-              <span className="sr-only">{title}</span>
-            )}
-          </Link>
-        );
-        if (mobile)
-          return (
-            <DrawerClose asChild key={href}>
-              {link}
-            </DrawerClose>
-          );
-        if (!compact) return <div key={href}>{link}</div>;
-        return (
-          <Tooltip key={href}>
-            <TooltipTrigger asChild>{link}</TooltipTrigger>
-            <TooltipContent side="left">{title}</TooltipContent>
-          </Tooltip>
-        );
-      })}
+      {compact
+        ? groupedNavigationItems.flatMap((group) => group.items).map(renderItem)
+        : groupedNavigationItems.map((group) => (
+            <section
+              key={group.id}
+              aria-label={group.title}
+              className="min-w-0"
+            >
+              <h2>
+                <button
+                  type="button"
+                  aria-expanded={!isGroupClosed(group.id)}
+                  aria-controls={groupId + group.id}
+                  onClick={() => toggleGroup(group.id)}
+                  className={cn(
+                    'mb-1 flex w-full items-center gap-2 rounded-lg text-start outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-[9px] pb-[5px] pt-[9px] text-sm font-semibold leading-6',
+                    mobile ? 'text-muted-foreground' : 'text-blue-200',
+                  )}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'size-1.5 shrink-0 rounded-full',
+                      mobile ? 'bg-primary/50' : 'bg-cyan-200/70',
+                    )}
+                  />
+                  {group.title}
+                  {isGroupClosed(group.id) ? (
+                    <ChevronLeft
+                      aria-hidden="true"
+                      className="ms-auto size-3.5 shrink-0"
+                    />
+                  ) : (
+                    <ChevronDown
+                      aria-hidden="true"
+                      className="ms-auto size-3.5 shrink-0"
+                    />
+                  )}
+                </button>
+              </h2>
+              <div
+                id={groupId + group.id}
+                hidden={isGroupClosed(group.id)}
+                className={
+                  isGroupClosed(group.id) ? 'hidden' : 'grid gap-[3px]'
+                }
+              >
+                {group.items.map(renderItem)}
+              </div>
+            </section>
+          ))}
     </nav>
   );
 }
@@ -357,6 +427,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
       <aside
+        data-rubi-sidebar
         className={cn(
           'sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden bg-[linear-gradient(180deg,#123f8c_0%,#0e2f6e_55%,#092354_100%)] p-2.5 text-white shadow-2xl shadow-blue-950/20 transition-[width] duration-200 lg:flex',
           collapsed ? 'w-[68px]' : 'w-[290px]',
@@ -370,7 +441,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
         >
           <Brand compact={collapsed} />
         </div>
-        <div className="mt-1 min-h-0 flex-1 overflow-hidden">
+        <div className="mt-1 min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           <Navigation compact={collapsed} />
         </div>
         <div className="mt-1 grid shrink-0 grid-cols-[1fr_auto] gap-1 border-t border-white/10 pt-1">
@@ -409,8 +480,8 @@ function AppShellContent({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-surface/90 shadow-sm shadow-blue-900/5 backdrop-blur-xl dark:border-blue-900/50">
-          <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
+        <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-surface/90 shadow-sm shadow-blue-900/5 backdrop-blur-xl dark:border-border">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 sm:flex sm:h-14 sm:gap-3 sm:px-6 sm:py-0">
             <Drawer>
               <DrawerTrigger asChild>
                 <Button
@@ -449,6 +520,9 @@ function AppShellContent({ children }: { children: ReactNode }) {
               <SearchDialog />
             </div>
             <HeaderActions />
+          </div>
+          <div className="flex min-w-0 justify-end px-4 pb-1 sm:px-6">
+            <HeaderToday />
           </div>
         </header>
         <div className="px-4 pt-3 sm:px-6 lg:px-7">

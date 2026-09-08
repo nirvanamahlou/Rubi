@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getNavigationBreadcrumbs,
+  groupedNavigationItems,
   getNavigationItem,
   isNavigationItemActive,
   navigationItems,
@@ -32,14 +33,14 @@ const expectedTitles = [
   'مشتریان و مسافران',
   'امور مشتریان، سرنخ‌ها و پشتیبانی',
   'رزرواسیون و عملیات سفر',
-  'مدیریت و تعریف بلیت‌ها',
-  'قراردادها، فروش و تخصیص خدمات',
+  'مدیریت و تعریف بلیط‌ها',
+  'قرارداد',
   'خرید و تأمین',
   'مالی و خزانه‌داری',
   'مارکتینگ',
   'آژانس‌ها و مشتریان سازمانی',
   'منابع انسانی',
-  'وظایف و اتوماسیون',
+  'میز کار',
   'اسناد و فایل‌ها',
   'گزارش‌ها',
   'یکپارچه‌سازی‌ها',
@@ -48,6 +49,30 @@ const expectedTitles = [
 ];
 
 describe('CRM navigation', () => {
+  it('groups every existing module exactly once without changing routes or labels', () => {
+    const grouped = groupedNavigationItems.flatMap((group) => group.items);
+    expect(grouped).toHaveLength(navigationItems.length);
+    expect(new Set(grouped.map((item) => item.href)).size).toBe(
+      navigationItems.length,
+    );
+    expect(grouped.map((item) => item.href).sort()).toEqual(
+      [...expectedRoutes].sort(),
+    );
+    for (const item of grouped)
+      expect(item).toBe(
+        navigationItems.find((original) => original.href === item.href),
+      );
+    expect(
+      groupedNavigationItems
+        .find((group) => group.id === 'finance')
+        ?.items.map((item) => item.href),
+    ).toEqual(['/finance', '/purchases']);
+    expect(
+      groupedNavigationItems
+        .find((group) => group.id === 'hr')
+        ?.items.map((item) => item.href),
+    ).toEqual(['/human-resources']);
+  });
   it('contains exactly the approved 17 routes in order', () => {
     expect(navigationItems.map((item) => item.href)).toEqual(expectedRoutes);
     expect(new Set(navigationItems.map((item) => item.href)).size).toBe(17);
@@ -108,9 +133,9 @@ describe('CRM navigation', () => {
   });
 
   it('keeps sales, reservation, and ticket management as separate modules', () => {
-    expect(getNavigationItem('/sales')?.title).toContain('قراردادها');
+    expect(getNavigationItem('/sales')?.title).toBe('قرارداد');
     expect(getNavigationItem('/reservations')?.title).toContain('رزرواسیون');
-    expect(getNavigationItem('/ticket-management')?.title).toContain('بلیت');
+    expect(getNavigationItem('/ticket-management')?.title).toContain('بلیط');
   });
 
   it('combines user administration and settings only at navigation level', () => {
@@ -131,6 +156,14 @@ describe('CRM navigation', () => {
   });
 
   it('identifies users and settings beneath system management', () => {
+    expect(
+      getNavigationBreadcrumbs('/sales/contracts/new')
+        .map((item) => item.title)
+        .at(-1),
+    ).toBe('قرارداد جدید');
+    expect(
+      getNavigationBreadcrumbs('/sales/contracts/new').map((item) => item.href),
+    ).toEqual(['/sales', '/sales/contracts/new']);
     expect(getNavigationBreadcrumbs('/users').map((item) => item.href)).toEqual(
       ['/system', '/users'],
     );

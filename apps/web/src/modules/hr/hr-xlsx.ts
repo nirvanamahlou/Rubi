@@ -149,3 +149,127 @@ export function downloadHrXlsx(
   anchor.click();
   URL.revokeObjectURL(url);
 }
+
+/** Reads bounded, non-macro XLSX workbooks, including Excel shared strings. */
+export async function readHrXlsx(file: File): Promise<string[][]> {
+  if (!/\.xlsx$/i.test(file.name) || file.size > 5 * 1024 * 1024)
+    throw new Error('فایل XLSX با حجم حداکثر ۵ مگابایت انتخاب کنید.');
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const view = new DataView(bytes.buffer);
+  let end = bytes.length - 22;
+  while (
+    end >= Math.max(0, bytes.length - 65557) &&
+    view.getUint32(end, true) !== 0x06054b50
+  )
+    end--;
+  if (end < 0 || view.getUint32(end, true) !== 0x06054b50)
+    throw new Error('ساختار فایل اکسل معتبر نیست.');
+  const count = view.getUint16(end + 10, true);
+  if (count > 200) throw new Error('فایل اکسل بیش از حد پیچیده است.');
+  let cursor = view.getUint32(end + 16, true);
+  let total = 0;
+  const files = new Map<string, string>();
+  for (let i = 0; i < count; i++) {
+    if (
+      cursor + 46 > bytes.length ||
+      view.getUint32(cursor, true) !== 0x02014b50
+    )
+      throw new Error('فایل اکسل خراب است.');
+    const method = view.getUint16(cursor + 10, true),
+      compressed = view.getUint32(cursor + 20, true),
+      size = view.getUint32(cursor + 24, true);
+    const nameLength = view.getUint16(cursor + 28, true),
+      extraLength = view.getUint16(cursor + 30, true),
+      commentLength = view.getUint16(cursor + 32, true);
+    const offset = view.getUint32(cursor + 42, true);
+    const name = new TextDecoder().decode(
+      bytes.slice(cursor + 46, cursor + 46 + nameLength),
+    );
+    total += size;
+    if (total > 20 * 1024 * 1024 || /vbaProject|externalLinks/i.test(name))
+      throw new Error('فایل دارای محتوای غیرمجاز یا حجم بازشده بیش از حد است.');
+    if (
+      name === 'xl/sharedStrings.xml' ||
+      name === 'xl/worksheets/sheet1.xml'
+    ) {
+      if (offset + 30 > bytes.length) throw new Error('فایل اکسل خراب است.');
+      const start =
+        offset +
+        30 +
+        view.getUint16(offset + 26, true) +
+        view.getUint16(offset + 28, true);
+      if (start + compressed > bytes.length)
+        throw new Error('فایل اکسل ناقص است.');
+      let data = bytes.slice(start, start + compressed);
+      if (method === 8) {
+        const reader = new Blob([data])
+          .stream()
+          .pipeThrough(new DecompressionStream('deflate-raw'))
+          .getReader();
+        const parts: Uint8Array[] = [];
+        let length = 0;
+        while (true) {
+          const result = await reader.read();
+          if (result.done) break;
+          length += result.value.length;
+          if (length > size || length > 20 * 1024 * 1024) {
+            await reader.cancel();
+            throw new Error('حجم فایل نامعتبر است.');
+          }
+          parts.push(result.value);
+        }
+        data = joinBytes(parts);
+      } else if (method !== 0)
+        throw new Error('فشرده‌سازی فایل پشتیبانی نمی‌شود.');
+      files.set(name, new TextDecoder().decode(data));
+    }
+    cursor += 46 + nameLength + extraLength + commentLength;
+  }
+  const parse = (xml: string) => {
+    if (/<!DOCTYPE|<!ENTITY/i.test(xml))
+      throw new Error('ساختار XML مجاز نیست.');
+    const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    if (doc.querySelector('parsererror'))
+      throw new Error('ساختار XML خراب است.');
+    return doc;
+  };
+  const sharedXml = files.get('xl/sharedStrings.xml');
+  const shared = sharedXml
+    ? Array.from(parse(sharedXml).getElementsByTagName('si')).map(
+        (item) => item.textContent ?? '',
+      )
+    : [];
+  const sheet = files.get('xl/worksheets/sheet1.xml');
+  if (!sheet) throw new Error('برگه اول اکسل پیدا نشد.');
+  const doc = parse(sheet);
+  if (doc.getElementsByTagName('f').length)
+    throw new Error('فرمول‌ها را پیش از ورود به مقدار ثابت تبدیل کنید.');
+  const rows = Array.from(doc.getElementsByTagName('row'));
+  if (rows.length > 10001)
+    throw new Error('حداکثر ۱۰٬۰۰۰ رکورد قابل ورود است.');
+  return rows.map((row) => {
+    const values: string[] = [];
+    for (const cell of Array.from(row.getElementsByTagName('c'))) {
+      const column =
+        (cell.getAttribute('r') ?? '').match(/^[A-Z]+/)?.[0] ?? 'A';
+      const index =
+        Array.from(column).reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0) -
+        1;
+      if (index > 100) throw new Error('تعداد ستون‌ها بیش از حد است.');
+      const raw = cell.getElementsByTagName('v')[0]?.textContent ?? '';
+      const value =
+        cell.getAttribute('t') === 's'
+          ? (shared[Number(raw)] ?? '')
+          : cell.getAttribute('t') === 'inlineStr'
+            ? (cell.getElementsByTagName('is')[0]?.textContent ?? '')
+            : raw;
+      if (value.length > 10000)
+        throw new Error('محتوای سلول بیش از حد طولانی است.');
+      values[index] = value;
+    }
+    return Array.from(
+      { length: values.length },
+      (_, index) => values[index] ?? '',
+    );
+  });
+}

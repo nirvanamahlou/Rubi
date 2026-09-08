@@ -1495,3 +1495,201 @@
     transition: none;
   }
 }
+
+/* Dark overrides also apply to portalled HR dialogs outside .workspace. */
+:global(.dark) .workspace,
+:global(.dark) .modal {
+  --hr-blue: var(--primary);
+  --hr-ink: var(--foreground);
+  --hr-muted: var(--muted-foreground);
+  --hr-line: var(--border);
+  color: var(--foreground);
+}
+:global(.dark)
+  :is(
+    .button,
+    .dateBar,
+    .hubCard,
+    .tabActive,
+    .panel,
+    .control,
+    .kpi,
+    .requestCard,
+    .employeeBanner,
+    .orgNode,
+    .orgEditButton,
+    .integrationLinks
+  ) {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--foreground);
+  box-shadow: none;
+}
+:global(.dark) :is(.control, .button, .orgEditButton) {
+  border-color: var(--input);
+}
+:global(.dark)
+  :is(
+    .tabs,
+    .bar,
+    .table th,
+    .pill,
+    .hubWorkspaceLink,
+    .orgNodeMeta span,
+    .heroMetric
+  ) {
+  background: var(--muted);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+:global(.dark)
+  :is(
+    .button:hover:not(:disabled),
+    .hubWorkspaceLink:hover,
+    .table tbody tr:hover
+  ) {
+  background: var(--muted);
+}
+:global(.dark)
+  :is(.title h1, .panelTitle, .kpiValue, .table, .summaryItem b, .formLegend) {
+  color: var(--foreground);
+}
+:global(.dark)
+  :is(
+    .dateLead,
+    .fieldLabel,
+    .dateSummary,
+    .hubCopy p,
+    .hubFoot small,
+    .hubWorkspaceLink small,
+    .tab,
+    .panelNote,
+    .source,
+    .searchInputIcon,
+    .kpiLabel,
+    .kpiHint,
+    .chartHead small,
+    .chartLabels,
+    .person small,
+    .alert small,
+    .employeeMeta,
+    .summaryItem span,
+    .orgNode small
+  ) {
+  color: var(--muted-foreground);
+}
+:global(.dark)
+  :is(
+    .panelHead,
+    .hubFoot,
+    .table th,
+    .table td,
+    .alert,
+    .summaryItem,
+    .formFieldset
+  ) {
+  border-color: var(--border);
+}
+:global(.dark)
+  :is(.hubCard, .blue, .violet, .cyan, .orange, .teal, .rose, .green, .slate) {
+  --accent: var(--primary);
+  --tint: var(--muted);
+}
+:global(.dark) .kpi {
+  --kpi-color: var(--primary);
+  --kpi-tint: var(--muted);
+}
+:global(.dark)
+  :is(.hubIcon, .avatar, .avatarPhoto, .filterStatus, .badge, .boundary) {
+  background: var(--muted);
+  color: var(--primary);
+  border-color: var(--border);
+}
+:global(.dark)
+  :is(.tabActive, .textButton, .integrationLinks a, .fallback svg) {
+  color: var(--primary);
+}
+:global(.dark)
+  :is(
+    .buttonPrimary,
+    .buttonPrimary:hover:not(:disabled),
+    .profileAvatar,
+    .orgNodePrimary
+  ) {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+:global(.dark)
+  :is(
+    .orgNodePrimary small,
+    .orgNodePrimary .orgEditButton,
+    .orgNodePrimary .orgNodeMeta span
+  ) {
+  background: var(--muted);
+  color: var(--foreground);
+  border-color: var(--input);
+}
+:global(.dark) :is(.badgeSuccess, .notice) {
+  background: #193b30;
+  color: #a7f3d0;
+  border-color: #5da98a;
+}
+:global(.dark) :is(.badgeWarning, .previewNote, .alertIcon) {
+  background: #40331b;
+  color: #fde68a;
+  border-color: #b59954;
+}
+:global(.dark) :is(.badgeDanger, .buttonDanger:hover:not(:disabled)) {
+  background: #482426;
+  color: #ffd7d7;
+  border-color: var(--destructive);
+}
+:global(.dark)
+  :is(.buttonDanger, .orgDeleteButton, .fieldError, .requiredMark) {
+  color: var(--destructive);
+}
+:global(.dark)
+  :is(.buttonDanger, .orgDeleteButton, .control[aria-invalid='true']) {
+  border-color: var(--destructive);
+}
+:global(.dark) .badgeNeutral {
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+:global(.dark) .kpiTrend {
+  color: #a7f3d0;
+}
+:global(.dark) .payrollHero {
+  background: var(--surface);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+:global(.dark) :is(.payrollHero p, .heroMetric small) {
+  color: var(--muted-foreground);
+}
+:global(.dark) .chartGrid {
+  stroke: var(--border);
+}
+:global(.dark) :is(.chartLine, .chartDot, .orgEdge) {
+  stroke: var(--primary);
+}
+:global(.dark) .chartDot {
+  fill: var(--surface);
+}
+:global(.dark)
+  :is(
+    .button,
+    .hubMain,
+    .hubWorkspaceLink,
+    .hubSectionLink,
+    .tab,
+    .textButton,
+    .orgEditButton
+  ):focus-visible,
+:global(.dark) .control:focus {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-color: var(--ring);
+}

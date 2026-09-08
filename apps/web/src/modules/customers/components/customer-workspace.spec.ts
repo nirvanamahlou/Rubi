@@ -12,7 +12,7 @@ import {
 const source = readFileSync(
   new URL('./customer-workspace.tsx', import.meta.url),
   'utf8',
-);
+).replace(/\r\n/g, '\n');
 const dateFieldSource = readFileSync(
   new URL('./customer-date-field.tsx', import.meta.url),
   'utf8',
@@ -23,10 +23,11 @@ const customerDocumentsPanelSource = readFileSync(
 );
 
 describe('Customer Operations workspace boundaries', () => {
-  it('opens contacts for either role and offers a call only after audited reveal', () => {
-    expect(source).toContain("open('view', record.id, 'contacts')");
-    expect(source).toContain('setActiveTab(tab)');
-    expect(source).toContain('مشاهده تماس‌ها');
+  it('reveals the phone inline through the existing audited sensitive flow', () => {
+    expect(source).not.toContain('مشاهده تماس‌ها');
+    expect(source).toContain('revealListPrimaryContact(record)');
+    expect(source).toContain('CUSTOMER_SUPPORT_REQUEST_REASON');
+    expect(source).toContain('revealedListContact?.customerId === record.id');
     expect(source).toContain('نمایش شماره کامل');
     expect(source).toContain('contactCallHref(item, Boolean(revealedDetail))');
     expect(source).toContain('href={callHref}');
@@ -251,9 +252,10 @@ describe('Customer Operations workspace boundaries', () => {
       expect(source).toContain(filter);
   });
 
-  it('shows the primary contact in a dedicated masked list column', () => {
+  it('shows the phone in a dedicated inline list control', () => {
     expect(source).toContain('شماره تماس');
-    expect(source).toContain("record.maskedPrimaryContact ?? 'بدون تماس'");
+    expect(source).toContain('record.maskedPrimaryContact ? (');
+    expect(source).toContain('revealListPrimaryContact(record)');
   });
 
   it('provides an enter-friendly create flow with adjustable companion passengers', () => {
@@ -267,16 +269,19 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain(
       'organizationId: companion.organizationId || null',
     );
-    expect(source).toContain('اطلاعات ۳۶۰ مسافر (اختیاری)');
-    expect(source).toContain('<details className=');
-    expect(source).toContain('<summary className=');
-    expect(source).toContain('تاریخ تولد، تماس، ایمیل، شرکت و مدارک سفر');
-    expect(source).toContain('companion-${companion.key}-email');
+    expect(source).toContain('<CustomerEntrySheet');
+    expect(source).toContain('validateCustomerEntryRows');
+    expect(source).not.toContain('<details className=');
+    expect(source).not.toContain('<summary className=');
+    expect(source).toContain('تاریخ تولد (اجباری)');
+    expect(source).toContain('شماره پاسپورت');
+    expect(source).toContain('تصویر یا فایل مدرک (اختیاری)');
+    expect(source).toContain('onChange: (field, value) =>');
     expect(source).toContain('value: companion.email.trim().toLowerCase()');
     expect(source).toContain('مدارک سفر مسافر');
     expect(source).toContain('فیلتر شعبه مجاز');
     expect(source).toContain('id="customer-national-id"');
-    expect(source).toContain('companion-${companion.key}-national-id');
+    expect(source).toContain('nationalId: draft.nationalId');
     expect(source).toContain(
       'nationalId: normalizeNationalId(companion.nationalId)',
     );
@@ -335,12 +340,14 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('disabled={records.length === 0 || exporting}');
   });
 
-  it('shows twenty people per page with a complete page position and masked mobile number', () => {
+  it('shows twenty people per page with a complete page position and one inline phone control', () => {
     expect(source).toContain('const pageSize = 20');
     expect(source).toContain('Math.max(1, Math.ceil(total / pageSize))');
     expect(source).toContain('نفر در هر صفحه');
     expect(source).toContain('<th className="p-4 text-start">شماره تماس</th>');
-    expect(source).toContain("record.maskedPrimaryContact ?? 'بدون تماس'");
+    expect(source).toContain('record.maskedPrimaryContact ? (');
+    expect(source).toContain('setRevealedListContact(null)');
+    expect(source).toContain('window.setTimeout(remask, 60_000)');
   });
 
   it('renders filter-scoped KPI cards without inventing Sales purchase data', () => {

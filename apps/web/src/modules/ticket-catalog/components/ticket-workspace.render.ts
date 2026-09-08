@@ -11,12 +11,12 @@ describe('Rendered ticket UI', () => {
   it('exposes direct ticket management without preview controls', () => {
     const html = renderToStaticMarkup(createElement(TicketWorkspace));
     expect(html).toContain('dir="rtl"');
-    expect(html).toContain('تعریف بلیت جدید');
+    expect(html).toContain('تعریف بلیط جدید');
     expect(html).not.toContain('افزودن نمونه‌ها');
     expect(html).toContain('هواپیما • قطار • اتوبوس');
-    expect(html).toContain('تعریف بلیت قابل فروش');
+    expect(html).toContain('تعریف بلیط قابل فروش');
     expect(html).toContain('مسیر، برنامه حرکت و ظرفیت');
-    expect(html).toContain('بلیت‌های صادرشده مسافران');
+    expect(html).toContain('بلیط‌های صادرشده مسافران');
     expect(html).toContain('گزارش صدور، PNR و قرارداد');
     expect(html).not.toContain('شروع پیش‌نمایش');
     expect(html).not.toContain('حالت شبیه‌سازی');
@@ -94,19 +94,19 @@ describe('Rendered ticket UI', () => {
     expect(card).toContain(
       `${(sample.definition.totalCapacity - 5).toLocaleString('fa-IR')} نفر`,
     );
-    expect(card).toContain('aria-label="توقف فروش بلیت"');
+    expect(card).toContain('aria-label="توقف فروش بلیط"');
     expect(card).not.toContain('disabled=""');
-    expect(pausedCard).toContain('aria-label="فعال‌کردن دوباره فروش بلیت"');
+    expect(pausedCard).toContain('aria-label="فعال‌کردن دوباره فروش بلیط"');
     expect(pausedCard).not.toContain('disabled=""');
-    expect(draftCard).toContain('aria-label="فعال‌کردن دوباره فروش بلیت"');
+    expect(draftCard).toContain('aria-label="فعال‌کردن دوباره فروش بلیط"');
     expect(draftCard).not.toContain('disabled=""');
     expect(card).not.toContain('</svg>توقف فروش');
     expect(pausedCard).not.toContain('</svg>فعال‌کردن فروش');
     expect(cancelledCard).toContain('ویرایش');
-    expect(cancelledCard).toContain('aria-label="فروش این بلیت متوقف است"');
+    expect(cancelledCard).toContain('aria-label="فروش این بلیط متوقف است"');
     expect(cancelledCard).toContain('disabled=""');
     expect(issued).toContain('شماره قرارداد');
-    expect(issued).toContain('شماره بلیت یا PNR');
+    expect(issued).toContain('شماره بلیط یا PNR');
     expect(issued).toContain('مبدأ');
     expect(issued).toContain('مقصد');
     expect(issued).toContain('در انتظار اتصال قرارداد عمومی رزرواسیون');
@@ -125,7 +125,7 @@ describe('Rendered ticket UI', () => {
     expect(html).toContain('انتخاب و جست‌وجوی نوع هواپیما');
     expect(html).toContain('فرودگاه مبدأ');
     expect(html).toContain('ابتدا شهر را انتخاب کنید');
-    expect(html).toContain('ذخیره بلیت');
+    expect(html).toContain('ذخیره بلیط');
     expect(html).not.toContain('پیش‌نمایش');
     expect(html).not.toMatch(/name="(held|confirmed)"/);
     expect(html).not.toContain('type="datetime-local"');

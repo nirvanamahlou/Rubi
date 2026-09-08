@@ -13,8 +13,23 @@ import {
 } from '../src';
 
 describe('IAM public permission contract', () => {
-  it('publishes the version 7 domain permission catalogs without duplicates', () => {
-    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(7);
+  it('retains HR and current Sales, Ticket and Reservations permissions together', () => {
+    expect(IAM_PERMISSION_CODES).toEqual(
+      expect.arrayContaining([
+        'hr.read',
+        'hr.manage',
+        'hr.self',
+        'sales.contracts.read.own',
+        'sales.export',
+        'ticket_catalog.read',
+        'reservations.read',
+        'reservations.hotel_purchase.write',
+        'reservations.arrangements.update',
+      ]),
+    );
+  });
+  it('publishes the version 8 domain permission catalogs without duplicates', () => {
+    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(8);
     expect(MASTER_DATA_PERMISSION_CODES).toEqual([
       'master_data.read',
       'master_data.create',

@@ -569,3 +569,97 @@
     display: none;
   }
 }
+
+/* Frappe landing pages share the neutral application dark palette. */
+:global(.dark)
+  :is(
+    .launcher,
+    .chartCard,
+    .directory,
+    .switcher,
+    .launcherCard,
+    .allCapabilities,
+    .metricCard,
+    .groupCard
+  ) {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--foreground);
+  box-shadow: none;
+}
+:global(.dark)
+  :is(
+    .launcherCard,
+    .switcherItem,
+    .pageHead,
+    .metricCard,
+    .chartCard
+  )[data-tone],
+:global(.dark)
+  :is(.launcherCard, .switcherItem, .pageHead, .metricCard, .chartCard) {
+  --workspace-accent: var(--primary);
+  --workspace-tint: var(--muted);
+}
+:global(.dark)
+  :is(
+    .launcherHead h2,
+    .directoryHead h2,
+    .chartHead,
+    .chartHead h2,
+    .titleRow h1,
+    .metricCard strong,
+    .groupCard h3,
+    .groupCard a
+  ) {
+  color: var(--foreground);
+}
+:global(.dark)
+  :is(
+    .launcherHead p,
+    .directoryHead p,
+    .chartHead p,
+    .launcherCopy small,
+    .breadcrumb,
+    .titleRow p,
+    .switcherItem,
+    .metricCard span,
+    .chartLabels,
+    .groupCard svg
+  ) {
+  color: var(--muted-foreground);
+}
+:global(.dark) :is(.eyebrow, .previewBadge) {
+  background: #193b30;
+  color: #a7f3d0;
+}
+:global(.dark) :is(.launcherIcon, .switcherIcon, .titleIcon) {
+  color: var(--primary-foreground);
+}
+:global(.dark)
+  :is(.switcherItem:hover, .switcherItem[data-active='true'], .chartHead span) {
+  background: var(--muted);
+  color: var(--primary);
+  border-color: var(--input);
+}
+:global(.dark) .groupCard li + li {
+  border-color: var(--border);
+}
+:global(.dark) .groupCard a:hover {
+  color: var(--primary);
+}
+:global(.dark) .chartGrid {
+  stroke: var(--border);
+}
+:global(.dark) .chartDot {
+  fill: var(--surface);
+}
+:global(.dark)
+  :is(
+    .launcherCard,
+    .switcherItem,
+    .groupCard a,
+    .allCapabilities
+  ):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}

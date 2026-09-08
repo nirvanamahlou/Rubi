@@ -11,7 +11,7 @@
 3. `docs/TRAVEL_WORKFLOW_ARCHITECTURE.md` — مرجع تاییدشده فروش، تخصیص مسافر،
    رزرواسیون، تعریف بلیت، Manifest، خرید و تحویل مالی
 4. `docs/DATA_MODEL.md` — مدل داده و قواعد یکپارچگی
-5. `docs/DEVELOPMENT_WORKFLOW.md` — قرارداد همکاری PC-A و PC-B
+5. `docs/DEVELOPMENT_WORKFLOW.md` — قرارداد همکاری چندکامپیوتری PC-A تا PC-D
 6. `docs/PROJECT_STATUS.md`، `WORK_ASSIGNMENTS.md` و `PLANS.md` — وضعیت و برنامه
 7. Git history و Prisma migrations، پس از ایجاد — واقعیت پیاده‌سازی
 
@@ -20,13 +20,13 @@
 
 ## پیش از هر تغییر
 
-- `COMPUTER_ID` را مشخص کنید (`PC-A` یا `PC-B`).
+- `COMPUTER_ID` را مشخص کنید (`PC-A`، `PC-B`، `PC-C` یا `PC-D`).
 - `git status --short --branch`، شاخه و `git remote -v` را بررسی کنید.
 - `git fetch --prune origin` اجرا و اسناد وضعیت/تخصیص را کامل بخوانید.
 - روی `main` یا `develop` کار نکنید و Remote موجود را حذف یا جایگزین نکنید.
 - یک واحد کار مستقل در `WORK_ASSIGNMENTS.md` رزرو کنید.
-- شاخه وظیفه‌محور بسازید: `codex/pc-a-<task-name>` یا
-  `codex/pc-b-<task-name>`.
+- شاخه وظیفه‌محور و یکتا بسازید: `codex/pc-<id>-<task-name>`؛ شناسه شاخه
+  با حروف کوچک `a`، `b`، `c` یا `d` مطابق `COMPUTER_ID` است.
 - مالکیت ماژول و هر قفل فعال Migration، Dependency/Lockfile یا فایل مرکزی را در
   `docs/MODULE_OWNERSHIP.md` و `WORK_ASSIGNMENTS.md` کنترل کنید.
 - اگر فایل هدف تغییر محلی یا مالک فعال دیگری دارد، کار را متوقف و هماهنگ کنید.
@@ -35,8 +35,10 @@
 
 - معماری Modular Monolith و مرز ماژول‌ها را حفظ کنید؛ دسترسی مستقیم به جدول
   ماژول دیگر ممنوع است مگر از قرارداد/سرویس عمومی آن ماژول.
-- PC-A و PC-B هر دو Full-Stack هستند و Database، Backend، Frontend و Test ماژول‌های
-  تحت مالکیت خود را توسعه می‌دهند؛ تقسیم ثابت Backend/Frontend معتبر نیست.
+- همه کامپیوترها Full-Stack هستند و Database، Backend، Frontend و Test محدوده
+  تخصیص‌یافته خود را توسعه می‌دهند؛ تقسیم ثابت Backend/Frontend معتبر نیست.
+  اضافه‌شدن PC-C/PC-D مالکیت ماژول‌های موجود را منتقل نمی‌کند؛ پیش از تغییر، واحد کار
+  و محدوده باید با مالک فعلی هماهنگ و در `WORK_ASSIGNMENTS.md` رزرو شود.
 - در هر لحظه فقط یک Migration Owner و یک Dependency/Lockfile Owner مجاز است؛
   فایل‌های مرکزی نیز پیش از تغییر باید در یک Work Item قفل شوند.
 - تغییر API/Event Contract مشترک پیش از اجرا با producer، consumer و برنامه سازگاری

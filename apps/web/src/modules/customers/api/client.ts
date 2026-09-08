@@ -10,6 +10,7 @@ import type {
   CustomerListQuery,
   CustomerListResponse,
   CustomerMutationRequest,
+  CustomerRegistrationLookupRequest,
   CustomerStatusRequest,
   CustomerStatusHistoryResponse,
   DuplicateCandidate,
@@ -76,6 +77,12 @@ const body = (value: unknown): RequestInit => ({
 });
 
 export const customersApi = {
+  registrationLookup(input: CustomerRegistrationLookupRequest) {
+    return request<{ data: CustomerDetail | null }>(
+      '/registration-lookup',
+      body(input),
+    );
+  },
   async branchReferences(): Promise<readonly BranchReference[]> {
     const baseUrl = getPublicApiBaseUrl();
     if (!baseUrl)

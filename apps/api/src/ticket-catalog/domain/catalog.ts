@@ -353,7 +353,7 @@ export function validateProduct(
 ): void {
   ensure(
     input.title.trim().length > 0 && input.title.length <= 160,
-    'نام بلیت الزامی و حداکثر ۱۶۰ نویسه است.',
+    'نام بلیط الزامی و حداکثر ۱۶۰ نویسه است.',
   );
   ensure(
     ['flight', 'train', 'bus'].includes(input.transport),
@@ -361,7 +361,7 @@ export function validateProduct(
   );
   ensure(
     ['one-way', 'outbound', 'return'].includes(input.journeyRole),
-    'نوع مسیر بلیت نامعتبر است.',
+    'نوع مسیر بلیط نامعتبر است.',
   );
   ensure(
     input.segments.length > 0 && input.segments.length <= 8,
@@ -491,7 +491,7 @@ export function validateProduct(
     );
   ensure(
     !('sale' in input.fare),
-    'قیمت فروش باید در فروش تعیین شود، نه در تعریف بلیت.',
+    'قیمت فروش باید در فروش تعیین شود، نه در تعریف بلیط.',
   );
   for (const amount of [
     input.fare.purchase,

@@ -52,7 +52,7 @@ function TicketChoice({
       <legend className="px-2 font-semibold">{label}</legend>
       <Input
         aria-label={`جست‌وجوی ${label}`}
-        placeholder="نام بلیت، شماره پرواز یا شهر…"
+        placeholder="نام بلیط، شماره پرواز یا شهر…"
         value={search}
         onChange={(event) => setSearch(event.target.value)}
       />
@@ -72,8 +72,8 @@ function TicketChoice({
         {!rows.length ? (
           <p role="status" className="text-sm">
             {disabled
-              ? 'ابتدا بلیت رفت را انتخاب کنید.'
-              : 'بلیت منطبق در این پیش‌نمایش وجود ندارد.'}
+              ? 'ابتدا بلیط رفت را انتخاب کنید.'
+              : 'بلیط منطبق در این پیش‌نمایش وجود ندارد.'}
           </p>
         ) : null}
       </div>
@@ -109,10 +109,10 @@ export function JourneyPreview({
   });
   return (
     <Card className="min-w-0 space-y-4 p-4">
-      <h2 className="font-bold">انتخاب بلیت یک‌طرفه یا رفت‌وبرگشت</h2>
+      <h2 className="font-bold">انتخاب بلیط یک‌طرفه یا رفت‌وبرگشت</h2>
       <p className="text-sm leading-7 text-muted-foreground">
-        پیش‌نمایش ترکیب سفر: هر بلیت رفت و برگشت به‌تنهایی هم قابل انتخاب است.
-        ترکیب دو بلیت، محصول یا ظرفیت جدید نمی‌سازد. قیمت فروش در فروش تعیین
+        پیش‌نمایش ترکیب سفر: هر بلیط رفت و برگشت به‌تنهایی هم قابل انتخاب است.
+        ترکیب دو بلیط، محصول یا ظرفیت جدید نمی‌سازد. قیمت فروش در فروش تعیین
         می‌شود؛ این بخش فروش یا رزرو واقعی ثبت نمی‌کند.
       </p>
       <div role="group" aria-label="نوع سفر" className="flex flex-wrap gap-2">
@@ -139,7 +139,7 @@ export function JourneyPreview({
       </div>
       <div className="grid min-w-0 gap-4 lg:grid-cols-2">
         <TicketChoice
-          label={type === 'one-way' ? 'بلیت مستقل' : 'بلیت رفت'}
+          label={type === 'one-way' ? 'بلیط مستقل' : 'بلیط رفت'}
           products={previewTripCandidates(products)}
           selected={outbound}
           references={references}
@@ -152,7 +152,7 @@ export function JourneyPreview({
         {type === 'round-trip' ? (
           <TicketChoice
             key={outbound?.productId}
-            label="بلیت برگشت"
+            label="بلیط برگشت"
             products={out ? previewTripCandidates(products, out) : []}
             selected={inbound}
             references={references}
@@ -167,7 +167,7 @@ export function JourneyPreview({
       {type === 'round-trip' ? (
         <p className="text-xs text-muted-foreground">
           برگشت‌ها بر اساس مسیر معکوس کشور/شهر یا فرودگاه و زمان بعد از رسیدن
-          رفت فیلتر می‌شوند. بلیت فاقد مسیر مشخص را نمی‌توان به‌عنوان برگشت
+          رفت فیلتر می‌شوند. بلیط فاقد مسیر مشخص را نمی‌توان به‌عنوان برگشت
           تأیید کرد.
         </p>
       ) : null}
@@ -182,7 +182,7 @@ export function JourneyPreview({
       {checked && !message && outbound ? (
         <Alert
           title="ترکیب پیش‌نمایش معتبر است؛ فروش یا رزرو ثبت نشد."
-          description={`${type === 'round-trip' ? 'دو بلیت مستقل' : 'یک بلیت مستقل'} انتخاب شده است. قیمت نهایی باید در قرارداد فروش تعیین شود.`}
+          description={`${type === 'round-trip' ? 'دو بلیط مستقل' : 'یک بلیط مستقل'} انتخاب شده است. قیمت نهایی باید در قرارداد فروش تعیین شود.`}
         />
       ) : null}
     </Card>

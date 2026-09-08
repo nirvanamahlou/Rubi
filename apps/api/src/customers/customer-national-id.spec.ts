@@ -77,4 +77,20 @@ describe('Customer national ID protection', () => {
       expect(() => protector.protect(value)).toThrow(BadRequestException);
     },
   );
+
+  it('encrypts, masks and decrypts a normalized passport number', () => {
+    const protector = new CustomerNationalIdProtector(
+      new ConfigService({
+        CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64: encryptionKey,
+        CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64: fingerprintKey,
+        CUSTOMER_CONTACT_ENCRYPTION_KEY_VERSION: 1,
+      }),
+    );
+    const protectedValue = protector.protectPassportNumber(' a 12345678 ');
+
+    expect(protectedValue.passportNumberMasked).toBe('A1*****78');
+    expect(protectedValue.passportNumberFingerprint).toHaveLength(64);
+    expect(JSON.stringify(protectedValue)).not.toContain('A12345678');
+    expect(protector.decryptPassportNumber(protectedValue)).toBe('A12345678');
+  });
 });
