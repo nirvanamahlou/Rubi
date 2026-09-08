@@ -1,5 +1,18 @@
 # Work Assignments
 
+## HR-007-LOCAL-CURRENT — PC-B — READY_FOR_REVIEW
+
+- Owner request 2026-09-08: run the current HR experience on port 3100 while retaining the current Rubi application. Branch `codex/pc-b-hr3100-current` starts at `origin/develop@30d67ec`; port 3100 was handed over by Task «PC-B Uniting» after confirming no active work on its listener.
+- Scope: carry the already reviewed HR-005/HR-006 implementation from `b9b525d` into this isolated checkout, adapting only additive HR registration, HR permission exports/seed, Prisma HR relations and the local launcher. Preserve current IAM/MFA, Documents, four-company header, Profile, Notifications, Master Data and other modules. No merge to main/develop and no edits to other checkouts.
+- Reserve `HR shared-contract/root export`, `IAM HR permission slice`, `AppModule HR registration`, HR proxy/runtime paths and the existing additive HR schema/migrations for this work item. The owner previously transferred the completed PC-A migration lock for HR; no new or destructive migration is planned. Dependency/lockfile and other module contracts remain unchanged.
+- Runtime/data: prepare and validate separately before replacing only the handed-over web listener. Preserve API4000, its integrated database copy and the original HR database; prepare a separate database copy if schema reconciliation is needed. Record the exact runtime/commit and complete authentication, HR and current-shell smoke checks before handoff.
+- Acceptance: port 3100 serves the current HR UI/API, legacy HR URL redirects correctly, four companies/profile/notifications and document step-up remain available, and no business data is reset or silently downgraded.
+- Compatibility reservation: `Central UI Owner = PC-B/HR-007-LOCAL-CURRENT` only for the existing notification-center/change-notifications integration. Consume the public HR notification client in the common bell and remove the legacy HR listener to avoid two popups; all current non-HR feeds/actions stay intact.
+- Local runtime reserves `apps/web/src/lib/environment.ts` and its focused tests to keep local API/web hostnames aligned (`localhost` or `127.0.0.1`) and prevent host-scoped login cookies from causing another login loop. Remote API addresses retain their existing behavior.
+- Browser compatibility found a 14px overflow in the current shared header at 390px; reserve only the header container layout class in `app-shell.tsx` to arrange the existing controls into two mobile rows. Current desktop layout, company branding, user menu and actions remain present.
+- Result: the current HR production build is active on `localhost:3100`, with API4190 and the isolated `rubi_hr_current_20260908` database/document snapshot. Real browser login, all four companies, Profile/MFA, one notification bell, the legacy HR redirect, six employees and reload passed on both `localhost:3100` and `127.0.0.1:3100`. Lint/typecheck/build and targeted Web/API/Contracts/PostgreSQL checks passed; details and restart command are in `docs/tasks/HR-007.md`.
+- Implementation reservations are released for review. Operational ownership of web3100/API4190 remains PC-B/HR-007 until an explicit runtime handoff; preserve its database/document snapshot when replacing the listener. No merge to main/develop was performed.
+
 ## LEGAL-ENTITY-HEADER-003 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-08: چهار شرکت نیایش سیر سحر، جهان باستان، قسطی رو و جهان آکادمیا در انتخاب‌گر و رنگ مستقل Header؛ هر دو PC-A و PC-B برای اجرا و توسعه مجازند. منظور حساب IAM جدید نیست.

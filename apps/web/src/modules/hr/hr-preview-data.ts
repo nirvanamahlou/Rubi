@@ -13,6 +13,10 @@ export interface HrPreviewDataset {
   columns: readonly string[];
   rows: readonly (readonly HrPreviewCell[])[];
   totalLabel: string;
+  recordIds?: readonly string[];
+  versions?: readonly number[];
+  employeeIds?: readonly (string | null)[];
+  parentIds?: readonly (string | null)[];
 }
 
 const status = (label: string, tone: HrPreviewTone): HrPreviewStatus => ({
@@ -627,7 +631,7 @@ const datasets: Readonly<
     ),
     checkins: one(
       'time-checkin',
-      ['کارمند', 'تاریخ تردد', 'ساعت تردد', 'نوع تردد', 'منبع ثبت', 'موقعیت'],
+      ['کارمند', 'تاریخ تردد', 'ساعت تردد', 'نوع تردد', 'منبع ثبت', 'شرکت'],
       [
         'همکار نمایشی ب',
         '۱۴۰۵/۰۶/۱۰',
@@ -715,8 +719,21 @@ const datasets: Readonly<
         'شناوری ورود',
         'حداقل کارکرد',
         'تقویم تعطیلات',
+        'کارمند',
+        'از تاریخ',
+        'تا تاریخ',
       ],
-      ['شیفت صبح', '۰۸:۰۰', '۱۷:۰۰', '۱۵ دقیقه', '۸ ساعت', 'تقویم تهران'],
+      [
+        'شیفت صبح',
+        '۰۸:۰۰',
+        '۱۷:۰۰',
+        '۱۵ دقیقه',
+        '۸ ساعت',
+        'ایران ۱۴۰۵',
+        'همکار نمایشی الف',
+        '2026-09-01',
+        '2026-09-30',
+      ],
       'فعال',
       'success',
       '۱ شیفت آزمایشی',
@@ -955,7 +972,19 @@ const datasets: Readonly<
     ),
     training: one(
       'development-training',
-      ['عنوان برنامه', 'مهارت هدف', 'مدرس', 'ظرفیت', 'تاریخ شروع', 'مدت دوره'],
+      [
+        'عنوان برنامه',
+        'مهارت هدف',
+        'مدرس',
+        'ظرفیت',
+        'تاریخ شروع',
+        'مدت دوره',
+        'تاریخ رویداد',
+        'محل برگزاری',
+        'تعداد شرکت‌کننده',
+        'میانگین امتیاز',
+        'نتیجه',
+      ],
       [
         'مذاکره پیشرفته',
         'فروش سازمانی',
@@ -963,6 +992,11 @@ const datasets: Readonly<
         '۱۲',
         '۱۴۰۵/۰۷/۱۵',
         '۱۶ ساعت',
+        '۱۴۰۵/۰۷/۱۵',
+        'سالن آموزش مرکزی',
+        '۱۰',
+        '۹۱',
+        'قبولی ۹ نفر',
       ],
       'ثبت‌نام باز',
       'success',
@@ -1988,6 +2022,10 @@ export function getHrPreviewDataset(
   section: HrSectionId,
   tab: string,
 ): HrPreviewDataset {
+  if (section === 'expenses' && tab === 'mission')
+    return getHrPreviewDataset('time', 'mission');
+  if (section === 'assets' && (tab === 'vehicles' || tab === 'logs'))
+    return getHrPreviewDataset('fleet', tab);
   return (
     datasets[section]?.[tab] ??
     one(

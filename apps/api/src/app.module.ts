@@ -8,6 +8,7 @@ import { DatabaseModule } from './database/database.module';
 import { DocumentsModule } from './documents/documents.module';
 import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
+import { HrModule } from './hr/hr.module';
 import { IamModule } from './iam/iam.module';
 import { LegalEntitiesModule } from './legal-entities/legal-entities.module';
 import { MasterDataModule } from './master-data/master-data.module';
@@ -32,6 +33,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     IamModule,
     LegalEntitiesModule,
     NotificationsModule,
+    HrModule,
   ],
   controllers: [HealthController],
   providers: [HealthService],

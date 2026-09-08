@@ -1,8 +1,10 @@
 'use client';
 
-import { ExternalLink, Info, Upload } from 'lucide-react';
+import { ExternalLink, Upload } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
+import { persianDateToIso } from './hr-dates';
+export { persianDateToIso } from './hr-dates';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +12,9 @@ import {
   DialogTitle,
 } from '@/components/ui/overlays';
 import type { HrSectionId } from './hr.model';
-import styles from './hr-workspace.module.css';
+import styles from './hr-forms.module.css';
+import { buttonVariants } from '@/components/ui/button';
+import { parseWeightedGoals, weightedProgress } from './weighted-goals';
 import { RequiredFieldLabel } from './required-field-label';
 
 export interface ContextualHrFormContext {
@@ -30,6 +34,15 @@ export interface ContextualHrFormContext {
   }[];
   contractNumbersByEmployee?: Readonly<Record<string, string>>;
   linkedEmployeeName?: string;
+  linkedEmployeeId?: string;
+  parentRecordId?: string;
+  recordId?: string;
+  recordVersion?: number;
+  presetValues?: Readonly<Record<string, string>>;
+  optionsByLabel?: Readonly<Record<string, readonly string[]>>;
+  fieldTypes?: Readonly<Record<string, ContextualFieldType>>;
+  attendance?: readonly { employee: string; date: string; value: string }[];
+  holidayOptions?: readonly string[];
 }
 
 type ContextualFieldType =
@@ -93,6 +106,17 @@ const fieldOptions = (
   label: string,
   peopleOptions: readonly string[] = defaultPeopleOptions,
 ): readonly string[] | undefined => {
+  if (label === 'وضعیت تجهیز')
+    return [
+      'سالم',
+      'نیازمند تعمیر',
+      'در حال تعمیر',
+      'معیوب',
+      'اسقاط‌شده',
+      'مفقود',
+    ];
+  if (label === 'تقویم تعطیلات')
+    return ['ایران ۱۴۰۵', 'ایران ۱۴۰۶', 'نیایش سیر', 'جهان باستان'];
   if (label === 'نوع مدرک')
     return [
       'کارت ملی',
@@ -131,7 +155,7 @@ const fieldOptions = (
       'غیرفعال',
     ];
   if (/ارزیاب|مصاحبه‌کننده|تأییدکننده/.test(label))
-    return Array.from(new Set([...peopleOptions, ...defaultPeopleOptions]));
+    return Array.from(new Set([...peopleOptions]));
   if (label === 'ارز' || /کد ارز|ارز پرداخت|ارز هزینه|ارز مبنا/.test(label))
     return ['IRR', 'USD', 'EUR', 'AED'];
   if (/مشمول|قابل انتقال|الزامی|تحویل دارایی|قطع دسترسی/.test(label))
@@ -141,11 +165,9 @@ const fieldOptions = (
     label === 'درخواست‌کننده' ||
     label.includes('نام درخواست‌کننده')
   )
-    return Array.from(new Set([...peopleOptions, ...defaultPeopleOptions]));
+    return Array.from(new Set([...peopleOptions]));
   if (label === 'مدیر مستقیم')
-    return Array.from(
-      new Set(['بدون مدیر مستقیم', ...peopleOptions, ...defaultPeopleOptions]),
-    );
+    return Array.from(new Set(['بدون مدیر مستقیم', ...peopleOptions]));
   if (
     label.includes('مسئول') ||
     label.includes('مالک') ||
@@ -202,7 +224,17 @@ const fieldOptions = (
   if (/سطح فعلی|سطح هدف|سطح موجود|سطح موردنیاز/.test(label))
     return ['مقدماتی', 'متوسط', 'پیشرفته', 'خبره'];
   if (label.includes('رتبه'))
-    return ['نیازمند بهبود', 'مطابق انتظار', 'فراتر از انتظار'];
+    return [
+      'بسیار ضعیف',
+      'ضعیف',
+      'نیازمند بهبود',
+      'قابل قبول',
+      'مطابق انتظار',
+      'خوب',
+      'بسیار خوب',
+      'فراتر از انتظار',
+      'ممتاز',
+    ];
   if (label.includes('تقویم')) return ['شمسی', 'میلادی', 'تقویم تهران'];
   if (label.includes('خروجی')) return ['نمایش', 'PDF', 'Excel'];
   return undefined;
@@ -331,39 +363,6 @@ export async function readHrAttachmentFile(value: string): Promise<File> {
   return new File([blob], reference.name, { type: blob.type });
 }
 
-const normalizeDigits = (value: string) =>
-  value
-    .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
-    .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
-
-function persianDateToIso(value: string): string {
-  if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value;
-  const match = /^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/.exec(
-    normalizeDigits(value.trim()),
-  );
-  if (!match) return value;
-  const target = `${match[1]}-${match[2]?.padStart(2, '0')}-${match[3]?.padStart(2, '0')}`;
-  const formatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-  const start = new Date(Number(match[1]) + 620, 0, 1, 12);
-  const end = new Date(Number(match[1]) + 622, 11, 31, 12);
-  for (let date = start; date <= end; date.setDate(date.getDate() + 1)) {
-    const parts = formatter.formatToParts(date);
-    const part = (type: Intl.DateTimeFormatPartTypes) =>
-      parts.find((item) => item.type === type)?.value.padStart(2, '0') ?? '';
-    if (`${part('year')}-${part('month')}-${part('day')}` === target) {
-      const year = String(date.getFullYear());
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-  }
-  return value;
-}
-
 const isAutomaticCodeField = (field: ContextualHrField, index: number) =>
   (index === 0 && field.label.includes('شناسه')) ||
   field.label.startsWith('کد') ||
@@ -376,6 +375,8 @@ const isContextDerivedField = (
   context: ContextualHrFormContext,
   field: ContextualHrField,
 ) =>
+  (context.section === 'time' &&
+    /^(مقدار فعلی|آخرین همگام‌سازی|تعداد روز)$/.test(field.label)) ||
   (context.section === 'lifecycle' &&
     context.tab === 'promotion' &&
     /^(سمت فعلی|رده فعلی)$/.test(field.label)) ||
@@ -411,6 +412,10 @@ function buildInitialFormValues(
                 : '')),
     ]),
   );
+  for (const field of fields) {
+    const preset = context.presetValues?.[field.label];
+    if (preset !== undefined) initial[field.id] = preset;
+  }
   const employeeField = fields.find((field) => field.label === 'کارمند');
   const selectedEmployee = context.employeeDetails?.find(
     (employee) => employee.name === initial[employeeField?.id ?? ''],
@@ -438,24 +443,109 @@ export function ContextualHrForm({
 }: {
   context: ContextualHrFormContext;
   onCancel: () => void;
-  onSubmit: (values: readonly string[]) => void;
+  onSubmit: (values: readonly string[]) => void | Promise<void>;
 }) {
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const fields = useMemo(
     () =>
       buildContextualHrFields(context.columns, context.peopleOptions).map(
         (field) =>
-          (context.section === 'employee' && context.tab === 'docs') ||
-          context.section === 'documents'
-            ? field.label === 'تاریخ انقضا'
-              ? { ...field, required: true }
-              : field
-            : field,
+          context.fieldTypes?.[field.label]
+            ? {
+                ...field,
+                type: context.fieldTypes[field.label]!,
+                ...(context.optionsByLabel?.[field.label]
+                  ? { options: context.optionsByLabel[field.label]! }
+                  : {}),
+              }
+            : context.optionsByLabel?.[field.label]
+              ? {
+                  ...field,
+                  type: 'select' as const,
+                  options: context.optionsByLabel[field.label]!,
+                }
+              : field.label === 'تقویم تعطیلات' &&
+                  context.holidayOptions?.length
+                ? {
+                    ...field,
+                    type: 'select' as const,
+                    options: context.holidayOptions,
+                  }
+                : (context.section === 'employee' && context.tab === 'docs') ||
+                    context.section === 'documents'
+                  ? field.label === 'تاریخ انقضا'
+                    ? { ...field, required: true }
+                    : field
+                  : field,
       ),
-    [context.columns, context.peopleOptions, context.section, context.tab],
+    [
+      context.columns,
+      context.peopleOptions,
+      context.section,
+      context.tab,
+      context.holidayOptions,
+      context.optionsByLabel,
+      context.fieldTypes,
+    ],
   );
   const [values, setValues] = useState<Record<string, string>>(() =>
     buildInitialFormValues(context, fields),
   );
+  const deriveValues = (input: Record<string, string>) => {
+    const next = { ...input };
+    const field = (label: string) =>
+      fields.find((item) => item.label === label);
+    const read = (label: string) => next[field(label)?.id ?? ''] ?? '';
+    const write = (label: string, value: string) => {
+      const target = field(label);
+      if (target) next[target.id] = value;
+    };
+    if (context.section === 'time' && context.tab === 'leave') {
+      const start = Date.parse(persianDateToIso(read('از تاریخ')));
+      const end = Date.parse(persianDateToIso(read('تا تاریخ')));
+      write(
+        'تعداد روز',
+        Number.isFinite(start) && end >= start
+          ? String(Math.round((end - start) / 86400000) + 1)
+          : '',
+      );
+    }
+    if (context.section === 'time' && context.tab === 'corrections') {
+      const record = context.attendance?.find(
+        (item) =>
+          item.employee === read('کارمند') &&
+          persianDateToIso(item.date) ===
+            persianDateToIso(read('تاریخ کارکرد')),
+      );
+      write('مقدار فعلی', record?.value ?? 'رکورد حضور یافت نشد');
+    }
+    if (context.section === 'time' && context.tab === 'biometric')
+      write(
+        'آخرین همگام‌سازی',
+        read('آخرین همگام‌سازی') || 'هنوز همگام‌سازی نشده',
+      );
+    return next;
+  };
+  const derivedValues = deriveValues(values);
+  for (const field of fields) {
+    const preset = context.presetValues?.[field.label];
+    if (preset !== undefined) derivedValues[field.id] = preset;
+  }
+  const goalField = fields.find((field) => field.label === 'عنوان هدف');
+  const [goals, setGoals] = useState(() =>
+    parseWeightedGoals(values[goalField?.id ?? ''] ?? ''),
+  );
+  if (context.section === 'development' && context.tab === 'goals') {
+    if (goalField) derivedValues[goalField.id] = JSON.stringify(goals);
+    const progress = fields.find((field) => field.label === 'پیشرفت');
+    const weight = fields.find((field) => field.label === 'وزن');
+    if (progress) derivedValues[progress.id] = `${weightedProgress(goals)}%`;
+    if (weight)
+      derivedValues[weight.id] = String(
+        goals.reduce((sum, goal) => sum + goal.weight, 0),
+      );
+  }
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [fileLoading, setFileLoading] = useState(false);
 
@@ -486,31 +576,70 @@ export function ContextualHrForm({
       return next;
     });
   };
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (saving) return;
+    if (
+      context.section === 'development' &&
+      context.tab === 'goals' &&
+      (!goals.length ||
+        goals.some(
+          (goal) =>
+            !goal.title.trim() ||
+            !Number.isFinite(goal.weight) ||
+            goal.weight <= 0,
+        ))
+    ) {
+      setErrors({ goals: 'برای هر هدف، عنوان و وزن مثبت وارد کنید.' });
+      return;
+    }
     const nextErrors = Object.fromEntries(
       fields
-        .filter((field) => field.required && !values[field.id]?.trim())
+        .filter((field) => field.required && !derivedValues[field.id]?.trim())
         .map((field) => [field.id, `${field.label} الزامی است.`]),
     );
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors);
       return;
     }
-    onSubmit(fields.map((field) => values[field.id] ?? ''));
+    if (
+      context.section === 'time' &&
+      context.tab === 'leave' &&
+      !derivedValues[
+        fields.find((field) => field.label === 'تعداد روز')?.id ?? ''
+      ]
+    ) {
+      setErrors({
+        [fields.find((field) => field.label === 'تا تاریخ')?.id ?? '']:
+          'بازه مرخصی معتبر نیست.',
+      });
+      return;
+    }
+    setSaving(true);
+    setSaveError('');
+    try {
+      await onSubmit(fields.map((field) => derivedValues[field.id] ?? ''));
+    } catch (error) {
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : 'ذخیره انجام نشد؛ دوباره تلاش کنید.',
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <form noValidate onSubmit={submit}>
-      <div className={styles.previewNote}>
-        <Info aria-hidden="true" size={16} />
-        {context.section === 'employee' && context.tab === 'docs'
-          ? 'فایل در نشست جاری نگهداری می‌شود و پس از ذخیره از طریق API عمومی به اسناد و فایل‌ها نیز ارسال خواهد شد.'
-          : 'داده این فرم فقط برای بررسی رابط در همین نشست استفاده می‌شود.'}
-      </div>
+      {saveError ? (
+        <p className={styles.fieldError} role="alert">
+          {saveError}
+        </p>
+      ) : null}
       {context.section === 'recruitment' && context.tab === 'applicants' ? (
         <div className={styles.integrationLinks}>
-          <span>منابع جذب متصل به فرم:</span>
+          <span>منابع جذب:</span>
           <a href="https://jobinja.ir" rel="noreferrer" target="_blank">
             جابینجا <ExternalLink aria-hidden="true" size={13} />
           </a>
@@ -519,10 +648,106 @@ export function ContextualHrForm({
           </a>
         </div>
       ) : null}
+      {context.section === 'development' && context.tab === 'goals' ? (
+        <fieldset className={styles.formFieldset}>
+          <legend>اهداف و وزن هر هدف</legend>
+          {goals.map((goal, index) => (
+            <div className={styles.formGrid} key={index}>
+              <label>
+                عنوان هدف *
+                <input
+                  className={styles.control}
+                  value={goal.title}
+                  onChange={(event) =>
+                    setGoals((items) =>
+                      items.map((item, i) =>
+                        i === index
+                          ? { ...item, title: event.target.value }
+                          : item,
+                      ),
+                    )
+                  }
+                />
+              </label>
+              <label>
+                وزن *
+                <input
+                  className={styles.control}
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={goal.weight}
+                  onChange={(event) =>
+                    setGoals((items) =>
+                      items.map((item, i) =>
+                        i === index
+                          ? { ...item, weight: Number(event.target.value) }
+                          : item,
+                      ),
+                    )
+                  }
+                />
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={goal.achieved}
+                  onChange={(event) =>
+                    setGoals((items) =>
+                      items.map((item, i) =>
+                        i === index
+                          ? { ...item, achieved: event.target.checked }
+                          : item,
+                      ),
+                    )
+                  }
+                />{' '}
+                تحقق هدف (ارزیابی مدیر)
+              </label>
+              <button
+                type="button"
+                onClick={() =>
+                  setGoals((items) => items.filter((_, i) => i !== index))
+                }
+              >
+                حذف هدف
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            className={buttonVariants({ variant: 'outline' })}
+            onClick={() =>
+              setGoals((items) => [
+                ...items,
+                { title: '', weight: 1, achieved: false },
+              ])
+            }
+          >
+            افزودن هدف
+          </button>
+          <output>
+            پیشرفت وزنی: {weightedProgress(goals).toLocaleString('fa-IR')}٪
+          </output>
+          {errors.goals ? <p role="alert">{errors.goals}</p> : null}
+        </fieldset>
+      ) : null}
       <fieldset className={styles.formFieldset}>
         <legend className={styles.formLegend}>مشخصات {context.title}</legend>
         <div className={styles.formGrid}>
           {fields.map((field, index) => {
+            if (
+              context.section === 'development' &&
+              context.tab === 'goals' &&
+              /^(عنوان هدف|وزن|پیشرفت)$/.test(field.label)
+            )
+              return null;
+            if (
+              context.section === 'time' &&
+              ((context.tab === 'leave' && field.label === 'تعداد روز') ||
+                (context.tab === 'biometric' && field.label === 'شناسه'))
+            )
+              return null;
             const inputId = `hr-${context.section}-${context.tab}-${field.id}`;
             const errorId = `${inputId}-error`;
             const commonProps = {
@@ -537,7 +762,8 @@ export function ContextualHrForm({
             const readOnly =
               isAutomaticCodeField(field, index) ||
               isAutomaticRegistrationDate(field.label) ||
-              isContextDerivedField(context, field);
+              isContextDerivedField(context, field) ||
+              context.presetValues?.[field.label] !== undefined;
             return (
               <label
                 className={styles.fieldLabel}
@@ -552,7 +778,7 @@ export function ContextualHrForm({
                     {...commonProps}
                     disabled={readOnly}
                     onChange={(event) => update(field.id, event.target.value)}
-                    value={values[field.id] ?? ''}
+                    value={derivedValues[field.id] ?? ''}
                   >
                     {Array.from(
                       new Set(
@@ -570,9 +796,10 @@ export function ContextualHrForm({
                     <input
                       {...commonProps}
                       list={`${inputId}-options`}
+                      readOnly={readOnly}
                       onChange={(event) => update(field.id, event.target.value)}
                       placeholder={`انتخاب یا تایپ ${field.label}`}
-                      value={values[field.id] ?? ''}
+                      value={derivedValues[field.id] ?? ''}
                     />
                     <datalist id={`${inputId}-options`}>
                       {(field.options ?? []).map((option) => (
@@ -583,10 +810,11 @@ export function ContextualHrForm({
                 ) : field.type === 'date' ? (
                   <DatePicker
                     {...commonProps}
+                    className={styles.dateControl!}
                     onChange={(value) => update(field.id, value)}
                     placeholder={`انتخاب ${field.label}`}
                     readOnly={readOnly}
-                    value={values[field.id] ?? ''}
+                    value={derivedValues[field.id] ?? ''}
                   />
                 ) : field.type === 'file' ? (
                   <>
@@ -624,7 +852,7 @@ export function ContextualHrForm({
                     className={`${styles.control} ${styles.textArea}`}
                     onChange={(event) => update(field.id, event.target.value)}
                     rows={3}
-                    value={values[field.id] ?? ''}
+                    value={derivedValues[field.id] ?? ''}
                   />
                 ) : (
                   <input
@@ -635,7 +863,7 @@ export function ContextualHrForm({
                     placeholder={field.placeholder}
                     readOnly={readOnly}
                     type={field.type}
-                    value={values[field.id] ?? ''}
+                    value={derivedValues[field.id] ?? ''}
                   />
                 )}
                 {readOnly ? (
@@ -654,15 +882,23 @@ export function ContextualHrForm({
         </div>
       </fieldset>
       <div className={styles.modalFooter}>
-        <button className={styles.button} onClick={onCancel} type="button">
+        <button
+          className={buttonVariants({ variant: 'outline' })}
+          onClick={onCancel}
+          type="button"
+        >
           انصراف
         </button>
         <button
-          className={`${styles.button} ${styles.buttonPrimary}`}
-          disabled={fileLoading}
+          className={buttonVariants({ variant: 'primary' })}
+          disabled={fileLoading || saving}
           type="submit"
         >
-          {context.mode === 'edit' ? 'ذخیره ویرایش' : `افزودن ${context.title}`}
+          {saving
+            ? 'در حال ذخیره…'
+            : context.mode === 'edit'
+              ? 'ذخیره ویرایش'
+              : `افزودن ${context.title}`}
         </button>
       </div>
     </form>
@@ -676,7 +912,7 @@ export function ContextualHrFormDialog({
 }: {
   context: ContextualHrFormContext;
   onClose: () => void;
-  onSubmit: (values: readonly string[]) => void;
+  onSubmit: (values: readonly string[]) => void | Promise<void>;
 }) {
   const purpose = sectionPurposes[context.section] ?? context.description;
   return (

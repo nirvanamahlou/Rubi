@@ -410,7 +410,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
 
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-surface/90 shadow-sm shadow-blue-900/5 backdrop-blur-xl dark:border-blue-900/50">
-          <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 sm:flex sm:h-14 sm:gap-3 sm:px-6 sm:py-0">
             <Drawer>
               <DrawerTrigger asChild>
                 <Button

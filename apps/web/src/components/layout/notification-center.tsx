@@ -1,6 +1,6 @@
 'use client';
 
-import type { NotificationItemV1 } from '@rubi/contracts';
+import type { HrNotificationDto, NotificationItemV1 } from '@rubi/contracts';
 import {
   Bell,
   BellRing,
@@ -15,6 +15,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { cn } from '@/lib/utils';
+import { hrApi, HrApiError } from '@/modules/hr/hr-api';
+import { pendingHrBellNotifications } from '@/modules/hr/hr-bell-notifications';
 import {
   NOTIFICATIONS_CHANGED_EVENT,
   notificationsApi,
@@ -40,7 +42,7 @@ const SERVER_POLL_INTERVAL_MS = 45_000;
 interface CenterNotification {
   key: string;
   id: string;
-  source: 'local' | 'server';
+  source: 'local' | 'server' | 'hr';
   title: string;
   description: string;
   href: string;
@@ -118,10 +120,26 @@ function localNotification(item: ChangeNotification): CenterNotification {
 export function NotificationCenter() {
   const [localItems, setLocalItems] = useState<ChangeNotification[]>([]);
   const [serverItems, setServerItems] = useState<NotificationItemV1[]>([]);
+  const [hrItems, setHrItems] = useState<HrNotificationDto[]>([]);
+  const [hrError, setHrError] = useState<string | null>(null);
   const [serverUnreadCount, setServerUnreadCount] = useState(0);
   const [serverLoading, setServerLoading] = useState(true);
   const [serverError, setServerError] = useState<string | null>(null);
   const apiBaseUrl = getPublicApiBaseUrl();
+
+  const loadHr = useCallback(async () => {
+    try {
+      setHrItems(await hrApi.notifications());
+      setHrError(null);
+    } catch (error) {
+      setHrItems([]);
+      setHrError(
+        error instanceof HrApiError && error.status === 403
+          ? null
+          : 'دریافت اعلان‌های منابع انسانی انجام نشد.',
+      );
+    }
+  }, []);
 
   const loadServer = useCallback(async () => {
     try {
@@ -140,20 +158,36 @@ export function NotificationCenter() {
     }
   }, []);
 
-  const notifications = useMemo(
+  const notifications = useMemo<CenterNotification[]>(
     () =>
       [
         ...serverItems.map(serverNotification),
         ...localItems.map(localNotification),
+        ...pendingHrBellNotifications(hrItems),
       ].sort((left, right) => right.occurredAt.localeCompare(left.occurredAt)),
-    [localItems, serverItems],
+    [localItems, serverItems, hrItems],
   );
   const unreadCount = useMemo(
     () =>
       serverUnreadCount +
+      hrItems.filter((item) => !item.readAt).length +
       localItems.filter((notification) => !notification.readAt).length,
-    [localItems, serverUnreadCount],
+    [localItems, serverUnreadCount, hrItems],
   );
+
+  useEffect(() => {
+    const refresh = () => void loadHr();
+    const initial = window.setTimeout(refresh, 0);
+    const interval = window.setInterval(refresh, SERVER_POLL_INTERVAL_MS);
+    window.addEventListener('rubi:hr-server-change', refresh);
+    window.addEventListener('focus', refresh);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(interval);
+      window.removeEventListener('rubi:hr-server-change', refresh);
+      window.removeEventListener('focus', refresh);
+    };
+  }, [loadHr]);
 
   useEffect(() => {
     const sync = () => setLocalItems(readStoredNotifications());
@@ -217,6 +251,17 @@ export function NotificationCenter() {
 
   function markRead(notification: CenterNotification) {
     if (notification.isRead) return;
+    if (notification.source === 'hr') {
+      setHrItems((current) =>
+        current.map((item) =>
+          item.id === notification.id
+            ? { ...item, readAt: new Date().toISOString() }
+            : item,
+        ),
+      );
+      void hrApi.readNotification(notification.id).catch(() => loadHr());
+      return;
+    }
     if (notification.source === 'server') {
       setServerItems((current) =>
         current.map((item) =>
@@ -239,6 +284,11 @@ export function NotificationCenter() {
 
   function markAllRead() {
     const readAt = new Date().toISOString();
+    const pendingHr = hrItems.filter((item) => !item.readAt);
+    setHrItems((current) => current.map((item) => ({ ...item, readAt })));
+    void (async () => {
+      for (const item of pendingHr) await hrApi.readNotification(item.id);
+    })().catch(() => loadHr());
     updateLocalItems((current) =>
       current.map((item) => (item.readAt ? item : { ...item, readAt })),
     );
@@ -304,6 +354,15 @@ export function NotificationCenter() {
             </Button>
           ) : null}
         </div>
+
+        {hrError ? (
+          <div role="alert" className="px-4 py-2 text-sm text-destructive">
+            {hrError}
+            <Button onClick={() => void loadHr()} size="sm" variant="ghost">
+              تلاش دوباره
+            </Button>
+          </div>
+        ) : null}
 
         {notifications.length ? (
           <div className="max-h-[min(65vh,28rem)] overflow-y-auto p-1.5">

@@ -9,15 +9,17 @@ export default async function Page({
     tab?: string;
     workspace?: string;
     employee?: string;
+    record?: string;
   }>;
 }) {
-  const { employee, section, tab, workspace } = await searchParams;
+  const { employee, section, tab, workspace, record } = await searchParams;
   return (
     <HrWorkspace
       sectionId={section ?? 'home'}
       tabId={tab}
       workspaceId={workspace}
       employeeId={employee}
+      recordId={record}
     />
   );
 }

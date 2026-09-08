@@ -15,7 +15,8 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/overlays';
-import styles from './hr-workspace.module.css';
+import styles from './hr-forms.module.css';
+import { buttonVariants } from '@/components/ui/button';
 import {
   initialOrganizationCatalogRecords,
   type OrganizationCatalogRecords,
@@ -534,11 +535,15 @@ export function OrganizationNodeForm({
       </fieldset>
 
       <div className={styles.modalFooter}>
-        <button className={styles.button} onClick={onCancel} type="button">
+        <button
+          className={buttonVariants({ variant: 'outline' })}
+          onClick={onCancel}
+          type="button"
+        >
           انصراف
         </button>
         <button
-          className={`${styles.button} ${styles.buttonPrimary}`}
+          className={buttonVariants({ variant: 'primary' })}
           type="submit"
         >
           {initialNode ? 'ذخیره ویرایش' : 'افزودن به چارت'}
@@ -552,10 +557,14 @@ export function OrganizationChart({
   nodes,
   onEdit,
   onDelete,
+  editable = true,
+  confirmDelete = true,
 }: {
   nodes: readonly OrganizationNode[];
   onEdit: (node: OrganizationNode) => void;
   onDelete: (node: OrganizationNode) => void;
+  editable?: boolean;
+  confirmDelete?: boolean;
 }) {
   const chartRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef(new Map<string, HTMLElement>());
@@ -648,33 +657,36 @@ export function OrganizationChart({
             else nodeRefs.current.delete(node.id);
           }}
         >
-          <div className={styles.orgNodeActions}>
-            <button
-              aria-label={`ویرایش ${node.name}`}
-              className={styles.orgEditButton}
-              onClick={() => onEdit(node)}
-              type="button"
-            >
-              <PencilLine aria-hidden="true" size={14} />
-              ویرایش
-            </button>
-            <button
-              aria-label={`حذف ${node.name}`}
-              className={`${styles.orgEditButton} ${styles.orgDeleteButton}`}
-              onClick={() => {
-                if (
-                  window.confirm(
-                    `«${node.name}» و همه زیرشاخه‌های آن از چارت موقت حذف شوند؟`,
+          {editable ? (
+            <div className={styles.orgNodeActions}>
+              <button
+                aria-label={`ویرایش ${node.name}`}
+                className={styles.orgEditButton}
+                onClick={() => onEdit(node)}
+                type="button"
+              >
+                <PencilLine aria-hidden="true" size={14} />
+                ویرایش
+              </button>
+              <button
+                aria-label={`حذف ${node.name}`}
+                className={`${styles.orgEditButton} ${styles.orgDeleteButton}`}
+                onClick={() => {
+                  if (
+                    !confirmDelete ||
+                    window.confirm(
+                      `«${node.name}» و همه زیرشاخه‌های آن از چارت موقت حذف شوند؟`,
+                    )
                   )
-                )
-                  onDelete(node);
-              }}
-              type="button"
-            >
-              <Trash2 aria-hidden="true" size={14} />
-              حذف
-            </button>
-          </div>
+                    onDelete(node);
+                }}
+                type="button"
+              >
+                <Trash2 aria-hidden="true" size={14} />
+                حذف
+              </button>
+            </div>
+          ) : null}
           <div className={styles.orgNodeTitle}>
             <Building2 aria-hidden="true" size={17} />
             <b>{node.name}</b>
