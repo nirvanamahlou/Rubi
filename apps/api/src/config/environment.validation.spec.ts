@@ -4,6 +4,7 @@ import { environmentValidationSchema } from './environment.validation';
 
 const encryptionKey = Buffer.alloc(32, 1).toString('base64');
 const fingerprintKey = Buffer.alloc(32, 2).toString('base64');
+const totpKey = Buffer.alloc(32, 5).toString('base64');
 
 const validEnvironment = {
   NODE_ENV: 'test',
@@ -20,6 +21,32 @@ const validEnvironment = {
 };
 
 describe('API environment validation', () => {
+  it('requires a dedicated TOTP encryption key in production', () => {
+    expect(
+      environmentValidationSchema.validate({
+        ...validEnvironment,
+        NODE_ENV: 'production',
+        DOCUMENTS_STORAGE_ROOT: '/srv/rubi/documents',
+      }).error,
+    ).toBeDefined();
+    expect(
+      environmentValidationSchema.validate({
+        ...validEnvironment,
+        NODE_ENV: 'production',
+        DOCUMENTS_STORAGE_ROOT: '/srv/rubi/documents',
+        IAM_TOTP_ENCRYPTION_KEY_BASE64: totpKey,
+      }).error,
+    ).toBeUndefined();
+    expect(
+      environmentValidationSchema.validate({
+        ...validEnvironment,
+        NODE_ENV: 'production',
+        DOCUMENTS_STORAGE_ROOT: '/srv/rubi/documents',
+        IAM_TOTP_ENCRYPTION_KEY_BASE64: encryptionKey,
+      }).error,
+    ).toBeDefined();
+  });
+
   it('requires independent 32-byte contact keys and a positive version', () => {
     expect(
       environmentValidationSchema.validate(validEnvironment).error,

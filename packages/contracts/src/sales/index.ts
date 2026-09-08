@@ -1,4 +1,5 @@
 import type { SalesServicePricingV1 } from './pricing';
+import type { LegalEntityCode } from '../legal-entities';
 export const SALES_CONTRACT_VERSION = 1 as const;
 export * from './pricing';
 export * from './contract-flights';
@@ -294,7 +295,7 @@ export interface SalesContractOutputV1 {
   ownerName: string | null;
   company: {
     id: string;
-    code: 'NIYAYESH_SEIR_SAHAR' | 'JAHAN_BASTAN';
+    code: LegalEntityCode;
     persianName: string;
     latinName: string | null;
     website: string | null;

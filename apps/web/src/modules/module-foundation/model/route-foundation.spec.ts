@@ -104,6 +104,6 @@ describe('17-route module foundation', () => {
 
     const shell = source('src/components/layout/app-shell.tsx');
     expect(shell).toContain('overflow-x-hidden');
-    expect(shell).toContain('truncate whitespace-nowrap');
+    expect(shell).toContain('min-w-0 whitespace-normal break-words');
   });
 });

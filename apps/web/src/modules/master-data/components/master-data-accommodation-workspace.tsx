@@ -68,7 +68,10 @@ import {
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { getMasterDataDefinition } from '../model/catalog';
-import { HotelImportPanel } from './hotel-import-panel';
+import {
+  HotelImportPanel,
+  type HotelImportCompleted,
+} from './hotel-import-panel';
 import {
   MasterDataLiveForm,
   type MasterDataFormMode,
@@ -615,6 +618,29 @@ export function MasterDataAccommodationWorkspace() {
   function selectProfile(record: MasterDataRecord) {
     setSelected(record);
     setProfileOpen(true);
+  }
+
+  function handleHotelImportCompleted({
+    result,
+    countryId,
+    cityId,
+  }: HotelImportCompleted) {
+    setSearch('');
+    resetColumnFilters();
+    resetDateRange();
+    setStatus('all');
+    setCountryFilter(countryId);
+    setCityFilter(cityId);
+    setStarFilter('all');
+    setPage(1);
+    setSelected(undefined);
+    setProfileOpen(false);
+    setFormMode(null);
+    setNotice(
+      `ثبت Excel کامل شد: ${result.counts.created.toLocaleString('fa-IR')} هتل جدید، ${result.counts.updated.toLocaleString('fa-IR')} به‌روزرسانی و ${result.counts.skipped.toLocaleString('fa-IR')} مورد رد شد. فهرست مقصد نمایش داده شده است.`,
+    );
+    setTab('hotels');
+    void loadSummary();
   }
 
   async function persist(
@@ -1372,9 +1398,7 @@ export function MasterDataAccommodationWorkspace() {
       />
     ) : tab === 'import' ? (
       <div id="accommodation-import-panel">
-        <HotelImportPanel
-          onImported={() => void Promise.all([load(), loadSummary()])}
-        />
+        <HotelImportPanel onImported={handleHotelImportCompleted} />
       </div>
     ) : tab === 'combined' && records.length ? (
       combined()

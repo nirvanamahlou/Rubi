@@ -152,7 +152,9 @@ function utcRange(from: string | null, to: string | null) {
 
 export function toCustomerSummary(row: CustomerRow): CustomerSummary {
   const primary =
-    row.contacts?.find(({ isPrimary }) => isPrimary) ?? row.contacts?.[0];
+    row.contacts?.find(
+      ({ isPrimary, type }) => isPrimary && type === 'PHONE',
+    ) ?? row.contacts?.find(({ type }) => type === 'PHONE');
   const latestConsent = row.consents?.[0];
   return {
     id: row.id,
@@ -304,7 +306,11 @@ export class CustomerRepository {
         this.database.client.customer.findMany({
           where,
           include: {
-            contacts: { where: { isPrimary: true }, take: 1 },
+            contacts: {
+              where: { type: 'PHONE' },
+              orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+              take: 1,
+            },
             consents: { orderBy: { occurredAt: 'desc' }, take: 1 },
             _count: { select: { relationships: true } },
           },

@@ -1,5 +1,10 @@
 import { Transform } from 'class-transformer';
 import {
+  LEGAL_ENTITY_CODES,
+  LEGAL_ENTITY_CONTEXT_ALL,
+  type LegalEntitySelection,
+} from '@rubi/contracts';
+import {
   IsBoolean,
   IsIn,
   IsInt,
@@ -12,9 +17,14 @@ import {
   MinLength,
 } from 'class-validator';
 
+const legalEntitySelections = [
+  ...LEGAL_ENTITY_CODES,
+  LEGAL_ENTITY_CONTEXT_ALL,
+] as const;
+
 export class SwitchLegalEntityDto {
-  @IsIn(['NIYAYESH_SEIR_SAHAR', 'JAHAN_BASTAN', 'ALL'])
-  selection!: 'NIYAYESH_SEIR_SAHAR' | 'JAHAN_BASTAN' | 'ALL';
+  @IsIn(legalEntitySelections)
+  selection!: LegalEntitySelection;
 
   @IsInt()
   @Min(0)

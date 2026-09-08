@@ -21,6 +21,7 @@ import {
   Badge,
   Button,
   Card,
+  Checkbox,
   DatePicker,
   Dialog,
   DialogContent,
@@ -54,6 +55,7 @@ interface UploadValues {
   confidentiality: string;
   validUntil: string;
   versionNote: string;
+  requiresStepUpVerification: boolean;
 }
 
 const emptyUpload: UploadValues = {
@@ -64,6 +66,7 @@ const emptyUpload: UploadValues = {
   confidentiality: '',
   validUntil: '',
   versionNote: '',
+  requiresStepUpVerification: false,
 };
 
 const scanLabels: Record<string, string> = {
@@ -213,7 +216,10 @@ export function CustomerDocumentsPanel({
     }
   }
 
-  function update(name: keyof UploadValues, value: string) {
+  function update<K extends keyof UploadValues>(
+    name: K,
+    value: UploadValues[K],
+  ) {
     setMessage('');
     setValues((current) => ({ ...current, [name]: value }));
   }
@@ -255,6 +261,8 @@ export function CustomerDocumentsPanel({
       if (values.validUntil) form.set('validUntil', values.validUntil);
       if (values.versionNote.trim())
         form.set('versionNote', values.versionNote.trim());
+      if (values.requiresStepUpVerification)
+        form.set('requiresStepUpVerification', 'true');
 
       await customerDocumentsApi.upload(form);
       setUploadOpen(false);
@@ -392,6 +400,11 @@ export function CustomerDocumentsPanel({
                 <Badge className="bg-muted text-muted-foreground">
                   اعتبار: {formatDate(record.validUntil)}
                 </Badge>
+                {record.requiresStepUpVerification ? (
+                  <Badge className="bg-sky-100 text-sky-800">
+                    ورود دومرحله‌ای
+                  </Badge>
+                ) : null}
               </div>
             </article>
           ))}
@@ -552,6 +565,26 @@ export function CustomerDocumentsPanel({
                   value={values.description}
                 />
               </FormField>
+              <label
+                className="flex cursor-pointer items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50/70 p-4 dark:bg-sky-950/20"
+                htmlFor="customer-document-requires-step-up"
+              >
+                <Checkbox
+                  checked={values.requiresStepUpVerification}
+                  id="customer-document-requires-step-up"
+                  onCheckedChange={(checked) =>
+                    update('requiresStepUpVerification', checked === true)
+                  }
+                />
+                <span>
+                  <span className="block font-bold">
+                    نیازمند اعتبارسنجی دومرحله‌ای
+                  </span>
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    برای نمایش یا دانلود، کد Authenticator حساب درخواست می‌شود.
+                  </span>
+                </span>
+              </label>
               <Alert
                 description={
                   options.uploadPolicy.antivirusAvailable

@@ -12,6 +12,8 @@ import {
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
+import { DocumentStepUpForm } from './document-step-up-form';
+
 import { Alert, Badge, Button, Input } from '@/components/ui';
 
 const previewableImageMimeTypes = new Set(['image/jpeg', 'image/png']);
@@ -20,6 +22,7 @@ type LoadDocumentPreview = (
   document: DocumentDetailV1,
   sensitiveReason: string | undefined,
   signal: AbortSignal,
+  accessGrantToken: string | undefined,
 ) => Promise<Blob>;
 
 type PreviewLoadState =
@@ -32,6 +35,50 @@ function isSensitive(document: DocumentDetailV1) {
     document.confidentiality === 'CONFIDENTIAL' ||
     document.confidentiality === 'RESTRICTED'
   );
+}
+
+async function createSafePreviewBlob(
+  source: Blob,
+  watermark: string,
+): Promise<Blob> {
+  if (typeof createImageBitmap !== 'function')
+    throw new Error('مرورگر امکان ساخت پیش‌نمایش امن را ندارد.');
+  const bitmap = await createImageBitmap(source);
+  try {
+    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+    const canvas = window.document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('ساخت پیش‌نمایش امن ممکن نیست.');
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    context.save();
+    context.globalAlpha = 0.24;
+    context.fillStyle = '#0f3f86';
+    context.textAlign = 'center';
+    context.font = `700 ${Math.max(18, Math.round(canvas.width / 34))}px sans-serif`;
+    context.translate(canvas.width / 2, canvas.height / 2);
+    context.rotate(-Math.PI / 7);
+    const gapX = Math.max(260, canvas.width / 2);
+    const gapY = Math.max(120, canvas.height / 4);
+    for (let y = -canvas.height; y <= canvas.height; y += gapY) {
+      for (let x = -canvas.width; x <= canvas.width; x += gapX) {
+        context.fillText(watermark, x, y);
+      }
+    }
+    context.restore();
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (blob) =>
+          blob
+            ? resolve(blob)
+            : reject(new Error('ساخت نسخه امن تصویر ناموفق بود.')),
+        'image/png',
+      );
+    });
+  } finally {
+    bitmap.close();
+  }
 }
 
 export function DocumentImagePreview({
@@ -51,6 +98,9 @@ export function DocumentImagePreview({
   const [approvedReason, setApprovedReason] = useState<string | null>(
     sensitive ? null : '',
   );
+  const [accessGrantToken, setAccessGrantToken] = useState<string | null>(
+    document.requiresStepUpVerification ? null : '',
+  );
   const [requestVersion, setRequestVersion] = useState(0);
   const [previewState, setPreviewState] = useState<PreviewLoadState>(
     sensitive ? { status: 'idle' } : { status: 'loading' },
@@ -60,6 +110,7 @@ export function DocumentImagePreview({
     clean &&
     previewable &&
     approvedReason !== null &&
+    accessGrantToken !== null &&
     (!sensitive || approvedReason.length >= 5);
 
   useEffect(() => {
@@ -69,12 +120,21 @@ export function DocumentImagePreview({
     let active = true;
     let objectUrl: string | null = null;
 
-    void onLoadPreview(document, approvedReason || undefined, controller.signal)
-      .then((blob) => {
+    void onLoadPreview(
+      document,
+      approvedReason || undefined,
+      controller.signal,
+      accessGrantToken || undefined,
+    )
+      .then(async (blob) => {
         if (!previewableImageMimeTypes.has(blob.type)) {
           throw new Error('پاسخ دریافت‌شده یک تصویر مجاز نیست.');
         }
-        objectUrl = URL.createObjectURL(blob);
+        const safeBlob = await createSafePreviewBlob(
+          blob,
+          `سامانه • ${document.archiveCode} • ${new Date().toLocaleString('fa-IR')}`,
+        );
+        objectUrl = URL.createObjectURL(safeBlob);
         if (active) setPreviewState({ status: 'ready', url: objectUrl });
         else URL.revokeObjectURL(objectUrl);
       })
@@ -94,7 +154,14 @@ export function DocumentImagePreview({
       controller.abort();
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [approvedReason, document, onLoadPreview, readyToLoad, requestVersion]);
+  }, [
+    accessGrantToken,
+    approvedReason,
+    document,
+    onLoadPreview,
+    readyToLoad,
+    requestVersion,
+  ]);
 
   if (!allowed) {
     return (
@@ -160,6 +227,22 @@ export function DocumentImagePreview({
     );
   }
 
+  if (document.requiresStepUpVerification && accessGrantToken === null) {
+    return (
+      <div className="mx-auto w-full max-w-md">
+        <DocumentStepUpForm
+          document={document}
+          onGranted={(token) => {
+            setPreviewState({ status: 'loading' });
+            setAccessGrantToken(token);
+            setRequestVersion((value) => value + 1);
+          }}
+          purpose="PREVIEW"
+        />
+      </div>
+    );
+  }
+
   if (previewState.status === 'loading') {
     return (
       <div className="text-center" role="status">
@@ -183,6 +266,10 @@ export function DocumentImagePreview({
         <Button
           className="w-full"
           onClick={() => {
+            if (document.requiresStepUpVerification) {
+              setAccessGrantToken(null);
+              return;
+            }
             setPreviewState({ status: 'loading' });
             setRequestVersion((value) => value + 1);
           }}
@@ -212,7 +299,7 @@ export function DocumentImagePreview({
       <figcaption className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
         <ImageIcon aria-hidden="true" className="size-4 text-primary" />
         <span>{document.currentVersion.safeDownloadName}</span>
-        <Badge>تصویر اسکن‌شده و مجاز</Badge>
+        <Badge>تصویر اسکن‌شده و مجاز · نسخه کم‌حجم و واترمارک‌شده</Badge>
       </figcaption>
     </figure>
   );

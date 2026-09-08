@@ -600,7 +600,7 @@ function TicketCatalogWorkspace() {
         />
       ) : (
         <>
-          <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-flow-row-dense items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
             {cardGroups.map((group) => (
               <div
                 key={group[0]!.definition.tripGroupId ?? group[0]!.id}

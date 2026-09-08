@@ -35,6 +35,31 @@ describe('legal entity review DTO validation', () => {
     ).not.toHaveLength(0);
   });
 
+  it.each(['JAHAN_ACADEMIA', 'GHESATI_RO'])(
+    'accepts the additional active company code %s',
+    async (selection) => {
+      await expect(
+        validate(
+          plainToInstance(SwitchLegalEntityDto, {
+            selection,
+            expectedVersion: 1,
+          }),
+        ),
+      ).resolves.toHaveLength(0);
+    },
+  );
+
+  it('rejects company codes outside the public contract', async () => {
+    expect(
+      await validate(
+        plainToInstance(SwitchLegalEntityDto, {
+          selection: 'UNREGISTERED_COMPANY',
+          expectedVersion: 1,
+        }),
+      ),
+    ).not.toHaveLength(0);
+  });
+
   it('requires trusted template identity and does not expose requiresLetterhead', async () => {
     const input = plainToInstance(CreateDocumentIssueDto, {
       issuerLegalEntityId: '00000000-0000-4000-8000-000000000001',

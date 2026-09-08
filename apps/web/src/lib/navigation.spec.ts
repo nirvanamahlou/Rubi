@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getNavigationBreadcrumbs,
+  groupedNavigationItems,
   getNavigationItem,
   isNavigationItemActive,
   navigationItems,
@@ -48,6 +49,30 @@ const expectedTitles = [
 ];
 
 describe('CRM navigation', () => {
+  it('groups every existing module exactly once without changing routes or labels', () => {
+    const grouped = groupedNavigationItems.flatMap((group) => group.items);
+    expect(grouped).toHaveLength(navigationItems.length);
+    expect(new Set(grouped.map((item) => item.href)).size).toBe(
+      navigationItems.length,
+    );
+    expect(grouped.map((item) => item.href).sort()).toEqual(
+      [...expectedRoutes].sort(),
+    );
+    for (const item of grouped)
+      expect(item).toBe(
+        navigationItems.find((original) => original.href === item.href),
+      );
+    expect(
+      groupedNavigationItems
+        .find((group) => group.id === 'finance')
+        ?.items.map((item) => item.href),
+    ).toEqual(['/finance']);
+    expect(
+      groupedNavigationItems
+        .find((group) => group.id === 'hr')
+        ?.items.map((item) => item.href),
+    ).toEqual(['/human-resources']);
+  });
   it('contains exactly the approved 17 routes in order', () => {
     expect(navigationItems.map((item) => item.href)).toEqual(expectedRoutes);
     expect(new Set(navigationItems.map((item) => item.href)).size).toBe(17);

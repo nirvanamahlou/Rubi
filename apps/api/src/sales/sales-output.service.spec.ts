@@ -68,6 +68,29 @@ function setup() {
   return { service, contract, sales, repo, customers, legal, iam };
 }
 describe('Sales saved output authorization', () => {
+  it.each(['JAHAN_ACADEMIA', 'GHESATI_RO'])(
+    'preserves the public issuer code %s in output and audit',
+    async (code) => {
+      const t = setup();
+      t.legal.branding.mockResolvedValue({
+        data: {
+          legalEntityId: 'company',
+          code,
+          persianName: 'شرکت نمونه',
+          latinName: null,
+          website: null,
+          version: 3,
+        },
+      });
+      const result = await t.service.prepare('contract', actor);
+      expect(result.data.company.code).toBe(code);
+      expect(t.repo.recordOutputPreview).toHaveBeenCalledWith(
+        'contract',
+        expect.anything(),
+        expect.objectContaining({ company: expect.objectContaining({ code }) }),
+      );
+    },
+  );
   it('denies export without existing permission before reading any data', async () => {
     const t = setup();
     await expect(

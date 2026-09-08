@@ -39,6 +39,7 @@ let organizationId: string;
 let otherOrganizationId: string;
 let contactId: string;
 let otherContactId: string;
+let serviceCode: string;
 const plaintextPhone = '+12025550123'; // Reserved fictional North American number; test DB only.
 
 function sql(database: string, input: string) {
@@ -130,7 +131,6 @@ describe.skipIf(!enabled)('partner forms on isolated PostgreSQL 18', () => {
         'organizations',
         {
           legalName: 'Test partner organization',
-          displayName: 'Test organization',
           roleCodes: 'SUPPLIER,BROKER',
           personType: 'LEGAL',
         },
@@ -142,7 +142,6 @@ describe.skipIf(!enabled)('partner forms on isolated PostgreSQL 18', () => {
         'organizations',
         {
           legalName: 'Other test organization',
-          displayName: 'Other test',
           roleCodes: 'BROKER',
         },
         actor,
@@ -172,11 +171,13 @@ describe.skipIf(!enabled)('partner forms on isolated PostgreSQL 18', () => {
         actor,
       )
     ).data.id;
-    await service.create(
-      'travel-services',
-      { code: 'TEST_HOTEL', name: 'Test hotel service' },
-      actor,
-    );
+    serviceCode = (
+      await service.create(
+        'travel-services',
+        { name: 'Test hotel service' },
+        actor,
+      )
+    ).data.code;
   }, 180000);
 
   afterAll(async () => {
@@ -195,7 +196,7 @@ describe.skipIf(!enabled)('partner forms on isolated PostgreSQL 18', () => {
           organizationId,
           englishName: 'Test Partner',
           primaryContactId: contactId,
-          serviceCodes: ['TEST_HOTEL'],
+          serviceCodes: [serviceCode],
         },
         actor,
       );
@@ -203,7 +204,7 @@ describe.skipIf(!enabled)('partner forms on isolated PostgreSQL 18', () => {
         englishName: 'Test Partner',
         primaryContactId: contactId,
         organizationPersonType: 'LEGAL',
-        serviceCodes: 'TEST_HOTEL',
+        serviceCodes: serviceCode,
       });
       expect(result.data.attributes.primaryPhoneMasked).toContain('•');
       expect(JSON.stringify(result)).not.toContain(plaintextPhone);

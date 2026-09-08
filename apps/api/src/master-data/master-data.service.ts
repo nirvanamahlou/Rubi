@@ -610,7 +610,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   ],
   'rail-companies': ['name', 'organizationId', 'countryId'],
   'train-types': ['name', 'manufacturer', 'model', 'category'],
-  'bus-companies': ['name', 'countryId'],
+  'bus-companies': ['name', 'organizationId', 'countryId'],
   'bus-types': ['name', 'manufacturerModel', 'serviceClass'],
   hotels: ['name', 'cityId'],
   'hotel-chains': ['name', 'countryId'],

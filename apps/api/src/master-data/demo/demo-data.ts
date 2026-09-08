@@ -13,10 +13,14 @@ export type DemoResource = Exclude<
   (typeof DEMO_EXCLUDED)[number]
 >;
 type Values = Record<string, string | number | readonly string[] | null>;
+export type DemoReferenceResolver = (
+  key: string,
+  field?: 'id' | 'code',
+) => string;
 export type DemoRecord = {
   key: string;
   resource: DemoResource;
-  values: (id: (key: string) => string) => Values;
+  values: (reference: DemoReferenceResolver) => Values;
 };
 
 /** Explicit synthetic fixtures, never part of the normal application seed. */
@@ -48,12 +52,10 @@ export function masterDataDemoRecords(): DemoRecord[] {
     decimalDigits: 2,
   });
   add('service-hotel', 'travel-services', {
-    code: 'DEMO_HOTEL',
     name: name('خدمات هتل'),
     englishName: 'Demo Hotel Service',
   });
   add('service-tour', 'travel-services', {
-    code: 'DEMO_TOUR',
     name: name('خدمات تور'),
     englishName: 'Demo Tour Service',
   });
@@ -62,7 +64,6 @@ export function masterDataDemoRecords(): DemoRecord[] {
       countryId: id('country'),
       name: name(`ناحیه نمونه ${n}`),
       englishName: `Demo Region ${n}`,
-      type: 'REGION',
     }));
     add(`city-${n}`, 'cities', (id) => ({
       countryId: id('country'),
@@ -86,7 +87,6 @@ export function masterDataDemoRecords(): DemoRecord[] {
     }));
     add(`organization-${n}`, 'organizations', {
       legalName: name(`سازمان نمونه ${n}`),
-      displayName: name(`سازمان نمونه ${n}`),
       personType: n === 1 ? 'LEGAL' : 'NATURAL',
       roleCodes: [
         'SUPPLIER',
@@ -113,7 +113,7 @@ export function masterDataDemoRecords(): DemoRecord[] {
       countryId: id('country'),
       cityId: id(`city-${n}`),
       collaborationStatus: n === 1 ? 'ACTIVE' : 'UNDER_REVIEW',
-      serviceCodes: ['DEMO_HOTEL', 'DEMO_TOUR'],
+      serviceCodes: [id('service-hotel', 'code'), id('service-tour', 'code')],
     }));
     add(`broker-${n}`, 'brokers', (id) => ({
       name: name(`کارگزار نمونه ${n}`),
@@ -123,7 +123,7 @@ export function masterDataDemoRecords(): DemoRecord[] {
       countryId: id('country'),
       cityId: id(`city-${n}`),
       collaborationStatus: 'ACTIVE',
-      serviceCodes: ['DEMO_HOTEL', 'DEMO_TOUR'],
+      serviceCodes: [id('service-hotel', 'code'), id('service-tour', 'code')],
     }));
   }
   add('airport', 'airports', (id) => ({
@@ -180,7 +180,6 @@ export function masterDataDemoRecords(): DemoRecord[] {
     englishName: 'Demo Bed and Breakfast',
     category: 'MEAL_PLAN',
     includedMeals: ['صبحانه'],
-    status: 'active',
   });
   add('meal-2', 'meal-services', {
     code: 'DEMO_ALL',
@@ -188,7 +187,6 @@ export function masterDataDemoRecords(): DemoRecord[] {
     englishName: 'Demo All Inclusive',
     category: 'SERVICE',
     includedMeals: ['صبحانه', 'ناهار', 'شام', 'میان‌وعده'],
-    status: 'active',
   });
   add('chain', 'hotel-chains', (id) => ({
     name: name('زنجیره هتل نمونه'),
@@ -214,19 +212,15 @@ export function masterDataDemoRecords(): DemoRecord[] {
       website: `https://hotel-${n}.example.invalid`,
       checkInTime: '14:00',
       checkOutTime: '12:00',
-      latitude: '-75',
-      longitude: '0',
       isSaleableReference: 'true',
       mealServiceIds: [id('meal-1'), id('meal-2')],
       roomTypeIds: [id(`room-${n}`)],
       facilityIds: [id('facility-1'), id('facility-2')],
     }));
     add(`airline-${n}`, 'airlines', (id) => ({
-      code: `Z${n}`,
-      icaoCode: `ZZ${n}`,
+      airlineCodes: `Z${n} / ZZ${n}`,
       name: name(`ایرلاین نمونه ${n}`),
       englishName: `Demo Airline ${n}`,
-      organizationId: id(`organization-${n}`),
       countryId: id('country'),
     }));
     add(`aircraft-${n}`, 'aircraft-types', {
@@ -234,13 +228,11 @@ export function masterDataDemoRecords(): DemoRecord[] {
       englishName: `Demo Aircraft ${n}`,
       manufacturer: 'Demo Manufacturer',
       model: `DEMO-${n}`,
-      bodyType: n === 1 ? 'NARROW_BODY' : 'WIDE_BODY',
     });
     add(`cabin-${n}`, 'cabin-classes', {
       name: name(n === 1 ? 'اکونومی' : 'بیزینس'),
       englishName: `Demo Cabin ${n}`,
       bookingCode: `DEMO${n}`,
-      cabinType: n === 1 ? 'ECONOMY' : 'BUSINESS',
       displayOrder: n,
     });
     add(`baggage-${n}`, 'baggage-rules', (id) => ({
@@ -252,8 +244,6 @@ export function masterDataDemoRecords(): DemoRecord[] {
       allowance: String(n * 10),
       unit: 'KG',
       pieceCount: n,
-      validFrom,
-      validTo,
       description: 'قاعده ساختگی تست؛ غیرقابل استفاده برای صدور واقعی',
     }));
     add(`manifest-${n}`, 'manifest-templates', (id) => ({
@@ -293,8 +283,7 @@ export function masterDataDemoRecords(): DemoRecord[] {
     add(`bus-type-${n}`, 'bus-types', (id) => ({
       name: name(`اتوبوس نمونه ${n}`),
       englishName: `Demo Bus ${n}`,
-      manufacturer: 'Demo Manufacturer',
-      model: `DEMO-${n}`,
+      manufacturerModel: `Demo Manufacturer / DEMO-${n}`,
       serviceClass: n === 1 ? 'STANDARD' : 'VIP',
       facilityIds: [id('facility-1'), id('facility-3')],
     }));
@@ -354,7 +343,6 @@ export function masterDataDemoRecords(): DemoRecord[] {
       name: name(`خدمت ویزای نمونه ${n}`),
       englishName: `Demo Visa ${n}`,
       countryId: id('country'),
-      supplierId: id(`supplier-${n}`),
       visaType: 'آزمایشی',
       referenceValidityMode: 'DAYS',
       referenceValidityDays: 30,

@@ -19,6 +19,7 @@ import { DocumentCasePicker } from './document-case-picker';
 import {
   Alert,
   Button,
+  Checkbox,
   DatePicker,
   Dialog,
   DialogContent,
@@ -74,7 +75,10 @@ export function DocumentUploadDialog({
     [options, values.documentTypeId],
   );
 
-  function update(name: keyof DocumentUploadValues, value: string) {
+  function update<K extends keyof DocumentUploadValues>(
+    name: K,
+    value: DocumentUploadValues[K],
+  ) {
     setValidationError('');
     setValues((current) => ({ ...current, [name]: value }));
   }
@@ -93,7 +97,7 @@ export function DocumentUploadDialog({
     const form = new FormData();
     form.set('file', file!);
     for (const [name, value] of Object.entries(values)) {
-      if (value) form.set(name, value);
+      if (value) form.set(name, String(value));
     }
     if (await onSubmit(form)) {
       setValues({ ...emptyDocumentUploadValues });
@@ -353,6 +357,27 @@ export function DocumentUploadDialog({
                 </Select>
               </FormField>
             </div>
+            <label
+              className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50/70 p-4 transition hover:border-primary dark:bg-sky-950/20"
+              htmlFor="document-requires-step-up"
+            >
+              <Checkbox
+                checked={values.requiresStepUpVerification}
+                id="document-requires-step-up"
+                onCheckedChange={(checked) =>
+                  update('requiresStepUpVerification', checked === true)
+                }
+              />
+              <span>
+                <span className="block font-black">
+                  نیازمند اعتبارسنجی دومرحله‌ای
+                </span>
+                <span className="mt-1 block text-xs leading-6 text-muted-foreground">
+                  مشاهده و دانلود این سند فقط پس از ورود کد شش‌رقمی
+                  Authenticator انجام می‌شود.
+                </span>
+              </span>
+            </label>
             <Alert
               className="mt-4"
               description={

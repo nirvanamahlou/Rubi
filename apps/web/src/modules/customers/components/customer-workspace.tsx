@@ -2818,6 +2818,14 @@ export function CustomerWorkspace() {
       : 'overview',
   );
   const [notice, setNotice] = useState<string | null>(null);
+  const [revealedListContact, setRevealedListContact] = useState<{
+    customerId: string;
+    value: string;
+  } | null>(null);
+  const [revealingListContactId, setRevealingListContactId] = useState<
+    string | null
+  >(null);
+  const listSensitiveRequestId = useRef(0);
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importPreview, setImportPreview] = useState<
@@ -2834,6 +2842,27 @@ export function CustomerWorkspace() {
       .then((response) => setAcquaintanceMethods(response.data))
       .catch(() => setAcquaintanceMethods([]));
   }, []);
+
+  useEffect(() => {
+    const remask = () => {
+      listSensitiveRequestId.current += 1;
+      setRevealedListContact(null);
+      setRevealingListContactId(null);
+    };
+    const timer = revealedListContact
+      ? window.setTimeout(remask, 60_000)
+      : undefined;
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') remask();
+    };
+    window.addEventListener('blur', remask);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('blur', remask);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [revealedListContact]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -2866,6 +2895,9 @@ export function CustomerWorkspace() {
   ]);
 
   const load = useCallback(async () => {
+    listSensitiveRequestId.current += 1;
+    setRevealedListContact(null);
+    setRevealingListContactId(null);
     setRequestState('loading');
     try {
       const response = await customersApi.list({
@@ -2986,6 +3018,44 @@ export function CustomerWorkspace() {
       setNotice(
         error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.',
       );
+    }
+  }
+
+  async function revealListPrimaryContact(record: CustomerSummary) {
+    if (revealedListContact?.customerId === record.id) {
+      listSensitiveRequestId.current += 1;
+      setRevealedListContact(null);
+      return;
+    }
+    const requestId = ++listSensitiveRequestId.current;
+    setRevealingListContactId(record.id);
+    setNotice(null);
+    try {
+      const detail = (
+        await customersApi.detail(record.id, CUSTOMER_SUPPORT_REQUEST_REASON)
+      ).data;
+      if (requestId !== listSensitiveRequestId.current) return;
+      const phone =
+        detail.contacts.find(
+          (contact) =>
+            contact.type === 'phone' && contact.isPrimary && contact.value,
+        ) ??
+        detail.contacts.find(
+          (contact) => contact.type === 'phone' && contact.value,
+        );
+      if (!phone?.value) {
+        setNotice('شماره تلفن کاملی برای این شخص ثبت نشده است.');
+        return;
+      }
+      setRevealedListContact({ customerId: record.id, value: phone.value });
+      setNotice('شماره کامل نمایش داده شد و مشاهده آن در Audit ثبت شد.');
+    } catch (error) {
+      if (requestId !== listSensitiveRequestId.current) return;
+      setNotice(customerSensitiveRevealFeedback(error).message);
+    } finally {
+      if (requestId === listSensitiveRequestId.current) {
+        setRevealingListContactId(null);
+      }
     }
   }
 
@@ -3633,19 +3703,32 @@ export function CustomerWorkspace() {
                     </button>
                   </td>
                   <td className="p-4">
-                    <span className="font-mono text-muted-foreground" dir="ltr">
-                      {record.maskedPrimaryContact ?? 'بدون تماس'}
-                    </span>
-                    <Button
-                      className="mt-2"
-                      onClick={() => void open('view', record.id, 'contacts')}
-                      size="sm"
-                      type="button"
-                      variant="outline"
-                    >
-                      <Phone aria-hidden="true" className="size-4" />
-                      مشاهده تماس‌ها
-                    </Button>
+                    {record.maskedPrimaryContact ? (
+                      <Button
+                        aria-label={
+                          revealedListContact?.customerId === record.id
+                            ? `پنهان‌کردن شماره ${record.displayName}`
+                            : `نمایش شماره کامل ${record.displayName}`
+                        }
+                        className="h-auto max-w-full gap-2 px-2 py-1 font-mono"
+                        disabled={revealingListContactId === record.id}
+                        onClick={() => void revealListPrimaryContact(record)}
+                        size="sm"
+                        type="button"
+                        variant="ghost"
+                      >
+                        <Phone aria-hidden="true" className="size-4 shrink-0" />
+                        <span className="truncate" dir="ltr">
+                          {revealingListContactId === record.id
+                            ? 'در حال دریافت…'
+                            : revealedListContact?.customerId === record.id
+                              ? revealedListContact.value
+                              : record.maskedPrimaryContact}
+                        </span>
+                      </Button>
+                    ) : (
+                      <span className="text-muted-foreground">بدون تماس</span>
+                    )}
                   </td>
                   <td className="p-4">
                     <Badge className="me-1">

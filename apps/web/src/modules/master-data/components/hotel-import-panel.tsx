@@ -4,6 +4,7 @@ import type {
   MasterDataListQuery,
   MasterDataRecord,
   MasterHotelImportDuplicateBehavior,
+  MasterHotelImportCommitResult,
   MasterHotelImportPreview,
 } from '@rubi/contracts';
 import { FileCheck2, FileSpreadsheet, Upload } from 'lucide-react';
@@ -37,7 +38,17 @@ async function loadAll(resource: 'countries' | 'cities') {
   return records;
 }
 
-export function HotelImportPanel({ onImported }: { onImported: () => void }) {
+export interface HotelImportCompleted {
+  result: MasterHotelImportCommitResult;
+  countryId: string;
+  cityId: string;
+}
+
+export function HotelImportPanel({
+  onImported,
+}: {
+  onImported: (completed: HotelImportCompleted) => void;
+}) {
   const [countries, setCountries] = useState<readonly MasterDataRecord[]>([]);
   const [cities, setCities] = useState<readonly MasterDataRecord[]>([]);
   const [countryId, setCountryId] = useState('');
@@ -118,7 +129,7 @@ export function HotelImportPanel({ onImported }: { onImported: () => void }) {
       );
       setPreview(null);
       setFile(null);
-      onImported();
+      onImported({ result: response.data, countryId, cityId });
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : 'ثبت نهایی هتل‌ها ناموفق بود.',

@@ -6,6 +6,8 @@ import { AuthController } from './auth.controller';
 import { AuditController } from './audit.controller';
 import { AuthGuard } from './auth.guard';
 import { IamService } from './iam.service';
+import { IAM_STEP_UP_PORT } from './iam-step-up.port';
+import { MfaTotpService } from './mfa-totp';
 import { PermissionGuard } from './permission.guard';
 import { RolesController } from './roles.controller';
 import { UsersController } from './users.controller';
@@ -27,7 +29,13 @@ import { UsersController } from './users.controller';
     RolesController,
     AuditController,
   ],
-  providers: [IamService, AuthGuard, PermissionGuard],
-  exports: [IamService],
+  providers: [
+    IamService,
+    MfaTotpService,
+    AuthGuard,
+    PermissionGuard,
+    { provide: IAM_STEP_UP_PORT, useExisting: IamService },
+  ],
+  exports: [IamService, IAM_STEP_UP_PORT],
 })
 export class IamModule {}

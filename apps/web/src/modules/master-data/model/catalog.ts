@@ -1173,6 +1173,13 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: 'Bus Company',
       },
       {
+        key: 'organizationId',
+        label: 'سازمان شرکت اتوبوس',
+        type: 'text',
+        placeholder: '',
+        required: true,
+      },
+      {
         key: 'countryId',
         label: 'کشور',
         type: 'text',
@@ -1188,6 +1195,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     ],
     preview: {
       name: 'شرکت اتوبوس',
+      organizationId: 'UUID',
       countryId: 'UUID',
     },
   },

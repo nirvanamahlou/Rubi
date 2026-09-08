@@ -69,6 +69,23 @@ describe('accommodation workspace', () => {
     expect(source).not.toContain('CTR-881');
   });
 
+  it('shows successfully imported rows in their destination hotel list', () => {
+    expect(source).toContain(
+      '<HotelImportPanel onImported={handleHotelImportCompleted} />',
+    );
+    const completionHandler = source.slice(
+      source.indexOf('function handleHotelImportCompleted'),
+      source.indexOf('async function persist'),
+    );
+    expect(completionHandler).toContain("setTab('hotels')");
+    expect(completionHandler).toContain("setStatus('all')");
+    expect(completionHandler).toContain('setCountryFilter(countryId)');
+    expect(completionHandler).toContain('setCityFilter(cityId)');
+    expect(completionHandler).toContain('resetColumnFilters()');
+    expect(completionHandler).toContain('resetDateRange()');
+    expect(completionHandler).toContain('فهرست مقصد نمایش داده شده است');
+  });
+
   it('implements the contextual filters shown in every catalog mockup', () => {
     for (const label of [
       'همه کشورها',

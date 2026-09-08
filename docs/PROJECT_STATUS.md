@@ -1,4 +1,59 @@
 # وضعیت پروژه
+## GROUPED-SIDEBAR-0908 — COMPLETE_LOCAL
+
+PC-A applied the owner-approved 7 sidebar groups to actual Web3100, retaining all 17 original names/routes/icons and existing 290/68px collapse, tooltips, mobile DrawerClose, header/branding/notifications/search/breadcrumb and module content. Expanded labels are 15px and headings 13px; labels can wrap and expanded navigation scrolls while footer remains reachable. No prototype pricing or synthetic pages transferred. 11 navigation tests, scoped lint, Web typecheck and production build with 34 routes passed. Authenticated Web3100 browser QA verified links/groups, collapse/expand, tooltips and mobile drawer; desktop screenshot reviewed. Drawer itself has no horizontal overflow; whole dashboard measured 398px at viewport390 after closing, so no claim to fix whole-page overflow. Branch codex/pc-a-grouped-sidebar-0908 from f2cc52a, active pc-b-sync-0908 checkout. No API/data/schema/dependency/permission changes or migration. Local commit only; remote push gate requires destination verification. Sales integration is separately coordinated and preserves this change.
+
+
+## MARKETING-001G — حذف معرفی Hub مارکتینگ — آماده بررسی
+
+- `PC-B` روی Branch مستقل `codex/pc-b-marketing-remove-section-intro` بلوک نمایشی شامل عنوان «بخش‌های مارکتینگ» و راهنمای انتخاب کارت را از Hub حذف کرد. فاصله اضافه Wrapper نیز حذف شد و Grid کارت‌ها مستقیماً نمایش داده می‌شود؛ نام دسترس‌پذیر Section بدون متن دیداری حفظ شده است.
+- هیچ Backend، Schema/Migration/Seed، API/Contract، Dependency/Lockfile، داده یا فایل مرکزی UI تغییر نکرد. ۱۸ تست هدفمند، Contracts build، Web typecheck/lint و Production Build با ۳۴ Route موفق‌اند و نسخه جدید روی پورت ۳۱۰۰ فعال است.
+
+## LEGAL-ENTITY-BRAND-HEADER-002 — هدر جهان باستان و اطلاعات ورود — ادغام‌شده
+
+- `PC-B` روی Branch مستقل `codex/pc-b-jahan-bastan-header-identity` تم Header را به Context موجود شرکت فعال متصل کرد. با انتخاب «جهان باستان»، Header بدون تغییر فایل مرکزی درگیر PR #99 به طیف سورمه‌ای تغییر می‌کند و کنترل‌های انتخاب شرکت، جست‌وجو و عملیات Header خوانا می‌مانند؛ سایر Contextها ظاهر پیشین را حفظ می‌کنند.
+- نام نمایشی کاربر و ساعت ورود در Header دسکتاپ نمایش داده می‌شود. داده فقط از پاسخ عمومی و احرازشده Login/Refresh می‌آید و در Session Storage همان Tab نگه‌داری می‌شود؛ شناسه کاربر، نام کاربری، Password، Token، Cookie یا PII اضافی ذخیره نمی‌شود.
+- ۱۳ تست هدفمند Legal Entity/Auth/Header، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند. Preview ایزوله روی پورت ۳۱۰۱ به Login سالم رسید؛ سرویس‌های فعال Task دیگر روی ۳۱۰۰/۴۰۰۰ متوقف یا تغییر داده نشدند. هیچ Backend، Schema/Migration/Seed، API/Contract، Dependency/Lockfile یا داده کاربر تغییر نکرد.
+- Follow-up مالک: `legal-entities.v3` گزینه‌های فعال «جهان آکادمیا» و «قسطی رو» را با کدهای `JAHAN_ACADEMIA` و `GHESATI_RO` به قرارداد، API و انتخاب‌گر افزود؛ عنوان مدیران «همه شرکت‌ها» شد و برای شرکت‌های بدون لوگوی تحویلی نشان خنثی نمایش داده می‌شود. Schema/Migration و Dependency/Lockfile تغییر نکردند.
+- به‌علت تغییر فعال `packages/database/prisma/seed.ts` در PR #90، Seed مشترک دست‌نخورده ماند. دیتابیس اصلی پورت ۵۵۴۳۲ و سرویس‌های ۳۱۰۰/۴۰۰۰ بدون شرکت جدید حفظ شدند؛ Clone ایزوله Backup روی ۵۵۴۳۳ هر چهار شرکت فعال را دارد و نسخه جدید روی `127.0.0.1:3101` و API آن روی `127.0.0.1:4001` اجرا می‌شود.
+- ۲۷ تست هدفمند Contract/API/Web، lint و typecheck بسته‌های متاثر، Production Build API/Web با ۳۴ Route و `git diff --check` موفق‌اند. Web، Health API و CORS احرازشده Preview ایزوله نیز سالم‌اند.
+- PR #106 با Merge Commit `10fc98b1dd0f6df7ed006dfc65e952cac1d421dd` وارد `develop` شد؛ هر ۸ Gate ثبت‌شده CI سبز هستند. نسخه Merge‌شده روی `localhost:3100` و API روی `localhost:4000` اجرا می‌شوند و دیتابیس ایزوله محلی PC-B هر چهار شرکت فعال را دارد. قفل قرارداد Legal Entities نیز `RELEASED / STABLE` است.
+
+## NOTIFICATIONS-001 — مرکز اعلان تغییرات — ادغام‌شده
+
+- `PC-B` روی Branch مستقل `codex/pc-b-global-change-notifications` زنگوله App Shell را به Notification Center سراسری Web تبدیل کرد. هر Mutation موفق `POST/PUT/PATCH/DELETE` به API تنظیم‌شده Rubi پس از موفقیت Response، یک اعلان فارسی شامل نوع عملیات، بخش، زمان و لینک داخلی می‌سازد؛ عملیات ناموفق، Auth، Preview، Search، Validation و Export اعلان تغییر تولید نمی‌کنند.
+- اعلان‌ها Payload درخواست یا PII نگه نمی‌دارند و در Browser Profile با سقف ۶۰ رکورد ذخیره می‌شوند. Badge خوانده‌نشده، فهرست RTL، Empty State، خواندن تکی/همه، پاک‌کردن خوانده‌شده‌ها، Sync بین Tabها و fallback امن Storage تکمیل است. اتصال DOCUMENTS-007، اعلان اسناد را از Backend پایدار می‌گیرد و برای آن مسیر اعلان مرورگری تکراری نمی‌سازد.
+- PR #104 با همه Gateهای CI سبز روی `develop` ادغام شد. پیگیری DOCUMENTS-007 قرارداد، Persistence و API اعلان‌های اسناد را به همین مرکز اضافه می‌کند؛ Dependency/Lockfile تغییر نکرده است.
+
+## DOCUMENTS-007 — اعتبارسنجی دومرحله‌ای نمایش اسناد — ادغام‌شده
+
+- `PC-B` روی Branch مستقل `codex/pc-b-documents-step-up-security` دسترسی محدود IAM، Migration و Documents را برای همین Task گرفت؛ مالکیت Sales و PR #90 نزد PC-A دست‌نخورده ماند.
+- فرم‌های بارگذاری اصلی و Customer گزینه «نیازمند اعتبارسنجی دومرحله‌ای» دارند. فعال‌سازی Authenticator با تأیید رمز جاری، TOTP واقعی، Secret رمز‌شده با کلید مستقل production، جلوگیری از Replay و قفل موقت تلاش‌های ناموفق انجام می‌شود.
+- Preview/Download سند محافظت‌شده به Grant تصادفی و هش‌شده دو دقیقه‌ای محدود است که به همان User، Session، Document و Purpose متصل و اتمیک فقط یک بار مصرف می‌شود. کنترل Scan، Permission، Branch/Domain و Audit سمت Backend fail-closed است.
+- پیش‌نمایش تصویر مجاز در Browser به PNG کم‌حجم واترمارک‌شده با نام سامانه، کد آرشیو و زمان تبدیل می‌شود و Headerهای امنیتی پاسخ/صفحه سخت‌تر شده‌اند؛ جلوگیری مطلق از Screenshot ممکن نیست.
+- زنگوله مرکزی اکنون داده واقعی `notifications.v1` را نشان می‌دهد: Badge تعداد خوانده‌نشده، فهرست و Deep Link، خواندن تکی/همه و stateهای Loading/Empty/Error فعال‌اند. Upload، ویرایش، آرشیو، بازیابی، تغییر کامل/ناقص، عملیات گروهی و حذف دائمی سند در همان تراکنش تغییر، برای Actor و مالک سند اعلان پایدار و بدون گیرنده تکراری می‌سازند.
+- ماژول مستقل Notifications مالک جدول و API است و همه List/Readها با User احراز‌شده Scope می‌شوند؛ Documents فقط Service عمومی ثبت را مصرف می‌کند. Migration افزایشی همراه Rollback و قرارداد عمومی نسخه‌دار اضافه شد و هیچ Dependency/Lockfile یا داده واقعی تغییر نکرد.
+- Prisma، lint، typecheck و Production Build کامل با ۳۴ Route موفق است؛ `812` تست API و `633` تست Web سالم پاس شدند. Full Web فقط Assertion قدیمی و تغییرنیافته Customer وابسته به LF/CRLF را قرمز دارد. همه Migrationها روی PostgreSQL 18 خالی و ارتقای نمونه دارای User/Document موفق بود؛ Container موقت حذف شد و هیچ Secret واقعی در Git نیست.
+- پیگیری اعلان با ۲۷ تست هدفمند API، ۸ تست هدفمند Web، Contract test و ۴ تست PostgreSQL واقعی Migration پاس شد؛ اجرای کامل API اکنون ۸۱۲ تست پاس و ۷۰ skip دارد.
+
+## MARKETING-001F — اتصال مخاطب هدف پیشنهاد و تخفیف — آماده بررسی
+
+- `PC-B` روی Branch مستقل `codex/pc-b-marketing-offer-targets` فیلد اختیاری «مخاطب هدف» را به هر دو فرم «پیشنهاد ویژه» و «کد تخفیف» افزود. کاربر می‌تواند پیشنهاد را عمومی نگه دارد یا یک مشتری/آژانس مشخص را انتخاب کند؛ اگر نوع هدف را انتخاب کند، ذخیره بدون انتخاب رکورد مجاز نیست.
+- گزینه‌های مشتری از Client عمومی Customers و فقط میان مشتریان فعال دارای رضایت جاری مارکتینگ دریافت می‌شوند. گزینه‌های آژانس از Client عمومی Master Data Organizations و فقط میان Organizationهای فعال با نقش canonical `AGENCY` می‌آیند. جست‌وجو، Loading/Empty/Error، Retry و لینک مستقیم به بخش مالک رکورد فعال است و Marketing هیچ Query مستقیم یا کپی داده هویتی ندارد.
+- هیچ Schema/Migration/Seed، API/Shared Contract، Dependency/Lockfile، Permission یا فایل مرکزی UI تغییر نکرد. Web lint، typecheck، ۲۱ تست هدفمند و Production Build با ۳۴ Route موفق‌اند؛ نسخه متصل به API پورت ۴۰۰۰ جای اجرای قدیمی روی پورت ۳۱۰۰ فعال شد.
+
+## MASTER-005 — خواندن، ثبت و نمایش نتیجه Excel — ادغام‌شده
+
+- جریان موجود `HOTEL_IMPORT_V1` دوباره بررسی شد: Preview و اعتبارسنجی امنیتی قبل از Commit انجام می‌شوند و ثبت ردیف‌ها، ارتباطات مرجع و Audit در تراکنش اتمیک Backend باقی مانده است.
+- نقص نمایش پس از ثبت برطرف شد؛ پس از Commit موفق، Workspace به فهرست هتل‌های همان کشور/شهر می‌رود، فیلتر وضعیت روی «همه» قرار می‌گیرد و شمارنده‌های ایجاد، به‌روزرسانی و ردشدن را نمایش می‌دهد.
+- تست جدید سرویس، خواندن Workbook، ایجاد رکورد هتل در مقصد و ثبت Audit را پوشش می‌دهد. اجباری‌بودن فیلدهای Catalog اکنون علاوه بر ستارهٔ UI به semantics خود کنترل منتقل می‌شود و Backend نیز همان الزام‌ها را پیش از ثبت اعمال می‌کند. وعده/سرویس، نوع اتاق و امکانات هتل اختیاری‌اند و ثبت هتل بدون آن‌ها با تست سرویس تأیید شده است.
+- Fixtureهای محلی و تست‌های فرم با قرارداد فعلی هم‌راستا شدند؛ کد خودکار خدمت در وابستگی تأمین‌کننده/کارگزار استفاده می‌شود و شرکت اتوبوس با سازمان مالک واقعی ثبت می‌شود. ۴۰۵ تست Master Data در API، ۳۳۶ تست Master Data در Web و ۶۶ تست یکپارچگی PostgreSQL، lint، typecheck و Build تولیدی هر دو بسته با ۳۴ Route موفق‌اند؛ Schema/Migration و Customer Import تغییر نکرده‌اند.
+
+## TICKET-CATALOG-004 — حذف فضای خالی میان کارت‌های بلیت — آماده بررسی
+
+- `PC-A` روی Branch مستقل `codex/pc-a-ticket-card-dense-layout` جای‌گذاری Grid کارت‌ها را Dense کرد؛ کارت‌های تک‌مسیر خانه‌های خالی کنار گروه‌های دو ستونه را پر می‌کنند و کارت‌های رفت‌وبرگشت همچنان در یک Wrapper و کنار هم می‌مانند.
+- ۹۵/۹۵ تست Ticket Catalog Web، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند. قانون Dense در CSS تولیدشده موجود است و نسخه جدید روی پورت ۳۱۰۰ پاسخ ۲۰۰ دارد. Browser QA خودکار به‌علت خطای ACL ابزار Windows ممکن نشد.
+- هیچ Schema/Migration/Seed، API، Contract، Dependency/Lockfile یا ماژول دیگری تغییر نکرد.
 
 ## SALES-FIRST-PASSENGER-ACQUAINTANCE-0908 — COMPLETE_CODE / LOCAL_ACTIVATION_PENDING
 
@@ -323,6 +378,7 @@ Individual agreed package totals per passenger/currency are persisted with exact
 - Popup موجود آژانس اطلاعات واقعی آدرس، تماس ماسک‌شده، پروفایل، قرارداد، اعتبار و نرخ را از APIهای عمومی می‌گیرد. تاریخ‌ها از تقویم مشترک شمسی/میلادی استفاده می‌کنند و Finance exposure تا انتشار Adapter مالک Finance صریحاً ناموجود است؛ مقدار صفر ساختگی تولید نمی‌شود.
 - Migrationها روی PostgreSQL موقت خالی از ابتدا تا انتها اجرا و ۶ جدول و ۲۲ Index جدید بررسی شدند. Prisma، lint، typecheck، ۲۱ تست هدفمند و Production Build وب با ۳۴ Route موفق‌اند. Full Test فقط روی assertion قدیمی و تغییرنیافته Customer که در Checkout ویندوز LF را با CRLF مقایسه می‌کند قرمز است.
 - قفل‌های محدود Migration، قرارداد عمومی B2B و Central Docs تا پایان Review نزد همین Task می‌مانند؛ Branchهای PC-A و PR #90 دست‌نخورده‌اند و Merge خودکار انجام نمی‌شود.
+
 ## MARKETING-001E — بازگردانی ارتباطات مارکتینگ — آماده بررسی
 
 - `PC-B` روی Branch مستقل `codex/pc-b-marketing-communications-restore` بخش «ارتباطات» را به Hub، Route مستقیم و Breadcrumb پویا برگرداند. چهار تب «ارسال پیام»، «ارسال‌های زمان‌بندی‌شده»، «تاریخچه ارسال‌ها» و «قالب‌های پیام» فعال‌اند و «عملکرد کانال‌ها» مطابق درخواست قبلی حذف باقی مانده است.

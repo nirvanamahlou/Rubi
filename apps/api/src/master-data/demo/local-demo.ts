@@ -8,6 +8,7 @@ import { MasterDataService } from '../master-data.service';
 import {
   DEMO_PREFIX,
   masterDataDemoRecords,
+  type DemoReferenceResolver,
   type DemoResource,
 } from './demo-data';
 import {
@@ -99,7 +100,13 @@ export async function seedLocalMasterDataDemo(input: {
           new MasterDataRepository({ client } as DatabaseService),
           crypto,
         );
-        const ids = new Map<string, string>();
+        const references = new Map<string, { id: string; code: string }>();
+        const resolveReference: DemoReferenceResolver = (key, field = 'id') => {
+          const reference = references.get(key)?.[field];
+          if (!reference)
+            throw new Error(`Missing demo dependency: ${key}.${field}`);
+          return reference;
+        };
         const report: DemoReport = {
           applied: input.apply,
           created: 0,
@@ -167,32 +174,38 @@ export async function seedLocalMasterDataDemo(input: {
             },
           });
           let id: string;
+          let code: string;
           if (marker) {
             if (!marker.entityId || marker.resource !== fixture.resource)
               throw new Error(`Invalid demo marker: ${fixture.key}`);
             // Preserve even manually edited fixtures. Never recreate a deleted one silently.
-            id = (await service.detail(fixture.resource, marker.entityId)).data
-              .id;
+            const existing = (
+              await service.detail(fixture.resource, marker.entityId)
+            ).data;
+            id = existing.id;
+            code = existing.code;
             if (input.realistic && !completedRefresh) {
-              const values = fixture.values((key) => {
-                const reference = ids.get(key);
-                if (!reference)
-                  throw new Error(`Missing demo dependency: ${key}`);
-                return reference;
-              });
-              await service.update(fixture.resource, id, values, 1, actor);
+              const updated = await service.update(
+                fixture.resource,
+                id,
+                fixture.values(resolveReference),
+                1,
+                actor,
+              );
+              code = updated.data.code;
               report.refreshed++;
             } else report.reused++;
           } else {
-            const values = fixture.values((key) => {
-              const reference = ids.get(key);
-              if (!reference)
-                throw new Error(`Missing demo dependency: ${key}`);
-              return reference;
-            });
             try {
-              id = (await service.create(fixture.resource, values, actor)).data
-                .id;
+              const created = (
+                await service.create(
+                  fixture.resource,
+                  fixture.values(resolveReference),
+                  actor,
+                )
+              ).data;
+              id = created.id;
+              code = created.code;
             } catch (error) {
               throw new Error(
                 `Demo fixture ${fixture.key} failed: ${error instanceof Error ? error.message : 'validation failed'}`,
@@ -219,7 +232,7 @@ export async function seedLocalMasterDataDemo(input: {
             });
             report.created++;
           }
-          ids.set(fixture.key, id);
+          references.set(fixture.key, { id, code });
           report.records.push({
             key: fixture.key,
             resource: fixture.resource,

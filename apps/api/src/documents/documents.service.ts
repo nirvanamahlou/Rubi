@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type { Readable } from 'node:stream';
 
 import {
@@ -12,6 +12,8 @@ import {
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
+  DocumentAccessGrantResponseV1,
+  DocumentAccessPurposeCode,
   DocumentCaseOptionsQueryV1,
   DocumentCaseOptionsResponseV1,
   DocumentAuditEventV1,
@@ -28,11 +30,13 @@ import type {
 } from '@rubi/contracts';
 
 import type {
+  DocumentAccessGrantDto,
   DocumentArchiveActionDto,
   DocumentDeleteDto,
   DocumentUpdateDto,
   DocumentUploadDto,
 } from './documents.dto';
+import { IAM_STEP_UP_PORT, type IamStepUpPort } from '../iam/iam-step-up.port';
 import {
   allowedDocumentDomains,
   type DocumentDetailRow,
@@ -57,6 +61,7 @@ export interface DocumentRequestMetadata {
   ipAddress?: string;
   userAgent?: string;
   sensitiveReason?: string;
+  accessGrantToken?: string;
 }
 
 const validSortFields = new Set<DocumentSortCode>([
@@ -178,6 +183,7 @@ function mapListItem(
     confidentiality: row.confidentiality,
     archiveStatus: row.archiveStatus,
     isIncomplete: row.isIncomplete,
+    requiresStepUpVerification: row.requiresStepUpVerification,
     validUntil: row.validUntil?.toISOString() ?? null,
     version: row.version,
     currentVersion: mapVersion(
@@ -217,6 +223,8 @@ export class DocumentsService {
     private readonly storage: LocalDocumentStorage,
     @Inject(DocumentsScanProcessor)
     private readonly scanProcessor: DocumentsScanProcessor,
+    @Inject(IAM_STEP_UP_PORT)
+    private readonly iamStepUp: IamStepUpPort,
   ) {}
 
   private assertDomain(
@@ -492,6 +500,8 @@ export class DocumentsService {
       reason: dto.reason.trim(),
       actorUserId: actor.userId,
       actorBranchId: row.branchId,
+      ownerUserId: row.ownerUserId,
+      documentTitle: row.title,
       ipSummary: summarizeIp(metadata.ipAddress),
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
@@ -524,6 +534,8 @@ export class DocumentsService {
       reason: dto.reason.trim(),
       actorUserId: actor.userId,
       actorBranchId: row.branchId,
+      ownerUserId: row.ownerUserId,
+      documentTitle: row.title,
       ipSummary: summarizeIp(metadata.ipAddress),
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
@@ -614,7 +626,13 @@ export class DocumentsService {
         this.storage.removeQuarantined(version.storageObjectKey),
       ),
     );
-    const deleted = await this.repository.permanentlyDelete(id, dto.version);
+    const deleted = await this.repository.permanentlyDelete({
+      documentId: id,
+      expectedVersion: dto.version,
+      actorUserId: actor.userId,
+      ownerUserId: row.ownerUserId,
+      documentTitle: row.title,
+    });
     if (!deleted) {
       throw new ConflictException(
         'سند هم‌زمان تغییر کرده است؛ فهرست را تازه کنید.',
@@ -728,6 +746,7 @@ export class DocumentsService {
         sourceDisplayLabel: sourceReference.displayLabel,
         confidentiality:
           dto.confidentiality ?? references.documentType.defaultConfidentiality,
+        requiresStepUpVerification: dto.requiresStepUpVerification ?? false,
         validUntil: dto.validUntil
           ? new Date(`${dto.validUntil.slice(0, 10)}T23:59:59.999Z`)
           : null,
@@ -779,6 +798,98 @@ export class DocumentsService {
     };
   }
 
+  async createAccessGrant(
+    id: string,
+    dto: DocumentAccessGrantDto,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<DocumentAccessGrantResponseV1> {
+    const row = await this.repository.findDetail(id, actor.branchIds);
+    if (!row || !row.currentVersion)
+      throw new NotFoundException('سند پیدا نشد.');
+    this.assertDomain(row.documentType.domain, actor.permissions);
+    if (!row.requiresStepUpVerification) {
+      await this.auditAccessGrantFailure(
+        row,
+        actor,
+        metadata,
+        'STEP_UP_NOT_REQUIRED',
+      );
+      throw new ConflictException({
+        code: 'DOCUMENT_STEP_UP_NOT_REQUIRED',
+        message: 'این سند به اعتبارسنجی دومرحله‌ای نیاز ندارد.',
+      });
+    }
+    const sensitive =
+      row.confidentiality === 'CONFIDENTIAL' ||
+      row.confidentiality === 'RESTRICTED';
+    const hasPurposePermission =
+      dto.purpose === 'PREVIEW'
+        ? actor.permissions.includes('documents.file.read') &&
+          (!sensitive || actor.permissions.includes('documents.sensitive.read'))
+        : actor.permissions.includes('documents.file.read') &&
+          actor.permissions.includes('documents.download') &&
+          (!sensitive ||
+            actor.permissions.includes('documents.sensitive.download'));
+    const previewable =
+      dto.purpose !== 'PREVIEW' ||
+      previewableImageMimeTypes.has(row.currentVersion.detectedMimeType);
+    if (
+      !hasPurposePermission ||
+      !previewable ||
+      row.archiveStatus !== 'ACTIVE' ||
+      row.currentVersion.scanStatus !== 'CLEAN'
+    ) {
+      await this.auditAccessGrantFailure(
+        row,
+        actor,
+        metadata,
+        'ACCESS_GRANT_POLICY_DENIED',
+      );
+      throw new ForbiddenException('دریافت مجوز نمایش این سند مجاز نیست.');
+    }
+    try {
+      await this.iamStepUp.verifyStepUp(actor, dto.code, metadata);
+    } catch (error) {
+      await this.repository.appendAudit({
+        documentId: row.id,
+        versionId: row.currentVersion.id,
+        actorUserId: actor.userId,
+        actorBranchId: row.branchId,
+        action: 'documents.access_grant.create',
+        outcome: 'FAILURE',
+        reason: 'STEP_UP_VERIFICATION_FAILED',
+        ipSummary: summarizeIp(metadata.ipAddress),
+        userAgentSummary: summarizeUserAgent(metadata.userAgent),
+      });
+      throw error;
+    }
+    const token = randomBytes(32).toString('base64url');
+    const expiresAt = new Date(Date.now() + 2 * 60_000);
+    await this.repository.createAccessGrant({
+      tokenHash: createHash('sha256').update(token, 'utf8').digest('hex'),
+      documentId: row.id,
+      actorUserId: actor.userId,
+      actorSessionId: actor.sessionId,
+      purpose: dto.purpose,
+      expiresAt,
+    });
+    await this.repository.appendAudit({
+      documentId: row.id,
+      versionId: row.currentVersion.id,
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      action: 'documents.access_grant.create',
+      outcome: 'SUCCESS',
+      reason: dto.purpose,
+      ipSummary: summarizeIp(metadata.ipAddress),
+      userAgentSummary: summarizeUserAgent(metadata.userAgent),
+    });
+    return {
+      data: { token, purpose: dto.purpose, expiresAt: expiresAt.toISOString() },
+    };
+  }
+
   async download(
     id: string,
     actor: AuthenticatedActor,
@@ -791,7 +902,7 @@ export class DocumentsService {
     const sensitive =
       row.confidentiality === 'CONFIDENTIAL' ||
       row.confidentiality === 'RESTRICTED';
-    const allowed =
+    const baseAllowed =
       actor.permissions.includes('documents.file.read') &&
       actor.permissions.includes('documents.download') &&
       (!sensitive ||
@@ -799,6 +910,11 @@ export class DocumentsService {
           (metadata.sensitiveReason?.trim().length ?? 0) >= 5)) &&
       row.archiveStatus === 'ACTIVE' &&
       row.currentVersion.scanStatus === 'CLEAN';
+    const stepUpAllowed =
+      baseAllowed && row.requiresStepUpVerification
+        ? await this.consumeAccessGrant(row.id, actor, 'DOWNLOAD', metadata)
+        : true;
+    const allowed = baseAllowed && stepUpAllowed;
     await this.repository.appendAudit({
       documentId: row.id,
       versionId: row.currentVersion.id,
@@ -808,7 +924,9 @@ export class DocumentsService {
       outcome: allowed ? 'SUCCESS' : 'FAILURE',
       reason: allowed
         ? metadata.sensitiveReason?.trim() || null
-        : 'DOWNLOAD_POLICY_DENIED',
+        : baseAllowed && row.requiresStepUpVerification
+          ? 'DOWNLOAD_STEP_UP_DENIED'
+          : 'DOWNLOAD_POLICY_DENIED',
       ipSummary: summarizeIp(metadata.ipAddress),
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
@@ -851,19 +969,26 @@ export class DocumentsService {
     const previewable = previewableImageMimeTypes.has(
       row.currentVersion.detectedMimeType,
     );
-    const allowed =
+    const baseAllowed =
       actor.permissions.includes('documents.file.read') &&
       sensitiveAllowed &&
       row.archiveStatus === 'ACTIVE' &&
       row.currentVersion.scanStatus === 'CLEAN' &&
       previewable;
+    const stepUpAllowed =
+      baseAllowed && row.requiresStepUpVerification
+        ? await this.consumeAccessGrant(row.id, actor, 'PREVIEW', metadata)
+        : true;
+    const allowed = baseAllowed && stepUpAllowed;
 
     const denialReason =
       row.currentVersion.scanStatus !== 'CLEAN'
         ? 'PREVIEW_SCAN_BLOCKED'
         : !previewable
           ? 'PREVIEW_TYPE_UNSUPPORTED'
-          : 'PREVIEW_POLICY_DENIED';
+          : baseAllowed && row.requiresStepUpVerification
+            ? 'PREVIEW_STEP_UP_DENIED'
+            : 'PREVIEW_POLICY_DENIED';
     await this.repository.appendAudit({
       documentId: row.id,
       versionId: row.currentVersion.id,
@@ -899,5 +1024,42 @@ export class DocumentsService {
       mimeType: row.currentVersion.detectedMimeType,
       sizeBytes: Number(row.currentVersion.sizeBytes),
     };
+  }
+
+  private async consumeAccessGrant(
+    documentId: string,
+    actor: AuthenticatedActor,
+    purpose: DocumentAccessPurposeCode,
+    metadata: DocumentRequestMetadata,
+  ): Promise<boolean> {
+    if (!metadata.accessGrantToken) return false;
+    return this.repository.consumeAccessGrant({
+      tokenHash: createHash('sha256')
+        .update(metadata.accessGrantToken, 'utf8')
+        .digest('hex'),
+      documentId,
+      actorUserId: actor.userId,
+      actorSessionId: actor.sessionId,
+      purpose,
+    });
+  }
+
+  private auditAccessGrantFailure(
+    row: DocumentDetailRow,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+    reason: string,
+  ) {
+    return this.repository.appendAudit({
+      documentId: row.id,
+      ...(row.currentVersion ? { versionId: row.currentVersion.id } : {}),
+      actorUserId: actor.userId,
+      actorBranchId: row.branchId,
+      action: 'documents.access_grant.create',
+      outcome: 'FAILURE',
+      reason,
+      ipSummary: summarizeIp(metadata.ipAddress),
+      userAgentSummary: summarizeUserAgent(metadata.userAgent),
+    });
   }
 }

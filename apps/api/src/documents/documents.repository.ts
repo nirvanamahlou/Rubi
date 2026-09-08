@@ -1,8 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { DocumentDomainCode, DocumentListQueryV1 } from '@rubi/contracts';
+import type {
+  DocumentAccessPurposeCode,
+  DocumentDomainCode,
+  DocumentListQueryV1,
+} from '@rubi/contracts';
 import { AuditOutcome, type Prisma } from '@rubi/database';
 
 import { DatabaseService } from '../database/database.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import type { NotificationTransaction } from '../notifications/notifications.types';
 import type { LocalAntivirusResult } from './documents.antivirus';
 
 export const documentListInclude = {
@@ -83,7 +89,67 @@ function dateAtEndOfDay(value: string): Date {
 export class DocumentsRepository {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(NotificationsService)
+    private readonly notifications: NotificationsService,
   ) {}
+
+  private notifyDocumentChange(
+    transaction: NotificationTransaction,
+    input: {
+      action:
+        | 'documents.upload'
+        | 'documents.metadata.update'
+        | 'documents.archive'
+        | 'documents.restore'
+        | 'documents.completion.update'
+        | 'documents.permanently-delete';
+      actorUserId: string;
+      ownerUserId: string;
+      documentId: string;
+      documentTitle: string;
+    },
+  ): Promise<void> {
+    const content = {
+      'documents.upload': {
+        title: 'سند جدید بارگذاری شد',
+        verb: 'بارگذاری شد',
+      },
+      'documents.metadata.update': {
+        title: 'اطلاعات سند ویرایش شد',
+        verb: 'ویرایش شد',
+      },
+      'documents.archive': {
+        title: 'سند آرشیو شد',
+        verb: 'آرشیو شد',
+      },
+      'documents.restore': {
+        title: 'سند بازیابی شد',
+        verb: 'از آرشیو بازیابی شد',
+      },
+      'documents.completion.update': {
+        title: 'وضعیت تکمیل سند تغییر کرد',
+        verb: 'از نظر کامل‌بودن تغییر کرد',
+      },
+      'documents.permanently-delete': {
+        title: 'سند برای همیشه حذف شد',
+        verb: 'برای همیشه حذف شد',
+      },
+    }[input.action];
+    return this.notifications.createWithinTransaction(transaction, {
+      recipientUserIds: [input.actorUserId, input.ownerUserId],
+      actorUserId: input.actorUserId,
+      sourceModule: 'documents',
+      eventType: input.action,
+      title: content.title,
+      message: `سند «${input.documentTitle}» ${content.verb}.`,
+      entityType: 'Document',
+      entityId: input.documentId,
+      href:
+        input.action === 'documents.permanently-delete'
+          ? '/documents'
+          : `/documents?document=${encodeURIComponent(input.documentId)}`,
+    });
+  }
 
   async list(
     query: Required<
@@ -464,6 +530,13 @@ export class DocumentsRepository {
           userAgentSummary: input.userAgentSummary,
         },
       });
+      await this.notifyDocumentChange(transaction, {
+        action: 'documents.metadata.update',
+        actorUserId: input.actorUserId,
+        ownerUserId: input.ownerUserId,
+        documentId: input.documentId,
+        documentTitle: input.title,
+      });
       return transaction.document.findUniqueOrThrow({
         where: { id: input.documentId },
         include: documentDetailInclude,
@@ -480,6 +553,8 @@ export class DocumentsRepository {
     reason: string;
     actorUserId: string;
     actorBranchId: string;
+    ownerUserId: string;
+    documentTitle: string;
     ipSummary: string;
     userAgentSummary: string;
   }): Promise<DocumentDetailRow | null> {
@@ -509,6 +584,13 @@ export class DocumentsRepository {
           ipSummary: input.ipSummary,
           userAgentSummary: input.userAgentSummary,
         },
+      });
+      await this.notifyDocumentChange(transaction, {
+        action: input.action,
+        actorUserId: input.actorUserId,
+        ownerUserId: input.ownerUserId,
+        documentId: input.documentId,
+        documentTitle: input.documentTitle,
       });
       return transaction.document.findUniqueOrThrow({
         where: { id: input.documentId },
@@ -560,28 +642,42 @@ export class DocumentsRepository {
             userAgentSummary: input.userAgentSummary,
           },
         });
+        await this.notifyDocumentChange(transaction, {
+          action: isArchiveAction
+            ? input.action === 'ARCHIVE'
+              ? 'documents.archive'
+              : 'documents.restore'
+            : 'documents.completion.update',
+          actorUserId: input.actorUserId,
+          ownerUserId: row.ownerUserId,
+          documentId: row.id,
+          documentTitle: row.title,
+        });
       }
       return input.rows.length;
     });
   }
 
-  async permanentlyDelete(
-    documentId: string,
-    expectedVersion: number,
-  ): Promise<boolean> {
+  async permanentlyDelete(input: {
+    documentId: string;
+    expectedVersion: number;
+    actorUserId: string;
+    ownerUserId: string;
+    documentTitle: string;
+  }): Promise<boolean> {
     return this.database.client.$transaction(async (transaction) => {
       const current = await transaction.document.findUnique({
-        where: { id: documentId },
+        where: { id: input.documentId },
         select: { version: true },
       });
-      if (!current || current.version !== expectedVersion) return false;
+      if (!current || current.version !== input.expectedVersion) return false;
       const versions = await transaction.documentVersion.findMany({
-        where: { documentId },
+        where: { documentId: input.documentId },
         select: { id: true },
       });
       const versionIds = versions.map(({ id }) => id);
       await transaction.document.update({
-        where: { id: documentId },
+        where: { id: input.documentId },
         data: { currentVersionId: null },
       });
       await transaction.documentProcessingJob.deleteMany({
@@ -591,15 +687,22 @@ export class DocumentsRepository {
         where: { versionId: { in: versionIds } },
       });
       await transaction.documentAuditEvent.deleteMany({
-        where: { documentId },
+        where: { documentId: input.documentId },
       });
       await transaction.documentRelation.deleteMany({
-        where: { documentId },
+        where: { documentId: input.documentId },
       });
       await transaction.documentVersion.deleteMany({
-        where: { documentId },
+        where: { documentId: input.documentId },
       });
-      await transaction.document.delete({ where: { id: documentId } });
+      await transaction.document.delete({ where: { id: input.documentId } });
+      await this.notifyDocumentChange(transaction, {
+        action: 'documents.permanently-delete',
+        actorUserId: input.actorUserId,
+        ownerUserId: input.ownerUserId,
+        documentId: input.documentId,
+        documentTitle: input.documentTitle,
+      });
       return true;
     });
   }
@@ -619,6 +722,7 @@ export class DocumentsRepository {
     sourceEntityId: string;
     sourceDisplayLabel: string;
     confidentiality: string;
+    requiresStepUpVerification: boolean;
     validUntil: Date | null;
     originalFileName: string;
     safeDownloadName: string;
@@ -646,6 +750,7 @@ export class DocumentsRepository {
           sourceEntityType: input.sourceEntityType,
           sourceEntityId: input.sourceEntityId,
           confidentiality: input.confidentiality as never,
+          requiresStepUpVerification: input.requiresStepUpVerification,
           validUntil: input.validUntil,
           createdByUserId: input.actorUserId,
           updatedByUserId: input.actorUserId,
@@ -704,6 +809,13 @@ export class DocumentsRepository {
           userAgentSummary: input.userAgentSummary,
         },
       });
+      await this.notifyDocumentChange(transaction, {
+        action: 'documents.upload',
+        actorUserId: input.actorUserId,
+        ownerUserId: input.ownerUserId,
+        documentId: input.documentId,
+        documentTitle: input.title,
+      });
       return transaction.document.findUniqueOrThrow({
         where: { id: input.documentId },
         include: documentDetailInclude,
@@ -729,6 +841,48 @@ export class DocumentsRepository {
         outcome: input.outcome,
       },
     });
+  }
+
+  async createAccessGrant(input: {
+    tokenHash: string;
+    documentId: string;
+    actorUserId: string;
+    actorSessionId: string;
+    purpose: DocumentAccessPurposeCode;
+    expiresAt: Date;
+  }): Promise<void> {
+    await this.database.client.$transaction([
+      this.database.client.documentAccessGrant.deleteMany({
+        where: {
+          expiresAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
+      }),
+      this.database.client.documentAccessGrant.create({
+        data: input,
+      }),
+    ]);
+  }
+
+  async consumeAccessGrant(input: {
+    tokenHash: string;
+    documentId: string;
+    actorUserId: string;
+    actorSessionId: string;
+    purpose: DocumentAccessPurposeCode;
+  }): Promise<boolean> {
+    const claimed = await this.database.client.documentAccessGrant.updateMany({
+      where: {
+        tokenHash: input.tokenHash,
+        documentId: input.documentId,
+        actorUserId: input.actorUserId,
+        actorSessionId: input.actorSessionId,
+        purpose: input.purpose,
+        consumedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      data: { consumedAt: new Date() },
+    });
+    return claimed.count === 1;
   }
 
   audit(documentId: string) {
