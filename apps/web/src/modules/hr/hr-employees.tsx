@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import type { HrEmployeeDto } from '@rubi/contracts';
 import { hrApi } from './hr-api';
 import type { HrStore } from './hr-store';
@@ -13,10 +14,10 @@ import {
   HrRangeBar,
   HrTable,
 } from './hr-controls';
-import {
-  NewEmployeeDialog,
-  type NewEmployeeFormValue,
-} from './new-employee-dialog';
+import type { NewEmployeeFormValue } from './new-employee-dialog';
+const NewEmployeeDialog = dynamic(() =>
+  import('./new-employee-dialog').then((module) => module.NewEmployeeDialog),
+);
 import { employeeLabel, hrCompanies } from './hr-live-data';
 import type { HrPreviewDataset } from './hr-preview-data';
 import { normalizeHrText } from './hr-data-utils';

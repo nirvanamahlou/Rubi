@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Plus, RefreshCw } from 'lucide-react';
 import { getHrResource, type HrRecordDto } from '@rubi/contracts';
 import type { HrSectionId } from './hr.model';
@@ -15,6 +16,7 @@ import { allHrRecords, type HrStore } from './hr-store';
 import { recordsDataset, hrCompanies } from './hr-live-data';
 import {
   HrButton,
+  HrLoading,
   HrConfirmDelete,
   HrPanel,
   HrRangeBar,
@@ -22,30 +24,16 @@ import {
   HrTabs,
 } from './hr-controls';
 import type { HrFormTarget } from './hr-record-form';
-import { HrImport } from './hr-import';
+const HrImport = dynamic(() =>
+  import('./hr-import').then((module) => module.HrImport),
+);
 import { ShiftCalendar } from './shift-calendar';
 import { SectionReports } from './section-reports';
 import ui from './hr-unified.module.css';
 import { parseSavedHrFilter } from './hr-filters';
 
-export function sourceForRecord(record: HrRecordDto): HrSource {
-  return (
-    Object.values(hrGroups)
-      .flatMap((groups) => groups.flatMap((group) => group.sources))
-      .find(
-        (source) =>
-          source.section === record.section && source.tab === record.tab,
-      ) ?? {
-      section: record.section as HrSectionId,
-      tab: record.tab,
-      label:
-        sectionTabs[record.section as HrSectionId]?.find(
-          (tab) => tab.id === record.tab,
-        )?.label ?? 'پرونده',
-      action: 'افزودن',
-    }
-  );
-}
+export { sourceForRecord } from './hr-record-source';
+
 export function HrUnifiedSection({
   section,
   initialTab,
@@ -94,6 +82,7 @@ export function HrUnifiedSection({
   const [range, setRange] = useState({ from: '', to: '' });
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<HrRecordDto[]>([]);
+  const [loadedSource, setLoadedSource] = useState('');
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -143,6 +132,7 @@ export function HrUnifiedSection({
         .then((result) => {
           if (active) {
             setItems(result.items);
+            setLoadedSource(`${sourceSection}.${activeTab}`);
             setTotal(result.total);
             remember(result.items);
           }
@@ -161,7 +151,7 @@ export function HrUnifiedSection({
       active = false;
       window.clearTimeout(timer);
     };
-  }, [queryKey, page, store.revision, remember]);
+  }, [queryKey, page, store.revision, remember, sourceSection, activeTab]);
   useEffect(() => {
     if (!calendar) return;
     let active = true;
@@ -177,7 +167,8 @@ export function HrUnifiedSection({
       active = false;
     };
   }, [calendar, queryKey, store.revision]);
-  const currentItems = items;
+  const matchingSource = loadedSource === `${sourceSection}.${activeTab}`;
+  const currentItems = matchingSource ? items : [];
   const dataset = recordsDataset(source.section, source.tab, currentItems);
   const writable = Boolean(
     definition &&
@@ -465,8 +456,8 @@ export function HrUnifiedSection({
             {notice}
           </p>
         ) : null}
-        {loading ? (
-          <p role="status">در حال دریافت اطلاعات…</p>
+        {!matchingSource && !error ? (
+          <HrLoading />
         ) : calendar ? (
           <ShiftCalendar
             shifts={recordsDataset('time', 'shift', calendarItems)}
@@ -475,6 +466,8 @@ export function HrUnifiedSection({
           <>
             <HrTable
               data={dataset}
+              showPagination={false}
+              busy={loading}
               onOpen={(index) => onSelect(currentItems[index]!, source)}
               {...(writable
                 ? {
@@ -490,7 +483,10 @@ export function HrUnifiedSection({
               <HrButton disabled={page === 1} onClick={() => setPage(page - 1)}>
                 قبلی
               </HrButton>
-              <span>{page.toLocaleString('fa-IR')}</span>
+              <span>
+                صفحه {page.toLocaleString('fa-IR')} از{' '}
+                {Math.max(1, Math.ceil(total / 20)).toLocaleString('fa-IR')}
+              </span>
               <HrButton
                 disabled={page * 20 >= total}
                 onClick={() => setPage(page + 1)}

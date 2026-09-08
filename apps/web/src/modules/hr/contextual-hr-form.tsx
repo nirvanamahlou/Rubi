@@ -3,6 +3,8 @@
 import { ExternalLink, Upload } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
+import { persianDateToIso } from './hr-dates';
+export { persianDateToIso } from './hr-dates';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +12,8 @@ import {
   DialogTitle,
 } from '@/components/ui/overlays';
 import type { HrSectionId } from './hr.model';
-import styles from './hr-workspace.module.css';
+import styles from './hr-forms.module.css';
+import { buttonVariants } from '@/components/ui/button';
 import { parseWeightedGoals, weightedProgress } from './weighted-goals';
 import { RequiredFieldLabel } from './required-field-label';
 
@@ -358,39 +361,6 @@ export async function readHrAttachmentFile(value: string): Promise<File> {
   if (!dataUrl) throw new Error('فایل انتخاب‌شده در این نشست پیدا نشد.');
   const blob = await fetch(dataUrl).then((response) => response.blob());
   return new File([blob], reference.name, { type: blob.type });
-}
-
-const normalizeDigits = (value: string) =>
-  value
-    .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
-    .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
-
-export function persianDateToIso(value: string): string {
-  if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value;
-  const match = /^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/.exec(
-    normalizeDigits(value.trim()),
-  );
-  if (!match) return value;
-  const target = `${match[1]}-${match[2]?.padStart(2, '0')}-${match[3]?.padStart(2, '0')}`;
-  const formatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-  const start = new Date(Number(match[1]) + 620, 0, 1, 12);
-  const end = new Date(Number(match[1]) + 622, 11, 31, 12);
-  for (let date = start; date <= end; date.setDate(date.getDate() + 1)) {
-    const parts = formatter.formatToParts(date);
-    const part = (type: Intl.DateTimeFormatPartTypes) =>
-      parts.find((item) => item.type === type)?.value.padStart(2, '0') ?? '';
-    if (`${part('year')}-${part('month')}-${part('day')}` === target) {
-      const year = String(date.getFullYear());
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-  }
-  return value;
 }
 
 const isAutomaticCodeField = (field: ContextualHrField, index: number) =>
@@ -746,7 +716,7 @@ export function ContextualHrForm({
           ))}
           <button
             type="button"
-            className={styles.button}
+            className={buttonVariants({ variant: 'outline' })}
             onClick={() =>
               setGoals((items) => [
                 ...items,
@@ -840,6 +810,7 @@ export function ContextualHrForm({
                 ) : field.type === 'date' ? (
                   <DatePicker
                     {...commonProps}
+                    className={styles.dateControl!}
                     onChange={(value) => update(field.id, value)}
                     placeholder={`انتخاب ${field.label}`}
                     readOnly={readOnly}
@@ -911,11 +882,15 @@ export function ContextualHrForm({
         </div>
       </fieldset>
       <div className={styles.modalFooter}>
-        <button className={styles.button} onClick={onCancel} type="button">
+        <button
+          className={buttonVariants({ variant: 'outline' })}
+          onClick={onCancel}
+          type="button"
+        >
           انصراف
         </button>
         <button
-          className={`${styles.button} ${styles.buttonPrimary}`}
+          className={buttonVariants({ variant: 'primary' })}
           disabled={fileLoading || saving}
           type="submit"
         >

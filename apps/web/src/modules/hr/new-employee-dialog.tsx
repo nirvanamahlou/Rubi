@@ -8,7 +8,8 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/overlays';
-import styles from './hr-workspace.module.css';
+import styles from './hr-forms.module.css';
+import { buttonVariants } from '@/components/ui/button';
 import { RequiredFieldLabel } from './required-field-label';
 
 const employmentTypes = [
@@ -442,11 +443,15 @@ export function NewEmployeeForm({
       </fieldset>
 
       <div className={styles.modalFooter}>
-        <button className={styles.button} onClick={onCancel} type="button">
+        <button
+          className={buttonVariants({ variant: 'outline' })}
+          onClick={onCancel}
+          type="button"
+        >
           انصراف
         </button>
         <button
-          className={`${styles.button} ${styles.buttonPrimary}`}
+          className={buttonVariants({ variant: 'primary' })}
           type="submit"
           disabled={saving}
         >

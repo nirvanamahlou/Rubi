@@ -5,7 +5,8 @@ import { OrganizationChart, type OrganizationNode } from './organization-chart';
 import { HrButton, HrConfirmDelete, HrPanel, HrTabs } from './hr-controls';
 import type { HrFormTarget } from './hr-record-form';
 import type { HrStore } from './hr-store';
-import { HrUnifiedSection, sourceForRecord } from './hr-unified-section';
+import { HrUnifiedSection } from './hr-unified-section';
+import { sourceForRecord } from './hr-record-source';
 import type { HrSource } from './hr-navigation';
 import ui from './hr-unified.module.css';
 

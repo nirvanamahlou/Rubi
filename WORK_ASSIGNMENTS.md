@@ -1,5 +1,14 @@
 # Work Assignments
 
+## HR-006 — PC-B — READY_FOR_REVIEW
+
+- Owner request: rebuild the HR experience with Rubi's existing theme, keep all current capabilities and do not add sections. Branch `codex/pc-b-hr-rubi-redesign` starts at the reviewed, pushed HR-005 head `cfd6549`.
+- Reserved: live HR presentation/navigation/components/styles and related web tests in `apps/web/src/modules/hr/**`; `docs/tasks/HR-006.md` and only HR-006 entries in central assignment/status/plans. Shared shell, Master Data and shared UI are read-only references/consumers. Other worktrees and the HR-005 backend remain intact.
+- No schema/migration, API, shared contracts, dependency/lockfile, user credentials, business data or shared-module changes. Preserve current section IDs and links, permissions, persistent operations, upload, calendar and reporting contracts. UI controls may be consolidated without adding destinations.
+- Verify themed responsive screens, keyboard interaction, forms/tables/navigation, affected tests/typecheck/lint/build and the final served commit. No merge.
+- Runtime handoff 2026-09-08: Task «PC-B Uniting» has owner approval for the integrated build on 3100/4000. HR-006 released only those runtime ports and moved its preview to `127.0.0.1:3188` / API `127.0.0.1:4188`, using an ignored public API URL setting. Do not restart 3100/4000 from this task. Original HR checkout/database remain separate from the integrated runtime copy.
+- Delivered: shared Rubi theme across existing screens/forms/tables/dossiers/calendar/notifications, compact section navigation, deferred forms/reports, safe loading/source changes and cached date conversion. Lint/typecheck, 85 HR tests, production build and authenticated responsive/keyboard/export/calendar QA passed. See `docs/tasks/HR-006.md`; no merge.
+
 ## HR-005 — PC-B — READY_FOR_REVIEW
 
 - Owner request (2026-09-08): implement the approved HR reliability priorities and all navigation/workflow consolidations. Branch `codex/pc-b-hr-unified-workflows` from the reviewed HR working baseline `a0636c6`; preserve the unmerged HR-002/003/004 changes and do not merge develop/main.

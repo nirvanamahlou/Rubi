@@ -1,12 +1,31 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+  ArrowLeft,
+  CalendarCheck2,
+  CalendarDays,
+  CircleAlert,
+  ClipboardList,
+  Clock3,
+  FileClock,
+  ShieldCheck,
+  UsersRound,
+} from 'lucide-react';
 import type { HrRecordDto } from '@rubi/contracts';
 import { getHrResource } from '@rubi/contracts';
 import { allHrRecords, type HrStore } from './hr-store';
-import { HrButton, HrPanel, HrRangeBar, HrPdfButton } from './hr-controls';
+import {
+  HrButton,
+  HrEmpty,
+  HrLoading,
+  HrPanel,
+  HrRangeBar,
+  HrPdfButton,
+  HrStatus,
+} from './hr-controls';
 import { hrCompanies } from './hr-live-data';
-import { sourceForRecord } from './hr-unified-section';
+import { sourceForRecord } from './hr-record-source';
 import type { HrSource } from './hr-navigation';
 import ui from './hr-unified.module.css';
 
@@ -20,8 +39,20 @@ export function HrDashboard({
   const [branch, setBranch] = useState('');
   const [unit, setUnit] = useState('');
   const [range, setRange] = useState({ from: '', to: '' });
-  const [records, setRecords] = useState<HrRecordDto[]>([]);
-  const [error, setError] = useState('');
+  const queryKey = JSON.stringify([
+    branch,
+    range.from,
+    range.to,
+    store.revision,
+  ]);
+  const [report, setReport] = useState<{
+    key: string;
+    records: HrRecordDto[];
+    error: string;
+  } | null>(null);
+  const loading = report?.key !== queryKey;
+  const records = loading ? [] : (report?.records ?? []);
+  const error = loading ? '' : (report?.error ?? '');
   const [now] = useState(() => new Date());
   useEffect(() => {
     let active = true;
@@ -31,16 +62,20 @@ export function HrDashboard({
       ...(range.to ? { to: range.to } : {}),
     })
       .then((items) => {
-        if (active) setRecords(items);
+        if (active) setReport({ key: queryKey, records: items, error: '' });
       })
       .catch((e) => {
         if (active)
-          setError(e instanceof Error ? e.message : 'دریافت گزارش انجام نشد.');
+          setReport({
+            key: queryKey,
+            records: [],
+            error: e instanceof Error ? e.message : 'دریافت گزارش انجام نشد.',
+          });
       });
     return () => {
       active = false;
     };
-  }, [branch, range, store.revision]);
+  }, [branch, range.from, range.to, queryKey]);
   const employees = store.data!.employees.filter(
     (item) =>
       (!branch || (item.organizationBranchId || item.branchId) === branch) &&
@@ -95,43 +130,59 @@ export function HrDashboard({
   const metrics = [
     {
       label: 'کارکنان فعال',
+      icon: UsersRound,
+      tone: 'blue',
       value: employees.filter((item) => item.status === 'فعال').length,
       href: '/hr?section=employees',
     },
     {
       label: 'حاضر امروز',
+      icon: CalendarCheck2,
+      tone: 'success',
       value: attendance.filter((item) => Number(read(item, 'ساعت کارکرد')) > 0)
         .length,
       href: '/hr?section=time&tab=attendance',
     },
     {
       label: 'در مرخصی',
+      icon: CalendarDays,
+      tone: 'violet',
       value: leaves.length,
       href: '/hr?section=time&tab=leave',
     },
     {
       label: 'نیازمند رسیدگی',
+      icon: CircleAlert,
+      tone: 'warning',
       value: pending.length + incomplete.length,
       href: '/hr?section=requests',
     },
     {
       label: 'قرارداد نزدیک پایان',
+      icon: FileClock,
+      tone: 'warning',
       value: expiring.length,
       href: '/hr?section=contracts',
     },
     {
       label: 'درخواست در انتظار',
+      icon: ClipboardList,
+      tone: 'blue',
       value: pending.length,
       href: '/hr?section=requests',
     },
     {
       label: 'اضافه‌کاری مصوب',
+      icon: Clock3,
+      tone: 'violet',
       value: overtime,
       unit: 'ساعت',
       href: '/hr?section=time&tab=overtime',
     },
     {
       label: 'تکمیل پرونده کارکنان',
+      icon: ShieldCheck,
+      tone: 'success',
       value: employees.length
         ? Math.round(
             ((employees.length - incomplete.length) * 100) / employees.length,
@@ -172,6 +223,7 @@ export function HrDashboard({
         actions={
           <HrPdfButton
             title="نمای کلی منابع انسانی"
+            disabled={loading || Boolean(error)}
             data={{
               columns: ['شاخص', 'مقدار'],
               rows: metrics.map((item) => [
@@ -182,8 +234,7 @@ export function HrDashboard({
             }}
           />
         }
-      />
-      <HrPanel title="فیلتر داشبورد">
+      >
         <div className={ui.filters}>
           <label>
             شرکت / شعبه
@@ -233,32 +284,53 @@ export function HrDashboard({
             پاک‌کردن فیلتر
           </HrButton>
         </div>
-      </HrPanel>
+      </HrRangeBar>
       {error ? (
         <p role="alert" className={ui.error}>
           {error}
         </p>
       ) : null}
-      <div className={ui.grid}>
+      <div className={ui.metricsGrid} aria-busy={loading}>
         {metrics.map((item) => (
-          <Link href={item.href} className={ui.card} key={item.label}>
-            <span>{item.label}</span>
-            <strong className={ui.metric}>
-              {item.value.toLocaleString('fa-IR')} {item.unit}
-            </strong>
+          <Link href={item.href} className={ui.metricCard} key={item.label}>
+            <span className={ui.metricIcon} data-tone={item.tone}>
+              <item.icon size={23} aria-hidden="true" />
+            </span>
+            <div>
+              <small>{item.label}</small>
+              <strong>
+                {loading || error ? '—' : item.value.toLocaleString('fa-IR')}
+                <span>{item.unit}</span>
+              </strong>
+            </div>
           </Link>
         ))}
       </div>
       <div className={ui.twoColumns}>
-        <HrPanel title="روند شروع همکاری کارکنان">
+        <HrPanel
+          title="روند شروع همکاری کارکنان"
+          description="۱۲ ماه گذشته؛ تعداد تجمعی شروع همکاری"
+        >
           <svg
+            className={ui.chart}
             viewBox="0 0 600 210"
             role="img"
             aria-label="تعداد کارکنانی که تا هر ماه شروع به همکاری کرده‌اند"
           >
+            {[35, 107, 180].map((y) => (
+              <line
+                key={y}
+                x1="10"
+                x2="582"
+                y1={y}
+                y2={y}
+                stroke="var(--border)"
+                strokeDasharray="4 4"
+              />
+            ))}
             <path
               d={`M 10 180 ${months.map((month, index) => `L ${10 + index * 52} ${180 - (month.count / max) * 145}`).join(' ')} L 582 180 Z`}
-              fill="#e1efff"
+              fill="var(--secondary)"
             />
             <polyline
               points={months
@@ -267,7 +339,7 @@ export function HrDashboard({
                     `${10 + index * 52},${180 - (month.count / max) * 145}`,
                 )
                 .join(' ')}
-              stroke="#197bf0"
+              stroke="var(--primary)"
               fill="none"
               strokeWidth="3"
             />
@@ -277,7 +349,9 @@ export function HrDashboard({
                 cx={10 + index * 52}
                 cy={180 - (month.count / max) * 145}
                 r="4"
-                fill="#197bf0"
+                fill="var(--surface)"
+                stroke="var(--primary)"
+                strokeWidth="2"
               >
                 <title>
                   {month.label}: {month.count}
@@ -285,14 +359,17 @@ export function HrDashboard({
               </circle>
             ))}
           </svg>
-          <div className={ui.actions}>
-            <span>{months[0]!.label}</span>
-            <span style={{ marginInlineStart: 'auto' }}>
+          <div className={ui.actions} dir="ltr">
+            <span dir="rtl">{months[0]!.label}</span>
+            <span dir="rtl" style={{ marginLeft: 'auto' }}>
               {months.at(-1)!.label}
             </span>
           </div>
         </HrPanel>
-        <HrPanel title="ترکیب کارکنان">
+        <HrPanel
+          title="ترکیب کارکنان"
+          description="توزیع کارکنان بر اساس نوع همکاری"
+        >
           <div className={ui.spaced}>
             {Array.from(new Set(employees.map((item) => item.kind))).map(
               (kind) => {
@@ -308,9 +385,9 @@ export function HrDashboard({
                       </strong>
                     </div>
                     <progress
+                      className={ui.progress}
                       value={count}
                       max={employees.length || 1}
-                      style={{ width: '100%' }}
                       aria-label={kind}
                     />
                   </div>
@@ -320,20 +397,50 @@ export function HrDashboard({
           </div>
         </HrPanel>
       </div>
-      <HrPanel title="نیازمند رسیدگی">
-        <div className={ui.spaced}>
-          {pending.slice(0, 10).map((record) => (
-            <HrButton
-              key={record.id}
-              onClick={() => onSelect(record, sourceForRecord(record))}
-            >
-              {sourceForRecord(record).label} · {record.code}
-            </HrButton>
-          ))}
-          {!pending.length ? (
-            <p className={ui.muted}>درخواست در انتظاری وجود ندارد.</p>
-          ) : null}
-        </div>
+      <HrPanel
+        title="نیازمند رسیدگی"
+        actions={
+          <Link href="/hr?section=requests" className={ui.link}>
+            مشاهده همه درخواست‌ها
+          </Link>
+        }
+      >
+        {loading ? (
+          <HrLoading label="در حال دریافت درخواست‌ها…" />
+        ) : error ? (
+          <HrEmpty
+            title="دریافت درخواست‌ها انجام نشد."
+            description="برای تلاش دوباره، به‌روزرسانی را بزنید."
+          />
+        ) : (
+          <div className={ui.attentionList}>
+            {pending.slice(0, 10).map((record) => (
+              <button
+                type="button"
+                className={ui.attentionItem}
+                key={record.id}
+                onClick={() => onSelect(record, sourceForRecord(record))}
+              >
+                <span>
+                  <strong>{sourceForRecord(record).label}</strong>
+                  <small>
+                    {store.data!.employees.find(
+                      (employee) => employee.id === record.employeeId,
+                    )?.name ?? record.code}
+                  </small>
+                </span>
+                <HrStatus>{record.status}</HrStatus>
+                <ArrowLeft size={17} aria-hidden="true" />
+              </button>
+            ))}
+            {!pending.length ? (
+              <HrEmpty
+                title="درخواست در انتظاری وجود ندارد."
+                description="درخواست‌های نیازمند رسیدگی در این قسمت نمایش داده می‌شوند."
+              />
+            ) : null}
+          </div>
+        )}
       </HrPanel>
     </div>
   );

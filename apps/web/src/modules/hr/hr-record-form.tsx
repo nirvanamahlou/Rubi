@@ -19,7 +19,7 @@ import { employeeLabel, hrCompanies } from './hr-live-data';
 import { prepareHrCommand } from './hr-commands';
 import { DatePicker } from '@/components/ui/date-picker';
 import { RequiredFieldLabel } from './required-field-label';
-import styles from './hr-workspace.module.css';
+
 import ui from './hr-unified.module.css';
 
 export interface HrFormTarget {
@@ -219,7 +219,7 @@ export function HrRecordForm({
         if (!open) onClose();
       }}
     >
-      <DialogContent dir="rtl" className={`${styles.modal} ${ui.detail}`}>
+      <DialogContent dir="rtl" className={ui.detail}>
         <DialogTitle>
           {target.record ? 'ویرایش' : target.source.action}{' '}
           {target.record ? target.source.label : ''}

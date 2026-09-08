@@ -13,9 +13,9 @@ import { hrApi } from './hr-api';
 import type { HrStore } from './hr-store';
 import { hrGroups, type HrSource } from './hr-navigation';
 import { recordsDataset } from './hr-live-data';
-import { HrButton, HrPanel, HrTable } from './hr-controls';
+import { HrButton, HrPanel, HrTable, HrStatus } from './hr-controls';
 import type { HrFormTarget } from './hr-record-form';
-import { reportCellText } from './section-reports';
+import { reportCellText } from './hr-report-text';
 import ui from './hr-unified.module.css';
 
 export function HrRecordDetail({
@@ -111,7 +111,7 @@ export function HrRecordDetail({
           جزئیات پرونده، موارد مرتبط و وضعیت رسیدگی
         </DialogDescription>
         <div className={ui.actions}>
-          <span className={ui.status}>{record.status}</span>
+          <HrStatus>{record.status}</HrStatus>
           <span className={ui.muted}>
             نسخه {record.version.toLocaleString('fa-IR')}
           </span>

@@ -3,17 +3,17 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { LayoutGrid, RefreshCw } from 'lucide-react';
 import { type HrRecordDto } from '@rubi/contracts';
 import { hrHubCards, normalizeSection, type HrSectionId } from './hr.model';
 import { canonicalHrLocation, type HrSource } from './hr-navigation';
 import { useHrStore } from './hr-store';
 import { hrRequest } from './hr-api';
-import { HrButton } from './hr-controls';
+import { HrButton, HrLoading } from './hr-controls';
 import { HrHub } from './hr-hub';
 import type { HrFormTarget } from './hr-record-form';
-import { sourceForRecord } from './hr-unified-section';
+import { sourceForRecord } from './hr-record-source';
 import { HrServerNotifications } from './hr-server-notifications';
-import styles from './hr-workspace.module.css';
 import ui from './hr-unified.module.css';
 
 const HrReports = dynamic(() =>
@@ -116,7 +116,7 @@ export function HrLiveWorkspace({
   }, [section, tab, headerTitle]);
   if (!store.data)
     return (
-      <main className={styles.workspace} dir="rtl">
+      <div className={ui.workspace} dir="rtl">
         <div className={ui.loading}>
           {store.error ? (
             <div className={ui.spaced}>
@@ -133,14 +133,14 @@ export function HrLiveWorkspace({
               </div>
             </div>
           ) : (
-            <p role="status">در حال دریافت منابع انسانی…</p>
+            <HrLoading label="در حال دریافت منابع انسانی…" />
           )}
         </div>
-      </main>
+      </div>
     );
   const data = store.data;
   return (
-    <main className={styles.workspace} dir="rtl" lang="fa" data-hr-mode="live">
+    <div className={ui.workspace} dir="rtl" lang="fa" data-hr-mode="live">
       <HrServerNotifications
         onSelect={async (id) => {
           try {
@@ -153,14 +153,49 @@ export function HrLiveWorkspace({
           }
         }}
       />
-      <div className={ui.actions}>
-        <span className={ui.badge} style={{ marginInlineStart: 'auto' }}>
-          {store.loading ? 'در حال تازه‌سازی…' : 'اطلاعات سرور'} ·{' '}
-          <HrButton onClick={() => void store.refresh().catch(() => undefined)}>
-            تازه‌سازی
-          </HrButton>
-        </span>
-      </div>
+      <nav className={ui.navigation} aria-label="جابه‌جایی در منابع انسانی">
+        <Link href="/hr" aria-current={section === 'home' ? 'page' : undefined}>
+          <LayoutGrid size={17} aria-hidden="true" /> همه بخش‌ها
+        </Link>
+        {section !== 'home' ? (
+          <label className={ui.sectionPicker}>
+            <span>بخش جاری</span>
+            <select
+              aria-label="انتخاب بخش منابع انسانی"
+              value={section === 'employee' ? 'employees' : section}
+              onChange={(event) =>
+                router.push(`/hr?section=${event.target.value}`)
+              }
+            >
+              {hrHubCards
+                .filter((card) => card.id !== 'finance')
+                .map((card) => (
+                  <option key={card.id} value={card.id}>
+                    {card.id === 'payroll' ? 'حقوق و ارتباط مالی' : card.title}
+                  </option>
+                ))}
+            </select>
+          </label>
+        ) : null}
+        <HrButton
+          className={ui.refresh}
+          aria-label="به‌روزرسانی اطلاعات منابع انسانی"
+          title="به‌روزرسانی اطلاعات منابع انسانی"
+          size="sm"
+          variant="ghost"
+          disabled={store.loading}
+          onClick={() => void store.refresh().catch(() => undefined)}
+        >
+          <RefreshCw
+            size={15}
+            aria-hidden="true"
+            className={store.loading ? 'animate-spin' : undefined}
+          />
+          <span className={ui.refreshLabel}>
+            {store.loading ? 'در حال به‌روزرسانی…' : 'به‌روزرسانی'}
+          </span>
+        </HrButton>
+      </nav>
       {store.error ? (
         <p role="alert" className={ui.error}>
           {store.error}
@@ -260,6 +295,6 @@ export function HrLiveWorkspace({
           }}
         />
       ) : null}
-    </main>
+    </div>
   );
 }

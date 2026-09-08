@@ -1,5 +1,6 @@
 'use client';
-import { reportCellText, type SectionReport } from './section-reports';
+import { reportCellText } from './hr-report-text';
+import type { SectionReport } from './section-reports';
 import {
   buildSearchablePdf,
   type HrPdfPage,

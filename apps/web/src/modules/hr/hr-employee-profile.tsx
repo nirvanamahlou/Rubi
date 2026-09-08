@@ -12,6 +12,7 @@ import { allHrRecords } from './hr-store';
 import type { HrFormTarget } from './hr-record-form';
 import {
   HrButton,
+  HrStatus,
   HrConfirmDelete,
   HrPdfButton,
   HrExportButton,
@@ -24,7 +25,7 @@ import { HrAudit } from './hr-audit';
 import { HrLeaveGrant } from './hr-leave-grant';
 import { HrEmployeeEditor } from './hr-employees';
 import { hrApi, hrRequest } from './hr-api';
-import { sourceForRecord } from './hr-unified-section';
+import { sourceForRecord } from './hr-record-source';
 import ui from './hr-unified.module.css';
 
 interface LeaveBalances {
@@ -183,64 +184,69 @@ export function HrEmployeeProfile({
               {employee.personnelCode} · {employee.position} · {branch} /{' '}
               {employee.unit}
             </p>
-            <span className={ui.status}>{employee.status}</span>
+            <HrStatus>{employee.status}</HrStatus>
           </div>
           {canWrite ? (
             <div className={ui.actions}>
               <HrButton onClick={() => setEditing(true)}>
                 ویرایش مشخصات
               </HrButton>
-              <label className={ui.field}>
-                اعتبار عکس در بایگانی
-                <DatePicker
-                  value={photoExpiry}
-                  onChange={setPhotoExpiry}
-                  aria-label="اعتبار عکس در بایگانی"
-                />
-              </label>
-              <label className={ui.field}>
-                عکس پروفایل
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  disabled={uploading}
-                  onChange={async (event) => {
-                    const file = event.target.files?.[0];
-                    event.target.value = '';
-                    if (!file) return;
-                    if (file.size > 5 * 1024 * 1024) {
-                      setError('اندازه عکس باید کمتر از ۵ مگابایت باشد.');
-                      return;
-                    }
-                    setUploading(true);
-                    try {
-                      const { archiveHrFile } =
-                        await import('./hr-file-archive');
-                      const document = await archiveHrFile({
-                        file,
-                        branchId: employee.branchId,
-                        employeeId: employee.id,
-                        entityId: employee.id,
-                        title: `عکس پروفایل ${employee.name}`,
-                        validUntil: photoExpiry || undefined,
-                      });
-                      await hrApi.employees.update(employee.id, {
-                        version: employee.version,
-                        photoDocumentId: document.id,
-                      });
-                      await store.mutated();
-                    } catch (e) {
-                      setError(
-                        e instanceof Error
-                          ? e.message
-                          : 'بارگذاری عکس انجام نشد.',
-                      );
-                    } finally {
-                      setUploading(false);
-                    }
-                  }}
-                />
-              </label>
+              <details className={ui.profilePhoto}>
+                <summary>تغییر عکس پروفایل</summary>
+                <div>
+                  <label className={ui.field}>
+                    اعتبار عکس در بایگانی
+                    <DatePicker
+                      value={photoExpiry}
+                      onChange={setPhotoExpiry}
+                      aria-label="اعتبار عکس در بایگانی"
+                    />
+                  </label>
+                  <label className={ui.field}>
+                    عکس پروفایل
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      disabled={uploading}
+                      onChange={async (event) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = '';
+                        if (!file) return;
+                        if (file.size > 5 * 1024 * 1024) {
+                          setError('اندازه عکس باید کمتر از ۵ مگابایت باشد.');
+                          return;
+                        }
+                        setUploading(true);
+                        try {
+                          const { archiveHrFile } =
+                            await import('./hr-file-archive');
+                          const document = await archiveHrFile({
+                            file,
+                            branchId: employee.branchId,
+                            employeeId: employee.id,
+                            entityId: employee.id,
+                            title: `عکس پروفایل ${employee.name}`,
+                            validUntil: photoExpiry || undefined,
+                          });
+                          await hrApi.employees.update(employee.id, {
+                            version: employee.version,
+                            photoDocumentId: document.id,
+                          });
+                          await store.mutated();
+                        } catch (e) {
+                          setError(
+                            e instanceof Error
+                              ? e.message
+                              : 'بارگذاری عکس انجام نشد.',
+                          );
+                        } finally {
+                          setUploading(false);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              </details>
             </div>
           ) : null}
         </div>

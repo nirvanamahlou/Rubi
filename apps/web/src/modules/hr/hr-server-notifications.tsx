@@ -3,8 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { HrNotificationDto } from '@rubi/contracts';
 import { X, CheckCheck } from 'lucide-react';
 import { hrApi } from './hr-api';
-import { HrButton } from './hr-controls';
-import styles from './hr-workspace.module.css';
+import { HrButton, HrEmpty } from './hr-controls';
 import ui from './hr-unified.module.css';
 
 export function HrServerNotifications({
@@ -52,13 +51,13 @@ export function HrServerNotifications({
     if (!element) return;
     bell.current = element;
     const toggle = () => setOpen((value) => !value);
-    element.classList.add(styles.notificationBellConnected!);
+    element.classList.add(ui.notificationBellConnected!);
     element.addEventListener('click', toggle);
     return () => {
       element.removeEventListener('click', toggle);
       element.classList.remove(
-        styles.notificationBellConnected!,
-        styles.notificationBellHasUnread!,
+        ui.notificationBellConnected!,
+        ui.notificationBellHasUnread!,
       );
       element.removeAttribute('data-unread');
       element.removeAttribute('aria-expanded');
@@ -67,11 +66,9 @@ export function HrServerNotifications({
   }, []);
   useEffect(() => {
     if (!bell.current) return;
-    bell.current.classList.toggle(
-      styles.notificationBellHasUnread!,
-      unread > 0,
-    );
-    bell.current.dataset.unread = unread.toLocaleString('fa-IR');
+    bell.current.classList.toggle(ui.notificationBellHasUnread!, unread > 0);
+    bell.current.dataset.unread =
+      unread > 99 ? '۹۹+' : unread.toLocaleString('fa-IR');
     bell.current.setAttribute(
       'aria-label',
       unread
@@ -108,14 +105,16 @@ export function HrServerNotifications({
     <div
       role="dialog"
       aria-label="اعلان‌های منابع انسانی"
-      className={styles.notificationPanel}
+      className={ui.notificationPanel}
       ref={panel}
       tabIndex={-1}
       dir="rtl"
     >
-      <div className={styles.notificationHeader}>
+      <div className={ui.notificationHeader}>
         <strong>اعلان‌های منابع انسانی</strong>
         <HrButton
+          variant="ghost"
+          size="icon"
           aria-label="بستن اعلان‌ها"
           onClick={() => {
             setOpen(false);
@@ -131,6 +130,9 @@ export function HrServerNotifications({
         </p>
       ) : null}
       <HrButton
+        className={ui.notificationReadAll}
+        variant="ghost"
+        disabled={!unread}
         onClick={async () => {
           try {
             for (const item of items.filter((item) => !item.readAt))
@@ -172,7 +174,12 @@ export function HrServerNotifications({
           </li>
         ))}
       </ul>
-      {!items.length ? <p className={ui.empty}>اعلانی ثبت نشده است.</p> : null}
+      {!items.length ? (
+        <HrEmpty
+          title="اعلانی ثبت نشده است."
+          description="تغییرات و درخواست‌های مرتبط در اینجا نمایش داده می‌شوند."
+        />
+      ) : null}
     </div>
   );
 }

@@ -15,7 +15,8 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/overlays';
-import styles from './hr-workspace.module.css';
+import styles from './hr-forms.module.css';
+import { buttonVariants } from '@/components/ui/button';
 import {
   initialOrganizationCatalogRecords,
   type OrganizationCatalogRecords,
@@ -69,7 +70,13 @@ export function getOrganizationRelationships(
   const nodeIds = new Set(nodes.map((node) => node.id));
   return nodes.flatMap((node) =>
     node.parentId && nodeIds.has(node.parentId)
-      ? [{ id: `${node.parentId}-${node.id}`, parentId: node.parentId, childId: node.id }]
+      ? [
+          {
+            id: `${node.parentId}-${node.id}`,
+            parentId: node.parentId,
+            childId: node.id,
+          },
+        ]
       : [],
   );
 }
@@ -156,7 +163,10 @@ export function synchronizeOrganizationChartWithCatalog(
 }
 
 export const initialOrganizationNodes: readonly OrganizationNode[] =
-  synchronizeOrganizationChartWithCatalog([], initialOrganizationCatalogRecords);
+  synchronizeOrganizationChartWithCatalog(
+    [],
+    initialOrganizationCatalogRecords,
+  );
 
 const emptyValue: OrganizationNodeFormValue = {
   id: '',
@@ -193,7 +203,11 @@ function blockedParentIds(
   while (changed) {
     changed = false;
     for (const node of nodes) {
-      if (node.parentId && blocked.has(node.parentId) && !blocked.has(node.id)) {
+      if (
+        node.parentId &&
+        blocked.has(node.parentId) &&
+        !blocked.has(node.id)
+      ) {
         blocked.add(node.id);
         changed = true;
       }
@@ -224,8 +238,7 @@ export function validateOrganizationNodeForm(
     errors.id = 'این شناسه ساختاری قبلاً استفاده شده است.';
 
   if (!name) errors.name = 'عنوان ساختار الزامی است.';
-  else if (name.length > 100)
-    errors.name = 'عنوان باید حداکثر ۱۰۰ نویسه باشد.';
+  else if (name.length > 100) errors.name = 'عنوان باید حداکثر ۱۰۰ نویسه باشد.';
 
   if (!value.branch.trim()) errors.branch = 'شعبه الزامی است.';
   if (value.kind === 'UNIT' && !value.parentId)
@@ -360,7 +373,9 @@ export function OrganizationNodeForm({
               required
               value={value.id}
             />
-            <small className={styles.fieldHint}>این شناسه به‌صورت خودکار تخصیص داده می‌شود.</small>
+            <small className={styles.fieldHint}>
+              این شناسه به‌صورت خودکار تخصیص داده می‌شود.
+            </small>
             <FieldError errors={errors} field="id" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-org-name">
@@ -485,7 +500,9 @@ export function OrganizationNodeForm({
               max="9999"
               min="0"
               name="positionCapacity"
-              onChange={(event) => update('positionCapacity', event.target.value)}
+              onChange={(event) =>
+                update('positionCapacity', event.target.value)
+              }
               readOnly={Boolean(initialNode?.catalogSource)}
               required
               type="number"
@@ -498,7 +515,10 @@ export function OrganizationNodeForm({
             ) : null}
             <FieldError errors={errors} field="positionCapacity" />
           </label>
-          <label className={`${styles.fieldLabel} ${styles.full}`} htmlFor="hr-org-effective-from">
+          <label
+            className={`${styles.fieldLabel} ${styles.full}`}
+            htmlFor="hr-org-effective-from"
+          >
             <RequiredFieldLabel required>تاریخ اثر</RequiredFieldLabel>
             <DatePicker
               {...errorProps('effectiveFrom')}
@@ -515,11 +535,15 @@ export function OrganizationNodeForm({
       </fieldset>
 
       <div className={styles.modalFooter}>
-        <button className={styles.button} onClick={onCancel} type="button">
+        <button
+          className={buttonVariants({ variant: 'outline' })}
+          onClick={onCancel}
+          type="button"
+        >
           انصراف
         </button>
         <button
-          className={`${styles.button} ${styles.buttonPrimary}`}
+          className={buttonVariants({ variant: 'primary' })}
           type="submit"
         >
           {initialNode ? 'ذخیره ویرایش' : 'افزودن به چارت'}
@@ -555,22 +579,24 @@ export function OrganizationChart({
     const chart = chartRef.current;
     if (!chart) return;
     const chartRect = chart.getBoundingClientRect();
-    const nextEdges = getOrganizationRelationships(nodes).flatMap((relationship) => {
-      const parent = nodeRefs.current.get(relationship.parentId);
-      const child = nodeRefs.current.get(relationship.childId);
-      if (!parent || !child) return [];
-      const parentRect = parent.getBoundingClientRect();
-      const childRect = child.getBoundingClientRect();
-      return [
-        {
-          id: relationship.id,
-          startX: parentRect.left - chartRect.left + parentRect.width / 2,
-          startY: parentRect.bottom - chartRect.top,
-          endX: childRect.left - chartRect.left + childRect.width / 2,
-          endY: childRect.top - chartRect.top,
-        },
-      ];
-    });
+    const nextEdges = getOrganizationRelationships(nodes).flatMap(
+      (relationship) => {
+        const parent = nodeRefs.current.get(relationship.parentId);
+        const child = nodeRefs.current.get(relationship.childId);
+        if (!parent || !child) return [];
+        const parentRect = parent.getBoundingClientRect();
+        const childRect = child.getBoundingClientRect();
+        return [
+          {
+            id: relationship.id,
+            startX: parentRect.left - chartRect.left + parentRect.width / 2,
+            startY: parentRect.bottom - chartRect.top,
+            endX: childRect.left - chartRect.left + childRect.width / 2,
+            endY: childRect.top - chartRect.top,
+          },
+        ];
+      },
+    );
     const nextSize = {
       width: Math.max(1, chart.clientWidth),
       height: Math.max(1, chart.scrollHeight),
@@ -631,41 +657,48 @@ export function OrganizationChart({
             else nodeRefs.current.delete(node.id);
           }}
         >
-          {editable ? <div className={styles.orgNodeActions}>
-            <button
-              aria-label={`ویرایش ${node.name}`}
-              className={styles.orgEditButton}
-              onClick={() => onEdit(node)}
-              type="button"
-            >
-              <PencilLine aria-hidden="true" size={14} />
-              ویرایش
-            </button>
-            <button
-              aria-label={`حذف ${node.name}`}
-              className={`${styles.orgEditButton} ${styles.orgDeleteButton}`}
-              onClick={() => {
-                if (
-                  !confirmDelete || window.confirm(
-                    `«${node.name}» و همه زیرشاخه‌های آن از چارت موقت حذف شوند؟`,
+          {editable ? (
+            <div className={styles.orgNodeActions}>
+              <button
+                aria-label={`ویرایش ${node.name}`}
+                className={styles.orgEditButton}
+                onClick={() => onEdit(node)}
+                type="button"
+              >
+                <PencilLine aria-hidden="true" size={14} />
+                ویرایش
+              </button>
+              <button
+                aria-label={`حذف ${node.name}`}
+                className={`${styles.orgEditButton} ${styles.orgDeleteButton}`}
+                onClick={() => {
+                  if (
+                    !confirmDelete ||
+                    window.confirm(
+                      `«${node.name}» و همه زیرشاخه‌های آن از چارت موقت حذف شوند؟`,
+                    )
                   )
-                )
-                  onDelete(node);
-              }}
-              type="button"
-            >
-              <Trash2 aria-hidden="true" size={14} />
-              حذف
-            </button>
-          </div> : null}
+                    onDelete(node);
+                }}
+                type="button"
+              >
+                <Trash2 aria-hidden="true" size={14} />
+                حذف
+              </button>
+            </div>
+          ) : null}
           <div className={styles.orgNodeTitle}>
             <Building2 aria-hidden="true" size={17} />
             <b>{node.name}</b>
           </div>
           <small>{node.manager}</small>
           <div className={styles.orgNodeMeta}>
-            <span>{node.kind === 'MANAGEMENT' ? 'مدیریت' : 'واحد سازمانی'}</span>
-            <span>{new Intl.NumberFormat('fa-IR').format(node.positionCapacity)} سمت</span>
+            <span>
+              {node.kind === 'MANAGEMENT' ? 'مدیریت' : 'واحد سازمانی'}
+            </span>
+            <span>
+              {new Intl.NumberFormat('fa-IR').format(node.positionCapacity)} سمت
+            </span>
             <span>{node.status}</span>
           </div>
         </article>
@@ -703,7 +736,10 @@ export function OrganizationChart({
   );
 }
 
-type OrganizationNodeDialogProps = Omit<OrganizationNodeFormProps, 'onCancel'> & {
+type OrganizationNodeDialogProps = Omit<
+  OrganizationNodeFormProps,
+  'onCancel'
+> & {
   onClose: () => void;
 };
 
@@ -717,7 +753,10 @@ export function OrganizationNodeDialog({
 }: OrganizationNodeDialogProps) {
   return (
     <Dialog onOpenChange={(open) => !open && onClose()} open>
-      <DialogContent className={`${styles.modal} ${styles.employeeModal}`} dir="rtl">
+      <DialogContent
+        className={`${styles.modal} ${styles.employeeModal}`}
+        dir="rtl"
+      >
         <DialogTitle>
           {initialNode ? 'ویرایش گره سازمانی' : 'افزودن گره سازمانی'}
         </DialogTitle>
