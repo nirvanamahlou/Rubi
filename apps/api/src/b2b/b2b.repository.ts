@@ -10,7 +10,15 @@ import { DatabaseService } from '../database/database.service';
 
 const profileInclude = {
   agreements: { orderBy: { startsAt: 'desc' } },
-  creditPolicy: true,
+  creditPolicies: {
+    where: {
+      OR: [
+        { revisionId: null },
+        { revision: { status: 'APPROVED', activeFor: { isNot: null } } },
+      ],
+    },
+    orderBy: { currencyCode: 'asc' },
+  },
   agreedRates: {
     where: { isActive: true },
     orderBy: [{ validFrom: 'desc' }, { title: 'asc' }],
@@ -29,7 +37,13 @@ export class B2bRepository {
 
   findProfile(organizationId: string, branchId: string) {
     return this.database.client.agencyOperationalProfile.findUnique({
-      where: { organizationId_branchId: { organizationId, branchId } },
+      where: {
+        organizationId_branchId_role: {
+          organizationId,
+          branchId,
+          role: 'AGENCY',
+        },
+      },
       include: profileInclude,
     });
   }
@@ -47,9 +61,10 @@ export class B2bRepository {
       await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`b2b-profile:${input.organizationId}:${input.branchId}`}, 0))::text`;
       const before = await transaction.agencyOperationalProfile.findUnique({
         where: {
-          organizationId_branchId: {
+          organizationId_branchId_role: {
             organizationId: input.organizationId,
             branchId: input.branchId,
+            role: 'AGENCY',
           },
         },
       });
@@ -173,8 +188,8 @@ export class B2bRepository {
     actorUserId: string;
   }) {
     return this.database.client.$transaction(async (transaction) => {
-      const before = await transaction.b2bAgencyCreditPolicy.findUnique({
-        where: { profileId: input.profileId },
+      const before = await transaction.b2bAgencyCreditPolicy.findFirst({
+        where: { profileId: input.profileId, revisionId: null },
       });
       let row;
       if (!before) {

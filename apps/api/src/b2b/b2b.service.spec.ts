@@ -300,18 +300,20 @@ describe('B2B agency service', () => {
       updatedAt: now,
       agreements: [],
       agreedRates: [],
-      creditPolicy: {
-        id: '66666666-6666-4666-8666-666666666666',
-        profileId: '55555555-5555-4555-8555-555555555555',
-        creditLimit: new Prisma.Decimal('250000000'),
-        currencyCode: 'IRR',
-        effectiveFrom: now,
-        expiresAt: null,
-        isActive: true,
-        version: 1,
-        createdAt: now,
-        updatedAt: now,
-      },
+      creditPolicies: [
+        {
+          id: '66666666-6666-4666-8666-666666666666',
+          profileId: '55555555-5555-4555-8555-555555555555',
+          creditLimit: new Prisma.Decimal('250000000'),
+          currencyCode: 'IRR',
+          effectiveFrom: now,
+          expiresAt: null,
+          isActive: true,
+          version: 1,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ],
     });
     await service.agencyWorkspace(organizationId, actor, branchId);
     expect(exposure.getPartyExposure).toHaveBeenCalledWith({

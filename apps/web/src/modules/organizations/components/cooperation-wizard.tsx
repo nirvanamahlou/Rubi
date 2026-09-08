@@ -12,7 +12,8 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/overlays';
-import { DatePicker } from '@/components/ui/date-picker';
+import { AgreementTermsEditor } from './agreement-terms-editor';
+import { blankAgreementTerms } from '../model/agreement-terms';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { agencyClient } from '../api/agency-client';
 import {
@@ -40,7 +41,12 @@ export function CooperationWizard({
   onClose: () => void;
   onSaved: (record: MasterDataRecord) => void;
 }) {
-  const [draft, setDraft] = useState({ ...blankCooperationDraft, role });
+  const [draft, setDraft] = useState<CooperationDraft>(() => ({
+    ...blankCooperationDraft,
+    role,
+    agreementTerms: blankAgreementTerms(),
+    agreementRequestId: crypto.randomUUID(),
+  }));
   const [step, setStep] = useState(1);
   const [mode, setMode] = useState<'new' | 'existing'>('existing');
   const [existing, setExisting] = useState<MasterDataRecord>();
@@ -204,18 +210,9 @@ export function CooperationWizard({
       />
     </label>
   );
-  const canAgreement =
-    draft.role === 'AGENCY' &&
-    (
-      [
-        'b2b.agency.read',
-        'b2b.agreement.read',
-        'b2b.credit.read',
-        'b2b.rate.read',
-        'b2b.agency.manage',
-        'b2b.agreement.manage',
-      ] as const
-    ).every((permission) => permissions.includes(permission));
+  const canAgreement = (
+    ['b2b.agreement.read', 'b2b.credit.read', 'b2b.agreement.manage'] as const
+  ).every((permission) => permissions.includes(permission));
   function close() {
     if (busy) return;
     if (partial) onSaved(partial);
@@ -506,74 +503,59 @@ export function CooperationWizard({
             ) : null}
             {step === 3 ? (
               <>
-                <label className="check">
-                  <input
-                    type="checkbox"
-                    checked={draft.withAgreement}
-                    disabled={!canAgreement}
-                    onChange={(event) =>
-                      set('withAgreement', event.target.checked)
-                    }
-                  />{' '}
-                  ثبت پیش‌نویس قرارداد همراه پرونده
-                </label>
+                <div className="agreement-row-title">
+                  <label className="check">
+                    <input
+                      type="checkbox"
+                      checked={draft.withAgreement}
+                      onChange={(event) =>
+                        set('withAgreement', event.target.checked)
+                      }
+                    />
+                    ثبت قرارداد همراه پرونده
+                  </label>
+                  <span className="panel-note">
+                    {draft.withAgreement
+                      ? 'پیش‌نویس همراه پرونده ذخیره می‌شود'
+                      : 'برای ثبت قرارداد، گزینه را فعال کنید'}
+                  </span>
+                </div>
                 {!canAgreement ? (
-                  <p className="panel-note">
-                    ثبت قرارداد به نقش آژانس و مجوزهای قرارداد نیاز دارد.
-                    قرارداد عملیاتی مشتری سازمانی هنوز متصل نیست.
+                  <p className="boundary-note">
+                    برای ذخیره قرارداد، مجوز مدیریت قرارداد و مشاهده قرارداد و
+                    اعتبار لازم است. می‌توانید ساختار فرم را بررسی کنید.
                   </p>
                 ) : null}
-                {draft.withAgreement ? (
-                  <div className="form-grid">
-                    <label className="field">
-                      <span>شعبه عملیاتی</span>
-                      <select
-                        className="input"
-                        value={draft.branchId}
-                        onChange={(event) =>
-                          set('branchId', event.target.value)
-                        }
-                      >
-                        <option value="">انتخاب شعبه</option>
-                        {branches.map((branch) => (
-                          <option value={branch.id} key={branch.id}>
-                            {branch.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    {field('agreementTitle', 'عنوان قرارداد')}
-                    <div className="field">
-                      <span>شروع اعتبار</span>
-                      <DatePicker
-                        aria-label="شروع اعتبار قرارداد"
-                        value={draft.startsAt}
-                        onChange={(value) => set('startsAt', value)}
-                      />
-                    </div>
-                    <div className="field">
-                      <span>پایان اعتبار</span>
-                      <DatePicker
-                        aria-label="پایان اعتبار قرارداد"
-                        value={draft.endsAt}
-                        onChange={(value) => set('endsAt', value)}
-                      />
-                    </div>
-                    <label className="field full">
-                      <span>شرایط و یادداشت</span>
-                      <textarea
-                        className="textarea"
-                        maxLength={500}
-                        value={draft.notes}
-                        onChange={(event) => set('notes', event.target.value)}
-                      />
-                    </label>
-                  </div>
-                ) : null}
-                <div className="boundary-note">
-                  سقف اعتبار، تضمین و فعال‌سازی قرارداد به گردش تأیید نیاز دارند
-                  و از این فرم تغییر نمی‌کنند.
-                </div>
+                <label className="field">
+                  <span>شعبه قرارداد *</span>
+                  <select
+                    className="input"
+                    value={draft.branchId}
+                    onChange={(event) => set('branchId', event.target.value)}
+                  >
+                    <option value="">انتخاب شعبه</option>
+                    {branches.map((branch) => (
+                      <option value={branch.id} key={branch.id}>
+                        {branch.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <AgreementTermsEditor
+                  value={draft.agreementTerms}
+                  role={draft.role}
+                  branchId={draft.branchId}
+                  organizationId={existing?.id}
+                  permissions={permissions}
+                  disabled={busy || stopped}
+                  onChange={(agreementTerms) =>
+                    setDraft((current) => ({
+                      ...current,
+                      agreementTerms,
+                      withAgreement: true,
+                    }))
+                  }
+                />
               </>
             ) : null}
             {step === 4 ? (
@@ -591,9 +573,27 @@ export function CooperationWizard({
                     [
                       'قرارداد',
                       draft.withAgreement
-                        ? `${draft.agreementTitle} — پیش‌نویس`
+                        ? `${draft.agreementTerms.title} — پیش‌نویس`
                         : 'ثبت نمی‌شود',
                     ],
+                    ...(draft.withAgreement
+                      ? [
+                          [
+                            'ارزهای قرارداد',
+                            draft.agreementTerms.currencyCodes.join('، '),
+                          ],
+                          [
+                            'سقف‌های اعتبار',
+                            draft.agreementTerms.creditPolicies
+                              .map((p) => `${p.creditLimit} ${p.currencyCode}`)
+                              .join(' · ') || 'بدون سقف اعتباری',
+                          ],
+                          [
+                            'تضمین‌ها',
+                            `${draft.agreementTerms.guarantees.length} مورد`,
+                          ],
+                        ]
+                      : []),
                   ].map(([label, value]) => (
                     <div className="summary-row" key={label}>
                       <span>{label}</span>
@@ -604,9 +604,9 @@ export function CooperationWizard({
                 <div className="boundary-note">
                   <FileText size={20} />
                   <span>
-                    اتصال مدارک و ارسال برای تأیید هنوز آماده نیست. این عملیات
-                    اطلاعات پرونده را ذخیره می‌کند و به معنی تأیید اعتبار یا
-                    قرارداد نیست.
+                    پس از ذخیره، قرارداد و اسناد آن در پرونده قابل ویرایش و
+                    ارسال برای تأیید مستقل است. این عملیات اطلاعات پرونده را
+                    ذخیره می‌کند و به معنی تأیید اعتبار یا قرارداد نیست.
                   </span>
                 </div>
               </>

@@ -69,7 +69,7 @@ export class B2bAgreementDocuments {
             code: 'B2B_DOCUMENT_NOT_READY',
             message: 'سند باید کامل، معتبر و دارای بررسی امنیتی موفق باشد.',
           });
-        return;
+        return { documentId: record.id, versionId: record.currentVersion.id };
       }
       if (page >= response.meta.totalPages) break;
     }

@@ -8,6 +8,7 @@ import {
   CooperationSaveError,
   saveCooperation,
 } from './cooperation-draft';
+import { blankAgreementTerms, editableAgreementTerms } from './agreement-terms';
 afterEach(() => vi.restoreAllMocks());
 const draft = {
   ...blankCooperationDraft,
@@ -15,6 +16,73 @@ const draft = {
   code: 'B2B-TEST-01',
 };
 describe('cooperation wizard writes', () => {
+  it('saves corporate contract terms and independent currency limits without requiring agency/rate permissions', async () => {
+    const existing = {
+      id: 'identity',
+      version: 1,
+      attributes: { roleCodes: 'CORPORATE_CUSTOMER' },
+    } as unknown as MasterDataRecord;
+    const terms = {
+      ...blankAgreementTerms(),
+      title: 'قرارداد سازمانی',
+      currencyCodes: ['IRR', 'USD'],
+      paymentMethod: 'CREDIT' as const,
+      creditPolicies: [
+        {
+          currencyCode: 'IRR',
+          creditLimit: '9007199254740993.25',
+          limitType: 'HARD' as const,
+          dueDays: 10,
+          overdueAction: 'BLOCK' as const,
+          effectiveFrom: '2026-09-01',
+          expiresAt: null,
+        },
+      ],
+      startsAt: '2026-09-01',
+    };
+    const save = vi
+      .spyOn(agencyClient, 'saveAgreementTerms')
+      .mockResolvedValue({} as never);
+    const profile = vi.spyOn(agencyClient, 'upsertProfile');
+    await saveCooperation(
+      {
+        ...draft,
+        role: 'CORPORATE_CUSTOMER',
+        withAgreement: true,
+        branchId: 'branch',
+        agreementTerms: terms,
+        agreementRequestId: 'same-request',
+      },
+      [
+        'master_data.read',
+        'b2b.agreement.read',
+        'b2b.agreement.manage',
+        'b2b.credit.read',
+        'b2b.credit.manage',
+      ],
+      existing,
+    );
+    expect(save).toHaveBeenCalledWith('identity', {
+      branchId: 'branch',
+      role: 'CORPORATE_CUSTOMER',
+      requestId: 'same-request',
+      terms,
+    });
+    expect(profile).not.toHaveBeenCalled();
+  });
+  it('removes review metadata from editable terms and preserves pinned document versions', () => {
+    const terms = {
+      ...blankAgreementTerms(),
+      documentVersionId: 'version',
+      id: 'review-id',
+      status: 'APPROVED',
+      createdByUserId: 'actor',
+    };
+    const editable = editableAgreementTerms(terms);
+    expect(editable).not.toHaveProperty('status');
+    expect(editable).not.toHaveProperty('createdByUserId');
+    expect(editable.documentVersionId).toBe('version');
+  });
   it('denies missing permissions before touching the owner API', async () => {
     const create = vi.spyOn(masterDataApi, 'create');
     await expect(saveCooperation(draft, [])).rejects.toThrow('مجوز');
@@ -69,8 +137,12 @@ describe('cooperation wizard writes', () => {
           ...draft,
           withAgreement: true,
           branchId: 'branch',
-          agreementTitle: 'قرارداد آزمون',
-          startsAt: '2026-02-30',
+          agreementTerms: {
+            ...blankAgreementTerms(),
+            title: 'قرارداد آزمون',
+            currencyCodes: ['IRR'],
+            startsAt: '2026-02-30',
+          },
         },
         3,
       ),

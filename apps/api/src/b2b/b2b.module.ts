@@ -9,6 +9,8 @@ import { B2bAgreementDocuments } from './b2b-agreement-documents';
 import { B2bController } from './b2b.controller';
 import { B2bRepository } from './b2b.repository';
 import { B2bService } from './b2b.service';
+import { B2bAgreementWorkflowRepository } from './b2b-agreement-workflow.repository';
+import { B2bAgreementWorkflowService } from './b2b-agreement-workflow.service';
 import {
   FINANCE_PARTY_EXPOSURE_PORT,
   UnavailableFinanceExposureAdapter,
@@ -22,6 +24,8 @@ import {
     PermissionGuard,
     B2bRepository,
     B2bService,
+    B2bAgreementWorkflowRepository,
+    B2bAgreementWorkflowService,
     B2bAgreementDocuments,
     UnavailableFinanceExposureAdapter,
     {

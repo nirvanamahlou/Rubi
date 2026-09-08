@@ -1,4 +1,10 @@
-import type { IamPermissionCode, MasterDataRecord } from '@rubi/contracts';
+import { b2bAgreementTermsIssue } from '@rubi/contracts';
+import type {
+  B2bAgreementTermsV1,
+  IamPermissionCode,
+  MasterDataRecord,
+} from '@rubi/contracts';
+import { blankAgreementTerms } from './agreement-terms';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { agencyClient } from '../api/agency-client';
 import {
@@ -7,6 +13,8 @@ import {
 } from './organization-import';
 
 export interface CooperationDraft {
+  agreementTerms: B2bAgreementTermsV1;
+  agreementRequestId?: string;
   legalName: string;
   code: string;
   personType: string;
@@ -26,6 +34,7 @@ export interface CooperationDraft {
   notes: string;
 }
 export const blankCooperationDraft: CooperationDraft = {
+  agreementTerms: blankAgreementTerms(),
   legalName: '',
   code: '',
   personType: 'LEGAL',
@@ -72,24 +81,15 @@ export function cooperationIssue(
       return 'ایمیل نماینده معتبر نیست.';
   }
   if (step === 3 && draft.withAgreement) {
-    if (draft.role !== 'AGENCY')
-      return 'قرارداد عملیاتی مشتری سازمانی هنوز متصل نیست.';
-    if (!draft.branchId || draft.agreementTitle.trim().length < 2)
-      return 'شعبه و عنوان قرارداد لازم است.';
+    if (!draft.branchId) return 'شعبه قرارداد را انتخاب کنید.';
     if (
-      !/^\d{4}-\d{2}-\d{2}$/.test(draft.startsAt) ||
-      Number.isNaN(Date.parse(draft.startsAt)) ||
-      new Date(draft.startsAt).toISOString().slice(0, 10) !== draft.startsAt
+      (draft.role === 'AGENCY' &&
+        draft.agreementTerms.agreementType === 'CORPORATE') ||
+      (draft.role === 'CORPORATE_CUSTOMER' &&
+        draft.agreementTerms.agreementType === 'AGENCY')
     )
-      return 'تاریخ شروع معتبر لازم است.';
-    if (
-      draft.endsAt &&
-      (!/^\d{4}-\d{2}-\d{2}$/.test(draft.endsAt) ||
-        Number.isNaN(Date.parse(draft.endsAt)) ||
-        new Date(draft.endsAt).toISOString().slice(0, 10) !== draft.endsAt ||
-        draft.endsAt < draft.startsAt)
-    )
-      return 'تاریخ پایان باید معتبر و پس از شروع باشد.';
+      return 'نوع قرارداد را با نقش همکاری هماهنگ کنید.';
+    return b2bAgreementTermsIssue(draft.agreementTerms);
   }
 }
 export class CooperationSaveError extends Error {
@@ -125,14 +125,17 @@ export async function saveCooperation(
     require('master_data.update');
   if (draft.withAgreement)
     for (const permission of [
-      'b2b.agency.read',
       'b2b.agreement.read',
       'b2b.credit.read',
-      'b2b.rate.read',
-      'b2b.agency.manage',
       'b2b.agreement.manage',
     ] as const)
       require(permission);
+  if (
+    draft.withAgreement &&
+    (draft.agreementTerms.creditPolicies.length ||
+      draft.agreementTerms.guarantees.length)
+  )
+    require('b2b.credit.manage');
   let organization: MasterDataRecord | undefined;
   try {
     roles.add(draft.role);
@@ -176,23 +179,11 @@ export async function saveCooperation(
         isPrimary: false,
       });
     if (draft.withAgreement) {
-      const workspace = await agencyClient.workspace(
-        organization.id,
-        draft.branchId,
-      );
-      if (!workspace.data.profile)
-        await agencyClient.upsertProfile(organization.id, {
-          branchId: draft.branchId,
-          status: 'UNDER_REVIEW',
-          displayOrder: 0,
-        });
-      await agencyClient.createAgreement(organization.id, {
+      await agencyClient.saveAgreementTerms(organization.id, {
         branchId: draft.branchId,
-        title: draft.agreementTitle.trim(),
-        startsAt: draft.startsAt,
-        endsAt: draft.endsAt || null,
-        status: 'DRAFT',
-        notes: draft.notes.trim() || null,
+        role: draft.role,
+        requestId: draft.agreementRequestId ?? crypto.randomUUID(),
+        terms: draft.agreementTerms,
       });
     }
     return organization;

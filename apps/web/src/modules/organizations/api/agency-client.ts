@@ -1,4 +1,8 @@
 import type {
+  B2bAgreementCaseV1,
+  B2bAgreementActionRequestV1,
+  B2bCooperationRole,
+  SaveB2bAgreementTermsRequestV1,
   B2bAgencyWorkspaceV1,
   BranchReference,
   CreateB2bAgencyAgreedRateRequestV1,
@@ -77,6 +81,46 @@ async function b2bRequest<T>(
 }
 
 export const agencyClient = {
+  agreements(
+    organizationId: string,
+    branchId: string,
+    role: B2bCooperationRole,
+    page = 1,
+  ) {
+    return b2bRequest<{
+      data: B2bAgreementCaseV1[];
+      meta: {
+        page: number;
+        pageSize: number;
+        total: number;
+        totalPages: number;
+      };
+    }>(
+      `/agencies/${encodeURIComponent(organizationId)}/agreements?role=${role}&page=${page}`,
+      { headers: { 'x-branch-id': branchId } },
+    );
+  },
+  saveAgreementTerms(
+    organizationId: string,
+    input: SaveB2bAgreementTermsRequestV1,
+    agreementId?: string,
+  ) {
+    return b2bRequest<B2bAgreementCaseV1>(
+      `/agencies/${encodeURIComponent(organizationId)}/agreements/${agreementId ? encodeURIComponent(agreementId) : 'drafts'}`,
+      { method: agreementId ? 'PUT' : 'POST', body: JSON.stringify(input) },
+    );
+  },
+  agreementAction(
+    organizationId: string,
+    agreementId: string,
+    action: 'submit' | 'review',
+    input: B2bAgreementActionRequestV1,
+  ) {
+    return b2bRequest<B2bAgreementCaseV1>(
+      `/agencies/${encodeURIComponent(organizationId)}/agreements/${encodeURIComponent(agreementId)}/${action}`,
+      { method: 'POST', body: JSON.stringify(input) },
+    );
+  },
   saveContact(
     organizationId: string,
     values: Record<string, string>,

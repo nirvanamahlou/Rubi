@@ -70,10 +70,17 @@ export class MasterOrganizationDirectory {
   ) {}
 
   async agencyReference(organizationId: string) {
+    return this.cooperationReference(organizationId, 'AGENCY');
+  }
+
+  async cooperationReference(
+    organizationId: string,
+    role: 'AGENCY' | 'CORPORATE_CUSTOMER',
+  ) {
     return this.database.client.masterOrganization.findFirst({
       where: {
         id: organizationId,
-        roles: { some: { roleCode: 'AGENCY' } },
+        roles: { some: { roleCode: role } },
       },
       select: {
         id: true,
@@ -100,6 +107,14 @@ export class MasterOrganizationDirectory {
       ],
     });
     return rows.map(addressRecord);
+  }
+
+  async activeCurrencyCodes(codes: string[]) {
+    const rows = await this.database.client.masterCurrency.findMany({
+      where: { code: { in: codes }, isActive: true },
+      select: { code: true },
+    });
+    return rows.map((row) => row.code);
   }
 
   async primaryAddress(organizationId: string) {

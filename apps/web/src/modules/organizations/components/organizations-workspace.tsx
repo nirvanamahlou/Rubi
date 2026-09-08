@@ -50,6 +50,7 @@ import { MasterDataLiveForm } from '@/modules/master-data/components/master-data
 import { getMasterDataDefinition } from '@/modules/master-data/model/catalog';
 import { agencyClient } from '../api/agency-client';
 import { AgencyConnectionsPanel } from './agency-connections-panel';
+import { AgreementWorkflowPanel } from './agreement-workflow-panel';
 import { cooperationLabel } from '../model/presentation';
 import { CorporateMetric, CorporateProfile } from './corporate-profile';
 import './corporate-design.css';
@@ -802,7 +803,18 @@ export function OrganizationsWorkspace() {
             </Card>
           }
           operations={(view) =>
-            String(selected.attributes.roleCodes ?? '').includes('AGENCY') ? (
+            view === 'agreements' ||
+            view === 'credit' ||
+            view === 'guarantees' ? (
+              <AgreementWorkflowPanel
+                key={selected.id + role + view}
+                organizationId={selected.id}
+                role={role}
+                view={view}
+              />
+            ) : String(selected.attributes.roleCodes ?? '').includes(
+                'AGENCY',
+              ) ? (
               <AgencyConnectionsPanel
                 key={selected.id}
                 organizationId={selected.id}

@@ -14,6 +14,8 @@ import {
 import { IamService } from '../iam/iam.service';
 import { B2bController } from './b2b.controller';
 import { B2bService } from './b2b.service';
+import { B2bAgreementWorkflowService } from './b2b-agreement-workflow.service';
+import { agreementTestTerms } from './agreement-test-fixtures';
 
 const id = '11111111-1111-4111-8111-111111111111';
 describe('B2B authenticated runtime boundary', () => {
@@ -24,11 +26,18 @@ describe('B2B authenticated runtime boundary', () => {
     createAgreement: vi.fn(),
     upsertProfile: vi.fn(),
   };
+  const workflow = {
+    save: vi.fn(),
+    action: vi.fn(),
+    list: vi.fn(),
+    get: vi.fn(),
+  };
   beforeAll(async () => {
     const module = await Test.createTestingModule({
       controllers: [B2bController],
       providers: [
         { provide: B2bService, useValue: service },
+        { provide: B2bAgreementWorkflowService, useValue: workflow },
         {
           provide: IamService,
           useValue: {
@@ -58,6 +67,45 @@ describe('B2B authenticated runtime boundary', () => {
   it('returns 401 without authentication', async () => {
     await request(app.getHttpServer()).get(`/b2b/agencies/${id}`).expect(401);
     expect(service.agencyWorkspace).not.toHaveBeenCalled();
+  });
+  it('validates the complete nested draft DTO and requires a separate review permission', async () => {
+    actor.permissions = ['b2b.agreement.manage'];
+    await request(app.getHttpServer())
+      .post(`/b2b/agencies/${id}/agreements/drafts`)
+      .set('Cookie', 'rubi_access=test-only')
+      .send({ branchId: id, role: 'CORPORATE_CUSTOMER', requestId: id })
+      .expect(400);
+    expect(workflow.save).not.toHaveBeenCalled();
+    workflow.save.mockResolvedValue({ id });
+    await request(app.getHttpServer())
+      .post(`/b2b/agencies/${id}/agreements/drafts`)
+      .set('Cookie', 'rubi_access=test-only')
+      .send({
+        branchId: id,
+        role: 'CORPORATE_CUSTOMER',
+        requestId: id,
+        terms: agreementTestTerms(),
+      })
+      .expect(201);
+    expect(workflow.save).toHaveBeenCalledWith(
+      id,
+      undefined,
+      expect.objectContaining({ role: 'CORPORATE_CUSTOMER' }),
+      actor,
+    );
+    await request(app.getHttpServer())
+      .post(`/b2b/agencies/${id}/agreements/${id}/review`)
+      .set('Cookie', 'rubi_access=test-only')
+      .send({
+        branchId: id,
+        role: 'AGENCY',
+        requestId: id,
+        version: 1,
+        reason: 'Approve',
+        decision: 'APPROVE',
+      })
+      .expect(403);
+    expect(workflow.action).not.toHaveBeenCalled();
   });
   it('returns 403 without the complete workspace permissions', async () => {
     actor.permissions = ['b2b.agency.read'];

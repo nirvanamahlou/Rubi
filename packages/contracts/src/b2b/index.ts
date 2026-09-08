@@ -1,4 +1,6 @@
 export const B2B_CONTRACT_VERSION = 1 as const;
+export * from './agreement-workflow';
+export * from './agreement-validation';
 export const B2B_API_PREFIX = '/api/v1/b2b' as const;
 
 export type AgencyOperationalStatus =
@@ -14,6 +16,7 @@ export interface B2bAgencyProfileV1 {
   id: string;
   organizationId: string;
   branchId: string;
+  role?: 'AGENCY' | 'CORPORATE_CUSTOMER';
   accountManagerUserId: string | null;
   status: AgencyOperationalStatus;
   displayOrder: number;

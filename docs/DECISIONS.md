@@ -129,3 +129,8 @@ develop یا تغییر والدها جزو این کار نیست. فقط قر�
 FINANCE-001 Phase A هیچ Prisma Schema، Migration، Repository، Persistence، Dependency یا
 Lockfile تغییر نمی‌کند. پس از Merge PR #21، ایجاد Schema و Migration افزایشی مالی فقط در
 Task مستقل Phase B، با رزرو مجدد قفل‌ها و Migration gate کامل، مجاز خواهد بود.
+# B2B-CONTRACT-CREDIT-001 — decisions confirmed by owner
+
+- A single independent reviewer approves contract/credit changes using the corresponding permission; the proposer cannot approve their own request. Confirmed explicitly in this task on the Screenshot527 follow-up.
+- Each currency has a separate credit limit; no implicit FX conversion. Contract/policy drafts have no effective financial authority before approval. Submitted/approved content is versioned and preserved, and edits require a new draft/revision.
+- Evolve existing B2B profile/agreement/credit persistence and public routes. Organization identity remains in Master Data, binary/version storage in Documents, and exposure/payment/deposit balances in Finance. This scope completes the contract/credit wizard and its management workflow, not every independent PRD module.

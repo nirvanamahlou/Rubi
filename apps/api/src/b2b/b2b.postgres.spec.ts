@@ -10,6 +10,8 @@ import {
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DatabaseService } from '../database/database.service';
 import { B2bRepository } from './b2b.repository';
+import { B2bAgreementWorkflowRepository } from './b2b-agreement-workflow.repository';
+import { agreementTestTerms } from './agreement-test-fixtures';
 
 const enabled = process.env.RUBI_RUN_B2B_POSTGRES_TESTS === '1';
 const container = `rubi-test-b2b-${randomUUID().slice(0, 8)}`;
@@ -59,6 +61,8 @@ describe.skipIf(!enabled)(
             'exec',
             container,
             'pg_isready',
+            '-h',
+            '127.0.0.1',
             '-U',
             'postgres',
             '-d',
@@ -160,6 +164,371 @@ describe.skipIf(!enabled)(
       if (client) await client.$disconnect();
       if (started) docker(['stop', container]);
     }, 30000);
+
+    async function workflowFixture() {
+      const workflow = new B2bAgreementWorkflowRepository({
+        client,
+      } as DatabaseService);
+      const org = await client.masterOrganization.create({
+        data: {
+          code: `WF-${randomUUID().slice(0, 20)}`,
+          legalName: 'Synthetic workflow organization',
+          displayName: 'Synthetic workflow organization',
+          createdByUserId: actorUserId,
+          updatedByUserId: actorUserId,
+        },
+      });
+      const reviewer = (
+        await client.user.create({
+          data: {
+            username: `review-${randomUUID()}`,
+            displayName: 'Synthetic independent reviewer',
+            passwordHash: 'not-a-login-credential',
+            status: 'INACTIVE',
+          },
+        })
+      ).id;
+      const scope = {
+        organizationId: org.id,
+        branchId,
+        role: 'AGENCY' as const,
+      };
+      const command = { ...scope, actorUserId, requestId: randomUUID() };
+      return { workflow, scope, command, reviewer };
+    }
+
+    it('stores exact multi-currency decimals and serializes duplicate commands without duplicate audits', async () => {
+      const { workflow, scope, command } = await workflowFixture();
+      const [a, b] = await Promise.all([
+        workflow.save(command, agreementTestTerms()),
+        workflow.save(command, agreementTestTerms()),
+      ]);
+      expect(a.id).toBe(b.id);
+      expect(a.revisions).toHaveLength(1);
+      expect(
+        a.revisions[0]!.creditPolicies.find(
+          (p) => p.currencyCode === 'IRR',
+        )!.creditLimit.toString(),
+      ).toBe('9007199254740993.25');
+      expect(
+        a.revisions[0]!.creditPolicies.find(
+          (p) => p.currencyCode === 'USD',
+        )!.creditLimit.toString(),
+      ).toBe('12500.5');
+      expect(
+        await client.b2bAuditEvent.count({
+          where: {
+            entityId: a.revisions[0]!.id,
+            action: 'b2b.agreement.draft_saved',
+          },
+        }),
+      ).toBe(1);
+      await expect(
+        workflow.save(command, {
+          ...agreementTestTerms(),
+          title: 'Changed payload',
+        }),
+      ).rejects.toThrow('شناسه درخواست');
+      const corporate = await workflow.save(
+        { ...command, requestId: randomUUID(), role: 'CORPORATE_CUSTOMER' },
+        agreementTestTerms(),
+      );
+      expect(corporate.profileId).not.toBe(a.profileId);
+      expect((await workflow.list(scope, 1, 20)).total).toBe(1);
+    });
+
+    it('allows only one optimistic concurrent edit and rolls back the stale edit', async () => {
+      const { workflow, command } = await workflowFixture();
+      const row = await workflow.save(command, agreementTestTerms());
+      const results = await Promise.allSettled(
+        ['first', 'second'].map((title) =>
+          workflow.save(
+            {
+              ...command,
+              requestId: randomUUID(),
+              agreementId: row.id,
+              version: row.version,
+            },
+            { ...agreementTestTerms(), title },
+          ),
+        ),
+      );
+      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      const after = await workflow.find(command, row.id);
+      expect(after.version).toBe(2);
+      expect(after.revisions).toHaveLength(1);
+      expect(
+        await client.b2bAuditEvent.count({
+          where: { entityId: after.revisions[0]!.id },
+        }),
+      ).toBe(2);
+    });
+
+    it('freezes submitted content, requires an independent reviewer, and preserves active terms through a rejected amendment', async () => {
+      const { workflow, command, reviewer } = await workflowFixture();
+      let row = await workflow.save(command, agreementTestTerms());
+      const submit = {
+        ...command,
+        agreementId: row.id,
+        version: row.version,
+        requestId: randomUUID(),
+      };
+      row = await workflow.transition(submit, 'SUBMIT', 'بررسی مستقل');
+      expect(
+        (await workflow.transition(submit, 'SUBMIT', 'بررسی مستقل')).version,
+      ).toBe(row.version);
+      await expect(
+        workflow.save(
+          {
+            ...command,
+            agreementId: row.id,
+            version: row.version,
+            requestId: randomUUID(),
+          },
+          agreementTestTerms(),
+        ),
+      ).rejects.toThrow('ارسال‌شده');
+      await expect(
+        workflow.transition(
+          {
+            ...command,
+            agreementId: row.id,
+            version: row.version,
+            requestId: randomUUID(),
+          },
+          'APPROVE',
+          'قبول شرایط',
+        ),
+      ).rejects.toThrow('ثبت‌کننده');
+      row = await workflow.transition(
+        {
+          ...command,
+          actorUserId: reviewer,
+          agreementId: row.id,
+          version: row.version,
+          requestId: randomUUID(),
+        },
+        'APPROVE',
+        'قبول شرایط',
+      );
+      const activeId = row.activeRevisionId;
+      expect(row.profile.status).toBe('ACTIVE');
+      const revised = {
+        ...agreementTestTerms(),
+        title: 'اصلاحیه آزمایشی',
+        changeReason: 'اصلاح شرایط',
+      };
+      row = await workflow.save(
+        {
+          ...command,
+          agreementId: row.id,
+          version: row.version,
+          requestId: randomUUID(),
+        },
+        revised,
+      );
+      expect(row.activeRevisionId).toBe(activeId);
+      expect(row.revisions[0]!.number).toBe(2);
+      expect(row.title).toBe(agreementTestTerms().title);
+      row = await workflow.transition(
+        {
+          ...command,
+          agreementId: row.id,
+          version: row.version,
+          requestId: randomUUID(),
+        },
+        'SUBMIT',
+        'بررسی اصلاحیه',
+      );
+      row = await workflow.transition(
+        {
+          ...command,
+          actorUserId: reviewer,
+          agreementId: row.id,
+          version: row.version,
+          requestId: randomUUID(),
+        },
+        'REJECT',
+        'شرایط نیازمند اصلاح است',
+      );
+      expect(row.activeRevisionId).toBe(activeId);
+      expect(row.revisions[0]!.reviewReason).toBe('شرایط نیازمند اصلاح است');
+      row = await workflow.save(
+        {
+          ...command,
+          agreementId: row.id,
+          version: row.version,
+          requestId: randomUUID(),
+        },
+        revised,
+      );
+      expect(row.revisions.map((r) => r.number)).toEqual([3, 2, 1]);
+    });
+
+    it('also prevents a previous draft editor from reviewing a version submitted by somebody else', async () => {
+      const { workflow, command, reviewer } = await workflowFixture();
+      let row = await workflow.save(command, agreementTestTerms());
+      row = await workflow.save(
+        {
+          ...command,
+          actorUserId: reviewer,
+          agreementId: row.id,
+          version: row.version,
+          requestId: randomUUID(),
+        },
+        { ...agreementTestTerms(), notes: 'Edited by reviewer' },
+      );
+      row = await workflow.transition(
+        {
+          ...command,
+          agreementId: row.id,
+          version: row.version,
+          requestId: randomUUID(),
+        },
+        'SUBMIT',
+        'ارسال نسخه',
+      );
+      await expect(
+        workflow.transition(
+          {
+            ...command,
+            actorUserId: reviewer,
+            agreementId: row.id,
+            version: row.version,
+            requestId: randomUUID(),
+          },
+          'APPROVE',
+          'بررسی نسخه',
+        ),
+      ).rejects.toThrow('ویرایش‌کننده');
+    });
+
+    it('serializes approvals of overlapping agreements and approves only one', async () => {
+      const { workflow, command, reviewer } = await workflowFixture();
+      const rows = [];
+      for (let i = 0; i < 2; i++) {
+        let row = await workflow.save(
+          { ...command, requestId: randomUUID() },
+          agreementTestTerms(),
+        );
+        row = await workflow.transition(
+          {
+            ...command,
+            agreementId: row.id,
+            version: row.version,
+            requestId: randomUUID(),
+          },
+          'SUBMIT',
+          'بررسی تداخل',
+        );
+        rows.push(row);
+      }
+      const results = await Promise.allSettled(
+        rows.map((row) =>
+          workflow.transition(
+            {
+              ...command,
+              actorUserId: reviewer,
+              agreementId: row.id,
+              version: row.version,
+              requestId: randomUUID(),
+            },
+            'APPROVE',
+            'تأیید مستقل',
+          ),
+        ),
+      );
+      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect(
+        await client.b2bAgencyAgreement.count({
+          where: { profileId: rows[0]!.profileId, status: 'ACTIVE' },
+        }),
+      ).toBe(1);
+    });
+
+    it('protects immutable SQL history, child terms, foreign keys and branch isolation', async () => {
+      const { workflow, command, reviewer } = await workflowFixture();
+      let row = await workflow.save(command, agreementTestTerms());
+      row = await workflow.transition(
+        {
+          ...command,
+          agreementId: row.id,
+          version: row.version,
+          requestId: randomUUID(),
+        },
+        'SUBMIT',
+        'بررسی نسخه',
+      );
+      await expect(
+        client.b2bAgreementRevision.update({
+          where: { id: row.revisions[0]!.id },
+          data: { title: 'forbidden edit' },
+        }),
+      ).rejects.toThrow('immutable');
+      await expect(
+        client.b2bAgencyCreditPolicy.update({
+          where: { id: row.revisions[0]!.creditPolicies[0]!.id },
+          data: { creditLimit: new Prisma.Decimal('1') },
+        }),
+      ).rejects.toThrow('immutable');
+      await expect(
+        client.b2bAgreementGuarantee.delete({
+          where: { id: row.revisions[0]!.guarantees[0]!.id },
+        }),
+      ).rejects.toThrow('immutable');
+      await expect(
+        workflow.find({ ...command, branchId: randomUUID() }, row.id),
+      ).rejects.toThrow('یافت نشد');
+      row = await workflow.transition(
+        {
+          ...command,
+          actorUserId: reviewer,
+          agreementId: row.id,
+          version: row.version,
+          requestId: randomUUID(),
+        },
+        'APPROVE',
+        'تأیید مستقل',
+      );
+      await expect(
+        client.b2bAgreementRevision.delete({
+          where: { id: row.revisions[0]!.id },
+        }),
+      ).rejects.toThrow('immutable');
+      await expect(
+        workflow.save(
+          { ...command, requestId: randomUUID() },
+          { ...agreementTestTerms(), documentVersionId: randomUUID() },
+        ),
+      ).rejects.toThrow();
+      expect((await workflow.list(command, 1, 20)).total).toBe(1);
+    });
+
+    it('rolls back the complete draft and its idempotency receipt if audit insertion fails', async () => {
+      const { workflow, command } = await workflowFixture();
+      await client.$executeRawUnsafe(
+        `CREATE FUNCTION b2b_test_fail_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.action='b2b.agreement.draft_saved' THEN RAISE EXCEPTION 'synthetic audit failure'; END IF; RETURN NEW; END $$`,
+      );
+      await client.$executeRawUnsafe(
+        `CREATE TRIGGER b2b_test_fail_audit BEFORE INSERT ON b2b_audit_events FOR EACH ROW EXECUTE FUNCTION b2b_test_fail_audit()`,
+      );
+      try {
+        await expect(
+          workflow.save(command, agreementTestTerms()),
+        ).rejects.toThrow('synthetic audit failure');
+      } finally {
+        await client.$executeRawUnsafe(
+          `DROP TRIGGER b2b_test_fail_audit ON b2b_audit_events`,
+        );
+        await client.$executeRawUnsafe(`DROP FUNCTION b2b_test_fail_audit()`);
+      }
+      expect((await workflow.list(command, 1, 20)).total).toBe(0);
+      expect(
+        await client.b2bAgreementCommand.count({
+          where: { requestId: command.requestId },
+        }),
+      ).toBe(0);
+    });
 
     const rate = (code: string) => ({
       profileId,

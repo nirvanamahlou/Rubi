@@ -80,6 +80,10 @@ model User {
   notificationsActed             Notification[]               @relation("NotificationActor")
   agencyProfilesManaged          AgencyOperationalProfile[]   @relation("AgencyAccountManager")
   b2bAuditEvents                 B2bAuditEvent[]              @relation("B2bAuditActor")
+  b2bRevisionsCreated            B2bAgreementRevision[]       @relation("B2bRevisionCreator")
+  b2bRevisionsSubmitted          B2bAgreementRevision[]       @relation("B2bRevisionSubmitter")
+  b2bRevisionsReviewed           B2bAgreementRevision[]       @relation("B2bRevisionReviewer")
+  b2bCommands                    B2bAgreementCommand[]
   hrEmployee                     HrEmployee?
   hrAuditEvents                  HrAuditEvent[]
   hrCommands                     HrCommand[]
@@ -270,6 +274,13 @@ enum B2bAgreedRateKind {
   FIXED_AMOUNT
   DISCOUNT_PERCENT
   COMMISSION_PERCENT
+}
+
+enum B2bReviewStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum MasterCurrencyRateType {
@@ -805,28 +816,29 @@ model MasterOrganizationAddress {
 }
 
 model AgencyOperationalProfile {
-  id                   String                  @id @default(uuid()) @db.Uuid
-  organizationId       String                  @db.Uuid
-  branchId             String                  @db.Uuid
-  accountManagerUserId String?                 @db.Uuid
-  status               AgencyOperationalStatus @default(ACTIVE)
-  displayOrder         Int                     @default(0)
-  isActive             Boolean                 @default(true)
-  version              Int                     @default(1)
-  createdByUserId      String                  @db.Uuid
-  updatedByUserId      String                  @db.Uuid
-  deactivatedByUserId  String?                 @db.Uuid
-  deactivatedAt        DateTime?               @db.Timestamptz(3)
-  createdAt            DateTime                @default(now()) @db.Timestamptz(3)
-  updatedAt            DateTime                @updatedAt @db.Timestamptz(3)
-  organization         MasterOrganization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  branch               Branch                  @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  accountManager       User?                   @relation("AgencyAccountManager", fields: [accountManagerUserId], references: [id], onDelete: Restrict)
+  id                   String                     @id @default(uuid()) @db.Uuid
+  organizationId       String                     @db.Uuid
+  branchId             String                     @db.Uuid
+  role                 MasterOrganizationRoleCode @default(AGENCY)
+  accountManagerUserId String?                    @db.Uuid
+  status               AgencyOperationalStatus    @default(ACTIVE)
+  displayOrder         Int                        @default(0)
+  isActive             Boolean                    @default(true)
+  version              Int                        @default(1)
+  createdByUserId      String                     @db.Uuid
+  updatedByUserId      String                     @db.Uuid
+  deactivatedByUserId  String?                    @db.Uuid
+  deactivatedAt        DateTime?                  @db.Timestamptz(3)
+  createdAt            DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime                   @updatedAt @db.Timestamptz(3)
+  organization         MasterOrganization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  branch               Branch                     @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  accountManager       User?                      @relation("AgencyAccountManager", fields: [accountManagerUserId], references: [id], onDelete: Restrict)
   agreements           B2bAgencyAgreement[]
-  creditPolicy         B2bAgencyCreditPolicy?
+  creditPolicies       B2bAgencyCreditPolicy[]
   agreedRates          B2bAgencyAgreedRate[]
 
-  @@unique([organizationId, branchId])
+  @@unique([organizationId, branchId, role])
   @@index([branchId, status, isActive])
   @@index([accountManagerUserId, isActive])
   @@map("b2b_agency_profiles")
@@ -849,6 +861,10 @@ model B2bAgencyAgreement {
   createdAt         DateTime                 @default(now()) @db.Timestamptz(3)
   updatedAt         DateTime                 @updatedAt @db.Timestamptz(3)
   profile           AgencyOperationalProfile @relation(fields: [profileId], references: [id], onDelete: Restrict)
+  activeRevisionId  String?                  @unique @db.Uuid
+  activeRevision    B2bAgreementRevision?    @relation("B2bActiveRevision", fields: [activeRevisionId], references: [id], onDelete: Restrict)
+  revisions         B2bAgreementRevision[]   @relation("B2bAgreementRevisions")
+  commands          B2bAgreementCommand[]
 
   @@index([profileId, status, startsAt, endsAt])
   @@map("b2b_agency_agreements")
@@ -856,11 +872,15 @@ model B2bAgencyAgreement {
 
 model B2bAgencyCreditPolicy {
   id              String                   @id @default(uuid()) @db.Uuid
-  profileId       String                   @unique @db.Uuid
+  profileId       String                   @db.Uuid
+  revisionId      String?                  @db.Uuid
   creditLimit     Decimal                  @db.Decimal(20, 2)
   currencyCode    String                   @db.Char(3)
   effectiveFrom   DateTime                 @db.Date
   expiresAt       DateTime?                @db.Date
+  limitType       String                   @default("HARD") @db.VarChar(8)
+  dueDays         Int                      @default(0)
+  overdueAction   String                   @default("BLOCK") @db.VarChar(8)
   isActive        Boolean                  @default(true)
   version         Int                      @default(1)
   createdByUserId String                   @db.Uuid
@@ -868,9 +888,88 @@ model B2bAgencyCreditPolicy {
   createdAt       DateTime                 @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime                 @updatedAt @db.Timestamptz(3)
   profile         AgencyOperationalProfile @relation(fields: [profileId], references: [id], onDelete: Restrict)
+  revision        B2bAgreementRevision?    @relation(fields: [revisionId], references: [id], onDelete: Restrict)
 
+  @@unique([revisionId, currencyCode])
+  @@index([profileId, currencyCode, effectiveFrom, expiresAt])
   @@index([currencyCode, isActive, expiresAt])
   @@map("b2b_agency_credit_policies")
+}
+
+model B2bAgreementRevision {
+  id                String                  @id @default(uuid()) @db.Uuid
+  agreementId       String                  @db.Uuid
+  number            Int
+  status            B2bReviewStatus         @default(DRAFT)
+  title             String                  @db.VarChar(160)
+  agreementType     String                  @db.VarChar(24)
+  startsAt          DateTime                @db.Date
+  endsAt            DateTime?               @db.Date
+  currencyCodes     String[]
+  services          String[]
+  paymentMethod     String                  @db.VarChar(16)
+  settlementCycle   String                  @db.VarChar(16)
+  settlementDays    Int                     @default(0)
+  cutoffDay         Int?
+  slaHours          Int?
+  cancellationTerms String                  @default("") @db.VarChar(2000)
+  refundTerms       String                  @default("") @db.VarChar(2000)
+  notes             String                  @default("") @db.VarChar(2000)
+  changeReason      String                  @db.VarChar(500)
+  documentVersionId String?                 @db.Uuid
+  createdByUserId   String                  @db.Uuid
+  submittedByUserId String?                 @db.Uuid
+  reviewedByUserId  String?                 @db.Uuid
+  reviewReason      String?                 @db.VarChar(500)
+  createdAt         DateTime                @default(now()) @db.Timestamptz(3)
+  submittedAt       DateTime?               @db.Timestamptz(3)
+  reviewedAt        DateTime?               @db.Timestamptz(3)
+  agreement         B2bAgencyAgreement      @relation("B2bAgreementRevisions", fields: [agreementId], references: [id], onDelete: Restrict)
+  activeFor         B2bAgencyAgreement?     @relation("B2bActiveRevision")
+  creditPolicies    B2bAgencyCreditPolicy[]
+  guarantees        B2bAgreementGuarantee[]
+  documentVersion   DocumentVersion?        @relation("B2bRevisionDocument", fields: [documentVersionId], references: [id], onDelete: Restrict)
+  createdBy         User                    @relation("B2bRevisionCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  submittedBy       User?                   @relation("B2bRevisionSubmitter", fields: [submittedByUserId], references: [id], onDelete: Restrict)
+  reviewedBy        User?                   @relation("B2bRevisionReviewer", fields: [reviewedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([agreementId, number])
+  @@index([agreementId, status])
+  @@map("b2b_agreement_revisions")
+}
+
+model B2bAgreementGuarantee {
+  id                String               @id @default(uuid()) @db.Uuid
+  revisionId        String               @db.Uuid
+  kind              String               @db.VarChar(24)
+  reference         String               @db.VarChar(120)
+  amount            Decimal              @db.Decimal(20, 2)
+  currencyCode      String               @db.Char(3)
+  issuer            String               @db.VarChar(160)
+  receivedAt        DateTime             @db.Date
+  expiresAt         DateTime?            @db.Date
+  status            String               @db.VarChar(16)
+  documentVersionId String?              @db.Uuid
+  revision          B2bAgreementRevision @relation(fields: [revisionId], references: [id], onDelete: Restrict)
+  documentVersion   DocumentVersion?     @relation("B2bGuaranteeDocument", fields: [documentVersionId], references: [id], onDelete: Restrict)
+
+  @@index([revisionId])
+  @@map("b2b_agreement_guarantees")
+}
+
+model B2bAgreementCommand {
+  id            String             @id @default(uuid()) @db.Uuid
+  actorUserId   String             @db.Uuid
+  requestId     String             @db.Uuid
+  fingerprint   String             @db.Char(64)
+  agreementId   String             @db.Uuid
+  resultVersion Int
+  createdAt     DateTime           @default(now()) @db.Timestamptz(3)
+  actor         User               @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  agreement     B2bAgencyAgreement @relation(fields: [agreementId], references: [id], onDelete: Restrict)
+
+  @@unique([actorUserId, requestId])
+  @@map("b2b_agreement_commands")
 }
 
 model B2bAgencyAgreedRate {
@@ -2582,6 +2681,8 @@ model DocumentVersion {
   auditEvents        DocumentAuditEvent[]
   quarantine         DocumentQuarantine?
   processingJobs     DocumentProcessingJob[]
+  b2bRevisions       B2bAgreementRevision[]  @relation("B2bRevisionDocument")
+  b2bGuarantees      B2bAgreementGuarantee[] @relation("B2bGuaranteeDocument")
 
   @@unique([documentId, versionNumber])
   @@index([documentId, createdAt])

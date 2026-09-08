@@ -1,5 +1,13 @@
 # Work Assignments
 
+## B2B-CONTRACT-CREDIT-001 — PC-B — IN_PROGRESS
+
+- Owner asks to complete Screenshot527's contract/credit wizard step. Explicit decisions: one independent reviewer with the appropriate contract/credit permission; proposer cannot approve; separate limits per currency without automatic FX.
+- Continue clean 8853c27 on codex/pc-b-b2b-contract-credit in the owned combined runtime worktree. Reserve B2B API/Web, additive B2B contracts and scoped task/status/decision documentation. Extend existing profile/agreement/credit tables and routes; preserve legacy records/API defaults, HR and other module work. No parallel organization or agreement module.
+- Proposed shared scope, pending coordinator lock confirmation: additive B2B revision/approval/guarantee schema and migration plus FK reverse relations, role-aware MasterOrganizationDirectory lookup and B2B approval-permission catalog slice. No dependency change or direct query/write to another module's tables. No real IAM grants; Documents and Master Data are consumed through public services.
+- Coordinator confirms no remaining lock in its task; latest develop/open PRs and published reservations work show no active conflicting B2B implementation. Reserve Migration Owner = PC-B/B2B-CONTRACT-CREDIT-001 for this B2B migration; B2B contracts, the two approval permission catalog entries and the public Master Data lookup are limited shared reservations. Preserve unrelated unmerged PC-A migrations and never apply them implicitly to this runtime.
+- Implement draft/edit/reload, contract conditions and per-currency policy/guarantee fields for both roles, immutable submitted versions, independent approval/rejection, optimistic concurrency, conflict checks and transactional audit. Financial balances remain owner projections. Build/test with disposable data before any coordinated local migration; back up and rehearse first, preserving current runtime data/storage.
+
 ## B2B-FONT-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests the Agencies/Organizations section to use the same font as the rest of Rubi. Continue the clean combined runtime at 2c434c1 on codex/pc-b-b2b-font-alignment; fetch and PC-B module/runtime ownership verified.

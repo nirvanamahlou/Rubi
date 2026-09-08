@@ -132,7 +132,7 @@ const sections = [
 ] as const;
 
 export type OperationalView =
-  'overview' | 'address' | 'credit' | 'agreements' | 'rates';
+  'overview' | 'address' | 'credit' | 'guarantees' | 'agreements' | 'rates';
 
 export function CorporateMetric({
   label,
@@ -235,9 +235,11 @@ export function CorporateProfile({
         : screen === 'contracts' &&
             ['rates', 'discounts', 'commission'].includes(tab)
           ? 'rates'
-          : screen === 'credit' && ['policy', 'exposure'].includes(tab)
-            ? 'credit'
-            : undefined;
+          : screen === 'credit' && tab === 'guarantees'
+            ? 'guarantees'
+            : screen === 'credit' && ['policy', 'exposure'].includes(tab)
+              ? 'credit'
+              : undefined;
   return (
     <div className="corporate-profile">
       <div className="crumb">

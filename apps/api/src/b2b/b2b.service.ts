@@ -205,8 +205,8 @@ export class B2bService {
       this.organizations.primaryAddress(organizationId),
       this.repository.findProfile(organizationId, branchId),
     ]);
-    const creditPolicy = row?.creditPolicy
-      ? creditRecord(row.creditPolicy)
+    const creditPolicy = row?.creditPolicies?.[0]
+      ? creditRecord(row.creditPolicies[0])
       : null;
     const financeExposure = creditPolicy
       ? await this.financeExposure.getPartyExposure({
