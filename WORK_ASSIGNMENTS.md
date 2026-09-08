@@ -1,11 +1,13 @@
 # Work Assignments
-## TOUR-PACKAGES-0908 — PC-A — IN_PROGRESS
+## TOUR-PACKAGES-0908 — PC-A — COMPLETE_LOCAL
 
 Explicit user request: persistent tour packages and dated departures in Ticket Management, repeat next week with editable flight times, and a single ticket inventory shared with standalone sales. Branch codex/pc-a-tour-packages-0908 from verified runtime 8b15b4d. Ticket owner explicitly released ticket-catalog/shared-contract/migration scope on 2026-09-08. Prior pricing migration reservation is released.
 
 Reserve Ticket Catalog Web/API/tests, additive travel public contracts/root export, TourPackage/TourDeparture schema and migration, scoped Sales consumer and task documentation. No dependency, permission grant, producer worktree changes or public publication. Current runtime remains active until verified cutover. No tour-specific capacity ledger: existing TicketOfferCapacityAllocation is authoritative. New dated departures never mutate existing tickets/contracts. Operational migration requires private backup and isolated rehearsal; historical migration checksums remain untouched.
 
 Additive producer boundary scope: MasterTravelDirectory and its module export only, validating public active city/hotel/insurance references for tours. Existing MasterDataService/repository/controllers/forms remain unchanged; no cross-module direct query. Ticket Catalog provides public immutable departure selection validation to Sales. Expanded services keep the existing pricing model; the tour label adds no second charge.
+
+Delivered in fd325c7, 7844907 and 3949878. Tour definitions, dated departures, hotel/insurance selectors, included transfers/visa, repeat-week prefill with editable flight times, real offer publication and Sales selection are active locally. Shared stock/concurrent reservation, idempotency/replay, branch and reference tests passed. Forty-three migrations applied to an empty isolated DB and restored backup; seed twice passed only on isolated DB. Fresh private backup preceded the one additive migration on rubi; existing business counts and historical checksums unchanged. Web3100/API4000 serve the new build. This task's reservations released; no producer branch, grants, operational seed or public push. Details and exact QA limits are in the task document.
 
 ## SIDEBAR-LABELS-DOTS-0908 — PC-A — COMPLETE_LOCAL
 
