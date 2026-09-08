@@ -34,13 +34,13 @@ const expectedTitles = [
   'امور مشتریان، سرنخ‌ها و پشتیبانی',
   'رزرواسیون و عملیات سفر',
   'مدیریت و تعریف بلیت‌ها',
-  'قراردادها، فروش و تخصیص خدمات',
+  'قرارداد',
   'خرید و تأمین',
   'مالی و خزانه‌داری',
   'مارکتینگ',
   'آژانس‌ها و مشتریان سازمانی',
   'منابع انسانی',
-  'وظایف و اتوماسیون',
+  'میز کار',
   'اسناد و فایل‌ها',
   'گزارش‌ها',
   'یکپارچه‌سازی‌ها',
@@ -95,7 +95,7 @@ describe('CRM navigation', () => {
   });
 
   it('keeps sales, reservation, and ticket management as separate modules', () => {
-    expect(getNavigationItem('/sales')?.title).toContain('قراردادها');
+    expect(getNavigationItem('/sales')?.title).toBe('قرارداد');
     expect(getNavigationItem('/reservations')?.title).toContain('رزرواسیون');
     expect(getNavigationItem('/ticket-management')?.title).toContain('بلیت');
   });

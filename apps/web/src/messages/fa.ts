@@ -101,7 +101,7 @@ export const navigationMessages = [
     description: 'تعریف محصول بلیت، برنامه حرکت، نرخ و ظرفیت',
   },
   {
-    title: 'قراردادها، فروش و تخصیص خدمات',
+    title: 'قرارداد',
     href: '/sales',
     description: 'قرارداد جدید و تخصیص مسافر به خدمات',
   },
@@ -127,7 +127,7 @@ export const navigationMessages = [
     description: 'پرونده و عملیات کارکنان',
   },
   {
-    title: 'وظایف و اتوماسیون',
+    title: 'میز کار',
     href: '/tasks',
     description: 'کارها و جریان‌های خودکار',
   },

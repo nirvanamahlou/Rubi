@@ -1,4 +1,8 @@
 # Work Assignments
+## SIDEBAR-LABELS-DOTS-0908 — PC-A — COMPLETE_LOCAL
+
+User requests colored group dots and rename Sales to قرارداد and Tasks to میز کار. Reserve navigation metadata/messages/spec, group-dot class in app-shell and scoped docs. Current integrated branch from2e48ceb; no route/content/API/data/permission/collapse changes. Local-only, preserve PDF env and restart only Web after build.
+
 ## SIDEBAR-GROUP-TOGGLE-0908 — PC-A — COMPLETE_LOCAL
 
 Explicit user follow-up: group headings toggle their own links like3200, whole-sidebar collapse unchanged. Branch from integrated f4b033b; Sales owner handed off runtime/build, no further concurrent writes. Reserve app-shell Navigation only and this task's docs. Preserve integrated Sales/Customers/Notifications, API4000, database, PDF config and all original routes. Build then restart only Web3100 from this integration checkout; no old checkout activation. No push due existing destination gate.

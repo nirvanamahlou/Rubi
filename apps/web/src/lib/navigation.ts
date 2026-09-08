@@ -52,9 +52,15 @@ export const navigationItems = navigationMessages.map((item) => ({
 
 /** Sidebar presentation only: module routes, labels and permissions stay unchanged. */
 export const navigationGroups = [
-  { id: 'work', title: 'فضای کار', hrefs: ['/dashboard', '/tasks'] },
+  {
+    id: 'work',
+    dotClass: 'bg-[#96c9ff]',
+    title: 'فضای کار',
+    hrefs: ['/dashboard', '/tasks'],
+  },
   {
     id: 'sales',
+    dotClass: 'bg-[#7dd3fc]',
     title: 'فروش و ارتباط با مشتری',
     hrefs: [
       '/sales',
@@ -66,29 +72,44 @@ export const navigationGroups = [
   },
   {
     id: 'operations',
+    dotClass: 'bg-[#62d5c6]',
     title: 'رزرواسیون و تأمین سفر',
     hrefs: ['/reservations', '/ticket-management', '/purchases'],
   },
-  { id: 'finance', title: 'امور مالی', hrefs: ['/finance'] },
-  { id: 'hr', title: 'سرمایه انسانی', hrefs: ['/human-resources'] },
+  {
+    id: 'finance',
+    dotClass: 'bg-[#f7d184]',
+    title: 'امور مالی',
+    hrefs: ['/finance'],
+  },
+  {
+    id: 'hr',
+    dotClass: 'bg-[#d4b4fc]',
+    title: 'سرمایه انسانی',
+    hrefs: ['/human-resources'],
+  },
   {
     id: 'resources',
+    dotClass: 'bg-[#9cb9dd]',
     title: 'اسناد و گزارش‌ها',
     hrefs: ['/documents', '/reports'],
   },
   {
     id: 'system',
+    dotClass: 'bg-[#94a3b8]',
     title: 'تنظیمات شرکت',
     hrefs: ['/master-data', '/integrations', '/system'],
   },
 ] as const satisfies readonly {
   id: string;
+  dotClass: string;
   title: string;
   hrefs: readonly NavigationHref[];
 }[];
 
 export const groupedNavigationItems = navigationGroups.map((group) => ({
   id: group.id,
+  dotClass: group.dotClass,
   title: group.title,
   items: group.hrefs.map((href) =>
     navigationItems.find((item) => item.href === href)!,

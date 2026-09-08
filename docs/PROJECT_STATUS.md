@@ -1,4 +1,8 @@
 # وضعیت پروژه
+## SIDEBAR-LABELS-DOTS-0908 — COMPLETE_LOCAL
+
+PC-A renamed the existing /sales navigation label to قرارداد and /tasks to میز کار per explicit owner request. Original routes, descriptions, content, permissions, compact behavior and group disclosure preserved. Added distinct static Tailwind group-dot colors aligned with reference3200, also visible on mobile. Final typecheck, scoped lint, 15 navigation/foundation tests and production build36 routes passed. Authenticated browser QA verifies new titles, seven rendered colored dots, group toggles, keyboard, compact17 links and mobile. Only verified Web1372 was replaced on3100 with the new integrated production build; existing PDF environment preserved, API/DB untouched. Local commit only, remote destination gate unchanged.
+
 ## SIDEBAR-GROUP-TOGGLE-0908 — COMPLETE_LOCAL
 
 Independent accessible group buttons now run on integrated Web3100; whole-sidebar collapse and latest Sales preserved. Scoped lint/typecheck, 15 navigation/foundation tests, 36-route build and authenticated keyboard/desktop/mobile QA passed. Only Web restarted with existing PDF configuration; no API/data/migration change. See docs/tasks/SIDEBAR-GROUP-TOGGLE-0908.md. No remote push.
