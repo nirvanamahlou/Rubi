@@ -1,6 +1,10 @@
 import type { DatabaseService } from '../database/database.service';
 import { describe, expect, it, vi } from 'vitest';
-import { CustomerRepository, toCustomerDetail } from './customer.repository';
+import {
+  CustomerRepository,
+  toCustomerDetail,
+  toCustomerSummary,
+} from './customer.repository';
 
 const row = {
   id: '44444444-4444-4444-8444-444444444444',
@@ -31,6 +35,44 @@ const row = {
 };
 
 describe('CustomerRepository', () => {
+  it('uses a phone rather than an email for the masked list contact', () => {
+    expect(
+      toCustomerSummary({
+        ...row,
+        contacts: [
+          {
+            id: '77777777-7777-4777-8777-777777777777',
+            type: 'EMAIL',
+            label: 'ایمیل اصلی',
+            maskedValue: 'm•••@example.test',
+            encryptedValue: 'encrypted-email',
+            encryptionIv: 'email-iv',
+            encryptionAuthTag: 'email-tag',
+            encryptionKeyVersion: 1,
+            valueFingerprint: 'e'.repeat(64),
+            isPrimary: true,
+            verifiedAt: null,
+            createdAt: new Date('2026-08-24T00:00:00.000Z'),
+          },
+          {
+            id: '88888888-8888-4888-8888-888888888888',
+            type: 'PHONE',
+            label: 'شماره همراه',
+            maskedValue: '0912•••1234',
+            encryptedValue: 'encrypted-phone',
+            encryptionIv: 'phone-iv',
+            encryptionAuthTag: 'phone-tag',
+            encryptionKeyVersion: 1,
+            valueFingerprint: 'p'.repeat(64),
+            isPrimary: false,
+            verifiedAt: null,
+            createdAt: new Date('2026-08-24T00:00:01.000Z'),
+          },
+        ],
+      } as never),
+    ).toMatchObject({ maskedPrimaryContact: '0912•••1234' });
+  });
+
   it('restricts registration recovery to exact fingerprint, active unmerged people and actor branches', async () => {
     const findFirst = vi
       .fn()
@@ -254,6 +296,13 @@ describe('CustomerRepository', () => {
         orderBy: { createdAt: 'asc' },
         skip: 10,
         take: 10,
+        include: expect.objectContaining({
+          contacts: {
+            where: { type: 'PHONE' },
+            orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+            take: 1,
+          },
+        }),
       }),
     );
     expect(customer.count).toHaveBeenCalledWith({

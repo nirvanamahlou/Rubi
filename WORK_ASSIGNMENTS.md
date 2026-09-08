@@ -1,5 +1,10 @@
 # Work Assignments
 
+## CUSTOMER-DIRECT-CONTACT-0908 — PC-A — IN_PROGRESS
+
+- Reserve Customers list UI/API mapping and focused Customers tests from `3b82a72` on `codex/pc-a-customer-direct-contact-0908`. Replace the separate «مشاهده تماس‌ها» action with one inline phone control: the list summary must prefer a phone rather than an email, and the full number is fetched only through the existing permission/reason/audit-sensitive endpoint, then re-masked on timeout, blur, visibility loss or list refresh.
+- Scope is limited to `apps/web/src/modules/customers/**`, `apps/api/src/customers/**`, this assignment and the task document. No schema, migration, seed, dependency, lockfile, IAM grant, real-data mutation, cross-module query, merge or public-branch rewrite.
+
 ## SALES-CONTRACT-ROOM-LOCATION-0908 — PC-A — COMPLETE_LOCAL
 
 - Purchased room totals now sit below the Hotel Information table (section 4), not Other Services. 34 focused tests, scoped lint/typecheck and 36-route production build pass; all four synthetic PDF pages visually inspected. Web3100 updated; Web/API 200. No data/API/schema/public-push change. Scoped reservation released; see docs/tasks/SALES-CONTRACT-ROOM-LOCATION-0908.md.
@@ -228,6 +233,7 @@
 - User authorized separation of all 27 pre-existing foreign changes. Preserved as local commit 75afc50751b3d5db16003c3e551bc3778e047eda on codex/pc-a-customer-passport-preservation-0905, plus raw backup at ../.worktrees/sales-foreign-backup-20260905. Three-way SHA256 equality checked before cleaning Sales; 20 tracked paths restored and 7 duplicate untracked files removed only from Sales.
 - This is recovery-only, not feature approval or reconciliation into the active Customers branch. Twelve files match customer-connections-0905; fifteen require owner reconciliation. Existing owner branches/worktrees remain untouched. Publishing the unreviewed preservation payload was blocked by safety review; no remote preservation branch or new PR was created.
 - Sales worktree is clean at 8dbc5f4 after isolation. Prisma foreign-file blocker is resolved; Reservations amendment API and Agency public contracts are still unfinished. Migration/Central Docs/Sales Contract locks remain held; PR #90 is not promoted or merged.
+
 ## CUSTOMERS-PRESERVATION-0905 — PC-A — RECOVERY_ONLY
 
 - Authorized isolation of 27 foreign Sales-worktree files onto codex/pc-a-customer-passport-preservation-0905; exact snapshot, not feature completion. See docs/tasks/CUSTOMERS-PRESERVATION-0905.md and byte manifest. No schema redesign, migration application, lock transfer, new PR or modification of active owner branches.
@@ -255,6 +261,7 @@
 ## TICKET-CATALOG-EDIT-COMPLETENESS — PC-A — READY_FOR_REVIEW
 
 - User approved integrating PR #85 Documents/Customer 360 and the existing master-data session retry on 2026-09-05. Isolated branch `codex/pc-a-customer-connections-0905`, based on committed Sales `5ea2b32`; active Sales worktree is untouched. Scope: integration of existing Customers/Documents public API changes, customer reference retry, tests and these task entries. No schema, migration, dependency or permission changes.
+
 ## SALES-CONTRACTS-001 — PC-A — READY_FOR_REVIEW
 
 - PC-A route/calendar-language follow-up READY_FOR_REVIEW: origin/destination each have vertically paired country/city fields. Sales calendar wrapper opts into English Gregorian month/day names, labels, digits and LTR; default shared behavior and ISO values unchanged. Shared Calendar Owner = PC-A/SALES-CONTRACTS-001 for the additive option pending review. 48 Sales/shared-calendar tests, scoped lint/typecheck and Web production build passed; no schema/dependency/API changes.
@@ -290,6 +297,7 @@
 - نتیجه: قرارداد عمومی v1، Prisma/Migration افزایشی، Permission Seed، Repository/API واقعی، Audit/Scope/Lock/Idempotency، محاسبه مانده فقط از تأیید Finance، صف پایدار ReservationRequest و فرم تمام‌صفحه هفت‌مرحله‌ای تکمیل شد.
 - Gate پس از آخرین Merge: ۳۱ Migration روی PostgreSQL 18 خالی، Seed دوباره‌پذیر، Full lint/typecheck، ۱٬۴۸۵ تست و Full Production Build موفق‌اند. Ticket offer در زمان تأیید تا انتشار Runtime Public API ماژول مالک به‌صورت fail-closed رد می‌شود و داده ساختگی وجود ندارد.
 - Commits: `7eba1b2` (contract/database)، `d1ecb63` (backend/API)، `fc61a4e` (full-page web) به‌همراه Commit نهایی hardening/docs. انتشار فقط روی همان Draft PR #90 انجام می‌شود.
+
 ## AGENCY-B2B-INTEGRATIONS-001 — PC-B — READY_FOR_REVIEW
 
 - درخواست و واگذاری صریح مالک محصول در 2026-09-05: مانع قبلی PR #90 رفع‌شده تلقی شود و اتصال عملیاتی آژانس‌ها شامل آدرس پایه، پروفایل شعبه‌ای، قرارداد B2B، سیاست اعتبار و نرخ توافقی پیاده‌سازی شود. `COMPUTER_ID=PC-B`.
@@ -301,6 +309,7 @@
 - نتیجه: آدرس پایه سازمان، پروفایل عملیاتی شعبه‌ای، قرارداد B2B، سیاست اعتبار و نرخ توافقی با Migration افزایشی، قرارداد عمومی نسخه‌دار، API مجوزمحور و Popup آژانس پیاده‌سازی شدند. تماس‌ها ماسک‌شده می‌مانند، تاریخ‌ها از DatePicker مشترک‌اند و exposure مالی تا انتشار Adapter مالک Finance صریحاً `UNAVAILABLE` است و صفر ساختگی نمایش داده نمی‌شود.
 - اعتبارسنجی: تمام Migrationها روی PostgreSQL موقت خالی اعمال شدند و ۶ جدول، قیود و ۲۲ Index جدید تأیید شدند؛ Prisma format/validate/generate، lint، typecheck، ۲۱ تست هدفمند و Production Build وب با ۳۴ Route موفق‌اند. Full Test همه بسته‌های تغییریافته را عبور داد؛ تنها شکست باقی‌مانده assertion متنی قدیمی Customer روی CRLF ویندوز است و هیچ فایل Customer در این Task تغییر نکرده است.
 - تحویل: PR [#98](https://github.com/nirvanamahlou/Rubi/pull/98) به `develop` برای Review آماده است و قفل‌های Migration، B2B shared-contract/root export و Central Docs تا تعیین تکلیف PR نزد `PC-B/AGENCY-B2B-INTEGRATIONS-001` باقی می‌مانند؛ Dependency/Lockfile آزاد است. Merge خودکار انجام نمی‌شود.
+
 ## MARKETING-001E-COMMUNICATIONS-RESTORE — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک در 2026-09-05: بخش «ارتباطات» به فضای کاری مارکتینگ بازگردد و مسیر، محتوای آزمایشی و عملیات اختصاصی آن قابل استفاده بماند. `COMPUTER_ID=PC-B`.
@@ -427,6 +436,7 @@
 - اعتبارسنجی: Web Master Data برابر `42/42` فایل و `327/327` تست، API Master Data برابر `27/27` فایل و `402/402` تست، lint و typecheck هر دو برنامه و Production Build هر دو موفق‌اند. API روی `4000` و Web تازه‌ساخته‌شده روی `3100` فعال‌اند؛ Health هر دو پاسخ `200` دارند. Schema/Migration/Seed/Dependency/Lockfile تغییر نکرد.
 
 ## MASTER-004-FORM-ALIGNMENT — PC-B — DONE/MERGED
+
 ## CUSTOMER-DOCUMENTS-001 — PC-A — READY_FOR_REVIEW
 
 - درخواست صریح مالک در 2026-09-03: جایگزینی وضعیت «در انتظار زیرساخت مدارک» در پرونده ۳۶۰ مشتری با اتصال واقعی به ماژول ادغام‌شده Documents. `COMPUTER_ID=PC-A`.
