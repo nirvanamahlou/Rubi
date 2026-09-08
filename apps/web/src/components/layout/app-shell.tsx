@@ -34,6 +34,7 @@ import {
 } from '@/modules/legal-entities/components/legal-entity-context';
 import { legalEntityBrand } from '@/modules/legal-entities/model/context';
 import { NotificationCenter } from './notification-center';
+import { sidebarIcons } from './sidebar-icons';
 import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
 import { Input } from '../ui/form-controls';
@@ -94,18 +95,17 @@ function Navigation({
   mobile?: boolean;
 }) {
   const pathname = usePathname();
-  function renderItem({
-    href,
-    icon: Icon,
-    title,
-  }: (typeof navigationItems)[number]) {
+  function renderItem({ href, title }: (typeof navigationItems)[number]) {
     const active = isNavigationItemActive(href, pathname);
+    const Icon = sidebarIcons[href];
     const link = (
       <Link
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'group flex min-w-0 items-center gap-3 overflow-hidden rounded-xl px-3 font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300',
-          compact ? 'h-full min-h-8' : 'min-h-11 py-2 text-[15px] leading-6',
+          'group flex min-w-0 items-center gap-2.5 overflow-hidden rounded-[10px] px-[11px] font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300',
+          compact
+            ? 'h-full min-h-8'
+            : 'min-h-10 py-2 text-xs leading-[1.8]',
           mobile
             ? active
               ? 'bg-primary text-primary-foreground shadow-sm'
@@ -119,10 +119,11 @@ function Navigation({
         title={!compact ? title : undefined}
       >
         <Icon
+          strokeWidth={1.7}
           aria-hidden="true"
           className={cn(
-            'shrink-0',
-            mobile ? 'size-[18px]' : 'size-[clamp(17px,1.7vh,21px)]',
+            'size-[17px] shrink-0',
+            !mobile && (active ? 'text-cyan-100' : 'text-[#adcaed]'),
           )}
         />
         {!compact ? (
@@ -153,7 +154,7 @@ function Navigation({
         'grid min-w-0 content-start overflow-x-hidden',
         compact
           ? 'h-full grid-rows-[repeat(17,minmax(32px,1fr))] gap-0.5'
-          : 'gap-3 py-2',
+          : 'gap-[7px] py-2',
       )}
     >
       {compact
@@ -166,7 +167,7 @@ function Navigation({
             >
               <h2
                 className={cn(
-                  'mb-1 flex items-center gap-2 px-3 py-1 text-[13px] font-semibold leading-6',
+                  'mb-1 flex items-center gap-2 px-[9px] pb-[5px] pt-[9px] text-sm font-semibold leading-6',
                   mobile ? 'text-muted-foreground' : 'text-blue-200',
                 )}
               >
@@ -179,7 +180,9 @@ function Navigation({
                 />
                 {group.title}
               </h2>
-              <div className="grid gap-0.5">{group.items.map(renderItem)}</div>
+              <div className="grid gap-[3px]">
+                {group.items.map(renderItem)}
+              </div>
             </section>
           ))}
     </nav>
