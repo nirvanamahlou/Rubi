@@ -19,3 +19,10 @@ Local migration history already differs from file checksums for Master Data foun
 ## Gates
 
 Prisma format/validate/generate, current Web/API/Contract tests, lint/typecheck and production build; CI migration/seed gate on a disposable PostgreSQL database; restored-data migration rehearsal with unchanged HR/customer/document/company counts. Browser smoke must identify the served commit and preserve current identity, four companies, date, HR and Agencies permissions without fabricating an authenticated user.
+
+## Verified integration results
+
+- Full production build, monorepo lint and typecheck passed.
+- Contracts: 61 passed. Targeted Web: 150 passed. API: 1001 passed, 107 opt-in cases skipped.
+- Private restored-data rehearsal applied all ten pending existing migrations successfully (45 applied total). Counts remained 6 employees, 144 HR records, 2 customers, 18 documents and 4 legal entities. Live migration still requires a fresh backup before cutover; no seed or IAM grant changes.
+- Date PR #118 passed all eight CI checks and merged to develop as `e12c397ef15494d5c45ac5b1e8c03675e63ad573`. Include it in PR #115 and require final-head CI before the explicitly authorized merge. Runtime QA is reported separately after cutover; no unperformed authenticated smoke is claimed.

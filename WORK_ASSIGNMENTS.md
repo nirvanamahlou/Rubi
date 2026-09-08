@@ -1,10 +1,11 @@
 # Work Assignments
 
-## HEADER-TODAY-001 / PR115 integration — PC-B — IN_PROGRESS
+## HEADER-TODAY-001 / PR115 integration — PC-B — READY_FOR_REVIEW
 
 - Owner explicitly approved merging both the date change and PR #115, and receiving latest develop. Integration worktree codex/pc-b-hr115-integration starts from published PR115@628012a and incorporates develop@130606d without modifying source worktrees.
 - Temporary integration-only ownership: conflicting status/plans, IAM permission catalog union and Prisma model union. Preserve HR, Sales, Ticket/Reservations, current company/profile/notifications and both histories; no new domain feature, dependency, migration file or IAM grant.
 - HR owner handed over runtime3100/4190. Keep rubi_hr_current_20260908 and hr007-documents as active data/storage; no reset, seed or password changes. Rehearse existing pending migrations on a restored private backup before live cutover. Historical checksum differences remain unchanged and documented.
+- Combined production build, full lint/typecheck, 61 Contract tests, 150 targeted Web tests and 1001 API tests passed (107 opt-in API tests skipped). Restored-data rehearsal applied all ten pending existing migrations: 45 applied, preserving 6 employees, 144 HR records, 2 customers, 18 documents and 4 companies. Date PR #118 merged as e12c397; PR #115 receives that date before final CI/merge. Integration implementation reservation is released; operational runtime handoff remains with PC-B until cutover verification.
 
 ## LOCAL-HR-AGENCIES-009 — PC-B — READY_FOR_REVIEW
 
@@ -33,6 +34,14 @@
 - Browser compatibility found a 14px overflow in the current shared header at 390px; reserve only the header container layout class in `app-shell.tsx` to arrange the existing controls into two mobile rows. Current desktop layout, company branding, user menu and actions remain present.
 - Result: the current HR production build is active on `localhost:3100`, with API4190 and the isolated `rubi_hr_current_20260908` database/document snapshot. Real browser login, all four companies, Profile/MFA, one notification bell, the legacy HR redirect, six employees and reload passed on both `localhost:3100` and `127.0.0.1:3100`. Lint/typecheck/build and targeted Web/API/Contracts/PostgreSQL checks passed; details and restart command are in `docs/tasks/HR-007.md`.
 - Implementation reservations are released for review. Operational ownership of web3100/API4190 remains PC-B/HR-007 until an explicit runtime handoff; preserve its database/document snapshot when replacing the listener. No merge to main/develop was performed.
+
+## HEADER-TODAY-001 — PC-B — DONE / MERGED
+
+- Owner requests today's date in the header, normal push/merge and fetching current changes; separately approves merging PR #115. Date slice starts at origin/develop@130606d on codex/pc-b-header-today.
+- Reserve only app-shell Header date insertion, header-today component/helper/tests and this task's documentation. Existing navigation, company colors, IAM identity and notifications remain unchanged. HR owner released Header scope and handed off runtime3100/4190; preserve its current HR/Agencies data and Documents storage.
+- No schema, migration, seed, dependencies, grants or credential changes in the date slice. PR #115 integration is validated separately; no source branches are deleted or force-pushed.
+- Date implementation complete: 12 focused date/session/company tests, Web lint and production build passed. Header-only implementation reservation released for review; final CI and runtime verification gate merge/handoff.
+- Desktop authenticated RTL app, responsive to320px; Persian calendar and numerals, Asia/Tehran. Targets (not measured claims): LCP p75<=2500ms, INP<=200ms, CLS<=0.1, route JS<=200KB gzip, incremental date code<=3KB gzip, Lighthouse accessibility>=95/performance>=90. PC-B verifies this slice; reuse existing theme and WCAG AA contrast.
 
 ## CONTRACT-OUTPUT-SUMMARY-0908 — PC-A — COMPLETE_LOCAL
 

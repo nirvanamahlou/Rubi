@@ -1,4 +1,11 @@
 # وضعیت پروژه
+
+## HEADER-TODAY-001 — PC-B — ready for review
+
+The header displays today's Persian date and weekday using Persian digits and Asia/Tehran, independent of browser timezone and login time. A stable server placeholder prevents a stale build-date/hydration mismatch; minute-aligned updates and focus/visibility refresh handle midnight and sleeping tabs. A separate compact header row preserves existing controls and company colors. No API, database, dependency, user identity or permission changes. Source is current develop@130606d; PR #115 integration and runtime handoff are separately coordinated to retain current HR/Agencies and its database/storage.
+
+Twelve focused tests, Web lint and production build passed. CI and final local runtime verification are required before completion; implementation scope is released for review.
+
 ## CONTRACT-OUTPUT-SUMMARY-0908 — COMPLETE_LOCAL
 
 کارت‌های «پرداخت تأییدشده مالی» و «مانده» فقط از قالب مشترک چاپ/PDF قرارداد حذف شدند؛ مبلغ توافق‌شده باقی است. محاسبات مالی، داشبورد، Excel، قیمت مسافران و سایر بخش‌های قرارداد تغییر نکردند. 199 تست Web فروش، lint محدوده، typecheck و Build تولیدی 36 مسیر موفق‌اند. PDF مصنوعی با رندر واقعی و بازبینی تصویری یک‌صفحه‌ای تأیید شد؛ آزمون احرازشده قرارداد واقعی ادعا نمی‌شود.
