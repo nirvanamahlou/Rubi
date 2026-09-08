@@ -256,18 +256,10 @@ function MarketingHub({
 }) {
   return (
     <section
-      aria-labelledby="marketing-hub-title"
-      className="grid gap-5 text-right"
+      aria-label="فهرست کارت‌های ماژول مارکتینگ"
+      className="text-right"
       dir="rtl"
     >
-      <div>
-        <h2 className="text-xl font-black" id="marketing-hub-title">
-          بخش‌های مارکتینگ
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          برای ورود به هر بخش، کارت مربوط را انتخاب کنید.
-        </p>
-      </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {marketingSections.map((section) => {
           const Icon = sectionIcons[section.key];

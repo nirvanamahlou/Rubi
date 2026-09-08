@@ -1,5 +1,13 @@
 # Work Assignments
 
+## MARKETING-001G-REMOVE-HUB-INTRO — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-08: بلوک نمایشی «بخش‌های مارکتینگ / برای ورود به هر بخش، کارت مربوط را انتخاب کنید.» از Hub مارکتینگ حذف شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-marketing-remove-section-intro` از آخرین Snapshot محلی `origin/develop@54e5102`؛ `git fetch --prune origin` دو بار اجرا شد اما GitHub موقتاً روی پورت ۴۴۳ در دسترس نبود.
+- محدوده فقط `apps/web/src/modules/marketing/components/marketing-workspace.tsx`، تست قرارداد همان ماژول و ورودی‌های همین Work Item در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` است. هیچ Schema/Migration/Seed، API/Contract، Dependency/Lockfile، داده یا فایل مرکزی UI تغییر نمی‌کند.
+- نتیجه: عنوان «بخش‌های مارکتینگ» و توضیح «برای ورود به هر بخش، کارت مربوط را انتخاب کنید.» همراه Wrapper فاصله‌ساز حذف شدند؛ Grid کارت‌ها بدون فاصله اضافه از ابتدای Hub نمایش داده می‌شود و Section با نام دسترس‌پذیر غیرنمایشی باقی مانده است.
+- اعتبارسنجی: ۱۸ تست هدفمند مارکتینگ، Contracts build، Web typecheck و lint و Production Build با ۳۴ Route موفق‌اند. نسخه همین Branch جای اجرای قدیمی `Rubi-hr-foundation` روی پورت ۳۱۰۰ فعال شد.
+
 ## LEGAL-ENTITY-BRAND-HEADER-002 — PC-B — DONE/MERGED
 
 - درخواست صریح مالک محصول در 2026-09-07: با انتخاب شرکت فعال «جهان باستان»، هدر اصلی سامانه سورمه‌ای شود و نام کاربر همراه ساعت ورود در همان هدر نمایش داده شود. `COMPUTER_ID=PC-B`.
