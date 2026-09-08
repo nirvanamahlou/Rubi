@@ -68,6 +68,7 @@ import { TicketForm } from './ticket-form';
 import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
 import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
+import { TourWorkspace } from './tour-workspace';
 
 const actor = 'کاربر جاری';
 const transportIcons = {
@@ -90,7 +91,7 @@ export function TicketWorkspace() {
       <Tabs defaultValue="catalog" dir="rtl" className="space-y-5">
         <TabsList
           aria-label="انتخاب بخش مدیریت بلیت"
-          className="grid h-auto w-full grid-cols-1 gap-2 rounded-2xl border border-primary/15 bg-primary/[0.04] p-2 sm:grid-cols-2 lg:w-fit"
+          className="grid h-auto w-full grid-cols-1 gap-2 rounded-2xl border border-primary/15 bg-primary/[0.04] p-2 sm:grid-cols-3 lg:w-fit"
         >
           <TabsTrigger
             className="group min-h-20 justify-start gap-3 border border-transparent px-4 py-3 text-start transition hover:border-primary/20 hover:bg-surface/80 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
@@ -120,7 +121,16 @@ export function TicketWorkspace() {
               </span>
             </span>
           </TabsTrigger>
+          <TabsTrigger
+            className="min-h-20 rounded-xl px-4 py-3 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            value="tours"
+          >
+            تعریف تور و نوبت برگزاری
+          </TabsTrigger>
         </TabsList>
+        <TabsContent value="tours">
+          <TourWorkspace />
+        </TabsContent>
         <TabsContent value="catalog">
           <TicketCatalogWorkspace />
         </TabsContent>

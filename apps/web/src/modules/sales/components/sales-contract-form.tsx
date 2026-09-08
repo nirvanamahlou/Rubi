@@ -30,6 +30,7 @@ import { TicketOfferPicker } from './ticket-offer-picker';
 import { ContractFlightEditor } from './contract-flight-editor';
 import { SearchableReference } from './searchable-reference';
 import { SalesInsurancePicker } from './sales-insurance-picker';
+import { SalesTourPicker } from './sales-tour-picker';
 import { FlightTicketPreview } from './flight-ticket-preview';
 import { SalesPeopleSheet } from './sales-people-sheet';
 import type { SalesPeopleDraft } from '../model/sales-people-sheet';
@@ -432,6 +433,7 @@ export function SalesContractForm() {
         (passengerCounts.infants === 0 || passengerCounts.adults > 0),
       );
     if (step === 1) {
+      if (activeDetail === 'TOUR') return false;
       if (activeDetail === 'FLIGHT')
         return (
           salesFlightsValid(state) &&
@@ -803,6 +805,32 @@ export function SalesContractForm() {
         {step === 1 ? (
           <div className="grid gap-6">
             <h2 className="text-xl font-black">جزئیات خدمات</h2>
+            {state.tour && (
+              <div className="flex items-center justify-between gap-2 rounded-xl bg-primary/10 p-3">
+                <span>
+                  تور انتخاب‌شده: {state.tour.package.name} ·{' '}
+                  {state.tour.startsOn} تا {state.tour.endsOn}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => patchState({ tour: undefined })}
+                >
+                  تبدیل به خدمات مستقل
+                </Button>
+              </div>
+            )}
+            {activeDetail === 'TOUR' && (
+              <SalesTourPicker
+                state={state}
+                cities={references.cities}
+                hotels={references.hotels}
+                onChange={(next) => {
+                  setState(next);
+                  setDetailStep(0);
+                }}
+              />
+            )}
             <ol className="flex flex-wrap gap-2">
               {detailSteps.map((key, index) => (
                 <li
@@ -1018,7 +1046,7 @@ export function SalesContractForm() {
             {activeDetail &&
             activeDetail !== 'FLIGHT' &&
             !activeDetail.startsWith('TRANSFER-') &&
-            !['HOTEL', 'VISA', 'INSURANCE'].includes(activeDetail) ? (
+            !['HOTEL', 'VISA', 'INSURANCE', 'TOUR'].includes(activeDetail) ? (
               <section className="grid gap-4 rounded-2xl border border-border p-4">
                 <h3 className="font-bold">{detailLabel(activeDetail)}</h3>
                 <p className="text-sm text-muted-foreground">
@@ -1053,7 +1081,9 @@ export function SalesContractForm() {
                     value={state.hotel.hotelId}
                     options={references.hotels.filter(
                       (hotel) =>
-                        hotel.attributes.cityId === state.destinationId,
+                        hotel.attributes.cityId === state.destinationId &&
+                        (!state.tour ||
+                          state.tour.package.hotelIds.includes(hotel.id)),
                     )}
                     onChange={(hotelId) =>
                       patchState({

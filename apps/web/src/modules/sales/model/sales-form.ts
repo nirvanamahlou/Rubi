@@ -19,6 +19,7 @@ import type {
   SalesServiceInput,
   SalesTicketDirection,
   TicketOfferV1,
+  TourDepartureV1,
 } from '@rubi/contracts';
 
 import {
@@ -79,7 +80,8 @@ export const salesSteps = [
 ] as const;
 
 export interface SalesFormState {
-  insurancePlan?: SalesInsuranceSelection;
+  tour?: TourDepartureV1 | undefined;
+  insurancePlan?: SalesInsuranceSelection | undefined;
   contractFlights?: Partial<Record<SalesTicketDirection, ContractFlightDraft>>;
   servicePricing?: Record<string, SalesServicePricingV1[]>;
   customerKind?: 'person' | 'organization';
@@ -664,6 +666,13 @@ export function salesPayload(
             kind,
             titleSnapshot: `${kind === 'FLIGHT' ? 'بلیت' : 'ترانسفر'} ${direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}`,
             metadata: {
+              ...(kind === 'FLIGHT' && direction === 'OUTBOUND' && state.tour
+                ? {
+                    tourDepartureId: state.tour.id,
+                    tourDepartureVersion: state.tour.version,
+                    tourName: state.tour.package.name,
+                  }
+                : {}),
               ...(kind === 'FLIGHT'
                 ? { businessOutput: state.businessOutput === true }
                 : {}),
