@@ -859,3 +859,5 @@ HR-003 / READY_FOR_REVIEW: HR section overview/PDF reports implemented, no share
 HR-004 / PC-B / IN_PROGRESS: employee-specific profile, related records and reporting scope; HR-owned files, no migration or shared dependency.
 
 HR-004 / READY_FOR_REVIEW: employee profile isolation and linked records complete within current HR session model.
+
+HR-004 follow-up / PC-B: top HR view switcher removed; statistics and PDF export retained below section content.

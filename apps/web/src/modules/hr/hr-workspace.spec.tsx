@@ -53,6 +53,15 @@ import {
 import { getHrPreviewDataset } from './hr-preview-data';
 
 describe('HR reference implementation', () => {
+  it('does not render the overview, operations and reports switcher above HR content', () => {
+    const html = renderToStaticMarkup(
+      <HrWorkspace sectionId="time" tabId="attendance" />,
+    );
+    expect(html).not.toContain('aria-label="نماهای کارکرد و زمان"');
+    expect(html).not.toContain('aria-pressed=');
+    expect(html).toContain('آمار و خروجی PDF');
+  });
+
   it('renders the eighteen capability hub cards as deep links', () => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId="home" />);
     expect(hrHubCards).toHaveLength(15);

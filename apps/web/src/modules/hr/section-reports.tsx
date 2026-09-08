@@ -34,7 +34,6 @@ export function SectionReports({
   reports: readonly SectionReport[];
   children: ReactNode;
 }) {
-  const [view, setView] = useState('operations');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState('all');
   const [busy, setBusy] = useState(false);
@@ -54,38 +53,19 @@ export function SectionReports({
     }));
   return (
     <>
-      <nav aria-label={`نماهای ${title}`} className={styles.rowActions}>
-        {[
-          ['overview', 'نمای کلی'],
-          ['operations', 'عملیات'],
-          ['reports', 'گزارش‌ها'],
-        ].map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            aria-pressed={view === id}
-            onClick={() => setView(id!)}
-            className={`${styles.button} ${view === id ? styles.buttonPrimary : ''}`}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-      <div hidden={view !== 'operations'}>{children}</div>
-      {view === 'overview' ? (
-        <section className={styles.panel} aria-label={`نمای کلی ${title}`}>
+      {children}
+      <details className={styles.panel}>
+        <summary className={styles.panelBody}>آمار و خروجی PDF</summary>
+        <section aria-label={`آمار ${title}`}>
           <div className={styles.panelBody}>
-            <h2>نمای کلی {title}</h2>
+            <h2>آمار {title}</h2>
             <p>آمار رکوردهای موجود در این نشست</p>
             <div className={styles.hubGrid}>
               {reports.map((report) => (
                 <button
                   className={styles.button}
                   key={report.id}
-                  onClick={() => {
-                    setSelected(report.id);
-                    setView('reports');
-                  }}
+                  onClick={() => setSelected(report.id)}
                   type="button"
                 >
                   <span>{report.title}</span>
@@ -98,11 +78,9 @@ export function SectionReports({
             </div>
           </div>
         </section>
-      ) : null}
-      {view === 'reports' ? (
         <section className={styles.panel}>
           <div className={styles.panelBody}>
-            <h2>گزارش‌های {title}</h2>
+            <h2>خروجی PDF {title}</h2>
             <div className={styles.rowActions}>
               <select
                 aria-label="موضوع گزارش"
@@ -184,7 +162,7 @@ export function SectionReports({
             ))}
           </div>
         </section>
-      ) : null}
+      </details>
     </>
   );
 }
