@@ -52,6 +52,8 @@ import { AgencyConnectionsPanel } from './agency-connections-panel';
 import { cooperationLabel } from '../model/presentation';
 import { CorporateMetric, CorporateProfile } from './corporate-profile';
 import './corporate-design.css';
+import { CooperationWizard } from './cooperation-wizard';
+import { OrganizationExcelDialog } from './organization-excel-dialog';
 
 type RequestState =
   'loading' | 'ready' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
@@ -73,6 +75,9 @@ export function OrganizationsWorkspace() {
   const [state, setState] = useState<RequestState>('loading');
   const [selected, setSelected] = useState<MasterDataRecord>();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [excelOpen, setExcelOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit' | null>(null);
   const [notice, setNotice] = useState<string>();
   const [contactsLoading, setContactsLoading] = useState(false);
@@ -209,6 +214,40 @@ export function OrganizationsWorkspace() {
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+  async function exportExcel() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const file = await masterDataApi.downloadExcel({
+        resource: 'organizations',
+        format: 'xlsx',
+        filters: {
+          search,
+          status,
+          organizationRole: role,
+          sortBy,
+          sortDirection: sortBy === 'updatedAt' ? 'desc' : 'asc',
+        },
+        columns: ['code', 'legalName', 'personType', 'roleCodes'],
+        locale: 'fa-IR',
+        timezone: 'Asia/Tehran',
+      });
+      const url = URL.createObjectURL(file.blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = file.fileName;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setNotice('خروجی اکسل مطابق فیلترهای فعلی دریافت شد.');
+    } catch (caught) {
+      setNotice(
+        caught instanceof Error ? caught.message : 'خروجی اکسل ناموفق بود.',
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
+
   async function persistContact(values: Record<string, string>) {
     if (!selected || !contactForm)
       throw new Error('پرونده سازمان انتخاب نشده است.');
@@ -235,17 +274,37 @@ export function OrganizationsWorkspace() {
           <div className="actions">
             <button
               className="btn"
-              disabled
-              title="خروجی مجاز سازمان‌ها هنوز در دسترس نیست"
+              disabled={
+                exporting || !permissions.includes('master_data.export')
+              }
+              onClick={() => void exportExcel()}
             >
-              خروجی مجاز
+              {exporting ? 'در حال دریافت…' : 'خروجی اکسل'}
+            </button>
+            <button
+              className="btn"
+              disabled={
+                ![
+                  'master_data.read',
+                  'master_data.create',
+                  'master_data.import',
+                ].every((permission) =>
+                  permissions.includes(permission as IamPermissionCode),
+                )
+              }
+              onClick={() => setExcelOpen(true)}
+            >
+              ورود اکسل
             </button>
             <button
               className="btn primary"
-              disabled={!permissions.includes('master_data.create')}
+              disabled={
+                !permissions.includes('master_data.read') ||
+                (!permissions.includes('master_data.create') &&
+                  !permissions.includes('master_data.update'))
+              }
               onClick={() => {
-                setSelected(undefined);
-                setFormMode('create');
+                setWizardOpen(true);
               }}
             >
               <Plus size={18} />
@@ -659,6 +718,24 @@ export function OrganizationsWorkspace() {
         />
       ) : null}
 
+      {wizardOpen ? (
+        <CooperationWizard
+          role={role}
+          permissions={permissions}
+          onClose={() => setWizardOpen(false)}
+          onSaved={(record) => {
+            setWizardOpen(false);
+            void load();
+            void openProfile(record);
+          }}
+        />
+      ) : null}
+      {excelOpen ? (
+        <OrganizationExcelDialog
+          onClose={() => setExcelOpen(false)}
+          onImported={() => void load()}
+        />
+      ) : null}
       {contactForm && selected ? (
         <MasterDataLiveForm
           definition={getMasterDataDefinition('organization-contacts')}
