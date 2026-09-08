@@ -14,6 +14,8 @@
 - Verification: 78 HR API tests including 19 PostgreSQL/auth scenarios; 85 affected web/proxy tests; contracts/database checks and production builds pass. Authenticated browser QA covers the 12 live sections, candidate CRUD/reload/notifications, profile edit, resume archive, spreadsheet validation/import, Persian PDF text extraction, mobile layout and legacy redirect. Details and external producer limits: `docs/tasks/HR-005.md`.
 - Handoff: two additive migrations applied locally; three pre-existing PC-A migration entries remain untouched and must be reconciled during branch review. Branch is pushed for review; no merge/deploy is authorized. Shared shell/profile changes in the other worktree were not touched.
 
+- Visual follow-up delivered (owner request): HR home uses the same shared Card/PageHeader, four-column responsive grid, tone palette, icons, subsection chips, entry footer, hover and keyboard focus as Master Data. Reserved only HR hub presentation and this task's documentation; Master Data/shared components remain unmodified. HR routes and live counts are preserved. Targeted lint, web typecheck, 12 existing tests and production build pass; isolated component browser QA with production CSS covers 1920/1366/820/390px and dark mode without overflow. No migration or API changes.
+
 ## CUSTOMER-DOCUMENTS-AGENCIES-INTEGRATION-001 — PC-B — READY_FOR_REVIEW
 
 - واگذاری صریح مالک محصول در 2026-09-05: نجات و سازگارکردن قابلیت‌های سالم PR #85 با آخرین Documents، اتصال واقعی Customer 360 به اسناد، اتصال عملیاتی آژانس‌ها به Organizationهای اطلاعات پایه و حذف شناسه موقت از جریان Logo. `COMPUTER_ID=PC-B`.

@@ -5,10 +5,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { type HrRecordDto } from '@rubi/contracts';
 import { hrHubCards, normalizeSection, type HrSectionId } from './hr.model';
-import { canonicalHrLocation, hrGroups, type HrSource } from './hr-navigation';
+import { canonicalHrLocation, type HrSource } from './hr-navigation';
 import { useHrStore } from './hr-store';
 import { hrRequest } from './hr-api';
 import { HrButton } from './hr-controls';
+import { HrHub } from './hr-hub';
 import type { HrFormTarget } from './hr-record-form';
 import { sourceForRecord } from './hr-unified-section';
 import { HrServerNotifications } from './hr-server-notifications';
@@ -138,7 +139,6 @@ export function HrLiveWorkspace({
       </main>
     );
   const data = store.data;
-  const cards = hrHubCards.filter((item) => item.id !== 'finance');
   return (
     <main className={styles.workspace} dir="rtl" lang="fa" data-hr-mode="live">
       <HrServerNotifications
@@ -185,45 +185,7 @@ export function HrLiveWorkspace({
       {section === 'reports' ? (
         <HrReports store={store} />
       ) : section === 'home' ? (
-        <div className={ui.spaced}>
-          <header className={ui.heading}>
-            <div>
-              <h1>منابع انسانی</h1>
-              <p>پرونده کارکنان و فرایندهای مرتبط در یک فضای کاری</p>
-            </div>
-          </header>
-          <div className={ui.grid}>
-            {cards.map((card) => {
-              const count =
-                card.id === 'employees'
-                  ? data.employees.length
-                  : data.records.filter((item) => item.section === card.id)
-                      .length;
-              const Icon = card.icon;
-              return (
-                <Link
-                  href={`/hr?section=${card.id}`}
-                  key={card.id}
-                  className={ui.card}
-                >
-                  <Icon size={25} />
-                  <h2>
-                    {card.id === 'payroll' ? 'حقوق و ارتباط مالی' : card.title}
-                  </h2>
-                  <p>{card.description}</p>
-                  <span>
-                    {card.id === 'employees'
-                      ? '۸ بخش پرونده شخصی'
-                      : `${hrGroups[card.id]?.length ?? 1} بخش`}{' '}
-                    {!['dashboard', 'reports', 'settings'].includes(card.id)
-                      ? `· ${card.id === 'requests' ? data.records.filter((item) => /انتظار|بررسی/.test(item.status)).length.toLocaleString('fa-IR') : count.toLocaleString('fa-IR')} رکورد`
-                      : ''}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+        <HrHub data={data} />
       ) : section === 'dashboard' ? (
         <HrDashboard store={store} onSelect={select} />
       ) : section === 'employees' ? (
