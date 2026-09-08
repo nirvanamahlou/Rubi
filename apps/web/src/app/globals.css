@@ -105,35 +105,65 @@ a {
 }
 
 header[data-rubi-active-company='JAHAN_BASTAN'] {
+  --company-header-background: linear-gradient(
+    110deg,
+    #061a3f 0%,
+    #092b68 58%,
+    #0f438e 100%
+  );
+}
+
+header[data-rubi-active-company='NIYAYESH_SEIR_SAHAR'] {
+  --company-header-background: linear-gradient(110deg, #123f8c, #1554ad);
+}
+
+header[data-rubi-active-company='GHESATI_RO'] {
+  --company-header-background: linear-gradient(110deg, #064e3b, #087052);
+}
+
+header[data-rubi-active-company='JAHAN_ACADEMIA'] {
+  --company-header-background: linear-gradient(110deg, #4c1d75, #702b9c);
+}
+
+header:is(
+  [data-rubi-active-company='JAHAN_BASTAN'],
+  [data-rubi-active-company='NIYAYESH_SEIR_SAHAR'],
+  [data-rubi-active-company='GHESATI_RO'],
+  [data-rubi-active-company='JAHAN_ACADEMIA']
+) {
   border-color: rgb(125 169 234 / 0.38);
-  background: linear-gradient(110deg, #061a3f 0%, #092b68 58%, #0f438e 100%);
+  background: var(--company-header-background);
   color: #f8fbff;
   box-shadow: 0 12px 30px rgb(4 20 52 / 0.2);
 }
 
-header[data-rubi-active-company='JAHAN_BASTAN'] button {
+header[data-rubi-active-company]:not([data-rubi-active-company='ALL']) button {
   color: #f8fbff;
 }
 
-header[data-rubi-active-company='JAHAN_BASTAN'] button:hover {
+header[data-rubi-active-company]:not([data-rubi-active-company='ALL'])
+  button:hover {
   background-color: rgb(255 255 255 / 0.12);
 }
 
-header[data-rubi-active-company='JAHAN_BASTAN']
+header[data-rubi-active-company]:not([data-rubi-active-company='ALL'])
   [data-legal-entity-selector]
   button,
-header[data-rubi-active-company='JAHAN_BASTAN'] #global-search-trigger,
-header[data-rubi-active-company='JAHAN_BASTAN'] [data-header-session-summary] {
+header[data-rubi-active-company]:not([data-rubi-active-company='ALL'])
+  #global-search-trigger,
+header[data-rubi-active-company]:not([data-rubi-active-company='ALL'])
+  [data-header-session-summary] {
   border-color: rgb(219 234 254 / 0.24);
   background-color: rgb(255 255 255 / 0.11);
   color: #ffffff;
 }
 
-header[data-rubi-active-company='JAHAN_BASTAN'] .text-muted-foreground {
+header[data-rubi-active-company]:not([data-rubi-active-company='ALL'])
+  .text-muted-foreground {
   color: #dbeafe;
 }
 
-header[data-rubi-active-company='JAHAN_BASTAN']
+header[data-rubi-active-company]:not([data-rubi-active-company='ALL'])
   [data-header-session-summary]
   span {
   border-color: rgb(219 234 254 / 0.24);
