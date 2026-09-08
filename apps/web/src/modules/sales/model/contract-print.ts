@@ -1,7 +1,6 @@
 import {
   moneyDecimal,
   moneyUnits,
-  SALES_ACCOMMODATION_LABELS,
   salesContractFlights,
   type SalesContractOutputV1,
 } from '@rubi/contracts';
@@ -15,6 +14,32 @@ export interface ContractPrintReferences {
   logoDataUrl?: string;
 }
 export const contractOutputTemplateVersion = 'travel-services-v1';
+
+/** Purchased room quantities, never inferred from passenger accommodation. */
+export function contractRoomSummary(
+  hotel: SalesContractOutputV1['contract']['hotelSelection'],
+): string {
+  if (!hotel) return 'ندارد';
+  const count = (value: number | undefined) =>
+    Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : 0;
+  const total = count(hotel.roomCount);
+  if (!total) return 'تعداد اتاق ثبت نشده';
+  const single = count(hotel.singleRoomCount);
+  const double = count(hotel.doubleRoomCount);
+  const extra = count(hotel.extraBedCount);
+  const parts =
+    single + double > total
+      ? ['ترکیب اتاق‌ها نیازمند بررسی است']
+      : [
+          ...(single ? [`${single} سینگل`] : []),
+          ...(double ? [`${double} دبل`] : []),
+          ...(total > single + double
+            ? [`${total - single - double} اتاق با ترکیب ثبت‌نشده`]
+            : []),
+        ];
+  if (extra) parts.push(`${extra} تخت اضافه`);
+  return `مجموع ${total} اتاق: ${parts.join('، ')}`;
+}
 
 export function escapeContractText(value: unknown): string {
   return String(value ?? '—').replace(
@@ -101,7 +126,7 @@ export function contractPrintHtml(
     `<h2><em>${String(n).padStart(2, '0')}</em><span dir="ltr">${en}</span><small>${fa}</small></h2>`;
   const agency = output.customer.kind === 'organization';
   const passengerColumns = (
-    agency ? [5, 20, 8, 5, 14, 18, 14, 8, 8] : [5, 22, 9, 5, 15, 20, 15, 9]
+    agency ? [5, 26, 8, 6, 22, 17, 8, 8] : [5, 28, 9, 6, 24, 18, 10]
   )
     .map((width) => `<col style="width:${width}%">`)
     .join('');
@@ -124,10 +149,7 @@ export function contractPrintHtml(
               '</bdi></div>',
           )
           .join('');
-      const accommodation = p.accommodationKind
-        ? SALES_ACCOMMODATION_LABELS[p.accommodationKind]
-        : 'ثبت نشده';
-      return `<tr><td>${i + 1}</td><td>${e(p.displayNameSnapshot)}</td><td>${{ ADT: 'بزرگسال', CHD: 'کودک', INF: 'نوزاد' }[p.ageCategory]}</td><td>${allocated.some((s) => s.kind === 'VISA') ? 'دارد' : '—'}</td><td>${allocated.some((s) => s.kind === 'HOTEL') ? e(accommodation) : '—'}</td><td class="contract-total">${p.agreedPrices?.length ? renderPrices(false) : 'ثبت نشده'}</td><td>${renderPrices(true)}</td>${agency ? '<td>ثبت نشده</td>' : ''}<td>—</td></tr>`;
+      return `<tr><td>${i + 1}</td><td>${e(p.displayNameSnapshot)}</td><td>${{ ADT: 'بزرگسال', CHD: 'کودک', INF: 'نوزاد' }[p.ageCategory]}</td><td>${allocated.some((s) => s.kind === 'VISA') ? 'دارد' : '—'}</td><td class="contract-total">${p.agreedPrices?.length ? renderPrices(false) : 'ثبت نشده'}</td><td>${renderPrices(true)}</td>${agency ? '<td>ثبت نشده</td>' : ''}<td>—</td></tr>`;
     })
     .join('');
   const flights = salesContractFlights(c.servicesDetail, c.ticketSelections)
@@ -212,10 +234,10 @@ export function contractPrintHtml(
   ${c.status === 'CANCELLED' ? '<div class="cancelled">این قرارداد لغو شده است</div>' : ''}
   <div class="meta"><div>شماره قرارداد<strong><bdi>${e(c.contractNumber)}</bdi></strong></div><div>تاریخ ثبت<strong>${e(date(c.createdAt))}</strong></div><div>ساعت<strong>${e(time(c.createdAt))}</strong></div><div>مسئول فروش<strong>${e(output.ownerName)}</strong></div></div>
   <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(c.customerNameSnapshot)}</b></div><div>مدیر: —</div><div class="wide">نشانی: ${e(output.customer.address)}</div><div>مقصد: ${e(name(c.destinationId))}</div><div>تعداد: ${c.passengersDetail.length} نفر</div><div>درخواست‌کننده: ${e(c.customerNameSnapshot)}</div><div>خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>
-<section class="passengers">${heading(2, 'PASSENGERS & PRICING', 'مسافران و قیمت')}<table><colgroup>${passengerColumns}</colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>ویزا</th><th>اتاق</th><th>مبلغ فروش</th><th>ارز</th>${agency ? '<th>کمیسیون</th>' : ''}<th>توضیحات</th></tr></thead><tbody>${rows}</tbody></table><div class="financial-summary"><p class="note">${c.passengersDetail.every((p) => p.agreedPrices?.length) ? 'مبلغ فروش هر مسافر، کل خدمات توافق‌شده همان نفر است.' : 'برای ردیف‌های قدیمی قیمت تفکیکی مسافر ثبت نشده؛ مبلغ حدسی درج نمی‌شود.'}</p><div class="summary-grid"><div class="summary-card"><b>مبلغ توافق‌شده قرارداد</b><div class="summary-value">${agreementTotal ?? moneyRows('amount')}</div></div><div class="summary-card"><b>پرداخت تأییدشده مالی:</b><div class="summary-value">${moneyRows('confirmedPaid')}</div></div><div class="summary-card"><b>مانده:</b><div class="summary-value">${moneyRows('outstanding')}</div></div></div>${agency ? '<p class="note">کمیسیون آژانس در این قرارداد ثبت نشده؛ هیچ مبلغی بابت آن از جمع قرارداد کسر نشده است.</p>' : ''}</div></section>
+<section class="passengers">${heading(2, 'PASSENGERS & PRICING', 'مسافران و قیمت')}<table><colgroup>${passengerColumns}</colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>ویزا</th><th>مبلغ فروش</th><th>ارز</th>${agency ? '<th>کمیسیون</th>' : ''}<th>توضیحات</th></tr></thead><tbody>${rows}</tbody></table><div class="financial-summary"><p class="note">${c.passengersDetail.every((p) => p.agreedPrices?.length) ? 'مبلغ فروش هر مسافر، کل خدمات توافق‌شده همان نفر است.' : 'برای ردیف‌های قدیمی قیمت تفکیکی مسافر ثبت نشده؛ مبلغ حدسی درج نمی‌شود.'}</p><div class="summary-grid"><div class="summary-card"><b>مبلغ توافق‌شده قرارداد</b><div class="summary-value">${agreementTotal ?? moneyRows('amount')}</div></div><div class="summary-card"><b>پرداخت تأییدشده مالی:</b><div class="summary-value">${moneyRows('confirmedPaid')}</div></div><div class="summary-card"><b>مانده:</b><div class="summary-value">${moneyRows('outstanding')}</div></div></div>${agency ? '<p class="note">کمیسیون آژانس در این قرارداد ثبت نشده؛ هیچ مبلغی بابت آن از جمع قرارداد کسر نشده است.</p>' : ''}</div></section>
   <section>${heading(3, 'FLIGHT INFORMATION', 'اطلاعات پرواز')}<table><thead><tr><th>مسیر</th><th>ایرلاین</th><th>شماره</th><th>تاریخ</th><th>ساعت</th><th>کلاس</th></tr></thead><tbody>${flights || '<tr><td colspan="6">پرواز در این قرارداد انتخاب نشده است.</td></tr>'}</tbody></table></section>
   <section>${heading(4, 'HOTEL INFORMATION', 'اطلاعات هتل')}${hotel ? `<table><thead><tr><th style="width:30%">نام هتل</th><th>درجه</th><th>خدمات</th><th>ورود</th><th>خروج</th><th>نوع اتاق</th></tr></thead><tbody><tr><td><bdi>${e(refs.hotelLatinName || 'ثبت نشده')}</bdi><small><bdi>${e(refs.hotelWebsite || 'وب‌سایت ثبت نشده')}</bdi></small></td><td>${e(refs.hotelGrade)}</td><td>${e(name(hotel.mealServiceId))}</td><td>${e(date(hotel.checkInDate))}</td><td>${e(date(hotel.checkOutDate))}</td><td>${e(room)}</td></tr></tbody></table>` : 'هتل در این قرارداد انتخاب نشده است.'}</section>
-  <section>${heading(5, 'OTHER SERVICES', 'سایر خدمات')}<div class="fields"><div>ترانسفر: ${e(transfers || 'ندارد')}</div><div>گشت شهری: ${e(
+  <section>${heading(5, 'OTHER SERVICES', 'سایر خدمات')}<div class="fields">${hotel ? `<div class="wide"><b>اتاق‌های قرارداد: ${e(contractRoomSummary(hotel))}</b></div>` : ''}<div>ترانسفر: ${e(transfers || 'ندارد')}</div><div>گشت شهری: ${e(
     c.servicesDetail
       .filter((s) => s.kind === 'TOUR')
       .map((s) => s.titleSnapshot)

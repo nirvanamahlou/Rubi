@@ -30,12 +30,17 @@ describe('Saved contract print output', () => {
   it('uses the selected Master Data room type only in the hotel section', () => {
     const output = structuredClone(printFixture);
     output.contract.passengersDetail[0]!.accommodationKind = 'DBL';
-    const html = contractPrintHtml(output, { ...printReferences, names: { ...printReferences.names, double: 'DELUXE SEA VIEW' } });
+    const html = contractPrintHtml(output, {
+      ...printReferences,
+      names: { ...printReferences.names, double: 'DELUXE SEA VIEW' },
+    });
     const hotel = html.split('HOTEL INFORMATION')[1]!.split('</section>')[0]!;
     expect(hotel).toContain('DELUXE SEA VIEW');
     expect(hotel).not.toContain('DBL');
-    expect(html.split('HOTEL INFORMATION')[0]).toContain('DBL');
-    const missing = contractPrintHtml(output, { names: {} }).split('HOTEL INFORMATION')[1]!.split('</section>')[0]!;
+    expect(html.split('HOTEL INFORMATION')[0]).not.toContain('DBL');
+    const missing = contractPrintHtml(output, { names: {} })
+      .split('HOTEL INFORMATION')[1]!
+      .split('</section>')[0]!;
     expect(missing).toContain('نام مرجع در دسترس نیست');
     expect(missing).not.toContain('DBL');
   });
@@ -83,7 +88,7 @@ describe('Saved contract print output', () => {
       const cols = [...html.matchAll(/<col style="width:(\d+)%">/g)].map(
         (match) => Number(match[1]),
       );
-      expect(cols).toHaveLength(kind === 'person' ? 8 : 9);
+      expect(cols).toHaveLength(kind === 'person' ? 7 : 8);
       expect(cols.reduce((sum, width) => sum + width, 0)).toBe(100);
       expect(html).toContain('overflow-wrap:anywhere');
     },
@@ -130,8 +135,8 @@ describe('Saved contract print output', () => {
     expect(html).toContain(
       '<td class="contract-total"><div><bdi class="money">2.25</bdi></div></td><td></td>',
     );
-    expect(html).toContain('کودک بدون تخت');
-    expect(html).toContain('DBL');
+    expect(html).not.toContain('کودک بدون تخت');
+    expect(html).not.toContain('DBL');
     expect(html).toContain('SAMPLE HOTEL');
     expect(html).toContain('https://hotel.example');
     expect(html).toContain('Nystkt.ir');

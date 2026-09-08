@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-CONTRACT-ROOM-SUMMARY-0908 — PC-A — COMPLETE_LOCAL
+
+- Removed passenger room column and added saved contract-level room/extra-bed quantities to Other Services. Master Data hotel product, prices and prior terms/QR unchanged; no passenger-based room inference. 181 Sales tests, scoped lint/typecheck and 36-route Web build pass; all four pages of synthetic six/agency-six/42 passenger PDFs reviewed. Web3100 updated, Web/API health 200. No schema/API/IAM/real-data/public-push change. Scoped reservation released; see docs/tasks/SALES-CONTRACT-ROOM-SUMMARY-0908.md.
+
+- Reserve Sales print/PDF template and tests plus task/central docs from 05c5945 on current local Sales branch. Remove passenger room column; show purchased contract-level single/double room and extra-bed counts in Other Services from saved hotel selection only, without passenger allocation inference. Preserve hotel Master Data product type, pricing, QR, terms and pagination. No API/schema/dependency/producer/IAM/real-data edits, merge or public push.
+
 ## SALES-CONTRACT-ONLY-FLIGHT-0907 — PC-A — COMPLETE_LOCAL
 
 - Completed contract-only outbound/return editor and additive versioned Sales snapshot with route/time/source validation, no Ticket Management publish/allocation, reservation reopening and print/PDF support. 59 public-contract, 54 API Sales and 181 Web Sales/Reservations tests pass, with scoped lint/typechecks and API/36-route Web production builds. Synthetic browser and both six-passenger one-page PDFs verified. Web3100/API4000 updated; database SELECT 1 passed after restoring existing Docker runtime September 8. No migration/dependency/IAM/real-data/public-push change. Scoped reservation released; see docs/tasks/SALES-CONTRACT-ONLY-FLIGHT-0907.md.

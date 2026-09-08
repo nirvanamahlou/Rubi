@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-CONTRACT-ROOM-SUMMARY-0908 — COMPLETE_LOCAL
+
+Removed per-passenger room labels from contract print/PDF and added saved purchased room counts (single, double, extra beds and total rooms) to Other Services, independently of passenger accommodation. Hotel Master Data product name, pricing/Finance rules, notices and QR remain unchanged. Older records with no breakdown are explicitly unrecorded, not inferred. 181 Sales tests, scoped lint/typecheck and 36-route Web build pass; all four synthetic PDF pages reviewed (six and agency-six one page, 42 two pages). Web3100 updated; Web/API 200. No schema, API, permissions, business-data or public-push change. See docs/tasks/SALES-CONTRACT-ROOM-SUMMARY-0908.md.
+
 ## SALES-CONTRACT-ONLY-FLIGHT-0907 — COMPLETE_LOCAL
 
 Sales now supports a contract-only floating flight independently for outbound/return, alongside actual catalog offers. Version-1 details persist in existing Sales service metadata and the reservation request snapshot, not Ticket Management or inventory selections. Backend validates source exclusivity, route and timing; manual-only confirmation does not call the inventory reservation adapter. Print/PDF and Reservations ticket reopening include the pending-reservation flight. 59 public-contract, 54 API Sales and 181 Web Sales/Reservations tests, scoped lint/typechecks and API/36-route Web builds pass. Synthetic browser and both six-person one-page PDFs verified. Web3100/API4000 and existing database connectivity restored September 8. No migration, dependency, permissions, real records or public push changed. See docs/tasks/SALES-CONTRACT-ONLY-FLIGHT-0907.md.
