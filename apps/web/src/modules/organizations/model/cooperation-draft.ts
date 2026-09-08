@@ -28,10 +28,6 @@ export interface CooperationDraft {
   email: string;
   withAgreement: boolean;
   branchId: string;
-  agreementTitle: string;
-  startsAt: string;
-  endsAt: string;
-  notes: string;
 }
 export const blankCooperationDraft: CooperationDraft = {
   agreementTerms: blankAgreementTerms(),
@@ -48,10 +44,6 @@ export const blankCooperationDraft: CooperationDraft = {
   email: '',
   withAgreement: false,
   branchId: '',
-  agreementTitle: '',
-  startsAt: '',
-  endsAt: '',
-  notes: '',
 };
 export function cooperationIssue(
   draft: CooperationDraft,
