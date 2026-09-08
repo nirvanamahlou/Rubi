@@ -28,6 +28,7 @@ import type {
   UpsertAgencyProfileDto,
 } from './b2b.dto';
 import { B2bRepository } from './b2b.repository';
+import { B2bAgreementDocuments } from './b2b-agreement-documents';
 import { FINANCE_PARTY_EXPOSURE_PORT } from './finance-exposure.port';
 
 function branchOf(actor: AuthenticatedActor, requested?: string): string {
@@ -182,6 +183,8 @@ export class B2bService {
     private readonly organizations: MasterOrganizationDirectory,
     @Inject(FINANCE_PARTY_EXPOSURE_PORT)
     private readonly financeExposure: FinancePartyExposurePortV1,
+    @Inject(B2bAgreementDocuments)
+    private readonly agreementDocuments: B2bAgreementDocuments,
   ) {}
 
   async agencyWorkspace(
@@ -235,12 +238,19 @@ export class B2bService {
   ) {
     requirePermissions(actor, 'b2b.agency.manage');
     branchOf(actor, dto.branchId);
-    await this.agency(organizationId);
+    const organization = await this.agency(organizationId);
+    if (!organization.isActive)
+      throw new ConflictException({
+        code: 'B2B_ORGANIZATION_INACTIVE',
+        message: 'برای سازمان غیرفعال نمی‌توان پروفایل ثبت یا ویرایش کرد.',
+      });
     const branchId = branchOf(actor, dto.branchId);
     const row = await this.repository.upsertProfile({
       organizationId,
       branchId,
-      accountManagerUserId: dto.accountManagerUserId ?? null,
+      ...(dto.accountManagerUserId !== undefined
+        ? { accountManagerUserId: dto.accountManagerUserId }
+        : {}),
       status: dto.status,
       displayOrder: dto.displayOrder,
       ...(dto.version ? { expectedVersion: dto.version } : {}),
@@ -263,7 +273,19 @@ export class B2bService {
         message:
           'توافق‌نامه جدید باید پیش‌نویس باشد؛ فعال‌سازی به گردش تأیید نیاز دارد.',
       });
-    const profile = await this.profile(organizationId, dto.branchId, actor);
+    const profile = await this.profile(
+      organizationId,
+      dto.branchId,
+      actor,
+      true,
+    );
+    if (dto.documentReference)
+      await this.agreementDocuments.assertDraftReference(
+        dto.documentReference,
+        organizationId,
+        profile.branchId,
+        actor,
+      );
     const row = await this.repository.createAgreement({
       profileId: profile.id,
       branchId: profile.branchId,
@@ -341,6 +363,7 @@ export class B2bService {
     organizationId: string,
     requestedBranch: string,
     actor: AuthenticatedActor,
+    allowUnderReview = false,
   ) {
     const branchId = branchOf(actor, requestedBranch);
     const organization = await this.agency(organizationId);
@@ -352,7 +375,11 @@ export class B2bService {
     const profile = await this.repository.findProfile(organizationId, branchId);
     if (!profile)
       throw new NotFoundException('ابتدا پروفایل عملیاتی آژانس را ثبت کنید.');
-    if (!profile.isActive || profile.status !== 'ACTIVE')
+    if (
+      !profile.isActive ||
+      (profile.status !== 'ACTIVE' &&
+        !(allowUnderReview && profile.status === 'UNDER_REVIEW'))
+    )
       throw new ConflictException({
         code: 'B2B_PROFILE_INACTIVE',
         message: 'پروفایل عملیاتی شعبه فعال نیست.',
