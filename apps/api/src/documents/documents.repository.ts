@@ -151,6 +151,36 @@ export class DocumentsRepository {
     });
   }
 
+  async organizationVersionReferences(
+    versionIds: readonly string[],
+    organizationId: string,
+    branchId: string,
+  ) {
+    const rows = await this.database.client.documentVersion.findMany({
+      where: {
+        id: { in: [...versionIds] },
+        document: {
+          branchId,
+          archiveStatus: { not: 'DELETED' },
+          documentType: { domain: 'ORGANIZATION' },
+          relations: {
+            some: {
+              relationType: 'PRIMARY_CASE',
+              sourceModule: 'master-data',
+              sourceEntityType: 'organizations',
+              sourceEntityId: organizationId,
+            },
+          },
+        },
+      },
+      select: { id: true, documentId: true },
+    });
+    return rows.map((row) => ({
+      versionId: row.id,
+      documentId: row.documentId,
+    }));
+  }
+
   async list(
     query: Required<
       Pick<

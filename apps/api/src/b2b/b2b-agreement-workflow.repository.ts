@@ -16,10 +16,7 @@ export const agreementCaseInclude = {
     orderBy: { number: 'desc' },
     include: {
       creditPolicies: true,
-      guarantees: {
-        include: { documentVersion: { select: { documentId: true } } },
-      },
-      documentVersion: { select: { documentId: true } },
+      guarantees: true,
     },
   },
 } satisfies Prisma.B2bAgencyAgreementInclude;

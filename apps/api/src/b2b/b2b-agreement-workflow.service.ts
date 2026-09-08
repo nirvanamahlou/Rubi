@@ -26,7 +26,10 @@ import type {
 
 const day = (date: Date) => date.toISOString().slice(0, 10);
 const optionalDay = (date: Date | null) => (date ? day(date) : null);
-export function agreementCaseRecord(row: AgreementCaseRow): B2bAgreementCaseV1 {
+export function agreementCaseRecord(
+  row: AgreementCaseRow,
+  documentIds: ReadonlyMap<string, string> = new Map(),
+): B2bAgreementCaseV1 {
   return {
     id: row.id,
     organizationId: row.profile.organizationId,
@@ -61,7 +64,9 @@ export function agreementCaseRecord(row: AgreementCaseRow): B2bAgreementCaseV1 {
       refundTerms: revision.refundTerms,
       notes: revision.notes,
       changeReason: revision.changeReason,
-      documentId: revision.documentVersion?.documentId ?? null,
+      documentId: revision.documentVersionId
+        ? (documentIds.get(revision.documentVersionId) ?? null)
+        : null,
       documentVersionId: revision.documentVersionId,
       creditPolicies: revision.creditPolicies.map((policy) => ({
         currencyCode: policy.currencyCode,
@@ -81,7 +86,9 @@ export function agreementCaseRecord(row: AgreementCaseRow): B2bAgreementCaseV1 {
         receivedAt: day(guarantee.receivedAt),
         expiresAt: optionalDay(guarantee.expiresAt),
         status: guarantee.status as 'REQUIRED' | 'RECEIVED',
-        documentId: guarantee.documentVersion?.documentId ?? null,
+        documentId: guarantee.documentVersionId
+          ? (documentIds.get(guarantee.documentVersionId) ?? null)
+          : null,
         documentVersionId: guarantee.documentVersionId,
       })),
       createdByUserId: revision.createdByUserId,
@@ -141,6 +148,22 @@ export class B2bAgreementWorkflowService {
       throw new NotFoundException('سازمان با نقش همکاری انتخاب‌شده یافت نشد.');
     if (!org.isActive) throw new ConflictException('سازمان غیرفعال است.');
   }
+  private async record(row: AgreementCaseRow, actor: AuthenticatedActor) {
+    const ids = row.revisions
+      .flatMap((r) => [
+        r.documentVersionId,
+        ...r.guarantees.map((g) => g.documentVersionId),
+      ])
+      .filter((id): id is string => id !== null);
+    const documents = await this.documents.referenceMap(
+      ids,
+      row.profile.organizationId,
+      row.profile.branchId,
+      actor,
+    );
+    return agreementCaseRecord(row, documents);
+  }
+
   async list(
     organizationId: string,
     branchId: string,
@@ -161,7 +184,9 @@ export class B2bAgreementWorkflowService {
       throw new BadRequestException('صفحه‌بندی معتبر نیست.');
     const result = await this.repository.list(scope, page, pageSize);
     return {
-      data: result.data.map(agreementCaseRecord),
+      data: await Promise.all(
+        result.data.map((row) => this.record(row, actor)),
+      ),
       meta: {
         page,
         pageSize,
@@ -178,11 +203,12 @@ export class B2bAgreementWorkflowService {
     actor: AuthenticatedActor,
   ) {
     permissions(actor, 'b2b.agreement.read', 'b2b.credit.read');
-    return agreementCaseRecord(
+    return this.record(
       await this.repository.find(
         this.scope(organizationId, branchId, role, actor),
         agreementId,
       ),
+      actor,
     );
   }
   private async prepare(
@@ -289,7 +315,7 @@ export class B2bAgreementWorkflowService {
         );
       },
     );
-    return agreementCaseRecord(row);
+    return this.record(row, actor);
   }
   async action(
     organizationId: string,
@@ -318,7 +344,7 @@ export class B2bAgreementWorkflowService {
       action,
       dto.reason,
       async (before) => {
-        const terms = agreementCaseRecord(before).revisions[0]!;
+        const terms = (await this.record(before, actor)).revisions[0]!;
         if (hasCredit(terms))
           permissions(
             actor,
@@ -356,6 +382,6 @@ export class B2bAgreementWorkflowService {
         }
       },
     );
-    return agreementCaseRecord(row);
+    return this.record(row, actor);
   }
 }

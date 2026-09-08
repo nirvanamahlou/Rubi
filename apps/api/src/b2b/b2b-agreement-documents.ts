@@ -14,6 +14,26 @@ export class B2bAgreementDocuments {
     @Inject(DocumentsService) private readonly documents: DocumentsService,
   ) {}
 
+  async referenceMap(
+    versionIds: readonly string[],
+    organizationId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ) {
+    const result = new Map<string, string>();
+    const unique = [...new Set(versionIds)];
+    for (let i = 0; i < unique.length; i += 200) {
+      const rows = await this.documents.organizationVersionReferences(
+        unique.slice(i, i + 200),
+        organizationId,
+        branchId,
+        actor,
+      );
+      for (const row of rows) result.set(row.versionId, row.documentId);
+    }
+    return result;
+  }
+
   async assertDraftReference(
     documentId: string,
     organizationId: string,
