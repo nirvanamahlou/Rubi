@@ -1,4 +1,11 @@
 # Work Assignments
+## GROUPED-SIDEBAR-0908 — PC-A — COMPLETE_LOCAL
+
+- Explicit owner approval to apply the reviewed team grouping to the actual Web3100 sidebar, preserving prior collapse/drawer behavior, styling, routes and all module content; slightly larger navigation labels. COMPUTER_ID=PC-A. Branch codex/pc-a-grouped-sidebar-0908 from active Web3100 f2cc52a; clean checkout before starting. No prototype pricing or sample pages are transferred.
+- Reserve app-shell.tsx Navigation rendering and scrolling wrapper, additive navigation group metadata and focused navigation tests, plus this task's status/docs entries. Earlier integrated breadcrumb, branding and notification changes stay unchanged. No globals, API, database, schema, dependency, permission or business-data edits. Prototype3200 remains separate. Authorizes updating the local running application, not an unrelated bulk merge.
+
+
+- Completed: 7 visual groups, original 17 links/names/icons, 15px expanded labels and 13px group headings; expanded navigation scrolls with footer/collapse reachable. Original compact/tooltips and mobile DrawerClose preserved. 11 navigation tests, scoped lint, Web typecheck and 34-route build passed; real Web3100 browser QA passed. No data or migration. Local commit only: remote push requires destination verification. Scope released; Sales integration is a separate task.
 
 ## MARKETING-001G-REMOVE-HUB-INTRO — PC-B — READY_FOR_REVIEW
 

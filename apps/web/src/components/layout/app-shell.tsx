@@ -20,6 +20,7 @@ import { Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import {
   getNavigationBreadcrumbs,
+  groupedNavigationItems,
   isNavigationItemActive,
   MARKETING_SECTION_CHANGE_EVENT,
   navigationItems,
@@ -93,67 +94,94 @@ function Navigation({
   mobile?: boolean;
 }) {
   const pathname = usePathname();
+  function renderItem({
+    href,
+    icon: Icon,
+    title,
+  }: (typeof navigationItems)[number]) {
+    const active = isNavigationItemActive(href, pathname);
+    const link = (
+      <Link
+        aria-current={active ? 'page' : undefined}
+        className={cn(
+          'group flex min-w-0 items-center gap-3 overflow-hidden rounded-xl px-3 font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300',
+          compact ? 'h-full min-h-8' : 'min-h-11 py-2 text-[15px] leading-6',
+          mobile
+            ? active
+              ? 'bg-primary text-primary-foreground shadow-sm'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            : active
+              ? 'bg-cyan-300/20 text-white ring-1 ring-inset ring-cyan-100/30 shadow-md shadow-blue-950/20'
+              : 'text-blue-50/75 hover:bg-white/10 hover:text-white',
+          compact && 'justify-center px-0',
+        )}
+        href={href}
+        title={!compact ? title : undefined}
+      >
+        <Icon
+          aria-hidden="true"
+          className={cn(
+            'shrink-0',
+            mobile ? 'size-[18px]' : 'size-[clamp(17px,1.7vh,21px)]',
+          )}
+        />
+        {!compact ? (
+          <span className="min-w-0 whitespace-normal break-words">{title}</span>
+        ) : (
+          <span className="sr-only">{title}</span>
+        )}
+      </Link>
+    );
+    if (mobile)
+      return (
+        <DrawerClose asChild key={href}>
+          {link}
+        </DrawerClose>
+      );
+    if (!compact) return <div key={href}>{link}</div>;
+    return (
+      <Tooltip key={href}>
+        <TooltipTrigger asChild>{link}</TooltipTrigger>
+        <TooltipContent side="left">{title}</TooltipContent>
+      </Tooltip>
+    );
+  }
   return (
     <nav
       aria-label="منوی اصلی"
       className={cn(
-        'grid min-w-0 content-start gap-0.5 overflow-x-hidden',
-        mobile
-          ? 'auto-rows-[44px]'
-          : 'h-full grid-rows-[repeat(17,minmax(32px,1fr))]',
+        'grid min-w-0 content-start overflow-x-hidden',
+        compact
+          ? 'h-full grid-rows-[repeat(17,minmax(32px,1fr))] gap-0.5'
+          : 'gap-3 py-2',
       )}
     >
-      {navigationItems.map(({ href, icon: Icon, title }) => {
-        const active = isNavigationItemActive(href, pathname);
-        const link = (
-          <Link
-            aria-current={active ? 'page' : undefined}
-            className={cn(
-              'group flex min-w-0 items-center gap-3 overflow-hidden rounded-xl px-3 font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300',
-              mobile
-                ? 'h-11 text-sm'
-                : 'h-full min-h-8 text-[clamp(12px,1.35vh,15px)]',
-              mobile
-                ? active
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                : active
-                  ? 'bg-cyan-300/20 text-white ring-1 ring-inset ring-cyan-100/30 shadow-md shadow-blue-950/20'
-                  : 'text-blue-50/75 hover:bg-white/10 hover:text-white',
-              compact && 'justify-center px-0',
-            )}
-            href={href}
-          >
-            <Icon
-              aria-hidden="true"
-              className={cn(
-                'shrink-0',
-                mobile ? 'size-[18px]' : 'size-[clamp(17px,1.7vh,21px)]',
-              )}
-            />
-            {!compact ? (
-              <span className="min-w-0 truncate whitespace-nowrap">
-                {title}
-              </span>
-            ) : (
-              <span className="sr-only">{title}</span>
-            )}
-          </Link>
-        );
-        if (mobile)
-          return (
-            <DrawerClose asChild key={href}>
-              {link}
-            </DrawerClose>
-          );
-        if (!compact) return <div key={href}>{link}</div>;
-        return (
-          <Tooltip key={href}>
-            <TooltipTrigger asChild>{link}</TooltipTrigger>
-            <TooltipContent side="left">{title}</TooltipContent>
-          </Tooltip>
-        );
-      })}
+      {compact
+        ? groupedNavigationItems.flatMap((group) => group.items).map(renderItem)
+        : groupedNavigationItems.map((group) => (
+            <section
+              key={group.id}
+              aria-label={group.title}
+              className="min-w-0"
+            >
+              <h2
+                className={cn(
+                  'mb-1 flex items-center gap-2 px-3 py-1 text-[13px] font-semibold leading-6',
+                  mobile ? 'text-muted-foreground' : 'text-blue-200',
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'size-1.5 shrink-0 rounded-full',
+                    mobile ? 'bg-primary/50' : 'bg-cyan-200/70',
+                  )}
+                />
+                {group.title}
+              </h2>
+              <div className="grid gap-0.5">{group.items.map(renderItem)}</div>
+            </section>
+          ))}
     </nav>
   );
 }
@@ -399,7 +427,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
         >
           <Brand compact={collapsed} />
         </div>
-        <div className="mt-1 min-h-0 flex-1 overflow-hidden">
+        <div className="mt-1 min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           <Navigation compact={collapsed} />
         </div>
         <div className="mt-1 grid shrink-0 grid-cols-[1fr_auto] gap-1 border-t border-white/10 pt-1">

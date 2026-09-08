@@ -50,6 +50,51 @@ export const navigationItems = navigationMessages.map((item) => ({
   icon: iconByHref[item.href],
 }));
 
+/** Sidebar presentation only: module routes, labels and permissions stay unchanged. */
+export const navigationGroups = [
+  { id: 'work', title: 'فضای کار', hrefs: ['/dashboard', '/tasks'] },
+  {
+    id: 'sales',
+    title: 'فروش و ارتباط با مشتری',
+    hrefs: [
+      '/sales',
+      '/customers',
+      '/customer-affairs',
+      '/organizations',
+      '/marketing',
+    ],
+  },
+  {
+    id: 'operations',
+    title: 'رزرواسیون و تأمین سفر',
+    hrefs: ['/reservations', '/ticket-management', '/purchases'],
+  },
+  { id: 'finance', title: 'امور مالی', hrefs: ['/finance'] },
+  { id: 'hr', title: 'سرمایه انسانی', hrefs: ['/human-resources'] },
+  {
+    id: 'resources',
+    title: 'اسناد و گزارش‌ها',
+    hrefs: ['/documents', '/reports'],
+  },
+  {
+    id: 'system',
+    title: 'تنظیمات شرکت',
+    hrefs: ['/master-data', '/integrations', '/system'],
+  },
+] as const satisfies readonly {
+  id: string;
+  title: string;
+  hrefs: readonly NavigationHref[];
+}[];
+
+export const groupedNavigationItems = navigationGroups.map((group) => ({
+  id: group.id,
+  title: group.title,
+  items: group.hrefs.map((href) =>
+    navigationItems.find((item) => item.href === href)!,
+  ),
+}));
+
 export const navigationAliases = {
   '/users': {
     parentHref: '/system',
