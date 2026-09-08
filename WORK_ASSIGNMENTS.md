@@ -1,10 +1,11 @@
 # Work Assignments
 
-## B2B-FONT-001 — PC-B — IN_PROGRESS
+## B2B-FONT-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests the Agencies/Organizations section to use the same font as the rest of Rubi. Continue the clean combined runtime at 2c434c1 on codex/pc-b-b2b-font-alignment; fetch and PC-B module/runtime ownership verified.
 - Reserve only corporate-design.css and this task's status/report entries. Remove the reference-specific Tahoma override so the directory, dossier and popup forms inherit the existing global Vazirmatn font. No new font/dependency, shared theme, API, HR or business-data change.
 - Validate affected Web checks and production build, then refresh only this task's owned Web3100 listener. Keep API4190 and the existing database/Documents configuration. Verify computed fonts and popup appearance in the real browser before handoff.
+- Completed: 87 Organizations tests, Web lint/typecheck, formatting and the 40-route production build passed. Web3100 serves source da1ed41 with the same global Vazirmatn family on the directory, table, dossier and all popup controls; browser font loading and the desktop popup were verified. API4190 PID18812 is unchanged and healthy. No data mutation or migration. Implementation reservation released; shared runtime coordination remains with this task.
 
 ## B2B-FORM-RUNTIME-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
