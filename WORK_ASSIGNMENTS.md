@@ -1,5 +1,11 @@
 # Work Assignments
 
+## DOCUMENTS-008A-BLUE-BUTTON-CASCADE-FIX — PC-B — IN_PROGRESS
+
+- پیگیری گزارش مالک محصول در 2026-09-09: پس از Merge PR #130، متن CTAهای آبی ارتباطات اسناد روی اجرای واقعی ۳۱۰۰ همچنان مشکی بود. `COMPUTER_ID=PC-B`.
+- بررسی مستقیم Browser نشان داد کلاس `text-white` روی هر لینک وجود دارد، اما قانون global و unlayered برابر `a { color: inherit }` آن را به `rgb(18, 33, 61)` بازنویسی می‌کند. Branch مستقل `codex/pc-b-documents-button-contrast-followup` از `origin/develop@0f75770` است.
+- محدوده رزروشده فقط همان دو CTA در `apps/web/src/modules/documents/components/documents-workspace.tsx`، تست قراردادی Documents و ورودی‌های همین Task در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` است. رنگ باید در CSS cascade واقعی سفید بماند؛ بدون تغییر global anchor، سایر دکمه‌ها، Schema/Migration/API/Contract/Dependency/Data.
+
 ## DOCUMENTS-008-BLUE-BUTTON-CONTRAST — PC-B — READY_FOR_APPROVED_MERGE
 
 - درخواست مالک محصول در 2026-09-09: متن و آیکن دکمه‌های آبی کارت‌های «ارتباط اسناد با بخش‌های سامانه» سفید باشند، نه مشکی. `COMPUTER_ID=PC-B`.
