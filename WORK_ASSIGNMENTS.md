@@ -1,5 +1,10 @@
 # Work Assignments
 
+## SALES-RUNTIME-INTEGRATION-0908 — PC-A — IN_PROGRESS
+
+- User explicitly approved local integration of latest Sales with current Web3100, preserving Customers and grouped navigation. Branch codex/pc-a-sales-runtime-integration-0908 starts at Sales 5380719, isolated from the active pc-b-sync-0908 checkout. Integrate released grouped-sidebar 93a4c0d (baseline f2cc52a). Reserve integration conflict resolution in AppModule, public root exports, additive combined Prisma schema and status/assignment docs; no new domain design, permission grants, seed data, dependency changes or public push. Existing source branches and uncommitted work remain untouched.
+- Runtime changes only after owner handoff, combined tests/build and database compatibility checks. Preserve local data, document encryption keys and storage; any additive migration requires a verified private backup first. No reset, destructive migration, main/develop change or remote merge.
+
 ## SALES-FIRST-PASSENGER-ACQUAINTANCE-0908 — PC-A — COMPLETE_CODE / LOCAL_ACTIVATION_PENDING
 
 - Delivered first-passenger natural-person contract identity and per-passenger registered acquaintance selection through public Customers APIs. 194 Sales tests, scoped lint/typecheck, synthetic browser QA and 36-route production build pass. Web3100 currently belongs to customer-direct-contact-0908 and was left running unchanged; coordinate activation with its owner. No schema, real-data, IAM or public push. Scoped code reservation released; see docs/tasks/SALES-FIRST-PASSENGER-ACQUAINTANCE-0908.md.
