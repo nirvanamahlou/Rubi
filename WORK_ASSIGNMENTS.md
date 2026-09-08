@@ -1,4 +1,10 @@
 # Work Assignments
+## CONTRACT-OUTPUT-SUMMARY-0908 — PC-A — COMPLETE_LOCAL
+
+User marked confirmed-paid and outstanding cards for removal from the contract PDF. Branch codex/pc-a-contract-output-summary-0908 from36ebb12. Reserve only Sales contract-print template/test and task status entries. Retain agreed total, passenger prices, notices, QR, all application balances and Excel output. No API, database, dependency or permission changes; preserve integrated local runtime. Local-only publication gate unchanged.
+
+Delivered: customer print/PDF now shows only the agreed-total summary card. 199 Sales Web tests, scoped lint, Web typecheck and production build (36 routes) passed. Actual synthetic PDF rendered and visually checked: one page with all remaining sections intact. Web3100 PID14136 and unchanged API4000 respond200; no authenticated real-contract QA claimed. Existing downloaded PDFs require regeneration. Task reservations released; no migration, data changes or remote push.
+
 ## SALES-EXCEL-0908 — PC-A — COMPLETE_LOCAL
 
 User requested a clean Excel export beside the Sales contract list. Branch codex/pc-a-sales-excel-0908 from local runtime ac063f5; preserve all integrated tours and Sales features. Reserve Sales API/controller/repository/export renderer/tests, Sales Web client/workspace/tests and this task's docs only. Additive authenticated XLSX download uses existing list permissions, owner/branch/payment-search scope and applied filters; ignores pagination, bounded export with explicit refusal rather than truncation. No schema, migration, grants, dependency/lockfile or other module edits. No public push until the existing destination gate is resolved.

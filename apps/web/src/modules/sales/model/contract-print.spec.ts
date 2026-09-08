@@ -2,6 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { contractPrintHtml, contractMoney } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
+  it('keeps agreed total but omits paid and outstanding cards from customer output', () => {
+    const output = structuredClone(printFixture);
+    const before = structuredClone(output);
+    const html = contractPrintHtml(output, printReferences);
+    expect(html).toContain('مبلغ توافق‌شده قرارداد');
+    expect(html).not.toContain('پرداخت تأییدشده مالی:');
+    expect(html).not.toContain('مانده:');
+    expect(html.match(/class="summary-card"/g)).toHaveLength(1);
+    expect(output).toEqual(before);
+  });
   it('applies the reference palette while preserving field and section order', () => {
     const html = contractPrintHtml(printFixture, printReferences);
     expect(html).toContain('background:#10386b');
@@ -177,11 +187,11 @@ describe('Saved contract print output', () => {
     expect(html).toContain('font-family:Arial,sans-serif!important');
     expect(html).not.toContain('قیمت تفکیکی مسافر ثبت نشده');
   });
-  it('uses agreed totals and confirmed Finance values without offer or purchase prices', () => {
+  it('uses agreed totals without paid, outstanding, offer or purchase prices', () => {
     const html = contractPrintHtml(printFixture, printReferences);
     expect(html).toContain('123,456,789.25');
-    expect(html).toContain('103,456,789.25');
-    expect(html).toContain('20,000,000');
+    expect(html).not.toContain('103,456,789.25');
+    expect(html).not.toContain('20,000,000');
     expect(html).not.toContain('999,999,999');
     expect(html).not.toContain('40,000,000');
     expect(html).toContain('900.50');
