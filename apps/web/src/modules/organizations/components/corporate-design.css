@@ -953,6 +953,9 @@
   .modal-title {
     padding: 0 0 18px 40px;
   }
+  &.organization-delete-modal {
+    max-width: 640px;
+  }
   .modal-title h2 {
     font-size: 25px;
     color: var(--ink);

@@ -18,6 +18,7 @@ import {
   ShieldX,
   Users,
   TriangleAlert,
+  Trash2,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -54,6 +55,11 @@ import { CorporateMetric, CorporateProfile } from './corporate-profile';
 import './corporate-design.css';
 import { CooperationWizard } from './cooperation-wizard';
 import { OrganizationExcelDialog } from './organization-excel-dialog';
+import { OrganizationDeleteDialog } from './organization-delete-dialog';
+import {
+  saveOrganizationChanges,
+  type OrganizationDeletionTarget,
+} from '../model/record-mutations';
 
 type RequestState =
   'loading' | 'ready' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
@@ -78,6 +84,9 @@ export function OrganizationsWorkspace() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [excelOpen, setExcelOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [deleteTarget, setDeleteTarget] =
+    useState<OrganizationDeletionTarget>();
+  const directoryHeading = useRef<HTMLHeadingElement>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit' | null>(null);
   const [notice, setNotice] = useState<string>();
   const [contactsLoading, setContactsLoading] = useState(false);
@@ -187,19 +196,11 @@ export function OrganizationsWorkspace() {
     values: Record<string, string>,
     logoChange?: MasterDataLogoChange,
   ) {
-    const roleCodes = new Set(
-      (values.roleCodes ?? '')
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean),
-    );
-    if (!roleCodes.has('AGENCY') && !roleCodes.has('CORPORATE_CUSTOMER'))
-      roleCodes.add(role);
-    const result = await masterDataApi.persistWithLogo({
-      resource: 'organizations',
-      values: { ...values, roleCodes: [...roleCodes].join(',') },
-      title: `لوگوی سازمان ${values.legalName ?? selected?.name ?? ''}`.trim(),
-      ...(formMode === 'edit' && selected ? { existing: selected } : {}),
+    const result = await saveOrganizationChanges({
+      values,
+      permissions,
+      defaultRole: role,
+      ...(formMode === 'edit' && selected ? { record: selected } : {}),
       ...(logoChange ? { logoChange } : {}),
     });
     setNotice(
@@ -210,6 +211,42 @@ export function OrganizationsWorkspace() {
     if (profileOpen && selected) setSelected(result.data);
     else setSelected(undefined);
     await load();
+  }
+
+  async function refreshAfterDeletion(
+    target: OrganizationDeletionTarget,
+    deleted: boolean,
+  ) {
+    setDeleteTarget(undefined);
+    if (deleted)
+      setNotice(
+        `${target.resource === 'organizations' ? 'سازمان' : 'مخاطب'} «${target.record.name}» برای همیشه حذف شد.`,
+      );
+    if (target.resource === 'organization-contacts' && selected) {
+      await openProfile(
+        selected,
+        Math.max(
+          1,
+          Math.min(
+            contactPage,
+            Math.ceil((contactTotal - Number(deleted)) / 100),
+          ),
+        ),
+      );
+      return;
+    }
+    ++contactRequestId.current;
+    setProfileOpen(false);
+    setSelected(undefined);
+    setContactForm(undefined);
+    setContacts([]);
+    const nextPage = Math.max(
+      1,
+      Math.min(page, Math.ceil((total - Number(deleted)) / pageSize)),
+    );
+    if (nextPage !== page) setPage(nextPage);
+    else await load();
+    window.requestAnimationFrame(() => directoryHeading.current?.focus());
   }
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -265,7 +302,9 @@ export function OrganizationsWorkspace() {
         </div>
         <div className="page-head">
           <div className="title">
-            <h1>آژانس‌ها و مشتریان سازمانی</h1>
+            <h1 ref={directoryHeading} tabIndex={-1}>
+              آژانس‌ها و مشتریان سازمانی
+            </h1>
             <p>
               مدیریت یکپارچه پرونده همکاری B2B، قرارداد، اعتبار، شرایط تجاری و
               نمای عملیات
@@ -492,6 +531,17 @@ export function OrganizationsWorkspace() {
                     >
                       ویرایش
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      disabled={!permissions.includes('master_data.delete')}
+                      onClick={() =>
+                        setDeleteTarget({ resource: 'organizations', record })
+                      }
+                      aria-label={`حذف دائمی ${record.name}`}
+                    >
+                      <Trash2 aria-hidden="true" className="size-4" /> حذف دائمی
+                    </Button>
                   </div>
                 </Card>
               ))}
@@ -555,7 +605,7 @@ export function OrganizationsWorkspace() {
                       </td>
                       <td className="unavailable-value">در دسترس نیست</td>
                       <td className="p-4">
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <Button
                             onClick={() => void openProfile(record)}
                             size="sm"
@@ -575,6 +625,23 @@ export function OrganizationsWorkspace() {
                             variant="outline"
                           >
                             <Pencil className="size-4" /> ویرایش
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={
+                              !permissions.includes('master_data.delete')
+                            }
+                            onClick={() =>
+                              setDeleteTarget({
+                                resource: 'organizations',
+                                record,
+                              })
+                            }
+                            aria-label={`حذف دائمی ${record.name}`}
+                          >
+                            <Trash2 aria-hidden="true" className="size-4" /> حذف
+                            دائمی
                           </Button>
                         </div>
                       </td>
@@ -623,6 +690,10 @@ export function OrganizationsWorkspace() {
           }}
           canEdit={permissions.includes('master_data.update')}
           onEdit={() => setFormMode('edit')}
+          canDelete={permissions.includes('master_data.delete')}
+          onDelete={() =>
+            setDeleteTarget({ resource: 'organizations', record: selected })
+          }
           contacts={
             <Card className="space-y-3 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -665,6 +736,22 @@ export function OrganizationsWorkspace() {
                       }
                     >
                       ویرایش مخاطب
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      disabled={!permissions.includes('master_data.delete')}
+                      onClick={() =>
+                        setDeleteTarget({
+                          resource: 'organization-contacts',
+                          record: contact,
+                          organizationId: selected.id,
+                        })
+                      }
+                      aria-label={`حذف دائمی مخاطب ${contact.name}`}
+                    >
+                      <Trash2 aria-hidden="true" className="size-4" /> حذف دائمی
+                      مخاطب
                     </Button>
                   </div>
                 ))
@@ -728,6 +815,18 @@ export function OrganizationsWorkspace() {
             void load();
             void openProfile(record);
           }}
+        />
+      ) : null}
+      {deleteTarget ? (
+        <OrganizationDeleteDialog
+          key={`${deleteTarget.resource}:${deleteTarget.record.id}`}
+          target={deleteTarget}
+          permissions={permissions}
+          onClose={(refresh) => {
+            if (refresh) void refreshAfterDeletion(deleteTarget, false);
+            else setDeleteTarget(undefined);
+          }}
+          onDeleted={() => void refreshAfterDeletion(deleteTarget, true)}
         />
       ) : null}
       {excelOpen ? (

@@ -290,6 +290,48 @@ confirmation. No alternate process-kill mechanism was attempted. The local
 3100 is available. Integrating the new UNDER_REVIEW draft behavior also requires
 running this branch's B2B service change. No merge or deployment is claimed.
 
+## Editing / permanent deletion follow-up — ready for review 2026-09-08
+
+PC-B continues the same clean branch after fetching origin/develop@0261b91.
+Reserve only the organization Web module and this report. The existing public
+Master Data update/delete APIs already own authorization, optimistic versions,
+dependency restrictions and transactional deletion/audit. Add visible record
+actions and an explicit confirmation dialog; do not change Master Data, shared
+contracts, migrations, permissions or other tasks' runtime. This request adds a
+capability and does not authorize deleting the eight existing demo records.
+Central status/reservation updates remain here under the existing owner exception.
+
+- Organization edit and permanent-delete actions are visible on desktop rows,
+  mobile cards and the profile banner. Existing representative editing remains
+  available, with a separate permanent-delete action per contact. Organization
+  edits retain the existing identity/version and preserve other roles when the
+  role field is omitted. Writes are denied before calling the public owner API
+  without their separate create/update/delete permission.
+- The deletion dialog names the exact record and code, explains irreversibility
+  and that deleting an organization removes its shared identity/all roles, and
+  initially focuses Cancel. No deletion occurs on open, Escape or cancel. The
+  explicit action calls the existing `masterDataApi.remove` with the current
+  resource/id/version. Contact deletion checks organization ownership first.
+  A confirmed response is required before success; errors stay in the dialog,
+  with no automatic retry or status fallback. Closing after an error refreshes
+  the list before another attempt. Successful deletion refreshes the directory
+  or contact page and adjusts pagination when its last record was removed.
+- Existing Master Data permanent deletion is transactional and audited, removes
+  only owner association rows, and rejects referenced records via restrictive
+  FKs. No cascade deletion of business history, new endpoint or backend change
+  is introduced. The eight stored demo organizations were not deleted or edited.
+- Checks: 36 organization tests passed (including 8 new mutation cases); all 92
+  existing Master Data deletion tests passed. Web lint, typecheck and final
+  production build passed (36 routes). Scope/diff checks passed. No schema,
+  migration, API, dependency, central-file or other-checkout change.
+- Browser QA used the actual workspace, profile, owner edit form and deletion
+  dialog with in-memory mock public APIs. Editing advanced the expected version
+  and refreshed the name; cancelling deletion preserved the record; confirming
+  deletion returned the empty directory. Desktop and 390x844 actions/dialog were
+  visually checked. Temporary tab/server were closed. No real database deletion
+  or authenticated live-runtime test is claimed. The prior 3100 runtime handoff
+  limitation remains; this follow-up prepares and publishes code only.
+
 ## Integration handoff
 
 Fetch `codex/pc-b-agencies-organizations` and review its independent draft PR;

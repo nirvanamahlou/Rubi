@@ -12,6 +12,8 @@ import {
   ShieldCheck,
   ShoppingCart,
   Users,
+  Pencil,
+  Trash2,
   Wallet,
   type LucideIcon,
 } from 'lucide-react';
@@ -23,6 +25,7 @@ import {
   type ReactNode,
 } from 'react';
 import { cooperationLabel } from '../model/presentation';
+import { Button } from '@/components/ui/button';
 
 const sections = [
   {
@@ -187,6 +190,8 @@ export function CorporateProfile({
   onClose,
   onEdit,
   canEdit,
+  onDelete,
+  canDelete,
   contacts,
   operations,
 }: {
@@ -194,6 +199,8 @@ export function CorporateProfile({
   onClose: () => void;
   onEdit: () => void;
   canEdit: boolean;
+  onDelete: () => void;
+  canDelete: boolean;
   contacts: ReactNode;
   operations: (view: OperationalView) => ReactNode;
 }) {
@@ -268,6 +275,16 @@ export function CorporateProfile({
           </div>
         </div>
         <div className="org-actions">
+          <Button variant="outline" disabled={!canEdit} onClick={onEdit}>
+            <Pencil aria-hidden="true" className="size-4" /> ویرایش سازمان
+          </Button>
+          <Button
+            variant="destructive"
+            disabled={!canDelete}
+            onClick={onDelete}
+          >
+            <Trash2 aria-hidden="true" className="size-4" /> حذف دائمی سازمان
+          </Button>
           <button className="btn" onClick={onClose}>
             تغییر سازمان
           </button>
