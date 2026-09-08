@@ -1,5 +1,11 @@
 # Work Assignments
 
+## B2B-AGENCIES-001 / approved PR113 integration — PC-B — IN_PROGRESS
+
+- Owner explicitly authorizes merge and push. Continue clean published 122945b on the existing task branch; fetch origin/develop@0261b91 and integrate it with a normal merge, preserving both histories.
+- Reserve conflict reconciliation only in B2B API, Organizations Web and this task's status/decision/report entries. The B2B/Organizations code in develop is byte-identical to the previously copied source fc573ac; retain this branch's later validated changes and all unrelated develop changes.
+- No new domain feature, dependency, schema/migration, IAM grant, operational database or runtime change. Final combined tests, builds and GitHub checks gate the explicitly authorized PR merge; no force push or branch deletion.
+
 ## B2B-AGENCIES-001 / organization logo — PC-B — READY_FOR_REVIEW
 
 - Owner requests an appropriate logo-upload location for agencies and corporate customers. Continue clean a53b294 after fetch. Reserve organization Web components/model/tests and scoped status entries only; use the existing Master Data logo workflow and public Documents metadata/preview APIs.
