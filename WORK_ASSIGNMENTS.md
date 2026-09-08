@@ -9,7 +9,6 @@
 - Schema/Migration، Seed مشترک زیر مالکیت فروش، Dependency/Lockfile و IAM grants تغییر نمی‌کنند. آماده‌سازی محلی فقط شرکت مفقود را در تراکنش ایجاد می‌کند و رکورد موجود را بازنویسی نمی‌کند؛ پیش‌فرض read-only و Apply پس از Backup است.
 - نتیجه: چهار رنگ مستقل، ۹ تست Web و ۴ تست ابزار محلی، lint/typecheck و Build API/Web موفق‌اند. Apply روی کپی مستقل PostgreSQL بار اول دو شرکت و بار دوم صفر شرکت ساخت؛ هر چهار شرکت فعال‌اند. Preview روی `127.0.0.1:3101/4001` است و اجرای قدیمی HR روی 3100/4000 تغییر نمی‌کند. `Central UI Owner = RELEASED — LEGAL-ENTITY-HEADER-003 ready for review`؛ جزئیات در `docs/tasks/LEGAL-ENTITY-HEADER-003.md`.
 
-
 ## MARKETING-001G-REMOVE-HUB-INTRO — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک محصول در 2026-09-08: بلوک نمایشی «بخش‌های مارکتینگ / برای ورود به هر بخش، کارت مربوط را انتخاب کنید.» از Hub مارکتینگ حذف شود. `COMPUTER_ID=PC-B`.
