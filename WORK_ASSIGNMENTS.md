@@ -1,10 +1,11 @@
 # Work Assignments
 
-## B2B-DOSSIER-FORMS-001 — PC-B — IN_PROGRESS
+## B2B-DOSSIER-FORMS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests test data and entry forms in the agency 360 dossier. Branch `codex/pc-b-b2b-dossier-forms` starts from clean 7518154, retaining PR132/133 and fetched develop e07c0c6. Reserve Organizations Web, B2B profile/rate CRUD and its contract slice, the public Master Organization address deletion endpoint, scoped tests/docs and a guarded local fixture loader. Published reservations show no competing active work in this scope; coordinator was notified. No migration or dependency change is planned.
 - Add popup create/edit/delete for organization addresses and rate/discount/commission records, account-manager/profile registration, visible shortcuts/counts, and use existing representative and versioned contract/credit/guarantee forms. Draft rate rows may be stored against an under-review profile but cannot become active until that profile is active. Keep optimistic versions, branch/role ownership, relevant permissions and audit. Read-only Finance/Sales sections do not fabricate balances or permit B2B writes to another owner.
 - Fixtures target only explicitly named existing test agencies, use owner public services, and retain all unrelated data. Re-running must not duplicate or overwrite modified records. Preview, back up and verify before applying locally. No actual IAM account grant or approval bypass. Preserve Web3100/API4190 database/storage configuration and coordinate listener changes.
+- Completed source aa964d6: popup address/profile/rate/discount/commission forms, overview counts/shortcuts and guarded fixtures. Four synthetic agencies now contain 8 addresses, 8 contacts, 12 inactive commercial terms and 4 draft agreements with 8 currency policies/4 deposit requirements. Post-apply preview has zero pending changes. 176 API, 14 disposable PostgreSQL, 89 Web and 61 Contracts tests pass; API/Web lint/typecheck/build and all four push CI gates pass. Web3100 PID15740 serves aa964d6 / hr005-96235a5b777bc891; API4190 PID14320 is healthy. Draft PR134 depends on PR132/133; no merge. Browser component CRUD and final styling pass; production session needs login, and adding B2B writer access to Nirvana awaits the owner's answer. All 177 IAM role grants are unchanged. Release implementation reservations; coordinate subsequent runtime changes with this task.
 
 ## B2B-BREADCRUMB-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 

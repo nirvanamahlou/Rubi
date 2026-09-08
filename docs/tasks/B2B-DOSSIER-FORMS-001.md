@@ -16,10 +16,12 @@ Applied to the existing four explicitly named synthetic agencies: افق سفر�
 
 - API: 176 targeted tests; separate disposable PostgreSQL 18 run passes 14 tests, including rate overlap/concurrency, edit/delete scope, stale versions and transactional audit failure rollback for both rates and addresses.
 - Web: 89 Organizations/navigation tests; browser with actual React components and isolated public-port fixtures verifies overview navigation, address create/edit/delete, exact decimal rate create/edit/delete and manager reassignment. Popup styling uses Rubi controls and font. This is separate from authenticated production-session validation.
-- Contracts: 61 tests and package build. API/Web lint and typecheck and API build pass; Web build/runtime evidence is recorded after cutover.
+- Contracts: 61 tests and package build. API/Web lint, typecheck and production builds pass (40 Web routes). All four push CI gates pass on aa964d6. Final browser popup styling has no console errors.
 - No migration or dependency change. Existing Finance/Sales/access placeholders remain owner integration work and are not represented as completed financial or reservation operations.
 - Existing live IAM roles have no B2B grants. No grants are added implicitly: an authorized writer/reviewer account must be selected by the owner before authenticated B2B forms become available to that account. Master Data forms retain their existing permissions. Contract approval cannot be performed by the proposer/editor.
 
 ## Handoff
 
 Branch `codex/pc-b-b2b-dossier-forms` starts from 7518154 and retains PR132 (contract/credit) and PR133 (breadcrumb), including develop e07c0c6. Review/merge dependency order is PR132, PR133, then this task. Do not overwrite the unrelated main checkout or change the runtime database/Documents storage. Source reservations and local runtime ownership are recorded in WORK_ASSIGNMENTS; no merge is performed by this task.
+
+Source aa964d62b82e63b961da529fcc4ede1ac68b133a is running on Web3100 PID15740, version hr005-96235a5b777bc891, with API4190 PID14320 healthy and the `/api/v1` public base preserved. Draft PR134: https://github.com/nirvanamahlou/Rubi/pull/134. Live counts are 12 organizations, 10 contacts, 8 addresses, 4 profiles, 12 rates, 4 agreements and 8 currency policies. IAM remains 5 users, 9 roles and 177 role-permission grants. Private runtime verification is saved beside the fixture backup. The owner was asked specifically whether to add B2B read/manage access to Nirvana, without independent approval privileges; no answer or grant yet.
