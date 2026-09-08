@@ -875,7 +875,7 @@ export function MasterDataFinanceWorkspace({
       <PageHeader
         actions={
           <Link
-            className={buttonVariants({ variant: 'outline' })}
+            className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
             href="/master-data"
           >
             <ArrowRight aria-hidden="true" className="size-4" />
@@ -888,8 +888,8 @@ export function MasterDataFinanceWorkspace({
 
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2">
+      <div className="flex w-full flex-col items-end gap-3 sm:flex-row sm:justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
           <Button
             onClick={() => {
               setSelected(undefined);
@@ -1062,7 +1062,7 @@ export function MasterDataFinanceWorkspace({
                       {row.createdByUserId}
                     </td>
                     <td className="p-4">
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap justify-end gap-2">
                         <Button
                           onClick={() => {
                             setSelected(rateRecord(row));
@@ -1140,7 +1140,7 @@ export function MasterDataFinanceWorkspace({
                     record.attributes.description ?? 'تعریف مرجع روش پرداخت',
                   )}
                 </p>
-                <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+                <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-border pt-4">
                   <Button
                     onClick={() => {
                       setSelected(record);
@@ -1225,7 +1225,7 @@ export function MasterDataFinanceWorkspace({
                       </Badge>
                     </td>
                     <td className="p-4">
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap justify-end gap-2">
                         <Button
                           onClick={() => {
                             if (tab === 'currencies')

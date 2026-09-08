@@ -502,7 +502,7 @@ export function MasterDataSuppliersWorkspace() {
   };
 
   const rowActions = (record: MasterDataRecord) => (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap justify-end gap-2">
       <Button onClick={() => openProfile(record)} size="sm" variant="outline">
         <Eye className="size-4" /> مشاهده
       </Button>
@@ -945,7 +945,7 @@ export function MasterDataSuppliersWorkspace() {
       <PageHeader
         actions={
           <Link
-            className={buttonVariants({ variant: 'outline' })}
+            className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
             href="/master-data"
           >
             <ArrowRight className="size-4" /> همه بخش‌ها
@@ -954,7 +954,7 @@ export function MasterDataSuppliersWorkspace() {
         description={copy.description}
         title={copy.title}
       />
-      <div className="flex flex-wrap gap-2">
+      <div className="flex w-full flex-wrap justify-end gap-2">
         {tab !== 'collaboration' ? (
           <>
             <Button

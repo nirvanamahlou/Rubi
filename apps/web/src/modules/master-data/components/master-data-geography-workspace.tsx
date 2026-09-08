@@ -821,7 +821,7 @@ export function MasterDataGeographyWorkspace() {
                     ),
                   )}
                   <td className="p-4">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap justify-end gap-2">
                       <Button
                         aria-label={`مشاهده ${record.name}`}
                         onClick={() => openRecord(record, 'view')}
@@ -867,7 +867,7 @@ export function MasterDataGeographyWorkspace() {
       <PageHeader
         actions={
           <Link
-            className={buttonVariants({ variant: 'outline' })}
+            className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
             href="/master-data"
           >
             <ArrowRight aria-hidden="true" className="size-4" />
@@ -884,8 +884,8 @@ export function MasterDataGeographyWorkspace() {
 
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2">
+      <div className="flex w-full flex-col items-end gap-3 sm:flex-row sm:justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
           {isLocationView ? (
             <>
               <Button onClick={() => openCreate('regions')}>
@@ -1220,7 +1220,7 @@ export function MasterDataGeographyWorkspace() {
                     ),
                   )}
                   <td className="p-4">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap justify-end gap-2">
                       <Button
                         aria-label={`مشاهده ${record.name}`}
                         onClick={() => openRecord(record, 'view')}

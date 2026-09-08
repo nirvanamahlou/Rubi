@@ -468,7 +468,7 @@ export function MasterDataInsuranceWorkspace() {
   }
 
   const actions = (record: MasterDataRecord) => (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap justify-end gap-2">
       <Button
         aria-label={`مشاهده ${record.name}`}
         onClick={() => openProfile(record)}
@@ -711,7 +711,7 @@ export function MasterDataInsuranceWorkspace() {
       <PageHeader
         actions={
           <Link
-            className={buttonVariants({ variant: 'outline' })}
+            className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
             href="/master-data"
           >
             <ArrowRight className="size-4" /> همه بخش‌ها
@@ -720,7 +720,7 @@ export function MasterDataInsuranceWorkspace() {
         description={definition.description}
         title={definition.label}
       />
-      <div className="flex flex-wrap gap-2">
+      <div className="flex w-full flex-wrap justify-end gap-2">
         <Button
           loading={exporting}
           onClick={() => void downloadExcel()}

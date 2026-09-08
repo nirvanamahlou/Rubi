@@ -733,7 +733,7 @@ export function MasterDataAccommodationWorkspace() {
 
   function actions(record: MasterDataRecord) {
     return (
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         <Button
           onClick={() => {
             if (record.resource === 'hotels') selectProfile(record);
@@ -1192,7 +1192,7 @@ export function MasterDataAccommodationWorkspace() {
                 {attribute(selected, 'cityName')}،{' '}
                 {attribute(selected, 'regionName')}
               </p>
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap justify-end gap-2">
                 <StatusBadge record={selected} saleable />
                 <Badge>{attribute(selected, 'chainName', 'مستقل')}</Badge>
               </div>
@@ -1424,7 +1424,7 @@ export function MasterDataAccommodationWorkspace() {
       <PageHeader
         actions={
           <Link
-            className={buttonVariants({ variant: 'outline' })}
+            className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
             href="/master-data"
           >
             <ArrowRight className="size-4" /> همه بخش‌ها
@@ -1433,7 +1433,7 @@ export function MasterDataAccommodationWorkspace() {
         description={current.description}
         title={current.title}
       />
-      <div className="flex flex-wrap gap-2">
+      <div className="flex w-full flex-wrap justify-end gap-2">
         <Button
           disabled={tab === 'import'}
           loading={exporting}

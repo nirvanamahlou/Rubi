@@ -53,14 +53,16 @@ function valuesFrom(
     return Object.fromEntries(
       getMasterDataFormFields(definition).map((field) => [
         field.key,
-        field.key === 'displayOrder'
-          ? '0'
-          : field.key === 'collaborationStatus' ||
-              field.key === 'transportStatus'
-            ? 'ACTIVE'
-            : field.key === 'referenceValidityMode'
-              ? 'DAYS'
-              : '',
+        definition.key === 'payment-methods' && field.key === 'channel'
+          ? 'OTHER'
+          : field.key === 'displayOrder'
+            ? '0'
+            : field.key === 'collaborationStatus' ||
+                field.key === 'transportStatus'
+              ? 'ACTIVE'
+              : field.key === 'referenceValidityMode'
+                ? 'DAYS'
+                : '',
       ]),
     );
   const [fromCurrencyCode = '', toCurrencyCode = ''] = record.code.split('/');
@@ -212,7 +214,7 @@ function GenericMasterDataLiveForm({
                 {...(record ? { record } : {})}
               />
             ) : null}
-            {getMasterDataFormFields(definition).map((field) => {
+            {getMasterDataFormFields(definition, mode).map((field) => {
               const error = errors[field.key];
               const controlId = `live-${definition.key}-${field.key}`;
               const reference = getReferenceFieldConfig(
