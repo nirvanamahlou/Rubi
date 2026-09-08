@@ -286,7 +286,10 @@ async function storeHrAttachment(file: File): Promise<string> {
     'image/png',
     'image/webp',
   ]);
-  if (!allowed.has(file.type) || !/\.(pdf|doc|docx|jpg|jpeg|png|webp)$/i.test(file.name))
+  if (
+    !allowed.has(file.type) ||
+    !/\.(pdf|doc|docx|jpg|jpeg|png|webp)$/i.test(file.name)
+  )
     throw new Error('فایل باید PDF، DOC، DOCX، JPG، PNG یا WEBP باشد.');
   if (file.size > 5 * 1024 * 1024)
     throw new Error('حجم فایل باید حداکثر ۵ مگابایت باشد.');
@@ -422,7 +425,8 @@ function buildInitialFormValues(
     const contract = fields.find((field) => field.label === 'شماره قرارداد');
     if (contract && employeeField)
       initial[contract.id] =
-        context.contractNumbersByEmployee?.[initial[employeeField.id] ?? ''] ?? '';
+        context.contractNumbersByEmployee?.[initial[employeeField.id] ?? ''] ??
+        '';
   }
   return initial;
 }

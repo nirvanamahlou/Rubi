@@ -172,10 +172,9 @@
 
 .dateBar {
   display: grid;
-  grid-template-columns: auto minmax(150px, 220px) minmax(
-      150px,
-      220px
-    ) 1fr auto auto;
+  grid-template-columns:
+    auto minmax(150px, 220px) minmax(150px, 220px)
+    1fr auto auto;
   align-items: end;
   gap: 10px;
   margin-bottom: 15px;

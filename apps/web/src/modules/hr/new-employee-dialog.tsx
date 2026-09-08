@@ -99,7 +99,8 @@ export function validateNewEmployeeForm(
     errors.personnelCode = 'کد پرسنلی باید حداکثر ۵۰ نویسه باشد.';
   else if (
     existingPersonnelCodes.some(
-      (code) => normalizePersonnelCode(code) === normalizePersonnelCode(personnelCode),
+      (code) =>
+        normalizePersonnelCode(code) === normalizePersonnelCode(personnelCode),
     )
   )
     errors.personnelCode = 'این کد پرسنلی قبلاً استفاده شده است.';
@@ -141,11 +142,12 @@ export function NewEmployeeForm({
   onCancel,
   onSubmit,
 }: NewEmployeeFormProps) {
-  const [value, setValue] = useState<NewEmployeeFormValue>(() =>
-    initialValue ?? {
-      ...defaultEmployeeValue,
-      personnelCode: nextEmployeePersonnelCode(existingPersonnelCodes),
-    },
+  const [value, setValue] = useState<NewEmployeeFormValue>(
+    () =>
+      initialValue ?? {
+        ...defaultEmployeeValue,
+        personnelCode: nextEmployeePersonnelCode(existingPersonnelCodes),
+      },
   );
   const [errors, setErrors] = useState<NewEmployeeFormErrors>({});
 
@@ -188,14 +190,17 @@ export function NewEmployeeForm({
     <form noValidate onSubmit={submit}>
       <div className={styles.previewNote}>
         <Info aria-hidden="true" size={16} />
-        اطلاعات این فرم فقط به فهرست موقت همین نشست اضافه می‌شود و پس از تازه‌سازی
-        صفحه باقی نمی‌ماند.
+        اطلاعات این فرم فقط به فهرست موقت همین نشست اضافه می‌شود و پس از
+        تازه‌سازی صفحه باقی نمی‌ماند.
       </div>
 
       <fieldset className={styles.formFieldset}>
         <legend className={styles.formLegend}>مشخصات پایه</legend>
         <div className={styles.formGrid}>
-          <label className={styles.fieldLabel} htmlFor="hr-new-employee-first-name">
+          <label
+            className={styles.fieldLabel}
+            htmlFor="hr-new-employee-first-name"
+          >
             <RequiredFieldLabel required>نام</RequiredFieldLabel>
             <input
               {...errorProps('firstName')}
@@ -211,7 +216,10 @@ export function NewEmployeeForm({
             />
             <FieldError errors={errors} field="firstName" />
           </label>
-          <label className={styles.fieldLabel} htmlFor="hr-new-employee-last-name">
+          <label
+            className={styles.fieldLabel}
+            htmlFor="hr-new-employee-last-name"
+          >
             <RequiredFieldLabel required>نام خانوادگی</RequiredFieldLabel>
             <input
               {...errorProps('lastName')}
@@ -240,7 +248,9 @@ export function NewEmployeeForm({
               required
               value={value.personnelCode}
             />
-            <small className={styles.fieldHint}>این کد به‌صورت خودکار تخصیص داده می‌شود.</small>
+            <small className={styles.fieldHint}>
+              این کد به‌صورت خودکار تخصیص داده می‌شود.
+            </small>
             <FieldError errors={errors} field="personnelCode" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-type">
@@ -300,7 +310,10 @@ export function NewEmployeeForm({
               ))}
             </select>
           </label>
-          <label className={styles.fieldLabel} htmlFor="hr-new-employee-position">
+          <label
+            className={styles.fieldLabel}
+            htmlFor="hr-new-employee-position"
+          >
             <RequiredFieldLabel required>سمت</RequiredFieldLabel>
             <input
               {...errorProps('position')}
@@ -336,7 +349,10 @@ export function NewEmployeeForm({
             </select>
             <FieldError errors={errors} field="grade" />
           </label>
-          <label className={styles.fieldLabel} htmlFor="hr-new-employee-manager">
+          <label
+            className={styles.fieldLabel}
+            htmlFor="hr-new-employee-manager"
+          >
             <RequiredFieldLabel>مدیر مستقیم</RequiredFieldLabel>
             <select
               className={styles.control}
@@ -359,7 +375,10 @@ export function NewEmployeeForm({
       <fieldset className={styles.formFieldset}>
         <legend className={styles.formLegend}>وضعیت همکاری</legend>
         <div className={styles.formGrid}>
-          <label className={styles.fieldLabel} htmlFor="hr-new-employee-started-at">
+          <label
+            className={styles.fieldLabel}
+            htmlFor="hr-new-employee-started-at"
+          >
             <RequiredFieldLabel required>تاریخ شروع</RequiredFieldLabel>
             <DatePicker
               {...errorProps('startedAt')}
@@ -424,7 +443,10 @@ export function NewEmployeeDialog({
 }: NewEmployeeDialogProps) {
   return (
     <Dialog onOpenChange={(open) => !open && onClose()} open>
-      <DialogContent className={`${styles.modal} ${styles.employeeModal}`} dir="rtl">
+      <DialogContent
+        className={`${styles.modal} ${styles.employeeModal}`}
+        dir="rtl"
+      >
         <DialogTitle>
           {initialValue ? 'ویرایش کارمند' : 'افزودن کارمند جدید'}
         </DialogTitle>

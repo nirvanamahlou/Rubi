@@ -4,14 +4,7 @@ import { buildPdfFromJpeg, contractRecordFromRow } from './hr-contract-pdf';
 describe('HR contract PDF export', () => {
   it('maps the active contract dataset to a company-specific record', () => {
     const record = contractRecordFromRow(
-      [
-        'شناسه',
-        'کارمند',
-        'شماره قرارداد',
-        'شرکت',
-        'نوع قرارداد',
-        'وضعیت',
-      ],
+      ['شناسه', 'کارمند', 'شماره قرارداد', 'شرکت', 'نوع قرارداد', 'وضعیت'],
       [
         'HR-1',
         'سارا محمدی',

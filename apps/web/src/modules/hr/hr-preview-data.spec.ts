@@ -46,12 +46,12 @@ describe('HR preview datasets', () => {
     for (const section of tabbedSections) {
       const tabs = sectionTabs[section] ?? [];
       const datasets = tabs.map((tab) => getHrPreviewDataset(section, tab.id));
-      expect(new Set(datasets.map(({ columns }) => columns.join('|'))).size).toBe(
-        tabs.length,
-      );
-      expect(new Set(datasets.map(({ rows }) => JSON.stringify(rows))).size).toBe(
-        tabs.length,
-      );
+      expect(
+        new Set(datasets.map(({ columns }) => columns.join('|'))).size,
+      ).toBe(tabs.length);
+      expect(
+        new Set(datasets.map(({ rows }) => JSON.stringify(rows))).size,
+      ).toBe(tabs.length);
     }
   });
 });

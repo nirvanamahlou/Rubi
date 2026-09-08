@@ -154,9 +154,9 @@ function initialBrowserNotifications() {
 }
 
 export function HrNotificationCenter() {
-  const [notifications, setNotifications] = useState<
-    readonly HrNotification[]
-  >(initialBrowserNotifications);
+  const [notifications, setNotifications] = useState<readonly HrNotification[]>(
+    initialBrowserNotifications,
+  );
   const [open, setOpen] = useState(false);
   const bellRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -177,7 +177,8 @@ export function HrNotificationCenter() {
   useEffect(() => {
     const receive = (event: Event) => {
       const detail = (event as CustomEvent<readonly HrNotification[]>).detail;
-      if (Array.isArray(detail)) setNotifications(detail.filter(isNotification));
+      if (Array.isArray(detail))
+        setNotifications(detail.filter(isNotification));
     };
     window.addEventListener(notificationEvent, receive);
     return () => window.removeEventListener(notificationEvent, receive);
@@ -213,7 +214,9 @@ export function HrNotificationCenter() {
     bell.setAttribute('aria-expanded', String(open));
     bell.setAttribute(
       'aria-label',
-      unread ? `اعلان‌ها (${unread.toLocaleString('fa-IR')} خوانده‌نشده)` : 'اعلان‌ها',
+      unread
+        ? `اعلان‌ها (${unread.toLocaleString('fa-IR')} خوانده‌نشده)`
+        : 'اعلان‌ها',
     );
   }, [open, unread]);
 

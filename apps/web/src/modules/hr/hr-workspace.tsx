@@ -79,10 +79,7 @@ import {
   type ContextualHrFormContext,
 } from './contextual-hr-form';
 import { downloadHrXlsx } from './hr-xlsx';
-import {
-  contractRecordFromRow,
-  downloadContractPdf,
-} from './hr-contract-pdf';
+import { contractRecordFromRow, downloadContractPdf } from './hr-contract-pdf';
 import { uploadEmployeeDocumentToArchive } from './hr-documents-integration';
 import {
   HrNotificationCenter,
@@ -1622,10 +1619,7 @@ function genericTable(
   dataset: HrPreviewDataset,
   editRow: (rowIndex: number, row: readonly HrPreviewCell[]) => void,
   deleteRow: (rowIndex: number) => void,
-  extraActions?: (
-    rowIndex: number,
-    row: readonly HrPreviewCell[],
-  ) => ReactNode,
+  extraActions?: (rowIndex: number, row: readonly HrPreviewCell[]) => ReactNode,
 ): PreviewTableData {
   const readonlyData = readonlyTable(dataset);
   return {
@@ -2386,7 +2380,9 @@ function TabbedSection({
     void downloadContractPdf(contractRecordFromRow(dataset.columns, row)).catch(
       (error: unknown) =>
         window.alert(
-          error instanceof Error ? error.message : 'ساخت PDF قرارداد انجام نشد.',
+          error instanceof Error
+            ? error.message
+            : 'ساخت PDF قرارداد انجام نشد.',
         ),
     );
   };
@@ -2677,7 +2673,8 @@ export function HrWorkspace({
       if (datasetSection === 'employee' && tab === 'docs') {
         const documentsKey = previewDatasetKey('documents', 'list');
         const documentsRows =
-          current[documentsKey] ?? getHrPreviewDataset('documents', 'list').rows;
+          current[documentsKey] ??
+          getHrPreviewDataset('documents', 'list').rows;
         const documentId = previewCellText(row?.[0] ?? '');
         next = {
           ...next,
@@ -2723,8 +2720,7 @@ export function HrWorkspace({
       const financeRows = current[financeKey] ?? financeDataset.rows;
       const lifecycleRows = current[lifecycleKey] ?? lifecycleDataset.rows;
       const financeStatusIndex = financeDataset.columns.indexOf('وضعیت');
-      const lifecycleEmployeeIndex =
-        lifecycleDataset.columns.indexOf('کارمند');
+      const lifecycleEmployeeIndex = lifecycleDataset.columns.indexOf('کارمند');
       const lifecycleApprovalIndex =
         lifecycleDataset.columns.indexOf('وضعیت تأیید مالی');
       const lifecycleStatusIndex = lifecycleDataset.columns.indexOf('وضعیت');
@@ -2757,7 +2753,9 @@ export function HrWorkspace({
       });
       return next;
     });
-    setNotice(`تسویه «${employee}» در مالی تأیید و وضعیت چرخه همکاری به‌روزرسانی شد.`);
+    setNotice(
+      `تسویه «${employee}» در مالی تأیید و وضعیت چرخه همکاری به‌روزرسانی شد.`,
+    );
     notifyMutation({
       action: 'update',
       section: 'finance',
@@ -2843,7 +2841,8 @@ export function HrWorkspace({
     if (!contextualForm) return;
     const context = contextualForm;
     const key = previewDatasetKey(context.section, context.tab);
-    const value = (column: string) => formValueByColumn(context, values, column);
+    const value = (column: string) =>
+      formValueByColumn(context, values, column);
     const subject =
       value('نام و نام خانوادگی') ||
       value('کارمند') ||
@@ -2854,7 +2853,11 @@ export function HrWorkspace({
     if (context.section === 'lifecycle' && context.tab === 'onboarding') {
       const nextEmployee = employeeFromOnboarding(context, values);
       const previousName = context.initialValues
-        ? formValueByColumn(context, context.initialValues, 'نام و نام خانوادگی')
+        ? formValueByColumn(
+            context,
+            context.initialValues,
+            'نام و نام خانوادگی',
+          )
         : '';
       setEmployees((current) => {
         const previous = current.find(
@@ -2978,7 +2981,8 @@ export function HrWorkspace({
           promotedEmployee?.unit.split(' / ') ?? [];
         const assignmentKey = previewDatasetKey('employee', 'assignment');
         const assignmentRows =
-          next[assignmentKey] ?? getHrPreviewDataset('employee', 'assignment').rows;
+          next[assignmentKey] ??
+          getHrPreviewDataset('employee', 'assignment').rows;
         next = {
           ...next,
           [assignmentKey]: [
@@ -2999,7 +3003,8 @@ export function HrWorkspace({
       if (context.section === 'lifecycle' && context.tab === 'settlement') {
         const financeKey = previewDatasetKey('finance', 'settlements');
         const financeRows =
-          next[financeKey] ?? getHrPreviewDataset('finance', 'settlements').rows;
+          next[financeKey] ??
+          getHrPreviewDataset('finance', 'settlements').rows;
         const reference = value('شناسه');
         const financeRow: readonly HrPreviewCell[] = [
           `HR-FIN-SET-${Date.now().toString(36).toUpperCase()}`,

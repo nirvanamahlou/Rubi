@@ -427,8 +427,7 @@ export const frappeWorkspaces: readonly FrappeWorkspaceDefinition[] = [
     id: 'performance',
     title: 'عملکرد و آموزش',
     shortTitle: 'عملکرد',
-    description:
-      'دوره ارزیابی، هدف و KRA، خودارزیابی، بازخورد و آموزش',
+    description: 'دوره ارزیابی، هدف و KRA، خودارزیابی، بازخورد و آموزش',
     icon: CircleGauge,
     tone: 'violet',
     metrics: [

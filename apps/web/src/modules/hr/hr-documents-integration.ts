@@ -44,7 +44,8 @@ export async function uploadEmployeeDocumentToArchive(
     options.owners[0];
   if (!documentType)
     throw new Error('نوع سند منابع انسانی در اسناد و فایل‌ها تعریف نشده است.');
-  if (!category) throw new Error('دسته‌بندی سند در اسناد و فایل‌ها تعریف نشده است.');
+  if (!category)
+    throw new Error('دسته‌بندی سند در اسناد و فایل‌ها تعریف نشده است.');
   if (!branch) throw new Error('شعبه مجاز برای بارگذاری سند پیدا نشد.');
   if (!owner) throw new Error('مالک مجاز برای بارگذاری سند پیدا نشد.');
   if (!input.validUntil)

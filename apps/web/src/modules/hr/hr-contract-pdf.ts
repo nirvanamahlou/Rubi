@@ -93,7 +93,9 @@ export function buildPdfFromJpeg(
   const xref = ascii(
     `xref\n0 6\n0000000000 65535 f \n${offsets
       .map((value) => `${String(value).padStart(10, '0')} 00000 n `)
-      .join('\n')}\ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`,
+      .join(
+        '\n',
+      )}\ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`,
   );
   return concatBytes([header, ...objects, xref]);
 }
@@ -139,12 +141,15 @@ const contractTitle = (type: string) => {
   return `قرارداد همکاری ${type}`;
 };
 
-async function renderContract(record: HrContractRecord): Promise<HTMLCanvasElement> {
+async function renderContract(
+  record: HrContractRecord,
+): Promise<HTMLCanvasElement> {
   const canvas = document.createElement('canvas');
   canvas.width = 1240;
   canvas.height = 1754;
   const context = canvas.getContext('2d');
-  if (!context) throw new Error('ساخت خروجی PDF در این مرورگر پشتیبانی نمی‌شود.');
+  if (!context)
+    throw new Error('ساخت خروجی PDF در این مرورگر پشتیبانی نمی‌شود.');
   context.fillStyle = '#ffffff';
   context.fillRect(0, 0, canvas.width, canvas.height);
   context.direction = 'rtl';
@@ -154,7 +159,9 @@ async function renderContract(record: HrContractRecord): Promise<HTMLCanvasEleme
   context.fillText(contractTitle(record.type), 1120, 130);
 
   const logo = await loadLogo(
-    record.company.includes('جهان باستان') ? JAHAN_BASTAN_LOGO : NIYAYESH_SEIR_LOGO,
+    record.company.includes('جهان باستان')
+      ? JAHAN_BASTAN_LOGO
+      : NIYAYESH_SEIR_LOGO,
   );
   context.drawImage(logo, 70, 55, 150, 150);
   context.font = '500 25px Vazirmatn, Tahoma, sans-serif';
@@ -174,7 +181,10 @@ async function renderContract(record: HrContractRecord): Promise<HTMLCanvasEleme
     ['نوع قرارداد', record.type],
     ['تاریخ شروع', record.startDate],
     ['تاریخ پایان', record.endDate || 'نامحدود'],
-    ['مبلغ قرارداد', `${record.amount || 'طبق پیوست مالی'} ${record.currency}`.trim()],
+    [
+      'مبلغ قرارداد',
+      `${record.amount || 'طبق پیوست مالی'} ${record.currency}`.trim(),
+    ],
   ] as const;
   let y = 315;
   context.font = '600 26px Vazirmatn, Tahoma, sans-serif';
@@ -187,9 +197,21 @@ async function renderContract(record: HrContractRecord): Promise<HTMLCanvasEleme
   }
 
   const clauses = [
-    ['موضوع و تعهدات', record.obligations || 'انجام وظایف شغلی و رعایت مقررات و رویه‌های مصوب شرکت.'],
-    ['محرمانگی', record.confidentiality || 'اطلاعات محرمانه در طول همکاری و پس از پایان آن باید حفاظت شود.'],
-    ['حل اختلاف', record.disputeAuthority || 'اختلاف ابتدا از طریق مذاکره و سپس در مراجع صالح رسیدگی می‌شود.'],
+    [
+      'موضوع و تعهدات',
+      record.obligations ||
+        'انجام وظایف شغلی و رعایت مقررات و رویه‌های مصوب شرکت.',
+    ],
+    [
+      'محرمانگی',
+      record.confidentiality ||
+        'اطلاعات محرمانه در طول همکاری و پس از پایان آن باید حفاظت شود.',
+    ],
+    [
+      'حل اختلاف',
+      record.disputeAuthority ||
+        'اختلاف ابتدا از طریق مذاکره و سپس در مراجع صالح رسیدگی می‌شود.',
+    ],
   ] as const;
   y += 25;
   for (const [title, body] of clauses) {
@@ -220,11 +242,16 @@ async function renderContract(record: HrContractRecord): Promise<HTMLCanvasEleme
   return canvas;
 }
 
-export async function downloadContractPdf(record: HrContractRecord): Promise<void> {
+export async function downloadContractPdf(
+  record: HrContractRecord,
+): Promise<void> {
   const canvas = await renderContract(record);
   const jpegBlob = await new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error('ساخت تصویر قرارداد انجام نشد.'))),
+      (blob) =>
+        blob
+          ? resolve(blob)
+          : reject(new Error('ساخت تصویر قرارداد انجام نشد.')),
       'image/jpeg',
       0.92,
     ),
@@ -234,7 +261,9 @@ export async function downloadContractPdf(record: HrContractRecord): Promise<voi
     canvas.width,
     canvas.height,
   );
-  const blob = new Blob([pdf.buffer as ArrayBuffer], { type: 'application/pdf' });
+  const blob = new Blob([pdf.buffer as ArrayBuffer], {
+    type: 'application/pdf',
+  });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
