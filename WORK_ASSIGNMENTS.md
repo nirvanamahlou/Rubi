@@ -1,11 +1,12 @@
 # Work Assignments
 
-## B2B-FORM-RUNTIME-001 — PC-B — IN_PROGRESS
+## B2B-FORM-RUNTIME-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner reports that localhost:3100/organizations still opens the generic organization form instead of the requested four-step B2B popup. Read-only diagnosis: active HR-011 checkout at 13b6f49 predates merged B2B PR113 (develop@7d716af).
 - Reserve this task's documentation and isolated runtime integration only on codex/pc-b-b2b-form-runtime. Combine published HR-010/011 with current develop, retaining both module implementations unchanged; do not modify the source checkouts or merge the HR PRs into develop.
 - HR owner explicitly handed over Web3100/API4190 after confirming no active work. Validate/build before replacing the reverified listeners. Preserve rubi_hr_current_20260908 on 127.0.0.1:55432 and hr007-documents; no schema, migration, seed, credential, permission, dependency or business-data changes.
 - Acceptance: the real organizations entry opens the four-step cooperation popup on port 3100 while retaining current HR and the existing application shell. Record runtime identity and checks before releasing this reservation.
+- Completed: 196 targeted Web tests, 108 API tests, full lint/typecheck and production builds passed. The authenticated localhost:3100 browser now opens all four cooperation steps; existing organization search, seven-card agency profile, logo dialog and HR navigation work. No business form was submitted. Runtime source is f2981b5, fingerprint hr005-2fbd1e21da23276d; final listener/data configuration is recorded outside Git in Rubi-backups/b2b-form-runtime-final.json. Documentation-only follow-up commits do not change the built source. Implementation reservation released; coordinate later runtime changes with this task to preserve combined HR/B2B.
 
 ## B2B-AGENCIES-001 / approved PR113 integration — PC-B — READY_FOR_APPROVED_MERGE
 
