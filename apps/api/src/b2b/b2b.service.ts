@@ -263,7 +263,12 @@ export class B2bService {
         message:
           'توافق‌نامه جدید باید پیش‌نویس باشد؛ فعال‌سازی به گردش تأیید نیاز دارد.',
       });
-    const profile = await this.profile(organizationId, dto.branchId, actor);
+    const profile = await this.profile(
+      organizationId,
+      dto.branchId,
+      actor,
+      true,
+    );
     const row = await this.repository.createAgreement({
       profileId: profile.id,
       branchId: profile.branchId,
@@ -341,6 +346,7 @@ export class B2bService {
     organizationId: string,
     requestedBranch: string,
     actor: AuthenticatedActor,
+    allowUnderReview = false,
   ) {
     const branchId = branchOf(actor, requestedBranch);
     const organization = await this.agency(organizationId);
@@ -352,7 +358,11 @@ export class B2bService {
     const profile = await this.repository.findProfile(organizationId, branchId);
     if (!profile)
       throw new NotFoundException('ابتدا پروفایل عملیاتی آژانس را ثبت کنید.');
-    if (!profile.isActive || profile.status !== 'ACTIVE')
+    if (
+      !profile.isActive ||
+      (profile.status !== 'ACTIVE' &&
+        !(allowUnderReview && profile.status === 'UNDER_REVIEW'))
+    )
       throw new ConflictException({
         code: 'B2B_PROFILE_INACTIVE',
         message: 'پروفایل عملیاتی شعبه فعال نیست.',

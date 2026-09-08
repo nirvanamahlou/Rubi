@@ -63,6 +63,81 @@ function setup(profile: Record<string, unknown> | null = null) {
 }
 
 describe('B2B agency service', () => {
+  it('permits draft preparation under review without permitting rates or activation', async () => {
+    const { service, repository } = setup({
+      id: 'profile',
+      branchId,
+      status: 'UNDER_REVIEW',
+      isActive: true,
+    });
+    vi.mocked(repository.createAgreement).mockRejectedValue(
+      new Error('draft write reached'),
+    );
+    await expect(
+      service.createAgreement(
+        organizationId,
+        {
+          branchId,
+          title: 'پیش‌نویس آزمون',
+          startsAt: '2026-09-08',
+          status: 'DRAFT',
+        },
+        actor,
+      ),
+    ).rejects.toThrow('draft write reached');
+    expect(repository.createAgreement).toHaveBeenCalledOnce();
+    await expect(
+      service.createRate(
+        organizationId,
+        {
+          branchId,
+          title: 'نرخ آزمون',
+          serviceReference: 'TEST',
+          kind: 'DISCOUNT_PERCENT',
+          value: '5',
+          validFrom: '2026-09-08',
+        },
+        actor,
+      ),
+    ).rejects.toThrow('فعال نیست');
+    expect(repository.createRate).not.toHaveBeenCalled();
+    await expect(
+      service.createAgreement(
+        organizationId,
+        {
+          branchId,
+          title: 'قرارداد آزمون',
+          startsAt: '2026-09-08',
+          status: 'ACTIVE',
+        },
+        actor,
+      ),
+    ).rejects.toThrow();
+  });
+  it.each(['SUSPENDED', 'ENDED'])(
+    'does not permit draft agreements on %s profiles',
+    async (status) => {
+      const { service, repository } = setup({
+        id: 'profile',
+        branchId,
+        status,
+        isActive: true,
+      });
+      await expect(
+        service.createAgreement(
+          organizationId,
+          {
+            branchId,
+            title: 'قرارداد آزمون',
+            startsAt: '2026-09-08',
+            status: 'DRAFT',
+          },
+          actor,
+        ),
+      ).rejects.toThrow('فعال نیست');
+      expect(repository.createAgreement).not.toHaveBeenCalled();
+    },
+  );
   it('denies service calls without every required read permission before any lookup', async () => {
     const { service, organizations, repository } = setup();
     await expect(
