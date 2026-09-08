@@ -1,6 +1,8 @@
 # Work Assignments
 
-## CUSTOMER-DIRECT-CONTACT-0908 — PC-A — IN_PROGRESS
+## CUSTOMER-DIRECT-CONTACT-0908 — PC-A — COMPLETE_LOCAL
+
+- حذف دکمه جداگانه «مشاهده تماس‌ها» و ادغام نمایش Masked/Reveal امن شماره تلفن در همان ردیف تکمیل شد. انتخاب Backend اکنون تلفن را بر ایمیل ترجیح می‌دهد؛ Reveal از مسیر مجوز/دلیل/Audit موجود انجام و با timeout، blur، پنهان‌شدن صفحه یا refresh فهرست پاک می‌شود. ۹۴ تست API Customers و ۱۰۵ تست Web Customers، lint، typecheck، build و کنترل Scope/Diff پاس شدند؛ Web3100 و API4000 پاسخ ۲۰۰ می‌دهند.
 
 - Reserve Customers list UI/API mapping and focused Customers tests from `3b82a72` on `codex/pc-a-customer-direct-contact-0908`. Replace the separate «مشاهده تماس‌ها» action with one inline phone control: the list summary must prefer a phone rather than an email, and the full number is fetched only through the existing permission/reason/audit-sensitive endpoint, then re-masked on timeout, blur, visibility loss or list refresh.
 - Scope is limited to `apps/web/src/modules/customers/**`, `apps/api/src/customers/**`, this assignment and the task document. No schema, migration, seed, dependency, lockfile, IAM grant, real-data mutation, cross-module query, merge or public-branch rewrite.

@@ -3,7 +3,7 @@
 - Computer: `PC-A`
 - Branch: `codex/pc-a-customer-direct-contact-0908`
 - Base: `3b82a72f3478af1d9045f83d043cf120583e0f59`
-- Status: `IN_PROGRESS`
+- Status: `COMPLETE_LOCAL`
 
 ## هدف
 
@@ -19,4 +19,10 @@
 
 ## کنترل کیفیت
 
-- وضعیت: در حال اجرا
+- API Customers: ۹۴ تست پاس
+- Web Customers: ۱۰۵ تست پاس
+- lint و typecheck کامل API/Web: پاس
+- Production build کامل API/Web: پاس
+- API روی پورت ۴۰۰۰ و Web روی پورت ۳۱۰۰: پاسخ ۲۰۰
+- `git diff --check`، Prettier و Scope scan: پاس
+- Prisma، Migration، Seed، Dependency و Lockfile: بدون تغییر
