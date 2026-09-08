@@ -1,5 +1,13 @@
 # Work Assignments
 
+## HR-008-CONNECTED-FORMS — PC-B — READY_FOR_REVIEW
+
+- Owner request: simplify HR forms and populated tables, remove duplicate employee/company inputs, use stored reference data in dropdowns, enable selected-row exports and expense-document upload. Preserve current sections, workflow permissions and the active 3100 runtime's database.
+- Branch `codex/pc-b-hr-connected-forms` from HR-007 `54c5ed7`; reserve `apps/web/src/modules/hr/**`, `apps/api/src/hr/**` and the HR-only resource registry/columns slice in `packages/contracts/src/hr/**` if needed for compatible field metadata. Producer/consumer remain HR API/Web; retain stored column positions and current transport contracts for existing records/imports. No shared IAM, Documents, App Shell, dependency, schema or migration changes are planned.
+- Runtime remains the HR-007 checkout on web3100/API4190 with database `rubi_hr_current_20260908`; validate before rebuilding the owned listeners. Commit/push this branch and open a review PR without merging main/develop.
+- Result: stored-reference dropdowns and applicant/opening FK, deduplicated forms, selectable chart placement, selected-row XLSX/PDF, real expense receipt archiving and simplified tables/detail header. Retired fields retain stored positions for compatibility; no migration or shared IAM/Documents change. Web/API lint/typecheck/build, 94 HR Web tests, 79 HR API tests (20 PostgreSQL), 22 Contract tests and production browser checks passed. Details: `docs/tasks/HR-008.md`.
+- Implementation reservations are released for review. Operational ownership of web3100/API4190 and its independent data snapshot remains PC-B/HR-008; do not replace its listener with an older checkout. No merge performed.
+
 ## HR-007-LOCAL-CURRENT — PC-B — READY_FOR_REVIEW
 
 - Owner request 2026-09-08: run the current HR experience on port 3100 while retaining the current Rubi application. Branch `codex/pc-b-hr3100-current` starts at `origin/develop@30d67ec`; port 3100 was handed over by Task «PC-B Uniting» after confirming no active work on its listener.

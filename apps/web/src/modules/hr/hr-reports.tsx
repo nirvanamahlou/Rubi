@@ -14,6 +14,7 @@ import {
 } from './hr-controls';
 import { HrAudit } from './hr-audit';
 import ui from './hr-unified.module.css';
+import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
 
 export function HrReports({ store }: { store: HrStore }) {
   const [records, setRecords] = useState<HrRecordDto[]>([]);
@@ -48,6 +49,7 @@ export function HrReports({ store }: { store: HrStore }) {
     (item) => `${item.section}.${item.tab}` === topic,
   );
   const title = source?.label ?? 'کارکنان';
+  const selection = useHrRowSelection(JSON.stringify([topic, range]));
   const data = source
     ? recordsDataset(source.section, source.tab, records)
     : employeeDataset(
@@ -67,8 +69,14 @@ export function HrReports({ store }: { store: HrStore }) {
         onApply={(from, to) => setRange({ from, to })}
         actions={
           <>
-            <HrExportButton data={data} name={`hr-report-${topic}`} />
-            <HrPdfButton data={data} title={title} />
+            <HrExportButton
+              data={selectedHrDataset(data, selection.selectedIds)}
+              name={`hr-report-${topic}`}
+            />
+            <HrPdfButton
+              data={selectedHrDataset(data, selection.selectedIds)}
+              title={title}
+            />
           </>
         }
       />
@@ -93,7 +101,7 @@ export function HrReports({ store }: { store: HrStore }) {
           </label>
         </div>
         {error ? <p role="alert">{error}</p> : null}
-        <HrTable data={data} />
+        <HrTable data={data} {...selection} />
       </HrPanel>
       {store.data!.capabilities.audit ? <HrAudit store={store} /> : null}
     </div>

@@ -21,6 +21,7 @@ import {
   HrPanel,
   HrRangeBar,
   HrTable,
+  HrSelectionSummary,
   HrTabs,
 } from './hr-controls';
 import type { HrFormTarget } from './hr-record-form';
@@ -28,7 +29,9 @@ const HrImport = dynamic(() =>
   import('./hr-import').then((module) => module.HrImport),
 );
 import { ShiftCalendar } from './shift-calendar';
-import { SectionReports } from './section-reports';
+import { useHrRowSelection } from './hr-row-selection';
+import { needsHrDetail } from './hr-form-model';
+import { reportCellText } from './hr-report-text';
 import ui from './hr-unified.module.css';
 import { parseSavedHrFilter } from './hr-filters';
 
@@ -118,6 +121,7 @@ export function HrUnifiedSection({
       : {}),
   };
   const queryKey = JSON.stringify(requestQuery);
+  const selection = useHrRowSelection(queryKey);
   useEffect(() => {
     let active = true;
     const timer = window.setTimeout(() => {
@@ -188,7 +192,10 @@ export function HrUnifiedSection({
     setBusy(true);
     setError('');
     try {
-      const all = await allHrRecords(requestQuery);
+      const all = (await allHrRecords(requestQuery)).filter((record) =>
+        selection.selectedIds.has(record.id),
+      );
+      if (!all.length) throw new Error('رکوردی برای خروجی انتخاب نشده است.');
       const data = recordsDataset(source.section, source.tab, all);
       if (pdf) {
         const { downloadSectionPdf } = await import('./section-report-pdf');
@@ -199,10 +206,8 @@ export function HrUnifiedSection({
         const { downloadHrXlsx } = await import('./hr-xlsx');
         await downloadHrXlsx(`hr-${source.section}-${source.tab}.xlsx`, [
           [...data.columns, 'کد پرسنلی', 'شناسه پرونده مرتبط'],
-          ...all.map((record) => [
-            record.code,
-            ...record.values,
-            record.status,
+          ...all.map((record, index) => [
+            ...data.rows[index]!.map(reportCellText),
             store.data!.employees.find(
               (employee) => employee.id === record.employeeId,
             )?.personnelCode ?? '',
@@ -235,10 +240,20 @@ export function HrUnifiedSection({
         }}
         actions={
           <>
-            <HrButton disabled={busy} onClick={() => void exportData(false)}>
+            <HrSelectionSummary
+              count={selection.selectedIds.size}
+              onClear={() => selection.onSelectionChange(new Set())}
+            />
+            <HrButton
+              disabled={busy || !selection.selectedIds.size}
+              onClick={() => void exportData(false)}
+            >
               خروجی اکسل
             </HrButton>
-            <HrButton disabled={busy} onClick={() => void exportData(true)}>
+            <HrButton
+              disabled={busy || !selection.selectedIds.size}
+              onClick={() => void exportData(true)}
+            >
               گزارش PDF
             </HrButton>
             {writable && !calendar ? (
@@ -466,9 +481,19 @@ export function HrUnifiedSection({
           <>
             <HrTable
               data={dataset}
+              {...selection}
               showPagination={false}
               busy={loading}
-              onOpen={(index) => onSelect(currentItems[index]!, source)}
+              {...(needsHrDetail(
+                source.section,
+                source.tab,
+                Boolean(definition?.approval),
+              )
+                ? {
+                    onOpen: (index: number) =>
+                      onSelect(currentItems[index]!, source),
+                  }
+                : {})}
               {...(writable
                 ? {
                     onEdit: (index: number) =>
@@ -573,12 +598,6 @@ export function HrUnifiedSection({
           </details>
         ) : null}
       </HrPanel>
-      <SectionReports
-        title={`${source.label} · صفحه جاری`}
-        reports={[{ id: source.tab, title: source.label, data: dataset }]}
-      >
-        <span />
-      </SectionReports>
       {removing ? (
         <HrConfirmDelete
           title={removing.code}

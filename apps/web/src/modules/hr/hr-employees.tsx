@@ -13,6 +13,7 @@ import {
   HrPdfButton,
   HrRangeBar,
   HrTable,
+  HrSelectionSummary,
 } from './hr-controls';
 import type { NewEmployeeFormValue } from './new-employee-dialog';
 const NewEmployeeDialog = dynamic(() =>
@@ -22,6 +23,9 @@ import { employeeLabel, hrCompanies } from './hr-live-data';
 import type { HrPreviewDataset } from './hr-preview-data';
 import { normalizeHrText } from './hr-data-utils';
 import ui from './hr-unified.module.css';
+import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
+import { hrReferenceOptions } from './hr-form-model';
+import { useHrReferenceData } from './hr-reference-data';
 
 export function employeeDataset(
   employees: readonly HrEmployeeDto[],
@@ -96,6 +100,7 @@ export function HrEmployeeEditor({
   onClose: () => void;
 }) {
   const key = useRef(crypto.randomUUID());
+  const references = useHrReferenceData(store);
   const companies = hrCompanies(store.data!);
   return (
     <NewEmployeeDialog
@@ -119,6 +124,21 @@ export function HrEmployeeEditor({
             .concat(store.data!.employees.map((item) => item.unit)),
         ),
       )}
+      organizationOptions={companies.map((company) => {
+        const options = hrReferenceOptions(
+          references.data,
+          'employee',
+          'create',
+          company.branchId,
+          company.organizationBranchId,
+        );
+        return {
+          branch: company.name,
+          units: options['واحد'] ?? [],
+          positions: options['سمت'] ?? [],
+          grades: options['رده'] ?? [],
+        };
+      })}
       managerOptions={store
         .data!.employees.filter((item) => item.id !== employee?.id)
         .map(employeeLabel)}
@@ -193,6 +213,10 @@ export function HrEmployees({
     [store.data, branch, unit, status, query, range],
   );
   const dataset = employeeDataset(filtered, store.data!.branches);
+  const selection = useHrRowSelection(
+    JSON.stringify([query, branch, unit, status, range]),
+  );
+  const exportDataset = selectedHrDataset(dataset, selection.selectedIds);
   return (
     <div className={ui.spaced}>
       <header className={ui.heading}>
@@ -208,8 +232,12 @@ export function HrEmployees({
         onApply={(from, to) => setRange({ from, to })}
         actions={
           <>
-            <HrExportButton data={dataset} name="hr-employees" />
-            <HrPdfButton data={dataset} title="کارکنان" />
+            <HrSelectionSummary
+              count={exportDataset.rows.length}
+              onClear={() => selection.onSelectionChange(new Set())}
+            />
+            <HrExportButton data={exportDataset} name="hr-employees" />
+            <HrPdfButton data={exportDataset} title="کارکنان" />
             {store.data!.capabilities.write ? (
               <HrButton primary onClick={() => setEditing(null)}>
                 کارمند جدید
@@ -294,6 +322,7 @@ export function HrEmployees({
         </div>
         <HrTable
           data={dataset}
+          {...selection}
           onOpen={(index) => onProfile(filtered[index]!)}
           {...(store.data!.capabilities.write
             ? {

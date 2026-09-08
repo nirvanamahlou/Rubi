@@ -4,6 +4,7 @@ import {
   type HrBootstrapDto,
 } from '@rubi/contracts';
 import type { HrPreviewDataset } from './hr-preview-data';
+import { retiredHrColumns } from './hr-form-model';
 
 export function recordsDataset(
   section: string,
@@ -11,13 +12,22 @@ export function recordsDataset(
   records: readonly HrRecordDto[],
 ): HrPreviewDataset {
   const source = getHrResource(section, tab);
+  const visible =
+    source?.columns
+      .map((label, index) => ({ label, index }))
+      .filter((item) => !retiredHrColumns(section, tab).includes(item.label)) ??
+    [];
   const items = records.filter(
     (record) =>
       record.section === section && record.tab === tab && !record.deletedAt,
   );
   return {
-    columns: ['شناسه', ...(source?.columns ?? []), 'وضعیت'],
-    rows: items.map((record) => [record.code, ...record.values, record.status]),
+    columns: ['شناسه', ...visible.map((item) => item.label), 'وضعیت'],
+    rows: items.map((record) => [
+      record.code,
+      ...visible.map((item) => record.values[item.index] ?? ''),
+      record.status,
+    ]),
     recordIds: items.map((r) => r.id),
     versions: items.map((r) => r.version),
     employeeIds: items.map((r) => r.employeeId),

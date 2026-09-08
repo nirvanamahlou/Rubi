@@ -146,7 +146,6 @@ export function HrLiveWorkspace({
         </Link>
         {section !== 'home' ? (
           <label className={ui.sectionPicker}>
-            <span>بخش جاری</span>
             <select
               aria-label="انتخاب بخش منابع انسانی"
               value={section === 'employee' ? 'employees' : section}

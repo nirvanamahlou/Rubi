@@ -1286,6 +1286,102 @@ describe.skipIf(process.env.RUBI_RUN_HR_POSTGRES_TESTS !== '1')(
         ),
       ).rejects.toThrow('خود');
     });
+    it('links applicants to authorized openings and persists changes without trusting copied job text', async () => {
+      const opening = await service.createRecord(
+        {
+          branchId: branchA,
+          section: 'recruitment',
+          tab: 'openings',
+          values: [
+            'فرصت اول',
+            'تهران',
+            'تمام‌وقت',
+            '2026-09-09',
+            '2026-10-09',
+            '1',
+          ],
+        },
+        key(),
+        admin,
+      );
+      const next = await service.createRecord(
+        {
+          branchId: branchA,
+          section: 'recruitment',
+          tab: 'openings',
+          values: [
+            'فرصت دوم',
+            'تهران',
+            'تمام‌وقت',
+            '2026-09-09',
+            '2026-10-09',
+            '1',
+          ],
+        },
+        key(),
+        admin,
+      );
+      const applicant = await service.createRecord(
+        {
+          branchId: branchA,
+          section: 'recruitment',
+          tab: 'applicants',
+          parentId: opening.id,
+          values: [
+            'متقاضی آزمایش ارتباط',
+            'عنوان ناسازگار',
+            '',
+            '',
+            '',
+            '2026-09-09',
+            'دریافت رزومه',
+            '',
+          ],
+        },
+        key(),
+        admin,
+      );
+      expect(applicant.parentId).toBe(opening.id);
+      expect(applicant.values[1]).toBe('فرصت اول');
+      const updated = await service.updateRecord(
+        applicant.id,
+        { version: applicant.version, parentId: next.id },
+        admin,
+      );
+      expect(updated.parentId).toBe(next.id);
+      expect(updated.values[1]).toBe('فرصت دوم');
+      const otherRecruiter = (
+        await actor(
+          'hr_test_other_recruiter',
+          ['hr.read', 'hr.manage', 'hr.sensitive'],
+          [branchB],
+        )
+      ).actor;
+      const foreign = await service.createRecord(
+        {
+          branchId: branchB,
+          section: 'recruitment',
+          tab: 'openings',
+          values: [
+            'فرصت شعبه دیگر',
+            'تهران',
+            'تمام‌وقت',
+            '2026-09-09',
+            '2026-10-09',
+            '1',
+          ],
+        },
+        key(),
+        otherRecruiter,
+      );
+      await expect(
+        service.updateRecord(
+          applicant.id,
+          { version: updated.version, parentId: foreign.id },
+          admin,
+        ),
+      ).rejects.toThrow();
+    });
     it('applies due approved job changes automatically on authorized reads without replay', async () => {
       const before = await client.hrRecord.count({
         where: {

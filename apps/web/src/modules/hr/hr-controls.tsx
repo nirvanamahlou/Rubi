@@ -32,6 +32,7 @@ import type { HrPreviewDataset } from './hr-preview-data';
 import { cellText, recordKey } from './hr-data-utils';
 import { reportCellText } from './hr-report-text';
 import { hrStatusTone } from './hr-presentation';
+import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
 import ui from './hr-unified.module.css';
 
 export const HrButton = ({
@@ -203,6 +204,9 @@ export function HrTable({
   empty = 'رکوردی مطابق این فیلترها وجود ندارد.',
   showPagination = true,
   busy = false,
+  selectedIds,
+  onSelectionChange,
+  showOpenButton = false,
 }: {
   data: HrPreviewDataset;
   onOpen?: (index: number) => void;
@@ -211,15 +215,46 @@ export function HrTable({
   empty?: string;
   showPagination?: boolean;
   busy?: boolean;
+  selectedIds?: ReadonlySet<string>;
+  onSelectionChange?: (ids: ReadonlySet<string>) => void;
+  showOpenButton?: boolean;
 }) {
+  const localSelection = useHrRowSelection(data.columns.join('|'));
+  const selected = selectedIds ?? localSelection.selectedIds;
+  const select = onSelectionChange ?? localSelection.onSelectionChange;
+  const exportSelection = selectedHrDataset(data, selected);
+  const hasActions = (onOpen && showOpenButton) || onEdit || onDelete;
   const [page, setPage] = useState(0);
   const currentPage = Math.min(
     page,
     Math.max(0, Math.ceil(data.rows.length / 20) - 1),
   );
   const start = currentPage * 20;
+  const visibleIds = data.rows
+    .slice(start, start + 20)
+    .map((_, offset) => recordKey(data, start + offset));
+  const allSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selected.has(id));
+  const toggle = (ids: string[], checked: boolean) => {
+    const next = new Set(selected);
+    ids.forEach((id) => {
+      if (checked) next.add(id);
+      else next.delete(id);
+    });
+    select(next);
+  };
   return (
     <>
+      {!onSelectionChange && selected.size > 0 ? (
+        <div className={ui.actions}>
+          <HrSelectionSummary
+            count={exportSelection.rows.length}
+            onClear={() => select(new Set())}
+          />
+          <HrExportButton data={exportSelection} name="hr-selected-records" />
+          <HrPdfButton data={exportSelection} title="رکوردهای انتخاب‌شده" />
+        </div>
+      ) : null}
       <div
         className={ui.tableScroll}
         tabIndex={0}
@@ -230,12 +265,21 @@ export function HrTable({
         <table className={ui.table}>
           <thead>
             <tr>
+              <th scope="col" className={ui.selectionCell}>
+                <input
+                  type="checkbox"
+                  aria-label="انتخاب همه رکوردهای این صفحه"
+                  checked={allSelected}
+                  disabled={busy || !visibleIds.length}
+                  onChange={(e) => toggle(visibleIds, e.target.checked)}
+                />
+              </th>
               {data.columns.map((column, i) => (
                 <th scope="col" key={`${i}-${column}`}>
                   {column}
                 </th>
               ))}
-              {onOpen || onEdit || onDelete ? (
+              {hasActions ? (
                 <th scope="col" className={ui.operationCell}>
                   عملیات
                 </th>
@@ -247,6 +291,17 @@ export function HrTable({
               const index = start + offset;
               return (
                 <tr key={recordKey(data, index) || index}>
+                  <td className={ui.selectionCell}>
+                    <input
+                      type="checkbox"
+                      aria-label={`انتخاب ${cellText(row[1]) || cellText(row[0])}`}
+                      checked={selected.has(recordKey(data, index))}
+                      disabled={busy}
+                      onChange={(e) =>
+                        toggle([recordKey(data, index)], e.target.checked)
+                      }
+                    />
+                  </td>
                   {data.columns.map((column, col) => (
                     <td
                       key={`${column}-${col}`}
@@ -267,10 +322,10 @@ export function HrTable({
                       )}
                     </td>
                   ))}
-                  {onOpen || onEdit || onDelete ? (
+                  {hasActions ? (
                     <td className={ui.operationCell}>
                       <div className={ui.rowActions}>
-                        {onOpen ? (
+                        {onOpen && showOpenButton ? (
                           <HrButton
                             variant="ghost"
                             size="sm"
@@ -418,7 +473,7 @@ export function HrExportButton({
   return (
     <>
       <HrButton
-        disabled={busy}
+        disabled={busy || !data.rows.length}
         onClick={async () => {
           setBusy(true);
           setError('');
@@ -456,7 +511,7 @@ export function HrPdfButton({
   return (
     <>
       <HrButton
-        disabled={busy || disabled}
+        disabled={busy || disabled || !data.rows.length}
         onClick={async () => {
           setBusy(true);
           setError('');
@@ -474,5 +529,28 @@ export function HrPdfButton({
       </HrButton>
       {error ? <span role="alert">{error}</span> : null}
     </>
+  );
+}
+
+export function HrSelectionSummary({
+  count,
+  onClear,
+}: {
+  count: number;
+  onClear: () => void;
+}) {
+  return (
+    <div className={ui.selectionSummary}>
+      <span aria-live="polite">
+        {count
+          ? `${count.toLocaleString('fa-IR')} رکورد انتخاب‌شده`
+          : 'برای خروجی، رکوردها را انتخاب کنید'}
+      </span>
+      {count ? (
+        <HrButton variant="ghost" size="sm" onClick={onClear}>
+          لغو انتخاب
+        </HrButton>
+      ) : null}
+    </div>
   );
 }

@@ -1171,3 +1171,20 @@ a.card:hover {
   outline-offset: 3px;
   border-radius: 16px;
 }
+.selectionCell {
+  width: 2.5rem;
+  text-align: center;
+}
+.selectionCell input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-primary, #1677ed);
+  cursor: pointer;
+}
+.selectionSummary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-muted-foreground, #526784);
+}

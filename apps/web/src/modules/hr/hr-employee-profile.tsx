@@ -27,6 +27,8 @@ import { HrEmployeeEditor } from './hr-employees';
 import { hrApi, hrRequest } from './hr-api';
 import { sourceForRecord } from './hr-record-source';
 import ui from './hr-unified.module.css';
+import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
+import { needsHrDetail } from './hr-form-model';
 
 interface LeaveBalances {
   employeeId: string;
@@ -157,6 +159,10 @@ export function HrEmployeeProfile({
           }
         : recordsDataset(realSource.section, realSource.tab, selected);
   const pending = records.filter((item) => /انتظار|بررسی/.test(item.status));
+  const rowSelection = useHrRowSelection(
+    JSON.stringify([employee.id, source.tab, range]),
+  );
+  const exportData = selectedHrDataset(data, rowSelection.selectedIds);
   const branch =
     employee.companyName ||
     store.data!.branches.find((item) => item.id === employee.branchId)?.name ||
@@ -300,11 +306,11 @@ export function HrEmployeeProfile({
         actions={
           <>
             <HrExportButton
-              data={data}
+              data={source.tab === 'summary' ? data : exportData}
               name={`employee-${employee.personnelCode}-${source.tab}`}
             />
             <HrPdfButton
-              data={data}
+              data={source.tab === 'summary' ? data : exportData}
               title={`${employee.name} · ${source.label}`}
             />
             {canWrite &&
@@ -379,6 +385,7 @@ export function HrEmployeeProfile({
           )
         ) : source.tab === 'requests' ? (
           <HrTable
+            {...rowSelection}
             data={{
               columns: ['کد', 'درخواست', 'وضعیت'],
               rows: records
@@ -402,7 +409,19 @@ export function HrEmployeeProfile({
         ) : (
           <HrTable
             data={data}
-            onOpen={(index) => onSelect(selected[index]!, realSource)}
+            {...rowSelection}
+            {...(needsHrDetail(
+              realSource.section,
+              realSource.tab,
+              Boolean(
+                getHrResource(realSource.section, realSource.tab)?.approval,
+              ),
+            )
+              ? {
+                  onOpen: (index: number) =>
+                    onSelect(selected[index]!, realSource),
+                }
+              : {})}
             {...(canWrite &&
             !getHrResource(realSource.section, realSource.tab)?.readOnly
               ? {

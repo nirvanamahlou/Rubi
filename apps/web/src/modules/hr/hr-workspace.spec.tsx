@@ -236,6 +236,12 @@ describe('Legacy HR preview and migration regression fixtures', () => {
       startedAt: 'تاریخ شروع همکاری الزامی است.',
     });
     expect(
+      validateNewEmployeeForm({ ...value, branch: '', unit: '' }, []),
+    ).toMatchObject({
+      branch: 'شعبه را انتخاب کنید.',
+      unit: 'واحد را انتخاب کنید.',
+    });
+    expect(
       validateNewEmployeeForm(
         {
           ...value,

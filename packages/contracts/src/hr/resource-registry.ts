@@ -27,6 +27,7 @@ export interface HrResourceDefinition {
 
 const parentResources: Record<string, string[]> = {
   'organization.units': ['organization.units'],
+  'recruitment.applicants': ['recruitment.openings'],
   'expenses.travel': ['time.mission', 'expenses.mission'],
   'expenses.advances': ['time.mission', 'expenses.mission'],
   'expenses.claims': ['time.mission', 'expenses.mission'],
@@ -160,6 +161,7 @@ export function getHrResource(
     parentResources: parentResources[key] ?? [],
     parentOptional: [
       'organization.units',
+      'recruitment.applicants',
       'expenses.travel',
       'expenses.advances',
       'expenses.claims',

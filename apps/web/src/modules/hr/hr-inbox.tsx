@@ -12,6 +12,7 @@ import {
 import { sourceForRecord } from './hr-record-source';
 import type { HrSource } from './hr-navigation';
 import ui from './hr-unified.module.css';
+import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
 
 export function HrInbox({
   store,
@@ -24,6 +25,7 @@ export function HrInbox({
   const [status, setStatus] = useState('در انتظار تأیید');
   const [range, setRange] = useState({ from: '', to: '' });
   const [error, setError] = useState('');
+  const selection = useHrRowSelection(JSON.stringify([status, range]));
   useEffect(() => {
     let active = true;
     void allHrRecords({
@@ -83,8 +85,14 @@ export function HrInbox({
         onApply={(from, to) => setRange({ from, to })}
         actions={
           <>
-            <HrExportButton data={data} name="hr-inbox" />
-            <HrPdfButton data={data} title="کارتابل منابع انسانی" />
+            <HrExportButton
+              data={selectedHrDataset(data, selection.selectedIds)}
+              name="hr-inbox"
+            />
+            <HrPdfButton
+              data={selectedHrDataset(data, selection.selectedIds)}
+              title="کارتابل منابع انسانی"
+            />
           </>
         }
       />
@@ -116,6 +124,7 @@ export function HrInbox({
         ) : null}
         <HrTable
           data={data}
+          {...selection}
           onOpen={(index) =>
             onSelect(items[index]!, sourceForRecord(items[index]!))
           }

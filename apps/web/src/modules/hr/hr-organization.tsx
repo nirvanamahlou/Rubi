@@ -161,7 +161,12 @@ export function HrOrganization({
           title="چارت سازمانی"
           actions={
             store.data!.capabilities.write ? (
-              <HrButton primary onClick={() => onForm({ source: unitSource })}>
+              <HrButton
+                primary
+                onClick={() =>
+                  onForm({ source: unitSource, organizationNode: true })
+                }
+              >
                 افزودن گره سازمانی
               </HrButton>
             ) : null
@@ -176,7 +181,11 @@ export function HrOrganization({
                 (item) => item.id === node.id,
               );
               if (record && store.data!.capabilities.write)
-                onForm({ source: sourceForRecord(record), record });
+                onForm({
+                  source: sourceForRecord(record),
+                  record,
+                  ...(record.tab === 'units' ? { organizationNode: true } : {}),
+                });
             }}
             onDelete={(node) => {
               const record = store.data!.records.find(

@@ -4,6 +4,7 @@ import { hrRequest } from './hr-api';
 import type { HrStore } from './hr-store';
 import { HrExportButton, HrPanel, HrPdfButton, HrTable } from './hr-controls';
 import ui from './hr-unified.module.css';
+import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
 
 interface AuditEvent {
   id: string;
@@ -37,6 +38,7 @@ export function HrAudit({
 }) {
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [error, setError] = useState('');
+  const selection = useHrRowSelection(`${employeeId ?? ''}:${recordId ?? ''}`);
   useEffect(() => {
     let active = true;
     const query = new URLSearchParams({
@@ -73,10 +75,20 @@ export function HrAudit({
   return (
     <HrPanel title="تاریخچه تغییرات و دسترسی‌ها">
       <div className={ui.actions}>
-        <HrExportButton data={data} name="hr-audit" />
-        <HrPdfButton data={data} title="تاریخچه منابع انسانی" />
+        <HrExportButton
+          data={selectedHrDataset(data, selection.selectedIds)}
+          name="hr-audit"
+        />
+        <HrPdfButton
+          data={selectedHrDataset(data, selection.selectedIds)}
+          title="تاریخچه منابع انسانی"
+        />
       </div>
-      {error ? <p role="alert">{error}</p> : <HrTable data={data} />}
+      {error ? (
+        <p role="alert">{error}</p>
+      ) : (
+        <HrTable data={data} {...selection} />
+      )}
       <p className={ui.muted}>حداکثر ۲۰۰ رویداد اخیر در محدوده دسترسی شما</p>
     </HrPanel>
   );

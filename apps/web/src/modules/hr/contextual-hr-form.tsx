@@ -41,6 +41,8 @@ export interface ContextualHrFormContext {
   presetValues?: Readonly<Record<string, string>>;
   optionsByLabel?: Readonly<Record<string, readonly string[]>>;
   fieldTypes?: Readonly<Record<string, ContextualFieldType>>;
+  hiddenLabels?: readonly string[];
+  editableLabels?: readonly string[];
   attendance?: readonly { employee: string; date: string; value: string }[];
   holidayOptions?: readonly string[];
 }
@@ -241,7 +243,7 @@ const fieldOptions = (
 };
 
 const fieldType = (label: string): ContextualFieldType => {
-  if (/رزومه|فایل پیوست|^فایل$/.test(label)) return 'file';
+  if (/رزومه|فایل پیوست|^فایل$|^مدرک هزینه$/.test(label)) return 'file';
   if (label.includes('لینک')) return 'url';
   if (/ارزیاب|مصاحبه‌کننده|تأییدکننده/.test(label)) return 'combobox';
   if (/ساعت (شروع|پایان|مصاحبه|تردد|تحویل|عودت)/.test(label)) return 'time';
@@ -595,7 +597,12 @@ export function ContextualHrForm({
     }
     const nextErrors = Object.fromEntries(
       fields
-        .filter((field) => field.required && !derivedValues[field.id]?.trim())
+        .filter(
+          (field) =>
+            !context.hiddenLabels?.includes(field.label) &&
+            field.required &&
+            !derivedValues[field.id]?.trim(),
+        )
         .map((field) => [field.id, `${field.label} الزامی است.`]),
     );
     if (Object.keys(nextErrors).length) {
@@ -736,6 +743,7 @@ export function ContextualHrForm({
         <legend className={styles.formLegend}>مشخصات {context.title}</legend>
         <div className={styles.formGrid}>
           {fields.map((field, index) => {
+            if (context.hiddenLabels?.includes(field.label)) return null;
             if (
               context.section === 'development' &&
               context.tab === 'goals' &&
@@ -762,7 +770,8 @@ export function ContextualHrForm({
             const readOnly =
               isAutomaticCodeField(field, index) ||
               isAutomaticRegistrationDate(field.label) ||
-              isContextDerivedField(context, field) ||
+              (isContextDerivedField(context, field) &&
+                !context.editableLabels?.includes(field.label)) ||
               context.presetValues?.[field.label] !== undefined;
             return (
               <label
@@ -780,6 +789,7 @@ export function ContextualHrForm({
                     onChange={(event) => update(field.id, event.target.value)}
                     value={derivedValues[field.id] ?? ''}
                   >
+                    <option value="">انتخاب {field.label}</option>
                     {Array.from(
                       new Set(
                         [

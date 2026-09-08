@@ -105,6 +105,8 @@ export function validateNewEmployeeForm(
   )
     errors.personnelCode = 'این کد پرسنلی قبلاً استفاده شده است.';
 
+  if (!value.branch.trim()) errors.branch = 'شعبه را انتخاب کنید.';
+  if (!value.unit.trim()) errors.unit = 'واحد را انتخاب کنید.';
   if (!value.position.trim()) errors.position = 'سمت الزامی است.';
   if (!value.grade.trim()) errors.grade = 'رده شغلی الزامی است.';
   if (!value.startedAt) errors.startedAt = 'تاریخ شروع همکاری الزامی است.';
@@ -136,6 +138,12 @@ interface NewEmployeeFormProps {
   branchOptions?: readonly string[] | undefined;
   unitOptions?: readonly string[] | undefined;
   lockAssignment?: boolean;
+  organizationOptions?: readonly {
+    branch: string;
+    units: readonly string[];
+    positions: readonly string[];
+    grades: readonly string[];
+  }[];
 }
 
 export function NewEmployeeForm({
@@ -145,6 +153,7 @@ export function NewEmployeeForm({
   branchOptions = previewBranches,
   unitOptions = previewUnits,
   lockAssignment = false,
+  organizationOptions,
   onCancel,
   onSubmit,
 }: NewEmployeeFormProps) {
@@ -154,6 +163,7 @@ export function NewEmployeeForm({
         ...defaultEmployeeValue,
         branch: branchOptions[0] ?? '',
         unit: unitOptions[0] ?? '',
+        ...(organizationOptions ? { unit: '', position: '', grade: '' } : {}),
         personnelCode: nextEmployeePersonnelCode(existingPersonnelCodes),
       },
   );
@@ -162,7 +172,13 @@ export function NewEmployeeForm({
   const [errors, setErrors] = useState<NewEmployeeFormErrors>({});
 
   const update = (field: FormField, nextValue: string) => {
-    setValue((current) => ({ ...current, [field]: nextValue }));
+    setValue((current) => ({
+      ...current,
+      [field]: nextValue,
+      ...(field === 'branch' && organizationOptions
+        ? { unit: '', position: '', grade: '' }
+        : {}),
+    }));
     setErrors((current) => {
       if (!current[field]) return current;
       const next = { ...current };
@@ -204,6 +220,13 @@ export function NewEmployeeForm({
   });
 
   const managers = Array.from(new Set(managerOptions));
+  const organization = organizationOptions?.find(
+    (o) => o.branch === value.branch,
+  );
+  const currentOptions = (options: readonly string[], current: string) =>
+    Array.from(
+      new Set([...options, ...(initialValue && current ? [current] : [])]),
+    );
 
   return (
     <form noValidate onSubmit={submit}>
@@ -306,6 +329,7 @@ export function NewEmployeeForm({
             <select
               className={styles.control}
               id="hr-new-employee-branch"
+              {...errorProps('branch')}
               disabled={lockAssignment}
               name="branch"
               onChange={(event) => update('branch', event.target.value)}
@@ -318,42 +342,70 @@ export function NewEmployeeForm({
                 </option>
               ))}
             </select>
+            <FieldError errors={errors} field="branch" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-unit">
             <RequiredFieldLabel required>واحد</RequiredFieldLabel>
             <select
               className={styles.control}
               id="hr-new-employee-unit"
+              {...errorProps('unit')}
               disabled={lockAssignment}
               name="unit"
               onChange={(event) => update('unit', event.target.value)}
               required
               value={value.unit}
             >
-              {unitOptions.map((option) => (
+              <option value="">انتخاب واحد</option>
+              {currentOptions(
+                organization?.units ?? unitOptions,
+                value.unit,
+              ).map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
               ))}
             </select>
+            <FieldError errors={errors} field="unit" />
           </label>
           <label
             className={styles.fieldLabel}
             htmlFor="hr-new-employee-position"
           >
             <RequiredFieldLabel required>سمت</RequiredFieldLabel>
-            <input
-              {...errorProps('position')}
-              className={styles.control}
-              id="hr-new-employee-position"
-              disabled={lockAssignment}
-              maxLength={120}
-              name="position"
-              onChange={(event) => update('position', event.target.value)}
-              placeholder="برای نمونه کارشناس عملیات"
-              required
-              value={value.position}
-            />
+            {organizationOptions ? (
+              <select
+                {...errorProps('position')}
+                className={styles.control}
+                id="hr-new-employee-position"
+                disabled={lockAssignment}
+                name="position"
+                required
+                value={value.position}
+                onChange={(event) => update('position', event.target.value)}
+              >
+                <option value="">انتخاب سمت</option>
+                {currentOptions(
+                  organization?.positions ?? [],
+                  value.position,
+                ).map((option) => (
+                  <option key={option}>{option}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                {...errorProps('position')}
+                className={styles.control}
+                id="hr-new-employee-position"
+                disabled={lockAssignment}
+                maxLength={120}
+                name="position"
+                onChange={(event) => update('position', event.target.value)}
+                placeholder="برای نمونه کارشناس عملیات"
+                required
+                value={value.position}
+              />
+            )}
             <FieldError errors={errors} field="position" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-grade">
@@ -368,13 +420,17 @@ export function NewEmployeeForm({
               required
               value={value.grade}
             >
-              {['G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'مدیریتی'].map(
-                (option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ),
-              )}
+              <option value="">انتخاب رده شغلی</option>
+              {currentOptions(
+                organizationOptions
+                  ? (organization?.grades ?? [])
+                  : ['G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'مدیریتی'],
+                value.grade,
+              ).map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
             </select>
             <FieldError errors={errors} field="grade" />
           </label>
@@ -475,6 +531,7 @@ interface NewEmployeeDialogProps {
   branchOptions?: readonly string[] | undefined;
   unitOptions?: readonly string[] | undefined;
   lockAssignment?: boolean;
+  organizationOptions?: NewEmployeeFormProps['organizationOptions'];
 }
 
 export function NewEmployeeDialog({
@@ -483,6 +540,7 @@ export function NewEmployeeDialog({
   managerOptions,
   branchOptions,
   unitOptions,
+  organizationOptions,
   lockAssignment = false,
   onClose,
   onSubmit,
@@ -505,6 +563,7 @@ export function NewEmployeeDialog({
           managerOptions={managerOptions}
           branchOptions={branchOptions}
           unitOptions={unitOptions}
+          {...(organizationOptions ? { organizationOptions } : {})}
           lockAssignment={lockAssignment}
           onCancel={onClose}
           onSubmit={onSubmit}

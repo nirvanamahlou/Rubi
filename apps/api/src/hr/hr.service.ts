@@ -1182,6 +1182,19 @@ export class HrService {
           branchId,
           data,
         );
+        if (schema.key === 'recruitment.applicants' && parent) {
+          const openingCompany = (parent.data as HrWorkflowData)
+            .organizationBranchId;
+          if (
+            openingCompany &&
+            data.organizationBranchId &&
+            openingCompany !== data.organizationBranchId
+          )
+            throw new BadRequestException(
+              'فرصت شغلی باید متعلق به شرکت انتخاب‌شده باشد.',
+            );
+          values[1] = (parent.values as string[])[0] ?? '';
+        }
         const state = validate.status(input.status, schema.approval);
         if (schema.approval && validate.APPROVED.has(state))
           await this.approve(tx, schema, actor, employee);
@@ -1255,7 +1268,9 @@ export class HrService {
       const schema = validate.resource(row.section, row.tab);
       let parentId = row.parentId;
       if (input.parentId !== undefined) {
-        if (schema.key !== 'organization.units')
+        if (
+          !['organization.units', 'recruitment.applicants'].includes(schema.key)
+        )
           throw new BadRequestException(
             'تغییر والد برای این نوع رکورد مجاز نیست.',
           );
@@ -1272,13 +1287,12 @@ export class HrService {
           const parent = await this.record(tx, cursor, actor);
           if (
             parent.branchId !== row.branchId ||
-            parent.section !== 'organization' ||
-            parent.tab !== 'units'
+            !schema.parentResources.includes(`${parent.section}.${parent.tab}`)
           )
             throw new BadRequestException(
-              'والد باید واحد سازمانی همان شعبه باشد.',
+              'رکورد مرتبط باید از نوع مجاز و متعلق به همان شعبه باشد.',
             );
-          cursor = parent.parentId;
+          cursor = schema.key === 'organization.units' ? parent.parentId : null;
         }
       }
       if (schema.key === 'time.checkins') {
@@ -1384,6 +1398,20 @@ export class HrService {
               row.branchId,
               data,
             );
+      if (schema.key === 'recruitment.applicants' && parentId) {
+        const opening = await this.record(tx, parentId, actor);
+        const openingCompany = (opening.data as HrWorkflowData)
+          .organizationBranchId;
+        if (
+          openingCompany &&
+          data.organizationBranchId &&
+          openingCompany !== data.organizationBranchId
+        )
+          throw new BadRequestException(
+            'فرصت شغلی باید متعلق به شرکت انتخاب‌شده باشد.',
+          );
+        values[1] = (opening.values as string[])[0] ?? '';
+      }
       const changed = await tx.hrRecord.updateMany({
         where: { id, version: expected, deletedAt: null },
         data: {

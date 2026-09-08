@@ -112,15 +112,17 @@ export function HrRecordDetail({
         </DialogDescription>
         <div className={ui.actions}>
           <HrStatus>{record.status}</HrStatus>
-          <span className={ui.muted}>
-            نسخه {record.version.toLocaleString('fa-IR')}
-          </span>
-          {record.employeeId ? (
+          {record.section !== 'contracts' ? (
+            <span className={ui.muted}>
+              نسخه {record.version.toLocaleString('fa-IR')}
+            </span>
+          ) : null}
+          {record.employeeId && record.section !== 'contracts' ? (
             <Link href={`/hr?section=employee&employee=${record.employeeId}`}>
               پرونده کارمند
             </Link>
           ) : null}
-          {canEdit ? (
+          {canEdit && record.section !== 'contracts' ? (
             <HrButton onClick={() => onForm({ source, record })}>
               ویرایش اطلاعات
             </HrButton>
