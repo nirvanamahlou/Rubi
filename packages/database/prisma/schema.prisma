@@ -2798,7 +2798,7 @@ model SalesContract {
 }
 
 model SalesContractPassenger {
-  accommodationKind   String? @map("accommodation_kind") @db.VarChar(24)
+  accommodationKind   String?                           @map("accommodation_kind") @db.VarChar(24)
   id                  String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   contractId          String                            @map("contract_id") @db.Uuid
   customerId          String                            @map("customer_id") @db.Uuid
@@ -2816,10 +2816,10 @@ model SalesContractPassenger {
 }
 
 model SalesContractPassengerPrice {
-  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  passengerId  String @map("passenger_id") @db.Uuid
-  currencyCode String @map("currency_code") @db.VarChar(3)
-  amount       Decimal @db.Decimal(24, 4)
+  id           String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  passengerId  String                 @map("passenger_id") @db.Uuid
+  currencyCode String                 @map("currency_code") @db.VarChar(3)
+  amount       Decimal                @db.Decimal(24, 4)
   passenger    SalesContractPassenger @relation(fields: [passengerId], references: [id], onDelete: Cascade)
 
   @@unique([passengerId, currencyCode])
@@ -2991,25 +2991,67 @@ model SalesContractStatusHistory {
   @@map("sales_contract_status_history")
 }
 
+// Published tour definitions and occurrences are immutable; revisions create new definitions.
+model TourPackage {
+  id              String          @id @default(uuid()) @db.Uuid
+  version         Int             @default(1)
+  branchId        String          @db.Uuid
+  name            String          @db.VarChar(160)
+  definition      Json
+  createdByUserId String          @db.Uuid
+  createKey       String          @db.VarChar(160)
+  fingerprint     String          @db.VarChar(64)
+  createdAt       DateTime        @default(now()) @db.Timestamptz(3)
+  departures      TourDeparture[]
+
+  @@unique([createdByUserId, createKey])
+  @@index([branchId, createdAt])
+}
+
+model TourDeparture {
+  id              String                @id @default(uuid()) @db.Uuid
+  version         Int                   @default(1)
+  branchId        String                @db.Uuid
+  packageId       String                @db.Uuid
+  packageVersion  Int
+  startsOn        DateTime              @db.Date
+  endsOn          DateTime              @db.Date
+  outboundOfferId String                @db.Uuid
+  returnOfferId   String?               @db.Uuid
+  createdByUserId String                @db.Uuid
+  createKey       String                @db.VarChar(160)
+  fingerprint     String                @db.VarChar(64)
+  createdAt       DateTime              @default(now()) @db.Timestamptz(3)
+  package         TourPackage           @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  outboundOffer   TicketPublishedOffer  @relation("TourOutbound", fields: [outboundOfferId], references: [id], onDelete: Restrict)
+  returnOffer     TicketPublishedOffer? @relation("TourReturn", fields: [returnOfferId], references: [id], onDelete: Restrict)
+
+  @@unique([createdByUserId, createKey])
+  @@index([branchId, startsOn])
+  @@index([packageId])
+}
+
 model TicketPublishedOffer {
-  id                  String                          @id @default(uuid()) @db.Uuid
-  version             Int                             @default(1)
-  branchId            String                          @db.Uuid
-  originId            String                          @db.Uuid
-  destinationId       String                          @db.Uuid
-  departureAt         DateTime                        @db.Timestamptz(3)
-  arrivalAt           DateTime                        @db.Timestamptz(3)
-  carrierName         String                          @db.VarChar(160)
-  serviceNumber       String                          @db.VarChar(80)
-  cabinClassCode      String                          @db.VarChar(20)
-  totalCapacity       Int
-  status              String                          @default("ACTIVE") @db.VarChar(20)
-  createdByUserId     String                          @db.Uuid
-  createKey           String                          @db.VarChar(160)
-  fingerprint         String                          @db.VarChar(64)
-  createdAt           DateTime                        @default(now()) @db.Timestamptz(3)
-  audit               TicketOfferAudit[]
-  capacityAllocations TicketOfferCapacityAllocation[]
+  tourOutboundDepartures TourDeparture[]                 @relation("TourOutbound")
+  tourReturnDepartures   TourDeparture[]                 @relation("TourReturn")
+  id                     String                          @id @default(uuid()) @db.Uuid
+  version                Int                             @default(1)
+  branchId               String                          @db.Uuid
+  originId               String                          @db.Uuid
+  destinationId          String                          @db.Uuid
+  departureAt            DateTime                        @db.Timestamptz(3)
+  arrivalAt              DateTime                        @db.Timestamptz(3)
+  carrierName            String                          @db.VarChar(160)
+  serviceNumber          String                          @db.VarChar(80)
+  cabinClassCode         String                          @db.VarChar(20)
+  totalCapacity          Int
+  status                 String                          @default("ACTIVE") @db.VarChar(20)
+  createdByUserId        String                          @db.Uuid
+  createKey              String                          @db.VarChar(160)
+  fingerprint            String                          @db.VarChar(64)
+  createdAt              DateTime                        @default(now()) @db.Timestamptz(3)
+  audit                  TicketOfferAudit[]
+  capacityAllocations    TicketOfferCapacityAllocation[]
 
   @@unique([createdByUserId, createKey])
   @@index([branchId, originId, destinationId, departureAt])

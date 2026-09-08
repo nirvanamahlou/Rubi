@@ -8,7 +8,9 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
+import { TourPublicService } from '../ticket-catalog/tour-public.service';
 import type {
   SalesServicePricingV1,
   SalesAccommodationKind,
@@ -286,7 +288,24 @@ export class SalesService {
     private readonly customers: SalesCustomersPublicAdapter,
     @Inject(SALES_TICKET_AVAILABILITY_PORT)
     private readonly tickets: SalesTicketAvailabilityPort,
+    @Optional()
+    @Inject(TourPublicService)
+    private readonly tours?: TourPublicService,
   ) {}
+
+  private async assertTour(
+    input: SalesContractCreateRequest,
+    branchId: string,
+  ) {
+    if (
+      !input.services.some(
+        (service) => service.metadata?.tourDepartureId !== undefined,
+      )
+    )
+      return;
+    if (!this.tours) throw new BadRequestException('سرویس تور در دسترس نیست.');
+    await this.tours.assertSalesSelection(input, branchId);
+  }
 
   private assertRead(row: SalesContractRow, actor: AuthenticatedActor): void {
     if (has(actor, 'sales.contracts.read.all')) return;
@@ -415,6 +434,7 @@ export class SalesService {
       };
     }
     const branchId = branch(actor, requestedBranch);
+    await this.assertTour(input, branchId);
     const customer = await this.customers.resolveSnapshot(
       input.customerId,
       actor,
@@ -452,6 +472,7 @@ export class SalesService {
         message: 'قرارداد یافت نشد.',
       });
     this.assertUpdate(row, actor);
+    await this.assertTour(input, row.branchId);
     for (const passenger of row.passengers) {
       const next = input.passengers.find(
         (p) => p.customerId === passenger.customerId,

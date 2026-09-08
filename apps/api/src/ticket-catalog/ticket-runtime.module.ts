@@ -15,6 +15,9 @@ import { IamModule } from '../iam/iam.module';
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { TicketPublicService } from './ticket-public.service';
+import { MasterDataModule } from '../master-data/master-data.module';
+import { TourPublicService } from './tour-public.service';
+import { TourController } from './tour.controller';
 
 @Controller('ticket-catalog/offers')
 @UseGuards(AuthGuard)
@@ -39,9 +42,9 @@ class TicketOffersController {
 }
 
 @Module({
-  imports: [IamModule],
-  controllers: [TicketOffersController],
-  providers: [AuthGuard, TicketPublicService],
-  exports: [TicketPublicService],
+  imports: [IamModule, MasterDataModule],
+  controllers: [TicketOffersController, TourController],
+  providers: [AuthGuard, TicketPublicService, TourPublicService],
+  exports: [TicketPublicService, TourPublicService],
 })
 export class TicketRuntimeModule {}
