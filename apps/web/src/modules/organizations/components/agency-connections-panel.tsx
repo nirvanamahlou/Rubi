@@ -5,6 +5,7 @@ import type {
   BranchReference,
   MasterDataRecord,
   IamPermissionCode,
+  DocumentListItemV1,
 } from '@rubi/contracts';
 import { CreditCard, FileText, MapPin, Percent, RefreshCw } from 'lucide-react';
 import type { FormEvent } from 'react';
@@ -15,8 +16,12 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/form-controls';
 import { Alert, Badge, Card, Skeleton } from '@/components/ui/surfaces';
 import { masterDataApi } from '@/modules/master-data/api/client';
+import { documentsApi } from '@/modules/documents/api/client';
+import { organizationDocumentQuery } from '../model/organization-documents';
+import Link from 'next/link';
 import { agencyClient, B2bApiError } from '../api/agency-client';
 import { moneyLabel, agreementLabel } from '../model/presentation';
+import { projectCredit } from '../model/credit-projection';
 import type { OperationalView } from './corporate-profile';
 
 function value(form: FormData, key: string) {
@@ -58,6 +63,55 @@ export function AgencyConnectionsPanel({
   }, []);
   const [localSection, setSection] = useState('overview');
   const section = view ?? localSection;
+  const [agreementDocuments, setAgreementDocuments] = useState<
+    readonly DocumentListItemV1[]
+  >([]);
+  const [documentError, setDocumentError] = useState('');
+  useEffect(() => {
+    let cancelled = false;
+    if (
+      section !== 'agreements' ||
+      !branchId ||
+      !permissions.includes('documents.list') ||
+      !permissions.includes('documents.organization.read') ||
+      !permissions.includes('documents.metadata.read')
+    )
+      return;
+    void documentsApi
+      .list({
+        ...organizationDocumentQuery(organizationId, branchId),
+        pageSize: 100,
+        scanStatus: 'CLEAN',
+        completion: 'COMPLETE',
+        validity: 'ALL',
+      })
+      .then((response) => {
+        if (cancelled) return;
+        setAgreementDocuments(
+          response.data.filter(
+            (document) =>
+              document.validUntil === null ||
+              Date.parse(document.validUntil) > Date.now(),
+          ),
+        );
+        setDocumentError(
+          response.meta.total > response.data.length
+            ? 'فقط ۱۰۰ سند تازه نمایش داده می‌شود؛ سایر اسناد را در آرشیو بررسی کنید.'
+            : '',
+        );
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAgreementDocuments([]);
+          setDocumentError(
+            'دریافت اسناد مجاز ناموفق بود. می‌توانید پیش‌نویس را بدون سند آماده کنید.',
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [organizationId, branchId, permissions, section]);
 
   const load = useCallback(
     async (requestedBranch?: string) => {
@@ -212,6 +266,7 @@ export function AgencyConnectionsPanel({
           startsAt: value(form, 'startsAt'),
           endsAt: value(form, 'endsAt') || null,
           status: 'DRAFT',
+          documentReference: value(form, 'documentReference') || null,
           notes: value(form, 'notes') || null,
         }),
       'قرارداد تجاری آژانس ثبت شد.',
@@ -270,6 +325,13 @@ export function AgencyConnectionsPanel({
       </div>
     );
 
+  const credit = workspace
+    ? projectCredit(
+        workspace.creditPolicy,
+        workspace.financeExposure,
+        new Date(),
+      )
+    : undefined;
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
@@ -376,8 +438,8 @@ export function AgencyConnectionsPanel({
                   پروفایل عملیاتی این شعبه هنوز ثبت نشده است
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  برای ثبت قرارداد، اعتبار و نرخ توافقی ابتدا پروفایل شعبه را
-                  فعال کنید.
+                  برای آماده‌سازی پیش‌نویس قرارداد، پروفایل شعبه را در وضعیت «در
+                  حال بررسی» ثبت کنید. فعال‌سازی نیازمند گردش تأیید است.
                 </p>
               </div>
               <Button
@@ -391,15 +453,15 @@ export function AgencyConnectionsPanel({
                     () =>
                       agencyClient.upsertProfile(organizationId, {
                         branchId,
-                        status: 'ACTIVE',
+                        status: 'UNDER_REVIEW',
                         displayOrder: 0,
                       }),
-                    'پروفایل عملیاتی این شعبه فعال شد.',
+                    'پروفایل این شعبه در وضعیت در حال بررسی ثبت شد.',
                   )
                 }
                 size="sm"
               >
-                فعال‌سازی پروفایل
+                ثبت پروفایل برای بررسی
               </Button>
             </Card>
           ) : (
@@ -410,10 +472,15 @@ export function AgencyConnectionsPanel({
                   نسخه {workspace.profile.version.toLocaleString('fa-IR')}
                 </p>
               </div>
-              <Badge className="bg-emerald-100 text-emerald-800">
-                {workspace.profile.status === 'ACTIVE'
-                  ? 'فعال'
-                  : workspace.profile.status}
+              <Badge>
+                {
+                  {
+                    ACTIVE: 'فعال',
+                    UNDER_REVIEW: 'در حال بررسی',
+                    SUSPENDED: 'تعلیق‌شده',
+                    ENDED: 'خاتمه‌یافته',
+                  }[workspace.profile.status]
+                }
               </Badge>
             </Card>
           )}
@@ -504,17 +571,49 @@ export function AgencyConnectionsPanel({
                       workspace.creditPolicy.currencyCode,
                     )}
                   </p>
-                  <p className="text-muted-foreground">
-                    مصرف فعلی:{' '}
-                    {workspace.financeExposure.status === 'AVAILABLE'
-                      ? formatMoney(
-                          workspace.financeExposure.amount,
-                          workspace.financeExposure.currencyCode,
-                        )
-                      : 'اطلاعات مالی هنوز در دسترس نیست'}
+                  <p>
+                    سقف ثبت‌شده · نسخه{' '}
+                    {workspace.creditPolicy.version.toLocaleString('fa-IR')}
+                  </p>
+                  <p>
+                    بازه اعتبار:{' '}
+                    <bdi>
+                      {workspace.creditPolicy.effectiveFrom} —{' '}
+                      {workspace.creditPolicy.expiresAt ?? 'بدون پایان'}
+                    </bdi>
                   </p>
                 </div>
               ) : null}
+              {credit?.status === 'AVAILABLE' ? (
+                <div className="space-y-2 rounded-xl border p-3 text-sm">
+                  <p>
+                    مصرف گزارش‌شده مالی:{' '}
+                    {formatMoney(credit.exposure, credit.currencyCode)}
+                  </p>
+                  <p className="font-bold">
+                    اعتبار باقی‌مانده:{' '}
+                    {formatMoney(credit.available, credit.currencyCode)}
+                  </p>
+                  <p>
+                    زمان اطلاعات:{' '}
+                    <time dateTime={credit.observedAt}>
+                      {new Date(credit.observedAt).toLocaleString('fa-IR')}
+                    </time>{' '}
+                    · نسخه مالی {credit.sourceVersion.toLocaleString('fa-IR')}
+                  </p>
+                  <p className="text-muted-foreground">
+                    سقف اعتبار منهای مصرف مالی، برای همین ارز. مجاز بودن سفارش
+                    نیازمند کنترل مستقل قرارداد، تضمین و بدهی سررسیدشده است.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {credit?.reason}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                محاسبه فقط برای همان ارز است؛ تبدیل خودکار انجام نمی‌شود.
+              </p>
               <details>
                 <summary className="cursor-pointer text-sm font-semibold text-primary">
                   {workspace?.creditPolicy
@@ -584,6 +683,14 @@ export function AgencyConnectionsPanel({
                       {agreement.code} · {agreement.startsAt} —{' '}
                       {agreement.endsAt ?? 'بدون پایان'}
                     </p>
+                    {agreement.documentReference && (
+                      <Link
+                        className="mt-2 inline-block text-primary underline"
+                        href={`/documents?document=${encodeURIComponent(agreement.documentReference)}`}
+                      >
+                        مشاهده سند پیوست در آرشیو
+                      </Link>
+                    )}
                   </div>
                 ))
               ) : (
@@ -600,6 +707,32 @@ export function AgencyConnectionsPanel({
                   <DatePicker name="startsAt" required />
                   <DatePicker name="endsAt" />
                   <Input name="notes" placeholder="یادداشت اختیاری" />
+                  <label className="space-y-1 text-sm">
+                    سند سازمان (اختیاری)
+                    <select
+                      name="documentReference"
+                      key={branchId}
+                      className="h-11 w-full rounded-xl border bg-surface px-3"
+                      disabled={
+                        pending ||
+                        !permissions.includes('documents.metadata.read')
+                      }
+                    >
+                      <option value="">بدون پیوست؛ پیش‌نویس</option>
+                      {agreementDocuments
+                        .filter((document) => document.branchId === branchId)
+                        .map((document) => (
+                          <option key={document.id} value={document.id}>
+                            {document.title} · {document.archiveCode}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  {documentError && (
+                    <p className="text-xs text-muted-foreground">
+                      {documentError}
+                    </p>
+                  )}
                   <Button
                     disabled={
                       pending ||

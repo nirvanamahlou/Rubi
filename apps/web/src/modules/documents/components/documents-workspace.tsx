@@ -1830,7 +1830,10 @@ export function DocumentsWorkspace() {
                       </Button>
                       {moduleHref ? (
                         <Link
-                          className={buttonVariants({ size: 'sm' })}
+                          className={cn(
+                            buttonVariants({ size: 'sm' }),
+                            'text-white hover:text-white',
+                          )}
                           href={moduleHref}
                         >
                           رفتن به {connection.moduleLabel}
@@ -2076,10 +2079,10 @@ export function DocumentsWorkspace() {
               </div>
               {activeConnection.moduleHref ? (
                 <Link
-                  className={buttonVariants({
-                    className: 'shrink-0',
-                    size: 'sm',
-                  })}
+                  className={cn(
+                    buttonVariants({ size: 'sm' }),
+                    'shrink-0 text-white hover:text-white',
+                  )}
                   href={activeConnection.moduleHref}
                 >
                   رفتن به {activeConnection.moduleLabel}
