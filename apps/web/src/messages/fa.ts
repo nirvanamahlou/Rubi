@@ -25,6 +25,7 @@ export const faMessages = {
     userMenu: 'منوی کاربر',
     profile: 'پروفایل من',
     preferences: 'تنظیمات شخصی',
+    securitySessions: 'امنیت و نشست‌ها',
     signOut: 'خروج از حساب',
     collapseSidebar: 'جمع‌کردن نوار کناری',
     expandSidebar: 'بازکردن نوار کناری',

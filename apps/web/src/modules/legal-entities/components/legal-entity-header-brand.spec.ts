@@ -12,6 +12,10 @@ describe('Jahan Bastan header brand integration', () => {
     path.resolve(__dirname, '../../../app/login/login-form.tsx'),
     'utf8',
   );
+  const userMenuSource = fs.readFileSync(
+    path.resolve(__dirname, '../../../components/layout/user-menu.tsx'),
+    'utf8',
+  );
   const globalStyles = fs.readFileSync(
     path.resolve(__dirname, '../../../app/globals.css'),
     'utf8',
@@ -27,10 +31,11 @@ describe('Jahan Bastan header brand integration', () => {
     expect(globalStyles).toContain('#061a3f');
   });
 
-  it('shows the authenticated display name and login time in the header', () => {
-    expect(selectorSource).toContain('data-header-session-summary');
-    expect(selectorSource).toContain('identity?.displayName ??');
-    expect(selectorSource).toContain('ورود {formatHeaderLoginTime');
+  it('keeps the authenticated identity in the user control without duplicating it beside the company selector', () => {
+    expect(selectorSource).not.toContain('HeaderSessionSummary');
+    expect(selectorSource).not.toContain('data-header-session-summary');
+    expect(userMenuSource).toContain('data-user-menu-trigger');
+    expect(userMenuSource).toContain('identity.displayName');
     expect(loginSource).toContain('rememberHeaderSession(session.user)');
   });
 

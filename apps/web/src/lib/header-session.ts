@@ -3,7 +3,7 @@ import type { LoginResponse } from '@rubi/contracts';
 const HEADER_SESSION_STORAGE_KEY = 'rubi:header-session:v1';
 
 type LoginUser = LoginResponse['user'];
-type HeaderSessionStorage = Pick<Storage, 'getItem' | 'setItem'>;
+type HeaderSessionStorage = Pick<Storage, 'getItem' | 'removeItem' | 'setItem'>;
 
 export interface HeaderSessionIdentity {
   displayName: string;
@@ -60,6 +60,16 @@ export function rememberHeaderSession(
     // A blocked Session Storage must not break authentication or navigation.
   }
   return identity;
+}
+
+export function clearHeaderSession(
+  storage: HeaderSessionStorage | null = browserSessionStorage(),
+): void {
+  try {
+    storage?.removeItem(HEADER_SESSION_STORAGE_KEY);
+  } catch {
+    // A blocked Session Storage must not break secure logout.
+  }
 }
 
 export function formatHeaderLoginTime(loggedInAt: string): string {
