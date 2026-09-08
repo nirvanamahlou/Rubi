@@ -16,4 +16,6 @@ The first cutover failed before startup because the build fingerprint had been c
 
 Final listener identity, database/document configuration and QA evidence are recorded privately in `C:/Users/admin/Rubi-backups/b2b-form-runtime-final.json`; the previous runtime record is in `b2b-form-runtime-before.json`. The original HR checkout remains clean and available for rollback. Follow-up commits contain documentation only, so the served source commit intentionally identifies the actual tested integration build. For a later restart from the latest documentation HEAD, use the existing launcher with `-Build`, preserving the same API environment, database and Documents arguments; coordinate ownership first.
 
-Implementation reservation is released. Runtime ownership remains with this task until a coordinated handoff. Push the integration branch for review; this task does not merge HR PRs into develop.
+The HR employee page also loaded its existing six rows after cutover. No personal employee values were copied into this report.
+
+Implementation reservation is released. Runtime ownership remains with this task until a coordinated handoff. The integration branch is pushed for review; this task does not merge HR PRs into develop.

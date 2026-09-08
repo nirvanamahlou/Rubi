@@ -34,6 +34,7 @@
 - Consume the public Documents Service/client for organization files and draft attachments. No Documents implementation, Master Data, IAM, HR, shared API contract, schema/migration/seed or dependency/lockfile changes. Full PRD acceptance still requires the documented business decisions, persistent B2B workflows and owner projections; unavailable states are not completion.
 - Scope, evidence and remaining acceptance criteria: `docs/tasks/B2B-AGENCIES-001-PRD-COVERAGE.md`. No migration lock or runtime handoff is claimed by this slice.
 - Validation: 62 organization Web tests, 49 B2B API tests and 5 isolated PostgreSQL tests passed; affected lint/typechecks and production builds passed. New browser visual QA was unavailable due webview attachment timeout. This slice's implementation reservations are released for review; full PRD acceptance and runtime integration remain incomplete.
+
 ## HR-011-EXPENSE-MISSION-LINK — PC-B — READY_FOR_REVIEW
 
 - Owner reports the mission-reference selector in independent expense entry is not connected to recorded missions. Branch `codex/pc-b-hr-expense-mission-link` starts from the clean current HR-010 runtime `40c362e` (PR #125), preserving its operation buttons and develop `0261b91`.
