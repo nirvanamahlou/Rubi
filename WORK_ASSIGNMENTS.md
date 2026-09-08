@@ -1,5 +1,11 @@
 # Work Assignments
 
+## DOCUMENTS-008-BLUE-BUTTON-CONTRAST — PC-B — IN_PROGRESS
+
+- درخواست مالک محصول در 2026-09-09: متن و آیکن دکمه‌های آبی کارت‌های «ارتباط اسناد با بخش‌های سامانه» سفید باشند، نه مشکی. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-documents-button-contrast` از `origin/develop@7d716af`. محدوده رزروشده فقط `apps/web/src/modules/documents/components/documents-workspace.tsx`، تست قراردادی همان ماژول و ورودی‌های همین Task در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` است.
+- اصلاح صرفاً Presentation و محدود به CTAهای آبی ارتباطات اسناد است؛ رنگ پس‌زمینه، رفتار لینک‌ها و دکمه‌های سایر ماژول‌ها تغییر نمی‌کند. بدون Schema/Migration/Seed، API/Contract، IAM، Dependency/Lockfile، داده یا Runtime.
+
 ## B2B-AGENCIES-001 / approved PR113 integration — PC-B — READY_FOR_APPROVED_MERGE
 
 - Owner explicitly authorizes merge and push. Continue clean published 122945b on the existing task branch; fetch origin/develop@0261b91 and integrate it with a normal merge, preserving both histories.
