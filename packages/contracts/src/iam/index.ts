@@ -1,4 +1,6 @@
-export const IAM_PERMISSION_CONTRACT_VERSION = 6 as const;
+import { HR_PERMISSION_CODES } from '../hr';
+
+export const IAM_PERMISSION_CONTRACT_VERSION = 7 as const;
 
 export const IAM_CORE_PERMISSION_CODES = [
   'iam.users.read',
@@ -85,6 +87,7 @@ export const IAM_PERMISSION_CODES = [
   ...CUSTOMER_PERMISSION_CODES,
   ...LEGAL_ENTITY_PERMISSION_CODES,
   ...DOCUMENT_PERMISSION_CODES,
+  ...HR_PERMISSION_CODES,
 ] as const;
 
 export type IamPermissionCode = (typeof IAM_PERMISSION_CODES)[number];
