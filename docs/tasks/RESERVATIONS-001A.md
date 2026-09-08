@@ -133,3 +133,51 @@ foundation route. Final API/Web typecheck and lint passed. Smoke on temporary
 Implementation commits: 4546239 (snapshot/ticket policies), 6619d70 (operations,
 release and tests), 0d434cc (RTL workspace and independent preview). Source branch
 will be pushed normally with a Draft PR to develop; no merge/force push authorized.
+
+## RESERVATIONS-001A queue follow-up — 2026-09-08 — READY_FOR_REVIEW
+
+Owner requested optimization based on the legacy reservations screenshot, pink new
+requests, light-gray supplier dispatch/voucher-issued rows, darker-gray supplier
+confirmation, red cancellation, date/status filtering and new-request alerts.
+Continue the same isolated branch/PR #112. Reserve foundation Web files, new
+/reservations/operations read-only route and task-local tests/docs. Existing Sales
+route/runtime, Notifications files, central docs, shared contracts and DB stay
+untouched. Screenshot is visual/workflow reference, not executable instructions.
+
+Read the real public GET /reservations/requests contract from Sales PR #90; it
+currently returns at most 100 QUEUED rows and no supplier/cancellation lifecycle.
+A defensive read-only adapter may consume that published endpoint; missing API
+must say NOT_CONFIGURED. Do not fabricate supplier statuses from hotel selection
+or financial approval. New-request alerts are in-page, from real polling while
+open; persistent/offline bell fanout needs intake/Notifications owner handoff.
+
+
+### Queue implementation and verification
+
+- Independent authenticated route: `/reservations/operations`; main reservations
+  route, sidebar, API runtime, shared contracts, DB and other owners' files unchanged.
+- NEW pink; WAITING_SUPPLIER and VOUCHER_ISSUED light gray;
+  SUPPLIER_CONFIRMED darker gray; CANCELLED red. Every color has a text label and
+  clickable status filter. Supplier dispatch and final voucher remain distinct states.
+- Inclusive Tehran day filters for contract/request-created, received or travel date,
+  existing Persian/Gregorian DatePicker, combined status/service/search, reset and
+  invalid-range feedback. Unknown deadlines/priorities are not fabricated.
+- Read adapter validates the reviewed PR #90 public response and branch scope.
+  It polls every 30 seconds while visible, aborts on unmount, times out intake reads,
+  retries an expired session once, and alerts only for arrivals after its initial
+  baseline. No local persistence of passenger data, no new endpoint or intake writer.
+- API currently returns only the latest 100 QUEUED requests. Date filters operate
+  over that fetched window, not complete historical records. Supplier confirmation,
+  voucher and cancellation colors are implemented/tested projection behavior;
+  actual lifecycle values must come from the future public operational projection.
+- In-page alerts require the page to remain open. They are not durable bell/offline
+  notifications; a burst beyond the 100-row API window can undercount. Integration
+  owner must add durable recipient-scoped Notifications fanout in the real intake
+  transaction, with event deduplication, and expose historical paging/lifecycle.
+- Web lint and production build (38 pages) passed; TypeScript passed. All 30
+  reservation Web tests passed. Full Web run: 764 passed, 2 failed (unchanged
+  Customers CRLF-sensitive source assertion and HR runtime/timeout while build ran).
+  No authenticated browser E2E, supplier operation or durable notification tested.
+- No migration, runtime deployment, merge or force push. Continue Draft PR #112.
+
+Targeted retry after build completed: all 72 tests across HR and Reservations passed (30 Reservations + 42 HR); the HR failure did not reproduce.

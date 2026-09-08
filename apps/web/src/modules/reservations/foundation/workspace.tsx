@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   accessibleRows,
   dashboard,
@@ -10,6 +11,8 @@ import {
   sections,
   serviceLabels,
   statusLabels,
+  statusTones,
+  workflowLegend,
   type Query,
   type RequestView,
   type Section,
@@ -122,6 +125,8 @@ export interface ReservationWorkspaceProps {
   initialSection?: Section;
   /** Preview reveals layout only. It never grants access to rows or enables mutation. */
   preview?: boolean;
+  newRequestCount?: number;
+  onDismissNewRequests?: () => void;
 }
 /** Mount after the Sales route handoff. No API calls, credentials, local storage or mock records. */
 export function ReservationOperationsWorkspace({
@@ -133,17 +138,21 @@ export function ReservationOperationsWorkspace({
   now = '1970-01-01T00:00:00.000Z',
   initialSection = 'dashboard',
   preview = false,
+  newRequestCount = 0,
+  onDismissNewRequests,
 }: ReservationWorkspaceProps) {
   const [section, setSection] = useState<Section>(initialSection);
   const [query, setQuery] = useState<Query>(defaultQuery);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const effectiveState = preview
     ? 'NOT_CONFIGURED'
-    : !access.authenticated
-      ? 'UNAUTHORIZED'
-      : !access.permissions.includes('reservations.read')
-        ? 'FORBIDDEN'
-        : state;
+    : state === 'LOADING' || state === 'NOT_CONFIGURED'
+      ? state
+      : !access.authenticated
+        ? 'UNAUTHORIZED'
+        : !access.permissions.includes('reservations.read')
+          ? 'FORBIDDEN'
+          : state;
   const visibleRows =
     effectiveState === 'SUCCESS' ? accessibleRows(rows, access) : [];
   const result = queryRows(visibleRows, query);
@@ -216,11 +225,52 @@ export function ReservationOperationsWorkspace({
           )}
         </section>
       )}
+      {available && newRequestCount > 0 && (
+        <aside
+          className={styles.newRequests}
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <div>
+            <strong>
+              {newRequestCount.toLocaleString('fa-IR')} درخواست جدید به
+              رزرواسیون رسید
+            </strong>
+            <p>درخواست‌ها به صف اضافه شدند؛ فیلتر فعلی شما حفظ شده است.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              changeQuery({ ...defaultQuery, status: 'NEW', sort: 'newest' });
+              setSection('inbox');
+              onDismissNewRequests?.();
+            }}
+          >
+            مشاهده درخواست‌های جدید
+          </button>
+          <button
+            type="button"
+            onClick={() => onDismissNewRequests?.()}
+            aria-label="بستن اعلان درخواست‌های جدید"
+          >
+            بستن
+          </button>
+        </aside>
+      )}
       {section === 'dashboard' && (
         <>
           <section className={styles.metrics} aria-label="خلاصه رزرواسیون">
             {(Object.keys(statusLabels) as (keyof typeof statusLabels)[])
-              .filter((s) => s !== 'COMPLETED')
+              .filter(
+                (s) =>
+                  ![
+                    'COMPLETED',
+                    'CANCELLED',
+                    'VOUCHER_ISSUED',
+                    'SUPPLIER_CONFIRMED',
+                  ].includes(s),
+              )
               .map((status) => (
                 <button
                   key={status}
@@ -289,13 +339,31 @@ export function ReservationOperationsWorkspace({
                 : 'در انتظار دریافت از فروش'}
             </span>
           </div>
+          <div className={styles.legend} aria-label="راهنمای رنگ و فیلتر وضعیت">
+            {workflowLegend.map((status) => (
+              <button
+                type="button"
+                key={status}
+                data-tone={statusTones[status]}
+                aria-pressed={query.status === status}
+                onClick={() =>
+                  changeQuery({
+                    status: query.status === status ? 'ALL' : status,
+                  })
+                }
+              >
+                <i aria-hidden="true" />
+                {statusLabels[status]}
+              </button>
+            ))}
+          </div>
           <div className={styles.filters}>
             <label>
               جست‌وجو
               <input
                 value={query.search}
                 maxLength={100}
-                placeholder="قرارداد، مشتری یا مسئول"
+                placeholder="شماره قرارداد، مسافر، هتل یا مسیر"
                 onChange={(e) => changeQuery({ search: e.target.value })}
               />
             </label>
@@ -343,6 +411,51 @@ export function ReservationOperationsWorkspace({
               </select>
             </label>
           </div>
+          <div className={styles.dateFilters}>
+            <label>
+              مبنای تاریخ
+              <select
+                value={query.dateBasis}
+                onChange={(e) =>
+                  changeQuery({
+                    dateBasis: e.target.value as Query['dateBasis'],
+                  })
+                }
+              >
+                <option value="createdAt">تاریخ قرارداد</option>
+                <option value="receivedAt">ورود به رزرواسیون</option>
+                <option value="travelDate">تاریخ سفر</option>
+              </select>
+            </label>
+            <div>
+              <label htmlFor="reservation-from">از تاریخ</label>
+              <DatePicker
+                id="reservation-from"
+                value={query.fromDate}
+                onChange={(fromDate) => changeQuery({ fromDate })}
+                aria-invalid={Boolean(result.dateError)}
+                aria-describedby="reservation-date-help"
+              />
+            </div>
+            <div>
+              <label htmlFor="reservation-to">تا تاریخ</label>
+              <DatePicker
+                id="reservation-to"
+                value={query.toDate}
+                onChange={(toDate) => changeQuery({ toDate })}
+                aria-invalid={Boolean(result.dateError)}
+                aria-describedby="reservation-date-help"
+              />
+            </div>
+            <button type="button" onClick={() => setQuery({ ...defaultQuery })}>
+              پاک‌کردن فیلترها
+            </button>
+          </div>
+          <p id="reservation-date-help" className={styles.filterHelp}>
+            {result.dateError ??
+              'بازه شامل تمام روز شروع و پایان است؛ ساعت‌ها بر مبنای تهران محاسبه می‌شوند.'}
+          </p>
+          {result.dateError && <p role="alert">{result.dateError}</p>}
           {result.rows.length === 0 ? (
             <p className={styles.empty}>
               {available
@@ -352,19 +465,40 @@ export function ReservationOperationsWorkspace({
           ) : (
             <ul className={styles.requests}>
               {result.rows.map((row) => (
-                <li key={row.id}>
+                <li
+                  key={row.id}
+                  data-tone={statusTones[row.status]}
+                  data-selected={selectedId === row.id}
+                >
                   <button type="button" onClick={() => setSelectedId(row.id)}>
                     <strong>{row.contractNumber}</strong>
-                    <span>{row.customerName}</span>
+                    <span>
+                      {row.customerName !== '—'
+                        ? row.customerName
+                        : row.passengerNames.slice(0, 2).join('، ') ||
+                          'نام مشتری دریافت نشده'}
+                    </span>
+                    {row.hotelName && <small>{row.hotelName}</small>}
                   </button>
-                  <span>{statusLabels[row.status]}</span>
+                  <span className={styles.statusLabel}>
+                    {statusLabels[row.status]}
+                  </span>
                   <span>
                     {row.services.map((s) => serviceLabels[s]).join('، ')}
                   </span>
                   <span>{row.assignee ?? 'تخصیص‌نیافته'}</span>
-                  <time dateTime={row.deadline}>
-                    {new Date(row.deadline).toLocaleString('fa-IR')}
-                  </time>
+                  <span>
+                    <small>مهلت اقدام</small>
+                    {row.deadline ? (
+                      <time dateTime={row.deadline}>
+                        {new Date(row.deadline).toLocaleString('fa-IR', {
+                          timeZone: 'Asia/Tehran',
+                        })}
+                      </time>
+                    ) : (
+                      'تعیین نشده'
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -407,9 +541,12 @@ export function ReservationOperationsWorkspace({
               شعبه: selected.branchName,
               مسافران: selected.passengerNames.join('، '),
               'مسئول رزرواسیون': selected.assignee ?? 'تخصیص‌نیافته',
-              اولویت: { NORMAL: 'عادی', HIGH: 'بالا', URGENT: 'فوری' }[
-                selected.priority
-              ],
+              اولویت: {
+                NORMAL: 'عادی',
+                HIGH: 'بالا',
+                URGENT: 'فوری',
+                UNSPECIFIED: 'تعیین نشده',
+              }[selected.priority],
             }).map(([label, value]) => (
               <div key={label}>
                 <dt>{label}</dt>

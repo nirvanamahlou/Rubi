@@ -257,3 +257,130 @@
     flex-direction: column;
   }
 }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0 14px;
+}
+.legend button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  padding: 8px 12px;
+}
+.legend button[aria-pressed='true'] {
+  outline: 2px solid #2764ab;
+  outline-offset: 2px;
+}
+.legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--tone-edge);
+}
+.workspace [data-tone='pink'] {
+  --tone-bg: #fce7f3;
+  --tone-edge: #be185d;
+  --tone-text: #831843;
+}
+.workspace [data-tone='lightGray'] {
+  --tone-bg: #f1f2f4;
+  --tone-edge: #9ca3af;
+  --tone-text: #374151;
+}
+.workspace [data-tone='darkGray'] {
+  --tone-bg: #cbd0d8;
+  --tone-edge: #4b5563;
+  --tone-text: #1f2937;
+}
+.workspace [data-tone='red'] {
+  --tone-bg: #fee2e2;
+  --tone-edge: #dc2626;
+  --tone-text: #991b1b;
+}
+.workspace [data-tone='neutral'] {
+  --tone-bg: #f7faff;
+  --tone-edge: #6085ba;
+  --tone-text: #254267;
+}
+.requests li[data-tone] {
+  background: var(--tone-bg);
+  border: 1px solid #dce3ec;
+  border-inline-start: 4px solid var(--tone-edge);
+  border-radius: 12px;
+  margin: 8px 0;
+  padding: 12px;
+  color: var(--tone-text);
+}
+.requests li[data-selected='true'] {
+  outline: 2px solid #2563bf;
+  outline-offset: 2px;
+}
+.requests li button {
+  color: inherit;
+  background: transparent;
+  border: none;
+  text-align: right;
+}
+.requests li small {
+  display: block;
+  opacity: 0.85;
+  font-size: 10px;
+  margin-bottom: 5px;
+}
+.statusLabel {
+  font-weight: 700;
+}
+.dateFilters {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+  margin-top: 16px;
+}
+.dateFilters > div {
+  min-width: 0;
+}
+.dateFilters > div > label {
+  margin-bottom: 7px;
+}
+.filterHelp {
+  font-size: 11px;
+  margin: 8px 0;
+}
+.newRequests {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #f0b0d1;
+  background: #fdf0f7;
+  color: #831843;
+  border-radius: 14px;
+  margin: 16px 0;
+}
+.newRequests p {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+.newRequests > div {
+  flex: 1;
+  min-width: 200px;
+}
+@media (max-width: 900px) {
+  .dateFilters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .dateFilters {
+    grid-template-columns: 1fr;
+  }
+  .requests li {
+    grid-template-columns: 1fr 1fr;
+  }
+}

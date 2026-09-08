@@ -221,3 +221,37 @@ it('protects operation and audit projections independently of visible customer r
   );
   expect(allowed).toContain('Test audit event');
 });
+
+it('renders workflow colors with readable statuses and accessible arrival alert', () => {
+  const states = [
+    'NEW',
+    'WAITING_SUPPLIER',
+    'SUPPLIER_CONFIRMED',
+    'VOUCHER_ISSUED',
+    'CANCELLED',
+  ] as const;
+  const html = renderToStaticMarkup(
+    <ReservationOperationsWorkspace
+      state="SUCCESS"
+      rows={states.map((status) => ({ ...row(status), status }))}
+      access={access}
+      now={now}
+      initialSection="inbox"
+      newRequestCount={2}
+    />,
+  );
+  for (const tone of ['pink', 'lightGray', 'darkGray', 'red'])
+    expect(html).toContain(`data-tone="${tone}"`);
+  for (const label of ['واچر صادرشده', 'تأییدشده توسط کارگزار', 'ابطال‌شده'])
+    expect(html).toContain(label);
+  expect(html).toContain('aria-live="polite"');
+  expect(html).toContain('درخواست جدید به');
+  const denied = renderToStaticMarkup(
+    <ReservationOperationsWorkspace
+      state="SUCCESS"
+      rows={[row()]}
+      newRequestCount={2}
+    />,
+  );
+  expect(denied).not.toContain('درخواست جدید به');
+});

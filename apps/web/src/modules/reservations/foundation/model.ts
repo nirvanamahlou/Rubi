@@ -26,15 +26,21 @@ export type QueueStatus =
   | 'WAITING_FINANCE'
   | 'READY_FOR_DELIVERY'
   | 'ERROR'
-  | 'COMPLETED';
+  | 'COMPLETED'
+  | 'SUPPLIER_CONFIRMED'
+  | 'VOUCHER_ISSUED'
+  | 'CANCELLED';
 export const statusLabels: Record<QueueStatus, string> = {
   NEW: 'درخواست جدید',
   ACTION_REQUIRED: 'در انتظار اقدام',
-  WAITING_SUPPLIER: 'در انتظار کارگزار',
+  WAITING_SUPPLIER: 'ارسال‌شده به کارگزار',
   WAITING_FINANCE: 'در انتظار تأیید مالی',
   READY_FOR_DELIVERY: 'آماده تحویل',
   ERROR: 'خطادار',
   COMPLETED: 'تکمیل‌شده',
+  SUPPLIER_CONFIRMED: 'تأییدشده توسط کارگزار',
+  VOUCHER_ISSUED: 'واچر صادرشده',
+  CANCELLED: 'ابطال‌شده',
 };
 export interface RequestView {
   id: string;
@@ -49,8 +55,13 @@ export interface RequestView {
   services: readonly (
     'FLIGHT' | 'TRAIN' | 'BUS' | 'HOTEL' | 'INSURANCE' | 'OTHER'
   )[];
-  priority: 'NORMAL' | 'HIGH' | 'URGENT';
-  deadline: string;
+  priority: 'NORMAL' | 'HIGH' | 'URGENT' | 'UNSPECIFIED';
+  deadline: string | null;
+  receivedAt?: string;
+  travelDate?: string;
+  destination?: string;
+  hotelName?: string;
+  carrierName?: string;
   createdAt: string;
   status: QueueStatus;
   /** Counts issued documents once, not once per passenger/segment join. */
@@ -63,6 +74,9 @@ export interface Query {
   sort: 'deadline' | 'newest' | 'priority';
   page: number;
   pageSize: number;
+  dateBasis: 'createdAt' | 'receivedAt' | 'travelDate';
+  fromDate: string;
+  toDate: string;
 }
 export const defaultQuery: Query = {
   search: '',
@@ -71,6 +85,9 @@ export const defaultQuery: Query = {
   sort: 'deadline',
   page: 1,
   pageSize: 10,
+  dateBasis: 'createdAt',
+  fromDate: '',
+  toDate: '',
 };
 export const serviceLabels: Record<RequestView['services'][number], string> = {
   FLIGHT: 'هواپیما',
@@ -98,23 +115,35 @@ export function accessibleRows(
 }
 export function queryRows(rows: readonly RequestView[], query: Query) {
   const search = query.search.trim().toLocaleLowerCase('fa');
-  const priority = { NORMAL: 0, HIGH: 1, URGENT: 2 };
+  const priority = { UNSPECIFIED: -1, NORMAL: 0, HIGH: 1, URGENT: 2 };
+  const dateError = validateDateRange(query.fromDate, query.toDate);
   const filtered = rows.filter(
     (r) =>
+      !dateError &&
+      matchesDateRange(r, query) &&
       (query.status === 'ALL' || r.status === query.status) &&
       (query.service === 'ALL' ||
         r.services.some((s) => s === query.service)) &&
-      [r.contractNumber, r.customerName, r.salesCounter, r.assignee ?? ''].some(
-        (v) => v.toLocaleLowerCase('fa').includes(search),
-      ),
+      [
+        r.contractNumber,
+        r.customerName,
+        r.salesCounter,
+        r.assignee ?? '',
+        ...r.passengerNames,
+        r.destination ?? '',
+        r.hotelName ?? '',
+        r.carrierName ?? '',
+      ].some((v) => v.toLocaleLowerCase('fa').includes(search)),
   );
   filtered.sort((a, b) => {
     const order =
       query.sort === 'priority'
         ? priority[b.priority] - priority[a.priority]
         : query.sort === 'newest'
-          ? Date.parse(b.createdAt) - Date.parse(a.createdAt)
-          : Date.parse(a.deadline) - Date.parse(b.deadline);
+          ? Date.parse(b.receivedAt ?? b.createdAt) -
+            Date.parse(a.receivedAt ?? a.createdAt)
+          : (a.deadline ? Date.parse(a.deadline) : Number.MAX_SAFE_INTEGER) -
+            (b.deadline ? Date.parse(b.deadline) : Number.MAX_SAFE_INTEGER);
     return order || a.id.localeCompare(b.id);
   });
   const pageSize = Number.isFinite(query.pageSize)
@@ -125,6 +154,7 @@ export function queryRows(rows: readonly RequestView[], query: Query) {
     ? Math.max(1, Math.min(pages, Math.trunc(query.page)))
     : 1;
   return {
+    dateError,
     rows: filtered.slice((page - 1) * pageSize, page * pageSize),
     total: filtered.length,
     page,
@@ -150,9 +180,10 @@ export function dashboard(rows: readonly RequestView[], now: string) {
     ) as Record<QueueStatus, number>,
     nearSla: rows.filter(
       (r) =>
-        r.status !== 'COMPLETED' &&
+        !['COMPLETED', 'CANCELLED'].includes(r.status) &&
         (r.status === 'ERROR' ||
-          Date.parse(r.deadline) <= timestamp + 60 * 60 * 1000),
+          (r.deadline !== null &&
+            Date.parse(r.deadline) <= timestamp + 60 * 60 * 1000)),
     ).length,
     issuedToday: issued.size,
   };
@@ -205,4 +236,70 @@ export interface TimelineView {
   actionLabel: string;
   occurredAt: string;
   outcome: 'ALLOWED' | 'DENIED';
+}
+
+export const statusTones: Record<
+  QueueStatus,
+  'pink' | 'lightGray' | 'darkGray' | 'red' | 'neutral'
+> = {
+  NEW: 'pink',
+  WAITING_SUPPLIER: 'lightGray',
+  SUPPLIER_CONFIRMED: 'darkGray',
+  VOUCHER_ISSUED: 'lightGray',
+  CANCELLED: 'red',
+  ACTION_REQUIRED: 'neutral',
+  WAITING_FINANCE: 'neutral',
+  READY_FOR_DELIVERY: 'neutral',
+  ERROR: 'neutral',
+  COMPLETED: 'neutral',
+};
+export const workflowLegend: QueueStatus[] = [
+  'NEW',
+  'WAITING_SUPPLIER',
+  'SUPPLIER_CONFIRMED',
+  'VOUCHER_ISSUED',
+  'CANCELLED',
+];
+const civilDate = /^\d{4}-\d{2}-\d{2}$/;
+export function isCivilDate(value: string): boolean {
+  if (!civilDate.test(value)) return false;
+  const parsed = Date.parse(`${value}T00:00:00.000Z`);
+  return (
+    Number.isFinite(parsed) &&
+    new Date(parsed).toISOString().slice(0, 10) === value
+  );
+}
+/** DatePicker stores Gregorian civil days. Instant boundaries are displayed in Tehran. */
+export function reservationDay(value: string | undefined): string | null {
+  if (!value) return null;
+  if (isCivilDate(value)) return value;
+  if (
+    !/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(value) ||
+    !Number.isFinite(Date.parse(value))
+  )
+    return null;
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Tehran',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(value));
+  const part = (type: string) => parts.find((p) => p.type === type)?.value;
+  return `${part('year')}-${part('month')}-${part('day')}`;
+}
+export function validateDateRange(from: string, to: string): string | null {
+  if ((from && !isCivilDate(from)) || (to && !isCivilDate(to)))
+    return 'تاریخ واردشده معتبر نیست.';
+  if (from && to && from > to)
+    return 'تاریخ شروع باید قبل از تاریخ پایان یا برابر آن باشد.';
+  return null;
+}
+function matchesDateRange(row: RequestView, query: Query): boolean {
+  if (!query.fromDate && !query.toDate) return true;
+  const day = reservationDay(row[query.dateBasis]);
+  return (
+    day !== null &&
+    (!query.fromDate || day >= query.fromDate) &&
+    (!query.toDate || day <= query.toDate)
+  );
 }
