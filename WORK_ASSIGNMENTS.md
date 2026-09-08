@@ -96,7 +96,9 @@
 - نتیجه: Grid فهرست به جای‌گذاری Dense مجهز شد؛ خانه تک‌ستونه خالی کنار گروه‌های دوکارته با کارت بعدی پر می‌شود و Wrapper دو ستونه رفت/برگشت دست‌نخورده باقی می‌ماند.
 - اعتبارسنجی: ۹۵/۹۵ تست Ticket Catalog Web، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند؛ build قانون `.grid-flow-row-dense{grid-auto-flow:dense}` را تولید می‌کند و سرویس پورت ۳۱۰۰ پاسخ ۲۰۰ دارد. بازبینی خودکار پنجره به‌علت خطای ACL ابزار Windows ممکن نشد.
 
-## SALES-RUNTIME-INTEGRATION-0908 — PC-A — IN_PROGRESS
+## SALES-RUNTIME-INTEGRATION-0908 — PC-A — COMPLETE_LOCAL
+
+- Activated combined Sales5380719/current-CRM f2cc52a with both released sidebar93a4c0d/0f9ff4e changes through normal local merges bd4fb50/a9223e0. API/Web production builds and source lint/typechecks pass; API934 and Contracts60 tests pass, final Sales/navigation/foundation209 and output7 pass. Web3100/API4000 healthy, protected routes401; previous checkout preserved. All42 migrations already present; no DB/seed/key/permission change. Historical migration checksum/name/default drift recorded, not rewritten. Integration lock released; runtime is local-integration-0906, not pc-b-sync-0908. No public push. See docs/tasks/SALES-RUNTIME-INTEGRATION-0908.md.
 
 - User explicitly approved local integration of latest Sales with current Web3100, preserving Customers and grouped navigation. Branch codex/pc-a-sales-runtime-integration-0908 starts at Sales 5380719, isolated from the active pc-b-sync-0908 checkout. Integrate released grouped-sidebar 93a4c0d (baseline f2cc52a). Reserve integration conflict resolution in AppModule, public root exports, additive combined Prisma schema and status/assignment docs; no new domain design, permission grants, seed data, dependency changes or public push. Existing source branches and uncommitted work remain untouched.
 - Runtime changes only after owner handoff, combined tests/build and database compatibility checks. Preserve local data, document encryption keys and storage; any additive migration requires a verified private backup first. No reset, destructive migration, main/develop change or remote merge.
