@@ -43,4 +43,8 @@
 - فایل مشترک `packages/database/prisma/seed.ts` به‌علت مالکیت فعال PR #90 تغییر نکرد. افزودن این دو رکورد به Seed مشترک پس از پایان آن مالکیت، Handoff مستقل لازم دارد؛ Migration، Schema و قفل Seed/Migration در این Follow-up گرفته نشد.
 - ۲۷ تست هدفمند Contract/API/Web، lint و typecheck بسته‌های متاثر، Production Build API/Web با ۳۴ Route و `git diff --check` موفق‌اند. Web و Health API ایزوله HTTP 200 و Preflight احرازشده دارای Origin صحیح است.
 
-`Legal Entities shared-contract Owner = PC-B/LEGAL-ENTITY-BRAND-HEADER-002` تا Merge یا Handoff باقی می‌ماند.
+## ادغام و تحویل
+
+- PR #106 با Merge Commit `10fc98b1dd0f6df7ed006dfc65e952cac1d421dd` وارد `develop` شد و همه ۸ Gate ثبت‌شده CI موفق‌اند.
+- نسخه Merge‌شده روی `localhost:3100` و API روی `localhost:4000` اجرا می‌شوند؛ دیتابیس ایزوله محلی PC-B هر چهار شرکت فعال را دارد.
+- `Legal Entities shared-contract Owner = RELEASED / STABLE` و `Central UI Owner = RELEASED`.
