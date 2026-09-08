@@ -1,5 +1,22 @@
 # Work Assignments
 
+## LEGAL-ENTITY-BRAND-HEADER-002 — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-07: با انتخاب شرکت فعال «جهان باستان»، هدر اصلی سامانه سورمه‌ای شود و نام کاربر همراه ساعت ورود در همان هدر نمایش داده شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-jahan-bastan-header-identity` از `origin/develop@8c445ccb21bdef441b051aa34fb93e5c94379fcf`؛ محدوده فقط `apps/web/src/modules/legal-entities/components/legal-entity-context.tsx`، `apps/web/src/app/login/login-form.tsx`، `apps/web/src/lib/header-session.ts`، `apps/web/src/app/globals.css`، تست‌های هدفمند Web و اسناد همین Work Item است.
+- `Central UI Owner = PC-B/LEGAL-ENTITY-BRAND-HEADER-002` فقط برای `apps/web/src/app/globals.css`. فایل `apps/web/src/components/layout/app-shell.tsx` به‌علت مالکیت فعال PR #99 تغییر نمی‌کند و تغییر Breadcrumb منابع انسانی دست‌نخورده می‌ماند.
+- نام نمایشی کاربر فقط از پاسخ احرازشده عمومی IAM در Login/Refresh گرفته می‌شود و همراه زمان ورود در Session Storage همان Tab ثبت می‌شود؛ شناسه کاربر، نام کاربری، Password، Token، Cookie یا PII اضافی ذخیره یا نمایش داده نمی‌شود.
+- هیچ Backend، API/Shared Contract، Schema/Migration/Seed، Dependency/Lockfile، Navigation مرکزی، داده کاربر یا Branch دیگری تغییر نمی‌کند. معیار پذیرش شامل تغییر فوری تم هدر هنگام Switch شرکت، خوانایی کنترل‌ها، نمایش نام/ساعت ورود، RTL/Responsive، تست هدفمند، lint، typecheck و Production Build Web است.
+- پیاده‌سازی تکمیل شد: Header با Context `JAHAN_BASTAN` سورمه‌ای می‌شود، نام نمایشی کاربر و ساعت ورود همان Tab را نشان می‌دهد و Login موفق Cache نمایشی را مقداردهی می‌کند. ۱۳ تست هدفمند، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند؛ Preview ایزوله روی پورت ۳۱۰۱ بدون توقف سرویس‌های فعال ۳۱۰۰/۴۰۰۰ بالا آمد و تا صفحه Login سالم پاسخ داد.
+- `Central UI Owner = RELEASED — PC-B/LEGAL-ENTITY-BRAND-HEADER-002 ready for review`. هیچ قفل Migration، Contract، Dependency/Lockfile، Database، Permission یا Branch دیگری گرفته نشد.
+- Follow-up صریح مالک در 2026-09-07: «جهان آکادمیا» و «قسطی رو» به انتخاب‌گر شرکت فعال افزوده شوند. کدهای canonical برابر `JAHAN_ACADEMIA` و `GHESATI_RO` هستند و Context تجمیعی از «هر دو شرکت» به «همه شرکت‌ها» اصلاح می‌شود.
+- محدوده Follow-up: قرارداد عمومی نسخه‌دار Legal Entities، اعتبارسنجی Switch در API، مدل/تست انتخاب‌گر Web، Asset خنثی برای شرکت‌های بدون لوگوی تحویلی، مستندات همین Task و Upsert اتمیک دو رکورد در دیتابیس محلی PC-B پس از Backup. `Legal Entities shared-contract Owner = PC-B/LEGAL-ENTITY-BRAND-HEADER-002` تا پایان Review.
+- `packages/database/prisma/seed.ts` به‌علت تغییر فعال PR #90 نزد PC-A دست‌نخورده می‌ماند؛ هیچ Schema/Migration، Dependency/Lockfile، App Shell، داده کاربر یا Branch دیگری تغییر نمی‌کند. Seed مشترک پس از پایان مالکیت PR #90 یک Handoff مستقل می‌خواهد و این Task قفل Migration یا Seed آن را بازپس نمی‌گیرد.
+- نتیجه Follow-up: قرارداد `legal-entities.v3` چهار کد واقعی را منتشر می‌کند، DTO سوییچ مستقیماً همان قرارداد را اعتبارسنجی می‌کند، انتخاب‌گر «جهان آکادمیا» و «قسطی رو» را نشان می‌دهد و عنوان تجمیعی به «همه شرکت‌ها» اصلاح شد. تا دریافت لوگوی اختصاصی، دو شرکت جدید نشان خنثی و نام صحیح خود را دارند و لوگوی نیایش سیر به آن‌ها نسبت داده نمی‌شود.
+- دیتابیس مشترک Task فعال ۳۱۰۰/۴۰۰۰ پس از تشخیص ناسازگاری نسخه قدیمی دقیقاً به دو شرکت قبلی بازگردانده شد. Preview ایزوله از Backup تأییدشده روی PostgreSQL پورت ۵۵۴۳۳ شامل هر چهار شرکت فعال است و API/Web جدید روی `127.0.0.1:4001` و `127.0.0.1:3101` اجرا می‌شوند؛ Cookieهای `localhost` Task دیگر نیز به‌علت Host ایزوله دست‌نخورده می‌مانند.
+- کنترل کیفیت Follow-up: ۲۷ تست هدفمند Contract/API/Web، lint و typecheck بسته‌های متاثر، Build تولیدی API/Web با ۳۴ Route و `git diff --check` موفق‌اند؛ Health و Login هر دو سرویس ایزوله HTTP 200 و CORS احرازشده صحیح است.
+- `Legal Entities shared-contract Owner = PC-B/LEGAL-ENTITY-BRAND-HEADER-002` تا Merge یا Handoff باقی می‌ماند. `Central UI Owner = RELEASED` است؛ Migration، Seed مشترک، Dependency/Lockfile و Database مشترک رزرو نشده‌اند.
+
 ## NOTIFICATIONS-001-ACTIVITY-BELL — PC-B — DONE/MERGED
 
 - درخواست صریح مالک محصول در 2026-09-07: هر تغییر موفقی که در سامانه انجام می‌شود در بخش زنگوله به‌صورت Notification نمایش داده شود. `COMPUTER_ID=PC-B` بر مبنای مالکیت فعلی این Workspace و ماژول‌های افقی رابط.

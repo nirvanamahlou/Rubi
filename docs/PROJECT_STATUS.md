@@ -1,5 +1,14 @@
 # وضعیت پروژه
 
+## LEGAL-ENTITY-BRAND-HEADER-002 — هدر جهان باستان و اطلاعات ورود — آماده بررسی
+
+- `PC-B` روی Branch مستقل `codex/pc-b-jahan-bastan-header-identity` تم Header را به Context موجود شرکت فعال متصل کرد. با انتخاب «جهان باستان»، Header بدون تغییر فایل مرکزی درگیر PR #99 به طیف سورمه‌ای تغییر می‌کند و کنترل‌های انتخاب شرکت، جست‌وجو و عملیات Header خوانا می‌مانند؛ سایر Contextها ظاهر پیشین را حفظ می‌کنند.
+- نام نمایشی کاربر و ساعت ورود در Header دسکتاپ نمایش داده می‌شود. داده فقط از پاسخ عمومی و احرازشده Login/Refresh می‌آید و در Session Storage همان Tab نگه‌داری می‌شود؛ شناسه کاربر، نام کاربری، Password، Token، Cookie یا PII اضافی ذخیره نمی‌شود.
+- ۱۳ تست هدفمند Legal Entity/Auth/Header، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند. Preview ایزوله روی پورت ۳۱۰۱ به Login سالم رسید؛ سرویس‌های فعال Task دیگر روی ۳۱۰۰/۴۰۰۰ متوقف یا تغییر داده نشدند. هیچ Backend، Schema/Migration/Seed، API/Contract، Dependency/Lockfile یا داده کاربر تغییر نکرد.
+- Follow-up مالک: `legal-entities.v3` گزینه‌های فعال «جهان آکادمیا» و «قسطی رو» را با کدهای `JAHAN_ACADEMIA` و `GHESATI_RO` به قرارداد، API و انتخاب‌گر افزود؛ عنوان مدیران «همه شرکت‌ها» شد و برای شرکت‌های بدون لوگوی تحویلی نشان خنثی نمایش داده می‌شود. Schema/Migration و Dependency/Lockfile تغییر نکردند.
+- به‌علت تغییر فعال `packages/database/prisma/seed.ts` در PR #90، Seed مشترک دست‌نخورده ماند. دیتابیس اصلی پورت ۵۵۴۳۲ و سرویس‌های ۳۱۰۰/۴۰۰۰ بدون شرکت جدید حفظ شدند؛ Clone ایزوله Backup روی ۵۵۴۳۳ هر چهار شرکت فعال را دارد و نسخه جدید روی `127.0.0.1:3101` و API آن روی `127.0.0.1:4001` اجرا می‌شود.
+- ۲۷ تست هدفمند Contract/API/Web، lint و typecheck بسته‌های متاثر، Production Build API/Web با ۳۴ Route و `git diff --check` موفق‌اند. Web، Health API و CORS احرازشده Preview ایزوله نیز سالم‌اند.
+
 ## NOTIFICATIONS-001 — مرکز اعلان تغییرات — ادغام‌شده
 
 - `PC-B` روی Branch مستقل `codex/pc-b-global-change-notifications` زنگوله App Shell را به Notification Center سراسری Web تبدیل کرد. هر Mutation موفق `POST/PUT/PATCH/DELETE` به API تنظیم‌شده Rubi پس از موفقیت Response، یک اعلان فارسی شامل نوع عملیات، بخش، زمان و لینک داخلی می‌سازد؛ عملیات ناموفق، Auth، Preview، Search، Validation و Export اعلان تغییر تولید نمی‌کنند.

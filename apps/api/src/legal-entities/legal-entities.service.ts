@@ -659,7 +659,7 @@ export class LegalEntitiesService {
     if (context.mode === LegalEntityContextMode.ALL)
       throw new UnprocessableEntityException({
         code: 'LEGAL_ENTITY_SPECIFIC_CONTEXT_REQUIRED',
-        message: 'صدور و صدور مجدد در حالت هر دو شرکت مجاز نیست.',
+        message: 'صدور و صدور مجدد در حالت تجمیعی شرکت‌ها مجاز نیست.',
       });
     if (context.legalEntityId !== id)
       throw new ForbiddenException(
