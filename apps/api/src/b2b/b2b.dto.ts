@@ -30,7 +30,7 @@ export class UpsertAgencyProfileDto {
 
   @ValidateIf(provided)
   @IsIn(['ACTIVE', 'UNDER_REVIEW', 'SUSPENDED', 'ENDED'])
-  status: 'ACTIVE' | 'UNDER_REVIEW' | 'SUSPENDED' | 'ENDED' = 'ACTIVE';
+  status: 'ACTIVE' | 'UNDER_REVIEW' | 'SUSPENDED' | 'ENDED' = 'UNDER_REVIEW';
 
   @ValidateIf(provided)
   @IsInt()

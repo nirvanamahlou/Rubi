@@ -8,6 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
 import type { B2bRepository } from './b2b.repository';
 import { B2bService } from './b2b.service';
+import type { B2bAgreementDocuments } from './b2b-agreement-documents';
 
 const organizationId = '11111111-1111-4111-8111-111111111111';
 const branchId = '22222222-2222-4222-8222-222222222222';
@@ -54,15 +55,67 @@ function setup(profile: Record<string, unknown> | null = null) {
       reason: 'FINANCE_PORT_UNAVAILABLE',
     }),
   } as unknown as FinancePartyExposurePortV1;
+  const documents = { assertDraftReference: vi.fn() };
   return {
-    service: new B2bService(repository, organizations, exposure),
+    service: new B2bService(
+      repository,
+      organizations,
+      exposure,
+      documents as unknown as B2bAgreementDocuments,
+    ),
     repository,
     organizations,
     exposure,
+    documents,
   };
 }
 
 describe('B2B agency service', () => {
+  it('rejects an inactive organization before writing a review profile', async () => {
+    const { service, organizations, repository } = setup();
+    const organization = await organizations.agencyReference(organizationId);
+    vi.mocked(organizations.agencyReference).mockResolvedValue({
+      ...organization!,
+      isActive: false,
+    });
+    await expect(
+      service.upsertProfile(
+        organizationId,
+        { branchId, status: 'UNDER_REVIEW', displayOrder: 0 },
+        actor,
+      ),
+    ).rejects.toThrow('غیرفعال');
+    expect(repository.upsertProfile).not.toHaveBeenCalled();
+  });
+  it('validates a document before any draft write and retains owner failures', async () => {
+    const { service, documents, repository } = setup({
+      id: 'profile',
+      branchId,
+      status: 'UNDER_REVIEW',
+      isActive: true,
+    });
+    documents.assertDraftReference.mockRejectedValue(new Error('سند نامعتبر'));
+    await expect(
+      service.createAgreement(
+        organizationId,
+        {
+          branchId,
+          title: 'قرارداد آزمون',
+          startsAt: '2026-09-08',
+          status: 'DRAFT',
+          documentReference: 'document',
+        },
+        actor,
+      ),
+    ).rejects.toThrow('سند نامعتبر');
+    expect(documents.assertDraftReference).toHaveBeenCalledExactlyOnceWith(
+      'document',
+      organizationId,
+      branchId,
+      actor,
+    );
+    expect(repository.createAgreement).not.toHaveBeenCalled();
+  });
   it('permits draft preparation under review without permitting rates or activation', async () => {
     const { service, repository } = setup({
       id: 'profile',

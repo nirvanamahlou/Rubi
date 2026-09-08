@@ -150,7 +150,7 @@ describe.skipIf(!enabled)(
           branchId,
           actorUserId,
           accountManagerUserId: null,
-          status: 'ACTIVE',
+          status: 'UNDER_REVIEW',
           displayOrder: 0,
         })
       ).id;
@@ -234,7 +234,7 @@ describe.skipIf(!enabled)(
         actorUserId,
         accountManagerUserId: null,
         displayOrder: 0,
-        status: 'SUSPENDED' as const,
+        status: 'UNDER_REVIEW' as const,
         expectedVersion: 1,
       };
       await repository.upsertProfile(input);
@@ -247,6 +247,29 @@ describe.skipIf(!enabled)(
           where: { branchId, action: 'b2b.agency.update' },
         }),
       ).toBe(1);
+    });
+
+    it('blocks lifecycle activation without changing the persisted version or history', async () => {
+      const before = await repository.findProfile(organizationId, branchId);
+      const auditBefore = await client.b2bAuditEvent.count({
+        where: { branchId },
+      });
+      await expect(
+        repository.upsertProfile({
+          organizationId,
+          branchId,
+          actorUserId,
+          status: 'ACTIVE',
+          displayOrder: 0,
+          expectedVersion: before!.version,
+        }),
+      ).rejects.toThrow('گردش تأیید');
+      const after = await repository.findProfile(organizationId, branchId);
+      expect(after?.version).toBe(before?.version);
+      expect(after?.status).toBe('UNDER_REVIEW');
+      expect(await client.b2bAuditEvent.count({ where: { branchId } })).toBe(
+        auditBefore,
+      );
     });
   },
 );

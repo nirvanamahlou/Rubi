@@ -37,7 +37,7 @@ export class B2bRepository {
   async upsertProfile(input: {
     organizationId: string;
     branchId: string;
-    accountManagerUserId: string | null;
+    accountManagerUserId?: string | null;
     status: AgencyOperationalStatus;
     displayOrder: number;
     expectedVersion?: number;
@@ -54,6 +54,15 @@ export class B2bRepository {
         },
       });
       let row;
+      if (
+        (!before && input.status !== 'UNDER_REVIEW') ||
+        (before && before.status !== input.status)
+      )
+        throw new ConflictException({
+          code: 'B2B_PROFILE_APPROVAL_REQUIRED',
+          message:
+            'ثبت پروفایل فقط در وضعیت در حال بررسی مجاز است؛ تغییر وضعیت نیازمند گردش تأیید و ثبت دلیل است.',
+        });
       if (!before) {
         if (input.expectedVersion)
           throw new ConflictException({
@@ -64,7 +73,7 @@ export class B2bRepository {
           data: {
             organizationId: input.organizationId,
             branchId: input.branchId,
-            accountManagerUserId: input.accountManagerUserId,
+            accountManagerUserId: input.accountManagerUserId ?? null,
             status: input.status,
             isActive: input.status !== 'ENDED',
             deactivatedAt: input.status === 'ENDED' ? new Date() : null,
@@ -81,13 +90,10 @@ export class B2bRepository {
         const claimed = await transaction.agencyOperationalProfile.updateMany({
           where: { id: before.id, version: input.expectedVersion },
           data: {
-            accountManagerUserId: input.accountManagerUserId,
-            status: input.status,
+            ...(input.accountManagerUserId !== undefined
+              ? { accountManagerUserId: input.accountManagerUserId }
+              : {}),
             displayOrder: input.displayOrder,
-            isActive: input.status !== 'ENDED',
-            deactivatedAt: input.status === 'ENDED' ? new Date() : null,
-            deactivatedByUserId:
-              input.status === 'ENDED' ? input.actorUserId : null,
             updatedByUserId: input.actorUserId,
             version: { increment: 1 },
           },
