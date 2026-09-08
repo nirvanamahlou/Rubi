@@ -86,6 +86,9 @@ async function main() {
     const showcaseIds = new Set<string>();
     const showcaseByResource: Record<string, number> = {};
     const showcaseByStatus: Record<string, number> = {};
+    let legacyOrganizationRowsUpdated = 0;
+    let jahanOrganizationLabelsUpdated = 0;
+    const organizationUnitCounts: Record<string, number> = {};
     for (const branch of branches) {
       const prefix = `hr-demo:v1:${branch.id}`;
       const create = async (label: string, body: HrRecordCreate) => {
@@ -133,7 +136,7 @@ async function main() {
         ],
         status: 'فعال',
       });
-      await create('team', {
+      const team = await create('team', {
         section: 'organization',
         tab: 'units',
         parentId: unit.id,
@@ -147,6 +150,144 @@ async function main() {
         ],
         status: 'فعال',
       });
+      // Preserve the original command bodies/keys above. Only untouched legacy
+      // fixtures are eligible for this one-time classification and label repair.
+      for (const [row, expectedValues, expectedParentId] of [
+        [
+          unit,
+          [
+            'واحد عملیات آزمایشی',
+            'واحد',
+            branch.name,
+            '—',
+            'مدیر آزمایشی',
+            '2026-01-01',
+          ],
+          null,
+        ],
+        [
+          team,
+          [
+            'تیم خدمات آزمایشی',
+            'تیم',
+            branch.name,
+            'واحد عملیات آزمایشی',
+            'مدیر آزمایشی',
+            '2026-01-01',
+          ],
+          unit.id,
+        ],
+      ] as const) {
+        if (
+          row.version === 1 &&
+          row.status === 'فعال' &&
+          row.parentId === expectedParentId &&
+          Object.keys(row.data).length === 0 &&
+          JSON.stringify(row.values) === JSON.stringify(expectedValues)
+        ) {
+          const values = [...row.values];
+          values[2] = 'نیایش سیر';
+          await service.updateRecord(
+            row.id,
+            {
+              version: row.version,
+              values,
+              data: { organizationBranchId: organizationBranches[0]! },
+            },
+            actor,
+          );
+          legacyOrganizationRowsUpdated++;
+        }
+      }
+      const jahanUnit = await create('company-jahan-unit:v1', {
+        section: 'organization',
+        tab: 'units',
+        values: [
+          'واحد عملیات آزمایشی جهان باستان',
+          'واحد',
+          'جهان باستان',
+          '—',
+          'مدیر آزمایشی مهتاب',
+          '2026-01-01',
+        ],
+        data: { organizationBranchId: organizationBranches[1]! },
+        status: 'فعال',
+      });
+      const jahanTeam = await create('company-jahan-team:v1', {
+        section: 'organization',
+        tab: 'units',
+        parentId: jahanUnit.id,
+        values: [
+          'تیم خدمات آزمایشی جهان باستان',
+          'تیم',
+          'جهان باستان',
+          'واحد عملیات آزمایشی جهان باستان',
+          'مدیر آزمایشی مهتاب',
+          '2026-01-01',
+        ],
+        data: { organizationBranchId: organizationBranches[1]! },
+        status: 'فعال',
+      });
+      // Match the existing employee assignment title within Jahan's own company.
+      // Keep the original create payloads above unchanged for idempotent replay.
+      for (const [row, expectedValues, expectedParentId, fieldIndex] of [
+        [
+          jahanUnit,
+          [
+            'واحد عملیات آزمایشی جهان باستان',
+            'واحد',
+            'جهان باستان',
+            '—',
+            'مدیر آزمایشی مهتاب',
+            '2026-01-01',
+          ],
+          null,
+          0,
+        ],
+        [
+          jahanTeam,
+          [
+            'تیم خدمات آزمایشی جهان باستان',
+            'تیم',
+            'جهان باستان',
+            'واحد عملیات آزمایشی جهان باستان',
+            'مدیر آزمایشی مهتاب',
+            '2026-01-01',
+          ],
+          jahanUnit.id,
+          3,
+        ],
+      ] as const) {
+        if (
+          row.version === 1 &&
+          row.status === 'فعال' &&
+          row.parentId === expectedParentId &&
+          Object.keys(row.data).length === 1 &&
+          row.data.organizationBranchId === organizationBranches[1] &&
+          JSON.stringify(row.values) === JSON.stringify(expectedValues)
+        ) {
+          const values = [...row.values];
+          values[fieldIndex] = 'واحد عملیات آزمایشی';
+          await service.updateRecord(
+            row.id,
+            { version: row.version, values },
+            actor,
+          );
+          jahanOrganizationLabelsUpdated++;
+        }
+      }
+      for (const [index, name] of ['نیایش سیر', 'جهان باستان'].entries()) {
+        const result = await service.listRecords(
+          {
+            section: 'organization',
+            tab: 'units',
+            organizationBranchId: organizationBranches[index]!,
+            pageSize: '1',
+          },
+          actor,
+        );
+        organizationUnitCounts[`${branch.code}:${name}`] = result.total;
+      }
       await create('grade', {
         section: 'organization',
         tab: 'grades',
@@ -525,6 +666,11 @@ async function main() {
         records,
         fictional: true,
         existingUsersUnchanged: true,
+        organization: {
+          legacyRowsUpdated: legacyOrganizationRowsUpdated,
+          jahanLabelsUpdated: jahanOrganizationLabelsUpdated,
+          unitCounts: organizationUnitCounts,
+        },
         showcase: {
           uniqueRecords: showcaseIds.size,
           resources: showcaseByResource,
