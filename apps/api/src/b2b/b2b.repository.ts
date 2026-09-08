@@ -44,6 +44,7 @@ export class B2bRepository {
     actorUserId: string;
   }) {
     return this.database.client.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`b2b-profile:${input.organizationId}:${input.branchId}`}, 0))::text`;
       const before = await transaction.agencyOperationalProfile.findUnique({
         where: {
           organizationId_branchId: {
@@ -54,12 +55,21 @@ export class B2bRepository {
       });
       let row;
       if (!before) {
+        if (input.expectedVersion)
+          throw new ConflictException({
+            code: 'B2B_PROFILE_VERSION_CONFLICT',
+            message: 'پروفایل مورد انتظار یافت نشد؛ دوباره بارگذاری کنید.',
+          });
         row = await transaction.agencyOperationalProfile.create({
           data: {
             organizationId: input.organizationId,
             branchId: input.branchId,
             accountManagerUserId: input.accountManagerUserId,
             status: input.status,
+            isActive: input.status !== 'ENDED',
+            deactivatedAt: input.status === 'ENDED' ? new Date() : null,
+            deactivatedByUserId:
+              input.status === 'ENDED' ? input.actorUserId : null,
             displayOrder: input.displayOrder,
             createdByUserId: input.actorUserId,
             updatedByUserId: input.actorUserId,
@@ -224,6 +234,30 @@ export class B2bRepository {
     actorUserId: string;
   }) {
     return this.database.client.$transaction(async (transaction) => {
+      // Serialize checks and writes for this profile without touching another module.
+      // Transaction-scoped PostgreSQL advisory locks are released on rollback too.
+      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`b2b-rate:${input.profileId}`}, 0))::text`;
+      const overlapping = await transaction.b2bAgencyAgreedRate.findFirst({
+        where: {
+          profileId: input.profileId,
+          serviceReference: {
+            equals: input.serviceReference,
+            mode: 'insensitive',
+          },
+          kind: input.kind,
+          currencyCode: input.currencyCode,
+          isActive: true,
+          ...(input.validTo ? { validFrom: { lte: input.validTo } } : {}),
+          OR: [{ validTo: null }, { validTo: { gte: input.validFrom } }],
+        },
+        select: { id: true },
+      });
+      if (overlapping)
+        throw new ConflictException({
+          code: 'B2B_RATE_OVERLAP',
+          message:
+            'نرخ فعال این خدمت و نوع محاسبه با بازه انتخاب‌شده هم‌پوشانی دارد.',
+        });
       const row = await transaction.b2bAgencyAgreedRate.create({
         data: {
           profileId: input.profileId,
