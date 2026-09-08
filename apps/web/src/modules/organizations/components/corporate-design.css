@@ -16,7 +16,6 @@
   --purple: #7958db;
   --shadow: 0 8px 24px rgba(19, 64, 124, 0.08);
   color: var(--text);
-  font-family: Tahoma, 'Segoe UI', sans-serif;
   line-height: 1.6;
   font-size: 14px;
   .page-head {
