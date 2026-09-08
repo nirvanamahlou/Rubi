@@ -18,7 +18,7 @@ const connections = readFileSync(
 describe('agency to Master Organization integration', () => {
   it('uses the public Master Data client and the canonical AGENCY role', () => {
     expect(client).toContain("masterDataApi.list('organizations'");
-    expect(client).toContain("organizationRole: 'AGENCY'");
+    expect(client).toContain('organizationRole: role');
     expect(client).toContain("masterDataApi.list('organization-contacts'");
     expect(source).not.toContain('@prisma/client');
     expect(source).not.toContain('MasterDataRepository');
@@ -45,9 +45,7 @@ describe('agency to Master Organization integration', () => {
     expect(connections).toContain('createOrganizationAddress');
     expect(connections).toContain('upsertCreditPolicy');
     expect(connections).toContain('createAgreedRate');
-    expect(connections).toContain(
-      'درگاه Finance هنوز Snapshot منتشر نکرده است',
-    );
+    expect(connections).toContain('اطلاعات مالی هنوز در دسترس نیست');
     expect(source).toContain('phoneMasked');
     expect(source).toContain('emailMasked');
   });

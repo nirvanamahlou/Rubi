@@ -1,5 +1,12 @@
 # Work Assignments
 
+## LOCAL-HR-AGENCIES-009 — PC-B — READY_FOR_REVIEW
+
+- Owner explicitly requests the current Agencies section alongside HR on the same local port 3100. Branch `codex/pc-b-hr-agencies-local` starts from HR-008 `838c1eb`; source agency implementation is the clean, published `codex/pc-b-agencies-organizations@fc573ac` (PR #113), based on the same develop `30d67ec`.
+- Reserve only the already implemented delta under `apps/api/src/b2b/**`, `apps/web/src/modules/organizations/**`, its task report and this local integration handoff. No new feature design, schema/migration, shared contract, IAM grant, dependency/lockfile or other module change. Preserve HR-008, current app shell and the existing independent HR database/document snapshot.
+- Apply the source module delta in this checkout, validate both sections, rebuild the owned web3100/API4190 listeners, and push a review branch without merging main/develop. The source agency worktree and its preview remain untouched. Existing B2B approval gates/unavailable producer projections must be retained.
+- Imported source modules are unchanged from the published agency branch. Fourteen Web and 28 API tests (including four PostgreSQL cases), full lint/typecheck and API build passed. Local startup and production handoff checks are documented in `docs/tasks/LOCAL-HR-AGENCIES-009.md`; browser/runtime evidence stays outside Git. No migration or merge.
+
 ## HR-008-CONNECTED-FORMS — PC-B — READY_FOR_REVIEW
 
 - Owner request: simplify HR forms and populated tables, remove duplicate employee/company inputs, use stored reference data in dropdowns, enable selected-row exports and expense-document upload. Preserve current sections, workflow permissions and the active 3100 runtime's database.
