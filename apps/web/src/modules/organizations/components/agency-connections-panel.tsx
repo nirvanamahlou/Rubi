@@ -17,6 +17,7 @@ import { Alert, Badge, Card, Skeleton } from '@/components/ui/surfaces';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { agencyClient, B2bApiError } from '../api/agency-client';
 import { moneyLabel, agreementLabel } from '../model/presentation';
+import type { OperationalView } from './corporate-profile';
 
 function value(form: FormData, key: string) {
   return String(form.get(key) ?? '').trim();
@@ -32,8 +33,10 @@ function formatMoney(amount: string, currencyCode: string) {
 
 export function AgencyConnectionsPanel({
   organizationId,
+  view,
 }: {
   organizationId: string;
+  view?: OperationalView;
 }) {
   const [branches, setBranches] = useState<readonly BranchReference[]>([]);
   const [branchId, setBranchId] = useState('');
@@ -53,7 +56,8 @@ export function AgencyConnectionsPanel({
   const invalidateRequests = useCallback(() => {
     ++requestId.current;
   }, []);
-  const [section, setSection] = useState('overview');
+  const [localSection, setSection] = useState('overview');
+  const section = view ?? localSection;
 
   const load = useCallback(
     async (requestedBranch?: string) => {
@@ -300,6 +304,7 @@ export function AgencyConnectionsPanel({
       {!workspace ? null : (
         <>
           <nav
+            hidden={Boolean(view)}
             className="flex flex-wrap gap-2"
             aria-label="بخش‌های پرونده تجاری"
           >

@@ -162,7 +162,43 @@ states that those records are not connected.
   production SLO measurements are not performed or claimed. New IAM grants,
   production data or service restarts are not part of this slice.
 
-## PC-A handoff
+## Corporate HTML reference follow-up — 2026-09-08
+
+Owner requested implementation of `b2b-agencies-corporate.html` from the attached
+visualization. Same isolated PC-B branch and reservation; original checkout and
+task worktree were clean at the start. Fetched origin and rechecked open PRs;
+Sales #90, Reservations #112 and Master Data #105 remain outside this scope.
+The HTML is a visual reference, not authority for scripts, credentials or sample
+business records. Central/shared locks remain unchanged.
+
+- Transferred the reference palette, typography, card geometry, gradients,
+  directory columns, organization banner and seven colored 360-degree cards into
+  scoped CSS and React components on the existing `/organizations` route.
+- Replaced the profile dialog with an in-page organization workspace. All seven
+  groups and their tabs are navigable. Existing permissioned contact forms,
+  branch address, agreement, credit read and rate operations consume their
+  existing public APIs. Edit results refresh the selected identity from the
+  mutation response; cancel retains the selected profile.
+- Kept real server search, role/status filtering, paging, request errors and
+  mobile directory cards. Focus moves to the profile heading on section changes;
+  controls retain keyboard focus rings and reduced-motion behavior.
+- Explicit differences from the prototype: global shell remains the shared
+  Rubi shell; the existing identity form handles new cooperation instead of the
+  prototype's simulated approval wizard. Unsupported account-manager filters,
+  combined-role aggregates, global KPIs, financial values, history, access,
+  signatories, documents and reports have unavailable states. No sample people,
+  balances, fake approvals or success notifications were imported. Branch tabs
+  expose the existing address capability; organizational branch authorization
+  still requires the B-phase contract. Rate, discount and commission tabs use
+  the existing rate editor. This is not a claim that the blocked module or an
+  exact pixel match has been completed.
+- Web typecheck, lint, 14 targeted tests and production build (36 routes) passed.
+  Browser visual QA could not run: the in-app browser timed out attaching its
+  webview. A temporary, isolated component harness used synthetic UI-only data
+  and no API/DB access; it is not shipped. No authenticated browser, responsive
+  screenshot comparison or Lighthouse result is claimed.
+
+## Integration handoff
 
 Fetch `codex/pc-b-agencies-organizations` and review its independent draft PR;
 do not merge or rebase the Sales/Reservations branches as part of this delivery.

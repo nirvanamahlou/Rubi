@@ -16,6 +16,8 @@ import {
   RefreshCw,
   Search,
   ShieldX,
+  Users,
+  TriangleAlert,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -29,19 +31,12 @@ import {
   SelectValue,
 } from '@/components/ui/form-controls';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from '@/components/ui/overlays';
-import {
   Alert,
   Badge,
   Card,
   EmptyState,
   ErrorState,
   FilterBar,
-  PageHeader,
   PaginationShell,
   Skeleton,
 } from '@/components/ui/surfaces';
@@ -55,6 +50,8 @@ import { getMasterDataDefinition } from '@/modules/master-data/model/catalog';
 import { agencyClient } from '../api/agency-client';
 import { AgencyConnectionsPanel } from './agency-connections-panel';
 import { cooperationLabel } from '../model/presentation';
+import { CorporateMetric, CorporateProfile } from './corporate-profile';
+import './corporate-design.css';
 
 type RequestState =
   'loading' | 'ready' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
@@ -64,14 +61,6 @@ function attribute(record: MasterDataRecord, key: string, fallback = '—') {
   return value === null || value === undefined || value === ''
     ? fallback
     : String(value);
-}
-
-function personType(record: MasterDataRecord) {
-  return attribute(record, 'personType') === 'NATURAL'
-    ? 'حقیقی'
-    : attribute(record, 'personType') === 'LEGAL'
-      ? 'حقوقی'
-      : 'ثبت‌نشده';
 }
 
 export function OrganizationsWorkspace() {
@@ -213,7 +202,8 @@ export function OrganizationsWorkspace() {
         `سازمان با موفقیت ${formMode === 'edit' ? 'ویرایش' : 'ایجاد'} شد.`,
     );
     setFormMode(null);
-    setSelected(undefined);
+    if (profileOpen && selected) setSelected(result.data);
+    else setSelected(undefined);
     await load();
   }
 
@@ -229,391 +219,445 @@ export function OrganizationsWorkspace() {
   }
 
   return (
-    <div className="min-w-0 space-y-5" dir="rtl">
-      <PageHeader
-        actions={
-          <Button
-            disabled={!permissions.includes('master_data.create')}
-            onClick={() => {
-              setSelected(undefined);
-              setFormMode('create');
-            }}
-          >
-            <Plus className="size-4" /> افزودن سازمان
-          </Button>
-        }
-        description="مدیریت همکاری، مخاطبان و پرونده تجاری سازمان‌ها"
-        title="آژانس‌ها و مشتریان سازمانی"
-      />
-
-      {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
-
-      <FilterBar>
-        <label className="min-w-44 space-y-2">
-          <span className="text-sm font-bold">نوع همکاری</span>
-          <Select
-            value={role}
-            onValueChange={(value) => {
-              setPage(1);
-              setRole(value as typeof role);
-            }}
-          >
-            <SelectTrigger aria-label="نوع همکاری">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="AGENCY">آژانس همکار</SelectItem>
-              <SelectItem value="CORPORATE_CUSTOMER">مشتری سازمانی</SelectItem>
-            </SelectContent>
-          </Select>
-        </label>
-        <label className="min-w-64 flex-1 space-y-2">
-          <span className="text-sm font-bold">جست‌وجو</span>
-          <span className="relative block">
-            <Search className="absolute end-3 top-3 size-4 text-muted-foreground" />
-            <Input
-              className="pe-9"
-              onChange={(event) => {
-                setPage(1);
-                setSearch(event.target.value);
-              }}
-              placeholder="نام یا کد سازمان"
-              maxLength={100}
-              value={search}
-            />
-          </span>
-        </label>
-        <label className="min-w-44 space-y-2">
-          <span className="text-sm font-bold">مرتب‌سازی</span>
-          <Select
-            value={sortBy}
-            onValueChange={(value) => {
-              setPage(1);
-              setSortBy(value as MasterDataSortField);
-            }}
-          >
-            <SelectTrigger aria-label="مرتب‌سازی">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="updatedAt">آخرین تغییر</SelectItem>
-              <SelectItem value="name">نام</SelectItem>
-              <SelectItem value="code">کد</SelectItem>
-            </SelectContent>
-          </Select>
-        </label>
-        <label className="min-w-48 space-y-2">
-          <span className="text-sm font-bold">وضعیت سازمان</span>
-          <Select
-            onValueChange={(value) => {
-              setPage(1);
-              setStatus(value as 'all' | MasterDataStatus);
-            }}
-            value={status}
-          >
-            <SelectTrigger aria-label="وضعیت سازمان">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-              <SelectItem value="active">فعال</SelectItem>
-              <SelectItem value="inactive">غیرفعال</SelectItem>
-            </SelectContent>
-          </Select>
-        </label>
-        <Button onClick={() => void load()} type="button" variant="outline">
-          <RefreshCw className="size-4" /> تازه‌سازی
-        </Button>
-      </FilterBar>
-
-      {state === 'loading' ? (
-        <div aria-label="در حال بارگذاری آژانس‌ها" className="space-y-3">
-          {[0, 1, 2].map((item) => (
-            <Skeleton className="h-20 w-full" key={item} />
-          ))}
+    <div className="b2b-design min-w-0" dir="rtl">
+      <div hidden={profileOpen}>
+        <div className="crumb">
+          خانه <span>‹</span> آژانس‌ها و مشتریان سازمانی
         </div>
-      ) : state === 'unauthorized' ? (
-        <EmptyState
-          description="نشست شما معتبر نیست؛ دوباره وارد سامانه شوید."
-          icon={ShieldX}
-          title="ورود مجدد لازم است"
-        />
-      ) : state === 'forbidden' ? (
-        <EmptyState
-          description="اجازه مشاهده اطلاعات پایه سازمان‌ها را ندارید."
-          icon={ShieldX}
-          title="دسترسی وجود ندارد"
-        />
-      ) : state === 'error' ? (
-        <ErrorState
-          action={<Button onClick={() => void load()}>تلاش دوباره</Button>}
-          description="دریافت فهرست سازمان‌ها ناموفق بود."
-          title="خطا در دریافت سازمان‌ها"
-        />
-      ) : state === 'empty' ? (
-        <EmptyState
-          description="با فیلتر فعلی سازمانی پیدا نشد."
-          icon={Building2}
-          title="فهرست سازمان‌ها خالی است"
-        />
-      ) : (
-        <>
-          <div className="grid gap-3 md:hidden">
-            {records.map((record) => (
-              <Card key={record.id} className="min-w-0 space-y-3 p-4">
-                <div className="flex flex-wrap justify-between gap-2">
-                  <strong className="break-words">{record.name}</strong>
-                  <Badge>
-                    {record.status === 'active' ? 'فعال' : 'غیرفعال'}
-                  </Badge>
-                </div>
-                <p className="break-all text-sm" dir="ltr">
-                  {record.code}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {cooperationLabel(record.attributes.roleCodes)}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => void openProfile(record)}
-                  >
-                    مشاهده پرونده
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={!permissions.includes('master_data.update')}
-                    onClick={() => {
-                      setSelected(record);
-                      setFormMode('edit');
-                    }}
-                  >
-                    ویرایش
-                  </Button>
-                </div>
-              </Card>
+        <div className="page-head">
+          <div className="title">
+            <h1>آژانس‌ها و مشتریان سازمانی</h1>
+            <p>
+              مدیریت یکپارچه پرونده همکاری B2B، قرارداد، اعتبار، شرایط تجاری و
+              نمای عملیات
+            </p>
+          </div>
+          <div className="actions">
+            <button
+              className="btn"
+              disabled
+              title="خروجی مجاز سازمان‌ها هنوز در دسترس نیست"
+            >
+              خروجی مجاز
+            </button>
+            <button
+              className="btn primary"
+              disabled={!permissions.includes('master_data.create')}
+              onClick={() => {
+                setSelected(undefined);
+                setFormMode('create');
+              }}
+            >
+              <Plus size={18} />
+              همکاری جدید
+            </button>
+          </div>
+        </div>
+        <section className="kpis">
+          <CorporateMetric
+            label="نتایج فیلتر فعلی"
+            value={
+              state === 'ready' || state === 'empty'
+                ? total.toLocaleString('fa-IR')
+                : '—'
+            }
+            icon={Building2}
+          />
+          <CorporateMetric
+            label="آژانس همکار"
+            icon={Users}
+            tone="purple"
+            note="آمار کل در دسترس نیست"
+          />
+          <CorporateMetric
+            label="مشتری سازمانی"
+            icon={Building2}
+            tone="green"
+            note="آمار کل در دسترس نیست"
+          />
+          <CorporateMetric
+            label="نیازمند اقدام"
+            icon={TriangleAlert}
+            tone="amber"
+            note="در انتظار اتصال"
+          />
+        </section>
+
+        {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
+
+        <div className="directory-filters">
+          <FilterBar>
+            <label className="min-w-44 space-y-2">
+              <span className="text-sm font-bold">نوع همکاری</span>
+              <Select
+                value={role}
+                onValueChange={(value) => {
+                  setPage(1);
+                  setRole(value as typeof role);
+                }}
+              >
+                <SelectTrigger aria-label="نوع همکاری">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="AGENCY">آژانس همکار</SelectItem>
+                  <SelectItem value="CORPORATE_CUSTOMER">
+                    مشتری سازمانی
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+            <label className="min-w-64 flex-1 space-y-2">
+              <span className="text-sm font-bold">جست‌وجو</span>
+              <span className="relative block">
+                <Search className="absolute end-3 top-3 size-4 text-muted-foreground" />
+                <Input
+                  className="pe-9"
+                  onChange={(event) => {
+                    setPage(1);
+                    setSearch(event.target.value);
+                  }}
+                  placeholder="نام یا کد سازمان"
+                  maxLength={100}
+                  value={search}
+                />
+              </span>
+            </label>
+            <label className="min-w-44 space-y-2">
+              <span className="text-sm font-bold">مرتب‌سازی</span>
+              <Select
+                value={sortBy}
+                onValueChange={(value) => {
+                  setPage(1);
+                  setSortBy(value as MasterDataSortField);
+                }}
+              >
+                <SelectTrigger aria-label="مرتب‌سازی">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="updatedAt">آخرین تغییر</SelectItem>
+                  <SelectItem value="name">نام</SelectItem>
+                  <SelectItem value="code">کد</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+            <label className="min-w-48 space-y-2">
+              <span className="text-sm font-bold">وضعیت سازمان</span>
+              <Select
+                onValueChange={(value) => {
+                  setPage(1);
+                  setStatus(value as 'all' | MasterDataStatus);
+                }}
+                value={status}
+              >
+                <SelectTrigger aria-label="وضعیت سازمان">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                  <SelectItem value="active">فعال</SelectItem>
+                  <SelectItem value="inactive">غیرفعال</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+            <Button onClick={() => void load()} type="button" variant="outline">
+              <RefreshCw className="size-4" /> تازه‌سازی
+            </Button>
+          </FilterBar>
+        </div>
+
+        {state === 'loading' ? (
+          <div aria-label="در حال بارگذاری آژانس‌ها" className="space-y-3">
+            {[0, 1, 2].map((item) => (
+              <Skeleton className="h-20 w-full" key={item} />
             ))}
           </div>
-          <Card className="hidden overflow-x-auto md:block">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-muted-foreground">
-                <tr>
-                  {[
-                    'کد',
-                    'نام سازمان',
-                    'نوع',
-                    'وضعیت',
-                    'آخرین تغییر',
-                    'عملیات',
-                  ].map((head) => (
-                    <th className="p-4 text-start" key={head}>
-                      {head}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {records.map((record) => (
-                  <tr className="border-t border-border" key={record.id}>
-                    <td className="p-4 font-mono" dir="ltr">
-                      {record.code}
-                    </td>
-                    <td className="p-4 font-bold">
-                      {record.name}
-                      <p className="mt-1 text-xs font-normal text-muted-foreground">
-                        {cooperationLabel(record.attributes.roleCodes)}
-                      </p>
-                    </td>
-                    <td className="p-4">{personType(record)}</td>
-                    <td className="p-4">
-                      <Badge
-                        className={
-                          record.status === 'active'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-slate-100 text-slate-700'
-                        }
-                      >
-                        {record.status === 'active' ? 'فعال' : 'غیرفعال'}
-                      </Badge>
-                    </td>
-                    <td className="p-4" dir="ltr">
-                      {new Date(record.updatedAt).toLocaleDateString('fa-IR')}
-                    </td>
-                    <td className="p-4">
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => void openProfile(record)}
-                          size="sm"
-                          variant="outline"
-                        >
-                          <Eye className="size-4" /> مشاهده
-                        </Button>
-                        <Button
-                          disabled={!permissions.includes('master_data.update')}
-                          onClick={() => {
-                            setSelected(record);
-                            setFormMode('edit');
-                          }}
-                          size="sm"
-                          variant="outline"
-                        >
-                          <Pencil className="size-4" /> ویرایش
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
-        </>
-      )}
-
-      <div className="flex items-center justify-between gap-3">
-        <PaginationShell
-          currentPage={page}
-          totalLabel={`${total.toLocaleString('fa-IR')} سازمان`}
-        />
-        <div className="flex gap-2">
-          <Button
-            disabled={page <= 1}
-            onClick={() => setPage((current) => Math.max(1, current - 1))}
-            size="sm"
-            variant="outline"
-          >
-            <ChevronRight className="size-4" /> قبلی
-          </Button>
-          <Button
-            disabled={page >= totalPages}
-            onClick={() => setPage((current) => current + 1)}
-            size="sm"
-            variant="outline"
-          >
-            بعدی <ChevronLeft className="size-4" />
-          </Button>
-        </div>
-      </div>
-
-      <Dialog onOpenChange={setProfileOpen} open={profileOpen}>
-        <DialogContent className="start-auto left-1/2 max-h-[90vh] max-w-5xl overflow-y-auto">
-          <DialogTitle>پرونده سازمان</DialogTitle>
-          <DialogDescription>
-            اطلاعات پایه سازمان و مخاطبان مجاز؛ شماره تماس و ایمیل به‌صورت
-            پوشیده نمایش داده می‌شوند.
-          </DialogDescription>
-          {selected ? (
-            <div className="mt-5 space-y-4">
-              <Card className="grid gap-3 p-4 sm:grid-cols-2">
-                <div>
-                  <p className="text-xs text-muted-foreground">نام</p>
-                  <p className="font-bold">{selected.name}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">کد</p>
-                  <p className="font-mono" dir="ltr">
-                    {selected.code}
+        ) : state === 'unauthorized' ? (
+          <EmptyState
+            description="نشست شما معتبر نیست؛ دوباره وارد سامانه شوید."
+            icon={ShieldX}
+            title="ورود مجدد لازم است"
+          />
+        ) : state === 'forbidden' ? (
+          <EmptyState
+            description="اجازه مشاهده اطلاعات پایه سازمان‌ها را ندارید."
+            icon={ShieldX}
+            title="دسترسی وجود ندارد"
+          />
+        ) : state === 'error' ? (
+          <ErrorState
+            action={<Button onClick={() => void load()}>تلاش دوباره</Button>}
+            description="دریافت فهرست سازمان‌ها ناموفق بود."
+            title="خطا در دریافت سازمان‌ها"
+          />
+        ) : state === 'empty' ? (
+          <EmptyState
+            description="با فیلتر فعلی سازمانی پیدا نشد."
+            icon={Building2}
+            title="فهرست سازمان‌ها خالی است"
+          />
+        ) : (
+          <>
+            <div className="grid gap-3 md:hidden">
+              {records.map((record) => (
+                <Card key={record.id} className="min-w-0 space-y-3 p-4">
+                  <div className="flex flex-wrap justify-between gap-2">
+                    <strong className="break-words">{record.name}</strong>
+                    <Badge>
+                      {record.status === 'active' ? 'فعال' : 'غیرفعال'}
+                    </Badge>
+                  </div>
+                  <p className="break-all text-sm" dir="ltr">
+                    {record.code}
                   </p>
-                </div>
-              </Card>
-              <Card className="space-y-3 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-bold">تماس‌های سازمان</p>
-                  <Button
-                    size="sm"
-                    disabled={!permissions.includes('master_data.create')}
-                    onClick={() => setContactForm({ mode: 'create' })}
-                  >
-                    افزودن مخاطب
-                  </Button>
-                </div>
-                {notice ? (
-                  <Alert title="نتیجه عملیات" description={notice} />
-                ) : null}
-                {contactsError ? (
-                  <Alert
-                    title="وضعیت مخاطبان"
-                    description={contactsError}
-                    tone="warning"
-                  />
-                ) : null}
-                {contactsLoading ? (
-                  <Skeleton className="h-16 w-full" />
-                ) : contacts.length ? (
-                  contacts.map((contact) => (
-                    <div
-                      className="grid gap-1 rounded-xl border p-3 sm:grid-cols-3"
-                      key={contact.id}
-                    >
-                      <span className="font-semibold">{contact.name}</span>
-                      <span dir="ltr">{attribute(contact, 'phoneMasked')}</span>
-                      <span dir="ltr">{attribute(contact, 'emailMasked')}</span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={!permissions.includes('master_data.update')}
-                        onClick={() =>
-                          setContactForm({ mode: 'edit', record: contact })
-                        }
-                      >
-                        ویرایش مخاطب
-                      </Button>
-                    </div>
-                  ))
-                ) : !contactsError ? (
                   <p className="text-sm text-muted-foreground">
-                    تماس ثبت‌شده‌ای وجود ندارد.
+                    {cooperationLabel(record.attributes.roleCodes)}
                   </p>
-                ) : null}
-                {contactTotal > 100 ? (
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={contactsLoading || contactPage <= 1}
-                      onClick={() =>
-                        void openProfile(selected, contactPage - 1)
-                      }
+                      onClick={() => void openProfile(record)}
                     >
-                      مخاطبان قبلی
+                      مشاهده پرونده
                     </Button>
-                    <span className="text-xs">
-                      صفحه {contactPage.toLocaleString('fa-IR')} از{' '}
-                      {Math.ceil(contactTotal / 100).toLocaleString('fa-IR')}
-                    </span>
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={
-                        contactsLoading || contactPage * 100 >= contactTotal
-                      }
-                      onClick={() =>
-                        void openProfile(selected, contactPage + 1)
-                      }
+                      disabled={!permissions.includes('master_data.update')}
+                      onClick={() => {
+                        setSelected(record);
+                        setFormMode('edit');
+                      }}
                     >
-                      مخاطبان بعدی
+                      ویرایش
                     </Button>
                   </div>
-                ) : null}
-              </Card>
-              {String(selected.attributes.roleCodes ?? '').includes(
-                'AGENCY',
-              ) ? (
-                <AgencyConnectionsPanel
-                  key={selected.id}
-                  organizationId={selected.id}
-                />
-              ) : (
-                <Alert
-                  title="پرونده تجاری در انتظار اتصال"
-                  description="اطلاعات پایه و مخاطبان این مشتری سازمانی قابل مدیریت است. اتصال پروفایل عملیاتی مشتریان سازمانی هنوز آماده نیست."
-                />
-              )}
+                </Card>
+              ))}
             </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+            <div className="directory-table hidden overflow-x-auto md:block">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 text-muted-foreground">
+                  <tr>
+                    {[
+                      'سازمان',
+                      'نوع طرف',
+                      'کد سازمان',
+                      'مدیر حساب',
+                      'قرارداد فعال',
+                      'اعتبار قابل استفاده',
+                      'وضعیت',
+                      'هشدار',
+                      'عملیات',
+                    ].map((head) => (
+                      <th className="p-4 text-start" key={head}>
+                        {head}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {records.map((record) => (
+                    <tr className="border-t border-border" key={record.id}>
+                      <td>
+                        <div className="org-cell">
+                          <div className="avatar">
+                            {record.name.slice(0, 1)}
+                          </div>
+                          <div>
+                            <b>{record.name}</b>
+                            <small>شناسه ملی در دسترس نیست</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="badge purple">
+                          {cooperationLabel(record.attributes.roleCodes)}
+                        </span>
+                      </td>
+                      <td>
+                        <bdi>{record.code}</bdi>
+                      </td>
+                      <td className="unavailable-value">در دسترس نیست</td>
+                      <td className="unavailable-value">در دسترس نیست</td>
+                      <td className="unavailable-value">در دسترس نیست</td>
+                      <td className="p-4">
+                        <Badge
+                          className={
+                            record.status === 'active'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-slate-100 text-slate-700'
+                          }
+                        >
+                          {record.status === 'active' ? 'فعال' : 'غیرفعال'}
+                        </Badge>
+                      </td>
+                      <td className="unavailable-value">در دسترس نیست</td>
+                      <td className="p-4">
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => void openProfile(record)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Eye className="size-4" /> مشاهده پرونده
+                          </Button>
+                          <Button
+                            disabled={
+                              !permissions.includes('master_data.update')
+                            }
+                            onClick={() => {
+                              setSelected(record);
+                              setFormMode('edit');
+                            }}
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Pencil className="size-4" /> ویرایش
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        <div className="flex items-center justify-between gap-3">
+          <PaginationShell
+            currentPage={page}
+            totalLabel={`${total.toLocaleString('fa-IR')} سازمان`}
+          />
+          <div className="flex gap-2">
+            <Button
+              disabled={page <= 1}
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              size="sm"
+              variant="outline"
+            >
+              <ChevronRight className="size-4" /> قبلی
+            </Button>
+            <Button
+              disabled={page >= totalPages}
+              onClick={() => setPage((current) => current + 1)}
+              size="sm"
+              variant="outline"
+            >
+              بعدی <ChevronLeft className="size-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+      {profileOpen && selected ? (
+        <CorporateProfile
+          key={selected.id}
+          organization={selected}
+          onClose={() => {
+            ++contactRequestId.current;
+            setProfileOpen(false);
+            setSelected(undefined);
+            setContactForm(undefined);
+          }}
+          canEdit={permissions.includes('master_data.update')}
+          onEdit={() => setFormMode('edit')}
+          contacts={
+            <Card className="space-y-3 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-bold">تماس‌های سازمان</p>
+                <Button
+                  size="sm"
+                  disabled={!permissions.includes('master_data.create')}
+                  onClick={() => setContactForm({ mode: 'create' })}
+                >
+                  افزودن مخاطب
+                </Button>
+              </div>
+              {notice ? (
+                <Alert title="نتیجه عملیات" description={notice} />
+              ) : null}
+              {contactsError ? (
+                <Alert
+                  title="وضعیت مخاطبان"
+                  description={contactsError}
+                  tone="warning"
+                />
+              ) : null}
+              {contactsLoading ? (
+                <Skeleton className="h-16 w-full" />
+              ) : contacts.length ? (
+                contacts.map((contact) => (
+                  <div
+                    className="grid gap-1 rounded-xl border p-3 sm:grid-cols-3"
+                    key={contact.id}
+                  >
+                    <span className="font-semibold">{contact.name}</span>
+                    <span dir="ltr">{attribute(contact, 'phoneMasked')}</span>
+                    <span dir="ltr">{attribute(contact, 'emailMasked')}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={!permissions.includes('master_data.update')}
+                      onClick={() =>
+                        setContactForm({ mode: 'edit', record: contact })
+                      }
+                    >
+                      ویرایش مخاطب
+                    </Button>
+                  </div>
+                ))
+              ) : !contactsError ? (
+                <p className="text-sm text-muted-foreground">
+                  تماس ثبت‌شده‌ای وجود ندارد.
+                </p>
+              ) : null}
+              {contactTotal > 100 ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={contactsLoading || contactPage <= 1}
+                    onClick={() => void openProfile(selected, contactPage - 1)}
+                  >
+                    مخاطبان قبلی
+                  </Button>
+                  <span className="text-xs">
+                    صفحه {contactPage.toLocaleString('fa-IR')} از{' '}
+                    {Math.ceil(contactTotal / 100).toLocaleString('fa-IR')}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={
+                      contactsLoading || contactPage * 100 >= contactTotal
+                    }
+                    onClick={() => void openProfile(selected, contactPage + 1)}
+                  >
+                    مخاطبان بعدی
+                  </Button>
+                </div>
+              ) : null}
+            </Card>
+          }
+          operations={(view) =>
+            String(selected.attributes.roleCodes ?? '').includes('AGENCY') ? (
+              <AgencyConnectionsPanel
+                key={selected.id}
+                organizationId={selected.id}
+                view={view}
+              />
+            ) : (
+              <Alert
+                title="پرونده تجاری در انتظار اتصال"
+                description="اطلاعات پایه و مخاطبان این مشتری سازمانی قابل مدیریت است. اتصال پروفایل عملیاتی مشتریان سازمانی هنوز آماده نیست."
+              />
+            )
+          }
+        />
+      ) : null}
 
       {contactForm && selected ? (
         <MasterDataLiveForm
@@ -638,7 +682,7 @@ export function OrganizationsWorkspace() {
           onOpenChange={(open) => {
             if (!open) {
               setFormMode(null);
-              setSelected(undefined);
+              if (!profileOpen) setSelected(undefined);
             }
           }}
           onPersist={persist}
