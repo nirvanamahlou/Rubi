@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-CONTRACT-ONLY-FLIGHT-0907 — COMPLETE_LOCAL
+
+Sales now supports a contract-only floating flight independently for outbound/return, alongside actual catalog offers. Version-1 details persist in existing Sales service metadata and the reservation request snapshot, not Ticket Management or inventory selections. Backend validates source exclusivity, route and timing; manual-only confirmation does not call the inventory reservation adapter. Print/PDF and Reservations ticket reopening include the pending-reservation flight. 59 public-contract, 54 API Sales and 181 Web Sales/Reservations tests, scoped lint/typechecks and API/36-route Web builds pass. Synthetic browser and both six-person one-page PDFs verified. Web3100/API4000 and existing database connectivity restored September 8. No migration, dependency, permissions, real records or public push changed. See docs/tasks/SALES-CONTRACT-ONLY-FLIGHT-0907.md.
+
 ## SALES-CONTRACT-QR-PLACEHOLDER-0907 — COMPLETE_LOCAL
 
 User explicitly requested a non-working QR now. Print/PDF footer now has a sharp black/white QR at bottom right, with a small pending-server notice and existing contact details at left. QR contains only fixed pending-status text, no personal data, URL or access credential. It is not contract verification and existing copies will need regeneration after secure public-server viewing is implemented. 166 Sales tests, scoped lint/typecheck and 36-route build pass; all five synthetic PDF pages visually reviewed (six-person one-page layout retained). Web3100 updated; Web/API 200. No API, schema, dependency, IAM, real-data or public-push change. See docs/tasks/SALES-CONTRACT-QR-PLACEHOLDER-0907.md.

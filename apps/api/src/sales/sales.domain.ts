@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { salesAccommodationValid } from '@rubi/contracts';
+import { salesAccommodationValid, salesContractFlights } from '@rubi/contracts';
 import {
   servicePriceComponents,
   validatePassengerPackagePrices,
@@ -231,7 +231,18 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
         'تخصیص خدمت به مسافر معتبر نیست.',
       );
   }
-  const tickets = input.ticketSelections ?? [];
+  let tickets: ReturnType<typeof salesContractFlights>;
+  try {
+    tickets = salesContractFlights(
+      input.services,
+      input.ticketSelections ?? [],
+    );
+  } catch (error) {
+    throw new SalesDomainError(
+      'TICKET_NOT_AVAILABLE',
+      error instanceof Error ? error.message : 'اطلاعات بلیت شناور معتبر نیست.',
+    );
+  }
   for (const ticket of tickets) {
     const service = input.services.find(
       (item) => item.clientKey === ticket.serviceClientKey,

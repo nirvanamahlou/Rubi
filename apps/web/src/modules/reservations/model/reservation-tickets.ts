@@ -1,4 +1,5 @@
 import type { SalesReservationRequestV1 } from '@rubi/contracts';
+import { salesContractFlights } from '@rubi/contracts';
 import type { FlightTicketSheetData } from '@/modules/sales/public/tickets';
 
 export function reservationTickets(
@@ -11,7 +12,10 @@ export function reservationTickets(
         passenger.serviceClientKeys.includes(service.clientKey),
       );
       const flights = assigned.filter((service) => service.kind === 'FLIGHT');
-      const offers = (snapshot.ticketSelections ?? [])
+      const offers = salesContractFlights(
+        snapshot.serviceSelections,
+        snapshot.ticketSelections ?? [],
+      )
         .filter((ticket) =>
           flights.some(
             (service) => service.clientKey === ticket.serviceClientKey,
@@ -25,7 +29,8 @@ export function reservationTickets(
               : 1,
         )
         .map((ticket) => ({
-          id: `${ticket.serviceClientKey}-${ticket.offerId}`,
+          id: `${ticket.serviceClientKey}-${ticket.offerId ?? 'contract-only'}`,
+          contractOnly: ticket.source === 'CONTRACT_ONLY',
           originId: ticket.originId,
           destinationId: ticket.destinationId,
           departureAt: ticket.departureAt,

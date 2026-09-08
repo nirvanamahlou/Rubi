@@ -2,6 +2,9 @@ import {
   servicePriceComponents,
   SALES_ACCOMMODATION_LABELS,
   salesAccommodationValid,
+  contractFlightMetadata,
+  salesContractOnlyFlights,
+  type SalesFlightSnapshotV1,
   type SalesServicePricingV1,
 } from '@rubi/contracts';
 import type {
@@ -71,6 +74,7 @@ export const salesSteps = [
 ] as const;
 
 export interface SalesFormState {
+  contractFlights?: Partial<Record<SalesTicketDirection, ContractFlightDraft>>;
   servicePricing?: Record<string, SalesServicePricingV1[]>;
   customerKind?: 'person' | 'organization';
   customerOrganizationId?: string;
@@ -136,6 +140,116 @@ export interface SalesFormState {
   pricingNotes: string;
   passengerPrices?: Record<string, SalesMoney[]>;
   passengerAccommodations?: Record<string, SalesAccommodationKind>;
+}
+
+export interface ContractFlightDraft {
+  departureAt: string;
+  arrivalAt: string;
+  carrierName: string;
+  serviceNumber: string;
+  cabinClassCode: 'ECONOMY' | 'BUSINESS' | 'FIRST';
+}
+
+export function salesFlightSelection(
+  state: SalesFormState,
+  direction: SalesTicketDirection,
+): SalesFlightSnapshotV1 | undefined {
+  if (!salesDirections(state, 'FLIGHT').includes(direction)) return undefined;
+  const manual = state.contractFlights?.[direction];
+  const serviceClientKey = 'flight-' + direction.toLowerCase();
+  if (manual) {
+    try {
+      const utc = (value: string) =>
+        new Date(
+          /(?:Z|[+-]\d{2}:\d{2})$/.test(value) ? value : value + '+03:30',
+        ).toISOString();
+      return salesContractOnlyFlights([
+        {
+          kind: 'FLIGHT',
+          clientKey: serviceClientKey,
+          titleSnapshot: 'بلیت شناور',
+          status: 'NEEDS_RESERVATION_CONFIRMATION',
+          metadata: contractFlightMetadata({
+            version: 1,
+            direction,
+            originId:
+              direction === 'OUTBOUND' ? state.originId : state.destinationId,
+            destinationId:
+              direction === 'OUTBOUND' ? state.destinationId : state.originId,
+            departureAt: utc(manual.departureAt),
+            arrivalAt: utc(manual.arrivalAt),
+            carrierNameSnapshot: manual.carrierName.trim(),
+            serviceNumberSnapshot: manual.serviceNumber.trim(),
+            cabinClassCode: manual.cabinClassCode,
+          }),
+        },
+      ])[0];
+    } catch {
+      return undefined;
+    }
+  }
+  const offer =
+    direction === 'OUTBOUND' ? state.outboundOffer : state.returnOffer;
+  return offer
+    ? {
+        source: 'CATALOG',
+        offerId: offer.id,
+        serviceClientKey,
+        direction,
+        originId: offer.originId,
+        destinationId: offer.destinationId,
+        departureAt: offer.departureAt,
+        arrivalAt: offer.arrivalAt,
+        carrierNameSnapshot: offer.carrierName,
+        serviceNumberSnapshot: offer.serviceNumber,
+        cabinClassCode: offer.cabinClassCode,
+      }
+    : undefined;
+}
+
+export function salesFlightsValid(state: SalesFormState): boolean {
+  const directions = salesDirections(state, 'FLIGHT');
+  if (
+    directions.some((direction) => {
+      const flight = salesFlightSelection(state, direction);
+      if (!flight) return true;
+      return (
+        flight.source === 'CATALOG' &&
+        !salesOfferHasCapacity(
+          direction === 'OUTBOUND' ? state.outboundOffer : state.returnOffer,
+          salesPassengerCounts(state).seated,
+        )
+      );
+    })
+  )
+    return false;
+  const out = salesFlightSelection(state, 'OUTBOUND'),
+    back = salesFlightSelection(state, 'RETURN');
+  return (
+    !out || !back || Date.parse(back.departureAt) >= Date.parse(out.arrivalAt)
+  );
+}
+
+export function patchContractFlight(
+  state: SalesFormState,
+  direction: SalesTicketDirection,
+  flight: ContractFlightDraft | undefined,
+): Partial<SalesFormState> {
+  const contractFlights = { ...state.contractFlights };
+  if (flight) contractFlights[direction] = flight;
+  else delete contractFlights[direction];
+  return {
+    contractFlights,
+    ...(direction === 'OUTBOUND'
+      ? { outboundOffer: undefined }
+      : { returnOffer: undefined }),
+    ticket: {
+      ...state.ticket,
+      ...(direction === 'OUTBOUND'
+        ? { outboundOfferId: '' }
+        : { returnOfferId: '' }),
+    },
+  };
 }
 
 export const emptySalesForm: SalesFormState = {
@@ -431,8 +545,10 @@ export function withSalesHotelDates(
       salesDirections(state, 'FLIGHT').includes(
         field === 'checkIn' ? 'OUTBOUND' : 'RETURN',
       )
-        ? (field === 'checkIn' ? state.outboundOffer : state.returnOffer)
-            ?.departureAt
+        ? salesFlightSelection(
+            state,
+            field === 'checkIn' ? 'OUTBOUND' : 'RETURN',
+          )?.departureAt
         : undefined,
       field === 'checkIn' ? 1 : -1,
     );
@@ -506,6 +622,7 @@ export function toggleSalesDirectionalService(
       ? {
           outboundOffer: undefined,
           returnOffer: undefined,
+          contractFlights: {},
           ticket: { ...state.ticket, outboundOfferId: '', returnOfferId: '' },
         }
       : {}),
@@ -513,13 +630,16 @@ export function toggleSalesDirectionalService(
 }
 
 export function salesReturnSearchFrom(state: SalesFormState): string {
-  return state.outboundOffer?.departureAt.slice(0, 10) || state.departureDate;
+  return (
+    salesFlightSelection(state, 'OUTBOUND')?.departureAt.slice(0, 10) ||
+    state.departureDate
+  );
 }
 
 export function salesTravelDate(state: SalesFormState): string {
   return (
-    state.outboundOffer?.departureAt.slice(0, 10) ||
-    state.returnOffer?.departureAt.slice(0, 10) ||
+    salesFlightSelection(state, 'OUTBOUND')?.departureAt.slice(0, 10) ||
+    salesFlightSelection(state, 'RETURN')?.departureAt.slice(0, 10) ||
     (state.serviceKinds.includes('HOTEL') ? state.hotel.checkIn : '') ||
     state.departureDate
   );
@@ -569,6 +689,21 @@ export function salesPayload(
             },
           ],
   );
+  for (const direction of salesDirections(state, 'FLIGHT')) {
+    if (!state.contractFlights?.[direction]) continue;
+    const flight = salesFlightSelection(state, direction);
+    if (!flight || flight.source !== 'CONTRACT_ONLY')
+      throw new Error('اطلاعات بلیت شناور کامل نیست.');
+    const service = services.find(
+      (item) => item.clientKey === flight.serviceClientKey,
+    )!;
+    service.status = 'NEEDS_RESERVATION_CONFIRMATION';
+    service.titleSnapshot += ' — شناور (فقط این قرارداد)';
+    service.metadata = {
+      ...service.metadata,
+      ...contractFlightMetadata({ ...flight, version: 1 }),
+    };
+  }
   if (state.servicePricing)
     for (const service of services) {
       if (service.kind === 'TRANSFER') {
@@ -581,7 +716,8 @@ export function salesPayload(
   const ticketSelections = state.serviceKinds.includes('FLIGHT')
     ? [
         ...(salesDirections(state, 'FLIGHT').includes('OUTBOUND') &&
-        state.ticket.outboundOfferId
+        state.ticket.outboundOfferId &&
+        !state.contractFlights?.OUTBOUND
           ? [
               {
                 serviceClientKey: 'flight-outbound',
@@ -608,7 +744,8 @@ export function salesPayload(
             ]
           : []),
         ...(salesDirections(state, 'FLIGHT').includes('RETURN') &&
-        state.ticket.returnOfferId
+        state.ticket.returnOfferId &&
+        !state.contractFlights?.RETURN
           ? [
               {
                 serviceClientKey: 'flight-return',

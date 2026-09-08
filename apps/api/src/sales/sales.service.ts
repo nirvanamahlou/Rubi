@@ -591,12 +591,14 @@ export class SalesService {
     const seatCount = presented.passengersDetail.filter(
       ({ ageCategory }) => ageCategory !== 'INF',
     ).length;
-    const ticketCheck = await this.tickets.reserve(
-      presented.ticketSelections,
-      row.branchId,
-      row.id,
-      seatCount,
-    );
+    const ticketCheck = presented.ticketSelections.length
+      ? await this.tickets.reserve(
+          presented.ticketSelections,
+          row.branchId,
+          row.id,
+          seatCount,
+        )
+      : { available: true, unavailableOfferIds: [], createdAllocationIds: [] };
     if (!ticketCheck.available)
       throw new ConflictException({
         code: 'TICKET_CAPACITY_INSUFFICIENT',

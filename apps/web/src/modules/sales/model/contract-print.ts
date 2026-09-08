@@ -2,6 +2,7 @@ import {
   moneyDecimal,
   moneyUnits,
   SALES_ACCOMMODATION_LABELS,
+  salesContractFlights,
   type SalesContractOutputV1,
 } from '@rubi/contracts';
 import { contractPendingQrHtml } from './contract-pending-qr';
@@ -129,12 +130,12 @@ export function contractPrintHtml(
       return `<tr><td>${i + 1}</td><td>${e(p.displayNameSnapshot)}</td><td>${{ ADT: 'بزرگسال', CHD: 'کودک', INF: 'نوزاد' }[p.ageCategory]}</td><td>${allocated.some((s) => s.kind === 'VISA') ? 'دارد' : '—'}</td><td>${allocated.some((s) => s.kind === 'HOTEL') ? e(accommodation) : '—'}</td><td class="contract-total">${p.agreedPrices?.length ? renderPrices(false) : 'ثبت نشده'}</td><td>${renderPrices(true)}</td>${agency ? '<td>ثبت نشده</td>' : ''}<td>—</td></tr>`;
     })
     .join('');
-  const flights = c.ticketSelections
+  const flights = salesContractFlights(c.servicesDetail, c.ticketSelections)
     .map((t) => {
       const business =
         c.servicesDetail.find((s) => s.clientKey === t.serviceClientKey)
           ?.metadata?.businessOutput === true;
-      return `<tr><td>${e(name(t.originId))} ← ${e(name(t.destinationId))}<small>${t.direction === 'RETURN' ? 'برگشت' : 'رفت'}</small></td><td>${e(t.carrierNameSnapshot)}</td><td><bdi>${e(t.serviceNumberSnapshot)}</bdi></td><td>${e(date(t.departureAt))}</td><td>${e(time(t.departureAt))}</td><td>${e(business ? 'BUSINESS' : t.cabinClassCode)}</td></tr>`;
+      return `<tr><td>${e(name(t.originId))} ← ${e(name(t.destinationId))}<small>${t.direction === 'RETURN' ? 'برگشت' : 'رفت'}${t.source === 'CONTRACT_ONLY' ? ' · شناور، نیازمند تأیید رزرو' : ''}</small></td><td>${e(t.carrierNameSnapshot)}</td><td><bdi>${e(t.serviceNumberSnapshot)}</bdi></td><td>${e(date(t.departureAt))}</td><td>${e(time(t.departureAt))}</td><td>${e(business ? 'BUSINESS' : t.cabinClassCode)}</td></tr>`;
     })
     .join('');
   const transfers = c.servicesDetail
@@ -142,10 +143,17 @@ export function contractPrintHtml(
     .map((s) => s.titleSnapshot)
     .join('، ');
   const niyayeshIssuer = output.company.code === 'NIYAYESH_SEIR_SAHAR';
-  const contactIcon = (path: string) => `<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
-  const websiteIcon = contactIcon('<circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M5 7h14M5 17h14"/>');
-  const phoneIcon = contactIcon('<path d="M5 3h4l2 5-3 2c1 3 3 5 6 6l2-3 5 2v4c0 2-2 2-4 2C9 20 4 15 3 7c0-2 0-4 2-4Z"/>');
-  const emailIcon = contactIcon('<rect x="3" y="5" width="18" height="14" rx="1"/><path d="m3 6 9 7 9-7"/>');
+  const contactIcon = (path: string) =>
+    `<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
+  const websiteIcon = contactIcon(
+    '<circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M5 7h14M5 17h14"/>',
+  );
+  const phoneIcon = contactIcon(
+    '<path d="M5 3h4l2 5-3 2c1 3 3 5 6 6l2-3 5 2v4c0 2-2 2-4 2C9 20 4 15 3 7c0-2 0-4 2-4Z"/>',
+  );
+  const emailIcon = contactIcon(
+    '<rect x="3" y="5" width="18" height="14" rx="1"/><path d="m3 6 9 7 9-7"/>',
+  );
   const logo =
     refs.logoDataUrl &&
     /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(refs.logoDataUrl)

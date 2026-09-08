@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-CONTRACT-ONLY-FLIGHT-0907 — PC-A — COMPLETE_LOCAL
+
+- Completed contract-only outbound/return editor and additive versioned Sales snapshot with route/time/source validation, no Ticket Management publish/allocation, reservation reopening and print/PDF support. 59 public-contract, 54 API Sales and 181 Web Sales/Reservations tests pass, with scoped lint/typechecks and API/36-route Web production builds. Synthetic browser and both six-passenger one-page PDFs verified. Web3100/API4000 updated; database SELECT 1 passed after restoring existing Docker runtime September 8. No migration/dependency/IAM/real-data/public-push change. Scoped reservation released; see docs/tasks/SALES-CONTRACT-ONLY-FLIGHT-0907.md.
+
+- Reserve Sales form/model/print/ticket presentation, Sales validation/confirmation tests, Reservations ticket snapshot consumer, additive Sales public metadata helpers/tests and central/task docs from e1e8532 on the current local Sales branch. Persist versioned contract-only flight details in the existing Sales service metadata snapshot, not catalog selections; no fake offer ID, catalog publish or capacity allocation. Validate mutually exclusive published/manual sources and route/timing on the server, retain pending-reservation state, ownership, audit and idempotency. Published-ticket behavior unchanged. No migration, dependency, producer Master Data edits, IAM grants, real business mutations or public push.
+
 ## SALES-CONTRACT-QR-PLACEHOLDER-0907 — PC-A — COMPLETE_LOCAL
 
 - Added explicitly pending, offline vector QR to bottom-right print/PDF footer; contacts/notices preserved. 166 Sales tests, scoped lint/typecheck, 36-route production build and all five synthetic PDF pages pass (2/6/agency-6: one page; 42: two). Web3100 updated; Web/API health 200. Placeholder is non-sensitive plain text, not an online viewer; future secure server links require regenerated output. No API/schema/dependency/IAM/data/public-push change. Scoped reservation released; see docs/tasks/SALES-CONTRACT-QR-PLACEHOLDER-0907.md.

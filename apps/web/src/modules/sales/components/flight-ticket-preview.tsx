@@ -8,7 +8,7 @@ import { Plane } from 'lucide-react';
 import type { MasterDataRecord, TicketOfferV1 } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
 import type { SalesFormState } from '../model/sales-form';
-import { salesDirections } from '../model/sales-form';
+import { salesDirections, salesFlightSelection } from '../model/sales-form';
 import styles from './flight-ticket-preview.module.css';
 
 export interface FlightTicketSheetData {
@@ -23,7 +23,11 @@ export interface FlightTicketSheetData {
     | 'departureAt'
     | 'carrierName'
     | 'serviceNumber'
-  > & { cabinClassCode: string; businessOutput?: boolean })[];
+  > & {
+    cabinClassCode: string;
+    businessOutput?: boolean;
+    contractOnly?: boolean;
+  })[];
   transferDirections: readonly string[];
 }
 
@@ -40,14 +44,23 @@ export function FlightTicketDocument({
     const record = cities.find((item) => item.id === id);
     return String(record?.attributes.englishName || record?.name || '—');
   };
-  const offers = [
-    salesDirections(state, 'FLIGHT').includes('OUTBOUND')
-      ? state.outboundOffer
-      : undefined,
-    salesDirections(state, 'FLIGHT').includes('RETURN')
-      ? state.returnOffer
-      : undefined,
-  ].filter((item) => item !== undefined);
+  const offers = salesDirections(state, 'FLIGHT').flatMap((direction) => {
+    const flight = salesFlightSelection(state, direction);
+    return flight
+      ? [
+          {
+            id: flight.serviceClientKey,
+            originId: flight.originId,
+            destinationId: flight.destinationId,
+            departureAt: flight.departureAt,
+            carrierName: flight.carrierNameSnapshot,
+            serviceNumber: flight.serviceNumberSnapshot,
+            cabinClassCode: flight.cabinClassCode,
+            contractOnly: flight.source === 'CONTRACT_ONLY',
+          },
+        ]
+      : [];
+  });
   return (
     <FlightTicketSheet
       data={{
@@ -79,6 +92,7 @@ export function FlightTicketSheet({
     offers.length > 0 &&
     offers.every(
       (offer) =>
+        !offer.contractOnly &&
         /^TEST-AYT-0[1-4]$/.test(offer.serviceNumber) &&
         /^TEST AIRLINE(?:\s|$)/i.test(offer.carrierName.trim()),
     );
@@ -184,15 +198,31 @@ export function FlightTicketSheet({
             <tbody>
               {offers.map((offer) => (
                 <tr key={offer.id}>
-                  <td>{offer.departureAt.slice(0, 10)}</td>
+                  <td>
+                    {new Intl.DateTimeFormat('en-CA', {
+                      timeZone: 'Asia/Tehran',
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                    }).format(new Date(offer.departureAt))}
+                  </td>
                   <td>{offer.serviceNumber}</td>
                   <td>{cityName(offer.originId)}</td>
                   <td>{cityName(offer.destinationId)}</td>
-                  <td>{offer.departureAt.slice(11, 16)}</td>
+                  <td>
+                    {new Intl.DateTimeFormat('en-GB', {
+                      timeZone: 'Asia/Tehran',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: false,
+                    }).format(new Date(offer.departureAt))}
+                  </td>
                   <td>
                     {offer.businessOutput ? 'BUSINESS' : offer.cabinClassCode}
                   </td>
-                  <td>DRAFT</td>
+                  <td>
+                    {offer.contractOnly ? 'PENDING RESERVATION' : 'DRAFT'}
+                  </td>
                   <td>—</td>
                 </tr>
               ))}
@@ -205,9 +235,9 @@ export function FlightTicketSheet({
           <i>2</i> NOTICE
         </h3>
         <p>
-          NOTICE 1: This preview is not an issued ticket. Reservation
-          confirmation, ticket number, airport codes and baggage must come from
-          the issuing system.
+          All times are shown in Tehran time. NOTICE 1: This preview is not an
+          issued ticket. Reservation confirmation, ticket number, airport codes
+          and baggage must come from the issuing system.
         </p>
         <p dir="rtl">
           اطلاعات صدور در این پیش‌نمایش تأیید نشده‌اند. درج بیزینس فقط برچسب

@@ -27,6 +27,7 @@ import { Alert, Badge, Card } from '@/components/ui/surfaces';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { salesApi } from '../api/client';
 import { TicketOfferPicker } from './ticket-offer-picker';
+import { ContractFlightEditor } from './contract-flight-editor';
 import { SearchableReference } from './searchable-reference';
 import { FlightTicketPreview } from './flight-ticket-preview';
 import { SalesPeopleSheet } from './sales-people-sheet';
@@ -37,6 +38,9 @@ import {
 } from './flight-date-range';
 import {
   emptySalesForm,
+  salesFlightSelection,
+  salesFlightsValid,
+  patchContractFlight,
   salesPayload,
   salesSteps,
   salesPassengerAgeLabel,
@@ -175,6 +179,7 @@ export function SalesContractForm() {
             ? {
                 outboundOffer: undefined,
                 returnOffer: undefined,
+                contractFlights: {},
                 ticket: {
                   ...current.ticket,
                   outboundOfferId: '',
@@ -313,6 +318,7 @@ export function SalesContractForm() {
         ? {
             outboundOffer: undefined,
             returnOffer: undefined,
+            contractFlights: {},
             ticket: { ...state.ticket, outboundOfferId: '', returnOfferId: '' },
           }
         : {}),
@@ -426,13 +432,7 @@ export function SalesContractForm() {
     if (step === 1) {
       if (activeDetail === 'FLIGHT')
         return (
-          (!salesDirections(state, 'FLIGHT').includes('OUTBOUND') ||
-            salesOfferHasCapacity(
-              state.outboundOffer,
-              passengerCounts.seated,
-            )) &&
-          (!salesDirections(state, 'FLIGHT').includes('RETURN') ||
-            salesOfferHasCapacity(state.returnOffer, passengerCounts.seated)) &&
+          salesFlightsValid(state) &&
           (!state.serviceKinds.includes('HOTEL') || salesHotelValid(state))
         );
       if (activeDetail === 'HOTEL') return salesHotelValid(state);
@@ -832,132 +832,175 @@ export function SalesContractForm() {
                   {flightDirections.includes('OUTBOUND') ? (
                     <section className="grid gap-3 min-w-0">
                       <h3 className="font-bold">بلیت رفت</h3>
-                      <FlightDateRangeFilter
-                        value={flightRange}
-                        onChange={setFlightRange}
-                      />
-                      <TicketOfferPicker
-                        originLabel={
-                          references.cities.find(
-                            (city) => city.id === state.originId,
-                          )?.name ?? 'مبدأ'
-                        }
-                        destinationLabel={
-                          references.cities.find(
-                            (city) => city.id === state.destinationId,
-                          )?.name ?? 'مقصد'
-                        }
-                        key={`out-${state.originId}-${state.destinationId}-${flightRange.from}-${flightRange.to}`}
-                        query={{
-                          originId: state.originId,
-                          destinationId: state.destinationId,
-                          departureFrom:
-                            flightRange.from &&
-                            flightRange.from > futureFrom.slice(0, 10)
-                              ? flightRange.from
-                              : futureFrom,
-                          ...(flightRange.to
-                            ? { departureTo: flightRange.to }
-                            : {}),
-                        }}
-                        requiredSeats={passengerCounts.seated}
-                        selectedId={state.ticket.outboundOfferId}
-                        onSelect={(offer) =>
-                          patchState({
-                            outboundOffer: offer,
-                            returnOffer: undefined,
-                            ticket: {
-                              ...state.ticket,
-                              outboundOfferId: offer.id,
-                              outboundDepartureAt: offer.departureAt,
-                              outboundArrivalAt: offer.arrivalAt,
-                              outboundNumber: offer.serviceNumber,
-                              carrier: offer.carrierName,
-                              returnOfferId: '',
-                            },
-                          })
+                      <ContractFlightEditor
+                        value={state.contractFlights?.OUTBOUND}
+                        onChange={(value) =>
+                          patchState(
+                            patchContractFlight(state, 'OUTBOUND', value),
+                          )
                         }
                       />
+                      {!state.contractFlights?.OUTBOUND ? (
+                        <>
+                          <FlightDateRangeFilter
+                            value={flightRange}
+                            onChange={setFlightRange}
+                          />
+                          <TicketOfferPicker
+                            originLabel={
+                              references.cities.find(
+                                (city) => city.id === state.originId,
+                              )?.name ?? 'مبدأ'
+                            }
+                            destinationLabel={
+                              references.cities.find(
+                                (city) => city.id === state.destinationId,
+                              )?.name ?? 'مقصد'
+                            }
+                            key={`out-${state.originId}-${state.destinationId}-${flightRange.from}-${flightRange.to}`}
+                            query={{
+                              originId: state.originId,
+                              destinationId: state.destinationId,
+                              departureFrom:
+                                flightRange.from &&
+                                flightRange.from > futureFrom.slice(0, 10)
+                                  ? flightRange.from
+                                  : futureFrom,
+                              ...(flightRange.to
+                                ? { departureTo: flightRange.to }
+                                : {}),
+                            }}
+                            requiredSeats={passengerCounts.seated}
+                            selectedId={state.ticket.outboundOfferId}
+                            onSelect={(offer) =>
+                              patchState({
+                                outboundOffer: offer,
+                                returnOffer: undefined,
+                                contractFlights: {},
+                                ticket: {
+                                  ...state.ticket,
+                                  outboundOfferId: offer.id,
+                                  outboundDepartureAt: offer.departureAt,
+                                  outboundArrivalAt: offer.arrivalAt,
+                                  outboundNumber: offer.serviceNumber,
+                                  carrier: offer.carrierName,
+                                  returnOfferId: '',
+                                },
+                              })
+                            }
+                          />
+                        </>
+                      ) : null}
                     </section>
                   ) : null}
                   {flightDirections.includes('RETURN') ? (
                     <section className="grid gap-3 min-w-0">
                       <h3 className="font-bold">انتخاب بلیت برگشت</h3>
-                      {!flightDirections.includes('OUTBOUND') ? (
-                        <FlightDateRangeFilter
-                          value={flightRange}
-                          onChange={setFlightRange}
-                        />
+                      <ContractFlightEditor
+                        value={state.contractFlights?.RETURN}
+                        onChange={(value) =>
+                          patchState(
+                            patchContractFlight(state, 'RETURN', value),
+                          )
+                        }
+                      />
+                      {!state.contractFlights?.RETURN ? (
+                        <>
+                          {!flightDirections.includes('OUTBOUND') ? (
+                            <FlightDateRangeFilter
+                              value={flightRange}
+                              onChange={setFlightRange}
+                            />
+                          ) : null}
+                          <p className="text-sm text-muted-foreground">
+                            همه بلیت‌های مقصد به مبدأ از تاریخ بلیت رفت به بعد
+                            نمایش داده می‌شوند؛ سقف تاریخ ندارند.
+                          </p>
+                          {!flightDirections.includes('OUTBOUND') ||
+                          salesFlightSelection(state, 'OUTBOUND') ? (
+                            <TicketOfferPicker
+                              originLabel={
+                                references.cities.find(
+                                  (city) => city.id === state.destinationId,
+                                )?.name ?? 'مقصد'
+                              }
+                              destinationLabel={
+                                references.cities.find(
+                                  (city) => city.id === state.originId,
+                                )?.name ?? 'مبدأ'
+                              }
+                              key={`return-${salesFlightSelection(state, 'OUTBOUND')?.departureAt ?? futureFrom}-${!flightDirections.includes('OUTBOUND') ? flightRange.from + '-' + flightRange.to : ''}`}
+                              query={{
+                                originId: state.destinationId,
+                                destinationId: state.originId,
+                                departureFrom: flightDirections.includes(
+                                  'OUTBOUND',
+                                )
+                                  ? salesReturnSearchFrom(state) >
+                                    futureFrom.slice(0, 10)
+                                    ? salesReturnSearchFrom(state)
+                                    : futureFrom
+                                  : flightRange.from &&
+                                      flightRange.from > futureFrom.slice(0, 10)
+                                    ? flightRange.from
+                                    : futureFrom,
+                                ...(!flightDirections.includes('OUTBOUND') &&
+                                flightRange.to
+                                  ? { departureTo: flightRange.to }
+                                  : {}),
+                              }}
+                              requiredSeats={passengerCounts.seated}
+                              selectedId={state.ticket.returnOfferId}
+                              onSelect={(offer) => {
+                                if (
+                                  salesFlightSelection(state, 'OUTBOUND') &&
+                                  Date.parse(offer.departureAt) <
+                                    Date.parse(
+                                      salesFlightSelection(state, 'OUTBOUND')!
+                                        .arrivalAt,
+                                    )
+                                ) {
+                                  setError(
+                                    'زمان حرکت برگشت باید پس از رسیدن بلیت رفت باشد.',
+                                  );
+                                  return;
+                                }
+                                setError('');
+                                patchState({
+                                  returnOffer: offer,
+                                  contractFlights: Object.fromEntries(
+                                    Object.entries(
+                                      state.contractFlights ?? {},
+                                    ).filter(([key]) => key !== 'RETURN'),
+                                  ),
+                                  ticket: {
+                                    ...state.ticket,
+                                    returnOfferId: offer.id,
+                                    returnDepartureAt: offer.departureAt,
+                                    returnArrivalAt: offer.arrivalAt,
+                                    returnNumber: offer.serviceNumber,
+                                  },
+                                });
+                              }}
+                            />
+                          ) : (
+                            <p className="rounded-xl border border-dashed p-5 text-muted-foreground">
+                              ابتدا بلیت رفت را در همین صفحه انتخاب کنید.
+                            </p>
+                          )}
+                        </>
                       ) : null}
-                      <p className="text-sm text-muted-foreground">
-                        همه بلیت‌های مقصد به مبدأ از تاریخ بلیت رفت به بعد نمایش
-                        داده می‌شوند؛ سقف تاریخ ندارند.
-                      </p>
-                      {!flightDirections.includes('OUTBOUND') ||
-                      state.outboundOffer ? (
-                        <TicketOfferPicker
-                          originLabel={
-                            references.cities.find(
-                              (city) => city.id === state.destinationId,
-                            )?.name ?? 'مقصد'
-                          }
-                          destinationLabel={
-                            references.cities.find(
-                              (city) => city.id === state.originId,
-                            )?.name ?? 'مبدأ'
-                          }
-                          key={`return-${state.outboundOffer?.id ?? futureFrom}-${!flightDirections.includes('OUTBOUND') ? flightRange.from + '-' + flightRange.to : ''}`}
-                          query={{
-                            originId: state.destinationId,
-                            destinationId: state.originId,
-                            departureFrom: flightDirections.includes('OUTBOUND')
-                              ? salesReturnSearchFrom(state) >
-                                futureFrom.slice(0, 10)
-                                ? salesReturnSearchFrom(state)
-                                : futureFrom
-                              : flightRange.from &&
-                                  flightRange.from > futureFrom.slice(0, 10)
-                                ? flightRange.from
-                                : futureFrom,
-                            ...(!flightDirections.includes('OUTBOUND') &&
-                            flightRange.to
-                              ? { departureTo: flightRange.to }
-                              : {}),
-                          }}
-                          requiredSeats={passengerCounts.seated}
-                          selectedId={state.ticket.returnOfferId}
-                          onSelect={(offer) => {
-                            if (
-                              state.outboundOffer &&
-                              Date.parse(offer.departureAt) <
-                                Date.parse(state.outboundOffer.arrivalAt)
-                            ) {
-                              setError(
-                                'زمان حرکت برگشت باید پس از رسیدن بلیت رفت باشد.',
-                              );
-                              return;
-                            }
-                            setError('');
-                            patchState({
-                              returnOffer: offer,
-                              ticket: {
-                                ...state.ticket,
-                                returnOfferId: offer.id,
-                                returnDepartureAt: offer.departureAt,
-                                returnArrivalAt: offer.arrivalAt,
-                                returnNumber: offer.serviceNumber,
-                              },
-                            });
-                          }}
-                        />
-                      ) : (
-                        <p className="rounded-xl border border-dashed p-5 text-muted-foreground">
-                          ابتدا بلیت رفت را در همین صفحه انتخاب کنید.
-                        </p>
-                      )}
                     </section>
                   ) : null}
                 </div>
+                {(state.contractFlights?.OUTBOUND ||
+                  state.contractFlights?.RETURN) &&
+                !salesFlightsValid(state) ? (
+                  <p role="status" className="text-sm text-amber-700">
+                    اطلاعات هر بلیت را کامل کنید؛ رسیدن باید بعد از حرکت و پرواز
+                    برگشت بعد از رسیدن پرواز رفت باشد.
+                  </p>
+                ) : null}
               </section>
             ) : null}
             {activeDetail &&

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import type { ReservationIntakeV1 } from '@rubi/contracts';
+import { salesContractFlights } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -32,10 +33,10 @@ export function ReservationTickets({
     let active = true;
     const ids = [
       ...new Set(
-        (request.snapshot.ticketSelections ?? []).flatMap((item) => [
-          item.originId,
-          item.destinationId,
-        ]),
+        salesContractFlights(
+          request.snapshot.serviceSelections,
+          request.snapshot.ticketSelections ?? [],
+        ).flatMap((item) => [item.originId, item.destinationId]),
       ),
     ];
     void Promise.all(

@@ -1,6 +1,7 @@
 import type { SalesServicePricingV1 } from './pricing';
 export const SALES_CONTRACT_VERSION = 1 as const;
 export * from './pricing';
+export * from './contract-flights';
 export const SALES_API_PREFIX = '/api/v1/sales' as const;
 
 export const SALES_PERMISSION_CODES = [
