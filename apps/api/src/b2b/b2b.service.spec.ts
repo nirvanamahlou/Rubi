@@ -9,6 +9,7 @@ import type { MasterOrganizationDirectory } from '../master-data/master-organiza
 import type { B2bRepository } from './b2b.repository';
 import { B2bService } from './b2b.service';
 import type { B2bAgreementDocuments } from './b2b-agreement-documents';
+import type { IamService } from '../iam/iam.service';
 
 const organizationId = '11111111-1111-4111-8111-111111111111';
 const branchId = '22222222-2222-4222-8222-222222222222';
@@ -41,6 +42,7 @@ function setup(profile: Record<string, unknown> | null = null) {
       version: 1,
     }),
     primaryAddress: vi.fn().mockResolvedValue(null),
+    activeCurrencyCodes: vi.fn(async (codes: string[]) => codes),
   } as unknown as MasterOrganizationDirectory;
   const repository = {
     findProfile: vi.fn().mockResolvedValue(profile),
@@ -56,21 +58,121 @@ function setup(profile: Record<string, unknown> | null = null) {
     }),
   } as unknown as FinancePartyExposurePortV1;
   const documents = { assertDraftReference: vi.fn() };
+  const iam = { listUsers: vi.fn().mockResolvedValue([]) };
   return {
     service: new B2bService(
       repository,
       organizations,
       exposure,
       documents as unknown as B2bAgreementDocuments,
+      iam as unknown as IamService,
     ),
     repository,
     organizations,
     exposure,
     documents,
+    iam,
   };
 }
 
 describe('B2B agency service', () => {
+  it('returns only scoped manager choices and profile fields under agency read permission', async () => {
+    const { service, iam } = setup({
+      id: 'profile',
+      organizationId,
+      branchId,
+      status: 'UNDER_REVIEW',
+      isActive: true,
+      version: 1,
+      displayOrder: 0,
+      accountManagerUserId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      creditPolicies: [{ secret: 'credit-only' }],
+      agreements: [{ secret: 'agreement-only' }],
+    });
+    iam.listUsers.mockResolvedValue([
+      {
+        id: 'manager',
+        displayName: 'مدیر آزمون',
+        status: 'ACTIVE',
+        email: 'private@example.test',
+        branches: [{ branch: { id: branchId } }],
+        roles: ['private'],
+      },
+      {
+        id: 'outside',
+        displayName: 'خارج شعبه',
+        status: 'ACTIVE',
+        branches: [{ branch: { id: 'other' } }],
+      },
+      {
+        id: 'inactive',
+        displayName: 'غیرفعال',
+        status: 'INACTIVE',
+        branches: [{ branch: { id: branchId } }],
+      },
+    ]);
+    const { data } = await service.profileDetails(
+      organizationId,
+      { ...actor, permissions: ['b2b.agency.read'] },
+      branchId,
+    );
+    expect(data.accountManagers).toEqual([
+      { id: 'manager', displayName: 'مدیر آزمون' },
+    ]);
+    expect(data.profile).not.toHaveProperty('creditPolicies');
+    expect(data.profile).not.toHaveProperty('agreements');
+    await expect(
+      service.profileDetails(organizationId, actor, 'other'),
+    ).rejects.toThrow('شعبه');
+  });
+  it('rejects assignment to an inactive or unrelated account before persisting', async () => {
+    const { service, repository } = setup();
+    await expect(
+      service.upsertProfile(
+        organizationId,
+        {
+          branchId,
+          accountManagerUserId: 'missing',
+          status: 'UNDER_REVIEW',
+          displayOrder: 0,
+        },
+        actor,
+      ),
+    ).rejects.toThrow('مدیر حساب');
+    expect(repository.upsertProfile).not.toHaveBeenCalled();
+  });
+  it('allows an inactive draft rate under review and preserves its decimal text', async () => {
+    const { service, repository } = setup({
+      id: 'profile',
+      branchId,
+      status: 'UNDER_REVIEW',
+      isActive: true,
+    });
+    vi.mocked(repository.createRate).mockRejectedValue(
+      new Error('draft persisted'),
+    );
+    await expect(
+      service.createRate(
+        organizationId,
+        {
+          branchId,
+          title: 'نرخ پیش‌نویس',
+          serviceReference: 'HOTEL',
+          kind: 'FIXED_AMOUNT',
+          value: '9007199254740993.125',
+          currencyCode: 'IRR',
+          validFrom: '2026-09-09',
+          isActive: false,
+        },
+        actor,
+      ),
+    ).rejects.toThrow('draft persisted');
+    const saved = vi.mocked(repository.createRate).mock.calls[0]![0];
+    expect(saved.isActive).toBe(false);
+    expect(saved.value.toString()).toBe('9007199254740993.125');
+  });
   it('rejects an inactive organization before writing a review profile', async () => {
     const { service, organizations, repository } = setup();
     const organization = await organizations.agencyReference(organizationId);
@@ -116,7 +218,7 @@ describe('B2B agency service', () => {
     );
     expect(repository.createAgreement).not.toHaveBeenCalled();
   });
-  it('permits draft preparation under review without permitting rates or activation', async () => {
+  it('permits draft preparation under review without permitting active rates or activation', async () => {
     const { service, repository } = setup({
       id: 'profile',
       branchId,
@@ -152,7 +254,7 @@ describe('B2B agency service', () => {
         },
         actor,
       ),
-    ).rejects.toThrow('فعال نیست');
+    ).rejects.toThrow('پیش‌نویس');
     expect(repository.createRate).not.toHaveBeenCalled();
     await expect(
       service.createAgreement(

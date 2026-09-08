@@ -14,6 +14,10 @@ import type {
   MasterDataSortDirection,
   UpsertB2bAgencyCreditPolicyRequestV1,
   UpsertB2bAgencyProfileRequestV1,
+  B2bAgencyProfileDetailsV1,
+  B2bAgencyAgreedRateV1,
+  UpdateB2bAgencyAgreedRateRequestV1,
+  B2bRecordDeleteRequestV1,
 } from '@rubi/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -81,6 +85,38 @@ async function b2bRequest<T>(
 }
 
 export const agencyClient = {
+  profileDetails(organizationId: string, branchId: string) {
+    return b2bRequest<{ data: B2bAgencyProfileDetailsV1 }>(
+      `/agencies/${encodeURIComponent(organizationId)}/profile`,
+      { headers: { 'x-branch-id': branchId } },
+    );
+  },
+  rates(organizationId: string, branchId: string) {
+    return b2bRequest<{ data: B2bAgencyAgreedRateV1[] }>(
+      `/agencies/${encodeURIComponent(organizationId)}/agreed-rates`,
+      { headers: { 'x-branch-id': branchId } },
+    );
+  },
+  updateRate(
+    organizationId: string,
+    rateId: string,
+    input: UpdateB2bAgencyAgreedRateRequestV1,
+  ) {
+    return b2bRequest(
+      `/agencies/${encodeURIComponent(organizationId)}/agreed-rates/${encodeURIComponent(rateId)}`,
+      { method: 'PUT', body: JSON.stringify(input) },
+    );
+  },
+  deleteRate(
+    organizationId: string,
+    rateId: string,
+    input: B2bRecordDeleteRequestV1,
+  ) {
+    return b2bRequest(
+      `/agencies/${encodeURIComponent(organizationId)}/agreed-rates/${encodeURIComponent(rateId)}`,
+      { method: 'DELETE', body: JSON.stringify(input) },
+    );
+  },
   agreements(
     organizationId: string,
     branchId: string,

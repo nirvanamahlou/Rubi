@@ -490,6 +490,16 @@ export const masterDataApi = {
       `/organizations/${encodeURIComponent(organizationId)}/addresses`,
     );
   },
+  deleteOrganizationAddress(
+    organizationId: string,
+    addressId: string,
+    version: number,
+  ) {
+    return request<{ data: { id: string; deleted: boolean } }>(
+      `/organizations/${encodeURIComponent(organizationId)}/addresses/${encodeURIComponent(addressId)}`,
+      { method: 'DELETE', body: JSON.stringify({ version }) },
+    );
+  },
   createOrganizationAddress(
     organizationId: string,
     input: MasterOrganizationAddressMutationV1,

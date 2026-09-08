@@ -138,7 +138,16 @@ const sections = [
 ] as const;
 
 export type OperationalView =
-  'overview' | 'address' | 'credit' | 'guarantees' | 'agreements' | 'rates';
+  | 'overview'
+  | 'address'
+  | 'credit'
+  | 'guarantees'
+  | 'agreements'
+  | 'rates'
+  | 'discounts'
+  | 'commission'
+  | 'manager'
+  | 'profile';
 
 export function CorporateMetric({
   label,
@@ -202,6 +211,7 @@ export function CorporateProfile({
   contacts,
   operations,
   logo,
+  overview,
 }: {
   organization: MasterDataRecord;
   onClose: () => void;
@@ -212,6 +222,7 @@ export function CorporateProfile({
   contacts: ReactNode;
   operations: (view: OperationalView) => ReactNode;
   logo?: ReactNode;
+  overview?: ReactNode;
 }) {
   const [screen, setScreen] = useState('home');
   const [tab, setTab] = useState('profile');
@@ -226,10 +237,12 @@ export function CorporateProfile({
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [screen]);
   const current = sections.find((section) => section.id === screen);
-  const go = useCallback((id: string) => {
+  const go = useCallback((id: string, requestedTab?: string) => {
     setScreen(id);
     setTab(
-      sections.find((section) => section.id === id)?.tabs[0][0] ?? 'profile',
+      requestedTab ??
+        sections.find((section) => section.id === id)?.tabs[0][0] ??
+        'profile',
     );
   }, []);
   const title = current?.title ?? `نمای ۳۶۰ درجه ${entityLabel}`;
@@ -257,12 +270,14 @@ export function CorporateProfile({
         ? 'agreements'
         : screen === 'contracts' &&
             ['rates', 'discounts', 'commission'].includes(tab)
-          ? 'rates'
-          : screen === 'credit' && tab === 'guarantees'
-            ? 'guarantees'
-            : screen === 'credit' && ['policy', 'exposure'].includes(tab)
-              ? 'credit'
-              : undefined;
+          ? (tab as 'rates' | 'discounts' | 'commission')
+          : screen === 'organization' && tab === 'manager'
+            ? 'manager'
+            : screen === 'credit' && tab === 'guarantees'
+              ? 'guarantees'
+              : screen === 'credit' && ['policy', 'exposure'].includes(tab)
+                ? 'credit'
+                : undefined;
   return (
     <div className="corporate-profile">
       <div className="page-head">
@@ -329,6 +344,41 @@ export function CorporateProfile({
       </section>
       {screen === 'home' ? (
         <>
+          {overview}
+          <section className="panel" aria-label="ثبت اطلاعات پرونده">
+            <header className="panel-head">
+              <div>
+                <h2 className="panel-title">ثبت اطلاعات پرونده</h2>
+                <p className="panel-note">
+                  اطلاعات هر بخش از همین پرونده ثبت و ویرایش می‌شود.
+                </p>
+              </div>
+            </header>
+            <div className="panel-body flex flex-wrap gap-2">
+              <Button variant="outline" onClick={onEdit} disabled={!canEdit}>
+                مشخصات {entityLabel}
+              </Button>
+              {[
+                ['شعب و آدرس‌ها', 'organization', 'branches'],
+                ['نمایندگان', 'organization', 'representatives'],
+                ['مدیر حساب', 'organization', 'manager'],
+                ['قرارداد همکاری', 'contracts', 'framework'],
+                ['سقف اعتبار و تضمین', 'credit', 'policy'],
+                ['نرخ توافقی', 'contracts', 'rates'],
+                ['تخفیف', 'contracts', 'discounts'],
+                ['پورسانت', 'contracts', 'commission'],
+                ['اسناد پرونده', 'contracts', 'documents'],
+              ].map(([label, sectionId, tabId]) => (
+                <Button
+                  key={label}
+                  variant="outline"
+                  onClick={() => go(sectionId!, tabId!)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </section>
           <div className="boundary-note">
             <Info size={20} />
             <span>
@@ -479,10 +529,7 @@ export function CorporateProfile({
                   ))}
                 </div>
               </div>
-              <CorporateUnavailable
-                title="چرخه وضعیت همکاری"
-                description="تاریخچه تأیید و تغییر وضعیت همکاری هنوز در دسترس نیست."
-              />
+              {operations('profile')}
             </section>
           ) : screen === 'organization' && tab === 'representatives' ? (
             <section className="panel">

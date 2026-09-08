@@ -25,6 +25,8 @@ describe('B2B authenticated runtime boundary', () => {
     agencyWorkspace: vi.fn(),
     createAgreement: vi.fn(),
     upsertProfile: vi.fn(),
+    updateRate: vi.fn(),
+    deleteRate: vi.fn(),
   };
   const workflow = {
     save: vi.fn(),
@@ -67,6 +69,59 @@ describe('B2B authenticated runtime boundary', () => {
   it('returns 401 without authentication', async () => {
     await request(app.getHttpServer()).get(`/b2b/agencies/${id}`).expect(401);
     expect(service.agencyWorkspace).not.toHaveBeenCalled();
+  });
+  it('guards rate editing and deletion and requires a positive version and deletion reason', async () => {
+    const body = {
+      branchId: id,
+      title: 'Draft rate',
+      serviceReference: 'HOTEL',
+      kind: 'DISCOUNT_PERCENT',
+      value: '5.125',
+      validFrom: '2026-09-09',
+      isActive: false,
+      version: 1,
+    };
+    const endpoint = `/b2b/agencies/${id}/agreed-rates/${id}`;
+    await request(app.getHttpServer())
+      .put(endpoint)
+      .set('Cookie', 'rubi_access=test-only')
+      .send(body)
+      .expect(403);
+    actor.permissions = ['b2b.rate.manage'];
+    for (const invalid of [
+      { ...body, version: 0 },
+      { ...body, value: '-1' },
+      { ...body, isActive: 'false' },
+    ])
+      await request(app.getHttpServer())
+        .put(endpoint)
+        .set('Cookie', 'rubi_access=test-only')
+        .send(invalid)
+        .expect(400);
+    expect(service.updateRate).not.toHaveBeenCalled();
+    await request(app.getHttpServer())
+      .put(endpoint)
+      .set('Cookie', 'rubi_access=test-only')
+      .send(body)
+      .expect(200);
+    expect(service.updateRate).toHaveBeenCalledWith(
+      id,
+      id,
+      expect.objectContaining(body),
+      actor,
+    );
+    await request(app.getHttpServer())
+      .delete(endpoint)
+      .set('Cookie', 'rubi_access=test-only')
+      .send({ branchId: id, version: 1 })
+      .expect(400);
+    expect(service.deleteRate).not.toHaveBeenCalled();
+    await request(app.getHttpServer())
+      .delete(endpoint)
+      .set('Cookie', 'rubi_access=test-only')
+      .send({ branchId: id, version: 1, reason: 'Synthetic deletion' })
+      .expect(200);
+    expect(service.deleteRate).toHaveBeenCalledOnce();
   });
   it('validates the complete nested draft DTO and requires a separate review permission', async () => {
     actor.permissions = ['b2b.agreement.manage'];

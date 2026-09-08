@@ -27,6 +27,11 @@ function branchOf(actor: AuthenticatedActor, requested?: string): string {
   return branchId;
 }
 
+function validateAddress(input: MasterOrganizationAddressMutationV1) {
+  if (!input.label.trim() || !input.addressLine.trim())
+    throw new BadRequestException('عنوان و نشانی کامل را وارد کنید.');
+}
+
 function addressRecord(row: {
   id: string;
   organizationId: string;
@@ -132,6 +137,7 @@ export class MasterOrganizationDirectory {
     actor: AuthenticatedActor,
     requestedBranch?: string,
   ) {
+    validateAddress(input);
     await this.assertOrganization(organizationId);
     await this.assertCityCountry(input.cityId, input.countryId);
     const actorBranchId = branchOf(actor, requestedBranch);
@@ -191,6 +197,7 @@ export class MasterOrganizationDirectory {
     actor: AuthenticatedActor,
     requestedBranch?: string,
   ) {
+    validateAddress(input);
     if (!input.version)
       throw new BadRequestException('version برای ویرایش آدرس الزامی است.');
     await this.assertCityCountry(input.cityId, input.countryId);
@@ -272,6 +279,53 @@ export class MasterOrganizationDirectory {
       select: { id: true },
     });
     if (!exists) throw new NotFoundException('سازمان یافت نشد.');
+  }
+
+  async deleteAddress(
+    organizationId: string,
+    addressId: string,
+    version: number,
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+  ) {
+    if (!actor.permissions.includes('master_data.delete'))
+      throw new ForbiddenException('مجوز حذف آدرس را ندارید.');
+    const actorBranchId = branchOf(actor, requestedBranch);
+    return this.database.client.$transaction(async (transaction) => {
+      const before = await transaction.masterOrganizationAddress.findFirst({
+        where: { id: addressId, organizationId },
+      });
+      if (!before) throw new NotFoundException('آدرس این سازمان یافت نشد.');
+      if (before.version !== version)
+        throw new ConflictException('آدرس هم‌زمان تغییر کرده است.');
+      const removed = await transaction.masterOrganizationAddress.deleteMany({
+        where: { id: addressId, organizationId, version },
+      });
+      if (removed.count !== 1)
+        throw new ConflictException(
+          'آدرس هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
+        );
+      await transaction.masterDataAuditEvent.create({
+        data: {
+          actorUserId: actor.userId,
+          actorBranchId,
+          action: 'master_data.organization_address.delete',
+          resource: 'organization-addresses',
+          entityId: addressId,
+          outcome: AuditOutcome.SUCCESS,
+          beforeSnapshot: {
+            organizationId,
+            label: before.label,
+            countryId: before.countryId,
+            cityId: before.cityId,
+            isPrimary: before.isPrimary,
+          },
+          afterSnapshot: { deleted: true },
+          entityVersion: version,
+        },
+      });
+      return { id: addressId, deleted: true };
+    });
   }
 
   private async assertCityCountry(cityId: string, countryId: string) {

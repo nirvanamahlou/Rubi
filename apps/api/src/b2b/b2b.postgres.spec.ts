@@ -12,6 +12,8 @@ import type { DatabaseService } from '../database/database.service';
 import { B2bRepository } from './b2b.repository';
 import { B2bAgreementWorkflowRepository } from './b2b-agreement-workflow.repository';
 import { agreementTestTerms } from './agreement-test-fixtures';
+import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
+import type { AuthenticatedActor } from '@rubi/contracts';
 
 const enabled = process.env.RUBI_RUN_B2B_POSTGRES_TESTS === '1';
 const container = `rubi-test-b2b-${randomUUID().slice(0, 8)}`;
@@ -639,6 +641,171 @@ describe.skipIf(!enabled)(
       expect(await client.b2bAuditEvent.count({ where: { branchId } })).toBe(
         auditBefore,
       );
+    });
+    it('edits draft rates precisely, prevents stale or foreign deletes, and rolls back deletion when audit fails', async () => {
+      const row = await repository.createRate({
+        ...rate('RATE-CRUD'),
+        isActive: false,
+      });
+      const write = {
+        ...rate('RATE-CRUD'),
+        id: row.id,
+        expectedVersion: row.version,
+        isActive: false,
+        value: new Prisma.Decimal('7.1255'),
+      };
+      const updated = await repository.updateRate(write);
+      expect(updated.value.toString()).toBe('7.1255');
+      await expect(repository.updateRate(write)).rejects.toThrow('هم‌زمان');
+      await expect(
+        repository.updateRate({
+          ...write,
+          expectedVersion: updated.version,
+          isActive: true,
+        }),
+      ).rejects.toThrow('هم‌پوشانی');
+      const removal = {
+        organizationId,
+        branchId,
+        id: row.id,
+        expectedVersion: updated.version,
+        actorUserId,
+        reason: 'Synthetic removal',
+      };
+      await expect(
+        repository.deleteRate({ ...removal, organizationId: randomUUID() }),
+      ).rejects.toThrow('یافت نشد');
+      await expect(
+        repository.deleteRate({ ...removal, branchId: randomUUID() }),
+      ).rejects.toThrow('یافت نشد');
+      await expect(
+        repository.deleteRate({ ...removal, expectedVersion: 1 }),
+      ).rejects.toThrow('هم‌زمان');
+      await expect(
+        repository.deleteRate({ ...removal, actorUserId: randomUUID() }),
+      ).rejects.toThrow();
+      expect(
+        await client.b2bAgencyAgreedRate.findUnique({ where: { id: row.id } }),
+      ).not.toBeNull();
+      await repository.deleteRate(removal);
+      expect(
+        await client.b2bAgencyAgreedRate.findUnique({ where: { id: row.id } }),
+      ).toBeNull();
+      const audit = await client.b2bAuditEvent.findFirstOrThrow({
+        where: { entityId: row.id, action: 'b2b.rate.delete' },
+      });
+      expect(audit.beforeSnapshot).toMatchObject({
+        value: '7.1255',
+        version: 2,
+      });
+      expect(audit.afterSnapshot).toEqual({
+        deleted: true,
+        reason: removal.reason,
+      });
+    });
+    it('creates, edits and permanently deletes an address through its owner with scope and audit atomicity', async () => {
+      const directory = new MasterOrganizationDirectory({
+        client,
+      } as DatabaseService);
+      const country = await client.masterCountry.findFirstOrThrow();
+      const city = await client.masterCity.create({
+        data: {
+          countryId: country.id,
+          code: 'DOSSIER-TEST',
+          name: 'شهر آزمایشی',
+          englishName: 'Synthetic city',
+          createdByUserId: actorUserId,
+          updatedByUserId: actorUserId,
+        },
+      });
+      const actor: AuthenticatedActor = {
+        userId: actorUserId,
+        sessionId: randomUUID(),
+        branchIds: [branchId],
+        permissions: ['master_data.update', 'master_data.delete'],
+      };
+      const input = {
+        countryId: country.id,
+        cityId: city.id,
+        label: 'شعبه آزمایشی',
+        addressLine: 'نشانی ساختگی آزمون',
+        isPrimary: true,
+      };
+      const row = await directory.createAddress(organizationId, input, actor);
+      const edited = await directory.updateAddress(
+        organizationId,
+        row.id,
+        { ...input, label: 'شعبه ویرایش‌شده', version: row.version },
+        actor,
+      );
+      await expect(
+        directory.deleteAddress(organizationId, row.id, edited.version, {
+          ...actor,
+          permissions: [],
+        }),
+      ).rejects.toThrow('مجوز');
+      await expect(
+        directory.deleteAddress(
+          organizationId,
+          row.id,
+          edited.version,
+          actor,
+          randomUUID(),
+        ),
+      ).rejects.toThrow('شعبه');
+      await expect(
+        directory.deleteAddress(randomUUID(), row.id, edited.version, actor),
+      ).rejects.toThrow('یافت نشد');
+      await expect(
+        directory.deleteAddress(organizationId, row.id, row.version, actor),
+      ).rejects.toThrow('هم‌زمان');
+      await client.$executeRawUnsafe(
+        `CREATE FUNCTION address_test_fail_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.action='master_data.organization_address.delete' THEN RAISE EXCEPTION 'synthetic audit failure'; END IF; RETURN NEW; END $$`,
+      );
+      await client.$executeRawUnsafe(
+        `CREATE TRIGGER address_test_fail_audit BEFORE INSERT ON master_audit_events FOR EACH ROW EXECUTE FUNCTION address_test_fail_audit()`,
+      );
+      try {
+        await expect(
+          directory.deleteAddress(
+            organizationId,
+            row.id,
+            edited.version,
+            actor,
+          ),
+        ).rejects.toThrow('synthetic audit failure');
+      } finally {
+        await client.$executeRawUnsafe(
+          `DROP TRIGGER address_test_fail_audit ON master_audit_events`,
+        );
+        await client.$executeRawUnsafe(
+          `DROP FUNCTION address_test_fail_audit()`,
+        );
+      }
+      expect(
+        (await directory.addresses(organizationId)).some(
+          (address) => address.id === row.id,
+        ),
+      ).toBe(true);
+      await directory.deleteAddress(
+        organizationId,
+        row.id,
+        edited.version,
+        actor,
+      );
+      expect(
+        await client.masterOrganizationAddress.findUnique({
+          where: { id: row.id },
+        }),
+      ).toBeNull();
+      const audit = await client.masterDataAuditEvent.findFirstOrThrow({
+        where: {
+          entityId: row.id,
+          action: 'master_data.organization_address.delete',
+        },
+      });
+      expect(audit.beforeSnapshot).toMatchObject({ label: 'شعبه ویرایش‌شده' });
+      expect(audit.beforeSnapshot).not.toHaveProperty('addressLine');
     });
   },
 );

@@ -51,6 +51,10 @@ import { getMasterDataDefinition } from '@/modules/master-data/model/catalog';
 import { agencyClient } from '../api/agency-client';
 import { AgencyConnectionsPanel } from './agency-connections-panel';
 import { AgreementWorkflowPanel } from './agreement-workflow-panel';
+import { OrganizationAddressesPanel } from './organization-addresses-panel';
+import { AgencyProfilePanel } from './agency-profile-panel';
+import { AgencyDossierSummary } from './agency-dossier-summary';
+import { AgencyRatesPanel } from './agency-rates-panel';
 import { cooperationLabel } from '../model/presentation';
 import { CorporateMetric, CorporateProfile } from './corporate-profile';
 import './corporate-design.css';
@@ -681,6 +685,13 @@ export function OrganizationsWorkspace() {
         <CorporateProfile
           key={selected.id}
           organization={selected}
+          overview={
+            String(selected.attributes.roleCodes ?? '')
+              .split(',')
+              .includes('AGENCY') ? (
+              <AgencyDossierSummary organizationId={selected.id} />
+            ) : undefined
+          }
           logo={
             <OrganizationLogo
               organization={selected}
@@ -804,9 +815,15 @@ export function OrganizationsWorkspace() {
             </Card>
           }
           operations={(view) =>
-            view === 'agreements' ||
-            view === 'credit' ||
-            view === 'guarantees' ? (
+            view === 'address' ? (
+              <OrganizationAddressesPanel
+                key={selected.id}
+                organizationId={selected.id}
+                permissions={permissions}
+              />
+            ) : view === 'agreements' ||
+              view === 'credit' ||
+              view === 'guarantees' ? (
               <AgreementWorkflowPanel
                 key={selected.id + role + view}
                 organizationId={selected.id}
@@ -816,11 +833,32 @@ export function OrganizationsWorkspace() {
             ) : String(selected.attributes.roleCodes ?? '').includes(
                 'AGENCY',
               ) ? (
-              <AgencyConnectionsPanel
-                key={selected.id}
-                organizationId={selected.id}
-                view={view}
-              />
+              view === 'manager' || view === 'profile' ? (
+                <AgencyProfilePanel
+                  key={selected.id + view}
+                  organizationId={selected.id}
+                />
+              ) : view === 'rates' ||
+                view === 'discounts' ||
+                view === 'commission' ? (
+                <AgencyRatesPanel
+                  key={selected.id + view}
+                  organizationId={selected.id}
+                  kind={
+                    view === 'rates'
+                      ? 'FIXED_AMOUNT'
+                      : view === 'discounts'
+                        ? 'DISCOUNT_PERCENT'
+                        : 'COMMISSION_PERCENT'
+                  }
+                />
+              ) : (
+                <AgencyConnectionsPanel
+                  key={selected.id}
+                  organizationId={selected.id}
+                  view={view}
+                />
+              )
             ) : (
               <Alert
                 title="پرونده تجاری در انتظار اتصال"

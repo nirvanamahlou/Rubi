@@ -151,6 +151,22 @@ export interface CreateB2bAgencyAgreedRateRequestV1 {
   currencyCode?: string | null;
   validFrom: string;
   validTo?: string | null;
+  isActive?: boolean;
+}
+
+export interface UpdateB2bAgencyAgreedRateRequestV1 extends CreateB2bAgencyAgreedRateRequestV1 {
+  version: number;
+}
+
+export interface B2bRecordDeleteRequestV1 {
+  branchId: string;
+  version: number;
+  reason: string;
+}
+
+export interface B2bAgencyProfileDetailsV1 {
+  profile: B2bAgencyProfileV1 | null;
+  accountManagers: readonly { id: string; displayName: string }[];
 }
 
 export interface FinancePartyExposureQueryV1 {

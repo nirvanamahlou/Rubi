@@ -150,4 +150,29 @@ export class CreateAgencyAgreedRateDto {
   @Matches(datePattern)
   @IsDateString({ strict: true })
   validTo?: string | null;
+
+  @ValidateIf(provided)
+  @IsBoolean()
+  isActive?: boolean = true;
+}
+
+export class UpdateAgencyAgreedRateDto extends CreateAgencyAgreedRateDto {
+  @IsInt()
+  @Min(1)
+  version!: number;
+}
+
+export class DeleteB2bRecordDto {
+  @IsUUID()
+  branchId!: string;
+
+  @IsInt()
+  @Min(1)
+  version!: number;
+
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MinLength(5)
+  @MaxLength(500)
+  reason!: string;
 }

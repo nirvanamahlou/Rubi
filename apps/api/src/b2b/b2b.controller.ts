@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   Inject,
@@ -26,6 +27,8 @@ import {
   CreateAgencyAgreementDto,
   UpsertAgencyCreditPolicyDto,
   UpsertAgencyProfileDto,
+  UpdateAgencyAgreedRateDto,
+  DeleteB2bRecordDto,
 } from './b2b.dto';
 import { B2bService } from './b2b.service';
 import type { B2bCooperationRole } from '@rubi/contracts';
@@ -47,6 +50,48 @@ export class B2bController {
     @Inject(B2bAgreementWorkflowService)
     private readonly workflow: B2bAgreementWorkflowService,
   ) {}
+
+  @Get(':organizationId/profile')
+  @RequirePermissions('b2b.agency.read')
+  profileDetails(
+    @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId: string,
+  ) {
+    return this.service.profileDetails(organizationId, request.actor, branchId);
+  }
+
+  @Get(':organizationId/agreed-rates')
+  @RequirePermissions('b2b.rate.read')
+  rates(
+    @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId: string,
+  ) {
+    return this.service.rates(organizationId, request.actor, branchId);
+  }
+
+  @Put(':organizationId/agreed-rates/:rateId')
+  @RequirePermissions('b2b.rate.manage')
+  updateRate(
+    @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
+    @Param('rateId', new ParseUUIDPipe()) rateId: string,
+    @Body() dto: UpdateAgencyAgreedRateDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.updateRate(organizationId, rateId, dto, request.actor);
+  }
+
+  @Delete(':organizationId/agreed-rates/:rateId')
+  @RequirePermissions('b2b.rate.manage')
+  deleteRate(
+    @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
+    @Param('rateId', new ParseUUIDPipe()) rateId: string,
+    @Body() dto: DeleteB2bRecordDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.deleteRate(organizationId, rateId, dto, request.actor);
+  }
 
   @Get(':organizationId/agreements')
   @RequirePermissions('b2b.agreement.read', 'b2b.credit.read')

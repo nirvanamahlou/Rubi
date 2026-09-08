@@ -1,5 +1,11 @@
 # Work Assignments
 
+## B2B-DOSSIER-FORMS-001 — PC-B — IN_PROGRESS
+
+- Owner requests test data and entry forms in the agency 360 dossier. Branch `codex/pc-b-b2b-dossier-forms` starts from clean 7518154, retaining PR132/133 and fetched develop e07c0c6. Reserve Organizations Web, B2B profile/rate CRUD and its contract slice, the public Master Organization address deletion endpoint, scoped tests/docs and a guarded local fixture loader. Published reservations show no competing active work in this scope; coordinator was notified. No migration or dependency change is planned.
+- Add popup create/edit/delete for organization addresses and rate/discount/commission records, account-manager/profile registration, visible shortcuts/counts, and use existing representative and versioned contract/credit/guarantee forms. Draft rate rows may be stored against an under-review profile but cannot become active until that profile is active. Keep optimistic versions, branch/role ownership, relevant permissions and audit. Read-only Finance/Sales sections do not fabricate balances or permit B2B writes to another owner.
+- Fixtures target only explicitly named existing test agencies, use owner public services, and retain all unrelated data. Re-running must not duplicate or overwrite modified records. Preview, back up and verify before applying locally. No actual IAM account grant or approval bypass. Preserve Web3100/API4190 database/storage configuration and coordinate listener changes.
+
 ## B2B-BREADCRUMB-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests one working breadcrumb at the top of Organizations and its contract/terms dossier section. Branch `codex/pc-b-b2b-breadcrumb` continues the clean combined runtime source 92e7a81 (PR132); fetched develop e07c0c6 is already included. Reserve Organizations' directory/profile presentation, a small shared page-breadcrumb context and the breadcrumb/provider integration in `components/layout/app-shell.tsx`, plus task documentation. PC-B Uniting confirms no active conflicting shell/breadcrumb/runtime reservation in its coordination; the shared edit is limited to this breadcrumb connection, preserving HR/Marketing trails and other header controls.
