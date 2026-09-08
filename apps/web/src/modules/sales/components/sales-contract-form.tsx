@@ -290,12 +290,14 @@ export function SalesContractForm() {
     );
   }, [state]);
 
-  const toggleService = (kind: SalesServiceKind) =>
+  const toggleService = (kind: SalesServiceKind) => {
+    setDetailStep(0);
     patchState({
       serviceKinds: state.serviceKinds.includes(kind)
         ? state.serviceKinds.filter((item) => item !== kind)
         : [...state.serviceKinds, kind],
     });
+  };
   const toggleDirection = (
     kind: 'FLIGHT' | 'TRANSFER',
     direction: 'OUTBOUND' | 'RETURN',
@@ -327,7 +329,9 @@ export function SalesContractForm() {
         : {}),
     });
   };
-  const detailSteps = salesDetailSteps(state);
+  const detailSteps = state.serviceKinds.includes('TOUR')
+    ? ['TOUR']
+    : salesDetailSteps(state);
   const activeDetail = detailSteps[detailStep];
   const serviceDetail = activeDetail
     ? (state.serviceDetails?.[activeDetail] ?? {})
