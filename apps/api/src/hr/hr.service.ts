@@ -60,6 +60,11 @@ const recordKeys = [
   'data',
 ];
 const systemResources = new Set(['time.periods', 'time.leaveGrants']);
+const missionExpenseResources = new Set([
+  'expenses.travel',
+  'expenses.advances',
+  'expenses.claims',
+]);
 const jobResources = new Set([
   'lifecycle.promotion',
   'lifecycle.transfer',
@@ -75,6 +80,33 @@ export class HrService {
     @Inject(IamService) private readonly iam: IamService,
     @Inject(DocumentsService) private readonly documents: DocumentsService,
   ) {}
+
+  private expenseMission(
+    parent: RecordRow | null,
+    employee: Employee | null,
+    data: HrWorkflowData,
+  ) {
+    if (!parent) return;
+    if (
+      !employee ||
+      parent.employeeId !== employee.id ||
+      parent.branchId !== employee.branchId ||
+      !['time', 'expenses'].includes(parent.section) ||
+      parent.tab !== 'mission'
+    )
+      throw new BadRequestException(
+        'مأموریت مرجع باید متعلق به همین کارمند باشد.',
+      );
+    const missionCompany =
+      (parent.data as HrWorkflowData).organizationBranchId ??
+      employee.organizationBranchId;
+    const expenseCompany =
+      data.organizationBranchId ?? employee.organizationBranchId;
+    if (missionCompany !== expenseCompany)
+      throw new BadRequestException(
+        'مأموریت مرجع باید متعلق به همین شرکت باشد.',
+      );
+  }
 
   private has(actor: AuthenticatedActor, permission: IamPermissionCode) {
     return actor.permissions.includes(permission);
@@ -1174,6 +1206,8 @@ export class HrService {
           );
         if (schema.key === 'organization.units')
           await this.unitCompany(tx, branchId, parent?.id ?? null, data, actor);
+        if (missionExpenseResources.has(schema.key))
+          this.expenseMission(parent, employee, data);
         const values = await this.values(
           tx,
           schema,
@@ -1182,6 +1216,10 @@ export class HrService {
           branchId,
           data,
         );
+        if (missionExpenseResources.has(schema.key)) {
+          const referenceIndex = schema.columns.indexOf('مأموریت مرجع');
+          if (referenceIndex >= 0) values[referenceIndex] = parent?.code ?? '';
+        }
         if (schema.key === 'recruitment.applicants' && parent) {
           const openingCompany = (parent.data as HrWorkflowData)
             .organizationBranchId;
@@ -1269,7 +1307,10 @@ export class HrService {
       let parentId = row.parentId;
       if (input.parentId !== undefined) {
         if (
-          !['organization.units', 'recruitment.applicants'].includes(schema.key)
+          !['organization.units', 'recruitment.applicants'].includes(
+            schema.key,
+          ) &&
+          !missionExpenseResources.has(schema.key)
         )
           throw new BadRequestException(
             'تغییر والد برای این نوع رکورد مجاز نیست.',
@@ -1356,6 +1397,7 @@ export class HrService {
         cancel &&
         (!providedData?.reason ||
           input.values !== undefined ||
+          input.parentId !== undefined ||
           input.effectiveAt !== undefined)
       )
         throw new BadRequestException(
@@ -1367,7 +1409,9 @@ export class HrService {
         );
       if (
         approvalAction &&
-        (input.values !== undefined || input.effectiveAt !== undefined)
+        (input.values !== undefined ||
+          input.effectiveAt !== undefined ||
+          input.parentId !== undefined)
       )
         throw new BadRequestException(
           'تأیید و تغییر محتوا باید در درخواست‌های جدا ثبت شوند.',
@@ -1383,6 +1427,17 @@ export class HrService {
       if (schema.key === 'finance.batch' && validate.APPROVED.has(state))
         throw new ConflictException('دریافت Finance هنوز در دسترس نیست.');
       const data = { ...(row.data as HrWorkflowData), ...providedData };
+      const missionParent =
+        missionExpenseResources.has(schema.key) &&
+        (input.parentId !== undefined ||
+          input.values !== undefined ||
+          providedData?.organizationBranchId !== undefined)
+          ? parentId
+            ? await this.record(tx, parentId, actor)
+            : null
+          : undefined;
+      if (missionParent !== undefined)
+        this.expenseMission(missionParent, employee, data);
       if (schema.key === 'organization.units')
         await this.unitCompany(tx, row.branchId, parentId, data, actor, row.id);
       const values =
@@ -1398,6 +1453,11 @@ export class HrService {
               row.branchId,
               data,
             );
+      if (missionParent !== undefined) {
+        const referenceIndex = schema.columns.indexOf('مأموریت مرجع');
+        if (referenceIndex >= 0)
+          values[referenceIndex] = missionParent?.code ?? '';
+      }
       if (schema.key === 'recruitment.applicants' && parentId) {
         const opening = await this.record(tx, parentId, actor);
         const openingCompany = (opening.data as HrWorkflowData)
