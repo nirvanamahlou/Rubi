@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-CONTRACT-ROOM-LOCATION-0908 — COMPLETE_LOCAL
+
+User corrected room-total placement: saved single/double/extra-bed quantities now appear directly below the hotel table in Hotel Information (section 4), absent from Other Services. Passenger room column stays removed; calculations and all other fields unchanged. 34 focused tests, scoped lint/typecheck, 36-route build and all four synthetic PDF pages pass. Web3100 updated; Web/API 200. No schema/API/real-data/public-push change. See docs/tasks/SALES-CONTRACT-ROOM-LOCATION-0908.md.
+
 ## SALES-CONTRACT-ROOM-SUMMARY-0908 — COMPLETE_LOCAL
 
 Removed per-passenger room labels from contract print/PDF and added saved purchased room counts (single, double, extra beds and total rooms) to Other Services, independently of passenger accommodation. Hotel Master Data product name, pricing/Finance rules, notices and QR remain unchanged. Older records with no breakdown are explicitly unrecorded, not inferred. 181 Sales tests, scoped lint/typecheck and 36-route Web build pass; all four synthetic PDF pages reviewed (six and agency-six one page, 42 two pages). Web3100 updated; Web/API 200. No schema, API, permissions, business-data or public-push change. See docs/tasks/SALES-CONTRACT-ROOM-SUMMARY-0908.md.

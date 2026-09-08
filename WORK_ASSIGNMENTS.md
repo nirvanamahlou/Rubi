@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-CONTRACT-ROOM-LOCATION-0908 — PC-A — COMPLETE_LOCAL
+
+- Purchased room totals now sit below the Hotel Information table (section 4), not Other Services. 34 focused tests, scoped lint/typecheck and 36-route production build pass; all four synthetic PDF pages visually inspected. Web3100 updated; Web/API 200. No data/API/schema/public-push change. Scoped reservation released; see docs/tasks/SALES-CONTRACT-ROOM-LOCATION-0908.md.
+
+- Reserve Sales print template/room-summary regression tests and scoped docs from f86c42d. Move purchased room quantities from Other Services into Hotel Information as explicitly corrected by user. No calculations, inputs, schema, API, ownership, real-data or public-push changes.
+
 ## SALES-CONTRACT-ROOM-SUMMARY-0908 — PC-A — COMPLETE_LOCAL
 
 - Removed passenger room column and added saved contract-level room/extra-bed quantities to Other Services. Master Data hotel product, prices and prior terms/QR unchanged; no passenger-based room inference. 181 Sales tests, scoped lint/typecheck and 36-route Web build pass; all four pages of synthetic six/agency-six/42 passenger PDFs reviewed. Web3100 updated, Web/API health 200. No schema/API/IAM/real-data/public-push change. Scoped reservation released; see docs/tasks/SALES-CONTRACT-ROOM-SUMMARY-0908.md.
