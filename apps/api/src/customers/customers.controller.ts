@@ -28,6 +28,7 @@ import {
   CustomerContactDto,
   CustomerListQueryDto,
   CustomerMutationDto,
+  CustomerRegistrationLookupDto,
   CustomerStatusDto,
   DuplicateCandidateDto,
   DuplicateReviewDto,
@@ -63,6 +64,18 @@ export class CustomersController {
     @Headers('x-request-id') traceId?: string,
   ) {
     return this.service.create(dto, request.actor, branchId, traceId);
+  }
+
+  @Post('registration-lookup')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @RequirePermissions('customers.read', 'customers.sensitive.read')
+  registrationLookup(
+    @Body() dto: CustomerRegistrationLookupDto,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-request-id') traceId?: string,
+  ) {
+    return this.service.registrationLookup(dto, request.actor, traceId);
   }
 
   @Post('duplicate-candidates')

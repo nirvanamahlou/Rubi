@@ -15,6 +15,10 @@
 - HR-005/HR-006 در شاخه مستقل مبتنی بر develop فعلی روی پورت ۳۱۰۰ فعال شد؛ هدر چهارشرکتی، پروفایل و قراردادهای جدید حفظ شدند. انتقال Listener با هماهنگی Task «PC-B Uniting» انجام شد.
 - API اختصاصی روی ۴۱۹۰ و دیتابیس/فایل‌های کپی‌شده مستقل‌اند. ورود واقعی از `localhost:3100` و `127.0.0.1:3100`، پروفایل/MFA، زنگوله و هدایت آدرس قدیمی موفق‌اند. برای اجرای مجدد همین نسخه از دستور `docs/tasks/HR-007.md` استفاده شود؛ Merge به main/develop در محدوده این کار نیست.
 
+## SALES-CUSTOMER-PRICING-0907 — completed locally
+
+Delivered explicit per-passenger whole-service agreement totals and saved-data direct PDF download with English monetary digits. Reconciliation preserves existing service pricing and Finance settlement. Local upgrade, rollback-safe rehearsal, tests and production builds passed; user can review on localhost:3100. Historical migration-file differences remain untouched (see DECISIONS). No remote publication or official issuance/archive policy expansion. Scoped locks released.
+
 ## یکپارچه‌سازی مشترک — 2026-08-31
 
 - SHARED-INTEGRATION-0831 در حال ترکیب Snapshotهای منتشرشده PR #55/#56/#46 در یک develop است؛ Branchهای مبدأ حفظ و نسخه ترکیبی بازبینی می‌شود.
@@ -32,6 +36,8 @@
 foundation یا یکپارچگی مالی، `P1` الزامی برای نسخه عملیاتی، `P2` بهبود بعدی.
 
 ## Documents — زنجیره Stacked فعلی
+
+- [x] `CUSTOMER-DOCUMENTS-001`: اتصال واقعی Customer 360 به فهرست و بارگذاری امن Documents با exact source + Branch/Domain scope، بدون Query مستقیم بین ماژول‌ها و بدون Migration. داده semantic پاسپورت/ویزا تا `DEC-OPEN-006` مسدود می‌ماند.
 
 - [x] `DOCUMENTS-001`: Foundation رابط و معماری ماژول روی
       `codex/pc-b-documents-foundation` / Draft PR #61؛ هنوز به `develop` ادغام نشده است.

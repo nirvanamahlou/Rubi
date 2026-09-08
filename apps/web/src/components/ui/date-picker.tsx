@@ -10,11 +10,11 @@ import {
   calendarMonthLabel,
   calendarMonthName,
   calendarParts,
-  calculateCalendarPopoverPosition,
   formatCalendarValue,
   joinDateAndTime,
   moveCalendarMonth,
   parseIsoDate,
+  resolveCalendarPopoverPosition,
   setCalendarMonthYear,
   toIsoDate,
   type CalendarSystem,
@@ -34,6 +34,7 @@ function formatCalendarNumber(value: number, system: CalendarSystem): string {
 }
 
 export interface DatePickerProps {
+  gregorianEnglish?: boolean;
   id?: string;
   name?: string;
   value?: string;
@@ -51,6 +52,7 @@ export interface DatePickerProps {
 
 export function DatePicker({
   className,
+  gregorianEnglish = false,
   defaultValue = '',
   disabled,
   id,
@@ -67,19 +69,23 @@ export function DatePicker({
   const currentValue = value ?? internalValue;
   const [calendarSystem, setCalendarSystem] =
     React.useState<CalendarSystem>('persian');
+  const english = gregorianEnglish && calendarSystem === 'gregorian';
+  const t = (fa: string, en: string) => (english ? en : fa);
   const [calendarView, setCalendarView] = React.useState<CalendarView>('days');
   const [yearGridStart, setYearGridStart] = React.useState(0);
   const [open, setOpen] = React.useState(false);
+  const [popoverPlacement, setPopoverPlacement] = React.useState<
+    'above' | 'below'
+  >('below');
+  const [popoverPosition, setPopoverPosition] =
+    React.useState<React.CSSProperties | null>(null);
   const [anchor, setAnchor] = React.useState(
     () => parseIsoDate(currentValue) ?? new Date(),
   );
   const rootRef = React.useRef<HTMLDivElement>(null);
-  const triggerRef = React.useRef<HTMLButtonElement>(null);
   const popoverRef = React.useRef<HTMLDivElement>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
   const popoverId = `${React.useId()}-calendar`;
-  const [popoverPosition, setPopoverPosition] = React.useState<ReturnType<
-    typeof calculateCalendarPopoverPosition
-  > | null>(null);
   const selectedDate = currentValue.slice(0, 10);
   const days = calendarMonthDays(anchor, calendarSystem);
   const anchorParts = calendarParts(anchor, calendarSystem);
@@ -97,18 +103,20 @@ export function DatePicker({
           month,
           calendarSystem,
         );
-        return { month, label: calendarMonthName(date, calendarSystem) };
+        return {
+          month,
+          label: calendarMonthName(date, calendarSystem, gregorianEnglish),
+        };
       }),
-    [anchor, anchorParts.year, calendarSystem],
+    [anchor, anchorParts.year, calendarSystem, gregorianEnglish],
   );
 
   React.useEffect(() => {
     if (!open) return;
     const closeOnOutside = (event: PointerEvent) => {
-      const target = event.target as Node;
       if (
-        !rootRef.current?.contains(target) &&
-        !popoverRef.current?.contains(target)
+        !rootRef.current?.contains(event.target as Node) &&
+        !popoverRef.current?.contains(event.target as Node)
       )
         setOpen(false);
     };
@@ -123,53 +131,46 @@ export function DatePicker({
     };
   }, [open]);
 
-  const updatePopoverPosition = React.useCallback(() => {
-    const trigger = triggerRef.current;
+  const positionPopover = React.useCallback(() => {
+    const trigger = triggerRef.current?.getBoundingClientRect();
     const popover = popoverRef.current;
     if (!trigger || !popover) return;
-    const triggerRect = trigger.getBoundingClientRect();
-    const popoverRect = popover.getBoundingClientRect();
-    const next = calculateCalendarPopoverPosition(
+
+    const position = resolveCalendarPopoverPosition(
       {
-        top: triggerRect.top,
-        right: triggerRect.right,
-        bottom: triggerRect.bottom,
+        bottom: trigger.bottom,
+        height: trigger.height,
+        left: trigger.left,
+        top: trigger.top,
+        width: trigger.width,
       },
-      { width: popoverRect.width, height: popoverRect.height },
-      { width: window.innerWidth, height: window.innerHeight },
+      { height: popover.scrollHeight, width: popover.offsetWidth },
+      { height: window.innerHeight, width: window.innerWidth },
     );
-    setPopoverPosition((current) =>
-      current &&
-      current.top === next.top &&
-      current.left === next.left &&
-      current.placement === next.placement
-        ? current
-        : next,
-    );
+    setPopoverPlacement(position.top < trigger.top ? 'above' : 'below');
+    setPopoverPosition({
+      left: position.left,
+      maxHeight: position.maxHeight,
+      top: position.top,
+    });
   }, []);
 
   React.useLayoutEffect(() => {
     if (!open) return;
-    let animationFrame = 0;
-    const schedulePosition = () => {
-      window.cancelAnimationFrame(animationFrame);
-      animationFrame = window.requestAnimationFrame(updatePopoverPosition);
-    };
-    updatePopoverPosition();
-    window.addEventListener('resize', schedulePosition);
-    window.addEventListener('scroll', schedulePosition, true);
+    positionPopover();
     const observer =
       typeof ResizeObserver === 'undefined'
         ? null
-        : new ResizeObserver(schedulePosition);
+        : new ResizeObserver(positionPopover);
     if (popoverRef.current) observer?.observe(popoverRef.current);
+    window.addEventListener('resize', positionPopover);
+    window.addEventListener('scroll', positionPopover, true);
     return () => {
-      window.cancelAnimationFrame(animationFrame);
-      window.removeEventListener('resize', schedulePosition);
-      window.removeEventListener('scroll', schedulePosition, true);
       observer?.disconnect();
+      window.removeEventListener('resize', positionPopover);
+      window.removeEventListener('scroll', positionPopover, true);
     };
-  }, [calendarSystem, calendarView, includeTime, open, updatePopoverPosition]);
+  }, [calendarSystem, calendarView, includeTime, open, positionPopover]);
 
   const emit = (nextValue: string) => {
     if (value === undefined) setInternalValue(nextValue);
@@ -226,24 +227,24 @@ export function DatePicker({
 
   const previousLabel =
     calendarView === 'days'
-      ? 'ماه قبل'
+      ? t('ماه قبل', 'Previous month')
       : calendarView === 'months'
-        ? 'سال قبل'
-        : '۱۲ سال قبل';
+        ? t('سال قبل', 'Previous year')
+        : t('۱۲ سال قبل', 'Previous 12 years');
   const nextLabel =
     calendarView === 'days'
-      ? 'ماه بعد'
+      ? t('ماه بعد', 'Next month')
       : calendarView === 'months'
-        ? 'سال بعد'
-        : '۱۲ سال بعد';
+        ? t('سال بعد', 'Next year')
+        : t('۱۲ سال بعد', 'Next 12 years');
 
   return (
     <div className={cn('relative w-full', className)} ref={rootRef}>
       <input name={name} type="hidden" value={currentValue} />
       <button
         {...ariaProps}
-        aria-controls={open ? popoverId : undefined}
         aria-expanded={open}
+        aria-controls={open ? popoverId : undefined}
         aria-haspopup="dialog"
         className={cn(
           'flex h-11 w-full items-center justify-between gap-3 rounded-xl border border-input bg-surface px-3 text-sm text-foreground shadow-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50',
@@ -252,23 +253,28 @@ export function DatePicker({
         disabled={disabled || readOnly}
         id={id}
         onClick={() => {
-          if (open) {
-            setOpen(false);
-            return;
+          if (!open) {
+            const parsed = parseIsoDate(currentValue);
+            if (parsed) setAnchor(parsed);
+            setCalendarView('days');
+            setPopoverPosition(null);
           }
-          const parsed = parseIsoDate(currentValue);
-          if (parsed) setAnchor(parsed);
-          setCalendarView('days');
-          setPopoverPosition(null);
-          setOpen(true);
+          setOpen((current) => !current);
         }}
         ref={triggerRef}
         type="button"
       >
         <span>
           {currentValue
-            ? formatCalendarValue(currentValue, calendarSystem, includeTime)
-            : placeholder}
+            ? formatCalendarValue(
+                currentValue,
+                calendarSystem,
+                includeTime,
+                gregorianEnglish,
+              )
+            : english && placeholder === 'انتخاب تاریخ'
+              ? 'Select date'
+              : placeholder}
         </span>
         <CalendarDays aria-hidden="true" className="size-5 text-primary" />
       </button>
@@ -276,25 +282,23 @@ export function DatePicker({
       {open && typeof document !== 'undefined'
         ? createPortal(
             <div
-              aria-label="انتخاب تاریخ"
-              className="pointer-events-auto fixed z-[100] max-h-[calc(100dvh-2rem)] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15"
-              data-placement={popoverPosition?.placement}
-              dir="rtl"
-              id={popoverId}
+              aria-label={t('انتخاب تاریخ', 'Select date')}
+              className="fixed z-[70] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15"
+              dir={english ? 'ltr' : 'rtl'}
               ref={popoverRef}
+              id={popoverId}
+              data-placement={popoverPlacement}
               role="dialog"
-              onPointerDown={(event) => event.stopPropagation()}
               style={
-                popoverPosition
-                  ? {
-                      left: popoverPosition.left,
-                      top: popoverPosition.top,
-                    }
-                  : { left: 0, top: 0, visibility: 'hidden' }
+                popoverPosition ?? {
+                  left: '1rem',
+                  top: '1rem',
+                  visibility: 'hidden',
+                }
               }
             >
               <div
-                aria-label="نوع تقویم"
+                aria-label={t('نوع تقویم', 'Calendar system')}
                 className="mb-3 grid grid-cols-2 rounded-xl bg-secondary p-1"
                 role="group"
               >
@@ -311,7 +315,9 @@ export function DatePicker({
                     onClick={() => changeCalendarSystem(system)}
                     type="button"
                   >
-                    {system === 'persian' ? 'شمسی' : 'میلادی'}
+                    {system === 'persian'
+                      ? t('شمسی', 'Persian')
+                      : t('میلادی', 'Gregorian')}
                   </button>
                 ))}
               </div>
@@ -323,7 +329,10 @@ export function DatePicker({
                   onClick={navigateBackward}
                   type="button"
                 >
-                  <ChevronRight aria-hidden="true" className="size-5" />
+                  <ChevronRight
+                    aria-hidden="true"
+                    className={`size-5 ${english ? 'rotate-180' : ''}`}
+                  />
                 </button>
                 <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
                   {calendarView === 'years' ? (
@@ -334,7 +343,7 @@ export function DatePicker({
                   ) : (
                     <>
                       <button
-                        aria-label="نمایش شبکه ماه‌ها"
+                        aria-label={t('نمایش شبکه ماه‌ها', 'Choose month')}
                         aria-pressed={calendarView === 'months'}
                         className={cn(
                           'h-9 min-w-0 flex-1 rounded-lg px-2 text-sm font-bold outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white',
@@ -343,10 +352,14 @@ export function DatePicker({
                         onClick={() => setCalendarView('months')}
                         type="button"
                       >
-                        {calendarMonthName(anchor, calendarSystem)}
+                        {calendarMonthName(
+                          anchor,
+                          calendarSystem,
+                          gregorianEnglish,
+                        )}
                       </button>
                       <button
-                        aria-label="نمایش شبکه سال‌ها"
+                        aria-label={t('نمایش شبکه سال‌ها', 'Choose year')}
                         className="h-9 min-w-0 flex-1 rounded-lg px-2 text-sm font-bold outline-none transition hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
                         dir="ltr"
                         onClick={() => {
@@ -360,7 +373,11 @@ export function DatePicker({
                     </>
                   )}
                   <span className="sr-only">
-                    {calendarMonthLabel(anchor, calendarSystem)}
+                    {calendarMonthLabel(
+                      anchor,
+                      calendarSystem,
+                      gregorianEnglish,
+                    )}
                   </span>
                 </div>
                 <button
@@ -369,19 +386,22 @@ export function DatePicker({
                   onClick={navigateForward}
                   type="button"
                 >
-                  <ChevronLeft aria-hidden="true" className="size-5" />
+                  <ChevronLeft
+                    aria-hidden="true"
+                    className={`size-5 ${english ? 'rotate-180' : ''}`}
+                  />
                 </button>
               </div>
 
               {calendarView === 'months' ? (
                 <div
-                  aria-label="شبکه انتخاب ماه"
+                  aria-label={t('شبکه انتخاب ماه', 'Choose month')}
                   className="grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-2"
                   role="group"
                 >
                   {monthOptions.map((option) => (
                     <button
-                      aria-label={`ماه ${option.label}`}
+                      aria-label={`${t('ماه', 'Month')} ${option.label}`}
                       aria-pressed={option.month === anchorParts.month}
                       className={cn(
                         'min-h-12 rounded-xl border border-primary/15 bg-surface px-2 text-sm font-semibold text-foreground shadow-xs outline-none transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
@@ -408,13 +428,13 @@ export function DatePicker({
                 </div>
               ) : calendarView === 'years' ? (
                 <div
-                  aria-label="شبکه انتخاب سال"
+                  aria-label={t('شبکه انتخاب سال', 'Choose year')}
                   className="grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-2"
                   role="group"
                 >
                   {yearOptions.map((year) => (
                     <button
-                      aria-label={`سال ${formatCalendarNumber(year, calendarSystem)}`}
+                      aria-label={`${t('سال', 'Year')} ${formatCalendarNumber(year, calendarSystem)}`}
                       aria-pressed={year === anchorParts.year}
                       className={cn(
                         'min-h-12 rounded-xl border border-primary/15 bg-surface px-2 text-sm font-semibold text-foreground shadow-xs outline-none transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
@@ -442,7 +462,10 @@ export function DatePicker({
                 </div>
               ) : (
                 <div className="grid grid-cols-7 gap-1 text-center">
-                  {weekdayLabels[calendarSystem].map((label, index) => (
+                  {(english
+                    ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                    : weekdayLabels[calendarSystem]
+                  ).map((label, index) => (
                     <span
                       className="py-1 text-xs font-bold text-primary"
                       key={`${label}-${index}`}
@@ -485,7 +508,7 @@ export function DatePicker({
                     className="text-xs font-semibold"
                     htmlFor={`${id}-time`}
                   >
-                    ساعت
+                    {t('ساعت', 'Time')}
                   </label>
                   <input
                     className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-surface px-2 text-center text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
@@ -502,13 +525,15 @@ export function DatePicker({
                     onClick={() => setOpen(false)}
                     type="button"
                   >
-                    تأیید
+                    {t('تأیید', 'Confirm')}
                   </button>
                 </div>
               ) : null}
 
               {required ? (
-                <span className="sr-only">انتخاب تاریخ الزامی است.</span>
+                <span className="sr-only">
+                  {t('انتخاب تاریخ الزامی است.', 'A date is required.')}
+                </span>
               ) : null}
             </div>,
             document.body,

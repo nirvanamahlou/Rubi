@@ -17,6 +17,14 @@ import {
   ValidateIf,
 } from 'class-validator';
 
+export class CustomerRegistrationLookupDto {
+  @IsOptional() @IsBoolean() matchByNationalId?: boolean;
+  @IsString() @MaxLength(16) nationalId!: string;
+  @IsString() @MinLength(1) @MaxLength(120) firstName!: string;
+  @IsString() @MinLength(1) @MaxLength(120) lastName!: string;
+  @IsOptional() @IsDateString({ strict: true }) birthDate?: string;
+}
+
 export class CustomerListQueryDto {
   @IsOptional() @IsString() @MaxLength(100) search = '';
   @IsOptional() @IsIn(['all', 'person', 'organization']) kind:
@@ -86,6 +94,19 @@ export class CustomerMutationDto {
   @IsString()
   @Matches(/^\d{10}$/)
   nationalId?: string | null;
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string'
+      ? value.trim().toUpperCase().replace(/\s+/g, '')
+      : value,
+  )
+  @IsString()
+  @Matches(/^[A-Z0-9-]{4,24}$/)
+  passportNumber?: string | null;
+  @IsOptional()
+  @IsDateString({ strict: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  passportExpiryDate?: string | null;
   @IsArray() @IsIn(['customer', 'passenger'], { each: true }) roles!: (
     'customer' | 'passenger'
   )[];

@@ -1,4 +1,44 @@
 # وضعیت پروژه
+## CONTRACT-OUTPUT-SUMMARY-0908 — COMPLETE_LOCAL
+
+کارت‌های «پرداخت تأییدشده مالی» و «مانده» فقط از قالب مشترک چاپ/PDF قرارداد حذف شدند؛ مبلغ توافق‌شده باقی است. محاسبات مالی، داشبورد، Excel، قیمت مسافران و سایر بخش‌های قرارداد تغییر نکردند. 199 تست Web فروش، lint محدوده، typecheck و Build تولیدی 36 مسیر موفق‌اند. PDF مصنوعی با رندر واقعی و بازبینی تصویری یک‌صفحه‌ای تأیید شد؛ آزمون احرازشده قرارداد واقعی ادعا نمی‌شود.
+
+نسخه روی Web3100 با PID14136 فعال است و API4000 بدون تغییر مانده؛ هر دو پاسخ200 دارند. نسخه قبلی وب در tmp/contract-output-summary-web-before-0908 حفظ شده است. PDFهای دانلودشده قبلی تغییر نمی‌کنند و باید دوباره خروجی گرفت. بدون Migration، تغییر داده/مجوز یا Push؛ رزرو همین کار آزاد شد.
+
+## SALES-EXCEL-0908 — COMPLETE_LOCAL
+
+دکمه خروجی Excel کنار فهرست قراردادها اضافه شد؛ همه نتایج جست‌وجو و وضعیت تسویه اعمال‌شده را با مجوز خروجی و محدوده دسترسی قبلی دریافت می‌کند. فایل واقعی XLSX با تیتر فارسی، تم سرمه‌ای، فیلتر و سربرگ ثابت، تاریخ قابل مرتب‌سازی و مبلغ عددی است. هر قرارداد/ارز یک ردیف دارد؛ مبلغ توافقی، پرداخت تأییدشده و مانده جدا هستند. سقف ۲۰۰۰ قرارداد با خطای صریح، بدون خروجی ناقص؛ سابقه دریافت فقط قالب/نسخه را ثبت می‌کند.
+
+67 تست API فروش و 198 تست Web فروش، lint محدوده، typecheck و Build تولیدی API/Web (36 مسیر) موفق‌اند. فایل مصنوعی با دو خواننده مستقل و پیش‌نمایش بررسی شد؛ بررسی احرازشده قرارداد واقعی ادعا نمی‌شود. Web3100 (PID6036) و API4000 (PID20132) فعال، پاسخ سلامت و فایل جدید 200، خروجی بدون نشست401؛ داده، تنظیمات PDF/مدارک و همه قابلیت‌های تور قبلی محفوظ‌اند. بدون Migration/Seed/مجوز جدید/Push عمومی؛ قفل‌های همین کار آزاد شد. جزئیات: docs/tasks/SALES-EXCEL-0908.md.
+
+## TOUR-PACKAGES-0908 — COMPLETE_LOCAL
+
+PC-A added the real Tour definition/departure tab in Ticket Management. Templates contain route, destination hotel options, registered insurance and included transfer/visa services. Dated departures reference the same published ticket offers used in standalone Sales. Weekly repetition prefills new dates and the old flight details for explicit confirmation/editing; it never changes old tickets or copies reservations. Sales chooses the tour before individual service details, expands its services without a duplicate tour charge, and persists a public versioned departure reference validated by Ticket Catalog.
+
+QA: 22 isolated PostgreSQL/domain tests passed including concurrent tour-versus-standalone capacity and concurrent idempotent departure creation; 58 targeted Sales/Master tests and 291 final affected Web tests passed. Full Web baseline: 900 passed, plus the new tour provenance test. Full API run: 948 passed, 83 optional skipped, one unrelated Customers hook timeout; all 13 tests in that file passed on isolated rerun. Contracts60 and Database73 tests passed; affected lint/typecheck and API/Web production builds passed (36 Web routes). Synthetic browser QA verifies themed selection, hotel city filtering, save, repeat prefill, Sales offer linkage and desktop/mobile width; no live authenticated business mutation is claimed.
+
+All43 migrations passed on an empty DB and the new additive migration passed on a restored backup. After a fresh private backup, only 20260908150000_tour_packages was applied to local rubi; existing record counts and historical migration checksums stayed unchanged. No live seed or permission change. Web3100/API4000 now serve the build; login/pages/health/new bundle HTTP200, protected tour routes401 without a session, credentialed CORS204. Existing Documents keys/storage and PDF browser/font environment preserved. Previous Web build and private backups remain under ignored tmp. Commits fd325c7 / 7844907 / 3949878; local-only, existing remote publication gate unchanged.
+
+## SIDEBAR-LABELS-DOTS-0908 — COMPLETE_LOCAL
+
+PC-A renamed the existing /sales navigation label to قرارداد and /tasks to میز کار per explicit owner request. Original routes, descriptions, content, permissions, compact behavior and group disclosure preserved. Added distinct static Tailwind group-dot colors aligned with reference3200, also visible on mobile. Final typecheck, scoped lint, 15 navigation/foundation tests and production build36 routes passed. Authenticated browser QA verifies new titles, seven rendered colored dots, group toggles, keyboard, compact17 links and mobile. Only verified Web1372 was replaced on3100 with the new integrated production build; existing PDF environment preserved, API/DB untouched. Local commit only, remote destination gate unchanged.
+
+## SIDEBAR-GROUP-TOGGLE-0908 — COMPLETE_LOCAL
+
+Independent accessible group buttons now run on integrated Web3100; whole-sidebar collapse and latest Sales preserved. Scoped lint/typecheck, 15 navigation/foundation tests, 36-route build and authenticated keyboard/desktop/mobile QA passed. Only Web restarted with existing PDF configuration; no API/data/migration change. See docs/tasks/SIDEBAR-GROUP-TOGGLE-0908.md. No remote push.
+
+
+## SALES-RUNTIME-INTEGRATION-0908 — COMPLETE_LOCAL
+
+User-approved normal local integration now serves latest Sales and both final grouped-sidebar changes, preserving current Customers, Notifications, branding and other CRM work. Source branches and old checkout remain intact. Branch codex/pc-a-sales-runtime-integration-0908, merges bd4fb50/a9223e0, active Web3100/API4000 from local-integration-0906. Production builds36 routes, source lint/typechecks and targeted integration tests pass; health200 and unauthenticated protected routes401. Existing DB has all42 migrations; no migration/seed/reset/data/permission/key change. Earlier SALES-FIRST-PASSENGER-ACQUAINTANCE-0908 activation-pending note is superseded by this activation. Historical migration checksum and index/default-name drift remain documented, not altered. No public push. See docs/tasks/SALES-RUNTIME-INTEGRATION-0908.md.
+## SIDEBAR-REFERENCE-SIZE-0908 — منوی هم‌اندازه مرجع
+
+PC-A follow-up on the approved sidebar: sidebar-icons.ts maps the existing 17 routes to outline Lucide symbols matching the3200 reference, without changing icons used elsewhere. Sidebar glyphs17px/stroke1.7, row text12px/semibold, minimum row40px with 3px gaps; group headings14px. All module names, routes, original widths/collapse/tooltips, mobile drawer and business pages preserved. Removed unintended row outlines during visual QA. Scoped lint, typecheck, 11 navigation tests, production build with 34 routes and authenticated browser collapse/expand/mobile checks passed. Final sidebar screenshot verified; final 390px viewport also measured390px without page overflow. Local-only on codex/pc-a-grouped-sidebar-0908; no runtime restart, migration, dependency, data or permissions. Handoff to separate Sales integration task required to retain this follow-up after its runtime cutover. Remote gate unchanged; no push attempted.
+
+## GROUPED-SIDEBAR-0908 — COMPLETE_LOCAL
+
+PC-A applied the owner-approved 7 sidebar groups to actual Web3100, retaining all 17 original names/routes/icons and existing 290/68px collapse, tooltips, mobile DrawerClose, header/branding/notifications/search/breadcrumb and module content. Expanded labels are 15px and headings 13px; labels can wrap and expanded navigation scrolls while footer remains reachable. No prototype pricing or synthetic pages transferred. 11 navigation tests, scoped lint, Web typecheck and production build with 34 routes passed. Authenticated Web3100 browser QA verified links/groups, collapse/expand, tooltips and mobile drawer; desktop screenshot reviewed. Drawer itself has no horizontal overflow; whole dashboard measured 398px at viewport390 after closing, so no claim to fix whole-page overflow. Branch codex/pc-a-grouped-sidebar-0908 from f2cc52a, active pc-b-sync-0908 checkout. No API/data/schema/dependency/permission changes or migration. Local commit only; remote push gate requires destination verification. Sales integration is separately coordinated and preserves this change.
+
 
 ## LOCAL-HR-AGENCIES-009 — آژانس‌ها و منابع انسانی در اجرای مشترک — آماده بررسی
 
@@ -83,6 +123,322 @@
 - ۹۵/۹۵ تست Ticket Catalog Web، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند. قانون Dense در CSS تولیدشده موجود است و نسخه جدید روی پورت ۳۱۰۰ پاسخ ۲۰۰ دارد. Browser QA خودکار به‌علت خطای ACL ابزار Windows ممکن نشد.
 - هیچ Schema/Migration/Seed، API، Contract، Dependency/Lockfile یا ماژول دیگری تغییر نکرد.
 
+## SALES-FIRST-PASSENGER-ACQUAINTANCE-0908 — COMPLETE_CODE / LOCAL_ACTIVATION_PENDING
+
+New natural-person Sales contracts use passenger one as the customer, without a separate primary row or optional linkage checkbox. Agency customers remain independent. Each passenger has a themed registered acquaintance-method selector, persisted through public Customers create/update with existing permissions and optimistic versions. Legacy drafts and saved methods are preserved. 194 Sales tests, scoped lint/typecheck, synthetic browser QA and 36-route production build pass. Web3100/API4000 health is 200, but Web3100 runs the separate customer-direct-contact-0908 worktree; it was not replaced. Coordinate activation with that owner. No migration, IAM, real-data mutation or public push. See docs/tasks/SALES-FIRST-PASSENGER-ACQUAINTANCE-0908.md.
+
+## SALES-PAYMENT-SEARCH-UPLOAD-0908 — COMPLETE_LOCAL
+
+Tracking search in contract payments now opens the main server-backed search across authorized contracts rather than filtering only the current contract's payment rows. It clears old settlement filters/page and shows matching contracts under unchanged payment-read/ownership/branch gates. A prominent receipt section offers saved-payment selection and direct file upload/list/download through public Documents APIs; new payments select their saved ID automatically. Finance state, restricted confidentiality, scan/download and uncertain-upload guards are unchanged. 188 Web Sales and 5 API reference tests, scoped lint/typecheck, synthetic browser QA and 36-route build pass. Web3100 updated; Web/API health 200. No schema/API/IAM/real-data/public-push change. See docs/tasks/SALES-PAYMENT-SEARCH-UPLOAD-0908.md.
+
+## SALES-INSURANCE-SELECTION-0908 — COMPLETE_LOCAL / ISSUANCE_DEFERRED
+
+New Sales contracts select an active registered insurance plan from a themed dropdown instead of free-text description. Public Master Data lookup supports pagination, retry and empty/inactive states. Plan reference/name/record version and insurer selection metadata persist in the existing Sales service and version-1 reservation snapshot with passenger assignments; no issued-policy claim. User explicitly deferred insurer API connection to later Reservations/Integrations work. 185 Sales tests, scoped lint/typecheck, synthetic browser checks and 36-route Web production build pass. Web3100 updated; Web/API health 200. No schema, API, producer, IAM, real-data or public-push change. See docs/tasks/SALES-INSURANCE-SELECTION-0908.md.
+
+## SALES-CONTRACT-ROOM-LOCATION-0908 — COMPLETE_LOCAL
+
+User corrected room-total placement: saved single/double/extra-bed quantities now appear directly below the hotel table in Hotel Information (section 4), absent from Other Services. Passenger room column stays removed; calculations and all other fields unchanged. 34 focused tests, scoped lint/typecheck, 36-route build and all four synthetic PDF pages pass. Web3100 updated; Web/API 200. No schema/API/real-data/public-push change. See docs/tasks/SALES-CONTRACT-ROOM-LOCATION-0908.md.
+
+## SALES-CONTRACT-ROOM-SUMMARY-0908 — COMPLETE_LOCAL
+
+Removed per-passenger room labels from contract print/PDF and added saved purchased room counts (single, double, extra beds and total rooms) to Other Services, independently of passenger accommodation. Hotel Master Data product name, pricing/Finance rules, notices and QR remain unchanged. Older records with no breakdown are explicitly unrecorded, not inferred. 181 Sales tests, scoped lint/typecheck and 36-route Web build pass; all four synthetic PDF pages reviewed (six and agency-six one page, 42 two pages). Web3100 updated; Web/API 200. No schema, API, permissions, business-data or public-push change. See docs/tasks/SALES-CONTRACT-ROOM-SUMMARY-0908.md.
+
+## SALES-CONTRACT-ONLY-FLIGHT-0907 — COMPLETE_LOCAL
+
+Sales now supports a contract-only floating flight independently for outbound/return, alongside actual catalog offers. Version-1 details persist in existing Sales service metadata and the reservation request snapshot, not Ticket Management or inventory selections. Backend validates source exclusivity, route and timing; manual-only confirmation does not call the inventory reservation adapter. Print/PDF and Reservations ticket reopening include the pending-reservation flight. 59 public-contract, 54 API Sales and 181 Web Sales/Reservations tests, scoped lint/typechecks and API/36-route Web builds pass. Synthetic browser and both six-person one-page PDFs verified. Web3100/API4000 and existing database connectivity restored September 8. No migration, dependency, permissions, real records or public push changed. See docs/tasks/SALES-CONTRACT-ONLY-FLIGHT-0907.md.
+
+## SALES-CONTRACT-QR-PLACEHOLDER-0907 — COMPLETE_LOCAL
+
+User explicitly requested a non-working QR now. Print/PDF footer now has a sharp black/white QR at bottom right, with a small pending-server notice and existing contact details at left. QR contains only fixed pending-status text, no personal data, URL or access credential. It is not contract verification and existing copies will need regeneration after secure public-server viewing is implemented. 166 Sales tests, scoped lint/typecheck and 36-route build pass; all five synthetic PDF pages visually reviewed (six-person one-page layout retained). Web3100 updated; Web/API 200. No API, schema, dependency, IAM, real-data or public-push change. See docs/tasks/SALES-CONTRACT-QR-PLACEHOLDER-0907.md.
+
+## SALES-PAYMENT-EVIDENCE-0907 — COMPLETE_LOCAL
+
+Contract payments now accept optional tracking references in both creation and dashboard flows. Authorized dashboard search finds payment references within existing contract ownership/branch scope; payment rows can be filtered and show distinct Finance states. Saved payments expose receipt upload/list/download using public Documents APIs, registered FINANCE receipts, restricted confidentiality and unchanged scan/permission gates. Upload does not confirm payment; search is not a bank inquiry. 164 Web Sales tests, 62 API Sales/Documents tests, scoped lint/typechecks and API/Web production builds pass; synthetic browser workflow verified. Web3100/API4000 return 200; unauthenticated contract/document APIs return 401. No migration, grants, real-data upload or public push. See docs/tasks/SALES-PAYMENT-EVIDENCE-0907.md.
+
+## SALES-CONTRACT-THEME-ROOM-0907 — COMPLETE_LOCAL
+
+Hotel section now uses the selected room-type name from the existing public Master Data lookup, not passenger DBL/child accommodation labels. Updated reference-style Persian/navy header, left number badges, pale table headings, three-column financial summary, signatures and contact footer. User-requested phone/email apply only to Niyayesh issuer; prior terms, passenger/currency totals and finance logic are preserved. B Nazanin bold rendering corrected in print and PDF. 161 Sales tests, scoped lint/typecheck and 36-route build pass; all five final synthetic PDF pages inspected (2/6/agency-6: one page; 42: two). Web3100 updated; Web/API 200. QR remains deferred to server-hosted contract viewing. No migration/API/IAM/data change or public push. See docs/tasks/SALES-CONTRACT-THEME-ROOM-0907.md.
+
+## SALES-CONTRACT-REFERENCE-THEME-0907 — THEME_COMPLETE_LOCAL / QR_DEFERRED_TO_SERVER
+
+Contract print/PDF follows the supplied navy-header, teal-rule and soft-gray-table reference theme without changing fields, section order or business calculations. B Nazanin, English monetary digits, saved passenger amounts and notices remain. 159 Sales tests plus final 17 print tests, scoped lint/typecheck and 36-route production build pass; all five pages of four synthetic PDFs visually inspected (2/6/agency-6 passengers: one page; 42: two pages). Web3100 updated and Web/API health 200. User wants QR to open this specific contract online, like file viewing, after future server deployment. No public viewer/verification capability or QR is claimed or added now. No migration, API/IAM/data change or public push. See docs/tasks/SALES-CONTRACT-REFERENCE-THEME-0907.md.
+
+## SALES-PAYMENT-CURRENCY-0907 — COMPLETE_LOCAL
+
+Replaced the remaining free-text currency in saved-contract dashboard payments with a button-only themed registered-currency dropdown. Active references load across pages; failures/empty lists block submission with retry, and arbitrary codes cannot be entered. Existing new-contract currency selections remain unchanged. 158 Sales Web tests, scoped lint/typecheck and 36-route production build pass; synthetic actual-component browser tests cover retry, disabled submit, USD selection, inactive filtering and retention. Local Web3100 updated; API/database unchanged, no real payment created or public push. See docs/tasks/SALES-PAYMENT-CURRENCY-0907.md.
+
+## RESERVATIONS-TICKET-ACCESS-0907 — COMPLETE_LOCAL
+
+Reservations contract cards now reopen saved passenger ticket snapshots, select one passenger or print all (one A4 page each), and offer browser Save as PDF. Contract-number search and paging make requests older than the latest 100 accessible within existing permission/branch scope. Sales exposes a presentation-only public ticket entry; no live inventory reconstruction or private-module queries. 162 Web tests, 15 API tests, scoped lint/typechecks, API/Web production builds, synthetic interactive browser and both rendered PDF pages passed. Five unrelated PostgreSQL hotel-purchase tests skipped without their dedicated test database; an empty-authorized-scope history query was independently checked on local PostgreSQL without business-row access. Local Web3100/API4000 updated. Existing templates remain DRAFT/not issued; no direct ticket-PDF download endpoint or real issuance added. No migration/data/IAM/public push. See docs/tasks/RESERVATIONS-TICKET-ACCESS-0907.md.
+
+## SALES-TICKET-THEME-0907 — COMPLETE_LOCAL
+
+Passenger ticket preview/print uses contract blue, larger agency branding and no payment section. Recognized test flights show a test-airline icon plus explicitly sample-only e-ticket 7143/RLOC DEMO01; actual issuance remains blank and all copies remain DRAFT. 153 Sales tests plus seven final template/visual checks, scoped lint/typecheck/production build pass. Chromium screenshot verified; Web3100 active, Web/API 200. No schema/API/IAM/real-data changes or public push. See docs/tasks/SALES-TICKET-THEME-0907.md.
+
+## SALES-OUTPUT-PAGINATION-0907 — COMPLETE_LOCAL
+
+Contract print and PDF now fit standard 5–6 passenger examples (including agency, hotel, return flight and IRR/USD) on one A4 page. Wider room/currency columns and compact branding/section badges preserve legibility. All rows continue across pages with repeated headings, grouped totals and page counters; 42/100-person samples use 2/3 pages. Eight final pages visually checked, row/page counts verified, 150 Sales Web tests plus scoped lint/typecheck/production build pass. Web3100 active and Web/API health 200. No migration, API, IAM, real data change or public push; scoped locks released. See docs/tasks/SALES-OUTPUT-PAGINATION-0907.md.
+
+## SALES-PEOPLE-CORRECTION-0907 — COMPLETE_LOCAL
+
+Current national-ID corrections no longer require restoring an earlier attempted ID. Confirmation reads but never mutates the previous registration, then adopts/updates the accessible exact current-ID profile using existing permissions/version. Duplicate creates resolve on the same confirmation; blank optional entries preserve existing details. Optional Customers matchByNationalId retains strict legacy default, branch scope and sensitive-read audit. 249 Web + final 25 focused, 93 API Customers, 48 Contracts tests, scoped lint/typechecks and API/Web production builds passed. Local Web3100/API4000 updated and healthy; no migration/IAM/real-data walkthrough/public push. See docs/tasks/SALES-PEOPLE-CORRECTION-0907.md.
+
+## SALES-PEOPLE-RECOVERY-0907 — COMPLETE_LOCAL
+
+Sales people confirmation now separates definite rejection from unknown creation/contact outcomes. The same confirmation action recovers an exact existing identity or refreshes a known saved profile, preserving successful records/contact checkpoints. New public Customers registration lookup is POST-only, branch-scoped and sensitive-read permission/audit protected; no fuzzy identity binding or blind changed-national-ID retry. 243 combined Web + final 8 client tests, 91 Customers API + final 16 permission tests, 48 Contracts tests, scoped lint/typechecks and API/Web production builds pass. Local services updated; no migration/seed/IAM or real-customer walkthrough. See docs/tasks/SALES-PEOPLE-RECOVERY-0907.md.
+
+## SALES-OUTPUT-TERMS-0907 — COMPLETE_LOCAL
+
+Three user-supplied notices (similar hotel substitution, cashier receipt requirement, and overseas contract-conditions acceptance statement) are displayed below signatures and above Nystkt.ir in print/PDF. Persian spacing/spelling normalized without added terms; no legal review or automated consent/receipt-state change. Fourteen focused tests, scoped lint and production TypeScript/build passed. One-page normal and three-page large samples visually checked. Local Web3100 updated; API/database unchanged. No public push. See docs/tasks/SALES-OUTPUT-TERMS-0907.md.
+
+## SALES-OUTPUT-HOTEL-CURRENCY-0907 — COMPLETE_LOCAL
+
+Contract print/PDF now shows Nystkt.ir, hotel Latin name and website from public Master Data, explicit guest accommodation categories, separate IRR and foreign amount columns, and exact passenger-summed totals per currency. Existing missing data remains unrecorded, not inferred. Additive Sales passenger accommodation migration is live locally after empty/seed-twice and backup-restore gates; old records/history preserved. 132 Web Sales / 45 API Sales / 48 Contracts tests, scoped lint/typechecks and production builds passed. All four synthetic PDF pages inspected. Web3100/API4000 return 200; authenticated real-customer walkthrough not performed. Local-only; scoped ownership released. See docs/tasks/SALES-OUTPUT-HOTEL-CURRENCY-0907.md.
+
+## SALES-OUTPUT-CLEANUP-0907 — COMPLETE_LOCAL
+
+Removed the user-marked operator notes under signatures and technical generation footer from customer print/PDF, preserving company/signatures and all amounts. Operator disclosures and browser header/footer instructions remain in the preview dialog. Eleven tests, scoped lint and Web production TypeScript/build passed; all four synthetic PDF pages inspected. Web3100 restarted; API/database unchanged. Local-only; scoped locks released. See docs/tasks/SALES-OUTPUT-CLEANUP-0907.md.
+
+## SALES-CUSTOMER-PRICING-0907 — COMPLETE_LOCAL — 2026-09-07
+
+Individual agreed package totals per passenger/currency are persisted with exact reconciliation, without inferred age allocation. Direct PDF download is beside Print; amounts use English digits while Persian prose retains B Nazanin. Latest local Web3100/API4000 are active. 129 Web Sales / 44 API Sales / 47 Contracts tests, scoped lint, typechecks and production builds passed. Additive migration passed empty/seed-twice and backup-restore gates; operational historical checksums/business counts unchanged. No historical rebaseline, IAM grant, producer modification or public push. Legacy per-passenger amounts remain unrecorded; no fabrication. Task-specific locks released. Details: docs/tasks/SALES-CUSTOMER-PRICING-0907.md.
+
+## رنگ خروجی و ویرایش مشتری از فروش — 2026-09-07 — تحویل جزئی در لوکال
+
+- آبی جدول‌ها و کارت‌های خروجی قرارداد به آبی تیره هماهنگ شد؛ ب‌نازنین و جمع مالی قبلی حفظ شدند و همه صفحات PDF آزمایشی بازبینی شدند.
+- انتخاب شخص موجود، اطلاعات مجاز را در جدول باز می‌کند و فوکوس به ردیف قابل ویرایش می‌رود. اصلاح نام، هویت، تولد، پاسپورت و تماس با API عمومی مشتریان، مجوزهای قبلی و کنترل نسخه ذخیره می‌شود. مقادیر ماسک‌شده دست‌نخورده ارسال نمی‌شوند؛ تماس قبلی حذف نمی‌شود و مشتری همان مسافر اول همگام می‌ماند.
+- ۲۳۶ تست وب و ۱۴ تست نهایی مدل افراد، lint، typecheck و Build تولیدی ۳۶ مسیر موفق‌اند. آزمون تعاملی داده مصنوعی با CSS نهایی موفق؛ وب۳۱۰۰ فعال، ورود و سلامت API۲۰۰ و حفاظت فرم۳۰۷ است. بررسی احرازشده یا تغییر داده واقعی انجام نشد.
+- بخش مبلغ هر مسافر هنوز انجام نشده: انتخاب ورود قیمت روز/توافقی بر اساس رده سنی یا فردی در انتظار پاسخ است. هیچ تقسیم فرضی جمع یا تخفیف سنی ساختگی اضافه نشده. بدون Migration، تغییر API/مجوز یا Push عمومی؛ جزئیات: docs/tasks/SALES-CUSTOMER-PRICING-0907.md.
+
+## خروجی قرارداد و اصلاح عرض فرم — 2026-09-07 — فعال در لوکال
+
+- عنوان «قرارداد جدید» در راهنمای بالای صفحه تعریف شد؛ پیام «در دسترس نیست» ناشی از نبود عنوان مسیر بود، نه قطع سرور. ستون فرم از عرض حداقل جدول مستقل شد و پیمایش افقی داخل جدول می‌ماند.
+- پس از تأیید قرارداد و در داشبورد، «خروجی قرارداد / PDF» اطلاعات ذخیره‌شده را در قالب شش‌بخشی با ب‌نازنین نشان می‌دهد. دریافت فایل با «چاپ / ذخیره PDF» مرورگر است، نه دانلود خودکار یا ارسال به مشتری. مبلغ توافق‌شده و پرداخت تأییدشده مالی مصرف می‌شوند؛ قیمت خرید/پیشنهاد و کمیسیون فرضی وارد جمع نمی‌شوند.
+- این نسخه کپی اطلاعات قرارداد است، نه رسید پرداخت، فاکتور مالیاتی یا صدور رسمی بایگانی‌شده. نام شرکت از شرکت فعال هنگام تهیه خروجی است و این محدودیت صریح نمایش داده می‌شود. سیاست صدور رسمی Legal Entity همچنان بدون تغییر است.
+- ۲۳۳ تست وب، ۴۴ تست API فروش، ۴۱ تست قرارداد عمومی، lint محدوده، typecheck و Build وب/API موفق‌اند. پیش‌نمایش و چاپ در iframe و عرض فرم دسکتاپ/موبایل با داده مصنوعی آزموده شد؛ PDF نمونه عادی یک صفحه و ۴۲ مسافر سه صفحه است. ۳۱۰۰/۴۰۰۰ فعال و حفاظت ورود برقرار؛ بررسی احرازشده روی قرارداد واقعی ادعا نمی‌شود.
+- بدون Migration، تغییر مجوز، داده واقعی آزمایشی یا انتشار عمومی. جزئیات و محدودیت‌ها: docs/tasks/SALES-OUTPUT-LAYOUT-0907.md.
+
+## تقویم مستقیم جدول مشتری و مسافر — 2026-09-06 — فعال در لوکال
+
+- پنجرهٔ واسط تاریخ حذف شد؛ تقویم هم‌تم مستقیم کنار خانهٔ تاریخ تولد یا انقضای پاسپورت باز می‌شود. سوییچ شمسی/میلادی داخل تقویم است و فرم اصلی با Escape بسته نمی‌شود. همین جدول در فروش نیز مصرف می‌شود؛ مقدار ISO، ردیف‌ها و قواعد ویرایش حفظ شدند.
+- ۲۲۲ تست هدفمند وب، lint، typecheck و Build تولیدی ۳۶ مسیر موفق‌اند. آزمون تعاملی با دادهٔ مصنوعی و CSS نهایی، انتخاب سال/ماه/روز، حفظ فرم، کلیک بیرون، فوکوس، انقضای مستقل و محدودهٔ موبایل را تأیید کرد. وب۳۱۰۰ و API۴۰۰۰ پاسخ موفق دارند؛ بررسی احرازشده و تغییر دادهٔ واقعی انجام نشد.
+- بدون تغییر API، دیتابیس، مجوز، وابستگی یا انتشار عمومی؛ نسخهٔ قبلی وب محفوظ است. جزئیات: docs/tasks/CUSTOMER-INLINE-CALENDAR-0906.md.
+
+## اتصال مشتری به مسافر اول و انقضای پاسپورت — 2026-09-06 — فعال در لوکال
+
+- تیک «این مشتری مسافر اول هم هست» اطلاعات مشتری را بدون افزایش تعداد در ردیف اول قرار می‌دهد؛ ویرایش‌ها همگام می‌مانند و برداشتن تیک ردیف قبلی را بازمی‌گرداند. جایگزینی ردیف پُر نیازمند تأیید است و مشتری حقوقی مسافر نمی‌شود.
+- شماره و تاریخ انقضای پاسپورت از جدول قرارداد در پرونده Customers ذخیره می‌شوند. شماره همچنان رمزنگاری/ماسک می‌شود و خواندن اطلاعات حساس مجوز و Audit قبلی را دارد. انقضا ستون nullable از نوع Date با قرارداد اختیاری سازگار است؛ اطلاعات خام وارد localStorage فروش نمی‌شود.
+- ۲۱۱ تست مشترک Web و ۱۱ تست نهایی مدل افراد، ۸۸ تست API مشتریان، ۴۱ Contracts و ۷۱ Database، lint/typecheck و Build وب/API موفق‌اند. ۳۸ Migration و Seed دوبار روی دیتابیس خالی، ارتقای نسخه بکاپ و تست ذخیره واقعی/نسخه/شعبه موفق بودند. پس از بکاپ جدید، تنها Migration افزایشی روی لوکال اعمال شد؛ شمار داده‌های قبلی و checksumهای تاریخی حفظ شدند.
+- وب ۳۱۰۰ و API۴۰۰۰ فعال‌اند؛ پاسخ ورود، فایل جدید و سلامت API برابر ۲۰۰ و منع دسترسی بدون ورود برقرار است. بدون تغییر مجوز، Seed عملیاتی یا انتشار عمومی؛ بررسی بصری احرازشده انجام نشده است. جزئیات: docs/tasks/SALES-PASSPORT-EXPIRY-0906.md.
+
+## جدول مشترک مشتری و مسافر در فروش — 2026-09-06 — فعال در لوکال
+
+- مرحله افراد قرارداد از همان جدول افزودن مشتریان استفاده می‌کند؛ تمام ردیف‌های مسافر مطابق تعداد مرحله اول یکجا باز می‌شوند. فقط افزودن نوزاد در این مرحله ممکن است و تعداد بزرگسال/کودک از مرحله اول تغییر می‌کند. مشتری حقوقی و «مشتری همان مسافر اول» حفظ شدند.
+- اعتبارسنجی همه ردیف‌ها پیش از ثبت انجام می‌شود؛ پرونده‌های موجود دوباره ساخته نمی‌شوند و نتیجه نامطمئن ثبت نیازمند بررسی است. اطلاعات خام ورودی در حافظه فرم است، نه پیش‌نویس localStorage. مرز عمومی مشتریان، کنترل شعبه/مجوز، ظرفیت و قواعد مالی حفظ شدند.
+- ۲۰۸ تست مشترک فروش/مشتریان و ۷ تست نهایی جدول مشترک، lint محدوده، typecheck و Build تولیدی ۳۶ مسیر موفق‌اند. وب ۳۱۰۰ و فایل جدید پاسخ ۲۰۰ دارند؛ API بدون تغییر سالم است. بدون Migration، تغییر مجوز، داده واقعی آزمایشی یا انتشار عمومی. بررسی بصری احرازشده انجام نشده؛ جزئیات در docs/tasks/SALES-PEOPLE-SHEET-0906.md.
+
+## یکسان‌سازی تم داشبورد فروش — 2026-09-06 — فعال در لوکال
+
+- چهار کارت شاخص فروش با گرادیان، تایپوگرافی و فاصله‌گذاری بخش مشتریان/مسافران هماهنگ شد؛ اعداد و محاسبات قبلی حفظ شدند. منوی وضعیت تسویه، روش پرداخت، بانک چک و مسافر پیش‌نمایش بلیت از Select آماده برنامه با پشتیبانی RTL و کیبورد استفاده می‌کنند.
+- ۹۹ تست فروش، lint محدوده، typecheck وب و Build تولیدی ۳۶ مسیر موفق بود. نسخه روی ۳۱۰۰ فعال؛ فایل جدید و ورود پاسخ ۲۰۰، حفاظت ورود داشبورد پاسخ ۳۰۷ و سرور پاسخ سلامت ۲۰۰ دارند. بدون تغییر API، پایگاه داده، مجوز یا انتشار عمومی؛ بررسی بصری احرازشده ادعا نمی‌شود.
+
+## بازطراحی برنامه پرداخت قرارداد — 2026-09-06 — فعال در لوکال
+
+- کارت‌های فشرده و شماره‌دار، تعداد پرداخت و چک، عنوان مستقل مبلغ/ارز/روش/سررسید، اطلاعات چک در بخش مشخص و حذف با تأیید اضافه شد. داده چک پیش‌نویس در ورودی‌های کنترل‌شده نمایش داده می‌شود؛ تغییر روش به غیرچک، داده غیرفعال چک را از درخواست حذف می‌کند تا اعتبارسنجی فعلی سرور حفظ شود.
+- ۹۶ تست فروش، lint محدوده، typecheck نهایی و Build تولیدی ۳۶ مسیر پاس شدند. پنج تست جزء جدید پس از اصلاح نوع فیلد اختیاری چک تکرار و موفق شدند. نسخه روی ۳۱۰۰ فعال و پاسخ صفحه ورود و فایل جدید ۲۰۰ است. API، پایگاه داده، مجوزها و قواعد تأیید مالی تغییر نکرده‌اند. نسخه قبلی در tmp/payment-layout-web-before-0906 نگهداری شد؛ بدون انتشار عمومی یا ادعای بررسی بصری احرازشده.
+
+## ارز و ترانسفر همراه قرارداد — 2026-09-06 — فعال در لوکال
+
+- ارز قیمت خدمات و پرداخت‌ها از فهرست فعال اطلاعات پایه با جست‌وجو انتخاب می‌شود؛ منوی روش پرداخت و مراجع فرم با تم برنامه یکسان شد. ارز نامعتبر یا غیرفعال در فرم جدید پذیرفته نمی‌شود.
+- ترانسفر رفت/برگشت در قرارداد جدید خدمت همراه بدون هزینه اضافه است؛ ردیف قیمت ندارد، سرور قیمت اضافه برای آن را رد می‌کند و جهت آن در خروجی بلیت و اطلاعات تحویل رزرواسیون باقی می‌ماند. قیمت قراردادهای قدیمی، محاسبه هتل و تسویه بر اساس تأیید Finance تغییر نکرد.
+- ۴۱ تست Contracts، ۹۱ تست Sales Web، ۴۴ تست API فروش/رزرواسیون، همه ۱۱ بررسی lint/typecheck و وابستگی، Build سرور و Build وب با ۳۶ مسیر پاس شدند؛ ۵ تست اختیاری دیتابیس اجرا نشدند. نسخه جدید روی ۳۱۰۰/۴۰۰۰ فعال است و پاسخ HTTP و فایل نسخه جدید تأیید شد. بدون Migration، تغییر مجوز یا انتشار عمومی؛ بررسی بصری احرازشده ادعا نمی‌شود. جزئیات: docs/tasks/SALES-CURRENCY-INCLUDED-TRANSFER-0906.md.
+
+## ورودی عددی تعداد مسافر — 2026-09-06
+
+- منوهای تعداد بزرگسال، کودک و نوزاد در قرارداد جدید با ورودی مستقیم عدد صحیح جایگزین شدند؛ انتخاب مقدار با کلیک، پاک‌کردن/تایپ مجدد و واحد «نفر» حفظ است. عدد منفی/اعشاری رد می‌شود و محدودیت منوی ۰ تا ۳۰ حذف شده؛ منطق ظرفیت صندلی و ترکیب سنی تغییر نکرد.
+- ۸۵ تست فروش، lint محدوده، typecheck وب و Build تولیدی ۳۶ مسیر پاس شدند. نسخه جدید روی ۳۱۰۰ فعال و وب/API پاسخ موفق دارند. تغییر فقط Web است؛ بدون Migration، تغییر مجوز یا انتشار عمومی. بررسی بصری احرازشده ادعا نمی‌شود.
+
+## قیمت‌گذاری فروش و خرید هتل — 2026-09-06 — فعال در لوکال
+
+- پیگیری با تأیید کاربر: ادغام معمولی e31b8d1 سه تغییر فروش تا 3d3095e را با قیمت‌گذاری ترکیب کرد؛ هر دو تاریخچه و Handoff حفظ شدند. شاخه مالک، main/develop و ریموت تغییر نکردند. نسخه مستقل هزینه خرید و چیدمان در یک پاسخ عمومی بازمی‌گردند و Snapshot قرارداد ثابت می‌ماند.
+- بررسی ترکیبی: ۷۳۳ تست Web، ۸۸۳ تست API، ۳۸ تست Contracts، ۷۱ تست Database، lint/typecheck و Build وب/API موفق؛ ۳۷ Migration روی دیتابیس تازه، Seed دوگانه و ۴۶ تست واقعی دامنه/ظرفیت/رزرواسیون پاس شدند. اجرای اولیه Seed زیر بار هم‌زمان timeout شد؛ تکرار مستقل دوگانه موفق بود.
+- ارتقا روی نسخه بازیابی‌شده بکاپ و سپس دیتابیس اصلی با بکاپ تازه موفق شد؛ فقط Migration افزایشی قیمت‌گذاری اعمال شد و شمار داده‌های قبلی و checksumهای تاریخی ثابت ماندند. نسخه کامل اکنون روی ۳۱۰۰ و API۴۰۰۰ فعال است؛ پاسخ وب/سرور، CORS، منع ثبت بدون ورود و دسترسی مؤثر خواندن/ثبت خرید هتل برای Ramtin تأیید شدند. هیچ Seed عملیاتی، مجوز اضافی یا ثبت قرارداد واقعی برای آزمایش انجام نشد.
+- بندهای توقف اولیه در ادامه، سابقه پیش از این ادغام موفق‌اند و دیگر مانع فعال‌سازی نیستند. بررسی تصویری احرازشده ادعا نمی‌شود.
+
+- قیمت روز فروش و مبلغ توافقی هر خدمت/ارز جدا شده‌اند؛ ورودی مبلغ سه‌رقمی، قیمت هر شب/کل اقامت با حفظ جمع دقیق و تخفیف خودکار فروشنده پیاده شد. ثبت هزینه خرید هتل در رزرواسیون نسخه‌دار و دارای کنترل شعبه، مجوز اختصاصی، ثبت تکرارپذیر و سابقه تغییرات است. مانده مالی همچنان فقط بر اساس پرداخت تأییدشده محاسبه می‌شود.
+- lint/typecheck، ۷۲۷ تست Web و ۳ تست نهایی پنل قیمت، ۸۸۲ تست API، ۳۸ تست Contracts، ۷۱ تست Database و Build وب/API پاس شدند. ۳۵ Migration روی دیتابیس خالی، Seed دوگانه و ۳۷ تست هدفمند دامنه/ذخیره واقعی موفق بودند؛ ۷۸ تست اختیاری API اجرا نشدند.
+- پیش‌بررسی عملیاتی دو Migration تازه ظرفیت بلیت و چیدمان رزرواسیون از شاخه فروش را یافت که در این پایه یکپارچه نیستند؛ هیچ Migration قیمت‌گذاری یا تعویض API انجام نشد. نسخه قبلی وب روی ۳۱۰۰ بازگردانده شد و API۴۰۰۰ در دسترس است. فعال‌سازی نیازمند هماهنگی و یکپارچه‌سازی با کار مالک آن شاخه است؛ بدون Push عمومی یا ادعای بررسی تصویری احرازشده.
+- طبق تأیید صریح کاربر، فقط مجوز ثبت خرید هتل به Ramtin با نقش اختصاصی اضافه شد؛ بکاپ و Audit ثبت و عدم تغییر سایر کاربران/نقش‌های مشترک کنترل شد. جزئیات: docs/tasks/HOTEL-SALES-PRICING-0906.md.
+
+## ورود جدولی مشتری و مسافران — 2026-09-06
+
+- فرم ایجاد شخص در Customer 360 به جدول قابل ویرایش تبدیل شد؛ مدارک هر ردیف جدا باز می‌شوند. اعتبارسنجی نام خالی و کد ملی تکراری پیش از ثبت، تأیید حذف/تغییر شخص و تقویم سلولی اضافه شد. اتصال عمومی Customers/Documents و حفاظت اطلاعات محفوظ است؛ API و دیتابیس تغییر نکردند.
+- روی شاخه مستقل codex/pc-a-customer-entry-sheet-0906: ۱۰۰ تست مشتریان، همه ۷۲۵ تست Web، lint بخش مشتریان، typecheck و Build تولیدی ۳۶ مسیر پاس شدند. وب جدید ۳۱۰۰ و API۴۰۰۰ پاسخ موفق دارند؛ بررسی احرازشده تصویری و ثبت مشتری واقعی ادعا نمی‌شود. جزئیات: docs/tasks/CUSTOMER-ENTRY-SHEET-0906.md.
+
+## فعال‌شدن نسخه یکپارچه محلی — 2026-09-06
+
+- ارتقا روی کپی بازیابی‌شده بکاپ موفق بود؛ پس از بکاپ تازه، فقط Migration افزایشی آژانس‌ها روی rubi اجرا شد. checksumهای قبلی و شمار مشتری/کاربر/مدرک حفظ شدند؛ هیچ reset یا Seed عملیاتی انجام نشد.
+- وب ۳۱۰۰ و API۴۰۰۰ اکنون از شاخه یکپارچه اجرا می‌شوند و پاسخ HTTP موفق دارند. کلید و مسیر مدارک قبلی محفوظ است. ریشه تاریخی اختلاف checksum همچنان ثبت است، اما آزمون ارتقای کپی مانع اجرای محلی را رفع کرد.
+
+## یکپارچه‌سازی محلی — 2026-09-06
+
+- نسخه آخر فروش، develop، آژانس، مارکتینگ، منابع انسانی، تقویم و بازیابی پاسپورت در شاخه مستقل codex/pc-a-local-integration-0906 ترکیب شدند. شاخه‌های اصلی، main/develop و ریموت تغییر نکردند.
+- lint، typecheck، تست کامل و Build موفق؛ ۳۴ Migration روی دیتابیس خالی و Seed دوگانه موفق. جزئیات و آزمون‌های اجرا‌نشده در docs/tasks/LOCAL-INTEGRATION-0906.md ثبت است.
+- اجرای نسخه جدید متوقف است: دو checksum قدیمی در دیتابیس rubi با تاریخچه Git تطبیق ندارند. بکاپ محلی تهیه شد؛ Migration عملیاتی، Seed یا جابه‌جایی سرور انجام نشده و نسخه جاری محفوظ است.
+
+## ترکیب مسافر و چیدمان نسخه‌دار هتل — 2026-09-06
+
+- شمارنده‌های بزرگسال، کودک و نوزاد در فروش جمع‌وجور هستند؛ تعداد اتاق، یک‌تخته، دوتخته و تخت اضافه با ورودی عددی مستقیم نمایش داده می‌شوند. واحد اتاق «باب» و تخت اضافه «نفر» است و خلاصه پایین ترکیب بزرگسال، کودک و نوزاد را نشان می‌دهد. تعداد مسافر پیش از انتخاب بلیت تعیین می‌شود و نوزاد صندلی مصرف نمی‌کند؛ کنترل ظرفیت اتمیک قبلی حفظ شده است.
+- پس از ثبت قرارداد، رزرواسیون می‌تواند چیدمان اجرایی هتل و اعضای اقامت را فقط از میان مسافران همان Snapshot و با دلیل تغییر ثبت کند. هر تغییر یک Revision افزایشی با کنترل نسخه هم‌زمانی می‌سازد و Snapshot فروش بازنویسی نمی‌شود. افزودن/تعویض مسافر یا افزایش صندلی همچنان از اصلاح قرارداد فروش و کنترل ظرفیت می‌گذرد.
+- ستون‌های چیدمان برای قراردادهای تاریخی nullable هستند تا هیچ مقدار فرضی روی داده قبلی نوشته نشود؛ قراردادهای جدید مقادیر واقعی را ذخیره می‌کنند. Migration `20260906113000_reservation_arrangements` پس از pg_dump روی دیتابیس لوکال اعمال شد و هر ۳۴ Migration روی PostgreSQL خالی موفق بود.
+- ۶۸۰ تست Web، ۸۲۳ تست API با ۷۶ skip اختیاری و ۱۸ تست Contracts موفق؛ lint، typecheck و Production Build وب/API و تست یکپارچه چیدمان رزرواسیون موفق‌اند. تعریف مجوز جدید آماده است، اما تخصیص آن به نقش‌ها به تأیید صریح امنیتی نیاز دارد. بررسی بصری احراز‌شده ادعا نمی‌شود.
+## ظرفیت مسافر بلیت و اعضای هتل — 2026-09-06
+
+- ترکیب بزرگسال، کودک و نوزاد پیش از انتخاب بلیت ثبت می‌شود؛ فقط بزرگسال و کودک صندلی مصرف می‌کنند و وجود نوزاد بدون بزرگسال رد می‌شود. کارت پیشنهاد ظرفیت کل و مانده را نشان می‌دهد و پیشنهاد ناکافی قابل انتخاب نیست.
+- تأیید قرارداد، ظرفیت هر جهت را با قفل ردیفی PostgreSQL و کلید قرارداد/جهت اتمیک رزرو می‌کند؛ اجرای هم‌زمان از بیش‌فروشی جلوگیری می‌کند و لغو قرارداد ظرفیت را آزاد می‌کند. Migration افزایشی `20260906095000_ticket_offer_capacity_allocations` روی دیتابیس خالی با هر ۳۳ Migration موفق بود.
+- برای هتل، تعداد اتاق جداست و اعضای اقامت از میان مسافران قرارداد انتخاب می‌شوند؛ occupancy از همان اعضا ساخته و در Snapshot رزرواسیون ثبت می‌شود. موجودی قطعی هتل همچنان نیازمند تأیید رزرواسیون است و موجودی ساختگی تولید نمی‌شود.
+- کل تست‌ها: ۶۷۸ تست Web و ۸۲۳ تست API موفق (۷۵ تست اختیاری API skip)؛ ۴۶ تست هدفمند Web و ۳۱ تست هدفمند API نیز مستقل موفق؛ lint، typecheck و Production Build وب/API و تست PostgreSQL مستقل جلوگیری از بیش‌فروشی موفق‌اند. تست هم‌زمانی قدیمی Reservations در اجرای کامل PostgreSQL یک خطای race در upsert خود Reservations نشان داد که خارج از این تغییر است؛ تست ظرفیت مستقل دوباره موفق شد. پس از پشتیبان‌گیری داخل کانتینر، Migration لوکال اعمال شد و Web 3100، API 4000 و CORS به‌ترتیب 200/200/204 پاسخ دادند. بررسی بصری احراز‌شده به‌دلیل خطای ACL ابزار مرورگر ادعا نمی‌شود.
+
+## بازطراحی داشبورد فروش — 2026-09-05
+
+- سربرگ و کارت‌های خلاصه بازطراحی شدند؛ مانده ارزها جدا، پیگیری مالی/رزرواسیون و مسیر ثبت اولین قرارداد مشخص‌اند. فهرست دارای جست‌وجوی واقعی شماره/مشتری، فیلتر تسویه، صفحه‌بندی و برچسب‌های فارسی است.
+- ارقام فارسی بدون تبدیل Decimal به Number؛ آمار کل از فهرست فیلترشده مستقل و کنترل دسترسی و مانده تأییدشده Finance بدون تغییر است. ۷۲ تست فروش، lint محدوده، typecheck و Production Build وب موفق‌اند.
+- تحویل محلی روی ۳۱۰۰؛ بدون Migration، تغییر مجوز، Push یا Merge. تست بصری احراز‌شده ادعا نمی‌شود.
+
+## بازطراحی مشتری و مسافران فروش — 2026-09-05
+
+- دو بخش شماره‌دار مشتری قرارداد و مسافران، سه انتخاب خریدار (شخص/آژانس/مسافر اول)، کارت مختصر مشتری انتخاب‌شده و تغییر صریح آن. جست‌وجوی نقش‌محور و صفحه‌بندی‌شده مشتری/مسافر جداست؛ نتایج جمع‌وجور و محدود به ارتفاع‌اند و کد ملی/تماس فقط Masked نمایش داده می‌شود. UUID و role انگلیسی از این بخش حذف شد. در هر بخش فقط جست‌وجو یا ثبت باز است؛ ردیف‌های اضافه مسافر در صف جمع‌وجور ثبت می‌شوند و علت غیرفعال‌بودن «بعدی» مشخص است.
+- کد ملی مشتری حقیقی هم مطابق Backend اجباری شد. Backend فروش در ایجاد/ویرایش/تأیید از Public masked API مشتریان دسترسی و وضعیت هر مسافر را کنترل می‌کند؛ مسافر باید شخص فعال دارای نقش مسافر باشد. مشتری غیرفعال و مسافر تکراری رد می‌شوند. هیچ Query مستقیم یا تغییر Customers/Schema انجام نشد.
+- ۶۹ تست Web فروش و ۳۵ تست API فروش، lint و typecheck و Build هر دو موفق؛ وب ۳۱۰۰ و API۴۰۰۰ به‌روزرسانی شدند. بررسی بصری احراز‌شده و ایجاد شخص واقعی انجام نشده؛ انتشار عمومی هنوز مجاز نشده است.
+
+## تاریخ خواناتر کارت بلیت فروش
+
+- تاریخ حرکت و رسیدن در کارت بلیت رفت و برگشت از ۱۱px کم‌رنگ به ۱۴px موبایل/۱۶px دسکتاپ، پررنگ و با کنتراست کامل تغییر کرد؛ متن قابلیت شکستن خط دارد. منطق زمان تهران و انتخاب بلیت ثابت است. ۶۶ تست فروش، lint، typecheck و Build وب موفق؛ تغییر محلی و بدون Push عمومی.
+
+## SALES-ORGANIZATION-CUSTOMER-0905 — اتصال مشتری حقوقی/آژانس
+
+- ۶۴ تست فروش، lint، typecheck و Production Build وب با ۳۵ مسیر موفق؛ نسخه جدید روی پورت ۳۱۰۰ اجرا شد. تغییرات فقط محلی ثبت می‌شوند؛ انتشار عمومی فروش هنوز تأیید نشده است.
+
+- فرم فروش نوع مشتری حقیقی یا حقوقی/آژانس دارد. سازمان‌های فعال از Public API اطلاعات پایه با جست‌وجو انتخاب می‌شوند؛ پرونده مشتری حقوقی قابل‌دسترسی از API مشتریان، با صفحه‌بندی کامل، دوباره استفاده می‌شود. اگر پرونده موجود نباشد، دکمه صریح ثبت فقط Customer از نوع organization با همان organizationId می‌سازد؛ MasterOrganization جدید ساخته نمی‌شود.
+- پرونده غیرفعال یا بدون نقش مشتری دوباره ساخته نمی‌شود و برای اصلاح به مشتریان ارجاع داده می‌شود. Permission/Branch scope همان APIهای مالک است. مشتری حقوقی با customerId واقعی به Sales وصل می‌شود؛ مسافران مستقل‌اند و گزینه مشتری‌بودن مسافر اول در حالت حقوقی غیرفعال است. تغییر سازمان، انتخاب مشتری قبلی را پاک می‌کند تا تأیید دوباره انجام شود.
+- این اتصال از مدل موجود استفاده می‌کند و به معنی تکمیل endpointهای Agency agreed-rates یا credit-summary نیست. بدون Schema/Migration/API مشترک یا تغییر ماژول‌های دیگر؛ ثبت واقعی سازمان/شخص در تست انجام نشده است.
+
+## SALES-PASSENGER-ROWS-0905 — تعداد مسافران و مشتری همراه
+
+- ۵۸ تست فروش، lint محدوده، typecheck و Production Build وب با ۳۵ مسیر موفق؛ نسخه جدید وب روی ۳۱۰۰ اجرا شد. PR #90 همچنان Draft است و قفل‌ها آزاد نشدند.
+
+- در مرحله مشتری و مسافران، ردیف‌های مستقل به تعداد موردنیاز اضافه/حذف می‌شوند؛ شمارنده ثبت‌شده و در حال ورود و شماره هر مسافر نمایش داده می‌شود. ردیف‌های جدید به ترتیب از Public API مشتریان ثبت می‌شوند و ردیف ناقص اجازه ادامه قرارداد نمی‌دهد. حذف از قرارداد، پرونده مشتری را حذف نمی‌کند.
+- کد ملی مسافر جدید الزامی و دقیقاً ۱۰رقمی است؛ ارقام فارسی/عربی به انگلیسی تبدیل و صفر ابتدایی حفظ می‌شود. رقم کنترل و یکتایی همچنان توسط ماژول Customers بررسی می‌شوند. کد خام فقط در حافظه فرم ورود است و وارد localStorage یا payload فروش نمی‌شود؛ اشخاص موجود از جست‌وجوی قبلی قابل انتخاب‌اند.
+- گزینه «مسافر اول، مشتری قرارداد هم هست» به همان شخص اشاره می‌کند و با حذف نفر اول، نفر بعدی را انتخاب می‌کند؛ در نبود مسافر، مشتری خالی می‌شود. ایجاد مسافر اول با این گزینه هر دو نقش را در API مشتریان درخواست می‌کند. بدون تغییر API/Schema/Migration/Permission یا شاخه‌های دیگر.
+
+## جداسازی تغییرات خارج از فروش — 2026-09-05
+
+- با اجازه مالک، تمام ۲۷ فایل Customers/Documents/Passport/Button در شاخه محلی codex/pc-a-customer-passport-preservation-0905 با Commit 75afc50 و پشتیبان خام مستقل محفوظ شدند. تطبیق SHA256 هر فایل در مبدا، پشتیبان و Worktree بازیابی موفق بود؛ فروش به وضعیت تمیز برگشت.
+- ۱۲ فایل با شاخه فعال مشتریان برابر است و ۱۵ فایل به تطبیق توسط مالک نیاز دارد؛ هیچ نسخه‌ای روی شاخه فعال مشتریان بازنویسی نشد. انتشار پشتیبان بررسی‌نشده توسط کنترل ایمنی متوقف شد؛ فقط محلی است. PR جدید، Merge، اجرای Migration یا آزادسازی قفل انجام نشد.
+- مانع فایل محلی Prisma رفع شد؛ این کار به معنی تکمیل ویرایش رزرواسیون، قراردادهای Agency یا رفع Conflict کلی PR #90 نیست. بررسی این مرحله صحت بازیابی و جداسازی فایل‌هاست، نه تأیید عملکرد کد پشتیبان.
+
+## SALES-CONTRACTS-001 — بلیت و هتل در یک بخش
+
+- جزئیات بلیت و هتل در یک زیرمرحله، بلیت بالا و هتل پایین، نمایش داده می‌شوند. انتخاب هتل با جست‌وجوی یکپارچه نام/کد و فقط مراجع شهر مقصد از Public API اطلاعات پایه است.
+- ورود پیشنهادی روز بعد از پرواز رفت و خروج روز قبل از پرواز برگشت، مطابق تاریخ نمایشی تهران، است. تاریخ دستی محفوظ می‌ماند؛ بازنشانی از بلیت ممکن است و بازه نامعتبر اجازه ادامه نمی‌دهد. تاریخ‌های نهایی از قرارداد عمومی فعلی به رزرواسیون ارسال می‌شوند.
+- تغییر چیدمان اجرایی هتل اکنون در رزرواسیون با Revision نسخه‌دار انجام می‌شود؛ Snapshot فروش immutable می‌ماند و اصلاح مسافر/ظرفیت همچنان از Sales عبور می‌کند.
+- ۵۰ تست فروش، lint محدوده فروش، typecheck وب و Production Build با ۳۵ مسیر موفق‌اند. بدون تغییر Schema/Migration/Dependency و بدون دست‌کاری تغییرات محلی کار دیگر؛ بررسی بصری احراز‌شده انجام نشده است.
+
+## SALES-CONTRACTS-001 — دو ستون مسیر و میلادی انگلیسی
+
+- کشور مبدأ بالای شهر مبدأ و کشور مقصد بالای شهر مقصد قرار گرفت؛ دو گروه در دسکتاپ کنار هم و در موبایل زیر هم‌اند.
+- تمام DatePickerهای فروش (هتل، تولد، خدمات و پرداخت‌ها) از گزینه اختیاری انگلیسی میلادی استفاده می‌کنند؛ بازه پرواز نیز هماهنگ شد. نام ماه/روز، ارقام و متن‌های پنجره میلادی انگلیسی و چیدمان LTR است؛ شمسی و پیش‌فرض سایر بخش‌ها فارسی می‌ماند. مقدار ISO تغییر نکرده است.
+- ۴۸ تست فروش/تقویم مشترک، lint/typecheck و Production Build وب موفق؛ تغییر مشترک افزایشی و opt-in است. بررسی بصری احراز‌شده ادعا نمی‌شود.
+
+## SALES-CONTRACTS-001 — تقویم هماهنگ و کارت بلیت خواناتر
+
+- فیلتر بازه با ظاهر تقویم مشترک، کلید شمسی/میلادی و شبکه انتخاب ماه و سال هماهنگ شد؛ همچنان یک تقویم اختیاری است. پنجره بر اساس فضای موجود بالا/پایین باز می‌شود و ارتفاع قابل اسکرول دارد. فایل تقویم مشترک تغییر نکرده است.
+- کارت بلیت نام شرکت/شماره، شهرهای مسیر، ساعت و تاریخ جداگانه حرکت/رسیدن، مدت سفر، کلاس واقعی و ظرفیت کل را نشان می‌دهد. ساعت بدون ثانیه و با برچسب وقت تهران نمایش داده می‌شود؛ انتخاب آبی و دارای علامت است. قیمت یا ظرفیت باقی‌مانده ساختگی درج نشده است.
+- ۳۹ تست فروش وب و lint/typecheck موفق‌اند. فیلتر اختیاری و جست‌وجوی برگشت بدون سقف بازه رفت حفظ شدند؛ Schema/API/مجوزها دست‌نخورده‌اند. بررسی بصری احراز‌شده ادعا نمی‌شود.
+
+## SALES-CONTRACTS-001 — مشتری و مسافران در یک مرحله
+
+- مراحل از شش به پنج رسید: جست‌وجو/انتخاب مشتری، افزودن مسافر و تاریخ تولد/رده سنی در یک مرحله مشترک هستند. تغییر مشتری مسافران قبلی را پاک نمی‌کند و انتخاب تکراری مسافر رکورد جدید نمی‌سازد.
+- دکمه‌های مشتری جدید و مسافر جدید، فرم کوچک داخل همان صفحه باز می‌کنند؛ نام، نام خانوادگی، تاریخ تولد و کد ملی اختیاری از Customers API موجود ثبت می‌شوند. مشتری می‌تواند هم‌زمان نقش مسافر داشته باشد. فرد فقط پس از موفقیت API به قرارداد انتخاب می‌شود؛ ثبت شخص مستقل از ثبت نهایی قرارداد است.
+- ۳۵ تست فروش وب، lint/typecheck و Production Build موفق؛ Schema، مجوزها و کد ماژول مشتریان تغییر نکرده‌اند. ایجاد فرد واقعی/آزمون احراز‌شده در مرورگر انجام نشده است.
+
+## SALES-CONTRACTS-001 — فرم جمع‌وجور و رفع اتصال داشبورد
+
+- فرم تمام‌صفحه با عرض محدود، عنوان/مراحل کوچک‌تر، چهار فیلد کشور/شهر در یک ردیف دسکتاپ، گزینه‌های خدمات کم‌ارتفاع و نوار دکمه‌های در دسترس بازطراحی شد. موبایل همچنان چیدمان واکنش‌گرا دارد.
+- علت تأییدشده اتصال: bundle تولیدی قبلی بدون NEXT_PUBLIC_API_BASE_URL ساخته شده بود. مقدار عمومی localhost:4000/api/v1 در فایل محلی ignored تنظیم و بیلد مجدد شد؛ هیچ Secret یا تنظیم محیط محلی وارد Git نمی‌شود. Queryهای داشبورد و فهرست در scope بدون رکورد موفق‌اند و API، CORS پورت 3100 را مجاز می‌داند.
+- آمار و فهرست مستقل بارگذاری می‌شوند؛ خطای یکی داده سالم دیگری را حذف نمی‌کند. خطاهای واقعی اتصال/نشست پنهان یا با داده جعلی جایگزین نمی‌شوند. ۲۷ تست فروش وب، lint، typecheck و Production Build موفق؛ بررسی بصری احراز‌شده به‌دلیل خطای ابزار ویندوز انجام نشده است.
+
+## SALES-CONTRACTS-001 — خدمات ساده و فیلتر اختیاری بلیت
+
+- انتخاب پرواز، قطار و اتوبوس را حذف/غیرفعال می‌کند؛ API نیز ترکیب نامعتبر را رد می‌کند. ترانسفر فقط علامت رفت/برگشت است، مرحله جزئیات ندارد و در پیش‌نمایش بلیت درج می‌شود.
+- تاریخ از مرحله مسیر حذف شد؛ جست‌وجو به‌صورت پیش‌فرض بلیت‌های آینده با ترتیب نزدیک‌ترین تاریخ است. شروع/پایان بازه در یک تقویم شمسی/میلادی اختیاری انتخاب و فیلتر قابل پاک‌کردن است. سقف بازه رفت به برگشت اعمال نمی‌شود.
+- تاریخ معتبر قرارداد از بلیت انتخاب‌شده یا ورود هتل گرفته می‌شود؛ برای خدمت بدون این تاریخ‌ها فقط در مرحله مسافر جهت محاسبه سن درخواست می‌شود. این تغییر جایگزین توضیحات قدیمی جزئیات ترانسفر در پایین سند است. Schema/Migration و ماژول‌های دیگر تغییر نکرده‌اند.
+
+## SALES-CONTRACTS-001 — رفت/برگشت کنار هم و پیش‌نمایش بلیت
+
+- انتخاب هر دو جهت در یک مرحله و دو ستون انجام می‌شود؛ تیک بیزینس فقط برچسب خروجی است و کلاس واقعی موجودی/بازاعتبارسنجی را عوض نمی‌کند.
+- چهار پیشنهاد کاملاً آزمایشی تهران/آنتالیا روی شعبه HQ برای تست قرارداد منتشر و از جست‌وجوی عمومی تأیید شدند: دو رفت در 2026-09-10 و برگشت در 2026-09-17 و 2026-09-20. هر پیشنهاد ظرفیت ۲۰ دارد و انتشار دوباره تکراری نمی‌سازد.
+- قالب پیش‌نمایش چاپی بر اساس تصویر کاربر، با رنگ سرمه‌ای/فیروزه‌ای، اطلاعات سفر و برچسب BUSINESS آماده شد. پیش‌نمایش عمداً فاقد اعتبار سفر است؛ شماره بلیت، PNR و اطلاعات صدور/پرداخت واقعی جعل نمی‌شوند. صدور و آزادسازی واقعی همچنان در مالکیت رزرواسیون/مالی/اسناد است.
+- ۱۵ تست فروش وب موفق؛ جزئیات کیفیت و محدودیت بررسی بصری در سند Task ثبت است. Schema/Migration و کد ماژول‌های دیگر دست‌نخورده‌اند.
+
+## SALES-CONTRACTS-001 — ثبت مرجع ترکیه/آنتالیا و حذف پنل بلیت زمان‌دار
+
+- مانع ثبت مرجع رفع شد: ترکیه با کد TR، استان لازم آنتالیا و شهر آنتالیا در دیتابیس محلی از سرویس مالک اطلاعات پایه ثبت شدند؛ وضعیت فعال و ارتباط کشور/استان بررسی شد. اجرای دوباره هر سه رکورد را بازاستفاده کرد و داده تکراری نساخت. هیچ مجوز، نشست، کاربر یا شعبه IAM تغییر نکرد؛ Audit با انتساب شفاف نگهداری آفلاین ثبت شد.
+- فقط نمایش پنل «ثبت بلیت زمان‌دار برای فروش» از مدیریت بلیت حذف شد؛ دکمه تکرار هفتگی/ماهانه، رکوردهای قبلی و API بلیت دست‌نخورده‌اند. این تغییر تکرار بلیت محلی را به انتشار پیشنهاد فروش متصل نمی‌کند.
+- ۹۶ تست Ticket Catalog موفق؛ تغییرات هم‌زمان Customers/Documents و Prisma در کامیت این کار وارد نمی‌شوند.
+
+## SALES-CONTRACTS-001 — انتخاب خدمت و بازگشت داشبورد
+
+- انتخاب خودِ بلیت یا ترانسفر، هر دو جهت را فعال می‌کند؛ تیک‌های رفت/برگشت زیر همان خدمت باز می‌شوند و مستقل قابل تغییرند. فرم جدید لینک بازگشت به `/sales` دارد؛ ورودی فروش همان داشبورد قراردادهاست.
+- ۱۲ تست فروش وب، lint فروش و typecheck وب موفق؛ Schema/Migration و Backend تغییر نکرده‌اند.
+- ثبت کشور ترکیه و شهر آنتالیا هنوز انجام یا تأیید نشده: ابزار مرورگر خطای ACL ویندوز و ابزار کنترل کامپیوتر خطای Runtime داد؛ API عمومی بدون نشست ورود پاسخ 401 داد. ثبت از رابط عمومی احراز‌شده باقی مانده و هیچ جدول خصوصی مستقیم تغییر نکرده است.
+
+## SALES-CONTRACTS-001 — جست‌وجوی مسیر و خدمات جهت‌دار — آماده بررسی
+
+- انتخاب کشور و شهر مبدأ/مقصد جست‌وجوپذیر، RTL، گرد و هم‌تم شد؛ شهرها به کشور انتخابی محدودند. پیش‌فرض فرم جدید از رکورد واقعی ایران/تهران و ترکیه/آنتالیا پیدا می‌شود؛ Draft موجود بازنویسی و داده مرجع ساختگی ایجاد نمی‌شود.
+- بلیت و ترانسفر رفت و برگشت چهار تیک مستقل‌اند. جزئیات فقط برای خدمات انتخاب‌شده و به‌ترتیب نمایش داده می‌شود؛ ترانسفر تاریخ، محل سوارشدن و پیاده‌شدن دارد. بلیت برگشت مسیر معکوس را از تاریخ بلیت رفت به بعد و بدون سقف تاریخ جست‌وجو می‌کند؛ برگشت قبل از رسیدن رفت قابل تأیید نیست.
+- جهت خدمت در metadata موجود Sales v1 ذخیره و به Snapshot رزرواسیون منتقل می‌شود؛ اعتبارسنجی قدیمی بدون direction سازگار باقی ماند. Schema/Migration، Dependency، مجوزها و ماژول‌های دیگر در این Follow-up تغییر نکردند.
+- ۹ تست Web Sales و ۲۶ تست API Sales، شامل هر ۱۵ ترکیب غیرخالی چهار تیک، موفق؛ typecheck وب/API، lint فروش و Production Build وب/API موفق (۳۵ Route). سرور نسخه جدید روی پورت 3100 اجرا شد. بررسی بصری/ورود احراز‌شده ادعا نمی‌شود.
+- مانع مجوزِ گزارش قبلی با تأیید صریح کاربر رفع شد: چهار ارتباط نقش‌ـ‌مجوز در دیتابیس محلی ثبت و Audit شدند؛ عضویت شعبه‌ها ثابت ماند. همان Branch و Draft PR #90 ادامه دارد؛ تغییرات هم‌زمان Customers/Documents در کامیت فروش قرار نمی‌گیرند.
+
+## SALES-CONTRACTS-001 — ادامه اجرایی 2026-09-05 — IN_PROGRESS
+
+- با اجازه صریح کاربر، Public API واقعی انتشار/جست‌وجو/بازاعتبارسنجی پیشنهاد بلیت و صندوق دریافت نسخه‌دار Reservations اضافه شد؛ ارتباط Sales فقط از سرویس عمومی ماژول‌هاست.
+- فرم تمام‌صفحه شش‌مرحله‌ای با مسیر/خدمات در ابتدا، انتخاب آبی بلیت، برگشت مستقل بدون سقف تاریخ، جست‌وجوی هتل مقصد، ویزای مقصد، کلاس پرواز و رده سنی مسافر پیاده شد. قیمت توافقی ریالی/ارزی و اقساط/چک به API متصل‌اند؛ مانده فقط با تأیید Finance کاهش می‌یابد و اضافه‌پرداخت یک ارز، بدهی ارز دیگر را تسویه نمی‌کند.
+- Migration افزایشی `20260905070000_travel_runtime_intake`؛ هر ۳۲ Migration روی PostgreSQL 18 خالی و Seed دو بار موفق. پنج تست اختصاصی شامل چهار تست واقعی PostgreSQL موفق؛ Full test/typecheck/lint و Production Build موفق‌اند. بررسی کامل محلی شامل تغییرات هم‌زمان و کامیت‌نشده Customers/Documents نیز بوده؛ آن فایل‌ها در کامیت‌های فروش قرار نگرفته‌اند.
+- پیشنهادهای منتشرشده پایدار از تعریف‌های قدیمی محلی Ticket Catalog جدا هستند؛ مهاجرت خودکار داده قدیمی یا داده عملیاتی ساختگی نداریم. Reservations فعلاً دریافت پایدار/تکرارناپذیر و صف بررسی است، نه Hold ظرفیت یا صدور بلیت.
+- وب پورت 3100 و Health API پورت 4000 پاسخ 200 دادند؛ بررسی تعاملی مرورگر به‌علت خطای ACL ابزار ممکن نشد. اعطای مجوزهای جدید روی دیتابیس عملیاتی اجرا نشده: بررسی خودکار مجوز، تأیید صریح نقش/دسترسی/محدوده را لازم دانست. فعال‌سازی تا این تأیید باز می‌ماند.
+- همان Branch و Draft PR #90 ادامه دارد؛ Rebase، Force Push، Merge و تغییر main/develop انجام نشده است. گزارش قبلی زیر، سابقه Slice پیش از این ادامه است.
+
+## CUSTOMER-CONNECTIONS-0905 — local integration ready for review
+
+- Customer Documents and master-data reference refresh are integrated and validated (163 tests; lint/typecheck/build successful). Independent local runtime: Web 3101 / API 4101. Existing 3 pending additive migrations were applied to localhost:5432; no reset, new migration or seed. Persistent protected local Documents key is configured. Authenticated user upload/download has not been manually exercised in this session.
+
+- Customer Documents and master-data session retry are integrated in an isolated checkout based on committed Sales. The following historical entries retain their original scope; this task does not change Ticket Catalog.
+
+## CUSTOMER-MASTERDATA-RETRY — بازیابی اطلاعات پایه پس از تمدید نشست
+
+- `PC-A` روی Branch مستقل `codex/pc-a-customer-masterdata-retry` خطای هم‌زمانی
+  بارگذاری Public Master Data در فرم Customers را اصلاح کرد. پاسخ 401 اکنون از همان
+  Refresh مشترک نشست استفاده می‌کند و درخواست Organization، نحوه آشنایی، کشور یا شهر
+  فقط یک بار تکرار می‌شود؛ سایر خطاها رفتار صریح قبلی را حفظ می‌کنند.
+- همه قابلیت‌های ادغام‌شده CUSTOMER-002B، نمایش/خروجی تماس و اتصال امن Documents در
+  همین مبنا موجودند. Passport/Visa ساختاری به‌دلیل بازبودن `DEC-OPEN-006` فعال نشده و
+  هیچ داده ساختگی جایگزین نشده است. ۵۶۵ تست Web، lint، typecheck و Production Build
+  موفق‌اند. جزئیات در `docs/tasks/CUSTOMER-MASTERDATA-RETRY.md`.
+
+## TICKET-CATALOG-EDIT-COMPLETENESS — نمایش کامل اطلاعات هنگام ویرایش
+
+- PC-A is validating PR #85 Customer Documents against committed Sales plus the existing master-data session-refresh retry. Separate worktree preserves active Sales changes; prior test results below do not establish validation of this integration.
+## SALES-CONTRACTS-001 — Vertical Slice فروش — آماده بررسی
+
+- PR #91 با Merge Commit `b69b7fa` قفل‌های Migration، Central Docs و Sales shared-contract/root export را به `PC-A/SALES-CONTRACTS-001` منتقل کرد؛ Merge معمولی `8d3b89d` این Handoff را وارد Branch فروش کرد. آخرین `origin/develop@85204a4` نیز با Merge معمولی `dbaf450` وارد و تعارض اسناد با حفظ هر دو Handoff حل شد.
+- Branch `codex/pc-a-sales-contracts` و Draft PR #90 مالک Prisma/Migration افزایشی Sales، Permission Seed، قرارداد عمومی، Backend، UI و تست‌های این Slice هستند؛ Dependency/Lockfile تغییر نمی‌کند.
+- تمام ارتباط‌های Customers، Ticket Catalog، Master Data، Finance، Reservations، Documents و Legal Entity فقط از Public Contract/Port انجام می‌شود و هیچ Query مستقیم جدول خصوصی مجاز نیست.
+- PR #85 و خروجی PC-B دست‌نخورده‌اند؛ `main`/`develop` مستقیم تغییر نمی‌کنند و Merge/Rebase/Force Push انجام نمی‌شود.
+- Slice واقعی تکمیل است: قرارداد عمومی Sales v1، ۱۱ جدول مالک Sales با Migration افزایشی، Permission Seed، Repository/API، Scope مالک/شعبه، Audit، Optimistic Lock، Idempotency، صف نسخه‌دار ReservationRequest و داشبورد/فرم تمام‌صفحه قرارداد تحویل شد.
+- مانده فقط از پرداخت `FINANCE_CONFIRMED` کم می‌شود؛ پرداخت pending/scheduled اثر ندارد. تأیید Offer بلیت تا انتشار Public API اجرایی Ticket Management fail-closed است و پاسخ ساختگی ساخته نمی‌شود.
+- Gate نهایی پس از آخرین Merge: Prisma معتبر، ۳۱ Migration روی PostgreSQL 18 خالی، Seed دوباره‌پذیر، Full lint/typecheck، ۱٬۴۸۵ تست و Full Production Build با ۳۵ صفحه موفق است. Draft PR #90 همان PR جاری باقی می‌ماند.
 ## AGENCY-B2B-INTEGRATIONS-001 — اتصال عملیاتی و تجاری آژانس — آماده بررسی
 
 - `PC-B` روی Branch مستقل `codex/pc-b-agency-b2b-integrations` و PR [#98](https://github.com/nirvanamahlou/Rubi/pull/98) مانع ثبت‌شده در PR #90 را پس از اعلام رفع قفل از سوی مالک محصول تکمیل کرد. هویت آژانس همان `MasterOrganization` دارای نقش `AGENCY` باقی می‌ماند و هیچ موجودیت موازی یا Query مستقیم Sales/Finance ساخته نشده است.
@@ -155,6 +511,13 @@
   از کش افزایشی قدیمی محلی بود و فایل Master Data در این Task تغییر نکرد.
 - PR [#86](https://github.com/nirvanamahlou/Rubi/pull/86) با Merge Commit `4ea7b27`
   وارد `develop` شد؛ اجرای کامل CI پس از ادغام روی خود `develop` نیز سبز است.
+## CUSTOMER-DOCUMENTS-001 — مدارک واقعی در Customer 360 — آماده بررسی
+
+- `PC-A` وضعیت «در انتظار زیرساخت مدارک» را با پنل واقعی فهرست و بارگذاری فایل جایگزین کرد. هر مشتری اکنون تعداد، کد آرشیو، نوع، نسخه، تاریخ اعتبار و وضعیت اسکن مدارک خودش را می‌بیند و می‌تواند از همان پرونده فایل جدید اضافه کند.
+- قرارداد عمومی Documents به‌صورت backward-compatible فیلتر exact source گرفت. Backend مرجع سه‌بخشی را کامل اعتبارسنجی و همراه Branch/Domain/Permission scope روی Relation اصلی اعمال می‌کند؛ پاسخ هیچ source id خامی افشا نمی‌کند.
+- Customers فقط مصرف‌کننده Public Contract/API است و هیچ دسترسی مستقیم به Repository یا جدول Documents ندارد. UI باز PR #80 و فایل‌های تقویم/اسناد PC-B نیز تغییر نکرده‌اند.
+- ذخیره ساخت‌یافته شماره پاسپورت، کشور صادرکننده و شماره ویزا همچنان تا تصمیم `DEC-OPEN-006` مسدود است؛ ولی خود فایل‌ها اکنون با قرنطینه، نسخه و کنترل دسترسی فعلی Documents عملیاتی‌اند.
+- Full lint/typecheck/build پاس و `1470` تست Monorepo موفق است؛ `70` تست PostgreSQL اختیاری skip شدند. Migration، Schema، Seed، Dependency و Lockfile تغییر نکرده‌اند. جزئیات: `docs/tasks/CUSTOMER-DOCUMENTS-001.md`.
 
 ## MASTER-004-FORM-ALIGNMENT — هم‌ترازی فرم‌های اطلاعات پایه — آماده بررسی
 
@@ -1187,3 +1550,14 @@
 - ذخیره PII حساس و مدارک هویتی تا تصمیم قطعی retention/رمزنگاری ممنوع می‌ماند.
 - اجرای Persistence مالی فقط در Task مستقل Phase B پس از Merge PR #21 و با قفل یگانه Migration/Dependency مجاز است؛ تاریخچه Migration یا داده محلی نباید دستی دست‌کاری شود.
 - Compose credentialها synthetic و Local هستند و پیش از هر محیط دیگر باید با secret manager جایگزین شوند.
+
+## LOCAL-UNIFIED-3100-0909 — PC-A — READY_FOR_REVIEW
+Port 3100 composes Sales 385efaa (includes 3d3095e), sidebar efe6287 and Reservations 0946bdd. Main reservations route uses colored queue; original processing retained at /reservations/processing. Source worktrees preserved. API/Web builds, 41 navigation/reservation tests and targeted lint passed. Existing DB 55432 restarted; private pre-update pg_dump retained inside container; 14 existing non-destructive migrations applied. Official Sales/Reservations permissions synchronized to existing administrator. Stored local login and both API lists returned 200. No new migration/dependency or production deployment.
+
+### Local database correction — 2026-09-09
+The 55432 preview database was the wrong dataset for the user's current work (2 customers, 0 contracts). Runtime now uses the original root .env database localhost:5432/rubi, with its matching contact keys explicitly loaded. Read-only verification found 350 customers and 5 contracts; all 43 migrations already applied, no main-database migration or data changes. Contact integrity check: 542 valid, 4 failed; those records remain unchanged. API remains loopback-only. Previous preview database and its backup are preserved. Login may need renewal after the database/session change.
+
+## RESERVATIONS-ACTION-PANEL-003 — PC-A
+Implemented the selected option 3 on the isolated local branch: twenty buttons grouped in a sticky right panel; all disabled until an authorized contract is selected. Each opens the standard accessible Dialog with selected-contract context. Changing selection/access unmounts the previous dialogs. Available overview/passenger/customer projections are read-only; unspecified forms explicitly remain pending with no write controls. Small screens stack the panel above the list. No API, credentials, database or migration changes. 34 reservation tests passed.
+
+Final verification: targeted lint and production Web build/TypeScript passed (39 routes). Local Web 3100 restarted; no API restart or database switch.

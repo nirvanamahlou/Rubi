@@ -31,10 +31,23 @@ describe('Customer 360 documents integration boundary', () => {
     expect(source).toContain("form.set('branchId', customer.ownerBranchId)");
   });
 
-  it('keeps semantic identity data behind DEC-OPEN-006 while files are operational', () => {
+  it('keeps production identity policy behind DEC-OPEN-006 while files are operational', () => {
     expect(source).toContain('DEC-OPEN-006');
     expect(source).toContain('شماره پاسپورت');
     expect(source).toContain('فایل خصوصی و غیرقابل دریافت باقی می‌ماند');
-    expect(source).not.toContain('passportNumber');
+    expect(source).not.toContain('passportNumberEncrypted');
+  });
+
+  it('stages and uploads multiple documents from the passenger creation form', () => {
+    expect(workspace).toContain('مدارک سفر مسافر');
+    expect(workspace).toContain('addPassengerDocument(index)');
+    expect(workspace).toContain('uploadPassengerDocuments(');
+    expect(workspace).toContain("form.set('sourceEntityId', passenger.id)");
+    expect(workspace).toContain(
+      "form.set('sourceDisplayLabel', `پرونده مسافر ${passenger.displayName}`)",
+    );
+    expect(workspace).not.toContain(
+      'پس از فعال‌شدن نگهداری امن مدارک در همین بخش قابل ثبت خواهند بود',
+    );
   });
 });

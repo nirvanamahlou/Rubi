@@ -15,6 +15,7 @@ import { MasterDataContactCrypto } from './master-data-contact.crypto';
 import { MasterDataRepository } from './master-data.repository';
 import { MasterDataService } from './master-data.service';
 import { MasterOrganizationDirectory } from './master-organization-directory';
+import { MasterTravelDirectory } from './master-travel-directory';
 import { OrganizationAddressController } from './organization-address.controller';
 
 @Module({
@@ -33,9 +34,10 @@ import { OrganizationAddressController } from './organization-address.controller
     MasterDataContactCrypto,
     MasterDataService,
     MasterOrganizationDirectory,
+    MasterTravelDirectory,
     CurrencyRateService,
     HotelImportService,
   ],
-  exports: [MasterOrganizationDirectory],
+  exports: [MasterOrganizationDirectory, MasterTravelDirectory],
 })
 export class MasterDataModule {}
