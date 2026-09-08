@@ -5,18 +5,16 @@ on:
     branches:
       - main
       - develop
-      - 'codex/pc-a-*'
-      - 'codex/pc-b-*'
+      - 'codex/pc-*'
   pull_request:
     branches:
       - main
       - develop
-      - 'codex/pc-a-*'
-      - 'codex/pc-b-*'
+      - 'codex/pc-*'
   workflow_dispatch:
 
 # A new commit cancels only the older run for the same event and head branch.
-# Push and pull-request checks remain independent, and PC-A and PC-B branches
+# Push and pull-request checks remain independent, and all computer task branches
 # never cancel or serialize each other's validation.
 concurrency:
   group: rubi-ci-${{ github.event_name }}-${{ github.event.pull_request.head.ref || github.ref_name }}
@@ -65,6 +63,9 @@ jobs:
         run: |
           node --version
           test "$(pnpm --version)" = "11.19.0"
+
+      - name: Verify multi-computer CI policy
+        run: node --test .github/tests/ci-policy.test.mjs
 
       - name: Frozen install
         run: pnpm install --frozen-lockfile
