@@ -17,7 +17,8 @@
 - 194 Sales Web tests pass: exact row counts, no separate checkbox/row, first-passenger association for legacy drafts, agency separation, saved-draft preservation, create/update acquaintance selection, optimistic version and retry stability, active paginated catalog/error/empty behavior.
 - Scoped ESLint and Web typecheck pass. The synthetic browser fixture's explicit partial-record cast was corrected without changing production types.
 - Actual-component synthetic Chromium QA passes: two editable rows, no separate payer, agency/person switching without passenger overwrite, catalog retry, both dropdown selections, public create input IDs/roles, first-passenger customer binding and contained mobile scrolling. Screenshot visually inspected; no real data used.
-- Production build and local health: pending final verification.
+- Production build passes: all 36 Web routes generated successfully on September 8. No migration required.
+- Local Web3100 and API4000 health return 200, but Web3100 is owned by the separate customer-direct-contact-0908 worktree (7d11329), which does not include this change. That running process was preserved; this Sales build has not replaced it. Activation needs coordination with that worktree owner, not a blind restart or merge.
 
 ## Handoff
 

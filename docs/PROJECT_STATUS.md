@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-FIRST-PASSENGER-ACQUAINTANCE-0908 — COMPLETE_CODE / LOCAL_ACTIVATION_PENDING
+
+New natural-person Sales contracts use passenger one as the customer, without a separate primary row or optional linkage checkbox. Agency customers remain independent. Each passenger has a themed registered acquaintance-method selector, persisted through public Customers create/update with existing permissions and optimistic versions. Legacy drafts and saved methods are preserved. 194 Sales tests, scoped lint/typecheck, synthetic browser QA and 36-route production build pass. Web3100/API4000 health is 200, but Web3100 runs the separate customer-direct-contact-0908 worktree; it was not replaced. Coordinate activation with that owner. No migration, IAM, real-data mutation or public push. See docs/tasks/SALES-FIRST-PASSENGER-ACQUAINTANCE-0908.md.
+
 ## SALES-PAYMENT-SEARCH-UPLOAD-0908 — COMPLETE_LOCAL
 
 Tracking search in contract payments now opens the main server-backed search across authorized contracts rather than filtering only the current contract's payment rows. It clears old settlement filters/page and shows matching contracts under unchanged payment-read/ownership/branch gates. A prominent receipt section offers saved-payment selection and direct file upload/list/download through public Documents APIs; new payments select their saved ID automatically. Finance state, restricted confidentiality, scan/download and uncertain-upload guards are unchanged. 188 Web Sales and 5 API reference tests, scoped lint/typecheck, synthetic browser QA and 36-route build pass. Web3100 updated; Web/API health 200. No schema/API/IAM/real-data/public-push change. See docs/tasks/SALES-PAYMENT-SEARCH-UPLOAD-0908.md.

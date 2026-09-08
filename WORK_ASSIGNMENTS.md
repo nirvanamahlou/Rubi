@@ -1,6 +1,8 @@
 # Work Assignments
 
-## SALES-FIRST-PASSENGER-ACQUAINTANCE-0908 — PC-A — IN_PROGRESS
+## SALES-FIRST-PASSENGER-ACQUAINTANCE-0908 — PC-A — COMPLETE_CODE / LOCAL_ACTIVATION_PENDING
+
+- Delivered first-passenger natural-person contract identity and per-passenger registered acquaintance selection through public Customers APIs. 194 Sales tests, scoped lint/typecheck, synthetic browser QA and 36-route production build pass. Web3100 currently belongs to customer-direct-contact-0908 and was left running unchanged; coordinate activation with its owner. No schema, real-data, IAM or public push. Scoped code reservation released; see docs/tasks/SALES-FIRST-PASSENGER-ACQUAINTANCE-0908.md.
 
 - Reserve Sales people-entry model/UI/form/targeted tests and scoped docs from 8274131. New natural-person contracts always use passenger 1 as customer without a separate payer row/toggle; organizations remain separate. Add per-person registered Master Data acquaintance-method selection through existing Customers public mutations. Preserve old draft entries, customer permissions/optimistic updates, passenger counts and identity recovery. No producer/schema/API/IAM/real-data edits, merge or public push.
 
