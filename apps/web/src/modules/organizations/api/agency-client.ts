@@ -4,7 +4,10 @@ import type {
   CreateB2bAgencyAgreedRateRequestV1,
   CreateB2bAgencyAgreementRequestV1,
   MasterDataListResponse,
+  MasterDataRecord,
   MasterDataStatus,
+  MasterDataSortField,
+  MasterDataSortDirection,
   UpsertB2bAgencyCreditPolicyRequestV1,
   UpsertB2bAgencyProfileRequestV1,
 } from '@rubi/contracts';
@@ -18,11 +21,28 @@ export interface AgencyListQuery {
   status: 'all' | MasterDataStatus;
   page: number;
   pageSize: number;
+  role?: 'AGENCY' | 'CORPORATE_CUSTOMER';
+  sortBy?: MasterDataSortField;
+  sortDirection?: MasterDataSortDirection;
 }
 
-async function b2bRequest<T>(path: string, init?: RequestInit): Promise<T> {
+export class B2bApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly code?: string,
+  ) {
+    super(message);
+  }
+}
+
+async function b2bRequest<T>(
+  path: string,
+  init?: RequestInit,
+  retried = false,
+): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
-  if (!baseUrl) throw new Error('نشانی API پیکربندی نشده است.');
+  if (!baseUrl) throw new B2bApiError('نشانی API پیکربندی نشده است.', 0);
   const response = await fetch(`${baseUrl}/b2b${path}`, {
     credentials: 'include',
     cache: 'no-store',
@@ -33,39 +53,84 @@ async function b2bRequest<T>(path: string, init?: RequestInit): Promise<T> {
       ...init?.headers,
     },
   });
+  if (
+    response.status === 401 &&
+    !retried &&
+    (await refreshAuthenticatedSession(baseUrl))
+  )
+    return b2bRequest<T>(path, init, true);
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
       message?: string;
-      error?: { message?: string };
+      code?: string;
+      error?: { message?: string; code?: string };
     } | null;
-    throw new Error(
+    throw new B2bApiError(
       envelope?.error?.message ??
         envelope?.message ??
         'دریافت اطلاعات عملیاتی آژانس ناموفق بود.',
+      response.status,
+      envelope?.error?.code ?? envelope?.code,
     );
   }
   return response.json() as Promise<T>;
 }
 
 export const agencyClient = {
+  saveContact(
+    organizationId: string,
+    values: Record<string, string>,
+    existing?: MasterDataRecord,
+  ) {
+    if (
+      existing &&
+      String(existing.attributes.organizationId) !== organizationId
+    )
+      throw new B2bApiError(
+        'مخاطب متعلق به این سازمان نیست.',
+        409,
+        'B2B_CONTACT_ORGANIZATION_CONFLICT',
+      );
+    const body = { values: { ...values, organizationId } };
+    return existing
+      ? masterDataApi.update('organization-contacts', existing.id, {
+          ...body,
+          version: existing.version,
+        })
+      : masterDataApi.create('organization-contacts', body);
+  },
   list(query: AgencyListQuery): Promise<MasterDataListResponse> {
+    const {
+      role = 'AGENCY',
+      sortBy = 'updatedAt',
+      sortDirection = 'desc',
+      ...filters
+    } = query;
     return masterDataApi.list('organizations', {
-      ...query,
-      organizationRole: 'AGENCY',
-      sortBy: 'updatedAt',
-      sortDirection: 'desc',
+      ...filters,
+      organizationRole: role,
+      sortBy,
+      sortDirection,
     });
   },
-  contacts(organizationId: string): Promise<MasterDataListResponse> {
+  contacts(organizationId: string, page = 1): Promise<MasterDataListResponse> {
     return masterDataApi.list('organization-contacts', {
       search: '',
       status: 'all',
       sortBy: 'name',
       sortDirection: 'asc',
-      page: 1,
+      page,
       pageSize: 100,
       organizationId,
     });
+  },
+  async session() {
+    const baseUrl = getPublicApiBaseUrl();
+    if (!baseUrl) throw new B2bApiError('نشانی API پیکربندی نشده است.', 0);
+    const session = await refreshAuthenticatedSession(baseUrl);
+    if (!session)
+      throw new B2bApiError('نشست شما معتبر نیست؛ دوباره وارد شوید.', 401);
+    return session.user;
   },
   async branches(): Promise<readonly BranchReference[]> {
     const baseUrl = getPublicApiBaseUrl();

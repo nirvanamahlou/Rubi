@@ -1,6 +1,11 @@
 'use client';
 
-import type { MasterDataRecord, MasterDataStatus } from '@rubi/contracts';
+import type {
+  IamPermissionCode,
+  MasterDataRecord,
+  MasterDataStatus,
+  MasterDataSortField,
+} from '@rubi/contracts';
 import {
   Building2,
   ChevronLeft,
@@ -12,7 +17,7 @@ import {
   Search,
   ShieldX,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -49,6 +54,7 @@ import { MasterDataLiveForm } from '@/modules/master-data/components/master-data
 import { getMasterDataDefinition } from '@/modules/master-data/model/catalog';
 import { agencyClient } from '../api/agency-client';
 import { AgencyConnectionsPanel } from './agency-connections-panel';
+import { cooperationLabel } from '../model/presentation';
 
 type RequestState =
   'loading' | 'ready' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
@@ -81,9 +87,27 @@ export function OrganizationsWorkspace() {
   const [formMode, setFormMode] = useState<'create' | 'edit' | null>(null);
   const [notice, setNotice] = useState<string>();
   const [contactsLoading, setContactsLoading] = useState(false);
+  const [contactsError, setContactsError] = useState<string>();
+  const [contactPage, setContactPage] = useState(1);
+  const [contactTotal, setContactTotal] = useState(0);
+  const [contactForm, setContactForm] = useState<{
+    mode: 'create' | 'edit';
+    record?: MasterDataRecord;
+  }>();
+  const [role, setRole] = useState<'AGENCY' | 'CORPORATE_CUSTOMER'>('AGENCY');
+  const [sortBy, setSortBy] = useState<MasterDataSortField>('updatedAt');
+  const [permissions, setPermissions] = useState<readonly IamPermissionCode[]>(
+    [],
+  );
+  const requestId = useRef(0);
+  const contactRequestId = useRef(0);
+  const invalidateRequests = useCallback(() => {
+    ++requestId.current;
+  }, []);
   const pageSize = 20;
 
   const load = useCallback(async () => {
+    const current = ++requestId.current;
     setState('loading');
     try {
       const response = await agencyClient.list({
@@ -91,36 +115,77 @@ export function OrganizationsWorkspace() {
         status,
         page,
         pageSize,
+        role,
+        sortBy,
+        sortDirection: sortBy === 'updatedAt' ? 'desc' : 'asc',
       });
+      if (current !== requestId.current) return;
       setRecords(response.data);
       setTotal(response.meta.total);
       setState(response.data.length ? 'ready' : 'empty');
     } catch (error) {
+      if (current !== requestId.current) return;
+      setRecords([]);
+      setTotal(0);
       if (error instanceof MasterDataApiError && error.status === 401)
         setState('unauthorized');
       else if (error instanceof MasterDataApiError && error.status === 403)
         setState('forbidden');
       else setState('error');
     }
-  }, [page, search, status]);
+  }, [page, search, status, role, sortBy]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
-  }, [load]);
+    const timer = window.setTimeout(() => void load(), 300);
+    return () => {
+      window.clearTimeout(timer);
+      invalidateRequests();
+    };
+  }, [load, invalidateRequests]);
 
-  async function openProfile(record: MasterDataRecord) {
+  useEffect(() => {
+    let cancelled = false;
+    void agencyClient
+      .session()
+      .then((user) => {
+        if (!cancelled) setPermissions(user.permissions);
+      })
+      .catch(() => {
+        if (!cancelled) setPermissions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function openProfile(
+    record: MasterDataRecord,
+    requestedContactPage = 1,
+  ) {
+    const current = ++contactRequestId.current;
     setSelected(record);
     setProfileOpen(true);
     setContacts([]);
+    setContactsError(undefined);
+    setContactPage(requestedContactPage);
+    setContactTotal(0);
     setContactsLoading(true);
     try {
-      const response = await agencyClient.contacts(record.id);
+      const response = await agencyClient.contacts(
+        record.id,
+        requestedContactPage,
+      );
+      if (current !== contactRequestId.current) return;
       setContacts(response.data);
-    } catch {
+      setContactTotal(response.meta.total);
+    } catch (error) {
+      if (current !== contactRequestId.current) return;
       setContacts([]);
+      setContactsError(
+        error instanceof Error ? error.message : 'دریافت مخاطبان ناموفق بود.',
+      );
     } finally {
-      setContactsLoading(false);
+      if (current === contactRequestId.current) setContactsLoading(false);
     }
   }
 
@@ -134,17 +199,18 @@ export function OrganizationsWorkspace() {
         .map((item) => item.trim())
         .filter(Boolean),
     );
-    roleCodes.add('AGENCY');
+    if (!roleCodes.has('AGENCY') && !roleCodes.has('CORPORATE_CUSTOMER'))
+      roleCodes.add(role);
     const result = await masterDataApi.persistWithLogo({
       resource: 'organizations',
       values: { ...values, roleCodes: [...roleCodes].join(',') },
-      title: `لوگوی آژانس ${values.legalName ?? selected?.name ?? ''}`.trim(),
+      title: `لوگوی سازمان ${values.legalName ?? selected?.name ?? ''}`.trim(),
       ...(formMode === 'edit' && selected ? { existing: selected } : {}),
       ...(logoChange ? { logoChange } : {}),
     });
     setNotice(
       result.warning ??
-        `سازمان آژانس با موفقیت ${formMode === 'edit' ? 'ویرایش' : 'ایجاد'} شد.`,
+        `سازمان با موفقیت ${formMode === 'edit' ? 'ویرایش' : 'ایجاد'} شد.`,
     );
     setFormMode(null);
     setSelected(undefined);
@@ -153,26 +219,54 @@ export function OrganizationsWorkspace() {
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+  async function persistContact(values: Record<string, string>) {
+    if (!selected || !contactForm)
+      throw new Error('پرونده سازمان انتخاب نشده است.');
+    await agencyClient.saveContact(selected.id, values, contactForm.record);
+    setContactForm(undefined);
+    setNotice('مخاطب سازمان با موفقیت ذخیره شد.');
+    await openProfile(selected, contactPage);
+  }
+
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5" dir="rtl">
       <PageHeader
         actions={
           <Button
+            disabled={!permissions.includes('master_data.create')}
             onClick={() => {
               setSelected(undefined);
               setFormMode('create');
             }}
           >
-            <Plus className="size-4" /> افزودن سازمان آژانس
+            <Plus className="size-4" /> افزودن سازمان
           </Button>
         }
-        description="فهرست آژانس‌ها مستقیماً از Organizationهای دارای نقش AGENCY در اطلاعات پایه خوانده می‌شود؛ موجودیت تکراری ساخته نمی‌شود."
+        description="مدیریت همکاری، مخاطبان و پرونده تجاری سازمان‌ها"
         title="آژانس‌ها و مشتریان سازمانی"
       />
 
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
 
       <FilterBar>
+        <label className="min-w-44 space-y-2">
+          <span className="text-sm font-bold">نوع همکاری</span>
+          <Select
+            value={role}
+            onValueChange={(value) => {
+              setPage(1);
+              setRole(value as typeof role);
+            }}
+          >
+            <SelectTrigger aria-label="نوع همکاری">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="AGENCY">آژانس همکار</SelectItem>
+              <SelectItem value="CORPORATE_CUSTOMER">مشتری سازمانی</SelectItem>
+            </SelectContent>
+          </Select>
+        </label>
         <label className="min-w-64 flex-1 space-y-2">
           <span className="text-sm font-bold">جست‌وجو</span>
           <span className="relative block">
@@ -183,10 +277,30 @@ export function OrganizationsWorkspace() {
                 setPage(1);
                 setSearch(event.target.value);
               }}
-              placeholder="نام یا کد آژانس"
+              placeholder="نام یا کد سازمان"
+              maxLength={100}
               value={search}
             />
           </span>
+        </label>
+        <label className="min-w-44 space-y-2">
+          <span className="text-sm font-bold">مرتب‌سازی</span>
+          <Select
+            value={sortBy}
+            onValueChange={(value) => {
+              setPage(1);
+              setSortBy(value as MasterDataSortField);
+            }}
+          >
+            <SelectTrigger aria-label="مرتب‌سازی">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="updatedAt">آخرین تغییر</SelectItem>
+              <SelectItem value="name">نام</SelectItem>
+              <SelectItem value="code">کد</SelectItem>
+            </SelectContent>
+          </Select>
         </label>
         <label className="min-w-48 space-y-2">
           <span className="text-sm font-bold">وضعیت سازمان</span>
@@ -226,103 +340,141 @@ export function OrganizationsWorkspace() {
         />
       ) : state === 'forbidden' ? (
         <EmptyState
-          description="مجوز master_data.read برای مشاهده آژانس‌ها لازم است."
+          description="اجازه مشاهده اطلاعات پایه سازمان‌ها را ندارید."
           icon={ShieldX}
           title="دسترسی وجود ندارد"
         />
       ) : state === 'error' ? (
         <ErrorState
           action={<Button onClick={() => void load()}>تلاش دوباره</Button>}
-          description="دریافت آژانس‌ها از API عمومی اطلاعات پایه ناموفق بود."
-          title="خطا در دریافت آژانس‌ها"
+          description="دریافت فهرست سازمان‌ها ناموفق بود."
+          title="خطا در دریافت سازمان‌ها"
         />
       ) : state === 'empty' ? (
         <EmptyState
-          description="با فیلتر فعلی Organization دارای نقش AGENCY پیدا نشد."
+          description="با فیلتر فعلی سازمانی پیدا نشد."
           icon={Building2}
-          title="فهرست آژانس‌ها خالی است"
+          title="فهرست سازمان‌ها خالی است"
         />
       ) : (
-        <Card className="overflow-x-auto">
-          <table className="w-full min-w-[70rem] text-sm">
-            <thead className="bg-muted/50 text-muted-foreground">
-              <tr>
-                {[
-                  'کد',
-                  'نام آژانس',
-                  'نوع',
-                  'تلفن و ایمیل',
-                  'آدرس پایه',
-                  'وضعیت',
-                  'آخرین تغییر',
-                  'عملیات',
-                ].map((head) => (
-                  <th className="p-4 text-start" key={head}>
-                    {head}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {records.map((record) => (
-                <tr className="border-t border-border" key={record.id}>
-                  <td className="p-4 font-mono" dir="ltr">
-                    {record.code}
-                  </td>
-                  <td className="p-4 font-bold">{record.name}</td>
-                  <td className="p-4">{personType(record)}</td>
-                  <td className="p-4 text-muted-foreground">
-                    برای مشاهده، پروفایل را باز کنید
-                  </td>
-                  <td className="p-4">
-                    <Badge>در پروفایل</Badge>
-                  </td>
-                  <td className="p-4">
-                    <Badge
-                      className={
-                        record.status === 'active'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-slate-100 text-slate-700'
-                      }
-                    >
-                      {record.status === 'active' ? 'فعال' : 'غیرفعال'}
-                    </Badge>
-                  </td>
-                  <td className="p-4" dir="ltr">
-                    {new Date(record.updatedAt).toLocaleDateString('fa-IR')}
-                  </td>
-                  <td className="p-4">
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => void openProfile(record)}
-                        size="sm"
-                        variant="outline"
-                      >
-                        <Eye className="size-4" /> مشاهده
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setSelected(record);
-                          setFormMode('edit');
-                        }}
-                        size="sm"
-                        variant="outline"
-                      >
-                        <Pencil className="size-4" /> ویرایش
-                      </Button>
-                    </div>
-                  </td>
+        <>
+          <div className="grid gap-3 md:hidden">
+            {records.map((record) => (
+              <Card key={record.id} className="min-w-0 space-y-3 p-4">
+                <div className="flex flex-wrap justify-between gap-2">
+                  <strong className="break-words">{record.name}</strong>
+                  <Badge>
+                    {record.status === 'active' ? 'فعال' : 'غیرفعال'}
+                  </Badge>
+                </div>
+                <p className="break-all text-sm" dir="ltr">
+                  {record.code}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {cooperationLabel(record.attributes.roleCodes)}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void openProfile(record)}
+                  >
+                    مشاهده پرونده
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!permissions.includes('master_data.update')}
+                    onClick={() => {
+                      setSelected(record);
+                      setFormMode('edit');
+                    }}
+                  >
+                    ویرایش
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+          <Card className="hidden overflow-x-auto md:block">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-muted-foreground">
+                <tr>
+                  {[
+                    'کد',
+                    'نام سازمان',
+                    'نوع',
+                    'وضعیت',
+                    'آخرین تغییر',
+                    'عملیات',
+                  ].map((head) => (
+                    <th className="p-4 text-start" key={head}>
+                      {head}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+              </thead>
+              <tbody>
+                {records.map((record) => (
+                  <tr className="border-t border-border" key={record.id}>
+                    <td className="p-4 font-mono" dir="ltr">
+                      {record.code}
+                    </td>
+                    <td className="p-4 font-bold">
+                      {record.name}
+                      <p className="mt-1 text-xs font-normal text-muted-foreground">
+                        {cooperationLabel(record.attributes.roleCodes)}
+                      </p>
+                    </td>
+                    <td className="p-4">{personType(record)}</td>
+                    <td className="p-4">
+                      <Badge
+                        className={
+                          record.status === 'active'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-slate-100 text-slate-700'
+                        }
+                      >
+                        {record.status === 'active' ? 'فعال' : 'غیرفعال'}
+                      </Badge>
+                    </td>
+                    <td className="p-4" dir="ltr">
+                      {new Date(record.updatedAt).toLocaleDateString('fa-IR')}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => void openProfile(record)}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <Eye className="size-4" /> مشاهده
+                        </Button>
+                        <Button
+                          disabled={!permissions.includes('master_data.update')}
+                          onClick={() => {
+                            setSelected(record);
+                            setFormMode('edit');
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <Pencil className="size-4" /> ویرایش
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        </>
       )}
 
       <div className="flex items-center justify-between gap-3">
         <PaginationShell
           currentPage={page}
-          totalLabel={`${total.toLocaleString('fa-IR')} آژانس`}
+          totalLabel={`${total.toLocaleString('fa-IR')} سازمان`}
         />
         <div className="flex gap-2">
           <Button
@@ -346,10 +498,10 @@ export function OrganizationsWorkspace() {
 
       <Dialog onOpenChange={setProfileOpen} open={profileOpen}>
         <DialogContent className="start-auto left-1/2 max-h-[90vh] max-w-5xl overflow-y-auto">
-          <DialogTitle>پروفایل سازمان آژانس</DialogTitle>
+          <DialogTitle>پرونده سازمان</DialogTitle>
           <DialogDescription>
-            اطلاعات پایه از Master Organization و تماس‌ها فقط به‌صورت ماسک‌شده
-            خوانده می‌شوند.
+            اطلاعات پایه سازمان و مخاطبان مجاز؛ شماره تماس و ایمیل به‌صورت
+            پوشیده نمایش داده می‌شوند.
           </DialogDescription>
           {selected ? (
             <div className="mt-5 space-y-4">
@@ -366,7 +518,26 @@ export function OrganizationsWorkspace() {
                 </div>
               </Card>
               <Card className="space-y-3 p-4">
-                <p className="font-bold">تماس‌های سازمان</p>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-bold">تماس‌های سازمان</p>
+                  <Button
+                    size="sm"
+                    disabled={!permissions.includes('master_data.create')}
+                    onClick={() => setContactForm({ mode: 'create' })}
+                  >
+                    افزودن مخاطب
+                  </Button>
+                </div>
+                {notice ? (
+                  <Alert title="نتیجه عملیات" description={notice} />
+                ) : null}
+                {contactsError ? (
+                  <Alert
+                    title="وضعیت مخاطبان"
+                    description={contactsError}
+                    tone="warning"
+                  />
+                ) : null}
                 {contactsLoading ? (
                   <Skeleton className="h-16 w-full" />
                 ) : contacts.length ? (
@@ -378,24 +549,91 @@ export function OrganizationsWorkspace() {
                       <span className="font-semibold">{contact.name}</span>
                       <span dir="ltr">{attribute(contact, 'phoneMasked')}</span>
                       <span dir="ltr">{attribute(contact, 'emailMasked')}</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!permissions.includes('master_data.update')}
+                        onClick={() =>
+                          setContactForm({ mode: 'edit', record: contact })
+                        }
+                      >
+                        ویرایش مخاطب
+                      </Button>
                     </div>
                   ))
-                ) : (
+                ) : !contactsError ? (
                   <p className="text-sm text-muted-foreground">
                     تماس ثبت‌شده‌ای وجود ندارد.
                   </p>
-                )}
+                ) : null}
+                {contactTotal > 100 ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={contactsLoading || contactPage <= 1}
+                      onClick={() =>
+                        void openProfile(selected, contactPage - 1)
+                      }
+                    >
+                      مخاطبان قبلی
+                    </Button>
+                    <span className="text-xs">
+                      صفحه {contactPage.toLocaleString('fa-IR')} از{' '}
+                      {Math.ceil(contactTotal / 100).toLocaleString('fa-IR')}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={
+                        contactsLoading || contactPage * 100 >= contactTotal
+                      }
+                      onClick={() =>
+                        void openProfile(selected, contactPage + 1)
+                      }
+                    >
+                      مخاطبان بعدی
+                    </Button>
+                  </div>
+                ) : null}
               </Card>
-              <AgencyConnectionsPanel organizationId={selected.id} />
+              {String(selected.attributes.roleCodes ?? '').includes(
+                'AGENCY',
+              ) ? (
+                <AgencyConnectionsPanel
+                  key={selected.id}
+                  organizationId={selected.id}
+                />
+              ) : (
+                <Alert
+                  title="پرونده تجاری در انتظار اتصال"
+                  description="اطلاعات پایه و مخاطبان این مشتری سازمانی قابل مدیریت است. اتصال پروفایل عملیاتی مشتریان سازمانی هنوز آماده نیست."
+                />
+              )}
             </div>
           ) : null}
         </DialogContent>
       </Dialog>
 
+      {contactForm && selected ? (
+        <MasterDataLiveForm
+          definition={getMasterDataDefinition('organization-contacts')}
+          lockedFields={['organizationId']}
+          initialValues={{ organizationId: selected.id }}
+          mode={contactForm.mode}
+          onOpenChange={(open) => {
+            if (!open) setContactForm(undefined);
+          }}
+          onPersist={persistContact}
+          open
+          {...(contactForm.record ? { record: contactForm.record } : {})}
+        />
+      ) : null}
+
       {formMode ? (
         <MasterDataLiveForm
           definition={getMasterDataDefinition('organizations')}
-          initialValues={formMode === 'create' ? { roleCodes: 'AGENCY' } : {}}
+          initialValues={formMode === 'create' ? { roleCodes: role } : {}}
           mode={formMode}
           onOpenChange={(open) => {
             if (!open) {
