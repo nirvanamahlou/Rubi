@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AuthenticatedActor } from '@rubi/contracts';
 import type { DatabaseService } from '../database/database.service';
+import type { NotificationsService } from '../notifications/notifications.service';
 import { DocumentsRepository } from './documents.repository';
 import { DocumentsService } from './documents.service';
 import { B2bAgreementDocuments } from '../b2b/b2b-agreement-documents';
@@ -74,9 +75,12 @@ describe('public organization document version references', () => {
     const findMany = vi
       .fn()
       .mockResolvedValue([{ id: 'version', documentId: 'document' }]);
-    const repository = new DocumentsRepository({
-      client: { documentVersion: { findMany } },
-    } as unknown as DatabaseService);
+    const repository = new DocumentsRepository(
+      {
+        client: { documentVersion: { findMany } },
+      } as unknown as DatabaseService,
+      { createWithinTransaction: vi.fn() } as unknown as NotificationsService,
+    );
     expect(
       await repository.organizationVersionReferences(
         ['version'],
