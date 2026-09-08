@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import Joi from 'joi';
+import { buildSalesXlsx, SALES_EXPORT_LIMIT } from './sales.xlsx';
 import { validatePassengerPackagePrices } from '@rubi/contracts';
 
 import {
@@ -352,7 +354,47 @@ export class SalesService {
     return { userId: actor.userId, branchId, ...(traceId ? { traceId } : {}) };
   }
 
-  async list(query: SalesContractListQuery, actor: AuthenticatedActor) {
+  async exportXlsx(query: SalesContractListQuery, actor: AuthenticatedActor) {
+    if (!has(actor, 'sales.export'))
+      throw new ForbiddenException('مجوز دریافت خروجی قرارداد وجود ندارد.');
+    const validated = Joi.object({
+      search: Joi.string().trim().max(160).allow(''),
+      settlementStatus: Joi.string().valid(
+        'UNPAID',
+        'PARTIALLY_SETTLED',
+        'SETTLED',
+        'OVERPAID',
+      ),
+      sortBy: Joi.string().valid(
+        'createdAt',
+        'updatedAt',
+        'departureDate',
+        'contractNumber',
+      ),
+      sortDirection: Joi.string().valid('asc', 'desc'),
+    })
+      .unknown(false)
+      .validate(query);
+    if (validated.error)
+      throw new BadRequestException(
+        'فیلتر خروجی معتبر نیست؛ فهرست را دوباره بارگذاری کنید.',
+      );
+    const result = await this.list(validated.value, actor, SALES_EXPORT_LIMIT);
+    if (result.data.length > SALES_EXPORT_LIMIT)
+      throw new BadRequestException(
+        'خروجی بیش از ۲۰۰۰ قرارداد است؛ با جست‌وجو یا وضعیت تسویه، نتایج را محدود کنید.',
+      );
+    const bytes = buildSalesXlsx(result.data, validated.value);
+    if (result.data.length)
+      await this.repository.recordListExport(result.data, actor.userId);
+    return bytes;
+  }
+
+  async list(
+    query: SalesContractListQuery,
+    actor: AuthenticatedActor,
+    exportLimit?: number,
+  ) {
     if (
       query.search != null &&
       (typeof query.search !== 'string' || query.search.length > 160)
@@ -378,6 +420,7 @@ export class SalesService {
       query,
       scope,
       has(actor, 'sales.payments.read'),
+      ...(exportLimit ? [exportLimit] : []),
     );
     return {
       data: result.data.map((row) => summary(presentSalesContract(row))),

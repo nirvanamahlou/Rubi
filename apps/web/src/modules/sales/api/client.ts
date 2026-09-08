@@ -27,6 +27,7 @@ async function request<T>(
   path: string,
   init?: RequestInit,
   retried = false,
+  asBlob = false,
 ): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new SalesApiError('نشانی API پیکربندی نشده است.', 0);
@@ -51,7 +52,7 @@ async function request<T>(
     !retried &&
     (await refreshAuthenticatedSession(baseUrl))
   )
-    return request<T>(path, init, true);
+    return request<T>(path, init, true, asBlob);
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as {
       code?: string;
@@ -68,6 +69,20 @@ async function request<T>(
       payload?.error?.code ?? payload?.code,
     );
   }
+  if (asBlob) {
+    if (
+      !response.headers
+        .get('content-type')
+        ?.includes(
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+    )
+      throw new SalesApiError(
+        'فایل Excel معتبر دریافت نشد؛ دوباره تلاش کنید.',
+        response.status,
+      );
+    return response.blob() as Promise<T>;
+  }
   return response.json() as Promise<T>;
 }
 
@@ -79,6 +94,23 @@ function queryString(query: SalesContractListQuery): string {
 }
 
 export const salesApi = {
+  exportXlsx: (query: SalesContractListQuery) => {
+    // Export the applied list filters, never just the visible page or unsubmitted input.
+    const filters: SalesContractListQuery = {
+      ...(query.search ? { search: query.search } : {}),
+      ...(query.settlementStatus
+        ? { settlementStatus: query.settlementStatus }
+        : {}),
+      sortBy: query.sortBy ?? 'updatedAt',
+      sortDirection: query.sortDirection ?? 'desc',
+    };
+    return request<Blob>(
+      `/contracts/export.xlsx?${queryString(filters)}`,
+      undefined,
+      false,
+      true,
+    );
+  },
   output: (id: string) =>
     request<{ data: SalesContractOutputV1 }>(
       `/contracts/${encodeURIComponent(id)}/output`,

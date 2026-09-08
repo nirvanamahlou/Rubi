@@ -11,6 +11,7 @@ import {
   Post,
   Query,
   Req,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
@@ -26,6 +27,7 @@ import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { SalesService } from './sales.service';
 import { SalesOutputService } from './sales-output.service';
+import { SALES_XLSX_MIME } from './sales.xlsx';
 
 @ApiTags('Sales')
 @ApiCookieAuth('rubi_access')
@@ -45,6 +47,19 @@ export class SalesController {
     @Headers('x-request-id') traceId?: string,
   ) {
     return this.output.prepare(id, request.actor, traceId);
+  }
+
+  @Get('contracts/export.xlsx')
+  @Header('Cache-Control', 'private, no-store')
+  async exportXlsx(
+    @Query() query: SalesContractListQuery,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    const bytes = await this.service.exportXlsx(query, request.actor);
+    return new StreamableFile(bytes, {
+      type: SALES_XLSX_MIME,
+      disposition: `attachment; filename="sales-contracts-${new Date().toISOString().slice(0, 10)}.xlsx"`,
+    });
   }
 
   @Get('dashboard')

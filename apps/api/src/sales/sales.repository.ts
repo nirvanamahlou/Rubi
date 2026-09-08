@@ -113,6 +113,7 @@ export class SalesRepository {
     query: SalesContractListQuery,
     whereScope: Prisma.SalesContractWhereInput,
     searchPaymentReferences = false,
+    exportLimit?: number,
   ) {
     const where: Prisma.SalesContractWhereInput = {
       AND: [
@@ -196,6 +197,15 @@ export class SalesRepository {
     const pageSize = Math.min(100, Math.max(1, query.pageSize ?? 20));
     const sortBy = query.sortBy ?? 'updatedAt';
     const sortDirection = query.sortDirection ?? 'desc';
+    if (exportLimit) {
+      const data = await this.database.client.salesContract.findMany({
+        where,
+        include: salesDetailInclude,
+        orderBy: [{ [sortBy]: sortDirection }, { id: 'asc' }],
+        take: exportLimit + 1,
+      });
+      return { data, total: data.length, page: 1, pageSize: exportLimit };
+    }
     const [data, total] = await Promise.all([
       this.database.client.salesContract.findMany({
         where,
@@ -797,6 +807,22 @@ export class SalesRepository {
         afterSnapshot: snapshot,
         traceId: actor.traceId ?? null,
       },
+    });
+  }
+
+  recordListExport(
+    records: readonly { id: string; branchId: string; version: number }[],
+    userId: string,
+  ) {
+    return this.database.client.salesContractAuditEvent.createMany({
+      data: records.map((record) => ({
+        contractId: record.id,
+        actorUserId: userId,
+        actorBranchId: record.branchId,
+        action: 'sales.contract.xlsx_export',
+        outcome: AuditOutcome.SUCCESS,
+        afterSnapshot: { format: 'xlsx', contractVersion: record.version },
+      })),
     });
   }
 

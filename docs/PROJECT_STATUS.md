@@ -1,4 +1,10 @@
 # وضعیت پروژه
+## SALES-EXCEL-0908 — COMPLETE_LOCAL
+
+دکمه خروجی Excel کنار فهرست قراردادها اضافه شد؛ همه نتایج جست‌وجو و وضعیت تسویه اعمال‌شده را با مجوز خروجی و محدوده دسترسی قبلی دریافت می‌کند. فایل واقعی XLSX با تیتر فارسی، تم سرمه‌ای، فیلتر و سربرگ ثابت، تاریخ قابل مرتب‌سازی و مبلغ عددی است. هر قرارداد/ارز یک ردیف دارد؛ مبلغ توافقی، پرداخت تأییدشده و مانده جدا هستند. سقف ۲۰۰۰ قرارداد با خطای صریح، بدون خروجی ناقص؛ سابقه دریافت فقط قالب/نسخه را ثبت می‌کند.
+
+67 تست API فروش و 198 تست Web فروش، lint محدوده، typecheck و Build تولیدی API/Web (36 مسیر) موفق‌اند. فایل مصنوعی با دو خواننده مستقل و پیش‌نمایش بررسی شد؛ بررسی احرازشده قرارداد واقعی ادعا نمی‌شود. Web3100 (PID6036) و API4000 (PID20132) فعال، پاسخ سلامت و فایل جدید 200، خروجی بدون نشست401؛ داده، تنظیمات PDF/مدارک و همه قابلیت‌های تور قبلی محفوظ‌اند. بدون Migration/Seed/مجوز جدید/Push عمومی؛ قفل‌های همین کار آزاد شد. جزئیات: docs/tasks/SALES-EXCEL-0908.md.
+
 ## TOUR-PACKAGES-0908 — COMPLETE_LOCAL
 
 PC-A added the real Tour definition/departure tab in Ticket Management. Templates contain route, destination hotel options, registered insurance and included transfer/visa services. Dated departures reference the same published ticket offers used in standalone Sales. Weekly repetition prefills new dates and the old flight details for explicit confirmation/editing; it never changes old tickets or copies reservations. Sales chooses the tour before individual service details, expands its services without a duplicate tour charge, and persists a public versioned departure reference validated by Ticket Catalog.

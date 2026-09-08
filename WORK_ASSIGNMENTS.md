@@ -1,4 +1,10 @@
 # Work Assignments
+## SALES-EXCEL-0908 — PC-A — COMPLETE_LOCAL
+
+User requested a clean Excel export beside the Sales contract list. Branch codex/pc-a-sales-excel-0908 from local runtime ac063f5; preserve all integrated tours and Sales features. Reserve Sales API/controller/repository/export renderer/tests, Sales Web client/workspace/tests and this task's docs only. Additive authenticated XLSX download uses existing list permissions, owner/branch/payment-search scope and applied filters; ignores pagination, bounded export with explicit refusal rather than truncation. No schema, migration, grants, dependency/lockfile or other module edits. No public push until the existing destination gate is resolved.
+
+Delivered with existing sales.export permission and per-contract audit; 67 Sales API and 198 Sales Web tests, scoped lint/typechecks and API/Web production builds passed. Independent XLSX readers verified numbers/dates/RTL and synthetic preview inspected. Active Web3100/API4000, health and updated bundle 200; unauthenticated export 401. No business data/keys/migrations changed. This task's reservations released. Details: docs/tasks/SALES-EXCEL-0908.md.
+
 ## TOUR-PACKAGES-0908 — PC-A — COMPLETE_LOCAL
 
 Explicit user request: persistent tour packages and dated departures in Ticket Management, repeat next week with editable flight times, and a single ticket inventory shared with standalone sales. Branch codex/pc-a-tour-packages-0908 from verified runtime 8b15b4d. Ticket owner explicitly released ticket-catalog/shared-contract/migration scope on 2026-09-08. Prior pricing migration reservation is released.

@@ -9,6 +9,8 @@ import {
   Search,
   ArrowLeft,
   CheckCheck,
+  FileSpreadsheet,
+  LoaderCircle,
   type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -87,6 +89,34 @@ export function SalesWorkspace() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [dashboardError, setDashboardError] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+  const [exportNotice, setExportNotice] = useState('');
+  async function downloadExcel() {
+    setExporting(true);
+    setExportError('');
+    setExportNotice('');
+    try {
+      const blob = await salesApi.exportXlsx(query);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `sales-contracts-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      globalThis.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setExportNotice('فایل Excel نتایج فیلترشده برای دانلود آماده شد.');
+    } catch (cause) {
+      setExportError(
+        cause instanceof Error
+          ? cause.message
+          : 'دریافت Excel ناموفق بود؛ دوباره تلاش کنید.',
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
   const load = useCallback(async () => {
     const version = ++requestVersion.current;
     setLoading(true);
@@ -237,10 +267,31 @@ export function SalesWorkspace() {
                 : ''}
             </span>
           </h2>
-          <span className="text-xs text-muted-foreground">
-            مرتب‌شده بر اساس آخرین تغییر
-          </span>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={loading || !!error || exporting || total === 0}
+            onClick={() => void downloadExcel()}
+            title="خروجی همه نتایج فیلترشده، نه فقط این صفحه"
+          >
+            {exporting ? (
+              <LoaderCircle className="size-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="size-4" />
+            )}
+            {exporting ? 'در حال ساخت Excel…' : 'خروجی Excel'}
+          </Button>
         </div>
+        {exportError ? (
+          <p role="alert" className="mb-3 text-sm text-red-600">
+            {exportError}
+          </p>
+        ) : null}
+        {exportNotice ? (
+          <p role="status" className="mb-3 text-sm text-emerald-700">
+            {exportNotice}
+          </p>
+        ) : null}
         <form
           className="flex flex-wrap gap-2"
           onSubmit={(event) => {

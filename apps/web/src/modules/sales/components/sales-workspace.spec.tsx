@@ -9,17 +9,20 @@ import {
 } from './sales-workspace';
 
 describe('sales dashboard loading', () => {
+  it('places the Excel export beside the contract list with a full-results hint', () => {
+    const html = renderToStaticMarkup(<SalesWorkspace />);
+    expect(html).toContain('خروجی Excel');
+    expect(html).toContain('خروجی همه نتایج فیلترشده، نه فقط این صفحه');
+  });
   it('searches tracking references server-side across contracts without a current contract or stale settlement filter', async () => {
     const query = paymentReferenceSearchQuery('  OTHER-CONTRACT-TRACK  ');
     expect(query).toEqual({ search: 'OTHER-CONTRACT-TRACK', page: 1 });
     const api = {
       dashboard: vi.fn().mockResolvedValue({ data: {} }),
-      list: vi
-        .fn()
-        .mockResolvedValue({
-          data: [{ id: 'other-contract' }],
-          meta: { total: 1 },
-        }),
+      list: vi.fn().mockResolvedValue({
+        data: [{ id: 'other-contract' }],
+        meta: { total: 1 },
+      }),
     };
     const result = await loadSalesWorkspace(api, query);
     expect(api.list).toHaveBeenCalledWith({

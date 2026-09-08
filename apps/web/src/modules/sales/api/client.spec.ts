@@ -10,6 +10,55 @@ vi.mock('@/lib/auth-session', () => ({
 
 afterEach(() => vi.unstubAllGlobals());
 describe('sales API dashboard connection', () => {
+  it('downloads all applied results as a Blob and omits list pagination', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response('PK-test', {
+          headers: {
+            'content-type':
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          },
+        }),
+      );
+    vi.stubGlobal('fetch', fetch);
+    const blob = await salesApi.exportXlsx({
+      search: 'TRACK',
+      settlementStatus: 'UNPAID',
+      page: 3,
+      pageSize: 20,
+    });
+    expect(await blob.text()).toBe('PK-test');
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/sales/contracts/export.xlsx?search=TRACK&settlementStatus=UNPAID&sortBy=updatedAt&sortDirection=desc',
+      expect.objectContaining({ credentials: 'include', cache: 'no-store' }),
+    );
+  });
+  it('does not download JSON or an access error as an Excel file', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response('{}', {
+            headers: { 'content-type': 'application/json' },
+          }),
+        ),
+    );
+    await expect(salesApi.exportXlsx({})).rejects.toThrow('Excel');
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response('{"message":"مجوز خروجی ندارید"}', { status: 403 }),
+        ),
+    );
+    await expect(salesApi.exportXlsx({})).rejects.toMatchObject({
+      status: 403,
+      message: 'مجوز خروجی ندارید',
+    });
+  });
   it('loads a saved contract output with authentication and no cache', async () => {
     const fetch = vi
       .fn()
