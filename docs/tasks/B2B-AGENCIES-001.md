@@ -1,7 +1,9 @@
 # B2B-AGENCIES-001 — PC-B
 
-Status: partial implementation ready for review; B2B-AGENCIES-001B blocked by
-owner contracts and shared locks. Base: `origin/develop@30d67ec`.
+Status: partial implementation; PRD follow-up ready for review. B2B-AGENCIES-001B
+requires remaining product decisions, persistent workflows and producer contracts.
+Historical lock notes below describe earlier deliveries, not current ownership.
+Base: `origin/develop@30d67ec`.
 Branch: `codex/pc-b-agencies-organizations`.
 Worktree: `C:/Users/admin/Rubi-agencies-organizations`.
 Published: [Draft PR #113](https://github.com/nirvanamahlou/Rubi/pull/113) to
@@ -332,12 +334,77 @@ Central status/reservation updates remain here under the existing owner exceptio
   or authenticated live-runtime test is claimed. The prior 3100 runtime handoff
   limitation remains; this follow-up prepares and publishes code only.
 
+## PRD verification follow-up — ready for review
+
+PC-B continues the clean published branch at c06effd. Source: owner-supplied
+`PRD_B2B_Agencies_Corporate_Customers_FA.docx`, version 1.0, 451 extracted
+paragraphs, read in full. Reserve organization UI/model/tests, B2B API/tests and
+this report plus the scoped PRD coverage report. Consume existing public
+Documents APIs for organization files; do not modify the Documents producer.
+No schema, migration, permissions, shared contract or runtime takeover is included
+in this independent slice. The latest remote state was checked: PR90 is merged,
+PR112 remains open. Historical locks are not treated as permanent ownership;
+the remaining producer/schema work needs a fresh coordinated B-phase plan.
+
+Owner decision: credit limits are separate per currency, with **no automatic FX
+conversion**. The existing single-currency policy cannot represent the final
+multi-currency model; the read projection must reject mismatched currencies.
+Commission recognition trigger and approval-matrix questions remain pending.
+Document classifications/access use the existing Documents policies; this does
+not decide new retention, tax, exposure-component or cross-module pricing rules.
+
+PRD ORG04 and the owner's permanent-delete request are compatible: expose the
+existing dependency-restricted delete for unused identities, retain referenced
+business history, and never cascade financial/contract records.
+
+The refreshed ownership check supersedes the earlier central-lock exception for
+this follow-up. Only this task's entries in WORK_ASSIGNMENTS, PROJECT_STATUS and
+DECISIONS were reserved/updated; no other entry or shared code ownership changed.
+Full requirement-by-requirement evidence and remaining work are in
+[the PRD coverage report](B2B-AGENCIES-001-PRD-COVERAGE.md). This is not a complete
+implementation of the PRD.
+
+Delivered: real branch-scoped organization Documents list/upload/expiry filtering,
+owner deep links for metadata/version/access, server-validated draft attachments,
+exact same-currency credit read projection with source timestamp/version, and a
+transactional guard against unapproved profile lifecycle changes. Metadata edits
+preserve lifecycle fields and an omitted account manager. Direct activation now
+returns `B2B_PROFILE_APPROVAL_REQUIRED`; existing lifecycle and history remain
+readable. Web and API must be integrated together. Financial/contract approval
+gates remain in place and do not represent a finished workflow.
+
+Final checks:
+
+- **62 organization Web tests passed**; **49 B2B unit/HTTP/boundary tests plus 5
+  real disposable PostgreSQL cases passed**. Coverage includes canonical source
+  and permission checks, invalid/foreign/quarantined/expired document rejection,
+  decimal precision, currency mismatch, unavailable/invalid snapshots, review-only
+  creation, preserved lifecycle metadata, overlap, rollback and optimistic lock.
+- Web/API typecheck and production builds passed; Web generates 36 routes. API
+  full lint passed. Web full lint found one new ref-cleanup warning; it was fixed
+  and scoped Web/API lint then passed without warnings. Scope/diff checks passed.
+- The final concurrent test/build run encountered one Docker startup timeout;
+  its exact orphaned disposable container was identified and stopped. The five
+  PostgreSQL cases were rerun after build load ended and all passed. No operational
+  database, shared container, stored demo organization or IAM grant was changed.
+- Browser QA could not attach the in-app browser webview on two attempts. The
+  temporary synthetic public-service harness was stopped; no new visual,
+  authenticated upload/download, MFA end-to-end or performance result is claimed.
+- No schema/migration/seed, dependency, shared contract, Documents producer,
+  Master Data, IAM or HR code change. The original Word file, sample files and
+  local runtime/test artifacts remain outside Git.
+
+Runtime: independent listeners 3100/4190 remain in place. This follow-up is code
+prepared for review, not a live cutover. The prior automatic approval review
+rejection of stopping/replacing 3100 remains unresolved; it was not bypassed or
+retried. No merge/rebase or deployment was performed.
+
 ## Integration handoff
 
 Fetch `codex/pc-b-agencies-organizations` and review its independent draft PR;
 do not merge or rebase the Sales/Reservations branches as part of this delivery.
-The central lock owners must coordinate B2B-AGENCIES-001B before the blocked
-schema, permission, shared-contract or integration work begins. In particular,
+Coordinate B2B-AGENCIES-001B with the current producer owners and resolve the
+remaining business decisions before final schema/contracts/approval work. In particular,
 review the deliberate credit and agreement approval gates before integrating
 clients that previously relied on direct activation. Neither accounting
 balances nor issued travel documents are created by this module.

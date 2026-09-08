@@ -8,6 +8,7 @@ describe('organization presentation from real projections', () => {
       '۱۲۳٬۴۵۶٬۷۸۹٬۰۱۲٬۳۴۵٬۶۷۸٫۱۲۳۴ IRR',
     );
     expect(moneyLabel('invalid', 'IRR')).toBe('نامشخص');
+    expect(moneyLabel('-0.0001', 'IRR')).toBe('−۰٫۰۰۰۱ IRR');
   });
   it('labels a dual-role organization without duplicating its identity', () => {
     expect(cooperationLabel('AGENCY,CORPORATE_CUSTOMER')).toBe(

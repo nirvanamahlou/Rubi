@@ -1,5 +1,13 @@
 # Work Assignments
 
+## B2B-AGENCIES-001 / PRD coverage follow-up — PC-B — READY_FOR_REVIEW
+
+- Owner requests implementation against the supplied B2B PRD and selects separate credit limits per currency, without automatic FX. Continue the clean published `codex/pc-b-agencies-organizations` branch/PR #113; original checkout and independent 3100/4190 runtime remain untouched.
+- Reserve organization Web/model/tests, B2B API/tests, scoped task reports and only this task's entries in WORK_ASSIGNMENTS, PROJECT_STATUS and DECISIONS. Latest fetched develop@0261b91 and published PR states were checked: Sales PR90 is merged; Reservations PR112 remains open and claims no shared lock. Historical central-lock ownership is not treated as permanent; no other task entry is rewritten.
+- Consume the public Documents Service/client for organization files and draft attachments. No Documents implementation, Master Data, IAM, HR, shared API contract, schema/migration/seed or dependency/lockfile changes. Full PRD acceptance still requires the documented business decisions, persistent B2B workflows and owner projections; unavailable states are not completion.
+- Scope, evidence and remaining acceptance criteria: `docs/tasks/B2B-AGENCIES-001-PRD-COVERAGE.md`. No migration lock or runtime handoff is claimed by this slice.
+- Validation: 62 organization Web tests, 49 B2B API tests and 5 isolated PostgreSQL tests passed; affected lint/typechecks and production builds passed. New browser visual QA was unavailable due webview attachment timeout. This slice's implementation reservations are released for review; full PRD acceptance and runtime integration remain incomplete.
+
 ## LEGAL-ENTITY-HEADER-003 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-08: چهار شرکت نیایش سیر سحر، جهان باستان، قسطی رو و جهان آکادمیا در انتخاب‌گر و رنگ مستقل Header؛ هر دو PC-A و PC-B برای اجرا و توسعه مجازند. منظور حساب IAM جدید نیست.

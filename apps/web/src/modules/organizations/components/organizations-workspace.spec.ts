@@ -45,7 +45,7 @@ describe('agency to Master Organization integration', () => {
     expect(connections).toContain('createOrganizationAddress');
     expect(connections).toContain('upsertCreditPolicy');
     expect(connections).toContain('createAgreedRate');
-    expect(connections).toContain('اطلاعات مالی هنوز در دسترس نیست');
+    expect(connections).toContain('projectCredit(');
     expect(source).toContain('phoneMasked');
     expect(source).toContain('emailMasked');
   });

@@ -956,6 +956,9 @@
   &.organization-delete-modal {
     max-width: 640px;
   }
+  &.organization-document-modal {
+    max-width: 780px;
+  }
   .modal-title h2 {
     font-size: 25px;
     color: var(--ink);

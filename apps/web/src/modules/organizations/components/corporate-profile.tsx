@@ -26,6 +26,7 @@ import {
 } from 'react';
 import { cooperationLabel } from '../model/presentation';
 import { Button } from '@/components/ui/button';
+import { OrganizationDocumentsPanel } from './organization-documents-panel';
 
 const sections = [
   {
@@ -463,6 +464,11 @@ export function CorporateProfile({
               </header>
               <div className="panel-body">{contacts}</div>
             </section>
+          ) : screen === 'contracts' && tab === 'documents' ? (
+            <OrganizationDocumentsPanel
+              key={organization.id}
+              organization={organization}
+            />
           ) : operationalView ? (
             operations(operationalView)
           ) : (
