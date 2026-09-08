@@ -1,5 +1,113 @@
 # Work Assignments
 
+## MARKETING-001G-REMOVE-HUB-INTRO — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-08: بلوک نمایشی «بخش‌های مارکتینگ / برای ورود به هر بخش، کارت مربوط را انتخاب کنید.» از Hub مارکتینگ حذف شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-marketing-remove-section-intro` از آخرین Snapshot محلی `origin/develop@54e5102`؛ `git fetch --prune origin` دو بار اجرا شد اما GitHub موقتاً روی پورت ۴۴۳ در دسترس نبود.
+- محدوده فقط `apps/web/src/modules/marketing/components/marketing-workspace.tsx`، تست قرارداد همان ماژول و ورودی‌های همین Work Item در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` است. هیچ Schema/Migration/Seed، API/Contract، Dependency/Lockfile، داده یا فایل مرکزی UI تغییر نمی‌کند.
+- نتیجه: عنوان «بخش‌های مارکتینگ» و توضیح «برای ورود به هر بخش، کارت مربوط را انتخاب کنید.» همراه Wrapper فاصله‌ساز حذف شدند؛ Grid کارت‌ها بدون فاصله اضافه از ابتدای Hub نمایش داده می‌شود و Section با نام دسترس‌پذیر غیرنمایشی باقی مانده است.
+- اعتبارسنجی: ۱۸ تست هدفمند مارکتینگ، Contracts build، Web typecheck و lint و Production Build با ۳۴ Route موفق‌اند. نسخه همین Branch جای اجرای قدیمی `Rubi-hr-foundation` روی پورت ۳۱۰۰ فعال شد.
+
+## LEGAL-ENTITY-BRAND-HEADER-002 — PC-B — DONE/MERGED
+
+- درخواست صریح مالک محصول در 2026-09-07: با انتخاب شرکت فعال «جهان باستان»، هدر اصلی سامانه سورمه‌ای شود و نام کاربر همراه ساعت ورود در همان هدر نمایش داده شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-jahan-bastan-header-identity` از `origin/develop@8c445ccb21bdef441b051aa34fb93e5c94379fcf`؛ محدوده فقط `apps/web/src/modules/legal-entities/components/legal-entity-context.tsx`، `apps/web/src/app/login/login-form.tsx`، `apps/web/src/lib/header-session.ts`، `apps/web/src/app/globals.css`، تست‌های هدفمند Web و اسناد همین Work Item است.
+- `Central UI Owner = PC-B/LEGAL-ENTITY-BRAND-HEADER-002` فقط برای `apps/web/src/app/globals.css`. فایل `apps/web/src/components/layout/app-shell.tsx` به‌علت مالکیت فعال PR #99 تغییر نمی‌کند و تغییر Breadcrumb منابع انسانی دست‌نخورده می‌ماند.
+- نام نمایشی کاربر فقط از پاسخ احرازشده عمومی IAM در Login/Refresh گرفته می‌شود و همراه زمان ورود در Session Storage همان Tab ثبت می‌شود؛ شناسه کاربر، نام کاربری، Password، Token، Cookie یا PII اضافی ذخیره یا نمایش داده نمی‌شود.
+- هیچ Backend، API/Shared Contract، Schema/Migration/Seed، Dependency/Lockfile، Navigation مرکزی، داده کاربر یا Branch دیگری تغییر نمی‌کند. معیار پذیرش شامل تغییر فوری تم هدر هنگام Switch شرکت، خوانایی کنترل‌ها، نمایش نام/ساعت ورود، RTL/Responsive، تست هدفمند، lint، typecheck و Production Build Web است.
+- پیاده‌سازی تکمیل شد: Header با Context `JAHAN_BASTAN` سورمه‌ای می‌شود، نام نمایشی کاربر و ساعت ورود همان Tab را نشان می‌دهد و Login موفق Cache نمایشی را مقداردهی می‌کند. ۱۳ تست هدفمند، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند؛ Preview ایزوله روی پورت ۳۱۰۱ بدون توقف سرویس‌های فعال ۳۱۰۰/۴۰۰۰ بالا آمد و تا صفحه Login سالم پاسخ داد.
+- `Central UI Owner = RELEASED — PC-B/LEGAL-ENTITY-BRAND-HEADER-002 ready for review`. هیچ قفل Migration، Contract، Dependency/Lockfile، Database، Permission یا Branch دیگری گرفته نشد.
+- Follow-up صریح مالک در 2026-09-07: «جهان آکادمیا» و «قسطی رو» به انتخاب‌گر شرکت فعال افزوده شوند. کدهای canonical برابر `JAHAN_ACADEMIA` و `GHESATI_RO` هستند و Context تجمیعی از «هر دو شرکت» به «همه شرکت‌ها» اصلاح می‌شود.
+- محدوده Follow-up: قرارداد عمومی نسخه‌دار Legal Entities، اعتبارسنجی Switch در API، مدل/تست انتخاب‌گر Web، Asset خنثی برای شرکت‌های بدون لوگوی تحویلی، مستندات همین Task و Upsert اتمیک دو رکورد در دیتابیس محلی PC-B پس از Backup. `Legal Entities shared-contract Owner = PC-B/LEGAL-ENTITY-BRAND-HEADER-002` تا پایان Review.
+- `packages/database/prisma/seed.ts` به‌علت تغییر فعال PR #90 نزد PC-A دست‌نخورده می‌ماند؛ هیچ Schema/Migration، Dependency/Lockfile، App Shell، داده کاربر یا Branch دیگری تغییر نمی‌کند. Seed مشترک پس از پایان مالکیت PR #90 یک Handoff مستقل می‌خواهد و این Task قفل Migration یا Seed آن را بازپس نمی‌گیرد.
+- نتیجه Follow-up: قرارداد `legal-entities.v3` چهار کد واقعی را منتشر می‌کند، DTO سوییچ مستقیماً همان قرارداد را اعتبارسنجی می‌کند، انتخاب‌گر «جهان آکادمیا» و «قسطی رو» را نشان می‌دهد و عنوان تجمیعی به «همه شرکت‌ها» اصلاح شد. تا دریافت لوگوی اختصاصی، دو شرکت جدید نشان خنثی و نام صحیح خود را دارند و لوگوی نیایش سیر به آن‌ها نسبت داده نمی‌شود.
+- دیتابیس مشترک Task فعال ۳۱۰۰/۴۰۰۰ پس از تشخیص ناسازگاری نسخه قدیمی دقیقاً به دو شرکت قبلی بازگردانده شد. Preview ایزوله از Backup تأییدشده روی PostgreSQL پورت ۵۵۴۳۳ شامل هر چهار شرکت فعال است و API/Web جدید روی `127.0.0.1:4001` و `127.0.0.1:3101` اجرا می‌شوند؛ Cookieهای `localhost` Task دیگر نیز به‌علت Host ایزوله دست‌نخورده می‌مانند.
+- کنترل کیفیت Follow-up: ۲۷ تست هدفمند Contract/API/Web، lint و typecheck بسته‌های متاثر، Build تولیدی API/Web با ۳۴ Route و `git diff --check` موفق‌اند؛ Health و Login هر دو سرویس ایزوله HTTP 200 و CORS احرازشده صحیح است.
+- PR #106 با Merge Commit `10fc98b1dd0f6df7ed006dfc65e952cac1d421dd` وارد `develop` شد و همه ۸ Gate ثبت‌شده CI موفق‌اند. نسخه Merge‌شده روی `localhost:3100` و API روی `localhost:4000` با چهار شرکت فعال در دیتابیس ایزوله محلی PC-B پاسخ سالم دارند.
+- `Legal Entities shared-contract Owner = RELEASED / STABLE`. `Central UI Owner = RELEASED` است؛ Migration، Seed مشترک، Dependency/Lockfile و Database مشترک رزرو نشده‌اند.
+
+## NOTIFICATIONS-001-ACTIVITY-BELL — PC-B — DONE/MERGED
+
+- درخواست صریح مالک محصول در 2026-09-07: هر تغییر موفقی که در سامانه انجام می‌شود در بخش زنگوله به‌صورت Notification نمایش داده شود. `COMPUTER_ID=PC-B` بر مبنای مالکیت فعلی این Workspace و ماژول‌های افقی رابط.
+- Branch مستقل `codex/pc-b-global-change-notifications` از `origin/develop@9b9d7a4`. محدوده رزروشده: یک Notification Center مستقل در `apps/web/src/components/layout/**`، اتصال محدود زنگوله موجود در `app-shell.tsx`، تست‌های همان Slice و ورودی‌های همین Task در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md`.
+- نسخه اول بدون Schema/Migration/Seed و بدون تغییر API/Shared Contract/Dependency/Lockfile است: Mutationهای موفق `POST/PUT/PATCH/DELETE` که از Web احراز‌شده Rubi به API تنظیم‌شده ارسال می‌شوند در مرورگر ثبت می‌شوند. Auth/refresh/logout و عملیات غیرتغییردهنده Preview/Search/Export از Feed تغییر حذف‌اند.
+- اعلان‌ها فاقد PII و Payload درخواست‌اند و فقط نوع عملیات، نام بخش، زمان و مسیر داخلی را نگه می‌دارند. نگهداری محدود، خوانده/خوانده‌نشده، پاک‌سازی اعلان‌های خوانده‌شده، Sync بین Tabها و fallback امن برای LocalStorage الزامی است.
+- این Slice تغییرات عمومی را از همان Browser Profile پوشش می‌دهد. پیگیری DOCUMENTS-007 اعلان تغییرات اسناد را با قرارداد و Persistence مستقل Backend به همین مرکز متصل کرده است؛ بنابراین مسیرهای `documents/**` از رهگیری مرورگری حذف‌اند تا اعلان تکراری ساخته نشود. سایر ماژول‌ها تا پیگیری Backend خود، مرورگرمحور باقی می‌مانند.
+- نتیجه: زنگوله موجود به Notification Center واقعی تبدیل شد؛ Mutation موفق پس از دریافت Response به اعلان فارسیِ بخش و عملیات تبدیل می‌شود. Badge تعداد خوانده‌نشده، Empty State، زمان، Deep Link، خواندن تکی/همه، پاک‌کردن خوانده‌شده‌ها، سقف ۶۰ رکورد و همگام‌سازی Tabها فعال است؛ خطای Storage هرگز نتیجه درخواست اصلی را تغییر نمی‌دهد.
+- اعتبارسنجی: Web lint و typecheck، ۲۲ تست هدفمند و Production Build با ۳۴ Route موفق‌اند؛ Web/API روی ۳۱۰۰/۴۰۰۰ پاسخ ۲۰۰ دارند. Full Web برابر ۶۴۱ تست موفق از ۶۴۲ است و فقط assertion قدیمی و تغییرنیافته Customers درباره LF/CRLF روی Windows شکست دارد؛ فایل Customers خارج Scope دست‌نخورده ماند.
+
+## MARKETING-001F-OFFER-AUDIENCE-TARGETS — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-07: در فرم‌های «پیشنهاد ویژه» و «کد تخفیف» یک انتخاب اختیاری مخاطب هدف اضافه شود که بتواند به مشتریان یا آژانس‌ها متصل شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-marketing-offer-targets` از `origin/develop@7b84040`؛ محدوده فقط `apps/web/src/modules/marketing/**`، تست‌های همان ماژول و ثبت همین Work Item در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` است.
+- اتصال فقط خواندنی از Client عمومی Customers و Master Data Organizations انجام می‌شود: مشتریان فعال دارای رضایت جاری مارکتینگ و Organizationهای فعال با نقش canonical `AGENCY`. هیچ جدول، Repository یا زیرساخت داخلی ماژول دیگر مستقیماً مصرف نمی‌شود.
+- این Task هیچ Schema/Migration/Seed، API/Shared Contract، Dependency/Lockfile، فایل مرکزی UI یا داده واقعی را تغییر نمی‌دهد. قفل‌های فعال `AGENCY-B2B-INTEGRATIONS-001` و مالکیت Customers نزد PC-A دست‌نخورده‌اند.
+- معیار پذیرش: فیلد «مخاطب هدف (اختیاری)» در هر دو فرم وجود داشته باشد؛ حالت عمومی، مشتری و آژانس را پشتیبانی کند؛ جست‌وجو و انتخاب رکورد از API واقعی با stateهای loading/empty/error کار کند؛ انتخاب نوع بدون انتخاب رکورد ذخیره نشود و مرجع انتخاب‌شده در نتیجه عملیات دیده شود.
+- نتیجه: Selector مشترک هر دو فرم به `customersApi` و `masterDataApi` متصل شد؛ فقط مشتری فعال دارای رضایت جاری و Organization فعال با نقش `AGENCY` قابل انتخاب است. جست‌وجوی debounce، Retry، پیام خطای نشست/مجوز و Deep Link به بخش مالک نیز تکمیل شد.
+- اعتبارسنجی: Web lint بدون هشدار، Web typecheck، ۲۱ تست هدفمند مارکتینگ و Production Build با ۳۴ Route موفق‌اند. Build اجرایی با `NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api/v1` ساخته و جای نسخه قدیمی پورت ۳۱۰۰ اجرا شد؛ Health API پاسخ ۲۰۰ و Endpointهای محافظت‌شده مشتری/آژانس بدون نشست پاسخ صحیح ۴۰۱ دارند.
+
+## DOCUMENTS-007-STEP-UP-SECURITY — PC-B — DONE/MERGED
+
+- درخواست و واگذاری صریح مالک محصول در 2026-09-07: PC-B در کنار PC-A به مرز عمومی IAM دسترسی داشته باشد تا برای سندهایی که هنگام بارگذاری علامت «نیازمند اعتبارسنجی دومرحله‌ای» می‌خورند، مشاهده و دانلود فقط پس از Step-up واقعی انجام شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-documents-step-up-security` از `origin/develop@7b84040` در Worktree `C:\Users\admin\Rubi-documents-step-up-security`؛ Branch و تغییرات PC-A/PR #90 حفظ و بازنویسی نمی‌شوند.
+- محدوده رزروشده: قابلیت عمومی و نسخه‌دار Step-up در IAM، Schema/Migration افزایشی و غیرمخرب همان قابلیت، Policy و Access Grant یک‌بارمصرف Documents، Upload/Preview/Download، قراردادهای عمومی IAM/Documents، رابط کاربری و تست‌ها و مستندات همین واحد کار.
+- انتقال محدود قفل پس از Merge PR #98: `Migration Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY`، `IAM shared-contract Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY`، `Documents shared-contract Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY` و `Central Docs Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY`. قفل Dependency/Lockfile فقط در صورت ضرورت و ثبت فایل دقیق گرفته می‌شود.
+- مرز تداخل: فایل‌ها و Migrationهای فروش در PR #90 تغییر نمی‌کنند؛ Documents فقط از Public Step-up Contract/Port IAM استفاده می‌کند و به Repository یا جدول داخلی IAM Query مستقیم نمی‌زند. PC-A همچنان مالک Sales است و این واگذاری دسترسی آن را حذف نمی‌کند.
+- فرض ظرفیت و امنیت: نسبت خواندن به نوشتن `20:1`، اوج کمتر از `50 QPS`، سامانه ورودمحور با Branch Scope و داده در سطح PII/Restricted؛ هدف `p50<150ms`، `p95<300ms`، `p99<600ms`، SLO برابر `99.9%`، `RPO<=24h` و `RTO<=4h` است.
+- معیار پذیرش: Checkbox از Upload تا DB حفظ شود؛ کد ثابت، کد نمایشی در UI یا Secret داخل Git ممنوع است؛ کد Authenticator با Rate Limit و جلوگیری از Replay اعتبارسنجی شود؛ Grant کوتاه‌عمر و یک‌بارمصرف به همان کاربر/سند/عملیات محدود باشد؛ Preview/Download بدون Grant به‌صورت fail-closed رد و همه موفقیت/ردها Audit شوند.
+- نتیجه: فعال‌سازی Authenticator با رمز جاری و TOTP واقعی، Secret رمز‌شده، Replay Guard و Rate Limit تکمیل شد. سند علامت‌خورده فقط با Grant هش‌شده دو دقیقه‌ای و یک‌بارمصرفِ وابسته به User/Session/Document/Purpose نمایش یا دانلود می‌شود؛ Scan، Permission و Audit نیز سمت Backend fail-closed باقی می‌مانند.
+- رابط: Checkbox در Upload اصلی و Customer وجود دارد؛ فرم فعال‌سازی/ورود کد فارسی است و پیش‌نمایش تصویری مجاز در Browser به PNG کم‌حجم دارای واترمارک سامانه، کد آرشیو و زمان تبدیل می‌شود. جلوگیری مطلق از Screenshot ادعا نمی‌شود.
+- اعتبارسنجی: Prisma format/validate/generate، lint کامل API/Web/Database، typecheck API/Web، Production Build کامل و ۳۴ Route، `812` تست API، `633` تست Web سالم و تست‌های هدفمند Migration موفق‌اند. زنجیره Migrationها روی PostgreSQL 18 خالی و ارتقای دیتابیس دارای User/Document آزمایشی پاس شد؛ تنها شکست Full Web همان Assertion قدیمی Customer وابسته به LF/CRLF و خارج از Scope است.
+- مرجع طراحی و Handoff: `docs/tasks/DOCUMENTS-007-STEP-UP-SECURITY.md`.
+- پیگیری صریح مالک محصول در 2026-09-07: همه تغییرات عملیاتی سند در زنگوله سامانه به‌صورت اعلان پایدار دیده شوند. محدوده افزوده شامل قرارداد عمومی نسخه‌دار Notifications، Persistence و API ماژول مستقل Notifications، Service عمومی ثبت اعلان برای Documents، Bell مرکزی App Shell و تست/مستندات همین قابلیت است. گیرنده امن هر تغییر، Actor و مالک سند است و در صورت یکی‌بودن فقط یک اعلان ساخته می‌شود؛ دسترسی کاربران یا شعب دیگر گسترش نمی‌یابد.
+- انتقال محدود قفل پیگیری: `Notifications shared-contract/root export Owner = PC-B/DOCUMENTS-007-STEP-UP-SECURITY` و فایل مرکزی `apps/web/src/components/layout/app-shell.tsx` فقط برای Bell همین Task نزد PC-B رزرو است. Migration و Central Docs همان قفل موجود Task باقی می‌مانند و Dependency/Lockfile همچنان آزاد است.
+- نتیجه پیگیری: Persistence و API گیرنده‌محور `notifications.v1`، وضعیت خواندن/پاک‌کردن خوانده‌شده‌ها و ثبت اتمیک اعلان برای Upload، ویرایش، آرشیو، بازیابی، کامل/ناقص، عملیات گروهی و حذف دائمی تکمیل شد. Feed پایدار اسناد با Notification Center سراسری ادغام شد؛ Documents فقط Service عمومی Notifications را مصرف می‌کند و دسترسی مستقیم جدول بین ماژول‌ها ایجاد نشد.
+- اعتبارسنجی پیگیری: Prisma format/validate/generate، lint و typecheck API/Web، ۲۷ تست هدفمند API، ۸ تست هدفمند Web و اجرای ۴ تست PostgreSQL زنجیره Migrationها پاس شد. Full API برابر ۸۱۲ تست پاس و ۷۰ skip است؛ Full Web فقط Assertion قدیمی Customer وابسته به LF/CRLF خارج از Scope را قرمز دارد.
+
+## MASTER-005-EXCEL-IMPORT-PERSISTENCE — PC-B — DONE/MERGED
+
+- درخواست صریح مالک محصول در 2026-09-06: مسیر خواندن Excel در اطلاعات پایه بررسی شود و رکوردهای معتبر پس از خواندن، در بخش مالک خود ثبت و بلافاصله قابل مشاهده باشند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-master-data-excel-import` از `origin/develop@bf6b387` در Worktree `C:\Users\admin\Rubi-master-data-excel-import`؛ محدوده فقط جریان Import اقامت، تست‌های هدفمند و اسناد همین واحد کار است.
+- معیار پذیرش: فایل فقط پس از Preview و اعتبارسنجی Backend به‌صورت اتمیک Commit شود؛ نتیجه ثبت شامل تعداد ایجاد/ویرایش/رد نمایش داده شود؛ پس از Commit کاربر به فهرست هتل‌های کشور/شهر انتخاب‌شده هدایت شود و فیلتر وضعیت مانع مشاهده رکورد تازه نشود.
+- این Task هیچ Schema/Migration/Seed، Shared Contract، Dependency/Lockfile، Customer Excel Import یا فایل‌های تحت مالکیت PC-A را تغییر نمی‌دهد.
+- نتیجه: callback ثبت نهایی اکنون Scope کشور/شهر و شمارنده‌های Commit را به Workspace می‌دهد؛ Workspace فیلترهای پنهان‌کننده را پاک می‌کند، وضعیت را روی «همه» می‌گذارد، فهرست هتل‌های همان Scope را باز می‌کند و پیام نتیجه را بعد از خروج از تب Import نگه می‌دارد.
+- اعتبارسنجی: تست سرویس با Workbook معتبر، ایجاد هتل و Auditهای create/commit را داخل تراکنش تأیید می‌کند؛ ۴۰۵ تست Master Data در API، ۳۳۶ تست Master Data در Web، ۶۶ تست PostgreSQL واقعی، lint و typecheck هر دو بسته و Production Build API/Web با ۳۴ Route موفق‌اند.
+- پیگیری صریح مالک محصول در 2026-09-06: الزامی‌بودن فیلدها در همه فرم‌های اطلاعات پایه با ستاره و semantics کنترل مشخص شود، وعده/سرویس/نوع اتاق/امکانات هتل اختیاری بمانند، مسیرهای ثبت دوباره تست شوند و نتیجه برای استفاده PC-A روی `develop` ادغام شود.
+- نتیجه پیگیری: requiredهای Catalog هم در UI ستاره دارند و هم به کنترل‌ها منتقل می‌شوند؛ Backend همان requiredها را پیش از ثبت بررسی می‌کند. هتل فقط «نام» و «شهر» را اجباری نگه می‌دارد و روابط وعده/سرویس، نوع اتاق و امکانات با انتخاب خالی نیز با موفقیت ثبت می‌شوند. Fixtureهای محلی با قرارداد فعلی هم‌راستا و کدهای خودکار خدمات در وابستگی‌های تأمین‌کننده/کارگزار استفاده شدند؛ شرکت اتوبوس بدون «تأمین‌کننده» و با FK الزامی سازمان مالک ثبت می‌شود.
+
+## TICKET-CATALOG-004 — PC-A — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-06: فضای خالی میان کارت‌های بلیت در چیدمان فهرست حذف شود و گروه رفت‌وبرگشت همچنان کنار هم بماند. `COMPUTER_ID=PC-A`.
+- Branch مستقل `codex/pc-a-ticket-card-dense-layout` از `origin/develop@733a24d`؛ محدوده فقط چیدمان Workspace و تست رندر Ticket Catalog و ثبت همین Work Item است.
+- راهکار باید ترتیب منطقی کارت‌ها و گروه‌بندی رفت/برگشت را حفظ کند و هیچ Schema/Migration/Seed، API، Contract، Dependency/Lockfile یا ماژول دیگری را تغییر ندهد.
+- نتیجه: Grid فهرست به جای‌گذاری Dense مجهز شد؛ خانه تک‌ستونه خالی کنار گروه‌های دوکارته با کارت بعدی پر می‌شود و Wrapper دو ستونه رفت/برگشت دست‌نخورده باقی می‌ماند.
+- اعتبارسنجی: ۹۵/۹۵ تست Ticket Catalog Web، Web lint، Web typecheck و Production Build با ۳۴ Route موفق‌اند؛ build قانون `.grid-flow-row-dense{grid-auto-flow:dense}` را تولید می‌کند و سرویس پورت ۳۱۰۰ پاسخ ۲۰۰ دارد. بازبینی خودکار پنجره به‌علت خطای ACL ابزار Windows ممکن نشد.
+
+## AGENCY-B2B-INTEGRATIONS-001 — PC-B — READY_FOR_REVIEW
+
+- درخواست و واگذاری صریح مالک محصول در 2026-09-05: مانع قبلی PR #90 رفع‌شده تلقی شود و اتصال عملیاتی آژانس‌ها شامل آدرس پایه، پروفایل شعبه‌ای، قرارداد B2B، سیاست اعتبار و نرخ توافقی پیاده‌سازی شود. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-agency-b2b-integrations` از `origin/develop@092109d`؛ Branch و تغییرات PC-A/PR #90 دست‌نخورده و فقط از قراردادهای عمومی مصرف می‌شوند.
+- محدوده رزروشده: `MasterOrganizationAddress` در مالکیت Master Data؛ مدل‌ها، API و UI ماژول B2B/Agencies برای پروفایل شعبه‌ای، قرارداد، سیاست اعتبار و نرخ توافقی؛ قراردادهای عمومی نسخه‌دار؛ Migration افزایشی؛ تست و اسناد همین واحد کار.
+- انتقال قفل محدود: `Migration Owner = PC-B/AGENCY-B2B-INTEGRATIONS-001`، `B2B shared-contract/root export Owner = PC-B/AGENCY-B2B-INTEGRATIONS-001` و `Central Docs Owner = PC-B/AGENCY-B2B-INTEGRATIONS-001`. قفل Dependency/Lockfile رزرو نمی‌شود. هماهنگی انتقال در PR #90 ثبت شده است.
+- مرز ممنوع: Query یا FK مستقیم به جدول‌های Sales/Finance، تغییر Migrationهای PR #90، تغییر Branchهای PC-A، داده ساختگی مالی یا PII واقعی. B2B مالک قرارداد/سیاست اعتبار/نرخ توافقی است و exposure مالی فقط از Port عمومی Finance خوانده می‌شود.
+- فرض ظرفیت: نسبت خواندن به نوشتن حدود `20:1` و اوج کمتر از `50 QPS`؛ هدف پیشنهادی `p50<150ms`، `p95<300ms`، `p99<600ms`، SLO برابر `99.9%`، `RPO<=24h` و `RTO<=4h`. هویت سازمان مشترک است و پروفایل عملیاتی با Branch scope و deny-by-default کنترل می‌شود.
+- نتیجه: آدرس پایه سازمان، پروفایل عملیاتی شعبه‌ای، قرارداد B2B، سیاست اعتبار و نرخ توافقی با Migration افزایشی، قرارداد عمومی نسخه‌دار، API مجوزمحور و Popup آژانس پیاده‌سازی شدند. تماس‌ها ماسک‌شده می‌مانند، تاریخ‌ها از DatePicker مشترک‌اند و exposure مالی تا انتشار Adapter مالک Finance صریحاً `UNAVAILABLE` است و صفر ساختگی نمایش داده نمی‌شود.
+- اعتبارسنجی: تمام Migrationها روی PostgreSQL موقت خالی اعمال شدند و ۶ جدول، قیود و ۲۲ Index جدید تأیید شدند؛ Prisma format/validate/generate، lint، typecheck، ۲۱ تست هدفمند و Production Build وب با ۳۴ Route موفق‌اند. Full Test همه بسته‌های تغییریافته را عبور داد؛ تنها شکست باقی‌مانده assertion متنی قدیمی Customer روی CRLF ویندوز است و هیچ فایل Customer در این Task تغییر نکرده است.
+- تحویل: PR [#98](https://github.com/nirvanamahlou/Rubi/pull/98) به `develop` برای Review آماده است و قفل‌های Migration، B2B shared-contract/root export و Central Docs تا تعیین تکلیف PR نزد `PC-B/AGENCY-B2B-INTEGRATIONS-001` باقی می‌مانند؛ Dependency/Lockfile آزاد است. Merge خودکار انجام نمی‌شود.
+
+## MARKETING-001E-COMMUNICATIONS-RESTORE — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک در 2026-09-05: بخش «ارتباطات» به فضای کاری مارکتینگ بازگردد و مسیر، محتوای آزمایشی و عملیات اختصاصی آن قابل استفاده بماند. `COMPUTER_ID=PC-B`.
+- Follow-up صریح مالک در 2026-09-05: فرم واقعی «سناریو جدید»، ویرایش اتوماسیون و ایجاد مرحله عملیاتی شود؛ Actionهای مخاطب کمپین، منابع ورود، کد تخفیف و پیشنهاد ویژه با خروجی Excel هم‌راستا شوند؛ و فرم محتوا نوع‌های بیشتر و دو شعبه نیایش سیر سحر/جهان باستان داشته باشد. این گسترش همچنان فقط در `apps/web/src/modules/marketing/**` و تست/ثبت همین Work Item است.
+- Branch مستقل `codex/pc-b-marketing-communications-restore` از `origin/develop@092109d`؛ محدوده فقط `apps/web/src/modules/marketing/**`، تست‌های همان ماژول و ثبت محدود همین Work Item در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` است.
+- این Task هیچ Schema/Migration/Seed، API/Shared Contract، Dependency/Lockfile، فایل Navigation مرکزی یا داده واقعی مشتری را تغییر نمی‌دهد. ارتباطات فقط State آزمایشی محلی دارد و ارسال واقعی پیام انجام نمی‌شود.
+- معیار پذیرش: کارت و سکشن «ارتباطات» در Hub و URL مستقیم باز شود، Breadcrumb عنوان صحیح نشان دهد، دکمه «ارسال پیام» فقط در بخش ارسال پیام و دکمه «قالب جدید» در بخش قالب‌ها فعال باشد، RTL و تست‌های قرارداد مارکتینگ حفظ شوند.
+- نتیجه: کارت «ارتباطات» با چهار تب ارسال پیام، ارسال‌های زمان‌بندی‌شده، تاریخچه و قالب‌ها بازگشت. تب حذف‌شده «عملکرد کانال‌ها» بازگردانده نشد؛ داده هر تب مستقل است و فهرست‌ها جست‌وجو، وضعیت، بازه تاریخ، Excel، مشاهده، ویرایش و پاور فعال/غیرفعال دارند.
+- فرم ارسال، کمپین، مخاطب، قالب، روش ارسال، DatePicker و چهار کانال دارد و حداقل یک کانال، متن و تاریخ زمان‌بندی را اعتبارسنجی می‌کند. دکمه «ارسال پیام» فقط همان فرم را Submit می‌کند و «قالب جدید» فقط در تب قالب‌ها فرم مرتبط را باز می‌کند.
+- Follow-up تکمیل شد: «سناریو جدید» فرم عملیاتی رویداد، مخاطب، کانال، هدف، اقدام، تأخیر، مالک، وضعیت و بازه تاریخ دارد و رکورد ساخته‌شده را همان‌جا نمایش می‌دهد. در سازنده اتوماسیون، ویرایش مشخصات و افزودن مرحله با فرم معتبر و نمایش فوری مرحله جدید فعال است.
+- Actionهای افزودن مخاطبان کمپین، منابع ورود، کد تخفیف و پیشنهاد ویژه کنار خروجی Excel هم‌راستا شدند. فرم‌های محتوای جدید و بارگذاری فایل، ده نوع محتوای مرتبط و شعبه‌های «نیایش سیر سحر» و «جهان باستان» را ارائه می‌کنند و Upload همچنان فقط قرارداد عمومی Documents را مصرف می‌کند.
+- اعتبارسنجی: ۱۸/۱۸ تست هدفمند مارکتینگ، Web lint، Web typecheck پس از Build قراردادهای workspace و Production Build با ۳۴ Route پاس شدند. Smoke مستقیم Hub و `/marketing?section=communications` پاسخ ۲۰۰، همه چهار عنوان و نبود «عملکرد کانال‌ها» را تأیید کرد. اجرای کامل محلی Web به‌جز یک تست قدیمی Customer وابسته به LF روی Checkout ویندوز (`625/626`) پاس شد؛ فایل Customer خارج از Scope و دست‌نخورده ماند.
+
 ## CUSTOMER-DOCUMENTS-AGENCIES-INTEGRATION-001 — PC-B — READY_FOR_REVIEW
 
 - واگذاری صریح مالک محصول در 2026-09-05: نجات و سازگارکردن قابلیت‌های سالم PR #85 با آخرین Documents، اتصال واقعی Customer 360 به اسناد، اتصال عملیاتی آژانس‌ها به Organizationهای اطلاعات پایه و حذف شناسه موقت از جریان Logo. `COMPUTER_ID=PC-B`.

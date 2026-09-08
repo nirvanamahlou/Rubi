@@ -13,6 +13,8 @@ import type {
   MasterDataListResponse,
   MasterDataMutationRequest,
   MasterOrganizationContactUnmasked,
+  MasterOrganizationAddressMutationV1,
+  MasterOrganizationAddressV1,
   MasterOrganizationSupplierSummary,
   MasterDataRecord,
   MasterDataResource,
@@ -481,6 +483,30 @@ export const masterDataApi = {
   unmaskOrganizationContact(id: string) {
     return request<{ data: MasterOrganizationContactUnmasked }>(
       `/organization-contacts/${encodeURIComponent(id)}/unmask`,
+    );
+  },
+  organizationAddresses(organizationId: string) {
+    return request<{ data: readonly MasterOrganizationAddressV1[] }>(
+      `/organizations/${encodeURIComponent(organizationId)}/addresses`,
+    );
+  },
+  createOrganizationAddress(
+    organizationId: string,
+    input: MasterOrganizationAddressMutationV1,
+  ) {
+    return request<{ data: MasterOrganizationAddressV1 }>(
+      `/organizations/${encodeURIComponent(organizationId)}/addresses`,
+      { method: 'POST', body: JSON.stringify(input) },
+    );
+  },
+  updateOrganizationAddress(
+    organizationId: string,
+    addressId: string,
+    input: MasterOrganizationAddressMutationV1,
+  ) {
+    return request<{ data: MasterOrganizationAddressV1 }>(
+      `/organizations/${encodeURIComponent(organizationId)}/addresses/${encodeURIComponent(addressId)}`,
+      { method: 'PATCH', body: JSON.stringify(input) },
     );
   },
   organizationSupplierSummary() {

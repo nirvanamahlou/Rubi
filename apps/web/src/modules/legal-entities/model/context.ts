@@ -35,10 +35,21 @@ const jahanBastanBrand: LegalEntityBrand = {
   height: 768,
 };
 
+const placeholderBrand = (name: string): LegalEntityBrand => ({
+  alt: `نشان عمومی شرکت ${name}`,
+  label: `CRM شرکت ${name}`,
+  src: '/brand/company-placeholder.svg',
+  width: 512,
+  height: 256,
+});
+
 export function legalEntityBrand(
   selection: LegalEntitySelection | null | undefined,
 ): LegalEntityBrand {
-  return selection === 'JAHAN_BASTAN' ? jahanBastanBrand : niyayeshSeirBrand;
+  if (selection === 'JAHAN_BASTAN') return jahanBastanBrand;
+  if (selection === 'JAHAN_ACADEMIA') return placeholderBrand('جهان آکادمیا');
+  if (selection === 'GHESATI_RO') return placeholderBrand('قسطی رو');
+  return niyayeshSeirBrand;
 }
 
 export function legalEntityChoices(
@@ -56,7 +67,7 @@ export function legalEntityChoices(
       ? [
           {
             value: LEGAL_ENTITY_CONTEXT_ALL,
-            label: 'هر دو شرکت — ویژه مدیران',
+            label: 'همه شرکت‌ها — ویژه مدیران',
             aggregate: true,
             entity: null,
           },
@@ -69,7 +80,7 @@ export function legalEntitySelectionLabel(
   selection: LegalEntitySelection,
   entities: readonly LegalEntitySummary[],
 ): string {
-  if (selection === LEGAL_ENTITY_CONTEXT_ALL) return 'هر دو شرکت';
+  if (selection === LEGAL_ENTITY_CONTEXT_ALL) return 'همه شرکت‌ها';
   return (
     entities
       .find(({ code }) => code === selection)

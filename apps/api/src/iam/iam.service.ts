@@ -8,6 +8,8 @@ import {
 import {
   ConflictException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   UnauthorizedException,
@@ -35,6 +37,8 @@ import type { UpdateUserAccessDto } from './dto/update-user-access.dto';
 import { assertStrongPassword } from './password-policy';
 import { classifyRefreshFailure } from './refresh-token-policy';
 import type { RequestMetadata } from './iam.types';
+import type { IamStepUpPort } from './iam-step-up.port';
+import { MfaTotpService } from './mfa-totp';
 
 interface AccessClaims {
   sub: string;
@@ -42,11 +46,16 @@ interface AccessClaims {
   type: 'access';
 }
 
+const MFA_MAX_ATTEMPTS = 5;
+const MFA_LOCK_MINUTES = 5;
+const MFA_SETUP_TTL_MINUTES = 10;
+
 @Injectable()
-export class IamService {
+export class IamService implements IamStepUpPort {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(JwtService) private readonly jwt: JwtService,
+    @Inject(MfaTotpService) private readonly mfaTotp: MfaTotpService,
   ) {}
 
   async login(
@@ -323,6 +332,238 @@ export class IamService {
         userAgent: true,
       },
     });
+  }
+
+  async mfaStatus(actor: AuthenticatedActor) {
+    const user = await this.database.client.user.findUniqueOrThrow({
+      where: { id: actor.userId },
+      select: {
+        mfaTotpEnabledAt: true,
+        mfaTotpPendingExpiresAt: true,
+        mfaLockedUntil: true,
+      },
+    });
+    const now = new Date();
+    return {
+      data: {
+        enabled: Boolean(user.mfaTotpEnabledAt),
+        setupPending: Boolean(
+          user.mfaTotpPendingExpiresAt && user.mfaTotpPendingExpiresAt > now,
+        ),
+        lockedUntil:
+          user.mfaLockedUntil && user.mfaLockedUntil > now
+            ? user.mfaLockedUntil.toISOString()
+            : null,
+      },
+    };
+  }
+
+  async beginMfaSetup(
+    actor: AuthenticatedActor,
+    currentPassword: string,
+    metadata: RequestMetadata,
+  ) {
+    const user = await this.database.client.user.findUniqueOrThrow({
+      where: { id: actor.userId },
+      select: {
+        id: true,
+        username: true,
+        passwordHash: true,
+        mfaFailedAttempts: true,
+        mfaLockedUntil: true,
+      },
+    });
+    this.assertMfaNotLocked(user.mfaLockedUntil);
+    const passwordValid = await verify(
+      user.passwordHash,
+      currentPassword,
+    ).catch(() => false);
+    if (!passwordValid) {
+      await this.recordMfaFailure(user, 'auth.mfa.setup.password', metadata);
+      throw new UnauthorizedException({
+        code: 'IAM_MFA_PASSWORD_INVALID',
+        message: 'رمز عبور فعلی صحیح نیست.',
+      });
+    }
+    const secret = this.mfaTotp.generateSecret();
+    const expiresAt = new Date(Date.now() + MFA_SETUP_TTL_MINUTES * 60_000);
+    await this.database.client.user.update({
+      where: { id: user.id },
+      data: {
+        mfaTotpPendingSecretCiphertext: this.mfaTotp.encrypt(user.id, secret),
+        mfaTotpPendingExpiresAt: expiresAt,
+        mfaFailedAttempts: 0,
+        mfaLockedUntil: null,
+      },
+    });
+    await this.audit(
+      actor.userId,
+      'auth.mfa.setup.begin',
+      'User',
+      actor.userId,
+      AuditOutcome.SUCCESS,
+      metadata,
+    );
+    return {
+      data: {
+        manualKey: secret,
+        otpAuthUri: this.mfaTotp.otpAuthUri(user.username, secret),
+        expiresAt: expiresAt.toISOString(),
+      },
+    };
+  }
+
+  async confirmMfaSetup(
+    actor: AuthenticatedActor,
+    code: string,
+    metadata: RequestMetadata,
+  ) {
+    const user = await this.database.client.user.findUniqueOrThrow({
+      where: { id: actor.userId },
+      select: {
+        id: true,
+        mfaTotpPendingSecretCiphertext: true,
+        mfaTotpPendingExpiresAt: true,
+        mfaFailedAttempts: true,
+        mfaLockedUntil: true,
+      },
+    });
+    this.assertMfaNotLocked(user.mfaLockedUntil);
+    const now = new Date();
+    if (
+      !user.mfaTotpPendingSecretCiphertext ||
+      !user.mfaTotpPendingExpiresAt ||
+      user.mfaTotpPendingExpiresAt <= now
+    ) {
+      throw new ConflictException({
+        code: 'IAM_MFA_SETUP_EXPIRED',
+        message: 'فرایند فعال‌سازی منقضی شده است؛ دوباره شروع کنید.',
+      });
+    }
+    const secret = this.mfaTotp.decrypt(
+      user.id,
+      user.mfaTotpPendingSecretCiphertext,
+    );
+    const matchedStep = this.mfaTotp.verify(secret, code, now.getTime());
+    if (matchedStep === null) {
+      await this.recordMfaFailure(user, 'auth.mfa.setup.confirm', metadata);
+      throw new UnauthorizedException({
+        code: 'IAM_MFA_CODE_INVALID',
+        message: 'کد شش‌رقمی صحیح نیست یا منقضی شده است.',
+      });
+    }
+    await this.database.client.user.update({
+      where: { id: user.id },
+      data: {
+        mfaTotpSecretCiphertext: user.mfaTotpPendingSecretCiphertext,
+        mfaTotpPendingSecretCiphertext: null,
+        mfaTotpPendingExpiresAt: null,
+        mfaTotpEnabledAt: now,
+        mfaFailedAttempts: 0,
+        mfaLockedUntil: null,
+        mfaLastUsedStep: BigInt(matchedStep),
+      },
+    });
+    await this.audit(
+      actor.userId,
+      'auth.mfa.setup.confirm',
+      'User',
+      actor.userId,
+      AuditOutcome.SUCCESS,
+      metadata,
+    );
+    return this.mfaStatus(actor);
+  }
+
+  async verifyStepUp(
+    actor: AuthenticatedActor,
+    code: string,
+    metadata: RequestMetadata,
+  ): Promise<void> {
+    const user = await this.database.client.user.findUniqueOrThrow({
+      where: { id: actor.userId },
+      select: {
+        id: true,
+        mfaTotpSecretCiphertext: true,
+        mfaTotpEnabledAt: true,
+        mfaFailedAttempts: true,
+        mfaLockedUntil: true,
+        mfaLastUsedStep: true,
+      },
+    });
+    this.assertMfaNotLocked(user.mfaLockedUntil);
+    if (!user.mfaTotpEnabledAt || !user.mfaTotpSecretCiphertext) {
+      await this.audit(
+        actor.userId,
+        'auth.mfa.step_up',
+        'User',
+        actor.userId,
+        AuditOutcome.FAILURE,
+        metadata,
+        { reason: 'not-enrolled' },
+      );
+      throw new ForbiddenException({
+        code: 'IAM_MFA_NOT_ENROLLED',
+        message: 'ابتدا اعتبارسنجی دومرحله‌ای حساب را فعال کنید.',
+      });
+    }
+    const now = new Date();
+    const secret = this.mfaTotp.decrypt(user.id, user.mfaTotpSecretCiphertext);
+    const matchedStep = this.mfaTotp.verify(secret, code, now.getTime());
+    if (
+      matchedStep === null ||
+      (user.mfaLastUsedStep !== null &&
+        BigInt(matchedStep) <= user.mfaLastUsedStep)
+    ) {
+      await this.recordMfaFailure(user, 'auth.mfa.step_up', metadata);
+      throw new UnauthorizedException({
+        code:
+          matchedStep === null
+            ? 'IAM_MFA_CODE_INVALID'
+            : 'IAM_MFA_CODE_REPLAYED',
+        message:
+          matchedStep === null
+            ? 'کد شش‌رقمی صحیح نیست یا منقضی شده است.'
+            : 'این کد قبلاً استفاده شده است؛ کد بعدی را وارد کنید.',
+      });
+    }
+    const claimed = await this.database.client.user.updateMany({
+      where: {
+        id: user.id,
+        OR: [
+          { mfaLastUsedStep: null },
+          { mfaLastUsedStep: { lt: BigInt(matchedStep) } },
+        ],
+      },
+      data: {
+        mfaLastUsedStep: BigInt(matchedStep),
+        mfaFailedAttempts: 0,
+        mfaLockedUntil: null,
+      },
+    });
+    if (claimed.count !== 1) {
+      await this.audit(
+        actor.userId,
+        'auth.mfa.step_up',
+        'User',
+        actor.userId,
+        AuditOutcome.FAILURE,
+        metadata,
+        { reason: 'concurrent-replay' },
+      );
+      throw new UnauthorizedException({
+        code: 'IAM_MFA_CODE_REPLAYED',
+        message: 'این کد قبلاً استفاده شده است؛ کد بعدی را وارد کنید.',
+      });
+    }
+    await this.audit(
+      actor.userId,
+      'auth.mfa.step_up',
+      'User',
+      actor.userId,
+      AuditOutcome.SUCCESS,
+      metadata,
+    );
   }
 
   async revokeSession(
@@ -610,6 +851,50 @@ export class IamService {
     return this.jwt.signAsync(
       { sub: userId, sid: sessionId, type: 'access' } satisfies AccessClaims,
       { expiresIn: ACCESS_TTL_SECONDS },
+    );
+  }
+  private assertMfaNotLocked(lockedUntil: Date | null): void {
+    if (lockedUntil && lockedUntil > new Date())
+      throw new HttpException(
+        {
+          code: 'IAM_MFA_RATE_LIMITED',
+          message:
+            'تلاش‌های ناموفق بیش از حد است؛ چند دقیقه بعد دوباره تلاش کنید.',
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+  }
+  private async recordMfaFailure(
+    user: {
+      id: string;
+      mfaFailedAttempts: number;
+      mfaLockedUntil: Date | null;
+    },
+    action: string,
+    metadata: RequestMetadata,
+  ): Promise<void> {
+    const failures = user.mfaFailedAttempts + 1;
+    const lockedUntil =
+      failures >= MFA_MAX_ATTEMPTS
+        ? new Date(Date.now() + MFA_LOCK_MINUTES * 60_000)
+        : null;
+    await this.database.client.user.update({
+      where: { id: user.id },
+      data: {
+        mfaFailedAttempts: failures,
+        mfaLockedUntil: lockedUntil,
+      },
+    });
+    await this.audit(
+      user.id,
+      action,
+      'User',
+      user.id,
+      AuditOutcome.FAILURE,
+      metadata,
+      {
+        reason: lockedUntil ? 'rate-limited' : 'invalid-verification',
+      },
     );
   }
   private tokenHash(value: string) {

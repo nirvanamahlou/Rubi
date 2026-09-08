@@ -32,6 +32,7 @@ import { PermissionGuard } from '../iam/permission.guard';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import {
   DocumentArchiveActionDto,
+  DocumentAccessGrantDto,
   DocumentBulkActionDto,
   DocumentCaseOptionsQueryDto,
   DocumentDeleteDto,
@@ -49,6 +50,7 @@ import { MAX_DOCUMENT_SIZE_BYTES } from './documents.validation';
 function requestMetadata(
   request: AuthenticatedRequest,
   sensitiveReason?: string,
+  accessGrantToken?: string,
 ): DocumentRequestMetadata {
   const userAgent = request.headers['user-agent'];
   let decodedSensitiveReason = sensitiveReason;
@@ -67,6 +69,7 @@ function requestMetadata(
     ...(decodedSensitiveReason
       ? { sensitiveReason: decodedSensitiveReason }
       : {}),
+    ...(accessGrantToken ? { accessGrantToken } : {}),
   };
 }
 
@@ -82,6 +85,8 @@ export class DocumentsController {
   @Get()
   @Header('Cache-Control', 'private, no-store')
   @Header('Vary', 'Cookie')
+  @Header('X-Content-Type-Options', 'nosniff')
+  @Header('Cross-Origin-Resource-Policy', 'same-origin')
   @RequirePermissions('documents.list')
   list(
     @Query() query: DocumentListQueryDto,
@@ -155,6 +160,7 @@ export class DocumentsController {
           type: 'string',
           description: 'Legacy fallback',
         },
+        requiresStepUpVerification: { type: 'boolean', default: false },
       },
     },
   })
@@ -250,9 +256,27 @@ export class DocumentsController {
     return this.service.audit(id, request.actor);
   }
 
+  @Post(':id/access-grants')
+  @HttpCode(201)
+  @RequirePermissions('documents.metadata.read', 'documents.file.read')
+  createAccessGrant(
+    @Param('id') id: string,
+    @Body() dto: DocumentAccessGrantDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.createAccessGrant(
+      id,
+      dto,
+      request.actor,
+      requestMetadata(request),
+    );
+  }
+
   @Get(':id/download')
   @Header('Cache-Control', 'private, no-store')
   @Header('Vary', 'Cookie')
+  @Header('X-Content-Type-Options', 'nosniff')
+  @Header('Cross-Origin-Resource-Policy', 'same-origin')
   @RequirePermissions(
     'documents.metadata.read',
     'documents.file.read',
@@ -262,11 +286,12 @@ export class DocumentsController {
     @Param('id') id: string,
     @Req() request: AuthenticatedRequest,
     @Headers('x-sensitive-read-reason') sensitiveReason?: string,
+    @Headers('x-document-access-grant') accessGrantToken?: string,
   ) {
     const result = await this.service.download(
       id,
       request.actor,
-      requestMetadata(request, sensitiveReason),
+      requestMetadata(request, sensitiveReason, accessGrantToken),
     );
     return new StreamableFile(result.stream, {
       type: result.mimeType,
@@ -279,16 +304,22 @@ export class DocumentsController {
   @Header('Cache-Control', 'private, no-store')
   @Header('Vary', 'Cookie')
   @Header('X-Content-Type-Options', 'nosniff')
+  @Header('Cross-Origin-Resource-Policy', 'same-origin')
+  @Header(
+    'Content-Security-Policy',
+    "default-src 'none'; img-src 'self' blob:; sandbox",
+  )
   @RequirePermissions('documents.metadata.read', 'documents.file.read')
   async preview(
     @Param('id') id: string,
     @Req() request: AuthenticatedRequest,
     @Headers('x-sensitive-read-reason') sensitiveReason?: string,
+    @Headers('x-document-access-grant') accessGrantToken?: string,
   ) {
     const result = await this.service.preview(
       id,
       request.actor,
-      requestMetadata(request, sensitiveReason),
+      requestMetadata(request, sensitiveReason, accessGrantToken),
     );
     return new StreamableFile(result.stream, {
       type: result.mimeType,

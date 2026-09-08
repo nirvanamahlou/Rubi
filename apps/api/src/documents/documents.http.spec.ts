@@ -52,6 +52,13 @@ describe('Documents HTTP boundary', () => {
     permanentlyDelete: vi.fn().mockResolvedValue(undefined),
     detail: vi.fn().mockResolvedValue({ data: { id: 'document-id' } }),
     audit: vi.fn().mockResolvedValue({ data: [] }),
+    createAccessGrant: vi.fn().mockResolvedValue({
+      data: {
+        token: 'one-time-grant',
+        purpose: 'PREVIEW',
+        expiresAt: '2026-09-07T12:02:00.000Z',
+      },
+    }),
     download: vi.fn().mockResolvedValue({
       stream: Readable.from(Buffer.from('%PDF-test')),
       fileName: 'contract.pdf',
@@ -275,6 +282,33 @@ describe('Documents HTTP boundary', () => {
       'documents.file.read',
       'documents.download',
     ]);
+  });
+
+  it('accepts only a numeric six-digit code for a document access grant', async () => {
+    const id = '44444444-4444-4444-8444-444444444444';
+    await request(app.getHttpServer())
+      .post(`/api/v1/documents/${id}/access-grants`)
+      .set('Cookie', 'rubi_access=test')
+      .send({ code: 'abcdef', purpose: 'PREVIEW' })
+      .expect(400);
+    expect(service.createAccessGrant).not.toHaveBeenCalled();
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/documents/${id}/access-grants`)
+      .set('Cookie', 'rubi_access=test')
+      .send({ code: '123456', purpose: 'PREVIEW' })
+      .expect(201);
+
+    expect(iam.assertPermissions).toHaveBeenCalledWith(actor, [
+      'documents.metadata.read',
+      'documents.file.read',
+    ]);
+    expect(service.createAccessGrant).toHaveBeenCalledWith(
+      id,
+      { code: '123456', purpose: 'PREVIEW' },
+      actor,
+      expect.any(Object),
+    );
   });
 
   it('serves an inline preview with read permissions and no download requirement', async () => {

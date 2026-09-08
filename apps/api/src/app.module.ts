@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
+import { B2bModule } from './b2b/b2b.module';
 import { environmentValidationSchema } from './config/environment.validation';
 import { CustomersModule } from './customers/customers.module';
 import { DatabaseModule } from './database/database.module';
@@ -10,6 +11,7 @@ import { HealthService } from './health/health.service';
 import { IamModule } from './iam/iam.module';
 import { LegalEntitiesModule } from './legal-entities/legal-entities.module';
 import { MasterDataModule } from './master-data/master-data.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -23,11 +25,13 @@ import { MasterDataModule } from './master-data/master-data.module';
       validationSchema: environmentValidationSchema,
     }),
     DatabaseModule,
+    B2bModule,
     DocumentsModule,
     CustomersModule,
     MasterDataModule,
     IamModule,
     LegalEntitiesModule,
+    NotificationsModule,
   ],
   controllers: [HealthController],
   providers: [HealthService],

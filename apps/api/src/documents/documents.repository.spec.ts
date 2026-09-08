@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { DatabaseService } from '../database/database.service';
+import type { NotificationsService } from '../notifications/notifications.service';
 import { DocumentsRepository } from './documents.repository';
 
 describe('DocumentsRepository source scoping', () => {
@@ -15,7 +16,9 @@ describe('DocumentsRepository source scoping', () => {
         ),
       },
     } as unknown as DatabaseService;
-    const repository = new DocumentsRepository(database);
+    const repository = new DocumentsRepository(database, {
+      createWithinTransaction: vi.fn(),
+    } as unknown as NotificationsService);
 
     await repository.list(
       {
@@ -51,5 +54,52 @@ describe('DocumentsRepository source scoping', () => {
       }),
     });
     expect(findMany).toHaveBeenCalledOnce();
+  });
+
+  it('writes the metadata-change notification in the same transaction', async () => {
+    const transaction = {
+      document: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'document-a' }),
+      },
+      documentAuditEvent: { create: vi.fn().mockResolvedValue({}) },
+    };
+    const database = {
+      client: {
+        $transaction: vi.fn(
+          async (callback: (value: typeof transaction) => Promise<unknown>) =>
+            callback(transaction),
+        ),
+      },
+    } as unknown as DatabaseService;
+    const createWithinTransaction = vi.fn().mockResolvedValue(undefined);
+    const repository = new DocumentsRepository(database, {
+      createWithinTransaction,
+    } as unknown as NotificationsService);
+
+    await repository.updateMetadata({
+      documentId: 'document-a',
+      expectedVersion: 1,
+      title: 'قرارداد ویرایش‌شده',
+      description: null,
+      categoryId: 'category-a',
+      ownerUserId: 'owner-a',
+      confidentiality: 'INTERNAL',
+      validUntil: null,
+      isIncomplete: false,
+      actorUserId: 'actor-a',
+      actorBranchId: 'branch-a',
+      ipSummary: '192.0.2.1',
+      userAgentSummary: 'test',
+    });
+
+    expect(createWithinTransaction).toHaveBeenCalledWith(
+      transaction,
+      expect.objectContaining({
+        recipientUserIds: ['actor-a', 'owner-a'],
+        eventType: 'documents.metadata.update',
+        entityId: 'document-a',
+      }),
+    );
   });
 });

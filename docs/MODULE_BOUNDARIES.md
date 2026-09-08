@@ -31,7 +31,7 @@
 | Human Resources   | employee/personnel record, contact/emergency contact, assignment, employment contract, attendance, shift, leave/mission, overtime, performance, training/certificate, issued asset | manage employment lifecycle, approve time/leave, publish payroll input | IAM user reference، Master Data branch refs، Documents، Finance payroll-input port |
 | Tasks/Automation  | task, checklist, rule/run, approval task                                                                                                                                           | create urgent task, evaluate event                                     | IAM assignee، domain events                                                        |
 | Reporting/Exports | approved views, report definition/run, export artifact                                                                                                                             | query/export/schedule                                                  | read-only از مالک‌ها، Documents                                                    |
-| Notifications     | notification request/delivery/template rendering                                                                                                                                   | enqueue/send/status                                                    | Settings, external messaging adapters                                              |
+| Notifications     | notification record، recipient scope، read state، request/delivery/template rendering                                                                                             | list own/mark read، enqueue داخل transaction یا event/outbox           | IAM user reference، Settings، external messaging adapters                          |
 | Audit             | audit event                                                                                                                                                                        | append/query authorized                                                | همه ماژول‌ها append می‌کنند                                                        |
 | Dashboard         | فقط read model و saved filters                                                                                                                                                     | aggregate/drill-down                                                   | Reporting only                                                                     |
 
@@ -84,6 +84,14 @@ Customers مالک identity و consent جاری/تاریخچه است. Marketing
 از قرارداد عمومی `legal-entities.v1` می‌گیرد و Metadata صدور را ثبت می‌کند؛ query مستقیم
 جدول‌های Legal Entity ممنوع است. شماره رسمی بیرونی از Integrations/Reservations می‌آید و
 template آن را تولید نمی‌کند.
+
+### Documents در برابر Notifications
+
+Documents مالک تغییر وضعیت سند و متن دامنه‌ای رخداد است؛ Notifications مالک رکورد اعلان،
+گیرنده، خوانده/خوانده‌نشده و API زنگوله است. تغییر همزمان سند از Service عمومی Notifications
+در همان transaction coordinator ثبت می‌شود و Documents اجازه Query یا درج مستقیم جدول
+`notifications` را ندارد. برای حذف دائمی، اعلان فقط مرجع متنی امن سند را نگه می‌دارد و FK به
+Document ندارد؛ List و Mark Read همیشه با User احراز‌شده Scope می‌شوند.
 
 ### Legal Entity در برابر Branch و داده عملیاتی
 

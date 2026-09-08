@@ -14,6 +14,7 @@ export interface DocumentUploadValues {
   confidentiality: string;
   validUntil: string;
   versionNote: string;
+  requiresStepUpVerification: boolean;
 }
 
 export const emptyDocumentUploadValues: DocumentUploadValues = {
@@ -27,6 +28,7 @@ export const emptyDocumentUploadValues: DocumentUploadValues = {
   confidentiality: '',
   validUntil: '',
   versionNote: '',
+  requiresStepUpVerification: false,
 };
 
 export function hydrateDocumentUploadDefaults(

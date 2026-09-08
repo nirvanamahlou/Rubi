@@ -6,6 +6,8 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { getPublicApiBaseUrl } from '@/lib/environment';
+import { rememberHeaderSession } from '@/lib/header-session';
+import type { LoginResponse } from '@rubi/contracts';
 import { loginErrorMessage } from './login-error';
 
 export function LoginForm() {
@@ -38,6 +40,8 @@ export function LoginForm() {
         setError(loginErrorMessage(response.status));
         return;
       }
+      const session = (await response.json()) as LoginResponse;
+      rememberHeaderSession(session.user);
       const target = search.get('next');
       router.replace(
         target?.startsWith('/') && !target.startsWith('//')

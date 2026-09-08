@@ -25,6 +25,7 @@ export function MasterDataReferenceSelector({
   id,
   label = 'انتخاب',
   onChange,
+  required,
   value,
   scopeValue,
   refreshKey = 0,
@@ -35,6 +36,7 @@ export function MasterDataReferenceSelector({
   id: string;
   label?: string;
   onChange: (value: string) => void;
+  required?: boolean;
   value: string;
   scopeValue?: string;
   refreshKey?: number;
@@ -42,18 +44,40 @@ export function MasterDataReferenceSelector({
 }) {
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState<readonly MasterDataRecord[]>([]);
-  const [savedSelection, setSavedSelection] = useState<MasterDataRecord | null>(null);
+  const [savedSelection, setSavedSelection] = useState<MasterDataRecord | null>(
+    null,
+  );
   const [state, setState] = useState<ReferenceSelectorState>('loading');
 
   useEffect(() => {
     if (config.multiple || config.payload !== 'id' || !value) return;
     let active = true;
-    void masterDataApi.detail(config.target, value).then(({ data }) => {
-      if (active && (!config.scopeField || !scopeValue || String(data.attributes[config.scopeField] ?? '') === scopeValue))
-        setSavedSelection(data);
-    }).catch(() => { if (active) setSavedSelection(null); });
-    return () => { active = false; };
-  }, [config.multiple, config.payload, config.target, config.scopeField, scopeValue, value, refreshKey]);
+    void masterDataApi
+      .detail(config.target, value)
+      .then(({ data }) => {
+        if (
+          active &&
+          (!config.scopeField ||
+            !scopeValue ||
+            String(data.attributes[config.scopeField] ?? '') === scopeValue)
+        )
+          setSavedSelection(data);
+      })
+      .catch(() => {
+        if (active) setSavedSelection(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    config.multiple,
+    config.payload,
+    config.target,
+    config.scopeField,
+    scopeValue,
+    value,
+    refreshKey,
+  ]);
 
   useEffect(() => {
     if (config.scopeField === 'organizationId' && !scopeValue) return;
@@ -68,7 +92,9 @@ export function MasterDataReferenceSelector({
           sortDirection: 'asc',
           page: 1,
           pageSize: 100,
-          ...(config.scopeField && scopeValue ? { [config.scopeField]: scopeValue } : {}),
+          ...(config.scopeField && scopeValue
+            ? { [config.scopeField]: scopeValue }
+            : {}),
         });
         if (!active) return;
         const compatible = response.data.filter((record) =>
@@ -93,7 +119,14 @@ export function MasterDataReferenceSelector({
       active = false;
       window.clearTimeout(timer);
     };
-  }, [config.requiredRole, config.target, config.scopeField, scopeValue, refreshKey, query]);
+  }, [
+    config.requiredRole,
+    config.target,
+    config.scopeField,
+    scopeValue,
+    refreshKey,
+    query,
+  ]);
 
   const selected = useMemo(
     () =>
@@ -150,21 +183,50 @@ export function MasterDataReferenceSelector({
   }
 
   if (config.scopeField === 'organizationId' && !scopeValue)
-    return <p className="text-sm text-muted-foreground">ابتدا سازمان را انتخاب کنید.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">
+        ابتدا سازمان را انتخاب کنید.
+      </p>
+    );
 
   return (
     <div className="space-y-2">
       {onManage ? (
         <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={() => onManage()} size="sm" type="button" variant="outline">
-            {config.target === 'organizations' ? 'افزودن سازمان' : config.target === 'organization-contacts' ? 'افزودن مخاطب' : 'افزودن خدمت'}
+          <Button
+            onClick={() => onManage()}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {config.target === 'organizations'
+              ? 'افزودن سازمان'
+              : config.target === 'organization-contacts'
+                ? 'افزودن مخاطب'
+                : 'افزودن خدمت'}
           </Button>
-          {!config.multiple && selected ? <Button onClick={() => onManage(selected)} size="sm" type="button" variant="ghost">
-            {config.target === 'organizations' ? 'ویرایش سازمان و نوع شخصیت' : 'ویرایش مخاطب'}
-          </Button> : null}
-          {config.target === 'organizations' && selected ? <Badge>
-            نوع شخصیت: {selected.attributes.personType === 'NATURAL' ? 'حقیقی' : selected.attributes.personType === 'LEGAL' ? 'حقوقی' : 'ثبت نشده'}
-          </Badge> : null}
+          {!config.multiple && selected ? (
+            <Button
+              onClick={() => onManage(selected)}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              {config.target === 'organizations'
+                ? 'ویرایش سازمان و نوع شخصیت'
+                : 'ویرایش مخاطب'}
+            </Button>
+          ) : null}
+          {config.target === 'organizations' && selected ? (
+            <Badge>
+              نوع شخصیت:{' '}
+              {selected.attributes.personType === 'NATURAL'
+                ? 'حقیقی'
+                : selected.attributes.personType === 'LEGAL'
+                  ? 'حقوقی'
+                  : 'ثبت نشده'}
+            </Badge>
+          ) : null}
         </div>
       ) : null}
       {value ? (
@@ -211,6 +273,7 @@ export function MasterDataReferenceSelector({
           aria-autocomplete="list"
           aria-controls={`${id}-options`}
           aria-expanded={state === 'ready'}
+          aria-required={required || undefined}
           className="pe-10"
           id={id}
           onChange={(event) => setQuery(event.target.value)}
@@ -264,9 +327,15 @@ export function MasterDataReferenceSelector({
                   type="button"
                 >
                   <span className="font-semibold">{record.name}</span>
-                  {config.target === 'organization-contacts' ? <span className="ms-2 text-xs" dir="ltr">
-                    {String(record.attributes.phoneMasked || record.attributes.emailMasked || '—')}
-                  </span> : null}
+                  {config.target === 'organization-contacts' ? (
+                    <span className="ms-2 text-xs" dir="ltr">
+                      {String(
+                        record.attributes.phoneMasked ||
+                          record.attributes.emailMasked ||
+                          '—',
+                      )}
+                    </span>
+                  ) : null}
                   <span className="ms-2 font-mono text-xs" dir="ltr">
                     {record.code}
                   </span>
@@ -284,16 +353,21 @@ export function OrganizationRoleSelector({
   disabled,
   id,
   onChange,
+  required,
   value,
 }: {
   disabled: boolean;
   id: string;
   onChange: (value: string) => void;
+  required?: boolean;
   value: string;
 }) {
   const selected = new Set(value.split(',').filter(Boolean));
   return (
-    <fieldset className="grid gap-2 rounded-xl border border-border p-3">
+    <fieldset
+      aria-required={required || undefined}
+      className="grid gap-2 rounded-xl border border-border p-3"
+    >
       <legend className="px-1 text-xs font-semibold text-muted-foreground">
         یک یا چند Role را انتخاب کنید
       </legend>
