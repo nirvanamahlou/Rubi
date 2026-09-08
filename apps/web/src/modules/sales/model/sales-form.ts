@@ -21,6 +21,11 @@ import type {
   TicketOfferV1,
 } from '@rubi/contracts';
 
+import {
+  salesInsuranceService,
+  type SalesInsuranceSelection,
+} from './sales-insurance';
+
 export function selectSalesPerson(
   state: SalesFormState,
   person: Pick<CustomerSummary, 'id' | 'displayName' | 'roles'> &
@@ -74,6 +79,7 @@ export const salesSteps = [
 ] as const;
 
 export interface SalesFormState {
+  insurancePlan?: SalesInsuranceSelection;
   contractFlights?: Partial<Record<SalesTicketDirection, ContractFlightDraft>>;
   servicePricing?: Record<string, SalesServicePricingV1[]>;
   customerKind?: 'person' | 'organization';
@@ -670,24 +676,26 @@ export function salesPayload(
                 direction === 'OUTBOUND' ? state.destinationId : state.originId,
             },
           }))
-        : [
-            {
-              clientKey: kind.toLowerCase(),
-              kind,
-              metadata: { ...state.serviceDetails?.[kind] },
-              titleSnapshot:
-                (
-                  {
-                    FLIGHT: 'بلیت پرواز',
-                    HOTEL: 'اقامت هتل',
-                    VISA: 'خدمات ویزا',
-                  } as Partial<Record<SalesServiceKind, string>>
-                )[kind] ?? kind,
-              ...(kind === 'VISA' && state.visaReferenceId
-                ? { referenceId: state.visaReferenceId }
-                : {}),
-            },
-          ],
+        : kind === 'INSURANCE'
+          ? [salesInsuranceService(state.insurancePlan)]
+          : [
+              {
+                clientKey: kind.toLowerCase(),
+                kind,
+                metadata: { ...state.serviceDetails?.[kind] },
+                titleSnapshot:
+                  (
+                    {
+                      FLIGHT: 'بلیت پرواز',
+                      HOTEL: 'اقامت هتل',
+                      VISA: 'خدمات ویزا',
+                    } as Partial<Record<SalesServiceKind, string>>
+                  )[kind] ?? kind,
+                ...(kind === 'VISA' && state.visaReferenceId
+                  ? { referenceId: state.visaReferenceId }
+                  : {}),
+              },
+            ],
   );
   for (const direction of salesDirections(state, 'FLIGHT')) {
     if (!state.contractFlights?.[direction]) continue;

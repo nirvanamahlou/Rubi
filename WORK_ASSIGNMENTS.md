@@ -1,5 +1,11 @@
 # Work Assignments
 
+## SALES-INSURANCE-SELECTION-0908 — PC-A — COMPLETE_LOCAL / ISSUANCE_DEFERRED
+
+- Delivered active registered-plan dropdown without description, reference/versioned selection metadata and passenger service assignments; existing reservation snapshot preserves the selection, not an issued policy. 185 Sales tests, scoped lint/typecheck, synthetic actual-component browser checks and 36-route production build pass. Updated Web3100/API4000 health 200. No schema/API/producer/IAM/real-data/public-push changes. User deferred insurer connection to later Reservations work. Scoped reservation released; see docs/tasks/SALES-INSURANCE-SELECTION-0908.md.
+
+- Reserve Sales insurance picker/model/payload/form tests and scoped task/central docs from 3b82a72 on the current local Sales branch. Select an active registered Master Data insurance plan, no free-text description; persist its reference and versioned selection metadata in the existing Sales service/reservation snapshot. User explicitly defers insurer API issuance to Reservations later. No schema, provider integration, producer edits, credentials, permissions, real-data mutation, merge or public push.
+
 ## SALES-CONTRACT-ROOM-LOCATION-0908 — PC-A — COMPLETE_LOCAL
 
 - Purchased room totals now sit below the Hotel Information table (section 4), not Other Services. 34 focused tests, scoped lint/typecheck and 36-route production build pass; all four synthetic PDF pages visually inspected. Web3100 updated; Web/API 200. No data/API/schema/public-push change. Scoped reservation released; see docs/tasks/SALES-CONTRACT-ROOM-LOCATION-0908.md.

@@ -29,6 +29,7 @@ import { salesApi } from '../api/client';
 import { TicketOfferPicker } from './ticket-offer-picker';
 import { ContractFlightEditor } from './contract-flight-editor';
 import { SearchableReference } from './searchable-reference';
+import { SalesInsurancePicker } from './sales-insurance-picker';
 import { FlightTicketPreview } from './flight-ticket-preview';
 import { SalesPeopleSheet } from './sales-people-sheet';
 import type { SalesPeopleDraft } from '../model/sales-people-sheet';
@@ -134,6 +135,7 @@ export function SalesContractForm() {
   });
   const [peopleDraft, setPeopleDraft] = useState<SalesPeopleDraft | null>(null);
   const [peopleDirty, setPeopleDirty] = useState(false);
+  const [insuranceReady, setInsuranceReady] = useState(false);
   const [references, setReferences] = useState<{
     countries: readonly MasterDataRecord[];
     cities: readonly MasterDataRecord[];
@@ -437,6 +439,8 @@ export function SalesContractForm() {
         );
       if (activeDetail === 'HOTEL') return salesHotelValid(state);
       if (activeDetail === 'VISA') return Boolean(state.visaReferenceId);
+      if (activeDetail === 'INSURANCE')
+        return Boolean(state.insurancePlan) && insuranceReady;
       return true;
     }
     if (step === 2)
@@ -482,6 +486,7 @@ export function SalesContractForm() {
     state,
     step,
     activeDetail,
+    insuranceReady,
     peopleDirty,
     references.currencies,
     passengerCounts,
@@ -1003,10 +1008,17 @@ export function SalesContractForm() {
                 ) : null}
               </section>
             ) : null}
+            {activeDetail === 'INSURANCE' ? (
+              <SalesInsurancePicker
+                value={state.insurancePlan}
+                onChange={(insurancePlan) => patchState({ insurancePlan })}
+                onReady={setInsuranceReady}
+              />
+            ) : null}
             {activeDetail &&
             activeDetail !== 'FLIGHT' &&
             !activeDetail.startsWith('TRANSFER-') &&
-            !['HOTEL', 'VISA'].includes(activeDetail) ? (
+            !['HOTEL', 'VISA', 'INSURANCE'].includes(activeDetail) ? (
               <section className="grid gap-4 rounded-2xl border border-border p-4">
                 <h3 className="font-bold">{detailLabel(activeDetail)}</h3>
                 <p className="text-sm text-muted-foreground">

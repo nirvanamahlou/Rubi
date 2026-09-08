@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## SALES-INSURANCE-SELECTION-0908 — COMPLETE_LOCAL / ISSUANCE_DEFERRED
+
+New Sales contracts select an active registered insurance plan from a themed dropdown instead of free-text description. Public Master Data lookup supports pagination, retry and empty/inactive states. Plan reference/name/record version and insurer selection metadata persist in the existing Sales service and version-1 reservation snapshot with passenger assignments; no issued-policy claim. User explicitly deferred insurer API connection to later Reservations/Integrations work. 185 Sales tests, scoped lint/typecheck, synthetic browser checks and 36-route Web production build pass. Web3100 updated; Web/API health 200. No schema, API, producer, IAM, real-data or public-push change. See docs/tasks/SALES-INSURANCE-SELECTION-0908.md.
+
 ## SALES-CONTRACT-ROOM-LOCATION-0908 — COMPLETE_LOCAL
 
 User corrected room-total placement: saved single/double/extra-bed quantities now appear directly below the hotel table in Hotel Information (section 4), absent from Other Services. Passenger room column stays removed; calculations and all other fields unchanged. 34 focused tests, scoped lint/typecheck, 36-route build and all four synthetic PDF pages pass. Web3100 updated; Web/API 200. No schema/API/real-data/public-push change. See docs/tasks/SALES-CONTRACT-ROOM-LOCATION-0908.md.
