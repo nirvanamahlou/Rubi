@@ -1,5 +1,11 @@
 # Work Assignments
 
+## B2B-BREADCRUMB-001 — PC-B — IN_PROGRESS
+
+- Owner requests one working breadcrumb at the top of Organizations and its contract/terms dossier section. Branch `codex/pc-b-b2b-breadcrumb` continues the clean combined runtime source 92e7a81 (PR132); fetched develop e07c0c6 is already included. Reserve Organizations' directory/profile presentation, a small shared page-breadcrumb context and the breadcrumb/provider integration in `components/layout/app-shell.tsx`, plus task documentation. PC-B Uniting confirms no active conflicting shell/breadcrumb/runtime reservation in its coordination; the shared edit is limited to this breadcrumb connection, preserving HR/Marketing trails and other header controls.
+- Keep the existing global route breadcrumb as the default; register the active organization/section only while its dossier is mounted. Ancestor actions return to the directory or dossier overview without discarding the directory filters. Remove duplicate local breadcrumb rows. No API, schema, migration, permission, dependency, or operational data changes.
+- Verify parent navigation, section changes, unmount cleanup and responsive layout with the actual React components, then run affected Web checks/build and refresh only the verified owned Web3100 listener. API4190 and the existing runtime database/Documents storage remain in place.
+
 ## B2B-CONTRACT-CREDIT-001 — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_ACTIVE
 
 - Owner asks to complete Screenshot527's contract/credit wizard step. Explicit decisions: one independent reviewer with the appropriate contract/credit permission; proposer cannot approve; separate limits per currency without automatic FX.

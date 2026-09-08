@@ -18,7 +18,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import {
+  useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -26,6 +28,10 @@ import {
 } from 'react';
 import { cooperationLabel } from '../model/presentation';
 import { Button } from '@/components/ui/button';
+import {
+  usePageBreadcrumbs,
+  type PageBreadcrumb,
+} from '@/components/layout/page-breadcrumbs';
 import { OrganizationDocumentsPanel } from './organization-documents-panel';
 
 const sections = [
@@ -220,13 +226,30 @@ export function CorporateProfile({
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [screen]);
   const current = sections.find((section) => section.id === screen);
-  const go = (id: string) => {
+  const go = useCallback((id: string) => {
     setScreen(id);
     setTab(
       sections.find((section) => section.id === id)?.tabs[0][0] ?? 'profile',
     );
-  };
+  }, []);
   const title = current?.title ?? `نمای ۳۶۰ درجه ${entityLabel}`;
+  const breadcrumbs = useMemo<readonly PageBreadcrumb[]>(
+    () => [
+      {
+        key: 'organizations',
+        title: 'آژانس‌ها و مشتریان سازمانی',
+        onSelect: onClose,
+      },
+      {
+        key: organization.id,
+        title: organization.name,
+        onSelect: () => go('home'),
+      },
+      ...(current ? [{ key: current.id, title: current.title }] : []),
+    ],
+    [onClose, organization.id, organization.name, go, current],
+  );
+  usePageBreadcrumbs('/organizations', breadcrumbs);
   const operationalView: OperationalView | undefined =
     screen === 'organization' && tab === 'branches'
       ? 'address'
@@ -242,11 +265,6 @@ export function CorporateProfile({
               : undefined;
   return (
     <div className="corporate-profile">
-      <div className="crumb">
-        <button onClick={onClose}>آژانس‌ها و مشتریان سازمانی</button>
-        <span>‹</span>
-        {title}
-      </div>
       <div className="page-head">
         <div className="title">
           <h1 ref={heading} tabIndex={-1}>

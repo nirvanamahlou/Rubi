@@ -299,9 +299,6 @@ export function OrganizationsWorkspace() {
   return (
     <div className="b2b-design min-w-0" dir="rtl">
       <div hidden={profileOpen}>
-        <div className="crumb">
-          خانه <span>‹</span> آژانس‌ها و مشتریان سازمانی
-        </div>
         <div className="page-head">
           <div className="title">
             <h1 ref={directoryHeading} tabIndex={-1}>
@@ -701,6 +698,10 @@ export function OrganizationsWorkspace() {
             setProfileOpen(false);
             setSelected(undefined);
             setContactForm(undefined);
+            window.requestAnimationFrame(() => {
+              directoryHeading.current?.focus({ preventScroll: true });
+              window.scrollTo({ top: 0, behavior: 'instant' });
+            });
           }}
           canEdit={permissions.includes('master_data.update')}
           onEdit={() => setFormMode('edit')}
