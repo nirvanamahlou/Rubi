@@ -195,6 +195,7 @@ export function CorporateProfile({
   canDelete,
   contacts,
   operations,
+  logo,
 }: {
   organization: MasterDataRecord;
   onClose: () => void;
@@ -204,6 +205,7 @@ export function CorporateProfile({
   canDelete: boolean;
   contacts: ReactNode;
   operations: (view: OperationalView) => ReactNode;
+  logo?: ReactNode;
 }) {
   const [screen, setScreen] = useState('home');
   const [tab, setTab] = useState('profile');
@@ -260,9 +262,11 @@ export function CorporateProfile({
         </div>
       </div>
       <section className="org-banner">
-        <div className="org-logo">
-          <Building2 size={31} />
-        </div>
+        {logo ?? (
+          <div className="org-logo">
+            <Building2 size={31} />
+          </div>
+        )}
         <div className="org-main">
           <h2>{organization.name}</h2>
           <div className="org-meta">

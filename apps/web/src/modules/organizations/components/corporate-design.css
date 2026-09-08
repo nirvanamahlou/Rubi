@@ -956,6 +956,84 @@
   &.organization-delete-modal {
     max-width: 640px;
   }
+  .organization-logo-control {
+    display: grid;
+    justify-items: center;
+    gap: 5px;
+    flex: 0 0 auto;
+    min-width: 92px;
+  }
+  .organization-logo-trigger {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    padding: 5px;
+    cursor: pointer;
+  }
+  .organization-logo-image {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    border-radius: 8px;
+  }
+  .logo-camera {
+    position: absolute;
+    bottom: -4px;
+    left: -4px;
+    display: grid;
+    place-items: center;
+    width: 25px;
+    height: 25px;
+    border: 2px solid white;
+    border-radius: 50%;
+    background: var(--blue);
+    color: white;
+  }
+  .logo-action,
+  .logo-archive-link {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .logo-action {
+    min-height: 26px;
+  }
+  .logo-archive-link {
+    text-decoration: underline;
+  }
+  &.organization-logo-modal {
+    max-width: 480px;
+    background: white;
+  }
+  .logo-editor-preview {
+    display: grid;
+    place-items: center;
+    height: 184px;
+    margin: 12px 0;
+    border: 1px dashed var(--line);
+    border-radius: 14px;
+    background: var(--bg);
+    color: var(--muted);
+  }
+  .logo-editor-preview img {
+    width: 160px;
+    height: 160px;
+    object-fit: contain;
+  }
+  .logo-file-field {
+    display: grid;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .logo-file-field input {
+    min-width: 0;
+    width: 100%;
+    font-size: 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px;
+  }
   &.organization-document-modal {
     max-width: 780px;
   }

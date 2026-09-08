@@ -1,5 +1,11 @@
 # Work Assignments
 
+## B2B-AGENCIES-001 / organization logo — PC-B — READY_FOR_REVIEW
+
+- Owner requests an appropriate logo-upload location for agencies and corporate customers. Continue clean a53b294 after fetch. Reserve organization Web components/model/tests and scoped status entries only; use the existing Master Data logo workflow and public Documents metadata/preview APIs.
+- Add the logo and an explicit upload/change action beside the profile name, with a small preview/save dialog. Preserve owner scan/access checks and organization identity/version/roles. No producer, schema, dependency, permission grant or independent runtime change.
+- Delivered PNG/JPEG selection (5 MB), preview, replace/remove and canonical archive link in the shared profile header. Existing owner partial-save warnings stay visible; cancelled/denied/unscanned previews do not expose file bytes. Targeted tests, lint, typecheck and build passed; browser validation uses only synthetic in-memory owner responses. This reservation is released for review; the independent 3100 runtime is not replaced.
+
 ## B2B-AGENCIES-001 / agency 360 entry — PC-B — READY_FOR_REVIEW
 
 - Owner requests the Screenshot (524) seven-card 360 view when opening an agency record. Continue the clean published branch at d41d0ee; fetch completed. Reserve the shared organization profile component and this task's status entries only.

@@ -399,8 +399,6 @@ prepared for review, not a live cutover. The prior automatic approval review
 rejection of stopping/replacing 3100 remains unresolved; it was not bypassed or
 retried. No merge/rebase or deployment was performed.
 
-## Integration handoff
-
 ## Agency 360 entry follow-up — Screenshot (524)
 
 PC-B continues the clean published d41d0ee branch after fetch. The owner requests
@@ -422,6 +420,52 @@ read-only and also contains that shared routing; it was not edited or restarted.
   passed (36 routes). No new dependency, API/schema/migration, producer change,
   data mutation or runtime takeover. Only the profile component and scoped status
   entries changed; implementation reservation is released for review.
+
+## Organization logo follow-up
+
+PC-B continues published a53b294 after fetch. The owner requests an appropriate
+logo-upload location for both agencies and corporate customers. The shared 360
+profile header now displays the organization's logo, upload/change action and
+canonical Documents archive link. A small RTL dialog accepts nonempty PNG/JPEG
+files up to 5 MB, previews the selected image, and explicitly saves replacement
+or removal. Focus returns to the opener when the dialog closes.
+
+Saving delegates to the existing public Master Data `persistWithLogo` workflow,
+retaining record id, optimistic version and unrelated organization roles. That
+workflow owns canonical Documents upload/idempotency, attachment and old-logo
+archival. Partial-save warnings remain visible without false success; repeated
+submission is blocked until close/refresh resolves the current record version.
+Removal detaches/archives through the owner; this feature does not physically
+delete a document or bypass retention rules.
+
+Stored previews use authenticated public Documents metadata and preview APIs.
+The component requires separate metadata/brand/file grants, active BRAND domain,
+clean scan and view capability, and does not automatically open confidential or
+step-up-protected files. Such records retain the canonical owner archive link.
+Object URLs are revoked on replacement/unmount, cancelled reads cannot replace
+the current preview, and permission removal hides a previously loaded image.
+
+Validation:
+
+- 97 targeted tests passed across the organization module and existing Master
+  Data client tests, including 25 new logo cases. These cover permission failure,
+  invalid/oversized input, identity/version/role preservation, partial warnings,
+  owner removal, scan/confidentiality restrictions and cancelled preview reads.
+- Full Web lint, final scoped lint, typecheck and production build passed (36
+  routes). The first typecheck of the new tests found an incomplete synthetic
+  record fixture; it was completed before the final successful checks.
+- An inadvertently broad test invocation reported failures in unchanged Customer
+  and HR source-text checks; it was stopped and rerun with explicit target filters.
+  No full-suite-green claim or unrelated Customer/HR edit is included.
+- Browser QA of the real shared profile/logo components with synthetic in-memory
+  public-owner substitutes verified dialog opening, rejected text input, PNG
+  selection/preview, save-to-header, reopening and removal. The standalone fixture
+  needed a Next environment shim; no product workaround was introduced. This
+  verifies UI behavior, not authenticated persistent upload or antivirus operation.
+- No new dependency, schema/migration, API/producer edit, operational file upload,
+  database or IAM mutation. Temporary scripts and synthetic images stay outside
+  Git. The independently owned 3100/4190 runtime remains unchanged; the earlier
+  automatic approval-review rejection of replacing it was not retried/bypassed.
 
 ## Current integration handoff
 

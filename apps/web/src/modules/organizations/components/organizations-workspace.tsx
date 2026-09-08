@@ -56,6 +56,7 @@ import './corporate-design.css';
 import { CooperationWizard } from './cooperation-wizard';
 import { OrganizationExcelDialog } from './organization-excel-dialog';
 import { OrganizationDeleteDialog } from './organization-delete-dialog';
+import { OrganizationLogo } from './organization-logo';
 import {
   saveOrganizationChanges,
   type OrganizationDeletionTarget,
@@ -682,6 +683,18 @@ export function OrganizationsWorkspace() {
         <CorporateProfile
           key={selected.id}
           organization={selected}
+          logo={
+            <OrganizationLogo
+              organization={selected}
+              permissions={permissions}
+              onSaved={(record) => {
+                setSelected((current) =>
+                  current?.id === record.id ? record : current,
+                );
+                void load();
+              }}
+            />
+          }
           onClose={() => {
             ++contactRequestId.current;
             setProfileOpen(false);
