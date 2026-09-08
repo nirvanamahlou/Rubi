@@ -1,5 +1,11 @@
 # Work Assignments
 
+## B2B-AGENCIES-001 / agency 360 entry — PC-B — READY_FOR_REVIEW
+
+- Owner requests the Screenshot (524) seven-card 360 view when opening an agency record. Continue the clean published branch at d41d0ee; fetch completed. Reserve the shared organization profile component and this task's status entries only.
+- The directory already routes agency and corporate records to the same profile. Make the agency heading explicit and bring the profile start into view on entry/section navigation. Preserve the seven reference cards and existing public-service connections. No schema, API, dependency or other checkout/runtime edit.
+- Verified the real shared component renders all seven sections for AGENCY, CORPORATE_CUSTOMER and dual-role records. All 62 existing organization tests, scoped lint, typecheck and final production build passed. Entry/section navigation scrolls to the page start, preserving the sticky header. This UI reservation is released for review; no new runtime handoff is claimed.
+
 ## B2B-AGENCIES-001 / PRD coverage follow-up — PC-B — READY_FOR_REVIEW
 
 - Owner requests implementation against the supplied B2B PRD and selects separate credit limits per currency, without automatic FX. Continue the clean published `codex/pc-b-agencies-organizations` branch/PR #113; original checkout and independent 3100/4190 runtime remain untouched.

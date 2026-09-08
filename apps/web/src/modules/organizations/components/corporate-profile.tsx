@@ -207,9 +207,15 @@ export function CorporateProfile({
 }) {
   const [screen, setScreen] = useState('home');
   const [tab, setTab] = useState('profile');
+  const roles = String(organization.attributes.roleCodes ?? '').split(',');
+  const entityLabel =
+    roles.includes('AGENCY') && !roles.includes('CORPORATE_CUSTOMER')
+      ? 'آژانس'
+      : 'سازمان';
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }, [screen]);
   const current = sections.find((section) => section.id === screen);
   const go = (id: string) => {
@@ -218,7 +224,7 @@ export function CorporateProfile({
       sections.find((section) => section.id === id)?.tabs[0][0] ?? 'profile',
     );
   };
-  const title = current?.title ?? 'نمای ۳۶۰ درجه سازمان';
+  const title = current?.title ?? `نمای ۳۶۰ درجه ${entityLabel}`;
   const operationalView: OperationalView | undefined =
     screen === 'organization' && tab === 'branches'
       ? 'address'
@@ -277,17 +283,19 @@ export function CorporateProfile({
         </div>
         <div className="org-actions">
           <Button variant="outline" disabled={!canEdit} onClick={onEdit}>
-            <Pencil aria-hidden="true" className="size-4" /> ویرایش سازمان
+            <Pencil aria-hidden="true" className="size-4" /> ویرایش{' '}
+            {entityLabel}
           </Button>
           <Button
             variant="destructive"
             disabled={!canDelete}
             onClick={onDelete}
           >
-            <Trash2 aria-hidden="true" className="size-4" /> حذف دائمی سازمان
+            <Trash2 aria-hidden="true" className="size-4" /> حذف دائمی{' '}
+            {entityLabel}
           </Button>
           <button className="btn" onClick={onClose}>
-            تغییر سازمان
+            تغییر {entityLabel}
           </button>
           <button className="btn primary" onClick={() => go('home')}>
             <LayoutDashboard size={18} />
@@ -329,7 +337,10 @@ export function CorporateProfile({
               note="اطلاعات مالی در دسترس نیست"
             />
           </section>
-          <section className="hub-grid" aria-label="بخش‌های سازمان">
+          <section
+            className="hub-grid"
+            aria-label={`بخش‌های پرونده ${entityLabel}`}
+          >
             {sections.map(
               ({
                 id,

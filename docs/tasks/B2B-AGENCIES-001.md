@@ -401,6 +401,30 @@ retried. No merge/rebase or deployment was performed.
 
 ## Integration handoff
 
+## Agency 360 entry follow-up — Screenshot (524)
+
+PC-B continues the clean published d41d0ee branch after fetch. The owner requests
+the same seven-section 360 home when an agency's "View profile" action is clicked.
+Both desktop/mobile actions already use `openProfile` and the shared profile
+component without a corporate-only role gate. The live checkout was inspected
+read-only and also contains that shared routing; it was not edited or restarted.
+
+- Made the agency-only profile heading/action labels explicit, while corporate
+  and dual-role identities keep organization wording. All seven reference cards,
+  their colored layout, section navigation and real public-service adapters remain
+  shared. Initial entry and section navigation now reset document scroll to the
+  top, so the prior directory-row scroll does not hide the profile header/home.
+- The actual React component was rendered through `react-dom/server` for AGENCY,
+  CORPORATE_CUSTOMER and both roles; each has the expected title and all seven
+  cards. The temporary synthetic verification script stayed outside Git. This is
+  component-render verification, not an authenticated browser click/visual test.
+- All 62 existing organization tests, scoped lint, Web typecheck and final build
+  passed (36 routes). No new dependency, API/schema/migration, producer change,
+  data mutation or runtime takeover. Only the profile component and scoped status
+  entries changed; implementation reservation is released for review.
+
+## Current integration handoff
+
 Fetch `codex/pc-b-agencies-organizations` and review its independent draft PR;
 do not merge or rebase the Sales/Reservations branches as part of this delivery.
 Coordinate B2B-AGENCIES-001B with the current producer owners and resolve the
