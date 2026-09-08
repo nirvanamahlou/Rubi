@@ -4,11 +4,9 @@ import {
   AlertCircle,
   Building2,
   CheckCircle2,
-  Clock3,
   Layers3,
   LoaderCircle,
   RefreshCw,
-  UserRound,
 } from 'lucide-react';
 import Image from 'next/image';
 import {
@@ -35,14 +33,6 @@ import {
   SelectTrigger,
 } from '@/components/ui/form-controls';
 import { Badge } from '@/components/ui/surfaces';
-import { getPublicApiBaseUrl } from '@/lib/environment';
-import {
-  formatHeaderLoginTime,
-  readHeaderSession,
-  rememberHeaderSession,
-  type HeaderSessionIdentity,
-} from '@/lib/header-session';
-import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { cn } from '@/lib/utils';
 import { legalEntitiesApi } from '../api/client';
 import {
@@ -209,48 +199,6 @@ function IssuerMark({
   return <Building2 aria-hidden="true" className="size-4 text-primary" />;
 }
 
-function HeaderSessionSummary() {
-  const [identity, setIdentity] = useState<HeaderSessionIdentity | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    void Promise.resolve().then(async () => {
-      const cached = readHeaderSession();
-      if (cached) {
-        if (active) setIdentity(cached);
-        return;
-      }
-      const api = getPublicApiBaseUrl();
-      if (!api) return;
-      const response = await refreshAuthenticatedSession(api);
-      if (active && response) setIdentity(rememberHeaderSession(response.user));
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return (
-    <div
-      aria-label="اطلاعات نشست کاربر"
-      className="hidden h-10 shrink-0 items-center gap-2 rounded-xl border border-border/70 bg-surface/80 px-3 text-xs shadow-sm xl:flex"
-      data-header-session-summary
-      dir="rtl"
-    >
-      <UserRound aria-hidden="true" className="size-4 shrink-0" />
-      <span className="max-w-32 truncate font-bold">
-        {identity?.displayName ?? 'در حال دریافت کاربر'}
-      </span>
-      {identity ? (
-        <span className="flex items-center gap-1 border-s border-border/70 ps-2 text-muted-foreground">
-          <Clock3 aria-hidden="true" className="size-3.5" />
-          ورود {formatHeaderLoginTime(identity.loggedInAt)}
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
 export function LegalEntityContextSelector() {
   const state = useLegalEntityContext();
   const choices = legalEntityChoices(state.entities, state.canAggregate);
@@ -363,12 +311,11 @@ export function LegalEntityContextSelector() {
 
   return (
     <div
-      className="flex shrink-0 items-center gap-2"
+      className="flex shrink-0 items-center"
       data-legal-entity-header-controls
       ref={headerAnchor}
     >
       {selector}
-      <HeaderSessionSummary />
     </div>
   );
 }

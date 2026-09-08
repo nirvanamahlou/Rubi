@@ -98,6 +98,9 @@ export function getNavigationBreadcrumbs(
   marketingSectionKey?: string | null,
   hrLocation?: HrBreadcrumbLocation | null,
 ) {
+  if (pathname === '/profile')
+    return [{ href: '/profile', title: 'پروفایل من' }];
+
   if (pathname.startsWith('/master-data/')) {
     const sectionSlug = pathname.slice('/master-data/'.length).split('/')[0];
     const section = getMasterDataSection(sectionSlug ?? '');

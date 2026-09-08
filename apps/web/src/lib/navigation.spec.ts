@@ -94,6 +94,13 @@ describe('CRM navigation', () => {
     ).toEqual([{ href: '/hr', title: 'منابع انسانی' }]);
   });
 
+  it('keeps the personal profile outside management navigation', () => {
+    expect(getNavigationItem('/profile')).toBeUndefined();
+    expect(getNavigationBreadcrumbs('/profile')).toEqual([
+      { href: '/profile', title: 'پروفایل من' },
+    ]);
+  });
+
   it('does not create disallowed standalone sections', () => {
     const titles = navigationItems.map((item) => item.title).join(' ');
     expect(titles).not.toContain('جست‌وجو و فروش آنلاین');
