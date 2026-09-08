@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { HrWorkspace } from './hr-workspace';
+import { HrLegacyPreviewWorkspace as HrWorkspace } from './hr-legacy-preview';
 import {
   frappeWorkspaceIdsByHubSection,
   frappeWorkspaces as allWorkspaces,
@@ -14,7 +14,7 @@ const frappeWorkspaces = allWorkspaces
   .filter((item) => item.id !== 'tax-benefits')
   .map((item) => getFrappeWorkspace(item.id));
 
-describe('Frappe-style HR workspaces', () => {
+describe('Legacy Frappe directory compatibility fixtures', () => {
   it('merges the nine requested workspaces into the complete HR hub', () => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId="home" />);
     const linkedWorkspaceIds = Object.values(

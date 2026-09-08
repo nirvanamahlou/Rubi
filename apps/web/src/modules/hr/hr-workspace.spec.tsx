@@ -4,13 +4,13 @@ import { describe, expect, it } from 'vitest';
 import {
   appendAutomaticHrHistory,
   HrState,
-  HrWorkspace,
+  HrLegacyPreviewWorkspace as HrWorkspace,
   isAutomaticHrHistoryTab,
   parseHrPreviewDatasetOverrides,
   parsePreviewEmployees,
   removeHrPreviewRow,
   saveHrPreviewRow,
-} from './hr-workspace';
+} from './hr-legacy-preview';
 import {
   NewEmployeeForm,
   nextEmployeePersonnelCode,
@@ -52,7 +52,7 @@ import {
 } from './hr.model';
 import { getHrPreviewDataset } from './hr-preview-data';
 
-describe('HR reference implementation', () => {
+describe('Legacy HR preview and migration regression fixtures', () => {
   it('does not render the overview, operations and reports switcher above HR content', () => {
     const html = renderToStaticMarkup(
       <HrWorkspace sectionId="time" tabId="attendance" />,

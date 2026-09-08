@@ -1,5 +1,10 @@
 'use client';
 import { reportCellText, type SectionReport } from './section-reports';
+import {
+  buildSearchablePdf,
+  type HrPdfPage,
+  type PdfTextLine,
+} from './hr-searchable-pdf';
 
 export function buildReportPdf(images: readonly Uint8Array[]): Uint8Array {
   const enc = new TextEncoder();
@@ -81,10 +86,13 @@ export async function downloadSectionPdf(
   const context = canvas.getContext('2d');
   if (!context) throw new Error('مرورگر امکان ساخت گزارش را ندارد.');
   const images: Uint8Array[] = [];
+  const pages: HrPdfPage[] = [];
+  let textLines: PdfTextLine[] = [];
   let y = 0;
   let page = 0;
   const start = () => {
     page++;
+    textLines = [];
     context.fillStyle = '#fff';
     context.fillRect(0, 0, 1240, 1754);
     context.direction = 'rtl';
@@ -92,10 +100,11 @@ export async function downloadSectionPdf(
     context.fillStyle = '#103c78';
     context.font = 'bold 34px Vazirmatn, Tahoma, sans-serif';
     context.fillText(`گزارش ${title}`, 1170, 75);
+    textLines.push({ text: `گزارش ${title}`, x: 1170, y: 75, size: 34 });
     context.font = '22px Vazirmatn, Tahoma, sans-serif';
     context.fillStyle = '#52657c';
     context.fillText(
-      `داده‌های نشست · ${new Date().toLocaleString('fa-IR')} · صفحه ${page.toLocaleString('fa-IR')}`,
+      `اطلاعات منابع انسانی · ${new Date().toLocaleString('fa-IR')} · صفحه ${page.toLocaleString('fa-IR')}`,
       1170,
       117,
     );
@@ -104,6 +113,12 @@ export async function downloadSectionPdf(
   const save = () => {
     const binary = atob(canvas.toDataURL('image/jpeg', 0.92).split(',')[1]!);
     images.push(Uint8Array.from(binary, (char) => char.charCodeAt(0)));
+    pages.push({
+      image: images.at(-1)!,
+      width: 1240,
+      height: 1754,
+      lines: [...textLines],
+    });
     if (images.length > 200)
       throw new Error('گزارش بیش از ۲۰۰ صفحه است؛ فیلتر را محدود کنید.');
   };
@@ -126,6 +141,7 @@ export async function downloadSectionPdf(
       context.fillStyle = heading ? '#103c78' : '#24354b';
       context.font = `${heading ? 'bold ' : ''}25px Vazirmatn, Tahoma, sans-serif`;
       context.fillText(value, 1170, y);
+      textLines.push({ text: value, x: 1170, y, size: 25 });
       y += 39;
     }
   };
@@ -145,7 +161,7 @@ export async function downloadSectionPdf(
     });
   }
   save();
-  const blob = new Blob([new Uint8Array(buildReportPdf(images))], {
+  const blob = new Blob([new Uint8Array(buildSearchablePdf(pages))], {
     type: 'application/pdf',
   });
   const url = URL.createObjectURL(blob);

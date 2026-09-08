@@ -13,6 +13,10 @@ export interface HrPreviewDataset {
   columns: readonly string[];
   rows: readonly (readonly HrPreviewCell[])[];
   totalLabel: string;
+  recordIds?: readonly string[];
+  versions?: readonly number[];
+  employeeIds?: readonly (string | null)[];
+  parentIds?: readonly (string | null)[];
 }
 
 const status = (label: string, tone: HrPreviewTone): HrPreviewStatus => ({

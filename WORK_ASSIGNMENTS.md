@@ -1,5 +1,19 @@
 # Work Assignments
 
+## HR-005 — PC-B — READY_FOR_REVIEW
+
+- Owner request (2026-09-08): implement the approved HR reliability priorities and all navigation/workflow consolidations. Branch `codex/pc-b-hr-unified-workflows` from the reviewed HR working baseline `a0636c6`; preserve the unmerged HR-002/003/004 changes and do not merge develop/main.
+- Reserved: `apps/web/src/modules/hr/**`, HR routes, `apps/api/src/hr/**`, HR-local contracts/tests/scripts and `docs/tasks/HR-005.md`; only this task's entries in assignment/status documents. Existing shared shell/profile changes in `Rubi-hr-foundation-pr99` are excluded.
+- The owner transferred the completed PC-A migration lock to this task. Exact additive HR schema/contracts/AppModule/permissions changes are reserved below; Dependency/Lockfile remains unchanged.
+- Public integration producers: IAM identity/scope, Documents files, Finance payment/settlement, Notifications delivery. HR consumes versioned public interfaces only; no other module's table/repository access. Legacy HR URLs and stored records must remain readable.
+- Acceptance and progress tracked in `docs/tasks/HR-005.md`.
+- Local runtime verification also reserves `infrastructure/scripts/start-hr-local.ps1`, `apps/web/src/app/api/hr-runtime/route.ts` and the exact public version/login redirect guards in `apps/web/src/proxy.ts`. No shared shell/profile code is changed.
+- Owner confirmed PC-A database work is complete and Migration ownership may transfer (2026-09-08). `Migration Owner = PC-B/HR-005` for additive HR models/migration only; reserve corresponding Prisma relations, HR permission seed/contract exports, API AppModule HR registration and HR configuration. Central document edits remain limited to HR-005 entries. No existing migration is rewritten. Dependency/Lockfile changes are not reserved.
+
+- Delivered: durable scoped HR API and approvals, effective-dated employee changes, leave ledger and attendance closing, company-aware organization trees, persistent notifications/audit, consolidated case navigation and employee dossiers, validated Excel and branded searchable PDF exports. The existing preview survives only as an isolated regression fixture.
+- Verification: 78 HR API tests including 19 PostgreSQL/auth scenarios; 85 affected web/proxy tests; contracts/database checks and production builds pass. Authenticated browser QA covers the 12 live sections, candidate CRUD/reload/notifications, profile edit, resume archive, spreadsheet validation/import, Persian PDF text extraction, mobile layout and legacy redirect. Details and external producer limits: `docs/tasks/HR-005.md`.
+- Handoff: two additive migrations applied locally; three pre-existing PC-A migration entries remain untouched and must be reconciled during branch review. Branch is pushed for review; no merge/deploy is authorized. Shared shell/profile changes in the other worktree were not touched.
+
 ## CUSTOMER-DOCUMENTS-AGENCIES-INTEGRATION-001 — PC-B — READY_FOR_REVIEW
 
 - واگذاری صریح مالک محصول در 2026-09-05: نجات و سازگارکردن قابلیت‌های سالم PR #85 با آخرین Documents، اتصال واقعی Customer 360 به اسناد، اتصال عملیاتی آژانس‌ها به Organizationهای اطلاعات پایه و حذف شناسه موقت از جریان Logo. `COMPUTER_ID=PC-B`.

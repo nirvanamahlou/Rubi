@@ -533,10 +533,14 @@ export function OrganizationChart({
   nodes,
   onEdit,
   onDelete,
+  editable = true,
+  confirmDelete = true,
 }: {
   nodes: readonly OrganizationNode[];
   onEdit: (node: OrganizationNode) => void;
   onDelete: (node: OrganizationNode) => void;
+  editable?: boolean;
+  confirmDelete?: boolean;
 }) {
   const chartRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef(new Map<string, HTMLElement>());
@@ -627,7 +631,7 @@ export function OrganizationChart({
             else nodeRefs.current.delete(node.id);
           }}
         >
-          <div className={styles.orgNodeActions}>
+          {editable ? <div className={styles.orgNodeActions}>
             <button
               aria-label={`ویرایش ${node.name}`}
               className={styles.orgEditButton}
@@ -642,7 +646,7 @@ export function OrganizationChart({
               className={`${styles.orgEditButton} ${styles.orgDeleteButton}`}
               onClick={() => {
                 if (
-                  window.confirm(
+                  !confirmDelete || window.confirm(
                     `«${node.name}» و همه زیرشاخه‌های آن از چارت موقت حذف شوند؟`,
                   )
                 )
@@ -653,7 +657,7 @@ export function OrganizationChart({
               <Trash2 aria-hidden="true" size={14} />
               حذف
             </button>
-          </div>
+          </div> : null}
           <div className={styles.orgNodeTitle}>
             <Building2 aria-hidden="true" size={17} />
             <b>{node.name}</b>

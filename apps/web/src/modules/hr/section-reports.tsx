@@ -15,7 +15,7 @@ export function reportCellText(
   cell: HrPreviewDataset['rows'][number][number],
 ): string {
   if (typeof cell !== 'string') return cell.label;
-  if (cell.startsWith('hr-attachment://')) return 'فایل پیوست';
+  if (/^(hr-attachment|document):\/\//.test(cell)) return 'فایل پیوست';
   if (cell.startsWith('['))
     return parseWeightedGoals(cell)
       .map(
@@ -59,7 +59,7 @@ export function SectionReports({
         <section aria-label={`آمار ${title}`}>
           <div className={styles.panelBody}>
             <h2>آمار {title}</h2>
-            <p>آمار رکوردهای موجود در این نشست</p>
+            <p>آمار رکوردهای فهرست انتخاب‌شده</p>
             <div className={styles.hubGrid}>
               {reports.map((report) => (
                 <button

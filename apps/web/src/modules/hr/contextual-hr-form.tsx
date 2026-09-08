@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLink, Info, Upload } from 'lucide-react';
+import { ExternalLink, Upload } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -32,6 +32,12 @@ export interface ContextualHrFormContext {
   contractNumbersByEmployee?: Readonly<Record<string, string>>;
   linkedEmployeeName?: string;
   linkedEmployeeId?: string;
+  parentRecordId?: string;
+  recordId?: string;
+  recordVersion?: number;
+  presetValues?: Readonly<Record<string, string>>;
+  optionsByLabel?: Readonly<Record<string, readonly string[]>>;
+  fieldTypes?: Readonly<Record<string, ContextualFieldType>>;
   attendance?: readonly { employee: string; date: string; value: string }[];
   holidayOptions?: readonly string[];
 }
@@ -146,7 +152,7 @@ const fieldOptions = (
       'غیرفعال',
     ];
   if (/ارزیاب|مصاحبه‌کننده|تأییدکننده/.test(label))
-    return Array.from(new Set([...peopleOptions, ...defaultPeopleOptions]));
+    return Array.from(new Set([...peopleOptions]));
   if (label === 'ارز' || /کد ارز|ارز پرداخت|ارز هزینه|ارز مبنا/.test(label))
     return ['IRR', 'USD', 'EUR', 'AED'];
   if (/مشمول|قابل انتقال|الزامی|تحویل دارایی|قطع دسترسی/.test(label))
@@ -156,11 +162,9 @@ const fieldOptions = (
     label === 'درخواست‌کننده' ||
     label.includes('نام درخواست‌کننده')
   )
-    return Array.from(new Set([...peopleOptions, ...defaultPeopleOptions]));
+    return Array.from(new Set([...peopleOptions]));
   if (label === 'مدیر مستقیم')
-    return Array.from(
-      new Set(['بدون مدیر مستقیم', ...peopleOptions, ...defaultPeopleOptions]),
-    );
+    return Array.from(new Set(['بدون مدیر مستقیم', ...peopleOptions]));
   if (
     label.includes('مسئول') ||
     label.includes('مالک') ||
@@ -438,6 +442,10 @@ function buildInitialFormValues(
                 : '')),
     ]),
   );
+  for (const field of fields) {
+    const preset = context.presetValues?.[field.label];
+    if (preset !== undefined) initial[field.id] = preset;
+  }
   const employeeField = fields.find((field) => field.label === 'کارمند');
   const selectedEmployee = context.employeeDetails?.find(
     (employee) => employee.name === initial[employeeField?.id ?? ''],
@@ -465,24 +473,41 @@ export function ContextualHrForm({
 }: {
   context: ContextualHrFormContext;
   onCancel: () => void;
-  onSubmit: (values: readonly string[]) => void;
+  onSubmit: (values: readonly string[]) => void | Promise<void>;
 }) {
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const fields = useMemo(
     () =>
       buildContextualHrFields(context.columns, context.peopleOptions).map(
         (field) =>
-          field.label === 'تقویم تعطیلات' && context.holidayOptions?.length
+          context.fieldTypes?.[field.label]
             ? {
                 ...field,
-                type: 'select' as const,
-                options: context.holidayOptions,
+                type: context.fieldTypes[field.label]!,
+                ...(context.optionsByLabel?.[field.label]
+                  ? { options: context.optionsByLabel[field.label]! }
+                  : {}),
               }
-            : (context.section === 'employee' && context.tab === 'docs') ||
-                context.section === 'documents'
-              ? field.label === 'تاریخ انقضا'
-                ? { ...field, required: true }
-                : field
-              : field,
+            : context.optionsByLabel?.[field.label]
+              ? {
+                  ...field,
+                  type: 'select' as const,
+                  options: context.optionsByLabel[field.label]!,
+                }
+              : field.label === 'تقویم تعطیلات' &&
+                  context.holidayOptions?.length
+                ? {
+                    ...field,
+                    type: 'select' as const,
+                    options: context.holidayOptions,
+                  }
+                : (context.section === 'employee' && context.tab === 'docs') ||
+                    context.section === 'documents'
+                  ? field.label === 'تاریخ انقضا'
+                    ? { ...field, required: true }
+                    : field
+                  : field,
       ),
     [
       context.columns,
@@ -490,6 +515,8 @@ export function ContextualHrForm({
       context.section,
       context.tab,
       context.holidayOptions,
+      context.optionsByLabel,
+      context.fieldTypes,
     ],
   );
   const [values, setValues] = useState<Record<string, string>>(() =>
@@ -531,6 +558,10 @@ export function ContextualHrForm({
     return next;
   };
   const derivedValues = deriveValues(values);
+  for (const field of fields) {
+    const preset = context.presetValues?.[field.label];
+    if (preset !== undefined) derivedValues[field.id] = preset;
+  }
   const goalField = fields.find((field) => field.label === 'عنوان هدف');
   const [goals, setGoals] = useState(() =>
     parseWeightedGoals(values[goalField?.id ?? ''] ?? ''),
@@ -575,8 +606,9 @@ export function ContextualHrForm({
       return next;
     });
   };
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (saving) return;
     if (
       context.section === 'development' &&
       context.tab === 'goals' &&
@@ -613,20 +645,31 @@ export function ContextualHrForm({
       });
       return;
     }
-    onSubmit(fields.map((field) => derivedValues[field.id] ?? ''));
+    setSaving(true);
+    setSaveError('');
+    try {
+      await onSubmit(fields.map((field) => derivedValues[field.id] ?? ''));
+    } catch (error) {
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : 'ذخیره انجام نشد؛ دوباره تلاش کنید.',
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <form noValidate onSubmit={submit}>
-      <div className={styles.previewNote}>
-        <Info aria-hidden="true" size={16} />
-        {context.section === 'employee' && context.tab === 'docs'
-          ? 'فایل در نشست جاری نگهداری می‌شود و پس از ذخیره از طریق API عمومی به اسناد و فایل‌ها نیز ارسال خواهد شد.'
-          : 'داده این فرم فقط برای بررسی رابط در همین نشست استفاده می‌شود.'}
-      </div>
+      {saveError ? (
+        <p className={styles.fieldError} role="alert">
+          {saveError}
+        </p>
+      ) : null}
       {context.section === 'recruitment' && context.tab === 'applicants' ? (
         <div className={styles.integrationLinks}>
-          <span>منابع جذب متصل به فرم:</span>
+          <span>منابع جذب:</span>
           <a href="https://jobinja.ir" rel="noreferrer" target="_blank">
             جابینجا <ExternalLink aria-hidden="true" size={13} />
           </a>
@@ -749,7 +792,8 @@ export function ContextualHrForm({
             const readOnly =
               isAutomaticCodeField(field, index) ||
               isAutomaticRegistrationDate(field.label) ||
-              isContextDerivedField(context, field);
+              isContextDerivedField(context, field) ||
+              context.presetValues?.[field.label] !== undefined;
             return (
               <label
                 className={styles.fieldLabel}
@@ -782,6 +826,7 @@ export function ContextualHrForm({
                     <input
                       {...commonProps}
                       list={`${inputId}-options`}
+                      readOnly={readOnly}
                       onChange={(event) => update(field.id, event.target.value)}
                       placeholder={`انتخاب یا تایپ ${field.label}`}
                       value={derivedValues[field.id] ?? ''}
@@ -871,10 +916,14 @@ export function ContextualHrForm({
         </button>
         <button
           className={`${styles.button} ${styles.buttonPrimary}`}
-          disabled={fileLoading}
+          disabled={fileLoading || saving}
           type="submit"
         >
-          {context.mode === 'edit' ? 'ذخیره ویرایش' : `افزودن ${context.title}`}
+          {saving
+            ? 'در حال ذخیره…'
+            : context.mode === 'edit'
+              ? 'ذخیره ویرایش'
+              : `افزودن ${context.title}`}
         </button>
       </div>
     </form>
@@ -888,7 +937,7 @@ export function ContextualHrFormDialog({
 }: {
   context: ContextualHrFormContext;
   onClose: () => void;
-  onSubmit: (values: readonly string[]) => void;
+  onSubmit: (values: readonly string[]) => void | Promise<void>;
 }) {
   const purpose = sectionPurposes[context.section] ?? context.description;
   return (

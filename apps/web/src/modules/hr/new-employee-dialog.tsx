@@ -1,6 +1,5 @@
 'use client';
 
-import { Info } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -99,7 +98,8 @@ export function validateNewEmployeeForm(
     errors.personnelCode = 'کد پرسنلی باید حداکثر ۵۰ نویسه باشد.';
   else if (
     existingPersonnelCodes.some(
-      (code) => normalizePersonnelCode(code) === normalizePersonnelCode(personnelCode),
+      (code) =>
+        normalizePersonnelCode(code) === normalizePersonnelCode(personnelCode),
     )
   )
     errors.personnelCode = 'این کد پرسنلی قبلاً استفاده شده است.';
@@ -131,22 +131,33 @@ interface NewEmployeeFormProps {
   initialValue?: NewEmployeeFormValue | undefined;
   managerOptions: readonly string[];
   onCancel: () => void;
-  onSubmit: (value: NewEmployeeFormValue) => void;
+  onSubmit: (value: NewEmployeeFormValue) => void | Promise<void>;
+  branchOptions?: readonly string[] | undefined;
+  unitOptions?: readonly string[] | undefined;
+  lockAssignment?: boolean;
 }
 
 export function NewEmployeeForm({
   existingPersonnelCodes,
   initialValue,
   managerOptions,
+  branchOptions = previewBranches,
+  unitOptions = previewUnits,
+  lockAssignment = false,
   onCancel,
   onSubmit,
 }: NewEmployeeFormProps) {
-  const [value, setValue] = useState<NewEmployeeFormValue>(() =>
-    initialValue ?? {
-      ...defaultEmployeeValue,
-      personnelCode: nextEmployeePersonnelCode(existingPersonnelCodes),
-    },
+  const [value, setValue] = useState<NewEmployeeFormValue>(
+    () =>
+      initialValue ?? {
+        ...defaultEmployeeValue,
+        branch: branchOptions[0] ?? '',
+        unit: unitOptions[0] ?? '',
+        personnelCode: nextEmployeePersonnelCode(existingPersonnelCodes),
+      },
   );
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [errors, setErrors] = useState<NewEmployeeFormErrors>({});
 
   const update = (field: FormField, nextValue: string) => {
@@ -159,20 +170,29 @@ export function NewEmployeeForm({
     });
   };
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const nextErrors = validateNewEmployeeForm(value, existingPersonnelCodes);
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors);
       return;
     }
-    onSubmit({
-      ...value,
-      firstName: value.firstName.trim(),
-      lastName: value.lastName.trim(),
-      personnelCode: value.personnelCode.trim(),
-      position: value.position.trim(),
-    });
+    if (saving) return;
+    setSaving(true);
+    setSaveError('');
+    try {
+      await onSubmit({
+        ...value,
+        firstName: value.firstName.trim(),
+        lastName: value.lastName.trim(),
+        personnelCode: value.personnelCode.trim(),
+        position: value.position.trim(),
+      });
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'ذخیره انجام نشد.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const errorProps = (field: FormField) => ({
@@ -186,16 +206,19 @@ export function NewEmployeeForm({
 
   return (
     <form noValidate onSubmit={submit}>
-      <div className={styles.previewNote}>
-        <Info aria-hidden="true" size={16} />
-        اطلاعات این فرم فقط به فهرست موقت همین نشست اضافه می‌شود و پس از تازه‌سازی
-        صفحه باقی نمی‌ماند.
-      </div>
+      {saveError ? (
+        <p role="alert" className={styles.fieldError}>
+          {saveError}
+        </p>
+      ) : null}
 
       <fieldset className={styles.formFieldset}>
         <legend className={styles.formLegend}>مشخصات پایه</legend>
         <div className={styles.formGrid}>
-          <label className={styles.fieldLabel} htmlFor="hr-new-employee-first-name">
+          <label
+            className={styles.fieldLabel}
+            htmlFor="hr-new-employee-first-name"
+          >
             <RequiredFieldLabel required>نام</RequiredFieldLabel>
             <input
               {...errorProps('firstName')}
@@ -211,7 +234,10 @@ export function NewEmployeeForm({
             />
             <FieldError errors={errors} field="firstName" />
           </label>
-          <label className={styles.fieldLabel} htmlFor="hr-new-employee-last-name">
+          <label
+            className={styles.fieldLabel}
+            htmlFor="hr-new-employee-last-name"
+          >
             <RequiredFieldLabel required>نام خانوادگی</RequiredFieldLabel>
             <input
               {...errorProps('lastName')}
@@ -240,7 +266,9 @@ export function NewEmployeeForm({
               required
               value={value.personnelCode}
             />
-            <small className={styles.fieldHint}>این کد به‌صورت خودکار تخصیص داده می‌شود.</small>
+            <small className={styles.fieldHint}>
+              این کد به‌صورت خودکار تخصیص داده می‌شود.
+            </small>
             <FieldError errors={errors} field="personnelCode" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-type">
@@ -265,18 +293,25 @@ export function NewEmployeeForm({
 
       <fieldset className={styles.formFieldset}>
         <legend className={styles.formLegend}>جایگاه سازمانی</legend>
+        {lockAssignment ? (
+          <p>
+            تغییر سمت، رده، واحد و مدیر از بخش تغییرات شغلی با تاریخ اثر ثبت
+            می‌شود.
+          </p>
+        ) : null}
         <div className={styles.formGrid}>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-branch">
             <RequiredFieldLabel required>شعبه</RequiredFieldLabel>
             <select
               className={styles.control}
               id="hr-new-employee-branch"
+              disabled={lockAssignment}
               name="branch"
               onChange={(event) => update('branch', event.target.value)}
               required
               value={value.branch}
             >
-              {previewBranches.map((option) => (
+              {branchOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -288,24 +323,29 @@ export function NewEmployeeForm({
             <select
               className={styles.control}
               id="hr-new-employee-unit"
+              disabled={lockAssignment}
               name="unit"
               onChange={(event) => update('unit', event.target.value)}
               required
               value={value.unit}
             >
-              {previewUnits.map((option) => (
+              {unitOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
               ))}
             </select>
           </label>
-          <label className={styles.fieldLabel} htmlFor="hr-new-employee-position">
+          <label
+            className={styles.fieldLabel}
+            htmlFor="hr-new-employee-position"
+          >
             <RequiredFieldLabel required>سمت</RequiredFieldLabel>
             <input
               {...errorProps('position')}
               className={styles.control}
               id="hr-new-employee-position"
+              disabled={lockAssignment}
               maxLength={120}
               name="position"
               onChange={(event) => update('position', event.target.value)}
@@ -321,6 +361,7 @@ export function NewEmployeeForm({
               {...errorProps('grade')}
               className={styles.control}
               id="hr-new-employee-grade"
+              disabled={lockAssignment}
               name="grade"
               onChange={(event) => update('grade', event.target.value)}
               required
@@ -336,11 +377,15 @@ export function NewEmployeeForm({
             </select>
             <FieldError errors={errors} field="grade" />
           </label>
-          <label className={styles.fieldLabel} htmlFor="hr-new-employee-manager">
+          <label
+            className={styles.fieldLabel}
+            htmlFor="hr-new-employee-manager"
+          >
             <RequiredFieldLabel>مدیر مستقیم</RequiredFieldLabel>
             <select
               className={styles.control}
               id="hr-new-employee-manager"
+              disabled={lockAssignment}
               name="manager"
               onChange={(event) => update('manager', event.target.value)}
               value={value.manager}
@@ -359,10 +404,14 @@ export function NewEmployeeForm({
       <fieldset className={styles.formFieldset}>
         <legend className={styles.formLegend}>وضعیت همکاری</legend>
         <div className={styles.formGrid}>
-          <label className={styles.fieldLabel} htmlFor="hr-new-employee-started-at">
+          <label
+            className={styles.fieldLabel}
+            htmlFor="hr-new-employee-started-at"
+          >
             <RequiredFieldLabel required>تاریخ شروع</RequiredFieldLabel>
             <DatePicker
               {...errorProps('startedAt')}
+              disabled={lockAssignment}
               id="hr-new-employee-started-at"
               name="startedAt"
               onChange={(nextValue) => update('startedAt', nextValue)}
@@ -399,8 +448,13 @@ export function NewEmployeeForm({
         <button
           className={`${styles.button} ${styles.buttonPrimary}`}
           type="submit"
+          disabled={saving}
         >
-          {initialValue ? 'ذخیره ویرایش' : 'افزودن به فهرست'}
+          {saving
+            ? 'در حال ذخیره…'
+            : initialValue
+              ? 'ذخیره ویرایش'
+              : 'ثبت کارمند'}
         </button>
       </div>
     </form>
@@ -412,19 +466,28 @@ interface NewEmployeeDialogProps {
   initialValue?: NewEmployeeFormValue | undefined;
   managerOptions: readonly string[];
   onClose: () => void;
-  onSubmit: (value: NewEmployeeFormValue) => void;
+  onSubmit: (value: NewEmployeeFormValue) => void | Promise<void>;
+  branchOptions?: readonly string[] | undefined;
+  unitOptions?: readonly string[] | undefined;
+  lockAssignment?: boolean;
 }
 
 export function NewEmployeeDialog({
   existingPersonnelCodes,
   initialValue,
   managerOptions,
+  branchOptions,
+  unitOptions,
+  lockAssignment = false,
   onClose,
   onSubmit,
 }: NewEmployeeDialogProps) {
   return (
     <Dialog onOpenChange={(open) => !open && onClose()} open>
-      <DialogContent className={`${styles.modal} ${styles.employeeModal}`} dir="rtl">
+      <DialogContent
+        className={`${styles.modal} ${styles.employeeModal}`}
+        dir="rtl"
+      >
         <DialogTitle>
           {initialValue ? 'ویرایش کارمند' : 'افزودن کارمند جدید'}
         </DialogTitle>
@@ -435,6 +498,9 @@ export function NewEmployeeDialog({
           existingPersonnelCodes={existingPersonnelCodes}
           initialValue={initialValue}
           managerOptions={managerOptions}
+          branchOptions={branchOptions}
+          unitOptions={unitOptions}
+          lockAssignment={lockAssignment}
           onCancel={onClose}
           onSubmit={onSubmit}
         />
