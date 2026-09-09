@@ -10,6 +10,7 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  Download,
   Eye,
   Pencil,
   Plus,
@@ -19,6 +20,7 @@ import {
   Users,
   TriangleAlert,
   Trash2,
+  Upload,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -90,6 +92,7 @@ export function OrganizationsWorkspace() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [excelOpen, setExcelOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [templateDownloading, setTemplateDownloading] = useState(false);
   const [deleteTarget, setDeleteTarget] =
     useState<OrganizationDeletionTarget>();
   const directoryHeading = useRef<HTMLHeadingElement>(null);
@@ -257,6 +260,27 @@ export function OrganizationsWorkspace() {
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+  async function downloadImportTemplate() {
+    if (templateDownloading) return;
+    setTemplateDownloading(true);
+    try {
+      const [{ downloadOrganizationXlsx }, { organizationHeaders }] =
+        await Promise.all([
+          import('../model/organization-xlsx'),
+          import('../model/organization-import'),
+        ]);
+      downloadOrganizationXlsx('rubi-organizations-template.xlsx', [
+        organizationHeaders,
+      ]);
+    } catch (caught) {
+      setNotice(
+        caught instanceof Error ? caught.message : 'دریافت قالب ناموفق بود.',
+      );
+    } finally {
+      setTemplateDownloading(false);
+    }
+  }
+
   async function exportExcel() {
     if (exporting) return;
     setExporting(true);
@@ -313,46 +337,6 @@ export function OrganizationsWorkspace() {
               نمای عملیات
             </p>
           </div>
-          <div className="actions">
-            <button
-              className="btn"
-              disabled={
-                exporting || !permissions.includes('master_data.export')
-              }
-              onClick={() => void exportExcel()}
-            >
-              {exporting ? 'در حال دریافت…' : 'خروجی اکسل'}
-            </button>
-            <button
-              className="btn"
-              disabled={
-                ![
-                  'master_data.read',
-                  'master_data.create',
-                  'master_data.import',
-                ].every((permission) =>
-                  permissions.includes(permission as IamPermissionCode),
-                )
-              }
-              onClick={() => setExcelOpen(true)}
-            >
-              ورود اکسل
-            </button>
-            <button
-              className="btn primary"
-              disabled={
-                !permissions.includes('master_data.read') ||
-                (!permissions.includes('master_data.create') &&
-                  !permissions.includes('master_data.update'))
-              }
-              onClick={() => {
-                setWizardOpen(true);
-              }}
-            >
-              <Plus size={18} />
-              همکاری جدید
-            </button>
-          </div>
         </div>
         <section className="kpis">
           <CorporateMetric
@@ -383,6 +367,75 @@ export function OrganizationsWorkspace() {
             note="در انتظار اتصال"
           />
         </section>
+
+        <Card
+          aria-label="ثبت آژانس و مشتری سازمانی"
+          className="mb-5 flex flex-col gap-4 border-primary/25 bg-primary/[0.04] p-5 text-foreground xl:flex-row xl:items-center xl:justify-between"
+          role="region"
+        >
+          <div className="min-w-0">
+            <p className="text-lg font-bold">ثبت آژانس و مشتری سازمانی</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              اطلاعات سازمان، نمایندگان و شرایط همکاری را در یک جریان مرحله‌ای
+              وارد کنید.
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Button
+              disabled={
+                exporting || !permissions.includes('master_data.export')
+              }
+              onClick={() => void exportExcel()}
+              size="lg"
+              type="button"
+              variant="outline"
+            >
+              <Download aria-hidden="true" className="size-4" />
+              {exporting ? 'در حال ساخت خروجی…' : 'خروجی Excel'}
+            </Button>
+            <Button
+              disabled={templateDownloading}
+              onClick={() => void downloadImportTemplate()}
+              size="lg"
+              type="button"
+              variant="outline"
+            >
+              <Download aria-hidden="true" className="size-4" />
+              {templateDownloading ? 'در حال دریافت…' : 'دانلود قالب ورود'}
+            </Button>
+            <Button
+              disabled={
+                ![
+                  'master_data.read',
+                  'master_data.create',
+                  'master_data.import',
+                ].every((permission) =>
+                  permissions.includes(permission as IamPermissionCode),
+                )
+              }
+              onClick={() => setExcelOpen(true)}
+              size="lg"
+              type="button"
+              variant="outline"
+            >
+              <Upload aria-hidden="true" className="size-4" />
+              ورود از Excel
+            </Button>
+            <Button
+              disabled={
+                !permissions.includes('master_data.read') ||
+                (!permissions.includes('master_data.create') &&
+                  !permissions.includes('master_data.update'))
+              }
+              onClick={() => setWizardOpen(true)}
+              size="lg"
+              type="button"
+            >
+              <Plus aria-hidden="true" className="size-4" />
+              بازکردن فرم ثبت
+            </Button>
+          </div>
+        </Card>
 
         {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
 

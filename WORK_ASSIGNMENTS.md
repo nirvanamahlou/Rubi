@@ -1,5 +1,10 @@
 # Work Assignments
 
+## B2B-DIRECTORY-ACTIONS-001 — PC-B — IN_PROGRESS
+
+- Owner requests the Customers registration/Excel action bar shown in Capture.PNG on the Agencies home page. COMPUTER_ID=PC-B; clean `codex/pc-b-b2b-directory-actions` starts from 38203ea, preserving the owned combined runtime and fetched develop e07c0c6. Reserve only Organizations workspace presentation and task/status documentation; prior Organizations implementation locks are released. The Customers component is a read-only visual reference.
+- Reuse Rubi Card/Button styling for registration, Excel import, template download and filtered export. Connect to the existing cooperation wizard and validated import/export implementations, preserving permissions and data boundaries. No API/schema/migration/dependency, IAM or business-data change. Run affected checks and browser verification, then refresh the owned Web3100 runtime while preserving API4190.
+
 ## B2B-DOSSIER-SALES-REMOVAL-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests removal of the Sales Operations section from the 360 dossier. Clean branch `codex/pc-b-b2b-remove-sales-section` starts from 3bb9fe1, continuing the owned combined runtime and retaining fetched develop e07c0c6. Reserve only `corporate-profile.tsx` and this task's documentation; prior Organizations implementation reservations are released.
