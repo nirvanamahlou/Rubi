@@ -143,7 +143,9 @@ export function OrganizationFinancePreview({
         ) : null}
         <p className="panel-note">
           {shown.length.toLocaleString('fa-IR')} ردیف نمونه
-          {current === 'checks' ? '؛ فیلتر تاریخ بر اساس سررسید چک است.' : '.'}{' '}
+          {current === 'checks'
+            ? '؛ فیلتر تاریخ بر اساس سررسید چک است.'
+            : '.'}{' '}
           جمع‌های بالا مربوط به کل سناریو هستند.
         </p>
         <div className="agreement-table-wrap">
