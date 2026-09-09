@@ -74,6 +74,9 @@ export function DatePicker({
   const [calendarView, setCalendarView] = React.useState<CalendarView>('days');
   const [yearGridStart, setYearGridStart] = React.useState(0);
   const [open, setOpen] = React.useState(false);
+  const [popoverPlacement, setPopoverPlacement] = React.useState<
+    'above' | 'below'
+  >('below');
   const [popoverPosition, setPopoverPosition] =
     React.useState<React.CSSProperties | null>(null);
   const [anchor, setAnchor] = React.useState(
@@ -144,6 +147,7 @@ export function DatePicker({
       { height: popover.scrollHeight, width: popover.offsetWidth },
       { height: window.innerHeight, width: window.innerWidth },
     );
+    setPopoverPlacement(position.top < trigger.top ? 'above' : 'below');
     setPopoverPosition({
       left: position.left,
       maxHeight: position.maxHeight,
@@ -283,12 +287,7 @@ export function DatePicker({
               dir={english ? 'ltr' : 'rtl'}
               ref={popoverRef}
               id={popoverId}
-              data-placement={
-                Number(popoverPosition?.top) <
-                (triggerRef.current?.getBoundingClientRect().top ?? 0)
-                  ? 'above'
-                  : 'below'
-              }
+              data-placement={popoverPlacement}
               role="dialog"
               style={
                 popoverPosition ?? {
