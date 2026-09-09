@@ -1,4 +1,12 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { B2bOrganizationUserRepository } from './b2b-organization-user.repository';
+import { B2bOrganizationUserService } from './b2b-organization-user.service';
+import {
+  B2bOrganizationUserController,
+  B2bPortalController,
+} from './b2b-organization-user.controller';
+import { B2bPortalBoundaryInterceptor } from './b2b-portal-boundary.interceptor';
 
 import { AuthGuard } from '../iam/auth.guard';
 import { IamModule } from '../iam/iam.module';
@@ -20,8 +28,15 @@ import {
 
 @Module({
   imports: [IamModule, MasterDataModule, DocumentsModule],
-  controllers: [B2bController],
+  controllers: [
+    B2bController,
+    B2bOrganizationUserController,
+    B2bPortalController,
+  ],
   providers: [
+    B2bOrganizationUserRepository,
+    B2bOrganizationUserService,
+    { provide: APP_INTERCEPTOR, useClass: B2bPortalBoundaryInterceptor },
     AuthGuard,
     PermissionGuard,
     B2bRepository,

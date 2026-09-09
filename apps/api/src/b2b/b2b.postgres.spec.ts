@@ -11,6 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DatabaseService } from '../database/database.service';
 import { B2bRepository } from './b2b.repository';
 import { B2bSignatoryRepository } from './b2b-signatory.repository';
+import { B2bOrganizationUserRepository } from './b2b-organization-user.repository';
 import { B2bAgreementWorkflowRepository } from './b2b-agreement-workflow.repository';
 import { agreementTestTerms } from './agreement-test-fixtures';
 import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
@@ -167,6 +168,80 @@ describe.skipIf(!enabled)(
       if (client) await client.$disconnect();
       if (started) docker(['stop', container]);
     }, 30000);
+
+    it('persists scoped organization-user grants with optimistic concurrency and atomic audit', async () => {
+      const users = new B2bOrganizationUserRepository({
+        client,
+      } as DatabaseService);
+      const identity = await client.user.create({
+        data: {
+          username: 'portal-' + randomUUID(),
+          displayName: 'Synthetic portal user',
+          passwordHash: 'unusable-test-hash',
+        },
+      });
+      const input = {
+        branchId,
+        roleName: 'Reader',
+        sections: ['organization' as const],
+        isActive: true,
+        reason: 'Synthetic create',
+      };
+      const row = await users.save(
+        organizationId,
+        input,
+        actorUserId,
+        undefined,
+        identity.id,
+      );
+      expect((await users.byUser(identity.id))?.sections).toEqual([
+        'organization',
+      ]);
+      const updates = await Promise.allSettled([
+        users.save(
+          organizationId,
+          { ...input, sections: ['credit'], version: 1 },
+          actorUserId,
+          row.id,
+        ),
+        users.save(
+          organizationId,
+          { ...input, sections: ['contracts'], version: 1 },
+          actorUserId,
+          row.id,
+        ),
+      ]);
+      expect(updates.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      await expect(
+        users.save(randomUUID(), { ...input, version: 2 }, actorUserId, row.id),
+      ).rejects.toThrow();
+      const before = await users.byUser(identity.id);
+      await expect(
+        users.save(
+          organizationId,
+          { ...input, version: 2, isActive: false },
+          randomUUID(),
+          row.id,
+        ),
+      ).rejects.toThrow();
+      expect(await users.byUser(identity.id)).toEqual(before);
+      await expect(
+        client.b2bOrganizationUser.update({
+          where: { id: row.id },
+          data: { sections: ['dashboard'] },
+        }),
+      ).rejects.toThrow();
+      await users.save(
+        organizationId,
+        { ...input, version: 2, isActive: false, sections: [] },
+        actorUserId,
+        row.id,
+      );
+      expect((await users.byUser(identity.id))?.isActive).toBe(false);
+      expect(
+        await users.history(organizationId, branchId, [row.id]),
+      ).toHaveLength(3);
+    });
 
     it('persists signatory limits, scopes edits/deletes and atomically audits optimistic updates', async () => {
       const signatories = new B2bSignatoryRepository({

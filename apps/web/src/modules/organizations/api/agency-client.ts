@@ -20,6 +20,10 @@ import type {
   B2bRecordDeleteRequestV1,
   B2bSignatoryInputV1,
   B2bSignatoryV1,
+  B2bOrganizationUser,
+  B2bOrganizationUserInput,
+  B2bPortalIdentity,
+  B2bPortalSection,
 } from '@rubi/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -87,6 +91,41 @@ async function b2bRequest<T>(
 }
 
 export const agencyClient = {
+  organizationUserHistory(organizationId: string, branchId: string) {
+    return b2bRequest<{
+      data: { id: string; action: string; occurredAt: string }[];
+    }>(`/agencies/${encodeURIComponent(organizationId)}/users/history`, {
+      headers: { 'x-branch-id': branchId },
+    });
+  },
+  organizationUsers(organizationId: string, branchId: string) {
+    return b2bRequest<{ data: B2bOrganizationUser[] }>(
+      `/agencies/${encodeURIComponent(organizationId)}/users`,
+      { headers: { 'x-branch-id': branchId } },
+    );
+  },
+  saveOrganizationUser(
+    organizationId: string,
+    input: B2bOrganizationUserInput & {
+      username?: string;
+      displayName?: string;
+      password?: string;
+    },
+    id?: string,
+  ) {
+    return b2bRequest<{ data: { id: string; version: number } }>(
+      `/agencies/${encodeURIComponent(organizationId)}/users${id ? '/' + encodeURIComponent(id) : ''}`,
+      { method: id ? 'PUT' : 'POST', body: JSON.stringify(input) },
+    );
+  },
+  portalIdentity() {
+    return b2bRequest<{ data: B2bPortalIdentity }>('/portal/me');
+  },
+  portalSection(section: string) {
+    return b2bRequest<{ data: B2bPortalSection }>(
+      `/portal/sections/${encodeURIComponent(section)}`,
+    );
+  },
   signatories(organizationId: string, branchId: string) {
     return b2bRequest<{ data: B2bSignatoryV1[] }>(
       `/agencies/${encodeURIComponent(organizationId)}/signatories`,

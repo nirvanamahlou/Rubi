@@ -56,6 +56,7 @@ import { AgreementWorkflowPanel } from './agreement-workflow-panel';
 import { OrganizationAddressesPanel } from './organization-addresses-panel';
 import { AgencyProfilePanel } from './agency-profile-panel';
 import { OrganizationSignatoriesPanel } from './organization-signatories-panel';
+import { OrganizationUsersPanel } from './organization-users-panel';
 import { AgencyDossierSummary } from './agency-dossier-summary';
 import { AgencyRatesPanel } from './agency-rates-panel';
 import { cooperationLabel } from '../model/presentation';
@@ -882,6 +883,13 @@ export function OrganizationsWorkspace() {
               onAddContact={() => setContactForm({ mode: 'create' })}
             />
           }
+          access={(view) => (
+            <OrganizationUsersPanel
+              key={selected.id + view}
+              organizationId={selected.id}
+              view={view}
+            />
+          )}
           operations={(view, onReviewCooperation) =>
             view === 'address' ? (
               <OrganizationAddressesPanel

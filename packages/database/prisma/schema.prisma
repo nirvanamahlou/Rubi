@@ -30,6 +30,7 @@ enum AuditOutcome {
 }
 
 model User {
+  b2bOrganizationUser            B2bOrganizationUser?
   id                             String                       @id @default(uuid()) @db.Uuid
   username                       String                       @unique @db.VarChar(80)
   email                          String?                      @unique @db.VarChar(320)
@@ -145,6 +146,7 @@ model RolePermission {
 }
 
 model Branch {
+  b2bOrganizationUsers  B2bOrganizationUser[]
   id                    String                     @id @default(uuid()) @db.Uuid
   code                  String                     @unique @db.VarChar(40)
   name                  String                     @db.VarChar(160)
@@ -746,34 +748,35 @@ model MasterPaymentMethod {
 }
 
 model MasterOrganization {
-  id                  String                      @id @default(uuid()) @db.Uuid
-  code                String                      @unique @db.VarChar(32)
-  legalName           String                      @db.VarChar(200)
-  displayName         String                      @db.VarChar(160)
-  personType          String?                     @db.VarChar(16)
-  nationalId          String?                     @unique @db.VarChar(11)
-  logoFileReference   String?                     @db.Uuid
-  displayOrder        Int                         @default(0)
-  isActive            Boolean                     @default(true)
-  version             Int                         @default(1)
-  createdByUserId     String                      @db.Uuid
-  updatedByUserId     String                      @db.Uuid
-  deactivatedByUserId String?                     @db.Uuid
-  deactivatedAt       DateTime?                   @db.Timestamptz(3)
-  createdAt           DateTime                    @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime                    @updatedAt @db.Timestamptz(3)
-  roles               MasterOrganizationRole[]
-  supplier            MasterSupplier?
-  contacts            MasterOrganizationContact[]
-  insurer             MasterInsurer?
-  airline             MasterAirline?
-  railCompany         MasterRailCompany?
-  busCompany          MasterBusCompany?
-  broker              MasterBroker?
-  hotel               MasterHotel?
-  customers           Customer[]
-  addresses           MasterOrganizationAddress[]
-  agencyProfiles      AgencyOperationalProfile[]
+  b2bOrganizationUsers B2bOrganizationUser[]
+  id                   String                      @id @default(uuid()) @db.Uuid
+  code                 String                      @unique @db.VarChar(32)
+  legalName            String                      @db.VarChar(200)
+  displayName          String                      @db.VarChar(160)
+  personType           String?                     @db.VarChar(16)
+  nationalId           String?                     @unique @db.VarChar(11)
+  logoFileReference    String?                     @db.Uuid
+  displayOrder         Int                         @default(0)
+  isActive             Boolean                     @default(true)
+  version              Int                         @default(1)
+  createdByUserId      String                      @db.Uuid
+  updatedByUserId      String                      @db.Uuid
+  deactivatedByUserId  String?                     @db.Uuid
+  deactivatedAt        DateTime?                   @db.Timestamptz(3)
+  createdAt            DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime                    @updatedAt @db.Timestamptz(3)
+  roles                MasterOrganizationRole[]
+  supplier             MasterSupplier?
+  contacts             MasterOrganizationContact[]
+  insurer              MasterInsurer?
+  airline              MasterAirline?
+  railCompany          MasterRailCompany?
+  busCompany           MasterBusCompany?
+  broker               MasterBroker?
+  hotel                MasterHotel?
+  customers            Customer[]
+  addresses            MasterOrganizationAddress[]
+  agencyProfiles       AgencyOperationalProfile[]
 
   @@index([isActive, displayName])
   @@map("master_organizations")
@@ -1024,6 +1027,27 @@ model B2bOrganizationSignatory {
 
   @@index([organizationId, branchId, isActive])
   @@map("b2b_organization_signatories")
+}
+
+model B2bOrganizationUser {
+  id              String             @id @default(uuid()) @db.Uuid
+  organizationId  String             @db.Uuid
+  userId          String             @unique @db.Uuid
+  branchId        String             @db.Uuid
+  roleName        String             @db.VarChar(120)
+  sections        String[]
+  isActive        Boolean            @default(false)
+  version         Int                @default(1)
+  createdByUserId String             @db.Uuid
+  updatedByUserId String             @db.Uuid
+  createdAt       DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime           @updatedAt @db.Timestamptz(3)
+  organization    MasterOrganization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user            User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  branch          Branch             @relation(fields: [branchId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, branchId, isActive])
+  @@map("b2b_organization_users")
 }
 
 model B2bAuditEvent {

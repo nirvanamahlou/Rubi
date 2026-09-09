@@ -1,5 +1,12 @@
 # Work Assignments
 
+## B2B-ORGANIZATION-USERS-001 — PC-B — IN_PROGRESS
+
+- Owner requests users/access forms, synthetic data and per-user section selection; explicitly confirms access is restricted to the same agency's 360 dossier, not the whole Rubi system. Reserve B2B org-user domain/API/portal access enforcement, Organizations UI and new standalone agency portal page, public Master Data reference projection if required, contracts/root export, scoped tests and docs. Clean branch `codex/pc-b-b2b-organization-users` starts from 3a3b9ab and preserves the owned runtime/PR142 stack. Prior implementation locks are released.
+- Migration Owner = PC-B for additive B2bOrganizationUser and FK/index/checks; reserve only its schema relations. No dependency lock. IAM remains owner of credentials, login, sessions and global permissions: consume existing exported IamService methods, with no IAM source/table writes outside that public service. New agency accounts have no global roles or branches. Organization membership/section grants are B2B-owned, rechecked on each portal request, with an additional global interceptor denying these accounts access to non-portal authenticated endpoints. Existing staff accounts are not converted to agency accounts.
+- Forms manage organization role, active status and viewable dossier sections; grants do not authorize contract/credit approval or administrative writes. Portal projections are scoped to the server-side membership and selected internal cooperation branch. No organization/branch supplied by a portal client is trusted. Preserve permissions, optimistic concurrency, atomic B2B audit and separate Master Data/Finance/Documents ownership.
+- Use existing modular monolith/PostgreSQL and synchronous service ports, existing backup/restore and operational targets; no new infrastructure/SLO is introduced. Data is internal identity/contact PII. Synthetic usernames/passwords are isolated from real users, credentials remain outside Git, and loader is idempotent with backup/verification. Rehearse additive migration before local3100/4190 cutover. No merge.
+
 ## B2B-DOSSIER-SHORTCUTS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests removal of the circled registration shortcut row on the 360 home page (Screenshot532). Reserve only `corporate-profile.tsx` and task/status documentation. Clean branch `codex/pc-b-b2b-remove-dossier-shortcuts` starts from 82f003c, preserving the owned combined runtime and fetched develop. Prior Organizations reservation is released; no conflicting active owner found.

@@ -55,12 +55,12 @@ const sections = [
     icon: KeyRound,
     accent: '#7958db',
     tint: '#f1edff',
-    description: 'کاربران سازمان، نقش‌ها، شعب مجاز و زنجیره تأیید',
+    description: 'کاربران سازمان، نقش‌ها، بخش‌های مجاز و تاریخچه دسترسی',
     tabs: [
       ['users', 'کاربران سازمان'],
       ['roles', 'نقش‌های سازمانی'],
-      ['scopes', 'شعب و خدمات مجاز'],
-      ['approvers', 'تأییدکنندگان'],
+      ['scopes', 'بخش‌های مجاز'],
+      ['history', 'تاریخچه دسترسی'],
     ],
   },
   {
@@ -196,6 +196,7 @@ export function CorporateProfile({
   canDelete,
   contacts,
   signatories,
+  access,
   operations,
   logo,
   overview,
@@ -208,6 +209,7 @@ export function CorporateProfile({
   canDelete: boolean;
   contacts: ReactNode;
   signatories?: ReactNode;
+  access?: (tab: string) => ReactNode;
   operations: (
     view: OperationalView,
     onReviewCooperation: () => void,
@@ -551,6 +553,8 @@ export function CorporateProfile({
               key={organization.id}
               organization={organization}
             />
+          ) : screen === 'access' && access ? (
+            access(tab)
           ) : operationalView ? (
             operations(operationalView, () => go('contracts', 'framework'))
           ) : (

@@ -1,6 +1,7 @@
 export * from './customers';
 export * from './b2b';
 export * from './b2b-signatories';
+export * from './b2b-organization-users';
 export * from './documents';
 export * from './finance';
 export * from './health';
