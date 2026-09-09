@@ -1,9 +1,10 @@
 # Work Assignments
 
-## B2B-DOSSIER-SALES-REMOVAL-001 — PC-B — IN_PROGRESS
+## B2B-DOSSIER-SALES-REMOVAL-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests removal of the Sales Operations section from the 360 dossier. Clean branch `codex/pc-b-b2b-remove-sales-section` starts from 3bb9fe1, continuing the owned combined runtime and retaining fetched develop e07c0c6. Reserve only `corporate-profile.tsx` and this task's documentation; prior Organizations implementation reservations are released.
 - Remove the shared agency/corporate dossier card and its local subpage navigation. This is a presentation-only change with no Sales data/API, IAM, schema, migration or dependency change. Validate existing Organizations tests, Web lint/typecheck/build and the actual component, then refresh the owned Web3100 listener while preserving API4190.
+- Completed source 4d49975: six dossier sections remain and Sales Operations/subpages are removed. All 89 Organizations tests, Web lint/typecheck, formatting and the 40-route production build pass; all four push CI gates pass. Browser verification with the actual component confirms six cards, remaining section navigation/return and no errors. Web3100 PID3644 serves 4d49975 / hr005-3d2484aaec769e16; API4190 PID14320 remains healthy. No merge or data change; release implementation reservation.
 
 ## B2B-DOSSIER-ACCESS-001 — PC-B — DONE / LOCAL_ACCESS_APPLIED
 
