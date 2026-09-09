@@ -1608,3 +1608,6 @@ Final validation: Web lint, TypeScript and production build (40 routes) passed. 
 ## RESERVATIONS-PAGE-CLEANUP-0909 — PC-A
 Removed the screenshot-marked processing link, manual refresh control, polling explanation and Tickets/Hotels/Vouchers/Insurance/Costs navigation tabs. Dashboard, inbox, Manifest, timeline, per-contract actions and periodic polling remain. The processing route is retained. 34 foundation tests passed; no backend/data changes. Ticket approval financial-release clarification remains pending separately.
 Final: scoped lint, production TypeScript and 40-route build passed; Web3100 refreshed, login HTTP 200. No authenticated visual QA claimed.
+
+## PAYMENT-DIALOGS-0909 — PC-A
+Sales contract payments open in a history dialog. A separate nested add dialog preserves the saved fields and enables the existing receipt uploader directly below the tracking reference after successful payment creation. Each history entry can expand its own documents. Returning refreshes history without closing the parent. Existing finance confirmation and Documents checks remain. 10 targeted tests, scoped lint/typecheck, 40-route build and isolated Playwright flow with synthetic API responses passed (one creation, new-payment receipt association, both history entries retained). Local Web3100 refreshed with PDF environment preserved; no database/API changes.
