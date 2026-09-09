@@ -5,6 +5,7 @@ import {
   Headers,
   Inject,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
   Req,
@@ -41,7 +42,7 @@ export class B2bController {
     'b2b.rate.read',
   )
   workspace(
-    @Param('organizationId') organizationId: string,
+    @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
     @Req() request: AuthenticatedRequest,
     @Headers('x-branch-id') branchId?: string,
   ) {
@@ -55,7 +56,7 @@ export class B2bController {
   @Put(':organizationId/profile')
   @RequirePermissions('b2b.agency.manage')
   profile(
-    @Param('organizationId') organizationId: string,
+    @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
     @Body() dto: UpsertAgencyProfileDto,
     @Req() request: AuthenticatedRequest,
   ) {
@@ -65,7 +66,7 @@ export class B2bController {
   @Post(':organizationId/agreements')
   @RequirePermissions('b2b.agreement.manage')
   agreement(
-    @Param('organizationId') organizationId: string,
+    @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
     @Body() dto: CreateAgencyAgreementDto,
     @Req() request: AuthenticatedRequest,
   ) {
@@ -75,7 +76,7 @@ export class B2bController {
   @Put(':organizationId/credit-policy')
   @RequirePermissions('b2b.credit.manage')
   creditPolicy(
-    @Param('organizationId') organizationId: string,
+    @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
     @Body() dto: UpsertAgencyCreditPolicyDto,
     @Req() request: AuthenticatedRequest,
   ) {
@@ -85,7 +86,7 @@ export class B2bController {
   @Post(':organizationId/agreed-rates')
   @RequirePermissions('b2b.rate.manage')
   agreedRate(
-    @Param('organizationId') organizationId: string,
+    @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
     @Body() dto: CreateAgencyAgreedRateDto,
     @Req() request: AuthenticatedRequest,
   ) {

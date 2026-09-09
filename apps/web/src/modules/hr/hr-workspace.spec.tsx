@@ -4,13 +4,13 @@ import { describe, expect, it } from 'vitest';
 import {
   appendAutomaticHrHistory,
   HrState,
-  HrWorkspace,
+  HrLegacyPreviewWorkspace as HrWorkspace,
   isAutomaticHrHistoryTab,
   parseHrPreviewDatasetOverrides,
   parsePreviewEmployees,
   removeHrPreviewRow,
   saveHrPreviewRow,
-} from './hr-workspace';
+} from './hr-legacy-preview';
 import {
   NewEmployeeForm,
   nextEmployeePersonnelCode,
@@ -52,10 +52,19 @@ import {
 } from './hr.model';
 import { getHrPreviewDataset } from './hr-preview-data';
 
-describe('HR reference implementation', () => {
+describe('Legacy HR preview and migration regression fixtures', () => {
+  it('does not render the overview, operations and reports switcher above HR content', () => {
+    const html = renderToStaticMarkup(
+      <HrWorkspace sectionId="time" tabId="attendance" />,
+    );
+    expect(html).not.toContain('aria-label="نماهای کارکرد و زمان"');
+    expect(html).not.toContain('aria-pressed=');
+    expect(html).toContain('آمار و خروجی PDF');
+  });
+
   it('renders the eighteen capability hub cards as deep links', () => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId="home" />);
-    expect(hrHubCards).toHaveLength(18);
+    expect(hrHubCards).toHaveLength(15);
     expect(html).toContain('dir="rtl"');
     expect(html).toContain('data-hr-mode="preview"');
     for (const card of hrHubCards) {
@@ -82,7 +91,7 @@ describe('HR reference implementation', () => {
   });
 
   it('provides the complete employee profile and section tab sets', () => {
-    expect(employeeTabs).toHaveLength(15);
+    expect(employeeTabs).toHaveLength(17);
     expect(sectionTabs.organization).toHaveLength(5);
     expect(sectionTabs.organization?.map((tab) => tab.label)).not.toContain(
       'نوع کارکنان',
@@ -93,8 +102,8 @@ describe('HR reference implementation', () => {
     );
     expect(sectionTabs.lifecycle).toHaveLength(6);
     expect(sectionTabs.contracts).toHaveLength(5);
-    expect(sectionTabs.time).toHaveLength(13);
-    expect(sectionTabs.development).toHaveLength(8);
+    expect(sectionTabs.time).toHaveLength(10);
+    expect(sectionTabs.development).toHaveLength(6);
     expect(sectionTabs.expenses).toHaveLength(4);
     expect(sectionTabs.benefits).toHaveLength(6);
     expect(sectionTabs.fleet).toHaveLength(2);
@@ -225,6 +234,12 @@ describe('HR reference implementation', () => {
       personnelCode: 'این کد پرسنلی قبلاً استفاده شده است.',
       position: 'سمت الزامی است.',
       startedAt: 'تاریخ شروع همکاری الزامی است.',
+    });
+    expect(
+      validateNewEmployeeForm({ ...value, branch: '', unit: '' }, []),
+    ).toMatchObject({
+      branch: 'شعبه را انتخاب کنید.',
+      unit: 'واحد را انتخاب کنید.',
     });
     expect(
       validateNewEmployeeForm(
@@ -643,7 +658,7 @@ describe('HR reference implementation', () => {
 
     for (const [section, tab, title] of [
       ['employee', 'audit', 'تاریخچه'],
-      ['fleet', 'logs', 'سوابق استفاده'],
+      ['assets', 'logs', 'سوابق خودرو'],
       ['reports', 'audit', 'Audit اختصاصی'],
     ] as const) {
       const html = renderToStaticMarkup(
@@ -724,9 +739,8 @@ describe('HR reference implementation', () => {
   it.each([
     ['recruitment', 'جذب و استخدام', 'preview-recruitment-staffing-1'],
     ['lifecycle', 'چرخه همکاری', 'preview-lifecycle-onboarding-1'],
-    ['expenses', 'مأموریت و هزینه‌ها', 'preview-expenses-travel-1'],
-    ['benefits', 'مالیات و مزایا', 'preview-benefits-tax-slab-1'],
-    ['fleet', 'خودروهای سازمانی', 'preview-fleet-vehicle-1'],
+    ['expenses', 'مأموریت و هزینه‌ها', 'preview-time-mission-1'],
+    ['assets', 'تجهیزات تحویلی', 'preview-assets-list-1'],
     ['hrSettings', 'تنظیمات و یکپارچگی', 'preview-settings-workflow-1'],
   ] as const)('renders the %s capability preview', (section, title, id) => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId={section} />);

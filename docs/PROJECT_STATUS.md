@@ -47,6 +47,24 @@ PC-A follow-up on the approved sidebar: sidebar-icons.ts maps the existing 17 ro
 PC-A applied the owner-approved 7 sidebar groups to actual Web3100, retaining all 17 original names/routes/icons and existing 290/68px collapse, tooltips, mobile DrawerClose, header/branding/notifications/search/breadcrumb and module content. Expanded labels are 15px and headings 13px; labels can wrap and expanded navigation scrolls while footer remains reachable. No prototype pricing or synthetic pages transferred. 11 navigation tests, scoped lint, Web typecheck and production build with 34 routes passed. Authenticated Web3100 browser QA verified links/groups, collapse/expand, tooltips and mobile drawer; desktop screenshot reviewed. Drawer itself has no horizontal overflow; whole dashboard measured 398px at viewport390 after closing, so no claim to fix whole-page overflow. Branch codex/pc-a-grouped-sidebar-0908 from f2cc52a, active pc-b-sync-0908 checkout. No API/data/schema/dependency/permission changes or migration. Local commit only; remote push gate requires destination verification. Sales integration is separately coordinated and preserves this change.
 
 
+## LOCAL-HR-AGENCIES-009 — آژانس‌ها و منابع انسانی در اجرای مشترک — آماده بررسی
+
+- نسخه منتشرشده آژانس‌ها از `fc573ac` به شاخه مستقل `codex/pc-b-hr-agencies-local` بر پایه HR-008 اضافه شد؛ مسیرهای `/organizations` و `/hr` در همان برنامه پورت ۳۱۰۰ قرار دارند و کد منابع انسانی حفظ شده است.
+- ۱۴ تست Web و ۲۸ تست API آژانس‌ها، شامل چهار سناریوی PostgreSQL، به همراه lint/typecheck و Build API موفق‌اند. هیچ Schema/Migration یا قرارداد مشترکی تغییر نکرده است؛ محدودیت‌های تأیید B2B حفظ شده‌اند. دستور اجرا و کنترل تحویل در `docs/tasks/LOCAL-HR-AGENCIES-009.md` ثبت است؛ بدون Merge.
+
+## HR-008 — فرم‌های متصل و خروجی رکوردهای انتخاب‌شده — آماده بررسی
+
+- گزینه‌های ارجاعی فرم‌ها از داده‌های مجاز ثبت‌شده خوانده می‌شوند؛ ورودی‌های تکراری کارمند/شرکت و فیلدهای اضافی شعبه، واحد، مصاحبه و تجهیز حذف شدند. جایگاه واحد در چارت با انتخاب شرکت، سطح و والد تنظیم می‌شود؛ ارتباط متقاضی و فرصت شغلی نیز پایدار و کنترل‌شده است.
+- جدول‌ها انتخاب تکی/گروهی و خروجی واقعی Excel/PDF از انتخاب‌ها دارند. دکمه‌های مشاهده غیرضروری و آمار خروجی تکراری حذف شده‌اند؛ رسید هزینه واقعاً در اسناد بایگانی و به رکورد متصل می‌شود.
+- ۹۴ تست HR Web، ۷۹ تست HR API شامل ۲۰ سناریوی PostgreSQL و ۲۲ تست Contracts موفق‌اند؛ lint/typecheck/build و آزمون مرورگری فرم‌ها، ذخیره متقاضی، خروجی انتخابی و بارگذاری رسید نیز موفق‌اند. نسخه بر پایه HR-007 روی ۳۱۰۰ و API۴۱۹۰ اجرا می‌شود؛ بدون Migration و بدون Merge. جزئیات در `docs/tasks/HR-008.md` است.
+
+## HR-007 — منابع انسانی به‌روز روی ۳۱۰۰ — آماده بررسی
+
+- `PC-B` روی `codex/pc-b-hr3100-current` و پایه `30d67ec`: پیاده‌سازی HR-005/HR-006 با نسخه فعلی روبی سازگار شد؛ چهار شرکت، هدر، پروفایل، اعلان‌های عمومی و امنیت اسناد حفظ شدند. زنگوله فقط یک پنجره دارد و اعلان‌های HR را از API خودش دریافت می‌کند.
+- داده‌های موجود در کپی مستقل `rubi_hr_current_20260908` و فایل‌های اسناد در Snapshot جدا حفظ شدند؛ API۴۰۰۰، کپی یکپارچه قبلی و دیتابیس اصلی HR تغییر نکردند. تمام ۳۵ Migration از قبل اعمال شده‌اند.
+- نسخه جدید روی `localhost:3100/hr` با API۴۱۹۰ فعال است. ورود واقعی، چهار شرکت، پروفایل/MFA، زنگوله واحد، شش کارمند، هدایت آدرس قدیمی و بارگذاری مجدد روی هر دو میزبان `localhost` و `127.0.0.1` در پورت ۳۱۰۰ موفق‌اند.
+- lint/typecheck/build، آزمون‌های Web/API/Contracts و ۱۹ سناریوی PostgreSQL موفق‌اند؛ ۱۴ مقصد HR، فرم‌ها، خروجی‌های واقعی و نمایش موبایل بررسی شدند. جزئیات و فرمان اجرای همین نسخه در `docs/tasks/HR-007.md` ثبت است. هیچ Merge انجام نشده است.
+
 ## MASTER-006 — حذف کانال ایجاد روش پرداخت و چیدمان چپ عملیات — آماده بررسی
 
 - در فرم افزودن روش پرداخت، فیلد «کانال» از UI و ترتیب Focus حذف شد؛ مقدار خنثی `OTHER` برای سازگاری قرارداد فعلی فقط هنگام ایجاد در State داخلی ارسال می‌شود و کانال رکوردهای قبلی در مشاهده/ویرایش باقی است.

@@ -111,7 +111,9 @@ function isIgnoredMutation(path: string) {
     path === 'documents' ||
     path.startsWith('documents/') ||
     path === 'notifications' ||
-    path.startsWith('notifications/')
+    path.startsWith('notifications/') ||
+    path === 'hr' ||
+    path.startsWith('hr/')
   )
     return true;
   return path
