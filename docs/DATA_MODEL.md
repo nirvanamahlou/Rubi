@@ -1,5 +1,9 @@
 # مدل داده و ERD اولیه
 
+## B2B-UNIFIED-PROFILE-001 — organization signatories
+
+B2B owns `B2bOrganizationSignatory`: organization/contact composite restrictive FK to the Master Organization contact, authorized internal branch FK, document types, optional Decimal(24,4) authority limit with currency FK, UTC validity dates, optional pinned Documents version FK, active flag, optimistic version and actor/timestamps. B2bAuditEvent records mutations atomically. Contact identity and encrypted communication data remain in Master Data; proof contents/access/scan remain in Documents. Inactive entries can be completed without proof; activation requires a valid exact-source organization/branch document through the public owner service. Directory registration does not grant IAM permissions, independent approval rights or signature execution. Existing contacts and records are not reclassified or backfilled.
+
 ## B2B-PROFILE-CLARITY-001 — organization identity
 
 `MasterOrganization.nationalId` is an optional, unique varchar(11) company identifier. Master Data normalizes Persian/Arabic digits and accepts only 11 ASCII digits for LEGAL organizations; a database check enforces the same format/person-type rule. Legacy rows stay NULL. Omitted updates preserve the identifier; explicit blank/null clears it, with existing optimistic version and audit semantics. Personal national IDs stay outside this field. It is manually supplied identity data, without a registry verification claim. The public generic record exposes `attributes.nationalId`; legacy consumers may ignore it.

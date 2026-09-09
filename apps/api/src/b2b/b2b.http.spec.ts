@@ -15,6 +15,7 @@ import { IamService } from '../iam/iam.service';
 import { B2bController } from './b2b.controller';
 import { B2bService } from './b2b.service';
 import { B2bAgreementWorkflowService } from './b2b-agreement-workflow.service';
+import { B2bSignatoryService } from './b2b-signatory.service';
 import { agreementTestTerms } from './agreement-test-fixtures';
 
 const id = '11111111-1111-4111-8111-111111111111';
@@ -34,12 +35,14 @@ describe('B2B authenticated runtime boundary', () => {
     list: vi.fn(),
     get: vi.fn(),
   };
+  const signatories = { list: vi.fn(), save: vi.fn(), remove: vi.fn() };
   beforeAll(async () => {
     const module = await Test.createTestingModule({
       controllers: [B2bController],
       providers: [
         { provide: B2bService, useValue: service },
         { provide: B2bAgreementWorkflowService, useValue: workflow },
+        { provide: B2bSignatoryService, useValue: signatories },
         {
           provide: IamService,
           useValue: {
@@ -69,6 +72,44 @@ describe('B2B authenticated runtime boundary', () => {
   it('returns 401 without authentication', async () => {
     await request(app.getHttpServer()).get(`/b2b/agencies/${id}`).expect(401);
     expect(service.agencyWorkspace).not.toHaveBeenCalled();
+  });
+  it('guards signatory writes and validates DTOs without granting approval privileges', async () => {
+    const endpoint = `/b2b/agencies/${id}/signatories`;
+    const body = {
+      branchId: id,
+      contactId: id,
+      documentTypes: ['FRAMEWORK_AGREEMENT'],
+      validFrom: '2026-09-01',
+      isActive: false,
+    };
+    await request(app.getHttpServer())
+      .post(endpoint)
+      .set('Cookie', 'rubi_access=test-only')
+      .send(body)
+      .expect(403);
+    actor.permissions = ['b2b.agency.manage'];
+    await request(app.getHttpServer())
+      .post(endpoint)
+      .set('Cookie', 'rubi_access=test-only')
+      .send({ ...body, authorityLimit: 123 })
+      .expect(400);
+    expect(signatories.save).not.toHaveBeenCalled();
+    await request(app.getHttpServer())
+      .post(endpoint)
+      .set('Cookie', 'rubi_access=test-only')
+      .send(body)
+      .expect(201);
+    expect(signatories.save).toHaveBeenCalledWith(
+      id,
+      expect.objectContaining(body),
+      actor,
+    );
+    await request(app.getHttpServer())
+      .delete(`${endpoint}/${id}`)
+      .set('Cookie', 'rubi_access=test-only')
+      .send({ branchId: id, version: 0, reason: 'Invalid version' })
+      .expect(400);
+    expect(signatories.remove).not.toHaveBeenCalled();
   });
   it('guards rate editing and deletion and requires a positive version and deletion reason', async () => {
     const body = {

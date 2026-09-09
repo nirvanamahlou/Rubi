@@ -9,6 +9,8 @@ import { B2bAgreementDocuments } from './b2b-agreement-documents';
 import { B2bController } from './b2b.controller';
 import { B2bRepository } from './b2b.repository';
 import { B2bService } from './b2b.service';
+import { B2bSignatoryService } from './b2b-signatory.service';
+import { B2bSignatoryRepository } from './b2b-signatory.repository';
 import { B2bAgreementWorkflowRepository } from './b2b-agreement-workflow.repository';
 import { B2bAgreementWorkflowService } from './b2b-agreement-workflow.service';
 import {
@@ -24,6 +26,8 @@ import {
     PermissionGuard,
     B2bRepository,
     B2bService,
+    B2bSignatoryService,
+    B2bSignatoryRepository,
     B2bAgreementWorkflowRepository,
     B2bAgreementWorkflowService,
     B2bAgreementDocuments,

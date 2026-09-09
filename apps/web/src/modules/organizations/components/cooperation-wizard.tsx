@@ -404,10 +404,10 @@ export function CooperationWizard({
                     </select>
                   </label>
                   {draft.personType === 'LEGAL' ? (
-                    <div>
+                    <div className="rounded-xl border border-border bg-white p-3">
                       {field(
                         'nationalId',
-                        'شناسه ملی شرکت (اختیاری)',
+                        'شناسه ملی شرکت',
                         11,
                         mode === 'existing',
                       )}
@@ -521,8 +521,9 @@ export function CooperationWizard({
                   ) : null}
                 </div>
                 <div className="boundary-note">
-                  اتصال کاربر پرتال، تعیین امضادار و دامنه اختیار هنوز در دسترس
-                  نیست. ثبت نماینده حساب ورود ایجاد نمی‌کند.
+                  پس از ثبت سازمان، نمایندگان، امضاداران و مدیر حساب را در صفحه
+                  مشخصات و نقش‌ها تکمیل کنید. ثبت نماینده حساب ورود پرتال ایجاد
+                  نمی‌کند.
                 </div>
               </>
             ) : null}

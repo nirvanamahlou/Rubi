@@ -159,6 +159,7 @@ model Branch {
   documentAuditEvents   DocumentAuditEvent[]
   agencyProfiles        AgencyOperationalProfile[]
   b2bAuditEvents        B2bAuditEvent[]
+  b2bSignatories        B2bOrganizationSignatory[]
   hrEmployees           HrEmployee[]
   hrRecords             HrRecord[]
   hrAuditEvents         HrAuditEvent[]
@@ -630,6 +631,7 @@ model MasterCurrency {
   draftRatesFrom      MasterDraftExchangeRate[]   @relation("DraftRateFromCurrency")
   draftRatesTo        MasterDraftExchangeRate[]   @relation("DraftRateToCurrency")
   insuranceCoverages  MasterInsuranceCoverage[]
+  b2bSignatories      B2bOrganizationSignatory[]
 
   @@index([isActive, name])
   @@map("master_currencies")
@@ -997,6 +999,33 @@ model B2bAgencyAgreedRate {
   @@map("b2b_agency_agreed_rates")
 }
 
+model B2bOrganizationSignatory {
+  id                String                    @id @default(uuid()) @db.Uuid
+  organizationId    String                    @db.Uuid
+  contactId         String                    @db.Uuid
+  branchId          String                    @db.Uuid
+  documentTypes     String[]
+  authorityLimit    Decimal?                  @db.Decimal(24, 4)
+  currencyCode      String?                   @db.Char(3)
+  validFrom         DateTime                  @db.Date
+  validTo           DateTime?                 @db.Date
+  documentVersionId String?                   @db.Uuid
+  isActive          Boolean                   @default(false)
+  notes             String                    @default("") @db.VarChar(1000)
+  version           Int                       @default(1)
+  createdByUserId   String                    @db.Uuid
+  updatedByUserId   String                    @db.Uuid
+  createdAt         DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime                  @updatedAt @db.Timestamptz(3)
+  contact           MasterOrganizationContact @relation(fields: [contactId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  branch            Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  currency          MasterCurrency?           @relation(fields: [currencyCode], references: [code], onDelete: Restrict)
+  documentVersion   DocumentVersion?          @relation(fields: [documentVersionId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, branchId, isActive])
+  @@map("b2b_organization_signatories")
+}
+
 model B2bAuditEvent {
   id             String   @id @default(uuid()) @db.Uuid
   actorUserId    String   @db.Uuid
@@ -1133,6 +1162,7 @@ model MasterOrganizationContact {
   organization              MasterOrganization               @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   primaryForSuppliers       MasterSupplier[]                 @relation("SupplierPrimaryContact")
   primaryForBrokers         MasterBroker[]                   @relation("BrokerPrimaryContact")
+  b2bSignatories            B2bOrganizationSignatory[]
 
   @@unique([id, organizationId])
   @@unique([organizationId, phoneFingerprint])
@@ -2662,28 +2692,29 @@ model DocumentAccessGrant {
 }
 
 model DocumentVersion {
-  id                 String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  documentId         String                  @map("document_id") @db.Uuid
-  versionNumber      Int                     @map("version_number")
-  storageObjectKey   String                  @unique @map("storage_object_key") @db.VarChar(300)
-  originalFileName   String                  @map("original_file_name") @db.VarChar(255)
-  safeDownloadName   String                  @map("safe_download_name") @db.VarChar(160)
-  detectedMimeType   String                  @map("detected_mime_type") @db.VarChar(160)
-  extension          String                  @db.VarChar(16)
-  sizeBytes          BigInt                  @map("size_bytes") @db.BigInt
-  sha256             String                  @db.Char(64)
-  scanStatus         DocumentScanStatus      @default(PENDING_SCAN) @map("scan_status")
-  versionNote        String                  @map("version_note") @db.VarChar(500)
-  createdByUserId    String                  @map("created_by_user_id") @db.Uuid
-  createdAt          DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
-  document           Document                @relation("DocumentVersions", fields: [documentId], references: [id], onDelete: Restrict)
-  currentForDocument Document?               @relation("CurrentDocumentVersion")
-  createdBy          User                    @relation("DocumentVersionCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  id                 String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  documentId         String                     @map("document_id") @db.Uuid
+  versionNumber      Int                        @map("version_number")
+  storageObjectKey   String                     @unique @map("storage_object_key") @db.VarChar(300)
+  originalFileName   String                     @map("original_file_name") @db.VarChar(255)
+  safeDownloadName   String                     @map("safe_download_name") @db.VarChar(160)
+  detectedMimeType   String                     @map("detected_mime_type") @db.VarChar(160)
+  extension          String                     @db.VarChar(16)
+  sizeBytes          BigInt                     @map("size_bytes") @db.BigInt
+  sha256             String                     @db.Char(64)
+  scanStatus         DocumentScanStatus         @default(PENDING_SCAN) @map("scan_status")
+  versionNote        String                     @map("version_note") @db.VarChar(500)
+  createdByUserId    String                     @map("created_by_user_id") @db.Uuid
+  createdAt          DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
+  document           Document                   @relation("DocumentVersions", fields: [documentId], references: [id], onDelete: Restrict)
+  currentForDocument Document?                  @relation("CurrentDocumentVersion")
+  createdBy          User                       @relation("DocumentVersionCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
   auditEvents        DocumentAuditEvent[]
   quarantine         DocumentQuarantine?
   processingJobs     DocumentProcessingJob[]
-  b2bRevisions       B2bAgreementRevision[]  @relation("B2bRevisionDocument")
-  b2bGuarantees      B2bAgreementGuarantee[] @relation("B2bGuaranteeDocument")
+  b2bRevisions       B2bAgreementRevision[]     @relation("B2bRevisionDocument")
+  b2bGuarantees      B2bAgreementGuarantee[]    @relation("B2bGuaranteeDocument")
+  b2bSignatories     B2bOrganizationSignatory[]
 
   @@unique([documentId, versionNumber])
   @@index([documentId, createdAt])

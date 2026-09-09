@@ -10,6 +10,7 @@ import {
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DatabaseService } from '../database/database.service';
 import { B2bRepository } from './b2b.repository';
+import { B2bSignatoryRepository } from './b2b-signatory.repository';
 import { B2bAgreementWorkflowRepository } from './b2b-agreement-workflow.repository';
 import { agreementTestTerms } from './agreement-test-fixtures';
 import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
@@ -166,6 +167,130 @@ describe.skipIf(!enabled)(
       if (client) await client.$disconnect();
       if (started) docker(['stop', container]);
     }, 30000);
+
+    it('persists signatory limits, scopes edits/deletes and atomically audits optimistic updates', async () => {
+      const signatories = new B2bSignatoryRepository({
+        client,
+      } as DatabaseService);
+      const contact = await client.masterOrganizationContact.create({
+        data: {
+          organizationId,
+          code: `SIGN-${randomUUID().slice(0, 20)}`,
+          fullName: 'Synthetic signatory',
+          phoneEncrypted: 'synthetic-test-ciphertext',
+          phoneEncryptionIv: 'test-iv',
+          phoneEncryptionAuthTag: 'test-tag',
+          phoneEncryptionKeyVersion: 1,
+          phoneMasked: '09*****0000',
+          phoneFingerprint: randomUUID(),
+          createdByUserId: actorUserId,
+          updatedByUserId: actorUserId,
+        },
+      });
+      const scope = { organizationId, branchId };
+      const values = {
+        contactId: contact.id,
+        documentTypes: ['FRAMEWORK_AGREEMENT'],
+        authorityLimit: new Prisma.Decimal('9007199254740993.1234'),
+        currencyCode: 'IRR',
+        validFrom: new Date('2026-09-01T00:00:00Z'),
+        validTo: null,
+        documentVersionId: null,
+        isActive: false,
+        notes: 'Synthetic authority',
+      };
+      const row = await signatories.save(scope, values, actorUserId);
+      expect(row.authorityLimit?.toString()).toBe('9007199254740993.1234');
+      const results = await Promise.allSettled([
+        signatories.save(
+          scope,
+          { ...values, notes: 'Edit A' },
+          actorUserId,
+          row.id,
+          1,
+        ),
+        signatories.save(
+          scope,
+          { ...values, notes: 'Edit B' },
+          actorUserId,
+          row.id,
+          1,
+        ),
+      ]);
+      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect(
+        await client.b2bAuditEvent.count({ where: { entityId: row.id } }),
+      ).toBe(2);
+      await expect(
+        signatories.remove(
+          { ...scope, branchId: randomUUID() },
+          row.id,
+          2,
+          actorUserId,
+          'test delete',
+        ),
+      ).rejects.toThrow('یافت نشد');
+      await expect(
+        signatories.remove(scope, row.id, 1, actorUserId, 'test delete'),
+      ).rejects.toThrow('هم‌زمان');
+      await signatories.remove(scope, row.id, 2, actorUserId, 'test delete');
+      expect(await signatories.find(scope, row.id)).toBeNull();
+      expect(
+        await client.masterOrganizationContact.findUnique({
+          where: { id: contact.id },
+        }),
+      ).not.toBeNull();
+      expect(
+        await client.b2bAuditEvent.count({ where: { entityId: row.id } }),
+      ).toBe(3);
+    });
+    it('rejects cross-organization contact/proofless activation and rolls back signatory writes when auditing fails', async () => {
+      const signatories = new B2bSignatoryRepository({
+        client,
+      } as DatabaseService);
+      const contact = await client.masterOrganizationContact.create({
+        data: {
+          organizationId,
+          code: `SIGN-${randomUUID().slice(0, 20)}`,
+          fullName: 'Synthetic scoped person',
+          phoneEncrypted: 'synthetic-test-ciphertext',
+          phoneEncryptionIv: 'test-iv',
+          phoneEncryptionAuthTag: 'test-tag',
+          phoneEncryptionKeyVersion: 1,
+          phoneMasked: '09*****0000',
+          phoneFingerprint: randomUUID(),
+          createdByUserId: actorUserId,
+          updatedByUserId: actorUserId,
+        },
+      });
+      const scope = { organizationId, branchId };
+      const values = {
+        contactId: contact.id,
+        documentTypes: ['FRAMEWORK_AGREEMENT'],
+        authorityLimit: null,
+        currencyCode: null,
+        validFrom: new Date('2026-09-01T00:00:00Z'),
+        validTo: null,
+        documentVersionId: null,
+        isActive: false,
+        notes: '',
+      };
+      const before = await client.b2bOrganizationSignatory.count();
+      await expect(
+        signatories.save(
+          { ...scope, organizationId: randomUUID() },
+          values,
+          actorUserId,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        signatories.save(scope, { ...values, isActive: true }, actorUserId),
+      ).rejects.toThrow();
+      await expect(
+        signatories.save(scope, values, randomUUID()),
+      ).rejects.toThrow();
+      expect(await client.b2bOrganizationSignatory.count()).toBe(before);
+    });
 
     async function workflowFixture() {
       const workflow = new B2bAgreementWorkflowRepository({

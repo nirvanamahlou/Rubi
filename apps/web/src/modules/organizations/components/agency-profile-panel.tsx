@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/form-controls';
 import { agencyClient } from '../api/agency-client';
 import { DossierFormDialog } from './dossier-form-dialog';
 import { useDossierBranch } from './use-dossier-branch';
-import { OrganizationAddressesPanel } from './organization-addresses-panel';
 
 const statusLabels = {
   ACTIVE: 'فعال',
@@ -72,12 +71,6 @@ export function AgencyProfilePanel({
   );
   return (
     <div className="space-y-4">
-      <OrganizationAddressesPanel
-        key={organizationId}
-        organizationId={organizationId}
-        permissions={permissions}
-        presentation="selector"
-      />
       <section className="panel">
         <header className="panel-head">
           <h2 className="panel-title">پروفایل همکاری و مدیر حساب</h2>

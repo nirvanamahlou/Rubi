@@ -1,5 +1,11 @@
 # تصمیم‌های معماری
 
+## B2B-UNIFIED-PROFILE-001 — 2026-09-09
+
+The owner's unified-page request moves all organization profile entry actions into the profile/roles screen. Existing organization tabs become sections on that same page and popup editors preserve current data contracts. National ID remains the existing Master Data company field in step one and edit, not a duplicate identity field.
+
+Implement signatory directory entries against existing Master Data contacts, following FR-PEO-02 document-type, limit/currency, date and proof requirements. Only B2B metadata is stored; public Master Data and Documents methods validate references. An incomplete proof permits saving an inactive entry only. No automatic IAM grant, portal account, independent approval or legal signature verification is implied. This bounded registration feature does not invent a new signatory-approval workflow. Existing cooperation agreement approval remains unchanged.
+
 ## B2B-PROFILE-CLARITY-001 — 2026-09-09
 
 - پاسخ مالک محصول: گزینه‌های شعب، شعب آژانس طرف همکاری هستند. منبع آن‌ها آدرس‌های همان MasterOrganization و CRUD عمومی Master Data است. انتخاب نشانی صرفاً نمایش جزئیات است؛ شناسه نشانی به‌جای IAM branchId ارسال نمی‌شود. شعبه داخلی مسئول قرارداد و دسترسی‌ها جدا و روشن نمایش داده می‌شود.

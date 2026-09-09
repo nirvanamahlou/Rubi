@@ -55,6 +55,7 @@ import { AgencyConnectionsPanel } from './agency-connections-panel';
 import { AgreementWorkflowPanel } from './agreement-workflow-panel';
 import { OrganizationAddressesPanel } from './organization-addresses-panel';
 import { AgencyProfilePanel } from './agency-profile-panel';
+import { OrganizationSignatoriesPanel } from './organization-signatories-panel';
 import { AgencyDossierSummary } from './agency-dossier-summary';
 import { AgencyRatesPanel } from './agency-rates-panel';
 import { cooperationLabel } from '../model/presentation';
@@ -780,13 +781,13 @@ export function OrganizationsWorkspace() {
           contacts={
             <Card className="space-y-3 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="font-bold">تماس‌های سازمان</p>
+                <p className="font-bold">نمایندگان و اشخاص سازمان</p>
                 <Button
                   size="sm"
                   disabled={!permissions.includes('master_data.create')}
                   onClick={() => setContactForm({ mode: 'create' })}
                 >
-                  افزودن مخاطب
+                  افزودن نماینده
                 </Button>
               </div>
               {notice ? (
@@ -808,6 +809,9 @@ export function OrganizationsWorkspace() {
                     key={contact.id}
                   >
                     <span className="font-semibold">{contact.name}</span>
+                    <span>
+                      {attribute(contact, 'jobTitle') || 'سمت ثبت نشده'}
+                    </span>
                     <span dir="ltr">{attribute(contact, 'phoneMasked')}</span>
                     <span dir="ltr">{attribute(contact, 'emailMasked')}</span>
                     <Button
@@ -871,12 +875,20 @@ export function OrganizationsWorkspace() {
               ) : null}
             </Card>
           }
+          signatories={
+            <OrganizationSignatoriesPanel
+              key={selected.id}
+              organizationId={selected.id}
+              onAddContact={() => setContactForm({ mode: 'create' })}
+            />
+          }
           operations={(view, onReviewCooperation) =>
             view === 'address' ? (
               <OrganizationAddressesPanel
                 key={selected.id}
                 organizationId={selected.id}
                 permissions={permissions}
+                presentation="selector"
               />
             ) : view === 'agreements' ||
               view === 'credit' ||
@@ -961,7 +973,12 @@ export function OrganizationsWorkspace() {
         <MasterDataLiveForm
           definition={getMasterDataDefinition('organization-contacts')}
           lockedFields={['organizationId']}
-          initialValues={{ organizationId: selected.id }}
+          initialValues={{
+            organizationId: selected.id,
+            ...(contactForm.mode === 'create'
+              ? { preferredChannel: 'PHONE' }
+              : {}),
+          }}
           mode={contactForm.mode}
           onOpenChange={(open) => {
             if (!open) setContactForm(undefined);

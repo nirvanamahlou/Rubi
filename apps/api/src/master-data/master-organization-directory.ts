@@ -122,6 +122,30 @@ export class MasterOrganizationDirectory {
     return rows.map((row) => row.code);
   }
 
+  async signatoryContactReference(organizationId: string, contactId: string) {
+    return this.database.client.masterOrganizationContact.findFirst({
+      where: {
+        id: contactId,
+        organizationId,
+        isActive: true,
+        organization: {
+          isActive: true,
+          roles: {
+            some: { roleCode: { in: ['AGENCY', 'CORPORATE_CUSTOMER'] } },
+          },
+        },
+      },
+      select: { id: true, organizationId: true },
+    });
+  }
+
+  async signatoryContactNames(organizationId: string, contactIds: string[]) {
+    return this.database.client.masterOrganizationContact.findMany({
+      where: { organizationId, id: { in: contactIds } },
+      select: { id: true, fullName: true, isActive: true },
+    });
+  }
+
   async primaryAddress(organizationId: string) {
     const row = await this.database.client.masterOrganizationAddress.findFirst({
       where: { organizationId, isPrimary: true, isActive: true },

@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   ShieldCheck,
   ShoppingCart,
-  Users,
   Pencil,
   Trash2,
   Wallet,
@@ -196,6 +195,7 @@ export function CorporateProfile({
   onDelete,
   canDelete,
   contacts,
+  signatories,
   operations,
   logo,
   overview,
@@ -207,6 +207,7 @@ export function CorporateProfile({
   onDelete: () => void;
   canDelete: boolean;
   contacts: ReactNode;
+  signatories?: ReactNode;
   operations: (
     view: OperationalView,
     onReviewCooperation: () => void,
@@ -227,6 +228,16 @@ export function CorporateProfile({
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [screen]);
   const current = sections.find((section) => section.id === screen);
+  const focusSection = useCallback((id: string) => {
+    window.requestAnimationFrame(() => {
+      const section = document.getElementById(`organization-section-${id}`);
+      section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      section?.focus({ preventScroll: true });
+    });
+  }, []);
+  useEffect(() => {
+    if (screen === 'organization' && tab !== 'profile') focusSection(tab);
+  }, [screen, tab, focusSection]);
   const go = useCallback((id: string, requestedTab?: string) => {
     setScreen(id);
     setTab(
@@ -460,21 +471,38 @@ export function CorporateProfile({
         </>
       ) : (
         <>
-          <nav className="tabs" aria-label={`صفحه‌های ${title}`}>
+          <nav
+            className="tabs"
+            aria-label={
+              screen === 'organization'
+                ? 'بخش‌های مشخصات و نقش‌ها'
+                : `صفحه‌های ${title}`
+            }
+          >
             {current?.tabs.map(([id, label]) => (
               <button
                 className={`tab ${tab === id ? 'active' : ''}`}
                 aria-pressed={tab === id}
                 key={id}
-                onClick={() => setTab(id)}
+                onClick={() => {
+                  setTab(id);
+                  if (screen === 'organization') focusSection(id);
+                }}
               >
                 {label}
               </button>
             ))}
           </nav>
-          {screen === 'organization' && tab === 'profile' ? (
-            <section className="grid-2">
-              <div className="panel">
+          {screen === 'organization' ? (
+            <section
+              className="grid-2 items-start"
+              aria-label="مشخصات و نقش‌ها و اطلاعات مرتبط"
+            >
+              <div
+                className="panel scroll-mt-28"
+                id="organization-section-profile"
+                tabIndex={-1}
+              >
                 <header className="panel-head">
                   <div className="panel-title">
                     <Building2 size={20} />
@@ -523,22 +551,34 @@ export function CorporateProfile({
                   ))}
                 </div>
               </div>
-              {operations('profile', () => go('contracts', 'framework'))}
-            </section>
-          ) : screen === 'organization' && tab === 'representatives' ? (
-            <section className="panel">
-              <header className="panel-head">
-                <div>
-                  <div className="panel-title">
-                    <Users size={20} />
-                    نمایندگان سازمان
-                  </div>
-                  <div className="panel-note">
-                    اطلاعات تماس به‌صورت پوشیده نمایش داده می‌شوند.
-                  </div>
-                </div>
-              </header>
-              <div className="panel-body">{contacts}</div>
+              <div
+                id="organization-section-manager"
+                tabIndex={-1}
+                className="scroll-mt-28"
+              >
+                {operations('profile', () => go('contracts', 'framework'))}
+              </div>
+              <div
+                id="organization-section-branches"
+                tabIndex={-1}
+                className="scroll-mt-28"
+              >
+                {operations('address', () => go('contracts', 'framework'))}
+              </div>
+              <div
+                id="organization-section-representatives"
+                tabIndex={-1}
+                className="scroll-mt-28"
+              >
+                {contacts}
+              </div>
+              <div
+                id="organization-section-signatories"
+                tabIndex={-1}
+                className="scroll-mt-28 lg:col-span-2"
+              >
+                {signatories}
+              </div>
             </section>
           ) : screen === 'contracts' && tab === 'documents' ? (
             <OrganizationDocumentsPanel

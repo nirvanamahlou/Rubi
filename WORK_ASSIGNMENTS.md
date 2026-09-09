@@ -1,5 +1,11 @@
 # Work Assignments
 
+## B2B-UNIFIED-PROFILE-001 — PC-B — IN_PROGRESS
+
+- Owner requests company national ID in the initial form and all agency branches, representatives, signatories and account manager together on the profile/roles page, each with a popup entry form. Clean branch `codex/pc-b-b2b-unified-profile` starts from 5182c27, retaining the owned combined runtime and fetched develop. Reserve Organizations components/models/client/tests, existing Master Data contact form integration and public directory reference method.
+- Reserve Migration Owner = PC-B for additive B2bOrganizationSignatory table and its restrictive relations, scoped Prisma schema, B2B module/controller/service/repository/DTO, `packages/contracts/src/b2b-signatories.ts` and root export, DATA_MODEL/DECISIONS/status/task docs. Producer B2B, consumers Organizations Web and tests; additive v1 endpoints under existing B2B agency routes. Existing Master Data contacts identify the person; Documents public service validates/pins proof versions; currency comes from Master Data public references. No IAM grant or automatic signing/approval privilege is created. No dependency/lockfile changes. Previous task released migration lock; no newer conflicting reservation found.
+- Preserve contact encryption, actor/branch authorization, versions and atomic audit. Signatory form captures document types, optional Decimal/currency limit, dates and proof; a record without valid proof stays inactive. Rehearse migration against a restored backup before updating the owned 3100/4190 local runtime; no merge or unrelated checkout changes.
+
 ## B2B-PROFILE-CLARITY-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner clarifies that the requested branch options are the counterparty agency's own branches, and asks where cooperation status, account manager and national ID are determined. Clean branch `codex/pc-b-b2b-profile-clarity` starts from 65042b4, preserving the current combined runtime and fetched develop e07c0c6. Reserve Organizations profile/address presentation, cooperation form/model, scoped tests and documentation.

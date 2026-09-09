@@ -18,6 +18,8 @@ import type {
   B2bAgencyAgreedRateV1,
   UpdateB2bAgencyAgreedRateRequestV1,
   B2bRecordDeleteRequestV1,
+  B2bSignatoryInputV1,
+  B2bSignatoryV1,
 } from '@rubi/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -85,6 +87,32 @@ async function b2bRequest<T>(
 }
 
 export const agencyClient = {
+  signatories(organizationId: string, branchId: string) {
+    return b2bRequest<{ data: B2bSignatoryV1[] }>(
+      `/agencies/${encodeURIComponent(organizationId)}/signatories`,
+      { headers: { 'x-branch-id': branchId } },
+    );
+  },
+  saveSignatory(
+    organizationId: string,
+    input: B2bSignatoryInputV1,
+    id?: string,
+  ) {
+    return b2bRequest<{ data: { id: string; version: number } }>(
+      `/agencies/${encodeURIComponent(organizationId)}/signatories${id ? '/' + encodeURIComponent(id) : ''}`,
+      { method: id ? 'PUT' : 'POST', body: JSON.stringify(input) },
+    );
+  },
+  deleteSignatory(
+    organizationId: string,
+    id: string,
+    input: B2bRecordDeleteRequestV1,
+  ) {
+    return b2bRequest(
+      `/agencies/${encodeURIComponent(organizationId)}/signatories/${encodeURIComponent(id)}`,
+      { method: 'DELETE', body: JSON.stringify(input) },
+    );
+  },
   profileDetails(organizationId: string, branchId: string) {
     return b2bRequest<{ data: B2bAgencyProfileDetailsV1 }>(
       `/agencies/${encodeURIComponent(organizationId)}/profile`,

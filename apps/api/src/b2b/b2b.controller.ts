@@ -20,6 +20,10 @@ import { AuthGuard } from '../iam/auth.guard';
 import { RequirePermissions } from '../iam/iam.decorators';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { PermissionGuard } from '../iam/permission.guard';
+import { B2bSignatoryService } from './b2b-signatory.service';
+// Runtime DTO import is required for ValidationPipe metadata.
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { SaveB2bSignatoryDto } from './b2b-signatory.dto';
 // Runtime imports are required for Nest emitDecoratorMetadata and ValidationPipe.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import {
@@ -49,7 +53,48 @@ export class B2bController {
     @Inject(B2bService) private readonly service: B2bService,
     @Inject(B2bAgreementWorkflowService)
     private readonly workflow: B2bAgreementWorkflowService,
+    @Inject(B2bSignatoryService)
+    private readonly signatories: B2bSignatoryService,
   ) {}
+
+  @Get(':organizationId/signatories')
+  @RequirePermissions('b2b.agency.read')
+  listSignatories(
+    @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
+    @Headers('x-branch-id') branchId: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.signatories.list(organizationId, branchId, request.actor);
+  }
+  @Post(':organizationId/signatories')
+  @RequirePermissions('b2b.agency.manage')
+  createSignatory(
+    @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
+    @Body() dto: SaveB2bSignatoryDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.signatories.save(organizationId, dto, request.actor);
+  }
+  @Put(':organizationId/signatories/:id')
+  @RequirePermissions('b2b.agency.manage')
+  updateSignatory(
+    @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: SaveB2bSignatoryDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.signatories.save(organizationId, dto, request.actor, id);
+  }
+  @Delete(':organizationId/signatories/:id')
+  @RequirePermissions('b2b.agency.manage')
+  deleteSignatory(
+    @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: DeleteB2bRecordDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.signatories.remove(organizationId, id, dto, request.actor);
+  }
 
   @Get(':organizationId/profile')
   @RequirePermissions('b2b.agency.read')
