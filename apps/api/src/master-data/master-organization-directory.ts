@@ -91,17 +91,25 @@ export class MasterOrganizationDirectory {
         'مجوز تاریخچه اطلاعات سازمان یا شعبه را ندارید.',
       );
     const rows = await this.database.client.$queryRaw<ActivityRow[]>(Prisma.sql`
-      WITH children AS (
+      WITH current_children AS (
         SELECT id, 'organization-contacts'::text AS resource FROM master_organization_contacts WHERE "organizationId" = ${org}::uuid
         UNION SELECT id, 'organization-addresses' FROM master_organization_addresses WHERE "organizationId" = ${org}::uuid
-        UNION SELECT "entityId", resource FROM master_audit_events
-          WHERE resource IN ('organization-contacts', 'organization-addresses')
-          AND ("beforeSnapshot"->>'organizationId' = ${org} OR "afterSnapshot"->>'organizationId' = ${org})
       ), e AS (
         SELECT a.*, resource AS "entityType", 'PROFILE'::text AS category FROM master_audit_events a
         WHERE "actorBranchId" = ${branch}::uuid AND (
           (resource = 'organizations' AND "entityId" = ${org}::uuid)
-          OR EXISTS (SELECT 1 FROM children c WHERE c.id = a."entityId" AND c.resource = a.resource)
+          OR (resource IN ('organization-contacts', 'organization-addresses') AND (
+            a."beforeSnapshot"->>'organizationId' = ${org} OR a."afterSnapshot"->>'organizationId' = ${org}
+            OR (a."beforeSnapshot"->>'organizationId' IS NULL AND a."afterSnapshot"->>'organizationId' IS NULL
+              AND COALESCE(
+                (SELECT COALESCE(h."afterSnapshot"->>'organizationId', h."beforeSnapshot"->>'organizationId')
+                  FROM master_audit_events h WHERE h.resource = a.resource AND h."entityId" = a."entityId"
+                  AND h."occurredAt" <= a."occurredAt"
+                  AND COALESCE(h."afterSnapshot"->>'organizationId', h."beforeSnapshot"->>'organizationId') IS NOT NULL
+                  ORDER BY h."occurredAt" DESC, h.id DESC LIMIT 1),
+                (SELECT ${org}::text FROM current_children c WHERE c.id = a."entityId" AND c.resource = a.resource LIMIT 1)
+              ) = ${org})
+          ))
         )
       ) SELECT * FROM e WHERE ${activityPredicate(window, 'MASTER_DATA')}
       ORDER BY "occurredAt" DESC, id DESC LIMIT 51`);

@@ -299,6 +299,68 @@ describe.skipIf(!enabled)(
         ),
       ).toEqual([]);
 
+      const movedContactId = randomUUID(),
+        otherOrganizationId = randomUUID();
+      await client.masterDataAuditEvent.createMany({
+        data: [
+          {
+            actorUserId,
+            actorBranchId: branchId,
+            occurredAt: new Date('2025-01-02T00:00:01Z'),
+            resource: 'organization-contacts',
+            action: 'master_data.create',
+            entityId: movedContactId,
+            outcome: 'SUCCESS',
+            afterSnapshot: { organizationId },
+          },
+          {
+            actorUserId,
+            actorBranchId: branchId,
+            occurredAt: new Date('2025-01-02T00:00:02Z'),
+            resource: 'organization-contacts',
+            action: 'master_data.update',
+            entityId: movedContactId,
+            outcome: 'SUCCESS',
+            beforeSnapshot: { organizationId },
+            afterSnapshot: { organizationId: otherOrganizationId },
+          },
+          {
+            actorUserId,
+            actorBranchId: branchId,
+            occurredAt: new Date('2025-01-02T00:00:03Z'),
+            resource: 'organization-contacts',
+            action: 'master_data.delete',
+            entityId: movedContactId,
+            outcome: 'SUCCESS',
+            beforeSnapshot: { id: movedContactId, version: 2 },
+          },
+        ],
+      });
+      const former = (
+        await directory.organizationActivity(
+          organizationId,
+          branchId,
+          actor,
+          window,
+        )
+      ).filter((row) => row.entityId === movedContactId);
+      const next = (
+        await directory.organizationActivity(
+          otherOrganizationId,
+          branchId,
+          actor,
+          window,
+        )
+      ).filter((row) => row.entityId === movedContactId);
+      expect(former.map((row) => row.action)).toEqual([
+        'master_data.update',
+        'master_data.create',
+      ]);
+      expect(next.map((row) => row.action)).toEqual([
+        'master_data.delete',
+        'master_data.update',
+      ]);
+
       const documents = new DocumentsRepository(db, {
         createWithinTransaction: async () => {},
       } as unknown as NotificationsService);

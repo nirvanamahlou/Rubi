@@ -1232,7 +1232,14 @@ export class MasterDataRepository {
           resource,
           entityId: id,
           outcome: AuditOutcome.SUCCESS,
-          beforeSnapshot: { id, version: before.version },
+          beforeSnapshot: {
+            id,
+            version: before.version,
+            ...(resource === 'organization-contacts' &&
+            typeof before.organizationId === 'string'
+              ? { organizationId: before.organizationId }
+              : {}),
+          },
         },
       });
     });
