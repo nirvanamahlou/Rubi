@@ -61,6 +61,15 @@ describe('17-route module foundation', () => {
   it('preserves connected workspaces and the Master Data hub-to-section flow', () => {
     expect(
       readFileSync(resolve(crmRoot, 'reservations/page.tsx'), 'utf8'),
+    ).toContain('LiveReservationQueue');
+    expect(
+      readFileSync(resolve(crmRoot, 'reservations/page.tsx'), 'utf8'),
+    ).toContain('/reservations/processing');
+    expect(
+      readFileSync(
+        resolve(crmRoot, 'reservations/processing/page.tsx'),
+        'utf8',
+      ),
     ).toContain('ReservationInbox');
     expect(
       readFileSync(resolve(crmRoot, 'ticket-management/page.tsx'), 'utf8'),
