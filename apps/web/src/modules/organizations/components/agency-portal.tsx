@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   B2B_DOSSIER_SECTIONS,
   type B2bPortalIdentity,
@@ -11,6 +12,7 @@ import { logoutAuthenticatedSession } from '@/modules/profile/api/client';
 import { agencyClient } from '../api/agency-client';
 import './corporate-design.css';
 export function AgencyPortal() {
+  const router = useRouter();
   const [identity, setIdentity] = useState<B2bPortalIdentity>(),
     [section, setSection] = useState(''),
     [content, setContent] = useState<B2bPortalSection>(),
@@ -20,7 +22,8 @@ export function AgencyPortal() {
     try {
       await logoutAuthenticatedSession();
       clearHeaderSession();
-      window.location.assign('/login?next=%2Fagency-portal');
+      router.replace('/login?next=%2Fagency-portal');
+      router.refresh();
     } catch {
       setError('خروج از حساب انجام نشد؛ دوباره تلاش کنید.');
     }
