@@ -1,5 +1,18 @@
 # Work Assignments
 
+## HR-PUBLISH-012 — PC-B — IN_PROGRESS / OWNER_APPROVED_MERGE
+
+- The owner explicitly requests push, merge and availability to PC-A on 2026-09-09. Continue the published HR-010/HR-011 stack (PR125/127); reserve only merge conflict reconciliation and this work item's publication/status/handoff documentation. No new feature, contract, dependency, schema/migration or runtime change.
+- Integrate current develop with normal merge commits, preserving both histories and unrelated module code. Existing HR task branches remain intact and are pushed without force. Exact-head GitHub quality, test, build and PostgreSQL gates must pass before each merge; verify the final develop run as well.
+- PC-B Uniting confirms no concurrent merge and no direct access to PC-A. Verify repository publication and provide a PC-A fetch/integration handoff; do not claim its checkout or running app was updated without device evidence. Active Web3100/API4190, the B2B worktree, its migration reservation, database and document storage remain with the B2B owner.
+
+## HR-010-OPERATION-BUTTONS — PC-B — READY_FOR_REVIEW
+
+- Owner requests HR record operation buttons to match Master Data. Branch `codex/pc-b-hr-operation-buttons` starts from current runtime and `origin/develop@0261b91`; checkout is `C:/Users/admin/Rubi-hr115-integration`.
+- Reserve only the shared HR table controls/styles under `apps/web/src/modules/hr/**` and this task's status/report entries. Reuse the existing public UI Button appearance used by Master Data; keep existing permission checks, edit/detail callbacks, soft-delete confirmation, selection and export behavior. Master Data, app shell, API, IAM, database/schema/migrations and dependencies remain unchanged.
+- PC-B Uniting confirmed no active checkout/listener work and handed over Web3100 for this additive change after validation. Preserve API4190, `rubi_hr_current_20260908`, `hr007-documents` and all current develop changes; recheck listener ownership before restarting Web. Commit/push and open a review PR; no merge is requested for this work item.
+- HR tables now use direct outlined View/Edit/Delete buttons with Master Data's shared Button sizing/icons, 8px spacing and destructive text color. Existing callbacks, detail visibility, soft-delete confirmation and capability gating remain unchanged; buttons are disabled while the table loads. All 97 existing HR/shared-Button tests, full Web lint and typecheck passed. Browser attachment timed out, so interactive visual QA is not asserted; build/runtime results accompany the review handoff in `docs/tasks/HR-010.md` and PR. Implementation reservation is released; coordinate any later listener replacement.
+
 ## DOCUMENTS-008-BLUE-BUTTON-CONTRAST — PC-B — READY_FOR_APPROVED_MERGE
 
 - درخواست مالک محصول در 2026-09-09: متن و آیکن دکمه‌های آبی کارت‌های «ارتباط اسناد با بخش‌های سامانه» سفید باشند، نه مشکی. `COMPUTER_ID=PC-B`.
