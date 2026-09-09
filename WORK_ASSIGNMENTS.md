@@ -1,5 +1,10 @@
 # Work Assignments
 
+## B2B-DOSSIER-SALES-REMOVAL-001 — PC-B — IN_PROGRESS
+
+- Owner requests removal of the Sales Operations section from the 360 dossier. Clean branch `codex/pc-b-b2b-remove-sales-section` starts from 3bb9fe1, continuing the owned combined runtime and retaining fetched develop e07c0c6. Reserve only `corporate-profile.tsx` and this task's documentation; prior Organizations implementation reservations are released.
+- Remove the shared agency/corporate dossier card and its local subpage navigation. This is a presentation-only change with no Sales data/API, IAM, schema, migration or dependency change. Validate existing Organizations tests, Web lint/typecheck/build and the actual component, then refresh the owned Web3100 listener while preserving API4190.
+
 ## B2B-DOSSIER-ACCESS-001 — PC-B — DONE / LOCAL_ACCESS_APPLIED
 
 - Owner explicitly requests full access to every agency 360 section after the missing commercial-dossier permission error, continuing the concrete Nirvana-account permission question. COMPUTER_ID=PC-B; clean branch `codex/pc-b-b2b-dossier-access` starts from 1369efa, retaining the active runtime aa964d6 and fetched develop e07c0c6. Reserve only this local access administration and task/status documentation; no IAM implementation, schema, migration, dependency or runtime-listener change.

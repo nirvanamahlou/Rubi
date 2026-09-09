@@ -94,19 +94,6 @@ const sections = [
     ],
   },
   {
-    id: 'sales',
-    title: 'عملیات فروش',
-    icon: ShoppingCart,
-    accent: '#e25579',
-    tint: '#fff0f4',
-    description: 'مسافران مجاز و نمای فقط‌خواندنی قرارداد فروش و سفارش',
-    tabs: [
-      ['travelers', 'مسافران سازمانی'],
-      ['contracts', 'قراردادهای فروش'],
-      ['orders', 'سفارش‌ها و رزروها'],
-    ],
-  },
-  {
     id: 'finance',
     title: 'مالی و تسویه',
     icon: Wallet,
