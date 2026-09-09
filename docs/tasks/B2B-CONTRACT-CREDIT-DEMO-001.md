@@ -16,3 +16,9 @@ The owner requests credit/guarantees beneath contracts in the 360 dossier and sy
 - 92 Organizations tests pass, including currency reconciliation and inclusive/reversed date range coverage. Web lint and typecheck pass. Browser checks using actual React components verify five home cards, nested contract/credit navigation, guarantee contents, and labelled financial rows. Selecting 1405/6/14 as the start date filters six statement rows to three; USD reduces them to one, whose detail dialog references the matching sample invoice.
 - The local fixture browser uses isolated API fixtures; actual stored guarantees were separately reloaded by the public B2B owner. No staff login was bypassed.
 - Source build, runtime and remote checks will be recorded at completion. Branch `codex/pc-b-b2b-contract-credit-demo` retains the PR145 stack from49d578e. No merge.
+
+## Runtime
+
+- Final source `6ec0cd7c8f747cd005d05bbd5a00b2a9979d4418` builds all 41 Web routes and is active on Web3100 PID14180, build `hr005-ee20b418202c6261`. `/api/hr-runtime` returns the exact source/build. Existing API4191 PID21516 is preserved and independently healthy; no backend/schema cutover was needed.
+- Browser returned to `/organizations` and its normal login page. Temporary QA3196 stopped. [Draft PR146](https://github.com/nirvanamahlou/Rubi/pull/146) targets develop; no merge. Private fixture/QA helpers and backups stay outside Git.
+- All four final source gates pass in [CI34466246227](https://github.com/nirvanamahlou/Rubi/actions/runs/34466246227): full test suite, production build, PostgreSQL18 migration/seed and quality gate. A formatting-only correction was made after the initial CI attempt. Release task implementation reservations; coordinate future runtime updates.

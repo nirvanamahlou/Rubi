@@ -1,10 +1,11 @@
 # Work Assignments
 
-## B2B-CONTRACT-CREDIT-DEMO-001 — PC-B — IN_PROGRESS
+## B2B-CONTRACT-CREDIT-DEMO-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests nesting credit/guarantees under contracts in the 360 dossier and synthetic guarantee/finance data. Reserve Organizations navigation/components/models/tests, a bounded public-owner-service B2B/Documents fixture loader, and task/status/decision documentation on clean `codex/pc-b-b2b-contract-credit-demo` from49d578e. Preserve PR145 stack and owned Web3100/API4191 runtime. Prior implementation reservations are released.
 - Credit becomes a contracts subview while keeping existing credit permission boundaries and approval workflow. No IAM grants or permission identifier migration. Guarantee fixtures persist as DRAFT agreement terms using public B2B/Documents services, additive/idempotent and restricted to existing explicitly synthetic agencies. No automatic approval, activation or real balances.
 - Finance Phase B persistence/owner adapter is absent in this checkout (FINANCE-001 is a preview foundation). Provide clearly labelled synthetic finance previews within B2B, separate from operational exposure/available-credit calculations; do not create or query Finance tables, invent confirmed payment events, or modify PC-A Finance producers. No schema/migration/dependency lock required. Back up before fixture writes, preserve user changes, verify actual navigation, fixtures and runtime before handoff. No merge.
+- Completed source6ec0cd7: five home cards with nested credit/guarantees, six labelled finance preview tabs and filters/details; four persisted DRAFT agreements with 12 guarantees/eight proofs, idempotent repeat verified. 92 Organizations tests, browser QA, 41-route Web build and all four CI gates (34466246227) pass. Web3100 PID14180/hr005-ee20b418202c6261 healthy; API4191 PID21516 preserved/healthy. Draft PR146 targets develop, no merge. Release task implementation reservations; coordinate future runtime changes. Details: docs/tasks/B2B-CONTRACT-CREDIT-DEMO-001.md.
 
 ## B2B-CONTRACT-FORMS-002 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
