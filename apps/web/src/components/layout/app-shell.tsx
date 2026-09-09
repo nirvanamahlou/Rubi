@@ -104,22 +104,12 @@ function Navigation({
 }) {
   const pathname = usePathname();
   const groupId = useId();
-  const [closedGroups, setClosedGroups] = useState<{
-    pathname: string;
-    ids: string[];
-  }>({ pathname, ids: [] });
-  const isGroupClosed = (id: string) =>
-    closedGroups.pathname === pathname && closedGroups.ids.includes(id);
+  const [closedGroups, setClosedGroups] = useState<string[]>([]);
+  const isGroupClosed = (id: string) => closedGroups.includes(id);
   function toggleGroup(id: string) {
-    setClosedGroups((previous) => {
-      const ids = previous.pathname === pathname ? previous.ids : [];
-      return {
-        pathname,
-        ids: ids.includes(id)
-          ? ids.filter((value) => value !== id)
-          : [...ids, id],
-      };
-    });
+    setClosedGroups((ids) =>
+      ids.includes(id) ? ids.filter((value) => value !== id) : [...ids, id],
+    );
   }
   function renderItem({ href, title }: (typeof navigationItems)[number]) {
     const active = isNavigationItemActive(href, pathname);

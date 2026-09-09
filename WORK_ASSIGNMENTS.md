@@ -1375,3 +1375,8 @@ User requests neutral dark surfaces with legible text and controls. Scope: share
 
 
 Validation: 66 targeted tests passed, including seven contrast assertions; Web lint, TypeScript and production build (40 routes) passed. Local Web 3100 refreshed. Browser visual QA unavailable because the browser tool failed to start. Branch codex/pc-a-neutral-dark-mode builds on Finance/ticket-labels PR #117. No migration or API/database changes.
+
+## HR-DARK-NAVIGATION-0909 — PC-A — READY_FOR_REVIEW
+User follow-up to neutral dark mode. Reserve HR workspace/Frappe CSS, Navigation collapse state and scoped tests on codex/pc-a-hr-dark-navigation-fix from 3d08f07. Preserve existing light design and local latest stack. No domain/API/data changes; header date work stays outside scope.
+
+Validation: 87 scoped tests, Web lint, TypeScript and production build (40 routes) passed; Web 3100 refreshed. No API/database restart or changes. Scoped reservations released.
