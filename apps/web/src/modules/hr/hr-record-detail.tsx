@@ -9,13 +9,15 @@ import {
   DialogDescription,
 } from '@/components/ui/overlays';
 import { HrContractState } from './hr-contract-state';
-import { hrApi } from './hr-api';
+import { hrApi, hrRequest } from './hr-api';
 import type { HrStore } from './hr-store';
 import { hrGroups, type HrSource } from './hr-navigation';
 import { recordsDataset } from './hr-live-data';
 import { HrButton, HrPanel, HrTable, HrStatus } from './hr-controls';
 import type { HrFormTarget } from './hr-record-form';
 import { reportCellText } from './hr-report-text';
+import { isMissionExpense } from './hr-mission-reference';
+import { sourceForRecord } from './hr-record-source';
 import ui from './hr-unified.module.css';
 
 export function HrRecordDetail({
@@ -90,6 +92,21 @@ export function HrRecordDetail({
       setBusy(false);
     }
   };
+  const openMission = async () => {
+    if (!record.parentId) return;
+    setBusy(true);
+    setError('');
+    try {
+      const mission = await hrRequest<HrRecordDto>(
+        `/records/${encodeURIComponent(record.parentId)}`,
+      );
+      onSelect(mission, sourceForRecord(mission));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'دریافت مأموریت انجام نشد.');
+    } finally {
+      setBusy(false);
+    }
+  };
   const pending = /انتظار|بررسی/.test(record.status);
   const approved = /تأییدشده|فعال|امضا/.test(record.status);
   const canEdit =
@@ -121,6 +138,11 @@ export function HrRecordDetail({
             <Link href={`/hr?section=employee&employee=${record.employeeId}`}>
               پرونده کارمند
             </Link>
+          ) : null}
+          {record.parentId && isMissionExpense(record.section, record.tab) ? (
+            <HrButton disabled={busy} onClick={() => void openMission()}>
+              پرونده مأموریت
+            </HrButton>
           ) : null}
           {canEdit && record.section !== 'contracts' ? (
             <HrButton onClick={() => onForm({ source, record })}>

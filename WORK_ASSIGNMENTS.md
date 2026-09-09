@@ -1,10 +1,18 @@
 # Work Assignments
 
+## HR-011-EXPENSE-MISSION-LINK — PC-B — READY_FOR_REVIEW
+
+- Owner reports the mission-reference selector in independent expense entry is not connected to recorded missions. Branch `codex/pc-b-hr-expense-mission-link` starts from the clean current HR-010 runtime `40c362e` (PR #125), preserving its operation buttons and develop `0261b91`.
+- Reserve HR-local form/model and related tests, plus HR service/tests only if needed to persist permitted expense-parent edits. Scope mission references for travel/advances/claims to existing canonical or legacy HR missions and matching company/employee; retain independent expenses, approval restrictions, permission checks, audit and optimistic versions. No shared contract/schema/migration, IAM grant, dependency or other module change.
+- PC-B retains the handed-over local runtime at `C:/Users/admin/Rubi-hr115-integration`, Web3100/API4190 with the existing database and document root. Read-only diagnostics only; do not seed or change business data for QA. Build affected services before coordinated local activation, commit/push and open a stacked review PR without merging.
+- Result: current/legacy mission choices identify destination/dates and respect company/employee scope; permitted draft expense references now persist on create/edit/clear and link back to their mission. API validation preserves permissions, optimistic versions, approval/final-state guards and audit. All 99 HR Web tests and 80 HR API tests (21 isolated PostgreSQL) passed after resolving initial environment timeouts by rerunning sequentially. Source reservation is released for review; local activation and runtime handoff are recorded with `docs/tasks/HR-011.md` and the PR. No migration or merge.
+
 ## HR-PUBLISH-012 — PC-B — IN_PROGRESS / OWNER_APPROVED_MERGE
 
 - The owner explicitly requests push, merge and availability to PC-A on 2026-09-09. Continue the published HR-010/HR-011 stack (PR125/127); reserve only merge conflict reconciliation and this work item's publication/status/handoff documentation. No new feature, contract, dependency, schema/migration or runtime change.
 - Integrate current develop with normal merge commits, preserving both histories and unrelated module code. Existing HR task branches remain intact and are pushed without force. Exact-head GitHub quality, test, build and PostgreSQL gates must pass before each merge; verify the final develop run as well.
 - PC-B Uniting confirms no concurrent merge and no direct access to PC-A. Verify repository publication and provide a PC-A fetch/integration handoff; do not claim its checkout or running app was updated without device evidence. Active Web3100/API4190, the B2B worktree, its migration reservation, database and document storage remain with the B2B owner.
+- Combined integration preserves the exact tested HR source `13b6f49` and current develop's unrelated module trees; only additive publication documentation conflicts required reconciliation. Implementation reservation is released pending the authorized CI-gated PR merges. PC-A handoff is in `docs/tasks/HR-PUBLISH-012.md`.
 
 ## HR-010-OPERATION-BUTTONS — PC-B — READY_FOR_REVIEW
 
