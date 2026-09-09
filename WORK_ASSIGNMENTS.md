@@ -1441,3 +1441,9 @@ User explicitly authorized merging the latest Finance labels, dark theme and HR/
 User requests themed dropdown menus for the four Reservations queue filters. Reserve foundation workspace only; use existing shared Radix Select with RTL, labels and unchanged query values. Branch codex/pc-a-reservation-themed-filters from develop 0261b91. No shared component/API/data change.
 
 Validation: 34 foundation tests, Web lint, production TypeScript and build (40 routes) passed. Local Web 3100 refreshed. Scope released; no API/database changes.
+
+## CONTRACT-TERMS-SELECTION-0909 — PC-A — READY_FOR_REVIEW
+
+User supplied a shared one-page terms PDF; preserve its exact bytes and download through the selected contract's مفاد action. Extend the existing accessible selection button hit area across the full reservation card. Scope: foundation panel/workspace CSS/tests, shared static PDF and task docs. Builds on themed filters branch to preserve the current local version. No PDF editing, API, database or migration changes.
+
+Validation: foundation tests, Web lint, TypeScript and production build passed; source/asset SHA256 equal. Web3100 refreshed. Scoped reservation released.
