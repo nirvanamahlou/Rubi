@@ -41,6 +41,17 @@ const input = {
   },
 } as unknown as ReservationFormIntake;
 describe('reservation reference form', () => {
+  it('prefers the registered English hotel name and preserves snapshot fallback', () => {
+    expect(reservationFormData(input).hotel).toBe('Sample Hotel');
+    expect(
+      reservationFormData(input, {
+        h: { attributes: { englishName: 'ENGLISH HOTEL' } } as never,
+      }).hotel,
+    ).toBe('ENGLISH HOTEL');
+    expect(input.snapshot.hotelSelection?.hotelNameSnapshot).toBe(
+      'Sample Hotel',
+    );
+  });
   it('uses actual ordered passengers and overrides without copying source sample data', () => {
     const data = reservationFormData(input);
     expect(data.passengers.map((p) => p.id)).toEqual(['b', 'a']);

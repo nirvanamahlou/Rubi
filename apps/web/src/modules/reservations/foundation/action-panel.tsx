@@ -1,4 +1,5 @@
 'use client';
+import { EnglishHotelName } from '../components/english-hotel-name';
 
 import {
   Dialog,
@@ -75,7 +76,12 @@ export function ContractActionContent({
           شعبه: request.branchName,
           وضعیت: statusLabels[request.status],
           'مسئول رزرواسیون': request.assignee ?? 'تخصیص‌نیافته',
-          هتل: request.hotelName ?? 'دریافت نشده',
+          هتل: (
+            <EnglishHotelName
+              hotelId={request.hotelId}
+              fallback={request.hotelName ?? 'دریافت نشده'}
+            />
+          ),
         }).map(([label, value]) => (
           <div key={label}>
             <dt>{label}</dt>

@@ -126,7 +126,9 @@ export function reservationFormData(
         timeZone: 'Asia/Tehran',
       }).format(new Date(f.departureAt)),
     })),
-    hotel: hotel?.hotelNameSnapshot || '-',
+    hotel: text(
+      hotelRecord?.attributes.englishName || hotel?.hotelNameSnapshot,
+    ),
     stars: text(
       String(
         hotelRecord?.attributes.starRating ??

@@ -1,4 +1,5 @@
 'use client';
+import { EnglishHotelName } from './english-hotel-name';
 import { useEffect, useState } from 'react';
 import type {
   ReservationArrangementUpdateV1,
@@ -342,7 +343,12 @@ export function ReservationInbox() {
                 <section className="grid gap-3 rounded-xl border border-primary/20 p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <h3 className="font-bold">{hotel.hotelNameSnapshot}</h3>
+                      <h3 className="font-bold">
+                        <EnglishHotelName
+                          hotelId={hotel.hotelId}
+                          fallback={hotel.hotelNameSnapshot}
+                        />
+                      </h3>
                       <p className="text-xs text-muted-foreground">
                         {hotel.checkInDate} تا {hotel.checkOutDate}
                       </p>

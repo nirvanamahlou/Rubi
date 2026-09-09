@@ -1614,3 +1614,8 @@ Sales contract payments open in a history dialog. A separate nested add dialog p
 
 ## CONFIRM-VOUCHER-0909 — PC-A
 Supplier confirmation atomically issues the hotel voucher and notifies the Sales owner; insurance acknowledgement and Finance delivery gate remain. Legacy confirmed-only issuance supported. Separate confirmed filter/legend removed; issued voucher dark gray; new card identity column alone #FFC0C0; MANIFEST uppercase. 12 API/34 Web tests, scoped lint, both typechecks/builds and light/dark computed-style checks passed. Local API4000/Web3100 refreshed and health 200, original data/PDF environment preserved. No migration or grants. Publication blocked by approval review: origin is currently public; explicit approval pending.
+
+## RESERVATION-COMPACT-ENGLISH-0909 — PC-A
+Reservations displays registered English hotel names in the queue, details, hotel operations and documents through public Master Data access; snapshot fallback retained. Queue calendars default Gregorian with English dates and retain calendar switching; other consumers remain Persian by default. Reduced row padding/gaps preserve whole-card selection and 44px identity target. No backend, migration, data writes or permission changes. Public push remains pending earlier authorization. See docs/tasks/RESERVATION-COMPACT-ENGLISH-0909.md.
+
+RESERVATION-COMPACT-ENGLISH-0909 validation complete: 60 Reservations/calendar tests plus 16 default-calendar/workspace checks, scoped lint/typecheck and 40-route build passed. Web3100 refreshed; API unchanged. Scope released for local review.

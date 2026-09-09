@@ -61,6 +61,7 @@ export interface RequestView {
   travelDate?: string;
   destination?: string;
   hotelName?: string;
+  hotelId?: string | undefined;
   carrierName?: string;
   createdAt: string;
   status: QueueStatus;

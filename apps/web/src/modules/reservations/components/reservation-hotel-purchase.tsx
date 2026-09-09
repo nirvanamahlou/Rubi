@@ -1,4 +1,5 @@
 'use client';
+import { EnglishHotelName } from './english-hotel-name';
 import { useRef, useState } from 'react';
 import {
   hotelNights,
@@ -98,7 +99,11 @@ export function ReservationHotelPurchase({
   return (
     <div className="mt-4 space-y-3 rounded-xl border bg-muted/20 p-4">
       <h3 className="font-bold">
-        {hotel.hotelNameSnapshot} · {nights.toLocaleString('fa-IR')} شب
+        <EnglishHotelName
+          hotelId={hotel.hotelId}
+          fallback={hotel.hotelNameSnapshot}
+        />{' '}
+        · {nights.toLocaleString('fa-IR')} شب
       </h3>
       <p className="text-xs text-muted-foreground">
         قیمت‌های فروشِ ثبت‌شده در قرارداد قابل تغییر نیستند؛ هزینه خرید کل اقامت

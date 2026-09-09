@@ -50,6 +50,7 @@ const snapshotSchema = z.object({
   hotelSelection: z
     .object({
       hotelNameSnapshot: z.string().max(200),
+      hotelId: id.optional(),
       checkInDate: z.string().refine(isCivilDate),
     })
     .nullable(),
@@ -156,7 +157,10 @@ export function decodeIntake(
         receivedAt: row.receivedAt,
         ...(travelDate ? { travelDate } : {}),
         ...(snapshot.hotelSelection
-          ? { hotelName: snapshot.hotelSelection.hotelNameSnapshot }
+          ? {
+              hotelName: snapshot.hotelSelection.hotelNameSnapshot,
+              hotelId: snapshot.hotelSelection.hotelId,
+            }
           : {}),
         ...(snapshot.ticketSelections?.length
           ? {

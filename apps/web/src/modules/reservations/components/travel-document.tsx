@@ -1,4 +1,5 @@
 'use client';
+import { reservationFormData } from '../model/reservation-form';
 import Image from 'next/image';
 import {
   ReservationFormSheet,
@@ -65,7 +66,7 @@ export function TravelDocument({
   const [printing, setPrinting] = useState(false);
   const [printError, setPrintError] = useState('');
   const state = intake.workflow;
-  const formReferences = useReservationFormReferences(intake, !voucher);
+  const formReferences = useReservationFormReferences(intake, true);
   const enabled =
     !!logo &&
     !!state.branding &&
@@ -109,7 +110,9 @@ export function TravelDocument({
       </header>
       <p>
         هتل:{' '}
-        {intake.snapshot.hotelSelection?.hotelNameSnapshot ?? 'بدون خدمت هتل'}
+        {intake.snapshot.hotelSelection
+          ? reservationFormData(intake, formReferences.references).hotel
+          : 'بدون خدمت هتل'}
       </p>
       <p>
         ورود: {intake.snapshot.hotelSelection?.checkInDate ?? '—'} · خروج:{' '}

@@ -1,4 +1,5 @@
 'use client';
+import { EnglishHotelName } from '../components/english-hotel-name';
 
 import { useState } from 'react';
 import { ContractActionPanel } from './action-panel';
@@ -516,6 +517,8 @@ export function ReservationOperationsWorkspace({
                 <div>
                   <label htmlFor="reservation-from">از تاریخ</label>
                   <DatePicker
+                    defaultCalendarSystem="gregorian"
+                    gregorianEnglish
                     id="reservation-from"
                     value={query.fromDate}
                     onChange={(fromDate) => changeQuery({ fromDate })}
@@ -526,6 +529,8 @@ export function ReservationOperationsWorkspace({
                 <div>
                   <label htmlFor="reservation-to">تا تاریخ</label>
                   <DatePicker
+                    defaultCalendarSystem="gregorian"
+                    gregorianEnglish
                     id="reservation-to"
                     value={query.toDate}
                     onChange={(toDate) => changeQuery({ toDate })}
@@ -571,7 +576,14 @@ export function ReservationOperationsWorkspace({
                             : row.passengerNames.slice(0, 2).join('، ') ||
                               'نام مشتری دریافت نشده'}
                         </span>
-                        {row.hotelName && <small>{row.hotelName}</small>}
+                        {row.hotelName && (
+                          <small>
+                            <EnglishHotelName
+                              hotelId={row.hotelId}
+                              fallback={row.hotelName}
+                            />
+                          </small>
+                        )}
                       </button>
                       <span className={styles.statusLabel}>
                         {statusLabels[row.status]}
