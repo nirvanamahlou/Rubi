@@ -1497,3 +1497,7 @@ Validation: 87 scoped tests, Web lint, TypeScript and production build (40 route
 ## PUBLISH-DARK-HR-0909 — PC-A — READY_FOR_REVIEW
 
 User explicitly authorized merging the latest Finance labels, dark theme and HR/navigation corrections into develop. Integrate current develop 679e516, retaining PC-B HR/agencies and header date; resolve shared shell conflict with both responsive header and neutral dark border. Synchronize three ticket validation strings in API with the mirrored Web proposal to satisfy the existing parity test. No local database migration or runtime switch. Final combined CI gates must pass before merge.
+
+## LOCAL3100-LATEST-0909 — PC-B — VALIDATED / RUNTIME_HANDED_OVER
+
+- Owner requests latest project on localhost:3100. Base origin/develop e07c0c6; branch codex/pc-b-local3100-latest-0909. Reserve this task's status entries and initial local runtime only. No source/schema/dependency change. Both ports were free. Preserve rubi_hr_current_20260908 and hr007-documents using the existing protected HR environment. No seed/reset or merge. Runtime handoff on 2026-09-09: newer combined B2B source 38203ea exists at C:/Users/admin/Rubi-b2b-form-runtime. B2B-DIRECTORY-ACTIONS-001 now owns final Web3100/API4190 activation; our temporary API4000 uses the same existing HR database and may be stopped after its replacement is healthy.
