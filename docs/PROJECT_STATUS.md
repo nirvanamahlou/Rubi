@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## RESERVATION-REFERENCE-FORM-0909 — PC-A — READY_FOR_REVIEW
+
+Reservation request print now follows the supplied six-section English navy/teal A4 reference, populated from the selected contract and current operational arrangement/age. Existing logo selection, voucher and financial gates preserved. Missing fields stay unfilled; no sample PII copied. 49 tests, scoped lint/typecheck and 40-route build passed; actual one- and three-page synthetic PDFs visually inspected. Web3100 refreshed without API/data/permission changes. Details: [task report](tasks/RESERVATION-REFERENCE-FORM-0909.md).
+
 ## TRAVEL-DOCUMENT-HANDOFF-0909 — PC-A — READY_FOR_REVIEW
 
 Persisted Reservations supplier/insurance/voucher/cancellation workflow, versioned operational order/age overrides, company/agency letterhead and printable request/voucher outputs. Sales passenger document access now requires Finance delivery authorization, with revocation and transactional owner notifications. Over-60 insurance extra is a per-passenger toman field with exact IRR reconciliation. Local additive migration applied after restored-copy rehearsal and fresh backup; 350 customers/5 contracts retained. API4000/Web3100 updated. Role grants remain pending user approval; no live financial or operational decisions, production deploy or merge. Tests, remaining limitations and handoff: [task report](tasks/TRAVEL-DOCUMENT-HANDOFF-0909.md).
