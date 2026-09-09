@@ -1,5 +1,67 @@
 # Work Assignments
 
+## DOCUMENTS-008A-BLUE-BUTTON-CASCADE-FIX — PC-B — READY_FOR_APPROVED_MERGE
+
+- پیگیری گزارش مالک محصول در 2026-09-09: پس از Merge PR #130، متن CTAهای آبی ارتباطات اسناد روی اجرای واقعی ۳۱۰۰ همچنان مشکی بود. `COMPUTER_ID=PC-B`.
+- بررسی مستقیم Browser نشان داد کلاس `text-white` روی هر لینک وجود دارد، اما قانون global و unlayered برابر `a { color: inherit }` آن را به `rgb(18, 33, 61)` بازنویسی می‌کند. Branch مستقل `codex/pc-b-documents-button-contrast-followup` از `origin/develop@0f75770` است.
+- محدوده رزروشده فقط همان دو CTA در `apps/web/src/modules/documents/components/documents-workspace.tsx`، تست قراردادی Documents و ورودی‌های همین Task در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` است. رنگ باید در CSS cascade واقعی سفید بماند؛ بدون تغییر global anchor، سایر دکمه‌ها، Schema/Migration/API/Contract/Dependency/Data.
+- نتیجه: رنگ متن و آیکن با یک override درون‌خطی و محدود به همان دو CTA تثبیت شد. ۵ تست قراردادی Documents، Web lint/typecheck و Production Build با ۴۰ Route موفق‌اند؛ اجرای واقعی `3100` و Browser مقدار محاسبه‌شده سفید `rgb(255, 255, 255)` روی پس‌زمینه آبی `rgb(21, 87, 184)` را برای همه CTAها تأیید کردند. مالک محصول Push و Merge همین اصلاح با `develop` را قبلاً صریحاً تأیید کرده است؛ CI نسخه نهایی شاخه شرط ادغام است.
+
+## HR-011-EXPENSE-MISSION-LINK — PC-B — READY_FOR_REVIEW
+
+- Owner reports the mission-reference selector in independent expense entry is not connected to recorded missions. Branch `codex/pc-b-hr-expense-mission-link` starts from the clean current HR-010 runtime `40c362e` (PR #125), preserving its operation buttons and develop `0261b91`.
+- Reserve HR-local form/model and related tests, plus HR service/tests only if needed to persist permitted expense-parent edits. Scope mission references for travel/advances/claims to existing canonical or legacy HR missions and matching company/employee; retain independent expenses, approval restrictions, permission checks, audit and optimistic versions. No shared contract/schema/migration, IAM grant, dependency or other module change.
+- PC-B retains the handed-over local runtime at `C:/Users/admin/Rubi-hr115-integration`, Web3100/API4190 with the existing database and document root. Read-only diagnostics only; do not seed or change business data for QA. Build affected services before coordinated local activation, commit/push and open a stacked review PR without merging.
+- Result: current/legacy mission choices identify destination/dates and respect company/employee scope; permitted draft expense references now persist on create/edit/clear and link back to their mission. API validation preserves permissions, optimistic versions, approval/final-state guards and audit. All 99 HR Web tests and 80 HR API tests (21 isolated PostgreSQL) passed after resolving initial environment timeouts by rerunning sequentially. Source reservation is released for review; local activation and runtime handoff are recorded with `docs/tasks/HR-011.md` and the PR. No migration or merge.
+
+## HR-PUBLISH-012 — PC-B — IN_PROGRESS / OWNER_APPROVED_MERGE
+
+- The owner explicitly requests push, merge and availability to PC-A on 2026-09-09. Continue the published HR-010/HR-011 stack (PR125/127); reserve only merge conflict reconciliation and this work item's publication/status/handoff documentation. No new feature, contract, dependency, schema/migration or runtime change.
+- Integrate current develop with normal merge commits, preserving both histories and unrelated module code. Existing HR task branches remain intact and are pushed without force. Exact-head GitHub quality, test, build and PostgreSQL gates must pass before each merge; verify the final develop run as well.
+- PC-B Uniting confirms no concurrent merge and no direct access to PC-A. Verify repository publication and provide a PC-A fetch/integration handoff; do not claim its checkout or running app was updated without device evidence. Active Web3100/API4190, the B2B worktree, its migration reservation, database and document storage remain with the B2B owner.
+- Combined integration preserves the exact tested HR source `13b6f49` and current develop's unrelated module trees; only additive publication documentation conflicts required reconciliation. Implementation reservation is released pending the authorized CI-gated PR merges. PC-A handoff is in `docs/tasks/HR-PUBLISH-012.md`.
+
+## HR-010-OPERATION-BUTTONS — PC-B — READY_FOR_REVIEW
+
+- Owner requests HR record operation buttons to match Master Data. Branch `codex/pc-b-hr-operation-buttons` starts from current runtime and `origin/develop@0261b91`; checkout is `C:/Users/admin/Rubi-hr115-integration`.
+- Reserve only the shared HR table controls/styles under `apps/web/src/modules/hr/**` and this task's status/report entries. Reuse the existing public UI Button appearance used by Master Data; keep existing permission checks, edit/detail callbacks, soft-delete confirmation, selection and export behavior. Master Data, app shell, API, IAM, database/schema/migrations and dependencies remain unchanged.
+- PC-B Uniting confirmed no active checkout/listener work and handed over Web3100 for this additive change after validation. Preserve API4190, `rubi_hr_current_20260908`, `hr007-documents` and all current develop changes; recheck listener ownership before restarting Web. Commit/push and open a review PR; no merge is requested for this work item.
+- HR tables now use direct outlined View/Edit/Delete buttons with Master Data's shared Button sizing/icons, 8px spacing and destructive text color. Existing callbacks, detail visibility, soft-delete confirmation and capability gating remain unchanged; buttons are disabled while the table loads. All 97 existing HR/shared-Button tests, full Web lint and typecheck passed. Browser attachment timed out, so interactive visual QA is not asserted; build/runtime results accompany the review handoff in `docs/tasks/HR-010.md` and PR. Implementation reservation is released; coordinate any later listener replacement.
+
+## DOCUMENTS-008-BLUE-BUTTON-CONTRAST — PC-B — READY_FOR_APPROVED_MERGE
+
+- درخواست مالک محصول در 2026-09-09: متن و آیکن دکمه‌های آبی کارت‌های «ارتباط اسناد با بخش‌های سامانه» سفید باشند، نه مشکی. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-documents-button-contrast` از `origin/develop@7d716af`. محدوده رزروشده فقط `apps/web/src/modules/documents/components/documents-workspace.tsx`، تست قراردادی همان ماژول و ورودی‌های همین Task در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` است.
+- اصلاح صرفاً Presentation و محدود به CTAهای آبی ارتباطات اسناد است؛ رنگ پس‌زمینه، رفتار لینک‌ها و دکمه‌های سایر ماژول‌ها تغییر نمی‌کند. بدون Schema/Migration/Seed، API/Contract، IAM، Dependency/Lockfile، داده یا Runtime.
+- نتیجه: متن و آیکن هر دو CTA آبی در کارت‌های نمای کلی و نمای فیلترشده با `text-white` و `hover:text-white` تثبیت شدند. کنتراست سفید روی آبی اصلی `6.80:1` و مطابق WCAG AA است؛ ۵ تست قراردادی Documents، Web lint/typecheck و Production Build با ۴۰ Route موفق‌اند. مالک محصول در 2026-09-09 Push و Merge با `develop` را صریحاً تأیید کرد؛ جایگزینی Runtime جزو این Merge نیست.
+
+## B2B-AGENCIES-001 / approved PR113 integration — PC-B — READY_FOR_APPROVED_MERGE
+
+- Owner explicitly authorizes merge and push. Continue clean published 122945b on the existing task branch; fetch origin/develop@0261b91 and integrate it with a normal merge, preserving both histories.
+- Reserve conflict reconciliation only in B2B API, Organizations Web and this task's status/decision/report entries. The B2B/Organizations code in develop is byte-identical to the previously copied source fc573ac; retain this branch's later validated changes and all unrelated develop changes.
+- No new domain feature, dependency, schema/migration, IAM grant, operational database or runtime change. Final combined tests, builds and GitHub checks gate the explicitly authorized PR merge; no force push or branch deletion.
+- Resolved the copied-baseline conflicts without changing this branch's B2B/Organizations source behavior; all unrelated develop code and both documentation histories are preserved. Combined validation: 97 targeted Web tests, 54 B2B tests (including five disposable PostgreSQL cases), full monorepo lint/typecheck and production build passed (40 Web routes). Exact-head GitHub gates are required before merge. The implementation reservation is released; runtime ownership is not transferred.
+
+## B2B-AGENCIES-001 / organization logo — PC-B — READY_FOR_REVIEW
+
+- Owner requests an appropriate logo-upload location for agencies and corporate customers. Continue clean a53b294 after fetch. Reserve organization Web components/model/tests and scoped status entries only; use the existing Master Data logo workflow and public Documents metadata/preview APIs.
+- Add the logo and an explicit upload/change action beside the profile name, with a small preview/save dialog. Preserve owner scan/access checks and organization identity/version/roles. No producer, schema, dependency, permission grant or independent runtime change.
+- Delivered PNG/JPEG selection (5 MB), preview, replace/remove and canonical archive link in the shared profile header. Existing owner partial-save warnings stay visible; cancelled/denied/unscanned previews do not expose file bytes. Targeted tests, lint, typecheck and build passed; browser validation uses only synthetic in-memory owner responses. This reservation is released for review; the independent 3100 runtime is not replaced.
+
+## B2B-AGENCIES-001 / agency 360 entry — PC-B — READY_FOR_REVIEW
+
+- Owner requests the Screenshot (524) seven-card 360 view when opening an agency record. Continue the clean published branch at d41d0ee; fetch completed. Reserve the shared organization profile component and this task's status entries only.
+- The directory already routes agency and corporate records to the same profile. Make the agency heading explicit and bring the profile start into view on entry/section navigation. Preserve the seven reference cards and existing public-service connections. No schema, API, dependency or other checkout/runtime edit.
+- Verified the real shared component renders all seven sections for AGENCY, CORPORATE_CUSTOMER and dual-role records. All 62 existing organization tests, scoped lint, typecheck and final production build passed. Entry/section navigation scrolls to the page start, preserving the sticky header. This UI reservation is released for review; no new runtime handoff is claimed.
+
+## B2B-AGENCIES-001 / PRD coverage follow-up — PC-B — READY_FOR_REVIEW
+
+- Owner requests implementation against the supplied B2B PRD and selects separate credit limits per currency, without automatic FX. Continue the clean published `codex/pc-b-agencies-organizations` branch/PR #113; original checkout and independent 3100/4190 runtime remain untouched.
+- Reserve organization Web/model/tests, B2B API/tests, scoped task reports and only this task's entries in WORK_ASSIGNMENTS, PROJECT_STATUS and DECISIONS. Latest fetched develop@0261b91 and published PR states were checked: Sales PR90 is merged; Reservations PR112 remains open and claims no shared lock. Historical central-lock ownership is not treated as permanent; no other task entry is rewritten.
+- Consume the public Documents Service/client for organization files and draft attachments. No Documents implementation, Master Data, IAM, HR, shared API contract, schema/migration/seed or dependency/lockfile changes. Full PRD acceptance still requires the documented business decisions, persistent B2B workflows and owner projections; unavailable states are not completion.
+- Scope, evidence and remaining acceptance criteria: `docs/tasks/B2B-AGENCIES-001-PRD-COVERAGE.md`. No migration lock or runtime handoff is claimed by this slice.
+- Validation: 62 organization Web tests, 49 B2B API tests and 5 isolated PostgreSQL tests passed; affected lint/typechecks and production builds passed. New browser visual QA was unavailable due webview attachment timeout. This slice's implementation reservations are released for review; full PRD acceptance and runtime integration remain incomplete.
+
 ## CI-002-MULTI-COMPUTER — PC-B — READY_FOR_REVIEW
 
 - User reports four computers and authorizes checking/fixing CI, normal push and merge. Base origin/develop@679e516; independent branch/worktree codex/pc-b-ci-multi-computer. CI-001 released its workflow reservation; current module owners and other PRs remain untouched.
@@ -1484,5 +1546,7 @@ Reserve only AppShell global search shortcut styling and task docs. Explicit tex
 
 SEARCH-SHORTCUT-CONTRAST-0909: 25 layout tests, scoped lint/typecheck and 40-route build passed. Web3100 refreshed; scope released. Local commit only.
 
-## SYNC-DEVELOP-0909 — PC-A — IN_PROGRESS
+## SYNC-DEVELOP-0909 — PC-A — LOCAL_COMPLETE_PENDING_PUBLICATION
 User requests bringing colleagues Git fixes locally. Integrate reviewed origin/develop e07c0c6 into local d68a65f on independent branch, preserving all local Reservations/Sales/header changes. Scope integration/docs and resolution of actual conflicts only. Draft PR132 and other unmerged branches excluded. No incoming migration or dependency changes; no data/permission edits, remote merges or public push.
+
+SYNC-DEVELOP-0909: local integration of develop e07c0c6 complete. 270 Web tests passed including isolated timeout retry; 120 API passed and 26 PostgreSQL tests skipped. Web/API lint/typechecks/builds passed; API4000/Web3100 refreshed and health verified. Scope released; no public push or remote merge.

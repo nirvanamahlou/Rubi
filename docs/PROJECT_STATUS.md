@@ -8,6 +8,50 @@ Reservation request print now follows the supplied six-section English navy/teal
 
 Persisted Reservations supplier/insurance/voucher/cancellation workflow, versioned operational order/age overrides, company/agency letterhead and printable request/voucher outputs. Sales passenger document access now requires Finance delivery authorization, with revocation and transactional owner notifications. Over-60 insurance extra is a per-passenger toman field with exact IRR reconciliation. Local additive migration applied after restored-copy rehearsal and fresh backup; 350 customers/5 contracts retained. API4000/Web3100 updated. Role grants remain pending user approval; no live financial or operational decisions, production deploy or merge. Tests, remaining limitations and handoff: [task report](tasks/TRAVEL-DOCUMENT-HANDOFF-0909.md).
 
+## DOCUMENTS-008A — اصلاح قطعی رنگ CTA آبی — آماده ادغام تأییدشده
+
+- در اجرای واقعی مشخص شد قانون عمومی و بدون لایه `a { color: inherit }` کلاس Tailwind سفید PR #130 را بازنویسی می‌کند. `PC-B` رنگ سفید را فقط روی دو CTA آبی ارتباطات اسناد در سطح خود لینک تثبیت کرد؛ قانون عمومی لینک‌ها و سایر بخش‌های سامانه تغییر نکردند.
+- ۵ تست قراردادی Documents، Web lint/typecheck و Production Build با ۴۰ Route موفق‌اند. نسخه تولیدی روی `3100` اجرا و با Browser بررسی شد: همه CTAهای ماژول‌ها متن و آیکن سفید `rgb(255, 255, 255)` روی آبی `rgb(21, 87, 184)` دارند. بدون Schema/Migration/API/Dependency/Data؛ CI نسخه دقیق شاخه شرط ادغام است.
+
+## HR-PUBLISH-012 — انتشار تأییدشده منابع انسانی برای PC-A
+
+مالک در 2026-09-09 پوش و مرج HR-010/011 را صریحاً تأیید کرد. PRهای ۱۲۵ و ۱۲۷ با حفظ تاریخچه و کد آزموده‌شده به develop جاری متصل می‌شوند؛ فقط تعارض‌های افزایشی اسناد وضعیت حل شد. CI نسخهٔ نهایی هر PR و develop شرط تکمیل انتشار است. سرویس‌های محلی و کار جاری آژانس‌ها تغییر نمی‌کنند. روش دریافت و کنترل نسخه روی PC-A در [راهنمای تحویل](tasks/HR-PUBLISH-012.md) ثبت شده؛ دریافت یا اجرای واقعی روی آن دستگاه بدون شواهد ادعا نمی‌شود.
+
+## HR-011 — اتصال هزینه به مأموریت — آماده بررسی
+
+انتخاب مأموریت مرجع از رکوردهای واقعی مأموریت، با کد، کارمند، مقصد و تاریخ سفر انجام می‌شود؛ شرکت و کارمند انتخاب‌شده محدوده فهرست را تعیین می‌کنند و مأموریت‌های قدیمی هم پشتیبانی می‌شوند. اتصال، تغییر و برداشتن مرجع در هزینه پیش‌نویس ذخیره می‌شود؛ کنترل مجوز، شرکت، کارمند، نسخه و وضعیت نهایی در API برقرار است. ۹۹ تست وب و ۸۰ تست API، شامل ۲۱ تست PostgreSQL، موفق‌اند. بدون Migration، تغییر داده عملیاتی یا Merge؛ جزئیات و راه‌اندازی نسخه 3100 در [HR-011](tasks/HR-011.md).
+
+## HR-010 — دکمه‌های عملیات منابع انسانی — آماده بررسی
+
+دکمه‌های ویرایش و حذف از منوی سه‌نقطه به عملیات مستقیم هر ردیف منتقل شدند؛ همان Button حاشیه‌دار کوچک، آیکن‌ها، فاصله و رنگ حذف اطلاعات پایه استفاده می‌شود. مشاهده فقط در محل‌های قبلی خود باقی است و تأیید حذف منطقی و مجوزها حفظ شده‌اند. ۹۷ تست موجود، lint و typecheck موفق‌اند؛ اتصال مرورگر برای آزمون تصویری برقرار نشد. تغییر فقط در UI منابع انسانی است؛ بدون Migration یا Merge. جزئیات: [HR-010](tasks/HR-010.md).
+
+## DOCUMENTS-008 — سفیدشدن متن دکمه‌های آبی ارتباطات — آماده ادغام تأییدشده
+
+- `PC-B` روی شاخه مستقل `codex/pc-b-documents-button-contrast` متن و آیکن CTAهای آبی «رفتن به بخش مربوطه» را در کارت‌های ارتباطات اسناد، در حالت عادی و Hover، سفید کرد. تغییر فقط Presentation است و رفتار لینک‌ها یا سایر دکمه‌های سامانه را عوض نمی‌کند.
+- نسبت کنتراست سفید روی رنگ آبی اصلی `6.80:1` و مطابق WCAG AA است. ۵ تست قراردادی Documents، Web lint/typecheck و Production Build با ۴۰ Route موفق‌اند؛ Schema/Migration/API/Dependency/Data و Runtime تغییر نکرده‌اند. مالک محصول در 2026-09-09 Push و Merge با `develop` را تأیید کرد و CI نسخه دقیق شاخه شرط ادغام است.
+
+## B2B-AGENCIES-001 — ادغام تأییدشده PR #113
+
+- مالک صریحاً Merge و Push را تأیید کرد. `develop@0261b91` با Merge معمولی وارد شاخه همین کار شد؛ نسخه آژانس‌ها در develop با منبع کپی‌شده `fc573ac` یکسان بود و تغییرات جدید فرم، اکسل، پرونده، اسناد و لوگو حفظ شدند. تغییرات سایر ماژول‌ها و سوابق هر دو سمت باقی ماندند.
+- ۹۷ تست هدفمند Web، ۵۴ تست B2B شامل پنج PostgreSQL یک‌بارمصرف، lint/typecheck کامل و Build تولیدی همه بسته‌ها با ۴۰ مسیر Web موفق‌اند؛ CI نسخه ترکیبی شرط Merge است. این تحویل تغییر اجرای ۳۱۰۰/۴۱۹۰، داده عملیاتی یا تکمیل تمام PRD را شامل نمی‌شود.
+
+## B2B-AGENCIES-001 — لوگوی آژانس و مشتری سازمانی — آماده بررسی
+
+- کنار نام در سربرگ مشترک پرونده، دکمه بارگذاری/تغییر لوگو و پنجره انتخاب تصویر با پیش‌نمایش، ذخیره و برداشتن لوگو اضافه شد؛ PNG/JPEG تا ۵ مگابایت پذیرفته می‌شود.
+- ذخیره از مسیر موجود Master Data و Documents انجام می‌شود؛ هویت، نسخه و همه نقش‌های سازمان حفظ می‌شوند. مجوز نمایش، وضعیت اسکن و اعتبارسنجی دومرحله‌ای آرشیو رعایت می‌شوند؛ نتیجه ناقص پیام موفقیت دریافت نمی‌کند.
+- ۹۷ تست هدفمند سازمان‌ها و Client مالک، lint، typecheck و Build موفق‌اند. انتخاب فایل نامعتبر/معتبر، نمایش پس از ذخیره و برداشتن لوگو در مرورگر با سرویس‌های صرفاً آزمایشی بررسی شد. فایل واقعی، داده عملیاتی، schema/API و اجرای مستقل ۳۱۰۰/۴۱۹۰ تغییر نکردند.
+
+## B2B-AGENCIES-001 — نمای ۳۶۰ درجه آژانس — آماده بررسی
+
+- مسیر «مشاهده پرونده» دسکتاپ و موبایل برای آژانس، مشتری سازمانی و نقش دوگانه به یک نمای مشترک با هر هفت کارت Screenshot (524) می‌رود. عنوان اختصاصی آژانس و بازگشت به ابتدای صفحه هنگام ورود/تغییر بخش اضافه شد؛ صفحه از محل اسکرول ردیف فهرست باز نمی‌ماند.
+- رندر واقعی کامپوننت برای هر سه نقش، ۶۲ تست موجود سازمان‌ها، lint، typecheck و Build نهایی Web موفق‌اند. داده، API، نقش‌ها، هدر و اجرای مستقل ۳۱۰۰/۴۱۹۰ تغییر نکردند؛ این پیگیری به معنی تکمیل قابلیت‌های باقی‌مانده PRD نیست.
+
+## B2B-AGENCIES-001 — تطبیق PRD و اتصال اسناد — آماده بررسی، پذیرش کامل باقی است
+
+- کل سند ۴۵۱‌بندی بررسی و پوشش ۴۰ نیازمندی عملکردی در `docs/tasks/B2B-AGENCIES-001-PRD-COVERAGE.md` ثبت شد. کل PRD هنوز تکمیل نیست؛ گردش تأیید/نسخه immutable، پروفایل نقش‌محور، کاربران/مسافران سازمان و تولیدکننده مالی باقی‌اند.
+- اتصال واقعی آرشیو سازمان، فیلتر انقضا و بارگذاری، انتخاب/اعتبارسنجی سند پیش‌نویس، نمایش دقیق اعتبار هم‌ارز و زمان/نسخه Finance و جلوگیری از تغییر lifecycle بدون تأیید اضافه شد. تصمیم مالک: سقف مستقل هر ارز، بدون FX خودکار؛ مدل چندسیاست ارزی هنوز migration نشده است.
+- شاخه مستقل و Draft PR #113 حفظ می‌شوند. پایگاه داده عملیاتی، ۳۱۰۰/۴۱۹۰، schema/migration، مجوزها و ماژول‌های مالک تغییر نمی‌کنند. نتیجه نهایی بررسی‌ها در گزارش Task ثبت می‌شود.
+- ۶۲ تست سازمان‌ها، ۴۹ تست B2B و پنج تست PostgreSQL، lint/typecheck و Build هر دو بخش موفق‌اند. آزمون ظاهری جدید به علت timeout اتصال مرورگر انجام نشد. رزرو پیاده‌سازی این پیگیری برای Review آزاد است؛ استقرار و تکمیل کل PRD انجام‌شده محسوب نمی‌شوند.
 
 ## CI-002-MULTI-COMPUTER — PC-B — READY_FOR_REVIEW
 
@@ -1622,3 +1666,6 @@ RESERVATION-COMPACT-ENGLISH-0909 validation complete: 60 Reservations/calendar t
 
 ## SEARCH-SHORTCUT-CONTRAST-0909 — PC-A
 Global search kbd now has explicit paired foreground/surface colors, readable semibold Ctrl + K and nonshrinking LTR layout. Visible from sm rather than lg. Shared theme and keyboard behavior unchanged. 25 layout tests passed; scoped lint/typecheck passed. Production 40-route build passed; Web3100 refreshed. No publication to public origin.
+
+## SYNC-DEVELOP-0909 — PC-A
+Integrated reviewed develop e07c0c6 into the local feature stack: agencies PR113, HR PR125/127 and Documents CTA PR130/131. No code conflicts; additive status conflict preserves both sides. Local Reservations/Sales/calendar/header files verified unchanged against d68a65f. 270 Web tests passed (one timeout rerun separately), 120 API tests passed, 26 database tests skipped. Web lint, scoped API lint, both typechecks/builds passed. API4000/Web3100 refreshed with original environment and PDF settings; no migration, data or grants. Draft132 excluded. Local merge only; public-origin publication approval remains pending.

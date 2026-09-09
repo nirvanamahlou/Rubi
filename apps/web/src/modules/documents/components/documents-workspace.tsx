@@ -1832,6 +1832,7 @@ export function DocumentsWorkspace() {
                         <Link
                           className={buttonVariants({ size: 'sm' })}
                           href={moduleHref}
+                          style={{ color: '#ffffff' }}
                         >
                           رفتن به {connection.moduleLabel}
                           <ChevronLeft aria-hidden="true" className="size-4" />
@@ -2076,11 +2077,9 @@ export function DocumentsWorkspace() {
               </div>
               {activeConnection.moduleHref ? (
                 <Link
-                  className={buttonVariants({
-                    className: 'shrink-0',
-                    size: 'sm',
-                  })}
+                  className={cn(buttonVariants({ size: 'sm' }), 'shrink-0')}
                   href={activeConnection.moduleHref}
+                  style={{ color: '#ffffff' }}
                 >
                   رفتن به {activeConnection.moduleLabel}
                   <ChevronLeft aria-hidden="true" className="size-4" />

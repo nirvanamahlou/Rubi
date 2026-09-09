@@ -19,6 +19,10 @@ const editDialogSource = readFileSync(
   join(moduleRoot, 'components', 'document-edit-dialog.tsx'),
   'utf8',
 );
+const documentsWorkspaceSource = readFileSync(
+  join(moduleRoot, 'components', 'documents-workspace.tsx'),
+  'utf8',
+);
 
 function moduleSources(directory: string): string {
   return readdirSync(directory, { withFileTypes: true })
@@ -34,6 +38,12 @@ function moduleSources(directory: string): string {
 }
 
 describe('documents workspace contract', () => {
+  it('keeps document connection CTA labels and icons white on blue', () => {
+    expect(
+      documentsWorkspaceSource.match(/style=\{\{ color: '#ffffff' \}\}/g),
+    ).toHaveLength(2);
+  });
+
   it('renders the real operational, security and detail surfaces', () => {
     const source = moduleSources(moduleRoot);
     for (const marker of [

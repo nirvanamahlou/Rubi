@@ -1382,6 +1382,227 @@ describe.skipIf(process.env.RUBI_RUN_HR_POSTGRES_TESTS !== '1')(
         ),
       ).rejects.toThrow();
     });
+    it('persists expense mission links and rejects scope, stale-version and approval bypasses', async () => {
+      const company = (name: string) =>
+        service.createRecord(
+          {
+            branchId: branchA,
+            section: 'organization',
+            tab: 'branches',
+            values: [name, name, 'Test', '', '2026-01-01'],
+            status: 'فعال',
+          },
+          key(),
+          admin,
+        );
+      const companyA = await company('Mission company A');
+      const companyB = await company('Mission company B');
+      const worker = await service.createEmployee(
+        employeeInput('Mission worker', {
+          organizationBranchId: companyA.id,
+        }),
+        key(),
+        admin,
+      );
+      const missionInput = {
+        branchId: branchA,
+        section: 'expenses',
+        tab: 'mission',
+        employeeId: worker.id,
+        values: [
+          worker.name,
+          'شیراز',
+          '2026-10-01',
+          '2026-10-03',
+          'جلسه آزمایشی',
+          '',
+        ],
+        data: { organizationBranchId: companyA.id },
+      };
+      const current = await service.createRecord(missionInput, key(), admin);
+      const legacy = await service.createRecord(
+        { ...missionInput, section: 'time', data: {} },
+        key(),
+        admin,
+      );
+      const wrongCompany = await service.createRecord(
+        { ...missionInput, data: { organizationBranchId: companyB.id } },
+        key(),
+        admin,
+      );
+      const wrongWorker = await service.createRecord(
+        { ...missionInput, employeeId: otherEmployee.id },
+        key(),
+        admin,
+      );
+      const expense = {
+        branchId: branchA,
+        employeeId: worker.id,
+        section: 'expenses',
+        tab: 'claims',
+        values: [worker.name, 'رفت‌وآمد', '2026-10-01', 'IRR', '1200', '', ''],
+        data: { organizationBranchId: companyA.id, currency: 'IRR' },
+      };
+      const direct = await service.createRecord(
+        { ...expense, parentId: current.id },
+        key(),
+        admin,
+      );
+      expect(direct.parentId).toBe(current.id);
+      await expect(
+        service.createRecord(
+          { ...expense, parentId: wrongCompany.id },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow('شرکت');
+      await expect(
+        service.createRecord(
+          { ...expense, parentId: wrongWorker.id },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.createRecord(
+          { ...expense, parentId: companyA.id },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow();
+      const independent = await service.createRecord(expense, key(), admin);
+      expect(independent.parentId).toBeNull();
+      const linked = await service.updateRecord(
+        independent.id,
+        { version: 1, parentId: current.id },
+        admin,
+      );
+      expect((await service.getRecord(linked.id, admin)).parentId).toBe(
+        current.id,
+      );
+      expect(
+        (await service.listRecords({ parentId: current.id }, admin)).items.map(
+          (r) => r.id,
+        ),
+      ).toContain(linked.id);
+      await expect(
+        service.updateRecord(
+          linked.id,
+          { version: 1, parentId: legacy.id },
+          admin,
+        ),
+      ).rejects.toThrow('دیگری');
+      await expect(
+        service.updateRecord(
+          linked.id,
+          { version: linked.version, parentId: wrongCompany.id },
+          admin,
+        ),
+      ).rejects.toThrow('شرکت');
+      await expect(
+        service.updateRecord(
+          linked.id,
+          { version: linked.version, parentId: wrongWorker.id },
+          admin,
+        ),
+      ).rejects.toThrow('کارمند');
+      await expect(
+        service.updateRecord(
+          linked.id,
+          { version: linked.version, parentId: legacy.id },
+          reader,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.updateRecord(
+          linked.id,
+          { version: linked.version, parentId: legacy.id },
+          outsider,
+        ),
+      ).rejects.toThrow();
+      const replaced = await service.updateRecord(
+        linked.id,
+        { version: linked.version, parentId: legacy.id },
+        admin,
+      );
+      expect(replaced.parentId).toBe(legacy.id);
+      const cleared = await service.updateRecord(
+        linked.id,
+        { version: replaced.version, parentId: null },
+        admin,
+      );
+      expect((await service.getRecord(cleared.id, admin)).parentId).toBeNull();
+      await expect(
+        service.updateRecord(
+          cleared.id,
+          {
+            version: cleared.version,
+            parentId: current.id,
+            status: 'تأییدشده',
+          },
+          admin,
+        ),
+      ).rejects.toThrow('جدا');
+      const approved = await service.updateRecord(
+        cleared.id,
+        { version: cleared.version, status: 'تأییدشده' },
+        admin,
+      );
+      await expect(
+        service.updateRecord(
+          cleared.id,
+          { version: approved.version, parentId: current.id },
+          admin,
+        ),
+      ).rejects.toThrow('نهایی');
+      await expect(
+        service.updateRecord(
+          cleared.id,
+          {
+            version: approved.version,
+            parentId: current.id,
+            status: 'لغوشده',
+            data: { reason: 'Test' },
+          },
+          admin,
+        ),
+      ).rejects.toThrow('بدون تغییر');
+      const advance = await service.createRecord(
+        {
+          ...expense,
+          tab: 'advances',
+          parentId: current.id,
+          values: [
+            worker.name,
+            'forged reference',
+            'IRR',
+            '1200',
+            '2026-10-01',
+            'نقدی',
+          ],
+        },
+        key(),
+        admin,
+      );
+      expect(advance.values[1]).toBe(current.code);
+      const advanceMoved = await service.updateRecord(
+        advance.id,
+        { version: advance.version, parentId: legacy.id },
+        admin,
+      );
+      expect(advanceMoved.values[1]).toBe(legacy.code);
+      const advanceCleared = await service.updateRecord(
+        advance.id,
+        { version: advanceMoved.version, parentId: null },
+        admin,
+      );
+      expect(advanceCleared.values[1]).toBe('');
+      expect(
+        await client.hrAuditEvent.count({
+          where: { recordId: linked.id, action: 'record.update' },
+        }),
+      ).toBeGreaterThanOrEqual(3);
+    });
     it('applies due approved job changes automatically on authorized reads without replay', async () => {
       const before = await client.hrRecord.count({
         where: {

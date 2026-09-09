@@ -1,5 +1,11 @@
 # تصمیم‌های معماری
 
+## B2B-AGENCIES-001 — اعتبار چندارزی و حذف هویت استفاده‌شده
+
+- پاسخ صریح مالک در پیگیری PRD: **سقف جدا برای هر ارز؛ بدون تبدیل خودکار**. محاسبه اعتبار فقط Decimalهای هم‌ارز را ترکیب می‌کند؛ currency mismatch نتیجه قابل‌استفاده تولید نمی‌کند. مدل نهایی Policy باید ارز را در scope یکتا لحاظ کند؛ schema فعلی تک‌سیاستی به‌عنوان پیاده‌سازی چندارزی معرفی نمی‌شود.
+- درخواست حذف دائمی داده با FR-ORG-04 چنین جمع می‌شود: رکورد بدون وابستگی از API نسخه‌دار و audited مالک قابل حذف است؛ FK محدودکننده هویت استفاده‌شده و تاریخچه تجاری حفظ می‌شود. هیچ حذف آبشاری قرارداد/سفارش/سند مالی مجاز نشده است.
+- زمان تحقق پورسانت، تعداد مراحل/مجوزهای تأیید، ترکیب Exposure و سایر P0های باز سند با این پاسخ تعیین نشده‌اند. جزئیات و وضعیت واقعی پیاده‌سازی: `tasks/B2B-AGENCIES-001-PRD-COVERAGE.md`.
+
 ## SALES-OUTPUT-CLEANUP-0907 — customer copy vs operator guidance
 
 At the user's request, operational issuance/context disclaimers and template generation metadata are removed from the customer-facing printed/PDF page. The same disclosures stay in the operator dialog; this layout-only change does not establish historical issuer binding, official issuance, archive completion, Finance payment confirmation or reservation fulfillment. Existing fail-closed API policies remain unchanged.

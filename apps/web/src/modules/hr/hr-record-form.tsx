@@ -25,6 +25,11 @@ import {
   retiredHrColumns,
 } from './hr-form-model';
 import { useHrReferenceData } from './hr-reference-data';
+import {
+  expenseMissionOptions,
+  isMissionExpense,
+  missionOptionLabel,
+} from './hr-mission-reference';
 
 import ui from './hr-unified.module.css';
 
@@ -129,10 +134,22 @@ function HrRecordFormFields({
   const references = useHrReferenceData(store);
   const data = references.data;
   const companies = hrCompanies(data);
+  const missionExpense = isMissionExpense(
+    target.source.section,
+    target.source.tab,
+  );
   const [companyId, setCompanyId] = useState(
     () =>
+      (missionExpense
+        ? (target.record?.data.organizationBranchId ??
+          target.parent?.data.organizationBranchId)
+        : undefined) ??
       data.employees.find(
-        (item) => item.id === (target.employeeId ?? target.record?.employeeId),
+        (item) =>
+          item.id ===
+          (target.employeeId ??
+            target.record?.employeeId ??
+            target.parent?.employeeId),
       )?.organizationBranchId ??
       target.record?.data.organizationBranchId ??
       target.parent?.data.organizationBranchId ??
@@ -189,8 +206,6 @@ function HrRecordFormFields({
   const key = useRef(crypto.randomUUID());
   const archivedFiles = useRef(new Map<string, string>());
   const employee = data.employees.find((item) => item.id === employeeId);
-  const parent =
-    target.parent ?? data.records.find((item) => item.id === parentId);
   const employees = data.employees.filter(
     (item) =>
       item.branchId === branchId &&
@@ -198,20 +213,30 @@ function HrRecordFormFields({
         item.organizationBranchId === company.organizationBranchId ||
         item.id === employeeId),
   );
-  const parents = data.records.filter(
-    (item) =>
-      item.branchId === branchId &&
-      item.id !== target.record?.id &&
-      (!company?.organizationBranchId ||
-        !item.data.organizationBranchId ||
-        item.data.organizationBranchId === company.organizationBranchId) &&
-      (!definition.employeeRequired ||
-        !employeeId ||
-        !item.employeeId ||
-        item.employeeId === employeeId) &&
-      definition.parentResources.includes(`${item.section}.${item.tab}`) &&
-      !item.deletedAt,
-  );
+  const parents = missionExpense
+    ? expenseMissionOptions(
+        data,
+        branchId,
+        company?.organizationBranchId,
+        employeeId,
+      )
+    : data.records.filter(
+        (item) =>
+          item.branchId === branchId &&
+          item.id !== target.record?.id &&
+          (!company?.organizationBranchId ||
+            !item.data.organizationBranchId ||
+            item.data.organizationBranchId === company.organizationBranchId) &&
+          (!definition.employeeRequired ||
+            !employeeId ||
+            !item.employeeId ||
+            item.employeeId === employeeId) &&
+          definition.parentResources.includes(`${item.section}.${item.tab}`) &&
+          !item.deletedAt,
+      );
+  const parent = missionExpense
+    ? parents.find((item) => item.id === parentId)
+    : (target.parent ?? data.records.find((item) => item.id === parentId));
   const unitNames = data.records
     .filter(
       (item) =>
@@ -296,6 +321,7 @@ function HrRecordFormFields({
     };
     if (employeeRequired) result['کارمند'] = employee?.name ?? '';
     if (approvalRequired) result['تأییدکننده'] = 'تعیین در گردش تأیید';
+    if (missionExpense) result['مأموریت مرجع'] = parent?.code ?? '';
     if (correction)
       result['مقدار درخواستی'] = `${correctionStart} تا ${correctionEnd}`;
     if (
@@ -392,7 +418,10 @@ function HrRecordFormFields({
                   target.employeeId ||
                   target.parent?.employeeId,
                 )}
-                onChange={(event) => setEmployeeId(event.target.value)}
+                onChange={(event) => {
+                  setEmployeeId(event.target.value);
+                  if (missionExpense) setParentId('');
+                }}
               >
                 <option value="">انتخاب کارمند</option>
                 {employees.map((item) => (
@@ -412,7 +441,10 @@ function HrRecordFormFields({
               </RequiredFieldLabel>
               <select
                 disabled={Boolean(
-                  target.parent || (target.record && !(isUnit || isApplicant)),
+                  target.parent ||
+                  (target.record &&
+                    !(isUnit || isApplicant || missionExpense)) ||
+                  references.loading,
                 )}
                 value={parentId}
                 onChange={(event) => {
@@ -424,18 +456,33 @@ function HrRecordFormFields({
                 <option value="">
                   {isApplicant
                     ? 'انتخاب فرصت شغلی ثبت‌شده'
-                    : target.source.section === 'expenses'
-                      ? 'هزینه مستقل'
+                    : missionExpense
+                      ? 'بدون مأموریت (هزینه مستقل)'
                       : definition.parentOptional
                         ? 'بدون والد'
                         : 'انتخاب پرونده'}
                 </option>
+                {missionExpense && parentId && !parent ? (
+                  <option value={parentId} disabled>
+                    مأموریت انتخاب‌شده در این شرکت یا برای این کارمند در دسترس
+                    نیست
+                  </option>
+                ) : null}
                 {parents.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.values[0]} · {item.code}
+                    {missionExpense
+                      ? missionOptionLabel(item)
+                      : `${item.values[0]} · ${item.code}`}
                   </option>
                 ))}
               </select>
+              {missionExpense && !references.loading && !parents.length ? (
+                <span className={ui.muted}>
+                  برای شرکت و کارمند انتخاب‌شده مأموریتی ثبت نشده است. شرکت یا
+                  کارمند را بررسی کنید یا از بخش مأموریت‌ها درخواست مأموریت ثبت
+                  کنید.
+                </span>
+              ) : null}
             </label>
           ) : null}
         </div>
@@ -547,6 +594,10 @@ function HrRecordFormFields({
               if (!branchId) throw new Error('شرکت مجاز را انتخاب کنید.');
               if (definition.employeeRequired && !employee)
                 throw new Error('کارمند را از فهرست انتخاب کنید.');
+              if (missionExpense && parentId && !parent)
+                throw new Error(
+                  'مأموریت را از فهرست مأموریت‌های همین شرکت و کارمند انتخاب کنید.',
+                );
               if (
                 definition.parentResources.length &&
                 !parentId &&
@@ -686,7 +737,7 @@ function HrRecordFormFields({
                     values: input.values,
                     ...(input.status ? { status: input.status } : {}),
                     ...(input.data ? { data: input.data } : {}),
-                    ...(isUnit || isApplicant
+                    ...(isUnit || isApplicant || missionExpense
                       ? { parentId: parentId || null }
                       : {}),
                     ...(input.effectiveAt
