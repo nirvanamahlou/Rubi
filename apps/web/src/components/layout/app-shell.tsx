@@ -436,6 +436,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
       <aside
+        data-rubi-sidebar
         className={cn(
           'sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden bg-[linear-gradient(180deg,#123f8c_0%,#0e2f6e_55%,#092354_100%)] p-2.5 text-white shadow-2xl shadow-blue-950/20 transition-[width] duration-200 lg:flex',
           collapsed ? 'w-[68px]' : 'w-[290px]',
@@ -488,7 +489,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-surface/90 shadow-sm shadow-blue-900/5 backdrop-blur-xl dark:border-blue-900/50">
+        <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-surface/90 shadow-sm shadow-blue-900/5 backdrop-blur-xl dark:border-border">
           <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
             <Drawer>
               <DrawerTrigger asChild>

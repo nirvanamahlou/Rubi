@@ -1548,3 +1548,6 @@ Final verification: targeted lint and production Web build/TypeScript passed (39
 Purchases now appears in the Finance sidebar group; route and permissions are unchanged. Visible Web copy uses the requested Persian spelling بلیط, with existing fixture/test text updated consistently. 57 relevant tests passed; no backend, data, migration or dependency change.
 
 Final validation: Web lint, TypeScript and production build passed (40 routes); local Web3100 refreshed. API and original database unchanged.
+
+## NEUTRAL-DARK-MODE-0909 — PC-A — READY_FOR_REVIEW
+Replaced navy dark theme surfaces with neutral charcoal tokens; desktop sidebar and company header now follow dark mode. Reservations queue, filters and action panel use shared theme tokens, with distinct pink, light/dark gray and red status palettes. Foreground and secondary text meet 4.5:1 contrast on base surfaces; input boundaries and focus rings meet 3:1. These checks cover declared token pairs, not every composed screen. Light palette and Finance/ticket label changes are preserved. Web lint, TypeScript, 66 relevant tests and production build (40 routes) passed. Web 3100 restarted; API/main database unchanged. Browser visual review unavailable due to browser tool startup failure. No migration, dependency, backend or production deployment changes.

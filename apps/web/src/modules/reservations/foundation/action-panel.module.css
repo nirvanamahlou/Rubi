@@ -4,9 +4,9 @@
   align-self: start;
   max-height: calc(100dvh - 32px);
   overflow-y: auto;
-  background: #fff;
-  border: 1px solid #dbe5f2;
-  border-top: 4px solid #2468b3;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--primary);
   border-radius: 10px;
   padding: 12px;
   min-width: 0;
@@ -15,9 +15,9 @@
   display: grid;
   gap: 7px;
   padding: 12px;
-  background: #eaf3ff;
+  background: var(--secondary);
   border-radius: 8px;
-  color: #173253;
+  color: var(--foreground);
   font-size: 13px;
   overflow-wrap: anywhere;
 }
@@ -29,7 +29,7 @@
 }
 .group h2 {
   font-size: 13px !important;
-  color: #586e89;
+  color: var(--muted-foreground);
   margin-bottom: 8px !important;
 }
 .buttons {

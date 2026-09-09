@@ -1369,3 +1369,9 @@ User explicitly authorized merging the complete latest local version, including 
 User requested moving Purchases into the Finance navigation group and using بلیط in visible Web copy. Scope: navigation grouping, Persian Web strings and corresponding existing test expectations. No domain/API/schema changes.
 
 NAV-FINANCE-TICKET-LABELS-0909: READY_FOR_REVIEW. 57 targeted tests, Web lint, TypeScript and build passed; local port 3100 refreshed.
+
+## NEUTRAL-DARK-MODE-0909 — PC-A — READY_FOR_REVIEW
+User requests neutral dark surfaces with legible text and controls. Scope: shared theme tokens, shell backgrounds and Reservations theme-aware surfaces/status colors. Preserve current Finance grouping and ticket labels. No API/data changes.
+
+
+Validation: 66 targeted tests passed, including seven contrast assertions; Web lint, TypeScript and production build (40 routes) passed. Local Web 3100 refreshed. Browser visual QA unavailable because the browser tool failed to start. Branch codex/pc-a-neutral-dark-mode builds on Finance/ticket-labels PR #117. No migration or API/database changes.
