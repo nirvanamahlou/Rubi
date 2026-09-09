@@ -335,6 +335,9 @@ export function CooperationWizard({
                                 ...current,
                                 legalName: record.name,
                                 code: record.code,
+                                nationalId: String(
+                                  record.attributes.nationalId ?? '',
+                                ),
                                 personType: String(
                                   record.attributes.personType ?? 'LEGAL',
                                 ),
@@ -386,13 +389,35 @@ export function CooperationWizard({
                       disabled={mode === 'existing'}
                       value={draft.personType}
                       onChange={(event) =>
-                        set('personType', event.target.value)
+                        setDraft((current) => ({
+                          ...current,
+                          personType: event.target.value,
+                          nationalId:
+                            event.target.value === 'LEGAL'
+                              ? current.nationalId
+                              : '',
+                        }))
                       }
                     >
                       <option value="LEGAL">حقوقی</option>
                       <option value="NATURAL">حقیقی</option>
                     </select>
                   </label>
+                  {draft.personType === 'LEGAL' ? (
+                    <div>
+                      {field(
+                        'nationalId',
+                        'شناسه ملی شرکت (اختیاری)',
+                        11,
+                        mode === 'existing',
+                      )}
+                      <p className="panel-note">
+                        ۱۱ رقم از مدارک ثبتی شرکت؛ شناسه ملی خودکار تولید یا
+                        استعلام نمی‌شود. شناسه سازمان موجود از «ویرایش اطلاعات»
+                        اصلاح می‌شود.
+                      </p>
+                    </div>
+                  ) : null}
                   <label className="field">
                     <span>کشور نشانی (اختیاری)</span>
                     <input
@@ -563,6 +588,7 @@ export function CooperationWizard({
                 <div className="summary-list">
                   {[
                     ['سازمان', draft.legalName],
+                    ['شناسه ملی شرکت', draft.nationalId || 'ثبت نشده'],
                     ['کد سازمان', draft.code || 'تخصیص خودکار پس از ثبت'],
                     [
                       'نقش همکاری',

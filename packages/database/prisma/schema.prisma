@@ -749,6 +749,7 @@ model MasterOrganization {
   legalName           String                      @db.VarChar(200)
   displayName         String                      @db.VarChar(160)
   personType          String?                     @db.VarChar(16)
+  nationalId          String?                     @unique @db.VarChar(11)
   logoFileReference   String?                     @db.Uuid
   displayOrder        Int                         @default(0)
   isActive            Boolean                     @default(true)

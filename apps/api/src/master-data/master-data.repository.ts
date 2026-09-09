@@ -267,7 +267,7 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
   'meal-services': ['name', 'englishName', 'code'],
   facilities: ['name', 'englishName', 'code', 'category'],
   'composite-hotels': ['name', 'englishName', 'code', 'usageCondition'],
-  organizations: ['legalName', 'code'],
+  organizations: ['legalName', 'code', 'nationalId'],
   suppliers: ['name', 'code', 'englishName', 'externalProviderReference'],
   brokers: ['name', 'englishName', 'code'],
   'travel-services': ['name', 'englishName', 'code'],

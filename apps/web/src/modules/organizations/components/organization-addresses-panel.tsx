@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type {
   IamPermissionCode,
   MasterOrganizationAddressMutationV1,
@@ -27,10 +27,14 @@ const emptyAddress = (): MasterOrganizationAddressMutationV1 => ({
 export function OrganizationAddressesPanel({
   organizationId,
   permissions,
+  presentation = 'cards',
 }: {
   organizationId: string;
   permissions: readonly IamPermissionCode[];
+  presentation?: 'cards' | 'selector';
 }) {
+  const selectorId = useId();
+  const [selectedId, setSelectedId] = useState('');
   const [rows, setRows] = useState<readonly MasterOrganizationAddressV1[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -79,13 +83,22 @@ export function OrganizationAddressesPanel({
     setDeleting(undefined);
     void load();
   };
+  const selected =
+    rows.find((row) => row.id === selectedId) ??
+    rows.find((row) => row.isActive && row.isPrimary) ??
+    rows.find((row) => row.isActive) ??
+    rows[0];
+  const visibleRows =
+    presentation === 'selector' ? (selected ? [selected] : []) : rows;
   return (
     <section className="panel">
       <header className="panel-head">
         <div>
           <h2 className="panel-title">
             <MapPin size={20} />
-            شعب و آدرس‌های سازمان
+            {presentation === 'selector'
+              ? 'شعب آژانس طرف همکاری'
+              : 'شعب و آدرس‌های سازمان'}
           </h2>
           <p className="panel-note">
             {rows.length.toLocaleString('fa-IR')} آدرس ثبت‌شده
@@ -115,7 +128,31 @@ export function OrganizationAddressesPanel({
             هنوز آدرسی ثبت نشده است. از دکمه «ثبت شعبه یا آدرس» استفاده کنید.
           </p>
         ) : null}
-        {rows.map((row) => (
+        {presentation === 'selector' && rows.length > 0 ? (
+          <label className="field" htmlFor={selectorId}>
+            شعبه آژانس
+            <select
+              id={selectorId}
+              className="input"
+              value={selected?.id ?? ''}
+              disabled={loading}
+              onChange={(event) => setSelectedId(event.target.value)}
+            >
+              {rows.map((row) => (
+                <option key={row.id} value={row.id}>
+                  {row.label} · {row.cityName}
+                  {row.isPrimary ? ' · اصلی' : ''}
+                  {!row.isActive ? ' · غیرفعال' : ''}
+                </option>
+              ))}
+            </select>
+            <span className="panel-note">
+              برای مشاهده نشانی و اطلاعات هر شعبه، آن را انتخاب کنید. شعب جدید
+              را با «ثبت شعبه یا آدرس» اضافه کنید.
+            </span>
+          </label>
+        ) : null}
+        {visibleRows.map((row) => (
           <article key={row.id} className="rounded-xl border border-border p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="font-bold">
@@ -194,11 +231,13 @@ export function OrganizationAddressesPanel({
                 editor.id,
                 editor.values,
               );
-            else
-              await masterDataApi.createOrganizationAddress(
+            else {
+              const created = await masterDataApi.createOrganizationAddress(
                 organizationId,
                 editor.values,
               );
+              setSelectedId(created.data.id);
+            }
           }}
         >
           <label className="field">

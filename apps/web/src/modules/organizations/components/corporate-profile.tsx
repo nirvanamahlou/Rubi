@@ -207,7 +207,10 @@ export function CorporateProfile({
   onDelete: () => void;
   canDelete: boolean;
   contacts: ReactNode;
-  operations: (view: OperationalView) => ReactNode;
+  operations: (
+    view: OperationalView,
+    onReviewCooperation: () => void,
+  ) => ReactNode;
   logo?: ReactNode;
   overview?: ReactNode;
 }) {
@@ -488,7 +491,11 @@ export function CorporateProfile({
                 <div className="panel-body summary-list">
                   {[
                     ['نام سازمان', organization.name],
-                    ['شناسه ملی', 'در دسترس نیست'],
+                    [
+                      'شناسه ملی شرکت',
+                      organization.attributes.nationalId ||
+                        'ثبت نشده؛ از «ویرایش اطلاعات» وارد کنید',
+                    ],
                     [
                       'نوع شخصیت',
                       organization.attributes.personType === 'LEGAL'
@@ -516,7 +523,7 @@ export function CorporateProfile({
                   ))}
                 </div>
               </div>
-              {operations('profile')}
+              {operations('profile', () => go('contracts', 'framework'))}
             </section>
           ) : screen === 'organization' && tab === 'representatives' ? (
             <section className="panel">
@@ -539,7 +546,7 @@ export function CorporateProfile({
               organization={organization}
             />
           ) : operationalView ? (
-            operations(operationalView)
+            operations(operationalView, () => go('contracts', 'framework'))
           ) : (
             <CorporateUnavailable
               title={current?.tabs.find(([id]) => id === tab)?.[1] ?? title}

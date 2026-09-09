@@ -18,6 +18,7 @@ export interface CooperationDraft {
   legalName: string;
   code: string;
   personType: string;
+  nationalId: string;
   role: 'AGENCY' | 'CORPORATE_CUSTOMER';
   countryId: string;
   cityId: string;
@@ -34,6 +35,7 @@ export const blankCooperationDraft: CooperationDraft = {
   legalName: '',
   code: '',
   personType: 'LEGAL',
+  nationalId: '',
   role: 'AGENCY',
   countryId: '',
   cityId: '',
@@ -49,7 +51,13 @@ export function cooperationIssue(
   draft: CooperationDraft,
   step: number,
 ): string | undefined {
-  if (step === 1)
+  if (step === 1) {
+    if (
+      draft.nationalId.trim() &&
+      (draft.personType !== 'LEGAL' ||
+        !/^[0-9۰-۹٠-٩]{11}$/.test(draft.nationalId.trim()))
+    )
+      return 'شناسه ملی شرکت باید ۱۱ رقم و مربوط به شخصیت حقوقی باشد.';
     return validateOrganizationRows([
       {
         code: draft.code,
@@ -58,6 +66,7 @@ export function cooperationIssue(
         roleCodes: draft.role,
       },
     ])[0]?.issue;
+  }
   if (step === 2) {
     if (
       (draft.countryId || draft.cityId || draft.addressLine) &&
@@ -150,6 +159,7 @@ export async function saveCooperation(
           values: {
             legalName: draft.legalName.trim(),
             personType: draft.personType,
+            nationalId: draft.nationalId.trim() || null,
             roleCodes: draft.role,
           },
         })

@@ -633,7 +633,11 @@ export function OrganizationsWorkspace() {
                           </div>
                           <div>
                             <b>{record.name}</b>
-                            <small>شناسه ملی در دسترس نیست</small>
+                            <small>
+                              {record.attributes.nationalId
+                                ? `شناسه ملی: ${record.attributes.nationalId}`
+                                : 'شناسه ملی ثبت نشده'}
+                            </small>
                           </div>
                         </div>
                       </td>
@@ -867,7 +871,7 @@ export function OrganizationsWorkspace() {
               ) : null}
             </Card>
           }
-          operations={(view) =>
+          operations={(view, onReviewCooperation) =>
             view === 'address' ? (
               <OrganizationAddressesPanel
                 key={selected.id}
@@ -890,6 +894,7 @@ export function OrganizationsWorkspace() {
                 <AgencyProfilePanel
                   key={selected.id + view}
                   organizationId={selected.id}
+                  onReviewCooperation={onReviewCooperation}
                 />
               ) : view === 'rates' ||
                 view === 'discounts' ||

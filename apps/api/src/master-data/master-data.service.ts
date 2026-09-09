@@ -1,4 +1,8 @@
 import { columnFilterWhere } from './catalog-filters';
+import {
+  normalizeOrganizationNationalId,
+  rethrowOrganizationIdentityError,
+} from './organization-identity.policy';
 import { createHash } from 'node:crypto';
 
 import { isMasterTransportFormResource } from '@rubi/contracts';
@@ -453,6 +457,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'legalName',
     'roleCodes',
     'personType',
+    'nationalId',
     'logoFileReference',
   ],
   suppliers: [
@@ -1165,6 +1170,8 @@ export class MasterDataService {
     const row = await this.repository
       .create(resource, data, actor.userId, branchOf(actor, requestedBranch))
       .catch((error: unknown) => {
+        if (resource === 'organizations')
+          rethrowOrganizationIdentityError(error);
         if (resource === 'meal-services') rethrowMealServiceWriteError(error);
         throw error;
       });
@@ -1230,6 +1237,8 @@ export class MasterDataService {
         branchOf(actor, requestedBranch),
       )
       .catch((error: unknown) => {
+        if (resource === 'organizations')
+          rethrowOrganizationIdentityError(error);
         if (resource === 'meal-services') rethrowMealServiceWriteError(error);
         throw error;
       });
@@ -1509,6 +1518,27 @@ export class MasterDataService {
       if (personType && !['NATURAL', 'LEGAL'].includes(personType))
         throw new BadRequestException('نوع شخصیت باید حقیقی یا حقوقی باشد.');
       data.personType = personType || null;
+    }
+    if (
+      resource === 'organizations' &&
+      (Object.hasOwn(data, 'nationalId') || Object.hasOwn(data, 'personType'))
+    ) {
+      if (Object.hasOwn(data, 'nationalId'))
+        data.nationalId = normalizeOrganizationNationalId(data.nationalId);
+      const existing =
+        partial && entityId
+          ? await this.repository.find(resource, entityId)
+          : undefined;
+      const nationalId = Object.hasOwn(data, 'nationalId')
+        ? data.nationalId
+        : existing?.nationalId;
+      const personType = Object.hasOwn(data, 'personType')
+        ? data.personType
+        : existing?.personType;
+      if (nationalId && personType !== 'LEGAL')
+        throw new BadRequestException(
+          'شناسه ملی شرکت فقط برای شخصیت حقوقی ثبت می‌شود؛ برای تغییر به حقیقی، شناسه شرکت را پاک کنید.',
+        );
     }
     if (resource === 'suppliers' || resource === 'brokers') {
       if (Object.hasOwn(data, 'englishName')) {

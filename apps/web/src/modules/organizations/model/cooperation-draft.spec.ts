@@ -16,6 +16,20 @@ const draft = {
   code: 'B2B-TEST-01',
 };
 describe('cooperation wizard writes', () => {
+  it('accepts an optional company ID and rejects a personal or malformed identifier', () => {
+    expect(
+      cooperationIssue({ ...draft, nationalId: '۱۲۳۴۵۶۷۸۹۰۱' }, 1),
+    ).toBeUndefined();
+    expect(
+      cooperationIssue({ ...draft, nationalId: '1234567890' }, 1),
+    ).toContain('۱۱ رقم');
+    expect(
+      cooperationIssue(
+        { ...draft, personType: 'NATURAL', nationalId: '12345678901' },
+        1,
+      ),
+    ).toContain('حقوقی');
+  });
   it('saves corporate contract terms and independent currency limits without requiring agency/rate permissions', async () => {
     const existing = {
       id: 'identity',
