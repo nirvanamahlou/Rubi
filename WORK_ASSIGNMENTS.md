@@ -1,5 +1,48 @@
 # Work Assignments
 
+## HEADER-TODAY-001 / PR115 integration — PC-B — READY_FOR_REVIEW
+
+- Owner explicitly approved merging both the date change and PR #115, and receiving latest develop. Integration worktree codex/pc-b-hr115-integration starts from published PR115@628012a and incorporates develop@130606d without modifying source worktrees.
+- Temporary integration-only ownership: conflicting status/plans, IAM permission catalog union and Prisma model union. Preserve HR, Sales, Ticket/Reservations, current company/profile/notifications and both histories; no new domain feature, dependency, migration file or IAM grant.
+- HR owner handed over runtime3100/4190. Keep rubi_hr_current_20260908 and hr007-documents as active data/storage; no reset, seed or password changes. Rehearse existing pending migrations on a restored private backup before live cutover. Historical checksum differences remain unchanged and documented.
+- Combined production build, full lint/typecheck, 61 Contract tests, 150 targeted Web tests and 1001 API tests passed (107 opt-in API tests skipped). Restored-data rehearsal applied all ten pending existing migrations: 45 applied, preserving 6 employees, 144 HR records, 2 customers, 18 documents and 4 companies. Date PR #118 merged as e12c397; PR #115 receives that date before final CI/merge. Integration implementation reservation is released; operational runtime handoff remains with PC-B until cutover verification.
+
+## LOCAL-HR-AGENCIES-009 — PC-B — READY_FOR_REVIEW
+
+- Owner explicitly requests the current Agencies section alongside HR on the same local port 3100. Branch `codex/pc-b-hr-agencies-local` starts from HR-008 `838c1eb`; source agency implementation is the clean, published `codex/pc-b-agencies-organizations@fc573ac` (PR #113), based on the same develop `30d67ec`.
+- Reserve only the already implemented delta under `apps/api/src/b2b/**`, `apps/web/src/modules/organizations/**`, its task report and this local integration handoff. No new feature design, schema/migration, shared contract, IAM grant, dependency/lockfile or other module change. Preserve HR-008, current app shell and the existing independent HR database/document snapshot.
+- Apply the source module delta in this checkout, validate both sections, rebuild the owned web3100/API4190 listeners, and push a review branch without merging main/develop. The source agency worktree and its preview remain untouched. Existing B2B approval gates/unavailable producer projections must be retained.
+- Imported source modules are unchanged from the published agency branch. Fourteen Web and 28 API tests (including four PostgreSQL cases), full lint/typecheck and API build passed. Local startup and production handoff checks are documented in `docs/tasks/LOCAL-HR-AGENCIES-009.md`; browser/runtime evidence stays outside Git. No migration or merge.
+
+## HR-008-CONNECTED-FORMS — PC-B — READY_FOR_REVIEW
+
+- Owner request: simplify HR forms and populated tables, remove duplicate employee/company inputs, use stored reference data in dropdowns, enable selected-row exports and expense-document upload. Preserve current sections, workflow permissions and the active 3100 runtime's database.
+- Branch `codex/pc-b-hr-connected-forms` from HR-007 `54c5ed7`; reserve `apps/web/src/modules/hr/**`, `apps/api/src/hr/**` and the HR-only resource registry/columns slice in `packages/contracts/src/hr/**` if needed for compatible field metadata. Producer/consumer remain HR API/Web; retain stored column positions and current transport contracts for existing records/imports. No shared IAM, Documents, App Shell, dependency, schema or migration changes are planned.
+- Runtime remains the HR-007 checkout on web3100/API4190 with database `rubi_hr_current_20260908`; validate before rebuilding the owned listeners. Commit/push this branch and open a review PR without merging main/develop.
+- Result: stored-reference dropdowns and applicant/opening FK, deduplicated forms, selectable chart placement, selected-row XLSX/PDF, real expense receipt archiving and simplified tables/detail header. Retired fields retain stored positions for compatibility; no migration or shared IAM/Documents change. Web/API lint/typecheck/build, 94 HR Web tests, 79 HR API tests (20 PostgreSQL), 22 Contract tests and production browser checks passed. Details: `docs/tasks/HR-008.md`.
+- Implementation reservations are released for review. Operational ownership of web3100/API4190 and its independent data snapshot remains PC-B/HR-008; do not replace its listener with an older checkout. No merge performed.
+
+## HR-007-LOCAL-CURRENT — PC-B — READY_FOR_REVIEW
+
+- Owner request 2026-09-08: run the current HR experience on port 3100 while retaining the current Rubi application. Branch `codex/pc-b-hr3100-current` starts at `origin/develop@30d67ec`; port 3100 was handed over by Task «PC-B Uniting» after confirming no active work on its listener.
+- Scope: carry the already reviewed HR-005/HR-006 implementation from `b9b525d` into this isolated checkout, adapting only additive HR registration, HR permission exports/seed, Prisma HR relations and the local launcher. Preserve current IAM/MFA, Documents, four-company header, Profile, Notifications, Master Data and other modules. No merge to main/develop and no edits to other checkouts.
+- Reserve `HR shared-contract/root export`, `IAM HR permission slice`, `AppModule HR registration`, HR proxy/runtime paths and the existing additive HR schema/migrations for this work item. The owner previously transferred the completed PC-A migration lock for HR; no new or destructive migration is planned. Dependency/lockfile and other module contracts remain unchanged.
+- Runtime/data: prepare and validate separately before replacing only the handed-over web listener. Preserve API4000, its integrated database copy and the original HR database; prepare a separate database copy if schema reconciliation is needed. Record the exact runtime/commit and complete authentication, HR and current-shell smoke checks before handoff.
+- Acceptance: port 3100 serves the current HR UI/API, legacy HR URL redirects correctly, four companies/profile/notifications and document step-up remain available, and no business data is reset or silently downgraded.
+- Compatibility reservation: `Central UI Owner = PC-B/HR-007-LOCAL-CURRENT` only for the existing notification-center/change-notifications integration. Consume the public HR notification client in the common bell and remove the legacy HR listener to avoid two popups; all current non-HR feeds/actions stay intact.
+- Local runtime reserves `apps/web/src/lib/environment.ts` and its focused tests to keep local API/web hostnames aligned (`localhost` or `127.0.0.1`) and prevent host-scoped login cookies from causing another login loop. Remote API addresses retain their existing behavior.
+- Browser compatibility found a 14px overflow in the current shared header at 390px; reserve only the header container layout class in `app-shell.tsx` to arrange the existing controls into two mobile rows. Current desktop layout, company branding, user menu and actions remain present.
+- Result: the current HR production build is active on `localhost:3100`, with API4190 and the isolated `rubi_hr_current_20260908` database/document snapshot. Real browser login, all four companies, Profile/MFA, one notification bell, the legacy HR redirect, six employees and reload passed on both `localhost:3100` and `127.0.0.1:3100`. Lint/typecheck/build and targeted Web/API/Contracts/PostgreSQL checks passed; details and restart command are in `docs/tasks/HR-007.md`.
+- Implementation reservations are released for review. Operational ownership of web3100/API4190 remains PC-B/HR-007 until an explicit runtime handoff; preserve its database/document snapshot when replacing the listener. No merge to main/develop was performed.
+
+## HEADER-TODAY-001 — PC-B — DONE / MERGED
+
+- Owner requests today's date in the header, normal push/merge and fetching current changes; separately approves merging PR #115. Date slice starts at origin/develop@130606d on codex/pc-b-header-today.
+- Reserve only app-shell Header date insertion, header-today component/helper/tests and this task's documentation. Existing navigation, company colors, IAM identity and notifications remain unchanged. HR owner released Header scope and handed off runtime3100/4190; preserve its current HR/Agencies data and Documents storage.
+- No schema, migration, seed, dependencies, grants or credential changes in the date slice. PR #115 integration is validated separately; no source branches are deleted or force-pushed.
+- Date implementation complete: 12 focused date/session/company tests, Web lint and production build passed. Header-only implementation reservation released for review; final CI and runtime verification gate merge/handoff.
+- Desktop authenticated RTL app, responsive to320px; Persian calendar and numerals, Asia/Tehran. Targets (not measured claims): LCP p75<=2500ms, INP<=200ms, CLS<=0.1, route JS<=200KB gzip, incremental date code<=3KB gzip, Lighthouse accessibility>=95/performance>=90. PC-B verifies this slice; reuse existing theme and WCAG AA contrast.
+
 ## CONTRACT-OUTPUT-SUMMARY-0908 — PC-A — COMPLETE_LOCAL
 
 User marked confirmed-paid and outstanding cards for removal from the contract PDF. Branch codex/pc-a-contract-output-summary-0908 from36ebb12. Reserve only Sales contract-print template/test and task status entries. Retain agreed total, passenger prices, notices, QR, all application balances and Excel output. No API, database, dependency or permission changes; preserve integrated local runtime. Local-only publication gate unchanged.
@@ -1371,12 +1414,17 @@ User requested moving Purchases into the Finance navigation group and using بل
 NAV-FINANCE-TICKET-LABELS-0909: READY_FOR_REVIEW. 57 targeted tests, Web lint, TypeScript and build passed; local port 3100 refreshed.
 
 ## NEUTRAL-DARK-MODE-0909 — PC-A — READY_FOR_REVIEW
-User requests neutral dark surfaces with legible text and controls. Scope: shared theme tokens, shell backgrounds and Reservations theme-aware surfaces/status colors. Preserve current Finance grouping and ticket labels. No API/data changes.
 
+User requests neutral dark surfaces with legible text and controls. Scope: shared theme tokens, shell backgrounds and Reservations theme-aware surfaces/status colors. Preserve current Finance grouping and ticket labels. No API/data changes.
 
 Validation: 66 targeted tests passed, including seven contrast assertions; Web lint, TypeScript and production build (40 routes) passed. Local Web 3100 refreshed. Browser visual QA unavailable because the browser tool failed to start. Branch codex/pc-a-neutral-dark-mode builds on Finance/ticket-labels PR #117. No migration or API/database changes.
 
 ## HR-DARK-NAVIGATION-0909 — PC-A — READY_FOR_REVIEW
+
 User follow-up to neutral dark mode. Reserve HR workspace/Frappe CSS, Navigation collapse state and scoped tests on codex/pc-a-hr-dark-navigation-fix from 3d08f07. Preserve existing light design and local latest stack. No domain/API/data changes; header date work stays outside scope.
 
 Validation: 87 scoped tests, Web lint, TypeScript and production build (40 routes) passed; Web 3100 refreshed. No API/database restart or changes. Scoped reservations released.
+
+## PUBLISH-DARK-HR-0909 — PC-A — IN_PROGRESS
+
+User explicitly authorized merging the latest Finance labels, dark theme and HR/navigation corrections into develop. Integrate current develop 679e516, retaining PC-B HR/agencies and header date; resolve shared shell conflict with both responsive header and neutral dark border. Synchronize three ticket validation strings in API with the mirrored Web proposal to satisfy the existing parity test. No local database migration or runtime switch. Final combined CI gates must pass before merge.

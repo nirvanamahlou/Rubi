@@ -15,7 +15,16 @@ const actor: AuthenticatedActor = {
   userId: '33333333-3333-4333-8333-333333333333',
   sessionId: '44444444-4444-4444-8444-444444444444',
   branchIds: [branchId],
-  permissions: ['b2b.agency.read'],
+  permissions: [
+    'b2b.agency.read',
+    'b2b.agreement.read',
+    'b2b.credit.read',
+    'b2b.rate.read',
+    'b2b.agency.manage',
+    'b2b.agreement.manage',
+    'b2b.credit.manage',
+    'b2b.rate.manage',
+  ],
 };
 
 function setup(profile: Record<string, unknown> | null = null) {
@@ -54,6 +63,85 @@ function setup(profile: Record<string, unknown> | null = null) {
 }
 
 describe('B2B agency service', () => {
+  it('denies service calls without every required read permission before any lookup', async () => {
+    const { service, organizations, repository } = setup();
+    await expect(
+      service.agencyWorkspace(
+        organizationId,
+        { ...actor, permissions: ['b2b.agency.read'] },
+        branchId,
+      ),
+    ).rejects.toThrow('مجوز');
+    expect(organizations.agencyReference).not.toHaveBeenCalled();
+    expect(repository.findProfile).not.toHaveBeenCalled();
+  });
+
+  it.each(['2026-02-30', '2026-13-01', 'not-a-date'])(
+    'rejects invalid calendar date %s before persistence',
+    async (startsAt) => {
+      const { service, repository } = setup();
+      await expect(
+        service.createAgreement(
+          organizationId,
+          { branchId, title: 'توافق آزمایشی', startsAt, status: 'DRAFT' },
+          actor,
+        ),
+      ).rejects.toThrow('تاریخ');
+      expect(repository.createAgreement).not.toHaveBeenCalled();
+    },
+  );
+
+  it('does not allow direct credit writes to bypass maker/checker approval', async () => {
+    const { service, repository } = setup({
+      id: 'profile-id',
+      branchId,
+      status: 'ACTIVE',
+      isActive: true,
+    });
+    await expect(
+      service.upsertCreditPolicy(
+        organizationId,
+        {
+          branchId,
+          creditLimit: '100',
+          currencyCode: 'IRR',
+          effectiveFrom: '2026-09-08',
+          isActive: true,
+        },
+        actor,
+      ),
+    ).rejects.toThrow('تأیید شخص دیگری');
+    expect(repository.upsertCreditPolicy).not.toHaveBeenCalled();
+  });
+
+  it('does not allow a new agreement to bypass approval', async () => {
+    const { service, repository } = setup();
+    await expect(
+      service.createAgreement(
+        organizationId,
+        {
+          branchId,
+          title: 'توافق آزمایشی',
+          startsAt: '2026-09-08',
+          status: 'ACTIVE',
+        },
+        actor,
+      ),
+    ).rejects.toThrow('پیش‌نویس');
+    expect(repository.createAgreement).not.toHaveBeenCalled();
+  });
+
+  it('rejects mutations outside branch scope before organization lookup', async () => {
+    const { service, organizations } = setup();
+    await expect(
+      service.upsertProfile(
+        organizationId,
+        { branchId: 'other', status: 'ACTIVE', displayOrder: 0 },
+        actor,
+      ),
+    ).rejects.toThrow('دامنه دسترسی');
+    expect(organizations.agencyReference).not.toHaveBeenCalled();
+  });
   it('returns no fabricated exposure when the agency has no credit policy', async () => {
     const { service, exposure } = setup();
     const result = await service.agencyWorkspace(

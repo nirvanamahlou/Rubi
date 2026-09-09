@@ -43,6 +43,7 @@ import { legalEntityBrand } from '@/modules/legal-entities/model/context';
 import { NotificationCenter } from './notification-center';
 import { sidebarIcons } from './sidebar-icons';
 import { UserMenu } from './user-menu';
+import { HeaderToday } from './header-today';
 import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
 import { Input } from '../ui/form-controls';
@@ -480,7 +481,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
 
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-surface/90 shadow-sm shadow-blue-900/5 backdrop-blur-xl dark:border-border">
-          <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 sm:flex sm:h-14 sm:gap-3 sm:px-6 sm:py-0">
             <Drawer>
               <DrawerTrigger asChild>
                 <Button
@@ -519,6 +520,9 @@ function AppShellContent({ children }: { children: ReactNode }) {
               <SearchDialog />
             </div>
             <HeaderActions />
+          </div>
+          <div className="flex min-w-0 justify-end px-4 pb-1 sm:px-6">
+            <HeaderToday />
           </div>
         </header>
         <div className="px-4 pt-3 sm:px-6 lg:px-7">

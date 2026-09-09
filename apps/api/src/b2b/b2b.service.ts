@@ -6,6 +6,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -15,6 +16,7 @@ import type {
   B2bAgencyProfileV1,
   B2bAgencyWorkspaceV1,
   FinancePartyExposurePortV1,
+  IamPermissionCode,
 } from '@rubi/contracts';
 import { Prisma } from '@rubi/database';
 
@@ -36,7 +38,17 @@ function branchOf(actor: AuthenticatedActor, requested?: string): string {
 }
 
 function date(value: string): Date {
-  return new Date(`${value}T00:00:00.000Z`);
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
+    !Number.isFinite(parsed.getTime()) ||
+    parsed.toISOString().slice(0, 10) !== value
+  )
+    throw new BadRequestException({
+      code: 'B2B_INVALID_DATE',
+      message: 'تاریخ معتبر نیست.',
+    });
+  return parsed;
 }
 
 function optionalDate(value?: string | null): Date | null {
@@ -44,8 +56,23 @@ function optionalDate(value?: string | null): Date | null {
 }
 
 function assertDateRange(from: string, to?: string | null) {
-  if (to && date(to).getTime() < date(from).getTime())
-    throw new BadRequestException('پایان بازه نمی‌تواند قبل از شروع آن باشد.');
+  const start = date(from);
+  if (to && date(to).getTime() < start.getTime())
+    throw new BadRequestException({
+      code: 'B2B_INVALID_DATE_RANGE',
+      message: 'پایان بازه نمی‌تواند قبل از شروع آن باشد.',
+    });
+}
+
+function requirePermissions(
+  actor: AuthenticatedActor,
+  ...permissions: IamPermissionCode[]
+) {
+  if (permissions.some((permission) => !actor.permissions.includes(permission)))
+    throw new ForbiddenException({
+      code: 'B2B_PERMISSION_DENIED',
+      message: 'مجوز این عملیات را ندارید.',
+    });
 }
 
 function day(value: Date): string {
@@ -162,6 +189,13 @@ export class B2bService {
     actor: AuthenticatedActor,
     requestedBranch?: string,
   ): Promise<{ data: B2bAgencyWorkspaceV1 }> {
+    requirePermissions(
+      actor,
+      'b2b.agency.read',
+      'b2b.agreement.read',
+      'b2b.credit.read',
+      'b2b.rate.read',
+    );
     const branchId = branchOf(actor, requestedBranch);
     const organization = await this.agency(organizationId);
     const [primaryAddress, row] = await Promise.all([
@@ -199,6 +233,8 @@ export class B2bService {
     dto: UpsertAgencyProfileDto,
     actor: AuthenticatedActor,
   ) {
+    requirePermissions(actor, 'b2b.agency.manage');
+    branchOf(actor, dto.branchId);
     await this.agency(organizationId);
     const branchId = branchOf(actor, dto.branchId);
     const row = await this.repository.upsertProfile({
@@ -218,7 +254,15 @@ export class B2bService {
     dto: CreateAgencyAgreementDto,
     actor: AuthenticatedActor,
   ) {
+    requirePermissions(actor, 'b2b.agreement.manage');
+    branchOf(actor, dto.branchId);
     assertDateRange(dto.startsAt, dto.endsAt);
+    if (dto.status !== 'DRAFT')
+      throw new ConflictException({
+        code: 'B2B_AGREEMENT_APPROVAL_REQUIRED',
+        message:
+          'توافق‌نامه جدید باید پیش‌نویس باشد؛ فعال‌سازی به گردش تأیید نیاز دارد.',
+      });
     const profile = await this.profile(organizationId, dto.branchId, actor);
     const row = await this.repository.createAgreement({
       profileId: profile.id,
@@ -240,20 +284,15 @@ export class B2bService {
     dto: UpsertAgencyCreditPolicyDto,
     actor: AuthenticatedActor,
   ) {
+    requirePermissions(actor, 'b2b.credit.manage');
+    branchOf(actor, dto.branchId);
     assertDateRange(dto.effectiveFrom, dto.expiresAt);
-    const profile = await this.profile(organizationId, dto.branchId, actor);
-    const row = await this.repository.upsertCreditPolicy({
-      profileId: profile.id,
-      branchId: profile.branchId,
-      creditLimit: new Prisma.Decimal(dto.creditLimit),
-      currencyCode: dto.currencyCode,
-      effectiveFrom: date(dto.effectiveFrom),
-      expiresAt: optionalDate(dto.expiresAt),
-      isActive: dto.isActive,
-      ...(dto.version ? { expectedVersion: dto.version } : {}),
-      actorUserId: actor.userId,
+    await this.profile(organizationId, dto.branchId, actor);
+    throw new ConflictException({
+      code: 'B2B_CREDIT_APPROVAL_REQUIRED',
+      message:
+        'تغییر سقف اعتبار به ثبت درخواست و تأیید شخص دیگری نیاز دارد. گردش تأیید هنوز متصل نیست.',
     });
-    return { data: creditRecord(row) };
   }
 
   async createRate(
@@ -261,6 +300,8 @@ export class B2bService {
     dto: CreateAgencyAgreedRateDto,
     actor: AuthenticatedActor,
   ) {
+    requirePermissions(actor, 'b2b.rate.manage');
+    branchOf(actor, dto.branchId);
     assertDateRange(dto.validFrom, dto.validTo);
     const value = new Prisma.Decimal(dto.value);
     if (dto.kind === 'FIXED_AMOUNT' && !dto.currencyCode)
@@ -301,11 +342,21 @@ export class B2bService {
     requestedBranch: string,
     actor: AuthenticatedActor,
   ) {
-    await this.agency(organizationId);
     const branchId = branchOf(actor, requestedBranch);
+    const organization = await this.agency(organizationId);
+    if (!organization.isActive)
+      throw new ConflictException({
+        code: 'B2B_ORGANIZATION_INACTIVE',
+        message: 'سازمان غیرفعال است.',
+      });
     const profile = await this.repository.findProfile(organizationId, branchId);
     if (!profile)
       throw new NotFoundException('ابتدا پروفایل عملیاتی آژانس را ثبت کنید.');
+    if (!profile.isActive || profile.status !== 'ACTIVE')
+      throw new ConflictException({
+        code: 'B2B_PROFILE_INACTIVE',
+        message: 'پروفایل عملیاتی شعبه فعال نیست.',
+      });
     return profile;
   }
 }

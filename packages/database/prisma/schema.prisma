@@ -80,6 +80,11 @@ model User {
   notificationsActed             Notification[]               @relation("NotificationActor")
   agencyProfilesManaged          AgencyOperationalProfile[]   @relation("AgencyAccountManager")
   b2bAuditEvents                 B2bAuditEvent[]              @relation("B2bAuditActor")
+  hrEmployee                     HrEmployee?
+  hrAuditEvents                  HrAuditEvent[]
+  hrCommands                     HrCommand[]
+  hrNotificationReads            HrNotificationRead[]
+  hrNotifications                HrNotification[]
 
   @@map("iam_users")
 }
@@ -150,6 +155,10 @@ model Branch {
   documentAuditEvents   DocumentAuditEvent[]
   agencyProfiles        AgencyOperationalProfile[]
   b2bAuditEvents        B2bAuditEvent[]
+  hrEmployees           HrEmployee[]
+  hrRecords             HrRecord[]
+  hrAuditEvents         HrAuditEvent[]
+  hrNotifications       HrNotification[]
 
   @@map("branches")
 }
@@ -2518,6 +2527,8 @@ model Document {
   relations                  DocumentRelation[]
   auditEvents                DocumentAuditEvent[]
   accessGrants               DocumentAccessGrant[]
+  hrRecords                  HrRecord[]
+  hrEmployeePhotos           HrEmployee[]
 
   @@index([branchId, archiveStatus, updatedAt])
   @@index([documentTypeId, archiveStatus, updatedAt])
@@ -2651,6 +2662,183 @@ model DocumentProcessingJob {
   @@unique([versionId, jobType])
   @@index([status, availableAt])
   @@map("document_processing_jobs")
+}
+
+// HR-005: additive HR boundary; immutable event/ledger rows, soft-deleted aggregates.
+model HrEmployee {
+  organizationBranchId String?          @map("organization_branch_id") @db.Uuid
+  organizationBranch   HrRecord?        @relation("HrEmployeeOrganizationBranch", fields: [organizationBranchId, branchId], references: [id, branchId], onDelete: Restrict)
+  photoDocumentId      String?          @map("photo_document_id") @db.Uuid
+  photoDocument        Document?        @relation(fields: [photoDocumentId], references: [id], onDelete: Restrict)
+  id                   String           @id @default(uuid()) @db.Uuid
+  personnelCode        String           @unique @map("personnel_code") @db.VarChar(50)
+  branchId             String           @map("branch_id") @db.Uuid
+  userId               String?          @unique @map("user_id") @db.Uuid
+  managerId            String?          @map("manager_id") @db.Uuid
+  name                 String           @db.VarChar(160)
+  kind                 String           @db.VarChar(80)
+  unit                 String           @db.VarChar(160)
+  position             String           @db.VarChar(160)
+  grade                String           @db.VarChar(40)
+  startedAt            DateTime         @map("started_at") @db.Date
+  status               String           @default("فعال") @db.VarChar(80)
+  version              Int              @default(1)
+  deletedAt            DateTime?        @map("deleted_at") @db.Timestamptz(3)
+  createdAt            DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  branch               Branch           @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  user                 User?            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  manager              HrEmployee?      @relation("HrManager", fields: [managerId], references: [id], onDelete: Restrict)
+  reports              HrEmployee[]     @relation("HrManager")
+  records              HrRecord[]
+  auditEvents          HrAuditEvent[]
+  leaveEntries         HrLeaveEntry[]
+  notifications        HrNotification[]
+
+  @@index([branchId, deletedAt, name])
+  @@index([managerId])
+  @@index([organizationBranchId, branchId])
+  @@map("hr_employees")
+}
+
+model HrRecord {
+  organizationEmployees HrEmployee[]     @relation("HrEmployeeOrganizationBranch")
+  searchText            String           @default("") @map("search_text") @db.VarChar(12000)
+  expiresAt             DateTime?        @map("expires_at") @db.Date
+  documentId            String?          @map("document_id") @db.Uuid
+  document              Document?        @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  id                    String           @id @default(uuid()) @db.Uuid
+  code                  String           @unique @db.VarChar(60)
+  branchId              String           @map("branch_id") @db.Uuid
+  employeeId            String?          @map("employee_id") @db.Uuid
+  parentId              String?          @map("parent_id") @db.Uuid
+  section               String           @db.VarChar(40)
+  tab                   String           @db.VarChar(40)
+  values                Json
+  data                  Json             @default("{}")
+  status                String           @default("پیش‌نویس") @db.VarChar(80)
+  version               Int              @default(1)
+  effectiveAt           DateTime?        @map("effective_at") @db.Date
+  appliedAt             DateTime?        @map("applied_at") @db.Timestamptz(3)
+  deletedAt             DateTime?        @map("deleted_at") @db.Timestamptz(3)
+  createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  branch                Branch           @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  employee              HrEmployee?      @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  parent                HrRecord?        @relation("HrRecordParent", fields: [parentId, branchId], references: [id, branchId], onDelete: Restrict)
+  children              HrRecord[]       @relation("HrRecordParent")
+  auditEvents           HrAuditEvent[]
+  amounts               HrRecordAmount[]
+  leaveEntries          HrLeaveEntry[]
+  notifications         HrNotification[]
+
+  @@unique([id, branchId])
+  @@index([branchId, section, tab, deletedAt, createdAt])
+  @@index([employeeId, section, tab])
+  @@index([parentId, branchId])
+  @@index([effectiveAt, appliedAt])
+  @@map("hr_records")
+}
+
+model HrRecordAmount {
+  id       String   @id @default(uuid()) @db.Uuid
+  recordId String   @map("record_id") @db.Uuid
+  field    String   @db.VarChar(40)
+  amount   Decimal  @db.Decimal(24, 4)
+  currency String   @db.VarChar(3)
+  record   HrRecord @relation(fields: [recordId], references: [id], onDelete: Restrict)
+
+  @@unique([recordId, field])
+  @@map("hr_record_amounts")
+}
+
+model HrAuditEvent {
+  id         String      @id @default(uuid()) @db.Uuid
+  branchId   String      @map("branch_id") @db.Uuid
+  actorId    String      @map("actor_id") @db.Uuid
+  employeeId String?     @map("employee_id") @db.Uuid
+  recordId   String?     @map("record_id") @db.Uuid
+  action     String      @db.VarChar(80)
+  version    Int?
+  fromStatus String?     @map("from_status") @db.VarChar(80)
+  toStatus   String?     @map("to_status") @db.VarChar(80)
+  changes    Json
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  branch     Branch      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  actor      User        @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  employee   HrEmployee? @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  record     HrRecord?   @relation(fields: [recordId], references: [id], onDelete: Restrict)
+
+  @@index([branchId, createdAt])
+  @@index([actorId])
+  @@index([employeeId, createdAt])
+  @@index([recordId, createdAt])
+  @@map("hr_audit_events")
+}
+
+model HrCommand {
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String   @map("actor_id") @db.Uuid
+  key       String   @db.VarChar(120)
+  hash      String   @db.VarChar(64)
+  result    Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  actor     User     @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@unique([actorId, key])
+  @@map("hr_commands")
+}
+
+model HrLeaveEntry {
+  id         String     @id @default(uuid()) @db.Uuid
+  employeeId String     @map("employee_id") @db.Uuid
+  recordId   String     @map("record_id") @db.Uuid
+  type       String     @db.VarChar(80)
+  days       Decimal    @db.Decimal(8, 2)
+  year       Int
+  action     String     @db.VarChar(20)
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  employee   HrEmployee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  record     HrRecord   @relation(fields: [recordId], references: [id], onDelete: Restrict)
+
+  @@unique([recordId, action])
+  @@index([employeeId, type, year])
+  @@map("hr_leave_entries")
+}
+
+model HrNotification {
+  id           String               @id @default(uuid()) @db.Uuid
+  branchId     String               @map("branch_id") @db.Uuid
+  targetUserId String?              @map("target_user_id") @db.Uuid
+  employeeId   String?              @map("employee_id") @db.Uuid
+  recordId     String?              @map("record_id") @db.Uuid
+  action       String               @db.VarChar(80)
+  title        String               @db.VarChar(250)
+  sensitive    Boolean              @default(false)
+  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  branch       Branch               @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  targetUser   User?                @relation(fields: [targetUserId], references: [id], onDelete: Restrict)
+  employee     HrEmployee?          @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  record       HrRecord?            @relation(fields: [recordId], references: [id], onDelete: Restrict)
+  reads        HrNotificationRead[]
+
+  @@index([branchId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([employeeId])
+  @@index([recordId])
+  @@map("hr_notifications")
+}
+
+model HrNotificationRead {
+  notificationId String         @map("notification_id") @db.Uuid
+  userId         String         @map("user_id") @db.Uuid
+  readAt         DateTime       @default(now()) @map("read_at") @db.Timestamptz(3)
+  notification   HrNotification @relation(fields: [notificationId], references: [id], onDelete: Restrict)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([notificationId, userId])
+  @@index([userId])
+  @@map("hr_notification_reads")
 }
 
 enum SalesTripType {

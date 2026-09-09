@@ -81,6 +81,8 @@ describe('global change notifications', () => {
     ['POST', `${apiBaseUrl}/master-data/exports/xlsx`, true],
     ['POST', `${apiBaseUrl}/documents/document-1/archive`, true],
     ['PATCH', `${apiBaseUrl}/notifications/read-all`, true],
+    ['PATCH', `${apiBaseUrl}/hr/records/record-1`, true],
+    ['POST', `${apiBaseUrl}/hr/notifications/notice-1/read`, true],
     ['POST', 'https://other.example/api/v1/customers', true],
   ])('ignores non-change request %s %s', (method, requestUrl, responseOk) => {
     expect(
