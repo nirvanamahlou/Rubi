@@ -1,11 +1,12 @@
 # Work Assignments
 
-## B2B-CONTRACT-FORMS-002 — PC-B — IN_PROGRESS
+## B2B-CONTRACT-FORMS-002 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests working contract/dossier dates, additional agreement types, payment method selection from Master Data, inline contract/guarantee document uploads stored in Documents, removal of limit-type UI and separate document-upload section, and closing single-select rate reference options. Clean owned runtime branch `codex/pc-b-b2b-contract-forms` starts from 2bdde76, retaining the PR143 stack and fetched develop4717b13. Prior task releases its locks; existing runtime3100/API4191 belongs to this checkout.
 - Reserve B2B Web/API/contracts/tests and task/status/domain docs; reserve a narrowly scoped shared DatePicker modal-container option and MasterDataReferenceSelector close-on-select option, preserving default behavior for other consumers. Reserve public MasterOrganizationDirectory payment reference lookup; consume existing Documents upload/list APIs and policies without direct Documents tables/storage writes.
 - Migration Owner = PC-B for additive nullable agreement-revision payment-method FK and reverse relation, preserving legacy payment terms and immutable revisions. Producer B2B/Master Data, consumers agreement forms and read projections; optional v1 reference fields preserve legacy client compatibility. Expanded agreement-type values use existing string storage with validation. No dependency lock or IAM grants. Inline files are linked to the same organization/branch through Documents, keep scan/access requirements, and do not imply contract approval. Default new credit limit remains HARD; hidden existing limit type is preserved. Rehearse and back up migration before local cutover; no merge.
 - Implementation and 109 Web / 24 workflow-document / 18 PostgreSQL tests pass, with browser date/selector verification and two real synthetic CLEAN document uploads attached to a DRAFT agreement. Migration applied after restored-database rehearsal and backup, preserving 129 business tables/history. Final Web3100 build and CI remain; keep runtime reservation until handoff.
+- Completed source3c6b3cb: 41-route production build, Web3100 PID20400/hr005-f4de59bf61e65404 and API4191 PID21516 healthy. Public-service reload confirms payment and contract/guarantee document references; VALID/EXPIRED filters pass. Draft PR145 targets develop, all four source CI gates pass (34464367220). QA3196 stopped; no merge. Release B2B/migration/shared-file implementation reservations and coordinate future runtime changes. Details: docs/tasks/B2B-CONTRACT-FORMS-002.md.
 
 ## B2B-ORGANIZATION-USERS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
