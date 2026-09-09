@@ -1,4 +1,5 @@
 export const PERMISSION_SEED_DATA = [
+  ['hr.directory.read', 'hr', 'انتخاب کارکنان در فرم‌های بین‌بخشی'],
   [
     'hr.connections.tasks.receive',
     'hr',

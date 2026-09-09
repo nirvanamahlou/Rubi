@@ -15,6 +15,8 @@ import {
   validateDocumentUpload,
 } from '../model/document-upload-form';
 import { DocumentCasePicker } from './document-case-picker';
+import { HrDirectoryPicker } from '@/modules/hr/hr-directory-picker';
+import { hrDirectoryLabel, type HrDirectoryEmployee } from '@rubi/contracts';
 
 import {
   Alert,
@@ -64,6 +66,7 @@ export function DocumentUploadDialog({
       : { ...emptyDocumentUploadValues },
   );
   const [file, setFile] = useState<File | null>(null);
+  const [employee, setEmployee] = useState<HrDirectoryEmployee | null>(null);
   const [selectedCase, setSelectedCase] = useState<DocumentCaseOptionV1 | null>(
     null,
   );
@@ -97,12 +100,24 @@ export function DocumentUploadDialog({
     const form = new FormData();
     form.set('file', file!);
     for (const [name, value] of Object.entries(values)) {
+      if (name === 'employeeId') continue;
       if (value) form.set(name, String(value));
+    }
+    if (
+      employee &&
+      values.employeeId === employee.id &&
+      !values.sourceRelationId
+    ) {
+      form.set('sourceModule', 'HUMAN_RESOURCES');
+      form.set('sourceEntityType', 'Employee');
+      form.set('sourceEntityId', employee.id);
+      form.set('sourceDisplayLabel', hrDirectoryLabel(employee));
     }
     if (await onSubmit(form)) {
       setValues({ ...emptyDocumentUploadValues });
       setFile(null);
       setSelectedCase(null);
+      setEmployee(null);
       setValidationError('');
     }
   }
@@ -112,6 +127,7 @@ export function DocumentUploadDialog({
       setValues({ ...emptyDocumentUploadValues });
       setFile(null);
       setSelectedCase(null);
+      setEmployee(null);
       setValidationError('');
     }
     onOpenChange(nextOpen);
@@ -184,7 +200,13 @@ export function DocumentUploadDialog({
               <FormField id="document-type" label="نوع سند" required>
                 <Select
                   disabled={!options?.documentTypes.length || submitting}
-                  onValueChange={(value) => update('documentTypeId', value)}
+                  onValueChange={(value) => {
+                    update('documentTypeId', value);
+                    update('employeeId', '');
+                    setEmployee(null);
+                    update('sourceRelationId', '');
+                    setSelectedCase(null);
+                  }}
                   value={values.documentTypeId}
                 >
                   <SelectTrigger aria-label="نوع سند" id="document-type">
@@ -279,8 +301,8 @@ export function DocumentUploadDialog({
               </h3>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              مشخص کنید این فایل متعلق به کدام قرارداد، رزرو یا پرونده موجود در
-              آرشیو است.
+              پرونده موجود در آرشیو را انتخاب کنید؛ برای اسناد پرسنلی، انتخاب
+              مستقیم کارمند از منابع انسانی هم ممکن است.
             </p>
             <div className="mt-4">
               <FormField
@@ -295,10 +317,30 @@ export function DocumentUploadDialog({
                   onSelect={(option) => {
                     setSelectedCase(option);
                     update('sourceRelationId', option?.id ?? '');
+                    update('employeeId', '');
+                    setEmployee(null);
                   }}
                   selected={selectedCase}
                 />
               </FormField>
+              {selectedType?.domain === 'HUMAN_RESOURCES' && values.branchId ? (
+                <HrDirectoryPicker
+                  key={values.branchId}
+                  branchId={values.branchId}
+                  disabled={submitting}
+                  label="یا انتخاب پرونده کارمند از منابع انسانی"
+                  selected={employee}
+                  onSelect={(item) => {
+                    setEmployee(item);
+                    setSelectedCase(null);
+                    setValues((current) => ({
+                      ...current,
+                      employeeId: item?.id ?? '',
+                      sourceRelationId: '',
+                    }));
+                  }}
+                />
+              ) : null}
             </div>
           </section>
 
@@ -320,8 +362,10 @@ export function DocumentUploadDialog({
                         ...current,
                         branchId: value,
                         sourceRelationId: '',
+                        employeeId: '',
                       }));
                       setValidationError('');
+                      setEmployee(null);
                     }
                   }}
                   value={values.branchId}

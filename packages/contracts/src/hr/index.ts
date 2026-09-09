@@ -1,11 +1,13 @@
 export * from './resource-registry';
 export * from './connections';
+export * from './directory';
 import { HR_CONNECTION_PERMISSION_CODES } from './connections';
 
 export const HR_CONTRACT_VERSION = 1 as const;
 export const HR_PERMISSION_CODES = [
   ...HR_CONNECTION_PERMISSION_CODES,
   'hr.read',
+  'hr.directory.read',
   'hr.manage',
   'hr.approve',
   'hr.sensitive',
@@ -89,7 +91,7 @@ export interface HrContractStateCommand {
 
 export interface HrEmployeeCreate {
   branchId?: string;
-  userId?: string;
+  userId?: string | null;
   photoDocumentId?: string;
   organizationBranchId?: string;
   personnelCode?: string;

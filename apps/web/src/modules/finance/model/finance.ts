@@ -400,6 +400,7 @@ export const financePreviewRecords: readonly FinancePreviewRecord[] = [
 ];
 
 export interface FinancePreviewDraft {
+  hrEmployeeId?: string;
   title: string;
   partyReference: string;
   contractReference: string;
@@ -414,9 +415,18 @@ export function validateFinancePreviewDraft(draft: FinancePreviewDraft) {
   const errors: Partial<Record<keyof FinancePreviewDraft, string>> = {};
   if (draft.title.trim().length < 3)
     errors.title = 'عنوان حداقل سه نویسه لازم دارد.';
-  if (!/^preview-[a-z0-9-]{3,80}$/.test(draft.partyReference))
+  if (
+    !/^preview-[a-z0-9-]{3,80}$/.test(draft.partyReference) &&
+    !(
+      draft.hrEmployeeId &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        draft.hrEmployeeId,
+      ) &&
+      draft.partyReference === `hr-employee:${draft.hrEmployeeId}`
+    )
+  )
     errors.partyReference =
-      'فقط Public Reference ساختگی با پیشوند preview- مجاز است.';
+      'طرف‌حساب نمونه یا کارمند را از فهرست منابع انسانی انتخاب کنید.';
   if (
     draft.contractReference &&
     !/^preview-[a-z0-9-]{3,80}$/.test(draft.contractReference)

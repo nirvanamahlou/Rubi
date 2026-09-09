@@ -26,6 +26,7 @@ import ui from './hr-unified.module.css';
 import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
 import { hrReferenceOptions } from './hr-form-model';
 import { useHrReferenceData } from './hr-reference-data';
+import { useHrFormReferences } from './hr-directory-picker';
 
 export function employeeDataset(
   employees: readonly HrEmployeeDto[],
@@ -65,6 +66,7 @@ export function employeeFormValue(
 ): NewEmployeeFormValue {
   const [firstName, ...last] = employee.name.split(' ');
   return {
+    userId: employee.userId ?? '',
     firstName: firstName ?? '',
     lastName: last.join(' '),
     personnelCode: employee.personnelCode,
@@ -101,9 +103,17 @@ export function HrEmployeeEditor({
 }) {
   const key = useRef(crypto.randomUUID());
   const references = useHrReferenceData(store);
-  const companies = hrCompanies(store.data!);
+  const external = useHrFormReferences(employee?.id);
+  const companies = hrCompanies(references.data);
   return (
     <NewEmployeeDialog
+      userOptions={external.data?.users.map((u) => ({
+        ...u,
+        branches: companies
+          .filter((c) => u.branchIds.includes(c.branchId))
+          .map((c) => c.name),
+      }))}
+      userOptionsError={external.error}
       lockAssignment={Boolean(employee)}
       existingPersonnelCodes={store
         .data!.employees.filter((item) => item.id !== employee?.id)
@@ -152,6 +162,7 @@ export function HrEmployeeEditor({
         if (value.manager !== 'بدون مدیر مستقیم' && !manager)
           throw new Error('مدیر مستقیم را از فهرست کارکنان انتخاب کنید.');
         const input = {
+          userId: value.userId || null,
           branchId: branch.branchId,
           ...(branch.organizationBranchId
             ? { organizationBranchId: branch.organizationBranchId }
@@ -170,6 +181,9 @@ export function HrEmployeeEditor({
             name: input.name,
             kind: input.kind,
             status: input.status,
+            ...(input.userId !== employee.userId
+              ? { userId: input.userId }
+              : {}),
             version: employee.version,
           });
         else await hrApi.employees.create(input, key.current);

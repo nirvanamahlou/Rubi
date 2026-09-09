@@ -1,5 +1,6 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type { Readable } from 'node:stream';
+import { HrDirectoryService } from '../hr/hr-directory.service';
 
 import {
   BadRequestException,
@@ -225,6 +226,8 @@ export class DocumentsService {
     private readonly scanProcessor: DocumentsScanProcessor,
     @Inject(IAM_STEP_UP_PORT)
     private readonly iamStepUp: IamStepUpPort,
+    @Inject(HrDirectoryService)
+    private readonly hrDirectory: HrDirectoryService,
   ) {}
 
   private assertDomain(
@@ -687,6 +690,22 @@ export class DocumentsService {
       sourceEntityId: dto.sourceEntityId?.trim() ?? '',
       displayLabel: dto.sourceDisplayLabel?.trim() ?? '',
     };
+    if (
+      sourceReference.sourceModule === 'HUMAN_RESOURCES' &&
+      sourceReference.sourceEntityType === 'Employee'
+    ) {
+      this.assertDomain('HUMAN_RESOURCES', actor.permissions);
+      if (references.documentType.domain !== 'HUMAN_RESOURCES')
+        throw new BadRequestException(
+          'برای پرونده پرسنلی نوع سند منابع انسانی را انتخاب کنید.',
+        );
+      const employee = await this.hrDirectory.employee(
+        sourceReference.sourceEntityId,
+        dto.branchId,
+        actor,
+      );
+      sourceReference.displayLabel = `${employee.name} · ${employee.personnelCode}`;
+    }
     if (
       !sourceReference.sourceModule ||
       !sourceReference.sourceEntityType ||

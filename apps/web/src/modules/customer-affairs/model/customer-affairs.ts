@@ -80,6 +80,7 @@ export interface ActivityPreview {
 }
 
 export interface CustomerAffairsDraft {
+  assigneeEmployeeId?: string;
   title: string;
   details: string;
   priority: Priority;
