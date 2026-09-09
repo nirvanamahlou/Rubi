@@ -1524,3 +1524,8 @@ Port 3100 composes Sales 385efaa (includes 3d3095e), sidebar efe6287 and Reserva
 
 ### Local database correction — 2026-09-09
 The 55432 preview database was the wrong dataset for the user's current work (2 customers, 0 contracts). Runtime now uses the original root .env database localhost:5432/rubi, with its matching contact keys explicitly loaded. Read-only verification found 350 customers and 5 contracts; all 43 migrations already applied, no main-database migration or data changes. Contact integrity check: 542 valid, 4 failed; those records remain unchanged. API remains loopback-only. Previous preview database and its backup are preserved. Login may need renewal after the database/session change.
+
+## RESERVATIONS-ACTION-PANEL-003 — PC-A
+Implemented the selected option 3 on the isolated local branch: twenty buttons grouped in a sticky right panel; all disabled until an authorized contract is selected. Each opens the standard accessible Dialog with selected-contract context. Changing selection/access unmounts the previous dialogs. Available overview/passenger/customer projections are read-only; unspecified forms explicitly remain pending with no write controls. Small screens stack the panel above the list. No API, credentials, database or migration changes. 34 reservation tests passed.
+
+Final verification: targeted lint and production Web build/TypeScript passed (39 routes). Local Web 3100 restarted; no API restart or database switch.

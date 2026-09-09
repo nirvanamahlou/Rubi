@@ -1328,3 +1328,8 @@ Customers، Finance، Procurement، Reservations، Integrations و Documents خ�
 User-authorized local composition on codex/pc-a-local-unified-3100-0909. Base 385efaa (latest local Sales); consume sidebar handoff efe6287 and Reservations 0946bdd. Scope: isolated Web shell, reservation routes/projections and task status. Preserve source worktrees, shared contracts, schema and dependencies. No merge or database mutation.
 
 LOCAL-UNIFIED-3100-0909: READY_FOR_REVIEW. Independent branch; local Web 3100/API 4000 bind loopback. Verification recorded in PROJECT_STATUS.
+
+## RESERVATIONS-ACTION-PANEL-003 — PC-A — IN_PROGRESS
+User selected preview option 3. Scope: foundation Web action panel, selected-contract dialogs, workspace layout and tests on current isolated branch. No API, database, Sales or shared UI changes. Unknown forms remain explicit placeholders.
+
+RESERVATIONS-ACTION-PANEL-003: READY_FOR_REVIEW; 34 tests, targeted lint, TypeScript and Web production build passed. Port 3100 restarted with option 3; primary API/database unchanged.
