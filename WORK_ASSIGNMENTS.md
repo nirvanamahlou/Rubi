@@ -1447,3 +1447,9 @@ Validation: 34 foundation tests, Web lint, production TypeScript and build (40 r
 User supplied a shared one-page terms PDF; preserve its exact bytes and download through the selected contract's مفاد action. Extend the existing accessible selection button hit area across the full reservation card. Scope: foundation panel/workspace CSS/tests, shared static PDF and task docs. Builds on themed filters branch to preserve the current local version. No PDF editing, API, database or migration changes.
 
 Validation: foundation tests, Web lint, TypeScript and production build passed; source/asset SHA256 equal. Web3100 refreshed. Scoped reservation released.
+
+## RESERVATIONS-PAGE-CLEANUP-0909 — PC-A — READY_FOR_REVIEW
+
+User marked top processing link, refresh button, polling explanation and five section tabs for removal (tickets, hotels, vouchers, insurance, costs). Scope only reservation landing page and foundation navigation chrome. Keep polling, remaining tabs, action panel and processing route. Ticket approval workflow remains pending the user's financial-release clarification; no approval/backend changes here.
+
+Validation: 34 tests, scoped lint, production TypeScript/build passed; Web3100 refreshed. Scope released.

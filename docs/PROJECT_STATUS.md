@@ -1595,3 +1595,7 @@ Final validation: Web lint, production TypeScript and build (40 routes) passed; 
 ## CONTRACT-TERMS-SELECTION-0909 — PC-A
 The selected contract's مفاد action downloads the same user-provided one-page PDF for every contract. Original bytes preserved at apps/web/public/contracts/terms.pdf; SHA256 D5954B99DAD891A728602C6248109F8DD9F8FDF98609C760842BDFE76B671A1B matches the source. Source rendered for visual identification; no legal/text/layout edits. Action stays disabled without a selection. The existing selection button now has a full-card hit area, pressed state and card focus outline, preserving keyboard operation and list/grid structure. Foundation tests passed after updating the dialog expectation for direct download. No API, migration, dependency or database changes.
 Final validation: Web lint, TypeScript and production build (40 routes) passed. Web3100 restarted; login HTTP 200. Authenticated browser interaction was not verified; PDF bytes were verified identical.
+
+## RESERVATIONS-PAGE-CLEANUP-0909 — PC-A
+Removed the screenshot-marked processing link, manual refresh control, polling explanation and Tickets/Hotels/Vouchers/Insurance/Costs navigation tabs. Dashboard, inbox, Manifest, timeline, per-contract actions and periodic polling remain. The processing route is retained. 34 foundation tests passed; no backend/data changes. Ticket approval financial-release clarification remains pending separately.
+Final: scoped lint, production TypeScript and 40-route build passed; Web3100 refreshed, login HTTP 200. No authenticated visual QA claimed.

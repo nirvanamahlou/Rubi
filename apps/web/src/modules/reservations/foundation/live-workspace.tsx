@@ -33,7 +33,7 @@ export function LiveReservationQueue() {
     newCount: 0,
     now: '1970-01-01T00:00:00.000Z',
   });
-  const [reload, setReload] = useState(0);
+
   useEffect(() => {
     let disposed = false;
     let running = false;
@@ -117,22 +117,9 @@ export function LiveReservationQueue() {
       if (timer) clearTimeout(timer);
       document.removeEventListener('visibilitychange', resume);
     };
-  }, [reload]);
+  }, []);
   return (
     <>
-      <div
-        dir="rtl"
-        className="mb-3 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground"
-      >
-        <p>آخرین ۱۰۰ درخواست · بررسی خودکار هر ۳۰ ثانیه هنگام باز بودن صفحه</p>
-        <button
-          type="button"
-          className="rounded-lg border px-3 py-2"
-          onClick={() => setReload((value) => value + 1)}
-        >
-          به‌روزرسانی
-        </button>
-      </div>
       <ReservationOperationsWorkspace
         state={view.state}
         rows={view.rows}
