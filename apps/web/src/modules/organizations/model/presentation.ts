@@ -9,7 +9,9 @@ export function moneyLabel(amount: string, currency: string): string {
     /\d/g,
     (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]!,
   );
-  return `${integer}${fraction ? `٫${fraction}` : ''} ${currency}`.trim();
+  const negativeFraction =
+    match[1] === '-' && BigInt(match[2]!) === 0n ? '−' : '';
+  return `${negativeFraction}${integer}${fraction ? `٫${fraction}` : ''} ${currency}`.trim();
 }
 
 export function agreementLabel(

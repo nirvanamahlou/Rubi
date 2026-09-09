@@ -1,5 +1,32 @@
 # Work Assignments
 
+## B2B-AGENCIES-001 / approved PR113 integration — PC-B — READY_FOR_APPROVED_MERGE
+
+- Owner explicitly authorizes merge and push. Continue clean published 122945b on the existing task branch; fetch origin/develop@0261b91 and integrate it with a normal merge, preserving both histories.
+- Reserve conflict reconciliation only in B2B API, Organizations Web and this task's status/decision/report entries. The B2B/Organizations code in develop is byte-identical to the previously copied source fc573ac; retain this branch's later validated changes and all unrelated develop changes.
+- No new domain feature, dependency, schema/migration, IAM grant, operational database or runtime change. Final combined tests, builds and GitHub checks gate the explicitly authorized PR merge; no force push or branch deletion.
+- Resolved the copied-baseline conflicts without changing this branch's B2B/Organizations source behavior; all unrelated develop code and both documentation histories are preserved. Combined validation: 97 targeted Web tests, 54 B2B tests (including five disposable PostgreSQL cases), full monorepo lint/typecheck and production build passed (40 Web routes). Exact-head GitHub gates are required before merge. The implementation reservation is released; runtime ownership is not transferred.
+
+## B2B-AGENCIES-001 / organization logo — PC-B — READY_FOR_REVIEW
+
+- Owner requests an appropriate logo-upload location for agencies and corporate customers. Continue clean a53b294 after fetch. Reserve organization Web components/model/tests and scoped status entries only; use the existing Master Data logo workflow and public Documents metadata/preview APIs.
+- Add the logo and an explicit upload/change action beside the profile name, with a small preview/save dialog. Preserve owner scan/access checks and organization identity/version/roles. No producer, schema, dependency, permission grant or independent runtime change.
+- Delivered PNG/JPEG selection (5 MB), preview, replace/remove and canonical archive link in the shared profile header. Existing owner partial-save warnings stay visible; cancelled/denied/unscanned previews do not expose file bytes. Targeted tests, lint, typecheck and build passed; browser validation uses only synthetic in-memory owner responses. This reservation is released for review; the independent 3100 runtime is not replaced.
+
+## B2B-AGENCIES-001 / agency 360 entry — PC-B — READY_FOR_REVIEW
+
+- Owner requests the Screenshot (524) seven-card 360 view when opening an agency record. Continue the clean published branch at d41d0ee; fetch completed. Reserve the shared organization profile component and this task's status entries only.
+- The directory already routes agency and corporate records to the same profile. Make the agency heading explicit and bring the profile start into view on entry/section navigation. Preserve the seven reference cards and existing public-service connections. No schema, API, dependency or other checkout/runtime edit.
+- Verified the real shared component renders all seven sections for AGENCY, CORPORATE_CUSTOMER and dual-role records. All 62 existing organization tests, scoped lint, typecheck and final production build passed. Entry/section navigation scrolls to the page start, preserving the sticky header. This UI reservation is released for review; no new runtime handoff is claimed.
+
+## B2B-AGENCIES-001 / PRD coverage follow-up — PC-B — READY_FOR_REVIEW
+
+- Owner requests implementation against the supplied B2B PRD and selects separate credit limits per currency, without automatic FX. Continue the clean published `codex/pc-b-agencies-organizations` branch/PR #113; original checkout and independent 3100/4190 runtime remain untouched.
+- Reserve organization Web/model/tests, B2B API/tests, scoped task reports and only this task's entries in WORK_ASSIGNMENTS, PROJECT_STATUS and DECISIONS. Latest fetched develop@0261b91 and published PR states were checked: Sales PR90 is merged; Reservations PR112 remains open and claims no shared lock. Historical central-lock ownership is not treated as permanent; no other task entry is rewritten.
+- Consume the public Documents Service/client for organization files and draft attachments. No Documents implementation, Master Data, IAM, HR, shared API contract, schema/migration/seed or dependency/lockfile changes. Full PRD acceptance still requires the documented business decisions, persistent B2B workflows and owner projections; unavailable states are not completion.
+- Scope, evidence and remaining acceptance criteria: `docs/tasks/B2B-AGENCIES-001-PRD-COVERAGE.md`. No migration lock or runtime handoff is claimed by this slice.
+- Validation: 62 organization Web tests, 49 B2B API tests and 5 isolated PostgreSQL tests passed; affected lint/typechecks and production builds passed. New browser visual QA was unavailable due webview attachment timeout. This slice's implementation reservations are released for review; full PRD acceptance and runtime integration remain incomplete.
+
 ## CI-002-MULTI-COMPUTER — PC-B — READY_FOR_REVIEW
 
 - User reports four computers and authorizes checking/fixing CI, normal push and merge. Base origin/develop@679e516; independent branch/worktree codex/pc-b-ci-multi-computer. CI-001 released its workflow reservation; current module owners and other PRs remain untouched.

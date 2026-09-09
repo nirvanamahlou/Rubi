@@ -1,5 +1,28 @@
 # وضعیت پروژه
 
+## B2B-AGENCIES-001 — ادغام تأییدشده PR #113
+
+- مالک صریحاً Merge و Push را تأیید کرد. `develop@0261b91` با Merge معمولی وارد شاخه همین کار شد؛ نسخه آژانس‌ها در develop با منبع کپی‌شده `fc573ac` یکسان بود و تغییرات جدید فرم، اکسل، پرونده، اسناد و لوگو حفظ شدند. تغییرات سایر ماژول‌ها و سوابق هر دو سمت باقی ماندند.
+- ۹۷ تست هدفمند Web، ۵۴ تست B2B شامل پنج PostgreSQL یک‌بارمصرف، lint/typecheck کامل و Build تولیدی همه بسته‌ها با ۴۰ مسیر Web موفق‌اند؛ CI نسخه ترکیبی شرط Merge است. این تحویل تغییر اجرای ۳۱۰۰/۴۱۹۰، داده عملیاتی یا تکمیل تمام PRD را شامل نمی‌شود.
+
+## B2B-AGENCIES-001 — لوگوی آژانس و مشتری سازمانی — آماده بررسی
+
+- کنار نام در سربرگ مشترک پرونده، دکمه بارگذاری/تغییر لوگو و پنجره انتخاب تصویر با پیش‌نمایش، ذخیره و برداشتن لوگو اضافه شد؛ PNG/JPEG تا ۵ مگابایت پذیرفته می‌شود.
+- ذخیره از مسیر موجود Master Data و Documents انجام می‌شود؛ هویت، نسخه و همه نقش‌های سازمان حفظ می‌شوند. مجوز نمایش، وضعیت اسکن و اعتبارسنجی دومرحله‌ای آرشیو رعایت می‌شوند؛ نتیجه ناقص پیام موفقیت دریافت نمی‌کند.
+- ۹۷ تست هدفمند سازمان‌ها و Client مالک، lint، typecheck و Build موفق‌اند. انتخاب فایل نامعتبر/معتبر، نمایش پس از ذخیره و برداشتن لوگو در مرورگر با سرویس‌های صرفاً آزمایشی بررسی شد. فایل واقعی، داده عملیاتی، schema/API و اجرای مستقل ۳۱۰۰/۴۱۹۰ تغییر نکردند.
+
+## B2B-AGENCIES-001 — نمای ۳۶۰ درجه آژانس — آماده بررسی
+
+- مسیر «مشاهده پرونده» دسکتاپ و موبایل برای آژانس، مشتری سازمانی و نقش دوگانه به یک نمای مشترک با هر هفت کارت Screenshot (524) می‌رود. عنوان اختصاصی آژانس و بازگشت به ابتدای صفحه هنگام ورود/تغییر بخش اضافه شد؛ صفحه از محل اسکرول ردیف فهرست باز نمی‌ماند.
+- رندر واقعی کامپوننت برای هر سه نقش، ۶۲ تست موجود سازمان‌ها، lint، typecheck و Build نهایی Web موفق‌اند. داده، API، نقش‌ها، هدر و اجرای مستقل ۳۱۰۰/۴۱۹۰ تغییر نکردند؛ این پیگیری به معنی تکمیل قابلیت‌های باقی‌مانده PRD نیست.
+
+## B2B-AGENCIES-001 — تطبیق PRD و اتصال اسناد — آماده بررسی، پذیرش کامل باقی است
+
+- کل سند ۴۵۱‌بندی بررسی و پوشش ۴۰ نیازمندی عملکردی در `docs/tasks/B2B-AGENCIES-001-PRD-COVERAGE.md` ثبت شد. کل PRD هنوز تکمیل نیست؛ گردش تأیید/نسخه immutable، پروفایل نقش‌محور، کاربران/مسافران سازمان و تولیدکننده مالی باقی‌اند.
+- اتصال واقعی آرشیو سازمان، فیلتر انقضا و بارگذاری، انتخاب/اعتبارسنجی سند پیش‌نویس، نمایش دقیق اعتبار هم‌ارز و زمان/نسخه Finance و جلوگیری از تغییر lifecycle بدون تأیید اضافه شد. تصمیم مالک: سقف مستقل هر ارز، بدون FX خودکار؛ مدل چندسیاست ارزی هنوز migration نشده است.
+- شاخه مستقل و Draft PR #113 حفظ می‌شوند. پایگاه داده عملیاتی، ۳۱۰۰/۴۱۹۰، schema/migration، مجوزها و ماژول‌های مالک تغییر نمی‌کنند. نتیجه نهایی بررسی‌ها در گزارش Task ثبت می‌شود.
+- ۶۲ تست سازمان‌ها، ۴۹ تست B2B و پنج تست PostgreSQL، lint/typecheck و Build هر دو بخش موفق‌اند. آزمون ظاهری جدید به علت timeout اتصال مرورگر انجام نشد. رزرو پیاده‌سازی این پیگیری برای Review آزاد است؛ استقرار و تکمیل کل PRD انجام‌شده محسوب نمی‌شوند.
+
 ## CI-002-MULTI-COMPUTER — PC-B — READY_FOR_REVIEW
 
 CI push and stacked-PR base filters now cover `codex/pc-*`, including PC-A/B/C/D and future IDs. Existing main/develop triggers, all four hosted jobs, read-only credentials, disposable PostgreSQL and event/head-branch isolation are retained. Five dependency-free regression tests cover triggers, concurrency and retained safety/quality gates. Contributor IDs and branch instructions are aligned without transferring module ownership or granting account access. No application, migration, dependency, database or runtime changes. Final-head PR CI and post-merge develop CI are required; details: [CI-002](tasks/CI-002-MULTI-COMPUTER.md).

@@ -942,4 +942,247 @@
       transform: none;
     }
   }
+  &.b2b-modal {
+    max-width: 1180px;
+    width: calc(100vw - 40px);
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+    padding: 26px;
+    background: #f3f7fd;
+  }
+  .modal-title {
+    padding: 0 0 18px 40px;
+  }
+  &.organization-delete-modal {
+    max-width: 640px;
+  }
+  .organization-logo-control {
+    display: grid;
+    justify-items: center;
+    gap: 5px;
+    flex: 0 0 auto;
+    min-width: 92px;
+  }
+  .organization-logo-trigger {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    padding: 5px;
+    cursor: pointer;
+  }
+  .organization-logo-image {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    border-radius: 8px;
+  }
+  .logo-camera {
+    position: absolute;
+    bottom: -4px;
+    left: -4px;
+    display: grid;
+    place-items: center;
+    width: 25px;
+    height: 25px;
+    border: 2px solid white;
+    border-radius: 50%;
+    background: var(--blue);
+    color: white;
+  }
+  .logo-action,
+  .logo-archive-link {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .logo-action {
+    min-height: 26px;
+  }
+  .logo-archive-link {
+    text-decoration: underline;
+  }
+  &.organization-logo-modal {
+    max-width: 480px;
+    background: white;
+  }
+  .logo-editor-preview {
+    display: grid;
+    place-items: center;
+    height: 184px;
+    margin: 12px 0;
+    border: 1px dashed var(--line);
+    border-radius: 14px;
+    background: var(--bg);
+    color: var(--muted);
+  }
+  .logo-editor-preview img {
+    width: 160px;
+    height: 160px;
+    object-fit: contain;
+  }
+  .logo-file-field {
+    display: grid;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .logo-file-field input {
+    min-width: 0;
+    width: 100%;
+    font-size: 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px;
+  }
+  &.organization-document-modal {
+    max-width: 780px;
+  }
+  .modal-title h2 {
+    font-size: 25px;
+    color: var(--ink);
+  }
+  .wizard {
+    align-items: stretch;
+  }
+  .wizard-body {
+    min-width: 0;
+    margin-bottom: 0;
+  }
+  .wizard-body h3 {
+    margin: 10px 0 18px;
+    font-size: 17px;
+    color: var(--ink);
+  }
+  .steps {
+    margin-bottom: 0;
+  }
+  .field > span {
+    font-size: 12px;
+    font-weight: 800;
+    color: #526e98;
+  }
+  .form-grid {
+    margin-top: 16px;
+  }
+  .wizard-mode {
+    display: flex;
+    gap: 20px;
+    margin: 18px 0;
+    flex-wrap: wrap;
+  }
+  .wizard-mode label {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  input[type='radio'],
+  input[type='checkbox'] {
+    accent-color: var(--blue);
+  }
+  .search-field {
+    position: relative;
+  }
+  .search-field > svg {
+    position: absolute;
+    left: 12px;
+    top: 11px;
+    color: var(--muted);
+  }
+  .search-field > .input {
+    padding-left: 38px;
+  }
+  .organization-matches {
+    max-height: 150px;
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin: 6px 0 12px;
+  }
+  .organization-matches button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: white;
+    text-align: right;
+    cursor: pointer;
+  }
+  .organization-matches button bdi {
+    margin-inline-start: auto;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .organization-matches button.selected {
+    background: #eaf3ff;
+    color: var(--blue);
+  }
+  .organization-matches p {
+    padding: 12px;
+  }
+  .form-error {
+    border: 1px solid #f4b6c2;
+    background: #fff0f3;
+    color: #a52040;
+    padding: 12px;
+    border-radius: 10px;
+    margin: 12px 0;
+    overflow-wrap: anywhere;
+  }
+  .excel-tools {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 20px 0 10px;
+  }
+  .excel-tools input {
+    max-width: 230px;
+    font-size: 12px;
+  }
+  .excel-preview {
+    overflow: auto;
+    max-height: 45dvh;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin-top: 16px;
+  }
+  .excel-preview table {
+    min-width: 750px;
+  }
+  .excel-preview td {
+    white-space: normal;
+    max-width: 320px;
+    overflow-wrap: anywhere;
+  }
+  .wizard .boundary-note {
+    margin-top: 18px;
+  }
+  @media (max-width: 850px) {
+    &.b2b-modal {
+      padding: 18px;
+      width: calc(100vw - 20px);
+      max-height: calc(100dvh - 20px);
+    }
+    .wizard > .steps {
+      display: flex;
+      overflow: auto;
+      padding: 8px;
+    }
+    .step {
+      min-width: 160px;
+    }
+    .step small {
+      display: none;
+    }
+    .wizard-body {
+      padding: 14px;
+    }
+    .excel-tools {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
 }
