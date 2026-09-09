@@ -61,6 +61,13 @@ export function transitionTravelWorkflow(
         command.supplierReference.length > 200
       )
         throw new Error('مرجع تأیید کارگزار الزامی است.');
+      if (
+        !current.insuranceIssued &&
+        command.acknowledgeMissingInsurance !== true
+      )
+        throw new Error('بیمه صادر نشده است؛ ادامه بدون بیمه را تأیید کنید.');
+      next.voucherIssued = true;
+      next.insuranceWarningAcknowledged = !current.insuranceIssued;
       next.supplierStatus = 'CONFIRMED';
       next.supplierReference = command.supplierReference.trim();
       break;

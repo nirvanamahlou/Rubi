@@ -1468,3 +1468,8 @@ RESERVATION-REFERENCE-FORM-0909: 49 tests, scoped lint/typecheck/build and rende
 Reserve Sales Web contract-payments component/tests and task docs only. Base 2a747c5 preserves current local stack. Show contract history in a dialog and separate add-payment dialog with receipt attachment below reference after successful save. Consume existing Documents public component; no API, schema, grants or other module edits.
 
 PAYMENT-DIALOGS-0909: 10 targeted tests, scoped lint, typecheck, production build and isolated browser interaction passed. Scope released. No API, data or permission changes.
+
+## CONFIRM-VOUCHER-0909 — PC-A — LOCAL_COMPLETE_PENDING_PUBLICATION
+Reserve Reservations workflow transition/service/tests, Web workflow form/foundation styling/model/tests and docs. New request first column #FFC0C0; confirmation atomically issues voucher with existing insurance acknowledgement and Sales notification; financial release remains mandatory. Retain legacy confirmed-only voucher issue. No migration or live permission grants. Base 8297341 preserves local feature stack.
+
+CONFIRM-VOUCHER-0909: 12 API/34 Web tests, scoped lint, typechecks/builds and both-theme color checks passed; local API4000/Web3100 health 200. Scope released. Push blocked by automatic approval review; GitHub reports origin Rubi is public, contrary to earlier private-repository description. Publication awaits explicit approval.

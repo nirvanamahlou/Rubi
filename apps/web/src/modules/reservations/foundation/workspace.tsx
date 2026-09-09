@@ -94,7 +94,7 @@ const operationContent: Record<
     note: 'اتصال بیمه سامان آماده نیست. هیچ درخواست یا بیمه‌نامه‌ای ایجاد نشده است.',
   },
   manifests: {
-    title: 'Manifest ظرفیت شرکت',
+    title: 'MANIFEST ظرفیت شرکت',
     fields: [
       'مسیر',
       'تاریخ حرکت',
@@ -104,7 +104,7 @@ const operationContent: Record<
       'مسافران',
       'زمان ارسال',
     ],
-    action: 'آماده‌سازی Manifest',
+    action: 'آماده‌سازی MANIFEST',
     note: 'فقط ظرفیت‌ها و تورهای متعلق به شرکت؛ خروجی نهایی پس از اتصال تولید و آرشیو فایل فعال می‌شود.',
   },
   costs: {
@@ -421,11 +421,13 @@ export function ReservationOperationsWorkspace({
                       className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
                     >
                       <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
-                      {Object.entries(statusLabels).map(([key, label]) => (
-                        <SelectItem value={key} key={key}>
-                          {label}
-                        </SelectItem>
-                      ))}
+                      {Object.entries(statusLabels)
+                        .filter(([key]) => key !== 'SUPPLIER_CONFIRMED')
+                        .map(([key, label]) => (
+                          <SelectItem value={key} key={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </label>

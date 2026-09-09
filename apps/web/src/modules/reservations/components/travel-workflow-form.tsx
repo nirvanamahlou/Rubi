@@ -49,7 +49,7 @@ type WorkflowIntake = ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
 const labels = {
   NEW: 'درخواست جدید',
   REQUESTED: 'در انتظار کارگزار',
-  CONFIRMED: 'تأیید کارگزار',
+  CONFIRMED: 'آماده صدور واچر هتل',
   CANCELLED: 'ابطال‌شده',
 };
 
@@ -226,8 +226,13 @@ export function TravelWorkflowForm({
           onClose={() => setTicket(false)}
         />
       )}
-      {(action === 'رزرواسیون' || action === 'واچر') && (
-        <TravelDocument intake={intake} voucher={action === 'واچر'} />
+      {(action === 'رزرواسیون' ||
+        action === 'واچر' ||
+        (action === 'Confirmation' && state.voucherIssued)) && (
+        <TravelDocument
+          intake={intake}
+          voucher={action === 'واچر' || action === 'Confirmation'}
+        />
       )}
       {action === 'ویرایش' && (
         <div className="grid gap-2">
@@ -303,20 +308,21 @@ export function TravelWorkflowForm({
               maxLength={500}
             />
           </label>
-          {action === 'واچر' && !state.insuranceIssued && (
-            <label className="rounded border border-amber-500 p-3">
-              <p>
-                بیمه هنوز صادر نشده است. در صورت عدم تمایل مسافر می‌توانید ادامه
-                دهید.
-              </p>
-              <input
-                type="checkbox"
-                checked={acknowledge}
-                onChange={(e) => setAcknowledge(e.target.checked)}
-              />{' '}
-              ادامه بدون بیمه
-            </label>
-          )}
+          {(action === 'واچر' || action === 'Confirmation') &&
+            !state.insuranceIssued && (
+              <label className="rounded border border-amber-500 p-3">
+                <p>
+                  بیمه هنوز صادر نشده است. در صورت عدم تمایل مسافر می‌توانید
+                  ادامه دهید.
+                </p>
+                <input
+                  type="checkbox"
+                  checked={acknowledge}
+                  onChange={(e) => setAcknowledge(e.target.checked)}
+                />{' '}
+                ادامه بدون بیمه
+              </label>
+            )}
           <div className="flex flex-wrap gap-2">
             {action === 'رزرواسیون' && (
               <Button
@@ -329,10 +335,14 @@ export function TravelWorkflowForm({
             {action === 'Confirmation' && (
               <>
                 <Button
-                  disabled={busy || state.supplierStatus !== 'REQUESTED'}
+                  disabled={
+                    busy ||
+                    state.supplierStatus !== 'REQUESTED' ||
+                    (!state.insuranceIssued && !acknowledge)
+                  }
                   onClick={() => void run('CONFIRM_SUPPLIER')}
                 >
-                  ثبت تأیید کارگزار
+                  تأیید کارگزار و صدور واچر هتل برای فروش
                 </Button>
                 <Button disabled={busy} onClick={() => void run('CANCEL')}>
                   ابطال درخواست با دلیل

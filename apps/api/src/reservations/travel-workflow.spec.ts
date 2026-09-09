@@ -39,19 +39,24 @@ describe('travel workflow', () => {
   it('allows optional insurance only after explicit acknowledgement and closes voucher', () => {
     let state = initialTravelWorkflow();
     state = transition(state, command(state, 'REQUEST_SUPPLIER'), ['p']);
-    state = transition(
-      state,
-      command(state, 'CONFIRM_SUPPLIER', { supplierReference: 'BROKER-1' }),
-      ['p'],
-    );
     expect(() =>
-      transition(state, command(state, 'ISSUE_VOUCHER'), ['p']),
+      transition(
+        state,
+        command(state, 'CONFIRM_SUPPLIER', { supplierReference: 'BROKER-1' }),
+        ['p'],
+      ),
     ).toThrow('بیمه');
+    expect(state.supplierStatus).toBe('REQUESTED');
+    expect(state.voucherIssued).toBe(false);
     state = transition(
       state,
-      command(state, 'ISSUE_VOUCHER', { acknowledgeMissingInsurance: true }),
+      command(state, 'CONFIRM_SUPPLIER', {
+        supplierReference: 'BROKER-1',
+        acknowledgeMissingInsurance: true,
+      }),
       ['p'],
     );
+    expect(state.supplierStatus).toBe('CONFIRMED');
     expect(state.voucherIssued).toBe(true);
     expect(state.insuranceWarningAcknowledged).toBe(true);
     expect(() => transition(state, command(state, 'CANCEL'), ['p'])).toThrow(
@@ -62,9 +67,8 @@ describe('travel workflow', () => {
     let state = initialTravelWorkflow();
     for (const action of [
       'REQUEST_SUPPLIER',
-      'CONFIRM_SUPPLIER',
       'INSURANCE',
-      'ISSUE_VOUCHER',
+      'CONFIRM_SUPPLIER',
     ] as const)
       state = transition(
         state,
@@ -75,6 +79,20 @@ describe('travel workflow', () => {
         ['p'],
       );
     expect(state.insuranceWarningAcknowledged).toBe(false);
+    expect(state.voucherIssued).toBe(true);
+  });
+  it('retains voucher issuance for previously confirmed records', () => {
+    const state = {
+      ...initialTravelWorkflow(),
+      supplierStatus: 'CONFIRMED' as const,
+    };
+    expect(
+      transition(
+        state,
+        command(state, 'ISSUE_VOUCHER', { acknowledgeMissingInsurance: true }),
+        [],
+      ).voucherIssued,
+    ).toBe(true);
   });
   it('requires cancellation reason and disallows stale/concurrent commands', () => {
     const state = initialTravelWorkflow();

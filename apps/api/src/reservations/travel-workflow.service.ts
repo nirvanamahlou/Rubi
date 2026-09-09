@@ -156,7 +156,9 @@ export class TravelWorkflowService {
       }
       if (branding) next.branding = branding;
       if (
-        ['REQUEST_SUPPLIER', 'ISSUE_VOUCHER'].includes(command.action) &&
+        ['REQUEST_SUPPLIER', 'CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(
+          command.action,
+        ) &&
         !next.branding
       )
         throw new BadRequestException('ابتدا سربرگ خروجی را ثبت کنید.');
@@ -172,13 +174,14 @@ export class TravelWorkflowService {
       });
       if (
         intake.salesOwnerUserId &&
-        ['ISSUE_VOUCHER', 'CANCEL'].includes(command.action)
+        ((next.voucherIssued && !state.voucherIssued) ||
+          command.action === 'CANCEL')
       )
         await this.notifications.createWithinTransaction(tx, {
           recipientUserIds: [intake.salesOwnerUserId],
           actorUserId: actor.userId,
           sourceModule: 'reservations',
-          eventType: command.action,
+          eventType: command.action === 'CANCEL' ? 'CANCEL' : 'ISSUE_VOUCHER',
           title:
             command.action === 'CANCEL'
               ? 'ابطال درخواست رزرواسیون'

@@ -5,7 +5,7 @@ export const sections = [
   ['hotels', 'رزرو هتل'],
   ['vouchers', 'واچر'],
   ['insurance', 'بیمه سامان'],
-  ['manifests', 'Manifest'],
+  ['manifests', 'MANIFEST'],
   ['costs', 'هزینه خرید'],
   ['timeline', 'رویدادها'],
 ] as const;
@@ -38,7 +38,7 @@ export const statusLabels: Record<QueueStatus, string> = {
   READY_FOR_DELIVERY: 'آماده تحویل',
   ERROR: 'خطادار',
   COMPLETED: 'تکمیل‌شده',
-  SUPPLIER_CONFIRMED: 'تأییدشده توسط کارگزار',
+  SUPPLIER_CONFIRMED: 'آماده صدور واچر هتل',
   VOUCHER_ISSUED: 'واچر صادرشده',
   CANCELLED: 'ابطال‌شده',
 };
@@ -245,7 +245,7 @@ export const statusTones: Record<
   NEW: 'pink',
   WAITING_SUPPLIER: 'lightGray',
   SUPPLIER_CONFIRMED: 'darkGray',
-  VOUCHER_ISSUED: 'lightGray',
+  VOUCHER_ISSUED: 'darkGray',
   CANCELLED: 'red',
   ACTION_REQUIRED: 'neutral',
   WAITING_FINANCE: 'neutral',
@@ -256,7 +256,6 @@ export const statusTones: Record<
 export const workflowLegend: QueueStatus[] = [
   'NEW',
   'WAITING_SUPPLIER',
-  'SUPPLIER_CONFIRMED',
   'VOUCHER_ISSUED',
   'CANCELLED',
 ];

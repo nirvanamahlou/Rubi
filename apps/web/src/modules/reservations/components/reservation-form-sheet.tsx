@@ -271,7 +271,7 @@ export function ReservationFormSheet({
                 </tr>
               </tbody>
             </table>
-            <Heading number="05" title="PASSENGERS" note="Passenger manifest" />
+            <Heading number="05" title="PASSENGERS" note="Passenger MANIFEST" />
             <table className={`${styles.table} ${styles.passengers}`}>
               <colgroup>
                 <col style={{ width: '6%' }} />
