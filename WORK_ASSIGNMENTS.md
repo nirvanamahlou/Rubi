@@ -1463,3 +1463,8 @@ TRAVEL-DOCUMENT-HANDOFF-0909 validation and local rollout completed; role grants
 User supplies reservation-form-contract-theme (1).pdf as the Reservation form layout. Base current local workflow branch 16dae5f to retain the authorized existing runtime; fetched develop 7d716af has unrelated agency changes. Reserve only Reservations Web document renderer/model/CSS/tests and scoped task docs. Reproduce the six-section English A4 navy/teal layout with actual selected-contract values, operational ordering/age and existing company/agency logo. Preserve voucher rendering, financial gate and existing workflow. Missing source fields remain unfilled; no sample passenger/provider data copied from the PDF. No API, schema/migration, dependencies, IAM grants or unrelated module edits. Validate print layout with synthetic data and update owned Web3100 after build.
 
 RESERVATION-REFERENCE-FORM-0909: 49 tests, scoped lint/typecheck/build and rendered 1-/3-page A4 QA passed. Web3100 refreshed; API/data unchanged. Scope released; see docs/tasks/RESERVATION-REFERENCE-FORM-0909.md.
+
+## PAYMENT-DIALOGS-0909 — PC-A — READY_FOR_REVIEW
+Reserve Sales Web contract-payments component/tests and task docs only. Base 2a747c5 preserves current local stack. Show contract history in a dialog and separate add-payment dialog with receipt attachment below reference after successful save. Consume existing Documents public component; no API, schema, grants or other module edits.
+
+PAYMENT-DIALOGS-0909: 10 targeted tests, scoped lint, typecheck, production build and isolated browser interaction passed. Scope released. No API, data or permission changes.
