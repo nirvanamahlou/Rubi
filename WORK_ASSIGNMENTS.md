@@ -1,5 +1,11 @@
 # Work Assignments
 
+## B2B-CONTRACT-CREDIT-DEMO-001 — PC-B — IN_PROGRESS
+
+- Owner requests nesting credit/guarantees under contracts in the 360 dossier and synthetic guarantee/finance data. Reserve Organizations navigation/components/models/tests, a bounded public-owner-service B2B/Documents fixture loader, and task/status/decision documentation on clean `codex/pc-b-b2b-contract-credit-demo` from49d578e. Preserve PR145 stack and owned Web3100/API4191 runtime. Prior implementation reservations are released.
+- Credit becomes a contracts subview while keeping existing credit permission boundaries and approval workflow. No IAM grants or permission identifier migration. Guarantee fixtures persist as DRAFT agreement terms using public B2B/Documents services, additive/idempotent and restricted to existing explicitly synthetic agencies. No automatic approval, activation or real balances.
+- Finance Phase B persistence/owner adapter is absent in this checkout (FINANCE-001 is a preview foundation). Provide clearly labelled synthetic finance previews within B2B, separate from operational exposure/available-credit calculations; do not create or query Finance tables, invent confirmed payment events, or modify PC-A Finance producers. No schema/migration/dependency lock required. Back up before fixture writes, preserve user changes, verify actual navigation, fixtures and runtime before handoff. No merge.
+
 ## B2B-CONTRACT-FORMS-002 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests working contract/dossier dates, additional agreement types, payment method selection from Master Data, inline contract/guarantee document uploads stored in Documents, removal of limit-type UI and separate document-upload section, and closing single-select rate reference options. Clean owned runtime branch `codex/pc-b-b2b-contract-forms` starts from 2bdde76, retaining the PR143 stack and fetched develop4717b13. Prior task releases its locks; existing runtime3100/API4191 belongs to this checkout.

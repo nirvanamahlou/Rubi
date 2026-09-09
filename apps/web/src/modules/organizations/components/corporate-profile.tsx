@@ -27,6 +27,7 @@ import {
 } from 'react';
 import { cooperationLabel } from '../model/presentation';
 import { Button } from '@/components/ui/button';
+import { OrganizationFinancePreview } from './organization-finance-preview';
 import {
   usePageBreadcrumbs,
   type PageBreadcrumb,
@@ -68,26 +69,13 @@ const sections = [
     icon: FileText,
     accent: '#e98923',
     tint: '#fff4e7',
-    description: 'قرارداد چارچوب، نرخ توافقی، تخفیف، پورسانت و اسناد',
+    description: 'قرارداد چارچوب، اعتبار و تضمین، نرخ توافقی، تخفیف و پورسانت',
     tabs: [
       ['framework', 'قرارداد چارچوب'],
+      ['credit', 'اعتبار و تضمین'],
       ['rates', 'نرخ‌های توافقی'],
       ['discounts', 'تخفیف'],
       ['commission', 'پورسانت'],
-    ],
-  },
-  {
-    id: 'credit',
-    title: 'اعتبار و تضمین',
-    icon: ShieldCheck,
-    accent: '#12a97d',
-    tint: '#e8f9f3',
-    description: 'سیاست اعتبار، مانده، افزایش موقت و تضمین‌های فعال',
-    tabs: [
-      ['policy', 'سیاست اعتبار'],
-      ['exposure', 'Exposure و مانده'],
-      ['temporary', 'افزایش موقت'],
-      ['guarantees', 'تضمین‌ها'],
     ],
   },
   {
@@ -217,6 +205,8 @@ export function CorporateProfile({
 }) {
   const [screen, setScreen] = useState('home');
   const [tab, setTab] = useState('profile');
+  const [creditTab, setCreditTab] = useState('policy');
+  const inCredit = screen === 'contracts' && tab === 'credit';
   const roles = String(organization.attributes.roleCodes ?? '').split(',');
   const entityLabel =
     roles.includes('AGENCY') && !roles.includes('CORPORATE_CUSTOMER')
@@ -259,9 +249,22 @@ export function CorporateProfile({
         title: organization.name,
         onSelect: () => go('home'),
       },
-      ...(current ? [{ key: current.id, title: current.title }] : []),
+      ...(current
+        ? [
+            {
+              key: current.id,
+              title: current.title,
+              ...(inCredit
+                ? { onSelect: () => go('contracts', 'framework') }
+                : {}),
+            },
+          ]
+        : []),
+      ...(inCredit
+        ? [{ key: 'contract-credit', title: 'اعتبار و تضمین' }]
+        : []),
     ],
-    [onClose, organization.id, organization.name, go, current],
+    [onClose, organization.id, organization.name, go, current, inCredit],
   );
   usePageBreadcrumbs('/organizations', breadcrumbs);
   const operationalView: OperationalView | undefined =
@@ -274,9 +277,9 @@ export function CorporateProfile({
           ? (tab as 'rates' | 'discounts' | 'commission')
           : screen === 'organization' && tab === 'manager'
             ? 'manager'
-            : screen === 'credit' && tab === 'guarantees'
+            : inCredit && creditTab === 'guarantees'
               ? 'guarantees'
-              : screen === 'credit' && ['policy', 'exposure'].includes(tab)
+              : inCredit && ['policy', 'temporary'].includes(creditTab)
                 ? 'credit'
                 : undefined;
   return (
@@ -459,6 +462,33 @@ export function CorporateProfile({
               </button>
             ))}
           </nav>
+          {inCredit ? (
+            <nav className="tabs" aria-label="بخش‌های اعتبار و تضمین قرارداد">
+              {(
+                [
+                  ['policy', 'سیاست اعتبار'],
+                  ['guarantees', 'تضمین‌ها'],
+                  ['exposure', 'Exposure و مانده'],
+                  ['temporary', 'افزایش موقت'],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  className={`tab ${creditTab === id ? 'active' : ''}`}
+                  aria-pressed={creditTab === id}
+                  onClick={() => setCreditTab(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+          ) : null}
+          {inCredit && creditTab === 'temporary' ? (
+            <p className="boundary-note">
+              افزایش اعتبار با ثبت اصلاحیه قرارداد، تاریخ اعتبار مشخص و تأیید
+              مستقل انجام می‌شود.
+            </p>
+          ) : null}
           {screen === 'organization' ? (
             <section
               className="grid-2 items-start"
@@ -548,6 +578,17 @@ export function CorporateProfile({
             </section>
           ) : screen === 'access' && access ? (
             access(tab)
+          ) : screen === 'finance' ? (
+            <OrganizationFinancePreview
+              key={organization.id}
+              organizationName={organization.name}
+              tab={tab}
+            />
+          ) : inCredit && creditTab === 'exposure' ? (
+            <CorporateUnavailable
+              title="Exposure و مانده مالی"
+              description="مانده واقعی و اعتبار قابل استفاده پس از اتصال سرویس مالی نمایش داده می‌شود. نمونه‌های مالی را در بخش «مالی و تسویه» ببینید."
+            />
           ) : operationalView ? (
             operations(operationalView, () => go('contracts', 'framework'))
           ) : (
@@ -556,7 +597,7 @@ export function CorporateProfile({
               description={
                 screen === 'finance'
                   ? 'اطلاعات مالی هنوز در دسترس نیست؛ صورت‌حساب و تسویه پس از اتصال سرویس مالی نمایش داده می‌شوند.'
-                  : screen === 'credit'
+                  : inCredit
                     ? 'ثبت و تأیید درخواست اعتبار و تضمین هنوز آماده نیست.'
                     : screen === 'access'
                       ? 'دسترسی کاربران این سازمان هنوز به سامانه هویت و تأیید متصل نشده است.'
