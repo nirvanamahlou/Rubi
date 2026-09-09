@@ -10,7 +10,13 @@ import { Alert, Badge, Card, PageHeader } from '@/components/ui/surfaces';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { ReservationHotelPurchase } from './reservation-hotel-purchase';
-import { ReservationTickets } from './reservation-tickets';
+import { TravelWorkflowForm } from './travel-workflow-form';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/overlays';
 
 type ArrangementDraft = ReservationArrangementUpdateV1 & { requestId: string };
 const countOptions = Array.from({ length: 31 }, (_, value) => value);
@@ -231,11 +237,25 @@ export function ReservationInbox() {
         </Button>
       </div>
       {ticketRequest ? (
-        <ReservationTickets
-          key={ticketRequest.id}
-          request={ticketRequest}
-          onClose={() => setTicketRequest(null)}
-        />
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setTicketRequest(null);
+          }}
+        >
+          <DialogContent
+            dir="rtl"
+            className="max-h-[85dvh] overflow-y-auto sm:max-w-3xl"
+          >
+            <DialogTitle>بلیط مسافران</DialogTitle>
+            <DialogDescription>انتخاب سربرگ و خروجی قرارداد</DialogDescription>
+            <TravelWorkflowForm
+              key={ticketRequest.id}
+              id={ticketRequest.id}
+              action="بلیط"
+            />
+          </DialogContent>
+        </Dialog>
       ) : null}
       {error ? <Alert tone="error" title={error} /> : null}
       {busy && !requests.length ? (

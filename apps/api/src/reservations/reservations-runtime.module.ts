@@ -1,3 +1,12 @@
+import { NotificationsModule } from '../notifications/notifications.module';
+import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
+import { MasterDataModule } from '../master-data/master-data.module';
+import { TravelWorkflowService } from './travel-workflow.service';
+import {
+  FinanceDeliveryModule,
+  FinanceDeliveryService,
+} from '../finance/document-delivery/finance-delivery.module';
+import type { TravelWorkflowCommandV1 } from '@rubi/contracts';
 import {
   Body,
   Controller,
@@ -30,7 +39,86 @@ export class ReservationRequestsController {
     private readonly service: ReservationsPublicService,
     @Inject(ReservationHotelPurchaseService)
     private readonly hotelPurchase: ReservationHotelPurchaseService,
+    @Inject(TravelWorkflowService)
+    private readonly workflow: TravelWorkflowService,
+    @Inject(FinanceDeliveryService)
+    private readonly delivery: FinanceDeliveryService,
   ) {}
+  @Get('delivery-queue')
+  @Header('Cache-Control', 'private, no-store')
+  async deliveryQueue(
+    @Req() req: AuthenticatedRequest,
+    @Query('contractNumber') contractNumber?: string,
+  ) {
+    if (!req.actor.permissions.includes('finance.financial_release.read'))
+      throw new ForbiddenException();
+    const rows = await this.service.list(req.actor.branchIds, {
+      contractNumber,
+    });
+    return {
+      data: await Promise.all(
+        rows.map(async (row) => ({
+          id: row.id,
+          contractNumber: row.snapshot.contractNumber,
+          delivery: await this.delivery.read(row.id),
+        })),
+      ),
+    };
+  }
+  @Get(':id/workflow')
+  @Header('Cache-Control', 'private, no-store')
+  async workflowDetail(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    return {
+      data: await this.workflow.detail(id, req.actor.branchIds),
+      delivery: await this.delivery.read(id),
+    };
+  }
+  @Patch(':id/workflow')
+  @Header('Cache-Control', 'private, no-store')
+  async workflowUpdate(
+    @Param('id') id: string,
+    @Body() input: TravelWorkflowCommandV1,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return { data: await this.workflow.update(id, input, req.actor) };
+  }
+  @Get(':id/delivery')
+  @Header('Cache-Control', 'private, no-store')
+  async deliveryDetail(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.actor.permissions.includes('finance.financial_release.read'))
+      throw new ForbiddenException();
+    await this.workflow.detail(id, req.actor.branchIds);
+    return { data: await this.delivery.read(id) };
+  }
+  @Patch(':id/delivery')
+  @Header('Cache-Control', 'private, no-store')
+  async deliveryUpdate(
+    @Param('id') id: string,
+    @Body()
+    input: { expectedVersion: number; approved: boolean; reason: string },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.actor.permissions.includes('finance.financial_release.approve'))
+      throw new ForbiddenException();
+    const intake = await this.workflow.detail(id, req.actor.branchIds);
+    return {
+      data: await this.delivery.update(
+        id,
+        input,
+        req.actor.userId,
+        intake.salesOwnerUserId,
+        intake.contractId,
+      ),
+    };
+  }
   @Post(':id/hotel-purchase')
   @Header('Cache-Control', 'private, no-store')
   record(
@@ -80,13 +168,24 @@ export class ReservationRequestsController {
   }
 }
 @Module({
-  imports: [IamModule],
+  imports: [
+    IamModule,
+    NotificationsModule,
+    FinanceDeliveryModule,
+    LegalEntitiesModule,
+    MasterDataModule,
+  ],
   controllers: [ReservationRequestsController],
   providers: [
     AuthGuard,
+    TravelWorkflowService,
     ReservationsPublicService,
     ReservationHotelPurchaseService,
   ],
-  exports: [ReservationsPublicService],
+  exports: [
+    ReservationsPublicService,
+    TravelWorkflowService,
+    FinanceDeliveryModule,
+  ],
 })
 export class ReservationsRuntimeModule {}

@@ -38,6 +38,7 @@ export class SalesReservationDispatcher
           const receipt = await this.reservations.receive(
             request.snapshot as unknown as SalesReservationRequestV1,
             request.contract.branchId,
+            request.contract.ownerUserId,
           );
           await this.repository.acknowledgeReservationRequest(
             request.id,

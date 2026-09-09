@@ -1,5 +1,10 @@
 # وضعیت پروژه
 
+## TRAVEL-DOCUMENT-HANDOFF-0909 — PC-A — READY_FOR_REVIEW
+
+Persisted Reservations supplier/insurance/voucher/cancellation workflow, versioned operational order/age overrides, company/agency letterhead and printable request/voucher outputs. Sales passenger document access now requires Finance delivery authorization, with revocation and transactional owner notifications. Over-60 insurance extra is a per-passenger toman field with exact IRR reconciliation. Local additive migration applied after restored-copy rehearsal and fresh backup; 350 customers/5 contracts retained. API4000/Web3100 updated. Role grants remain pending user approval; no live financial or operational decisions, production deploy or merge. Tests, remaining limitations and handoff: [task report](tasks/TRAVEL-DOCUMENT-HANDOFF-0909.md).
+
+
 ## CI-002-MULTI-COMPUTER — PC-B — READY_FOR_REVIEW
 
 CI push and stacked-PR base filters now cover `codex/pc-*`, including PC-A/B/C/D and future IDs. Existing main/develop triggers, all four hosted jobs, read-only credentials, disposable PostgreSQL and event/head-branch isolation are retained. Five dependency-free regression tests cover triggers, concurrency and retained safety/quality gates. Contributor IDs and branch instructions are aligned without transferring module ownership or granting account access. No application, migration, dependency, database or runtime changes. Final-head PR CI and post-merge develop CI are required; details: [CI-002](tasks/CI-002-MULTI-COMPUTER.md).

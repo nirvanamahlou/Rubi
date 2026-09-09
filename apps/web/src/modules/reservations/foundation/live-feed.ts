@@ -65,6 +65,18 @@ const envelopeSchema = z.object({
         contractVersion: z.number().int().positive(),
         branchId: id,
         status: z.literal('QUEUED'),
+        workflow: z
+          .object({
+            supplierStatus: z.enum([
+              'NEW',
+              'REQUESTED',
+              'CONFIRMED',
+              'CANCELLED',
+            ]),
+            voucherIssued: z.boolean(),
+          })
+          .nullable()
+          .optional(),
         receivedAt: instant,
         snapshot: snapshotSchema,
       }),
@@ -155,7 +167,16 @@ export function decodeIntake(
               ].join('، '),
             }
           : {}),
-        status: 'NEW',
+        status:
+          row.workflow?.supplierStatus === 'CANCELLED'
+            ? 'CANCELLED'
+            : row.workflow?.voucherIssued
+              ? 'VOUCHER_ISSUED'
+              : row.workflow?.supplierStatus === 'CONFIRMED'
+                ? 'SUPPLIER_CONFIRMED'
+                : row.workflow?.supplierStatus === 'REQUESTED'
+                  ? 'WAITING_SUPPLIER'
+                  : 'NEW',
         issues: [],
       };
     });

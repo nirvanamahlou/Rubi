@@ -12,6 +12,7 @@ import { salesDirections, salesFlightSelection } from '../model/sales-form';
 import styles from './flight-ticket-preview.module.css';
 
 export interface FlightTicketSheetData {
+  branding?: { name: string; logo: string };
   passengerName: string;
   businessOutput?: boolean;
   contractNumber?: string;
@@ -103,14 +104,16 @@ export function FlightTicketSheet({
           <h1>FLIGHT TICKET</h1>
           <div className={styles.rule} />
         </div>
-        <Image
-          src="/brand/niyayesh-seir-full.png"
-          alt="Niyayesh Seir"
-          width={210}
-          height={140}
-          loading="eager"
-          unoptimized
-        />
+        {(!data.branding || data.branding.logo) && (
+          <Image
+            src={data.branding?.logo ?? '/brand/niyayesh-seir-full.png'}
+            alt={data.branding?.name ?? 'Niyayesh Seir'}
+            width={210}
+            height={140}
+            loading="eager"
+            unoptimized
+          />
+        )}
       </header>
       <p className={styles.draft}>
         DRAFT — NOT VALID FOR TRAVEL / پیش‌نمایش، فاقد اعتبار سفر
@@ -138,7 +141,8 @@ export function FlightTicketSheet({
       <div className={styles.identity}>
         <div>
           <p>
-            Agency Name<strong>NIYAYESH SEIR SAHAR</strong>
+            Agency Name
+            <strong>{data.branding?.name ?? 'NIYAYESH SEIR SAHAR'}</strong>
           </p>
           <p>
             Airline Name<strong>{offers[0]?.carrierName || '—'}</strong>

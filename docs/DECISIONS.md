@@ -123,3 +123,6 @@ develop یا تغییر والدها جزو این کار نیست. فقط قر�
 FINANCE-001 Phase A هیچ Prisma Schema، Migration، Repository، Persistence، Dependency یا
 Lockfile تغییر نمی‌کند. پس از Merge PR #21، ایجاد Schema و Migration افزایشی مالی فقط در
 Task مستقل Phase B، با رزرو مجدد قفل‌ها و Migration gate کامل، مجاز خواهد بود.
+
+## ADR-TRAVEL-DELIVERY-0909 — confirmed by owner
+Implement the explicit Finance delivery tick as a manual document-delivery authorization, separate from settlement, credit, ledger and payment approval. It never changes financial facts or pretends to satisfy the broader settlement engine. Default blocked, Finance-only permission, mandatory reason, versioned approval/revocation and actor/time audit. Sales document APIs remain blocked until this authorization and operational readiness both hold. Reservations can preview operational documents independently. Supplier confirmation is required for vouchers; insurance absence requires explicit acknowledgement rather than blocking. Operational room/age overrides preserve customer birth dates and commercial allocations; commercial changes require Sales correction. Earlier draft previews in the Sales form must not bypass the delivery gate.

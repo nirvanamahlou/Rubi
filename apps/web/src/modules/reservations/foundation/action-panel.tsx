@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/overlays';
+import { TravelWorkflowForm } from '../components/travel-workflow-form';
 import type { RequestView } from './model';
 import { statusLabels } from './model';
 import styles from './action-panel.module.css';
@@ -51,6 +52,17 @@ export function ContractActionContent({
   action: string;
   request: RequestView;
 }) {
+  if (
+    [
+      'رزرواسیون',
+      'Confirmation',
+      'بلیط',
+      'واچر',
+      'بیمه‌نامه',
+      'ویرایش',
+    ].includes(action)
+  )
+    return <TravelWorkflowForm id={request.id} action={action} />;
   if (
     action === 'مشاهده' ||
     action === 'مشخصات کلی' ||

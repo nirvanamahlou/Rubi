@@ -1453,3 +1453,8 @@ Validation: foundation tests, Web lint, TypeScript and production build passed; 
 User marked top processing link, refresh button, polling explanation and five section tabs for removal (tickets, hotels, vouchers, insurance, costs). Scope only reservation landing page and foundation navigation chrome. Keep polling, remaining tabs, action panel and processing route. Ticket approval workflow remains pending the user's financial-release clarification; no approval/backend changes here.
 
 Validation: 34 tests, scoped lint, production TypeScript/build passed; Web3100 refreshed. Scope released.
+
+## TRAVEL-DOCUMENT-HANDOFF-0909 — PC-A — READY_FOR_REVIEW
+User explicitly requests execution of the agreed workflow: Reservations owns ticket preview/branding, supplier request/confirmation/cancellation and voucher issue; missing insurance is an acknowledged warning, not a block. Sales cannot view/render/download passenger documents before Finance delivery authorization. Reserve Reservations API/Web, Sales public consumption/pricing, Finance document-delivery runtime, additive Prisma schema/migration, IAM permission catalog/seed slice, public travel contracts and task docs. Producer/consumer: Reservations snapshots -> Sales/Finance through public services; B2B/Master Data/Documents existing public interfaces only. No third-party module edits, destructive migration, live IAM grants, merge or external sends. Preserve current branch stack and local data. Migration owner PC-A/TRAVEL-DOCUMENT-HANDOFF-0909; dependency lock unused.
+
+TRAVEL-DOCUMENT-HANDOFF-0909 validation and local rollout completed; role grants pending explicit response, scope released for review. See docs/tasks/TRAVEL-DOCUMENT-HANDOFF-0909.md.

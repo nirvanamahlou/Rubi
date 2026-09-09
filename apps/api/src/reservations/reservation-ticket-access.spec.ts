@@ -1,3 +1,5 @@
+import type { TravelWorkflowService } from './travel-workflow.service';
+import type { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import { describe, expect, it, vi } from 'vitest';
 import type { DatabaseService } from '../database/database.service';
 import type { AuthenticatedRequest } from '../iam/iam.types';
@@ -63,6 +65,8 @@ describe('reservation saved ticket access scope and history', () => {
     const controller = new ReservationRequestsController(
       service,
       {} as ReservationHotelPurchaseService,
+      {} as TravelWorkflowService,
+      {} as FinanceDeliveryService,
     );
     await expect(
       controller.list(

@@ -70,7 +70,7 @@ export class SalesRepository {
         dispatchedAt: null,
         contract: { status: 'SENT_TO_RESERVATIONS' },
       },
-      include: { contract: { select: { branchId: true } } },
+      include: { contract: { select: { branchId: true, ownerUserId: true } } },
       orderBy: { createdAt: 'asc' },
       take: 50,
     });

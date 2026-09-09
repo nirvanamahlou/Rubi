@@ -33,6 +33,7 @@ import {
 import { salesApi } from '../api/client';
 import { SalesThemedSelect } from './sales-themed-select';
 import { ContractPayments } from './contract-payments';
+import { SalesTravelDocuments } from './sales-travel-documents';
 import { ContractOutputButton } from './contract-output';
 
 export async function loadSalesWorkspace(
@@ -505,6 +506,7 @@ export function SalesWorkspace() {
                       </Button>
                       <div className="mt-2">
                         <ContractOutputButton contractId={contract.id} />
+                        <SalesTravelDocuments contractId={contract.id} />
                       </div>
                     </td>
                   </tr>
