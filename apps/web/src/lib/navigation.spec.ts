@@ -86,6 +86,44 @@ describe('CRM navigation', () => {
 
   it('resolves the Human Resources owner route', () => {
     expect(getNavigationItem('/human-resources')?.title).toBe('منابع انسانی');
+    expect(getNavigationItem('/hr')?.title).toBe('منابع انسانی');
+    expect(getNavigationBreadcrumbs('/hr')).toEqual([
+      { href: '/hr', title: 'منابع انسانی' },
+    ]);
+  });
+
+  it('shows the active Human Resources section or workspace in breadcrumbs', () => {
+    expect(
+      getNavigationBreadcrumbs('/hr', null, {
+        sectionKey: 'employees',
+        workspaceKey: null,
+      }),
+    ).toEqual([
+      { href: '/hr', title: 'منابع انسانی' },
+      { href: '/hr?section=employees', title: 'کارکنان' },
+    ]);
+    expect(
+      getNavigationBreadcrumbs('/hr', null, {
+        sectionKey: null,
+        workspaceKey: 'payroll',
+      }),
+    ).toEqual([
+      { href: '/hr', title: 'منابع انسانی' },
+      { href: '/hr?workspace=payroll', title: 'حقوق و دستمزد' },
+    ]);
+    expect(
+      getNavigationBreadcrumbs('/hr', null, {
+        sectionKey: 'unknown',
+        workspaceKey: 'unknown',
+      }),
+    ).toEqual([{ href: '/hr', title: 'منابع انسانی' }]);
+  });
+
+  it('keeps the personal profile outside management navigation', () => {
+    expect(getNavigationItem('/profile')).toBeUndefined();
+    expect(getNavigationBreadcrumbs('/profile')).toEqual([
+      { href: '/profile', title: 'پروفایل من' },
+    ]);
   });
 
   it('does not create disallowed standalone sections', () => {

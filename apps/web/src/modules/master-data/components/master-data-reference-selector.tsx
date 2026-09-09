@@ -192,7 +192,7 @@ export function MasterDataReferenceSelector({
   return (
     <div className="space-y-2">
       {onManage ? (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <Button
             onClick={() => onManage()}
             size="sm"

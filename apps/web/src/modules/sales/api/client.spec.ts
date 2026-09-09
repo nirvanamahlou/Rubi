@@ -11,16 +11,14 @@ vi.mock('@/lib/auth-session', () => ({
 afterEach(() => vi.unstubAllGlobals());
 describe('sales API dashboard connection', () => {
   it('downloads all applied results as a Blob and omits list pagination', async () => {
-    const fetch = vi
-      .fn()
-      .mockResolvedValue(
-        new Response('PK-test', {
-          headers: {
-            'content-type':
-              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          },
-        }),
-      );
+    const fetch = vi.fn().mockResolvedValue(
+      new Response('PK-test', {
+        headers: {
+          'content-type':
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      }),
+    );
     vi.stubGlobal('fetch', fetch);
     const blob = await salesApi.exportXlsx({
       search: 'TRACK',
@@ -37,13 +35,11 @@ describe('sales API dashboard connection', () => {
   it('does not download JSON or an access error as an Excel file', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response('{}', {
-            headers: { 'content-type': 'application/json' },
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        new Response('{}', {
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
     );
     await expect(salesApi.exportXlsx({})).rejects.toThrow('Excel');
     vi.stubGlobal(

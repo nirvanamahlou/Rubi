@@ -11,11 +11,18 @@ import {
   utc,
   validateAssignment,
   validateAttendance,
+  validateCandidateInterview,
   validateEmployee,
+  validateEmployeeCheckin,
+  validateEmployeeExpense,
+  validateLeavePolicy,
   validateMoney,
+  validatePayrollRun,
   validatePeriod,
   validateReason,
   validateShift,
+  validateStaffingPlan,
+  validateVehicleLog,
 } from './hr.domain';
 import {
   canAccess,
@@ -31,11 +38,17 @@ import {
 } from './hr.ports';
 import type {
   Employee,
+  EmployeeCheckin,
+  EmployeeExpense,
   EmploymentAssignment,
   EmploymentContract,
+  LeavePolicy,
   LeaveRequest,
+  PayrollRun,
   PersonnelDocument,
   Shift,
+  StaffingPlan,
+  VehicleLog,
 } from './hr.entities';
 
 const now = '2026-09-05T00:00:00.000Z';
@@ -103,6 +116,72 @@ const shift: Shift = {
   overnight: false,
   breakMinutes: 30,
   timezone: 'Asia/Tehran',
+};
+const staffingPlan: StaffingPlan = {
+  ...entity,
+  ...period,
+  branchId: target.branchId,
+  organizationUnitId: 'synthetic-unit',
+  plannedHeadcount: 2,
+  approvedBudget: { amount: '1000000.00', currencyCode: 'IRR' },
+  status: 'DRAFT',
+  makerUserId: actor.userId,
+};
+const expense: EmployeeExpense = {
+  ...entity,
+  employeeId: target.employeeId,
+  kind: 'EXPENSE_CLAIM',
+  money: { amount: '100.25', currencyCode: 'USD' },
+  settlementMoney: { amount: '1000000', currencyCode: 'IRR' },
+  exchangeRate: '9975.06234414',
+  approvalStage: 'synthetic-manager-review',
+  status: 'PENDING',
+  makerUserId: actor.userId,
+};
+const leavePolicy: LeavePolicy = {
+  ...entity,
+  ...period,
+  branchId: target.branchId,
+  leaveTypeId: 'synthetic-annual-leave',
+  allocationUnits: '26.5',
+  carryForward: true,
+  encashmentAllowed: false,
+  holidayListId: 'synthetic-holiday-list',
+  status: 'DRAFT',
+};
+const payrollRun: PayrollRun = {
+  ...entity,
+  ...period,
+  issuerLegalEntityId: 'synthetic-issuer',
+  employeeIds: [target.employeeId, 'synthetic-employee-2'],
+  formulaVersion: 'synthetic-formula-v1',
+  totals: [{ amount: '2000000', currencyCode: 'IRR' }],
+  status: 'DRAFT',
+  makerUserId: actor.userId,
+};
+const vehicleLog: VehicleLog = {
+  ...entity,
+  ...period,
+  vehicleId: 'synthetic-vehicle',
+  employeeId: target.employeeId,
+  purpose: 'Synthetic business journey',
+  startOdometer: '1000.25',
+  endOdometer: '1020.75',
+  expense: { amount: '250000', currencyCode: 'IRR' },
+  status: 'COMPLETED',
+};
+const checkin: EmployeeCheckin = {
+  ...entity,
+  employeeId: target.employeeId,
+  occurredAt: now,
+  kind: 'IN',
+  source: 'MOBILE',
+  location: {
+    latitude: '35.6892',
+    longitude: '51.3890',
+    accuracyMeters: '12.5',
+  },
+  makerUserId: actor.userId,
 };
 
 describe('HR domain foundation', () => {
@@ -209,8 +288,33 @@ describe('HR domain foundation', () => {
         checkedInAt: now,
         checkedOutAt: now,
         source: 'MANUAL',
+        workedMinutes: 0,
+        lateMinutes: 0,
+        earlyDepartureMinutes: 0,
+        calculationVersion: 'synthetic-calc-v1',
         status: 'SUBMITTED',
         makerUserId: actor.userId,
+      }),
+    ).toThrow();
+  });
+  it('validates UTC check-ins, biometric/import references and GPS bounds', () => {
+    expect(() => validateEmployeeCheckin(checkin)).not.toThrow();
+    expect(() =>
+      validateEmployeeCheckin({
+        ...checkin,
+        location: { latitude: '90.1', longitude: '51.3890' },
+      }),
+    ).toThrow();
+    expect(() =>
+      validateEmployeeCheckin({
+        ...checkin,
+        source: 'BIOMETRIC',
+      }),
+    ).toThrow();
+    expect(() =>
+      validateEmployeeCheckin({
+        ...checkin,
+        source: 'IMPORT',
       }),
     ).toThrow();
   });
@@ -263,6 +367,80 @@ describe('HR domain foundation', () => {
     ).toThrow();
     expect(() =>
       performanceScore([{ id: 'a', weight: 100, score: Infinity }]),
+    ).toThrow();
+  });
+  it('validates staffing budgets and positive planned headcount', () => {
+    expect(() => validateStaffingPlan(staffingPlan)).not.toThrow();
+    expect(() =>
+      validateStaffingPlan({ ...staffingPlan, plannedHeadcount: 0 }),
+    ).toThrow();
+    expect(() =>
+      validateStaffingPlan({
+        ...staffingPlan,
+        approvedBudget: { amount: '1e6', currencyCode: 'IRR' },
+      }),
+    ).toThrow();
+  });
+  it('validates interview panels, rounds, UTC scheduling and weighted scores', () => {
+    const interview = {
+      ...entity,
+      candidateId: 'synthetic-candidate',
+      round: 1,
+      scheduledAt: now,
+      panelUserIds: ['synthetic-panel-1', 'synthetic-panel-2'],
+      scores: [
+        { id: 'technical', weight: 60, score: 80 },
+        { id: 'communication', weight: 40, score: 90 },
+      ],
+      status: 'COMPLETED' as const,
+      makerUserId: actor.userId,
+    };
+    expect(validateCandidateInterview(interview)).toBe(84);
+    expect(() =>
+      validateCandidateInterview({
+        ...interview,
+        panelUserIds: ['synthetic-panel-1', 'synthetic-panel-1'],
+      }),
+    ).toThrow();
+    expect(() =>
+      validateCandidateInterview({ ...interview, scheduledAt: '2026-09-06' }),
+    ).toThrow();
+  });
+  it('requires a canonical positive exchange rate for multi-currency expenses', () => {
+    const expenseWithoutExchangeRate = { ...expense };
+    delete expenseWithoutExchangeRate.exchangeRate;
+    expect(() => validateEmployeeExpense(expense)).not.toThrow();
+    expect(() => validateEmployeeExpense(expenseWithoutExchangeRate)).toThrow();
+    expect(() =>
+      validateEmployeeExpense({ ...expense, exchangeRate: '1e4' }),
+    ).toThrow();
+    expect(() =>
+      validateEmployeeExpense({
+        ...expenseWithoutExchangeRate,
+        settlementMoney: { amount: '100.25', currencyCode: 'USD' },
+      }),
+    ).not.toThrow();
+  });
+  it('validates dated leave policies and unique payroll populations', () => {
+    expect(() => validateLeavePolicy(leavePolicy)).not.toThrow();
+    expect(() =>
+      validateLeavePolicy({ ...leavePolicy, allocationUnits: '0' }),
+    ).toThrow();
+    expect(() => validatePayrollRun(payrollRun)).not.toThrow();
+    expect(() =>
+      validatePayrollRun({
+        ...payrollRun,
+        employeeIds: [target.employeeId, target.employeeId],
+      }),
+    ).toThrow();
+  });
+  it('validates vehicle log chronology and decimal odometer values', () => {
+    expect(() => validateVehicleLog(vehicleLog)).not.toThrow();
+    expect(() =>
+      validateVehicleLog({ ...vehicleLog, endOdometer: '999.99' }),
+    ).toThrow();
+    expect(() =>
+      validateVehicleLog({ ...vehicleLog, startOdometer: '1e3' }),
     ).toThrow();
   });
 });

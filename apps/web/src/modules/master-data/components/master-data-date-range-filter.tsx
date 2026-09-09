@@ -119,7 +119,7 @@ export function MasterDataDateRangeFilter({
       {hasValue ? (
         <button
           aria-label="پاک‌کردن بازه تاریخ"
-          className="mt-1 inline-flex min-h-7 items-center gap-1 rounded-md px-1.5 text-[11px] font-medium text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="ms-auto mt-1 flex min-h-7 w-fit items-center gap-1 rounded-md px-1.5 text-[11px] font-medium text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           onClick={onReset}
           type="button"
         >

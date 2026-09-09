@@ -8,20 +8,22 @@ import { getMasterDataFormFields } from './form-fields';
 import { validateMasterDataDraft } from './validation';
 
 describe('payment-method form fields', () => {
-  it('omits code and English name without changing the reference/export catalog', () => {
+  it('omits channel only while creating without changing stored payment metadata', () => {
     const definition = getMasterDataDefinition('payment-methods');
     expect(
-      getMasterDataFormFields(definition).map((field) => field.key),
+      getMasterDataFormFields(definition, 'create').map((field) => field.key),
     ).toEqual([
       'name',
-      'channel',
       'direction',
       'requiresManualApproval',
       'displayOrder',
       'description',
     ]);
+    expect(
+      getMasterDataFormFields(definition, 'edit').map((field) => field.key),
+    ).toContain('channel');
     expect(definition.fields.map((field) => field.key)).toEqual(
-      expect.arrayContaining(['code', 'englishName']),
+      expect.arrayContaining(['code', 'englishName', 'channel']),
     );
   });
 
@@ -78,16 +80,25 @@ describe('payment-method form fields', () => {
     });
   });
 
-  it('uses visible fields for create/edit initialization and rendering in both forms', () => {
+  it('uses mode-aware visible fields when rendering both forms', () => {
     for (const file of ['master-data-form.tsx', 'master-data-live-form.tsx']) {
       const source = readFileSync(
         resolve(process.cwd(), 'src/modules/master-data/components', file),
         'utf8',
       );
-      expect(
-        source.match(/getMasterDataFormFields\(definition\)\.map/g),
-      ).toHaveLength(3);
+      expect(source).toContain('getMasterDataFormFields(definition, mode).map');
       expect(source).not.toContain('definition.fields.map');
+    }
+  });
+
+  it('keeps a neutral hidden channel so the create request remains valid', () => {
+    for (const file of ['master-data-form.tsx', 'master-data-live-form.tsx']) {
+      const source = readFileSync(
+        resolve(process.cwd(), 'src/modules/master-data/components', file),
+        'utf8',
+      );
+      expect(source).toContain("field.key === 'channel'");
+      expect(source).toContain("? 'OTHER'");
     }
   });
 

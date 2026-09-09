@@ -40,6 +40,20 @@ PC-A follow-up on the approved sidebar: sidebar-icons.ts maps the existing 17 ro
 PC-A applied the owner-approved 7 sidebar groups to actual Web3100, retaining all 17 original names/routes/icons and existing 290/68px collapse, tooltips, mobile DrawerClose, header/branding/notifications/search/breadcrumb and module content. Expanded labels are 15px and headings 13px; labels can wrap and expanded navigation scrolls while footer remains reachable. No prototype pricing or synthetic pages transferred. 11 navigation tests, scoped lint, Web typecheck and production build with 34 routes passed. Authenticated Web3100 browser QA verified links/groups, collapse/expand, tooltips and mobile drawer; desktop screenshot reviewed. Drawer itself has no horizontal overflow; whole dashboard measured 398px at viewport390 after closing, so no claim to fix whole-page overflow. Branch codex/pc-a-grouped-sidebar-0908 from f2cc52a, active pc-b-sync-0908 checkout. No API/data/schema/dependency/permission changes or migration. Local commit only; remote push gate requires destination verification. Sales integration is separately coordinated and preserves this change.
 
 
+## MASTER-006 — حذف کانال ایجاد روش پرداخت و چیدمان چپ عملیات — آماده بررسی
+
+- در فرم افزودن روش پرداخت، فیلد «کانال» از UI و ترتیب Focus حذف شد؛ مقدار خنثی `OTHER` برای سازگاری قرارداد فعلی فقط هنگام ایجاد در State داخلی ارسال می‌شود و کانال رکوردهای قبلی در مشاهده/ویرایش باقی است.
+- گروه‌های دکمه و عملیات تمام Workspaceهای اطلاعات پایه در سمت چپ فیزیکی صفحه، از جمله چیدمان موبایل، هم‌تراز شدند. قرارداد/API/Schema/Migration، داده و Dependency تغییر نکردند.
+- Contracts build، ۳۳۸ تست Master Data در ۴۲ فایل، Web lint/typecheck، Production Build با ۳۶ Route و `git diff --check` موفق‌اند.
+
+## LEGAL-ENTITY-HEADER-003 — رنگ مستقل چهار شرکت و اجرای مشترک PC-A/PC-B
+
+- آماده بررسی روی `codex/pc-b-company-header-colors`؛ نیایش سیر آبی، جهان باستان سورمه‌ای، قسطی رو سبز و جهان آکادمیا بنفش هستند.
+- مجوز مالک برای اجرا و توسعه این قابلیت به هر دو کامپیوتر تعلق دارد. تنظیمات کاربران یا مجوزهای IAM گسترش نمی‌یابند؛ قرارداد چهارشرکتی موجود عمومی باقی می‌ماند.
+- آماده‌سازی شرکت‌های مفقود به‌صورت فرمان محلی مستقل از Seed مشترک، بدون تغییر رکورد موجود و بدون Migration ارائه می‌شود.
+- ۱۳ تست هدفمند، lint/typecheck و Build API/Web موفق‌اند. دو اجرای واقعی روی کپی دیتابیس، تکرارپذیری و فعال‌بودن چهار شرکت را تأیید کرد. Preview روی `http://127.0.0.1:3101` آماده ورود است؛ اجرای قدیمی HR روی 3100/4000 همچنان جدا باقی مانده است. دستور یکسان برای هر دو PC در `docs/tasks/LEGAL-ENTITY-HEADER-003.md` ثبت شد؛ رزرو موقت CSS آزاد است.
+
+
 ## MARKETING-001G — حذف معرفی Hub مارکتینگ — آماده بررسی
 
 - `PC-B` روی Branch مستقل `codex/pc-b-marketing-remove-section-intro` بلوک نمایشی شامل عنوان «بخش‌های مارکتینگ» و راهنمای انتخاب کارت را از Hub حذف کرد. فاصله اضافه Wrapper نیز حذف شد و Grid کارت‌ها مستقیماً نمایش داده می‌شود؛ نام دسترس‌پذیر Section بدون متن دیداری حفظ شده است.

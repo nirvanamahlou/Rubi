@@ -20,10 +20,20 @@ import {
 } from 'lucide-react';
 
 import { navigationMessages, type NavigationHref } from '../messages/fa';
+import {
+  getFrappeWorkspace,
+  normalizeFrappeWorkspace,
+} from '../modules/hr/frappe-workspaces';
+import { normalizeSection, screenMeta } from '../modules/hr/hr.model';
 import { marketingSections } from '../modules/marketing/model/reference-data';
 import { getMasterDataSection } from '../modules/master-data/model/sections';
 
 export const MARKETING_SECTION_CHANGE_EVENT = 'rubi:marketing-section-change';
+
+export interface HrBreadcrumbLocation {
+  sectionKey: string | null;
+  workspaceKey: string | null;
+}
 
 const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/dashboard': Gauge,
@@ -121,6 +131,10 @@ export const navigationAliases = {
     parentHref: '/sales',
     title: 'قرارداد جدید',
   },
+  '/hr': {
+    parentHref: '/human-resources',
+    title: 'منابع انسانی',
+  },
   '/users': {
     parentHref: '/system',
     title: 'مدیریت کاربران، نقش‌ها و دسترسی‌ها',
@@ -152,7 +166,11 @@ export function isNavigationItemActive(href: NavigationHref, pathname: string) {
 export function getNavigationBreadcrumbs(
   pathname: string,
   marketingSectionKey?: string | null,
+  hrLocation?: HrBreadcrumbLocation | null,
 ) {
+  if (pathname === '/profile')
+    return [{ href: '/profile', title: 'پروفایل من' }];
+
   if (pathname.startsWith('/master-data/')) {
     const sectionSlug = pathname.slice('/master-data/'.length).split('/')[0];
     const section = getMasterDataSection(sectionSlug ?? '');
@@ -184,11 +202,40 @@ export function getNavigationBreadcrumbs(
     }
   }
 
+  if (pathname === '/hr') {
+    const root = { href: '/hr', title: screenMeta.home.title };
+    const workspace = normalizeFrappeWorkspace(
+      hrLocation?.workspaceKey ?? undefined,
+    );
+    if (workspace) {
+      return [
+        root,
+        {
+          href: `/hr?workspace=${encodeURIComponent(workspace)}`,
+          title: getFrappeWorkspace(workspace).title,
+        },
+      ];
+    }
+
+    const section = normalizeSection(hrLocation?.sectionKey ?? undefined);
+    if (section === 'home') return [root];
+    return [
+      root,
+      {
+        href: `/hr?section=${encodeURIComponent(section)}`,
+        title: screenMeta[section].title,
+      },
+    ];
+  }
+
   const alias = navigationAliases[pathname as keyof typeof navigationAliases];
   if (alias) {
     const parent = navigationItems.find(
       (item) => item.href === alias.parentHref,
     );
+    if (parent?.title === alias.title) {
+      return [{ href: pathname, title: alias.title }];
+    }
     return [
       ...(parent ? [{ href: parent.href, title: parent.title }] : []),
       { href: pathname, title: alias.title },

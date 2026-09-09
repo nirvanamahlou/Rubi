@@ -4,13 +4,20 @@ export const metadata: Metadata = { title: 'منابع انسانی | Rubi' };
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ section?: string }>;
+  searchParams: Promise<{
+    section?: string;
+    tab?: string;
+    workspace?: string;
+    employee?: string;
+  }>;
 }) {
-  const { section } = await searchParams;
+  const { employee, section, tab, workspace } = await searchParams;
   return (
     <HrWorkspace
-      key={section ?? 'dashboard'}
-      sectionId={section ?? 'dashboard'}
+      sectionId={section ?? 'home'}
+      tabId={tab}
+      workspaceId={workspace}
+      employeeId={employee}
     />
   );
 }

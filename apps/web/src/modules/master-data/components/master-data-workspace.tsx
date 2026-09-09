@@ -178,7 +178,7 @@ export function MasterDataWorkspace({
                   {definition.description}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex self-end gap-2">
                 <Button
                   onClick={() => setFormMode('view')}
                   size="sm"
@@ -258,7 +258,7 @@ export function MasterDataWorkspace({
               <legend className="text-xs font-bold text-muted-foreground">
                 پیش‌نمایش Stateهای اجباری UI
               </legend>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap justify-end gap-2">
                 {masterDataStateOptions.map(([value, label]) => (
                   <Button
                     aria-pressed={previewState === value}

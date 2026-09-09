@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { LoginResponse } from '@rubi/contracts';
 
 import {
+  clearHeaderSession,
   formatHeaderLoginTime,
   readHeaderSession,
   rememberHeaderSession,
@@ -15,6 +16,9 @@ function memoryStorage() {
     },
     setItem(key: string, value: string) {
       values.set(key, value);
+    },
+    removeItem(key: string) {
+      values.delete(key);
     },
   };
 }
@@ -64,5 +68,14 @@ describe('header session identity', () => {
   it('formats a valid login time and safely handles an invalid value', () => {
     expect(formatHeaderLoginTime('2026-09-07T07:32:00.000Z')).toContain(':');
     expect(formatHeaderLoginTime('invalid')).toBe('—');
+  });
+
+  it('clears only the header identity after secure logout', () => {
+    const storage = memoryStorage();
+    rememberHeaderSession(user, '2026-09-07T07:32:00.000Z', storage);
+
+    clearHeaderSession(storage);
+
+    expect(readHeaderSession(storage)).toBeNull();
   });
 });

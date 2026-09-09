@@ -8,16 +8,14 @@ import {
   ChevronsRight,
   Command,
   Languages,
-  LogOut,
   Menu,
   Moon,
   Search,
   Sun,
-  UserRound,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Suspense,
   useEffect,
@@ -44,6 +42,7 @@ import {
 import { legalEntityBrand } from '@/modules/legal-entities/model/context';
 import { NotificationCenter } from './notification-center';
 import { sidebarIcons } from './sidebar-icons';
+import { UserMenu } from './user-menu';
 import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
 import { Input } from '../ui/form-controls';
@@ -308,20 +307,8 @@ function SearchDialog() {
 
 function HeaderActions() {
   const { theme, toggleTheme } = useTheme();
-  const router = useRouter();
-  async function signOut() {
-    const api = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '');
-    if (api) {
-      await fetch(`${api}/iam/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      }).catch(() => undefined);
-    }
-    router.replace('/login');
-    router.refresh();
-  }
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex min-w-0 shrink-0 items-center gap-1">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -359,29 +346,7 @@ function HeaderActions() {
         )}
       </Button>
       <NotificationCenter />
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            aria-label={faMessages.shell.userMenu}
-            className="rounded-full"
-            size="icon"
-            variant="secondary"
-          >
-            <UserRound aria-hidden="true" className="size-5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem>{faMessages.shell.profile}</DropdownMenuItem>
-          <DropdownMenuItem>{faMessages.shell.preferences}</DropdownMenuItem>
-          <DropdownMenuItem
-            className="text-destructive"
-            onSelect={() => void signOut()}
-          >
-            <LogOut aria-hidden="true" className="size-4" />
-            {faMessages.shell.signOut}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <UserMenu />
     </div>
   );
 }
@@ -418,6 +383,12 @@ function Breadcrumb() {
   const breadcrumbs = getNavigationBreadcrumbs(
     pathname,
     pathname === '/marketing' ? marketingSectionKey : null,
+    pathname === '/hr'
+      ? {
+          sectionKey: searchParams.get('section'),
+          workspaceKey: searchParams.get('workspace'),
+        }
+      : null,
   );
   return (
     <nav

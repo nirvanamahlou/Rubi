@@ -219,13 +219,11 @@ describe('Contract-only flights remain outside ticket inventory', () => {
         findById: vi.fn().mockResolvedValue(saved),
         transition: vi.fn().mockResolvedValue(true),
       };
-      const reserve = vi
-        .fn()
-        .mockResolvedValue({
-          available: true,
-          unavailableOfferIds: [],
-          createdAllocationIds: [],
-        });
+      const reserve = vi.fn().mockResolvedValue({
+        available: true,
+        unavailableOfferIds: [],
+        createdAllocationIds: [],
+      });
       const service = new SalesService(
         repository as unknown as SalesRepository,
         {

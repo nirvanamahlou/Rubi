@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { getHealthEndpoint, getPublicApiBaseUrl } from './environment';
 
 const originalValue = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   if (originalValue === undefined) {
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
   } else {
@@ -23,5 +24,18 @@ describe('web environment', () => {
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
     expect(getPublicApiBaseUrl()).toBeNull();
     expect(getHealthEndpoint()).toBeNull();
+  });
+
+  it('discovers the local API when a localhost build has no injected address', () => {
+    delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    vi.stubGlobal('window', {
+      location: {
+        hostname: 'localhost',
+        origin: 'http://localhost:3100',
+      },
+    });
+
+    expect(getPublicApiBaseUrl()).toBe('http://localhost:4000/api/v1');
+    expect(getHealthEndpoint()).toBe('http://localhost:4000/api/v1/health');
   });
 });

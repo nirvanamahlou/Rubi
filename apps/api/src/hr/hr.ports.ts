@@ -27,6 +27,33 @@ export type HrReadModel<K extends HrResource> = Omit<
   | 'profileDocumentId'
   | 'receiptDocumentId'
   | 'attachmentDocumentId'
+  | 'approvedBudget'
+  | 'proposedPay'
+  | 'components'
+  | 'totals'
+  | 'net'
+  | 'brackets'
+  | 'principal'
+  | 'installment'
+  | 'expense'
+  | 'settlementMoney'
+  | 'scores'
+  | 'feedback'
+  | 'reason'
+  | 'purpose'
+  | 'relationship'
+  | 'location'
+  | 'proposedCheckinAt'
+  | 'proposedCheckoutAt'
+  | 'sourceDocumentId'
+  | 'schemaDocumentId'
+  | 'proofDocumentIds'
+  | 'formulaExpression'
+  | 'keyResult'
+  | 'progress'
+  | 'declaredMoney'
+  | 'employeeContribution'
+  | 'employerContribution'
 > & { sensitive: 'MASKED' };
 export interface HrQuery {
   search?: string;
@@ -166,7 +193,15 @@ export interface HrFinancePort {
     components: readonly {
       amount: string;
       currencyCode: string;
-      kind: 'BENEFIT' | 'DEDUCTION' | 'AGREED_PAY';
+      kind:
+        | 'BENEFIT'
+        | 'DEDUCTION'
+        | 'AGREED_PAY'
+        | 'EXPENSE_REIMBURSEMENT'
+        | 'ADVANCE_SETTLEMENT'
+        | 'PAYROLL_NET'
+        | 'LEAVE_ENCASHMENT'
+        | 'GRATUITY';
     }[];
     idempotencyKey: string;
   }): Promise<{ receiptId: string }>;
@@ -185,6 +220,9 @@ export const proposedHttpContract = {
     'renew',
     'convert',
     'reveal',
+    'schedule',
+    'run',
+    'reconcile',
   ],
   errors: [
     'UNAUTHORIZED',

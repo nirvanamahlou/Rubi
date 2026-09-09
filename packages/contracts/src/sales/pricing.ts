@@ -1,4 +1,8 @@
-import type { SalesPassengerInput, SalesPriceComponentInput, SalesServiceInput } from './index';
+import type {
+  SalesPassengerInput,
+  SalesPriceComponentInput,
+  SalesServiceInput,
+} from './index';
 
 /** No allocation is inferred: legacy callers may omit prices, new forms require them. */
 export function validatePassengerPackagePrices(

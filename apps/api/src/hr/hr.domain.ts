@@ -1,13 +1,20 @@
 import type {
   AttendanceRecord,
+  CandidateInterview,
   Employee,
+  EmployeeCheckin,
+  EmployeeExpense,
   EmploymentAssignment,
   EmploymentContract,
+  LeavePolicy,
   LeaveRequest,
   Money,
+  PayrollRun,
   Period,
   ReviewCriterion,
   Shift,
+  StaffingPlan,
+  VehicleLog,
 } from './hr.entities';
 
 export class HrDomainError extends Error {
@@ -38,6 +45,86 @@ export function validatePeriod(period: Period): void {
 export function validateMoney(money: Money): void {
   requireInvariant(/^(0|[1-9]\d{0,27})(\.\d{1,8})?$/.test(money.amount));
   requireInvariant(/^[A-Z]{3}$/.test(money.currencyCode));
+}
+function decimalUnits(value: string): bigint {
+  requireInvariant(/^(0|[1-9]\d{0,27})(\.\d{1,8})?$/.test(value));
+  const [whole = '0', fraction = ''] = value.split('.');
+  return BigInt(whole) * 100000000n + BigInt(fraction.padEnd(8, '0'));
+}
+function signedDecimalUnits(value: string): bigint {
+  requireInvariant(/^-?(0|[1-9]\d{0,27})(\.\d{1,8})?$/.test(value));
+  requireInvariant(value !== '-0');
+  const negative = value.startsWith('-');
+  const absolute = negative ? value.slice(1) : value;
+  const units = decimalUnits(absolute);
+  return negative ? -units : units;
+}
+export function validateStaffingPlan(plan: StaffingPlan): void {
+  validatePeriod(plan);
+  requireInvariant(
+    Number.isSafeInteger(plan.plannedHeadcount) && plan.plannedHeadcount > 0,
+  );
+  requireInvariant(
+    Boolean(plan.branchId.trim() && plan.organizationUnitId.trim()),
+  );
+  if (plan.approvedBudget) validateMoney(plan.approvedBudget);
+}
+export function validateCandidateInterview(
+  interview: CandidateInterview,
+): number {
+  utc(interview.scheduledAt);
+  requireInvariant(
+    Number.isSafeInteger(interview.round) && interview.round > 0,
+  );
+  const panelUserIds = interview.panelUserIds.map((id) => id.trim());
+  requireInvariant(
+    panelUserIds.length > 0 &&
+      new Set(panelUserIds).size === panelUserIds.length &&
+      panelUserIds.every(Boolean),
+  );
+  return performanceScore(interview.scores);
+}
+export function validateEmployeeExpense(expense: EmployeeExpense): void {
+  validateMoney(expense.money);
+  if (expense.exchangeRate)
+    requireInvariant(decimalUnits(expense.exchangeRate) > 0n);
+  if (expense.settlementMoney) {
+    validateMoney(expense.settlementMoney);
+    if (expense.settlementMoney.currencyCode !== expense.money.currencyCode)
+      requireInvariant(Boolean(expense.exchangeRate));
+  }
+  requireInvariant(Boolean(expense.approvalStage.trim()));
+}
+export function validateLeavePolicy(policy: LeavePolicy): void {
+  validatePeriod(policy);
+  requireInvariant(decimalUnits(policy.allocationUnits) > 0n);
+  requireInvariant(
+    Boolean(
+      policy.branchId.trim() &&
+      policy.leaveTypeId.trim() &&
+      policy.holidayListId.trim(),
+    ),
+  );
+}
+export function validatePayrollRun(run: PayrollRun): void {
+  validatePeriod(run);
+  const employeeIds = run.employeeIds.map((id) => id.trim());
+  requireInvariant(
+    employeeIds.length > 0 &&
+      new Set(employeeIds).size === employeeIds.length &&
+      employeeIds.every(Boolean) &&
+      Boolean(run.formulaVersion.trim()),
+  );
+  run.totals.forEach(validateMoney);
+}
+export function validateVehicleLog(log: VehicleLog): void {
+  validatePeriod(log);
+  requireInvariant(Boolean(log.vehicleId.trim() && log.employeeId.trim()));
+  validateReason(log.purpose);
+  const start = decimalUnits(log.startOdometer);
+  requireInvariant(start >= 0n);
+  if (log.endOdometer) requireInvariant(decimalUnits(log.endOdometer) >= start);
+  if (log.expense) validateMoney(log.expense);
 }
 export function validateEmployee(employee: Employee): void {
   requireInvariant(
@@ -158,7 +245,33 @@ export function validateAttendance(record: AttendanceRecord): void {
   utc(record.checkedInAt);
   if (record.checkedOutAt)
     requireInvariant(utc(record.checkedOutAt) > utc(record.checkedInAt));
+  requireInvariant(
+    [
+      record.workedMinutes,
+      record.lateMinutes,
+      record.earlyDepartureMinutes,
+    ].every((value) => Number.isSafeInteger(value) && value >= 0) &&
+      Boolean(record.calculationVersion.trim()),
+  );
   requireInvariant(record.status === 'DRAFT' || Boolean(record.checkedOutAt));
+}
+export function validateEmployeeCheckin(checkin: EmployeeCheckin): void {
+  utc(checkin.occurredAt);
+  requireInvariant(
+    Boolean(checkin.employeeId.trim() && checkin.makerUserId.trim()),
+  );
+  if (checkin.source === 'BIOMETRIC')
+    requireInvariant(Boolean(checkin.deviceReferenceId?.trim()));
+  if (checkin.source === 'IMPORT')
+    requireInvariant(Boolean(checkin.importBatchId?.trim()));
+  if (checkin.location) {
+    const latitude = signedDecimalUnits(checkin.location.latitude);
+    const longitude = signedDecimalUnits(checkin.location.longitude);
+    requireInvariant(latitude >= -9000000000n && latitude <= 9000000000n);
+    requireInvariant(longitude >= -18000000000n && longitude <= 18000000000n);
+    if (checkin.location.accuracyMeters)
+      requireInvariant(decimalUnits(checkin.location.accuracyMeters) > 0n);
+  }
 }
 export function makerChecker(makerUserId: string, checkerUserId: string): void {
   requireInvariant(

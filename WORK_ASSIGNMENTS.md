@@ -1,4 +1,5 @@
 # Work Assignments
+
 ## CONTRACT-OUTPUT-SUMMARY-0908 — PC-A — COMPLETE_LOCAL
 
 User marked confirmed-paid and outstanding cards for removal from the contract PDF. Branch codex/pc-a-contract-output-summary-0908 from36ebb12. Reserve only Sales contract-print template/test and task status entries. Retain agreed total, passenger prices, notices, QR, all application balances and Excel output. No API, database, dependency or permission changes; preserve integrated local runtime. Local-only publication gate unchanged.
@@ -40,8 +41,27 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - Explicit owner approval to apply the reviewed team grouping to the actual Web3100 sidebar, preserving prior collapse/drawer behavior, styling, routes and all module content; slightly larger navigation labels. COMPUTER_ID=PC-A. Branch codex/pc-a-grouped-sidebar-0908 from active Web3100 f2cc52a; clean checkout before starting. No prototype pricing or sample pages are transferred.
 - Reserve app-shell.tsx Navigation rendering and scrolling wrapper, additive navigation group metadata and focused navigation tests, plus this task's status/docs entries. Earlier integrated breadcrumb, branding and notification changes stay unchanged. No globals, API, database, schema, dependency, permission or business-data edits. Prototype3200 remains separate. Authorizes updating the local running application, not an unrelated bulk merge.
 
-
 - Completed: 7 visual groups, original 17 links/names/icons, 15px expanded labels and 13px group headings; expanded navigation scrolls with footer/collapse reachable. Original compact/tooltips and mobile DrawerClose preserved. 11 navigation tests, scoped lint, Web typecheck and 34-route build passed; real Web3100 browser QA passed. No data or migration. Local commit only: remote push requires destination verification. Scope released; Sales integration is a separate task.
+
+## LEGAL-ENTITY-HEADER-003 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-08: چهار شرکت نیایش سیر سحر، جهان باستان، قسطی رو و جهان آکادمیا در انتخاب‌گر و رنگ مستقل Header؛ هر دو PC-A و PC-B برای اجرا و توسعه مجازند. منظور حساب IAM جدید نیست.
+- Branch: `codex/pc-b-company-header-colors` از `origin/develop@8c24ad9`. محدوده فقط CSS هدر در `apps/web/src/app/globals.css`، تست برند، آماده‌سازی محلی مستقل شرکت‌ها در `apps/api/scripts/local-legal-entities*` و اسناد همین Task است.
+- رزرو موقت `Central UI Owner = PC-B/LEGAL-ENTITY-HEADER-003` فقط برای CSS یادشده؛ `app-shell.tsx` و تغییرهای HR/Profile در PR #99 و Branchهای سایر Taskها تغییر نمی‌کنند.
+- PC-A و PC-B هر دو مجاز به مصرف قرارداد عمومی و توسعه این قابلیت روی Branch مستقل‌اند؛ ویرایش هم‌زمان یک فایل همچنان به رزرو Task نیاز دارد. قفل دائمی یا انحصار ماژولی به یکی از کامپیوترها داده نمی‌شود.
+- Schema/Migration، Seed مشترک زیر مالکیت فروش، Dependency/Lockfile و IAM grants تغییر نمی‌کنند. آماده‌سازی محلی فقط شرکت مفقود را در تراکنش ایجاد می‌کند و رکورد موجود را بازنویسی نمی‌کند؛ پیش‌فرض read-only و Apply پس از Backup است.
+- نتیجه: چهار رنگ مستقل، ۹ تست Web و ۴ تست ابزار محلی، lint/typecheck و Build API/Web موفق‌اند. Apply روی کپی مستقل PostgreSQL بار اول دو شرکت و بار دوم صفر شرکت ساخت؛ هر چهار شرکت فعال‌اند. Preview روی `127.0.0.1:3101/4001` است و اجرای قدیمی HR روی 3100/4000 تغییر نمی‌کند. `Central UI Owner = RELEASED — LEGAL-ENTITY-HEADER-003 ready for review`؛ جزئیات در `docs/tasks/LEGAL-ENTITY-HEADER-003.md`.
+
+## MASTER-006-PAYMENT-LEFT-ACTIONS — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-08: فیلد «کانال» فقط از فرم افزودن روش پرداخت حذف شود و گروه‌های دکمه در همه بخش‌های اطلاعات پایه در سمت چپ فیزیکی صفحه قرار بگیرند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-master-data-left-actions`، بازپایه‌شده روی `origin/develop@1cb96ae`؛ محدوده رزروشده فقط `apps/web/src/modules/master-data/**`، تست‌های هدفمند همان ماژول و همین Work Item است.
+- سازگاری: رکوردها و قرارداد موجود روش پرداخت تغییر نمی‌کنند؛ مقدار کانال در مشاهده/ویرایش رکوردهای قبلی حفظ می‌شود و در ایجاد از رفتار سازگار فعلی Backend استفاده خواهد شد. هیچ Schema/Migration/Seed، API/Shared Contract، Dependency/Lockfile، داده محلی یا فایل درگیر PR #105 تغییر نمی‌کند.
+- معیار پذیرش: ورودی «کانال» در حالت ایجاد روش پرداخت دیده یا Focus نشود؛ تمام Action groupهای صفحه، فیلتر، فرم و جدول اطلاعات پایه در Desktop و Mobile به سمت چپ فیزیکی هم‌تراز شوند؛ ترتیب تب، نام دسترس‌پذیر و Focus ring دکمه‌ها حفظ شود.
+- بودجه غیررگرسیونی Web داخلی: `LCP p75 <= 2500ms`، `INP p75 <= 200ms`، `CLS <= 0.1`، JavaScript اولیه `<= 200KB gzip` و سهم Route `<= 80KB gzip`، Lighthouse Performance `>= 85` و Accessibility `>= 90`. این Slice Dependency یا بارگذاری Route جدید اضافه نمی‌کند.
+- نتیجه: فیلد «کانال» در ایجاد روش پرداخت دیده یا Focus نمی‌شود و مقدار سازگار `OTHER` فقط در State داخلی ایجاد نگه داشته می‌شود؛ مشاهده/ویرایش کانال رکوردهای قبلی بدون تغییر است. گروه‌های عملیات در Workspaceهای مالی، جغرافیا، اقامت، سازمان‌ها و تأمین‌کنندگان، مراجع فروش، حمل‌ونقل، بیمه و خدمات سفر در سمت چپ فیزیکی هم‌تراز شدند.
+- اعتبارسنجی: Contracts build، تمام ۳۳۸ تست Master Data در ۴۲ فایل، Web lint، Web typecheck، Production Build با ۳۶ Route و `git diff --check` موفق‌اند. Dependency/Route جدیدی اضافه نشده است.
+- Lock state: `Master Data Web = RELEASED — MASTER-006-PAYMENT-LEFT-ACTIONS ready for review`. Migration، Shared Contract، API، Central UI و Dependency/Lockfile برابر `RELEASED / UNASSIGNED` می‌مانند.
 
 ## MARKETING-001G-REMOVE-HUB-INTRO — PC-B — READY_FOR_REVIEW
 
@@ -379,6 +399,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - User authorized separation of all 27 pre-existing foreign changes. Preserved as local commit 75afc50751b3d5db16003c3e551bc3778e047eda on codex/pc-a-customer-passport-preservation-0905, plus raw backup at ../.worktrees/sales-foreign-backup-20260905. Three-way SHA256 equality checked before cleaning Sales; 20 tracked paths restored and 7 duplicate untracked files removed only from Sales.
 - This is recovery-only, not feature approval or reconciliation into the active Customers branch. Twelve files match customer-connections-0905; fifteen require owner reconciliation. Existing owner branches/worktrees remain untouched. Publishing the unreviewed preservation payload was blocked by safety review; no remote preservation branch or new PR was created.
 - Sales worktree is clean at 8dbc5f4 after isolation. Prisma foreign-file blocker is resolved; Reservations amendment API and Agency public contracts are still unfinished. Migration/Central Docs/Sales Contract locks remain held; PR #90 is not promoted or merged.
+
 ## CUSTOMERS-PRESERVATION-0905 — PC-A — RECOVERY_ONLY
 
 - Authorized isolation of 27 foreign Sales-worktree files onto codex/pc-a-customer-passport-preservation-0905; exact snapshot, not feature completion. See docs/tasks/CUSTOMERS-PRESERVATION-0905.md and byte manifest. No schema redesign, migration application, lock transfer, new PR or modification of active owner branches.
@@ -406,6 +427,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 ## TICKET-CATALOG-EDIT-COMPLETENESS — PC-A — READY_FOR_REVIEW
 
 - User approved integrating PR #85 Documents/Customer 360 and the existing master-data session retry on 2026-09-05. Isolated branch `codex/pc-a-customer-connections-0905`, based on committed Sales `5ea2b32`; active Sales worktree is untouched. Scope: integration of existing Customers/Documents public API changes, customer reference retry, tests and these task entries. No schema, migration, dependency or permission changes.
+
 ## SALES-CONTRACTS-001 — PC-A — READY_FOR_REVIEW
 
 - PC-A route/calendar-language follow-up READY_FOR_REVIEW: origin/destination each have vertically paired country/city fields. Sales calendar wrapper opts into English Gregorian month/day names, labels, digits and LTR; default shared behavior and ISO values unchanged. Shared Calendar Owner = PC-A/SALES-CONTRACTS-001 for the additive option pending review. 48 Sales/shared-calendar tests, scoped lint/typecheck and Web production build passed; no schema/dependency/API changes.
@@ -441,6 +463,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - نتیجه: قرارداد عمومی v1، Prisma/Migration افزایشی، Permission Seed، Repository/API واقعی، Audit/Scope/Lock/Idempotency، محاسبه مانده فقط از تأیید Finance، صف پایدار ReservationRequest و فرم تمام‌صفحه هفت‌مرحله‌ای تکمیل شد.
 - Gate پس از آخرین Merge: ۳۱ Migration روی PostgreSQL 18 خالی، Seed دوباره‌پذیر، Full lint/typecheck، ۱٬۴۸۵ تست و Full Production Build موفق‌اند. Ticket offer در زمان تأیید تا انتشار Runtime Public API ماژول مالک به‌صورت fail-closed رد می‌شود و داده ساختگی وجود ندارد.
 - Commits: `7eba1b2` (contract/database)، `d1ecb63` (backend/API)، `fc61a4e` (full-page web) به‌همراه Commit نهایی hardening/docs. انتشار فقط روی همان Draft PR #90 انجام می‌شود.
+
 ## AGENCY-B2B-INTEGRATIONS-001 — PC-B — READY_FOR_REVIEW
 
 - درخواست و واگذاری صریح مالک محصول در 2026-09-05: مانع قبلی PR #90 رفع‌شده تلقی شود و اتصال عملیاتی آژانس‌ها شامل آدرس پایه، پروفایل شعبه‌ای، قرارداد B2B، سیاست اعتبار و نرخ توافقی پیاده‌سازی شود. `COMPUTER_ID=PC-B`.
@@ -579,6 +602,7 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - اعتبارسنجی: Web Master Data برابر `42/42` فایل و `327/327` تست، API Master Data برابر `27/27` فایل و `402/402` تست، lint و typecheck هر دو برنامه و Production Build هر دو موفق‌اند. API روی `4000` و Web تازه‌ساخته‌شده روی `3100` فعال‌اند؛ Health هر دو پاسخ `200` دارند. Schema/Migration/Seed/Dependency/Lockfile تغییر نکرد.
 
 ## MASTER-004-FORM-ALIGNMENT — PC-B — DONE/MERGED
+
 ## CUSTOMER-DOCUMENTS-001 — PC-A — READY_FOR_REVIEW
 
 - درخواست صریح مالک در 2026-09-03: جایگزینی وضعیت «در انتظار زیرساخت مدارک» در پرونده ۳۶۰ مشتری با اتصال واقعی به ماژول ادغام‌شده Documents. `COMPUTER_ID=PC-A`.
@@ -1325,11 +1349,17 @@ Customers، Finance، Procurement، Reservations، Integrations و Documents خ�
 - آزادکردن کار بدون تکمیل با تغییر مالک به `تخصیص‌نیافته` و ثبت دلیل انجام می‌شود.
 
 ## LOCAL-UNIFIED-3100-0909 — PC-A — IN_PROGRESS
+
 User-authorized local composition on codex/pc-a-local-unified-3100-0909. Base 385efaa (latest local Sales); consume sidebar handoff efe6287 and Reservations 0946bdd. Scope: isolated Web shell, reservation routes/projections and task status. Preserve source worktrees, shared contracts, schema and dependencies. No merge or database mutation.
 
 LOCAL-UNIFIED-3100-0909: READY_FOR_REVIEW. Independent branch; local Web 3100/API 4000 bind loopback. Verification recorded in PROJECT_STATUS.
 
 ## RESERVATIONS-ACTION-PANEL-003 — PC-A — IN_PROGRESS
+
 User selected preview option 3. Scope: foundation Web action panel, selected-contract dialogs, workspace layout and tests on current isolated branch. No API, database, Sales or shared UI changes. Unknown forms remain explicit placeholders.
 
 RESERVATIONS-ACTION-PANEL-003: READY_FOR_REVIEW; 34 tests, targeted lint, TypeScript and Web production build passed. Port 3100 restarted with option 3; primary API/database unchanged.
+
+## PUBLISH-LATEST-0909 — PC-A — IN_PROGRESS
+
+User explicitly authorized merging the complete latest local version, including global changes, into develop. Integration preserves grouped sidebar, Sales/Customers/Tour stack and Reservations option 3, plus develop UserMenu/profile, HR route alias and portal calendar fixes. No live database change. Final PR checks gate merge.
