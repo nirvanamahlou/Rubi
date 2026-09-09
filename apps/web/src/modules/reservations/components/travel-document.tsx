@@ -1,5 +1,9 @@
 'use client';
 import Image from 'next/image';
+import {
+  ReservationFormSheet,
+  useReservationFormReferences,
+} from './reservation-form-sheet';
 import { useEffect, useState } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import type {
@@ -61,12 +65,19 @@ export function TravelDocument({
   const [printing, setPrinting] = useState(false);
   const [printError, setPrintError] = useState('');
   const state = intake.workflow;
+  const formReferences = useReservationFormReferences(intake, !voucher);
   const enabled =
     !!logo &&
     !!state.branding &&
     state.supplierStatus !== 'CANCELLED' &&
     (!voucher || state.voucherIssued);
-  const sheet = (
+  const sheet = !voucher ? (
+    <ReservationFormSheet
+      intake={intake}
+      logo={logo}
+      references={formReferences.references}
+    />
+  ) : (
     <article
       dir="rtl"
       style={{ background: 'white', color: '#111', padding: 32, fontSize: 14 }}
@@ -198,17 +209,24 @@ export function TravelDocument({
   return (
     <div className="grid gap-3">
       {(error || printError) && <p role="alert">{error || printError}</p>}
-      <Button disabled={!enabled} onClick={() => void print()}>
+      <Button
+        disabled={!enabled || !formReferences.ready}
+        onClick={() => void print()}
+      >
         چاپ / ذخیره PDF {voucher ? 'واچر' : 'فرم رزرواسیون'}
       </Button>
+      {!voucher && formReferences.failed && (
+        <p role="status">
+          برخی اطلاعات تکمیلی مرجع دریافت نشد؛ فیلدهای خالی را پیش از ارسال
+          بررسی کنید.
+        </p>
+      )}
       {enabled && sheet}
       {printing &&
         createPortal(
           <div data-travel-document>
             <style media="print">
-              {
-                '@page{size:A4;margin:10mm}body>:not([data-travel-document]){display:none!important}body{overflow:visible!important} [data-travel-document]{display:block!important}'
-              }
+              {`${voucher ? '@page{size:A4;margin:10mm}' : '@page{size:A4;margin:0}'}body>:not([data-travel-document]){display:none!important}body{overflow:visible!important} [data-travel-document]{display:block!important}`}
             </style>
             {sheet}
           </div>,
