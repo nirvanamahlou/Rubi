@@ -1,5 +1,12 @@
 # Work Assignments
 
+## DOCUMENTS-008A-BLUE-BUTTON-CASCADE-FIX — PC-B — READY_FOR_APPROVED_MERGE
+
+- پیگیری گزارش مالک محصول در 2026-09-09: پس از Merge PR #130، متن CTAهای آبی ارتباطات اسناد روی اجرای واقعی ۳۱۰۰ همچنان مشکی بود. `COMPUTER_ID=PC-B`.
+- بررسی مستقیم Browser نشان داد کلاس `text-white` روی هر لینک وجود دارد، اما قانون global و unlayered برابر `a { color: inherit }` آن را به `rgb(18, 33, 61)` بازنویسی می‌کند. Branch مستقل `codex/pc-b-documents-button-contrast-followup` از `origin/develop@0f75770` است.
+- محدوده رزروشده فقط همان دو CTA در `apps/web/src/modules/documents/components/documents-workspace.tsx`، تست قراردادی Documents و ورودی‌های همین Task در `WORK_ASSIGNMENTS.md` و `docs/PROJECT_STATUS.md` است. رنگ باید در CSS cascade واقعی سفید بماند؛ بدون تغییر global anchor، سایر دکمه‌ها، Schema/Migration/API/Contract/Dependency/Data.
+- نتیجه: رنگ متن و آیکن با یک override درون‌خطی و محدود به همان دو CTA تثبیت شد. ۵ تست قراردادی Documents، Web lint/typecheck و Production Build با ۴۰ Route موفق‌اند؛ اجرای واقعی `3100` و Browser مقدار محاسبه‌شده سفید `rgb(255, 255, 255)` روی پس‌زمینه آبی `rgb(21, 87, 184)` را برای همه CTAها تأیید کردند. مالک محصول Push و Merge همین اصلاح با `develop` را قبلاً صریحاً تأیید کرده است؛ CI نسخه نهایی شاخه شرط ادغام است.
+
 ## HR-011-EXPENSE-MISSION-LINK — PC-B — READY_FOR_REVIEW
 
 - Owner reports the mission-reference selector in independent expense entry is not connected to recorded missions. Branch `codex/pc-b-hr-expense-mission-link` starts from the clean current HR-010 runtime `40c362e` (PR #125), preserving its operation buttons and develop `0261b91`.
