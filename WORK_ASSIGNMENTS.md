@@ -1,9 +1,10 @@
 # Work Assignments
 
-## B2B-DIRECTORY-ACTIONS-001 — PC-B — IN_PROGRESS
+## B2B-DIRECTORY-ACTIONS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests the Customers registration/Excel action bar shown in Capture.PNG on the Agencies home page. COMPUTER_ID=PC-B; clean `codex/pc-b-b2b-directory-actions` starts from 38203ea, preserving the owned combined runtime and fetched develop e07c0c6. Reserve only Organizations workspace presentation and task/status documentation; prior Organizations implementation locks are released. The Customers component is a read-only visual reference.
 - Reuse Rubi Card/Button styling for registration, Excel import, template download and filtered export. Connect to the existing cooperation wizard and validated import/export implementations, preserving permissions and data boundaries. No API/schema/migration/dependency, IAM or business-data change. Run affected checks and browser verification, then refresh the owned Web3100 runtime while preserving API4190.
+- Completed source 963978d: 89 Organizations tests, Web lint/typecheck/format/build (40 routes), all four push CI gates and actual React browser checks pass. Template/export workbooks, registration/import dialogs, permission-disabled actions and final styling match the intended flow. LOCAL3100-LATEST-0909 explicitly handed over its temporary runtime; Web3100 PID13656 / hr005-78e8e205babdeb9f and API4190 PID8236 now serve the combined B2B source with existing database/storage. Temporary API4000 was stopped after 4190 health; no other checkout or data was changed. Release implementation reservation; coordinate subsequent runtime changes with this task.
 
 ## B2B-DOSSIER-SALES-REMOVAL-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
