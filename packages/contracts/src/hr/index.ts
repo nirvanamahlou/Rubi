@@ -1,7 +1,10 @@
 export * from './resource-registry';
+export * from './connections';
+import { HR_CONNECTION_PERMISSION_CODES } from './connections';
 
 export const HR_CONTRACT_VERSION = 1 as const;
 export const HR_PERMISSION_CODES = [
+  ...HR_CONNECTION_PERMISSION_CODES,
   'hr.read',
   'hr.manage',
   'hr.approve',

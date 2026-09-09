@@ -333,6 +333,17 @@ export function HrRecordDetail({
           })}
         </div>
         <div className={ui.muted}>
+          {store.data!.capabilities.write &&
+          store.data!.capabilities.approve &&
+          store.data!.capabilities.sensitive ? (
+            <Link
+              className="block mb-3 underline"
+              href={`/hr?hrConnections=1&sourceRecord=${encodeURIComponent(record.id)}`}
+              onClick={onClose}
+            >
+              ارجاع این پرونده به بخش دیگر
+            </Link>
+          ) : null}
           ثبت: {new Date(record.createdAt).toLocaleString('fa-IR')} · آخرین
           تغییر: {new Date(record.updatedAt).toLocaleString('fa-IR')}
         </div>

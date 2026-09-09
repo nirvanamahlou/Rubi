@@ -42,6 +42,8 @@ async function main() {
             update: { module, name },
           });
           for (const role of roles) {
+            // Receiving a shared personnel referral requires an explicit role assignment.
+            if (code.startsWith('hr.connections.')) continue;
             if (
               role.code === 'hr_staff' &&
               !['hr.read', 'hr.manage', 'hr.sensitive', 'hr.audit'].includes(

@@ -153,6 +153,7 @@ export class HrService {
   private recordScope(actor: AuthenticatedActor): Prisma.HrRecordWhereInput {
     this.readable(actor);
     return {
+      section: { not: 'connections' },
       branchId: { in: actor.branchIds },
       deletedAt: null,
       ...(this.has(actor, 'hr.read') || this.has(actor, 'hr.manage')

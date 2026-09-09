@@ -33,6 +33,8 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationsRepository } from '../notifications/notifications.repository';
 import { HrController } from './hr.controller';
 import { HrService } from './hr.service';
+import { HrConnectionsService } from './hr-connections.service';
+import { HrConnectionsController } from './hr-connections.controller';
 
 const databaseName = `rubi_hr_test_${randomUUID().replaceAll('-', '')}`;
 const branchA = randomUUID(),
@@ -48,6 +50,7 @@ let admin: AuthenticatedActor,
   reader: AuthenticatedActor;
 let adminCookie = '',
   selfCookie = '';
+let connections: HrConnectionsService;
 let employee: HrEmployeeDto, otherEmployee: HrEmployeeDto, leave: HrRecordDto;
 const key = () => randomUUID();
 function sql(database: string, input: string) {
@@ -202,11 +205,15 @@ describe.skipIf(process.env.RUBI_RUN_HR_POSTGRES_TESTS !== '1')(
       ).actor;
       reader = (await actor('hr_test_reader', ['hr.read'], [branchA])).actor;
       const module = await Test.createTestingModule({
-        controllers: [HrController],
+        controllers: [HrController, HrConnectionsController],
         providers: [
           AuthGuard,
           { provide: IamService, useValue: iam },
           { provide: HrService, useValue: service },
+          {
+            provide: HrConnectionsService,
+            useValue: (connections = new HrConnectionsService(database)),
+          },
         ],
       }).compile();
       app = module.createNestApplication();
@@ -1603,6 +1610,195 @@ describe.skipIf(process.env.RUBI_RUN_HR_POSTGRES_TESTS !== '1')(
         }),
       ).toBeGreaterThanOrEqual(3);
     });
+    it('persists and isolates referrals, replies, idempotency, deadlines and source references', async () => {
+      const receiver = await actor(
+        'hr_connection_finance',
+        ['hr.connections.finance.receive'],
+        [branchA],
+      );
+      const wrongBranch = await actor(
+        'hr_connection_other',
+        ['hr.connections.finance.receive'],
+        [branchB],
+      );
+      const worker = await service.createEmployee(
+        employeeInput('Synthetic Connection Worker'),
+        key(),
+        admin,
+      );
+      const source = await service.createRecord(
+        {
+          branchId: branchA,
+          employeeId: worker.id,
+          section: 'employee',
+          tab: 'contact',
+          values: ['تلفن', 'PRIVATE_NOT_SHARED***', '2026-01-01', 'Synthetic'],
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      const input = {
+        target: 'finance',
+        sourceId: source.id,
+        sourceVersion: source.version,
+        title: 'Synthetic review',
+        message: 'Only explicitly shared text',
+        dueAt: '2099-12-01T20:29:59.000Z',
+      };
+      await request(app.getHttpServer())
+        .get('/api/v1/hr/connections')
+        .expect(401);
+      await request(app.getHttpServer())
+        .get('/api/v1/hr/connections')
+        .set('Cookie', selfCookie)
+        .expect(403);
+      await expect(connections.create(input, key(), reader)).rejects.toThrow();
+      await expect(
+        connections.create({ ...input, sourceVersion: 999 }, key(), admin),
+      ).rejects.toThrow('تغییر');
+      const idempotency = key();
+      const [one, replay] = await Promise.all([
+        connections.create(input, idempotency, admin),
+        connections.create(input, idempotency, admin),
+      ]);
+      expect(replay.id).toBe(one.id);
+      await expect(
+        connections.create(
+          { ...input, message: 'changed' },
+          idempotency,
+          admin,
+        ),
+      ).rejects.toThrow('محتوای');
+      await expect(connections.create(input, key(), admin)).rejects.toThrow(
+        'درخواست باز',
+      );
+      const inbox = await connections.list({}, receiver.actor);
+      expect(inbox.items.map((r) => r.id)).toEqual([one.id]);
+      expect(inbox.items[0]?.sourceHref).toBeNull();
+      expect(JSON.stringify(inbox)).not.toContain('PRIVATE_NOT_SHARED');
+      expect((await connections.list({}, wrongBranch.actor)).total).toBe(0);
+      expect(
+        (await connections.list({ target: 'purchases' }, receiver.actor)).total,
+      ).toBe(0);
+      expect(
+        (await service.listRecords({}, admin)).items.some(
+          (r) => r.id === one.id,
+        ),
+      ).toBe(false);
+      await expect(service.getRecord(one.id, admin)).rejects.toThrow();
+      await expect(
+        service.deleteRecord(source.id, String(source.version), admin),
+      ).rejects.toThrow('وابسته');
+      await expect(
+        connections.decide(
+          one.id,
+          { version: 1, status: 'IN_REVIEW', note: 'self response' },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow('خود');
+      await expect(
+        connections.decide(
+          one.id,
+          { version: 1, status: 'IN_REVIEW', note: 'wrong branch' },
+          key(),
+          wrongBranch.actor,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        connections.decide(
+          one.id,
+          { version: 1, status: 'ANSWERED', note: 'skip' },
+          key(),
+          receiver.actor,
+        ),
+      ).rejects.toThrow('ترتیب');
+      const response = await request(app.getHttpServer())
+        .post(`/api/v1/hr/connections/${one.id}/response`)
+        .set('Cookie', receiver.cookie)
+        .set('Idempotency-Key', key())
+        .send({ version: 1, status: 'IN_REVIEW', note: 'Review started' })
+        .expect(201);
+      expect(response.body.status).toBe('IN_REVIEW');
+      await expect(
+        connections.decide(
+          one.id,
+          { version: 1, status: 'REJECTED', note: 'stale' },
+          key(),
+          receiver.actor,
+        ),
+      ).rejects.toThrow('هم‌زمان');
+      const answerKey = key(),
+        answer = {
+          version: 2,
+          status: 'ANSWERED',
+          note: 'Reviewed; no payment posted',
+        };
+      const answered = await connections.decide(
+        one.id,
+        answer,
+        answerKey,
+        receiver.actor,
+      );
+      expect(answered.history).toHaveLength(3);
+      expect(
+        (await connections.decide(one.id, answer, answerKey, receiver.actor))
+          .version,
+      ).toBe(3);
+      await expect(
+        connections.decide(
+          one.id,
+          { version: 3, status: 'IN_REVIEW', note: 'reopen' },
+          key(),
+          receiver.actor,
+        ),
+      ).rejects.toThrow();
+      expect(
+        (await connections.list({}, admin)).items.find((r) => r.id === one.id)
+          ?.response,
+      ).toBe(answer.note);
+      expect(
+        await client.hrNotification.count({
+          where: {
+            action: 'connection.response',
+            targetUserId: admin.userId,
+            recordId: source.id,
+          },
+        }),
+      ).toBe(2);
+      const another = await connections.create(
+        { ...input, target: 'system' },
+        key(),
+        admin,
+      );
+      const cancelled = await connections.decide(
+        another.id,
+        { version: 1, status: 'CANCELLED', note: 'No longer needed' },
+        key(),
+        admin,
+      );
+      expect(cancelled.status).toBe('CANCELLED');
+      const deadline = await connections.create(
+        { ...input, target: 'tasks', dueAt: '2099-12-01T20:29:59.000Z' },
+        key(),
+        admin,
+      );
+      vi.useFakeTimers({ toFake: ['Date'] });
+      try {
+        vi.setSystemTime(new Date('2099-12-01T10:00:00Z'));
+        expect(
+          (await connections.list({ target: 'tasks' }, admin)).counts.overdue,
+        ).toBe(0);
+        vi.setSystemTime(new Date('2099-12-01T21:00:00Z'));
+        expect(
+          (await connections.list({ target: 'tasks' }, admin)).counts.overdue,
+        ).toBe(1);
+      } finally {
+        vi.useRealTimers();
+      }
+      expect(deadline.status).toBe('SUBMITTED');
+    }, 30000);
     it('applies due approved job changes automatically on authorized reads without replay', async () => {
       const before = await client.hrRecord.count({
         where: {
