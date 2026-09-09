@@ -1478,3 +1478,8 @@ CONFIRM-VOUCHER-0909: 12 API/34 Web tests, scoped lint, typechecks/builds and bo
 Reserve Reservations Web hotel-name display, queue styles and default calendar option in shared DatePicker (existing callers stay Persian), tests/docs. No backend/migration/grants. Publication remains pending approval for public origin.
 
 RESERVATION-COMPACT-ENGLISH-0909: 60 Reservations/calendar tests plus default-calendar rendering and updated workspace tests passed; scoped lint/typecheck passed. Web 40-route build passed; Web3100 refreshed. Scope released. No public push while earlier approval remains pending.
+
+## SEARCH-SHORTCUT-CONTRAST-0909 — PC-A — LOCAL_COMPLETE_PENDING_PUBLICATION
+Reserve only AppShell global search shortcut styling and task docs. Explicit text/background contrast in light/dark header; retain keyboard behavior. No shared theme, API or permission changes. Local only; public publication remains unapproved.
+
+SEARCH-SHORTCUT-CONTRAST-0909: 25 layout tests, scoped lint/typecheck and 40-route build passed. Web3100 refreshed; scope released. Local commit only.

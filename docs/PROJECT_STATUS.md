@@ -1619,3 +1619,6 @@ Supplier confirmation atomically issues the hotel voucher and notifies the Sales
 Reservations displays registered English hotel names in the queue, details, hotel operations and documents through public Master Data access; snapshot fallback retained. Queue calendars default Gregorian with English dates and retain calendar switching; other consumers remain Persian by default. Reduced row padding/gaps preserve whole-card selection and 44px identity target. No backend, migration, data writes or permission changes. Public push remains pending earlier authorization. See docs/tasks/RESERVATION-COMPACT-ENGLISH-0909.md.
 
 RESERVATION-COMPACT-ENGLISH-0909 validation complete: 60 Reservations/calendar tests plus 16 default-calendar/workspace checks, scoped lint/typecheck and 40-route build passed. Web3100 refreshed; API unchanged. Scope released for local review.
+
+## SEARCH-SHORTCUT-CONTRAST-0909 — PC-A
+Global search kbd now has explicit paired foreground/surface colors, readable semibold Ctrl + K and nonshrinking LTR layout. Visible from sm rather than lg. Shared theme and keyboard behavior unchanged. 25 layout tests passed; scoped lint/typecheck passed. Production 40-route build passed; Web3100 refreshed. No publication to public origin.
