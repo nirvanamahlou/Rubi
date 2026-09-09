@@ -43,6 +43,7 @@ import { legalEntityBrand } from '@/modules/legal-entities/model/context';
 import { NotificationCenter } from './notification-center';
 import { sidebarIcons } from './sidebar-icons';
 import { UserMenu } from './user-menu';
+import { HeaderToday } from './header-today';
 import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
 import { Input } from '../ui/form-controls';
@@ -528,6 +529,9 @@ function AppShellContent({ children }: { children: ReactNode }) {
               <SearchDialog />
             </div>
             <HeaderActions />
+          </div>
+          <div className="flex min-w-0 justify-end px-4 pb-1 sm:px-6">
+            <HeaderToday />
           </div>
         </header>
         <div className="px-4 pt-3 sm:px-6 lg:px-7">

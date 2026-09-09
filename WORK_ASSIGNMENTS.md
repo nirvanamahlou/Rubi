@@ -1,5 +1,13 @@
 # Work Assignments
 
+## HEADER-TODAY-001 — PC-B — READY_FOR_REVIEW
+
+- Owner requests today's date in the header, normal push/merge and fetching current changes; separately approves merging PR #115. Date slice starts at origin/develop@130606d on codex/pc-b-header-today.
+- Reserve only app-shell Header date insertion, header-today component/helper/tests and this task's documentation. Existing navigation, company colors, IAM identity and notifications remain unchanged. HR owner released Header scope and handed off runtime3100/4190; preserve its current HR/Agencies data and Documents storage.
+- No schema, migration, seed, dependencies, grants or credential changes in the date slice. PR #115 integration is validated separately; no source branches are deleted or force-pushed.
+- Date implementation complete: 12 focused date/session/company tests, Web lint and production build passed. Header-only implementation reservation released for review; final CI and runtime verification gate merge/handoff.
+- Desktop authenticated RTL app, responsive to320px; Persian calendar and numerals, Asia/Tehran. Targets (not measured claims): LCP p75<=2500ms, INP<=200ms, CLS<=0.1, route JS<=200KB gzip, incremental date code<=3KB gzip, Lighthouse accessibility>=95/performance>=90. PC-B verifies this slice; reuse existing theme and WCAG AA contrast.
+
 ## CONTRACT-OUTPUT-SUMMARY-0908 — PC-A — COMPLETE_LOCAL
 
 User marked confirmed-paid and outstanding cards for removal from the contract PDF. Branch codex/pc-a-contract-output-summary-0908 from36ebb12. Reserve only Sales contract-print template/test and task status entries. Retain agreed total, passenger prices, notices, QR, all application balances and Excel output. No API, database, dependency or permission changes; preserve integrated local runtime. Local-only publication gate unchanged.
