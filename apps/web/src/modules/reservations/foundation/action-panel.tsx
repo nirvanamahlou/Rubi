@@ -130,34 +130,60 @@ export function ContractActionPanel({
         <section key={group.title} className={styles.group}>
           <h2>{group.title}</h2>
           <div className={styles.buttons}>
-            {group.items.map((action) => (
-              <Dialog key={action}>
-                <DialogTrigger asChild>
+            {group.items.map((action) =>
+              action === 'مفاد' ? (
+                request ? (
+                  <a
+                    key={action}
+                    href="/contracts/terms.pdf"
+                    download="مفاد.pdf"
+                    className={`${styles.action} ${styles.download}`}
+                    aria-label="دریافت PDF مفاد قرارداد"
+                  >
+                    {action}
+                  </a>
+                ) : (
                   <button
+                    key={action}
                     type="button"
-                    disabled={!request}
+                    disabled
                     className={styles.action}
                   >
                     {action}
                   </button>
-                </DialogTrigger>
-                {request && (
-                  <DialogContent
-                    dir="rtl"
-                    className="max-h-[85dvh] overflow-y-auto sm:max-w-3xl"
-                  >
-                    <DialogTitle className="pe-10">{action}</DialogTitle>
-                    <DialogDescription>
-                      قرارداد {request.contractNumber} ·{' '}
-                      {request.customerName !== '—'
-                        ? request.customerName
-                        : (request.passengerNames[0] ?? request.branchName)}
-                    </DialogDescription>
-                    <ContractActionContent action={action} request={request} />
-                  </DialogContent>
-                )}
-              </Dialog>
-            ))}
+                )
+              ) : (
+                <Dialog key={action}>
+                  <DialogTrigger asChild>
+                    <button
+                      type="button"
+                      disabled={!request}
+                      className={styles.action}
+                    >
+                      {action}
+                    </button>
+                  </DialogTrigger>
+                  {request && (
+                    <DialogContent
+                      dir="rtl"
+                      className="max-h-[85dvh] overflow-y-auto sm:max-w-3xl"
+                    >
+                      <DialogTitle className="pe-10">{action}</DialogTitle>
+                      <DialogDescription>
+                        قرارداد {request.contractNumber} ·{' '}
+                        {request.customerName !== '—'
+                          ? request.customerName
+                          : (request.passengerNames[0] ?? request.branchName)}
+                      </DialogDescription>
+                      <ContractActionContent
+                        action={action}
+                        request={request}
+                      />
+                    </DialogContent>
+                  )}
+                </Dialog>
+              ),
+            )}
           </div>
         </section>
       ))}

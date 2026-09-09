@@ -549,6 +549,7 @@ export function ReservationOperationsWorkspace({
                       <button
                         type="button"
                         onClick={() => setSelectedId(row.id)}
+                        aria-pressed={selectedId === row.id}
                       >
                         <strong>{row.contractNumber}</strong>
                         <span>

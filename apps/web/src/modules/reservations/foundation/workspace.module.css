@@ -443,3 +443,19 @@
 .workspace button[role='combobox'][data-state='open'] {
   border-color: var(--ring);
 }
+
+/* Stretch the existing keyboard-accessible selection button across its card. */
+.requests li {
+  position: relative;
+}
+.requests li button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.requests li:focus-within {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}

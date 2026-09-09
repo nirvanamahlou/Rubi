@@ -39,7 +39,9 @@ describe('selected contract actions', () => {
     );
     expect(html).toContain('SYNTH-01');
     expect(html).not.toContain('disabled=""');
-    expect(html.match(/aria-haspopup="dialog"/g) ?? []).toHaveLength(20);
+    expect(html.match(/aria-haspopup="dialog"/g) ?? []).toHaveLength(19);
+    expect(html).toContain('href="/contracts/terms.pdf"');
+    expect(html).toContain('download="مفاد.pdf"');
   });
   it('uses only the selected passenger data', () => {
     const html = renderToStaticMarkup(
