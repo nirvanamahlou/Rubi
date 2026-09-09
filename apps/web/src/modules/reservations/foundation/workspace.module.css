@@ -433,3 +433,13 @@
 :global(.dark) .newRequests p {
   color: #ffd5e9;
 }
+
+.workspace button[role='combobox'] {
+  min-width: 0;
+  border-color: var(--input);
+  font-size: 12px;
+  text-align: start;
+}
+.workspace button[role='combobox'][data-state='open'] {
+  border-color: var(--ring);
+}

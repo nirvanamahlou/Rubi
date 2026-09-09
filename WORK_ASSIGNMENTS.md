@@ -1435,3 +1435,9 @@ Validation: 87 scoped tests, Web lint, TypeScript and production build (40 route
 ## PUBLISH-DARK-HR-0909 — PC-A — READY_FOR_REVIEW
 
 User explicitly authorized merging the latest Finance labels, dark theme and HR/navigation corrections into develop. Integrate current develop 679e516, retaining PC-B HR/agencies and header date; resolve shared shell conflict with both responsive header and neutral dark border. Synchronize three ticket validation strings in API with the mirrored Web proposal to satisfy the existing parity test. No local database migration or runtime switch. Final combined CI gates must pass before merge.
+
+## RESERVATIONS-THEMED-FILTERS-0909 — PC-A — READY_FOR_REVIEW
+
+User requests themed dropdown menus for the four Reservations queue filters. Reserve foundation workspace only; use existing shared Radix Select with RTL, labels and unchanged query values. Branch codex/pc-a-reservation-themed-filters from develop 0261b91. No shared component/API/data change.
+
+Validation: 34 foundation tests, Web lint, production TypeScript and build (40 routes) passed. Local Web 3100 refreshed. Scope released; no API/database changes.

@@ -4,6 +4,13 @@ import { useState } from 'react';
 import { ContractActionPanel } from './action-panel';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/form-controls';
+import {
   accessibleRows,
   dashboard,
   defaultQuery,
@@ -385,63 +392,113 @@ export function ReservationOperationsWorkspace({
                 </label>
                 <label>
                   وضعیت
-                  <select
+                  <Select
+                    dir="rtl"
                     value={query.status}
-                    onChange={(e) =>
-                      changeQuery({ status: e.target.value as Query['status'] })
+                    onValueChange={(value) =>
+                      changeQuery({ status: value as Query['status'] })
                     }
                   >
-                    <option value="ALL">همه وضعیت‌ها</option>
-                    {Object.entries(statusLabels).map(([key, label]) => (
-                      <option value={key} key={key}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      aria-label="وضعیت"
+                      className="min-w-0 text-xs"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent
+                      align="start"
+                      className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
+                    >
+                      <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
+                      {Object.entries(statusLabels).map(([key, label]) => (
+                        <SelectItem value={key} key={key}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
                 <label>
                   خدمت
-                  <select
+                  <Select
+                    dir="rtl"
                     value={query.service}
-                    onChange={(e) => changeQuery({ service: e.target.value })}
+                    onValueChange={(value) => changeQuery({ service: value })}
                   >
-                    <option value="ALL">همه خدمات</option>
-                    {Object.entries(serviceLabels).map(([key, label]) => (
-                      <option value={key} key={key}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      aria-label="خدمت"
+                      className="min-w-0 text-xs"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent
+                      align="start"
+                      className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
+                    >
+                      <SelectItem value="ALL">همه خدمات</SelectItem>
+                      {Object.entries(serviceLabels).map(([key, label]) => (
+                        <SelectItem value={key} key={key}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
                 <label>
                   مرتب‌سازی
-                  <select
+                  <Select
+                    dir="rtl"
                     value={query.sort}
-                    onChange={(e) =>
-                      changeQuery({ sort: e.target.value as Query['sort'] })
+                    onValueChange={(value) =>
+                      changeQuery({ sort: value as Query['sort'] })
                     }
                   >
-                    <option value="deadline">نزدیک‌ترین مهلت</option>
-                    <option value="newest">جدیدترین درخواست</option>
-                    <option value="priority">بیشترین اولویت</option>
-                  </select>
+                    <SelectTrigger
+                      aria-label="مرتب‌سازی"
+                      className="min-w-0 text-xs"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent
+                      align="start"
+                      className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
+                    >
+                      <SelectItem value="deadline">نزدیک‌ترین مهلت</SelectItem>
+                      <SelectItem value="newest">جدیدترین درخواست</SelectItem>
+                      <SelectItem value="priority">بیشترین اولویت</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </label>
               </div>
               <div className={styles.dateFilters}>
                 <label>
                   مبنای تاریخ
-                  <select
+                  <Select
+                    dir="rtl"
                     value={query.dateBasis}
-                    onChange={(e) =>
+                    onValueChange={(value) =>
                       changeQuery({
-                        dateBasis: e.target.value as Query['dateBasis'],
+                        dateBasis: value as Query['dateBasis'],
                       })
                     }
                   >
-                    <option value="createdAt">تاریخ قرارداد</option>
-                    <option value="receivedAt">ورود به رزرواسیون</option>
-                    <option value="travelDate">تاریخ سفر</option>
-                  </select>
+                    <SelectTrigger
+                      aria-label="مبنای تاریخ"
+                      className="min-w-0 text-xs"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent
+                      align="start"
+                      className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
+                    >
+                      <SelectItem value="createdAt">تاریخ قرارداد</SelectItem>
+                      <SelectItem value="receivedAt">
+                        ورود به رزرواسیون
+                      </SelectItem>
+                      <SelectItem value="travelDate">تاریخ سفر</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </label>
                 <div>
                   <label htmlFor="reservation-from">از تاریخ</label>
