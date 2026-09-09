@@ -488,3 +488,81 @@
 .requests li[data-tone='pink'] > button {
   padding: 5px 8px;
 }
+
+.tableScroll {
+  overflow: auto;
+  max-height: 65vh;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-top: 12px;
+}
+.requestTable {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  min-width: 1220px;
+  font-size: 12px;
+}
+.requestTable th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
+  color: var(--foreground);
+  padding: 8px 6px;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+.requestTable td {
+  padding: 4px 6px;
+  height: 36px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
+  white-space: nowrap;
+}
+.requestTable tbody tr {
+  background: var(--tone-bg);
+  color: var(--tone-text);
+  cursor: pointer;
+}
+.requestTable tr[data-tone='pink'] {
+  background: var(--surface);
+  color: var(--foreground);
+}
+.requestTable tr[data-tone='pink'] td:first-child {
+  background: #ffc0c0;
+  color: #3f1515;
+}
+.requestTable td:first-child button {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  color: inherit;
+  font-weight: 700;
+}
+.requestTable tr[data-selected='true'] td {
+  box-shadow:
+    inset 0 2px var(--primary),
+    inset 0 -2px var(--primary);
+}
+.requestTable tr:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+.requestTable td:nth-child(3) {
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+.exportBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+}
+.exportBar small {
+  color: var(--muted-foreground);
+}

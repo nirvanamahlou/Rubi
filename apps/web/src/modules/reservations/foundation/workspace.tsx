@@ -1,5 +1,10 @@
 'use client';
-import { EnglishHotelName } from '../components/english-hotel-name';
+import { useQueueNames } from './queue-names';
+import {
+  reservationColumns,
+  reservationCells,
+  reservationExportRows,
+} from './reservation-table';
 
 import { useState } from 'react';
 import { ContractActionPanel } from './action-panel';
@@ -162,8 +167,12 @@ export function ReservationOperationsWorkspace({
         : !access.permissions.includes('reservations.read')
           ? 'FORBIDDEN'
           : state;
-  const visibleRows =
+  const rawVisibleRows =
     effectiveState === 'SUCCESS' ? accessibleRows(rows, access) : [];
+  const names = useQueueNames(rawVisibleRows);
+  const visibleRows = names.rows;
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
   const result = queryRows(visibleRows, query);
   const metrics = dashboard(visibleRows, now);
   const selected = visibleRows.find((r) => r.id === selectedId);
@@ -371,6 +380,55 @@ export function ReservationOperationsWorkspace({
                     : 'در انتظار دریافت از فروش'}
                 </span>
               </div>
+              <div className={styles.exportBar}>
+                <button
+                  type="button"
+                  disabled={
+                    !available ||
+                    !names.ready ||
+                    exporting ||
+                    !!result.dateError ||
+                    !result.total
+                  }
+                  onClick={async () => {
+                    setExporting(true);
+                    setExportError('');
+                    const exportRows = reservationExportRows(
+                      result.filteredRows,
+                    );
+                    try {
+                      const { createReservationXlsx } =
+                        await import('./reservation-xlsx');
+                      const bytes = createReservationXlsx(exportRows);
+                      const url = URL.createObjectURL(
+                        new Blob([bytes], {
+                          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        }),
+                      );
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `reservations-${new Date().toISOString().slice(0, 10)}.xlsx`;
+                      document.body.appendChild(link);
+                      link.click();
+                      link.remove();
+                      setTimeout(() => URL.revokeObjectURL(url), 30000);
+                    } catch {
+                      setExportError('خروجی اکسل آماده نشد؛ دوباره تلاش کنید.');
+                    } finally {
+                      setExporting(false);
+                    }
+                  }}
+                >
+                  {exporting
+                    ? 'آماده‌سازی اکسل…'
+                    : `خروجی اکسل (${result.total.toLocaleString('fa-IR')} درخواست)`}
+                </button>
+                <small>
+                  همهٔ نتایج مطابق فیلترها و ترتیب فعلی؛ تیک‌ها فقط نمایش وضعیت
+                  ثبت‌شده‌اند.
+                </small>
+                {exportError && <span role="alert">{exportError}</span>}
+              </div>
               <div
                 className={styles.legend}
                 aria-label="راهنمای رنگ و فیلتر وضعیت"
@@ -557,56 +615,66 @@ export function ReservationOperationsWorkspace({
                     : 'هنوز درخواستی دریافت نشده است.'}
                 </p>
               ) : (
-                <ul className={styles.requests}>
-                  {result.rows.map((row) => (
-                    <li
-                      key={row.id}
-                      data-tone={statusTones[row.status]}
-                      data-selected={selectedId === row.id}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setSelectedId(row.id)}
-                        aria-pressed={selectedId === row.id}
-                      >
-                        <strong>{row.contractNumber}</strong>
-                        <span>
-                          {row.customerName !== '—'
-                            ? row.customerName
-                            : row.passengerNames.slice(0, 2).join('، ') ||
-                              'نام مشتری دریافت نشده'}
-                        </span>
-                        {row.hotelName && (
-                          <small>
-                            <EnglishHotelName
-                              hotelId={row.hotelId}
-                              fallback={row.hotelName}
-                            />
-                          </small>
-                        )}
-                      </button>
-                      <span className={styles.statusLabel}>
-                        {statusLabels[row.status]}
-                      </span>
-                      <span>
-                        {row.services.map((s) => serviceLabels[s]).join('، ')}
-                      </span>
-                      <span>{row.assignee ?? 'تخصیص‌نیافته'}</span>
-                      <span>
-                        <small>مهلت اقدام</small>
-                        {row.deadline ? (
-                          <time dateTime={row.deadline}>
-                            {new Date(row.deadline).toLocaleString('fa-IR', {
-                              timeZone: 'Asia/Tehran',
-                            })}
-                          </time>
-                        ) : (
-                          'تعیین نشده'
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <div
+                  className={styles.tableScroll}
+                  role="region"
+                  aria-label="جدول درخواست‌های رزرواسیون"
+                  tabIndex={0}
+                >
+                  <table className={styles.requestTable}>
+                    <thead>
+                      <tr>
+                        {reservationColumns.map((column) => (
+                          <th key={column} scope="col">
+                            {column}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.rows.map((row) => (
+                        <tr
+                          key={row.id}
+                          data-tone={statusTones[row.status]}
+                          data-selected={selectedId === row.id}
+                          aria-selected={selectedId === row.id}
+                          tabIndex={0}
+                          onClick={() => setSelectedId(row.id)}
+                          onKeyDown={(event) => {
+                            if (
+                              event.target === event.currentTarget &&
+                              (event.key === 'Enter' || event.key === ' ')
+                            ) {
+                              event.preventDefault();
+                              setSelectedId(row.id);
+                            }
+                          }}
+                        >
+                          {reservationCells(row).map((value, index) => (
+                            <td key={reservationColumns[index]} title={value}>
+                              {index === 0 ? (
+                                <button
+                                  type="button"
+                                  aria-pressed={selectedId === row.id}
+                                  title={
+                                    row.customerName !== '—'
+                                      ? row.customerName
+                                      : row.passengerNames.join('، ')
+                                  }
+                                  onClick={() => setSelectedId(row.id)}
+                                >
+                                  {value}
+                                </button>
+                              ) : (
+                                <bdi>{value}</bdi>
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
               <div className={styles.pagination}>
                 <button

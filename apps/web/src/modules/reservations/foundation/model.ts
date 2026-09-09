@@ -63,6 +63,16 @@ export interface RequestView {
   hotelName?: string;
   hotelId?: string | undefined;
   carrierName?: string;
+  destinationId?: string | undefined;
+  checkIn?: string | undefined;
+  checkOut?: string | undefined;
+  roomCount?: number | undefined;
+  singleRooms?: number | undefined;
+  doubleRooms?: number | undefined;
+  extraBeds?: number | undefined;
+  hotelRequested?: boolean | undefined;
+  hotelConfirmed?: boolean | undefined;
+  correctedAt?: string | undefined;
   createdAt: string;
   status: QueueStatus;
   /** Counts issued documents once, not once per passenger/segment join. */
@@ -156,6 +166,7 @@ export function queryRows(rows: readonly RequestView[], query: Query) {
     : 1;
   return {
     dateError,
+    filteredRows: filtered,
     rows: filtered.slice((page - 1) * pageSize, page * pageSize),
     total: filtered.length,
     page,

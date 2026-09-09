@@ -188,3 +188,64 @@ describe('date and state filters', () => {
     expect(reservationDay('2026-09-08')).toBe('2026-09-08');
   });
 });
+
+it('loads following API pages for filtered export without truncating at 100', async () => {
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () =>
+        envelope(Array.from({ length: 100 }, (_, i) => intake(`page1-${i}`))),
+    })
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => envelope([intake('page2')]),
+    });
+  const rows = await loadIntake(
+    'http://example.test/api',
+    session,
+    new AbortController().signal,
+    fetcher,
+  );
+  expect(rows).toHaveLength(101);
+  expect(fetcher.mock.calls[1]?.[0]).toBe(
+    'http://example.test/api/reservations/requests?page=2',
+  );
+});
+it('projects the latest persisted arrangement over the commercial room snapshot', () => {
+  const source = intake();
+  const rows = decodeIntake(
+    envelope([
+      {
+        ...source,
+        snapshot: {
+          ...source.snapshot,
+          hotelSelection: {
+            hotelNameSnapshot: 'Demo',
+            checkInDate: '2026-10-01',
+            checkOutDate: '2026-10-03',
+            roomCount: 1,
+            singleRoomCount: 1,
+            doubleRoomCount: 0,
+            extraBedCount: 0,
+          },
+        },
+        arrangement: {
+          roomCount: 2,
+          singleRoomCount: 0,
+          doubleRoomCount: 2,
+          extraBedCount: 1,
+          updatedAt: '2026-09-09T10:00:00Z',
+        },
+      } as never,
+    ]),
+    session,
+  );
+  expect(rows[0]).toMatchObject({
+    roomCount: 2,
+    singleRooms: 0,
+    doubleRooms: 2,
+    extraBeds: 1,
+    correctedAt: '2026-09-09T10:00:00Z',
+  });
+});

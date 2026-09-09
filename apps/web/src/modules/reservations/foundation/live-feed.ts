@@ -51,6 +51,12 @@ const snapshotSchema = z.object({
     .object({
       hotelNameSnapshot: z.string().max(200),
       hotelId: id.optional(),
+      cityId: id.optional(),
+      checkOutDate: z.string().refine(isCivilDate).optional(),
+      roomCount: z.number().int().nonnegative().optional(),
+      singleRoomCount: z.number().int().nonnegative().optional(),
+      doubleRoomCount: z.number().int().nonnegative().optional(),
+      extraBedCount: z.number().int().nonnegative().optional(),
       checkInDate: z.string().refine(isCivilDate),
     })
     .nullable(),
@@ -66,6 +72,16 @@ const envelopeSchema = z.object({
         contractVersion: z.number().int().positive(),
         branchId: id,
         status: z.literal('QUEUED'),
+        arrangement: z
+          .object({
+            roomCount: z.number().int().nonnegative(),
+            singleRoomCount: z.number().int().nonnegative(),
+            doubleRoomCount: z.number().int().nonnegative(),
+            extraBedCount: z.number().int().nonnegative(),
+            updatedAt: instant,
+          })
+          .nullable()
+          .optional(),
         workflow: z
           .object({
             supplierStatus: z.enum([
@@ -155,6 +171,27 @@ export function decodeIntake(
         deadline: null,
         createdAt: snapshot.createdAt,
         receivedAt: row.receivedAt,
+        destinationId:
+          snapshot.hotelSelection?.cityId ??
+          snapshot.ticketSelections?.[0]?.destinationId,
+        checkIn: snapshot.hotelSelection?.checkInDate,
+        checkOut: snapshot.hotelSelection?.checkOutDate,
+        roomCount:
+          row.arrangement?.roomCount ?? snapshot.hotelSelection?.roomCount,
+        singleRooms:
+          row.arrangement?.singleRoomCount ??
+          snapshot.hotelSelection?.singleRoomCount,
+        doubleRooms:
+          row.arrangement?.doubleRoomCount ??
+          snapshot.hotelSelection?.doubleRoomCount,
+        extraBeds:
+          row.arrangement?.extraBedCount ??
+          snapshot.hotelSelection?.extraBedCount,
+        hotelRequested: ['REQUESTED', 'CONFIRMED'].includes(
+          row.workflow?.supplierStatus ?? '',
+        ),
+        hotelConfirmed: row.workflow?.supplierStatus === 'CONFIRMED',
+        correctedAt: row.arrangement?.updatedAt,
         ...(travelDate ? { travelDate } : {}),
         ...(snapshot.hotelSelection
           ? {
@@ -190,13 +227,17 @@ export async function loadIntake(
   session: LoginResponse,
   signal: AbortSignal,
   fetcher: typeof fetch = fetch,
+  page = 1,
 ): Promise<RequestView[]> {
-  const response = await fetcher(`${baseUrl}/reservations/requests`, {
-    credentials: 'include',
-    cache: 'no-store',
-    signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
-    headers: { accept: 'application/json' },
-  });
+  const response = await fetcher(
+    `${baseUrl}/reservations/requests${page > 1 ? `?page=${page}` : ''}`,
+    {
+      credentials: 'include',
+      cache: 'no-store',
+      signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
+      headers: { accept: 'application/json' },
+    },
+  );
   if (!response.ok)
     throw new ReservationFeedError(
       response.status === 401
@@ -213,7 +254,15 @@ export async function loadIntake(
   } catch {
     throw new ReservationFeedError('ERROR');
   }
-  return decodeIntake(input, session);
+  const current = decodeIntake(input, session);
+  const count = (input as { data: unknown[] }).data.length;
+  if (count < 100) return current;
+  if (page >= 100) throw new ReservationFeedError('ERROR');
+  const rest = await loadIntake(baseUrl, session, signal, fetcher, page + 1);
+  const combined = [...current, ...rest];
+  if (new Set(combined.map((row) => row.id)).size !== combined.length)
+    throw new ReservationFeedError('ERROR');
+  return combined;
 }
 /** Constant-memory watermark except for IDs sharing the newest timestamp. No PII/storage. */
 export class ReservationArrivalTracker {

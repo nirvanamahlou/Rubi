@@ -1550,3 +1550,8 @@ SEARCH-SHORTCUT-CONTRAST-0909: 25 layout tests, scoped lint/typecheck and 40-rou
 User requests bringing colleagues Git fixes locally. Integrate reviewed origin/develop e07c0c6 into local d68a65f on independent branch, preserving all local Reservations/Sales/header changes. Scope integration/docs and resolution of actual conflicts only. Draft PR132 and other unmerged branches excluded. No incoming migration or dependency changes; no data/permission edits, remote merges or public push.
 
 SYNC-DEVELOP-0909: local integration of develop e07c0c6 complete. 270 Web tests passed including isolated timeout retry; 120 API passed and 26 PostgreSQL tests skipped. Web/API lint/typechecks/builds passed; API4000/Web3100 refreshed and health verified. Scope released; no public push or remote merge.
+
+## RESERVATION-TABLE-EXPORT-0909 — PC-A — LOCAL_COMPLETE_PENDING_PUBLICATION
+Reserve Reservations Web queue table/projection/reference lookup/XLSX export/tests and docs. Real scoped API records; export all matching loaded pages with active filters/sort, no formulas or fabricated flags. No data mutation or permission grants; local only while public push approval is pending.
+
+RESERVATION-TABLE-EXPORT-0909: 39 tests, scoped lint/typecheck/build and synthetic browser XLSX/selection QA passed; independent workbook read verified. Scope released after Web3100 refresh. No public push.
