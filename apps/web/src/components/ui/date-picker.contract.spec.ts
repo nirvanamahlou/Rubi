@@ -38,7 +38,7 @@ describe('shared date picker contract', () => {
     expect(pickerSource).toContain('createPortal');
     expect(pickerSource).toContain('data-placement');
     expect(pickerSource.indexOf('نوع تقویم')).toBeLessThan(
-      pickerSource.indexOf('calendarMonthLabel(anchor'),
+      pickerSource.search(/calendarMonthLabel\(\s*anchor/),
     );
   });
 
