@@ -10,7 +10,7 @@ export const statusLabels = {
   draft: 'پیش‌نویس',
   active: 'فعال',
   paused: 'توقف فروش',
-  cancelled: 'لغو بلیت',
+  cancelled: 'لغو بلیط',
 } as const;
 export const supplyLabels = {
   company: 'ظرفیت شرکت',
@@ -286,7 +286,7 @@ export function catalogSamples(now: string): Product[] {
         supplyType: index % 3 === 0 ? 'company' : 'supplier',
         companyOwned: index % 3 === 0,
         rules:
-          'نمونه ساختگی برای بررسی فرم؛ قوانین نهایی هنگام تعریف بلیت وارد می‌شود.',
+          'نمونه ساختگی برای بررسی فرم؛ قوانین نهایی هنگام تعریف بلیط وارد می‌شود.',
         segments: [
           {
             ...input.segments[0]!,
@@ -350,7 +350,7 @@ export function activateCatalogSample(product: Product, at: string): Product {
         action: 'active',
         at,
         actor: 'سیستم نمونه',
-        reason: 'فعال‌سازی بلیت نمونه برای نمایش کنترل توقف فروش',
+        reason: 'فعال‌سازی بلیط نمونه برای نمایش کنترل توقف فروش',
       },
     ],
   };
@@ -550,16 +550,16 @@ export function moveDefinitionToDate(
   departureDate: string,
 ): ProductInput {
   if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(departureDate))
-    throw new Error('تاریخ اولین بلیت جدید را انتخاب کنید.');
+    throw new Error('تاریخ اولین بلیط جدید را انتخاب کنید.');
   const selectedDay = new Date(departureDate + 'T00:00:00.000Z');
   if (
     Number.isNaN(selectedDay.getTime()) ||
     selectedDay.toISOString().slice(0, 10) !== departureDate
   )
-    throw new Error('تاریخ اولین بلیت جدید معتبر نیست.');
+    throw new Error('تاریخ اولین بلیط جدید معتبر نیست.');
   const firstDeparture = new Date(source.segments[0]?.departureAt ?? '');
   if (Number.isNaN(firstDeparture.getTime()))
-    throw new Error('زمان حرکت بلیت مبدأ معتبر نیست.');
+    throw new Error('زمان حرکت بلیط مبدأ معتبر نیست.');
   const sourceDay = Date.UTC(
     firstDeparture.getUTCFullYear(),
     firstDeparture.getUTCMonth(),

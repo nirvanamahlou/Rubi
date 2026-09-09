@@ -65,7 +65,7 @@ import {
 } from '../model/sales-form';
 
 const serviceOptions: readonly [SalesServiceKind, string][] = [
-  ['FLIGHT', 'بلیت پرواز'],
+  ['FLIGHT', 'بلیط پرواز'],
   ['HOTEL', 'هتل'],
   ['VISA', 'ویزا'],
   ['INSURANCE', 'بیمه'],
@@ -353,9 +353,9 @@ export function SalesContractForm() {
   const flightDirections = salesDirections(state, 'FLIGHT');
   const detailLabel = (key: string) =>
     key === 'FLIGHT' && state.serviceKinds.includes('HOTEL')
-      ? 'بلیت و هتل'
+      ? 'بلیط و هتل'
       : key.startsWith('FLIGHT-')
-        ? `بلیت ${key.endsWith('OUTBOUND') ? 'رفت' : 'برگشت'}`
+        ? `بلیط ${key.endsWith('OUTBOUND') ? 'رفت' : 'برگشت'}`
         : key.startsWith('TRANSFER-')
           ? `ترانسفر ${key.endsWith('OUTBOUND') ? 'رفت' : 'برگشت'}`
           : (serviceOptions.find(([kind]) => kind === key)?.[1] ?? key);
@@ -365,7 +365,7 @@ export function SalesContractForm() {
       kind === 'FLIGHT'
         ? salesDirections(state, kind).map((direction) => ({
             key: `${kind.toLowerCase()}-${direction.toLowerCase()}`,
-            title: `${kind === 'FLIGHT' ? 'بلیت' : 'ترانسفر'} ${direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}`,
+            title: `${kind === 'FLIGHT' ? 'بلیط' : 'ترانسفر'} ${direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}`,
             hotel: false,
           }))
         : [
@@ -692,7 +692,7 @@ export function SalesContractForm() {
             <h2 className="text-sm font-bold">خدمات قرارداد</h2>
             <p className="text-xs text-muted-foreground">
               با انتخاب پرواز، قطار و اتوبوس قابل انتخاب نیستند. ترانسفر فقط روی
-              خروجی بلیت درج می‌شود.
+              خروجی بلیط درج می‌شود.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               {(['FLIGHT', 'TRANSFER'] as const).map((kind) => (
@@ -701,7 +701,7 @@ export function SalesContractForm() {
                   className="rounded-xl border border-border p-3 text-sm"
                 >
                   <label className="flex cursor-pointer items-center justify-between gap-3 font-bold">
-                    <span>{kind === 'FLIGHT' ? 'بلیت پرواز' : 'ترانسفر'}</span>
+                    <span>{kind === 'FLIGHT' ? 'بلیط پرواز' : 'ترانسفر'}</span>
                     <input
                       type="checkbox"
                       className="size-4 accent-primary"
@@ -770,7 +770,7 @@ export function SalesContractForm() {
               <div>
                 <h2 className="text-sm font-bold">تعداد مسافران</h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  این تعداد پیش از انتخاب بلیت کنترل می‌شود تا بیشتر از ظرفیت
+                  این تعداد پیش از انتخاب بلیط کنترل می‌شود تا بیشتر از ظرفیت
                   باقی‌مانده فروخته نشود.
                 </p>
               </div>
@@ -800,8 +800,8 @@ export function SalesContractForm() {
               />
             </div>
             <p className="rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-900 dark:bg-sky-950/40 dark:text-sky-200">
-              نوزاد لازم نیست در تعداد صندلی بلیت شمرده شود؛ فقط بزرگسال و کودک
-              از ظرفیت بلیت کم می‌شوند. هر نوزاد باید همراه حداقل یک بزرگسال
+              نوزاد لازم نیست در تعداد صندلی بلیط شمرده شود؛ فقط بزرگسال و کودک
+              از ظرفیت بلیط کم می‌شوند. هر نوزاد باید همراه حداقل یک بزرگسال
               باشد.
             </p>
           </section>
@@ -853,7 +853,7 @@ export function SalesContractForm() {
             </ol>
             {activeDetail === 'FLIGHT' ? (
               <section className="grid gap-4 rounded-xl border p-4">
-                <h3 className="font-bold">انتخاب بلیت پرواز</h3>
+                <h3 className="font-bold">انتخاب بلیط پرواز</h3>
                 <label className="flex items-center gap-3 rounded-xl bg-primary/5 p-3">
                   <input
                     type="checkbox"
@@ -863,12 +863,12 @@ export function SalesContractForm() {
                       patchState({ businessOutput: event.target.checked })
                     }
                   />
-                  این بلیت بیزینس است — درج در خروجی
+                  این بلیط بیزینس است — درج در خروجی
                 </label>
                 <div className="grid items-start gap-5 lg:grid-cols-2">
                   {flightDirections.includes('OUTBOUND') ? (
                     <section className="grid gap-3 min-w-0">
-                      <h3 className="font-bold">بلیت رفت</h3>
+                      <h3 className="font-bold">بلیط رفت</h3>
                       <ContractFlightEditor
                         value={state.contractFlights?.OUTBOUND}
                         onChange={(value) =>
@@ -932,7 +932,7 @@ export function SalesContractForm() {
                   ) : null}
                   {flightDirections.includes('RETURN') ? (
                     <section className="grid gap-3 min-w-0">
-                      <h3 className="font-bold">انتخاب بلیت برگشت</h3>
+                      <h3 className="font-bold">انتخاب بلیط برگشت</h3>
                       <ContractFlightEditor
                         value={state.contractFlights?.RETURN}
                         onChange={(value) =>
@@ -950,7 +950,7 @@ export function SalesContractForm() {
                             />
                           ) : null}
                           <p className="text-sm text-muted-foreground">
-                            همه بلیت‌های مقصد به مبدأ از تاریخ بلیت رفت به بعد
+                            همه بلیط‌های مقصد به مبدأ از تاریخ بلیط رفت به بعد
                             نمایش داده می‌شوند؛ سقف تاریخ ندارند.
                           </p>
                           {!flightDirections.includes('OUTBOUND') ||
@@ -998,7 +998,7 @@ export function SalesContractForm() {
                                     )
                                 ) {
                                   setError(
-                                    'زمان حرکت برگشت باید پس از رسیدن بلیت رفت باشد.',
+                                    'زمان حرکت برگشت باید پس از رسیدن بلیط رفت باشد.',
                                   );
                                   return;
                                 }
@@ -1022,7 +1022,7 @@ export function SalesContractForm() {
                             />
                           ) : (
                             <p className="rounded-xl border border-dashed p-5 text-muted-foreground">
-                              ابتدا بلیت رفت را در همین صفحه انتخاب کنید.
+                              ابتدا بلیط رفت را در همین صفحه انتخاب کنید.
                             </p>
                           )}
                         </>
@@ -1034,7 +1034,7 @@ export function SalesContractForm() {
                   state.contractFlights?.RETURN) &&
                 !salesFlightsValid(state) ? (
                   <p role="status" className="text-sm text-amber-700">
-                    اطلاعات هر بلیت را کامل کنید؛ رسیدن باید بعد از حرکت و پرواز
+                    اطلاعات هر بلیط را کامل کنید؛ رسیدن باید بعد از حرکت و پرواز
                     برگشت بعد از رسیدن پرواز رفت باشد.
                   </p>
                 ) : null}
@@ -1249,7 +1249,7 @@ export function SalesContractForm() {
                       </span>
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground">
-                      نوزاد در ظرفیت صندلی بلیت شمرده نمی‌شود.
+                      نوزاد در ظرفیت صندلی بلیط شمرده نمی‌شود.
                     </p>
                   </div>
                 </div>
@@ -1276,7 +1276,7 @@ export function SalesContractForm() {
                       })
                     }
                   >
-                    تنظیم دوباره تاریخ‌ها از بلیت
+                    تنظیم دوباره تاریخ‌ها از بلیط
                   </Button>
                 ) : null}
               </section>
@@ -1416,7 +1416,7 @@ export function SalesContractForm() {
                     direction === 'OUTBOUND' ? 'رفت' : 'برگشت',
                   )
                   .join(' و ')}{' '}
-                همراه خدمات است؛ هزینهٔ اضافه ندارد و در خروجی بلیت درج می‌شود.
+                همراه خدمات است؛ هزینهٔ اضافه ندارد و در خروجی بلیط درج می‌شود.
               </p>
             ) : null}
             <SalesPricingPanel
@@ -1520,8 +1520,8 @@ export function SalesContractForm() {
             {state.serviceKinds.includes('FLIGHT') ? (
               <Alert
                 tone="warning"
-                title="کنترل موجودی بلیت در تأیید نهایی"
-                description="پیش از ارسال، بلیت انتخاب‌شده دوباره بررسی می‌شود. ظرفیت و اجرای خدمات در رزرواسیون پیگیری می‌شود."
+                title="کنترل موجودی بلیط در تأیید نهایی"
+                description="پیش از ارسال، بلیط انتخاب‌شده دوباره بررسی می‌شود. ظرفیت و اجرای خدمات در رزرواسیون پیگیری می‌شود."
               />
             ) : null}
           </div>

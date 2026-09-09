@@ -583,7 +583,7 @@ export function TicketForm({
       {error ? <Alert tone="error" title={error} /> : null}
       <fieldset disabled={readOnly} className="space-y-6 disabled:opacity-80">
         <section className="space-y-4">
-          <h3 className="font-bold text-primary">۱. نوع بلیت</h3>
+          <h3 className="font-bold text-primary">۱. نوع بلیط</h3>
           <div className={styles.fields}>
             <FormField label="نوع وسیله سفر" id="ticket-transport" required>
               <Select
@@ -626,7 +626,7 @@ export function TicketForm({
           </div>
           {allowRoundTrip ? (
             <p className="text-xs leading-6 text-muted-foreground">
-              رفت‌وبرگشت دو بلیت مستقل می‌سازد. ترکیبی یک بلیت واحد با چند قطعه
+              رفت‌وبرگشت دو بلیط مستقل می‌سازد. ترکیبی یک بلیط واحد با چند قطعه
               متصل است و همه قطعه‌ها با هم فروخته می‌شوند.
             </p>
           ) : null}
@@ -664,10 +664,10 @@ export function TicketForm({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="font-bold text-primary">
-                  ۲. قطعه‌های بلیت ترکیبی
+                  ۲. قطعه‌های بلیط ترکیبی
                 </h3>
                 <p className="mt-1 text-xs leading-6 text-muted-foreground">
-                  مقصد هر قطعه باید مبدأ قطعه بعدی باشد. این قطعه‌ها یک بلیت
+                  مقصد هر قطعه باید مبدأ قطعه بعدی باشد. این قطعه‌ها یک بلیط
                   واحد هستند.
                 </p>
               </div>
@@ -902,7 +902,7 @@ export function TicketForm({
           </div>
         </section>
         <section className="space-y-4">
-          <h3 className="font-bold text-primary">۶. شرایط بلیت</h3>
+          <h3 className="font-bold text-primary">۶. شرایط بلیط</h3>
           <FormField
             label="قوانین تغییر، کنسلی و محدودیت فروش"
             id="ticket-rules"
@@ -931,10 +931,10 @@ export function TicketForm({
         {!readOnly ? (
           <Button type="submit">
             {definitionMode === 'round-trip' && allowRoundTrip
-              ? 'ذخیره دو بلیت رفت و برگشت'
+              ? 'ذخیره دو بلیط رفت و برگشت'
               : definitionMode === 'combined'
-                ? 'ذخیره بلیت ترکیبی'
-                : 'ذخیره بلیت'}
+                ? 'ذخیره بلیط ترکیبی'
+                : 'ذخیره بلیط'}
           </Button>
         ) : null}
         <Button type="button" variant="outline" onClick={onCancel}>

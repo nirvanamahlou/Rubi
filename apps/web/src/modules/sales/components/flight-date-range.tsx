@@ -157,7 +157,7 @@ export function FlightDateRangeFilter({
       ) : (
         <span className="text-xs text-muted-foreground">
           {t(
-            'همه بلیت‌های آینده، از نزدیک‌ترین تاریخ',
+            'همه بلیط‌های آینده، از نزدیک‌ترین تاریخ',
             'All upcoming flights, earliest first',
           )}
         </span>

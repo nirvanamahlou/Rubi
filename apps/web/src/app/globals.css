@@ -45,21 +45,22 @@
 
 .dark {
   color-scheme: dark;
-  --background: #08152d;
-  --foreground: #edf4ff;
-  --surface: #0e2142;
-  --muted: #162c50;
-  --muted-foreground: #a7b7cf;
-  --primary: #66a9ff;
-  --primary-foreground: #071a38;
-  --secondary: #173b6d;
-  --secondary-foreground: #d9eaff;
-  --border: #29476e;
-  --input: #36577e;
-  --ring: #69b6ff;
-  --popover: #0e2142;
-  --popover-foreground: #e8edf5;
-  --destructive: #f87171;
+  --background: #111113;
+  --foreground: #f4f4f5;
+  --surface: #1c1c1f;
+  --muted: #27272b;
+  --muted-foreground: #b4b4bd;
+  --primary: #a8c7f0;
+  --primary-foreground: #111820;
+  --secondary: #303035;
+  --secondary-foreground: #e4e4e7;
+  --border: #45454d;
+  --input: #777782;
+  --ring: #c1d9fa;
+  --popover: #232327;
+  --popover-foreground: #f4f4f5;
+  --destructive: #ff9494;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 14px 34px rgb(0 0 0 / 0.2);
 }
 
 * {
@@ -199,4 +200,46 @@ header[data-rubi-active-company]:not([data-rubi-active-company='ALL'])
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Neutral dark shell; status colors and company identity remain as accents. */
+.dark body {
+  background: var(--background);
+}
+.dark [data-rubi-sidebar] {
+  background: #18181b;
+  box-shadow: none;
+  border-inline-end: 1px solid var(--border);
+}
+.dark [data-rubi-sidebar] :is(a, button) {
+  color: #e4e4e7;
+}
+.dark [data-rubi-sidebar] [aria-current='page'] {
+  background: #39393f;
+  color: #ffffff;
+}
+.dark header[data-rubi-active-company] {
+  background: var(--surface);
+  color: var(--foreground);
+  border-color: var(--border);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.18);
+}
+.dark
+  header[data-rubi-active-company]
+  :is(
+    #global-search-trigger,
+    [data-header-session-summary],
+    [data-legal-entity-selector] button
+  ) {
+  background: var(--muted);
+  color: var(--foreground);
+  border-color: var(--input);
+}
+.dark header[data-rubi-active-company] .text-muted-foreground {
+  color: var(--muted-foreground);
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1;
 }

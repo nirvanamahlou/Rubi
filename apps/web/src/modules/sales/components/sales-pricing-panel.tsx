@@ -241,7 +241,7 @@ export function SalesPricingPanel({
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                این مبلغ فروش است، نه هزینه خرید. هزینه خرید بلیت در مدیریت بلیت
+                این مبلغ فروش است، نه هزینه خرید. هزینه خرید بلیط در مدیریت بلیط
                 باقی می‌ماند.
               </p>
             )}

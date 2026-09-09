@@ -84,13 +84,13 @@ export const navigationGroups = [
     id: 'operations',
     dotClass: 'bg-[#62d5c6]',
     title: 'رزرواسیون و تأمین سفر',
-    hrefs: ['/reservations', '/ticket-management', '/purchases'],
+    hrefs: ['/reservations', '/ticket-management'],
   },
   {
     id: 'finance',
     dotClass: 'bg-[#f7d184]',
     title: 'امور مالی',
-    hrefs: ['/finance'],
+    hrefs: ['/finance', '/purchases'],
   },
   {
     id: 'hr',

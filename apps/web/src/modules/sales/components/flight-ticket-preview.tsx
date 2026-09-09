@@ -272,12 +272,12 @@ export function FlightTicketPreview({
           variant="outline"
           onClick={() => setOpen((value) => !value)}
         >
-          {open ? 'بستن پیش‌نمایش' : 'پیش‌نمایش قالب بلیت'}
+          {open ? 'بستن پیش‌نمایش' : 'پیش‌نمایش قالب بلیط'}
         </Button>
         {open ? (
           <>
             <SalesThemedSelect
-              label="مسافر پیش‌نمایش بلیت"
+              label="مسافر پیش‌نمایش بلیط"
               value={String(passengerIndex)}
               disabled={!state.passengers.length}
               onValueChange={(value) => setPassengerIndex(Number(value))}

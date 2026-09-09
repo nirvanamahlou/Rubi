@@ -1406,3 +1406,25 @@ RESERVATIONS-ACTION-PANEL-003: READY_FOR_REVIEW; 34 tests, targeted lint, TypeSc
 ## PUBLISH-LATEST-0909 — PC-A — IN_PROGRESS
 
 User explicitly authorized merging the complete latest local version, including global changes, into develop. Integration preserves grouped sidebar, Sales/Customers/Tour stack and Reservations option 3, plus develop UserMenu/profile, HR route alias and portal calendar fixes. No live database change. Final PR checks gate merge.
+
+## NAV-FINANCE-TICKET-LABELS-0909 — PC-A — IN_PROGRESS
+
+User requested moving Purchases into the Finance navigation group and using بلیط in visible Web copy. Scope: navigation grouping, Persian Web strings and corresponding existing test expectations. No domain/API/schema changes.
+
+NAV-FINANCE-TICKET-LABELS-0909: READY_FOR_REVIEW. 57 targeted tests, Web lint, TypeScript and build passed; local port 3100 refreshed.
+
+## NEUTRAL-DARK-MODE-0909 — PC-A — READY_FOR_REVIEW
+
+User requests neutral dark surfaces with legible text and controls. Scope: shared theme tokens, shell backgrounds and Reservations theme-aware surfaces/status colors. Preserve current Finance grouping and ticket labels. No API/data changes.
+
+Validation: 66 targeted tests passed, including seven contrast assertions; Web lint, TypeScript and production build (40 routes) passed. Local Web 3100 refreshed. Browser visual QA unavailable because the browser tool failed to start. Branch codex/pc-a-neutral-dark-mode builds on Finance/ticket-labels PR #117. No migration or API/database changes.
+
+## HR-DARK-NAVIGATION-0909 — PC-A — READY_FOR_REVIEW
+
+User follow-up to neutral dark mode. Reserve HR workspace/Frappe CSS, Navigation collapse state and scoped tests on codex/pc-a-hr-dark-navigation-fix from 3d08f07. Preserve existing light design and local latest stack. No domain/API/data changes; header date work stays outside scope.
+
+Validation: 87 scoped tests, Web lint, TypeScript and production build (40 routes) passed; Web 3100 refreshed. No API/database restart or changes. Scoped reservations released.
+
+## PUBLISH-DARK-HR-0909 — PC-A — READY_FOR_REVIEW
+
+User explicitly authorized merging the latest Finance labels, dark theme and HR/navigation corrections into develop. Integrate current develop 679e516, retaining PC-B HR/agencies and header date; resolve shared shell conflict with both responsive header and neutral dark border. Synchronize three ticket validation strings in API with the mirrored Web proposal to satisfy the existing parity test. No local database migration or runtime switch. Final combined CI gates must pass before merge.

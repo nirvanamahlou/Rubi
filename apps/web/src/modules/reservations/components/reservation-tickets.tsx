@@ -98,11 +98,11 @@ export function ReservationTickets({
           dir="rtl"
         >
           <DialogTitle>
-            بلیت‌های قرارداد {request.snapshot.contractNumber}
+            بلیط‌های قرارداد {request.snapshot.contractNumber}
           </DialogTitle>
           <DialogDescription>
             نسخهٔ ذخیره‌شدهٔ {request.contractVersion}؛ از همین قرارداد
-            می‌توانید دوباره دریافت کنید. این خروجی هنوز بلیت صادرشدهٔ ایرلاین
+            می‌توانید دوباره دریافت کنید. این خروجی هنوز بلیط صادرشدهٔ ایرلاین
             نیست.
           </DialogDescription>
           {tickets.length ? (
@@ -110,7 +110,7 @@ export function ReservationTickets({
               <div
                 className="flex flex-wrap gap-2"
                 role="group"
-                aria-label="انتخاب مسافر بلیت"
+                aria-label="انتخاب مسافر بلیط"
               >
                 {tickets.map((item) => (
                   <Button
@@ -159,7 +159,7 @@ export function ReservationTickets({
           ) : (
             <p className="py-6">
               اطلاعات ذخیره‌شدهٔ پرواز و تخصیص آن به مسافر برای این درخواست
-              موجود نیست. بلیت ساختگی تولید نمی‌شود.
+              موجود نیست. بلیط ساختگی تولید نمی‌شود.
             </p>
           )}
         </DialogContent>

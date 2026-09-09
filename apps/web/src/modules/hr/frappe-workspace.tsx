@@ -186,7 +186,7 @@ export function FrappeWorkspaceScreen({
           </div>
         </div>
         <Link className={styles.allCapabilities} href="/hr">
-          همه قابلیت‌های HR <ArrowUpLeft aria-hidden="true" size={16} />
+          همه قابلیط‌های HR <ArrowUpLeft aria-hidden="true" size={16} />
         </Link>
       </header>
 

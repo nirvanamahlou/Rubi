@@ -21,7 +21,7 @@ describe('compact sales contract form', () => {
     for (const label of ['بزرگسال', 'کودک', 'نوزاد']) {
       expect(html).toContain(`aria-label="تعداد ${label}"`);
     }
-    expect(html).toContain('نوزاد لازم نیست در تعداد صندلی بلیت شمرده شود');
+    expect(html).toContain('نوزاد لازم نیست در تعداد صندلی بلیط شمرده شود');
     expect(html).toContain('aria-label="مبدأ سفر"');
     expect(html).toContain('aria-label="مقصد سفر"');
     expect(html).toMatch(

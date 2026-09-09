@@ -63,7 +63,7 @@ export function moveToCalendarMonth(
   const current = calendarParts(anchor, system);
   const delta = (targetYear - current.year) * 12 + targetMonth - current.month;
   if (!Number.isSafeInteger(delta) || Math.abs(delta) > 480)
-    throw new Error('سال انتخابی خارج از بازه تقویم بلیت است.');
+    throw new Error('سال انتخابی خارج از بازه تقویم بلیط است.');
   let next = anchor;
   const direction: -1 | 1 = delta < 0 ? -1 : 1;
   for (let index = 0; index < Math.abs(delta); index += 1)

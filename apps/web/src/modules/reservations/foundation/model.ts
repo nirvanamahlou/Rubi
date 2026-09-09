@@ -1,7 +1,7 @@
 export const sections = [
   ['dashboard', 'داشبورد'],
   ['inbox', 'صندوق درخواست‌ها'],
-  ['tickets', 'صدور بلیت'],
+  ['tickets', 'صدور بلیط'],
   ['hotels', 'رزرو هتل'],
   ['vouchers', 'واچر'],
   ['insurance', 'بیمه سامان'],

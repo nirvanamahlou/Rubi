@@ -67,20 +67,20 @@ export function IssuedTicketsWorkspace({
   return (
     <div className="space-y-5" dir="rtl">
       <PageHeader
-        title="بلیت‌های صادرشده مسافران"
+        title="بلیط‌های صادرشده مسافران"
         eyebrow="گزارش فقط‌خواندنی رزرواسیون"
-        description="پیگیری بلیت صادرشده، قرارداد، مسافر، PNR و مسیر؛ عملیات صدور و استرداد همچنان در رزرواسیون انجام می‌شود."
+        description="پیگیری بلیط صادرشده، قرارداد، مسافر، PNR و مسیر؛ عملیات صدور و استرداد همچنان در رزرواسیون انجام می‌شود."
       />
       {!connected ? (
         <Alert
           tone="warning"
           title="در انتظار اتصال قرارداد عمومی رزرواسیون"
-          description="این صفحه داده ساختگی ذخیره نمی‌کند. پس از انتشار قرارداد عمومی رزرواسیون، بلیت‌های واقعی به‌صورت فقط‌خواندنی اینجا نمایش داده می‌شوند."
+          description="این صفحه داده ساختگی ذخیره نمی‌کند. پس از انتشار قرارداد عمومی رزرواسیون، بلیط‌های واقعی به‌صورت فقط‌خواندنی اینجا نمایش داده می‌شوند."
         />
       ) : null}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="p-5">
-          <p className="text-sm text-muted-foreground">جمع بلیت‌های صادرشده</p>
+          <p className="text-sm text-muted-foreground">جمع بلیط‌های صادرشده</p>
           <div className="mt-3 flex items-center justify-between">
             <strong className="text-2xl text-primary">
               {tickets.length.toLocaleString('fa-IR')}
@@ -118,12 +118,12 @@ export function IssuedTicketsWorkspace({
       </div>
       {routeCounts.length ? (
         <Card className="p-4">
-          <h2 className="font-bold">جمع بلیت صادرشده در هر مسیر</h2>
+          <h2 className="font-bold">جمع بلیط صادرشده در هر مسیر</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {routeCounts.map((route) => (
               <Badge key={route.key}>
                 {route.origin} ← {route.destination} •{' '}
-                {route.count.toLocaleString('fa-IR')} بلیت
+                {route.count.toLocaleString('fa-IR')} بلیط
               </Badge>
             ))}
           </div>
@@ -132,14 +132,14 @@ export function IssuedTicketsWorkspace({
       <Card className="space-y-4 p-4">
         <div className="flex items-center gap-2">
           <Search className="size-5 text-primary" aria-hidden />
-          <h2 className="font-bold">فیلتر بلیت‌های صادرشده</h2>
+          <h2 className="font-bold">فیلتر بلیط‌های صادرشده</h2>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <FormField label="جست‌وجوی کلی" id="issued-ticket-search">
             <Input
               id="issued-ticket-search"
               value={query.search}
-              placeholder="قرارداد، مسافر، بلیت، PNR…"
+              placeholder="قرارداد، مسافر، بلیط، PNR…"
               onChange={(event) => filter({ search: event.target.value })}
             />
           </FormField>
@@ -159,7 +159,7 @@ export function IssuedTicketsWorkspace({
               onChange={(event) => filter({ passenger: event.target.value })}
             />
           </FormField>
-          <FormField label="شماره بلیت یا PNR" id="issued-document-number">
+          <FormField label="شماره بلیط یا PNR" id="issued-document-number">
             <Input
               id="issued-document-number"
               value={query.documentNumber}
@@ -273,13 +273,13 @@ export function IssuedTicketsWorkspace({
           icon={FileCheck2}
           title={
             connected
-              ? 'بلیتی با این فیلترها پیدا نشد'
+              ? 'بلیطی با این فیلترها پیدا نشد'
               : 'هنوز داده رزرواسیون متصل نشده است'
           }
           description={
             connected
               ? 'فیلترها را تغییر دهید یا قرارداد دیگری را جست‌وجو کنید.'
-              : 'پس از اتصال قرارداد عمومی رزرواسیون، اطلاعات واقعی بلیت‌های مسافران در این بخش نمایش داده می‌شود.'
+              : 'پس از اتصال قرارداد عمومی رزرواسیون، اطلاعات واقعی بلیط‌های مسافران در این بخش نمایش داده می‌شود.'
           }
         />
       ) : (
@@ -299,7 +299,7 @@ export function IssuedTicketsWorkspace({
                 <Badge>{statusLabels[ticket.status]}</Badge>
               </div>
               <p className="text-sm">
-                بلیت: {ticket.ticketNumber} • PNR: {ticket.pnr} •{' '}
+                بلیط: {ticket.ticketNumber} • PNR: {ticket.pnr} •{' '}
                 {ticket.airline}
               </p>
             </Card>

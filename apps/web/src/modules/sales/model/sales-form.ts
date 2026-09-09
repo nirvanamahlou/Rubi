@@ -175,7 +175,7 @@ export function salesFlightSelection(
         {
           kind: 'FLIGHT',
           clientKey: serviceClientKey,
-          titleSnapshot: 'بلیت شناور',
+          titleSnapshot: 'بلیط شناور',
           status: 'NEEDS_RESERVATION_CONFIRMATION',
           metadata: contractFlightMetadata({
             version: 1,
@@ -664,7 +664,7 @@ export function salesPayload(
         ? salesDirections(state, kind).map((direction) => ({
             clientKey: `${kind.toLowerCase()}-${direction.toLowerCase()}`,
             kind,
-            titleSnapshot: `${kind === 'FLIGHT' ? 'بلیت' : 'ترانسفر'} ${direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}`,
+            titleSnapshot: `${kind === 'FLIGHT' ? 'بلیط' : 'ترانسفر'} ${direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}`,
             metadata: {
               ...(kind === 'FLIGHT' && direction === 'OUTBOUND' && state.tour
                 ? {
@@ -696,7 +696,7 @@ export function salesPayload(
                 titleSnapshot:
                   (
                     {
-                      FLIGHT: 'بلیت پرواز',
+                      FLIGHT: 'بلیط پرواز',
                       HOTEL: 'اقامت هتل',
                       VISA: 'خدمات ویزا',
                     } as Partial<Record<SalesServiceKind, string>>
@@ -711,7 +711,7 @@ export function salesPayload(
     if (!state.contractFlights?.[direction]) continue;
     const flight = salesFlightSelection(state, direction);
     if (!flight || flight.source !== 'CONTRACT_ONLY')
-      throw new Error('اطلاعات بلیت شناور کامل نیست.');
+      throw new Error('اطلاعات بلیط شناور کامل نیست.');
     const service = services.find(
       (item) => item.clientKey === flight.serviceClientKey,
     )!;

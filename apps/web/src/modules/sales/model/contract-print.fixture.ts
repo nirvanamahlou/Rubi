@@ -54,11 +54,11 @@ export const printFixture: SalesContractOutputV1 = {
     tripType: 'ROUND_TRIP',
     payerCustomerId: 'buyer',
     servicesDetail: [
-      { clientKey: 'flight-out', kind: 'FLIGHT', titleSnapshot: 'بلیت رفت' },
+      { clientKey: 'flight-out', kind: 'FLIGHT', titleSnapshot: 'بلیط رفت' },
       {
         clientKey: 'flight-return',
         kind: 'FLIGHT',
-        titleSnapshot: 'بلیت برگشت',
+        titleSnapshot: 'بلیط برگشت',
         metadata: { businessOutput: true },
       },
       { clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'هتل' },

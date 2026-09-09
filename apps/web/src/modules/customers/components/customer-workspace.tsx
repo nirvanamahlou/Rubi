@@ -2070,7 +2070,7 @@ function CustomerDrawer({
               ) : null}
               <Alert
                 description="نام لاتین، جنسیت و یادداشت در Schema و customers.v2 موجود نیستند و برای CUSTOMER-002B مسدود ثبت شده‌اند."
-                title="قابلیت‌های نیازمند قرارداد"
+                title="قابلیط‌های نیازمند قرارداد"
                 tone="warning"
               />
             </TabsContent>

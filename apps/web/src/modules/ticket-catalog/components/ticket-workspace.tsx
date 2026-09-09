@@ -90,7 +90,7 @@ export function TicketWorkspace() {
     <>
       <Tabs defaultValue="catalog" dir="rtl" className="space-y-5">
         <TabsList
-          aria-label="انتخاب بخش مدیریت بلیت"
+          aria-label="انتخاب بخش مدیریت بلیط"
           className="grid h-auto w-full grid-cols-1 gap-2 rounded-2xl border border-primary/15 bg-primary/[0.04] p-2 sm:grid-cols-3 lg:w-fit"
         >
           <TabsTrigger
@@ -101,7 +101,7 @@ export function TicketWorkspace() {
               <Ticket className="size-5" aria-hidden />
             </span>
             <span>
-              <span className="block font-bold">تعریف بلیت قابل فروش</span>
+              <span className="block font-bold">تعریف بلیط قابل فروش</span>
               <span className="mt-1 block text-xs opacity-75">
                 مسیر، برنامه حرکت و ظرفیت
               </span>
@@ -115,7 +115,7 @@ export function TicketWorkspace() {
               <TicketCheck className="size-5" aria-hidden />
             </span>
             <span>
-              <span className="block font-bold">بلیت‌های صادرشده مسافران</span>
+              <span className="block font-bold">بلیط‌های صادرشده مسافران</span>
               <span className="mt-1 block text-xs opacity-75">
                 گزارش صدور، PNR و قرارداد
               </span>
@@ -213,7 +213,7 @@ function TicketCatalogWorkspace() {
     const now = new Date().toISOString();
     const current = form.product;
     if (current && inputs.length !== 1)
-      throw new Error('ویرایش باید روی همان بلیت انجام شود.');
+      throw new Error('ویرایش باید روی همان بلیط انجام شود.');
     let updated = products;
     if (current) {
       const next = reviseProduct(
@@ -223,7 +223,7 @@ function TicketCatalogWorkspace() {
         resolve,
         now,
         actor,
-        editReason.trim() || 'ویرایش اطلاعات بلیت',
+        editReason.trim() || 'ویرایش اطلاعات بلیط',
         {
           total: current.definition.totalCapacity,
           version: 0,
@@ -248,10 +248,10 @@ function TicketCatalogWorkspace() {
     setProblem('');
     setNotice(
       inputs.length === 2
-        ? 'دو بلیت مستقل رفت و برگشت ذخیره شد.'
+        ? 'دو بلیط مستقل رفت و برگشت ذخیره شد.'
         : current
-          ? 'تغییرات بلیت ذخیره شد.'
-          : 'بلیت جدید ذخیره شد.',
+          ? 'تغییرات بلیط ذخیره شد.'
+          : 'بلیط جدید ذخیره شد.',
     );
   }
   function applyRepeat() {
@@ -287,11 +287,11 @@ function TicketCatalogWorkspace() {
       setRepeat(undefined);
       setProblem('');
       setNotice(
-        `${repeat.count.toLocaleString('fa-IR')} بلیت ${repeat.cadence === 'weekly' ? 'هفتگی' : 'ماهانه'} جدید ساخته شد.`,
+        `${repeat.count.toLocaleString('fa-IR')} بلیط ${repeat.cadence === 'weekly' ? 'هفتگی' : 'ماهانه'} جدید ساخته شد.`,
       );
     } catch (error) {
       setProblem(
-        error instanceof Error ? error.message : 'تکرار بلیت ناموفق بود.',
+        error instanceof Error ? error.message : 'تکرار بلیط ناموفق بود.',
       );
     }
   }
@@ -299,7 +299,7 @@ function TicketCatalogWorkspace() {
     if (!deleteProduct) return;
     setProducts((rows) => rows.filter((row) => row.id !== deleteProduct.id));
     setDeleteProduct(undefined);
-    setNotice('بلیت از فهرست این مرورگر حذف شد.');
+    setNotice('بلیط از فهرست این مرورگر حذف شد.');
     setProblem('');
   }
   function applyStatus() {
@@ -313,7 +313,7 @@ function TicketCatalogWorkspace() {
         resolve,
         new Date().toISOString(),
         actor,
-        reason.trim() || 'تغییر وضعیت بلیت',
+        reason.trim() || 'تغییر وضعیت بلیط',
         {
           total: current.definition.totalCapacity,
           version: 0,
@@ -323,7 +323,7 @@ function TicketCatalogWorkspace() {
       setProducts(replacePreview(products, next, current.version));
       setStatusChange(null);
       setProblem('');
-      setNotice(`وضعیت بلیت به «${statusLabels[next.status]}» تغییر کرد.`);
+      setNotice(`وضعیت بلیط به «${statusLabels[next.status]}» تغییر کرد.`);
     } catch (error) {
       setProblem(
         error instanceof Error ? error.message : 'تغییر وضعیت ناموفق بود.',
@@ -366,12 +366,12 @@ function TicketCatalogWorkspace() {
   return (
     <div className="space-y-5" dir="rtl">
       <PageHeader
-        title="مدیریت و تعریف بلیت‌ها"
+        title="مدیریت و تعریف بلیط‌ها"
         eyebrow="هواپیما • قطار • اتوبوس"
         actions={
           <Button onClick={() => setForm({ mode: 'create' })}>
             <Plus className="size-4" aria-hidden />
-            تعریف بلیت جدید
+            تعریف بلیط جدید
           </Button>
         }
       />
@@ -380,7 +380,7 @@ function TicketCatalogWorkspace() {
       ) : null}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 p-5 dark:border-blue-900 dark:from-blue-950/70 dark:to-blue-900/30">
-          <p className="text-sm text-muted-foreground">کل بلیت‌ها</p>
+          <p className="text-sm text-muted-foreground">کل بلیط‌ها</p>
           <div className="mt-3 flex items-center justify-between">
             <p className="text-2xl font-black text-blue-800 dark:text-blue-200">
               {hydrated ? products.length.toLocaleString('fa-IR') : '…'}
@@ -416,7 +416,7 @@ function TicketCatalogWorkspace() {
         })}
       </div>
       <Card className="p-4">
-        <h2 className="font-bold">جمع بلیت‌های تعریف‌شده در هر مسیر</h2>
+        <h2 className="font-bold">جمع بلیط‌های تعریف‌شده در هر مسیر</h2>
         {routeCounts.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {routeCounts.map((route) => (
@@ -438,19 +438,19 @@ function TicketCatalogWorkspace() {
                 }
               >
                 {route.origin} ← {route.destination} •{' '}
-                {route.count.toLocaleString('fa-IR')} بلیت
+                {route.count.toLocaleString('fa-IR')} بلیط
               </Button>
             ))}
           </div>
         ) : (
           <p className="mt-2 text-sm text-muted-foreground">
-            پس از تعریف بلیت، جمع هر مسیر اینجا نمایش داده می‌شود.
+            پس از تعریف بلیط، جمع هر مسیر اینجا نمایش داده می‌شود.
           </p>
         )}
       </Card>
       <Card className="space-y-4 p-4">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <FormField label="جست‌وجوی بلیت" id="ticket-search">
+          <FormField label="جست‌وجوی بلیط" id="ticket-search">
             <Input
               id="ticket-search"
               value={query.search}
@@ -605,8 +605,8 @@ function TicketCatalogWorkspace() {
         />
       ) : result.rows.length === 0 ? (
         <EmptyState
-          title="بلیتی یافت نشد"
-          description="بلیت جدید بسازید یا فیلترها را پاک کنید."
+          title="بلیطی یافت نشد"
+          description="بلیط جدید بسازید یا فیلترها را پاک کنید."
         />
       ) : (
         <>
@@ -648,11 +648,11 @@ function TicketCatalogWorkspace() {
             ))}
           </div>
           <nav
-            aria-label="صفحه‌بندی بلیت‌ها"
+            aria-label="صفحه‌بندی بلیط‌ها"
             className="flex flex-wrap items-center justify-between gap-3 text-sm"
           >
             <span>
-              {result.total.toLocaleString('fa-IR')} بلیت • صفحه{' '}
+              {result.total.toLocaleString('fa-IR')} بلیط • صفحه{' '}
               {result.page.toLocaleString('fa-IR')} از{' '}
               {result.pages.toLocaleString('fa-IR')}
             </span>
@@ -687,14 +687,14 @@ function TicketCatalogWorkspace() {
         >
           <DialogTitle className="pe-10">
             {form?.mode === 'view'
-              ? 'مشاهده بلیت'
+              ? 'مشاهده بلیط'
               : form?.mode === 'edit'
-                ? 'ویرایش بلیت'
-                : 'تعریف بلیت جدید'}
+                ? 'ویرایش بلیط'
+                : 'تعریف بلیط جدید'}
           </DialogTitle>
           <DialogDescription>
             {form?.mode === 'view'
-              ? 'اطلاعات کامل مسیر، زمان، ظرفیت و نرخ این بلیت را مشاهده کنید.'
+              ? 'اطلاعات کامل مسیر، زمان، ظرفیت و نرخ این بلیط را مشاهده کنید.'
               : 'اطلاعات مسیر، ظرفیت و نرخ خرید را کامل کنید.'}
           </DialogDescription>
           {form ? (
@@ -745,14 +745,14 @@ function TicketCatalogWorkspace() {
         }}
       >
         <DialogContent dir="rtl" className="start-auto! left-1/2!">
-          <DialogTitle>تکرار هفتگی یا ماهانه بلیت</DialogTitle>
+          <DialogTitle>تکرار هفتگی یا ماهانه بلیط</DialogTitle>
           <DialogDescription>
-            تاریخ اولین بلیت جدید را انتخاب کنید؛ تکرارهای بعدی با همان ساعت و
+            تاریخ اولین بلیط جدید را انتخاب کنید؛ تکرارهای بعدی با همان ساعت و
             ظرفیت از این تاریخ ساخته می‌شوند.
           </DialogDescription>
           {problem ? <Alert tone="error" title={problem} /> : null}
           <FormField
-            label="تاریخ اولین بلیت جدید"
+            label="تاریخ اولین بلیط جدید"
             id="ticket-repeat-start-date"
           >
             <TicketDatePicker
@@ -781,7 +781,7 @@ function TicketCatalogWorkspace() {
               </SelectContent>
             </Select>
           </FormField>
-          <FormField label="تعداد بلیت جدید" id="ticket-repeat-count">
+          <FormField label="تعداد بلیط جدید" id="ticket-repeat-count">
             <Input
               id="ticket-repeat-count"
               type="number"
@@ -799,7 +799,7 @@ function TicketCatalogWorkspace() {
             disabled={!repeat?.startDate}
             onClick={applyRepeat}
           >
-            ساخت بلیت‌های تکرارشونده
+            ساخت بلیط‌های تکرارشونده
           </Button>
         </DialogContent>
       </Dialog>
@@ -810,13 +810,13 @@ function TicketCatalogWorkspace() {
         }}
       >
         <DialogContent dir="rtl" className="start-auto! left-1/2!">
-          <DialogTitle>حذف بلیت</DialogTitle>
+          <DialogTitle>حذف بلیط</DialogTitle>
           <DialogDescription>
             «{deleteProduct?.definition.title}» از فهرست این مرورگر حذف شود؟
           </DialogDescription>
           <div className="mt-4 flex gap-2">
             <Button variant="destructive" onClick={removeProduct}>
-              حذف بلیت
+              حذف بلیط
             </Button>
             <Button
               variant="outline"
@@ -836,13 +836,13 @@ function TicketCatalogWorkspace() {
         <DialogContent dir="rtl" className="start-auto! left-1/2!">
           <DialogTitle>
             {statusChange?.status === 'active'
-              ? 'فعال‌کردن فروش بلیت'
-              : 'توقف فروش بلیت'}
+              ? 'فعال‌کردن فروش بلیط'
+              : 'توقف فروش بلیط'}
           </DialogTitle>
           <DialogDescription>
             {statusChange?.status === 'active'
-              ? 'پس از تأیید، این بلیت دوباره برای فروش در دسترس قرار می‌گیرد.'
-              : 'پس از تأیید، فروش این بلیت متوقف می‌شود و بعداً می‌توانید دوباره آن را فعال کنید.'}
+              ? 'پس از تأیید، این بلیط دوباره برای فروش در دسترس قرار می‌گیرد.'
+              : 'پس از تأیید، فروش این بلیط متوقف می‌شود و بعداً می‌توانید دوباره آن را فعال کنید.'}
           </DialogDescription>
           {problem ? <Alert tone="error" title={problem} /> : null}
           <FormField label="دلیل تغییر وضعیت" id="ticket-status-reason">
