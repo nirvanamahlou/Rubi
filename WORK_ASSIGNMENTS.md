@@ -1,10 +1,11 @@
 # Work Assignments
 
-## B2B-PROFILE-CLARITY-001 — PC-B — IN_PROGRESS
+## B2B-PROFILE-CLARITY-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner clarifies that the requested branch options are the counterparty agency's own branches, and asks where cooperation status, account manager and national ID are determined. Clean branch `codex/pc-b-b2b-profile-clarity` starts from 65042b4, preserving the current combined runtime and fetched develop e07c0c6. Reserve Organizations profile/address presentation, cooperation form/model, scoped tests and documentation.
 - Counterparty branches come from the existing public Master Organization addresses service; never use an address ID as an IAM branch scope. Preserve internal Rubi branch authorization separately. Clarify the responsible employee and provide working navigation to the existing independent contract review flow.
 - Reserve the Master Data organization identity slice (API allowed fields/validation, form catalog and tests), the additive optional organization national-ID column/migration, and its DATA_MODEL/DECISIONS entries. Migration Owner = PC-B/B2B-PROFILE-CLARITY-001; no other current active migration reservation was found. Producer = Master Data; consumer = Organizations Web through the existing generic values/attributes contract, additive and optional for legacy clients/rows. No dependency/lockfile or IAM changes. Validate and back up/rehearse before applying the additive migration to the owned local runtime.
+- Completed source dbd7329: agency-address selector and CRUD, account-manager explanation/review navigation, optional persisted company national ID in forms/dossier/directory. 90 Web + 479 API + 14 PostgreSQL targeted tests, lint/typecheck/schema/API/Database/Web builds and all four CI gates (34450246803) pass. Migration applied after restore rehearsal and fresh cutover backup; all data across 127 business tables and historical migration checksums preserved. Web3100 PID12100 / hr005-b0658359a760157c and API4190 PID19300 are healthy on the same database/storage. Real React browser checks passed; production browser currently needs login. PR140 is draft against develop, no merge. Release implementation and migration locks; coordinate any subsequent runtime replacement with this task.
 
 ## B2B-DIRECTORY-ACTIONS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
