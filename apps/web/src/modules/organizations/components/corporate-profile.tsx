@@ -346,40 +346,6 @@ export function CorporateProfile({
       {screen === 'home' ? (
         <>
           {overview}
-          <section className="panel" aria-label="ثبت اطلاعات پرونده">
-            <header className="panel-head">
-              <div>
-                <h2 className="panel-title">ثبت اطلاعات پرونده</h2>
-                <p className="panel-note">
-                  اطلاعات هر بخش از همین پرونده ثبت و ویرایش می‌شود.
-                </p>
-              </div>
-            </header>
-            <div className="panel-body flex flex-wrap gap-2">
-              <Button variant="outline" onClick={onEdit} disabled={!canEdit}>
-                مشخصات {entityLabel}
-              </Button>
-              {[
-                ['شعب و آدرس‌ها', 'organization', 'branches'],
-                ['نمایندگان', 'organization', 'representatives'],
-                ['مدیر حساب', 'organization', 'manager'],
-                ['قرارداد همکاری', 'contracts', 'framework'],
-                ['سقف اعتبار و تضمین', 'credit', 'policy'],
-                ['نرخ توافقی', 'contracts', 'rates'],
-                ['تخفیف', 'contracts', 'discounts'],
-                ['پورسانت', 'contracts', 'commission'],
-                ['اسناد پرونده', 'contracts', 'documents'],
-              ].map(([label, sectionId, tabId]) => (
-                <Button
-                  key={label}
-                  variant="outline"
-                  onClick={() => go(sectionId!, tabId!)}
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
-          </section>
           <div className="boundary-note">
             <Info size={20} />
             <span>

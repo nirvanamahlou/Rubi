@@ -1,5 +1,10 @@
 # Work Assignments
 
+## B2B-DOSSIER-SHORTCUTS-001 — PC-B — IN_PROGRESS
+
+- Owner requests removal of the circled registration shortcut row on the 360 home page (Screenshot532). Reserve only `corporate-profile.tsx` and task/status documentation. Clean branch `codex/pc-b-b2b-remove-dossier-shortcuts` starts from 82f003c, preserving the owned combined runtime and fetched develop. Prior Organizations reservation is released; no conflicting active owner found.
+- Remove the shortcut panel and its now-empty heading. The six section cards and their actual forms remain available. Presentation only: no API, data, permission, migration or dependency change. Run existing Organizations tests, Web lint/typecheck/build and browser verification, then refresh owned Web3100 with API4190 preserved.
+
 ## B2B-UNIFIED-PROFILE-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests company national ID in the initial form and all agency branches, representatives, signatories and account manager together on the profile/roles page, each with a popup entry form. Clean branch `codex/pc-b-b2b-unified-profile` starts from 5182c27, retaining the owned combined runtime and fetched develop. Reserve Organizations components/models/client/tests, existing Master Data contact form integration and public directory reference method.
