@@ -1,10 +1,11 @@
 # Work Assignments
 
-## B2B-UNIFIED-PROFILE-001 — PC-B — IN_PROGRESS
+## B2B-UNIFIED-PROFILE-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests company national ID in the initial form and all agency branches, representatives, signatories and account manager together on the profile/roles page, each with a popup entry form. Clean branch `codex/pc-b-b2b-unified-profile` starts from 5182c27, retaining the owned combined runtime and fetched develop. Reserve Organizations components/models/client/tests, existing Master Data contact form integration and public directory reference method.
 - Reserve Migration Owner = PC-B for additive B2bOrganizationSignatory table and its restrictive relations, scoped Prisma schema, B2B module/controller/service/repository/DTO, `packages/contracts/src/b2b-signatories.ts` and root export, DATA_MODEL/DECISIONS/status/task docs. Producer B2B, consumers Organizations Web and tests; additive v1 endpoints under existing B2B agency routes. Existing Master Data contacts identify the person; Documents public service validates/pins proof versions; currency comes from Master Data public references. No IAM grant or automatic signing/approval privilege is created. No dependency/lockfile changes. Previous task released migration lock; no newer conflicting reservation found.
 - Preserve contact encryption, actor/branch authorization, versions and atomic audit. Signatory form captures document types, optional Decimal/currency limit, dates and proof; a record without valid proof stays inactive. Rehearse migration against a restored backup before updating the owned 3100/4190 local runtime; no merge or unrelated checkout changes.
+- Completed source 08d2107: five cards with popup forms on the profile/roles page, initial company national-ID field and persisted signatory CRUD. 90 Web + 496 API + 16 PostgreSQL + 61 Contracts tests, affected lint/typecheck/build and all four CI gates (34455845286) pass. Actual React checks cover nested representative creation, signatory create/edit/delete, branch creation/selection and manager update. Migration applied alone after restore rehearsal/fresh backup, preserving all 127 prior table digests and 47 historical migrations. Web3100 PID6320 / hr005-885cff5dba39ac2b and API4190 PID16408 are healthy on the existing database/storage. PR141 is draft; no merge. Release implementation/migration locks and coordinate any subsequent runtime replacement.
 
 ## B2B-PROFILE-CLARITY-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
