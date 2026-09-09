@@ -388,3 +388,5 @@ export const salesEndpoints = {
     `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}/status-history`,
   dashboard: `${SALES_API_PREFIX}/dashboard`,
 } as const;
+
+export * from './insurance-extra';

@@ -15,6 +15,7 @@ import { Prisma } from '@rubi/database';
 import { DatabaseService } from '../database/database.service';
 
 const intakeInclude = {
+  workflowRevisions: { orderBy: { version: 'desc' }, take: 1 },
   arrangements: { orderBy: { version: 'desc' }, take: 1 },
   hotelPurchases: {
     orderBy: { version: 'desc' },
@@ -32,9 +33,10 @@ const intakeInclude = {
 
 function present(
   row: Prisma.ReservationIntakeGetPayload<{ include: typeof intakeInclude }>,
-): ReservationIntakeV1 {
+): ReservationIntakeV1 & { workflow: unknown } {
   const arrangement = row.arrangements[0];
   return {
+    workflow: row.workflowRevisions?.[0]?.state ?? null,
     purchaseVersion: row.purchaseVersion,
     hotelPurchases: row.hotelPurchases.map((cost) => ({
       ...cost,
@@ -78,7 +80,11 @@ export class ReservationsPublicService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
-  async receive(snapshot: SalesReservationRequestV1, branchId: string) {
+  async receive(
+    snapshot: SalesReservationRequestV1,
+    branchId: string,
+    salesOwnerUserId?: string,
+  ) {
     const fingerprint = createHash('sha256')
       .update(JSON.stringify({ branchId, snapshot }))
       .digest('hex');
@@ -92,6 +98,7 @@ export class ReservationsPublicService {
           contractId: snapshot.contractId,
           contractVersion: snapshot.contractVersion,
           branchId,
+          ...(salesOwnerUserId ? { salesOwnerUserId } : {}),
           fingerprint,
           snapshot: snapshot as unknown as Prisma.InputJsonValue,
         },
@@ -191,6 +198,9 @@ export class ReservationsPublicService {
     const guestIds = [...new Set(input.hotelGuestCustomerIds)];
     return this.database.client.$transaction(async (transaction) => {
       await transaction.$queryRaw(
+        Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${id}, 0))`,
+      );
+      await transaction.$queryRaw(
         Prisma.sql`SELECT "id" FROM "ReservationIntake" WHERE "id" = ${id}::uuid FOR UPDATE`,
       );
       const row = await transaction.reservationIntake.findUnique({
@@ -199,6 +209,12 @@ export class ReservationsPublicService {
       });
       if (!row || !branchIds.includes(row.branchId))
         throw new NotFoundException('درخواست رزرواسیون یافت نشد.');
+      const workflow = row.workflowRevisions?.[0]?.state as
+        { voucherIssued?: boolean; supplierStatus?: string } | undefined;
+      if (workflow?.voucherIssued || workflow?.supplierStatus === 'CANCELLED')
+        throw new ConflictException(
+          'درخواست بسته شده است؛ چیدمان قابل تغییر نیست.',
+        );
       const snapshot = row.snapshot as unknown as SalesReservationRequestV1;
       if (!snapshot.hotelSelection)
         throw new BadRequestException('این درخواست خدمت هتل ندارد.');

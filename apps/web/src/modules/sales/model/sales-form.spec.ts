@@ -471,3 +471,58 @@ describe('sales contract form payload', () => {
     expect(payload.passengers[1]?.serviceClientKeys).toEqual([]);
   });
 });
+
+describe('per passenger insurance surcharge payload', () => {
+  it('counts a toman surcharge once in service, passenger and contract totals', () => {
+    const state = {
+      ...emptySalesForm,
+      departureDate: '2026-10-01',
+      serviceKinds: ['INSURANCE' as const],
+      insurancePlan: {
+        id: 'plan',
+        name: 'Sample',
+        code: 'P',
+        recordVersion: 1,
+        insurerId: 'insurer',
+        insurerName: 'Sample',
+      },
+      passengers: [
+        { customerId: 'older', displayName: 'Older', birthDate: '1960-01-01' },
+        {
+          customerId: 'younger',
+          displayName: 'Younger',
+          birthDate: '1990-01-01',
+        },
+      ],
+      insuranceExtraToman: { older: '100', younger: '500' },
+      servicePricing: {
+        insurance: [
+          {
+            version: 1 as const,
+            currencyCode: 'IRR',
+            daySale: { basis: 'TOTAL' as const, amount: '2000' },
+            agreed: { basis: 'TOTAL' as const, amount: '2000' },
+          },
+        ],
+      },
+      passengerPrices: {
+        older: [{ currencyCode: 'IRR', amount: '1000' }],
+        younger: [{ currencyCode: 'IRR', amount: '1000' }],
+      },
+    };
+    const payload = salesPayload(state);
+    expect(payload.services).toHaveLength(2);
+    expect(payload.passengers[0]?.agreedPrices).toEqual([
+      { currencyCode: 'IRR', amount: '2000' },
+    ]);
+    expect(payload.passengers[1]?.agreedPrices).toEqual([
+      { currencyCode: 'IRR', amount: '1000' },
+    ]);
+    expect(payload.passengers[1]?.serviceClientKeys).toEqual(['insurance']);
+    expect(
+      payload.priceComponents.reduce((sum, p) => sum + Number(p.amount), 0),
+    ).toBe(3000);
+    expect(salesPayload(state)).toEqual(payload);
+    expect(state.passengerPrices.older[0]?.amount).toBe('1000');
+  });
+});

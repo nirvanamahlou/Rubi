@@ -82,3 +82,51 @@ export interface ReservationHotelPurchaseInputV1 {
   amount: string;
   currencyCode: string;
 }
+
+export interface TravelBrandingV1 {
+  kind: 'OWN' | 'AGENCY';
+  referenceId: string;
+  name: string;
+  logoFileId: string | null;
+  companyCode?: string;
+}
+export interface TravelWorkflowStateV1 {
+  version: number;
+  supplierStatus: 'NEW' | 'REQUESTED' | 'CONFIRMED' | 'CANCELLED';
+  supplierReference: string;
+  insuranceIssued: boolean;
+  insuranceReference: string;
+  voucherIssued: boolean;
+  insuranceWarningAcknowledged: boolean;
+  branding: TravelBrandingV1 | null;
+  roomOrder: string[];
+  ageOverrides: Record<string, 'ADULT' | 'CHILD' | 'INFANT'>;
+  note: string;
+  updatedAt: string | null;
+  updatedByUserId: string | null;
+}
+export interface TravelWorkflowCommandV1 {
+  expectedVersion: number;
+  action:
+    | 'BRANDING'
+    | 'REQUEST_SUPPLIER'
+    | 'CONFIRM_SUPPLIER'
+    | 'CANCEL'
+    | 'INSURANCE'
+    | 'ISSUE_VOUCHER'
+    | 'ARRANGEMENT';
+  note: string;
+  supplierReference?: string;
+  insuranceReference?: string;
+  acknowledgeMissingInsurance?: boolean;
+  roomOrder?: string[];
+  ageOverrides?: Record<string, 'ADULT' | 'CHILD' | 'INFANT'>;
+  branding?: { kind: 'OWN' | 'AGENCY'; referenceId?: string };
+}
+export interface TravelDeliveryAuthorizationV1 {
+  version: number;
+  approved: boolean;
+  reason: string;
+  updatedAt: string | null;
+  updatedByUserId: string | null;
+}

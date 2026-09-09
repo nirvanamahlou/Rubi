@@ -110,12 +110,14 @@ export function LiveReservationQueue() {
       if (document.visibilityState === 'visible') void update();
     };
     document.addEventListener('visibilitychange', resume);
+    window.addEventListener('reservation-workflow-changed', resume);
     void update();
     return () => {
       disposed = true;
       controller.abort();
       if (timer) clearTimeout(timer);
       document.removeEventListener('visibilitychange', resume);
+      window.removeEventListener('reservation-workflow-changed', resume);
     };
   }, []);
   return (
@@ -133,8 +135,8 @@ export function LiveReservationQueue() {
       />
       <p dir="rtl" className="mt-3 text-xs leading-6 text-muted-foreground">
         اعلان درخواست جدید داخل همین صفحه نمایش داده می‌شود. ارسال دائمی به
-        زنگوله پس از اتصال سرویس اعلان فعال می‌شود. وضعیت کارگزار و ابطال تا
-        دریافت از سامانه عملیاتی نمایش داده نمی‌شود.
+        زنگوله پس از اتصال سرویس اعلان فعال می‌شود. وضعیت کارگزار، ابطال و صدور
+        از آخرین ثبت عملیاتی خوانده می‌شود.
       </p>
     </>
   );

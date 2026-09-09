@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { createPortal, flushSync } from 'react-dom';
-import type { ReservationIntakeV1 } from '@rubi/contracts';
+import { useTravelLogo } from './travel-document';
+import type { ReservationIntakeV1, TravelBrandingV1 } from '@rubi/contracts';
 import { salesContractFlights } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,11 +17,14 @@ import { reservationTickets } from '../model/reservation-tickets';
 
 export function ReservationTickets({
   request,
+  branding = null,
   onClose,
 }: {
   request: ReservationIntakeV1;
+  branding?: TravelBrandingV1 | null;
   onClose: () => void;
 }) {
+  const { logo, error: logoError } = useTravelLogo(branding);
   const tickets = reservationTickets(request.snapshot);
   const [selected, setSelected] = useState(tickets[0]?.passengerId ?? '');
   const [names, setNames] = useState<Record<string, string>>({});
@@ -65,6 +69,10 @@ export function ReservationTickets({
     };
   }, [request]);
   async function print(all: boolean) {
+    if (branding && (!logo || logoError)) {
+      setWarning(logoError || 'در حال دریافت لوگو');
+      return;
+    }
     flushSync(() => {
       setPrintAll(all);
       setPrinting(true);
@@ -152,7 +160,15 @@ export function ReservationTickets({
               ) : null}
               <div className="min-h-0 overflow-auto rounded-xl bg-slate-100 p-3">
                 {ticket ? (
-                  <FlightTicketSheet data={ticket} cityName={name} />
+                  <FlightTicketSheet
+                    data={{
+                      ...ticket,
+                      ...(branding
+                        ? { branding: { name: branding.name, logo } }
+                        : {}),
+                    }}
+                    cityName={name}
+                  />
                 ) : null}
               </div>
             </>
@@ -173,7 +189,15 @@ export function ReservationTickets({
           </style>
           {(printAll ? tickets : ticket ? [ticket] : []).map((item) => (
             <div key={item.passengerId} data-reservation-ticket-page>
-              <FlightTicketSheet data={item} cityName={name} />
+              <FlightTicketSheet
+                data={{
+                  ...item,
+                  ...(branding
+                    ? { branding: { name: branding.name, logo } }
+                    : {}),
+                }}
+                cityName={name}
+              />
             </div>
           ))}
         </div>,

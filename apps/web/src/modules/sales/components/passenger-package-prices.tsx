@@ -16,9 +16,13 @@ export function PassengerPackagePrices({
   onChange: (prices: Record<string, SalesMoney[]>) => void;
 }) {
   const expected = new Map<string, bigint>();
+  let effective: Record<string, readonly SalesMoney[]> = {};
   let error = '';
   try {
     const payload = salesPayload(state);
+    effective = Object.fromEntries(
+      payload.passengers.map((p) => [p.customerId, p.agreedPrices ?? []]),
+    );
     for (const p of payload.priceComponents)
       expected.set(
         p.currencyCode,
@@ -40,6 +44,15 @@ export function PassengerPackagePrices({
         مبلغ توافقی کل پکیج هر نفر را بنویسید، نه فقط بلیط. جمع ردیف‌ها باید با
         مبلغ توافقی خدمات بالا برابر باشد. برای مسافر رایگان صفر وارد کنید.
       </p>
+      {state.serviceKinds.includes('INSURANCE') &&
+        Object.values(state.insuranceExtraToman ?? {}).some(
+          (v) => v && v !== '0',
+        ) && (
+          <p className="text-sm">
+            مبلغ ورودی هر نفر را بدون اضافه بیمه وارد کنید؛ اضافه بیمه جداگانه
+            به مبلغ نهایی زیر هر ردیف افزوده می‌شود.
+          </p>
+        )}
       {!expected.size ? (
         <p className="text-sm">
           ابتدا قیمت خدمات را کامل کنید. خدمات رایگان مبلغی ندارند.
@@ -89,6 +102,17 @@ export function PassengerPackagePrices({
                           });
                         }}
                       />
+                      {state.insuranceExtraToman?.[p.customerId] &&
+                        code === 'IRR' &&
+                        state.serviceKinds.includes('INSURANCE') && (
+                          <p className="text-xs">
+                            نهایی با اضافه بیمه:{' '}
+                            {effective[p.customerId]?.find(
+                              (v) => v.currencyCode === code,
+                            )?.amount ?? '—'}{' '}
+                            ریال
+                          </p>
+                        )}
                     </td>
                   ))}
                 </tr>
