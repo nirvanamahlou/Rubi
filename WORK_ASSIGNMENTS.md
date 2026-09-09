@@ -1323,3 +1323,8 @@ Customers، Finance، Procurement، Reservations، Integrations و Documents خ�
 - وضعیت `DONE` یعنی Commit و Push شده و گزارش تست/ریسک در Project Status ثبت شده
   است؛ ادغام‌شدن را تضمین نمی‌کند.
 - آزادکردن کار بدون تکمیل با تغییر مالک به `تخصیص‌نیافته` و ثبت دلیل انجام می‌شود.
+
+## LOCAL-UNIFIED-3100-0909 — PC-A — IN_PROGRESS
+User-authorized local composition on codex/pc-a-local-unified-3100-0909. Base 385efaa (latest local Sales); consume sidebar handoff efe6287 and Reservations 0946bdd. Scope: isolated Web shell, reservation routes/projections and task status. Preserve source worktrees, shared contracts, schema and dependencies. No merge or database mutation.
+
+LOCAL-UNIFIED-3100-0909: READY_FOR_REVIEW. Independent branch; local Web 3100/API 4000 bind loopback. Verification recorded in PROJECT_STATUS.

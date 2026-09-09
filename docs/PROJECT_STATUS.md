@@ -1518,3 +1518,6 @@ Individual agreed package totals per passenger/currency are persisted with exact
 - ذخیره PII حساس و مدارک هویتی تا تصمیم قطعی retention/رمزنگاری ممنوع می‌ماند.
 - اجرای Persistence مالی فقط در Task مستقل Phase B پس از Merge PR #21 و با قفل یگانه Migration/Dependency مجاز است؛ تاریخچه Migration یا داده محلی نباید دستی دست‌کاری شود.
 - Compose credentialها synthetic و Local هستند و پیش از هر محیط دیگر باید با secret manager جایگزین شوند.
+
+## LOCAL-UNIFIED-3100-0909 — PC-A — READY_FOR_REVIEW
+Port 3100 composes Sales 385efaa (includes 3d3095e), sidebar efe6287 and Reservations 0946bdd. Main reservations route uses colored queue; original processing retained at /reservations/processing. Source worktrees preserved. API/Web builds, 41 navigation/reservation tests and targeted lint passed. Existing DB 55432 restarted; private pre-update pg_dump retained inside container; 14 existing non-destructive migrations applied. Official Sales/Reservations permissions synchronized to existing administrator. Stored local login and both API lists returned 200. No new migration/dependency or production deployment.

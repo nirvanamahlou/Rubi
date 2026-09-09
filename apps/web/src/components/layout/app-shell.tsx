@@ -205,7 +205,7 @@ function Navigation({
                     aria-hidden="true"
                     className={cn(
                       'size-1.5 shrink-0 rounded-full',
-                      group.dotClass,
+                      mobile ? 'bg-primary/50' : 'bg-cyan-200/70',
                     )}
                   />
                   {group.title}
