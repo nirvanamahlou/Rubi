@@ -60,6 +60,7 @@ export function CooperationWizard({
   const [branches, setBranches] = useState<readonly BranchReference[]>([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [stopped, setStopped] = useState(false);
   const [partial, setPartial] = useState<MasterDataRecord>();
   const heading = useRef<HTMLHeadingElement>(null);
@@ -174,7 +175,7 @@ export function CooperationWizard({
     setStep((current) => Math.min(4, current + 1));
   }
   async function save() {
-    if (busy || stopped) return;
+    if (busy || uploading || stopped) return;
     setBusy(true);
     setError('');
     try {
@@ -201,7 +202,7 @@ export function CooperationWizard({
         className="input"
         type={type}
         maxLength={maxLength}
-        disabled={disabled || busy || stopped}
+        disabled={disabled || busy || uploading || stopped}
         value={String(draft[key])}
         placeholder={
           key === 'code' ? 'پس از ثبت، خودکار تولید می‌شود' : undefined
@@ -214,7 +215,7 @@ export function CooperationWizard({
     ['b2b.agreement.read', 'b2b.credit.read', 'b2b.agreement.manage'] as const
   ).every((permission) => permissions.includes(permission));
   function close() {
-    if (busy) return;
+    if (busy || uploading) return;
     if (partial) onSaved(partial);
     else onClose();
   }
@@ -568,12 +569,13 @@ export function CooperationWizard({
                   </select>
                 </label>
                 <AgreementTermsEditor
+                  onUploadStateChange={setUploading}
                   value={draft.agreementTerms}
                   role={draft.role}
                   branchId={draft.branchId}
                   organizationId={existing?.id}
                   permissions={permissions}
-                  disabled={busy || stopped}
+                  disabled={busy || uploading || stopped}
                   onChange={(agreementTerms) =>
                     setDraft((current) => ({
                       ...current,
@@ -656,7 +658,7 @@ export function CooperationWizard({
             <div className="wizard-actions">
               <button
                 className="btn"
-                disabled={step === 1 || busy || stopped}
+                disabled={step === 1 || busy || uploading || stopped}
                 onClick={() => {
                   setStep((current) => current - 1);
                   setError('');
@@ -674,7 +676,7 @@ export function CooperationWizard({
               ) : (
                 <button
                   className="btn primary"
-                  disabled={busy || stopped}
+                  disabled={busy || uploading || stopped}
                   onClick={() => (step < 4 ? next() : void save())}
                 >
                   {busy

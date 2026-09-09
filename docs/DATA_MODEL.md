@@ -367,3 +367,6 @@ Viewهای پیشنهادی: `reporting_sales_contract_facts` (یک ردیف/ق�
 
 واژه‌نامه entityها در [DATA_DICTIONARY.md](DATA_DICTIONARY.md) و KPIها در
 [KPI_DICTIONARY.md](KPI_DICTIONARY.md) است.
+# B2B contract payment reference — 2026-09-09
+
+`B2bAgreementRevision.paymentMethodId` is an optional FK to `MasterPaymentMethod.id` with RESTRICT deletion. `paymentMethodName` snapshots the owner-validated label at revision write. Existing `paymentMethod` retains settlement semantics. Legacy omitted references are preserved, explicit null clears the optional reference, and historical revisions remain immutable. See [B2B-CONTRACT-FORMS-002](tasks/B2B-CONTRACT-FORMS-002.md).

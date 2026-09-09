@@ -39,6 +39,7 @@ export class B2bAgreementDocuments {
     organizationId: string,
     branchId: string,
     actor: AuthenticatedActor,
+    allowPendingScan = false,
   ) {
     if (
       !actor.branchIds.includes(branchId) ||
@@ -79,7 +80,13 @@ export class B2bAgreementDocuments {
         record.archiveStatus === 'ACTIVE'
       ) {
         if (
-          record.currentVersion.scanStatus !== 'CLEAN' ||
+          !(
+            record.currentVersion.scanStatus === 'CLEAN' ||
+            (allowPendingScan &&
+              ['PENDING_SCAN', 'AWAITING_ANTIVIRUS_ADAPTER'].includes(
+                record.currentVersion.scanStatus,
+              ))
+          ) ||
           record.isIncomplete ||
           (record.validUntil !== null &&
             (!Number.isFinite(Date.parse(record.validUntil)) ||

@@ -467,6 +467,7 @@ function OrganizationDocumentUpload({
                 تاریخ انقضا {type?.requiresExpiry ? '*' : '(اختیاری)'}
               </span>
               <DatePicker
+                withinDialog
                 value={values.validUntil}
                 onChange={(value) =>
                   setValues({ ...values, validUntil: value })

@@ -70,6 +70,12 @@ function addressRecord(row: {
 
 @Injectable()
 export class MasterOrganizationDirectory {
+  async activePaymentMethod(id: string) {
+    return this.database.client.masterPaymentMethod.findFirst({
+      where: { id, isActive: true },
+      select: { id: true, name: true },
+    });
+  }
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}

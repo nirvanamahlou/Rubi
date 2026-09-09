@@ -183,6 +183,7 @@ function SignatoryFields({
       <div className="field">
         <span>شروع اعتبار</span>
         <DatePicker
+          withinDialog
           aria-label="شروع اعتبار امضادار"
           required
           value={value.validFrom}
@@ -192,6 +193,7 @@ function SignatoryFields({
       <div className="field">
         <span>پایان اعتبار</span>
         <DatePicker
+          withinDialog
           aria-label="پایان اعتبار امضادار"
           value={value.validTo ?? ''}
           onChange={(validTo) => set({ validTo: validTo || null })}

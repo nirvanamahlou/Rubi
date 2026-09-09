@@ -31,7 +31,6 @@ import {
   usePageBreadcrumbs,
   type PageBreadcrumb,
 } from '@/components/layout/page-breadcrumbs';
-import { OrganizationDocumentsPanel } from './organization-documents-panel';
 
 const sections = [
   {
@@ -75,7 +74,6 @@ const sections = [
       ['rates', 'نرخ‌های توافقی'],
       ['discounts', 'تخفیف'],
       ['commission', 'پورسانت'],
-      ['documents', 'اسناد قرارداد'],
     ],
   },
   {
@@ -548,11 +546,6 @@ export function CorporateProfile({
                 {signatories}
               </div>
             </section>
-          ) : screen === 'contracts' && tab === 'documents' ? (
-            <OrganizationDocumentsPanel
-              key={organization.id}
-              organization={organization}
-            />
           ) : screen === 'access' && access ? (
             access(tab)
           ) : operationalView ? (

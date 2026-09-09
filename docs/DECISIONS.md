@@ -1,5 +1,9 @@
 # تصمیم‌های معماری
 
+## B2B-CONTRACT-FORMS-002 — 2026-09-09
+
+Master Data owns payment-method identity; B2B consumes its public directory and persists a nullable revision FK and label snapshot. Settlement mode remains PREPAID/CREDIT/MIXED. Optional v1 fields preserve older client writes and immutable historical revisions. The expanded agreement-type check is additive. Documents owns all inline uploads and file state; pending scans may be linked to drafts, while submission/approval always requires CLEAN and the existing scope/completeness/expiry checks. Removing the editable limit type preserves existing values and the HARD default; it does not silently alter credit enforcement. Shared calendar and selector behavior is opt-in for the affected forms.
+
 ## B2B-ORGANIZATION-USERS-001 — 2026-09-09
 
 The owner explicitly limits per-user selection to the same agency's 360 dossier. Provide six view permissions and a standalone agency portal; do not grant global Rubi roles, administrative mutations, independent contract/credit approval, or access to other agencies. B2B stores membership and consumes exported IAM provisioning methods. A global B2B interceptor restricts any linked account, including inactive memberships and accounts subsequently granted global IAM roles, to its portal and own authentication/session endpoints. Each portal projection rechecks active membership, organization and selected section and derives organization/branch from the server. Existing staff accounts are never converted. Failed membership creation disables the new IAM account; B2B membership/audit are atomic, while IAM and B2B provisioning are separate public-service operations. Finance remains explicitly unavailable until its owner projection is connected; no fabricated balances. Role labels do not confer IAM privileges.

@@ -8,7 +8,7 @@ import type {
   BranchReference,
   IamPermissionCode,
 } from '@rubi/contracts';
-import { b2bAgreementTermsIssue } from '@rubi/contracts';
+import { b2bAgreementTermsIssue, B2B_AGREEMENT_TYPES } from '@rubi/contracts';
 import {
   Plus,
   RefreshCw,
@@ -39,19 +39,16 @@ function RevisionSummary({ revision }: { revision: B2bAgreementRevisionV1 }) {
       <div className="summary-list">
         {[
           ['عنوان', revision.title],
-          [
-            'نوع قرارداد',
-            {
-              FRAMEWORK: 'چارچوب',
-              AGENCY: 'آژانس',
-              CORPORATE: 'مشتری سازمانی',
-            }[revision.agreementType],
-          ],
+          ['نوع قرارداد', B2B_AGREEMENT_TYPES[revision.agreementType]],
           [
             'اعتبار زمانی',
             `${revision.startsAt} تا ${revision.endsAt ?? 'بدون پایان'}`,
           ],
           ['ارزها', revision.currencyCodes.join('، ')],
+          [
+            'روش پرداخت',
+            revision.paymentMethodName ?? 'در نسخه قدیمی انتخاب نشده',
+          ],
           ['خدمات', revision.services.map((s) => serviceLabels[s]).join('، ')],
           [
             'پرداخت',
@@ -193,6 +190,7 @@ export function AgreementWorkflowPanel({
     requestId: string;
   } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [dialogError, setDialogError] = useState('');
   const sequence = useRef(0);
@@ -296,7 +294,11 @@ export function AgreementWorkflowPanel({
     });
   }
   async function save() {
-    if (!editor || busy) return;
+    if (!editor || busy || uploading) return;
+    if (!editor.terms.paymentMethodId) {
+      setDialogError('روش پرداخت را از اطلاعات پایه انتخاب کنید.');
+      return;
+    }
     const issue = b2bAgreementTermsIssue(editor.terms);
     if (issue) {
       setDialogError(issue);
@@ -610,7 +612,7 @@ export function AgreementWorkflowPanel({
         <Dialog
           open
           onOpenChange={(open) => {
-            if (!open && !busy) {
+            if (!open && !busy && !uploading) {
               setEditor(null);
               if (uncertain) setRefresh((n) => n + 1);
             }
@@ -634,6 +636,7 @@ export function AgreementWorkflowPanel({
               organizationId={organizationId}
               permissions={permissions}
               disabled={busy || uncertain}
+              onUploadStateChange={setUploading}
               onChange={(terms) =>
                 setEditor({ ...editor, terms, requestId: crypto.randomUUID() })
               }
@@ -652,7 +655,7 @@ export function AgreementWorkflowPanel({
             <div className="wizard-actions">
               <button
                 className="btn"
-                disabled={busy}
+                disabled={busy || uploading}
                 onClick={() => {
                   setEditor(null);
                   if (uncertain) setRefresh((n) => n + 1);
@@ -662,7 +665,7 @@ export function AgreementWorkflowPanel({
               </button>
               <button
                 className="btn primary"
-                disabled={busy}
+                disabled={busy || uploading}
                 onClick={() => void save()}
               >
                 {busy

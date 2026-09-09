@@ -18,7 +18,7 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { B2B_SERVICE_CODES } from '@rubi/contracts';
+import { B2B_SERVICE_CODES, B2B_AGREEMENT_TYPES } from '@rubi/contracts';
 import type {
   B2bAgreementTermsV1,
   B2bCreditDraftV1,
@@ -55,7 +55,7 @@ export class B2bGuaranteeDraftDto implements B2bGuaranteeDraftV1 {
 }
 export class B2bAgreementTermsDto implements B2bAgreementTermsV1 {
   @IsString() @MinLength(2) @MaxLength(160) title!: string;
-  @IsIn(['FRAMEWORK', 'AGENCY', 'CORPORATE'])
+  @IsIn(Object.keys(B2B_AGREEMENT_TYPES))
   agreementType!: B2bAgreementTermsV1['agreementType'];
   @Matches(day) startsAt!: string;
   @ValidateIf(nullable) @Matches(day) endsAt!: string | null;
@@ -73,6 +73,9 @@ export class B2bAgreementTermsDto implements B2bAgreementTermsV1 {
   services!: B2bAgreementTermsV1['services'];
   @IsIn(['PREPAID', 'CREDIT', 'MIXED'])
   paymentMethod!: B2bAgreementTermsV1['paymentMethod'];
+  @ValidateIf((_o, v) => v !== undefined && v !== null)
+  @IsUUID()
+  paymentMethodId?: string | null;
   @IsIn(['PER_ORDER', 'WEEKLY', 'MONTHLY', 'CUSTOM'])
   settlementCycle!: B2bAgreementTermsV1['settlementCycle'];
   @IsInt() @Min(0) @Max(365) settlementDays!: number;

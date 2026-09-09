@@ -248,6 +248,14 @@ export class B2bAgreementWorkflowRepository {
           currencyCodes: terms.currencyCodes,
           services: terms.services,
           paymentMethod: terms.paymentMethod,
+          paymentMethodId:
+            terms.paymentMethodId === undefined
+              ? (latest?.paymentMethodId ?? null)
+              : terms.paymentMethodId,
+          paymentMethodName:
+            terms.paymentMethodId === undefined
+              ? (latest?.paymentMethodName ?? null)
+              : (terms.paymentMethodName ?? null),
           settlementCycle: terms.settlementCycle,
           settlementDays: terms.settlementDays,
           cutoffDay: terms.cutoffDay,

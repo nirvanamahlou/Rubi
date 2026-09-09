@@ -16,6 +16,9 @@ import {
   organizationDocumentQuery,
 } from '../model/organization-documents';
 import { serviceLabels } from '../model/agreement-terms';
+import { B2B_AGREEMENT_TYPES } from '@rubi/contracts';
+import { MasterDataReferenceSelector } from '@/modules/master-data/components/master-data-reference-selector';
+import { InlineDocumentUpload } from './inline-document-upload';
 
 export function AgreementTermsEditor({
   value,
@@ -25,6 +28,7 @@ export function AgreementTermsEditor({
   organizationId,
   permissions,
   disabled = false,
+  onUploadStateChange,
 }: {
   value: B2bAgreementTermsV1;
   onChange: (terms: B2bAgreementTermsV1) => void;
@@ -33,7 +37,13 @@ export function AgreementTermsEditor({
   organizationId?: string | undefined;
   permissions: readonly IamPermissionCode[];
   disabled?: boolean;
+  onUploadStateChange?: (busy: boolean) => void;
 }) {
+  const [uploading, setUploading] = useState(false);
+  const uploadBusy = (busy: boolean) => {
+    setUploading(busy);
+    onUploadStateChange?.(busy);
+  };
   const [currencies, setCurrencies] = useState<readonly MasterDataRecord[]>([]);
   const [documents, setDocuments] = useState<readonly DocumentListItemV1[]>([]);
   const [error, setError] = useState('');
@@ -145,8 +155,10 @@ export function AgreementTermsEditor({
     <div className="field">
       <span>{label}</span>
       <DatePicker
+        withinDialog
         aria-label={label}
         value={current ?? ''}
+        required={label.includes('*')}
         onChange={change}
         disabled={disabled}
       />
@@ -157,11 +169,12 @@ export function AgreementTermsEditor({
     id: string | null,
     change: (id: string | null) => void,
   ) => (
-    <label className="field">
+    <div className="field full">
       <span>{label}</span>
       <select
         className="input"
         value={id ?? ''}
+        aria-label={label}
         disabled={!organizationId || !canReadOrganizationDocuments(permissions)}
         onChange={(e) => change(e.target.value || null)}
       >
@@ -174,7 +187,9 @@ export function AgreementTermsEditor({
             key={item.id}
             value={item.id}
             disabled={
-              item.currentVersion.scanStatus !== 'CLEAN' || item.isIncomplete
+              ['INFECTED', 'QUARANTINED', 'SCAN_FAILED'].includes(
+                item.currentVersion.scanStatus,
+              ) || item.isIncomplete
             }
           >
             {item.title}
@@ -184,13 +199,29 @@ export function AgreementTermsEditor({
           </option>
         ))}
       </select>
-    </label>
+      {organizationId &&
+      branchId &&
+      permissions.includes('documents.upload') &&
+      canReadOrganizationDocuments(permissions) ? (
+        <InlineDocumentUpload
+          organizationId={organizationId}
+          branchId={branchId}
+          label={label}
+          permissions={permissions}
+          onBusyChange={uploadBusy}
+          onUploaded={(documentId) => {
+            change(documentId);
+            setReload((n) => n + 1);
+          }}
+        />
+      ) : null}
+    </div>
   );
   const currencyChoices = value.currencyCodes.map(
     (code) => [code, code] as const,
   );
   return (
-    <fieldset className="agreement-editor" disabled={disabled}>
+    <fieldset className="agreement-editor" disabled={disabled || uploading}>
       {error ? (
         <div role="alert" className="form-error">
           {error}{' '}
@@ -220,12 +251,9 @@ export function AgreementTermsEditor({
           {select(
             'نوع قرارداد',
             value.agreementType,
-            [
-              ['FRAMEWORK', 'قرارداد چارچوب'],
-              ...(role === 'AGENCY'
-                ? [['AGENCY', 'همکاری آژانس'] as const]
-                : [['CORPORATE', 'مشتری سازمانی'] as const]),
-            ],
+            Object.entries(B2B_AGREEMENT_TYPES).filter(([key]) =>
+              role === 'AGENCY' ? key !== 'CORPORATE' : key !== 'AGENCY',
+            ) as [keyof typeof B2B_AGREEMENT_TYPES, string][],
             (v) => set('agreementType', v),
           )}
           {date('شروع قرارداد *', value.startsAt, (v) => set('startsAt', v))}
@@ -302,7 +330,7 @@ export function AgreementTermsEditor({
               ))}
           </fieldset>
           {select(
-            'روش پرداخت',
+            'شرایط تسویه',
             value.paymentMethod,
             [
               ['PREPAID', 'پیش‌پرداخت'],
@@ -311,6 +339,21 @@ export function AgreementTermsEditor({
             ],
             (v) => set('paymentMethod', v),
           )}
+          <div className="field">
+            <label htmlFor="agreement-payment-method">
+              روش پرداخت از اطلاعات پایه *
+            </label>
+            <MasterDataReferenceSelector
+              closeOnSelect
+              id="agreement-payment-method"
+              label="روش پرداخت"
+              config={{ target: 'payment-methods', payload: 'id' }}
+              value={value.paymentMethodId ?? ''}
+              required
+              disabled={disabled || uploading}
+              onChange={(id) => set('paymentMethodId', id || null)}
+            />
+          </div>
           {select(
             'چرخه تسویه',
             value.settlementCycle,
@@ -458,21 +501,6 @@ export function AgreementTermsEditor({
                   }
                 />
               </label>
-              {select(
-                'نوع کنترل سقف',
-                policy.limitType,
-                [
-                  ['HARD', 'سخت — توقف در عبور از سقف'],
-                  ['SOFT', 'نرم — هشدار در عبور از سقف'],
-                ],
-                (v) =>
-                  set(
-                    'creditPolicies',
-                    value.creditPolicies.map((p, i) =>
-                      i === index ? { ...p, limitType: v } : p,
-                    ),
-                  ),
-              )}
               {select(
                 'رفتار در بدهی سررسیدشده',
                 policy.overdueAction,
@@ -666,8 +694,10 @@ export function AgreementTermsEditor({
                 {date(`انقضای تضمین ${index + 1}`, guarantee.expiresAt, (v) =>
                   update({ expiresAt: v || null }),
                 )}
-                {document('سند تضمین', guarantee.documentId, (id) =>
-                  update({ documentId: id, documentVersionId: null }),
+                {document(
+                  `سند تضمین ${index + 1}`,
+                  guarantee.documentId,
+                  (id) => update({ documentId: id, documentVersionId: null }),
                 )}
               </div>
             </div>
@@ -685,8 +715,8 @@ export function AgreementTermsEditor({
       ) : canReadOrganizationDocuments(permissions) ? (
         <div className="agreement-row-title">
           <span className="panel-note">
-            اسناد همین سازمان و شعبه قابل انتخاب‌اند. پس از بارگذاری در بخش
-            اسناد، فهرست را تازه کنید.
+            فایل هر مدرک را در محل همان قرارداد یا تضمین بارگذاری کنید. اسناد
+            ذخیره‌شده همین سازمان و شعبه نیز قابل انتخاب‌اند.
           </span>
           <button
             type="button"

@@ -640,6 +640,7 @@ export function AgencyConnectionsPanel({
                       required
                     />
                     <DatePicker
+                      withinDialog
                       defaultValue={
                         workspace?.creditPolicy?.effectiveFrom ?? ''
                       }
@@ -648,6 +649,7 @@ export function AgencyConnectionsPanel({
                       required
                     />
                     <DatePicker
+                      withinDialog
                       defaultValue={workspace?.creditPolicy?.expiresAt ?? ''}
                       key={`credit-to-${workspace?.creditPolicy?.version ?? 0}`}
                       name="expiresAt"
@@ -704,8 +706,8 @@ export function AgencyConnectionsPanel({
                 </summary>
                 <form className="mt-3 grid gap-2" onSubmit={submitAgreement}>
                   <Input name="title" placeholder="عنوان قرارداد" required />
-                  <DatePicker name="startsAt" required />
-                  <DatePicker name="endsAt" />
+                  <DatePicker withinDialog name="startsAt" required />
+                  <DatePicker withinDialog name="endsAt" />
                   <Input name="notes" placeholder="یادداشت اختیاری" />
                   <label className="space-y-1 text-sm">
                     سند سازمان (اختیاری)
@@ -802,8 +804,8 @@ export function AgencyConnectionsPanel({
                     name="rateCurrencyCode"
                     placeholder="ارز برای مبلغ ثابت"
                   />
-                  <DatePicker name="validFrom" required />
-                  <DatePicker name="validTo" />
+                  <DatePicker withinDialog name="validFrom" required />
+                  <DatePicker withinDialog name="validTo" />
                   <Button
                     disabled={
                       pending ||

@@ -724,6 +724,7 @@ model MasterBankBranch {
 }
 
 model MasterPaymentMethod {
+  b2bAgreementRevisions  B2bAgreementRevision[]
   id                     String                       @id @default(uuid()) @db.Uuid
   code                   String                       @unique @db.VarChar(32)
   name                   String                       @db.VarChar(160)
@@ -914,6 +915,9 @@ model B2bAgreementRevision {
   currencyCodes     String[]
   services          String[]
   paymentMethod     String                  @db.VarChar(16)
+  paymentMethodId   String?                 @db.Uuid
+  paymentMethodName String?                 @db.VarChar(160)
+  paymentReference  MasterPaymentMethod?    @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
   settlementCycle   String                  @db.VarChar(16)
   settlementDays    Int                     @default(0)
   cutoffDay         Int?

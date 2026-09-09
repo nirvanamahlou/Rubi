@@ -1,5 +1,6 @@
 import {
   B2B_SERVICE_CODES,
+  B2B_AGREEMENT_TYPES,
   type B2bAgreementTermsV1,
 } from './agreement-workflow';
 
@@ -36,7 +37,7 @@ export function b2bAgreementTermsIssue(
   )
     return 'خدمات مجاز قرارداد را انتخاب کنید.';
   if (
-    !['FRAMEWORK', 'AGENCY', 'CORPORATE'].includes(terms.agreementType) ||
+    !Object.hasOwn(B2B_AGREEMENT_TYPES, terms.agreementType) ||
     !['PREPAID', 'CREDIT', 'MIXED'].includes(terms.paymentMethod) ||
     !['PER_ORDER', 'WEEKLY', 'MONTHLY', 'CUSTOM'].includes(
       terms.settlementCycle,

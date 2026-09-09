@@ -296,6 +296,7 @@ export function AgencyRatesPanel({
             <div className="field">
               <label htmlFor="rate-currency">ارز</label>
               <MasterDataReferenceSelector
+                closeOnSelect
                 id="rate-currency"
                 config={{ target: 'currencies', payload: 'code' }}
                 label="ارز"
@@ -309,6 +310,7 @@ export function AgencyRatesPanel({
           <label className="field">
             شروع اعتبار
             <DatePicker
+              withinDialog
               required
               value={editor.values.validFrom}
               onChange={(validFrom) => change({ validFrom })}
@@ -317,6 +319,7 @@ export function AgencyRatesPanel({
           <label className="field">
             پایان اعتبار
             <DatePicker
+              withinDialog
               value={editor.values.validTo ?? ''}
               onChange={(validTo) => change({ validTo: validTo || null })}
             />

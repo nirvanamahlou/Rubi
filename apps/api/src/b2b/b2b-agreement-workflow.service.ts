@@ -55,6 +55,8 @@ export function agreementCaseRecord(
       services: revision.services as B2bAgreementTermsV1['services'],
       paymentMethod:
         revision.paymentMethod as B2bAgreementTermsV1['paymentMethod'],
+      paymentMethodId: revision.paymentMethodId,
+      paymentMethodName: revision.paymentMethodName,
       settlementCycle:
         revision.settlementCycle as B2bAgreementTermsV1['settlementCycle'],
       settlementDays: revision.settlementDays,
@@ -231,6 +233,13 @@ export class B2bAgreementWorkflowService {
     )
       throw new BadRequestException('نوع قرارداد با نقش همکاری سازگار نیست.');
     await this.identity(organizationId, role);
+    const paymentReference = terms.paymentMethodId
+      ? await this.organizations.activePaymentMethod(terms.paymentMethodId)
+      : null;
+    if (terms.paymentMethodId && !paymentReference)
+      throw new BadRequestException(
+        'روش پرداخت باید از موارد فعال اطلاعات پایه انتخاب شود.',
+      );
     const validCodes = await this.organizations.activeCurrencyCodes(
       terms.currencyCodes,
     );
@@ -252,6 +261,7 @@ export class B2bAgreementWorkflowService {
         organizationId,
         branchId,
         actor,
+        !pinned,
       );
       if ((pinned || expected) && expected !== document.versionId)
         throw new ConflictException({
@@ -274,7 +284,14 @@ export class B2bAgreementWorkflowService {
           guarantee.documentVersionId,
         ),
       });
-    return { ...terms, documentVersionId, guarantees };
+    return {
+      ...terms,
+      ...(terms.paymentMethodId !== undefined
+        ? { paymentMethodName: paymentReference?.name ?? null }
+        : {}),
+      documentVersionId,
+      guarantees,
+    };
   }
   async save(
     organizationId: string,

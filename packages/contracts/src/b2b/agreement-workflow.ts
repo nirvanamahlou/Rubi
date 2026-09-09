@@ -1,5 +1,18 @@
 export type B2bCooperationRole = 'AGENCY' | 'CORPORATE_CUSTOMER';
 export type B2bReviewStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED';
+export const B2B_AGREEMENT_TYPES = {
+  FRAMEWORK: 'قرارداد چارچوب',
+  AGENCY: 'همکاری آژانس',
+  CORPORATE: 'مشتری سازمانی',
+  FLIGHT_SALES: 'فروش بلیط پرواز',
+  HOTEL_SERVICES: 'خدمات اقامت و هتل',
+  TOUR_SERVICES: 'تور و بسته سفر',
+  VISA_SERVICES: 'خدمات ویزا',
+  TRANSPORT_SERVICES: 'خدمات حمل‌ونقل',
+  COMMISSION: 'بازاریابی و پورسانت',
+  SERVICE_LEVEL: 'سطح خدمات و پشتیبانی',
+  OTHER: 'سایر قراردادهای همکاری',
+} as const;
 export const B2B_SERVICE_CODES = [
   'FLIGHT',
   'HOTEL',
@@ -33,12 +46,15 @@ export interface B2bGuaranteeDraftV1 {
 }
 export interface B2bAgreementTermsV1 {
   title: string;
-  agreementType: 'FRAMEWORK' | 'AGENCY' | 'CORPORATE';
+  agreementType: keyof typeof B2B_AGREEMENT_TYPES;
   startsAt: string;
   endsAt: string | null;
   currencyCodes: string[];
   services: (typeof B2B_SERVICE_CODES)[number][];
   paymentMethod: 'PREPAID' | 'CREDIT' | 'MIXED';
+  paymentMethodId?: string | null;
+  /** Read-only label captured from Master Data when a method is selected. */
+  paymentMethodName?: string | null;
   settlementCycle: 'PER_ORDER' | 'WEEKLY' | 'MONTHLY' | 'CUSTOM';
   settlementDays: number;
   cutoffDay: number | null;

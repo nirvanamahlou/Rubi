@@ -41,6 +41,7 @@ describe('cooperation wizard writes', () => {
       title: 'قرارداد سازمانی',
       currencyCodes: ['IRR', 'USD'],
       paymentMethod: 'CREDIT' as const,
+      paymentMethodId: '11111111-1111-4111-8111-111111111111',
       creditPolicies: [
         {
           currencyCode: 'IRR',
@@ -147,6 +148,12 @@ describe('cooperation wizard writes', () => {
   it('does not accept impossible dates or a partial address', () => {
     expect(
       cooperationIssue(
+        { ...draft, withAgreement: true, branchId: 'branch' },
+        3,
+      ),
+    ).toContain('روش پرداخت');
+    expect(
+      cooperationIssue(
         {
           ...draft,
           withAgreement: true,
@@ -156,6 +163,7 @@ describe('cooperation wizard writes', () => {
             title: 'قرارداد آزمون',
             currencyCodes: ['IRR'],
             startsAt: '2026-02-30',
+            paymentMethodId: '11111111-1111-4111-8111-111111111111',
           },
         },
         3,

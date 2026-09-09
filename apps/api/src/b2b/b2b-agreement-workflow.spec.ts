@@ -102,6 +102,9 @@ describe('agreement terms and public boundary checks', () => {
     const organizations = {
       cooperationReference: vi.fn().mockResolvedValue({ id, isActive: true }),
       activeCurrencyCodes: vi.fn().mockResolvedValue(['IRR', 'USD']),
+      activePaymentMethod: vi
+        .fn()
+        .mockResolvedValue({ id, name: 'انتقال بانکی' }),
     };
     const documents = {
       assertDraftReference: vi
@@ -166,6 +169,28 @@ describe('agreement terms and public boundary checks', () => {
       id,
       id,
       expect.objectContaining({ userId: id }),
+      true,
+    );
+  });
+  it('validates the payment method through Master Data and rejects inactive references', async () => {
+    const { service, organizations } = setup();
+    const dto = input();
+    dto.terms.paymentMethodId = id;
+    dto.terms.agreementType = 'HOTEL_SERVICES';
+    const writer = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'b2b.credit.manage',
+      ] as typeof actor.permissions,
+    };
+    await expect(service.save(id, undefined, dto, writer)).rejects.toThrow(
+      'persistence reached',
+    );
+    expect(organizations.activePaymentMethod).toHaveBeenCalledWith(id);
+    organizations.activePaymentMethod.mockResolvedValue(null as never);
+    await expect(service.save(id, undefined, dto, writer)).rejects.toThrow(
+      'روش پرداخت',
     );
   });
 });

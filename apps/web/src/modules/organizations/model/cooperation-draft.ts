@@ -83,6 +83,8 @@ export function cooperationIssue(
   }
   if (step === 3 && draft.withAgreement) {
     if (!draft.branchId) return 'شعبه قرارداد را انتخاب کنید.';
+    if (!draft.agreementTerms.paymentMethodId)
+      return 'روش پرداخت قرارداد را از اطلاعات پایه انتخاب کنید.';
     if (
       (draft.role === 'AGENCY' &&
         draft.agreementTerms.agreementType === 'CORPORATE') ||

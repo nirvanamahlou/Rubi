@@ -439,6 +439,53 @@ describe.skipIf(!enabled)(
       expect((await workflow.list(scope, 1, 20)).total).toBe(1);
     });
 
+    it('persists payment reference and expanded type, preserves legacy edits and enforces the FK', async () => {
+      const { workflow, command } = await workflowFixture();
+      const method = await client.masterPaymentMethod.create({
+        data: {
+          code: 'TEST_' + randomUUID().slice(0, 8).toUpperCase(),
+          name: 'روش پرداخت آزمایشی',
+          channel: 'BANK_TRANSFER',
+          createdByUserId: actorUserId,
+          updatedByUserId: actorUserId,
+        },
+      });
+      const terms = {
+        ...agreementTestTerms(),
+        agreementType: 'HOTEL_SERVICES' as const,
+        paymentMethodId: method.id,
+        paymentMethodName: method.name,
+      };
+      let row = await workflow.save(command, terms);
+      expect(row.revisions[0]!.paymentMethodId).toBe(method.id);
+      expect(row.revisions[0]!.paymentMethodName).toBe(method.name);
+      await expect(
+        client.masterPaymentMethod.delete({ where: { id: method.id } }),
+      ).rejects.toThrow();
+      row = await workflow.save(
+        {
+          ...command,
+          agreementId: row.id,
+          version: row.version,
+          requestId: randomUUID(),
+        },
+        agreementTestTerms(),
+      );
+      expect(row.revisions[0]!.paymentMethodId).toBe(method.id);
+      await expect(
+        workflow.save(
+          {
+            ...command,
+            agreementId: row.id,
+            version: row.version,
+            requestId: randomUUID(),
+          },
+          { ...terms, paymentMethodId: randomUUID() },
+        ),
+      ).rejects.toThrow();
+      expect((await workflow.find(command, row.id)).version).toBe(row.version);
+    });
+
     it('allows only one optimistic concurrent edit and rolls back the stale edit', async () => {
       const { workflow, command } = await workflowFixture();
       const row = await workflow.save(command, agreementTestTerms());
