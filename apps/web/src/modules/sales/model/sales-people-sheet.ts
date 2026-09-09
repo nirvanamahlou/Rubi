@@ -1,0 +1,740 @@
+import type { CustomerDetail, CustomerMutationRequest } from '@rubi/contracts';
+import {
+  customersApi,
+  CustomersApiError,
+  isValidIranianNationalId,
+  normalizeNationalId,
+  type EntryField,
+} from '@/modules/customers/public/entry';
+import {
+  salesPassengerCompositionMatches,
+  salesPassengerCounts,
+  salesTravelDate,
+  type SalesFormState,
+} from './sales-form';
+
+export type PeopleValues = Record<EntryField, string> & {
+  acquaintanceMethodId?: string;
+};
+export interface PeopleRow {
+  values: PeopleValues;
+  person?: { id: string; displayName: string };
+  reviewRequired?: boolean;
+  pendingNationalId?: string;
+  previousRegistrationRetained?: boolean;
+  profile?: CustomerDetail;
+  savedPassportNumber?: string;
+  savedValues?: PeopleValues;
+}
+export interface SalesPeopleDraft {
+  mode: 'person' | 'first-passenger' | 'organization';
+  rows: Record<string, PeopleRow>;
+  displacedFirst?: PeopleRow;
+  previousSeparateCustomer?: PeopleRow;
+  organization: {
+    id: string;
+    displayName: string;
+    organizationId: string | null;
+  } | null;
+}
+export const emptyPeopleValues = (): PeopleValues => ({
+  firstName: '',
+  lastName: '',
+  nationalId: '',
+  birthDate: '',
+  passportNumber: '',
+  passportExpiryDate: '',
+  phone: '',
+  email: '',
+  acquaintanceMethodId: '',
+});
+export function initialSalesPeopleDraft(
+  state: SalesFormState,
+): SalesPeopleDraft {
+  const rows: Record<string, PeopleRow> = {};
+  state.passengers.forEach((person, index) => {
+    rows['p' + index] = {
+      person: { id: person.customerId, displayName: person.displayName },
+      values: {
+        ...emptyPeopleValues(),
+        firstName: person.displayName,
+        birthDate: person.birthDate,
+      },
+    };
+  });
+  if (state.customerId && state.customerKind !== 'organization')
+    rows.primary = {
+      person: { id: state.customerId, displayName: state.customerName },
+      values: { ...emptyPeopleValues(), firstName: state.customerName },
+    };
+  return normalizeSalesPeopleDraft({
+    mode:
+      state.customerKind === 'organization'
+        ? 'organization'
+        : 'first-passenger',
+    rows,
+    organization:
+      state.customerKind === 'organization' && state.customerId
+        ? {
+            id: state.customerId,
+            displayName: state.customerName,
+            organizationId: state.customerOrganizationId ?? null,
+          }
+        : null,
+  });
+}
+export function normalizeSalesPeopleDraft(
+  draft: SalesPeopleDraft,
+): SalesPeopleDraft {
+  if (draft.mode === 'organization') return draft;
+  const first = draft.rows.p0;
+  const hasFirst =
+    first && (first.person || Object.values(first.values).some(Boolean));
+  const payer = hasFirst ? first : (draft.rows.primary ?? first);
+  return {
+    ...draft,
+    mode: 'first-passenger',
+    ...(draft.rows.primary && draft.rows.primary !== payer
+      ? { previousSeparateCustomer: draft.rows.primary }
+      : {}),
+    rows: { ...draft.rows, ...(payer ? { p0: payer, primary: payer } : {}) },
+  };
+}
+export const passengerSlotKeys = (state: SalesFormState) =>
+  Array.from(
+    { length: salesPassengerCounts(state).total },
+    (_, index) => 'p' + index,
+  );
+export const peopleRow = (draft: SalesPeopleDraft, key: string): PeopleRow =>
+  draft.rows[key] ?? { values: emptyPeopleValues() };
+export function selectedPeopleRow(person: CustomerDetail): PeopleRow {
+  const contact = (type: 'phone' | 'email') => {
+    const items = person.contacts?.filter((c) => c.type === type) ?? [];
+    const item = items.find((c) => c.isPrimary) ?? items[0];
+    return item?.value ?? item?.maskedValue ?? '';
+  };
+  const values: PeopleValues = {
+    ...emptyPeopleValues(),
+    firstName: person.firstName ?? person.displayName,
+    lastName: person.lastName ?? '',
+    birthDate: person.birthDateMasked
+      ? ''
+      : (person.birthDate?.slice(0, 10) ?? ''),
+    nationalId: person.nationalId ?? person.maskedNationalId ?? '',
+    passportNumber: person.passportNumber ?? person.maskedPassportNumber ?? '',
+    passportExpiryDate: person.passportExpiryDate ?? '',
+    phone: contact('phone'),
+    email: contact('email'),
+    acquaintanceMethodId: person.acquaintanceMethodId ?? '',
+  };
+  return {
+    person: { id: person.id, displayName: person.displayName },
+    profile: person,
+    savedPassportNumber:
+      person.passportNumber ?? person.maskedPassportNumber ?? '',
+    values,
+    savedValues: { ...values },
+  };
+}
+export function existingPeopleBaseline(row: PeopleRow): PeopleValues {
+  return (
+    row.savedValues ??
+    (row.profile ? selectedPeopleRow(row.profile).values : row.values)
+  );
+}
+export function refreshPeopleRow(
+  row: PeopleRow,
+  profile: CustomerDetail,
+): PeopleRow {
+  const next = selectedPeopleRow(profile);
+  const baseline = existingPeopleBaseline(row);
+  for (const field of Object.keys(row.values) as (keyof PeopleValues)[]) {
+    if (row.values[field] !== baseline[field])
+      next.values[field] = row.values[field] ?? '';
+  }
+  return next;
+}
+function validateExistingPerson(row: PeopleRow) {
+  if (!row.profile) return;
+  const baseline = existingPeopleBaseline(row),
+    values = row.values;
+  if (!values.firstName.trim() || !values.lastName.trim())
+    throw new Error('نام و نام خانوادگی پرونده موجود را کامل کنید.');
+  if (baseline.birthDate && !values.birthDate)
+    throw new Error('برای اصلاح تاریخ تولد، تاریخ جدید را وارد کنید.');
+  if (values.nationalId !== baseline.nationalId) {
+    const id = normalizeNationalId(values.nationalId);
+    if (!/^\d{10}$/.test(id) || !isValidIranianNationalId(id))
+      throw new Error('برای اصلاح کد ملی، مقدار معتبر ۱۰رقمی وارد کنید.');
+  }
+  if (
+    values.phone !== baseline.phone &&
+    !/^\+?[0-9]{10,15}$/.test(values.phone.trim())
+  )
+    throw new Error(
+      'شماره تلفن جدید معتبر وارد کنید؛ حذف تماس از بخش مشتریان انجام می‌شود.',
+    );
+  if (
+    values.email !== baseline.email &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())
+  )
+    throw new Error(
+      'ایمیل جدید معتبر وارد کنید؛ حذف تماس از بخش مشتریان انجام می‌شود.',
+    );
+  if (
+    values.birthDate &&
+    (!/^\d{4}-\d{2}-\d{2}$/.test(values.birthDate) ||
+      Number.isNaN(Date.parse(values.birthDate)) ||
+      new Date(values.birthDate).toISOString().slice(0, 10) !==
+        values.birthDate)
+  )
+    throw new Error('تاریخ تولد معتبر نیست.');
+}
+export function linkCustomerAsFirst(
+  draft: SalesPeopleDraft,
+  linked: boolean,
+): SalesPeopleDraft {
+  if (linked) {
+    if (draft.mode === 'organization')
+      throw new Error('مشتری حقوقی نمی‌تواند مسافر باشد.');
+    if (draft.mode === 'first-passenger') return draft;
+    return {
+      ...draft,
+      mode: 'first-passenger',
+      displacedFirst: peopleRow(draft, 'p0'),
+      rows: { ...draft.rows, p0: peopleRow(draft, 'primary') },
+    };
+  }
+  return {
+    ...draft,
+    mode: 'person',
+    rows: {
+      ...draft.rows,
+      primary: peopleRow(draft, 'p0'),
+      p0: draft.displacedFirst ?? { values: emptyPeopleValues() },
+    },
+  };
+}
+export function editPeopleRow(
+  draft: SalesPeopleDraft,
+  key: string,
+  row: PeopleRow,
+): SalesPeopleDraft {
+  const rows = { ...draft.rows, [key]: row };
+  if (draft.mode === 'first-passenger' && (key === 'primary' || key === 'p0')) {
+    rows.primary = row;
+    rows.p0 = row;
+  }
+  return { ...draft, rows };
+}
+function validatePassport(row: PeopleRow) {
+  const expiry = row.values.passportExpiryDate;
+  if (
+    expiry &&
+    (!/^\d{4}-\d{2}-\d{2}$/.test(expiry) ||
+      Number.isNaN(Date.parse(expiry)) ||
+      new Date(expiry).toISOString().slice(0, 10) !== expiry)
+  )
+    throw new Error('تاریخ انقضای پاسپورت معتبر نیست.');
+  const number = row.values.passportNumber.trim();
+  if (row.person && row.savedPassportNumber && !number)
+    throw new Error(
+      'برای تغییر پاسپورت، شماره جدید را وارد کنید؛ حذف مدرک از این فرم انجام نمی‌شود.',
+    );
+  if (
+    number &&
+    number !== row.profile?.maskedPassportNumber &&
+    !/^[A-Z0-9-]{4,24}$/i.test(number)
+  )
+    throw new Error('شماره پاسپورت معتبر نیست.');
+}
+export function peopleCreateInput(
+  row: PeopleRow,
+  customer: boolean,
+  passenger: boolean,
+): CustomerMutationRequest {
+  validatePassport(row);
+  const v = row.values;
+  if (!v.firstName.trim() || !v.lastName.trim())
+    throw new Error('نام و نام خانوادگی را کامل کنید.');
+  const nationalId = normalizeNationalId(v.nationalId);
+  if (!/^\d{10}$/.test(nationalId) || !isValidIranianNationalId(nationalId))
+    throw new Error('کد ملی معتبر ۱۰رقمی وارد کنید.');
+  if (passenger && !v.birthDate)
+    throw new Error('تاریخ تولد مسافر الزامی است.');
+  const passportNumber = v.passportNumber
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, '');
+  if (passportNumber && !/^[A-Z0-9-]{4,24}$/.test(passportNumber))
+    throw new Error('شماره پاسپورت معتبر نیست.');
+  if (v.phone.trim() && !/^\+?[0-9]{10,15}$/.test(v.phone.trim()))
+    throw new Error('شماره تلفن معتبر وارد کنید.');
+  if (v.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email.trim()))
+    throw new Error('ایمیل معتبر وارد کنید.');
+  return {
+    kind: 'person',
+    firstName: v.firstName.trim(),
+    lastName: v.lastName.trim(),
+    displayName: `${v.firstName.trim()} ${v.lastName.trim()}`,
+    nationalId,
+    ...(v.acquaintanceMethodId
+      ? { acquaintanceMethodId: v.acquaintanceMethodId }
+      : {}),
+    roles: customer
+      ? passenger
+        ? ['customer', 'passenger']
+        : ['customer']
+      : ['passenger'],
+    ...(v.birthDate ? { birthDate: v.birthDate } : {}),
+    ...(passportNumber ? { passportNumber } : {}),
+    ...(v.passportExpiryDate
+      ? { passportExpiryDate: v.passportExpiryDate }
+      : {}),
+  };
+}
+export function validateSalesPeopleDraft(
+  state: SalesFormState,
+  draft: SalesPeopleDraft,
+) {
+  const keys = passengerSlotKeys(state);
+  if (!keys.length) throw new Error('تعداد مسافران را در مرحله اول مشخص کنید.');
+  if (draft.mode === 'organization' && !draft.organization)
+    throw new Error('مشتری حقوقی / آژانس را انتخاب کنید.');
+  const ids = new Set<string>(),
+    nationalIds = new Set<string>();
+  for (const key of [
+    ...(draft.mode === 'person' ? ['primary'] : []),
+    ...keys,
+  ]) {
+    const row = peopleRow(draft, key);
+    const label =
+      key === 'primary' ? 'مشتری اصلی' : `مسافر ${Number(key.slice(1)) + 1}`;
+    if (row.reviewRequired)
+      throw new Error(
+        `${label}: نتیجه ثبت قبلی نیازمند بررسی است؛ پرونده موجود را انتخاب کنید.`,
+      );
+    validatePassport(row);
+    if (row.person) {
+      validateExistingPerson(row);
+      if (ids.has(row.person.id))
+        throw new Error(
+          'یک شخص دوبار انتخاب شده؛ مشتری حقیقی همان مسافر اول است و ردیف جدا نمی‌خواهد.',
+        );
+      ids.add(row.person.id);
+    } else {
+      try {
+        peopleCreateInput(
+          row,
+          key === 'primary' ||
+            (draft.mode === 'first-passenger' && key === 'p0'),
+          key !== 'primary',
+        );
+      } catch (reason) {
+        throw new Error(
+          label +
+            ': ' +
+            (reason instanceof Error ? reason.message : 'اطلاعات ناقص است.'),
+        );
+      }
+      const nationalId = normalizeNationalId(row.values.nationalId);
+      if (nationalIds.has(nationalId))
+        throw new Error(
+          'کد ملی تکراری است؛ هر مسافر باید یک ردیف مستقل داشته باشد.',
+        );
+      nationalIds.add(nationalId);
+    }
+  }
+  const passengers = keys.map((key) => ({
+    customerId: key,
+    displayName: key,
+    birthDate: peopleRow(draft, key).values.birthDate,
+  }));
+  if (
+    !salesTravelDate(state) ||
+    !salesPassengerCompositionMatches({ ...state, passengers })
+  )
+    throw new Error(
+      'تاریخ تولد همه مسافران را کامل کنید؛ تعداد بزرگسال، کودک و نوزاد باید با مرحله اول یکسان باشد.',
+    );
+}
+function mutationNeedsReview(error: unknown) {
+  return !(
+    error instanceof CustomersApiError &&
+    [400, 401, 403, 404, 413, 415, 422, 429].includes(error.status)
+  );
+}
+
+function adoptRegisteredPerson(
+  row: PeopleRow,
+  profile: CustomerDetail,
+): PeopleRow {
+  const next = selectedPeopleRow(profile);
+  for (const field of Object.keys(row.values) as (keyof PeopleValues)[])
+    if (row.values[field]?.trim()) next.values[field] = row.values[field] ?? '';
+  return {
+    ...next,
+    previousRegistrationRetained: Boolean(row.previousRegistrationRetained),
+  };
+}
+
+export async function saveSalesPeopleDraft(
+  state: SalesFormState,
+  draft: SalesPeopleDraft,
+  onProgress: (draft: SalesPeopleDraft) => void,
+  api: Pick<typeof customersApi, 'create' | 'addContact'> &
+    Partial<
+      Pick<typeof customersApi, 'update' | 'detail' | 'registrationLookup'>
+    > = customersApi,
+) {
+  draft = normalizeSalesPeopleDraft(draft);
+  let current = { ...draft, rows: { ...draft.rows } };
+  const keys = passengerSlotKeys(state);
+  for (const key of [
+    ...(draft.mode === 'person' ? ['primary'] : []),
+    ...keys,
+  ]) {
+    let row = peopleRow(current, key);
+    if (!row.reviewRequired) continue;
+    if (row.person ? !api.detail : !api.registrationLookup)
+      throw new Error(
+        'نتیجه ثبت قبلی نیازمند بررسی است؛ اتصال بازیابی در دسترس نیست.',
+      );
+    let profile: CustomerDetail | null;
+    if (row.person)
+      profile = (await api.detail!(row.person.id, 'customer-verification'))
+        .data;
+    else {
+      const nationalId = normalizeNationalId(row.values.nationalId);
+      if (row.pendingNationalId && row.pendingNationalId !== nationalId) {
+        const previous = (
+          await api.registrationLookup!({
+            nationalId: row.pendingNationalId,
+            firstName: row.values.firstName.trim(),
+            lastName: row.values.lastName.trim(),
+            matchByNationalId: true,
+          })
+        ).data;
+        row = {
+          ...row,
+          previousRegistrationRetained:
+            Boolean(previous) || Boolean(row.previousRegistrationRetained),
+        };
+        current = editPeopleRow(current, key, row);
+        onProgress(current);
+      }
+      profile = (
+        await api.registrationLookup!({
+          matchByNationalId: true,
+          nationalId,
+          firstName: row.values.firstName.trim(),
+          lastName: row.values.lastName.trim(),
+          ...(row.values.birthDate ? { birthDate: row.values.birthDate } : {}),
+        })
+      ).data;
+    }
+    const next = profile
+      ? row.person
+        ? refreshPeopleRow(row, profile)
+        : adoptRegisteredPerson(row, profile)
+      : { ...row, reviewRequired: false, pendingNationalId: '' };
+    current = editPeopleRow(current, key, next);
+    onProgress(current);
+  }
+  validateSalesPeopleDraft(state, current);
+  for (const key of [
+    ...(draft.mode === 'person' ? ['primary'] : []),
+    ...keys,
+  ]) {
+    const row = peopleRow(current, key);
+    if (row.person) {
+      const customerRole =
+        key === 'primary' || (draft.mode === 'first-passenger' && key === 'p0');
+      const profile = row.profile;
+      const baseline = existingPeopleBaseline(row);
+      const identityChanged =
+        profile &&
+        (['firstName', 'lastName', 'nationalId', 'birthDate'] as const).some(
+          (field) => row.values[field] !== baseline[field],
+        );
+      const passportChanged =
+        profile &&
+        (row.values.passportExpiryDate !== (profile.passportExpiryDate ?? '') ||
+          row.values.passportNumber !==
+            (row.savedPassportNumber ??
+              profile.passportNumber ??
+              profile.maskedPassportNumber ??
+              ''));
+      const needsRole =
+        profile &&
+        ((customerRole && !profile.roles.includes('customer')) ||
+          (key !== 'primary' && !profile.roles.includes('passenger')));
+      const acquaintanceChanged =
+        profile &&
+        row.values.acquaintanceMethodId !== undefined &&
+        row.values.acquaintanceMethodId !==
+          (baseline.acquaintanceMethodId ?? profile.acquaintanceMethodId ?? '');
+      if (
+        passportChanged ||
+        needsRole ||
+        identityChanged ||
+        acquaintanceChanged
+      ) {
+        if (!api.update) throw new Error('اتصال ویرایش مشتری در دسترس نیست.');
+        const roles = [
+          ...new Set([
+            ...profile.roles,
+            ...(customerRole ? ['customer' as const] : []),
+            ...(key !== 'primary' ? ['passenger' as const] : []),
+          ]),
+        ];
+        const number = row.values.passportNumber.trim();
+        const updated = (
+          await api.update(row.person.id, {
+            kind: 'person',
+            displayName:
+              row.values.firstName.trim() + ' ' + row.values.lastName.trim(),
+            firstName: row.values.firstName.trim(),
+            lastName: row.values.lastName.trim(),
+            acquaintanceMethodId: acquaintanceChanged
+              ? row.values.acquaintanceMethodId || null
+              : profile.acquaintanceMethodId,
+            roles,
+            version: profile.version,
+            ...(row.values.nationalId !== baseline.nationalId
+              ? { nationalId: normalizeNationalId(row.values.nationalId) }
+              : {}),
+            ...(row.values.birthDate
+              ? { birthDate: row.values.birthDate }
+              : {}),
+            ...(passportChanged
+              ? { passportExpiryDate: row.values.passportExpiryDate || null }
+              : {}),
+            ...(number &&
+            number !== profile.maskedPassportNumber &&
+            number !== profile.passportNumber
+              ? { passportNumber: number }
+              : {}),
+          })
+        ).data;
+        current = editPeopleRow(current, key, {
+          ...row,
+          profile: updated,
+          person: { id: updated.id, displayName: updated.displayName },
+          savedPassportNumber: row.values.passportNumber,
+          savedValues: {
+            ...row.values,
+            phone: baseline.phone,
+            email: baseline.email,
+          },
+        });
+        onProgress(current);
+      }
+      if (profile) {
+        for (const field of ['phone', 'email'] as const) {
+          if (
+            row.values[field].trim().toLowerCase() ===
+            baseline[field].trim().toLowerCase()
+          )
+            continue;
+          try {
+            const latest = peopleRow(current, key);
+            const updated = (
+              await api.addContact(row.person.id, {
+                type: field,
+                value: row.values[field].trim(),
+                label: 'اصلاح از قرارداد',
+                isPrimary: true,
+                version: latest.profile!.version,
+              })
+            ).data;
+            current = editPeopleRow(current, key, {
+              ...latest,
+              profile: updated,
+              savedValues: {
+                ...existingPeopleBaseline(latest),
+                [field]: row.values[field],
+              },
+            });
+            onProgress(current);
+          } catch (error) {
+            current = editPeopleRow(current, key, {
+              ...peopleRow(current, key),
+              reviewRequired: mutationNeedsReview(error),
+            });
+            onProgress(current);
+            throw new Error(
+              'ثبت تماس کامل نشد؛ با تأیید دوباره، ثبت قبلی خودکار بررسی می‌شود. ' +
+                (error instanceof Error ? error.message : ''),
+            );
+          }
+        }
+      }
+      continue;
+    }
+    let created: CustomerDetail;
+    try {
+      created = (
+        await api.create(
+          peopleCreateInput(
+            row,
+            key === 'primary' ||
+              (draft.mode === 'first-passenger' && key === 'p0'),
+            key !== 'primary',
+          ),
+        )
+      ).data;
+    } catch (error) {
+      const uncertain = mutationNeedsReview(error);
+      current = editPeopleRow(current, key, {
+        ...row,
+        reviewRequired: uncertain,
+        ...(uncertain
+          ? { pendingNationalId: normalizeNationalId(row.values.nationalId) }
+          : {}),
+      });
+      onProgress(current);
+      if (
+        error instanceof CustomersApiError &&
+        error.status === 409 &&
+        error.code === 'CUSTOMER_NATIONAL_ID_EXISTS' &&
+        api.registrationLookup
+      ) {
+        const existing = (
+          await api.registrationLookup({
+            nationalId: normalizeNationalId(row.values.nationalId),
+            firstName: row.values.firstName.trim(),
+            lastName: row.values.lastName.trim(),
+            matchByNationalId: true,
+            ...(row.values.birthDate
+              ? { birthDate: row.values.birthDate }
+              : {}),
+          })
+        ).data;
+        if (existing) {
+          current = editPeopleRow(
+            current,
+            key,
+            adoptRegisteredPerson(row, existing),
+          );
+          onProgress(current);
+          return saveSalesPeopleDraft(state, current, onProgress, api);
+        }
+      }
+      throw new Error(
+        (uncertain
+          ? 'ثبت شخص قطعی نشد؛ با تأیید دوباره، پرونده قبلی خودکار بررسی می‌شود. '
+          : 'ثبت شخص انجام نشد؛ مورد زیر را اصلاح و دوباره تأیید کنید. ') +
+          (error instanceof Error ? error.message : ''),
+      );
+    }
+    current = {
+      ...current,
+      rows: {
+        ...current.rows,
+        [key]: {
+          ...row,
+          person: { id: created.id, displayName: created.displayName },
+          profile: created,
+          savedPassportNumber: row.values.passportNumber,
+          savedValues: { ...row.values, phone: '', email: '' },
+        },
+      },
+    };
+    onProgress(current);
+    try {
+      if (row.values.phone.trim()) {
+        created = (
+          await api.addContact(created.id, {
+            type: 'phone',
+            value: row.values.phone.trim(),
+            label: 'اصلی',
+            isPrimary: true,
+            version: created.version,
+          })
+        ).data;
+        current = editPeopleRow(current, key, {
+          ...peopleRow(current, key),
+          profile: created,
+          savedValues: {
+            ...existingPeopleBaseline(peopleRow(current, key)),
+            phone: row.values.phone,
+          },
+        });
+        onProgress(current);
+      }
+      if (row.values.email.trim()) {
+        created = (
+          await api.addContact(created.id, {
+            type: 'email',
+            value: row.values.email.trim().toLowerCase(),
+            label: 'اصلی',
+            isPrimary: !row.values.phone.trim(),
+            version: created.version,
+          })
+        ).data;
+      }
+      current = editPeopleRow(current, key, {
+        ...current.rows[key]!,
+        profile: created,
+        savedValues: { ...row.values },
+      });
+      onProgress(current);
+    } catch (error) {
+      current = editPeopleRow(current, key, {
+        ...current.rows[key]!,
+        reviewRequired: mutationNeedsReview(error),
+      });
+      onProgress(current);
+      throw new Error(
+        'پرونده شخص ایجاد شد ولی ثبت تماس کامل نشد؛ با تأیید دوباره از همین‌جا ادامه دهید. ' +
+          (error instanceof Error ? error.message : ''),
+      );
+    }
+  }
+  if (draft.mode === 'first-passenger')
+    current = editPeopleRow(current, 'p0', peopleRow(current, 'p0'));
+  validateSalesPeopleDraft(state, current);
+  const passengers = keys.map((key) => {
+    const row = peopleRow(current, key);
+    return {
+      customerId: row.person!.id,
+      displayName: row.person!.displayName,
+      birthDate: row.values.birthDate,
+    };
+  });
+  const customer =
+    draft.mode === 'organization'
+      ? draft.organization!
+      : peopleRow(current, draft.mode === 'person' ? 'primary' : 'p0').person!;
+  return {
+    draft: current,
+    patch: {
+      passengers,
+      customerId: customer.id,
+      customerName: customer.displayName,
+      customerKind:
+        draft.mode === 'organization'
+          ? ('organization' as const)
+          : ('person' as const),
+      customerOrganizationId:
+        draft.mode === 'organization'
+          ? (draft.organization?.organizationId ?? '')
+          : '',
+      firstPassengerIsCustomer: draft.mode === 'first-passenger',
+      hotel: {
+        ...state.hotel,
+        guestCustomerIds: passengers
+          .filter(
+            (person) =>
+              !state.passengers.some(
+                (old) => old.customerId === person.customerId,
+              ) ||
+              state.hotel.guestCustomerIds === undefined ||
+              state.hotel.guestCustomerIds.includes(person.customerId),
+          )
+          .map((person) => person.customerId),
+      },
+    },
+  };
+}

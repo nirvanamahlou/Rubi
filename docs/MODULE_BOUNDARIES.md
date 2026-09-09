@@ -42,7 +42,7 @@
 Sales Contracts مالک customer/payer/passengerهای قرارداد، service allocation، قیمت فروش،
 quotation و contract version است. Reservations snapshot versioned و فقط‌خواندنی قرارداد را
 اجرا می‌کند. Reservation اجازه ایجاد/تغییر رابطه passenger با ticket/hotel/room/insurance
-ندارد؛ correction request به Sales برمی‌گردد.
+ندارد؛ correction request به Sales برمی‌گردد. چیدمان اجرایی هتل (تعداد اتاق، نوع تخت و اعضای اقامت) می‌تواند در Reservations فقط برای مسافران همان Snapshot به‌صورت append-only و versioned اصلاح شود؛ این نسخه قرارداد یا تخصیص تجاری Sales را تغییر نمی‌دهد.
 
 ### Ticket Catalog در برابر Reservations
 

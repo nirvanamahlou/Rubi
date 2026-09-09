@@ -10,6 +10,31 @@ afterEach(() => {
 });
 
 describe('customers browser client', () => {
+  it('recovers registration by a credentialed non-cacheable POST without putting identity in the URL', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ data: null }) });
+    vi.stubGlobal('fetch', fetchMock);
+    const input = {
+      nationalId: 'synthetic-id',
+      firstName: 'Synthetic',
+      lastName: 'Person',
+      birthDate: '1990-01-01',
+    };
+    await expect(customersApi.registrationLookup(input)).resolves.toEqual({
+      data: null,
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/customers/registration-lookup',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+        body: JSON.stringify(input),
+      }),
+    );
+  });
   it('gets real branch names from the public credentialed session response', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const branches = [

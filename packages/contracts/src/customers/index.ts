@@ -51,6 +51,14 @@ export const CUSTOMER_ERROR_CODES = [
 ] as const;
 export type CustomerErrorCode = (typeof CUSTOMER_ERROR_CODES)[number];
 
+export interface CustomerRegistrationLookupRequest {
+  matchByNationalId?: boolean;
+  nationalId: string;
+  firstName: string;
+  lastName: string;
+  birthDate?: string;
+}
+
 export interface CustomerListQuery {
   search: string;
   kind?: 'all' | CustomerKind;
@@ -116,6 +124,7 @@ export interface CustomerSummary {
   roles: CustomerRole[];
   maskedPrimaryContact: string | null;
   maskedNationalId: string | null;
+  maskedPassportNumber: string | null;
   currentConsentStatus: CustomerConsentStatus | 'not-recorded';
   companionCount: number;
   ownerBranchId: string;
@@ -130,6 +139,8 @@ export interface CustomerDetail extends CustomerSummary {
   birthDate: string | null;
   birthDateMasked: boolean;
   nationalId?: string | null;
+  passportNumber?: string | null;
+  passportExpiryDate?: string | null;
   acquaintanceMethodId: string | null;
   contacts: readonly CustomerContact[];
   addresses: readonly CustomerAddress[];
@@ -221,6 +232,8 @@ export interface CustomerMutationRequest {
   displayName: string;
   birthDate?: string | null;
   nationalId?: string | null;
+  passportNumber?: string | null;
+  passportExpiryDate?: string | null;
   roles: CustomerRole[];
   acquaintanceMethodId?: string | null;
   version?: number;

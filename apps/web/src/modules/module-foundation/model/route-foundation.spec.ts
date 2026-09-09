@@ -31,8 +31,6 @@ const approvedRoutes = [
 ] as const;
 
 const foundationRoutes = [
-  'reservations',
-  'sales',
   'purchases',
   'marketing',
   'human-resources',
@@ -62,6 +60,18 @@ describe('17-route module foundation', () => {
 
   it('preserves connected workspaces and the Master Data hub-to-section flow', () => {
     expect(
+      readFileSync(resolve(crmRoot, 'reservations/page.tsx'), 'utf8'),
+    ).toContain('LiveReservationQueue');
+    expect(
+      readFileSync(resolve(crmRoot, 'reservations/page.tsx'), 'utf8'),
+    ).toContain('/reservations/processing');
+    expect(
+      readFileSync(
+        resolve(crmRoot, 'reservations/processing/page.tsx'),
+        'utf8',
+      ),
+    ).toContain('ReservationInbox');
+    expect(
       readFileSync(resolve(crmRoot, 'ticket-management/page.tsx'), 'utf8'),
     ).toContain('TicketWorkspace');
     expect(
@@ -73,6 +83,9 @@ describe('17-route module foundation', () => {
     expect(
       readFileSync(resolve(crmRoot, 'finance/page.tsx'), 'utf8'),
     ).toContain('FinanceWorkspace');
+    expect(readFileSync(resolve(crmRoot, 'sales/page.tsx'), 'utf8')).toContain(
+      'SalesWorkspace',
+    );
     expect(
       readFileSync(resolve(crmRoot, 'organizations/page.tsx'), 'utf8'),
     ).toContain('OrganizationsWorkspace');
@@ -100,6 +113,6 @@ describe('17-route module foundation', () => {
 
     const shell = source('src/components/layout/app-shell.tsx');
     expect(shell).toContain('overflow-x-hidden');
-    expect(shell).toContain('truncate whitespace-nowrap');
+    expect(shell).toContain('min-w-0 whitespace-normal break-words');
   });
 });

@@ -38,7 +38,17 @@ describe('shared date picker contract', () => {
     expect(pickerSource).toContain('createPortal');
     expect(pickerSource).toContain('data-placement');
     expect(pickerSource.indexOf('نوع تقویم')).toBeLessThan(
-      pickerSource.indexOf('calendarMonthLabel(anchor'),
+      pickerSource.search(/calendarMonthLabel\(\s*anchor/),
+    );
+  });
+
+  it('positions the popup against the viewport instead of an RTL page edge', () => {
+    expect(pickerSource).toContain('resolveCalendarPopoverPosition');
+    expect(pickerSource).toContain('getBoundingClientRect()');
+    expect(pickerSource).toContain("window.addEventListener('scroll'");
+    expect(pickerSource).toContain('className="fixed z-[70]');
+    expect(pickerSource).not.toContain(
+      'absolute start-0 top-[calc(100%+0.5rem)]',
     );
   });
 

@@ -1,5 +1,19 @@
 # تصمیم‌های معماری
 
+## SALES-OUTPUT-CLEANUP-0907 — customer copy vs operator guidance
+
+At the user's request, operational issuance/context disclaimers and template generation metadata are removed from the customer-facing printed/PDF page. The same disclosures stay in the operator dialog; this layout-only change does not establish historical issuer binding, official issuance, archive completion, Finance payment confirmation or reservation fulfillment. Existing fail-closed API policies remain unchanged.
+
+## SALES-CUSTOMER-PRICING-0907 — local additive upgrade gate
+
+The operational database has pre-existing file/checksum differences for master_data_foundation (20260823084001), legal_entity_context (20260825123000), and reservation_arrangements (20260906113000), plus LF/CRLF differences elsewhere. This task does not repair/rebaseline/rewrite any historical migration or owner data. Like the previous local rollout, permit only the single reviewed additive Sales passenger-price migration after a fresh backup restore rehearsal. Require every historical migration to be known/finished, reject any other pending migration, and compare all stored historical checksums plus business counts before/after. The new table depends only on the existing Sales passenger UUID key. Broader historical reconciliation remains outside this task.
+
+## HOTEL-SALES-PRICING-0906 — 2026-09-06
+
+- مالک محصول ورود قیمت روز فروش/توافقی هتل به‌صورت هر شب یا کل و ثبت بعدی هزینه خرید در رزرواسیون را تأیید کرد. انتقال محدود قفل Migration نیز صریحاً تأیید شد.
+- هزینه ثبت‌شده در رزرواسیون سابقه عملیاتی خرید است؛ مالکیت تأیید خرید/بدهی در Procurement و Finance حفظ می‌شود. این ثبت هیچ financial release یا پرداخت تأییدشده تولید نمی‌کند.
+- اختلاف روز فروش و توافق «تخفیف فروشنده» است؛ بدون قیمت اولیه کارگزار، هیچ مقدار ساختگی با نام تخفیف کارگزار تولید نمی‌شود. حاشیه هتل فقط در ارز یکسان و بر پایه هزینه ثبت‌شده نمایش داده می‌شود، نه سود قطعی کل قرارداد.
+
 ## اجرای موقت DOCUMENTS-002 — 2026-09-01
 
 - ADR-002 و الزام S3/MinIO برای محیط تولید بدون تغییر باقی می‌ماند. Adapter فعلی Documents
@@ -10,6 +24,11 @@
   آن fail-closed است. تغییر دستی Scan به `CLEAN` یا جعل پاسخ Scanner در Seed/UI ممنوع است.
 - تصمیم `DEC-OPEN-006` درباره retention، residency و key management همچنان باز است؛ این
   Slice حذف دائمی، گردش کلید تولید یا تعهد نگهداری را حدس نمی‌زند.
+- درخواست صریح مالک محصول در 2026-09-05 ورود دستی اختیاری شماره پاسپورت و تصویر
+  اختیاری آن را برای Development/Test مجاز کرد. شماره فقط در مرز Customers با
+  AES-256-GCM، HMAC دامنه‌جدا، Mask و Sensitive-read Audit نگهداری می‌شود و فایل از
+  Public Contract ماژول Documents عبور می‌کند. این مجوز محدود، `DEC-OPEN-006` را برای
+  Production، retention، residency یا گردش کلید حل‌شده اعلام نمی‌کند.
 
 ## Clarifications carried from the approved source tasks — 2026-08-31
 
@@ -67,6 +86,7 @@ develop یا تغییر والدها جزو این کار نیست. فقط قر�
 | ADR-020 | فروش مالک قرارداد و تخصیص passenger/service؛ Ticket Catalog مالک تعریف بلیت؛ Reservations مالک اجرا/صدور/Manifest؛ Procurement مالک خرید؛ Finance مالک release تحویل است | حذف ورود تکراری و جلوگیری از اختلاط فروش/عملیات/خرید/مالی؛ شرح کامل در `TRAVEL_WORKFLOW_ARCHITECTURE.md` |
 | ADR-021 | ماژول تولیدکننده مالک Render و Issue سند است؛ Documents فقط فایل نهایی، نسخه، محرمانگی، دسترسی و Archive را مالک است | ADR-012 را در بخش Render supersede می‌کند؛ Metadata هویت صادرکننده از `legal-entities.v1` گرفته می‌شود و هیچ منوی صدور مستقل یا query مستقیم جدول Legal Entity ایجاد نمی‌شود |
 | ADR-022 | Master Data فایل XLSX گذرای فیلترشده را مستقیم Render و Download می‌کند؛ PDF و آرشیو پایدار همچنان از Documents/Worker عبور می‌کنند | خروجی Excel عملیاتی بدون جعل Artifact فعال می‌شود؛ سقف ۱۰٬۰۰۰ ردیف، Permission، Audit و ایمنی Formula Injection اجباری است |
+| ADR-023 | Snapshot فروش در Reservations تغییرناپذیر می‌ماند؛ رزرواسیون فقط چیدمان اجرایی هتل را برای همان مسافران به‌صورت append-only و versioned اصلاح می‌کند | نیاز عملیات به تغییر اتاق/تخت و اعضای هتل بدون انتقال مالکیت قرارداد؛ تغییر مسافر یا ظرفیت صندلی همچنان اصلاح Sales و کنترل Ticket Catalog است |
 
 ## تصمیم‌های باز
 
