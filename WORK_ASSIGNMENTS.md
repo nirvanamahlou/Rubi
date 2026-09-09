@@ -1483,3 +1483,6 @@ RESERVATION-COMPACT-ENGLISH-0909: 60 Reservations/calendar tests plus default-ca
 Reserve only AppShell global search shortcut styling and task docs. Explicit text/background contrast in light/dark header; retain keyboard behavior. No shared theme, API or permission changes. Local only; public publication remains unapproved.
 
 SEARCH-SHORTCUT-CONTRAST-0909: 25 layout tests, scoped lint/typecheck and 40-route build passed. Web3100 refreshed; scope released. Local commit only.
+
+## SYNC-DEVELOP-0909 — PC-A — IN_PROGRESS
+User requests bringing colleagues Git fixes locally. Integrate reviewed origin/develop e07c0c6 into local d68a65f on independent branch, preserving all local Reservations/Sales/header changes. Scope integration/docs and resolution of actual conflicts only. Draft PR132 and other unmerged branches excluded. No incoming migration or dependency changes; no data/permission edits, remote merges or public push.
