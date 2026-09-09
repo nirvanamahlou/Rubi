@@ -2,6 +2,8 @@
 
 COMPUTER_ID=PC-B. Base: origin/develop@e07c0c6. Branch: codex/pc-b-hr-module-connections.
 
+Implementation commit: `93c0a7e`, pushed to origin. Draft review PR: https://github.com/nirvanamahlou/Rubi/pull/139 (base develop). No merge or local activation.
+
 User authorizes connections to every main-menu module. Deliver a durable, permission-scoped HR referral and response workflow in the source and destination workspaces, with source FK, optimistic concurrency, idempotency and audit. Dashboard and Reports consume the same scoped public projection; Ticket Management routes mission fulfillment through Reservations. Existing Documents and IAM public integrations are preserved.
 
 Reserved files: apps/api/src/hr/**; apps/web/src/modules/hr/**; packages/contracts/src/hr/**; HR permission seed rows only; one additive integration outlet in apps/web/src/components/layout/app-shell.tsx; this task's assignment/status entries. No migration, lockfile, or existing destination domain mutation. Destination modules consume the HR public projection; HR never queries their tables. Source references use existing HrRecord.parentId and employeeId foreign keys. Referral content is explicitly shared by an HR manager; receiving it does not grant access to the underlying personnel record.
