@@ -1425,6 +1425,6 @@ User follow-up to neutral dark mode. Reserve HR workspace/Frappe CSS, Navigation
 
 Validation: 87 scoped tests, Web lint, TypeScript and production build (40 routes) passed; Web 3100 refreshed. No API/database restart or changes. Scoped reservations released.
 
-## PUBLISH-DARK-HR-0909 — PC-A — IN_PROGRESS
+## PUBLISH-DARK-HR-0909 — PC-A — READY_FOR_REVIEW
 
 User explicitly authorized merging the latest Finance labels, dark theme and HR/navigation corrections into develop. Integrate current develop 679e516, retaining PC-B HR/agencies and header date; resolve shared shell conflict with both responsive header and neutral dark border. Synchronize three ticket validation strings in API with the mirrored Web proposal to satisfy the existing parity test. No local database migration or runtime switch. Final combined CI gates must pass before merge.
