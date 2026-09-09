@@ -1,5 +1,6 @@
 export * from './customers';
 export * from './b2b';
+export * from './organization-activity';
 export * from './b2b-signatories';
 export * from './b2b-organization-users';
 export * from './documents';

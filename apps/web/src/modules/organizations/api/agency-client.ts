@@ -1,4 +1,6 @@
 import type {
+  OrganizationActivityQuery,
+  OrganizationActivityPage,
   B2bAgreementCaseV1,
   B2bAgreementActionRequestV1,
   B2bCooperationRole,
@@ -91,6 +93,20 @@ async function b2bRequest<T>(
 }
 
 export const agencyClient = {
+  activity(
+    organizationId: string,
+    branchId: string,
+    query: OrganizationActivityQuery,
+    signal?: AbortSignal,
+  ) {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query))
+      if (value) params.set(key, value);
+    return b2bRequest<OrganizationActivityPage>(
+      `/agencies/${organizationId}/activity?${params}`,
+      { headers: { 'x-branch-id': branchId }, ...(signal ? { signal } : {}) },
+    );
+  },
   organizationUserHistory(organizationId: string, branchId: string) {
     return b2bRequest<{
       data: { id: string; action: string; occurredAt: string }[];

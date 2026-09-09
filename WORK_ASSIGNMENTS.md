@@ -1,5 +1,11 @@
 # Work Assignments
 
+## B2B-DOSSIER-REPORTS-001 — PC-B — IN_PROGRESS
+
+- Owner requests working Reports/Audit for all agency dossier activity. Reserve B2B activity projection/controller/client/UI/tests, additive contracts/root export, public MasterOrganizationDirectory and Documents owner audit projections, and task/status documentation on `codex/pc-b-b2b-dossier-reports` from df19788. Prior task released its implementation locks; preserve the owned PR146 stack and Web3100/API4191 runtime.
+- Read existing persisted owner audit streams through public services; B2B never queries Master Data/Documents tables. This is a B2B dossier projection, not a change to PC-A central reporting or Finance. Preserve organization/branch scope and existing per-source permissions, redact snapshots, support bounded stable pagination/date filtering and matching export. Finance preview remains explicitly synthetic/unconnected. No migration, IAM grants or dependency lock. Additive v1 producer/consumer: B2B/Master Data/Documents to Organizations Web. No merge.
+- Documents inspection found permanent deletion erased audit rows. Reserve the owner deletion implementation/tests to retain a minimal DELETED tombstone and append-only metadata history while removing file versions; deleted documents remain inaccessible/unrestorable. Existing schema supports this; no migration. Historical already-erased events cannot be reconstructed.
+
 ## B2B-CONTRACT-CREDIT-DEMO-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests nesting credit/guarantees under contracts in the 360 dossier and synthetic guarantee/finance data. Reserve Organizations navigation/components/models/tests, a bounded public-owner-service B2B/Documents fixture loader, and task/status/decision documentation on clean `codex/pc-b-b2b-contract-credit-demo` from49d578e. Preserve PR145 stack and owned Web3100/API4191 runtime. Prior implementation reservations are released.

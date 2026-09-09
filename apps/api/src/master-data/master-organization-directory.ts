@@ -11,7 +11,13 @@ import type {
   MasterOrganizationAddressMutationV1,
   MasterOrganizationAddressV1,
 } from '@rubi/contracts';
-import { AuditOutcome } from '@rubi/database';
+import { AuditOutcome, Prisma } from '@rubi/database';
+import {
+  activityEvent,
+  activityPredicate,
+  type ActivityRow,
+  type ActivityWindow,
+} from '../common/organization-activity';
 
 import { DatabaseService } from '../database/database.service';
 
@@ -70,6 +76,37 @@ function addressRecord(row: {
 
 @Injectable()
 export class MasterOrganizationDirectory {
+  /** Owner projection includes historical child IDs so deleting a contact does not erase its history. */
+  async organizationActivity(
+    org: string,
+    branch: string,
+    actor: AuthenticatedActor,
+    window: ActivityWindow,
+  ) {
+    if (
+      !actor.permissions.includes('master_data.audit.read') ||
+      !actor.branchIds.includes(branch)
+    )
+      throw new ForbiddenException(
+        'مجوز تاریخچه اطلاعات سازمان یا شعبه را ندارید.',
+      );
+    const rows = await this.database.client.$queryRaw<ActivityRow[]>(Prisma.sql`
+      WITH children AS (
+        SELECT id, 'organization-contacts'::text AS resource FROM master_organization_contacts WHERE "organizationId" = ${org}::uuid
+        UNION SELECT id, 'organization-addresses' FROM master_organization_addresses WHERE "organizationId" = ${org}::uuid
+        UNION SELECT "entityId", resource FROM master_audit_events
+          WHERE resource IN ('organization-contacts', 'organization-addresses')
+          AND ("beforeSnapshot"->>'organizationId' = ${org} OR "afterSnapshot"->>'organizationId' = ${org})
+      ), e AS (
+        SELECT a.*, resource AS "entityType", 'PROFILE'::text AS category FROM master_audit_events a
+        WHERE "actorBranchId" = ${branch}::uuid AND (
+          (resource = 'organizations' AND "entityId" = ${org}::uuid)
+          OR EXISTS (SELECT 1 FROM children c WHERE c.id = a."entityId" AND c.resource = a.resource)
+        )
+      ) SELECT * FROM e WHERE ${activityPredicate(window, 'MASTER_DATA')}
+      ORDER BY "occurredAt" DESC, id DESC LIMIT 51`);
+    return rows.map((row) => activityEvent(row, 'MASTER_DATA'));
+  }
   async activePaymentMethod(id: string) {
     return this.database.client.masterPaymentMethod.findFirst({
       where: { id, isActive: true },

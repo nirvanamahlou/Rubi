@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import type { ActivityWindow } from '../common/organization-activity';
 import type { Readable } from 'node:stream';
 
 import {
@@ -827,6 +828,25 @@ export class DocumentsService {
         userAgentSummary: event.userAgentSummary,
       })),
     };
+  }
+
+  async organizationActivity(
+    org: string,
+    branch: string,
+    actor: AuthenticatedActor,
+    window: ActivityWindow,
+  ) {
+    if (
+      !actor.permissions.includes('documents.audit.read') ||
+      !actor.branchIds.includes(branch)
+    )
+      throw new ForbiddenException('مجوز تاریخچه اسناد یا شعبه را ندارید.');
+    return this.repository.organizationActivity(
+      org,
+      branch,
+      actor.permissions,
+      window,
+    );
   }
 
   async createAccessGrant(

@@ -1,5 +1,11 @@
 # تصمیم‌های معماری
 
+## B2B-DOSSIER-REPORTS-001 — 2026-09-09
+
+The dossier Reports/Audit UI consumes normalized metadata from B2B audit events and public Master Organization/Documents owner projections. It does not read another module's tables, change the central Reporting module or create financial events. Existing branch and source/domain permissions apply to every page. Snapshots stay server-side; the projection exposes changed field labels, action, actor and time, never private contact values, notes, document contents or credential fields. Export contains the same authorized filtered projection. Per-source keyset pages share a fixed upper timestamp, including a deterministic cross-source tie key; Tehran calendar-day filters include both day boundaries.
+
+Inspection found that Documents permanent deletion removed its audit rows. To preserve the requested history without a new schema, deletion now removes versions and payload metadata but retains a minimal DELETED document, case identifiers and audit events. Detail/file/restore and list APIs exclude that tombstone, including explicit DELETED queries. Version references in retained audits are cleared before physical version removal; a deletion event is appended atomically with the tombstone. Already-erased historical events cannot be reconstructed. Existing owner file cleanup behavior remains; no local business record was deleted by this task. Finance preview data is never reported as real transactions.
+
 ## B2B-CONTRACT-CREDIT-DEMO-001 — 2026-09-09
 
 Credit/guarantees moves beneath the commercial contract UI; existing credit authorization identifiers and approval rules remain independent. The owner requests synthetic guarantee and financial data. Guarantee drafts and proofs persist through B2B/Documents public services against explicitly synthetic agencies. Finance currently has a Phase A preview foundation and no posting/exposure adapter in this checkout, so the financial scenario is explicitly labelled as a UI preview and never supplied as authoritative exposure, receipt confirmation or ledger state. This satisfies the requested visual sample without crossing Finance ownership or changing account balances.

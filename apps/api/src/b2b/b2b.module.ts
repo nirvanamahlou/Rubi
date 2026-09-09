@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { B2bActivityController } from './b2b-activity.controller';
+import { B2bActivityService } from './b2b-activity.service';
+import { B2bActivityRepository } from './b2b-activity.repository';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { B2bOrganizationUserRepository } from './b2b-organization-user.repository';
 import { B2bOrganizationUserService } from './b2b-organization-user.service';
@@ -29,11 +32,14 @@ import {
 @Module({
   imports: [IamModule, MasterDataModule, DocumentsModule],
   controllers: [
+    B2bActivityController,
     B2bController,
     B2bOrganizationUserController,
     B2bPortalController,
   ],
   providers: [
+    B2bActivityService,
+    B2bActivityRepository,
     B2bOrganizationUserRepository,
     B2bOrganizationUserService,
     { provide: APP_INTERCEPTOR, useClass: B2bPortalBoundaryInterceptor },

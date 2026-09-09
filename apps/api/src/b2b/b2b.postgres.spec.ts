@@ -10,6 +10,10 @@ import {
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DatabaseService } from '../database/database.service';
 import { B2bRepository } from './b2b.repository';
+import { B2bActivityRepository } from './b2b-activity.repository';
+import { activityWindow } from '../common/organization-activity';
+import { DocumentsRepository } from '../documents/documents.repository';
+import type { NotificationsService } from '../notifications/notifications.service';
 import { B2bSignatoryRepository } from './b2b-signatory.repository';
 import { B2bOrganizationUserRepository } from './b2b-organization-user.repository';
 import { B2bAgreementWorkflowRepository } from './b2b-agreement-workflow.repository';
@@ -168,6 +172,275 @@ describe.skipIf(!enabled)(
       if (client) await client.$disconnect();
       if (started) docker(['stop', container]);
     }, 30000);
+
+    it('projects dated activity across owners, preserves deleted history and enforces scope with stable pages', async () => {
+      const db = { client } as DatabaseService;
+      const activity = new B2bActivityRepository(db);
+      const actor = {
+        userId: actorUserId,
+        branchIds: [branchId],
+        permissions: [
+          'b2b.agency.read',
+          'b2b.rate.read',
+          'master_data.audit.read',
+          'documents.audit.read',
+          'documents.organization.read',
+        ],
+      } as AuthenticatedActor;
+      const occurredAt = new Date('2025-01-02T00:00:00Z');
+      const scope = { from: '2025-01-02', to: '2025-01-02' };
+      await client.b2bAuditEvent.createMany({
+        data: Array.from({ length: 65 }, () => ({
+          id: randomUUID(),
+          actorUserId,
+          branchId,
+          occurredAt,
+          action: 'b2b.rate.delete',
+          entityType: 'B2bAgencyAgreedRate',
+          entityId: randomUUID(),
+          beforeSnapshot: { profileId, value: '999', notes: 'never disclose' },
+          afterSnapshot: { deleted: true },
+        })),
+      });
+      await client.b2bAuditEvent.create({
+        data: {
+          actorUserId,
+          branchId,
+          occurredAt,
+          action: 'b2b.rate.delete',
+          entityType: 'B2bAgencyAgreedRate',
+          entityId: randomUUID(),
+          beforeSnapshot: { profileId: randomUUID() },
+        },
+      });
+      const window = activityWindow(scope);
+      const first = await activity.activity(
+        organizationId,
+        branchId,
+        actor,
+        window,
+      );
+      expect(first).toHaveLength(51);
+      expect(JSON.stringify(first)).not.toContain('never disclose');
+      const last = first[49]!;
+      const second = await activity.activity(organizationId, branchId, actor, {
+        ...window,
+        before: { time: last.occurredAt, id: last.id },
+      });
+      expect(second).toHaveLength(15);
+      expect(
+        new Set([...first.slice(0, 50), ...second].map((row) => row.id)).size,
+      ).toBe(65);
+      expect(
+        await activity.activity(randomUUID(), branchId, actor, window),
+      ).toEqual([]);
+      expect(
+        await activity.activity(organizationId, randomUUID(), actor, window),
+      ).toEqual([]);
+      expect(
+        await activity.activity(
+          organizationId,
+          branchId,
+          { ...actor, permissions: ['b2b.agency.read'] },
+          window,
+        ),
+      ).toEqual([]);
+      expect(
+        await activity.activity(
+          organizationId,
+          branchId,
+          actor,
+          activityWindow({ from: '2025-01-03', to: '2025-01-03' }),
+        ),
+      ).toEqual([]);
+
+      const deletedContactId = randomUUID();
+      await client.masterDataAuditEvent.createMany({
+        data: [
+          {
+            actorUserId,
+            actorBranchId: branchId,
+            occurredAt,
+            resource: 'organization-contacts',
+            action: 'master_data.create',
+            entityId: deletedContactId,
+            outcome: 'SUCCESS',
+            afterSnapshot: { organizationId, fullName: 'Private contact' },
+          },
+          {
+            actorUserId,
+            actorBranchId: branchId,
+            occurredAt,
+            resource: 'organization-contacts',
+            action: 'master_data.delete',
+            entityId: deletedContactId,
+            outcome: 'SUCCESS',
+            beforeSnapshot: { id: deletedContactId, version: 1 },
+          },
+        ],
+      });
+      const directory = new MasterOrganizationDirectory(db);
+      const master = await directory.organizationActivity(
+        organizationId,
+        branchId,
+        actor,
+        window,
+      );
+      expect(
+        master.filter((row) => row.entityId === deletedContactId),
+      ).toHaveLength(2);
+      expect(JSON.stringify(master)).not.toContain('Private contact');
+      expect(
+        await directory.organizationActivity(
+          randomUUID(),
+          branchId,
+          actor,
+          window,
+        ),
+      ).toEqual([]);
+
+      const documents = new DocumentsRepository(db, {
+        createWithinTransaction: async () => {},
+      } as unknown as NotificationsService);
+      const type = await client.documentType.findFirstOrThrow({
+        where: { domain: 'ORGANIZATION' },
+      });
+      const document = await client.document.create({
+        data: {
+          title: 'Private synthetic proof',
+          documentTypeId: type.id,
+          branchId,
+          ownerUserId: actorUserId,
+          createdByUserId: actorUserId,
+          updatedByUserId: actorUserId,
+          sourceModule: 'master-data',
+          sourceEntityType: 'organizations',
+          sourceEntityId: organizationId,
+          relations: {
+            create: {
+              relationType: 'PRIMARY_CASE',
+              sourceModule: 'master-data',
+              sourceEntityType: 'organizations',
+              sourceEntityId: organizationId,
+              displayLabel: 'Private synthetic organization',
+            },
+          },
+        },
+      });
+      const version = await client.documentVersion.create({
+        data: {
+          documentId: document.id,
+          versionNumber: 1,
+          storageObjectKey: `synthetic/${randomUUID()}`,
+          originalFileName: 'test.png',
+          safeDownloadName: 'test.png',
+          detectedMimeType: 'image/png',
+          extension: 'png',
+          sizeBytes: 100n,
+          sha256: 'a'.repeat(64),
+          versionNote: 'test',
+          createdByUserId: actorUserId,
+        },
+      });
+      await client.document.update({
+        where: { id: document.id },
+        data: { currentVersionId: version.id, currentVersionNumber: 1 },
+      });
+      await client.documentAuditEvent.create({
+        data: {
+          documentId: document.id,
+          versionId: version.id,
+          actorUserId,
+          actorBranchId: branchId,
+          occurredAt,
+          action: 'documents.upload',
+          outcome: 'SUCCESS',
+          ipSummary: '',
+          userAgentSummary: '',
+        },
+      });
+      const docEvents = await documents.organizationActivity(
+        organizationId,
+        branchId,
+        actor.permissions,
+        window,
+      );
+      expect(docEvents).toHaveLength(1);
+      expect(
+        await documents.organizationActivity(
+          organizationId,
+          branchId,
+          [],
+          window,
+        ),
+      ).toEqual([]);
+      expect(
+        await documents.organizationActivity(
+          randomUUID(),
+          branchId,
+          actor.permissions,
+          window,
+        ),
+      ).toEqual([]);
+      await client.document.update({
+        where: { id: document.id },
+        data: { confidentiality: 'CONFIDENTIAL' },
+      });
+      expect(
+        await documents.organizationActivity(
+          organizationId,
+          branchId,
+          actor.permissions,
+          window,
+        ),
+      ).toEqual([]);
+      await client.document.update({
+        where: { id: document.id },
+        data: { confidentiality: 'INTERNAL' },
+      });
+      expect(
+        await documents.permanentlyDelete({
+          documentId: document.id,
+          expectedVersion: 1,
+          actorUserId,
+          ownerUserId: actorUserId,
+          documentTitle: document.title,
+        }),
+      ).toBe(true);
+      expect(await documents.findDetail(document.id, [branchId])).toBeNull();
+      expect(
+        await client.documentVersion.count({
+          where: { documentId: document.id },
+        }),
+      ).toBe(0);
+      expect(
+        await client.documentAuditEvent.count({
+          where: { documentId: document.id },
+        }),
+      ).toBe(2);
+      const remaining = await documents.organizationActivity(
+        organizationId,
+        branchId,
+        actor.permissions,
+        activityWindow({}),
+      );
+      expect(
+        remaining.some((row) => row.action === 'documents.permanently-delete'),
+      ).toBe(true);
+      expect(remaining.some((row) => row.action === 'documents.upload')).toBe(
+        true,
+      );
+      expect(JSON.stringify(remaining)).not.toContain('Private');
+      expect(
+        await documents.permanentlyDelete({
+          documentId: document.id,
+          expectedVersion: 2,
+          actorUserId,
+          ownerUserId: actorUserId,
+          documentTitle: document.title,
+        }),
+      ).toBe(false);
+    });
 
     it('persists scoped organization-user grants with optimistic concurrency and atomic audit', async () => {
       const users = new B2bOrganizationUserRepository({

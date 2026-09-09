@@ -28,6 +28,7 @@ import {
 import { cooperationLabel } from '../model/presentation';
 import { Button } from '@/components/ui/button';
 import { OrganizationFinancePreview } from './organization-finance-preview';
+import { OrganizationActivityPanel } from './organization-activity-panel';
 import {
   usePageBreadcrumbs,
   type PageBreadcrumb,
@@ -578,6 +579,12 @@ export function CorporateProfile({
             </section>
           ) : screen === 'access' && access ? (
             access(tab)
+          ) : screen === 'reports' ? (
+            <OrganizationActivityPanel
+              key={organization.id}
+              organizationId={organization.id}
+              tab={tab}
+            />
           ) : screen === 'finance' ? (
             <OrganizationFinancePreview
               key={organization.id}
