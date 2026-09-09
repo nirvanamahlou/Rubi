@@ -1,5 +1,12 @@
 # Work Assignments
 
+## CI-002-MULTI-COMPUTER — PC-B — READY_FOR_REVIEW
+
+- User reports four computers and authorizes checking/fixing CI, normal push and merge. Base origin/develop@679e516; independent branch/worktree codex/pc-b-ci-multi-computer. CI-001 released its workflow reservation; current module owners and other PRs remain untouched.
+- Reserve only .github/workflows/ci.yml, .github/tests/ci-policy.test.mjs, contributor-ID wording in AGENTS.md and docs/DEVELOPMENT_WORKFLOW.md, docs/tasks/CI-002-MULTI-COMPUTER.md and this task's central status entries. Cover A/B/C/D and future computer branch prefixes without multiplying jobs or weakening gates. No broad Central Docs lock or module ownership transfer.
+- No Migration, Dependency/Lockfile, shared contract, IAM, database, port or runtime lock. Existing 3100/4190 deployment remains unchanged. Final PR CI and post-merge develop CI gate completion.
+- Five policy regression tests and Node syntax checks passed locally. Implementation scope is released for review; final CI gates the authorized merge. PC-C/PC-D setup or collaborator access is not asserted without inspecting those computers/accounts.
+
 ## HEADER-TODAY-001 / PR115 integration — PC-B — READY_FOR_REVIEW
 
 - Owner explicitly approved merging both the date change and PR #115, and receiving latest develop. Integration worktree codex/pc-b-hr115-integration starts from published PR115@628012a and incorporates develop@130606d without modifying source worktrees.

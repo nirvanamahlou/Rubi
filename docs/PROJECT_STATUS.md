@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## CI-002-MULTI-COMPUTER — PC-B — READY_FOR_REVIEW
+
+CI push and stacked-PR base filters now cover `codex/pc-*`, including PC-A/B/C/D and future IDs. Existing main/develop triggers, all four hosted jobs, read-only credentials, disposable PostgreSQL and event/head-branch isolation are retained. Five dependency-free regression tests cover triggers, concurrency and retained safety/quality gates. Contributor IDs and branch instructions are aligned without transferring module ownership or granting account access. No application, migration, dependency, database or runtime changes. Final-head PR CI and post-merge develop CI are required; details: [CI-002](tasks/CI-002-MULTI-COMPUTER.md).
+
 ## HEADER-TODAY-001 — PC-B — ready for review
 
 The header displays today's Persian date and weekday using Persian digits and Asia/Tehran, independent of browser timezone and login time. A stable server placeholder prevents a stale build-date/hydration mismatch; minute-aligned updates and focus/visibility refresh handle midnight and sleeping tabs. A separate compact header row preserves existing controls and company colors. No API, database, dependency, user identity or permission changes. Source is current develop@130606d; PR #115 integration and runtime handoff are separately coordinated to retain current HR/Agencies and its database/storage.
