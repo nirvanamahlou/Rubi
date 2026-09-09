@@ -191,7 +191,7 @@ export function TourWorkspace() {
       .catch((error: unknown) => {
         if (!cancelled)
           setProblem(
-            error instanceof Error ? error.message : 'دریافت بلیت ناموفق بود.',
+            error instanceof Error ? error.message : 'دریافت بلیط ناموفق بود.',
           );
       });
     return () => {
@@ -268,7 +268,7 @@ export function TourWorkspace() {
         <div>
           <h2 className="text-xl font-bold">تورهای قابل فروش</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            بستهٔ خدمات را یک‌بار تعریف کنید؛ برای هر سفر یک نوبت با بلیت واقعی
+            بستهٔ خدمات را یک‌بار تعریف کنید؛ برای هر سفر یک نوبت با بلیط واقعی
             بسازید.
           </p>
         </div>
@@ -428,7 +428,7 @@ export function TourWorkspace() {
         </Card>
       )}
       <Card className="space-y-4 p-5">
-        <h3 className="font-bold">۲. نوبت برگزاری و بلیت‌ها</h3>
+        <h3 className="font-bold">۲. نوبت برگزاری و بلیط‌ها</h3>
         <fieldset disabled={busy} className="space-y-4">
           <Choice
             label="تور"
@@ -470,7 +470,7 @@ export function TourWorkspace() {
                     resetTickets();
                   }}
                 />
-                تور بلیت برگشت هم دارد
+                تور بلیط برگشت هم دارد
               </label>
               <div className="grid gap-4 sm:grid-cols-2">
                 {(
@@ -481,7 +481,7 @@ export function TourWorkspace() {
                     className="space-y-3 rounded-xl border p-4"
                   >
                     <Choice
-                      label={direction === 'out' ? 'بلیت رفت' : 'بلیت برگشت'}
+                      label={direction === 'out' ? 'بلیط رفت' : 'بلیط برگشت'}
                       value={direction === 'out' ? outbound : returning}
                       options={offers[direction].map((offer) => ({
                         id: offer.id,
@@ -495,10 +495,10 @@ export function TourWorkspace() {
                       variant="outline"
                       onClick={() => newFlight(direction)}
                     >
-                      تعریف بلیت برای این روز
+                      تعریف بلیط برای این روز
                     </Button>
                     <p className="text-xs text-muted-foreground">
-                      بلیت جدید در فروش تکی هم قابل انتخاب است و ظرفیت مشترک
+                      بلیط جدید در فروش تکی هم قابل انتخاب است و ظرفیت مشترک
                       دارد.
                     </p>
                   </div>
@@ -507,7 +507,7 @@ export function TourWorkspace() {
               {flight && (
                 <div className="space-y-3 rounded-xl bg-primary/5 p-4">
                   <h4 className="font-bold">
-                    بلیت واقعی {flight.direction === 'out' ? 'رفت' : 'برگشت'} —
+                    بلیط واقعی {flight.direction === 'out' ? 'رفت' : 'برگشت'} —
                     زمان‌ها به وقت تهران
                   </h4>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -589,17 +589,17 @@ export function TourWorkspace() {
                         else setReturning(result.data.id);
                         setFlight(undefined);
                         setNotice(
-                          'بلیت واقعی ثبت شد؛ برای ذخیره نوبت تور تأیید نهایی را بزنید.',
+                          'بلیط واقعی ثبت شد؛ برای ذخیره نوبت تور تأیید نهایی را بزنید.',
                         );
                       })
                     }
                   >
-                    ثبت بلیت قابل فروش
+                    ثبت بلیط قابل فروش
                   </Button>
                 </div>
               )}
               <p className="rounded-lg bg-primary/5 p-3 text-sm">
-                ظرفیت تور از بلیت‌ها محاسبه می‌شود؛ ثبت نوبت به‌تنهایی صندلی را
+                ظرفیت تور از بلیط‌ها محاسبه می‌شود؛ ثبت نوبت به‌تنهایی صندلی را
                 رزرو نمی‌کند. فروش تکی و تور از همان موجودی کم می‌شوند.
               </p>
               <Button
@@ -671,7 +671,7 @@ export function TourWorkspace() {
                 setRoundtrip(Boolean(item.returning));
                 resetTickets();
                 setNotice(
-                  'تاریخ‌ها یک هفته جلو رفتند؛ بلیت‌های همین تاریخ را انتخاب یا با ساعت دلخواه تعریف کنید. نوبت قبلی تغییر نکرده است.',
+                  'تاریخ‌ها یک هفته جلو رفتند؛ بلیط‌های همین تاریخ را انتخاب یا با ساعت دلخواه تعریف کنید. نوبت قبلی تغییر نکرده است.',
                 );
               }}
             >

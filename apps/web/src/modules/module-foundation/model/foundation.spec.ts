@@ -77,7 +77,7 @@ describe('module foundation coverage', () => {
       )?.items,
     ).toEqual([
       'Sales: تولید قرارداد',
-      'Reservations: تولید بلیت، Manifest، فرم رزرو، واچر و بیمه',
+      'Reservations: تولید بلیط، Manifest، فرم رزرو، واچر و بیمه',
       'Finance: تولید رسید، فاکتور و خروجی مالی خودش',
       'Purchases: تولید سفارش و اسناد خرید؛ HR: تولید اسناد پرسنلی',
     ]);

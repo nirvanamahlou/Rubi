@@ -270,7 +270,7 @@ export function ReservationInbox() {
                     disabled={busy}
                     onClick={() => setTicketRequest(request)}
                   >
-                    بلیت‌های مسافران · مشاهده و چاپ
+                    بلیط‌های مسافران · مشاهده و چاپ
                   </Button>
                 </div>
               ) : null}
@@ -291,7 +291,7 @@ export function ReservationInbox() {
                 </Badge>
               </div>
               <section className="grid gap-2 rounded-xl border border-border bg-muted/20 p-3">
-                <h3 className="font-bold">ترکیب مسافران بلیت</h3>
+                <h3 className="font-bold">ترکیب مسافران بلیط</h3>
                 <div className="grid gap-2 sm:grid-cols-3">
                   <CountSelect
                     label="بزرگسال"
@@ -313,7 +313,7 @@ export function ReservationInbox() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  این تعداد از قرارداد فروش می‌آید؛ نوزاد صندلی بلیت مصرف
+                  این تعداد از قرارداد فروش می‌آید؛ نوزاد صندلی بلیط مصرف
                   نمی‌کند. افزایش یا تعویض مسافر باید با اصلاح قرارداد فروش و
                   کنترل دوباره ظرفیت انجام شود.
                 </p>

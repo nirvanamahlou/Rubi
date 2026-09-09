@@ -33,7 +33,7 @@ const expectedTitles = [
   'مشتریان و مسافران',
   'امور مشتریان، سرنخ‌ها و پشتیبانی',
   'رزرواسیون و عملیات سفر',
-  'مدیریت و تعریف بلیت‌ها',
+  'مدیریت و تعریف بلیط‌ها',
   'قرارداد',
   'خرید و تأمین',
   'مالی و خزانه‌داری',
@@ -66,7 +66,7 @@ describe('CRM navigation', () => {
       groupedNavigationItems
         .find((group) => group.id === 'finance')
         ?.items.map((item) => item.href),
-    ).toEqual(['/finance']);
+    ).toEqual(['/finance', '/purchases']);
     expect(
       groupedNavigationItems
         .find((group) => group.id === 'hr')
@@ -135,7 +135,7 @@ describe('CRM navigation', () => {
   it('keeps sales, reservation, and ticket management as separate modules', () => {
     expect(getNavigationItem('/sales')?.title).toBe('قرارداد');
     expect(getNavigationItem('/reservations')?.title).toContain('رزرواسیون');
-    expect(getNavigationItem('/ticket-management')?.title).toContain('بلیت');
+    expect(getNavigationItem('/ticket-management')?.title).toContain('بلیط');
   });
 
   it('combines user administration and settings only at navigation level', () => {

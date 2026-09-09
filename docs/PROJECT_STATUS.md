@@ -1543,3 +1543,8 @@ The 55432 preview database was the wrong dataset for the user's current work (2 
 Implemented the selected option 3 on the isolated local branch: twenty buttons grouped in a sticky right panel; all disabled until an authorized contract is selected. Each opens the standard accessible Dialog with selected-contract context. Changing selection/access unmounts the previous dialogs. Available overview/passenger/customer projections are read-only; unspecified forms explicitly remain pending with no write controls. Small screens stack the panel above the list. No API, credentials, database or migration changes. 34 reservation tests passed.
 
 Final verification: targeted lint and production Web build/TypeScript passed (39 routes). Local Web 3100 restarted; no API restart or database switch.
+
+## NAV-FINANCE-TICKET-LABELS-0909 — PC-A
+Purchases now appears in the Finance sidebar group; route and permissions are unchanged. Visible Web copy uses the requested Persian spelling بلیط, with existing fixture/test text updated consistently. 57 relevant tests passed; no backend, data, migration or dependency change.
+
+Final validation: Web lint, TypeScript and production build passed (40 routes); local Web3100 refreshed. API and original database unchanged.

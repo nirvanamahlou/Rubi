@@ -386,7 +386,7 @@ function PreviewForm({
                     </SelectItem>
                     <SelectItem value="CANCELLATION">کنسلی</SelectItem>
                     <SelectItem value="REFUND">استرداد</SelectItem>
-                    <SelectItem value="TICKET_ISSUE">مشکل بلیت</SelectItem>
+                    <SelectItem value="TICKET_ISSUE">مشکل بلیط</SelectItem>
                     <SelectItem value="HOTEL_VOUCHER">هتل یا واچر</SelectItem>
                     <SelectItem value="INSURANCE">بیمه</SelectItem>
                     <SelectItem value="ADDITIONAL_SERVICE">

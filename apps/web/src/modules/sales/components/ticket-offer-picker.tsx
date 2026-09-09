@@ -55,7 +55,7 @@ export function TicketOfferPicker({
           response = await get();
         if (!response.ok)
           throw new Error(
-            'دریافت بلیت‌ها ناموفق بود؛ دسترسی و اتصال را بررسی کنید.',
+            'دریافت بلیط‌ها ناموفق بود؛ دسترسی و اتصال را بررسی کنید.',
           );
         const result = (await response.json()) as {
           data: TicketOfferV1[];
@@ -69,7 +69,7 @@ export function TicketOfferPicker({
             setError(
               reason instanceof Error
                 ? reason.message
-                : 'دریافت بلیت ناموفق بود.',
+                : 'دریافت بلیط ناموفق بود.',
             );
         })
         .finally(() => {
@@ -87,11 +87,11 @@ export function TicketOfferPicker({
         ساعت‌ها به وقت تهران · مرتب‌شده از نزدیک‌ترین تاریخ
       </p>
       {busy ? (
-        <p>در حال جست‌وجوی بلیت…</p>
+        <p>در حال جست‌وجوی بلیط…</p>
       ) : error ? (
         <Alert tone="error" title={error} />
       ) : !offers.length ? (
-        <p>بلیتی برای این مسیر و تاریخ پیدا نشد.</p>
+        <p>بلیطی برای این مسیر و تاریخ پیدا نشد.</p>
       ) : (
         offers.map((offer) => (
           <TicketOfferCard
@@ -123,7 +123,7 @@ export function TicketOfferPicker({
             disabled={busy}
             onClick={() => setPage(page + 1)}
           >
-            بلیت‌های بیشتر
+            بلیط‌های بیشتر
           </Button>
         ) : null}
       </div>

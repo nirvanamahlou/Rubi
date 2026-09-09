@@ -27,18 +27,18 @@ export function ContractFlightEditor({
           })
         }
       >
-        افزودن بلیت شناور؛ فقط این قرارداد
+        افزودن بلیط شناور؛ فقط این قرارداد
       </Button>
     );
   const patch = (next: Partial<ContractFlightDraft>) =>
     onChange({ ...value, ...next });
   return (
     <section
-      aria-label="بلیت شناور این قرارداد"
+      aria-label="بلیط شناور این قرارداد"
       className="grid gap-3 rounded-xl border border-primary bg-primary/5 p-3"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <strong>بلیت شناور — خارج از موجودی</strong>
+        <strong>بلیط شناور — خارج از موجودی</strong>
         <Button
           type="button"
           size="sm"
@@ -55,7 +55,7 @@ export function ContractFlightEditor({
       <div className="grid gap-3 sm:grid-cols-2">
         <FormField label="ایرلاین" required>
           <Input
-            aria-label="ایرلاین بلیت شناور"
+            aria-label="ایرلاین بلیط شناور"
             value={value.carrierName}
             maxLength={160}
             onChange={(e) => patch({ carrierName: e.target.value })}

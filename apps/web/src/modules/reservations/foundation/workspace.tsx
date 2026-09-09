@@ -34,7 +34,7 @@ const operationContent: Record<
   { title: string; fields: string[]; action: string; note: string }
 > = {
   tickets: {
-    title: 'صدور بلیت',
+    title: 'صدور بلیط',
     fields: [
       'مسافر تخصیص‌یافته',
       'خدمت قرارداد',
@@ -43,8 +43,8 @@ const operationContent: Record<
       'ظرفیت شرکت',
       'کد داخلی صدور',
     ],
-    action: 'صدور بلیت',
-    note: 'صدور بلیت پس از بررسی اطلاعات مسافر و تأیید تخصیص ظرفیت انجام می‌شود.',
+    action: 'صدور بلیط',
+    note: 'صدور بلیط پس از بررسی اطلاعات مسافر و تأیید تخصیص ظرفیت انجام می‌شود.',
   },
   hotels: {
     title: 'فرم رزرو هتل',
@@ -592,7 +592,7 @@ export function ReservationOperationsWorkspace({
                     <>
                       <label>
                         دلیل توقف
-                        <input placeholder="دلیل توقف بلیت" disabled />
+                        <input placeholder="دلیل توقف بلیط" disabled />
                       </label>
                       <button type="button" disabled>
                         توقف صدور

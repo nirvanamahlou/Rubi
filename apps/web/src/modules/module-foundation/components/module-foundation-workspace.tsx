@@ -381,7 +381,7 @@ export function ModuleFoundationWorkspace({
       <Card className="p-4">
         <div className="mb-3 flex items-center gap-2">
           <ListFilter aria-hidden="true" className="size-4 text-primary" />
-          <h2 className="text-sm font-black">Navigation داخلی قابلیت‌ها</h2>
+          <h2 className="text-sm font-black">Navigation داخلی قابلیط‌ها</h2>
         </div>
         <div className="flex flex-wrap gap-2" role="tablist">
           {config.sections.map((section, index) => (

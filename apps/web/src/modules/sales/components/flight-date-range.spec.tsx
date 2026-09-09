@@ -43,7 +43,7 @@ describe('optional flight range', () => {
           onChange={() => undefined}
         />,
       ),
-    ).toContain('همه بلیت‌های آینده');
+    ).toContain('همه بلیط‌های آینده');
     expect(
       renderToStaticMarkup(
         <FlightDateRangeFilter

@@ -422,7 +422,7 @@ export function SalesPeopleSheet({
       </div>
       <p className="text-xs text-muted-foreground">
         ردیف‌ها به تعداد مرحله اول باز شده‌اند. برای تغییر تعداد بزرگسال یا کودک
-        به مرحله اول برگردید؛ نوزاد صندلی بلیت کم نمی‌کند.
+        به مرحله اول برگردید؛ نوزاد صندلی بلیط کم نمی‌کند.
       </p>
       {!salesTravelDate(state) ||
       (!state.serviceKinds.includes('FLIGHT') &&

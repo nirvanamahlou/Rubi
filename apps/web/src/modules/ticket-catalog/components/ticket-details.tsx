@@ -179,7 +179,7 @@ export function TicketDetails({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Detail
-          label="ظرفیت کل بلیت"
+          label="ظرفیت کل بلیط"
           value={definition.totalCapacity.toLocaleString('fa-IR') + ' نفر'}
         />
         <Detail label="نوع تأمین" value={supplyLabels[definition.supplyType]} />
@@ -192,7 +192,7 @@ export function TicketDetails({
           }
           ltr
         />
-        <Detail label="قوانین بلیت" value={definition.rules || 'ثبت نشده'} />
+        <Detail label="قوانین بلیط" value={definition.rules || 'ثبت نشده'} />
       </div>
     </div>
   );

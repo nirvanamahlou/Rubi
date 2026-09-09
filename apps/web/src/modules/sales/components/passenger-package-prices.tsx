@@ -37,7 +37,7 @@ export function PassengerPackagePrices({
     <section className="space-y-3 rounded-xl border p-4">
       <h3 className="font-bold">مبلغ کل خدمات هر مسافر</h3>
       <p className="text-sm text-muted-foreground">
-        مبلغ توافقی کل پکیج هر نفر را بنویسید، نه فقط بلیت. جمع ردیف‌ها باید با
+        مبلغ توافقی کل پکیج هر نفر را بنویسید، نه فقط بلیط. جمع ردیف‌ها باید با
         مبلغ توافقی خدمات بالا برابر باشد. برای مسافر رایگان صفر وارد کنید.
       </p>
       {!expected.size ? (

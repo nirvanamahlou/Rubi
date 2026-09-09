@@ -68,9 +68,9 @@ export function PublishedOffers() {
       });
       if (!response.ok)
         throw new Error(
-          'ثبت بلیت ناموفق بود؛ مجوز مدیریت بلیت، مسیر و زمان‌ها را بررسی کنید.',
+          'ثبت بلیط ناموفق بود؛ مجوز مدیریت بلیط، مسیر و زمان‌ها را بررسی کنید.',
         );
-      setMessage('بلیت ذخیره شد و در جست‌وجوی فروش قابل انتخاب است.');
+      setMessage('بلیط ذخیره شد و در جست‌وجوی فروش قابل انتخاب است.');
       setOpen(false);
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : 'ثبت ناموفق بود.');
@@ -81,7 +81,7 @@ export function PublishedOffers() {
   return (
     <Card className="mb-5 p-5">
       <Button onClick={() => setOpen(!open)}>
-        ثبت بلیت زمان‌دار برای فروش
+        ثبت بلیط زمان‌دار برای فروش
       </Button>
       {message ? <Alert className="mt-3" title={message} /> : null}
       {open ? (
@@ -176,7 +176,7 @@ export function PublishedOffers() {
             />
           </FormField>
           <Button type="submit" loading={busy}>
-            ذخیره بلیت قابل فروش
+            ذخیره بلیط قابل فروش
           </Button>
         </form>
       ) : null}
