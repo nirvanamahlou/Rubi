@@ -136,8 +136,6 @@ export function ReservationFormSheet({
                     unoptimized
                   />
                 )}
-                <strong dir="auto">{data.brand}</strong>
-                <span>TOUR &amp; TRAVEL AGENCY</span>
               </div>
             </header>
             <div className={styles.meta}>

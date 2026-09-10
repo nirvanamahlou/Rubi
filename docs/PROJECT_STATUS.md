@@ -1715,3 +1715,7 @@ Pending-supplier light-theme background changed from #f1f2f4 to #dedee2 for clea
 
 ## RESERVATION-CONTRACT-HEADER-0910 — PC-A — LOCAL_COMPLETE
 Reservation sheet now follows Sales contract navy gradient/teal rule and centered grouped white own-company logo/name. OWN Niayesh reservation logo uses the contract niyayesh.png asset; uploaded agency logo retains its color treatment. Preview/print/direct-PDF HTML updated together; voucher unchanged.12 tests, scoped lint, TypeScript and build passed. Synthetic23-passenger PDF rendered through Playwright Edge and all3 A4 pages visually verified. The isolated CLI Chrome/Edge renderer returned without a PDF during this turn; authenticated direct-download success is not asserted. No renderer/runtime configuration changed. Public publication hold retained.
+
+## RESERVATION-COMPACT-HEADER-0910 — PC-A
+Removed the extra company-name and agency-caption text beneath the reservation header logo in preview and PDF HTML. Header reduced from27mm to22mm minimum height and vertical padding halved. Footer identity/alt text remain intact. Eight tests passed; three-page synthetic PDF generated through Playwright Edge and every page visually checked. Existing direct CLI renderer limitation remains unchanged. No data/API changes; public publication hold retained.
+Final scoped lint, TypeScript and Web build passed; local implementation complete.

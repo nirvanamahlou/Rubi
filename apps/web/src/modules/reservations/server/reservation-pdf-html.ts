@@ -37,7 +37,7 @@ export function reservationPdfHtml(
         p.age,
       ]);
       first += people.length;
-      return `<article class="page" dir="ltr"><header class="header"><div><h1>RESERVATION FORM</h1><p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p></div><div class="brand"><img class="${intake.workflow.branding?.kind === 'OWN' ? 'logo' : 'agencyLogo'}" src="${logo}" alt=""/><strong dir="auto">${escape(data.brand)}</strong><span>TOUR &amp; TRAVEL AGENCY</span></div></header>
+      return `<article class="page" dir="ltr"><header class="header"><div><h1>RESERVATION FORM</h1><p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p></div><div class="brand"><img class="${intake.workflow.branding?.kind === 'OWN' ? 'logo' : 'agencyLogo'}" src="${logo}" alt=""/></div></header>
     ${fields(
       [
         ['REQUEST NO.', data.request],

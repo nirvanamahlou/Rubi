@@ -21,8 +21,8 @@
   box-sizing: border-box;
 }
 .header {
-  min-height: 27mm;
-  padding: 4mm 5mm;
+  min-height: 22mm;
+  padding: 2mm 5mm;
   background: linear-gradient(115deg, #10386b, #092b56);
   color: white;
   border-bottom: 1mm solid #15999e;
@@ -70,7 +70,7 @@
   height: auto;
   max-width: 52mm;
   max-height: 17mm;
-  margin: 0 auto 1mm;
+  margin: 0 auto;
   object-fit: contain;
 }
 .logo {
