@@ -37,7 +37,10 @@ export function transitionTravelWorkflow(
     command.note.trim().length > 500
   )
     throw new Error('دلیل عملیات را تا ۵۰۰ نویسه وارد کنید.');
-  if (current.supplierStatus === 'CANCELLED' || current.voucherIssued)
+  if (
+    command.action !== 'NOTE' &&
+    (current.supplierStatus === 'CANCELLED' || current.voucherIssued)
+  )
     throw new Error('این درخواست بسته شده است و قابل تغییر نیست.');
   const next = {
     ...current,
@@ -45,6 +48,15 @@ export function transitionTravelWorkflow(
     note: command.note.trim(),
   };
   switch (command.action) {
+    case 'NOTE':
+      if ((current.reservationNotes?.length ?? 0) >= 100)
+        throw new Error('حداکثر تعداد یادداشت‌ها ثبت شده است.');
+      next.reservationNotes = [
+        ...(current.reservationNotes ?? []),
+        command.note.trim(),
+      ];
+      next.note = current.note;
+      break;
     case 'BRANDING':
       break;
     case 'REQUEST_SUPPLIER':

@@ -34,6 +34,13 @@ const snapshotSchema = z.object({
       z.object({
         kind: z.string().max(40),
         titleSnapshot: z.string().max(300),
+        metadata: z
+          .object({
+            reservationNote: z.string().max(500).optional(),
+            notes: z.string().optional(),
+          })
+          .passthrough()
+          .nullish(),
       }),
     )
     .max(1000),
@@ -95,6 +102,7 @@ const envelopeSchema = z.object({
               'CANCELLED',
             ]),
             voucherIssued: z.boolean(),
+            reservationNotes: z.array(z.string()).optional(),
           })
           .nullable()
           .optional(),
@@ -171,6 +179,14 @@ export function decodeIntake(
           .filter(Boolean),
         mealServiceId: snapshot.hotelSelection?.mealServiceId ?? undefined,
         hotelNotes: row.arrangement?.reason,
+        hasNotes:
+          row.snapshot.serviceSelections.some(
+            (service) =>
+              !!(
+                service.metadata?.reservationNote?.trim() ||
+                service.metadata?.notes?.trim()
+              ),
+          ) || !!row.workflow?.reservationNotes?.length,
         assignee: null,
         passengerNames: (snapshot.passengerAssignments ?? []).flatMap((p) =>
           p.displayNameSnapshot ? [p.displayNameSnapshot] : [],

@@ -113,3 +113,10 @@
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+
+.hasNotes {
+  background: #fef3c7 !important;
+  border-color: #d97706 !important;
+  color: #78350f !important;
+  font-weight: 700;
+}

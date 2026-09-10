@@ -66,6 +66,7 @@ export interface RequestView {
   mealServiceId?: string | undefined;
   mealServiceName?: string | undefined;
   hotelNotes?: string | undefined;
+  hasNotes?: boolean;
   carrierName?: string;
   destinationId?: string | undefined;
   checkIn?: string | undefined;

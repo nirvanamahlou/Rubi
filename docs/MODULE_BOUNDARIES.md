@@ -158,3 +158,6 @@ Event envelope شامل `eventId`, `eventType`, `version`, `occurredAt`, `traceI
 - تست معماری باید ادغام یا استفاده جایگزین Employee با Customer/Passenger و query مستقیم
   Finance روی داده حساس HR را رد کند.
 - reporting queryها با fixture چند passenger/segment از عدم تکثیر مبلغ مطمئن شوند.
+
+### Sales/Reservations note handoff (SALES-RESERVATION-NOTES-0910)
+Sales owns optional `services[].metadata.reservationNote` (500 characters), set once on the first persisted service and retained in the existing SalesReservationRequestV1 service snapshot. Reservations reads it and legacy per-service notes; it never rewrites Sales data. Optional `TravelWorkflowStateV1.reservationNotes` defaults empty for old JSON revisions. `NOTE` appends a nonempty500-character note under existing Reservations document permission, branch scope and expectedVersion, preserving status, issuance flags and action reason. Up to100 notes; existing revision actor/timestamp provide audit. Notes may be appended after issuance/cancellation without reopening workflow or granting Finance delivery. API must be deployed before this new client command; no schema migration. Notes are internal and are not inserted into traveler PDFs.

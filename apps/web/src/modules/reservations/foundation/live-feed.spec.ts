@@ -314,3 +314,34 @@ it('projects the latest persisted arrangement over the commercial room snapshot'
     correctedAt: '2026-09-09T10:00:00Z',
   });
 });
+it('marks notes from either the sales snapshot or reservation revisions', () => {
+  const input = intake();
+  const project = (record: unknown) =>
+    decodeIntake({ version: 1, data: [record] }, session)[0]!.hasNotes;
+  expect(project(input)).toBe(false);
+  expect(
+    project({
+      ...input,
+      snapshot: {
+        ...input.snapshot,
+        serviceSelections: [
+          {
+            kind: 'HOTEL',
+            titleSnapshot: 'Hotel',
+            metadata: { reservationNote: 'Quiet room' },
+          },
+        ],
+      },
+    }),
+  ).toBe(true);
+  expect(
+    project({
+      ...input,
+      workflow: {
+        supplierStatus: 'NEW',
+        voucherIssued: false,
+        reservationNotes: ['Follow up'],
+      },
+    }),
+  ).toBe(true);
+});

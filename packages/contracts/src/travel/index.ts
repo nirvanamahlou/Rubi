@@ -101,6 +101,7 @@ export interface TravelWorkflowStateV1 {
   branding: TravelBrandingV1 | null;
   roomOrder: string[];
   ageOverrides: Record<string, 'ADULT' | 'CHILD' | 'INFANT'>;
+  reservationNotes?: string[];
   note: string;
   updatedAt: string | null;
   updatedByUserId: string | null;
@@ -114,7 +115,8 @@ export interface TravelWorkflowCommandV1 {
     | 'CANCEL'
     | 'INSURANCE'
     | 'ISSUE_VOUCHER'
-    | 'ARRANGEMENT';
+    | 'ARRANGEMENT'
+    | 'NOTE';
   note: string;
   supplierReference?: string;
   insuranceReference?: string;

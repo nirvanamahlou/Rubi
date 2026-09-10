@@ -152,6 +152,7 @@ export interface SalesFormState {
   priceComponents: SalesPriceComponentInput[];
   payments: SalesPaymentInput[];
   pricingNotes: string;
+  reservationNote?: string;
   passengerPrices?: Record<string, SalesMoney[]>;
   passengerAccommodations?: Record<string, SalesAccommodationKind>;
 }
@@ -835,7 +836,17 @@ export function salesPayload(
     departureDate: salesTravelDate(state),
     returnNotBefore:
       state.tripType === 'ROUND_TRIP' ? salesTravelDate(state) : null,
-    services,
+    services: services.map((service, index) =>
+      index === 0 && state.reservationNote?.trim()
+        ? {
+            ...service,
+            metadata: {
+              ...service.metadata,
+              reservationNote: state.reservationNote.trim(),
+            },
+          }
+        : service,
+    ),
     passengers: state.passengers.map((item) => ({
       customerId: item.customerId,
       displayNameSnapshot: item.displayName,

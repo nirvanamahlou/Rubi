@@ -1,4 +1,5 @@
 'use client';
+import { ReservationNotes } from '../components/reservation-notes';
 import { ReservationPassengers } from '../passenger-files/passengers';
 import { ReservationFiles } from '../passenger-files/files';
 import { EnglishHotelName } from '../components/english-hotel-name';
@@ -46,6 +47,8 @@ export function ContractActionContent({
   action: string;
   request: RequestView;
 }) {
+  if (action === 'توضیحات')
+    return <ReservationNotes key={request.id} id={request.id} />;
   if (
     [
       'رزرواسیون',
@@ -161,7 +164,12 @@ export function ContractActionPanel({
                     <button
                       type="button"
                       disabled={!request}
-                      className={styles.action}
+                      className={`${styles.action} ${action === 'توضیحات' && request?.hasNotes ? styles.hasNotes : ''}`}
+                      aria-label={
+                        action === 'توضیحات' && request?.hasNotes
+                          ? 'توضیحات؛ این قرارداد یادداشت دارد'
+                          : action
+                      }
                     >
                       {action}
                     </button>

@@ -68,3 +68,16 @@ describe('selected contract actions', () => {
     expect(missing).toContain('در اطلاعات دریافتی موجود نیست');
   });
 });
+
+it('marks notes only for the selected contract with notes', () => {
+  expect(
+    renderToStaticMarkup(
+      <ContractActionPanel request={{ ...request, hasNotes: true }} />,
+    ),
+  ).toContain('توضیحات؛ این قرارداد یادداشت دارد');
+  expect(
+    renderToStaticMarkup(
+      <ContractActionPanel request={{ ...request, hasNotes: false }} />,
+    ),
+  ).not.toContain('این قرارداد یادداشت دارد');
+});

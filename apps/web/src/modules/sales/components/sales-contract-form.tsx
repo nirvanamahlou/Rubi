@@ -1577,6 +1577,23 @@ export function SalesContractForm() {
           </div>
         ) : null}
       </Card>
+      {step === salesSteps.length - 1 && (
+        <FormField label="یادداشت برای رزرواسیون (اختیاری)">
+          <Textarea
+            maxLength={500}
+            value={state.reservationNote ?? ''}
+            onChange={(event) =>
+              setState((current) => ({
+                ...current,
+                reservationNote: event.target.value,
+              }))
+            }
+          />
+          <p className="text-sm text-muted-foreground">
+            همراه قرارداد برای تیم رزرواسیون ارسال می‌شود.
+          </p>
+        </FormField>
+      )}
       <div className="sticky bottom-3 z-20 flex items-center justify-between rounded-xl border border-border bg-surface/95 p-3 shadow-sm backdrop-blur">
         <Button
           type="button"

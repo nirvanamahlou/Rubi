@@ -143,3 +143,29 @@ describe('travel workflow', () => {
     expect(state.ageOverrides).toEqual({});
   });
 });
+
+it('appends durable notes independently of issuance and preserves the operational note', () => {
+  const state = {
+    ...initialTravelWorkflow(),
+    voucherIssued: true,
+    note: 'issued',
+  };
+  const first = transition(
+    state,
+    command(state, 'NOTE', { note: 'Sales follow-up' }),
+    [],
+  );
+  expect(first.reservationNotes).toEqual(['Sales follow-up']);
+  expect(first.note).toBe('issued');
+  expect(first.voucherIssued).toBe(true);
+  const second = transition(
+    first,
+    command(first, 'NOTE', { note: 'Another note' }),
+    [],
+  );
+  expect(second.reservationNotes).toEqual(['Sales follow-up', 'Another note']);
+  expect(() => transition(second, command(first, 'NOTE'), [])).toThrow();
+  expect(() =>
+    transition(state, command(state, 'NOTE', { note: ' ' }), []),
+  ).toThrow();
+});

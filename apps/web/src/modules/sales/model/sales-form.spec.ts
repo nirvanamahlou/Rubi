@@ -526,3 +526,16 @@ describe('per passenger insurance surcharge payload', () => {
     expect(state.passengerPrices.older[0]?.amount).toBe('1000');
   });
 });
+
+it('carries the sales reservation note once in public service metadata', () => {
+  const payload = salesPayload({
+    ...emptySalesForm,
+    departureDate: '2026-10-01',
+    serviceKinds: ['OTHER'],
+    reservationNote: ' Quiet room please ',
+  });
+  expect(payload.services[0]?.metadata?.reservationNote).toBe(
+    'Quiet room please',
+  );
+  expect(payload.pricingNotes).toBeNull();
+});
