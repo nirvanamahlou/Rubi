@@ -1,5 +1,11 @@
 # وضعیت پروژه
 
+## TOUR-DETAILS-0910 — CODE_READY / ACTIVATION_PENDING
+
+فرم کامل تعریف تور شامل معرفی/شرایط، قیمت و ارز انتخابی، تومان با تبدیل دقیق به ریال، مشخصات حمل‌ونقل، برنامه سفر قابل افزودن/حذف/جابه‌جایی و تصویر از آرشیو امن اضافه شد. اطلاعات در definition موجود تور ذخیره می‌شود؛ بدون Migration یا تداخل با کار نرخ گروهی هتل.41 تست API و99 تست رابط/مصرف‌کننده، lint محدوده، typecheck و Build API/Web موفق‌اند. نوبت و ظرفیت قبلی دست‌نخورده است؛ نوع قطار فعلاً مشخصات تعریف است، نه نوبت اجرایی قطار.
+
+روی شاخه مستقل codex/pc-a-tour-details-0910 آماده است؛ اجرای3100/API4000 متعلق به کار فعال رزرواسیون تغییر نکرده و هماهنگی handoff ارسال شده است. بدون تغییر داده واقعی، انتشار عمومی یا ادعای تست مرورگر احرازشده. جزئیات: docs/tasks/TOUR-DETAILS-0910.md.
+
 ## RESERVATION-REFERENCE-FORM-0909 — PC-A — READY_FOR_REVIEW
 
 Reservation request print now follows the supplied six-section English navy/teal A4 reference, populated from the selected contract and current operational arrangement/age. Existing logo selection, voucher and financial gates preserved. Missing fields stay unfilled; no sample PII copied. 49 tests, scoped lint/typecheck and 40-route build passed; actual one- and three-page synthetic PDFs visually inspected. Web3100 refreshed without API/data/permission changes. Details: [task report](tasks/RESERVATION-REFERENCE-FORM-0909.md).
