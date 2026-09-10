@@ -1709,3 +1709,6 @@ Final scoped lint, TypeScript and Web build passed; implementation complete loca
 ## RESERVATION-ROOM-LAYOUT-0910 — PC-A
 Hotel attributes remain in the main table; stay dates and room quantities now have distinct captioned blocks with spacing. DBL/SGL/extra-bed quantities use emphasized values and expanded labels. Same layout in preview, print and direct PDF; existing values unchanged. Twelve targeted tests passed and synthetic3-page A4 PDF visually checked on every page. No API/schema/data changes. Public publication hold retained; local dev auto reload.
 Final scoped lint, TypeScript and production build passed; local implementation complete.
+
+## RESERVATION-PENDING-GRAY-0910 — PC-A — LOCAL_COMPLETE
+Pending-supplier light-theme background changed from #f1f2f4 to #dedee2 for clearer visibility. Issued/dark-mode colors and text remain unchanged. Formatting, diff check, TypeScript and Web build passed. CSS-only; no migration or operational data. Local dev update; public publication hold retained.

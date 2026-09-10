@@ -287,7 +287,7 @@
   --tone-text: #831843;
 }
 .workspace [data-tone='lightGray'] {
-  --tone-bg: #f1f2f4;
+  --tone-bg: #dedee2;
   --tone-edge: #9ca3af;
   --tone-text: #374151;
 }

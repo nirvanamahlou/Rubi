@@ -1607,3 +1607,7 @@ Completed:6 targeted tests, scoped lint, TypeScript and Web build passed. Scope 
 ## RESERVATION-ROOM-LAYOUT-0910 — PC-A — IN_PROGRESS
 Base9780a38. Reserve reservation-form-sheet.tsx/module.css and reservation-pdf-html.ts, existing checks and task status. Separate hotel stay dates and room quantities in preview/print/direct PDF without changing source values. No API/data/schema. Preserve next-env and public publication hold.
 Completed:12 tests, scoped lint, TypeScript and Web build passed. Three A4 PDF pages visually verified. Scope RELEASED, local-only commit.
+
+## RESERVATION-PENDING-GRAY-0910 — PC-A — IN_PROGRESS
+Based df96107. Reserve only workspace.module.css light-theme pending-supplier background and task status. Increase gray visibility while preserving dark-issued and dark-mode palettes, text, status and permissions. No data/API changes; preserve next-env and public publication hold.
+Completed: formatting/diff checks, TypeScript and Web build passed. CSS-only; scope RELEASED. Local commit only.
