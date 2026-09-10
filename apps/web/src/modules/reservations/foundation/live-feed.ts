@@ -199,7 +199,7 @@ export function decodeIntake(
         hotelRequested: ['REQUESTED', 'CONFIRMED'].includes(
           row.workflow?.supplierStatus ?? '',
         ),
-        hotelConfirmed: row.workflow?.supplierStatus === 'CONFIRMED',
+        hotelConfirmed: row.workflow?.voucherIssued === true,
         correctedAt: row.arrangement?.updatedAt,
         ...(travelDate ? { travelDate } : {}),
         ...(snapshot.hotelSelection

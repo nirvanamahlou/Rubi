@@ -263,7 +263,7 @@ export const statusTones: Record<
 > = {
   NEW: 'pink',
   WAITING_SUPPLIER: 'lightGray',
-  SUPPLIER_CONFIRMED: 'darkGray',
+  SUPPLIER_CONFIRMED: 'lightGray',
   VOUCHER_ISSUED: 'darkGray',
   CANCELLED: 'red',
   ACTION_REQUIRED: 'neutral',

@@ -1685,3 +1685,6 @@ Per-contract financial approval dialog replaces disabled buttons dependent on a 
 
 ## RESERVATION-EXTRA-COLUMNS-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
 Five requested columns added to Reservations and filtered XLSX; real permission-scoped names, meal-service lookup and persisted arrangement notes.13 API/41 Web tests, lint/typechecks/builds passed. API refreshed; Web awaits manual restart. No data/migration/grants. See tasks/RESERVATION-EXTRA-COLUMNS-0910.md.
+
+## RESERVATION-TABLE-ACTIONS-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
+Hotel table checkboxes open existing request/voucher workflow. Sent requests light gray; hotel confirmation checkbox and dark gray require issued voucher. Finance/insurance/version gates preserved.46 Web/7 API tests, browser QA, lint/typecheck/build passed. Web awaits user terminal restart; no API/data changes. See tasks/RESERVATION-TABLE-ACTIONS-0910.md.

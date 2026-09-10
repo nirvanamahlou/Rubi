@@ -1,5 +1,6 @@
 'use client';
 import { useQueueNames } from './queue-names';
+import { HotelTableAction } from './hotel-table-action';
 import {
   reservationColumns,
   reservationCells,
@@ -424,8 +425,8 @@ export function ReservationOperationsWorkspace({
                     : `خروجی اکسل (${result.total.toLocaleString('fa-IR')} درخواست)`}
                 </button>
                 <small>
-                  همهٔ نتایج مطابق فیلترها و ترتیب فعلی؛ تیک‌ها فقط نمایش وضعیت
-                  ثبت‌شده‌اند.
+                  همهٔ نتایج مطابق فیلترها و ترتیب فعلی؛ برای ارسال فرم یا صدور
+                  واچر، روی مربع اقدام یا تأیید هتل بزنید.
                 </small>
                 {exportError && <span role="alert">{exportError}</span>}
               </div>
@@ -665,6 +666,15 @@ export function ReservationOperationsWorkspace({
                                 >
                                   {value}
                                 </button>
+                              ) : index === 10 || index === 11 ? (
+                                <HotelTableAction
+                                  row={row}
+                                  confirmation={index === 11}
+                                  canManage={access.permissions.includes(
+                                    'reservations.documents.manage',
+                                  )}
+                                  onSelect={() => setSelectedId(row.id)}
+                                />
                               ) : (
                                 <bdi>{value}</bdi>
                               )}

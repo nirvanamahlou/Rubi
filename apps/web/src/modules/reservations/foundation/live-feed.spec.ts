@@ -85,6 +85,32 @@ it('decodes actual queue labels, meal reference and arrangement notes without de
   });
 });
 describe('reservation feed boundary', () => {
+  it('marks hotel confirmation only once a voucher is issued', () => {
+    const input = intake();
+    const project = (voucherIssued: boolean) =>
+      decodeIntake(
+        {
+          version: 1,
+          data: [
+            {
+              ...input,
+              workflow: { supplierStatus: 'CONFIRMED', voucherIssued },
+            },
+          ],
+        },
+        session,
+      )[0]!;
+    expect(project(false)).toMatchObject({
+      hotelRequested: true,
+      hotelConfirmed: false,
+      status: 'SUPPLIER_CONFIRMED',
+    });
+    expect(project(true)).toMatchObject({
+      hotelRequested: true,
+      hotelConfirmed: true,
+      status: 'VOUCHER_ISSUED',
+    });
+  });
   it('keeps real values without inventing priority, deadline or customer name', () => {
     expect(row()).toMatchObject({
       status: 'NEW',

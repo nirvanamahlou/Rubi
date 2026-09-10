@@ -1577,3 +1577,7 @@ FINANCE-DELIVERY-CONFIRM-0910: scoped lint/typecheck, 9 Finance tests, 41-route 
 Basea8160d7; reserve Reservations queue projection/runtime consumer wiring, Web model/feed/names/table/styles/tests and docs. Add services/seller/contract party/meal service/hotel arrangement notes from existing records and public Customer/IAM read services under existing permissions. No producer, schema, migration, grants or data edits. Public publication hold retained.
 Additional scope: Reservations XLSX filter range must cover all current columns, replacing the old fixed15-column bound.
 13 API and41 Web tests, scoped lint/typechecks and API/Web builds passed. API4000 refreshed; Web3100 retains user-started runtime and requires manual restart because tool startup remains blocked. Implementation scope RELEASED; local commit only.
+
+## RESERVATION-TABLE-ACTIONS-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
+Base88c7c6b; reserve Web Reservations table checkbox actions/component, feed/status projection, scoped tests/docs. Existing workflow dialog/commands for request and voucher remain authoritative; no backend changes, financial gate bypass, actual sends or real issuance. Checked hotel confirmation means voucherIssued only. Local-only publication hold retained.
+46 Web tests,7 existing workflow API tests, scoped lint/typecheck and41-route build passed. Synthetic browser verified dialog opening, insurance acknowledgement and conflict without false checkmark. No real mutations. Scope RELEASED; user-started Web awaits manual restart; no public push.
