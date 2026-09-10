@@ -1581,3 +1581,7 @@ Additional scope: Reservations XLSX filter range must cover all current columns,
 ## RESERVATION-TABLE-ACTIONS-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
 Base88c7c6b; reserve Web Reservations table checkbox actions/component, feed/status projection, scoped tests/docs. Existing workflow dialog/commands for request and voucher remain authoritative; no backend changes, financial gate bypass, actual sends or real issuance. Checked hotel confirmation means voucherIssued only. Local-only publication hold retained.
 46 Web tests,7 existing workflow API tests, scoped lint/typecheck and41-route build passed. Synthetic browser verified dialog opening, insurance acknowledgement and conflict without false checkmark. No real mutations. Scope RELEASED; user-started Web awaits manual restart; no public push.
+
+## CONTRACT-HOTEL-MEAL-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
+Based7d9e13. User clarified the source is the hotel master record. Scope narrowed to Reservations queue-name/meal projection and tests/docs only; Sales form scope released with own draft edits removed. Read-only verification: ROYAL WINGS has UALL; existing five contract snapshots omit a separate meal selection. Read hotel meal codes from existing Master Data response, preserve explicit contract selection precedence; no data/API/schema/grants. Public hold retained.
+49 Reservations tests, scoped lint/typecheck and41-route Web build passed. Hotel UALL fallback and explicit contract precedence tested; no live writes. Scope RELEASED; Web awaits manual restart; public hold retained.

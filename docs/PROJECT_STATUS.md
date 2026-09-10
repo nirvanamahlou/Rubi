@@ -1688,3 +1688,6 @@ Five requested columns added to Reservations and filtered XLSX; real permission-
 
 ## RESERVATION-TABLE-ACTIONS-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
 Hotel table checkboxes open existing request/voucher workflow. Sent requests light gray; hotel confirmation checkbox and dark gray require issued voucher. Finance/insurance/version gates preserved.46 Web/7 API tests, browser QA, lint/typecheck/build passed. Web awaits user terminal restart; no API/data changes. See tasks/RESERVATION-TABLE-ACTIONS-0910.md.
+
+## CONTRACT-HOTEL-MEAL-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
+Reservations service column now uses meal codes from the selected hotel's existing master-data response when the contract has no explicit service. ROYAL WINGS UALL verified read-only. Same value flows to XLSX without additional requests or contract writes.49 tests, scoped lint/typecheck and build passed; Web restart pending. See tasks/CONTRACT-HOTEL-MEAL-0910.md.
