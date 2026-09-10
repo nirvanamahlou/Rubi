@@ -55,6 +55,7 @@ export interface ReservationArrangementUpdateV1 {
 }
 
 export interface ReservationIntakeV1 {
+  contractEditVersion?: number;
   purchaseVersion?: number;
   hotelPurchases?: readonly ReservationHotelPurchaseV1[];
   id: string;
@@ -101,6 +102,10 @@ export interface TravelWorkflowStateV1 {
   branding: TravelBrandingV1 | null;
   roomOrder: string[];
   ageOverrides: Record<string, 'ADULT' | 'CHILD' | 'INFANT'>;
+  supplierFormSettings?: VoucherSettingsV1;
+  sentSupplierFormSettings?: VoucherSettingsV1;
+  sentSupplierFormVersion?: number;
+  appliedContractVersion?: number;
   voucherSettings?: VoucherSettingsV1;
   reservationNotes?: string[];
   note: string;
@@ -118,8 +123,11 @@ export interface TravelWorkflowCommandV1 {
     | 'ISSUE_VOUCHER'
     | 'ARRANGEMENT'
     | 'NOTE'
-    | 'VOUCHER_SETTINGS';
+    | 'VOUCHER_SETTINGS'
+    | 'SUPPLIER_FORM_SETTINGS';
   note: string;
+  applyToContractAndVoucher?: boolean;
+  expectedContractVersion?: number;
   voucherSettings?: VoucherSettingsV1;
   supplierReference?: string;
   insuranceReference?: string;

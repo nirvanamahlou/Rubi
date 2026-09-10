@@ -1,5 +1,5 @@
+import { supplierFormData } from '../model/voucher-settings';
 import {
-  reservationFormData,
   reservationPassengerPages,
   type ReservationFormIntake,
   type ReservationFormReferences,
@@ -19,7 +19,7 @@ export function reservationPdfHtml(
 ) {
   if (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(logo))
     throw new Error('PDF_LOGO_INVALID');
-  const data = reservationFormData(intake, refs),
+  const data = supplierFormData(intake, refs),
     pages = reservationPassengerPages(data.passengers);
   const heading = (n: string, title: string, note: string) =>
     `<div class="heading"><b>${n}</b><strong>${title}</strong><span>${note}</span></div>`;

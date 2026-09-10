@@ -1,3 +1,5 @@
+import { ParseUUIDPipe } from '@nestjs/common';
+import { SalesOperationalAmendmentModule } from '../sales/sales-operational-amendment.module';
 import { CustomersModule } from '../customers/customers.module';
 import { CustomerService } from '../customers/customer.service';
 import { IamService } from '../iam/iam.service';
@@ -152,6 +154,18 @@ export class ReservationRequestsController {
   ) {
     return this.hotelPurchase.record(id, input, req.actor, key);
   }
+  @Get(':id/purchase-context')
+  @Header('Cache-Control', 'private, no-store')
+  async purchaseContext(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    return {
+      data: await this.service.purchaseContext(id, req.actor.branchIds),
+    };
+  }
   @Get()
   @Header('Cache-Control', 'private, no-store')
   async list(
@@ -223,6 +237,7 @@ export class ReservationRequestsController {
 }
 @Module({
   imports: [
+    SalesOperationalAmendmentModule,
     IamModule,
     CustomersModule,
     DocumentsModule,

@@ -1,12 +1,11 @@
 'use client';
 import Image from 'next/image';
-import { voucherFormData } from '../model/voucher-settings';
+import { voucherFormData, supplierFormData } from '../model/voucher-settings';
 import { useEffect, useState } from 'react';
 import type { MasterDataResource } from '@rubi/contracts';
 import { salesContractFlights } from '@rubi/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import {
-  reservationFormData,
   reservationPassengerPages,
   type ReservationFormIntake,
   type ReservationFormReferences,
@@ -102,8 +101,10 @@ export function ReservationFormSheet({
 }) {
   const data = voucher
     ? voucherFormData(intake, references)
-    : reservationFormData(intake, references);
-  const settings = voucher ? intake.workflow.voucherSettings : undefined;
+    : supplierFormData(intake, references);
+  const settings = voucher
+    ? intake.workflow.voucherSettings
+    : intake.workflow.supplierFormSettings;
   const pages = reservationPassengerPages(
     data.passengers,
     settings

@@ -1,3 +1,4 @@
+import { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LegalEntitiesService } from '../legal-entities/legal-entities.service';
 import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
@@ -32,6 +33,8 @@ export class TravelWorkflowService {
     private readonly agencies: MasterOrganizationDirectory,
     @Inject(NotificationsService)
     private readonly notifications: NotificationsService,
+    @Inject(SalesOperationalAmendmentService)
+    private readonly amendments: SalesOperationalAmendmentService,
   ) {}
   async detail(id: string, branchIds: readonly string[]) {
     if (!/^[0-9a-f-]{36}$/i.test(id)) throw new NotFoundException();
@@ -47,6 +50,11 @@ export class TravelWorkflowService {
       TravelWorkflowStateV1 | undefined;
     const arrangement = row.arrangements[0];
     return {
+      contractEditVersion: await this.amendments.versionFor(
+        this.database.client,
+        row.contractId,
+        branchIds,
+      ),
       salesOwnerUserId: row.salesOwnerUserId,
       id: row.id,
       requestId: row.requestId,
@@ -163,6 +171,19 @@ export class TravelWorkflowService {
           error instanceof Error ? error.message : 'عملیات نامعتبر',
         );
       }
+      if (
+        command.action === 'SUPPLIER_FORM_SETTINGS' &&
+        command.applyToContractAndVoucher
+      )
+        next.appliedContractVersion = await this.amendments.apply(
+          tx,
+          intake.contractId,
+          intake.contractVersion,
+          next.supplierFormSettings!,
+          actor,
+          command.note,
+          command.expectedContractVersion,
+        );
       if (branding) next.branding = branding;
       if (
         ['REQUEST_SUPPLIER', 'CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(

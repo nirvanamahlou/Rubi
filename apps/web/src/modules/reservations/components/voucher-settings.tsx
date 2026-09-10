@@ -28,15 +28,24 @@ function VoucherSettingsForm({
   refs,
   onSaved,
   onDirty,
+  supplier = false,
 }: {
   intake: ReservationFormIntake;
   refs: ReservationFormReferences;
   onSaved: (state: TravelWorkflowStateV1) => void;
   onDirty: () => void;
+  supplier?: boolean;
 }) {
-  const [draft, setDraft] = useState(() =>
-    defaultVoucherSettings(intake, refs),
-  );
+  const [draft, setDraft] = useState(() => {
+    const source = structuredClone(intake);
+    if (supplier) {
+      delete source.workflow.voucherSettings;
+      if (source.workflow.supplierFormSettings)
+        source.workflow.voucherSettings = source.workflow.supplierFormSettings;
+    }
+    return defaultVoucherSettings(source, refs);
+  });
+  const [confirmScope, setConfirmScope] = useState(false);
   const [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<
@@ -59,7 +68,7 @@ function VoucherSettingsForm({
       live = false;
     };
   }, [intake.id, intake.workflow.version]);
-  async function save() {
+  async function save(applyToContractAndVoucher = false) {
     if (busy) return;
     setBusy(true);
     setError('');
@@ -67,9 +76,15 @@ function VoucherSettingsForm({
       const r = await travelRequest<{ data: TravelWorkflowStateV1 }>(
         `reservations/requests/${intake.id}/workflow`,
         {
-          action: 'VOUCHER_SETTINGS',
+          action: supplier ? 'SUPPLIER_FORM_SETTINGS' : 'VOUCHER_SETTINGS',
+          ...(supplier
+            ? {
+                applyToContractAndVoucher,
+                expectedContractVersion: intake.contractEditVersion,
+              }
+            : {}),
           expectedVersion: intake.workflow.version,
-          note: 'ثبت تنظیمات واچر',
+          note: supplier ? 'ویرایش فرم کارگزار' : 'ثبت تنظیمات واچر',
           voucherSettings: draft,
         },
       );
@@ -88,10 +103,13 @@ function VoucherSettingsForm({
   const selected = draft.passengers.filter((p) => p.selected);
   return (
     <section className="grid gap-4 rounded-xl border border-border p-4">
-      <h3 className="font-bold">تنظیمات واچر</h3>
+      <h3 className="font-bold">
+        {supplier ? 'ویرایش فرم ارسالی به کارگزار' : 'تنظیمات واچر'}
+      </h3>
       <p className="text-sm">
-        تغییرات را پیش از صدور ذخیره کنید. اصلاح واچر صادرشده به‌عنوان نسخهٔ
-        جدید نگهداری می‌شود.
+        {supplier
+          ? 'بعد از ویرایش، مقصد تغییرات را انتخاب و فرم را ذخیره کنید. مبالغ قرارداد تغییر نمی‌کنند.'
+          : 'تغییرات را پیش از صدور ذخیره کنید. اصلاح واچر صادرشده به‌عنوان نسخهٔ جدید نگهداری می‌شود.'}
       </p>
       <p>
         تعداد اتاق:{' '}
@@ -111,25 +129,31 @@ function VoucherSettingsForm({
           : '—'}
       </p>
       <fieldset
-        disabled={busy || intake.workflow.supplierStatus === 'CANCELLED'}
+        disabled={
+          busy ||
+          intake.workflow.supplierStatus === 'CANCELLED' ||
+          (supplier && intake.workflow.voucherIssued)
+        }
         className="grid gap-4"
       >
         <div className="flex flex-wrap gap-4">
-          {voucherFlagKeys.map((k) => (
-            <label key={k}>
-              <input
-                type="checkbox"
-                checked={draft.flags[k]}
-                onChange={(e) =>
-                  update({
-                    ...draft,
-                    flags: { ...draft.flags, [k]: e.target.checked },
-                  })
-                }
-              />{' '}
-              {voucherFlagLabels[k]}
-            </label>
-          ))}
+          {voucherFlagKeys
+            .filter((k) => !supplier || k !== 'withLetterhead')
+            .map((k) => (
+              <label key={k}>
+                <input
+                  type="checkbox"
+                  checked={draft.flags[k]}
+                  onChange={(e) =>
+                    update({
+                      ...draft,
+                      flags: { ...draft.flags, [k]: e.target.checked },
+                    })
+                  }
+                />{' '}
+                {voucherFlagLabels[k]}
+              </label>
+            ))}
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {voucherTextKeys.map((k) => (
@@ -344,10 +368,40 @@ function VoucherSettingsForm({
             </tbody>
           </table>
         </div>
-        <Button onClick={() => void save()} disabled={busy || !selected.length}>
-          {busy ? 'در حال ذخیره…' : 'ذخیره تنظیمات واچر'}
+        <Button
+          onClick={() => (supplier ? setConfirmScope(true) : void save())}
+          disabled={busy || !selected.length}
+        >
+          {busy
+            ? 'در حال ذخیره…'
+            : supplier
+              ? 'ذخیره فرم کارگزار'
+              : 'ذخیره تنظیمات واچر'}
         </Button>
       </fieldset>
+      {supplier && confirmScope && (
+        <div
+          role="alertdialog"
+          aria-label="مقصد تغییرات فرم"
+          className="rounded border border-border p-4 space-y-3"
+        >
+          <p>تغییرات این فرم در قرارداد و واچر هتل هم اعمال شود؟</p>
+          <p>«نه» فقط فرم کارگزار و مبنای خرید را تغییر می‌دهد.</p>
+          <Button disabled={busy} onClick={() => void save(false)}>
+            نه، فقط فرم کارگزار و خرید
+          </Button>
+          <Button disabled={busy} onClick={() => void save(true)}>
+            بله، قرارداد و واچر هم تغییر کند
+          </Button>
+          <Button
+            variant="outline"
+            disabled={busy}
+            onClick={() => setConfirmScope(false)}
+          >
+            بازگشت به ویرایش
+          </Button>
+        </div>
+      )}
       {error && (
         <p role="alert" className="text-destructive">
           {error}
@@ -403,6 +457,7 @@ export function VoucherSettings(props: {
   intake: ReservationFormIntake;
   onSaved: (state: TravelWorkflowStateV1) => void;
   onDirty: () => void;
+  supplier?: boolean;
 }) {
   const refs = useReservationFormReferences(props.intake, true);
   return refs.ready ? (

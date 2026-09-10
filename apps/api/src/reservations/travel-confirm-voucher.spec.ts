@@ -35,6 +35,7 @@ it('persists confirmation and voucher together and notifies the sales owner in t
     {} as Dependencies[1],
     {} as Dependencies[2],
     { createWithinTransaction: notify } as unknown as Dependencies[3],
+    {} as Dependencies[4],
   );
   vi.spyOn(service, 'detail').mockResolvedValue({
     salesOwnerUserId: 'owner',

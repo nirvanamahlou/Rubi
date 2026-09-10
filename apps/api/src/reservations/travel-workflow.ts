@@ -49,6 +49,16 @@ export function transitionTravelWorkflow(
     note: command.note.trim(),
   };
   switch (command.action) {
+    case 'SUPPLIER_FORM_SETTINGS':
+      if (typeof command.applyToContractAndVoucher !== 'boolean')
+        throw new Error('مقصد تغییرات را انتخاب کنید.');
+      next.supplierFormSettings = validateVoucherSettings(
+        command.voucherSettings,
+        passengerIds,
+      );
+      if (command.applyToContractAndVoucher)
+        next.voucherSettings = structuredClone(next.supplierFormSettings);
+      break;
     case 'VOUCHER_SETTINGS':
       if (current.supplierStatus === 'CANCELLED')
         throw new Error('درخواست ابطال شده است.');
@@ -69,9 +79,14 @@ export function transitionTravelWorkflow(
     case 'BRANDING':
       break;
     case 'REQUEST_SUPPLIER':
-      if (current.supplierStatus !== 'NEW')
-        throw new Error('درخواست قبلاً برای کارگزار ثبت شده است.');
+      if (!['NEW', 'REQUESTED'].includes(current.supplierStatus))
+        throw new Error('ثبت ارسال در این وضعیت ممکن نیست.');
       next.supplierStatus = 'REQUESTED';
+      if (current.supplierFormSettings)
+        next.sentSupplierFormSettings = structuredClone(
+          current.supplierFormSettings,
+        );
+      next.sentSupplierFormVersion = next.version;
       break;
     case 'CONFIRM_SUPPLIER':
       if (current.supplierStatus !== 'REQUESTED')

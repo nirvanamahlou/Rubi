@@ -124,6 +124,14 @@ export class ReservationsPublicService {
     return { id: row.id, requestId: row.requestId, status: row.status };
   }
 
+  async purchaseContext(id: string, branchIds: readonly string[]) {
+    const row = await this.database.client.reservationIntake.findFirst({
+      where: { id, branchId: { in: [...branchIds] } },
+      include: intakeInclude,
+    });
+    if (!row) throw new NotFoundException('درخواست در دسترس نیست.');
+    return present(row);
+  }
   async list(
     branchIds: readonly string[],
     options: {

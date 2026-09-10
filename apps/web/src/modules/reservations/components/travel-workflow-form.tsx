@@ -265,19 +265,28 @@ export function TravelWorkflowForm({
           voucher={action === 'واچر' || action === 'Confirmation'}
         />
       )}
-      {action === 'واچر' && (
+      {(action === 'واچر' || action === 'رزرواسیون') && (
         <VoucherSettings
+          supplier={action === 'رزرواسیون'}
           key={`${id}:${state.version}`}
           intake={intake}
           onDirty={() => setSettingsDirty(true)}
           onSaved={(workflow) => {
-            setIntake({ ...intake, workflow });
+            setIntake({
+              ...intake,
+              workflow,
+              ...(workflow.appliedContractVersion
+                ? { contractEditVersion: workflow.appliedContractVersion }
+                : {}),
+            });
             setSettingsDirty(false);
           }}
         />
       )}
       {settingsDirty && (
-        <p role="status">تنظیمات تغییر کرده؛ قبل از صدور ذخیره کنید.</p>
+        <p role="status">
+          تنظیمات تغییر کرده؛ قبل از ارسال یا صدور ذخیره کنید.
+        </p>
       )}
       {action === 'واچر' && state.supplierStatus === 'NEW' && (
         <p role="status">
@@ -381,13 +390,17 @@ export function TravelWorkflowForm({
           <div className="flex flex-wrap gap-2">
             {action === 'رزرواسیون' && (
               <Button
-                disabled={busy || state.supplierStatus !== 'NEW'}
+                disabled={
+                  busy ||
+                  settingsDirty ||
+                  !['NEW', 'REQUESTED'].includes(state.supplierStatus)
+                }
                 onClick={() => void run('REQUEST_SUPPLIER')}
               >
                 {busy
                   ? 'در حال ثبت…'
                   : state.supplierStatus === 'REQUESTED'
-                    ? 'ارسال به کارگزار ثبت شده'
+                    ? 'ثبت ارسال مجدد فرم اصلاح‌شده'
                     : 'ثبت ارسال درخواست به کارگزار'}
               </Button>
             )}

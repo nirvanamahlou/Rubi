@@ -1,4 +1,5 @@
 'use client';
+import { ReservationPurchaseDialog } from '../components/reservation-hotel-purchase';
 import { ReservationNotes } from '../components/reservation-notes';
 import { ReservationPassengers } from '../passenger-files/passengers';
 import { ReservationFiles } from '../passenger-files/files';
@@ -47,6 +48,7 @@ export function ContractActionContent({
   action: string;
   request: RequestView;
 }) {
+  if (action === 'خرید') return <ReservationPurchaseDialog id={request.id} />;
   if (action === 'توضیحات')
     return <ReservationNotes key={request.id} id={request.id} />;
   if (

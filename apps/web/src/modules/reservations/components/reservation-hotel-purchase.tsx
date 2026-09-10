@@ -1,6 +1,8 @@
 'use client';
+import { travelRequest } from './travel-workflow-form';
+import type { TravelWorkflowStateV1 } from '@rubi/contracts';
 import { EnglishHotelName } from './english-hotel-name';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   hotelNights,
   resolveSalesPrice,
@@ -24,6 +26,9 @@ export function ReservationHotelPurchase({
   request: ReservationIntakeV1;
   onSaved: () => void;
 }) {
+  const sent = (
+    request as ReservationIntakeV1 & { workflow?: TravelWorkflowStateV1 }
+  ).workflow?.sentSupplierFormSettings;
   const hotel = request.snapshot.hotelSelection;
   const pricing =
     request.snapshot.serviceSelections.find(
@@ -98,6 +103,25 @@ export function ReservationHotelPurchase({
   }
   return (
     <div className="mt-4 space-y-3 rounded-xl border bg-muted/20 p-4">
+      {sent && (
+        <section
+          className="rounded border border-border p-3"
+          aria-label="مبنای خرید ارسالی به کارگزار"
+        >
+          <strong>مبنای خرید: اطلاعات ارسال‌شده به کارگزار</strong>
+          <p>
+            {sent.text.hotel} · {sent.text.roomType} · {sent.text.meal}
+          </p>
+          <p dir="ltr">
+            {sent.text.checkIn} → {sent.text.checkOut} · SGL{' '}
+            {sent.numbers.singleRooms} / DBL {sent.numbers.doubleRooms} / EXT{' '}
+            {sent.numbers.extraBeds} / CUSTOM {sent.numbers.customRooms}
+          </p>
+          <p>
+            {sent.text.broker} · {sent.text.remarks}
+          </p>
+        </section>
+      )}
       <h3 className="font-bold">
         <EnglishHotelName
           hotelId={hotel.hotelId}
@@ -202,5 +226,36 @@ export function ReservationHotelPurchase({
         </p>
       ))}
     </div>
+  );
+}
+
+export function ReservationPurchaseDialog({ id }: { id: string }) {
+  const [request, setRequest] = useState<ReservationIntakeV1>();
+  const [error, setError] = useState('');
+  const [refresh, setRefresh] = useState(0);
+  useEffect(() => {
+    let live = true;
+    void travelRequest<{ data: ReservationIntakeV1 }>(
+      `reservations/requests/${id}/purchase-context`,
+    )
+      .then((r) => {
+        if (live) setRequest(r.data);
+      })
+      .catch((e) => {
+        if (live) setError(String(e.message));
+      });
+    return () => {
+      live = false;
+    };
+  }, [id, refresh]);
+  if (error) return <p role="alert">{error}</p>;
+  return request ? (
+    <ReservationHotelPurchase
+      key={request.purchaseVersion}
+      request={request}
+      onSaved={() => setRefresh((v) => v + 1)}
+    />
+  ) : (
+    <p>در حال دریافت اطلاعات خرید…</p>
   );
 }

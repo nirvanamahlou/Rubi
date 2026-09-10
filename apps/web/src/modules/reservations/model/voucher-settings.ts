@@ -1,10 +1,5 @@
-import type {
-  voucherNumberKeys,
-  voucherFlagKeys} from '@rubi/contracts';
-import {
-  voucherTextKeys,
-  type VoucherSettingsV1,
-} from '@rubi/contracts';
+import type { voucherNumberKeys, voucherFlagKeys } from '@rubi/contracts';
+import { voucherTextKeys, type VoucherSettingsV1 } from '@rubi/contracts';
 import {
   reservationFormData,
   type ReservationFormIntake,
@@ -190,4 +185,20 @@ export function voucherFormData(
       time: v.text[`${prefix}Time`] || '-',
     })),
   };
+}
+
+export function supplierFormData(
+  intake: ReservationFormIntake,
+  refs: ReservationFormReferences = {},
+) {
+  const settings = intake.workflow.supplierFormSettings;
+  return settings
+    ? voucherFormData(
+        {
+          ...intake,
+          workflow: { ...intake.workflow, voucherSettings: settings },
+        },
+        refs,
+      )
+    : reservationFormData(intake, refs);
 }

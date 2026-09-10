@@ -88,3 +88,44 @@ it('creates a new issued settings revision without rewriting the prior settings 
     ),
   ).toThrow();
 });
+it('isolates supplier form edits and freezes sent details for purchase', () => {
+  const original = settings();
+  original.text.roomType = 'DBL';
+  const state = { ...initialTravelWorkflow(), voucherSettings: original };
+  const single = settings();
+  single.text.roomType = 'SGL';
+  const draft = transition(
+    state,
+    {
+      action: 'SUPPLIER_FORM_SETTINGS',
+      expectedVersion: 0,
+      note: 'Edit',
+      voucherSettings: single,
+      applyToContractAndVoucher: false,
+    },
+    ['p'],
+  );
+  expect(draft.voucherSettings?.text.roomType).toBe('DBL');
+  expect(draft.supplierFormSettings?.text.roomType).toBe('SGL');
+  const sent = transition(
+    draft,
+    { action: 'REQUEST_SUPPLIER', expectedVersion: 1, note: 'Sent' },
+    ['p'],
+  );
+  expect(sent.sentSupplierFormSettings?.text.roomType).toBe('SGL');
+  single.text.roomType = 'NEXT';
+  expect(sent.sentSupplierFormSettings?.text.roomType).toBe('SGL');
+  const both = transition(
+    state,
+    {
+      action: 'SUPPLIER_FORM_SETTINGS',
+      expectedVersion: 0,
+      note: 'Both',
+      voucherSettings: single,
+      applyToContractAndVoucher: true,
+    },
+    ['p'],
+  );
+  expect(both.voucherSettings?.text.roomType).toBe('NEXT');
+  expect(state.voucherSettings.text.roomType).toBe('DBL');
+});
