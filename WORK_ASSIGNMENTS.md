@@ -1,5 +1,11 @@
 # Work Assignments
 
+## TOUR-RUNTIME-0910 — PC-A — VALIDATED / STARTUP_POLICY_BLOCKED
+
+User explicitly requests local activation. Integrated released hotel-rates5b1d287 with tour6ba6661 on codex/pc-a-tour-runtime-0910, preserving both histories and source branches. Reserve combined validation and runtime/task docs only. No new schema/migration/data/grants; existing applied schema must be checked before loopback API/Web switch. Coordinate current API1064 with Reservations owner; Web3100 is stopped. Preserve root environment, private document storage/keys and PDF runtime. No remote push or main/develop changes.
+
+Combined API53 and Web115 tests, Prisma generation, API build and Web41-route production build passed. Read-only check confirms hotel-rate migration already applied. Reservations owner transferred combined runtime ownership and is developing a separate unmerged follow-up. Web startup explicitly rejected by execution tool policy; no alternate launcher attempted. API1064 was not stopped or replaced;3100 remains down. No new migration, data change or public push. Source integration reservation released; activation remains blocked by execution policy, not user authorization.
+
 ## TOUR-DETAILS-0910 — PC-A — CODE_READY / ACTIVATION_PENDING
 
 User requests complete tour definition fields, ordered relative itinerary and image in Ticket Management. Isolated branch codex/pc-a-tour-details-0910 from current integrated local base14ec087; preserve active HOTEL-GROUP-RATES-0910 checkout/schema/runtime. Reserve Ticket Catalog tour API/UI/tests, additive optional packages/contracts/src/travel/tours.ts fields and task docs only. Producer/consumer Ticket Catalog API/Web; old Sales consumers remain compatible. Persist decimal strings and descriptive fields in existing TourPackage.definition, no schema/migration/dependency changes. Images use existing public Documents API and access/scan policy, not inline binary or external image fetch. No live data, IAM grants, runtime replacement, public push or merge without coordination.
