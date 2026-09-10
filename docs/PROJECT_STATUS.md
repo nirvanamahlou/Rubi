@@ -1,5 +1,21 @@
 # وضعیت پروژه
 
+## REPORTING — مجوز اجرای PC-C و Gate مرحله P0-04
+
+- `COMPUTER_ID=PC-C` برای ادامه Reporting در محدوده ماژول‌های Web/API Reporting،
+  اسناد `REPORTING-*` و اجرای محلی پورت 3000 مجاز شد. Workspace و Worktree اعلام‌شده
+  مقصد به‌ترتیب `F:/Projects/Rubi` و `F:/Projects/Rubi/.worktrees/reporting` هستند؛
+  وجود و Writable بودن آن‌ها باید روی خود PC-C تأیید شود.
+- مالکیت دائمی تغییر نکرد: PC-A مسئول Backend/grain و PC-B مسئول رابط مرکزی است؛ PC-C
+  مجری تفویض‌شده P0 با Branch مستقل است. هیچ قفل Migration، Schema، Seed، Dependency،
+  Lockfile یا shared contract به این مجوز منتقل نشد.
+- مبنای محلی اعلام‌شده P0-01=`dcf2b2e`، P0-02=`b429b94` و P0-03=`f4f85bc` است، ولی
+  این Commitها و Branch ریموت Reporting در fetch مرجع 2026-09-10 قابل مشاهده نبودند.
+  بنابراین شروع P0-04 از نظر مجوز آماده است و از نظر Git فقط پس از تأیید محلی Commitها،
+  کنترل Working Tree و Push معمولی شاخه PC-C آماده محسوب می‌شود.
+- جزئیات Scope، امنیت، پورت و Handoff در
+  [REPORTING-PC-C-AUTHORIZATION](tasks/REPORTING-PC-C-AUTHORIZATION.md) ثبت شده است.
+
 ## HR-013 — اتصال فرم‌ها و ارجاع بین منابع انسانی و بخش‌های سامانه — آماده ادغام تأییدشده
 
 - مالک محصول اتصال واقعی داده‌ها به فرم‌ها و سپس Push/Merge را صریحاً درخواست کرد. PR #139 شامل لایه ارجاع اولیه و این تکمیل فرم‌هاست؛ ادغام به develop پس از موفقیت CI نسخه نهایی انجام می‌شود. فعال‌سازی اجرای محلی مستقل از این ادغام است.

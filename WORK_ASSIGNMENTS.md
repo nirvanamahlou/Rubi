@@ -1,5 +1,35 @@
 # Work Assignments
 
+## REPORTING-PC-C-AUTHORIZATION — PC-A → PC-C — AUTHORIZED / P0-04 LOCAL-GATE
+
+- مالک هماهنگی پروژه در 2026-09-10 به `COMPUTER_ID=PC-C` اجازه داد توسعه Reporting
+  را در Workspace اعلام‌شده `F:/Projects/Rubi` و Worktree مستقل
+  `F:/Projects/Rubi/.worktrees/reporting` ادامه دهد. این ثبت، مجوز سیستم‌عامل یا وجود
+  مسیر روی دستگاه مقصد را از PC-A ادعا نمی‌کند؛ PC-C باید آن‌ها را محلی تأیید کند.
+- محدوده انحصاری Task: `apps/web/src/modules/reports/**`،
+  `apps/web/src/app/(crm)/reports/**`، `apps/api/src/reporting/**` و
+  `docs/tasks/REPORTING-*.md`. ثبت وضعیت همین Task در این فایل و
+  `docs/PROJECT_STATUS.md` مجاز است. شاخه‌های جدید فقط با الگوی
+  `codex/pc-c-reporting-<task>` ساخته می‌شوند.
+- PC-C مجاز به Terminal، test/lint/typecheck/build، اجرای Reporting روی پورت 3000 و
+  توقف/جایگزینی فقط Listener متعلق به همان Reporting worktree است. Process ناشناس یا
+  متعلق به Workspace دیگر نباید متوقف شود.
+- مبنای اعلام‌شده از دستگاه مقصد: P0-01=`dcf2b2e`، P0-02=`b429b94` و
+  P0-03=`f4f85bc`؛ ادامه `REPORTING-P0-04`. این سه Commit پس از fetch مورخ
+  2026-09-10 در Clone مرجع و Remote قابل resolve نبودند و هیچ Branch ریموت
+  `codex/pc-c-reporting-*` مشاهده نشد. PC-C پیش از P0-04 باید وجود و ترتیب این Commitها
+  را در Worktree خودش تأیید و شاخه را با Push معمولی منتشر کند؛ Commit ساختگی یا تغییر
+  Base ممنوع است.
+- هیچ Migration، Schema، Seed، Dependency، Lockfile یا shared/root contract برای این
+  مجوز رزرو نشده است. نیاز واقعی به هرکدام، Task و قفل مستقل می‌خواهد. Reporting فقط
+  Approved View یا Public Projection نسخه‌دار را مصرف می‌کند؛ Query مستقیم جدول‌های
+  عملیاتی و دورزدن Permission/Branch/Legal-Entity scope ممنوع است.
+- مالکیت دائمی Reporting منتقل نشده است: PC-A مالک زیرساخت Backend و صحت grain و PC-B
+  مالک رابط مرکزی باقی می‌مانند؛ PC-C مجری تفویض‌شده P0 است. تغییر Contract یا فایل
+  خارج از Scope باید پیش از اجرا با هر دو مالک ثبت شود. Merge، Force Push و تغییر
+  مستقیم `main`/`develop` مجاز نیست. مرجع کامل:
+  `docs/tasks/REPORTING-PC-C-AUTHORIZATION.md`.
+
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 
 - User requests HR connections to all main-menu modules. Reserve HR API/Web and HR contracts, HR receiving-permission seed entries, and one additive AppShell connection outlet on `codex/pc-b-hr-module-connections` from `origin/develop@e07c0c6`. Scope, producer/consumer compatibility and acceptance boundaries: `docs/tasks/HR-013-CONNECTIONS.md`.
