@@ -158,12 +158,13 @@ export function reservationFormData(
 /** Estimate wrapped name rows so long names get room without shrinking or clipping. */
 export function reservationPassengerPages(
   passengers: ReturnType<typeof reservationFormData>['passengers'],
+  pageUnits = 10,
 ) {
   const pages: (typeof passengers)[] = [[]];
   let used = 0;
   for (const person of passengers) {
     const units = Math.max(1, Math.ceil(person.name.length / 48));
-    if (used && used + units > 10) {
+    if (used && used + units > pageUnits) {
       pages.push([]);
       used = 0;
     }

@@ -1,5 +1,6 @@
 'use client';
 import Image from 'next/image';
+import { voucherFormData } from '../model/voucher-settings';
 import { useEffect, useState } from 'react';
 import type { MasterDataResource } from '@rubi/contracts';
 import { salesContractFlights } from '@rubi/contracts';
@@ -99,8 +100,19 @@ export function ReservationFormSheet({
   references?: ReservationFormReferences;
   voucher?: boolean;
 }) {
-  const data = reservationFormData(intake, references);
-  const pages = reservationPassengerPages(data.passengers);
+  const data = voucher
+    ? voucherFormData(intake, references)
+    : reservationFormData(intake, references);
+  const settings = voucher ? intake.workflow.voucherSettings : undefined;
+  const pages = reservationPassengerPages(
+    data.passengers,
+    settings
+      ? Math.max(
+          2,
+          8 - Math.ceil(Object.values(settings.text).join('').length / 350),
+        )
+      : 10,
+  );
   return (
     <div className={styles.document}>
       {pages.map((people, page) => {
@@ -114,13 +126,19 @@ export function ReservationFormSheet({
             dir="ltr"
             data-reservation-form-page
           >
-            <header className={styles.header}>
+            <header
+              className={
+                settings?.flags.withLetterhead === false
+                  ? styles.plainHeader
+                  : styles.header
+              }
+            >
               <div>
                 <h1>{voucher ? 'HOTEL VOUCHER' : 'RESERVATION FORM'}</h1>
                 <p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p>
               </div>
               <div className={styles.brand}>
-                {logo && (
+                {logo && settings?.flags.withLetterhead !== false && (
                   <Image
                     className={
                       intake.workflow.branding?.kind === 'OWN'
@@ -217,72 +235,85 @@ export function ReservationFormSheet({
                 ))}
               </tbody>
             </table>
-            <Heading
-              number="03"
-              title="HOTEL INFORMATION"
-              note="Accommodation"
-            />
-            <table className={styles.table}>
-              <colgroup>
-                <col style={{ width: '34%' }} />
-                <col style={{ width: '19%' }} />
-                <col style={{ width: '12%' }} />
-                <col style={{ width: '15%' }} />
-                <col style={{ width: '20%' }} />
-              </colgroup>
-              <thead>
-                <tr>
-                  {['HOTEL', 'CITY', 'STAR', 'SERVICE', 'ROOM TYPE'].map(
-                    (t) => (
-                      <th key={t}>{t}</th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td dir="auto">{data.hotel}</td>
-                  <td dir="auto">{data.destination}</td>
-                  <td>{data.stars}</td>
-                  <td dir="auto">{data.meal}</td>
-                  <td dir="auto">{data.roomType}</td>
-                </tr>
-              </tbody>
-            </table>
-            <div className={styles.accommodationBreakdown}>
-              <table className={styles.table}>
-                <caption>STAY DATES</caption>
-                <thead>
-                  <tr>
-                    <th>CHECK-IN</th>
-                    <th>CHECK-OUT</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>{data.checkIn}</td>
-                    <td>{data.checkOut}</td>
-                  </tr>
-                </tbody>
-              </table>
-              <table className={`${styles.table} ${styles.roomCounts}`}>
-                <caption>ROOM QUANTITIES BY TYPE</caption>
-                <thead>
-                  <tr>
-                    <th>DBL · DOUBLE</th>
-                    <th>SGL · SINGLE</th>
-                    <th>EXT · EXTRA BED</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>{data.double}</td>
-                    <td>{data.single}</td>
-                    <td>{data.extra}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            {(!settings || settings.flags.hotel) && (
+              <>
+                <Heading
+                  number="03"
+                  title="HOTEL INFORMATION"
+                  note="Accommodation"
+                />
+                <table className={styles.table}>
+                  <colgroup>
+                    <col style={{ width: '34%' }} />
+                    <col style={{ width: '19%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '15%' }} />
+                    <col style={{ width: '20%' }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      {['HOTEL', 'CITY', 'STAR', 'SERVICE', 'ROOM TYPE'].map(
+                        (t) => (
+                          <th key={t}>{t}</th>
+                        ),
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td dir="auto">{data.hotel}</td>
+                      <td dir="auto">{data.destination}</td>
+                      <td>{data.stars}</td>
+                      <td dir="auto">{data.meal}</td>
+                      <td dir="auto">{data.roomType}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className={styles.accommodationBreakdown}>
+                  <table className={styles.table}>
+                    <caption>STAY DATES</caption>
+                    <thead>
+                      <tr>
+                        <th>CHECK-IN</th>
+                        <th>CHECK-OUT</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>{data.checkIn}</td>
+                        <td>{data.checkOut}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <table className={`${styles.table} ${styles.roomCounts}`}>
+                    <caption>ROOM QUANTITIES BY TYPE</caption>
+                    <thead>
+                      <tr>
+                        <th>DBL · DOUBLE</th>
+                        <th>SGL · SINGLE</th>
+                        <th>EXT · EXTRA BED</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>{data.double}</td>
+                        <td>{data.single}</td>
+                        <td>{data.extra}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                {settings && (
+                  <p className={styles.voucherDetails}>
+                    Country: {settings.text.country || '-'} · Website:{' '}
+                    {settings.text.website || '-'} · CUSTOM:{' '}
+                    {settings.numbers.customRooms} · Special room:{' '}
+                    {settings.flags.specialRoom ? 'YES' : 'NO'} · Broker:{' '}
+                    {settings.text.broker || '-'}
+                  </p>
+                )}
+              </>
+            )}
             <Heading
               number="04"
               title="TOUR SERVICES"
@@ -312,6 +343,26 @@ export function ReservationFormSheet({
                 </tr>
               </tbody>
             </table>
+            {settings && (
+              <p className={styles.voucherDetails}>
+                Transfer:{' '}
+                {settings.flags.transfer
+                  ? [
+                      settings.text.transferKind,
+                      settings.text.transferBoard,
+                      settings.text.transferPhone,
+                    ]
+                      .filter(Boolean)
+                      .join(' / ') || '-'
+                  : '-'}{' '}
+                · Guide:{' '}
+                {settings.flags.tourLeader
+                  ? [settings.text.leaderLanguage, settings.text.leaderPhone]
+                      .filter(Boolean)
+                      .join(' / ') || '-'
+                  : '-'}
+              </p>
+            )}
             <Heading number="05" title="PASSENGERS" note="Passenger MANIFEST" />
             <table className={`${styles.table} ${styles.passengers}`}>
               <colgroup>
@@ -338,7 +389,12 @@ export function ReservationFormSheet({
                       <td dir="auto">{p.name}</td>
                       <td>{p.sex}</td>
                       <td>{p.age}</td>
-                      {voucher && <td>-</td>}
+                      {voucher && (
+                        <td>
+                          {settings?.passengers.find((s) => s.id === p.id)
+                            ?.roomType || '-'}
+                        </td>
+                      )}
                     </tr>
                   ))
                 ) : (

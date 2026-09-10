@@ -101,6 +101,7 @@ export interface TravelWorkflowStateV1 {
   branding: TravelBrandingV1 | null;
   roomOrder: string[];
   ageOverrides: Record<string, 'ADULT' | 'CHILD' | 'INFANT'>;
+  voucherSettings?: VoucherSettingsV1;
   reservationNotes?: string[];
   note: string;
   updatedAt: string | null;
@@ -116,8 +117,10 @@ export interface TravelWorkflowCommandV1 {
     | 'INSURANCE'
     | 'ISSUE_VOUCHER'
     | 'ARRANGEMENT'
-    | 'NOTE';
+    | 'NOTE'
+    | 'VOUCHER_SETTINGS';
   note: string;
+  voucherSettings?: VoucherSettingsV1;
   supplierReference?: string;
   insuranceReference?: string;
   acknowledgeMissingInsurance?: boolean;
@@ -131,4 +134,63 @@ export interface TravelDeliveryAuthorizationV1 {
   reason: string;
   updatedAt: string | null;
   updatedByUserId: string | null;
+}
+
+export const voucherTextKeys = [
+  'country',
+  'city',
+  'hotel',
+  'stars',
+  'meal',
+  'roomType',
+  'checkIn',
+  'checkOut',
+  'website',
+  'stayNotes',
+  'broker',
+  'leaderLanguage',
+  'leaderName',
+  'leaderPhone',
+  'transferBoard',
+  'transferPhone',
+  'transferKind',
+  'excursionDescription',
+  'extraServices',
+  'remarks',
+  'arrivalAirline',
+  'arrivalFlight',
+  'arrivalDate',
+  'arrivalTime',
+  'departureAirline',
+  'departureFlight',
+  'departureDate',
+  'departureTime',
+] as const;
+export const voucherNumberKeys = [
+  'singleRooms',
+  'doubleRooms',
+  'extraBeds',
+  'customRooms',
+] as const;
+export const voucherFlagKeys = [
+  'withLetterhead',
+  'hotel',
+  'transfer',
+  'tourLeader',
+  'excursion',
+  'specialRoom',
+] as const;
+export interface VoucherSettingsV1 {
+  text: Record<(typeof voucherTextKeys)[number], string>;
+  numbers: Record<(typeof voucherNumberKeys)[number], number>;
+  flags: Record<(typeof voucherFlagKeys)[number], boolean>;
+  passengers: {
+    id: string;
+    selected: boolean;
+    roomType: string;
+    age: 'ADL' | 'CHD' | 'INF';
+    sex?: 'MALE' | 'FEMALE' | '';
+    birthDate?: string;
+    documentNumber?: string;
+  }[];
 }

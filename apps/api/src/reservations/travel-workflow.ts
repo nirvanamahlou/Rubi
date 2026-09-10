@@ -1,3 +1,4 @@
+import { validateVoucherSettings } from './voucher-settings';
 import type {
   TravelWorkflowCommandV1,
   TravelWorkflowStateV1,
@@ -38,7 +39,7 @@ export function transitionTravelWorkflow(
   )
     throw new Error('دلیل عملیات را تا ۵۰۰ نویسه وارد کنید.');
   if (
-    command.action !== 'NOTE' &&
+    !['NOTE', 'VOUCHER_SETTINGS'].includes(command.action) &&
     (current.supplierStatus === 'CANCELLED' || current.voucherIssued)
   )
     throw new Error('این درخواست بسته شده است و قابل تغییر نیست.');
@@ -48,6 +49,14 @@ export function transitionTravelWorkflow(
     note: command.note.trim(),
   };
   switch (command.action) {
+    case 'VOUCHER_SETTINGS':
+      if (current.supplierStatus === 'CANCELLED')
+        throw new Error('درخواست ابطال شده است.');
+      next.voucherSettings = validateVoucherSettings(
+        command.voucherSettings,
+        passengerIds,
+      );
+      break;
     case 'NOTE':
       if ((current.reservationNotes?.length ?? 0) >= 100)
         throw new Error('حداکثر تعداد یادداشت‌ها ثبت شده است.');

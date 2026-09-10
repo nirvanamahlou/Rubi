@@ -13,6 +13,7 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { agencyClient } from '@/modules/organizations/api/agency-client';
 import type { MasterDataRecord } from '@rubi/contracts';
 import { TravelDocument } from './travel-document';
+import { VoucherSettings } from './voucher-settings';
 import { ReservationTickets } from './reservation-tickets';
 
 export async function travelRequest<T>(
@@ -74,6 +75,7 @@ export function TravelWorkflowForm({
   id: string;
   action: string;
 }) {
+  const [settingsDirty, setSettingsDirty] = useState(false);
   const [intake, setIntake] = useState<WorkflowIntake>();
   const [delivery, setDelivery] = useState<TravelDeliveryAuthorizationV1>();
   const [brandKind, setBrandKind] = useState<'OWN' | 'AGENCY'>('OWN');
@@ -263,6 +265,26 @@ export function TravelWorkflowForm({
           voucher={action === 'واچر' || action === 'Confirmation'}
         />
       )}
+      {action === 'واچر' && (
+        <VoucherSettings
+          key={`${id}:${state.version}`}
+          intake={intake}
+          onDirty={() => setSettingsDirty(true)}
+          onSaved={(workflow) => {
+            setIntake({ ...intake, workflow });
+            setSettingsDirty(false);
+          }}
+        />
+      )}
+      {settingsDirty && (
+        <p role="status">تنظیمات تغییر کرده؛ قبل از صدور ذخیره کنید.</p>
+      )}
+      {action === 'واچر' && state.supplierStatus === 'NEW' && (
+        <p role="status">
+          ابتدا فرم رزرواسیون را آماده و ارسال درخواست به کارگزار را ثبت کنید؛
+          سپس صدور واچر فعال می‌شود.
+        </p>
+      )}
       {action === 'ویرایش' && (
         <div className="grid gap-2">
           <p>
@@ -317,7 +339,9 @@ export function TravelWorkflowForm({
       )}
       {!closed && action !== 'بلیط' && (
         <>
-          {(action === 'Confirmation' || action === 'بیمه‌نامه') && (
+          {(action === 'Confirmation' ||
+            action === 'واچر' ||
+            action === 'بیمه‌نامه') && (
             <label>
               {action === 'بیمه‌نامه'
                 ? 'شماره بیمه‌نامه صادرشده'
@@ -393,12 +417,24 @@ export function TravelWorkflowForm({
               <Button
                 disabled={
                   busy ||
-                  state.supplierStatus !== 'CONFIRMED' ||
+                  settingsDirty ||
+                  !['REQUESTED', 'CONFIRMED'].includes(state.supplierStatus) ||
                   (!state.insuranceIssued && !acknowledge)
                 }
-                onClick={() => void run('ISSUE_VOUCHER')}
+                onClick={() =>
+                  void run(
+                    state.supplierStatus === 'REQUESTED'
+                      ? 'CONFIRM_SUPPLIER'
+                      : 'ISSUE_VOUCHER',
+                  )
+                }
               >
-                صدور واچر و پایان عملیات
+                تأیید کارگزار و صدور واچر
+              </Button>
+            )}
+            {action === 'واچر' && (
+              <Button disabled={busy} onClick={() => void run('CANCEL')}>
+                ابطال درخواست با دلیل
               </Button>
             )}
             {action === 'ویرایش' && (

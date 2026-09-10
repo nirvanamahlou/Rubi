@@ -91,6 +91,16 @@ export class ReservationRequestsController {
       delivery: await this.delivery.read(id),
     };
   }
+  @Get(':id/workflow/history')
+  @Header('Cache-Control', 'private, no-store')
+  async workflowHistory(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    return { data: await this.workflow.history(id, req.actor.branchIds) };
+  }
   @Patch(':id/workflow')
   @Header('Cache-Control', 'private, no-store')
   async workflowUpdate(

@@ -59,9 +59,11 @@ export function useTravelLogo(branding: TravelBrandingV1 | null) {
 export function TravelDocument({
   intake,
   voucher = false,
+  historical = false,
 }: {
   intake: ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
   voucher?: boolean;
+  historical?: boolean;
 }) {
   const { logo, error } = useTravelLogo(intake.workflow.branding);
   const [printing, setPrinting] = useState(false);
@@ -70,7 +72,8 @@ export function TravelDocument({
   const state = intake.workflow;
   const formReferences = useReservationFormReferences(intake, true);
   const enabled =
-    !!logo &&
+    (!!logo ||
+      (voucher && state.voucherSettings?.flags.withLetterhead === false)) &&
     !!state.branding &&
     state.supplierStatus !== 'CANCELLED' &&
     (!voucher || state.voucherIssued);
@@ -86,7 +89,7 @@ export function TravelDocument({
     if (printing || !enabled || !formReferences.ready) return;
     setPrintError('');
     const previousTitle = document.title;
-    document.title = `${voucher ? 'voucher' : 'reservation-form'}-${intake.snapshot.contractNumber}`;
+    document.title = `${voucher ? 'voucher' : 'reservation-form'}-${intake.snapshot.contractNumber}-v${state.version}`;
     flushSync(() => setPrinting(true));
     try {
       await document.fonts.ready;
@@ -150,7 +153,7 @@ export function TravelDocument({
   return (
     <div className="grid min-w-0 gap-3">
       {(error || printError) && <p role="alert">{error || printError}</p>}
-      {!voucher && (
+      {!voucher && !historical && (
         <Button
           disabled={downloading || !enabled}
           onClick={() => void downloadPdf()}

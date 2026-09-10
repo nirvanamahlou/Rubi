@@ -266,3 +266,13 @@
   padding: 12px;
   color: #0b3563;
 }
+
+.plainHeader {
+  padding: 10px 0;
+  border-bottom: 1px solid #c3d2e0;
+}
+.voucherDetails {
+  margin: 5px 0;
+  font-size: 8px;
+  overflow-wrap: anywhere;
+}
