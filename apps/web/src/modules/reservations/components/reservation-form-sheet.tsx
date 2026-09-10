@@ -234,24 +234,42 @@ export function ReservationFormSheet({
                   <td dir="auto">{data.meal}</td>
                   <td dir="auto">{data.roomType}</td>
                 </tr>
-                <tr>
-                  {['CHECK-IN', 'CHECK-OUT', 'DBL', 'SGL', 'EXT'].map((t) => (
-                    <td key={t}>{t}</td>
-                  ))}
-                </tr>
-                <tr>
-                  {[
-                    data.checkIn,
-                    data.checkOut,
-                    data.double,
-                    data.single,
-                    data.extra,
-                  ].map((t, i) => (
-                    <td key={i}>{t}</td>
-                  ))}
-                </tr>
               </tbody>
             </table>
+            <div className={styles.accommodationBreakdown}>
+              <table className={styles.table}>
+                <caption>STAY DATES</caption>
+                <thead>
+                  <tr>
+                    <th>CHECK-IN</th>
+                    <th>CHECK-OUT</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>{data.checkIn}</td>
+                    <td>{data.checkOut}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <table className={`${styles.table} ${styles.roomCounts}`}>
+                <caption>ROOM QUANTITIES BY TYPE</caption>
+                <thead>
+                  <tr>
+                    <th>DBL · DOUBLE</th>
+                    <th>SGL · SINGLE</th>
+                    <th>EXT · EXTRA BED</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>{data.double}</td>
+                    <td>{data.single}</td>
+                    <td>{data.extra}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
             <Heading
               number="04"
               title="TOUR SERVICES"

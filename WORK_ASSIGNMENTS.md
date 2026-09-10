@@ -1603,3 +1603,7 @@ Completed:8 tests, scoped lint, TypeScript and Web build passed. Scope RELEASED;
 ## SUPPLIER-SUBMIT-FEEDBACK-0910 — PC-A — IN_PROGRESS
 Base d55c98d. Reserve travel-workflow-form.tsx and targeted tests/docs. Empty note currently blocks request submission with error above long PDF preview. Provide explicit action audit note for REQUEST_SUPPLIER when optional detail omitted and local visible pending/success/error feedback. Preserve backend authorization/version/branding/financial rules; no real send or workflow mutations during QA. Preserve next-env.d.ts and public publication hold.
 Completed:6 targeted tests, scoped lint, TypeScript and Web build passed. Scope RELEASED; no real operational writes. Local-only publication.
+
+## RESERVATION-ROOM-LAYOUT-0910 — PC-A — IN_PROGRESS
+Base9780a38. Reserve reservation-form-sheet.tsx/module.css and reservation-pdf-html.ts, existing checks and task status. Separate hotel stay dates and room quantities in preview/print/direct PDF without changing source values. No API/data/schema. Preserve next-env and public publication hold.
+Completed:12 tests, scoped lint, TypeScript and Web build passed. Three A4 PDF pages visually verified. Scope RELEASED, local-only commit.

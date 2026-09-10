@@ -1705,3 +1705,7 @@ Final Web build and TypeScript passed (41 pages); local implementation complete.
 ## SUPPLIER-SUBMIT-FEEDBACK-0910 — PC-A
 The supplier registration button previously rejected a blank note and displayed the reason above the long PDF preview. Request registration now supplies an explicit audit description when optional details are omitted. Pending, registered and error feedback is visible beside the action. Cancellation/confirmation reasons, branding, optimistic version, authorization and Finance gates are unchanged. No real request registered or external message sent during QA. Six targeted tests passed; local dev runtime retained and public publication hold remains.
 Final scoped lint, TypeScript and Web build passed; implementation complete locally.
+
+## RESERVATION-ROOM-LAYOUT-0910 — PC-A
+Hotel attributes remain in the main table; stay dates and room quantities now have distinct captioned blocks with spacing. DBL/SGL/extra-bed quantities use emphasized values and expanded labels. Same layout in preview, print and direct PDF; existing values unchanged. Twelve targeted tests passed and synthetic3-page A4 PDF visually checked on every page. No API/schema/data changes. Public publication hold retained; local dev auto reload.
+Final scoped lint, TypeScript and production build passed; local implementation complete.

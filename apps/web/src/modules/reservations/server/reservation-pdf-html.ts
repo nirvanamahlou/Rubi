@@ -61,12 +61,12 @@ export function reservationPdfHtml(
     ${heading('02', 'FLIGHT INFORMATION', 'Departure & return · Tehran time')}${table(['LEG', 'AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'], data.flights.length ? data.flights.map((f) => [f.leg, f.airline, f.number, f.date, f.time]) : [['-', '-', '-', '-', '-']])}
     ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
       ['HOTEL', 'CITY', 'STAR', 'SERVICE', 'ROOM TYPE'],
-      [
-        [data.hotel, data.destination, data.stars, data.meal, data.roomType],
-        ['CHECK-IN', 'CHECK-OUT', 'DBL', 'SGL', 'EXT'],
-        [data.checkIn, data.checkOut, data.double, data.single, data.extra],
-      ],
+      [[data.hotel, data.destination, data.stars, data.meal, data.roomType]],
     )}
+    <div class="accommodationBreakdown">
+      ${table(['CHECK-IN', 'CHECK-OUT'], [[data.checkIn, data.checkOut]]).replace('<thead>', '<caption>STAY DATES</caption><thead>')}
+      ${table(['DBL · DOUBLE', 'SGL · SINGLE', 'EXT · EXTRA BED'], [[data.double, data.single, data.extra]], 'roomCounts').replace('<thead>', '<caption>ROOM QUANTITIES BY TYPE</caption><thead>')}
+    </div>
     ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table(['TOUR LEADER', 'EXCURSION'], [[data.leader, data.excursion]])}
     ${heading('05', 'PASSENGERS', 'Passenger MANIFEST')}${table(['#', 'SURNAME / NAME', 'SEX', 'AGE RATE'], rows.length ? rows : [['-', '-', '-', '-']], 'passengers')}
     ${heading('06', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>
