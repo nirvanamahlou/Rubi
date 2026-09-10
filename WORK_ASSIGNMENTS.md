@@ -1620,3 +1620,7 @@ Completed:12 tests, lint, TypeScript/build and3-page visual PDF QA passed using 
 ## RESERVATION-COMPACT-HEADER-0910 — PC-A — IN_PROGRESS
 Base434aef4. Reserve reservation-form-sheet.tsx/module.css and reservation-pdf-html.ts. Remove text under header logo and compact header height in both preview and PDF. Preserve logo alt text and footer identity, next-env, existing publication hold. No data/API/runtime changes.
 Completed:8 tests, lint, TypeScript/build and3-page visual PDF QA passed. Scope RELEASED; local-only commit.
+
+## HOTEL-VOUCHER-THEME-0910 — PC-A — IN_PROGRESS
+Base22d9c12. Reserve reservation-form-sheet.tsx/module.css voucher variant, travel-document.tsx consumer and focused tests/docs. Reference user PDF only for layout; never copy passenger data. Shared compact header, flight/hotel/stay/room counts, transfer/leader, passengers and notice/stamp in issued voucher. Preserve issuance/financial gates. No API/schema/runtime changes; next-env and public publication hold preserved.
+Completed:8 targeted tests, scoped lint, TypeScript/build and3-page synthetic visual PDF QA passed. Scope RELEASED; local-only commit, no data or actual issuance.

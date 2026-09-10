@@ -92,10 +92,12 @@ export function ReservationFormSheet({
   intake,
   logo,
   references = {},
+  voucher = false,
 }: {
   intake: ReservationFormIntake;
   logo: string;
   references?: ReservationFormReferences;
+  voucher?: boolean;
 }) {
   const data = reservationFormData(intake, references);
   const pages = reservationPassengerPages(data.passengers);
@@ -114,7 +116,7 @@ export function ReservationFormSheet({
           >
             <header className={styles.header}>
               <div>
-                <h1>RESERVATION FORM</h1>
+                <h1>{voucher ? 'HOTEL VOUCHER' : 'RESERVATION FORM'}</h1>
                 <p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p>
               </div>
               <div className={styles.brand}>
@@ -140,9 +142,14 @@ export function ReservationFormSheet({
             </header>
             <div className={styles.meta}>
               {[
-                ['REQUEST NO.', data.request],
-                ['SUPPLIER', data.supplier],
-                ['DATE OF ISSUE', data.issueDate],
+                [voucher ? 'BOOKING NO.' : 'REQUEST NO.', data.request],
+                [
+                  voucher ? 'SUPPLIER BOOKING NO.' : 'SUPPLIER',
+                  voucher
+                    ? intake.workflow.supplierReference || '-'
+                    : data.supplier,
+                ],
+                [voucher ? 'BOOKING DATE' : 'DATE OF ISSUE', data.issueDate],
                 ['SERVICES', data.services],
               ].map(([label, value]) => (
                 <div key={label}>
@@ -284,12 +291,22 @@ export function ReservationFormSheet({
             <table className={styles.table}>
               <thead>
                 <tr>
+                  {voucher && <th>TRANSFER</th>}
                   <th>TOUR LEADER</th>
                   <th>EXCURSION</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
+                  {voucher && (
+                    <td>
+                      {intake.snapshot.serviceSelections.some(
+                        (service) => service.kind === 'TRANSFER',
+                      )
+                        ? 'INCLUDED'
+                        : '-'}
+                    </td>
+                  )}
                   <td dir="auto">{data.leader}</td>
                   <td dir="auto">{data.excursion}</td>
                 </tr>
@@ -299,9 +316,10 @@ export function ReservationFormSheet({
             <table className={`${styles.table} ${styles.passengers}`}>
               <colgroup>
                 <col style={{ width: '6%' }} />
-                <col style={{ width: '56%' }} />
+                <col style={{ width: voucher ? '40%' : '56%' }} />
                 <col style={{ width: '17%' }} />
                 <col style={{ width: '21%' }} />
+                {voucher && <col style={{ width: '16%' }} />}
               </colgroup>
               <thead>
                 <tr>
@@ -309,6 +327,7 @@ export function ReservationFormSheet({
                   <th>SURNAME / NAME</th>
                   <th>SEX</th>
                   <th>AGE RATE</th>
+                  {voucher && <th>ROOM TYPE</th>}
                 </tr>
               </thead>
               <tbody>
@@ -319,26 +338,36 @@ export function ReservationFormSheet({
                       <td dir="auto">{p.name}</td>
                       <td>{p.sex}</td>
                       <td>{p.age}</td>
+                      {voucher && <td>-</td>}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4}>-</td>
+                    <td colSpan={voucher ? 5 : 4}>-</td>
                   </tr>
                 )}
               </tbody>
             </table>
             <Heading number="06" title="NOTICE" note="Notes & confirmation" />
-            <div className={styles.notice}>
-              <span>SPECIAL REQUESTS / REMARKS</span>
-              <p dir="auto">{data.notes || '\u00a0'}</p>
-              <div />
+            <div className={voucher ? styles.voucherClosing : undefined}>
+              <div className={styles.notice}>
+                <span>SPECIAL REQUESTS / REMARKS</span>
+                <p dir="auto">{data.notes || '\u00a0'}</p>
+                <div />
+              </div>
+              {voucher && (
+                <div className={styles.stamp}>
+                  <strong>STAMP</strong>
+                </div>
+              )}
             </div>
             <footer className={styles.footer}>
               <div>
                 <strong dir="auto">{data.brand}</strong>
                 <span>
-                  Reservation request - subject to supplier confirmation.
+                  {voucher
+                    ? 'Hotel voucher - present at check-in.'
+                    : 'Reservation request - subject to supplier confirmation.'}
                 </span>
               </div>
               <b>

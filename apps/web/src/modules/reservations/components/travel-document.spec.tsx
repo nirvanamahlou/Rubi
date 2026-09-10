@@ -33,6 +33,27 @@ describe('travel output branding and readiness', () => {
     expect(html).toContain('/brand/niyayesh.png');
     expect(html).toContain('SYNTHETIC');
   });
+  it('renders an issued hotel voucher with booking reference and stamp in the shared theme', () => {
+    const html = renderToStaticMarkup(
+      <TravelDocument
+        intake={{
+          ...intake,
+          workflow: {
+            ...intake.workflow,
+            voucherIssued: true,
+            supplierStatus: 'CONFIRMED',
+            supplierReference: 'SUPPLIER-TEST',
+          },
+        }}
+        voucher
+      />,
+    );
+    expect(html).toContain('HOTEL VOUCHER');
+    expect(html).toContain('SUPPLIER-TEST');
+    expect(html).toContain('STAMP');
+    expect(html).toContain('ROOM QUANTITIES BY TYPE');
+    expect(html).not.toContain('subject to supplier confirmation');
+  });
   it('does not render an unissued voucher', () => {
     const html = renderToStaticMarkup(
       <TravelDocument intake={intake} voucher />,

@@ -1,6 +1,4 @@
 'use client';
-import { reservationFormData } from '../model/reservation-form';
-import Image from 'next/image';
 import {
   ReservationFormSheet,
   useReservationFormReferences,
@@ -76,125 +74,13 @@ export function TravelDocument({
     !!state.branding &&
     state.supplierStatus !== 'CANCELLED' &&
     (!voucher || state.voucherIssued);
-  const sheet = !voucher ? (
+  const sheet = (
     <ReservationFormSheet
       intake={intake}
       logo={logo}
       references={formReferences.references}
+      voucher={voucher}
     />
-  ) : (
-    <article
-      dir="rtl"
-      style={{ background: 'white', color: '#111', padding: 32, fontSize: 14 }}
-    >
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          borderBottom: '2px solid #333',
-          paddingBottom: 16,
-        }}
-      >
-        <div>
-          <h1>{voucher ? 'واچر اقامت' : 'فرم درخواست رزرواسیون'}</h1>
-          <p>{state.branding?.name}</p>
-          <p>
-            {intake.snapshot.contractNumber} · نسخه {state.version}
-          </p>
-        </div>
-        {logo && (
-          <Image
-            src={logo}
-            alt={state.branding?.name ?? ''}
-            width={150}
-            height={95}
-            unoptimized
-          />
-        )}
-      </header>
-      <p>
-        هتل:{' '}
-        {intake.snapshot.hotelSelection
-          ? reservationFormData(intake, formReferences.references).hotel
-          : 'بدون خدمت هتل'}
-      </p>
-      <p>
-        ورود: {intake.snapshot.hotelSelection?.checkInDate ?? '—'} · خروج:{' '}
-        {intake.snapshot.hotelSelection?.checkOutDate ?? '—'}
-      </p>
-      <p>
-        تعداد اتاق طبق قرارداد:{' '}
-        {intake.arrangement?.roomCount ??
-          intake.snapshot.hotelSelection?.roomCount ??
-          '—'}
-      </p>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr>
-            <th>ردیف اسکان</th>
-            <th>مسافر</th>
-            <th>رده سنی عملیاتی</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(state.roomOrder.length
-            ? state.roomOrder
-            : intake.snapshot.passengerIds
-          ).map((id, index) => (
-            <tr key={id}>
-              <td style={{ borderBottom: '1px solid #ccc', padding: 8 }}>
-                {index + 1}
-              </td>
-              <td>
-                {intake.snapshot.passengerAssignments?.find(
-                  (p) => p.customerId === id,
-                )?.displayNameSnapshot ?? 'نام دریافت نشده'}
-              </td>
-              <td>
-                {state.ageOverrides[id] === 'ADULT'
-                  ? 'بزرگسال'
-                  : state.ageOverrides[id] === 'CHILD'
-                    ? 'کودک'
-                    : state.ageOverrides[id] === 'INFANT'
-                      ? 'نوزاد'
-                      : intake.snapshot.passengerAssignments?.find(
-                            (p) => p.customerId === id,
-                          )?.ageCategory === 'ADT'
-                        ? 'بزرگسال'
-                        : intake.snapshot.passengerAssignments?.find(
-                              (p) => p.customerId === id,
-                            )?.ageCategory === 'CHD'
-                          ? 'کودک'
-                          : intake.snapshot.passengerAssignments?.find(
-                                (p) => p.customerId === id,
-                              )?.ageCategory === 'INF'
-                            ? 'نوزاد'
-                            : 'طبق قرارداد'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <p>
-        خدمات:{' '}
-        {intake.snapshot.serviceSelections
-          .map((s) => s.titleSnapshot)
-          .join('، ')}
-      </p>
-      <p>مرجع تأیید کارگزار: {state.supplierReference || 'در انتظار تأیید'}</p>
-      <p>
-        بیمه: {state.insuranceIssued ? state.insuranceReference : 'صادر نشده'}
-      </p>
-      <p>{state.note}</p>
-      <p>
-        {state.updatedAt
-          ? new Date(state.updatedAt).toLocaleString('fa-IR')
-          : ''}
-      </p>
-      {!voucher && (
-        <p>درخواست رزرو؛ تا تأیید کارگزار به منزله تأیید اقامت نیست.</p>
-      )}
-    </article>
   );
   async function print() {
     if (printing || !enabled || !formReferences.ready) return;
@@ -284,7 +170,7 @@ export function TravelDocument({
         برای خروجی PDF، در پنجرهٔ چاپ مقصد «Save as PDF» را انتخاب کنید.
         پیش‌نمایش متناسب با پنجره است؛ خروجی در اندازهٔ کامل A4 ذخیره می‌شود.
       </p>
-      {!voucher && formReferences.failed && (
+      {formReferences.failed && (
         <p role="status">
           برخی اطلاعات تکمیلی مرجع دریافت نشد؛ فیلدهای خالی را پیش از ارسال
           بررسی کنید.
@@ -295,7 +181,7 @@ export function TravelDocument({
         createPortal(
           <div data-travel-document>
             <style media="print">
-              {`${voucher ? '@page{size:A4;margin:10mm}' : '@page{size:A4;margin:0}'}body>:not([data-travel-document]){display:none!important}html,body{overflow:visible!important;height:auto!important;margin:0!important} [data-travel-document]{display:block!important;width:100%!important;zoom:1!important}`}
+              {`@page{size:A4;margin:0}body>:not([data-travel-document]){display:none!important}html,body{overflow:visible!important;height:auto!important;margin:0!important} [data-travel-document]{display:block!important;width:100%!important;zoom:1!important}`}
             </style>
             {sheet}
           </div>,

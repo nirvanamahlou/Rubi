@@ -250,3 +250,19 @@
   font-size: 12px;
   font-weight: bold;
 }
+
+.voucherClosing {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 12px;
+  break-inside: avoid;
+}
+.voucherClosing .notice {
+  min-height: 90px;
+  border-top: 1px solid #c3d2e0;
+}
+.stamp {
+  border: 1px dashed #9daec0;
+  padding: 12px;
+  color: #0b3563;
+}
