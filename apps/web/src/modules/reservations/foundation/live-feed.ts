@@ -51,6 +51,7 @@ const snapshotSchema = z.object({
     .object({
       hotelNameSnapshot: z.string().max(200),
       hotelId: id.optional(),
+      mealServiceId: id.nullable().optional(),
       cityId: id.optional(),
       checkOutDate: z.string().refine(isCivilDate).optional(),
       roomCount: z.number().int().nonnegative().optional(),
@@ -71,6 +72,8 @@ const envelopeSchema = z.object({
         contractId: id,
         contractVersion: z.number().int().positive(),
         branchId: id,
+        sellerName: z.string().max(300).nullable().optional(),
+        contractPartyName: z.string().max(300).nullable().optional(),
         status: z.literal('QUEUED'),
         arrangement: z
           .object({
@@ -79,6 +82,7 @@ const envelopeSchema = z.object({
             doubleRoomCount: z.number().int().nonnegative(),
             extraBedCount: z.number().int().nonnegative(),
             updatedAt: instant,
+            reason: z.string().max(1000).optional(),
           })
           .nullable()
           .optional(),
@@ -160,8 +164,13 @@ export function decodeIntake(
         branchName:
           session.user.branches.find((b) => b.id === row.branchId)?.name ?? '—',
         issuerName: '—',
-        customerName: '—',
-        salesCounter: '—',
+        customerName: row.contractPartyName ?? '—',
+        salesCounter: row.sellerName ?? '—',
+        serviceTitles: snapshot.serviceSelections
+          .map((s) => s.titleSnapshot)
+          .filter(Boolean),
+        mealServiceId: snapshot.hotelSelection?.mealServiceId ?? undefined,
+        hotelNotes: row.arrangement?.reason,
         assignee: null,
         passengerNames: (snapshot.passengerAssignments ?? []).flatMap((p) =>
           p.displayNameSnapshot ? [p.displayNameSnapshot] : [],

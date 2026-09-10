@@ -10,6 +10,7 @@ export function useQueueNames(rows: readonly RequestView[]) {
           .flatMap((row) => [
             row.hotelId ? `hotels:${row.hotelId}` : '',
             row.destinationId ? `cities:${row.destinationId}` : '',
+            row.mealServiceId ? `meal-services:${row.mealServiceId}` : '',
           ])
           .filter(Boolean),
       ),
@@ -30,7 +31,7 @@ export function useQueueNames(rows: readonly RequestView[]) {
         const [resource, id] = item.split(':');
         try {
           const { data } = await masterDataApi.detail(
-            resource as 'hotels' | 'cities',
+            resource as 'hotels' | 'cities' | 'meal-services',
             id!,
           );
           const english = data.attributes.englishName;
@@ -57,6 +58,9 @@ export function useQueueNames(rows: readonly RequestView[]) {
     ready: key === '[]' || loaded?.key === key,
     rows: rows.map((row) => ({
       ...row,
+      ...(names[`meal-services:${row.mealServiceId}`]
+        ? { mealServiceName: names[`meal-services:${row.mealServiceId}`]! }
+        : {}),
       ...(names[`hotels:${row.hotelId}`]
         ? { hotelName: names[`hotels:${row.hotelId}`]! }
         : {}),

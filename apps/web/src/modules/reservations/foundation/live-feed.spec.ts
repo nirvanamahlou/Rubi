@@ -45,6 +45,45 @@ function intake(id = 'one', receivedAt = '2026-09-08T09:00:00Z') {
 const envelope = (data = [intake()]) => ({ version: 1, data });
 const row = (id = 'one', time?: string) =>
   decodeIntake(envelope([intake(id, time)]), session)[0]!;
+it('decodes actual queue labels, meal reference and arrangement notes without defaults', () => {
+  const input = intake();
+  const result = decodeIntake(
+    {
+      version: 1,
+      data: [
+        {
+          ...input,
+          sellerName: 'Seller',
+          contractPartyName: 'Agency',
+          arrangement: {
+            roomCount: 1,
+            singleRoomCount: 0,
+            doubleRoomCount: 1,
+            extraBedCount: 0,
+            updatedAt: input.receivedAt,
+            reason: 'TWIN BED',
+          },
+          snapshot: {
+            ...input.snapshot,
+            hotelSelection: {
+              hotelNameSnapshot: 'Hotel',
+              mealServiceId: 'meal',
+              checkInDate: '2026-09-10',
+            },
+          },
+        },
+      ],
+    },
+    session,
+  )[0]!;
+  expect(result).toMatchObject({
+    salesCounter: 'Seller',
+    customerName: 'Agency',
+    mealServiceId: 'meal',
+    hotelNotes: 'TWIN BED',
+    serviceTitles: ['Test hotel'],
+  });
+});
 describe('reservation feed boundary', () => {
   it('keeps real values without inventing priority, deadline or customer name', () => {
     expect(row()).toMatchObject({

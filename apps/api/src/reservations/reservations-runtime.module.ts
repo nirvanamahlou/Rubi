@@ -1,4 +1,6 @@
 import { CustomersModule } from '../customers/customers.module';
+import { CustomerService } from '../customers/customer.service';
+import { IamService } from '../iam/iam.service';
 import { DocumentsModule } from '../documents/documents.module';
 import { PermissionGuard } from '../iam/permission.guard';
 import {
@@ -22,6 +24,7 @@ import {
   Param,
   Post,
   ForbiddenException,
+  NotFoundException,
   Get,
   Header,
   Inject,
@@ -51,6 +54,8 @@ export class ReservationRequestsController {
     private readonly workflow: TravelWorkflowService,
     @Inject(FinanceDeliveryService)
     private readonly delivery: FinanceDeliveryService,
+    @Inject(CustomerService) private readonly customers: CustomerService,
+    @Inject(IamService) private readonly iam: IamService,
   ) {}
   @Get('delivery-queue')
   @Header('Cache-Control', 'private, no-store')
@@ -146,12 +151,43 @@ export class ReservationRequestsController {
   ) {
     if (!req.actor.permissions.includes('reservations.read'))
       throw new ForbiddenException('مجوز مشاهده رزرواسیون وجود ندارد.');
+    const rows = await this.service.list(req.actor.branchIds, {
+      page,
+      contractNumber,
+    });
+    const names = new Map<string, string>();
+    if (rows.length && req.actor.permissions.includes('iam.users.read')) {
+      const wanted = new Set(rows.map((row) => row.salesOwnerUserId));
+      for (const user of await this.iam.listUsers()) {
+        if (wanted.has(user.id)) names.set(user.id, user.displayName);
+      }
+    }
+    const parties = new Map<string, string>();
+    if (req.actor.permissions.includes('customers.read')) {
+      for (const customerId of new Set(
+        rows.map((row) => row.snapshot.customerId),
+      )) {
+        try {
+          const { data } = await this.customers.detail(customerId, req.actor);
+          parties.set(customerId, data.displayName);
+        } catch (error) {
+          if (!(
+            error instanceof ForbiddenException ||
+            error instanceof NotFoundException
+          ))
+            throw error;
+        }
+      }
+    }
     return {
       version: 1,
-      data: await this.service.list(req.actor.branchIds, {
-        page,
-        contractNumber,
-      }),
+      data: rows.map(({ salesOwnerUserId, ...row }) => ({
+        ...row,
+        sellerName: salesOwnerUserId
+          ? (names.get(salesOwnerUserId) ?? null)
+          : null,
+        contractPartyName: parties.get(row.snapshot.customerId) ?? null,
+      })),
     };
   }
 

@@ -1682,3 +1682,6 @@ Added group hotel purchase-rate register and sidebar entry with real Master Data
 
 ## FINANCE-DELIVERY-CONFIRM-0910 — PC-A — LOCAL_COMPLETE_PENDING_RESTART
 Per-contract financial approval dialog replaces disabled buttons dependent on a global reason. Existing authorization/version/audit preserved. 9 tests, browser QA, lint/typecheck and build passed. No real approvals. Web restart awaits user terminal due tool policy; see task report.
+
+## RESERVATION-EXTRA-COLUMNS-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
+Five requested columns added to Reservations and filtered XLSX; real permission-scoped names, meal-service lookup and persisted arrangement notes.13 API/41 Web tests, lint/typechecks/builds passed. API refreshed; Web awaits manual restart. No data/migration/grants. See tasks/RESERVATION-EXTRA-COLUMNS-0910.md.

@@ -33,10 +33,14 @@ const intakeInclude = {
 
 function present(
   row: Prisma.ReservationIntakeGetPayload<{ include: typeof intakeInclude }>,
-): ReservationIntakeV1 & { workflow: unknown } {
+): ReservationIntakeV1 & {
+  workflow: unknown;
+  salesOwnerUserId: string | null;
+} {
   const arrangement = row.arrangements[0];
   return {
     workflow: row.workflowRevisions?.[0]?.state ?? null,
+    salesOwnerUserId: row.salesOwnerUserId,
     purchaseVersion: row.purchaseVersion,
     hotelPurchases: row.hotelPurchases.map((cost) => ({
       ...cost,

@@ -110,7 +110,7 @@ function worksheetXml(rows: readonly (readonly string[])[]) {
           .join('')}</row>`,
     )
     .join('');
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" rightToLeft="1"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="2" width="22" customWidth="1"/><col min="3" max="3" width="35" customWidth="1"/><col min="4" max="15" width="17" customWidth="1"/></cols><sheetData>${body}</sheetData><autoFilter ref="A1:O${rows.length}"/></worksheet>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" rightToLeft="1"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="2" width="22" customWidth="1"/><col min="3" max="3" width="35" customWidth="1"/><col min="4" max="20" width="20" customWidth="1"/></cols><sheetData>${body}</sheetData><autoFilter ref="A1:${columnName(Math.max(0, (rows[0]?.length ?? 1) - 1))}${rows.length}"/></worksheet>`;
 }
 
 export function createReservationXlsx(rows: readonly (readonly string[])[]) {

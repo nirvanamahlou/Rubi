@@ -86,11 +86,44 @@ describe('reservation table and workbook', () => {
     const xml = entries.get('xl/worksheets/sheet1.xml')!;
     expect(xml).toContain('rightToLeft="1"');
     expect(xml).toContain('state="frozen"');
-    expect(xml).toContain('autoFilter ref="A1:O2"');
+    expect(xml).toContain('autoFilter ref="A1:T2"');
     expect(xml).toContain('t="inlineStr"');
     expect(xml).toContain('=1+1');
     expect(xml).toContain('Hotel &amp; &lt;Test&gt;');
     expect(xml).not.toContain('<f>');
     expect(entries.get('xl/workbook.xml')).toContain('name="Reservations"');
   });
+});
+
+it('includes additional contract columns in the filtered workbook and keeps unknown values empty', () => {
+  const exported = reservationExportRows([
+    {
+      ...row('QA'),
+      salesCounter: 'Seller',
+      customerName: 'Agency',
+      serviceTitles: ['Flight', 'Hotel'],
+      mealServiceName: 'UALL',
+      hotelNotes: 'TWIN BED',
+    },
+  ]);
+  expect(exported[0]!.slice(14, 19)).toEqual([
+    'خدمات',
+    'فروشنده',
+    'طرف قرارداد',
+    'سرویس هتل',
+    'توضیحات هتل',
+  ]);
+  expect(exported[1]!.slice(14, 19)).toEqual([
+    'Flight، Hotel',
+    'Seller',
+    'Agency',
+    'UALL',
+    'TWIN BED',
+  ]);
+  expect(reservationCells(row('EMPTY')).slice(15, 19)).toEqual([
+    '—',
+    '—',
+    '—',
+    '—',
+  ]);
 });

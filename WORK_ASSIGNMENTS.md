@@ -1572,3 +1572,8 @@ Base5b1d287; branch codex/pc-a-reservation-passenger-documents-0910. Reservation
 Base92e99cf; reserve only FinanceDeliveryPanel Web UX and scoped validation/docs. Replace hidden global reason prerequisite with per-contract confirmation dialog. Existing finance read/approve permissions verified read-only. No API/schema/permission/data mutations or actual financial approvals. Local publication hold retained.
 
 FINANCE-DELIVERY-CONFIRM-0910: scoped lint/typecheck, 9 Finance tests, 41-route production build and synthetic browser approval/revocation/cancel/required-reason checks passed. No actual approvals or permission changes. Implementation lock RELEASED. Web restart rejected by execution policy; existing user-started listener24460 retained. User must restart the existing PowerShell command. No public push.
+
+## RESERVATION-EXTRA-COLUMNS-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
+Basea8160d7; reserve Reservations queue projection/runtime consumer wiring, Web model/feed/names/table/styles/tests and docs. Add services/seller/contract party/meal service/hotel arrangement notes from existing records and public Customer/IAM read services under existing permissions. No producer, schema, migration, grants or data edits. Public publication hold retained.
+Additional scope: Reservations XLSX filter range must cover all current columns, replacing the old fixed15-column bound.
+13 API and41 Web tests, scoped lint/typechecks and API/Web builds passed. API4000 refreshed; Web3100 retains user-started runtime and requires manual restart because tool startup remains blocked. Implementation scope RELEASED; local commit only.

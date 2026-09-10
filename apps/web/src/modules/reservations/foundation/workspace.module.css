@@ -500,7 +500,7 @@
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
-  min-width: 1220px;
+  min-width: 1800px;
   font-size: 12px;
 }
 .requestTable th {
@@ -562,6 +562,11 @@
   align-items: center;
   gap: 12px;
   margin: 12px 0;
+}
+.requestTable td:nth-child(n + 15):nth-child(-n + 19) {
+  max-width: 230px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .exportBar small {
   color: var(--muted-foreground);

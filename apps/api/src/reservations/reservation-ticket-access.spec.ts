@@ -67,6 +67,8 @@ describe('reservation saved ticket access scope and history', () => {
       {} as ReservationHotelPurchaseService,
       {} as TravelWorkflowService,
       {} as FinanceDeliveryService,
+      {} as CustomerService,
+      {} as IamService,
     );
     await expect(
       controller.list(
@@ -99,3 +101,5 @@ describe('reservation saved ticket access scope and history', () => {
     );
   });
 });
+import type { CustomerService } from '../customers/customer.service';
+import type { IamService } from '../iam/iam.service';

@@ -1,5 +1,5 @@
 import type { RequestView } from './model';
-import { statusLabels } from './model';
+import { serviceLabels, statusLabels } from './model';
 export const reservationColumns = [
   'شماره قرارداد',
   'مقصد',
@@ -15,6 +15,11 @@ export const reservationColumns = [
   'تأیید هتل',
   'اصلاح',
   'تاریخ اصلاح',
+  'خدمات',
+  'فروشنده',
+  'طرف قرارداد',
+  'سرویس هتل',
+  'توضیحات هتل',
   'وضعیت',
 ] as const;
 export function tableDate(value?: string) {
@@ -42,6 +47,13 @@ export function reservationCells(row: RequestView): string[] {
     row.hotelConfirmed ? '✓' : '—',
     row.correctedAt ? '✓' : '—',
     tableDate(row.correctedAt),
+    row.serviceTitles?.join('، ') ||
+      row.services.map((kind) => serviceLabels[kind]).join('، ') ||
+      '—',
+    row.salesCounter || '—',
+    row.customerName || '—',
+    row.mealServiceName || '—',
+    row.hotelNotes || '—',
     statusLabels[row.status],
   ];
 }

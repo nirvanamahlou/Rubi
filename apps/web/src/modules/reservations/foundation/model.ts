@@ -62,6 +62,10 @@ export interface RequestView {
   destination?: string;
   hotelName?: string;
   hotelId?: string | undefined;
+  serviceTitles?: readonly string[];
+  mealServiceId?: string | undefined;
+  mealServiceName?: string | undefined;
+  hotelNotes?: string | undefined;
   carrierName?: string;
   destinationId?: string | undefined;
   checkIn?: string | undefined;
@@ -144,6 +148,9 @@ export function queryRows(rows: readonly RequestView[], query: Query) {
         r.destination ?? '',
         r.hotelName ?? '',
         r.carrierName ?? '',
+        r.mealServiceName ?? '',
+        r.hotelNotes ?? '',
+        ...(r.serviceTitles ?? []),
       ].some((v) => v.toLocaleLowerCase('fa').includes(search)),
   );
   filtered.sort((a, b) => {
