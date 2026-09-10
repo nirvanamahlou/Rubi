@@ -30,6 +30,7 @@ enum AuditOutcome {
 }
 
 model User {
+  hotelRateBatches ReservationHotelRateBatch[]
   ownedTravelIntakes             ReservationIntake[]           @relation("TravelSalesOwner")
   travelWorkflowRevisions        ReservationWorkflowRevision[]
   travelDeliveryRevisions        FinanceDeliveryRevision[]
@@ -144,6 +145,7 @@ model RolePermission {
 }
 
 model Branch {
+  hotelRateBatches ReservationHotelRateBatch[]
   id                    String                     @id @default(uuid()) @db.Uuid
   code                  String                     @unique @db.VarChar(40)
   name                  String                     @db.VarChar(160)
@@ -736,6 +738,7 @@ model MasterPaymentMethod {
 }
 
 model MasterOrganization {
+  hotelGroupRates ReservationHotelGroupRate[]
   id                  String                      @id @default(uuid()) @db.Uuid
   code                String                      @unique @db.VarChar(32)
   legalName           String                      @db.VarChar(200)
@@ -1410,6 +1413,7 @@ model MasterBusTypeFacility {
 }
 
 model MasterHotel {
+  groupRates ReservationHotelGroupRate[]
   id                   String                       @id @default(uuid()) @db.Uuid
   cityId               String                       @db.Uuid
   chainId              String?                      @db.Uuid
@@ -3377,4 +3381,39 @@ model FinanceDeliveryRevision {
   createdAt   DateTime          @default(now()) @db.Timestamptz(3)
 
   @@unique([intakeId, version])
+}
+
+model ReservationHotelRateBatch {
+ id String @id @default(uuid()) @db.Uuid
+ branchId String @db.Uuid
+ actorId String @db.Uuid
+ requestKey String @db.Uuid
+ fingerprint String @db.VarChar(64)
+ checkIn DateTime @db.Date
+ checkOut DateTime @db.Date
+ currency String @db.VarChar(3)
+ method String @db.VarChar(16)
+ createdAt DateTime @default(now()) @db.Timestamptz(3)
+ branch Branch @relation(fields:[branchId],references:[id],onDelete:Restrict)
+ actor User @relation(fields:[actorId],references:[id],onDelete:Restrict)
+ rows ReservationHotelGroupRate[]
+ @@unique([actorId,requestKey])
+ @@index([branchId,checkIn,checkOut])
+ @@map("reservation_hotel_rate_batches")
+}
+model ReservationHotelGroupRate {
+ id String @id @default(uuid()) @db.Uuid
+ batchId String @db.Uuid
+ hotelId String @db.Uuid
+ brokerId String @db.Uuid
+ hotelName String @db.VarChar(300)
+ brokerName String @db.VarChar(300)
+ base Decimal @db.Decimal(18,2)
+ factors Json
+ batch ReservationHotelRateBatch @relation(fields:[batchId],references:[id],onDelete:Restrict)
+ hotel MasterHotel @relation(fields:[hotelId],references:[id],onDelete:Restrict)
+ broker MasterOrganization @relation(fields:[brokerId],references:[id],onDelete:Restrict)
+ @@unique([batchId,hotelId,brokerId])
+ @@index([hotelId,batchId])
+ @@map("reservation_hotel_group_rates")
 }

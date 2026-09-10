@@ -30,6 +30,7 @@ export const sidebarIcons: Record<NavigationHref, LucideIcon> = {
   '/organizations': Building2,
   '/marketing': Megaphone,
   '/reservations': Send,
+  '/reservations/hotel-rates': Building2,
   '/ticket-management': Ticket,
   '/purchases': Package,
   '/finance': Banknote,

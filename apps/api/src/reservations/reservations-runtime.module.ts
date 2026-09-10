@@ -1,3 +1,4 @@
+import { HotelRatesModule } from './hotel-rates.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
 import { MasterDataModule } from '../master-data/master-data.module';
@@ -170,6 +171,7 @@ export class ReservationRequestsController {
 @Module({
   imports: [
     IamModule,
+    HotelRatesModule,
     NotificationsModule,
     FinanceDeliveryModule,
     LegalEntitiesModule,

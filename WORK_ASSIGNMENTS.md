@@ -1555,3 +1555,12 @@ SYNC-DEVELOP-0909: local integration of develop e07c0c6 complete. 270 Web tests 
 Reserve Reservations Web queue table/projection/reference lookup/XLSX export/tests and docs. Real scoped API records; export all matching loaded pages with active filters/sort, no formulas or fabricated flags. No data mutation or permission grants; local only while public push approval is pending.
 
 RESERVATION-TABLE-EXPORT-0909: 39 tests, scoped lint/typecheck/build and synthetic browser XLSX/selection QA passed; independent workbook read verified. Scope released after Web3100 refresh. No public push.
+
+## HOTEL-GROUP-RATES-0910 — PC-A — IN_PROGRESS
+User requests group hotel purchase rates from supplied HTML and explicitly authorizes local HR initialization plus all seven HR permissions for the dedicated Ramtin role. Reserve new Reservations rates UI/API and navigation entry, scoped task documentation. Preserve other work and public-origin publication hold. Existing canonical HR migrations only; no HR source changes or broad role seed. New rate persistence migration reservation must be checked before schema changes.
+
+
+Migration reservation checked against fetched PC-B/B2B-CONTRACT-CREDIT-001: implementation/shared-code/migration reservations explicitly released in final handoff. Reserve Migration Owner = PC-A/HOTEL-GROUP-RATES-0910 for two additive Reservations-owned rate tables and FK reverse relations only; MasterTravelDirectory additive public rate reference lookup, navigation messages/icon/group entries and local API module wiring. No dependencies or B2B implementation edits.
+
+
+HOTEL-GROUP-RATES-0910 final handoff: local implementation validated; Migration/shared-reference/navigation implementation locks RELEASED. API4000 running from this worktree, Web3100 stopped after update and blocked by execution policy despite user reconfirmation. See task report before runtime integration; separate tour-details work not merged. No public push.
