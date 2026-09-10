@@ -43,11 +43,12 @@ describe('selected contract actions', () => {
     expect(html).toContain('href="/contracts/terms.pdf"');
     expect(html).toContain('download="مفاد.pdf"');
   });
-  it('uses only the selected passenger data', () => {
+  it('loads canonical passenger names for the selected request', () => {
     const html = renderToStaticMarkup(
       <ContractActionContent action="اسامی مسافران" request={request} />,
     );
-    expect(html).toContain('Synthetic passenger');
+    expect(html).toContain('در حال دریافت اطلاعات مسافران');
+    expect(html).not.toContain('Synthetic passenger');
     expect(html).not.toContain('Synthetic customer');
   });
   it('does not invent writable forms or unknown customer details', () => {

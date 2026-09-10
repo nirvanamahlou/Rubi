@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## RESERVATION-PASSENGER-DOCUMENTS-0910 — PC-A — LOCAL_COMPLETE_PENDING_ACTIVATION
+
+اسامی مسافران رزرو از پرونده اصلی خوانده می‌شود و با مجوز فعلی و کنترل نسخه قابل ویرایش است. مدارک/پیوست قرارداد انتخاب مسافر، دسته‌بندی، نوع و بارگذاری دارد؛ همان فایل در بایگانی اسناد و پرونده انتخاب‌شده دیده می‌شود. ۸ تست API، ۳۹ تست Web، بررسی مرورگری با داده ساختگی، lint/typecheck و build موفق‌اند. بدون Migration، تغییر مجوز یا داده واقعی. هنوز روی 3100 فعال نشده؛ مالکیت اجرای ترکیبی با کار تور است. [گزارش و تحویل](tasks/RESERVATION-PASSENGER-DOCUMENTS-0910.md).
+
 ## RESERVATION-REFERENCE-FORM-0909 — PC-A — READY_FOR_REVIEW
 
 Reservation request print now follows the supplied six-section English navy/teal A4 reference, populated from the selected contract and current operational arrangement/age. Existing logo selection, voucher and financial gates preserved. Missing fields stay unfilled; no sample PII copied. 49 tests, scoped lint/typecheck and 40-route build passed; actual one- and three-page synthetic PDFs visually inspected. Web3100 refreshed without API/data/permission changes. Details: [task report](tasks/RESERVATION-REFERENCE-FORM-0909.md).

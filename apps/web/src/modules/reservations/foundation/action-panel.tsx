@@ -1,4 +1,6 @@
 'use client';
+import { ReservationPassengers } from '../passenger-files/passengers';
+import { ReservationFiles } from '../passenger-files/files';
 import { EnglishHotelName } from '../components/english-hotel-name';
 
 import {
@@ -92,17 +94,9 @@ export function ContractActionContent({
     );
   }
   if (action === 'اسامی مسافران')
-    return request.passengerNames.length ? (
-      <ul className={styles.passengers}>
-        {request.passengerNames.map((name, index) => (
-          <li key={index}>{name}</li>
-        ))}
-      </ul>
-    ) : (
-      <p className={styles.placeholder}>
-        نام مسافران هنوز در اطلاعات دریافتی موجود نیست.
-      </p>
-    );
+    return <ReservationPassengers key={request.id} id={request.id} />;
+  if (action === 'مدارک' || action === 'پیوست')
+    return <ReservationFiles key={request.id} id={request.id} />;
   if (action === 'طرف قرارداد')
     return (
       <dl className={styles.details}>

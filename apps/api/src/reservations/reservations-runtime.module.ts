@@ -1,3 +1,10 @@
+import { CustomersModule } from '../customers/customers.module';
+import { DocumentsModule } from '../documents/documents.module';
+import { PermissionGuard } from '../iam/permission.guard';
+import {
+  ReservationPassengerFilesController,
+  ReservationPassengerFilesService,
+} from './reservation-passenger-files';
 import { HotelRatesModule } from './hotel-rates.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
@@ -171,15 +178,22 @@ export class ReservationRequestsController {
 @Module({
   imports: [
     IamModule,
+    CustomersModule,
+    DocumentsModule,
     HotelRatesModule,
     NotificationsModule,
     FinanceDeliveryModule,
     LegalEntitiesModule,
     MasterDataModule,
   ],
-  controllers: [ReservationRequestsController],
+  controllers: [
+    ReservationRequestsController,
+    ReservationPassengerFilesController,
+  ],
   providers: [
     AuthGuard,
+    PermissionGuard,
+    ReservationPassengerFilesService,
     TravelWorkflowService,
     ReservationsPublicService,
     ReservationHotelPurchaseService,
