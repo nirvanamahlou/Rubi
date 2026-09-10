@@ -48,6 +48,18 @@ export async function travelRequest<T>(
   return result as T;
 }
 type WorkflowIntake = ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
+export function workflowOperationNote(
+  operation: TravelWorkflowCommandV1['action'],
+  note: string,
+) {
+  if (operation === 'BRANDING') return 'انتخاب سربرگ خروجی';
+  return (
+    note.trim() ||
+    (operation === 'REQUEST_SUPPLIER'
+      ? 'ثبت ارسال فرم رزرواسیون به کارگزار'
+      : '')
+  );
+}
 const labels = {
   NEW: 'درخواست جدید',
   REQUESTED: 'در انتظار کارگزار',
@@ -102,7 +114,8 @@ export function TravelWorkflowForm({
   }, [id]);
   async function run(operation: TravelWorkflowCommandV1['action']) {
     if (!intake || busy) return;
-    if (operation !== 'BRANDING' && !note.trim()) {
+    const operationNote = workflowOperationNote(operation, note);
+    if (!operationNote) {
       setError('توضیح / دلیل عملیات را وارد کنید.');
       return;
     }
@@ -118,7 +131,7 @@ export function TravelWorkflowForm({
         {
           action: operation,
           expectedVersion: intake.workflow.version,
-          note: operation === 'BRANDING' ? 'انتخاب سربرگ خروجی' : note,
+          note: operationNote,
           branding: { kind: brandKind, referenceId: agencyId },
           supplierReference: reference,
           insuranceReference: reference,
@@ -317,7 +330,9 @@ export function TravelWorkflowForm({
             </label>
           )}
           <label>
-            توضیح / دلیل عملیات
+            {action === 'رزرواسیون'
+              ? 'توضیحات ارسال (اختیاری)'
+              : 'توضیح / دلیل عملیات'}
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -345,7 +360,11 @@ export function TravelWorkflowForm({
                 disabled={busy || state.supplierStatus !== 'NEW'}
                 onClick={() => void run('REQUEST_SUPPLIER')}
               >
-                ثبت ارسال درخواست به کارگزار
+                {busy
+                  ? 'در حال ثبت…'
+                  : state.supplierStatus === 'REQUESTED'
+                    ? 'ارسال به کارگزار ثبت شده'
+                    : 'ثبت ارسال درخواست به کارگزار'}
               </Button>
             )}
             {action === 'Confirmation' && (
@@ -388,6 +407,14 @@ export function TravelWorkflowForm({
               </Button>
             )}
           </div>
+          {error && (
+            <p role="alert" className="text-destructive">
+              {error}
+            </p>
+          )}
+          {action === 'رزرواسیون' && state.supplierStatus === 'REQUESTED' && (
+            <p role="status">ارسال درخواست ثبت شد؛ در انتظار تأیید کارگزار.</p>
+          )}
         </>
       )}
       {state.updatedAt && (

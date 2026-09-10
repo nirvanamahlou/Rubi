@@ -1701,3 +1701,7 @@ Direct authenticated reservation PDF download added alongside print. Uses saved 
 ## RESERVATION-PANEL-TRIM-0910 — PC-A
 Removed six owner-marked buttons from the selected-contract panel: Confirmation, attachment, add note, email, SMS and contract party. Remaining notes group renamed accordingly. Existing hotel confirmation table action and Documents entry remain functional. Eight existing panel/hotel-action tests and scoped lint passed. No API, migration, data, permission or operational changes. Local dev3100 reloads the source update; public publication hold retained.
 Final Web build and TypeScript passed (41 pages); local implementation complete.
+
+## SUPPLIER-SUBMIT-FEEDBACK-0910 — PC-A
+The supplier registration button previously rejected a blank note and displayed the reason above the long PDF preview. Request registration now supplies an explicit audit description when optional details are omitted. Pending, registered and error feedback is visible beside the action. Cancellation/confirmation reasons, branding, optimistic version, authorization and Finance gates are unchanged. No real request registered or external message sent during QA. Six targeted tests passed; local dev runtime retained and public publication hold remains.
+Final scoped lint, TypeScript and Web build passed; implementation complete locally.
