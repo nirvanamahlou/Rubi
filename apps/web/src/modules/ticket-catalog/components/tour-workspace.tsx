@@ -26,6 +26,7 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { toursApi } from '../api/tours';
 import { TicketDatePicker } from './ticket-date-picker';
+import { TourDetailsForm } from './tour-details-form';
 
 const emptyPackage: TourPackageInputV1 = {
   name: '',
@@ -94,7 +95,17 @@ export function TourWorkspace() {
     cities: MasterDataRecord[];
     hotels: MasterDataRecord[];
     insurance: MasterDataRecord[];
-  }>({ cities: [], hotels: [], insurance: [] });
+    currencies: MasterDataRecord[];
+    airlines: MasterDataRecord[];
+    airports: MasterDataRecord[];
+  }>({
+    cities: [],
+    hotels: [],
+    insurance: [],
+    currencies: [],
+    airlines: [],
+    airports: [],
+  });
   const [draft, setDraft] = useState<TourPackageInputV1>(emptyPackage);
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState('');
@@ -147,17 +158,28 @@ export function TourWorkspace() {
       if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
       const session = await refreshAuthenticatedSession(base);
       if (!session) throw new Error('برای مدیریت تور وارد حساب شوید.');
-      const [p, d, cities, hotels, insurance] = await Promise.all([
-        toursApi.packages(),
-        toursApi.departures(),
-        loadRefs('cities'),
-        loadRefs('hotels'),
-        loadRefs('insurance-plans'),
-      ]);
+      const [p, d, cities, hotels, insurance, currencies, airlines, airports] =
+        await Promise.all([
+          toursApi.packages(),
+          toursApi.departures(),
+          loadRefs('cities'),
+          loadRefs('hotels'),
+          loadRefs('insurance-plans'),
+          loadRefs('currencies'),
+          loadRefs('airlines'),
+          loadRefs('airports'),
+        ]);
       if (cancelled) return;
       setPackages(p.data);
       setDepartures(d.data);
-      setReferences({ cities, hotels, insurance });
+      setReferences({
+        cities,
+        hotels,
+        insurance,
+        currencies,
+        airlines,
+        airports,
+      });
       setBranches(session.user.branches);
       if (session.user.branches.length === 1)
         setBranch(session.user.branches[0]!.id);
@@ -298,7 +320,7 @@ export function TourWorkspace() {
         <Card className="space-y-4 p-5">
           <h3 className="font-bold">۱. تعریف بستهٔ تور</h3>
           <fieldset disabled={busy} className="grid gap-4 sm:grid-cols-2">
-            <FormField id="tour-name" label="نام تور">
+            <FormField id="tour-name" label="عنوان تور">
               <Input
                 id="tour-name"
                 value={draft.name}
@@ -317,7 +339,13 @@ export function TourWorkspace() {
               label="شهر مبدأ"
               value={draft.originId}
               options={references.cities}
-              onChange={(originId) => setDraft({ ...draft, originId })}
+              onChange={(originId) => {
+                const details = {
+                  ...(draft.details ?? { version: 1 as const }),
+                };
+                delete details.originAirportCode;
+                setDraft({ ...draft, originId, details });
+              }}
             />
             <Choice
               label="شهر مقصد"
@@ -403,6 +431,17 @@ export function TourWorkspace() {
                 </label>
               ))}
             </div>
+            <TourDetailsForm
+              value={draft.details ?? { version: 1 }}
+              onChange={(details) => setDraft({ ...draft, details })}
+              currencies={references.currencies}
+              airlines={references.airlines}
+              airports={references.airports.filter(
+                (airport) => airport.attributes.cityId === draft.originId,
+              )}
+              branches={branches}
+              branchId={branch}
+            />
             <Button
               disabled={!branch}
               onClick={() =>
@@ -441,6 +480,91 @@ export function TourWorkspace() {
           />
           {pack && (
             <>
+              {pack.details && (
+                <details className="rounded-xl border bg-primary/5 p-4">
+                  <summary className="cursor-pointer font-semibold">
+                    مشخصات و برنامه سفر {pack.name}
+                  </summary>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {[
+                      ['خلاصه', pack.details.summary],
+                      ['معرفی', pack.details.description],
+                      ['مدارک لازم', pack.details.requiredDocuments],
+                      ['خدمات', pack.details.services],
+                      ['شرایط اقساط', pack.details.installmentTerms],
+                      ['قوانین استرداد', pack.details.refundRules],
+                      ['مدت سفر (روز)', pack.details.durationDays],
+                      ['امتیاز', pack.details.rating],
+                      ['مبدأ فرودگاهی', pack.details.originAirportCode],
+                      ['ایرلاین', pack.details.airlineName],
+                      [
+                        'قیمت پایه',
+                        pack.details.basePrice
+                          ? `${pack.details.basePrice.amount} ${pack.details.basePrice.currency}`
+                          : undefined,
+                      ],
+                      [
+                        'هزینه جداگانه پرواز',
+                        pack.details.flightPrice
+                          ? `${pack.details.flightPrice.amount} ${pack.details.flightPrice.currency}`
+                          : undefined,
+                      ],
+                    ].map(
+                      ([label, value]) =>
+                        value !== undefined && (
+                          <div key={String(label)}>
+                            <b>{label}: </b>
+                            <span className="whitespace-pre-wrap">{value}</span>
+                          </div>
+                        ),
+                    )}
+                  </div>
+                  <ol className="mt-4 space-y-2">
+                    {pack.details.itinerary?.map((step, index) => (
+                      <li
+                        key={index}
+                        className="rounded-lg border bg-surface p-3"
+                      >
+                        <b>
+                          مرحله {index + 1}: {step.title}
+                        </b>
+                        <div className="flex flex-wrap gap-3 text-sm">
+                          <span>{step.location}</span>
+                          {step.startTime && (
+                            <span>
+                              شروع: <bdi>{step.startTime}</bdi>
+                            </span>
+                          )}
+                          {step.stayDays !== undefined && (
+                            <span>اقامت: {step.stayDays} روز</span>
+                          )}
+                          {step.durationMinutes !== undefined && (
+                            <span>{step.durationMinutes} دقیقه</span>
+                          )}
+                          <span>{step.transport}</span>
+                          <span>{step.cabinClass}</span>
+                          {step.baggageKg !== undefined && (
+                            <span>بار: {step.baggageKg} کیلوگرم</span>
+                          )}
+                        </div>
+                        <p className="whitespace-pre-wrap text-sm">
+                          {step.description}
+                        </p>
+                      </li>
+                    ))}
+                  </ol>
+                  {pack.details.imageDocumentId && (
+                    <a
+                      className="mt-3 block text-primary underline"
+                      target="_blank"
+                      rel="noreferrer"
+                      href={`/documents?document=${encodeURIComponent(pack.details.imageDocumentId)}`}
+                    >
+                      مشاهده تصویر تور در آرشیو
+                    </a>
+                  )}
+                </details>
+              )}
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField label="روز شروع">
                   <TicketDatePicker
