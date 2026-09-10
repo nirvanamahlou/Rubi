@@ -1679,3 +1679,6 @@ Reservations inbox now uses a compact RTL table with real room counts, hotel act
 
 ## HOTEL-GROUP-RATES-0910 — PC-A — LOCAL_IMPLEMENTED / WEB_START_BLOCKED
 Added group hotel purchase-rate register and sidebar entry with real Master Data references, date ranges, per-row broker/base/six coefficients, exact Decimal computation, atomic idempotent persistence/audit, branch authorization and filtered history. Additive migration rehearsed and applied locally. User-approved HR migrations and seven dedicated Ramtin permissions enabled; actual HR bootstrap passed. 28 targeted tests, typechecks/builds and PostgreSQL/browser checks passed; source artifacts and runtime limitation in docs/tasks/HOTEL-GROUP-RATES-0910.md. API4000 active; Web3100 restart rejected by tool policy twice, including after explicit reconfirmation. No public push or merge.
+
+## FINANCE-DELIVERY-CONFIRM-0910 — PC-A — LOCAL_COMPLETE_PENDING_RESTART
+Per-contract financial approval dialog replaces disabled buttons dependent on a global reason. Existing authorization/version/audit preserved. 9 tests, browser QA, lint/typecheck and build passed. No real approvals. Web restart awaits user terminal due tool policy; see task report.

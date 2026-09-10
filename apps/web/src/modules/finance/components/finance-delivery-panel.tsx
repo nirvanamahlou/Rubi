@@ -3,6 +3,12 @@ import { useState } from 'react';
 import type { TravelDeliveryAuthorizationV1 } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/overlays';
 import { travelRequest } from '@/modules/reservations/components/travel-workflow-form';
 type Row = {
   id: string;
@@ -15,6 +21,10 @@ export function FinanceDeliveryPanel() {
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [selected, setSelected] = useState<Row | null>(null);
+  const [decisionError, setDecisionError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [loaded, setLoaded] = useState(false);
   async function load() {
     setBusy(true);
     setError('');
@@ -23,6 +33,7 @@ export function FinanceDeliveryPanel() {
         `reservations/requests/delivery-queue?contractNumber=${encodeURIComponent(search)}`,
       );
       setRows(response.data);
+      setLoaded(true);
     } catch (e) {
       setRows([]);
       setError(e instanceof Error ? e.message : 'دریافت نشد');
@@ -31,23 +42,34 @@ export function FinanceDeliveryPanel() {
     }
   }
   async function update(row: Row) {
+    if (busy) return;
+    if (!reason.trim()) {
+      setDecisionError('دلیل تأیید یا لغو تحویل مدارک را وارد کنید.');
+      return;
+    }
     setBusy(true);
-    setError('');
+    setDecisionError('');
+    setNotice('');
     try {
       const { data } = await travelRequest<{
         data: TravelDeliveryAuthorizationV1;
       }>(`reservations/requests/${row.id}/delivery`, {
         expectedVersion: row.delivery.version,
         approved: !row.delivery.approved,
-        reason,
+        reason: reason.trim(),
       });
       setRows((list) =>
         list.map((item) =>
           item.id === row.id ? { ...item, delivery: data } : item,
         ),
       );
+      setSelected(null);
+      setReason('');
+      setNotice(
+        `${row.contractNumber} · ${data.approved ? 'تحویل مدارک به فروش تأیید شد.' : 'مجوز تحویل مدارک لغو شد.'}`,
+      );
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'ثبت نشد');
+      setDecisionError(e instanceof Error ? e.message : 'ثبت نشد');
     } finally {
       setBusy(false);
     }
@@ -70,13 +92,10 @@ export function FinanceDeliveryPanel() {
           دریافت قراردادها
         </Button>
       </div>
-      <Input
-        aria-label="دلیل تصمیم مالی"
-        placeholder="دلیل تأیید یا لغو تحویل مدارک"
-        value={reason}
-        maxLength={500}
-        onChange={(e) => setReason(e.target.value)}
-      />
+      {notice && <p role="status">{notice}</p>}
+      {loaded && !busy && !error && rows.length === 0 && (
+        <p>قراردادی با این شماره پیدا نشد.</p>
+      )}
       {error && (
         <p role="alert" className="text-destructive">
           {error}
@@ -94,8 +113,12 @@ export function FinanceDeliveryPanel() {
               : 'دسترسی فروش بسته'}
           </span>
           <Button
-            disabled={busy || !reason.trim()}
-            onClick={() => void update(row)}
+            disabled={busy}
+            onClick={() => {
+              setSelected(row);
+              setReason('');
+              setDecisionError('');
+            }}
           >
             {row.delivery.approved
               ? 'لغو مجوز تحویل مدارک'
@@ -103,6 +126,67 @@ export function FinanceDeliveryPanel() {
           </Button>
         </div>
       ))}
+      <Dialog
+        open={selected !== null}
+        onOpenChange={(open) => {
+          if (!open && !busy) setSelected(null);
+        }}
+      >
+        <DialogContent dir="rtl">
+          <DialogTitle>
+            {selected?.delivery.approved
+              ? 'لغو مجوز تحویل مدارک'
+              : 'تأیید تحویل مدارک'}
+          </DialogTitle>
+          <DialogDescription>
+            قرارداد <b dir="ltr">{selected?.contractNumber}</b> ·{' '}
+            {selected?.delivery.approved
+              ? 'دسترسی بعدی فروش به مدارک این قرارداد بسته می‌شود.'
+              : 'فروش پس از تأیید شما به مدارک مسافر این قرارداد دسترسی خواهد داشت.'}
+          </DialogDescription>
+          <form
+            className="mt-4 grid gap-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (selected) void update(selected);
+            }}
+          >
+            <label className="grid gap-2">
+              <span>دلیل تصمیم مالی (الزامی)</span>
+              <Input
+                value={reason}
+                maxLength={500}
+                required
+                disabled={busy}
+                placeholder="دلیل تأیید یا لغو تحویل مدارک را بنویسید"
+                onChange={(event) => setReason(event.target.value)}
+              />
+            </label>
+            {decisionError && (
+              <p role="alert" className="text-destructive">
+                {decisionError}
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" disabled={busy}>
+                {busy
+                  ? 'در حال ثبت…'
+                  : selected?.delivery.approved
+                    ? 'ثبت لغو مجوز'
+                    : 'ثبت تأیید تحویل مدارک'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={() => setSelected(null)}
+              >
+                انصراف
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
