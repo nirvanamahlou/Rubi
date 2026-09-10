@@ -14,6 +14,7 @@ import type {
 } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
 import { documentsApi } from '@/modules/documents/api/client';
+import { DocumentPreview } from './document-preview';
 export function useTravelLogo(branding: TravelBrandingV1 | null) {
   const [loaded, setLoaded] = useState<{
     id: string;
@@ -193,43 +194,57 @@ export function TravelDocument({
     </article>
   );
   async function print() {
+    if (printing || !enabled || !formReferences.ready) return;
+    setPrintError('');
+    const previousTitle = document.title;
+    document.title = `${voucher ? 'voucher' : 'reservation-form'}-${intake.snapshot.contractNumber}`;
     flushSync(() => setPrinting(true));
     try {
+      await document.fonts.ready;
       await Promise.all(
         Array.from(
           document.querySelectorAll<HTMLImageElement>(
             '[data-travel-document] img',
           ),
-        ).map((img) => img.decode()),
+        ).map((img) => {
+          // Off-screen pages must load their logos before opening print/PDF.
+          img.loading = 'eager';
+          return img.decode();
+        }),
       );
       window.print();
     } catch {
       setPrintError('چاپ آماده نشد؛ دریافت لوگو را بررسی کنید.');
     } finally {
       setPrinting(false);
+      document.title = previousTitle;
     }
   }
   return (
-    <div className="grid gap-3">
+    <div className="grid min-w-0 gap-3">
       {(error || printError) && <p role="alert">{error || printError}</p>}
       <Button
-        disabled={!enabled || !formReferences.ready}
+        disabled={printing || !enabled || !formReferences.ready}
         onClick={() => void print()}
       >
         چاپ / ذخیره PDF {voucher ? 'واچر' : 'فرم رزرواسیون'}
       </Button>
+      <p className="text-sm text-muted-foreground">
+        برای خروجی PDF، در پنجرهٔ چاپ مقصد «Save as PDF» را انتخاب کنید.
+        پیش‌نمایش متناسب با پنجره است؛ خروجی در اندازهٔ کامل A4 ذخیره می‌شود.
+      </p>
       {!voucher && formReferences.failed && (
         <p role="status">
           برخی اطلاعات تکمیلی مرجع دریافت نشد؛ فیلدهای خالی را پیش از ارسال
           بررسی کنید.
         </p>
       )}
-      {enabled && sheet}
+      {enabled && <DocumentPreview>{sheet}</DocumentPreview>}
       {printing &&
         createPortal(
           <div data-travel-document>
             <style media="print">
-              {`${voucher ? '@page{size:A4;margin:10mm}' : '@page{size:A4;margin:0}'}body>:not([data-travel-document]){display:none!important}body{overflow:visible!important} [data-travel-document]{display:block!important}`}
+              {`${voucher ? '@page{size:A4;margin:10mm}' : '@page{size:A4;margin:0}'}body>:not([data-travel-document]){display:none!important}html,body{overflow:visible!important;height:auto!important;margin:0!important} [data-travel-document]{display:block!important;width:100%!important;zoom:1!important}`}
             </style>
             {sheet}
           </div>,

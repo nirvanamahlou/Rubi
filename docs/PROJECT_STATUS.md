@@ -1691,3 +1691,6 @@ Hotel table checkboxes open existing request/voucher workflow. Sent requests lig
 
 ## CONTRACT-HOTEL-MEAL-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
 Reservations service column now uses meal codes from the selected hotel's existing master-data response when the contract has no explicit service. ROYAL WINGS UALL verified read-only. Same value flows to XLSX without additional requests or contract writes.49 tests, scoped lint/typecheck and build passed; Web restart pending. See tasks/CONTRACT-HOTEL-MEAL-0910.md.
+
+## RESERVATION-FORM-PREVIEW-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
+A4 reservation preview fits RTL modal without clipping; native print size retained. Multi-page lazy-logo hang fixed; fonts/images ready before PDF print.7 tests and build passed;3-page synthetic PDF visually checked. Save as PDF remains browser destination. Web restart pending. See tasks/RESERVATION-FORM-PREVIEW-0910.md.

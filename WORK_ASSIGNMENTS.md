@@ -1585,3 +1585,7 @@ Base88c7c6b; reserve Web Reservations table checkbox actions/component, feed/sta
 ## CONTRACT-HOTEL-MEAL-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
 Based7d9e13. User clarified the source is the hotel master record. Scope narrowed to Reservations queue-name/meal projection and tests/docs only; Sales form scope released with own draft edits removed. Read-only verification: ROYAL WINGS has UALL; existing five contract snapshots omit a separate meal selection. Read hotel meal codes from existing Master Data response, preserve explicit contract selection precedence; no data/API/schema/grants. Public hold retained.
 49 Reservations tests, scoped lint/typecheck and41-route Web build passed. Hotel UALL fallback and explicit contract precedence tested; no live writes. Scope RELEASED; Web awaits manual restart; public hold retained.
+
+## RESERVATION-FORM-PREVIEW-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
+Base5fab2eb; reserve Reservations document preview/print consumer component and scoped tests/docs. Fix A4 clipping in modal; preserve reference template and print-size. Validate synthetic PDF with existing browser output. No API/schema/permissions or operational writes. Public hold retained.
+7 tests, scoped lint/typecheck/build, desktop/mobile browser containment and3-page synthetic PDF visual QA passed. Scope RELEASED; Web restart pending. No real data/operational changes or public push.
