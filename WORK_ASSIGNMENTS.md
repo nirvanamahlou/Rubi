@@ -1595,3 +1595,7 @@ Base7ab38a2; reserve Reservations Web PDF route/server rendering and workflow er
 Additional scope: next.config.ts output tracing for the server PDF's fixed template CSS/brand assets; no dependency changes. Existing Sales PDF renderer pattern reused in Reservations-owned renderer, without modifying Sales.
 
 Validation:13 targeted tests, scoped lint and build/typecheck passed. Actual isolated Chrome generated synthetic3-page A4 PDF; all pages visually checked. Live unauthenticated route redirects to login. No real workflow/financial writes. Scope RELEASED, LOCAL_COMPLETE; user-started Next dev retained, no manual restart required for these source changes. Public publication hold retained.
+
+## RESERVATION-PANEL-TRIM-0910 — PC-A — IN_PROGRESS
+Base d9150a0. Reserve only Reservations foundation action-panel.tsx, its existing spec and task status entries. Remove six owner-marked panel buttons: Confirmation, attachment, add note, email, SMS and contract party. Keep hotel confirmation workflow reachable through table action, and retain Documents. No API/data/schema changes. Preserve local next-env.d.ts; existing public publication hold retained.
+Completed:8 tests, scoped lint, TypeScript and Web build passed. Scope RELEASED; local-only commit, no public push or merge.

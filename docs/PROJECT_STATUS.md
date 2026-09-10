@@ -1697,3 +1697,7 @@ A4 reservation preview fits RTL modal without clipping; native print size retain
 
 ## RESERVATION-DIRECT-PDF-0910 — PC-A — LOCAL_COMPLETE
 Direct authenticated reservation PDF download added alongside print. Uses saved workflow branding and scoped public references, including hotel meal fallback; finance delivery approval is not required for Reservations output. API error.message is surfaced and missing operation reason/reference is validated before submission.13 targeted tests, scoped lint and production build/typecheck passed; real Chrome synthetic23-passenger PDF has3 A4 pages, all visually checked. Live3100 unauthenticated request redirects to login as expected. No actual workflow mutation, schema or grants. User-started Next dev applies Web edits automatically. Public publication hold remains.
+
+## RESERVATION-PANEL-TRIM-0910 — PC-A
+Removed six owner-marked buttons from the selected-contract panel: Confirmation, attachment, add note, email, SMS and contract party. Remaining notes group renamed accordingly. Existing hotel confirmation table action and Documents entry remain functional. Eight existing panel/hotel-action tests and scoped lint passed. No API, migration, data, permission or operational changes. Local dev3100 reloads the source update; public publication hold retained.
+Final Web build and TypeScript passed (41 pages); local implementation complete.

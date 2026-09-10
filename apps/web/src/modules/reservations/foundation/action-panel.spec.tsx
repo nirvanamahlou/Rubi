@@ -20,18 +20,20 @@ const request: RequestView = {
   issues: [],
 };
 describe('selected contract actions', () => {
-  it('keeps all twenty actions visible and disabled without a selection', () => {
+  it('keeps remaining actions visible and disabled without a selection', () => {
     const html = renderToStaticMarkup(<ContractActionPanel />);
-    expect(html.match(/disabled=""/g) ?? []).toHaveLength(20);
-    for (const label of [
+    expect(html.match(/disabled=""/g) ?? []).toHaveLength(14);
+    for (const label of ['واچر', 'مشخصات کلی', 'دریافت‌ها', 'مدارک', 'توضیحات'])
+      expect(html).toContain(label);
+    for (const removed of [
       'Confirmation',
-      'واچر',
-      'مشخصات کلی',
-      'دریافت‌ها',
+      'پیوست',
+      'طرف قرارداد',
+      'پیامک',
       'ارسال ایمیل',
       'ثبت توضیحات',
     ])
-      expect(html).toContain(label);
+      expect(html).not.toContain(removed);
   });
   it('enables dialogs for the selected contract without embedding other records', () => {
     const html = renderToStaticMarkup(
@@ -39,7 +41,7 @@ describe('selected contract actions', () => {
     );
     expect(html).toContain('SYNTH-01');
     expect(html).not.toContain('disabled=""');
-    expect(html.match(/aria-haspopup="dialog"/g) ?? []).toHaveLength(19);
+    expect(html.match(/aria-haspopup="dialog"/g) ?? []).toHaveLength(13);
     expect(html).toContain('href="/contracts/terms.pdf"');
     expect(html).toContain('download="مفاد.pdf"');
   });
