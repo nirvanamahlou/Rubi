@@ -1,5 +1,11 @@
 # Work Assignments
 
+## TOUR-DETAILS-0910 — PC-A — CODE_READY / ACTIVATION_PENDING
+
+User requests complete tour definition fields, ordered relative itinerary and image in Ticket Management. Isolated branch codex/pc-a-tour-details-0910 from current integrated local base14ec087; preserve active HOTEL-GROUP-RATES-0910 checkout/schema/runtime. Reserve Ticket Catalog tour API/UI/tests, additive optional packages/contracts/src/travel/tours.ts fields and task docs only. Producer/consumer Ticket Catalog API/Web; old Sales consumers remain compatible. Persist decimal strings and descriptive fields in existing TourPackage.definition, no schema/migration/dependency changes. Images use existing public Documents API and access/scan policy, not inline binary or external image fetch. No live data, IAM grants, runtime replacement, public push or merge without coordination.
+
+Delivered definition, pricing, ordered relative itinerary and public Documents image upload/validation.41 API and99 Web/consumer tests passed; scoped lint/typechecks and API/Web builds passed. No live-data or authenticated browser QA claim. Shared schema/runtime remain owned by HOTEL-GROUP-RATES-0910. Scoped source reservation released for review; activation requires coordinated integration with its newer changes. See docs/tasks/TOUR-DETAILS-0910.md.
+
 ## DOCUMENTS-008A-BLUE-BUTTON-CASCADE-FIX — PC-B — READY_FOR_APPROVED_MERGE
 
 - پیگیری گزارش مالک محصول در 2026-09-09: پس از Merge PR #130، متن CTAهای آبی ارتباطات اسناد روی اجرای واقعی ۳۱۰۰ همچنان مشکی بود. `COMPUTER_ID=PC-B`.
