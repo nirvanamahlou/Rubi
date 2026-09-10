@@ -1589,3 +1589,9 @@ Based7d9e13. User clarified the source is the hotel master record. Scope narrowe
 ## RESERVATION-FORM-PREVIEW-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
 Base5fab2eb; reserve Reservations document preview/print consumer component and scoped tests/docs. Fix A4 clipping in modal; preserve reference template and print-size. Validate synthetic PDF with existing browser output. No API/schema/permissions or operational writes. Public hold retained.
 7 tests, scoped lint/typecheck/build, desktop/mobile browser containment and3-page synthetic PDF visual QA passed. Scope RELEASED; Web restart pending. No real data/operational changes or public push.
+
+## RESERVATION-DIRECT-PDF-0910 — PC-A — IN_PROGRESS
+Base7ab38a2; reserve Reservations Web PDF route/server rendering and workflow error consumer/tests/docs. Preserve dev-generated next-env.d.ts. Direct PDF reads authenticated scoped workflow and public references, no client HTML or operational mutation. Fix normalized API error messages/client prerequisites. No schema/grants or Finance gate changes. Public hold retained.
+Additional scope: next.config.ts output tracing for the server PDF's fixed template CSS/brand assets; no dependency changes. Existing Sales PDF renderer pattern reused in Reservations-owned renderer, without modifying Sales.
+
+Validation:13 targeted tests, scoped lint and build/typecheck passed. Actual isolated Chrome generated synthetic3-page A4 PDF; all pages visually checked. Live unauthenticated route redirects to login. No real workflow/financial writes. Scope RELEASED, LOCAL_COMPLETE; user-started Next dev retained, no manual restart required for these source changes. Public publication hold retained.

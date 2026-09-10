@@ -136,7 +136,12 @@ export function reservationFormData(
           '-',
       ),
     ),
-    meal: hotel?.mealServiceId ? name(references[hotel.mealServiceId]) : '-',
+    meal: hotel?.mealServiceId
+      ? name(references[hotel.mealServiceId])
+      : text(
+          hotelRecord?.attributes.mealServiceCodes ||
+            hotelRecord?.attributes.mealServiceNames,
+        ),
     roomType: hotel?.roomTypeId ? name(references[hotel.roomTypeId]) : '-',
     checkIn: reservationFormDate(hotel?.checkInDate),
     checkOut: reservationFormDate(hotel?.checkOutDate),

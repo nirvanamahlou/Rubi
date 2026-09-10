@@ -1694,3 +1694,6 @@ Reservations service column now uses meal codes from the selected hotel's existi
 
 ## RESERVATION-FORM-PREVIEW-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
 A4 reservation preview fits RTL modal without clipping; native print size retained. Multi-page lazy-logo hang fixed; fonts/images ready before PDF print.7 tests and build passed;3-page synthetic PDF visually checked. Save as PDF remains browser destination. Web restart pending. See tasks/RESERVATION-FORM-PREVIEW-0910.md.
+
+## RESERVATION-DIRECT-PDF-0910 — PC-A — LOCAL_COMPLETE
+Direct authenticated reservation PDF download added alongside print. Uses saved workflow branding and scoped public references, including hotel meal fallback; finance delivery approval is not required for Reservations output. API error.message is surfaced and missing operation reason/reference is validated before submission.13 targeted tests, scoped lint and production build/typecheck passed; real Chrome synthetic23-passenger PDF has3 A4 pages, all visually checked. Live3100 unauthenticated request redirects to login as expected. No actual workflow mutation, schema or grants. User-started Next dev applies Web edits automatically. Public publication hold remains.

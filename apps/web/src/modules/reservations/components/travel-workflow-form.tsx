@@ -36,12 +36,14 @@ export async function travelRequest<T>(
   let response = await send();
   if (response.status === 401 && (await refreshAuthenticatedSession(base)))
     response = await send();
-  const result = await response.json();
+  const result = await response.json().catch(() => null);
   if (!response.ok)
     throw new Error(
-      typeof result.message === 'string'
-        ? result.message
-        : 'عملیات انجام نشد؛ مجوز و اتصال را بررسی کنید.',
+      typeof result?.error?.message === 'string'
+        ? result.error.message
+        : typeof result?.message === 'string'
+          ? result.message
+          : 'عملیات انجام نشد؛ مجوز و اتصال را بررسی کنید.',
     );
   return result as T;
 }
@@ -99,7 +101,15 @@ export function TravelWorkflowForm({
     };
   }, [id]);
   async function run(operation: TravelWorkflowCommandV1['action']) {
-    if (!intake) return;
+    if (!intake || busy) return;
+    if (operation !== 'BRANDING' && !note.trim()) {
+      setError('توضیح / دلیل عملیات را وارد کنید.');
+      return;
+    }
+    if (operation === 'CONFIRM_SUPPLIER' && !reference.trim()) {
+      setError('مرجع تأیید کارگزار را وارد کنید.');
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -143,6 +153,12 @@ export function TravelWorkflowForm({
           ? 'تأیید مالی ثبت شده'
           : 'قفل؛ در انتظار تأیید مالی'}
       </p>
+      {action === 'رزرواسیون' && (
+        <p className="text-sm text-muted-foreground">
+          قفل مالی فقط مربوط به تحویل مدارک به فروش است؛ دریافت فرم رزرواسیون
+          برای کارگزار نیاز به تأیید مالی ندارد.
+        </p>
+      )}
       {error && (
         <p role="alert" className="text-destructive">
           {error}

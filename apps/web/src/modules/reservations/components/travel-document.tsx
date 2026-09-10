@@ -15,6 +15,8 @@ import type {
 import { Button } from '@/components/ui/button';
 import { documentsApi } from '@/modules/documents/api/client';
 import { DocumentPreview } from './document-preview';
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { getPublicApiBaseUrl } from '@/lib/environment';
 export function useTravelLogo(branding: TravelBrandingV1 | null) {
   const [loaded, setLoaded] = useState<{
     id: string;
@@ -66,6 +68,7 @@ export function TravelDocument({
   const { logo, error } = useTravelLogo(intake.workflow.branding);
   const [printing, setPrinting] = useState(false);
   const [printError, setPrintError] = useState('');
+  const [downloading, setDownloading] = useState(false);
   const state = intake.workflow;
   const formReferences = useReservationFormReferences(intake, true);
   const enabled =
@@ -220,9 +223,57 @@ export function TravelDocument({
       document.title = previousTitle;
     }
   }
+  async function downloadPdf() {
+    if (downloading || !enabled) return;
+    setDownloading(true);
+    setPrintError('');
+    try {
+      const send = () =>
+        fetch(`/reservations/requests/${encodeURIComponent(intake.id)}/pdf`, {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+      let response = await send();
+      const base = getPublicApiBaseUrl();
+      if (
+        response.status === 401 &&
+        base &&
+        (await refreshAuthenticatedSession(base))
+      )
+        response = await send();
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.message || 'دریافت PDF انجام نشد.');
+      }
+      if (!response.headers.get('content-type')?.includes('application/pdf'))
+        throw new Error('پاسخ سرور فایل PDF نیست؛ دوباره وارد حساب شوید.');
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `reservation-form-${intake.snapshot.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_')}.pdf`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (e) {
+      setPrintError(e instanceof Error ? e.message : 'دریافت PDF انجام نشد.');
+    } finally {
+      setDownloading(false);
+    }
+  }
   return (
     <div className="grid min-w-0 gap-3">
       {(error || printError) && <p role="alert">{error || printError}</p>}
+      {!voucher && (
+        <Button
+          disabled={downloading || !enabled}
+          onClick={() => void downloadPdf()}
+        >
+          {downloading
+            ? 'در حال آماده‌سازی PDF…'
+            : 'دانلود مستقیم PDF فرم رزرواسیون'}
+        </Button>
+      )}
       <Button
         disabled={printing || !enabled || !formReferences.ready}
         onClick={() => void print()}
