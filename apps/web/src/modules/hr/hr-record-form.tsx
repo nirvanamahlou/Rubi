@@ -25,6 +25,7 @@ import {
   retiredHrColumns,
 } from './hr-form-model';
 import { useHrReferenceData } from './hr-reference-data';
+import { useHrFormReferences } from './hr-directory-picker';
 import {
   expenseMissionOptions,
   isMissionExpense,
@@ -131,6 +132,7 @@ function HrRecordFormFields({
   nodePicker,
 }: HrRecordFormProps & { nodePicker?: ReactNode }) {
   const definition = getHrResource(target.source.section, target.source.tab)!;
+  const external = useHrFormReferences();
   const references = useHrReferenceData(store);
   const data = references.data;
   const companies = hrCompanies(data);
@@ -252,6 +254,12 @@ function HrRecordFormFields({
     new Set([...unitNames, ...employees.map((item) => item.unit)]),
   );
   const optionsByLabel: Record<string, readonly string[]> = {
+    ...Object.fromEntries(
+      ['ارز', 'کد ارز', 'ارز پرداخت', 'ارز هزینه', 'ارز مبنا'].map((label) => [
+        label,
+        external.data?.currencies.map((c) => c.code) ?? [],
+      ]),
+    ),
     وضعیت: ['فعال', 'غیرفعال', 'پیش‌نویس', 'در حال بررسی', 'تکمیل‌شده'],
     کارمند: employees.map((item) => item.name),
     'واحد درخواست‌کننده': units,
@@ -530,6 +538,7 @@ function HrRecordFormFields({
           <ContextualHrForm
             key={`${companyId}:${branchId}:${employeeId}:${parentId}`}
             context={{
+              branchId,
               section: target.source.section,
               tab: target.source.tab,
               title: target.source.label,
@@ -591,6 +600,14 @@ function HrRecordFormFields({
             }}
             onCancel={onClose}
             onSubmit={async (raw) => {
+              if (
+                definition.fields.some((f) => f.type === 'money') &&
+                !external.data
+              )
+                throw new Error(
+                  external.error ||
+                    'ابتدا دریافت ارزها از اطلاعات پایه تکمیل شود.',
+                );
               if (!branchId) throw new Error('شرکت مجاز را انتخاب کنید.');
               if (definition.employeeRequired && !employee)
                 throw new Error('کارمند را از فهرست انتخاب کنید.');

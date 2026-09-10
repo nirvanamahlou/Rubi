@@ -60,6 +60,7 @@ export function hrReferenceOptions(
     .filter(
       (e) =>
         e.branchId === branchId &&
+        e.status === 'فعال' &&
         (!organizationBranchId ||
           e.organizationBranchId === organizationBranchId),
     )

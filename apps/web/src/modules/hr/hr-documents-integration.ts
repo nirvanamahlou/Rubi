@@ -36,9 +36,9 @@ export async function uploadEmployeeDocumentToArchive(
   const category =
     options.categories.find((item) => /پرسنل|منابع انسانی/.test(item.name)) ??
     options.categories[0];
-  const branch =
-    options.branches.find((item) => item.name === input.branchName) ??
-    options.branches[0];
+  const branch = options.branches.find(
+    (item) => item.name === input.branchName,
+  );
   const owner =
     options.owners.find((item) => item.id === options.currentUserId) ??
     options.owners[0];

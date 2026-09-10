@@ -47,6 +47,7 @@ import { HeaderToday } from './header-today';
 import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
 import { Input } from '../ui/form-controls';
+import { HrConnectionsOutlet } from '@/modules/hr/hr-connections-outlet';
 import {
   Dialog,
   DialogClose,
@@ -532,6 +533,9 @@ function AppShellContent({ children }: { children: ReactNode }) {
         </div>
         <main className="px-4 pb-6 pt-3 sm:px-6 lg:px-7" id="main-content">
           {children}
+          <Suspense fallback={null}>
+            <HrConnectionsOutlet />
+          </Suspense>
         </main>
       </div>
     </div>

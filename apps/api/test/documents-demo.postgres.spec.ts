@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import type { HrDirectoryService } from '../src/hr/hr-directory.service';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -299,6 +300,7 @@ describe.skipIf(process.env.RUBI_RUN_DOCUMENTS_DEMO_POSTGRES_TESTS !== '1')(
         {
           verifyStepUp: async () => undefined,
         },
+        {} as HrDirectoryService,
       );
       const actor: AuthenticatedActor = {
         userId,

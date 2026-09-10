@@ -1,6 +1,8 @@
 'use client';
 
 import type { CustomerSummary } from '@rubi/contracts';
+import { hrDirectoryLabel, type HrDirectoryEmployee } from '@rubi/contracts';
+import { HrDirectoryPicker } from '@/modules/hr/hr-directory-picker';
 
 import {
   AlertTriangle,
@@ -231,6 +233,7 @@ function PreviewForm({
   mode: FormMode;
   onClose: () => void;
 }) {
+  const [employee, setEmployee] = useState<HrDirectoryEmployee | null>(null);
   const [draft, setDraft] = useState<CustomerAffairsDraft>(
     mode === 'create' ? emptyDraft : previewDraft,
   );
@@ -577,18 +580,26 @@ function PreviewForm({
               label="مسئول پیگیری"
               required
             >
-              <Input
-                disabled={readonly}
-                id="customer-affairs-assignee"
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    assignee: event.target.value,
-                  }))
-                }
-                readOnly={readonly}
-                value={draft.assignee}
-              />
+              {readonly ? (
+                <Input
+                  id="customer-affairs-assignee"
+                  readOnly
+                  value={draft.assignee}
+                />
+              ) : (
+                <HrDirectoryPicker
+                  label="مسئول پیگیری از کارکنان"
+                  selected={employee}
+                  onSelect={(item) => {
+                    setEmployee(item);
+                    setDraft((current) => ({
+                      ...current,
+                      assignee: item ? hrDirectoryLabel(item) : '',
+                      assigneeEmployeeId: item?.id ?? '',
+                    }));
+                  }}
+                />
+              )}
             </FormField>
           </div>
           <FormField id="customer-affairs-next-action" label="تاریخ اقدام بعدی">

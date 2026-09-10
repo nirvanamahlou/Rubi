@@ -1,5 +1,14 @@
 # Work Assignments
 
+## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
+
+- User requests HR connections to all main-menu modules. Reserve HR API/Web and HR contracts, HR receiving-permission seed entries, and one additive AppShell connection outlet on `codex/pc-b-hr-module-connections` from `origin/develop@e07c0c6`. Scope, producer/consumer compatibility and acceptance boundaries: `docs/tasks/HR-013-CONNECTIONS.md`.
+- Uses existing HR-owned persistence/FKs; no Migration or Dependency lock is needed. Destination domain services and active B2B runtime remain untouched. No existing source owner reservation is taken over; receiver UI uses the additive public HR service.
+- Follow-up explicitly authorizes bidirectional form reference wiring, push and merge to develop. Extend this reservation to additive HR directory/contracts, Master Data public currency directory/export, Documents employee-case selection/validation, Finance party selection and foundation owner selection. Reuse existing IAM user FK and document source contract; no migration or runtime takeover. Public options must retain canonical IDs, branch scopes and live validation. Preview consumers remain explicitly non-persistent.
+- The existing Customer Affairs follow-up owner field is included in the same public employee selector scope; its preview draft retains the selected employee ID.
+- Follow-up delivered: active IAM account selection/persisted employee FK, active Master Data currency selection/validation, existing Documents selection with HR document FK, direct employee-case selection in Documents with public validation, and scoped/paginated employee selection in destination owner/party fields. All 469 targeted tests passed (157 Web, 150 API unit/boundary, 26 isolated PostgreSQL, 63 contracts, 73 database). Code reservation is released for the explicitly authorized CI-gated PR139 merge. Runtime/DB/migration ownership remains unchanged.
+- Delivered the durable referral/response layer with 16 menu destinations, 13 scoped receiving permissions, source FK/version, department inboxes, request reports and response notifications. Broad domain execution (payment, issuance, IAM changes, procurement fulfillment, external synchronization) remains unfinished and is explicitly listed in the task handoff. Implementation reservations are released for review; runtime ownership is unchanged.
+
 ## DOCUMENTS-008A-BLUE-BUTTON-CASCADE-FIX — PC-B — READY_FOR_APPROVED_MERGE
 
 - پیگیری گزارش مالک محصول در 2026-09-09: پس از Merge PR #130، متن CTAهای آبی ارتباطات اسناد روی اجرای واقعی ۳۱۰۰ همچنان مشکی بود. `COMPUTER_ID=PC-B`.
