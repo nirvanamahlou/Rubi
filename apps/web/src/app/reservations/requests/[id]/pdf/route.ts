@@ -69,7 +69,7 @@ export async function GET(
         branding.kind === 'OWN'
           ? (
               {
-                NIYAYESH_SEIR_SAHAR: 'niyayesh-seir-full.png',
+                NIYAYESH_SEIR_SAHAR: 'niyayesh.png',
                 JAHAN_BASTAN: 'jahan-bastan-horizontal.png',
               } as Record<string, string>
             )[branding.companyCode ?? '']

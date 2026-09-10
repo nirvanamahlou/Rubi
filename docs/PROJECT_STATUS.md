@@ -1712,3 +1712,6 @@ Final scoped lint, TypeScript and production build passed; local implementation 
 
 ## RESERVATION-PENDING-GRAY-0910 — PC-A — LOCAL_COMPLETE
 Pending-supplier light-theme background changed from #f1f2f4 to #dedee2 for clearer visibility. Issued/dark-mode colors and text remain unchanged. Formatting, diff check, TypeScript and Web build passed. CSS-only; no migration or operational data. Local dev update; public publication hold retained.
+
+## RESERVATION-CONTRACT-HEADER-0910 — PC-A — LOCAL_COMPLETE
+Reservation sheet now follows Sales contract navy gradient/teal rule and centered grouped white own-company logo/name. OWN Niayesh reservation logo uses the contract niyayesh.png asset; uploaded agency logo retains its color treatment. Preview/print/direct-PDF HTML updated together; voucher unchanged.12 tests, scoped lint, TypeScript and build passed. Synthetic23-passenger PDF rendered through Playwright Edge and all3 A4 pages visually verified. The isolated CLI Chrome/Edge renderer returned without a PDF during this turn; authenticated direct-download success is not asserted. No renderer/runtime configuration changed. Public publication hold retained.

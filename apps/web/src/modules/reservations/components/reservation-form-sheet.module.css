@@ -21,14 +21,18 @@
   box-sizing: border-box;
 }
 .header {
-  min-height: 100px;
-  padding: 16px 24px;
-  background: #0a2843;
+  min-height: 27mm;
+  padding: 4mm 5mm;
+  background: linear-gradient(115deg, #10386b, #092b56);
   color: white;
-  border-bottom: 4px solid #00a5b3;
+  border-bottom: 1mm solid #15999e;
   display: flex;
-  gap: 12px;
+  gap: 4mm;
   align-items: center;
+  justify-content: space-between;
+}
+.header > div:first-child {
+  flex: 1;
 }
 .header h1 {
   margin: 0 0 8px;
@@ -39,31 +43,41 @@
 }
 .header p {
   margin: 0;
-  color: #b9d1df;
-  font-size: 8.5px;
+  color: white;
+  font-size: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #38aeb1;
 }
 .brand {
-  margin-left: auto;
-  text-align: right;
-  max-width: 155px;
+  width: 54mm;
+  flex-shrink: 0;
+  text-align: center;
   overflow-wrap: anywhere;
 }
 .brand strong {
-  font-size: 10px;
+  font-size: 11px;
   display: block;
 }
 .brand span {
   display: block;
-  font-size: 7px;
-  margin-top: 7px;
+  font-size: 8px;
+  margin-top: 3px;
+}
+.logo,
+.agencyLogo {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 52mm;
+  max-height: 17mm;
+  margin: 0 auto 1mm;
+  object-fit: contain;
 }
 .logo {
-  object-fit: contain;
-  width: 60px;
-  height: 58px;
-  flex-shrink: 0;
+  filter: brightness(0) invert(1);
+}
+.agencyLogo {
   background: white;
-  border-radius: 6px;
   padding: 3px;
 }
 .meta {

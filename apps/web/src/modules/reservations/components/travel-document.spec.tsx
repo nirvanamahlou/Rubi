@@ -30,7 +30,7 @@ const intake = {
 describe('travel output branding and readiness', () => {
   it('uses the registered own-company code for its real bundled logo', () => {
     const html = renderToStaticMarkup(<TravelDocument intake={intake} />);
-    expect(html).toContain('/brand/niyayesh-seir-full.png');
+    expect(html).toContain('/brand/niyayesh.png');
     expect(html).toContain('SYNTHETIC');
   });
   it('does not render an unissued voucher', () => {

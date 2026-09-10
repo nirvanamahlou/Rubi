@@ -118,19 +118,27 @@ export function ReservationFormSheet({
                 <p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p>
               </div>
               <div className={styles.brand}>
+                {logo && (
+                  <Image
+                    className={
+                      intake.workflow.branding?.kind === 'OWN'
+                        ? styles.logo
+                        : styles.agencyLogo
+                    }
+                    src={
+                      logo === '/brand/niyayesh-seir-full.png'
+                        ? '/brand/niyayesh.png'
+                        : logo
+                    }
+                    alt={data.brand}
+                    width={196}
+                    height={64}
+                    unoptimized
+                  />
+                )}
                 <strong dir="auto">{data.brand}</strong>
                 <span>TOUR &amp; TRAVEL AGENCY</span>
               </div>
-              {logo && (
-                <Image
-                  className={styles.logo}
-                  src={logo}
-                  alt={data.brand}
-                  width={76}
-                  height={62}
-                  unoptimized
-                />
-              )}
             </header>
             <div className={styles.meta}>
               {[

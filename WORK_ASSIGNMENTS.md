@@ -1611,3 +1611,8 @@ Completed:12 tests, scoped lint, TypeScript and Web build passed. Three A4 PDF p
 ## RESERVATION-PENDING-GRAY-0910 — PC-A — IN_PROGRESS
 Based df96107. Reserve only workspace.module.css light-theme pending-supplier background and task status. Increase gray visibility while preserving dark-issued and dark-mode palettes, text, status and permissions. No data/API changes; preserve next-env and public publication hold.
 Completed: formatting/diff checks, TypeScript and Web build passed. CSS-only; scope RELEASED. Local commit only.
+
+## RESERVATION-CONTRACT-HEADER-0910 — PC-A — IN_PROGRESS
+Base4b52abb. Reserve reservation-form-sheet.tsx/module.css and reservation-pdf-html.ts, task docs. Match current Sales contract navy/teal header and grouped white logo/brand, preserving reservation title and selected agency branding. Sales source read-only. No data/API/schema. Preserve next-env and public publication hold.
+Additional scope: Reservations PDF route fixed OWN logo asset matches contract niyayesh.png; preview substitutes the same bundled asset only in reservation sheet, preserving voucher and uploaded agency logos.
+Completed:12 tests, lint, TypeScript/build and3-page visual PDF QA passed using Playwright Edge. CLI PDF renderer did not produce output in this run; documented limitation, no runtime changes. Scope RELEASED; local commit only. Existing branding spec updated for contract logo asset.
