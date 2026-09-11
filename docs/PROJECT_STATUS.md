@@ -1,5 +1,10 @@
 # وضعیت پروژه
 
+## WORKBENCH-010 — تغییر رمز از میزکار
+
+با واگذاری صریح همین محدودهٔ IAM از طرف مالک پروژه به PC-B، فرم تغییر رمز در حساب و تنظیمات به سرویس واقعی متصل شد. رمز فعلی بررسی می‌شود؛ تغییر هش، ابطال نشست‌ها و ثبت رخداد امنیتی اتمیک هستند. ورود/تمدید نشست با تغییر رمز هم‌زمان ایمن‌سازی شد. ۷ آزمون PostgreSQL مستقل و ۷۲ آزمون IAM/HTTP/میزکار، lint، typecheck و build API موفق‌اند؛ بدون Migration و بدون تغییر رمز واقعی اپراتور. جزئیات در [WORKBENCH-010](tasks/WORKBENCH-010-PASSWORD-CHANGE.md).
+
+
 ## WORKBENCH-009 — ایموجی پیام‌رسان
 
 انتخاب‌گر ۲۴ ایموجی با جست‌وجوی فارسی و درج در محل نشانگر/جایگزینی متن انتخاب‌شده به فرم پیام اضافه شد. از تم و اجزای مشترک روبی استفاده می‌کند. ارسال و ذخیره پیام هنوز غیرفعال است و این محدودیت در فرم نمایش داده می‌شود. ۲۸ تست، lint و typecheck موفق؛ جزئیات در [WORKBENCH-009](tasks/WORKBENCH-009-MESSAGE-EMOJI.md).
@@ -1754,5 +1759,6 @@ Final validation: production build (40 routes) passed and local Web 3100 refresh
 
 ## PUBLISH-DARK-HR-0909 — PC-A — READY_FOR_REVIEW
 User explicitly authorized merge to develop. PR #120 now contains the full stack from #117/#119/#120: Finance purchase grouping, بلیط spelling, neutral dark shell and Reservations, dark HR legacy surfaces and persistent collapsed navigation. Integrated develop 679e516 while preserving PC-B connected HR/agencies and responsive Tehran-date header. Resolved the header conflict by retaining both responsive grid and dark border. Updated three mirrored API ticket validation strings to match Web; existing parity assertion retained. 23 focused integration tests passed. Final combined GitHub quality, tests, build and PostgreSQL gates must all pass before merge. No local database migration or API/Web restart during this publication task. Other computers must pull develop using the existing workflow and apply the already-merged HR migrations through their normal release procedure. Scoped integration reservation ends on successful PR #120 merge; PRs #117 and #119 are superseded by the complete stack.
+
 
 

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   Inject,
@@ -21,6 +22,8 @@ import {
 } from './iam.constants';
 import { Public } from './iam.decorators';
 import { LoginDto } from './dto/login.dto';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { ChangePasswordDto } from './dto/change-password.dto';
 // Runtime imports are required for Nest validation metadata.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { MfaCodeDto, MfaSetupBeginDto } from './dto/mfa.dto';
@@ -88,6 +91,33 @@ export class AuthController {
     await this.iam.logout(
       request.actor.sessionId,
       request.actor.userId,
+      requestMetadata(request),
+    );
+    response.clearCookie(ACCESS_COOKIE, cookieBase());
+    response.clearCookie(REFRESH_COOKIE, cookieBase());
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth(ACCESS_COOKIE)
+  @Post('change-password')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Change own password and revoke all sessions' })
+  async changePassword(
+    @Body() dto: ChangePasswordDto,
+    @Req() request: AuthenticatedRequest,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<void> {
+    // Non-simple header requires a successful CORS preflight from other origins.
+    if (
+      request.get('x-rubi-password-change') !== '1' ||
+      !request.is('application/json')
+    )
+      throw new ForbiddenException('درخواست تغییر رمز معتبر نیست.');
+    response.setHeader('Cache-Control', 'no-store');
+    await this.iam.changePassword(
+      request.actor,
+      dto.currentPassword,
+      dto.newPassword,
       requestMetadata(request),
     );
     response.clearCookie(ACCESS_COOKIE, cookieBase());

@@ -97,6 +97,7 @@ export function WorkbenchWorkspace() {
   const [pendingRead, setPendingRead] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
   const [noteOpen, setNoteOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
   const generation = useRef(0);
   const invalidate = useCallback(() => {
     generation.current++;
@@ -122,9 +123,10 @@ export function WorkbenchWorkspace() {
     }
   }, []);
   useEffect(() => {
-    const timer = noteOpen ? undefined : setTimeout(() => void load(), 0);
+    const timer =
+      noteOpen || passwordOpen ? undefined : setTimeout(() => void load(), 0);
     const refresh = () => {
-      if (!noteOpen) void load();
+      if (!noteOpen && !passwordOpen) void load();
     };
     window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
     return () => {
@@ -132,7 +134,7 @@ export function WorkbenchWorkspace() {
       invalidate();
       window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
     };
-  }, [load, invalidate, noteOpen]);
+  }, [load, invalidate, noteOpen, passwordOpen]);
   function selectTab(value: string) {
     const query = new URLSearchParams(params.toString());
     query.set('tab', normalizeWorkbenchTab(value));
@@ -484,7 +486,12 @@ export function WorkbenchWorkspace() {
                     </div>
                   </dl>
                   <div className="flex flex-wrap gap-3">
-                    <PasswordChange />
+                    <PasswordChange
+                      open={passwordOpen}
+                      onOpenChange={setPasswordOpen}
+                      userId={home.user.id}
+                      username={home.user.username}
+                    />
                     <Button asChild variant="outline">
                       <Link href="/profile">
                         <UserRound className="size-4" aria-hidden="true" />
