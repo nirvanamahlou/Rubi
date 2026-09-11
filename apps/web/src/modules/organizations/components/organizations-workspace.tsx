@@ -60,6 +60,10 @@ import { OrganizationUsersPanel } from './organization-users-panel';
 import { AgencyDossierSummary } from './agency-dossier-summary';
 import { AgencyRatesPanel } from './agency-rates-panel';
 import { cooperationLabel } from '../model/presentation';
+import {
+  loadOrganizationMetrics,
+  type OrganizationMetrics,
+} from '../model/organization-metrics';
 import { CorporateMetric, CorporateProfile } from './corporate-profile';
 import './corporate-design.css';
 import { CooperationWizard } from './cooperation-wizard';
@@ -88,6 +92,10 @@ export function OrganizationsWorkspace() {
   const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [metrics, setMetrics] = useState<OrganizationMetrics>();
+  const [metricsState, setMetricsState] = useState<
+    'loading' | 'ready' | 'error'
+  >('loading');
   const [state, setState] = useState<RequestState>('loading');
   const [selected, setSelected] = useState<MasterDataRecord>();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -123,6 +131,21 @@ export function OrganizationsWorkspace() {
   const load = useCallback(async () => {
     const current = ++requestId.current;
     setState('loading');
+    setMetrics(undefined);
+    setMetricsState('loading');
+    void loadOrganizationMetrics(
+      { search, status },
+      () => current === requestId.current,
+    )
+      .then((result) => {
+        if (current !== requestId.current) return;
+        setMetrics(result);
+        setMetricsState('ready');
+      })
+      .catch(() => {
+        if (current !== requestId.current) return;
+        setMetricsState('error');
+      });
     try {
       const response = await agencyClient.list({
         search,
@@ -261,6 +284,12 @@ export function OrganizationsWorkspace() {
   }
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const metricValue = (value: number | undefined) =>
+    metricsState === 'loading' ? '…' : (value?.toLocaleString('fa-IR') ?? '—');
+  const metricNote =
+    metricsState === 'error'
+      ? 'دریافت آمار ناموفق؛ دوباره تازه‌سازی کنید'
+      : 'مطابق جست‌وجو و وضعیت؛ همه صفحات';
 
   async function downloadImportTemplate() {
     if (templateDownloading) return;
@@ -352,21 +381,28 @@ export function OrganizationsWorkspace() {
           />
           <CorporateMetric
             label="آژانس همکار"
+            value={metricValue(metrics?.agencies)}
             icon={Users}
             tone="purple"
-            note="آمار کل در دسترس نیست"
+            note={metricNote}
           />
           <CorporateMetric
             label="مشتری سازمانی"
+            value={metricValue(metrics?.corporateCustomers)}
             icon={Building2}
             tone="green"
-            note="آمار کل در دسترس نیست"
+            note={metricNote}
           />
           <CorporateMetric
-            label="نیازمند اقدام"
+            label="نیازمند تکمیل هویت"
+            value={metricValue(metrics?.incompleteIdentity)}
             icon={TriangleAlert}
             tone="amber"
-            note="در انتظار اتصال"
+            note={
+              metricsState === 'error'
+                ? metricNote
+                : 'نوع شخصیت یا شناسه ملی شرکت ثبت نشده'
+            }
           />
         </section>
 
