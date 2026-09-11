@@ -5,7 +5,7 @@ import type {
 } from '@rubi/contracts';
 
 export const workbenchTabs = [
-  ['today', 'امروز من'],
+  ['today', 'خانه'],
   ['requests', 'کارتابل درخواست‌ها'],
   ['messages', 'پیام‌ها'],
   ['files', 'فایل‌های من'],

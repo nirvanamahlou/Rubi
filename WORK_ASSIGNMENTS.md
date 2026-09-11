@@ -1,5 +1,9 @@
 # Work Assignments
 
+## WORKBENCH-006-HOME-LABEL — PC-B — IN_PROGRESS
+
+- User requests renaming the personal workspace tab from «امروز من» to «خانه». Reserve only workbench/model.ts and own status entries on codex/pc-b-workbench-home-label. Keep the today tab identifier, routes and all services unchanged. Preserve native runtime and owner B2B KPI changes; coordinate owned Web3100 rebuild. No shared shell/API/schema/dependency change.
+
 ## WORKBENCH-005-NATIVE-SHELL — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
 
 - User explicitly rejects the standalone demo and requests alignment with Rubi theme and application structure. Reserve native Workbench module/routes, restoration of original/tasks, compatibility redirect from/workbench/demo, additive Workbench sidebar/user entry via lib/navigation.ts, messages/fa.ts, sidebar-icons.ts, user-menu.tsx and their tests. Keep the seventeen business modules separate; use existing shared UI/theme/provider/auth.
