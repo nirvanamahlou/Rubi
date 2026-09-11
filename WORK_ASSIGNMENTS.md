@@ -1,6 +1,6 @@
 # Work Assignments
 
-## WORKBENCH-029 — PC-B — IN_PROGRESS
+## WORKBENCH-029 — PC-B — UI_VERIFIED
 
 - Four requested reservation messenger templates; reserve message-templates and own docs only. No Reservations domain/API/schema changes. Reuse editable composer/local attachments; no upload/send claim.
 
