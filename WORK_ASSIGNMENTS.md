@@ -8,6 +8,36 @@
 
 - Organizations permanent-delete dialog now keeps the destructive action available after an authoritative API rejection, clears the previous error before retry and changes the label to an explicit retry action. Only transport/unknown outcomes require refresh, preventing a duplicate delete after an uncertain response. Referenced organizations remain protected and unused organizations are physically removed through the existing Master Data owner endpoint. Focused lint, Web TypeScript/build, all 125 Organizations tests and the seven-test isolated PostgreSQL deletion suite passed. Authenticated Web3100 QA confirmed the merged dialog and active destructive action with the eight-record directory; no user data was deleted during UI QA. Runtime `b9244f4` / `hr005-72ea3c0ada5a1190`; API4190 healthy. No schema, migration, dependency, IAM grant, cascade or business-history deletion.
 
+## CUSTOMER-AFFAIRS-002 — PC-B — IN_PROGRESS
+
+- `COMPUTER_ID=PC-B`; branch `codex/pc-b-customer-affairs-operational` and worktree
+  `C:/Users/admin/Rubi-customer-affairs-operational` start from
+  `origin/develop@700168e67cc0a495178946bb44bdd3528d2d49d7`.
+- Reserve Customer Affairs ownership for the operational vertical slice in
+  `apps/api/src/customer-affairs/**`, `apps/web/src/modules/customer-affairs/**`,
+  `apps/web/src/app/(crm)/customer-affairs/**`, its focused tests and the new task report.
+  Preserve the existing foundation and consume Customers, Sales, Reservations, Finance,
+  Tasks/Workbench, Documents, HR/IAM, Settings/Notifications, Marketing and Reporting only
+  through their public services or versioned references.
+- `Migration Owner = PC-B/CUSTOMER-AFFAIRS-002` for additive Customer Affairs-owned
+  request/lead, timeline, handoff, ticket/SLA, referral, message-delivery, survey and
+  corrective-action persistence plus required FK reverse relations, indexes and checks.
+  The earlier `PC-A/SUPPLIER-PURCHASE-FINANCE-0912` and manifest migrations are already in
+  `origin/develop` through merged PRs #177/#191 and no open PR owns a newer migration; their
+  stale `LOCAL_COMPLETE` reservation is treated as released by the merged baseline.
+- `Customer Affairs public contract/root export Owner = PC-B/CUSTOMER-AFFAIRS-002` for an
+  additive v1 contract. Producers are Customer Affairs API/domain services; consumers are
+  Customer Affairs Web and approved module adapters. Existing clients remain compatible;
+  no internal table or repository of another module may be queried.
+- `Central Docs Owner = PC-B/CUSTOMER-AFFAIRS-002` only for additive entries in
+  `WORK_ASSIGNMENTS.md`, `docs/PROJECT_STATUS.md`, `PLANS.md`, `docs/DATA_MODEL.md`,
+  `docs/DECISIONS.md` if an actual conflict is found, and
+  `docs/tasks/CUSTOMER-AFFAIRS-002.md`. Existing entries from other tasks are preserved.
+- `Dependency/Lockfile Owner = RELEASED / UNASSIGNED`; no dependency, workspace manifest or
+  lockfile change is planned. P0 must use the repository's existing Prisma, Nest, Next,
+  Tasks, Documents, Notifications and export infrastructure. External SMS/email/survey
+  automation remains fail-closed unless a configured adapter already exists.
+
 ## B2B-EXCEL-IMPORT-EXPORT-001 — PC-B — UI_VERIFIED
 
 - Reserve Organizations directory Excel actions, Master Data export filter validation and focused service/UI tests. Remove the redundant directory-level import-template button, keep the sample template inside the import dialog, and allow the already-contracted `organizationRole` filter only for organization exports. No schema, migration, dependency, IAM grant or operational-data change.
