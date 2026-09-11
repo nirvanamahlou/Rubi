@@ -1,5 +1,10 @@
 # Work Assignments
 
+## WORKBENCH-026 — PC-B — IN_PROGRESS
+
+- Sales messenger six user-requested editable templates. Reserve message-templates only and own docs; reuse existing draft attachments. No Sales domain/API/schema changes or real customer data.
+
+
 ## WORKBENCH-025 — PC-B — UI_VERIFIED
 
 - HR messenger four editable templates: system/internet issues, salary/advance, leave, documents. Reuse existing text composer and unit-scoped local attachments. Reserve message-templates only plus docs; no HR domain/API/schema changes. Real upload/send remains unavailable.
