@@ -41,7 +41,7 @@ Reserve Organizations directory enrichment, dossier role summary and focused con
 
 Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped lint and typecheck pass. Audit/handoff: docs/tasks/B2B-CONNECTIONS-AUDIT-001.md. Combined Web build on9d05cd6 preserves latest7bae2a4; source reservations released. Missing Finance/Sales/notification producers remain explicitly incomplete.
 
-## WORKBENCH-015-SETTINGS-CENTER — PC-B — IN_PROGRESS
+## WORKBENCH-015-SETTINGS-CENTER — PC-B — DONE / UI_VERIFIED
 
 - Reserve only account action-grid alignment in workbench-workspace.tsx and own status docs. Center all settings buttons/links, no shared UI/API/dependency change. Base78bda1f; branch codex/pc-b-workbench-settings-center. Coordinate inclusion in next shared Web3100 build.
 
