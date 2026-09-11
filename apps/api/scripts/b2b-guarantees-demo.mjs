@@ -1,6 +1,7 @@
 // Additive local fixtures through public owner services. No approvals or IAM grants.
 import { createRequire } from 'node:module';
 import { randomUUID } from 'node:crypto';
+import { demoAgencyNames } from './b2b-demo-agencies.mjs';
 const require = createRequire(import.meta.url);
 require('reflect-metadata');
 const { ConfigService } = require('@nestjs/config');
@@ -164,7 +165,9 @@ try {
     'آژانس آزمایشی نیلگون',
   ];
   const plan = [];
-  for (const [index, name] of names.entries()) {
+  for (const [index, name] of (
+    await demoAgencyNames(master, names)
+  ).entries()) {
     const org = (await list('organizations', name)).find(
       (o) =>
         o.name === name &&
@@ -184,7 +187,7 @@ try {
       agreements.push(...response.data);
       if (agreements.length >= response.meta.total) break;
     }
-    const title = `قرارداد نمونه تضمین‌های آژانس ${index + 1}`;
+    const title = `قرارداد نمونه تضمین‌های آژانس ${process.env.B2B_DEMO_ALL_EXISTING === '1' ? org.code : index + 1}`;
     plan.push({
       org,
       index,

@@ -1,5 +1,11 @@
 # Work Assignments
 
+## B2B-ALL-AGENCIES-DEMO-001 — PC-B — DONE / LOCAL_DATA_ACTIVE
+
+- User explicitly requests synthetic dossier data, including contracts, for all existing agencies. Reserve a new local public-service fixture loader and task/status docs on `codex/pc-b-b2b-all-agencies-demo` from289fb8f. Previous implementation locks released. Preserve existing user records, permissions and runtime; no migration/dependency/API or Finance owner changes.
+- Discover all existing agency organizations with pagination; add clearly labelled sample records using existing operator grants and owner services after backup. Keep contracts draft and currency limits independent. Verify persistence and repeat-run idempotency. No merge.
+- Extended the three existing B2B fixture scripts with explicit opt-in discovery and a shared tested selector; dossier fixtures also add inactive sample signatories and read existing document references through Documents. No existing account grants changed. All seven existing agencies now have samples: 14 new draft agreements, 28 guarantee terms, 28 per-currency policies, six new proof uploads, seven signatories, six addresses, eight contacts, nine rates, two missing profiles and 21 scoped sample users. Existing records preserved; repeated previews produce zero additions. Public activity reads verify all seven dossiers and all three owner audit sources. Runtime unchanged; data is available on3100. See docs/tasks/B2B-ALL-AGENCIES-DEMO-001.md. Release implementation reservations.
+
 ## B2B-PROFILE-TABS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests removing the four circled top shortcuts (branches, representatives, signatories, account manager) from the organization profile. Reserve only corporate-profile.tsx and task/status docs on clean `codex/pc-b-b2b-remove-profile-tabs` from ff4060d, preserving PR147 and existing runtime. Previous reservations released; no conflicting owner found.

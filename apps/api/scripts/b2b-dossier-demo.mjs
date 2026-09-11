@@ -2,6 +2,7 @@
 // Existing matching records are reused without changing user edits or approvals.
 import { createRequire } from 'node:module';
 import { randomUUID } from 'node:crypto';
+import { demoAgencyNames } from './b2b-demo-agencies.mjs';
 const require = createRequire(import.meta.url);
 require('reflect-metadata');
 const { ConfigService } = require('@nestjs/config');
@@ -83,7 +84,8 @@ try {
     (user) =>
       user.id === actorId &&
       user.status === 'ACTIVE' &&
-      /ساختگی|آزمایشی|fixture/i.test(user.displayName) &&
+      (process.env.B2B_DEMO_ALL_EXISTING === '1' ||
+        /ساختگی|آزمایشی|fixture/i.test(user.displayName)) &&
       user.branches.some(({ branch }) => branch.id === branchId),
   );
   if (!fixtureActor)
@@ -109,7 +111,16 @@ try {
       'b2b.credit.manage',
     ],
   };
-  // This fixture has no Documents or Finance data; fail closed if a reference is introduced.
+  const { roles } = await iam.listRolesAndBranches();
+  const granted = new Set(
+    roles
+      .filter((r) => fixtureActor.roles.some((x) => x.role.id === r.id))
+      .flatMap((r) => r.permissions.map((x) => x.permission.code)),
+  );
+  if (actor.permissions.some((p) => !granted.has(p)))
+    throw Error('Existing operator permissions required');
+  actor.permissions = [...granted];
+  // Existing document references are read through their owner; this loader never uploads files.
   const unavailableDocuments = new Proxy(
     {},
     {
@@ -120,7 +131,42 @@ try {
       },
     },
   );
-  const documents = new B2bAgreementDocuments(unavailableDocuments);
+  const {
+    DocumentsService,
+  } = require('../dist/documents/documents.service.js');
+  const {
+    DocumentsRepository,
+  } = require('../dist/documents/documents.repository.js');
+  const {
+    NotificationsService,
+  } = require('../dist/notifications/notifications.service.js');
+  const {
+    NotificationsRepository,
+  } = require('../dist/notifications/notifications.repository.js');
+  const {
+    LocalDocumentStorage,
+  } = require('../dist/documents/documents.storage.js');
+  const documentService = new DocumentsService(
+    new DocumentsRepository(
+      database,
+      new NotificationsService(new NotificationsRepository(database)),
+    ),
+    new LocalDocumentStorage(config),
+    unavailableDocuments,
+    iam,
+  );
+  const documents = new B2bAgreementDocuments(documentService);
+  const {
+    B2bSignatoryService,
+  } = require('../dist/b2b/b2b-signatory.service.js');
+  const {
+    B2bSignatoryRepository,
+  } = require('../dist/b2b/b2b-signatory.repository.js');
+  const signatories = new B2bSignatoryService(
+    new B2bSignatoryRepository(database),
+    directory,
+    documents,
+  );
   const agency = new B2bService(
     new B2bRepository(database),
     directory,
@@ -170,7 +216,9 @@ try {
       'Active Iran/Tehran and IRR/USD reference data are required.',
     );
   const plan = [];
-  for (const [index, legalName] of names.entries()) {
+  for (const [index, legalName] of (
+    await demoAgencyNames(master, names)
+  ).entries()) {
     const org = (await list('organizations', legalName)).find(
       (row) => row.name === legalName,
     );
@@ -188,6 +236,9 @@ try {
     );
     const details = (await agency.profileDetails(org.id, actor, branchId)).data;
     const rates = (await agency.rates(org.id, actor, branchId)).data;
+    const existingSignatories = (
+      await signatories.list(org.id, branchId, actor)
+    ).data;
     const agreements = [];
     for (let page = 1; ; page++) {
       const response = await workflow.list(
@@ -314,7 +365,7 @@ try {
             actor,
           ),
         );
-    const title = `قرارداد همکاری آزمایشی ${index + 1}`;
+    const title = `قرارداد همکاری آزمایشی ${process.env.B2B_DEMO_ALL_EXISTING === '1' ? org.code : index + 1}`;
     if (!agreements.some((row) => row.title === title))
       add('agreement', () =>
         workflow.save(
@@ -374,6 +425,34 @@ try {
           actor,
         ),
       );
+    if (
+      !existingSignatories.some((s) => s.notes === 'امضادار آزمایشی پرونده ۳۶۰')
+    )
+      add('signatory', async () => {
+        const contact = (await list('organization-contacts')).find(
+          (r) =>
+            r.attributes.organizationId === org.id &&
+            r.name.includes('آزمایشی'),
+        );
+        if (!contact) throw Error('Sample representative required');
+        return signatories.save(
+          org.id,
+          {
+            branchId,
+            contactId: contact.id,
+            documentTypes: ['FRAMEWORK_AGREEMENT', 'FINANCIAL_DOCUMENT'],
+            authorityLimit: '100000000',
+            currencyCode: 'IRR',
+            validFrom: '2026-09-01',
+            validTo: '2027-08-31',
+            documentId: null,
+            documentVersionId: null,
+            isActive: false,
+            notes: 'امضادار آزمایشی پرونده ۳۶۰',
+          },
+          actor,
+        );
+      });
     plan.push(item);
   }
   // Preflight every organization before the first mutation. Each domain write is audited and transactional.

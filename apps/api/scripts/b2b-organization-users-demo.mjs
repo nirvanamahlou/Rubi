@@ -1,6 +1,7 @@
 // Local synthetic organization accounts. Credentials are written only to a private file outside Git.
 import { createRequire } from 'node:module';
 import { randomBytes, randomUUID } from 'node:crypto';
+import { demoAgencyNames } from './b2b-demo-agencies.mjs';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, relative, isAbsolute } from 'node:path';
@@ -134,7 +135,8 @@ try {
     ?.branch.id;
   if (!branchId) throw Error('HQ branch missing');
   const plan = [];
-  for (const [index, name] of names.entries()) {
+  const selectedNames = await demoAgencyNames(master, names);
+  for (const [index, name] of selectedNames.entries()) {
     const matches = await master.list('organizations', {
       search: name,
       status: 'active',
@@ -151,7 +153,7 @@ try {
     if (!org) throw Error('Synthetic organization missing: ' + name);
     const existing = await repository.list(org.id, branchId);
     for (const d of definitions) {
-      const username = `demo.agency.${index + 1}.${d.suffix}`;
+      const username = `demo.agency.${process.env.B2B_DEMO_ALL_EXISTING === '1' ? org.id : index + 1}.${d.suffix}`;
       const identity = users.find((u) => u.username === username);
       const member = existing.find((m) => m.userId === identity?.id);
       if (identity && !member)
@@ -168,7 +170,7 @@ try {
   console.log(
     JSON.stringify({
       mode,
-      organizations: names.length,
+      organizations: selectedNames.length,
       toCreate: plan.filter((p) => !p.exists).length,
       existing: plan.filter((p) => p.exists).length,
     }),
