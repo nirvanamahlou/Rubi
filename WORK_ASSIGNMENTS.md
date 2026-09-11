@@ -4,9 +4,9 @@
 
 - Reserve Organizations directory Excel actions, Master Data export filter validation and focused service/UI tests. Remove the redundant directory-level import-template button, keep the sample template inside the import dialog, and allow the already-contracted `organizationRole` filter only for organization exports. No schema, migration, dependency, IAM grant or operational-data change.
 
-## WORKBENCH-033 — PC-B — IN_PROGRESS
+## WORKBENCH-033 — PC-B — UI_VERIFIED
 
-- Move the existing Home quick-access card directly above "My notifications" in the primary column. Reserve only Workbench Home layout and own delivery docs. Preserve links, notification behavior, API/schema and shared components.
+- Moved the existing Home quick-access card directly above "My notifications" in the primary column. Its three links use a horizontal wide-screen grid; link and notification behavior are unchanged. Source `833458d`, combined runtime `7f4f793`; scoped lint, TypeScript and 46-route build passed. Authenticated Web3100 QA confirmed DOM and visual order with no console errors. Web PID29632/build gEMl1G7UjZStBq4fPr6UF; combined agency Excel fix preserved. No Workbench API/schema/shared-component change.
 
 ## WORKBENCH-032 — PC-B — UI_VERIFIED / CALENDAR_SESSION_LOCAL
 
