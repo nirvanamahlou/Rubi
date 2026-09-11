@@ -611,8 +611,11 @@ export function OrganizationsWorkspace() {
                       size="sm"
                       variant="outline"
                       onClick={() => void openProfile(record)}
+                      title="مشاهده پرونده"
+                      aria-label={`مشاهده پرونده ${record.name}`}
+                      className="size-10 p-0"
                     >
-                      مشاهده پرونده
+                      <Eye aria-hidden="true" className="size-4" />
                     </Button>
                     <Button
                       size="sm"
@@ -622,8 +625,11 @@ export function OrganizationsWorkspace() {
                         setSelected(record);
                         setFormMode('edit');
                       }}
+                      title="ویرایش"
+                      aria-label={`ویرایش ${record.name}`}
+                      className="size-10 p-0"
                     >
-                      ویرایش
+                      <Pencil aria-hidden="true" className="size-4" />
                     </Button>
                     <Button
                       size="sm"
@@ -633,8 +639,10 @@ export function OrganizationsWorkspace() {
                         setDeleteTarget({ resource: 'organizations', record })
                       }
                       aria-label={`حذف دائمی ${record.name}`}
+                      title="حذف دائمی"
+                      className="size-10 p-0"
                     >
-                      <Trash2 aria-hidden="true" className="size-4" /> حذف دائمی
+                      <Trash2 aria-hidden="true" className="size-4" />
                     </Button>
                   </div>
                 </Card>
@@ -703,13 +711,15 @@ export function OrganizationsWorkspace() {
                       </td>
                       <td className="unavailable-value">در دسترس نیست</td>
                       <td className="p-4">
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
                           <Button
                             onClick={() => void openProfile(record)}
-                            size="sm"
+                            size="icon"
                             variant="outline"
+                            title="مشاهده پرونده"
+                            aria-label={`مشاهده پرونده ${record.name}`}
                           >
-                            <Eye className="size-4" /> مشاهده پرونده
+                            <Eye aria-hidden="true" className="size-4" />
                           </Button>
                           <Button
                             disabled={
@@ -719,13 +729,15 @@ export function OrganizationsWorkspace() {
                               setSelected(record);
                               setFormMode('edit');
                             }}
-                            size="sm"
+                            size="icon"
                             variant="outline"
+                            title="ویرایش"
+                            aria-label={`ویرایش ${record.name}`}
                           >
-                            <Pencil className="size-4" /> ویرایش
+                            <Pencil aria-hidden="true" className="size-4" />
                           </Button>
                           <Button
-                            size="sm"
+                            size="icon"
                             variant="destructive"
                             disabled={
                               !permissions.includes('master_data.delete')
@@ -737,9 +749,9 @@ export function OrganizationsWorkspace() {
                               })
                             }
                             aria-label={`حذف دائمی ${record.name}`}
+                            title="حذف دائمی"
                           >
-                            <Trash2 aria-hidden="true" className="size-4" /> حذف
-                            دائمی
+                            <Trash2 aria-hidden="true" className="size-4" />
                           </Button>
                         </div>
                       </td>
