@@ -1,5 +1,9 @@
 # وضعیت پروژه
 
+## WORKBENCH-012 — واحدهای مخاطب و قالب پیام
+
+انتخاب مالی، رزرواسیون، AI و فروش و سه قالب اختصاصی برای هر واحد اضافه شد. قالب‌ها به متن اضافه می‌شوند و قابل ویرایش‌اند؛ تغییر واحد متن موجود را پاک نمی‌کند. محدودیت ۴۰۰۰ نویسه و درج ایموجی حفظ شد. این قابلیت آماده‌سازی متن است؛ ارسال، ذخیره پیام و پاسخ AI به سرویس فعال متصل نیستند و UI این موضوع را صریح نشان می‌دهد. تغییر API، Migration یا Dependency ندارد. Typecheck، lint و پنج تست درج ایموجی موفق‌اند.
+
 ## WORKBENCH-011 — بررسی و اتصال ماژول‌ها
 
 اعلان‌های مجاز HR از سرویس موجود به خانه و پیگیری میزکار متصل شدند؛ خواندن اعلان در زنگ اصلی و میزکار پس از موفقیت همگام می‌شود. مسیرهای مالک مالی/خرید/سازمان‌ها با کنترل مجوز افزوده شدند و رویداد امنیتی از feed عمومی کنار گذاشته شد. ماتریس کامل ارتباط‌ها، خدمات موجود و وابستگی‌های مسدود در [WORKBENCH-011](tasks/WORKBENCH-011-CONNECTIONS.md) ثبت است. پیام/درخواست/یادداشت پایدار و فعال‌سازی API رمز همچنان محدودیت‌های مستقل دارند؛ تکمیل عمومی کل PRD ادعا نمی‌شود.
@@ -1770,3 +1774,5 @@ Final validation: production build (40 routes) passed and local Web 3100 refresh
 User explicitly authorized merge to develop. PR #120 now contains the full stack from #117/#119/#120: Finance purchase grouping, بلیط spelling, neutral dark shell and Reservations, dark HR legacy surfaces and persistent collapsed navigation. Integrated develop 679e516 while preserving PC-B connected HR/agencies and responsive Tehran-date header. Resolved the header conflict by retaining both responsive grid and dark border. Updated three mirrored API ticket validation strings to match Web; existing parity assertion retained. 23 focused integration tests passed. Final combined GitHub quality, tests, build and PostgreSQL gates must all pass before merge. No local database migration or API/Web restart during this publication task. Other computers must pull develop using the existing workflow and apply the already-merged HR migrations through their normal release procedure. Scoped integration reservation ends on successful PR #120 merge; PRs #117 and #119 are superseded by the complete stack.
 
 آخرین اجرای WORKBENCH-010: Web3100/PID21272، source9480599، manifesthr005-de86e8b02435c31e؛ بررسی مرورگر فرم خالی و غیرفعال‌بودن دریافت رمز تا آماده‌شدن API موفق بود. API15024 بدون تغییر و فعال‌سازی Backend همچنان مسدود است.
+
+WORKBENCH-012: build تولیدی و بررسی مرورگر با حساب واقعی موفق؛ انتخاب واحد، درج قالب و حفظ متن قبلی تأیید و متن آزمایشی پاک شد. Web3100 source7bae2a4 / PID26140؛ API بدون تغییر. Draft PR175؛ بدون merge.
