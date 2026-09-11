@@ -53,6 +53,8 @@ import { NoteEditor } from './note-editor';
 import { WorkbenchFavorites } from './workbench-favorites';
 import { MessageComposer } from './message-composer';
 import { PasswordChange } from './password-change';
+import { allowedWorkbenchDestinations } from './connections';
+import { WorkbenchHrNotifications } from './workbench-hr-notifications';
 
 const tabIcons = [
   Home,
@@ -64,27 +66,6 @@ const tabIcons = [
   StickyNote,
   Settings2,
 ];
-const ownerDestinations = [
-  {
-    href: '/hr',
-    title: 'درخواست‌های منابع انسانی',
-    description: 'مرخصی، مأموریت و پیگیری پرونده‌های کارکنان',
-    permission: 'hr.',
-  },
-  {
-    href: '/sales',
-    title: 'فروش و قراردادها',
-    description: 'ثبت و پیگیری درخواست در پرونده فروش',
-    permission: 'sales.',
-  },
-  {
-    href: '/reservations',
-    title: 'رزرواسیون و عملیات سفر',
-    description: 'پیگیری درخواست‌های اجرایی سفر',
-    permission: 'reservations.',
-  },
-] as const;
-
 export function WorkbenchWorkspace() {
   const params = useSearchParams();
   const router = useRouter();
@@ -324,6 +305,10 @@ export function WorkbenchWorkspace() {
                     />
                   </Card>
                   <div className="space-y-5">
+                    <WorkbenchHrNotifications
+                      key={home.user.id}
+                      permissions={home.user.permissions}
+                    />
                     <Card className="p-5">
                       <h2 className="font-bold mb-4">دسترسی سریع</h2>
                       <div className="grid gap-2">
@@ -385,18 +370,17 @@ export function WorkbenchWorkspace() {
                 />
               </TabsContent>
               <TabsContent value="requests" className="space-y-4">
+                <WorkbenchHrNotifications
+                  key={home.user.id}
+                  permissions={home.user.permissions}
+                />
                 <Alert
                   title="ثبت و پیگیری در پرونده اصلی"
                   description="کارتابل عمومی درخواست‌ها هنوز فعال نیست. درخواست‌های موجود را از بخش مسئول همان خدمت پیگیری کنید."
                 />
                 <div className="grid gap-4 md:grid-cols-3">
-                  {ownerDestinations
-                    .filter((destination) =>
-                      home.user.permissions.some((permission) =>
-                        permission.startsWith(destination.permission),
-                      ),
-                    )
-                    .map((destination) => (
+                  {allowedWorkbenchDestinations(home.user.permissions).map(
+                    (destination) => (
                       <Card key={destination.href} className="p-5">
                         <h2 className="font-bold">{destination.title}</h2>
                         <p className="text-sm text-muted-foreground my-3 leading-7">
@@ -412,7 +396,8 @@ export function WorkbenchWorkspace() {
                           </Link>
                         </Button>
                       </Card>
-                    ))}
+                    ),
+                  )}
                 </div>
               </TabsContent>
               <TabsContent value="messages">

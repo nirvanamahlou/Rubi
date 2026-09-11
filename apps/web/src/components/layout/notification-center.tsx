@@ -20,6 +20,7 @@ import { pendingHrBellNotifications } from '@/modules/hr/hr-bell-notifications';
 import {
   NOTIFICATIONS_CHANGED_EVENT,
   notificationsApi,
+  notifyNotificationFeedChanged,
 } from '@/modules/notifications/api/client';
 import { Button } from '../ui/button';
 import {
@@ -259,7 +260,10 @@ export function NotificationCenter() {
             : item,
         ),
       );
-      void hrApi.readNotification(notification.id).catch(() => loadHr());
+      void hrApi
+        .readNotification(notification.id)
+        .then(() => window.dispatchEvent(new Event('rubi:hr-server-change')))
+        .catch(() => loadHr());
       return;
     }
     if (notification.source === 'server') {
@@ -269,7 +273,10 @@ export function NotificationCenter() {
         ),
       );
       setServerUnreadCount((current) => Math.max(0, current - 1));
-      void notificationsApi.markRead(notification.id).catch(() => loadServer());
+      void notificationsApi
+        .markRead(notification.id)
+        .then(notifyNotificationFeedChanged)
+        .catch(() => loadServer());
       return;
     }
     const readAt = new Date().toISOString();

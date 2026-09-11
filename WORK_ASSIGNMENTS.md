@@ -1,5 +1,10 @@
 # Work Assignments
 
+## WORKBENCH-011-CONNECTIONS — PC-B — IN_PROGRESS
+
+- Audit Workbench internal/cross-module/external-provider links against original request, owner APIs and runtime. Base0441c1e; preserve pending B2B contacts delta. Reserve Workbench HR notification consumer/model/tests and navigation map/report; shared notification-center.tsx only adds successful read-change event propagation; reserve change-notifications.ts/spec to exclude IAM security actions from the public feed. No owner service/table/schema/contract/dependency change; no API cutover retry. Persistent requests/messages/notes/tasks remain gated by active Reservations migration lock and missing services. Branch codex/pc-b-workbench-connections; Web restart only after runtime handoff.
+
+
 ## WORKBENCH-010-PASSWORD-CHANGE — PC-B — CODE_READY / API_ACTIVATION_BLOCKED
 
 - Base2794b60; reserve Workbench password form and integration plus own task/status docs. User requests password change inside Workbench. IAM has no existing endpoint; coordinator confirms no authority to transfer PC-A ownership. Prepare native UI with no credential collection/transmission until real IAM service is available. Proposed producer IAM / consumer Workbench contract and secure acceptance criteria in task report; backend changes require explicit PC-A/project-owner slice handoff. No schema, dependency, API runtime or actual credential changes. Coordinate Web3100 checkpoint with B2B owner.
