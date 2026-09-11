@@ -1,5 +1,11 @@
 # Work Assignments
 
+## B2B-BACK-NAVIGATION-001 — PC-B — READY_FOR_REVIEW
+
+Reserve corporate-profile.tsx on codex/pc-b-b2b-back-navigation from40da905. Correct in-page back from dossier sections to same organization360, retaining directory exit only at home. No API/data/dependency changes; coordinate Web3100.
+
+User clarified browser Back. Extend scope to organizations-workspace.tsx and module-local history helper/tests. Sourcea753d86 preserves Next history metadata, records organization/screen/tab identifiers, restores Back/Forward without duplicate pushes.113 tests, scoped lint/typecheck pass; combined build1995e16 preserves8492a36. Release source reservations.
+
 ## B2B-CONNECTIONS-AUDIT-001 — PC-B — READY_FOR_REVIEW
 
 Reserve Organizations directory enrichment, dossier role summary and focused connection tests/report on codex/pc-b-b2b-connections-audit. Consume existing B2B/MasterData/IAM public APIs only. Finance producer and shared Sales contracts remain with PC-A; no migration/dependency/central API edits. Preserve latest Web runtime29cfe14 and coordinate integration.
