@@ -1751,3 +1751,4 @@ Runtime verification: combined build43 routes passed; Web3100 source e8ba0fd / h
 
 ## 2026-09-11 — B2B directory action icons (PC-B)
 Source48d95b5 / draft PR173 replaces directory view/edit/delete labels with accessible icons and tooltips, keeps desktop actions together, and updates mobile cards. Scoped lint, typecheck and107 tests passed. Combined Web3100 build delegated to its current owner; no API or data changes.
+Runtime29cfe14 / hr005-3646774b4da0ada9 / WebPID23416 includes48d95b5. Combined build passed. Authenticated browser verified all three actions have empty visible text, SVG icons,40px widths and identical row alignment; view icon opens agency360. Screenshot at1920px verified. API unchanged.
