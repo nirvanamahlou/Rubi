@@ -1,6 +1,6 @@
 # Work Assignments
 
-## WORKBENCH-030 — PC-B — IN_PROGRESS
+## WORKBENCH-030 — PC-B — UI_VERIFIED
 
 - Limit Home HR notices to latest5, retaining complete received-list view-all dialog. Reserve Workbench HR notification component only and docs. No API/HR domain/shared changes.
 
