@@ -2016,3 +2016,4 @@ WORKBENCH-012: build تولیدی و بررسی مرورگر با حساب وا�
 
 ## 2026-09-11 — B2B browser navigation (PC-B)
 User clarified native browser Back. Sourcea753d86 records directory/dossier/section/tab transitions in browser history, preserves Next metadata, restores Back/Forward and avoids duplicate entries on refresh of contacts. In-page return also targets same dossier from subsections.113 Organizations tests and scoped lint/typecheck passed; combined build1995e16 from8492a36. No API/dependency changes.
+Runtime confirmed: source1995e160afb1fd59b47832199d524a4d883a341c / hr005-de87fc5eb9722975 / WebPID5516,43-route build pass. Actual browser Back: contract to same ORG_A38P8LPLQXLB360 to directory; Forward restores same dossier and contract. Credit tab Back restores framework tab.113 tests passed; API unchanged. Draft PR179; Web returned to workbench owner.
