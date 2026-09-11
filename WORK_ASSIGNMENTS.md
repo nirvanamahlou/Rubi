@@ -1,5 +1,11 @@
 # Work Assignments
 
+## WORKBENCH-003-RUNTIME-3100 — PC-B — IN_PROGRESS
+
+- User requests the reference Workbench in Chrome on3100. Runtime owner task01a086a4-fb72-7e80-8d13-db2ce47873ad explicitly hands over Web3100 only after isolated build and free-port verification. Base is last verified runtime source7ada379; existing B2B checkout0300a34 and its active date-filter changes remain untouched.
+- Reserve isolated `apps/web/src/modules/workbench/demo/**`, GET `/workbench/demo`, opt-in link on existing `/tasks` page (the current main-menu Workbench destination), and this task's own documentation entries. Branch `codex/pc-b-workbench-runtime-3100`. No shared shell/proxy, API, schema, dependencies or data changes.
+- Preserve API4190 PID15024, database/storage and all inherited B2B/HR capabilities. Before replacing Web3100 recheck expected PID20360/Next command line and runtime identity; no broad process termination. No merge. Demo remains synthetic/session-only and gated by RUBI_WORKBENCH_DEMO=1.
+
 ## B2B-NAMED-BRANCHES-001 — PC-B — IN_PROGRESS
 
 - User explicitly repeats that the four company names must be branches and requests alignment of the contract branch selector. Reserve a local branch-reference provisioning script, agreement header CSS/component, and status docs on `codex/pc-b-b2b-named-branches` from0146c4f. No active IAM implementation lock found; consume public IAM access updates, preserve roles/other users and existing HQ records. Back up before additive reference writes. New branches are distinct from LegalEntity records; no reassignment of existing business rows. No migration/dependency change or merge.
