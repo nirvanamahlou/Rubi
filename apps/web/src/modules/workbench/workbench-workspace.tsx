@@ -52,6 +52,7 @@ import { WorkbenchFiles } from './workbench-files';
 import { NoteEditor } from './note-editor';
 import { WorkbenchFavorites } from './workbench-favorites';
 import { MessageComposer } from './message-composer';
+import { PasswordChange } from './password-change';
 
 const tabIcons = [
   Home,
@@ -483,6 +484,7 @@ export function WorkbenchWorkspace() {
                     </div>
                   </dl>
                   <div className="flex flex-wrap gap-3">
+                    <PasswordChange />
                     <Button asChild variant="outline">
                       <Link href="/profile">
                         <UserRound className="size-4" aria-hidden="true" />
