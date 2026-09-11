@@ -26,6 +26,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { useSuppressHrConnections } from '@/modules/hr/hr-connections-visibility';
 import {
   Input,
   Select,
@@ -110,6 +111,7 @@ export function OrganizationsWorkspace() {
   const [state, setState] = useState<RequestState>('loading');
   const [selected, setSelected] = useState<MasterDataRecord>();
   const [profileOpen, setProfileOpen] = useState(false);
+  useSuppressHrConnections(!profileOpen);
   const openedOrganization = useRef<string | null>(null);
   const historyRecords = useRef(new Map<string, MasterDataRecord>());
   const historyRequest = useRef(0);
