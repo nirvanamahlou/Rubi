@@ -469,10 +469,6 @@ export function OrganizationsWorkspace() {
             <h1 ref={directoryHeading} tabIndex={-1}>
               آژانس‌ها و مشتریان سازمانی
             </h1>
-            <p>
-              مدیریت یکپارچه پرونده همکاری B2B، قرارداد، اعتبار، شرایط تجاری و
-              نمای عملیات
-            </p>
           </div>
         </div>
         <section className="kpis agencies-kpis">
