@@ -1,5 +1,10 @@
 # Work Assignments
 
+## WORKBENCH-028 — PC-B — IN_PROGRESS
+
+- Finance messenger eight requested editable templates; reserve message-templates and own docs. Reuse local draft attachments; no Finance domain/API/schema changes, posting or actual payment.
+
+
 ## WORKBENCH-027 — PC-B — UI_VERIFIED
 
 - User removes Tasks/Automation section. Reserve shared navigation/messages/icon mappings/change-notification label and tasks route plus existing nav test. Remove entry globally and redirect legacy route to Workbench, no data/API/schema deletion. Shared runtime coordinated.
