@@ -1,6 +1,6 @@
 # Work Assignments
 
-## WORKBENCH-023 — PC-B — IN_PROGRESS
+## WORKBENCH-023 — PC-B — UI_VERIFIED / DELIVERY_NOT_CONNECTED
 
 - Home feedback/survey form: subject/body, department, optional local attachments and anonymous preference. Reserve Workbench new component/integration only. No feedback delivery/storage service exists; explicit draft state, no fake anonymous submission, no schema/API/dependency changes. Persistence remains awaiting coordinated migration handoff.
 
