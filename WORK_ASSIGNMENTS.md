@@ -1709,3 +1709,7 @@ User explicitly authorized merging the latest Finance labels, dark theme and HR/
 ## B2B-REMOVE-BOUNDARY-NOTE-001 — PC-B — IN_PROGRESS
 Scope: remove user-specified home boundary note in corporate-profile.tsx. No API/data changes or shared locks.
 B2B-REMOVE-BOUNDARY-NOTE-001: READY_FOR_REVIEW. Source3528efe; lint/typecheck and113 Organizations tests passed. Source reservation released; combined runtime build c5e17e8 preserves86bb4a3.
+
+## B2B-COMMERCIAL-EXPORTS-001 — PC-B — IN_PROGRESS
+Reserve Organizations agreement/rates panels, workspace props, module-local export helpers/tests. Export filtered authorized data as PDF/XLSX, preserve decimal strings and workflow states. No shared files, dependencies, API or data mutations.
+B2B-COMMERCIAL-EXPORTS-001: READY_FOR_REVIEW. Sourcebc4c6b9; module-local PDF/XLSX downloads, all-page agreements and exact decimal text.120 tests and scoped lint passed. Runtime build656e37f preserves534de0e. Source locks released.

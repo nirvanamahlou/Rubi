@@ -1772,3 +1772,6 @@ Runtime QA: Web3100 source fe0ae53 / hr005-ab3ce59627f77da6 / PID8040, combined4
 ## 2026-09-12 — B2B home note removal (PC-B)
 User-requested boundary note removed by3528efe. Lint/typecheck and113 tests passed. Combined runtime c5e17e8 builds on86bb4a3; no API/data changes.
 Runtime c5e17e8 / hr005-f38f0c8769bf5dd6 / WebPID12640:43-route production build passed; authenticated360 home confirms requested note absent. API unchanged; Web ownership returned to profile task. Draft PR187.
+
+## 2026-09-12 — B2B commercial exports (PC-B)
+Sourcebc4c6b9 adds actual PDF/XLSX downloads to agreement, credit, guarantee, temporary, rate, discount and commission views. Report includes branch/organization/date context and latest revision status; agreements fetch all pages with cancellation/failure handling. No API, data, dependency or workflow mutations.120 tests and scoped lint pass; combined656e37f building. PDF is rendered with browser Persian shaping and Rubi font, paginated A4.
