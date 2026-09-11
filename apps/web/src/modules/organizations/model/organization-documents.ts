@@ -5,6 +5,7 @@ import type {
   IamPermissionCode,
   MasterDataRecord,
 } from '@rubi/contracts';
+import { dossierDateBoundary } from './dossier-date-range';
 
 export type OrganizationDocumentOptions = DocumentOptionsResponseV1['data'];
 
@@ -119,6 +120,6 @@ export function organizationDocumentForm(
     String(input.requiresStepUpVerification),
   );
   if (input.validUntil)
-    form.set('validUntil', `${input.validUntil}T23:59:59.999Z`);
+    form.set('validUntil', dossierDateBoundary(input.validUntil, true));
   return form;
 }
