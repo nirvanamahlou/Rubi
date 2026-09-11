@@ -144,24 +144,6 @@ export function OrganizationUsersPanel({
             ))}
           </div>
         ) : null}
-        {view === 'roles' ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {[...new Set(rows.map((r) => r.roleName))].map((role) => (
-              <div className="rounded-xl border p-4" key={role}>
-                <strong>{role}</strong>
-                <p>
-                  {rows
-                    .filter((r) => r.roleName === role)
-                    .length.toLocaleString('fa-IR')}{' '}
-                  کاربر
-                </p>
-                <p className="panel-note">
-                  دسترسی هر فرد به‌صورت مستقل در فرم خودش تعیین می‌شود.
-                </p>
-              </div>
-            ))}
-          </div>
-        ) : null}
         <div className="grid gap-3">
           {rows.map((row) => (
             <article key={row.id} className="rounded-xl border p-4">
@@ -169,7 +151,7 @@ export function OrganizationUsersPanel({
                 <div>
                   <strong>{row.displayName}</strong>
                   <p className="panel-note">
-                    <span dir="ltr">{row.username}</span> · {row.roleName} ·{' '}
+                    <span dir="ltr">{row.username}</span> ·{' '}
                     {row.isActive && row.accountStatus === 'ACTIVE'
                       ? 'فعال'
                       : 'غیرفعال'}
@@ -198,7 +180,9 @@ export function OrganizationUsersPanel({
                   ویرایش دسترسی
                 </Button>
               </div>
-              <div className="mt-3 flex flex-wrap gap-2">
+              <p className="mt-3 text-sm">نقش سازمانی: {row.roleName}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-sm">بخش‌های مجاز:</span>
                 {B2B_DOSSIER_SECTIONS.filter((s) =>
                   row.sections.includes(s.id),
                 ).map((s) => (

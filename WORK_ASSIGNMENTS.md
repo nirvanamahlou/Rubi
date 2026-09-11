@@ -1,5 +1,9 @@
 # Work Assignments
 
+## B2B-UNIFIED-USERS-001 — PC-B — IN_PROGRESS
+
+- Remove the circled roles/scopes tabs from access navigation and display their values in the organization-user cards. Reserve corporate-profile.tsx, organization-users-panel.tsx and status docs on `codex/pc-b-b2b-unified-users` from1bb99f7. Prior locks released. Preserve users/history navigation, forms, permissions and all data. No migration/dependency/API changes. Verify Web checks and refresh owned3100 only; no merge.
+
 ## B2B-ALL-AGENCIES-DEMO-001 — PC-B — DONE / LOCAL_DATA_ACTIVE
 
 - User explicitly requests synthetic dossier data, including contracts, for all existing agencies. Reserve a new local public-service fixture loader and task/status docs on `codex/pc-b-b2b-all-agencies-demo` from289fb8f. Previous implementation locks released. Preserve existing user records, permissions and runtime; no migration/dependency/API or Finance owner changes.
