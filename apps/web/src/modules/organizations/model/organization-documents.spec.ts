@@ -1,6 +1,7 @@
 import type { IamPermissionCode, MasterDataRecord } from '@rubi/contracts';
 import { describe, expect, it } from 'vitest';
 import {
+  formatOrganizationDocumentExpiry,
   organizationDocumentForm,
   organizationDocumentQuery,
   type OrganizationDocumentInput,
@@ -90,10 +91,10 @@ describe('organization Documents public integration', () => {
       sourceEntityId: 'organization-1',
       sourceDisplayLabel: 'ORG_TEST',
       requiresStepUpVerification: 'true',
-      validUntil: '2026-12-01T20:29:59.999Z',
+      validUntil: '2026-12-01T23:59:59.999Z',
     });
   });
-  it('keeps expiry on the selected Tehran day through the last millisecond', () => {
+  it('displays the calendar expiry returned by Documents without a timezone day shift', () => {
     const form = organizationDocumentForm(
       organization,
       { ...input, validUntil: '2026-10-02' },
@@ -101,16 +102,10 @@ describe('organization Documents public integration', () => {
       options,
       permissions,
     );
-    const expiry = new Date(String(form.get('validUntil')));
-    const day = (date: Date) =>
-      new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Asia/Tehran',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      }).format(date);
-    expect(day(expiry)).toBe('2026-10-02');
-    expect(day(new Date(expiry.getTime() + 1))).toBe('2026-10-03');
+    expect(form.get('validUntil')).toBe('2026-10-02T23:59:59.999Z');
+    expect(
+      formatOrganizationDocumentExpiry(String(form.get('validUntil'))),
+    ).toBe('۱۴۰۵/۷/۱۰');
   });
   it.each(permissions)(
     'denies missing grant %s before creating a request',

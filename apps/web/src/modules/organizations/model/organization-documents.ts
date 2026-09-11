@@ -5,7 +5,11 @@ import type {
   IamPermissionCode,
   MasterDataRecord,
 } from '@rubi/contracts';
-import { dossierDateBoundary } from './dossier-date-range';
+
+/** Documents stores expiry as a calendar date normalized to UTC day end. */
+export function formatOrganizationDocumentExpiry(value: string) {
+  return new Date(value).toLocaleDateString('fa-IR', { timeZone: 'UTC' });
+}
 
 export type OrganizationDocumentOptions = DocumentOptionsResponseV1['data'];
 
@@ -120,6 +124,6 @@ export function organizationDocumentForm(
     String(input.requiresStepUpVerification),
   );
   if (input.validUntil)
-    form.set('validUntil', dossierDateBoundary(input.validUntil, true));
+    form.set('validUntil', `${input.validUntil}T23:59:59.999Z`);
   return form;
 }

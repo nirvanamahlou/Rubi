@@ -36,6 +36,7 @@ import {
 } from '../model/dossier-date-range';
 import {
   canReadOrganizationDocuments,
+  formatOrganizationDocumentExpiry,
   organizationDocumentForm,
   organizationDocumentQuery,
   type OrganizationDocumentInput,
@@ -306,7 +307,7 @@ export function OrganizationDocumentsPanel({
                 <p>
                   انقضا:{' '}
                   {record.validUntil
-                    ? new Date(record.validUntil).toLocaleDateString('fa-IR')
+                    ? formatOrganizationDocumentExpiry(record.validUntil)
                     : 'بدون انقضا'}
                   {record.isIncomplete ? ' · پرونده ناقص' : ''}
                 </p>
