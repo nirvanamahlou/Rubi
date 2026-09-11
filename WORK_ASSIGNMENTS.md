@@ -1,5 +1,10 @@
 # Work Assignments
 
+## WORKBENCH-027 — PC-B — IN_PROGRESS
+
+- User removes Tasks/Automation section. Reserve shared navigation/messages/icon mappings/change-notification label and tasks route plus existing nav test. Remove entry globally and redirect legacy route to Workbench, no data/API/schema deletion. Shared runtime coordinated.
+
+
 ## WORKBENCH-026 — PC-B — UI_VERIFIED
 
 - Sales messenger six user-requested editable templates. Reserve message-templates only and own docs; reuse existing draft attachments. No Sales domain/API/schema changes or real customer data.

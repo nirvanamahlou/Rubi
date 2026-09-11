@@ -4,7 +4,6 @@ import {
   Banknote,
   Building2,
   ChartColumn,
-  ClipboardCheck,
   Database,
   FileText,
   Headphones,
@@ -27,7 +26,6 @@ import type { NavigationHref } from '@/messages/fa';
 export const sidebarIcons: Record<NavigationHref, LucideIcon> = {
   '/workbench': House,
   '/dashboard': LayoutGrid,
-  '/tasks': ClipboardCheck,
   '/sales': FileText,
   '/pricing-management': BadgeDollarSign,
   '/customers': UsersRound,
