@@ -16,4 +16,6 @@ Proposed producer IAM / consumer Web profile, additive self-only contract. Read/
 
 ## Runtime limitation
 
+UI validation:20 scoped tests (12 profile and8 commercial export), lint, TypeScript and43-route build passed. Authenticated browser previewed a repository brand PNG, accepted a synthetic phone value, and reset both without submitting. Web3100 source1af4c0c/PID19708/manifesthr005-b7ab66ff79101b7b. Draft PR190; no merge. Owner export changesbc4c6b9/7fc5b05 are preserved.
+
 API4190/PID15024 still serves the older service. Its previously denied replacement remains blocked; this task must not retry or route around the automatic denial. Web form preparation does not solve API activation. Further implementation/activation requires separate resolution of the ownership and runtime constraints.

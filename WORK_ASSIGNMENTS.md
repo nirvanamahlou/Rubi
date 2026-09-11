@@ -1,8 +1,10 @@
 # Work Assignments
 
-## WORKBENCH-017-PERSONAL-PROFILE — PC-B — IN_PROGRESS
+## WORKBENCH-017-PERSONAL-PROFILE — PC-B — UI_VERIFIED / PERSISTENCE_AWAITING_HANDOFF
 
 - User requests editable personal information and profile photo in preferences. Reserve Web profile module/form/model/tests plus own task/status docs on codex/pc-b-personal-profile-editor frome4ddc02. Consume existing native controls/theme. IAM has no self-edit/avatar contract; backend/schema ownership handoff requested before edits. No new browser persistence, fake saved records or profile data in source. Runtime API cutover remains a separate previously blocked action; no retry.
+
+- Delivered UI6e6ad65 with owner exportsbc4c6b9 and datefix7fc5b05 preserved.20 targeted tests, lint, typecheck and43-route build passed. Browser verified local photo preview, phone editing, reset and disabled real-save state; test selection/input removed. Web3100 source1af4c0c/PID19708/manifesthr005-b7ab66ff79101b7b; API untouched. Draft PR190; no merge. Web implementation reservation released, backend/schema unreserved pending explicit handoff.
 
 ## WORKBENCH-016-PROFILE-VIEWS — PC-B — DONE / UI_VERIFIED
 
