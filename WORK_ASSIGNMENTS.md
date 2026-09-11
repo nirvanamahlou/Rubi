@@ -1,6 +1,6 @@
 # Work Assignments
 
-## WORKBENCH-031 — PC-B — IN_PROGRESS
+## WORKBENCH-031 — PC-B — UI_VERIFIED
 
 - Distinct feedback card background only. Reserve WorkbenchFeedback root class; violet light/dark gradient and border, existing form controls unchanged. No behavior/API changes.
 
