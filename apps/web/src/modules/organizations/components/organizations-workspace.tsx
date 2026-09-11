@@ -1106,6 +1106,7 @@ export function OrganizationsWorkspace() {
               <AgreementWorkflowPanel
                 key={selected.id + role + view}
                 organizationId={selected.id}
+                organizationName={selected.name}
                 role={role}
                 view={view}
               />
@@ -1124,6 +1125,7 @@ export function OrganizationsWorkspace() {
                 <AgencyRatesPanel
                   key={selected.id + view}
                   organizationId={selected.id}
+                  organizationName={selected.name}
                   kind={
                     view === 'rates'
                       ? 'FIXED_AMOUNT'

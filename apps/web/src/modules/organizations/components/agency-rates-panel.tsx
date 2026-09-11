@@ -18,6 +18,8 @@ import { DossierFormDialog } from './dossier-form-dialog';
 import { useDossierBranch } from './use-dossier-branch';
 import { DossierDateFilters } from './dossier-date-filters';
 import { inDossierDateRange } from '../model/dossier-date-range';
+import { ratesReport } from '../model/commercial-export';
+import { CommercialExportActions } from './commercial-export-actions';
 
 const kindLabels: Record<B2bAgreedRateKind, string> = {
   FIXED_AMOUNT: 'نرخ توافقی',
@@ -26,9 +28,11 @@ const kindLabels: Record<B2bAgreedRateKind, string> = {
 };
 export function AgencyRatesPanel({
   organizationId,
+  organizationName = organizationId,
   kind,
 }: {
   organizationId: string;
+  organizationName?: string;
   kind: B2bAgreedRateKind;
 }) {
   const { branches, branchId, setBranchId, permissions, sessionError } =
@@ -149,6 +153,30 @@ export function AgencyRatesPanel({
             value={dateRange}
             onChange={setDateRange}
             basis="شروع اعتبار نرخ"
+          />
+        </div>
+        <div className="flex justify-end">
+          <CommercialExportActions
+            key={`${organizationId}:${branchId}:${kind}:${dateRange.from}:${dateRange.to}`}
+            disabled={
+              loading ||
+              !!sessionError ||
+              !!error ||
+              !branchId ||
+              !permissions.includes('b2b.rate.read') ||
+              !!(
+                dateRange.from &&
+                dateRange.to &&
+                dateRange.from > dateRange.to
+              )
+            }
+            loadReport={async () => {
+              const result = await agencyClient.rates(organizationId, branchId);
+              return ratesReport(result.data, kind, dateRange, [
+                `سازمان: ${organizationName}`,
+                `شعبه: ${branches.find((b) => b.id === branchId)?.name ?? branchId}`,
+              ]);
+            }}
           />
         </div>
         {sessionError || error ? (
