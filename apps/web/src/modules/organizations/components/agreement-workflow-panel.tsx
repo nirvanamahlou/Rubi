@@ -445,19 +445,92 @@ export function AgreementWorkflowPanel({
   return (
     <div className="agreement-workflow">
       <div className="agreement-row-title agreement-toolbar dossier-filter-grid">
-        <div>
-          <h3>
-            {view === 'temporary'
-              ? 'افزایش موقت اعتبار'
-              : view === 'credit'
-                ? 'سیاست‌های اعتبار'
-                : view === 'guarantees'
-                  ? 'تضمین‌های قرارداد'
-                  : 'قراردادهای همکاری'}
-          </h3>
-          <p className="panel-note">
-            نسخه‌بندی، ویرایش پیش‌نویس و تأیید مستقل قرارداد و شرایط ارزی
-          </p>
+        <div className="commercial-section-heading">
+          <div>
+            <h3>
+              {view === 'temporary'
+                ? 'افزایش موقت اعتبار'
+                : view === 'credit'
+                  ? 'سیاست‌های اعتبار'
+                  : view === 'guarantees'
+                    ? 'تضمین‌های قرارداد'
+                    : 'قراردادهای همکاری'}
+            </h3>
+            <p className="panel-note">
+              نسخه‌بندی، ویرایش پیش‌نویس و تأیید مستقل قرارداد و شرایط ارزی
+            </p>
+          </div>
+          <div className="commercial-section-actions">
+            {canManage &&
+            view !== 'agreements' &&
+            permissions.includes('b2b.credit.manage') ? (
+              <label className="field">
+                <span>{formTitle}</span>
+                <select
+                  className="input"
+                  value=""
+                  disabled={loading || !branchId}
+                  onChange={(e) => {
+                    const selected = records.find(
+                      (r) => r.id === e.target.value,
+                    );
+                    if (selected) edit(selected);
+                  }}
+                >
+                  <option value="">انتخاب قرارداد مرتبط</option>
+                  {records
+                    .filter((r) => r.revisions[0]?.status !== 'PENDING')
+                    .map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.title}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            ) : null}
+            {canManage && view === 'agreements' ? (
+              <button
+                className="btn primary"
+                disabled={loading || !branchId}
+                onClick={() => edit()}
+              >
+                <Plus size={16} />
+                قرارداد جدید
+              </button>
+            ) : null}
+            <CommercialExportActions
+              key={`${organizationId}:${role}:${branchId}:${view}:${dateRange.from}:${dateRange.to}:${refresh}`}
+              disabled={
+                loading ||
+                !!error ||
+                !branchId ||
+                !permissions.includes('b2b.agreement.read') ||
+                !permissions.includes('b2b.credit.read') ||
+                !!(
+                  dateRange.from &&
+                  dateRange.to &&
+                  dateRange.from > dateRange.to
+                )
+              }
+              loadReport={async (isCurrent) => {
+                const all = await collectAgreementExport(
+                  (page) =>
+                    agencyClient.agreements(
+                      organizationId,
+                      branchId,
+                      role,
+                      page,
+                    ),
+                  isCurrent,
+                );
+                return agreementReport(all, view, dateRange, [
+                  `سازمان: ${organizationName}`,
+                  `شعبه: ${branches.find((b) => b.id === branchId)?.name ?? branchId}`,
+                  `نقش: ${role === 'AGENCY' ? 'آژانس' : 'مشتری سازمانی'}`,
+                ]);
+              }}
+            />
+          </div>
         </div>
         <DossierDateFilters
           value={dateRange}
@@ -500,67 +573,8 @@ export function AgreementWorkflowPanel({
           <RefreshCw size={16} />
           تازه‌سازی
         </button>
-        {canManage &&
-        view !== 'agreements' &&
-        permissions.includes('b2b.credit.manage') ? (
-          <label className="field">
-            <span>{formTitle}</span>
-            <select
-              className="input"
-              value=""
-              disabled={loading || !branchId}
-              onChange={(e) => {
-                const selected = records.find((r) => r.id === e.target.value);
-                if (selected) edit(selected);
-              }}
-            >
-              <option value="">انتخاب قرارداد مرتبط</option>
-              {records
-                .filter((r) => r.revisions[0]?.status !== 'PENDING')
-                .map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.title}
-                  </option>
-                ))}
-            </select>
-          </label>
-        ) : null}
-        {canManage && view === 'agreements' ? (
-          <button
-            className="btn primary"
-            disabled={loading || !branchId}
-            onClick={() => edit()}
-          >
-            <Plus size={16} />
-            قرارداد جدید
-          </button>
-        ) : null}
       </div>
-      <div className="my-3 flex justify-end">
-        <CommercialExportActions
-          key={`${organizationId}:${role}:${branchId}:${view}:${dateRange.from}:${dateRange.to}:${refresh}`}
-          disabled={
-            loading ||
-            !!error ||
-            !branchId ||
-            !permissions.includes('b2b.agreement.read') ||
-            !permissions.includes('b2b.credit.read') ||
-            !!(dateRange.from && dateRange.to && dateRange.from > dateRange.to)
-          }
-          loadReport={async (isCurrent) => {
-            const all = await collectAgreementExport(
-              (page) =>
-                agencyClient.agreements(organizationId, branchId, role, page),
-              isCurrent,
-            );
-            return agreementReport(all, view, dateRange, [
-              `سازمان: ${organizationName}`,
-              `شعبه: ${branches.find((b) => b.id === branchId)?.name ?? branchId}`,
-              `نقش: ${role === 'AGENCY' ? 'آژانس' : 'مشتری سازمانی'}`,
-            ]);
-          }}
-        />
-      </div>
+
       {error ? (
         <div role="alert" className="form-error">
           {error}
