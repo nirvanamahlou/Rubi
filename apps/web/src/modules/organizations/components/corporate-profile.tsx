@@ -495,7 +495,7 @@ export function CorporateProfile({
           ) : null}
           {screen === 'organization' ? (
             <section
-              className="grid-2 items-start"
+              className="grid-2 organization-profile-grid"
               aria-label="مشخصات و نقش‌ها و اطلاعات مرتبط"
             >
               <div
