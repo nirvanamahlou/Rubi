@@ -173,6 +173,11 @@ export async function saveCooperation(
         jobTitle: draft.jobTitle.trim(),
         phone: draft.phone.trim(),
         email: draft.email.trim(),
+        preferredChannel: draft.phone.trim()
+          ? 'PHONE'
+          : draft.email.trim()
+            ? 'EMAIL'
+            : 'OTHER',
       });
     if (draft.addressLine.trim())
       await masterDataApi.createOrganizationAddress(organization.id, {
