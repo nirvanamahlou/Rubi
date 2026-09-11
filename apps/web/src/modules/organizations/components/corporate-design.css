@@ -382,6 +382,9 @@
   .organization-profile-grid > div {
     min-width: 0;
   }
+  .organization-profile-grid .panel {
+    margin-bottom: 0;
+  }
   .organization-profile-grid > div:not(.panel),
   .organization-profile-grid > div > .space-y-4 {
     display: flex;
