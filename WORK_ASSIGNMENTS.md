@@ -1,5 +1,10 @@
 # Work Assignments
 
+## B2B-PROFILE-TABS-001 — PC-B — IN_PROGRESS
+
+- Owner requests removing the four circled top shortcuts (branches, representatives, signatories, account manager) from the organization profile. Reserve only corporate-profile.tsx and task/status docs on clean `codex/pc-b-b2b-remove-profile-tabs` from ff4060d, preserving PR147 and existing runtime. Previous reservations released; no conflicting owner found.
+- Keep the profile/roles tab and all inline section cards/forms; filter only top navigation. No API/data/migration/dependency change. Run existing checks and refresh owned Web3100, preserving API4191. No merge.
+
 ## B2B-DOSSIER-REPORTS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Owner requests working Reports/Audit for all agency dossier activity. Reserve B2B activity projection/controller/client/UI/tests, additive contracts/root export, public MasterOrganizationDirectory and Documents owner audit projections, and task/status documentation on `codex/pc-b-b2b-dossier-reports` from df19788. Prior task released its implementation locks; preserve the owned PR146 stack and Web3100/API4191 runtime.

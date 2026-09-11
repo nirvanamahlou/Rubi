@@ -449,19 +449,21 @@ export function CorporateProfile({
                 : `صفحه‌های ${title}`
             }
           >
-            {current?.tabs.map(([id, label]) => (
-              <button
-                className={`tab ${tab === id ? 'active' : ''}`}
-                aria-pressed={tab === id}
-                key={id}
-                onClick={() => {
-                  setTab(id);
-                  if (screen === 'organization') focusSection(id);
-                }}
-              >
-                {label}
-              </button>
-            ))}
+            {current?.tabs
+              .filter(([id]) => screen !== 'organization' || id === 'profile')
+              .map(([id, label]) => (
+                <button
+                  className={`tab ${tab === id ? 'active' : ''}`}
+                  aria-pressed={tab === id}
+                  key={id}
+                  onClick={() => {
+                    setTab(id);
+                    if (screen === 'organization') focusSection(id);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
           </nav>
           {inCredit ? (
             <nav className="tabs" aria-label="بخش‌های اعتبار و تضمین قرارداد">
