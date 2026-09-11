@@ -1,5 +1,9 @@
 # Work Assignments
 
+## WORKBENCH-017-PERSONAL-PROFILE — PC-B — IN_PROGRESS
+
+- User requests editable personal information and profile photo in preferences. Reserve Web profile module/form/model/tests plus own task/status docs on codex/pc-b-personal-profile-editor frome4ddc02. Consume existing native controls/theme. IAM has no self-edit/avatar contract; backend/schema ownership handoff requested before edits. No new browser persistence, fake saved records or profile data in source. Runtime API cutover remains a separate previously blocked action; no retry.
+
 ## WORKBENCH-016-PROFILE-VIEWS — PC-B — DONE / UI_VERIFIED
 
 - User follow-up: reserve and replace only the profile permission-summary heading with «خلاصه دسترسی‌ها» on the same task branch; no behavior changes. Runtime inclusion coordinated with the current B2B owner.

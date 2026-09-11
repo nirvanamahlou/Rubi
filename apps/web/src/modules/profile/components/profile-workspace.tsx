@@ -17,6 +17,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
 import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
+import { PersonalDetailsForm } from './personal-details-form';
 import {
   Badge,
   Card,
@@ -124,7 +125,7 @@ function ProfileContent({
   tab: ProfileTab;
 }) {
   const legalEntity = useLegalEntityContext();
-  if (tab === 'preferences') return <PersonalPreferences />;
+  if (tab === 'preferences') return <PersonalPreferences profile={profile} />;
   if (tab === 'security') return <SessionLogs sessions={profile.sessions} />;
   const displayName = safeProfileDisplayName(profile.user.displayName);
 
@@ -282,14 +283,23 @@ function ProfileField({
   );
 }
 
-function PersonalPreferences() {
+function PersonalPreferences({ profile }: { profile: AuthenticatedProfile }) {
   const { theme, toggleTheme } = useTheme();
   return (
     <section className="min-w-0 space-y-5" dir="rtl">
       <PageHeader
         eyebrow="حساب کاربری"
         title="تنظیمات شخصی"
-        description="ظاهر روبی را مطابق سلیقه خود تنظیم کنید."
+        description="اطلاعات شخصی و ظاهر روبی را مدیریت کنید."
+      />
+      <PersonalDetailsForm
+        key={profile.user.id}
+        username={profile.user.username}
+        initial={{
+          displayName: profile.user.displayName,
+          email: profile.user.email ?? '',
+          phone: '',
+        }}
       />
       <Card className="p-5 sm:p-6">
         <h2 className="text-lg font-black">ظاهر برنامه</h2>
