@@ -1798,4 +1798,5 @@ WORKBENCH-012: build تولیدی و بررسی مرورگر با حساب وا�
 تنظیمات دو بخشی، تب‌های بزرگ و وسط‌چین، KPI رنگی، حذف shortcut اسناد داخل میزکار، نمای دو ستونی پیام‌ها، فرم اولیه درخواست و چک‌لیست تیک‌زدنی یادداشت اجرا شد. ذخیره/ارسال واقعی به‌دلیل قفل Migration و نبود سرویس همچنان مسدود است؛ چند یادداشت واقعی ایجاد نشد. ۳۷ تست، lint/typecheck/build موفق؛ مرورگر تنظیمات و انتخاب قالب/تیک/خط‌خوردن را تأیید کرد. Web3100 source8492a36/PID22916؛ API بدون تغییر و health200. مرجع: tasks/WORKBENCH-013-INTERACTIONS.md.
 
 WORKBENCH-014 نهایی: build۴۳route و بررسی مرورگر سه کارت، تیک/خط‌خوردن، اعمال ویرایش و حفظ آن پس از بستن فرم موفق بود. Web3100 source1e295db/PID20512/manifesthr005-3938c4fc437ae857؛ تغییر تاریخچه آژانس1995e16 حفظ شد. API4190 بدون تغییر/health200. نمونه آزمایشی با reload بازنشانی شد. PR180 پیش‌نویس، بدون merge.
-`nWORKBENCH-016 heading follow-up: scoped lint and43-route production build/TypeScript passed. Web3100 source534de0e/PID24904/manifesthr005-03a688ca8958bf45 preserves B2B boundary-note removal3528efe. API unchanged.
+
+WORKBENCH-016 heading follow-up: scoped lint and43-route production build/TypeScript passed. Web3100 source534de0e/PID24904/manifesthr005-03a688ca8958bf45 preserves B2B boundary-note removal3528efe. API unchanged.
