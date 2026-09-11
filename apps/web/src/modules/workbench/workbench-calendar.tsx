@@ -1,4 +1,5 @@
 'use client';
+import { WorkbenchSelect } from './workbench-select';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -181,22 +182,22 @@ export function WorkbenchCalendar({
         </div>
         <label className="flex flex-wrap items-center gap-3 text-sm font-semibold">
           اولویت
-          <select
-            aria-label="اولویت برنامه‌ها"
-            className="min-h-10 min-w-48 rounded-xl border border-border bg-surface px-3 text-foreground"
+          <WorkbenchSelect
+            label="اولویت برنامه‌ها"
             value={filter.priority}
-            onChange={(event) =>
+            onValueChange={(priority) =>
               setFilter({
                 ...filter,
-                priority: event.target.value as CalendarFilter['priority'],
+                priority: priority as CalendarFilter['priority'],
               })
             }
-          >
-            <option value="all">همه اولویت‌ها</option>
-            <option value="normal">عادی</option>
-            <option value="high">مهم</option>
-            <option value="urgent">فوری</option>
-          </select>
+            options={[
+              { value: 'all', label: 'همه اولویت‌ها' },
+              { value: 'normal', label: 'عادی' },
+              { value: 'high', label: 'مهم' },
+              { value: 'urgent', label: 'فوری' },
+            ]}
+          />
         </label>
       </Card>
       {!sourceReady ? (

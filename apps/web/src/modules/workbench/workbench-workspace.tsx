@@ -1,4 +1,5 @@
 'use client';
+import { WorkbenchSelect } from './workbench-select';
 
 import type { NotificationItemV1 } from '@rubi/contracts';
 import {
@@ -610,17 +611,15 @@ export function WorkbenchWorkspace() {
             </DialogDescription>
             <label className="mt-4 block space-y-2 text-sm font-semibold">
               واحد مخاطب
-              <select
-                className="w-full rounded-xl border border-border bg-surface p-3"
+              <WorkbenchSelect
+                label="واحد مخاطب"
                 value={messageUnit}
-                onChange={(event) => setMessageUnit(event.target.value)}
-              >
-                {messageUnits.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.label}
-                  </option>
-                ))}
-              </select>
+                onValueChange={setMessageUnit}
+                options={messageUnits.map((item) => ({
+                  value: item.id,
+                  label: item.label,
+                }))}
+              />
             </label>
             <Button className="mt-4" onClick={() => setMessageOpen(false)}>
               نوشتن پیام
