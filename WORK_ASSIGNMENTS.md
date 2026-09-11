@@ -1,5 +1,9 @@
 # Work Assignments
 
+## B2B-LIVE-KPIS-001 — PC-B — VERIFIED / RUNTIME_INTEGRATION_PENDING
+
+- Reserve Organizations workspace and new metrics loader/tests on codex/pc-b-b2b-live-kpis from6b942be. Use existing public MasterData list contract only; counts cover all pages, role overlap deduplicated for incomplete identity. No backend/API/schema/dependency changes. Coordinate3100 integration with native workbench owner. Source c63ec00 + test fix8b6cd35, draft PR163. Lint/typecheck and103 tests pass; shared runtime owner integrating build. Release source locks.
+
 ## B2B-KPI-COLORS-001 — PC-B — VERIFIED / RUNTIME_INTEGRATION_PENDING
 
 - Reserve Organizations workspace KPI class and corporate CSS only on codex/pc-b-b2b-kpi-colors. Match Customers blue/cyan/emerald/amber gradient cards. No data/API/dependency changes. Coordinate runtime3100 with active workbench owner; preserve native shell changes. Source c83d530 / draft PR162: browser fixture, lint/typecheck and100 Organizations tests pass. Runtime owner will integrate into combined build; release source locks.
@@ -1653,5 +1657,6 @@ Validation: 87 scoped tests, Web lint, TypeScript and production build (40 route
 ## PUBLISH-DARK-HR-0909 — PC-A — READY_FOR_REVIEW
 
 User explicitly authorized merging the latest Finance labels, dark theme and HR/navigation corrections into develop. Integrate current develop 679e516, retaining PC-B HR/agencies and header date; resolve shared shell conflict with both responsive header and neutral dark border. Synchronize three ticket validation strings in API with the mirrored Web proposal to satisfy the existing parity test. No local database migration or runtime switch. Final combined CI gates must pass before merge.
+
 
 
