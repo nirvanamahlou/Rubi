@@ -5,6 +5,7 @@ import {
   Activity,
   ArrowUpLeft,
   Bell,
+  CalendarDays,
   CheckCheck,
   ClipboardList,
   FileText,
@@ -53,6 +54,7 @@ import {
   type WorkbenchHome,
 } from './model';
 import { WorkbenchFiles } from './workbench-files';
+import { WorkbenchCalendar } from './workbench-calendar';
 import { WorkbenchNotes } from './workbench-notes';
 import { WorkbenchFavorites } from './workbench-favorites';
 import { MessageComposer } from './message-composer';
@@ -70,6 +72,7 @@ const tabIcons = [
   Star,
   Activity,
   StickyNote,
+  CalendarDays,
   Settings2,
 ];
 export function WorkbenchWorkspace() {
@@ -266,7 +269,7 @@ export function WorkbenchWorkspace() {
             >
               <TabsList
                 aria-label="بخش‌های میزکار"
-                className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl p-2 sm:grid-cols-4 xl:grid-cols-8"
+                className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl p-2 sm:grid-cols-3 xl:grid-cols-9"
               >
                 {workbenchTabs.map(([id, label], index) => {
                   const Icon = tabIcons[index]!;
@@ -479,6 +482,9 @@ export function WorkbenchWorkspace() {
                     onRead={markRead}
                   />
                 </Card>
+              </TabsContent>
+              <TabsContent value="calendar">
+                <WorkbenchCalendar />
               </TabsContent>
               <TabsContent value="account">
                 <Card className="overflow-hidden lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">

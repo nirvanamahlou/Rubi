@@ -12,6 +12,7 @@ export const workbenchTabs = [
   ['stars', 'ستاره‌دارها'],
   ['activity', 'فعالیت‌های من'],
   ['notes', 'یادداشت‌ها'],
+  ['calendar', 'تقویم من'],
   ['account', 'حساب و تنظیمات'],
 ] as const;
 export type WorkbenchTab = (typeof workbenchTabs)[number][0];

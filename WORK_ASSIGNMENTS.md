@@ -1,5 +1,9 @@
 # Work Assignments
 
+## WORKBENCH-018-CALENDAR — PC-B — IN_PROGRESS
+
+- User requests screenshot558 calendar in Workbench. Reserve Workbench-local calendar model/component/tests and tab integration on codex/pc-b-workbench-calendar from4756f1d. Reuse existing shared Persian calendar utilities and theme; month/week/agenda/undated navigation, date selection and filters. No task due-date service exists in current Workbench: show explicit unavailable-source state, never substitute notification creation timestamps or fabricated events. No API/schema/dependency/shared-component changes; coordinate Web runtime only.
+
 ## WORKBENCH-017-PUBLISH — PC-B — IN_PROGRESS
 
 - CI integration follow-up reserves user-menu.spec.ts only to update obsolete profile heading/navigation expectations; credential/access-mutation assertions remain intact. Combined local170tests/lint passed; final CI is the merge gate.
