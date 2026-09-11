@@ -17,7 +17,7 @@
   API پس از Merge همین Baseline انجام می‌شود. جزئیات در
   `docs/tasks/UNIFIED-LATEST-0912.md` ثبت شده است.
 
-## WORKBENCH-013-INTERACTIONS — PC-B — IN_PROGRESS
+## WORKBENCH-013-INTERACTIONS — PC-B — UI_READY / PERSISTENCE_BLOCKED
 
 - User requests screenshot-aligned settings, larger centered tabs, colored KPIs, removal of Documents shortcut, chat layout, functional request/message/note forms and private checklist notes. Reserve Workbench-local UI and own docs on codex/pc-b-workbench-interactions; preserve B2B9b1c33c. Persistence requires current migration-owner handoff, requested from coordinator before schema work; no fake storage or transmission. Shared layout and other owner modules unchanged.
 
