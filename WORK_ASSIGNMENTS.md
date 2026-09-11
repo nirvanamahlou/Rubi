@@ -1,8 +1,10 @@
 # Work Assignments
 
-## B2B-NAMED-BRANCHES-001 — PC-B — IN_PROGRESS
+## B2B-NAMED-BRANCHES-001 — PC-B — DONE / LOCAL_RUNTIME_3196
 
 - User explicitly repeats that the four company names must be branches and requests alignment of the contract branch selector. Reserve a local branch-reference provisioning script, agreement header CSS/component, and status docs on `codex/pc-b-b2b-named-branches` from0146c4f. No active IAM implementation lock found; consume public IAM access updates, preserve roles/other users and existing HQ records. Back up before additive reference writes. New branches are distinct from LegalEntity records; no reassignment of existing business rows. No migration/dependency change or merge.
+- Created four references and verified existing operator sees all four plus retained HQ. Public IAM update preserves existing roles and other users; repeated preview has zero missing branches. Backup: C:/Users/admin/Rubi-backups/cooperation-branches/before-1789146731135.dump (SHA25686534a4b44ec8d932a98119d613d0d668e724e1981e3c5c8cf8836d77221af42). Script/Web lint, typecheck, 97 Organizations tests and production build pass. Source7ada379, PR157 draft, no merge.
+- During build, another workbench demo acquired3100 (PID22408, apps/web/src/modules/workbench/demo/preview.mjs); launcher refused to stop it. Preserve that process. Served owned build hr005-a63a90ce0594f86b on3196 with API4191 CORS verified for3196. Release implementation reservations; runtime coordination needed before restoring3100.
 
 ## B2B-FINANCE-DOCUMENTS-EXPORT-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
