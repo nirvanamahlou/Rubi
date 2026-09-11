@@ -1,5 +1,11 @@
 # Work Assignments
 
+## B2B-LIST-ACTION-ICONS-001 — PC-B — READY_FOR_REVIEW
+
+Reserve organizations-workspace.tsx on codex/pc-b-b2b-list-action-icons for icon-only directory actions, desktop and mobile. No API/data/dependency changes; coordinate Web3100 runtime.
+
+Source48d95b5, draft PR173. Scoped lint, typecheck and107 Organizations tests pass. Runtime owner integrating into combined Web3100 build; release source reservation.
+
 ## B2B-CONTACT-ACTIONS-001 — PC-B — READY_FOR_REVIEW
 
 Reserve organizations-workspace.tsx on codex/pc-b-b2b-contact-actions for removing empty contact placeholders and compact accessible icon actions. No data, API or dependency changes. Coordinate Web3100 with runtime owner.

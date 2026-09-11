@@ -1748,3 +1748,6 @@ Final verification on combined828af98 / hr005-8034d7d7d02efa2b at3100: first-row
 ## 2026-09-11 — B2B contact actions (PC-B)
 Representative rows omit missing phone/email placeholders and use compact edit/delete icons with accessible names and tooltips. Source14613d9, draft PR172; scoped lint, typecheck and107 tests passed. Combined Web build on e8ba0fd preserves current workbench9480599. No API/data changes.
 Runtime verification: combined build43 routes passed; Web3100 source e8ba0fd / hr005-71b012c5f86aaab8 / PID21248. Authenticated browser confirms both representative rows omit dashes and all four action buttons contain only icons (40px) with accessible names. API unchanged; Web ownership returned to workbench task.
+
+## 2026-09-11 — B2B directory action icons (PC-B)
+Source48d95b5 / draft PR173 replaces directory view/edit/delete labels with accessible icons and tooltips, keeps desktop actions together, and updates mobile cards. Scoped lint, typecheck and107 tests passed. Combined Web3100 build delegated to its current owner; no API or data changes.
