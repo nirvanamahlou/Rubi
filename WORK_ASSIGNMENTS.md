@@ -2138,3 +2138,8 @@ User clarifies only the agency360 finance subview. Reserve corporate-profile.tsx
 B2B-FINANCE-HIDE-HR-001: SOURCE_COMPLETE 8ff2da8. Scoped lint, Web typecheck and125 tests passed. Runtime inclusion coordinated with Workbench owner; no API/schema/data change. Source locks released.
 
 B2B-FINANCE-HIDE-HR-001: READY_FOR_REVIEW. Runtime ab4d12c/PID8940 build46 routes and browser finance/Back/Forward visibility verified. No data/API change. PR196; locks released.
+
+## B2B-LOGO-IN-EDIT-001 — PC-B — IN_PROGRESS
+Reserve Organizations organization-logo display and workspace wiring. Move all logo actions out of dossier header; existing MasterDataLiveForm logo upload persists via existing API. No API/data/shared-form changes.
+
+B2B-LOGO-IN-EDIT-001: SOURCE_COMPLETE4786181. Header logo display-only; existing edit form selects/replaces/removes logo through its standard save.121 tests, scoped lint/typecheck passed. Source locks released.
