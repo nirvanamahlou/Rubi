@@ -340,7 +340,7 @@ export function OrganizationsWorkspace() {
             </p>
           </div>
         </div>
-        <section className="kpis">
+        <section className="kpis agencies-kpis">
           <CorporateMetric
             label="نتایج فیلتر فعلی"
             value={
