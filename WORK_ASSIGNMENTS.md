@@ -1,5 +1,9 @@
 # Work Assignments
 
+## B2B-CONTRACT-DOCUMENT-FORM-001 — PC-B — IN_PROGRESS
+
+- Replace contract document picker with the expanded metadata/file form, preserving existing attachments and Documents storage. Reserve agreement-terms-editor.tsx, inline-document-upload.tsx and status docs on `codex/pc-b-b2b-contract-document-form` fromc5f66ca. Previous locks released. Guarantee selectors unchanged; no API/data/migration/dependency changes. Verify and refresh owned3100; no merge.
+
 ## B2B-UNIFIED-USERS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Remove the circled roles/scopes tabs from access navigation and display their values in the organization-user cards. Reserve corporate-profile.tsx, organization-users-panel.tsx and status docs on `codex/pc-b-b2b-unified-users` from1bb99f7. Prior locks released. Preserve users/history navigation, forms, permissions and all data. No migration/dependency/API changes. Verify Web checks and refresh owned3100 only; no merge.

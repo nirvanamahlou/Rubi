@@ -168,42 +168,61 @@ export function AgreementTermsEditor({
     label: string,
     id: string | null,
     change: (id: string | null) => void,
+    inlineOnly = false,
   ) => (
     <div className="field full">
       <span>{label}</span>
-      <select
-        className="input"
-        value={id ?? ''}
-        aria-label={label}
-        disabled={!organizationId || !canReadOrganizationDocuments(permissions)}
-        onChange={(e) => change(e.target.value || null)}
-      >
-        <option value="">بدون پیوست</option>
-        {id && !documents.some((d) => d.id === id) ? (
-          <option value={id}>سند انتخاب‌شده (نسخه ثبت‌شده)</option>
-        ) : null}
-        {documents.map((item) => (
-          <option
-            key={item.id}
-            value={item.id}
-            disabled={
-              ['INFECTED', 'QUARANTINED', 'SCAN_FAILED'].includes(
-                item.currentVersion.scanStatus,
-              ) || item.isIncomplete
-            }
-          >
-            {item.title}
-            {item.currentVersion.scanStatus !== 'CLEAN'
-              ? ' — در انتظار بررسی'
-              : ''}
-          </option>
-        ))}
-      </select>
+      {inlineOnly ? (
+        id ? (
+          <div className="flex items-center justify-between gap-3 rounded-xl border p-3">
+            <span>
+              سند متصل:{' '}
+              {documents.find((d) => d.id === id)?.title ??
+                'سند ثبت‌شده قرارداد'}
+            </span>
+            <button type="button" className="btn" onClick={() => change(null)}>
+              برداشتن پیوست از قرارداد
+            </button>
+          </div>
+        ) : null
+      ) : (
+        <select
+          className="input"
+          value={id ?? ''}
+          aria-label={label}
+          disabled={
+            !organizationId || !canReadOrganizationDocuments(permissions)
+          }
+          onChange={(e) => change(e.target.value || null)}
+        >
+          <option value="">بدون پیوست</option>
+          {id && !documents.some((d) => d.id === id) ? (
+            <option value={id}>سند انتخاب‌شده (نسخه ثبت‌شده)</option>
+          ) : null}
+          {documents.map((item) => (
+            <option
+              key={item.id}
+              value={item.id}
+              disabled={
+                ['INFECTED', 'QUARANTINED', 'SCAN_FAILED'].includes(
+                  item.currentVersion.scanStatus,
+                ) || item.isIncomplete
+              }
+            >
+              {item.title}
+              {item.currentVersion.scanStatus !== 'CLEAN'
+                ? ' — در انتظار بررسی'
+                : ''}
+            </option>
+          ))}
+        </select>
+      )}
       {organizationId &&
       branchId &&
       permissions.includes('documents.upload') &&
       canReadOrganizationDocuments(permissions) ? (
         <InlineDocumentUpload
+          expanded={inlineOnly}
           organizationId={organizationId}
           branchId={branchId}
           label={label}
@@ -409,8 +428,12 @@ export function AgreementTermsEditor({
           </label>
           {text('cancellationTerms', 'شرایط لغو و جریمه', true)}
           {text('refundTerms', 'شرایط استرداد', true)}
-          {document('سند قرارداد', value.documentId, (id) =>
-            onChange({ ...value, documentId: id, documentVersionId: null }),
+          {document(
+            'سند قرارداد',
+            value.documentId,
+            (id) =>
+              onChange({ ...value, documentId: id, documentVersionId: null }),
+            true,
           )}
         </div>
       </section>

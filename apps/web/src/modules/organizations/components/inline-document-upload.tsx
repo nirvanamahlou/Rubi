@@ -20,6 +20,7 @@ export function InlineDocumentUpload({
   permissions,
   onUploaded,
   onBusyChange,
+  expanded = false,
 }: {
   organizationId: string;
   branchId: string;
@@ -27,6 +28,7 @@ export function InlineDocumentUpload({
   permissions: readonly IamPermissionCode[];
   onUploaded: (id: string) => void;
   onBusyChange: (busy: boolean) => void;
+  expanded?: boolean;
 }) {
   const [options, setOptions] = useState<OrganizationDocumentOptions>();
   const [organization, setOrganization] = useState<MasterDataRecord>();
@@ -129,11 +131,16 @@ export function InlineDocumentUpload({
       callbacks.current.onBusyChange(false);
     }
   }
+  const Container = expanded ? 'div' : 'details';
   return (
-    <details className="rounded-xl border border-dashed p-3">
-      <summary className="cursor-pointer font-semibold">
-        بارگذاری فایل جدید برای {label}
-      </summary>
+    <Container className="rounded-xl border border-dashed p-3">
+      {expanded ? (
+        <p className="font-semibold">اطلاعات و فایل {label}</p>
+      ) : (
+        <summary className="cursor-pointer font-semibold">
+          بارگذاری فایل جدید برای {label}
+        </summary>
+      )}
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <label className="field">
           <span>عنوان مدرک</span>
@@ -215,6 +222,6 @@ export function InlineDocumentUpload({
           </p>
         ) : null}
       </div>
-    </details>
+    </Container>
   );
 }
