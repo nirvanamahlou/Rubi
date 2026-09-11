@@ -1,8 +1,8 @@
 # Work Assignments
 
-## WORKBENCH-032 — PC-B — IN_PROGRESS
+## WORKBENCH-032 — PC-B — UI_VERIFIED / CALENDAR_SESSION_LOCAL
 
-- Requested Workbench UI polish: shorten Notes date placeholders, add a session-local calendar event form with text/image/link attachments, remove the profile theme selector, and refresh the messenger presentation while removing its visible unavailable-state copy. Reserve Workbench Notes/Calendar/Messenger components, profile personal-preferences presentation, focused tests and own delivery docs. No API/schema/dependency changes; calendar persistence and message delivery remain outside this UI-only work item.
+- Delivered Workbench UI polish: Notes date placeholders are short, the calendar creates session-local events with text/image/link attachments, the profile theme selector is removed, and the messenger has a colorful Rubi presentation without visible unavailable-state copy. Source `623fbb0`; 56 focused tests, scoped lint, TypeScript and 46-route production build passed. Authenticated browser verified all four requests and an event with image/link; no console errors. Web3100 PID14168/buildGhIUre85BIXBxND2PRsp2; API4190 unchanged. Calendar persistence and message delivery remain outside this UI-only work item.
 
 ## WORKBENCH-031 — PC-B — UI_VERIFIED
 
