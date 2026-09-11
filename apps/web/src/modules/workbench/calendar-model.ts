@@ -13,11 +13,38 @@ export interface CalendarEntry {
   status: CalendarStatus;
   priority: 'normal' | 'high' | 'urgent';
   href?: string;
+  description?: string;
+  imageName?: string;
+  imageUrl?: string;
+  linkUrl?: string;
 }
 export interface CalendarFilter {
   query: string;
   status: CalendarStatus | 'all' | 'open';
   priority: CalendarEntry['priority'] | 'all';
+}
+
+export function normalizeCalendarLink(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+      ? parsed.href
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export function calendarImageError(
+  file: Pick<File, 'size' | 'type'> | null,
+): string | null {
+  if (!file) return null;
+  if (!file.type.startsWith('image/')) return 'فایل انتخاب‌شده باید تصویر باشد.';
+  if (file.size > 5 * 1024 * 1024)
+    return 'حجم تصویر باید حداکثر ۵ مگابایت باشد.';
+  return null;
 }
 
 export function tehranDay(value: string | Date): string | null {
@@ -63,7 +90,9 @@ export function filterCalendar(
   return entries.filter(
     (entry) =>
       (!filter.query.trim() ||
-        normalize(entry.title).includes(normalize(filter.query))) &&
+        normalize(`${entry.title} ${entry.description ?? ''}`).includes(
+          normalize(filter.query),
+        )) &&
       (filter.priority === 'all' || entry.priority === filter.priority) &&
       (filter.status === 'all' ||
         (filter.status === 'open'

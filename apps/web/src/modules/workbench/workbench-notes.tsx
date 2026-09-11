@@ -90,19 +90,19 @@ export function WorkbenchNotes({
             />
           </label>
           <label>
-            <span className="sr-only">از تاریخ پیش‌نویس</span>
+            <span className="sr-only">از تاریخ</span>
             <DatePicker
               value={from}
               onChange={setFrom}
-              placeholder="از تاریخ پیش‌نویس"
+              placeholder="از تاریخ"
             />
           </label>
           <label>
-            <span className="sr-only">تا تاریخ پیش‌نویس</span>
+            <span className="sr-only">تا تاریخ</span>
             <DatePicker
               value={to}
               onChange={setTo}
-              placeholder="تا تاریخ پیش‌نویس"
+              placeholder="تا تاریخ"
             />
           </label>
           <WorkbenchSelect

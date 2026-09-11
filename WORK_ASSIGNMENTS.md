@@ -1,5 +1,9 @@
 # Work Assignments
 
+## WORKBENCH-032 — PC-B — IN_PROGRESS
+
+- Requested Workbench UI polish: shorten Notes date placeholders, add a session-local calendar event form with text/image/link attachments, remove the profile theme selector, and refresh the messenger presentation while removing its visible unavailable-state copy. Reserve Workbench Notes/Calendar/Messenger components, profile personal-preferences presentation, focused tests and own delivery docs. No API/schema/dependency changes; calendar persistence and message delivery remain outside this UI-only work item.
+
 ## WORKBENCH-031 — PC-B — UI_VERIFIED
 
 - Distinct feedback card background only. Reserve WorkbenchFeedback root class; violet light/dark gradient and border, existing form controls unchanged. No behavior/API changes.

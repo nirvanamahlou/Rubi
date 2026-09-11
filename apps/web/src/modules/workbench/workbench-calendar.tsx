@@ -1,15 +1,25 @@
 'use client';
 import { WorkbenchSelect } from './workbench-select';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { CalendarDays, ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { Alert, Badge, Button, Card, EmptyState, Input } from '@/components/ui';
+import {
+  CalendarDays,
+  CalendarPlus,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  ImageIcon,
+  Search,
+} from 'lucide-react';
+import { Badge, Button, Card, EmptyState, Input } from '@/components/ui';
 import {
   calendarMonthLabel,
   calendarParts,
   formatCalendarValue,
   moveCalendarMonth,
+  parseIsoDate,
   toIsoDate,
 } from '@/components/ui/date-picker.utils';
 import { cn } from '@/lib/utils';
@@ -25,6 +35,10 @@ import {
   type CalendarFilter,
   type CalendarView,
 } from './calendar-model';
+import {
+  CalendarEventDialog,
+  type CalendarEventDraft,
+} from './calendar-event-dialog';
 
 const views = [
   ['month', 'ماه'],
@@ -62,19 +76,50 @@ export function WorkbenchCalendar({
   const [anchor, setAnchor] = useState(calendarToday);
   const [selected, setSelected] = useState(() => toIsoDate(calendarToday()));
   const [view, setView] = useState<CalendarView>('month');
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [localEntries, setLocalEntries] = useState<CalendarEntry[]>([]);
+  const imageUrls = useRef<string[]>([]);
   const [filter, setFilter] = useState<CalendarFilter>({
     query: '',
     status: 'open',
     priority: 'all',
   });
-  const filtered = filterCalendar(entries, filter);
+  const allEntries = [...entries, ...localEntries];
+  const filtered = filterCalendar(allEntries, filter);
   const visible = entriesInView(filtered, anchor, view);
   const days = calendarDays(anchor, view);
   const selectedEntries = filtered.filter(
     (entry) => entry.dueAt && tehranDay(entry.dueAt) === selected,
   );
   const selectedMonth = calendarParts(anchor, 'persian');
+  const hasCalendarSource = sourceReady || localEntries.length > 0;
   const dateLabel = (value: string) => formatCalendarValue(value, 'persian');
+  useEffect(
+    () => () => imageUrls.current.forEach((url) => URL.revokeObjectURL(url)),
+    [],
+  );
+  function createEvent(draft: CalendarEventDraft) {
+    const imageUrl = draft.image ? URL.createObjectURL(draft.image) : undefined;
+    if (imageUrl) imageUrls.current.push(imageUrl);
+    const entry: CalendarEntry = {
+      id: `local-event-${Date.now()}`,
+      title: draft.title,
+      dueAt: `${draft.date}T12:00:00+03:30`,
+      status: 'planned',
+      priority: 'normal',
+      ...(draft.description ? { description: draft.description } : {}),
+      ...(draft.image && imageUrl
+        ? { imageName: draft.image.name, imageUrl }
+        : {}),
+      ...(draft.linkUrl ? { linkUrl: draft.linkUrl } : {}),
+    };
+    setLocalEntries((current) => [...current, entry]);
+    const nextDate = parseIsoDate(draft.date);
+    if (nextDate) setAnchor(nextDate);
+    setSelected(draft.date);
+    setView('month');
+    setFilter((current) => ({ ...current, status: 'open' }));
+  }
   function move(direction: -1 | 1) {
     setAnchor((current) =>
       view === 'week'
@@ -96,26 +141,69 @@ export function WorkbenchCalendar({
           return (
             <li
               key={entry.id}
-              className="flex flex-wrap items-center gap-3 py-3"
+              className="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_auto]"
             >
-              <span className="min-w-0 flex-1 font-semibold">
-                {href ? (
-                  <Link href={href} className="text-primary hover:underline">
-                    {entry.title}
-                  </Link>
-                ) : (
-                  entry.title
-                )}
-              </span>
-              <Badge>{statuses.find(([id]) => id === entry.status)?.[1]}</Badge>
-              {entry.dueAt && tehranDay(entry.dueAt) ? (
-                <time
-                  dateTime={entry.dueAt}
-                  className="text-sm text-muted-foreground"
-                >
-                  {dateLabel(tehranDay(entry.dueAt)!)}
-                </time>
-              ) : null}
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="min-w-0 font-semibold">
+                    {href ? (
+                      <Link href={href} className="text-primary hover:underline">
+                        {entry.title}
+                      </Link>
+                    ) : (
+                      entry.title
+                    )}
+                  </span>
+                  <Badge>
+                    {statuses.find(([id]) => id === entry.status)?.[1]}
+                  </Badge>
+                </div>
+                {entry.description ? (
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted-foreground">
+                    {entry.description}
+                  </p>
+                ) : null}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {entry.linkUrl ? (
+                    <Button asChild size="sm" variant="outline">
+                      <a href={entry.linkUrl} target="_blank" rel="noreferrer">
+                        <ExternalLink aria-hidden="true" className="size-4" />
+                        بازکردن لینک
+                      </a>
+                    </Button>
+                  ) : null}
+                  {entry.imageName ? (
+                    <span className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-xs font-semibold text-primary">
+                      <ImageIcon aria-hidden="true" className="size-4" />
+                      {entry.imageName}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+              <div className="flex items-start gap-3 sm:flex-col sm:items-end">
+                {entry.dueAt && tehranDay(entry.dueAt) ? (
+                  <time
+                    dateTime={entry.dueAt}
+                    className="text-sm text-muted-foreground"
+                  >
+                    {dateLabel(tehranDay(entry.dueAt)!)}
+                  </time>
+                ) : null}
+                {entry.imageUrl ? (
+                  <Image
+                    src={entry.imageUrl}
+                    alt={
+                      entry.imageName
+                        ? `تصویر ${entry.imageName}`
+                        : 'تصویر رویداد'
+                    }
+                    width={160}
+                    height={96}
+                    unoptimized
+                    className="h-24 w-40 rounded-xl border border-border object-cover"
+                  />
+                ) : null}
+              </div>
             </li>
           );
         })}
@@ -123,14 +211,14 @@ export function WorkbenchCalendar({
     ) : (
       <EmptyState
         title={
-          sourceReady
+          hasCalendarSource
             ? 'برنامه‌ای برای نمایش وجود ندارد'
             : 'هنوز برنامه‌ای به تقویم متصل نشده است'
         }
         description={
-          sourceReady
+          hasCalendarSource
             ? 'بازه یا فیلترها را تغییر دهید.'
-            : 'پس از اتصال موعد کارها و درخواست‌های شما، موارد در این بخش نمایش داده می‌شوند.'
+            : 'با دکمه افزودن رویداد، اولین برنامه خود را در این تقویم ثبت کنید.'
         }
       />
     );
@@ -142,7 +230,13 @@ export function WorkbenchCalendar({
           <CalendarDays aria-hidden="true" className="size-5 text-primary" />
           تقویم من
         </h2>
-        <Badge>محدوده: من</Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge>محدوده: من</Badge>
+          <Button onClick={() => setEventDialogOpen(true)}>
+            <CalendarPlus aria-hidden="true" className="size-4" />
+            افزودن رویداد
+          </Button>
+        </div>
       </div>
       <Card className="space-y-4 p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-3">
@@ -201,10 +295,10 @@ export function WorkbenchCalendar({
         </label>
       </Card>
       {!sourceReady ? (
-        <Alert
-          title="اتصال موعدها هنوز فعال نیست"
-          description="سرویس موعد کارها و درخواست‌های میزکار هنوز ارائه نشده است؛ تاریخ ایجاد اعلان‌ها به‌جای موعد اقدام نمایش داده نمی‌شود."
-        />
+        <p className="rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
+          رویدادهایی که خودتان اضافه می‌کنید در همین نشست مرورگر نمایش داده
+          می‌شوند.
+        </p>
       ) : null}
       <Card className="overflow-hidden">
         <div className="space-y-4 p-4 sm:p-5">
@@ -342,6 +436,13 @@ export function WorkbenchCalendar({
           {renderEntries(selectedEntries)}
         </Card>
       ) : null}
+      <CalendarEventDialog
+        key={`${selected}-${eventDialogOpen ? 'open' : 'closed'}`}
+        open={eventDialogOpen}
+        initialDate={selected}
+        onOpenChange={setEventDialogOpen}
+        onCreate={createEvent}
+      />
     </section>
   );
 }

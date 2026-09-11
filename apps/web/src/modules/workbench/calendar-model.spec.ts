@@ -8,6 +8,8 @@ import {
   calendarDays,
   entriesInView,
   filterCalendar,
+  calendarImageError,
+  normalizeCalendarLink,
   tehranDay,
   type CalendarEntry,
 } from './calendar-model';
@@ -95,5 +97,16 @@ describe('Workbench Persian calendar', () => {
     expect(entriesInView(entries, anchor, 'week').map((x) => x.id)).toEqual([
       'c',
     ]);
+  });
+  it('accepts safe event links and supported calendar images', () => {
+    expect(normalizeCalendarLink('https://example.com/event')).toBe(
+      'https://example.com/event',
+    );
+    expect(normalizeCalendarLink('javascript:alert(1)')).toBeNull();
+    expect(normalizeCalendarLink('')).toBe('');
+    expect(calendarImageError({ size: 1024, type: 'image/png' })).toBeNull();
+    expect(calendarImageError({ size: 1024, type: 'application/pdf' })).toBe(
+      'فایل انتخاب‌شده باید تصویر باشد.',
+    );
   });
 });

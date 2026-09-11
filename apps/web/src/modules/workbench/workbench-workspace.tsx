@@ -609,7 +609,7 @@ export function WorkbenchWorkspace() {
             <DialogTitle>پیام جدید</DialogTitle>
             <DialogDescription>
               واحد مخاطب را از فهرست پیام‌رسان انتخاب کنید و با قالب آماده یا
-              متن دلخواه شروع کنید. ارسال واقعی هنوز در دسترس نیست.
+              متن دلخواه شروع کنید.
             </DialogDescription>
             <label className="mt-4 block space-y-2 text-sm font-semibold">
               واحد مخاطب
