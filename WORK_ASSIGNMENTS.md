@@ -1,6 +1,6 @@
 # Work Assignments
 
-## WORKBENCH-015-SETTINGS-CENTER — PC-B — IN_PROGRESS
+## WORKBENCH-015-SETTINGS-CENTER — PC-B — DONE / UI_VERIFIED
 
 - Reserve only account action-grid alignment in workbench-workspace.tsx and own status docs. Center all settings buttons/links, no shared UI/API/dependency change. Base78bda1f; branch codex/pc-b-workbench-settings-center. Coordinate inclusion in next shared Web3100 build.
 
