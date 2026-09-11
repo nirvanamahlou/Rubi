@@ -1,5 +1,11 @@
 # Work Assignments
 
+## B2B-REMOVE-SUBTITLE-001 — PC-B — READY_FOR_REVIEW
+
+Reserve Organizations workspace heading copy on codex/pc-b-b2b-remove-subtitle from282227a. Remove requested directory subtitle only; no data/API/dependency changes.
+
+Sourcee03afcf; scoped lint/typecheck and113 tests pass. Runtime buildd59b860 preserves current1e295db. Release source reservation.
+
 ## B2B-BACK-NAVIGATION-001 — PC-B — READY_FOR_REVIEW
 
 Reserve corporate-profile.tsx on codex/pc-b-b2b-back-navigation from40da905. Correct in-page back from dossier sections to same organization360, retaining directory exit only at home. No API/data/dependency changes; coordinate Web3100.
