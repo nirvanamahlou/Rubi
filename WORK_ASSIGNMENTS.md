@@ -1,5 +1,11 @@
 # Work Assignments
 
+## B2B-CONTACT-ACTIONS-001 — PC-B — READY_FOR_REVIEW
+
+Reserve organizations-workspace.tsx on codex/pc-b-b2b-contact-actions for removing empty contact placeholders and compact accessible icon actions. No data, API or dependency changes. Coordinate Web3100 with runtime owner.
+
+Source14613d9; scoped ESLint, TypeScript and107 Organizations tests pass. Draft PR172. Runtime integration on e8ba0fd preserves9480599. Release source reservation.
+
 ## B2B-PROFILE-GRID-001 — PC-B — READY_FOR_REVIEW / RUNTIME_3100
 
 Reserve corporate-profile.tsx and corporate-design.css for equal-height dossier cards and responsive spacing. Branch codex/pc-b-b2b-profile-grid from bef45ad. No API, data, migration or dependency changes. Coordinate Web3100 with active runtime owner.
