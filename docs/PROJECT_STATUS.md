@@ -2101,3 +2101,5 @@ Runtime3397f2b/hr005-1ba72d053599fc53/PID11368 preserves96b6d2d.46-route build p
 
 ## 2026-09-12 — Agency360 subtitle removal (PC-B)
 Source f03d34c removes the requested home360 subtitle without leaving an empty paragraph. Subsection descriptions unchanged. Scoped lint/typecheck passed; combined runtime build coordinated.
+
+Combined runtime1bf840b/PID8604/hr005-ef61a0178f542c46 built by Workbench owner. Browser confirms360heading present and requestedsubtitle absent. NoAPI/data change. PR209.

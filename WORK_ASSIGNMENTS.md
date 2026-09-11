@@ -2164,3 +2164,5 @@ B2B-DIRECTORY-HIDE-HR-001: READY_FOR_REVIEW.46-route build and live directory ve
 Reserve corporate-profile.tsx only to remove requested home360 explanatory subtitle. No API/data changes.
 
 B2B-360-REMOVE-SUBTITLE-001: SOURCE_COMPLETEf03d34c. Requested fallback subtitle removed; subsection descriptions retained. Scoped lint/typecheck passed. Combined build delegated to current runtime owner; locks released.
+
+B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 build and live360subtitleabsence verified. PR209; locks released.
