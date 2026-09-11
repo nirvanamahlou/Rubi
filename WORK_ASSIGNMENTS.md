@@ -1,6 +1,6 @@
 # Work Assignments
 
-## WORKBENCH-019 — PC-B — IN_PROGRESS
+## WORKBENCH-019 — PC-B — UI_VERIFIED
 
 - Reserve Workbench message units/icons and Home feeds (latest10 plus view-all), own tests/docs on codex/pc-b-workbench-units-home-limits fromf25c052. No API/schema/shared files. Coordinate next Web build with B2B owner.
 
