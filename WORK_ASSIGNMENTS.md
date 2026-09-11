@@ -1,5 +1,10 @@
 # Work Assignments
 
+## WORKBENCH-021 — PC-B — CONTRACT_PREPARATION / AWAITING_OWNER_HANDOFF
+
+- User requests CRM contacts, direct messages, forwarding and group creation. Branch codex/pc-b-workbench-messaging based on7bc84c0 (preserves unmerged Workbench delivery). Reserve own task proposal only until IAM/migration ownership coordinated. Proposed additive v1 producer IAM minimum staff directory, Messaging conversation/membership/message services; consumer Workbench messenger. No admin-user listing exposure, credential changes, direct cross-module table reads or API runtime takeover. Exact proposal: docs/tasks/WORKBENCH-021-MESSAGING.md.
+
+
 ## WORKBENCH-020 — PC-B — UI_VERIFIED
 
 - Reserve Workbench-only dropdown wrapper and six native select consumers; reuse shared Rubi Select without changing shared components/dependencies. Branch codex/pc-b-workbench-themed-selects, PC-B.
