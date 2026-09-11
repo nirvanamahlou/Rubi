@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Send, Smile, X } from 'lucide-react';
+import { Send, Smile, X, Paperclip } from 'lucide-react';
 import { Alert, Button, Card, Input, Textarea } from '@/components/ui';
 import { MessageUnitIcon } from './message-unit-icon';
 import { messageUnits } from './message-templates';
@@ -26,6 +26,8 @@ export function MessageComposer({
   const [picker, setPicker] = useState(false);
   const [search, setSearch] = useState('');
   const [unitSearch, setUnitSearch] = useState('');
+  const [attachments, setAttachments] = useState<Record<string, File[]>>({});
+  const files = attachments[unitId] ?? [];
   const [error, setError] = useState('');
   const input = useRef<HTMLTextAreaElement>(null);
   const selection = useRef({ start: 0, end: 0 });
@@ -205,6 +207,80 @@ export function MessageComposer({
               {text.length.toLocaleString('fa-IR')} از ۴٬۰۰۰
             </p>
           </div>
+          <section
+            className="space-y-3 rounded-xl border border-border p-4"
+            aria-label="پیوست‌های پیام"
+          >
+            <label
+              className="flex items-center gap-2 text-sm font-semibold"
+              htmlFor="workbench-message-files"
+            >
+              <Paperclip className="size-4" aria-hidden="true" />
+              افزودن فایل پیوست
+            </label>
+            <Input
+              id="workbench-message-files"
+              type="file"
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png,.webp"
+              onChange={(event) => {
+                const picked = Array.from(event.target.files ?? []);
+                event.target.value = '';
+                if (
+                  files.length + picked.length > 10 ||
+                  picked.some(
+                    (file) =>
+                      file.size > 10 * 1024 * 1024 ||
+                      !/\.(pdf|jpe?g|png|webp)$/i.test(file.name),
+                  )
+                ) {
+                  setError(
+                    'حداکثر ۱۰ فایل PDF یا تصویر و هر فایل تا ۱۰ مگابایت انتخاب کنید.',
+                  );
+                  return;
+                }
+                setAttachments((current) => ({
+                  ...current,
+                  [unitId]: [...files, ...picked],
+                }));
+                setError('');
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              فایل‌ها فقط برای پیش‌نویس انتخاب می‌شوند؛ هنوز بارگذاری یا ارسال
+              نشده‌اند. برای تعویض، فایل را حذف و فایل جدید انتخاب کنید.
+            </p>
+            <ul className="space-y-2">
+              {files.map((file, index) => (
+                <li
+                  key={`${file.name}-${index}`}
+                  className="flex items-center justify-between gap-2 rounded-lg bg-muted/40 p-2 text-sm"
+                >
+                  <span className="min-w-0 break-all">
+                    {file.name} ·{' '}
+                    {Math.ceil(file.size / 1024).toLocaleString('fa-IR')}{' '}
+                    کیلوبایت
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`حذف پیوست ${file.name}`}
+                    onClick={() =>
+                      setAttachments((current) => ({
+                        ...current,
+                        [unitId]: files.filter(
+                          (_, position) => position !== index,
+                        ),
+                      }))
+                    }
+                  >
+                    <X className="size-4" aria-hidden="true" />
+                    حذف
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </section>
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"

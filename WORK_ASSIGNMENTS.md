@@ -1,5 +1,10 @@
 # Work Assignments
 
+## WORKBENCH-022 — PC-B — IN_PROGRESS
+
+- Visa document/payment receipt editable templates and local attachment selection in Workbench composer. No upload/send persistence claimed before Messaging contract/migration handoff. Reserve message templates/composer and local attachment helper/tests only. Preserve WORKBENCH-021 pending owner coordination.
+
+
 ## WORKBENCH-021 — PC-B — CONTRACT_PREPARATION / AWAITING_OWNER_HANDOFF
 
 - User requests CRM contacts, direct messages, forwarding and group creation. Branch codex/pc-b-workbench-messaging based on7bc84c0 (preserves unmerged Workbench delivery). Reserve own task proposal only until IAM/migration ownership coordinated. Proposed additive v1 producer IAM minimum staff directory, Messaging conversation/membership/message services; consumer Workbench messenger. No admin-user listing exposure, credential changes, direct cross-module table reads or API runtime takeover. Exact proposal: docs/tasks/WORKBENCH-021-MESSAGING.md.
