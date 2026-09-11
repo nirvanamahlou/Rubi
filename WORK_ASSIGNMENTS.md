@@ -1,5 +1,9 @@
 # Work Assignments
 
+## B2B-FORM-SAVE-AUDIT-001 — PC-B — READY_FOR_REVIEW / USER_HANDOFF
+
+- User authorizes authenticated UI entry tests of all agency forms. Isolated QA organization ORG_Q9WGXUJ2F2AN, clearly labelled test records only. Reserve Organizations wizard/contact save fixes, organization document expiry serialization, focused tests and audit notes on codex/pc-b-b2b-form-save-audit from8fea8f1. Preserve native runtime; coordinate restarts. No security changes, actual approvals or financial postings.
+
 ## B2B-LIVE-KPIS-001 — PC-B — DONE / RUNTIME_3100
 
 - Reserve Organizations workspace and new metrics loader/tests on codex/pc-b-b2b-live-kpis from6b942be. Use existing public MasterData list contract only; counts cover all pages, role overlap deduplicated for incomplete identity. No backend/API/schema/dependency changes. Coordinate3100 integration with native workbench owner. Source c63ec00 + test fix8b6cd35, draft PR163. Lint/typecheck and103 tests pass; combined build2d5d5e / hr005-f74450ea05fc1fa7 now served3100, Organizations HTTP200; runtime owner reports authenticated browser verification. Release source locks.
