@@ -4,6 +4,10 @@
 
 - Reserve Organizations directory Excel actions, Master Data export filter validation and focused service/UI tests. Remove the redundant directory-level import-template button, keep the sample template inside the import dialog, and allow the already-contracted `organizationRole` filter only for organization exports. No schema, migration, dependency, IAM grant or operational-data change.
 
+## B2B-FINANCE-EXPORT-LAYOUT-001 — PC-B — IN_PROGRESS
+
+- Reserve `organization-finance-preview.tsx` and `organization-documents-panel.tsx` only. Remove the requested finance sample-boundary notice and move both finance-row and document Excel actions into the document header beside the upload action with compact controls. No export payload, document API, data, schema, dependency or permission change.
+
 ## WORKBENCH-033 — PC-B — UI_VERIFIED
 
 - Moved the existing Home quick-access card directly above "My notifications" in the primary column. Its three links use a horizontal wide-screen grid; link and notification behavior are unchanged. Source `833458d`, combined runtime `7f4f793`; scoped lint, TypeScript and 46-route build passed. Authenticated Web3100 QA confirmed DOM and visual order with no console errors. Web PID29632/build gEMl1G7UjZStBq4fPr6UF; combined agency Excel fix preserved. Draft PR212. No Workbench API/schema/shared-component change.
