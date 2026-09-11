@@ -1,4 +1,7 @@
 # وضعیت پروژه
+## B2B-KPI-COLORS-001 — رنگ کارت‌های شاخص آژانس
+
+چهار کارت صفحه اول آژانس‌ها با گرادیان آبی، فیروزه‌ای، سبز و کهربایی مطابق مشتریان رنگی شدند؛ پشتیبانی ظاهر تیره اضافه شد. مرورگر، lint/typecheck و۱۰۰ تست موفق. Source c83d530، PR162 پیش‌نویس؛ ترکیب در build3100 با مالک میزکار هماهنگ شده و منتظر تکمیل است. بدون تغییر داده/API.
 ## B2B-DOSSIER-DATE-FILTERS-001 — فیلتر تاریخ پرونده
 
 فیلتر تاریخ با تقویم روبی و گرید واکنش‌گرا برای قرارداد، اعتبار، تضمین، نرخ، کاربران/تاریخچه، امضاداران و اسناد اضافه شد؛ چیدمان مالی و گزارش‌ها هماهنگ است. مبنای تاریخ مشخص و مرز روز تهران شامل ابتدا/انتهای بازه است؛ فیلتر قرارداد و اسناد همه صفحات مرتبط را پوشش می‌دهد. ۱۰۰ تست، lint/typecheck/build و بررسی ظاهری تقویم موفق‌اند. نسخه56d5d48 روی۳۱۹۶ و API4191 سالم؛ PR158 پیش‌نویس، بدون Merge یا تغییر API/داده.
@@ -1725,5 +1728,6 @@ Final validation: production build (40 routes) passed and local Web 3100 refresh
 
 ## PUBLISH-DARK-HR-0909 — PC-A — READY_FOR_REVIEW
 User explicitly authorized merge to develop. PR #120 now contains the full stack from #117/#119/#120: Finance purchase grouping, بلیط spelling, neutral dark shell and Reservations, dark HR legacy surfaces and persistent collapsed navigation. Integrated develop 679e516 while preserving PC-B connected HR/agencies and responsive Tehran-date header. Resolved the header conflict by retaining both responsive grid and dark border. Updated three mirrored API ticket validation strings to match Web; existing parity assertion retained. 23 focused integration tests passed. Final combined GitHub quality, tests, build and PostgreSQL gates must all pass before merge. No local database migration or API/Web restart during this publication task. Other computers must pull develop using the existing workflow and apply the already-merged HR migrations through their normal release procedure. Scoped integration reservation ends on successful PR #120 merge; PRs #117 and #119 are superseded by the complete stack.
+
 
 
