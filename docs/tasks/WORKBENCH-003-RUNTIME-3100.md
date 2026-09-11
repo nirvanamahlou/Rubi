@@ -34,3 +34,22 @@ its original checkout command line and served manifest. Then start this build wi
 `-SkipApi -Port 3100`; preserve the API process and data. Retain old build for rollback.
 
 Validation and final runtime identity are recorded after execution below.
+
+## Validation and cutover status
+
+- 100 tests passed: 3 Workbench gate/isolation/integration tests and 97 Organizations
+  regression tests. The initial test pass needed the Contracts dist output in this
+  fresh worktree; building existing Contracts resolved that setup failure.
+- Full Web lint, typecheck and production build passed. HTML is included in Next
+  output tracing; inherited B2B/HR/API sources and lockfile have zero changes.
+- Source commit `769c72d313018c7af34ddf492fd89d6d36683a3a`; runtime manifest
+  `hr005-fa78528a419acdbb`; review Web3310 PID14384. `/login` returns200; anonymous
+  `/tasks`, `/workbench/demo`, `/organizations` and `/hr` preserve redirects to login.
+- Before cutover, Web3100 was reverified as PID20360, source7ada379 and manifest
+  hr005-a63a90ce0594f86b. API4190 PID15024 health returns200.
+- Automatic approval review rejected the guarded stop-and-replace command with
+  only “blocked by policy”. That command did not execute; Web3100 remains unchanged.
+  Direct user confirmation was requested for only PID20360 and the tested replacement.
+  Do not delegate the rejected operation or claim the runtime was transferred.
+- Chrome verification is pending the transfer. The previously reported browser
+  control limitation has not been bypassed. Original preview3301 is retained.

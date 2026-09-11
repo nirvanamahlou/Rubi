@@ -1,6 +1,6 @@
 # Work Assignments
 
-## WORKBENCH-003-RUNTIME-3100 — PC-B — IN_PROGRESS
+## WORKBENCH-003-RUNTIME-3100 — PC-B — READY_FOR_RUNTIME_APPROVAL
 
 - User requests the reference Workbench in Chrome on3100. Runtime owner task01a086a4-fb72-7e80-8d13-db2ce47873ad explicitly hands over Web3100 only after isolated build and free-port verification. Base is last verified runtime source7ada379; existing B2B checkout0300a34 and its active date-filter changes remain untouched.
 - Reserve isolated `apps/web/src/modules/workbench/demo/**`, GET `/workbench/demo`, opt-in link on existing `/tasks` page (the current main-menu Workbench destination), and this task's own documentation entries. Branch `codex/pc-b-workbench-runtime-3100`. No shared shell/proxy, API, schema, dependencies or data changes.
