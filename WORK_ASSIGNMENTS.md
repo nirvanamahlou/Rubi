@@ -1,5 +1,9 @@
 # Work Assignments
 
+## B2B-EXCEL-IMPORT-EXPORT-001 — PC-B — IN_PROGRESS
+
+- Reserve Organizations directory Excel actions, Master Data export filter validation and focused service/UI tests. Remove the redundant directory-level import-template button, keep the sample template inside the import dialog, and allow the already-contracted `organizationRole` filter only for organization exports. No schema, migration, dependency, IAM grant or operational-data change.
+
 ## WORKBENCH-033 — PC-B — IN_PROGRESS
 
 - Move the existing Home quick-access card directly above "My notifications" in the primary column. Reserve only Workbench Home layout and own delivery docs. Preserve links, notification behavior, API/schema and shared components.
