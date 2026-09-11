@@ -2171,3 +2171,6 @@ Reserve corporate-profile.tsx only to remove requested home360 explanatory subti
 B2B-360-REMOVE-SUBTITLE-001: SOURCE_COMPLETEf03d34c. Requested fallback subtitle removed; subsection descriptions retained. Scoped lint/typecheck passed. Combined build delegated to current runtime owner; locks released.
 
 B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 build and live360subtitleabsence verified. PR209; locks released.
+B2B-EXCEL-IMPORT-EXPORT-001 — PC-B — IN_PROGRESS
+
+Reserve Organizations directory Excel actions, Master Data export filter validation and focused service/UI tests. Remove the redundant directory-level import-template button, keep the sample template inside the import dialog, and allow the already-contracted `organizationRole` filter only for organization exports. No schema, migration, dependency, IAM grant or operational-data change.

@@ -407,6 +407,40 @@ describe('MasterDataService', () => {
     );
   });
 
+  it('accepts the organization role filter for organization XLSX exports', async () => {
+    const repository = {
+      list: vi.fn().mockResolvedValue({ rows: [row], total: 1 }),
+      createExport: vi.fn().mockResolvedValue({
+        id: '77777777-7777-4777-8777-777777777777',
+        status: 'COMPLETED',
+      }),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    await service.downloadXlsx(
+      {
+        resource: 'organizations',
+        format: 'xlsx',
+        filters: {
+          search: '',
+          status: 'all',
+          organizationRole: 'AGENCY',
+          sortBy: 'name',
+          sortDirection: 'asc',
+        },
+        columns: ['code', 'legalName', 'personType', 'roleCodes'],
+        locale: 'fa-IR',
+        timezone: 'Asia/Tehran',
+      },
+      actor,
+    );
+
+    expect(repository.list).toHaveBeenCalledWith(
+      'organizations',
+      expect.objectContaining({ organizationRole: 'AGENCY' }),
+    );
+  });
+
   it('forbids generic exchange-rate update and status before repository access', async () => {
     const repository = {
       find: vi.fn(),

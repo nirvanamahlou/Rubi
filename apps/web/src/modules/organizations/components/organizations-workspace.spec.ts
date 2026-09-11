@@ -38,6 +38,13 @@ describe('agency to Master Organization integration', () => {
     expect(source).toContain('setPage');
   });
 
+  it('keeps Excel export and import available without the redundant template action', () => {
+    expect(source).toContain('void exportExcel()');
+    expect(source).toContain('setExcelOpen(true)');
+    expect(source).toContain('ورود از Excel');
+    expect(source).not.toContain('دانلود قالب ورود');
+  });
+
   it('loads operational and address data through public APIs without inventing Finance exposure', () => {
     expect(source).not.toContain('BLOCKED_FOR_MIGRATION');
     expect(client).toContain('workspace(organizationId');
