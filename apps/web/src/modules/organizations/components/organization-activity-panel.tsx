@@ -163,7 +163,7 @@ export function OrganizationActivityPanel({
         </div>
       </header>
       <div className="panel-body space-y-4">
-        <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
+        <div className="dossier-filter-grid">
           <label className="field">
             <span>شعبه همکاری روبی</span>
             <select

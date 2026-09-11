@@ -1,5 +1,30 @@
 /* Visual tokens and component geometry from the owner's corporate HTML reference. */
 .b2b-design {
+  .dossier-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 16px;
+  }
+  .dossier-filter-grid > * {
+    min-width: 0;
+  }
+  .dossier-filter-grid .field {
+    margin: 0;
+  }
+  .dossier-filter-grid .input,
+  .dossier-filter-grid .field > button,
+  .dossier-filter-grid > button {
+    min-height: 40px;
+    width: 100%;
+  }
+  .dossier-filter-error {
+    grid-column: 1 / -1;
+  }
+  .agreement-toolbar.dossier-filter-grid > div:first-child {
+    grid-column: 1 / -1;
+  }
   .agreement-editor {
     border: 0;
     margin: 0;

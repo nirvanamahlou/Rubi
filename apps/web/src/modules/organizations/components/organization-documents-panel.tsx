@@ -29,6 +29,11 @@ import {
 } from '@/modules/documents/api/client';
 import { agencyClient } from '../api/agency-client';
 import { downloadOrganizationXlsx } from '../model/organization-xlsx';
+import { DossierDateFilters } from './dossier-date-filters';
+import {
+  dossierDateBoundary,
+  inDossierDateRange,
+} from '../model/dossier-date-range';
 import {
   canReadOrganizationDocuments,
   organizationDocumentForm,
@@ -69,6 +74,7 @@ export function OrganizationDocumentsPanel({
   );
   const [branch, setBranch] = useState('');
   const [page, setPage] = useState(1);
+  const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [validity, setValidity] = useState<DocumentValidityFilter>('ALL');
   const [records, setRecords] = useState<readonly DocumentListItemV1[]>([]);
   const [total, setTotal] = useState(0);
@@ -87,6 +93,10 @@ export function OrganizationDocumentsPanel({
     setRecords([]);
     setError('');
     try {
+      if (dateRange.from && dateRange.to && dateRange.from > dateRange.to) {
+        setTotal(0);
+        return;
+      }
       const session = await agencyClient.session();
       if (sequence !== request.current) return;
       setPermissions(session.permissions);
@@ -106,18 +116,41 @@ export function OrganizationDocumentsPanel({
         setBranch(selectedBranch);
         return;
       }
-      const list = await documentsApi.list({
+      const query = {
         ...organizationDocumentQuery(
           organization.id,
           selectedBranch,
-          page,
+          dateRange.from || dateRange.to ? 1 : page,
           validity,
         ),
         ...(folderLabel ? { search: folderLabel } : {}),
-      });
+        ...(dateRange.from
+          ? { createdFrom: dossierDateBoundary(dateRange.from) }
+          : {}),
+        ...(dateRange.to
+          ? { createdTo: dossierDateBoundary(dateRange.to, true) }
+          : {}),
+      };
+      const list = await documentsApi.list(query);
       if (sequence !== request.current) return;
-      setRecords(list.data);
-      setTotal(list.meta.total);
+      if (dateRange.from || dateRange.to) {
+        // Documents filters by UTC calendar day. Fetch the covering days, then
+        // apply the exact Tehran date range before pagination and export.
+        const all = [...list.data];
+        for (let next = 2; next <= Math.ceil(list.meta.total / 20); next++) {
+          const result = await documentsApi.list({ ...query, page: next });
+          if (sequence !== request.current) return;
+          all.push(...result.data);
+        }
+        const matching = all.filter((row) =>
+          inDossierDateRange(row.createdAt, dateRange),
+        );
+        setRecords(matching.slice((page - 1) * 20, page * 20));
+        setTotal(matching.length);
+      } else {
+        setRecords(list.data);
+        setTotal(list.meta.total);
+      }
     } catch (caught) {
       if (sequence === request.current) {
         setTotal(0);
@@ -126,7 +159,7 @@ export function OrganizationDocumentsPanel({
     } finally {
       if (sequence === request.current) setLoading(false);
     }
-  }, [organization.id, branch, page, validity, folderLabel]);
+  }, [organization.id, branch, page, validity, folderLabel, dateRange]);
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     return () => {
@@ -184,7 +217,15 @@ export function OrganizationDocumentsPanel({
             خروجی Excel اسناد این صفحه
           </Button>
         ) : null}
-        <div className="grid items-end gap-3 sm:grid-cols-3">
+        <div className="dossier-filter-grid">
+          <DossierDateFilters
+            value={dateRange}
+            onChange={(value) => {
+              setDateRange(value);
+              setPage(1);
+            }}
+            basis="ثبت سند"
+          />
           <label className="space-y-1 text-sm">
             شعبه سند
             <select

@@ -12,6 +12,8 @@ import { FileSignature, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
+import { DossierDateFilters } from './dossier-date-filters';
+import { inDossierDateRange } from '../model/dossier-date-range';
 import { MasterDataReferenceSelector } from '@/modules/master-data/components/master-data-reference-selector';
 import { documentsApi } from '@/modules/documents/api/client';
 import { agencyClient, B2bApiError } from '../api/agency-client';
@@ -304,6 +306,7 @@ export function OrganizationSignatoriesPanel({
   const { branches, branchId, setBranchId, permissions, sessionError } =
     useDossierBranch();
   const [rows, setRows] = useState<B2bSignatoryV1[]>([]);
+  const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [editor, setEditor] = useState<{
@@ -351,6 +354,9 @@ export function OrganizationSignatoriesPanel({
   };
   const canManage = permissions.includes('b2b.agency.manage');
   const today = new Date().toISOString().slice(0, 10);
+  const visible = rows.filter((row) =>
+    inDossierDateRange(row.validFrom, dateRange),
+  );
   return (
     <section className="panel">
       <header className="panel-head">
@@ -373,26 +379,33 @@ export function OrganizationSignatoriesPanel({
         </Button>
       </header>
       <div className="panel-body space-y-3">
-        {branches.length > 1 ? (
-          <label className="field">
-            شعبه داخلی مسئول همکاری
-            <select
-              className="input"
-              value={branchId}
-              onChange={(event) => setBranchId(event.target.value)}
-            >
-              {branches.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : (
-          <p className="panel-note">
-            شعبه داخلی: {branches[0]?.name ?? 'در حال دریافت…'}
-          </p>
-        )}
+        <div className="dossier-filter-grid">
+          {branches.length > 1 ? (
+            <label className="field">
+              شعبه داخلی مسئول همکاری
+              <select
+                className="input"
+                value={branchId}
+                onChange={(event) => setBranchId(event.target.value)}
+              >
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <p className="panel-note">
+              شعبه داخلی: {branches[0]?.name ?? 'در حال دریافت…'}
+            </p>
+          )}
+          <DossierDateFilters
+            value={dateRange}
+            onChange={setDateRange}
+            basis="شروع اختیار امضادار"
+          />
+        </div>
         {sessionError || error ? (
           <p role="alert" className="form-error">
             {sessionError || error}
@@ -400,10 +413,10 @@ export function OrganizationSignatoriesPanel({
         ) : null}
         {loading ? (
           <p role="status">در حال دریافت امضاداران…</p>
-        ) : !rows.length ? (
+        ) : !visible.length ? (
           <p>هنوز امضاداری ثبت نشده است؛ از «افزودن امضادار» استفاده کنید.</p>
         ) : (
-          rows.map((row) => (
+          visible.map((row) => (
             <article
               key={row.id}
               className="rounded-xl border border-border p-4 space-y-2"

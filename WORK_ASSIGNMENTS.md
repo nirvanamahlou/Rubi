@@ -1,5 +1,9 @@
 # Work Assignments
 
+## B2B-DOSSIER-DATE-FILTERS-001 — PC-B — IN_PROGRESS
+
+- Add themed responsive date-range filters beside existing dossier filters. Reserve Organizations date helper/component, agreement/rates/users/signatories/documents/finance/activity panels, CSS and tests/status docs on `codex/pc-b-b2b-dossier-date-filters` from0300a34. Previous locks released. Preserve date meaning, inclusive boundaries, server pagination and organization/branch authorization. No API/schema/dependency change; runtime3196/API4191 retained and unrelated3100 untouched. No merge.
+
 ## B2B-NAMED-BRANCHES-001 — PC-B — DONE / LOCAL_RUNTIME_3196
 
 - User explicitly repeats that the four company names must be branches and requests alignment of the contract branch selector. Reserve a local branch-reference provisioning script, agreement header CSS/component, and status docs on `codex/pc-b-b2b-named-branches` from0146c4f. No active IAM implementation lock found; consume public IAM access updates, preserve roles/other users and existing HQ records. Back up before additive reference writes. New branches are distinct from LegalEntity records; no reassignment of existing business rows. No migration/dependency change or merge.

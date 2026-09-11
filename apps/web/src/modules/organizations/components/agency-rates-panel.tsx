@@ -16,6 +16,8 @@ import { moneyLabel } from '../model/presentation';
 import { serviceLabels } from '../model/agreement-terms';
 import { DossierFormDialog } from './dossier-form-dialog';
 import { useDossierBranch } from './use-dossier-branch';
+import { DossierDateFilters } from './dossier-date-filters';
+import { inDossierDateRange } from '../model/dossier-date-range';
 
 const kindLabels: Record<B2bAgreedRateKind, string> = {
   FIXED_AMOUNT: 'نرخ توافقی',
@@ -35,6 +37,7 @@ export function AgencyRatesPanel({
   const [profile, setProfile] =
     useState<B2bAgencyProfileDetailsV1['profile']>();
   const [error, setError] = useState('');
+  const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [loading, setLoading] = useState(false);
   const [editor, setEditor] = useState<{
     row?: B2bAgencyAgreedRateV1;
@@ -79,7 +82,9 @@ export function AgencyRatesPanel({
       invalidate();
     };
   }, [load, invalidate]);
-  const visible = rows.filter((row) => row.kind === kind);
+  const visible = rows.filter(
+    (row) => row.kind === kind && inDossierDateRange(row.validFrom, dateRange),
+  );
   const close = () => {
     setEditor(undefined);
     setDeleting(undefined);
@@ -125,20 +130,27 @@ export function AgencyRatesPanel({
         </Button>
       </header>
       <div className="panel-body space-y-4">
-        <label className="field">
-          شعبه روبی
-          <select
-            className="input"
-            value={branchId}
-            onChange={(e) => setBranchId(e.target.value)}
-          >
-            {branches.map((branch) => (
-              <option key={branch.id} value={branch.id}>
-                {branch.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="dossier-filter-grid">
+          <label className="field">
+            شعبه روبی
+            <select
+              className="input"
+              value={branchId}
+              onChange={(e) => setBranchId(e.target.value)}
+            >
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <DossierDateFilters
+            value={dateRange}
+            onChange={setDateRange}
+            basis="شروع اعتبار نرخ"
+          />
+        </div>
         {sessionError || error ? (
           <p role="alert" className="form-error">
             {sessionError || error}

@@ -33,6 +33,8 @@ import {
 } from '../model/agreement-terms';
 import { AgreementTermsEditor } from './agreement-terms-editor';
 import { temporaryCreditIssue } from '../model/temporary-credit';
+import { DossierDateFilters } from './dossier-date-filters';
+import { inDossierDateRange } from '../model/dossier-date-range';
 
 function RevisionSummary({
   revision,
@@ -181,6 +183,7 @@ export function AgreementWorkflowPanel({
   const [branchId, setBranchId] = useState('');
   const [records, setRecords] = useState<B2bAgreementCaseV1[]>([]);
   const [page, setPage] = useState(1);
+  const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -208,6 +211,10 @@ export function AgreementWorkflowPanel({
     setError('');
     setRecords([]);
     try {
+      if (dateRange.from && dateRange.to && dateRange.from > dateRange.to) {
+        setPages(1);
+        return;
+      }
       const user = await agencyClient.session();
       if (current !== sequence.current) return;
       setPermissions(user.permissions);
@@ -232,11 +239,38 @@ export function AgreementWorkflowPanel({
         organizationId,
         branch,
         role,
-        page,
+        dateRange.from || dateRange.to ? 1 : page,
       );
       if (current !== sequence.current) return;
-      setRecords(response.data);
-      setPages(response.meta.totalPages);
+      if (dateRange.from || dateRange.to) {
+        const all = [...response.data];
+        for (let next = 2; next <= response.meta.totalPages; next++) {
+          const result = await agencyClient.agreements(
+            organizationId,
+            branch,
+            role,
+            next,
+          );
+          if (current !== sequence.current) return;
+          all.push(...result.data);
+        }
+        setRecords(
+          all.filter((record) => {
+            const revision = record.revisions[0];
+            const dates =
+              view === 'guarantees'
+                ? (revision?.guarantees.map((g) => g.receivedAt) ?? [])
+                : view === 'credit' || view === 'temporary'
+                  ? (revision?.creditPolicies.map((p) => p.effectiveFrom) ?? [])
+                  : [revision?.startsAt ?? record.startsAt];
+            return dates.some((date) => inDossierDateRange(date, dateRange));
+          }),
+        );
+        setPages(1);
+      } else {
+        setRecords(response.data);
+        setPages(response.meta.totalPages);
+      }
     } catch (caught) {
       if (current === sequence.current)
         setError(
@@ -247,7 +281,7 @@ export function AgreementWorkflowPanel({
     } finally {
       if (current === sequence.current) setLoading(false);
     }
-  }, [organizationId, role, branchId, page]);
+  }, [organizationId, role, branchId, page, dateRange, view]);
   const invalidate = useCallback(() => {
     ++sequence.current;
   }, []);
@@ -410,7 +444,7 @@ export function AgreementWorkflowPanel({
   }
   return (
     <div className="agreement-workflow">
-      <div className="agreement-row-title agreement-toolbar">
+      <div className="agreement-row-title agreement-toolbar dossier-filter-grid">
         <div>
           <h3>
             {view === 'temporary'
@@ -425,6 +459,20 @@ export function AgreementWorkflowPanel({
             نسخه‌بندی، ویرایش پیش‌نویس و تأیید مستقل قرارداد و شرایط ارزی
           </p>
         </div>
+        <DossierDateFilters
+          value={dateRange}
+          onChange={(value) => {
+            setDateRange(value);
+            setPage(1);
+          }}
+          basis={
+            view === 'guarantees'
+              ? 'تاریخ تضمین'
+              : view === 'credit' || view === 'temporary'
+                ? 'شروع سقف اعتبار'
+                : 'شروع قرارداد'
+          }
+        />
         <label className="field">
           <span>شعبه قرارداد</span>
           <select

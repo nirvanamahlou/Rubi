@@ -129,7 +129,7 @@ export function OrganizationFinancePreview({
             );
           })}
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="dossier-filter-grid">
           <label className="field">
             <span>ارز</span>
             <select

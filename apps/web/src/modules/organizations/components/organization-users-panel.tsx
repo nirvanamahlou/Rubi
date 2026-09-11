@@ -11,6 +11,8 @@ import { Input, Textarea } from '@/components/ui/form-controls';
 import { agencyClient, B2bApiError } from '../api/agency-client';
 import { useDossierBranch } from './use-dossier-branch';
 import { DossierFormDialog } from './dossier-form-dialog';
+import { DossierDateFilters } from './dossier-date-filters';
+import { inDossierDateRange } from '../model/dossier-date-range';
 type Draft = B2bOrganizationUserInput & {
   displayName: string;
   username: string;
@@ -24,6 +26,7 @@ export function OrganizationUsersPanel({
   view?: string;
 }) {
   const { branchId, permissions } = useDossierBranch();
+  const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [rows, setRows] = useState<B2bOrganizationUser[]>([]),
     [error, setError] = useState(''),
     [loading, setLoading] = useState(true),
@@ -112,6 +115,13 @@ export function OrganizationUsersPanel({
         </Button>
       </header>
       <div className="panel-body space-y-4">
+        <div className="dossier-filter-grid">
+          <DossierDateFilters
+            value={dateRange}
+            onChange={setDateRange}
+            basis={view === 'history' ? 'فعالیت' : 'آخرین تغییر کاربر'}
+          />
+        </div>
         <p className="panel-note">
           ورود کاربران:{' '}
           <a
@@ -136,70 +146,83 @@ export function OrganizationUsersPanel({
         ) : null}
         {view === 'history' ? (
           <div className="space-y-2">
-            {history.map((event) => (
-              <p className="rounded-xl border p-3" key={event.id}>
-                {event.action.endsWith('create') ? 'ثبت کاربر' : 'تغییر دسترسی'}{' '}
-                · {new Date(event.occurredAt).toLocaleString('fa-IR')}
-              </p>
-            ))}
+            {history
+              .filter((event) =>
+                inDossierDateRange(event.occurredAt, dateRange),
+              )
+              .map((event) => (
+                <p className="rounded-xl border p-3" key={event.id}>
+                  {event.action.endsWith('create')
+                    ? 'ثبت کاربر'
+                    : 'تغییر دسترسی'}{' '}
+                  · {new Date(event.occurredAt).toLocaleString('fa-IR')}
+                </p>
+              ))}
           </div>
         ) : null}
         <div className="grid gap-3">
-          {rows.map((row) => (
-            <article key={row.id} className="rounded-xl border p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <strong>{row.displayName}</strong>
-                  <p className="panel-note">
-                    <span dir="ltr">{row.username}</span> ·{' '}
-                    {row.isActive && row.accountStatus === 'ACTIVE'
-                      ? 'فعال'
-                      : 'غیرفعال'}
-                  </p>
+          {rows
+            .filter(
+              (row) =>
+                view !== 'history' &&
+                inDossierDateRange(row.updatedAt, dateRange),
+            )
+            .map((row) => (
+              <article key={row.id} className="rounded-xl border p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <strong>{row.displayName}</strong>
+                    <p className="panel-note">
+                      <span dir="ltr">{row.username}</span> ·{' '}
+                      {row.isActive && row.accountStatus === 'ACTIVE'
+                        ? 'فعال'
+                        : 'غیرفعال'}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    disabled={!canManage}
+                    onClick={() =>
+                      setEditor({
+                        id: row.id,
+                        draft: {
+                          branchId: row.branchId,
+                          roleName: row.roleName,
+                          sections: row.sections,
+                          isActive: row.isActive,
+                          version: row.version,
+                          reason: '',
+                          displayName: row.displayName,
+                          username: row.username,
+                          password: '',
+                        },
+                      })
+                    }
+                  >
+                    ویرایش دسترسی
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  disabled={!canManage}
-                  onClick={() =>
-                    setEditor({
-                      id: row.id,
-                      draft: {
-                        branchId: row.branchId,
-                        roleName: row.roleName,
-                        sections: row.sections,
-                        isActive: row.isActive,
-                        version: row.version,
-                        reason: '',
-                        displayName: row.displayName,
-                        username: row.username,
-                        password: '',
-                      },
-                    })
-                  }
-                >
-                  ویرایش دسترسی
-                </Button>
-              </div>
-              <p className="mt-3 text-sm">نقش سازمانی: {row.roleName}</p>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-sm">بخش‌های مجاز:</span>
-                {B2B_DOSSIER_SECTIONS.filter((s) =>
-                  row.sections.includes(s.id),
-                ).map((s) => (
-                  <span className="badge blue" key={s.id}>
-                    {s.label}
-                  </span>
-                ))}
-                {!row.sections.length ? <span>بدون دسترسی</span> : null}
-              </div>
-              {view === 'history' ? (
-                <p className="panel-note mt-3">
-                  آخرین تغییر: {new Date(row.updatedAt).toLocaleString('fa-IR')}{' '}
-                  · نسخه {row.version.toLocaleString('fa-IR')}
-                </p>
-              ) : null}
-            </article>
-          ))}
+                <p className="mt-3 text-sm">نقش سازمانی: {row.roleName}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="text-sm">بخش‌های مجاز:</span>
+                  {B2B_DOSSIER_SECTIONS.filter((s) =>
+                    row.sections.includes(s.id),
+                  ).map((s) => (
+                    <span className="badge blue" key={s.id}>
+                      {s.label}
+                    </span>
+                  ))}
+                  {!row.sections.length ? <span>بدون دسترسی</span> : null}
+                </div>
+                {view === 'history' ? (
+                  <p className="panel-note mt-3">
+                    آخرین تغییر:{' '}
+                    {new Date(row.updatedAt).toLocaleString('fa-IR')} · نسخه{' '}
+                    {row.version.toLocaleString('fa-IR')}
+                  </p>
+                ) : null}
+              </article>
+            ))}
         </div>
         <Button variant="outline" onClick={refresh}>
           تازه‌سازی کاربران
