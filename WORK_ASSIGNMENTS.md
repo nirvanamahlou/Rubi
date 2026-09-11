@@ -2176,3 +2176,7 @@ B2B-EXCEL-IMPORT-EXPORT-001 — PC-B — IN_PROGRESS
 Reserve Organizations directory Excel actions, Master Data export filter validation and focused service/UI tests. Remove the redundant directory-level import-template button, keep the sample template inside the import dialog, and allow the already-contracted `organizationRole` filter only for organization exports. No schema, migration, dependency, IAM grant or operational-data change.
 
 B2B-EXCEL-IMPORT-EXPORT-001: READY_FOR_REVIEW. Source `8dd5f7e`; ۱۲۲ Organizations tests, ۱۹ Master Data tests, scoped lint, Web/API TypeScript and production builds passed after Prisma client regeneration. Live export created a ۹-row XLSX (header + ۸ filtered organizations); live import preview and commit classified all ۸ as existing and left them unchanged. Redundant directory template action absent. Combined Web3100 source `7f4f793` / PID29632; API4190 PID7124. Locks released.
+
+## B2B-FINANCE-EXPORT-LAYOUT-001 — PC-B — IN_PROGRESS
+
+Reserve `organization-finance-preview.tsx` and `organization-documents-panel.tsx` only. Remove the requested finance sample-boundary notice and move both finance-row and document Excel actions into the document header beside the upload action with compact controls. No export payload, document API, data, schema, dependency or permission change.
