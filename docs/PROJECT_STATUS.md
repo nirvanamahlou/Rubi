@@ -1764,3 +1764,6 @@ Runtime confirmed: source1995e160afb1fd59b47832199d524a4d883a341c / hr005-de87fc
 ## 2026-09-11 — B2B directory subtitle (PC-B)
 Sourcee03afcf removes requested explanatory paragraph below the directory heading. Scoped lint/typecheck and113 tests passed. Combined runtime buildd59b860 preserves1e295db and native browser history fix. No data/API changes.
 Runtime d59b860 / hr005-785b78ad01bbc39f / WebPID22512 verified: heading remains and requested subtitle absent in browser DOM.43-route build passed; API unchanged. Draft PR181; Web handed back to workbench owner.
+
+## 2026-09-11 — B2B contract filter alignment (PC-B)
+cc3027d+d1160ed fix flex cascade overriding dossier grid; date, branch and action controls align in6/3/1 responsive columns.113 tests/typecheck passed. Runtimebuildfe0ae53 preserves12c7c41; no API or data change.
