@@ -38,4 +38,8 @@ HR API برای HR managers اعلان‌های شعب مجاز، برای self/
 
 ## رزرو و اعتبارسنجی
 
-فایل‌های Workbench consumer/navigation/tests و تغییر محدود notification-center.tsx به success events؛ همچنین change-notifications.ts/spec برای حذف security events از feed عمومی رزرو شد. API/schema/contracts/dependency دست‌نخورده؛ مالکیت نهایی ماژول‌ها حفظ شده است. تست‌های permission routing، عدم ارتقای مجوز از Documents، عدم اعلان موفقیت read ناموفق و استثنای رخداد امنیتی اجرا می‌شوند. Build و بررسی مرورگر قبل از تحویل ثبت خواهد شد.
+فایل‌های Workbench consumer/navigation/tests و تغییر محدود notification-center.tsx به success events؛ همچنین change-notifications.ts/spec برای حذف security events از feed عمومی رزرو شد. API/schema/contracts/dependency دست‌نخورده؛ مالکیت نهایی ماژول‌ها حفظ شده است.
+
+۵۸ تست هدفمند (۴۱ میزکار/HR/اعلان و ۱۷ رخداد مرورگر)، lint، typecheck و build تولیدی موفق شدند؛ شامل permission routing، عدم ارتقای مجوز از Documents، عدم اعلان موفقیت read ناموفق و استثنای رخداد امنیتی. بررسی مرورگر با حساب واردشده، شرکت فعال و پوسته اصلی انجام شد: خانه اعلان‌های واقعی HR با توضیح محدودیت ۱۰۰ مورد را نشان می‌دهد؛ در کارتابل فقط مسیرهای HR و سازمان‌ها مطابق مجوز حساب حاضر دیده شدند. هیچ اعلان یا رکورد واقعی برای تست تغییر نکرد.
+
+Web3100: PID23416، source29cfe14، manifest hr005-3646774b4da0ada9. دلتاهای B2B14613d9 و48d95b5 حفظ و QA آیکن‌های فهرست توسط مالک تأیید شد. API4190 همان پردازش قبلی و health200 است. تغییرات در Draft PR174 برای بررسی ارسال شده‌اند؛ merge انجام نشده است. وضعیت این واحد آماده بررسی است و به معنی تکمیل سرویس‌های مسدود جدول بالا نیست.

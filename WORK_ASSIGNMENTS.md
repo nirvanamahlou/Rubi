@@ -1,9 +1,11 @@
 # Work Assignments
 
-## WORKBENCH-011-CONNECTIONS — PC-B — IN_PROGRESS
+## WORKBENCH-011-CONNECTIONS — PC-B — READY_FOR_REVIEW / PERSISTENCE_BLOCKED
 
 - Audit Workbench internal/cross-module/external-provider links against original request, owner APIs and runtime. Base0441c1e; preserve pending B2B contacts delta. Reserve Workbench HR notification consumer/model/tests and navigation map/report; shared notification-center.tsx only adds successful read-change event propagation; reserve change-notifications.ts/spec to exclude IAM security actions from the public feed. No owner service/table/schema/contract/dependency change; no API cutover retry. Persistent requests/messages/notes/tasks remain gated by active Reservations migration lock and missing services. Branch codex/pc-b-workbench-connections; Web restart only after runtime handoff.
 
+
+- Delivered scoped connections in Draft PR174. 58 targeted tests, lint, typecheck and production build passed. Authenticated Home/Requests browser QA passed without business mutations. Web3100 PID23416 serves source29cfe14 / manifest hr005-3646774b4da0ada9, preserving owner commits14613d9+48d95b5; B2B owner confirmed icon QA. API4190 remains unchanged and health200. Persistent-service dependencies remain blocked as documented.
 
 ## WORKBENCH-010-PASSWORD-CHANGE — PC-B — CODE_READY / API_ACTIVATION_BLOCKED
 
