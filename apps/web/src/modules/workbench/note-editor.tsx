@@ -23,7 +23,9 @@ export function NoteEditor({
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [discard, setDiscard] = useState(false);
-  const dirty = Boolean(title || body);
+  const [items, setItems] = useState<{ text: string; done: boolean }[]>([]);
+  const [itemText, setItemText] = useState('');
+  const dirty = Boolean(title || body || items.length || itemText);
   function close() {
     if (dirty) setDiscard(true);
     else onOpenChange(false);
@@ -31,6 +33,8 @@ export function NoteEditor({
   function discardDraft() {
     setTitle('');
     setBody('');
+    setItems([]);
+    setItemText('');
     setDiscard(false);
     onOpenChange(false);
   }
@@ -75,6 +79,58 @@ export function NoteEditor({
               description="می‌توانید فرم را تکمیل کنید، اما متن فعلاً ذخیره نمی‌شود و با خروج از صفحه از بین می‌رود. پس از فعال‌شدن ذخیره‌سازی خصوصی، ثبت یادداشت در حساب شما ممکن می‌شود."
             />
             <div className="space-y-2">
+              <p className="text-sm font-semibold">شروع از قالب یادداشت</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  [
+                    'چک‌لیست روزانه',
+                    [
+                      'مرور درخواست‌های باز',
+                      'پیگیری پاسخ واحد مالی',
+                      'هماهنگی با رزرواسیون',
+                    ],
+                  ],
+                  [
+                    'نکات جلسه فروش',
+                    [
+                      'ثبت تصمیم‌های جلسه',
+                      'مشخص‌کردن مسئول پیگیری',
+                      'تعیین موعد اقدام بعدی',
+                    ],
+                  ],
+                  [
+                    'تحویل پرونده',
+                    [
+                      'بررسی کامل‌بودن مدارک',
+                      'کنترل اطلاعات قرارداد',
+                      'تأیید تحویل به واحد مقصد',
+                    ],
+                  ],
+                ].map(([label, lines]) => (
+                  <Button
+                    key={label as string}
+                    type="button"
+                    variant="outline"
+                    disabled={dirty}
+                    onClick={() => {
+                      setTitle(label as string);
+                      setItems(
+                        (lines as string[]).map((text) => ({
+                          text,
+                          done: false,
+                        })),
+                      );
+                    }}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                قالب‌ها نمونهٔ قابل ویرایش‌اند و یادداشت ذخیره‌شده نیستند.
+              </p>
+            </div>
+            <div className="space-y-2">
               <label
                 htmlFor="workbench-note-title"
                 className="block text-sm font-semibold"
@@ -115,7 +171,7 @@ export function NoteEditor({
               <Textarea
                 id="workbench-note-body"
                 name="body"
-                required
+                required={!items.length}
                 maxLength={10000}
                 rows={8}
                 value={body}
@@ -131,6 +187,75 @@ export function NoteEditor({
                 {body.length.toLocaleString('fa-IR')} از ۱۰٬۰۰۰ نویسه
               </p>
             </div>
+            <section
+              className="space-y-3 rounded-xl border border-border p-4"
+              aria-label="چک‌لیست یادداشت"
+            >
+              <h3 className="font-semibold">چک‌لیست</h3>
+              {items.map((item, index) => (
+                <div key={index} className="flex items-center gap-3">
+                  <label className="flex flex-1 items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={item.done}
+                      onChange={(e) =>
+                        setItems((current) =>
+                          current.map((row, i) =>
+                            i === index
+                              ? { ...row, done: e.target.checked }
+                              : row,
+                          ),
+                        )
+                      }
+                      className="size-5 accent-primary"
+                    />
+                    <span
+                      className={
+                        item.done ? 'text-muted-foreground line-through' : ''
+                      }
+                    >
+                      {item.text}
+                    </span>
+                  </label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    aria-label={`حذف مورد ${item.text}`}
+                    onClick={() =>
+                      setItems((current) =>
+                        current.filter((_, i) => i !== index),
+                      )
+                    }
+                  >
+                    حذف
+                  </Button>
+                </div>
+              ))}
+              <div className="flex gap-2">
+                <Input
+                  aria-label="مورد جدید چک‌لیست"
+                  maxLength={300}
+                  placeholder="یک مورد جدید…"
+                  value={itemText}
+                  onChange={(e) => setItemText(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!itemText.trim() || items.length >= 50}
+                  onClick={() => {
+                    setItems((current) => [
+                      ...current,
+                      { text: itemText.trim(), done: false },
+                    ]);
+                    setItemText('');
+                  }}
+                >
+                  افزودن
+                </Button>
+              </div>
+            </section>
             <p className="flex items-center gap-2 text-xs text-muted-foreground">
               <LockKeyhole className="size-4 shrink-0" aria-hidden="true" />
               یادداشت شخصی؛ گزینه‌ای برای اشتراک با دیگران ندارد.
