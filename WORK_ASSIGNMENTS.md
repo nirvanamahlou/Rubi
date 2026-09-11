@@ -2159,3 +2159,8 @@ Reserve organizations-workspace.tsx: suppress supplementary HR requests footer o
 B2B-DIRECTORY-HIDE-HR-001: SOURCE_COMPLETEd73d6bb. Scoped lint/typecheck passed. No behavior/data/API change. Source locks released; runtime inclusion coordinated.
 
 B2B-DIRECTORY-HIDE-HR-001: READY_FOR_REVIEW.46-route build and live directory verification pass; runtime3397f2b/PID11368. PR206; locks released.
+
+## B2B-360-REMOVE-SUBTITLE-001 — PC-B — IN_PROGRESS
+Reserve corporate-profile.tsx only to remove requested home360 explanatory subtitle. No API/data changes.
+
+B2B-360-REMOVE-SUBTITLE-001: SOURCE_COMPLETEf03d34c. Requested fallback subtitle removed; subsection descriptions retained. Scoped lint/typecheck passed. Combined build delegated to current runtime owner; locks released.

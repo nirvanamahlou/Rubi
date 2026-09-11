@@ -2098,3 +2098,6 @@ Runtime610170e/hr005-e828cafc8da400a3/PID16592 preserves37b72b8.46-route product
 Source d73d6bb suppresses the supplementary HR requests panel on the Organizations directory using the existing public visibility hook. Existing finance suppression preserved. Lint and Web typecheck passed; runtime verification pending.
 
 Runtime3397f2b/hr005-1ba72d053599fc53/PID11368 preserves96b6d2d.46-route build passes. Browser directory renders8organizations and pagination with zero HR connections panels. API unchanged. PR206.
+
+## 2026-09-12 — Agency360 subtitle removal (PC-B)
+Source f03d34c removes the requested home360 subtitle without leaving an empty paragraph. Subsection descriptions unchanged. Scoped lint/typecheck passed; combined runtime build coordinated.
