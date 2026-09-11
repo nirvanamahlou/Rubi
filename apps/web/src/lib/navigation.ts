@@ -10,6 +10,7 @@ import {
   Headphones,
   Handshake,
   HeartHandshake,
+  House,
   Megaphone,
   PackageSearch,
   Settings,
@@ -36,6 +37,7 @@ export interface HrBreadcrumbLocation {
 }
 
 const iconByHref: Record<NavigationHref, LucideIcon> = {
+  '/workbench': House,
   '/dashboard': Gauge,
   '/customers': UsersRound,
   '/customer-affairs': Headphones,
@@ -66,7 +68,7 @@ export const navigationGroups = [
     id: 'work',
     dotClass: 'bg-[#96c9ff]',
     title: 'فضای کار',
-    hrefs: ['/dashboard', '/tasks'],
+    hrefs: ['/workbench', '/dashboard', '/tasks'],
   },
   {
     id: 'sales',

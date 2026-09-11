@@ -77,6 +77,11 @@ export const faMessages = {
 
 export const navigationMessages = [
   {
+    title: 'میزکار من',
+    href: '/workbench',
+    description: 'اعلان‌ها، فایل‌ها و حساب شخصی من',
+  },
+  {
     title: 'داشبورد',
     href: '/dashboard',
     description: 'نمای کلی عملکرد و کارهای روزانه',
@@ -128,7 +133,7 @@ export const navigationMessages = [
     description: 'پرونده و عملیات کارکنان',
   },
   {
-    title: 'میز کار',
+    title: 'وظایف و اتوماسیون',
     href: '/tasks',
     description: 'کارها و جریان‌های خودکار',
   },
