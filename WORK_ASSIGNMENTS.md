@@ -1,8 +1,9 @@
 # Work Assignments
 
-## B2B-CREDIT-SECTION-FORMS-001 — PC-B — IN_PROGRESS
+## B2B-CREDIT-SECTION-FORMS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Add section-specific policy, guarantee and dated temporary-credit forms inside existing agreement workflow. Reserve Organizations editor/workflow/navigation/workspace and tests/status docs on `codex/pc-b-b2b-credit-section-forms` fromde48b4a. Prior locks released. Preserve complete revision terms and independent approval; Exposure remains read-only pending Finance adapter. No API/migration/dependency or Finance owner changes. Verify and refresh3100; no merge.
+- Source3cf0715 adds agreement selection and focused modal editors, scoped summaries and exact per-currency temporary-increase validation. Other revision fields remain preserved and accessible through expandable contract details. Web lint/typecheck/build and 97 Organizations tests pass; actual React browser confirms guarantee entry and temporary-credit focus. Web3100 PID13748/hr005-56ff1e665ae9fa09 and API4191 healthy. QA3196 stopped, PR152 draft, no merge. Release implementation reservations.
 
 ## B2B-CONTRACT-DOCUMENT-FORM-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
