@@ -11,7 +11,10 @@ import {
   ratesReport,
 } from './commercial-export';
 import { createOrganizationXlsx, unzipWorkbook } from './organization-xlsx';
-import { buildCommercialPdf } from './commercial-pdf';
+import {
+  buildCommercialPdf,
+  isolateCommercialIdentifiers,
+} from './commercial-pdf';
 
 const record = (id = 'a'): B2bAgreementCaseV1 => ({
   id,
@@ -67,6 +70,14 @@ const record = (id = 'a'): B2bAgreementCaseV1 => ({
 });
 const range = { from: '2026-09-01', to: '2026-09-30' };
 describe('commercial exports', () => {
+  it('isolates dates and exact decimal strings in Persian PDF text', () => {
+    expect(isolateCommercialIdentifiers('شروع: 2026-09-11')).toBe(
+      'شروع: \u20662026-09-11\u2069',
+    );
+    expect(isolateCommercialIdentifiers('مبلغ: 100.0001 USD')).toBe(
+      'مبلغ: \u2066100.0001\u2069 \u2066USD\u2069',
+    );
+  });
   it('collects every page, deduplicates, and fails rather than exporting partial data', async () => {
     const read = vi.fn(async (page: number) => ({
       data: page === 1 ? [record()] : [record(), record('b')],
