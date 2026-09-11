@@ -14,6 +14,10 @@ import {
   deleteOrganizationRecord,
   type OrganizationDeletionTarget,
 } from '../model/record-mutations';
+import {
+  organizationDeleteFailure,
+  type OrganizationDeleteFailure,
+} from '../model/delete-recovery';
 
 export function OrganizationDeleteDialog({
   target,
@@ -28,20 +32,21 @@ export function OrganizationDeleteDialog({
 }) {
   const [busy, setBusy] = useState(false);
   const [attempted, setAttempted] = useState(false);
-  const [error, setError] = useState('');
+  const [failure, setFailure] = useState<OrganizationDeleteFailure>();
   const pending = useRef(false);
   const cancel = useRef<HTMLButtonElement>(null);
   const label = target.resource === 'organizations' ? 'سازمان' : 'مخاطب';
   async function remove() {
-    if (pending.current || attempted) return;
+    if (pending.current || failure?.requiresRefresh) return;
     pending.current = true;
     setBusy(true);
     setAttempted(true);
+    setFailure(undefined);
     try {
       await deleteOrganizationRecord(target, permissions);
       onDeleted();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'حذف تأیید نشد.');
+      setFailure(organizationDeleteFailure(caught));
     } finally {
       pending.current = false;
       setBusy(false);
@@ -75,9 +80,12 @@ export function OrganizationDeleteDialog({
             ? ' هویت سازمان و تمام نقش‌های آن حذف می‌شوند. رکورد دارای وابستگی قابل حذف نیست.'
             : ' سازمان و سایر مخاطبان آن باقی می‌مانند.'}
         </DialogDescription>
-        {error ? (
+        {failure ? (
           <p role="alert" className="form-error">
-            {error} پیش از تلاش مجدد، فهرست تازه‌سازی می‌شود.
+            {failure.message}{' '}
+            {failure.requiresRefresh
+              ? 'نتیجه حذف قطعی نیست؛ پنجره را ببندید تا فهرست تازه‌سازی شود.'
+              : 'پس از رفع علت می‌توانید دوباره تلاش کنید.'}
           </p>
         ) : null}
         <div className="wizard-actions">
@@ -92,11 +100,16 @@ export function OrganizationDeleteDialog({
           <Button
             variant="destructive"
             loading={busy}
-            disabled={attempted || !permissions.includes('master_data.delete')}
+            disabled={
+              failure?.requiresRefresh ||
+              !permissions.includes('master_data.delete')
+            }
             onClick={() => void remove()}
           >
             <Trash2 aria-hidden="true" className="size-4" />
-            حذف دائمی {label}
+            {failure
+              ? `تلاش دوباره برای حذف دائمی ${label}`
+              : `حذف دائمی ${label}`}
           </Button>
         </div>
       </DialogContent>
