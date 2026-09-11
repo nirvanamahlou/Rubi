@@ -10,6 +10,10 @@
 - وضعیت فعلی `READY_FOR_MERGE` است: نصب Frozen، Prisma، lint، typecheck، ۲۶۵۴
   تست و Build شش Task/۴۶ Route پاس شدند. `main` در این عملیات تغییر نمی‌کند.
 
+## WORKBENCH-014 — نمای کارت‌های یادداشت
+
+براساس تصاویر552/553، دفتر یادداشت با کارت‌های کرم سه‌ستونه، جست‌وجو، فیلتر پوشه/تاریخ، پوشه جدید و کنترل ویرایش/سنجاق/حذف قابل بازگردانی ساخته شد. چک‌لیست روی کارت تیک و خط‌خوردن دارد. سه کارت اولیه صریحاً «قالب نمونه» هستند؛ اعمال ویرایش فقط پیش‌نویس حافظه صفحه است، نه ذخیره در حساب. هیچ API، Schema، Migration، browser storage یا ارسال داده ایجاد نشد؛ مجوز توسعه persistence همچنان پاسخ نگرفته است. پنجره‌های ویرایش هنگام بسته‌شدن دیگر میزکار را دوباره بارگذاری نمی‌کنند. Typecheck/lint و ۳۷ تست موجود میزکار موفق؛ runtime/QA نهایی پس از handoff ثبت می‌شود.
+
 ## REPORTING — مجوز اجرای PC-C و Gate مرحله P0-04
 
 - `COMPUTER_ID=PC-C` برای ادامه Reporting در محدوده ماژول‌های Web/API Reporting،
@@ -2020,3 +2024,5 @@ Runtime confirmed: source1995e160afb1fd59b47832199d524a4d883a341c / hr005-de87fc
 
 ## 2026-09-11 — B2B directory subtitle (PC-B)
 Sourcee03afcf removes requested explanatory paragraph below the directory heading. Scoped lint/typecheck and113 tests passed. Combined runtime buildd59b860 preserves1e295db and native browser history fix. No data/API changes.
+
+WORKBENCH-014 نهایی: build۴۳route و بررسی مرورگر سه کارت، تیک/خط‌خوردن، اعمال ویرایش و حفظ آن پس از بستن فرم موفق بود. Web3100 source1e295db/PID20512/manifesthr005-3938c4fc437ae857؛ تغییر تاریخچه آژانس1995e16 حفظ شد. API4190 بدون تغییر/health200. نمونه آزمایشی با reload بازنشانی شد. PR180 پیش‌نویس، بدون merge.

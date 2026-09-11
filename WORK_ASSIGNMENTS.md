@@ -35,7 +35,7 @@ Reserve Organizations directory enrichment, dossier role summary and focused con
 
 Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped lint and typecheck pass. Audit/handoff: docs/tasks/B2B-CONNECTIONS-AUDIT-001.md. Combined Web build on9d05cd6 preserves latest7bae2a4; source reservations released. Missing Finance/Sales/notification producers remain explicitly incomplete.
 
-## WORKBENCH-014-NOTE-CARDS — PC-B — IN_PROGRESS
+## WORKBENCH-014-NOTE-CARDS — PC-B — UI_READY / LOCAL_RUNTIME_3100
 
 - PC-B reserves Workbench note board/editor/model and workspace integration to match screenshots552/553: cream cards, folders/search/date filters, pin/edit/remove and checklist strike-through. UI drafts only with explicit unsaved label; no persistence, fake server records, API/schema/dependency changes. Branch codex/pc-b-workbench-note-cards from e701b49; preserve pending B2B history fix on runtime handoff.
 
