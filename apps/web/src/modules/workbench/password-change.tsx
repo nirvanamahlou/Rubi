@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { KeyRound } from 'lucide-react';
 import {
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui';
 import {
   passwordChangeError,
+  passwordChangeAvailable,
   submitPasswordChange,
 } from './password-change-api';
 
@@ -31,6 +32,17 @@ export function PasswordChange({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [serviceReady, setServiceReady] = useState(false);
+  useEffect(() => {
+    let current = true;
+    if (open)
+      void passwordChangeAvailable().then((ready) => {
+        if (current) setServiceReady(ready);
+      });
+    return () => {
+      current = false;
+    };
+  }, [open]);
   const submitting = useRef(false);
   const form = useRef<HTMLFormElement>(null);
   function changeOpen(value: boolean) {
@@ -38,11 +50,12 @@ export function PasswordChange({
     form.current?.reset();
     setError('');
     setSuccess(false);
+    setServiceReady(false);
     onOpenChange(value);
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submitting.current) return;
+    if (submitting.current || !serviceReady) return;
     const values = new FormData(event.currentTarget);
     const current = String(values.get('currentPassword') ?? '');
     const next = String(values.get('newPassword') ?? '');
@@ -119,7 +132,7 @@ export function PasswordChange({
                 hidden
               />
               <fieldset
-                disabled={pending}
+                disabled={pending || !serviceReady}
                 className="space-y-4"
                 aria-label="اطلاعات تغییر رمز عبور"
               >
@@ -185,8 +198,15 @@ export function PasswordChange({
                 </div>
               </fieldset>
               {error && <Alert tone="error" title={error} />}
+              {!serviceReady && (
+                <Alert
+                  tone="info"
+                  title="سرویس تغییر رمز در دسترس نیست"
+                  description="پس از فعال‌شدن سرویس، این فرم را دوباره باز کنید. تا آن زمان ورود و ثبت رمز غیرفعال است."
+                />
+              )}
               <div className="flex flex-wrap gap-2">
-                <Button type="submit" disabled={pending}>
+                <Button type="submit" disabled={pending || !serviceReady}>
                   {pending ? 'در حال تغییر رمز…' : 'ثبت رمز جدید'}
                 </Button>
                 <Button

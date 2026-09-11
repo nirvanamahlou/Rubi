@@ -2,6 +2,33 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { clearHeaderSession } from '@/lib/header-session';
 
+export async function passwordChangeAvailable(
+  baseUrl = getPublicApiBaseUrl(),
+  fetchImpl: typeof fetch = fetch,
+): Promise<boolean> {
+  if (!baseUrl) return false;
+  try {
+    const response = await fetchImpl(
+      `${baseUrl}/iam/auth/password-change/status`,
+      {
+        credentials: 'include',
+        cache: 'no-store',
+        headers: { accept: 'application/json' },
+      },
+    );
+    if (!response.ok) return false;
+    const data: unknown = await response.json();
+    return Boolean(
+      data &&
+      typeof data === 'object' &&
+      'available' in data &&
+      data.available === true,
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function passwordChangeError(
   current: string,
   next: string,

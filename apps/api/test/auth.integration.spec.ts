@@ -99,6 +99,19 @@ describe('IAM login and refresh HTTP contract', () => {
     expect(service.changePassword).not.toHaveBeenCalled();
   });
 
+  it('exposes password capability only to authenticated clients without collecting credentials', async () => {
+    await request(app.getHttpServer())
+      .get('/iam/auth/password-change/status')
+      .expect(401);
+    const response = await request(app.getHttpServer())
+      .get('/iam/auth/password-change/status')
+      .set('Cookie', 'rubi_access=fixture')
+      .expect(200);
+    expect(response.body).toEqual({ available: true });
+    expect(response.headers['cache-control']).toBe('no-store');
+    expect(service.changePassword).not.toHaveBeenCalled();
+  });
+
   it('rejects requests without the CSRF header and caller-supplied identities', async () => {
     await request(app.getHttpServer())
       .post('/iam/auth/change-password')

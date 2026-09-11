@@ -1,11 +1,13 @@
 # Work Assignments
 
-## WORKBENCH-010-PASSWORD-CHANGE — PC-B — IN_PROGRESS / IAM_SLICE_AUTHORIZED_BY_PROJECT_OWNER
+## WORKBENCH-010-PASSWORD-CHANGE — PC-B — CODE_READY / API_ACTIVATION_BLOCKED
 
 - Base2794b60; reserve Workbench password form and integration plus own task/status docs. User requests password change inside Workbench. IAM has no existing endpoint; coordinator confirms no authority to transfer PC-A ownership. Prepare native UI with no credential collection/transmission until real IAM service is available. Proposed producer IAM / consumer Workbench contract and secure acceptance criteria in task report; backend changes require explicit PC-A/project-owner slice handoff. No schema, dependency, API runtime or actual credential changes. Coordinate Web3100 checkpoint with B2B owner.
 
 
 - Project owner explicitly authorized this PC-B task to complete the bounded IAM password-change slice in this conversation. Reserve auth.controller.ts, iam.service.ts, password-change service/DTO/tests and relevant IAM HTTP/PostgreSQL tests; final module ownership remains PC-A. Producer IAM, consumer Workbench, additive POST change-password contract as documented. No migration/dependency change; existing passwordChangedAt/session/audit fields suffice. Preserve other modules and coordinate API4190 replacement after isolated verification.
+
+- Implementation/tests ready inPR171; API15024replacement rejected twice by automatic review, including after explicit exact-PID user approval. API4190remains unchanged. Authenticated read-only capability gate keeps password fields disabled until the new service is actually running. No credential/session mutation, migration or dependency change.81tests passed. Release implementation reservation; APIactivation remains blocked.
 
 ## WORKBENCH-009-MESSAGE-EMOJI — PC-B — UI_READY / LOCAL_RUNTIME_3100
 

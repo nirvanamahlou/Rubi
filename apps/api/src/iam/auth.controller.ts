@@ -99,6 +99,14 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @ApiCookieAuth(ACCESS_COOKIE)
+  @Get('password-change/status')
+  passwordChangeStatus(@Res({ passthrough: true }) response: Response) {
+    response.setHeader('Cache-Control', 'no-store');
+    return { available: true };
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth(ACCESS_COOKIE)
   @Post('change-password')
   @HttpCode(204)
   @ApiOperation({ summary: 'Change own password and revoke all sessions' })

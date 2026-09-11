@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { LoginResponse } from '@rubi/contracts';
 import {
   passwordChangeError,
+  passwordChangeAvailable,
   submitPasswordChange,
 } from './password-change-api';
 const oldPassword = 'Old-Fixture-123!';
@@ -24,6 +25,33 @@ function dependencies(status = 204, code?: string) {
   };
 }
 describe('password change consumer', () => {
+  it('keeps credential collection unavailable until the authenticated service confirms readiness', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 404 }));
+    expect(
+      await passwordChangeAvailable(
+        'https://fixture.invalid/api/v1',
+        fetchImpl,
+      ),
+    ).toBe(false);
+    fetchImpl.mockResolvedValue(
+      new Response(JSON.stringify({ available: true }), { status: 200 }),
+    );
+    expect(
+      await passwordChangeAvailable(
+        'https://fixture.invalid/api/v1',
+        fetchImpl,
+      ),
+    ).toBe(true);
+    fetchImpl.mockRejectedValue(new Error('offline'));
+    expect(
+      await passwordChangeAvailable(
+        'https://fixture.invalid/api/v1',
+        fetchImpl,
+      ),
+    ).toBe(false);
+  });
   it('validates policy, unchanged value and confirmation without trimming passwords', () => {
     expect(
       passwordChangeError(oldPassword, nextPassword, nextPassword),
