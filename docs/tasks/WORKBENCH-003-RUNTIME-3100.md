@@ -53,3 +53,10 @@ Validation and final runtime identity are recorded after execution below.
   Do not delegate the rejected operation or claim the runtime was transferred.
 - Chrome verification is pending the transfer. The previously reported browser
   control limitation has not been bypassed. Original preview3301 is retained.
+
+The user directly approved the exact PID20360-to-tested-build transfer. Automatic
+approval review nevertheless rejected the second guarded command before execution,
+again only “blocked by policy”. No further workaround or delegated stop is attempted.
+The user must stop the old web listener manually before this agent can start3100.
+The running candidate remains3310/PID14384; built source769c72d is unchanged by the
+subsequent documentation-only commits. Preserve that build identity when launching.
