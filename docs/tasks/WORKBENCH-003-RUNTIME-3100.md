@@ -60,3 +60,15 @@ again only “blocked by policy”. No further workaround or delegated stop is a
 The user must stop the old web listener manually before this agent can start3100.
 The running candidate remains3310/PID14384; built source769c72d is unchanged by the
 subsequent documentation-only commits. Preserve that build identity when launching.
+
+## Completed transfer after manual stop
+
+The user reported completing the manual stop. A fresh listener check confirmed3100
+was free. Started only the verified candidate Web on3100: PID28232, source
+769c72d313018c7af34ddf492fd89d6d36683a3a, manifest hr005-fa78528a419acdbb.
+The served runtime identity matches; login returns200 and the Web error log is empty.
+API4190 remains PID15024 and health returns200. No data or API change occurred.
+Exact entry: http://localhost:3100/workbench/demo (existing authentication applies).
+The original Tasks workspace also exposes the opt-in Workbench link.
+Chrome-specific visual confirmation is reported separately; runtime readiness does
+not assert that a Chrome tab was opened. Review3310 and preview3301 are retained.
