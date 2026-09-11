@@ -99,11 +99,7 @@ export function WorkbenchNotes({
           </label>
           <label>
             <span className="sr-only">تا تاریخ</span>
-            <DatePicker
-              value={to}
-              onChange={setTo}
-              placeholder="تا تاریخ"
-            />
+            <DatePicker value={to} onChange={setTo} placeholder="تا تاریخ" />
           </label>
           <WorkbenchSelect
             label="پوشه یادداشت"

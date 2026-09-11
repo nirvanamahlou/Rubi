@@ -147,7 +147,10 @@ export function WorkbenchCalendar({
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="min-w-0 font-semibold">
                     {href ? (
-                      <Link href={href} className="text-primary hover:underline">
+                      <Link
+                        href={href}
+                        className="text-primary hover:underline"
+                      >
                         {entry.title}
                       </Link>
                     ) : (

@@ -41,7 +41,8 @@ export function calendarImageError(
   file: Pick<File, 'size' | 'type'> | null,
 ): string | null {
   if (!file) return null;
-  if (!file.type.startsWith('image/')) return 'فایل انتخاب‌شده باید تصویر باشد.';
+  if (!file.type.startsWith('image/'))
+    return 'فایل انتخاب‌شده باید تصویر باشد.';
   if (file.size > 5 * 1024 * 1024)
     return 'حجم تصویر باید حداکثر ۵ مگابایت باشد.';
   return null;

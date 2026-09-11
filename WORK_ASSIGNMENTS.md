@@ -16,66 +16,53 @@
 
 - Distinct feedback card background only. Reserve WorkbenchFeedback root class; violet light/dark gradient and border, existing form controls unchanged. No behavior/API changes.
 
-
 ## WORKBENCH-030 — PC-B — UI_VERIFIED
 
 - Limit Home HR notices to latest5, retaining complete received-list view-all dialog. Reserve Workbench HR notification component only and docs. No API/HR domain/shared changes.
-
 
 ## WORKBENCH-029 — PC-B — UI_VERIFIED
 
 - Four requested reservation messenger templates; reserve message-templates and own docs only. No Reservations domain/API/schema changes. Reuse editable composer/local attachments; no upload/send claim.
 
-
 ## WORKBENCH-028 — PC-B — UI_VERIFIED
 
 - Finance messenger eight requested editable templates; reserve message-templates and own docs. Reuse local draft attachments; no Finance domain/API/schema changes, posting or actual payment.
-
 
 ## WORKBENCH-027 — PC-B — UI_VERIFIED
 
 - User removes Tasks/Automation section. Reserve shared navigation/messages/icon mappings/change-notification label and tasks route plus existing nav test. Remove entry globally and redirect legacy route to Workbench, no data/API/schema deletion. Shared runtime coordinated.
 
-
 ## WORKBENCH-026 — PC-B — UI_VERIFIED
 
 - Sales messenger six user-requested editable templates. Reserve message-templates only and own docs; reuse existing draft attachments. No Sales domain/API/schema changes or real customer data.
-
 
 ## WORKBENCH-025 — PC-B — UI_VERIFIED
 
 - HR messenger four editable templates: system/internet issues, salary/advance, leave, documents. Reuse existing text composer and unit-scoped local attachments. Reserve message-templates only plus docs; no HR domain/API/schema changes. Real upload/send remains unavailable.
 
-
 ## WORKBENCH-024 — PC-B — UI_VERIFIED
 
 - Explicit user asks shared header user menu only Workbench and Logout. Reserve user-menu.tsx and existing specification; remove other dropdown content only, preserve identity trigger and logout behavior. Coordinate shared runtime. No IAM/API/schema changes.
-
 
 ## WORKBENCH-023 — PC-B — UI_VERIFIED / DELIVERY_NOT_CONNECTED
 
 - Home feedback/survey form: subject/body, department, optional local attachments and anonymous preference. Reserve Workbench new component/integration only. No feedback delivery/storage service exists; explicit draft state, no fake anonymous submission, no schema/API/dependency changes. Persistence remains awaiting coordinated migration handoff.
 
-
 ## WORKBENCH-022 — PC-B — UI_READY / UPLOAD_NOT_CONNECTED
 
 - Visa document/payment receipt editable templates and local attachment selection in Workbench composer. No upload/send persistence claimed before Messaging contract/migration handoff. Reserve message templates/composer and local attachment helper/tests only. Preserve WORKBENCH-021 pending owner coordination.
-
 
 ## WORKBENCH-021 — PC-B — CONTRACT_PREPARATION / AWAITING_OWNER_HANDOFF
 
 - User requests CRM contacts, direct messages, forwarding and group creation. Branch codex/pc-b-workbench-messaging based on7bc84c0 (preserves unmerged Workbench delivery). Reserve own task proposal only until IAM/migration ownership coordinated. Proposed additive v1 producer IAM minimum staff directory, Messaging conversation/membership/message services; consumer Workbench messenger. No admin-user listing exposure, credential changes, direct cross-module table reads or API runtime takeover. Exact proposal: docs/tasks/WORKBENCH-021-MESSAGING.md.
 
-
 ## WORKBENCH-020 — PC-B — UI_VERIFIED
 
 - Reserve Workbench-only dropdown wrapper and six native select consumers; reuse shared Rubi Select without changing shared components/dependencies. Branch codex/pc-b-workbench-themed-selects, PC-B.
 
-
 ## WORKBENCH-019 — PC-B — UI_VERIFIED
 
 - Reserve Workbench message units/icons and Home feeds (latest10 plus view-all), own tests/docs on codex/pc-b-workbench-units-home-limits fromf25c052. No API/schema/shared files. Coordinate next Web build with B2B owner.
-
 
 ## WORKBENCH-018-CALENDAR — PC-B — UI_VERIFIED / SOURCE_NOT_CONNECTED
 
