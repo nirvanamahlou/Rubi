@@ -116,7 +116,7 @@ export function AgencyRatesPanel({
     });
   return (
     <section className="panel">
-      <header className="panel-head">
+      <header className="panel-head commercial-section-heading">
         <div>
           <h2 className="panel-title">{kindLabels[kind]}</h2>
           <p className="panel-note">
