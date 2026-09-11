@@ -1,5 +1,9 @@
 # Work Assignments
 
+## B2B-FINANCE-DOCUMENTS-EXPORT-001 — PC-B — IN_PROGRESS
+
+- Add document metadata/file entry to finance dossier and Excel export of filtered preview rows. Reserve finance preview, organization document panel, corporate profile and status docs on `codex/pc-b-b2b-finance-documents-export` from417831f. Prior locks released. Use Documents owner storage, not new financial transactions; PC-A Finance accounting remains separate. No schema/API/dependency change. Clarification requested about accounting transactions; proceed with explicitly labelled document intake and preview export. No merge.
+
 ## B2B-CREDIT-SECTION-FORMS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Add section-specific policy, guarantee and dated temporary-credit forms inside existing agreement workflow. Reserve Organizations editor/workflow/navigation/workspace and tests/status docs on `codex/pc-b-b2b-credit-section-forms` fromde48b4a. Prior locks released. Preserve complete revision terms and independent approval; Exposure remains read-only pending Finance adapter. No API/migration/dependency or Finance owner changes. Verify and refresh3100; no merge.

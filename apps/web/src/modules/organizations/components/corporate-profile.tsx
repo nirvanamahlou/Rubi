@@ -590,6 +590,7 @@ export function CorporateProfile({
             />
           ) : screen === 'finance' ? (
             <OrganizationFinancePreview
+              organization={organization}
               key={organization.id}
               organizationName={organization.name}
               tab={tab}

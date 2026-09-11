@@ -1,5 +1,8 @@
 'use client';
 import { useState } from 'react';
+import type { MasterDataRecord } from '@rubi/contracts';
+import { OrganizationDocumentsPanel } from './organization-documents-panel';
+import { downloadOrganizationXlsx } from '../model/organization-xlsx';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
@@ -28,9 +31,11 @@ const amount = (value: string | bigint) =>
 export function OrganizationFinancePreview({
   organizationName,
   tab,
+  organization,
 }: {
   organizationName: string;
   tab: string;
+  organization?: MasterDataRecord;
 }) {
   const current: FinancePreviewTab = Object.hasOwn(financePreviewRows, tab)
     ? (tab as FinancePreviewTab)
@@ -59,6 +64,49 @@ export function OrganizationFinancePreview({
         <span className="badge amber">داده آزمایشی</span>
       </header>
       <div className="panel-body space-y-4">
+        {organization ? (
+          <OrganizationDocumentsPanel
+            key={organization.id + current}
+            organization={organization}
+            folderLabel={`اسناد مالی ${titles[current].replace('های نمونه', '').replace('نمونه', '')}`}
+          />
+        ) : null}
+        <button
+          className="btn"
+          disabled={invalidRange || !shown.length}
+          onClick={() =>
+            downloadOrganizationXlsx(`finance-preview-${current}.xlsx`, [
+              [
+                'سازمان',
+                'نوع داده',
+                'بخش',
+                'شناسه',
+                'تاریخ',
+                'شرح',
+                'مبلغ',
+                'ارز',
+                'وضعیت',
+                'مرجع',
+                'یادداشت',
+              ],
+              ...shown.map((row) => [
+                organizationName,
+                'آزمایشی؛ فاقد ثبت حسابداری',
+                titles[current],
+                row.id,
+                row.date,
+                row.title,
+                row.amount,
+                row.currency,
+                row.status,
+                row.reference,
+                row.note,
+              ]),
+            ])
+          }
+        >
+          خروجی Excel ردیف‌های فیلترشده
+        </button>
         <p className="boundary-note" role="note">
           این ردیف‌ها سناریوی نمونه برای بررسی بخش مالی پرونده «
           {organizationName}» هستند؛ سوابق واقعی این آژانس، سند حسابداری یا
