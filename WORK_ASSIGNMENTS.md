@@ -1,8 +1,9 @@
 # Work Assignments
 
-## B2B-UNIFIED-USERS-001 — PC-B — IN_PROGRESS
+## B2B-UNIFIED-USERS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Remove the circled roles/scopes tabs from access navigation and display their values in the organization-user cards. Reserve corporate-profile.tsx, organization-users-panel.tsx and status docs on `codex/pc-b-b2b-unified-users` from1bb99f7. Prior locks released. Preserve users/history navigation, forms, permissions and all data. No migration/dependency/API changes. Verify Web checks and refresh owned3100 only; no merge.
+- Completed source f50d293: actual React browser verifies only users/history tabs and visible per-user role/allowed sections. Web lint/typecheck, 95 Organizations tests and production build pass. Web3100 PID3508/hr005-a1e5ed333149bb40 active; API4191 preserved. Temporary QA3196 stopped. Draft PR150, no merge. Release implementation reservations.
 
 ## B2B-ALL-AGENCIES-DEMO-001 — PC-B — DONE / LOCAL_DATA_ACTIVE
 
