@@ -50,6 +50,7 @@ import {
   type WorkbenchTab,
 } from './model';
 import { WorkbenchFiles } from './workbench-files';
+import { NoteEditor } from './note-editor';
 
 const tabIcons = [
   Home,
@@ -93,6 +94,7 @@ export function WorkbenchWorkspace() {
   const [unauthorized, setUnauthorized] = useState(false);
   const [pendingRead, setPendingRead] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
+  const [noteOpen, setNoteOpen] = useState(false);
   const generation = useRef(0);
   const invalidate = useCallback(() => {
     generation.current++;
@@ -118,15 +120,17 @@ export function WorkbenchWorkspace() {
     }
   }, []);
   useEffect(() => {
-    const timer = setTimeout(() => void load(), 0);
-    const refresh = () => void load();
+    const timer = noteOpen ? undefined : setTimeout(() => void load(), 0);
+    const refresh = () => {
+      if (!noteOpen) void load();
+    };
     window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
     return () => {
       clearTimeout(timer);
       invalidate();
       window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
     };
-  }, [load, invalidate]);
+  }, [load, invalidate, noteOpen]);
   function selectTab(value: string) {
     const query = new URLSearchParams(params.toString());
     query.set('tab', normalizeWorkbenchTab(value));
@@ -152,14 +156,23 @@ export function WorkbenchWorkspace() {
         title="میزکار من"
         description="کارهای روزانه، فایل‌ها و ارتباط شما با بخش‌های روبی."
         actions={
-          <Button
-            variant="outline"
-            disabled={loading}
-            onClick={() => void load()}
-          >
-            <RefreshCw className="size-4" aria-hidden="true" />
-            به‌روزرسانی
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              disabled={!home || loading}
+              onClick={() => setNoteOpen(true)}
+            >
+              <StickyNote className="size-4" aria-hidden="true" />
+              یادداشت جدید
+            </Button>
+            <Button
+              variant="outline"
+              disabled={loading}
+              onClick={() => void load()}
+            >
+              <RefreshCw className="size-4" aria-hidden="true" />
+              به‌روزرسانی
+            </Button>
+          </div>
         }
       />
       {loading ? (
@@ -326,21 +339,23 @@ export function WorkbenchWorkspace() {
                       {home.documents.status === 'ready' ? (
                         home.documents.data.data.length ? (
                           <ul className="space-y-3">
-                        {home.documents.data.data.slice(0, 5).map((file) => (
-                              <li key={file.id}>
-                                <Link
-                                  className="block rounded-lg p-2 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                                  href={`/documents?document=${encodeURIComponent(file.id)}`}
-                                >
-                                  <span className="font-medium text-sm">
-                                    {file.title}
-                                  </span>
-                                  <span className="block text-xs text-muted-foreground mt-1">
-                                    {file.archiveCode}
-                                  </span>
-                                </Link>
-                              </li>
-                            ))}
+                            {home.documents.data.data
+                              .slice(0, 5)
+                              .map((file) => (
+                                <li key={file.id}>
+                                  <Link
+                                    className="block rounded-lg p-2 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                                    href={`/documents?document=${encodeURIComponent(file.id)}`}
+                                  >
+                                    <span className="font-medium text-sm">
+                                      {file.title}
+                                    </span>
+                                    <span className="block text-xs text-muted-foreground mt-1">
+                                      {file.archiveCode}
+                                    </span>
+                                  </Link>
+                                </li>
+                              ))}
                           </ul>
                         ) : (
                           <p className="text-sm text-muted-foreground">
@@ -403,7 +418,20 @@ export function WorkbenchWorkspace() {
                 <Unavailable tab="stars" />
               </TabsContent>
               <TabsContent value="notes">
-                <Unavailable tab="notes" />
+                <Card className="p-5 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="font-bold">یادداشت‌های من</h2>
+                    <Button onClick={() => setNoteOpen(true)}>
+                      <StickyNote className="size-4" aria-hidden="true" />
+                      یادداشت جدید
+                    </Button>
+                  </div>
+                  <Alert
+                    tone="info"
+                    title="فرم یادداشت آماده است"
+                    description="برای نوشتن عنوان و متن، یادداشت جدید را باز کنید. ثبت و نگهداری یادداشت در حساب هنوز فعال نشده است."
+                  />
+                </Card>
               </TabsContent>
               <TabsContent value="activity">
                 <Card className="p-5">
@@ -482,6 +510,13 @@ export function WorkbenchWorkspace() {
           </>
         )
       )}
+      {home && (
+        <NoteEditor
+          key={home.user.id}
+          open={noteOpen}
+          onOpenChange={setNoteOpen}
+        />
+      )}
     </div>
   );
 }
@@ -542,15 +577,9 @@ function QuickLink({ href, label }: { href: string; label: string }) {
 function Unavailable({
   tab,
 }: {
-  tab: Extract<WorkbenchTab, 'notes' | 'stars' | 'messages'>;
+  tab: Extract<WorkbenchTab, 'stars' | 'messages'>;
 }) {
   const content = {
-    notes: {
-      title: 'یادداشت‌های خصوصی هنوز فعال نشده‌اند',
-      description:
-        'ثبت و نگهداری امن یادداشت شخصی در حساب شما هنوز فراهم نشده است.',
-      icon: StickyNote,
-    },
     stars: {
       title: 'ستاره‌دارها هنوز فعال نشده‌اند',
       description:

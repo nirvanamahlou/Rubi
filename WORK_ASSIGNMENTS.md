@@ -1,5 +1,10 @@
 # Work Assignments
 
+## WORKBENCH-007-NOTE-FORM — PC-B — IN_PROGRESS
+
+- Reserve native note editor and Workbench integration on codex/pc-b-workbench-note-form. User requests new-note creation and form. Fields: title and plain-text content; shared Rubi UI, keyboard-accessible modal, validation and explicit unsaved state. No pretend persistence, browser storage or overloaded owner tables. Persistence is pending migration-owner coordination; coordinator contacted before schema/API work. No other owner file changes.
+- Existing authenticated desktop/corporate application; retain current Next rendering and shared theme. Accessibility target AA, owner PC-B for this form. Targets (not measured claims): LCP2500ms, INP200ms, CLS0.1 at p75; incremental route budget80KB gzip, Lighthouse accessibility90/performance80. No new dependencies or framework decisions.
+
 ## WORKBENCH-006-HOME-LABEL — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
 
 - User requests renaming the personal workspace tab from «امروز من» to «خانه». Reserve only workbench/model.ts and own status entries on codex/pc-b-workbench-home-label. Keep the today tab identifier, routes and all services unchanged. Preserve native runtime and owner B2B KPI changes; coordinate owned Web3100 rebuild. No shared shell/API/schema/dependency change.
