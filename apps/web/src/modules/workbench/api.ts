@@ -53,7 +53,7 @@ export async function loadWorkbenchHome(
           deps.documents({
             personalView: 'OWNED',
             page: 1,
-            pageSize: 5,
+            pageSize: 10,
             sortBy: 'updatedAt',
             sortDirection: 'desc',
           }),

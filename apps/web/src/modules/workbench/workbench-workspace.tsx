@@ -208,7 +208,7 @@ export function WorkbenchWorkspace() {
                               company.context.selection,
                               company.entities,
                             )
-                          : 'شرکت فعال دریافت نشد'}
+                          : 'شرکتی انتخاب نشده است'}
                   </p>
                 </div>
               </div>
@@ -326,7 +326,7 @@ export function WorkbenchWorkspace() {
                       {home.documents.status === 'ready' ? (
                         home.documents.data.data.length ? (
                           <ul className="space-y-3">
-                            {home.documents.data.data.map((file) => (
+                        {home.documents.data.data.slice(0, 5).map((file) => (
                               <li key={file.id}>
                                 <Link
                                   className="block rounded-lg p-2 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"

@@ -29,7 +29,7 @@ function dependencies() {
       .mockResolvedValue({ data: [], meta: { unreadCount: 7, limit: 50 } }),
     documents: vi.fn().mockResolvedValue({
       data: [],
-      meta: { page: 1, pageSize: 5, total: 12, totalPages: 3 },
+      meta: { page: 1, pageSize: 10, total: 12, totalPages: 2 },
     }),
   };
 }
@@ -51,7 +51,7 @@ describe('native workbench owner services', () => {
     expect(deps.documents).toHaveBeenCalledWith({
       personalView: 'OWNED',
       page: 1,
-      pageSize: 5,
+      pageSize: 10,
       sortBy: 'updatedAt',
       sortDirection: 'desc',
     });
