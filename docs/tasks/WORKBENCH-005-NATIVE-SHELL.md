@@ -23,6 +23,15 @@ Preserve the full runtime based on B2B56d5d48 and apply owner-supplied c83d530 K
 
 ## Validation
 
-- Native service/model, Notifications/Documents and navigation tests: 54 passed.
-- Web typecheck passed. Full Web lint, production build and browser validation pending at source commit; final results recorded below after execution.
+- Final combined native service/model, Notifications/Documents, Organizations and navigation suite: 157 passed. The final Workbench fix was retested with all16native tests passing.
+- Full Web lint passed; changed Workbench/Organizations files passed follow-up scoped lint. Final production build and its TypeScript stage passed.
 - Tests verify unauthenticated/permission-denied access, owner partial failure, recipient unread counts, server personal scope, mutation failure without false refresh, internal notification links and date fallbacks.
+
+## Verified delivery
+
+- Running source `2d5d5e826b0eb5805edbe5fde5fea0e6ce59fcac`; manifest `hr005-f74450ea05fc1fa7`; owned Web3100/PID28628. API4190/PID15024 remains unchanged, health200. The launcher's apiHealthy=false with SkipApi was checked directly against the healthy API endpoint.
+- Old demo URL redirects to the native route; sidebar entry opens it from Organizations. Authenticated home displays the active company,5allowed branches,17server notifications and33owned documents. Existing data includes earlier test records; no new business data was created during QA.
+- Real personal files pagination to page2 passed; both light and dark shared themes inspected and prior light theme restored. Upload uses the existing owner dialog but no document was uploaded during QA. Notification mutation failure/success behavior is covered by unit tests, without changing the user's read state for testing.
+- Browser QA caught Documents DTO minimum pageSize10: summary request now uses10and renders five recent entries. The unavailable/error distinction remains intact.
+- Owner-supplied Organizations changes c83d530/c63ec00/8b6cd35 are included. Read-only /organizations QA showed current filter7, agencies7, corporate customers4, incomplete identity9. Owner notified; no edits to organization data.
+- Draft PR164: https://github.com/nirvanamahlou/Rubi/pull/164. No merge. Branch includes the prior unmerged combined B2B runtime history; prerequisite owner PRs must be coordinated before integration.
