@@ -32,11 +32,18 @@ import {
   serviceLabels,
 } from '../model/agreement-terms';
 import { AgreementTermsEditor } from './agreement-terms-editor';
+import { temporaryCreditIssue } from '../model/temporary-credit';
 
-function RevisionSummary({ revision }: { revision: B2bAgreementRevisionV1 }) {
+function RevisionSummary({
+  revision,
+  view = 'agreements',
+}: {
+  revision: B2bAgreementRevisionV1;
+  view?: 'agreements' | 'credit' | 'guarantees' | 'temporary';
+}) {
   return (
     <div className="agreement-summary">
-      <div className="summary-list">
+      <div className="summary-list" hidden={view !== 'agreements'}>
         {[
           ['عنوان', revision.title],
           ['نوع قرارداد', B2B_AGREEMENT_TYPES[revision.agreementType]],
@@ -82,7 +89,7 @@ function RevisionSummary({ revision }: { revision: B2bAgreementRevisionV1 }) {
           </div>
         ))}
       </div>
-      {revision.creditPolicies.length ? (
+      {view !== 'guarantees' && revision.creditPolicies.length ? (
         <>
           <h4>سقف‌های ارزی این نسخه</h4>
           <div className="agreement-table-wrap">
@@ -115,7 +122,8 @@ function RevisionSummary({ revision }: { revision: B2bAgreementRevisionV1 }) {
           </div>
         </>
       ) : null}
-      {revision.guarantees.length ? (
+      {(view === 'agreements' || view === 'guarantees') &&
+      revision.guarantees.length ? (
         <>
           <h4>تضمین‌های این نسخه</h4>
           {revision.guarantees.map((g, i) => (
@@ -163,7 +171,7 @@ export function AgreementWorkflowPanel({
 }: {
   organizationId: string;
   role: B2bCooperationRole;
-  view?: 'agreements' | 'credit' | 'guarantees';
+  view?: 'agreements' | 'credit' | 'guarantees' | 'temporary';
 }) {
   const [branches, setBranches] = useState<readonly BranchReference[]>([]);
   const [permissions, setPermissions] = useState<readonly IamPermissionCode[]>(
@@ -254,6 +262,12 @@ export function AgreementWorkflowPanel({
     permissions.includes('b2b.agreement.manage') &&
     permissions.includes('b2b.agreement.read') &&
     permissions.includes('b2b.credit.read');
+  const formTitle =
+    view === 'guarantees'
+      ? 'ثبت و ویرایش تضمین'
+      : view === 'temporary'
+        ? 'درخواست افزایش موقت اعتبار'
+        : 'ثبت و ویرایش سیاست اعتبار';
   function edit(record?: B2bAgreementCaseV1) {
     setDialogError('');
     setUncertain(false);
@@ -295,6 +309,16 @@ export function AgreementWorkflowPanel({
   }
   async function save() {
     if (!editor || busy || uploading) return;
+    if (view === 'temporary') {
+      const issue = temporaryCreditIssue(
+        editor.terms.creditPolicies,
+        editor.record?.revisions[0]?.creditPolicies ?? [],
+      );
+      if (issue) {
+        setDialogError(issue);
+        return;
+      }
+    }
     if (!editor.terms.paymentMethodId) {
       setDialogError('روش پرداخت را از اطلاعات پایه انتخاب کنید.');
       return;
@@ -389,11 +413,13 @@ export function AgreementWorkflowPanel({
       <div className="agreement-row-title">
         <div>
           <h3>
-            {view === 'credit'
-              ? 'سیاست‌های اعتبار'
-              : view === 'guarantees'
-                ? 'تضمین‌های قرارداد'
-                : 'قراردادهای همکاری'}
+            {view === 'temporary'
+              ? 'افزایش موقت اعتبار'
+              : view === 'credit'
+                ? 'سیاست‌های اعتبار'
+                : view === 'guarantees'
+                  ? 'تضمین‌های قرارداد'
+                  : 'قراردادهای همکاری'}
           </h3>
           <p className="panel-note">
             نسخه‌بندی، ویرایش پیش‌نویس و تأیید مستقل قرارداد و شرایط ارزی
@@ -426,7 +452,32 @@ export function AgreementWorkflowPanel({
           <RefreshCw size={16} />
           تازه‌سازی
         </button>
-        {canManage ? (
+        {canManage &&
+        view !== 'agreements' &&
+        permissions.includes('b2b.credit.manage') ? (
+          <label className="field">
+            <span>{formTitle}</span>
+            <select
+              className="input"
+              value=""
+              disabled={loading || !branchId}
+              onChange={(e) => {
+                const selected = records.find((r) => r.id === e.target.value);
+                if (selected) edit(selected);
+              }}
+            >
+              <option value="">انتخاب قرارداد مرتبط</option>
+              {records
+                .filter((r) => r.revisions[0]?.status !== 'PENDING')
+                .map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.title}
+                  </option>
+                ))}
+            </select>
+          </label>
+        ) : null}
+        {canManage && view === 'agreements' ? (
           <button
             className="btn primary"
             disabled={loading || !branchId}
@@ -509,7 +560,7 @@ export function AgreementWorkflowPanel({
                     <FileText size={16} />
                     جزئیات نسخه {latest.number}
                   </summary>
-                  <RevisionSummary revision={latest} />
+                  <RevisionSummary revision={latest} view={view} />
                 </details>
                 {active && active.id !== latest.id ? (
                   <p className="boundary-note">
@@ -528,9 +579,11 @@ export function AgreementWorkflowPanel({
               {manage && latest?.status !== 'PENDING' ? (
                 <button className="btn" onClick={() => edit(record)}>
                   <Pencil size={16} />
-                  {latest && latest.status !== 'DRAFT'
-                    ? 'ثبت اصلاحیه / نسخه جدید'
-                    : 'ویرایش پیش‌نویس'}
+                  {view !== 'agreements'
+                    ? formTitle
+                    : latest && latest.status !== 'DRAFT'
+                      ? 'ثبت اصلاحیه / نسخه جدید'
+                      : 'ویرایش پیش‌نویس'}
                 </button>
               ) : null}
               {manage && latest?.status === 'DRAFT' ? (
@@ -624,12 +677,17 @@ export function AgreementWorkflowPanel({
             onInteractOutside={(e) => e.preventDefault()}
           >
             <DialogTitle>
-              {editor.record ? 'ویرایش و نسخه‌بندی قرارداد' : 'قرارداد جدید'}
+              {view !== 'agreements'
+                ? formTitle
+                : editor.record
+                  ? 'ویرایش و نسخه‌بندی قرارداد'
+                  : 'قرارداد جدید'}
             </DialogTitle>
             <DialogDescription>
               قرارداد و سقف‌های ارزی پس از تأیید مستقل فعال می‌شوند.
             </DialogDescription>
             <AgreementTermsEditor
+              focus={view === 'agreements' ? 'all' : view}
               value={editor.terms}
               role={role}
               branchId={branchId}

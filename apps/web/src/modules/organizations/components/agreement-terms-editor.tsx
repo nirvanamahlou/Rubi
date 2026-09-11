@@ -29,6 +29,7 @@ export function AgreementTermsEditor({
   permissions,
   disabled = false,
   onUploadStateChange,
+  focus = 'all',
 }: {
   value: B2bAgreementTermsV1;
   onChange: (terms: B2bAgreementTermsV1) => void;
@@ -38,6 +39,7 @@ export function AgreementTermsEditor({
   permissions: readonly IamPermissionCode[];
   disabled?: boolean;
   onUploadStateChange?: (busy: boolean) => void;
+  focus?: 'all' | 'credit' | 'guarantees' | 'temporary';
 }) {
   const [uploading, setUploading] = useState(false);
   const uploadBusy = (busy: boolean) => {
@@ -256,391 +258,259 @@ export function AgreementTermsEditor({
           </button>
         </div>
       ) : null}
-      <section className="agreement-section">
-        <div className="agreement-section-title">
-          <FileText size={20} />
-          <div>
-            <h4>مشخصات و شرایط قرارداد</h4>
-            <p>دامنه خدمات، اعتبار زمانی و شیوه تسویه همکاری</p>
-          </div>
-          <span className="badge">پیش‌نویس</span>
-        </div>
-        <div className="form-grid">
-          {text('title', 'عنوان قرارداد *')}
-          {select(
-            'نوع قرارداد',
-            value.agreementType,
-            Object.entries(B2B_AGREEMENT_TYPES).filter(([key]) =>
-              role === 'AGENCY' ? key !== 'CORPORATE' : key !== 'AGENCY',
-            ) as [keyof typeof B2B_AGREEMENT_TYPES, string][],
-            (v) => set('agreementType', v),
-          )}
-          {date('شروع قرارداد *', value.startsAt, (v) => set('startsAt', v))}
-          {date('پایان قرارداد', value.endsAt, (v) => set('endsAt', v || null))}
-          <fieldset className="field full">
-            <legend>خدمات مشمول قرارداد *</legend>
-            <div className="agreement-options">
-              {Object.entries(serviceLabels).map(([code, label]) => (
-                <label className="check" key={code}>
-                  <input
-                    type="checkbox"
-                    checked={value.services.includes(
-                      code as keyof typeof serviceLabels,
-                    )}
-                    onChange={(e) =>
-                      set(
-                        'services',
-                        e.target.checked
-                          ? [
-                              ...value.services,
-                              code as keyof typeof serviceLabels,
-                            ]
-                          : value.services.filter((item) => item !== code),
-                      )
-                    }
-                  />
-                  {label}
-                </label>
-              ))}
+      <details open={focus === 'all'}>
+        <summary>
+          {focus === 'all'
+            ? 'مشخصات قرارداد'
+            : 'مشاهده یا تکمیل مشخصات قرارداد مرتبط'}
+        </summary>
+        <section className="agreement-section">
+          <div className="agreement-section-title">
+            <FileText size={20} />
+            <div>
+              <h4>مشخصات و شرایط قرارداد</h4>
+              <p>دامنه خدمات، اعتبار زمانی و شیوه تسویه همکاری</p>
             </div>
-          </fieldset>
-          <fieldset className="field full">
-            <legend>ارزهای قرارداد *</legend>
-            <div className="agreement-options">
-              {currencies.map((currency) => (
-                <label className="check" key={currency.id}>
-                  <input
-                    type="checkbox"
-                    checked={value.currencyCodes.includes(currency.code)}
-                    onChange={(e) =>
-                      set(
-                        'currencyCodes',
-                        e.target.checked
-                          ? [...value.currencyCodes, currency.code]
-                          : value.currencyCodes.filter(
-                              (code) => code !== currency.code,
-                            ),
-                      )
-                    }
-                  />
-                  {currency.name} <span dir="ltr">{currency.code}</span>
-                </label>
-              ))}
-            </div>
-            {!currencies.length ? (
-              <small>فهرست ارزهای فعال اطلاعات پایه در حال دریافت است.</small>
-            ) : null}
-            {value.currencyCodes
-              .filter((code) => !currencies.some((c) => c.code === code))
-              .map((code) => (
-                <label className="check" key={code}>
-                  <input
-                    type="checkbox"
-                    checked
-                    onChange={() =>
-                      set(
-                        'currencyCodes',
-                        value.currencyCodes.filter((c) => c !== code),
-                      )
-                    }
-                  />
-                  {code} — خارج از فهرست فعال
-                </label>
-              ))}
-          </fieldset>
-          {select(
-            'شرایط تسویه',
-            value.paymentMethod,
-            [
-              ['PREPAID', 'پیش‌پرداخت'],
-              ['CREDIT', 'اعتباری'],
-              ['MIXED', 'ترکیبی'],
-            ],
-            (v) => set('paymentMethod', v),
-          )}
-          <div className="field">
-            <label htmlFor="agreement-payment-method">
-              روش پرداخت از اطلاعات پایه *
-            </label>
-            <MasterDataReferenceSelector
-              closeOnSelect
-              id="agreement-payment-method"
-              label="روش پرداخت"
-              config={{ target: 'payment-methods', payload: 'id' }}
-              value={value.paymentMethodId ?? ''}
-              required
-              disabled={disabled || uploading}
-              onChange={(id) => set('paymentMethodId', id || null)}
-            />
+            <span className="badge">پیش‌نویس</span>
           </div>
-          {select(
-            'چرخه تسویه',
-            value.settlementCycle,
-            [
-              ['PER_ORDER', 'برای هر سفارش'],
-              ['WEEKLY', 'هفتگی'],
-              ['MONTHLY', 'ماهانه'],
-              ['CUSTOM', 'تعداد روز مشخص'],
-            ],
-            (v) =>
-              onChange({
-                ...value,
-                settlementCycle: v,
-                cutoffDay: v === 'MONTHLY' ? (value.cutoffDay ?? 1) : null,
-              }),
-          )}
-          <label className="field">
-            <span>مهلت تسویه (روز)</span>
-            <input
-              className="input"
-              type="number"
-              min={0}
-              max={365}
-              value={value.settlementDays}
-              onChange={(e) => set('settlementDays', Number(e.target.value))}
-            />
-          </label>
-          {value.settlementCycle === 'MONTHLY' ? (
+          <div className="form-grid">
+            {text('title', 'عنوان قرارداد *')}
+            {select(
+              'نوع قرارداد',
+              value.agreementType,
+              Object.entries(B2B_AGREEMENT_TYPES).filter(([key]) =>
+                role === 'AGENCY' ? key !== 'CORPORATE' : key !== 'AGENCY',
+              ) as [keyof typeof B2B_AGREEMENT_TYPES, string][],
+              (v) => set('agreementType', v),
+            )}
+            {date('شروع قرارداد *', value.startsAt, (v) => set('startsAt', v))}
+            {date('پایان قرارداد', value.endsAt, (v) =>
+              set('endsAt', v || null),
+            )}
+            <fieldset className="field full">
+              <legend>خدمات مشمول قرارداد *</legend>
+              <div className="agreement-options">
+                {Object.entries(serviceLabels).map(([code, label]) => (
+                  <label className="check" key={code}>
+                    <input
+                      type="checkbox"
+                      checked={value.services.includes(
+                        code as keyof typeof serviceLabels,
+                      )}
+                      onChange={(e) =>
+                        set(
+                          'services',
+                          e.target.checked
+                            ? [
+                                ...value.services,
+                                code as keyof typeof serviceLabels,
+                              ]
+                            : value.services.filter((item) => item !== code),
+                        )
+                      }
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset className="field full">
+              <legend>ارزهای قرارداد *</legend>
+              <div className="agreement-options">
+                {currencies.map((currency) => (
+                  <label className="check" key={currency.id}>
+                    <input
+                      type="checkbox"
+                      checked={value.currencyCodes.includes(currency.code)}
+                      onChange={(e) =>
+                        set(
+                          'currencyCodes',
+                          e.target.checked
+                            ? [...value.currencyCodes, currency.code]
+                            : value.currencyCodes.filter(
+                                (code) => code !== currency.code,
+                              ),
+                        )
+                      }
+                    />
+                    {currency.name} <span dir="ltr">{currency.code}</span>
+                  </label>
+                ))}
+              </div>
+              {!currencies.length ? (
+                <small>فهرست ارزهای فعال اطلاعات پایه در حال دریافت است.</small>
+              ) : null}
+              {value.currencyCodes
+                .filter((code) => !currencies.some((c) => c.code === code))
+                .map((code) => (
+                  <label className="check" key={code}>
+                    <input
+                      type="checkbox"
+                      checked
+                      onChange={() =>
+                        set(
+                          'currencyCodes',
+                          value.currencyCodes.filter((c) => c !== code),
+                        )
+                      }
+                    />
+                    {code} — خارج از فهرست فعال
+                  </label>
+                ))}
+            </fieldset>
+            {select(
+              'شرایط تسویه',
+              value.paymentMethod,
+              [
+                ['PREPAID', 'پیش‌پرداخت'],
+                ['CREDIT', 'اعتباری'],
+                ['MIXED', 'ترکیبی'],
+              ],
+              (v) => set('paymentMethod', v),
+            )}
+            <div className="field">
+              <label htmlFor="agreement-payment-method">
+                روش پرداخت از اطلاعات پایه *
+              </label>
+              <MasterDataReferenceSelector
+                closeOnSelect
+                id="agreement-payment-method"
+                label="روش پرداخت"
+                config={{ target: 'payment-methods', payload: 'id' }}
+                value={value.paymentMethodId ?? ''}
+                required
+                disabled={disabled || uploading}
+                onChange={(id) => set('paymentMethodId', id || null)}
+              />
+            </div>
+            {select(
+              'چرخه تسویه',
+              value.settlementCycle,
+              [
+                ['PER_ORDER', 'برای هر سفارش'],
+                ['WEEKLY', 'هفتگی'],
+                ['MONTHLY', 'ماهانه'],
+                ['CUSTOM', 'تعداد روز مشخص'],
+              ],
+              (v) =>
+                onChange({
+                  ...value,
+                  settlementCycle: v,
+                  cutoffDay: v === 'MONTHLY' ? (value.cutoffDay ?? 1) : null,
+                }),
+            )}
             <label className="field">
-              <span>روز بستن حساب ماهانه</span>
+              <span>مهلت تسویه (روز)</span>
+              <input
+                className="input"
+                type="number"
+                min={0}
+                max={365}
+                value={value.settlementDays}
+                onChange={(e) => set('settlementDays', Number(e.target.value))}
+              />
+            </label>
+            {value.settlementCycle === 'MONTHLY' ? (
+              <label className="field">
+                <span>روز بستن حساب ماهانه</span>
+                <input
+                  className="input"
+                  type="number"
+                  min={1}
+                  max={28}
+                  value={value.cutoffDay ?? 1}
+                  onChange={(e) => set('cutoffDay', Number(e.target.value))}
+                />
+              </label>
+            ) : null}
+            <label className="field">
+              <span>مهلت پاسخ‌گویی (ساعت)</span>
               <input
                 className="input"
                 type="number"
                 min={1}
-                max={28}
-                value={value.cutoffDay ?? 1}
-                onChange={(e) => set('cutoffDay', Number(e.target.value))}
-              />
-            </label>
-          ) : null}
-          <label className="field">
-            <span>مهلت پاسخ‌گویی (ساعت)</span>
-            <input
-              className="input"
-              type="number"
-              min={1}
-              max={720}
-              value={value.slaHours ?? ''}
-              onChange={(e) =>
-                set('slaHours', e.target.value ? Number(e.target.value) : null)
-              }
-            />
-          </label>
-          {text('cancellationTerms', 'شرایط لغو و جریمه', true)}
-          {text('refundTerms', 'شرایط استرداد', true)}
-          {document(
-            'سند قرارداد',
-            value.documentId,
-            (id) =>
-              onChange({ ...value, documentId: id, documentVersionId: null }),
-            true,
-          )}
-        </div>
-      </section>
-      <section className="agreement-section credit-section">
-        <div className="agreement-section-title">
-          <Wallet size={20} />
-          <div>
-            <h4>سیاست اعتبار به تفکیک ارز</h4>
-            <p>هر ارز سقف مستقل دارد؛ تبدیل ارز انجام نمی‌شود.</p>
-          </div>
-          <button
-            type="button"
-            className="btn"
-            disabled={
-              !value.currencyCodes.some(
-                (c) => !value.creditPolicies.some((p) => p.currencyCode === c),
-              )
-            }
-            onClick={() =>
-              set('creditPolicies', [
-                ...value.creditPolicies,
-                {
-                  currencyCode: value.currencyCodes.find(
-                    (c) =>
-                      !value.creditPolicies.some((p) => p.currencyCode === c),
-                  )!,
-                  creditLimit: '0',
-                  limitType: 'HARD',
-                  dueDays: 0,
-                  overdueAction: 'BLOCK',
-                  effectiveFrom: value.startsAt,
-                  expiresAt: value.endsAt,
-                },
-              ])
-            }
-          >
-            <Plus size={16} />
-            افزودن سقف ارزی
-          </button>
-        </div>
-        {!value.creditPolicies.length ? (
-          <p className="panel-note">
-            برای پرداخت اعتباری یا ترکیبی، حداقل یک سقف ارزی اضافه کنید.
-          </p>
-        ) : null}
-        {value.creditPolicies.map((policy, index) => (
-          <div className="agreement-subcard" key={index}>
-            <div className="agreement-row-title">
-              <b>سقف اعتبار {policy.currencyCode}</b>
-              <button
-                type="button"
-                className="btn danger"
-                aria-label={`حذف سقف ${policy.currencyCode}`}
-                onClick={() =>
+                max={720}
+                value={value.slaHours ?? ''}
+                onChange={(e) =>
                   set(
-                    'creditPolicies',
-                    value.creditPolicies.filter((_, i) => i !== index),
+                    'slaHours',
+                    e.target.value ? Number(e.target.value) : null,
                   )
                 }
-              >
-                <Trash2 size={16} />
-                حذف
-              </button>
-            </div>
-            <div className="form-grid">
-              {select('ارز اعتبار', policy.currencyCode, currencyChoices, (v) =>
-                set(
-                  'creditPolicies',
-                  value.creditPolicies.map((p, i) =>
-                    i === index ? { ...p, currencyCode: v } : p,
-                  ),
-                ),
-              )}
-              <label className="field">
-                <span>سقف اعتبار *</span>
-                <input
-                  className="input"
-                  dir="ltr"
-                  inputMode="decimal"
-                  value={policy.creditLimit}
-                  onChange={(e) =>
-                    set(
-                      'creditPolicies',
-                      value.creditPolicies.map((p, i) =>
-                        i === index ? { ...p, creditLimit: e.target.value } : p,
-                      ),
-                    )
-                  }
-                />
-              </label>
-              {select(
-                'رفتار در بدهی سررسیدشده',
-                policy.overdueAction,
-                [
-                  ['BLOCK', 'توقف اعتبار'],
-                  ['WARN', 'هشدار'],
-                ],
-                (v) =>
-                  set(
-                    'creditPolicies',
-                    value.creditPolicies.map((p, i) =>
-                      i === index ? { ...p, overdueAction: v } : p,
-                    ),
-                  ),
-              )}
-              <label className="field">
-                <span>مهلت پرداخت بدهی (روز)</span>
-                <input
-                  className="input"
-                  type="number"
-                  min={0}
-                  max={365}
-                  value={policy.dueDays}
-                  onChange={(e) =>
-                    set(
-                      'creditPolicies',
-                      value.creditPolicies.map((p, i) =>
-                        i === index
-                          ? { ...p, dueDays: Number(e.target.value) }
-                          : p,
-                      ),
-                    )
-                  }
-                />
-              </label>
-              {date(
-                `شروع سقف ${policy.currencyCode}`,
-                policy.effectiveFrom,
-                (v) =>
-                  set(
-                    'creditPolicies',
-                    value.creditPolicies.map((p, i) =>
-                      i === index ? { ...p, effectiveFrom: v } : p,
-                    ),
-                  ),
-              )}
-              {date(`پایان سقف ${policy.currencyCode}`, policy.expiresAt, (v) =>
-                set(
-                  'creditPolicies',
-                  value.creditPolicies.map((p, i) =>
-                    i === index ? { ...p, expiresAt: v || null } : p,
-                  ),
-                ),
-              )}
-            </div>
+              />
+            </label>
+            {text('cancellationTerms', 'شرایط لغو و جریمه', true)}
+            {text('refundTerms', 'شرایط استرداد', true)}
+            {document(
+              'سند قرارداد',
+              value.documentId,
+              (id) =>
+                onChange({ ...value, documentId: id, documentVersionId: null }),
+              true,
+            )}
           </div>
-        ))}
-      </section>
-      <section className="agreement-section guarantee-section">
-        <div className="agreement-section-title">
-          <ShieldCheck size={20} />
-          <div>
-            <h4>تضمین‌ها و اسناد پشتیبان</h4>
-            <p>مشخصات تضمین و نسخه سند آن همراه قرارداد ثبت می‌شود.</p>
+        </section>
+      </details>
+      {focus !== 'guarantees' && (
+        <section className="agreement-section credit-section">
+          <div className="agreement-section-title">
+            <Wallet size={20} />
+            <div>
+              <h4>
+                {focus === 'temporary'
+                  ? 'افزایش موقت سقف اعتبار'
+                  : 'سیاست اعتبار به تفکیک ارز'}
+              </h4>
+              <p>هر ارز سقف مستقل دارد؛ تبدیل ارز انجام نمی‌شود.</p>
+            </div>
+            <button
+              type="button"
+              className="btn"
+              disabled={
+                !value.currencyCodes.some(
+                  (c) =>
+                    !value.creditPolicies.some((p) => p.currencyCode === c),
+                )
+              }
+              onClick={() =>
+                set('creditPolicies', [
+                  ...value.creditPolicies,
+                  {
+                    currencyCode: value.currencyCodes.find(
+                      (c) =>
+                        !value.creditPolicies.some((p) => p.currencyCode === c),
+                    )!,
+                    creditLimit: '0',
+                    limitType: 'HARD',
+                    dueDays: 0,
+                    overdueAction: 'BLOCK',
+                    effectiveFrom: value.startsAt,
+                    expiresAt: value.endsAt,
+                  },
+                ])
+              }
+            >
+              <Plus size={16} />
+              افزودن سقف ارزی
+            </button>
           </div>
-          <button
-            type="button"
-            className="btn"
-            disabled={
-              !value.currencyCodes.length || value.guarantees.length >= 20
-            }
-            onClick={() =>
-              set('guarantees', [
-                ...value.guarantees,
-                {
-                  kind: 'BANK_GUARANTEE',
-                  reference: '',
-                  amount: '',
-                  currencyCode: value.currencyCodes[0]!,
-                  issuer: '',
-                  receivedAt: value.startsAt,
-                  expiresAt: value.endsAt,
-                  status: 'REQUIRED',
-                  documentId: null,
-                },
-              ])
-            }
-          >
-            <Plus size={16} />
-            افزودن تضمین
-          </button>
-        </div>
-        {!value.guarantees.length ? (
-          <p className="panel-note">
-            در صورت نیاز، ضمانت‌نامه بانکی، چک یا شرط سپرده را اضافه کنید.
-          </p>
-        ) : null}
-        {value.guarantees.map((guarantee, index) => {
-          const update = (patch: Partial<typeof guarantee>) =>
-            set(
-              'guarantees',
-              value.guarantees.map((g, i) =>
-                i === index ? { ...g, ...patch } : g,
-              ),
-            );
-          return (
+          {!value.creditPolicies.length ? (
+            <p className="panel-note">
+              برای پرداخت اعتباری یا ترکیبی، حداقل یک سقف ارزی اضافه کنید.
+            </p>
+          ) : null}
+          {value.creditPolicies.map((policy, index) => (
             <div className="agreement-subcard" key={index}>
               <div className="agreement-row-title">
-                <b>تضمین {new Intl.NumberFormat('fa-IR').format(index + 1)}</b>
+                <b>سقف اعتبار {policy.currencyCode}</b>
                 <button
                   type="button"
                   className="btn danger"
-                  aria-label={`حذف تضمین ${index + 1}`}
+                  aria-label={`حذف سقف ${policy.currencyCode}`}
                   onClick={() =>
                     set(
-                      'guarantees',
-                      value.guarantees.filter((_, i) => i !== index),
+                      'creditPolicies',
+                      value.creditPolicies.filter((_, i) => i !== index),
                     )
                   }
                 >
@@ -650,87 +520,255 @@ export function AgreementTermsEditor({
               </div>
               <div className="form-grid">
                 {select(
-                  'نوع تضمین',
-                  guarantee.kind,
-                  [
-                    ['BANK_GUARANTEE', 'ضمانت‌نامه بانکی'],
-                    ['CHEQUE', 'چک تضمین'],
-                    ['DEPOSIT_REQUIREMENT', 'شرط سپرده نقدی'],
-                    ['OTHER', 'سایر تضمین‌ها'],
-                  ],
+                  'ارز اعتبار',
+                  policy.currencyCode,
+                  currencyChoices,
                   (v) =>
-                    update({
-                      kind: v,
-                      ...(v === 'DEPOSIT_REQUIREMENT'
-                        ? { status: 'REQUIRED' }
-                        : {}),
-                    }),
+                    set(
+                      'creditPolicies',
+                      value.creditPolicies.map((p, i) =>
+                        i === index ? { ...p, currencyCode: v } : p,
+                      ),
+                    ),
                 )}
                 <label className="field">
-                  <span>شماره / شناسه تضمین *</span>
-                  <input
-                    className="input"
-                    maxLength={120}
-                    value={guarantee.reference}
-                    onChange={(e) => update({ reference: e.target.value })}
-                  />
-                </label>
-                <label className="field">
-                  <span>مبلغ تضمین *</span>
+                  <span>
+                    {focus === 'temporary'
+                      ? 'سقف موقت (مبلغ کل) *'
+                      : 'سقف اعتبار *'}
+                  </span>
                   <input
                     className="input"
                     dir="ltr"
                     inputMode="decimal"
-                    value={guarantee.amount}
-                    onChange={(e) => update({ amount: e.target.value })}
+                    value={policy.creditLimit}
+                    onChange={(e) =>
+                      set(
+                        'creditPolicies',
+                        value.creditPolicies.map((p, i) =>
+                          i === index
+                            ? { ...p, creditLimit: e.target.value }
+                            : p,
+                        ),
+                      )
+                    }
                   />
                 </label>
                 {select(
-                  'ارز تضمین',
-                  guarantee.currencyCode,
-                  currencyChoices,
-                  (v) => update({ currencyCode: v }),
+                  'رفتار در بدهی سررسیدشده',
+                  policy.overdueAction,
+                  [
+                    ['BLOCK', 'توقف اعتبار'],
+                    ['WARN', 'هشدار'],
+                  ],
+                  (v) =>
+                    set(
+                      'creditPolicies',
+                      value.creditPolicies.map((p, i) =>
+                        i === index ? { ...p, overdueAction: v } : p,
+                      ),
+                    ),
                 )}
                 <label className="field">
-                  <span>صادرکننده / متعهد *</span>
+                  <span>مهلت پرداخت بدهی (روز)</span>
                   <input
                     className="input"
-                    maxLength={160}
-                    value={guarantee.issuer}
-                    onChange={(e) => update({ issuer: e.target.value })}
+                    type="number"
+                    min={0}
+                    max={365}
+                    value={policy.dueDays}
+                    onChange={(e) =>
+                      set(
+                        'creditPolicies',
+                        value.creditPolicies.map((p, i) =>
+                          i === index
+                            ? { ...p, dueDays: Number(e.target.value) }
+                            : p,
+                        ),
+                      )
+                    }
                   />
                 </label>
-                {select(
-                  'وضعیت تضمین',
-                  guarantee.status,
-                  [
-                    ['REQUIRED', 'موردنیاز / در انتظار دریافت'],
-                    ...(guarantee.kind !== 'DEPOSIT_REQUIREMENT'
-                      ? [['RECEIVED', 'دریافت‌شده با سند'] as const]
-                      : []),
-                  ],
-                  (v) => update({ status: v }),
+                {date(
+                  `شروع سقف ${policy.currencyCode}`,
+                  policy.effectiveFrom,
+                  (v) =>
+                    set(
+                      'creditPolicies',
+                      value.creditPolicies.map((p, i) =>
+                        i === index ? { ...p, effectiveFrom: v } : p,
+                      ),
+                    ),
                 )}
-                {date(`تاریخ تضمین ${index + 1}`, guarantee.receivedAt, (v) =>
-                  update({ receivedAt: v }),
-                )}
-                {date(`انقضای تضمین ${index + 1}`, guarantee.expiresAt, (v) =>
-                  update({ expiresAt: v || null }),
-                )}
-                {document(
-                  `سند تضمین ${index + 1}`,
-                  guarantee.documentId,
-                  (id) => update({ documentId: id, documentVersionId: null }),
+                {date(
+                  `پایان سقف ${policy.currencyCode}`,
+                  policy.expiresAt,
+                  (v) =>
+                    set(
+                      'creditPolicies',
+                      value.creditPolicies.map((p, i) =>
+                        i === index ? { ...p, expiresAt: v || null } : p,
+                      ),
+                    ),
                 )}
               </div>
             </div>
-          );
-        })}
-        <p className="panel-note">
-          ثبت شرط سپرده، دریافت وجه ثبت نمی‌کند. دریافت و مانده سپرده در بخش
-          مالی مدیریت می‌شود.
-        </p>
-      </section>
+          ))}
+        </section>
+      )}
+      {(focus === 'all' || focus === 'guarantees') && (
+        <section className="agreement-section guarantee-section">
+          <div className="agreement-section-title">
+            <ShieldCheck size={20} />
+            <div>
+              <h4>تضمین‌ها و اسناد پشتیبان</h4>
+              <p>مشخصات تضمین و نسخه سند آن همراه قرارداد ثبت می‌شود.</p>
+            </div>
+            <button
+              type="button"
+              className="btn"
+              disabled={
+                !value.currencyCodes.length || value.guarantees.length >= 20
+              }
+              onClick={() =>
+                set('guarantees', [
+                  ...value.guarantees,
+                  {
+                    kind: 'BANK_GUARANTEE',
+                    reference: '',
+                    amount: '',
+                    currencyCode: value.currencyCodes[0]!,
+                    issuer: '',
+                    receivedAt: value.startsAt,
+                    expiresAt: value.endsAt,
+                    status: 'REQUIRED',
+                    documentId: null,
+                  },
+                ])
+              }
+            >
+              <Plus size={16} />
+              افزودن تضمین
+            </button>
+          </div>
+          {!value.guarantees.length ? (
+            <p className="panel-note">
+              در صورت نیاز، ضمانت‌نامه بانکی، چک یا شرط سپرده را اضافه کنید.
+            </p>
+          ) : null}
+          {value.guarantees.map((guarantee, index) => {
+            const update = (patch: Partial<typeof guarantee>) =>
+              set(
+                'guarantees',
+                value.guarantees.map((g, i) =>
+                  i === index ? { ...g, ...patch } : g,
+                ),
+              );
+            return (
+              <div className="agreement-subcard" key={index}>
+                <div className="agreement-row-title">
+                  <b>
+                    تضمین {new Intl.NumberFormat('fa-IR').format(index + 1)}
+                  </b>
+                  <button
+                    type="button"
+                    className="btn danger"
+                    aria-label={`حذف تضمین ${index + 1}`}
+                    onClick={() =>
+                      set(
+                        'guarantees',
+                        value.guarantees.filter((_, i) => i !== index),
+                      )
+                    }
+                  >
+                    <Trash2 size={16} />
+                    حذف
+                  </button>
+                </div>
+                <div className="form-grid">
+                  {select(
+                    'نوع تضمین',
+                    guarantee.kind,
+                    [
+                      ['BANK_GUARANTEE', 'ضمانت‌نامه بانکی'],
+                      ['CHEQUE', 'چک تضمین'],
+                      ['DEPOSIT_REQUIREMENT', 'شرط سپرده نقدی'],
+                      ['OTHER', 'سایر تضمین‌ها'],
+                    ],
+                    (v) =>
+                      update({
+                        kind: v,
+                        ...(v === 'DEPOSIT_REQUIREMENT'
+                          ? { status: 'REQUIRED' }
+                          : {}),
+                      }),
+                  )}
+                  <label className="field">
+                    <span>شماره / شناسه تضمین *</span>
+                    <input
+                      className="input"
+                      maxLength={120}
+                      value={guarantee.reference}
+                      onChange={(e) => update({ reference: e.target.value })}
+                    />
+                  </label>
+                  <label className="field">
+                    <span>مبلغ تضمین *</span>
+                    <input
+                      className="input"
+                      dir="ltr"
+                      inputMode="decimal"
+                      value={guarantee.amount}
+                      onChange={(e) => update({ amount: e.target.value })}
+                    />
+                  </label>
+                  {select(
+                    'ارز تضمین',
+                    guarantee.currencyCode,
+                    currencyChoices,
+                    (v) => update({ currencyCode: v }),
+                  )}
+                  <label className="field">
+                    <span>صادرکننده / متعهد *</span>
+                    <input
+                      className="input"
+                      maxLength={160}
+                      value={guarantee.issuer}
+                      onChange={(e) => update({ issuer: e.target.value })}
+                    />
+                  </label>
+                  {select(
+                    'وضعیت تضمین',
+                    guarantee.status,
+                    [
+                      ['REQUIRED', 'موردنیاز / در انتظار دریافت'],
+                      ...(guarantee.kind !== 'DEPOSIT_REQUIREMENT'
+                        ? [['RECEIVED', 'دریافت‌شده با سند'] as const]
+                        : []),
+                    ],
+                    (v) => update({ status: v }),
+                  )}
+                  {date(`تاریخ تضمین ${index + 1}`, guarantee.receivedAt, (v) =>
+                    update({ receivedAt: v }),
+                  )}
+                  {date(`انقضای تضمین ${index + 1}`, guarantee.expiresAt, (v) =>
+                    update({ expiresAt: v || null }),
+                  )}
+                  {document(
+                    `سند تضمین ${index + 1}`,
+                    guarantee.documentId,
+                    (id) => update({ documentId: id, documentVersionId: null }),
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <p className="panel-note">
+            ثبت شرط سپرده، دریافت وجه ثبت نمی‌کند. دریافت و مانده سپرده در بخش
+            مالی مدیریت می‌شود.
+          </p>
+        </section>
+      )}
       {!organizationId ? (
         <p className="boundary-note">
           پس از ثبت سازمان، مدارک را در پرونده بارگذاری و به پیش‌نویس متصل کنید.

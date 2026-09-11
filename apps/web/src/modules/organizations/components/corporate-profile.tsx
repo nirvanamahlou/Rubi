@@ -112,6 +112,7 @@ export type OperationalView =
   | 'overview'
   | 'address'
   | 'credit'
+  | 'temporary'
   | 'guarantees'
   | 'agreements'
   | 'rates'
@@ -279,7 +280,9 @@ export function CorporateProfile({
             : inCredit && creditTab === 'guarantees'
               ? 'guarantees'
               : inCredit && ['policy', 'temporary'].includes(creditTab)
-                ? 'credit'
+                ? creditTab === 'temporary'
+                  ? 'temporary'
+                  : 'credit'
                 : undefined;
   return (
     <div className="corporate-profile">

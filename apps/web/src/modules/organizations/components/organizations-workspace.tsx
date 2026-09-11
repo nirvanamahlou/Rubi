@@ -900,6 +900,7 @@ export function OrganizationsWorkspace() {
               />
             ) : view === 'agreements' ||
               view === 'credit' ||
+              view === 'temporary' ||
               view === 'guarantees' ? (
               <AgreementWorkflowPanel
                 key={selected.id + role + view}

@@ -1,5 +1,9 @@
 # Work Assignments
 
+## B2B-CREDIT-SECTION-FORMS-001 — PC-B — IN_PROGRESS
+
+- Add section-specific policy, guarantee and dated temporary-credit forms inside existing agreement workflow. Reserve Organizations editor/workflow/navigation/workspace and tests/status docs on `codex/pc-b-b2b-credit-section-forms` fromde48b4a. Prior locks released. Preserve complete revision terms and independent approval; Exposure remains read-only pending Finance adapter. No API/migration/dependency or Finance owner changes. Verify and refresh3100; no merge.
+
 ## B2B-CONTRACT-DOCUMENT-FORM-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Replace contract document picker with the expanded metadata/file form, preserving existing attachments and Documents storage. Reserve agreement-terms-editor.tsx, inline-document-upload.tsx and status docs on `codex/pc-b-b2b-contract-document-form` fromc5f66ca. Previous locks released. Guarantee selectors unchanged; no API/data/migration/dependency changes. Verify and refresh owned3100; no merge.
