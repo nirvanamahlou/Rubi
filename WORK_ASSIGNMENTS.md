@@ -17,6 +17,12 @@
   API پس از Merge همین Baseline انجام می‌شود. جزئیات در
   `docs/tasks/UNIFIED-LATEST-0912.md` ثبت شده است.
 
+## B2B-CONTRACT-FILTER-LAYOUT-001 — PC-B — READY_FOR_REVIEW
+
+Reserve corporate-design.css agreement filter layout on codex/pc-b-b2b-contract-filter-layout from2e43e0e. Resolve flex overriding the shared filter grid; maintain date/branch filters and compact aligned actions. No data/API/dependency changes.
+
+Sourcecc3027d+d1160ed: explicit grid specificity and6/3/1 responsive columns;113 tests/typecheck pass. Combined buildfe0ae53 preserves12c7c41. Release source reservation.
+
 ## B2B-REMOVE-SUBTITLE-001 — PC-B — READY_FOR_REVIEW
 
 Reserve Organizations workspace heading copy on codex/pc-b-b2b-remove-subtitle from282227a. Remove requested directory subtitle only; no data/API/dependency changes.
