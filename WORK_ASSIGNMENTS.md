@@ -1,5 +1,9 @@
 # Work Assignments
 
+## B2B-NAMED-BRANCHES-001 — PC-B — IN_PROGRESS
+
+- User explicitly repeats that the four company names must be branches and requests alignment of the contract branch selector. Reserve a local branch-reference provisioning script, agreement header CSS/component, and status docs on `codex/pc-b-b2b-named-branches` from0146c4f. No active IAM implementation lock found; consume public IAM access updates, preserve roles/other users and existing HQ records. Back up before additive reference writes. New branches are distinct from LegalEntity records; no reassignment of existing business rows. No migration/dependency change or merge.
+
 ## B2B-FINANCE-DOCUMENTS-EXPORT-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Add document metadata/file entry to finance dossier and Excel export of filtered preview rows. Reserve finance preview, organization document panel, corporate profile and status docs on `codex/pc-b-b2b-finance-documents-export` from417831f. Prior locks released. Use Documents owner storage, not new financial transactions; PC-A Finance accounting remains separate. No schema/API/dependency change. Clarification requested about accounting transactions; proceed with explicitly labelled document intake and preview export. No merge.

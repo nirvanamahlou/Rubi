@@ -410,7 +410,7 @@ export function AgreementWorkflowPanel({
   }
   return (
     <div className="agreement-workflow">
-      <div className="agreement-row-title">
+      <div className="agreement-row-title agreement-toolbar">
         <div>
           <h3>
             {view === 'temporary'
