@@ -1,8 +1,10 @@
 # Work Assignments
 
-## WORKBENCH-009-MESSAGE-EMOJI — PC-B — IN_PROGRESS
+## WORKBENCH-009-MESSAGE-EMOJI — PC-B — UI_READY / LOCAL_RUNTIME_3100
 
 - User requests emoji insertion in messenger. Reserve only Workbench message composer, emoji model/tests and workspace integration. Shared theme/UI, accessible named emoji buttons, search, insertion at caret/replacing selection. Local text is explicitly unsent; no message creation, transmission, fake success, browser storage, dependency or schema/API change. Preserve combined runtime; restart only at B2B owner checkpoint.
+
+- Completed:28tests, lint, typecheck/build and authenticated browser search/selection replacement passed. Source a102dbf, manifest hr005-0b702d158c6d4660, WebPID24240; API4190unchanged/health200. B2B owner checkpoint/resume confirmed; owner80c1169 included. PR169draft, no merge. UI reservation released; message sending remains unavailable.
 
 ## WORKBENCH-008-DOCUMENT-FAVORITES — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
 
@@ -1683,3 +1685,4 @@ Validation: 87 scoped tests, Web lint, TypeScript and production build (40 route
 ## PUBLISH-DARK-HR-0909 — PC-A — READY_FOR_REVIEW
 
 User explicitly authorized merging the latest Finance labels, dark theme and HR/navigation corrections into develop. Integrate current develop 679e516, retaining PC-B HR/agencies and header date; resolve shared shell conflict with both responsive header and neutral dark border. Synchronize three ticket validation strings in API with the mirrored Web proposal to satisfy the existing parity test. No local database migration or runtime switch. Final combined CI gates must pass before merge.
+

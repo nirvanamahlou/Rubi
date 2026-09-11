@@ -4,6 +4,8 @@
 
 انتخاب‌گر ۲۴ ایموجی با جست‌وجوی فارسی و درج در محل نشانگر/جایگزینی متن انتخاب‌شده به فرم پیام اضافه شد. از تم و اجزای مشترک روبی استفاده می‌کند. ارسال و ذخیره پیام هنوز غیرفعال است و این محدودیت در فرم نمایش داده می‌شود. ۲۸ تست، lint و typecheck موفق؛ جزئیات در [WORKBENCH-009](tasks/WORKBENCH-009-MESSAGE-EMOJI.md).
 
+نسخهa102dbf روی۳۱۰۰/PID24240 فعال شد؛ build و بررسی مرورگر جست‌وجو و جایگزینی متن با ایموجی موفق بود. API بدون تغییر؛ PR169 پیش‌نویس و ارسال پیام همچنان غیرفعال است.
+
 ## WORKBENCH-008 — فایل و ستاره مشترک با اسناد
 
 فایل‌های میزکار از همان API بارگذاری و آرشیو «اسناد و فایل‌ها» استفاده می‌کنند؛ مسیر مستقلی برای ثبت فایل ساخته نشده است. تب ستاره‌دارها اکنون فهرست فعلی علاقه‌مندی‌های اسناد همان حساب/مرورگر را می‌خواند و تنها اسناد مجازِ بازگشتی از API اصلی را نمایش می‌دهد. ستاره‌های نسخه فعلی اسناد محلی هستند و همگام‌سازی بین دستگاه‌ها همچنان فراهم نیست. هیچ ذخیره‌سازی جدیدی در میزکار اضافه نشد. جزئیات در [WORKBENCH-008](tasks/WORKBENCH-008-DOCUMENT-FAVORITES.md).
@@ -1752,4 +1754,5 @@ Final validation: production build (40 routes) passed and local Web 3100 refresh
 
 ## PUBLISH-DARK-HR-0909 — PC-A — READY_FOR_REVIEW
 User explicitly authorized merge to develop. PR #120 now contains the full stack from #117/#119/#120: Finance purchase grouping, بلیط spelling, neutral dark shell and Reservations, dark HR legacy surfaces and persistent collapsed navigation. Integrated develop 679e516 while preserving PC-B connected HR/agencies and responsive Tehran-date header. Resolved the header conflict by retaining both responsive grid and dark border. Updated three mirrored API ticket validation strings to match Web; existing parity assertion retained. 23 focused integration tests passed. Final combined GitHub quality, tests, build and PostgreSQL gates must all pass before merge. No local database migration or API/Web restart during this publication task. Other computers must pull develop using the existing workflow and apply the already-merged HR migrations through their normal release procedure. Scoped integration reservation ends on successful PR #120 merge; PRs #117 and #119 are superseded by the complete stack.
+
 
