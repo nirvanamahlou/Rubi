@@ -51,6 +51,7 @@ import {
 } from './model';
 import { WorkbenchFiles } from './workbench-files';
 import { NoteEditor } from './note-editor';
+import { WorkbenchFavorites } from './workbench-favorites';
 
 const tabIcons = [
   Home,
@@ -415,7 +416,7 @@ export function WorkbenchWorkspace() {
                 <Unavailable tab="messages" />
               </TabsContent>
               <TabsContent value="stars">
-                <Unavailable tab="stars" />
+                <WorkbenchFavorites key={home.user.id} user={home.user} />
               </TabsContent>
               <TabsContent value="notes">
                 <Card className="p-5 space-y-4">
@@ -577,15 +578,9 @@ function QuickLink({ href, label }: { href: string; label: string }) {
 function Unavailable({
   tab,
 }: {
-  tab: Extract<WorkbenchTab, 'stars' | 'messages'>;
+  tab: Extract<WorkbenchTab, 'messages'>;
 }) {
   const content = {
-    stars: {
-      title: 'ستاره‌دارها هنوز فعال نشده‌اند',
-      description:
-        'ذخیره میان‌برهای شخصی در حساب شما هنوز فراهم نشده است. فعلاً از دسترسی سریع صفحه امروز استفاده کنید.',
-      icon: Star,
-    },
     messages: {
       title: 'گفت‌وگوی داخلی هنوز فعال نشده است',
       description:

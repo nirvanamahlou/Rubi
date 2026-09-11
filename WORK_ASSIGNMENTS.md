@@ -1,5 +1,10 @@
 # Work Assignments
 
+## WORKBENCH-008-DOCUMENT-FAVORITES — PC-B — IN_PROGRESS
+
+- User explicitly requests canonical Documents upload and displaying Documents stars in Workbench. Reserve workbench favorites consumer, files presentation, Documents favorite-reader helper and additive change event in documents-workspace.tsx, plus tests/docs. Existing Documents upload is already used; no duplicate file or metadata persistence.
+- Consume the already-existing account-keyed Documents browser favorites, with an explicit same-browser limitation; do not introduce Workbench/browser writes or claim cross-device persistence. Revalidate metadata through authorized server list across all pages, exclude revoked/deleted documents, clear stale data on reload/failure. No schema/migration/API/dependency changes. UI runtime coordinated with B2B owner; preserve note form/home/KPI/wizard fixes.
+
 ## WORKBENCH-007-NOTE-FORM — PC-B — UI_READY / PERSISTENCE_BLOCKED_BY_MIGRATION_LOCK
 
 - Reserve native note editor and Workbench integration on codex/pc-b-workbench-note-form. User requests new-note creation and form. Fields: title and plain-text content; shared Rubi UI, keyboard-accessible modal, validation and explicit unsaved state. No pretend persistence, browser storage or overloaded owner tables. Persistence is pending migration-owner coordination; coordinator contacted before schema/API work. No other owner file changes.

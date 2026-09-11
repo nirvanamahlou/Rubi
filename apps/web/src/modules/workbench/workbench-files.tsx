@@ -143,15 +143,21 @@ export function WorkbenchFiles({
         <div>
           <h2 className="font-bold text-lg">فایل‌های من</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            اسناد شخصی شما در شعب مجاز؛ مشاهده و دریافت با دسترسی پرونده اصلی.
+            فایل‌های این بخش در آرشیو اصلی «اسناد و فایل‌ها» ثبت می‌شوند و از
+            همان پرونده قابل مشاهده و دریافت هستند.
           </p>
         </div>
-        {user.permissions.includes('documents.upload') && (
-          <Button disabled={uploadBusy} onClick={() => void openUpload()}>
-            <Upload className="size-4" aria-hidden="true" />
-            بارگذاری سند
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href="/documents">اسناد و فایل‌ها</Link>
           </Button>
-        )}
+          {user.permissions.includes('documents.upload') && (
+            <Button disabled={uploadBusy} onClick={() => void openUpload()}>
+              <Upload className="size-4" aria-hidden="true" />
+              بارگذاری سند
+            </Button>
+          )}
+        </div>
       </div>
       {feedback && <Alert title={feedback} />}
       {uploadError && !uploadOpen && (
