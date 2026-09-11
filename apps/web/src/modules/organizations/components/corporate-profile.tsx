@@ -386,13 +386,6 @@ export function CorporateProfile({
       {screen === 'home' ? (
         <>
           {overview}
-          <div className="boundary-note">
-            <Info size={20} />
-            <span>
-              فایل‌های پرونده به اسناد متصل‌اند. مانده مالی و سفارش‌ها هنوز به
-              سرویس عملیاتی متصل نیستند؛ جدول‌های مالی آزمایشی‌اند.
-            </span>
-          </div>
           <section className="kpis">
             <CorporateMetric
               label="اعتبار قابل استفاده"
