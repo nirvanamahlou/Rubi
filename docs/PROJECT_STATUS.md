@@ -2093,3 +2093,6 @@ Runtimeeb22c43/hr005-3e8178627325af68/PID8872:46-route production build passed; 
 Sourcea64ea2f replaces edit-access text with pencil icon, accessible name and tooltip. Scoped lint/typecheck passed; no API/data changes. Runtime build preserving37b72b8 underway.
 
 Runtime610170e/hr005-e828cafc8da400a3/PID16592 preserves37b72b8.46-route production build passed. Current QA agency has no users, so no live row click verified; editor handler/permission unchanged. API untouched. PR200.
+
+## 2026-09-12 — Agency directory HR footer (PC-B)
+Source d73d6bb suppresses the supplementary HR requests panel on the Organizations directory using the existing public visibility hook. Existing finance suppression preserved. Lint and Web typecheck passed; runtime verification pending.

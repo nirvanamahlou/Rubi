@@ -2152,3 +2152,8 @@ Reserve organization-users-panel.tsx only: replace visible edit-access label wit
 B2B-ACCESS-EDIT-ICON-001: SOURCE_COMPLETEa64ea2f. Compact pencil button retains accessible user-specific label, title, permissions and editor behavior. Scoped lint/typecheck passed. Locks released.
 
 B2B-ACCESS-EDIT-ICON-001: READY_FOR_REVIEW.46-route build passed, active Web3100PID16592/source610170e. No test data or grants added; current QA agency user list empty. PR200; locks released.
+
+## B2B-DIRECTORY-HIDE-HR-001 — PC-B — IN_PROGRESS
+Reserve organizations-workspace.tsx: suppress supplementary HR requests footer only while directory is shown; existing finance suppression retained. Public hook already exists. No API/data/shared-file changes.
+
+B2B-DIRECTORY-HIDE-HR-001: SOURCE_COMPLETEd73d6bb. Scoped lint/typecheck passed. No behavior/data/API change. Source locks released; runtime inclusion coordinated.
