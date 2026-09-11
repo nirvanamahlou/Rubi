@@ -1,6 +1,6 @@
 # Work Assignments
 
-## WORKBENCH-027 — PC-B — IN_PROGRESS
+## WORKBENCH-027 — PC-B — UI_VERIFIED
 
 - User removes Tasks/Automation section. Reserve shared navigation/messages/icon mappings/change-notification label and tasks route plus existing nav test. Remove entry globally and redirect legacy route to Workbench, no data/API/schema deletion. Shared runtime coordinated.
 
