@@ -937,12 +937,6 @@ export function OrganizationsWorkspace() {
             <OrganizationLogo
               organization={selected}
               permissions={permissions}
-              onSaved={(record) => {
-                setSelected((current) =>
-                  current?.id === record.id ? record : current,
-                );
-                void load();
-              }}
             />
           }
           onClose={() => {
