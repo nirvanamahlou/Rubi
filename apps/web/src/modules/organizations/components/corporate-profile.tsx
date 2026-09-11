@@ -28,6 +28,10 @@ import {
 import { cooperationLabel } from '../model/presentation';
 import { Button } from '@/components/ui/button';
 import { OrganizationFinancePreview } from './organization-finance-preview';
+import {
+  pushDossierHistory,
+  readDossierHistory,
+} from '../model/dossier-history';
 import { OrganizationActivityPanel } from './organization-activity-panel';
 import {
   usePageBreadcrumbs,
@@ -206,6 +210,21 @@ export function CorporateProfile({
   const [screen, setScreen] = useState('home');
   const [tab, setTab] = useState('profile');
   const [creditTab, setCreditTab] = useState('policy');
+  useEffect(() => {
+    const restore = () => {
+      const entry = readDossierHistory(window.history.state);
+      if (entry?.organizationId !== organization.id) return;
+      setScreen(entry.screen);
+      setTab(entry.tab);
+      setCreditTab(entry.creditTab);
+    };
+    const timer = window.setTimeout(restore, 0);
+    window.addEventListener('popstate', restore);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('popstate', restore);
+    };
+  }, [organization.id]);
   const inCredit = screen === 'contracts' && tab === 'credit';
   const roles = String(organization.attributes.roleCodes ?? '').split(',');
   const entityLabel =
@@ -228,14 +247,24 @@ export function CorporateProfile({
   useEffect(() => {
     if (screen === 'organization' && tab !== 'profile') focusSection(tab);
   }, [screen, tab, focusSection]);
-  const go = useCallback((id: string, requestedTab?: string) => {
-    setScreen(id);
-    setTab(
-      requestedTab ??
+  const go = useCallback(
+    (id: string, requestedTab?: string) => {
+      const nextTab =
+        requestedTab ??
         sections.find((section) => section.id === id)?.tabs[0][0] ??
-        'profile',
-    );
-  }, []);
+        'profile';
+      pushDossierHistory({
+        organizationId: organization.id,
+        screen: id,
+        tab: nextTab,
+        creditTab: 'policy',
+      });
+      setScreen(id);
+      setTab(nextTab);
+      setCreditTab('policy');
+    },
+    [organization.id],
+  );
   const title = current?.title ?? `نمای ۳۶۰ درجه ${entityLabel}`;
   const breadcrumbs = useMemo<readonly PageBreadcrumb[]>(
     () => [
@@ -297,8 +326,14 @@ export function CorporateProfile({
           </p>
         </div>
         <div className="actions">
-          <button className="btn" onClick={onClose}>
-            بازگشت به فهرست <ArrowLeft size={18} />
+          <button
+            className="btn"
+            onClick={screen === 'home' ? onClose : () => go('home')}
+          >
+            {screen === 'home'
+              ? 'بازگشت به فهرست آژانس‌ها و مشتریان سازمانی'
+              : `بازگشت به پرونده ${organization.name}`}
+            <ArrowLeft size={18} />
           </button>
         </div>
       </div>
@@ -354,8 +389,8 @@ export function CorporateProfile({
           <div className="boundary-note">
             <Info size={20} />
             <span>
-              فایل‌های پرونده به اسناد متصل‌اند. مانده مالی و سفارش‌ها هنوز
-              به سرویس عملیاتی متصل نیستند؛ جدول‌های مالی آزمایشی‌اند.
+              فایل‌های پرونده به اسناد متصل‌اند. مانده مالی و سفارش‌ها هنوز به
+              سرویس عملیاتی متصل نیستند؛ جدول‌های مالی آزمایشی‌اند.
             </span>
           </div>
           <section className="kpis">
@@ -458,7 +493,7 @@ export function CorporateProfile({
                   aria-pressed={tab === id}
                   key={id}
                   onClick={() => {
-                    setTab(id);
+                    go(screen, id);
                     if (screen === 'organization') focusSection(id);
                   }}
                 >
@@ -480,7 +515,15 @@ export function CorporateProfile({
                   key={id}
                   className={`tab ${creditTab === id ? 'active' : ''}`}
                   aria-pressed={creditTab === id}
-                  onClick={() => setCreditTab(id)}
+                  onClick={() => {
+                    pushDossierHistory({
+                      organizationId: organization.id,
+                      screen,
+                      tab,
+                      creditTab: id,
+                    });
+                    setCreditTab(id);
+                  }}
                 >
                   {label}
                 </button>
