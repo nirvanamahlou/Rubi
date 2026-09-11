@@ -1,5 +1,9 @@
 # Work Assignments
 
+## B2B-PROFILE-GRID-001 — PC-B — READY_FOR_REVIEW / RUNTIME_3100
+
+Reserve corporate-profile.tsx and corporate-design.css for equal-height dossier cards and responsive spacing. Branch codex/pc-b-b2b-profile-grid from bef45ad. No API, data, migration or dependency changes. Coordinate Web3100 with active runtime owner.
+
 ## B2B-FORM-SAVE-AUDIT-001 — PC-B — READY_FOR_REVIEW / USER_HANDOFF
 
 - User authorizes authenticated UI entry tests of all agency forms. Isolated QA organization ORG_Q9WGXUJ2F2AN, clearly labelled test records only. Reserve Organizations wizard/contact save fixes, organization document expiry serialization, focused tests and audit notes on codex/pc-b-b2b-form-save-audit from8fea8f1. Preserve native runtime; coordinate restarts. No security changes, actual approvals or financial postings.
