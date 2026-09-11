@@ -60,6 +60,10 @@ import { OrganizationSignatoriesPanel } from './organization-signatories-panel';
 import { OrganizationUsersPanel } from './organization-users-panel';
 import { AgencyDossierSummary } from './agency-dossier-summary';
 import { loadCommercialSummary } from '../model/commercial-summary';
+import {
+  pushDossierHistory,
+  readDossierHistory,
+} from '../model/dossier-history';
 import { AgencyRatesPanel } from './agency-rates-panel';
 import { cooperationLabel } from '../model/presentation';
 import {
@@ -106,6 +110,9 @@ export function OrganizationsWorkspace() {
   const [state, setState] = useState<RequestState>('loading');
   const [selected, setSelected] = useState<MasterDataRecord>();
   const [profileOpen, setProfileOpen] = useState(false);
+  const openedOrganization = useRef<string | null>(null);
+  const historyRecords = useRef(new Map<string, MasterDataRecord>());
+  const historyRequest = useRef(0);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [excelOpen, setExcelOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -237,36 +244,93 @@ export function OrganizationsWorkspace() {
     };
   }, [records, commercialBranch, role, permissions, state, profileOpen]);
 
-  async function openProfile(
-    record: MasterDataRecord,
-    requestedContactPage = 1,
-  ) {
-    const current = ++contactRequestId.current;
-    setSelected(record);
-    setProfileOpen(true);
-    setContacts([]);
-    setContactsError(undefined);
-    setContactPage(requestedContactPage);
-    setContactTotal(0);
-    setContactsLoading(true);
-    try {
-      const response = await agencyClient.contacts(
-        record.id,
-        requestedContactPage,
-      );
-      if (current !== contactRequestId.current) return;
-      setContacts(response.data);
-      setContactTotal(response.meta.total);
-    } catch (error) {
-      if (current !== contactRequestId.current) return;
+  const openProfile = useCallback(
+    async (
+      record: MasterDataRecord,
+      requestedContactPage = 1,
+      fromHistory = false,
+    ) => {
+      if (!fromHistory && openedOrganization.current !== record.id) {
+        ++historyRequest.current;
+        pushDossierHistory({
+          organizationId: record.id,
+          screen: 'home',
+          tab: 'profile',
+          creditTab: 'policy',
+        });
+      }
+      openedOrganization.current = record.id;
+      historyRecords.current.set(record.id, record);
+      const current = ++contactRequestId.current;
+      setSelected(record);
+      setProfileOpen(true);
       setContacts([]);
-      setContactsError(
-        error instanceof Error ? error.message : 'دریافت مخاطبان ناموفق بود.',
-      );
-    } finally {
-      if (current === contactRequestId.current) setContactsLoading(false);
-    }
-  }
+      setContactsError(undefined);
+      setContactPage(requestedContactPage);
+      setContactTotal(0);
+      setContactsLoading(true);
+      try {
+        const response = await agencyClient.contacts(
+          record.id,
+          requestedContactPage,
+        );
+        if (current !== contactRequestId.current) return;
+        setContacts(response.data);
+        setContactTotal(response.meta.total);
+      } catch (error) {
+        if (current !== contactRequestId.current) return;
+        setContacts([]);
+        setContactsError(
+          error instanceof Error ? error.message : 'دریافت مخاطبان ناموفق بود.',
+        );
+      } finally {
+        if (current === contactRequestId.current) setContactsLoading(false);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    let active = true;
+    const restore = () => {
+      const entry = readDossierHistory(window.history.state);
+      const request = ++historyRequest.current;
+      if (!entry) {
+        openedOrganization.current = null;
+        ++contactRequestId.current;
+        setProfileOpen(false);
+        setSelected(undefined);
+        setContactForm(undefined);
+        setFormMode(null);
+        return;
+      }
+      if (openedOrganization.current === entry.organizationId) return;
+      const cached = historyRecords.current.get(entry.organizationId);
+      if (cached) {
+        void openProfile(cached, 1, true);
+        return;
+      }
+      void masterDataApi
+        .detail('organizations', entry.organizationId)
+        .then(({ data }) => {
+          if (active && request === historyRequest.current)
+            void openProfile(data, 1, true);
+        })
+        .catch(() => {
+          if (active && request === historyRequest.current)
+            setNotice(
+              'دریافت پرونده از تاریخچه ناموفق بود؛ دوباره از فهرست انتخاب کنید.',
+            );
+        });
+    };
+    const timer = window.setTimeout(restore, 0);
+    window.addEventListener('popstate', restore);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+      window.removeEventListener('popstate', restore);
+    };
+  }, [openProfile]);
 
   async function persist(
     values: Record<string, string>,
@@ -886,6 +950,9 @@ export function OrganizationsWorkspace() {
             />
           }
           onClose={() => {
+            ++historyRequest.current;
+            openedOrganization.current = null;
+            pushDossierHistory(null);
             ++contactRequestId.current;
             setProfileOpen(false);
             setSelected(undefined);
