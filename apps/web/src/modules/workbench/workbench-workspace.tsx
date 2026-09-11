@@ -1,4 +1,5 @@
 'use client';
+import { WorkbenchFeedback } from './workbench-feedback';
 import { WorkbenchSelect } from './workbench-select';
 
 import type { NotificationItemV1 } from '@rubi/contracts';
@@ -363,6 +364,7 @@ export function WorkbenchWorkspace() {
                     />
                   </Card>
                   <div className="space-y-5">
+                    <WorkbenchFeedback />
                     <WorkbenchHrNotifications
                       key={home.user.id}
                       permissions={home.user.permissions}

@@ -1,5 +1,10 @@
 # Work Assignments
 
+## WORKBENCH-023 — PC-B — IN_PROGRESS
+
+- Home feedback/survey form: subject/body, department, optional local attachments and anonymous preference. Reserve Workbench new component/integration only. No feedback delivery/storage service exists; explicit draft state, no fake anonymous submission, no schema/API/dependency changes. Persistence remains awaiting coordinated migration handoff.
+
+
 ## WORKBENCH-022 — PC-B — UI_READY / UPLOAD_NOT_CONNECTED
 
 - Visa document/payment receipt editable templates and local attachment selection in Workbench composer. No upload/send persistence claimed before Messaging contract/migration handoff. Reserve message templates/composer and local attachment helper/tests only. Preserve WORKBENCH-021 pending owner coordination.
