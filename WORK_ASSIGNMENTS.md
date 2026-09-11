@@ -1,6 +1,6 @@
 # Work Assignments
 
-## WORKBENCH-024 — PC-B — IN_PROGRESS
+## WORKBENCH-024 — PC-B — UI_VERIFIED
 
 - Explicit user asks shared header user menu only Workbench and Logout. Reserve user-menu.tsx and existing specification; remove other dropdown content only, preserve identity trigger and logout behavior. Coordinate shared runtime. No IAM/API/schema changes.
 
