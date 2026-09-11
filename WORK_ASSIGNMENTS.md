@@ -1,9 +1,10 @@
 # Work Assignments
 
-## WORKBENCH-008-DOCUMENT-FAVORITES — PC-B — IN_PROGRESS
+## WORKBENCH-008-DOCUMENT-FAVORITES — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
 
 - User explicitly requests canonical Documents upload and displaying Documents stars in Workbench. Reserve workbench favorites consumer, files presentation, Documents favorite-reader helper and additive change event in documents-workspace.tsx, plus tests/docs. Existing Documents upload is already used; no duplicate file or metadata persistence.
 - Consume the already-existing account-keyed Documents browser favorites, with an explicit same-browser limitation; do not introduce Workbench/browser writes or claim cross-device persistence. Revalidate metadata through authorized server list across all pages, exclude revoked/deleted documents, clear stale data on reload/failure. No schema/migration/API/dependency changes. UI runtime coordinated with B2B owner; preserve note form/home/KPI/wizard fixes.
+-41tests, scoped lint/typecheck/build passed. Running sourcefb7a6dd, manifest hr005-7409f3314c154331, Web3100/PID23768; API4190unchanged/health200. Browser verified adding/removing a Documents star appears/disappears in a separate Workbench tab automatically. Test star restored, existing star preserved, no file/business mutation. PR167draft; implementation reservations released. B2B owner notified after approved restart checkpoint.
 
 ## WORKBENCH-007-NOTE-FORM — PC-B — UI_READY / PERSISTENCE_BLOCKED_BY_MIGRATION_LOCK
 
