@@ -1,5 +1,9 @@
 # Work Assignments
 
+## WORKBENCH-016-PROFILE-VIEWS — PC-B — IN_PROGRESS
+
+- Reserve Web profile-workspace.tsx and Workbench settings session label plus own status docs on codex/pc-b-profile-settings-views. User requests separate session logs, working personal preferences and removal of duplicate profile navigation. Consume existing IAM public session response and shared theme provider only; no IAM backend, schema, dependency or shared provider edits. Coordinate B2B toolbar source preservation before Web3100 handoff.
+
 ## WORKBENCH-015-SETTINGS-CENTER — PC-B — DONE / UI_VERIFIED
 
 - Reserve only account action-grid alignment in workbench-workspace.tsx and own status docs. Center all settings buttons/links, no shared UI/API/dependency change. Base78bda1f; branch codex/pc-b-workbench-settings-center. Coordinate inclusion in next shared Web3100 build.

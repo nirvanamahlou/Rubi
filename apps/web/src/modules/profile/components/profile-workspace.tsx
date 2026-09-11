@@ -6,6 +6,8 @@ import {
   type LucideIcon,
   Mail,
   RefreshCw,
+  Sun,
+  Moon,
   ShieldCheck,
   UserRound,
 } from 'lucide-react';
@@ -13,9 +15,9 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
+import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import {
-  Alert,
   Badge,
   Card,
   EmptyState,
@@ -31,7 +33,6 @@ import {
   ProfileUnauthorizedError,
 } from '../api/client';
 import {
-  activeProfileSessions,
   formatProfileDate,
   normalizeProfileTab,
   profileInitials,
@@ -47,24 +48,6 @@ type ProfileLoadState =
   | { status: 'empty' }
   | { status: 'unauthorized' }
   | { status: 'error'; message: string };
-
-const profileTabs: ReadonlyArray<{
-  value: ProfileTab;
-  label: string;
-  href: string;
-}> = [
-  { value: 'overview', label: 'پروفایل من', href: '/profile' },
-  {
-    value: 'preferences',
-    label: 'تنظیمات شخصی',
-    href: '/profile?tab=preferences',
-  },
-  {
-    value: 'security',
-    label: 'امنیت و نشست‌ها',
-    href: '/profile?tab=security',
-  },
-];
 
 export function ProfileWorkspace() {
   const searchParams = useSearchParams();
@@ -141,8 +124,10 @@ function ProfileContent({
   tab: ProfileTab;
 }) {
   const legalEntity = useLegalEntityContext();
+  if (tab === 'preferences') return <PersonalPreferences />;
+  if (tab === 'security') return <SessionLogs sessions={profile.sessions} />;
   const displayName = safeProfileDisplayName(profile.user.displayName);
-  const sessions = activeProfileSessions(profile.sessions);
+
   const permissionGroups = summarizePermissions(profile.user.permissions);
   const activeCompany = legalEntity.loading
     ? 'در حال دریافت شرکت فعال'
@@ -156,44 +141,10 @@ function ProfileContent({
   return (
     <section className="min-w-0 space-y-5" dir="rtl">
       <PageHeader
-        description="نمای فقط‌خواندنی اطلاعات حساب، دسترسی‌ها و امنیت نشست شما"
+        description="اطلاعات حساب کاربری و دسترسی‌های شما"
         eyebrow="حساب کاربری"
-        title={
-          tab === 'preferences'
-            ? 'تنظیمات شخصی'
-            : tab === 'security'
-              ? 'امنیت و نشست‌ها'
-              : 'پروفایل من'
-        }
+        title="پروفایل من"
       />
-      <nav
-        aria-label="بخش‌های پروفایل"
-        className="flex max-w-full gap-2 overflow-x-auto rounded-2xl border border-border bg-surface p-2"
-      >
-        {profileTabs.map((item) => (
-          <Link
-            aria-current={tab === item.value ? 'page' : undefined}
-            className={cn(
-              'shrink-0 rounded-xl px-4 py-2 text-sm font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
-              tab === item.value
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-            )}
-            href={item.href}
-            key={item.value}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-
-      {tab === 'preferences' ? (
-        <Alert
-          description="API عمومی امن برای ویرایش ترجیحات شخصی منتشر نشده است؛ بنابراین این صفحه تنظیم ساختگی یا ذخیره‌سازی مرورگر ایجاد نمی‌کند."
-          title="تنظیمات شخصی فقط‌خواندنی است"
-        />
-      ) : null}
-
       <Card className="overflow-hidden">
         <div className="bg-[linear-gradient(135deg,#0e3a86,#1768c4)] p-5 text-white sm:p-6">
           <div className="flex min-w-0 items-center gap-4">
@@ -283,62 +234,6 @@ function ProfileContent({
           )}
         </Card>
       </div>
-
-      <Card
-        className={cn(
-          'min-w-0 p-5',
-          tab === 'security' && 'ring-2 ring-primary/25',
-        )}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="font-black">نشست‌های فعال</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              فقط زمان‌های امنیتی نمایش داده می‌شوند و اطلاعات حساس ورود در این
-              صفحه قرار نمی‌گیرند.
-            </p>
-          </div>
-          <Badge>{sessions.length.toLocaleString('fa-IR')} نشست</Badge>
-        </div>
-        {sessions.length ? (
-          <ul className="mt-4 grid gap-3 md:grid-cols-2">
-            {sessions.map((session, index) => (
-              <li
-                className="rounded-2xl border border-border bg-muted/30 p-4"
-                key={session.id}
-              >
-                <div className="flex items-center gap-2 font-bold">
-                  <ShieldCheck
-                    aria-hidden="true"
-                    className="size-4 text-emerald-600"
-                  />
-                  نشست فعال {Number(index + 1).toLocaleString('fa-IR')}
-                </div>
-                <dl className="mt-3 grid gap-2 text-sm">
-                  <SessionTime label="ایجاد" value={session.createdAt} />
-                  <SessionTime
-                    label="آخرین استفاده"
-                    value={session.lastUsedAt}
-                  />
-                  <SessionTime label="انقضا" value={session.expiresAt} />
-                </dl>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="mt-4">
-            <EmptyState
-              description="IAM در حال حاضر نشست فعالی برای این حساب برنگردانده است."
-              title="نشست فعالی وجود ندارد"
-            />
-          </div>
-        )}
-        <Alert
-          className="mt-4"
-          description="API فعلی نشست جاری را مشخص نمی‌کند و عملیات عمومی «خروج از سایر نشست‌ها» ندارد؛ برای جلوگیری از خروج اشتباهی، دکمه ساختگی نمایش داده نمی‌شود."
-          title="مدیریت نشست‌ها فقط‌خواندنی است"
-        />
-      </Card>
     </section>
   );
 }
@@ -387,11 +282,135 @@ function ProfileField({
   );
 }
 
-function SessionTime({ label, value }: { label: string; value: string }) {
+function PersonalPreferences() {
+  const { theme, toggleTheme } = useTheme();
   return (
-    <div className="flex items-center justify-between gap-3">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="text-end font-semibold">{formatProfileDate(value)}</dd>
-    </div>
+    <section className="min-w-0 space-y-5" dir="rtl">
+      <PageHeader
+        eyebrow="حساب کاربری"
+        title="تنظیمات شخصی"
+        description="ظاهر روبی را مطابق سلیقه خود تنظیم کنید."
+      />
+      <Card className="p-5 sm:p-6">
+        <h2 className="text-lg font-black">ظاهر برنامه</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          انتخاب شما بلافاصله اعمال می‌شود و در همین مرورگر باقی می‌ماند.
+        </p>
+        <div
+          aria-label="انتخاب تم"
+          className="mt-5 grid max-w-2xl gap-3 sm:grid-cols-2"
+          role="group"
+        >
+          {(
+            [
+              { value: 'light', label: 'حالت روشن', icon: Sun },
+              { value: 'dark', label: 'حالت تیره', icon: Moon },
+            ] as const
+          ).map(({ value, label, icon: Icon }) => (
+            <Button
+              key={value}
+              variant="outline"
+              aria-pressed={theme === value}
+              onClick={() => {
+                if (theme !== value) toggleTheme();
+              }}
+              className={cn(
+                'h-auto min-h-28 flex-col justify-center gap-3 text-center text-base',
+                theme === value &&
+                  'border-primary bg-primary/10 text-primary ring-1 ring-primary',
+              )}
+            >
+              <Icon aria-hidden="true" className="size-6" />
+              {label}
+            </Button>
+          ))}
+        </div>
+        <p className="mt-4 text-sm text-muted-foreground" role="status">
+          تم فعلی: {theme === 'light' ? 'روشن' : 'تیره'}
+        </p>
+      </Card>
+    </section>
+  );
+}
+
+function SessionLogs({
+  sessions,
+}: {
+  sessions: AuthenticatedProfile['sessions'];
+}) {
+  const statuses: Record<string, string> = {
+    ACTIVE: 'فعال',
+    ROTATED: 'تمدیدشده',
+    REVOKED: 'باطل‌شده',
+    EXPIRED: 'منقضی‌شده',
+  };
+  return (
+    <section className="min-w-0 space-y-5" dir="rtl">
+      <PageHeader
+        eyebrow="حساب کاربری"
+        title="لاگ نشست‌ها"
+        description="زمان ایجاد، آخرین استفاده و انقضای نشست‌های ثبت‌شده حساب شما"
+      />
+      <Card className="overflow-hidden">
+        {sessions.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[650px] text-right text-sm">
+              <caption className="border-b border-border p-4 text-right font-bold">
+                {sessions.length.toLocaleString('fa-IR')} نشست ثبت‌شده
+              </caption>
+              <thead className="bg-muted/60 text-muted-foreground">
+                <tr>
+                  {[
+                    'ردیف',
+                    'وضعیت',
+                    'ایجاد نشست',
+                    'آخرین استفاده',
+                    'انقضا',
+                  ].map((label) => (
+                    <th key={label} scope="col" className="px-4 py-3 font-bold">
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {sessions.map((session, index) => {
+                  const status = session.status;
+                  return (
+                    <tr key={session.id} className="hover:bg-muted/30">
+                      <td className="px-4 py-4">
+                        {(index + 1).toLocaleString('fa-IR')}
+                      </td>
+                      <td className="px-4 py-4">
+                        <Badge>{statuses[status] ?? 'نامشخص'}</Badge>
+                      </td>
+                      {[
+                        session.createdAt,
+                        session.lastUsedAt,
+                        session.expiresAt,
+                      ].map((value, column) => (
+                        <td
+                          className="whitespace-nowrap px-4 py-4"
+                          key={column}
+                        >
+                          <time dateTime={value}>
+                            {formatProfileDate(value)}
+                          </time>
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState
+            title="لاگ نشستی وجود ندارد"
+            description="هنوز نشستی برای نمایش ثبت نشده است."
+          />
+        )}
+      </Card>
+    </section>
   );
 }

@@ -547,7 +547,7 @@ export function WorkbenchWorkspace() {
                       <Button asChild variant="outline">
                         <Link href="/profile?tab=security">
                           <ShieldCheck className="size-4" aria-hidden="true" />
-                          امنیت و نشست‌ها
+                          لاگ نشست‌ها
                         </Link>
                       </Button>
                       <Button asChild variant="outline">
