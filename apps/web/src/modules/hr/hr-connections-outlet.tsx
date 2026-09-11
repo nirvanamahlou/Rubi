@@ -4,6 +4,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { hrConnectionModule } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
+import { useHrConnectionsHidden } from './hr-connections-visibility';
 
 const Workspace = dynamic(
   () =>
@@ -13,6 +14,7 @@ const Workspace = dynamic(
   },
 );
 export function HrConnectionsOutlet() {
+  const hidden = useHrConnectionsHidden();
   const pathname = usePathname(),
     params = useSearchParams();
   const [expanded, setExpanded] = useState<{
@@ -22,7 +24,7 @@ export function HrConnectionsOutlet() {
   const locationKey = `${pathname}?${params.toString()}`;
   const source = pathname === '/hr' || pathname === '/human-resources';
   const destination = hrConnectionModule(pathname);
-  if (!source && !destination) return null;
+  if (hidden || (!source && !destination)) return null;
   const open =
     expanded?.key === locationKey
       ? expanded.open
