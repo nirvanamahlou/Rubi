@@ -1,8 +1,9 @@
 # Work Assignments
 
-## B2B-DOSSIER-DATE-FILTERS-001 — PC-B — IN_PROGRESS
+## B2B-DOSSIER-DATE-FILTERS-001 — PC-B — DONE / LOCAL_RUNTIME_3196
 
 - Add themed responsive date-range filters beside existing dossier filters. Reserve Organizations date helper/component, agreement/rates/users/signatories/documents/finance/activity panels, CSS and tests/status docs on `codex/pc-b-b2b-dossier-date-filters` from0300a34. Previous locks released. Preserve date meaning, inclusive boundaries, server pagination and organization/branch authorization. No API/schema/dependency change; runtime3196/API4191 retained and unrelated3100 untouched. No merge.
+- Source56d5d48: inclusive Tehran date ranges and responsive Rubi grid; paginated contracts/documents fully covered. 100 Organizations tests, lint/typecheck/build pass; browser fixture verifies calendar/grid. Runtime hr005-2a247e29d4bbef76 on3196 and API4191 healthy. Draft PR158 stacked on157; no merge. Release implementation reservations.
 
 ## B2B-NAMED-BRANCHES-001 — PC-B — DONE / LOCAL_RUNTIME_3196
 
@@ -1648,3 +1649,4 @@ Validation: 87 scoped tests, Web lint, TypeScript and production build (40 route
 ## PUBLISH-DARK-HR-0909 — PC-A — READY_FOR_REVIEW
 
 User explicitly authorized merging the latest Finance labels, dark theme and HR/navigation corrections into develop. Integrate current develop 679e516, retaining PC-B HR/agencies and header date; resolve shared shell conflict with both responsive header and neutral dark border. Synchronize three ticket validation strings in API with the mirrored Web proposal to satisfy the existing parity test. No local database migration or runtime switch. Final combined CI gates must pass before merge.
+
