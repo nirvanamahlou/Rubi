@@ -1,8 +1,9 @@
 # Work Assignments
 
-## B2B-FINANCE-DOCUMENTS-EXPORT-001 — PC-B — IN_PROGRESS
+## B2B-FINANCE-DOCUMENTS-EXPORT-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Add document metadata/file entry to finance dossier and Excel export of filtered preview rows. Reserve finance preview, organization document panel, corporate profile and status docs on `codex/pc-b-b2b-finance-documents-export` from417831f. Prior locks released. Use Documents owner storage, not new financial transactions; PC-A Finance accounting remains separate. No schema/API/dependency change. Clarification requested about accounting transactions; proceed with explicitly labelled document intake and preview export. No merge.
+- Sourcec37060c: per-tab financial document entry/list through Documents with a visible title prefix; current document-page XLSX and filtered synthetic finance XLSX. No ledger writes. Browser verifies intake form and export controls; Web lint/typecheck/build and 97 Organizations tests pass. Web3100 PID28836/hr005-2b88eb2834942f39 and API4191 healthy. QA3196 stopped; PR154 draft, no merge. Release implementation reservations.
 
 ## B2B-CREDIT-SECTION-FORMS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
