@@ -2074,3 +2074,6 @@ Runtime d59b860 / hr005-785b78ad01bbc39f / WebPID22512 verified: heading remains
 
 ## 2026-09-11 — B2B contract filter alignment (PC-B)
 cc3027d+d1160ed fix flex cascade overriding dossier grid; date, branch and action controls align in6/3/1 responsive columns.113 tests/typecheck passed. Runtimebuildfe0ae53 preserves12c7c41; no API or data change.
+
+## 2026-09-12 — B2B compact export actions (PC-B)
+Source7acd39f moves exports next to create actions in commercial headers and uses33px buttons with short labels and accessible names. Filters retain their own responsive grid.121 tests/lint/typecheck passed. Combined9dceb66 building; no API/data changes.

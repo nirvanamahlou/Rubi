@@ -2126,3 +2126,8 @@ Completed: both stay dates now use the shared dual Persian/Gregorian DatePicker 
 
 Base e7cb696; COMPUTER_ID=PC-A. Isolated worktree to avoid overlap with the active Reservations contract-PDF task. Reserve only reservation-general-details component/styles/tests and task status. Add a distinct contract-party group and obtain full contacts through the existing Customers sensitive-detail public API with fixed `support-request` reason, preserving permission, branch and Audit controls. Fall back to masked data when sensitive access is unavailable. No API/schema/grant/data changes; preserve next-env and public-publication hold.
 Completed: «طرف قرارداد» is now a distinct accented group with name, type/status, primary and additional phones, email and recorded address. Opening general details requests authorized full contact data through Customers with `support-request`; Backend remains responsible for permission/branch checks and Audit. Unauthorized/decryption failures fall back to masked detail without blocking the rest of the dialog. Eight targeted tests, scoped lint, Web TypeScript and production build passed. Isolated local commit for handoff; public-publication hold retained.
+
+## B2B-COMPACT-EXPORT-ACTIONS-001 — PC-B — IN_PROGRESS
+
+Reserve Organizations agreement/rate headers, export buttons and corporate CSS for compact colocated create/export actions. No behavior/API/data/dependency changes.
+B2B-COMPACT-EXPORT-ACTIONS-001: READY_FOR_REVIEW. Source7acd39f; create and compact Excel/PDF colocated in headers.121 tests, lint/typecheck passed. Source locks released; combined9dceb66 build preservescalendar9f5ef8c.
