@@ -1,5 +1,9 @@
 # Work Assignments
 
+## WORKBENCH-012-MESSAGE-TEMPLATES — PC-B — IN_PROGRESS
+
+- Reserve message-composer.tsx and module-local message-templates.ts plus own docs. Add Finance, Reservations, AI and Sales recipient choices with editable prepared texts. Branch codex/pc-b-workbench-message-templates, base d8b3e15. No message service, transmission, storage, owner API, schema or dependency changes. Existing authenticated desktop Rubi UI and accessibility conventions retained; runtime build coordinated with B2B.
+
 ## WORKBENCH-011-CONNECTIONS — PC-B — READY_FOR_REVIEW / PERSISTENCE_BLOCKED
 
 - Audit Workbench internal/cross-module/external-provider links against original request, owner APIs and runtime. Base0441c1e; preserve pending B2B contacts delta. Reserve Workbench HR notification consumer/model/tests and navigation map/report; shared notification-center.tsx only adds successful read-change event propagation; reserve change-notifications.ts/spec to exclude IAM security actions from the public feed. No owner service/table/schema/contract/dependency change; no API cutover retry. Persistent requests/messages/notes/tasks remain gated by active Reservations migration lock and missing services. Branch codex/pc-b-workbench-connections; Web restart only after runtime handoff.

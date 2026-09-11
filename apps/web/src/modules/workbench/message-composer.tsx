@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { Send, Smile, X } from 'lucide-react';
 import { Alert, Button, Card, Input, Textarea } from '@/components/ui';
+import { messageUnits } from './message-templates';
 import {
   insertMessageEmoji,
   messageEmojis,
@@ -11,6 +12,8 @@ import {
 
 export function MessageComposer() {
   const [text, setText] = useState('');
+  const [unitId, setUnitId] = useState<string>(messageUnits[0].id);
+  const unit = messageUnits.find((item) => item.id === unitId)!;
   const [picker, setPicker] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
@@ -57,6 +60,67 @@ export function MessageComposer() {
         title="ارسال پیام هنوز فعال نیست"
         description="می‌توانید متن و ایموجی را آماده کنید؛ این متن ارسال یا ذخیره نمی‌شود و با خروج از این بخش از بین می‌رود."
       />
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-semibold">واحد مخاطب</legend>
+        <div className="flex flex-wrap gap-2">
+          {messageUnits.map((item) => (
+            <Button
+              key={item.id}
+              variant={unitId === item.id ? 'primary' : 'outline'}
+              aria-pressed={unitId === item.id}
+              onClick={() => {
+                setUnitId(item.id);
+                setError('');
+              }}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </div>
+      </fieldset>
+      <section
+        aria-label={`قالب‌های پیام به ${unit.label}`}
+        className="space-y-3 rounded-xl border border-border bg-muted/40 p-4"
+      >
+        <h3 className="text-sm font-semibold">
+          قالب‌های آماده برای {unit.label}
+        </h3>
+        <p className="text-xs text-muted-foreground">
+          قالب به انتهای متن اضافه می‌شود؛ بخش‌های داخل کروشه را تکمیل و متن را
+          ویرایش کنید.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {unit.templates.map((template) => (
+            <Button
+              key={template.title}
+              variant="outline"
+              onClick={() => {
+                const next = text
+                  ? `${text}\n\n${template.text}`
+                  : template.text;
+                if (next.length > MESSAGE_DRAFT_LIMIT) {
+                  setError('برای افزودن قالب، بخشی از متن پیام را کم کنید.');
+                  return;
+                }
+                setText(next);
+                setError('');
+                selection.current = { start: next.length, end: next.length };
+                requestAnimationFrame(() => {
+                  input.current?.focus();
+                  input.current?.setSelectionRange(next.length, next.length);
+                });
+              }}
+            >
+              {template.title}
+            </Button>
+          ))}
+        </div>
+        {unit.id === 'ai' && (
+          <p className="text-xs text-muted-foreground">
+            پاسخ‌گویی AI هنوز متصل نیست؛ این قالب‌ها برای آماده‌سازی متن هستند.
+          </p>
+        )}
+      </section>
       <div className="space-y-2">
         <label
           htmlFor="workbench-message-text"
