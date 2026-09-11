@@ -1,15 +1,19 @@
 'use client';
 import { useEffect, useState } from 'react';
+import type { B2bCooperationRole } from '@rubi/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { agencyClient } from '../api/agency-client';
 import { useDossierBranch } from './use-dossier-branch';
 
 export function AgencyDossierSummary({
   organizationId,
+  role,
 }: {
   organizationId: string;
+  role: B2bCooperationRole;
 }) {
-  const { branchId, branches, permissions, sessionError } = useDossierBranch();
+  const { branchId, setBranchId, branches, permissions, sessionError } =
+    useDossierBranch();
   const [summary, setSummary] = useState<
     readonly { label: string; value: string }[]
   >([]);
@@ -20,14 +24,14 @@ export function AgencyDossierSummary({
       codes.every((code) => permissions.includes(code));
     void Promise.allSettled([
       masterDataApi.organizationAddresses(organizationId),
-      allowed('b2b.agency.read')
+      role === 'AGENCY' && allowed('b2b.agency.read')
         ? agencyClient.profileDetails(organizationId, branchId)
         : Promise.resolve(null),
-      allowed('b2b.rate.read')
+      role === 'AGENCY' && allowed('b2b.rate.read')
         ? agencyClient.rates(organizationId, branchId)
         : Promise.resolve(null),
       allowed('b2b.agreement.read', 'b2b.credit.read')
-        ? agencyClient.agreements(organizationId, branchId, 'AGENCY')
+        ? agencyClient.agreements(organizationId, branchId, role)
         : Promise.resolve(null),
     ]).then(([addresses, profile, rates, agreements]) => {
       if (!active) return;
@@ -49,7 +53,9 @@ export function AgencyDossierSummary({
             profile.status === 'rejected'
               ? unavailable
               : !details
-                ? restricted
+                ? role === 'AGENCY'
+                  ? restricted
+                  : 'برای این نقش تعریف نشده'
                 : (details.accountManagers.find(
                     (user) => user.id === details.profile?.accountManagerUserId,
                   )?.displayName ?? 'تعیین نشده'),
@@ -61,7 +67,9 @@ export function AgencyDossierSummary({
               ? unavailable
               : rates.value
                 ? rates.value.data.length.toLocaleString('fa-IR')
-                : restricted,
+                : role === 'AGENCY'
+                  ? restricted
+                  : 'برای این نقش تعریف نشده',
         },
         {
           label: 'قراردادهای ثبت‌شده',
@@ -77,7 +85,7 @@ export function AgencyDossierSummary({
     return () => {
       active = false;
     };
-  }, [organizationId, branchId, permissions]);
+  }, [organizationId, branchId, permissions, role]);
   return (
     <section className="panel" aria-label="خلاصه اطلاعات ثبت‌شده">
       <header className="panel-head">
@@ -88,6 +96,23 @@ export function AgencyDossierSummary({
               'در حال دریافت…'}
           </p>
         </div>
+        <label className="field">
+          <span>شعبه خلاصه پرونده</span>
+          <select
+            className="input"
+            value={branchId}
+            onChange={(event) => {
+              setSummary([]);
+              setBranchId(event.target.value);
+            }}
+          >
+            {branches.map((branch) => (
+              <option key={branch.id} value={branch.id}>
+                {branch.name}
+              </option>
+            ))}
+          </select>
+        </label>
       </header>
       <div className="panel-body grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {sessionError ? (
