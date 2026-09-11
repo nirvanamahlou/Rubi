@@ -208,7 +208,7 @@ function ProfileContent({
         </Card>
         <Card className="min-w-0 p-5">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-black">خلاصه Permissionها</h2>
+            <h2 className="font-black">خلاصه دسترسی‌ها</h2>
             <Badge>
               {profile.user.permissions.length.toLocaleString('fa-IR')} مورد
             </Badge>
