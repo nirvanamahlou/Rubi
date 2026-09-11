@@ -90,7 +90,9 @@ export function WorkbenchHrNotifications({
     }
   }
   if (!allowed) return null;
-  const notices = pendingHrBellNotifications(items);
+  const notices = pendingHrBellNotifications(items).sort(
+    (a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt),
+  );
   const renderNotices = (visibleNotices: typeof notices) => (
     <ul className="divide-y divide-border">
       {visibleNotices.map((item) => (
@@ -147,7 +149,7 @@ export function WorkbenchHrNotifications({
           description={error}
         />
       ) : notices.length ? (
-        renderNotices(notices.slice(0, 10))
+        renderNotices(notices.slice(0, 5))
       ) : (
         <p className="text-sm text-muted-foreground">
           اعلان خوانده‌نشده‌ای در این فهرست نیست.

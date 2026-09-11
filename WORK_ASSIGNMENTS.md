@@ -1,5 +1,10 @@
 # Work Assignments
 
+## WORKBENCH-030 — PC-B — IN_PROGRESS
+
+- Limit Home HR notices to latest5, retaining complete received-list view-all dialog. Reserve Workbench HR notification component only and docs. No API/HR domain/shared changes.
+
+
 ## WORKBENCH-029 — PC-B — UI_VERIFIED
 
 - Four requested reservation messenger templates; reserve message-templates and own docs only. No Reservations domain/API/schema changes. Reuse editable composer/local attachments; no upload/send claim.
