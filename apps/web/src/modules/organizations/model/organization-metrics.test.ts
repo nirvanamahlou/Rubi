@@ -82,7 +82,7 @@ describe('live organization metrics', () => {
     ).toBe(true);
     const list = vi.fn<typeof agencyClient.list>().mockResolvedValue({
       data: [],
-      meta: { page: 1, pageSize: 100, total: 0, totalPages: 0 },
+      meta: { page: 1, pageSize: 100, total: 0 },
     });
     expect(
       await loadOrganizationMetrics(
@@ -93,3 +93,4 @@ describe('live organization metrics', () => {
     ).toEqual({ agencies: 0, corporateCustomers: 0, incompleteIdentity: 0 });
   });
 });
+
