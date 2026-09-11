@@ -1,6 +1,6 @@
 # Work Assignments
 
-## WORKBENCH-026 — PC-B — IN_PROGRESS
+## WORKBENCH-026 — PC-B — UI_VERIFIED
 
 - Sales messenger six user-requested editable templates. Reserve message-templates only and own docs; reuse existing draft attachments. No Sales domain/API/schema changes or real customer data.
 
