@@ -1,8 +1,9 @@
 # Work Assignments
 
-## B2B-CONTRACT-DOCUMENT-FORM-001 — PC-B — IN_PROGRESS
+## B2B-CONTRACT-DOCUMENT-FORM-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
 - Replace contract document picker with the expanded metadata/file form, preserving existing attachments and Documents storage. Reserve agreement-terms-editor.tsx, inline-document-upload.tsx and status docs on `codex/pc-b-b2b-contract-document-form` fromc5f66ca. Previous locks released. Guarantee selectors unchanged; no API/data/migration/dependency changes. Verify and refresh owned3100; no merge.
+- Source1ed0a1c verified in actual React browser: contract metadata/file fields visible without attachment dropdown. Web lint/typecheck, 95 Organizations tests and production build pass. Web3100 PID8332/hr005-e7a497343c731ef1 and unchanged API4191 healthy. QA3196 stopped; PR151 draft, no merge. Release implementation reservations.
 
 ## B2B-UNIFIED-USERS-001 — PC-B — DONE / LOCAL_RUNTIME_ACTIVE
 
