@@ -169,7 +169,7 @@ export function WorkbenchCalendar({
               <Button
                 key={status}
                 size="sm"
-                variant={filter.status === status ? 'default' : 'outline'}
+                variant={filter.status === status ? 'primary' : 'outline'}
                 aria-pressed={filter.status === status}
                 onClick={() => setFilter({ ...filter, status })}
                 className="rounded-full"
@@ -227,7 +227,7 @@ export function WorkbenchCalendar({
               {views.map(([value, label]) => (
                 <Button
                   key={value}
-                  variant={view === value ? 'default' : 'ghost'}
+                  variant={view === value ? 'primary' : 'ghost'}
                   size="sm"
                   className="rounded-full"
                   aria-pressed={view === value}
