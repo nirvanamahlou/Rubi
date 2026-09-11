@@ -2157,3 +2157,5 @@ B2B-ACCESS-EDIT-ICON-001: READY_FOR_REVIEW.46-route build passed, active Web3100
 Reserve organizations-workspace.tsx: suppress supplementary HR requests footer only while directory is shown; existing finance suppression retained. Public hook already exists. No API/data/shared-file changes.
 
 B2B-DIRECTORY-HIDE-HR-001: SOURCE_COMPLETEd73d6bb. Scoped lint/typecheck passed. No behavior/data/API change. Source locks released; runtime inclusion coordinated.
+
+B2B-DIRECTORY-HIDE-HR-001: READY_FOR_REVIEW.46-route build and live directory verification pass; runtime3397f2b/PID11368. PR206; locks released.
