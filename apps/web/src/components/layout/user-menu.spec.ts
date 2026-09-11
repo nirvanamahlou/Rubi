@@ -31,10 +31,11 @@ describe('authenticated user menu integration', () => {
     expect(menuSource).toContain('data-user-menu-trigger');
   });
 
-  it('opens real profile, preferences and security destinations', () => {
-    expect(menuSource).toContain('href="/profile"');
-    expect(menuSource).toContain('href="/profile?tab=preferences"');
-    expect(menuSource).toContain('href="/profile?tab=security"');
+  it('shows only Workbench and logout menu actions', () => {
+    expect(menuSource).toContain('href="/workbench"');
+    expect(menuSource).not.toContain('href="/profile"');
+    expect(menuSource).not.toContain('href="/profile?tab=preferences"');
+    expect(menuSource).not.toContain('href="/profile?tab=security"');
     expect(menuSource).toContain('DropdownMenuTrigger asChild');
   });
 

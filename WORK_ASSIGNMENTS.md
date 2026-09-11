@@ -1,5 +1,10 @@
 # Work Assignments
 
+## WORKBENCH-024 — PC-B — IN_PROGRESS
+
+- Explicit user asks shared header user menu only Workbench and Logout. Reserve user-menu.tsx and existing specification; remove other dropdown content only, preserve identity trigger and logout behavior. Coordinate shared runtime. No IAM/API/schema changes.
+
+
 ## WORKBENCH-023 — PC-B — UI_VERIFIED / DELIVERY_NOT_CONNECTED
 
 - Home feedback/survey form: subject/body, department, optional local attachments and anonymous preference. Reserve Workbench new component/integration only. No feedback delivery/storage service exists; explicit draft state, no fake anonymous submission, no schema/API/dependency changes. Persistence remains awaiting coordinated migration handoff.
