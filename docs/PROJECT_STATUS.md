@@ -2078,3 +2078,6 @@ cc3027d+d1160ed fix flex cascade overriding dossier grid; date, branch and actio
 ## 2026-09-12 — B2B compact export actions (PC-B)
 Source7acd39f moves exports next to create actions in commercial headers and uses33px buttons with short labels and accessible names. Filters retain their own responsive grid.121 tests/lint/typecheck passed. Combined9dceb66 building; no API/data changes.
 Final runtimec8164fc/hr005-da948517ea153e3e/PID27312 verified: desktop contract create/Excel/PDF share identicaly438px and33px height; mobile390px rates create/Excel/PDF share identicaly851px and33px height with no document overflow. Combined46-route build passes. API unchanged; Web remains with workbench owner. Draft PR193.
+
+## 2026-09-12 — Agency360 finance HR footer (PC-B)
+Source8ff2da8 hides the supplementary HR connections panel only while the agency dossier finance screen is mounted. Shared provider cleanup restores other pages; HR permissions unchanged. Scoped lint, Web typecheck and125 tests pass. Runtime build/verification pending owner cutover.

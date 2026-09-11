@@ -2131,3 +2131,8 @@ Completed: «طرف قرارداد» is now a distinct accented group with name,
 
 Reserve Organizations agreement/rate headers, export buttons and corporate CSS for compact colocated create/export actions. No behavior/API/data/dependency changes.
 B2B-COMPACT-EXPORT-ACTIONS-001: READY_FOR_REVIEW. Source7acd39f; create and compact Excel/PDF colocated in headers.121 tests, lint/typecheck passed. Source locks released; combined9dceb66 build preservescalendar9f5ef8c.
+
+## B2B-FINANCE-HIDE-HR-001 — PC-B — IN_PROGRESS
+User clarifies only the agency360 finance subview. Reserve corporate-profile.tsx, HR outlet and new public visibility context, plus narrow central AppShell main provider wiring. Default visibility and HR routes remain intact; no API/data changes. Public Web-only provider/consumer: HR contextual outlet to Organizations view suppression; cleanup restores visibility.
+
+B2B-FINANCE-HIDE-HR-001: SOURCE_COMPLETE 8ff2da8. Scoped lint, Web typecheck and125 tests passed. Runtime inclusion coordinated with Workbench owner; no API/schema/data change. Source locks released.
