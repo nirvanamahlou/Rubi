@@ -1,6 +1,6 @@
 # Work Assignments
 
-## WORKBENCH-020 — PC-B — IN_PROGRESS
+## WORKBENCH-020 — PC-B — UI_VERIFIED
 
 - Reserve Workbench-only dropdown wrapper and six native select consumers; reuse shared Rubi Select without changing shared components/dependencies. Branch codex/pc-b-workbench-themed-selects, PC-B.
 
