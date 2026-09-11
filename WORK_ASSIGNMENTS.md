@@ -1,5 +1,10 @@
 # Work Assignments
 
+## WORKBENCH-025 — PC-B — IN_PROGRESS
+
+- HR messenger four editable templates: system/internet issues, salary/advance, leave, documents. Reuse existing text composer and unit-scoped local attachments. Reserve message-templates only plus docs; no HR domain/API/schema changes. Real upload/send remains unavailable.
+
+
 ## WORKBENCH-024 — PC-B — UI_VERIFIED
 
 - Explicit user asks shared header user menu only Workbench and Logout. Reserve user-menu.tsx and existing specification; remove other dropdown content only, preserve identity trigger and logout behavior. Coordinate shared runtime. No IAM/API/schema changes.
