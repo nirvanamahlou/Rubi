@@ -16,6 +16,32 @@ const draft = {
   code: 'B2B-TEST-01',
 };
 describe('cooperation wizard writes', () => {
+  it.each([
+    ['09120000000', '', 'PHONE'],
+    ['', 'qa@example.com', 'EMAIL'],
+    ['', '', 'OTHER'],
+  ])(
+    'supplies the required contact channel for phone=%s email=%s',
+    async (phone, email, preferredChannel) => {
+      const existing = {
+        id: 'identity',
+        version: 1,
+        attributes: { roleCodes: 'AGENCY' },
+      } as unknown as MasterDataRecord;
+      const contact = vi
+        .spyOn(agencyClient, 'saveContact')
+        .mockResolvedValue({ data: existing });
+      await saveCooperation(
+        { ...draft, fullName: 'نماینده آزمایشی', phone, email },
+        ['master_data.read', 'master_data.create'],
+        existing,
+      );
+      expect(contact).toHaveBeenCalledWith(
+        'identity',
+        expect.objectContaining({ preferredChannel, phone, email }),
+      );
+    },
+  );
   it('accepts an optional company ID and rejects a personal or malformed identifier', () => {
     expect(
       cooperationIssue({ ...draft, nationalId: '۱۲۳۴۵۶۷۸۹۰۱' }, 1),
