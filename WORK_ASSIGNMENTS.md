@@ -1,6 +1,6 @@
 # Work Assignments
 
-## WORKBENCH-028 — PC-B — IN_PROGRESS
+## WORKBENCH-028 — PC-B — UI_VERIFIED
 
 - Finance messenger eight requested editable templates; reserve message-templates and own docs. Reuse local draft attachments; no Finance domain/API/schema changes, posting or actual payment.
 
