@@ -1,8 +1,10 @@
 # Work Assignments
 
-## WORKBENCH-016-PROFILE-VIEWS — PC-B — IN_PROGRESS
+## WORKBENCH-016-PROFILE-VIEWS — PC-B — DONE / UI_VERIFIED
 
 - Reserve Web profile-workspace.tsx and Workbench settings session label plus own status docs on codex/pc-b-profile-settings-views. User requests separate session logs, working personal preferences and removal of duplicate profile navigation. Consume existing IAM public session response and shared theme provider only; no IAM backend, schema, dependency or shared provider edits. Coordinate B2B toolbar source preservation before Web3100 handoff.
+
+- Delivered a744f0c; preserved toolbar patches as357d025/86bb4a3. Eight profile tests, scoped lint, TypeScript and43-route build passed. Authenticated browser verified session-only table, absent duplicate nav, real theme change and persistence after reload; original light theme restored. Web3100/PID2772/source86bb4a3/manifesthr005-2463c93fed3bee9e; handed to B2B for subsequent boundary-note-only build. Draft PR186, no merge; scoped reservation released.
 
 ## WORKBENCH-015-SETTINGS-CENTER — PC-B — DONE / UI_VERIFIED
 
