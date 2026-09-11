@@ -1896,14 +1896,16 @@ User requests themed dropdown menus for the four Reservations queue filters. Res
 
 Validation: 34 foundation tests, Web lint, production TypeScript and build (40 routes) passed. Local Web 3100 refreshed. Scope released; no API/database changes.
 
-
 ## B2B-REMOVE-BOUNDARY-NOTE-001 — PC-B — IN_PROGRESS
+
 Scope: remove user-specified home boundary note in corporate-profile.tsx. No API/data changes or shared locks.
 B2B-REMOVE-BOUNDARY-NOTE-001: READY_FOR_REVIEW. Source3528efe; lint/typecheck and113 Organizations tests passed. Source reservation released; combined runtime build c5e17e8 preserves86bb4a3.
 
 ## B2B-COMMERCIAL-EXPORTS-001 — PC-B — IN_PROGRESS
+
 Reserve Organizations agreement/rates panels, workspace props, module-local export helpers/tests. Export filtered authorized data as PDF/XLSX, preserve decimal strings and workflow states. No shared files, dependencies, API or data mutations.
 B2B-COMMERCIAL-EXPORTS-001: READY_FOR_REVIEW. Sourcebc4c6b9; module-local PDF/XLSX downloads, all-page agreements and exact decimal text.120 tests and scoped lint passed. Runtime build656e37f preserves534de0e. Source locks released.
+
 ## CONTRACT-TERMS-SELECTION-0909 — PC-A — READY_FOR_REVIEW
 
 User supplied a shared one-page terms PDF; preserve its exact bytes and download through the selected contract's مفاد action. Extend the existing accessible selection button hit area across the full reservation card. Scope: foundation panel/workspace CSS/tests, shared static PDF and task docs. Builds on themed filters branch to preserve the current local version. No PDF editing, API, database or migration changes.
@@ -2111,4 +2113,5 @@ Base e7cb696; COMPUTER_ID=PC-A. Isolated worktree to avoid overlap with the acti
 Completed: «طرف قرارداد» is now a distinct accented group with name, type/status, primary and additional phones, email and recorded address. Opening general details requests authorized full contact data through Customers with `support-request`; Backend remains responsible for permission/branch checks and Audit. Unauthorized/decryption failures fall back to masked detail without blocking the rest of the dialog. Eight targeted tests, scoped lint, Web TypeScript and production build passed. Isolated local commit for handoff; public-publication hold retained.
 
 ## B2B-PUBLISH-0912 — PC-B — IN_PROGRESS
+
 User explicitly authorizes push and merge of the B2B changes. Integrate current develop into PR189 preserving both documentation streams and requested removed boundary note. No runtime, API or database mutations.
