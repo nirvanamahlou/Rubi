@@ -47,11 +47,11 @@ import {
   workbenchDate,
   workbenchTabs,
   type WorkbenchHome,
-  type WorkbenchTab,
 } from './model';
 import { WorkbenchFiles } from './workbench-files';
 import { NoteEditor } from './note-editor';
 import { WorkbenchFavorites } from './workbench-favorites';
+import { MessageComposer } from './message-composer';
 
 const tabIcons = [
   Home,
@@ -413,7 +413,7 @@ export function WorkbenchWorkspace() {
                 </div>
               </TabsContent>
               <TabsContent value="messages">
-                <Unavailable tab="messages" />
+                <MessageComposer key={home.user.id} />
               </TabsContent>
               <TabsContent value="stars">
                 <WorkbenchFavorites key={home.user.id} user={home.user} />
@@ -573,25 +573,6 @@ function QuickLink({ href, label }: { href: string; label: string }) {
       {label}
       <ArrowUpLeft className="ms-auto size-4" aria-hidden="true" />
     </Link>
-  );
-}
-function Unavailable({
-  tab,
-}: {
-  tab: Extract<WorkbenchTab, 'messages'>;
-}) {
-  const content = {
-    messages: {
-      title: 'گفت‌وگوی داخلی هنوز فعال نشده است',
-      description:
-        'ارسال پیام بین همکاران هنوز در دسترس نیست. اعلان‌های واقعی سامانه در صفحه امروز نمایش داده می‌شوند.',
-      icon: MessageSquare,
-    },
-  }[tab];
-  return (
-    <Card>
-      <EmptyState {...content} />
-    </Card>
   );
 }
 function NotificationFeed({

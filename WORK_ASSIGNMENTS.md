@@ -1,5 +1,9 @@
 # Work Assignments
 
+## WORKBENCH-009-MESSAGE-EMOJI — PC-B — IN_PROGRESS
+
+- User requests emoji insertion in messenger. Reserve only Workbench message composer, emoji model/tests and workspace integration. Shared theme/UI, accessible named emoji buttons, search, insertion at caret/replacing selection. Local text is explicitly unsent; no message creation, transmission, fake success, browser storage, dependency or schema/API change. Preserve combined runtime; restart only at B2B owner checkpoint.
+
 ## WORKBENCH-008-DOCUMENT-FAVORITES — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
 
 - User explicitly requests canonical Documents upload and displaying Documents stars in Workbench. Reserve workbench favorites consumer, files presentation, Documents favorite-reader helper and additive change event in documents-workspace.tsx, plus tests/docs. Existing Documents upload is already used; no duplicate file or metadata persistence.
