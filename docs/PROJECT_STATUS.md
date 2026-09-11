@@ -1768,3 +1768,6 @@ Runtime d59b860 / hr005-785b78ad01bbc39f / WebPID22512 verified: heading remains
 ## 2026-09-11 — B2B contract filter alignment (PC-B)
 cc3027d+d1160ed fix flex cascade overriding dossier grid; date, branch and action controls align in6/3/1 responsive columns.113 tests/typecheck passed. Runtimebuildfe0ae53 preserves12c7c41; no API or data change.
 Runtime QA: Web3100 source fe0ae53 / hr005-ab3ce59627f77da6 / PID8040, combined43-route build passed. Authenticated1920px screenshot confirms six aligned controls;390px mobile shows one343px column with no document overflow. Viewport reset. API unchanged; Web ownership returned to workbench task. Draft PR184.
+
+## 2026-09-12 — B2B home note removal (PC-B)
+User-requested boundary note removed by3528efe. Lint/typecheck and113 tests passed. Combined runtime c5e17e8 builds on86bb4a3; no API/data changes.
