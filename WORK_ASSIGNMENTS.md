@@ -1,5 +1,10 @@
 # Work Assignments
 
+## WORKBENCH-031 — PC-B — IN_PROGRESS
+
+- Distinct feedback card background only. Reserve WorkbenchFeedback root class; violet light/dark gradient and border, existing form controls unchanged. No behavior/API changes.
+
+
 ## WORKBENCH-030 — PC-B — UI_VERIFIED
 
 - Limit Home HR notices to latest5, retaining complete received-list view-all dialog. Reserve Workbench HR notification component only and docs. No API/HR domain/shared changes.

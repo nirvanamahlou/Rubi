@@ -21,7 +21,7 @@ export function WorkbenchFeedback() {
   const [error, setError] = useState('');
   const picker = useRef<HTMLInputElement>(null);
   return (
-    <Card className="space-y-4 p-5">
+    <Card className="space-y-4 border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 p-5 dark:border-violet-400/25 dark:from-violet-950/50 dark:to-indigo-950/40">
       <div className="flex items-center gap-2">
         <MessageSquareText className="size-5 text-primary" aria-hidden="true" />
         <h2 className="font-bold">نظرسنجی و پیشنهادها</h2>
