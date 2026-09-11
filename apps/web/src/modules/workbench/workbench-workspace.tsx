@@ -531,7 +531,7 @@ export function WorkbenchWorkspace() {
                         پروفایل، ترجیحات و دسترسی‌های حساب خود را مدیریت کنید.
                       </p>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-2 [&>button]:min-h-16 [&>a]:min-h-16 [&>a]:justify-start">
+                    <div className="grid gap-3 sm:grid-cols-2 [&>button]:min-h-16 [&>button]:justify-center [&>button]:text-center [&>a]:min-h-16 [&>a]:justify-center [&>a]:text-center">
                       <PasswordChange
                         open={passwordOpen}
                         onOpenChange={setPasswordOpen}
