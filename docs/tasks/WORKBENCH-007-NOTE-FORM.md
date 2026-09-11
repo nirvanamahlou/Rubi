@@ -11,3 +11,7 @@ Persistence blocker: current origin/codex/pc-a-finance-core-accounting WORK_ASSI
 Required follow-up: handoff/reserve migration ownership; define PrivateNote with real owner IAM FK and owner-only authorization (no supervisor/delegate access), plain-text validation and safe persistence; establish versioned public create/list/update contract; test cross-user denial, reload/login persistence and failure/retry; rehearse migrations with backup before coordinating API4190 cutover. Do not overload HR, Documents or Notifications storage.
 
 Validation: scoped Workbench lint/typecheck and16existing model/service tests passed. Production build and browser form checks are recorded after runtime handoff. No API/data/schema/dependency changes or merge.
+
+Final runtime: source116a67818b62002ca3b1a17abbea887d1053c8b7, manifest hr005-a5bf459b38b3bbd4, Web3100/PID4680. API4190 retained and health200. Production build/TypeScript passed. Owner-supplied613436e representative-channel fix included with its10tests passing. B2B owner approved the restart checkpoint and was notified to resume.
+
+Authenticated browser QA verified header button opens the native modal, title/body accept text, counters update, save remains explicitly unavailable, cancel warns before discarding, and Continue retains both fields. Test text was cleared; no note/business record was created. PR166draft: https://github.com/nirvanamahlou/Rubi/pull/166. UI complete; durable note creation remains blocked as described above.

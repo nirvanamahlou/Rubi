@@ -1,9 +1,10 @@
 # Work Assignments
 
-## WORKBENCH-007-NOTE-FORM — PC-B — IN_PROGRESS
+## WORKBENCH-007-NOTE-FORM — PC-B — UI_READY / PERSISTENCE_BLOCKED_BY_MIGRATION_LOCK
 
 - Reserve native note editor and Workbench integration on codex/pc-b-workbench-note-form. User requests new-note creation and form. Fields: title and plain-text content; shared Rubi UI, keyboard-accessible modal, validation and explicit unsaved state. No pretend persistence, browser storage or overloaded owner tables. Persistence is pending migration-owner coordination; coordinator contacted before schema/API work. No other owner file changes.
 - Existing authenticated desktop/corporate application; retain current Next rendering and shared theme. Accessibility target AA, owner PC-B for this form. Targets (not measured claims): LCP2500ms, INP200ms, CLS0.1 at p75; incremental route budget80KB gzip, Lighthouse accessibility90/performance80. No new dependencies or framework decisions.
+- Form deployed on owned Web3100/PID4680, source116a678, manifest hr005-a5bf459b38b3bbd4; API4190 unchanged/health200. Includes B2B owner613436e wizard fix during approved pause between form submissions.16Workbench +10wizard tests, scoped lint/typecheck/build passed. Browser verified opening, typing/counts, cancel warning and retained text after Continue. PR166draft; UI reservation released, persistence requires explicit Migration owner handoff.
 
 ## WORKBENCH-006-HOME-LABEL — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
 
