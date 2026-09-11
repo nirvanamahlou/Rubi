@@ -1,5 +1,11 @@
 # Work Assignments
 
+## B2B-CONNECTIONS-AUDIT-001 — PC-B — READY_FOR_REVIEW
+
+Reserve Organizations directory enrichment, dossier role summary and focused connection tests/report on codex/pc-b-b2b-connections-audit. Consume existing B2B/MasterData/IAM public APIs only. Finance producer and shared Sales contracts remain with PC-A; no migration/dependency/central API edits. Preserve latest Web runtime29cfe14 and coordinate integration.
+
+Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped lint and typecheck pass. Audit/handoff: docs/tasks/B2B-CONNECTIONS-AUDIT-001.md. Combined Web build on9d05cd6 preserves latest7bae2a4; source reservations released. Missing Finance/Sales/notification producers remain explicitly incomplete.
+
 ## B2B-LIST-ACTION-ICONS-001 — PC-B — READY_FOR_REVIEW
 
 Reserve organizations-workspace.tsx on codex/pc-b-b2b-list-action-icons for icon-only directory actions, desktop and mobile. No API/data/dependency changes; coordinate Web3100 runtime.

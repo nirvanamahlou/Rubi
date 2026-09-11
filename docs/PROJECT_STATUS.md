@@ -1752,3 +1752,6 @@ Runtime verification: combined build43 routes passed; Web3100 source e8ba0fd / h
 ## 2026-09-11 — B2B directory action icons (PC-B)
 Source48d95b5 / draft PR173 replaces directory view/edit/delete labels with accessible icons and tooltips, keeps desktop actions together, and updates mobile cards. Scoped lint, typecheck and107 tests passed. Combined Web3100 build delegated to its current owner; no API or data changes.
 Runtime29cfe14 / hr005-3646774b4da0ada9 / WebPID23416 includes48d95b5. Combined build passed. Authenticated browser verified all three actions have empty visible text, SVG icons,40px widths and identical row alignment; view icon opens agency360. Screenshot at1920px verified. API unchanged.
+
+## 2026-09-11 — B2B connection audit (PC-B)
+Source9b1c33c connects directory account manager and active-contract count to existing public APIs with branch/role authorization, pagination, partial failure and cancellation. Corporate dossier summary now uses its actual role.111 tests, lint and typecheck passed. Detailed implemented versus missing connections and owner handoffs: docs/tasks/B2B-CONNECTIONS-AUDIT-001.md. No financial producer, Sales pricing integration or external sync is claimed. Combined Web build9d05cd6 preserves7bae2a4; API unchanged.
