@@ -2,6 +2,8 @@
 
 ## WORKBENCH-017-PUBLISH — PC-B — IN_PROGRESS
 
+- CI integration follow-up reserves user-menu.spec.ts only to update obsolete profile heading/navigation expectations; credential/access-mutation assertions remain intact. Combined local170tests/lint passed; final CI is the merge gate.
+
 - User explicitly authorizes push and merge of current changes to develop via PR190. Integration-only reservation for the five conflicting files in profile/Workbench/B2B status stack; preserve current develop, owner exports, requested label and boundary-note removal. No runtime/API/database changes. Personal-profile persistence remains awaiting separate owner handoff. Merge only after final combined CI gates pass.
 
 ## WORKBENCH-017-PERSONAL-PROFILE — PC-B — UI_VERIFIED / PERSISTENCE_AWAITING_HANDOFF
