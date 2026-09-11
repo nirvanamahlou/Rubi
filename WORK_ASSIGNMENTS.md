@@ -2133,6 +2133,7 @@ Reserve Organizations agreement/rate headers, export buttons and corporate CSS f
 B2B-COMPACT-EXPORT-ACTIONS-001: READY_FOR_REVIEW. Source7acd39f; create and compact Excel/PDF colocated in headers.121 tests, lint/typecheck passed. Source locks released; combined9dceb66 build preservescalendar9f5ef8c.
 
 ## B2B-FINANCE-HIDE-HR-001 — PC-B — IN_PROGRESS
+
 User clarifies only the agency360 finance subview. Reserve corporate-profile.tsx, HR outlet and new public visibility context, plus narrow central AppShell main provider wiring. Default visibility and HR routes remain intact; no API/data changes. Public Web-only provider/consumer: HR contextual outlet to Organizations view suppression; cleanup restores visibility.
 
 B2B-FINANCE-HIDE-HR-001: SOURCE_COMPLETE 8ff2da8. Scoped lint, Web typecheck and125 tests passed. Runtime inclusion coordinated with Workbench owner; no API/schema/data change. Source locks released.
@@ -2140,6 +2141,7 @@ B2B-FINANCE-HIDE-HR-001: SOURCE_COMPLETE 8ff2da8. Scoped lint, Web typecheck and
 B2B-FINANCE-HIDE-HR-001: READY_FOR_REVIEW. Runtime ab4d12c/PID8940 build46 routes and browser finance/Back/Forward visibility verified. No data/API change. PR196; locks released.
 
 ## B2B-LOGO-IN-EDIT-001 — PC-B — IN_PROGRESS
+
 Reserve Organizations organization-logo display and workspace wiring. Move all logo actions out of dossier header; existing MasterDataLiveForm logo upload persists via existing API. No API/data/shared-form changes.
 
 B2B-LOGO-IN-EDIT-001: SOURCE_COMPLETE4786181. Header logo display-only; existing edit form selects/replaces/removes logo through its standard save.121 tests, scoped lint/typecheck passed. Source locks released.
@@ -2147,6 +2149,7 @@ B2B-LOGO-IN-EDIT-001: SOURCE_COMPLETE4786181. Header logo display-only; existing
 B2B-LOGO-IN-EDIT-001: READY_FOR_REVIEW.46-route build and live header/edit-dialog browser QA passed; Web8872, runtimeeb22c43. PR198; locks released.
 
 ## B2B-ACCESS-EDIT-ICON-001 — PC-B — IN_PROGRESS
+
 Reserve organization-users-panel.tsx only: replace visible edit-access label with accessible pencil icon. No behavior/API/data changes.
 
 B2B-ACCESS-EDIT-ICON-001: SOURCE_COMPLETEa64ea2f. Compact pencil button retains accessible user-specific label, title, permissions and editor behavior. Scoped lint/typecheck passed. Locks released.
@@ -2154,6 +2157,7 @@ B2B-ACCESS-EDIT-ICON-001: SOURCE_COMPLETEa64ea2f. Compact pencil button retains 
 B2B-ACCESS-EDIT-ICON-001: READY_FOR_REVIEW.46-route build passed, active Web3100PID16592/source610170e. No test data or grants added; current QA agency user list empty. PR200; locks released.
 
 ## B2B-DIRECTORY-HIDE-HR-001 — PC-B — IN_PROGRESS
+
 Reserve organizations-workspace.tsx: suppress supplementary HR requests footer only while directory is shown; existing finance suppression retained. Public hook already exists. No API/data/shared-file changes.
 
 B2B-DIRECTORY-HIDE-HR-001: SOURCE_COMPLETEd73d6bb. Scoped lint/typecheck passed. No behavior/data/API change. Source locks released; runtime inclusion coordinated.
@@ -2161,6 +2165,7 @@ B2B-DIRECTORY-HIDE-HR-001: SOURCE_COMPLETEd73d6bb. Scoped lint/typecheck passed.
 B2B-DIRECTORY-HIDE-HR-001: READY_FOR_REVIEW.46-route build and live directory verification pass; runtime3397f2b/PID11368. PR206; locks released.
 
 ## B2B-360-REMOVE-SUBTITLE-001 — PC-B — IN_PROGRESS
+
 Reserve corporate-profile.tsx only to remove requested home360 explanatory subtitle. No API/data changes.
 
 B2B-360-REMOVE-SUBTITLE-001: SOURCE_COMPLETEf03d34c. Requested fallback subtitle removed; subsection descriptions retained. Scoped lint/typecheck passed. Combined build delegated to current runtime owner; locks released.
