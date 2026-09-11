@@ -1,8 +1,9 @@
 # Work Assignments
 
-## WORKBENCH-003-RUNTIME-3100 — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
+## WORKBENCH-003-RUNTIME-3100 — PC-B — IN_PROGRESS / MENU_FOLLOWUP
 
 - User requests the reference Workbench in Chrome on3100. Runtime owner task01a086a4-fb72-7e80-8d13-db2ce47873ad explicitly hands over Web3100 only after isolated build and free-port verification. Base is last verified runtime source7ada379; existing B2B checkout0300a34 and its active date-filter changes remain untouched.
+- Follow-up: user reports the Workbench menu still opens `/tasks`. Reserve the existing task page and test to redirect directly to the isolated demo when enabled; keep the original Tasks workspace when disabled. Refresh only this task-owned Web3100 after checks.
 - Reserve isolated `apps/web/src/modules/workbench/demo/**`, GET `/workbench/demo`, opt-in link on existing `/tasks` page (the current main-menu Workbench destination), and this task's own documentation entries. Branch `codex/pc-b-workbench-runtime-3100`. No shared shell/proxy, API, schema, dependencies or data changes.
 - Preserve API4190 PID15024, database/storage and all inherited B2B/HR capabilities. Before replacing Web3100 recheck expected PID20360/Next command line and runtime identity; no broad process termination. No merge. Demo remains synthetic/session-only and gated by RUBI_WORKBENCH_DEMO=1.
 

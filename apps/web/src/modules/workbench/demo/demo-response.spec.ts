@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { Script } from 'node:vm';
 import { GET } from '../../../app/(crm)/workbench/demo/route';
 import TasksPage from '../../../app/(crm)/tasks/page';
+import { foundationModules } from '@/modules/module-foundation/model/foundation';
 import { workbenchDemoEnabled, workbenchDemoHeaders } from './demo-response';
 
 vi.mock(
@@ -33,15 +34,18 @@ describe('Workbench demo in the complete runtime', () => {
     expect(response.headers.get('cache-control')).toContain('no-store');
   });
 
-  it('shows the opt-in entry while preserving the original Tasks workspace', () => {
+  it('opens the demo directly from the existing menu route only when enabled', () => {
     vi.stubEnv('RUBI_WORKBENCH_DEMO', '0');
-    const disabled = TasksPage().props.children;
-    expect(disabled[0]).toBe(false);
+    const disabled = TasksPage();
+    expect(disabled.props.config).toBe(foundationModules.tasks);
     vi.stubEnv('RUBI_WORKBENCH_DEMO', '1');
-    const enabled = TasksPage().props.children;
-    expect(enabled[0].props.children[0].props.href).toBe('/workbench/demo');
-    expect(enabled[1].type).toBe(disabled[1].type);
-    expect(enabled[1].props.config).toBe(disabled[1].props.config);
+    let redirectDigest = '';
+    try {
+      TasksPage();
+    } catch (error) {
+      redirectDigest = (error as { digest: string }).digest;
+    }
+    expect(redirectDigest).toBe('NEXT_REDIRECT;replace;/workbench/demo;307;');
   });
 
   it('retains the opaque sandbox and blocks network and persisted browser state', () => {

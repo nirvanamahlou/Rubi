@@ -72,3 +72,11 @@ Exact entry: http://localhost:3100/workbench/demo (existing authentication appli
 The original Tasks workspace also exposes the opt-in Workbench link.
 Chrome-specific visual confirmation is reported separately; runtime readiness does
 not assert that a Chrome tab was opened. Review3310 and preview3301 are retained.
+
+## Menu follow-up
+
+User reports the sidebar Workbench still opens `/tasks`. The existing route now
+redirects to `/workbench/demo` when the runtime opt-in is enabled, so the extra
+intermediate workspace/link is removed. With the flag disabled, the original
+Tasks workspace remains. Regression test checks the exact redirect and fallback.
+No shared navigation, API, permission or data change. Refresh only task-owned3100.
