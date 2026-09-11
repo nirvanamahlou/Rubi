@@ -2013,3 +2013,6 @@ WORKBENCH-012: build تولیدی و بررسی مرورگر با حساب وا�
 ## WORKBENCH-013 — بازچینی و پیش‌نویس‌ها
 
 تنظیمات دو بخشی، تب‌های بزرگ و وسط‌چین، KPI رنگی، حذف shortcut اسناد داخل میزکار، نمای دو ستونی پیام‌ها، فرم اولیه درخواست و چک‌لیست تیک‌زدنی یادداشت اجرا شد. ذخیره/ارسال واقعی به‌دلیل قفل Migration و نبود سرویس همچنان مسدود است؛ چند یادداشت واقعی ایجاد نشد. ۳۷ تست، lint/typecheck/build موفق؛ مرورگر تنظیمات و انتخاب قالب/تیک/خط‌خوردن را تأیید کرد. Web3100 source8492a36/PID22916؛ API بدون تغییر و health200. مرجع: tasks/WORKBENCH-013-INTERACTIONS.md.
+
+## 2026-09-11 — B2B browser navigation (PC-B)
+User clarified native browser Back. Sourcea753d86 records directory/dossier/section/tab transitions in browser history, preserves Next metadata, restores Back/Forward and avoids duplicate entries on refresh of contacts. In-page return also targets same dossier from subsections.113 Organizations tests and scoped lint/typecheck passed; combined build1995e16 from8492a36. No API/dependency changes.
