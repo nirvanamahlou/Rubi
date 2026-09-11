@@ -268,6 +268,41 @@
     background: #e7f2ff;
     color: var(--blue);
   }
+  .agencies-kpis > .kpi {
+    --kpi-color: 59, 130, 246;
+    --kpi-soft: 219, 234, 254;
+    border-color: rgba(var(--kpi-color), 0.35);
+    background: linear-gradient(
+      135deg,
+      rgba(var(--kpi-color), 0.2),
+      rgba(var(--kpi-soft), 0.6),
+      var(--surface, #fff)
+    );
+  }
+  .agencies-kpis > .kpi:nth-child(2) {
+    --kpi-color: 6, 182, 212;
+    --kpi-soft: 207, 250, 254;
+  }
+  .agencies-kpis > .kpi:nth-child(3) {
+    --kpi-color: 16, 185, 129;
+    --kpi-soft: 209, 250, 229;
+  }
+  .agencies-kpis > .kpi:nth-child(4) {
+    --kpi-color: 245, 158, 11;
+    --kpi-soft: 254, 243, 199;
+  }
+  .agencies-kpis > .kpi .kpi-icon {
+    background: rgba(var(--kpi-color), 0.14);
+    color: rgb(var(--kpi-color));
+  }
+  :is(.dark, [data-theme='dark']) & .agencies-kpis > .kpi {
+    background: linear-gradient(
+      135deg,
+      rgba(var(--kpi-color), 0.2),
+      rgba(var(--kpi-color), 0.07),
+      var(--surface, #202020)
+    );
+  }
   .kpi-icon.green {
     background: #e2f8f1;
     color: var(--green);
