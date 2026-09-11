@@ -32,4 +32,3 @@ Edit checks: representative job title changed to آزمون ذخیره و ویر
 All six finance upload forms saved a separate synthetic PNG and displayed the new record. Branch: جهان آکادمیا. Document codes: statement E199C009DF29; invoice ED167788B6EF; receipt18AB73F3957D; cheque67D3F12AAA8E; settlement0A15F78E5E21; dispute2A94D1B56C58 (all prefixed DOC-20260911-). Stored expiry date2026-10-02. These are document records, not financial postings.
 
 User handoff: new-user form prepared with synthetic display name, username agency_form_qa_0911, inactive status and profile-only default visibility. Password left empty; no submission. User must enter the new password and submit. This form is not counted as a successful save.
-

@@ -27,6 +27,13 @@ describe('header date integration', () => {
       source.indexOf('</header>'),
     );
     expect(header).toContain('<HeaderToday />');
+    expect(header.indexOf('<HeaderToday />')).toBeLessThan(
+      header.indexOf('<HeaderActions />'),
+    );
+    expect(header).toContain(
+      'className="hidden shrink-0 whitespace-nowrap lg:flex"',
+    );
+    expect(header).not.toContain('justify-end px-4 pb-1');
     expect(header).toContain('<LegalEntityContextSelector />');
     expect(header).toContain('<HeaderActions />');
     expect(source).toContain('<UserMenu />');

@@ -1,4 +1,70 @@
 export const PERMISSION_SEED_DATA = [
+  ['hr.directory.read', 'hr', 'انتخاب کارکنان در فرم‌های بین‌بخشی'],
+  [
+    'hr.connections.tasks.receive',
+    'hr',
+    'دریافت و پاسخ درخواست منابع انسانی: tasks',
+  ],
+  [
+    'hr.connections.sales.receive',
+    'hr',
+    'دریافت و پاسخ درخواست منابع انسانی: sales',
+  ],
+  [
+    'hr.connections.customers.receive',
+    'hr',
+    'دریافت و پاسخ درخواست منابع انسانی: customers',
+  ],
+  [
+    'hr.connections.customer-affairs.receive',
+    'hr',
+    'دریافت و پاسخ درخواست منابع انسانی: customer-affairs',
+  ],
+  [
+    'hr.connections.organizations.receive',
+    'hr',
+    'دریافت و پاسخ درخواست منابع انسانی: organizations',
+  ],
+  [
+    'hr.connections.marketing.receive',
+    'hr',
+    'دریافت و پاسخ درخواست منابع انسانی: marketing',
+  ],
+  [
+    'hr.connections.reservations.receive',
+    'hr',
+    'دریافت و پاسخ درخواست منابع انسانی: reservations',
+  ],
+  [
+    'hr.connections.finance.receive',
+    'hr',
+    'دریافت و پاسخ درخواست منابع انسانی: finance',
+  ],
+  [
+    'hr.connections.purchases.receive',
+    'hr',
+    'دریافت و پاسخ درخواست منابع انسانی: purchases',
+  ],
+  [
+    'hr.connections.documents.receive',
+    'hr',
+    'دریافت و پاسخ درخواست منابع انسانی: documents',
+  ],
+  [
+    'hr.connections.master-data.receive',
+    'hr',
+    'دریافت و پاسخ درخواست منابع انسانی: master-data',
+  ],
+  [
+    'hr.connections.integrations.receive',
+    'hr',
+    'دریافت و پاسخ درخواست منابع انسانی: integrations',
+  ],
+  [
+    'hr.connections.system.receive',
+    'hr',
+    'دریافت و پاسخ درخواست منابع انسانی: system',
+  ],
   ['hr.read', 'hr', 'مشاهده منابع انسانی شعبه'],
   ['hr.manage', 'hr', 'مدیریت منابع انسانی شعبه'],
   ['hr.approve', 'hr', 'تأیید درخواست منابع انسانی'],
@@ -107,6 +173,9 @@ export const PERMISSION_SEED_DATA = [
   ['sales.export', 'sales', 'خروجی قراردادهای فروش'],
   ['ticket_catalog.read', 'ticket_catalog', 'مشاهده بلیت قابل فروش'],
   ['ticket_catalog.manage', 'ticket_catalog', 'مدیریت بلیت قابل فروش'],
+  ['reservations.documents.manage', 'reservations', 'عملیات مدارک رزرواسیون'],
+  ['finance.financial_release.read', 'finance', 'مشاهده مجوز تحویل مدارک'],
+  ['finance.financial_release.approve', 'finance', 'تأیید یا لغو تحویل مدارک'],
   ['reservations.read', 'reservations', 'مشاهده صف رزرواسیون شعبه'],
   [
     'reservations.hotel_purchase.write',

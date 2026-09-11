@@ -1,4 +1,5 @@
 'use client';
+import { FinanceDeliveryPanel } from './finance-delivery-panel';
 
 import {
   ArrowDownUp,
@@ -754,6 +755,7 @@ export function FinanceWorkspace() {
 
   return (
     <main className="space-y-6" dir="rtl">
+      <FinanceDeliveryPanel />
       <PageHeader
         actions={
           <>

@@ -46,6 +46,7 @@ export function reservationTickets(
       return [
         {
           passengerId: passenger.customerId,
+          issued: true,
           passengerName: passenger.displayNameSnapshot || 'نام مسافر ثبت نشده',
           contractNumber: snapshot.contractNumber,
           offers,

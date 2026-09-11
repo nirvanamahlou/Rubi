@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { HrDirectoryModule } from '../hr/hr-directory.module';
 
 import { AuthGuard } from '../iam/auth.guard';
 import { IamModule } from '../iam/iam.module';
@@ -12,7 +13,7 @@ import { DocumentsService } from './documents.service';
 import { LocalDocumentStorage } from './documents.storage';
 
 @Module({
-  imports: [IamModule, NotificationsModule],
+  imports: [IamModule, NotificationsModule, HrDirectoryModule],
   controllers: [DocumentsController],
   providers: [
     AuthGuard,

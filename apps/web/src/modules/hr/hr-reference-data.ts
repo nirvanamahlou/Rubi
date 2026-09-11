@@ -4,8 +4,14 @@ import type { HrRecordDto } from '@rubi/contracts';
 import { allHrRecords, type HrStore } from './hr-store';
 
 export function useHrReferenceData(store: HrStore) {
-  const [loaded, setLoaded] = useState<HrRecordDto[] | null>(null);
-  const [error, setError] = useState('');
+  const [result, setResult] = useState<{
+    revision: number;
+    records?: HrRecordDto[];
+    error?: string;
+  }>();
+  const loaded =
+    result?.revision === store.revision ? result.records : undefined;
+  const error = result?.revision === store.revision ? (result.error ?? '') : '';
   const truncated = store.data!.recordsTruncated;
   useEffect(() => {
     if (!truncated) return;
@@ -13,15 +19,18 @@ export function useHrReferenceData(store: HrStore) {
     void allHrRecords({})
       .then((records) => {
         if (active) {
-          setLoaded(records);
-          setError('');
+          setResult({ revision: store.revision, records });
         }
       })
       .catch((e) => {
         if (active)
-          setError(
-            e instanceof Error ? e.message : 'دریافت مقادیر انتخابی انجام نشد.',
-          );
+          setResult({
+            revision: store.revision,
+            error:
+              e instanceof Error
+                ? e.message
+                : 'دریافت مقادیر انتخابی انجام نشد.',
+          });
       });
     return () => {
       active = false;

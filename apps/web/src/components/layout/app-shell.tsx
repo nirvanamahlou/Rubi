@@ -52,6 +52,7 @@ import {
 import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
 import { Input } from '../ui/form-controls';
+import { HrConnectionsOutlet } from '@/modules/hr/hr-connections-outlet';
 import {
   Dialog,
   DialogClose,
@@ -110,7 +111,9 @@ function Navigation({
 }) {
   const pathname = usePathname();
   const groupId = useId();
-  const [closedGroups, setClosedGroups] = useState<string[]>([]);
+  const [closedGroups, setClosedGroups] = useState<string[]>(() =>
+    groupedNavigationItems.map((group) => group.id),
+  );
   const isGroupClosed = (id: string) => closedGroups.includes(id);
   function toggleGroup(id: string) {
     setClosedGroups((ids) =>
@@ -173,7 +176,7 @@ function Navigation({
       className={cn(
         'grid min-w-0 content-start overflow-x-hidden',
         compact
-          ? 'h-full grid-rows-[repeat(17,minmax(32px,1fr))] gap-0.5'
+          ? 'h-full auto-rows-[minmax(32px,1fr)] gap-0.5'
           : 'gap-[7px] py-2',
       )}
     >
@@ -260,8 +263,11 @@ function SearchDialog() {
         >
           <Search aria-hidden="true" className="size-4" />
           <span className="truncate">{faMessages.common.search}</span>
-          <kbd className="ms-auto hidden rounded-md border border-border bg-surface px-1.5 py-0.5 text-[10px] lg:inline">
-            Ctrl K
+          <kbd
+            dir="ltr"
+            className="ms-auto hidden shrink-0 items-center whitespace-nowrap rounded-md border border-input bg-surface px-2 py-0.5 text-[11px] font-semibold leading-5 text-foreground sm:inline-flex"
+          >
+            Ctrl + K
           </kbd>
         </button>
       </DialogTrigger>
@@ -537,10 +543,10 @@ function AppShellContent({ children }: { children: ReactNode }) {
             <div className="min-w-0 flex-1">
               <SearchDialog />
             </div>
+            <div className="hidden shrink-0 whitespace-nowrap lg:flex">
+              <HeaderToday />
+            </div>
             <HeaderActions />
-          </div>
-          <div className="flex min-w-0 justify-end px-4 pb-1 sm:px-6">
-            <HeaderToday />
           </div>
         </header>
         <div className="px-4 pt-3 sm:px-6 lg:px-7">
@@ -550,6 +556,9 @@ function AppShellContent({ children }: { children: ReactNode }) {
         </div>
         <main className="px-4 pb-6 pt-3 sm:px-6 lg:px-7" id="main-content">
           {children}
+          <Suspense fallback={null}>
+            <HrConnectionsOutlet />
+          </Suspense>
         </main>
       </div>
     </div>

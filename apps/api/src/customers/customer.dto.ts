@@ -107,6 +107,36 @@ export class CustomerMutationDto {
   @IsDateString({ strict: true })
   @Matches(/^\d{4}-\d{2}-\d{2}$/)
   passportExpiryDate?: string | null;
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Za-z][A-Za-z '-]{0,119}$/)
+  passportFirstName?: string | null;
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Za-z][A-Za-z '-]{0,119}$/)
+  passportLastName?: string | null;
+  @IsOptional() @IsIn(['M', 'F']) gender?: 'M' | 'F' | null;
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsString()
+  @Matches(/^[A-Z]{3}$/)
+  nationalityCode?: string | null;
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsString()
+  @Matches(/^[A-Z]{3}$/)
+  passportIssuingCountryCode?: string | null;
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsString()
+  @Matches(/^[A-Z]{3}$/)
+  birthCountryCode?: string | null;
   @IsArray() @IsIn(['customer', 'passenger'], { each: true }) roles!: (
     'customer' | 'passenger'
   )[];

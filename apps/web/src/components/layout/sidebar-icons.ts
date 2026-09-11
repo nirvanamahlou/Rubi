@@ -1,5 +1,6 @@
 import {
   Archive,
+  BadgeDollarSign,
   Banknote,
   Building2,
   ChartColumn,
@@ -7,6 +8,8 @@ import {
   Database,
   FileText,
   Headphones,
+  House,
+  Inbox,
   LayoutGrid,
   Megaphone,
   Package,
@@ -22,17 +25,21 @@ import type { NavigationHref } from '@/messages/fa';
 
 /** Sidebar-only icons matching the approved compact navigation reference. */
 export const sidebarIcons: Record<NavigationHref, LucideIcon> = {
+  '/workbench': House,
   '/dashboard': LayoutGrid,
   '/tasks': ClipboardCheck,
   '/sales': FileText,
+  '/pricing-management': BadgeDollarSign,
   '/customers': UsersRound,
   '/customer-affairs': Headphones,
   '/organizations': Building2,
   '/marketing': Megaphone,
   '/reservations': Send,
+  '/reservations/hotel-rates': Building2,
   '/ticket-management': Ticket,
   '/purchases': Package,
   '/finance': Banknote,
+  '/finance/requests': Inbox,
   '/human-resources': UserRoundCheck,
   '/documents': Archive,
   '/reports': ChartColumn,

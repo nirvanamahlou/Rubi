@@ -15,6 +15,7 @@ import { Prisma } from '@rubi/database';
 import { DatabaseService } from '../database/database.service';
 
 const intakeInclude = {
+  workflowRevisions: { orderBy: { version: 'desc' }, take: 1 },
   arrangements: { orderBy: { version: 'desc' }, take: 1 },
   hotelPurchases: {
     orderBy: { version: 'desc' },
@@ -28,19 +29,74 @@ const intakeInclude = {
       createdAt: true,
     },
   },
+  servicePurchases: {
+    orderBy: { version: 'desc' },
+    include: {
+      financeRevisions: { orderBy: { version: 'desc' }, take: 1 },
+    },
+  },
 } satisfies Prisma.ReservationIntakeInclude;
 
 function present(
   row: Prisma.ReservationIntakeGetPayload<{ include: typeof intakeInclude }>,
-): ReservationIntakeV1 {
+): ReservationIntakeV1 & {
+  workflow: unknown;
+  salesOwnerUserId: string | null;
+} {
   const arrangement = row.arrangements[0];
+  const latestServicePurchases = new Map<
+    string,
+    (typeof row.servicePurchases)[number]
+  >();
+  for (const purchase of row.servicePurchases)
+    if (!latestServicePurchases.has(purchase.serviceClientKey))
+      latestServicePurchases.set(purchase.serviceClientKey, purchase);
   return {
+    workflow: row.workflowRevisions?.[0]?.state ?? null,
+    salesOwnerUserId: row.salesOwnerUserId,
     purchaseVersion: row.purchaseVersion,
     hotelPurchases: row.hotelPurchases.map((cost) => ({
       ...cost,
       amount: cost.amount.toString(),
       createdAt: cost.createdAt.toISOString(),
     })),
+    servicePurchases: [...latestServicePurchases.values()].map((purchase) => {
+      const finance = purchase.financeRevisions[0];
+      return {
+        id: purchase.id,
+        version: purchase.version,
+        serviceClientKey: purchase.serviceClientKey,
+        serviceKind: purchase.serviceKind,
+        serviceTitle: purchase.serviceTitleSnapshot,
+        supplierOrganizationId: purchase.supplierOrganizationId,
+        supplierName: purchase.supplierNameSnapshot,
+        amount: purchase.amount.toString(),
+        currencyCode: purchase.currencyCode,
+        actorUserId: purchase.actorUserId,
+        createdAt: purchase.createdAt.toISOString(),
+        finance: finance
+          ? {
+              version: finance.version,
+              status: finance.status,
+              bankId: finance.bankId,
+              transferAt: finance.transferAt?.toISOString() ?? null,
+              paymentReference: finance.paymentReference,
+              reason: finance.reason,
+              updatedAt: finance.createdAt.toISOString(),
+              updatedByUserId: finance.actorUserId,
+            }
+          : {
+              version: 0,
+              status: 'PENDING' as const,
+              bankId: null,
+              transferAt: null,
+              paymentReference: null,
+              reason: '',
+              updatedAt: null,
+              updatedByUserId: null,
+            },
+      };
+    }),
     id: row.id,
     requestId: row.requestId,
     contractId: row.contractId,
@@ -78,7 +134,11 @@ export class ReservationsPublicService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
-  async receive(snapshot: SalesReservationRequestV1, branchId: string) {
+  async receive(
+    snapshot: SalesReservationRequestV1,
+    branchId: string,
+    salesOwnerUserId?: string,
+  ) {
     const fingerprint = createHash('sha256')
       .update(JSON.stringify({ branchId, snapshot }))
       .digest('hex');
@@ -92,6 +152,7 @@ export class ReservationsPublicService {
           contractId: snapshot.contractId,
           contractVersion: snapshot.contractVersion,
           branchId,
+          ...(salesOwnerUserId ? { salesOwnerUserId } : {}),
           fingerprint,
           snapshot: snapshot as unknown as Prisma.InputJsonValue,
         },
@@ -113,6 +174,14 @@ export class ReservationsPublicService {
     return { id: row.id, requestId: row.requestId, status: row.status };
   }
 
+  async purchaseContext(id: string, branchIds: readonly string[]) {
+    const row = await this.database.client.reservationIntake.findFirst({
+      where: { id, branchId: { in: [...branchIds] } },
+      include: intakeInclude,
+    });
+    if (!row) throw new NotFoundException('درخواست در دسترس نیست.');
+    return present(row);
+  }
   async list(
     branchIds: readonly string[],
     options: {
@@ -191,6 +260,9 @@ export class ReservationsPublicService {
     const guestIds = [...new Set(input.hotelGuestCustomerIds)];
     return this.database.client.$transaction(async (transaction) => {
       await transaction.$queryRaw(
+        Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${id}, 0))`,
+      );
+      await transaction.$queryRaw(
         Prisma.sql`SELECT "id" FROM "ReservationIntake" WHERE "id" = ${id}::uuid FOR UPDATE`,
       );
       const row = await transaction.reservationIntake.findUnique({
@@ -199,6 +271,12 @@ export class ReservationsPublicService {
       });
       if (!row || !branchIds.includes(row.branchId))
         throw new NotFoundException('درخواست رزرواسیون یافت نشد.');
+      const workflow = row.workflowRevisions?.[0]?.state as
+        { voucherIssued?: boolean; supplierStatus?: string } | undefined;
+      if (workflow?.voucherIssued || workflow?.supplierStatus === 'CANCELLED')
+        throw new ConflictException(
+          'درخواست بسته شده است؛ چیدمان قابل تغییر نیست.',
+        );
       const snapshot = row.snapshot as unknown as SalesReservationRequestV1;
       if (!snapshot.hotelSelection)
         throw new BadRequestException('این درخواست خدمت هتل ندارد.');

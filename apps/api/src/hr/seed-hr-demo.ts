@@ -17,6 +17,8 @@ import type { DocumentsService } from '../documents/documents.service';
 import { IamService } from '../iam/iam.service';
 import { MfaTotpService } from '../iam/mfa-totp';
 import { HrService } from './hr.service';
+import { HrDirectoryService } from './hr-directory.service';
+import { MasterHrDirectory } from '../master-data/master-hr-directory';
 
 /** Explicit, idempotent fictional local fixtures through the production HR commands. */
 async function main() {
@@ -83,7 +85,12 @@ async function main() {
         throw new Error('Demo fixtures do not create or attach documents.');
       },
     } as unknown as DocumentsService;
-    const service = new HrService(database, iam, documents);
+    const service = new HrService(
+      database,
+      iam,
+      documents,
+      new HrDirectoryService(database, iam, new MasterHrDirectory(database)),
+    );
     let employees = 0,
       records = 0;
     const showcaseIds = new Set<string>();

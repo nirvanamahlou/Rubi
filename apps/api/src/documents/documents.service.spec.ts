@@ -19,6 +19,7 @@ import { DocumentsService } from './documents.service';
 import type { DocumentsScanProcessor } from './documents.scan-processor';
 import type { LocalDocumentStorage } from './documents.storage';
 import type { IamStepUpPort } from '../iam/iam-step-up.port';
+import type { HrDirectoryService } from '../hr/hr-directory.service';
 
 const branchId = '33333333-3333-4333-8333-333333333333';
 const actor: AuthenticatedActor = {
@@ -154,6 +155,7 @@ describe('DocumentsService security and persistence flow', () => {
     processVersion: vi.fn().mockResolvedValue(false),
   };
   const iamStepUp = { verifyStepUp: vi.fn() };
+  const hrDirectory = { employee: vi.fn() };
   let service: DocumentsService;
 
   beforeEach(() => {
@@ -163,6 +165,7 @@ describe('DocumentsService security and persistence flow', () => {
       storage as unknown as LocalDocumentStorage,
       scanProcessor as unknown as DocumentsScanProcessor,
       iamStepUp as unknown as IamStepUpPort,
+      hrDirectory as unknown as HrDirectoryService,
     );
   });
 
@@ -538,6 +541,78 @@ describe('DocumentsService security and persistence flow', () => {
     );
     expect(result.data.currentVersion.scanStatus).toBe(
       'AWAITING_ANTIVIRUS_ADAPTER',
+    );
+  });
+
+  it('resolves an HR employee through its public service and rejects stale or cross-branch source references before storage', async () => {
+    const hrActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [...actor.permissions, 'documents.hr.read'],
+    };
+    const employeeId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    repository.uploadReferences.mockResolvedValue({
+      documentType: {
+        id: row().documentTypeId,
+        domain: 'HUMAN_RESOURCES',
+        defaultConfidentiality: 'INTERNAL',
+        allowedMimeTypes: ['application/pdf'],
+        maxFileSizeBytes: 25000000,
+        requiresExpiry: false,
+      },
+      category: { id: row().categoryId },
+      owner: { id: actor.userId },
+      branch: { id: branchId },
+    });
+    repository.createUploaded.mockResolvedValue(
+      row({ domain: 'HUMAN_RESOURCES', confidentiality: 'INTERNAL' }),
+    );
+    hrDirectory.employee.mockResolvedValue({
+      id: employeeId,
+      name: 'Canonical HR employee',
+      personnelCode: 'HR-42',
+    });
+    const dto: DocumentUploadDto = {
+      title: 'Employee archive',
+      documentTypeId: row().documentTypeId,
+      categoryId: row().categoryId!,
+      branchId,
+      ownerUserId: actor.userId,
+      sourceModule: 'HUMAN_RESOURCES',
+      sourceEntityType: 'Employee',
+      sourceEntityId: employeeId,
+      sourceDisplayLabel: 'Forged display label',
+    };
+    const buffer = Buffer.from('%PDF-1.7\nsynthetic employee document');
+    const file = {
+      buffer,
+      mimetype: 'application/pdf',
+      originalname: 'employee.pdf',
+      size: buffer.length,
+    };
+    await service.upload(dto, file, hrActor, {});
+    expect(hrDirectory.employee).toHaveBeenCalledWith(
+      employeeId,
+      branchId,
+      hrActor,
+    );
+    expect(repository.createUploaded).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceEntityId: employeeId,
+        sourceDisplayLabel: 'Canonical HR employee · HR-42',
+      }),
+    );
+    storage.putQuarantined.mockClear();
+    repository.createUploaded.mockClear();
+    hrDirectory.employee.mockRejectedValueOnce(
+      new ForbiddenException('Employee outside branch'),
+    );
+    await expect(service.upload(dto, file, hrActor, {})).rejects.toThrow(
+      'Employee outside branch',
+    );
+    expect(storage.putQuarantined).not.toHaveBeenCalled();
+    expect(repository.createUploaded).not.toHaveBeenCalled();
+    await expect(service.upload(dto, file, actor, {})).rejects.toBeInstanceOf(
+      ForbiddenException,
     );
   });
 

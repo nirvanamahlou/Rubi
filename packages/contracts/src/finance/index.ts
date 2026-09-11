@@ -328,6 +328,93 @@ export const financeConsumerCompatibility = {
   hr: 'Consumes only approved aggregate payroll input; no attendance, contract, or evaluation access.',
 } as const;
 
+export const financeWorkflowContracts = {
+  receiptVerificationRequest: 'finance.receipt-verification-request.v1',
+  receiptConfirmed: 'finance.receipt-confirmed.v1',
+  receiptRejected: 'finance.receipt-rejected.v1',
+  paymentRequest: 'finance.payment-request.v1',
+  paymentApproved: 'finance.payment-approved.v1',
+  paymentCompleted: 'finance.payment-completed.v1',
+  paymentRejected: 'finance.payment-rejected.v1',
+  correctionRequested: 'finance.correction-requested.v1',
+  financialReleaseChanged: 'finance.financial-release-changed.v1',
+  accountingSource: 'finance.accounting-source.v1',
+} as const;
+
+export type FinanceRequestStatus =
+  | 'NEW'
+  | 'UNDER_REVIEW'
+  | 'CORRECTION_REQUIRED'
+  | 'APPROVED'
+  | 'READY_FOR_PAYMENT'
+  | 'PAYING'
+  | 'PAID'
+  | 'RECEIPT_CONFIRMED'
+  | 'REJECTED'
+  | 'CANCELLED'
+  | 'RETURNED'
+  | 'REQUIRES_MANUAL_REVIEW';
+
+export type FinanceRequestSourceModule =
+  'SALES' | 'RESERVATIONS' | 'PROCUREMENT' | 'HR' | 'OTHER';
+
+export interface FinanceRequestBaseV1 {
+  requestReference: string;
+  sourceModule: FinanceRequestSourceModule;
+  sourceReference: FinancePublicReference;
+  contractReference: FinancePublicReference | null;
+  partyReference: FinancePublicReference;
+  partyDisplaySnapshot: string;
+  description: string;
+  amount: MoneyContract;
+  rialEquivalent: MoneyContract | null;
+  exchangeRateReference: string | null;
+  createdAt: string;
+  dueAt: string | null;
+  requestedByReference: string;
+  documentReferences: readonly FinancePublicReference[];
+  branchReference: string;
+  legalEntityReference: string;
+  version: number;
+  idempotencyKey: string;
+}
+
+export type FinanceReceiptVerificationRequestV1 = FinanceEventEnvelope<
+  'finance.receipt-verification-request.v1',
+  FinanceRequestBaseV1 & {
+    declaredPaymentMethod: string;
+    declaredPaidAt: string;
+    declaredTrackingReference: string | null;
+    contractAmount: MoneyContract;
+    previouslyConfirmedAmount: MoneyContract;
+  }
+>;
+
+export type FinancePaymentRequestV1 = FinanceEventEnvelope<
+  'finance.payment-request.v1',
+  FinanceRequestBaseV1 & {
+    serviceReference: FinancePublicReference | null;
+    supplierReference: FinancePublicReference;
+    grossPurchase: MoneyContract;
+    supplierDiscount: MoneyContract;
+    netPurchase: MoneyContract;
+    invoiceReference: string | null;
+    maskedDestinationAccount: string | null;
+  }
+>;
+
+export interface FinanceWorkflowResultV1 {
+  requestReference: string;
+  sourceReference: FinancePublicReference;
+  status: FinanceRequestStatus;
+  financeNote: string;
+  receiptOrPaymentReference: string | null;
+  journalReference: string | null;
+  trackingReference: string | null;
+  occurredAt: string;
+  version: number;
+}
+
 export function normalizeFinanceListQuery(
   input: Partial<FinanceListQuery>,
 ): FinanceListQuery {

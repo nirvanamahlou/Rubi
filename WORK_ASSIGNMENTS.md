@@ -1,5 +1,22 @@
 # Work Assignments
 
+## UNIFIED-LATEST-0912 — PC-A — READY_FOR_MERGE
+
+- با تأیید صریح مالک محصول، آخرین نسخه‌های منتشرشده PC-A، PC-B و مجوز Reporting
+  برای PC-C روی شاخه مستقل `codex/pc-a-unified-latest-0912` تجمیع شدند تا پس از
+  کنترل کامل از یک Pull Request به `develop` برسند. `main` تغییر نمی‌کند.
+- ورودی‌های تجمیع‌شده شامل رزرواسیون و خروجی‌ها تا `af77d07`، رابط مشترک تا
+  `bc40d8b`، مالی تا `f2085c1`، مدیریت قیمت تا `135260f`، آژانس‌ها تا
+  `5322656`، میزکار تا `40fa1d6` و مجوز Reporting تا `a9300cc` است. تاریخ‌های
+  خام بازگشتی نیز به DatePicker مشترک تبدیل شدند.
+- Conflictهای اسناد به‌صورت افزایشی حل شده‌اند؛ هیچ Workspace دارای تغییر محلی
+  reset، stash یا overwrite نشده است. مالکیت Taskهای مستقل با Merge این شاخه
+  منتقل نمی‌شود و ادامه هر ماژول همچنان به رزرو جدید نیاز دارد.
+- نصب Frozen، Prisma، lint، typecheck، ۲۶۵۴ تست و Production Build شش Task با
+  ۴۶ Route پاس شدند. کنترل Diff و Secret نیز سالم است؛ اجرای نهایی Web 3100 و
+  API پس از Merge همین Baseline انجام می‌شود. جزئیات در
+  `docs/tasks/UNIFIED-LATEST-0912.md` ثبت شده است.
+
 ## B2B-CONTRACT-FILTER-LAYOUT-001 — PC-B — READY_FOR_REVIEW
 
 Reserve corporate-design.css agreement filter layout on codex/pc-b-b2b-contract-filter-layout from2e43e0e. Resolve flex overriding the shared filter grid; maintain date/branch filters and compact aligned actions. No data/API/dependency changes.
@@ -24,38 +41,197 @@ Reserve Organizations directory enrichment, dossier role summary and focused con
 
 Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped lint and typecheck pass. Audit/handoff: docs/tasks/B2B-CONNECTIONS-AUDIT-001.md. Combined Web build on9d05cd6 preserves latest7bae2a4; source reservations released. Missing Finance/Sales/notification producers remain explicitly incomplete.
 
-## B2B-LIST-ACTION-ICONS-001 — PC-B — READY_FOR_REVIEW
+## WORKBENCH-015-SETTINGS-CENTER — PC-B — DONE / UI_VERIFIED
 
-Reserve organizations-workspace.tsx on codex/pc-b-b2b-list-action-icons for icon-only directory actions, desktop and mobile. No API/data/dependency changes; coordinate Web3100 runtime.
+- Reserve only account action-grid alignment in workbench-workspace.tsx and own status docs. Center all settings buttons/links, no shared UI/API/dependency change. Base78bda1f; branch codex/pc-b-workbench-settings-center. Coordinate inclusion in next shared Web3100 build.
 
-Source48d95b5, draft PR173. Scoped lint, typecheck and107 Organizations tests pass. Runtime owner integrating into combined Web3100 build; release source reservation.
+## WORKBENCH-014-NOTE-CARDS — PC-B — UI_READY / LOCAL_RUNTIME_3100
 
-## B2B-CONTACT-ACTIONS-001 — PC-B — READY_FOR_REVIEW
+- PC-B reserves Workbench note board/editor/model and workspace integration to match screenshots552/553: cream cards, folders/search/date filters, pin/edit/remove and checklist strike-through. UI drafts only with explicit unsaved label; no persistence, fake server records, API/schema/dependency changes. Branch codex/pc-b-workbench-note-cards from e701b49; preserve pending B2B history fix on runtime handoff.
 
-Reserve organizations-workspace.tsx on codex/pc-b-b2b-contact-actions for removing empty contact placeholders and compact accessible icon actions. No data, API or dependency changes. Coordinate Web3100 with runtime owner.
+## WORKBENCH-013-INTERACTIONS — PC-B — UI_READY / PERSISTENCE_BLOCKED
 
-Source14613d9; scoped ESLint, TypeScript and107 Organizations tests pass. Draft PR172. Runtime integration on e8ba0fd preserves9480599. Release source reservation.
+- User requests screenshot-aligned settings, larger centered tabs, colored KPIs, removal of Documents shortcut, chat layout, functional request/message/note forms and private checklist notes. Reserve Workbench-local UI and own docs on codex/pc-b-workbench-interactions; preserve B2B9b1c33c. Persistence requires current migration-owner handoff, requested from coordinator before schema work; no fake storage or transmission. Shared layout and other owner modules unchanged.
 
-## B2B-PROFILE-GRID-001 — PC-B — READY_FOR_REVIEW / RUNTIME_3100
+## WORKBENCH-012-MESSAGE-TEMPLATES — PC-B — UI_READY / LOCAL_RUNTIME_3100
 
-Reserve corporate-profile.tsx and corporate-design.css for equal-height dossier cards and responsive spacing. Branch codex/pc-b-b2b-profile-grid from bef45ad. No API, data, migration or dependency changes. Coordinate Web3100 with active runtime owner.
+- Reserve message-composer.tsx and module-local message-templates.ts plus own docs. Add Finance, Reservations, AI and Sales recipient choices with editable prepared texts. Branch codex/pc-b-workbench-message-templates, base d8b3e15. No message service, transmission, storage, owner API, schema or dependency changes. Existing authenticated desktop Rubi UI and accessibility conventions retained; runtime build coordinated with B2B.
 
-## B2B-FORM-SAVE-AUDIT-001 — PC-B — READY_FOR_REVIEW / USER_HANDOFF
+## REPORTING-PC-C-AUTHORIZATION — PC-A → PC-C — AUTHORIZED / P0-04 LOCAL-GATE
 
-- User authorizes authenticated UI entry tests of all agency forms. Isolated QA organization ORG_Q9WGXUJ2F2AN, clearly labelled test records only. Reserve Organizations wizard/contact save fixes, organization document expiry serialization, focused tests and audit notes on codex/pc-b-b2b-form-save-audit from8fea8f1. Preserve native runtime; coordinate restarts. No security changes, actual approvals or financial postings.
+- مالک هماهنگی پروژه در 2026-09-10 به `COMPUTER_ID=PC-C` اجازه داد توسعه Reporting
+  را در Workspace اعلام‌شده `F:/Projects/Rubi` و Worktree مستقل
+  `F:/Projects/Rubi/.worktrees/reporting` ادامه دهد. این ثبت، مجوز سیستم‌عامل یا وجود
+  مسیر روی دستگاه مقصد را از PC-A ادعا نمی‌کند؛ PC-C باید آن‌ها را محلی تأیید کند.
+- محدوده انحصاری Task: `apps/web/src/modules/reports/**`،
+  `apps/web/src/app/(crm)/reports/**`، `apps/api/src/reporting/**` و
+  `docs/tasks/REPORTING-*.md`. ثبت وضعیت همین Task در این فایل و
+  `docs/PROJECT_STATUS.md` مجاز است. شاخه‌های جدید فقط با الگوی
+  `codex/pc-c-reporting-<task>` ساخته می‌شوند.
+- PC-C مجاز به Terminal، test/lint/typecheck/build، اجرای Reporting روی پورت 3000 و
+  توقف/جایگزینی فقط Listener متعلق به همان Reporting worktree است. Process ناشناس یا
+  متعلق به Workspace دیگر نباید متوقف شود.
+- مبنای اعلام‌شده از دستگاه مقصد: P0-01=`dcf2b2e`، P0-02=`b429b94` و
+  P0-03=`f4f85bc`؛ ادامه `REPORTING-P0-04`. این سه Commit پس از fetch مورخ
+  2026-09-10 در Clone مرجع و Remote قابل resolve نبودند و هیچ Branch ریموت
+  `codex/pc-c-reporting-*` مشاهده نشد. PC-C پیش از P0-04 باید وجود و ترتیب این Commitها
+  را در Worktree خودش تأیید و شاخه را با Push معمولی منتشر کند؛ Commit ساختگی یا تغییر
+  Base ممنوع است.
+- هیچ Migration، Schema، Seed، Dependency، Lockfile یا shared/root contract برای این
+  مجوز رزرو نشده است. نیاز واقعی به هرکدام، Task و قفل مستقل می‌خواهد. Reporting فقط
+  Approved View یا Public Projection نسخه‌دار را مصرف می‌کند؛ Query مستقیم جدول‌های
+  عملیاتی و دورزدن Permission/Branch/Legal-Entity scope ممنوع است.
+- مالکیت دائمی Reporting منتقل نشده است: PC-A مالک زیرساخت Backend و صحت grain و PC-B
+  مالک رابط مرکزی باقی می‌مانند؛ PC-C مجری تفویض‌شده P0 است. تغییر Contract یا فایل
+  خارج از Scope باید پیش از اجرا با هر دو مالک ثبت شود. Merge، Force Push و تغییر
+  مستقیم `main`/`develop` مجاز نیست. مرجع کامل:
+  `docs/tasks/REPORTING-PC-C-AUTHORIZATION.md`.
 
-## B2B-LIVE-KPIS-001 — PC-B — DONE / RUNTIME_3100
+## SALES-PRICE-MANAGEMENT-0912 — PC-A — READY_FOR_REVIEW / UI_PREVIEW
 
-- Reserve Organizations workspace and new metrics loader/tests on codex/pc-b-b2b-live-kpis from6b942be. Use existing public MasterData list contract only; counts cover all pages, role overlap deduplicated for incomplete identity. No backend/API/schema/dependency changes. Coordinate3100 integration with native workbench owner. Source c63ec00 + test fix8b6cd35, draft PR163. Lint/typecheck and103 tests pass; combined build2d5d5e / hr005-f74450ea05fc1fa7 now served3100, Organizations HTTP200; runtime owner reports authenticated browser verification. Release source locks.
+- درخواست صریح مالک در 2026-09-12: افزودن آیتم مستقل «مدیریت قیمت» در گروه «فروش»
+  برای تغییر روزانه قیمت تورها و بلیت‌های ملکی و دریافت خروجی بنر قیمت. `COMPUTER_ID=PC-A`.
+- Branch مستقل `codex/pc-a-pricing-management` به‌صورت stacked از نسخه قابل مشاهده
+  Finance `77e181d` ساخته شد تا ناوبری تأییدشده کاربر حفظ شود؛ Merge مقصد فقط پس از
+  تعیین تکلیف PR #153 انجام می‌شود.
+- محدوده رزروشده: ماژول Web جدید `apps/web/src/modules/pricing-management/**`، route
+  `/pricing-management`، metadata/icon/render ناوبری و تست‌های مربوط، و اسناد همین Task.
+  فایل‌های API/Ticket/Tour/Sales موجود، Schema/Migration/Seed، Permission، داده عملیاتی،
+  Dependency/Lockfile و Listenerهای دیگر تغییر نمی‌کنند.
+- قیمت فروش طبق قرارداد موجود متعلق به Sales است، اما Producer فعلی تور/بلیت قرارداد
+  قیمت روزانه و mutation پایدار ندارد. این Slice فقط ویرایش/اعتبارسنجی Preview و تولید
+  واقعی PNG در مرورگر از داده صریحاً synthetic دارد؛ ذخیره سروری یا ادعای انتشار قیمت
+  تا قرارداد عمومی، Permission و Migration مستقل ممنوع است.
+- نتیجه تحویل: route مستقل `/pricing-management` بلافاصله پس از «قرارداد» در گروه فروش،
+  فیلتر تاریخ/نوع/جست‌وجو، ویرایش و اعتبارسنجی قیمت، انتخاب اقلام بنر، سه تم و خروجی
+  واقعی PNG مربع ۱۲۰۰ پیکسل. ۲۳ تست هدفمند، Web typecheck، lint محدود و Production
+  Build با ۴۲ مسیر موفق‌اند. Browser صفحه و پیام موفقیت ساخت PNG را بدون خطای Console
+  تأیید کرد؛ Commit `c8f41fc` Push و Draft PR #161 به شاخه مالی stacked باز شد؛ ذخیره
+  عملیاتی همچنان خارج از این Slice است.
 
-## B2B-KPI-COLORS-001 — PC-B — DONE / RUNTIME_3100
+## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — READY_FOR_REVIEW / FX_SNAPSHOT_FOLLOWUP / PERSISTENCE_BLOCKED
 
-- Reserve Organizations workspace KPI class and corporate CSS only on codex/pc-b-b2b-kpi-colors. Match Customers blue/cyan/emerald/amber gradient cards. No data/API/dependency changes. Coordinate runtime3100 with active workbench owner; preserve native shell changes. Source c83d530 / draft PR162: browser fixture, lint/typecheck and100 Organizations tests pass. Runtime owner will integrate into combined build; release source locks.
+- درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
+  دریافت/پرداخت در فضای مستقل `/finance`. Branch مستقل
+  `codex/pc-a-finance-core-accounting` از `origin/develop@4717b13` و Worktree مستقل
+  `C:/Users/niayeshseir-1/Rubi-finance-core-accounting` است؛ `COMPUTER_ID=PC-A`.
+- محدوده رزروشده: `apps/api/src/finance/**`، `apps/web/src/modules/finance/**`، route موجود
+  `/finance`، `packages/contracts/src/finance/**`، تست‌های Finance و سند
+  `docs/tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md`. تغییرات اسناد مرکزی فقط به ورودی
+  افزایشی همین Task محدود است و ورودی هیچ مالک دیگری بازنویسی نمی‌شود.
+- قفل Migration/Central Docs و قراردادهای IAM/Sales/Travel نزد Task فعال رزرواسیون باقی
+  می‌ماند. بنابراین Prisma Schema/Migration/Seed، Permission seed، Root contract export،
+  Dependency/Lockfile، فایل‌های Sales/Reservations/Procurement/HR/Documents و Runtime یا
+  Portهای آن‌ها تغییر نمی‌کند. Finance فقط Reference/Snapshot نسخه‌دار مصرف می‌کند.
+- اجرای مجاز تا آزادشدن قفل: Domain/Application و UI واقعی از نظر validation و state
+  handling، بدون Controller/Persistence یا موفقیت عملیاتی جعلی. Web مالی فقط روی 3200 و
+  API مالی فقط روی 4200 Smoke می‌شود و هیچ listener متعلق به رزرواسیون متوقف نمی‌شود.
+- معیارها، قفل‌ها، قراردادهای producer/consumer و موارد مسدود در
+  `docs/tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md` ثبت می‌شوند. Push و Draft PR به
+  `develop` مجاز است؛ Merge، Force Push و تغییر مستقیم `main`/`develop` ممنوع است.
+- نتیجه مجاز تحویل شد: حسابداری و کارتابل مستقل، درخت حساب، کنترل‌های دوره/Posting، قراردادهای
+  versioned و کارتابل Preview با validation دریافت/پرداخت. Contractها ۶۴ تست، API مالی
+  ۱۹ تست و Web مالی ۱۴ تست پاس؛ lint/typecheck/build و Smoke پورت‌های 3200/4200 موفق.
+  Commit قابلیت `6de5d94` Push و Draft PR #153 به `develop` باز شد. Persistence، Audit
+  پایدار، Outbox/Event و Posting واقعی همچنان `BLOCKED_BY_MIGRATION_LOCK` هستند.
+- پیگیری اصلاح‌شده مالک در 2026-09-12 با مرجع تصویری: «کارتابل درخواست‌ها» باید کاملاً
+  از صفحه حسابداری جدا و به‌عنوان آیتم مستقل بین «حسابداری» و «خرید و تأمین» در گروه
+  «مالی» قرار گیرد. `/finance` فقط حسابداری و `/finance/requests` فقط کارتابل را نمایش
+  می‌دهد. نگاشت عمومی مقصد درخواست‌های HR و اعلان‌های مالی نیز به مسیر جدید منتقل شد؛
+  محدوده این پیگیری به metadata ناوبری، routeها، Web مالی، همین نگاشت‌های عمومی و تست‌های
+  مربوط محدود است.
+  ۳۱ تست هدفمند Web و ۶۴ تست Contract، lint/typecheck و Build نهایی ۴۱ مسیر موفق‌اند.
+- پیگیری دوم مالک در 2026-09-12 با مرجع تصویری: فرم بررسی دریافت باید نام و مبلغ/مانده
+  قرارداد و حساب مقصد موجود را روشن نشان دهد؛ فرم پرداخت باید قرارداد، کارگزار، حساب
+  مبدأ، سابقه پرداخت و مانده را نمایش دهد و ردیف‌های پرداخت جزئی قابل افزودن/حذف باشند.
+  محدوده رزروشده همان مدل/Workspace/Test مالی و Domain validation پرداخت جزئی است؛
+  قرارداد v1 موجود شکسته نمی‌شود و Schema/Migration/Persistence/Posting همچنان قفل است.
+- نتیجه پیگیری دوم: کارت‌ها و Dialog نام قرارداد و مانده را نمایش می‌دهند؛ دریافت به
+  حساب مقصد قابل Posting و هم‌ارز متصل می‌شود؛ پرداخت قرارداد/کارگزار، حساب مبدأ، سابقه،
+  جمع و مانده پس از عملیات دارد و ردیف‌های پرداخت جزئی قابل افزودن/حذف‌اند. فیلدهای فنی
+  Version/Idempotency از فرم کاربر حذف و در state داخلی حفظ شدند. ۳۲ تست هدفمند Web،
+  typecheck، lint محدود، Build ۴۱ مسیر و Browser QA هر دو فرم موفق‌اند؛ ثبت قطعی همچنان
+  `BLOCKED_BY_MIGRATION_LOCK` است. Commit قابلیت `70fde9b` به Draft PR #153 Push شد.
+- پیگیری سوم مالک در 2026-09-12: «توضیح مالی» در فرم دریافت/پرداخت اختیاری باشد و
+  فیش‌های همراه درخواست در همان Dialog نمایش داده شوند. محدوده فقط مدل/Workspace/Test
+  مالی و اسناد همین Task است؛ فایل جدید، Upload، Documents persistence یا قرارداد v1
+  شکسته ایجاد نمی‌شود و attachment فقط از snapshot مرجع درخواست نمایش داده می‌شود.
+- نتیجه پیگیری سوم: حداقل طول توضیح مالی حذف و label آن اختیاری شد. Dialog فیش/مدرک
+  همراه را با نام، نوع، حجم، UTC و وضعیت Scan نمایش می‌دهد و حالت بدون فایل نیز روشن است؛
+  باینری در Finance کپی نمی‌شود. ۳۳ تست هدفمند Web، typecheck، lint محدود، Build ۴۱
+  مسیر و Browser QA نمایش فیش و label اختیاری موفق‌اند. Commit `7e673e8` به Draft PR
+  #153 Push شد.
+- پیگیری چهارم مالک در 2026-09-12: Finance باید روش هر پرداخت را از میان حواله، چک،
+  نقد، کارت‌خوان و روش‌های متعارف مشخص کند. محدوده فقط مدل ردیف پرداخت، Dialog و تست‌های
+  Finance است؛ قرارداد v1، Schema/Migration/Persistence و داده عملیاتی تغییر نمی‌کنند.
+- نتیجه پیگیری چهارم: برای هر ردیف پرداخت جزئی، روش پرداخت مستقل و اجباری از میان حواله
+  بانکی، چک، نقد، کارت‌خوان، کارت‌به‌کارت، برداشت مستقیم و سایر اضافه شد. انتخاب چک،
+  شماره چک را اجباری می‌کند و سایر روش‌ها مرجع/شماره پیگیری اختیاری دارند. ۳۴ تست هدفمند
+  Web، typecheck، lint محدود، Production Build با ۴۱ مسیر و Browser QA فهرست روش‌ها و
+  تغییر پویا به «شماره چک» موفق‌اند. Commit قابلیت `801455f` به Draft PR #153 Push شد؛
+  ثبت عملیاتی همچنان `BLOCKED_BY_MIGRATION_LOCK` است.
+- پیگیری پنجم مالک در 2026-09-12: اگر دریافت یا پرداخت ارزی است، نرخ روز ارز باید همراه
+  زمان همان عملیات در سابقه دریافت/پرداخت قابل مشاهده باشد. محدوده رزروشده فقط مدل Draft،
+  داده Preview سابقه، محاسبه Decimal معادل ریالی، Dialog و تست‌های Finance است؛ منبع نرخ
+  authoritative، Schema/Migration/API/Persistence و قرارداد cross-module تغییر نمی‌کنند.
+- نتیجه پیگیری پنجم: نرخ هر واحد ارز به ریال برای دریافت/پرداخت غیرریالی اجباری شد و
+  معادل ریالی همان عملیات به‌صورت Decimal محاسبه می‌شود. سابقه هر عملیات ارزی مبلغ، نرخ
+  Snapshot، معادل ریالی و UTC را کنار هم نمایش می‌دهد؛ سابقه دریافت و پرداخت نیز عنوان
+  متناسب دارد. ۳۶ تست هدفمند Web، typecheck، lint، Build ۴۱ مسیر و Browser QA موفق‌اند؛
+  Commit قابلیت `9f4e01d` به Draft PR #153 Push شد. ذخیره پایدار و منبع خودکار نرخ
+  همچنان `BLOCKED_BY_MIGRATION_LOCK` هستند.
 
-## B2B-DOSSIER-DATE-FILTERS-001 — PC-B — DONE / LOCAL_RUNTIME_3196
+## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
+
+- User requests HR connections to all main-menu modules. Reserve HR API/Web and HR contracts, HR receiving-permission seed entries, and one additive AppShell connection outlet on `codex/pc-b-hr-module-connections` from `origin/develop@e07c0c6`. Scope, producer/consumer compatibility and acceptance boundaries: `docs/tasks/HR-013-CONNECTIONS.md`.
+- Uses existing HR-owned persistence/FKs; no Migration or Dependency lock is needed. Destination domain services and active B2B runtime remain untouched. No existing source owner reservation is taken over; receiver UI uses the additive public HR service.
+- Follow-up explicitly authorizes bidirectional form reference wiring, push and merge to develop. Extend this reservation to additive HR directory/contracts, Master Data public currency directory/export, Documents employee-case selection/validation, Finance party selection and foundation owner selection. Reuse existing IAM user FK and document source contract; no migration or runtime takeover. Public options must retain canonical IDs, branch scopes and live validation. Preview consumers remain explicitly non-persistent.
+- The existing Customer Affairs follow-up owner field is included in the same public employee selector scope; its preview draft retains the selected employee ID.
+- Follow-up delivered: active IAM account selection/persisted employee FK, active Master Data currency selection/validation, existing Documents selection with HR document FK, direct employee-case selection in Documents with public validation, and scoped/paginated employee selection in destination owner/party fields. All 469 targeted tests passed (157 Web, 150 API unit/boundary, 26 isolated PostgreSQL, 63 contracts, 73 database). Code reservation is released for the explicitly authorized CI-gated PR139 merge. Runtime/DB/migration ownership remains unchanged.
+- Delivered the durable referral/response layer with 16 menu destinations, 13 scoped receiving permissions, source FK/version, department inboxes, request reports and response notifications. Broad domain execution (payment, issuance, IAM changes, procurement fulfillment, external synchronization) remains unfinished and is explicitly listed in the task handoff. Implementation reservations are released for review; runtime ownership is unchanged.
+
+## RESERVATION-TICKET-PDF-0912 — PC-A — LOCAL_COMPLETE
+
+- گزارش مالک محصول: خروجی بلیط در رزرواسیون کار نمی‌کند. Branch `codex/pc-a-reservation-settings-0912`؛ محدودهٔ رزروشده: مدل/رابط خروجی بلیط، Route و Renderer دانلود PDF، تست‌های هدفمند و اسناد همین واحد کار.
+- خروجی فقط از snapshot ذخیره‌شده و مجاز همان درخواست ساخته می‌شود؛ هیچ شماره بلیط، PNR، بار مجاز یا وضعیت صدور جعل نمی‌شود. چاپ مرورگر حفظ و دانلود مستقیم PDF یک مسافر/همه مسافران افزوده می‌شود. بدون Migration، IAM grant، دادهٔ واقعی، ارسال خارجی یا public push.
+- دانلود واقعی با Chrome ویندوز نیز بررسی شد؛ Renderer تا تکمیل فایل پردازش headless صبر می‌کند. ۱۱ تست هدفمند، lint، typecheck، build تولیدی و بازبینی تصویری PDF یک‌صفحه‌ای A4 موفق‌اند.
+
+## RESERVATION-RECEIPT-SUMMARY-0912 — PC-A — LOCAL_COMPLETE
+
+- درخواست مالک محصول: در پنجرهٔ «دریافت‌ها»ی رزرواسیون مشخص باشد برای قرارداد انتخاب‌شده از طرف پرداخت‌کننده چه مبلغی دریافت شده است.
+- Branch `codex/pc-a-reservation-settings-0912`. محدودهٔ رزروشده: نمایش و تست جمع دریافت‌های همان قرارداد در `reservation-receipts` و اسناد وضعیت همین واحد کار. فقط رکوردهای موجود Sales خوانده می‌شوند؛ مبلغ تأییدشده مالی از مبالغ در انتظار/برنامه‌ریزی‌شده جدا است و هیچ دریافت، وضعیت مالی، مجوز، Schema یا Migration ایجاد یا تغییر نمی‌کند.
+- اجرای محلی Web3100/API4000 حفظ می‌شود و public push همچنان ممنوع است.
+- نتیجه: نام پرداخت‌کنندهٔ قرارداد، مجموع دریافت تأییدشده و مبلغ در انتظار تأیید مالی به تفکیک ارز بالای جدول نمایش داده می‌شود و هر ردیف ستون «از طرف» دارد. نام پرداخت‌کننده از API عمومی Customers خوانده و در نبود دسترسی از snapshot معتبر قرارداد/مسافر استفاده می‌شود. ۱۱ تست هدفمند، lint، typecheck و build تولیدی ۴۱ مسیر موفق؛ Web3100/API4000 پاسخ ۲۰۰. Scope آزاد شد.
+
+## RESERVATION-FORM-SETTINGS-0912 — PC-A — LOCAL_COMPLETE
+
+- درخواست مالک محصول: تنظیمات و سابقهٔ اصلاح فقط زیر دکمهٔ «رزرواسیون» باشد؛ تاریخ اقامت، تعداد و نوع اتاق و ردهٔ سنی مسافران با تقویم مشترک ماه/سال قابل ویرایش باشند. انتخاب صریح تعیین می‌کند تغییر فقط در فرم ارسالی و مبنای خرید ثبت شود یا در خروجی قرارداد و واچر هم اعمال گردد.
+- Branch `codex/pc-a-reservation-settings-0912` از نسخهٔ محلی کامل `0ef39f2`. محدودهٔ رزروشده: Travel workflow قرارداد/API، فرم و خروجی رزواسیون/واچر، خلاصهٔ مبنای خرید، overlay عملیاتی خروجی قرارداد، تست‌های هدفمند و اسناد وضعیت. معماری append-only، optimistic version، مجوزها، قیمت‌های تجاری و گیت مالی/بیمه حفظ می‌شوند.
+- بدون Migration، Dependency/Lockfile، IAM grant، دادهٔ واقعی، ارسال خارجی، merge یا public push. اجرای فعلی Web3100/API4000 پس از تست و build با همین checkout تازه می‌شود.
+- نتیجه: رابط مستقل تنظیمات واچر حذف شد؛ تنظیمات و سابقه فرم رزواسیون، تقویم مشترک، انتخاب دامنه اصلاح و مبنای خرید از نسخه ارسال‌شده پیاده شد. ۱۲ تست API، ۱۲ تست Web، lint/typecheck و build API/Web موفق؛ هر دو سرویس محلی ۲۰۰. رزرو فایل‌ها برای بازبینی آزاد است.
+
+## WORKBENCH-006-HOME-LABEL — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
+
+- User requests renaming the personal workspace tab from «امروز من» to «خانه». Reserve only workbench/model.ts and own status entries on codex/pc-b-workbench-home-label. Keep the today tab identifier, routes and all services unchanged. Preserve native runtime and owner B2B KPI changes; coordinate owned Web3100 rebuild. No shared shell/API/schema/dependency change.
+- Scoped lint,10model tests and production build/typecheck passed. Source d711222, manifest hr005-2471b6a3c0f957a5, Web3100/PID27380. API4190 health200 unchanged. Restart completed in owner-confirmed pause between agency forms; owner notified to resume. PR165draft; release label reservation. No merge.
+
+## WORKBENCH-005-NATIVE-SHELL — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
+
+- User explicitly rejects the standalone demo and requests alignment with Rubi theme and application structure. Reserve native Workbench module/routes, restoration of original/tasks, compatibility redirect from/workbench/demo, additive Workbench sidebar/user entry via lib/navigation.ts, messages/fa.ts, sidebar-icons.ts, user-menu.tsx and their tests. Keep the seventeen business modules separate; use existing shared UI/theme/provider/auth.
+- Public consumers only: current identity, recipient-scoped Notifications, personal Documents lists/detail/upload and existing profile. No counterfeit requests/messages/notes/favorites, localStorage or new persistence. No changes to owner service contracts, API, permissions, schema/migration or dependencies. Migration remains with Reservations per active PR153; request storage/messaging/private features cannot be represented as operational without that handoff.
+- UI is functional for existing owner services and explicitly unavailable where services do not exist. Preserve runtime base8bf0446 including B2B date filters. Runtime changes coordinated with existing owners; API4190/data/storage remain untouched. No merge.
+- Shared shell reservation additionally covers the compact sidebar grid row sizing for the added personal entry. No business module is removed. B2B owner supplied c83d530 (KPI colors), authorized for inclusion in the combined build.
+- Native runtime verified at source2d5d5e8, manifest hr005-f74450ea05fc1fa7, Web3100/PID28628. API4190/PID15024 unchanged and health200. Includes owner KPI deltas c63ec00 +8b6cd35. 157 targeted tests, Web lint, follow-up scoped lint, typecheck/build and authenticated browser verification passed. PR164 draft. Release implementation locks; preserve this combined runtime for subsequent owner work.
+
+## WORKBENCH-004-MENU-CURRENT-RUNTIME — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
+
+- User reports Workbench menu opens old `/tasks`. Runtime3100 changed to B2B source56d5d48/PID12500 after prior handoff; preserve the new B2B date filters by basing `codex/pc-b-workbench-menu-current-runtime` on56d5d48. Own worktree only; no edits to B2B checkout.
+- Reserve Workbench demo files, existing task page and own status/report entries. `/tasks` directly redirects to the demo when RUBI_WORKBENCH_DEMO=1; flag-off keeps the original workspace. All isolated demo protections remain. No shared shell/proxy/API/data/schema/dependency changes.
+- B2B owner notified to coordinate3100 before replacement. Build/test candidate first; verify expected source/PID again. API4190 and all B2B/HR code remain unchanged. No merge.
+
+## B2B-DOSSIER-DATE-FILTERS-001 — PC-B — IN_PROGRESS
 
 - Add themed responsive date-range filters beside existing dossier filters. Reserve Organizations date helper/component, agreement/rates/users/signatories/documents/finance/activity panels, CSS and tests/status docs on `codex/pc-b-b2b-dossier-date-filters` from0300a34. Previous locks released. Preserve date meaning, inclusive boundaries, server pagination and organization/branch authorization. No API/schema/dependency change; runtime3196/API4191 retained and unrelated3100 untouched. No merge.
-- Source56d5d48: inclusive Tehran date ranges and responsive Rubi grid; paginated contracts/documents fully covered. 100 Organizations tests, lint/typecheck/build pass; browser fixture verifies calendar/grid. Runtime hr005-2a247e29d4bbef76 on3196 and API4191 healthy. Draft PR158 stacked on157; no merge. Release implementation reservations.
 
 ## B2B-NAMED-BRANCHES-001 — PC-B — DONE / LOCAL_RUNTIME_3196
 
@@ -203,6 +379,18 @@ Reserve corporate-profile.tsx and corporate-design.css for equal-height dossier 
 - HR owner explicitly handed over Web3100/API4190 after confirming no active work. Validate/build before replacing the reverified listeners. Preserve rubi_hr_current_20260908 on 127.0.0.1:55432 and hr007-documents; no schema, migration, seed, credential, permission, dependency or business-data changes.
 - Acceptance: the real organizations entry opens the four-step cooperation popup on port 3100 while retaining current HR and the existing application shell. Record runtime identity and checks before releasing this reservation.
 - Completed: 196 targeted Web tests, 108 API tests, full lint/typecheck and production builds passed. The authenticated localhost:3100 browser now opens all four cooperation steps; existing organization search, seven-card agency profile, logo dialog and HR navigation work. No business form was submitted. Runtime source is f2981b5, fingerprint hr005-2fbd1e21da23276d; final listener/data configuration is recorded outside Git in Rubi-backups/b2b-form-runtime-final.json. Documentation-only follow-up commits do not change the built source. Implementation reservation released; coordinate later runtime changes with this task to preserve combined HR/B2B.
+
+## TOUR-RUNTIME-0910 — PC-A — VALIDATED / STARTUP_POLICY_BLOCKED
+
+User explicitly requests local activation. Integrated released hotel-rates5b1d287 with tour6ba6661 on codex/pc-a-tour-runtime-0910, preserving both histories and source branches. Reserve combined validation and runtime/task docs only. No new schema/migration/data/grants; existing applied schema must be checked before loopback API/Web switch. Coordinate current API1064 with Reservations owner; Web3100 is stopped. Preserve root environment, private document storage/keys and PDF runtime. No remote push or main/develop changes.
+
+Combined API53 and Web115 tests, Prisma generation, API build and Web41-route production build passed. Read-only check confirms hotel-rate migration already applied. Reservations owner transferred combined runtime ownership and is developing a separate unmerged follow-up. Web startup explicitly rejected by execution tool policy; no alternate launcher attempted. API1064 was not stopped or replaced;3100 remains down. No new migration, data change or public push. Source integration reservation released; activation remains blocked by execution policy, not user authorization.
+
+## TOUR-DETAILS-0910 — PC-A — CODE_READY / ACTIVATION_PENDING
+
+User requests complete tour definition fields, ordered relative itinerary and image in Ticket Management. Isolated branch codex/pc-a-tour-details-0910 from current integrated local base14ec087; preserve active HOTEL-GROUP-RATES-0910 checkout/schema/runtime. Reserve Ticket Catalog tour API/UI/tests, additive optional packages/contracts/src/travel/tours.ts fields and task docs only. Producer/consumer Ticket Catalog API/Web; old Sales consumers remain compatible. Persist decimal strings and descriptive fields in existing TourPackage.definition, no schema/migration/dependency changes. Images use existing public Documents API and access/scan policy, not inline binary or external image fetch. No live data, IAM grants, runtime replacement, public push or merge without coordination.
+
+Delivered definition, pricing, ordered relative itinerary and public Documents image upload/validation.41 API and99 Web/consumer tests passed; scoped lint/typechecks and API/Web builds passed. No live-data or authenticated browser QA claim. Shared schema/runtime remain owned by HOTEL-GROUP-RATES-0910. Scoped source reservation released for review; activation requires coordinated integration with its newer changes. See docs/tasks/TOUR-DETAILS-0910.md.
 
 ## DOCUMENTS-008A-BLUE-BUTTON-CASCADE-FIX — PC-B — READY_FOR_APPROVED_MERGE
 
@@ -1702,8 +1890,11 @@ Validation: 87 scoped tests, Web lint, TypeScript and production build (40 route
 
 User explicitly authorized merging the latest Finance labels, dark theme and HR/navigation corrections into develop. Integrate current develop 679e516, retaining PC-B HR/agencies and header date; resolve shared shell conflict with both responsive header and neutral dark border. Synchronize three ticket validation strings in API with the mirrored Web proposal to satisfy the existing parity test. No local database migration or runtime switch. Final combined CI gates must pass before merge.
 
+## RESERVATIONS-THEMED-FILTERS-0909 — PC-A — READY_FOR_REVIEW
 
+User requests themed dropdown menus for the four Reservations queue filters. Reserve foundation workspace only; use existing shared Radix Select with RTL, labels and unchanged query values. Branch codex/pc-a-reservation-themed-filters from develop 0261b91. No shared component/API/data change.
 
+Validation: 34 foundation tests, Web lint, production TypeScript and build (40 routes) passed. Local Web 3100 refreshed. Scope released; no API/database changes.
 
 
 ## B2B-REMOVE-BOUNDARY-NOTE-001 — PC-B — IN_PROGRESS
@@ -1713,3 +1904,211 @@ B2B-REMOVE-BOUNDARY-NOTE-001: READY_FOR_REVIEW. Source3528efe; lint/typecheck an
 ## B2B-COMMERCIAL-EXPORTS-001 — PC-B — IN_PROGRESS
 Reserve Organizations agreement/rates panels, workspace props, module-local export helpers/tests. Export filtered authorized data as PDF/XLSX, preserve decimal strings and workflow states. No shared files, dependencies, API or data mutations.
 B2B-COMMERCIAL-EXPORTS-001: READY_FOR_REVIEW. Sourcebc4c6b9; module-local PDF/XLSX downloads, all-page agreements and exact decimal text.120 tests and scoped lint passed. Runtime build656e37f preserves534de0e. Source locks released.
+## CONTRACT-TERMS-SELECTION-0909 — PC-A — READY_FOR_REVIEW
+
+User supplied a shared one-page terms PDF; preserve its exact bytes and download through the selected contract's مفاد action. Extend the existing accessible selection button hit area across the full reservation card. Scope: foundation panel/workspace CSS/tests, shared static PDF and task docs. Builds on themed filters branch to preserve the current local version. No PDF editing, API, database or migration changes.
+
+Validation: foundation tests, Web lint, TypeScript and production build passed; source/asset SHA256 equal. Web3100 refreshed. Scoped reservation released.
+
+## RESERVATIONS-PAGE-CLEANUP-0909 — PC-A — READY_FOR_REVIEW
+
+User marked top processing link, refresh button, polling explanation and five section tabs for removal (tickets, hotels, vouchers, insurance, costs). Scope only reservation landing page and foundation navigation chrome. Keep polling, remaining tabs, action panel and processing route. Ticket approval workflow remains pending the user's financial-release clarification; no approval/backend changes here.
+
+Validation: 34 tests, scoped lint, production TypeScript/build passed; Web3100 refreshed. Scope released.
+
+## TRAVEL-DOCUMENT-HANDOFF-0909 — PC-A — READY_FOR_REVIEW
+
+User explicitly requests execution of the agreed workflow: Reservations owns ticket preview/branding, supplier request/confirmation/cancellation and voucher issue; missing insurance is an acknowledged warning, not a block. Sales cannot view/render/download passenger documents before Finance delivery authorization. Reserve Reservations API/Web, Sales public consumption/pricing, Finance document-delivery runtime, additive Prisma schema/migration, IAM permission catalog/seed slice, public travel contracts and task docs. Producer/consumer: Reservations snapshots -> Sales/Finance through public services; B2B/Master Data/Documents existing public interfaces only. No third-party module edits, destructive migration, live IAM grants, merge or external sends. Preserve current branch stack and local data. Migration owner PC-A/TRAVEL-DOCUMENT-HANDOFF-0909; dependency lock unused.
+
+TRAVEL-DOCUMENT-HANDOFF-0909 validation and local rollout completed; role grants pending explicit response, scope released for review. See docs/tasks/TRAVEL-DOCUMENT-HANDOFF-0909.md.
+
+## RESERVATION-REFERENCE-FORM-0909 — PC-A — READY_FOR_REVIEW
+
+User supplies reservation-form-contract-theme (1).pdf as the Reservation form layout. Base current local workflow branch 16dae5f to retain the authorized existing runtime; fetched develop 7d716af has unrelated agency changes. Reserve only Reservations Web document renderer/model/CSS/tests and scoped task docs. Reproduce the six-section English A4 navy/teal layout with actual selected-contract values, operational ordering/age and existing company/agency logo. Preserve voucher rendering, financial gate and existing workflow. Missing source fields remain unfilled; no sample passenger/provider data copied from the PDF. No API, schema/migration, dependencies, IAM grants or unrelated module edits. Validate print layout with synthetic data and update owned Web3100 after build.
+
+RESERVATION-REFERENCE-FORM-0909: 49 tests, scoped lint/typecheck/build and rendered 1-/3-page A4 QA passed. Web3100 refreshed; API/data unchanged. Scope released; see docs/tasks/RESERVATION-REFERENCE-FORM-0909.md.
+
+## PAYMENT-DIALOGS-0909 — PC-A — READY_FOR_REVIEW
+
+Reserve Sales Web contract-payments component/tests and task docs only. Base 2a747c5 preserves current local stack. Show contract history in a dialog and separate add-payment dialog with receipt attachment below reference after successful save. Consume existing Documents public component; no API, schema, grants or other module edits.
+
+PAYMENT-DIALOGS-0909: 10 targeted tests, scoped lint, typecheck, production build and isolated browser interaction passed. Scope released. No API, data or permission changes.
+
+## CONFIRM-VOUCHER-0909 — PC-A — LOCAL_COMPLETE_PENDING_PUBLICATION
+
+Reserve Reservations workflow transition/service/tests, Web workflow form/foundation styling/model/tests and docs. New request first column #FFC0C0; confirmation atomically issues voucher with existing insurance acknowledgement and Sales notification; financial release remains mandatory. Retain legacy confirmed-only voucher issue. No migration or live permission grants. Base 8297341 preserves local feature stack.
+
+CONFIRM-VOUCHER-0909: 12 API/34 Web tests, scoped lint, typechecks/builds and both-theme color checks passed; local API4000/Web3100 health 200. Scope released. Push blocked by automatic approval review; GitHub reports origin Rubi is public, contrary to earlier private-repository description. Publication awaits explicit approval.
+
+## RESERVATION-COMPACT-ENGLISH-0909 — PC-A — LOCAL_COMPLETE_PENDING_PUBLICATION
+
+Reserve Reservations Web hotel-name display, queue styles and default calendar option in shared DatePicker (existing callers stay Persian), tests/docs. No backend/migration/grants. Publication remains pending approval for public origin.
+
+RESERVATION-COMPACT-ENGLISH-0909: 60 Reservations/calendar tests plus default-calendar rendering and updated workspace tests passed; scoped lint/typecheck passed. Web 40-route build passed; Web3100 refreshed. Scope released. No public push while earlier approval remains pending.
+
+## SEARCH-SHORTCUT-CONTRAST-0909 — PC-A — LOCAL_COMPLETE_PENDING_PUBLICATION
+
+Reserve only AppShell global search shortcut styling and task docs. Explicit text/background contrast in light/dark header; retain keyboard behavior. No shared theme, API or permission changes. Local only; public publication remains unapproved.
+
+SEARCH-SHORTCUT-CONTRAST-0909: 25 layout tests, scoped lint/typecheck and 40-route build passed. Web3100 refreshed; scope released. Local commit only.
+
+## SYNC-DEVELOP-0909 — PC-A — LOCAL_COMPLETE_PENDING_PUBLICATION
+
+User requests bringing colleagues Git fixes locally. Integrate reviewed origin/develop e07c0c6 into local d68a65f on independent branch, preserving all local Reservations/Sales/header changes. Scope integration/docs and resolution of actual conflicts only. Draft PR132 and other unmerged branches excluded. No incoming migration or dependency changes; no data/permission edits, remote merges or public push.
+
+SYNC-DEVELOP-0909: local integration of develop e07c0c6 complete. 270 Web tests passed including isolated timeout retry; 120 API passed and 26 PostgreSQL tests skipped. Web/API lint/typechecks/builds passed; API4000/Web3100 refreshed and health verified. Scope released; no public push or remote merge.
+
+## RESERVATION-TABLE-EXPORT-0909 — PC-A — LOCAL_COMPLETE_PENDING_PUBLICATION
+
+Reserve Reservations Web queue table/projection/reference lookup/XLSX export/tests and docs. Real scoped API records; export all matching loaded pages with active filters/sort, no formulas or fabricated flags. No data mutation or permission grants; local only while public push approval is pending.
+
+RESERVATION-TABLE-EXPORT-0909: 39 tests, scoped lint/typecheck/build and synthetic browser XLSX/selection QA passed; independent workbook read verified. Scope released after Web3100 refresh. No public push.
+
+## HOTEL-GROUP-RATES-0910 — PC-A — IN_PROGRESS
+
+User requests group hotel purchase rates from supplied HTML and explicitly authorizes local HR initialization plus all seven HR permissions for the dedicated Ramtin role. Reserve new Reservations rates UI/API and navigation entry, scoped task documentation. Preserve other work and public-origin publication hold. Existing canonical HR migrations only; no HR source changes or broad role seed. New rate persistence migration reservation must be checked before schema changes.
+
+Migration reservation checked against fetched PC-B/B2B-CONTRACT-CREDIT-001: implementation/shared-code/migration reservations explicitly released in final handoff. Reserve Migration Owner = PC-A/HOTEL-GROUP-RATES-0910 for two additive Reservations-owned rate tables and FK reverse relations only; MasterTravelDirectory additive public rate reference lookup, navigation messages/icon/group entries and local API module wiring. No dependencies or B2B implementation edits.
+
+HOTEL-GROUP-RATES-0910 final handoff: local implementation validated; Migration/shared-reference/navigation implementation locks RELEASED. API4000 running from this worktree, Web3100 stopped after update and blocked by execution policy despite user reconfirmation. See task report before runtime integration; separate tour-details work not merged. No public push.
+
+## RESERVATION-PASSENGER-DOCUMENTS-0910 — PC-A — LOCAL_COMPLETE_PENDING_ACTIVATION
+
+Base5b1d287; branch codex/pc-a-reservation-passenger-documents-0910. Reservations action-panel, passenger/document consumer API/Web, tests and runtime wiring completed. CustomerService canonical names are editable with existing permissions and version checks; issued snapshots stay immutable. Documents use canonical contract+passenger case references (general files reuse sales/SalesContract), existing archive/scan/access policies and one asset. No producer/schema/dependency edits. Eight API and 39 Web tests, scoped lint/typechecks, API/Web builds and synthetic browser QA passed. Read-only target verification found one linked passenger with an available name and existing edit permission. Implementation scope RELEASED. Tour integration retains runtime ownership; no listeners changed or tour merge performed. Local activation and public publication remain pending; see task report.
+
+## FINANCE-DELIVERY-CONFIRM-0910 — PC-A — LOCAL_COMPLETE_PENDING_RESTART
+
+Base92e99cf; reserve only FinanceDeliveryPanel Web UX and scoped validation/docs. Replace hidden global reason prerequisite with per-contract confirmation dialog. Existing finance read/approve permissions verified read-only. No API/schema/permission/data mutations or actual financial approvals. Local publication hold retained.
+
+FINANCE-DELIVERY-CONFIRM-0910: scoped lint/typecheck, 9 Finance tests, 41-route production build and synthetic browser approval/revocation/cancel/required-reason checks passed. No actual approvals or permission changes. Implementation lock RELEASED. Web restart rejected by execution policy; existing user-started listener24460 retained. User must restart the existing PowerShell command. No public push.
+
+## RESERVATION-EXTRA-COLUMNS-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
+
+Basea8160d7; reserve Reservations queue projection/runtime consumer wiring, Web model/feed/names/table/styles/tests and docs. Add services/seller/contract party/meal service/hotel arrangement notes from existing records and public Customer/IAM read services under existing permissions. No producer, schema, migration, grants or data edits. Public publication hold retained.
+Additional scope: Reservations XLSX filter range must cover all current columns, replacing the old fixed15-column bound.
+13 API and41 Web tests, scoped lint/typechecks and API/Web builds passed. API4000 refreshed; Web3100 retains user-started runtime and requires manual restart because tool startup remains blocked. Implementation scope RELEASED; local commit only.
+
+## RESERVATION-TABLE-ACTIONS-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
+
+Base88c7c6b; reserve Web Reservations table checkbox actions/component, feed/status projection, scoped tests/docs. Existing workflow dialog/commands for request and voucher remain authoritative; no backend changes, financial gate bypass, actual sends or real issuance. Checked hotel confirmation means voucherIssued only. Local-only publication hold retained.
+46 Web tests,7 existing workflow API tests, scoped lint/typecheck and41-route build passed. Synthetic browser verified dialog opening, insurance acknowledgement and conflict without false checkmark. No real mutations. Scope RELEASED; user-started Web awaits manual restart; no public push.
+
+## CONTRACT-HOTEL-MEAL-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
+
+Based7d9e13. User clarified the source is the hotel master record. Scope narrowed to Reservations queue-name/meal projection and tests/docs only; Sales form scope released with own draft edits removed. Read-only verification: ROYAL WINGS has UALL; existing five contract snapshots omit a separate meal selection. Read hotel meal codes from existing Master Data response, preserve explicit contract selection precedence; no data/API/schema/grants. Public hold retained.
+49 Reservations tests, scoped lint/typecheck and41-route Web build passed. Hotel UALL fallback and explicit contract precedence tested; no live writes. Scope RELEASED; Web awaits manual restart; public hold retained.
+
+## RESERVATION-FORM-PREVIEW-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
+
+Base5fab2eb; reserve Reservations document preview/print consumer component and scoped tests/docs. Fix A4 clipping in modal; preserve reference template and print-size. Validate synthetic PDF with existing browser output. No API/schema/permissions or operational writes. Public hold retained.
+7 tests, scoped lint/typecheck/build, desktop/mobile browser containment and3-page synthetic PDF visual QA passed. Scope RELEASED; Web restart pending. No real data/operational changes or public push.
+
+## RESERVATION-DIRECT-PDF-0910 — PC-A — IN_PROGRESS
+
+Base7ab38a2; reserve Reservations Web PDF route/server rendering and workflow error consumer/tests/docs. Preserve dev-generated next-env.d.ts. Direct PDF reads authenticated scoped workflow and public references, no client HTML or operational mutation. Fix normalized API error messages/client prerequisites. No schema/grants or Finance gate changes. Public hold retained.
+Additional scope: next.config.ts output tracing for the server PDF's fixed template CSS/brand assets; no dependency changes. Existing Sales PDF renderer pattern reused in Reservations-owned renderer, without modifying Sales.
+
+Validation:13 targeted tests, scoped lint and build/typecheck passed. Actual isolated Chrome generated synthetic3-page A4 PDF; all pages visually checked. Live unauthenticated route redirects to login. No real workflow/financial writes. Scope RELEASED, LOCAL_COMPLETE; user-started Next dev retained, no manual restart required for these source changes. Public publication hold retained.
+
+## RESERVATION-PANEL-TRIM-0910 — PC-A — IN_PROGRESS
+
+Base d9150a0. Reserve only Reservations foundation action-panel.tsx, its existing spec and task status entries. Remove six owner-marked panel buttons: Confirmation, attachment, add note, email, SMS and contract party. Keep hotel confirmation workflow reachable through table action, and retain Documents. No API/data/schema changes. Preserve local next-env.d.ts; existing public publication hold retained.
+Completed:8 tests, scoped lint, TypeScript and Web build passed. Scope RELEASED; local-only commit, no public push or merge.
+
+## SUPPLIER-SUBMIT-FEEDBACK-0910 — PC-A — IN_PROGRESS
+
+Base d55c98d. Reserve travel-workflow-form.tsx and targeted tests/docs. Empty note currently blocks request submission with error above long PDF preview. Provide explicit action audit note for REQUEST_SUPPLIER when optional detail omitted and local visible pending/success/error feedback. Preserve backend authorization/version/branding/financial rules; no real send or workflow mutations during QA. Preserve next-env.d.ts and public publication hold.
+Completed:6 targeted tests, scoped lint, TypeScript and Web build passed. Scope RELEASED; no real operational writes. Local-only publication.
+
+## RESERVATION-ROOM-LAYOUT-0910 — PC-A — IN_PROGRESS
+
+Base9780a38. Reserve reservation-form-sheet.tsx/module.css and reservation-pdf-html.ts, existing checks and task status. Separate hotel stay dates and room quantities in preview/print/direct PDF without changing source values. No API/data/schema. Preserve next-env and public publication hold.
+Completed:12 tests, scoped lint, TypeScript and Web build passed. Three A4 PDF pages visually verified. Scope RELEASED, local-only commit.
+
+## RESERVATION-PENDING-GRAY-0910 — PC-A — IN_PROGRESS
+
+Based df96107. Reserve only workspace.module.css light-theme pending-supplier background and task status. Increase gray visibility while preserving dark-issued and dark-mode palettes, text, status and permissions. No data/API changes; preserve next-env and public publication hold.
+Completed: formatting/diff checks, TypeScript and Web build passed. CSS-only; scope RELEASED. Local commit only.
+
+## RESERVATION-CONTRACT-HEADER-0910 — PC-A — IN_PROGRESS
+
+Base4b52abb. Reserve reservation-form-sheet.tsx/module.css and reservation-pdf-html.ts, task docs. Match current Sales contract navy/teal header and grouped white logo/brand, preserving reservation title and selected agency branding. Sales source read-only. No data/API/schema. Preserve next-env and public publication hold.
+Additional scope: Reservations PDF route fixed OWN logo asset matches contract niyayesh.png; preview substitutes the same bundled asset only in reservation sheet, preserving voucher and uploaded agency logos.
+Completed:12 tests, lint, TypeScript/build and3-page visual PDF QA passed using Playwright Edge. CLI PDF renderer did not produce output in this run; documented limitation, no runtime changes. Scope RELEASED; local commit only. Existing branding spec updated for contract logo asset.
+
+## RESERVATION-COMPACT-HEADER-0910 — PC-A — IN_PROGRESS
+
+Base434aef4. Reserve reservation-form-sheet.tsx/module.css and reservation-pdf-html.ts. Remove text under header logo and compact header height in both preview and PDF. Preserve logo alt text and footer identity, next-env, existing publication hold. No data/API/runtime changes.
+Completed:8 tests, lint, TypeScript/build and3-page visual PDF QA passed. Scope RELEASED; local-only commit.
+
+## HOTEL-VOUCHER-THEME-0910 — PC-A — IN_PROGRESS
+
+Base22d9c12. Reserve reservation-form-sheet.tsx/module.css voucher variant, travel-document.tsx consumer and focused tests/docs. Reference user PDF only for layout; never copy passenger data. Shared compact header, flight/hotel/stay/room counts, transfer/leader, passengers and notice/stamp in issued voucher. Preserve issuance/financial gates. No API/schema/runtime changes; next-env and public publication hold preserved.
+Completed:8 targeted tests, scoped lint, TypeScript/build and3-page synthetic visual PDF QA passed. Scope RELEASED; local-only commit, no data or actual issuance.
+
+## SALES-RESERVATION-NOTES-0910 — PC-A — IN_PROGRESS
+
+Base03fb3a2. Reserve Sales form/model payload + Reservations notes dialog/feed/action styles, travel workflow transition/tests and additive travel shared type, status/domain docs. Sales uses explicit reservationNote key on existing persisted service metadata; public outbox preserves it. Reservation note append uses existing versioned JSON workflow revisions with NOTE command and optional reservationNotes, no migration. Existing states default empty; deploy API before Web, old clients remain compatible. Permission/branch/audit/version guards retained. No external sends or actual customer writes in QA. Preserve next-env and public publication hold.
+Completed:45 Web/8 API tests, scoped lint, Contracts/API/Web builds/typechecks and synthetic browser notes flow passed. Scope RELEASED. API4000 refreshed with original env; local-only commit/public hold. Domain handoff recorded in MODULE_BOUNDARIES.md.
+
+## VOUCHER-SETTINGS-0910 — PC-A — IN_PROGRESS
+
+Base2f5d30b. Reserve Reservations voucher workflow UI, settings component/model, workflow transition/validation and additive travel types, tests/docs. Fix REQUESTED->confirm+issue in voucher dialog; keep NEW blocked and insurance/Finance rules. Persist display settings in versioned workflow JSON, validate selected passenger IDs and typed fields, freeze issued output. Clarification pending for multiple independent vouchers vs one revision history; common settings proceed. No schema/grants/data writes during QA; preserve next-env/public publication hold.
+User clarified: one logical voucher per contract with immutable workflow revision history, not independent vouchers. Additional docs scope: PROJECT_STATUS.md and MODULE_BOUNDARIES.md handoff. Implementation stores validated output settings on workflow JSON revisions; no migration.
+Completed: user chose one voucher with revision history.10 API/9 Web tests, scoped lint/typecheck/build, synthetic browser workflow and four-page PDF visual QA passed. API4000 refreshed, health200; Web3100 login200. Scope RELEASED, local-only commit/public publication hold.
+
+## SUPPLIER-FORM-ISOLATION-0910 — PC-A — IN_PROGRESS
+
+Base cf09e1b; COMPUTER_ID=PC-A. User requests independently editable supplier reservation form; do not propagate to customer contract/voucher without explicit destination. Reserve Reservations settings UI/model/print/PDF, workflow JSON/types/tests and hotel purchase context within Reservations; no Procurement table changes. Add optional supplierFormSettings and sentSupplierFormSettings, immutable sent revision as purchase basis. Contract propagation selection is pending user clarification; Sales source read-only until destination semantics settled. Preserve next-env and public publication hold.
+Additional scope: Sales-owned operational amendment public service/module and Sales contract print reader; nonfinancial display amendment in existing service metadata plus Sales audit/version. Canonical master/customer references and monetary values stay intact; current output consumes explicitly recorded amendment. Apply-both executes in same transaction as Reservations workflow; Sales update scope required. No destructive schema work. Domain decision: preserve base commercial terms and publish operational amendment with before/after audit instead of rewriting a confirmed draft.
+Additional scope: purchase-context read endpoint and Reservations purchase dialog wiring, operational amendment output test, ADR. Explicit re-send captures a new immutable supplier copy for purchases before voucher issuance.
+Final lint/typechecks and Contracts/API/Web builds passed. API4000 refreshed with original environment; health200 and Web3100 login200. Scope RELEASED; local-only commit with existing public-publication hold.
+
+## VOUCHER-STATUS-CONTRAST-0910 — PC-A — IN_PROGRESS
+
+Base ac2db91. Reserve only Reservations workspace.module.css status palette and status docs. Darken issued voucher and increase pending/issued separation in both themes, retaining readable text/selection. No business/API/data changes. Preserve next-env and public-publication hold.
+Completed: palette visual QA and all four text contrasts above4.5:1, formatting and Web TypeScript/build passed. Scope RELEASED. No API/data changes; local-only commit.
+
+## RESERVATION-GENERAL-DETAILS-0912 — PC-A — LOCAL_COMPLETE
+
+Base 1b0e995; COMPUTER_ID=PC-A. Reserve Reservations selected-contract general-details component/action-panel styles/tests and task status. Show only recorded intake/workflow/customer/master-reference values: contract, customer masked phone when permitted, seller/branch, dates, hotel/service/room/passenger/flight/financial summary and notes. Missing fields remain explicitly unavailable; no inferred debt, buyer or operational writes. Preserve next-env and public-publication hold.
+Completed: selected-contract «مشخصات کلی» now loads the canonical workflow snapshot and groups contract/customer, route/services, hotel/rooms, flight, recorded price and operational-note/status fields. Customer phone remains masked and permission-dependent. Debt/FX fields explicitly report that Reservations did not receive them. 11 targeted tests, scoped lint, TypeScript and Web production build passed. Local3100 responds 200 and hot reloads the change; scope released for local review. Public-publication hold remains.
+
+## RESERVATION-CONTRACT-PDF-0912 — PC-A — LOCAL_COMPLETE
+
+Base e7cb696; COMPUTER_ID=PC-A. Reserve Reservations selected-contract «مشاهده» action, feed contractId mapping, PDF preview component/styles/tests and task status. Load the existing authenticated Sales contract PDF for the selected contract inside the Reservations dialog, with download and retry controls. Preserve Sales output/permissions, next-env and public-publication hold; no API/schema/data changes.
+Completed: «مشاهده» now passes the canonical Sales contractId from the Reservations intake and loads the existing authenticated saved-contract PDF inside a wide preview dialog. The loaded PDF can be downloaded and failed loads can be retried with the server's safe error message. 32 focused tests, scoped lint, TypeScript and Web production build passed; Local3100 responds 200 and hot reload is active. Scope released for local review; no API/schema/grant/data changes and public-publication hold remains.
+
+## RESERVATION-PASSENGER-IDENTITY-0912 — PC-A — LOCAL_COMPLETE
+
+Base 61df3bd; COMPUTER_ID=PC-A. Reserve Reservations passenger list projection/UI/tests and task status. Show contract age category plus available customer birth date, national ID, passport number and expiry in the existing passenger dialog. Full sensitive values require existing customers.sensitive.read and are audited with customer-verification; otherwise return masked values/status. Gender and passport issue place remain explicitly unavailable because the Customer schema does not own them. Preserve editable canonical names, next-env and public-publication hold; no schema/migration/grant or operational data changes.
+Completed: passenger names dialog now uses a compact horizontally scrollable table with editable first/last names, contract age category, gender, birth date, national ID, passport number, expiry and issue-place columns. Existing customer and contract sources populate recorded values. Full protected identity is returned only with customers.sensitive.read and an audited customer-verification reason; other users receive masked values and a protected birth-date indicator. Missing gender/issue place display «ثبت نشده». Nine focused API tests, scoped API/Web lint, both typechecks and production builds passed. API4000 refreshed and health200; Web3100 hot reload and HTTP200. Scope released, no migration/grant/data write and public-publication hold retained.
+
+## RESERVATION-RECEIPTS-0912 — PC-A — IN_PROGRESS
+
+Base d369bf1. Reserve the Reservations receipts dialog, Sales payment read projection, additive shared payment output fields, focused tests and status docs. Show recorded payment method, status, amount/currency, transfer/registration dates, bank/reference and registering user for the selected contract. Read existing Sales-owned payment records only; do not invent missing bank data, change settlement state, grant permissions or create financial records. Preserve the local dev runtimes and the existing public-publication hold.
+Completed: «دریافت‌ها» now opens a wide payment-history table for the selected canonical Sales contract. It shows method/status, amount/currency, Finance transfer confirmation, due/registration dates, registering user's display name, historical bank lookup, tracking reference and description. Missing values remain explicit. Twelve focused tests, scoped lint, Contracts/API/Web typechecks and builds passed. API4000 refreshed; API and Web3100 return 200. Scope RELEASED; no schema/migration/grant/payment mutation and no public push.
+
+## SUPPLIER-PURCHASE-FINANCE-0912 — PC-A — LOCAL_COMPLETE
+
+Base ee589f5; COMPUTER_ID=PC-A. User requires one supplier purchase cost per contract service, potentially different brokers/currencies, submitted to Finance before document delivery. Reserve Reservations purchase contracts/API/Web, Finance supplier-payment queue and delivery gate, MasterTravelDirectory public broker validation, additive Prisma schema/migration, focused tests and status/domain docs. Migration Owner = PC-A/SUPPLIER-PURCHASE-FINANCE-0912; shared Travel contract and central docs reserved for this task. Keep legacy hotel purchase history readable. Finance owns payment revisions; Reservations owns immutable service-purchase revisions. Delivery approval requires every contract service to have a latest purchase paid by Finance. No live payment or document-delivery mutations during QA; no permission grant/dependency change; public-publication hold retained.
+Completed: per-service immutable purchases with active broker FK and Decimal/currency feed the Finance queue. Finance records versioned supplier payments with bank/date/reference/reason; delivery approval is gated on paid latest purchases for every contract service. Legacy hotel costs remain readable. Additive migration applied locally; validation/full API tests/typechecks/build checks recorded in final handoff. No live payment/delivery/grant and no public push.
+
+## SPARTA-ANTALYA-MANIFEST-0912 — PC-A — LOCAL_COMPLETE
+
+Base 2f9c833; COMPUTER_ID=PC-A. Reserve the Reservations MANIFEST action/API, Iran Airtour Antalya XLSX template integration, nullable Customer airline-identity fields, Sales international-passenger validation, additive migration, focused tests and task/domain status docs. Generate one airline-ready workbook from the selected reservation using canonical Sales travel data and Customer-owned protected identity values; require existing read/export permissions and audit access. Never retain sample passenger PII from the supplied workbook. Preserve local live runtimes and the public-publication hold.
+Implementation: sanitized the supplied workbook to a PII-free template while preserving Pax List and six airline reference sheets. Added nullable Customer airline identity fields with ISO/gender constraints and made them required in Sales only for international passenger rows. Reservations validates Antalya + Iran Airtour, reads protected passport data with the existing sensitive-read audit, maps age/class codes and downloads the exact 12-column workbook. Additive migration applied locally; no operational record, permission grant or external airline send was performed.
+Validation: 44 focused API tests and 40 focused Web tests passed; scoped API/Web lint, Contracts/Database/API/Web typechecks, Prisma validation and API/Web production builds passed. The template asset is copied into the API build. API4000 and Web3100 run from this worktree and return HTTP 200; the protected endpoint returns 401 without a session. Scope RELEASED for local review; public-publication hold remains.
+
+## HOTEL-RATE-CALENDAR-0912 — PC-A — LOCAL_COMPLETE
+
+Base 61df3bd; COMPUTER_ID=PC-A. Isolated worktree to avoid overlap with active Reservations tasks. Reserve only hotel-rates workspace/styles/focused test and task status. Replace native browser date inputs with the shared project DatePicker, retaining Gregorian default, ISO values and existing stay-range validation. No API/schema/data changes; preserve next-env and public-publication hold.
+Completed: both stay dates now use the shared dual Persian/Gregorian DatePicker with Gregorian-English default, consistent trigger styling and ISO values. Existing positive-night validation and calculation remain unchanged. Twelve focused date/rate tests, scoped lint, Web TypeScript and production build passed. Isolated local commit for handoff; public-publication hold retained.
+
+## RESERVATION-PARTY-DETAILS-0912 — PC-A — LOCAL_COMPLETE
+
+Base e7cb696; COMPUTER_ID=PC-A. Isolated worktree to avoid overlap with the active Reservations contract-PDF task. Reserve only reservation-general-details component/styles/tests and task status. Add a distinct contract-party group and obtain full contacts through the existing Customers sensitive-detail public API with fixed `support-request` reason, preserving permission, branch and Audit controls. Fall back to masked data when sensitive access is unavailable. No API/schema/grant/data changes; preserve next-env and public-publication hold.
+Completed: «طرف قرارداد» is now a distinct accented group with name, type/status, primary and additional phones, email and recorded address. Opening general details requests authorized full contact data through Customers with `support-request`; Backend remains responsible for permission/branch checks and Audit. Unauthorized/decryption failures fall back to masked detail without blocking the rest of the dialog. Eight targeted tests, scoped lint, Web TypeScript and production build passed. Isolated local commit for handoff; public-publication hold retained.
+
+## B2B-PUBLISH-0912 — PC-B — IN_PROGRESS
+User explicitly authorizes push and merge of the B2B changes. Integrate current develop into PR189 preserving both documentation streams and requested removed boundary note. No runtime, API or database mutations.

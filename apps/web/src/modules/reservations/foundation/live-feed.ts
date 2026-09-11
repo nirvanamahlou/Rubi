@@ -34,6 +34,13 @@ const snapshotSchema = z.object({
       z.object({
         kind: z.string().max(40),
         titleSnapshot: z.string().max(300),
+        metadata: z
+          .object({
+            reservationNote: z.string().max(500).optional(),
+            notes: z.string().optional(),
+          })
+          .passthrough()
+          .nullish(),
       }),
     )
     .max(1000),
@@ -50,6 +57,14 @@ const snapshotSchema = z.object({
   hotelSelection: z
     .object({
       hotelNameSnapshot: z.string().max(200),
+      hotelId: id.optional(),
+      mealServiceId: id.nullable().optional(),
+      cityId: id.optional(),
+      checkOutDate: z.string().refine(isCivilDate).optional(),
+      roomCount: z.number().int().nonnegative().optional(),
+      singleRoomCount: z.number().int().nonnegative().optional(),
+      doubleRoomCount: z.number().int().nonnegative().optional(),
+      extraBedCount: z.number().int().nonnegative().optional(),
       checkInDate: z.string().refine(isCivilDate),
     })
     .nullable(),
@@ -64,7 +79,33 @@ const envelopeSchema = z.object({
         contractId: id,
         contractVersion: z.number().int().positive(),
         branchId: id,
+        sellerName: z.string().max(300).nullable().optional(),
+        contractPartyName: z.string().max(300).nullable().optional(),
         status: z.literal('QUEUED'),
+        arrangement: z
+          .object({
+            roomCount: z.number().int().nonnegative(),
+            singleRoomCount: z.number().int().nonnegative(),
+            doubleRoomCount: z.number().int().nonnegative(),
+            extraBedCount: z.number().int().nonnegative(),
+            updatedAt: instant,
+            reason: z.string().max(1000).optional(),
+          })
+          .nullable()
+          .optional(),
+        workflow: z
+          .object({
+            supplierStatus: z.enum([
+              'NEW',
+              'REQUESTED',
+              'CONFIRMED',
+              'CANCELLED',
+            ]),
+            voucherIssued: z.boolean(),
+            reservationNotes: z.array(z.string()).optional(),
+          })
+          .nullable()
+          .optional(),
         receivedAt: instant,
         snapshot: snapshotSchema,
       }),
@@ -126,13 +167,27 @@ export function decodeIntake(
       const travelDate = departures[0] ?? snapshot.hotelSelection?.checkInDate;
       return {
         id: row.id,
+        contractId: row.contractId,
         contractNumber: snapshot.contractNumber,
         branchId: row.branchId,
         branchName:
           session.user.branches.find((b) => b.id === row.branchId)?.name ?? '—',
         issuerName: '—',
-        customerName: '—',
-        salesCounter: '—',
+        customerName: row.contractPartyName ?? '—',
+        salesCounter: row.sellerName ?? '—',
+        serviceTitles: snapshot.serviceSelections
+          .map((s) => s.titleSnapshot)
+          .filter(Boolean),
+        mealServiceId: snapshot.hotelSelection?.mealServiceId ?? undefined,
+        hotelNotes: row.arrangement?.reason,
+        hasNotes:
+          row.snapshot.serviceSelections.some(
+            (service) =>
+              !!(
+                service.metadata?.reservationNote?.trim() ||
+                service.metadata?.notes?.trim()
+              ),
+          ) || !!row.workflow?.reservationNotes?.length,
         assignee: null,
         passengerNames: (snapshot.passengerAssignments ?? []).flatMap((p) =>
           p.displayNameSnapshot ? [p.displayNameSnapshot] : [],
@@ -142,9 +197,33 @@ export function decodeIntake(
         deadline: null,
         createdAt: snapshot.createdAt,
         receivedAt: row.receivedAt,
+        destinationId:
+          snapshot.hotelSelection?.cityId ??
+          snapshot.ticketSelections?.[0]?.destinationId,
+        checkIn: snapshot.hotelSelection?.checkInDate,
+        checkOut: snapshot.hotelSelection?.checkOutDate,
+        roomCount:
+          row.arrangement?.roomCount ?? snapshot.hotelSelection?.roomCount,
+        singleRooms:
+          row.arrangement?.singleRoomCount ??
+          snapshot.hotelSelection?.singleRoomCount,
+        doubleRooms:
+          row.arrangement?.doubleRoomCount ??
+          snapshot.hotelSelection?.doubleRoomCount,
+        extraBeds:
+          row.arrangement?.extraBedCount ??
+          snapshot.hotelSelection?.extraBedCount,
+        hotelRequested: ['REQUESTED', 'CONFIRMED'].includes(
+          row.workflow?.supplierStatus ?? '',
+        ),
+        hotelConfirmed: row.workflow?.voucherIssued === true,
+        correctedAt: row.arrangement?.updatedAt,
         ...(travelDate ? { travelDate } : {}),
         ...(snapshot.hotelSelection
-          ? { hotelName: snapshot.hotelSelection.hotelNameSnapshot }
+          ? {
+              hotelName: snapshot.hotelSelection.hotelNameSnapshot,
+              hotelId: snapshot.hotelSelection.hotelId,
+            }
           : {}),
         ...(snapshot.ticketSelections?.length
           ? {
@@ -155,7 +234,16 @@ export function decodeIntake(
               ].join('، '),
             }
           : {}),
-        status: 'NEW',
+        status:
+          row.workflow?.supplierStatus === 'CANCELLED'
+            ? 'CANCELLED'
+            : row.workflow?.voucherIssued
+              ? 'VOUCHER_ISSUED'
+              : row.workflow?.supplierStatus === 'CONFIRMED'
+                ? 'SUPPLIER_CONFIRMED'
+                : row.workflow?.supplierStatus === 'REQUESTED'
+                  ? 'WAITING_SUPPLIER'
+                  : 'NEW',
         issues: [],
       };
     });
@@ -165,13 +253,17 @@ export async function loadIntake(
   session: LoginResponse,
   signal: AbortSignal,
   fetcher: typeof fetch = fetch,
+  page = 1,
 ): Promise<RequestView[]> {
-  const response = await fetcher(`${baseUrl}/reservations/requests`, {
-    credentials: 'include',
-    cache: 'no-store',
-    signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
-    headers: { accept: 'application/json' },
-  });
+  const response = await fetcher(
+    `${baseUrl}/reservations/requests${page > 1 ? `?page=${page}` : ''}`,
+    {
+      credentials: 'include',
+      cache: 'no-store',
+      signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
+      headers: { accept: 'application/json' },
+    },
+  );
   if (!response.ok)
     throw new ReservationFeedError(
       response.status === 401
@@ -188,7 +280,15 @@ export async function loadIntake(
   } catch {
     throw new ReservationFeedError('ERROR');
   }
-  return decodeIntake(input, session);
+  const current = decodeIntake(input, session);
+  const count = (input as { data: unknown[] }).data.length;
+  if (count < 100) return current;
+  if (page >= 100) throw new ReservationFeedError('ERROR');
+  const rest = await loadIntake(baseUrl, session, signal, fetcher, page + 1);
+  const combined = [...current, ...rest];
+  if (new Set(combined.map((row) => row.id)).size !== combined.length)
+    throw new ReservationFeedError('ERROR');
+  return combined;
 }
 /** Constant-memory watermark except for IDs sharing the newest timestamp. No PII/storage. */
 export class ReservationArrivalTracker {

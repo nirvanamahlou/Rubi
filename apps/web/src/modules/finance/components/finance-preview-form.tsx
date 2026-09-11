@@ -9,6 +9,8 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
+import type { HrDirectoryEmployee } from '@rubi/contracts';
+import { HrDirectoryPicker } from '@/modules/hr/hr-directory-picker';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -101,6 +103,7 @@ export function FinancePreviewForm({
     Partial<Record<keyof FinancePreviewDraft, string>>
   >({});
   const [validated, setValidated] = useState(false);
+  const [employee, setEmployee] = useState<HrDirectoryEmployee | null>(null);
   const readOnly = mode === 'view';
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -179,16 +182,39 @@ export function FinancePreviewForm({
                 disabled={readOnly}
                 dir="ltr"
                 id="finance-party-reference"
-                onChange={(event) =>
+                onChange={(event) => {
+                  setEmployee(null);
                   setDraft((current) => ({
                     ...current,
                     partyReference: event.target.value,
-                  }))
-                }
+                    hrEmployeeId: '',
+                  }));
+                }}
                 placeholder="preview-party-..."
                 readOnly={readOnly}
                 value={draft.partyReference}
               />
+              {!readOnly ? (
+                <HrDirectoryPicker
+                  label="انتخاب کارمند به‌عنوان طرف‌حساب"
+                  selected={employee}
+                  onSelect={(item) => {
+                    setEmployee(item);
+                    setValidated(false);
+                    setDraft((current) => ({
+                      ...current,
+                      hrEmployeeId: item?.id ?? '',
+                      partyReference: item ? `hr-employee:${item.id}` : '',
+                    }));
+                  }}
+                />
+              ) : null}
+              {employee ? (
+                <p className="text-xs">
+                  مرجع واقعی کارمند انتخاب شده است؛ این فرم مالی هنوز ذخیره یا
+                  پرداخت انجام نمی‌دهد.
+                </p>
+              ) : null}
             </FormField>
             <FormField
               {...(errors.contractReference

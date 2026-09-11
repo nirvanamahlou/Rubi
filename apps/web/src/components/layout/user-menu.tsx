@@ -2,6 +2,7 @@
 
 import {
   ChevronDown,
+  House,
   LogOut,
   Settings2,
   ShieldCheck,
@@ -123,6 +124,12 @@ export function UserMenu() {
             </span>
           </span>
         </div>
+        <DropdownMenuItem asChild>
+          <Link href="/workbench">
+            <House aria-hidden="true" className="size-4" />
+            میزکار من
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/profile">
             <UserRound aria-hidden="true" className="size-4" />

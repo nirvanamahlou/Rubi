@@ -1,3 +1,5 @@
+import { TravelWorkflowService } from '../reservations/travel-workflow.service';
+import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
@@ -27,6 +29,8 @@ describe('authenticated Sales XLSX HTTP route', () => {
     const module = await Test.createTestingModule({
       controllers: [SalesController],
       providers: [
+        { provide: TravelWorkflowService, useValue: {} },
+        { provide: FinanceDeliveryService, useValue: {} },
         { provide: SalesService, useValue: service },
         { provide: SalesOutputService, useValue: {} },
         {

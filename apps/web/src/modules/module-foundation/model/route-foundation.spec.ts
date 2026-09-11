@@ -63,8 +63,8 @@ describe('17-route module foundation', () => {
       readFileSync(resolve(crmRoot, 'reservations/page.tsx'), 'utf8'),
     ).toContain('LiveReservationQueue');
     expect(
-      readFileSync(resolve(crmRoot, 'reservations/page.tsx'), 'utf8'),
-    ).toContain('/reservations/processing');
+      source('src/modules/reservations/foundation/live-workspace.tsx'),
+    ).toContain('initialSection="inbox"');
     expect(
       readFileSync(
         resolve(crmRoot, 'reservations/processing/page.tsx'),
@@ -82,7 +82,7 @@ describe('17-route module foundation', () => {
     ).toContain('CustomerAffairsWorkspace');
     expect(
       readFileSync(resolve(crmRoot, 'finance/page.tsx'), 'utf8'),
-    ).toContain('FinanceWorkspace');
+    ).toContain('FinanceAccountingWorkspace');
     expect(readFileSync(resolve(crmRoot, 'sales/page.tsx'), 'utf8')).toContain(
       'SalesWorkspace',
     );

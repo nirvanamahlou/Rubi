@@ -240,4 +240,3 @@ INSERT INTO "iam_permissions" ("id","code","module","name") VALUES
   (gen_random_uuid(),'b2b.credit.approve','b2b','تأیید مستقل سیاست اعتبار')
 ON CONFLICT ("code") DO NOTHING;
 COMMIT;
-
