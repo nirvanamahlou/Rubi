@@ -22,7 +22,6 @@ const approvedRoutes = [
   'marketing',
   'organizations',
   'human-resources',
-  'tasks',
   'documents',
   'reports',
   'integrations',
@@ -34,20 +33,24 @@ const foundationRoutes = [
   'purchases',
   'marketing',
   'human-resources',
-  'tasks',
   'documents',
   'reports',
   'integrations',
   'system',
 ] as const;
 
-describe('17-route module foundation', () => {
+describe('main-route module foundation', () => {
   it('keeps every approved main route reviewable', () => {
     for (const route of approvedRoutes) {
       expect(() =>
         readFileSync(resolve(crmRoot, route, 'page.tsx'), 'utf8'),
       ).not.toThrow();
     }
+  });
+
+  it('keeps the retired tasks route pointed to workbench', () => {
+    const page = readFileSync(resolve(crmRoot, 'tasks/page.tsx'), 'utf8');
+    expect(page).toContain("redirect('/workbench')");
   });
 
   it('connects every incomplete route to the shared workspace', () => {
