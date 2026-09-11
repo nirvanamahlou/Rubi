@@ -322,10 +322,7 @@ export function CorporateProfile({
           <h1 ref={heading} tabIndex={-1}>
             {title}
           </h1>
-          <p>
-            {current?.description ??
-              'تصویر یکپارچه رابطه تجاری و نمای عملیات سازمان'}
-          </p>
+          {current?.description && <p>{current.description}</p>}
         </div>
         <div className="actions">
           <button
