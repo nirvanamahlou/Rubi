@@ -68,24 +68,28 @@ export function CommercialExportActions({
   }
   return (
     <div
-      className="flex flex-wrap items-center gap-2"
+      className="commercial-export-actions"
       aria-label="خروجی اطلاعات فیلترشده"
     >
       <button
-        className="btn"
+        className="btn small"
+        aria-label="خروجی Excel"
+        title="خروجی Excel"
         disabled={disabled || !!busy}
         onClick={() => void download('xlsx')}
       >
         <Download size={16} />
-        {busy === 'xlsx' ? 'در حال ساخت…' : 'خروجی Excel'}
+        {busy === 'xlsx' ? 'در حال ساخت…' : 'Excel'}
       </button>
       <button
-        className="btn"
+        className="btn small"
+        aria-label="خروجی PDF"
+        title="خروجی PDF"
         disabled={disabled || !!busy}
         onClick={() => void download('pdf')}
       >
         <FileText size={16} />
-        {busy === 'pdf' ? 'در حال ساخت…' : 'خروجی PDF'}
+        {busy === 'pdf' ? 'در حال ساخت…' : 'PDF'}
       </button>
       {error ? (
         <p className="form-error" role="alert">

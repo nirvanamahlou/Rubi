@@ -61,7 +61,7 @@
     align-items: end;
     gap: 12px;
     @media (min-width: 1440px) {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
     }
     @media (max-width: 640px) {
       grid-template-columns: minmax(0, 1fr);
@@ -69,6 +69,41 @@
   }
   .agreement-toolbar.dossier-filter-grid > .field {
     min-width: 0;
+  }
+  .commercial-section-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .commercial-section-actions,
+  .commercial-export-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .commercial-section-actions > button,
+  .commercial-export-actions > button {
+    width: auto;
+    min-height: 33px;
+    height: 33px;
+    padding: 0 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .commercial-section-actions > .field {
+    width: 200px;
+    max-width: 100%;
+    margin: 0;
+  }
+  .commercial-section-actions > .field > .input {
+    min-height: 33px;
+    height: 33px;
+  }
+  .commercial-export-actions > .form-error {
+    flex-basis: 100%;
   }
   .agreement-toolbar > .field {
     margin: 0;
