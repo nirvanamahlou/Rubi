@@ -1,5 +1,10 @@
 # Work Assignments
 
+## WORKBENCH-019 — PC-B — IN_PROGRESS
+
+- Reserve Workbench message units/icons and Home feeds (latest10 plus view-all), own tests/docs on codex/pc-b-workbench-units-home-limits fromf25c052. No API/schema/shared files. Coordinate next Web build with B2B owner.
+
+
 ## WORKBENCH-018-CALENDAR — PC-B — UI_VERIFIED / SOURCE_NOT_CONNECTED
 
 - User requests screenshot558 calendar in Workbench. Reserve Workbench-local calendar model/component/tests and tab integration on codex/pc-b-workbench-calendar from4756f1d. Reuse existing shared Persian calendar utilities and theme; month/week/agenda/undated navigation, date selection and filters. No task due-date service exists in current Workbench: show explicit unavailable-source state, never substitute notification creation timestamps or fabricated events. No API/schema/dependency/shared-component changes; coordinate Web runtime only.

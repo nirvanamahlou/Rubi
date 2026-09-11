@@ -2,7 +2,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { HrNotificationDto } from '@rubi/contracts';
-import { Alert, Badge, Button, Card, Skeleton } from '@/components/ui';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Skeleton,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui';
 import { hrApi } from '@/modules/hr/hr-api';
 import { pendingHrBellNotifications } from '@/modules/hr/hr-bell-notifications';
 import {
@@ -20,6 +30,7 @@ export function WorkbenchHrNotifications({
   const allowed = canReadWorkbenchHr(permissions);
   const [items, setItems] = useState<HrNotificationDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [pending, setPending] = useState<string | null>(null);
@@ -80,6 +91,31 @@ export function WorkbenchHrNotifications({
   }
   if (!allowed) return null;
   const notices = pendingHrBellNotifications(items);
+  const renderNotices = (visibleNotices: typeof notices) => (
+    <ul className="divide-y divide-border">
+      {visibleNotices.map((item) => (
+        <li key={item.key} className="space-y-2 py-3">
+          <p className="font-semibold text-sm">{item.title}</p>
+          <p className="text-xs text-muted-foreground">
+            {workbenchDate(item.occurredAt)}
+          </p>
+          <div className="flex gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href={item.href}>مشاهده پرونده</Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={Boolean(pending)}
+              onClick={() => void markRead(item.id)}
+            >
+              {pending === item.id ? 'در حال ثبت…' : 'خواندم'}
+            </Button>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
   return (
     <Card className="space-y-4 p-5">
       <div className="flex flex-wrap items-center gap-2">
@@ -111,34 +147,27 @@ export function WorkbenchHrNotifications({
           description={error}
         />
       ) : notices.length ? (
-        <ul className="divide-y divide-border">
-          {notices.map((item) => (
-            <li key={item.key} className="space-y-2 py-3">
-              <p className="font-semibold text-sm">{item.title}</p>
-              <p className="text-xs text-muted-foreground">
-                {workbenchDate(item.occurredAt)}
-              </p>
-              <div className="flex gap-2">
-                <Button asChild variant="outline" size="sm">
-                  <Link href={item.href}>مشاهده پرونده</Link>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={Boolean(pending)}
-                  onClick={() => void markRead(item.id)}
-                >
-                  {pending === item.id ? 'در حال ثبت…' : 'خواندم'}
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
+        renderNotices(notices.slice(0, 10))
       ) : (
         <p className="text-sm text-muted-foreground">
           اعلان خوانده‌نشده‌ای در این فهرست نیست.
         </p>
       )}
+      <Button variant="outline" size="sm" onClick={() => setShowAll(true)}>
+        مشاهده همه
+      </Button>
+      <Dialog open={showAll} onOpenChange={setShowAll}>
+        <DialogContent
+          dir="rtl"
+          className="max-w-3xl max-h-[85vh] overflow-y-auto"
+        >
+          <DialogTitle>اعلان‌های منابع انسانی</DialogTitle>
+          <DialogDescription>
+            همه اعلان‌های خوانده‌نشده در فهرست دریافتی مجاز شما
+          </DialogDescription>
+          {renderNotices(notices)}
+        </DialogContent>
+      </Dialog>
       {actionError && (
         <Alert
           tone="error"

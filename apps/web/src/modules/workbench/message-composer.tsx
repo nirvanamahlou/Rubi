@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { Send, Smile, X } from 'lucide-react';
 import { Alert, Button, Card, Input, Textarea } from '@/components/ui';
+import { MessageUnitIcon } from './message-unit-icon';
 import { messageUnits } from './message-templates';
 import {
   insertMessageEmoji,
@@ -96,7 +97,7 @@ export function MessageComposer({
                   }}
                 >
                   <span className="grid size-10 place-items-center rounded-xl bg-surface/20">
-                    {item.label.slice(0, 1)}
+                    <MessageUnitIcon id={item.id} />
                   </span>
                   <span>
                     {item.label}
@@ -109,7 +110,8 @@ export function MessageComposer({
           </div>
         </aside>
         <div className="min-w-0 space-y-4 p-5">
-          <h3 className="border-b border-border pb-4 text-lg font-bold">
+          <h3 className="flex items-center gap-2 border-b border-border pb-4 text-lg font-bold">
+            <MessageUnitIcon id={unit.id} />
             {unit.label}
           </h3>
           <Alert

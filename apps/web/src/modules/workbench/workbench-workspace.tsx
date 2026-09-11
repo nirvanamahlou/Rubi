@@ -89,6 +89,7 @@ export function WorkbenchWorkspace() {
   const [noteOpen, setNoteOpen] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [messageUnit, setMessageUnit] = useState('finance');
   const [passwordOpen, setPasswordOpen] = useState(false);
   const generation = useRef(0);
@@ -337,7 +338,14 @@ export function WorkbenchWorkspace() {
                         aria-hidden="true"
                       />
                       <h2 className="font-bold">اعلان‌های من</h2>
-                      <Badge className="ms-auto">سامانه</Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="ms-auto"
+                        onClick={() => setNotificationsOpen(true)}
+                      >
+                        مشاهده همه
+                      </Button>
                     </div>
                     {actionError && (
                       <Alert
@@ -347,6 +355,7 @@ export function WorkbenchWorkspace() {
                       />
                     )}
                     <NotificationFeed
+                      limit={10}
                       home={home}
                       pendingRead={pendingRead}
                       onRead={markRead}
@@ -372,12 +381,17 @@ export function WorkbenchWorkspace() {
                       </div>
                     </Card>
                     <Card className="p-5">
-                      <h2 className="font-bold mb-3">آخرین فایل‌های من</h2>
+                      <div className="mb-3 flex items-center justify-between gap-2">
+                        <h2 className="font-bold">آخرین فایل‌های من</h2>
+                        <Button asChild variant="outline" size="sm">
+                          <Link href="/workbench?tab=files">مشاهده همه</Link>
+                        </Button>
+                      </div>
                       {home.documents.status === 'ready' ? (
                         home.documents.data.data.length ? (
                           <ul className="space-y-3">
                             {home.documents.data.data
-                              .slice(0, 5)
+                              .slice(0, 10)
                               .map((file) => (
                                 <li key={file.id}>
                                   <Link
@@ -571,6 +585,22 @@ export function WorkbenchWorkspace() {
         )
       )}
       {home && (
+        <Dialog open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+          <DialogContent
+            dir="rtl"
+            className="max-w-3xl max-h-[85vh] overflow-y-auto"
+          >
+            <DialogTitle>همه اعلان‌های دریافتی</DialogTitle>
+            <DialogDescription>آخرین ۵۰ اعلان دریافتی سامانه</DialogDescription>
+            <NotificationFeed
+              home={home}
+              pendingRead={pendingRead}
+              onRead={markRead}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+      {home && (
         <Dialog open={messageOpen} onOpenChange={setMessageOpen}>
           <DialogContent dir="rtl" className="max-w-xl">
             <DialogTitle>پیام جدید</DialogTitle>
@@ -672,11 +702,13 @@ function QuickLink({ href, label }: { href: string; label: string }) {
 function NotificationFeed({
   home,
   activityOnly = false,
+  limit,
   pendingRead,
   onRead,
 }: {
   home: WorkbenchHome;
   activityOnly?: boolean;
+  limit?: number;
   pendingRead: string | null;
   onRead: (id: string) => Promise<void>;
 }) {
@@ -692,9 +724,10 @@ function NotificationFeed({
         }
       />
     );
-  const items = home.notifications.data.data.filter(
-    (item) => !activityOnly || item.actor?.id === home.user.id,
-  );
+  const items = home.notifications.data.data
+    .filter((item) => !activityOnly || item.actor?.id === home.user.id)
+    .sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt))
+    .slice(0, limit);
   if (!items.length)
     return (
       <EmptyState
