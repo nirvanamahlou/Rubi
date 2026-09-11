@@ -1,5 +1,10 @@
 # Work Assignments
 
+## WORKBENCH-029 — PC-B — IN_PROGRESS
+
+- Four requested reservation messenger templates; reserve message-templates and own docs only. No Reservations domain/API/schema changes. Reuse editable composer/local attachments; no upload/send claim.
+
+
 ## WORKBENCH-028 — PC-B — UI_VERIFIED
 
 - Finance messenger eight requested editable templates; reserve message-templates and own docs. Reuse local draft attachments; no Finance domain/API/schema changes, posting or actual payment.
