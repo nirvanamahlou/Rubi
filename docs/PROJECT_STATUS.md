@@ -2081,3 +2081,5 @@ Final runtimec8164fc/hr005-da948517ea153e3e/PID27312 verified: desktop contract 
 
 ## 2026-09-12 — Agency360 finance HR footer (PC-B)
 Source8ff2da8 hides the supplementary HR connections panel only while the agency dossier finance screen is mounted. Shared provider cleanup restores other pages; HR permissions unchanged. Scoped lint, Web typecheck and125 tests pass. Runtime build/verification pending owner cutover.
+
+Runtime ab4d12c/hr005-82286e6ac8efeb1f/WebPID8940 preserves ce2ca88.46-route webpack production build passed. Browser finance heading present, HR panel absent; native Back restores home panel and Forward suppresses it again. API unchanged. Draft PR196.

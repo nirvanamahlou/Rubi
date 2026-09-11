@@ -2136,3 +2136,5 @@ B2B-COMPACT-EXPORT-ACTIONS-001: READY_FOR_REVIEW. Source7acd39f; create and comp
 User clarifies only the agency360 finance subview. Reserve corporate-profile.tsx, HR outlet and new public visibility context, plus narrow central AppShell main provider wiring. Default visibility and HR routes remain intact; no API/data changes. Public Web-only provider/consumer: HR contextual outlet to Organizations view suppression; cleanup restores visibility.
 
 B2B-FINANCE-HIDE-HR-001: SOURCE_COMPLETE 8ff2da8. Scoped lint, Web typecheck and125 tests passed. Runtime inclusion coordinated with Workbench owner; no API/schema/data change. Source locks released.
+
+B2B-FINANCE-HIDE-HR-001: READY_FOR_REVIEW. Runtime ab4d12c/PID8940 build46 routes and browser finance/Back/Forward visibility verified. No data/API change. PR196; locks released.
