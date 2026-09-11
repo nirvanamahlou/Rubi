@@ -148,9 +148,6 @@ export function WorkbenchFiles({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline">
-            <Link href="/documents">اسناد و فایل‌ها</Link>
-          </Button>
           {user.permissions.includes('documents.upload') && (
             <Button disabled={uploadBusy} onClick={() => void openUpload()}>
               <Upload className="size-4" aria-hidden="true" />

@@ -1,5 +1,9 @@
 # Work Assignments
 
+## WORKBENCH-013-INTERACTIONS — PC-B — IN_PROGRESS
+
+- User requests screenshot-aligned settings, larger centered tabs, colored KPIs, removal of Documents shortcut, chat layout, functional request/message/note forms and private checklist notes. Reserve Workbench-local UI and own docs on codex/pc-b-workbench-interactions; preserve B2B9b1c33c. Persistence requires current migration-owner handoff, requested from coordinator before schema work; no fake storage or transmission. Shared layout and other owner modules unchanged.
+
 ## WORKBENCH-012-MESSAGE-TEMPLATES — PC-B — UI_READY / LOCAL_RUNTIME_3100
 
 - Reserve message-composer.tsx and module-local message-templates.ts plus own docs. Add Finance, Reservations, AI and Sales recipient choices with editable prepared texts. Branch codex/pc-b-workbench-message-templates, base d8b3e15. No message service, transmission, storage, owner API, schema or dependency changes. Existing authenticated desktop Rubi UI and accessibility conventions retained; runtime build coordinated with B2B.
