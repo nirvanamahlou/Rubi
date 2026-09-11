@@ -1,8 +1,9 @@
 # Work Assignments
 
-## WORKBENCH-006-HOME-LABEL — PC-B — IN_PROGRESS
+## WORKBENCH-006-HOME-LABEL — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
 
 - User requests renaming the personal workspace tab from «امروز من» to «خانه». Reserve only workbench/model.ts and own status entries on codex/pc-b-workbench-home-label. Keep the today tab identifier, routes and all services unchanged. Preserve native runtime and owner B2B KPI changes; coordinate owned Web3100 rebuild. No shared shell/API/schema/dependency change.
+- Scoped lint,10model tests and production build/typecheck passed. Source d711222, manifest hr005-2471b6a3c0f957a5, Web3100/PID27380. API4190 health200 unchanged. Restart completed in owner-confirmed pause between agency forms; owner notified to resume. PR165draft; release label reservation. No merge.
 
 ## WORKBENCH-005-NATIVE-SHELL — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
 
