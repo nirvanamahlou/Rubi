@@ -2145,3 +2145,8 @@ Reserve Organizations organization-logo display and workspace wiring. Move all l
 B2B-LOGO-IN-EDIT-001: SOURCE_COMPLETE4786181. Header logo display-only; existing edit form selects/replaces/removes logo through its standard save.121 tests, scoped lint/typecheck passed. Source locks released.
 
 B2B-LOGO-IN-EDIT-001: READY_FOR_REVIEW.46-route build and live header/edit-dialog browser QA passed; Web8872, runtimeeb22c43. PR198; locks released.
+
+## B2B-ACCESS-EDIT-ICON-001 — PC-B — IN_PROGRESS
+Reserve organization-users-panel.tsx only: replace visible edit-access label with accessible pencil icon. No behavior/API/data changes.
+
+B2B-ACCESS-EDIT-ICON-001: SOURCE_COMPLETEa64ea2f. Compact pencil button retains accessible user-specific label, title, permissions and editor behavior. Scoped lint/typecheck passed. Locks released.

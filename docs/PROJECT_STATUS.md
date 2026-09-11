@@ -2088,3 +2088,6 @@ Runtime ab4d12c/hr005-82286e6ac8efeb1f/WebPID8940 preserves ce2ca88.46-route web
 Source4786181 removes header camera, upload/change action, archive link and separate editor. Existing edit form logo field and save pathway remain authoritative.121 tests, lint/typecheck passed. Combined runtime build preserves3bd4f5b.
 
 Runtimeeb22c43/hr005-3e8178627325af68/PID8872:46-route production build passed; browser confirms header logo image retained with zero change/upload buttons and edit dialog has logo file selector, saved badge, remove and save actions. No data changed. PR198.
+
+## 2026-09-12 — Agency access pencil button (PC-B)
+Sourcea64ea2f replaces edit-access text with pencil icon, accessible name and tooltip. Scoped lint/typecheck passed; no API/data changes. Runtime build preserving37b72b8 underway.
