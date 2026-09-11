@@ -354,8 +354,8 @@ export function CorporateProfile({
           <div className="boundary-note">
             <Info size={20} />
             <span>
-              مانده مالی، فاکتور، دریافت، چک، سفارش و فایل‌ها از بخش مربوط
-              خوانده می‌شوند.
+              فایل‌های پرونده به اسناد متصل‌اند. مانده مالی و سفارش‌ها هنوز
+              به سرویس عملیاتی متصل نیستند؛ جدول‌های مالی آزمایشی‌اند.
             </span>
           </div>
           <section className="kpis">

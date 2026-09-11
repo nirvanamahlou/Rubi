@@ -5,6 +5,7 @@ import type {
   MasterDataRecord,
   MasterDataStatus,
   MasterDataSortField,
+  BranchReference,
 } from '@rubi/contracts';
 import {
   Building2,
@@ -58,6 +59,7 @@ import { AgencyProfilePanel } from './agency-profile-panel';
 import { OrganizationSignatoriesPanel } from './organization-signatories-panel';
 import { OrganizationUsersPanel } from './organization-users-panel';
 import { AgencyDossierSummary } from './agency-dossier-summary';
+import { loadCommercialSummary } from '../model/commercial-summary';
 import { AgencyRatesPanel } from './agency-rates-panel';
 import { cooperationLabel } from '../model/presentation';
 import {
@@ -87,6 +89,11 @@ function attribute(record: MasterDataRecord, key: string, fallback = '—') {
 
 export function OrganizationsWorkspace() {
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
+  const [branches, setBranches] = useState<readonly BranchReference[]>([]);
+  const [commercialBranch, setCommercialBranch] = useState('');
+  const [commercial, setCommercial] = useState<
+    Record<string, Awaited<ReturnType<typeof loadCommercialSummary>>>
+  >({});
   const [contacts, setContacts] = useState<readonly MasterDataRecord[]>([]);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
@@ -185,7 +192,11 @@ export function OrganizationsWorkspace() {
     void agencyClient
       .session()
       .then((user) => {
-        if (!cancelled) setPermissions(user.permissions);
+        if (!cancelled) {
+          setPermissions(user.permissions);
+          setBranches(user.branches);
+          setCommercialBranch(user.branches[0]?.id ?? '');
+        }
       })
       .catch(() => {
         if (!cancelled) setPermissions([]);
@@ -194,6 +205,37 @@ export function OrganizationsWorkspace() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let current = true;
+    let next = 0;
+    const worker = async () => {
+      while (current && next < records.length) {
+        const record = records[next++];
+        if (!record) return;
+        const summary = await loadCommercialSummary(
+          record.id,
+          commercialBranch,
+          role,
+          permissions,
+          () => current,
+        );
+        if (current)
+          setCommercial((previous) => ({ ...previous, [record.id]: summary }));
+      }
+    };
+    const timer = window.setTimeout(() => {
+      setCommercial({});
+      if (!commercialBranch || state !== 'ready' || profileOpen) return;
+      void Promise.all(
+        Array.from({ length: Math.min(4, records.length) }, worker),
+      );
+    }, 0);
+    return () => {
+      current = false;
+      window.clearTimeout(timer);
+    };
+  }, [records, commercialBranch, role, permissions, state, profileOpen]);
 
   async function openProfile(
     record: MasterDataRecord,
@@ -553,6 +595,24 @@ export function OrganizationsWorkspace() {
                 </SelectContent>
               </Select>
             </label>
+            <label className="min-w-44 space-y-2">
+              <span className="text-sm font-bold">شعبه اطلاعات تجاری</span>
+              <Select
+                value={commercialBranch}
+                onValueChange={setCommercialBranch}
+              >
+                <SelectTrigger aria-label="شعبه اطلاعات تجاری">
+                  <SelectValue placeholder="انتخاب شعبه" />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
             <Button onClick={() => void load()} type="button" variant="outline">
               <RefreshCw className="size-4" /> تازه‌سازی
             </Button>
@@ -605,6 +665,14 @@ export function OrganizationsWorkspace() {
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {cooperationLabel(record.attributes.roleCodes)}
+                  </p>
+                  <p className="text-sm">
+                    مدیر حساب:{' '}
+                    {commercial[record.id]?.manager ?? 'در حال دریافت…'}
+                  </p>
+                  <p className="text-sm">
+                    قرارداد فعال:{' '}
+                    {commercial[record.id]?.agreements ?? 'در حال دریافت…'}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <Button
@@ -695,8 +763,18 @@ export function OrganizationsWorkspace() {
                       <td>
                         <bdi>{record.code}</bdi>
                       </td>
-                      <td className="unavailable-value">در دسترس نیست</td>
-                      <td className="unavailable-value">در دسترس نیست</td>
+                      <td>
+                        {commercial[record.id]?.manager ??
+                          (commercialBranch
+                            ? 'در حال دریافت…'
+                            : 'شعبه انتخاب نشده')}
+                      </td>
+                      <td>
+                        {commercial[record.id]?.agreements ??
+                          (commercialBranch
+                            ? 'در حال دریافت…'
+                            : 'شعبه انتخاب نشده')}
+                      </td>
                       <td className="unavailable-value">در دسترس نیست</td>
                       <td className="p-4">
                         <Badge
@@ -793,11 +871,7 @@ export function OrganizationsWorkspace() {
           key={selected.id}
           organization={selected}
           overview={
-            String(selected.attributes.roleCodes ?? '')
-              .split(',')
-              .includes('AGENCY') ? (
-              <AgencyDossierSummary organizationId={selected.id} />
-            ) : undefined
+            <AgencyDossierSummary organizationId={selected.id} role={role} />
           }
           logo={
             <OrganizationLogo
