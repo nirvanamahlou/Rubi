@@ -1,5 +1,9 @@
 import type { CommercialReport } from './commercial-export';
 
+export function isolateCommercialIdentifiers(text: string) {
+  return text.replace(/[A-Za-z0-9][A-Za-z0-9_.,:/%+-]*/g, '\u2066$&\u2069');
+}
+
 export function buildCommercialPdf(images: readonly Uint8Array[]): Uint8Array {
   const enc = new TextEncoder();
   const join = (parts: readonly Uint8Array[]) => {
@@ -125,7 +129,7 @@ export async function commercialPdf(
         start();
         apply();
       }
-      ctx.fillText(value, 1170, y);
+      ctx.fillText(isolateCommercialIdentifiers(value), 1170, y);
       y += 37;
     }
   };
