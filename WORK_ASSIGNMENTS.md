@@ -1,5 +1,9 @@
 # Work Assignments
 
+## WORKBENCH-033 — PC-B — IN_PROGRESS
+
+- Move the existing Home quick-access card directly above "My notifications" in the primary column. Reserve only Workbench Home layout and own delivery docs. Preserve links, notification behavior, API/schema and shared components.
+
 ## WORKBENCH-032 — PC-B — UI_VERIFIED / CALENDAR_SESSION_LOCAL
 
 - Delivered Workbench UI polish: Notes date placeholders are short, the calendar creates session-local events with text/image/link attachments, the profile theme selector is removed, and the messenger has a colorful Rubi presentation without visible unavailable-state copy. Source `623fbb0`; 56 focused tests, scoped lint, TypeScript and 46-route production build passed. Authenticated browser verified all four requests and an event with image/link; no console errors. Web3100 PID14168/buildGhIUre85BIXBxND2PRsp2; API4190 unchanged. Draft PR211. Calendar persistence and message delivery remain outside this UI-only work item.

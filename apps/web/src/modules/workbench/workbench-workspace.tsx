@@ -333,45 +333,10 @@ export function WorkbenchWorkspace() {
                   />
                 </div>
                 <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-                  <Card className="p-5">
-                    <div className="mb-4 flex items-center gap-2">
-                      <Bell
-                        className="size-5 text-primary"
-                        aria-hidden="true"
-                      />
-                      <h2 className="font-bold">اعلان‌های من</h2>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="ms-auto"
-                        onClick={() => setNotificationsOpen(true)}
-                      >
-                        مشاهده همه
-                      </Button>
-                    </div>
-                    {actionError && (
-                      <Alert
-                        title="وضعیت اعلان ثبت نشد"
-                        description={actionError}
-                        tone="error"
-                      />
-                    )}
-                    <NotificationFeed
-                      limit={10}
-                      home={home}
-                      pendingRead={pendingRead}
-                      onRead={markRead}
-                    />
-                  </Card>
                   <div className="space-y-5">
-                    <WorkbenchFeedback />
-                    <WorkbenchHrNotifications
-                      key={home.user.id}
-                      permissions={home.user.permissions}
-                    />
                     <Card className="p-5">
-                      <h2 className="font-bold mb-4">دسترسی سریع</h2>
-                      <div className="grid gap-2">
+                      <h2 className="mb-4 font-bold">دسترسی سریع</h2>
+                      <div className="grid gap-2 sm:grid-cols-3">
                         <QuickLink href="/profile" label="پروفایل و حساب من" />
                         <QuickLink
                           href="/workbench?tab=files"
@@ -383,6 +348,43 @@ export function WorkbenchWorkspace() {
                         />
                       </div>
                     </Card>
+                    <Card className="p-5">
+                      <div className="mb-4 flex items-center gap-2">
+                        <Bell
+                          className="size-5 text-primary"
+                          aria-hidden="true"
+                        />
+                        <h2 className="font-bold">اعلان‌های من</h2>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="ms-auto"
+                          onClick={() => setNotificationsOpen(true)}
+                        >
+                          مشاهده همه
+                        </Button>
+                      </div>
+                      {actionError && (
+                        <Alert
+                          title="وضعیت اعلان ثبت نشد"
+                          description={actionError}
+                          tone="error"
+                        />
+                      )}
+                      <NotificationFeed
+                        limit={10}
+                        home={home}
+                        pendingRead={pendingRead}
+                        onRead={markRead}
+                      />
+                    </Card>
+                  </div>
+                  <div className="space-y-5">
+                    <WorkbenchFeedback />
+                    <WorkbenchHrNotifications
+                      key={home.user.id}
+                      permissions={home.user.permissions}
+                    />
                     <Card className="p-5">
                       <div className="mb-3 flex items-center justify-between gap-2">
                         <h2 className="font-bold">آخرین فایل‌های من</h2>
