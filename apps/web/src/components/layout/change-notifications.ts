@@ -54,7 +54,7 @@ const notificationAreas: readonly (readonly [string, NotificationArea])[] = [
   ['reservations', { label: 'رزرواسیون و عملیات سفر', href: '/reservations' }],
   ['procurement', { label: 'خرید و تأمین', href: '/purchases' }],
   ['purchases', { label: 'خرید و تأمین', href: '/purchases' }],
-  ['finance', { label: 'مالی و خزانه‌داری', href: '/finance' }],
+  ['finance', { label: 'کارتابل درخواست‌های مالی', href: '/finance/requests' }],
   ['marketing', { label: 'مارکتینگ', href: '/marketing' }],
   ['b2b', { label: 'آژانس‌ها و مشتریان سازمانی', href: '/organizations' }],
   [
@@ -105,8 +105,7 @@ function relativeApiPath(requestUrl: string, apiBaseUrl: string) {
 }
 
 function isIgnoredMutation(path: string) {
-  if (path === 'iam/auth' || path.startsWith('iam/auth/'))
-    return true;
+  if (path === 'iam/auth' || path.startsWith('iam/auth/')) return true;
   if (
     path === 'documents' ||
     path.startsWith('documents/') ||

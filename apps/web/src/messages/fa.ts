@@ -102,6 +102,11 @@ export const navigationMessages = [
     description: 'بررسی ظرفیت، صدور خدمات، واچر، بیمه و منیفست',
   },
   {
+    title: 'مدیریت گروهی نرخ‌های هتل‌ها',
+    href: '/reservations/hotel-rates',
+    description: 'ثبت گروهی قیمت خرید هتل در بازه اقامت',
+  },
+  {
     title: 'مدیریت و تعریف بلیط‌ها',
     href: '/ticket-management',
     description: 'تعریف محصول بلیط، برنامه حرکت، نرخ و ظرفیت',
@@ -112,14 +117,24 @@ export const navigationMessages = [
     description: 'قرارداد جدید و تخصیص مسافر به خدمات',
   },
   {
+    title: 'مدیریت قیمت',
+    href: '/pricing-management',
+    description: 'قیمت روزانه تورها و بلیت‌های ملکی و خروجی بنر',
+  },
+  {
     title: 'خرید و تأمین',
     href: '/purchases',
     description: 'خرید خدمات و تأمین‌کنندگان',
   },
   {
-    title: 'مالی و خزانه‌داری',
+    title: 'حسابداری',
     href: '/finance',
-    description: 'دریافت، پرداخت و خزانه',
+    description: 'کدینگ، اسناد، دفاتر و خزانه',
+  },
+  {
+    title: 'کارتابل درخواست‌ها',
+    href: '/finance/requests',
+    description: 'رسیدگی به درخواست‌های دریافت و پرداخت واحدها',
   },
   { title: 'مارکتینگ', href: '/marketing', description: 'کمپین‌ها و مخاطبان' },
   {

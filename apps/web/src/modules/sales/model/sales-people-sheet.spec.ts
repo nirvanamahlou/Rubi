@@ -107,6 +107,8 @@ describe('fixed Sales people-entry slots', () => {
       roles: ['customer', 'passenger'],
       contacts: [],
       nationalId: values.nationalId,
+      gender:
+        values.gender === 'M' || values.gender === 'F' ? values.gender : null,
       displayName: values.firstName + ' ' + values.lastName,
     });
   it('saves acquaintance selection for new passengers, with first passenger as customer even for a legacy separate draft', async () => {
@@ -828,5 +830,29 @@ describe('fixed Sales people-entry slots', () => {
       reviewRequired: true,
     });
     expect(api.create).toHaveBeenCalledTimes(1);
+  });
+  it('requires airline identity for every passenger on an international contract', () => {
+    const international = {
+      ...state,
+      originCountryId: 'origin-country',
+      destinationCountryId: 'destination-country',
+    };
+    const draft = filled();
+    expect(() => validateSalesPeopleDraft(international, draft)).toThrow(
+      'نام و نام خانوادگی لاتین پاسپورت الزامی است',
+    );
+    for (const row of Object.values(draft.rows))
+      row.values = {
+        ...row.values,
+        passportFirstName: 'SYNTHETIC',
+        passportLastName: 'PASSENGER',
+        gender: 'M',
+        nationalityCode: 'IRN',
+        passportIssuingCountryCode: 'IRN',
+        birthCountryCode: 'IRN',
+        passportNumber: 'X1234567',
+        passportExpiryDate: '2030-01-01',
+      };
+    expect(() => validateSalesPeopleDraft(international, draft)).not.toThrow();
   });
 });

@@ -1,3 +1,6 @@
+import { ForbiddenException } from '@nestjs/common';
+import { TravelWorkflowService } from '../reservations/travel-workflow.service';
+import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import {
   Body,
   Controller,
@@ -37,8 +40,30 @@ export class SalesController {
   constructor(
     @Inject(SalesService) private readonly service: SalesService,
     @Inject(SalesOutputService) private readonly output: SalesOutputService,
+    @Inject(TravelWorkflowService)
+    private readonly travel: TravelWorkflowService,
+    @Inject(FinanceDeliveryService)
+    private readonly delivery: FinanceDeliveryService,
   ) {}
 
+  @Get('contracts/:id/travel-documents')
+  @Header('Cache-Control', 'private, no-store')
+  async travelDocuments(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.service.detail(id, req.actor);
+    const intake = await this.travel.forContract(id, req.actor.branchIds);
+    const authorization = await this.delivery.read(intake.id);
+    if (
+      !authorization.approved ||
+      intake.workflow.supplierStatus === 'CANCELLED'
+    )
+      throw new ForbiddenException(
+        'مدارک مسافر تا تأیید تحویل مدارک توسط مالی در دسترس فروش نیست.',
+      );
+    return { data: intake, delivery: authorization };
+  }
   @Get('contracts/:id/output')
   @Header('Cache-Control', 'private, no-store')
   printOutput(

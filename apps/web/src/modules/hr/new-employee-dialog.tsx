@@ -35,6 +35,7 @@ export const employeeStatuses = ['فعال', 'در حال تکمیل', 'تعلی
 export type NewEmployeeStatus = (typeof employeeStatuses)[number];
 
 export interface NewEmployeeFormValue {
+  userId?: string;
   firstName: string;
   lastName: string;
   personnelCode: string;
@@ -130,6 +131,10 @@ function FieldError({
 }
 
 interface NewEmployeeFormProps {
+  userOptions?:
+    | readonly { id: string; label: string; branches: readonly string[] }[]
+    | undefined;
+  userOptionsError?: string | undefined;
   existingPersonnelCodes: readonly string[];
   initialValue?: NewEmployeeFormValue | undefined;
   managerOptions: readonly string[];
@@ -147,6 +152,8 @@ interface NewEmployeeFormProps {
 }
 
 export function NewEmployeeForm({
+  userOptions,
+  userOptionsError,
   existingPersonnelCodes,
   initialValue,
   managerOptions,
@@ -175,6 +182,7 @@ export function NewEmployeeForm({
     setValue((current) => ({
       ...current,
       [field]: nextValue,
+      ...(field === 'branch' ? { userId: '' } : {}),
       ...(field === 'branch' && organizationOptions
         ? { unit: '', position: '', grade: '' }
         : {}),
@@ -459,7 +467,43 @@ export function NewEmployeeForm({
       </fieldset>
 
       <fieldset className={styles.formFieldset}>
-        <legend className={styles.formLegend}>وضعیت همکاری</legend>
+        <legend className={styles.formLegend}>
+          حساب کاربری و وضعیت همکاری
+        </legend>
+        <label className={styles.fieldLabel} htmlFor="hr-employee-user">
+          حساب کاربری سامانه
+          <select
+            className={styles.control}
+            id="hr-employee-user"
+            disabled={!userOptions}
+            value={value.userId ?? ''}
+            onChange={(e) => update('userId', e.target.value)}
+          >
+            <option value="">بدون حساب کاربری مرتبط</option>
+            {value.userId &&
+            !userOptions?.some(
+              (u) => u.id === value.userId && u.branches.includes(value.branch),
+            ) ? (
+              <option value={value.userId} disabled>
+                حساب فعلی · {value.userId}
+              </option>
+            ) : null}
+            {userOptions
+              ?.filter((u) => u.branches.includes(value.branch))
+              .map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.label}
+                </option>
+              ))}
+          </select>
+          <small>
+            حساب فعال همان شعبه؛ برای دسترسی شخصی، اعلان‌ها و انتخاب مسئول در
+            بخش‌های دیگر.
+          </small>
+          {userOptionsError ? (
+            <small role="alert">{userOptionsError}</small>
+          ) : null}
+        </label>
         <div className={styles.formGrid}>
           <label
             className={styles.fieldLabel}
@@ -523,6 +567,8 @@ export function NewEmployeeForm({
 }
 
 interface NewEmployeeDialogProps {
+  userOptions?: NewEmployeeFormProps['userOptions'];
+  userOptionsError?: string | undefined;
   existingPersonnelCodes: readonly string[];
   initialValue?: NewEmployeeFormValue | undefined;
   managerOptions: readonly string[];
@@ -535,6 +581,8 @@ interface NewEmployeeDialogProps {
 }
 
 export function NewEmployeeDialog({
+  userOptions,
+  userOptionsError,
   existingPersonnelCodes,
   initialValue,
   managerOptions,
@@ -558,6 +606,8 @@ export function NewEmployeeDialog({
           مشخصات پایه و جایگاه سازمانی کارمند را مطابق فهرست کارکنان تکمیل کنید.
         </DialogDescription>
         <NewEmployeeForm
+          userOptions={userOptions}
+          userOptionsError={userOptionsError}
           existingPersonnelCodes={existingPersonnelCodes}
           initialValue={initialValue}
           managerOptions={managerOptions}

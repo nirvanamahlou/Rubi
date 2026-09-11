@@ -16,8 +16,10 @@ import styles from './hr-forms.module.css';
 import { buttonVariants } from '@/components/ui/button';
 import { parseWeightedGoals, weightedProgress } from './weighted-goals';
 import { RequiredFieldLabel } from './required-field-label';
+import { HrArchiveDocumentPicker } from './hr-archive-document-picker';
 
 export interface ContextualHrFormContext {
+  branchId?: string;
   section: HrSectionId;
   tab: string;
   title: string;
@@ -828,9 +830,17 @@ export function ContextualHrForm({
                   />
                 ) : field.type === 'file' ? (
                   <>
+                    {context.branchId && !readOnly ? (
+                      <HrArchiveDocumentPicker
+                        branchId={context.branchId}
+                        value={values[field.id] ?? ''}
+                        onChange={(next) => update(field.id, next)}
+                      />
+                    ) : null}
                     <input
                       {...commonProps}
                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png,image/webp"
+                      required={field.required && !values[field.id]}
                       onChange={(event) => {
                         const file = event.target.files?.[0];
                         if (!file) return;

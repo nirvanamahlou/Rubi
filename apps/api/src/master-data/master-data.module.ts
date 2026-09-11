@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { MasterHrDirectory } from './master-hr-directory';
 
 import { AuthGuard } from '../iam/auth.guard';
 import { IamModule } from '../iam/iam.module';
@@ -33,11 +34,16 @@ import { OrganizationAddressController } from './organization-address.controller
     MasterDataRepository,
     MasterDataContactCrypto,
     MasterDataService,
+    MasterHrDirectory,
     MasterOrganizationDirectory,
     MasterTravelDirectory,
     CurrencyRateService,
     HotelImportService,
   ],
-  exports: [MasterOrganizationDirectory, MasterTravelDirectory],
+  exports: [
+    MasterOrganizationDirectory,
+    MasterTravelDirectory,
+    MasterHrDirectory,
+  ],
 })
 export class MasterDataModule {}

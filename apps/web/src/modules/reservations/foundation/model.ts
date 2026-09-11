@@ -5,7 +5,7 @@ export const sections = [
   ['hotels', 'رزرو هتل'],
   ['vouchers', 'واچر'],
   ['insurance', 'بیمه سامان'],
-  ['manifests', 'Manifest'],
+  ['manifests', 'MANIFEST'],
   ['costs', 'هزینه خرید'],
   ['timeline', 'رویدادها'],
 ] as const;
@@ -38,12 +38,13 @@ export const statusLabels: Record<QueueStatus, string> = {
   READY_FOR_DELIVERY: 'آماده تحویل',
   ERROR: 'خطادار',
   COMPLETED: 'تکمیل‌شده',
-  SUPPLIER_CONFIRMED: 'تأییدشده توسط کارگزار',
+  SUPPLIER_CONFIRMED: 'آماده صدور واچر هتل',
   VOUCHER_ISSUED: 'واچر صادرشده',
   CANCELLED: 'ابطال‌شده',
 };
 export interface RequestView {
   id: string;
+  contractId?: string;
   contractNumber: string;
   branchId: string;
   branchName: string;
@@ -61,7 +62,23 @@ export interface RequestView {
   travelDate?: string;
   destination?: string;
   hotelName?: string;
+  hotelId?: string | undefined;
+  serviceTitles?: readonly string[];
+  mealServiceId?: string | undefined;
+  mealServiceName?: string | undefined;
+  hotelNotes?: string | undefined;
+  hasNotes?: boolean;
   carrierName?: string;
+  destinationId?: string | undefined;
+  checkIn?: string | undefined;
+  checkOut?: string | undefined;
+  roomCount?: number | undefined;
+  singleRooms?: number | undefined;
+  doubleRooms?: number | undefined;
+  extraBeds?: number | undefined;
+  hotelRequested?: boolean | undefined;
+  hotelConfirmed?: boolean | undefined;
+  correctedAt?: string | undefined;
   createdAt: string;
   status: QueueStatus;
   /** Counts issued documents once, not once per passenger/segment join. */
@@ -133,6 +150,9 @@ export function queryRows(rows: readonly RequestView[], query: Query) {
         r.destination ?? '',
         r.hotelName ?? '',
         r.carrierName ?? '',
+        r.mealServiceName ?? '',
+        r.hotelNotes ?? '',
+        ...(r.serviceTitles ?? []),
       ].some((v) => v.toLocaleLowerCase('fa').includes(search)),
   );
   filtered.sort((a, b) => {
@@ -155,6 +175,7 @@ export function queryRows(rows: readonly RequestView[], query: Query) {
     : 1;
   return {
     dateError,
+    filteredRows: filtered,
     rows: filtered.slice((page - 1) * pageSize, page * pageSize),
     total: filtered.length,
     page,
@@ -244,8 +265,8 @@ export const statusTones: Record<
 > = {
   NEW: 'pink',
   WAITING_SUPPLIER: 'lightGray',
-  SUPPLIER_CONFIRMED: 'darkGray',
-  VOUCHER_ISSUED: 'lightGray',
+  SUPPLIER_CONFIRMED: 'lightGray',
+  VOUCHER_ISSUED: 'darkGray',
   CANCELLED: 'red',
   ACTION_REQUIRED: 'neutral',
   WAITING_FINANCE: 'neutral',
@@ -256,7 +277,6 @@ export const statusTones: Record<
 export const workflowLegend: QueueStatus[] = [
   'NEW',
   'WAITING_SUPPLIER',
-  'SUPPLIER_CONFIRMED',
   'VOUCHER_ISSUED',
   'CANCELLED',
 ];

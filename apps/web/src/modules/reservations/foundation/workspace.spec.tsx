@@ -242,7 +242,7 @@ it('renders workflow colors with readable statuses and accessible arrival alert'
   );
   for (const tone of ['pink', 'lightGray', 'darkGray', 'red'])
     expect(html).toContain(`data-tone="${tone}"`);
-  for (const label of ['واچر صادرشده', 'تأییدشده توسط کارگزار', 'ابطال‌شده'])
+  for (const label of ['واچر صادرشده', 'آماده صدور واچر هتل', 'ابطال‌شده'])
     expect(html).toContain(label);
   expect(html).toContain('aria-live="polite"');
   expect(html).toContain('درخواست جدید به');

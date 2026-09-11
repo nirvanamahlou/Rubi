@@ -64,13 +64,21 @@ export class SalesRepository {
     });
   }
 
+  findUserDisplayNames(userIds: readonly string[]) {
+    if (!userIds.length) return Promise.resolve([]);
+    return this.database.client.user.findMany({
+      where: { id: { in: [...new Set(userIds)] } },
+      select: { id: true, displayName: true },
+    });
+  }
+
   pendingReservationRequests() {
     return this.database.client.salesReservationRequest.findMany({
       where: {
         dispatchedAt: null,
         contract: { status: 'SENT_TO_RESERVATIONS' },
       },
-      include: { contract: { select: { branchId: true } } },
+      include: { contract: { select: { branchId: true, ownerUserId: true } } },
       orderBy: { createdAt: 'asc' },
       take: 50,
     });

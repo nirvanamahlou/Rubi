@@ -1,12 +1,19 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import { afterEach, describe, expect, it } from 'vitest';
 import { demoAgencyNames } from './b2b-demo-agencies.mjs';
 
-test('explicit all-agency selection paginates and excludes other roles', async () => {
-  const previous = process.env.B2B_DEMO_ALL_EXISTING;
-  try {
+const previous = process.env.B2B_DEMO_ALL_EXISTING;
+
+afterEach(() => {
+  if (previous === undefined) delete process.env.B2B_DEMO_ALL_EXISTING;
+  else process.env.B2B_DEMO_ALL_EXISTING = previous;
+});
+
+describe('B2B demo agency selection', () => {
+  it('explicitly paginates all agencies and excludes other roles', async () => {
     delete process.env.B2B_DEMO_ALL_EXISTING;
-    assert.deepEqual(await demoAgencyNames({}, ['bounded']), ['bounded']);
+    await expect(demoAgencyNames({}, ['bounded'])).resolves.toEqual([
+      'bounded',
+    ]);
     process.env.B2B_DEMO_ALL_EXISTING = '1';
     const calls = [];
     const master = {
@@ -27,34 +34,29 @@ test('explicit all-agency selection paginates and excludes other roles', async (
         };
       },
     };
-    assert.deepEqual(await demoAgencyNames(master, []), [
+    await expect(demoAgencyNames(master, [])).resolves.toEqual([
       'Agency',
       'Last agency',
     ]);
-    assert.deepEqual(calls, [
+    expect(calls).toEqual([
       ['organizations', 1],
       ['organizations', 2],
     ]);
-    await assert.rejects(
-      () =>
-        demoAgencyNames(
-          {
-            async list() {
-              return {
-                data: [1, 2].map(() => ({
-                  name: 'duplicate',
-                  attributes: { roleCodes: 'AGENCY' },
-                })),
-                meta: { total: 2 },
-              };
-            },
+    await expect(
+      demoAgencyNames(
+        {
+          async list() {
+            return {
+              data: [1, 2].map(() => ({
+                name: 'duplicate',
+                attributes: { roleCodes: 'AGENCY' },
+              })),
+              meta: { total: 2 },
+            };
           },
-          [],
-        ),
-      /Duplicate agency/,
-    );
-  } finally {
-    if (previous === undefined) delete process.env.B2B_DEMO_ALL_EXISTING;
-    else process.env.B2B_DEMO_ALL_EXISTING = previous;
-  }
+        },
+        [],
+      ),
+    ).rejects.toThrow(/Duplicate agency/);
+  });
 });

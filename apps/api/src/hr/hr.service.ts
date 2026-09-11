@@ -25,6 +25,7 @@ import { DatabaseService } from '../database/database.service';
 import { DocumentsService } from '../documents/documents.service';
 import { IamService } from '../iam/iam.service';
 import * as validate from './hr.validation';
+import { HrDirectoryService } from './hr-directory.service';
 
 type Tx = Prisma.TransactionClient;
 type Employee = Prisma.HrEmployeeGetPayload<null>;
@@ -79,6 +80,7 @@ export class HrService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(IamService) private readonly iam: IamService,
     @Inject(DocumentsService) private readonly documents: DocumentsService,
+    @Inject(HrDirectoryService) private readonly directory: HrDirectoryService,
   ) {}
 
   private expenseMission(
@@ -153,6 +155,7 @@ export class HrService {
   private recordScope(actor: AuthenticatedActor): Prisma.HrRecordWhereInput {
     this.readable(actor);
     return {
+      section: { not: 'connections' },
       branchId: { in: actor.branchIds },
       deletedAt: null,
       ...(this.has(actor, 'hr.read') || this.has(actor, 'hr.manage')
@@ -796,7 +799,11 @@ export class HrService {
     this.require(actor, 'hr.manage');
     const input = validate.object(body, employeeKeys);
     const photo = input.photoDocumentId
-      ? await this.documentReference(input.photoDocumentId, actor)
+      ? await this.documentReference(
+          input.photoDocumentId,
+          actor,
+          this.branch(actor, input.branchId),
+        )
       : null;
     const result = await this.command(
       actor,
@@ -815,7 +822,11 @@ export class HrService {
     const input = validate.object(body, [...employeeKeys, 'version']);
     const expected = validate.version(input.version);
     const photo = input.photoDocumentId
-      ? await this.documentReference(input.photoDocumentId, actor)
+      ? await this.documentReference(
+          input.photoDocumentId,
+          actor,
+          (await this.employee(this.database.client, id, actor)).branchId,
+        )
       : undefined;
     const row = await this.transaction(async (tx) => {
       const existing = await this.employee(tx, id, actor);
@@ -1136,6 +1147,7 @@ export class HrService {
       const currency = data.currency || values[schema.columns.indexOf('ارز')];
       if (!currency || !/^[A-Z]{3}$/.test(currency))
         throw new BadRequestException('برای مبلغ، کد ارز سه‌حرفی الزامی است.');
+      await this.directory.master.assertCurrency(currency);
       await tx.hrRecordAmount.upsert({
         where: { recordId_field: { recordId: row.id, field: field.key } },
         create: {
@@ -1156,9 +1168,6 @@ export class HrService {
     const input = validate.object(body, recordKeys);
     const schema = validate.resource(input.section, input.tab);
     const data = validate.workflowData(input.data);
-    const documentId = data.documentId
-      ? await this.documentReference(data.documentId, actor)
-      : null;
     const result = await this.command(
       actor,
       key,
@@ -1174,6 +1183,9 @@ export class HrService {
           actor,
           input.branchId ?? employee?.branchId,
         );
+        const documentId = data.documentId
+          ? await this.documentReference(data.documentId, actor, branchId)
+          : null;
         if (employee && employee.branchId !== branchId)
           throw new BadRequestException(
             'کارمند متعلق به شعبه انتخاب‌شده نیست.',
@@ -1297,7 +1309,11 @@ export class HrService {
     const providedData =
       input.data === undefined ? undefined : validate.workflowData(input.data);
     const docId = providedData?.documentId
-      ? await this.documentReference(providedData.documentId, actor)
+      ? await this.documentReference(
+          providedData.documentId,
+          actor,
+          (await this.record(this.database.client, id, actor)).branchId,
+        )
       : undefined;
     return this.transaction(async (tx) => {
       const row = await this.record(tx, id, actor);

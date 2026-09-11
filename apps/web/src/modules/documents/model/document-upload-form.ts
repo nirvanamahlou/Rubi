@@ -4,6 +4,7 @@ import type {
 } from '@rubi/contracts';
 
 export interface DocumentUploadValues {
+  employeeId?: string;
   title: string;
   description: string;
   documentTypeId: string;
@@ -56,7 +57,10 @@ export function validateDocumentUpload(
   if (!values.categoryId) return 'دسته‌بندی را انتخاب کنید.';
   if (!values.branchId) return 'شعبه را انتخاب کنید.';
   if (!values.ownerUserId) return 'مالک فایل را انتخاب کنید.';
-  if (!values.sourceRelationId) return 'پرونده مربوطه را انتخاب کنید.';
+  if (!values.sourceRelationId && !values.employeeId)
+    return 'پرونده مربوطه را انتخاب کنید.';
+  if (values.sourceRelationId && values.employeeId)
+    return 'فقط یک پرونده مرجع انتخاب کنید.';
   if (requiresExpiry && !values.validUntil)
     return 'برای این نوع سند، تاریخ اعتبار الزامی است.';
   return null;
