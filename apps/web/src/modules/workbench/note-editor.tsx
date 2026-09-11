@@ -12,18 +12,29 @@ import {
   Input,
   Textarea,
 } from '@/components/ui';
+import type { NoteDraft } from './note-drafts';
 
 export function NoteEditor({
   open,
   onOpenChange,
+  initial,
+  folders = ['شخصی', 'جلسات', 'ایده‌ها'],
+  onApply,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initial?: NoteDraft | undefined;
+  folders?: string[];
+  onApply?: (draft: NoteDraft) => void;
 }) {
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
+  const [title, setTitle] = useState(initial?.title ?? '');
+  const [body, setBody] = useState(initial?.body ?? '');
+  const [folder, setFolder] = useState(initial?.folder ?? 'شخصی');
+  const [tags, setTags] = useState(initial?.tags ?? '');
   const [discard, setDiscard] = useState(false);
-  const [items, setItems] = useState<{ text: string; done: boolean }[]>([]);
+  const [items, setItems] = useState<{ text: string; done: boolean }[]>(
+    initial?.items ?? [],
+  );
   const [itemText, setItemText] = useState('');
   const dirty = Boolean(title || body || items.length || itemText);
   function close() {
@@ -50,7 +61,9 @@ export function NoteEditor({
         className="max-h-[90dvh] max-w-2xl overflow-y-auto"
         dir="rtl"
       >
-        <DialogTitle className="pe-10">یادداشت جدید</DialogTitle>
+        <DialogTitle className="pe-10">
+          {initial ? 'ویرایش یادداشت' : 'یادداشت جدید'}
+        </DialogTitle>
         <DialogDescription>
           عنوان و متن یادداشت شخصی خود را وارد کنید.
         </DialogDescription>
@@ -71,12 +84,31 @@ export function NoteEditor({
         ) : (
           <form
             className="mt-5 space-y-5"
-            onSubmit={(event) => event.preventDefault()}
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (
+                !title.trim() ||
+                (!body.trim() && !items.length) ||
+                itemText.trim()
+              )
+                return;
+              onApply?.({
+                id: initial?.id ?? crypto.randomUUID(),
+                title: title.trim(),
+                body,
+                folder,
+                tags,
+                items,
+                pinned: initial?.pinned ?? false,
+                updatedAt: new Date().toISOString(),
+                template: false,
+              });
+            }}
           >
             <Alert
               tone="warning"
               title="ذخیره یادداشت هنوز در دسترس نیست"
-              description="می‌توانید فرم را تکمیل کنید، اما متن فعلاً ذخیره نمی‌شود و با خروج از صفحه از بین می‌رود. پس از فعال‌شدن ذخیره‌سازی خصوصی، ثبت یادداشت در حساب شما ممکن می‌شود."
+              description="اعمال تغییرات، کارت پیش‌نویس همین صفحه را به‌روز می‌کند؛ در حساب ذخیره نمی‌شود و با بارگذاری مجدد از بین می‌رود."
             />
             <div className="space-y-2">
               <p className="text-sm font-semibold">شروع از قالب یادداشت</p>
@@ -187,6 +219,28 @@ export function NoteEditor({
                 {body.length.toLocaleString('fa-IR')} از ۱۰٬۰۰۰ نویسه
               </p>
             </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="space-y-2 text-sm font-semibold">
+                پوشه
+                <select
+                  className="w-full rounded-xl border border-border bg-surface p-3"
+                  value={folder}
+                  onChange={(event) => setFolder(event.target.value)}
+                >
+                  {folders.map((name) => (
+                    <option key={name}>{name}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-2 text-sm font-semibold">
+                برچسب‌ها
+                <Input
+                  maxLength={200}
+                  value={tags}
+                  onChange={(event) => setTags(event.target.value)}
+                />
+              </label>
+            </div>
             <section
               className="space-y-3 rounded-xl border border-border p-4"
               aria-label="چک‌لیست یادداشت"
@@ -263,11 +317,16 @@ export function NoteEditor({
             <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
               <Button
                 type="submit"
-                disabled
+                disabled={
+                  !onApply ||
+                  !title.trim() ||
+                  (!body.trim() && !items.length) ||
+                  Boolean(itemText.trim())
+                }
                 aria-describedby="workbench-note-save-status"
               >
                 <Save className="size-4" aria-hidden="true" />
-                ثبت یادداشت
+                اعمال در پیش‌نویس
               </Button>
               <Button type="button" variant="outline" onClick={close}>
                 انصراف
@@ -276,7 +335,9 @@ export function NoteEditor({
                 id="workbench-note-save-status"
                 className="text-xs text-muted-foreground"
               >
-                ثبت تا آماده‌شدن ذخیره‌سازی خصوصی غیرفعال است.
+                {itemText.trim()
+                  ? 'مورد نوشته‌شده را به چک‌لیست اضافه یا پاک کنید.'
+                  : 'پیش‌نویس در حساب ذخیره نمی‌شود.'}
               </span>
             </div>
           </form>

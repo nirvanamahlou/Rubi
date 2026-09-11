@@ -1,5 +1,9 @@
 # Work Assignments
 
+## WORKBENCH-014-NOTE-CARDS — PC-B — IN_PROGRESS
+
+- PC-B reserves Workbench note board/editor/model and workspace integration to match screenshots552/553: cream cards, folders/search/date filters, pin/edit/remove and checklist strike-through. UI drafts only with explicit unsaved label; no persistence, fake server records, API/schema/dependency changes. Branch codex/pc-b-workbench-note-cards from e701b49; preserve pending B2B history fix on runtime handoff.
+
 ## WORKBENCH-013-INTERACTIONS — PC-B — UI_READY / PERSISTENCE_BLOCKED
 
 - User requests screenshot-aligned settings, larger centered tabs, colored KPIs, removal of Documents shortcut, chat layout, functional request/message/note forms and private checklist notes. Reserve Workbench-local UI and own docs on codex/pc-b-workbench-interactions; preserve B2B9b1c33c. Persistence requires current migration-owner handoff, requested from coordinator before schema work; no fake storage or transmission. Shared layout and other owner modules unchanged.
