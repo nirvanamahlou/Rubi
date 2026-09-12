@@ -1,6 +1,6 @@
 # Work Assignments
 
-## HR-015-RUNTIME — PC-B — IN_PROGRESS
+## HR-015-RUNTIME — PC-B — VERIFIED / ACTIVATION_BLOCKED
 
 - User authorizes applying merged PR226 UI removal to Web3100. CA owner explicitly handed off runtime at b1da23bd. Reserve AppShell outlet and HR referral UI removal on codex/pc-b-hr-panel-runtime-0913; preserve all CA commits and API4190/PID33612, database and contracts. Isolated build, Web-only cutover after checks. No migration or dependency changes.
 
