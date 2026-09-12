@@ -1,5 +1,12 @@
 # Work Assignments
 
+## MASTER-010-CABIN-CLASS-TITLE — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک محصول: در «کلاس پروازی» عنوان فارسی از فرم و نمایش حذف و عنوان انگلیسی اجباری شود.
+- محدوده رزروشده: Catalog/Validation/Workspace حمل‌ونقل Web، آماده‌سازی و اعتبارسنجی Master Data API، Fixtureهای نمایشی کلاس پروازی، تست‌های هدفمند و اسناد Task. ستون پایدار `name` برای سازگاری Schema و مصرف‌کنندگان حفظ و از مقدار اجباری `englishName` در مرز API همگام می‌شود.
+- وابستگی: شاخه `codex/pc-b-cabin-class-title` از HEAD PR #240 (`f7affc37`) ساخته شده و به‌ترتیب به PRهای #240 و #236 وابسته است؛ شاخه‌ها و PRهای والد دست‌نخورده می‌مانند.
+- مرزها: هیچ Schema/Migration، Contract مشترک، Dependency/Lockfile، IAM، داده عملیاتی یا فایل متعلق به PC-A تغییر نمی‌کند. تغییر با حفظ API عمومی و FKهای Ticket Catalog/Baggage تحویل می‌شود و سازنده آن را خودکار Merge نمی‌کند.
+
 ## MASTER-009-AIRLINE-BAGGAGE — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک محصول: «قواعد بار» از تب مستقل حمل‌ونقل خارج و داخل بخش/فرم ایرلاین مدیریت شود.

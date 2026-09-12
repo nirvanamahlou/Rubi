@@ -841,12 +841,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'کد رزرو و Cabin مرجع؛ قیمت و موجودی صندلی در Ticket Catalog/Reservations می‌ماند.',
     fields: [
-      nameField,
       {
         key: 'englishName',
         label: 'نام انگلیسی',
         type: 'text',
         placeholder: 'Economy',
+        required: true,
       },
       {
         key: 'bookingCode',
@@ -862,7 +862,11 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: '0',
       },
     ],
-    preview: { name: 'اکونومی', bookingCode: 'Y', cabinType: 'ECONOMY' },
+    preview: {
+      englishName: 'Economy',
+      bookingCode: 'Y',
+      cabinType: 'ECONOMY',
+    },
   },
   {
     key: 'baggage-rules',

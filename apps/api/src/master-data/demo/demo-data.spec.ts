@@ -33,6 +33,12 @@ describe('explicit local Master Data demo fixtures', () => {
     expect(
       fixtures.find((row) => row.key === 'aircraft-1')?.values((key) => key),
     ).not.toHaveProperty('name');
+    expect(
+      fixtures.find((row) => row.key === 'cabin-1')?.values((key) => key),
+    ).toMatchObject({ englishName: 'Economy', bookingCode: 'Y' });
+    expect(
+      fixtures.find((row) => row.key === 'cabin-1')?.values((key) => key),
+    ).not.toHaveProperty('name');
   });
   it('covers all retained reference catalogs with ordered dependencies and marked synthetic names', () => {
     const fixtures = masterDataDemoRecords();
@@ -53,6 +59,9 @@ describe('explicit local Master Data demo fixtures', () => {
         expect(values).not.toHaveProperty('name');
         expect(values).not.toHaveProperty('manufacturer');
         expect(values).not.toHaveProperty('model');
+      } else if (row.resource === 'cabin-classes') {
+        expect(values.englishName).toMatch(/^Demo Cabin \d+$/);
+        expect(values).not.toHaveProperty('name');
       } else if (row.resource !== 'suppliers')
         expect(values.name ?? values.legalName ?? values.fullName).toContain(
           'آزمایشی',

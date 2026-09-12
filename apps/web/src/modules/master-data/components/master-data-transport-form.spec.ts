@@ -62,6 +62,28 @@ const expected = {
 };
 
 describe('transport mockup form coverage', () => {
+  it('renders cabin class with a required English title and no Persian title', () => {
+    const definition = getMasterDataDefinition('cabin-classes');
+    const fields = getMasterDataFormFields(definition);
+    const html = renderToStaticMarkup(
+      createElement(MasterDataLiveForm, {
+        definition,
+        mode: 'create',
+        open: true,
+        onOpenChange: () => {},
+        onPersist: async () => {},
+      }),
+    );
+
+    expect(fields.map((field) => field.key)).not.toContain('name');
+    expect(fields.find((field) => field.key === 'englishName')).toMatchObject({
+      required: true,
+    });
+    expect(html).toContain('id="live-cabin-classes-englishName"');
+    expect(html).toContain('required=""');
+    expect(html).not.toContain('عنوان فارسی');
+  });
+
   it.each(MASTER_TRANSPORT_FORM_RESOURCES)(
     '%s renders every editable field and generated metadata',
     (resource) => {

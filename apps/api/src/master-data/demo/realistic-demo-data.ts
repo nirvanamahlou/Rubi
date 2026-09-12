@@ -108,8 +108,8 @@ export function realisticMasterDataDemoRecords(): DemoRecord[] {
       englishName: 'Boeing 777-300ER',
       manufacturerModel: 'Boeing / 777-300ER',
     },
-    'cabin-1': { ...pair('اکونومی', 'Economy'), bookingCode: 'Y' },
-    'cabin-2': { ...pair('بیزینس', 'Business'), bookingCode: 'C' },
+    'cabin-1': { englishName: 'Economy', bookingCode: 'Y' },
+    'cabin-2': { englishName: 'Business', bookingCode: 'C' },
     'baggage-1': {
       name: 'بار بزرگسال اکونومی',
       allowance: '20',

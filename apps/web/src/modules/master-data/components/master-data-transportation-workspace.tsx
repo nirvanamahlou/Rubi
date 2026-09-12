@@ -168,12 +168,15 @@ function aircraftManufacturerModel(record: MasterDataRecord) {
 }
 
 function transportDisplayName(record: MasterDataRecord) {
-  if (record.resource !== 'aircraft-types') return record.name;
-  return (
-    String(record.attributes.englishName ?? '').trim() ||
-    aircraftManufacturerModel(record) ||
-    record.code
-  );
+  if (record.resource === 'cabin-classes')
+    return String(record.attributes.englishName ?? '').trim() || record.code;
+  if (record.resource === 'aircraft-types')
+    return (
+      String(record.attributes.englishName ?? '').trim() ||
+      aircraftManufacturerModel(record) ||
+      record.code
+    );
+  return record.name;
 }
 
 function profileAttributeEntries(record: MasterDataRecord) {
@@ -194,6 +197,7 @@ function needsCompletion(record: MasterDataRecord) {
     return !record.attributes.englishName || !record.attributes.countryId;
   if (
     record.resource === 'aircraft-types' ||
+    record.resource === 'cabin-classes' ||
     record.resource === 'train-types' ||
     record.resource === 'bus-types'
   )
@@ -483,7 +487,9 @@ export function MasterDataTransportationWorkspace() {
         columns: [
           ...new Set([
             'code',
-            ...(resource === 'aircraft-types' ? [] : ['name']),
+            ...(['aircraft-types', 'cabin-classes'].includes(resource)
+              ? []
+              : ['name']),
             ...getMasterDataFormFields(definition).map((field) => field.key),
             'status',
             'updatedAt',
@@ -573,6 +579,7 @@ export function MasterDataTransportationWorkspace() {
                 {columns.map(([key]) => (
                   <td key={key} className="p-4 min-w-28">
                     {key === 'name' ||
+                    (resource === 'cabin-classes' && key === 'englishName') ||
                     (resource === 'aircraft-types' &&
                       key === 'manufacturerModel') ? (
                       <>
@@ -876,7 +883,10 @@ export function MasterDataTransportationWorkspace() {
                     {transportDisplayName(selected)}
                   </h2>
                   <p className="mt-1 text-muted-foreground" dir="ltr">
-                    {selected.code} · {attribute(selected, 'englishName')}
+                    {selected.code}
+                    {resource === 'cabin-classes'
+                      ? ''
+                      : ` · ${attribute(selected, 'englishName')}`}
                   </p>
                   <Badge className="mt-3">
                     {selected.attributes.transportStatus === 'UNDER_REVIEW'

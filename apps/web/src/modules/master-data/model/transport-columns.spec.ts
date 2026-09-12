@@ -48,6 +48,21 @@ describe('mockup column coverage', () => {
       transportColumns('aircraft-types').map(([, label]) => label),
     ).not.toContain('عنوان فارسی');
   });
+  it('shows only the required English title for cabin classes', () => {
+    expect(transportColumns('cabin-classes').map(([, label]) => label)).toEqual(
+      [
+        'کد',
+        'عنوان انگلیسی',
+        'کد رزرو',
+        'ترتیب',
+        'استفاده در Ticket Catalog',
+        'Version / Audit',
+      ],
+    );
+    expect(
+      transportColumns('cabin-classes').map(([, label]) => label),
+    ).not.toContain('عنوان فارسی');
+  });
   it('does not invent external connections or capacity', () => {
     const record = {
       resource: 'bus-types',

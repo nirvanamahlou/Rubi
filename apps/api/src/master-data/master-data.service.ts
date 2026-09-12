@@ -387,7 +387,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'model',
     'manufacturerModel',
   ],
-  'cabin-classes': ['name', 'englishName', 'bookingCode', 'displayOrder'],
+  'cabin-classes': ['englishName', 'bookingCode', 'displayOrder'],
   'baggage-rules': [
     'name',
     'airlineId',
@@ -641,7 +641,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   // still submit manufacturer/model separately, so aircraft validation happens
   // in prepare() after the compatibility payload has been normalized.
   'aircraft-types': [],
-  'cabin-classes': ['name', 'bookingCode'],
+  'cabin-classes': ['englishName', 'bookingCode'],
   'baggage-rules': ['name', 'airlineId', 'passengerType', 'allowance', 'unit'],
   'manifest-templates': [
     'name',
@@ -1693,6 +1693,17 @@ export class MasterDataService {
       ]) {
         if (data[field] === '') data[field] = null;
       }
+    }
+    if (resource === 'cabin-classes' && Object.hasOwn(data, 'englishName')) {
+      const englishName = String(data.englishName ?? '').trim();
+      if (!englishName)
+        throw new BadRequestException('نام انگلیسی کلاس پروازی الزامی است.');
+      if (englishName.length > 160)
+        throw new BadRequestException(
+          'نام انگلیسی کلاس پروازی حداکثر ۱۶۰ نویسه است.',
+        );
+      data.englishName = englishName;
+      data.name = englishName;
     }
     if (
       (resource === 'payment-methods' || resource === 'meal-services') &&

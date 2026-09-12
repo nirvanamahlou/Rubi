@@ -228,7 +228,6 @@ export function masterDataDemoRecords(): DemoRecord[] {
       manufacturerModel: `Demo Manufacturer / DEMO-${n}`,
     });
     add(`cabin-${n}`, 'cabin-classes', {
-      name: name(n === 1 ? 'اکونومی' : 'بیزینس'),
       englishName: `Demo Cabin ${n}`,
       bookingCode: `DEMO${n}`,
       displayOrder: n,
