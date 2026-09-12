@@ -111,7 +111,7 @@ export function OrganizationsWorkspace() {
   const [state, setState] = useState<RequestState>('loading');
   const [selected, setSelected] = useState<MasterDataRecord>();
   const [profileOpen, setProfileOpen] = useState(false);
-  useSuppressHrConnections(!profileOpen);
+  useSuppressHrConnections(true);
   const openedOrganization = useRef<string | null>(null);
   const historyRecords = useRef(new Map<string, MasterDataRecord>());
   const historyRequest = useRef(0);
