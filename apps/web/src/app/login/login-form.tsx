@@ -74,7 +74,7 @@ export function LoginForm() {
         <div className="relative">
           <Input
             autoComplete="current-password"
-            className="pe-11"
+            className="pr-11"
             dir="ltr"
             id="password"
             name="password"
@@ -84,7 +84,7 @@ export function LoginForm() {
           <button
             aria-label={showPassword ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور'}
             aria-pressed={showPassword}
-            className="absolute inset-y-0 end-0 flex w-11 items-center justify-center rounded-e-xl text-muted-foreground transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-muted-foreground transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
             onClick={() => setShowPassword((visible) => !visible)}
             type="button"
           >

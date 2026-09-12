@@ -28,4 +28,10 @@ describe('login password visibility control', () => {
     expect(source).toContain('<EyeOff aria-hidden="true"');
     expect(source).toContain('<Eye aria-hidden="true"');
   });
+
+  it('places the visibility control on the right side of the input', () => {
+    expect(source).toContain('absolute inset-y-0 right-0');
+    expect(source).toContain('className="pr-11"');
+    expect(source).not.toContain('inset-y-0 end-0');
+  });
 });
