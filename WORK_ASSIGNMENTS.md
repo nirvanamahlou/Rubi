@@ -42,7 +42,7 @@
   جمع و مانده پس از عملیات دارد و ردیف‌های پرداخت جزئی قابل افزودن/حذف‌اند. فیلدهای فنی
   Version/Idempotency از فرم کاربر حذف و در state داخلی حفظ شدند. ۳۲ تست هدفمند Web،
   typecheck، lint محدود، Build ۴۱ مسیر و Browser QA هر دو فرم موفق‌اند؛ ثبت قطعی همچنان
-  `BLOCKED_BY_MIGRATION_LOCK` است.
+  `BLOCKED_BY_MIGRATION_LOCK` است. Commit قابلیت `70fde9b` به Draft PR #153 Push شد.
 
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 

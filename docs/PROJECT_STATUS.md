@@ -19,6 +19,7 @@
   مبلغ/پیگیری قابل افزودن و حذف، جمع و مانده بعد از عملیات و سابقه پرداخت نمایش داده
   می‌شوند. فیلدهای فنی Version/Idempotency از UI حذف و داخلی ماندند. ۳۲ تست هدفمند Web،
   typecheck، lint محدود، Build ۴۱ مسیر و Browser QA موفق‌اند؛ Persistence/Posting مسدود است.
+- Commit پیگیری `70fde9b` روی شاخه مالی Push و به Draft PR #153 اضافه شد.
 - جزئیات: [FINANCE-002A-ACCOUNTING-AND-INBOX.md](tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md).
 
 ## HR-013 — اتصال فرم‌ها و ارجاع بین منابع انسانی و بخش‌های سامانه — آماده ادغام تأییدشده
