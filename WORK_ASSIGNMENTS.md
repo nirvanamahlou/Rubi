@@ -7,6 +7,28 @@
 - قرارداد Backend بدون تغییر می‌ماند: Controller/Service مسیر CRM connections، مدل و client وب، مجوز شعبه و مصرف KPI/Finance حفظ می‌شوند. این واحد Migration، Schema، API contract، Dependency/Lockfile، IAM، داده یا Runtime مشترک را تغییر نمی‌دهد و خودکار Merge نمی‌شود.
 - تب/پنل مستقل حذف شد و رزرو فایل‌های اجرایی آزاد است. ۱۳۰ تست Organizations، ۸ تست API، lint و typecheck وب و build تولیدی ۴۶ مسیر موفق‌اند؛ جست‌وجوی منبع نیز حفظ مسیر Backend و حذف کامل ورودی UI مستقل را تایید کرد. PR #243 به `develop` باز است.
 
+## FINANCE-004-ACCOUNTING-SECONDARY-NAV — PC-A — COMPLETE / MERGED
+
+- درخواست مالک محصول در 2026-09-13: افزودن منوی داخلی جمع‌شونده برای صفحه «حسابداری»
+  با چهار گروه «دفتر کل»، «دریافت و پرداخت»، «ارتباط با سامانه مودیان مالیاتی» و
+  «حسابداری مالیاتی». زیرگروه‌های فعلی فقط پوسته ناوبری هستند و محتوای عملیاتی آن‌ها
+  تا دریافت توضیحات بعدی مالک محصول عمداً خالی می‌ماند.
+- Branch مستقل `codex/pc-a-accounting-secondary-navigation` از
+  `origin/develop@40d8f1f4`؛ `COMPUTER_ID=PC-A`.
+- محدوده رزروشده: `apps/web/src/modules/finance/**`، routeهای افزایشی زیر
+  `apps/web/src/app/(crm)/finance/accounting/**`، و تست‌های همان محدوده. منوی اصلی، API،
+  Schema/Migration/Seed، Permission، Dependency/Lockfile و داده عملیاتی تغییر نمی‌کنند.
+- زیرگروه دفتر کل: اطلاعات پایه، حساب‌ها، اسناد، عملیات پایان سال و گزارش‌ها. زیرگروه
+  دریافت و پرداخت: گزارش پرداخت و دریافت. دو گروه مالیاتی تا اعلام زیرگروه‌های بعدی فقط
+  ورودی سطح اول دارند. Push و Draft PR به develop مجاز؛ Merge/Force Push ممنوع.
+- پیاده‌سازی تکمیل شد: منوی داخلی مستقل و جمع‌شونده، مسیرهای پایدار، وضعیت انتخاب‌شده و
+  Empty Stateهای بدون داده اضافه شدند. ۲۰ تست Finance/Navigation، Prettier، ESLint،
+  TypeScript و build تولیدی ۴۶ مسیر موفق‌اند؛ QA مرورگر نیز ساختار و ناوبری را تأیید کرد.
+  هیچ API، Schema/Migration، Permission، داده عملیاتی یا Dependency تغییر نکرد.
+- مالک محصول در 2026-09-13 ادغام با `develop` و فعال‌سازی Web3100 را صریحاً مجاز کرد.
+- Merge Commit `b5fdbe75` روی `develop` پوش شد؛ رزرو پیاده‌سازی این واحد آزاد است.
+- Web3100 از Worktree همین واحد با Build ID `RAhkQQeixfqHkOKXiubFX` فعال است.
+
 ## HR-014-BACKEND-ONLY — PC-B — MERGE_AUTHORIZED
 
 - User explicitly removes the standalone HR connections panel and wants integrations behind the existing forms. Reserve the central AppShell outlet removal, HR record referral link and now-unreachable referral UI/client/tests on `codex/pc-b-hr-backend-only-0912` from `origin/develop@6a4e0410`. Backend services, contracts, persisted records, permissions and the form directory/document/currency integrations stay intact. No migration, dependency or runtime takeover. Existing visibility context is retained for consumer compatibility. Push a review PR to develop; no automatic merge under the updated instructions.

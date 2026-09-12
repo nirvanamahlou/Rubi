@@ -47,12 +47,61 @@ const inboxPageSource = readFileSync(
   join(process.cwd(), 'src', 'app', '(crm)', 'finance', 'requests', 'page.tsx'),
   'utf8',
 );
+const accountingNavigationSource = readFileSync(
+  join(
+    process.cwd(),
+    'src',
+    'modules',
+    'finance',
+    'components',
+    'accounting-navigation-workspace.tsx',
+  ),
+  'utf8',
+);
+const accountingRouteSource = readFileSync(
+  join(
+    process.cwd(),
+    'src',
+    'app',
+    '(crm)',
+    'finance',
+    'accounting',
+    '[...slug]',
+    'page.tsx',
+  ),
+  'utf8',
+);
 
 describe('finance workspace component contract', () => {
   it('routes the finance page to the dedicated workspace', () => {
-    expect(pageSource).toContain('FinanceAccountingWorkspace');
+    expect(pageSource).toContain('AccountingNavigationWorkspace');
     expect(inboxPageSource).toContain('FinanceRequestInboxWorkspace');
     expect(pageSource).not.toContain('ModuleOverview');
+  });
+
+  it('provides the requested collapsible accounting navigation with empty destinations', () => {
+    for (const label of [
+      'دفتر کل',
+      'اطلاعات پایه',
+      'حساب‌ها',
+      'اسناد',
+      'عملیات پایان سال',
+      'گزارش‌ها',
+      'دریافت و پرداخت',
+      'گزارش پرداخت و دریافت',
+      'ارتباط با سامانه مودیان مالیاتی',
+      'حسابداری مالیاتی',
+    ]) {
+      expect(accountingNavigationSource).toContain(label);
+    }
+    expect(accountingNavigationSource).toContain('بازکردن منوی حسابداری');
+    expect(accountingNavigationSource).toContain('جمع‌کردن منوی حسابداری');
+    expect(accountingNavigationSource).toContain('در انتظار تعریف جزئیات');
+    expect(accountingNavigationSource).toContain('usePageBreadcrumbs');
+    expect(accountingNavigationSource).not.toMatch(
+      /fetch\(|financeInboxPreview/,
+    );
+    expect(accountingRouteSource).toContain('AccountingNavigationWorkspace');
   });
 
   it('separates accounting and the request inbox into independent pages', () => {
