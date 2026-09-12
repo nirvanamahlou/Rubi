@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { LoginResponse } from '@rubi/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Choice, Lookup, rateRequest, type Option } from './controls';
 import { kinds, labels, initialFactors, price, type Factors } from './model';
 import { RateHistory } from './history';
@@ -21,6 +22,50 @@ const blank = (): Row => ({
   base: '',
   factors: { ...initialFactors },
 });
+
+export function HotelRateStayRange({
+  checkIn,
+  checkOut,
+  onCheckIn,
+  onCheckOut,
+}: {
+  checkIn: string;
+  checkOut: string;
+  onCheckIn: (value: string) => void;
+  onCheckOut: (value: string) => void;
+}) {
+  return (
+    <>
+      <div className={styles.dateField}>
+        <label htmlFor="hotel-rate-check-in">ورود به هتل</label>
+        <DatePicker
+          defaultCalendarSystem="gregorian"
+          gregorianEnglish
+          id="hotel-rate-check-in"
+          name="checkIn"
+          required
+          value={checkIn}
+          onChange={onCheckIn}
+          aria-describedby="hotel-rate-date-help"
+        />
+      </div>
+      <div className={styles.dateField}>
+        <label htmlFor="hotel-rate-check-out">خروج از هتل</label>
+        <DatePicker
+          defaultCalendarSystem="gregorian"
+          gregorianEnglish
+          id="hotel-rate-check-out"
+          name="checkOut"
+          required
+          value={checkOut}
+          onChange={onCheckOut}
+          aria-describedby="hotel-rate-date-help"
+        />
+      </div>
+    </>
+  );
+}
+
 export function HotelGroupRates() {
   const [session, setSession] = useState<LoginResponse | null>(null);
   const [ready, setReady] = useState(false);
@@ -143,25 +188,12 @@ export function HotelGroupRates() {
                   }))}
                 />
               </label>
-              <label>
-                ورود به هتل
-                <input
-                  type="date"
-                  required
-                  value={checkIn}
-                  onChange={(e) => setCheckIn(e.target.value)}
-                />
-              </label>
-              <label>
-                خروج از هتل
-                <input
-                  type="date"
-                  required
-                  min={checkIn}
-                  value={checkOut}
-                  onChange={(e) => setCheckOut(e.target.value)}
-                />
-              </label>
+              <HotelRateStayRange
+                checkIn={checkIn}
+                checkOut={checkOut}
+                onCheckIn={setCheckIn}
+                onCheckOut={setCheckOut}
+              />
               <label>
                 واحد قیمت
                 <Choice
@@ -188,10 +220,10 @@ export function HotelGroupRates() {
                 />
               </label>
             </div>
-            <p>
+            <p id="hotel-rate-date-help">
               {nights > 0
                 ? `${nights} شب اقامت · روز خروج جزو شب‌های اقامت نیست.`
-                : 'تاریخ‌ها را به میلادی انتخاب کنید.'}
+                : 'تاریخ ورود و خروج را انتخاب کنید؛ تقویم پیش‌فرض میلادی است.'}
             </p>
           </section>
           <section>

@@ -1744,3 +1744,6 @@ The selected-contract «مشخصات کلی» action now loads the canonical Res
 
 ## RESERVATION-CONTRACT-PDF-0912 — PC-A — LOCAL_COMPLETE
 The Reservations selected-contract «مشاهده» action now displays the existing authenticated Sales contract PDF in-place. The live-feed adapter retains the canonical contractId separately from the Reservations intake id, preventing cross-record or wrong-id output. The dialog includes PDF download, retry and safe server error feedback. Thirty-two focused tests, scoped lint, TypeScript and the Web production build passed; Local Web3100 responds 200 with hot reload active. Existing Sales output permissions and audit remain authoritative. No API, schema, grant or operational-data changes; public-publication hold retained.
+
+## HOTEL-RATE-CALENDAR-0912 — PC-A — LOCAL_COMPLETE
+Hotel group-rate stay dates now use the shared project DatePicker instead of browser-native date controls. Both check-in and check-out open the same dual Persian/Gregorian calendar used elsewhere in Reservations, default to Gregorian-English display and continue to store ISO civil dates. Existing positive-night validation, calculation and API payload are unchanged. Twelve focused date/rate tests, scoped lint, Web TypeScript and production build passed. No API, schema or data changes; isolated local handoff commit and public-publication hold retained.
