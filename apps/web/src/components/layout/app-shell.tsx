@@ -338,6 +338,9 @@ function HeaderActions() {
         )}
       </Button>
       <NotificationCenter />
+      <Button asChild variant="secondary" className="shrink-0 text-xs">
+        <Link href="/workbench">میزکار من</Link>
+      </Button>
       <UserMenu />
     </div>
   );
