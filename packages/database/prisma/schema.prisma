@@ -3453,23 +3453,23 @@ model TicketOfferCapacityAllocation {
 }
 
 model ReservationIntake {
-  salesOwnerUserId  String?                          @db.Uuid
-  salesOwner        User?                            @relation("TravelSalesOwner", fields: [salesOwnerUserId], references: [id], onDelete: Restrict)
-  workflowRevisions ReservationWorkflowRevision[]
-  deliveryRevisions FinanceDeliveryRevision[]
-  purchaseVersion   Int                              @default(0)
-  hotelPurchases    ReservationHotelPurchase[]
-  servicePurchases  ReservationServicePurchase[]
-  id                String                           @id @default(uuid()) @db.Uuid
-  requestId         String                           @unique @db.Uuid
-  contractId        String                           @db.Uuid
-  contractVersion   Int
-  branchId          String                           @db.Uuid
-  fingerprint       String                           @db.VarChar(64)
-  snapshot          Json
-  status            String                           @default("QUEUED") @db.VarChar(40)
-  receivedAt        DateTime                         @default(now()) @db.Timestamptz(3)
-  arrangements      ReservationArrangementRevision[]
+  salesOwnerUserId    String?                          @db.Uuid
+  salesOwner          User?                            @relation("TravelSalesOwner", fields: [salesOwnerUserId], references: [id], onDelete: Restrict)
+  workflowRevisions   ReservationWorkflowRevision[]
+  deliveryRevisions   FinanceDeliveryRevision[]
+  purchaseVersion     Int                              @default(0)
+  hotelPurchases      ReservationHotelPurchase[]
+  servicePurchases    ReservationServicePurchase[]
+  id                  String                           @id @default(uuid()) @db.Uuid
+  requestId           String                           @unique @db.Uuid
+  contractId          String                           @db.Uuid
+  contractVersion     Int
+  branchId            String                           @db.Uuid
+  fingerprint         String                           @db.VarChar(64)
+  snapshot            Json
+  status              String                           @default("QUEUED") @db.VarChar(40)
+  receivedAt          DateTime                         @default(now()) @db.Timestamptz(3)
+  arrangements        ReservationArrangementRevision[]
   manifestExportItems ReservationManifestExportItem[]
 
   @@unique([contractId, contractVersion])
