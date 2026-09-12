@@ -240,6 +240,30 @@ export class DocumentsService {
     }
   }
 
+  /** Public ownership/reference check; Workbench never reads Documents tables. */
+  async assertWorkbenchFeedbackAttachments(
+    documentIds: readonly string[],
+    feedbackId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ): Promise<void> {
+    if (!documentIds.length) return;
+    if (!actor.branchIds.includes(branchId))
+      throw new ForbiddenException('شعبه فایل در دامنه دسترسی نیست.');
+    const uniqueIds = [...new Set(documentIds)];
+    const matches = await this.repository.feedbackAttachmentIds({
+      documentIds: uniqueIds,
+      feedbackId,
+      branchId,
+      ownerUserId: actor.userId,
+    });
+    if (matches.length !== uniqueIds.length) {
+      throw new BadRequestException(
+        'یک یا چند فایل پیوست متعلق به این نظرسنجی نیست.',
+      );
+    }
+  }
+
   /** Public reference-only lookup; file contents and metadata stay inside Documents. */
   async organizationVersionReferences(
     versionIds: readonly string[],

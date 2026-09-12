@@ -1,5 +1,11 @@
 # مدل داده و ERD اولیه
 
+## WORKBENCH-034 — نظرسنجی و پیشنهادها
+
+Workbench مالک `workbench_feedback` است. هر رکورد UUID و کد پیگیری یکتا، FK واقعی شعبه و فرستنده، واحد مقصد محدودشده، موضوع و متن، انتخاب ناشناس، تعداد پیوست و زمان UTC دارد. `request_hash` همراه UUID ارسالی از ایجاد دوباره یا استفاده متفاوت از همان شناسه جلوگیری می‌کند. شناسه فرستنده برای Audit ذخیره می‌شود و در اعلان ناشناس Actor تهی است؛ projection گیرنده نباید فرستنده ناشناس را بازگرداند.
+
+فایل داخل این جدول ذخیره نمی‌شود. هر پیوست یک Document با `sourceModule=WORKBENCH`، `sourceEntityType=WorkbenchFeedback` و `sourceEntityId` برابر UUID نظرسنجی است. Workbench فقط از سرویس عمومی Documents برای احراز مالک/شعبه/مرجع پیوست استفاده می‌کند و اسکن، دسترسی، نگهداری باینری و تاریخچه نسخه در مالکیت Documents می‌ماند. HR فقط شناسه حساب‌های متصل به واحد مقصد را برمی‌گرداند و Notifications اعلان گیرنده را داخل همان Transaction ثبت می‌کند.
+
 ## B2B-ORGANIZATION-USERS-001 — agency portal membership
 
 B2B owns B2bOrganizationUser with restrictive organization, unique IAM user and internal branch foreign keys. It stores roleName, selected section identifiers (organization/access/contracts/credit/finance/audit), active status, optimistic version and UTC actor/timestamps. A database check restricts section identifiers and requires at least one section for active membership. Membership writes and B2bAuditEvent snapshots are atomic; credentials are never sent to that repository. IAM public services alone create/hash credentials; dedicated agency users receive no global roles or branches. The membership is not a contact, signatory or approval authority. Its branch is the internal cooperation scope, not the agency's street address. Deactivation keeps membership and history, and the portal boundary still applies.
