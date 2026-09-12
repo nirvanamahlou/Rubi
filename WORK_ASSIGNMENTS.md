@@ -1,5 +1,12 @@
 # Work Assignments
 
+## WORKBENCH-002-DEMO-PARITY — PC-B — READY_FOR_REVIEW
+
+- User explicitly requests exact parity with `my-workbench.html`, synthetic data and working input forms. COMPUTER_ID=PC-B; branch `codex/pc-b-workbench-interactive-demo`, based on published WORKBENCH-001 `cb2aa16` (whose develop base is the current `4717b13`). Source reservation in WORKBENCH-001 is released for review.
+- Reserve only `apps/web/src/modules/workbench/demo/**`, the additive gated `/workbench/demo` route, an opt-in entry link in the Workbench page, and this work item's documentation/status entries. No shared shell, proxy, IAM, API, contracts, dependency/lockfile, schema/migration or operational data edits.
+- Deliver an explicitly labeled isolated demo, preserving the supplied design and session-only interactions. The real Workbench permission check and unavailable services remain unchanged. No migration or broader central ownership is acquired; only this additive status entry is reserved.
+- Separate loopback preview only; do not replace 3100/4190 or other owners' listeners. The demo cannot call production APIs or submit files/passwords. See `docs/tasks/WORKBENCH-002-DEMO-PARITY.md`.
+
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 
 - User requests HR connections to all main-menu modules. Reserve HR API/Web and HR contracts, HR receiving-permission seed entries, and one additive AppShell connection outlet on `codex/pc-b-hr-module-connections` from `origin/develop@e07c0c6`. Scope, producer/consumer compatibility and acceptance boundaries: `docs/tasks/HR-013-CONNECTIONS.md`.

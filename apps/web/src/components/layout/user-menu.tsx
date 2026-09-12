@@ -124,6 +124,9 @@ export function UserMenu() {
           </span>
         </div>
         <DropdownMenuItem asChild>
+          <Link href="/workbench">میزکار من</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <Link href="/profile">
             <UserRound aria-hidden="true" className="size-4" />
             {faMessages.shell.profile}
