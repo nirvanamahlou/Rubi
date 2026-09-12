@@ -6,11 +6,15 @@
 - Store the submitting user for audit while omitting identity from recipient projections and notifications when anonymous is selected. Route by the selected branch and department, upload optional files through the existing Documents service with a Workbench source reference, preserve existing document scanning/access controls, and create recipient notifications without direct cross-module table access. No IAM grant, dependency/lockfile change, destructive migration, real external delivery, or merge.
 - Completed: persisted idempotent feedback API, department routing with branch-admin fallback, anonymous actor suppression, exact Documents attachment validation, active Home submission with tracking receipt, and an authenticated full-detail view restricted to the sender or current destination recipients. Additive migration rehearsed on a restored full backup and applied to the existing runtime database; 38 users, five branches, 44 documents and six HR employees were preserved. Web3100/API4190 are healthy with the existing database/storage. Authenticated browser confirmed obsolete draft copy absent and submit enabled; no synthetic feedback was sent. 1,222 API, 1,319 full-run Web plus isolated 54 HR and 44 Workbench, 73 Database and 68 Contracts tests pass. Lint/typechecks and 46-route build pass. Implementation, Migration and central-file reservations RELEASED; no IAM grant, external delivery or merge.
 
-## B2B-EXCEL-IMPORT-EXPORT-001 — PC-B — IN_PROGRESS
+## B2B-ORGANIZATION-PERMANENT-DELETE-001 — PC-B — UI_VERIFIED
+
+- Organizations permanent-delete dialog now keeps the destructive action available after an authoritative API rejection, clears the previous error before retry and changes the label to an explicit retry action. Only transport/unknown outcomes require refresh, preventing a duplicate delete after an uncertain response. Referenced organizations remain protected and unused organizations are physically removed through the existing Master Data owner endpoint. Focused lint, Web TypeScript/build, all 125 Organizations tests and the seven-test isolated PostgreSQL deletion suite passed. Authenticated Web3100 QA confirmed the merged dialog and active destructive action with the eight-record directory; no user data was deleted during UI QA. Runtime `b9244f4` / `hr005-72ea3c0ada5a1190`; API4190 healthy. No schema, migration, dependency, IAM grant, cascade or business-history deletion.
+
+## B2B-EXCEL-IMPORT-EXPORT-001 — PC-B — UI_VERIFIED
 
 - Reserve Organizations directory Excel actions, Master Data export filter validation and focused service/UI tests. Remove the redundant directory-level import-template button, keep the sample template inside the import dialog, and allow the already-contracted `organizationRole` filter only for organization exports. No schema, migration, dependency, IAM grant or operational-data change.
 
-## B2B-FINANCE-EXPORT-LAYOUT-001 — PC-B — IN_PROGRESS
+## B2B-FINANCE-EXPORT-LAYOUT-001 — PC-B — UI_VERIFIED
 
 - Reserve `organization-finance-preview.tsx` and `organization-documents-panel.tsx` only. Remove the requested finance sample-boundary notice and move both finance-row and document Excel actions into the document header beside the upload action with compact controls. No export payload, document API, data, schema, dependency or permission change.
 
