@@ -1,5 +1,17 @@
 # برنامه اجرای Rubi
 
+## CUSTOMER-AFFAIRS-002 — برش عملیاتی
+
+- [x] Persistence افزایشی Lead/Ticket/Timeline/Handoff/Referral/SLA/Survey/Corrective Action/Command/Audit
+- [x] API و قرارداد عمومی v1 با idempotency، optimistic concurrency، permission و branch scope
+- [x] اتصال واقعی Customers، Sales، Reservations، Documents، Notifications و Workbench
+- [x] UI واقعی امور مشتریان و فرم عمومی رضایت‌سنجی با stateهای loading/empty/error/forbidden
+- [ ] adapter پیام خارجی، business calendar تنظیمات، retention/RPO/RTO و export سندی پس از قرارداد عمومی مالک مقصد
+
+جزئیات، AC01–AC16 و محدودیت‌های fail-closed در
+`docs/tasks/CUSTOMER-AFFAIRS-002.md` ثبت شده‌اند. این شاخه برای Review است و merge در
+محدوده این Task نیست.
+
 ## LOCAL-HR-AGENCIES-009 — اجرای آژانس‌ها کنار منابع انسانی
 
 - نسخه آژانس‌ها از PR #113 در شاخه مستقل بر پایه HR-008 وارد شد تا هر دو مسیر در پورت ۳۱۰۰ از یک Build ارائه شوند. این کار جایگزین‌کردن نسخه منابع انسانی با Checkout آژانس‌ها نیست؛ داده و فرم‌های HR-008 حفظ می‌شوند.

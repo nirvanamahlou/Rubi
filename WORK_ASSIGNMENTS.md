@@ -34,6 +34,11 @@
   1,327 Web tests, lint, typechecks and both production builds passed. Migration,
   central-contract and implementation reservations are RELEASED for review.
 
+## CUSTOMER-AFFAIRS-003 — PC-B — IMPLEMENTED / AWAITING AUTHENTICATED VISUAL QA
+
+- Reserve Customer Affairs Web components, local styles, API client presentation/query support and task documentation for the supplied customer-affairs.html reference. Branch `codex/pc-b-customer-affairs-rubi-ui` continues the unmerged operational slice `b39c93d` (PR #221) in its clean worktree. Reuse Rubi theme and live API; no schema, migration, dependency or shared shell edits. Central Docs reservation is limited to this entry, project status and own task report. Runtime ownership must be checked before restart.
+- Implementation and automated verification are complete: full Web lint, TypeScript/build (46 routes), 1329 full-suite tests and 3 additional new render tests passed. Preview on 3102 requires API CORS/runtime coordination and user sign-in for visual QA. Existing 3100/4190 runtimes were not changed. Central Docs reservation released for handoff; no migration or dependency lock was acquired. See `docs/tasks/CUSTOMER-AFFAIRS-003.md`.
+
 ## B2B-REMOVE-HR-REQUESTS-001 — PC-B — VALIDATED
 
 - The global Human Resources requests outlet is suppressed throughout the agency/corporate dossier route, including the directory and every 360 section. The profile-level exception that previously made the outlet visible again was removed. All 126 Organizations tests, focused lint, Web TypeScript and the 46-route production build passed. HR records, APIs, permissions and the Human Resources module remain unchanged; no schema, migration, dependency or central AppShell change.
@@ -41,6 +46,43 @@
 ## B2B-ORGANIZATION-PERMANENT-DELETE-001 — PC-B — UI_VERIFIED
 
 - Organizations permanent-delete dialog now keeps the destructive action available after an authoritative API rejection, clears the previous error before retry and changes the label to an explicit retry action. Only transport/unknown outcomes require refresh, preventing a duplicate delete after an uncertain response. Referenced organizations remain protected and unused organizations are physically removed through the existing Master Data owner endpoint. Focused lint, Web TypeScript/build, all 125 Organizations tests and the seven-test isolated PostgreSQL deletion suite passed. Authenticated Web3100 QA confirmed the merged dialog and active destructive action with the eight-record directory; no user data was deleted during UI QA. Runtime `b9244f4` / `hr005-72ea3c0ada5a1190`; API4190 healthy. No schema, migration, dependency, IAM grant, cascade or business-history deletion.
+
+## CUSTOMER-AFFAIRS-002 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`; branch `codex/pc-b-customer-affairs-operational` and worktree
+  `C:/Users/admin/Rubi-customer-affairs-operational` are rebased onto
+  `origin/develop@b2098bc76521c35518cbb64ab5337bcaf565f8f0`.
+- Reserve Customer Affairs ownership for the operational vertical slice in
+  `apps/api/src/customer-affairs/**`, `apps/web/src/modules/customer-affairs/**`,
+  `apps/web/src/app/(crm)/customer-affairs/**`,
+  `apps/web/src/modules/workbench/workbench-customer-affairs-referrals.tsx` and the
+  additive requests-tab integration in `workbench-workspace.tsx`, its focused tests and
+  the new task report.
+  Preserve the existing foundation and consume Customers, Sales, Reservations, Finance,
+  Tasks/Workbench, Documents, HR/IAM, Settings/Notifications, Marketing and Reporting only
+  through their public services or versioned references.
+- `Migration Owner = PC-B/CUSTOMER-AFFAIRS-002` for additive Customer Affairs-owned
+  request/lead, timeline, handoff, ticket/SLA, referral, message-delivery, survey and
+  corrective-action persistence plus required FK reverse relations, indexes and checks.
+  The earlier `PC-A/SUPPLIER-PURCHASE-FINANCE-0912` and manifest migrations are already in
+  `origin/develop` through merged PRs #177/#191 and no open PR owns a newer migration; their
+  stale `LOCAL_COMPLETE` reservation is treated as released by the merged baseline.
+- `Customer Affairs public contract/root export Owner = PC-B/CUSTOMER-AFFAIRS-002` for an
+  additive v1 contract. Producers are Customer Affairs API/domain services; consumers are
+  Customer Affairs Web and approved module adapters. Existing clients remain compatible;
+  no internal table or repository of another module may be queried.
+- `Central Docs Owner = PC-B/CUSTOMER-AFFAIRS-002` only for additive entries in
+  `WORK_ASSIGNMENTS.md`, `docs/PROJECT_STATUS.md`, `PLANS.md`, `docs/DATA_MODEL.md`,
+  `docs/DECISIONS.md` if an actual conflict is found, and
+  `docs/tasks/CUSTOMER-AFFAIRS-002.md`. Existing entries from other tasks are preserved.
+- `Dependency/Lockfile Owner = RELEASED / UNASSIGNED`; no dependency, workspace manifest or
+  lockfile change is planned. P0 must use the repository's existing Prisma, Nest, Next,
+  Tasks, Documents, Notifications and export infrastructure. External SMS/email/survey
+  automation remains fail-closed unless a configured adapter already exists.
+- P0 implementation, isolated PostgreSQL-18 migration/seed verification, monorepo gates,
+  authenticated API smoke and desktop/mobile browser QA are complete. Draft PR #221 is the
+  review handoff. `Migration Owner`, `Customer Affairs public contract/root export Owner`
+  and `Central Docs Owner` are `RELEASED`; Dependency/Lockfile remained unassigned.
 
 ## B2B-EXCEL-IMPORT-EXPORT-001 — PC-B — UI_VERIFIED
 

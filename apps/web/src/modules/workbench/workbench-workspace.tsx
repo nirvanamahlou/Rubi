@@ -63,6 +63,7 @@ import { MessageComposer } from './message-composer';
 import { PasswordChange } from './password-change';
 import { allowedWorkbenchDestinations } from './connections';
 import { WorkbenchHrNotifications } from './workbench-hr-notifications';
+import { WorkbenchCustomerAffairsReferrals } from './workbench-customer-affairs-referrals';
 import { NewRequestDialog } from './new-request-dialog';
 import { messageUnits } from './message-templates';
 
@@ -437,13 +438,17 @@ export function WorkbenchWorkspace() {
                 />
               </TabsContent>
               <TabsContent value="requests" className="space-y-4">
+                <WorkbenchCustomerAffairsReferrals
+                  enabled={home.user.permissions.includes(
+                    'customer_affairs.ticket.read',
+                  )}
+                  canRespond={home.user.permissions.includes(
+                    'customer_affairs.ticket.update',
+                  )}
+                />
                 <WorkbenchHrNotifications
                   key={home.user.id}
                   permissions={home.user.permissions}
-                />
-                <Alert
-                  title="ثبت و پیگیری در پرونده اصلی"
-                  description="کارتابل عمومی درخواست‌ها هنوز فعال نیست. درخواست‌های موجود را از بخش مسئول همان خدمت پیگیری کنید."
                 />
                 <div className="grid gap-4 md:grid-cols-3">
                   {allowedWorkbenchDestinations(home.user.permissions).map(

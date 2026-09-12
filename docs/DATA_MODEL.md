@@ -344,6 +344,24 @@ erDiagram
 
 ## تاریخچه و Audit
 
+### Customer Affairs operational aggregate
+
+- `customer_affairs_leads` منبع درخواست، نیاز سفر، Customer اختیاری، owner/queue، اقدام
+  بعدی و optimistic version را مالک است؛ `(branch_id, source_reference)` یکتا است.
+- `customer_affairs_handoffs` بسته نسخه‌دار و پاسخ Sales را نگه می‌دارد؛ تنها شناسه
+  قرارداد Sales پس از تایید سرویس عمومی ذخیره می‌شود.
+- `customer_affairs_tickets` مالک Ticket، SLA snapshot، مسئول پاسخ مشتری، مجری، reference
+  snapshot و state حل/بستن/بازگشایی است. ارجاع در `customer_affairs_referrals` مسئولیت
+  پاسخ به مشتری را منتقل نمی‌کند.
+- `customer_affairs_timeline` ارتباطات و delivery state،
+  `customer_affairs_satisfactions` دعوت هش‌شده و پاسخ واقعی مشتری، و
+  `customer_affairs_corrective_actions` پیگیری رضایت پایین را نگه می‌دارند.
+- `customer_affairs_commands` مرز idempotency و `customer_affairs_audit_events` ممیزی
+  branch/entity/version را نگه می‌دارند. actor رویداد survey عمومی nullable است؛ سایر
+  عملیات authenticated actor دارند.
+- Customer، User، Branch FK واقعی‌اند. Contract/Reservation/Document با سرویس عمومی
+  اعتبارسنجی می‌شوند و Customer Affairs جدول ماژول دیگر را مستقیم query نمی‌کند.
+
 جداول state history برای sales contract، service allocation، capacity hold، reservation،
 issue، manifest، financial release، purchase request/price، invoice، payment، check،
 support ticket، task، employment contract، leave/mission، overtime و payroll input شامل
