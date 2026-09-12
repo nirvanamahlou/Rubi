@@ -21,6 +21,8 @@ const selectClass =
   'w-full rounded-xl border border-input bg-surface p-2 text-sm text-foreground';
 const titleOf = (target: string) =>
   HR_CONNECTION_MODULES.find((m) => m.key === target)?.title ?? target;
+const pathOf = (target: string) =>
+  HR_CONNECTION_MODULES.find((m) => m.key === target)?.path ?? `/${target}`;
 const dateLabel = (value: string) =>
   new Date(value).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' });
 const errorText = (error: unknown) =>
@@ -460,7 +462,10 @@ export function ConnectionCard({
             مشاهده پرونده مبنا
           </Link>
         ) : null}
-        <Link className="underline" href={`/${item.target}?hrConnections=1`}>
+        <Link
+          className="underline"
+          href={`${pathOf(item.target)}?hrConnections=1`}
+        >
           بخش مقصد
         </Link>
       </div>

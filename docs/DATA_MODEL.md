@@ -1,5 +1,23 @@
 # مدل داده و ERD اولیه
 
+## B2B-ORGANIZATION-USERS-001 — agency portal membership
+
+B2B owns B2bOrganizationUser with restrictive organization, unique IAM user and internal branch foreign keys. It stores roleName, selected section identifiers (organization/access/contracts/credit/finance/audit), active status, optimistic version and UTC actor/timestamps. A database check restricts section identifiers and requires at least one section for active membership. Membership writes and B2bAuditEvent snapshots are atomic; credentials are never sent to that repository. IAM public services alone create/hash credentials; dedicated agency users receive no global roles or branches. The membership is not a contact, signatory or approval authority. Its branch is the internal cooperation scope, not the agency's street address. Deactivation keeps membership and history, and the portal boundary still applies.
+
+## B2B-UNIFIED-PROFILE-001 — organization signatories
+
+B2B owns `B2bOrganizationSignatory`: organization/contact composite restrictive FK to the Master Organization contact, authorized internal branch FK, document types, optional Decimal(24,4) authority limit with currency FK, UTC validity dates, optional pinned Documents version FK, active flag, optimistic version and actor/timestamps. B2bAuditEvent records mutations atomically. Contact identity and encrypted communication data remain in Master Data; proof contents/access/scan remain in Documents. Inactive entries can be completed without proof; activation requires a valid exact-source organization/branch document through the public owner service. Directory registration does not grant IAM permissions, independent approval rights or signature execution. Existing contacts and records are not reclassified or backfilled.
+
+## B2B-PROFILE-CLARITY-001 — organization identity
+
+`MasterOrganization.nationalId` is an optional, unique varchar(11) company identifier. Master Data normalizes Persian/Arabic digits and accepts only 11 ASCII digits for LEGAL organizations; a database check enforces the same format/person-type rule. Legacy rows stay NULL. Omitted updates preserve the identifier; explicit blank/null clears it, with existing optimistic version and audit semantics. Personal national IDs stay outside this field. It is manually supplied identity data, without a registry verification claim. The public generic record exposes `attributes.nationalId`; legacy consumers may ignore it.
+
+The agency branch selector reads existing `MasterOrganizationAddress` records for the selected organization. Selecting an address does not change IAM branch scope or the agency operational profile; existing public Master Data address CRUD persists additions/edits. IAM branch remains the internal organizational scope of the agreement and account manager.
+
+
+## B2B-CONTRACT-FORMS-002 — payment reference
+
+`B2bAgreementRevision.paymentMethodId` is an optional FK to `MasterPaymentMethod.id` with RESTRICT deletion. `paymentMethodName` snapshots the owner-validated label at revision write. Existing `paymentMethod` retains settlement semantics. Legacy omitted references are preserved, explicit null clears the optional reference, and historical revisions remain immutable. See [B2B-CONTRACT-FORMS-002](tasks/B2B-CONTRACT-FORMS-002.md).
 ## TOUR-PACKAGES-0908
 
 Ticket Catalog owns immutable TourPackage definitions and TourDeparture dated occurrences. Each departure has real restrictive foreign keys to its package and outbound/optional return TicketPublishedOffer. Definition JSON contains versioned public reference IDs and included services, not pricing or inventory. Branch, actor, UTC creation time, idempotency key and fingerprint form the append-only creation audit. Package version is checked on occurrence creation. No update/delete API is exposed. Capacity is always derived from existing active TicketOfferCapacityAllocation rows; no separate tour stock is created. Repeating must create new dated ticket occurrences or explicitly link existing ones, never change prior offers.
@@ -17,6 +35,12 @@ Sales owns additive `sales_contract_passenger_prices`: passenger FK (cascade), c
 - SalesContractService.pricing: JSON نسخه‌دار اختیاری شامل ارز، قیمت روز فروش و قیمت توافقی، هر کدام با مبنای NIGHT یا TOTAL. مبنای هر شب فقط برای هتل است و همه اتاق‌های انتخاب‌شده را پوشش می‌دهد؛ کلِ واردشده مرجع دقیق می‌ماند. قیمت‌های نسخه‌های قدیمی بدون تغییر باقی می‌مانند.
 - ReservationIntake.purchaseVersion کنترل هم‌زمانی ثبت خرید هتل است؛ snapshot اولیه تغییر نمی‌کند. ReservationHotelPurchase تاریخچه افزایشی مبلغ Decimal(24,4)، ارز، نسخه، ثبت‌کننده و زمان UTC است، با FK به intake، یکتایی intake/version و actor/idempotencyKey و fingerprint.
 - رکورد خرید رزرواسیون ورودی عملیاتی است، نه تأیید Procurement یا پرداخت Finance. جمع چند ارز یا ادعای سود نهایی بدون هزینه‌های مرجع ممنوع است.
+
+## SUPPLIER-PURCHASE-FINANCE-0912 — خرید هر خدمت و پرداخت کارگزار
+
+- Reservations برای هر `serviceClientKey` قرارداد یک زنجیرهٔ اصلاحات خرید نگه می‌دارد: نوع/عنوان خدمت، FK کارگزار، نام snapshot، مبلغ Decimal و ارز. آخرین نسخهٔ هر خدمت مبنای مالی است؛ اصلاح مبلغ یا کارگزار یک نسخهٔ تازه و در انتظار پرداخت می‌سازد.
+- Finance برای هر نسخهٔ خرید، سابقهٔ جداگانهٔ تصمیم/پرداخت نگه می‌دارد. پرداخت شامل FK بانک، تاریخ انتقال، شماره پیگیری، دلیل، actor و UTC است؛ تغییر خرید پرداخت‌شده، پرداخت قبلی را بازنویسی نمی‌کند.
+- تأیید تحویل مدارک تنها وقتی مجاز است که همهٔ خدمات snapshot قرارداد خرید ثبت‌شده داشته باشند و آخرین خرید هر خدمت در Finance پرداخت شده باشد. هیچ تبدیل ارز ضمنی یا جمع چندارزی انجام نمی‌شود.
 
 وضعیت: Conceptual/Logical v0.1؛ این سند Migration نیست. نام نهایی field، enum و index
 در Foundation با ADR و Prisma schema تثبیت می‌شود.
@@ -258,6 +282,12 @@ erDiagram
   تعداد قطعه و بازه اعتبار دارد؛ رکورد استفاده‌شده حذف فیزیکی نمی‌شود.
 - قالب Manifest فقط ساختار و نسخه قالب را نگه می‌دارد. فایل فعال نیازمند UUID واقعی از
   قرارداد Documents است؛ Manifest مسافر و تاریخچه ارسال در Reservations باقی می‌ماند.
+- مشخصات ایرلاینی مسافر شامل نام لاتین پاسپورت، جنسیت `M/F` و کد سه‌حرفی ملیت،
+  کشور صادرکننده پاسپورت و کشور محل تولد در Customer نگه‌داری می‌شود. شماره پاسپورت
+  همچنان رمزنگاری است و خواندن آن برای Manifest به مجوز حساس و Audit نیاز دارد.
+- فایل ایران ایرتور آنتالیا از Snapshot سفر و پرونده Customer ساخته می‌شود؛ نوع مسافر
+  از رده سنی قرارداد/اصلاح عملیاتی و کلاس از پرواز رفت می‌آید. فایل ناقص یا بیش از
+  ظرفیت ۶۱ ردیف قالب تولید نمی‌شود.
 - شرکت ریلی و اتوبوس هرکدام به Organization و Country فعال FK محدودکننده دارند. قرارداد،
   فروش، تسویه و Provider operation در ماژول‌های مالک نگه‌داری می‌شوند.
 - همه رکوردها global و مشترک دو شرکت هستند؛ Legal Entity Selector آن‌ها را فیلتر نمی‌کند

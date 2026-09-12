@@ -39,6 +39,7 @@ import { classifyRefreshFailure } from './refresh-token-policy';
 import type { RequestMetadata } from './iam.types';
 import type { IamStepUpPort } from './iam-step-up.port';
 import { MfaTotpService } from './mfa-totp';
+import { changeIamPassword, lockIamUser } from './password-change';
 
 interface AccessClaims {
   sub: string;
@@ -80,18 +81,33 @@ export class IamService implements IamStepUpPort {
 
     if (!user || !valid) {
       if (user && !locked && user.status !== UserStatus.INACTIVE) {
-        const failures = user.failedLoginAttempts + 1;
-        await this.database.client.user.update({
-          where: { id: user.id },
-          data: {
-            failedLoginAttempts: failures,
-            lockedUntil:
-              failures >= MAX_LOGIN_ATTEMPTS
-                ? new Date(now.getTime() + LOCK_MINUTES * 60_000)
-                : null,
-            status:
-              failures >= MAX_LOGIN_ATTEMPTS ? UserStatus.LOCKED : user.status,
-          },
+        await this.database.client.$transaction(async (transaction) => {
+          await lockIamUser(transaction, user.id);
+          const current = await transaction.user.findUnique({
+            where: { id: user.id },
+          });
+          if (
+            !current ||
+            current.passwordHash !== user.passwordHash ||
+            current.status === UserStatus.INACTIVE ||
+            (current.lockedUntil && current.lockedUntil > new Date())
+          )
+            return;
+          const failures = current.failedLoginAttempts + 1;
+          await transaction.user.update({
+            where: { id: user.id },
+            data: {
+              failedLoginAttempts: failures,
+              lockedUntil:
+                failures >= MAX_LOGIN_ATTEMPTS
+                  ? new Date(Date.now() + LOCK_MINUTES * 60_000)
+                  : null,
+              status:
+                failures >= MAX_LOGIN_ATTEMPTS
+                  ? UserStatus.LOCKED
+                  : current.status,
+            },
+          });
         });
       }
       await this.audit(
@@ -109,8 +125,19 @@ export class IamService implements IamStepUpPort {
     const familyId = randomUUID();
     const refreshSecret = randomBytes(48).toString('base64url');
     const expiresAt = new Date(now.getTime() + REFRESH_TTL_DAYS * 86_400_000);
-    await this.database.client.$transaction([
-      this.database.client.user.update({
+    await this.database.client.$transaction(async (transaction) => {
+      await lockIamUser(transaction, user.id);
+      const current = await transaction.user.findUnique({
+        where: { id: user.id },
+      });
+      if (
+        !current ||
+        current.passwordHash !== user.passwordHash ||
+        current.status === UserStatus.INACTIVE ||
+        (current.lockedUntil && current.lockedUntil > new Date())
+      )
+        throw new UnauthorizedException('نام کاربری یا رمز عبور صحیح نیست.');
+      await transaction.user.update({
         where: { id: user.id },
         data: {
           failedLoginAttempts: 0,
@@ -118,8 +145,8 @@ export class IamService implements IamStepUpPort {
           status: UserStatus.ACTIVE,
           lastLoginAt: now,
         },
-      }),
-      this.database.client.session.create({
+      });
+      await transaction.session.create({
         data: {
           id: sessionId,
           familyId,
@@ -128,8 +155,8 @@ export class IamService implements IamStepUpPort {
           expiresAt,
           ...metadata,
         },
-      }),
-      this.database.client.auditEvent.create({
+      });
+      await transaction.auditEvent.create({
         data: {
           actorUserId: user.id,
           action: 'auth.login',
@@ -138,8 +165,8 @@ export class IamService implements IamStepUpPort {
           outcome: AuditOutcome.SUCCESS,
           ...metadata,
         },
-      }),
-    ]);
+      });
+    });
     return {
       accessToken: await this.issueAccessToken(user.id, sessionId),
       refreshToken: `${sessionId}.${refreshSecret}`,
@@ -173,6 +200,16 @@ export class IamService implements IamStepUpPort {
     const expiresAt = new Date(now.getTime() + REFRESH_TTL_DAYS * 86_400_000);
     const rotated = await this.database.client.$transaction(
       async (transaction) => {
+        await lockIamUser(transaction, session.userId);
+        const currentUser = await transaction.user.findUnique({
+          where: { id: session.userId },
+        });
+        if (
+          !currentUser ||
+          currentUser.status !== UserStatus.ACTIVE ||
+          currentUser.passwordHash !== session.user.passwordHash
+        )
+          throw new UnauthorizedException('نشست منقضی شده است.');
         const claimed = await transaction.session.updateMany({
           where: {
             id: session.id,
@@ -213,6 +250,21 @@ export class IamService implements IamStepUpPort {
       expiresAt,
       body: this.loginResponse(session.user),
     };
+  }
+
+  changePassword(
+    actor: AuthenticatedActor,
+    currentPassword: string,
+    newPassword: string,
+    metadata: RequestMetadata,
+  ) {
+    return changeIamPassword(
+      this.database.client,
+      actor,
+      currentPassword,
+      newPassword,
+      metadata,
+    );
   }
 
   async logout(

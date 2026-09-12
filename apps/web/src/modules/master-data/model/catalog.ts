@@ -1566,6 +1566,13 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         required: true,
       },
       {
+        key: 'nationalId',
+        label: 'شناسه ملی شرکت',
+        type: 'text',
+        placeholder: '۱۱ رقم؛ اختیاری برای شخصیت حقوقی',
+        hint: 'از مدارک ثبتی شرکت وارد کنید. این مقدار خودکار تولید یا استعلام نمی‌شود. برای شخصیت حقیقی خالی بگذارید.',
+      },
+      {
         key: 'roleCodes',
         label: 'Roleهای سازمان',
         type: 'text',

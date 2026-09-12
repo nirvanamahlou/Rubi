@@ -10,6 +10,37 @@ export interface TourPackageInputV1 {
   transferOutbound: boolean;
   transferReturn: boolean;
   visa: boolean;
+  /** Optional, backwards-compatible descriptive definition; never a seat ledger. */
+  details?: {
+    version: 1;
+    summary?: string;
+    description?: string;
+    requiredDocuments?: string;
+    services?: string;
+    installmentTerms?: string;
+    refundRules?: string;
+    originAirportCode?: string;
+    durationDays?: number;
+    rating?: number;
+    transport?: 'FLIGHT' | 'TRAIN';
+    ticketIncluded?: boolean;
+    airlineName?: string;
+    basePrice?: { amount: string; currency: string };
+    flightPrice?: { amount: string; currency: string };
+    imageDocumentId?: string;
+    itinerary?: {
+      kind?: 'START' | 'TRANSPORT' | 'TRANSIT' | 'STAY' | 'EVENT' | 'END';
+      title?: string;
+      location?: string;
+      stayDays?: number;
+      startTime?: string;
+      durationMinutes?: number;
+      transport?: string;
+      cabinClass?: string;
+      baggageKg?: number;
+      description?: string;
+    }[];
+  };
 }
 
 export interface TourPackageV1 extends TourPackageInputV1 {

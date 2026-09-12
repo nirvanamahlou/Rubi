@@ -4,7 +4,13 @@ import type {
   DocumentDomainCode,
   DocumentListQueryV1,
 } from '@rubi/contracts';
-import { AuditOutcome, type Prisma } from '@rubi/database';
+import { AuditOutcome, Prisma } from '@rubi/database';
+import {
+  activityEvent,
+  activityPredicate,
+  type ActivityRow,
+  type ActivityWindow,
+} from '../common/organization-activity';
 
 import { DatabaseService } from '../database/database.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -87,6 +93,28 @@ function dateAtEndOfDay(value: string): Date {
 
 @Injectable()
 export class DocumentsRepository {
+  async organizationActivity(
+    org: string,
+    branch: string,
+    permissions: readonly string[],
+    window: ActivityWindow,
+  ) {
+    const rows = await this.database.client.$queryRaw<ActivityRow[]>(Prisma.sql`
+      WITH e AS (
+        SELECT a.id, a.action, a.outcome, a.document_id AS "entityId", 'Document'::text AS "entityType",
+          a.actor_user_id AS "actorUserId", a.occurred_at AS "occurredAt", 'DOCUMENT'::text AS category
+        FROM document_audit_events a JOIN documents d ON d.id = a.document_id
+        JOIN document_types t ON t.id = d.document_type_id
+        WHERE d.branch_id = ${branch}::uuid AND a.actor_branch_id = ${branch}::uuid
+          AND t.domain::text IN (${Prisma.join(allowedDocumentDomains(permissions))})
+          ${permissions.includes('documents.sensitive.read') ? Prisma.empty : Prisma.sql`AND d.confidentiality::text NOT IN ('CONFIDENTIAL', 'RESTRICTED')`}
+          AND EXISTS (SELECT 1 FROM document_relations r WHERE r.document_id = d.id
+            AND r.relation_type = 'PRIMARY_CASE' AND r.source_module = 'master-data'
+            AND r.source_entity_type = 'organizations' AND r.source_entity_id = ${org})
+      ) SELECT * FROM e WHERE ${activityPredicate(window, 'DOCUMENTS')}
+      ORDER BY "occurredAt" DESC, id DESC LIMIT 51`);
+    return rows.map((row) => activityEvent(row, 'DOCUMENTS'));
+  }
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(NotificationsService)
@@ -151,6 +179,36 @@ export class DocumentsRepository {
     });
   }
 
+  async organizationVersionReferences(
+    versionIds: readonly string[],
+    organizationId: string,
+    branchId: string,
+  ) {
+    const rows = await this.database.client.documentVersion.findMany({
+      where: {
+        id: { in: [...versionIds] },
+        document: {
+          branchId,
+          archiveStatus: { not: 'DELETED' },
+          documentType: { domain: 'ORGANIZATION' },
+          relations: {
+            some: {
+              relationType: 'PRIMARY_CASE',
+              sourceModule: 'master-data',
+              sourceEntityType: 'organizations',
+              sourceEntityId: organizationId,
+            },
+          },
+        },
+      },
+      select: { id: true, documentId: true },
+    });
+    return rows.map((row) => ({
+      versionId: row.id,
+      documentId: row.documentId,
+    }));
+  }
+
   async list(
     query: Required<
       Pick<
@@ -188,7 +246,7 @@ export class DocumentsRepository {
         ...(query.typeCode ? { code: query.typeCode } : {}),
       },
       ...(query.archiveStatus
-        ? { archiveStatus: query.archiveStatus }
+        ? { archiveStatus: { equals: query.archiveStatus, not: 'DELETED' } }
         : { archiveStatus: { not: 'DELETED' } }),
       ...(query.ownerUserId ? { ownerUserId: query.ownerUserId } : {}),
       ...(query.completion
@@ -296,14 +354,22 @@ export class DocumentsRepository {
 
   findDetail(id: string, branchIds: readonly string[]) {
     return this.database.client.document.findFirst({
-      where: { id, branchId: { in: [...branchIds] } },
+      where: {
+        id,
+        branchId: { in: [...branchIds] },
+        archiveStatus: { not: 'DELETED' },
+      },
       include: documentDetailInclude,
     });
   }
 
   findDetails(ids: readonly string[], branchIds: readonly string[]) {
     return this.database.client.document.findMany({
-      where: { id: { in: [...ids] }, branchId: { in: [...branchIds] } },
+      where: {
+        id: { in: [...ids] },
+        branchId: { in: [...branchIds] },
+        archiveStatus: { not: 'DELETED' },
+      },
       include: documentDetailInclude,
       orderBy: { id: 'asc' },
     });
@@ -668,34 +734,70 @@ export class DocumentsRepository {
     return this.database.client.$transaction(async (transaction) => {
       const current = await transaction.document.findUnique({
         where: { id: input.documentId },
-        select: { version: true },
+        select: { version: true, branchId: true, archiveStatus: true },
       });
-      if (!current || current.version !== input.expectedVersion) return false;
+      if (
+        !current ||
+        current.version !== input.expectedVersion ||
+        current.archiveStatus === 'DELETED'
+      )
+        return false;
       const versions = await transaction.documentVersion.findMany({
         where: { documentId: input.documentId },
         select: { id: true },
       });
       const versionIds = versions.map(({ id }) => id);
-      await transaction.document.update({
-        where: { id: input.documentId },
-        data: { currentVersionId: null },
+      const claimed = await transaction.document.updateMany({
+        where: {
+          id: input.documentId,
+          version: input.expectedVersion,
+          archiveStatus: { not: 'DELETED' },
+        },
+        data: { currentVersionId: null, version: { increment: 1 } },
       });
+      if (claimed.count !== 1) return false;
       await transaction.documentProcessingJob.deleteMany({
         where: { versionId: { in: versionIds } },
       });
       await transaction.documentQuarantine.deleteMany({
         where: { versionId: { in: versionIds } },
       });
-      await transaction.documentAuditEvent.deleteMany({
+      // Keep append-only history; remove references to physically deleted versions.
+      await transaction.documentAuditEvent.updateMany({
         where: { documentId: input.documentId },
+        data: { versionId: null },
       });
-      await transaction.documentRelation.deleteMany({
+      await transaction.documentRelation.updateMany({
         where: { documentId: input.documentId },
+        data: { displayLabel: 'سند حذف‌شده' },
       });
       await transaction.documentVersion.deleteMany({
         where: { documentId: input.documentId },
       });
-      await transaction.document.delete({ where: { id: input.documentId } });
+      // A minimal, inaccessible tombstone retains organization/domain audit scope.
+      await transaction.document.update({
+        where: { id: input.documentId },
+        data: {
+          archiveStatus: 'DELETED',
+          deletedAt: new Date(),
+          title: 'سند حذف‌شده',
+          description: null,
+          currentVersionNumber: 0,
+          validUntil: null,
+          updatedByUserId: input.actorUserId,
+        },
+      });
+      await transaction.documentAuditEvent.create({
+        data: {
+          documentId: input.documentId,
+          actorUserId: input.actorUserId,
+          actorBranchId: current.branchId,
+          action: 'documents.permanently-delete',
+          outcome: AuditOutcome.SUCCESS,
+          ipSummary: '',
+          userAgentSummary: '',
+        },
+      });
       await this.notifyDocumentChange(transaction, {
         action: 'documents.permanently-delete',
         actorUserId: input.actorUserId,

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   Inject,
@@ -18,7 +19,10 @@ import type { AuthenticatedRequest } from '../iam/iam.types';
 import { PermissionGuard } from '../iam/permission.guard';
 // Runtime import is required for Nest emitDecoratorMetadata and ValidationPipe.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-import { MasterOrganizationAddressDto } from './master-data.dto';
+import {
+  MasterOrganizationAddressDto,
+  MasterDataDeleteDto,
+} from './master-data.dto';
 import { MasterOrganizationDirectory } from './master-organization-directory';
 
 @ApiTags('Master Data Organization Addresses')
@@ -30,6 +34,26 @@ export class OrganizationAddressController {
     @Inject(MasterOrganizationDirectory)
     private readonly directory: MasterOrganizationDirectory,
   ) {}
+
+  @Delete(':organizationId/addresses/:addressId')
+  @RequirePermissions('master_data.delete')
+  async remove(
+    @Param('organizationId') organizationId: string,
+    @Param('addressId') addressId: string,
+    @Body() dto: MasterDataDeleteDto,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId?: string,
+  ) {
+    return {
+      data: await this.directory.deleteAddress(
+        organizationId,
+        addressId,
+        dto.version,
+        request.actor,
+        branchId,
+      ),
+    };
+  }
 
   @Get(':organizationId/addresses')
   @RequirePermissions('master_data.read')

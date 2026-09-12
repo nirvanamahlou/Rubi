@@ -1,0 +1,21 @@
+# B2B-FORM-RUNTIME-001 — restore the requested cooperation popup on port 3100
+
+PC-B / `codex/pc-b-b2b-form-runtime` / `C:/Users/admin/Rubi-b2b-form-runtime`.
+
+The owner reported Screenshot (525): **همکاری جدید** on `/organizations` opened the generic **ایجاد سازمان** modal. The running HR-011 checkout at `13b6f49` contained the old create action. Merged B2B PR #113 at `develop@7d716af` already routes this action to the requested four-step **ایجاد همکاری B2B** popup. This is a stale local runtime, not a missing wizard implementation.
+
+An isolated worktree combines develop with the published HR-010/011 head using a normal merge. Both B2B API/Organizations Web are byte-identical to develop; both HR API/Web are byte-identical to `13b6f49`. Only the independent task/documentation prepend sections needed conflict reconciliation. No application source is redesigned, no dependency or schema changes, and HR PRs #125/#127 are not merged into develop by this task.
+
+The HR owner explicitly handed over Web3100/API4190 after confirming no active edits/builds. Source checkout `C:/Users/admin/Rubi-hr115-integration` remains intact for rollback. The new runtime must retain database `rubi_hr_current_20260908` on `127.0.0.1:55432`, document root `C:/Users/admin/AppData/Local/Rubi/hr007-documents`, and the same private API environment file. No migrations, seed, business-record mutation, credential or permission changes are required. Local environment values and runtime evidence stay outside Git.
+
+Validation completed: frozen install, full monorepo lint (6 tasks), typecheck (9 tasks) and production builds (6 tasks, 40 Web routes) passed. All 196 targeted Organizations/HR/Master Data Web tests and 108 B2B/HR API tests passed. Five Web cases initially timed out during concurrent build/lint; all 196 passed with two workers on the final rerun. The 26 opt-in PostgreSQL tests were not rerun for this source-preserving integration; both source branches' prior disposable PostgreSQL results remain documented in their task reports.
+
+Web3100/API4190 now run from this worktree at application-source commit `f2981b5bfed7daa25de986cd44f3cb3a8392e98e`, fingerprint `hr005-2fbd1e21da23276d`. The authenticated browser verified the actual **همکاری جدید** action, wide popup with the steps on the right, existing-organization search, navigation through all four steps, seven-card agency dossier, logo dialog and HR navigation. All five directory rows remained present. No business form was submitted, no logo was uploaded and no record was deleted during QA. Existing workflow/permission restrictions and the separately documented incomplete PRD items remain in force.
+
+The first cutover failed before startup because the build fingerprint had been calculated in PowerShell 7 while the launcher uses Windows PowerShell. The old runtime was immediately restored. Recalculating the manifest with the launcher's own function under the same Windows PowerShell runtime fixed the mismatch; a temporary 3196 startup verified the build before the final coordinated cutover. That temporary listener is stopped. The startup fingerprint guard was not changed or disabled.
+
+Final listener identity, database/document configuration and QA evidence are recorded privately in `C:/Users/admin/Rubi-backups/b2b-form-runtime-final.json`; the previous runtime record is in `b2b-form-runtime-before.json`. The original HR checkout remains clean and available for rollback. Follow-up commits contain documentation only, so the served source commit intentionally identifies the actual tested integration build. For a later restart from the latest documentation HEAD, use the existing launcher with `-Build`, preserving the same API environment, database and Documents arguments; coordinate ownership first.
+
+The HR employee page also loaded its existing six rows after cutover. No personal employee values were copied into this report.
+
+Implementation reservation is released. Runtime ownership remains with this task until a coordinated handoff. The integration branch is pushed for review; this task does not merge HR PRs into develop.

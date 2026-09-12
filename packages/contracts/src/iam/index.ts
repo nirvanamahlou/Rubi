@@ -1,6 +1,6 @@
 import { HR_PERMISSION_CODES } from '../hr';
 
-export const IAM_PERMISSION_CONTRACT_VERSION = 8 as const;
+export const IAM_PERMISSION_CONTRACT_VERSION = 9 as const;
 export const IAM_STEP_UP_CONTRACT_VERSION = 1 as const;
 
 export const IAM_CORE_PERMISSION_CODES = [
@@ -41,8 +41,10 @@ export const B2B_PERMISSION_CODES = [
   'b2b.agency.manage',
   'b2b.agreement.read',
   'b2b.agreement.manage',
+  'b2b.agreement.approve',
   'b2b.credit.read',
   'b2b.credit.manage',
+  'b2b.credit.approve',
   'b2b.rate.read',
   'b2b.rate.manage',
 ] as const;
@@ -121,6 +123,9 @@ export const IAM_PERMISSION_CODES = [
   'ticket_catalog.read',
   'ticket_catalog.manage',
   'reservations.read',
+  'reservations.documents.manage',
+  'finance.financial_release.read',
+  'finance.financial_release.approve',
   'reservations.hotel_purchase.write',
 
   'reservations.arrangements.update',

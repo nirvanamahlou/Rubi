@@ -1,0 +1,122 @@
+.root {
+  max-width: 1500px;
+  margin: auto;
+  color: var(--foreground);
+}
+.root header {
+  margin-bottom: 24px;
+}
+.root h1 {
+  font-size: 24px;
+  font-weight: 700;
+}
+.root h2 {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.root p {
+  margin: 10px 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+.root section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.root fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.fields {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: end;
+}
+.fields > label,
+.dateField {
+  display: grid;
+  gap: 8px;
+  min-width: 150px;
+}
+.root input {
+  width: 100%;
+  min-height: 40px;
+  background: var(--surface);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 7px;
+}
+.root input[type='number'] {
+  direction: ltr;
+}
+.root button {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+.root button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.root button:focus-visible,
+.root input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.root .primary {
+  background: #1557b8;
+  color: white;
+}
+.scroll {
+  overflow-x: auto;
+  margin: 16px 0;
+}
+.root table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 1120px;
+  font-size: 12px;
+}
+.root th,
+.root td {
+  padding: 10px 8px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  min-width: 88px;
+}
+.root th {
+  background: var(--muted);
+}
+.root td:first-child,
+.root td:nth-child(2) {
+  min-width: 180px;
+}
+.root output,
+.root small {
+  display: block;
+  margin-top: 5px;
+  font-variant-numeric: tabular-nums;
+}
+.root output {
+  font-weight: 600;
+}
+.root .error {
+  color: var(--destructive);
+}
+@media (max-width: 600px) {
+  .root section {
+    padding: 12px;
+  }
+  .fields > * {
+    width: 100%;
+  }
+}

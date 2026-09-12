@@ -12,6 +12,8 @@ import { salesDirections, salesFlightSelection } from '../model/sales-form';
 import styles from './flight-ticket-preview.module.css';
 
 export interface FlightTicketSheetData {
+  branding?: { name: string; logo: string };
+  issued?: boolean;
   passengerName: string;
   businessOutput?: boolean;
   contractNumber?: string;
@@ -79,7 +81,7 @@ export function FlightTicketDocument({
   );
 }
 
-/** Presentation-only public document; issuance is intentionally not inferred. */
+/** Presentation-only public document; reservation outputs explicitly mark issuance. */
 export function FlightTicketSheet({
   data,
   cityName,
@@ -103,18 +105,22 @@ export function FlightTicketSheet({
           <h1>FLIGHT TICKET</h1>
           <div className={styles.rule} />
         </div>
-        <Image
-          src="/brand/niyayesh-seir-full.png"
-          alt="Niyayesh Seir"
-          width={210}
-          height={140}
-          loading="eager"
-          unoptimized
-        />
+        {(!data.branding || data.branding.logo) && (
+          <Image
+            src={data.branding?.logo ?? '/brand/niyayesh-seir-full.png'}
+            alt={data.branding?.name ?? 'Niyayesh Seir'}
+            width={210}
+            height={140}
+            loading="eager"
+            unoptimized
+          />
+        )}
       </header>
-      <p className={styles.draft}>
-        DRAFT — NOT VALID FOR TRAVEL / پیش‌نمایش، فاقد اعتبار سفر
-      </p>
+      {!data.issued ? (
+        <p className={styles.draft}>
+          DRAFT — NOT VALID FOR TRAVEL / پیش‌نمایش، فاقد اعتبار سفر
+        </p>
+      ) : null}
       <div className={styles.airlineBrand}>
         {demo ? (
           <span
@@ -130,7 +136,7 @@ export function FlightTicketSheet({
             'AIRLINE'}
         </h2>
       </div>
-      {demo ? (
+      {demo && !data.issued ? (
         <p className={styles.sample}>
           SAMPLE DATA — نمونهٔ نمایشی؛ شماره‌ها واقعی و صادرشده نیستند.
         </p>
@@ -138,23 +144,26 @@ export function FlightTicketSheet({
       <div className={styles.identity}>
         <div>
           <p>
-            Agency Name<strong>NIYAYESH SEIR SAHAR</strong>
+            Agency Name
+            <strong>{data.branding?.name ?? 'NIYAYESH SEIR SAHAR'}</strong>
           </p>
           <p>
             Airline Name<strong>{offers[0]?.carrierName || '—'}</strong>
           </p>
         </div>
-        <div>
-          <p>
-            Date Of Issue<strong>—</strong>
-          </p>
-          <p>
-            RLOC<strong>{demo ? 'DEMO01' : '—'}</strong>
-          </p>
-          <p>
-            E-Ticket No<strong>{demo ? '7143' : '—'}</strong>
-          </p>
-        </div>
+        {!data.issued ? (
+          <div>
+            <p>
+              Date Of Issue<strong>—</strong>
+            </p>
+            <p>
+              RLOC<strong>{demo ? 'DEMO01' : '—'}</strong>
+            </p>
+            <p>
+              E-Ticket No<strong>{demo ? '7143' : '—'}</strong>
+            </p>
+          </div>
+        ) : null}
       </div>
       <p className={styles.passenger}>
         Passenger Name <strong>{passengerName || '—'}</strong>
@@ -221,7 +230,11 @@ export function FlightTicketSheet({
                     {offer.businessOutput ? 'BUSINESS' : offer.cabinClassCode}
                   </td>
                   <td>
-                    {offer.contractOnly ? 'PENDING RESERVATION' : 'DRAFT'}
+                    {data.issued
+                      ? 'ISSUED'
+                      : offer.contractOnly
+                        ? 'PENDING RESERVATION'
+                        : 'DRAFT'}
                   </td>
                   <td>—</td>
                 </tr>
@@ -230,27 +243,31 @@ export function FlightTicketSheet({
           </table>
         </div>
       </section>
-      <section className={styles.section}>
-        <h3>
-          <i>2</i> NOTICE
-        </h3>
-        <p>
-          All times are shown in Tehran time. NOTICE 1: This preview is not an
-          issued ticket. Reservation confirmation, ticket number, airport codes
-          and baggage must come from the issuing system.
-        </p>
-        <p dir="rtl">
-          اطلاعات صدور در این پیش‌نمایش تأیید نشده‌اند. درج بیزینس فقط برچسب
-          خروجی انتخاب‌شده است.
-        </p>
-      </section>
-      <footer>
-        حضور در فرودگاه ۳ ساعت قبل از پرواز الزامی است.
-        <br />
-        <strong>
-          PRESENCE 03:00 BEFORE FLIGHT TIME AT THE AIRPORT IS MANDATORY
-        </strong>
-      </footer>
+      {!data.issued ? (
+        <>
+          <section className={styles.section}>
+            <h3>
+              <i>2</i> NOTICE
+            </h3>
+            <p>
+              All times are shown in Tehran time. NOTICE 1: This preview is not
+              an issued ticket. Reservation confirmation, ticket number, airport
+              codes and baggage must come from the issuing system.
+            </p>
+            <p dir="rtl">
+              اطلاعات صدور در این پیش‌نمایش تأیید نشده‌اند. درج بیزینس فقط برچسب
+              خروجی انتخاب‌شده است.
+            </p>
+          </section>
+          <footer>
+            حضور در فرودگاه ۳ ساعت قبل از پرواز الزامی است.
+            <br />
+            <strong>
+              PRESENCE 03:00 BEFORE FLIGHT TIME AT THE AIRPORT IS MANDATORY
+            </strong>
+          </footer>
+        </>
+      ) : null}
     </article>
   );
 }

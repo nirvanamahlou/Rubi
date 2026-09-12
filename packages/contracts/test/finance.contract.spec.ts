@@ -7,6 +7,7 @@ import {
   financeCurrencyCodes,
   financeEndpointProposals,
   financePermissionMatrix,
+  financeWorkflowContracts,
   hasFinancePermission,
   normalizeFinanceListQuery,
   type FinanceInboundEventV1,
@@ -36,6 +37,20 @@ describe('finance public proposal contract', () => {
         path.startsWith('/api/v1/finance'),
       ),
     ).toBe(true);
+  });
+
+  it('versions receipt, payment and accounting inbox contracts explicitly', () => {
+    expect(financeWorkflowContracts).toMatchObject({
+      receiptVerificationRequest: 'finance.receipt-verification-request.v1',
+      receiptConfirmed: 'finance.receipt-confirmed.v1',
+      paymentRequest: 'finance.payment-request.v1',
+      paymentCompleted: 'finance.payment-completed.v1',
+      correctionRequested: 'finance.correction-requested.v1',
+      accountingSource: 'finance.accounting-source.v1',
+    });
+    expect(new Set(Object.values(financeWorkflowContracts)).size).toBe(
+      Object.keys(financeWorkflowContracts).length,
+    );
   });
 
   it('keeps permissions deny-by-default and separates maker/checker capabilities', () => {

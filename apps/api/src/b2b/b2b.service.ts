@@ -15,6 +15,7 @@ import type {
   B2bAgencyCreditPolicyV1,
   B2bAgencyProfileV1,
   B2bAgencyWorkspaceV1,
+  B2bAgencyProfileDetailsV1,
   FinancePartyExposurePortV1,
   IamPermissionCode,
 } from '@rubi/contracts';
@@ -26,7 +27,10 @@ import type {
   CreateAgencyAgreementDto,
   UpsertAgencyCreditPolicyDto,
   UpsertAgencyProfileDto,
+  UpdateAgencyAgreedRateDto,
+  DeleteB2bRecordDto,
 } from './b2b.dto';
+import { IamService } from '../iam/iam.service';
 import { B2bRepository } from './b2b.repository';
 import { B2bAgreementDocuments } from './b2b-agreement-documents';
 import { FINANCE_PARTY_EXPOSURE_PORT } from './finance-exposure.port';
@@ -93,7 +97,14 @@ function profileRecord(row: {
   updatedAt: Date;
 }): B2bAgencyProfileV1 {
   return {
-    ...row,
+    id: row.id,
+    organizationId: row.organizationId,
+    branchId: row.branchId,
+    accountManagerUserId: row.accountManagerUserId,
+    status: row.status,
+    displayOrder: row.displayOrder,
+    isActive: row.isActive,
+    version: row.version,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -185,7 +196,51 @@ export class B2bService {
     private readonly financeExposure: FinancePartyExposurePortV1,
     @Inject(B2bAgreementDocuments)
     private readonly agreementDocuments: B2bAgreementDocuments,
+    @Inject(IamService) private readonly iam: IamService,
   ) {}
+
+  async profileDetails(
+    organizationId: string,
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+  ): Promise<{ data: B2bAgencyProfileDetailsV1 }> {
+    requirePermissions(actor, 'b2b.agency.read');
+    const branchId = branchOf(actor, requestedBranch);
+    await this.agency(organizationId);
+    const profile = await this.repository.findProfile(organizationId, branchId);
+    return {
+      data: {
+        profile: profile ? profileRecord(profile) : null,
+        accountManagers: await this.accountManagers(branchId),
+      },
+    };
+  }
+
+  private async accountManagers(branchId: string) {
+    const users = await this.iam.listUsers();
+    return users
+      .filter(
+        (user) =>
+          user.status === 'ACTIVE' &&
+          user.branches.some(({ branch }) => branch.id === branchId),
+      )
+      .map(({ id, displayName }) => ({ id, displayName }));
+  }
+
+  async rates(
+    organizationId: string,
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+  ) {
+    requirePermissions(actor, 'b2b.rate.read');
+    const branchId = branchOf(actor, requestedBranch);
+    await this.agency(organizationId);
+    return {
+      data: (await this.repository.listRates(organizationId, branchId)).map(
+        rateRecord,
+      ),
+    };
+  }
 
   async agencyWorkspace(
     organizationId: string,
@@ -205,8 +260,8 @@ export class B2bService {
       this.organizations.primaryAddress(organizationId),
       this.repository.findProfile(organizationId, branchId),
     ]);
-    const creditPolicy = row?.creditPolicy
-      ? creditRecord(row.creditPolicy)
+    const creditPolicy = row?.creditPolicies?.[0]
+      ? creditRecord(row.creditPolicies[0])
       : null;
     const financeExposure = creditPolicy
       ? await this.financeExposure.getPartyExposure({
@@ -245,6 +300,15 @@ export class B2bService {
         message: 'برای سازمان غیرفعال نمی‌توان پروفایل ثبت یا ویرایش کرد.',
       });
     const branchId = branchOf(actor, dto.branchId);
+    if (
+      dto.accountManagerUserId &&
+      !(await this.accountManagers(branchId)).some(
+        ({ id }) => id === dto.accountManagerUserId,
+      )
+    )
+      throw new BadRequestException(
+        'مدیر حساب باید کاربر فعال و عضو همین شعبه باشد.',
+      );
     const row = await this.repository.upsertProfile({
       organizationId,
       branchId,
@@ -334,7 +398,23 @@ export class B2bService {
       throw new BadRequestException(
         'درصد نرخ توافقی نمی‌تواند بیشتر از ۱۰۰ باشد.',
       );
-    const profile = await this.profile(organizationId, dto.branchId, actor);
+    const profile = await this.profile(
+      organizationId,
+      dto.branchId,
+      actor,
+      true,
+    );
+    if ((dto.isActive ?? true) && profile.status !== 'ACTIVE')
+      throw new ConflictException(
+        'تا تأیید پروفایل، شرایط تجاری فقط به‌صورت پیش‌نویس قابل ثبت است.',
+      );
+    if (
+      dto.currencyCode &&
+      !(
+        await this.organizations.activeCurrencyCodes([dto.currencyCode])
+      ).includes(dto.currencyCode)
+    )
+      throw new BadRequestException('ارز انتخاب‌شده فعال نیست.');
     const row = await this.repository.createRate({
       profileId: profile.id,
       branchId: profile.branchId,
@@ -346,9 +426,80 @@ export class B2bService {
       currencyCode: dto.currencyCode ?? null,
       validFrom: date(dto.validFrom),
       validTo: optionalDate(dto.validTo),
+      isActive: dto.isActive ?? true,
       actorUserId: actor.userId,
     });
     return { data: rateRecord(row) };
+  }
+
+  async updateRate(
+    organizationId: string,
+    rateId: string,
+    dto: UpdateAgencyAgreedRateDto,
+    actor: AuthenticatedActor,
+  ) {
+    requirePermissions(actor, 'b2b.rate.manage');
+    const profile = await this.profile(
+      organizationId,
+      dto.branchId,
+      actor,
+      true,
+    );
+    assertDateRange(dto.validFrom, dto.validTo);
+    const value = new Prisma.Decimal(dto.value);
+    if (
+      (dto.kind === 'FIXED_AMOUNT' && !dto.currencyCode) ||
+      (dto.kind !== 'FIXED_AMOUNT' &&
+        (dto.currencyCode || value.greaterThan(100)))
+    )
+      throw new BadRequestException('ارز یا درصد شرایط تجاری معتبر نیست.');
+    if ((dto.isActive ?? true) && profile.status !== 'ACTIVE')
+      throw new ConflictException(
+        'تا تأیید پروفایل، شرایط تجاری فقط به‌صورت پیش‌نویس قابل ثبت است.',
+      );
+    if (
+      dto.currencyCode &&
+      !(
+        await this.organizations.activeCurrencyCodes([dto.currencyCode])
+      ).includes(dto.currencyCode)
+    )
+      throw new BadRequestException('ارز انتخاب‌شده فعال نیست.');
+    const row = await this.repository.updateRate({
+      id: rateId,
+      profileId: profile.id,
+      branchId: profile.branchId,
+      expectedVersion: dto.version,
+      serviceReference: dto.serviceReference.trim(),
+      title: dto.title.trim(),
+      kind: dto.kind,
+      value,
+      currencyCode: dto.currencyCode ?? null,
+      validFrom: date(dto.validFrom),
+      validTo: optionalDate(dto.validTo),
+      isActive: dto.isActive ?? true,
+      actorUserId: actor.userId,
+    });
+    return { data: rateRecord(row) };
+  }
+
+  async deleteRate(
+    organizationId: string,
+    rateId: string,
+    dto: DeleteB2bRecordDto,
+    actor: AuthenticatedActor,
+  ) {
+    requirePermissions(actor, 'b2b.rate.manage');
+    const branchId = branchOf(actor, dto.branchId);
+    await this.agency(organizationId);
+    await this.repository.deleteRate({
+      organizationId,
+      branchId,
+      id: rateId,
+      expectedVersion: dto.version,
+      actorUserId: actor.userId,
+      reason: dto.reason,
+    });
+    return { data: { id: rateId, deleted: true } };
   }
 
   private async agency(organizationId: string) {

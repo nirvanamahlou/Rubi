@@ -37,13 +37,13 @@ describe('Customer entry spreadsheet', () => {
       render([{ ...row, readOnly: true, editableFields: ['birthDate'] }]).match(
         /disabled=""/g,
       ),
-    ).toHaveLength(6);
+    ).toHaveLength(12);
     expect(
       render(
         [{ ...row, readOnly: true, editableFields: ['birthDate'] }],
         true,
       ).match(/disabled=""/g),
-    ).toHaveLength(7);
+    ).toHaveLength(13);
   });
   it('renders a real labelled table with independent stable rows and essential columns', () => {
     const html = render([
@@ -72,8 +72,8 @@ describe('Customer entry spreadsheet', () => {
   it('renders reuse rows without editable copies and blocks editing during save', () => {
     expect(
       render([{ ...row, readOnly: true }]).match(/disabled=""/g),
-    ).toHaveLength(7);
-    expect(render([row], true).match(/disabled=""/g)).toHaveLength(7);
+    ).toHaveLength(13);
+    expect(render([row], true).match(/disabled=""/g)).toHaveLength(13);
   });
   it('rejects whitespace names before starting a batch', () => {
     expect(

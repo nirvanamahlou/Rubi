@@ -11,7 +11,13 @@ import type {
   MasterOrganizationAddressMutationV1,
   MasterOrganizationAddressV1,
 } from '@rubi/contracts';
-import { AuditOutcome } from '@rubi/database';
+import { AuditOutcome, Prisma } from '@rubi/database';
+import {
+  activityEvent,
+  activityPredicate,
+  type ActivityRow,
+  type ActivityWindow,
+} from '../common/organization-activity';
 
 import { DatabaseService } from '../database/database.service';
 
@@ -25,6 +31,11 @@ function branchOf(actor: AuthenticatedActor, requested?: string): string {
   if (!branchId || !actor.branchIds.includes(branchId))
     throw new ForbiddenException('شعبه انتخاب‌شده در دامنه دسترسی کاربر نیست.');
   return branchId;
+}
+
+function validateAddress(input: MasterOrganizationAddressMutationV1) {
+  if (!input.label.trim() || !input.addressLine.trim())
+    throw new BadRequestException('عنوان و نشانی کامل را وارد کنید.');
 }
 
 function addressRecord(row: {
@@ -65,15 +76,67 @@ function addressRecord(row: {
 
 @Injectable()
 export class MasterOrganizationDirectory {
+  /** Owner projection includes historical child IDs so deleting a contact does not erase its history. */
+  async organizationActivity(
+    org: string,
+    branch: string,
+    actor: AuthenticatedActor,
+    window: ActivityWindow,
+  ) {
+    if (
+      !actor.permissions.includes('master_data.audit.read') ||
+      !actor.branchIds.includes(branch)
+    )
+      throw new ForbiddenException(
+        'مجوز تاریخچه اطلاعات سازمان یا شعبه را ندارید.',
+      );
+    const rows = await this.database.client.$queryRaw<ActivityRow[]>(Prisma.sql`
+      WITH current_children AS (
+        SELECT id, 'organization-contacts'::text AS resource FROM master_organization_contacts WHERE "organizationId" = ${org}::uuid
+        UNION SELECT id, 'organization-addresses' FROM master_organization_addresses WHERE "organizationId" = ${org}::uuid
+      ), e AS (
+        SELECT a.*, resource AS "entityType", 'PROFILE'::text AS category FROM master_audit_events a
+        WHERE "actorBranchId" = ${branch}::uuid AND (
+          (resource = 'organizations' AND "entityId" = ${org}::uuid)
+          OR (resource IN ('organization-contacts', 'organization-addresses') AND (
+            a."beforeSnapshot"->>'organizationId' = ${org} OR a."afterSnapshot"->>'organizationId' = ${org}
+            OR (a."beforeSnapshot"->>'organizationId' IS NULL AND a."afterSnapshot"->>'organizationId' IS NULL
+              AND COALESCE(
+                (SELECT COALESCE(h."afterSnapshot"->>'organizationId', h."beforeSnapshot"->>'organizationId')
+                  FROM master_audit_events h WHERE h.resource = a.resource AND h."entityId" = a."entityId"
+                  AND h."occurredAt" <= a."occurredAt"
+                  AND COALESCE(h."afterSnapshot"->>'organizationId', h."beforeSnapshot"->>'organizationId') IS NOT NULL
+                  ORDER BY h."occurredAt" DESC, h.id DESC LIMIT 1),
+                (SELECT ${org}::text FROM current_children c WHERE c.id = a."entityId" AND c.resource = a.resource LIMIT 1)
+              ) = ${org})
+          ))
+        )
+      ) SELECT * FROM e WHERE ${activityPredicate(window, 'MASTER_DATA')}
+      ORDER BY "occurredAt" DESC, id DESC LIMIT 51`);
+    return rows.map((row) => activityEvent(row, 'MASTER_DATA'));
+  }
+  async activePaymentMethod(id: string) {
+    return this.database.client.masterPaymentMethod.findFirst({
+      where: { id, isActive: true },
+      select: { id: true, name: true },
+    });
+  }
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
   async agencyReference(organizationId: string) {
+    return this.cooperationReference(organizationId, 'AGENCY');
+  }
+
+  async cooperationReference(
+    organizationId: string,
+    role: 'AGENCY' | 'CORPORATE_CUSTOMER',
+  ) {
     return this.database.client.masterOrganization.findFirst({
       where: {
         id: organizationId,
-        roles: { some: { roleCode: 'AGENCY' } },
+        roles: { some: { roleCode: role } },
       },
       select: {
         id: true,
@@ -102,6 +165,38 @@ export class MasterOrganizationDirectory {
     return rows.map(addressRecord);
   }
 
+  async activeCurrencyCodes(codes: string[]) {
+    const rows = await this.database.client.masterCurrency.findMany({
+      where: { code: { in: codes }, isActive: true },
+      select: { code: true },
+    });
+    return rows.map((row) => row.code);
+  }
+
+  async signatoryContactReference(organizationId: string, contactId: string) {
+    return this.database.client.masterOrganizationContact.findFirst({
+      where: {
+        id: contactId,
+        organizationId,
+        isActive: true,
+        organization: {
+          isActive: true,
+          roles: {
+            some: { roleCode: { in: ['AGENCY', 'CORPORATE_CUSTOMER'] } },
+          },
+        },
+      },
+      select: { id: true, organizationId: true },
+    });
+  }
+
+  async signatoryContactNames(organizationId: string, contactIds: string[]) {
+    return this.database.client.masterOrganizationContact.findMany({
+      where: { organizationId, id: { in: contactIds } },
+      select: { id: true, fullName: true, isActive: true },
+    });
+  }
+
   async primaryAddress(organizationId: string) {
     const row = await this.database.client.masterOrganizationAddress.findFirst({
       where: { organizationId, isPrimary: true, isActive: true },
@@ -117,6 +212,7 @@ export class MasterOrganizationDirectory {
     actor: AuthenticatedActor,
     requestedBranch?: string,
   ) {
+    validateAddress(input);
     await this.assertOrganization(organizationId);
     await this.assertCityCountry(input.cityId, input.countryId);
     const actorBranchId = branchOf(actor, requestedBranch);
@@ -176,6 +272,7 @@ export class MasterOrganizationDirectory {
     actor: AuthenticatedActor,
     requestedBranch?: string,
   ) {
+    validateAddress(input);
     if (!input.version)
       throw new BadRequestException('version برای ویرایش آدرس الزامی است.');
     await this.assertCityCountry(input.cityId, input.countryId);
@@ -257,6 +354,53 @@ export class MasterOrganizationDirectory {
       select: { id: true },
     });
     if (!exists) throw new NotFoundException('سازمان یافت نشد.');
+  }
+
+  async deleteAddress(
+    organizationId: string,
+    addressId: string,
+    version: number,
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+  ) {
+    if (!actor.permissions.includes('master_data.delete'))
+      throw new ForbiddenException('مجوز حذف آدرس را ندارید.');
+    const actorBranchId = branchOf(actor, requestedBranch);
+    return this.database.client.$transaction(async (transaction) => {
+      const before = await transaction.masterOrganizationAddress.findFirst({
+        where: { id: addressId, organizationId },
+      });
+      if (!before) throw new NotFoundException('آدرس این سازمان یافت نشد.');
+      if (before.version !== version)
+        throw new ConflictException('آدرس هم‌زمان تغییر کرده است.');
+      const removed = await transaction.masterOrganizationAddress.deleteMany({
+        where: { id: addressId, organizationId, version },
+      });
+      if (removed.count !== 1)
+        throw new ConflictException(
+          'آدرس هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
+        );
+      await transaction.masterDataAuditEvent.create({
+        data: {
+          actorUserId: actor.userId,
+          actorBranchId,
+          action: 'master_data.organization_address.delete',
+          resource: 'organization-addresses',
+          entityId: addressId,
+          outcome: AuditOutcome.SUCCESS,
+          beforeSnapshot: {
+            organizationId,
+            label: before.label,
+            countryId: before.countryId,
+            cityId: before.cityId,
+            isPrimary: before.isPrimary,
+          },
+          afterSnapshot: { deleted: true },
+          entityVersion: version,
+        },
+      });
+      return { id: addressId, deleted: true };
+    });
   }
 
   private async assertCityCountry(cityId: string, countryId: string) {

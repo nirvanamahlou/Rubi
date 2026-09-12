@@ -46,6 +46,12 @@ export interface CustomerRow {
   passportNumberKeyVersion?: number | null;
   passportNumberMasked?: string | null;
   passportExpiryDate?: Date | null;
+  passportFirstName?: string | null;
+  passportLastName?: string | null;
+  gender?: string | null;
+  nationalityCode?: string | null;
+  passportIssuingCountryCode?: string | null;
+  birthCountryCode?: string | null;
   isActive: boolean;
   isCustomer: boolean;
   isPassenger: boolean;
@@ -197,6 +203,12 @@ export function toCustomerDetail(
     passportNumber: null,
     passportExpiryDate:
       row.passportExpiryDate?.toISOString().slice(0, 10) ?? null,
+    passportFirstName: row.passportFirstName ?? null,
+    passportLastName: row.passportLastName ?? null,
+    gender: row.gender === 'M' || row.gender === 'F' ? row.gender : null,
+    nationalityCode: row.nationalityCode ?? null,
+    passportIssuingCountryCode: row.passportIssuingCountryCode ?? null,
+    birthCountryCode: row.birthCountryCode ?? null,
     acquaintanceMethodId: row.acquaintanceMethodId,
     contacts: (row.contacts ?? []).map((contact) => ({
       id: contact.id,

@@ -1,0 +1,25 @@
+# B2B-UNIFIED-PROFILE-001 — PC-B
+
+The owner requests company national ID in the initial company form and branches, representatives, signatories and account manager together on the profile/roles page, each with a popup form. The existing first-step national-ID input is now clearly labelled; its Master Data ownership, optional 11-digit LEGAL validation and persistence remain unchanged.
+
+The organization profile renders five cards together. Navigation shortcuts scroll/focus the corresponding card without replacing the page. Existing branch/address CRUD, representative creation/editing and cooperation/account-manager dialogs remain connected to their public APIs. Creating a representative from the signatory dialog returns to the same signatory draft; refresh the person selector to select the new contact.
+
+Signatories now have additive B2B-owned persistence, scoped v1 list/create/update/delete endpoints and a real popup form. The person is an active Master Data contact of the same active cooperating organization. Document types, an optional exact Decimal/currency limit, validity dates, notes and a pinned Documents proof version are stored. Proofless entries remain inactive. Active registration requires a complete, clean, unexpired proof in the same organization/internal branch, validated through the existing Documents public service. This registration creates no login, approval permission or automatic document-signing authority; a separate signatory approval/signature-execution workflow is not implemented.
+
+The agency's own addresses remain separate from internal Rubi branch authorization. Existing B2B read/manage and branch checks apply; writes use optimistic versions and atomic audit, including deletion. Restrictive foreign keys prevent a cross-organization contact or orphan proof. Deleting an authority preserves the person and proof. Contacts cannot be deleted while referenced by a signatory.
+
+## Validation and rollout
+
+- 90 Organizations Web tests, 496 Master Data/B2B API tests and 16 disposable PostgreSQL tests pass. The PostgreSQL tests exercise exact large Decimal values, optimistic concurrency, scoped deletion, foreign keys, proofless activation rejection and rollback when audit fails.
+- Web/API/Contracts/Database lint and typecheck pass; Contracts/Database/API builds pass. The Web production build and runtime cutover are recorded below once complete.
+- The migration was rehearsed against a restored fresh operational backup in disposable PostgreSQL 18. All existing data across 127 business tables was preserved and the new signatory table was empty. Migration checksum: `369c70a4c29a2be6e2967182efad341c6aadee25cc3801786ada6d07d3ccd460`. The 47 existing historical migrations/checksums are preserved; no reset or historical repair is performed.
+- Browser QA uses the actual React workspace/forms with an isolated mutable service fixture. All five cards render together; nested representative creation returns to the signatory form and the new person can be selected. Inactive signatory creation and editing update the card. Production browser authentication is unavailable; no session was bypassed or synthetic person inserted into the operational database.
+- Branch `codex/pc-b-b2b-unified-profile` starts from 5182c27 and preserves the owned combined runtime and prior draft PR dependencies. Review targets develop; no merge, IAM grant or dependency/lockfile change.
+
+## Completed cutover
+
+- Source `08d2107234d1bb533a416aaf0d4c5166355dd251` is active on Web3100 (PID6320, `hr005-885cff5dba39ac2b`) and API4190 (PID16408). All 40 Web routes build; organizations/login return HTTP200 and the runtime/health endpoints match. API/Web error logs are empty. The existing database `rubi_hr_current_20260908` and Documents storage are preserved.
+- The additive migration was applied alone after a fresh cutover backup at `C:/Users/admin/Rubi-backups/b2b-unified-profile/cutover-1788975642835.dump`. All 127 pre-existing business-table digests and the 47 historical migration records/checksums are unchanged; the new table starts empty. Private migration evidence is outside Git.
+- All four CI gates in run34455845286 pass: full quality, full test suite, PostgreSQL18 migration/seed and full production build. The local Contracts suite also passes all 61 tests.
+- Actual React browser QA also verifies signatory deletion preserves the representative, manager selection saves, and a newly created agency address becomes the selected branch. The initial company form accepts national ID. After rebuilding, the same production CSS renders the unified cards and signatory popup correctly, section shortcuts work and the browser console has no errors. This is an isolated fixture; authenticated production writes were not exercised.
+- Draft PR141: https://github.com/nirvanamahlou/Rubi/pull/141. No merge. Release implementation and migration reservations; subsequent runtime replacements must retain this source and the applied migration. Documentation-only follow-up does not change the built source.

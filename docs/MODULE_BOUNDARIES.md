@@ -70,6 +70,12 @@ Purchase Order/Invoice و payable source است. سود از sale snapshot من�
 journal و `financial_release` را مالک است. هیچ ماژولی journal line را مستقیم درج نمی‌کند.
 صدور سند با تحویل آن یکی نیست؛ Sales فقط پس از release مالی اجازه مشاهده/ارسال فایل را دارد.
 
+تا زمان استقرار کامل Purchase Order/Invoice در Procurement، فرم عملیاتی خرید رزرواسیون
+برای هر service item یک زنجیره نسخه مستقل با کارگزار و مبلغ/ارز ثبت می‌کند و از قرارداد
+عمومی به صف پرداخت Finance می‌فرستد. این رکورد جای Invoice تأییدشده یا journal نیست؛ Finance
+مالک تصمیم و سابقه پرداخت کارگزار است. اصلاح خرید یک نسخه pending تازه می‌سازد و
+`financial_release` تحویل مدارک فقط وقتی مجاز است که آخرین خرید همه خدمات پرداخت شده باشد.
+
 ### Customers در برابر Marketing
 
 Customers مالک identity و consent جاری/تاریخچه است. Marketing segment و campaign را مالک
@@ -158,3 +164,12 @@ Event envelope شامل `eventId`, `eventType`, `version`, `occurredAt`, `traceI
 - تست معماری باید ادغام یا استفاده جایگزین Employee با Customer/Passenger و query مستقیم
   Finance روی داده حساس HR را رد کند.
 - reporting queryها با fixture چند passenger/segment از عدم تکثیر مبلغ مطمئن شوند.
+
+### Sales/Reservations note handoff (SALES-RESERVATION-NOTES-0910)
+Sales owns optional `services[].metadata.reservationNote` (500 characters), set once on the first persisted service and retained in the existing SalesReservationRequestV1 service snapshot. Reservations reads it and legacy per-service notes; it never rewrites Sales data. Optional `TravelWorkflowStateV1.reservationNotes` defaults empty for old JSON revisions. `NOTE` appends a nonempty500-character note under existing Reservations document permission, branch scope and expectedVersion, preserving status, issuance flags and action reason. Up to100 notes; existing revision actor/timestamp provide audit. Notes may be appended after issuance/cancellation without reopening workflow or granting Finance delivery. API must be deployed before this new client command; no schema migration. Notes are internal and are not inserted into traveler PDFs.
+
+## Voucher settings and single-voucher history — 2026-09-10
+Reservations owns optional TravelWorkflowStateV1.voucherSettings and VOUCHER_SETTINGS command. Typed output-only settings are validated against the complete intake passenger ID set and stored in existing workflow revision JSON; existing states remain readable without migration. No writes to Sales/customer/master tables. Correcting an issued voucher creates a new workflow version while preserving earlier states and Finance authorization. GET requests/:id/workflow/history returns latest100 revisions after reservations.read and branch checks; mutations retain reservations.documents.manage, audit and expectedVersion. Historical views print the selected state and never invoke the current-reservation PDF download route. Deploy Contracts/API before Web; older clients remain compatible. User explicitly selected one logical voucher with revision history. No independent voucher/request entities were introduced.
+
+## Supplier form isolation and apply-both — 2026-09-10
+SupplierFormSettings is the editable Reservations form; sentSupplierFormSettings and sentSupplierFormVersion capture its explicit send/re-send. Purchasing context uses the sent copy; unsent edits never alter that copy. No leaves Sales and voucher untouched. Yes invokes SalesOperationalAmendmentService in the workflow transaction and copies settings to voucher. Sales stores a versioned JSON string on existing primitive service metadata, audits before/after, retains monetary terms and canonical foreign keys, and exposes the amendment in current contract output. UI supplies current contractEditVersion read through the Sales public boundary (not the older outbox snapshot version); stale writes fail. No schema changes. Purchase dialog reuses Reservations' existing costs API and full branch checks; Procurement tables unchanged. Deploy API/Contracts before Web.

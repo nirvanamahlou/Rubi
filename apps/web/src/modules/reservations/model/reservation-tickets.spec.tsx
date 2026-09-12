@@ -132,7 +132,10 @@ describe('saved reservation passenger tickets', () => {
     expect(html).toContain('Synthetic Adult');
     expect(html).toContain('TEST-AYT-01');
     expect(html).toContain('Antalya');
-    expect(html).toContain('DRAFT');
+    expect(data.issued).toBe(true);
+    expect(html).toContain('ISSUED');
+    expect(html).not.toContain('DRAFT');
+    expect(html).not.toContain('NOTICE');
     expect(html).not.toContain('PAYMENT');
     expect(html).not.toContain('Synthetic Infant');
   });

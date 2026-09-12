@@ -96,3 +96,27 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  text-decoration: none;
+}
+.download:hover {
+  background: var(--muted);
+}
+.download:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.hasNotes {
+  background: #fef3c7 !important;
+  border-color: #d97706 !important;
+  color: #78350f !important;
+  font-weight: 700;
+}

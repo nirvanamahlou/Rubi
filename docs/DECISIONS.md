@@ -1,5 +1,36 @@
 # تصمیم‌های معماری
 
+## B2B-DOSSIER-REPORTS-001 — 2026-09-09
+
+The dossier Reports/Audit UI consumes normalized metadata from B2B audit events and public Master Organization/Documents owner projections. It does not read another module's tables, change the central Reporting module or create financial events. Existing branch and source/domain permissions apply to every page. Snapshots stay server-side; the projection exposes changed field labels, action, actor and time, never private contact values, notes, document contents or credential fields. Export contains the same authorized filtered projection. Per-source keyset pages share a fixed upper timestamp, including a deterministic cross-source tie key; Tehran calendar-day filters include both day boundaries.
+
+Inspection found that Documents permanent deletion removed its audit rows. To preserve the requested history without a new schema, deletion now removes versions and payload metadata but retains a minimal DELETED document, case identifiers and audit events. Detail/file/restore and list APIs exclude that tombstone, including explicit DELETED queries. Version references in retained audits are cleared before physical version removal; a deletion event is appended atomically with the tombstone. Already-erased historical events cannot be reconstructed. Existing owner file cleanup behavior remains; no local business record was deleted by this task. Finance preview data is never reported as real transactions.
+
+## B2B-CONTRACT-CREDIT-DEMO-001 — 2026-09-09
+
+Credit/guarantees moves beneath the commercial contract UI; existing credit authorization identifiers and approval rules remain independent. The owner requests synthetic guarantee and financial data. Guarantee drafts and proofs persist through B2B/Documents public services against explicitly synthetic agencies. Finance currently has a Phase A preview foundation and no posting/exposure adapter in this checkout, so the financial scenario is explicitly labelled as a UI preview and never supplied as authoritative exposure, receipt confirmation or ledger state. This satisfies the requested visual sample without crossing Finance ownership or changing account balances.
+
+## B2B-CONTRACT-FORMS-002 — 2026-09-09
+
+Master Data owns payment-method identity; B2B consumes its public directory and persists a nullable revision FK and label snapshot. Settlement mode remains PREPAID/CREDIT/MIXED. Optional v1 fields preserve older client writes and immutable historical revisions. The expanded agreement-type check is additive. Documents owns all inline uploads and file state; pending scans may be linked to drafts, while submission/approval always requires CLEAN and the existing scope/completeness/expiry checks. Removing the editable limit type preserves existing values and the HARD default; it does not silently alter credit enforcement. Shared calendar and selector behavior is opt-in for the affected forms.
+
+## B2B-ORGANIZATION-USERS-001 — 2026-09-09
+
+The owner explicitly limits per-user selection to the same agency's 360 dossier. Provide six view permissions and a standalone agency portal; do not grant global Rubi roles, administrative mutations, independent contract/credit approval, or access to other agencies. B2B stores membership and consumes exported IAM provisioning methods. A global B2B interceptor restricts any linked account, including inactive memberships and accounts subsequently granted global IAM roles, to its portal and own authentication/session endpoints. Each portal projection rechecks active membership, organization and selected section and derives organization/branch from the server. Existing staff accounts are never converted. Failed membership creation disables the new IAM account; B2B membership/audit are atomic, while IAM and B2B provisioning are separate public-service operations. Finance remains explicitly unavailable until its owner projection is connected; no fabricated balances. Role labels do not confer IAM privileges.
+
+## B2B-UNIFIED-PROFILE-001 — 2026-09-09
+
+The owner's unified-page request moves all organization profile entry actions into the profile/roles screen. Existing organization tabs become sections on that same page and popup editors preserve current data contracts. National ID remains the existing Master Data company field in step one and edit, not a duplicate identity field.
+
+Implement signatory directory entries against existing Master Data contacts, following FR-PEO-02 document-type, limit/currency, date and proof requirements. Only B2B metadata is stored; public Master Data and Documents methods validate references. An incomplete proof permits saving an inactive entry only. No automatic IAM grant, portal account, independent approval or legal signature verification is implied. This bounded registration feature does not invent a new signatory-approval workflow. Existing cooperation agreement approval remains unchanged.
+
+## B2B-PROFILE-CLARITY-001 — 2026-09-09
+
+- پاسخ مالک محصول: گزینه‌های شعب، شعب آژانس طرف همکاری هستند. منبع آن‌ها آدرس‌های همان MasterOrganization و CRUD عمومی Master Data است. انتخاب نشانی صرفاً نمایش جزئیات است؛ شناسه نشانی به‌جای IAM branchId ارسال نمی‌شود. شعبه داخلی مسئول قرارداد و دسترسی‌ها جدا و روشن نمایش داده می‌شود.
+- شناسه ملی شرکت، فیلد اختیاری `MasterOrganization.nationalId` برای شخصیت حقوقی است؛ ورود دستی ۱۱ رقم با تبدیل ارقام فارسی/عربی به لاتین، یکتا بین سازمان‌ها و قابل اصلاح با مجوز Master Data و version موجود. این ثبت، استعلام یا تأیید اصالت ثبتی نیست. کد ملی شخص حقیقی در این فیلد ذخیره نمی‌شود. رکوردهای قدیمی NULL می‌مانند و درخواست‌های قدیمی که فیلد را نمی‌فرستند مقدار آن را حفظ می‌کنند.
+- تغییر قرارداد عمومی فقط افزودن attribute/value اختیاری است؛ producer اطلاعات پایه و consumer فرم و پرونده سازمان است. Migration افزایشی محدود به همین ستون، unique index و قید قالب/شخصیت است؛ پس از backup و rehearsal روی نسخه بازیابی‌شده اعمال می‌شود. هیچ migration تاریخی یا داده موجود بازنویسی نمی‌شود.
+- مدیر حساب کاربر داخلی مسئول پیگیری آژانس است. وضعیت همکاری از پروفایل واقعی خوانده می‌شود؛ دکمه بررسی به گردش قرارداد موجود می‌رود و تأیید مستقل قرارداد، پروفایل در حال بررسی را فعال می‌کند. قواعد دسترسی و منع خودتأییدی بدون تغییر می‌مانند.
+
 ## B2B-AGENCIES-001 — اعتبار چندارزی و حذف هویت استفاده‌شده
 
 - پاسخ صریح مالک در پیگیری PRD: **سقف جدا برای هر ارز؛ بدون تبدیل خودکار**. محاسبه اعتبار فقط Decimalهای هم‌ارز را ترکیب می‌کند؛ currency mismatch نتیجه قابل‌استفاده تولید نمی‌کند. مدل نهایی Policy باید ارز را در scope یکتا لحاظ کند؛ schema فعلی تک‌سیاستی به‌عنوان پیاده‌سازی چندارزی معرفی نمی‌شود.
@@ -129,3 +160,17 @@ develop یا تغییر والدها جزو این کار نیست. فقط قر�
 FINANCE-001 Phase A هیچ Prisma Schema، Migration، Repository، Persistence، Dependency یا
 Lockfile تغییر نمی‌کند. پس از Merge PR #21، ایجاد Schema و Migration افزایشی مالی فقط در
 Task مستقل Phase B، با رزرو مجدد قفل‌ها و Migration gate کامل، مجاز خواهد بود.
+
+## ADR-TRAVEL-DELIVERY-0909 — confirmed by owner
+Implement the explicit Finance delivery tick as a manual document-delivery authorization, separate from settlement, credit, ledger and payment approval. It never changes financial facts or pretends to satisfy the broader settlement engine. Default blocked, Finance-only permission, mandatory reason, versioned approval/revocation and actor/time audit. Sales document APIs remain blocked until this authorization and operational readiness both hold. Reservations can preview operational documents independently. Supplier confirmation is required for vouchers; insurance absence requires explicit acknowledgement rather than blocking. Operational room/age overrides preserve customer birth dates and commercial allocations; commercial changes require Sales correction. Earlier draft previews in the Sales form must not bypass the delivery gate.
+
+## ADR-CONFIRM-VOUCHER-0909 — owner request
+Supplier confirmation now atomically issues the hotel voucher and notifies the Sales owner. There is no separate confirmed-only stage for new commands. Explicit missing-insurance acknowledgement is still required; the Finance delivery gate remains unchanged. Legacy already-confirmed records retain ISSUE_VOUCHER support. New queue cards use #FFC0C0 only on the identity column, and issued vouchers use dark gray. This refines the prior travel handoff flow without changing stored schema or grants.
+
+## ADR-SUPPLIER-FORM-ISOLATION-0910 — explicit owner choice
+The owner selected: No affects supplier reservation form and purchasing basis only; Yes also affects contract and voucher. Supplier draft settings and sent settings are separate workflow JSON copies. Purchase displays the sent copy, never an unsent draft; explicit re-send records a new copy/version. Sales confirmed commercial records are not edited through updateDraft. The public Sales operational-amendment service records nonfinancial form settings in service metadata, increments the contract version and writes before/after Sales audit within the same transaction as the Reservations revision. Current contract output renders operational hotel amendments and an explicit amendment section; original financial terms, customer/master foreign keys and prior evidence remain intact. Sales update permission/branch scope and optimistic version checks are required for apply-both. Failure rolls back both destinations. No schema migration or new external send channel.
+## B2B-CONTRACT-CREDIT-001 — decisions confirmed by owner
+
+- A single independent reviewer approves contract/credit changes using the corresponding permission; the proposer cannot approve their own request. Confirmed explicitly in this task on the Screenshot527 follow-up.
+- Each currency has a separate credit limit; no implicit FX conversion. Contract/policy drafts have no effective financial authority before approval. Submitted/approved content is versioned and preserved, and edits require a new draft/revision.
+- Evolve existing B2B profile/agreement/credit persistence and public routes. Organization identity remains in Master Data, binary/version storage in Documents, and exposure/payment/deposit balances in Finance. This scope completes the contract/credit wizard and its management workflow, not every independent PRD module.

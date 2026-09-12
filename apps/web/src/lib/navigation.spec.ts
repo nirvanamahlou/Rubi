@@ -9,14 +9,18 @@ import {
 } from './navigation';
 
 const expectedRoutes = [
+  '/workbench',
   '/dashboard',
   '/customers',
   '/customer-affairs',
   '/reservations',
+  '/reservations/hotel-rates',
   '/ticket-management',
   '/sales',
+  '/pricing-management',
   '/purchases',
   '/finance',
+  '/finance/requests',
   '/marketing',
   '/organizations',
   '/human-resources',
@@ -29,18 +33,22 @@ const expectedRoutes = [
 ];
 
 const expectedTitles = [
+  'میزکار من',
   'داشبورد',
   'مشتریان و مسافران',
   'امور مشتریان، سرنخ‌ها و پشتیبانی',
   'رزرواسیون و عملیات سفر',
+  'مدیریت گروهی نرخ‌های هتل‌ها',
   'مدیریت و تعریف بلیط‌ها',
   'قرارداد',
+  'مدیریت قیمت',
   'خرید و تأمین',
-  'مالی و خزانه‌داری',
+  'حسابداری',
+  'کارتابل درخواست‌ها',
   'مارکتینگ',
   'آژانس‌ها و مشتریان سازمانی',
   'منابع انسانی',
-  'میز کار',
+  'وظایف و اتوماسیون',
   'اسناد و فایل‌ها',
   'گزارش‌ها',
   'یکپارچه‌سازی‌ها',
@@ -64,24 +72,43 @@ describe('CRM navigation', () => {
       );
     expect(
       groupedNavigationItems
+        .find((group) => group.id === 'sales')
+        ?.items.map((item) => item.href),
+    ).toEqual([
+      '/sales',
+      '/pricing-management',
+      '/customers',
+      '/customer-affairs',
+      '/organizations',
+      '/marketing',
+    ]);
+    expect(
+      groupedNavigationItems
         .find((group) => group.id === 'finance')
         ?.items.map((item) => item.href),
-    ).toEqual(['/finance', '/purchases']);
+    ).toEqual(['/finance', '/finance/requests', '/purchases']);
+    expect(
+      groupedNavigationItems.find((group) => group.id === 'finance')?.title,
+    ).toBe('مالی');
+    expect(getNavigationItem('/finance')?.title).toBe('حسابداری');
+    expect(getNavigationItem('/finance/requests')?.title).toBe(
+      'کارتابل درخواست‌ها',
+    );
     expect(
       groupedNavigationItems
         .find((group) => group.id === 'hr')
         ?.items.map((item) => item.href),
     ).toEqual(['/human-resources']);
   });
-  it('contains exactly the approved 17 routes in order', () => {
+  it('contains the approved routes plus the separate finance inbox in order', () => {
     expect(navigationItems.map((item) => item.href)).toEqual(expectedRoutes);
-    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(17);
+    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(21);
   });
 
-  it('uses exactly the approved 17 Persian titles in order', () => {
-    expect(navigationItems).toHaveLength(17);
+  it('uses distinct Persian titles for all navigation items', () => {
+    expect(navigationItems).toHaveLength(21);
     expect(navigationItems.map((item) => item.title)).toEqual(expectedTitles);
-    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(17);
+    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(21);
   });
 
   it('resolves the Human Resources owner route', () => {

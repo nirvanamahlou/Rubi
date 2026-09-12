@@ -1,8 +1,22 @@
 'use client';
+import { useQueueNames } from './queue-names';
+import { HotelTableAction } from './hotel-table-action';
+import {
+  reservationColumns,
+  reservationCells,
+  reservationExportRows,
+} from './reservation-table';
 
 import { useState } from 'react';
 import { ContractActionPanel } from './action-panel';
 import { DatePicker } from '@/components/ui/date-picker';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/form-controls';
 import {
   accessibleRows,
   dashboard,
@@ -23,6 +37,7 @@ import {
   type TimelineView,
 } from './model';
 import styles from './workspace.module.css';
+import { ManifestExport } from '../components/manifest-export';
 
 const noAccess: ViewAccess = {
   authenticated: false,
@@ -87,7 +102,7 @@ const operationContent: Record<
     note: 'اتصال بیمه سامان آماده نیست. هیچ درخواست یا بیمه‌نامه‌ای ایجاد نشده است.',
   },
   manifests: {
-    title: 'Manifest ظرفیت شرکت',
+    title: 'MANIFEST ایران ایرتور · آنتالیا',
     fields: [
       'مسیر',
       'تاریخ حرکت',
@@ -97,8 +112,8 @@ const operationContent: Record<
       'مسافران',
       'زمان ارسال',
     ],
-    action: 'آماده‌سازی Manifest',
-    note: 'فقط ظرفیت‌ها و تورهای متعلق به شرکت؛ خروجی نهایی پس از اتصال تولید و آرشیو فایل فعال می‌شود.',
+    action: 'آماده‌سازی MANIFEST',
+    note: 'خروجی رسمی اسپارتا برای پروازهای آنتالیای ایران ایرتور؛ اطلاعات هر مسافر از پرونده فروش خوانده می‌شود.',
   },
   costs: {
     title: 'پیشنهاد هزینه خرید',
@@ -154,8 +169,12 @@ export function ReservationOperationsWorkspace({
         : !access.permissions.includes('reservations.read')
           ? 'FORBIDDEN'
           : state;
-  const visibleRows =
+  const rawVisibleRows =
     effectiveState === 'SUCCESS' ? accessibleRows(rows, access) : [];
+  const names = useQueueNames(rawVisibleRows);
+  const visibleRows = names.rows;
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
   const result = queryRows(visibleRows, query);
   const metrics = dashboard(visibleRows, now);
   const selected = visibleRows.find((r) => r.id === selectedId);
@@ -204,16 +223,27 @@ export function ReservationOperationsWorkspace({
             </span>
           </header>
           <nav className={styles.tabs} aria-label="بخش‌های رزرواسیون">
-            {sections.map(([key, label]) => (
-              <button
-                type="button"
-                key={key}
-                aria-current={section === key ? 'page' : undefined}
-                onClick={() => setSection(key)}
-              >
-                {label}
-              </button>
-            ))}
+            {sections
+              .filter(
+                ([key]) =>
+                  ![
+                    'tickets',
+                    'hotels',
+                    'vouchers',
+                    'insurance',
+                    'costs',
+                  ].includes(key),
+              )
+              .map(([key, label]) => (
+                <button
+                  type="button"
+                  key={key}
+                  aria-current={section === key ? 'page' : undefined}
+                  onClick={() => setSection(key)}
+                >
+                  {label}
+                </button>
+              ))}
           </nav>
           {!available && (
             <section
@@ -352,6 +382,55 @@ export function ReservationOperationsWorkspace({
                     : 'در انتظار دریافت از فروش'}
                 </span>
               </div>
+              <div className={styles.exportBar}>
+                <button
+                  type="button"
+                  disabled={
+                    !available ||
+                    !names.ready ||
+                    exporting ||
+                    !!result.dateError ||
+                    !result.total
+                  }
+                  onClick={async () => {
+                    setExporting(true);
+                    setExportError('');
+                    const exportRows = reservationExportRows(
+                      result.filteredRows,
+                    );
+                    try {
+                      const { createReservationXlsx } =
+                        await import('./reservation-xlsx');
+                      const bytes = createReservationXlsx(exportRows);
+                      const url = URL.createObjectURL(
+                        new Blob([bytes], {
+                          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        }),
+                      );
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `reservations-${new Date().toISOString().slice(0, 10)}.xlsx`;
+                      document.body.appendChild(link);
+                      link.click();
+                      link.remove();
+                      setTimeout(() => URL.revokeObjectURL(url), 30000);
+                    } catch {
+                      setExportError('خروجی اکسل آماده نشد؛ دوباره تلاش کنید.');
+                    } finally {
+                      setExporting(false);
+                    }
+                  }}
+                >
+                  {exporting
+                    ? 'آماده‌سازی اکسل…'
+                    : `خروجی اکسل (${result.total.toLocaleString('fa-IR')} درخواست)`}
+                </button>
+                <small>
+                  همهٔ نتایج مطابق فیلترها و ترتیب فعلی؛ برای ارسال فرم یا صدور
+                  واچر، روی مربع اقدام یا تأیید هتل بزنید.
+                </small>
+                {exportError && <span role="alert">{exportError}</span>}
+              </div>
               <div
                 className={styles.legend}
                 aria-label="راهنمای رنگ و فیلتر وضعیت"
@@ -385,67 +464,121 @@ export function ReservationOperationsWorkspace({
                 </label>
                 <label>
                   وضعیت
-                  <select
+                  <Select
+                    dir="rtl"
                     value={query.status}
-                    onChange={(e) =>
-                      changeQuery({ status: e.target.value as Query['status'] })
+                    onValueChange={(value) =>
+                      changeQuery({ status: value as Query['status'] })
                     }
                   >
-                    <option value="ALL">همه وضعیت‌ها</option>
-                    {Object.entries(statusLabels).map(([key, label]) => (
-                      <option value={key} key={key}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      aria-label="وضعیت"
+                      className="min-w-0 text-xs"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent
+                      align="start"
+                      className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
+                    >
+                      <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
+                      {Object.entries(statusLabels)
+                        .filter(([key]) => key !== 'SUPPLIER_CONFIRMED')
+                        .map(([key, label]) => (
+                          <SelectItem value={key} key={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
                 </label>
                 <label>
                   خدمت
-                  <select
+                  <Select
+                    dir="rtl"
                     value={query.service}
-                    onChange={(e) => changeQuery({ service: e.target.value })}
+                    onValueChange={(value) => changeQuery({ service: value })}
                   >
-                    <option value="ALL">همه خدمات</option>
-                    {Object.entries(serviceLabels).map(([key, label]) => (
-                      <option value={key} key={key}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      aria-label="خدمت"
+                      className="min-w-0 text-xs"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent
+                      align="start"
+                      className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
+                    >
+                      <SelectItem value="ALL">همه خدمات</SelectItem>
+                      {Object.entries(serviceLabels).map(([key, label]) => (
+                        <SelectItem value={key} key={key}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
                 <label>
                   مرتب‌سازی
-                  <select
+                  <Select
+                    dir="rtl"
                     value={query.sort}
-                    onChange={(e) =>
-                      changeQuery({ sort: e.target.value as Query['sort'] })
+                    onValueChange={(value) =>
+                      changeQuery({ sort: value as Query['sort'] })
                     }
                   >
-                    <option value="deadline">نزدیک‌ترین مهلت</option>
-                    <option value="newest">جدیدترین درخواست</option>
-                    <option value="priority">بیشترین اولویت</option>
-                  </select>
+                    <SelectTrigger
+                      aria-label="مرتب‌سازی"
+                      className="min-w-0 text-xs"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent
+                      align="start"
+                      className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
+                    >
+                      <SelectItem value="deadline">نزدیک‌ترین مهلت</SelectItem>
+                      <SelectItem value="newest">جدیدترین درخواست</SelectItem>
+                      <SelectItem value="priority">بیشترین اولویت</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </label>
               </div>
               <div className={styles.dateFilters}>
                 <label>
                   مبنای تاریخ
-                  <select
+                  <Select
+                    dir="rtl"
                     value={query.dateBasis}
-                    onChange={(e) =>
+                    onValueChange={(value) =>
                       changeQuery({
-                        dateBasis: e.target.value as Query['dateBasis'],
+                        dateBasis: value as Query['dateBasis'],
                       })
                     }
                   >
-                    <option value="createdAt">تاریخ قرارداد</option>
-                    <option value="receivedAt">ورود به رزرواسیون</option>
-                    <option value="travelDate">تاریخ سفر</option>
-                  </select>
+                    <SelectTrigger
+                      aria-label="مبنای تاریخ"
+                      className="min-w-0 text-xs"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent
+                      align="start"
+                      className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
+                    >
+                      <SelectItem value="createdAt">تاریخ قرارداد</SelectItem>
+                      <SelectItem value="receivedAt">
+                        ورود به رزرواسیون
+                      </SelectItem>
+                      <SelectItem value="travelDate">تاریخ سفر</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </label>
                 <div>
                   <label htmlFor="reservation-from">از تاریخ</label>
                   <DatePicker
+                    defaultCalendarSystem="gregorian"
+                    gregorianEnglish
                     id="reservation-from"
                     value={query.fromDate}
                     onChange={(fromDate) => changeQuery({ fromDate })}
@@ -456,6 +589,8 @@ export function ReservationOperationsWorkspace({
                 <div>
                   <label htmlFor="reservation-to">تا تاریخ</label>
                   <DatePicker
+                    defaultCalendarSystem="gregorian"
+                    gregorianEnglish
                     id="reservation-to"
                     value={query.toDate}
                     onChange={(toDate) => changeQuery({ toDate })}
@@ -482,48 +617,75 @@ export function ReservationOperationsWorkspace({
                     : 'هنوز درخواستی دریافت نشده است.'}
                 </p>
               ) : (
-                <ul className={styles.requests}>
-                  {result.rows.map((row) => (
-                    <li
-                      key={row.id}
-                      data-tone={statusTones[row.status]}
-                      data-selected={selectedId === row.id}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setSelectedId(row.id)}
-                      >
-                        <strong>{row.contractNumber}</strong>
-                        <span>
-                          {row.customerName !== '—'
-                            ? row.customerName
-                            : row.passengerNames.slice(0, 2).join('، ') ||
-                              'نام مشتری دریافت نشده'}
-                        </span>
-                        {row.hotelName && <small>{row.hotelName}</small>}
-                      </button>
-                      <span className={styles.statusLabel}>
-                        {statusLabels[row.status]}
-                      </span>
-                      <span>
-                        {row.services.map((s) => serviceLabels[s]).join('، ')}
-                      </span>
-                      <span>{row.assignee ?? 'تخصیص‌نیافته'}</span>
-                      <span>
-                        <small>مهلت اقدام</small>
-                        {row.deadline ? (
-                          <time dateTime={row.deadline}>
-                            {new Date(row.deadline).toLocaleString('fa-IR', {
-                              timeZone: 'Asia/Tehran',
-                            })}
-                          </time>
-                        ) : (
-                          'تعیین نشده'
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <div
+                  className={styles.tableScroll}
+                  role="region"
+                  aria-label="جدول درخواست‌های رزرواسیون"
+                  tabIndex={0}
+                >
+                  <table className={styles.requestTable}>
+                    <thead>
+                      <tr>
+                        {reservationColumns.map((column) => (
+                          <th key={column} scope="col">
+                            {column}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.rows.map((row) => (
+                        <tr
+                          key={row.id}
+                          data-tone={statusTones[row.status]}
+                          data-selected={selectedId === row.id}
+                          aria-selected={selectedId === row.id}
+                          tabIndex={0}
+                          onClick={() => setSelectedId(row.id)}
+                          onKeyDown={(event) => {
+                            if (
+                              event.target === event.currentTarget &&
+                              (event.key === 'Enter' || event.key === ' ')
+                            ) {
+                              event.preventDefault();
+                              setSelectedId(row.id);
+                            }
+                          }}
+                        >
+                          {reservationCells(row).map((value, index) => (
+                            <td key={reservationColumns[index]} title={value}>
+                              {index === 0 ? (
+                                <button
+                                  type="button"
+                                  aria-pressed={selectedId === row.id}
+                                  title={
+                                    row.customerName !== '—'
+                                      ? row.customerName
+                                      : row.passengerNames.join('، ')
+                                  }
+                                  onClick={() => setSelectedId(row.id)}
+                                >
+                                  {value}
+                                </button>
+                              ) : index === 10 || index === 11 ? (
+                                <HotelTableAction
+                                  row={row}
+                                  confirmation={index === 11}
+                                  canManage={access.permissions.includes(
+                                    'reservations.documents.manage',
+                                  )}
+                                  onSelect={() => setSelectedId(row.id)}
+                                />
+                              ) : (
+                                <bdi>{value}</bdi>
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
               <div className={styles.pagination}>
                 <button
@@ -557,7 +719,9 @@ export function ReservationOperationsWorkspace({
               <section className={styles.panel}>
                 <div className={styles.panelTitle}>
                   <h2>{operationContent[section].title}</h2>
-                  <span className={styles.badge}>در انتظار اتصال</span>
+                  {section !== 'manifests' && (
+                    <span className={styles.badge}>در انتظار اتصال</span>
+                  )}
                 </div>
                 <p>{operationContent[section].note}</p>
                 {visibleOperations.map((operation) => (
@@ -576,35 +740,48 @@ export function ReservationOperationsWorkspace({
                     </dl>
                   </article>
                 ))}
-                <dl className={styles.details}>
-                  {operationContent[section].fields.map((label) => (
-                    <div key={label}>
-                      <dt>{label}</dt>
-                      <dd>—</dd>
-                    </div>
-                  ))}
-                </dl>
-                <div className={styles.actions}>
-                  <button type="button" disabled>
-                    {operationContent[section].action}
-                  </button>
-                  {section === 'tickets' && (
-                    <>
-                      <label>
-                        دلیل توقف
-                        <input placeholder="دلیل توقف بلیط" disabled />
-                      </label>
-                      <button type="button" disabled>
-                        توقف صدور
-                      </button>
-                    </>
-                  )}
-                  {['tickets', 'vouchers', 'insurance'].includes(section) && (
+                {section === 'manifests' ? (
+                  <ManifestExport
+                    {...(selected
+                      ? {
+                          requestId: selected.id,
+                          contractNumber: selected.contractNumber,
+                        }
+                      : {})}
+                  />
+                ) : (
+                  <dl className={styles.details}>
+                    {operationContent[section].fields.map((label) => (
+                      <div key={label}>
+                        <dt>{label}</dt>
+                        <dd>—</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+                {section !== 'manifests' && (
+                  <div className={styles.actions}>
                     <button type="button" disabled>
-                      تحویل مدارک · نیازمند تأیید مالی
+                      {operationContent[section].action}
                     </button>
-                  )}
-                </div>
+                    {section === 'tickets' && (
+                      <>
+                        <label>
+                          دلیل توقف
+                          <input placeholder="دلیل توقف بلیط" disabled />
+                        </label>
+                        <button type="button" disabled>
+                          توقف صدور
+                        </button>
+                      </>
+                    )}
+                    {['tickets', 'vouchers', 'insurance'].includes(section) && (
+                      <button type="button" disabled>
+                        تحویل مدارک · نیازمند تأیید مالی
+                      </button>
+                    )}
+                  </div>
+                )}
               </section>
             )}
           {section === 'timeline' && (

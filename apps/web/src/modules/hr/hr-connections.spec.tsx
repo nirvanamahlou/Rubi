@@ -33,7 +33,7 @@ describe('HR referral recipient card', () => {
     expect(html).not.toContain('مشاهده پرونده مبنا');
     expect(html).not.toContain('شروع رسیدگی');
     expect(html).not.toContain('ثبت پاسخ');
-    expect(html).toContain('/finance?hrConnections=1');
+    expect(html).toContain('/finance/requests?hrConnections=1');
   });
   it('offers review before reply without claiming financial execution', () => {
     const html = renderToStaticMarkup(

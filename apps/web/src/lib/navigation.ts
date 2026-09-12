@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Bot,
+  BadgeDollarSign,
   Building2,
   CalendarCheck2,
   CircleDollarSign,
@@ -10,6 +11,8 @@ import {
   Headphones,
   Handshake,
   HeartHandshake,
+  House,
+  Inbox,
   Megaphone,
   PackageSearch,
   Settings,
@@ -36,14 +39,18 @@ export interface HrBreadcrumbLocation {
 }
 
 const iconByHref: Record<NavigationHref, LucideIcon> = {
+  '/workbench': House,
   '/dashboard': Gauge,
   '/customers': UsersRound,
   '/customer-affairs': Headphones,
   '/reservations': CalendarCheck2,
+  '/reservations/hotel-rates': Building2,
   '/ticket-management': Ticket,
   '/sales': Handshake,
+  '/pricing-management': BadgeDollarSign,
   '/purchases': PackageSearch,
   '/finance': CircleDollarSign,
+  '/finance/requests': Inbox,
   '/marketing': Megaphone,
   '/organizations': Building2,
   '/human-resources': HeartHandshake,
@@ -66,7 +73,7 @@ export const navigationGroups = [
     id: 'work',
     dotClass: 'bg-[#96c9ff]',
     title: 'فضای کار',
-    hrefs: ['/dashboard', '/tasks'],
+    hrefs: ['/workbench', '/dashboard', '/tasks'],
   },
   {
     id: 'sales',
@@ -74,6 +81,7 @@ export const navigationGroups = [
     title: 'فروش و ارتباط با مشتری',
     hrefs: [
       '/sales',
+      '/pricing-management',
       '/customers',
       '/customer-affairs',
       '/organizations',
@@ -84,13 +92,13 @@ export const navigationGroups = [
     id: 'operations',
     dotClass: 'bg-[#62d5c6]',
     title: 'رزرواسیون و تأمین سفر',
-    hrefs: ['/reservations', '/ticket-management'],
+    hrefs: ['/reservations', '/reservations/hotel-rates', '/ticket-management'],
   },
   {
     id: 'finance',
     dotClass: 'bg-[#f7d184]',
-    title: 'امور مالی',
-    hrefs: ['/finance', '/purchases'],
+    title: 'مالی',
+    hrefs: ['/finance', '/finance/requests', '/purchases'],
   },
   {
     id: 'hr',

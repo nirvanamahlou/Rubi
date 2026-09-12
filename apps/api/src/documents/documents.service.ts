@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import type { ActivityWindow } from '../common/organization-activity';
 import type { Readable } from 'node:stream';
 import { HrDirectoryService } from '../hr/hr-directory.service';
 
@@ -237,6 +238,37 @@ export class DocumentsService {
     if (!allowedDocumentDomains(permissions).includes(domain)) {
       throw new ForbiddenException('دسترسی به دامنه این سند مجاز نیست.');
     }
+  }
+
+  /** Public reference-only lookup; file contents and metadata stay inside Documents. */
+  async organizationVersionReferences(
+    versionIds: readonly string[],
+    organizationId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.branchIds.includes(branchId))
+      throw new ForbiddenException('شعبه سند در دامنه دسترسی نیست.');
+    if (
+      ![
+        'documents.list',
+        'documents.organization.read',
+        'documents.metadata.read',
+      ].every((code) =>
+        actor.permissions.includes(code as (typeof actor.permissions)[number]),
+      )
+    )
+      return [];
+    if (versionIds.length > 200)
+      throw new BadRequestException(
+        'تعداد نسخه‌های درخواست‌شده بیش از حد مجاز است.',
+      );
+    if (!versionIds.length) return [];
+    return this.repository.organizationVersionReferences(
+      versionIds,
+      organizationId,
+      branchId,
+    );
   }
 
   async list(query: DocumentListQueryV1, actor: AuthenticatedActor) {
@@ -815,6 +847,25 @@ export class DocumentsService {
         userAgentSummary: event.userAgentSummary,
       })),
     };
+  }
+
+  async organizationActivity(
+    org: string,
+    branch: string,
+    actor: AuthenticatedActor,
+    window: ActivityWindow,
+  ) {
+    if (
+      !actor.permissions.includes('documents.audit.read') ||
+      !actor.branchIds.includes(branch)
+    )
+      throw new ForbiddenException('مجوز تاریخچه اسناد یا شعبه را ندارید.');
+    return this.repository.organizationActivity(
+      org,
+      branch,
+      actor.permissions,
+      window,
+    );
   }
 
   async createAccessGrant(

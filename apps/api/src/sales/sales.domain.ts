@@ -1,3 +1,4 @@
+import { validateInsuranceExtras } from '@rubi/contracts';
 import { createHash } from 'node:crypto';
 import { salesAccommodationValid, salesContractFlights } from '@rubi/contracts';
 import {
@@ -114,6 +115,14 @@ export function passengerAgeCategory(
 }
 
 export function validateSalesContract(input: SalesContractCreateRequest): void {
+  try {
+    validateInsuranceExtras(input);
+  } catch (error) {
+    throw new SalesDomainError(
+      'SALES_INSURANCE_EXTRA_INVALID',
+      error instanceof Error ? error.message : 'هزینه بیمه معتبر نیست',
+    );
+  }
   if (
     !input ||
     !['ONE_WAY', 'ROUND_TRIP'].includes(input.tripType) ||

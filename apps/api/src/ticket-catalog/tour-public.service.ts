@@ -19,6 +19,7 @@ import type { Prisma } from '@rubi/database';
 import { DatabaseService } from '../database/database.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { validateTourDeparture, validateTourPackage } from './tour-policy';
+import { DocumentsService } from '../documents/documents.service';
 
 const included = {
   package: true,
@@ -104,6 +105,7 @@ export class TourPublicService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(MasterTravelDirectory)
     private readonly references: MasterTravelDirectory,
+    @Inject(DocumentsService) private readonly documents?: DocumentsService,
   ) {}
 
   private authorize(
@@ -263,6 +265,33 @@ export class TourPublicService {
       return { data: packageView(previous) };
     }
     await this.references.assertTourReferences(input);
+    if (input.details?.imageDocumentId) {
+      if (
+        !this.documents ||
+        !actor.permissions.includes('documents.metadata.read')
+      )
+        throw new ForbiddenException('مجوز بررسی تصویر تور را ندارید.');
+      const { data: image } = await this.documents.detail(
+        input.details.imageDocumentId,
+        actor,
+        {},
+      );
+      if (
+        image.type.domain !== 'BRAND' ||
+        image.branchId !== branchId ||
+        image.archiveStatus !== 'ACTIVE' ||
+        image.currentVersion.scanStatus !== 'CLEAN' ||
+        !image.capabilities.viewFile ||
+        image.requiresStepUpVerification ||
+        !['PUBLIC', 'INTERNAL'].includes(image.confidentiality) ||
+        !['image/jpeg', 'image/png'].includes(
+          image.currentVersion.detectedMimeType,
+        )
+      )
+        throw new BadRequestException(
+          'تصویر باید در همین شعبه، فعال، مجاز و تأییدشده توسط بررسی امنیتی باشد.',
+        );
+    }
     const row = await this.database.client.tourPackage.upsert({
       where,
       update: {},
