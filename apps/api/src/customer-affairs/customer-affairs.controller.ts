@@ -232,6 +232,29 @@ export class CustomerAffairsController {
     );
   }
 
+  @Post('workbench/requests')
+  createWorkbenchRequest(
+    @Body() dto: TicketMutationDto,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId?: string,
+    @Headers('idempotency-key') key?: string,
+    @Headers('x-request-id') traceId?: string,
+  ) {
+    return this.service.createWorkbenchRequest(
+      dto as CustomerAffairsTicketInput,
+      req.actor,
+      branchId,
+      key,
+      traceId,
+    );
+  }
+
+  @Get('workbench/requests')
+  @Header('Cache-Control', 'private, no-store')
+  workbenchRequests(@Req() req: AuthenticatedRequest) {
+    return this.service.workbenchRequests(req.actor);
+  }
+
   @Patch('tickets/:id')
   @RequirePermissions('customer_affairs.ticket.update')
   updateTicket(

@@ -28,8 +28,8 @@ const conversation = {
   createdAt: now,
   updatedAt: now,
   members: [
-    { userId: actor.userId, role: 'OWNER' as const },
-    { userId: recipientId, role: 'MEMBER' as const },
+    { userId: actor.userId, role: 'OWNER' as const, lastReadAt: null },
+    { userId: recipientId, role: 'MEMBER' as const, lastReadAt: null },
   ],
   messages: [],
 };
@@ -37,6 +37,7 @@ const conversation = {
 describe('MessagingService', () => {
   let repository: Record<string, ReturnType<typeof vi.fn>>;
   let iam: Record<string, ReturnType<typeof vi.fn>>;
+  let documents: Record<string, ReturnType<typeof vi.fn>>;
   let service: MessagingService;
 
   beforeEach(() => {
@@ -48,6 +49,8 @@ describe('MessagingService', () => {
       messages: vi.fn(),
       createMessage: vi.fn(),
       sourceMessage: vi.fn(),
+      unreadCount: vi.fn().mockResolvedValue(0),
+      markRead: vi.fn(),
     };
     iam = {
       validateMessagingRecipients: vi.fn().mockResolvedValue({
@@ -59,9 +62,13 @@ describe('MessagingService', () => {
         { id: recipientId, displayName: 'گیرنده', username: 'recipient' },
       ]),
     };
+    documents = {
+      assertWorkbenchOwnedAttachments: vi.fn().mockResolvedValue([]),
+    };
     service = new MessagingService(
       repository as unknown as MessagingRepository,
       iam as unknown as IamService,
+      documents as never,
     );
   });
 
@@ -98,6 +105,44 @@ describe('MessagingService', () => {
     expect(repository.createMessage).not.toHaveBeenCalled();
   });
 
+  it('validates message files through Documents and notifies other members', async () => {
+    const documentId = '88888888-8888-4888-8888-888888888888';
+    documents.assertWorkbenchOwnedAttachments!.mockResolvedValue([
+      { id: documentId, title: 'فیش واریزی' },
+    ]);
+    repository.createMessage!.mockResolvedValue({
+      id: messageId,
+      conversationId,
+      senderUserId: actor.userId,
+      body: 'پیوست ارسال شد.',
+      createdAt: now,
+      forwardedFrom: null,
+      attachments: [{ documentId, title: 'فیش واریزی' }],
+    });
+    await service.send(
+      conversationId,
+      {
+        body: 'پیوست ارسال شد.',
+        clientRequestId: 'message:request-0002',
+        attachmentDocumentIds: [documentId],
+      },
+      actor,
+    );
+    expect(documents.assertWorkbenchOwnedAttachments).toHaveBeenCalledWith(
+      [documentId],
+      'MessagingMessage',
+      'message:request-0002',
+      actor.branchIds[0],
+      actor,
+    );
+    expect(repository.createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attachments: [{ documentId, title: 'فیش واریزی' }],
+        recipientUserIds: [recipientId],
+      }),
+    );
+  });
+
   it('forwards the server copy of an accessible source message', async () => {
     repository.sourceMessage!.mockResolvedValue({
       id: messageId,
@@ -106,6 +151,7 @@ describe('MessagingService', () => {
       body: 'متن ثبت‌شده مبدأ',
       createdAt: now,
       forwardedFrom: null,
+      attachments: [],
     });
     repository.createMessage!.mockResolvedValue({
       id: '77777777-7777-4777-8777-777777777777',
@@ -114,6 +160,7 @@ describe('MessagingService', () => {
       body: 'متن ثبت‌شده مبدأ',
       createdAt: now,
       forwardedFrom: { id: messageId, senderUserId: recipientId },
+      attachments: [],
     });
 
     const response = await service.forward(
@@ -128,6 +175,8 @@ describe('MessagingService', () => {
       body: 'متن ثبت‌شده مبدأ',
       forwardedFromMessageId: messageId,
       clientRequestId: 'forward:request-0001',
+      attachments: [],
+      recipientUserIds: [recipientId],
     });
     expect(response.data.forwardedFrom).toEqual({
       id: messageId,

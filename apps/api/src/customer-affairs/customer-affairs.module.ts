@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { CustomersModule } from '../customers/customers.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { IamModule } from '../iam/iam.module';
+import { HrDirectoryModule } from '../hr/hr-directory.module';
 import { AuthGuard } from '../iam/auth.guard';
 import { PermissionGuard } from '../iam/permission.guard';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -18,6 +19,7 @@ import { CustomerAffairsService } from './customer-affairs.service';
 @Module({
   imports: [
     IamModule,
+    HrDirectoryModule,
     CustomersModule,
     DocumentsModule,
     SalesModule,

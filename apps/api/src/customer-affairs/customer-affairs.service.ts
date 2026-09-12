@@ -23,6 +23,7 @@ import { CustomerService } from '../customers/customer.service';
 import { DocumentsService } from '../documents/documents.service';
 import { SalesService } from '../sales/sales.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { HrDirectoryService } from '../hr/hr-directory.service';
 import { ReservationsPublicService } from '../reservations/reservations-public.service';
 import {
   canTransitionLead,
@@ -227,7 +228,56 @@ export class CustomerAffairsService {
     private readonly reservations: ReservationsPublicService,
     @Inject(NotificationsService)
     private readonly notifications: NotificationsService,
+    @Inject(HrDirectoryService)
+    private readonly hrDirectory: HrDirectoryService,
   ) {}
+
+  async createWorkbenchRequest(
+    input: CustomerAffairsTicketInput,
+    actor: AuthenticatedActor,
+    requestedBranch: string | undefined,
+    idempotencyValue: string | undefined,
+    traceId?: string,
+  ) {
+    const branchId = branchScope(actor, requestedBranch);
+    const recipients = await this.hrDirectory.workbenchFeedbackRecipientUserIds(
+      branchId,
+      this.workbenchUnitTerms(input.executionUnit),
+    );
+    const executionOwnerUserId =
+      input.executionOwnerUserId ??
+      recipients.find((userId) => userId !== actor.userId) ??
+      recipients[0];
+    return this.createTicket(
+      {
+        ...input,
+        ...(executionOwnerUserId ? { executionOwnerUserId } : {}),
+      },
+      actor,
+      branchId,
+      idempotencyValue,
+      traceId,
+    );
+  }
+
+  async workbenchRequests(actor: AuthenticatedActor) {
+    const rows = await this.repository.workbenchRequests(
+      actor.userId,
+      actor.branchIds,
+    );
+    return {
+      data: rows.map((row) => ({
+        id: row.id,
+        trackingNumber: row.trackingNumber,
+        subject: row.subject,
+        destinationUnit: row.executionUnit,
+        status: row.status,
+        priority: row.priority,
+        nextActionAt: row.nextActionAt.toISOString(),
+        updatedAt: row.updatedAt.toISOString(),
+      })),
+    };
+  }
 
   async dashboard(
     actor: AuthenticatedActor,
@@ -832,7 +882,13 @@ export class CustomerAffairsService {
           },
         });
         await this.notifications.createWithinTransaction(tx, {
-          recipientUserIds: [owner],
+          recipientUserIds: [
+            ...new Set(
+              [owner, input.executionOwnerUserId].filter(
+                (userId): userId is string => Boolean(userId),
+              ),
+            ),
+          ],
           actorUserId: actor.userId,
           sourceModule: 'customer-affairs',
           eventType: 'ticket.assigned',
@@ -1697,6 +1753,19 @@ export class CustomerAffairsService {
       throw new BadRequestException(
         'موعد اقدام بعدی باید پس از زمان تماس باشد.',
       );
+  }
+
+  private workbenchUnitTerms(unit: string | null | undefined): string[] {
+    const normalized = unit?.trim() ?? '';
+    const terms: Readonly<Record<string, string[]>> = {
+      مالی: ['مالی', 'حسابداری', 'خزانه'],
+      رزرواسیون: ['رزرواسیون', 'رزرو'],
+      فروش: ['فروش'],
+      ویزا: ['ویزا'],
+      'منابع انسانی': ['منابع انسانی', 'سرمایه انسانی', 'اداری'],
+      مدیریت: ['مدیریت', 'مدیر'],
+    };
+    return terms[normalized] ?? (normalized ? [normalized] : []);
   }
 
   private ticketData(input: CustomerAffairsTicketInput) {

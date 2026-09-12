@@ -13,6 +13,7 @@ import type {
 } from '@rubi/contracts';
 
 import { IamService } from '../iam/iam.service';
+import { DocumentsService } from '../documents/documents.service';
 import { MessagingRepository } from './messaging.repository';
 import * as validate from './messaging.validation';
 
@@ -27,6 +28,7 @@ export class MessagingService {
     @Inject(MessagingRepository)
     private readonly repository: MessagingRepository,
     @Inject(IamService) private readonly iam: IamService,
+    @Inject(DocumentsService) private readonly documents: DocumentsService,
   ) {}
 
   async contacts(actor: AuthenticatedActor, query: Record<string, unknown>) {
@@ -99,6 +101,7 @@ export class MessagingService {
       cursor,
       requestedLimit + 1,
     );
+    await this.repository.markRead(conversationId, actor.userId);
     const hasMore = rows.length > requestedLimit;
     const page = rows.slice(0, requestedLimit);
     return {
@@ -109,20 +112,34 @@ export class MessagingService {
 
   async send(id: string, body: unknown, actor: AuthenticatedActor) {
     const conversationId = validate.uuid(id, 'گفت‌وگو');
-    await this.assertConversation(conversationId, actor);
+    const conversation = await this.assertConversation(conversationId, actor);
     const input = validate.message(body);
+    const attachments = await this.documents.assertWorkbenchOwnedAttachments(
+      input.attachmentDocumentIds ?? [],
+      'MessagingMessage',
+      input.clientRequestId,
+      conversation.branchId,
+      actor,
+    );
     const row = await this.repository.createMessage({
       conversationId,
       senderUserId: actor.userId,
       body: input.body,
       clientRequestId: input.clientRequestId,
+      attachments: attachments.map(({ id, title }) => ({
+        documentId: id,
+        title,
+      })),
+      recipientUserIds: conversation.members
+        .map((member) => member.userId)
+        .filter((userId) => userId !== actor.userId),
     });
     return { data: await this.mapMessage(row) };
   }
 
   async forward(id: string, body: unknown, actor: AuthenticatedActor) {
     const conversationId = validate.uuid(id, 'گفت‌وگوی مقصد');
-    await this.assertConversation(conversationId, actor);
+    const conversation = await this.assertConversation(conversationId, actor);
     const input = validate.forward(body);
     const source = await this.repository.sourceMessage(
       input.sourceMessageId,
@@ -136,6 +153,10 @@ export class MessagingService {
       body: source.body,
       forwardedFromMessageId: source.id,
       clientRequestId: input.clientRequestId,
+      attachments: source.attachments,
+      recipientUserIds: conversation.members
+        .map((member) => member.userId)
+        .filter((userId) => userId !== actor.userId),
     });
     return { data: await this.mapMessage(row) };
   }
@@ -170,6 +191,7 @@ export class MessagingService {
       body: string;
       createdAt: Date;
       forwardedFrom: { id: string; senderUserId: string } | null;
+      attachments: Array<{ documentId: string; title: string }>;
     }>,
   ): Promise<MessagingMessageV1[]> {
     const names = await this.descriptions(
@@ -198,6 +220,7 @@ export class MessagingService {
               }
             : null,
         createdAt: row.createdAt.toISOString(),
+        attachments: row.attachments,
       };
     });
   }
@@ -216,7 +239,11 @@ export class MessagingService {
       branchId: string;
       createdAt: Date;
       updatedAt: Date;
-      members: Array<{ userId: string; role: 'OWNER' | 'MEMBER' }>;
+      members: Array<{
+        userId: string;
+        role: 'OWNER' | 'MEMBER';
+        lastReadAt: Date | null;
+      }>;
       messages: Parameters<MessagingService['mapMessages']>[0];
     }>,
     actorUserId: string,
@@ -242,6 +269,14 @@ export class MessagingService {
     const other = participants.find(
       (participant) => participant.id !== actorUserId,
     );
+    const membership = row.members.find(
+      (member) => member.userId === actorUserId,
+    );
+    const unreadCount = await this.repository.unreadCount(
+      row.id,
+      actorUserId,
+      membership?.lastReadAt ?? null,
+    );
     return {
       id: row.id,
       type: row.type,
@@ -252,6 +287,7 @@ export class MessagingService {
       branchId: row.branchId,
       participants,
       lastMessage: (await this.mapMessages(row.messages))[0] ?? null,
+      unreadCount,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
     };

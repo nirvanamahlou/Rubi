@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { Prisma } from '@rubi/database';
 
 import { DatabaseService } from '../database/database.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const messageSelection = {
   id: true,
@@ -10,11 +11,15 @@ const messageSelection = {
   body: true,
   createdAt: true,
   forwardedFrom: { select: { id: true, senderUserId: true } },
+  attachments: {
+    select: { documentId: true, title: true },
+    orderBy: { createdAt: 'asc' },
+  },
 } satisfies Prisma.MessagingMessageSelect;
 
 const conversationInclusion = {
   members: {
-    select: { userId: true, role: true },
+    select: { userId: true, role: true, lastReadAt: true },
     orderBy: { joinedAt: 'asc' },
   },
   messages: {
@@ -28,6 +33,8 @@ const conversationInclusion = {
 export class MessagingRepository {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(NotificationsService)
+    private readonly notifications: NotificationsService,
   ) {}
 
   listConversations(userId: string, branchIds: string[]) {
@@ -126,14 +133,44 @@ export class MessagingRepository {
     });
   }
 
+  markRead(conversationId: string, userId: string) {
+    return this.database.client.messagingMember.update({
+      where: { conversationId_userId: { conversationId, userId } },
+      data: { lastReadAt: new Date() },
+    });
+  }
+
+  unreadCount(conversationId: string, userId: string, lastReadAt: Date | null) {
+    return this.database.client.messagingMessage.count({
+      where: {
+        conversationId,
+        senderUserId: { not: userId },
+        ...(lastReadAt ? { createdAt: { gt: lastReadAt } } : {}),
+      },
+    });
+  }
+
   async createMessage(input: {
     conversationId: string;
     senderUserId: string;
     body: string;
     clientRequestId: string;
     forwardedFromMessageId?: string;
+    attachments?: Array<{ documentId: string; title: string }>;
+    recipientUserIds: string[];
   }) {
     return this.database.client.$transaction(async (transaction) => {
+      const existing = await transaction.messagingMessage.findUnique({
+        where: {
+          conversationId_senderUserId_clientRequestId: {
+            conversationId: input.conversationId,
+            senderUserId: input.senderUserId,
+            clientRequestId: input.clientRequestId,
+          },
+        },
+        select: messageSelection,
+      });
+      if (existing) return existing;
       const message = await transaction.messagingMessage.upsert({
         where: {
           conversationId_senderUserId_clientRequestId: {
@@ -143,14 +180,46 @@ export class MessagingRepository {
           },
         },
         update: {},
-        create: input,
+        create: {
+          conversationId: input.conversationId,
+          senderUserId: input.senderUserId,
+          body: input.body,
+          clientRequestId: input.clientRequestId,
+          ...(input.forwardedFromMessageId
+            ? { forwardedFromMessageId: input.forwardedFromMessageId }
+            : {}),
+        },
         select: messageSelection,
       });
+      if (input.attachments?.length) {
+        await transaction.messagingMessageAttachment.createMany({
+          data: input.attachments.map((attachment) => ({
+            messageId: message.id,
+            documentId: attachment.documentId,
+            title: attachment.title,
+          })),
+          skipDuplicates: true,
+        });
+      }
       await transaction.messagingConversation.update({
         where: { id: input.conversationId },
         data: { updatedAt: message.createdAt },
       });
-      return message;
+      await this.notifications.createWithinTransaction(transaction, {
+        recipientUserIds: input.recipientUserIds,
+        actorUserId: input.senderUserId,
+        sourceModule: 'messaging',
+        eventType: 'message.received',
+        title: 'پیام داخلی جدید',
+        message: input.body || 'یک فایل برای شما ارسال شد.',
+        entityType: 'messaging-conversation',
+        entityId: input.conversationId,
+        href: `/workbench?tab=messages&conversation=${encodeURIComponent(input.conversationId)}`,
+      });
+      return transaction.messagingMessage.findUniqueOrThrow({
+        where: { id: message.id },
+        select: messageSelection,
+      });
     });
   }
 

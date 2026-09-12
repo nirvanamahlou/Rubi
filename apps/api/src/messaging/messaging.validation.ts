@@ -64,16 +64,35 @@ export function group(value: unknown): CreateGroupConversationInputV1 {
 }
 
 export function message(value: unknown): SendMessagingMessageInputV1 {
-  const input = record(value, ['body', 'clientRequestId']);
+  const input = record(value, [
+    'body',
+    'clientRequestId',
+    'attachmentDocumentIds',
+  ]);
+  const attachmentDocumentIds =
+    input.attachmentDocumentIds === undefined
+      ? []
+      : Array.isArray(input.attachmentDocumentIds)
+        ? [
+            ...new Set(
+              input.attachmentDocumentIds.map((id) => uuid(id, 'پیوست پیام')),
+            ),
+          ]
+        : (() => {
+            throw new BadRequestException('پیوست‌های پیام معتبر نیستند.');
+          })();
+  if (attachmentDocumentIds.length > 10)
+    throw new BadRequestException('حداکثر ۱۰ پیوست برای هر پیام مجاز است.');
   if (
     typeof input.body !== 'string' ||
-    !input.body.trim() ||
-    input.body.trim().length > 4000
+    input.body.trim().length > 4000 ||
+    (!input.body.trim() && !attachmentDocumentIds.length)
   )
-    throw new BadRequestException('متن پیام باید بین ۱ تا ۴۰۰۰ نویسه باشد.');
+    throw new BadRequestException('متن یا پیوست پیام الزامی است.');
   return {
     body: input.body.trim(),
     clientRequestId: requestId(input.clientRequestId),
+    attachmentDocumentIds,
   };
 }
 

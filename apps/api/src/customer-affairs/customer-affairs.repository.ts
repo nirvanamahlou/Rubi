@@ -144,6 +144,18 @@ export class CustomerAffairsRepository {
     });
   }
 
+  workbenchRequests(userId: string, branchIds: string[]) {
+    return this.database.client.customerAffairsTicket.findMany({
+      where: {
+        createdByUserId: userId,
+        branchId: { in: branchIds },
+        category: { startsWith: 'WORKBENCH_' },
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      take: 100,
+    });
+  }
+
   findReferralByKey(ticketId: string, idempotencyKey: string) {
     return this.database.client.customerAffairsReferral.findUnique({
       where: { ticketId_idempotencyKey: { ticketId, idempotencyKey } },

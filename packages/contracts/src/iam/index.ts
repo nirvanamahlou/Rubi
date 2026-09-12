@@ -188,3 +188,23 @@ export interface IamMfaSetupConfirmInputV1 {
 export interface IamMfaSetupConfirmResponseV1 {
   data: IamMfaStatusV1;
 }
+
+export interface IamPersonalProfileV1 {
+  displayName: string;
+  email: string | null;
+  phone: string | null;
+  photoDocumentId: string | null;
+  updatedAt: string | null;
+}
+
+export interface IamPersonalProfileResponseV1 {
+  data: IamPersonalProfileV1;
+}
+
+export interface IamPersonalProfileUpdateInputV1 {
+  displayName: string;
+  email?: string | null;
+  phone?: string | null;
+  photoDocumentId?: string | null;
+  photoBranchId?: string | null;
+}

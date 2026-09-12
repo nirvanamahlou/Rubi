@@ -17,6 +17,7 @@ import { MessagingModule } from './messaging/messaging.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SalesModule } from './sales/sales.module';
 import { WorkbenchFeedbackModule } from './workbench-feedback/workbench-feedback.module';
+import { WorkbenchModule } from './workbench/workbench.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { WorkbenchFeedbackModule } from './workbench-feedback/workbench-feedback
     NotificationsModule,
     HrModule,
     WorkbenchFeedbackModule,
+    WorkbenchModule,
   ],
   controllers: [HealthController],
   providers: [HealthService],
