@@ -1,6 +1,6 @@
 # Work Assignments
 
-## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — READY_FOR_REVIEW / FORM_FOLLOWUP / PERSISTENCE_BLOCKED
+## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — IN_PROGRESS / RECEIPT_ATTACHMENT_FOLLOWUP / PERSISTENCE_BLOCKED
 
 - درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
   دریافت/پرداخت در فضای مستقل `/finance`. Branch مستقل
@@ -43,6 +43,10 @@
   Version/Idempotency از فرم کاربر حذف و در state داخلی حفظ شدند. ۳۲ تست هدفمند Web،
   typecheck، lint محدود، Build ۴۱ مسیر و Browser QA هر دو فرم موفق‌اند؛ ثبت قطعی همچنان
   `BLOCKED_BY_MIGRATION_LOCK` است. Commit قابلیت `70fde9b` به Draft PR #153 Push شد.
+- پیگیری سوم مالک در 2026-09-12: «توضیح مالی» در فرم دریافت/پرداخت اختیاری باشد و
+  فیش‌های همراه درخواست در همان Dialog نمایش داده شوند. محدوده فقط مدل/Workspace/Test
+  مالی و اسناد همین Task است؛ فایل جدید، Upload، Documents persistence یا قرارداد v1
+  شکسته ایجاد نمی‌شود و attachment فقط از snapshot مرجع درخواست نمایش داده می‌شود.
 
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 
