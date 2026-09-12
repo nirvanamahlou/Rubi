@@ -5,7 +5,7 @@ import {
   type B2bOrganizationUser,
   type B2bOrganizationUserInput,
 } from '@rubi/contracts';
-import { Plus, Users } from 'lucide-react';
+import { Pencil, Plus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';
 import { agencyClient, B2bApiError } from '../api/agency-client';
@@ -181,6 +181,9 @@ export function OrganizationUsersPanel({
                   </div>
                   <Button
                     variant="outline"
+                    size="icon"
+                    aria-label={`ویرایش دسترسی ${row.displayName}`}
+                    title="ویرایش دسترسی"
                     disabled={!canManage}
                     onClick={() =>
                       setEditor({
@@ -199,7 +202,7 @@ export function OrganizationUsersPanel({
                       })
                     }
                   >
-                    ویرایش دسترسی
+                    <Pencil className="size-4" aria-hidden="true" />
                   </Button>
                 </div>
                 <p className="mt-3 text-sm">نقش سازمانی: {row.roleName}</p>

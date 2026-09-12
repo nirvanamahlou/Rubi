@@ -116,46 +116,23 @@ export function AgencyRatesPanel({
     });
   return (
     <section className="panel">
-      <header className="panel-head">
+      <header className="panel-head commercial-section-heading">
         <div>
           <h2 className="panel-title">{kindLabels[kind]}</h2>
           <p className="panel-note">
             {visible.length.toLocaleString('fa-IR')} مورد ثبت‌شده
           </p>
         </div>
-        <Button
-          disabled={
-            !branchId || loading || !permissions.includes('b2b.rate.manage')
-          }
-          onClick={create}
-        >
-          <Plus className="size-4" />
-          ثبت {kindLabels[kind]}
-        </Button>
-      </header>
-      <div className="panel-body space-y-4">
-        <div className="dossier-filter-grid">
-          <label className="field">
-            شعبه روبی
-            <select
-              className="input"
-              value={branchId}
-              onChange={(e) => setBranchId(e.target.value)}
-            >
-              {branches.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <DossierDateFilters
-            value={dateRange}
-            onChange={setDateRange}
-            basis="شروع اعتبار نرخ"
-          />
-        </div>
-        <div className="flex justify-end">
+        <div className="commercial-section-actions">
+          <Button
+            disabled={
+              !branchId || loading || !permissions.includes('b2b.rate.manage')
+            }
+            onClick={create}
+          >
+            <Plus className="size-4" />
+            ثبت {kindLabels[kind]}
+          </Button>
           <CommercialExportActions
             key={`${organizationId}:${branchId}:${kind}:${dateRange.from}:${dateRange.to}`}
             disabled={
@@ -179,6 +156,30 @@ export function AgencyRatesPanel({
             }}
           />
         </div>
+      </header>
+      <div className="panel-body space-y-4">
+        <div className="dossier-filter-grid">
+          <label className="field">
+            شعبه روبی
+            <select
+              className="input"
+              value={branchId}
+              onChange={(e) => setBranchId(e.target.value)}
+            >
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <DossierDateFilters
+            value={dateRange}
+            onChange={setDateRange}
+            basis="شروع اعتبار نرخ"
+          />
+        </div>
+
         {sessionError || error ? (
           <p role="alert" className="form-error">
             {sessionError || error}

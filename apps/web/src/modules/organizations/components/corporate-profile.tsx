@@ -1,4 +1,5 @@
 'use client';
+import { useSuppressHrConnections } from '@/modules/hr/hr-connections-visibility';
 
 import type { MasterDataRecord } from '@rubi/contracts';
 import {
@@ -208,6 +209,7 @@ export function CorporateProfile({
   overview?: ReactNode;
 }) {
   const [screen, setScreen] = useState('home');
+  useSuppressHrConnections(screen === 'finance');
   const [tab, setTab] = useState('profile');
   const [creditTab, setCreditTab] = useState('policy');
   useEffect(() => {
@@ -320,10 +322,7 @@ export function CorporateProfile({
           <h1 ref={heading} tabIndex={-1}>
             {title}
           </h1>
-          <p>
-            {current?.description ??
-              'تصویر یکپارچه رابطه تجاری و نمای عملیات سازمان'}
-          </p>
+          {current?.description && <p>{current.description}</p>}
         </div>
         <div className="actions">
           <button

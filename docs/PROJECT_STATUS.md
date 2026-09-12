@@ -2074,3 +2074,32 @@ Runtime d59b860 / hr005-785b78ad01bbc39f / WebPID22512 verified: heading remains
 
 ## 2026-09-11 — B2B contract filter alignment (PC-B)
 cc3027d+d1160ed fix flex cascade overriding dossier grid; date, branch and action controls align in6/3/1 responsive columns.113 tests/typecheck passed. Runtimebuildfe0ae53 preserves12c7c41; no API or data change.
+
+## 2026-09-12 — B2B compact export actions (PC-B)
+Source7acd39f moves exports next to create actions in commercial headers and uses33px buttons with short labels and accessible names. Filters retain their own responsive grid.121 tests/lint/typecheck passed. Combined9dceb66 building; no API/data changes.
+Final runtimec8164fc/hr005-da948517ea153e3e/PID27312 verified: desktop contract create/Excel/PDF share identicaly438px and33px height; mobile390px rates create/Excel/PDF share identicaly851px and33px height with no document overflow. Combined46-route build passes. API unchanged; Web remains with workbench owner. Draft PR193.
+
+## 2026-09-12 — Agency360 finance HR footer (PC-B)
+Source8ff2da8 hides the supplementary HR connections panel only while the agency dossier finance screen is mounted. Shared provider cleanup restores other pages; HR permissions unchanged. Scoped lint, Web typecheck and125 tests pass. Runtime build/verification pending owner cutover.
+
+Runtime ab4d12c/hr005-82286e6ac8efeb1f/WebPID8940 preserves ce2ca88.46-route webpack production build passed. Browser finance heading present, HR panel absent; native Back restores home panel and Forward suppresses it again. API unchanged. Draft PR196.
+
+## 2026-09-12 — Agency logo controls in edit form (PC-B)
+Source4786181 removes header camera, upload/change action, archive link and separate editor. Existing edit form logo field and save pathway remain authoritative.121 tests, lint/typecheck passed. Combined runtime build preserves3bd4f5b.
+
+Runtimeeb22c43/hr005-3e8178627325af68/PID8872:46-route production build passed; browser confirms header logo image retained with zero change/upload buttons and edit dialog has logo file selector, saved badge, remove and save actions. No data changed. PR198.
+
+## 2026-09-12 — Agency access pencil button (PC-B)
+Sourcea64ea2f replaces edit-access text with pencil icon, accessible name and tooltip. Scoped lint/typecheck passed; no API/data changes. Runtime build preserving37b72b8 underway.
+
+Runtime610170e/hr005-e828cafc8da400a3/PID16592 preserves37b72b8.46-route production build passed. Current QA agency has no users, so no live row click verified; editor handler/permission unchanged. API untouched. PR200.
+
+## 2026-09-12 — Agency directory HR footer (PC-B)
+Source d73d6bb suppresses the supplementary HR requests panel on the Organizations directory using the existing public visibility hook. Existing finance suppression preserved. Lint and Web typecheck passed; runtime verification pending.
+
+Runtime3397f2b/hr005-1ba72d053599fc53/PID11368 preserves96b6d2d.46-route build passes. Browser directory renders8organizations and pagination with zero HR connections panels. API unchanged. PR206.
+
+## 2026-09-12 — Agency360 subtitle removal (PC-B)
+Source f03d34c removes the requested home360 subtitle without leaving an empty paragraph. Subsection descriptions unchanged. Scoped lint/typecheck passed; combined runtime build coordinated.
+
+Combined runtime1bf840b/PID8604/hr005-ef61a0178f542c46 built by Workbench owner. Browser confirms360heading present and requestedsubtitle absent. NoAPI/data change. PR209.
