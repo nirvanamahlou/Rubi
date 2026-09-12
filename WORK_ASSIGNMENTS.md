@@ -1,6 +1,6 @@
 # Work Assignments
 
-## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — IN_PROGRESS
+## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — READY_FOR_REVIEW / PERSISTENCE_BLOCKED
 
 - درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
   دریافت/پرداخت در فضای مستقل `/finance`. Branch مستقل
@@ -20,6 +20,11 @@
 - معیارها، قفل‌ها، قراردادهای producer/consumer و موارد مسدود در
   `docs/tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md` ثبت می‌شوند. Push و Draft PR به
   `develop` مجاز است؛ Merge، Force Push و تغییر مستقیم `main`/`develop` ممنوع است.
+- نتیجه مجاز تحویل شد: دو فضای مستقل، درخت حساب، کنترل‌های دوره/Posting، قراردادهای
+  versioned و کارتابل Preview با validation دریافت/پرداخت. Contractها ۶۴ تست، API مالی
+  ۱۹ تست و Web مالی ۱۴ تست پاس؛ lint/typecheck/build و Smoke پورت‌های 3200/4200 موفق.
+  Commit قابلیت `6de5d94` Push و Draft PR #153 به `develop` باز شد. Persistence، Audit
+  پایدار، Outbox/Event و Posting واقعی همچنان `BLOCKED_BY_MIGRATION_LOCK` هستند.
 
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 

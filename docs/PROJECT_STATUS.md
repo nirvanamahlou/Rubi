@@ -1,5 +1,17 @@
 # وضعیت پروژه
 
+## FINANCE-002A — READY_FOR_REVIEW / PERSISTENCE_BLOCKED — 2026-09-12
+
+- PC-A روی Branch `codex/pc-a-finance-core-accounting` از `origin/develop@4717b13`
+  دو فضای حسابداری و کارتابل مالی، Domain invariantهای Phase A و قراردادهای versioned
+  دریافت/پرداخت را تکمیل کرد. Workspace قبلی FINANCE-001 حفظ شده است.
+- Commitهای `d513e08` و `6de5d94` Push و Draft PR #153 به `develop` ایجاد شد.
+- ۶۴ Contract test، ۱۹ Finance API test و ۱۴ Finance Web test پاس؛ lint/typecheck/build
+  Web/API و Smoke مستقل Web3200/API4200 موفق است.
+- Prisma/Migration/Seed و runtime رزرواسیون تغییر نکرد. Persistence، Posting واقعی،
+  Audit پایدار و Outbox/Event تا Handoff قفل Migration برابر `BLOCKED` باقی می‌مانند.
+- جزئیات: [FINANCE-002A-ACCOUNTING-AND-INBOX.md](tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md).
+
 ## HR-013 — اتصال فرم‌ها و ارجاع بین منابع انسانی و بخش‌های سامانه — آماده ادغام تأییدشده
 
 - مالک محصول اتصال واقعی داده‌ها به فرم‌ها و سپس Push/Merge را صریحاً درخواست کرد. PR #139 شامل لایه ارجاع اولیه و این تکمیل فرم‌هاست؛ ادغام به develop پس از موفقیت CI نسخه نهایی انجام می‌شود. فعال‌سازی اجرای محلی مستقل از این ادغام است.

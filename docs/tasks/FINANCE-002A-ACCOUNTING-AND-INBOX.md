@@ -3,9 +3,11 @@
 - **Computer:** PC-A
 - **Branch:** `codex/pc-a-finance-core-accounting`
 - **Base:** `origin/develop@4717b13`
-- **Status:** IN_PROGRESS
+- **Status:** READY_FOR_REVIEW / PERSISTENCE_BLOCKED
 - **Date:** 2026-09-12
 - **Web/API smoke ports:** 3200 / 4200
+- **PR:** Draft #153 → `develop`
+- **Commits:** `d513e08` (reservation)، `6de5d94` (implementation)
 
 ## هدف
 
@@ -74,3 +76,38 @@ Audit پایدار، Outbox/Inbox و اسناد Documents در گزارش نها
 - Web/API lint، typecheck، targeted tests و production build
 - Smoke روی Web 3200 و API 4200 بدون دست‌زدن به listenerهای دیگر
 - `git diff --check` و scan محدوده، Secret، PII و Card/CVV
+
+## نتیجه پیاده‌سازی
+
+- `/finance` دو کارت اصلی و واضح «حسابداری» و «مالی / کارتابل درخواست‌ها» دارد.
+- Workspace قبلی FINANCE-001 حذف نشده و زیر فضای حسابداری حفظ شده است.
+- درخت چهارسطحی حساب و جزئیات nature، posting، currency، active و مانده محاسباتی
+  نمایش داده می‌شود؛ ایجاد حساب تا Migration واقعی عمداً غیرفعال است.
+- Domain حسابداری hierarchy، حذف حساب دارای گردش، دوره بسته، Maker/Checker، optimistic
+  version، allocation، receipt destination، payment source/party، UTC و دلیل رد/اصلاح
+  را enforce می‌کند.
+- کارتابل هشت KPI، جست‌وجو/وضعیت، کارت Responsive، Dialog دریافت/پرداخت، کنترل فایل
+  رسید، کارمزد، tracking، Idempotency و Version دارد. نتیجه فقط validation محلی است.
+- قراردادهای `finance.*.v1` برای درخواست/نتیجه Receipt و Payment و Accounting Source
+  افزایشی و backward-compatible منتشر شدند؛ هیچ Root export یا producer داخلی تغییر نکرد.
+
+## نتیجه کنترل کیفیت
+
+- Contracts: ۶۴ تست در ۱۴ فایل، همگی پاس؛ lint، typecheck و build پاس.
+- API Finance: ۱۹ تست هدفمند در ۳ فایل، همگی پاس؛ lint، typecheck و production build پاس.
+- Web Finance: ۱۴ تست هدفمند در ۳ فایل، همگی پاس؛ lint، typecheck و production build
+  پاس؛ `/finance` در build شامل ۴۰ route تولید شد.
+- Smoke: Web روی 3200، redirect احراز هویت `/finance` برابر 307 و `/login` برابر 200؛
+  API روی 4200 و `/api/v1/health` برابر 200. فقط Processهای همین Task متوقف شدند.
+- `git diff --check` پاس؛ Prisma Schema/Migration/Seed، Dependency/Lockfile، فایل‌های
+  رزرواسیون و داده عملیاتی بدون تغییر.
+
+## موارد باقی‌مانده و Handoff
+
+- Migration lock و Central Docs/Shared IAM-Sales-Travel contracts نزد Task رزرواسیون
+  باقی مانده و به این Task منتقل نشده است.
+- پس از آزادسازی صریح قفل، یک Task مستقل Persistence باید Schema/Migration افزایشی،
+  repository تراکنشی، Audit، Inbox/Outbox، Permission seed و Controller واقعی را بسازد.
+- همان Task باید migration خالی PostgreSQL، seed دوباره‌پذیر، تست هم‌زمانی اتمیک و
+  Smoke authenticated Receipt/Payment/Posting را انجام دهد؛ این PR نباید پیش از آن
+  به‌عنوان Finance عملیاتی معرفی شود.
