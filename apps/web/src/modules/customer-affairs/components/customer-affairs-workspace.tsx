@@ -49,7 +49,7 @@ import { CustomerPicker } from './customer-picker';
 
 type Tab = 'leads' | 'tickets';
 type LoadState = 'loading' | 'ready' | 'empty' | 'error' | 'forbidden';
-type Detail = (CustomerAffairsLeadView | CustomerAffairsTicketView) & {
+export type Detail = (CustomerAffairsLeadView | CustomerAffairsTicketView) & {
   timeline?: Array<{
     id?: string;
     type: string;
@@ -64,7 +64,7 @@ type Detail = (CustomerAffairsLeadView | CustomerAffairsTicketView) & {
 
 const isoLocal = () =>
   new Date(Date.now() + 60 * 60_000).toISOString().slice(0, 16);
-const stageLabel: Record<string, string> = {
+export const stageLabel: Record<string, string> = {
   NEW: 'جدید',
   CONTACTED: 'تماس گرفته شد',
   QUALIFYING: 'در حال ارزیابی',
@@ -74,7 +74,7 @@ const stageLabel: Record<string, string> = {
   HANDED_OFF: 'تحویل فروش',
   LOST: 'از دست‌رفته',
 };
-const statusLabel: Record<string, string> = {
+export const statusLabel: Record<string, string> = {
   NEW: 'جدید',
   TRIAGED: 'تریاژ',
   IN_PROGRESS: 'در حال رسیدگی',
@@ -85,7 +85,7 @@ const statusLabel: Record<string, string> = {
   REOPENED: 'بازشده',
   CANCELLED: 'لغوشده',
 };
-const priorityLabel: Record<string, string> = {
+export const priorityLabel: Record<string, string> = {
   LOW: 'کم',
   NORMAL: 'عادی',
   HIGH: 'زیاد',
@@ -120,7 +120,7 @@ function Summary({
   );
 }
 
-function LeadForm({
+export function LeadForm({
   onCancel,
   onCreated,
 }: {
@@ -271,7 +271,7 @@ function LeadForm({
   );
 }
 
-function TicketForm({
+export function TicketForm({
   onCancel,
   onCreated,
 }: {
@@ -419,7 +419,7 @@ function TicketForm({
   );
 }
 
-function DetailPanel({
+export function DetailPanel({
   detail,
   onBack,
   onReload,

@@ -48,18 +48,47 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function query(search: string, status?: string) {
-  const params = new URLSearchParams({ page: '1', pageSize: '50' });
+export interface AffairsListOptions {
+  page?: number;
+  pageSize?: number;
+  stage?: string;
+  priority?: string;
+  overdueOnly?: boolean;
+}
+
+export interface AffairsReport {
+  generatedAt: string;
+  leadStages: Array<{ stage: string; _count: { _all: number } }>;
+  ticketStatuses: Array<{ status: string; _count: { _all: number } }>;
+  satisfaction: { average: number | null; count: number };
+  correctiveActions: Array<{ status: string; _count: { _all: number } }>;
+}
+
+function query(
+  search: string,
+  status?: string,
+  options: AffairsListOptions = {},
+) {
+  const params = new URLSearchParams({
+    page: String(options.page ?? 1),
+    pageSize: String(options.pageSize ?? 50),
+  });
   if (search.trim()) params.set('search', search.trim());
   if (status && status !== 'ALL') params.set('status', status);
+  if (options.stage && options.stage !== 'ALL')
+    params.set('stage', options.stage);
+  if (options.priority && options.priority !== 'ALL')
+    params.set('priority', options.priority);
+  if (options.overdueOnly) params.set('overdueOnly', 'true');
   return params.toString();
 }
 
 export const customerAffairsApi = {
   dashboard: () => request<{ data: CustomerAffairsDashboard }>('/dashboard'),
-  leads: (search = '') =>
+  report: () => request<{ data: AffairsReport }>('/reports/summary'),
+  leads: (search = '', options: AffairsListOptions = {}) =>
     request<CustomerAffairsListResponse<CustomerAffairsLeadView>>(
-      `/leads?${query(search)}`,
+      `/leads?${query(search, undefined, options)}`,
     ),
   lead: (id: string) =>
     request<{
@@ -100,9 +129,9 @@ export const customerAffairsApi = {
       headers: { 'idempotency-key': crypto.randomUUID() },
       body: JSON.stringify({ expectedVersion: version }),
     }),
-  tickets: (search = '', status = 'ALL') =>
+  tickets: (search = '', status = 'ALL', options: AffairsListOptions = {}) =>
     request<CustomerAffairsListResponse<CustomerAffairsTicketView>>(
-      `/tickets?${query(search, status)}`,
+      `/tickets?${query(search, status, options)}`,
     ),
   ticket: (id: string) =>
     request<{
