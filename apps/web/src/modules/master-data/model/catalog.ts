@@ -189,7 +189,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'فرودگاه',
     group: 'جغرافیا',
     description:
-      'فرودگاه با کدهای رسمی، Timezone معتبر IANA و مختصات کنترل‌شده.',
+      'ثبت اولیه فرودگاه با نام، شهر و کد IATA؛ مشخصات تکمیلی در ویرایش قابل ثبت است.',
     fields: [
       nameField,
       {
@@ -225,28 +225,24 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'کد ICAO',
         type: 'text',
         placeholder: 'OIII',
-        required: true,
       },
       {
         key: 'ianaTimezone',
         label: 'Timezone IANA',
         type: 'text',
         placeholder: 'Asia/Tehran',
-        required: true,
       },
       {
         key: 'latitude',
         label: 'عرض جغرافیایی',
         type: 'number',
         placeholder: '35.6892',
-        required: true,
       },
       {
         key: 'longitude',
         label: 'طول جغرافیایی',
         type: 'number',
         placeholder: '51.3134',
-        required: true,
       },
     ],
     preview: { iataCode: 'THR', icaoCode: 'OIII', ianaTimezone: 'Asia/Tehran' },
@@ -963,12 +959,19 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'قالب Manifest',
     group: 'حمل‌ونقل',
     description:
-      'تعریف نسخه و ساختار ستون‌ها؛ فایل واقعی فقط با Reference سرویس Documents متصل می‌شود.',
+      'فایل Excel ایرلاین برای مقصد انتخابی ذخیره و نسخه قالب به‌صورت خودکار ساخته می‌شود.',
     fields: [
       nameField,
       {
         key: 'airlineId',
         label: 'ایرلاین',
+        type: 'text',
+        placeholder: '',
+        required: true,
+      },
+      {
+        key: 'destinationCityId',
+        label: 'مقصد (شهر)',
         type: 'text',
         placeholder: '',
         required: true,
