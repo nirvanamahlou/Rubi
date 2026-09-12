@@ -1,8 +1,9 @@
 # Work Assignments
 
-## CUSTOMER-AFFAIRS-REMOVE-SETTINGS — PC-B — IN_PROGRESS
+## CUSTOMER-AFFAIRS-REMOVE-SETTINGS — PC-B — DONE / VERIFIED
 
 - User requests removal of the Customer Affairs settings section. Reserve only the Rubi workspace/component CSS, scoped navigation test and own status entry on `codex/pc-b-customer-affairs-remove-settings`; remove the settings tab, route view, read-only panel and dead local styling while preserving the four remaining sections, visual polish, data, API, schema, permissions, dependencies and global system settings. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190 stays untouched. No merge.
+- Removed the module-local settings tab, view, read-only policy panel, icon import and dead policy CSS. The remaining four navigation sections are explicitly covered by the updated regression test. Scoped ESLint/formatting and the focused suite passed (4/4); production Web build/typecheck completed across 46 routes. Authenticated browser QA verified exactly the four retained Customer Affairs tabs on Web3100/PID15724 from source `5ebca3d`; the global company-settings navigation, API4190/PID12504 and stored data remain unchanged. No merge.
 
 ## CUSTOMER-AFFAIRS-REMOVE-TAGLINE — PC-B — DONE / VERIFIED
 
