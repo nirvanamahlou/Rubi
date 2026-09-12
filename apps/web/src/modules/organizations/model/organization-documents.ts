@@ -6,6 +6,11 @@ import type {
   MasterDataRecord,
 } from '@rubi/contracts';
 
+/** Documents stores expiry as a calendar date normalized to UTC day end. */
+export function formatOrganizationDocumentExpiry(value: string) {
+  return new Date(value).toLocaleDateString('fa-IR', { timeZone: 'UTC' });
+}
+
 export type OrganizationDocumentOptions = DocumentOptionsResponseV1['data'];
 
 export function organizationDocumentQuery(
