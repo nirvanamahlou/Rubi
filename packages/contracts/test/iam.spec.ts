@@ -28,8 +28,8 @@ describe('IAM public permission contract', () => {
       ]),
     );
   });
-  it('publishes the version 8 domain permission catalogs without duplicates', () => {
-    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(8);
+  it('publishes the version 9 domain permission catalogs without duplicates', () => {
+    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(9);
     expect(MASTER_DATA_PERMISSION_CODES).toEqual([
       'master_data.read',
       'master_data.create',
@@ -57,8 +57,10 @@ describe('IAM public permission contract', () => {
       'b2b.agency.manage',
       'b2b.agreement.read',
       'b2b.agreement.manage',
+      'b2b.agreement.approve',
       'b2b.credit.read',
       'b2b.credit.manage',
+      'b2b.credit.approve',
       'b2b.rate.read',
       'b2b.rate.manage',
     ]);

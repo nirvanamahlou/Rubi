@@ -44,6 +44,11 @@ import { NotificationCenter } from './notification-center';
 import { sidebarIcons } from './sidebar-icons';
 import { UserMenu } from './user-menu';
 import { HeaderToday } from './header-today';
+import {
+  PageBreadcrumbProvider,
+  usePageBreadcrumbOverride,
+  type PageBreadcrumb,
+} from './page-breadcrumbs';
 import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
 import { Input } from '../ui/form-controls';
@@ -171,7 +176,7 @@ function Navigation({
       className={cn(
         'grid min-w-0 content-start overflow-x-hidden',
         compact
-          ? 'h-full grid-rows-[repeat(17,minmax(32px,1fr))] gap-0.5'
+          ? 'h-full auto-rows-[minmax(32px,1fr)] gap-0.5'
           : 'gap-[7px] py-2',
       )}
     >
@@ -350,6 +355,7 @@ function HeaderActions() {
 
 function Breadcrumb() {
   const pathname = usePathname();
+  const pageBreadcrumbs = usePageBreadcrumbOverride(pathname);
   const searchParams = useSearchParams();
   const sectionFromRouter =
     pathname === '/marketing' ? searchParams.get('section') : null;
@@ -377,20 +383,22 @@ function Breadcrumb() {
       );
     };
   }, [pathname, sectionFromRouter]);
-  const breadcrumbs = getNavigationBreadcrumbs(
-    pathname,
-    pathname === '/marketing' ? marketingSectionKey : null,
-    pathname === '/hr'
-      ? {
-          sectionKey: searchParams.get('section'),
-          workspaceKey: searchParams.get('workspace'),
-        }
-      : null,
-  );
+  const breadcrumbs: readonly PageBreadcrumb[] =
+    pageBreadcrumbs ??
+    getNavigationBreadcrumbs(
+      pathname,
+      pathname === '/marketing' ? marketingSectionKey : null,
+      pathname === '/hr'
+        ? {
+            sectionKey: searchParams.get('section'),
+            workspaceKey: searchParams.get('workspace'),
+          }
+        : null,
+    ).map((item) => ({ ...item, key: item.href }));
   return (
     <nav
       aria-label="مسیر صفحه"
-      className="flex items-center gap-2 text-xs text-muted-foreground"
+      className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
     >
       <Link className="hover:text-foreground" href="/dashboard">
         {faMessages.shell.workspace}
@@ -399,7 +407,7 @@ function Breadcrumb() {
         breadcrumbs.map((item, index) => {
           const current = index === breadcrumbs.length - 1;
           return (
-            <span className="contents" key={item.href}>
+            <span className="contents" key={item.key}>
               <span aria-hidden="true">/</span>
               {current ? (
                 <span
@@ -408,10 +416,20 @@ function Breadcrumb() {
                 >
                   {item.title}
                 </span>
-              ) : (
+              ) : item.onSelect ? (
+                <button
+                  type="button"
+                  className="rounded-sm text-start hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  onClick={item.onSelect}
+                >
+                  {item.title}
+                </button>
+              ) : item.href ? (
                 <Link className="hover:text-foreground" href={item.href}>
                   {item.title}
                 </Link>
+              ) : (
+                <span>{item.title}</span>
               )}
             </span>
           );
@@ -550,7 +568,9 @@ function AppShellContent({ children }: { children: ReactNode }) {
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <LegalEntityProvider>
-      <AppShellContent>{children}</AppShellContent>
+      <PageBreadcrumbProvider>
+        <AppShellContent>{children}</AppShellContent>
+      </PageBreadcrumbProvider>
     </LegalEntityProvider>
   );
 }

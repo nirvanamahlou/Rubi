@@ -11,14 +11,15 @@ import {
   LayoutDashboard,
   ShieldCheck,
   ShoppingCart,
-  Users,
   Pencil,
   Trash2,
   Wallet,
   type LucideIcon,
 } from 'lucide-react';
 import {
+  useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -26,7 +27,12 @@ import {
 } from 'react';
 import { cooperationLabel } from '../model/presentation';
 import { Button } from '@/components/ui/button';
-import { OrganizationDocumentsPanel } from './organization-documents-panel';
+import { OrganizationFinancePreview } from './organization-finance-preview';
+import { OrganizationActivityPanel } from './organization-activity-panel';
+import {
+  usePageBreadcrumbs,
+  type PageBreadcrumb,
+} from '@/components/layout/page-breadcrumbs';
 
 const sections = [
   {
@@ -50,12 +56,10 @@ const sections = [
     icon: KeyRound,
     accent: '#7958db',
     tint: '#f1edff',
-    description: 'کاربران سازمان، نقش‌ها، شعب مجاز و زنجیره تأیید',
+    description: 'کاربران سازمان، نقش‌ها، بخش‌های مجاز و تاریخچه دسترسی',
     tabs: [
       ['users', 'کاربران سازمان'],
-      ['roles', 'نقش‌های سازمانی'],
-      ['scopes', 'شعب و خدمات مجاز'],
-      ['approvers', 'تأییدکنندگان'],
+      ['history', 'تاریخچه دسترسی'],
     ],
   },
   {
@@ -64,40 +68,13 @@ const sections = [
     icon: FileText,
     accent: '#e98923',
     tint: '#fff4e7',
-    description: 'قرارداد چارچوب، نرخ توافقی، تخفیف، پورسانت و اسناد',
+    description: 'قرارداد چارچوب، اعتبار و تضمین، نرخ توافقی، تخفیف و پورسانت',
     tabs: [
       ['framework', 'قرارداد چارچوب'],
+      ['credit', 'اعتبار و تضمین'],
       ['rates', 'نرخ‌های توافقی'],
       ['discounts', 'تخفیف'],
       ['commission', 'پورسانت'],
-      ['documents', 'اسناد قرارداد'],
-    ],
-  },
-  {
-    id: 'credit',
-    title: 'اعتبار و تضمین',
-    icon: ShieldCheck,
-    accent: '#12a97d',
-    tint: '#e8f9f3',
-    description: 'سیاست اعتبار، مانده، افزایش موقت و تضمین‌های فعال',
-    tabs: [
-      ['policy', 'سیاست اعتبار'],
-      ['exposure', 'Exposure و مانده'],
-      ['temporary', 'افزایش موقت'],
-      ['guarantees', 'تضمین‌ها'],
-    ],
-  },
-  {
-    id: 'sales',
-    title: 'عملیات فروش',
-    icon: ShoppingCart,
-    accent: '#e25579',
-    tint: '#fff0f4',
-    description: 'مسافران مجاز و نمای فقط‌خواندنی قرارداد فروش و سفارش',
-    tabs: [
-      ['travelers', 'مسافران سازمانی'],
-      ['contracts', 'قراردادهای فروش'],
-      ['orders', 'سفارش‌ها و رزروها'],
     ],
   },
   {
@@ -132,7 +109,17 @@ const sections = [
 ] as const;
 
 export type OperationalView =
-  'overview' | 'address' | 'credit' | 'agreements' | 'rates';
+  | 'overview'
+  | 'address'
+  | 'credit'
+  | 'temporary'
+  | 'guarantees'
+  | 'agreements'
+  | 'rates'
+  | 'discounts'
+  | 'commission'
+  | 'manager'
+  | 'profile';
 
 export function CorporateMetric({
   label,
@@ -194,8 +181,11 @@ export function CorporateProfile({
   onDelete,
   canDelete,
   contacts,
+  signatories,
+  access,
   operations,
   logo,
+  overview,
 }: {
   organization: MasterDataRecord;
   onClose: () => void;
@@ -204,11 +194,19 @@ export function CorporateProfile({
   onDelete: () => void;
   canDelete: boolean;
   contacts: ReactNode;
-  operations: (view: OperationalView) => ReactNode;
+  signatories?: ReactNode;
+  access?: (tab: string) => ReactNode;
+  operations: (
+    view: OperationalView,
+    onReviewCooperation: () => void,
+  ) => ReactNode;
   logo?: ReactNode;
+  overview?: ReactNode;
 }) {
   const [screen, setScreen] = useState('home');
   const [tab, setTab] = useState('profile');
+  const [creditTab, setCreditTab] = useState('policy');
+  const inCredit = screen === 'contracts' && tab === 'credit';
   const roles = String(organization.attributes.roleCodes ?? '').split(',');
   const entityLabel =
     roles.includes('AGENCY') && !roles.includes('CORPORATE_CUSTOMER')
@@ -220,13 +218,55 @@ export function CorporateProfile({
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [screen]);
   const current = sections.find((section) => section.id === screen);
-  const go = (id: string) => {
+  const focusSection = useCallback((id: string) => {
+    window.requestAnimationFrame(() => {
+      const section = document.getElementById(`organization-section-${id}`);
+      section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      section?.focus({ preventScroll: true });
+    });
+  }, []);
+  useEffect(() => {
+    if (screen === 'organization' && tab !== 'profile') focusSection(tab);
+  }, [screen, tab, focusSection]);
+  const go = useCallback((id: string, requestedTab?: string) => {
     setScreen(id);
     setTab(
-      sections.find((section) => section.id === id)?.tabs[0][0] ?? 'profile',
+      requestedTab ??
+        sections.find((section) => section.id === id)?.tabs[0][0] ??
+        'profile',
     );
-  };
+  }, []);
   const title = current?.title ?? `نمای ۳۶۰ درجه ${entityLabel}`;
+  const breadcrumbs = useMemo<readonly PageBreadcrumb[]>(
+    () => [
+      {
+        key: 'organizations',
+        title: 'آژانس‌ها و مشتریان سازمانی',
+        onSelect: onClose,
+      },
+      {
+        key: organization.id,
+        title: organization.name,
+        onSelect: () => go('home'),
+      },
+      ...(current
+        ? [
+            {
+              key: current.id,
+              title: current.title,
+              ...(inCredit
+                ? { onSelect: () => go('contracts', 'framework') }
+                : {}),
+            },
+          ]
+        : []),
+      ...(inCredit
+        ? [{ key: 'contract-credit', title: 'اعتبار و تضمین' }]
+        : []),
+    ],
+    [onClose, organization.id, organization.name, go, current, inCredit],
+  );
+  usePageBreadcrumbs('/organizations', breadcrumbs);
   const operationalView: OperationalView | undefined =
     screen === 'organization' && tab === 'branches'
       ? 'address'
@@ -234,17 +274,18 @@ export function CorporateProfile({
         ? 'agreements'
         : screen === 'contracts' &&
             ['rates', 'discounts', 'commission'].includes(tab)
-          ? 'rates'
-          : screen === 'credit' && ['policy', 'exposure'].includes(tab)
-            ? 'credit'
-            : undefined;
+          ? (tab as 'rates' | 'discounts' | 'commission')
+          : screen === 'organization' && tab === 'manager'
+            ? 'manager'
+            : inCredit && creditTab === 'guarantees'
+              ? 'guarantees'
+              : inCredit && ['policy', 'temporary'].includes(creditTab)
+                ? creditTab === 'temporary'
+                  ? 'temporary'
+                  : 'credit'
+                : undefined;
   return (
     <div className="corporate-profile">
-      <div className="crumb">
-        <button onClick={onClose}>آژانس‌ها و مشتریان سازمانی</button>
-        <span>‹</span>
-        {title}
-      </div>
       <div className="page-head">
         <div className="title">
           <h1 ref={heading} tabIndex={-1}>
@@ -309,6 +350,7 @@ export function CorporateProfile({
       </section>
       {screen === 'home' ? (
         <>
+          {overview}
           <div className="boundary-note">
             <Info size={20} />
             <span>
@@ -400,21 +442,67 @@ export function CorporateProfile({
         </>
       ) : (
         <>
-          <nav className="tabs" aria-label={`صفحه‌های ${title}`}>
-            {current?.tabs.map(([id, label]) => (
-              <button
-                className={`tab ${tab === id ? 'active' : ''}`}
-                aria-pressed={tab === id}
-                key={id}
-                onClick={() => setTab(id)}
-              >
-                {label}
-              </button>
-            ))}
+          <nav
+            className="tabs"
+            aria-label={
+              screen === 'organization'
+                ? 'بخش‌های مشخصات و نقش‌ها'
+                : `صفحه‌های ${title}`
+            }
+          >
+            {current?.tabs
+              .filter(([id]) => screen !== 'organization' || id === 'profile')
+              .map(([id, label]) => (
+                <button
+                  className={`tab ${tab === id ? 'active' : ''}`}
+                  aria-pressed={tab === id}
+                  key={id}
+                  onClick={() => {
+                    setTab(id);
+                    if (screen === 'organization') focusSection(id);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
           </nav>
-          {screen === 'organization' && tab === 'profile' ? (
-            <section className="grid-2">
-              <div className="panel">
+          {inCredit ? (
+            <nav className="tabs" aria-label="بخش‌های اعتبار و تضمین قرارداد">
+              {(
+                [
+                  ['policy', 'سیاست اعتبار'],
+                  ['guarantees', 'تضمین‌ها'],
+                  ['exposure', 'Exposure و مانده'],
+                  ['temporary', 'افزایش موقت'],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  className={`tab ${creditTab === id ? 'active' : ''}`}
+                  aria-pressed={creditTab === id}
+                  onClick={() => setCreditTab(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+          ) : null}
+          {inCredit && creditTab === 'temporary' ? (
+            <p className="boundary-note">
+              افزایش اعتبار با ثبت اصلاحیه قرارداد، تاریخ اعتبار مشخص و تأیید
+              مستقل انجام می‌شود.
+            </p>
+          ) : null}
+          {screen === 'organization' ? (
+            <section
+              className="grid-2 items-start"
+              aria-label="مشخصات و نقش‌ها و اطلاعات مرتبط"
+            >
+              <div
+                className="panel scroll-mt-28"
+                id="organization-section-profile"
+                tabIndex={-1}
+              >
                 <header className="panel-head">
                   <div className="panel-title">
                     <Building2 size={20} />
@@ -431,7 +519,11 @@ export function CorporateProfile({
                 <div className="panel-body summary-list">
                   {[
                     ['نام سازمان', organization.name],
-                    ['شناسه ملی', 'در دسترس نیست'],
+                    [
+                      'شناسه ملی شرکت',
+                      organization.attributes.nationalId ||
+                        'ثبت نشده؛ از «ویرایش اطلاعات» وارد کنید',
+                    ],
                     [
                       'نوع شخصیت',
                       organization.attributes.personType === 'LEGAL'
@@ -459,40 +551,64 @@ export function CorporateProfile({
                   ))}
                 </div>
               </div>
-              <CorporateUnavailable
-                title="چرخه وضعیت همکاری"
-                description="تاریخچه تأیید و تغییر وضعیت همکاری هنوز در دسترس نیست."
-              />
+              <div
+                id="organization-section-manager"
+                tabIndex={-1}
+                className="scroll-mt-28"
+              >
+                {operations('profile', () => go('contracts', 'framework'))}
+              </div>
+              <div
+                id="organization-section-branches"
+                tabIndex={-1}
+                className="scroll-mt-28"
+              >
+                {operations('address', () => go('contracts', 'framework'))}
+              </div>
+              <div
+                id="organization-section-representatives"
+                tabIndex={-1}
+                className="scroll-mt-28"
+              >
+                {contacts}
+              </div>
+              <div
+                id="organization-section-signatories"
+                tabIndex={-1}
+                className="scroll-mt-28 lg:col-span-2"
+              >
+                {signatories}
+              </div>
             </section>
-          ) : screen === 'organization' && tab === 'representatives' ? (
-            <section className="panel">
-              <header className="panel-head">
-                <div>
-                  <div className="panel-title">
-                    <Users size={20} />
-                    نمایندگان سازمان
-                  </div>
-                  <div className="panel-note">
-                    اطلاعات تماس به‌صورت پوشیده نمایش داده می‌شوند.
-                  </div>
-                </div>
-              </header>
-              <div className="panel-body">{contacts}</div>
-            </section>
-          ) : screen === 'contracts' && tab === 'documents' ? (
-            <OrganizationDocumentsPanel
+          ) : screen === 'access' && access ? (
+            access(tab)
+          ) : screen === 'reports' ? (
+            <OrganizationActivityPanel
               key={organization.id}
+              organizationId={organization.id}
+              tab={tab}
+            />
+          ) : screen === 'finance' ? (
+            <OrganizationFinancePreview
               organization={organization}
+              key={organization.id}
+              organizationName={organization.name}
+              tab={tab}
+            />
+          ) : inCredit && creditTab === 'exposure' ? (
+            <CorporateUnavailable
+              title="Exposure و مانده مالی"
+              description="مانده واقعی و اعتبار قابل استفاده پس از اتصال سرویس مالی نمایش داده می‌شود. نمونه‌های مالی را در بخش «مالی و تسویه» ببینید."
             />
           ) : operationalView ? (
-            operations(operationalView)
+            operations(operationalView, () => go('contracts', 'framework'))
           ) : (
             <CorporateUnavailable
               title={current?.tabs.find(([id]) => id === tab)?.[1] ?? title}
               description={
                 screen === 'finance'
                   ? 'اطلاعات مالی هنوز در دسترس نیست؛ صورت‌حساب و تسویه پس از اتصال سرویس مالی نمایش داده می‌شوند.'
-                  : screen === 'credit'
+                  : inCredit
                     ? 'ثبت و تأیید درخواست اعتبار و تضمین هنوز آماده نیست.'
                     : screen === 'access'
                       ? 'دسترسی کاربران این سازمان هنوز به سامانه هویت و تأیید متصل نشده است.'

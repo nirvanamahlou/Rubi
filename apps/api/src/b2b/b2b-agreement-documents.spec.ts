@@ -32,6 +32,55 @@ function setup(records: DocumentListItemV1[] = [record]) {
   };
 }
 describe('B2B agreement document reference boundary', () => {
+  it('allows pending scan only for a draft, never for submission or approval', async () => {
+    const pending = {
+      ...record,
+      currentVersion: {
+        ...record.currentVersion,
+        scanStatus: 'PENDING_SCAN' as const,
+      },
+    };
+    const { service } = setup([pending]);
+    await expect(
+      service.assertDraftReference(
+        'document',
+        'organization',
+        'branch',
+        actor,
+        true,
+      ),
+    ).resolves.toBeDefined();
+    await expect(
+      service.assertDraftReference(
+        'document',
+        'organization',
+        'branch',
+        actor,
+        false,
+      ),
+    ).rejects.toThrow('بررسی امنیتی');
+    for (const scanStatus of [
+      'QUARANTINED',
+      'INFECTED',
+      'SCAN_FAILED',
+    ] as const) {
+      const denied = setup([
+        {
+          ...pending,
+          currentVersion: { ...pending.currentVersion, scanStatus },
+        },
+      ]).service;
+      await expect(
+        denied.assertDraftReference(
+          'document',
+          'organization',
+          'branch',
+          actor,
+          true,
+        ),
+      ).rejects.toThrow();
+    }
+  });
   it('validates through the public Documents source/branch/domain query', async () => {
     const { service, list } = setup();
     await service.assertDraftReference(

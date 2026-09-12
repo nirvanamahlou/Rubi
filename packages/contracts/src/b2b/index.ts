@@ -1,4 +1,6 @@
 export const B2B_CONTRACT_VERSION = 1 as const;
+export * from './agreement-workflow';
+export * from './agreement-validation';
 export const B2B_API_PREFIX = '/api/v1/b2b' as const;
 
 export type AgencyOperationalStatus =
@@ -14,6 +16,7 @@ export interface B2bAgencyProfileV1 {
   id: string;
   organizationId: string;
   branchId: string;
+  role?: 'AGENCY' | 'CORPORATE_CUSTOMER';
   accountManagerUserId: string | null;
   status: AgencyOperationalStatus;
   displayOrder: number;
@@ -148,6 +151,22 @@ export interface CreateB2bAgencyAgreedRateRequestV1 {
   currencyCode?: string | null;
   validFrom: string;
   validTo?: string | null;
+  isActive?: boolean;
+}
+
+export interface UpdateB2bAgencyAgreedRateRequestV1 extends CreateB2bAgencyAgreedRateRequestV1 {
+  version: number;
+}
+
+export interface B2bRecordDeleteRequestV1 {
+  branchId: string;
+  version: number;
+  reason: string;
+}
+
+export interface B2bAgencyProfileDetailsV1 {
+  profile: B2bAgencyProfileV1 | null;
+  accountManagers: readonly { id: string; displayName: string }[];
 }
 
 export interface FinancePartyExposureQueryV1 {

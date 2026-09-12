@@ -35,6 +35,7 @@ function formatCalendarNumber(value: number, system: CalendarSystem): string {
 
 export interface DatePickerProps {
   defaultCalendarSystem?: CalendarSystem;
+  withinDialog?: boolean;
   gregorianEnglish?: boolean;
   id?: string;
   name?: string;
@@ -52,6 +53,7 @@ export interface DatePickerProps {
 }
 
 export function DatePicker({
+  withinDialog = false,
   className,
   gregorianEnglish = false,
   defaultCalendarSystem = 'persian',
@@ -77,6 +79,7 @@ export function DatePicker({
   const [calendarView, setCalendarView] = React.useState<CalendarView>('days');
   const [yearGridStart, setYearGridStart] = React.useState(0);
   const [open, setOpen] = React.useState(false);
+  const [modalHost, setModalHost] = React.useState<HTMLElement | null>(null);
   const [popoverPlacement, setPopoverPlacement] = React.useState<
     'above' | 'below'
   >('below');
@@ -160,6 +163,9 @@ export function DatePicker({
 
   React.useLayoutEffect(() => {
     if (!open) return;
+    if (withinDialog && popoverRef.current?.hasAttribute('popover')) {
+      popoverRef.current.showPopover();
+    }
     positionPopover();
     const observer =
       typeof ResizeObserver === 'undefined'
@@ -173,7 +179,14 @@ export function DatePicker({
       window.removeEventListener('resize', positionPopover);
       window.removeEventListener('scroll', positionPopover, true);
     };
-  }, [calendarSystem, calendarView, includeTime, open, positionPopover]);
+  }, [
+    calendarSystem,
+    calendarView,
+    includeTime,
+    open,
+    positionPopover,
+    withinDialog,
+  ]);
 
   const emit = (nextValue: string) => {
     if (value === undefined) setInternalValue(nextValue);
@@ -257,6 +270,11 @@ export function DatePicker({
         id={id}
         onClick={() => {
           if (!open) {
+            setModalHost(
+              withinDialog && rootRef.current?.closest('[role="dialog"]')
+                ? rootRef.current
+                : null,
+            );
             const parsed = parseIsoDate(currentValue);
             if (parsed) setAnchor(parsed);
             setCalendarView('days');
@@ -285,6 +303,14 @@ export function DatePicker({
       {open && typeof document !== 'undefined'
         ? createPortal(
             <div
+              popover={modalHost ? 'manual' : undefined}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  event.stopPropagation();
+                  setOpen(false);
+                  triggerRef.current?.focus();
+                }
+              }}
               aria-label={t('انتخاب تاریخ', 'Select date')}
               className="fixed z-[70] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-2xl border border-primary/25 bg-popover p-3 text-popover-foreground shadow-2xl shadow-primary/15"
               dir={english ? 'ltr' : 'rtl'}
@@ -292,13 +318,17 @@ export function DatePicker({
               id={popoverId}
               data-placement={popoverPlacement}
               role="dialog"
-              style={
-                popoverPosition ?? {
+              style={{
+                margin: 0,
+                right: 'auto',
+                bottom: 'auto',
+                pointerEvents: 'auto',
+                ...(popoverPosition ?? {
                   left: '1rem',
                   top: '1rem',
                   visibility: 'hidden',
-                }
-              }
+                }),
+              }}
             >
               <div
                 aria-label={t('نوع تقویم', 'Calendar system')}
@@ -538,8 +568,21 @@ export function DatePicker({
                   {t('انتخاب تاریخ الزامی است.', 'A date is required.')}
                 </span>
               ) : null}
+              {withinDialog && !required && currentValue ? (
+                <button
+                  type="button"
+                  className="mt-3 w-full rounded-lg border p-2 text-sm"
+                  onClick={() => {
+                    emit('');
+                    setOpen(false);
+                    triggerRef.current?.focus();
+                  }}
+                >
+                  پاک‌کردن تاریخ
+                </button>
+              ) : null}
             </div>,
-            document.body,
+            modalHost ?? document.body,
           )
         : null}
     </div>

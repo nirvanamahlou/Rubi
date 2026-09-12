@@ -30,6 +30,7 @@ export function MasterDataReferenceSelector({
   scopeValue,
   refreshKey = 0,
   onManage,
+  closeOnSelect = false,
 }: {
   config: ReferenceFieldConfig;
   disabled: boolean;
@@ -41,7 +42,9 @@ export function MasterDataReferenceSelector({
   scopeValue?: string;
   refreshKey?: number;
   onManage?: (record?: MasterDataRecord) => void;
+  closeOnSelect?: boolean;
 }) {
+  const [expanded, setExpanded] = useState(true);
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState<readonly MasterDataRecord[]>([]);
   const [savedSelection, setSavedSelection] = useState<MasterDataRecord | null>(
@@ -153,6 +156,7 @@ export function MasterDataReferenceSelector({
   function choose(optionValue: string) {
     if (!config.multiple) {
       onChange(optionValue);
+      if (closeOnSelect) setExpanded(false);
       return;
     }
     onChange(
@@ -260,6 +264,7 @@ export function MasterDataReferenceSelector({
             onClear={() => {
               onChange('');
               setQuery('');
+              setExpanded(true);
             }}
           />
         </div>
@@ -272,17 +277,28 @@ export function MasterDataReferenceSelector({
         <Input
           aria-autocomplete="list"
           aria-controls={`${id}-options`}
-          aria-expanded={state === 'ready'}
+          aria-expanded={(!closeOnSelect || expanded) && state === 'ready'}
           aria-required={required || undefined}
           className="pe-10"
           id={id}
-          onChange={(event) => setQuery(event.target.value)}
+          onFocus={() => setExpanded(true)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && closeOnSelect && expanded) {
+              event.stopPropagation();
+              setExpanded(false);
+            }
+          }}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setExpanded(true);
+          }}
           placeholder="جست‌وجوی عنوان یا کد"
           role="combobox"
           value={query}
         />
       </div>
       <div
+        hidden={closeOnSelect && !expanded}
         aria-multiselectable={config.multiple || undefined}
         className="max-h-48 overflow-y-auto rounded-xl border border-border p-2"
         id={`${id}-options`}

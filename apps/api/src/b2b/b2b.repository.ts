@@ -1,4 +1,9 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type {
   AgencyOperationalStatus,
   B2bAgreementStatus,
@@ -8,9 +13,31 @@ import { Prisma } from '@rubi/database';
 
 import { DatabaseService } from '../database/database.service';
 
+type RateWrite = {
+  profileId: string;
+  branchId: string;
+  serviceReference: string;
+  title: string;
+  kind: B2bAgreedRateKind;
+  value: Prisma.Decimal;
+  currencyCode: string | null;
+  validFrom: Date;
+  validTo: Date | null;
+  isActive?: boolean;
+  actorUserId: string;
+};
+
 const profileInclude = {
   agreements: { orderBy: { startsAt: 'desc' } },
-  creditPolicy: true,
+  creditPolicies: {
+    where: {
+      OR: [
+        { revisionId: null },
+        { revision: { status: 'APPROVED', activeFor: { isNot: null } } },
+      ],
+    },
+    orderBy: { currencyCode: 'asc' },
+  },
   agreedRates: {
     where: { isActive: true },
     orderBy: [{ validFrom: 'desc' }, { title: 'asc' }],
@@ -29,8 +56,21 @@ export class B2bRepository {
 
   findProfile(organizationId: string, branchId: string) {
     return this.database.client.agencyOperationalProfile.findUnique({
-      where: { organizationId_branchId: { organizationId, branchId } },
+      where: {
+        organizationId_branchId_role: {
+          organizationId,
+          branchId,
+          role: 'AGENCY',
+        },
+      },
       include: profileInclude,
+    });
+  }
+
+  listRates(organizationId: string, branchId: string) {
+    return this.database.client.b2bAgencyAgreedRate.findMany({
+      where: { profile: { organizationId, branchId, role: 'AGENCY' } },
+      orderBy: [{ validFrom: 'desc' }, { title: 'asc' }],
     });
   }
 
@@ -47,9 +87,10 @@ export class B2bRepository {
       await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`b2b-profile:${input.organizationId}:${input.branchId}`}, 0))::text`;
       const before = await transaction.agencyOperationalProfile.findUnique({
         where: {
-          organizationId_branchId: {
+          organizationId_branchId_role: {
             organizationId: input.organizationId,
             branchId: input.branchId,
+            role: 'AGENCY',
           },
         },
       });
@@ -173,8 +214,8 @@ export class B2bRepository {
     actorUserId: string;
   }) {
     return this.database.client.$transaction(async (transaction) => {
-      const before = await transaction.b2bAgencyCreditPolicy.findUnique({
-        where: { profileId: input.profileId },
+      const before = await transaction.b2bAgencyCreditPolicy.findFirst({
+        where: { profileId: input.profileId, revisionId: null },
       });
       let row;
       if (!before) {
@@ -226,19 +267,7 @@ export class B2bRepository {
     });
   }
 
-  async createRate(input: {
-    profileId: string;
-    branchId: string;
-    code: string;
-    serviceReference: string;
-    title: string;
-    kind: B2bAgreedRateKind;
-    value: Prisma.Decimal;
-    currencyCode: string | null;
-    validFrom: Date;
-    validTo: Date | null;
-    actorUserId: string;
-  }) {
+  async createRate(input: RateWrite & { code: string }) {
     return this.database.client.$transaction(async (transaction) => {
       // Serialize checks and writes for this profile without touching another module.
       // Transaction-scoped PostgreSQL advisory locks are released on rollback too.
@@ -258,7 +287,7 @@ export class B2bRepository {
         },
         select: { id: true },
       });
-      if (overlapping)
+      if ((input.isActive ?? true) && overlapping)
         throw new ConflictException({
           code: 'B2B_RATE_OVERLAP',
           message:
@@ -275,6 +304,7 @@ export class B2bRepository {
           currencyCode: input.currencyCode,
           validFrom: input.validFrom,
           validTo: input.validTo,
+          isActive: input.isActive ?? true,
           createdByUserId: input.actorUserId,
           updatedByUserId: input.actorUserId,
         },
@@ -290,6 +320,124 @@ export class B2bRepository {
         },
       });
       return row;
+    });
+  }
+
+  async updateRate(input: RateWrite & { id: string; expectedVersion: number }) {
+    return this.database.client.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`b2b-rate:${input.profileId}`}, 0))::text`;
+      const before = await transaction.b2bAgencyAgreedRate.findFirst({
+        where: { id: input.id, profileId: input.profileId },
+      });
+      if (!before)
+        throw new NotFoundException('شرایط تجاری در این پرونده یافت نشد.');
+      if (before.version !== input.expectedVersion)
+        throw new ConflictException('شرایط تجاری هم‌زمان تغییر کرده است.');
+      if (input.isActive ?? true) {
+        const overlap = await transaction.b2bAgencyAgreedRate.findFirst({
+          where: {
+            id: { not: input.id },
+            profileId: input.profileId,
+            isActive: true,
+            serviceReference: {
+              equals: input.serviceReference,
+              mode: 'insensitive',
+            },
+            kind: input.kind,
+            currencyCode: input.currencyCode,
+            ...(input.validTo ? { validFrom: { lte: input.validTo } } : {}),
+            OR: [{ validTo: null }, { validTo: { gte: input.validFrom } }],
+          },
+          select: { id: true },
+        });
+        if (overlap)
+          throw new ConflictException(
+            'بازه این شرایط با نرخ فعال دیگری هم‌پوشانی دارد.',
+          );
+      }
+      const claimed = await transaction.b2bAgencyAgreedRate.updateMany({
+        where: {
+          id: input.id,
+          profileId: input.profileId,
+          version: input.expectedVersion,
+        },
+        data: {
+          serviceReference: input.serviceReference,
+          title: input.title,
+          kind: input.kind,
+          value: input.value,
+          currencyCode: input.currencyCode,
+          validFrom: input.validFrom,
+          validTo: input.validTo,
+          isActive: input.isActive ?? true,
+          updatedByUserId: input.actorUserId,
+          version: { increment: 1 },
+        },
+      });
+      if (claimed.count !== 1)
+        throw new ConflictException('شرایط تجاری هم‌زمان تغییر کرده است.');
+      const row = await transaction.b2bAgencyAgreedRate.findUniqueOrThrow({
+        where: { id: input.id },
+      });
+      await transaction.b2bAuditEvent.create({
+        data: {
+          actorUserId: input.actorUserId,
+          branchId: input.branchId,
+          action: 'b2b.rate.update',
+          entityType: 'B2bAgencyAgreedRate',
+          entityId: row.id,
+          beforeSnapshot: snapshot(before),
+          afterSnapshot: snapshot(row),
+        },
+      });
+      return row;
+    });
+  }
+
+  async deleteRate(input: {
+    organizationId: string;
+    branchId: string;
+    id: string;
+    expectedVersion: number;
+    actorUserId: string;
+    reason: string;
+  }) {
+    return this.database.client.$transaction(async (transaction) => {
+      const before = await transaction.b2bAgencyAgreedRate.findFirst({
+        where: {
+          id: input.id,
+          profile: {
+            organizationId: input.organizationId,
+            branchId: input.branchId,
+            role: 'AGENCY',
+          },
+        },
+      });
+      if (!before)
+        throw new NotFoundException('شرایط تجاری در این پرونده یافت نشد.');
+      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`b2b-rate:${before.profileId}`}, 0))::text`;
+      if (before.version !== input.expectedVersion)
+        throw new ConflictException('شرایط تجاری هم‌زمان تغییر کرده است.');
+      const result = await transaction.b2bAgencyAgreedRate.deleteMany({
+        where: {
+          id: before.id,
+          profileId: before.profileId,
+          version: input.expectedVersion,
+        },
+      });
+      if (result.count !== 1)
+        throw new ConflictException('شرایط تجاری هم‌زمان تغییر کرده است.');
+      await transaction.b2bAuditEvent.create({
+        data: {
+          actorUserId: input.actorUserId,
+          branchId: input.branchId,
+          action: 'b2b.rate.delete',
+          entityType: 'B2bAgencyAgreedRate',
+          entityId: before.id,
+          beforeSnapshot: snapshot(before),
+          afterSnapshot: { deleted: true, reason: input.reason },
+        },
+      });
     });
   }
 }

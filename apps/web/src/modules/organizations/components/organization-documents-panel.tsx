@@ -28,6 +28,12 @@ import {
   DocumentsApiError,
 } from '@/modules/documents/api/client';
 import { agencyClient } from '../api/agency-client';
+import { downloadOrganizationXlsx } from '../model/organization-xlsx';
+import { DossierDateFilters } from './dossier-date-filters';
+import {
+  dossierDateBoundary,
+  inDossierDateRange,
+} from '../model/dossier-date-range';
 import {
   canReadOrganizationDocuments,
   organizationDocumentForm,
@@ -57,8 +63,10 @@ function failure(error: unknown): string {
 
 export function OrganizationDocumentsPanel({
   organization,
+  folderLabel,
 }: {
   organization: MasterDataRecord;
+  folderLabel?: string;
 }) {
   const [options, setOptions] = useState<OrganizationDocumentOptions>();
   const [permissions, setPermissions] = useState<readonly IamPermissionCode[]>(
@@ -66,6 +74,7 @@ export function OrganizationDocumentsPanel({
   );
   const [branch, setBranch] = useState('');
   const [page, setPage] = useState(1);
+  const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [validity, setValidity] = useState<DocumentValidityFilter>('ALL');
   const [records, setRecords] = useState<readonly DocumentListItemV1[]>([]);
   const [total, setTotal] = useState(0);
@@ -84,6 +93,10 @@ export function OrganizationDocumentsPanel({
     setRecords([]);
     setError('');
     try {
+      if (dateRange.from && dateRange.to && dateRange.from > dateRange.to) {
+        setTotal(0);
+        return;
+      }
       const session = await agencyClient.session();
       if (sequence !== request.current) return;
       setPermissions(session.permissions);
@@ -103,17 +116,41 @@ export function OrganizationDocumentsPanel({
         setBranch(selectedBranch);
         return;
       }
-      const list = await documentsApi.list(
-        organizationDocumentQuery(
+      const query = {
+        ...organizationDocumentQuery(
           organization.id,
           selectedBranch,
-          page,
+          dateRange.from || dateRange.to ? 1 : page,
           validity,
         ),
-      );
+        ...(folderLabel ? { search: folderLabel } : {}),
+        ...(dateRange.from
+          ? { createdFrom: dossierDateBoundary(dateRange.from) }
+          : {}),
+        ...(dateRange.to
+          ? { createdTo: dossierDateBoundary(dateRange.to, true) }
+          : {}),
+      };
+      const list = await documentsApi.list(query);
       if (sequence !== request.current) return;
-      setRecords(list.data);
-      setTotal(list.meta.total);
+      if (dateRange.from || dateRange.to) {
+        // Documents filters by UTC calendar day. Fetch the covering days, then
+        // apply the exact Tehran date range before pagination and export.
+        const all = [...list.data];
+        for (let next = 2; next <= Math.ceil(list.meta.total / 20); next++) {
+          const result = await documentsApi.list({ ...query, page: next });
+          if (sequence !== request.current) return;
+          all.push(...result.data);
+        }
+        const matching = all.filter((row) =>
+          inDossierDateRange(row.createdAt, dateRange),
+        );
+        setRecords(matching.slice((page - 1) * 20, page * 20));
+        setTotal(matching.length);
+      } else {
+        setRecords(list.data);
+        setTotal(list.meta.total);
+      }
     } catch (caught) {
       if (sequence === request.current) {
         setTotal(0);
@@ -122,7 +159,7 @@ export function OrganizationDocumentsPanel({
     } finally {
       if (sequence === request.current) setLoading(false);
     }
-  }, [organization.id, branch, page, validity]);
+  }, [organization.id, branch, page, validity, folderLabel, dateRange]);
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     return () => {
@@ -135,11 +172,12 @@ export function OrganizationDocumentsPanel({
       <header className="panel-head">
         <div>
           <h2 className="panel-title">
-            <FileText size={20} /> اسناد سازمان و همکاری
+            <FileText size={20} /> {folderLabel ?? 'اسناد سازمان و همکاری'}
           </h2>
           <p className="panel-note">
-            قرارداد، الحاقیه، مجوز و تضمین؛ نسخه‌ها و دریافت فایل در آرشیو اسناد
-            در دسترس‌اند.
+            {folderLabel
+              ? 'مشخصات و فایل مدارک این بخش را ثبت کنید؛ نسخه‌ها و دانلود فایل در اسناد و فایل‌ها در دسترس‌اند. این ثبت، تراکنش حسابداری ایجاد نمی‌کند.'
+              : 'قرارداد، الحاقیه، مجوز و تضمین؛ نسخه‌ها و دریافت فایل در آرشیو اسناد در دسترس‌اند.'}
           </p>
         </div>
         <Button
@@ -154,11 +192,40 @@ export function OrganizationDocumentsPanel({
             !permissions.includes('documents.upload')
           }
         >
-          <FileUp className="size-4" /> بارگذاری سند
+          <FileUp className="size-4" />{' '}
+          {folderLabel ? 'ثبت مشخصات و فایل سند' : 'بارگذاری سند'}
         </Button>
       </header>
       <div className="panel-body space-y-4">
-        <div className="grid items-end gap-3 sm:grid-cols-3">
+        {folderLabel ? (
+          <Button
+            variant="outline"
+            disabled={loading || !!error || !records.length}
+            onClick={() =>
+              downloadOrganizationXlsx('financial-documents.xlsx', [
+                ['سازمان', 'بخش', 'عنوان سند', 'شناسه', 'وضعیت بررسی'],
+                ...records.map((r) => [
+                  organization.name,
+                  folderLabel,
+                  r.title,
+                  r.id,
+                  scanLabels[r.currentVersion.scanStatus],
+                ]),
+              ])
+            }
+          >
+            خروجی Excel اسناد این صفحه
+          </Button>
+        ) : null}
+        <div className="dossier-filter-grid">
+          <DossierDateFilters
+            value={dateRange}
+            onChange={(value) => {
+              setDateRange(value);
+              setPage(1);
+            }}
+            basis="ثبت سند"
+          />
           <label className="space-y-1 text-sm">
             شعبه سند
             <select
@@ -289,6 +356,7 @@ export function OrganizationDocumentsPanel({
       </div>
       {upload && options && (
         <OrganizationDocumentUpload
+          folderLabel={folderLabel}
           organization={organization}
           branchId={branch}
           options={options}
@@ -311,6 +379,7 @@ export function OrganizationDocumentsPanel({
 
 function OrganizationDocumentUpload({
   organization,
+  folderLabel,
   branchId,
   options,
   permissions,
@@ -318,6 +387,7 @@ function OrganizationDocumentUpload({
   onSaved,
 }: {
   organization: MasterDataRecord;
+  folderLabel?: string | undefined;
   branchId: string;
   options: OrganizationDocumentOptions;
   permissions: readonly IamPermissionCode[];
@@ -357,7 +427,12 @@ function OrganizationDocumentUpload({
       if (!file) throw new Error('فایل سند را انتخاب کنید.');
       form = organizationDocumentForm(
         organization,
-        values,
+        {
+          ...values,
+          title: folderLabel
+            ? `${folderLabel} — ${values.title}`
+            : values.title,
+        },
         file,
         options,
         permissions,
@@ -400,7 +475,9 @@ function OrganizationDocumentUpload({
           if (pending.current) event.preventDefault();
         }}
       >
-        <DialogTitle>بارگذاری سند سازمان</DialogTitle>
+        <DialogTitle>
+          {folderLabel ? `ثبت ${folderLabel}` : 'بارگذاری سند سازمان'}
+        </DialogTitle>
         <DialogDescription>
           سند به «{organization.name}» در شعبه انتخاب‌شده متصل می‌شود. ثبت سند
           به معنی تأیید قرارداد یا تضمین نیست.
@@ -467,6 +544,7 @@ function OrganizationDocumentUpload({
                 تاریخ انقضا {type?.requiresExpiry ? '*' : '(اختیاری)'}
               </span>
               <DatePicker
+                withinDialog
                 value={values.validUntil}
                 onChange={(value) =>
                   setValues({ ...values, validUntil: value })

@@ -14,11 +14,32 @@ export class B2bAgreementDocuments {
     @Inject(DocumentsService) private readonly documents: DocumentsService,
   ) {}
 
+  async referenceMap(
+    versionIds: readonly string[],
+    organizationId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ) {
+    const result = new Map<string, string>();
+    const unique = [...new Set(versionIds)];
+    for (let i = 0; i < unique.length; i += 200) {
+      const rows = await this.documents.organizationVersionReferences(
+        unique.slice(i, i + 200),
+        organizationId,
+        branchId,
+        actor,
+      );
+      for (const row of rows) result.set(row.versionId, row.documentId);
+    }
+    return result;
+  }
+
   async assertDraftReference(
     documentId: string,
     organizationId: string,
     branchId: string,
     actor: AuthenticatedActor,
+    allowPendingScan = false,
   ) {
     if (
       !actor.branchIds.includes(branchId) ||
@@ -59,7 +80,13 @@ export class B2bAgreementDocuments {
         record.archiveStatus === 'ACTIVE'
       ) {
         if (
-          record.currentVersion.scanStatus !== 'CLEAN' ||
+          !(
+            record.currentVersion.scanStatus === 'CLEAN' ||
+            (allowPendingScan &&
+              ['PENDING_SCAN', 'AWAITING_ANTIVIRUS_ADAPTER'].includes(
+                record.currentVersion.scanStatus,
+              ))
+          ) ||
           record.isIncomplete ||
           (record.validUntil !== null &&
             (!Number.isFinite(Date.parse(record.validUntil)) ||
@@ -69,7 +96,7 @@ export class B2bAgreementDocuments {
             code: 'B2B_DOCUMENT_NOT_READY',
             message: 'سند باید کامل، معتبر و دارای بررسی امنیتی موفق باشد.',
           });
-        return;
+        return { documentId: record.id, versionId: record.currentVersion.id };
       }
       if (page >= response.meta.totalPages) break;
     }

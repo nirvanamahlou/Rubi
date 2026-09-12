@@ -1,5 +1,148 @@
 /* Visual tokens and component geometry from the owner's corporate HTML reference. */
 .b2b-design {
+  .dossier-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 16px;
+  }
+  .dossier-filter-grid > * {
+    min-width: 0;
+  }
+  .dossier-filter-grid .field {
+    margin: 0;
+  }
+  .dossier-filter-grid .input,
+  .dossier-filter-grid .field > button,
+  .dossier-filter-grid > button {
+    min-height: 40px;
+    width: 100%;
+  }
+  .dossier-filter-error {
+    grid-column: 1 / -1;
+  }
+  .agreement-toolbar.dossier-filter-grid > div:first-child {
+    grid-column: 1 / -1;
+  }
+  .agreement-editor {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .agreement-section {
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 12px;
+    padding: 18px;
+    margin: 16px 0;
+    min-width: 0;
+  }
+  .agreement-section-title,
+  .agreement-row-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .agreement-section-title > div:first-of-type,
+  .agreement-row-title > div:first-child {
+    flex: 1;
+    min-width: 150px;
+  }
+  .agreement-toolbar {
+    align-items: flex-end;
+  }
+  .agreement-toolbar > .field {
+    margin: 0;
+    min-width: 180px;
+  }
+  .agreement-toolbar > .btn,
+  .agreement-toolbar > .field > .input {
+    min-height: 40px;
+  }
+  .agreement-section-title h4,
+  .agreement-row-title h4 {
+    margin: 0 0 5px;
+  }
+  .agreement-section-title p {
+    color: var(--muted);
+    font-size: 12px;
+    margin: 0;
+  }
+  .agreement-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .agreement-options .check {
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  .agreement-subcard {
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-top: 12px;
+    background: #fbfdff;
+  }
+  .credit-section {
+    border-top: 3px solid #1ba582;
+  }
+  .guarantee-section {
+    border-top: 3px solid #e5a343;
+  }
+  .agreement-editor legend {
+    font-weight: 600;
+  }
+  .agreement-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .agreement-table-wrap {
+    overflow-x: auto;
+  }
+  .agreement-summary .summary-row {
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .agreement-summary .summary-row b {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    text-align: end;
+  }
+  .agreement-empty {
+    padding: 32px;
+    text-align: center;
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+  }
+  .agreement-workflow details {
+    margin-top: 12px;
+  }
+  .agreement-workflow summary {
+    cursor: pointer;
+    color: var(--blue);
+    padding: 10px 0;
+  }
+  .agreement-workflow summary svg {
+    display: inline;
+    margin-inline-end: 6px;
+    vertical-align: middle;
+  }
+  &.agreement-modal {
+    width: min(1100px, calc(100vw - 40px));
+  }
+  &.agreement-review-modal {
+    width: min(850px, calc(100vw - 40px));
+  }
   --navy: #063578;
   --navy2: #0a4a9b;
   --blue: #1674e8;
@@ -16,7 +159,6 @@
   --purple: #7958db;
   --shadow: 0 8px 24px rgba(19, 64, 124, 0.08);
   color: var(--text);
-  font-family: Tahoma, 'Segoe UI', sans-serif;
   line-height: 1.6;
   font-size: 14px;
   .page-head {
@@ -125,6 +267,41 @@
     place-items: center;
     background: #e7f2ff;
     color: var(--blue);
+  }
+  .agencies-kpis > .kpi {
+    --kpi-color: 59, 130, 246;
+    --kpi-soft: 219, 234, 254;
+    border-color: rgba(var(--kpi-color), 0.35);
+    background: linear-gradient(
+      135deg,
+      rgba(var(--kpi-color), 0.2),
+      rgba(var(--kpi-soft), 0.6),
+      var(--surface, #fff)
+    );
+  }
+  .agencies-kpis > .kpi:nth-child(2) {
+    --kpi-color: 6, 182, 212;
+    --kpi-soft: 207, 250, 254;
+  }
+  .agencies-kpis > .kpi:nth-child(3) {
+    --kpi-color: 16, 185, 129;
+    --kpi-soft: 209, 250, 229;
+  }
+  .agencies-kpis > .kpi:nth-child(4) {
+    --kpi-color: 245, 158, 11;
+    --kpi-soft: 254, 243, 199;
+  }
+  .agencies-kpis > .kpi .kpi-icon {
+    background: rgba(var(--kpi-color), 0.14);
+    color: rgb(var(--kpi-color));
+  }
+  :is(.dark, [data-theme='dark']) & .agencies-kpis > .kpi {
+    background: linear-gradient(
+      135deg,
+      rgba(var(--kpi-color), 0.2),
+      rgba(var(--kpi-color), 0.07),
+      var(--surface, #202020)
+    );
   }
   .kpi-icon.green {
     background: #e2f8f1;

@@ -10,6 +10,7 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  Download,
   Eye,
   Pencil,
   Plus,
@@ -19,6 +20,7 @@ import {
   Users,
   TriangleAlert,
   Trash2,
+  Upload,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -50,7 +52,18 @@ import { MasterDataLiveForm } from '@/modules/master-data/components/master-data
 import { getMasterDataDefinition } from '@/modules/master-data/model/catalog';
 import { agencyClient } from '../api/agency-client';
 import { AgencyConnectionsPanel } from './agency-connections-panel';
+import { AgreementWorkflowPanel } from './agreement-workflow-panel';
+import { OrganizationAddressesPanel } from './organization-addresses-panel';
+import { AgencyProfilePanel } from './agency-profile-panel';
+import { OrganizationSignatoriesPanel } from './organization-signatories-panel';
+import { OrganizationUsersPanel } from './organization-users-panel';
+import { AgencyDossierSummary } from './agency-dossier-summary';
+import { AgencyRatesPanel } from './agency-rates-panel';
 import { cooperationLabel } from '../model/presentation';
+import {
+  loadOrganizationMetrics,
+  type OrganizationMetrics,
+} from '../model/organization-metrics';
 import { CorporateMetric, CorporateProfile } from './corporate-profile';
 import './corporate-design.css';
 import { CooperationWizard } from './cooperation-wizard';
@@ -79,12 +92,17 @@ export function OrganizationsWorkspace() {
   const [status, setStatus] = useState<'all' | MasterDataStatus>('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [metrics, setMetrics] = useState<OrganizationMetrics>();
+  const [metricsState, setMetricsState] = useState<
+    'loading' | 'ready' | 'error'
+  >('loading');
   const [state, setState] = useState<RequestState>('loading');
   const [selected, setSelected] = useState<MasterDataRecord>();
   const [profileOpen, setProfileOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [excelOpen, setExcelOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [templateDownloading, setTemplateDownloading] = useState(false);
   const [deleteTarget, setDeleteTarget] =
     useState<OrganizationDeletionTarget>();
   const directoryHeading = useRef<HTMLHeadingElement>(null);
@@ -113,6 +131,21 @@ export function OrganizationsWorkspace() {
   const load = useCallback(async () => {
     const current = ++requestId.current;
     setState('loading');
+    setMetrics(undefined);
+    setMetricsState('loading');
+    void loadOrganizationMetrics(
+      { search, status },
+      () => current === requestId.current,
+    )
+      .then((result) => {
+        if (current !== requestId.current) return;
+        setMetrics(result);
+        setMetricsState('ready');
+      })
+      .catch(() => {
+        if (current !== requestId.current) return;
+        setMetricsState('error');
+      });
     try {
       const response = await agencyClient.list({
         search,
@@ -251,6 +284,33 @@ export function OrganizationsWorkspace() {
   }
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const metricValue = (value: number | undefined) =>
+    metricsState === 'loading' ? '…' : (value?.toLocaleString('fa-IR') ?? '—');
+  const metricNote =
+    metricsState === 'error'
+      ? 'دریافت آمار ناموفق؛ دوباره تازه‌سازی کنید'
+      : 'مطابق جست‌وجو و وضعیت؛ همه صفحات';
+
+  async function downloadImportTemplate() {
+    if (templateDownloading) return;
+    setTemplateDownloading(true);
+    try {
+      const [{ downloadOrganizationXlsx }, { organizationHeaders }] =
+        await Promise.all([
+          import('../model/organization-xlsx'),
+          import('../model/organization-import'),
+        ]);
+      downloadOrganizationXlsx('rubi-organizations-template.xlsx', [
+        organizationHeaders,
+      ]);
+    } catch (caught) {
+      setNotice(
+        caught instanceof Error ? caught.message : 'دریافت قالب ناموفق بود.',
+      );
+    } finally {
+      setTemplateDownloading(false);
+    }
+  }
 
   async function exportExcel() {
     if (exporting) return;
@@ -298,9 +358,6 @@ export function OrganizationsWorkspace() {
   return (
     <div className="b2b-design min-w-0" dir="rtl">
       <div hidden={profileOpen}>
-        <div className="crumb">
-          خانه <span>‹</span> آژانس‌ها و مشتریان سازمانی
-        </div>
         <div className="page-head">
           <div className="title">
             <h1 ref={directoryHeading} tabIndex={-1}>
@@ -311,48 +368,8 @@ export function OrganizationsWorkspace() {
               نمای عملیات
             </p>
           </div>
-          <div className="actions">
-            <button
-              className="btn"
-              disabled={
-                exporting || !permissions.includes('master_data.export')
-              }
-              onClick={() => void exportExcel()}
-            >
-              {exporting ? 'در حال دریافت…' : 'خروجی اکسل'}
-            </button>
-            <button
-              className="btn"
-              disabled={
-                ![
-                  'master_data.read',
-                  'master_data.create',
-                  'master_data.import',
-                ].every((permission) =>
-                  permissions.includes(permission as IamPermissionCode),
-                )
-              }
-              onClick={() => setExcelOpen(true)}
-            >
-              ورود اکسل
-            </button>
-            <button
-              className="btn primary"
-              disabled={
-                !permissions.includes('master_data.read') ||
-                (!permissions.includes('master_data.create') &&
-                  !permissions.includes('master_data.update'))
-              }
-              onClick={() => {
-                setWizardOpen(true);
-              }}
-            >
-              <Plus size={18} />
-              همکاری جدید
-            </button>
-          </div>
         </div>
-        <section className="kpis">
+        <section className="kpis agencies-kpis">
           <CorporateMetric
             label="نتایج فیلتر فعلی"
             value={
@@ -364,23 +381,99 @@ export function OrganizationsWorkspace() {
           />
           <CorporateMetric
             label="آژانس همکار"
+            value={metricValue(metrics?.agencies)}
             icon={Users}
             tone="purple"
-            note="آمار کل در دسترس نیست"
+            note={metricNote}
           />
           <CorporateMetric
             label="مشتری سازمانی"
+            value={metricValue(metrics?.corporateCustomers)}
             icon={Building2}
             tone="green"
-            note="آمار کل در دسترس نیست"
+            note={metricNote}
           />
           <CorporateMetric
-            label="نیازمند اقدام"
+            label="نیازمند تکمیل هویت"
+            value={metricValue(metrics?.incompleteIdentity)}
             icon={TriangleAlert}
             tone="amber"
-            note="در انتظار اتصال"
+            note={
+              metricsState === 'error'
+                ? metricNote
+                : 'نوع شخصیت یا شناسه ملی شرکت ثبت نشده'
+            }
           />
         </section>
+
+        <Card
+          aria-label="ثبت آژانس و مشتری سازمانی"
+          className="mb-5 flex flex-col gap-4 border-primary/25 bg-primary/[0.04] p-5 text-foreground xl:flex-row xl:items-center xl:justify-between"
+          role="region"
+        >
+          <div className="min-w-0">
+            <p className="text-lg font-bold">ثبت آژانس و مشتری سازمانی</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              اطلاعات سازمان، نمایندگان و شرایط همکاری را در یک جریان مرحله‌ای
+              وارد کنید.
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Button
+              disabled={
+                exporting || !permissions.includes('master_data.export')
+              }
+              onClick={() => void exportExcel()}
+              size="lg"
+              type="button"
+              variant="outline"
+            >
+              <Download aria-hidden="true" className="size-4" />
+              {exporting ? 'در حال ساخت خروجی…' : 'خروجی Excel'}
+            </Button>
+            <Button
+              disabled={templateDownloading}
+              onClick={() => void downloadImportTemplate()}
+              size="lg"
+              type="button"
+              variant="outline"
+            >
+              <Download aria-hidden="true" className="size-4" />
+              {templateDownloading ? 'در حال دریافت…' : 'دانلود قالب ورود'}
+            </Button>
+            <Button
+              disabled={
+                ![
+                  'master_data.read',
+                  'master_data.create',
+                  'master_data.import',
+                ].every((permission) =>
+                  permissions.includes(permission as IamPermissionCode),
+                )
+              }
+              onClick={() => setExcelOpen(true)}
+              size="lg"
+              type="button"
+              variant="outline"
+            >
+              <Upload aria-hidden="true" className="size-4" />
+              ورود از Excel
+            </Button>
+            <Button
+              disabled={
+                !permissions.includes('master_data.read') ||
+                (!permissions.includes('master_data.create') &&
+                  !permissions.includes('master_data.update'))
+              }
+              onClick={() => setWizardOpen(true)}
+              size="lg"
+              type="button"
+            >
+              <Plus aria-hidden="true" className="size-4" />
+              بازکردن فرم ثبت
+            </Button>
+          </div>
+        </Card>
 
         {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
 
@@ -578,7 +671,11 @@ export function OrganizationsWorkspace() {
                           </div>
                           <div>
                             <b>{record.name}</b>
-                            <small>شناسه ملی در دسترس نیست</small>
+                            <small>
+                              {record.attributes.nationalId
+                                ? `شناسه ملی: ${record.attributes.nationalId}`
+                                : 'شناسه ملی ثبت نشده'}
+                            </small>
                           </div>
                         </div>
                       </td>
@@ -683,6 +780,13 @@ export function OrganizationsWorkspace() {
         <CorporateProfile
           key={selected.id}
           organization={selected}
+          overview={
+            String(selected.attributes.roleCodes ?? '')
+              .split(',')
+              .includes('AGENCY') ? (
+              <AgencyDossierSummary organizationId={selected.id} />
+            ) : undefined
+          }
           logo={
             <OrganizationLogo
               organization={selected}
@@ -700,6 +804,10 @@ export function OrganizationsWorkspace() {
             setProfileOpen(false);
             setSelected(undefined);
             setContactForm(undefined);
+            window.requestAnimationFrame(() => {
+              directoryHeading.current?.focus({ preventScroll: true });
+              window.scrollTo({ top: 0, behavior: 'instant' });
+            });
           }}
           canEdit={permissions.includes('master_data.update')}
           onEdit={() => setFormMode('edit')}
@@ -710,13 +818,13 @@ export function OrganizationsWorkspace() {
           contacts={
             <Card className="space-y-3 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="font-bold">تماس‌های سازمان</p>
+                <p className="font-bold">نمایندگان و اشخاص سازمان</p>
                 <Button
                   size="sm"
                   disabled={!permissions.includes('master_data.create')}
                   onClick={() => setContactForm({ mode: 'create' })}
                 >
-                  افزودن مخاطب
+                  افزودن نماینده
                 </Button>
               </div>
               {notice ? (
@@ -738,6 +846,9 @@ export function OrganizationsWorkspace() {
                     key={contact.id}
                   >
                     <span className="font-semibold">{contact.name}</span>
+                    <span>
+                      {attribute(contact, 'jobTitle') || 'سمت ثبت نشده'}
+                    </span>
                     <span dir="ltr">{attribute(contact, 'phoneMasked')}</span>
                     <span dir="ltr">{attribute(contact, 'emailMasked')}</span>
                     <Button
@@ -801,13 +912,68 @@ export function OrganizationsWorkspace() {
               ) : null}
             </Card>
           }
-          operations={(view) =>
-            String(selected.attributes.roleCodes ?? '').includes('AGENCY') ? (
-              <AgencyConnectionsPanel
+          signatories={
+            <OrganizationSignatoriesPanel
+              key={selected.id}
+              organizationId={selected.id}
+              onAddContact={() => setContactForm({ mode: 'create' })}
+            />
+          }
+          access={(view) => (
+            <OrganizationUsersPanel
+              key={selected.id + view}
+              organizationId={selected.id}
+              view={view}
+            />
+          )}
+          operations={(view, onReviewCooperation) =>
+            view === 'address' ? (
+              <OrganizationAddressesPanel
                 key={selected.id}
                 organizationId={selected.id}
+                permissions={permissions}
+                presentation="selector"
+              />
+            ) : view === 'agreements' ||
+              view === 'credit' ||
+              view === 'temporary' ||
+              view === 'guarantees' ? (
+              <AgreementWorkflowPanel
+                key={selected.id + role + view}
+                organizationId={selected.id}
+                role={role}
                 view={view}
               />
+            ) : String(selected.attributes.roleCodes ?? '').includes(
+                'AGENCY',
+              ) ? (
+              view === 'manager' || view === 'profile' ? (
+                <AgencyProfilePanel
+                  key={selected.id + view}
+                  organizationId={selected.id}
+                  onReviewCooperation={onReviewCooperation}
+                />
+              ) : view === 'rates' ||
+                view === 'discounts' ||
+                view === 'commission' ? (
+                <AgencyRatesPanel
+                  key={selected.id + view}
+                  organizationId={selected.id}
+                  kind={
+                    view === 'rates'
+                      ? 'FIXED_AMOUNT'
+                      : view === 'discounts'
+                        ? 'DISCOUNT_PERCENT'
+                        : 'COMMISSION_PERCENT'
+                  }
+                />
+              ) : (
+                <AgencyConnectionsPanel
+                  key={selected.id}
+                  organizationId={selected.id}
+                  view={view}
+                />
+              )
             ) : (
               <Alert
                 title="پرونده تجاری در انتظار اتصال"
@@ -852,7 +1018,12 @@ export function OrganizationsWorkspace() {
         <MasterDataLiveForm
           definition={getMasterDataDefinition('organization-contacts')}
           lockedFields={['organizationId']}
-          initialValues={{ organizationId: selected.id }}
+          initialValues={{
+            organizationId: selected.id,
+            ...(contactForm.mode === 'create'
+              ? { preferredChannel: 'PHONE' }
+              : {}),
+          }}
           mode={contactForm.mode}
           onOpenChange={(open) => {
             if (!open) setContactForm(undefined);
