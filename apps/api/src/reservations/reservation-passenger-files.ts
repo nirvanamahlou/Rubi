@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Get,
   Header,
+  Headers,
   Inject,
   Injectable,
   NotFoundException,
@@ -62,12 +63,42 @@ export function passengerDocumentSource(
     sourceEntityId: passengerId ? `${contractId}:${passengerId}` : contractId,
   };
 }
-function nameView(customer: CustomerDetail) {
+function nameView(
+  customer: CustomerDetail,
+  ageCategory?: 'ADT' | 'CHD' | 'INF',
+  sensitive = false,
+) {
+  const nationalId = sensitive
+    ? (customer.nationalId ?? customer.maskedNationalId)
+    : (customer.maskedNationalId ?? null);
+  const passportNumber = sensitive
+    ? (customer.passportNumber ?? customer.maskedPassportNumber)
+    : (customer.maskedPassportNumber ?? null);
   return {
     id: customer.id,
     firstName: customer.firstName ?? '',
     lastName: customer.lastName ?? '',
     displayName: customer.displayName,
+    ageCategory:
+      ageCategory === 'ADT'
+        ? ('ADL' as const)
+        : ageCategory === 'CHD' || ageCategory === 'INF'
+          ? ageCategory
+          : null,
+    gender: null,
+    birthDate: sensitive ? customer.birthDate : null,
+    birthDateMasked:
+      customer.birthDateMasked || Boolean(!sensitive && customer.birthDate),
+    nationalId,
+    nationalIdMasked: Boolean(
+      nationalId && (!sensitive || !customer.nationalId),
+    ),
+    passportNumber,
+    passportNumberMasked: Boolean(
+      passportNumber && (!sensitive || !customer.passportNumber),
+    ),
+    passportExpiryDate: customer.passportExpiryDate ?? null,
+    passportIssuePlace: null,
     version: customer.version,
   };
 }
@@ -98,13 +129,24 @@ export class ReservationPassengerFilesService {
       throw new NotFoundException('مسافر متعلق به این قرارداد نیست.');
     return intake;
   }
-  async passengers(id: string, actor: AuthenticatedActor) {
+  async passengers(id: string, actor: AuthenticatedActor, traceId?: string) {
     this.require(actor, ['customers.read']);
     const intake = await this.intake(id, actor);
+    const canReadSensitive = actor.permissions.includes(
+      'customers.sensitive.read',
+    );
     const data = [];
     for (const customerId of [...new Set(intake.snapshot.passengerIds)]) {
-      const { data: customer } = await this.customers.detail(customerId, actor);
-      data.push(nameView(customer));
+      const { data: customer } = await this.customers.detail(
+        customerId,
+        actor,
+        traceId,
+        canReadSensitive ? 'customer-verification' : undefined,
+      );
+      const assignment = intake.snapshot.passengerAssignments?.find(
+        (item) => item.customerId === customerId,
+      );
+      data.push(nameView(customer, assignment?.ageCategory, canReadSensitive));
     }
     return {
       data,
@@ -259,8 +301,12 @@ export class ReservationPassengerFilesController {
   @Get('passengers')
   @Header('Cache-Control', 'private, no-store')
   @RequirePermissions('reservations.read', 'customers.read')
-  passengers(@Param('intakeId') id: string, @Req() req: AuthenticatedRequest) {
-    return this.service.passengers(id, req.actor);
+  passengers(
+    @Param('intakeId') id: string,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-request-id') traceId?: string,
+  ) {
+    return this.service.passengers(id, req.actor, traceId);
   }
   @Patch('passengers/:passengerId')
   @RequirePermissions('reservations.read', 'customers.read', 'customers.update')

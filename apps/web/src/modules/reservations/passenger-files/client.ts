@@ -5,6 +5,16 @@ export interface PassengerName {
   firstName: string;
   lastName: string;
   displayName: string;
+  ageCategory: 'ADL' | 'CHD' | 'INF' | null;
+  gender: null;
+  birthDate: string | null;
+  birthDateMasked: boolean;
+  nationalId: string | null;
+  nationalIdMasked: boolean;
+  passportNumber: string | null;
+  passportNumberMasked: boolean;
+  passportExpiryDate: string | null;
+  passportIssuePlace: null;
   version: number;
 }
 export interface PassengersResponse {

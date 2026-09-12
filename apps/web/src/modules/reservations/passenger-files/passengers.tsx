@@ -7,6 +7,11 @@ import {
   type PassengerName,
   type PassengersResponse,
 } from './client';
+import styles from './passengers.module.css';
+
+const value = (input: string | null, masked = false) =>
+  input ? `${input}${masked ? ' (ماسک‌شده)' : ''}` : 'ثبت نشده';
+
 export function ReservationPassengers({ id }: { id: string }) {
   const [rows, setRows] = useState<PassengerName[]>([]);
   const [canEdit, setCanEdit] = useState(false);
@@ -61,7 +66,19 @@ export function ReservationPassengers({ id }: { id: string }) {
           }),
         },
       );
-      setRows((old) => old.map((r) => (r.id === row.id ? result.data : r)));
+      setRows((old) =>
+        old.map((r) =>
+          r.id === row.id
+            ? {
+                ...r,
+                firstName: result.data.firstName,
+                lastName: result.data.lastName,
+                displayName: result.data.displayName,
+                version: result.data.version,
+              }
+            : r,
+        ),
+      );
       setMessage('نام مسافر در پروندهٔ اصلی ذخیره شد.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'ذخیره انجام نشد.');
@@ -83,47 +100,77 @@ export function ReservationPassengers({ id }: { id: string }) {
         </p>
       )}
       {message && <p role="status">{message}</p>}
-      <div className="space-y-3">
-        {rows.map((row, i) => (
-          <form
-            key={row.id}
-            className="grid gap-3 rounded-xl border p-3 sm:grid-cols-[1fr_1fr_auto]"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void save(row);
-            }}
-          >
-            <label className="space-y-1 text-sm">
-              نام مسافر {i + 1}
-              <Input
-                aria-label={`نام مسافر ${i + 1}`}
-                value={row.firstName}
-                onChange={(e) => change(row.id, 'firstName', e.target.value)}
-                required
-                maxLength={100}
-                disabled={!canEdit || Boolean(busy)}
-              />
-            </label>
-            <label className="space-y-1 text-sm">
-              نام خانوادگی
-              <Input
-                aria-label={`نام خانوادگی مسافر ${i + 1}`}
-                value={row.lastName}
-                onChange={(e) => change(row.id, 'lastName', e.target.value)}
-                required
-                maxLength={100}
-                disabled={!canEdit || Boolean(busy)}
-              />
-            </label>
-            <Button
-              type="submit"
-              className="self-end"
-              disabled={!canEdit || Boolean(busy)}
-            >
-              {busy === row.id ? 'در حال ذخیره…' : 'ذخیره نام'}
-            </Button>
-          </form>
-        ))}
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>نام</th>
+              <th>نام خانوادگی</th>
+              <th>رده سنی</th>
+              <th>جنسیت</th>
+              <th>تاریخ تولد</th>
+              <th>شماره ملی</th>
+              <th>شماره پاسپورت</th>
+              <th>انقضای پاسپورت</th>
+              <th>محل صدور پاسپورت</th>
+              <th>عملیات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, i) => (
+              <tr key={row.id}>
+                <td>
+                  <Input
+                    aria-label={`نام مسافر ${i + 1}`}
+                    value={row.firstName}
+                    onChange={(e) =>
+                      change(row.id, 'firstName', e.target.value)
+                    }
+                    required
+                    maxLength={100}
+                    disabled={!canEdit || Boolean(busy)}
+                    form={`passenger-${row.id}`}
+                  />
+                </td>
+                <td>
+                  <Input
+                    aria-label={`نام خانوادگی مسافر ${i + 1}`}
+                    value={row.lastName}
+                    onChange={(e) => change(row.id, 'lastName', e.target.value)}
+                    required
+                    maxLength={100}
+                    disabled={!canEdit || Boolean(busy)}
+                    form={`passenger-${row.id}`}
+                  />
+                </td>
+                <td>{row.ageCategory ?? 'ثبت نشده'}</td>
+                <td>{value(row.gender)}</td>
+                <td>
+                  {row.birthDateMasked
+                    ? 'ثبت شده؛ نیازمند مجوز نمایش'
+                    : value(row.birthDate)}
+                </td>
+                <td>{value(row.nationalId, row.nationalIdMasked)}</td>
+                <td>{value(row.passportNumber, row.passportNumberMasked)}</td>
+                <td>{value(row.passportExpiryDate)}</td>
+                <td>{value(row.passportIssuePlace)}</td>
+                <td>
+                  <form
+                    id={`passenger-${row.id}`}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void save(row);
+                    }}
+                  >
+                    <Button type="submit" disabled={!canEdit || Boolean(busy)}>
+                      {busy === row.id ? 'در حال ذخیره…' : 'ذخیره نام'}
+                    </Button>
+                  </form>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       {!rows.length && !error && <p>مسافری به این قرارداد متصل نشده است.</p>}
       {!canEdit && rows.length > 0 && (

@@ -38,54 +38,59 @@ function setup() {
     version: 4,
     ownerBranchId: branch,
     birthDate: '2001-01-01',
+    birthDateMasked: false,
     nationalId: 'not-returned',
+    maskedNationalId: '00*****99',
     passportNumber: 'not-returned',
+    maskedPassportNumber: 'P1*****78',
+    passportExpiryDate: '2031-02-03',
   } as CustomerDetail;
   const workflow = {
-    detail: vi
-      .fn()
-      .mockResolvedValue({
-        id,
-        branchId: branch,
+    detail: vi.fn().mockResolvedValue({
+      id,
+      branchId: branch,
+      contractId,
+      snapshot: {
         contractId,
-        snapshot: {
-          contractId,
-          contractNumber: 'QA-001',
-          passengerIds: [pid],
-        },
-      }),
+        contractNumber: 'QA-001',
+        passengerIds: [pid],
+        passengerAssignments: [
+          {
+            customerId: pid,
+            ageCategory: 'ADT',
+            serviceClientKeys: [],
+          },
+        ],
+      },
+    }),
   };
   const customers = {
     detail: vi.fn().mockResolvedValue({ data: customer }),
-    update: vi
-      .fn()
-      .mockResolvedValue({
-        data: {
-          ...customer,
-          firstName: 'Edited',
-          displayName: 'Edited Passenger',
-          version: 5,
-        },
-      }),
+    update: vi.fn().mockResolvedValue({
+      data: {
+        ...customer,
+        firstName: 'Edited',
+        displayName: 'Edited Passenger',
+        version: 5,
+      },
+    }),
   };
   const documents = {
     list: vi
       .fn()
       .mockResolvedValue({ data: [], meta: { total: 0, totalPages: 0 } }),
-    options: vi
-      .fn()
-      .mockResolvedValue({
-        data: {
-          documentTypes: [
-            {
-              id: randomUUID(),
-              name: 'Passport',
-              domain: 'CUSTOMER_IDENTITY',
-              requiresExpiry: true,
-            },
-          ],
-        },
-      }),
+    options: vi.fn().mockResolvedValue({
+      data: {
+        documentTypes: [
+          {
+            id: randomUUID(),
+            name: 'Passport',
+            domain: 'CUSTOMER_IDENTITY',
+            requiresExpiry: true,
+          },
+        ],
+      },
+    }),
     upload: vi.fn().mockResolvedValue({ data: { id: 'doc' } }),
   };
   return {
@@ -106,7 +111,7 @@ function setup() {
   };
 }
 describe('Reservations passenger and document consumers', () => {
-  it('loads canonical names and only returns the name projection', async () => {
+  it('loads names, contract age and masked identity without leaking full values', async () => {
     const s = setup();
     const r = await s.service.passengers(s.id, s.actor);
     expect(r.canEdit).toBe(true);
@@ -115,10 +120,48 @@ describe('Reservations passenger and document consumers', () => {
       firstName: 'Actual',
       lastName: 'Passenger',
       displayName: 'Actual Passenger',
+      ageCategory: 'ADL',
+      gender: null,
+      birthDate: null,
+      birthDateMasked: true,
+      nationalId: '00*****99',
+      nationalIdMasked: true,
+      passportNumber: 'P1*****78',
+      passportNumberMasked: true,
+      passportExpiryDate: '2031-02-03',
+      passportIssuePlace: null,
       version: 4,
     });
     expect(JSON.stringify(r)).not.toContain('not-returned');
     expect(s.workflow.detail).toHaveBeenCalledWith(s.id, [s.branch]);
+    expect(s.customers.detail).toHaveBeenCalledWith(
+      s.pid,
+      s.actor,
+      undefined,
+      undefined,
+    );
+  });
+  it('returns full identity only with the existing sensitive-read permission and audit reason', async () => {
+    const s = setup();
+    const actor = {
+      ...s.actor,
+      permissions: [...s.actor.permissions, 'customers.sensitive.read'],
+    } as AuthenticatedActor;
+    const r = await s.service.passengers(s.id, actor, 'trace-1');
+    expect(r.data[0]).toMatchObject({
+      birthDate: '2001-01-01',
+      birthDateMasked: false,
+      nationalId: 'not-returned',
+      nationalIdMasked: false,
+      passportNumber: 'not-returned',
+      passportNumberMasked: false,
+    });
+    expect(s.customers.detail).toHaveBeenCalledWith(
+      s.pid,
+      actor,
+      'trace-1',
+      'customer-verification',
+    );
   });
   it('requires name edit grants before calling customer mutation', async () => {
     const s = setup();
