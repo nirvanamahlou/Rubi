@@ -1,5 +1,35 @@
 # Work Assignments
 
+## WORKBENCH-021 — PC-B — LOCAL_COMPLETE / RUNTIME_ACTIVE
+
+- User authorizes the bounded CRM messaging slice on
+  `codex/pc-b-workbench-messaging-activation` from `origin/develop@043871a`:
+  branch-scoped active CRM contacts through the IAM public service, persistent
+  direct and group conversations, membership, messages and server-side
+  forwarding, plus the Workbench messenger consumer. Agency-portal and disabled
+  accounts are excluded; no credential, role or permission mutation is included.
+- PC-B reserves the additive Messaging schema/migration, `apps/api/src/messaging/**`,
+  additive IAM contact projection, Messaging contracts/root export, Workbench
+  messaging UI/client/tests, and this task/status documentation. PC-B holds the
+  Migration and central-contract locks for this work item after confirming no
+  newer active lock on `origin/develop`; dependency/lockfiles are unchanged.
+- Shared-contract compatibility: v1 routes are additive under
+  `/api/v1/messaging`; all reads and writes require authenticated membership and
+  common authorized branch scope. Forwarding copies the source body on the
+  server and does not expose source participants. Migration backup/rehearsal,
+  focused tests, lint, typecheck and production builds are required before
+  runtime handoff; no synthetic message or group is sent to real users during QA.
+- Completed: IAM internal-contact projection, direct/group conversation storage,
+  membership-gated read/send, server-side forwarding and the Workbench contacts,
+  group and forward UI are active. All 56 baseline migrations plus Messaging
+  passed on an isolated database. The additive migration was backed up and
+  applied to `rubi_hr_current_20260908`; existing 38 users, five branches and 44
+  documents were preserved. Combined runtime `05768d7` is healthy on Web3100
+  (PID5864) and API4190 (PID22080); authenticated browser QA found three eligible
+  contacts and the complete group form without creating real data. 1,222 API and
+  1,327 Web tests, lint, typechecks and both production builds passed. Migration,
+  central-contract and implementation reservations are RELEASED for review.
+
 ## B2B-ORGANIZATION-PERMANENT-DELETE-001 — PC-B — UI_VERIFIED
 
 - Organizations permanent-delete dialog now keeps the destructive action available after an authoritative API rejection, clears the previous error before retry and changes the label to an explicit retry action. Only transport/unknown outcomes require refresh, preventing a duplicate delete after an uncertain response. Referenced organizations remain protected and unused organizations are physically removed through the existing Master Data owner endpoint. Focused lint, Web TypeScript/build, all 125 Organizations tests and the seven-test isolated PostgreSQL deletion suite passed. Authenticated Web3100 QA confirmed the merged dialog and active destructive action with the eight-record directory; no user data was deleted during UI QA. Runtime `b9244f4` / `hr005-72ea3c0ada5a1190`; API4190 healthy. No schema, migration, dependency, IAM grant, cascade or business-history deletion.

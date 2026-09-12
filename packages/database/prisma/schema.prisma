@@ -86,6 +86,9 @@ model User {
   documentAccessGrants            DocumentAccessGrant[]            @relation("DocumentAccessGrantActor")
   notificationsReceived           Notification[]                   @relation("NotificationRecipient")
   notificationsActed              Notification[]                   @relation("NotificationActor")
+  messagingConversationsCreated   MessagingConversation[]          @relation("MessagingConversationCreator")
+  messagingMemberships            MessagingMember[]
+  messagingMessagesSent           MessagingMessage[]               @relation("MessagingMessageSender")
   agencyProfilesManaged           AgencyOperationalProfile[]       @relation("AgencyAccountManager")
   b2bAuditEvents                  B2bAuditEvent[]                  @relation("B2bAuditActor")
   b2bRevisionsCreated             B2bAgreementRevision[]           @relation("B2bRevisionCreator")
@@ -153,27 +156,28 @@ model RolePermission {
 }
 
 model Branch {
-  hotelRateBatches      ReservationHotelRateBatch[]
-  b2bOrganizationUsers  B2bOrganizationUser[]
-  id                    String                      @id @default(uuid()) @db.Uuid
-  code                  String                      @unique @db.VarChar(40)
-  name                  String                      @db.VarChar(160)
-  isActive              Boolean                     @default(true)
-  createdAt             DateTime                    @default(now()) @db.Timestamptz(3)
-  updatedAt             DateTime                    @updatedAt @db.Timestamptz(3)
-  users                 UserBranch[]
-  ownedCustomers        Customer[]                  @relation("CustomerOwnerBranch")
-  customerStatusHistory CustomerStatusHistory[]
-  customerAuditEvents   CustomerAuditEvent[]
-  documents             Document[]
-  documentAuditEvents   DocumentAuditEvent[]
-  agencyProfiles        AgencyOperationalProfile[]
-  b2bAuditEvents        B2bAuditEvent[]
-  b2bSignatories        B2bOrganizationSignatory[]
-  hrEmployees           HrEmployee[]
-  hrRecords             HrRecord[]
-  hrAuditEvents         HrAuditEvent[]
-  hrNotifications       HrNotification[]
+  hotelRateBatches       ReservationHotelRateBatch[]
+  b2bOrganizationUsers   B2bOrganizationUser[]
+  id                     String                      @id @default(uuid()) @db.Uuid
+  code                   String                      @unique @db.VarChar(40)
+  name                   String                      @db.VarChar(160)
+  isActive               Boolean                     @default(true)
+  createdAt              DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime                    @updatedAt @db.Timestamptz(3)
+  users                  UserBranch[]
+  ownedCustomers         Customer[]                  @relation("CustomerOwnerBranch")
+  customerStatusHistory  CustomerStatusHistory[]
+  customerAuditEvents    CustomerAuditEvent[]
+  documents              Document[]
+  documentAuditEvents    DocumentAuditEvent[]
+  agencyProfiles         AgencyOperationalProfile[]
+  b2bAuditEvents         B2bAuditEvent[]
+  b2bSignatories         B2bOrganizationSignatory[]
+  hrEmployees            HrEmployee[]
+  hrRecords              HrRecord[]
+  hrAuditEvents          HrAuditEvent[]
+  hrNotifications        HrNotification[]
+  messagingConversations MessagingConversation[]
 
   @@map("branches")
 }
@@ -229,6 +233,68 @@ model AuditEvent {
   @@index([actorUserId, occurredAt])
   @@index([action, occurredAt])
   @@map("iam_audit_events")
+}
+
+enum MessagingConversationType {
+  DIRECT
+  GROUP
+}
+
+enum MessagingMemberRole {
+  OWNER
+  MEMBER
+}
+
+model MessagingConversation {
+  id              String                    @id @default(uuid()) @db.Uuid
+  type            MessagingConversationType
+  title           String?                   @db.VarChar(160)
+  branchId        String                    @db.Uuid
+  creatorUserId   String                    @db.Uuid
+  directPairKey   String?                   @unique @db.VarChar(140)
+  createRequestId String                    @db.VarChar(80)
+  createdAt       DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime                  @updatedAt @db.Timestamptz(3)
+  branch          Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  creator         User                      @relation("MessagingConversationCreator", fields: [creatorUserId], references: [id], onDelete: Restrict)
+  members         MessagingMember[]
+  messages        MessagingMessage[]
+
+  @@unique([creatorUserId, createRequestId])
+  @@index([branchId, updatedAt])
+  @@map("messaging_conversations")
+}
+
+model MessagingMember {
+  conversationId String                @db.Uuid
+  userId         String                @db.Uuid
+  role           MessagingMemberRole   @default(MEMBER)
+  joinedAt       DateTime              @default(now()) @db.Timestamptz(3)
+  conversation   MessagingConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([conversationId, userId])
+  @@index([userId, joinedAt])
+  @@map("messaging_members")
+}
+
+model MessagingMessage {
+  id                     String                @id @default(uuid()) @db.Uuid
+  conversationId         String                @db.Uuid
+  senderUserId           String                @db.Uuid
+  body                   String                @db.VarChar(4000)
+  forwardedFromMessageId String?               @db.Uuid
+  clientRequestId        String                @db.VarChar(80)
+  createdAt              DateTime              @default(now()) @db.Timestamptz(3)
+  conversation           MessagingConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender                 User                  @relation("MessagingMessageSender", fields: [senderUserId], references: [id], onDelete: Restrict)
+  forwardedFrom          MessagingMessage?     @relation("MessagingMessageForward", fields: [forwardedFromMessageId], references: [id], onDelete: SetNull)
+  forwards               MessagingMessage[]    @relation("MessagingMessageForward")
+
+  @@unique([conversationId, senderUserId, clientRequestId])
+  @@index([conversationId, createdAt, id])
+  @@index([forwardedFromMessageId])
+  @@map("messaging_messages")
 }
 
 model Notification {

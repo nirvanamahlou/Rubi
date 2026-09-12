@@ -6,6 +6,7 @@ import {
 } from 'node:crypto';
 
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   HttpException,
@@ -19,6 +20,7 @@ import type {
   AuthenticatedActor,
   IamPermissionCode,
   LoginResponse,
+  MessagingContactV1,
 } from '@rubi/contracts';
 import { AuditOutcome, SessionStatus, UserStatus } from '@rubi/database';
 import { hash, verify } from 'argon2';
@@ -346,6 +348,146 @@ export class IamService implements IamStepUpPort {
           select: { branch: { select: { id: true, code: true, name: true } } },
         },
       },
+    });
+  }
+
+  async listMessagingContacts(
+    actor: AuthenticatedActor,
+    requestedSearch?: string,
+    requestedLimit = 50,
+  ): Promise<{ contacts: MessagingContactV1[]; hasMore: boolean }> {
+    const search = requestedSearch?.trim() ?? '';
+    if (search.length > 100)
+      throw new BadRequestException('عبارت جست‌وجو حداکثر ۱۰۰ نویسه است.');
+    if (
+      !Number.isInteger(requestedLimit) ||
+      requestedLimit < 1 ||
+      requestedLimit > 50
+    )
+      throw new BadRequestException('تعداد مخاطبان باید بین ۱ تا ۵۰ باشد.');
+    const rows = await this.database.client.user.findMany({
+      where: {
+        id: { not: actor.userId },
+        status: UserStatus.ACTIVE,
+        b2bOrganizationUser: null,
+        branches: {
+          some: {
+            branchId: { in: actor.branchIds },
+            branch: { isActive: true },
+          },
+        },
+        ...(search
+          ? {
+              OR: [
+                {
+                  displayName: {
+                    contains: search,
+                    mode: 'insensitive' as const,
+                  },
+                },
+                {
+                  username: { contains: search, mode: 'insensitive' as const },
+                },
+              ],
+            }
+          : {}),
+      },
+      select: {
+        id: true,
+        displayName: true,
+        username: true,
+        branches: {
+          where: {
+            branchId: { in: actor.branchIds },
+            branch: { isActive: true },
+          },
+          select: { branch: { select: { id: true, code: true, name: true } } },
+          orderBy: { branchId: 'asc' },
+        },
+      },
+      orderBy: [{ displayName: 'asc' }, { id: 'asc' }],
+      take: requestedLimit + 1,
+    });
+    return {
+      contacts: rows.slice(0, requestedLimit).map((row) => ({
+        id: row.id,
+        displayName: row.displayName,
+        username: row.username,
+        branches: row.branches.map(({ branch }) => branch),
+      })),
+      hasMore: rows.length > requestedLimit,
+    };
+  }
+
+  async validateMessagingRecipients(
+    actor: AuthenticatedActor,
+    requestedIds: string[],
+  ): Promise<{ contacts: MessagingContactV1[]; branchId: string }> {
+    const ids = [...new Set(requestedIds)];
+    if (ids.length < 1 || ids.length > 50 || ids.includes(actor.userId))
+      throw new BadRequestException('بین ۱ تا ۵۰ مخاطب معتبر انتخاب کنید.');
+    const rows = await this.database.client.user.findMany({
+      where: {
+        id: { in: ids },
+        status: UserStatus.ACTIVE,
+        b2bOrganizationUser: null,
+        branches: {
+          some: {
+            branchId: { in: actor.branchIds },
+            branch: { isActive: true },
+          },
+        },
+      },
+      select: {
+        id: true,
+        displayName: true,
+        username: true,
+        branches: {
+          where: {
+            branchId: { in: actor.branchIds },
+            branch: { isActive: true },
+          },
+          select: { branch: { select: { id: true, code: true, name: true } } },
+          orderBy: { branchId: 'asc' },
+        },
+      },
+    });
+    if (rows.length !== ids.length)
+      throw new ForbiddenException(
+        'یک یا چند مخاطب در محدوده مجاز پیام‌رسان نیستند.',
+      );
+    const branchId = [...actor.branchIds]
+      .sort()
+      .find((candidate) =>
+        rows.every((row) =>
+          row.branches.some(({ branch }) => branch.id === candidate),
+        ),
+      );
+    if (!branchId)
+      throw new ForbiddenException(
+        'همه اعضای گروه باید یک شعبه مجاز مشترک داشته باشند.',
+      );
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    return {
+      branchId,
+      contacts: ids.map((id) => {
+        const row = byId.get(id)!;
+        return {
+          id: row.id,
+          displayName: row.displayName,
+          username: row.username,
+          branches: row.branches.map(({ branch }) => branch),
+        };
+      }),
+    };
+  }
+
+  async describeMessagingParticipants(ids: string[]) {
+    const uniqueIds = [...new Set(ids)];
+    if (!uniqueIds.length) return [];
+    return this.database.client.user.findMany({
+      where: { id: { in: uniqueIds } },
+      select: { id: true, displayName: true, username: true },
     });
   }
 
