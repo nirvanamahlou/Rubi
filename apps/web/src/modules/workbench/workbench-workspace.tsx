@@ -6,6 +6,7 @@ import { WorkbenchSelect } from './workbench-select';
 import type { NotificationItemV1, WorkbenchActivityV1 } from '@rubi/contracts';
 import {
   Activity,
+  ChartNoAxesCombined,
   ArrowUpLeft,
   Bell,
   CalendarDays,
@@ -57,6 +58,7 @@ import {
 } from './model';
 import { WorkbenchFiles } from './workbench-files';
 import { WorkbenchCalendar } from './workbench-calendar';
+import { WorkbenchPerformance } from './workbench-performance';
 import { WorkbenchNotes } from './workbench-notes';
 import { WorkbenchFavorites } from './workbench-favorites';
 import { MessageComposer } from './message-composer';
@@ -75,6 +77,7 @@ const tabIcons = [
   FileText,
   Star,
   Activity,
+  ChartNoAxesCombined,
   StickyNote,
   CalendarDays,
   Settings2,
@@ -270,7 +273,7 @@ export function WorkbenchWorkspace() {
             >
               <TabsList
                 aria-label="بخش‌های میزکار"
-                className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl p-2 sm:grid-cols-3 xl:grid-cols-9"
+                className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl p-2 sm:grid-cols-5 xl:grid-cols-10"
               >
                 {workbenchTabs.map(([id, label], index) => {
                   const Icon = tabIcons[index]!;
@@ -514,6 +517,9 @@ export function WorkbenchWorkspace() {
                     ? { branchId: home.user.branches[0].id }
                     : {})}
                 />
+              </TabsContent>
+              <TabsContent value="performance">
+                <WorkbenchPerformance />
               </TabsContent>
               <TabsContent value="account">
                 <Card className="overflow-hidden lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">

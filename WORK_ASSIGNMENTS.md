@@ -1,5 +1,24 @@
 # Work Assignments
 
+## WORKBENCH-038 — PC-B — COMPLETE / TESTED
+
+- User requests a real, self-only My Performance tab: HR leave, shifts and latest
+  payslip, own sales/customer metrics and permission-scoped recent job activity.
+  Branch `codex/pc-b-workbench-my-performance` preserves WORKBENCH-037.
+- Reserve additive HR self-performance service/module export, Workbench aggregation,
+  controller/module, Workbench contracts/UI/tests and task/status documentation.
+  HR and Workbench producers are PC-B-owned; consume existing Sales and IAM public
+  services without changing their contracts, ownership or tables. No Reporting edits.
+- Additive contract producer: HR/Workbench; consumer: Workbench Web. Only the signed-in
+  actor is accepted, never a client-supplied employee/user ID. HR self-service may see
+  only its own released payslip projection; draft payroll and colleagues remain hidden.
+- No migration, schema, dependency, shared runtime or permission seed changes. Existing
+  completed WORKBENCH-037 reservations are released. Push a PR to develop after checks.
+- Delivered the self-only HR/Sales/activity backend and native Performance tab.
+  18 targeted API tests and 49 Workbench Web tests pass, with scoped ESLint,
+  API/Web TypeScript and both production builds (46 Web routes). No migration or
+  operational data/runtime change. Implementation reservations are released.
+
 ## FINANCE-005-ACCOUNTING-DROPDOWN-DEFAULTS — PC-A — COMPLETE / MERGED / ACTIVE
 
 - درخواست مالک محصول در 2026-09-13: هر چهار گروه منوی داخلی حسابداری هنگام ورود بسته
