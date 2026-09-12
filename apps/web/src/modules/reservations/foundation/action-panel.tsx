@@ -6,6 +6,7 @@ import { ReservationFiles } from '../passenger-files/files';
 import { EnglishHotelName } from '../components/english-hotel-name';
 import { ReservationGeneralDetails } from '../components/reservation-general-details';
 import { ContractPdfPreview } from '../components/contract-pdf-preview';
+import { ReservationReceipts } from '../components/reservation-receipts';
 
 import {
   Dialog,
@@ -100,6 +101,13 @@ export function ContractActionContent({
     return <ReservationPassengers key={request.id} id={request.id} />;
   if (action === 'مدارک' || action === 'پیوست')
     return <ReservationFiles key={request.id} id={request.id} />;
+  if (action === 'دریافت‌ها')
+    return (
+      <ReservationReceipts
+        key={request.contractId ?? request.id}
+        {...(request.contractId ? { contractId: request.contractId } : {})}
+      />
+    );
   if (action === 'طرف قرارداد')
     return (
       <dl className={styles.details}>
@@ -186,7 +194,7 @@ export function ContractActionPanel({
                   {request && (
                     <DialogContent
                       dir="rtl"
-                      className={`max-h-[92dvh] overflow-y-auto ${action === 'مشاهده' ? 'sm:max-w-6xl' : 'sm:max-w-3xl'}`}
+                      className={`max-h-[92dvh] overflow-y-auto ${['مشاهده', 'دریافت‌ها'].includes(action) ? 'sm:max-w-6xl' : 'sm:max-w-3xl'}`}
                     >
                       <DialogTitle className="pe-10">{action}</DialogTitle>
                       <DialogDescription>

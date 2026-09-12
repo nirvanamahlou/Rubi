@@ -64,6 +64,14 @@ export class SalesRepository {
     });
   }
 
+  findUserDisplayNames(userIds: readonly string[]) {
+    if (!userIds.length) return Promise.resolve([]);
+    return this.database.client.user.findMany({
+      where: { id: { in: [...new Set(userIds)] } },
+      select: { id: true, displayName: true },
+    });
+  }
+
   pendingReservationRequests() {
     return this.database.client.salesReservationRequest.findMany({
       where: {

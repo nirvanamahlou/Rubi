@@ -280,6 +280,8 @@ export interface SalesContractDetail extends SalesContractSummary {
   payments: readonly (SalesPaymentInput & {
     id: string;
     status: SalesPaymentStatus;
+    createdByUserId?: string;
+    createdByName?: string | null;
     createdAt: string;
     financeConfirmedAt: string | null;
   })[];

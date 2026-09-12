@@ -68,6 +68,13 @@ describe('selected contract actions', () => {
     expect(html).toContain('در حال دریافت مشخصات کامل قرارداد');
     expect(html).not.toContain('Test branch');
   });
+  it('loads recorded receipts for the selected Sales contract', () => {
+    const html = renderToStaticMarkup(
+      <ContractActionContent action="دریافت‌ها" request={request} />,
+    );
+    expect(html).toContain('در حال دریافت سوابق دریافت‌ها');
+    expect(html).not.toContain('جزئیات این فرم هنوز تعیین نشده است');
+  });
   it('does not invent writable forms or unknown customer details', () => {
     const missing = renderToStaticMarkup(
       <ContractActionContent
