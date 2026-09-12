@@ -88,6 +88,7 @@ export const customerAffairsApi = {
     record: CustomerAffairsLeadView | CustomerAffairsTicketView,
     nextAction: string,
     nextActionAt: string,
+    changes: Record<string, unknown> = {},
   ) => {
     const lead = 'stage' in record;
     const keys = lead
@@ -132,10 +133,12 @@ export const customerAffairsApi = {
         ];
     const input = Object.fromEntries(
       keys
-        .filter((key) => key in record)
+        .filter((key) => key in record || key in changes)
         .map((key) => [
           key,
-          (record as unknown as Record<string, unknown>)[key],
+          Object.prototype.hasOwnProperty.call(changes, key)
+            ? changes[key]
+            : (record as unknown as Record<string, unknown>)[key],
         ]),
     );
     return request(`/${lead ? 'leads' : 'tickets'}/${record.id}`, {
@@ -148,6 +151,32 @@ export const customerAffairsApi = {
       }),
     });
   },
+  transitionLead: (
+    id: string,
+    input: {
+      stage: string;
+      reason: string;
+      lostReason?: string;
+      expectedVersion: number;
+    },
+  ) =>
+    request(`/leads/${id}/transition`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  updateCorrectiveAction: (
+    id: string,
+    input: {
+      status: string;
+      result: string;
+      effectivenessReview: string;
+      expectedVersion: number;
+    },
+  ) =>
+    request(`/corrective-actions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    }),
   dashboard: () => request<{ data: CustomerAffairsDashboard }>('/dashboard'),
   report: () => request<{ data: AffairsReport }>('/reports/summary'),
   leads: (search = '', options: AffairsListOptions = {}) =>

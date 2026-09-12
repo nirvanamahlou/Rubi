@@ -1,5 +1,10 @@
 # Work Assignments
 
+## CUSTOMER-AFFAIRS-OPERATIONAL-FORMS — PC-B — DONE / BACKLOG PARTIAL
+
+- User requests completion of audited gaps. Reserve Customer Affairs Web components/client/tests and own docs on `codex/pc-b-customer-affairs-operational-forms` from live `cc9970b`. Implement existing-contract record editing, source/preferences, scoped HR directory assignment, lead stage/loss and corrective action forms, explicit ticket categories. Shared API/schema/dependency/other-module changes are not reserved; external messaging/site ingress, probability persistence and producer-side customer conversion/sales intake need separate contracts/coordination. Preserve Web3100 combined runtime and API4190. No merge.
+- Existing-contract slice verified: 35 tests, scoped ESLint/typecheck and production build (46 routes) passed. Authenticated browser verified edit fields, retained data/customer lookup, allowed stage/loss controls. The checked branch has no user-linked HR employees; picker shows this rather than inventing recipients. No data submissions; API4190 retained and Web3100 restarted with its configured public API. Own reservation released; larger backlog remains incomplete as documented.
+
 ## CUSTOMER-AFFAIRS-FORM-DIALOGS — PC-B — DONE / VERIFIED
 
 - User requests popup forms. Reserve Customer Affairs Web components and scoped tests plus own task/status entries on `codex/pc-b-customer-affairs-form-dialogs`, based on live combined `304953b` to preserve Web3100. Reuse shared overlays without editing shared files. Convert creation, followup, qualification, referral, outcome and communication forms; keep underlying views mounted and API/data unchanged. No schema/dependency locks needed. Verify scoped checks, production build and browser; restart Web3100 only, retain API4190. No merge.

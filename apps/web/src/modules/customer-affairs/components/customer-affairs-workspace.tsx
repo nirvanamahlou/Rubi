@@ -48,6 +48,8 @@ import {
 } from '../api/customer-affairs-client';
 import { CustomerPicker } from './customer-picker';
 import { CustomerAffairsFormDialog } from './customer-affairs-form-dialog';
+import { AssigneePicker } from './assignee-picker';
+import { RecordOperations, ticketCategories } from './record-operations';
 import s from './customer-affairs-rubi.module.css';
 
 type Tab = 'leads' | 'tickets';
@@ -144,7 +146,7 @@ export function LeadForm({
     const passengers = Number(data.get('passengerCount'));
     const input: CustomerAffairsLeadInput = {
       title: String(data.get('title')),
-      sourceReference: `manual-${crypto.randomUUID()}`,
+      sourceReference: String(data.get('sourceReference')),
       inboundChannel: String(
         data.get('channel'),
       ) as CustomerAffairsLeadInput['inboundChannel'],
@@ -169,7 +171,8 @@ export function LeadForm({
             basis: 'TOTAL',
           }
         : { unknownReason: 'در تماس اولیه اعلام نشد' },
-      specialPreferences: null,
+      specialPreferences: String(data.get('specialPreferences') || '') || null,
+      assigneeUserId: String(data.get('assigneeUserId') || '') || null,
       customerId: customer?.id ?? null,
       priority: String(
         data.get('priority'),
@@ -199,6 +202,20 @@ export function LeadForm({
       <form className="mt-5 grid gap-4 lg:grid-cols-2" onSubmit={submit}>
         <FormField label="عنوان">
           <Input name="title" required minLength={3} />
+        </FormField>
+        <FormField label="منبع سرنخ / نام کمپین یا معرف">
+          <Input
+            name="sourceReference"
+            required
+            maxLength={160}
+            placeholder="مثلاً تماس مستقیم، معرفی مشتری یا نام کمپین"
+          />
+        </FormField>
+        <FormField label="توضیحات خاص">
+          <Textarea name="specialPreferences" maxLength={1000} />
+        </FormField>
+        <FormField label="مسئول پیگیری">
+          <AssigneePicker name="assigneeUserId" />
         </FormField>
         <FormField label="کانال">
           <select
@@ -372,6 +389,8 @@ export function TicketForm({
       ) as CustomerAffairsTicketInput['priority'],
       customerId: customer?.id ?? null,
       references: [],
+      customerOwnerUserId:
+        String(data.get('customerOwnerUserId') || '') || null,
       nextAction: String(data.get('nextAction')),
       nextActionAt: new Date(String(data.get('nextActionAt'))).toISOString(),
     };
@@ -394,6 +413,9 @@ export function TicketForm({
       <form className="mt-5 grid gap-4 lg:grid-cols-2" onSubmit={submit}>
         <FormField label="موضوع">
           <Input name="subject" required minLength={3} />
+        </FormField>
+        <FormField label="مسئول پاسخ‌گویی (در صورت انتخاب‌نکردن، ثبت‌کننده)">
+          <AssigneePicker name="customerOwnerUserId" />
         </FormField>
         <FormField label="کانال">
           <select
@@ -423,16 +445,7 @@ export function TicketForm({
               defaultValue="QUESTION"
               required
             >
-              {[
-                ['QUESTION', 'سؤال و راهنمایی'],
-                ['COMPLAINT', 'شکایت از خدمت'],
-                ['CHANGE', 'تغییر تاریخ یا خدمت'],
-                ['CANCELLATION', 'درخواست کنسلی'],
-                ['REFUND', 'پیگیری استرداد'],
-                ['DOCUMENT', 'پیگیری مدارک'],
-                ['PAYMENT', 'مشکل پرداخت'],
-                ['OTHER', 'سایر'],
-              ].map(([value, label]) => (
+              {ticketCategories.map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
@@ -586,6 +599,7 @@ export function DetailPanel({
         customerAffairsApi.refer(detail.id, {
           destinationModule: String(data.get('destinationModule')),
           destinationUnit: String(data.get('destinationUnit')),
+          assignedUserId: String(data.get('assignedUserId') || '') || null,
           title: String(data.get('title')),
           description: String(data.get('description')),
           dueAt: new Date(String(data.get('dueAt'))).toISOString(),
@@ -1064,6 +1078,12 @@ export function DetailPanel({
                   placeholder="نام واحد مسئول رسیدگی"
                 />
               </FormField>
+              <FormField label="کارشناس گیرنده">
+                <AssigneePicker
+                  name="assignedUserId"
+                  branchId={detail.branchId}
+                />
+              </FormField>
               <FormField label="عنوان کار">
                 <Input name="title" required minLength={3} />
               </FormField>
@@ -1122,6 +1142,7 @@ export function DetailPanel({
           )}
         </Card>
       ) : null}
+      <RecordOperations detail={detail} onReload={onReload} />
       <Card className={s.detail}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-black">سابقه ارتباط و رسیدگی</h3>

@@ -39,6 +39,7 @@ describe('customer affairs workspace contract', () => {
   });
 
   it('renders the required operational surfaces', () => {
+    const source = moduleSources(moduleRoot);
     for (const marker of [
       'پیش‌فروش',
       'پشتیبانی',
@@ -53,7 +54,7 @@ describe('customer affairs workspace contract', () => {
       'ارسال به فروش',
       'بازگشایی',
     ]) {
-      expect(moduleSources(moduleRoot)).toContain(marker);
+      expect(source).toContain(marker);
     }
   });
 

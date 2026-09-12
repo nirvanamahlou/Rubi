@@ -17,6 +17,76 @@ afterEach(() => {
 });
 
 describe('customer affairs operational API client', () => {
+  it('edits optional fields without leaking read-only or unrelated values', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4190/api/v1';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ data: {} }) });
+    vi.stubGlobal('fetch', fetchMock);
+    const record = {
+      id: 'lead',
+      stage: 'NEW',
+      version: 3,
+      title: 'عنوان قبلی',
+      sourceReference: 'old',
+      customerId: 'keep',
+      passengerComposition: { adults: 1, children: 0, infants: 0 },
+    } as CustomerAffairsLeadView;
+    await customerAffairsApi.updateFollowup(
+      record,
+      'پیگیری بعدی',
+      '2026-09-15T10:00:00Z',
+      {
+        sourceReference: 'کمپین پاییز',
+        specialPreferences: 'غذای گیاهی',
+        assigneeUserId: 'staff',
+        stage: 'HANDED_OFF',
+        id: 'other',
+        expectedVersion: 999,
+        budgetMaximum: '1000',
+      },
+    );
+    const payload = JSON.parse(fetchMock.mock.calls[0]![1].body);
+    expect(payload).toMatchObject({
+      customerId: 'keep',
+      sourceReference: 'کمپین پاییز',
+      specialPreferences: 'غذای گیاهی',
+      assigneeUserId: 'staff',
+      expectedVersion: 3,
+      passengerComposition: record.passengerComposition,
+    });
+    for (const key of ['id', 'stage', 'budgetMaximum'])
+      expect(payload).not.toHaveProperty(key);
+  });
+  it('persists loss reasons and corrective results through versioned endpoints', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4190/api/v1';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ data: {} }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await customerAffairsApi.transitionLead('lead', {
+      stage: 'LOST',
+      reason: 'مشتری منصرف شد',
+      lostReason: 'انصراف از سفر',
+      expectedVersion: 2,
+    });
+    await customerAffairsApi.updateCorrectiveAction('action', {
+      status: 'DONE',
+      result: 'پاسخ ارائه شد',
+      effectivenessReview: 'تأیید مشتری',
+      expectedVersion: 4,
+    });
+    expect(fetchMock.mock.calls[0]![0]).toContain('/leads/lead/transition');
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toMatchObject({
+      lostReason: 'انصراف از سفر',
+      expectedVersion: 2,
+    });
+    expect(fetchMock.mock.calls[1]![0]).toContain('/corrective-actions/action');
+    expect(JSON.parse(fetchMock.mock.calls[1]![1].body)).toMatchObject({
+      effectivenessReview: 'تأیید مشتری',
+      expectedVersion: 4,
+    });
+  });
   it.each(['leads', 'tickets'] as const)(
     'updates %s followup with concurrency protection and without writing read-only state',
     async (kind) => {
