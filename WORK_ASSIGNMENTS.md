@@ -1,6 +1,80 @@
 # Work Assignments
 
-## WORKBENCH-017-PUBLISH — PC-B — IN_PROGRESS
+## B2B-EXCEL-IMPORT-EXPORT-001 — PC-B — IN_PROGRESS
+
+- Reserve Organizations directory Excel actions, Master Data export filter validation and focused service/UI tests. Remove the redundant directory-level import-template button, keep the sample template inside the import dialog, and allow the already-contracted `organizationRole` filter only for organization exports. No schema, migration, dependency, IAM grant or operational-data change.
+
+## B2B-FINANCE-EXPORT-LAYOUT-001 — PC-B — IN_PROGRESS
+
+- Reserve `organization-finance-preview.tsx` and `organization-documents-panel.tsx` only. Remove the requested finance sample-boundary notice and move both finance-row and document Excel actions into the document header beside the upload action with compact controls. No export payload, document API, data, schema, dependency or permission change.
+
+## WORKBENCH-033 — PC-B — UI_VERIFIED
+
+- Moved the existing Home quick-access card directly above "My notifications" in the primary column. Its three links use a horizontal wide-screen grid; link and notification behavior are unchanged. Source `833458d`, combined runtime `7f4f793`; scoped lint, TypeScript and 46-route build passed. Authenticated Web3100 QA confirmed DOM and visual order with no console errors. Web PID29632/build gEMl1G7UjZStBq4fPr6UF; combined agency Excel fix preserved. Draft PR212. No Workbench API/schema/shared-component change.
+
+## WORKBENCH-032 — PC-B — UI_VERIFIED / CALENDAR_SESSION_LOCAL
+
+- Delivered Workbench UI polish: Notes date placeholders are short, the calendar creates session-local events with text/image/link attachments, the profile theme selector is removed, and the messenger has a colorful Rubi presentation without visible unavailable-state copy. Source `623fbb0`; 56 focused tests, scoped lint, TypeScript and 46-route production build passed. Authenticated browser verified all four requests and an event with image/link; no console errors. Web3100 PID14168/buildGhIUre85BIXBxND2PRsp2; API4190 unchanged. Draft PR211. Calendar persistence and message delivery remain outside this UI-only work item.
+
+## WORKBENCH-031 — PC-B — UI_VERIFIED
+
+- Distinct feedback card background only. Reserve WorkbenchFeedback root class; violet light/dark gradient and border, existing form controls unchanged. No behavior/API changes.
+
+## WORKBENCH-030 — PC-B — UI_VERIFIED
+
+- Limit Home HR notices to latest5, retaining complete received-list view-all dialog. Reserve Workbench HR notification component only and docs. No API/HR domain/shared changes.
+
+## WORKBENCH-029 — PC-B — UI_VERIFIED
+
+- Four requested reservation messenger templates; reserve message-templates and own docs only. No Reservations domain/API/schema changes. Reuse editable composer/local attachments; no upload/send claim.
+
+## WORKBENCH-028 — PC-B — UI_VERIFIED
+
+- Finance messenger eight requested editable templates; reserve message-templates and own docs. Reuse local draft attachments; no Finance domain/API/schema changes, posting or actual payment.
+
+## WORKBENCH-027 — PC-B — UI_VERIFIED
+
+- User removes Tasks/Automation section. Reserve shared navigation/messages/icon mappings/change-notification label and tasks route plus existing nav test. Remove entry globally and redirect legacy route to Workbench, no data/API/schema deletion. Shared runtime coordinated.
+
+## WORKBENCH-026 — PC-B — UI_VERIFIED
+
+- Sales messenger six user-requested editable templates. Reserve message-templates only and own docs; reuse existing draft attachments. No Sales domain/API/schema changes or real customer data.
+
+## WORKBENCH-025 — PC-B — UI_VERIFIED
+
+- HR messenger four editable templates: system/internet issues, salary/advance, leave, documents. Reuse existing text composer and unit-scoped local attachments. Reserve message-templates only plus docs; no HR domain/API/schema changes. Real upload/send remains unavailable.
+
+## WORKBENCH-024 — PC-B — UI_VERIFIED
+
+- Explicit user asks shared header user menu only Workbench and Logout. Reserve user-menu.tsx and existing specification; remove other dropdown content only, preserve identity trigger and logout behavior. Coordinate shared runtime. No IAM/API/schema changes.
+
+## WORKBENCH-023 — PC-B — UI_VERIFIED / DELIVERY_NOT_CONNECTED
+
+- Home feedback/survey form: subject/body, department, optional local attachments and anonymous preference. Reserve Workbench new component/integration only. No feedback delivery/storage service exists; explicit draft state, no fake anonymous submission, no schema/API/dependency changes. Persistence remains awaiting coordinated migration handoff.
+
+## WORKBENCH-022 — PC-B — UI_READY / UPLOAD_NOT_CONNECTED
+
+- Visa document/payment receipt editable templates and local attachment selection in Workbench composer. No upload/send persistence claimed before Messaging contract/migration handoff. Reserve message templates/composer and local attachment helper/tests only. Preserve WORKBENCH-021 pending owner coordination.
+
+## WORKBENCH-021 — PC-B — CONTRACT_PREPARATION / AWAITING_OWNER_HANDOFF
+
+- User requests CRM contacts, direct messages, forwarding and group creation. Branch codex/pc-b-workbench-messaging based on7bc84c0 (preserves unmerged Workbench delivery). Reserve own task proposal only until IAM/migration ownership coordinated. Proposed additive v1 producer IAM minimum staff directory, Messaging conversation/membership/message services; consumer Workbench messenger. No admin-user listing exposure, credential changes, direct cross-module table reads or API runtime takeover. Exact proposal: docs/tasks/WORKBENCH-021-MESSAGING.md.
+
+## WORKBENCH-020 — PC-B — UI_VERIFIED
+
+- Reserve Workbench-only dropdown wrapper and six native select consumers; reuse shared Rubi Select without changing shared components/dependencies. Branch codex/pc-b-workbench-themed-selects, PC-B.
+
+## WORKBENCH-019 — PC-B — UI_VERIFIED
+
+- Reserve Workbench message units/icons and Home feeds (latest10 plus view-all), own tests/docs on codex/pc-b-workbench-units-home-limits fromf25c052. No API/schema/shared files. Coordinate next Web build with B2B owner.
+
+## WORKBENCH-018-CALENDAR — PC-B — UI_VERIFIED / SOURCE_NOT_CONNECTED
+
+- User requests screenshot558 calendar in Workbench. Reserve Workbench-local calendar model/component/tests and tab integration on codex/pc-b-workbench-calendar from4756f1d. Reuse existing shared Persian calendar utilities and theme; month/week/agenda/undated navigation, date selection and filters. No task due-date service exists in current Workbench: show explicit unavailable-source state, never substitute notification creation timestamps or fabricated events. No API/schema/dependency/shared-component changes; coordinate Web runtime only.
+
+- Delivered source9f5ef8c; 43 Workbench tests, scoped lint, TypeScript and46-route production build passed. Authenticated browser verified month navigation/today, week/agenda/undated views and selected-day details. Web3100 PID4996 manifesthr005-de22f3cb4ce5141b; API4190 unchanged. Draft PR192, no merge. UI reservation released; due-date producer remains unavailable.
+
+## WORKBENCH-017-PUBLISH — PC-B — MERGED
 
 - CI integration follow-up reserves user-menu.spec.ts only to update obsolete profile heading/navigation expectations; credential/access-mutation assertions remain intact. Combined local170tests/lint passed; final CI is the merge gate.
 

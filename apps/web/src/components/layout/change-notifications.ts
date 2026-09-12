@@ -62,7 +62,7 @@ const notificationAreas: readonly (readonly [string, NotificationArea])[] = [
     { label: 'آژانس‌ها و مشتریان سازمانی', href: '/organizations' },
   ],
   ['human-resources', { label: 'منابع انسانی', href: '/human-resources' }],
-  ['tasks', { label: 'وظایف و اتوماسیون', href: '/tasks' }],
+  ['tasks', { label: 'میزکار من', href: '/workbench' }],
   ['documents', { label: 'اسناد و فایل‌ها', href: '/documents' }],
   ['integrations', { label: 'یکپارچه‌سازی‌ها', href: '/integrations' }],
   ['settings', { label: 'تنظیمات سیستم', href: '/settings' }],

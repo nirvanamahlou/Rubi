@@ -118,7 +118,6 @@ export function OrganizationsWorkspace() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [excelOpen, setExcelOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [templateDownloading, setTemplateDownloading] = useState(false);
   const [deleteTarget, setDeleteTarget] =
     useState<OrganizationDeletionTarget>();
   const directoryHeading = useRef<HTMLHeadingElement>(null);
@@ -399,27 +398,6 @@ export function OrganizationsWorkspace() {
       ? 'دریافت آمار ناموفق؛ دوباره تازه‌سازی کنید'
       : 'مطابق جست‌وجو و وضعیت؛ همه صفحات';
 
-  async function downloadImportTemplate() {
-    if (templateDownloading) return;
-    setTemplateDownloading(true);
-    try {
-      const [{ downloadOrganizationXlsx }, { organizationHeaders }] =
-        await Promise.all([
-          import('../model/organization-xlsx'),
-          import('../model/organization-import'),
-        ]);
-      downloadOrganizationXlsx('rubi-organizations-template.xlsx', [
-        organizationHeaders,
-      ]);
-    } catch (caught) {
-      setNotice(
-        caught instanceof Error ? caught.message : 'دریافت قالب ناموفق بود.',
-      );
-    } finally {
-      setTemplateDownloading(false);
-    }
-  }
-
   async function exportExcel() {
     if (exporting) return;
     setExporting(true);
@@ -534,16 +512,6 @@ export function OrganizationsWorkspace() {
             >
               <Download aria-hidden="true" className="size-4" />
               {exporting ? 'در حال ساخت خروجی…' : 'خروجی Excel'}
-            </Button>
-            <Button
-              disabled={templateDownloading}
-              onClick={() => void downloadImportTemplate()}
-              size="lg"
-              type="button"
-              variant="outline"
-            >
-              <Download aria-hidden="true" className="size-4" />
-              {templateDownloading ? 'در حال دریافت…' : 'دانلود قالب ورود'}
             </Button>
             <Button
               disabled={

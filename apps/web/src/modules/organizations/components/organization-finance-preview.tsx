@@ -1,6 +1,8 @@
 'use client';
 import { useState } from 'react';
 import type { MasterDataRecord } from '@rubi/contracts';
+import { Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { OrganizationDocumentsPanel } from './organization-documents-panel';
 import { downloadOrganizationXlsx } from '../model/organization-xlsx';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -69,49 +71,50 @@ export function OrganizationFinancePreview({
             key={organization.id + current}
             organization={organization}
             folderLabel={`اسناد مالی ${titles[current].replace('های نمونه', '').replace('نمونه', '')}`}
+            toolbar={
+              <Button
+                size="sm"
+                variant="outline"
+                aria-label="خروجی Excel ردیف‌های فیلترشده"
+                title="خروجی Excel ردیف‌های فیلترشده"
+                disabled={invalidRange || !shown.length}
+                onClick={() =>
+                  downloadOrganizationXlsx(`finance-preview-${current}.xlsx`, [
+                    [
+                      'سازمان',
+                      'نوع داده',
+                      'بخش',
+                      'شناسه',
+                      'تاریخ',
+                      'شرح',
+                      'مبلغ',
+                      'ارز',
+                      'وضعیت',
+                      'مرجع',
+                      'یادداشت',
+                    ],
+                    ...shown.map((row) => [
+                      organizationName,
+                      'آزمایشی؛ فاقد ثبت حسابداری',
+                      titles[current],
+                      row.id,
+                      row.date,
+                      row.title,
+                      row.amount,
+                      row.currency,
+                      row.status,
+                      row.reference,
+                      row.note,
+                    ]),
+                  ])
+                }
+              >
+                <Download aria-hidden="true" className="size-4" />
+                Excel ردیف‌ها
+              </Button>
+            }
           />
         ) : null}
-        <button
-          className="btn"
-          disabled={invalidRange || !shown.length}
-          onClick={() =>
-            downloadOrganizationXlsx(`finance-preview-${current}.xlsx`, [
-              [
-                'سازمان',
-                'نوع داده',
-                'بخش',
-                'شناسه',
-                'تاریخ',
-                'شرح',
-                'مبلغ',
-                'ارز',
-                'وضعیت',
-                'مرجع',
-                'یادداشت',
-              ],
-              ...shown.map((row) => [
-                organizationName,
-                'آزمایشی؛ فاقد ثبت حسابداری',
-                titles[current],
-                row.id,
-                row.date,
-                row.title,
-                row.amount,
-                row.currency,
-                row.status,
-                row.reference,
-                row.note,
-              ]),
-            ])
-          }
-        >
-          خروجی Excel ردیف‌های فیلترشده
-        </button>
-        <p className="boundary-note" role="note">
-          این ردیف‌ها سناریوی نمونه برای بررسی بخش مالی پرونده «
-          {organizationName}» هستند؛ سوابق واقعی این آژانس، سند حسابداری یا
-          تأیید پرداخت نیستند و روی اعتبار قابل استفاده اثر ندارند.
-        </p>
         <div className="grid gap-3 sm:grid-cols-2">
           {(['IRR', 'USD'] as const).map((currency) => {
             const totals = previewTotals(currency);

@@ -148,11 +148,6 @@ export const navigationMessages = [
     description: 'پرونده و عملیات کارکنان',
   },
   {
-    title: 'وظایف و اتوماسیون',
-    href: '/tasks',
-    description: 'کارها و جریان‌های خودکار',
-  },
-  {
     title: 'اسناد و فایل‌ها',
     href: '/documents',
     description: 'آرشیو و مدیریت فایل‌ها',

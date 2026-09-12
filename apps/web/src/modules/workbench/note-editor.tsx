@@ -1,4 +1,5 @@
 'use client';
+import { WorkbenchSelect } from './workbench-select';
 
 import { useState } from 'react';
 import { LockKeyhole, Save } from 'lucide-react';
@@ -222,15 +223,15 @@ export function NoteEditor({
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-2 text-sm font-semibold">
                 پوشه
-                <select
-                  className="w-full rounded-xl border border-border bg-surface p-3"
+                <WorkbenchSelect
+                  label="پوشه"
                   value={folder}
-                  onChange={(event) => setFolder(event.target.value)}
-                >
-                  {folders.map((name) => (
-                    <option key={name}>{name}</option>
-                  ))}
-                </select>
+                  onValueChange={setFolder}
+                  options={folders.map((name) => ({
+                    value: name,
+                    label: name,
+                  }))}
+                />
               </label>
               <label className="space-y-2 text-sm font-semibold">
                 برچسب‌ها

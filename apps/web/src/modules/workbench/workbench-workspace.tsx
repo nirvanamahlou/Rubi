@@ -1,10 +1,13 @@
 'use client';
+import { WorkbenchFeedback } from './workbench-feedback';
+import { WorkbenchSelect } from './workbench-select';
 
 import type { NotificationItemV1 } from '@rubi/contracts';
 import {
   Activity,
   ArrowUpLeft,
   Bell,
+  CalendarDays,
   CheckCheck,
   ClipboardList,
   FileText,
@@ -53,6 +56,7 @@ import {
   type WorkbenchHome,
 } from './model';
 import { WorkbenchFiles } from './workbench-files';
+import { WorkbenchCalendar } from './workbench-calendar';
 import { WorkbenchNotes } from './workbench-notes';
 import { WorkbenchFavorites } from './workbench-favorites';
 import { MessageComposer } from './message-composer';
@@ -70,6 +74,7 @@ const tabIcons = [
   Star,
   Activity,
   StickyNote,
+  CalendarDays,
   Settings2,
 ];
 export function WorkbenchWorkspace() {
@@ -86,6 +91,7 @@ export function WorkbenchWorkspace() {
   const [noteOpen, setNoteOpen] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [messageUnit, setMessageUnit] = useState('finance');
   const [passwordOpen, setPasswordOpen] = useState(false);
   const generation = useRef(0);
@@ -266,7 +272,7 @@ export function WorkbenchWorkspace() {
             >
               <TabsList
                 aria-label="بخش‌های میزکار"
-                className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl p-2 sm:grid-cols-4 xl:grid-cols-8"
+                className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl p-2 sm:grid-cols-3 xl:grid-cols-9"
               >
                 {workbenchTabs.map(([id, label], index) => {
                   const Icon = tabIcons[index]!;
@@ -327,36 +333,10 @@ export function WorkbenchWorkspace() {
                   />
                 </div>
                 <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-                  <Card className="p-5">
-                    <div className="mb-4 flex items-center gap-2">
-                      <Bell
-                        className="size-5 text-primary"
-                        aria-hidden="true"
-                      />
-                      <h2 className="font-bold">اعلان‌های من</h2>
-                      <Badge className="ms-auto">سامانه</Badge>
-                    </div>
-                    {actionError && (
-                      <Alert
-                        title="وضعیت اعلان ثبت نشد"
-                        description={actionError}
-                        tone="error"
-                      />
-                    )}
-                    <NotificationFeed
-                      home={home}
-                      pendingRead={pendingRead}
-                      onRead={markRead}
-                    />
-                  </Card>
                   <div className="space-y-5">
-                    <WorkbenchHrNotifications
-                      key={home.user.id}
-                      permissions={home.user.permissions}
-                    />
                     <Card className="p-5">
-                      <h2 className="font-bold mb-4">دسترسی سریع</h2>
-                      <div className="grid gap-2">
+                      <h2 className="mb-4 font-bold">دسترسی سریع</h2>
+                      <div className="grid gap-2 sm:grid-cols-3">
                         <QuickLink href="/profile" label="پروفایل و حساب من" />
                         <QuickLink
                           href="/workbench?tab=files"
@@ -369,12 +349,54 @@ export function WorkbenchWorkspace() {
                       </div>
                     </Card>
                     <Card className="p-5">
-                      <h2 className="font-bold mb-3">آخرین فایل‌های من</h2>
+                      <div className="mb-4 flex items-center gap-2">
+                        <Bell
+                          className="size-5 text-primary"
+                          aria-hidden="true"
+                        />
+                        <h2 className="font-bold">اعلان‌های من</h2>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="ms-auto"
+                          onClick={() => setNotificationsOpen(true)}
+                        >
+                          مشاهده همه
+                        </Button>
+                      </div>
+                      {actionError && (
+                        <Alert
+                          title="وضعیت اعلان ثبت نشد"
+                          description={actionError}
+                          tone="error"
+                        />
+                      )}
+                      <NotificationFeed
+                        limit={10}
+                        home={home}
+                        pendingRead={pendingRead}
+                        onRead={markRead}
+                      />
+                    </Card>
+                  </div>
+                  <div className="space-y-5">
+                    <WorkbenchFeedback />
+                    <WorkbenchHrNotifications
+                      key={home.user.id}
+                      permissions={home.user.permissions}
+                    />
+                    <Card className="p-5">
+                      <div className="mb-3 flex items-center justify-between gap-2">
+                        <h2 className="font-bold">آخرین فایل‌های من</h2>
+                        <Button asChild variant="outline" size="sm">
+                          <Link href="/workbench?tab=files">مشاهده همه</Link>
+                        </Button>
+                      </div>
                       {home.documents.status === 'ready' ? (
                         home.documents.data.data.length ? (
                           <ul className="space-y-3">
                             {home.documents.data.data
-                              .slice(0, 5)
+                              .slice(0, 10)
                               .map((file) => (
                                 <li key={file.id}>
                                   <Link
@@ -480,6 +502,9 @@ export function WorkbenchWorkspace() {
                   />
                 </Card>
               </TabsContent>
+              <TabsContent value="calendar">
+                <WorkbenchCalendar />
+              </TabsContent>
               <TabsContent value="account">
                 <Card className="overflow-hidden lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
                   <div className="space-y-6 bg-primary/5 p-6 lg:p-8">
@@ -565,26 +590,40 @@ export function WorkbenchWorkspace() {
         )
       )}
       {home && (
+        <Dialog open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+          <DialogContent
+            dir="rtl"
+            className="max-w-3xl max-h-[85vh] overflow-y-auto"
+          >
+            <DialogTitle>همه اعلان‌های دریافتی</DialogTitle>
+            <DialogDescription>آخرین ۵۰ اعلان دریافتی سامانه</DialogDescription>
+            <NotificationFeed
+              home={home}
+              pendingRead={pendingRead}
+              onRead={markRead}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+      {home && (
         <Dialog open={messageOpen} onOpenChange={setMessageOpen}>
           <DialogContent dir="rtl" className="max-w-xl">
             <DialogTitle>پیام جدید</DialogTitle>
             <DialogDescription>
               واحد مخاطب را از فهرست پیام‌رسان انتخاب کنید و با قالب آماده یا
-              متن دلخواه شروع کنید. ارسال واقعی هنوز در دسترس نیست.
+              متن دلخواه شروع کنید.
             </DialogDescription>
             <label className="mt-4 block space-y-2 text-sm font-semibold">
               واحد مخاطب
-              <select
-                className="w-full rounded-xl border border-border bg-surface p-3"
+              <WorkbenchSelect
+                label="واحد مخاطب"
                 value={messageUnit}
-                onChange={(event) => setMessageUnit(event.target.value)}
-              >
-                {messageUnits.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.label}
-                  </option>
-                ))}
-              </select>
+                onValueChange={setMessageUnit}
+                options={messageUnits.map((item) => ({
+                  value: item.id,
+                  label: item.label,
+                }))}
+              />
             </label>
             <Button className="mt-4" onClick={() => setMessageOpen(false)}>
               نوشتن پیام
@@ -666,11 +705,13 @@ function QuickLink({ href, label }: { href: string; label: string }) {
 function NotificationFeed({
   home,
   activityOnly = false,
+  limit,
   pendingRead,
   onRead,
 }: {
   home: WorkbenchHome;
   activityOnly?: boolean;
+  limit?: number;
   pendingRead: string | null;
   onRead: (id: string) => Promise<void>;
 }) {
@@ -686,9 +727,10 @@ function NotificationFeed({
         }
       />
     );
-  const items = home.notifications.data.data.filter(
-    (item) => !activityOnly || item.actor?.id === home.user.id,
-  );
+  const items = home.notifications.data.data
+    .filter((item) => !activityOnly || item.actor?.id === home.user.id)
+    .sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt))
+    .slice(0, limit);
   if (!items.length)
     return (
       <EmptyState

@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  ChevronDown,
-  House,
-  LogOut,
-  Settings2,
-  ShieldCheck,
-  UserRound,
-} from 'lucide-react';
+import { ChevronDown, House, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -16,7 +9,6 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import {
   clearHeaderSession,
-  formatHeaderLoginTime,
   readHeaderSession,
   rememberHeaderSession,
 } from '@/lib/header-session';
@@ -106,46 +98,10 @@ export function UserMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <div className="flex min-w-0 items-center gap-3 border-b border-border px-3 py-3">
-          <span
-            aria-hidden="true"
-            className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-sm font-black text-primary-foreground"
-          >
-            {initials}
-          </span>
-          <span className="min-w-0">
-            <strong className="block truncate text-sm">
-              {identity.displayName}
-            </strong>
-            <span className="text-xs text-muted-foreground">
-              {identity.status === 'ready'
-                ? `ورود ${formatHeaderLoginTime(identity.loggedInAt)}`
-                : 'حساب کاربری سامانه'}
-            </span>
-          </span>
-        </div>
         <DropdownMenuItem asChild>
           <Link href="/workbench">
             <House aria-hidden="true" className="size-4" />
             میزکار من
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/profile">
-            <UserRound aria-hidden="true" className="size-4" />
-            {faMessages.shell.profile}
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/profile?tab=preferences">
-            <Settings2 aria-hidden="true" className="size-4" />
-            {faMessages.shell.preferences}
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/profile?tab=security">
-            <ShieldCheck aria-hidden="true" className="size-4" />
-            {faMessages.shell.securitySessions}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem

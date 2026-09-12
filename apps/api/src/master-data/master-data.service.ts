@@ -709,6 +709,7 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     'paymentChannel',
     'paymentDirection',
     'organizationId',
+    'organizationRole',
     'serviceId',
     'insurerId',
     'currencyId',
@@ -770,6 +771,12 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     !['asc', 'desc'].includes(String(input.filters.sortDirection))
   )
     throw new BadRequestException('جهت مرتب‌سازی خروجی معتبر نیست.');
+  if (
+    input.filters.organizationRole !== undefined &&
+    (input.resource !== 'organizations' ||
+      !organizationRoles.has(String(input.filters.organizationRole)))
+  )
+    throw new BadRequestException('نقش سازمان در فیلتر خروجی معتبر نیست.');
   if (
     input.filters.terminalType !== undefined &&
     !['DOMESTIC', 'INTERNATIONAL', 'MIXED', 'VIP'].includes(
@@ -939,6 +946,14 @@ function exportQuery(input: ExportInput): MasterDataListQuery {
       : {}),
     ...(typeof input.filters.organizationId === 'string'
       ? { organizationId: input.filters.organizationId }
+      : {}),
+    ...(typeof input.filters.organizationRole === 'string'
+      ? {
+          organizationRole: input.filters.organizationRole as Exclude<
+            MasterDataListQuery['organizationRole'],
+            undefined
+          >,
+        }
       : {}),
     ...(typeof input.filters.serviceId === 'string'
       ? { serviceId: input.filters.serviceId }

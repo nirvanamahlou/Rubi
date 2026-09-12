@@ -1,4 +1,5 @@
 'use client';
+import { WorkbenchSelect } from './workbench-select';
 
 import { useState } from 'react';
 import {
@@ -51,19 +52,15 @@ export function NewRequestDialog({
           </label>
           <label className="space-y-2 text-sm font-semibold">
             <span>واحد مقصد *</span>
-            <select
-              className="w-full rounded-xl border border-border bg-surface p-3"
+            <WorkbenchSelect
+              label="واحد مقصد"
               value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-            >
-              {messageUnits
+              onValueChange={setUnit}
+              required
+              options={messageUnits
                 .filter((item) => item.id !== 'ai')
-                .map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
-                  </option>
-                ))}
-            </select>
+                .map((item) => ({ value: item.id, label: item.label }))}
+            />
           </label>
           <label className="space-y-2 text-sm font-semibold sm:col-span-2">
             <span>شرح درخواست *</span>
@@ -77,15 +74,16 @@ export function NewRequestDialog({
           </label>
           <label className="space-y-2 text-sm font-semibold">
             <span>اولویت</span>
-            <select
-              className="w-full rounded-xl border border-border bg-surface p-3"
+            <WorkbenchSelect
+              label="اولویت"
               value={priority}
-              onChange={(e) => setPriority(e.target.value)}
-            >
-              <option value="normal">عادی</option>
-              <option value="high">بالا</option>
-              <option value="urgent">فوری</option>
-            </select>
+              onValueChange={setPriority}
+              options={[
+                { value: 'normal', label: 'عادی' },
+                { value: 'high', label: 'بالا' },
+                { value: 'urgent', label: 'فوری' },
+              ]}
+            />
           </label>
           <label className="space-y-2 text-sm font-semibold">
             <span>مرجع پرونده مرتبط</span>

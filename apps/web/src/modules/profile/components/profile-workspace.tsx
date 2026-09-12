@@ -6,8 +6,6 @@ import {
   type LucideIcon,
   Mail,
   RefreshCw,
-  Sun,
-  Moon,
   ShieldCheck,
   UserRound,
 } from 'lucide-react';
@@ -15,7 +13,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
-import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import { PersonalDetailsForm } from './personal-details-form';
 import {
@@ -26,7 +23,6 @@ import {
   PageHeader,
   Skeleton,
 } from '@/components/ui/surfaces';
-import { cn } from '@/lib/utils';
 import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
 import { legalEntitySelectionLabel } from '@/modules/legal-entities/model/context';
 import {
@@ -284,13 +280,12 @@ function ProfileField({
 }
 
 function PersonalPreferences({ profile }: { profile: AuthenticatedProfile }) {
-  const { theme, toggleTheme } = useTheme();
   return (
     <section className="min-w-0 space-y-5" dir="rtl">
       <PageHeader
         eyebrow="حساب کاربری"
         title="تنظیمات شخصی"
-        description="اطلاعات شخصی و ظاهر روبی را مدیریت کنید."
+        description="اطلاعات شخصی و عکس پروفایل خود را مدیریت کنید."
       />
       <PersonalDetailsForm
         key={profile.user.id}
@@ -301,44 +296,6 @@ function PersonalPreferences({ profile }: { profile: AuthenticatedProfile }) {
           phone: '',
         }}
       />
-      <Card className="p-5 sm:p-6">
-        <h2 className="text-lg font-black">ظاهر برنامه</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          انتخاب شما بلافاصله اعمال می‌شود و در همین مرورگر باقی می‌ماند.
-        </p>
-        <div
-          aria-label="انتخاب تم"
-          className="mt-5 grid max-w-2xl gap-3 sm:grid-cols-2"
-          role="group"
-        >
-          {(
-            [
-              { value: 'light', label: 'حالت روشن', icon: Sun },
-              { value: 'dark', label: 'حالت تیره', icon: Moon },
-            ] as const
-          ).map(({ value, label, icon: Icon }) => (
-            <Button
-              key={value}
-              variant="outline"
-              aria-pressed={theme === value}
-              onClick={() => {
-                if (theme !== value) toggleTheme();
-              }}
-              className={cn(
-                'h-auto min-h-28 flex-col justify-center gap-3 text-center text-base',
-                theme === value &&
-                  'border-primary bg-primary/10 text-primary ring-1 ring-primary',
-              )}
-            >
-              <Icon aria-hidden="true" className="size-6" />
-              {label}
-            </Button>
-          ))}
-        </div>
-        <p className="mt-4 text-sm text-muted-foreground" role="status">
-          تم فعلی: {theme === 'light' ? 'روشن' : 'تیره'}
-        </p>
-      </Card>
     </section>
   );
 }

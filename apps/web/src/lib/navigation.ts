@@ -1,6 +1,5 @@
 import {
   BarChart3,
-  Bot,
   BadgeDollarSign,
   Building2,
   CalendarCheck2,
@@ -54,7 +53,6 @@ const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/marketing': Megaphone,
   '/organizations': Building2,
   '/human-resources': HeartHandshake,
-  '/tasks': Bot,
   '/documents': FileStack,
   '/reports': BarChart3,
   '/integrations': SlidersHorizontal,
@@ -73,7 +71,7 @@ export const navigationGroups = [
     id: 'work',
     dotClass: 'bg-[#96c9ff]',
     title: 'فضای کار',
-    hrefs: ['/workbench', '/dashboard', '/tasks'],
+    hrefs: ['/workbench', '/dashboard'],
   },
   {
     id: 'sales',

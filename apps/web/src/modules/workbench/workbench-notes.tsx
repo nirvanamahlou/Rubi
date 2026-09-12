@@ -1,4 +1,5 @@
 'use client';
+import { WorkbenchSelect } from './workbench-select';
 
 import { useState } from 'react';
 import { LockKeyhole, Plus, Search, Star, StickyNote } from 'lucide-react';
@@ -89,32 +90,26 @@ export function WorkbenchNotes({
             />
           </label>
           <label>
-            <span className="sr-only">از تاریخ پیش‌نویس</span>
+            <span className="sr-only">از تاریخ</span>
             <DatePicker
               value={from}
               onChange={setFrom}
-              placeholder="از تاریخ پیش‌نویس"
+              placeholder="از تاریخ"
             />
           </label>
           <label>
-            <span className="sr-only">تا تاریخ پیش‌نویس</span>
-            <DatePicker
-              value={to}
-              onChange={setTo}
-              placeholder="تا تاریخ پیش‌نویس"
-            />
+            <span className="sr-only">تا تاریخ</span>
+            <DatePicker value={to} onChange={setTo} placeholder="تا تاریخ" />
           </label>
-          <select
-            aria-label="پوشه یادداشت"
+          <WorkbenchSelect
+            label="پوشه یادداشت"
             value={folder}
-            onChange={(e) => setFolder(e.target.value)}
-            className="rounded-xl border border-border bg-surface p-2 text-sm"
-          >
-            <option value="">همه پوشه‌ها</option>
-            {folders.map((name) => (
-              <option key={name}>{name}</option>
-            ))}
-          </select>
+            onValueChange={setFolder}
+            options={[
+              { value: '', label: 'همه پوشه‌ها' },
+              ...folders.map((name) => ({ value: name, label: name })),
+            ]}
+          />
         </div>
         {(search || folder || from || to) && (
           <div className="px-4 pt-3">

@@ -6,7 +6,13 @@ import type {
   IamPermissionCode,
   MasterDataRecord,
 } from '@rubi/contracts';
-import { FileText, FileUp, RefreshCw, ExternalLink } from 'lucide-react';
+import {
+  Download,
+  ExternalLink,
+  FileText,
+  FileUp,
+  RefreshCw,
+} from 'lucide-react';
 import Link from 'next/link';
 import {
   useCallback,
@@ -14,6 +20,7 @@ import {
   useRef,
   useState,
   type FormEvent,
+  type ReactNode,
 } from 'react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -65,9 +72,11 @@ function failure(error: unknown): string {
 export function OrganizationDocumentsPanel({
   organization,
   folderLabel,
+  toolbar,
 }: {
   organization: MasterDataRecord;
   folderLabel?: string;
+  toolbar?: ReactNode;
 }) {
   const [options, setOptions] = useState<OrganizationDocumentOptions>();
   const [permissions, setPermissions] = useState<readonly IamPermissionCode[]>(
@@ -181,43 +190,51 @@ export function OrganizationDocumentsPanel({
               : 'قرارداد، الحاقیه، مجوز و تضمین؛ نسخه‌ها و دریافت فایل در آرشیو اسناد در دسترس‌اند.'}
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setNotice('');
-            setUpload(true);
-          }}
-          disabled={
-            loading ||
-            !!error ||
-            !options ||
-            !permissions.includes('documents.upload')
-          }
-        >
-          <FileUp className="size-4" />{' '}
-          {folderLabel ? 'ثبت مشخصات و فایل سند' : 'بارگذاری سند'}
-        </Button>
-      </header>
-      <div className="panel-body space-y-4">
-        {folderLabel ? (
+        <div className="flex flex-row-reverse flex-wrap items-center gap-2">
           <Button
-            variant="outline"
-            disabled={loading || !!error || !records.length}
-            onClick={() =>
-              downloadOrganizationXlsx('financial-documents.xlsx', [
-                ['سازمان', 'بخش', 'عنوان سند', 'شناسه', 'وضعیت بررسی'],
-                ...records.map((r) => [
-                  organization.name,
-                  folderLabel,
-                  r.title,
-                  r.id,
-                  scanLabels[r.currentVersion.scanStatus],
-                ]),
-              ])
+            size="sm"
+            onClick={() => {
+              setNotice('');
+              setUpload(true);
+            }}
+            disabled={
+              loading ||
+              !!error ||
+              !options ||
+              !permissions.includes('documents.upload')
             }
           >
-            خروجی Excel اسناد این صفحه
+            <FileUp className="size-4" />{' '}
+            {folderLabel ? 'ثبت مشخصات و فایل سند' : 'بارگذاری سند'}
           </Button>
-        ) : null}
+          {folderLabel ? (
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label="خروجی Excel اسناد این صفحه"
+              title="خروجی Excel اسناد این صفحه"
+              disabled={loading || !!error || !records.length}
+              onClick={() =>
+                downloadOrganizationXlsx('financial-documents.xlsx', [
+                  ['سازمان', 'بخش', 'عنوان سند', 'شناسه', 'وضعیت بررسی'],
+                  ...records.map((r) => [
+                    organization.name,
+                    folderLabel,
+                    r.title,
+                    r.id,
+                    scanLabels[r.currentVersion.scanStatus],
+                  ]),
+                ])
+              }
+            >
+              <Download aria-hidden="true" className="size-4" />
+              Excel اسناد
+            </Button>
+          ) : null}
+          {toolbar}
+        </div>
+      </header>
+      <div className="panel-body space-y-4">
         <div className="dossier-filter-grid">
           <DossierDateFilters
             value={dateRange}
