@@ -1,5 +1,9 @@
 # Work Assignments
 
+## CUSTOMER-AFFAIRS-VISUAL-POLISH — PC-B — IN_PROGRESS
+
+- User requests richer visual treatment for the existing Customer Affairs overview. Reserve the module CSS and own status entry on `codex/pc-b-customer-affairs-visual-polish`; preserve content, behavior, data, API, schema, dependencies and all other modules. Use existing Rubi/theme tokens with accessible contrast, responsive states and reduced-motion support; verify with scoped checks, production build and authenticated browser QA on Web3100. No merge.
+
 ## CUSTOMER-AFFAIRS-REMOVE-INTRO — PC-B — DONE / VERIFIED
 
 - User requests removal of the overview introduction banner and its two texts only. Reserve CA workspace, scoped regression test and own status entry on `codex/pc-b-customer-affairs-remove-intro` from shared runtime `7566d20`. Preserve all modules; Web3100-only rebuild/restart after checks. No API/database/schema/dependency changes.

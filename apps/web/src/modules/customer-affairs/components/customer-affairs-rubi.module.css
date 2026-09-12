@@ -50,9 +50,16 @@
   margin-bottom: 22px;
 }
 .tab {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 13px;
-  background: var(--surface);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--primary) 2%, var(--surface)),
+    var(--surface)
+  );
   color: var(--muted-foreground);
   display: flex;
   flex-direction: column;
@@ -64,8 +71,23 @@
   font-size: 13px;
   font-weight: 700;
   transition:
-    background 0.15s,
-    border-color 0.15s;
+    background 0.18s,
+    border-color 0.18s,
+    color 0.18s,
+    box-shadow 0.18s,
+    transform 0.18s;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+.tab::after {
+  content: '';
+  position: absolute;
+  inset-inline: 22%;
+  inset-block-end: 0;
+  height: 3px;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(90deg, var(--primary), var(--ca-teal));
+  transform: scaleX(0);
+  transition: transform 0.18s;
 }
 .tab svg {
   width: 23px;
@@ -73,12 +95,25 @@
 }
 .tab[aria-current='page'] {
   color: var(--primary);
-  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
-  background: color-mix(in srgb, var(--primary) 9%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 52%, var(--border));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--primary) 16%, var(--surface)),
+    color-mix(in srgb, var(--ca-teal) 7%, var(--surface))
+  );
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--primary) 13%, transparent);
+}
+.tab[aria-current='page']::after {
+  transform: scaleX(1);
 }
 .tab:hover,
 .hubCard:hover {
   border-color: var(--primary);
+}
+.tab:hover {
+  color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 9px 24px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 .workspace button:focus-visible,
 .workspace a:focus-visible {
@@ -130,21 +165,67 @@
   margin-bottom: 21px;
 }
 .metric {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 13px;
   padding: 18px;
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
   border-radius: 14px;
-  background: var(--surface);
+  background:
+    radial-gradient(
+      circle at 92% -30%,
+      color-mix(in srgb, var(--accent) 22%, transparent) 0,
+      transparent 52%
+    ),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 12%, var(--surface)),
+      color-mix(in srgb, var(--accent) 3%, var(--surface)) 68%,
+      var(--surface)
+    );
   text-align: start;
   min-width: 0;
+  box-shadow: 0 9px 26px color-mix(in srgb, var(--accent) 8%, transparent);
+  transition:
+    border-color 0.18s,
+    box-shadow 0.18s,
+    transform 0.18s;
+}
+.metric::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 4px;
+  background: linear-gradient(
+    180deg,
+    var(--accent),
+    color-mix(in srgb, var(--accent) 40%, transparent)
+  );
+}
+.metric > * {
+  position: relative;
+  z-index: 1;
+}
+.metric:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--accent) 14%, transparent);
+  transform: translateY(-3px);
+}
+.metric .icon {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 17%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 13%, transparent);
 }
 .metric strong {
   display: block;
   font-size: 28px;
   font-weight: 850;
   line-height: 1.4;
+  color: var(--accent);
 }
 .metric p {
   font-size: 13px;
@@ -161,6 +242,9 @@
   margin-bottom: 22px;
 }
 .hubCard {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -169,19 +253,69 @@
   padding: 21px;
   min-height: 195px;
   text-align: start;
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
   border-radius: 15px;
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--accent) 18%, transparent),
+      transparent 42%
+    ),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 14%, var(--surface)),
+      color-mix(in srgb, var(--accent) 4%, var(--surface)) 66%,
+      var(--surface)
+    );
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--accent) 8%, transparent);
+  transition:
+    border-color 0.18s,
+    box-shadow 0.18s,
+    transform 0.18s;
+}
+.hubCard::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  height: 4px;
   background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--accent, var(--primary)) 9%, var(--surface)),
-    var(--surface) 80%
+    90deg,
+    var(--accent),
+    color-mix(in srgb, var(--accent) 35%, transparent)
   );
+}
+.hubCard::after {
+  content: '';
+  position: absolute;
+  inset-inline-end: -44px;
+  inset-block-end: -52px;
+  width: 130px;
+  height: 130px;
+  border: 24px solid color-mix(in srgb, var(--accent) 5%, transparent);
+  border-radius: 50%;
+  z-index: -1;
+}
+.hubCard > * {
+  position: relative;
+  z-index: 1;
+}
+.hubCard:hover {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--border));
+  box-shadow: 0 16px 38px color-mix(in srgb, var(--accent) 14%, transparent);
+  transform: translateY(-3px);
 }
 .hubTitle {
   display: flex;
   align-items: center;
   gap: 11px;
   font-weight: 800;
+  color: color-mix(in srgb, var(--accent) 72%, var(--foreground));
+}
+.hubTitle .icon {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 17%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .hubCard p {
   color: var(--muted-foreground);
@@ -190,13 +324,14 @@
 }
 .hubCard footer {
   margin-top: auto;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
   padding-top: 11px;
   font-size: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: var(--primary);
+  color: color-mix(in srgb, var(--accent) 78%, var(--foreground));
+  font-weight: 750;
 }
 .columns {
   display: grid;
@@ -210,6 +345,7 @@
   background: var(--surface);
   overflow: clip;
   margin-bottom: 18px;
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 .panelHead {
   display: flex;
@@ -219,6 +355,11 @@
   gap: 12px;
   padding: 18px 20px;
   border-bottom: 1px solid var(--border);
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, var(--primary) 5%, var(--surface)),
+    var(--surface) 65%
+  );
 }
 .panelHead h2 {
   font-size: 16px;
@@ -241,6 +382,10 @@
   gap: 13px;
   padding: 17px 20px;
   border-bottom: 1px solid var(--border);
+  transition: background 0.16s;
+}
+.listItem:hover {
+  background: color-mix(in srgb, var(--primary) 4%, var(--surface));
 }
 .listItem:last-child {
   border-bottom: none;
@@ -594,5 +739,19 @@
   }
   .board {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab,
+  .tab::after,
+  .metric,
+  .hubCard,
+  .listItem {
+    transition: none;
+  }
+  .tab:hover,
+  .metric:hover,
+  .hubCard:hover {
+    transform: none;
   }
 }
