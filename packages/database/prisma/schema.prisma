@@ -30,73 +30,89 @@ enum AuditOutcome {
 }
 
 model User {
-  b2bOrganizationUser             B2bOrganizationUser?
-  hotelRateBatches                ReservationHotelRateBatch[]
-  reservationManifestExports      ReservationManifestExport[]
-  reservationServicePurchases     ReservationServicePurchase[]
-  financeSupplierPaymentRevisions FinanceSupplierPaymentRevision[]
-  ownedTravelIntakes              ReservationIntake[]              @relation("TravelSalesOwner")
-  travelWorkflowRevisions         ReservationWorkflowRevision[]
-  travelDeliveryRevisions         FinanceDeliveryRevision[]
-  id                              String                           @id @default(uuid()) @db.Uuid
-  username                        String                           @unique @db.VarChar(80)
-  email                           String?                          @unique @db.VarChar(320)
-  displayName                     String                           @db.VarChar(160)
-  passwordHash                    String                           @db.VarChar(255)
-  status                          UserStatus                       @default(ACTIVE)
-  failedLoginAttempts             Int                              @default(0)
-  lockedUntil                     DateTime?                        @db.Timestamptz(3)
-  passwordChangedAt               DateTime                         @default(now()) @db.Timestamptz(3)
-  lastLoginAt                     DateTime?                        @db.Timestamptz(3)
-  mfaTotpSecretCiphertext         String?                          @map("mfa_totp_secret_ciphertext") @db.VarChar(800)
-  mfaTotpPendingSecretCiphertext  String?                          @map("mfa_totp_pending_secret_ciphertext") @db.VarChar(800)
-  mfaTotpPendingExpiresAt         DateTime?                        @map("mfa_totp_pending_expires_at") @db.Timestamptz(3)
-  mfaTotpEnabledAt                DateTime?                        @map("mfa_totp_enabled_at") @db.Timestamptz(3)
-  mfaFailedAttempts               Int                              @default(0) @map("mfa_failed_attempts")
-  mfaLockedUntil                  DateTime?                        @map("mfa_locked_until") @db.Timestamptz(3)
-  mfaLastUsedStep                 BigInt?                          @map("mfa_last_used_step") @db.BigInt
-  createdAt                       DateTime                         @default(now()) @db.Timestamptz(3)
-  updatedAt                       DateTime                         @updatedAt @db.Timestamptz(3)
-  roles                           UserRole[]
-  branches                        UserBranch[]
-  sessions                        Session[]
-  auditEvents                     AuditEvent[]                     @relation("AuditActor")
-  customersCreated                Customer[]                       @relation("CustomerCreatedBy")
-  customersUpdated                Customer[]                       @relation("CustomerUpdatedBy")
-  customersDeactivated            Customer[]                       @relation("CustomerDeactivatedBy")
-  customerContactsCreated         CustomerContact[]                @relation("CustomerContactCreatedBy")
-  customerAddressesCreated        CustomerAddress[]                @relation("CustomerAddressCreatedBy")
-  customerConsentsRecorded        CustomerConsent[]                @relation("CustomerConsentRecordedBy")
-  customerRelationshipsCreated    CustomerRelationship[]           @relation("CustomerRelationshipCreatedBy")
-  customerStatusChanges           CustomerStatusHistory[]          @relation("CustomerStatusChangedBy")
-  customerDuplicateCandidates     CustomerDuplicateCandidate[]     @relation("CustomerDuplicateCreatedBy")
-  customerDuplicateReviews        CustomerDuplicateCandidate[]     @relation("CustomerDuplicateReviewedBy")
-  customerAuditEvents             CustomerAuditEvent[]             @relation("CustomerAuditActor")
-  legalEntityContext              UserLegalEntityContext?
-  legalEntitiesUpdated            LegalEntity[]                    @relation("LegalEntityUpdatedBy")
-  legalEntityBrandingVersions     LegalEntityBrandingVersion[]     @relation("LegalEntityBrandingVersionCreatedBy")
-  legalEntityAuditEvents          LegalEntityAuditEvent[]          @relation("LegalEntityAuditActor")
-  legalEntityDocumentIssues       LegalEntityDocumentIssue[]       @relation("LegalEntityDocumentIssueActor")
-  documentsOwned                  Document[]                       @relation("DocumentOwner")
-  documentsCreated                Document[]                       @relation("DocumentCreatedBy")
-  documentsUpdated                Document[]                       @relation("DocumentUpdatedBy")
-  documentVersionsCreated         DocumentVersion[]                @relation("DocumentVersionCreatedBy")
-  documentAuditEvents             DocumentAuditEvent[]             @relation("DocumentAuditActor")
-  documentQuarantinesReviewed     DocumentQuarantine[]             @relation("DocumentQuarantineReviewer")
-  documentAccessGrants            DocumentAccessGrant[]            @relation("DocumentAccessGrantActor")
-  notificationsReceived           Notification[]                   @relation("NotificationRecipient")
-  notificationsActed              Notification[]                   @relation("NotificationActor")
-  agencyProfilesManaged           AgencyOperationalProfile[]       @relation("AgencyAccountManager")
-  b2bAuditEvents                  B2bAuditEvent[]                  @relation("B2bAuditActor")
-  b2bRevisionsCreated             B2bAgreementRevision[]           @relation("B2bRevisionCreator")
-  b2bRevisionsSubmitted           B2bAgreementRevision[]           @relation("B2bRevisionSubmitter")
-  b2bRevisionsReviewed            B2bAgreementRevision[]           @relation("B2bRevisionReviewer")
-  b2bCommands                     B2bAgreementCommand[]
-  hrEmployee                      HrEmployee?
-  hrAuditEvents                   HrAuditEvent[]
-  hrCommands                      HrCommand[]
-  hrNotificationReads             HrNotificationRead[]
-  hrNotifications                 HrNotification[]
+  b2bOrganizationUser               B2bOrganizationUser?
+  hotelRateBatches                  ReservationHotelRateBatch[]
+  reservationManifestExports        ReservationManifestExport[]
+  reservationServicePurchases       ReservationServicePurchase[]
+  financeSupplierPaymentRevisions   FinanceSupplierPaymentRevision[]
+  ownedTravelIntakes                ReservationIntake[]               @relation("TravelSalesOwner")
+  travelWorkflowRevisions           ReservationWorkflowRevision[]
+  travelDeliveryRevisions           FinanceDeliveryRevision[]
+  id                                String                            @id @default(uuid()) @db.Uuid
+  username                          String                            @unique @db.VarChar(80)
+  email                             String?                           @unique @db.VarChar(320)
+  displayName                       String                            @db.VarChar(160)
+  passwordHash                      String                            @db.VarChar(255)
+  status                            UserStatus                        @default(ACTIVE)
+  failedLoginAttempts               Int                               @default(0)
+  lockedUntil                       DateTime?                         @db.Timestamptz(3)
+  passwordChangedAt                 DateTime                          @default(now()) @db.Timestamptz(3)
+  lastLoginAt                       DateTime?                         @db.Timestamptz(3)
+  mfaTotpSecretCiphertext           String?                           @map("mfa_totp_secret_ciphertext") @db.VarChar(800)
+  mfaTotpPendingSecretCiphertext    String?                           @map("mfa_totp_pending_secret_ciphertext") @db.VarChar(800)
+  mfaTotpPendingExpiresAt           DateTime?                         @map("mfa_totp_pending_expires_at") @db.Timestamptz(3)
+  mfaTotpEnabledAt                  DateTime?                         @map("mfa_totp_enabled_at") @db.Timestamptz(3)
+  mfaFailedAttempts                 Int                               @default(0) @map("mfa_failed_attempts")
+  mfaLockedUntil                    DateTime?                         @map("mfa_locked_until") @db.Timestamptz(3)
+  mfaLastUsedStep                   BigInt?                           @map("mfa_last_used_step") @db.BigInt
+  createdAt                         DateTime                          @default(now()) @db.Timestamptz(3)
+  updatedAt                         DateTime                          @updatedAt @db.Timestamptz(3)
+  roles                             UserRole[]
+  branches                          UserBranch[]
+  sessions                          Session[]
+  auditEvents                       AuditEvent[]                      @relation("AuditActor")
+  customersCreated                  Customer[]                        @relation("CustomerCreatedBy")
+  customersUpdated                  Customer[]                        @relation("CustomerUpdatedBy")
+  customersDeactivated              Customer[]                        @relation("CustomerDeactivatedBy")
+  customerContactsCreated           CustomerContact[]                 @relation("CustomerContactCreatedBy")
+  customerAddressesCreated          CustomerAddress[]                 @relation("CustomerAddressCreatedBy")
+  customerConsentsRecorded          CustomerConsent[]                 @relation("CustomerConsentRecordedBy")
+  customerRelationshipsCreated      CustomerRelationship[]            @relation("CustomerRelationshipCreatedBy")
+  customerStatusChanges             CustomerStatusHistory[]           @relation("CustomerStatusChangedBy")
+  customerDuplicateCandidates       CustomerDuplicateCandidate[]      @relation("CustomerDuplicateCreatedBy")
+  customerDuplicateReviews          CustomerDuplicateCandidate[]      @relation("CustomerDuplicateReviewedBy")
+  customerAuditEvents               CustomerAuditEvent[]              @relation("CustomerAuditActor")
+  legalEntityContext                UserLegalEntityContext?
+  legalEntitiesUpdated              LegalEntity[]                     @relation("LegalEntityUpdatedBy")
+  legalEntityBrandingVersions       LegalEntityBrandingVersion[]      @relation("LegalEntityBrandingVersionCreatedBy")
+  legalEntityAuditEvents            LegalEntityAuditEvent[]           @relation("LegalEntityAuditActor")
+  legalEntityDocumentIssues         LegalEntityDocumentIssue[]        @relation("LegalEntityDocumentIssueActor")
+  documentsOwned                    Document[]                        @relation("DocumentOwner")
+  documentsCreated                  Document[]                        @relation("DocumentCreatedBy")
+  documentsUpdated                  Document[]                        @relation("DocumentUpdatedBy")
+  documentVersionsCreated           DocumentVersion[]                 @relation("DocumentVersionCreatedBy")
+  documentAuditEvents               DocumentAuditEvent[]              @relation("DocumentAuditActor")
+  documentQuarantinesReviewed       DocumentQuarantine[]              @relation("DocumentQuarantineReviewer")
+  documentAccessGrants              DocumentAccessGrant[]             @relation("DocumentAccessGrantActor")
+  notificationsReceived             Notification[]                    @relation("NotificationRecipient")
+  notificationsActed                Notification[]                    @relation("NotificationActor")
+  agencyProfilesManaged             AgencyOperationalProfile[]        @relation("AgencyAccountManager")
+  b2bAuditEvents                    B2bAuditEvent[]                   @relation("B2bAuditActor")
+  b2bRevisionsCreated               B2bAgreementRevision[]            @relation("B2bRevisionCreator")
+  b2bRevisionsSubmitted             B2bAgreementRevision[]            @relation("B2bRevisionSubmitter")
+  b2bRevisionsReviewed              B2bAgreementRevision[]            @relation("B2bRevisionReviewer")
+  b2bCommands                       B2bAgreementCommand[]
+  hrEmployee                        HrEmployee?
+  hrAuditEvents                     HrAuditEvent[]
+  hrCommands                        HrCommand[]
+  hrNotificationReads               HrNotificationRead[]
+  hrNotifications                   HrNotification[]
+  customerAffairsLeadsAssigned      CustomerAffairsLead[]             @relation("CustomerAffairsLeadAssignee")
+  customerAffairsLeadsCreated       CustomerAffairsLead[]             @relation("CustomerAffairsLeadCreator")
+  customerAffairsLeadsUpdated       CustomerAffairsLead[]             @relation("CustomerAffairsLeadUpdater")
+  customerAffairsTicketsOwned       CustomerAffairsTicket[]           @relation("CustomerAffairsTicketOwner")
+  customerAffairsTicketsExecuted    CustomerAffairsTicket[]           @relation("CustomerAffairsTicketExecutor")
+  customerAffairsTicketsCreated     CustomerAffairsTicket[]           @relation("CustomerAffairsTicketCreator")
+  customerAffairsTicketsUpdated     CustomerAffairsTicket[]           @relation("CustomerAffairsTicketUpdater")
+  customerAffairsTimelineEntries    CustomerAffairsTimeline[]
+  customerAffairsHandoffsCreated    CustomerAffairsHandoff[]          @relation("CustomerAffairsHandoffCreator")
+  customerAffairsHandoffsResponded  CustomerAffairsHandoff[]          @relation("CustomerAffairsHandoffResponder")
+  customerAffairsReferralsAssigned  CustomerAffairsReferral[]         @relation("CustomerAffairsReferralAssignee")
+  customerAffairsReferralsCreated   CustomerAffairsReferral[]         @relation("CustomerAffairsReferralCreator")
+  customerAffairsReferralsResponded CustomerAffairsReferral[]         @relation("CustomerAffairsReferralResponder")
+  customerAffairsCorrectiveActions  CustomerAffairsCorrectiveAction[]
+  customerAffairsCommands           CustomerAffairsCommand[]
+  customerAffairsAuditEvents        CustomerAffairsAuditEvent[]
 
   @@map("iam_users")
 }
@@ -153,27 +169,30 @@ model RolePermission {
 }
 
 model Branch {
-  hotelRateBatches      ReservationHotelRateBatch[]
-  b2bOrganizationUsers  B2bOrganizationUser[]
-  id                    String                      @id @default(uuid()) @db.Uuid
-  code                  String                      @unique @db.VarChar(40)
-  name                  String                      @db.VarChar(160)
-  isActive              Boolean                     @default(true)
-  createdAt             DateTime                    @default(now()) @db.Timestamptz(3)
-  updatedAt             DateTime                    @updatedAt @db.Timestamptz(3)
-  users                 UserBranch[]
-  ownedCustomers        Customer[]                  @relation("CustomerOwnerBranch")
-  customerStatusHistory CustomerStatusHistory[]
-  customerAuditEvents   CustomerAuditEvent[]
-  documents             Document[]
-  documentAuditEvents   DocumentAuditEvent[]
-  agencyProfiles        AgencyOperationalProfile[]
-  b2bAuditEvents        B2bAuditEvent[]
-  b2bSignatories        B2bOrganizationSignatory[]
-  hrEmployees           HrEmployee[]
-  hrRecords             HrRecord[]
-  hrAuditEvents         HrAuditEvent[]
-  hrNotifications       HrNotification[]
+  hotelRateBatches           ReservationHotelRateBatch[]
+  b2bOrganizationUsers       B2bOrganizationUser[]
+  id                         String                      @id @default(uuid()) @db.Uuid
+  code                       String                      @unique @db.VarChar(40)
+  name                       String                      @db.VarChar(160)
+  isActive                   Boolean                     @default(true)
+  createdAt                  DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt                  DateTime                    @updatedAt @db.Timestamptz(3)
+  users                      UserBranch[]
+  ownedCustomers             Customer[]                  @relation("CustomerOwnerBranch")
+  customerStatusHistory      CustomerStatusHistory[]
+  customerAuditEvents        CustomerAuditEvent[]
+  documents                  Document[]
+  documentAuditEvents        DocumentAuditEvent[]
+  agencyProfiles             AgencyOperationalProfile[]
+  b2bAuditEvents             B2bAuditEvent[]
+  b2bSignatories             B2bOrganizationSignatory[]
+  hrEmployees                HrEmployee[]
+  hrRecords                  HrRecord[]
+  hrAuditEvents              HrAuditEvent[]
+  hrNotifications            HrNotification[]
+  customerAffairsLeads       CustomerAffairsLead[]
+  customerAffairsTickets     CustomerAffairsTicket[]
+  customerAffairsAuditEvents CustomerAffairsAuditEvent[]
 
   @@map("branches")
 }
@@ -2299,6 +2318,8 @@ model Customer {
   duplicateCandidates        CustomerDuplicateCandidate[] @relation("DuplicateSourceCustomer")
   duplicateMatches           CustomerDuplicateCandidate[] @relation("DuplicateCandidateCustomer")
   statusHistory              CustomerStatusHistory[]
+  customerAffairsLeads       CustomerAffairsLead[]
+  customerAffairsTickets     CustomerAffairsTicket[]
 
   @@index([ownerBranchId, isActive, updatedAt])
   @@index([displayName])
@@ -3679,4 +3700,278 @@ model ReservationHotelGroupRate {
   @@unique([batchId, hotelId, brokerId])
   @@index([hotelId, batchId])
   @@map("reservation_hotel_group_rates")
+}
+
+// Customer Affairs owns request, lead, support and referral persistence. Cross-module
+// identifiers are snapshots validated through public module services, never relations.
+model CustomerAffairsLead {
+  id                   String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  trackingNumber       String                    @unique @map("tracking_number") @db.VarChar(32)
+  branchId             String                    @map("branch_id") @db.Uuid
+  customerId           String?                   @map("customer_id") @db.Uuid
+  title                String                    @db.VarChar(200)
+  sourceReference      String                    @map("source_reference") @db.VarChar(160)
+  inboundChannel       String                    @map("inbound_channel") @db.VarChar(32)
+  contactOccurredAt    DateTime                  @map("contact_occurred_at") @db.Timestamptz(3)
+  travelNeed           String                    @map("travel_need") @db.VarChar(1000)
+  originReference      String?                   @map("origin_reference") @db.VarChar(160)
+  destinationReference String?                   @map("destination_reference") @db.VarChar(160)
+  travelStart          DateTime?                 @map("travel_start") @db.Timestamptz(3)
+  travelEnd            DateTime?                 @map("travel_end") @db.Timestamptz(3)
+  datePrecision        String                    @default("UNKNOWN") @map("date_precision") @db.VarChar(24)
+  dateFlexibility      String?                   @map("date_flexibility") @db.VarChar(240)
+  passengerCount       Int                       @map("passenger_count")
+  passengerComposition Json                      @map("passenger_composition")
+  requestedServices    Json                      @map("requested_services")
+  budgetMinimum        Decimal?                  @map("budget_minimum") @db.Decimal(24, 4)
+  budgetMaximum        Decimal?                  @map("budget_maximum") @db.Decimal(24, 4)
+  currencyCode         String?                   @map("currency_code") @db.VarChar(3)
+  budgetBasis          String?                   @map("budget_basis") @db.VarChar(32)
+  budgetUnknownReason  String?                   @map("budget_unknown_reason") @db.VarChar(500)
+  specialPreferences   String?                   @map("special_preferences") @db.VarChar(1000)
+  contactFingerprint   String?                   @map("contact_fingerprint") @db.Char(64)
+  priority             String                    @db.VarChar(16)
+  assigneeUserId       String?                   @map("assignee_user_id") @db.Uuid
+  queueCode            String?                   @map("queue_code") @db.VarChar(80)
+  nextAction           String                    @map("next_action") @db.VarChar(500)
+  nextActionAt         DateTime                  @map("next_action_at") @db.Timestamptz(3)
+  stage                String                    @default("NEW") @db.VarChar(32)
+  qualification        Json?
+  lostReason           String?                   @map("lost_reason") @db.VarChar(80)
+  lostNote             String?                   @map("lost_note") @db.VarChar(500)
+  createdByUserId      String                    @map("created_by_user_id") @db.Uuid
+  updatedByUserId      String                    @map("updated_by_user_id") @db.Uuid
+  version              Int                       @default(1)
+  createdAt            DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  branch               Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  customer             Customer?                 @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  assignee             User?                     @relation("CustomerAffairsLeadAssignee", fields: [assigneeUserId], references: [id], onDelete: Restrict)
+  createdBy            User                      @relation("CustomerAffairsLeadCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedBy            User                      @relation("CustomerAffairsLeadUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  timeline             CustomerAffairsTimeline[]
+  handoffs             CustomerAffairsHandoff[]
+
+  @@unique([branchId, sourceReference])
+  @@index([branchId, stage, nextActionAt])
+  @@index([assigneeUserId, stage, nextActionAt])
+  @@index([contactFingerprint, createdAt])
+  @@index([customerId, createdAt])
+  @@map("customer_affairs_leads")
+}
+
+model CustomerAffairsTicket {
+  id                      String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  trackingNumber          String                            @unique @map("tracking_number") @db.VarChar(32)
+  branchId                String                            @map("branch_id") @db.Uuid
+  customerId              String?                           @map("customer_id") @db.Uuid
+  subject                 String                            @db.VarChar(200)
+  description             String                            @db.VarChar(2000)
+  channel                 String                            @db.VarChar(32)
+  contactOccurredAt       DateTime                          @map("contact_occurred_at") @db.Timestamptz(3)
+  category                String                            @db.VarChar(48)
+  serviceType             String?                           @map("service_type") @db.VarChar(80)
+  impact                  String                            @db.VarChar(16)
+  urgency                 String                            @db.VarChar(16)
+  priority                String                            @db.VarChar(16)
+  status                  String                            @default("NEW") @db.VarChar(32)
+  customerOwnerUserId     String                            @map("customer_owner_user_id") @db.Uuid
+  executionOwnerUserId    String?                           @map("execution_owner_user_id") @db.Uuid
+  executionUnit           String?                           @map("execution_unit") @db.VarChar(80)
+  references              Json
+  slaPolicyVersion        String                            @map("sla_policy_version") @db.VarChar(80)
+  firstResponseDueAt      DateTime                          @map("first_response_due_at") @db.Timestamptz(3)
+  resolutionDueAt         DateTime                          @map("resolution_due_at") @db.Timestamptz(3)
+  firstRespondedAt        DateTime?                         @map("first_responded_at") @db.Timestamptz(3)
+  resolvedAt              DateTime?                         @map("resolved_at") @db.Timestamptz(3)
+  pausedAt                DateTime?                         @map("paused_at") @db.Timestamptz(3)
+  pausedMinutes           Int                               @default(0) @map("paused_minutes")
+  firstResponseBreachedAt DateTime?                         @map("first_response_breached_at") @db.Timestamptz(3)
+  resolutionBreachedAt    DateTime?                         @map("resolution_breached_at") @db.Timestamptz(3)
+  escalationLevel         Int?                              @map("escalation_level")
+  nextAction              String                            @map("next_action") @db.VarChar(500)
+  nextActionAt            DateTime                          @map("next_action_at") @db.Timestamptz(3)
+  resolutionOutcome       String?                           @map("resolution_outcome") @db.VarChar(1000)
+  closeReason             String?                           @map("close_reason") @db.VarChar(500)
+  closedAt                DateTime?                         @map("closed_at") @db.Timestamptz(3)
+  reopenCount             Int                               @default(0) @map("reopen_count")
+  createdByUserId         String                            @map("created_by_user_id") @db.Uuid
+  updatedByUserId         String                            @map("updated_by_user_id") @db.Uuid
+  version                 Int                               @default(1)
+  createdAt               DateTime                          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime                          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  branch                  Branch                            @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  customer                Customer?                         @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  customerOwner           User                              @relation("CustomerAffairsTicketOwner", fields: [customerOwnerUserId], references: [id], onDelete: Restrict)
+  executionOwner          User?                             @relation("CustomerAffairsTicketExecutor", fields: [executionOwnerUserId], references: [id], onDelete: Restrict)
+  createdBy               User                              @relation("CustomerAffairsTicketCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedBy               User                              @relation("CustomerAffairsTicketUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  timeline                CustomerAffairsTimeline[]
+  referrals               CustomerAffairsReferral[]
+  satisfactions           CustomerAffairsSatisfaction[]
+  correctiveActions       CustomerAffairsCorrectiveAction[]
+
+  @@index([branchId, status, priority, updatedAt])
+  @@index([customerOwnerUserId, status, nextActionAt])
+  @@index([executionOwnerUserId, status, nextActionAt])
+  @@index([customerId, createdAt])
+  @@index([firstResponseDueAt, resolutionDueAt])
+  @@map("customer_affairs_tickets")
+}
+
+model CustomerAffairsTimeline {
+  id                 String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId             String?                @map("lead_id") @db.Uuid
+  ticketId           String?                @map("ticket_id") @db.Uuid
+  type               String                 @db.VarChar(48)
+  outcome            String?                @db.VarChar(80)
+  summary            String                 @db.VarChar(2000)
+  customerVisible    Boolean                @default(false) @map("customer_visible")
+  channel            String?                @db.VarChar(32)
+  recipientReference String?                @map("recipient_reference") @db.VarChar(160)
+  templateVersion    String?                @map("template_version") @db.VarChar(80)
+  deliveryStatus     String?                @map("delivery_status") @db.VarChar(24)
+  deliveryKey        String?                @unique @map("delivery_key") @db.VarChar(160)
+  documentVersionIds String[]               @map("document_version_ids") @db.Uuid
+  actorUserId        String                 @map("actor_user_id") @db.Uuid
+  occurredAt         DateTime               @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  createdAt          DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  lead               CustomerAffairsLead?   @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  ticket             CustomerAffairsTicket? @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  actor              User                   @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([leadId, occurredAt])
+  @@index([ticketId, occurredAt])
+  @@map("customer_affairs_timeline")
+}
+
+model CustomerAffairsHandoff {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId             String              @map("lead_id") @db.Uuid
+  packageVersion     Int                 @map("package_version")
+  idempotencyKey     String              @map("idempotency_key") @db.VarChar(160)
+  requestFingerprint String              @map("request_fingerprint") @db.Char(64)
+  payloadSnapshot    Json                @map("payload_snapshot")
+  status             String              @default("WAITING_SALES") @db.VarChar(32)
+  salesContractId    String?             @map("sales_contract_id") @db.Uuid
+  responseReason     String?             @map("response_reason") @db.VarChar(500)
+  dispatchedAt       DateTime?           @map("dispatched_at") @db.Timestamptz(3)
+  respondedAt        DateTime?           @map("responded_at") @db.Timestamptz(3)
+  createdByUserId    String              @map("created_by_user_id") @db.Uuid
+  respondedByUserId  String?             @map("responded_by_user_id") @db.Uuid
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  lead               CustomerAffairsLead @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  createdBy          User                @relation("CustomerAffairsHandoffCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  respondedBy        User?               @relation("CustomerAffairsHandoffResponder", fields: [respondedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([leadId, packageVersion])
+  @@unique([leadId, idempotencyKey])
+  @@index([status, createdAt])
+  @@index([salesContractId])
+  @@map("customer_affairs_handoffs")
+}
+
+model CustomerAffairsReferral {
+  id                 String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketId           String                @map("ticket_id") @db.Uuid
+  destinationModule  String                @map("destination_module") @db.VarChar(80)
+  destinationUnit    String?               @map("destination_unit") @db.VarChar(80)
+  assignedUserId     String?               @map("assigned_user_id") @db.Uuid
+  title              String                @db.VarChar(200)
+  description        String                @db.VarChar(1000)
+  dueAt              DateTime              @map("due_at") @db.Timestamptz(3)
+  status             String                @default("OPEN") @db.VarChar(24)
+  responseSummary    String?               @map("response_summary") @db.VarChar(1000)
+  idempotencyKey     String                @map("idempotency_key") @db.VarChar(160)
+  requestFingerprint String                @map("request_fingerprint") @db.Char(64)
+  createdByUserId    String                @map("created_by_user_id") @db.Uuid
+  respondedByUserId  String?               @map("responded_by_user_id") @db.Uuid
+  createdAt          DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  ticket             CustomerAffairsTicket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  assignee           User?                 @relation("CustomerAffairsReferralAssignee", fields: [assignedUserId], references: [id], onDelete: Restrict)
+  createdBy          User                  @relation("CustomerAffairsReferralCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  respondedBy        User?                 @relation("CustomerAffairsReferralResponder", fields: [respondedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([ticketId, idempotencyKey])
+  @@index([assignedUserId, status, dueAt])
+  @@index([destinationModule, status, dueAt])
+  @@map("customer_affairs_referrals")
+}
+
+model CustomerAffairsSatisfaction {
+  id                  String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketId            String                            @unique @map("ticket_id") @db.Uuid
+  invitationReference String                            @unique @map("invitation_reference") @db.VarChar(160)
+  score               Int?
+  comment             String?                           @db.VarChar(1000)
+  submittedByCustomer Boolean                           @default(false) @map("submitted_by_customer")
+  submittedAt         DateTime?                         @map("submitted_at") @db.Timestamptz(3)
+  expiresAt           DateTime                          @map("expires_at") @db.Timestamptz(3)
+  createdAt           DateTime                          @default(now()) @map("created_at") @db.Timestamptz(3)
+  ticket              CustomerAffairsTicket             @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  correctiveActions   CustomerAffairsCorrectiveAction[]
+
+  @@index([ticketId, submittedAt])
+  @@map("customer_affairs_satisfaction")
+}
+
+model CustomerAffairsCorrectiveAction {
+  id                  String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketId            String                       @map("ticket_id") @db.Uuid
+  satisfactionId      String?                      @map("satisfaction_id") @db.Uuid
+  title               String                       @db.VarChar(200)
+  ownerUserId         String                       @map("owner_user_id") @db.Uuid
+  dueAt               DateTime                     @map("due_at") @db.Timestamptz(3)
+  status              String                       @default("OPEN") @db.VarChar(24)
+  result              String?                      @db.VarChar(1000)
+  effectivenessReview String?                      @map("effectiveness_review") @db.VarChar(1000)
+  version             Int                          @default(1)
+  createdAt           DateTime                     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  ticket              CustomerAffairsTicket        @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  owner               User                         @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
+  satisfaction        CustomerAffairsSatisfaction? @relation(fields: [satisfactionId], references: [id], onDelete: SetNull)
+
+  @@index([ownerUserId, status, dueAt])
+  @@index([ticketId, createdAt])
+  @@map("customer_affairs_corrective_actions")
+}
+
+model CustomerAffairsCommand {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorUserId        String   @map("actor_user_id") @db.Uuid
+  scope              String   @db.VarChar(80)
+  idempotencyKey     String   @map("idempotency_key") @db.VarChar(160)
+  requestFingerprint String   @map("request_fingerprint") @db.Char(64)
+  resultEntityId     String   @map("result_entity_id") @db.Uuid
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  actor              User     @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([actorUserId, scope, idempotencyKey])
+  @@index([resultEntityId])
+  @@map("customer_affairs_commands")
+}
+
+model CustomerAffairsAuditEvent {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId       String   @map("branch_id") @db.Uuid
+  actorUserId    String?  @map("actor_user_id") @db.Uuid
+  entityType     String   @map("entity_type") @db.VarChar(48)
+  entityId       String   @map("entity_id") @db.Uuid
+  action         String   @db.VarChar(80)
+  reason         String?  @db.VarChar(500)
+  traceId        String?  @map("trace_id") @db.VarChar(160)
+  version        Int
+  beforeSnapshot Json?    @map("before_snapshot")
+  afterSnapshot  Json?    @map("after_snapshot")
+  occurredAt     DateTime @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  branch         Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  actor          User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([branchId, occurredAt])
+  @@index([entityType, entityId, occurredAt])
+  @@index([actorUserId, occurredAt])
+  @@map("customer_affairs_audit_events")
 }

@@ -1,7 +1,6 @@
-export const CUSTOMER_AFFAIRS_CONTRACT_VERSION =
-  'customer-affairs.v1-proposal' as const;
+export const CUSTOMER_AFFAIRS_CONTRACT_VERSION = 'customer-affairs.v1' as const;
 export const CUSTOMER_AFFAIRS_PHASE_A_NOTICE =
-  'Phase A preview only; no controller, persistence, or cross-module mutation is active.' as const;
+  'Legacy module-local types retained for compatibility; the operational API contract is exported from @rubi/contracts.' as const;
 
 export type LeadStage =
   | 'NEW'

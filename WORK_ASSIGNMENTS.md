@@ -8,14 +8,17 @@
 
 - Organizations permanent-delete dialog now keeps the destructive action available after an authoritative API rejection, clears the previous error before retry and changes the label to an explicit retry action. Only transport/unknown outcomes require refresh, preventing a duplicate delete after an uncertain response. Referenced organizations remain protected and unused organizations are physically removed through the existing Master Data owner endpoint. Focused lint, Web TypeScript/build, all 125 Organizations tests and the seven-test isolated PostgreSQL deletion suite passed. Authenticated Web3100 QA confirmed the merged dialog and active destructive action with the eight-record directory; no user data was deleted during UI QA. Runtime `b9244f4` / `hr005-72ea3c0ada5a1190`; API4190 healthy. No schema, migration, dependency, IAM grant, cascade or business-history deletion.
 
-## CUSTOMER-AFFAIRS-002 — PC-B — IN_PROGRESS
+## CUSTOMER-AFFAIRS-002 — PC-B — UI_VERIFIED
 
 - `COMPUTER_ID=PC-B`; branch `codex/pc-b-customer-affairs-operational` and worktree
   `C:/Users/admin/Rubi-customer-affairs-operational` start from
   `origin/develop@700168e67cc0a495178946bb44bdd3528d2d49d7`.
 - Reserve Customer Affairs ownership for the operational vertical slice in
   `apps/api/src/customer-affairs/**`, `apps/web/src/modules/customer-affairs/**`,
-  `apps/web/src/app/(crm)/customer-affairs/**`, its focused tests and the new task report.
+  `apps/web/src/app/(crm)/customer-affairs/**`,
+  `apps/web/src/modules/workbench/workbench-customer-affairs-referrals.tsx` and the
+  additive requests-tab integration in `workbench-workspace.tsx`, its focused tests and
+  the new task report.
   Preserve the existing foundation and consume Customers, Sales, Reservations, Finance,
   Tasks/Workbench, Documents, HR/IAM, Settings/Notifications, Marketing and Reporting only
   through their public services or versioned references.
@@ -37,6 +40,10 @@
   lockfile change is planned. P0 must use the repository's existing Prisma, Nest, Next,
   Tasks, Documents, Notifications and export infrastructure. External SMS/email/survey
   automation remains fail-closed unless a configured adapter already exists.
+- P0 implementation, isolated PostgreSQL-18 migration/seed verification, monorepo gates,
+  authenticated API smoke and desktop/mobile browser QA are complete. Migration, public
+  contract and Central Docs locks remain owned by this Task only until its Draft PR is
+  opened; final release and handoff are recorded in the follow-up delivery commit.
 
 ## B2B-EXCEL-IMPORT-EXPORT-001 — PC-B — UI_VERIFIED
 

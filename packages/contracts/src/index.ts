@@ -14,3 +14,4 @@ export * from './sales';
 export * from './travel';
 export * from './travel/tours';
 export * from './notifications';
+export * from './customer-affairs';
