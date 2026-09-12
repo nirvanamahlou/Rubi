@@ -1,9 +1,10 @@
 # Work Assignments
 
-## RESERVATION-TICKET-PDF-0912 — PC-A — IN_PROGRESS
+## RESERVATION-TICKET-PDF-0912 — PC-A — LOCAL_COMPLETE
 
 - گزارش مالک محصول: خروجی بلیط در رزرواسیون کار نمی‌کند. Branch `codex/pc-a-reservation-settings-0912`؛ محدودهٔ رزروشده: مدل/رابط خروجی بلیط، Route و Renderer دانلود PDF، تست‌های هدفمند و اسناد همین واحد کار.
 - خروجی فقط از snapshot ذخیره‌شده و مجاز همان درخواست ساخته می‌شود؛ هیچ شماره بلیط، PNR، بار مجاز یا وضعیت صدور جعل نمی‌شود. چاپ مرورگر حفظ و دانلود مستقیم PDF یک مسافر/همه مسافران افزوده می‌شود. بدون Migration، IAM grant، دادهٔ واقعی، ارسال خارجی یا public push.
+- دانلود واقعی با Chrome ویندوز نیز بررسی شد؛ Renderer تا تکمیل فایل پردازش headless صبر می‌کند. ۱۱ تست هدفمند، lint، typecheck، build تولیدی و بازبینی تصویری PDF یک‌صفحه‌ای A4 موفق‌اند.
 
 ## RESERVATION-RECEIPT-SUMMARY-0912 — PC-A — LOCAL_COMPLETE
 
