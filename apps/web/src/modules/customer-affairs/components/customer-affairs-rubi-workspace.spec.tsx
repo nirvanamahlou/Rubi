@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -10,6 +11,19 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('Rubi Customer Affairs navigation', () => {
+  it('removes the overview introduction while retaining metrics and report hero', () => {
+    const source = readFileSync(
+      new URL('./customer-affairs-rubi-workspace.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(source).not.toContain('از اولین تماس تا حل مسئله');
+    expect(source).not.toContain(
+      'نمای یکپارچه درخواست‌ها، ارتباطات و پشتیبانی مشتریان',
+    );
+    expect(source).toContain('className={s.metrics}');
+    expect(source).toContain('className={s.hub}');
+    expect(source).toContain('className={s.hero}');
+  });
   it('renders the five reference sections inside the existing application shell', () => {
     route.query = '';
     const html = renderToStaticMarkup(<CustomerAffairsRubiWorkspace />);

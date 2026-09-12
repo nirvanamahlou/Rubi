@@ -350,18 +350,6 @@ export function CustomerAffairsRubiWorkspace() {
             <>
               {view === 'overview' && (
                 <>
-                  <section className={s.hero}>
-                    <span className={s.icon}>
-                      <Headphones />
-                    </span>
-                    <div>
-                      <h2>از اولین تماس تا حل مسئله، هیچ پیگیری گم نمی‌شود.</h2>
-                      <p className={s.muted}>
-                        نمای یکپارچه درخواست‌ها، ارتباطات و پشتیبانی مشتریان
-                        روبی
-                      </p>
-                    </div>
-                  </section>
                   <div className={s.metrics}>
                     {[
                       {
