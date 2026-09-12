@@ -8,7 +8,10 @@ import {
   CircleCheck,
   FileClock,
   FileSpreadsheet,
+  History,
+  Plus,
   Search,
+  Trash2,
   WalletCards,
   type LucideIcon,
 } from 'lucide-react';
@@ -42,6 +45,8 @@ import { FinanceWorkspace } from './finance-workspace';
 import {
   accountTreePreview,
   financeInboxPreviewRequests,
+  remainingAfterAmount,
+  sumDecimalAmounts,
   validateFinanceActionDraft,
   validateFinanceDecision,
   type AccountTreeItem,
@@ -60,19 +65,31 @@ const requestStatusLabels: Record<InboxRequestStatus, string> = {
   REQUIRES_MANUAL_REVIEW: 'بررسی دستی',
 };
 
-const blankDraft: FinanceActionDraft = {
-  accountReference: '',
-  partyReference: '',
-  actualAmount: '',
-  currencyCode: 'IRR',
-  occurredAt: '2026-09-12T10:00:00.000Z',
-  trackingReference: '',
-  feeAmount: '0',
-  note: '',
-  evidenceReviewed: false,
-  idempotencyKey: 'finance:request:preview-001',
-  expectedVersion: '1',
-};
+function createDraft(request: FinanceInboxPreviewRequest): FinanceActionDraft {
+  return {
+    accountReference: '',
+    partyReference: request.partyReference,
+    actualAmount: request.kind === 'RECEIPT_VERIFICATION' ? request.amount : '',
+    currencyCode: request.currencyCode,
+    occurredAt: '2026-09-12T10:00:00.000Z',
+    trackingReference: '',
+    feeAmount: '0',
+    note: '',
+    evidenceReviewed: false,
+    idempotencyKey: `finance:request:${request.id}`,
+    expectedVersion: String(request.version),
+    paymentParts:
+      request.kind === 'PAYMENT_REQUEST'
+        ? [
+            {
+              id: 'payment-part-1',
+              amount: request.amount,
+              trackingReference: '',
+            },
+          ]
+        : [],
+  };
+}
 
 const accountingCards: readonly [string, string, LucideIcon][] = [
   ['سال و دوره مالی', 'باز / درحال‌بستن / بسته', CalendarRange],
@@ -218,16 +235,41 @@ function ActionDialog({
   request,
   onClose,
 }: {
-  request: FinanceInboxPreviewRequest | null;
+  request: FinanceInboxPreviewRequest;
   onClose: () => void;
 }) {
-  const [draft, setDraft] = useState<FinanceActionDraft>(blankDraft);
+  const [draft, setDraft] = useState<FinanceActionDraft>(() =>
+    createDraft(request),
+  );
   const [errors, setErrors] = useState<readonly string[]>([]);
   const [validated, setValidated] = useState(false);
-  if (!request) return null;
   const isReceipt = request.kind === 'RECEIPT_VERIFICATION';
+  const postingAccounts = accountTreePreview.filter(
+    (account) =>
+      account.active &&
+      account.postingAllowed &&
+      account.currencyCode === request.currencyCode,
+  );
+  const paymentTotal =
+    sumDecimalAmounts(draft.paymentParts.map((part) => part.amount)) ?? '—';
+  const settlementAmount = isReceipt ? draft.actualAmount : paymentTotal;
+  const balanceAfter =
+    settlementAmount === '—'
+      ? null
+      : remainingAfterAmount(request.outstandingAmount, settlementAmount);
   const update = (key: keyof FinanceActionDraft, value: string | boolean) =>
     setDraft((current) => ({ ...current, [key]: value }));
+  const updatePaymentPart = (
+    id: string,
+    key: 'amount' | 'trackingReference',
+    value: string,
+  ) =>
+    setDraft((current) => ({
+      ...current,
+      paymentParts: current.paymentParts.map((part) =>
+        part.id === id ? { ...part, [key]: value } : part,
+      ),
+    }));
   return (
     <Dialog
       open
@@ -243,14 +285,60 @@ function ActionDialog({
           {isReceipt ? 'بررسی و تأیید دریافت' : 'ثبت کنترل‌های پرداخت'}
         </DialogTitle>
         <DialogDescription>
-          {request.requestNumber} · {request.contractReference} · عملیات فقط
-          اعتبارسنجی می‌شود و چیزی ذخیره نخواهد شد.
+          {request.requestNumber} · عملیات مالی برای قرارداد انتخاب‌شده بررسی
+          می‌شود؛ ثبت قطعی پس از فعال‌شدن Persistence انجام خواهد شد.
         </DialogDescription>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <Card className="p-4 sm:col-span-2">
+            <p className="text-xs text-muted-foreground">نام قرارداد</p>
+            <p className="mt-1 font-black">{request.contractTitle}</p>
+            <p className="mt-1 text-xs text-muted-foreground" dir="ltr">
+              {request.contractReference}
+            </p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground">
+              {isReceipt ? 'مشتری قرارداد' : 'کارگزار / تأمین‌کننده'}
+            </p>
+            <p className="mt-1 font-bold">{request.partySnapshot}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {request.partyRoleSnapshot}
+            </p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground">خدمت مرتبط</p>
+            <p className="mt-1 font-bold">{request.serviceSnapshot}</p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground">مبلغ قرارداد / تعهد</p>
+            <p className="mt-1 font-black" dir="ltr">
+              {money(request.contractAmount, request.currencyCode)}
+            </p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground">
+              پرداخت‌های تأییدشده قبلی
+            </p>
+            <p className="mt-1 font-black" dir="ltr">
+              {money(request.previouslySettledAmount, request.currencyCode)}
+            </p>
+          </Card>
+          <Card className="border-primary/30 bg-primary/5 p-4 sm:col-span-2">
+            <p className="text-xs text-muted-foreground">مانده فعلی قرارداد</p>
+            <p className="mt-1 text-xl font-black text-primary" dir="ltr">
+              {money(request.outstandingAmount, request.currencyCode)}
+            </p>
+          </Card>
+        </div>
         <form
           className="mt-5 space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
-            const next = validateFinanceActionDraft(request.kind, draft);
+            const next = validateFinanceActionDraft(
+              request.kind,
+              draft,
+              request.outstandingAmount,
+            );
             setErrors(next);
             setValidated(next.length === 0);
           }}
@@ -272,46 +360,33 @@ function ActionDialog({
                   <SelectValue placeholder="انتخاب حساب" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="preview-bank-account-001">
-                    حساب بانکی نمونه •••• ۱۲۳۴
-                  </SelectItem>
-                  <SelectItem value="preview-cash-account-001">
-                    صندوق نمونه مرکزی
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </FormField>
-            <FormField label="طرف‌حساب">
-              <Input
-                onChange={(e) => update('partyReference', e.target.value)}
-                placeholder="Public Reference"
-                value={draft.partyReference}
-              />
-            </FormField>
-            <FormField label="مبلغ واقعی" required>
-              <Input
-                dir="ltr"
-                inputMode="decimal"
-                onChange={(e) => update('actualAmount', e.target.value)}
-                value={draft.actualAmount}
-              />
-            </FormField>
-            <FormField label="ارز" required>
-              <Select
-                onValueChange={(v) => update('currencyCode', v)}
-                value={draft.currencyCode}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {['IRR', 'USD', 'EUR'].map((v) => (
-                    <SelectItem key={v} value={v}>
-                      {v}
+                  {postingAccounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.code} · {account.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                فقط حساب‌های فعال و قابل Posting با ارز {request.currencyCode}
+              </p>
+            </FormField>
+            {isReceipt ? (
+              <FormField label="مبلغ واقعی دریافت‌شده" required>
+                <Input
+                  dir="ltr"
+                  inputMode="decimal"
+                  onChange={(e) => update('actualAmount', e.target.value)}
+                  value={draft.actualAmount}
+                />
+              </FormField>
+            ) : (
+              <FormField label="طرف‌حساب پرداخت">
+                <Input readOnly value={request.partySnapshot} />
+              </FormField>
+            )}
+            <FormField label="ارز قرارداد" required>
+              <Input dir="ltr" readOnly value={draft.currencyCode} />
             </FormField>
             <FormField label="تاریخ و ساعت واقعی UTC" required>
               <Input
@@ -320,13 +395,15 @@ function ActionDialog({
                 value={draft.occurredAt}
               />
             </FormField>
-            <FormField label="شماره پیگیری">
-              <Input
-                dir="ltr"
-                onChange={(e) => update('trackingReference', e.target.value)}
-                value={draft.trackingReference}
-              />
-            </FormField>
+            {isReceipt ? (
+              <FormField label="شماره پیگیری دریافت">
+                <Input
+                  dir="ltr"
+                  onChange={(e) => update('trackingReference', e.target.value)}
+                  value={draft.trackingReference}
+                />
+              </FormField>
+            ) : null}
             <FormField label="کارمزد">
               <Input
                 dir="ltr"
@@ -334,25 +411,143 @@ function ActionDialog({
                 value={draft.feeAmount}
               />
             </FormField>
-            <FormField label="Version">
-              <Input
-                dir="ltr"
-                onChange={(e) => update('expectedVersion', e.target.value)}
-                value={draft.expectedVersion}
-              />
-            </FormField>
           </div>
+          {!isReceipt ? (
+            <Card className="space-y-3 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="font-black">پرداخت‌های این نوبت</h3>
+                  <p className="text-xs text-muted-foreground">
+                    پرداخت جزئی را ردیف‌به‌ردیف اضافه یا کم کنید.
+                  </p>
+                </div>
+                <Button
+                  onClick={() =>
+                    setDraft((current) => ({
+                      ...current,
+                      paymentParts: [
+                        ...current.paymentParts,
+                        {
+                          id: `payment-part-${Date.now()}`,
+                          amount: '',
+                          trackingReference: '',
+                        },
+                      ],
+                    }))
+                  }
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  <Plus className="size-4" /> افزودن پرداخت جزئی
+                </Button>
+              </div>
+              {draft.paymentParts.map((part, index) => (
+                <div
+                  className="grid gap-3 rounded-xl border border-border p-3 sm:grid-cols-[auto_1fr_1fr_auto] sm:items-end"
+                  key={part.id}
+                >
+                  <Badge>پرداخت {index + 1}</Badge>
+                  <FormField label="مبلغ پرداخت">
+                    <Input
+                      dir="ltr"
+                      inputMode="decimal"
+                      onChange={(event) =>
+                        updatePaymentPart(part.id, 'amount', event.target.value)
+                      }
+                      value={part.amount}
+                    />
+                  </FormField>
+                  <FormField label="شماره پیگیری">
+                    <Input
+                      dir="ltr"
+                      onChange={(event) =>
+                        updatePaymentPart(
+                          part.id,
+                          'trackingReference',
+                          event.target.value,
+                        )
+                      }
+                      value={part.trackingReference}
+                    />
+                  </FormField>
+                  <Button
+                    aria-label={`حذف پرداخت ${index + 1}`}
+                    onClick={() =>
+                      setDraft((current) => ({
+                        ...current,
+                        paymentParts: current.paymentParts.filter(
+                          (item) => item.id !== part.id,
+                        ),
+                      }))
+                    }
+                    size="sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+              ))}
+            </Card>
+          ) : null}
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Card className="p-3">
+              <p className="text-xs text-muted-foreground">مبلغ این عملیات</p>
+              <p className="mt-1 font-black" dir="ltr">
+                {settlementAmount === '—'
+                  ? '—'
+                  : money(settlementAmount, request.currencyCode)}
+              </p>
+            </Card>
+            <Card className="p-3">
+              <p className="text-xs text-muted-foreground">
+                مانده پس از عملیات
+              </p>
+              <p className="mt-1 font-black" dir="ltr">
+                {balanceAfter === null
+                  ? 'مبلغ نامعتبر یا بیشتر از مانده'
+                  : money(balanceAfter, request.currencyCode)}
+              </p>
+            </Card>
+            <Card className="p-3">
+              <p className="text-xs text-muted-foreground">
+                {isReceipt ? 'حساب مقصد دریافت' : 'حساب مبدأ پرداخت'}
+              </p>
+              <p className="mt-1 font-bold">
+                {draft.accountReference
+                  ? postingAccounts.find(
+                      (account) => account.id === draft.accountReference,
+                    )?.title
+                  : 'حساب انتخاب نشده'}
+              </p>
+            </Card>
+          </div>
+          {request.previousPayments.length ? (
+            <details className="rounded-xl border border-border p-3">
+              <summary className="flex cursor-pointer items-center gap-2 font-bold">
+                <History className="size-4" /> سابقه پرداخت‌های قرارداد
+              </summary>
+              <div className="mt-3 space-y-2">
+                {request.previousPayments.map((payment) => (
+                  <div
+                    className="flex flex-wrap justify-between gap-2 rounded-lg bg-muted p-2 text-sm"
+                    key={payment.reference}
+                  >
+                    <span>{payment.reference}</span>
+                    <span dir="ltr">
+                      {money(payment.amount, request.currencyCode)}
+                    </span>
+                    <span dir="ltr">{payment.occurredAt}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          ) : null}
           <FormField label="توضیح مالی" required>
             <Textarea
               onChange={(e) => update('note', e.target.value)}
               value={draft.note}
-            />
-          </FormField>
-          <FormField label="Idempotency Key" required>
-            <Input
-              dir="ltr"
-              onChange={(e) => update('idempotencyKey', e.target.value)}
-              value={draft.idempotencyKey}
             />
           </FormField>
           <label className="flex items-center gap-3 rounded-xl border border-border p-3 text-sm">
@@ -380,7 +575,11 @@ function ActionDialog({
             <Button onClick={onClose} type="button" variant="ghost">
               بستن
             </Button>
-            <Button type="submit">بررسی اطلاعات</Button>
+            <Button type="submit">
+              {isReceipt
+                ? 'بررسی و اتصال دریافت به حساب'
+                : 'بررسی پرداخت‌های جزئی'}
+            </Button>
           </div>
         </form>
       </DialogContent>
@@ -402,7 +601,7 @@ function InboxSpace() {
       financeInboxPreviewRequests.filter(
         (item) =>
           (status === 'ALL' || item.status === status) &&
-          `${item.requestNumber} ${item.contractReference} ${item.partySnapshot}`
+          `${item.requestNumber} ${item.contractReference} ${item.contractTitle} ${item.partySnapshot}`
             .toLowerCase()
             .includes(search.toLowerCase()),
       ),
@@ -476,9 +675,9 @@ function InboxSpace() {
                   </p>
                 </div>
                 <div>
-                  <p className="font-bold">{request.partySnapshot}</p>
+                  <p className="font-bold">{request.contractTitle}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {request.sourceModule} · {request.contractReference}
+                    {request.contractReference} · {request.partySnapshot}
                   </p>
                 </div>
                 <div>
@@ -486,7 +685,8 @@ function InboxSpace() {
                     {money(request.amount, request.currencyCode)}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    معادل ریالی: {money(request.rialEquivalent, 'IRR')}
+                    مانده قرارداد:{' '}
+                    {money(request.outstandingAmount, request.currencyCode)}
                   </p>
                 </div>
                 <div>
@@ -523,7 +723,13 @@ function InboxSpace() {
           description="فیلترها را تغییر دهید."
         />
       )}
-      <ActionDialog onClose={() => setSelected(null)} request={selected} />
+      {selected ? (
+        <ActionDialog
+          key={selected.id}
+          onClose={() => setSelected(null)}
+          request={selected}
+        />
+      ) : null}
       <Dialog
         open={decisionId !== null}
         onOpenChange={(open) => {

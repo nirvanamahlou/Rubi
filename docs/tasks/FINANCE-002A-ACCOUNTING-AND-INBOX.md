@@ -88,7 +88,8 @@ Audit پایدار، Outbox/Inbox و اسناد Documents در گزارش نها
   version، allocation، receipt destination، payment source/party، UTC و دلیل رد/اصلاح
   را enforce می‌کند.
 - کارتابل هشت KPI، جست‌وجو/وضعیت، کارت Responsive، Dialog دریافت/پرداخت، کنترل فایل
-  رسید، کارمزد، tracking، Idempotency و Version دارد. نتیجه فقط validation محلی است.
+  رسید، کارمزد و tracking دارد. Idempotency و Version در state داخلی حفظ می‌شوند و
+  به‌عنوان فیلد فنی به کاربر نمایش داده نمی‌شوند. نتیجه فقط validation محلی است.
 - قراردادهای `finance.*.v1` برای درخواست/نتیجه Receipt و Payment و Accounting Source
   افزایشی و backward-compatible منتشر شدند؛ هیچ Root export یا producer داخلی تغییر نکرد.
 
@@ -112,3 +113,16 @@ Audit پایدار، Outbox/Inbox و اسناد Documents در گزارش نها
 - همان Task باید migration خالی PostgreSQL، seed دوباره‌پذیر، تست هم‌زمانی اتمیک و
   Smoke authenticated Receipt/Payment/Posting را انجام دهد؛ این PR نباید پیش از آن
   به‌عنوان Finance عملیاتی معرفی شود.
+
+## پیگیری فرم قرارداد و پرداخت جزئی — 2026-09-12
+
+- نام قرارداد، خدمت، مشتری/کارگزار، مبلغ تعهد، پرداخت‌های تأییدشده قبلی و مانده جاری
+  هم روی کارت و هم در Dialog قابل مشاهده‌اند.
+- حساب مقصد دریافت و حساب مبدأ پرداخت مستقیماً از حساب‌های Preview کدینگ انتخاب می‌شود؛
+  فقط حساب فعال، Detail، قابل Posting و هم‌ارز درخواست در فهرست می‌آید.
+- پرداخت این نوبت می‌تواند چند ردیف مبلغ و شماره پیگیری داشته باشد؛ افزودن/حذف ردیف،
+  جمع Decimal بدون تبدیل به Number، مانده بعد از عملیات و منع بیش‌پرداخت پیاده شد.
+- Browser هر دو Dialog، انتخاب حساب EUR و افزودن/حذف ردیف پرداخت را تأیید کرد. ۳۲ تست
+  هدفمند Web، typecheck، lint محدود و Production Build با ۴۱ مسیر موفق‌اند.
+- این اتصال فقط مدل و validation فرم است. ایجاد Receipt/Payment/Journal و تغییر مانده
+  واقعی تا Persistence تراکنشی، Audit، Outbox و Migration مستقل همچنان مسدود است.

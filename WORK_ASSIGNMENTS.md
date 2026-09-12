@@ -1,6 +1,6 @@
 # Work Assignments
 
-## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — IN_PROGRESS / FORM_FOLLOWUP / PERSISTENCE_BLOCKED
+## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — READY_FOR_REVIEW / FORM_FOLLOWUP / PERSISTENCE_BLOCKED
 
 - درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
   دریافت/پرداخت در فضای مستقل `/finance`. Branch مستقل
@@ -37,6 +37,12 @@
   مبدأ، سابقه پرداخت و مانده را نمایش دهد و ردیف‌های پرداخت جزئی قابل افزودن/حذف باشند.
   محدوده رزروشده همان مدل/Workspace/Test مالی و Domain validation پرداخت جزئی است؛
   قرارداد v1 موجود شکسته نمی‌شود و Schema/Migration/Persistence/Posting همچنان قفل است.
+- نتیجه پیگیری دوم: کارت‌ها و Dialog نام قرارداد و مانده را نمایش می‌دهند؛ دریافت به
+  حساب مقصد قابل Posting و هم‌ارز متصل می‌شود؛ پرداخت قرارداد/کارگزار، حساب مبدأ، سابقه،
+  جمع و مانده پس از عملیات دارد و ردیف‌های پرداخت جزئی قابل افزودن/حذف‌اند. فیلدهای فنی
+  Version/Idempotency از فرم کاربر حذف و در state داخلی حفظ شدند. ۳۲ تست هدفمند Web،
+  typecheck، lint محدود، Build ۴۱ مسیر و Browser QA هر دو فرم موفق‌اند؛ ثبت قطعی همچنان
+  `BLOCKED_BY_MIGRATION_LOCK` است.
 
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 

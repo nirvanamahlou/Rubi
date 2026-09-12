@@ -40,15 +40,7 @@ const pageSource = readFileSync(
   'utf8',
 );
 const inboxPageSource = readFileSync(
-  join(
-    process.cwd(),
-    'src',
-    'app',
-    '(crm)',
-    'finance',
-    'requests',
-    'page.tsx',
-  ),
+  join(process.cwd(), 'src', 'app', '(crm)', 'finance', 'requests', 'page.tsx'),
   'utf8',
 );
 
@@ -69,7 +61,13 @@ describe('finance workspace component contract', () => {
     expect(coreSource).toContain('گروه ← کل ← معین ← تفصیلی');
     expect(coreSource).toContain('حساب بانکی یا صندوق مقصد');
     expect(coreSource).toContain('حساب بانکی یا صندوق مبدأ');
-    expect(coreSource).toContain('Idempotency Key');
+    expect(coreSource).toContain('نام قرارداد');
+    expect(coreSource).toContain('مانده فعلی قرارداد');
+    expect(coreSource).toContain('کارگزار / تأمین‌کننده');
+    expect(coreSource).toContain('افزودن پرداخت جزئی');
+    expect(coreSource).toContain('حذف پرداخت');
+    expect(coreSource).not.toContain('label="Idempotency Key"');
+    expect(coreSource).not.toContain('label="Version"');
     expect(coreSource).toContain('هیچ درخواست عملیاتی ثبت نمی‌شود');
     expect(coreSource).toContain('<FinanceWorkspace />');
   });
