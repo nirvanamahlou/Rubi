@@ -151,10 +151,13 @@ export interface FinanceInboxPreviewRequest {
   previousPayments: readonly {
     reference: string;
     amount: string;
+    exchangeRateToIrr: string;
+    rialEquivalent: string;
     occurredAt: string;
   }[];
   documentSnapshots: readonly FinanceDocumentSnapshot[];
   currencyCode: 'IRR' | 'USD' | 'EUR';
+  suggestedExchangeRateToIrr: string;
   rialEquivalent: string;
   dueAt: string;
   requesterSnapshot: string;
@@ -195,6 +198,8 @@ export const financeInboxPreviewRequests: readonly FinanceInboxPreviewRequest[] 
         {
           reference: 'RC-1405-0182',
           amount: '300000000',
+          exchangeRateToIrr: '1',
+          rialEquivalent: '300000000',
           occurredAt: '2026-08-30T08:20:00.000Z',
         },
       ],
@@ -210,6 +215,7 @@ export const financeInboxPreviewRequests: readonly FinanceInboxPreviewRequest[] 
         },
       ],
       currencyCode: 'IRR',
+      suggestedExchangeRateToIrr: '1',
       rialEquivalent: '125000000',
       dueAt: '2026-09-12T12:00:00.000Z',
       requesterSnapshot: 'کانتر فروش نمونه',
@@ -237,6 +243,8 @@ export const financeInboxPreviewRequests: readonly FinanceInboxPreviewRequest[] 
         {
           reference: 'PY-1405-0071',
           amount: '1000',
+          exchangeRateToIrr: '69000',
+          rialEquivalent: '69000000',
           occurredAt: '2026-09-01T09:15:00.000Z',
         },
       ],
@@ -252,6 +260,7 @@ export const financeInboxPreviewRequests: readonly FinanceInboxPreviewRequest[] 
         },
       ],
       currencyCode: 'EUR',
+      suggestedExchangeRateToIrr: '70000',
       rialEquivalent: '294035000',
       dueAt: '2026-09-13T09:00:00.000Z',
       requesterSnapshot: 'عملیات رزرواسیون نمونه',
@@ -279,11 +288,14 @@ export const financeInboxPreviewRequests: readonly FinanceInboxPreviewRequest[] 
         {
           reference: 'PY-1405-0064',
           amount: '200',
+          exchangeRateToIrr: '68500',
+          rialEquivalent: '13700000',
           occurredAt: '2026-08-28T11:00:00.000Z',
         },
       ],
       documentSnapshots: [],
       currencyCode: 'USD',
+      suggestedExchangeRateToIrr: '69900',
       rialEquivalent: '60813000',
       dueAt: '2026-09-10T08:00:00.000Z',
       requesterSnapshot: 'خرید نمونه',
@@ -298,6 +310,7 @@ export interface FinanceActionDraft {
   partyReference: string;
   actualAmount: string;
   currencyCode: string;
+  exchangeRateToIrr: string;
   occurredAt: string;
   trackingReference: string;
   feeAmount: string;
@@ -353,6 +366,16 @@ export function sumDecimalAmounts(values: readonly string[]): string | null {
     total += units;
   }
   return unitsToDecimal(total);
+}
+
+export function multiplyDecimalAmounts(
+  amount: string,
+  multiplier: string,
+): string | null {
+  const amountUnits = decimalUnits(amount);
+  const multiplierUnits = decimalUnits(multiplier);
+  if (amountUnits === null || multiplierUnits === null) return null;
+  return unitsToDecimal((amountUnits * multiplierUnits) / 10n ** 18n);
 }
 
 export function remainingAfterAmount(
@@ -419,6 +442,12 @@ export function validateFinanceActionDraft(
   if (!DECIMAL_PATTERN.test(draft.feeAmount))
     errors.push('کارمزد باید مبلغ Decimal نامنفی باشد.');
   if (!draft.currencyCode.trim()) errors.push('ارز الزامی است.');
+  if (
+    draft.currencyCode !== 'IRR' &&
+    (!DECIMAL_PATTERN.test(draft.exchangeRateToIrr) ||
+      draft.exchangeRateToIrr === '0')
+  )
+    errors.push('نرخ روز هر واحد ارز به ریال الزامی است.');
   if (
     !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(draft.occurredAt)
   )

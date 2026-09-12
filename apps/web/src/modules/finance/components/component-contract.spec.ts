@@ -73,6 +73,10 @@ describe('finance workspace component contract', () => {
     expect(coreSource).toContain('روش پرداخت');
     expect(coreModelSource).toContain('حواله بانکی');
     expect(coreSource).toContain("part.method === 'CHECK'");
+    expect(coreSource).toContain('نرخ روز هر ۱');
+    expect(coreSource).toContain('معادل ریالی با نرخ روز');
+    expect(coreSource).toContain('سابقه دریافت‌های قرارداد');
+    expect(coreSource).toContain('payment.exchangeRateToIrr');
     expect(coreSource).toContain('توضیح مالی (اختیاری)');
     expect(coreSource).toContain('فیش‌ها و مدارک همراه درخواست');
     expect(coreSource).toContain('فیشی همراه این درخواست ثبت نشده است.');

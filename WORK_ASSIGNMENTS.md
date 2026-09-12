@@ -1,6 +1,6 @@
 # Work Assignments
 
-## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — IN_PROGRESS / FX_SNAPSHOT_FOLLOWUP / PERSISTENCE_BLOCKED
+## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — READY_FOR_REVIEW / FX_SNAPSHOT_FOLLOWUP / PERSISTENCE_BLOCKED
 
 - درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
   دریافت/پرداخت در فضای مستقل `/finance`. Branch مستقل
@@ -65,6 +65,11 @@
   زمان همان عملیات در سابقه دریافت/پرداخت قابل مشاهده باشد. محدوده رزروشده فقط مدل Draft،
   داده Preview سابقه، محاسبه Decimal معادل ریالی، Dialog و تست‌های Finance است؛ منبع نرخ
   authoritative، Schema/Migration/API/Persistence و قرارداد cross-module تغییر نمی‌کنند.
+- نتیجه پیگیری پنجم: نرخ هر واحد ارز به ریال برای دریافت/پرداخت غیرریالی اجباری شد و
+  معادل ریالی همان عملیات به‌صورت Decimal محاسبه می‌شود. سابقه هر عملیات ارزی مبلغ، نرخ
+  Snapshot، معادل ریالی و UTC را کنار هم نمایش می‌دهد؛ سابقه دریافت و پرداخت نیز عنوان
+  متناسب دارد. ۳۶ تست هدفمند Web، typecheck، lint، Build ۴۱ مسیر و Browser QA موفق‌اند؛
+  ذخیره پایدار و منبع خودکار نرخ همچنان `BLOCKED_BY_MIGRATION_LOCK` هستند.
 
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 
