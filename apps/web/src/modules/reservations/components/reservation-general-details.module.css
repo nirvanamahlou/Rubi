@@ -1,0 +1,52 @@
+.groups {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+.group {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.group h3 {
+  margin: 0;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--secondary);
+  color: var(--foreground);
+  font-size: 14px;
+}
+.group dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+.group dl > div {
+  min-width: 0;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.group dl > div:nth-child(odd) {
+  border-inline-end: 1px solid var(--border);
+}
+.group dt {
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+.group dd {
+  margin: 4px 0 0;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 620px) {
+  .group dl {
+    grid-template-columns: 1fr;
+  }
+  .group dl > div:nth-child(odd) {
+    border-inline-end: 0;
+  }
+}

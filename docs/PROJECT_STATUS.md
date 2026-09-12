@@ -1738,3 +1738,6 @@ Final production builds passed; API4000 refreshed and health200, Web3100 login20
 
 ## VOUCHER-STATUS-CONTRAST-0910 — PC-A — LOCAL_COMPLETE
 Issued light-theme rows now #62626b with white text; dark pending rows #585861 with white text and dark issued rows #1d1d21 with #fafafa text. Distinct legend edges retained. Synthetic browser computed all four row text contrasts above4.5:1 and verified pending/issued separation; visual QA, formatting and Web TypeScript/build passed. CSS-only, no migration or API changes. Local-only publication hold retained.
+
+## RESERVATION-GENERAL-DETAILS-0912 — PC-A — LOCAL_COMPLETE
+The selected-contract «مشخصات کلی» action now loads the canonical Reservations workflow snapshot and presents separate groups for contract/customer, route/services, hotel/rooms, flight, recorded service prices and operational notes/status. Customer phone is read through the Customer public API and remains masked; missing permission leaves it unavailable. Debt and exchange-rate values are explicitly marked unavailable because they are not part of the Reservations intake, preventing invented financial data. Eleven targeted tests, scoped lint, TypeScript and the Web production build passed. Local Web3100 responds 200 and hot reload is active. No API, schema, grant or operational-data changes; public-publication hold retained.

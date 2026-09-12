@@ -4,6 +4,7 @@ import { ReservationNotes } from '../components/reservation-notes';
 import { ReservationPassengers } from '../passenger-files/passengers';
 import { ReservationFiles } from '../passenger-files/files';
 import { EnglishHotelName } from '../components/english-hotel-name';
+import { ReservationGeneralDetails } from '../components/reservation-general-details';
 
 import {
   Dialog,
@@ -49,6 +50,8 @@ export function ContractActionContent({
   request: RequestView;
 }) {
   if (action === 'خرید') return <ReservationPurchaseDialog id={request.id} />;
+  if (action === 'مشخصات کلی')
+    return <ReservationGeneralDetails key={request.id} request={request} />;
   if (action === 'توضیحات')
     return <ReservationNotes key={request.id} id={request.id} />;
   if (
@@ -62,11 +65,7 @@ export function ContractActionContent({
     ].includes(action)
   )
     return <TravelWorkflowForm id={request.id} action={action} />;
-  if (
-    action === 'مشاهده' ||
-    action === 'مشخصات کلی' ||
-    action === 'رزرواسیون'
-  ) {
+  if (action === 'مشاهده' || action === 'رزرواسیون') {
     return (
       <dl className={styles.details}>
         {Object.entries({

@@ -53,12 +53,14 @@ describe('selected contract actions', () => {
     expect(html).not.toContain('Synthetic passenger');
     expect(html).not.toContain('Synthetic customer');
   });
-  it('does not invent writable forms or unknown customer details', () => {
+  it('loads the full recorded data for general details', () => {
     const html = renderToStaticMarkup(
-      <ContractActionContent action="خرید" request={request} />,
+      <ContractActionContent action="مشخصات کلی" request={request} />,
     );
-    expect(html).toContain('جزئیات این فرم هنوز تعیین نشده');
-    expect(html).not.toContain('<input');
+    expect(html).toContain('در حال دریافت مشخصات کامل قرارداد');
+    expect(html).not.toContain('Test branch');
+  });
+  it('does not invent writable forms or unknown customer details', () => {
     const missing = renderToStaticMarkup(
       <ContractActionContent
         action="طرف قرارداد"
