@@ -8,8 +8,6 @@ it('offers date-range export with new-only selected by default', () => {
   expect(html).toContain('تا تاریخ رفت');
   expect(html).toContain('فقط قراردادهای جدید');
   expect(html).toContain('همه قراردادهای بازه');
-  expect(html).toMatch(
-    /name="manifest-scope"[^>]*checked=""[^>]*\/?>/,
-  );
+  expect(html).toMatch(/name="manifest-scope"[^>]*checked=""[^>]*\/?>/);
   expect(html).toContain('دریافت MANIFEST بازه');
 });

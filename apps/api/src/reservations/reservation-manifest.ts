@@ -61,7 +61,9 @@ const isoDay = /^\d{4}-\d{2}-\d{2}$/;
 function validIsoDay(value: unknown): value is string {
   if (typeof value !== 'string' || !isoDay.test(value)) return false;
   const instant = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(instant.valueOf()) && instant.toISOString().startsWith(value);
+  return (
+    !Number.isNaN(instant.valueOf()) && instant.toISOString().startsWith(value)
+  );
 }
 
 function tehranDay(value: string) {
@@ -342,14 +344,16 @@ export class ReservationManifestService {
       });
       const latest = new Map<string, (typeof all)[number]>();
       for (const intake of all)
-        if (!latest.has(intake.contractId)) latest.set(intake.contractId, intake);
+        if (!latest.has(intake.contractId))
+          latest.set(intake.contractId, intake);
 
       const dated: {
         row: (typeof all)[number];
         outboundDepartureAt: Date;
       }[] = [];
       for (const row of latest.values()) {
-        const snapshot = row.snapshot as unknown as ReservationIntakeV1['snapshot'];
+        const snapshot =
+          row.snapshot as unknown as ReservationIntakeV1['snapshot'];
         const outbound = snapshot.ticketSelections?.find(
           (ticket) => ticket.direction === 'OUTBOUND',
         );
@@ -357,7 +361,10 @@ export class ReservationManifestService {
         const day = tehranDay(outbound.departureAt);
         if (day < input.fromDate || day > input.toDate) continue;
         if (!(await this.isIranAirtourAntalya(snapshot))) continue;
-        dated.push({ row, outboundDepartureAt: new Date(outbound.departureAt) });
+        dated.push({
+          row,
+          outboundDepartureAt: new Date(outbound.departureAt),
+        });
       }
       dated.sort(
         (left, right) =>
@@ -366,9 +373,8 @@ export class ReservationManifestService {
           (
             left.row.snapshot as unknown as ReservationIntakeV1['snapshot']
           ).contractNumber.localeCompare(
-            (
-              right.row.snapshot as unknown as ReservationIntakeV1['snapshot']
-            ).contractNumber,
+            (right.row.snapshot as unknown as ReservationIntakeV1['snapshot'])
+              .contractNumber,
           ),
       );
 

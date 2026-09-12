@@ -158,11 +158,17 @@ export function ManifestExport() {
           </span>
         </label>
       </fieldset>
-      <Button disabled={!fromDate || !toDate || busy} onClick={() => void download()}>
+      <Button
+        disabled={!fromDate || !toDate || busy}
+        onClick={() => void download()}
+      >
         {busy ? 'در حال ساخت MANIFEST…' : 'دریافت MANIFEST بازه'}
       </Button>
       {result && (
-        <p role="status" className="text-sm text-emerald-700 dark:text-emerald-300">
+        <p
+          role="status"
+          className="text-sm text-emerald-700 dark:text-emerald-300"
+        >
           {result}
         </p>
       )}
