@@ -1,5 +1,22 @@
 # Work Assignments
 
+## UNIFIED-LATEST-0912 — PC-A — READY_FOR_MERGE
+
+- با تأیید صریح مالک محصول، آخرین نسخه‌های منتشرشده PC-A، PC-B و مجوز Reporting
+  برای PC-C روی شاخه مستقل `codex/pc-a-unified-latest-0912` تجمیع شدند تا پس از
+  کنترل کامل از یک Pull Request به `develop` برسند. `main` تغییر نمی‌کند.
+- ورودی‌های تجمیع‌شده شامل رزرواسیون و خروجی‌ها تا `af77d07`، رابط مشترک تا
+  `bc40d8b`، مالی تا `f2085c1`، مدیریت قیمت تا `135260f`، آژانس‌ها تا
+  `5ef4e39`، میزکار تا `2794b60` و مجوز Reporting تا `a9300cc` است. تاریخ‌های
+  خام بازگشتی نیز به DatePicker مشترک تبدیل شدند.
+- Conflictهای اسناد به‌صورت افزایشی حل شده‌اند؛ هیچ Workspace دارای تغییر محلی
+  reset، stash یا overwrite نشده است. مالکیت Taskهای مستقل با Merge این شاخه
+  منتقل نمی‌شود و ادامه هر ماژول همچنان به رزرو جدید نیاز دارد.
+- نصب Frozen، Prisma، lint، typecheck، ۲۶۳۴ تست و Production Build شش Task با
+  ۴۶ Route پاس شدند. کنترل Diff و Secret نیز سالم است؛ اجرای نهایی Web 3100 و
+  API پس از Merge همین Baseline انجام می‌شود. جزئیات در
+  `docs/tasks/UNIFIED-LATEST-0912.md` ثبت شده است.
+
 ## REPORTING-PC-C-AUTHORIZATION — PC-A → PC-C — AUTHORIZED / P0-04 LOCAL-GATE
 
 - مالک هماهنگی پروژه در 2026-09-10 به `COMPUTER_ID=PC-C` اجازه داد توسعه Reporting
@@ -29,6 +46,7 @@
   خارج از Scope باید پیش از اجرا با هر دو مالک ثبت شود. Merge، Force Push و تغییر
   مستقیم `main`/`develop` مجاز نیست. مرجع کامل:
   `docs/tasks/REPORTING-PC-C-AUTHORIZATION.md`.
+
 ## SALES-PRICE-MANAGEMENT-0912 — PC-A — READY_FOR_REVIEW / UI_PREVIEW
 
 - درخواست صریح مالک در 2026-09-12: افزودن آیتم مستقل «مدیریت قیمت» در گروه «فروش»
@@ -131,6 +149,7 @@
 - The existing Customer Affairs follow-up owner field is included in the same public employee selector scope; its preview draft retains the selected employee ID.
 - Follow-up delivered: active IAM account selection/persisted employee FK, active Master Data currency selection/validation, existing Documents selection with HR document FK, direct employee-case selection in Documents with public validation, and scoped/paginated employee selection in destination owner/party fields. All 469 targeted tests passed (157 Web, 150 API unit/boundary, 26 isolated PostgreSQL, 63 contracts, 73 database). Code reservation is released for the explicitly authorized CI-gated PR139 merge. Runtime/DB/migration ownership remains unchanged.
 - Delivered the durable referral/response layer with 16 menu destinations, 13 scoped receiving permissions, source FK/version, department inboxes, request reports and response notifications. Broad domain execution (payment, issuance, IAM changes, procurement fulfillment, external synchronization) remains unfinished and is explicitly listed in the task handoff. Implementation reservations are released for review; runtime ownership is unchanged.
+
 ## RESERVATION-TICKET-PDF-0912 — PC-A — LOCAL_COMPLETE
 
 - گزارش مالک محصول: خروجی بلیط در رزرواسیون کار نمی‌کند. Branch `codex/pc-a-reservation-settings-0912`؛ محدودهٔ رزروشده: مدل/رابط خروجی بلیط، Route و Renderer دانلود PDF، تست‌های هدفمند و اسناد همین واحد کار.
@@ -150,6 +169,7 @@
 - Branch `codex/pc-a-reservation-settings-0912` از نسخهٔ محلی کامل `0ef39f2`. محدودهٔ رزروشده: Travel workflow قرارداد/API، فرم و خروجی رزواسیون/واچر، خلاصهٔ مبنای خرید، overlay عملیاتی خروجی قرارداد، تست‌های هدفمند و اسناد وضعیت. معماری append-only، optimistic version، مجوزها، قیمت‌های تجاری و گیت مالی/بیمه حفظ می‌شوند.
 - بدون Migration، Dependency/Lockfile، IAM grant، دادهٔ واقعی، ارسال خارجی، merge یا public push. اجرای فعلی Web3100/API4000 پس از تست و build با همین checkout تازه می‌شود.
 - نتیجه: رابط مستقل تنظیمات واچر حذف شد؛ تنظیمات و سابقه فرم رزواسیون، تقویم مشترک، انتخاب دامنه اصلاح و مبنای خرید از نسخه ارسال‌شده پیاده شد. ۱۲ تست API، ۱۲ تست Web، lint/typecheck و build API/Web موفق؛ هر دو سرویس محلی ۲۰۰. رزرو فایل‌ها برای بازبینی آزاد است.
+
 ## WORKBENCH-006-HOME-LABEL — PC-B — READY_FOR_REVIEW / LOCAL_RUNTIME_3100
 
 - User requests renaming the personal workspace tab from «امروز من» to «خانه». Reserve only workbench/model.ts and own status entries on codex/pc-b-workbench-home-label. Keep the today tab identifier, routes and all services unchanged. Preserve native runtime and owner B2B KPI changes; coordinate owned Web3100 rebuild. No shared shell/API/schema/dependency change.
@@ -319,6 +339,7 @@
 - HR owner explicitly handed over Web3100/API4190 after confirming no active work. Validate/build before replacing the reverified listeners. Preserve rubi_hr_current_20260908 on 127.0.0.1:55432 and hr007-documents; no schema, migration, seed, credential, permission, dependency or business-data changes.
 - Acceptance: the real organizations entry opens the four-step cooperation popup on port 3100 while retaining current HR and the existing application shell. Record runtime identity and checks before releasing this reservation.
 - Completed: 196 targeted Web tests, 108 API tests, full lint/typecheck and production builds passed. The authenticated localhost:3100 browser now opens all four cooperation steps; existing organization search, seven-card agency profile, logo dialog and HR navigation work. No business form was submitted. Runtime source is f2981b5, fingerprint hr005-2fbd1e21da23276d; final listener/data configuration is recorded outside Git in Rubi-backups/b2b-form-runtime-final.json. Documentation-only follow-up commits do not change the built source. Implementation reservation released; coordinate later runtime changes with this task to preserve combined HR/B2B.
+
 ## TOUR-RUNTIME-0910 — PC-A — VALIDATED / STARTUP_POLICY_BLOCKED
 
 User explicitly requests local activation. Integrated released hotel-rates5b1d287 with tour6ba6661 on codex/pc-a-tour-runtime-0910, preserving both histories and source branches. Reserve combined validation and runtime/task docs only. No new schema/migration/data/grants; existing applied schema must be checked before loopback API/Web switch. Coordinate current API1064 with Reservations owner; Web3100 is stopped. Preserve root environment, private document storage/keys and PDF runtime. No remote push or main/develop changes.
@@ -2030,9 +2051,13 @@ Completed: per-service immutable purchases with active broker FK and Decimal/cur
 Base 2f9c833; COMPUTER_ID=PC-A. Reserve the Reservations MANIFEST action/API, Iran Airtour Antalya XLSX template integration, nullable Customer airline-identity fields, Sales international-passenger validation, additive migration, focused tests and task/domain status docs. Generate one airline-ready workbook from the selected reservation using canonical Sales travel data and Customer-owned protected identity values; require existing read/export permissions and audit access. Never retain sample passenger PII from the supplied workbook. Preserve local live runtimes and the public-publication hold.
 Implementation: sanitized the supplied workbook to a PII-free template while preserving Pax List and six airline reference sheets. Added nullable Customer airline identity fields with ISO/gender constraints and made them required in Sales only for international passenger rows. Reservations validates Antalya + Iran Airtour, reads protected passport data with the existing sensitive-read audit, maps age/class codes and downloads the exact 12-column workbook. Additive migration applied locally; no operational record, permission grant or external airline send was performed.
 Validation: 44 focused API tests and 40 focused Web tests passed; scoped API/Web lint, Contracts/Database/API/Web typechecks, Prisma validation and API/Web production builds passed. The template asset is copied into the API build. API4000 and Web3100 run from this worktree and return HTTP 200; the protected endpoint returns 401 without a session. Scope RELEASED for local review; public-publication hold remains.
+
 ## HOTEL-RATE-CALENDAR-0912 — PC-A — LOCAL_COMPLETE
+
 Base 61df3bd; COMPUTER_ID=PC-A. Isolated worktree to avoid overlap with active Reservations tasks. Reserve only hotel-rates workspace/styles/focused test and task status. Replace native browser date inputs with the shared project DatePicker, retaining Gregorian default, ISO values and existing stay-range validation. No API/schema/data changes; preserve next-env and public-publication hold.
 Completed: both stay dates now use the shared dual Persian/Gregorian DatePicker with Gregorian-English default, consistent trigger styling and ISO values. Existing positive-night validation and calculation remain unchanged. Twelve focused date/rate tests, scoped lint, Web TypeScript and production build passed. Isolated local commit for handoff; public-publication hold retained.
+
 ## RESERVATION-PARTY-DETAILS-0912 — PC-A — LOCAL_COMPLETE
+
 Base e7cb696; COMPUTER_ID=PC-A. Isolated worktree to avoid overlap with the active Reservations contract-PDF task. Reserve only reservation-general-details component/styles/tests and task status. Add a distinct contract-party group and obtain full contacts through the existing Customers sensitive-detail public API with fixed `support-request` reason, preserving permission, branch and Audit controls. Fall back to masked data when sensitive access is unavailable. No API/schema/grant/data changes; preserve next-env and public-publication hold.
 Completed: «طرف قرارداد» is now a distinct accented group with name, type/status, primary and additional phones, email and recorded address. Opening general details requests authorized full contact data through Customers with `support-request`; Backend remains responsible for permission/branch checks and Audit. Unauthorized/decryption failures fall back to masked detail without blocking the rest of the dialog. Eight targeted tests, scoped lint, Web TypeScript and production build passed. Isolated local commit for handoff; public-publication hold retained.

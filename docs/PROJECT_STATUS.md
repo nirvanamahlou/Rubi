@@ -1,5 +1,15 @@
 # وضعیت پروژه
 
+## 2026-09-12 — تجمیع نسخه‌های نهایی چندکامپیوتری
+
+- شاخه `codex/pc-a-unified-latest-0912` آخرین Commitهای منتشرشده رزرواسیون،
+  رابط کاربری مشترک، حسابداری، مدیریت قیمت، آژانس‌ها، میزکار و مجوز Reporting
+  را بدون دست‌کاری Workspaceهای Dirty کنار هم قرار داده است.
+- اختلاف‌های مشترک Navigation، DatePicker، تم تیره، تاریخ انقضای اسناد آژانس و
+  صفحات جدید Finance/Reservations با حفظ جدیدترین رفتار هر بخش حل شدند.
+- وضعیت فعلی `READY_FOR_MERGE` است: نصب Frozen، Prisma، lint، typecheck، ۲۶۳۴
+  تست و Build شش Task/۴۶ Route پاس شدند. `main` در این عملیات تغییر نمی‌کند.
+
 ## REPORTING — مجوز اجرای PC-C و Gate مرحله P0-04
 
 - `COMPUTER_ID=PC-C` برای ادامه Reporting در محدوده ماژول‌های Web/API Reporting،
