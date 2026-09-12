@@ -1,10 +1,10 @@
 # Work Assignments
 
-## B2B-EXCEL-IMPORT-EXPORT-001 — PC-B — IN_PROGRESS
+## B2B-EXCEL-IMPORT-EXPORT-001 — PC-B — UI_VERIFIED
 
 - Reserve Organizations directory Excel actions, Master Data export filter validation and focused service/UI tests. Remove the redundant directory-level import-template button, keep the sample template inside the import dialog, and allow the already-contracted `organizationRole` filter only for organization exports. No schema, migration, dependency, IAM grant or operational-data change.
 
-## B2B-FINANCE-EXPORT-LAYOUT-001 — PC-B — IN_PROGRESS
+## B2B-FINANCE-EXPORT-LAYOUT-001 — PC-B — UI_VERIFIED
 
 - Reserve `organization-finance-preview.tsx` and `organization-documents-panel.tsx` only. Remove the requested finance sample-boundary notice and move both finance-row and document Excel actions into the document header beside the upload action with compact controls. No export payload, document API, data, schema, dependency or permission change.
 
