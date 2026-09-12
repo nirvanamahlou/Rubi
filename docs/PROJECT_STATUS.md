@@ -33,6 +33,9 @@ Documents، Messaging، Customer Affairs، HR و Notifications را فقط از 
 ۴۷ تست Web همراه lint/typecheck پاس شدند؛ جزئیات در
 [WORKBENCH-036](tasks/WORKBENCH-036.md) ثبت است.
 
+در درخت نهایی بازپایه‌شده، lint سراسری ۶ Job، typecheck سراسری ۹ Job و build
+تولیدی ۶ Job شامل ۴۶ مسیر Web نیز بدون خطا تمام شد.
+
 ## WORKBENCH-021 — مخاطبان، گروه و فوروارد پیام
 
 پیام‌رسان میزکار به سرویس پایدار Messaging متصل شد: مخاطبان فعال داخلی CRM با

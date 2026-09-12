@@ -46,7 +46,8 @@ Migration افزایشی `20260912200000_workbench_integrations` پوشه/یاد
 - ۲۴ تست هدفمند API برای Workbench، IAM Profile، Documents، Messaging، Customer
   Affairs و Feedback پاس شد.
 - ۴۷ تست Workbench Web و ۱۰ تست مرز HTTP اسناد پاس شد.
-- lint و TypeScript بخش‌های API و Web و build قرارداد و دیتابیس پاس شد.
+- lint سراسری با ۶ Job، typecheck سراسری با ۹ Job و build تولیدی با ۶ Job و ۴۶
+  مسیر Web پاس شد.
 - Prisma format، generate و validate پاس شد. تمرین کامل تاریخچه روی دیتابیس
   موقت محلی به‌دلیل پاسخ‌ندادن Docker Desktop در Migration سوم متوقف شد؛ SQL
   همین Migration، schema و کل تاریخچه در CI روی PostgreSQL موقت دوباره اجرا
