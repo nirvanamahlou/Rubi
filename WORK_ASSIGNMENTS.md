@@ -42,6 +42,13 @@
   and shared-contract locks were released after isolated rehearsal and full checks;
   WORKBENCH-036 now carries the completed producer without changing its boundaries.
 
+## WORKBENCH-035 — PC-B — SOURCE_COMPLETE / INTEGRATED_BY_WORKBENCH-036
+
+- Add the editable Finance templates `خرید` and `پیگیری صورتحساب` and the
+  Reservations template `استعلام از کارگزار` to the existing composer. This is
+  presentation data only and creates no Finance, Procurement or Reservations
+  mutation. The completed source is carried by WORKBENCH-036.
+
 ## WORKBENCH-021 — PC-B — LOCAL_COMPLETE / RUNTIME_ACTIVE
 
 - User authorizes the bounded CRM messaging slice on
