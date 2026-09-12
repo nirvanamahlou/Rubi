@@ -48,6 +48,7 @@ import {
   accountTreePreview,
   financeInboxPreviewRequests,
   financePaymentMethods,
+  multiplyDecimalAmounts,
   remainingAfterAmount,
   sumDecimalAmounts,
   validateFinanceActionDraft,
@@ -75,6 +76,7 @@ function createDraft(request: FinanceInboxPreviewRequest): FinanceActionDraft {
     partyReference: request.partyReference,
     actualAmount: request.kind === 'RECEIPT_VERIFICATION' ? request.amount : '',
     currencyCode: request.currencyCode,
+    exchangeRateToIrr: request.suggestedExchangeRateToIrr,
     occurredAt: '2026-09-12T10:00:00.000Z',
     trackingReference: '',
     feeAmount: '0',
@@ -262,6 +264,12 @@ function ActionDialog({
     settlementAmount === '—'
       ? null
       : remainingAfterAmount(request.outstandingAmount, settlementAmount);
+  const rialEquivalent =
+    settlementAmount === '—'
+      ? null
+      : request.currencyCode === 'IRR'
+        ? settlementAmount
+        : multiplyDecimalAmounts(settlementAmount, draft.exchangeRateToIrr);
   const update = (key: keyof FinanceActionDraft, value: string | boolean) =>
     setDraft((current) => ({ ...current, [key]: value }));
   const updatePaymentPart = (
@@ -400,6 +408,22 @@ function ActionDialog({
             <FormField label="ارز قرارداد" required>
               <Input dir="ltr" readOnly value={draft.currencyCode} />
             </FormField>
+            {request.currencyCode !== 'IRR' ? (
+              <FormField
+                label={`نرخ روز هر ۱ ${request.currencyCode} به ریال`}
+                required
+              >
+                <Input
+                  dir="ltr"
+                  inputMode="decimal"
+                  onChange={(e) => update('exchangeRateToIrr', e.target.value)}
+                  value={draft.exchangeRateToIrr}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  این نرخ همراه تاریخ و ساعت عملیات Snapshot می‌شود.
+                </p>
+              </FormField>
+            ) : null}
             <FormField label="تاریخ و ساعت واقعی UTC" required>
               <Input
                 dir="ltr"
@@ -533,7 +557,7 @@ function ActionDialog({
               ))}
             </Card>
           ) : null}
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Card className="p-3">
               <p className="text-xs text-muted-foreground">مبلغ این عملیات</p>
               <p className="mt-1 font-black" dir="ltr">
@@ -564,22 +588,51 @@ function ActionDialog({
                   : 'حساب انتخاب نشده'}
               </p>
             </Card>
+            {request.currencyCode !== 'IRR' ? (
+              <Card className="border-primary/30 bg-primary/5 p-3">
+                <p className="text-xs text-muted-foreground">
+                  معادل ریالی با نرخ روز
+                </p>
+                <p className="mt-1 font-black text-primary" dir="ltr">
+                  {rialEquivalent === null
+                    ? 'نرخ یا مبلغ نامعتبر'
+                    : money(rialEquivalent, 'IRR')}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground" dir="ltr">
+                  1 {request.currencyCode} = {draft.exchangeRateToIrr || '—'}{' '}
+                  IRR
+                </p>
+              </Card>
+            ) : null}
           </div>
           {request.previousPayments.length ? (
             <details className="rounded-xl border border-border p-3">
               <summary className="flex cursor-pointer items-center gap-2 font-bold">
-                <History className="size-4" /> سابقه پرداخت‌های قرارداد
+                <History className="size-4" />{' '}
+                {isReceipt
+                  ? 'سابقه دریافت‌های قرارداد'
+                  : 'سابقه پرداخت‌های قرارداد'}
               </summary>
               <div className="mt-3 space-y-2">
                 {request.previousPayments.map((payment) => (
                   <div
-                    className="flex flex-wrap justify-between gap-2 rounded-lg bg-muted p-2 text-sm"
+                    className="grid gap-2 rounded-lg bg-muted p-3 text-sm sm:grid-cols-2 lg:grid-cols-5"
                     key={payment.reference}
                   >
                     <span>{payment.reference}</span>
                     <span dir="ltr">
                       {money(payment.amount, request.currencyCode)}
                     </span>
+                    {request.currencyCode !== 'IRR' ? (
+                      <>
+                        <span dir="ltr">
+                          نرخ: {payment.exchangeRateToIrr} IRR
+                        </span>
+                        <span dir="ltr">
+                          معادل: {money(payment.rialEquivalent, 'IRR')}
+                        </span>
+                      </>
+                    ) : null}
                     <span dir="ltr">{payment.occurredAt}</span>
                   </div>
                 ))}

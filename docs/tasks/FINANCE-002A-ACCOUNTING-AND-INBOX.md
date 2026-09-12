@@ -154,3 +154,17 @@ Audit پایدار، Outbox/Inbox و اسناد Documents در گزارش نها
 - این پیگیری فقط UI، مدل Draft و validation محلی است. ذخیره Payment/Method، Audit،
   Journal و تغییر مانده واقعی تا Task مستقل Persistence/Migration مسدود می‌ماند.
 - Commit قابلیت `801455f` روی origin Push و در Draft PR #153 ثبت شد.
+
+## پیگیری Snapshot نرخ ارز در سابقه — 2026-09-12
+
+- برای هر دریافت یا پرداخت با ارز غیر از IRR، نرخ روز «هر ۱ واحد ارز به ریال» اجباری
+  است و همراه `occurredAt` همان عملیات نگه داشته می‌شود. تراکنش IRR نرخ جدا نمی‌خواهد.
+- معادل ریالی مبلغ جاری با محاسبه Decimal نمایش داده می‌شود. سابقه هر دریافت/پرداخت ارزی
+  نیز مرجع، مبلغ ارزی، نرخ همان عملیات، معادل ریالی و زمان UTC را کنار هم نشان می‌دهد.
+- ۳۶ تست هدفمند Web، typecheck، lint محدود و Production Build با ۴۱ مسیر موفق‌اند.
+  Browser فیلد نرخ EUR، معادل ۲۹۴٬۰۳۵٬۰۰۰ ریال و سابقه نرخ ۶۹٬۰۰۰ با زمان ثبت‌شده را
+  تأیید کرد.
+- نرخ‌های فعلی داده synthetic و ورودی Preview هستند. منبع authoritative نرخ، سیاست
+  rounding، ذخیره immutable Snapshot و Journal واقعی باید در Task مستقل Persistence و
+  پس از آزادشدن Migration lock تکمیل شوند.
+- Commit قابلیت `9f4e01d` روی origin Push و در Draft PR #153 ثبت شد.
