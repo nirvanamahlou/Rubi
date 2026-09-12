@@ -83,6 +83,7 @@ describe('MANIFEST financial delivery gate', () => {
       customers as never,
       directory as never,
       delivery as never,
+      { client: {} } as never,
     );
     await expect(
       service.export('request', {
@@ -98,5 +99,156 @@ describe('MANIFEST financial delivery gate', () => {
     expect(delivery.read).toHaveBeenCalledWith('request');
     expect(directory.cityReference).not.toHaveBeenCalled();
     expect(customers.detail).not.toHaveBeenCalled();
+  });
+});
+
+describe('MANIFEST date-range history', () => {
+  it('puts only a newly arrived contract in the next new-only export', async () => {
+    const makeSnapshot = (contractNumber: string, customerId: string) => ({
+      version: 1,
+      requestId: `request-${contractNumber}`,
+      contractId: `contract-${contractNumber}`,
+      contractNumber,
+      contractVersion: 1,
+      customerId,
+      passengerIds: [customerId],
+      passengerAssignments: [
+        {
+          customerId,
+          ageCategory: 'ADL',
+          serviceClientKeys: ['flight'],
+        },
+      ],
+      serviceSelections: [],
+      selectedTicketOfferIds: ['flight'],
+      hotelSelection: { cityId: 'antalya' },
+      ticketSelections: [
+        {
+          serviceClientKey: 'flight',
+          direction: 'OUTBOUND',
+          offerId: 'offer',
+          originId: 'tehran',
+          destinationId: 'antalya',
+          departureAt: '2026-09-20T07:00:00.000Z',
+          arrivalAt: '2026-09-20T10:00:00.000Z',
+          carrierNameSnapshot: 'IRAN AIRTOUR',
+          serviceNumberSnapshot: 'B9-9710',
+          cabinClassCode: 'ECONOMY',
+        },
+      ],
+      createdAt: '2026-09-12T00:00:00.000Z',
+    });
+    const oldSnapshot = makeSnapshot('SC-OLD', 'customer-old');
+    const newSnapshot = makeSnapshot('SC-NEW', 'customer-new');
+    const intakes = [
+      {
+        id: 'intake-old',
+        contractId: 'contract-old',
+        contractVersion: 1,
+        branchId: 'branch',
+        receivedAt: new Date('2026-09-10T00:00:00Z'),
+        snapshot: oldSnapshot,
+      },
+      {
+        id: 'intake-new',
+        contractId: 'contract-new',
+        contractVersion: 1,
+        branchId: 'branch',
+        receivedAt: new Date('2026-09-12T00:00:00Z'),
+        snapshot: newSnapshot,
+      },
+    ];
+    const workflow = {
+      detail: vi.fn(async (id: string) => ({
+        id,
+        snapshot: id === 'intake-old' ? oldSnapshot : newSnapshot,
+        workflow: { roomOrder: [], ageOverrides: {} },
+      })),
+    };
+    const customers = {
+      detail: vi.fn(async (id: string) => ({
+        data: {
+          displayName: id,
+          passportFirstName: id === 'customer-new' ? 'NEW' : 'OLD',
+          passportLastName: 'PASSENGER',
+          gender: 'M',
+          birthDate: '1990-01-02',
+          nationalId: '0012345678',
+          nationalityCode: 'IRN',
+          passportNumber: 'X1234567',
+          passportIssuingCountryCode: 'IRN',
+          birthCountryCode: 'IRN',
+          passportExpiryDate: '2030-01-02',
+        },
+      })),
+    };
+    const create = vi.fn().mockResolvedValue({});
+    const database = {
+      client: {
+        reservationManifestExport: {
+          findUnique: vi.fn().mockResolvedValue(null),
+          create,
+        },
+        reservationIntake: { findMany: vi.fn().mockResolvedValue(intakes) },
+        reservationManifestExportItem: {
+          findMany: vi.fn().mockResolvedValue([{ intakeId: 'intake-old' }]),
+        },
+      },
+    };
+    const service = new ReservationManifestService(
+      workflow as never,
+      customers as never,
+      {
+        cityReference: vi
+          .fn()
+          .mockResolvedValue({ name: 'آنتالیا', englishName: 'ANTALYA' }),
+      } as never,
+      {
+        read: vi.fn().mockResolvedValue({ approved: true, version: 1 }),
+      } as never,
+      database as never,
+    );
+    const result = await service.exportRange(
+      {
+        fromDate: '2026-09-20',
+        toDate: '2026-09-20',
+        includePreviouslyExported: false,
+      },
+      'request-key',
+      {
+        userId: 'user',
+        branchIds: ['branch'],
+        permissions: [
+          'reservations.read',
+          'reservations.documents.manage',
+          'customers.read',
+          'customers.sensitive.read',
+        ],
+      } as never,
+    );
+
+    expect(result.contractCount).toBe(1);
+    expect(result.passengerCount).toBe(1);
+    expect(workflow.detail).toHaveBeenCalledWith('intake-new', ['branch']);
+    const sheet = strFromU8(
+      unzipSync(result.bytes)['xl/worksheets/sheet1.xml']!,
+    );
+    expect(sheet).toContain('NEW');
+    expect(sheet).not.toContain('OLD');
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          contractCount: 1,
+          items: {
+            create: [
+              expect.objectContaining({
+                intakeId: 'intake-new',
+                contractId: 'contract-new',
+              }),
+            ],
+          },
+        }),
+      }),
+    );
   });
 });

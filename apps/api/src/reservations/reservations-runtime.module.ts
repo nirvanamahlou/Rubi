@@ -49,6 +49,7 @@ import { ReservationHotelPurchaseService } from './reservation-hotel-purchase.se
 import type { ReservationHotelPurchaseInputV1 } from '@rubi/contracts';
 import { ReservationServicePurchaseService } from './reservation-service-purchase.service';
 import {
+  ReservationManifestBatchController,
   ReservationManifestController,
   ReservationManifestService,
 } from './reservation-manifest';
@@ -293,6 +294,7 @@ export class ReservationRequestsController {
     ReservationRequestsController,
     ReservationPassengerFilesController,
     ReservationManifestController,
+    ReservationManifestBatchController,
   ],
   providers: [
     AuthGuard,

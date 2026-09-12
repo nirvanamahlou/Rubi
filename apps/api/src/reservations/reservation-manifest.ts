@@ -1,20 +1,30 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   ForbiddenException,
   Get,
   Header,
+  Headers,
   Inject,
   Injectable,
   Param,
+  Post,
   Req,
+  Res,
   StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
-import type { AuthenticatedActor, CustomerDetail } from '@rubi/contracts';
+import type {
+  AuthenticatedActor,
+  CustomerDetail,
+  ReservationIntakeV1,
+} from '@rubi/contracts';
+import type { Response } from 'express';
+import { DatabaseService } from '../database/database.service';
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { CustomerService } from '../customers/customer.service';
@@ -38,6 +48,32 @@ export interface IranAirtourManifestRow {
   birthCountry: string;
   passportExpiryDate: string;
   cabinClass: string;
+}
+
+export interface ReservationManifestBatchInput {
+  fromDate: string;
+  toDate: string;
+  includePreviouslyExported?: boolean;
+}
+
+const isoDay = /^\d{4}-\d{2}-\d{2}$/;
+
+function validIsoDay(value: unknown): value is string {
+  if (typeof value !== 'string' || !isoDay.test(value)) return false;
+  const instant = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(instant.valueOf()) && instant.toISOString().startsWith(value);
+}
+
+function tehranDay(value: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Tehran',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(value));
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
 }
 
 const xml = (value: string) =>
@@ -141,9 +177,10 @@ export class ReservationManifestService {
     private readonly directory: MasterTravelDirectory,
     @Inject(FinanceDeliveryService)
     private readonly delivery: FinanceDeliveryService,
+    @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
-  async export(id: string, actor: AuthenticatedActor, traceId?: string) {
+  private requirePermissions(actor: AuthenticatedActor) {
     for (const permission of [
       'reservations.read',
       'reservations.documents.manage',
@@ -152,6 +189,275 @@ export class ReservationManifestService {
     ])
       if (!actor.permissions.includes(permission as never))
         throw new ForbiddenException('مجوز تهیه MANIFEST مسافران وجود ندارد.');
+  }
+
+  private async passengerRows(
+    intake: Awaited<ReturnType<TravelWorkflowService['detail']>>,
+    actor: AuthenticatedActor,
+    traceId?: string,
+  ) {
+    const flight = intake.snapshot.ticketSelections?.find(
+      (ticket) => ticket.direction === 'OUTBOUND',
+    );
+    if (!flight)
+      throw new BadRequestException('پرواز رفت قرارداد ثبت نشده است.');
+    const cabin = /BUSINESS|^B$/i.test(flight.cabinClassCode)
+      ? 'B'
+      : /FIRST|^F$/i.test(flight.cabinClassCode)
+        ? 'F'
+        : 'Y';
+    const assignments = new Map(
+      (intake.snapshot.passengerAssignments ?? []).map((item) => [
+        item.customerId,
+        item,
+      ]),
+    );
+    const order = intake.workflow.roomOrder.length
+      ? intake.workflow.roomOrder
+      : intake.snapshot.passengerIds;
+    const passengers: IranAirtourManifestRow[] = [];
+    for (const customerId of order) {
+      const customer = (
+        await this.customers.detail(
+          customerId,
+          actor,
+          traceId,
+          'customer-verification',
+        )
+      ).data;
+      const override = intake.workflow.ageOverrides[customerId];
+      const age = override ?? assignments.get(customerId)?.ageCategory;
+      passengers.push({
+        firstName: required(customer, 'passportFirstName', 'نام لاتین پاسپورت'),
+        lastName: required(
+          customer,
+          'passportLastName',
+          'نام خانوادگی لاتین پاسپورت',
+        ),
+        gender: required(customer, 'gender', 'جنسیت') === 'M' ? 'MR' : 'MS',
+        passengerType:
+          age === 'INF' || age === 'INFANT'
+            ? 'INFANT'
+            : age === 'CHD' || age === 'CHILD'
+              ? 'CHILD'
+              : 'ADULT',
+        birthDate: required(customer, 'birthDate', 'تاریخ تولد'),
+        nationalId: customer.nationalId?.trim() ?? '',
+        nationality: required(customer, 'nationalityCode', 'ملیت ISO3'),
+        passportNumber: required(customer, 'passportNumber', 'شماره پاسپورت'),
+        passportIssuingCountry: required(
+          customer,
+          'passportIssuingCountryCode',
+          'کشور صادرکننده پاسپورت ISO3',
+        ),
+        birthCountry: required(
+          customer,
+          'birthCountryCode',
+          'کشور محل تولد ISO3',
+        ),
+        passportExpiryDate: required(
+          customer,
+          'passportExpiryDate',
+          'تاریخ انقضای پاسپورت',
+        ),
+        cabinClass: cabin,
+      });
+    }
+    return passengers;
+  }
+
+  private async isIranAirtourAntalya(
+    snapshot: ReservationIntakeV1['snapshot'],
+  ) {
+    const flight = snapshot.ticketSelections?.find(
+      (ticket) => ticket.direction === 'OUTBOUND',
+    );
+    if (
+      !flight ||
+      !/(IRAN\s*AIRTOUR|ایران\s*ایرتور)/i.test(flight.carrierNameSnapshot)
+    )
+      return false;
+    const destination = await this.directory.cityReference(
+      snapshot.hotelSelection?.cityId ?? flight.destinationId,
+    );
+    return /(ANTALYA|آنتالیا)/i.test(
+      `${destination.name} ${destination.englishName}`,
+    );
+  }
+
+  async exportRange(
+    input: ReservationManifestBatchInput,
+    idempotencyKey: string | undefined,
+    actor: AuthenticatedActor,
+    traceId?: string,
+  ) {
+    this.requirePermissions(actor);
+    if (!idempotencyKey?.trim())
+      throw new BadRequestException('شناسه یکتای درخواست الزامی است.');
+    if (!validIsoDay(input.fromDate) || !validIsoDay(input.toDate))
+      throw new BadRequestException('بازه تاریخ معتبر نیست.');
+    if (input.fromDate > input.toDate)
+      throw new BadRequestException('تاریخ شروع باید قبل از تاریخ پایان باشد.');
+
+    const existing =
+      await this.database.client.reservationManifestExport.findUnique({
+        where: {
+          actorUserId_idempotencyKey: {
+            actorUserId: actor.userId,
+            idempotencyKey: idempotencyKey.trim(),
+          },
+        },
+        include: {
+          items: {
+            orderBy: [{ outboundDepartureAt: 'asc' }, { contractId: 'asc' }],
+          },
+        },
+      });
+    if (
+      existing &&
+      (existing.fromDate.toISOString().slice(0, 10) !== input.fromDate ||
+        existing.toDate.toISOString().slice(0, 10) !== input.toDate ||
+        existing.includePreviouslyExported !==
+          Boolean(input.includePreviouslyExported))
+    )
+      throw new BadRequestException(
+        'این شناسه درخواست قبلاً برای تنظیمات دیگری استفاده شده است.',
+      );
+
+    let selectedIds = existing?.items.map((item) => item.intakeId);
+    let skippedFinanceCount = existing?.skippedFinanceCount ?? 0;
+    let selectedMetadata:
+      | {
+          id: string;
+          contractId: string;
+          contractVersion: number;
+          outboundDepartureAt: Date;
+        }[]
+      | undefined;
+
+    if (!selectedIds) {
+      const all = await this.database.client.reservationIntake.findMany({
+        where: { branchId: { in: actor.branchIds } },
+        orderBy: [{ contractVersion: 'desc' }, { receivedAt: 'desc' }],
+      });
+      const latest = new Map<string, (typeof all)[number]>();
+      for (const intake of all)
+        if (!latest.has(intake.contractId)) latest.set(intake.contractId, intake);
+
+      const dated: {
+        row: (typeof all)[number];
+        outboundDepartureAt: Date;
+      }[] = [];
+      for (const row of latest.values()) {
+        const snapshot = row.snapshot as unknown as ReservationIntakeV1['snapshot'];
+        const outbound = snapshot.ticketSelections?.find(
+          (ticket) => ticket.direction === 'OUTBOUND',
+        );
+        if (!outbound) continue;
+        const day = tehranDay(outbound.departureAt);
+        if (day < input.fromDate || day > input.toDate) continue;
+        if (!(await this.isIranAirtourAntalya(snapshot))) continue;
+        dated.push({ row, outboundDepartureAt: new Date(outbound.departureAt) });
+      }
+      dated.sort(
+        (left, right) =>
+          left.outboundDepartureAt.valueOf() -
+            right.outboundDepartureAt.valueOf() ||
+          (
+            left.row.snapshot as unknown as ReservationIntakeV1['snapshot']
+          ).contractNumber.localeCompare(
+            (
+              right.row.snapshot as unknown as ReservationIntakeV1['snapshot']
+            ).contractNumber,
+          ),
+      );
+
+      let filtered = dated;
+      if (!input.includePreviouslyExported && dated.length) {
+        const previous =
+          await this.database.client.reservationManifestExportItem.findMany({
+            where: { intakeId: { in: dated.map(({ row }) => row.id) } },
+            select: { intakeId: true },
+            distinct: ['intakeId'],
+          });
+        const seen = new Set(previous.map((item) => item.intakeId));
+        filtered = dated.filter(({ row }) => !seen.has(row.id));
+      }
+
+      selectedMetadata = [];
+      for (const candidate of filtered) {
+        const authorization = await this.delivery.read(candidate.row.id);
+        if (!authorization.approved) {
+          skippedFinanceCount += 1;
+          continue;
+        }
+        selectedMetadata.push({
+          id: candidate.row.id,
+          contractId: candidate.row.contractId,
+          contractVersion: candidate.row.contractVersion,
+          outboundDepartureAt: candidate.outboundDepartureAt,
+        });
+      }
+      selectedIds = selectedMetadata.map((item) => item.id);
+    }
+
+    if (!selectedIds.length)
+      throw new BadRequestException(
+        input.includePreviouslyExported
+          ? 'در این بازه قرارداد قابل خروجی با تأیید مالی وجود ندارد.'
+          : 'در این بازه قرارداد جدید قابل خروجی وجود ندارد.',
+      );
+
+    const rows: IranAirtourManifestRow[] = [];
+    for (const id of selectedIds) {
+      const authorization = await this.delivery.read(id);
+      if (!authorization.approved)
+        throw new ForbiddenException(
+          'دریافت MANIFEST تا تأیید تحویل مدارک توسط مالی مجاز نیست.',
+        );
+      const intake = await this.workflow.detail(id, actor.branchIds);
+      rows.push(...(await this.passengerRows(intake, actor, traceId)));
+    }
+    const template = await readFile(
+      join(__dirname, 'templates', 'iran-airtour-antalya-pax-list.xlsx'),
+    );
+    const bytes = buildIranAirtourManifest(template, rows);
+
+    if (!existing) {
+      await this.database.client.reservationManifestExport.create({
+        data: {
+          actorUserId: actor.userId,
+          idempotencyKey: idempotencyKey.trim(),
+          fromDate: new Date(`${input.fromDate}T00:00:00.000Z`),
+          toDate: new Date(`${input.toDate}T00:00:00.000Z`),
+          includePreviouslyExported: Boolean(input.includePreviouslyExported),
+          contractCount: selectedIds.length,
+          passengerCount: rows.length,
+          skippedFinanceCount,
+          items: {
+            create: selectedMetadata!.map((item) => ({
+              intakeId: item.id,
+              contractId: item.contractId,
+              contractVersion: item.contractVersion,
+              outboundDepartureAt: item.outboundDepartureAt,
+            })),
+          },
+        },
+      });
+    }
+    return {
+      bytes,
+      contractCount: selectedIds.length,
+      passengerCount: rows.length,
+      skippedFinanceCount,
+      fromDate: input.fromDate,
+      toDate: input.toDate,
+      includePreviouslyExported: Boolean(input.includePreviouslyExported),
+    };
+  }
+
+  async export(id: string, actor: AuthenticatedActor, traceId?: string) {
+    this.requirePermissions(actor);
     const intake = await this.workflow.detail(id, actor.branchIds);
     const authorization = await this.delivery.read(id);
     if (!authorization.approved)
@@ -277,6 +583,42 @@ export class ReservationManifestController {
     return new StreamableFile(result.bytes, {
       type: MANIFEST_XLSX_MIME,
       disposition: `attachment; filename="iran-airtour-${result.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_')}.xlsx"`,
+    });
+  }
+}
+
+@Controller('reservations/manifests')
+@UseGuards(AuthGuard)
+export class ReservationManifestBatchController {
+  constructor(
+    @Inject(ReservationManifestService)
+    private readonly service: ReservationManifestService,
+  ) {}
+
+  @Post('iran-airtour-antalya.xlsx')
+  @Header('Cache-Control', 'private, no-store')
+  async exportRange(
+    @Body() input: ReservationManifestBatchInput,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.service.exportRange(
+      input,
+      idempotencyKey,
+      req.actor,
+      req.headers['x-request-id'] as string | undefined,
+    );
+    response.setHeader('X-Rubi-Manifest-Contracts', result.contractCount);
+    response.setHeader('X-Rubi-Manifest-Passengers', result.passengerCount);
+    response.setHeader(
+      'X-Rubi-Manifest-Skipped-Finance',
+      result.skippedFinanceCount,
+    );
+    const mode = result.includePreviouslyExported ? 'all' : 'new';
+    return new StreamableFile(result.bytes, {
+      type: MANIFEST_XLSX_MIME,
+      disposition: `attachment; filename="iran-airtour-antalya-${result.fromDate}-${result.toDate}-${mode}.xlsx"`,
     });
   }
 }
