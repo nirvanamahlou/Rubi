@@ -1,5 +1,25 @@
 # Work Assignments
 
+## WORKBENCH-021 — PC-B — IN_PROGRESS / MIGRATION_OWNER
+
+- User authorizes the bounded CRM messaging slice on
+  `codex/pc-b-workbench-messaging-activation` from `origin/develop@043871a`:
+  branch-scoped active CRM contacts through the IAM public service, persistent
+  direct and group conversations, membership, messages and server-side
+  forwarding, plus the Workbench messenger consumer. Agency-portal and disabled
+  accounts are excluded; no credential, role or permission mutation is included.
+- PC-B reserves the additive Messaging schema/migration, `apps/api/src/messaging/**`,
+  additive IAM contact projection, Messaging contracts/root export, Workbench
+  messaging UI/client/tests, and this task/status documentation. PC-B holds the
+  Migration and central-contract locks for this work item after confirming no
+  newer active lock on `origin/develop`; dependency/lockfiles are unchanged.
+- Shared-contract compatibility: v1 routes are additive under
+  `/api/v1/messaging`; all reads and writes require authenticated membership and
+  common authorized branch scope. Forwarding copies the source body on the
+  server and does not expose source participants. Migration backup/rehearsal,
+  focused tests, lint, typecheck and production builds are required before
+  runtime handoff; no synthetic message or group is sent to real users during QA.
+
 ## B2B-ORGANIZATION-PERMANENT-DELETE-001 — PC-B — UI_VERIFIED
 
 - Organizations permanent-delete dialog now keeps the destructive action available after an authoritative API rejection, clears the previous error before retry and changes the label to an explicit retry action. Only transport/unknown outcomes require refresh, preventing a duplicate delete after an uncertain response. Referenced organizations remain protected and unused organizations are physically removed through the existing Master Data owner endpoint. Focused lint, Web TypeScript/build, all 125 Organizations tests and the seven-test isolated PostgreSQL deletion suite passed. Authenticated Web3100 QA confirmed the merged dialog and active destructive action with the eight-record directory; no user data was deleted during UI QA. Runtime `b9244f4` / `hr005-72ea3c0ada5a1190`; API4190 healthy. No schema, migration, dependency, IAM grant, cascade or business-history deletion.
