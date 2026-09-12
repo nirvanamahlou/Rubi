@@ -7,6 +7,11 @@ import type {
 import { blankAgreementTerms } from './agreement-terms';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { agencyClient } from '../api/agency-client';
+import { documentsApi } from '@/modules/documents/api/client';
+import {
+  organizationDocumentForm,
+  type StagedOrganizationDocument,
+} from './organization-documents';
 import {
   organizationByName,
   validateOrganizationRows,
@@ -29,6 +34,8 @@ export interface CooperationDraft {
   email: string;
   withAgreement: boolean;
   branchId: string;
+  pendingAgreementDocument: StagedOrganizationDocument | null;
+  pendingGuaranteeDocuments: (StagedOrganizationDocument | null)[];
 }
 export const blankCooperationDraft: CooperationDraft = {
   agreementTerms: blankAgreementTerms(),
@@ -46,6 +53,8 @@ export const blankCooperationDraft: CooperationDraft = {
   email: '',
   withAgreement: false,
   branchId: '',
+  pendingAgreementDocument: null,
+  pendingGuaranteeDocuments: [],
 };
 export function cooperationIssue(
   draft: CooperationDraft,
@@ -92,7 +101,19 @@ export function cooperationIssue(
         draft.agreementTerms.agreementType === 'AGENCY')
     )
       return 'نوع قرارداد را با نقش همکاری هماهنگ کنید.';
-    return b2bAgreementTermsIssue(draft.agreementTerms);
+    const termsForValidation = {
+      ...draft.agreementTerms,
+      guarantees: draft.agreementTerms.guarantees.map((guarantee, index) =>
+        draft.pendingGuaranteeDocuments[index]
+          ? {
+              ...guarantee,
+              documentId:
+                guarantee.documentId ?? 'pending-document-selected-for-upload',
+            }
+          : guarantee,
+      ),
+    };
+    return b2bAgreementTermsIssue(termsForValidation);
   }
 }
 export class CooperationSaveError extends Error {
@@ -133,6 +154,15 @@ export async function saveCooperation(
       'b2b.agreement.manage',
     ] as const)
       require(permission);
+  if (
+    draft.withAgreement &&
+    (draft.pendingAgreementDocument ||
+      draft.pendingGuaranteeDocuments.some(Boolean))
+  ) {
+    require('documents.upload');
+    require('documents.list');
+    require('documents.organization.read');
+  }
   if (
     draft.withAgreement &&
     (draft.agreementTerms.creditPolicies.length ||
@@ -188,11 +218,57 @@ export async function saveCooperation(
         isPrimary: false,
       });
     if (draft.withAgreement) {
+      const savedOrganization = organization;
+      if (!savedOrganization)
+        throw new Error('هویت سازمان پیش از ثبت قرارداد ایجاد نشده است.');
+      let agreementTerms = draft.agreementTerms;
+      if (
+        draft.pendingAgreementDocument ||
+        draft.pendingGuaranteeDocuments.some(Boolean)
+      ) {
+        const options = (await documentsApi.options()).data;
+        const upload = async (pending: StagedOrganizationDocument) => {
+          const form = organizationDocumentForm(
+            savedOrganization,
+            { ...pending.input, branchId: draft.branchId },
+            pending.file,
+            options,
+            permissions,
+          );
+          return (await documentsApi.upload(form)).data.id;
+        };
+        const documentId = draft.pendingAgreementDocument
+          ? await upload(draft.pendingAgreementDocument)
+          : agreementTerms.documentId;
+        const guarantees = [];
+        for (const [index, guarantee] of agreementTerms.guarantees.entries()) {
+          const pending = draft.pendingGuaranteeDocuments[index];
+          guarantees.push(
+            pending
+              ? {
+                  ...guarantee,
+                  documentId: await upload(pending),
+                  documentVersionId: null,
+                }
+              : guarantee,
+          );
+        }
+        agreementTerms = {
+          ...agreementTerms,
+          documentId,
+          ...(draft.pendingAgreementDocument
+            ? { documentVersionId: null }
+            : agreementTerms.documentVersionId !== undefined
+              ? { documentVersionId: agreementTerms.documentVersionId }
+              : {}),
+          guarantees,
+        };
+      }
       await agencyClient.saveAgreementTerms(organization.id, {
         branchId: draft.branchId,
         role: draft.role,
         requestId: draft.agreementRequestId ?? crypto.randomUUID(),
-        terms: draft.agreementTerms,
+        terms: agreementTerms,
       });
     }
     return organization;

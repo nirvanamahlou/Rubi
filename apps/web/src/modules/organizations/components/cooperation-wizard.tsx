@@ -575,6 +575,17 @@ export function CooperationWizard({
                   branchId={draft.branchId}
                   organizationId={existing?.id}
                   permissions={permissions}
+                  pendingDocuments={{
+                    agreement: draft.pendingAgreementDocument,
+                    guarantees: draft.pendingGuaranteeDocuments,
+                  }}
+                  onPendingDocumentsChange={(pending) =>
+                    setDraft((current) => ({
+                      ...current,
+                      pendingAgreementDocument: pending.agreement,
+                      pendingGuaranteeDocuments: pending.guarantees,
+                    }))
+                  }
                   disabled={busy || uploading || stopped}
                   onChange={(agreementTerms) =>
                     setDraft((current) => ({

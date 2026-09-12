@@ -18,6 +18,14 @@ const profile = readFileSync(
   new URL('./corporate-profile.tsx', import.meta.url),
   'utf8',
 );
+const cooperationWizard = readFileSync(
+  new URL('./cooperation-wizard.tsx', import.meta.url),
+  'utf8',
+);
+const agreementEditor = readFileSync(
+  new URL('./agreement-terms-editor.tsx', import.meta.url),
+  'utf8',
+);
 
 describe('agency to Master Organization integration', () => {
   it('uses the public Master Data client and the canonical AGENCY role', () => {
@@ -53,6 +61,15 @@ describe('agency to Master Organization integration', () => {
     expect(source).toContain('setExcelOpen(true)');
     expect(source).toContain('ورود از Excel');
     expect(source).not.toContain('دانلود قالب ورود');
+  });
+
+  it('keeps contract and guarantee uploads inside registration and marks its explanation optional', () => {
+    expect(cooperationWizard).toContain('pendingAgreementDocument');
+    expect(cooperationWizard).toContain('pendingGuaranteeDocuments');
+    expect(agreementEditor).toContain("'سند قرارداد'");
+    expect(agreementEditor).toContain('`سند تضمین ${index + 1}`');
+    expect(agreementEditor).toContain('دلیل ثبت یا اصلاح این نسخه (اختیاری)');
+    expect(agreementEditor).not.toContain('دلیل ثبت یا اصلاح این نسخه *');
   });
 
   it('loads operational and address data through public APIs without inventing Finance exposure', () => {

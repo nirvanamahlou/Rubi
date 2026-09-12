@@ -84,7 +84,7 @@ export class B2bAgreementTermsDto implements B2bAgreementTermsV1 {
   @IsString() @MaxLength(2000) cancellationTerms!: string;
   @IsString() @MaxLength(2000) refundTerms!: string;
   @IsString() @MaxLength(2000) notes!: string;
-  @IsString() @MinLength(3) @MaxLength(500) changeReason!: string;
+  @IsString() @MaxLength(500) changeReason!: string;
   @ValidateIf(nullable) @IsUUID() documentId!: string | null;
   @ValidateIf((_o, v) => v !== undefined && v !== null)
   @IsUUID()

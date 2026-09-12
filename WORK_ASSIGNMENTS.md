@@ -2283,3 +2283,9 @@ Reserve corporate-profile.tsx only to remove requested home360 explanatory subti
 B2B-360-REMOVE-SUBTITLE-001: SOURCE_COMPLETEf03d34c. Requested fallback subtitle removed; subsection descriptions retained. Scoped lint/typecheck passed. Combined build delegated to current runtime owner; locks released.
 
 B2B-360-REMOVE-SUBTITLE-001: READY_FOR_REVIEW. Combined runtime1bf840b/PID8604 build and live360subtitleabsence verified. PR209; locks released.
+
+# B2B-RESTORE-REGISTRATION-DOCUMENTS-001 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک در 2026-09-12: محل بارگذاری سند قرارداد و سند تضمین در فرم مرحله‌ای ثبت آژانس برای سازمان جدید نیز نمایش داده شود و دلیل ثبت/اصلاح قرارداد اختیاری باشد. شاخه `codex/pc-b-restore-agency-document-guarantee` از `origin/develop@b2098bc` ساخته شد.
+- محدوده رزروشده: Organizations Web wizard/editor/model/tests، اعتبارسنجی افزایشی B2B contract/API DTO و اسناد وضعیت همین واحد کار. فایل انتخاب‌شده سازمان جدید پس از ایجاد شناسه پایدار سازمان و پیش از ذخیره پیش‌نویس، فقط از API عمومی Documents بارگذاری و به قرارداد یا تضمین متصل می‌شود. بدون Schema/Migration/Seed، IAM grant، Dependency/Lockfile یا دسترسی مستقیم به جدول ماژول دیگر.
+- پیاده‌سازی و QA کامل شد: کنترل‌های فایل قرارداد و تضمین برای سازمان جدید پس از انتخاب شعبه نمایش داده می‌شوند؛ گزینه‌های نوع/دسته سند از Documents بارگذاری می‌شوند و دلیل ثبت/اصلاح اختیاری است. ۱۲۸ تست Organizations، ۱۲۱ تست B2B API، ۶۷ تست Contracts، lint محدوده، TypeScript و build Web/API موفق بودند. بررسی Web3100 بدون خطای کنسول و بدون ذخیره داده آزمایشی انجام شد. برای دریافت PC-A، نتیجه از طریق PR همین شاخه در `origin/develop` منتشر می‌شود.

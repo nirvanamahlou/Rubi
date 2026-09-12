@@ -38,6 +38,16 @@ describe('agreement terms and public boundary checks', () => {
       }),
     ).toEqual([]);
   });
+  it('accepts an omitted registration explanation as an empty optional value', () => {
+    const terms = { ...agreementTestTerms(), changeReason: '' };
+    expect(b2bAgreementTermsIssue(terms)).toBeUndefined();
+    expect(
+      validateSync(
+        plainToInstance(SaveB2bAgreementDto, { ...input(), terms }),
+        { whitelist: true, forbidNonWhitelisted: true },
+      ),
+    ).toEqual([]);
+  });
   it.each([undefined, null, {}, []])(
     'rejects missing or malformed terms %s',
     (terms) => {

@@ -14,11 +14,17 @@ import { documentsApi } from '@/modules/documents/api/client';
 import {
   canReadOrganizationDocuments,
   organizationDocumentQuery,
+  type StagedOrganizationDocument,
 } from '../model/organization-documents';
 import { serviceLabels } from '../model/agreement-terms';
 import { B2B_AGREEMENT_TYPES } from '@rubi/contracts';
 import { MasterDataReferenceSelector } from '@/modules/master-data/components/master-data-reference-selector';
 import { InlineDocumentUpload } from './inline-document-upload';
+
+export interface AgreementPendingDocuments {
+  agreement: StagedOrganizationDocument | null;
+  guarantees: (StagedOrganizationDocument | null)[];
+}
 
 export function AgreementTermsEditor({
   value,
@@ -29,6 +35,8 @@ export function AgreementTermsEditor({
   permissions,
   disabled = false,
   onUploadStateChange,
+  pendingDocuments,
+  onPendingDocumentsChange,
   focus = 'all',
 }: {
   value: B2bAgreementTermsV1;
@@ -39,6 +47,8 @@ export function AgreementTermsEditor({
   permissions: readonly IamPermissionCode[];
   disabled?: boolean;
   onUploadStateChange?: (busy: boolean) => void;
+  pendingDocuments?: AgreementPendingDocuments;
+  onPendingDocumentsChange?: (documents: AgreementPendingDocuments) => void;
   focus?: 'all' | 'credit' | 'guarantees' | 'temporary';
 }) {
   const [uploading, setUploading] = useState(false);
@@ -171,6 +181,8 @@ export function AgreementTermsEditor({
     id: string | null,
     change: (id: string | null) => void,
     inlineOnly = false,
+    stage?: (document: StagedOrganizationDocument | null) => void,
+    staged?: StagedOrganizationDocument | null,
   ) => (
     <div className="field full">
       <span>{label}</span>
@@ -187,7 +199,7 @@ export function AgreementTermsEditor({
             </button>
           </div>
         ) : null
-      ) : (
+      ) : organizationId ? (
         <select
           className="input"
           value={id ?? ''}
@@ -218,22 +230,24 @@ export function AgreementTermsEditor({
             </option>
           ))}
         </select>
-      )}
-      {organizationId &&
-      branchId &&
+      ) : null}
+      {branchId &&
       permissions.includes('documents.upload') &&
       canReadOrganizationDocuments(permissions) ? (
         <InlineDocumentUpload
-          expanded={inlineOnly}
+          expanded={inlineOnly || !organizationId}
           organizationId={organizationId}
           branchId={branchId}
           label={label}
           permissions={permissions}
           onBusyChange={uploadBusy}
           onUploaded={(documentId) => {
+            stage?.(null);
             change(documentId);
             setReload((n) => n + 1);
           }}
+          onStaged={organizationId ? undefined : stage}
+          staged={staged}
         />
       ) : null}
     </div>
@@ -447,6 +461,12 @@ export function AgreementTermsEditor({
               (id) =>
                 onChange({ ...value, documentId: id, documentVersionId: null }),
               true,
+              (pending) =>
+                onPendingDocumentsChange?.({
+                  agreement: pending,
+                  guarantees: pendingDocuments?.guarantees ?? [],
+                }),
+              pendingDocuments?.agreement,
             )}
           </div>
         </section>
@@ -630,7 +650,7 @@ export function AgreementTermsEditor({
               disabled={
                 !value.currencyCodes.length || value.guarantees.length >= 20
               }
-              onClick={() =>
+              onClick={() => {
                 set('guarantees', [
                   ...value.guarantees,
                   {
@@ -644,8 +664,12 @@ export function AgreementTermsEditor({
                     status: 'REQUIRED',
                     documentId: null,
                   },
-                ])
-              }
+                ]);
+                onPendingDocumentsChange?.({
+                  agreement: pendingDocuments?.agreement ?? null,
+                  guarantees: [...(pendingDocuments?.guarantees ?? []), null],
+                });
+              }}
             >
               <Plus size={16} />
               افزودن تضمین
@@ -674,12 +698,18 @@ export function AgreementTermsEditor({
                     type="button"
                     className="btn danger"
                     aria-label={`حذف تضمین ${index + 1}`}
-                    onClick={() =>
+                    onClick={() => {
                       set(
                         'guarantees',
                         value.guarantees.filter((_, i) => i !== index),
-                      )
-                    }
+                      );
+                      onPendingDocumentsChange?.({
+                        agreement: pendingDocuments?.agreement ?? null,
+                        guarantees: (pendingDocuments?.guarantees ?? []).filter(
+                          (_, i) => i !== index,
+                        ),
+                      });
+                    }}
                   >
                     <Trash2 size={16} />
                     حذف
@@ -758,6 +788,17 @@ export function AgreementTermsEditor({
                     `سند تضمین ${index + 1}`,
                     guarantee.documentId,
                     (id) => update({ documentId: id, documentVersionId: null }),
+                    false,
+                    (pending) =>
+                      onPendingDocumentsChange?.({
+                        agreement: pendingDocuments?.agreement ?? null,
+                        guarantees: value.guarantees.map((_, i) =>
+                          i === index
+                            ? pending
+                            : (pendingDocuments?.guarantees[i] ?? null),
+                        ),
+                      }),
+                    pendingDocuments?.guarantees[index],
                   )}
                 </div>
               </div>
@@ -771,7 +812,8 @@ export function AgreementTermsEditor({
       )}
       {!organizationId ? (
         <p className="boundary-note">
-          پس از ثبت سازمان، مدارک را در پرونده بارگذاری و به پیش‌نویس متصل کنید.
+          فایل‌های انتخاب‌شده پس از ایجاد سازمان در «اسناد و فایل‌ها» ذخیره و به
+          همین قرارداد یا تضمین متصل می‌شوند.
         </p>
       ) : canReadOrganizationDocuments(permissions) ? (
         <div className="agreement-row-title">
@@ -814,7 +856,7 @@ export function AgreementTermsEditor({
       )}
       <div className="form-grid">
         {text('notes', 'یادداشت تکمیلی', true)}
-        {text('changeReason', 'دلیل ثبت یا اصلاح این نسخه *', true)}
+        {text('changeReason', 'دلیل ثبت یا اصلاح این نسخه (اختیاری)', true)}
       </div>
       <div className="boundary-note">
         ذخیره، پیش‌نویس ایجاد می‌کند. فعال‌سازی قرارداد و سقف‌ها پس از ارسال و
