@@ -30,76 +30,76 @@ enum AuditOutcome {
 }
 
 model User {
-  b2bOrganizationUser             B2bOrganizationUser?
-  hotelRateBatches                ReservationHotelRateBatch[]
-  reservationManifestExports      ReservationManifestExport[]
-  reservationServicePurchases     ReservationServicePurchase[]
-  financeSupplierPaymentRevisions FinanceSupplierPaymentRevision[]
-  ownedTravelIntakes              ReservationIntake[]              @relation("TravelSalesOwner")
-  travelWorkflowRevisions         ReservationWorkflowRevision[]
-  travelDeliveryRevisions         FinanceDeliveryRevision[]
-  id                              String                           @id @default(uuid()) @db.Uuid
-  username                        String                           @unique @db.VarChar(80)
-  email                           String?                          @unique @db.VarChar(320)
-  displayName                     String                           @db.VarChar(160)
-  passwordHash                    String                           @db.VarChar(255)
-  status                          UserStatus                       @default(ACTIVE)
-  failedLoginAttempts             Int                              @default(0)
-  lockedUntil                     DateTime?                        @db.Timestamptz(3)
-  passwordChangedAt               DateTime                         @default(now()) @db.Timestamptz(3)
-  lastLoginAt                     DateTime?                        @db.Timestamptz(3)
-  mfaTotpSecretCiphertext         String?                          @map("mfa_totp_secret_ciphertext") @db.VarChar(800)
-  mfaTotpPendingSecretCiphertext  String?                          @map("mfa_totp_pending_secret_ciphertext") @db.VarChar(800)
-  mfaTotpPendingExpiresAt         DateTime?                        @map("mfa_totp_pending_expires_at") @db.Timestamptz(3)
-  mfaTotpEnabledAt                DateTime?                        @map("mfa_totp_enabled_at") @db.Timestamptz(3)
-  mfaFailedAttempts               Int                              @default(0) @map("mfa_failed_attempts")
-  mfaLockedUntil                  DateTime?                        @map("mfa_locked_until") @db.Timestamptz(3)
-  mfaLastUsedStep                 BigInt?                          @map("mfa_last_used_step") @db.BigInt
-  createdAt                       DateTime                         @default(now()) @db.Timestamptz(3)
-  updatedAt                       DateTime                         @updatedAt @db.Timestamptz(3)
-  roles                           UserRole[]
-  branches                        UserBranch[]
-  sessions                        Session[]
-  auditEvents                     AuditEvent[]                     @relation("AuditActor")
-  customersCreated                Customer[]                       @relation("CustomerCreatedBy")
-  customersUpdated                Customer[]                       @relation("CustomerUpdatedBy")
-  customersDeactivated            Customer[]                       @relation("CustomerDeactivatedBy")
-  customerContactsCreated         CustomerContact[]                @relation("CustomerContactCreatedBy")
-  customerAddressesCreated        CustomerAddress[]                @relation("CustomerAddressCreatedBy")
-  customerConsentsRecorded        CustomerConsent[]                @relation("CustomerConsentRecordedBy")
-  customerRelationshipsCreated    CustomerRelationship[]           @relation("CustomerRelationshipCreatedBy")
-  customerStatusChanges           CustomerStatusHistory[]          @relation("CustomerStatusChangedBy")
-  customerDuplicateCandidates     CustomerDuplicateCandidate[]     @relation("CustomerDuplicateCreatedBy")
-  customerDuplicateReviews        CustomerDuplicateCandidate[]     @relation("CustomerDuplicateReviewedBy")
-  customerAuditEvents             CustomerAuditEvent[]             @relation("CustomerAuditActor")
-  legalEntityContext              UserLegalEntityContext?
-  legalEntitiesUpdated            LegalEntity[]                    @relation("LegalEntityUpdatedBy")
-  legalEntityBrandingVersions     LegalEntityBrandingVersion[]     @relation("LegalEntityBrandingVersionCreatedBy")
-  legalEntityAuditEvents          LegalEntityAuditEvent[]          @relation("LegalEntityAuditActor")
-  legalEntityDocumentIssues       LegalEntityDocumentIssue[]       @relation("LegalEntityDocumentIssueActor")
-  documentsOwned                  Document[]                       @relation("DocumentOwner")
-  documentsCreated                Document[]                       @relation("DocumentCreatedBy")
-  documentsUpdated                Document[]                       @relation("DocumentUpdatedBy")
-  documentVersionsCreated         DocumentVersion[]                @relation("DocumentVersionCreatedBy")
-  documentAuditEvents             DocumentAuditEvent[]             @relation("DocumentAuditActor")
-  documentQuarantinesReviewed     DocumentQuarantine[]             @relation("DocumentQuarantineReviewer")
-  documentAccessGrants            DocumentAccessGrant[]            @relation("DocumentAccessGrantActor")
-  notificationsReceived           Notification[]                   @relation("NotificationRecipient")
-  notificationsActed              Notification[]                   @relation("NotificationActor")
-  messagingConversationsCreated   MessagingConversation[]          @relation("MessagingConversationCreator")
-  messagingMemberships            MessagingMember[]
-  messagingMessagesSent           MessagingMessage[]               @relation("MessagingMessageSender")
-  agencyProfilesManaged           AgencyOperationalProfile[]       @relation("AgencyAccountManager")
-  b2bAuditEvents                  B2bAuditEvent[]                  @relation("B2bAuditActor")
-  b2bRevisionsCreated             B2bAgreementRevision[]           @relation("B2bRevisionCreator")
-  b2bRevisionsSubmitted           B2bAgreementRevision[]           @relation("B2bRevisionSubmitter")
-  b2bRevisionsReviewed            B2bAgreementRevision[]           @relation("B2bRevisionReviewer")
-  b2bCommands                     B2bAgreementCommand[]
-  hrEmployee                      HrEmployee?
-  hrAuditEvents                   HrAuditEvent[]
-  hrCommands                      HrCommand[]
-  hrNotificationReads             HrNotificationRead[]
-  hrNotifications                 HrNotification[]
+  b2bOrganizationUser               B2bOrganizationUser?
+  hotelRateBatches                  ReservationHotelRateBatch[]
+  reservationManifestExports        ReservationManifestExport[]
+  reservationServicePurchases       ReservationServicePurchase[]
+  financeSupplierPaymentRevisions   FinanceSupplierPaymentRevision[]
+  ownedTravelIntakes                ReservationIntake[]               @relation("TravelSalesOwner")
+  travelWorkflowRevisions           ReservationWorkflowRevision[]
+  travelDeliveryRevisions           FinanceDeliveryRevision[]
+  id                                String                            @id @default(uuid()) @db.Uuid
+  username                          String                            @unique @db.VarChar(80)
+  email                             String?                           @unique @db.VarChar(320)
+  displayName                       String                            @db.VarChar(160)
+  passwordHash                      String                            @db.VarChar(255)
+  status                            UserStatus                        @default(ACTIVE)
+  failedLoginAttempts               Int                               @default(0)
+  lockedUntil                       DateTime?                         @db.Timestamptz(3)
+  passwordChangedAt                 DateTime                          @default(now()) @db.Timestamptz(3)
+  lastLoginAt                       DateTime?                         @db.Timestamptz(3)
+  mfaTotpSecretCiphertext           String?                           @map("mfa_totp_secret_ciphertext") @db.VarChar(800)
+  mfaTotpPendingSecretCiphertext    String?                           @map("mfa_totp_pending_secret_ciphertext") @db.VarChar(800)
+  mfaTotpPendingExpiresAt           DateTime?                         @map("mfa_totp_pending_expires_at") @db.Timestamptz(3)
+  mfaTotpEnabledAt                  DateTime?                         @map("mfa_totp_enabled_at") @db.Timestamptz(3)
+  mfaFailedAttempts                 Int                               @default(0) @map("mfa_failed_attempts")
+  mfaLockedUntil                    DateTime?                         @map("mfa_locked_until") @db.Timestamptz(3)
+  mfaLastUsedStep                   BigInt?                           @map("mfa_last_used_step") @db.BigInt
+  createdAt                         DateTime                          @default(now()) @db.Timestamptz(3)
+  updatedAt                         DateTime                          @updatedAt @db.Timestamptz(3)
+  roles                             UserRole[]
+  branches                          UserBranch[]
+  sessions                          Session[]
+  auditEvents                       AuditEvent[]                      @relation("AuditActor")
+  customersCreated                  Customer[]                        @relation("CustomerCreatedBy")
+  customersUpdated                  Customer[]                        @relation("CustomerUpdatedBy")
+  customersDeactivated              Customer[]                        @relation("CustomerDeactivatedBy")
+  customerContactsCreated           CustomerContact[]                 @relation("CustomerContactCreatedBy")
+  customerAddressesCreated          CustomerAddress[]                 @relation("CustomerAddressCreatedBy")
+  customerConsentsRecorded          CustomerConsent[]                 @relation("CustomerConsentRecordedBy")
+  customerRelationshipsCreated      CustomerRelationship[]            @relation("CustomerRelationshipCreatedBy")
+  customerStatusChanges             CustomerStatusHistory[]           @relation("CustomerStatusChangedBy")
+  customerDuplicateCandidates       CustomerDuplicateCandidate[]      @relation("CustomerDuplicateCreatedBy")
+  customerDuplicateReviews          CustomerDuplicateCandidate[]      @relation("CustomerDuplicateReviewedBy")
+  customerAuditEvents               CustomerAuditEvent[]              @relation("CustomerAuditActor")
+  legalEntityContext                UserLegalEntityContext?
+  legalEntitiesUpdated              LegalEntity[]                     @relation("LegalEntityUpdatedBy")
+  legalEntityBrandingVersions       LegalEntityBrandingVersion[]      @relation("LegalEntityBrandingVersionCreatedBy")
+  legalEntityAuditEvents            LegalEntityAuditEvent[]           @relation("LegalEntityAuditActor")
+  legalEntityDocumentIssues         LegalEntityDocumentIssue[]        @relation("LegalEntityDocumentIssueActor")
+  documentsOwned                    Document[]                        @relation("DocumentOwner")
+  documentsCreated                  Document[]                        @relation("DocumentCreatedBy")
+  documentsUpdated                  Document[]                        @relation("DocumentUpdatedBy")
+  documentVersionsCreated           DocumentVersion[]                 @relation("DocumentVersionCreatedBy")
+  documentAuditEvents               DocumentAuditEvent[]              @relation("DocumentAuditActor")
+  documentQuarantinesReviewed       DocumentQuarantine[]              @relation("DocumentQuarantineReviewer")
+  documentAccessGrants              DocumentAccessGrant[]             @relation("DocumentAccessGrantActor")
+  notificationsReceived             Notification[]                    @relation("NotificationRecipient")
+  notificationsActed                Notification[]                    @relation("NotificationActor")
+  messagingConversationsCreated     MessagingConversation[]           @relation("MessagingConversationCreator")
+  messagingMemberships              MessagingMember[]
+  messagingMessagesSent             MessagingMessage[]                @relation("MessagingMessageSender")
+  agencyProfilesManaged             AgencyOperationalProfile[]        @relation("AgencyAccountManager")
+  b2bAuditEvents                    B2bAuditEvent[]                   @relation("B2bAuditActor")
+  b2bRevisionsCreated               B2bAgreementRevision[]            @relation("B2bRevisionCreator")
+  b2bRevisionsSubmitted             B2bAgreementRevision[]            @relation("B2bRevisionSubmitter")
+  b2bRevisionsReviewed              B2bAgreementRevision[]            @relation("B2bRevisionReviewer")
+  b2bCommands                       B2bAgreementCommand[]
+  hrEmployee                        HrEmployee?
+  hrAuditEvents                     HrAuditEvent[]
+  hrCommands                        HrCommand[]
+  hrNotificationReads               HrNotificationRead[]
+  hrNotifications                   HrNotification[]
   customerAffairsLeadsAssigned      CustomerAffairsLead[]             @relation("CustomerAffairsLeadAssignee")
   customerAffairsLeadsCreated       CustomerAffairsLead[]             @relation("CustomerAffairsLeadCreator")
   customerAffairsLeadsUpdated       CustomerAffairsLead[]             @relation("CustomerAffairsLeadUpdater")
@@ -172,28 +172,28 @@ model RolePermission {
 }
 
 model Branch {
-  hotelRateBatches       ReservationHotelRateBatch[]
-  b2bOrganizationUsers   B2bOrganizationUser[]
-  id                     String                      @id @default(uuid()) @db.Uuid
-  code                   String                      @unique @db.VarChar(40)
-  name                   String                      @db.VarChar(160)
-  isActive               Boolean                     @default(true)
-  createdAt              DateTime                    @default(now()) @db.Timestamptz(3)
-  updatedAt              DateTime                    @updatedAt @db.Timestamptz(3)
-  users                  UserBranch[]
-  ownedCustomers         Customer[]                  @relation("CustomerOwnerBranch")
-  customerStatusHistory  CustomerStatusHistory[]
-  customerAuditEvents    CustomerAuditEvent[]
-  documents              Document[]
-  documentAuditEvents    DocumentAuditEvent[]
-  agencyProfiles         AgencyOperationalProfile[]
-  b2bAuditEvents         B2bAuditEvent[]
-  b2bSignatories         B2bOrganizationSignatory[]
-  hrEmployees            HrEmployee[]
-  hrRecords              HrRecord[]
-  hrAuditEvents          HrAuditEvent[]
-  hrNotifications        HrNotification[]
-  messagingConversations MessagingConversation[]
+  hotelRateBatches           ReservationHotelRateBatch[]
+  b2bOrganizationUsers       B2bOrganizationUser[]
+  id                         String                      @id @default(uuid()) @db.Uuid
+  code                       String                      @unique @db.VarChar(40)
+  name                       String                      @db.VarChar(160)
+  isActive                   Boolean                     @default(true)
+  createdAt                  DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt                  DateTime                    @updatedAt @db.Timestamptz(3)
+  users                      UserBranch[]
+  ownedCustomers             Customer[]                  @relation("CustomerOwnerBranch")
+  customerStatusHistory      CustomerStatusHistory[]
+  customerAuditEvents        CustomerAuditEvent[]
+  documents                  Document[]
+  documentAuditEvents        DocumentAuditEvent[]
+  agencyProfiles             AgencyOperationalProfile[]
+  b2bAuditEvents             B2bAuditEvent[]
+  b2bSignatories             B2bOrganizationSignatory[]
+  hrEmployees                HrEmployee[]
+  hrRecords                  HrRecord[]
+  hrAuditEvents              HrAuditEvent[]
+  hrNotifications            HrNotification[]
+  messagingConversations     MessagingConversation[]
   customerAffairsLeads       CustomerAffairsLead[]
   customerAffairsTickets     CustomerAffairsTicket[]
   customerAffairsAuditEvents CustomerAffairsAuditEvent[]
