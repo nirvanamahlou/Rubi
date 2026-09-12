@@ -14,7 +14,7 @@ Optional PDF, PNG and JPEG files are uploaded through the existing Documents end
 
 Migration `20260912173000_workbench_feedback` is additive: one enum, one table, restrictive Branch/User FKs, a bounded attachment-count check and lookup indexes. It was rehearsed successfully on full restored copies before application. The active runtime database backup is `C:/Users/admin/Rubi-backups/workbench-feedback/runtime-before-20260912-031255.dump` with SHA-256 `2B092D3E6584033E4F4B54FE62E1D5A339DB5D4076CE3B35D90D7CD321559912`. The production-style local migration preserved 38 IAM users, five branches, 44 documents and six HR employees; feedback count remained zero because QA did not submit a representational test record.
 
-Web3100 serves build `hr005-445b3dde58420270`; API4190 is healthy and uses the existing `rubi_hr_current_20260908` database and `hr007-documents` storage. Authenticated browser inspection confirms the obsolete draft/unavailable text is absent, attachment persistence copy is present and the submit button is enabled. The unauthenticated endpoint returns 401.
+Web3100 and API4190 now run from the integrated Workbench branch with the existing `rubi_hr_current_20260908` database and `hr007-documents` storage. Authenticated browser inspection confirms the obsolete draft/unavailable text is absent, attachment persistence copy is present and the submit button is enabled. Both health endpoints respond successfully and the unauthenticated feedback endpoint returns 401.
 
 ## Validation
 
