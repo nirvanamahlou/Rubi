@@ -7,12 +7,12 @@
   کنترل کامل از یک Pull Request به `develop` برسند. `main` تغییر نمی‌کند.
 - ورودی‌های تجمیع‌شده شامل رزرواسیون و خروجی‌ها تا `af77d07`، رابط مشترک تا
   `bc40d8b`، مالی تا `f2085c1`، مدیریت قیمت تا `135260f`، آژانس‌ها تا
-  `5ef4e39`، میزکار تا `2794b60` و مجوز Reporting تا `a9300cc` است. تاریخ‌های
+  `6a4a312`، میزکار تا `0441c1e` و مجوز Reporting تا `a9300cc` است. تاریخ‌های
   خام بازگشتی نیز به DatePicker مشترک تبدیل شدند.
 - Conflictهای اسناد به‌صورت افزایشی حل شده‌اند؛ هیچ Workspace دارای تغییر محلی
   reset، stash یا overwrite نشده است. مالکیت Taskهای مستقل با Merge این شاخه
   منتقل نمی‌شود و ادامه هر ماژول همچنان به رزرو جدید نیاز دارد.
-- نصب Frozen، Prisma، lint، typecheck، ۲۶۳۴ تست و Production Build شش Task با
+- نصب Frozen، Prisma، lint، typecheck، ۲۶۴۴ تست و Production Build شش Task با
   ۴۶ Route پاس شدند. کنترل Diff و Secret نیز سالم است؛ اجرای نهایی Web 3100 و
   API پس از Merge همین Baseline انجام می‌شود. جزئیات در
   `docs/tasks/UNIFIED-LATEST-0912.md` ثبت شده است.

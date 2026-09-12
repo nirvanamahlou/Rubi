@@ -7,7 +7,7 @@
   را بدون دست‌کاری Workspaceهای Dirty کنار هم قرار داده است.
 - اختلاف‌های مشترک Navigation، DatePicker، تم تیره، تاریخ انقضای اسناد آژانس و
   صفحات جدید Finance/Reservations با حفظ جدیدترین رفتار هر بخش حل شدند.
-- وضعیت فعلی `READY_FOR_MERGE` است: نصب Frozen، Prisma، lint، typecheck، ۲۶۳۴
+- وضعیت فعلی `READY_FOR_MERGE` است: نصب Frozen، Prisma، lint، typecheck، ۲۶۴۴
   تست و Build شش Task/۴۶ Route پاس شدند. `main` در این عملیات تغییر نمی‌کند.
 
 ## REPORTING — مجوز اجرای PC-C و Gate مرحله P0-04
