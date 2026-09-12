@@ -96,6 +96,7 @@ export function SalesTravelDocuments({ contractId }: { contractId: string }) {
         <ReservationTickets
           request={intake}
           branding={intake.workflow.branding}
+          salesContractId={contractId}
           onClose={() => setTicket(false)}
         />
       )}

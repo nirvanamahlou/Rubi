@@ -26,9 +26,13 @@ export async function GET(
 ) {
   const { id } = await context.params;
   if (!uuid.test(id)) return fail('شناسه درخواست معتبر نیست.', 400);
-  const passengerId = new URL(request.url).searchParams.get('passengerId');
+  const parameters = new URL(request.url).searchParams;
+  const passengerId = parameters.get('passengerId');
+  const salesContractId = parameters.get('salesContractId');
   if (passengerId && !uuid.test(passengerId))
     return fail('شناسه مسافر معتبر نیست.', 400);
+  if (salesContractId && !uuid.test(salesContractId))
+    return fail('شناسه قرارداد معتبر نیست.', 400);
   const base = getPublicApiBaseUrl();
   if (!base) return fail('سرویس PDF پیکربندی نشده است.', 503);
   const get = (path: string) =>
@@ -39,15 +43,23 @@ export async function GET(
       signal: AbortSignal.timeout(15000),
     });
   try {
-    const workflowResponse = await get(`/reservations/requests/${id}/workflow`);
+    const workflowResponse = await get(
+      salesContractId
+        ? `/sales/contracts/${salesContractId}/travel-documents`
+        : `/reservations/requests/${id}/workflow`,
+    );
     if (!workflowResponse.ok)
       return fail(
-        'دریافت بلیط مجاز نیست؛ نشست و دسترسی رزرواسیون را بررسی کنید.',
+        salesContractId
+          ? 'دریافت بلیط در فروش تا تأیید تحویل مدارک توسط مالی مجاز نیست.'
+          : 'دریافت بلیط مجاز نیست؛ نشست و دسترسی رزرواسیون را بررسی کنید.',
         workflowResponse.status,
       );
     const { data: intake } = (await workflowResponse.json()) as {
       data: ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
     };
+    if (salesContractId && intake.id !== id)
+      return fail('قرارداد فروش با درخواست رزرواسیون مطابقت ندارد.', 403);
     const branding = intake.workflow.branding;
     if (!branding) return fail('ابتدا سربرگ خروجی را ثبت کنید.', 400);
     if (intake.workflow.supplierStatus === 'CANCELLED')

@@ -20,10 +20,12 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 export function ReservationTickets({
   request,
   branding = null,
+  salesContractId,
   onClose,
 }: {
   request: ReservationIntakeV1;
   branding?: TravelBrandingV1 | null;
+  salesContractId?: string;
   onClose: () => void;
 }) {
   const { logo, error: logoError } = useTravelLogo(branding);
@@ -101,7 +103,10 @@ export function ReservationTickets({
     setDownloading(true);
     setWarning('');
     try {
-      const path = `/reservations/requests/${encodeURIComponent(request.id)}/tickets/pdf${passengerId ? `?passengerId=${encodeURIComponent(passengerId)}` : ''}`;
+      const parameters = new URLSearchParams();
+      if (passengerId) parameters.set('passengerId', passengerId);
+      if (salesContractId) parameters.set('salesContractId', salesContractId);
+      const path = `/reservations/requests/${encodeURIComponent(request.id)}/tickets/pdf${parameters.size ? `?${parameters}` : ''}`;
       const send = () =>
         fetch(path, { credentials: 'include', cache: 'no-store' });
       let response = await send();
@@ -148,12 +153,10 @@ export function ReservationTickets({
           dir="rtl"
         >
           <DialogTitle>
-            بلیط‌های قرارداد {request.snapshot.contractNumber}
+            بلیط صادرشدهٔ قرارداد {request.snapshot.contractNumber}
           </DialogTitle>
           <DialogDescription>
-            نسخهٔ ذخیره‌شدهٔ {request.contractVersion}؛ از همین قرارداد
-            می‌توانید دوباره دریافت کنید. این خروجی هنوز بلیط صادرشدهٔ ایرلاین
-            نیست.
+            مسافر را انتخاب و فایل PDF را دریافت کنید.
           </DialogDescription>
           {tickets.length ? (
             <>
@@ -204,10 +207,6 @@ export function ReservationTickets({
                   چاپ همهٔ مسافران
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                دانلود PDF فایل را مستقیم ذخیره می‌کند. در چاپ گروهی هر مسافر در
-                برگهٔ جدا قرار می‌گیرد.
-              </p>
               {warning ? (
                 <p role="status" className="text-sm text-amber-700">
                   {warning}
