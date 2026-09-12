@@ -27,17 +27,12 @@ describe('Rubi Customer Affairs navigation', () => {
     expect(source).toContain('className={s.hub}');
     expect(source).toContain('className={s.hero}');
   });
-  it('renders the five reference sections inside the existing application shell', () => {
+  it('renders the four reference sections inside the existing application shell', () => {
     route.query = '';
     const html = renderToStaticMarkup(<CustomerAffairsRubiWorkspace />);
-    for (const label of [
-      'نمای کلی',
-      'پیش از فروش',
-      'پشتیبانی',
-      'گزارش‌ها',
-      'تنظیمات',
-    ])
+    for (const label of ['نمای کلی', 'پیش از فروش', 'پشتیبانی', 'گزارش‌ها'])
       expect(html).toContain(label);
+    expect(html).not.toContain('تنظیمات');
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('در حال دریافت اطلاعات');
     expect(html).not.toContain('<aside');

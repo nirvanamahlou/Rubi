@@ -15,7 +15,6 @@ import {
   Plus,
   Search,
   Send,
-  Settings,
   ShieldCheck,
   Smile,
   Users,
@@ -49,14 +48,12 @@ type View =
   | 'tickets'
   | 'queues'
   | 'satisfaction'
-  | 'reports'
-  | 'settings';
+  | 'reports';
 const sections = [
   { view: 'overview', title: 'نمای کلی', icon: Home },
   { view: 'leads', title: 'پیش از فروش', icon: Users },
   { view: 'tickets', title: 'پشتیبانی', icon: Inbox },
   { view: 'reports', title: 'گزارش‌ها', icon: BarChart3 },
-  { view: 'settings', title: 'تنظیمات', icon: Settings },
 ] as const;
 const hubs = [
   {
@@ -814,41 +811,6 @@ export function CustomerAffairsRubiWorkspace() {
                     </div>
                   </section>
                 </>
-              )}
-              {view === 'settings' && (
-                <section className={s.panel}>
-                  <div className={s.panelHead}>
-                    <h2>تنظیمات و قواعد جاری</h2>
-                    {badge('فقط خواندنی')}
-                  </div>
-                  <div className={`${s.panelBody} ${s.policy}`}>
-                    <div>
-                      <h3>مهلت رسیدگی (SLA)</h3>
-                      <p>
-                        مهلت پاسخ اولیه و حل، همراه نسخه سیاست در هر تیکت ثبت
-                        می‌شود. مهلت‌های هر پرونده را در بخش پشتیبانی مشاهده
-                        کنید. ویرایش سیاست از این صفحه در نسخه فعلی در دسترس
-                        نیست.
-                      </p>
-                    </div>
-                    <div>
-                      <h3>دسترسی و مالکیت پرونده</h3>
-                      <p>
-                        نمایش و عملیات پرونده‌ها تابع مجوز کاربر و محدوده
-                        سازمانی فعال است. ارجاع داخلی و تغییر وضعیت در جزئیات
-                        پرونده انجام می‌شود.
-                      </p>
-                    </div>
-                    <div>
-                      <h3>کانال ارتباط و رضایت</h3>
-                      <p>
-                        ثبت ارتباطات و دعوت رضایت از داخل پرونده انجام می‌شود.
-                        مدیریت ارائه‌دهنده پیام، قالب‌ها و تقویم کاری در این
-                        صفحه فعال نیست.
-                      </p>
-                    </div>
-                  </div>
-                </section>
               )}
             </>
           )}

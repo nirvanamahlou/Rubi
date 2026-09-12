@@ -1,5 +1,9 @@
 # Work Assignments
 
+## CUSTOMER-AFFAIRS-REMOVE-SETTINGS — PC-B — IN_PROGRESS
+
+- User requests removal of the Customer Affairs settings section. Reserve only the Rubi workspace/component CSS, scoped navigation test and own status entry on `codex/pc-b-customer-affairs-remove-settings`; remove the settings tab, route view, read-only panel and dead local styling while preserving the four remaining sections, visual polish, data, API, schema, permissions, dependencies and global system settings. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190 stays untouched. No merge.
+
 ## CUSTOMER-AFFAIRS-REMOVE-TAGLINE — PC-B — DONE / VERIFIED
 
 - User requests removal of the visible header tagline «همراه مشتری، از اولین درخواست تا آخرین پیگیری». Reserve only the Customer Affairs Rubi workspace, its scoped structural test and own status entry on `codex/pc-b-customer-affairs-remove-tagline`, preserving the title, actions, visual polish, data, API, schema, dependencies and all other modules. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190 stays untouched. No merge.

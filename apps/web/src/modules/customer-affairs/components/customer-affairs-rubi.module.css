@@ -622,24 +622,6 @@
   border-radius: 10px;
   background: linear-gradient(90deg, var(--ca-teal), var(--primary));
 }
-.policy {
-  display: grid;
-  gap: 14px;
-}
-.policy > div {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 18px;
-}
-.policy h3 {
-  font-weight: 800;
-  margin-bottom: 8px;
-}
-.policy p {
-  font-size: 13px;
-  color: var(--muted-foreground);
-  line-height: 2;
-}
 :global(.dark) .workspace {
   --ca-teal: #72d4c3;
   --ca-purple: #c1a4ef;
