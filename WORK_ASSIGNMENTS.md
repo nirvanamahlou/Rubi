@@ -27,6 +27,15 @@
   `docs/tasks/DASHBOARDS-PC-C-AUTHORIZATION.md`. Merge، Force Push، تغییر مستقیم
   `main`/`develop` و بازنویسی تغییرات PC-A/PC-B مجاز نیست.
 
+## MASTER-007-LOGO-UPLOAD — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک محصول: بارگذاری لوگو در ایرلاین‌ها و دیگر فرم‌های دارای لوگوی اطلاعات پایه واقعاً ذخیره شود. شاخه مستقل `codex/pc-b-master-data-logo-upload` از `origin/develop@6a4e0410` و Working Tree آغاز کار تمیز است.
+- محدوده رزروشده: جریان لوگوی `apps/web/src/modules/master-data/**`، endpoint و orchestration محدود `apps/api/src/master-data/**`، public service محدود مالک فایل در `apps/api/src/documents/**`، ثبت افزایشی integration module در `apps/api/src/app.module.ts`، تست‌های هدفمند و اسناد همین Task. تغییر باز PR #105 در زمینه اعلان‌های نرخ ارز حفظ و وارد این واحد نمی‌شود.
+- قرارداد producer/consumer: Documents مالک باینری، اسکن، Audit و شناسه سند باقی می‌ماند و Master Data فقط Reference را نگه می‌دارد. endpoint افزایشی و backward-compatible است؛ ویرایشگر Master Data بدون اعطای دسترسی عمومی آرشیو، فقط برای رکورد مجاز خود لوگو را بارگذاری/جایگزین/حذف می‌کند.
+- بدون Schema/Migration/Seed، Dependency/Lockfile، IAM grant یا تغییر داده عملیاتی. نوع PNG/JPEG، سقف ۵ MB، شعبه مجاز، optimistic version و رابطه دقیق `master-data/resource/id` در Backend کنترل می‌شوند. API p95 هدف موجود `<500ms` بدون Provider است؛ آپلود فایل وابسته به Storage/Scan بوده و endpoint/SLO جدیدی تعریف نمی‌شود.
+- تکمیل: مسیر محدود `POST/DELETE /api/v1/master-data/:resource/:id/logo` جای دسترسی مستقیم Web به آرشیو اسناد را گرفت. ایرلاین، بانک، بیمه، هتل، زنجیره هتل، شرکت ریلی/اتوبوس، سازمان، تأمین‌کننده و کارگزار پوشش دارند؛ جایگزینی و حذف، نسخه خوش‌بینانه و رابطه مالک رکورد را کنترل می‌کنند.
+- صحت‌سنجی: ۵۰۶ تست مرز Master Data/Documents در API، ۳۳۸ تست Master Data در Web، lint محدوده، typecheck و production build هر دو برنامه موفق‌اند. قفل‌های Task آزاد و تحویل آماده Review است؛ جزئیات در `docs/tasks/MASTER-007-LOGO-UPLOAD.md` ثبت شد.
+
 ## WORKBENCH-021 — PC-B — LOCAL_COMPLETE / RUNTIME_ACTIVE
 
 - User authorizes the bounded CRM messaging slice on

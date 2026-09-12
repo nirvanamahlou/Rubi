@@ -169,6 +169,23 @@ export class MasterDataMutationDto {
   version?: number;
 }
 
+export class MasterDataLogoUploadDto {
+  @IsString()
+  @MaxLength(240)
+  title!: string;
+
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  version!: number;
+}
+
+export class MasterDataLogoRemoveDto {
+  @IsInt()
+  @Min(1)
+  version!: number;
+}
+
 export class MasterOrganizationAddressDto {
   @IsUUID()
   countryId!: string;
