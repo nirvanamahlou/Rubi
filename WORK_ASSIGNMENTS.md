@@ -1,6 +1,6 @@
 # Work Assignments
 
-## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — READY_FOR_REVIEW / PAYMENT_METHOD_FOLLOWUP / PERSISTENCE_BLOCKED
+## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — IN_PROGRESS / FX_SNAPSHOT_FOLLOWUP / PERSISTENCE_BLOCKED
 
 - درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
   دریافت/پرداخت در فضای مستقل `/finance`. Branch مستقل
@@ -61,6 +61,10 @@
   Web، typecheck، lint محدود، Production Build با ۴۱ مسیر و Browser QA فهرست روش‌ها و
   تغییر پویا به «شماره چک» موفق‌اند. Commit قابلیت `801455f` به Draft PR #153 Push شد؛
   ثبت عملیاتی همچنان `BLOCKED_BY_MIGRATION_LOCK` است.
+- پیگیری پنجم مالک در 2026-09-12: اگر دریافت یا پرداخت ارزی است، نرخ روز ارز باید همراه
+  زمان همان عملیات در سابقه دریافت/پرداخت قابل مشاهده باشد. محدوده رزروشده فقط مدل Draft،
+  داده Preview سابقه، محاسبه Decimal معادل ریالی، Dialog و تست‌های Finance است؛ منبع نرخ
+  authoritative، Schema/Migration/API/Persistence و قرارداد cross-module تغییر نمی‌کنند.
 
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 
