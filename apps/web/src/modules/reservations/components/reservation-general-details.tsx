@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   hotelNights,
   moneyDecimal,
@@ -24,6 +24,7 @@ import { statusLabels } from '../foundation/model';
 import styles from './reservation-general-details.module.css';
 
 const unavailable = 'در اطلاعات قرارداد ثبت نشده';
+export const RESERVATION_CUSTOMER_AUDIT_REASON = 'support-request';
 const text = (value: unknown) =>
   typeof value === 'string' && value.trim() ? value.trim() : unavailable;
 const dateTime = (value?: string) =>
@@ -36,6 +37,26 @@ const date = (value?: string) =>
     : unavailable;
 
 type Group = { title: string; fields: readonly [string, ReactNode][] };
+
+type CustomerDetailLoader = (
+  id: string,
+  sensitiveReadReason?: string,
+) => Promise<{ data: CustomerDetail }>;
+
+export async function loadReservationContractParty(
+  customerId: string,
+  detail: CustomerDetailLoader = customersApi.detail,
+) {
+  try {
+    return {
+      customer: (await detail(customerId, RESERVATION_CUSTOMER_AUDIT_REASON))
+        .data,
+      sensitive: true,
+    };
+  } catch {
+    return { customer: (await detail(customerId)).data, sensitive: false };
+  }
+}
 
 function priceSummary(intake: ReservationFormIntake) {
   const totals = new Map<string, { day: bigint; agreed: bigint }>();
@@ -90,6 +111,7 @@ export function reservationGeneralDetailGroups(
   references: ReservationFormReferences = {},
   customer?: CustomerDetail,
   countryName?: string,
+  sensitiveContact = false,
 ): Group[] {
   const snapshot = intake.snapshot;
   const workflow = intake.workflow;
@@ -106,9 +128,16 @@ export function reservationGeneralDetailGroups(
   );
   const meta = (key: string) =>
     metadata.find((item) => typeof item?.[key] === 'string')?.[key];
-  const phone = customer?.contacts.find(
-    (contact) => contact.type === 'phone' && contact.isPrimary,
-  )?.maskedValue;
+  const contacts = (type: 'phone' | 'email') =>
+    customer?.contacts.filter((contact) => contact.type === type) ?? [];
+  const contactValue = (contact: CustomerDetail['contacts'][number]) =>
+    sensitiveContact && contact.value ? contact.value : contact.maskedValue;
+  const phones = contacts('phone');
+  const emails = contacts('email');
+  const primaryPhone = phones.find((contact) => contact.isPrimary) ?? phones[0];
+  const otherPhones = phones.filter(
+    (contact) => contact.id !== primaryPhone?.id,
+  );
   const prices = priceSummary(intake);
   const roomSummary = [
     `کل ${form.rooms}`,
@@ -118,11 +147,56 @@ export function reservationGeneralDetailGroups(
   ].join(' · ');
   return [
     {
+      title: 'طرف قرارداد',
+      fields: [
+        [
+          'نام طرف قرارداد',
+          text(customer?.displayName ?? request.customerName),
+        ],
+        [
+          'نوع پرونده',
+          customer?.kind === 'organization'
+            ? 'سازمانی'
+            : customer?.kind === 'person'
+              ? 'شخص حقیقی'
+              : unavailable,
+        ],
+        [
+          'شماره تماس اصلی',
+          primaryPhone
+            ? contactValue(primaryPhone)
+            : text(customer?.maskedPrimaryContact),
+        ],
+        [
+          'سایر شماره‌ها',
+          otherPhones.map(contactValue).join('، ') || unavailable,
+        ],
+        ['ایمیل', emails.map(contactValue).join('، ') || unavailable],
+        [
+          'آدرس ثبت‌شده',
+          customer?.addresses.map((address) => address.label).join('، ') ||
+            unavailable,
+        ],
+        [
+          'وضعیت پرونده',
+          customer?.status === 'active'
+            ? 'فعال'
+            : customer?.status === 'inactive'
+              ? 'غیرفعال'
+              : unavailable,
+        ],
+        [
+          'ثبت مشاهده در Audit',
+          sensitiveContact
+            ? 'درخواست پشتیبانی'
+            : 'شماره کامل نیازمند مجوز اطلاعات حساس است',
+        ],
+      ],
+    },
+    {
       title: 'مشخصات قرارداد',
       fields: [
         ['شماره قرارداد', snapshot.contractNumber],
-        ['طرف قرارداد', request.customerName],
-        ['تلفن همراه', text(phone ?? customer?.maskedPrimaryContact)],
         ['تاریخ ثبت', dateTime(snapshot.createdAt)],
         ['شعبه', request.branchName],
         ['فروشنده', request.salesCounter],
@@ -245,13 +319,28 @@ function LoadedDetails({
 }) {
   const refs = useReservationFormReferences(intake, true);
   const [customer, setCustomer] = useState<CustomerDetail>();
+  const [sensitiveContact, setSensitiveContact] = useState(false);
   const [country, setCountry] = useState('');
+  const customerRequest = useRef<
+    | {
+        customerId: string;
+        promise: ReturnType<typeof loadReservationContractParty>;
+      }
+    | undefined
+  >(undefined);
   useEffect(() => {
     let active = true;
-    void customersApi
-      .detail(intake.snapshot.customerId)
-      .then(({ data }) => {
-        if (active) setCustomer(data);
+    if (customerRequest.current?.customerId !== intake.snapshot.customerId)
+      customerRequest.current = {
+        customerId: intake.snapshot.customerId,
+        promise: loadReservationContractParty(intake.snapshot.customerId),
+      };
+    void customerRequest.current.promise
+      .then((result) => {
+        if (active) {
+          setCustomer(result.customer);
+          setSensitiveContact(result.sensitive);
+        }
       })
       .catch(() => undefined);
     return () => {
@@ -279,6 +368,7 @@ function LoadedDetails({
     refs.references,
     customer,
     country,
+    sensitiveContact,
   );
   return (
     <div className={styles.groups}>

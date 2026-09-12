@@ -9,6 +9,10 @@
   border-radius: 12px;
   background: var(--surface);
 }
+.group:first-child {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  box-shadow: inset 4px 0 0 color-mix(in srgb, var(--primary) 75%, transparent);
+}
 .group h3 {
   margin: 0;
   padding: 10px 14px;
