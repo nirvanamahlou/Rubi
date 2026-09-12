@@ -143,7 +143,7 @@ DELIVERED ارائه نمی‌شود.
 - QA مرورگر در `localhost:3100` و `127.0.0.1:3100` با Login واقعی، فهرست و
   Detail/Timeline Lead و Ticket، ارجاع Workbench، فرم عمومی رضایت و viewport
   موبایل ۳۹۰×۸۴۴ موفق بود؛ اسکرول افقی مشاهده نشد.
-- Runtime محلی این Worktree: Web PID `7576` روی ۳۱۰۰ و API PID `28564` روی
+- Runtime محلی این Worktree: Web PID `10276` روی ۳۱۰۰ و API PID `17748` روی
   ۴۱۹۰؛ هر دو به DB ایزوله و کلیدهای محلی غیرواقعی متصل‌اند.
 
 Draft PR #221 به `develop` ساخته شد. Migration/Contract/Central Docs lock آزاد و
