@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { B2bModule } from './b2b/b2b.module';
 import { environmentValidationSchema } from './config/environment.validation';
 import { CustomersModule } from './customers/customers.module';
+import { CustomerAffairsModule } from './customer-affairs/customer-affairs.module';
 import { DatabaseModule } from './database/database.module';
 import { DocumentsModule } from './documents/documents.module';
 import { HealthController } from './health/health.controller';
@@ -32,6 +33,7 @@ import { WorkbenchFeedbackModule } from './workbench-feedback/workbench-feedback
     B2bModule,
     DocumentsModule,
     CustomersModule,
+    CustomerAffairsModule,
     MasterDataModule,
     MessagingModule,
     IamModule,

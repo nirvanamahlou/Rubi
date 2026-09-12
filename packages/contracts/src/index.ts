@@ -16,3 +16,4 @@ export * from './travel';
 export * from './travel/tours';
 export * from './notifications';
 export * from './workbench-feedback';
+export * from './customer-affairs';
