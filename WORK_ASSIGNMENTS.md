@@ -69,7 +69,8 @@
   معادل ریالی همان عملیات به‌صورت Decimal محاسبه می‌شود. سابقه هر عملیات ارزی مبلغ، نرخ
   Snapshot، معادل ریالی و UTC را کنار هم نمایش می‌دهد؛ سابقه دریافت و پرداخت نیز عنوان
   متناسب دارد. ۳۶ تست هدفمند Web، typecheck، lint، Build ۴۱ مسیر و Browser QA موفق‌اند؛
-  ذخیره پایدار و منبع خودکار نرخ همچنان `BLOCKED_BY_MIGRATION_LOCK` هستند.
+  Commit قابلیت `9f4e01d` به Draft PR #153 Push شد. ذخیره پایدار و منبع خودکار نرخ
+  همچنان `BLOCKED_BY_MIGRATION_LOCK` هستند.
 
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 

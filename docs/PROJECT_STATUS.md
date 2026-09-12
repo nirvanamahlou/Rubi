@@ -35,7 +35,7 @@
   معادل ریالی عملیات هم‌زمان محاسبه می‌شود و سابقه مبلغ ارزی، نرخ Snapshot، معادل ریالی و
   UTC را نمایش می‌دهد. ۳۶ تست هدفمند Web، typecheck، lint، Build ۴۱ مسیر و Browser QA
   موفق‌اند؛ نرخ فعلی ورودی کنترل‌شده Preview است و اتصال منبع authoritative/ذخیره پایدار
-  به Task بعد از Migration واگذار شد.
+  به Task بعد از Migration واگذار شد. Commit `9f4e01d` به Draft PR #153 Push شد.
 - جزئیات: [FINANCE-002A-ACCOUNTING-AND-INBOX.md](tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md).
 
 ## HR-013 — اتصال فرم‌ها و ارجاع بین منابع انسانی و بخش‌های سامانه — آماده ادغام تأییدشده

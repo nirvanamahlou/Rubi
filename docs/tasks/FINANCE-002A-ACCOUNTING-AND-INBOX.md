@@ -167,3 +167,4 @@ Audit پایدار، Outbox/Inbox و اسناد Documents در گزارش نها
 - نرخ‌های فعلی داده synthetic و ورودی Preview هستند. منبع authoritative نرخ، سیاست
   rounding، ذخیره immutable Snapshot و Journal واقعی باید در Task مستقل Persistence و
   پس از آزادشدن Migration lock تکمیل شوند.
+- Commit قابلیت `9f4e01d` روی origin Push و در Draft PR #153 ثبت شد.
