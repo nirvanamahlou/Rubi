@@ -12,8 +12,15 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/form-controls';
-import { Alert, Badge, Card, EmptyState, PageHeader } from '@/components/ui/surfaces';
+import {
+  Alert,
+  Badge,
+  Card,
+  EmptyState,
+  PageHeader,
+} from '@/components/ui/surfaces';
 import {
   type BannerTheme,
   downloadPriceBanner,
@@ -81,11 +88,7 @@ export function PricingManagementWorkspace() {
         .length.toLocaleString('fa-IR'),
       Plane,
     ],
-    [
-      'تغییر ذخیره‌نشده',
-      changedCount.toLocaleString('fa-IR'),
-      CalendarDays,
-    ],
+    ['تغییر ذخیره‌نشده', changedCount.toLocaleString('fa-IR'), CalendarDays],
   ];
 
   const patchItem = (id: string, patch: Partial<DailyPriceItem>) => {
@@ -140,12 +143,7 @@ export function PricingManagementWorkspace() {
         <div className="grid gap-3 md:grid-cols-[12rem_13rem_1fr_auto] md:items-end">
           <label className="text-xs font-bold">
             تاریخ قیمت
-            <Input
-              className="mt-2"
-              onChange={(event) => setDate(event.target.value)}
-              type="date"
-              value={date}
-            />
+            <DatePicker className="mt-2" onChange={setDate} value={date} />
           </label>
           <label className="text-xs font-bold">
             نوع محصول
@@ -239,7 +237,9 @@ export function PricingManagementWorkspace() {
                       value={item.draftPrice}
                     />
                     {error ? (
-                      <span className="mt-1 block text-destructive">{error}</span>
+                      <span className="mt-1 block text-destructive">
+                        {error}
+                      </span>
                     ) : null}
                   </label>
                   <label className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-3 text-sm">
@@ -270,7 +270,8 @@ export function PricingManagementWorkspace() {
             <div>
               <h2 className="font-black">خروجی بنر قیمت</h2>
               <p className="mt-1 text-xs leading-6 text-muted-foreground">
-                حداکثر شش ردیف انتخاب‌شده در فایل PNG مربع ۱۲۰۰ پیکسل قرار می‌گیرند.
+                حداکثر شش ردیف انتخاب‌شده در فایل PNG مربع ۱۲۰۰ پیکسل قرار
+                می‌گیرند.
               </p>
             </div>
             <label className="block text-xs font-bold">
@@ -286,7 +287,9 @@ export function PricingManagementWorkspace() {
               رنگ بنر
               <select
                 className="mt-2 h-11 w-full rounded-xl border border-input bg-surface px-3"
-                onChange={(event) => setTheme(event.target.value as BannerTheme)}
+                onChange={(event) =>
+                  setTheme(event.target.value as BannerTheme)
+                }
                 value={theme}
               >
                 {Object.entries(themes).map(([value, label]) => (

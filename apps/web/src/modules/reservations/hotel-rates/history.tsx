@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Lookup, rateRequest, type Option } from './controls';
 import { kinds, labels, type Factors } from './model';
 import styles from './rates.module.css';
@@ -75,22 +76,20 @@ export function RateHistory({ revision }: { revision: number }) {
         />
         <label>
           از تاریخ
-          <input
-            type="date"
+          <DatePicker
             value={from}
-            onChange={(e) => {
-              setFrom(e.target.value);
+            onChange={(value) => {
+              setFrom(value);
               setPage(1);
             }}
           />
         </label>
         <label>
           تا تاریخ
-          <input
-            type="date"
+          <DatePicker
             value={to}
-            onChange={(e) => {
-              setTo(e.target.value);
+            onChange={(value) => {
+              setTo(value);
               setPage(1);
             }}
           />

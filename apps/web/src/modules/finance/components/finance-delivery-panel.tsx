@@ -6,6 +6,7 @@ import type {
   TravelDeliveryAuthorizationV1,
 } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Input,
   Select,
@@ -65,7 +66,10 @@ export function FinanceDeliveryPanel() {
       .then((response) => {
         if (live)
           setBanks(
-            response.data.map((record) => ({ id: record.id, name: record.name })),
+            response.data.map((record) => ({
+              id: record.id,
+              name: record.name,
+            })),
           );
       })
       .catch(() => {
@@ -303,10 +307,10 @@ export function FinanceDeliveryPanel() {
             </label>
             <label className="grid gap-2">
               <span>تاریخ و ساعت انتقال</span>
-              <Input
-                type="datetime-local"
+              <DatePicker
+                includeTime
                 value={transferAt}
-                onChange={(e) => setTransferAt(e.target.value)}
+                onChange={setTransferAt}
               />
             </label>
             <label className="grid gap-2">

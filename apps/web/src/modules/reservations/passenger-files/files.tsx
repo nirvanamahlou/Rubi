@@ -7,6 +7,7 @@ import type {
   DocumentOptionsResponseV1,
 } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Input,
   Select,
@@ -295,12 +296,11 @@ export function ReservationFiles({ id }: { id: string }) {
                 <label className="block space-y-1 text-sm">
                   تاریخ انقضا{' '}
                   {selectedType.requiresExpiry ? '(الزامی)' : '(اختیاری)'}
-                  <Input
-                    type="date"
+                  <DatePicker
                     aria-label="تاریخ انقضای مدرک"
                     required={selectedType.requiresExpiry}
                     value={expiry}
-                    onChange={(e) => setExpiry(e.target.value)}
+                    onChange={setExpiry}
                   />
                 </label>
                 <label className="block space-y-1 text-sm">

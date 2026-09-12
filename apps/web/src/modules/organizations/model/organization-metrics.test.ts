@@ -93,4 +93,3 @@ describe('live organization metrics', () => {
     ).toEqual({ agencies: 0, corporateCustomers: 0, incompleteIdentity: 0 });
   });
 });
-

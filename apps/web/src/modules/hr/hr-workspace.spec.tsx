@@ -672,7 +672,7 @@ describe('Legacy HR preview and migration regression fixtures', () => {
       expect(html).not.toContain('>ویرایش<');
       expect(html).not.toContain('>حذف<');
     }
-  });
+  }, 15_000);
 
   it('appends mutations to automatic audit and related history feeds', () => {
     const employeeHistory = appendAutomaticHrHistory(

@@ -403,7 +403,7 @@
 :global(.dark) .workspace [data-tone='pink'] {
   --tone-bg: #ffc0c0;
   --tone-edge: #ffc0c0;
-  --tone-text: #ffd5e9;
+  --tone-text: #831843;
 }
 :global(.dark) .workspace [data-tone='lightGray'] {
   --tone-bg: #585861;
