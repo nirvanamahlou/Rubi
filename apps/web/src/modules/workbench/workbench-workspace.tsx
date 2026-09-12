@@ -1,5 +1,6 @@
 'use client';
 import { WorkbenchFeedback } from './workbench-feedback';
+import { WorkbenchFeedbackDetail } from './workbench-feedback-detail';
 import { WorkbenchSelect } from './workbench-select';
 
 import type { NotificationItemV1 } from '@rubi/contracts';
@@ -81,6 +82,7 @@ export function WorkbenchWorkspace() {
   const params = useSearchParams();
   const router = useRouter();
   const tab = normalizeWorkbenchTab(params.get('tab'));
+  const feedbackId = params.get('feedback');
   const company = useLegalEntityContext();
   const [home, setHome] = useState<WorkbenchHome | null>(null);
   const [loading, setLoading] = useState(true);
@@ -380,7 +382,7 @@ export function WorkbenchWorkspace() {
                     </Card>
                   </div>
                   <div className="space-y-5">
-                    <WorkbenchFeedback />
+                    <WorkbenchFeedback branchId={home.user.branches[0]?.id} />
                     <WorkbenchHrNotifications
                       key={home.user.id}
                       permissions={home.user.permissions}
@@ -604,6 +606,18 @@ export function WorkbenchWorkspace() {
             />
           </DialogContent>
         </Dialog>
+      )}
+      {feedbackId && /^[0-9a-f-]{36}$/i.test(feedbackId) && (
+        <WorkbenchFeedbackDetail
+          key={feedbackId}
+          id={feedbackId}
+          onClose={() => {
+            const next = new URLSearchParams(params.toString());
+            next.delete('feedback');
+            const query = next.toString();
+            router.replace(query ? `/workbench?${query}` : '/workbench');
+          }}
+        />
       )}
       {home && (
         <Dialog open={messageOpen} onOpenChange={setMessageOpen}>

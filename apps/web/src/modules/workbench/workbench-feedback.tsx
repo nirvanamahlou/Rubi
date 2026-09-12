@@ -1,6 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { MessageSquareText, Paperclip, Send, X } from 'lucide-react';
+import type { WorkbenchFeedbackDepartment } from '@rubi/contracts';
 import {
   Alert,
   Button,
@@ -11,17 +12,43 @@ import {
 } from '@/components/ui';
 import { WorkbenchSelect } from './workbench-select';
 import { messageUnits } from './message-templates';
+import {
+  uploadWorkbenchFeedbackFiles,
+  workbenchFeedbackApi,
+} from './workbench-feedback-api';
 
-export function WorkbenchFeedback() {
+export function WorkbenchFeedback({
+  branchId,
+}: {
+  branchId?: string | undefined;
+}) {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
-  const [department, setDepartment] = useState('management');
+  const [department, setDepartment] =
+    useState<WorkbenchFeedbackDepartment>('management');
   const [anonymous, setAnonymous] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [sending, setSending] = useState(false);
+  const submissionId = useRef<string>('');
   const picker = useRef<HTMLInputElement>(null);
+  const reset = () => {
+    setSubject('');
+    setBody('');
+    setDepartment('management');
+    setAnonymous(false);
+    setFiles([]);
+    setError('');
+    setSuccess('');
+    submissionId.current = '';
+    if (picker.current) picker.current.value = '';
+  };
   return (
-    <Card className="space-y-4 border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 p-5 dark:border-violet-400/25 dark:from-violet-950/50 dark:to-indigo-950/40">
+    <Card
+      id="workbench-feedback"
+      className="space-y-4 border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 p-5 dark:border-violet-400/25 dark:from-violet-950/50 dark:to-indigo-950/40"
+    >
       <div className="flex items-center gap-2">
         <MessageSquareText className="size-5 text-primary" aria-hidden="true" />
         <h2 className="font-bold">نظرسنجی و پیشنهادها</h2>
@@ -29,7 +56,57 @@ export function WorkbenchFeedback() {
       <p className="text-sm text-muted-foreground">
         نظر، پیشنهاد یا موضوع موردنظر خود را برای واحد مربوط آماده کنید.
       </p>
-      <form className="space-y-4" onSubmit={(event) => event.preventDefault()}>
+      <form
+        className="space-y-4"
+        onSubmit={async (event) => {
+          event.preventDefault();
+          const normalizedSubject = subject.trim();
+          const normalizedBody = body.trim();
+          if (!branchId) {
+            setError('برای ارسال نظرسنجی باید یک شعبه مجاز داشته باشید.');
+            return;
+          }
+          if (!normalizedSubject || !normalizedBody) {
+            setError('موضوع و متن نظرسنجی را وارد کنید.');
+            return;
+          }
+          setSending(true);
+          setError('');
+          setSuccess('');
+          try {
+            const id = submissionId.current || crypto.randomUUID();
+            submissionId.current = id;
+            const attachmentDocumentIds = await uploadWorkbenchFeedbackFiles({
+              feedbackId: id,
+              subject: normalizedSubject,
+              branchId,
+              anonymous,
+              files,
+            });
+            const result = await workbenchFeedbackApi.send({
+              id,
+              branchId,
+              department,
+              subject: normalizedSubject,
+              body: normalizedBody,
+              anonymous,
+              attachmentDocumentIds,
+            });
+            reset();
+            setSuccess(
+              `نظر شما ثبت و برای واحد مقصد ارسال شد. کد پیگیری: ${result.data.trackingNumber}`,
+            );
+          } catch (reason) {
+            setError(
+              reason instanceof Error
+                ? reason.message
+                : 'ارسال نظرسنجی انجام نشد.',
+            );
+          } finally {
+            setSending(false);
+          }
+        }}
+      >
         <label className="block space-y-2 text-sm font-semibold">
           <span>موضوع *</span>
           <Input
@@ -46,7 +123,9 @@ export function WorkbenchFeedback() {
             label="واحد مقصد نظرسنجی"
             required
             value={department}
-            onValueChange={setDepartment}
+            onValueChange={(value) =>
+              setDepartment(value as WorkbenchFeedbackDepartment)
+            }
             options={messageUnits
               .filter((unit) => unit.id !== 'ai')
               .map((unit) => ({ value: unit.id, label: unit.label }))}
@@ -76,7 +155,7 @@ export function WorkbenchFeedback() {
             id="workbench-feedback-files"
             type="file"
             multiple
-            accept=".pdf,.png,.jpg,.jpeg,.webp"
+            accept=".pdf,.png,.jpg,.jpeg"
             onChange={(event) => {
               const selected = Array.from(event.target.files ?? []);
               event.target.value = '';
@@ -85,7 +164,7 @@ export function WorkbenchFeedback() {
                 selected.some(
                   (file) =>
                     file.size > 10 * 1024 * 1024 ||
-                    !/\.(pdf|png|jpe?g|webp)$/i.test(file.name),
+                    !/\.(pdf|png|jpe?g)$/i.test(file.name),
                 )
               ) {
                 setError(
@@ -95,11 +174,12 @@ export function WorkbenchFeedback() {
               }
               setFiles((current) => [...current, ...selected]);
               setError('');
+              setSuccess('');
             }}
           />
           <p className="text-xs text-muted-foreground">
-            PDF یا تصویر؛ حداکثر ۱۰ فایل، هر فایل تا ۱۰ مگابایت. فایل انتخاب‌شده
-            هنوز بارگذاری نمی‌شود.
+            PDF یا تصویر؛ حداکثر ۱۰ فایل، هر فایل تا ۱۰ مگابایت. پیوست‌ها در
+            «اسناد و فایل‌ها» نیز ذخیره می‌شوند.
           </p>
           <ul className="space-y-2">
             {files.map((file, index) => (
@@ -134,8 +214,8 @@ export function WorkbenchFeedback() {
           </label>
           <p className="text-xs leading-6 text-muted-foreground">
             {anonymous
-              ? 'درخواست شما: نام شما به واحد گیرنده نمایش داده نشود. اجرای این انتخاب به سرویس ارسال وابسته است؛ در حال حاضر چیزی ارسال نمی‌شود.'
-              : 'درخواست شما: نام شما همراه نظر به واحد گیرنده نمایش داده شود.'}
+              ? 'نام شما در اعلان ارسالی به واحد گیرنده نمایش داده نمی‌شود.'
+              : 'نام شما همراه نظر به واحد گیرنده نمایش داده می‌شود.'}
           </p>
           {anonymous && files.length > 0 && (
             <p className="text-xs leading-6 text-muted-foreground">
@@ -144,27 +224,21 @@ export function WorkbenchFeedback() {
           )}
         </div>
         {error && <Alert tone="error" title={error} />}
-        <Alert
-          title="ارسال نظرسنجی هنوز فعال نیست"
-          description="این فرم پیش‌نویس است؛ متن و فایل‌ها ذخیره یا ارسال نمی‌شوند و با خروج از بخش خانه از بین می‌روند. ارسال واقعی و پنهان‌کردن هویت از گیرنده به سرویس نیاز دارد."
-        />
+        {success && <Alert title={success} />}
         <div className="flex flex-wrap gap-2">
-          <Button disabled type="submit">
+          <Button disabled={sending || !branchId} type="submit">
             <Send className="size-4" aria-hidden="true" />
-            {anonymous ? 'ارسال ناشناس' : 'ارسال نظر'}
+            {sending
+              ? 'در حال ارسال…'
+              : anonymous
+                ? 'ارسال ناشناس'
+                : 'ارسال نظر'}
           </Button>
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
-              setSubject('');
-              setBody('');
-              setDepartment('management');
-              setAnonymous(false);
-              setFiles([]);
-              setError('');
-              if (picker.current) picker.current.value = '';
-            }}
+            disabled={sending}
+            onClick={reset}
           >
             پاک‌کردن فرم
           </Button>
