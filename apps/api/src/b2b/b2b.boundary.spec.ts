@@ -11,6 +11,10 @@ const service = readFileSync(
   resolve(process.cwd(), 'src/b2b/b2b.service.ts'),
   'utf8',
 );
+const crmConnections = readFileSync(
+  resolve(process.cwd(), 'src/b2b/b2b-crm-connections.service.ts'),
+  'utf8',
+);
 const directory = readFileSync(
   resolve(process.cwd(), 'src/master-data/master-organization-directory.ts'),
   'utf8',
@@ -30,6 +34,17 @@ describe('B2B module boundaries', () => {
     expect(service).toContain('MasterOrganizationDirectory');
     expect(service).toContain('agencyReference');
     expect(repository).not.toContain('masterOrganization');
+  });
+
+  it('composes CRM connections through public application services', () => {
+    expect(crmConnections).toContain('CustomerService');
+    expect(crmConnections).toContain('SalesService');
+    expect(crmConnections).toContain('ReservationsPublicService');
+    expect(crmConnections).toContain('MasterOrganizationDirectory');
+    expect(crmConnections).toContain('FINANCE_PARTY_EXPOSURE_PORT');
+    expect(crmConnections).not.toMatch(
+      /DatabaseService|@rubi\/database|\.repository|Repository/,
+    );
   });
 
   it('enforces the city-country relation and audits address writes', () => {

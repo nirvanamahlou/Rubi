@@ -1,3 +1,12 @@
+import type {
+  SalesContractStatus,
+  SalesPaymentMethod,
+  SalesPaymentStatus,
+  SalesReservationStatus,
+  SalesServiceKind,
+  SalesSettlementStatus,
+} from '../sales';
+
 export const B2B_CONTRACT_VERSION = 1 as const;
 export * from './agreement-workflow';
 export * from './agreement-validation';
@@ -181,6 +190,81 @@ export interface FinancePartyExposurePortV1 {
   ): Promise<B2bFinanceExposureV1>;
 }
 
+export type B2bCrmConnectionSourceV1 =
+  'CUSTOMERS' | 'SALES' | 'SALES_PAYMENTS' | 'RESERVATIONS' | 'FINANCE';
+
+export interface B2bCrmCustomerLinkV1 {
+  id: string;
+  displayName: string;
+  status: 'active' | 'inactive';
+}
+
+export interface B2bCrmSalesContractV1 {
+  id: string;
+  contractNumber: string;
+  customerId: string;
+  customerNameSnapshot: string;
+  status: SalesContractStatus;
+  settlementStatus: SalesSettlementStatus;
+  reservationStatus: SalesReservationStatus;
+  balances: readonly {
+    amount: string;
+    currencyCode: string;
+    confirmedPaid: string;
+    pendingFinance: string;
+    outstanding: string;
+  }[];
+  updatedAt: string;
+}
+
+export interface B2bCrmSalesPaymentV1 {
+  id: string;
+  contractId: string;
+  contractNumber: string;
+  amount: string;
+  currencyCode: string;
+  dueAt: string;
+  method: SalesPaymentMethod;
+  description: string | null;
+  paymentReference: string | null;
+  check: {
+    secureIdentifier: string;
+    ownerName: string;
+    dueDate: string;
+  } | null;
+  status: SalesPaymentStatus;
+  createdAt: string;
+}
+
+export interface B2bCrmReservationV1 {
+  id: string;
+  contractId: string;
+  contractNumber: string;
+  customerNameSnapshot: string;
+  passengerCount: number;
+  services: readonly SalesServiceKind[];
+  status:
+    | 'NEW'
+    | 'WAITING_SUPPLIER'
+    | 'SUPPLIER_CONFIRMED'
+    | 'VOUCHER_ISSUED'
+    | 'CANCELLED';
+  receivedAt: string;
+}
+
+export interface B2bCrmConnectionsV1 {
+  version: 1;
+  organizationId: string;
+  branchId: string;
+  customers: readonly B2bCrmCustomerLinkV1[];
+  contracts: readonly B2bCrmSalesContractV1[];
+  payments: readonly B2bCrmSalesPaymentV1[];
+  reservations: readonly B2bCrmReservationV1[];
+  financeExposure: B2bFinanceExposureV1;
+  unavailableSources: Partial<Record<B2bCrmConnectionSourceV1, string>>;
+  observedAt: string;
+}
+
 export const b2bEndpoints = {
   agency: (organizationId: string) =>
     `${B2B_API_PREFIX}/agencies/${encodeURIComponent(organizationId)}` as const,
@@ -192,4 +276,6 @@ export const b2bEndpoints = {
     `${B2B_API_PREFIX}/agencies/${encodeURIComponent(organizationId)}/credit-policy` as const,
   agencyAgreedRates: (organizationId: string) =>
     `${B2B_API_PREFIX}/agencies/${encodeURIComponent(organizationId)}/agreed-rates` as const,
+  agencyCrmConnections: (organizationId: string) =>
+    `${B2B_API_PREFIX}/agencies/${encodeURIComponent(organizationId)}/crm-connections` as const,
 };

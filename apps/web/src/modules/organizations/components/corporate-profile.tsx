@@ -9,8 +9,6 @@ import {
   Info,
   KeyRound,
   LayoutDashboard,
-  ShieldCheck,
-  ShoppingCart,
   Pencil,
   Trash2,
   Wallet,
@@ -33,6 +31,8 @@ import {
   readDossierHistory,
 } from '../model/dossier-history';
 import { OrganizationActivityPanel } from './organization-activity-panel';
+import { OrganizationCrmConnectionsPanel } from './organization-crm-connections-panel';
+import { OrganizationCrmKpis } from './organization-crm-kpis';
 import {
   usePageBreadcrumbs,
   type PageBreadcrumb,
@@ -108,6 +108,7 @@ const sections = [
       ['reports', 'گزارش‌ها'],
       ['audit', 'Audit'],
       ['export', 'خروجی'],
+      ['connections', 'ارتباطات CRM'],
     ],
   },
 ] as const;
@@ -383,31 +384,7 @@ export function CorporateProfile({
       {screen === 'home' ? (
         <>
           {overview}
-          <section className="kpis">
-            <CorporateMetric
-              label="اعتبار قابل استفاده"
-              icon={Wallet}
-              tone="green"
-              note="اطلاعات مالی در دسترس نیست"
-            />
-            <CorporateMetric
-              label="Exposure مالی"
-              icon={Wallet}
-              tone="amber"
-              note="اطلاعات مالی در دسترس نیست"
-            />
-            <CorporateMetric
-              label="سفارش باز"
-              icon={ShoppingCart}
-              note="در انتظار اتصال"
-            />
-            <CorporateMetric
-              label="بدهی سررسیدشده"
-              icon={ShieldCheck}
-              tone="green"
-              note="اطلاعات مالی در دسترس نیست"
-            />
-          </section>
+          <OrganizationCrmKpis organizationId={organization.id} />
           <section
             className="hub-grid"
             aria-label={`بخش‌های پرونده ${entityLabel}`}
@@ -615,6 +592,8 @@ export function CorporateProfile({
             </section>
           ) : screen === 'access' && access ? (
             access(tab)
+          ) : screen === 'reports' && tab === 'connections' ? (
+            <OrganizationCrmConnectionsPanel organizationId={organization.id} />
           ) : screen === 'reports' ? (
             <OrganizationActivityPanel
               key={organization.id}

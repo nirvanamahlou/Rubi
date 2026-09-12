@@ -13,6 +13,42 @@ vi.mock('@/lib/auth-session', () => ({ refreshAuthenticatedSession: vi.fn() }));
 afterEach(() => vi.restoreAllMocks());
 
 describe('agency public Master Data adapter', () => {
+  it('loads CRM connections through the backend B2B query endpoint', async () => {
+    const payload = {
+      version: 1,
+      organizationId: 'organization-id',
+      branchId: 'branch-id',
+      customers: [],
+      contracts: [],
+      payments: [],
+      reservations: [],
+      financeExposure: {
+        status: 'UNAVAILABLE',
+        reason: 'NO_EXPOSURE_SNAPSHOT',
+      },
+      unavailableSources: {},
+      observedAt: '2026-09-12T00:00:00.000Z',
+    } as const;
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify(payload), { status: 200 }),
+      );
+
+    await expect(
+      agencyClient.crmConnections('organization-id', 'branch-id'),
+    ).resolves.toEqual(payload);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:4999/api/v1/b2b/agencies/organization-id/crm-connections',
+      expect.objectContaining({
+        cache: 'no-store',
+        credentials: 'include',
+        headers: expect.objectContaining({ 'x-branch-id': 'branch-id' }),
+      }),
+    );
+  });
+
   it('pins new contacts to the selected canonical organization', async () => {
     const create = vi
       .spyOn(masterDataApi, 'create')
