@@ -1,5 +1,20 @@
 # وضعیت پروژه
 
+## SALES-PRICE-MANAGEMENT-0912 — READY_FOR_REVIEW / UI_PREVIEW — 2026-09-12
+
+- PC-A روی شاخه مستقل و stacked `codex/pc-a-pricing-management` ورودی «مدیریت قیمت»
+  را بلافاصله پس از «قرارداد» در گروه فروش و route مستقل `/pricing-management` اضافه کرد.
+- صفحه RTL و Responsive شامل قیمت‌های روزانه تورهای شرکت و بلیت‌های ملکی، فیلتر
+  تاریخ/نوع/جست‌وجو، اعتبارسنجی مبلغ و ارز، انتخاب اقلام، پیش‌نمایش بنر و دانلود واقعی
+  PNG مربع ۱۲۰۰ پیکسل در سه تم است.
+- ۲۳ تست هدفمند، Web typecheck، lint محدود و Production Build با ۴۲ مسیر موفق‌اند؛
+  Browser نمایش صفحه و پیام موفقیت ساخت PNG را بدون خطای Console تأیید کرد.
+- داده‌ها صریحاً synthetic و اعمال قیمت فقط Preview همان نشست است. ذخیره و انتشار
+  عملیاتی تا قرارداد عمومی Ticket/Tour، Permission، Audit، optimistic version و
+  Migration مستقل پیاده نشده و ادعا نمی‌شود.
+- این شاخه برای حفظ ناوبری تأییدشده مالی روی `77e181d` و PR #153 قرار دارد؛ ادغام
+  باید با رعایت همین وابستگی انجام شود. جزئیات: [SALES-PRICE-MANAGEMENT-0912.md](tasks/SALES-PRICE-MANAGEMENT-0912.md).
+
 ## FINANCE-002A — READY_FOR_REVIEW / PERSISTENCE_BLOCKED — 2026-09-12
 
 - PC-A روی Branch `codex/pc-a-finance-core-accounting` از `origin/develop@4717b13`

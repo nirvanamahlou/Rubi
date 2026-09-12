@@ -169,7 +169,7 @@ function Navigation({
       className={cn(
         'grid min-w-0 content-start overflow-x-hidden',
         compact
-          ? 'h-full grid-rows-[repeat(18,minmax(32px,1fr))] gap-0.5'
+          ? 'h-full grid-rows-[repeat(19,minmax(32px,1fr))] gap-0.5'
           : 'gap-[7px] py-2',
       )}
     >

@@ -1,6 +1,6 @@
 # Work Assignments
 
-## SALES-PRICE-MANAGEMENT-0912 — PC-A — IN_PROGRESS / UI_PHASE
+## SALES-PRICE-MANAGEMENT-0912 — PC-A — READY_FOR_REVIEW / UI_PREVIEW
 
 - درخواست صریح مالک در 2026-09-12: افزودن آیتم مستقل «مدیریت قیمت» در گروه «فروش»
   برای تغییر روزانه قیمت تورها و بلیت‌های ملکی و دریافت خروجی بنر قیمت. `COMPUTER_ID=PC-A`.
@@ -15,6 +15,11 @@
   قیمت روزانه و mutation پایدار ندارد. این Slice فقط ویرایش/اعتبارسنجی Preview و تولید
   واقعی PNG در مرورگر از داده صریحاً synthetic دارد؛ ذخیره سروری یا ادعای انتشار قیمت
   تا قرارداد عمومی، Permission و Migration مستقل ممنوع است.
+- نتیجه تحویل: route مستقل `/pricing-management` بلافاصله پس از «قرارداد» در گروه فروش،
+  فیلتر تاریخ/نوع/جست‌وجو، ویرایش و اعتبارسنجی قیمت، انتخاب اقلام بنر، سه تم و خروجی
+  واقعی PNG مربع ۱۲۰۰ پیکسل. ۲۳ تست هدفمند، Web typecheck، lint محدود و Production
+  Build با ۴۲ مسیر موفق‌اند. Browser صفحه و پیام موفقیت ساخت PNG را بدون خطای Console
+  تأیید کرد؛ ذخیره عملیاتی همچنان خارج از این Slice است.
 
 ## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — READY_FOR_REVIEW / PERSISTENCE_BLOCKED
 
