@@ -106,7 +106,9 @@ function Navigation({
 }) {
   const pathname = usePathname();
   const groupId = useId();
-  const [closedGroups, setClosedGroups] = useState<string[]>([]);
+  const [closedGroups, setClosedGroups] = useState<string[]>(() =>
+    groupedNavigationItems.map((group) => group.id),
+  );
   const isGroupClosed = (id: string) => closedGroups.includes(id);
   function toggleGroup(id: string) {
     setClosedGroups((ids) =>
@@ -523,10 +525,10 @@ function AppShellContent({ children }: { children: ReactNode }) {
             <div className="min-w-0 flex-1">
               <SearchDialog />
             </div>
+            <div className="hidden shrink-0 whitespace-nowrap lg:flex">
+              <HeaderToday />
+            </div>
             <HeaderActions />
-          </div>
-          <div className="flex min-w-0 justify-end px-4 pb-1 sm:px-6">
-            <HeaderToday />
           </div>
         </header>
         <div className="px-4 pt-3 sm:px-6 lg:px-7">
