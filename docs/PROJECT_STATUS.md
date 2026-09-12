@@ -25,6 +25,7 @@
   فایل را کپی نمی‌کند و فقط Snapshot مرجع Documents را نمایش می‌دهد. ۳۳ تست هدفمند Web
   به‌همراه typecheck، lint محدود، Build ۴۱ مسیر و Browser QA موفق‌اند؛ Persistence و
   دریافت باینری واقعی همچنان در Task قفل‌شده بعدی است.
+- Commit پیگیری فیش `7e673e8` روی شاخه مالی Push و به Draft PR #153 اضافه شد.
 - جزئیات: [FINANCE-002A-ACCOUNTING-AND-INBOX.md](tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md).
 
 ## HR-013 — اتصال فرم‌ها و ارجاع بین منابع انسانی و بخش‌های سامانه — آماده ادغام تأییدشده

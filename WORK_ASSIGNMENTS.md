@@ -50,7 +50,8 @@
 - نتیجه پیگیری سوم: حداقل طول توضیح مالی حذف و label آن اختیاری شد. Dialog فیش/مدرک
   همراه را با نام، نوع، حجم، UTC و وضعیت Scan نمایش می‌دهد و حالت بدون فایل نیز روشن است؛
   باینری در Finance کپی نمی‌شود. ۳۳ تست هدفمند Web، typecheck، lint محدود، Build ۴۱
-  مسیر و Browser QA نمایش فیش و label اختیاری موفق‌اند.
+  مسیر و Browser QA نمایش فیش و label اختیاری موفق‌اند. Commit `7e673e8` به Draft PR
+  #153 Push شد.
 
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 
