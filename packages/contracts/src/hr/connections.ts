@@ -85,8 +85,8 @@ export const HR_CONNECTION_MODULES = [
   },
   {
     key: 'finance',
-    title: 'مالی و خزانه‌داری',
-    path: '/finance',
+    title: 'کارتابل درخواست‌های مالی',
+    path: '/finance/requests',
     purpose: 'بررسی ورودی پرداخت، مساعده، هزینه مأموریت و تسویه',
     mode: 'REFERRAL',
   },

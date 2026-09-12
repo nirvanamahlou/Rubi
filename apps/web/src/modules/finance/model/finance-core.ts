@@ -1,4 +1,3 @@
-export type FinanceSection = 'accounting' | 'inbox';
 export type InboxRequestKind = 'RECEIPT_VERIFICATION' | 'PAYMENT_REQUEST';
 export type InboxRequestStatus =
   | 'NEW'

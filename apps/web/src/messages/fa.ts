@@ -112,9 +112,14 @@ export const navigationMessages = [
     description: 'خرید خدمات و تأمین‌کنندگان',
   },
   {
-    title: 'مالی و کارتابل درخواست‌ها',
+    title: 'حسابداری',
     href: '/finance',
-    description: 'حسابداری، دریافت، پرداخت و رسیدگی به درخواست‌های مالی',
+    description: 'کدینگ، اسناد، دفاتر و خزانه',
+  },
+  {
+    title: 'کارتابل درخواست‌ها',
+    href: '/finance/requests',
+    description: 'رسیدگی به درخواست‌های دریافت و پرداخت واحدها',
   },
   { title: 'مارکتینگ', href: '/marketing', description: 'کمپین‌ها و مخاطبان' },
   {

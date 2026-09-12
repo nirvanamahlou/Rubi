@@ -6,10 +6,8 @@ import {
   ChevronDown,
   ChevronLeft,
   CircleCheck,
-  CircleDollarSign,
   FileClock,
   FileSpreadsheet,
-  Landmark,
   Search,
   WalletCards,
   type LucideIcon,
@@ -49,7 +47,6 @@ import {
   type AccountTreeItem,
   type FinanceActionDraft,
   type FinanceInboxPreviewRequest,
-  type FinanceSection,
   type InboxRequestStatus,
 } from '../model/finance-core';
 
@@ -86,44 +83,6 @@ const accountingCards: readonly [string, string, LucideIcon][] = [
 
 function money(amount: string, currency: string) {
   return `${amount.replace(/\B(?=(\d{3})+(?!\d))/g, '٬')} ${currency}`;
-}
-
-function SectionTab({
-  active,
-  description,
-  icon: Icon,
-  onClick,
-  title,
-}: {
-  active: boolean;
-  description: string;
-  icon: typeof Landmark;
-  onClick: () => void;
-  title: string;
-}) {
-  return (
-    <button
-      aria-selected={active}
-      className={`flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition ${active ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
-      onClick={onClick}
-      role="tab"
-      type="button"
-    >
-      <span
-        className={`grid size-9 shrink-0 place-items-center rounded-lg ${active ? 'bg-white/15' : 'bg-primary/10 text-primary'}`}
-      >
-        <Icon className="size-5" />
-      </span>
-      <span>
-        <span className="block text-sm font-black">{title}</span>
-        <span
-          className={`mt-1 block text-xs ${active ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}
-        >
-          {description}
-        </span>
-      </span>
-    </button>
-  );
 }
 
 function AccountTree({
@@ -608,43 +567,9 @@ function InboxSpace() {
   );
 }
 
-export function FinanceCoreWorkspace() {
-  const [section, setSection] = useState<FinanceSection>('accounting');
+function FinanceModuleFooter() {
   return (
-    <main className="space-y-6">
-      <PageHeader
-        eyebrow="Rubi Finance"
-        title="مالی و کارتابل درخواست‌ها"
-        description="یک ماژول یکپارچه برای حسابداری، خزانه و رسیدگی به درخواست‌های مالی"
-      />
-      <Card className="p-2">
-        <div
-          aria-label="بخش‌های ماژول مالی و کارتابل درخواست‌ها"
-          className="grid gap-2 md:grid-cols-2"
-          role="tablist"
-        >
-          <SectionTab
-            active={section === 'accounting'}
-            description="کدینگ، دوره مالی، اسناد، دفاتر و کنترل Posting"
-            icon={Landmark}
-            onClick={() => setSection('accounting')}
-            title="حسابداری و خزانه"
-          />
-          <SectionTab
-            active={section === 'inbox'}
-            description="درخواست‌های فروش، رزرواسیون، خرید و منابع انسانی"
-            icon={CircleDollarSign}
-            onClick={() => setSection('inbox')}
-            title="کارتابل درخواست‌ها"
-          />
-        </div>
-      </Card>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Building2 className="size-4" /> شرکت نمونه · شعبه مرکزی{' '}
-        <ChevronLeft className="size-3" /> <WalletCards className="size-4" />{' '}
-        داده عملیاتی غیرفعال
-      </div>
-      {section === 'accounting' ? <AccountingSpace /> : <InboxSpace />}
+    <>
       <Card className="p-4">
         <p className="text-sm font-bold">Stateهای استاندارد رابط مالی</p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -665,6 +590,46 @@ export function FinanceCoreWorkspace() {
         title="امنیت و مرز ماژول"
         description="مجوزها در Backend باید enforce شوند؛ Finance فقط Public Contract نسخه‌دار و Snapshot حداقلی مصرف می‌کند و شماره حساب/کارت/شبا را Mask نگه می‌دارد. CVV هرگز ذخیره نمی‌شود."
       />
+    </>
+  );
+}
+
+function FinanceContext() {
+  return (
+    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <Building2 className="size-4" /> شرکت نمونه · شعبه مرکزی{' '}
+      <ChevronLeft className="size-3" /> <WalletCards className="size-4" /> داده
+      عملیاتی غیرفعال
+    </div>
+  );
+}
+
+export function FinanceAccountingWorkspace() {
+  return (
+    <main className="space-y-6">
+      <PageHeader
+        eyebrow="Rubi Finance"
+        title="حسابداری"
+        description="کدینگ حساب‌ها، دوره مالی، اسناد، دفاتر و کنترل‌های خزانه"
+      />
+      <FinanceContext />
+      <AccountingSpace />
+      <FinanceModuleFooter />
+    </main>
+  );
+}
+
+export function FinanceRequestInboxWorkspace() {
+  return (
+    <main className="space-y-6">
+      <PageHeader
+        eyebrow="Rubi Finance"
+        title="کارتابل درخواست‌ها"
+        description="بررسی مستقل درخواست‌های دریافت و پرداخت فروش، رزرواسیون، خرید و منابع انسانی"
+      />
+      <FinanceContext />
+      <InboxSpace />
+      <FinanceModuleFooter />
     </main>
   );
 }
