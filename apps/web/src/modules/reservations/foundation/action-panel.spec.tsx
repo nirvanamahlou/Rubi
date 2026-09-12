@@ -4,6 +4,7 @@ import { ContractActionPanel, ContractActionContent } from './action-panel';
 import type { RequestView } from './model';
 const request: RequestView = {
   id: 'test',
+  contractId: '10000000-0000-4000-8000-000000000001',
   contractNumber: 'SYNTH-01',
   branchId: 'a',
   branchName: 'Test branch',
@@ -52,6 +53,13 @@ describe('selected contract actions', () => {
     expect(html).toContain('در حال دریافت اطلاعات مسافران');
     expect(html).not.toContain('Synthetic passenger');
     expect(html).not.toContain('Synthetic customer');
+  });
+  it('loads the selected Sales contract PDF for viewing', () => {
+    const html = renderToStaticMarkup(
+      <ContractActionContent action="مشاهده" request={request} />,
+    );
+    expect(html).toContain('در حال ساخت PDF قرارداد');
+    expect(html).not.toContain('Test branch');
   });
   it('loads the full recorded data for general details', () => {
     const html = renderToStaticMarkup(

@@ -5,6 +5,7 @@ import { ReservationPassengers } from '../passenger-files/passengers';
 import { ReservationFiles } from '../passenger-files/files';
 import { EnglishHotelName } from '../components/english-hotel-name';
 import { ReservationGeneralDetails } from '../components/reservation-general-details';
+import { ContractPdfPreview } from '../components/contract-pdf-preview';
 
 import {
   Dialog,
@@ -50,6 +51,13 @@ export function ContractActionContent({
   request: RequestView;
 }) {
   if (action === 'خرید') return <ReservationPurchaseDialog id={request.id} />;
+  if (action === 'مشاهده')
+    return (
+      <ContractPdfPreview
+        contractId={request.contractId}
+        contractNumber={request.contractNumber}
+      />
+    );
   if (action === 'مشخصات کلی')
     return <ReservationGeneralDetails key={request.id} request={request} />;
   if (action === 'توضیحات')
@@ -65,7 +73,7 @@ export function ContractActionContent({
     ].includes(action)
   )
     return <TravelWorkflowForm id={request.id} action={action} />;
-  if (action === 'مشاهده' || action === 'رزرواسیون') {
+  if (action === 'رزرواسیون') {
     return (
       <dl className={styles.details}>
         {Object.entries({
@@ -178,7 +186,7 @@ export function ContractActionPanel({
                   {request && (
                     <DialogContent
                       dir="rtl"
-                      className="max-h-[85dvh] overflow-y-auto sm:max-w-3xl"
+                      className={`max-h-[92dvh] overflow-y-auto ${action === 'مشاهده' ? 'sm:max-w-6xl' : 'sm:max-w-3xl'}`}
                     >
                       <DialogTitle className="pe-10">{action}</DialogTitle>
                       <DialogDescription>

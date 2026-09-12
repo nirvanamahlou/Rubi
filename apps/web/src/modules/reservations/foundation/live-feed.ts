@@ -167,6 +167,7 @@ export function decodeIntake(
       const travelDate = departures[0] ?? snapshot.hotelSelection?.checkInDate;
       return {
         id: row.id,
+        contractId: row.contractId,
         contractNumber: snapshot.contractNumber,
         branchId: row.branchId,
         branchName:

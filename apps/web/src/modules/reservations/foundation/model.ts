@@ -44,6 +44,7 @@ export const statusLabels: Record<QueueStatus, string> = {
 };
 export interface RequestView {
   id: string;
+  contractId?: string;
   contractNumber: string;
   branchId: string;
   branchName: string;
