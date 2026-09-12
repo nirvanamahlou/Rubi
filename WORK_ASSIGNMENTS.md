@@ -59,7 +59,8 @@
   بانکی، چک، نقد، کارت‌خوان، کارت‌به‌کارت، برداشت مستقیم و سایر اضافه شد. انتخاب چک،
   شماره چک را اجباری می‌کند و سایر روش‌ها مرجع/شماره پیگیری اختیاری دارند. ۳۴ تست هدفمند
   Web، typecheck، lint محدود، Production Build با ۴۱ مسیر و Browser QA فهرست روش‌ها و
-  تغییر پویا به «شماره چک» موفق‌اند؛ ثبت عملیاتی همچنان `BLOCKED_BY_MIGRATION_LOCK` است.
+  تغییر پویا به «شماره چک» موفق‌اند. Commit قابلیت `801455f` به Draft PR #153 Push شد؛
+  ثبت عملیاتی همچنان `BLOCKED_BY_MIGRATION_LOCK` است.
 
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 

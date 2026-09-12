@@ -153,3 +153,4 @@ Audit پایدار، Outbox/Inbox و اسناد Documents در گزارش نها
   Browser فهرست کامل روش‌ها، انتخاب چک و تغییر پویا و اجباری‌شدن شماره چک را تأیید کرد.
 - این پیگیری فقط UI، مدل Draft و validation محلی است. ذخیره Payment/Method، Audit،
   Journal و تغییر مانده واقعی تا Task مستقل Persistence/Migration مسدود می‌ماند.
+- Commit قابلیت `801455f` روی origin Push و در Draft PR #153 ثبت شد.
