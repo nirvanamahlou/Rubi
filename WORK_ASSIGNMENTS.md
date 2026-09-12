@@ -1,6 +1,6 @@
 # Work Assignments
 
-## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — READY_FOR_REVIEW / PERSISTENCE_BLOCKED
+## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — IN_PROGRESS / FORM_FOLLOWUP / PERSISTENCE_BLOCKED
 
 - درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
   دریافت/پرداخت در فضای مستقل `/finance`. Branch مستقل
@@ -32,6 +32,11 @@
   محدوده این پیگیری به metadata ناوبری، routeها، Web مالی، همین نگاشت‌های عمومی و تست‌های
   مربوط محدود است.
   ۳۱ تست هدفمند Web و ۶۴ تست Contract، lint/typecheck و Build نهایی ۴۱ مسیر موفق‌اند.
+- پیگیری دوم مالک در 2026-09-12 با مرجع تصویری: فرم بررسی دریافت باید نام و مبلغ/مانده
+  قرارداد و حساب مقصد موجود را روشن نشان دهد؛ فرم پرداخت باید قرارداد، کارگزار، حساب
+  مبدأ، سابقه پرداخت و مانده را نمایش دهد و ردیف‌های پرداخت جزئی قابل افزودن/حذف باشند.
+  محدوده رزروشده همان مدل/Workspace/Test مالی و Domain validation پرداخت جزئی است؛
+  قرارداد v1 موجود شکسته نمی‌شود و Schema/Migration/Persistence/Posting همچنان قفل است.
 
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 
