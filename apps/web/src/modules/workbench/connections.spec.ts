@@ -3,6 +3,7 @@ import {
   allowedWorkbenchDestinations,
   canReadWorkbenchHr,
   readWorkbenchHrNotification,
+  workbenchDestinations,
 } from './connections';
 describe('Workbench owner connections', () => {
   it('uses only actual HR read scopes', () => {
@@ -11,7 +12,13 @@ describe('Workbench owner connections', () => {
     expect(canReadWorkbenchHr(['hr.audit'])).toBe(false);
     expect(canReadWorkbenchHr([])).toBe(false);
   });
-  it('routes each permitted owner without treating document permission as business-operation access', () => {
+  it('keeps the HR shortcut out of the bottom destination cards', () => {
+    expect(workbenchDestinations.map((item) => item.href)).not.toContain('/hr');
+    expect(workbenchDestinations.map((item) => item.title)).not.toContain(
+      'درخواست‌های منابع انسانی',
+    );
+  });
+  it('routes each remaining permitted owner without treating document permission as business-operation access', () => {
     expect(
       allowedWorkbenchDestinations([
         'sales.contracts.read.own',
@@ -19,7 +26,7 @@ describe('Workbench owner connections', () => {
         'hr.self',
         'b2b.agency.read',
       ]).map((item) => item.href),
-    ).toEqual(['/hr', '/sales', '/reservations', '/organizations']);
+    ).toEqual(['/sales', '/reservations', '/organizations']);
     expect(
       allowedWorkbenchDestinations(['finance.read', 'procurement.read']).map(
         (item) => item.href,

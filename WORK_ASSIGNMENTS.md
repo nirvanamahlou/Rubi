@@ -1,5 +1,12 @@
 # Work Assignments
 
+## WORKBENCH-037-REMOVE-HR-DESTINATION-CARD — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-13: پوسته پایین «درخواست‌های منابع انسانی» از صفحه میزکار حذف شود، اما Backend، مسیر `/hr`، مجوزها و اعلان‌های منابع انسانی باقی بمانند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-workbench-remove-hr-link` از `origin/develop@dd177cfd`؛ محدوده فقط مقصدهای نمایشی Workbench، تست همان قرارداد و اسناد وضعیت این Task است.
+- هیچ API، Backend، Schema/Migration/Seed، Shared Contract، Permission، داده، Dependency/Lockfile یا منوی اصلی تغییر نمی‌کند.
+- نتیجه: کارت و لینک پایین «درخواست‌های منابع انسانی» از خانه میزکار حذف شد؛ منطق خواندن اعلان HR و کنترل مجوز آن بدون تغییر باقی ماند. چهار تست هدفمند Workbench، lint فایل‌های متاثر، Web typecheck و Production Build با ۴۶ Route موفق‌اند.
+
 ## FINANCE-006-DELIVERY-PANEL-REDESIGN — PC-A — COMPLETE / MERGED / ACTIVE
 
 Base `6026370f`; COMPUTER_ID=PC-A. بازطراحی نمای «پرداخت کارگزاران و تحویل مدارک به فروش» در کارتابل مالی برای تفکیک روشن مراحل، نمایش کارت قرارداد، وضعیت تسویه خدمات و اقدام بعدی. محدوده `finance-delivery-panel.tsx`، انتقال محل نمایش آن از Workspace قدیمی حسابداری به `FinanceRequestInboxWorkspace`، تست متمرکز و اسناد وضعیت است؛ منطق API، مجوزها، داده، Schema/Migration و قراردادهای اشتراکی تغییر نمی‌کنند. PR قدیمی #126 فایل را در گذشته ایجاد کرده اما تغییر فعال تازه‌ای روی این محدوده ندارد؛ پیاده‌سازی فعلی `develop` مبناست.
