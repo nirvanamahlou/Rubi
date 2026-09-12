@@ -42,7 +42,12 @@ describe('daily sales price management', () => {
 
   it('filters by day, type and searchable product identity', () => {
     expect(
-      filterDailyPrices(pricingPreviewItems, 'استانبول', 'OWN_TICKET', '2026-09-12'),
+      filterDailyPrices(
+        pricingPreviewItems,
+        'استانبول',
+        'OWN_TICKET',
+        '2026-09-12',
+      ),
     ).toHaveLength(1);
     expect(
       filterDailyPrices(pricingPreviewItems, '', 'TOUR', '2026-09-13'),

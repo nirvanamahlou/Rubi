@@ -164,8 +164,8 @@ export function Lookup({
       {!error && !options.length && (
         <small>
           برای جست‌وجوی بیشتر نام را وارد کنید؛ هتل و کارگزار باید در{' '}
-          <Link href="/master-data/organizations-suppliers">اطلاعات پایه</Link> ثبت
-          شده باشند.
+          <Link href="/master-data/organizations-suppliers">اطلاعات پایه</Link>{' '}
+          ثبت شده باشند.
         </small>
       )}
       {error && <small role="alert">{error}</small>}

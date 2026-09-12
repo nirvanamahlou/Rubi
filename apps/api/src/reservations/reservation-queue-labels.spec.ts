@@ -9,11 +9,9 @@ function setup(permissions: string[]) {
     snapshot: { customerId: 'party' },
   };
   const list = vi.fn().mockResolvedValue([row, { ...row, id: 'intake2' }]);
-  const detail = vi
-    .fn()
-    .mockResolvedValue({
-      data: { displayName: 'Agency', nationalId: 'never-project' },
-    });
+  const detail = vi.fn().mockResolvedValue({
+    data: { displayName: 'Agency', nationalId: 'never-project' },
+  });
   const listUsers = vi
     .fn()
     .mockResolvedValue([

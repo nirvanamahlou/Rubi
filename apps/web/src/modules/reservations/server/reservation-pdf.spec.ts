@@ -71,16 +71,14 @@ describe('reservation PDF route', () => {
   it('rejects missing branding without emitting a PDF', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValue(
-          Response.json({
-            data: {
-              ...intake,
-              workflow: { ...intake.workflow, branding: null },
-            },
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        Response.json({
+          data: {
+            ...intake,
+            workflow: { ...intake.workflow, branding: null },
+          },
+        }),
+      ),
     );
     expect(
       (await GET(request(), { params: Promise.resolve({ id }) })).status,

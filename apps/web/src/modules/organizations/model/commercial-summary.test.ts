@@ -74,14 +74,12 @@ describe('commercial directory public connections', () => {
   it('preserves partial success and never substitutes zero on failure', async () => {
     const client = {
       ...agencyClient,
-      profileDetails: vi
-        .fn()
-        .mockResolvedValue({
-          data: {
-            profile: { accountManagerUserId: 'user' },
-            accountManagers: [{ id: 'user', displayName: 'Manager' }],
-          },
-        }),
+      profileDetails: vi.fn().mockResolvedValue({
+        data: {
+          profile: { accountManagerUserId: 'user' },
+          accountManagers: [{ id: 'user', displayName: 'Manager' }],
+        },
+      }),
       agreements: vi.fn().mockRejectedValue(new Error('unavailable')),
     };
     expect(

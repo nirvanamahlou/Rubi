@@ -105,8 +105,7 @@ function relativeApiPath(requestUrl: string, apiBaseUrl: string) {
 }
 
 function isIgnoredMutation(path: string) {
-  if (path === 'iam/auth' || path.startsWith('iam/auth/'))
-    return true;
+  if (path === 'iam/auth' || path.startsWith('iam/auth/')) return true;
   if (
     path === 'documents' ||
     path.startsWith('documents/') ||

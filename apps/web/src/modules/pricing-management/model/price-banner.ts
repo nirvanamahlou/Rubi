@@ -64,7 +64,11 @@ export async function downloadPriceBanner(input: {
     context.textAlign = 'left';
     context.fillStyle = palette.accent;
     context.font = '800 31px Vazirmatn, sans-serif';
-    context.fillText(formatPrice(item.draftPrice, item.currencyCode), 135, y + 63);
+    context.fillText(
+      formatPrice(item.draftPrice, item.currencyCode),
+      135,
+      y + 63,
+    );
     context.textAlign = 'right';
   });
 
