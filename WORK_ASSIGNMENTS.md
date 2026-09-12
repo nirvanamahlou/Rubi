@@ -1,8 +1,9 @@
 # Work Assignments
 
-## CUSTOMER-AFFAIRS-REMOVE-INTRO — PC-B — IN_PROGRESS
+## CUSTOMER-AFFAIRS-REMOVE-INTRO — PC-B — DONE / VERIFIED
 
 - User requests removal of the overview introduction banner and its two texts only. Reserve CA workspace, scoped regression test and own status entry on `codex/pc-b-customer-affairs-remove-intro` from shared runtime `7566d20`. Preserve all modules; Web3100-only rebuild/restart after checks. No API/database/schema/dependency changes.
+- Removed only the overview banner; metrics, hub and reports preserved. Scoped lint and tests passed (21 existing CA tests plus the new regression); production build/typecheck passed. Browser authenticated overview verified on Web3100, runtime source `ac15df6`, Web PID13128; API PID12504 unchanged. Draft PR #225; no merge.
 
 ## UNIFIED-CUSTOMER-AFFAIRS-3100 — PC-B — LIVE / VERIFIED
 
