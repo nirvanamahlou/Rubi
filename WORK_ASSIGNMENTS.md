@@ -138,7 +138,19 @@
   dependency, shared layout or operational-data change.
 - Removed the complete metadata block and its unused `HeaderToday` import. Web lint,
   Repository typecheck (9 jobs) and the production Web build (46 routes) pass. The
-  scoped source reservation is released.
+  initial greeting-card source reservation is released.
+- User follow-up restores the unit-message directory alongside contacts, groups and
+  conversations, while keeping the persisted Messaging/IAM/Documents integration.
+  Extend this work item to reserve `message-composer.tsx`, its focused tests and the
+  Workbench status entry on the same pre-merge branch. No API, schema, dependency or
+  cross-module contract change.
+- Delivered four explicit messenger views for units, contacts, groups and
+  conversations. All seven unit/template collections are visible again; direct/group
+  selection, group creation, persistence, attachments and forwarding keep using the
+  existing backend services. 47 Workbench tests, 42 isolated HR tests, scoped lint,
+  Repository typecheck (9 jobs) and the 46-route production Web build pass. A full
+  Web run passed 1337 tests and hit only the same two HR parallel 5-second timeouts;
+  both passed in the isolated rerun. All scoped reservations are released.
 
 ## B2B-CRM-CONNECTIONS-002 — PC-B — READY_FOR_REVIEW / TESTED
 
