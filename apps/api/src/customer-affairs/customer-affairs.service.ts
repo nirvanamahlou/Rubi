@@ -770,6 +770,9 @@ export class CustomerAffairsService {
     const pageSize = query.pageSize ?? 25;
     const where: Prisma.CustomerAffairsTicketWhereInput = {
       branchId: { in: branchIds },
+      ...(query.sourceSite
+        ? { siteOrigin: { site: { code: query.sourceSite } } }
+        : {}),
       ...(query.status ? { status: query.status } : {}),
       ...(query.priority ? { priority: query.priority } : {}),
       ...(query.overdueOnly
@@ -806,10 +809,21 @@ export class CustomerAffairsService {
     requestedBranch: string | undefined,
     idempotencyValue: string | undefined,
     traceId?: string,
+    siteOrigin?: { siteId: string; externalId: string },
   ) {
     const branchId = branchScope(actor, requestedBranch);
     const key = requiredIdempotencyKey(idempotencyValue);
-    const hash = fingerprint(input);
+    const hash = fingerprint(siteOrigin ? { input, siteOrigin } : input);
+    if (siteOrigin) {
+      const existing = await this.repository.findSiteTicket(
+        siteOrigin.siteId,
+        siteOrigin.externalId,
+      );
+      if (existing) {
+        if (existing.fingerprint !== hash) throw conflict();
+        return this.getTicket(existing.ticketId, actor);
+      }
+    }
     const prior = await this.repository.findTicketCommand(actor.userId, key);
     if (prior) {
       if (prior.requestFingerprint !== hash) throw conflict();
@@ -839,6 +853,10 @@ export class CustomerAffairsService {
             updatedByUserId: actor.userId,
           },
         });
+        if (siteOrigin)
+          await tx.customerAffairsSiteTicket.create({
+            data: { ...siteOrigin, ticketId: row.id, fingerprint: hash },
+          });
         await tx.customerAffairsTimeline.create({
           data: {
             ticketId: row.id,
@@ -892,6 +910,17 @@ export class CustomerAffairsService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
+        // The site identity survives rotation of its bound IAM account.
+        if (siteOrigin) {
+          const origin = await this.repository.findSiteTicket(
+            siteOrigin.siteId,
+            siteOrigin.externalId,
+          );
+          if (origin) {
+            if (origin.fingerprint !== hash) throw conflict();
+            return this.getTicket(origin.ticketId, actor);
+          }
+        }
         const replay = await this.repository.findTicketCommand(
           actor.userId,
           key,
@@ -1609,6 +1638,13 @@ export class CustomerAffairsService {
   } {
     return {
       ...ticketInput(row),
+      sourceSite: row.siteOrigin
+        ? {
+            code: row.siteOrigin.site.code,
+            domain: row.siteOrigin.site.domain,
+            externalId: row.siteOrigin.externalId,
+          }
+        : null,
       id: row.id,
       trackingNumber: row.trackingNumber,
       branchId: row.branchId,

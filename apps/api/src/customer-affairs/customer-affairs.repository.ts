@@ -9,6 +9,7 @@ export const customerAffairsLeadInclude = {
 } satisfies Prisma.CustomerAffairsLeadInclude;
 
 export const customerAffairsTicketInclude = {
+  siteOrigin: { include: { site: true } },
   timeline: { orderBy: { occurredAt: 'desc' as const } },
   referrals: { orderBy: { createdAt: 'desc' as const } },
   satisfactions: { orderBy: { createdAt: 'desc' as const } },
@@ -24,6 +25,17 @@ export type CustomerAffairsTicketRow = Prisma.CustomerAffairsTicketGetPayload<{
 
 @Injectable()
 export class CustomerAffairsRepository {
+  findSite(code: string) {
+    return this.database.client.customerAffairsSite.findUnique({
+      where: { code },
+    });
+  }
+
+  findSiteTicket(siteId: string, externalId: string) {
+    return this.database.client.customerAffairsSiteTicket.findUnique({
+      where: { siteId_externalId: { siteId, externalId } },
+    });
+  }
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
@@ -131,11 +143,16 @@ export class CustomerAffairsRepository {
     return { data, total };
   }
 
-  workbenchReferrals(userId: string, branchIds: string[]) {
+  workbenchReferrals(
+    userId: string,
+    branchIds: string[],
+    destinationModule?: string,
+  ) {
     return this.database.client.customerAffairsReferral.findMany({
       where: {
         ticket: { branchId: { in: branchIds } },
         status: { in: ['OPEN', 'IN_PROGRESS'] },
+        ...(destinationModule ? { destinationModule } : {}),
         OR: [{ assignedUserId: userId }, { assignedUserId: null }],
       },
       include: { ticket: { select: { trackingNumber: true, subject: true } } },
@@ -147,6 +164,13 @@ export class CustomerAffairsRepository {
   findReferralByKey(ticketId: string, idempotencyKey: string) {
     return this.database.client.customerAffairsReferral.findUnique({
       where: { ticketId_idempotencyKey: { ticketId, idempotencyKey } },
+    });
+  }
+
+  findReferral(id: string) {
+    return this.database.client.customerAffairsReferral.findUnique({
+      where: { id },
+      include: { ticket: { select: { branchId: true } } },
     });
   }
 

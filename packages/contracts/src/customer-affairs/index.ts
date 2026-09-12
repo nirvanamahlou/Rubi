@@ -139,6 +139,7 @@ export interface CustomerAffairsTicketInput {
 }
 
 export interface CustomerAffairsTicketView extends CustomerAffairsTicketInput {
+  sourceSite?: { code: string; domain: string; externalId: string } | null;
   id: string;
   trackingNumber: string;
   branchId: string;

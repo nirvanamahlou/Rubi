@@ -14,6 +14,11 @@ import {
 } from './customer-affairs.controller';
 import { CustomerAffairsRepository } from './customer-affairs.repository';
 import { CustomerAffairsService } from './customer-affairs.service';
+import {
+  CustomerAffairsSiteController,
+  CustomerAffairsSiteGuard,
+} from './customer-affairs-site.controller';
+import { CustomerAffairsInternalController } from './customer-affairs-internal.controller';
 
 @Module({
   imports: [
@@ -24,12 +29,18 @@ import { CustomerAffairsService } from './customer-affairs.service';
     ReservationsRuntimeModule,
     NotificationsModule,
   ],
-  controllers: [CustomerAffairsController, CustomerAffairsPublicController],
+  controllers: [
+    CustomerAffairsController,
+    CustomerAffairsPublicController,
+    CustomerAffairsSiteController,
+    CustomerAffairsInternalController,
+  ],
   providers: [
     AuthGuard,
     PermissionGuard,
     CustomerAffairsRepository,
     CustomerAffairsService,
+    CustomerAffairsSiteGuard,
   ],
   exports: [CustomerAffairsService],
 })

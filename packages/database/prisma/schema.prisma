@@ -3876,6 +3876,7 @@ model CustomerAffairsTicket {
   referrals               CustomerAffairsReferral[]
   satisfactions           CustomerAffairsSatisfaction[]
   correctiveActions       CustomerAffairsCorrectiveAction[]
+  siteOrigin              CustomerAffairsSiteTicket?
 
   @@index([branchId, status, priority, updatedAt])
   @@index([customerOwnerUserId, status, nextActionAt])
@@ -3883,6 +3884,29 @@ model CustomerAffairsTicket {
   @@index([customerId, createdAt])
   @@index([firstResponseDueAt, resolutionDueAt])
   @@map("customer_affairs_tickets")
+}
+
+model CustomerAffairsSite {
+  id      String @id @db.Uuid
+  code    String @unique @db.VarChar(48)
+  domain  String @unique @db.VarChar(160)
+  tickets CustomerAffairsSiteTicket[]
+
+  @@map("customer_affairs_sites")
+}
+
+model CustomerAffairsSiteTicket {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  siteId     String @map("site_id") @db.Uuid
+  ticketId   String @unique @map("ticket_id") @db.Uuid
+  externalId String @map("external_id") @db.VarChar(160)
+  fingerprint String @db.VarChar(64)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  site       CustomerAffairsSite @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  ticket     CustomerAffairsTicket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+
+  @@unique([siteId, externalId])
+  @@map("customer_affairs_site_tickets")
 }
 
 model CustomerAffairsTimeline {

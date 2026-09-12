@@ -234,6 +234,7 @@ export class SatisfactionDto {
 }
 
 export class ListQueryDto {
+  @IsOptional() @IsIn(['jahanbastan', 'nystkt']) sourceSite?: string;
   @IsOptional() @IsString() @MaxLength(100) search?: string;
   @IsOptional() @IsString() @MaxLength(48) status?: string;
   @IsOptional() @IsString() @MaxLength(48) stage?: string;
