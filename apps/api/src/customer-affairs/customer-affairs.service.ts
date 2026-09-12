@@ -363,7 +363,7 @@ export class CustomerAffairsService {
             message: `${trackingNumber} به شما تخصیص یافت.`,
             entityType: 'customer-affairs-lead',
             entityId: row.id,
-            href: `/customer-affairs?lead=${row.id}`,
+            href: `/customer-affairs?view=leads&lead=${row.id}`,
           });
         await tx.customerAffairsAuditEvent.create({
           data: {
@@ -431,6 +431,18 @@ export class CustomerAffairsService {
       const row = await tx.customerAffairsLead.findUniqueOrThrow({
         where: { id },
       });
+      if (row.assigneeUserId && row.assigneeUserId !== current.assigneeUserId)
+        await this.notifications.createWithinTransaction(tx, {
+          recipientUserIds: [row.assigneeUserId],
+          actorUserId: actor.userId,
+          sourceModule: 'customer-affairs',
+          eventType: 'lead.assigned',
+          title: 'تخصیص پیگیری سرنخ',
+          message: `${row.trackingNumber} به شما تخصیص یافت.`,
+          entityType: 'customer-affairs-lead',
+          entityId: id,
+          href: `/customer-affairs?view=leads&lead=${id}`,
+        });
       await tx.customerAffairsAuditEvent.create({
         data: {
           branchId: current.branchId,
@@ -662,7 +674,8 @@ export class CustomerAffairsService {
       if (handoff.status !== 'WAITING_SALES') {
         if (
           handoff.status === input.status &&
-          handoff.salesContractId === (input.salesContractId ?? null)
+          handoff.salesContractId === (input.salesContractId ?? null) &&
+          handoff.responseReason === input.reason
         )
           return handoff.lead;
         throw conflict();
@@ -683,8 +696,8 @@ export class CustomerAffairsService {
             message: 'مشتری قرارداد فروش با سرنخ یکسان نیست.',
           });
       }
-      await tx.customerAffairsHandoff.update({
-        where: { id: handoffId },
+      const response = await tx.customerAffairsHandoff.updateMany({
+        where: { id: handoffId, status: 'WAITING_SALES' },
         data: {
           status: input.status,
           salesContractId:
@@ -696,6 +709,7 @@ export class CustomerAffairsService {
           respondedByUserId: actor.userId,
         },
       });
+      if (!response.count) throw conflict();
       const stage = input.status === 'ACCEPTED' ? 'HANDED_OFF' : 'QUALIFIED';
       const updated = await tx.customerAffairsLead.update({
         where: { id: handoff.leadId },
@@ -714,6 +728,19 @@ export class CustomerAffairsService {
           actorUserId: actor.userId,
           documentVersionIds: [],
         },
+      });
+      await this.notifications.createWithinTransaction(tx, {
+        recipientUserIds: [
+          handoff.lead.assigneeUserId ?? handoff.lead.createdByUserId,
+        ],
+        actorUserId: actor.userId,
+        sourceModule: 'customer-affairs',
+        eventType: 'handoff.responded',
+        title: 'پاسخ فروش به درخواست مشتری',
+        message: `${handoff.lead.trackingNumber}: ${input.status === 'ACCEPTED' ? 'پذیرفته شد' : input.status === 'RETURNED' ? 'برای تکمیل برگشت داده شد' : 'پذیرفته نشد'}.`,
+        entityType: 'customer-affairs-lead',
+        entityId: handoff.leadId,
+        href: `/customer-affairs?view=leads&lead=${handoff.leadId}`,
       });
       await tx.customerAffairsAuditEvent.create({
         data: {
@@ -832,7 +859,10 @@ export class CustomerAffairsService {
           },
         });
         await this.notifications.createWithinTransaction(tx, {
-          recipientUserIds: [owner],
+          recipientUserIds: [
+            owner,
+            ...(row.executionOwnerUserId ? [row.executionOwnerUserId] : []),
+          ],
           actorUserId: actor.userId,
           sourceModule: 'customer-affairs',
           eventType: 'ticket.assigned',
@@ -840,7 +870,7 @@ export class CustomerAffairsService {
           message: `${trackingNumber} به شما تخصیص یافت.`,
           entityType: 'customer-affairs-ticket',
           entityId: row.id,
-          href: `/customer-affairs?ticket=${row.id}`,
+          href: `/customer-affairs?view=tickets&ticket=${row.id}`,
         });
         await tx.customerAffairsAuditEvent.create({
           data: {
@@ -906,6 +936,26 @@ export class CustomerAffairsService {
       const row = await tx.customerAffairsTicket.findUniqueOrThrow({
         where: { id },
       });
+      const recipients = new Set<string>();
+      if (row.customerOwnerUserId !== current.customerOwnerUserId)
+        recipients.add(row.customerOwnerUserId);
+      if (
+        row.executionOwnerUserId &&
+        row.executionOwnerUserId !== current.executionOwnerUserId
+      )
+        recipients.add(row.executionOwnerUserId);
+      if (recipients.size)
+        await this.notifications.createWithinTransaction(tx, {
+          recipientUserIds: [...recipients],
+          actorUserId: actor.userId,
+          sourceModule: 'customer-affairs',
+          eventType: 'ticket.assigned',
+          title: 'تخصیص رسیدگی تیکت',
+          message: `${row.trackingNumber} برای پیگیری به شما تخصیص یافت.`,
+          entityType: 'customer-affairs-ticket',
+          entityId: id,
+          href: `/customer-affairs?view=tickets&ticket=${id}`,
+        });
       await tx.customerAffairsAuditEvent.create({
         data: {
           branchId: current.branchId,
@@ -1154,21 +1204,27 @@ export class CustomerAffairsService {
         throw new ForbiddenException(
           'این ارجاع به کاربر دیگری تخصیص یافته است.',
         );
-      if (['DONE', 'CANCELLED'].includes(current.status)) {
-        if (
-          current.status === input.status &&
-          current.responseSummary === input.responseSummary
-        )
-          return current;
-        throw conflict();
-      }
-      const updated = await tx.customerAffairsReferral.update({
-        where: { id },
+      if (
+        current.status === input.status &&
+        current.responseSummary === input.responseSummary
+      )
+        return current;
+      if (['DONE', 'CANCELLED'].includes(current.status)) throw conflict();
+      const response = await tx.customerAffairsReferral.updateMany({
+        where: {
+          id,
+          status: current.status,
+          responseSummary: current.responseSummary,
+        },
         data: {
           status: input.status,
           responseSummary: input.responseSummary,
           respondedByUserId: actor.userId,
         },
+      });
+      if (!response.count) throw conflict();
+      const updated = await tx.customerAffairsReferral.findUniqueOrThrow({
+        where: { id },
       });
       await tx.customerAffairsTimeline.create({
         data: {
@@ -1189,7 +1245,7 @@ export class CustomerAffairsService {
         message: input.responseSummary,
         entityType: 'customer-affairs-referral',
         entityId: id,
-        href: `/customer-affairs?ticket=${current.ticketId}`,
+        href: `/customer-affairs?view=tickets&ticket=${current.ticketId}`,
       });
       await tx.customerAffairsAuditEvent.create({
         data: {
@@ -1301,7 +1357,7 @@ export class CustomerAffairsService {
           message: `${current.trackingNumber}: ${input.reason}`,
           entityType: 'customer-affairs-ticket',
           entityId: id,
-          href: `/customer-affairs?ticket=${id}`,
+          href: `/customer-affairs?view=tickets&ticket=${id}`,
         });
       await tx.customerAffairsAuditEvent.create({
         data: {
@@ -1427,7 +1483,7 @@ export class CustomerAffairsService {
             message: `${current.ticket.trackingNumber} نیازمند پیگیری سرپرست است.`,
             entityType: 'customer-affairs-corrective-action',
             entityId: action.id,
-            href: `/customer-affairs?ticket=${current.ticketId}`,
+            href: `/customer-affairs?view=tickets&ticket=${current.ticketId}`,
           });
         }
       }

@@ -1,5 +1,10 @@
 # Work Assignments
 
+## CUSTOMER-AFFAIRS-BACKEND-ROUTING — PC-B — DONE / READY FOR INTEGRATION
+
+- Backend-only continuation authorized by user with standard pre-production assumptions. Reserve `apps/api/src/customer-affairs/**` and scoped tests plus own task/status entries on `codex/pc-b-customer-affairs-backend-routing` from combined `503c39c`. Complete assignment and Sales-response notification routing through the existing Notifications public service, retaining existing endpoint/schema contracts. No producer/consumer API changes, schema/migration, dependency, IAM grants, or other-owner modules. No shared runtime takeover: newer PC-A Web/API work must be preserved. External websites and new cross-module contracts remain separate owner-coordinated work, not claimed active.
+- Implemented owner/execution-owner and Sales-response notifications, working record deep links and idempotent/concurrency-safe response handling for handoff/referrals. 52 scoped tests, ESLint/typecheck and API build passed. No live business writes. Local process inspection confirmed Web3100 belongs to this combined worktree; vacant API4190 was started with its existing approved local configuration, not another PC's runtime. Module-local reservation released; website and producer-contract backlog remains incomplete. See `docs/tasks/CUSTOMER-AFFAIRS-BACKEND-ROUTING.md` for review/activation limits.
+
 ## CUSTOMER-AFFAIRS-INTERNAL-LINKS — PC-B — UI SLICE WITHDRAWN / BACKEND PENDING
 
 - User requests cross-module connections. Reserve Customer Affairs Web public API consumers, reference/handoff forms and tests plus own docs, branch `codex/pc-b-customer-affairs-internal-links` based on live `a1d4cf0`. Consume existing Sales, Reservations and Documents read APIs and CA reference/handoff mutation contracts; do not modify producer modules, shared schema/contracts, credentials or permissions. External ingress/providers remain pending their owner contract and credentials. Existing referrals already feed Workbench. Preserve combined Web3100/API4190; no merge.
