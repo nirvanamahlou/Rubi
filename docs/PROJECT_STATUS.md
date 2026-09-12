@@ -35,6 +35,7 @@ Documents، Messaging، Customer Affairs، HR و Notifications را فقط از 
 
 در درخت نهایی بازپایه‌شده، lint سراسری ۶ Job، typecheck سراسری ۹ Job و build
 تولیدی ۶ Job شامل ۴۶ مسیر Web نیز بدون خطا تمام شد.
+PR #234 به `develop` باز شد و قفل‌های موقت این واحد کار آزاد شدند.
 
 ## WORKBENCH-021 — مخاطبان، گروه و فوروارد پیام
 

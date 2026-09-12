@@ -27,7 +27,7 @@
   `docs/tasks/DASHBOARDS-PC-C-AUTHORIZATION.md`. Merge، Force Push، تغییر مستقیم
   `main`/`develop` و بازنویسی تغییرات PC-A/PC-B مجاز نیست.
 
-## WORKBENCH-036 — PC-B — READY_FOR_REVIEW
+## WORKBENCH-036 — PC-B — PR_OPEN / LOCKS_RELEASED
 
 - COMPUTER_ID=PC-B. User explicitly requests a full Workbench integration audit,
   implementation of missing internal/cross-CRM connections, push and merge. Branch
@@ -55,7 +55,8 @@
   calls use exported services, including server-side calendar aggregation.
 - Full Repository lint (6 jobs), typecheck (9 jobs) and production build (6 jobs,
   46 Web routes) pass on the rebased tree. Migration/shared-contract/Central Docs
-  reservations remain owned only until the review PR is opened.
+  reservations are released after opening PR #234 to `develop`; dependency/lockfile
+  remained unassigned. Merge is explicitly authorized by the user after CI passes.
 
 ## B2B-CRM-CONNECTIONS-002 — PC-B — READY_FOR_REVIEW / TESTED
 
