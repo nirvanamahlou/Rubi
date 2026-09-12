@@ -11,6 +11,7 @@ import {
   Handshake,
   HeartHandshake,
   House,
+  Inbox,
   Megaphone,
   PackageSearch,
   Settings,
@@ -47,6 +48,7 @@ const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/sales': Handshake,
   '/purchases': PackageSearch,
   '/finance': CircleDollarSign,
+  '/finance/requests': Inbox,
   '/marketing': Megaphone,
   '/organizations': Building2,
   '/human-resources': HeartHandshake,
@@ -92,8 +94,8 @@ export const navigationGroups = [
   {
     id: 'finance',
     dotClass: 'bg-[#f7d184]',
-    title: 'امور مالی',
-    hrefs: ['/finance', '/purchases'],
+    title: 'مالی',
+    hrefs: ['/finance', '/finance/requests', '/purchases'],
   },
   {
     id: 'hr',

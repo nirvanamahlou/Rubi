@@ -15,6 +15,38 @@
   کنترل Working Tree و Push معمولی شاخه PC-C آماده محسوب می‌شود.
 - جزئیات Scope، امنیت، پورت و Handoff در
   [REPORTING-PC-C-AUTHORIZATION](tasks/REPORTING-PC-C-AUTHORIZATION.md) ثبت شده است.
+## FINANCE-002A — READY_FOR_REVIEW / PERSISTENCE_BLOCKED — 2026-09-12
+
+- PC-A روی Branch `codex/pc-a-finance-core-accounting` از `origin/develop@4717b13`
+  صفحات مستقل حسابداری و کارتابل مالی، Domain invariantهای Phase A و قراردادهای versioned
+  دریافت/پرداخت را تکمیل کرد. Workspace قبلی FINANCE-001 حفظ شده است.
+- Commitهای `d513e08` و `6de5d94` Push و Draft PR #153 به `develop` ایجاد شد.
+- ۶۴ Contract test، ۱۹ Finance API test و ۱۴ Finance Web test پاس؛ lint/typecheck/build
+  Web/API و Smoke مستقل Web3200/API4200 موفق است.
+- Prisma/Migration/Seed و runtime رزرواسیون تغییر نکرد. Persistence، Posting واقعی،
+  Audit پایدار و Outbox/Event تا Handoff قفل Migration برابر `BLOCKED` باقی می‌مانند.
+- پیگیری رابط مطابق مرجع تصویری: «حسابداری»، «کارتابل درخواست‌ها» و «خرید و تأمین» به
+  همین ترتیب سه آیتم گروه «مالی» هستند؛ `/finance` و `/finance/requests` صفحه‌های مستقل‌اند.
+  ۳۱ تست هدفمند Web و ۶۴ تست Contract، lint/typecheck و Build نهایی ۴۱ مسیر موفق‌اند.
+- پیگیری دوم فرم‌ها: نام/مبلغ/پرداخت قبلی/مانده قرارداد در دریافت و پرداخت دیده می‌شود؛
+  دریافت حساب مقصد و پرداخت حساب مبدأ واقعیِ فهرست کدینگ را فقط از حساب‌های فعال، قابل
+  Posting و هم‌ارز انتخاب می‌کنند. قرارداد و کارگزار مشخص‌اند؛ پرداخت‌های جزئی با ردیف
+  مبلغ/پیگیری قابل افزودن و حذف، جمع و مانده بعد از عملیات و سابقه پرداخت نمایش داده
+  می‌شوند. فیلدهای فنی Version/Idempotency از UI حذف و داخلی ماندند. ۳۲ تست هدفمند Web،
+  typecheck، lint محدود، Build ۴۱ مسیر و Browser QA موفق‌اند؛ Persistence/Posting مسدود است.
+- Commit پیگیری `70fde9b` روی شاخه مالی Push و به Draft PR #153 اضافه شد.
+- پیگیری سوم فرم‌ها: «توضیح مالی» اختیاری شد و فیش/مدارک همراه درخواست با metadata امن،
+  زمان UTC و وضعیت Scan در همان Dialog دیده می‌شوند؛ حالت بدون فایل نیز مشخص است. Finance
+  فایل را کپی نمی‌کند و فقط Snapshot مرجع Documents را نمایش می‌دهد. ۳۳ تست هدفمند Web
+  به‌همراه typecheck، lint محدود، Build ۴۱ مسیر و Browser QA موفق‌اند؛ Persistence و
+  دریافت باینری واقعی همچنان در Task قفل‌شده بعدی است.
+- Commit پیگیری فیش `7e673e8` روی شاخه مالی Push و به Draft PR #153 اضافه شد.
+- پیگیری چهارم پرداخت: روش هر ردیف پرداخت جزئی اجباری و مستقل شد؛ حواله بانکی، چک، نقد،
+  کارت‌خوان، کارت‌به‌کارت، برداشت مستقیم و سایر پشتیبانی می‌شوند. برای چک شماره چک اجباری
+  و برای بقیه روش‌ها شماره پیگیری/مرجع اختیاری است. ۳۴ تست هدفمند Web، typecheck، lint،
+  Build ۴۱ مسیر و Browser QA موفق‌اند. Commit `801455f` به Draft PR #153 Push شد؛ این
+  فیلد تا Persistence بعدی هنوز ثبت پایدار ندارد.
+- جزئیات: [FINANCE-002A-ACCOUNTING-AND-INBOX.md](tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md).
 
 ## HR-013 — اتصال فرم‌ها و ارجاع بین منابع انسانی و بخش‌های سامانه — آماده ادغام تأییدشده
 

@@ -29,6 +29,71 @@
   خارج از Scope باید پیش از اجرا با هر دو مالک ثبت شود. Merge، Force Push و تغییر
   مستقیم `main`/`develop` مجاز نیست. مرجع کامل:
   `docs/tasks/REPORTING-PC-C-AUTHORIZATION.md`.
+## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — IN_PROGRESS / FX_SNAPSHOT_FOLLOWUP / PERSISTENCE_BLOCKED
+
+- درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
+  دریافت/پرداخت در فضای مستقل `/finance`. Branch مستقل
+  `codex/pc-a-finance-core-accounting` از `origin/develop@4717b13` و Worktree مستقل
+  `C:/Users/niayeshseir-1/Rubi-finance-core-accounting` است؛ `COMPUTER_ID=PC-A`.
+- محدوده رزروشده: `apps/api/src/finance/**`، `apps/web/src/modules/finance/**`، route موجود
+  `/finance`، `packages/contracts/src/finance/**`، تست‌های Finance و سند
+  `docs/tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md`. تغییرات اسناد مرکزی فقط به ورودی
+  افزایشی همین Task محدود است و ورودی هیچ مالک دیگری بازنویسی نمی‌شود.
+- قفل Migration/Central Docs و قراردادهای IAM/Sales/Travel نزد Task فعال رزرواسیون باقی
+  می‌ماند. بنابراین Prisma Schema/Migration/Seed، Permission seed، Root contract export،
+  Dependency/Lockfile، فایل‌های Sales/Reservations/Procurement/HR/Documents و Runtime یا
+  Portهای آن‌ها تغییر نمی‌کند. Finance فقط Reference/Snapshot نسخه‌دار مصرف می‌کند.
+- اجرای مجاز تا آزادشدن قفل: Domain/Application و UI واقعی از نظر validation و state
+  handling، بدون Controller/Persistence یا موفقیت عملیاتی جعلی. Web مالی فقط روی 3200 و
+  API مالی فقط روی 4200 Smoke می‌شود و هیچ listener متعلق به رزرواسیون متوقف نمی‌شود.
+- معیارها، قفل‌ها، قراردادهای producer/consumer و موارد مسدود در
+  `docs/tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md` ثبت می‌شوند. Push و Draft PR به
+  `develop` مجاز است؛ Merge، Force Push و تغییر مستقیم `main`/`develop` ممنوع است.
+- نتیجه مجاز تحویل شد: حسابداری و کارتابل مستقل، درخت حساب، کنترل‌های دوره/Posting، قراردادهای
+  versioned و کارتابل Preview با validation دریافت/پرداخت. Contractها ۶۴ تست، API مالی
+  ۱۹ تست و Web مالی ۱۴ تست پاس؛ lint/typecheck/build و Smoke پورت‌های 3200/4200 موفق.
+  Commit قابلیت `6de5d94` Push و Draft PR #153 به `develop` باز شد. Persistence، Audit
+  پایدار، Outbox/Event و Posting واقعی همچنان `BLOCKED_BY_MIGRATION_LOCK` هستند.
+- پیگیری اصلاح‌شده مالک در 2026-09-12 با مرجع تصویری: «کارتابل درخواست‌ها» باید کاملاً
+  از صفحه حسابداری جدا و به‌عنوان آیتم مستقل بین «حسابداری» و «خرید و تأمین» در گروه
+  «مالی» قرار گیرد. `/finance` فقط حسابداری و `/finance/requests` فقط کارتابل را نمایش
+  می‌دهد. نگاشت عمومی مقصد درخواست‌های HR و اعلان‌های مالی نیز به مسیر جدید منتقل شد؛
+  محدوده این پیگیری به metadata ناوبری، routeها، Web مالی، همین نگاشت‌های عمومی و تست‌های
+  مربوط محدود است.
+  ۳۱ تست هدفمند Web و ۶۴ تست Contract، lint/typecheck و Build نهایی ۴۱ مسیر موفق‌اند.
+- پیگیری دوم مالک در 2026-09-12 با مرجع تصویری: فرم بررسی دریافت باید نام و مبلغ/مانده
+  قرارداد و حساب مقصد موجود را روشن نشان دهد؛ فرم پرداخت باید قرارداد، کارگزار، حساب
+  مبدأ، سابقه پرداخت و مانده را نمایش دهد و ردیف‌های پرداخت جزئی قابل افزودن/حذف باشند.
+  محدوده رزروشده همان مدل/Workspace/Test مالی و Domain validation پرداخت جزئی است؛
+  قرارداد v1 موجود شکسته نمی‌شود و Schema/Migration/Persistence/Posting همچنان قفل است.
+- نتیجه پیگیری دوم: کارت‌ها و Dialog نام قرارداد و مانده را نمایش می‌دهند؛ دریافت به
+  حساب مقصد قابل Posting و هم‌ارز متصل می‌شود؛ پرداخت قرارداد/کارگزار، حساب مبدأ، سابقه،
+  جمع و مانده پس از عملیات دارد و ردیف‌های پرداخت جزئی قابل افزودن/حذف‌اند. فیلدهای فنی
+  Version/Idempotency از فرم کاربر حذف و در state داخلی حفظ شدند. ۳۲ تست هدفمند Web،
+  typecheck، lint محدود، Build ۴۱ مسیر و Browser QA هر دو فرم موفق‌اند؛ ثبت قطعی همچنان
+  `BLOCKED_BY_MIGRATION_LOCK` است. Commit قابلیت `70fde9b` به Draft PR #153 Push شد.
+- پیگیری سوم مالک در 2026-09-12: «توضیح مالی» در فرم دریافت/پرداخت اختیاری باشد و
+  فیش‌های همراه درخواست در همان Dialog نمایش داده شوند. محدوده فقط مدل/Workspace/Test
+  مالی و اسناد همین Task است؛ فایل جدید، Upload، Documents persistence یا قرارداد v1
+  شکسته ایجاد نمی‌شود و attachment فقط از snapshot مرجع درخواست نمایش داده می‌شود.
+- نتیجه پیگیری سوم: حداقل طول توضیح مالی حذف و label آن اختیاری شد. Dialog فیش/مدرک
+  همراه را با نام، نوع، حجم، UTC و وضعیت Scan نمایش می‌دهد و حالت بدون فایل نیز روشن است؛
+  باینری در Finance کپی نمی‌شود. ۳۳ تست هدفمند Web، typecheck، lint محدود، Build ۴۱
+  مسیر و Browser QA نمایش فیش و label اختیاری موفق‌اند. Commit `7e673e8` به Draft PR
+  #153 Push شد.
+- پیگیری چهارم مالک در 2026-09-12: Finance باید روش هر پرداخت را از میان حواله، چک،
+  نقد، کارت‌خوان و روش‌های متعارف مشخص کند. محدوده فقط مدل ردیف پرداخت، Dialog و تست‌های
+  Finance است؛ قرارداد v1، Schema/Migration/Persistence و داده عملیاتی تغییر نمی‌کنند.
+- نتیجه پیگیری چهارم: برای هر ردیف پرداخت جزئی، روش پرداخت مستقل و اجباری از میان حواله
+  بانکی، چک، نقد، کارت‌خوان، کارت‌به‌کارت، برداشت مستقیم و سایر اضافه شد. انتخاب چک،
+  شماره چک را اجباری می‌کند و سایر روش‌ها مرجع/شماره پیگیری اختیاری دارند. ۳۴ تست هدفمند
+  Web، typecheck، lint محدود، Production Build با ۴۱ مسیر و Browser QA فهرست روش‌ها و
+  تغییر پویا به «شماره چک» موفق‌اند. Commit قابلیت `801455f` به Draft PR #153 Push شد؛
+  ثبت عملیاتی همچنان `BLOCKED_BY_MIGRATION_LOCK` است.
+- پیگیری پنجم مالک در 2026-09-12: اگر دریافت یا پرداخت ارزی است، نرخ روز ارز باید همراه
+  زمان همان عملیات در سابقه دریافت/پرداخت قابل مشاهده باشد. محدوده رزروشده فقط مدل Draft،
+  داده Preview سابقه، محاسبه Decimal معادل ریالی، Dialog و تست‌های Finance است؛ منبع نرخ
+  authoritative، Schema/Migration/API/Persistence و قرارداد cross-module تغییر نمی‌کنند.
 
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 

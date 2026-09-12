@@ -16,6 +16,8 @@ describe('HR main-menu integration contract', () => {
     for (const module of HR_CONNECTION_MODULES)
       expect(hrConnectionModule(`${module.path}/detail`)).toEqual(module);
     expect(hrConnectionModule('/finance-unrelated')).toBeUndefined();
+    expect(hrConnectionModule('/finance')).toBeUndefined();
+    expect(hrConnectionModule('/finance/requests')?.key).toBe('finance');
     expect(hrConnectionModule('https://other.test/finance')).toBeUndefined();
   });
   it('routes tickets through Reservations and leaves dashboards as projections', () => {

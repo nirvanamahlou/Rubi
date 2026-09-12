@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
-import { FinanceWorkspace } from '@/modules/finance/components/finance-workspace';
+import { FinanceAccountingWorkspace } from '@/modules/finance/components/finance-core-workspace';
 
-export const metadata: Metadata = { title: 'مالی و خزانه‌داری' };
+export const metadata: Metadata = { title: 'حسابداری' };
 
 export default function Page() {
-  return <FinanceWorkspace />;
+  return <FinanceAccountingWorkspace />;
 }
