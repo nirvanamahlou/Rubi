@@ -217,12 +217,19 @@ function recordValue(
       .filter((value) => value !== null && value !== undefined && value !== '')
       .join(' / ');
   if (column === 'status')
-    return record.resource === 'meal-services' && record.attributes.isUnderReview === true
+    return record.resource === 'meal-services' &&
+      record.attributes.isUnderReview === true
       ? 'در حال بررسی'
-      : record.status === 'active' ? 'فعال' : 'غیرفعال';
+      : record.status === 'active'
+        ? 'فعال'
+        : 'غیرفعال';
   if (column === 'transportStatus') {
     const status = record.attributes.transportStatus;
-    return status === 'UNDER_REVIEW' ? 'در حال بررسی' : status === 'ACTIVE' ? 'فعال' : 'غیرفعال';
+    return status === 'UNDER_REVIEW'
+      ? 'در حال بررسی'
+      : status === 'ACTIVE'
+        ? 'فعال'
+        : 'غیرفعال';
   }
   if (column === 'updatedAt')
     return formatter.format(new Date(record.updatedAt));
