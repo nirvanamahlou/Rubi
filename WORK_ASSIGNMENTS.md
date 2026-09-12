@@ -1,5 +1,21 @@
 # Work Assignments
 
+## SALES-PRICE-MANAGEMENT-0912 — PC-A — IN_PROGRESS / UI_PHASE
+
+- درخواست صریح مالک در 2026-09-12: افزودن آیتم مستقل «مدیریت قیمت» در گروه «فروش»
+  برای تغییر روزانه قیمت تورها و بلیت‌های ملکی و دریافت خروجی بنر قیمت. `COMPUTER_ID=PC-A`.
+- Branch مستقل `codex/pc-a-pricing-management` به‌صورت stacked از نسخه قابل مشاهده
+  Finance `77e181d` ساخته شد تا ناوبری تأییدشده کاربر حفظ شود؛ Merge مقصد فقط پس از
+  تعیین تکلیف PR #153 انجام می‌شود.
+- محدوده رزروشده: ماژول Web جدید `apps/web/src/modules/pricing-management/**`، route
+  `/pricing-management`، metadata/icon/render ناوبری و تست‌های مربوط، و اسناد همین Task.
+  فایل‌های API/Ticket/Tour/Sales موجود، Schema/Migration/Seed، Permission، داده عملیاتی،
+  Dependency/Lockfile و Listenerهای دیگر تغییر نمی‌کنند.
+- قیمت فروش طبق قرارداد موجود متعلق به Sales است، اما Producer فعلی تور/بلیت قرارداد
+  قیمت روزانه و mutation پایدار ندارد. این Slice فقط ویرایش/اعتبارسنجی Preview و تولید
+  واقعی PNG در مرورگر از داده صریحاً synthetic دارد؛ ذخیره سروری یا ادعای انتشار قیمت
+  تا قرارداد عمومی، Permission و Migration مستقل ممنوع است.
+
 ## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — READY_FOR_REVIEW / PERSISTENCE_BLOCKED
 
 - درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
