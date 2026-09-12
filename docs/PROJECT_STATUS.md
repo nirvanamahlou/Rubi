@@ -2,10 +2,26 @@
 
 ## HR-014 — حذف پنل مستقل ارتباطات از رابط کاربری
 
-- نتیجه: lint و TypeScript وب، ۲۶۰ تست موجود و build تولیدی ۴۶ مسیر موفق‌اند. آماده بازبینی؛ بدون merge خودکار و بدون فعال‌سازی روی اجرای مشترک ۳۱۰۰.
+- نتیجه: lint و TypeScript وب، ۲۶۰ تست موجود و build تولیدی ۴۶ مسیر موفق‌اند. مرج PR #226 با دستور صریح جدید کاربر مجاز شد؛ تداخل افزوده‌های مستندات با حفظ هر دو واحد کار رفع شد. بدون فعال‌سازی روی اجرای مشترک ۳۱۰۰.
 
 - مطابق اصلاح صریح مالک محصول، پنل «ارتباط منابع انسانی با بخش‌های سامانه» از پوسته مشترک تمام صفحه‌ها و لینک ارجاع از جزئیات پرونده HR حذف شد. کد رابط و client اختصاصی همین پنل نیز حذف شدند؛ پارامتر قدیمی `hrConnections` دیگر آن را نمایش نمی‌دهد.
 - سرویس‌ها و قراردادهای Backend، داده‌های ثبت‌شده، مجوزها و اتصال واقعی حساب کاربری/ارز/سند/کارمند در فرم‌های اصلی حفظ شده‌اند. بدون Migration یا تغییر Dependency و بدون جایگزینی Runtime مشترک. شاخه `codex/pc-b-hr-backend-only-0912`؛ نتیجه کنترل‌ها و PR در `docs/tasks/HR-014-BACKEND-ONLY.md` ثبت می‌شود.
+
+## DASHBOARDS-001 — واگذاری اجرا به PC-C
+
+مالک محصول در 2026-09-13 اجرای بخش Dashboard را به `COMPUTER_ID=PC-C` واگذار
+کرد. Scope مجاز شامل ماژول و Route داشبورد Web، Aggregationهای مجاز داخل Reporting
+و اسناد اختصاصی Dashboard است. PC-C باید از آخرین `origin/develop` و Branch مستقل
+`codex/pc-c-dashboards-<task>` استفاده کند و Preview خود را فقط روی پورت 3000 متعلق
+به Worktree خودش اجرا کند.
+
+این واگذاری مالکیت داده یا منطق Finance، Sales، Reservations، Customers، HR،
+Marketing، Documents و Master Data را منتقل نمی‌کند. Dashboard فقط Projection یا
+Public Contract تاییدشده را مصرف می‌کند و حق Query مستقیم جدول عملیاتی یا نمایش
+عدد ساختگی ندارد. هیچ Migration، Schema، Seed، Dependency/Lockfile، قرارداد مشترک
+یا فایل Navigation با این مجوز رزرو نشده است. جزئیات در
+[DASHBOARDS-PC-C-AUTHORIZATION](tasks/DASHBOARDS-PC-C-AUTHORIZATION.md) ثبت شده
+است.
 
 ## WORKBENCH-021 — مخاطبان، گروه و فوروارد پیام
 

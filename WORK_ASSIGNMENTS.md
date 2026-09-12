@@ -1,9 +1,31 @@
 # Work Assignments
 
-## HR-014-BACKEND-ONLY — PC-B — READY_FOR_REVIEW
+## HR-014-BACKEND-ONLY — PC-B — MERGE_AUTHORIZED
 
 - User explicitly removes the standalone HR connections panel and wants integrations behind the existing forms. Reserve the central AppShell outlet removal, HR record referral link and now-unreachable referral UI/client/tests on `codex/pc-b-hr-backend-only-0912` from `origin/develop@6a4e0410`. Backend services, contracts, persisted records, permissions and the form directory/document/currency integrations stay intact. No migration, dependency or runtime takeover. Existing visibility context is retained for consumer compatibility. Push a review PR to develop; no automatic merge under the updated instructions.
-- Removed the global outlet and referral entry point plus its unused presentation files. Web lint/typecheck, all 260 existing HR/Organizations/layout tests and the 46-route production build passed. No backend/contract/database diff and no remaining `hrConnections` UI entry points. Implementation reservation released for review; no merge or shared-runtime activation.
+- Removed the global outlet and referral entry point plus its unused presentation files. Web lint/typecheck, all 260 existing HR/Organizations/layout tests and the 46-route production build passed. No backend/contract/database diff and no remaining `hrConnections` UI entry points. Implementation reservation released. User explicitly authorized merging PR #226; reconcile documentation additions from develop while preserving both work items, then merge after CI. No shared-runtime activation.
+
+## DASHBOARDS-001 — PC-C — AUTHORIZED / PLANNED
+
+- با دستور صریح مالک محصول در 2026-09-13، اجرای Full-Stack بخش Dashboard به
+  `COMPUTER_ID=PC-C` واگذار شد. Workspace مقصد `F:/Projects/Rubi` و Worktree
+  پیشنهادی `F:/Projects/Rubi/.worktrees/dashboards-001` است؛ PC-C باید وجود،
+  Writable بودن و Remote صحیح را روی دستگاه خودش تایید کند.
+- محدوده انحصاری این واحد: `apps/web/src/modules/dashboard/**`،
+  `apps/web/src/app/(crm)/dashboard/**`، Aggregationهای Dashboard در
+  `apps/api/src/reporting/**` و `docs/tasks/DASHBOARDS-*.md`. Branchها فقط با الگوی
+  `codex/pc-c-dashboards-<task>` ساخته شوند. اجرای محلی روی پورت 3000 مجاز است و
+  فقط Listener متعلق به همان Worktree قابل توقف یا جایگزینی است.
+- Dashboard فقط Public Contract، Approved View یا Projection نسخه‌دار ماژول مالک
+  را مصرف می‌کند. تعریف و صحت شاخص‌های Finance، Sales، Reservations، Customers،
+  HR، Marketing، Documents و Master Data نزد مالک همان ماژول باقی می‌ماند؛ Query
+  مستقیم جدول یا Repository خصوصی، محاسبه مجدد وضعیت کسب‌وکار و داده ساختگی ممنوع است.
+- Migration، Schema، Seed، Dependency/Lockfile، Dashboard shared-contract/root
+  export و Central UI/Navigation برای این مجوز رزرو نشده‌اند. هر نیاز واقعی به فایل
+  مشترک یا قرارداد producer باید پیش از تغییر با مالک آن ثبت و جداگانه رزرو شود.
+- مرجع کامل Scope، امنیت، قفل‌ها و خروجی اجباری:
+  `docs/tasks/DASHBOARDS-PC-C-AUTHORIZATION.md`. Merge، Force Push، تغییر مستقیم
+  `main`/`develop` و بازنویسی تغییرات PC-A/PC-B مجاز نیست.
 
 ## WORKBENCH-021 — PC-B — LOCAL_COMPLETE / RUNTIME_ACTIVE
 
