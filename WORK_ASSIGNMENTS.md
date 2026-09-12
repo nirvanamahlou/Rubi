@@ -29,7 +29,29 @@
   خارج از Scope باید پیش از اجرا با هر دو مالک ثبت شود. Merge، Force Push و تغییر
   مستقیم `main`/`develop` مجاز نیست. مرجع کامل:
   `docs/tasks/REPORTING-PC-C-AUTHORIZATION.md`.
-## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — IN_PROGRESS / FX_SNAPSHOT_FOLLOWUP / PERSISTENCE_BLOCKED
+## SALES-PRICE-MANAGEMENT-0912 — PC-A — READY_FOR_REVIEW / UI_PREVIEW
+
+- درخواست صریح مالک در 2026-09-12: افزودن آیتم مستقل «مدیریت قیمت» در گروه «فروش»
+  برای تغییر روزانه قیمت تورها و بلیت‌های ملکی و دریافت خروجی بنر قیمت. `COMPUTER_ID=PC-A`.
+- Branch مستقل `codex/pc-a-pricing-management` به‌صورت stacked از نسخه قابل مشاهده
+  Finance `77e181d` ساخته شد تا ناوبری تأییدشده کاربر حفظ شود؛ Merge مقصد فقط پس از
+  تعیین تکلیف PR #153 انجام می‌شود.
+- محدوده رزروشده: ماژول Web جدید `apps/web/src/modules/pricing-management/**`، route
+  `/pricing-management`، metadata/icon/render ناوبری و تست‌های مربوط، و اسناد همین Task.
+  فایل‌های API/Ticket/Tour/Sales موجود، Schema/Migration/Seed، Permission، داده عملیاتی،
+  Dependency/Lockfile و Listenerهای دیگر تغییر نمی‌کنند.
+- قیمت فروش طبق قرارداد موجود متعلق به Sales است، اما Producer فعلی تور/بلیت قرارداد
+  قیمت روزانه و mutation پایدار ندارد. این Slice فقط ویرایش/اعتبارسنجی Preview و تولید
+  واقعی PNG در مرورگر از داده صریحاً synthetic دارد؛ ذخیره سروری یا ادعای انتشار قیمت
+  تا قرارداد عمومی، Permission و Migration مستقل ممنوع است.
+- نتیجه تحویل: route مستقل `/pricing-management` بلافاصله پس از «قرارداد» در گروه فروش،
+  فیلتر تاریخ/نوع/جست‌وجو، ویرایش و اعتبارسنجی قیمت، انتخاب اقلام بنر، سه تم و خروجی
+  واقعی PNG مربع ۱۲۰۰ پیکسل. ۲۳ تست هدفمند، Web typecheck، lint محدود و Production
+  Build با ۴۲ مسیر موفق‌اند. Browser صفحه و پیام موفقیت ساخت PNG را بدون خطای Console
+  تأیید کرد؛ Commit `c8f41fc` Push و Draft PR #161 به شاخه مالی stacked باز شد؛ ذخیره
+  عملیاتی همچنان خارج از این Slice است.
+
+## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — READY_FOR_REVIEW / PERSISTENCE_BLOCKED
 
 - درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
   دریافت/پرداخت در فضای مستقل `/finance`. Branch مستقل

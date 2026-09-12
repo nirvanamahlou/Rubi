@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Bot,
+  BadgeDollarSign,
   Building2,
   CalendarCheck2,
   CircleDollarSign,
@@ -46,6 +47,7 @@ const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/reservations/hotel-rates': Building2,
   '/ticket-management': Ticket,
   '/sales': Handshake,
+  '/pricing-management': BadgeDollarSign,
   '/purchases': PackageSearch,
   '/finance': CircleDollarSign,
   '/finance/requests': Inbox,
@@ -79,6 +81,7 @@ export const navigationGroups = [
     title: 'فروش و ارتباط با مشتری',
     hrefs: [
       '/sales',
+      '/pricing-management',
       '/customers',
       '/customer-affairs',
       '/organizations',
