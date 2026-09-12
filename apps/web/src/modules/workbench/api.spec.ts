@@ -31,6 +31,10 @@ function dependencies() {
       data: [],
       meta: { page: 1, pageSize: 10, total: 12, totalPages: 2 },
     }),
+    activity: vi.fn().mockResolvedValue({ data: [] }),
+    notes: vi.fn().mockResolvedValue({ data: [], folders: [] }),
+    calendar: vi.fn().mockResolvedValue({ data: [] }),
+    conversations: vi.fn().mockResolvedValue({ data: [] }),
   };
 }
 describe('native workbench owner services', () => {
@@ -43,6 +47,7 @@ describe('native workbench owner services', () => {
     );
     expect(deps.notifications).not.toHaveBeenCalled();
     expect(deps.documents).not.toHaveBeenCalled();
+    expect(deps.activity).not.toHaveBeenCalled();
   });
   it('uses server-scoped personal files and actual notification counts', async () => {
     const deps = dependencies();

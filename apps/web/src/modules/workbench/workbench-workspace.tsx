@@ -3,7 +3,7 @@ import { WorkbenchFeedback } from './workbench-feedback';
 import { WorkbenchFeedbackDetail } from './workbench-feedback-detail';
 import { WorkbenchSelect } from './workbench-select';
 
-import type { NotificationItemV1 } from '@rubi/contracts';
+import type { NotificationItemV1, WorkbenchActivityV1 } from '@rubi/contracts';
 import {
   Activity,
   ArrowUpLeft,
@@ -65,6 +65,7 @@ import { PasswordChange } from './password-change';
 import { allowedWorkbenchDestinations } from './connections';
 import { WorkbenchHrNotifications } from './workbench-hr-notifications';
 import { WorkbenchCustomerAffairsReferrals } from './workbench-customer-affairs-referrals';
+import { WorkbenchOwnRequests } from './workbench-own-requests';
 import { NewRequestDialog } from './new-request-dialog';
 import { messageUnits } from './message-templates';
 
@@ -88,6 +89,7 @@ export function WorkbenchWorkspace() {
   const [home, setHome] = useState<WorkbenchHome | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [requestsVersion, setRequestsVersion] = useState(0);
   const [unauthorized, setUnauthorized] = useState(false);
   const [pendingRead, setPendingRead] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
@@ -322,17 +324,23 @@ export function WorkbenchWorkspace() {
                   />
                   <Metric
                     title="کارهای شخصی"
-                    value={null}
-                    detail="این قابلیت هنوز فعال نشده است"
+                    value={personalWorkCount(home)}
+                    detail="یادداشت‌های چک‌لیستی و رویدادهای باز"
                     icon={ClipboardList}
                     tone="green"
+                    onClick={() => selectTab('notes')}
                   />
                   <Metric
                     title="گفت‌وگوهای داخلی"
-                    value={null}
-                    detail="این قابلیت هنوز فعال نشده است"
+                    value={
+                      home.conversations.status === 'ready'
+                        ? home.conversations.data.data.length
+                        : null
+                    }
+                    detail={conversationMetricDetail(home)}
                     icon={MessageSquare}
                     tone="violet"
+                    onClick={() => selectTab('messages')}
                   />
                 </div>
                 <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
@@ -440,6 +448,9 @@ export function WorkbenchWorkspace() {
                 />
               </TabsContent>
               <TabsContent value="requests" className="space-y-4">
+                <WorkbenchOwnRequests
+                  key={`${home.user.id}-${requestsVersion}`}
+                />
                 <WorkbenchCustomerAffairsReferrals
                   enabled={home.user.permissions.includes(
                     'customer_affairs.ticket.read',
@@ -499,19 +510,17 @@ export function WorkbenchWorkspace() {
                 <Card className="p-5">
                   <h2 className="font-bold mb-2">فعالیت‌های ثبت‌شده شما</h2>
                   <p className="text-sm text-muted-foreground mb-4">
-                    فعالیت‌هایی که در آخرین اعلان‌های قابل‌مشاهده، با حساب شما
-                    ثبت شده‌اند.
+                    آخرین عملیات موفقی که با حساب شما در CRM ثبت شده‌اند.
                   </p>
-                  <NotificationFeed
-                    home={home}
-                    activityOnly
-                    pendingRead={pendingRead}
-                    onRead={markRead}
-                  />
+                  <ActivityFeed resource={home.activity} />
                 </Card>
               </TabsContent>
               <TabsContent value="calendar">
-                <WorkbenchCalendar />
+                <WorkbenchCalendar
+                  {...(home.user.branches[0]?.id
+                    ? { branchId: home.user.branches[0].id }
+                    : {})}
+                />
               </TabsContent>
               <TabsContent value="account">
                 <Card className="overflow-hidden lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
@@ -652,7 +661,18 @@ export function WorkbenchWorkspace() {
         </Dialog>
       )}
       {home && (
-        <NewRequestDialog open={requestOpen} onOpenChange={setRequestOpen} />
+        <NewRequestDialog
+          open={requestOpen}
+          onOpenChange={setRequestOpen}
+          {...(home.user.branches[0]?.id
+            ? { branchId: home.user.branches[0].id }
+            : {})}
+          onCreated={() => {
+            setRequestsVersion((current) => current + 1);
+            selectTab('requests');
+            void load();
+          }}
+        />
       )}
     </div>
   );
@@ -722,6 +742,107 @@ function QuickLink({ href, label }: { href: string; label: string }) {
     </Link>
   );
 }
+
+function personalWorkCount(home: WorkbenchHome): number | null {
+  if (home.notes.status !== 'ready' && home.calendar.status !== 'ready')
+    return null;
+  const checklistItems =
+    home.notes.status === 'ready'
+      ? home.notes.data.data.reduce(
+          (count, note) =>
+            count + note.items.filter((item) => !item.done).length,
+          0,
+        )
+      : 0;
+  const openEvents =
+    home.calendar.status === 'ready'
+      ? home.calendar.data.data.filter(
+          (event) =>
+            event.status !== 'COMPLETED' && event.status !== 'CANCELLED',
+        ).length
+      : 0;
+  return checklistItems + openEvents;
+}
+
+function conversationMetricDetail(home: WorkbenchHome): string {
+  if (home.conversations.status !== 'ready')
+    return home.conversations.status === 'error'
+      ? home.conversations.message
+      : 'گفت‌وگوها قابل مشاهده نیستند';
+  const unread = home.conversations.data.data.reduce(
+    (total, conversation) => total + conversation.unreadCount,
+    0,
+  );
+  return unread
+    ? `${unread.toLocaleString('fa-IR')} پیام خوانده‌نشده`
+    : 'همه پیام‌ها خوانده شده‌اند';
+}
+
+const activityLabels: Readonly<Record<string, string>> = {
+  'workbench.folder.create': 'پوشه یادداشت ایجاد شد',
+  'workbench.note.create': 'یادداشت ایجاد شد',
+  'workbench.note.update': 'یادداشت ویرایش شد',
+  'workbench.note.delete': 'یادداشت حذف شد',
+  'workbench.calendar.create': 'رویداد تقویم ایجاد شد',
+  'workbench.calendar.update': 'رویداد تقویم ویرایش شد',
+  'workbench.calendar.delete': 'رویداد تقویم حذف شد',
+  'iam.profile.update': 'اطلاعات شخصی ویرایش شد',
+};
+
+function ActivityFeed({ resource }: { resource: WorkbenchHome['activity'] }) {
+  if (resource.status !== 'ready')
+    return (
+      <Alert
+        tone="error"
+        title="فعالیت‌ها دریافت نشدند"
+        description={
+          resource.status === 'error'
+            ? resource.message
+            : 'مشاهده فعالیت‌ها مجاز نیست.'
+        }
+      />
+    );
+  if (!resource.data.data.length)
+    return (
+      <EmptyState
+        title="هنوز فعالیتی ثبت نشده است"
+        description="عملیات موفق شما در بخش‌های CRM در این فهرست ثبت می‌شوند."
+      />
+    );
+  return (
+    <ul className="divide-y divide-border">
+      {resource.data.data.map((item) => (
+        <ActivityRow key={item.id} item={item} />
+      ))}
+    </ul>
+  );
+}
+
+function ActivityRow({ item }: { item: WorkbenchActivityV1 }) {
+  return (
+    <li className="flex flex-wrap items-center gap-3 py-4 first:pt-0 last:pb-0">
+      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+        <Activity aria-hidden="true" className="size-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold">
+          {activityLabels[item.action] ?? item.action}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {item.entityType}
+          {item.entityId ? ` · ${item.entityId}` : ''}
+        </p>
+      </div>
+      <time
+        className="text-xs text-muted-foreground"
+        dateTime={item.occurredAt}
+      >
+        {workbenchDate(item.occurredAt)}
+      </time>
+    </li>
+  );
+}
+
 function NotificationFeed({
   home,
   activityOnly = false,

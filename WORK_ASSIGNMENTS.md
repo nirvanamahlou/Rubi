@@ -26,6 +26,30 @@
 - مرجع کامل Scope، امنیت، قفل‌ها و خروجی اجباری:
   `docs/tasks/DASHBOARDS-PC-C-AUTHORIZATION.md`. Merge، Force Push، تغییر مستقیم
   `main`/`develop` و بازنویسی تغییرات PC-A/PC-B مجاز نیست.
+- COMPUTER_ID=PC-B. User explicitly requests a full Workbench integration audit,
+  implementation of missing internal/cross-CRM connections, push and merge. Branch
+  `codex/pc-b-workbench-integrations` starts from `origin/develop@6a4e041`.
+- Reserve the Workbench Web module, additive Workbench/Messaging API and contracts,
+  focused tests, and task/status documentation. Integrate the already completed
+  persisted-feedback, messaging-template and Customer Affairs producer slices while
+  preserving their module ownership, authorization, branch scope and migrations.
+- Cross-module rule: Workbench consumes IAM, Notifications, Documents, HR and Customer
+  Affairs only through their public services/contracts. It stores references and deep
+  links, never edits another module's tables. No dependency/lockfile change. Any new
+  Prisma migration or shared-contract expansion remains pending an explicit current
+  lock check before implementation; existing completed additive migrations may be
+  integrated and rehearsed together.
+- Current lock check completed after integrating the released WORKBENCH-034,
+  WORKBENCH-021 and CUSTOMER-AFFAIRS-002 migrations. No newer active owner exists on
+  fetched `origin/develop`; reserve `Migration Owner = PC-B/WORKBENCH-036`, the
+  additive Workbench/Profile/Messaging/Documents reference tables and compatible
+  public-contract additions. This task adds no destructive DDL and releases these
+  locks after its combined PR is opened.
+- Backend audit completed: Workbench-owned notes/calendar persist locally; IAM owns
+  profile and activity; Documents owns file metadata/favorites; Messaging owns
+  conversations/read state/attachments; Customer Affairs owns requests/referrals;
+  HR resolves destination users; Notifications owns delivery/read state. Cross-module
+  calls use exported services, including server-side calendar aggregation.
 
 ## B2B-CRM-CONNECTIONS-002 — PC-B — READY_FOR_REVIEW / TESTED
 

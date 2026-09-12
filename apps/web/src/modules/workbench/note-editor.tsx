@@ -26,7 +26,7 @@ export function NoteEditor({
   onOpenChange: (open: boolean) => void;
   initial?: NoteDraft | undefined;
   folders?: string[];
-  onApply?: (draft: NoteDraft) => void;
+  onApply?: (draft: NoteDraft) => void | Promise<void>;
 }) {
   const [title, setTitle] = useState(initial?.title ?? '');
   const [body, setBody] = useState(initial?.body ?? '');
@@ -93,7 +93,7 @@ export function NoteEditor({
                 itemText.trim()
               )
                 return;
-              onApply?.({
+              void onApply?.({
                 id: initial?.id ?? crypto.randomUUID(),
                 title: title.trim(),
                 body,
@@ -106,11 +106,6 @@ export function NoteEditor({
               });
             }}
           >
-            <Alert
-              tone="warning"
-              title="ذخیره یادداشت هنوز در دسترس نیست"
-              description="اعمال تغییرات، کارت پیش‌نویس همین صفحه را به‌روز می‌کند؛ در حساب ذخیره نمی‌شود و با بارگذاری مجدد از بین می‌رود."
-            />
             <div className="space-y-2">
               <p className="text-sm font-semibold">شروع از قالب یادداشت</p>
               <div className="flex flex-wrap gap-2">
@@ -160,7 +155,7 @@ export function NoteEditor({
                 ))}
               </div>
               <p className="text-xs text-muted-foreground">
-                قالب‌ها نمونهٔ قابل ویرایش‌اند و یادداشت ذخیره‌شده نیستند.
+                قالب‌ها قابل ویرایش‌اند و پس از ثبت در حساب شما ذخیره می‌شوند.
               </p>
             </div>
             <div className="space-y-2">
@@ -327,7 +322,7 @@ export function NoteEditor({
                 aria-describedby="workbench-note-save-status"
               >
                 <Save className="size-4" aria-hidden="true" />
-                اعمال در پیش‌نویس
+                ذخیره یادداشت
               </Button>
               <Button type="button" variant="outline" onClick={close}>
                 انصراف
@@ -338,7 +333,7 @@ export function NoteEditor({
               >
                 {itemText.trim()
                   ? 'مورد نوشته‌شده را به چک‌لیست اضافه یا پاک کنید.'
-                  : 'پیش‌نویس در حساب ذخیره نمی‌شود.'}
+                  : 'یادداشت در حساب شما ذخیره می‌شود.'}
               </span>
             </div>
           </form>

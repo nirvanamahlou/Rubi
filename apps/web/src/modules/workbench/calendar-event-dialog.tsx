@@ -32,7 +32,7 @@ export function CalendarEventDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreate: (draft: CalendarEventDraft) => void;
+  onCreate: (draft: CalendarEventDraft) => void | Promise<void>;
   initialDate: string;
 }) {
   const [title, setTitle] = useState('');
@@ -41,6 +41,7 @@ export function CalendarEventDialog({
   const [link, setLink] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [error, setError] = useState('');
+  const [pending, setPending] = useState(false);
 
   function reset() {
     setTitle('');
@@ -51,7 +52,7 @@ export function CalendarEventDialog({
     setError('');
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const safeLink = normalizeCalendarLink(link);
     if (!title.trim()) {
@@ -71,15 +72,24 @@ export function CalendarEventDialog({
       setError(imageError);
       return;
     }
-    onCreate({
-      title: title.trim(),
-      date,
-      description: description.trim(),
-      linkUrl: safeLink,
-      image,
-    });
-    reset();
-    onOpenChange(false);
+    setPending(true);
+    try {
+      await onCreate({
+        title: title.trim(),
+        date,
+        description: description.trim(),
+        linkUrl: safeLink,
+        image,
+      });
+      reset();
+      onOpenChange(false);
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : 'ذخیره رویداد انجام نشد.',
+      );
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -101,7 +111,10 @@ export function CalendarEventDialog({
         <DialogDescription>
           تاریخ، توضیحات و پیوست‌های رویداد را وارد کنید.
         </DialogDescription>
-        <form className="mt-5 space-y-5" onSubmit={submit}>
+        <form
+          className="mt-5 space-y-5"
+          onSubmit={(event) => void submit(event)}
+        >
           <div className="grid gap-4 sm:grid-cols-2">
             <label
               className="space-y-2 text-sm font-semibold"
@@ -227,9 +240,9 @@ export function CalendarEventDialog({
             >
               انصراف
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={pending}>
               <CalendarPlus aria-hidden="true" className="size-4" />
-              افزودن به تقویم
+              {pending ? 'در حال ذخیره…' : 'افزودن به تقویم'}
             </Button>
           </div>
         </form>

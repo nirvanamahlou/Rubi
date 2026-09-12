@@ -121,6 +121,31 @@ export const customerAffairsApi = {
       },
       body: JSON.stringify(input),
     }),
+  createWorkbenchRequest: (
+    input: CustomerAffairsTicketInput,
+    branchId: string,
+  ) =>
+    request<{ data: CustomerAffairsTicketView }>('/workbench/requests', {
+      method: 'POST',
+      headers: {
+        'idempotency-key': crypto.randomUUID(),
+        'x-branch-id': branchId,
+      },
+      body: JSON.stringify(input),
+    }),
+  workbenchRequests: () =>
+    request<{
+      data: Array<{
+        id: string;
+        trackingNumber: string;
+        subject: string;
+        destinationUnit: string | null;
+        status: string;
+        priority: string;
+        nextActionAt: string;
+        updatedAt: string;
+      }>;
+    }>('/workbench/requests'),
   addTicketTimeline: (id: string, input: CustomerAffairsTimelineInput) =>
     request(`/tickets/${id}/timeline`, {
       method: 'POST',

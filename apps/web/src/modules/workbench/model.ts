@@ -2,6 +2,10 @@ import type {
   DocumentListResponseV1,
   LoginResponse,
   NotificationListResponseV1,
+  MessagingConversationsResponseV1,
+  WorkbenchActivityResponseV1,
+  WorkbenchCalendarResponseV1,
+  WorkbenchNotesResponseV1,
 } from '@rubi/contracts';
 
 export const workbenchTabs = [
@@ -27,6 +31,10 @@ export interface WorkbenchHome {
   user: LoginResponse['user'];
   notifications: Resource<NotificationListResponseV1>;
   documents: Resource<DocumentListResponseV1>;
+  activity: Resource<WorkbenchActivityResponseV1>;
+  notes: Resource<WorkbenchNotesResponseV1>;
+  calendar: Resource<WorkbenchCalendarResponseV1>;
+  conversations: Resource<MessagingConversationsResponseV1>;
 }
 export function safeWorkbenchHref(value: string | null): string | null {
   if (

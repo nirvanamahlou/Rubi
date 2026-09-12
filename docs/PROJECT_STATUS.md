@@ -22,6 +22,16 @@ Public Contract تاییدشده را مصرف می‌کند و حق Query مس�
 یا فایل Navigation با این مجوز رزرو نشده است. جزئیات در
 [DASHBOARDS-PC-C-AUTHORIZATION](tasks/DASHBOARDS-PC-C-AUTHORIZATION.md) ثبت شده
 است.
+## WORKBENCH-036 — اتصال کامل بک‌اند میزکار
+
+یادداشت و تقویم شخصی، پروفایل و عکس، علاقه‌مندی اسناد، پیوست و unread پیام،
+درخواست‌های داخلی و نظرسنجی اکنون ذخیره پایدار دارند. Workbench داده‌های IAM،
+Documents، Messaging، Customer Affairs، HR و Notifications را فقط از سرویس عمومی
+مالک مصرف می‌کند. تقویم نیز ارجاع‌های مجاز Customer Affairs را در API میزکار
+تجمیع می‌کند. مسیریابی درخواست به کاربر فعال واحد، اعلان تراکنشی، ناشناس‌سازی
+گیرنده و کنترل عضویت/شعبه پیاده شده‌اند. ۲۴ تست سرویس API، ۱۰ تست HTTP اسناد و
+۴۷ تست Web همراه lint/typecheck پاس شدند؛ جزئیات در
+[WORKBENCH-036](tasks/WORKBENCH-036.md) ثبت است.
 
 ## WORKBENCH-021 — مخاطبان، گروه و فوروارد پیام
 

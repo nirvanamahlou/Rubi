@@ -1,5 +1,23 @@
 # مدل داده و ERD اولیه
 
+## WORKBENCH-036 — داده‌های شخصی و ارتباط‌های بک‌اند
+
+- `workbench_note_folders` و `workbench_notes` در مالکیت Workbench و با کلید
+  کاربر IAM هستند. FK مرکب پوشه مانع انتساب یادداشت به پوشه کاربر دیگر می‌شود؛
+  JSON چک‌لیست باید آرایه باشد و `version` برای optimistic concurrency است.
+- `workbench_calendar_events` رویداد کاربر را در شعبه مجاز نگه می‌دارد. کاربر،
+  شعبه و تصویر Documents FK واقعی‌اند؛ لینک فقط metadata رویداد است. ارجاع‌های
+  Customer Affairs کپی نمی‌شوند و در query service تقویم از مالک دریافت می‌شوند.
+- `iam_user_profiles` افزونه یک‌به‌یک User برای تلفن و مرجع عکس است. تغییر هویت
+  و این رکورد در سرویس IAM و یک تراکنش همراه Audit انجام می‌شود.
+- `document_favorites` رابطه چندبه‌چند شخصی User/Document است. Documents مالک
+  ایجاد/حذف و projection دسترسی آن است؛ Workbench جدول را مستقیم نمی‌خواند.
+- `messaging_message_attachments` مرجع پیام/سند و عنوان snapshot را نگه می‌دارد.
+  `messaging_members.last_read_at` مبنای شمارش خوانده‌نشده همان عضو است.
+  Documents مالک فایل و Messaging مالک رابطه پیوست است.
+
+جزئیات قرارداد، مجوز و QA در [WORKBENCH-036](tasks/WORKBENCH-036.md) آمده است.
+
 ## WORKBENCH-034 — نظرسنجی و پیشنهادها
 
 Workbench مالک `workbench_feedback` است. هر رکورد UUID و کد پیگیری یکتا، FK واقعی شعبه و فرستنده، واحد مقصد محدودشده، موضوع و متن، انتخاب ناشناس، تعداد پیوست و زمان UTC دارد. `request_hash` همراه UUID ارسالی از ایجاد دوباره یا استفاده متفاوت از همان شناسه جلوگیری می‌کند. شناسه فرستنده برای Audit ذخیره می‌شود و در اعلان ناشناس Actor تهی است؛ projection گیرنده نباید فرستنده ناشناس را بازگرداند.

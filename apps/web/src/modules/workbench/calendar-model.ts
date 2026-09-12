@@ -16,6 +16,7 @@ export interface CalendarEntry {
   description?: string;
   imageName?: string;
   imageUrl?: string;
+  imageDocumentId?: string;
   linkUrl?: string;
 }
 export interface CalendarFilter {

@@ -1,8 +1,8 @@
 'use client';
 import { WorkbenchSelect } from './workbench-select';
 
-import { useState } from 'react';
-import { LockKeyhole, Plus, Search, Star, StickyNote } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Plus, RefreshCw, Search, Star, StickyNote } from 'lucide-react';
 import {
   Alert,
   Button,
@@ -16,6 +16,26 @@ import {
 import { DatePicker } from '@/components/ui/date-picker';
 import { NoteEditor } from './note-editor';
 import { filterNoteDrafts, noteTemplates, type NoteDraft } from './note-drafts';
+import { workbenchPersonalApi } from './workbench-personal-api';
+
+function noteInput(note: NoteDraft) {
+  return {
+    title: note.title,
+    body: note.body,
+    folder: note.folder,
+    tags: note.tags,
+    items: note.items,
+    pinned: note.pinned,
+    reminderAt: note.reminderAt ?? null,
+    ...(note.version ? { expectedVersion: note.version } : {}),
+  };
+}
+
+function storedNote(
+  note: Awaited<ReturnType<typeof workbenchPersonalApi.createNote>>['data'],
+): NoteDraft {
+  return { ...note, template: false };
+}
 
 export function WorkbenchNotes({
   open,
@@ -37,16 +57,62 @@ export function WorkbenchNotes({
   const [editing, setEditing] = useState<NoteDraft>();
   const [editorVersion, setEditorVersion] = useState(0);
   const [removed, setRemoved] = useState<NoteDraft>();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await workbenchPersonalApi.notes();
+      setNotes([
+        ...structuredClone(noteTemplates),
+        ...response.data.map(storedNote),
+      ]);
+      setFolders(response.folders);
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : 'دریافت یادداشت‌ها انجام نشد.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
   const shown = filterNoteDrafts(notes, search, folder, from, to);
   function edit(note: NoteDraft) {
     setEditing(note);
     setEditorVersion((v) => v + 1);
     onOpenChange(true);
   }
-  function update(id: string, change: Partial<NoteDraft>) {
+  async function update(id: string, change: Partial<NoteDraft>) {
+    const previous = notes.find((note) => note.id === id);
+    if (!previous) return;
+    const next = { ...previous, ...change };
     setNotes((current) =>
       current.map((note) => (note.id === id ? { ...note, ...change } : note)),
     );
+    if (previous.template) return;
+    try {
+      const response = await workbenchPersonalApi.updateNote(
+        id,
+        noteInput(next),
+      );
+      setNotes((current) =>
+        current.map((note) =>
+          note.id === id ? storedNote(response.data) : note,
+        ),
+      );
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : 'ذخیره یادداشت انجام نشد.',
+      );
+      await load();
+    }
   }
   function closeEditor(value: boolean) {
     onOpenChange(value);
@@ -57,13 +123,13 @@ export function WorkbenchNotes({
   }
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
-        <LockKeyhole className="size-4 shrink-0" />
-        <span>
-          پیش‌نویس خصوصی این صفحه؛ نمونه‌ها و تغییرات در حساب ذخیره نمی‌شوند و
-          با بارگذاری مجدد از بین می‌روند.
-        </span>
-      </div>
+      {error ? (
+        <Alert
+          tone="error"
+          title="عملیات یادداشت انجام نشد"
+          description={error}
+        />
+      ) : null}
       <Card className="overflow-hidden">
         <div className="flex items-center justify-between gap-3 border-b border-border p-5">
           <h2 className="flex items-center gap-2 text-lg font-bold">
@@ -73,6 +139,14 @@ export function WorkbenchNotes({
           <Button variant="outline" onClick={() => setFolderOpen(true)}>
             <Plus className="size-4" />
             پوشه جدید
+          </Button>
+          <Button
+            variant="outline"
+            disabled={loading}
+            onClick={() => void load()}
+          >
+            <RefreshCw className="size-4" />
+            به‌روزرسانی
           </Button>
         </div>
         <div className="grid gap-3 border-b border-border p-4 lg:grid-cols-[minmax(0,1fr)_170px_170px_140px]">
@@ -170,7 +244,7 @@ export function WorkbenchNotes({
                       className="mt-1.5 size-4 shrink-0 accent-primary"
                       checked={item.done}
                       onChange={(e) =>
-                        update(note.id, {
+                        void update(note.id, {
                           items: note.items.map((row, i) =>
                             i === index
                               ? { ...row, done: e.target.checked }
@@ -193,8 +267,8 @@ export function WorkbenchNotes({
                 <p className="text-xs text-muted-foreground">
                   {note.tags} {note.tags ? '• ' : ''}
                   {note.template
-                    ? 'قالب نمونه'
-                    : `پیش‌نویس ذخیره‌نشده${note.updatedAt ? ' • ' + new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short' }).format(new Date(note.updatedAt)) : ''}`}
+                    ? 'قالب آماده'
+                    : `ذخیره‌شده${note.updatedAt ? ' • ' + new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short' }).format(new Date(note.updatedAt)) : ''}`}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Button
@@ -208,7 +282,9 @@ export function WorkbenchNotes({
                     size="sm"
                     variant="outline"
                     aria-pressed={note.pinned}
-                    onClick={() => update(note.id, { pinned: !note.pinned })}
+                    onClick={() =>
+                      void update(note.id, { pinned: !note.pinned })
+                    }
                   >
                     {note.pinned ? 'برداشتن سنجاق' : 'سنجاق'}
                   </Button>
@@ -221,6 +297,17 @@ export function WorkbenchNotes({
                       setNotes((current) =>
                         current.filter((row) => row.id !== note.id),
                       );
+                      if (!note.template)
+                        void workbenchPersonalApi
+                          .deleteNote(note.id)
+                          .catch((reason) => {
+                            setError(
+                              reason instanceof Error
+                                ? reason.message
+                                : 'حذف یادداشت انجام نشد.',
+                            );
+                            void load();
+                          });
                     }}
                   >
                     حذف
@@ -237,12 +324,32 @@ export function WorkbenchNotes({
         </div>
         {removed && (
           <div className="flex items-center justify-between border-t border-border p-4 text-sm">
-            <span>کارت از این پیش‌نویس حذف شد.</span>
+            <span>یادداشت حذف شد.</span>
             <Button
               variant="ghost"
               onClick={() => {
-                setNotes((current) => [...current, removed]);
+                const candidate = removed;
                 setRemoved(undefined);
+                if (candidate.template) {
+                  setNotes((current) => [...current, candidate]);
+                  return;
+                }
+                void workbenchPersonalApi
+                  .createNote(noteInput(candidate))
+                  .then((response) =>
+                    setNotes((current) => [
+                      ...current,
+                      storedNote(response.data),
+                    ]),
+                  )
+                  .catch((reason) => {
+                    setError(
+                      reason instanceof Error
+                        ? reason.message
+                        : 'بازگردانی یادداشت انجام نشد.',
+                    );
+                    setRemoved(candidate);
+                  });
               }}
             >
               بازگردانی
@@ -256,32 +363,64 @@ export function WorkbenchNotes({
         onOpenChange={closeEditor}
         initial={editing}
         folders={folders}
-        onApply={(draft) => {
-          setNotes((current) =>
-            editing
-              ? current.map((note) =>
-                  note.id === editing.id ? { ...draft, id: editing.id } : note,
-                )
-              : [...current, draft],
-          );
-          closeEditor(false);
+        onApply={async (draft) => {
+          setError('');
+          try {
+            if (editing && !editing.template) {
+              const response = await workbenchPersonalApi.updateNote(
+                editing.id,
+                {
+                  ...noteInput(draft),
+                  ...(editing.version
+                    ? { expectedVersion: editing.version }
+                    : {}),
+                },
+              );
+              setNotes((current) =>
+                current.map((note) =>
+                  note.id === editing.id ? storedNote(response.data) : note,
+                ),
+              );
+            } else {
+              const response = await workbenchPersonalApi.createNote(
+                noteInput(draft),
+              );
+              setNotes((current) => [...current, storedNote(response.data)]);
+            }
+            closeEditor(false);
+          } catch (reason) {
+            setError(
+              reason instanceof Error
+                ? reason.message
+                : 'ذخیره یادداشت انجام نشد.',
+            );
+          }
         }}
       />
       <Dialog open={folderOpen} onOpenChange={setFolderOpen}>
         <DialogContent dir="rtl" className="max-w-md">
           <DialogTitle>پوشه جدید</DialogTitle>
-          <DialogDescription>
-            این پوشه فقط در پیش‌نویس همین صفحه ایجاد می‌شود.
-          </DialogDescription>
+          <DialogDescription>پوشه در حساب شما ذخیره می‌شود.</DialogDescription>
           <form
             className="mt-4 space-y-4"
             onSubmit={(event) => {
               event.preventDefault();
               const name = folderName.trim();
               if (!name || folders.includes(name)) return;
-              setFolders((current) => [...current, name]);
-              setFolderName('');
-              setFolderOpen(false);
+              void workbenchPersonalApi
+                .createFolder(name)
+                .then(() => {
+                  setFolders((current) => [...current, name]);
+                  setFolderName('');
+                  setFolderOpen(false);
+                })
+                .catch((reason) =>
+                  setError(
+                    reason instanceof Error
+                      ? reason.message
+                      : 'ذخیره پوشه انجام نشد.',
+                  ),
+                );
             }}
           >
             <Input

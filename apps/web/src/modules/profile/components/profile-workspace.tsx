@@ -15,6 +15,9 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { PersonalDetailsForm } from './personal-details-form';
+import { workbenchPersonalApi } from '@/modules/workbench/workbench-personal-api';
+import { uploadWorkbenchAttachments } from '@/modules/workbench/workbench-attachments';
+import { documentsApi } from '@/modules/documents/api/client';
 import {
   Badge,
   Card,
@@ -280,6 +283,41 @@ function ProfileField({
 }
 
 function PersonalPreferences({ profile }: { profile: AuthenticatedProfile }) {
+  const [personal, setPersonal] = useState<{
+    displayName: string;
+    email: string | null;
+    phone: string | null;
+    photoDocumentId: string | null;
+  } | null>(null);
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [error, setError] = useState('');
+  useEffect(() => {
+    let disposed = false;
+    let objectUrl = '';
+    void workbenchPersonalApi
+      .profile()
+      .then(async ({ data }) => {
+        if (disposed) return;
+        setPersonal(data);
+        if (data.photoDocumentId) {
+          const result = await documentsApi.preview(data.photoDocumentId);
+          if (disposed) return;
+          objectUrl = URL.createObjectURL(result.blob);
+          setPhotoUrl(objectUrl);
+        }
+      })
+      .catch((reason) =>
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : 'دریافت تنظیمات شخصی انجام نشد.',
+        ),
+      );
+    return () => {
+      disposed = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [profile.user.id]);
   return (
     <section className="min-w-0 space-y-5" dir="rtl">
       <PageHeader
@@ -287,15 +325,49 @@ function PersonalPreferences({ profile }: { profile: AuthenticatedProfile }) {
         title="تنظیمات شخصی"
         description="اطلاعات شخصی و عکس پروفایل خود را مدیریت کنید."
       />
-      <PersonalDetailsForm
-        key={profile.user.id}
-        username={profile.user.username}
-        initial={{
-          displayName: profile.user.displayName,
-          email: profile.user.email ?? '',
-          phone: '',
-        }}
-      />
+      {error ? (
+        <ErrorState title="تنظیمات شخصی دریافت نشد" description={error} />
+      ) : null}
+      {!personal && !error ? (
+        <Skeleton className="h-96 rounded-2xl" />
+      ) : personal ? (
+        <PersonalDetailsForm
+          key={`${profile.user.id}-${personal.photoDocumentId ?? 'none'}`}
+          username={profile.user.username}
+          initialPhotoUrl={photoUrl}
+          initial={{
+            displayName: personal.displayName,
+            email: personal.email ?? '',
+            phone: personal.phone ?? '',
+          }}
+          onSave={async (details, photo) => {
+            const branchId = profile.user.branches[0]?.id;
+            let photoDocumentId: string | null = personal.photoDocumentId;
+            if (photo) {
+              if (!branchId)
+                throw new Error('شعبه مجاز برای ذخیره عکس پیدا نشد.');
+              const uploaded = await uploadWorkbenchAttachments({
+                entityType: 'IamProfile',
+                entityId: profile.user.id,
+                title: `عکس پروفایل ${details.displayName}`,
+                description: 'عکس پروفایل ثبت‌شده از تنظیمات شخصی',
+                branchId,
+                files: [photo],
+                confidentiality: 'RESTRICTED',
+              });
+              if (!uploaded[0]) throw new Error('بارگذاری عکس انجام نشد.');
+              photoDocumentId = uploaded[0];
+            }
+            const photoBranchId = photoDocumentId ? (branchId ?? null) : null;
+            const response = await workbenchPersonalApi.updateProfile({
+              ...details,
+              photoDocumentId,
+              photoBranchId,
+            });
+            setPersonal(response.data);
+          }}
+        />
+      ) : null}
     </section>
   );
 }

@@ -1,8 +1,7 @@
 'use client';
 import { WorkbenchSelect } from './workbench-select';
 
-import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   CalendarDays,
@@ -13,7 +12,15 @@ import {
   ImageIcon,
   Search,
 } from 'lucide-react';
-import { Badge, Button, Card, EmptyState, Input } from '@/components/ui';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Input,
+  Skeleton,
+} from '@/components/ui';
 import {
   calendarMonthLabel,
   calendarParts,
@@ -39,6 +46,8 @@ import {
   CalendarEventDialog,
   type CalendarEventDraft,
 } from './calendar-event-dialog';
+import { workbenchPersonalApi } from './workbench-personal-api';
+import { uploadWorkbenchAttachments } from './workbench-attachments';
 
 const views = [
   ['month', 'ماه'],
@@ -68,9 +77,11 @@ const emptyEntries: readonly CalendarEntry[] = [];
 export function WorkbenchCalendar({
   entries = emptyEntries,
   sourceReady = false,
+  branchId,
 }: {
   entries?: readonly CalendarEntry[];
   sourceReady?: boolean;
+  branchId?: string;
 }) {
   const [today, setToday] = useState(calendarToday);
   const [anchor, setAnchor] = useState(calendarToday);
@@ -78,13 +89,15 @@ export function WorkbenchCalendar({
   const [view, setView] = useState<CalendarView>('month');
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
   const [localEntries, setLocalEntries] = useState<CalendarEntry[]>([]);
-  const imageUrls = useRef<string[]>([]);
+  const [connectedEntries, setConnectedEntries] = useState<CalendarEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [filter, setFilter] = useState<CalendarFilter>({
     query: '',
     status: 'open',
     priority: 'all',
   });
-  const allEntries = [...entries, ...localEntries];
+  const allEntries = [...entries, ...connectedEntries, ...localEntries];
   const filtered = filterCalendar(allEntries, filter);
   const visible = entriesInView(filtered, anchor, view);
   const days = calendarDays(anchor, view);
@@ -92,26 +105,94 @@ export function WorkbenchCalendar({
     (entry) => entry.dueAt && tehranDay(entry.dueAt) === selected,
   );
   const selectedMonth = calendarParts(anchor, 'persian');
-  const hasCalendarSource = sourceReady || localEntries.length > 0;
+  const hasCalendarSource = sourceReady || !loading;
   const dateLabel = (value: string) => formatCalendarValue(value, 'persian');
-  useEffect(
-    () => () => imageUrls.current.forEach((url) => URL.revokeObjectURL(url)),
-    [],
-  );
-  function createEvent(draft: CalendarEventDraft) {
-    const imageUrl = draft.image ? URL.createObjectURL(draft.image) : undefined;
-    if (imageUrl) imageUrls.current.push(imageUrl);
-    const entry: CalendarEntry = {
-      id: `local-event-${Date.now()}`,
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const personal = await workbenchPersonalApi.calendar();
+      setLocalEntries(
+        personal.data.map((row) => ({
+          id: row.id,
+          title: row.title,
+          dueAt: row.dueAt,
+          status: row.status.toLowerCase() as CalendarEntry['status'],
+          priority: row.priority.toLowerCase() as CalendarEntry['priority'],
+          ...(row.description ? { description: row.description } : {}),
+          ...(row.linkUrl ? { linkUrl: row.linkUrl } : {}),
+          ...(row.imageDocumentId
+            ? {
+                imageName: 'تصویر رویداد',
+                imageDocumentId: row.imageDocumentId,
+              }
+            : {}),
+        })),
+      );
+      setConnectedEntries(
+        personal.sources.customerAffairs.map((row) => ({
+          id: `referral-${row.id}`,
+          title: `${row.trackingNumber} — ${row.title}`,
+          description: row.ticketSubject,
+          dueAt: row.dueAt,
+          status:
+            row.status === 'DONE'
+              ? 'completed'
+              : row.status === 'IN_PROGRESS'
+                ? 'active'
+                : 'planned',
+          priority: 'high',
+          href: `/workbench?tab=requests&ticket=${encodeURIComponent(row.ticketId)}`,
+        })),
+      );
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : 'دریافت تقویم انجام نشد.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
+  async function createEvent(draft: CalendarEventDraft) {
+    if (!branchId)
+      throw new Error('برای ثبت رویداد باید یک شعبه مجاز داشته باشید.');
+    const id = crypto.randomUUID();
+    const imageDocumentIds = await uploadWorkbenchAttachments({
+      entityType: 'WorkbenchCalendarEvent',
+      entityId: id,
+      title: `تصویر رویداد: ${draft.title}`,
+      description: 'تصویر ثبت‌شده از تقویم میزکار',
+      branchId,
+      files: draft.image ? [draft.image] : [],
+    });
+    const response = await workbenchPersonalApi.createEvent({
+      id,
+      branchId,
       title: draft.title,
+      description: draft.description,
       dueAt: `${draft.date}T12:00:00+03:30`,
+      linkUrl: draft.linkUrl || null,
+      imageDocumentId: imageDocumentIds[0] ?? null,
+    });
+    const row = response.data;
+    const entry: CalendarEntry = {
+      id: row.id,
+      title: row.title,
+      dueAt: row.dueAt,
       status: 'planned',
       priority: 'normal',
-      ...(draft.description ? { description: draft.description } : {}),
-      ...(draft.image && imageUrl
-        ? { imageName: draft.image.name, imageUrl }
+      ...(row.description ? { description: row.description } : {}),
+      ...(row.imageDocumentId
+        ? {
+            imageName: draft.image?.name ?? 'تصویر رویداد',
+            imageDocumentId: row.imageDocumentId,
+          }
         : {}),
-      ...(draft.linkUrl ? { linkUrl: draft.linkUrl } : {}),
+      ...(row.linkUrl ? { linkUrl: row.linkUrl } : {}),
     };
     setLocalEntries((current) => [...current, entry]);
     const nextDate = parseIsoDate(draft.date);
@@ -192,19 +273,14 @@ export function WorkbenchCalendar({
                     {dateLabel(tehranDay(entry.dueAt)!)}
                   </time>
                 ) : null}
-                {entry.imageUrl ? (
-                  <Image
-                    src={entry.imageUrl}
-                    alt={
-                      entry.imageName
-                        ? `تصویر ${entry.imageName}`
-                        : 'تصویر رویداد'
-                    }
-                    width={160}
-                    height={96}
-                    unoptimized
-                    className="h-24 w-40 rounded-xl border border-border object-cover"
-                  />
+                {entry.imageDocumentId ? (
+                  <Button asChild size="sm" variant="outline">
+                    <Link
+                      href={`/documents?document=${encodeURIComponent(entry.imageDocumentId)}`}
+                    >
+                      مشاهده تصویر
+                    </Link>
+                  </Button>
                 ) : null}
               </div>
             </li>
@@ -297,12 +373,10 @@ export function WorkbenchCalendar({
           />
         </label>
       </Card>
-      {!sourceReady ? (
-        <p className="rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
-          رویدادهایی که خودتان اضافه می‌کنید در همین نشست مرورگر نمایش داده
-          می‌شوند.
-        </p>
+      {error ? (
+        <Alert tone="error" title="تقویم دریافت نشد" description={error} />
       ) : null}
+      {loading ? <Skeleton className="h-40" /> : null}
       <Card className="overflow-hidden">
         <div className="space-y-4 p-4 sm:p-5">
           <p className="text-sm text-muted-foreground">
