@@ -89,7 +89,7 @@ export const navigationGroups = [
   {
     id: 'finance',
     dotClass: 'bg-[#f7d184]',
-    title: 'امور مالی',
+    title: 'مالی',
     hrefs: ['/finance', '/purchases'],
   },
   {

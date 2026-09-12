@@ -3,13 +3,16 @@
 ## FINANCE-002A — READY_FOR_REVIEW / PERSISTENCE_BLOCKED — 2026-09-12
 
 - PC-A روی Branch `codex/pc-a-finance-core-accounting` از `origin/develop@4717b13`
-  دو فضای حسابداری و کارتابل مالی، Domain invariantهای Phase A و قراردادهای versioned
+  دو بخش داخلی حسابداری و کارتابل در ماژول مالی، Domain invariantهای Phase A و قراردادهای versioned
   دریافت/پرداخت را تکمیل کرد. Workspace قبلی FINANCE-001 حفظ شده است.
 - Commitهای `d513e08` و `6de5d94` Push و Draft PR #153 به `develop` ایجاد شد.
 - ۶۴ Contract test، ۱۹ Finance API test و ۱۴ Finance Web test پاس؛ lint/typecheck/build
   Web/API و Smoke مستقل Web3200/API4200 موفق است.
 - Prisma/Migration/Seed و runtime رزرواسیون تغییر نکرد. Persistence، Posting واقعی،
   Audit پایدار و Outbox/Event تا Handoff قفل Migration برابر `BLOCKED` باقی می‌مانند.
+- پیگیری رابط: ورودی منو اکنون «مالی و کارتابل درخواست‌ها» و عضو گروه «مالی» است؛
+  حسابداری/خزانه و کارتابل به‌صورت بخش‌های داخلی همان ماژول یگانه نمایش داده می‌شوند.
+  ۲۷ تست هدفمند Web، lint محدود، typecheck و Build نهایی ۴۰ مسیر موفق‌اند.
 - جزئیات: [FINANCE-002A-ACCOUNTING-AND-INBOX.md](tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md).
 
 ## HR-013 — اتصال فرم‌ها و ارجاع بین منابع انسانی و بخش‌های سامانه — آماده ادغام تأییدشده

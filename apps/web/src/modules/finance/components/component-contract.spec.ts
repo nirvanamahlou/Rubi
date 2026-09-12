@@ -46,9 +46,13 @@ describe('finance workspace component contract', () => {
     expect(pageSource).not.toContain('ModuleOverview');
   });
 
-  it('separates accounting from the financial request inbox', () => {
-    expect(coreSource).toContain('۱. حسابداری');
-    expect(coreSource).toContain('۲. مالی / کارتابل درخواست‌ها');
+  it('keeps accounting and the request inbox inside one finance module', () => {
+    expect(coreSource).toContain('مالی و کارتابل درخواست‌ها');
+    expect(coreSource).toContain('بخش‌های ماژول مالی و کارتابل درخواست‌ها');
+    expect(coreSource).toContain('حسابداری و خزانه');
+    expect(coreSource).toContain('کارتابل درخواست‌ها');
+    expect(coreSource).not.toContain('۱. حسابداری');
+    expect(coreSource).not.toContain('۲. مالی / کارتابل درخواست‌ها');
     expect(coreSource).toContain('درخت کدینگ حساب‌ها');
     expect(coreSource).toContain('گروه ← کل ← معین ← تفصیلی');
     expect(coreSource).toContain('حساب بانکی یا صندوق مقصد');

@@ -36,7 +36,7 @@ const expectedTitles = [
   'مدیریت و تعریف بلیط‌ها',
   'قرارداد',
   'خرید و تأمین',
-  'مالی و خزانه‌داری',
+  'مالی و کارتابل درخواست‌ها',
   'مارکتینگ',
   'آژانس‌ها و مشتریان سازمانی',
   'منابع انسانی',
@@ -67,6 +67,12 @@ describe('CRM navigation', () => {
         .find((group) => group.id === 'finance')
         ?.items.map((item) => item.href),
     ).toEqual(['/finance', '/purchases']);
+    expect(
+      groupedNavigationItems.find((group) => group.id === 'finance')?.title,
+    ).toBe('مالی');
+    expect(getNavigationItem('/finance')?.title).toBe(
+      'مالی و کارتابل درخواست‌ها',
+    );
     expect(
       groupedNavigationItems
         .find((group) => group.id === 'hr')

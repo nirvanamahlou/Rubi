@@ -112,9 +112,9 @@ export const navigationMessages = [
     description: 'خرید خدمات و تأمین‌کنندگان',
   },
   {
-    title: 'مالی و خزانه‌داری',
+    title: 'مالی و کارتابل درخواست‌ها',
     href: '/finance',
-    description: 'دریافت، پرداخت و خزانه',
+    description: 'حسابداری، دریافت، پرداخت و رسیدگی به درخواست‌های مالی',
   },
   { title: 'مارکتینگ', href: '/marketing', description: 'کمپین‌ها و مخاطبان' },
   {
