@@ -24,19 +24,11 @@ export function CreatedDateFilter({
         if (!invalid) onApply(start, end);
       }}
     >
-      <FormField label="ثبت پرونده از تاریخ">
-        <DatePicker
-          aria-label="ثبت پرونده از تاریخ"
-          value={start}
-          onChange={setStart}
-        />
+      <FormField label="از تاریخ">
+        <DatePicker aria-label="از تاریخ" value={start} onChange={setStart} />
       </FormField>
       <FormField label="تا تاریخ">
-        <DatePicker
-          aria-label="ثبت پرونده تا تاریخ"
-          value={end}
-          onChange={setEnd}
-        />
+        <DatePicker aria-label="تا تاریخ" value={end} onChange={setEnd} />
       </FormField>
       <Button type="submit" disabled={invalid}>
         اعمال بازه

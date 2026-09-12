@@ -5,6 +5,12 @@
 - User authorizes applying merged PR226 UI removal to Web3100. CA owner explicitly handed off runtime at b1da23bd. Reserve AppShell outlet and HR referral UI removal on codex/pc-b-hr-panel-runtime-0913; preserve all CA commits and API4190/PID33612, database and contracts. Isolated build, Web-only cutover after checks. No migration or dependency changes.
 
 
+## CA-STAFF-PICKER-CLARITY — PC-B — IMPLEMENTED / ACTIVATION_PENDING
+
+- Date visible/accessibility labels simplified. Public HR directory unlinked employees now remain visible as disabled options with explanation, loading/retry and user-ID guard. This does not create identity mappings or make unlinked employees assignable. HR rollout task reports policy-blocked activation; no restart attempted here. Runtime baseline retains earlier build. Details: `docs/tasks/CA-STAFF-PICKER-CLARITY.md`.
+
+- Reserve CA-only date labels/tests, assignee picker and helper tests, own docs on `codex/pc-b-ca-staff-picker-clarity` from b1da23bd. Consume unchanged public HR directory; show unlinked employees explicitly without using employee IDs as user IDs. No IAM/HR mutations, permission expansion, migration or dependency changes. HR task owns current Web rollout; no runtime replacement without handoff. Existing Rubi desktop/auth-walled UI targets preserved.
+
 ## CUSTOMER-AFFAIRS-REPORT-DATA-E2E — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
 
 - Added 24 synthetic requests, 36 tickets, 20 satisfaction responses and 8 corrective actions; preview rolled back and repeat apply added zero. Existing data preserved. Removed end-date parenthetical and localized DONE/CANCELLED report labels. Web 46 focused tests, scoped lint, typecheck/build passed; date-filter 3 tests rerun passed. Authenticated browser ticket lifecycle, search, same-day date range and month/year grids verified. One API database-connection termination interrupted the first note attempt; runtime recovered and workflow rerun passed, root cause unresolved. Details and runtime handoff: `docs/tasks/CUSTOMER-AFFAIRS-REPORT-DATA-E2E.md`. Reservation released after documentation commit; no HR UI changes included.

@@ -8,7 +8,8 @@ describe('created date range', () => {
     const html = renderToStaticMarkup(
       <CreatedDateFilter from="" to="" onApply={() => {}} />,
     );
-    expect(html).toContain('ثبت پرونده از تاریخ');
+    expect(html).toContain('از تاریخ');
+    expect(html).not.toContain('ثبت پرونده');
     expect(html).toContain('پاک‌کردن بازه');
     expect(html).not.toContain('(شامل این روز)');
     expect(html).not.toContain('type="date"');
