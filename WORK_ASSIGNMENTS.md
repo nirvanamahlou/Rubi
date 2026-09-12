@@ -1,6 +1,6 @@
 # Work Assignments
 
-## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — IN_PROGRESS / RECEIPT_ATTACHMENT_FOLLOWUP / PERSISTENCE_BLOCKED
+## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — READY_FOR_REVIEW / RECEIPT_ATTACHMENT_FOLLOWUP / PERSISTENCE_BLOCKED
 
 - درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
   دریافت/پرداخت در فضای مستقل `/finance`. Branch مستقل
@@ -47,6 +47,10 @@
   فیش‌های همراه درخواست در همان Dialog نمایش داده شوند. محدوده فقط مدل/Workspace/Test
   مالی و اسناد همین Task است؛ فایل جدید، Upload، Documents persistence یا قرارداد v1
   شکسته ایجاد نمی‌شود و attachment فقط از snapshot مرجع درخواست نمایش داده می‌شود.
+- نتیجه پیگیری سوم: حداقل طول توضیح مالی حذف و label آن اختیاری شد. Dialog فیش/مدرک
+  همراه را با نام، نوع، حجم، UTC و وضعیت Scan نمایش می‌دهد و حالت بدون فایل نیز روشن است؛
+  باینری در Finance کپی نمی‌شود. ۳۳ تست هدفمند Web، typecheck، lint محدود، Build ۴۱
+  مسیر و Browser QA نمایش فیش و label اختیاری موفق‌اند.
 
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 

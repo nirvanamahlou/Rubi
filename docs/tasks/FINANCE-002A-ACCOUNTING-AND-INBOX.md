@@ -127,3 +127,16 @@ Audit پایدار، Outbox/Inbox و اسناد Documents در گزارش نها
 - این اتصال فقط مدل و validation فرم است. ایجاد Receipt/Payment/Journal و تغییر مانده
   واقعی تا Persistence تراکنشی، Audit، Outbox و Migration مستقل همچنان مسدود است.
 - Commit پیگیری `70fde9b` روی origin Push و در Draft PR #153 ثبت شد.
+
+## پیگیری فیش همراه و توضیح اختیاری — 2026-09-12
+
+- توضیح مالی دیگر required نیست و متن خالی validation دریافت/پرداخت را رد نمی‌کند.
+- هر درخواست می‌تواند Snapshot مدارک همراه با reference، نام فایل، نوع، MIME، حجم، زمان
+  UTC و وضعیت Scan داشته باشد. Dialog همان metadata را نمایش می‌دهد؛ اگر مدرکی نرسیده
+  باشد، حالت خالی صریح دیده می‌شود.
+- باینری، signed URL یا فایل جعلی در Finance ساخته یا کپی نمی‌شود. نمایش/دانلود واقعی
+  فایل در Phase Persistence باید از Public Contract مجاز Documents و کنترل Scan/Permission
+  استفاده کند.
+- ۳۳ تست هدفمند Web، typecheck، lint محدود و Production Build با ۴۱ مسیر موفق‌اند.
+  Browser نمایش کارت فیش، metadata/Scan، حالت label اختیاری و چیدمان Responsive را
+  تأیید کرد؛ Console خطای مرتبط نداشت.

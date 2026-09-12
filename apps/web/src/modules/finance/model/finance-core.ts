@@ -153,6 +153,7 @@ export interface FinanceInboxPreviewRequest {
     amount: string;
     occurredAt: string;
   }[];
+  documentSnapshots: readonly FinanceDocumentSnapshot[];
   currencyCode: 'IRR' | 'USD' | 'EUR';
   rialEquivalent: string;
   dueAt: string;
@@ -160,6 +161,16 @@ export interface FinanceInboxPreviewRequest {
   status: InboxRequestStatus;
   branchSnapshot: string;
   version: number;
+}
+
+export interface FinanceDocumentSnapshot {
+  reference: string;
+  fileName: string;
+  kind: 'RECEIPT' | 'PAYMENT_PROOF' | 'INVOICE';
+  mimeType: 'application/pdf' | 'image/jpeg' | 'image/png';
+  sizeLabel: string;
+  uploadedAt: string;
+  scanStatus: 'CLEAN' | 'PENDING_SCAN';
 }
 
 export const financeInboxPreviewRequests: readonly FinanceInboxPreviewRequest[] =
@@ -185,6 +196,17 @@ export const financeInboxPreviewRequests: readonly FinanceInboxPreviewRequest[] 
           reference: 'RC-1405-0182',
           amount: '300000000',
           occurredAt: '2026-08-30T08:20:00.000Z',
+        },
+      ],
+      documentSnapshots: [
+        {
+          reference: 'document:preview-receipt-001',
+          fileName: 'فیش-واریز-قرارداد-آنتالیا.pdf',
+          kind: 'RECEIPT',
+          mimeType: 'application/pdf',
+          sizeLabel: '۲۴۸ کیلوبایت',
+          uploadedAt: '2026-09-12T09:42:00.000Z',
+          scanStatus: 'CLEAN',
         },
       ],
       currencyCode: 'IRR',
@@ -218,6 +240,17 @@ export const financeInboxPreviewRequests: readonly FinanceInboxPreviewRequest[] 
           occurredAt: '2026-09-01T09:15:00.000Z',
         },
       ],
+      documentSnapshots: [
+        {
+          reference: 'document:preview-invoice-002',
+          fileName: 'پیش‌فاکتور-کارگزار-استانبول.pdf',
+          kind: 'INVOICE',
+          mimeType: 'application/pdf',
+          sizeLabel: '۳۱۲ کیلوبایت',
+          uploadedAt: '2026-09-11T15:30:00.000Z',
+          scanStatus: 'CLEAN',
+        },
+      ],
       currencyCode: 'EUR',
       rialEquivalent: '294035000',
       dueAt: '2026-09-13T09:00:00.000Z',
@@ -249,6 +282,7 @@ export const financeInboxPreviewRequests: readonly FinanceInboxPreviewRequest[] 
           occurredAt: '2026-08-28T11:00:00.000Z',
         },
       ],
+      documentSnapshots: [],
       currencyCode: 'USD',
       rialEquivalent: '60813000',
       dueAt: '2026-09-10T08:00:00.000Z',
@@ -364,8 +398,6 @@ export function validateFinanceActionDraft(
   )
     errors.push('تاریخ و ساعت باید UTC باشد.');
   if (!draft.evidenceReviewed) errors.push('بررسی فایل رسید باید تأیید شود.');
-  if (draft.note.trim().length < 10)
-    errors.push('توضیح مالی حداقل ده نویسه لازم دارد.');
   if (!/^finance:[a-z0-9:_-]{12,120}$/.test(draft.idempotencyKey))
     errors.push('Idempotency Key معتبر لازم است.');
   if (!/^[1-9]\d*$/.test(draft.expectedVersion))

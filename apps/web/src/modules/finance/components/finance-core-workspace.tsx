@@ -7,9 +7,11 @@ import {
   ChevronLeft,
   CircleCheck,
   FileClock,
+  FileCheck2,
   FileSpreadsheet,
   History,
   Plus,
+  Paperclip,
   Search,
   Trash2,
   WalletCards,
@@ -544,7 +546,58 @@ function ActionDialog({
               </div>
             </details>
           ) : null}
-          <FormField label="توضیح مالی" required>
+          <Card aria-label="فیش‌ها و مدارک همراه درخواست" className="p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Paperclip className="size-4 text-primary" />
+                <h3 className="font-black">فیش‌ها و مدارک همراه درخواست</h3>
+              </div>
+              <Badge>{request.documentSnapshots.length} فایل</Badge>
+            </div>
+            {request.documentSnapshots.length ? (
+              <div className="mt-3 space-y-2">
+                {request.documentSnapshots.map((document) => (
+                  <div
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 p-3"
+                    key={document.reference}
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="rounded-lg bg-primary/10 p-2 text-primary">
+                        <FileCheck2 className="size-5" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-bold">
+                          {document.fileName}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {document.kind === 'RECEIPT'
+                            ? 'فیش واریز'
+                            : document.kind === 'PAYMENT_PROOF'
+                              ? 'رسید پرداخت'
+                              : 'فاکتور / پیش‌فاکتور'}{' '}
+                          · {document.sizeLabel} · {document.uploadedAt}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge>
+                      {document.scanStatus === 'CLEAN'
+                        ? 'بررسی امنیتی موفق'
+                        : 'در انتظار بررسی فایل'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 rounded-xl bg-muted p-3 text-sm text-muted-foreground">
+                فیشی همراه این درخواست ثبت نشده است.
+              </p>
+            )}
+            <p className="mt-3 text-xs text-muted-foreground">
+              فایل از Snapshot مرجع Documents نمایش داده می‌شود و در Finance کپی
+              نمی‌شود.
+            </p>
+          </Card>
+          <FormField label="توضیح مالی (اختیاری)">
             <Textarea
               onChange={(e) => update('note', e.target.value)}
               value={draft.note}

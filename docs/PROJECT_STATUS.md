@@ -20,6 +20,11 @@
   می‌شوند. فیلدهای فنی Version/Idempotency از UI حذف و داخلی ماندند. ۳۲ تست هدفمند Web،
   typecheck، lint محدود، Build ۴۱ مسیر و Browser QA موفق‌اند؛ Persistence/Posting مسدود است.
 - Commit پیگیری `70fde9b` روی شاخه مالی Push و به Draft PR #153 اضافه شد.
+- پیگیری سوم فرم‌ها: «توضیح مالی» اختیاری شد و فیش/مدارک همراه درخواست با metadata امن،
+  زمان UTC و وضعیت Scan در همان Dialog دیده می‌شوند؛ حالت بدون فایل نیز مشخص است. Finance
+  فایل را کپی نمی‌کند و فقط Snapshot مرجع Documents را نمایش می‌دهد. ۳۳ تست هدفمند Web
+  به‌همراه typecheck، lint محدود، Build ۴۱ مسیر و Browser QA موفق‌اند؛ Persistence و
+  دریافت باینری واقعی همچنان در Task قفل‌شده بعدی است.
 - جزئیات: [FINANCE-002A-ACCOUNTING-AND-INBOX.md](tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md).
 
 ## HR-013 — اتصال فرم‌ها و ارجاع بین منابع انسانی و بخش‌های سامانه — آماده ادغام تأییدشده

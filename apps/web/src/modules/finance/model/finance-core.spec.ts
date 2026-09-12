@@ -53,6 +53,16 @@ describe('finance inbox validation', () => {
     );
   });
 
+  it('keeps the finance note optional', () => {
+    expect(
+      validateFinanceActionDraft(
+        'PAYMENT_REQUEST',
+        { ...valid, note: '' },
+        '150',
+      ),
+    ).toEqual([]);
+  });
+
   it('sums partial payments without converting money to Number', () => {
     expect(sumDecimalAmounts(['4200.50', '799.50'])).toBe('5000');
     expect(remainingAfterAmount('5000', '4200.50')).toBe('799.5');

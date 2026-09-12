@@ -66,6 +66,9 @@ describe('finance workspace component contract', () => {
     expect(coreSource).toContain('کارگزار / تأمین‌کننده');
     expect(coreSource).toContain('افزودن پرداخت جزئی');
     expect(coreSource).toContain('حذف پرداخت');
+    expect(coreSource).toContain('توضیح مالی (اختیاری)');
+    expect(coreSource).toContain('فیش‌ها و مدارک همراه درخواست');
+    expect(coreSource).toContain('فیشی همراه این درخواست ثبت نشده است.');
     expect(coreSource).not.toContain('label="Idempotency Key"');
     expect(coreSource).not.toContain('label="Version"');
     expect(coreSource).toContain('هیچ درخواست عملیاتی ثبت نمی‌شود');
