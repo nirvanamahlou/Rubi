@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { ContractActionPanel, ContractActionContent } from './action-panel';
+import {
+  contractActionGroups,
+  ContractActionPanel,
+  ContractActionContent,
+} from './action-panel';
 import type { RequestView } from './model';
 const request: RequestView = {
   id: 'test',
@@ -21,6 +25,18 @@ const request: RequestView = {
   issues: [],
 };
 describe('selected contract actions', () => {
+  it('keeps both receipt actions together under contract operations', () => {
+    const operations = contractActionGroups.find(
+      (group) => group.title === 'عملیات قرارداد',
+    );
+    const information = contractActionGroups.find(
+      (group) => group.title === 'اطلاعات قرارداد',
+    );
+    expect(operations?.items).toContain('دریافت');
+    expect(operations?.items).toContain('دریافت‌ها');
+    expect(information?.items).not.toContain('دریافت‌ها');
+  });
+
   it('keeps remaining actions visible and disabled without a selection', () => {
     const html = renderToStaticMarkup(<ContractActionPanel />);
     expect(html.match(/disabled=""/g) ?? []).toHaveLength(14);
