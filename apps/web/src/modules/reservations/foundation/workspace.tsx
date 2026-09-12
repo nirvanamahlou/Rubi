@@ -741,14 +741,7 @@ export function ReservationOperationsWorkspace({
                   </article>
                 ))}
                 {section === 'manifests' ? (
-                  <ManifestExport
-                    {...(selected
-                      ? {
-                          requestId: selected.id,
-                          contractNumber: selected.contractNumber,
-                        }
-                      : {})}
-                  />
+                  <ManifestExport />
                 ) : (
                   <dl className={styles.details}>
                     {operationContent[section].fields.map((label) => (

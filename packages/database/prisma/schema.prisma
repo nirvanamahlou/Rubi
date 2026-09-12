@@ -32,6 +32,7 @@ enum AuditOutcome {
 model User {
   b2bOrganizationUser             B2bOrganizationUser?
   hotelRateBatches                ReservationHotelRateBatch[]
+  reservationManifestExports      ReservationManifestExport[]
   reservationServicePurchases     ReservationServicePurchase[]
   financeSupplierPaymentRevisions FinanceSupplierPaymentRevision[]
   ownedTravelIntakes              ReservationIntake[]              @relation("TravelSalesOwner")
@@ -3452,26 +3453,62 @@ model TicketOfferCapacityAllocation {
 }
 
 model ReservationIntake {
-  salesOwnerUserId  String?                          @db.Uuid
-  salesOwner        User?                            @relation("TravelSalesOwner", fields: [salesOwnerUserId], references: [id], onDelete: Restrict)
-  workflowRevisions ReservationWorkflowRevision[]
-  deliveryRevisions FinanceDeliveryRevision[]
-  purchaseVersion   Int                              @default(0)
-  hotelPurchases    ReservationHotelPurchase[]
-  servicePurchases  ReservationServicePurchase[]
-  id                String                           @id @default(uuid()) @db.Uuid
-  requestId         String                           @unique @db.Uuid
-  contractId        String                           @db.Uuid
-  contractVersion   Int
-  branchId          String                           @db.Uuid
-  fingerprint       String                           @db.VarChar(64)
-  snapshot          Json
-  status            String                           @default("QUEUED") @db.VarChar(40)
-  receivedAt        DateTime                         @default(now()) @db.Timestamptz(3)
-  arrangements      ReservationArrangementRevision[]
+  salesOwnerUserId    String?                          @db.Uuid
+  salesOwner          User?                            @relation("TravelSalesOwner", fields: [salesOwnerUserId], references: [id], onDelete: Restrict)
+  workflowRevisions   ReservationWorkflowRevision[]
+  deliveryRevisions   FinanceDeliveryRevision[]
+  purchaseVersion     Int                              @default(0)
+  hotelPurchases      ReservationHotelPurchase[]
+  servicePurchases    ReservationServicePurchase[]
+  id                  String                           @id @default(uuid()) @db.Uuid
+  requestId           String                           @unique @db.Uuid
+  contractId          String                           @db.Uuid
+  contractVersion     Int
+  branchId            String                           @db.Uuid
+  fingerprint         String                           @db.VarChar(64)
+  snapshot            Json
+  status              String                           @default("QUEUED") @db.VarChar(40)
+  receivedAt          DateTime                         @default(now()) @db.Timestamptz(3)
+  arrangements        ReservationArrangementRevision[]
+  manifestExportItems ReservationManifestExportItem[]
 
   @@unique([contractId, contractVersion])
   @@index([branchId, receivedAt])
+}
+
+model ReservationManifestExport {
+  id                        String                          @id @default(uuid()) @db.Uuid
+  actorUserId               String                          @db.Uuid
+  idempotencyKey            String                          @db.VarChar(160)
+  fromDate                  DateTime                        @db.Date
+  toDate                    DateTime                        @db.Date
+  includePreviouslyExported Boolean                         @default(false)
+  contractCount             Int
+  passengerCount            Int
+  skippedFinanceCount       Int                             @default(0)
+  createdAt                 DateTime                        @default(now()) @db.Timestamptz(3)
+  actor                     User                            @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  items                     ReservationManifestExportItem[]
+
+  @@unique([actorUserId, idempotencyKey])
+  @@index([actorUserId, createdAt])
+  @@index([fromDate, toDate])
+  @@map("reservation_manifest_exports")
+}
+
+model ReservationManifestExportItem {
+  exportId            String                    @db.Uuid
+  intakeId            String                    @db.Uuid
+  contractId          String                    @db.Uuid
+  contractVersion     Int
+  outboundDepartureAt DateTime                  @db.Timestamptz(3)
+  export              ReservationManifestExport @relation(fields: [exportId], references: [id], onDelete: Restrict)
+  intake              ReservationIntake         @relation(fields: [intakeId], references: [id], onDelete: Restrict)
+
+  @@id([exportId, intakeId])
+  @@index([intakeId])
+  @@index([contractId, contractVersion])
+  @@map("reservation_manifest_export_items")
 }
 
 model ReservationHotelPurchase {

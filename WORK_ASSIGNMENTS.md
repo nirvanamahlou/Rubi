@@ -37,6 +37,11 @@
   API پس از Merge همین Baseline انجام می‌شود. جزئیات در
   `docs/tasks/UNIFIED-LATEST-0912.md` ثبت شده است.
 
+## RESERVATION-MANIFEST-BATCH-0912 — PC-A — LOCAL_COMPLETE
+
+- درخواست مالک محصول: قالب رسمی ایران ایرتور/اسپارتا برای قراردادهای آنتالیا به خروجی بازه‌ای تبدیل شود. تاریخ رفت مبنای بازه است؛ کاربر میان «همه قراردادهای بازه» و «فقط قراردادهایی که قبلاً در MANIFEST خروجی نشده‌اند» انتخاب می‌کند. هر خروجی و قراردادهای داخل آن با کاربر و زمان ثبت می‌شوند تا قراردادهای تازه در خروجی بعدی قابل تشخیص باشند. Gate تحویل مدارک مالی، مجوزهای حساس مسافر، سقف ۶۱ مسافر و قالب اصلی ایرلاین حفظ می‌شوند. محدوده: Reservations API/Web، Persistence افزایشی، تست‌ها و اسناد؛ بدون تغییر IAM، داده واقعی یا ارسال به ایرلاین.
+- نتیجه: رابط بازه‌ای میلادی و دو حالت خروجی فعال شد. آخرین نسخه هر قرارداد به ترتیب تاریخ رفت و شماره قرارداد وارد قالب اصلی می‌شود؛ اجرای موفق و اعضای آن در دو جدول جدید ثبت و Idempotency رعایت می‌شود. قراردادهای فاقد تأیید مالی حذف و تعدادشان اعلام می‌شود. Migration لوکال اعمال شد؛ ۴ تست API، ۱۶ تست Web، lint، typecheck، build تولیدی و بازبینی مرورگر موفق‌اند. [گزارش](docs/tasks/RESERVATION-MANIFEST-BATCH-0912.md).
+
 ## B2B-CONTRACT-FILTER-LAYOUT-001 — PC-B — READY_FOR_REVIEW
 
 Reserve corporate-design.css agreement filter layout on codex/pc-b-b2b-contract-filter-layout from2e43e0e. Resolve flex overriding the shared filter grid; maintain date/branch filters and compact aligned actions. No data/API/dependency changes.

@@ -20,6 +20,11 @@ export function configureApplication(app: INestApplication): void {
   app.setGlobalPrefix(apiPrefix);
   app.enableCors({
     credentials: true,
+    exposedHeaders: [
+      'X-Rubi-Manifest-Contracts',
+      'X-Rubi-Manifest-Passengers',
+      'X-Rubi-Manifest-Skipped-Finance',
+    ],
     origin: corsOrigins,
   });
   app.useGlobalPipes(
