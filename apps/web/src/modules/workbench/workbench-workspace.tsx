@@ -53,7 +53,7 @@ import {
   type WorkbenchHome,
 } from './model';
 import { WorkbenchFiles } from './workbench-files';
-import { NoteEditor } from './note-editor';
+import { WorkbenchNotes } from './workbench-notes';
 import { WorkbenchFavorites } from './workbench-favorites';
 import { MessageComposer } from './message-composer';
 import { PasswordChange } from './password-change';
@@ -113,21 +113,29 @@ export function WorkbenchWorkspace() {
     }
   }, []);
   useEffect(() => {
-    const timer =
-      noteOpen || passwordOpen || requestOpen || messageOpen
-        ? undefined
-        : setTimeout(() => void load(), 0);
+    const timer = setTimeout(() => void load(), 0);
+    return () => {
+      clearTimeout(timer);
+      invalidate();
+    };
+  }, [load, invalidate]);
+  useEffect(() => {
     const refresh = () => {
-      if (!noteOpen && !passwordOpen && !requestOpen && !messageOpen)
+      if (
+        !noteOpen &&
+        !passwordOpen &&
+        !requestOpen &&
+        !messageOpen &&
+        tab !== 'notes' &&
+        tab !== 'messages'
+      )
         void load();
     };
     window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
     return () => {
-      clearTimeout(timer);
-      invalidate();
       window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
     };
-  }, [load, invalidate, noteOpen, passwordOpen, requestOpen, messageOpen]);
+  }, [load, noteOpen, passwordOpen, requestOpen, messageOpen, tab]);
   function selectTab(value: string) {
     const query = new URLSearchParams(params.toString());
     query.set('tab', normalizeWorkbenchTab(value));
@@ -174,7 +182,10 @@ export function WorkbenchWorkspace() {
             </Button>
             <Button
               disabled={!home || loading}
-              onClick={() => setNoteOpen(true)}
+              onClick={() => {
+                selectTab('notes');
+                setNoteOpen(true);
+              }}
             >
               <StickyNote className="size-4" aria-hidden="true" />
               یادداشت جدید
@@ -443,21 +454,16 @@ export function WorkbenchWorkspace() {
               <TabsContent value="stars">
                 <WorkbenchFavorites key={home.user.id} user={home.user} />
               </TabsContent>
-              <TabsContent value="notes">
-                <Card className="p-5 space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="font-bold">یادداشت‌های من</h2>
-                    <Button onClick={() => setNoteOpen(true)}>
-                      <StickyNote className="size-4" aria-hidden="true" />
-                      یادداشت جدید
-                    </Button>
-                  </div>
-                  <Alert
-                    tone="info"
-                    title="فرم یادداشت آماده است"
-                    description="برای نوشتن عنوان و متن، یادداشت جدید را باز کنید. ثبت و نگهداری یادداشت در حساب هنوز فعال نشده است."
-                  />
-                </Card>
+              <TabsContent
+                value="notes"
+                forceMount
+                className="data-[state=inactive]:hidden"
+              >
+                <WorkbenchNotes
+                  key={home.user.id}
+                  open={noteOpen}
+                  onOpenChange={setNoteOpen}
+                />
               </TabsContent>
               <TabsContent value="activity">
                 <Card className="p-5">
@@ -588,13 +594,6 @@ export function WorkbenchWorkspace() {
       )}
       {home && (
         <NewRequestDialog open={requestOpen} onOpenChange={setRequestOpen} />
-      )}
-      {home && (
-        <NoteEditor
-          key={home.user.id}
-          open={noteOpen}
-          onOpenChange={setNoteOpen}
-        />
       )}
     </div>
   );

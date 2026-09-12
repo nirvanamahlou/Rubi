@@ -17,6 +17,28 @@
   API پس از Merge همین Baseline انجام می‌شود. جزئیات در
   `docs/tasks/UNIFIED-LATEST-0912.md` ثبت شده است.
 
+## B2B-REMOVE-SUBTITLE-001 — PC-B — READY_FOR_REVIEW
+
+Reserve Organizations workspace heading copy on codex/pc-b-b2b-remove-subtitle from282227a. Remove requested directory subtitle only; no data/API/dependency changes.
+
+Sourcee03afcf; scoped lint/typecheck and113 tests pass. Runtime buildd59b860 preserves current1e295db. Release source reservation.
+
+## B2B-BACK-NAVIGATION-001 — PC-B — READY_FOR_REVIEW
+
+Reserve corporate-profile.tsx on codex/pc-b-b2b-back-navigation from40da905. Correct in-page back from dossier sections to same organization360, retaining directory exit only at home. No API/data/dependency changes; coordinate Web3100.
+
+User clarified browser Back. Extend scope to organizations-workspace.tsx and module-local history helper/tests. Sourcea753d86 preserves Next history metadata, records organization/screen/tab identifiers, restores Back/Forward without duplicate pushes.113 tests, scoped lint/typecheck pass; combined build1995e16 preserves8492a36. Release source reservations.
+
+## B2B-CONNECTIONS-AUDIT-001 — PC-B — READY_FOR_REVIEW
+
+Reserve Organizations directory enrichment, dossier role summary and focused connection tests/report on codex/pc-b-b2b-connections-audit. Consume existing B2B/MasterData/IAM public APIs only. Finance producer and shared Sales contracts remain with PC-A; no migration/dependency/central API edits. Preserve latest Web runtime29cfe14 and coordinate integration.
+
+Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped lint and typecheck pass. Audit/handoff: docs/tasks/B2B-CONNECTIONS-AUDIT-001.md. Combined Web build on9d05cd6 preserves latest7bae2a4; source reservations released. Missing Finance/Sales/notification producers remain explicitly incomplete.
+
+## WORKBENCH-014-NOTE-CARDS — PC-B — UI_READY / LOCAL_RUNTIME_3100
+
+- PC-B reserves Workbench note board/editor/model and workspace integration to match screenshots552/553: cream cards, folders/search/date filters, pin/edit/remove and checklist strike-through. UI drafts only with explicit unsaved label; no persistence, fake server records, API/schema/dependency changes. Branch codex/pc-b-workbench-note-cards from e701b49; preserve pending B2B history fix on runtime handoff.
+
 ## WORKBENCH-013-INTERACTIONS — PC-B — UI_READY / PERSISTENCE_BLOCKED
 
 - User requests screenshot-aligned settings, larger centered tabs, colored KPIs, removal of Documents shortcut, chat layout, functional request/message/note forms and private checklist notes. Reserve Workbench-local UI and own docs on codex/pc-b-workbench-interactions; preserve B2B9b1c33c. Persistence requires current migration-owner handoff, requested from coordinator before schema work; no fake storage or transmission. Shared layout and other owner modules unchanged.

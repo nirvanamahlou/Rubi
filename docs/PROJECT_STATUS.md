@@ -10,6 +10,10 @@
 - وضعیت فعلی `READY_FOR_MERGE` است: نصب Frozen، Prisma، lint، typecheck، ۲۶۵۴
   تست و Build شش Task/۴۶ Route پاس شدند. `main` در این عملیات تغییر نمی‌کند.
 
+## WORKBENCH-014 — نمای کارت‌های یادداشت
+
+براساس تصاویر552/553، دفتر یادداشت با کارت‌های کرم سه‌ستونه، جست‌وجو، فیلتر پوشه/تاریخ، پوشه جدید و کنترل ویرایش/سنجاق/حذف قابل بازگردانی ساخته شد. چک‌لیست روی کارت تیک و خط‌خوردن دارد. سه کارت اولیه صریحاً «قالب نمونه» هستند؛ اعمال ویرایش فقط پیش‌نویس حافظه صفحه است، نه ذخیره در حساب. هیچ API، Schema، Migration، browser storage یا ارسال داده ایجاد نشد؛ مجوز توسعه persistence همچنان پاسخ نگرفته است. پنجره‌های ویرایش هنگام بسته‌شدن دیگر میزکار را دوباره بارگذاری نمی‌کنند. Typecheck/lint و ۳۷ تست موجود میزکار موفق؛ runtime/QA نهایی پس از handoff ثبت می‌شود.
+
 ## REPORTING — مجوز اجرای PC-C و Gate مرحله P0-04
 
 - `COMPUTER_ID=PC-C` برای ادامه Reporting در محدوده ماژول‌های Web/API Reporting،
@@ -2013,3 +2017,12 @@ WORKBENCH-012: build تولیدی و بررسی مرورگر با حساب وا�
 ## WORKBENCH-013 — بازچینی و پیش‌نویس‌ها
 
 تنظیمات دو بخشی، تب‌های بزرگ و وسط‌چین، KPI رنگی، حذف shortcut اسناد داخل میزکار، نمای دو ستونی پیام‌ها، فرم اولیه درخواست و چک‌لیست تیک‌زدنی یادداشت اجرا شد. ذخیره/ارسال واقعی به‌دلیل قفل Migration و نبود سرویس همچنان مسدود است؛ چند یادداشت واقعی ایجاد نشد. ۳۷ تست، lint/typecheck/build موفق؛ مرورگر تنظیمات و انتخاب قالب/تیک/خط‌خوردن را تأیید کرد. Web3100 source8492a36/PID22916؛ API بدون تغییر و health200. مرجع: tasks/WORKBENCH-013-INTERACTIONS.md.
+
+## 2026-09-11 — B2B browser navigation (PC-B)
+User clarified native browser Back. Sourcea753d86 records directory/dossier/section/tab transitions in browser history, preserves Next metadata, restores Back/Forward and avoids duplicate entries on refresh of contacts. In-page return also targets same dossier from subsections.113 Organizations tests and scoped lint/typecheck passed; combined build1995e16 from8492a36. No API/dependency changes.
+Runtime confirmed: source1995e160afb1fd59b47832199d524a4d883a341c / hr005-de87fc5eb9722975 / WebPID5516,43-route build pass. Actual browser Back: contract to same ORG_A38P8LPLQXLB360 to directory; Forward restores same dossier and contract. Credit tab Back restores framework tab.113 tests passed; API unchanged. Draft PR179; Web returned to workbench owner.
+
+## 2026-09-11 — B2B directory subtitle (PC-B)
+Sourcee03afcf removes requested explanatory paragraph below the directory heading. Scoped lint/typecheck and113 tests passed. Combined runtime buildd59b860 preserves1e295db and native browser history fix. No data/API changes.
+
+WORKBENCH-014 نهایی: build۴۳route و بررسی مرورگر سه کارت، تیک/خط‌خوردن، اعمال ویرایش و حفظ آن پس از بستن فرم موفق بود. Web3100 source1e295db/PID20512/manifesthr005-3938c4fc437ae857؛ تغییر تاریخچه آژانس1995e16 حفظ شد. API4190 بدون تغییر/health200. نمونه آزمایشی با reload بازنشانی شد. PR180 پیش‌نویس، بدون merge.
