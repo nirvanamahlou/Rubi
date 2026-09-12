@@ -3,7 +3,7 @@
 ## CUSTOMER-AFFAIRS-003 — PC-B — IMPLEMENTED / AWAITING AUTHENTICATED VISUAL QA
 
 - Reserve Customer Affairs Web components, local styles, API client presentation/query support and task documentation for the supplied customer-affairs.html reference. Branch `codex/pc-b-customer-affairs-rubi-ui` continues the unmerged operational slice `b39c93d` (PR #221) in its clean worktree. Reuse Rubi theme and live API; no schema, migration, dependency or shared shell edits. Central Docs reservation is limited to this entry, project status and own task report. Runtime ownership must be checked before restart.
-- Implementation and automated verification are complete: full Web lint, TypeScript/build (46 routes), 1329 full-suite tests and 3 additional new render tests passed. Preview on 3102 requires user sign-in for visual QA. Existing 3100/4190 runtimes were not changed. Central Docs reservation released for handoff; no migration or dependency lock was acquired. See `docs/tasks/CUSTOMER-AFFAIRS-003.md`.
+- Implementation and automated verification are complete: full Web lint, TypeScript/build (46 routes), 1329 full-suite tests and 3 additional new render tests passed. Preview on 3102 requires API CORS/runtime coordination and user sign-in for visual QA. Existing 3100/4190 runtimes were not changed. Central Docs reservation released for handoff; no migration or dependency lock was acquired. See `docs/tasks/CUSTOMER-AFFAIRS-003.md`.
 
 ## B2B-REMOVE-HR-REQUESTS-001 — PC-B — VALIDATED
 
