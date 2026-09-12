@@ -1,6 +1,8 @@
 # Work Assignments
 
-## CUSTOMER-AFFAIRS-REPORT-DATA-E2E — PC-B — IN_PROGRESS
+## CUSTOMER-AFFAIRS-REPORT-DATA-E2E — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
+
+- Added 24 synthetic requests, 36 tickets, 20 satisfaction responses and 8 corrective actions; preview rolled back and repeat apply added zero. Existing data preserved. Removed end-date parenthetical and localized DONE/CANCELLED report labels. Web 46 focused tests, scoped lint, typecheck/build passed; date-filter 3 tests rerun passed. Authenticated browser ticket lifecycle, search, same-day date range and month/year grids verified. One API database-connection termination interrupted the first note attempt; runtime recovered and workflow rerun passed, root cause unresolved. Details and runtime handoff: `docs/tasks/CUSTOMER-AFFAIRS-REPORT-DATA-E2E.md`. Reservation released after documentation commit; no HR UI changes included.
 
 - User authorizes additive synthetic report data and E2E on local CA, plus remove parenthetical end-date label. Reserve CA-only repeatable local fixture script (own tables), one UI label/test, own docs and browser QA. Preserve existing rows, no real contacts/customer linkage, no messages/permission/migration changes. Dataset provenance in audit and deterministic IDs; rollback rehearsal before apply, duplicate run must add zero rows. Branch `codex/pc-b-customer-affairs-report-data-e2e` from 0d699946; same Web3100/API4190. Verify workflows only on new synthetic records.
 
