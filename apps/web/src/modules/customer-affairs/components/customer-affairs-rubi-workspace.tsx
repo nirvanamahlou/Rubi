@@ -1,5 +1,6 @@
 'use client';
 
+import { AffairsSelect } from './affairs-select';
 import type {
   CustomerAffairsDashboard,
   CustomerAffairsLeadView,
@@ -567,7 +568,7 @@ export function CustomerAffairsRubiWorkspace() {
                       </Button>
                     </form>
                     {view !== 'followups' && (
-                      <select
+                      <AffairsSelect
                         aria-label="فیلتر وضعیت"
                         value={filter}
                         onChange={(e) => change('filter', e.target.value)}
@@ -582,7 +583,7 @@ export function CustomerAffairsRubiWorkspace() {
                             {label}
                           </option>
                         ))}
-                      </select>
+                      </AffairsSelect>
                     )}
                   </div>
                   {view === 'followups' || view === 'queues' ? (

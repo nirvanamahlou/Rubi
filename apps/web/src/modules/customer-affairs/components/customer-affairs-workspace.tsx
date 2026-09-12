@@ -1,5 +1,6 @@
 'use client';
 
+import { AffairsSelect } from './affairs-select';
 import type { CustomerSummary } from '@rubi/contracts';
 import type {
   CustomerAffairsDashboard,
@@ -218,7 +219,7 @@ export function LeadForm({
           <AssigneePicker name="assigneeUserId" />
         </FormField>
         <FormField label="کانال">
-          <select
+          <AffairsSelect
             className="h-11 w-full rounded-xl border border-input bg-surface px-3"
             name="channel"
             defaultValue="PHONE"
@@ -229,7 +230,7 @@ export function LeadForm({
             <option value="REFERRAL">معرفی</option>
             <option value="SOCIAL">شبکه اجتماعی</option>
             <option value="OTHER">سایر</option>
-          </select>
+          </AffairsSelect>
         </FormField>
         <div className="lg:col-span-2">
           <CustomerPicker onSelect={setCustomer} selected={customer} />
@@ -253,7 +254,7 @@ export function LeadForm({
           </FormField>
         </div>
         <FormField label="اولویت">
-          <select
+          <AffairsSelect
             className="h-11 w-full rounded-xl border border-input bg-surface px-3"
             name="priority"
             defaultValue="NORMAL"
@@ -262,10 +263,10 @@ export function LeadForm({
             <option value="NORMAL">عادی</option>
             <option value="HIGH">زیاد</option>
             <option value="URGENT">فوری</option>
-          </select>
+          </AffairsSelect>
         </FormField>
         <FormField label="صف مسئول">
-          <select
+          <AffairsSelect
             className={s.select}
             name="queueCode"
             defaultValue="customer-affairs-front-office"
@@ -274,7 +275,7 @@ export function LeadForm({
             <option value="customer-affairs-front-office">
               پذیرش امور مشتریان
             </option>
-          </select>
+          </AffairsSelect>
         </FormField>
         <FormField label="مبدأ (اختیاری)">
           <Input name="origin" />
@@ -307,12 +308,12 @@ export function LeadForm({
           <Input name="budgetAmount" type="number" min="0.01" step="0.01" />
         </FormField>
         <FormField label="ارز بودجه">
-          <select className={s.select} name="currency">
+          <AffairsSelect className={s.select} name="currency">
             <option value="IRR">ریال</option>
             <option value="USD">دلار آمریکا</option>
             <option value="EUR">یورو</option>
             <option value="AED">درهم امارات</option>
-          </select>
+          </AffairsSelect>
         </FormField>
         <FormField label="اقدام بعدی">
           <Input
@@ -418,7 +419,7 @@ export function TicketForm({
           <AssigneePicker name="customerOwnerUserId" />
         </FormField>
         <FormField label="کانال">
-          <select
+          <AffairsSelect
             className="h-11 w-full rounded-xl border border-input bg-surface px-3"
             name="channel"
             defaultValue="PHONE"
@@ -429,7 +430,7 @@ export function TicketForm({
             <option value="WEBSITE">وب‌سایت</option>
             <option value="WALK_IN">حضوری</option>
             <option value="OTHER">سایر</option>
-          </select>
+          </AffairsSelect>
         </FormField>
         <div className="lg:col-span-2">
           <CustomerPicker onSelect={setCustomer} selected={customer} />
@@ -439,7 +440,7 @@ export function TicketForm({
         </FormField>
         <div className="grid gap-4">
           <FormField label="دسته">
-            <select
+            <AffairsSelect
               className={s.select}
               name="category"
               defaultValue="QUESTION"
@@ -450,10 +451,10 @@ export function TicketForm({
                   {label}
                 </option>
               ))}
-            </select>
+            </AffairsSelect>
           </FormField>
           <FormField label="اولویت">
-            <select
+            <AffairsSelect
               className="h-11 w-full rounded-xl border border-input bg-surface px-3"
               name="priority"
               defaultValue="NORMAL"
@@ -463,11 +464,11 @@ export function TicketForm({
               <option value="HIGH">زیاد</option>
               <option value="URGENT">فوری</option>
               <option value="CRITICAL">بحرانی</option>
-            </select>
+            </AffairsSelect>
           </FormField>
         </div>
         <FormField label="اثر">
-          <select
+          <AffairsSelect
             className="h-11 w-full rounded-xl border border-input bg-surface px-3"
             name="impact"
             defaultValue="NORMAL"
@@ -475,10 +476,10 @@ export function TicketForm({
             <option value="LOW">کم</option>
             <option value="NORMAL">عادی</option>
             <option value="HIGH">زیاد</option>
-          </select>
+          </AffairsSelect>
         </FormField>
         <FormField label="فوریت">
-          <select
+          <AffairsSelect
             className="h-11 w-full rounded-xl border border-input bg-surface px-3"
             name="urgency"
             defaultValue="NORMAL"
@@ -486,7 +487,7 @@ export function TicketForm({
             <option value="LOW">کم</option>
             <option value="NORMAL">عادی</option>
             <option value="HIGH">زیاد</option>
-          </select>
+          </AffairsSelect>
         </FormField>
         <FormField label="اقدام بعدی">
           <Input name="nextAction" defaultValue="بررسی و پاسخ اولیه" required />
@@ -1063,13 +1064,17 @@ export function DetailPanel({
               onSubmit={refer}
             >
               <FormField label="ماژول مقصد">
-                <select name="destinationModule" required className={s.select}>
+                <AffairsSelect
+                  name="destinationModule"
+                  required
+                  className={s.select}
+                >
                   <option value="reservations">رزرواسیون و عملیات سفر</option>
                   <option value="sales">فروش و قراردادها</option>
                   <option value="finance">مالی</option>
                   <option value="customers">مشتریان و مسافران</option>
                   <option value="documents">اسناد</option>
-                </select>
+                </AffairsSelect>
               </FormField>
               <FormField label="واحد مقصد">
                 <Input
@@ -1171,7 +1176,7 @@ export function DetailPanel({
               />
             )}
             <form className="mt-4 grid gap-4" onSubmit={timeline}>
-              <select
+              <AffairsSelect
                 className={s.select}
                 style={{ maxWidth: 180 }}
                 aria-label="نوع ارتباط"
@@ -1186,7 +1191,7 @@ export function DetailPanel({
                 <option value="CALL">ثبت تماس</option>
                 <option value="MEETING">ثبت جلسه</option>
                 <option value="CUSTOMER_REPLY">پاسخ دریافتی مشتری</option>
-              </select>
+              </AffairsSelect>
               <Textarea
                 rows={5}
                 aria-label="خلاصه ارتباط"

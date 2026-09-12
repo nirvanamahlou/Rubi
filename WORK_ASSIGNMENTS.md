@@ -1,5 +1,10 @@
 # Work Assignments
 
+## CUSTOMER-AFFAIRS-THEMED-SELECTS — PC-B — CODE VERIFIED / RUNTIME RESTART BLOCKED
+
+- Reserve only CA Web components/tests and own task/status documentation on `codex/pc-b-customer-affairs-themed-selects` from combined `ac19de0a`. Replace native visible dropdowns with existing Rubi Select primitives, preserving form values and HR selection. No shared UI edits, API, schema, dependencies or permissions. Preserve API4190; verify and rebuild owned Web3100. No merge.
+- All four CA form/filter/assignee surfaces now use a module-local adapter over Rubi Select primitives (RTL, theme tokens, elevated/scrollable popup). 38 tests and 46-route production build/typecheck passed; scoped lint rerun after correcting unused prop. Attempted owned Web3100 restart was rejected by execution policy before command execution; no runtime replacement or visual QA of the new build is claimed. Module reservation released; activation remains pending.
+
 ## CUSTOMER-AFFAIRS-SITE-BRIDGE — PC-B — IMPLEMENTED / LIVE ADAPTERS PENDING
 
 - User explicitly delegates the cross-module connection scope formerly requiring PC-A coordination. Branch `codex/pc-b-customer-affairs-site-bridge` from combined `0b3117ad`; preserve existing local runtime. Reserve CA backend, additive CA site/ticket-origin schema and migration, CA contracts, IAM public authenticate consumption (no IAM implementation change), own docs and tests. Migration owner PC-B for this additive slice after fetched develop shows the latest WORKBENCH-036 migration reservation released; dependency lock not needed. No other active producer implementation is overwritten.

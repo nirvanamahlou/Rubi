@@ -1,5 +1,6 @@
 'use client';
 
+import { AffairsSelect } from './affairs-select';
 import { useEffect, useState } from 'react';
 import type { HrDirectoryResponse } from '@rubi/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -63,7 +64,7 @@ export function AssigneePicker({
           setPage(1);
         }}
       />
-      <select
+      <AffairsSelect
         aria-label="انتخاب مسئول"
         className="h-11 w-full rounded-xl border border-input bg-surface px-3"
         value={selected}
@@ -81,7 +82,7 @@ export function AssigneePicker({
               {employee.name} — {employee.unit}
             </option>
           ))}
-      </select>
+      </AffairsSelect>
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}

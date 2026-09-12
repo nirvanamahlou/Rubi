@@ -1,5 +1,6 @@
 'use client';
 
+import { AffairsSelect } from './affairs-select';
 import { useState, type FormEvent } from 'react';
 import type { CustomerSummary } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
@@ -247,7 +248,7 @@ export function RecordOperations({
               </FormField>
             ))}
             <FormField label="کانال ورود">
-              <select
+              <AffairsSelect
                 className="h-11 w-full rounded-xl border border-input bg-surface"
                 name={lead ? 'inboundChannel' : 'channel'}
                 defaultValue={String(
@@ -276,10 +277,10 @@ export function RecordOperations({
                     {label}
                   </option>
                 ))}
-              </select>
+              </AffairsSelect>
             </FormField>
             <FormField label="اولویت">
-              <select
+              <AffairsSelect
                 className="h-11 w-full rounded-xl border border-input bg-surface"
                 name="priority"
                 defaultValue={detail.priority}
@@ -295,7 +296,7 @@ export function RecordOperations({
                     {label}
                   </option>
                 ))}
-              </select>
+              </AffairsSelect>
             </FormField>
             <div className="sm:col-span-2">
               <FormField label={lead ? 'نیاز سفر' : 'شرح درخواست'}>
@@ -357,7 +358,7 @@ export function RecordOperations({
                   />
                 </FormField>
                 <FormField label="قطعیت تاریخ">
-                  <select
+                  <AffairsSelect
                     name="datePrecision"
                     defaultValue={detail.datePrecision || 'UNKNOWN'}
                     className="h-11 rounded-xl border border-input bg-surface"
@@ -372,7 +373,7 @@ export function RecordOperations({
                         {label}
                       </option>
                     ))}
-                  </select>
+                  </AffairsSelect>
                 </FormField>
                 <FormField label="انعطاف تاریخ">
                   <Input
@@ -430,7 +431,7 @@ export function RecordOperations({
               </>
             ) : (
               <FormField label="دسته تیکت">
-                <select
+                <AffairsSelect
                   name="category"
                   defaultValue={detail.category}
                   className="h-11 w-full rounded-xl border border-input bg-surface"
@@ -445,7 +446,7 @@ export function RecordOperations({
                       {label}
                     </option>
                   ))}
-                </select>
+                </AffairsSelect>
               </FormField>
             )}
             <div className="sm:col-span-2">
@@ -524,7 +525,7 @@ export function RecordOperations({
             }}
           >
             <FormField label="مرحله جدید">
-              <select
+              <AffairsSelect
                 className="h-11 rounded-xl border border-input bg-surface"
                 required
                 value={target}
@@ -536,11 +537,11 @@ export function RecordOperations({
                     {labels[stage]}
                   </option>
                 ))}
-              </select>
+              </AffairsSelect>
             </FormField>
             {target === 'LOST' && (
               <FormField label="دلیل شکست">
-                <select
+                <AffairsSelect
                   name="lostReason"
                   required
                   className="h-11 rounded-xl border border-input bg-surface"
@@ -557,7 +558,7 @@ export function RecordOperations({
                   ].map((reason) => (
                     <option key={reason}>{reason}</option>
                   ))}
-                </select>
+                </AffairsSelect>
               </FormField>
             )}
             <FormField label="توضیح تغییر مرحله">
@@ -627,7 +628,7 @@ export function RecordOperations({
             }}
           >
             <FormField label="وضعیت">
-              <select
+              <AffairsSelect
                 className="h-11 rounded-xl border border-input bg-surface"
                 name="status"
                 defaultValue={String(corrective.status)}
@@ -637,7 +638,7 @@ export function RecordOperations({
                     {labels[status]}
                   </option>
                 ))}
-              </select>
+              </AffairsSelect>
             </FormField>
             <FormField label="نتیجه اقدام">
               <Textarea
