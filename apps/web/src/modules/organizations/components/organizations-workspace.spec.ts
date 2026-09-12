@@ -14,6 +14,10 @@ const connections = readFileSync(
   new URL('./agency-connections-panel.tsx', import.meta.url),
   'utf8',
 );
+const profile = readFileSync(
+  new URL('./corporate-profile.tsx', import.meta.url),
+  'utf8',
+);
 
 describe('agency to Master Organization integration', () => {
   it('uses the public Master Data client and the canonical AGENCY role', () => {
@@ -36,6 +40,12 @@ describe('agency to Master Organization integration', () => {
     expect(source).toContain('setSearch');
     expect(source).toContain('setStatus');
     expect(source).toContain('setPage');
+  });
+
+  it('suppresses Human Resources requests throughout the organization dossier route', () => {
+    expect(source).toContain('useSuppressHrConnections(true)');
+    expect(source).not.toContain('useSuppressHrConnections(!profileOpen)');
+    expect(profile).not.toContain('useSuppressHrConnections');
   });
 
   it('keeps Excel export and import available without the redundant template action', () => {
