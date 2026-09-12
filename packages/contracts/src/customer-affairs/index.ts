@@ -149,6 +149,8 @@ export interface CustomerAffairsTicketView extends CustomerAffairsTicketInput {
   resolutionDueAt: string;
   firstRespondedAt: string | null;
   resolvedAt: string | null;
+  pausedAt?: string | null;
+  pausedMinutes?: number;
   firstResponseBreachedAt: string | null;
   resolutionBreachedAt: string | null;
   escalationLevel: number | null;

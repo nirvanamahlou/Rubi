@@ -19,6 +19,9 @@ import {
   CustomerAffairsSiteGuard,
 } from './customer-affairs-site.controller';
 import { CustomerAffairsInternalController } from './customer-affairs-internal.controller';
+import { CustomerAffairsRemindersService } from './customer-affairs-reminders.service';
+import { CustomerAffairsSmsService } from './customer-affairs-sms.service';
+import { CustomerAffairsSmsController } from './customer-affairs-sms.controller';
 
 @Module({
   imports: [
@@ -34,6 +37,7 @@ import { CustomerAffairsInternalController } from './customer-affairs-internal.c
     CustomerAffairsPublicController,
     CustomerAffairsSiteController,
     CustomerAffairsInternalController,
+    CustomerAffairsSmsController,
   ],
   providers: [
     AuthGuard,
@@ -41,6 +45,8 @@ import { CustomerAffairsInternalController } from './customer-affairs-internal.c
     CustomerAffairsRepository,
     CustomerAffairsService,
     CustomerAffairsSiteGuard,
+    CustomerAffairsRemindersService,
+    CustomerAffairsSmsService,
   ],
   exports: [CustomerAffairsService],
 })

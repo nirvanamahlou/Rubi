@@ -25,6 +25,39 @@ export type CustomerAffairsTicketRow = Prisma.CustomerAffairsTicketGetPayload<{
 
 @Injectable()
 export class CustomerAffairsRepository {
+  async dueReminderIds(kind: 'lead' | 'ticket', now: Date, after?: string) {
+    const page = {
+      select: { id: true },
+      orderBy: { id: 'asc' as const },
+      take: 100,
+    };
+    const cursor = after ? { id: { gt: after } } : {};
+    return kind === 'lead'
+      ? this.database.client.customerAffairsLead.findMany({
+          ...page,
+          where: {
+            ...cursor,
+            stage: { notIn: ['LOST', 'HANDED_OFF'] },
+            nextActionAt: { lte: now },
+          },
+        })
+      : this.database.client.customerAffairsTicket.findMany({
+          ...page,
+          where: {
+            ...cursor,
+            status: { notIn: ['CLOSED', 'CANCELLED', 'RESOLVED'] },
+            OR: [
+              { nextActionAt: { lte: now } },
+              { firstRespondedAt: null, firstResponseDueAt: { lte: now } },
+              {
+                pausedAt: null,
+                resolvedAt: null,
+                resolutionDueAt: { lte: now },
+              },
+            ],
+          },
+        });
+  }
   findSite(code: string) {
     return this.database.client.customerAffairsSite.findUnique({
       where: { code },
@@ -232,7 +265,7 @@ export class CustomerAffairsRepository {
             { firstResponseBreachedAt: { not: null } },
             { resolutionBreachedAt: { not: null } },
             { firstRespondedAt: null, firstResponseDueAt: { lt: now } },
-            { resolvedAt: null, resolutionDueAt: { lt: now } },
+            { pausedAt: null, resolvedAt: null, resolutionDueAt: { lt: now } },
           ],
         },
       }),

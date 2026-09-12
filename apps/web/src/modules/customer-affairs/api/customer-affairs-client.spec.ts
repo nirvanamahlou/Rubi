@@ -17,6 +17,27 @@ afterEach(() => {
 });
 
 describe('customer affairs operational API client', () => {
+  it('passes website filters and persists Sales handoff responses through existing contracts', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4190/api/v1';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ data: [] }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await customerAffairsApi.tickets('', 'ALL', {
+      sourceSite: 'nystkt',
+      page: 2,
+    });
+    expect(fetchMock.mock.calls[0]![0]).toContain('sourceSite=nystkt');
+    expect(fetchMock.mock.calls[0]![0]).toContain('page=2');
+    await customerAffairsApi.respondHandoff('handoff', {
+      status: 'RETURNED',
+      reason: 'تکمیل اطلاعات',
+    });
+    expect(fetchMock.mock.calls[1]![0]).toContain('/handoffs/handoff/respond');
+    expect(JSON.parse(fetchMock.mock.calls[1]![1].body)).toMatchObject({
+      status: 'RETURNED',
+    });
+  });
   it('edits optional fields without leaking read-only or unrelated values', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4190/api/v1';
     const fetchMock = vi

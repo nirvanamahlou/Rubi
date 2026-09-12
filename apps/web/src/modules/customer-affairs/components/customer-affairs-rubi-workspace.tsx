@@ -148,6 +148,7 @@ export function CustomerAffairsRubiWorkspace() {
   const tab = ticketId ? 'tickets' : 'leads';
   const search = params.get('search') || '';
   const filter = params.get('filter') || 'ALL';
+  const sourceSite = params.get('sourceSite') || 'ALL';
   const page = Math.max(
     1,
     Math.min(100000, Math.floor(Number(params.get('page')) || 1)),
@@ -215,6 +216,7 @@ export function CustomerAffairsRubiWorkspace() {
           page,
           pageSize: 12,
           overdueOnly: view === 'queues',
+          sourceSite,
         });
         result.tickets = rows.data;
         result.total = rows.meta.total;
@@ -245,7 +247,7 @@ export function CustomerAffairsRubiWorkspace() {
     return () => {
       current = false;
     };
-  }, [view, family, id, tab, search, filter, page, revision]);
+  }, [view, family, id, tab, search, filter, sourceSite, page, revision]);
   const reloadDetail = async () => {
     setRevision((x) => x + 1);
   };
@@ -585,6 +587,21 @@ export function CustomerAffairsRubiWorkspace() {
                         ))}
                       </AffairsSelect>
                     )}
+                    {family === 'tickets' && (
+                      <AffairsSelect
+                        aria-label="فیلتر سایت"
+                        value={sourceSite}
+                        onChange={(event) =>
+                          change('sourceSite', event.target.value)
+                        }
+                      >
+                        <option value="ALL">همه سایت‌ها و کانال‌ها</option>
+                        <option value="jahanbastan">
+                          جهان باستان · jahanbastan.ir
+                        </option>
+                        <option value="nystkt">نیایش · nystkt.ir</option>
+                      </AffairsSelect>
+                    )}
                   </div>
                   {view === 'followups' || view === 'queues' ? (
                     <p className={`${s.panelBody} ${s.muted}`}>
@@ -693,11 +710,13 @@ export function CustomerAffairsRubiWorkspace() {
                               }
                             >
                               <div>
-                                {date(
-                                  'stage' in row
-                                    ? row.nextActionAt
-                                    : row.resolutionDueAt,
-                                )}
+                                {!('stage' in row) && row.pausedAt
+                                  ? 'متوقف؛ منتظر پاسخ مشتری'
+                                  : date(
+                                      'stage' in row
+                                        ? row.nextActionAt
+                                        : row.resolutionDueAt,
+                                    )}
                               </div>
                             </td>
                           </tr>

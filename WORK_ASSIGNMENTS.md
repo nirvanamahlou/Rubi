@@ -1,5 +1,17 @@
 # Work Assignments
 
+## CUSTOMER-AFFAIRS-WORKFLOW-COMPLETION — PC-B — CODE VERIFIED / ACTIVATION PENDING
+
+- Delivered atomic lead-to-person conversion, Sales response popup, persisted manual probability, site filter, opt-in transactional reminder notifications, resolution waiting pause, and opt-in sms.ir sending with durable idempotency and uncertain-outcome handling. API 177 tests / Web 39 tests, scoped ESLint, both typechecks and both builds passed. No migration, dependency change, real SMS or business submissions. Runtime restart remains blocked; no new-runtime visual verification. Reservation released for this slice; remaining backlog and activation runbook: `docs/tasks/CUSTOMER-AFFAIRS-WORKFLOW-COMPLETION.md`.
+
+- User selected sms.ir for messaging. Reserve CA-local outbound SMS API/controller and explicit send popup, using existing timeline/command persistence. Provider endpoint and header verified against IPeCompany/SmsPanelV2.DotNet official SDK. Secret/line/sender allowlist remain environment-only and disabled by default. Network acceptance is not handset delivery; timeout/uncertain outcome is persisted without automatic resend. No real SMS during QA.
+
+- Public Customers contract extension reserved under user's cross-module delegation: transaction-aware person creation through CustomerService, only Customers owns validation/encryption/audit and its tables. CA locks its own lead, invokes public creation, then links customerId atomically. Customers files match fetched develop (no competing diff found); no Sales/Finance producer edits (their newer remote changes are preserved).
+
+- Additive CA contract reservation: optional pausedAt/pausedMinutes read projection for existing stored fields; producer CA API, consumer CA Web, old clients ignore new fields. No schema mutation. WAITING_CUSTOMER pauses resolution only; first-response and unit delays remain counted.
+
+- User requests completion of the audited operational backlog, retaining four tabs. Branch `codex/pc-b-customer-affairs-workflow-completion` from combined `48d3989e` preserves previous CA work. Reserve CA backend/frontend, module-owned scheduler and tests, own docs; consume Notifications/Sales/Customers public services only. No shared schema/dependency locks acquired in this slice. Provisional backend targets retained from BACKEND-ROUTING (internal/PII, shared branch scope, 10:1 read/write, 50QPS, p50/p95/p99 100/300/600ms, SLO99.5%, RPO24h/RTO4h, PC-B); these are unmeasured planning targets. Runtime restart previously blocked; newer PC-A shared Web3100 must not be replaced. Live site/message activation requires external adapters/credentials, never a fabricated connection.
+
 ## CUSTOMER-AFFAIRS-THEMED-SELECTS — PC-B — CODE VERIFIED / RUNTIME RESTART BLOCKED
 
 - Reserve only CA Web components/tests and own task/status documentation on `codex/pc-b-customer-affairs-themed-selects` from combined `ac19de0a`. Replace native visible dropdowns with existing Rubi Select primitives, preserving form values and HR selection. No shared UI edits, API, schema, dependencies or permissions. Preserve API4190; verify and rebuild owned Web3100. No merge.

@@ -24,6 +24,7 @@ import { DocumentsService } from '../documents/documents.service';
 import { SalesService } from '../sales/sales.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ReservationsPublicService } from '../reservations/reservations-public.service';
+import { resolutionPausePatch } from './customer-affairs-sla';
 import {
   canTransitionLead,
   canTransitionTicket,
@@ -490,7 +491,14 @@ export class CustomerAffairsService {
       const changed = await tx.customerAffairsLead.updateMany({
         where: { id, version: input.expectedVersion },
         data: {
-          qualification: json(qualification),
+          qualification: json({
+            ...qualification,
+            conversionProbability:
+              input.conversionProbability ??
+              (current.qualification as Record<string, unknown> | null)
+                ?.conversionProbability ??
+              null,
+          }),
           stage:
             qualification.state === 'QUALIFIED' ? 'QUALIFIED' : 'QUALIFYING',
           updatedByUserId: actor.userId,
@@ -582,6 +590,66 @@ export class CustomerAffairsService {
       return row;
     });
     return this.getLead(result.id, actor);
+  }
+
+  async convertLeadCustomer(
+    id: string,
+    input: {
+      firstName: string;
+      lastName: string;
+      nationalId: string;
+      expectedVersion: number;
+    },
+    actor: AuthenticatedActor,
+  ) {
+    await this.repository.transaction(async (tx) => {
+      await tx.$queryRaw(
+        Prisma.sql`SELECT id FROM customer_affairs_leads WHERE id = ${id}::uuid FOR UPDATE`,
+      );
+      const lead = await tx.customerAffairsLead.findUnique({ where: { id } });
+      if (!lead || !actor.branchIds.includes(lead.branchId))
+        throw new NotFoundException();
+      if (lead.customerId) return;
+      if (lead.version !== input.expectedVersion) throw conflict();
+      if (['LOST', 'HANDED_OFF'].includes(lead.stage))
+        throw new BadRequestException('این مرحله قابل تبدیل نیست.');
+      const customer = await this.customers.createPersonWithinTransaction(
+        input,
+        actor,
+        lead.branchId,
+        tx,
+      );
+      await tx.customerAffairsLead.update({
+        where: { id },
+        data: {
+          customerId: customer.id,
+          version: { increment: 1 },
+          updatedByUserId: actor.userId,
+        },
+      });
+      await tx.customerAffairsTimeline.create({
+        data: {
+          leadId: id,
+          type: 'STATUS_CHANGE',
+          outcome: 'CUSTOMER_CREATED',
+          summary: 'پرونده مشتری ایجاد و به سرنخ متصل شد.',
+          actorUserId: actor.userId,
+          documentVersionIds: [],
+        },
+      });
+      await tx.customerAffairsAuditEvent.create({
+        data: {
+          branchId: lead.branchId,
+          actorUserId: actor.userId,
+          entityType: 'LEAD',
+          entityId: id,
+          action: 'CUSTOMER_CONVERTED',
+          version: lead.version + 1,
+          afterSnapshot: { customerId: customer.id },
+        },
+      });
+    });
+    return this.getLead(id, actor);
   }
 
   async proposeHandoff(
@@ -687,6 +755,10 @@ export class CustomerAffairsService {
         });
       if (input.status === 'ACCEPTED') {
         const contract = await this.sales.detail(input.salesContractId!, actor);
+        if (contract.data.branchId !== handoff.lead.branchId)
+          throw new BadRequestException(
+            'شعبه قرارداد با درخواست مشتری یکسان نیست.',
+          );
         if (
           handoff.lead.customerId &&
           contract.data.customerId !== handoff.lead.customerId
@@ -1051,6 +1123,7 @@ export class CustomerAffairsService {
         where: { id, version: input.expectedVersion },
         data: {
           status: input.status,
+          ...resolutionPausePatch(current, input.status, new Date()),
           updatedByUserId: actor.userId,
           version: { increment: 1 },
         },
@@ -1338,10 +1411,16 @@ export class CustomerAffairsService {
         data.escalationLevel =
           input.level ?? Math.min(3, (current.escalationLevel ?? 0) + 1);
       if (action === 'RESOLVE') {
+        const pause = resolutionPausePatch(current, 'RESOLVED', now);
+        Object.assign(data, pause);
         data.status = 'RESOLVED';
         data.resolvedAt = now;
         data.resolutionOutcome = input.resolutionOutcome ?? null;
-        data.resolutionBreachedAt = now > current.resolutionDueAt ? now : null;
+        data.resolutionBreachedAt =
+          current.resolutionBreachedAt ??
+          (now > (pause.resolutionDueAt ?? current.resolutionDueAt)
+            ? now
+            : null);
       }
       if (action === 'CLOSE') {
         data.status = 'CLOSED';
@@ -1654,6 +1733,8 @@ export class CustomerAffairsService {
       resolutionDueAt: row.resolutionDueAt.toISOString(),
       firstRespondedAt: row.firstRespondedAt?.toISOString() ?? null,
       resolvedAt: row.resolvedAt?.toISOString() ?? null,
+      pausedAt: row.pausedAt?.toISOString() ?? null,
+      pausedMinutes: row.pausedMinutes,
       firstResponseBreachedAt:
         row.firstResponseBreachedAt?.toISOString() ?? null,
       resolutionBreachedAt: row.resolutionBreachedAt?.toISOString() ?? null,

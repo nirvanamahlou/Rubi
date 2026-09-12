@@ -31,6 +31,7 @@ import {
   HandoffDto,
   HandoffResponseDto,
   LeadMutationDto,
+  LeadCustomerConversionDto,
   LeadTransitionDto,
   ListQueryDto,
   QualificationDto,
@@ -185,6 +186,16 @@ export class CustomerAffairsController {
     @Headers('idempotency-key') key?: string,
   ) {
     return this.service.proposeHandoff(id, dto.expectedVersion, req.actor, key);
+  }
+
+  @Post('leads/:id/customer')
+  @RequirePermissions('customer_affairs.lead.update', 'customers.create')
+  convertCustomer(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: LeadCustomerConversionDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.convertLeadCustomer(id, dto, req.actor);
   }
 
   @Post('handoffs/:id/respond')

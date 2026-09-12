@@ -49,6 +49,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export interface AffairsListOptions {
+  sourceSite?: string;
   page?: number;
   pageSize?: number;
   stage?: string;
@@ -80,10 +81,46 @@ function query(
   if (options.priority && options.priority !== 'ALL')
     params.set('priority', options.priority);
   if (options.overdueOnly) params.set('overdueOnly', 'true');
+  if (options.sourceSite && options.sourceSite !== 'ALL')
+    params.set('sourceSite', options.sourceSite);
   return params.toString();
 }
 
 export const customerAffairsApi = {
+  sendSms: (
+    id: string,
+    input: { mobile: string; message: string },
+    key: string,
+  ) =>
+    request<{ data: { id: string; status: string; replay: boolean } }>(
+      `/tickets/${encodeURIComponent(id)}/sms`,
+      {
+        method: 'POST',
+        headers: { 'idempotency-key': key },
+        body: JSON.stringify(input),
+      },
+    ),
+  convertCustomer: (
+    id: string,
+    input: {
+      firstName: string;
+      lastName: string;
+      nationalId: string;
+      expectedVersion: number;
+    },
+  ) =>
+    request(`/leads/${encodeURIComponent(id)}/customer`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  respondHandoff: (
+    id: string,
+    input: { status: string; reason: string; salesContractId?: string },
+  ) =>
+    request(`/handoffs/${encodeURIComponent(id)}/respond`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
   updateFollowup: (
     record: CustomerAffairsLeadView | CustomerAffairsTicketView,
     nextAction: string,
@@ -213,6 +250,7 @@ export const customerAffairsApi = {
       budgetDiscussed: boolean;
       decisionMakerReachable: boolean;
       contactable: boolean;
+      conversionProbability?: number;
     },
   ) =>
     request(`/leads/${id}/qualification`, {

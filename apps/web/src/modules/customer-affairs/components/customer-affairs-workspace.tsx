@@ -51,6 +51,9 @@ import { CustomerPicker } from './customer-picker';
 import { CustomerAffairsFormDialog } from './customer-affairs-form-dialog';
 import { AssigneePicker } from './assignee-picker';
 import { RecordOperations, ticketCategories } from './record-operations';
+import { SalesHandoffResponse } from './sales-handoff-response';
+import { LeadCustomerConversion } from './lead-customer-conversion';
+import { TicketSms } from './ticket-sms';
 import s from './customer-affairs-rubi.module.css';
 
 type Tab = 'leads' | 'tickets';
@@ -62,6 +65,7 @@ export type Detail = (CustomerAffairsLeadView | CustomerAffairsTicketView) & {
     summary: string;
     occurredAt?: string;
     customerVisible?: boolean;
+    deliveryStatus?: string | null;
   }>;
   referrals?: Array<Record<string, unknown>>;
   correctiveActions?: Array<Record<string, unknown>>;
@@ -896,6 +900,13 @@ export function DetailPanel({
                         'decisionMakerReachable',
                       ),
                       contactable: data.has('contactable'),
+                      ...(String(data.get('conversionProbability') || '').trim()
+                        ? {
+                            conversionProbability: Number(
+                              data.get('conversionProbability'),
+                            ),
+                          }
+                        : {}),
                     }),
                   'نتیجه ارزیابی ثبت شد.',
                 );
@@ -903,6 +914,27 @@ export function DetailPanel({
               }}
             >
               <h3>آمادگی تحویل به فروش</h3>
+              <FormField
+                id="lead-conversion-probability"
+                label="احتمال تبدیل به فروش (درصد)"
+                description="برآورد کارشناس از صفر تا صد؛ مستقل از امتیاز آمادگی فروش است."
+              >
+                <Input
+                  id="lead-conversion-probability"
+                  name="conversionProbability"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={1}
+                  defaultValue={
+                    'stage' in detail &&
+                    typeof detail.qualification?.conversionProbability ===
+                      'number'
+                      ? detail.qualification.conversionProbability
+                      : ''
+                  }
+                />
+              </FormField>
               <p className={s.muted}>
                 فقط مواردی را تأیید کنید که در گفتگو با مشتری بررسی شده‌اند.
               </p>
@@ -1142,12 +1174,40 @@ export function DetailPanel({
                       'هنوز پاسخی ثبت نشده است.',
                   )}
                 </p>
+                {tab === 'leads' &&
+                  item.status === 'WAITING_SALES' &&
+                  typeof item.id === 'string' && (
+                    <SalesHandoffResponse
+                      id={item.id}
+                      customerId={detail.customerId ?? null}
+                      branchId={detail.branchId}
+                      onReload={onReload}
+                    />
+                  )}
               </div>
             ),
           )}
         </Card>
       ) : null}
       <RecordOperations detail={detail} onReload={onReload} />
+      {'stage' in detail &&
+        typeof detail.qualification?.conversionProbability === 'number' && (
+          <p className="text-sm text-muted-foreground">
+            احتمال تبدیل به فروش:{' '}
+            {detail.qualification.conversionProbability.toLocaleString('fa-IR')}
+            ٪ · برآورد کارشناس
+          </p>
+        )}
+      {!('stage' in detail) && <TicketSms id={detail.id} onReload={onReload} />}
+      {'stage' in detail &&
+        !detail.customerId &&
+        !['LOST', 'HANDED_OFF'].includes(detail.stage) && (
+          <LeadCustomerConversion
+            id={detail.id}
+            version={detail.version}
+            onReload={onReload}
+          />
+        )}
       <Card className={s.detail}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-black">سابقه ارتباط و رسیدگی</h3>
@@ -1234,6 +1294,19 @@ export function DetailPanel({
                     </span>
                   ) : (
                     <span className="text-xs text-muted-foreground">داخلی</span>
+                  )}
+                  {item.deliveryStatus && (
+                    <Badge>
+                      {(
+                        {
+                          PENDING: 'در انتظار تعیین نتیجه',
+                          ACCEPTED: 'پذیرفته‌شده توسط سرویس',
+                          DELIVERED: 'تحویل تأییدشده',
+                          FAILED: 'ناموفق',
+                          UNKNOWN: 'نتیجه نامشخص؛ نیازمند بررسی پنل',
+                        } as Record<string, string>
+                      )[item.deliveryStatus] ?? item.deliveryStatus}
+                    </Badge>
                   )}
                 </div>
                 <p className="mt-1 text-sm leading-6">{item.summary}</p>
