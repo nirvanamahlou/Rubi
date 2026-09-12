@@ -45,6 +45,7 @@ import {
 } from '@/components/ui/surfaces';
 import { FinanceWorkspace } from './finance-workspace';
 import { FinanceInboxLiveWorkspace } from './finance-inbox-live-workspace';
+import { FinanceDeliveryPanel } from './finance-delivery-panel';
 import {
   accountTreePreview,
   financeInboxPreviewRequests,
@@ -982,6 +983,7 @@ export function FinanceRequestInboxWorkspace() {
       />
       <FinanceContext />
       <FinanceInboxLiveWorkspace />
+      <FinanceDeliveryPanel />
       <details className="rounded-3xl border border-border bg-surface p-4">
         <summary className="cursor-pointer font-black">
           پیش‌نمایش فرم‌های دریافت و پرداخت

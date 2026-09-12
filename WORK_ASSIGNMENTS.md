@@ -19,6 +19,20 @@
   API/Web TypeScript and both production builds (46 Web routes). No migration or
   operational data/runtime change. Implementation reservations are released.
 
+## APP-SHELL-HEADER-UTILITY-LEFT-001 — PC-A — READY_FOR_REVIEW
+
+Base `dd177cfd`; COMPUTER_ID=PC-A. انتقال یکپارچه گروه تاریخ، زبان، پوسته، اعلان و منوی کاربر به لبه چپ نوار بالای AppShell طبق تصویر کاربر. محدوده فقط `app-shell.tsx`، تست header موجود و اسناد وضعیت است؛ رفتار کنترل‌ها، API، داده، Schema/Migration و وابستگی تغییر نمی‌کنند. PRهای قدیمی #155/#156/#159/#161 این فایل را در شاخه‌های قدیمی لمس کرده‌اند اما مبنای فعلی `develop` است و تغییر فعال تازه‌ای روی این چیدمان ندارند.
+
+Completed: تاریخ و HeaderActions داخل یک بلوک `ms-auto` قرار گرفتند تا در RTL به لبه چپ هدر منتقل شوند. نمایش دسکتاپ تاریخ و رفتار زبان/پوسته/اعلان/کاربر حفظ شد. ۴ تست متمرکز، lint محدوده، Web typecheck و build تولیدی ۴۶ مسیر پاس شدند؛ بدون تغییر API یا داده.
+
+## FINANCE-006-DELIVERY-PANEL-REDESIGN — PC-A — COMPLETE / MERGED / ACTIVE
+
+Base `6026370f`; COMPUTER_ID=PC-A. بازطراحی نمای «پرداخت کارگزاران و تحویل مدارک به فروش» در کارتابل مالی برای تفکیک روشن مراحل، نمایش کارت قرارداد، وضعیت تسویه خدمات و اقدام بعدی. محدوده `finance-delivery-panel.tsx`، انتقال محل نمایش آن از Workspace قدیمی حسابداری به `FinanceRequestInboxWorkspace`، تست متمرکز و اسناد وضعیت است؛ منطق API، مجوزها، داده، Schema/Migration و قراردادهای اشتراکی تغییر نمی‌کنند. PR قدیمی #126 فایل را در گذشته ایجاد کرده اما تغییر فعال تازه‌ای روی این محدوده ندارد؛ پیاده‌سازی فعلی `develop` مبناست.
+
+Completed: هدر راهنما و جریان دو مرحله‌ای، کارت مستقل قرارداد، شمارنده تسویه خدمات، وضعیت و اقدام صریح هر خدمت، علت غیرفعال بودن تحویل و وضعیت نهایی مجوز اضافه شد. کنترل از Workspace قدیمی حسابداری به `/finance/requests` منتقل شد. ۱۳۴۰ تست Web، تست متمرکز ۸ موردی، lint محدوده، typecheck و build تولیدی ۴۶ مسیر موفق بود. بدون تغییر API، داده، مجوز یا Migration.
+
+Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIROpWDpoCZuS` from this checkout and API4190 is healthy; unauthenticated route check returns the expected 307 login redirect. Scope released.
+
 ## FINANCE-005-ACCOUNTING-DROPDOWN-DEFAULTS — PC-A — COMPLETE / MERGED / ACTIVE
 
 - درخواست مالک محصول در 2026-09-13: هر چهار گروه منوی داخلی حسابداری هنگام ورود بسته
