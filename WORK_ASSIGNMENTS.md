@@ -1,5 +1,10 @@
 # Work Assignments
 
+## CUSTOMER-AFFAIRS-FORM-DIALOGS — PC-B — DONE / VERIFIED
+
+- User requests popup forms. Reserve Customer Affairs Web components and scoped tests plus own task/status entries on `codex/pc-b-customer-affairs-form-dialogs`, based on live combined `304953b` to preserve Web3100. Reuse shared overlays without editing shared files. Convert creation, followup, qualification, referral, outcome and communication forms; keep underlying views mounted and API/data unchanged. No schema/dependency locks needed. Verify scoped checks, production build and browser; restart Web3100 only, retain API4190. No merge.
+- Completed seven modal editing surfaces. Scoped ESLint, 30 tests, typecheck and 46-route production build passed. Authenticated QA verified creation/customer lookup, followup/calendar, qualification, communication, Escape/focus return and 390px layout. Final build explicitly targets API4190; Web3100/PID10196 active, API4190/PID12504 unchanged. No business submissions. Reservation released; no merge.
+
 ## CUSTOMER-AFFAIRS-WORKFLOW-REDESIGN — PC-B — DONE / VERIFIED
 
 - User authorizes logical restructuring and frontend redesign. Base is the live combined source `87239f4` to preserve unmerged Customer Affairs and shared Web3100 functionality; branch `codex/pc-b-customer-affairs-workflow-redesign`. Reserve Customer Affairs Web components/styles/client and focused tests plus this entry and own status/task documentation. Four primary sections; contextual filters, actionable overview, explicit qualification/communication/result forms using existing APIs. No schema, shared contract or dependency changes. Verify build and authenticated Web3100; API4190 retained. No merge.

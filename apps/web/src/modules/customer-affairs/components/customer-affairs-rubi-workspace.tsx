@@ -299,557 +299,546 @@ export function CustomerAffairsRubiWorkspace() {
             onCreated={(row) => navigate('tickets', row.id)}
           />
         )
-      ) : (
-        <>
-          {(family === 'leads' || family === 'tickets') && !id && (
-            <nav className={s.subtabs} aria-label="نماهای پرونده">
-              {hubs
-                .filter((x) =>
-                  (family === 'leads'
-                    ? ['leads', 'followups', 'handoffs']
-                    : ['tickets', 'queues']
-                  ).includes(x.view),
-                )
-                .map((x) => (
-                  <button
-                    key={x.view}
-                    aria-pressed={view === x.view}
-                    onClick={() => navigate(x.view)}
-                  >
-                    {x.view === 'leads' || x.view === 'tickets'
-                      ? 'همه پرونده‌ها'
-                      : x.title}
-                  </button>
-                ))}
-            </nav>
-          )}
-          {state === 'loading' ? (
-            <div className={s.empty} role="status">
-              در حال دریافت اطلاعات…
-            </div>
-          ) : state === 'error' || state === 'forbidden' ? (
-            <ErrorState
-              title={
-                state === 'forbidden'
-                  ? 'دسترسی به این بخش مجاز نیست'
-                  : 'اطلاعات دریافت نشد'
-              }
-              description={message}
-              action={
-                <Button
-                  variant="outline"
-                  onClick={() => setRevision((x) => x + 1)}
+      ) : null}
+      <>
+        {(family === 'leads' || family === 'tickets') && !id && (
+          <nav className={s.subtabs} aria-label="نماهای پرونده">
+            {hubs
+              .filter((x) =>
+                (family === 'leads'
+                  ? ['leads', 'followups', 'handoffs']
+                  : ['tickets', 'queues']
+                ).includes(x.view),
+              )
+              .map((x) => (
+                <button
+                  key={x.view}
+                  aria-pressed={view === x.view}
+                  onClick={() => navigate(x.view)}
                 >
-                  تلاش دوباره
-                </Button>
-              }
-            />
-          ) : loaded.detail && id ? (
-            <DetailPanel
-              key={id}
-              detail={loaded.detail}
-              tab={tab}
-              onBack={() => navigate(tab)}
-              onReload={reloadDetail}
-            />
-          ) : (
-            <>
-              {view === 'overview' && (
-                <>
-                  <div className={s.metrics}>
-                    {[
-                      {
-                        label: 'سرنخ‌های باز',
-                        value: loaded.dashboard?.leads.open,
-                        view: 'leads',
-                        icon: Users,
-                        color: 'blue',
-                      },
-                      {
-                        label: 'پیگیری‌های معوق',
-                        value: loaded.dashboard?.leads.overdue,
-                        view: 'followups',
-                        icon: Clock3,
-                        color: 'amber',
-                      },
-                      {
-                        label: 'تیکت‌های باز',
-                        value: loaded.dashboard?.tickets.open,
-                        view: 'tickets',
-                        icon: Inbox,
-                        color: 'purple',
-                      },
-                      {
-                        label: 'تیکت‌های معوق',
-                        value: loaded.dashboard?.tickets.overdue,
-                        view: 'queues',
-                        icon: ShieldCheck,
-                        color: 'red',
-                      },
-                    ].map((x) => (
-                      <button
-                        key={x.view}
-                        className={s.metric}
-                        onClick={() => navigate(x.view as View)}
-                        style={accent(x.color)}
-                      >
-                        <span className={s.icon}>
-                          <x.icon />
-                        </span>
-                        <div>
-                          <strong>
-                            {x.value === undefined ? '—' : number(x.value)}
-                          </strong>
-                          <p>{x.label}</p>
-                          <small>مشاهده پرونده‌ها</small>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                  <section className={s.attention}>
-                    <div className={s.panelHead}>
+                  {x.view === 'leads' || x.view === 'tickets'
+                    ? 'همه پرونده‌ها'
+                    : x.title}
+                </button>
+              ))}
+          </nav>
+        )}
+        {state === 'loading' ? (
+          <div className={s.empty} role="status">
+            در حال دریافت اطلاعات…
+          </div>
+        ) : state === 'error' || state === 'forbidden' ? (
+          <ErrorState
+            title={
+              state === 'forbidden'
+                ? 'دسترسی به این بخش مجاز نیست'
+                : 'اطلاعات دریافت نشد'
+            }
+            description={message}
+            action={
+              <Button
+                variant="outline"
+                onClick={() => setRevision((x) => x + 1)}
+              >
+                تلاش دوباره
+              </Button>
+            }
+          />
+        ) : loaded.detail && id ? (
+          <DetailPanel
+            key={id}
+            detail={loaded.detail}
+            tab={tab}
+            onBack={() => navigate(tab)}
+            onReload={reloadDetail}
+          />
+        ) : (
+          <>
+            {view === 'overview' && (
+              <>
+                <div className={s.metrics}>
+                  {[
+                    {
+                      label: 'سرنخ‌های باز',
+                      value: loaded.dashboard?.leads.open,
+                      view: 'leads',
+                      icon: Users,
+                      color: 'blue',
+                    },
+                    {
+                      label: 'پیگیری‌های معوق',
+                      value: loaded.dashboard?.leads.overdue,
+                      view: 'followups',
+                      icon: Clock3,
+                      color: 'amber',
+                    },
+                    {
+                      label: 'تیکت‌های باز',
+                      value: loaded.dashboard?.tickets.open,
+                      view: 'tickets',
+                      icon: Inbox,
+                      color: 'purple',
+                    },
+                    {
+                      label: 'تیکت‌های معوق',
+                      value: loaded.dashboard?.tickets.overdue,
+                      view: 'queues',
+                      icon: ShieldCheck,
+                      color: 'red',
+                    },
+                  ].map((x) => (
+                    <button
+                      key={x.view}
+                      className={s.metric}
+                      onClick={() => navigate(x.view as View)}
+                      style={accent(x.color)}
+                    >
+                      <span className={s.icon}>
+                        <x.icon />
+                      </span>
                       <div>
-                        <h2>
-                          <Clock3 aria-hidden="true" />
-                          نیازمند پیگیری
-                        </h2>
-                        <p className={s.muted}>
-                          درخواست‌هایی که موعد اقدام بعدی آن‌ها گذشته است
-                        </p>
+                        <strong>
+                          {x.value === undefined ? '—' : number(x.value)}
+                        </strong>
+                        <p>{x.label}</p>
+                        <small>مشاهده پرونده‌ها</small>
                       </div>
-                      <Button
-                        variant="outline"
-                        onClick={() => navigate('followups')}
-                      >
-                        مشاهده همه پیگیری‌ها <ArrowLeft size={16} />
-                      </Button>
+                    </button>
+                  ))}
+                </div>
+                <section className={s.attention}>
+                  <div className={s.panelHead}>
+                    <div>
+                      <h2>
+                        <Clock3 aria-hidden="true" />
+                        نیازمند پیگیری
+                      </h2>
+                      <p className={s.muted}>
+                        درخواست‌هایی که موعد اقدام بعدی آن‌ها گذشته است
+                      </p>
                     </div>
-                    {attention.length ? (
-                      attention.map((row) => (
-                        <div className={s.listItem} key={row.id}>
-                          <span className={s.icon} style={accent('amber')}>
-                            <Clock3 aria-hidden="true" />
-                          </span>
-                          <div className={s.grow}>
-                            <button
-                              className={s.titleButton}
-                              onClick={() => navigate('leads', row.id)}
-                            >
-                              {row.title}
-                            </button>
-                            <p className={s.muted}>{row.nextAction}</p>
-                          </div>
-                          <time className={s.due}>
-                            {date(row.nextActionAt)}
-                          </time>
-                          <Button
-                            variant="ghost"
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('followups')}
+                    >
+                      مشاهده همه پیگیری‌ها <ArrowLeft size={16} />
+                    </Button>
+                  </div>
+                  {attention.length ? (
+                    attention.map((row) => (
+                      <div className={s.listItem} key={row.id}>
+                        <span className={s.icon} style={accent('amber')}>
+                          <Clock3 aria-hidden="true" />
+                        </span>
+                        <div className={s.grow}>
+                          <button
+                            className={s.titleButton}
                             onClick={() => navigate('leads', row.id)}
                           >
-                            پیگیری <ArrowLeft size={15} />
-                          </Button>
+                            {row.title}
+                          </button>
+                          <p className={s.muted}>{row.nextAction}</p>
                         </div>
-                      ))
-                    ) : (
-                      <p className={s.empty}>پیگیری عقب‌افتاده‌ای ندارید.</p>
+                        <time className={s.due}>{date(row.nextActionAt)}</time>
+                        <Button
+                          variant="ghost"
+                          onClick={() => navigate('leads', row.id)}
+                        >
+                          پیگیری <ArrowLeft size={15} />
+                        </Button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className={s.empty}>پیگیری عقب‌افتاده‌ای ندارید.</p>
+                  )}
+                </section>
+                <div className={s.columns}>
+                  {(['tickets', 'leads'] as const).map((kind) => (
+                    <section className={s.panel} key={kind}>
+                      <div className={s.panelHead}>
+                        <h2>
+                          {kind === 'tickets'
+                            ? 'آخرین تیکت‌ها'
+                            : 'منتظر پذیرش فروش'}
+                        </h2>
+                        <Button
+                          variant="ghost"
+                          onClick={() =>
+                            navigate(
+                              kind === 'tickets' ? 'tickets' : 'handoffs',
+                            )
+                          }
+                        >
+                          مشاهده همه
+                        </Button>
+                      </div>
+                      {loaded[kind].length ? (
+                        loaded[kind].map((row) => (
+                          <div key={row.id} className={s.listItem}>
+                            <div className={s.grow}>
+                              <button
+                                className={s.titleButton}
+                                onClick={() => navigate(kind, row.id)}
+                              >
+                                {'subject' in row ? row.subject : row.title}
+                              </button>
+                              <p className={s.muted}>{row.trackingNumber}</p>
+                            </div>
+                            {badge(
+                              'status' in row
+                                ? statusLabel[row.status]
+                                : stageLabel[row.stage],
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <p className={s.empty}>پرونده‌ای وجود ندارد.</p>
+                      )}
+                    </section>
+                  ))}
+                </div>
+              </>
+            )}
+            {['leads', 'followups', 'handoffs', 'tickets', 'queues'].includes(
+              view,
+            ) && (
+              <>
+                {view === 'handoffs' && (
+                  <div className={s.flow}>
+                    {[
+                      'ارزیابی شرایط',
+                      'ارسال درخواست',
+                      'پذیرش فروش',
+                      'ادامه در فروش',
+                    ].map((x, i) => (
+                      <span key={x}>
+                        <b>{number(i + 1)}</b>
+                        {x}
+                        {i < 3 && <ArrowLeft size={14} />}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <section className={s.panel}>
+                  <div className={s.panelHead}>
+                    <h2>{title}</h2>
+                    {view === 'leads' && (
+                      <div className={s.subtabs}>
+                        <button
+                          aria-pressed={!board}
+                          onClick={() => change('layout', 'table')}
+                        >
+                          جدولی
+                        </button>
+                        <button
+                          aria-pressed={board}
+                          onClick={() => change('layout', 'board')}
+                        >
+                          مرحله‌ای
+                        </button>
+                      </div>
                     )}
-                  </section>
-                  <div className={s.columns}>
-                    {(['tickets', 'leads'] as const).map((kind) => (
-                      <section className={s.panel} key={kind}>
-                        <div className={s.panelHead}>
-                          <h2>
-                            {kind === 'tickets'
-                              ? 'آخرین تیکت‌ها'
-                              : 'منتظر پذیرش فروش'}
-                          </h2>
-                          <Button
-                            variant="ghost"
-                            onClick={() =>
-                              navigate(
-                                kind === 'tickets' ? 'tickets' : 'handoffs',
-                              )
-                            }
-                          >
-                            مشاهده همه
-                          </Button>
-                        </div>
-                        {loaded[kind].length ? (
-                          loaded[kind].map((row) => (
-                            <div key={row.id} className={s.listItem}>
-                              <div className={s.grow}>
+                  </div>
+                  <div className={s.filters}>
+                    <form
+                      className={`${s.search} ${s.actions}`}
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        change(
+                          'search',
+                          String(
+                            new FormData(event.currentTarget).get('search') ||
+                              '',
+                          ),
+                        );
+                      }}
+                    >
+                      <Search aria-hidden="true" />
+                      <Input
+                        aria-label="جست‌وجوی پرونده"
+                        placeholder="جست‌وجوی عنوان یا شماره پیگیری…"
+                        name="search"
+                        key={search}
+                        defaultValue={search}
+                        className="min-w-0 flex-1"
+                      />
+                      <Button type="submit" variant="outline">
+                        جست‌وجو
+                      </Button>
+                    </form>
+                    {view !== 'followups' && (
+                      <select
+                        aria-label="فیلتر وضعیت"
+                        value={filter}
+                        onChange={(e) => change('filter', e.target.value)}
+                      >
+                        <option value="ALL">
+                          {view === 'handoffs' ? 'منتظر فروش' : 'همه وضعیت‌ها'}
+                        </option>
+                        {Object.entries(
+                          family === 'leads' ? stageLabel : statusLabel,
+                        ).map(([key, label]) => (
+                          <option key={key} value={key}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                  {view === 'followups' || view === 'queues' ? (
+                    <p className={`${s.panelBody} ${s.muted}`}>
+                      این نما فقط پرونده‌های معوق را نمایش می‌دهد.
+                    </p>
+                  ) : null}
+                  {!rows.length ? (
+                    <p className={s.empty}>پرونده‌ای مطابق فیلترها پیدا نشد.</p>
+                  ) : view === 'leads' && board ? (
+                    <div className={s.board}>
+                      {Object.entries(stageLabel).map(([stage, label]) => (
+                        <section className={s.lane} key={stage}>
+                          <h3>
+                            {label}
+                            <span>
+                              {number(
+                                loaded.leads.filter((x) => x.stage === stage)
+                                  .length,
+                              )}
+                            </span>
+                          </h3>
+                          {loaded.leads
+                            .filter((x) => x.stage === stage)
+                            .map((row) => (
+                              <button
+                                key={row.id}
+                                className={s.leadCard}
+                                onClick={() => navigate('leads', row.id)}
+                              >
+                                <strong>{row.title}</strong>
+                                <p>{row.trackingNumber}</p>
+                                {badge(priorityLabel[row.priority])}
+                                <p>
+                                  {row.nextAction || 'اقدام بعدی تعیین نشده'}
+                                </p>
+                              </button>
+                            ))}
+                        </section>
+                      ))}
+                    </div>
+                  ) : (
+                    <table className={s.table}>
+                      <thead>
+                        <tr>
+                          {[
+                            'پرونده',
+                            'وضعیت و اولویت',
+                            family === 'leads' ? 'نیاز سفر' : 'مهلت پاسخ اولیه',
+                            'اقدام بعدی',
+                            family === 'leads' ? 'زمان پیگیری' : 'مهلت حل',
+                          ].map((x) => (
+                            <th key={x} scope="col">
+                              {x}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((row) => (
+                          <tr key={row.id}>
+                            <td data-label="پرونده">
+                              <div>
                                 <button
                                   className={s.titleButton}
-                                  onClick={() => navigate(kind, row.id)}
+                                  onClick={() =>
+                                    navigate(
+                                      family as 'leads' | 'tickets',
+                                      row.id,
+                                    )
+                                  }
                                 >
-                                  {'subject' in row ? row.subject : row.title}
+                                  {'title' in row ? row.title : row.subject}
                                 </button>
-                                <p className={s.muted}>{row.trackingNumber}</p>
+                                <p>{row.trackingNumber}</p>
                               </div>
-                              {badge(
-                                'status' in row
-                                  ? statusLabel[row.status]
-                                  : stageLabel[row.stage],
-                              )}
+                            </td>
+                            <td data-label="وضعیت">
+                              <div>
+                                {badge(
+                                  'stage' in row
+                                    ? stageLabel[row.stage]
+                                    : statusLabel[row.status],
+                                )}
+                                <p>{priorityLabel[row.priority]}</p>
+                              </div>
+                            </td>
+                            <td
+                              data-label={
+                                family === 'leads' ? 'نیاز سفر' : 'پاسخ اولیه'
+                              }
+                            >
+                              <div>
+                                {'travelNeed' in row
+                                  ? row.travelNeed
+                                  : date(row.firstResponseDueAt)}
+                                {'firstRespondedAt' in row &&
+                                  row.firstRespondedAt && <p>پاسخ داده شده</p>}
+                              </div>
+                            </td>
+                            <td data-label="اقدام بعدی">
+                              <div>{row.nextAction || 'تعیین نشده'}</div>
+                            </td>
+                            <td
+                              data-label={
+                                family === 'leads' ? 'زمان پیگیری' : 'مهلت حل'
+                              }
+                            >
+                              <div>
+                                {date(
+                                  'stage' in row
+                                    ? row.nextActionAt
+                                    : row.resolutionDueAt,
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  <footer className={s.pager}>
+                    <span>
+                      {number(loaded.total)} پرونده · صفحه {number(page)}
+                      {board && view === 'leads'
+                        ? ' · تعداد ستون‌ها مربوط به همین صفحه است'
+                        : ''}
+                    </span>
+                    <div className={s.actions}>
+                      <Button
+                        variant="outline"
+                        disabled={page <= 1}
+                        onClick={() => change('page', String(page - 1))}
+                      >
+                        قبلی
+                      </Button>
+                      <Button
+                        variant="outline"
+                        disabled={page * 12 >= loaded.total}
+                        onClick={() => change('page', String(page + 1))}
+                      >
+                        بعدی
+                      </Button>
+                    </div>
+                  </footer>
+                </section>
+              </>
+            )}
+            {report && (
+              <>
+                <section className={s.hero}>
+                  <span className={s.icon}>
+                    <BarChart3 />
+                  </span>
+                  <div>
+                    <h2>{title}</h2>
+                    <p className={s.muted}>
+                      داده‌های ثبت‌شده تا {date(report.generatedAt)}؛ در محدوده
+                      دسترسی شما
+                    </p>
+                  </div>
+                </section>
+                <div className={s.columns}>
+                  {view === 'reports' && (
+                    <section className={s.panel}>
+                      <div className={s.panelHead}>
+                        <h2>توزیع مرحله‌ای سرنخ‌ها</h2>
+                      </div>
+                      <div className={s.panelBody}>
+                        {report.leadStages.length ? (
+                          report.leadStages.map((x) => (
+                            <div key={x.stage} className={s.reportRow}>
+                              <div>
+                                <span>{stageLabel[x.stage] || x.stage}</span>
+                                <strong>{number(x._count._all)}</strong>
+                              </div>
+                              <div className={s.bar}>
+                                <i
+                                  style={{
+                                    width: `${(100 * x._count._all) / Math.max(1, ...report.leadStages.map((y) => y._count._all))}%`,
+                                  }}
+                                />
+                              </div>
                             </div>
                           ))
                         ) : (
-                          <p className={s.empty}>پرونده‌ای وجود ندارد.</p>
+                          <p className={s.empty}>داده‌ای ثبت نشده است.</p>
                         )}
-                      </section>
-                    ))}
-                  </div>
-                </>
-              )}
-              {['leads', 'followups', 'handoffs', 'tickets', 'queues'].includes(
-                view,
-              ) && (
-                <>
-                  {view === 'handoffs' && (
-                    <div className={s.flow}>
-                      {[
-                        'ارزیابی شرایط',
-                        'ارسال درخواست',
-                        'پذیرش فروش',
-                        'ادامه در فروش',
-                      ].map((x, i) => (
-                        <span key={x}>
-                          <b>{number(i + 1)}</b>
-                          {x}
-                          {i < 3 && <ArrowLeft size={14} />}
-                        </span>
-                      ))}
-                    </div>
+                      </div>
+                    </section>
                   )}
                   <section className={s.panel}>
                     <div className={s.panelHead}>
-                      <h2>{title}</h2>
-                      {view === 'leads' && (
-                        <div className={s.subtabs}>
-                          <button
-                            aria-pressed={!board}
-                            onClick={() => change('layout', 'table')}
-                          >
-                            جدولی
-                          </button>
-                          <button
-                            aria-pressed={board}
-                            onClick={() => change('layout', 'board')}
-                          >
-                            مرحله‌ای
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <div className={s.filters}>
-                      <form
-                        className={`${s.search} ${s.actions}`}
-                        onSubmit={(event) => {
-                          event.preventDefault();
-                          change(
-                            'search',
-                            String(
-                              new FormData(event.currentTarget).get('search') ||
-                                '',
-                            ),
-                          );
-                        }}
-                      >
-                        <Search aria-hidden="true" />
-                        <Input
-                          aria-label="جست‌وجوی پرونده"
-                          placeholder="جست‌وجوی عنوان یا شماره پیگیری…"
-                          name="search"
-                          key={search}
-                          defaultValue={search}
-                          className="min-w-0 flex-1"
-                        />
-                        <Button type="submit" variant="outline">
-                          جست‌وجو
-                        </Button>
-                      </form>
-                      {view !== 'followups' && (
-                        <select
-                          aria-label="فیلتر وضعیت"
-                          value={filter}
-                          onChange={(e) => change('filter', e.target.value)}
-                        >
-                          <option value="ALL">
-                            {view === 'handoffs'
-                              ? 'منتظر فروش'
-                              : 'همه وضعیت‌ها'}
-                          </option>
-                          {Object.entries(
-                            family === 'leads' ? stageLabel : statusLabel,
-                          ).map(([key, label]) => (
-                            <option key={key} value={key}>
-                              {label}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-                    {view === 'followups' || view === 'queues' ? (
-                      <p className={`${s.panelBody} ${s.muted}`}>
-                        این نما فقط پرونده‌های معوق را نمایش می‌دهد.
-                      </p>
-                    ) : null}
-                    {!rows.length ? (
-                      <p className={s.empty}>
-                        پرونده‌ای مطابق فیلترها پیدا نشد.
-                      </p>
-                    ) : view === 'leads' && board ? (
-                      <div className={s.board}>
-                        {Object.entries(stageLabel).map(([stage, label]) => (
-                          <section className={s.lane} key={stage}>
-                            <h3>
-                              {label}
-                              <span>
-                                {number(
-                                  loaded.leads.filter((x) => x.stage === stage)
-                                    .length,
-                                )}
-                              </span>
-                            </h3>
-                            {loaded.leads
-                              .filter((x) => x.stage === stage)
-                              .map((row) => (
-                                <button
-                                  key={row.id}
-                                  className={s.leadCard}
-                                  onClick={() => navigate('leads', row.id)}
-                                >
-                                  <strong>{row.title}</strong>
-                                  <p>{row.trackingNumber}</p>
-                                  {badge(priorityLabel[row.priority])}
-                                  <p>
-                                    {row.nextAction || 'اقدام بعدی تعیین نشده'}
-                                  </p>
-                                </button>
-                              ))}
-                          </section>
-                        ))}
-                      </div>
-                    ) : (
-                      <table className={s.table}>
-                        <thead>
-                          <tr>
-                            {[
-                              'پرونده',
-                              'وضعیت و اولویت',
-                              family === 'leads'
-                                ? 'نیاز سفر'
-                                : 'مهلت پاسخ اولیه',
-                              'اقدام بعدی',
-                              family === 'leads' ? 'زمان پیگیری' : 'مهلت حل',
-                            ].map((x) => (
-                              <th key={x} scope="col">
-                                {x}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {rows.map((row) => (
-                            <tr key={row.id}>
-                              <td data-label="پرونده">
-                                <div>
-                                  <button
-                                    className={s.titleButton}
-                                    onClick={() =>
-                                      navigate(
-                                        family as 'leads' | 'tickets',
-                                        row.id,
-                                      )
-                                    }
-                                  >
-                                    {'title' in row ? row.title : row.subject}
-                                  </button>
-                                  <p>{row.trackingNumber}</p>
-                                </div>
-                              </td>
-                              <td data-label="وضعیت">
-                                <div>
-                                  {badge(
-                                    'stage' in row
-                                      ? stageLabel[row.stage]
-                                      : statusLabel[row.status],
-                                  )}
-                                  <p>{priorityLabel[row.priority]}</p>
-                                </div>
-                              </td>
-                              <td
-                                data-label={
-                                  family === 'leads' ? 'نیاز سفر' : 'پاسخ اولیه'
-                                }
-                              >
-                                <div>
-                                  {'travelNeed' in row
-                                    ? row.travelNeed
-                                    : date(row.firstResponseDueAt)}
-                                  {'firstRespondedAt' in row &&
-                                    row.firstRespondedAt && (
-                                      <p>پاسخ داده شده</p>
-                                    )}
-                                </div>
-                              </td>
-                              <td data-label="اقدام بعدی">
-                                <div>{row.nextAction || 'تعیین نشده'}</div>
-                              </td>
-                              <td
-                                data-label={
-                                  family === 'leads' ? 'زمان پیگیری' : 'مهلت حل'
-                                }
-                              >
-                                <div>
-                                  {date(
-                                    'stage' in row
-                                      ? row.nextActionAt
-                                      : row.resolutionDueAt,
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                    <footer className={s.pager}>
-                      <span>
-                        {number(loaded.total)} پرونده · صفحه {number(page)}
-                        {board && view === 'leads'
-                          ? ' · تعداد ستون‌ها مربوط به همین صفحه است'
-                          : ''}
-                      </span>
-                      <div className={s.actions}>
-                        <Button
-                          variant="outline"
-                          disabled={page <= 1}
-                          onClick={() => change('page', String(page - 1))}
-                        >
-                          قبلی
-                        </Button>
-                        <Button
-                          variant="outline"
-                          disabled={page * 12 >= loaded.total}
-                          onClick={() => change('page', String(page + 1))}
-                        >
-                          بعدی
-                        </Button>
-                      </div>
-                    </footer>
-                  </section>
-                </>
-              )}
-              {report && (
-                <>
-                  <section className={s.hero}>
-                    <span className={s.icon}>
-                      <BarChart3 />
-                    </span>
-                    <div>
-                      <h2>{title}</h2>
-                      <p className={s.muted}>
-                        داده‌های ثبت‌شده تا {date(report.generatedAt)}؛ در
-                        محدوده دسترسی شما
-                      </p>
-                    </div>
-                  </section>
-                  <div className={s.columns}>
-                    {view === 'reports' && (
-                      <section className={s.panel}>
-                        <div className={s.panelHead}>
-                          <h2>توزیع مرحله‌ای سرنخ‌ها</h2>
-                        </div>
-                        <div className={s.panelBody}>
-                          {report.leadStages.length ? (
-                            report.leadStages.map((x) => (
-                              <div key={x.stage} className={s.reportRow}>
-                                <div>
-                                  <span>{stageLabel[x.stage] || x.stage}</span>
-                                  <strong>{number(x._count._all)}</strong>
-                                </div>
-                                <div className={s.bar}>
-                                  <i
-                                    style={{
-                                      width: `${(100 * x._count._all) / Math.max(1, ...report.leadStages.map((y) => y._count._all))}%`,
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <p className={s.empty}>داده‌ای ثبت نشده است.</p>
-                          )}
-                        </div>
-                      </section>
-                    )}
-                    <section className={s.panel}>
-                      <div className={s.panelHead}>
-                        <h2>رضایت مشتری</h2>
-                      </div>
-                      <div className={s.panelBody}>
-                        <p>
-                          میانگین امتیاز:{' '}
-                          {report.satisfaction.average === null
-                            ? 'هنوز ثبت نشده'
-                            : number(report.satisfaction.average)}
-                        </p>
-                        <p className={s.muted}>
-                          {number(report.satisfaction.count)} پاسخ ثبت‌شده
-                        </p>
-                        <p className={s.muted}>
-                          دعوت رضایت و جزئیات اقدام اصلاحی از داخل پرونده
-                          پشتیبانی در دسترس است.
-                        </p>
-                        <Button
-                          variant="outline"
-                          onClick={() => navigate('tickets')}
-                        >
-                          مشاهده پرونده‌های پشتیبانی
-                        </Button>
-                      </div>
-                    </section>
-                  </div>
-                  <section className={s.panel}>
-                    <div className={s.panelHead}>
-                      <h2>وضعیت تیکت‌ها و اقدام اصلاحی</h2>
+                      <h2>رضایت مشتری</h2>
                     </div>
                     <div className={s.panelBody}>
-                      {report.ticketStatuses.map((x) => (
-                        <div className={s.reportRow} key={x.status}>
-                          {statusLabel[x.status] || x.status}:{' '}
-                          {number(x._count._all)}
-                        </div>
-                      ))}
-                      {!report.ticketStatuses.length && (
-                        <p className={s.muted}>تیکتی ثبت نشده است.</p>
-                      )}
-                      <h3>اقدام‌های اصلاحی</h3>
-                      {report.correctiveActions.map((item) => (
-                        <p className={s.muted} key={item.status}>
-                          {(
-                            {
-                              OPEN: 'باز',
-                              IN_PROGRESS: 'در حال انجام',
-                              COMPLETED: 'تکمیل‌شده',
-                              CLOSED: 'بسته',
-                            } as Record<string, string>
-                          )[item.status] || item.status}
-                          : {number(item._count._all)}
-                        </p>
-                      ))}
-                      {!report.correctiveActions.length && (
-                        <p className={s.muted}>اقدام اصلاحی ثبت نشده است.</p>
-                      )}
+                      <p>
+                        میانگین امتیاز:{' '}
+                        {report.satisfaction.average === null
+                          ? 'هنوز ثبت نشده'
+                          : number(report.satisfaction.average)}
+                      </p>
+                      <p className={s.muted}>
+                        {number(report.satisfaction.count)} پاسخ ثبت‌شده
+                      </p>
+                      <p className={s.muted}>
+                        دعوت رضایت و جزئیات اقدام اصلاحی از داخل پرونده پشتیبانی
+                        در دسترس است.
+                      </p>
+                      <Button
+                        variant="outline"
+                        onClick={() => navigate('tickets')}
+                      >
+                        مشاهده پرونده‌های پشتیبانی
+                      </Button>
                     </div>
                   </section>
-                </>
-              )}
-            </>
-          )}
-        </>
-      )}
+                </div>
+                <section className={s.panel}>
+                  <div className={s.panelHead}>
+                    <h2>وضعیت تیکت‌ها و اقدام اصلاحی</h2>
+                  </div>
+                  <div className={s.panelBody}>
+                    {report.ticketStatuses.map((x) => (
+                      <div className={s.reportRow} key={x.status}>
+                        {statusLabel[x.status] || x.status}:{' '}
+                        {number(x._count._all)}
+                      </div>
+                    ))}
+                    {!report.ticketStatuses.length && (
+                      <p className={s.muted}>تیکتی ثبت نشده است.</p>
+                    )}
+                    <h3>اقدام‌های اصلاحی</h3>
+                    {report.correctiveActions.map((item) => (
+                      <p className={s.muted} key={item.status}>
+                        {(
+                          {
+                            OPEN: 'باز',
+                            IN_PROGRESS: 'در حال انجام',
+                            COMPLETED: 'تکمیل‌شده',
+                            CLOSED: 'بسته',
+                          } as Record<string, string>
+                        )[item.status] || item.status}
+                        : {number(item._count._all)}
+                      </p>
+                    ))}
+                    {!report.correctiveActions.length && (
+                      <p className={s.muted}>اقدام اصلاحی ثبت نشده است.</p>
+                    )}
+                  </div>
+                </section>
+              </>
+            )}
+          </>
+        )}
+      </>
     </div>
   );
 }

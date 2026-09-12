@@ -36,6 +36,8 @@ describe('Rubi Customer Affairs navigation', () => {
           onReload={async () => {}}
         />,
       );
+      expect(html).toContain('ثبت ارتباط جدید');
+      expect(html).not.toContain('<form');
       if (status === 'NEW') {
         expect(html).toContain('بررسی اولیه');
         expect(html).not.toContain('بستن پرونده');
