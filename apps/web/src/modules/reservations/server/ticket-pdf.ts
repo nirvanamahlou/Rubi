@@ -1,5 +1,12 @@
 import { execFile } from 'node:child_process';
-import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import {
+  access,
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises';
 import { dirname, isAbsolute, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
@@ -7,6 +14,20 @@ import { promisify } from 'node:util';
 
 const run = promisify(execFile);
 let active = 0;
+
+async function waitForPdf(path: string): Promise<void> {
+  const deadline = Date.now() + 10_000;
+  let previousSize = -1;
+  while (Date.now() < deadline) {
+    const size = await stat(path)
+      .then((entry) => entry.size)
+      .catch(() => 0);
+    if (size > 0 && size === previousSize) return;
+    previousSize = size;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error('PDF_NOT_CREATED');
+}
 
 export async function renderTicketPdf(html: string): Promise<Buffer> {
   const chrome = process.env.SALES_PDF_CHROME_PATH;
@@ -62,6 +83,8 @@ export async function renderTicketPdf(html: string): Promise<Buffer> {
       ],
       { env, windowsHide: true, timeout: 30000, maxBuffer: 1024 * 1024 },
     );
+    // Chrome on Windows can return after handing the work to its headless process.
+    await waitForPdf(output);
     const bytes = await readFile(output);
     if (
       bytes.subarray(0, 5).toString() !== '%PDF-' ||

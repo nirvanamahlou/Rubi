@@ -125,10 +125,11 @@
 - The existing Customer Affairs follow-up owner field is included in the same public employee selector scope; its preview draft retains the selected employee ID.
 - Follow-up delivered: active IAM account selection/persisted employee FK, active Master Data currency selection/validation, existing Documents selection with HR document FK, direct employee-case selection in Documents with public validation, and scoped/paginated employee selection in destination owner/party fields. All 469 targeted tests passed (157 Web, 150 API unit/boundary, 26 isolated PostgreSQL, 63 contracts, 73 database). Code reservation is released for the explicitly authorized CI-gated PR139 merge. Runtime/DB/migration ownership remains unchanged.
 - Delivered the durable referral/response layer with 16 menu destinations, 13 scoped receiving permissions, source FK/version, department inboxes, request reports and response notifications. Broad domain execution (payment, issuance, IAM changes, procurement fulfillment, external synchronization) remains unfinished and is explicitly listed in the task handoff. Implementation reservations are released for review; runtime ownership is unchanged.
-## RESERVATION-TICKET-PDF-0912 — PC-A — IN_PROGRESS
+## RESERVATION-TICKET-PDF-0912 — PC-A — LOCAL_COMPLETE
 
 - گزارش مالک محصول: خروجی بلیط در رزرواسیون کار نمی‌کند. Branch `codex/pc-a-reservation-settings-0912`؛ محدودهٔ رزروشده: مدل/رابط خروجی بلیط، Route و Renderer دانلود PDF، تست‌های هدفمند و اسناد همین واحد کار.
 - خروجی فقط از snapshot ذخیره‌شده و مجاز همان درخواست ساخته می‌شود؛ هیچ شماره بلیط، PNR، بار مجاز یا وضعیت صدور جعل نمی‌شود. چاپ مرورگر حفظ و دانلود مستقیم PDF یک مسافر/همه مسافران افزوده می‌شود. بدون Migration، IAM grant، دادهٔ واقعی، ارسال خارجی یا public push.
+- دانلود واقعی با Chrome ویندوز نیز بررسی شد؛ Renderer تا تکمیل فایل پردازش headless صبر می‌کند. ۱۱ تست هدفمند، lint، typecheck، build تولیدی و بازبینی تصویری PDF یک‌صفحه‌ای A4 موفق‌اند.
 
 ## RESERVATION-RECEIPT-SUMMARY-0912 — PC-A — LOCAL_COMPLETE
 
