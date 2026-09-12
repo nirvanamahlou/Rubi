@@ -25,21 +25,21 @@ const request: RequestView = {
   issues: [],
 };
 describe('selected contract actions', () => {
-  it('keeps both receipt actions together under contract operations', () => {
+  it('keeps only receipt history under contract operations', () => {
     const operations = contractActionGroups.find(
       (group) => group.title === 'عملیات قرارداد',
     );
     const information = contractActionGroups.find(
       (group) => group.title === 'اطلاعات قرارداد',
     );
-    expect(operations?.items).toContain('دریافت');
     expect(operations?.items).toContain('دریافت‌ها');
+    expect(operations?.items).not.toContain('دریافت');
     expect(information?.items).not.toContain('دریافت‌ها');
   });
 
   it('keeps remaining actions visible and disabled without a selection', () => {
     const html = renderToStaticMarkup(<ContractActionPanel />);
-    expect(html.match(/disabled=""/g) ?? []).toHaveLength(14);
+    expect(html.match(/disabled=""/g) ?? []).toHaveLength(13);
     for (const label of ['واچر', 'مشخصات کلی', 'دریافت‌ها', 'مدارک', 'توضیحات'])
       expect(html).toContain(label);
     for (const removed of [
@@ -58,7 +58,7 @@ describe('selected contract actions', () => {
     );
     expect(html).toContain('SYNTH-01');
     expect(html).not.toContain('disabled=""');
-    expect(html.match(/aria-haspopup="dialog"/g) ?? []).toHaveLength(13);
+    expect(html.match(/aria-haspopup="dialog"/g) ?? []).toHaveLength(12);
     expect(html).toContain('href="/contracts/terms.pdf"');
     expect(html).toContain('download="مفاد.pdf"');
   });
