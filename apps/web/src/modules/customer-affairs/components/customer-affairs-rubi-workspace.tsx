@@ -258,7 +258,6 @@ export function CustomerAffairsRubiWorkspace() {
         <div>
           <span className={s.eyebrow}>CUSTOMER AFFAIRS</span>
           <h1>امور مشتریان</h1>
-          <p>همراه مشتری، از اولین درخواست تا آخرین پیگیری</p>
         </div>
         <div className={s.actions}>
           <Button variant="outline" onClick={() => setForm('tickets')}>

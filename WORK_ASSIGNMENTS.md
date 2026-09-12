@@ -1,5 +1,9 @@
 # Work Assignments
 
+## CUSTOMER-AFFAIRS-REMOVE-TAGLINE — PC-B — IN_PROGRESS
+
+- User requests removal of the visible header tagline «همراه مشتری، از اولین درخواست تا آخرین پیگیری». Reserve only the Customer Affairs Rubi workspace, its scoped structural test and own status entry on `codex/pc-b-customer-affairs-remove-tagline`, preserving the title, actions, visual polish, data, API, schema, dependencies and all other modules. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190 stays untouched. No merge.
+
 ## CUSTOMER-AFFAIRS-VISUAL-POLISH — PC-B — DONE / VERIFIED
 
 - User requests richer visual treatment for the existing Customer Affairs overview. Reserve the module CSS and own status entry on `codex/pc-b-customer-affairs-visual-polish`; preserve content, behavior, data, API, schema, dependencies and all other modules. Use existing Rubi/theme tokens with accessible contrast, responsive states and reduced-motion support; verify with scoped checks, production build and authenticated browser QA on Web3100. No merge.

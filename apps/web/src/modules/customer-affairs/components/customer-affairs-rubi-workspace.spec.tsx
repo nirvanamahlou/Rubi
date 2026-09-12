@@ -20,6 +20,9 @@ describe('Rubi Customer Affairs navigation', () => {
     expect(source).not.toContain(
       'نمای یکپارچه درخواست‌ها، ارتباطات و پشتیبانی مشتریان',
     );
+    expect(source).not.toContain(
+      'همراه مشتری، از اولین درخواست تا آخرین پیگیری',
+    );
     expect(source).toContain('className={s.metrics}');
     expect(source).toContain('className={s.hub}');
     expect(source).toContain('className={s.hero}');
