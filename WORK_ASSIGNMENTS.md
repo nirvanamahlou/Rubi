@@ -1,8 +1,9 @@
 # Work Assignments
 
-## UNIFIED-CUSTOMER-AFFAIRS-3100 — PC-B — IN_PROGRESS
+## UNIFIED-CUSTOMER-AFFAIRS-3100 — PC-B — LIVE / VERIFIED
 
 - User explicitly requests combining Excel/current Rubi and Customer Affairs on Web3100 with its API. Base `origin/develop@6a4e041`; branch `codex/pc-b-unified-customer-affairs-3100`. Integrate published CA branch `f34166c` without replacing current modules. Reserve integration conflict resolution in schema reverse relations, app/contract wiring and task/status documents; no new domain contract or dependency change. Existing source worktrees remain untouched. Reuse the current local database and document storage; inspect/back up/rehearse the existing additive CA migration before applying it. Runtime cutover is authorized for the verified current Web3100/API4190 only, after build/test gates. No main/develop mutation, credential reset or broad seed.
+- Completed: shared source `09b3b18` is live on Web3100/PID1628 and API4190/PID12504, build `unified-vnpjB6iJEmubY1N0rxXr5`. Backup/rehearsal/additive CA migration succeeded; 38 users, 5 branches and 44 documents preserved. User separately approved 19 CA permissions for administrator only, audited without changing other roles. All 15 lint/typecheck tasks and six builds passed; API 1230 tests passed, Web 1336 plus the separately retried 42-test HR file passed (one original load-related timeout). Browser sign-in, CA overview/report and agency Excel dialog verified. Old preview3102 and rehearsal API4192 stopped. Implementation/central integration reservation released; future runtime replacement requires coordination and must retain this combined source. See `docs/tasks/UNIFIED-CUSTOMER-AFFAIRS-3100.md`.
 
 ## WORKBENCH-021 — PC-B — LOCAL_COMPLETE / RUNTIME_ACTIVE
 

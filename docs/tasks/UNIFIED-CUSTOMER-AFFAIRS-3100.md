@@ -40,4 +40,8 @@ For later module changes, integrate into this combined source before rebuilding;
 - Production build: all six build tasks succeeded; Web contains 46 routes.
 - Database tests: 73 passed; Contracts: 70 passed.
 - Full Web run: 1336 passed with one unrelated HR rendering test exceeding 5000ms under concurrent load. That entire HR file passed separately (42 tests), without changing its timeout or assertions.
-- Remaining lint/typecheck/API and browser smoke results are recorded in the completion update.
+- All 15 lint/typecheck tasks passed. Full API suite: 1230 passed, 135 optional PostgreSQL tests skipped. Separate affected CA/Messaging/IAM suite: 39 passed.
+- Current runtime: source `09b3b18`, build `unified-vnpjB6iJEmubY1N0rxXr5`, Web PID1628, API PID12504. Both health/identity endpoints return 200. CA unauthenticated dashboard returns 401 with the correct CORS origin, preserving authentication.
+- User signed in successfully. Browser verified actual CA overview and authorized report, eight existing agency rows, enabled Excel controls and the Excel import dialog (opened and closed without importing). No business record was created, edited or deleted during browser QA.
+- Previous CA preview3102 and rehearsal API4192 were stopped after successful cutover. Old source/build and local backup remain available; no destructive cleanup or force-push was performed.
+- Non-blocking existing `pg` concurrent-query deprecation warning appears in the API log; no startup or observed request failure. No claim of zero console/deprecation warnings is made.
