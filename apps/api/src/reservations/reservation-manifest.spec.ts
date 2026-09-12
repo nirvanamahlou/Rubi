@@ -1,17 +1,14 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { strFromU8, unzipSync } from 'fflate';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { buildIranAirtourManifest } from './reservation-manifest';
+import { ReservationManifestService } from './reservation-manifest';
 
 describe('Iran Airtour Antalya MANIFEST', () => {
   it('keeps the airline workbook and fills the first passenger without formulas', async () => {
     const template = await readFile(
-      join(
-        __dirname,
-        'templates',
-        'iran-airtour-antalya-pax-list.xlsx',
-      ),
+      join(__dirname, 'templates', 'iran-airtour-antalya-pax-list.xlsx'),
     );
     const bytes = buildIranAirtourManifest(template, [
       {
@@ -43,11 +40,7 @@ describe('Iran Airtour Antalya MANIFEST', () => {
 
   it('rejects an empty or oversized passenger list', async () => {
     const template = await readFile(
-      join(
-        __dirname,
-        'templates',
-        'iran-airtour-antalya-pax-list.xlsx',
-      ),
+      join(__dirname, 'templates', 'iran-airtour-antalya-pax-list.xlsx'),
     );
     expect(() => buildIranAirtourManifest(template, [])).toThrow(
       'مسافری برای ساخت MANIFEST وجود ندارد.',
@@ -72,5 +65,38 @@ describe('Iran Airtour Antalya MANIFEST', () => {
         Array.from({ length: 62 }, () => passenger),
       ),
     ).toThrow('حداکثر ۶۱ مسافر');
+  });
+});
+
+describe('MANIFEST financial delivery gate', () => {
+  it('stops before reading travel or passenger details while Finance is locked', async () => {
+    const workflow = {
+      detail: vi.fn().mockResolvedValue({ snapshot: {} }),
+    };
+    const customers = { detail: vi.fn() };
+    const directory = { cityReference: vi.fn() };
+    const delivery = {
+      read: vi.fn().mockResolvedValue({ approved: false, version: 0 }),
+    };
+    const service = new ReservationManifestService(
+      workflow as never,
+      customers as never,
+      directory as never,
+      delivery as never,
+    );
+    await expect(
+      service.export('request', {
+        branchIds: ['branch'],
+        permissions: [
+          'reservations.read',
+          'reservations.documents.manage',
+          'customers.read',
+          'customers.sensitive.read',
+        ],
+      } as never),
+    ).rejects.toThrow('تأیید تحویل مدارک');
+    expect(delivery.read).toHaveBeenCalledWith('request');
+    expect(directory.cityReference).not.toHaveBeenCalled();
+    expect(customers.detail).not.toHaveBeenCalled();
   });
 });

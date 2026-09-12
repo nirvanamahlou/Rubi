@@ -143,6 +143,45 @@ describe('reservation ticket PDF', () => {
     expect(html).not.toContain('<Passenger>');
     expect(html).toContain('@page{size:A4 portrait');
     expect(html).toContain('TEST-01');
+    expect(html).toContain('ISSUED');
+    expect(html).not.toContain('DRAFT');
+    expect(html).not.toContain('NOTICE');
+  });
+
+  it('uses the finance-gated Sales endpoint for a Sales download', async () => {
+    const contractId = intake.snapshot.contractId;
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ data: intake }))
+      .mockImplementation(() =>
+        Promise.resolve(
+          Response.json({
+            data: { name: 'City', attributes: { englishName: 'CITY' } },
+          }),
+        ),
+      );
+    vi.stubGlobal('fetch', fetcher);
+    const response = await GET(request(`?salesContractId=${contractId}`), {
+      params: Promise.resolve({ id }),
+    });
+    expect(response.status).toBe(200);
+    expect(fetcher.mock.calls[0]?.[0]).toBe(
+      `http://api.test/api/v1/sales/contracts/${contractId}/travel-documents`,
+    );
+    expect(renderer).toHaveBeenCalledOnce();
+  });
+
+  it('does not render Sales tickets when the Finance-gated API rejects access', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('{}', { status: 403 })),
+    );
+    const response = await GET(
+      request(`?salesContractId=${intake.snapshot.contractId}`),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(response.status).toBe(403);
+    expect(renderer).not.toHaveBeenCalled();
   });
 
   it('rejects unknown passenger and malformed identifiers', async () => {

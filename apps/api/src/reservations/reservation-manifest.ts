@@ -18,6 +18,7 @@ import type { AuthenticatedActor, CustomerDetail } from '@rubi/contracts';
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { CustomerService } from '../customers/customer.service';
+import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { TravelWorkflowService } from './travel-workflow.service';
 
@@ -138,6 +139,8 @@ export class ReservationManifestService {
     @Inject(CustomerService) private readonly customers: CustomerService,
     @Inject(MasterTravelDirectory)
     private readonly directory: MasterTravelDirectory,
+    @Inject(FinanceDeliveryService)
+    private readonly delivery: FinanceDeliveryService,
   ) {}
 
   async export(id: string, actor: AuthenticatedActor, traceId?: string) {
@@ -150,6 +153,11 @@ export class ReservationManifestService {
       if (!actor.permissions.includes(permission as never))
         throw new ForbiddenException('مجوز تهیه MANIFEST مسافران وجود ندارد.');
     const intake = await this.workflow.detail(id, actor.branchIds);
+    const authorization = await this.delivery.read(id);
+    if (!authorization.approved)
+      throw new ForbiddenException(
+        'دریافت MANIFEST تا تأیید تحویل مدارک توسط مالی مجاز نیست.',
+      );
     const destination = await this.directory.cityReference(
       intake.snapshot.hotelSelection?.cityId ??
         intake.snapshot.ticketSelections?.find(
