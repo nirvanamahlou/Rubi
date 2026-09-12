@@ -543,10 +543,15 @@ function AppShellContent({ children }: { children: ReactNode }) {
             <div className="min-w-0 flex-1">
               <SearchDialog />
             </div>
-            <div className="hidden shrink-0 whitespace-nowrap lg:flex">
-              <HeaderToday />
+            <div
+              className="ms-auto flex shrink-0 items-center gap-1"
+              data-header-utility-group
+            >
+              <div className="hidden shrink-0 whitespace-nowrap lg:flex">
+                <HeaderToday />
+              </div>
+              <HeaderActions />
             </div>
-            <HeaderActions />
           </div>
         </header>
         <div className="px-4 pt-3 sm:px-6 lg:px-7">
