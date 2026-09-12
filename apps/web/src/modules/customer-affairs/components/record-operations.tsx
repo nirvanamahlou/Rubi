@@ -469,6 +469,7 @@ export function RecordOperations({
                   : 'برای اتصال پرونده، مشتری موجود را انتخاب کنید.'}
               </p>
               <CustomerPicker
+                initialCustomerId={detail.customerId ?? null}
                 selected={customer}
                 onSelect={setCustomer}
                 disabled={busy}

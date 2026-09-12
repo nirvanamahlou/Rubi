@@ -1,5 +1,11 @@
 # Work Assignments
 
+## CUSTOMER-AFFAIRS-CUSTOMER-PICKER — PC-B — CODE VERIFIED / ACTIVATION PENDING
+
+- Complete: 43 focused tests, scoped ESLint, standalone typecheck and 46-route production build passed. No data/API/schema/permissions changed. Runtime restart not retried; new-build browser QA not claimed. Reservation released; `docs/tasks/CUSTOMER-AFFAIRS-CUSTOMER-PICKER.md` records handoff.
+
+- Reserve only CA Web picker, form consumers and focused tests/docs on `codex/pc-b-customer-affairs-customer-picker` from `7a146dca`. Consume existing Customers public list/detail: include customer and passenger roles, paginate, preserve selection and show existing linked person in edit forms. No Customers producer/schema/contracts/dependency/permission changes; no live business writes or runtime replacement. Prior desktop/corporate, auth-walled Rubi UI assumptions remain: p75 LCP2500ms/INP200ms/CLS0.1, 200KB initial +80KB route JS, Lighthouse a11y90/performance80, WCAG AA owner PC-B; planning targets, not measured claims.
+
 ## CUSTOMER-AFFAIRS-WORKFLOW-COMPLETION — PC-B — CODE VERIFIED / ACTIVATION PENDING
 
 - Delivered atomic lead-to-person conversion, Sales response popup, persisted manual probability, site filter, opt-in transactional reminder notifications, resolution waiting pause, and opt-in sms.ir sending with durable idempotency and uncertain-outcome handling. API 177 tests / Web 39 tests, scoped ESLint, both typechecks and both builds passed. No migration, dependency change, real SMS or business submissions. Runtime restart remains blocked; no new-runtime visual verification. Reservation released for this slice; remaining backlog and activation runbook: `docs/tasks/CUSTOMER-AFFAIRS-WORKFLOW-COMPLETION.md`.

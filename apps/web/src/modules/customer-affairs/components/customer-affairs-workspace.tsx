@@ -237,7 +237,11 @@ export function LeadForm({
           </AffairsSelect>
         </FormField>
         <div className="lg:col-span-2">
-          <CustomerPicker onSelect={setCustomer} selected={customer} />
+          <CustomerPicker
+            onSelect={setCustomer}
+            selected={customer}
+            disabled={busy}
+          />
         </div>
         <FormField label="نیاز سفر">
           <Textarea name="travelNeed" required minLength={3} />
@@ -437,7 +441,11 @@ export function TicketForm({
           </AffairsSelect>
         </FormField>
         <div className="lg:col-span-2">
-          <CustomerPicker onSelect={setCustomer} selected={customer} />
+          <CustomerPicker
+            onSelect={setCustomer}
+            selected={customer}
+            disabled={busy}
+          />
         </div>
         <FormField label="شرح">
           <Textarea name="description" required minLength={3} />
