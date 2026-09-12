@@ -70,6 +70,12 @@ Purchase Order/Invoice و payable source است. سود از sale snapshot من�
 journal و `financial_release` را مالک است. هیچ ماژولی journal line را مستقیم درج نمی‌کند.
 صدور سند با تحویل آن یکی نیست؛ Sales فقط پس از release مالی اجازه مشاهده/ارسال فایل را دارد.
 
+تا زمان استقرار کامل Purchase Order/Invoice در Procurement، فرم عملیاتی خرید رزرواسیون
+برای هر service item یک زنجیره نسخه مستقل با کارگزار و مبلغ/ارز ثبت می‌کند و از قرارداد
+عمومی به صف پرداخت Finance می‌فرستد. این رکورد جای Invoice تأییدشده یا journal نیست؛ Finance
+مالک تصمیم و سابقه پرداخت کارگزار است. اصلاح خرید یک نسخه pending تازه می‌سازد و
+`financial_release` تحویل مدارک فقط وقتی مجاز است که آخرین خرید همه خدمات پرداخت شده باشد.
+
 ### Customers در برابر Marketing
 
 Customers مالک identity و consent جاری/تاریخچه است. Marketing segment و campaign را مالک

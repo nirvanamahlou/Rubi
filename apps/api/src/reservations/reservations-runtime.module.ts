@@ -18,7 +18,11 @@ import {
   FinanceDeliveryModule,
   FinanceDeliveryService,
 } from '../finance/document-delivery/finance-delivery.module';
-import type { TravelWorkflowCommandV1 } from '@rubi/contracts';
+import type {
+  FinanceSupplierPaymentCommandV1,
+  ReservationServicePurchaseInputV1,
+  TravelWorkflowCommandV1,
+} from '@rubi/contracts';
 import {
   Body,
   Controller,
@@ -43,6 +47,7 @@ import type { AuthenticatedRequest } from '../iam/iam.types';
 import { ReservationsPublicService } from './reservations-public.service';
 import { ReservationHotelPurchaseService } from './reservation-hotel-purchase.service';
 import type { ReservationHotelPurchaseInputV1 } from '@rubi/contracts';
+import { ReservationServicePurchaseService } from './reservation-service-purchase.service';
 
 @Controller('reservations/requests')
 @UseGuards(AuthGuard)
@@ -52,6 +57,8 @@ export class ReservationRequestsController {
     private readonly service: ReservationsPublicService,
     @Inject(ReservationHotelPurchaseService)
     private readonly hotelPurchase: ReservationHotelPurchaseService,
+    @Inject(ReservationServicePurchaseService)
+    private readonly servicePurchase: ReservationServicePurchaseService,
     @Inject(TravelWorkflowService)
     private readonly workflow: TravelWorkflowService,
     @Inject(FinanceDeliveryService)
@@ -76,6 +83,7 @@ export class ReservationRequestsController {
           id: row.id,
           contractNumber: row.snapshot.contractNumber,
           delivery: await this.delivery.read(row.id),
+          supplierPurchases: await this.delivery.supplierPurchaseGate(row.id),
         })),
       ),
     };
@@ -153,6 +161,36 @@ export class ReservationRequestsController {
     @Headers('idempotency-key') key?: string,
   ) {
     return this.hotelPurchase.record(id, input, req.actor, key);
+  }
+  @Post(':id/service-purchases')
+  @Header('Cache-Control', 'private, no-store')
+  recordServicePurchase(
+    @Param('id') id: string,
+    @Body() input: ReservationServicePurchaseInputV1,
+    @Req() req: AuthenticatedRequest,
+    @Headers('idempotency-key') key?: string,
+  ) {
+    return this.servicePurchase.record(id, input, req.actor, key);
+  }
+  @Patch(':id/service-purchases/:purchaseId/payment')
+  @Header('Cache-Control', 'private, no-store')
+  async updateSupplierPayment(
+    @Param('id') id: string,
+    @Param('purchaseId', ParseUUIDPipe) purchaseId: string,
+    @Body() input: FinanceSupplierPaymentCommandV1,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.actor.permissions.includes('finance.financial_release.approve'))
+      throw new ForbiddenException();
+    await this.workflow.detail(id, req.actor.branchIds);
+    return {
+      data: await this.delivery.updateSupplierPayment(
+        id,
+        purchaseId,
+        input,
+        req.actor.userId,
+      ),
+    };
   }
   @Get(':id/purchase-context')
   @Header('Cache-Control', 'private, no-store')
@@ -258,6 +296,7 @@ export class ReservationRequestsController {
     TravelWorkflowService,
     ReservationsPublicService,
     ReservationHotelPurchaseService,
+    ReservationServicePurchaseService,
   ],
   exports: [
     ReservationsPublicService,

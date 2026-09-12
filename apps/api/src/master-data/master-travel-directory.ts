@@ -58,6 +58,24 @@ export class MasterTravelDirectory {
     };
   }
 
+  /** Public non-sensitive validation for a broker selected on a service purchase. */
+  async brokerReference(brokerId: string) {
+    const { data: broker } = await this.master.detail(
+      'organizations',
+      brokerId,
+    );
+    if (
+      broker.status !== 'active' ||
+      !String(broker.attributes.roleCodes ?? '')
+        .split(',')
+        .includes('BROKER')
+    )
+      throw new BadRequestException(
+        'کارگزار باید فعال و دارای نقش کارگزار باشد.',
+      );
+    return { id: broker.id, name: broker.name };
+  }
+
   async assertTourReferences(input: {
     originId: string;
     destinationId: string;

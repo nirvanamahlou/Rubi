@@ -58,6 +58,7 @@ export interface ReservationIntakeV1 {
   contractEditVersion?: number;
   purchaseVersion?: number;
   hotelPurchases?: readonly ReservationHotelPurchaseV1[];
+  servicePurchases?: readonly ReservationServicePurchaseV1[];
   id: string;
   requestId: string;
   contractId: string;
@@ -67,6 +68,56 @@ export interface ReservationIntakeV1 {
   receivedAt: string;
   snapshot: SalesReservationRequestV1;
   arrangement: ReservationArrangementV1 | null;
+}
+
+export interface ReservationServicePurchaseV1 {
+  id: string;
+  version: number;
+  serviceClientKey: string;
+  serviceKind: string;
+  serviceTitle: string;
+  supplierOrganizationId: string;
+  supplierName: string;
+  amount: string;
+  currencyCode: string;
+  actorUserId: string;
+  createdAt: string;
+  finance: {
+    version: number;
+    status: 'PENDING' | 'PAID' | 'REJECTED';
+    bankId: string | null;
+    transferAt: string | null;
+    paymentReference: string | null;
+    reason: string;
+    updatedAt: string | null;
+    updatedByUserId: string | null;
+  };
+}
+
+export interface ReservationServicePurchaseInputV1 {
+  version: 1;
+  expectedVersion: number;
+  serviceClientKey: string;
+  supplierOrganizationId: string;
+  amount: string;
+  currencyCode: string;
+}
+
+export interface FinanceSupplierPaymentCommandV1 {
+  expectedVersion: number;
+  status: 'PAID' | 'REJECTED';
+  bankId?: string | null;
+  transferAt?: string | null;
+  paymentReference?: string | null;
+  reason: string;
+}
+
+export interface SupplierPurchaseGateV1 {
+  complete: boolean;
+  requiredServiceCount: number;
+  missingServiceTitles: readonly string[];
+  unpaidServiceTitles: readonly string[];
+  purchases: readonly ReservationServicePurchaseV1[];
 }
 
 export interface ReservationHotelPurchaseV1 {

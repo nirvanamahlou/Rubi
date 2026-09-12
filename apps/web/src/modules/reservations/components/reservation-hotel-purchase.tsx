@@ -1,56 +1,60 @@
 'use client';
-import { travelRequest } from './travel-workflow-form';
-import type { TravelWorkflowStateV1 } from '@rubi/contracts';
-import { EnglishHotelName } from './english-hotel-name';
 import { useEffect, useRef, useState } from 'react';
 import {
-  hotelNights,
-  resolveSalesPrice,
   moneyUnits,
-  moneyDecimal,
   type ReservationIntakeV1,
+  type ReservationServicePurchaseV1,
 } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
+import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import {
-  MoneyInput as SalesMoneyInput,
-  formatSalesMoney,
-} from '@/components/ui/money-input';
+  Lookup,
+  type Option,
+} from '@/modules/reservations/hotel-rates/controls';
+import { travelRequest } from './travel-workflow-form';
 
-export function ReservationHotelPurchase({
+const financeLabel = (purchase?: ReservationServicePurchaseV1) => {
+  if (!purchase) return 'خرید ثبت نشده';
+  if (purchase.finance.status === 'PAID') return 'پرداخت مالی انجام شده';
+  if (purchase.finance.status === 'REJECTED') return 'برگشت‌خورده از مالی';
+  return 'ارسال‌شده به مالی؛ در انتظار پرداخت';
+};
+
+function ServicePurchaseCard({
   request,
+  service,
+  purchase,
   onSaved,
 }: {
   request: ReservationIntakeV1;
+  service: ReservationIntakeV1['snapshot']['serviceSelections'][number];
+  purchase: ReservationServicePurchaseV1 | undefined;
   onSaved: () => void;
 }) {
-  const sent = (
-    request as ReservationIntakeV1 & { workflow?: TravelWorkflowStateV1 }
-  ).workflow?.sentSupplierFormSettings;
-  const hotel = request.snapshot.hotelSelection;
-  const pricing =
-    request.snapshot.serviceSelections.find(
-      (service) => service.clientKey === hotel?.serviceClientKey,
-    )?.pricing ?? [];
-  const [amount, setAmount] = useState('');
-  const [code, setCode] = useState(pricing[0]?.currencyCode ?? 'IRR');
+  const [supplier, setSupplier] = useState<Option | null>(
+    purchase
+      ? {
+          id: purchase.supplierOrganizationId,
+          name: purchase.supplierName,
+        }
+      : null,
+  );
+  const [amount, setAmount] = useState(purchase?.amount ?? '');
+  const [code, setCode] = useState(
+    purchase?.currencyCode ?? service.pricing?.[0]?.currencyCode ?? 'IRR',
+  );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const attempt = useRef<{ payload: string; key: string } | null>(null);
-  if (!hotel) return null;
-  let nights = 0;
-  try {
-    nights = hotelNights(hotel.checkInDate, hotel.checkOutDate);
-  } catch {
-    /* Legacy snapshot without valid dates. */
-  }
   async function save() {
     if (busy) return;
     setBusy(true);
     setMessage('');
     try {
+      if (!supplier) throw new Error('کارگزار این خدمت را انتخاب کنید.');
       if (moneyUnits(amount) <= 0n)
         throw new Error('مبلغ خرید باید مثبت باشد.');
       const base = getPublicApiBaseUrl();
@@ -58,6 +62,8 @@ export function ReservationHotelPurchase({
       const payload = JSON.stringify({
         version: 1,
         expectedVersion: request.purchaseVersion ?? 0,
+        serviceClientKey: service.clientKey,
+        supplierOrganizationId: supplier.id,
         amount,
         currencyCode: code,
       });
@@ -65,10 +71,7 @@ export function ReservationHotelPurchase({
         attempt.current = { payload, key: crypto.randomUUID() };
       const send = () =>
         fetch(
-          base +
-            '/reservations/requests/' +
-            encodeURIComponent(request.id) +
-            '/hotel-purchase',
+          `${base}/reservations/requests/${encodeURIComponent(request.id)}/service-purchases`,
           {
             method: 'POST',
             credentials: 'include',
@@ -83,17 +86,12 @@ export function ReservationHotelPurchase({
       if (response.status === 401 && (await refreshAuthenticatedSession(base)))
         response = await send();
       if (!response.ok) {
-        if (response.status === 403)
-          throw new Error('مجوز ثبت هزینه خرید هتل برای این حساب فعال نیست.');
-        if (response.status === 409)
-          throw new Error(
-            'نسخه هزینه خرید تغییر کرده؛ ابتدا فهرست را به‌روزرسانی کنید.',
-          );
-        throw new Error(
-          'ثبت هزینه خرید هتل ناموفق بود؛ مبلغ، ارز و دسترسی را بررسی کنید.',
-        );
+        const body = (await response.json().catch(() => null)) as {
+          message?: string;
+        } | null;
+        throw new Error(body?.message ?? 'ثبت خرید خدمت ناموفق بود.');
       }
-      setMessage('هزینه خرید با سابقه تغییرات ثبت شد.');
+      setMessage('خرید این خدمت ثبت و برای پرداخت به مالی ارسال شد.');
       onSaved();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'ثبت ناموفق بود.');
@@ -101,103 +99,50 @@ export function ReservationHotelPurchase({
       setBusy(false);
     }
   }
+  const statusClass =
+    purchase?.finance.status === 'PAID'
+      ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100'
+      : purchase?.finance.status === 'REJECTED'
+        ? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-100'
+        : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100';
   return (
-    <div className="mt-4 space-y-3 rounded-xl border bg-muted/20 p-4">
-      {sent && (
-        <section
-          className="rounded border border-border p-3"
-          aria-label="مبنای خرید ارسالی به کارگزار"
+    <article className="grid gap-3 rounded-xl border border-border bg-surface p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h4 className="font-bold">{service.titleSnapshot}</h4>
+          <p className="text-xs text-muted-foreground">{service.kind}</p>
+        </div>
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-bold ${statusClass}`}
         >
-          <strong>مبنای خرید: اطلاعات ارسال‌شده به کارگزار</strong>
-          <p>
-            {sent.text.hotel} · {sent.text.roomType} · {sent.text.meal}
-          </p>
-          <p dir="ltr">
-            {sent.text.checkIn} → {sent.text.checkOut} · SGL{' '}
-            {sent.numbers.singleRooms} / DBL {sent.numbers.doubleRooms} / EXT{' '}
-            {sent.numbers.extraBeds} / CUSTOM {sent.numbers.customRooms}
-          </p>
-          <p>
-            {sent.text.broker} · {sent.text.remarks}
-          </p>
-        </section>
-      )}
-      <h3 className="font-bold">
-        <EnglishHotelName
-          hotelId={hotel.hotelId}
-          fallback={hotel.hotelNameSnapshot}
-        />{' '}
-        · {nights.toLocaleString('fa-IR')} شب
-      </h3>
-      <p className="text-xs text-muted-foreground">
-        قیمت‌های فروشِ ثبت‌شده در قرارداد قابل تغییر نیستند؛ هزینه خرید کل اقامت
-        را اینجا ثبت کنید.
-      </p>
-      {pricing.map((price) => {
-        let totals;
-        try {
-          totals = resolveSalesPrice(price, nights, true);
-        } catch {
-          return (
-            <p key={price.currencyCode}>قیمت فروش این نسخه قابل محاسبه نیست.</p>
-          );
-        }
-        const cost = request.hotelPurchases?.find(
-          (item) => item.currencyCode === price.currencyCode,
-        );
-        return (
-          <div
-            key={price.currencyCode}
-            className="grid gap-2 text-sm md:grid-cols-2"
-          >
-            <p>
-              قیمت روز فروش کل: {formatSalesMoney(totals.dayTotal)}{' '}
-              {price.currencyCode}
-            </p>
-            <p>
-              توافق مشتری کل: {formatSalesMoney(totals.agreedTotal)}{' '}
-              {price.currencyCode}
-            </p>
-            <p>
-              اختلاف روز فروش و توافق: {formatSalesMoney(totals.discount)}{' '}
-              {price.currencyCode}
-            </p>
-            <p>
-              {cost
-                ? `هزینه خرید ثبت‌شده: ${formatSalesMoney(cost.amount)} ${cost.currencyCode}`
-                : 'هزینه خرید: ثبت نشده'}
-            </p>
-            {cost ? (
-              <p className="font-bold">
-                حاشیه هتل بر اساس هزینه ثبت‌شده:{' '}
-                {formatSalesMoney(
-                  moneyDecimal(
-                    moneyUnits(totals.agreedTotal) - moneyUnits(cost.amount),
-                  ),
-                )}{' '}
-                {price.currencyCode}
-              </p>
-            ) : null}
-          </div>
-        );
-      })}
-      {!pricing.length ? (
-        <p className="text-xs">
-          این نسخه قدیمی، تفکیک قیمت روز و توافقی ندارد؛ سود محاسبه نمی‌شود.
+          {financeLabel(purchase)}
+        </span>
+      </div>
+      {purchase && (
+        <p className="text-sm">
+          آخرین خرید: {purchase.supplierName} ·{' '}
+          {formatSalesMoney(purchase.amount)} {purchase.currencyCode}
         </p>
-      ) : null}
-      <fieldset disabled={busy} className="flex flex-wrap items-end gap-3">
-        <FormField label="هزینه خرید کل هتل">
-          <SalesMoneyInput
-            aria-label="هزینه خرید کل هتل"
+      )}
+      <fieldset disabled={busy} className="grid gap-3 md:grid-cols-4">
+        <FormField label="کارگزار خدمت">
+          <Lookup
+            kind="organizations"
+            label="کارگزار"
+            value={supplier}
+            onChange={setSupplier}
+          />
+        </FormField>
+        <FormField label="مبلغ خرید">
+          <MoneyInput
+            aria-label={`مبلغ خرید ${service.titleSnapshot}`}
             value={amount}
             onValueChange={setAmount}
           />
         </FormField>
         <FormField label="ارز خرید">
           <Input
-            aria-label="ارز خرید هتل"
-            className="w-24"
+            aria-label={`ارز خرید ${service.titleSnapshot}`}
             dir="ltr"
             maxLength={3}
             value={code}
@@ -206,25 +151,65 @@ export function ReservationHotelPurchase({
         </FormField>
         <Button
           type="button"
-          disabled={busy || !amount}
+          className="self-end"
+          disabled={busy || !supplier || !amount}
           onClick={() => void save()}
         >
-          {busy ? 'در حال ثبت…' : 'ثبت هزینه خرید هتل'}
+          {busy
+            ? 'در حال ارسال…'
+            : purchase
+              ? 'ثبت اصلاح و ارسال به مالی'
+              : 'ثبت و ارسال به مالی'}
         </Button>
       </fieldset>
       <p role="status" className="text-sm">
         {message}
       </p>
-      <p className="text-xs text-muted-foreground">
-        هزینه ثبت‌شده عملیاتی است؛ جایگزین تأیید خرید یا پرداخت مالی نیست. تخفیف
-        فروشنده با هزینه خرید مخلوط نمی‌شود.
-      </p>
-      {request.hotelPurchases?.map((cost) => (
-        <p key={cost.id} className="text-xs text-muted-foreground">
-          آخرین ثبت {cost.currencyCode}: {formatSalesMoney(cost.amount)} · نسخه{' '}
-          {cost.version} · {new Date(cost.createdAt).toLocaleString('fa-IR')}
+    </article>
+  );
+}
+
+export function ReservationHotelPurchase({
+  request,
+  onSaved,
+}: {
+  request: ReservationIntakeV1;
+  onSaved: () => void;
+}) {
+  return (
+    <div className="mt-4 space-y-4 rounded-xl border bg-muted/20 p-4">
+      <div>
+        <h3 className="font-bold">خرید خدمات و ارسال به مالی</h3>
+        <p className="text-xs text-muted-foreground">
+          برای هر خدمت، کارگزار و مبلغ خرید را جدا ثبت کنید. اصلاح خرید یک نسخه
+          تازه می‌سازد و تا پرداخت نسخه تازه، تحویل مدارک به فروش بسته می‌ماند.
         </p>
+      </div>
+      {request.snapshot.serviceSelections.map((service) => (
+        <ServicePurchaseCard
+          key={service.clientKey}
+          request={request}
+          service={service}
+          purchase={request.servicePurchases?.find(
+            (item) => item.serviceClientKey === service.clientKey,
+          )}
+          onSaved={onSaved}
+        />
       ))}
+      {!request.snapshot.serviceSelections.length && (
+        <p>برای این قرارداد خدمتی ثبت نشده است.</p>
+      )}
+      {!!request.hotelPurchases?.length && (
+        <details className="text-xs text-muted-foreground">
+          <summary>سوابق قدیمی هزینه هتل</summary>
+          {request.hotelPurchases.map((cost) => (
+            <p key={cost.id}>
+              {formatSalesMoney(cost.amount)} {cost.currencyCode} · نسخه{' '}
+              {cost.version}
+            </p>
+          ))}
+        </details>
+      )}
     </div>
   );
 }
@@ -238,11 +223,11 @@ export function ReservationPurchaseDialog({ id }: { id: string }) {
     void travelRequest<{ data: ReservationIntakeV1 }>(
       `reservations/requests/${id}/purchase-context`,
     )
-      .then((r) => {
-        if (live) setRequest(r.data);
+      .then((response) => {
+        if (live) setRequest(response.data);
       })
-      .catch((e) => {
-        if (live) setError(String(e.message));
+      .catch((error: Error) => {
+        if (live) setError(error.message);
       });
     return () => {
       live = false;
@@ -253,7 +238,7 @@ export function ReservationPurchaseDialog({ id }: { id: string }) {
     <ReservationHotelPurchase
       key={request.purchaseVersion}
       request={request}
-      onSaved={() => setRefresh((v) => v + 1)}
+      onSaved={() => setRefresh((value) => value + 1)}
     />
   ) : (
     <p>در حال دریافت اطلاعات خرید…</p>

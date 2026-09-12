@@ -18,6 +18,12 @@ Sales owns additive `sales_contract_passenger_prices`: passenger FK (cascade), c
 - ReservationIntake.purchaseVersion کنترل هم‌زمانی ثبت خرید هتل است؛ snapshot اولیه تغییر نمی‌کند. ReservationHotelPurchase تاریخچه افزایشی مبلغ Decimal(24,4)، ارز، نسخه، ثبت‌کننده و زمان UTC است، با FK به intake، یکتایی intake/version و actor/idempotencyKey و fingerprint.
 - رکورد خرید رزرواسیون ورودی عملیاتی است، نه تأیید Procurement یا پرداخت Finance. جمع چند ارز یا ادعای سود نهایی بدون هزینه‌های مرجع ممنوع است.
 
+## SUPPLIER-PURCHASE-FINANCE-0912 — خرید هر خدمت و پرداخت کارگزار
+
+- Reservations برای هر `serviceClientKey` قرارداد یک زنجیرهٔ اصلاحات خرید نگه می‌دارد: نوع/عنوان خدمت، FK کارگزار، نام snapshot، مبلغ Decimal و ارز. آخرین نسخهٔ هر خدمت مبنای مالی است؛ اصلاح مبلغ یا کارگزار یک نسخهٔ تازه و در انتظار پرداخت می‌سازد.
+- Finance برای هر نسخهٔ خرید، سابقهٔ جداگانهٔ تصمیم/پرداخت نگه می‌دارد. پرداخت شامل FK بانک، تاریخ انتقال، شماره پیگیری، دلیل، actor و UTC است؛ تغییر خرید پرداخت‌شده، پرداخت قبلی را بازنویسی نمی‌کند.
+- تأیید تحویل مدارک تنها وقتی مجاز است که همهٔ خدمات snapshot قرارداد خرید ثبت‌شده داشته باشند و آخرین خرید هر خدمت در Finance پرداخت شده باشد. هیچ تبدیل ارز ضمنی یا جمع چندارزی انجام نمی‌شود.
+
 وضعیت: Conceptual/Logical v0.1؛ این سند Migration نیست. نام نهایی field، enum و index
 در Foundation با ADR و Prisma schema تثبیت می‌شود.
 

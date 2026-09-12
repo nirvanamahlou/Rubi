@@ -31,6 +31,8 @@ enum AuditOutcome {
 
 model User {
   hotelRateBatches ReservationHotelRateBatch[]
+  reservationServicePurchases ReservationServicePurchase[]
+  financeSupplierPaymentRevisions FinanceSupplierPaymentRevision[]
   ownedTravelIntakes             ReservationIntake[]           @relation("TravelSalesOwner")
   travelWorkflowRevisions        ReservationWorkflowRevision[]
   travelDeliveryRevisions        FinanceDeliveryRevision[]
@@ -663,6 +665,7 @@ model MasterDraftExchangeRate {
 }
 
 model MasterBank {
+  financeSupplierPaymentRevisions FinanceSupplierPaymentRevision[]
   id                  String             @id @default(uuid()) @db.Uuid
   countryId           String             @db.Uuid
   code                String             @unique @db.VarChar(32)
@@ -739,6 +742,7 @@ model MasterPaymentMethod {
 
 model MasterOrganization {
   hotelGroupRates ReservationHotelGroupRate[]
+  reservationServicePurchases ReservationServicePurchase[]
   id                  String                      @id @default(uuid()) @db.Uuid
   code                String                      @unique @db.VarChar(32)
   legalName           String                      @db.VarChar(200)
@@ -3287,6 +3291,7 @@ model ReservationIntake {
   deliveryRevisions FinanceDeliveryRevision[]
   purchaseVersion   Int                              @default(0)
   hotelPurchases    ReservationHotelPurchase[]
+  servicePurchases  ReservationServicePurchase[]
   id                String                           @id @default(uuid()) @db.Uuid
   requestId         String                           @unique @db.Uuid
   contractId        String                           @db.Uuid
@@ -3316,6 +3321,57 @@ model ReservationHotelPurchase {
 
   @@unique([intakeId, version])
   @@unique([actorUserId, idempotencyKey])
+}
+
+enum FinanceSupplierPaymentStatus {
+  PAID
+  REJECTED
+}
+
+model ReservationServicePurchase {
+  id                     String                           @id @default(uuid()) @db.Uuid
+  intakeId               String                           @db.Uuid
+  intake                 ReservationIntake                @relation(fields: [intakeId], references: [id], onDelete: Restrict)
+  serviceClientKey       String                           @db.VarChar(160)
+  serviceKind            String                           @db.VarChar(32)
+  serviceTitleSnapshot   String                           @db.VarChar(300)
+  supplierOrganizationId String                           @db.Uuid
+  supplierOrganization   MasterOrganization               @relation(fields: [supplierOrganizationId], references: [id], onDelete: Restrict)
+  supplierNameSnapshot   String                           @db.VarChar(200)
+  version                Int
+  amount                 Decimal                          @db.Decimal(24, 4)
+  currencyCode           String                           @db.VarChar(3)
+  actorUserId            String                           @db.Uuid
+  actor                  User                             @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  idempotencyKey         String                           @db.VarChar(160)
+  fingerprint            String                           @db.Char(64)
+  createdAt              DateTime                         @default(now()) @db.Timestamptz(3)
+  financeRevisions       FinanceSupplierPaymentRevision[]
+
+  @@unique([intakeId, version])
+  @@unique([actorUserId, idempotencyKey])
+  @@index([intakeId, serviceClientKey, version])
+  @@index([supplierOrganizationId, createdAt])
+}
+
+model FinanceSupplierPaymentRevision {
+  id               String                       @id @default(uuid()) @db.Uuid
+  purchaseId       String                       @db.Uuid
+  purchase         ReservationServicePurchase   @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  version          Int
+  status           FinanceSupplierPaymentStatus
+  bankId           String?                      @db.Uuid
+  bank             MasterBank?                  @relation(fields: [bankId], references: [id], onDelete: Restrict)
+  transferAt       DateTime?                    @db.Timestamptz(3)
+  paymentReference String?                      @db.VarChar(160)
+  reason           String                       @db.VarChar(500)
+  actorUserId      String                       @db.Uuid
+  actor            User                         @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  createdAt        DateTime                     @default(now()) @db.Timestamptz(3)
+
+  @@unique([purchaseId, version])
+  @@index([status, createdAt])
+  @@index([bankId, transferAt])
 }
 
 model ReservationArrangementRevision {

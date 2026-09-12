@@ -65,6 +65,7 @@ describe('reservation saved ticket access scope and history', () => {
     const controller = new ReservationRequestsController(
       service,
       {} as ReservationHotelPurchaseService,
+      {} as never,
       {} as TravelWorkflowService,
       {} as FinanceDeliveryService,
       {} as CustomerService,

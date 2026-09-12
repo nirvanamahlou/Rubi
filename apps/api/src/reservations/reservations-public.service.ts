@@ -29,6 +29,12 @@ const intakeInclude = {
       createdAt: true,
     },
   },
+  servicePurchases: {
+    orderBy: { version: 'desc' },
+    include: {
+      financeRevisions: { orderBy: { version: 'desc' }, take: 1 },
+    },
+  },
 } satisfies Prisma.ReservationIntakeInclude;
 
 function present(
@@ -38,6 +44,13 @@ function present(
   salesOwnerUserId: string | null;
 } {
   const arrangement = row.arrangements[0];
+  const latestServicePurchases = new Map<
+    string,
+    (typeof row.servicePurchases)[number]
+  >();
+  for (const purchase of row.servicePurchases)
+    if (!latestServicePurchases.has(purchase.serviceClientKey))
+      latestServicePurchases.set(purchase.serviceClientKey, purchase);
   return {
     workflow: row.workflowRevisions?.[0]?.state ?? null,
     salesOwnerUserId: row.salesOwnerUserId,
@@ -47,6 +60,43 @@ function present(
       amount: cost.amount.toString(),
       createdAt: cost.createdAt.toISOString(),
     })),
+    servicePurchases: [...latestServicePurchases.values()].map((purchase) => {
+      const finance = purchase.financeRevisions[0];
+      return {
+        id: purchase.id,
+        version: purchase.version,
+        serviceClientKey: purchase.serviceClientKey,
+        serviceKind: purchase.serviceKind,
+        serviceTitle: purchase.serviceTitleSnapshot,
+        supplierOrganizationId: purchase.supplierOrganizationId,
+        supplierName: purchase.supplierNameSnapshot,
+        amount: purchase.amount.toString(),
+        currencyCode: purchase.currencyCode,
+        actorUserId: purchase.actorUserId,
+        createdAt: purchase.createdAt.toISOString(),
+        finance: finance
+          ? {
+              version: finance.version,
+              status: finance.status,
+              bankId: finance.bankId,
+              transferAt: finance.transferAt?.toISOString() ?? null,
+              paymentReference: finance.paymentReference,
+              reason: finance.reason,
+              updatedAt: finance.createdAt.toISOString(),
+              updatedByUserId: finance.actorUserId,
+            }
+          : {
+              version: 0,
+              status: 'PENDING' as const,
+              bankId: null,
+              transferAt: null,
+              paymentReference: null,
+              reason: '',
+              updatedAt: null,
+              updatedByUserId: null,
+            },
+      };
+    }),
     id: row.id,
     requestId: row.requestId,
     contractId: row.contractId,

@@ -24,6 +24,7 @@ function setup(permissions: string[]) {
     {} as never,
     {} as never,
     {} as never,
+    {} as never,
     { detail } as never,
     { listUsers } as never,
   );
