@@ -10,6 +10,7 @@ describe('created date range', () => {
     );
     expect(html).toContain('ثبت پرونده از تاریخ');
     expect(html).toContain('پاک‌کردن بازه');
+    expect(html).not.toContain('(شامل این روز)');
     expect(html).not.toContain('type="date"');
   });
   it('prevents inverted ranges', () => {

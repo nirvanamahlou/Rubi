@@ -877,6 +877,8 @@ export function CustomerAffairsRubiWorkspace() {
                           {
                             OPEN: 'باز',
                             IN_PROGRESS: 'در حال انجام',
+                            DONE: 'تکمیل‌شده',
+                            CANCELLED: 'لغوشده',
                             COMPLETED: 'تکمیل‌شده',
                             CLOSED: 'بسته',
                           } as Record<string, string>

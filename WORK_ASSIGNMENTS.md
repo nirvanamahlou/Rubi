@@ -1,5 +1,9 @@
 # Work Assignments
 
+## CUSTOMER-AFFAIRS-REPORT-DATA-E2E — PC-B — IN_PROGRESS
+
+- User authorizes additive synthetic report data and E2E on local CA, plus remove parenthetical end-date label. Reserve CA-only repeatable local fixture script (own tables), one UI label/test, own docs and browser QA. Preserve existing rows, no real contacts/customer linkage, no messages/permission/migration changes. Dataset provenance in audit and deterministic IDs; rollback rehearsal before apply, duplicate run must add zero rows. Branch `codex/pc-b-customer-affairs-report-data-e2e` from 0d699946; same Web3100/API4190. Verify workflows only on new synthetic records.
+
 ## CUSTOMER-AFFAIRS-DATE-FILTER — PC-B — VERIFIED / LOCAL_RUNTIME_ACTIVE
 
 - API 84 tests and Web 46 tests passed, scoped lint and build TypeScript checks passed. Boundary/branch/pagination and shared-calendar render tests included. Runtime handoff recorded in task doc; no migration or data mutation.

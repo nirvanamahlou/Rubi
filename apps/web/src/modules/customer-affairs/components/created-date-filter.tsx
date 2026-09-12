@@ -31,7 +31,7 @@ export function CreatedDateFilter({
           onChange={setStart}
         />
       </FormField>
-      <FormField label="تا تاریخ (شامل این روز)">
+      <FormField label="تا تاریخ">
         <DatePicker
           aria-label="ثبت پرونده تا تاریخ"
           value={end}
