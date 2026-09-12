@@ -23,29 +23,26 @@ import { useReservationFormReferences } from './reservation-form-sheet';
 import { DatePicker } from '@/components/ui/date-picker';
 import { ReservationFiles } from '../passenger-files/files';
 import { TravelDocument } from './travel-document';
-function VoucherSettingsForm({
+function ReservationSettingsForm({
   intake,
   refs,
   onSaved,
   onDirty,
-  supplier = false,
 }: {
   intake: ReservationFormIntake;
   refs: ReservationFormReferences;
   onSaved: (state: TravelWorkflowStateV1) => void;
   onDirty: () => void;
-  supplier?: boolean;
 }) {
   const [draft, setDraft] = useState(() => {
     const source = structuredClone(intake);
-    if (supplier) {
-      delete source.workflow.voucherSettings;
-      if (source.workflow.supplierFormSettings)
-        source.workflow.voucherSettings = source.workflow.supplierFormSettings;
-    }
+    delete source.workflow.voucherSettings;
+    if (source.workflow.supplierFormSettings)
+      source.workflow.voucherSettings = source.workflow.supplierFormSettings;
     return defaultVoucherSettings(source, refs);
   });
-  const [confirmScope, setConfirmScope] = useState(false);
+  const [applyToContractAndVoucher, setApplyToContractAndVoucher] =
+    useState(false);
   const [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<
@@ -68,7 +65,7 @@ function VoucherSettingsForm({
       live = false;
     };
   }, [intake.id, intake.workflow.version]);
-  async function save(applyToContractAndVoucher = false) {
+  async function save() {
     if (busy) return;
     setBusy(true);
     setError('');
@@ -76,15 +73,13 @@ function VoucherSettingsForm({
       const r = await travelRequest<{ data: TravelWorkflowStateV1 }>(
         `reservations/requests/${intake.id}/workflow`,
         {
-          action: supplier ? 'SUPPLIER_FORM_SETTINGS' : 'VOUCHER_SETTINGS',
-          ...(supplier
-            ? {
-                applyToContractAndVoucher,
-                expectedContractVersion: intake.contractEditVersion,
-              }
-            : {}),
+          action: 'SUPPLIER_FORM_SETTINGS',
+          applyToContractAndVoucher,
+          expectedContractVersion: intake.contractEditVersion,
           expectedVersion: intake.workflow.version,
-          note: supplier ? 'ویرایش فرم کارگزار' : 'ثبت تنظیمات واچر',
+          note: applyToContractAndVoucher
+            ? 'ویرایش فرم رزواسیون و اعمال در قرارداد و واچر'
+            : 'ویرایش فرم رزواسیون و مبنای خرید',
           voucherSettings: draft,
         },
       );
@@ -101,15 +96,55 @@ function VoucherSettingsForm({
     onDirty();
   };
   const selected = draft.passengers.filter((p) => p.selected);
+  const primaryTextKeys = ['checkIn', 'checkOut', 'roomType'] as const;
+  const secondaryTextKeys = voucherTextKeys.filter(
+    (key) => !primaryTextKeys.includes(key as (typeof primaryTextKeys)[number]),
+  );
+  const textField = (key: (typeof voucherTextKeys)[number]) => (
+    <label key={key}>
+      {voucherTextLabels[key]}
+      {['checkIn', 'checkOut', 'arrivalDate', 'departureDate'].includes(key) ? (
+        <DatePicker
+          defaultCalendarSystem="gregorian"
+          gregorianEnglish
+          value={draft.text[key]}
+          onChange={(value) =>
+            update({ ...draft, text: { ...draft.text, [key]: value } })
+          }
+        />
+      ) : (
+        <Input
+          value={draft.text[key]}
+          maxLength={
+            [
+              'stayNotes',
+              'remarks',
+              'excursionDescription',
+              'extraServices',
+            ].includes(key)
+              ? 500
+              : 200
+          }
+          placeholder={key === 'website' ? 'https://' : undefined}
+          type={
+            ['arrivalTime', 'departureTime'].includes(key) ? 'time' : 'text'
+          }
+          onChange={(event) =>
+            update({
+              ...draft,
+              text: { ...draft.text, [key]: event.target.value },
+            })
+          }
+        />
+      )}
+    </label>
+  );
   return (
     <section className="grid gap-4 rounded-xl border border-border p-4">
-      <h3 className="font-bold">
-        {supplier ? 'ویرایش فرم ارسالی به کارگزار' : 'تنظیمات واچر'}
-      </h3>
+      <h3 className="font-bold">تنظیمات فرم رزواسیون</h3>
       <p className="text-sm">
-        {supplier
-          ? 'بعد از ویرایش، مقصد تغییرات را انتخاب و فرم را ذخیره کنید. مبالغ قرارداد تغییر نمی‌کنند.'
-          : 'تغییرات را پیش از صدور ذخیره کنید. اصلاح واچر صادرشده به‌عنوان نسخهٔ جدید نگهداری می‌شود.'}
+        تاریخ هتل، تعداد و نوع اتاق و ردهٔ سنی مسافران را اصلاح کنید. هر ذخیره
+        یک نسخهٔ مستقل در سابقهٔ فرم رزواسیون می‌سازد.
       </p>
       <p>
         تعداد اتاق:{' '}
@@ -129,102 +164,39 @@ function VoucherSettingsForm({
           : '—'}
       </p>
       <fieldset
-        disabled={
-          busy ||
-          intake.workflow.supplierStatus === 'CANCELLED' ||
-          (supplier && intake.workflow.voucherIssued)
-        }
+        disabled={busy || intake.workflow.supplierStatus === 'CANCELLED'}
         className="grid gap-4"
       >
-        <div className="flex flex-wrap gap-4">
-          {voucherFlagKeys
-            .filter((k) => !supplier || k !== 'withLetterhead')
-            .map((k) => (
-              <label key={k}>
-                <input
-                  type="checkbox"
-                  checked={draft.flags[k]}
-                  onChange={(e) =>
+        <div className="grid gap-3 rounded-xl border border-border p-3">
+          <h4 className="font-bold">تاریخ هتل و نوع اتاق</h4>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {primaryTextKeys.map(textField)}
+          </div>
+        </div>
+        <div className="grid gap-3 rounded-xl border border-border p-3">
+          <h4 className="font-bold">تعداد اتاق‌ها</h4>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {voucherNumberKeys.map((key) => (
+              <label key={key}>
+                {voucherNumberLabels[key]}
+                <Input
+                  type="number"
+                  min={0}
+                  max={1000}
+                  value={draft.numbers[key]}
+                  onChange={(event) =>
                     update({
                       ...draft,
-                      flags: { ...draft.flags, [k]: e.target.checked },
+                      numbers: {
+                        ...draft.numbers,
+                        [key]: Number(event.target.value),
+                      },
                     })
                   }
-                />{' '}
-                {voucherFlagLabels[k]}
+                />
               </label>
             ))}
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {voucherTextKeys.map((k) => (
-            <label key={k}>
-              {voucherTextLabels[k]}
-              {['checkIn', 'checkOut', 'arrivalDate', 'departureDate'].includes(
-                k,
-              ) ? (
-                <DatePicker
-                  defaultCalendarSystem="gregorian"
-                  gregorianEnglish
-                  value={draft.text[k]}
-                  onChange={(value) =>
-                    update({ ...draft, text: { ...draft.text, [k]: value } })
-                  }
-                />
-              ) : (
-                <Input
-                  value={draft.text[k]}
-                  maxLength={
-                    [
-                      'stayNotes',
-                      'remarks',
-                      'excursionDescription',
-                      'extraServices',
-                    ].includes(k)
-                      ? 500
-                      : 200
-                  }
-                  placeholder={k === 'website' ? 'https://' : undefined}
-                  type={
-                    [
-                      'checkIn',
-                      'checkOut',
-                      'arrivalDate',
-                      'departureDate',
-                    ].includes(k)
-                      ? 'date'
-                      : ['arrivalTime', 'departureTime'].includes(k)
-                        ? 'time'
-                        : 'text'
-                  }
-                  onChange={(e) =>
-                    update({
-                      ...draft,
-                      text: { ...draft.text, [k]: e.target.value },
-                    })
-                  }
-                />
-              )}
-            </label>
-          ))}
-        </div>
-        <div className="grid grid-cols-4 gap-2">
-          {voucherNumberKeys.map((k) => (
-            <label key={k}>
-              {voucherNumberLabels[k]}
-              <Input
-                type="number"
-                min={0}
-                max={1000}
-                value={draft.numbers[k]}
-                onChange={(e) =>
-                  update({
-                    ...draft,
-                    numbers: { ...draft.numbers, [k]: Number(e.target.value) },
-                  })
-                }
-              />
-            </label>
-          ))}
+          </div>
         </div>
         <p>
           مسافران انتخاب‌شده: {selected.length} · ADL{' '}
@@ -233,8 +205,8 @@ function VoucherSettingsForm({
           {selected.filter((p) => p.age === 'INF').length}
         </p>
         <p className="text-sm">
-          اطلاعات تکمیلی مسافران مخصوص این واچر است؛ پروندهٔ اصلی مسافر تغییر
-          نمی‌کند.
+          نوع اتاق و ردهٔ سنی در نسخهٔ عملیاتی فرم ذخیره می‌شود؛ پروندهٔ اصلی
+          مسافر تغییر نمی‌کند.
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -335,6 +307,7 @@ function VoucherSettingsForm({
                   <td>
                     <DatePicker
                       defaultCalendarSystem="gregorian"
+                      gregorianEnglish
                       value={p.birthDate ?? ''}
                       onChange={(value) =>
                         update({
@@ -368,73 +341,87 @@ function VoucherSettingsForm({
             </tbody>
           </table>
         </div>
-        <Button
-          onClick={() => (supplier ? setConfirmScope(true) : void save())}
-          disabled={busy || !selected.length}
-        >
-          {busy
-            ? 'در حال ذخیره…'
-            : supplier
-              ? 'ذخیره فرم کارگزار'
-              : 'ذخیره تنظیمات واچر'}
+        <details className="rounded-xl border border-border p-3">
+          <summary className="cursor-pointer font-bold">
+            سایر اطلاعات فرم رزواسیون
+          </summary>
+          <div className="mt-3 flex flex-wrap gap-4">
+            {voucherFlagKeys
+              .filter((key) => key !== 'withLetterhead')
+              .map((key) => (
+                <label key={key}>
+                  <input
+                    type="checkbox"
+                    checked={draft.flags[key]}
+                    onChange={(event) =>
+                      update({
+                        ...draft,
+                        flags: {
+                          ...draft.flags,
+                          [key]: event.target.checked,
+                        },
+                      })
+                    }
+                  />{' '}
+                  {voucherFlagLabels[key]}
+                </label>
+              ))}
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {secondaryTextKeys.map(textField)}
+          </div>
+        </details>
+        <label className="rounded-xl border border-primary/30 bg-primary/5 p-3">
+          <input
+            type="checkbox"
+            checked={applyToContractAndVoucher}
+            onChange={(event) =>
+              setApplyToContractAndVoucher(event.target.checked)
+            }
+          />{' '}
+          همین تغییرات در خروجی قرارداد و واچر هتل هم اعمال شود
+          <span className="mt-1 block text-xs text-muted-foreground">
+            اگر تیک نزنید، تغییر فقط در فرم رزواسیون و مبنای خرید ثبت می‌شود.
+          </span>
+        </label>
+        <Button onClick={() => void save()} disabled={busy || !selected.length}>
+          {busy ? 'در حال ذخیره…' : 'ثبت نسخهٔ جدید فرم رزواسیون'}
         </Button>
       </fieldset>
-      {supplier && confirmScope && (
-        <div
-          role="alertdialog"
-          aria-label="مقصد تغییرات فرم"
-          className="rounded border border-border p-4 space-y-3"
-        >
-          <p>تغییرات این فرم در قرارداد و واچر هتل هم اعمال شود؟</p>
-          <p>«نه» فقط فرم کارگزار و مبنای خرید را تغییر می‌دهد.</p>
-          <Button disabled={busy} onClick={() => void save(false)}>
-            نه، فقط فرم کارگزار و خرید
-          </Button>
-          <Button disabled={busy} onClick={() => void save(true)}>
-            بله، قرارداد و واچر هم تغییر کند
-          </Button>
-          <Button
-            variant="outline"
-            disabled={busy}
-            onClick={() => setConfirmScope(false)}
-          >
-            بازگشت به ویرایش
-          </Button>
-        </div>
-      )}
       {error && (
         <p role="alert" className="text-destructive">
           {error}
         </p>
       )}
       <details onToggle={(event) => setShowFiles(event.currentTarget.open)}>
-        <summary>پیوست درخواست و واچر</summary>
+        <summary>پیوست فرم رزواسیون و واچر</summary>
         {showFiles && <ReservationFiles id={intake.id} />}
       </details>
       <details>
-        <summary>سابقهٔ درخواست و واچر (۱۰۰ نسخهٔ اخیر)</summary>
+        <summary>سابقهٔ فرم رزواسیون (۱۰۰ نسخهٔ اخیر)</summary>
         <div className="grid gap-2">
-          {history.map((h) => (
-            <div
-              key={h.version}
-              className="flex justify-between gap-3 border-b border-border p-2"
-            >
-              <span>
-                نسخه {h.version} ·{' '}
-                {new Date(h.createdAt).toLocaleString('fa-IR')} ·{' '}
-                {h.state.voucherIssued
-                  ? 'واچر صادرشده'
-                  : h.state.supplierStatus === 'REQUESTED'
-                    ? 'ارسال به کارگزار'
-                    : 'درخواست'}
-              </span>
-              {h.state.branding && (
-                <Button variant="outline" onClick={() => setPast(h.state)}>
-                  مشاهده / چاپ
-                </Button>
-              )}
-            </div>
-          ))}
+          {history
+            .filter((item) => item.state.supplierFormSettings)
+            .map((h) => (
+              <div
+                key={h.version}
+                className="flex justify-between gap-3 border-b border-border p-2"
+              >
+                <span>
+                  نسخه {h.version} ·{' '}
+                  {new Date(h.createdAt).toLocaleString('fa-IR')} ·{' '}
+                  {h.state.note ||
+                    (h.state.supplierStatus === 'REQUESTED'
+                      ? 'ارسال به کارگزار'
+                      : 'فرم رزواسیون')}
+                </span>
+                {h.state.branding && (
+                  <Button variant="outline" onClick={() => setPast(h.state)}>
+                    مشاهده / چاپ
+                  </Button>
+                )}
+              </div>
+            ))}
         </div>
       </details>
       {past && (
@@ -442,26 +429,21 @@ function VoucherSettingsForm({
           <Button variant="outline" onClick={() => setPast(undefined)}>
             بستن نسخهٔ قبلی
           </Button>
-          <TravelDocument
-            intake={{ ...intake, workflow: past }}
-            voucher={past.voucherIssued}
-            historical
-          />
+          <TravelDocument intake={{ ...intake, workflow: past }} historical />
         </div>
       )}
     </section>
   );
 }
 
-export function VoucherSettings(props: {
+export function ReservationSettings(props: {
   intake: ReservationFormIntake;
   onSaved: (state: TravelWorkflowStateV1) => void;
   onDirty: () => void;
-  supplier?: boolean;
 }) {
   const refs = useReservationFormReferences(props.intake, true);
   return refs.ready ? (
-    <VoucherSettingsForm {...props} refs={refs.references} />
+    <ReservationSettingsForm {...props} refs={refs.references} />
   ) : (
     <p>در حال دریافت تنظیمات…</p>
   );

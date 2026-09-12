@@ -23,6 +23,14 @@ it('renders the recorded operational hotel amendment while preserving commercial
   });
   settings.numbers.singleRooms = 1;
   const output = structuredClone(printFixture);
+  settings.passengers = [
+    {
+      id: output.contract.passengersDetail[0]!.customerId,
+      selected: true,
+      roomType: 'SGL AMENDMENT',
+      age: 'INF',
+    },
+  ];
   const original = structuredClone(output.contract.hotelSelection);
   output.contract.servicesDetail[0]!.metadata = {
     reservationFormAmendment: JSON.stringify({ version: 1, settings }),
@@ -31,6 +39,7 @@ it('renders the recorded operational hotel amendment while preserving commercial
   expect(html).toContain('AMENDED HOTEL');
   expect(html).toContain('SGL AMENDMENT');
   expect(html).toContain('UALL AMENDMENT');
+  expect(html).toContain('نوزاد');
   expect(html).toContain(
     'مبالغ و تعهدات مالی قرارداد با این اصلاح تغییر نکرده‌اند.',
   );

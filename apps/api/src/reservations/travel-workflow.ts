@@ -39,8 +39,15 @@ export function transitionTravelWorkflow(
   )
     throw new Error('دلیل عملیات را تا ۵۰۰ نویسه وارد کنید.');
   if (
-    !['NOTE', 'VOUCHER_SETTINGS'].includes(command.action) &&
-    (current.supplierStatus === 'CANCELLED' || current.voucherIssued)
+    current.supplierStatus === 'CANCELLED' &&
+    !['NOTE', 'VOUCHER_SETTINGS'].includes(command.action)
+  )
+    throw new Error('این درخواست بسته شده است و قابل تغییر نیست.');
+  if (
+    current.voucherIssued &&
+    !['NOTE', 'VOUCHER_SETTINGS', 'SUPPLIER_FORM_SETTINGS'].includes(
+      command.action,
+    )
   )
     throw new Error('این درخواست بسته شده است و قابل تغییر نیست.');
   const next = {

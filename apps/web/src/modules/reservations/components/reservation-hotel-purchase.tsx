@@ -4,6 +4,7 @@ import {
   moneyUnits,
   type ReservationIntakeV1,
   type ReservationServicePurchaseV1,
+  type TravelWorkflowStateV1,
 } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
@@ -22,6 +23,52 @@ const financeLabel = (purchase?: ReservationServicePurchaseV1) => {
   if (purchase.finance.status === 'REJECTED') return 'برگشت‌خورده از مالی';
   return 'ارسال‌شده به مالی؛ در انتظار پرداخت';
 };
+
+type PurchaseRequest = ReservationIntakeV1 & {
+  workflow?: TravelWorkflowStateV1 | null;
+};
+
+export function SupplierFormPurchaseContext({
+  request,
+}: {
+  request: PurchaseRequest;
+}) {
+  const settings = request.workflow?.sentSupplierFormSettings;
+  if (!settings)
+    return (
+      <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+        هنوز نسخه‌ای از فرم رزواسیون برای کارگزار ارسال نشده است؛ مبلغ خرید را
+        پس از ارسال فرم ثبت کنید.
+      </p>
+    );
+  const selected = settings.passengers.filter(
+    (passenger) => passenger.selected,
+  );
+  return (
+    <section className="grid gap-2 rounded-xl border border-primary/25 bg-primary/5 p-3 text-sm">
+      <strong>مبنای قیمت خرید: آخرین فرم ارسال‌شده به کارگزار</strong>
+      <p>
+        اقامت: {settings.text.checkIn || '—'} تا {settings.text.checkOut || '—'}{' '}
+        · نوع اتاق: {settings.text.roomType || '—'}
+      </p>
+      <p>
+        SGL: {settings.numbers.singleRooms} · DBL:{' '}
+        {settings.numbers.doubleRooms} · EXT: {settings.numbers.extraBeds} ·
+        CUSTOM: {settings.numbers.customRooms}
+      </p>
+      <p>
+        مسافران: {selected.length} · ADL:{' '}
+        {selected.filter((passenger) => passenger.age === 'ADL').length} · CHD:{' '}
+        {selected.filter((passenger) => passenger.age === 'CHD').length} · INF:{' '}
+        {selected.filter((passenger) => passenger.age === 'INF').length}
+      </p>
+      <span className="text-xs text-muted-foreground">
+        نسخهٔ ارسال‌شده {request.workflow?.sentSupplierFormVersion ?? '—'}؛ مبلغ
+        خرید را طبق پاسخ همان کارگزار وارد کنید.
+      </span>
+    </section>
+  );
+}
 
 function ServicePurchaseCard({
   request,
@@ -173,7 +220,7 @@ export function ReservationHotelPurchase({
   request,
   onSaved,
 }: {
-  request: ReservationIntakeV1;
+  request: PurchaseRequest;
   onSaved: () => void;
 }) {
   return (
@@ -185,6 +232,7 @@ export function ReservationHotelPurchase({
           تازه می‌سازد و تا پرداخت نسخه تازه، تحویل مدارک به فروش بسته می‌ماند.
         </p>
       </div>
+      <SupplierFormPurchaseContext request={request} />
       {request.snapshot.serviceSelections.map((service) => (
         <ServicePurchaseCard
           key={service.clientKey}
@@ -215,12 +263,12 @@ export function ReservationHotelPurchase({
 }
 
 export function ReservationPurchaseDialog({ id }: { id: string }) {
-  const [request, setRequest] = useState<ReservationIntakeV1>();
+  const [request, setRequest] = useState<PurchaseRequest>();
   const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(0);
   useEffect(() => {
     let live = true;
-    void travelRequest<{ data: ReservationIntakeV1 }>(
+    void travelRequest<{ data: PurchaseRequest }>(
       `reservations/requests/${id}/purchase-context`,
     )
       .then((response) => {

@@ -213,6 +213,14 @@ export function contractPrintHtml(
       : '—';
   const rows = c.passengersDetail
     .map((p, i) => {
+      const amendedPassenger = amended?.passengers.find(
+        (passenger) => passenger.id === p.customerId,
+      );
+      const ageCategory = amendedPassenger?.selected
+        ? ({ ADL: 'ADT', CHD: 'CHD', INF: 'INF' } as const)[
+            amendedPassenger.age
+          ]
+        : p.ageCategory;
       const allocated = c.servicesDetail.filter((s) =>
         p.serviceClientKeys.includes(s.clientKey),
       );
@@ -227,7 +235,7 @@ export function contractPrintHtml(
               '</bdi></div>',
           )
           .join('');
-      return `<tr><td>${i + 1}</td><td>${e(p.displayNameSnapshot)}</td><td>${{ ADT: 'بزرگسال', CHD: 'کودک', INF: 'نوزاد' }[p.ageCategory]}</td><td>${allocated.some((s) => s.kind === 'VISA') ? 'دارد' : '—'}</td><td class="contract-total">${p.agreedPrices?.length ? renderPrices(false) : 'ثبت نشده'}</td><td>${renderPrices(true)}</td>${agency ? '<td>ثبت نشده</td>' : ''}<td>—</td></tr>`;
+      return `<tr><td>${i + 1}</td><td>${e(p.displayNameSnapshot)}</td><td>${{ ADT: 'بزرگسال', CHD: 'کودک', INF: 'نوزاد' }[ageCategory]}</td><td>${allocated.some((s) => s.kind === 'VISA') ? 'دارد' : '—'}</td><td class="contract-total">${p.agreedPrices?.length ? renderPrices(false) : 'ثبت نشده'}</td><td>${renderPrices(true)}</td>${agency ? '<td>ثبت نشده</td>' : ''}<td>—</td></tr>`;
     })
     .join('');
   const flights = salesContractFlights(c.servicesDetail, c.ticketSelections)

@@ -9,7 +9,9 @@ export function validateVoucherSettings(
   passengerIds: readonly string[],
 ): VoucherSettingsV1 {
   const fail = (): never => {
-    throw new Error('تنظیمات واچر معتبر نیست؛ فیلدها و مسافران را بررسی کنید.');
+    throw new Error(
+      'تنظیمات فرم رزواسیون یا واچر معتبر نیست؛ فیلدها و مسافران را بررسی کنید.',
+    );
   };
   if (!value || typeof value !== 'object') return fail();
   const v = value as VoucherSettingsV1;

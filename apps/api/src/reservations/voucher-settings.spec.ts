@@ -129,3 +129,33 @@ it('isolates supplier form edits and freezes sent details for purchase', () => {
   expect(both.voucherSettings?.text.roomType).toBe('NEXT');
   expect(state.voucherSettings.text.roomType).toBe('DBL');
 });
+
+it('allows a versioned reservation-form correction after voucher issuance', () => {
+  const state = {
+    ...initialTravelWorkflow(),
+    version: 4,
+    supplierStatus: 'CONFIRMED' as const,
+    voucherIssued: true,
+    voucherSettings: settings(),
+  };
+  const correction = settings();
+  correction.text.checkIn = '2026-10-02';
+  correction.text.checkOut = '2026-10-05';
+  correction.numbers.singleRooms = 1;
+  const next = transition(
+    state,
+    {
+      action: 'SUPPLIER_FORM_SETTINGS',
+      expectedVersion: 4,
+      note: 'Reservation form correction',
+      voucherSettings: correction,
+      applyToContractAndVoucher: true,
+    },
+    ['p'],
+  );
+  expect(next.version).toBe(5);
+  expect(next.voucherIssued).toBe(true);
+  expect(next.supplierFormSettings?.text.checkIn).toBe('2026-10-02');
+  expect(next.voucherSettings?.numbers.singleRooms).toBe(1);
+  expect(state.voucherSettings.text.checkIn).toBe('');
+});

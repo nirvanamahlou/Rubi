@@ -13,7 +13,7 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { agencyClient } from '@/modules/organizations/api/agency-client';
 import type { MasterDataRecord } from '@rubi/contracts';
 import { TravelDocument } from './travel-document';
-import { VoucherSettings } from './voucher-settings';
+import { ReservationSettings } from './reservation-settings';
 import { ReservationTickets } from './reservation-tickets';
 
 export async function travelRequest<T>(
@@ -265,9 +265,8 @@ export function TravelWorkflowForm({
           voucher={action === 'واچر' || action === 'Confirmation'}
         />
       )}
-      {(action === 'واچر' || action === 'رزرواسیون') && (
-        <VoucherSettings
-          supplier={action === 'رزرواسیون'}
+      {action === 'رزرواسیون' && (
+        <ReservationSettings
           key={`${id}:${state.version}`}
           intake={intake}
           onDirty={() => setSettingsDirty(true)}
