@@ -36,6 +36,7 @@ const columnLabels: Readonly<Record<string, string>> = {
   icaoCode: 'کد ICAO',
   manufacturer: 'سازنده',
   model: 'مدل',
+  manufacturerModel: 'سازنده و مدل',
   bodyType: 'نوع بدنه',
   bookingCode: 'کد رزرو',
   cabinType: 'کابین',
@@ -211,6 +212,10 @@ function recordValue(
 ): string | number {
   if (column === 'code') return record.code;
   if (column === 'name') return record.name;
+  if (column === 'manufacturerModel')
+    return [record.attributes.manufacturer, record.attributes.model]
+      .filter((value) => value !== null && value !== undefined && value !== '')
+      .join(' / ');
   if (column === 'status')
     return record.resource === 'meal-services' && record.attributes.isUnderReview === true
       ? 'در حال بررسی'

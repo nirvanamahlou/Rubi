@@ -24,6 +24,15 @@ describe('explicit local Master Data demo fixtures', () => {
     expect(values.find((value) => value.code === 'BB')?.englishName).toBe(
       'Bed & Breakfast',
     );
+    expect(
+      fixtures.find((row) => row.key === 'aircraft-1')?.values((key) => key),
+    ).toMatchObject({
+      englishName: 'Airbus A320-200',
+      manufacturerModel: 'Airbus / A320-200',
+    });
+    expect(
+      fixtures.find((row) => row.key === 'aircraft-1')?.values((key) => key),
+    ).not.toHaveProperty('name');
   });
   it('covers all retained reference catalogs with ordered dependencies and marked synthetic names', () => {
     const fixtures = masterDataDemoRecords();
@@ -39,7 +48,12 @@ describe('explicit local Master Data demo fixtures', () => {
         expect(seen.has(key), `${row.key} depends on ${key}`).toBe(true);
         return '11111111-1111-4111-8111-111111111111';
       });
-      if (row.resource !== 'suppliers')
+      if (row.resource === 'aircraft-types') {
+        expect(values.manufacturerModel).toContain(' / ');
+        expect(values).not.toHaveProperty('name');
+        expect(values).not.toHaveProperty('manufacturer');
+        expect(values).not.toHaveProperty('model');
+      } else if (row.resource !== 'suppliers')
         expect(values.name ?? values.legalName ?? values.fullName).toContain(
           'آزمایشی',
         );

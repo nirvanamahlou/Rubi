@@ -101,14 +101,12 @@ export function realisticMasterDataDemoRecords(): DemoRecord[] {
     'airline-1': pair('هواپیمایی افق فیروزه', 'Turquoise Horizon Airways'),
     'airline-2': pair('هواپیمایی آبیراه', 'Abirah Airways'),
     'aircraft-1': {
-      ...pair('ایرباس ۳۲۰', 'Airbus A320'),
-      manufacturer: 'Airbus',
-      model: 'A320-200',
+      englishName: 'Airbus A320-200',
+      manufacturerModel: 'Airbus / A320-200',
     },
     'aircraft-2': {
-      ...pair('بوئینگ ۷۷۷', 'Boeing 777'),
-      manufacturer: 'Boeing',
-      model: '777-300ER',
+      englishName: 'Boeing 777-300ER',
+      manufacturerModel: 'Boeing / 777-300ER',
     },
     'cabin-1': { ...pair('اکونومی', 'Economy'), bookingCode: 'Y' },
     'cabin-2': { ...pair('بیزینس', 'Business'), bookingCode: 'C' },

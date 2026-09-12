@@ -115,6 +115,7 @@ const attributeLabels: Record<string, string> = {
   organizationName: 'سازمان',
   manufacturer: 'سازنده',
   model: 'مدل',
+  manufacturerModel: 'سازنده و مدل',
   bodyType: 'نوع بدنه',
   bookingCode: 'کد رزرو',
   cabinType: 'Cabin',
@@ -150,6 +151,30 @@ function attribute(record: MasterDataRecord, key: string, fallback = '—') {
   return value === null || value === undefined || value === ''
     ? fallback
     : String(value);
+}
+
+function aircraftManufacturerModel(record: MasterDataRecord) {
+  return [record.attributes.manufacturer, record.attributes.model]
+    .filter((value) => value !== null && value !== undefined && value !== '')
+    .join(' / ');
+}
+
+function transportDisplayName(record: MasterDataRecord) {
+  if (record.resource !== 'aircraft-types') return record.name;
+  return (
+    String(record.attributes.englishName ?? '').trim() ||
+    aircraftManufacturerModel(record) ||
+    record.code
+  );
+}
+
+function profileAttributeEntries(record: MasterDataRecord) {
+  const entries = Object.entries(record.attributes);
+  if (record.resource !== 'aircraft-types') return entries;
+  return [
+    ['manufacturerModel', aircraftManufacturerModel(record)],
+    ...entries.filter(([key]) => key !== 'manufacturer' && key !== 'model'),
+  ] as const;
 }
 
 function needsCompletion(record: MasterDataRecord) {
@@ -440,7 +465,7 @@ export function MasterDataTransportationWorkspace() {
         columns: [
           ...new Set([
             'code',
-            'name',
+            ...(resource === 'aircraft-types' ? [] : ['name']),
             ...getMasterDataFormFields(definition).map((field) => field.key),
             'status',
             'updatedAt',
@@ -529,14 +554,18 @@ export function MasterDataTransportationWorkspace() {
                 </td>
                 {columns.map(([key]) => (
                   <td key={key} className="p-4 min-w-28">
-                    {key === 'name' ? (
+                    {key === 'name' ||
+                    (resource === 'aircraft-types' &&
+                      key === 'manufacturerModel') ? (
                       <>
                         <button
                           type="button"
                           className="text-start font-bold text-primary focus-visible:ring-2 focus-visible:ring-ring"
                           onClick={() => openProfile(record)}
                         >
-                          {record.name}
+                          {key === 'name'
+                            ? record.name
+                            : transportColumnValue(record, key)}
                         </button>
                         {[
                           'airlines',
@@ -576,7 +605,7 @@ export function MasterDataTransportationWorkspace() {
                 <td className="p-4">
                   <div className="flex flex-wrap justify-end gap-2">
                     <Button
-                      aria-label={`مشاهده ${record.name}`}
+                      aria-label={`مشاهده ${transportDisplayName(record)}`}
                       onClick={() => openProfile(record)}
                       size="icon"
                       variant="outline"
@@ -584,7 +613,7 @@ export function MasterDataTransportationWorkspace() {
                       <Eye className="size-4" />
                     </Button>
                     <Button
-                      aria-label={`ویرایش ${record.name}`}
+                      aria-label={`ویرایش ${transportDisplayName(record)}`}
                       onClick={() => {
                         setSelected(record);
                         setFormMode('edit');
@@ -798,7 +827,9 @@ export function MasterDataTransportationWorkspace() {
                   <CurrentIcon className="size-11" />
                 </span>
                 <div>
-                  <h2 className="text-2xl font-black">{selected.name}</h2>
+                  <h2 className="text-2xl font-black">
+                    {transportDisplayName(selected)}
+                  </h2>
                   <p className="mt-1 text-muted-foreground" dir="ltr">
                     {selected.code} · {attribute(selected, 'englishName')}
                   </p>
@@ -824,7 +855,7 @@ export function MasterDataTransportationWorkspace() {
                   <Database className="size-5" /> مشخصات مرجع
                 </h3>
                 <dl className="grid gap-4 sm:grid-cols-2">
-                  {Object.entries(selected.attributes)
+                  {profileAttributeEntries(selected)
                     .filter(
                       ([key, value]) =>
                         attributeLabels[key] && value !== null && value !== '',

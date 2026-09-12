@@ -22,12 +22,11 @@ export function transportColumns(
     case 'aircraft-types':
       return [
         ['code', 'کد'],
-        ['manufacturer', 'سازنده'],
-        ['model', 'مدل'],
-        ['name', 'عنوان فارسی'],
+        ['manufacturerModel', 'سازنده و مدل'],
         ['englishName', 'عنوان انگلیسی'],
         ['bodyType', 'نوع بدنه'],
         ['capacity', 'ظرفیت'],
+        ['displayOrder', 'ترتیب نمایش'],
       ];
     case 'cabin-classes':
       return [

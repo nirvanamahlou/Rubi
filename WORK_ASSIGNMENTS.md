@@ -1,5 +1,12 @@
 # Work Assignments
 
+## MASTER-008-AIRCRAFT-FIELDS — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک محصول: در «انواع هواپیما» عنوان فارسی از فرم، فهرست و پروفایل حذف شود؛ سازنده و مدل به یک ورودی/نمایش واحد تبدیل و داده‌های آزمایشی با آن هم‌راستا شوند.
+- محدوده رزروشده: مدل و Workspace حمل‌ونقل Web در `apps/web/src/modules/master-data/**`، سازگاری ورودی و خروجی Master Data در `apps/api/src/master-data/**`، Fixtureهای آزمایشی همین ماژول، تست‌های هدفمند و اسناد Task. PR #232 لوگو و PRهای تاریخی Master Data بدون تغییر می‌مانند.
+- سازگاری: Schema موجود `manufacturer`، `model` و `name` حفظ می‌شود؛ API ورودی ترکیبی را در مرز Master Data به ستون‌های موجود تبدیل و برای مصرف‌کنندگان قدیمی payload جداگانه را نیز می‌پذیرد. هیچ Schema/Migration/Seed عملیاتی، Dependency/Lockfile، قرارداد مرکزی یا IAM تغییر نمی‌کند.
+- تحویل: عنوان فارسی از فرم، جدول، پروفایل و Excel انواع هواپیما حذف شد؛ ورودی و نمایش «سازنده و مدل» یکپارچه و Fixtureهای ساده/واقع‌نما هماهنگ شدند. ۲۹ تست هدفمند Web، ۲۷ تست هدفمند API، lint محدوده، TypeScript Web/API و build تولیدی هر دو برنامه موفق‌اند. جزئیات در `docs/tasks/MASTER-008-AIRCRAFT-FIELDS.md`.
+
 ## HR-014-BACKEND-ONLY — PC-B — MERGE_AUTHORIZED
 
 - User explicitly removes the standalone HR connections panel and wants integrations behind the existing forms. Reserve the central AppShell outlet removal, HR record referral link and now-unreachable referral UI/client/tests on `codex/pc-b-hr-backend-only-0912` from `origin/develop@6a4e0410`. Backend services, contracts, persisted records, permissions and the form directory/document/currency integrations stay intact. No migration, dependency or runtime takeover. Existing visibility context is retained for consumer compatibility. Push a review PR to develop; no automatic merge under the updated instructions.

@@ -36,7 +36,17 @@ describe('mockup column coverage', () => {
     ]);
     expect(
       transportColumns('aircraft-types').map(([, label]) => label),
-    ).toContain('نوع بدنه');
+    ).toEqual([
+      'کد',
+      'سازنده و مدل',
+      'عنوان انگلیسی',
+      'نوع بدنه',
+      'ظرفیت',
+      'ترتیب نمایش',
+    ]);
+    expect(
+      transportColumns('aircraft-types').map(([, label]) => label),
+    ).not.toContain('عنوان فارسی');
   });
   it('does not invent external connections or capacity', () => {
     const record = {

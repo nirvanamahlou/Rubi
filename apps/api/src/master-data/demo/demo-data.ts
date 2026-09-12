@@ -224,10 +224,8 @@ export function masterDataDemoRecords(): DemoRecord[] {
       countryId: id('country'),
     }));
     add(`aircraft-${n}`, 'aircraft-types', {
-      name: name(`هواپیمای نمونه ${n}`),
       englishName: `Demo Aircraft ${n}`,
-      manufacturer: 'Demo Manufacturer',
-      model: `DEMO-${n}`,
+      manufacturerModel: `Demo Manufacturer / DEMO-${n}`,
     });
     add(`cabin-${n}`, 'cabin-classes', {
       name: name(n === 1 ? 'اکونومی' : 'بیزینس'),
