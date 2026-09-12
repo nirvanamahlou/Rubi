@@ -611,8 +611,11 @@ export function OrganizationsWorkspace() {
                       size="sm"
                       variant="outline"
                       onClick={() => void openProfile(record)}
+                      title="مشاهده پرونده"
+                      aria-label={`مشاهده پرونده ${record.name}`}
+                      className="size-10 p-0"
                     >
-                      مشاهده پرونده
+                      <Eye aria-hidden="true" className="size-4" />
                     </Button>
                     <Button
                       size="sm"
@@ -622,8 +625,11 @@ export function OrganizationsWorkspace() {
                         setSelected(record);
                         setFormMode('edit');
                       }}
+                      title="ویرایش"
+                      aria-label={`ویرایش ${record.name}`}
+                      className="size-10 p-0"
                     >
-                      ویرایش
+                      <Pencil aria-hidden="true" className="size-4" />
                     </Button>
                     <Button
                       size="sm"
@@ -633,8 +639,10 @@ export function OrganizationsWorkspace() {
                         setDeleteTarget({ resource: 'organizations', record })
                       }
                       aria-label={`حذف دائمی ${record.name}`}
+                      title="حذف دائمی"
+                      className="size-10 p-0"
                     >
-                      <Trash2 aria-hidden="true" className="size-4" /> حذف دائمی
+                      <Trash2 aria-hidden="true" className="size-4" />
                     </Button>
                   </div>
                 </Card>
@@ -703,13 +711,15 @@ export function OrganizationsWorkspace() {
                       </td>
                       <td className="unavailable-value">در دسترس نیست</td>
                       <td className="p-4">
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
                           <Button
                             onClick={() => void openProfile(record)}
-                            size="sm"
+                            size="icon"
                             variant="outline"
+                            title="مشاهده پرونده"
+                            aria-label={`مشاهده پرونده ${record.name}`}
                           >
-                            <Eye className="size-4" /> مشاهده پرونده
+                            <Eye aria-hidden="true" className="size-4" />
                           </Button>
                           <Button
                             disabled={
@@ -719,13 +729,15 @@ export function OrganizationsWorkspace() {
                               setSelected(record);
                               setFormMode('edit');
                             }}
-                            size="sm"
+                            size="icon"
                             variant="outline"
+                            title="ویرایش"
+                            aria-label={`ویرایش ${record.name}`}
                           >
-                            <Pencil className="size-4" /> ویرایش
+                            <Pencil aria-hidden="true" className="size-4" />
                           </Button>
                           <Button
-                            size="sm"
+                            size="icon"
                             variant="destructive"
                             disabled={
                               !permissions.includes('master_data.delete')
@@ -737,9 +749,9 @@ export function OrganizationsWorkspace() {
                               })
                             }
                             aria-label={`حذف دائمی ${record.name}`}
+                            title="حذف دائمی"
                           >
-                            <Trash2 aria-hidden="true" className="size-4" /> حذف
-                            دائمی
+                            <Trash2 aria-hidden="true" className="size-4" />
                           </Button>
                         </div>
                       </td>
@@ -842,41 +854,57 @@ export function OrganizationsWorkspace() {
               ) : contacts.length ? (
                 contacts.map((contact) => (
                   <div
-                    className="grid gap-1 rounded-xl border p-3 sm:grid-cols-3"
+                    className="flex flex-wrap items-center gap-3 rounded-xl border p-3"
                     key={contact.id}
                   >
-                    <span className="font-semibold">{contact.name}</span>
-                    <span>
-                      {attribute(contact, 'jobTitle') || 'سمت ثبت نشده'}
-                    </span>
-                    <span dir="ltr">{attribute(contact, 'phoneMasked')}</span>
-                    <span dir="ltr">{attribute(contact, 'emailMasked')}</span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={!permissions.includes('master_data.update')}
-                      onClick={() =>
-                        setContactForm({ mode: 'edit', record: contact })
-                      }
-                    >
-                      ویرایش مخاطب
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      disabled={!permissions.includes('master_data.delete')}
-                      onClick={() =>
-                        setDeleteTarget({
-                          resource: 'organization-contacts',
-                          record: contact,
-                          organizationId: selected.id,
-                        })
-                      }
-                      aria-label={`حذف دائمی مخاطب ${contact.name}`}
-                    >
-                      <Trash2 aria-hidden="true" className="size-4" /> حذف دائمی
-                      مخاطب
-                    </Button>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <span className="block font-semibold">
+                        {contact.name}
+                      </span>
+                      <span>
+                        {attribute(contact, 'jobTitle') || 'سمت ثبت نشده'}
+                      </span>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1">
+                        {['phoneMasked', 'emailMasked'].map((key) => {
+                          const value = attribute(contact, key, '').trim();
+                          return value && value !== '—' && value !== '-' ? (
+                            <span key={key} dir="ltr">
+                              {value}
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        title="ویرایش مخاطب"
+                        aria-label={`ویرایش مخاطب ${contact.name}`}
+                        disabled={!permissions.includes('master_data.update')}
+                        onClick={() =>
+                          setContactForm({ mode: 'edit', record: contact })
+                        }
+                      >
+                        <Pencil aria-hidden="true" className="size-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        title="حذف دائمی مخاطب"
+                        disabled={!permissions.includes('master_data.delete')}
+                        onClick={() =>
+                          setDeleteTarget({
+                            resource: 'organization-contacts',
+                            record: contact,
+                            organizationId: selected.id,
+                          })
+                        }
+                        aria-label={`حذف دائمی مخاطب ${contact.name}`}
+                      >
+                        <Trash2 aria-hidden="true" className="size-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))
               ) : !contactsError ? (
