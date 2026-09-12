@@ -1,5 +1,25 @@
 # Work Assignments
 
+## WORKBENCH-017-PUBLISH — PC-B — IN_PROGRESS
+
+- CI integration follow-up reserves user-menu.spec.ts only to update obsolete profile heading/navigation expectations; credential/access-mutation assertions remain intact. Combined local170tests/lint passed; final CI is the merge gate.
+
+- User explicitly authorizes push and merge of current changes to develop via PR190. Integration-only reservation for the five conflicting files in profile/Workbench/B2B status stack; preserve current develop, owner exports, requested label and boundary-note removal. No runtime/API/database changes. Personal-profile persistence remains awaiting separate owner handoff. Merge only after final combined CI gates pass.
+
+## WORKBENCH-017-PERSONAL-PROFILE — PC-B — UI_VERIFIED / PERSISTENCE_AWAITING_HANDOFF
+
+- User requests editable personal information and profile photo in preferences. Reserve Web profile module/form/model/tests plus own task/status docs on codex/pc-b-personal-profile-editor frome4ddc02. Consume existing native controls/theme. IAM has no self-edit/avatar contract; backend/schema ownership handoff requested before edits. No new browser persistence, fake saved records or profile data in source. Runtime API cutover remains a separate previously blocked action; no retry.
+
+- Delivered UI6e6ad65 with owner exportsbc4c6b9 and datefix7fc5b05 preserved.20 targeted tests, lint, typecheck and43-route build passed. Browser verified local photo preview, phone editing, reset and disabled real-save state; test selection/input removed. Web3100 source1af4c0c/PID19708/manifesthr005-b7ab66ff79101b7b; API untouched. Draft PR190; no merge. Web implementation reservation released, backend/schema unreserved pending explicit handoff.
+
+## WORKBENCH-016-PROFILE-VIEWS — PC-B — DONE / UI_VERIFIED
+
+- User follow-up: reserve and replace only the profile permission-summary heading with «خلاصه دسترسی‌ها» on the same task branch; no behavior changes. Runtime inclusion coordinated with the current B2B owner.
+
+- Reserve Web profile-workspace.tsx and Workbench settings session label plus own status docs on codex/pc-b-profile-settings-views. User requests separate session logs, working personal preferences and removal of duplicate profile navigation. Consume existing IAM public session response and shared theme provider only; no IAM backend, schema, dependency or shared provider edits. Coordinate B2B toolbar source preservation before Web3100 handoff.
+
+- Delivered a744f0c; preserved toolbar patches as357d025/86bb4a3. Eight profile tests, scoped lint, TypeScript and43-route build passed. Authenticated browser verified session-only table, absent duplicate nav, real theme change and persistence after reload; original light theme restored. Web3100/PID2772/source86bb4a3/manifesthr005-2463c93fed3bee9e; handed to B2B for subsequent boundary-note-only build. Draft PR186, no merge; scoped reservation released.
+
 ## UNIFIED-LATEST-0912 — PC-A — READY_FOR_MERGE
 
 - با تأیید صریح مالک محصول، آخرین نسخه‌های منتشرشده PC-A، PC-B و مجوز Reporting

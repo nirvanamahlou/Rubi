@@ -34,7 +34,12 @@ import {
 import { AgreementTermsEditor } from './agreement-terms-editor';
 import { temporaryCreditIssue } from '../model/temporary-credit';
 import { DossierDateFilters } from './dossier-date-filters';
-import { inDossierDateRange } from '../model/dossier-date-range';
+import {
+  agreementMatchesRange,
+  agreementReport,
+  collectAgreementExport,
+} from '../model/commercial-export';
+import { CommercialExportActions } from './commercial-export-actions';
 
 function RevisionSummary({
   revision,
@@ -168,10 +173,12 @@ function RevisionSummary({
 
 export function AgreementWorkflowPanel({
   organizationId,
+  organizationName = organizationId,
   role,
   view = 'agreements',
 }: {
   organizationId: string;
+  organizationName?: string;
   role: B2bCooperationRole;
   view?: 'agreements' | 'credit' | 'guarantees' | 'temporary';
 }) {
@@ -255,16 +262,9 @@ export function AgreementWorkflowPanel({
           all.push(...result.data);
         }
         setRecords(
-          all.filter((record) => {
-            const revision = record.revisions[0];
-            const dates =
-              view === 'guarantees'
-                ? (revision?.guarantees.map((g) => g.receivedAt) ?? [])
-                : view === 'credit' || view === 'temporary'
-                  ? (revision?.creditPolicies.map((p) => p.effectiveFrom) ?? [])
-                  : [revision?.startsAt ?? record.startsAt];
-            return dates.some((date) => inDossierDateRange(date, dateRange));
-          }),
+          all.filter((record) =>
+            agreementMatchesRange(record, view, dateRange),
+          ),
         );
         setPages(1);
       } else {
@@ -535,6 +535,31 @@ export function AgreementWorkflowPanel({
             قرارداد جدید
           </button>
         ) : null}
+      </div>
+      <div className="my-3 flex justify-end">
+        <CommercialExportActions
+          key={`${organizationId}:${role}:${branchId}:${view}:${dateRange.from}:${dateRange.to}:${refresh}`}
+          disabled={
+            loading ||
+            !!error ||
+            !branchId ||
+            !permissions.includes('b2b.agreement.read') ||
+            !permissions.includes('b2b.credit.read') ||
+            !!(dateRange.from && dateRange.to && dateRange.from > dateRange.to)
+          }
+          loadReport={async (isCurrent) => {
+            const all = await collectAgreementExport(
+              (page) =>
+                agencyClient.agreements(organizationId, branchId, role, page),
+              isCurrent,
+            );
+            return agreementReport(all, view, dateRange, [
+              `سازمان: ${organizationName}`,
+              `شعبه: ${branches.find((b) => b.id === branchId)?.name ?? branchId}`,
+              `نقش: ${role === 'AGENCY' ? 'آژانس' : 'مشتری سازمانی'}`,
+            ]);
+          }}
+        />
       </div>
       {error ? (
         <div role="alert" className="form-error">

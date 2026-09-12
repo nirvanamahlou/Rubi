@@ -45,11 +45,12 @@ describe('authenticated user menu integration', () => {
     expect(shellSource).toContain('<UserMenu />');
   });
 
-  it('keeps the profile read-only and avoids sensitive or synthetic persistence', () => {
-    expect(profileSource).toContain('نمای فقط‌خواندنی');
+  it('keeps access details read-only and separates personal preferences from session logs', () => {
     expect(profileSource).toContain('شعب مجاز');
-    expect(profileSource).toContain('خلاصه Permissionها');
-    expect(profileSource).toContain('نشست‌های فعال');
+    expect(profileSource).toContain('خلاصه دسترسی‌ها');
+    expect(profileSource).toContain('لاگ نشست‌ها');
+    expect(profileSource).not.toContain('aria-label="بخش‌های پروفایل"');
+    expect(profileSource).toContain('<PersonalDetailsForm');
     expect(profileSource).toContain('وضعیت MFA');
     expect(profileSource).not.toMatch(
       /accessToken|refreshToken|document\.cookie|localStorage|type="password"/i,
