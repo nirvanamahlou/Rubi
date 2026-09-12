@@ -1,5 +1,10 @@
 # Work Assignments
 
+## CUSTOMER-AFFAIRS-INTERNAL-LINKS — PC-B — UI SLICE WITHDRAWN / BACKEND PENDING
+
+- User requests cross-module connections. Reserve Customer Affairs Web public API consumers, reference/handoff forms and tests plus own docs, branch `codex/pc-b-customer-affairs-internal-links` based on live `a1d4cf0`. Consume existing Sales, Reservations and Documents read APIs and CA reference/handoff mutation contracts; do not modify producer modules, shared schema/contracts, credentials or permissions. External ingress/providers remain pending their owner contract and credentials. Existing referrals already feed Workbench. Preserve combined Web3100/API4190; no merge.
+- User clarified backend-only, no separate section. All new consumer UI/client/tests in this work item were withdrawn before commit; previous code/API preserved. Read-only QA found Documents accessible and Sales/Reservations 403 for the current account; no business mutations or permission changes. Frontend reservation released. Backend cross-module callbacks and website integration are not implemented; shared producer contracts/ownership must be coordinated before reserving that scope.
+
 ## CUSTOMER-AFFAIRS-OPERATIONAL-FORMS — PC-B — DONE / BACKLOG PARTIAL
 
 - User requests completion of audited gaps. Reserve Customer Affairs Web components/client/tests and own docs on `codex/pc-b-customer-affairs-operational-forms` from live `cc9970b`. Implement existing-contract record editing, source/preferences, scoped HR directory assignment, lead stage/loss and corrective action forms, explicit ticket categories. Shared API/schema/dependency/other-module changes are not reserved; external messaging/site ingress, probability persistence and producer-side customer conversion/sales intake need separate contracts/coordination. Preserve Web3100 combined runtime and API4190. No merge.
