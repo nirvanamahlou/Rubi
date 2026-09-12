@@ -39,7 +39,8 @@
   flex-wrap: wrap;
   align-items: end;
 }
-.fields > label {
+.fields > label,
+.dateField {
   display: grid;
   gap: 8px;
   min-width: 150px;
@@ -53,8 +54,7 @@
   border-radius: 7px;
   padding: 7px;
 }
-.root input[type='number'],
-.root input[type='date'] {
+.root input[type='number'] {
   direction: ltr;
 }
 .root button {
