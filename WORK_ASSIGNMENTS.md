@@ -1,6 +1,6 @@
 # Work Assignments
 
-## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — READY_FOR_REVIEW / RECEIPT_ATTACHMENT_FOLLOWUP / PERSISTENCE_BLOCKED
+## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — IN_PROGRESS / PAYMENT_METHOD_FOLLOWUP / PERSISTENCE_BLOCKED
 
 - درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
   دریافت/پرداخت در فضای مستقل `/finance`. Branch مستقل
@@ -52,6 +52,9 @@
   باینری در Finance کپی نمی‌شود. ۳۳ تست هدفمند Web، typecheck، lint محدود، Build ۴۱
   مسیر و Browser QA نمایش فیش و label اختیاری موفق‌اند. Commit `7e673e8` به Draft PR
   #153 Push شد.
+- پیگیری چهارم مالک در 2026-09-12: Finance باید روش هر پرداخت را از میان حواله، چک،
+  نقد، کارت‌خوان و روش‌های متعارف مشخص کند. محدوده فقط مدل ردیف پرداخت، Dialog و تست‌های
+  Finance است؛ قرارداد v1، Schema/Migration/Persistence و داده عملیاتی تغییر نمی‌کنند.
 
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 
