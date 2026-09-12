@@ -1,6 +1,6 @@
 # Work Assignments
 
-## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — IN_PROGRESS / PAYMENT_METHOD_FOLLOWUP / PERSISTENCE_BLOCKED
+## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — READY_FOR_REVIEW / PAYMENT_METHOD_FOLLOWUP / PERSISTENCE_BLOCKED
 
 - درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
   دریافت/پرداخت در فضای مستقل `/finance`. Branch مستقل
@@ -55,6 +55,11 @@
 - پیگیری چهارم مالک در 2026-09-12: Finance باید روش هر پرداخت را از میان حواله، چک،
   نقد، کارت‌خوان و روش‌های متعارف مشخص کند. محدوده فقط مدل ردیف پرداخت، Dialog و تست‌های
   Finance است؛ قرارداد v1، Schema/Migration/Persistence و داده عملیاتی تغییر نمی‌کنند.
+- نتیجه پیگیری چهارم: برای هر ردیف پرداخت جزئی، روش پرداخت مستقل و اجباری از میان حواله
+  بانکی، چک، نقد، کارت‌خوان، کارت‌به‌کارت، برداشت مستقیم و سایر اضافه شد. انتخاب چک،
+  شماره چک را اجباری می‌کند و سایر روش‌ها مرجع/شماره پیگیری اختیاری دارند. ۳۴ تست هدفمند
+  Web، typecheck، lint محدود، Production Build با ۴۱ مسیر و Browser QA فهرست روش‌ها و
+  تغییر پویا به «شماره چک» موفق‌اند؛ ثبت عملیاتی همچنان `BLOCKED_BY_MIGRATION_LOCK` است.
 
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 

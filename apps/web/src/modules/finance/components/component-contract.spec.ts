@@ -24,6 +24,10 @@ const coreSource = readFileSync(
   ),
   'utf8',
 );
+const coreModelSource = readFileSync(
+  join(process.cwd(), 'src', 'modules', 'finance', 'model', 'finance-core.ts'),
+  'utf8',
+);
 const formSource = readFileSync(
   join(
     process.cwd(),
@@ -66,6 +70,9 @@ describe('finance workspace component contract', () => {
     expect(coreSource).toContain('کارگزار / تأمین‌کننده');
     expect(coreSource).toContain('افزودن پرداخت جزئی');
     expect(coreSource).toContain('حذف پرداخت');
+    expect(coreSource).toContain('روش پرداخت');
+    expect(coreModelSource).toContain('حواله بانکی');
+    expect(coreSource).toContain("part.method === 'CHECK'");
     expect(coreSource).toContain('توضیح مالی (اختیاری)');
     expect(coreSource).toContain('فیش‌ها و مدارک همراه درخواست');
     expect(coreSource).toContain('فیشی همراه این درخواست ثبت نشده است.');

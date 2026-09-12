@@ -22,8 +22,18 @@ const valid = {
   idempotencyKey: 'finance:request:000001',
   expectedVersion: '1',
   paymentParts: [
-    { id: 'part-1', amount: '60.25', trackingReference: 'pay-1' },
-    { id: 'part-2', amount: '40', trackingReference: 'pay-2' },
+    {
+      id: 'part-1',
+      amount: '60.25',
+      trackingReference: 'pay-1',
+      method: 'BANK_TRANSFER' as const,
+    },
+    {
+      id: 'part-2',
+      amount: '40',
+      trackingReference: 'pay-2',
+      method: 'CASH' as const,
+    },
   ],
 };
 
@@ -79,6 +89,38 @@ describe('finance inbox validation', () => {
     expect(
       validateFinanceActionDraft('PAYMENT_REQUEST', valid, '100'),
     ).toContain('جمع مبلغ از مانده قرارداد بیشتر است.');
+  });
+
+  it('requires a method per payment part and a number for checks', () => {
+    expect(
+      validateFinanceActionDraft(
+        'PAYMENT_REQUEST',
+        {
+          ...valid,
+          paymentParts: [
+            { id: 'part-1', amount: '50', trackingReference: '', method: '' },
+          ],
+        },
+        '100',
+      ),
+    ).toContain('روش هر ردیف پرداخت باید مشخص شود.');
+    expect(
+      validateFinanceActionDraft(
+        'PAYMENT_REQUEST',
+        {
+          ...valid,
+          paymentParts: [
+            {
+              id: 'part-1',
+              amount: '50',
+              trackingReference: '',
+              method: 'CHECK',
+            },
+          ],
+        },
+        '100',
+      ),
+    ).toContain('برای پرداخت با چک، شماره چک الزامی است.');
   });
 
   it('offers a posting account in every preview request currency', () => {

@@ -312,7 +312,21 @@ export interface FinancePaymentPartDraft {
   id: string;
   amount: string;
   trackingReference: string;
+  method: FinancePaymentMethod | '';
 }
+
+export const financePaymentMethods = [
+  { value: 'BANK_TRANSFER', label: 'حواله بانکی' },
+  { value: 'CHECK', label: 'چک' },
+  { value: 'CASH', label: 'نقد' },
+  { value: 'POS', label: 'کارت‌خوان (POS)' },
+  { value: 'CARD_TO_CARD', label: 'کارت‌به‌کارت' },
+  { value: 'DIRECT_DEBIT', label: 'برداشت مستقیم' },
+  { value: 'OTHER', label: 'سایر' },
+] as const;
+
+export type FinancePaymentMethod =
+  (typeof financePaymentMethods)[number]['value'];
 
 const DECIMAL_PATTERN = /^(?:0|[1-9]\d*)(?:\.\d{1,18})?$/;
 
@@ -379,6 +393,18 @@ export function validateFinanceActionDraft(
       ))
   )
     errors.push('حداقل یک ردیف پرداخت با مبلغ Decimal مثبت لازم است.');
+  if (
+    kind === 'PAYMENT_REQUEST' &&
+    draft.paymentParts.some((part) => !part.method)
+  )
+    errors.push('روش هر ردیف پرداخت باید مشخص شود.');
+  if (
+    kind === 'PAYMENT_REQUEST' &&
+    draft.paymentParts.some(
+      (part) => part.method === 'CHECK' && !part.trackingReference.trim(),
+    )
+  )
+    errors.push('برای پرداخت با چک، شماره چک الزامی است.');
   if (
     kind === 'RECEIPT_VERIFICATION' &&
     (!DECIMAL_PATTERN.test(draft.actualAmount) || draft.actualAmount === '0')

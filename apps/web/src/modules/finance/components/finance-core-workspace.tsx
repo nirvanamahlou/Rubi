@@ -47,6 +47,7 @@ import { FinanceWorkspace } from './finance-workspace';
 import {
   accountTreePreview,
   financeInboxPreviewRequests,
+  financePaymentMethods,
   remainingAfterAmount,
   sumDecimalAmounts,
   validateFinanceActionDraft,
@@ -54,6 +55,7 @@ import {
   type AccountTreeItem,
   type FinanceActionDraft,
   type FinanceInboxPreviewRequest,
+  type FinancePaymentMethod,
   type InboxRequestStatus,
 } from '../model/finance-core';
 
@@ -87,6 +89,7 @@ function createDraft(request: FinanceInboxPreviewRequest): FinanceActionDraft {
               id: 'payment-part-1',
               amount: request.amount,
               trackingReference: '',
+              method: '',
             },
           ]
         : [],
@@ -272,6 +275,13 @@ function ActionDialog({
         part.id === id ? { ...part, [key]: value } : part,
       ),
     }));
+  const updatePaymentMethod = (id: string, method: FinancePaymentMethod) =>
+    setDraft((current) => ({
+      ...current,
+      paymentParts: current.paymentParts.map((part) =>
+        part.id === id ? { ...part, method } : part,
+      ),
+    }));
   return (
     <Dialog
       open
@@ -433,6 +443,7 @@ function ActionDialog({
                           id: `payment-part-${Date.now()}`,
                           amount: '',
                           trackingReference: '',
+                          method: '',
                         },
                       ],
                     }))
@@ -446,7 +457,7 @@ function ActionDialog({
               </div>
               {draft.paymentParts.map((part, index) => (
                 <div
-                  className="grid gap-3 rounded-xl border border-border p-3 sm:grid-cols-[auto_1fr_1fr_auto] sm:items-end"
+                  className="grid gap-3 rounded-xl border border-border p-3 lg:grid-cols-[auto_1fr_1fr_1fr_auto] lg:items-end"
                   key={part.id}
                 >
                   <Badge>پرداخت {index + 1}</Badge>
@@ -460,7 +471,36 @@ function ActionDialog({
                       value={part.amount}
                     />
                   </FormField>
-                  <FormField label="شماره پیگیری">
+                  <FormField label="روش پرداخت" required>
+                    <Select
+                      onValueChange={(value) =>
+                        updatePaymentMethod(
+                          part.id,
+                          value as FinancePaymentMethod,
+                        )
+                      }
+                      value={part.method}
+                    >
+                      <SelectTrigger aria-label={`روش پرداخت ${index + 1}`}>
+                        <SelectValue placeholder="انتخاب روش" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {financePaymentMethods.map((method) => (
+                          <SelectItem key={method.value} value={method.value}>
+                            {method.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField
+                    label={
+                      part.method === 'CHECK'
+                        ? 'شماره چک'
+                        : 'شماره پیگیری / مرجع'
+                    }
+                    required={part.method === 'CHECK'}
+                  >
                     <Input
                       dir="ltr"
                       onChange={(event) =>
