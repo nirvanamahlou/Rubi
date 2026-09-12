@@ -208,7 +208,7 @@ export function LeadForm({
         <FormField label="عنوان">
           <Input name="title" required minLength={3} />
         </FormField>
-        <FormField label="منبع سرنخ / نام کمپین یا معرف">
+        <FormField label="منبع درخواست / نام کمپین یا معرف">
           <Input
             name="sourceReference"
             required
@@ -1450,7 +1450,7 @@ export function CustomerAffairsWorkspace() {
         }
       />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Summary label="سرنخ باز" value={dashboard?.leads.open ?? 0} />
+        <Summary label="درخواست باز" value={dashboard?.leads.open ?? 0} />
         <Summary
           label="پیگیری عقب‌افتاده"
           value={dashboard?.leads.overdue ?? 0}

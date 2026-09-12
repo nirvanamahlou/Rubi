@@ -1,5 +1,11 @@
 # Work Assignments
 
+## CUSTOMER-AFFAIRS-REQUEST-LABELS — PC-B — CODE VERIFIED / ACTIVATION PENDING
+
+- Removed lead terminology in CA forms, report/metric/tab labels and `apps/web/src/messages/fa.ts` navigation title/description; navigation expectation updated. 56 focused tests, scoped lint and 46-route build/typecheck passed. No stored records removed or workflow changed. Reservation released; existing runtime not restarted.
+
+- User clarified remove only lead terminology, keep customer requests. Reserve CA Web display strings and regression tests, the existing module navigation label and its expectation, own status docs. Branch `codex/pc-b-customer-affairs-request-labels` from `b8a60215`. No workflow/data deletion, API/schema/dependency/permission changes. Preserve technical leads keys for compatibility. Existing UI targets/assumptions unchanged; no runtime replacement.
+
 ## CUSTOMER-AFFAIRS-CUSTOMER-PICKER — PC-B — CODE VERIFIED / ACTIVATION PENDING
 
 - Complete: 43 focused tests, scoped ESLint, standalone typecheck and 46-route production build passed. No data/API/schema/permissions changed. Runtime restart not retried; new-build browser QA not claimed. Reservation released; `docs/tasks/CUSTOMER-AFFAIRS-CUSTOMER-PICKER.md` records handoff.

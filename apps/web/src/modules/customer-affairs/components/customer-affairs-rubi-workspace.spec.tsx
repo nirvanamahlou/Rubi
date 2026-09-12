@@ -72,7 +72,7 @@ describe('Rubi Customer Affairs navigation', () => {
     const html = renderToStaticMarkup(<CustomerAffairsRubiWorkspace />);
     for (const label of [
       'نمای کلی',
-      'درخواست‌ها و سرنخ‌ها',
+      'درخواست‌های مشتریان',
       'تیکت‌های پشتیبانی',
       'گزارش‌ها',
     ])
@@ -81,7 +81,8 @@ describe('Rubi Customer Affairs navigation', () => {
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('در حال دریافت اطلاعات');
     expect(html).not.toContain('<aside');
-    expect(html).not.toContain('سرنخ‌های باز'); // No fabricated counts before the API resolves.
+    expect(html).not.toContain('سرنخ');
+    expect(html).not.toContain('درخواست‌های باز'); // No fabricated counts before the API resolves.
   });
 
   it('suppresses the supplementary HR requests outlet on Customer Affairs', () => {

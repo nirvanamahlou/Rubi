@@ -32,7 +32,7 @@ const labels: Record<string, string> = {
   urgency: 'فوریت',
   destinationModule: 'واحد مقصد',
   status: 'وضعیت',
-  stage: 'مرحله سرنخ',
+  stage: 'مرحله درخواست',
   lossReason: 'دلیل شکست',
   intakeQueue: 'صف مسئول',
 };

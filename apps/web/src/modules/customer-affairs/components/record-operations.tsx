@@ -173,7 +173,7 @@ export function RecordOperations({
   const fields = lead
     ? ([
         ['title', 'عنوان', true],
-        ['sourceReference', 'منبع سرنخ / نام کمپین یا معرف', true],
+        ['sourceReference', 'منبع درخواست / نام کمپین یا معرف', true],
         ['originReference', 'مبدأ', false],
         ['destinationReference', 'مقصد', false],
       ] as const)
@@ -504,7 +504,7 @@ export function RecordOperations({
       )}
       {mode === 'stage' && lead && (
         <CustomerAffairsFormDialog
-          title="تغییر مرحله سرنخ"
+          title="تغییر مرحله درخواست"
           busy={busy}
           onClose={() => setMode(null)}
         >

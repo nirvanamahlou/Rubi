@@ -26,11 +26,11 @@ export function LeadCustomerConversion({
           setOpen(true);
         }}
       >
-        تبدیل به مشتری
+        ثبت مشتری برای درخواست
       </Button>
       {open && (
         <CustomerAffairsFormDialog
-          title="ایجاد مشتری از سرنخ"
+          title="ثبت مشتری برای درخواست"
           description="اگر مشتری قبلاً ثبت شده، از ویرایش اطلاعات پرونده و انتخاب مشتری موجود استفاده کنید. این عملیات به مجوز ایجاد مشتری نیاز دارد."
           busy={busy}
           onClose={() => setOpen(false)}

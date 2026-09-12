@@ -53,15 +53,15 @@ type View =
   | 'reports';
 const sections = [
   { view: 'overview', title: 'نمای کلی', icon: Home },
-  { view: 'leads', title: 'درخواست‌ها و سرنخ‌ها', icon: Users },
+  { view: 'leads', title: 'درخواست‌های مشتریان', icon: Users },
   { view: 'tickets', title: 'تیکت‌های پشتیبانی', icon: Inbox },
   { view: 'reports', title: 'گزارش‌ها', icon: BarChart3 },
 ] as const;
 const hubs = [
   {
     view: 'leads',
-    title: 'درخواست‌ها و سرنخ‌ها',
-    text: 'ثبت نیاز سفر، ارزیابی شرایط و نمای مرحله‌ای سرنخ‌ها',
+    title: 'درخواست‌های مشتریان',
+    text: 'ثبت نیاز سفر، ارزیابی شرایط و پیگیری درخواست‌ها',
     icon: Users,
     color: 'blue',
   },
@@ -362,7 +362,7 @@ export function CustomerAffairsRubiWorkspace() {
                 <div className={s.metrics}>
                   {[
                     {
-                      label: 'سرنخ‌های باز',
+                      label: 'درخواست‌های باز',
                       value: loaded.dashboard?.leads.open,
                       view: 'leads',
                       icon: Users,
@@ -769,7 +769,7 @@ export function CustomerAffairsRubiWorkspace() {
                   {view === 'reports' && (
                     <section className={s.panel}>
                       <div className={s.panelHead}>
-                        <h2>توزیع مرحله‌ای سرنخ‌ها</h2>
+                        <h2>وضعیت درخواست‌های مشتریان</h2>
                       </div>
                       <div className={s.panelBody}>
                         {report.leadStages.length ? (
