@@ -44,6 +44,7 @@ import type {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { documentsApi, DocumentsApiError } from '../api/client';
+import { DOCUMENT_FAVORITES_CHANGED } from '../model/favorites';
 import {
   archiveTools,
   type ArchiveToolDefinition,
@@ -555,8 +556,8 @@ export function DocumentsWorkspace() {
   }
 
   function toggleFavorite(document: DocumentListItemV1) {
-    setFavoriteIds((current) => {
-      const next = new Set(current);
+    try {
+      const next = new Set(favoriteIds);
       if (next.has(document.id)) next.delete(document.id);
       else next.add(document.id);
       if (currentUserId && typeof window !== 'undefined') {
@@ -565,8 +566,13 @@ export function DocumentsWorkspace() {
           JSON.stringify([...next]),
         );
       }
-      return next;
-    });
+      setFavoriteIds(next);
+      window.dispatchEvent(new Event(DOCUMENT_FAVORITES_CHANGED));
+    } catch {
+      setNotice(
+        'ذخیره ستاره در این مرورگر انجام نشد. تنظیمات فضای ذخیره‌سازی مرورگر را بررسی کنید.',
+      );
+    }
   }
 
   function changeDetailOpen(open: boolean) {
