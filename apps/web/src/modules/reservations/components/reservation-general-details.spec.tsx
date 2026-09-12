@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { CustomerDetail } from '@rubi/contracts';
 import type { RequestView } from '../foundation/model';
 import type { ReservationFormIntake } from '../model/reservation-form';
-import { reservationGeneralDetailGroups } from './reservation-general-details';
+import {
+  loadReservationContractParty,
+  reservationGeneralDetailGroups,
+  RESERVATION_CUSTOMER_AUDIT_REASON,
+} from './reservation-general-details';
 
 const request = {
   id: 'request-1',
@@ -120,16 +124,40 @@ describe('reservation general details', () => {
         'meal-1': { attributes: { englishName: 'UALL' } } as never,
       },
       {
+        displayName: 'طرف قرارداد نمونه',
+        kind: 'person',
+        status: 'active',
         maskedPrimaryContact: '0912***4321',
-        contacts: [],
+        contacts: [
+          {
+            id: 'phone-1',
+            type: 'phone',
+            isPrimary: true,
+            maskedValue: '0912***4321',
+            value: '09123454321',
+          },
+          {
+            id: 'email-1',
+            type: 'email',
+            isPrimary: false,
+            maskedValue: 's***@example.test',
+            value: 'sample@example.test',
+          },
+        ],
+        addresses: [{ label: 'آدرس نمونه' }],
       } as unknown as CustomerDetail,
       'TURKEY',
+      true,
     );
     const content = JSON.stringify(groups);
 
     for (const expected of [
       'SC-TEST-001',
-      '0912***4321',
+      'طرف قرارداد نمونه',
+      '09123454321',
+      'sample@example.test',
+      'آدرس نمونه',
+      'درخواست پشتیبانی',
       'TURKEY',
       'ANTALYA',
       'SAMPLE HOTEL',
@@ -148,5 +176,31 @@ describe('reservation general details', () => {
       expect(content).toContain(expected);
     expect(content).toContain('در اطلاعات ارسالی به رزرواسیون موجود نیست');
     expect(intake.snapshot.hotelSelection?.roomCount).toBe(2);
+  });
+
+  it('uses the audited sensitive customer read and falls back to masked detail', async () => {
+    const calls: (string | undefined)[] = [];
+    const customer = { displayName: 'Sample' } as CustomerDetail;
+    const revealed = await loadReservationContractParty(
+      'customer-1',
+      async (_id, reason) => {
+        calls.push(reason);
+        return { data: customer };
+      },
+    );
+    expect(revealed).toEqual({ customer, sensitive: true });
+    expect(calls).toEqual([RESERVATION_CUSTOMER_AUDIT_REASON]);
+
+    calls.length = 0;
+    const masked = await loadReservationContractParty(
+      'customer-1',
+      async (_id, reason) => {
+        calls.push(reason);
+        if (reason) throw new Error('forbidden');
+        return { data: customer };
+      },
+    );
+    expect(masked).toEqual({ customer, sensitive: false });
+    expect(calls).toEqual([RESERVATION_CUSTOMER_AUDIT_REASON, undefined]);
   });
 });
