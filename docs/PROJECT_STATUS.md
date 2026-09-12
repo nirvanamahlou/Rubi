@@ -7,6 +7,20 @@
 ## B2B-ORGANIZATION-PERMANENT-DELETE-001 — بازیابی درست حذف دائمی
 
 پس از پاسخ خطای قطعی API، دکمهٔ «حذف دائمی» دیگر قفل نمی‌شود و با عنوان «تلاش دوباره» امکان اجرای مجدد دارد؛ پیام خطای قبلی نیز پیش از درخواست بعدی پاک می‌شود. اگر پاسخ سرور نامطمئن باشد، پنجره برای جلوگیری از حذف تکراری فقط پس از تازه‌سازی اجازهٔ ادامه می‌دهد. محدودیت مالک داده حفظ شده است: سازمان بدون وابستگی همراه نقش‌های مالک خودش حذف فیزیکی می‌شود و سازمان دارای قرارداد یا سابقهٔ وابسته حذف نمی‌شود. Lint فایل‌های متاثر، TypeScript، build تولیدی ۴۶ مسیر، ۱۲۵ تست ماژول Organizations و ۷ تست PostgreSQL ایزوله موفق بودند. مرورگر احرازهویت‌شده روی Web3100 نسخهٔ ادغام‌شده، بارگذاری فهرست ۸ سازمان و فعال‌بودن دکمهٔ قرمز پنجره را تأیید کرد؛ برای QA رابط هیچ داده‌ای از محیط کاربر حذف نشد. Runtime `b9244f4` / `hr005-72ea3c0ada5a1190` و API4190 سالم‌اند. بدون تغییر Schema، Migration، مجوز یا حذف آبشاری سوابق کسب‌وکار.
+## CUSTOMER-AFFAIRS-002 — برش عملیاتی امن
+
+بنیاد امور مشتریان به Vertical Slice پایدار برای Lead و Ticket ارتقا یافت: صف/مالک و
+اقدام بعدی، Timeline، تشخیص تکرار، Handoff واقعی و نسخه‌دار Sales، ارجاع پایدار در
+Workbench، SLA/تصعید، حل/بستن/بازگشایی، دعوت رضایت‌سنجی عمومی یک‌باره، اقدام اصلاحی،
+IAM/Audit و گزارش branch-scoped پیاده شده‌اند. اتصال Customer، Sales، Reservation و
+Document از public service است و reference فاقد adapter به‌صورت fail-closed رد می‌شود.
+Migration از صفر روی DB ایزوله با همه ۵۶ migration موفق بوده و DB مشترک تغییر نکرده است.
+هر دو اجرای Seed موفق بود، ۹ workspace تست سریال، lint، typecheck، build تولیدی،
+Prettier فایل‌های Task، scope/secret/PII scan و `git diff --check` پاس شدند. Prettier کل
+Repository به‌علت ۱۰۹۵ بدهی baseline خارج از Scope پاس نیست. Smoke واقعی API و
+QA احرازهویت‌شده Desktop/Mobile روی `localhost:3100` نیز پاس شدند. جزئیات در
+[CUSTOMER-AFFAIRS-002](tasks/CUSTOMER-AFFAIRS-002.md) است. Draft PR #221 آماده Review و
+Migration/Contract/Central Docs lockها آزاد شدند.
 
 ## B2B-FINANCE-EXPORT-LAYOUT-001 — خروجی‌های فشرده مالی
 

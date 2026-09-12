@@ -1,1306 +1,1140 @@
 'use client';
 
 import type { CustomerSummary } from '@rubi/contracts';
-import { hrDirectoryLabel, type HrDirectoryEmployee } from '@rubi/contracts';
-import { HrDirectoryPicker } from '@/modules/hr/hr-directory-picker';
-
+import type {
+  CustomerAffairsDashboard,
+  CustomerAffairsLeadInput,
+  CustomerAffairsLeadView,
+  CustomerAffairsTicketInput,
+  CustomerAffairsTicketView,
+} from '@rubi/contracts';
 import {
   AlertTriangle,
-  ArrowUpLeft,
-  CalendarClock,
+  ArrowLeft,
   CheckCircle2,
   Clock3,
-  Eye,
-  FilePenLine,
   Headphones,
-  KanbanSquare,
-  MessageSquareText,
   Plus,
   RefreshCw,
   Search,
-  ShieldAlert,
-  Sparkles,
-  TicketCheck,
-  UserSearch,
+  Send,
   Users,
-  type LucideIcon,
 } from 'lucide-react';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
-import {
-  FormField,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Textarea,
-} from '@/components/ui/form-controls';
-import {
-  DialogDescription,
-  DialogTitle,
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/overlays';
+import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import {
   Alert,
   Badge,
   Card,
   EmptyState,
   ErrorState,
-  FilterBar,
   PageHeader,
-  PaginationShell,
   Skeleton,
 } from '@/components/ui/surfaces';
+import {
+  customerAffairsApi,
+  CustomerAffairsApiError,
+} from '../api/customer-affairs-client';
 import { CustomerPicker } from './customer-picker';
-import {
-  CUSTOMER_AFFAIRS_PREVIEW_NOTICE,
-  CUSTOMER_AFFAIRS_UI_VERSION,
-  normalizeCustomerAffairsQuery,
-  type CustomerAffairsListQuery,
-  type CustomerAffairsPreviewState,
-} from '../api/contracts';
-import {
-  buildSalesHandoffPreview,
-  filterPreviewRecords,
-  leadStageLabels,
-  paginatePreview,
-  previewLeads,
-  previewStates,
-  previewTickets,
-  previewTimeline,
-  ticketStatusLabels,
-  validateCustomerAffairsDraft,
-  type CustomerAffairsDraft,
-  type LeadStage,
-  type PreviewLead,
-  type PreviewTicket,
-  type Priority,
-  type SLAState,
-} from '../model/customer-affairs';
 
-type FormMode = 'create' | 'view' | 'edit';
-type FormKind = 'lead' | 'ticket';
-type WorkspaceTab = 'presales' | 'support';
+type Tab = 'leads' | 'tickets';
+type LoadState = 'loading' | 'ready' | 'empty' | 'error' | 'forbidden';
+type Detail = (CustomerAffairsLeadView | CustomerAffairsTicketView) & {
+  timeline?: Array<{
+    id?: string;
+    type: string;
+    summary: string;
+    occurredAt?: string;
+    customerVisible?: boolean;
+  }>;
+  referrals?: Array<Record<string, unknown>>;
+  correctiveActions?: Array<Record<string, unknown>>;
+  handoffs?: Array<Record<string, unknown>>;
+};
 
-const emptyDraft: CustomerAffairsDraft = {
-  title: '',
-  details: '',
-  priority: 'NORMAL',
-  assignee: '',
-  nextActionAt: '',
+const isoLocal = () =>
+  new Date(Date.now() + 60 * 60_000).toISOString().slice(0, 16);
+const stageLabel: Record<string, string> = {
+  NEW: 'جدید',
+  CONTACTED: 'تماس گرفته شد',
+  QUALIFYING: 'در حال ارزیابی',
+  NURTURE: 'پیگیری بلندمدت',
+  QUALIFIED: 'واجد شرایط',
+  HANDOFF_PROPOSED: 'منتظر فروش',
+  HANDED_OFF: 'تحویل فروش',
+  LOST: 'از دست‌رفته',
 };
-const previewDraft: CustomerAffairsDraft = {
-  title: 'درخواست کاملاً نمایشی',
-  details: 'این شرح synthetic است و هیچ اطلاعات واقعی مشتری ندارد.',
-  priority: 'HIGH',
-  assignee: 'کارشناس نمونه ۰۱',
-  nextActionAt: '2026-08-25T08:00',
+const statusLabel: Record<string, string> = {
+  NEW: 'جدید',
+  TRIAGED: 'تریاژ',
+  IN_PROGRESS: 'در حال رسیدگی',
+  WAITING_CUSTOMER: 'منتظر مشتری',
+  WAITING_EXTERNAL: 'منتظر واحد دیگر',
+  RESOLVED: 'حل‌شده',
+  CLOSED: 'بسته',
+  REOPENED: 'بازشده',
+  CANCELLED: 'لغوشده',
 };
-const priorityLabels: Readonly<Record<Priority, string>> = {
+const priorityLabel: Record<string, string> = {
   LOW: 'کم',
   NORMAL: 'عادی',
   HIGH: 'زیاد',
   URGENT: 'فوری',
-};
-const slaLabels: Readonly<Record<SLAState, string>> = {
-  ON_TRACK: 'در محدوده SLA',
-  AT_RISK: 'نزدیک نقض SLA',
-  BREACHED: 'SLA نقض شده',
-  PAUSED: 'SLA متوقف',
-  MET: 'SLA رعایت شده',
+  CRITICAL: 'بحرانی',
 };
 
-function SummaryCard({
-  icon: Icon,
+function Summary({
   label,
-  tone = 'primary',
   value,
+  tone = 'normal',
 }: {
-  icon: LucideIcon;
   label: string;
-  tone?: 'primary' | 'warning' | 'danger';
-  value: string;
+  value: number;
+  tone?: 'normal' | 'warning' | 'danger';
 }) {
   return (
-    <Card className="flex items-center justify-between p-4">
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground">{label}</p>
-        <p className="mt-2 text-2xl font-black text-foreground">{value}</p>
-      </div>
-      <span
+    <Card className="p-4">
+      <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+      <p
         className={
           tone === 'danger'
-            ? 'grid size-11 place-items-center rounded-2xl bg-destructive/10 text-destructive'
+            ? 'mt-2 text-2xl font-black text-destructive'
             : tone === 'warning'
-              ? 'grid size-11 place-items-center rounded-2xl bg-amber-500/10 text-amber-700'
-              : 'grid size-11 place-items-center rounded-2xl bg-primary/10 text-primary'
+              ? 'mt-2 text-2xl font-black text-amber-700'
+              : 'mt-2 text-2xl font-black text-foreground'
         }
       >
-        <Icon aria-hidden="true" className="size-5" />
-      </span>
+        {value.toLocaleString('fa-IR')}
+      </p>
     </Card>
   );
 }
 
-function PreviewStateSwitcher({
-  onChange,
-  state,
+function LeadForm({
+  onCancel,
+  onCreated,
 }: {
-  onChange: (state: CustomerAffairsPreviewState) => void;
-  state: CustomerAffairsPreviewState;
+  onCancel: () => void;
+  onCreated: (row: CustomerAffairsLeadView) => void;
 }) {
-  return (
-    <div aria-label="انتخاب وضعیت نمایشی" className="flex flex-wrap gap-2">
-      {previewStates.map(([value, label]) => (
-        <Button
-          aria-pressed={state === value}
-          key={value}
-          onClick={() => onChange(value)}
-          size="sm"
-          type="button"
-          variant={state === value ? 'primary' : 'outline'}
-        >
-          {label}
-        </Button>
-      ))}
-    </div>
-  );
-}
-
-function StatePanel({
-  onRetry,
-  state,
-}: {
-  onRetry: () => void;
-  state: Exclude<CustomerAffairsPreviewState, 'preview'>;
-}) {
-  if (state === 'loading')
-    return (
-      <div
-        aria-label="در حال بارگذاری Preview"
-        className="grid gap-4 md:grid-cols-2"
-      >
-        {Array.from({ length: 4 }, (_, index) => (
-          <Skeleton className="h-36 w-full" key={index} />
-        ))}
-      </div>
-    );
-  if (state === 'empty')
-    return (
-      <EmptyState
-        description="در این حالت نمایشی هیچ Lead یا Ticket مطابق فیلتر وجود ندارد."
-        title="نتیجه‌ای پیدا نشد"
-      />
-    );
-  if (state === 'forbidden')
-    return (
-      <EmptyState
-        description="دسترسی به Customer Affairs به‌صورت deny-by-default طراحی شده و Permission مناسب لازم است."
-        icon={ShieldAlert}
-        title="دسترسی مجاز نیست"
-      />
-    );
-  return (
-    <ErrorState
-      action={
-        <Button onClick={onRetry} type="button" variant="outline">
-          <RefreshCw aria-hidden="true" className="size-4" />
-          تلاش دوباره
-        </Button>
-      }
-      description="این خطا فقط برای پوشش UI State نمایش داده شده و درخواست شبکه‌ای ارسال نشده است."
-      title="خطای نمایشی دریافت اطلاعات"
-    />
-  );
-}
-
-function PreviewForm({
-  kind,
-  mode,
-  onClose,
-}: {
-  kind: FormKind;
-  mode: FormMode;
-  onClose: () => void;
-}) {
-  const [employee, setEmployee] = useState<HrDirectoryEmployee | null>(null);
-  const [draft, setDraft] = useState<CustomerAffairsDraft>(
-    mode === 'create' ? emptyDraft : previewDraft,
-  );
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof CustomerAffairsDraft, string>>
-  >({});
-  const [validated, setValidated] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] =
-    useState<CustomerSummary | null>(null);
-  const readonly = mode === 'view';
-
-  function submit(event: FormEvent<HTMLFormElement>) {
+  const [customer, setCustomer] = useState<CustomerSummary | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const result = validateCustomerAffairsDraft(draft);
-    setErrors(result.errors);
-    setValidated(result.valid);
+    setBusy(true);
+    setError('');
+    const data = new FormData(event.currentTarget);
+    const passengers = Number(data.get('passengerCount'));
+    const input: CustomerAffairsLeadInput = {
+      title: String(data.get('title')),
+      sourceReference: `manual-${crypto.randomUUID()}`,
+      inboundChannel: String(
+        data.get('channel'),
+      ) as CustomerAffairsLeadInput['inboundChannel'],
+      contactOccurredAt: new Date().toISOString(),
+      travelNeed: String(data.get('travelNeed')),
+      destinationReference: String(data.get('destination')) || null,
+      datePrecision: 'UNKNOWN',
+      passengerCount: passengers,
+      passengerComposition: { adults: passengers, children: 0, infants: 0 },
+      requestedServices: [],
+      budget: { unknownReason: 'در تماس اولیه اعلام نشد' },
+      specialPreferences: null,
+      customerId: customer?.id ?? null,
+      priority: String(
+        data.get('priority'),
+      ) as CustomerAffairsLeadInput['priority'],
+      queueCode: String(data.get('queueCode')),
+      nextAction: String(data.get('nextAction')),
+      nextActionAt: new Date(String(data.get('nextActionAt'))).toISOString(),
+    };
+    try {
+      const response = await customerAffairsApi.createLead(input);
+      onCreated(response.data);
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : 'ثبت درخواست انجام نشد.',
+      );
+    } finally {
+      setBusy(false);
+    }
   }
-
-  const entityLabel = kind === 'lead' ? 'Lead' : 'Ticket';
-  return (
-    <Drawer onOpenChange={(open) => !open && onClose()} open>
-      <DrawerContent className="w-[min(94vw,42rem)] p-6">
-        <DialogTitle>
-          {mode === 'create'
-            ? `ایجاد نمایشی ${entityLabel}`
-            : mode === 'edit'
-              ? `ویرایش نمایشی ${entityLabel}`
-              : `مشاهده نمایشی ${entityLabel}`}
-        </DialogTitle>
-        <DialogDescription>
-          این فرم فقط Contract و validation فاز A را نمایش می‌دهد؛ Persistence،
-          ارسال پیام و تبدیل واقعی فعال نیست.
-        </DialogDescription>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Badge>{CUSTOMER_AFFAIRS_UI_VERSION}</Badge>
-          <Badge className="bg-amber-500/10 text-amber-700">
-            Preview synthetic
-          </Badge>
-        </div>
-        <form className="mt-6 space-y-4" onSubmit={submit}>
-          <CustomerPicker
-            disabled={readonly}
-            onSelect={setSelectedCustomer}
-            selected={selectedCustomer}
-          />
-          <FormField
-            {...(errors.title ? { error: errors.title } : {})}
-            id="customer-affairs-title"
-            label={kind === 'lead' ? 'عنوان درخواست مشتری' : 'موضوع Ticket'}
-            required
-          >
-            <Input
-              aria-invalid={Boolean(errors.title)}
-              disabled={readonly}
-              id="customer-affairs-title"
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  title: event.target.value,
-                }))
-              }
-              readOnly={readonly}
-              value={draft.title}
-            />
-          </FormField>
-          {kind === 'lead' ? (
-            <div className="grid gap-4 rounded-2xl border border-border bg-muted/20 p-4 sm:grid-cols-2">
-              <FormField label="منبع آشنایی">
-                <Select defaultValue="REFERRAL" disabled={readonly}>
-                  <SelectTrigger aria-label="منبع آشنایی">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="REFERRAL">معرفی ساختگی</SelectItem>
-                    <SelectItem value="WEBSITE">وب‌سایت نمایشی</SelectItem>
-                    <SelectItem value="CAMPAIGN">کمپین نمایشی</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormField>
-              <FormField label="کانال ورودی">
-                <Select defaultValue="PHONE" disabled={readonly}>
-                  <SelectTrigger aria-label="کانال ورودی">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PHONE">تماس تلفنی</SelectItem>
-                    <SelectItem value="MESSAGE">پیام</SelectItem>
-                    <SelectItem value="MEETING">جلسه</SelectItem>
-                    <SelectItem value="WEB_FORM">فرم آنلاین</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormField>
-              <FormField id="lead-destination" label="مقصد پیشنهادی">
-                <Input
-                  defaultValue={mode === 'create' ? '' : 'مقصد نمونه A'}
-                  disabled={readonly}
-                  id="lead-destination"
-                  placeholder="Reference نمایشی مقصد"
-                  readOnly={readonly}
-                />
-              </FormField>
-              <FormField id="lead-approximate-date" label="تاریخ تقریبی سفر">
-                <DatePicker
-                  defaultValue={mode === 'create' ? '' : '2026-09-10'}
-                  disabled={readonly}
-                  id="lead-approximate-date"
-                  readOnly={readonly}
-                />
-              </FormField>
-              <FormField id="lead-passengers" label="تعداد مسافر">
-                <Input
-                  defaultValue={mode === 'create' ? '1' : '3'}
-                  disabled={readonly}
-                  id="lead-passengers"
-                  min={1}
-                  readOnly={readonly}
-                  type="number"
-                />
-              </FormField>
-              <FormField id="lead-budget" label="بودجه اولیه">
-                <div className="grid grid-cols-[1fr_5rem] gap-2">
-                  <Input
-                    defaultValue={mode === 'create' ? '' : '250000000'}
-                    disabled={readonly}
-                    id="lead-budget"
-                    inputMode="decimal"
-                    placeholder="Decimal"
-                    readOnly={readonly}
-                  />
-                  <Input
-                    aria-label="کد ارز بودجه"
-                    defaultValue="IRR"
-                    disabled={readonly}
-                    dir="ltr"
-                    maxLength={3}
-                    readOnly={readonly}
-                  />
-                </div>
-              </FormField>
-            </div>
-          ) : (
-            <div className="grid gap-4 rounded-2xl border border-border bg-muted/20 p-4 sm:grid-cols-2">
-              <FormField label="دسته‌بندی Ticket">
-                <Select defaultValue="HOTEL_VOUCHER" disabled={readonly}>
-                  <SelectTrigger aria-label="دسته‌بندی Ticket">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="QUESTION">سؤال</SelectItem>
-                    <SelectItem value="COMPLAINT">شکایت</SelectItem>
-                    <SelectItem value="PROFILE_CORRECTION">
-                      اصلاح مشخصات
-                    </SelectItem>
-                    <SelectItem value="CANCELLATION">کنسلی</SelectItem>
-                    <SelectItem value="REFUND">استرداد</SelectItem>
-                    <SelectItem value="TICKET_ISSUE">مشکل بلیط</SelectItem>
-                    <SelectItem value="HOTEL_VOUCHER">هتل یا واچر</SelectItem>
-                    <SelectItem value="INSURANCE">بیمه</SelectItem>
-                    <SelectItem value="ADDITIONAL_SERVICE">
-                      خدمات تکمیلی
-                    </SelectItem>
-                    <SelectItem value="SERVICE_ISSUE">مشکل خدمات</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormField>
-              <FormField label="وضعیت Ticket">
-                <Select defaultValue="NEW" disabled={readonly}>
-                  <SelectTrigger aria-label="وضعیت Ticket">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NEW">جدید</SelectItem>
-                    <SelectItem value="TRIAGED">دسته‌بندی‌شده</SelectItem>
-                    <SelectItem value="IN_PROGRESS">در حال رسیدگی</SelectItem>
-                    <SelectItem value="WAITING_CUSTOMER">
-                      منتظر مشتری
-                    </SelectItem>
-                    <SelectItem value="WAITING_EXTERNAL">
-                      منتظر واحد بیرونی
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormField>
-              <FormField
-                description="فقط proposal؛ Customer داخلی import نمی‌شود."
-                id="ticket-customer-reference"
-                label="Customer Reference"
-              >
-                <Input
-                  defaultValue={
-                    mode === 'create' ? '' : 'preview-customer-ref-001'
-                  }
-                  disabled={readonly}
-                  dir="ltr"
-                  id="ticket-customer-reference"
-                  placeholder="preview-customer-ref-*"
-                  readOnly={readonly}
-                />
-              </FormField>
-              <FormField
-                description="قرارداد/رزرو/خدمت فقط reference پیشنهادی است."
-                id="ticket-sales-reference"
-                label="Sales/Reservation Reference"
-              >
-                <Input
-                  defaultValue={
-                    mode === 'create' ? '' : 'preview-sales-ref-001'
-                  }
-                  disabled={readonly}
-                  dir="ltr"
-                  id="ticket-sales-reference"
-                  placeholder="preview-sales-ref-*"
-                  readOnly={readonly}
-                />
-              </FormField>
-              <Alert
-                description="Contract، Reservation، Ticket، Voucher و Insurance فقط به‌صورت reference پیشنهادی و بدون Mutation نگهداری می‌شوند."
-                title="ارتباط آینده با فروش و رزرواسیون"
-              />
-              <FormField id="ticket-response-due" label="موعد اولین پاسخ">
-                <DatePicker
-                  defaultValue={mode === 'create' ? '' : '2026-08-25T09:00'}
-                  disabled={readonly}
-                  id="ticket-response-due"
-                  includeTime
-                  readOnly={readonly}
-                />
-              </FormField>
-              <FormField id="ticket-resolution-due" label="موعد حل SLA">
-                <DatePicker
-                  defaultValue={mode === 'create' ? '' : '2026-08-25T16:00'}
-                  disabled={readonly}
-                  id="ticket-resolution-due"
-                  includeTime
-                  readOnly={readonly}
-                />
-              </FormField>
-              <FormField id="ticket-tracking-number" label="شماره پیگیری">
-                <Input
-                  defaultValue={
-                    mode === 'create'
-                      ? 'پس از ثبت واقعی صادر می‌شود'
-                      : 'PREVIEW-CA-1405-0001'
-                  }
-                  disabled
-                  id="ticket-tracking-number"
-                  readOnly
-                />
-              </FormField>
-              <FormField id="ticket-satisfaction" label="امتیاز رضایت مشتری">
-                <Select defaultValue="NOT_RECORDED" disabled={readonly}>
-                  <SelectTrigger aria-label="امتیاز رضایت مشتری">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NOT_RECORDED">ثبت نشده</SelectItem>
-                    <SelectItem value="1">۱ از ۵</SelectItem>
-                    <SelectItem value="2">۲ از ۵</SelectItem>
-                    <SelectItem value="3">۳ از ۵</SelectItem>
-                    <SelectItem value="4">۴ از ۵</SelectItem>
-                    <SelectItem value="5">۵ از ۵</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormField>
-              <FormField id="ticket-resolution-outcome" label="نتیجه نهایی">
-                <Textarea
-                  defaultValue={
-                    mode === 'create' ? '' : 'نتیجه synthetic برای Preview'
-                  }
-                  disabled={readonly}
-                  id="ticket-resolution-outcome"
-                  readOnly={readonly}
-                />
-              </FormField>
-              <FormField id="ticket-close-reason" label="علت بسته‌شدن">
-                <Input
-                  defaultValue={
-                    mode === 'create' ? '' : 'حل کامل درخواست نمایشی'
-                  }
-                  disabled={readonly}
-                  id="ticket-close-reason"
-                  readOnly={readonly}
-                />
-              </FormField>
-              <Alert
-                description="فقط برای Ticket حل‌شده یا بسته، با Permission مستقل، علت مستند، کنترل نسخه و سقف دفعات مجاز است؛ در Preview هیچ Mutation اجرا نمی‌شود."
-                title="بازگشایی کنترل‌شده Ticket"
-                tone="warning"
-              />
-            </div>
-          )}
-          <FormField
-            {...(errors.details ? { error: errors.details } : {})}
-            description="از ثبت نام، شماره تماس، مدرک یا هر PII واقعی خودداری شود."
-            id="customer-affairs-details"
-            label={
-              kind === 'lead'
-                ? 'نیاز سفر و Qualification'
-                : 'شرح و پاسخ پیشنهادی'
-            }
-            required
-          >
-            <Textarea
-              aria-invalid={Boolean(errors.details)}
-              disabled={readonly}
-              id="customer-affairs-details"
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  details: event.target.value,
-                }))
-              }
-              readOnly={readonly}
-              value={draft.details}
-            />
-          </FormField>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField label="اولویت">
-              <Select
-                disabled={readonly}
-                onValueChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    priority: value as Priority,
-                  }))
-                }
-                value={draft.priority}
-              >
-                <SelectTrigger aria-label="اولویت">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(priorityLabels).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormField>
-            <FormField
-              {...(errors.assignee ? { error: errors.assignee } : {})}
-              id="customer-affairs-assignee"
-              label="مسئول پیگیری"
-              required
-            >
-              {readonly ? (
-                <Input
-                  id="customer-affairs-assignee"
-                  readOnly
-                  value={draft.assignee}
-                />
-              ) : (
-                <HrDirectoryPicker
-                  label="مسئول پیگیری از کارکنان"
-                  selected={employee}
-                  onSelect={(item) => {
-                    setEmployee(item);
-                    setDraft((current) => ({
-                      ...current,
-                      assignee: item ? hrDirectoryLabel(item) : '',
-                      assigneeEmployeeId: item?.id ?? '',
-                    }));
-                  }}
-                />
-              )}
-            </FormField>
-          </div>
-          <FormField id="customer-affairs-next-action" label="تاریخ اقدام بعدی">
-            <DatePicker
-              disabled={readonly}
-              id="customer-affairs-next-action"
-              includeTime
-              onChange={(nextValue) =>
-                setDraft((current) => ({
-                  ...current,
-                  nextActionAt: nextValue,
-                }))
-              }
-              readOnly={readonly}
-              value={draft.nextActionAt}
-            />
-          </FormField>
-          {validated ? (
-            <Alert
-              description="Validation موفق بود؛ Submit عمداً هیچ داده‌ای ذخیره یا ارسال نکرد."
-              title="فرم برای اتصال آینده آماده است"
-            />
-          ) : null}
-          <div className="flex justify-end gap-2">
-            <DrawerClose asChild>
-              <Button type="button" variant="ghost">
-                بستن
-              </Button>
-            </DrawerClose>
-            {!readonly ? <Button type="submit">بررسی بدون ذخیره</Button> : null}
-          </div>
-        </form>
-      </DrawerContent>
-    </Drawer>
-  );
-}
-
-function Timeline() {
   return (
     <Card className="p-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-bold">Timeline فعالیت‌ها</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            تماس، پیام، جلسه و یادداشت
-          </p>
+      <h2 className="text-lg font-black">ثبت درخواست یا سرنخ</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        اطلاعات نامعلوم را خالی بگذارید؛ درخواست با مالک صف و اقدام بعدی پایدار
+        می‌شود.
+      </p>
+      <form className="mt-5 grid gap-4 lg:grid-cols-2" onSubmit={submit}>
+        <FormField label="عنوان">
+          <Input name="title" required minLength={3} />
+        </FormField>
+        <FormField label="کانال">
+          <select
+            className="h-11 w-full rounded-xl border border-input bg-surface px-3"
+            name="channel"
+            defaultValue="PHONE"
+          >
+            <option value="PHONE">تلفن</option>
+            <option value="WEBSITE">وب‌سایت</option>
+            <option value="WALK_IN">حضوری</option>
+            <option value="REFERRAL">معرفی</option>
+            <option value="SOCIAL">شبکه اجتماعی</option>
+            <option value="OTHER">سایر</option>
+          </select>
+        </FormField>
+        <div className="lg:col-span-2">
+          <CustomerPicker onSelect={setCustomer} selected={customer} />
         </div>
-        <MessageSquareText aria-hidden="true" className="size-5 text-primary" />
-      </div>
-      <ol className="mt-5 space-y-4 border-s border-border ps-5">
-        {previewTimeline.map((activity) => (
-          <li className="relative" key={activity.id}>
-            <span className="absolute -start-[1.55rem] top-1.5 size-2 rounded-full bg-primary" />
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge>{activity.type}</Badge>
-              {activity.internal ? (
-                <Badge className="bg-slate-500/10 text-slate-700">داخلی</Badge>
-              ) : null}
-            </div>
-            <p className="mt-2 text-sm font-semibold">{activity.title}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {activity.at} · {activity.actor}
-            </p>
-          </li>
-        ))}
-      </ol>
+        <FormField label="نیاز سفر">
+          <Textarea name="travelNeed" required minLength={3} />
+        </FormField>
+        <div className="grid gap-4">
+          <FormField label="مقصد (اختیاری)">
+            <Input name="destination" />
+          </FormField>
+          <FormField label="تعداد مسافر">
+            <Input
+              name="passengerCount"
+              type="number"
+              min={1}
+              max={100}
+              defaultValue={1}
+              required
+            />
+          </FormField>
+        </div>
+        <FormField label="اولویت">
+          <select
+            className="h-11 w-full rounded-xl border border-input bg-surface px-3"
+            name="priority"
+            defaultValue="NORMAL"
+          >
+            <option value="LOW">کم</option>
+            <option value="NORMAL">عادی</option>
+            <option value="HIGH">زیاد</option>
+            <option value="URGENT">فوری</option>
+          </select>
+        </FormField>
+        <FormField label="صف مسئول">
+          <Input
+            name="queueCode"
+            defaultValue="customer-affairs-front-office"
+            required
+          />
+        </FormField>
+        <FormField label="اقدام بعدی">
+          <Input
+            name="nextAction"
+            defaultValue="تماس و تکمیل نیاز سفر"
+            required
+          />
+        </FormField>
+        <FormField label="موعد اقدام">
+          <DatePicker
+            name="nextActionAt"
+            includeTime
+            defaultValue={isoLocal()}
+            required
+          />
+        </FormField>
+        {error ? (
+          <Alert
+            className="lg:col-span-2"
+            title="ثبت ناموفق"
+            description={error}
+            tone="error"
+          />
+        ) : null}
+        <div className="flex gap-2 lg:col-span-2">
+          <Button disabled={busy} type="submit">
+            {busy ? 'در حال ثبت…' : 'ثبت پایدار'}
+          </Button>
+          <Button onClick={onCancel} type="button" variant="outline">
+            انصراف
+          </Button>
+        </div>
+      </form>
     </Card>
   );
 }
 
-function Filters({
-  onChange,
-  query,
-  statusOptions,
+function TicketForm({
+  onCancel,
+  onCreated,
 }: {
-  onChange: (query: CustomerAffairsListQuery) => void;
-  query: CustomerAffairsListQuery;
-  statusOptions: readonly [string, string][];
+  onCancel: () => void;
+  onCreated: (row: CustomerAffairsTicketView) => void;
 }) {
+  const [customer, setCustomer] = useState<CustomerSummary | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    const data = new FormData(event.currentTarget);
+    const input: CustomerAffairsTicketInput = {
+      subject: String(data.get('subject')),
+      description: String(data.get('description')),
+      channel: String(
+        data.get('channel'),
+      ) as CustomerAffairsTicketInput['channel'],
+      contactOccurredAt: new Date().toISOString(),
+      category: String(data.get('category')),
+      impact: String(
+        data.get('impact'),
+      ) as CustomerAffairsTicketInput['impact'],
+      urgency: String(
+        data.get('urgency'),
+      ) as CustomerAffairsTicketInput['urgency'],
+      priority: String(
+        data.get('priority'),
+      ) as CustomerAffairsTicketInput['priority'],
+      customerId: customer?.id ?? null,
+      references: [],
+      nextAction: String(data.get('nextAction')),
+      nextActionAt: new Date(String(data.get('nextActionAt'))).toISOString(),
+    };
+    try {
+      const response = await customerAffairsApi.createTicket(input);
+      onCreated(response.data);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'ثبت تیکت انجام نشد.');
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
-    <FilterBar className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-      <FormField id="customer-affairs-search" label="جست‌وجو">
-        <div className="relative">
-          <Search
-            aria-hidden="true"
-            className="absolute end-3 top-3.5 size-4 text-muted-foreground"
-          />
-          <Input
-            className="pe-10"
-            id="customer-affairs-search"
-            onChange={(event) =>
-              onChange({ ...query, search: event.target.value, page: 1 })
-            }
-            placeholder="عنوان Lead یا Ticket"
-            value={query.search}
-          />
+    <Card className="p-5">
+      <h2 className="text-lg font-black">ثبت تیکت پشتیبانی</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        تیکت بدون قرارداد هم قابل ثبت است؛ مالک پاسخ به مشتری تغییر نمی‌کند.
+      </p>
+      <form className="mt-5 grid gap-4 lg:grid-cols-2" onSubmit={submit}>
+        <FormField label="موضوع">
+          <Input name="subject" required minLength={3} />
+        </FormField>
+        <FormField label="کانال">
+          <select
+            className="h-11 w-full rounded-xl border border-input bg-surface px-3"
+            name="channel"
+            defaultValue="PHONE"
+          >
+            <option value="PHONE">تلفن</option>
+            <option value="EMAIL">ایمیل</option>
+            <option value="CHAT">گفتگو</option>
+            <option value="WEBSITE">وب‌سایت</option>
+            <option value="WALK_IN">حضوری</option>
+            <option value="OTHER">سایر</option>
+          </select>
+        </FormField>
+        <div className="lg:col-span-2">
+          <CustomerPicker onSelect={setCustomer} selected={customer} />
         </div>
-      </FormField>
-      <FormField label="وضعیت">
-        <Select
-          onValueChange={(value) =>
-            onChange({ ...query, status: value, page: 1 })
-          }
-          value={query.status}
-        >
-          <SelectTrigger aria-label="فیلتر وضعیت">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
-            {statusOptions.map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </FormField>
-      <FormField label="اولویت">
-        <Select
-          onValueChange={(value) =>
-            onChange({ ...query, priority: value, page: 1 })
-          }
-          value={query.priority}
-        >
-          <SelectTrigger aria-label="فیلتر اولویت">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">همه اولویت‌ها</SelectItem>
-            {Object.entries(priorityLabels).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </FormField>
-      <FormField label="مرتب‌سازی">
-        <Select
-          onValueChange={(value) =>
-            onChange({
-              ...query,
-              sortBy: value as CustomerAffairsListQuery['sortBy'],
-            })
-          }
-          value={query.sortBy}
-        >
-          <SelectTrigger aria-label="مرتب‌سازی">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="updatedAt">آخرین تغییر</SelectItem>
-            <SelectItem value="nextActionAt">اقدام بعدی</SelectItem>
-            <SelectItem value="priority">اولویت</SelectItem>
-          </SelectContent>
-        </Select>
-      </FormField>
-      <Button
-        aria-pressed={query.overdueOnly}
-        className="mb-0.5"
-        onClick={() =>
-          onChange({ ...query, overdueOnly: !query.overdueOnly, page: 1 })
-        }
-        type="button"
-        variant={query.overdueOnly ? 'primary' : 'outline'}
-      >
-        <AlertTriangle aria-hidden="true" className="size-4" />
-        فقط عقب‌افتاده
-      </Button>
-    </FilterBar>
+        <FormField label="شرح">
+          <Textarea name="description" required minLength={3} />
+        </FormField>
+        <div className="grid gap-4">
+          <FormField label="دسته">
+            <Input name="category" defaultValue="QUESTION" required />
+          </FormField>
+          <FormField label="اولویت">
+            <select
+              className="h-11 w-full rounded-xl border border-input bg-surface px-3"
+              name="priority"
+              defaultValue="NORMAL"
+            >
+              <option value="LOW">کم</option>
+              <option value="NORMAL">عادی</option>
+              <option value="HIGH">زیاد</option>
+              <option value="URGENT">فوری</option>
+              <option value="CRITICAL">بحرانی</option>
+            </select>
+          </FormField>
+        </div>
+        <FormField label="اثر">
+          <select
+            className="h-11 w-full rounded-xl border border-input bg-surface px-3"
+            name="impact"
+            defaultValue="NORMAL"
+          >
+            <option value="LOW">کم</option>
+            <option value="NORMAL">عادی</option>
+            <option value="HIGH">زیاد</option>
+          </select>
+        </FormField>
+        <FormField label="فوریت">
+          <select
+            className="h-11 w-full rounded-xl border border-input bg-surface px-3"
+            name="urgency"
+            defaultValue="NORMAL"
+          >
+            <option value="LOW">کم</option>
+            <option value="NORMAL">عادی</option>
+            <option value="HIGH">زیاد</option>
+          </select>
+        </FormField>
+        <FormField label="اقدام بعدی">
+          <Input name="nextAction" defaultValue="بررسی و پاسخ اولیه" required />
+        </FormField>
+        <FormField label="موعد اقدام">
+          <DatePicker
+            name="nextActionAt"
+            includeTime
+            defaultValue={isoLocal()}
+            required
+          />
+        </FormField>
+        {error ? (
+          <Alert
+            className="lg:col-span-2"
+            title="ثبت ناموفق"
+            description={error}
+            tone="error"
+          />
+        ) : null}
+        <div className="flex gap-2 lg:col-span-2">
+          <Button disabled={busy} type="submit">
+            {busy ? 'در حال ثبت…' : 'ثبت پایدار'}
+          </Button>
+          <Button onClick={onCancel} type="button" variant="outline">
+            انصراف
+          </Button>
+        </div>
+      </form>
+    </Card>
   );
 }
 
-function LeadCard({
-  lead,
-  onOpen,
+function DetailPanel({
+  detail,
+  onBack,
+  onReload,
+  tab,
 }: {
-  lead: PreviewLead;
-  onOpen: (mode: FormMode) => void;
+  detail: Detail;
+  onBack: () => void;
+  onReload: () => Promise<void>;
+  tab: Tab;
 }) {
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [referralOpen, setReferralOpen] = useState(false);
+  const [surveyUrl, setSurveyUrl] = useState('');
+  const stage = 'stage' in detail ? detail.stage : detail.status;
+  async function run(operation: () => Promise<unknown>, success: string) {
+    setBusy(true);
+    setNotice('');
+    try {
+      await operation();
+      setNotice(success);
+      await onReload();
+    } catch (cause) {
+      setNotice(cause instanceof Error ? cause.message : 'عملیات انجام نشد.');
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function timeline(event: FormEvent) {
+    event.preventDefault();
+    if (!message.trim()) return;
+    await run(
+      () =>
+        tab === 'leads'
+          ? customerAffairsApi.addLeadTimeline(detail.id, {
+              type: 'NOTE',
+              summary: message,
+              customerVisible: false,
+            })
+          : customerAffairsApi.addTicketTimeline(detail.id, {
+              type: 'NOTE',
+              summary: message,
+              customerVisible: false,
+            }),
+      'یادداشت داخلی ثبت شد.',
+    );
+    setMessage('');
+  }
+  async function refer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    await run(
+      () =>
+        customerAffairsApi.refer(detail.id, {
+          destinationModule: String(data.get('destinationModule')),
+          destinationUnit: String(data.get('destinationUnit')),
+          title: String(data.get('title')),
+          description: String(data.get('description')),
+          dueAt: new Date(String(data.get('dueAt'))).toISOString(),
+        }),
+      'ارجاع در کارتابل مقصد ثبت شد.',
+    );
+    setReferralOpen(false);
+  }
+  async function createSurveyInvitation() {
+    setBusy(true);
+    setNotice('');
+    try {
+      const response = await customerAffairsApi.createSatisfactionInvitation(
+        detail.id,
+      );
+      setSurveyUrl(
+        `${window.location.origin}/feedback/customer-affairs/${response.data.token}`,
+      );
+      setNotice('پیوند امن رضایت‌سنجی تا هفت روز معتبر است.');
+    } catch (cause) {
+      setNotice(
+        cause instanceof Error ? cause.message : 'ساخت دعوت‌نامه انجام نشد.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
-    <Card className="p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap gap-2">
-            <Badge>{leadStageLabels[lead.stage]}</Badge>
-            <Badge
-              className={
-                lead.overdue ? 'bg-destructive/10 text-destructive' : ''
+    <div className="space-y-4">
+      <Button onClick={onBack} variant="ghost">
+        <ArrowLeft className="size-4" /> بازگشت به فهرست
+      </Button>
+      <Card className="p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs text-muted-foreground">
+              {detail.trackingNumber}
+            </p>
+            <h2 className="mt-1 text-xl font-black">
+              {'title' in detail ? detail.title : detail.subject}
+            </h2>
+          </div>
+          <div className="flex gap-2">
+            <Badge>{stageLabel[stage] ?? statusLabel[stage] ?? stage}</Badge>
+            <Badge>{priorityLabel[detail.priority] ?? detail.priority}</Badge>
+          </div>
+        </div>
+        <p className="mt-4 whitespace-pre-wrap text-sm leading-7">
+          {'travelNeed' in detail ? detail.travelNeed : detail.description}
+        </p>
+        <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <dt className="text-muted-foreground">اقدام بعدی</dt>
+            <dd className="font-semibold">{detail.nextAction}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">موعد</dt>
+            <dd>{new Date(detail.nextActionAt).toLocaleString('fa-IR')}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">نسخه</dt>
+            <dd>{detail.version.toLocaleString('fa-IR')}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">مشتری</dt>
+            <dd>{detail.customerId ? 'متصل' : 'نامشخص'}</dd>
+          </div>
+        </dl>
+        {tab === 'leads' ? (
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Button
+              disabled={busy || stage !== 'QUALIFIED'}
+              onClick={() =>
+                run(
+                  () =>
+                    customerAffairsApi.proposeHandoff(
+                      detail.id,
+                      detail.version,
+                    ),
+                  'بسته نسخه‌دار برای فروش ارسال شد.',
+                )
               }
             >
-              {lead.overdue
-                ? 'پیگیری عقب‌افتاده'
-                : priorityLabels[lead.priority]}
-            </Badge>
+              <Send className="size-4" /> ارسال به فروش
+            </Button>
+            <Button
+              disabled={
+                busy || !['NEW', 'CONTACTED', 'QUALIFYING'].includes(stage)
+              }
+              onClick={() =>
+                run(
+                  () => customerAffairsApi.qualify(detail.id, detail.version),
+                  'ارزیابی ثبت شد.',
+                )
+              }
+              variant="outline"
+            >
+              <CheckCircle2 className="size-4" /> ارزیابی تکمیل
+            </Button>
           </div>
-          <h3 className="mt-3 font-bold">{lead.title}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {lead.source} · {lead.channel}
-          </p>
-        </div>
-        <span className="text-xs text-muted-foreground">
-          {lead.ageDays.toLocaleString('fa-IR')} روز
-        </span>
-      </div>
-      <dl className="mt-4 grid gap-2 text-xs sm:grid-cols-2">
-        <div>
-          <dt className="text-muted-foreground">نیاز/مقصد</dt>
-          <dd className="mt-1 font-medium">
-            {lead.travelNeed} · {lead.destination}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">مسافر/بودجه</dt>
-          <dd className="mt-1 font-medium">
-            {lead.passengerCount.toLocaleString('fa-IR')} نفر ·{' '}
-            {lead.budgetLabel}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Qualification</dt>
-          <dd className="mt-1 font-medium">{lead.qualification}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">اقدام بعدی</dt>
-          <dd className="mt-1 font-medium">{lead.nextActionAt}</dd>
-        </div>
-      </dl>
-      <div className="mt-4 flex flex-wrap justify-between gap-2 border-t border-border pt-3">
-        <span className="text-xs text-muted-foreground">{lead.assignee}</span>
-        <div className="flex gap-2">
-          <Button
-            onClick={() => onOpen('view')}
-            size="sm"
-            type="button"
-            variant="ghost"
-          >
-            <Eye aria-hidden="true" className="size-4" />
-            مشاهده
-          </Button>
-          <Button
-            onClick={() => onOpen('edit')}
-            size="sm"
-            type="button"
-            variant="outline"
-          >
-            <FilePenLine aria-hidden="true" className="size-4" />
-            ویرایش
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function LeadWorkspace({
-  onOpen,
-  state,
-}: {
-  onOpen: (mode: FormMode) => void;
-  state: CustomerAffairsPreviewState;
-}) {
-  const [query, setQuery] = useState(() =>
-    normalizeCustomerAffairsQuery({ pageSize: 2 }),
-  );
-  const [showHandoff, setShowHandoff] = useState(false);
-  const handoffPreview = buildSalesHandoffPreview(
-    previewLeads.find((lead) => lead.stage === 'QUALIFIED') ?? previewLeads[0]!,
-  );
-  const results = useMemo(
-    () => filterPreviewRecords(previewLeads, query),
-    [query],
-  );
-  const page = paginatePreview(results, query.page, query.pageSize);
-  const stages = Object.entries(leadStageLabels) as [LeadStage, string][];
-  if (state !== 'preview')
-    return <StatePanel onRetry={() => undefined} state={state} />;
-  return (
-    <div className="space-y-5">
-      <section aria-labelledby="lead-pipeline-title">
-        <div className="mb-3 flex items-center justify-between">
-          <div>
-            <h2 className="font-bold" id="lead-pipeline-title">
-              Pipeline پیش از فروش
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              جابجایی کارت‌ها در Phase A فعال نیست.
-            </p>
+        ) : (
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Button
+              disabled={busy || stage !== 'NEW'}
+              onClick={() =>
+                run(
+                  () =>
+                    customerAffairsApi.transitionTicket(
+                      detail.id,
+                      'TRIAGED',
+                      detail.version,
+                      'بررسی اولیه و تعیین مسیر رسیدگی',
+                    ),
+                  'تیکت تریاژ شد.',
+                )
+              }
+              variant="outline"
+            >
+              تریاژ
+            </Button>
+            <Button
+              disabled={
+                busy ||
+                ![
+                  'TRIAGED',
+                  'REOPENED',
+                  'WAITING_CUSTOMER',
+                  'WAITING_EXTERNAL',
+                ].includes(stage)
+              }
+              onClick={() =>
+                run(
+                  () =>
+                    customerAffairsApi.transitionTicket(
+                      detail.id,
+                      'IN_PROGRESS',
+                      detail.version,
+                      'رسیدگی توسط کارشناس آغاز شد',
+                    ),
+                  'رسیدگی آغاز شد.',
+                )
+              }
+              variant="outline"
+            >
+              شروع رسیدگی
+            </Button>
+            <Button
+              disabled={busy || stage !== 'IN_PROGRESS'}
+              onClick={() =>
+                run(
+                  () =>
+                    customerAffairsApi.transitionTicket(
+                      detail.id,
+                      'WAITING_CUSTOMER',
+                      detail.version,
+                      'در انتظار پاسخ مشتری',
+                    ),
+                  'وضعیت انتظار مشتری ثبت شد.',
+                )
+              }
+              variant="outline"
+            >
+              انتظار مشتری
+            </Button>
+            <Button
+              disabled={busy || stage !== 'IN_PROGRESS'}
+              onClick={() =>
+                run(
+                  () =>
+                    customerAffairsApi.transitionTicket(
+                      detail.id,
+                      'WAITING_EXTERNAL',
+                      detail.version,
+                      'در انتظار اقدام واحد ارجاع‌شده',
+                    ),
+                  'وضعیت انتظار واحد ثبت شد.',
+                )
+              }
+              variant="outline"
+            >
+              انتظار واحد
+            </Button>
+            <Button
+              disabled={
+                busy ||
+                ![
+                  'IN_PROGRESS',
+                  'WAITING_CUSTOMER',
+                  'WAITING_EXTERNAL',
+                  'REOPENED',
+                ].includes(stage)
+              }
+              onClick={() =>
+                run(
+                  () =>
+                    customerAffairsApi.action(detail.id, 'resolve', {
+                      expectedVersion: detail.version,
+                      reason: 'رسیدگی تکمیل شد',
+                      resolutionOutcome: 'درخواست مشتری انجام شد',
+                    }),
+                  'تیکت حل شد.',
+                )
+              }
+            >
+              حل تیکت
+            </Button>
+            <Button
+              disabled={busy || stage !== 'RESOLVED'}
+              onClick={() =>
+                run(
+                  () =>
+                    customerAffairsApi.action(detail.id, 'close', {
+                      expectedVersion: detail.version,
+                      reason: 'تأیید پایان رسیدگی',
+                      resolutionOutcome: 'رسیدگی تکمیل شد',
+                      closeReason: 'پایان فرایند پاسخ‌گویی',
+                    }),
+                  'تیکت بسته شد.',
+                )
+              }
+              variant="outline"
+            >
+              بستن
+            </Button>
+            <Button
+              disabled={
+                busy || !['RESOLVED', 'CLOSED', 'CANCELLED'].includes(stage)
+              }
+              onClick={() =>
+                run(
+                  () =>
+                    customerAffairsApi.action(detail.id, 'reopen', {
+                      expectedVersion: detail.version,
+                      reason: 'مشتری حل نشدن موضوع را اعلام کرد',
+                    }),
+                  'تیکت بازگشایی شد.',
+                )
+              }
+              variant="outline"
+            >
+              بازگشایی
+            </Button>
+            <Button
+              disabled={busy}
+              onClick={() =>
+                run(
+                  () =>
+                    customerAffairsApi.action(detail.id, 'escalate', {
+                      expectedVersion: detail.version,
+                      reason: 'نیازمند رسیدگی سطح بالاتر',
+                    }),
+                  'تصعید ثبت شد.',
+                )
+              }
+              variant="outline"
+            >
+              <AlertTriangle className="size-4" /> تصعید
+            </Button>
+            <Button
+              disabled={busy}
+              onClick={() => setReferralOpen((value) => !value)}
+              variant="outline"
+            >
+              ارجاع داخلی
+            </Button>
+            <Button
+              disabled={busy || !['RESOLVED', 'CLOSED'].includes(stage)}
+              onClick={createSurveyInvitation}
+              variant="outline"
+            >
+              دعوت رضایت‌سنجی
+            </Button>
           </div>
-          <Badge>
-            <KanbanSquare aria-hidden="true" className="me-1 size-3" />
-            Preview
-          </Badge>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-          {stages.map(([stage, label]) => {
-            const stageLeads = previewLeads.filter(
-              (lead) => lead.stage === stage,
-            );
-            return (
-              <Card className="min-w-0 bg-muted/20 p-3" key={stage}>
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold">{label}</h3>
-                  <Badge>{stageLeads.length.toLocaleString('fa-IR')}</Badge>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {stageLeads.length ? (
-                    stageLeads.map((lead) => (
-                      <div
-                        className="rounded-xl border border-border bg-surface p-3"
-                        key={lead.id}
-                      >
-                        <p className="text-xs font-semibold">{lead.title}</p>
-                        <p className="mt-2 text-[11px] text-muted-foreground">
-                          {lead.nextActionAt}
-                        </p>
-                      </div>
-                    ))
+        )}
+        {surveyUrl ? (
+          <div className="mt-4 rounded-xl border border-border bg-muted/30 p-4">
+            <p className="text-sm font-bold">پیوند مخصوص مشتری</p>
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+              <Input aria-label="پیوند رضایت‌سنجی" readOnly value={surveyUrl} />
+              <Button
+                onClick={() => void navigator.clipboard.writeText(surveyUrl)}
+                type="button"
+                variant="outline"
+              >
+                کپی پیوند
+              </Button>
+            </div>
+          </div>
+        ) : null}
+        {notice ? (
+          <Alert
+            className="mt-4"
+            title="نتیجه عملیات"
+            description={notice}
+            tone={notice.includes('نشد') ? 'error' : 'info'}
+          />
+        ) : null}
+        {tab === 'tickets' && referralOpen ? (
+          <form
+            className="mt-5 grid gap-3 rounded-xl border border-border bg-muted/30 p-4 sm:grid-cols-2"
+            onSubmit={refer}
+          >
+            <FormField label="ماژول مقصد">
+              <Input
+                name="destinationModule"
+                required
+                placeholder="reservations"
+              />
+            </FormField>
+            <FormField label="واحد مقصد">
+              <Input name="destinationUnit" required placeholder="operations" />
+            </FormField>
+            <FormField label="عنوان کار">
+              <Input name="title" required minLength={3} />
+            </FormField>
+            <FormField label="موعد">
+              <DatePicker
+                name="dueAt"
+                includeTime
+                defaultValue={isoLocal()}
+                required
+              />
+            </FormField>
+            <div className="sm:col-span-2">
+              <FormField label="شرح اقدام">
+                <Textarea name="description" required minLength={3} />
+              </FormField>
+            </div>
+            <Button className="sm:col-span-2" disabled={busy} type="submit">
+              ثبت ارجاع پایدار
+            </Button>
+          </form>
+        ) : null}
+      </Card>
+      <Card className="p-5">
+        <h3 className="font-black">Timeline</h3>
+        <form
+          className="mt-3 flex flex-col gap-2 sm:flex-row"
+          onSubmit={timeline}
+        >
+          <Input
+            aria-label="یادداشت داخلی"
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            placeholder="یادداشت داخلی (برای مشتری ارسال نمی‌شود)"
+          />
+          <Button disabled={busy || !message.trim()} type="submit">
+            ثبت یادداشت
+          </Button>
+        </form>
+        <ol className="mt-5 space-y-3">
+          {detail.timeline?.length ? (
+            detail.timeline.map((item, index) => (
+              <li
+                className="border-s-2 border-primary/25 ps-4"
+                key={item.id ?? `${item.type}-${index}`}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge>{item.type}</Badge>
+                  {item.customerVisible ? (
+                    <span className="text-xs text-emerald-700">
+                      قابل مشاهده برای مشتری
+                    </span>
                   ) : (
-                    <p className="py-5 text-center text-xs text-muted-foreground">
-                      بدون Lead
-                    </p>
+                    <span className="text-xs text-muted-foreground">داخلی</span>
                   )}
                 </div>
-              </Card>
-            );
-          })}
-        </div>
-      </section>
-      <Filters onChange={setQuery} query={query} statusOptions={stages} />
-      {page.length ? (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {page.map((lead) => (
-            <LeadCard key={lead.id} lead={lead} onOpen={onOpen} />
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          description="Lead مطابق فیلتر پیدا نشد."
-          title="فهرست Lead خالی است"
-        />
-      )}
-      <div className="flex items-center justify-between gap-3">
-        <Button
-          disabled={query.page === 1}
-          onClick={() => setQuery({ ...query, page: query.page - 1 })}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          صفحه قبل
-        </Button>
-        <PaginationShell
-          currentPage={query.page}
-          totalLabel={`${results.length.toLocaleString('fa-IR')} Lead نمایشی`}
-        />
-        <Button
-          disabled={query.page * query.pageSize >= results.length}
-          onClick={() => setQuery({ ...query, page: query.page + 1 })}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          صفحه بعد
-        </Button>
-      </div>
-      <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
-        <Timeline />
-        <Card className="p-5">
-          <h3 className="font-bold">پیشنهاد تحویل به فروش</h3>
-          <p className="mt-2 text-sm leading-7 text-muted-foreground">
-            فقط CustomerReference و SalesRequestReference پیشنهادی ساخته می‌شود؛
-            Customer، قرارداد یا رزرو خودکار ایجاد نمی‌شود.
-          </p>
-          <Button
-            aria-expanded={showHandoff}
-            className="mt-5"
-            onClick={() => setShowHandoff((current) => !current)}
-            type="button"
-            variant="outline"
-          >
-            <ArrowUpLeft aria-hidden="true" className="size-4" />
-            ساخت Handoff Contract پیشنهادی
-          </Button>
-          {showHandoff ? (
-            <dl className="mt-4 grid gap-2 rounded-xl border border-border bg-muted/30 p-3 text-xs">
-              <div className="flex justify-between gap-3">
-                <dt>Contract</dt>
-                <dd dir="ltr">{handoffPreview.contractVersion}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt>Event</dt>
-                <dd dir="ltr">{handoffPreview.eventType}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt>Lead</dt>
-                <dd dir="ltr">{handoffPreview.leadId}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt>Passenger count</dt>
-                <dd>{handoffPreview.passengerCount.toLocaleString('fa-IR')}</dd>
-              </div>
-              <div className="flex justify-between gap-3 font-bold text-amber-700">
-                <dt>وضعیت</dt>
-                <dd>ذخیره‌نشده · Mutation اجرا نشد</dd>
-              </div>
-            </dl>
-          ) : null}
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function TicketCard({
-  onOpen,
-  ticket,
-}: {
-  onOpen: (mode: FormMode) => void;
-  ticket: PreviewTicket;
-}) {
-  const slaTone =
-    ticket.slaState === 'BREACHED'
-      ? 'bg-destructive/10 text-destructive'
-      : ticket.slaState === 'AT_RISK'
-        ? 'bg-amber-500/10 text-amber-700'
-        : 'bg-emerald-500/10 text-emerald-700';
-  return (
-    <Card className="p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap gap-2">
-            <Badge>{ticketStatusLabels[ticket.status]}</Badge>
-            <Badge>{ticket.category}</Badge>
-            <Badge className={slaTone}>{slaLabels[ticket.slaState]}</Badge>
-          </div>
-          <p className="mt-3 font-mono text-xs text-primary" dir="ltr">
-            {ticket.trackingNumber}
-          </p>
-          <h3 className="mt-1 font-bold">{ticket.subject}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {ticket.customerReference} · {ticket.salesReference}
-          </p>
-        </div>
-        {ticket.escalated ? (
-          <Badge className="bg-destructive/10 text-destructive">
-            Escalated
-          </Badge>
-        ) : null}
-      </div>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <Alert description={ticket.firstResponseLabel} title="اولین پاسخ" />
-        <Alert
-          description={ticket.resolutionDueLabel}
-          title="موعد حل"
-          tone={
-            ticket.slaState === 'BREACHED'
-              ? 'error'
-              : ticket.slaState === 'AT_RISK'
-                ? 'warning'
-                : 'info'
-          }
-        />
-      </div>
-      <div className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
-        <div className="rounded-xl bg-muted/40 p-3">
-          <p className="font-bold">یادداشت داخلی</p>
-          <p className="mt-1 leading-6 text-muted-foreground">
-            {ticket.internalNote}
-          </p>
-        </div>
-        <div className="rounded-xl bg-primary/5 p-3">
-          <p className="font-bold">پاسخ قابل ارسال</p>
-          <p className="mt-1 leading-6 text-muted-foreground">
-            {ticket.customerReply}
-          </p>
-        </div>
-      </div>
-      <div className="mt-4 flex flex-wrap justify-between gap-2 border-t border-border pt-3">
-        <span className="text-xs text-muted-foreground">
-          {ticket.assignee} · رضایت: {ticket.satisfaction}
-        </span>
-        <div className="flex gap-2">
-          <Button
-            onClick={() => onOpen('view')}
-            size="sm"
-            type="button"
-            variant="ghost"
-          >
-            <Eye aria-hidden="true" className="size-4" />
-            مشاهده
-          </Button>
-          <Button
-            onClick={() => onOpen('edit')}
-            size="sm"
-            type="button"
-            variant="outline"
-          >
-            <FilePenLine aria-hidden="true" className="size-4" />
-            ویرایش
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function TicketWorkspace({
-  onOpen,
-  state,
-}: {
-  onOpen: (mode: FormMode) => void;
-  state: CustomerAffairsPreviewState;
-}) {
-  const [query, setQuery] = useState(() =>
-    normalizeCustomerAffairsQuery({ pageSize: 2 }),
-  );
-  const results = useMemo(
-    () => filterPreviewRecords(previewTickets, query),
-    [query],
-  );
-  const page = paginatePreview(results, query.page, query.pageSize);
-  const statuses = Object.entries(ticketStatusLabels);
-  if (state !== 'preview')
-    return <StatePanel onRetry={() => undefined} state={state} />;
-  return (
-    <div className="space-y-5">
-      <Filters onChange={setQuery} query={query} statusOptions={statuses} />
-      {page.length ? (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {page.map((ticket) => (
-            <TicketCard key={ticket.id} onOpen={onOpen} ticket={ticket} />
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          description="Ticket مطابق فیلتر پیدا نشد."
-          title="فهرست Ticket خالی است"
-        />
-      )}
-      <div className="flex items-center justify-between gap-3">
-        <Button
-          disabled={query.page === 1}
-          onClick={() => setQuery({ ...query, page: query.page - 1 })}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          صفحه قبل
-        </Button>
-        <PaginationShell
-          currentPage={query.page}
-          totalLabel={`${results.length.toLocaleString('fa-IR')} Ticket نمایشی`}
-        />
-        <Button
-          disabled={query.page * query.pageSize >= results.length}
-          onClick={() => setQuery({ ...query, page: query.page + 1 })}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          صفحه بعد
-        </Button>
-      </div>
-      <div className="grid gap-4 lg:grid-cols-3">
-        <SummaryCard
-          icon={Clock3}
-          label="میانگین پاسخ اولیه Preview"
-          value="۲۸ دقیقه"
-        />
-        <SummaryCard
-          icon={AlertTriangle}
-          label="نقض SLA"
-          tone="danger"
-          value="۱"
-        />
-        <SummaryCard icon={CheckCircle2} label="رضایت ثبت‌شده" value="۴ از ۵" />
-      </div>
-      <Timeline />
+                <p className="mt-1 text-sm leading-6">{item.summary}</p>
+                {item.occurredAt ? (
+                  <time className="text-xs text-muted-foreground">
+                    {new Date(item.occurredAt).toLocaleString('fa-IR')}
+                  </time>
+                ) : null}
+              </li>
+            ))
+          ) : (
+            <li className="text-sm text-muted-foreground">
+              رویدادی ثبت نشده است.
+            </li>
+          )}
+        </ol>
+      </Card>
     </div>
   );
 }
 
 export function CustomerAffairsWorkspace() {
-  const [state, setState] = useState<CustomerAffairsPreviewState>('preview');
-  const [tab, setTab] = useState<WorkspaceTab>('presales');
-  const [form, setForm] = useState<{ kind: FormKind; mode: FormMode } | null>(
+  const params = useSearchParams();
+  const router = useRouter();
+  const [tab, setTab] = useState<Tab>(
+    params.get('tab') === 'tickets' ? 'tickets' : 'leads',
+  );
+  const [state, setState] = useState<LoadState>('loading');
+  const [dashboard, setDashboard] = useState<CustomerAffairsDashboard | null>(
     null,
   );
-  const overdueCount =
-    previewLeads.filter((lead) => lead.overdue).length +
-    previewTickets.filter((ticket) => ticket.overdue).length;
-  const openTickets = previewTickets.filter(
-    (ticket) => ticket.status !== 'RESOLVED',
-  ).length;
-  const newLeads = previewLeads.filter((lead) => lead.stage === 'NEW').length;
-  const todayFollowUps = previewLeads.filter((lead) =>
-    lead.nextActionAt.includes('امروز'),
-  ).length;
-  const slaAtRisk = previewTickets.filter(
-    (ticket) => ticket.slaState === 'AT_RISK',
-  ).length;
+  const [leads, setLeads] = useState<CustomerAffairsLeadView[]>([]);
+  const [tickets, setTickets] = useState<CustomerAffairsTicketView[]>([]);
+  const [search, setSearch] = useState(params.get('search') ?? '');
+  const [creating, setCreating] = useState(false);
+  const [detail, setDetail] = useState<Detail | null>(null);
+  const [error, setError] = useState('');
+  function selectTab(value: Tab) {
+    const query = new URLSearchParams(params.toString());
+    query.set('tab', value);
+    if (search) query.set('search', search);
+    router.replace(`/customer-affairs?${query.toString()}`, { scroll: false });
+    setTab(value);
+    setDetail(null);
+    setCreating(false);
+  }
+  function changeSearch(value: string) {
+    const query = new URLSearchParams(params.toString());
+    if (value) query.set('search', value);
+    else query.delete('search');
+    query.set('tab', tab);
+    router.replace(`/customer-affairs?${query.toString()}`, { scroll: false });
+    setSearch(value);
+  }
+  const load = useCallback(async () => {
+    setState('loading');
+    setError('');
+    try {
+      const [summary, list] = await Promise.all([
+        customerAffairsApi.dashboard(),
+        tab === 'leads'
+          ? customerAffairsApi.leads(search)
+          : customerAffairsApi.tickets(search),
+      ]);
+      setDashboard(summary.data);
+      if (tab === 'leads')
+        setLeads((list as { data: CustomerAffairsLeadView[] }).data);
+      else setTickets((list as { data: CustomerAffairsTicketView[] }).data);
+      setState(list.data.length ? 'ready' : 'empty');
+    } catch (cause) {
+      setState(
+        cause instanceof CustomerAffairsApiError && cause.status === 403
+          ? 'forbidden'
+          : 'error',
+      );
+      setError(
+        cause instanceof Error ? cause.message : 'دریافت اطلاعات انجام نشد.',
+      );
+    }
+  }, [search, tab]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 250);
+    return () => window.clearTimeout(timer);
+  }, [load]);
+  const open = useCallback(
+    async (id: string) => {
+      setState('loading');
+      try {
+        const response =
+          tab === 'leads'
+            ? await customerAffairsApi.lead(id)
+            : await customerAffairsApi.ticket(id);
+        setDetail(response.data as Detail);
+        setState('ready');
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : 'جزئیات دریافت نشد.');
+        setState('error');
+      }
+    },
+    [tab],
+  );
+  const requestedId = params.get(tab === 'leads' ? 'lead' : 'ticket');
+  const openingId = useRef('');
+  useEffect(() => {
+    if (!requestedId) {
+      openingId.current = '';
+      return;
+    }
+    if (detail || creating || openingId.current === requestedId) return;
+    openingId.current = requestedId;
+    const timer = window.setTimeout(() => void open(requestedId), 0);
+    return () => window.clearTimeout(timer);
+  }, [creating, detail, open, requestedId]);
+  async function reloadDetail() {
+    if (!detail) return;
+    const response =
+      tab === 'leads'
+        ? await customerAffairsApi.lead(detail.id)
+        : await customerAffairsApi.ticket(detail.id);
+    setDetail(response.data as Detail);
+  }
+  const records = tab === 'leads' ? leads : tickets;
   return (
-    <main className="space-y-6" dir="rtl">
+    <main className="min-w-0 space-y-5" dir="rtl">
       <PageHeader
+        eyebrow="عملیاتی · داده پایدار"
+        title="امور مشتریان و پشتیبانی"
+        description="ثبت، مالکیت، SLA، Timeline، ارجاع و تحویل کنترل‌شده به فروش"
         actions={
-          <>
-            <Button
-              onClick={() =>
-                setForm({
-                  kind: tab === 'presales' ? 'lead' : 'ticket',
-                  mode: 'create',
-                })
-              }
-            >
-              <Plus aria-hidden="true" className="size-4" />
-              {tab === 'presales' ? 'Lead نمایشی جدید' : 'Ticket نمایشی جدید'}
-            </Button>
-          </>
+          <Button onClick={() => void load()} variant="outline">
+            <RefreshCw className="size-4" /> تازه‌سازی
+          </Button>
         }
-        description="Workspace یکپارچه Lead، Follow-up و پشتیبانی پس از فروش؛ تمام داده‌ها و عملیات این صفحه Preview هستند."
-        eyebrow="CUSTOMER-AFFAIRS-001 · Phase A"
-        title="امور مشتریان، سرنخ‌ها و پشتیبانی"
       />
-      <Alert
-        description={CUSTOMER_AFFAIRS_PREVIEW_NOTICE}
-        title="محیط طراحی بدون Persistence"
-        tone="warning"
-      >
-        <div className="mt-3">
-          <PreviewStateSwitcher onChange={setState} state={state} />
-        </div>
-      </Alert>
-      <section
-        aria-label="خلاصه Customer Affairs"
-        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
-      >
-        <SummaryCard
-          icon={Users}
-          label="Leadهای جدید"
-          value={newLeads.toLocaleString('fa-IR')}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Summary label="سرنخ باز" value={dashboard?.leads.open ?? 0} />
+        <Summary
+          label="پیگیری عقب‌افتاده"
+          value={dashboard?.leads.overdue ?? 0}
+          tone="warning"
         />
-        <SummaryCard
-          icon={Sparkles}
-          label="پیگیری‌های امروز"
-          value={todayFollowUps.toLocaleString('fa-IR')}
-        />
-        <SummaryCard
-          icon={Headphones}
-          label="Ticketهای باز"
-          value={openTickets.toLocaleString('fa-IR')}
-        />
-        <SummaryCard
-          icon={CalendarClock}
-          label="SLAهای نزدیک نقض"
+        <Summary label="تیکت باز" value={dashboard?.tickets.open ?? 0} />
+        <Summary
+          label="نقض SLA"
+          value={dashboard?.tickets.breached ?? 0}
           tone="danger"
-          value={slaAtRisk.toLocaleString('fa-IR')}
         />
-      </section>
-      {overdueCount ? (
-        <Alert
-          description="موارد عقب‌افتاده باید در آینده Task/Notification بسازند؛ در این فاز فقط هشدار UI نمایش داده می‌شود."
-          title="هشدار پیگیری و SLA"
-          tone="error"
-        />
-      ) : null}
-      <Tabs
-        onValueChange={(value) => setTab(value as WorkspaceTab)}
-        value={tab}
-      >
-        <TabsList className="grid w-full grid-cols-2 sm:w-auto">
-          <TabsTrigger value="presales">
-            <UserSearch aria-hidden="true" className="me-2 size-4" />
-            قبل از فروش
-          </TabsTrigger>
-          <TabsTrigger value="support">
-            <TicketCheck aria-hidden="true" className="me-2 size-4" />
-            بعد از فروش
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent className="mt-5" value="presales">
-          <LeadWorkspace
-            onOpen={(mode) => setForm({ kind: 'lead', mode })}
-            state={state}
+      </div>
+      <Card className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div aria-label="انتخاب فضای کاری" className="grid grid-cols-2 gap-2">
+          <Button
+            aria-pressed={tab === 'leads'}
+            onClick={() => selectTab('leads')}
+            variant={tab === 'leads' ? 'primary' : 'ghost'}
+          >
+            <Users className="size-4" /> پیش‌فروش
+          </Button>
+          <Button
+            aria-pressed={tab === 'tickets'}
+            onClick={() => selectTab('tickets')}
+            variant={tab === 'tickets' ? 'primary' : 'ghost'}
+          >
+            <Headphones className="size-4" /> پشتیبانی
+          </Button>
+        </div>
+        <Button
+          onClick={() => {
+            setCreating(true);
+            setDetail(null);
+          }}
+        >
+          <Plus className="size-4" />{' '}
+          {tab === 'leads' ? 'درخواست جدید' : 'تیکت جدید'}
+        </Button>
+      </Card>
+      {creating ? (
+        tab === 'leads' ? (
+          <LeadForm
+            onCancel={() => setCreating(false)}
+            onCreated={(row) => {
+              setCreating(false);
+              setLeads((items) => [row, ...items]);
+              void open(row.id);
+            }}
           />
-        </TabsContent>
-        <TabsContent className="mt-5" value="support">
-          <TicketWorkspace
-            onOpen={(mode) => setForm({ kind: 'ticket', mode })}
-            state={state}
+        ) : (
+          <TicketForm
+            onCancel={() => setCreating(false)}
+            onCreated={(row) => {
+              setCreating(false);
+              setTickets((items) => [row, ...items]);
+              void open(row.id);
+            }}
           />
-        </TabsContent>
-      </Tabs>
-      {form ? (
-        <PreviewForm
-          kind={form.kind}
-          mode={form.mode}
-          onClose={() => setForm(null)}
+        )
+      ) : detail ? (
+        <DetailPanel
+          detail={detail}
+          onBack={() => setDetail(null)}
+          onReload={reloadDetail}
+          tab={tab}
         />
-      ) : null}
+      ) : (
+        <>
+          <Card className="p-3">
+            <label className="relative block">
+              <Search
+                aria-hidden="true"
+                className="absolute start-3 top-3.5 size-4 text-muted-foreground"
+              />
+              <span className="sr-only">جستجو</span>
+              <Input
+                className="ps-10"
+                value={search}
+                onChange={(event) => changeSearch(event.target.value)}
+                placeholder="جستجو با شماره پیگیری یا عنوان"
+              />
+            </label>
+          </Card>
+          {state === 'loading' ? (
+            <div className="space-y-3">
+              <Skeleton className="h-24" />
+              <Skeleton className="h-24" />
+              <Skeleton className="h-24" />
+            </div>
+          ) : state === 'forbidden' ? (
+            <ErrorState
+              title="دسترسی ندارید"
+              description="مجوز مشاهده این بخش برای نقش فعلی صادر نشده است."
+            />
+          ) : state === 'error' ? (
+            <ErrorState
+              title="دریافت اطلاعات ناموفق بود"
+              description={error}
+              action={
+                <Button onClick={() => void load()} variant="outline">
+                  تلاش دوباره
+                </Button>
+              }
+            />
+          ) : state === 'empty' ? (
+            <EmptyState
+              title="رکوردی نیست"
+              description="فیلتر فعلی نتیجه‌ای ندارد یا هنوز رکوردی ثبت نشده است."
+              action={
+                <Button onClick={() => setCreating(true)}>
+                  ثبت اولین رکورد
+                </Button>
+              }
+            />
+          ) : (
+            <div className="grid gap-3">
+              {records.map((record) => (
+                <button
+                  className="w-full rounded-2xl border border-border bg-surface p-4 text-start shadow-sm transition hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  key={record.id}
+                  onClick={() => void open(record.id)}
+                  type="button"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        {record.trackingNumber}
+                      </p>
+                      <h2 className="mt-1 font-black">
+                        {'title' in record ? record.title : record.subject}
+                      </h2>
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge>
+                        {'stage' in record
+                          ? stageLabel[record.stage]
+                          : statusLabel[record.status]}
+                      </Badge>
+                      <Badge>{priorityLabel[record.priority]}</Badge>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <Clock3 className="size-3.5" />{' '}
+                      {new Date(record.nextActionAt).toLocaleString('fa-IR')}
+                    </span>
+                    <span>{record.nextAction}</span>
+                    <span className="ms-auto inline-flex items-center gap-1 text-primary">
+                      باز کردن <ArrowLeft className="size-3.5" />
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </main>
   );
 }
