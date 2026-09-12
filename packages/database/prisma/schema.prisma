@@ -89,6 +89,7 @@ model User {
   messagingConversationsCreated   MessagingConversation[]          @relation("MessagingConversationCreator")
   messagingMemberships            MessagingMember[]
   messagingMessagesSent           MessagingMessage[]               @relation("MessagingMessageSender")
+  workbenchFeedbackSubmitted      WorkbenchFeedback[]              @relation("WorkbenchFeedbackSubmitter")
   agencyProfilesManaged           AgencyOperationalProfile[]       @relation("AgencyAccountManager")
   b2bAuditEvents                  B2bAuditEvent[]                  @relation("B2bAuditActor")
   b2bRevisionsCreated             B2bAgreementRevision[]           @relation("B2bRevisionCreator")
@@ -178,6 +179,7 @@ model Branch {
   hrAuditEvents          HrAuditEvent[]
   hrNotifications        HrNotification[]
   messagingConversations MessagingConversation[]
+  workbenchFeedback     WorkbenchFeedback[]
 
   @@map("branches")
 }
@@ -317,6 +319,35 @@ model Notification {
   @@index([recipientUserId, occurredAt])
   @@index([sourceModule, entityType, entityId, occurredAt])
   @@map("notifications")
+}
+
+enum WorkbenchFeedbackDepartment {
+  FINANCE
+  RESERVATIONS
+  SALES
+  VISA
+  HUMAN_RESOURCES
+  MANAGEMENT
+}
+
+model WorkbenchFeedback {
+  id                String                      @id @db.Uuid
+  trackingNumber    String                      @unique @map("tracking_number") @db.VarChar(32)
+  requestHash       String                      @map("request_hash") @db.Char(64)
+  branchId          String                      @map("branch_id") @db.Uuid
+  department        WorkbenchFeedbackDepartment
+  subject           String                      @db.VarChar(200)
+  body              String                      @db.VarChar(10000)
+  isAnonymous       Boolean                     @default(false) @map("is_anonymous")
+  attachmentCount   Int                         @default(0) @map("attachment_count")
+  submittedByUserId String                      @map("submitted_by_user_id") @db.Uuid
+  submittedAt       DateTime                    @default(now()) @map("submitted_at") @db.Timestamptz(3)
+  branch            Branch                      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  submittedBy       User                        @relation("WorkbenchFeedbackSubmitter", fields: [submittedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([branchId, department, submittedAt])
+  @@index([submittedByUserId, submittedAt])
+  @@map("workbench_feedback")
 }
 
 enum MasterOrganizationRoleCode {

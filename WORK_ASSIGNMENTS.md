@@ -34,6 +34,13 @@
 - مرز مالکیت: هیچ Query مستقیم جدول، Migration، Dependency/Lockfile، IAM grant یا تغییر در producerهای فعال PC-A در Customers/Sales/Reservations/Finance انجام نمی‌شود. B2B shared-contract Owner برای قرارداد صرفاً خواندنی این endpoint در اختیار `PC-B/B2B-CRM-CONNECTIONS-002` است. Finance هنوز producer حسابداری سازمانی منتشر نکرده است؛ پورت رسمی B2B وضعیت unavailable را برمی‌گرداند و داده Sales به‌عنوان فاکتور یا دفترکل Finance معرفی نمی‌شود.
 - نتیجه: endpoint تجمیع Backend با اتصال دقیق `Organization → Customer → Sales Contract → Reservation`، کنترل مجوز و شعبه، projection حداقلی، failure isolation و مصرف تک-endpoint در Web تکمیل شد. ۱۲۶ تست B2B API و ۱۲۹ تست Organizations Web، lint و typecheck محدوده Contracts/API/Web و Production Build هر دو API و Web موفق‌اند. سند اجرا و مرزهای باقی‌مانده در `docs/tasks/B2B-CRM-CONNECTIONS-002.md` است.
 - Final lock state: `RELEASED — PC-B/B2B-CRM-CONNECTIONS-002 ready for review`. هیچ Migration، Dependency/Lockfile، IAM grant یا قفل producer دریافت نشد؛ B2B shared-contract slice این Task نیز آزاد است.
+## WORKBENCH-034 — PC-B — LOCAL_COMPLETE / INTEGRATED_BY_WORKBENCH-036
+
+- Persisted and idempotent Workbench feedback is integrated with department routing,
+  anonymous recipient projection, Documents-backed attachments, recipient
+  Notifications and sender/recipient detail authorization. Its additive migration
+  and shared-contract locks were released after isolated rehearsal and full checks;
+  WORKBENCH-036 now carries the completed producer without changing its boundaries.
 
 ## WORKBENCH-021 — PC-B — LOCAL_COMPLETE / RUNTIME_ACTIVE
 

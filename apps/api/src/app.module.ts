@@ -15,6 +15,7 @@ import { MasterDataModule } from './master-data/master-data.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SalesModule } from './sales/sales.module';
+import { WorkbenchFeedbackModule } from './workbench-feedback/workbench-feedback.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { SalesModule } from './sales/sales.module';
     SalesModule,
     NotificationsModule,
     HrModule,
+    WorkbenchFeedbackModule,
   ],
   controllers: [HealthController],
   providers: [HealthService],

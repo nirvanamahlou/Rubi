@@ -363,6 +363,28 @@ export class DocumentsRepository {
     });
   }
 
+  feedbackAttachmentIds(input: {
+    documentIds: readonly string[];
+    feedbackId: string;
+    branchId: string;
+    ownerUserId: string;
+  }) {
+    if (!input.documentIds.length) return Promise.resolve([]);
+    return this.database.client.document.findMany({
+      where: {
+        id: { in: [...input.documentIds] },
+        branchId: input.branchId,
+        ownerUserId: input.ownerUserId,
+        sourceModule: 'WORKBENCH',
+        sourceEntityType: 'WorkbenchFeedback',
+        sourceEntityId: input.feedbackId,
+        archiveStatus: 'ACTIVE',
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+  }
+
   findDetails(ids: readonly string[], branchIds: readonly string[]) {
     return this.database.client.document.findMany({
       where: {
