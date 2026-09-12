@@ -1,6 +1,6 @@
 # Work Assignments
 
-## WORKBENCH-021 — PC-B — IN_PROGRESS / MIGRATION_OWNER
+## WORKBENCH-021 — PC-B — LOCAL_COMPLETE / RUNTIME_ACTIVE
 
 - User authorizes the bounded CRM messaging slice on
   `codex/pc-b-workbench-messaging-activation` from `origin/develop@043871a`:
@@ -19,6 +19,16 @@
   server and does not expose source participants. Migration backup/rehearsal,
   focused tests, lint, typecheck and production builds are required before
   runtime handoff; no synthetic message or group is sent to real users during QA.
+- Completed: IAM internal-contact projection, direct/group conversation storage,
+  membership-gated read/send, server-side forwarding and the Workbench contacts,
+  group and forward UI are active. All 56 baseline migrations plus Messaging
+  passed on an isolated database. The additive migration was backed up and
+  applied to `rubi_hr_current_20260908`; existing 38 users, five branches and 44
+  documents were preserved. Combined runtime `05768d7` is healthy on Web3100
+  (PID5864) and API4190 (PID22080); authenticated browser QA found three eligible
+  contacts and the complete group form without creating real data. 1,222 API and
+  1,327 Web tests, lint, typechecks and both production builds passed. Migration,
+  central-contract and implementation reservations are RELEASED for review.
 
 ## B2B-ORGANIZATION-PERMANENT-DELETE-001 — PC-B — UI_VERIFIED
 
