@@ -4,12 +4,17 @@ import type { MasterDataRecord, SalesContractDetail } from '@rubi/contracts';
 
 import {
   ReservationReceipts,
+  reservationPayerName,
   reservationReceiptRows,
+  reservationReceiptSummary,
 } from './reservation-receipts';
 
 describe('reservation receipts', () => {
   it('projects recorded payment facts without inventing missing bank data', () => {
     const contract = {
+      customerId: 'customer-1',
+      payerCustomerId: 'customer-1',
+      customerNameSnapshot: 'مشتری نمونه',
       payments: [
         {
           id: 'payment-1',
@@ -51,6 +56,7 @@ describe('reservation receipts', () => {
 
     const rows = reservationReceiptRows(contract, banks);
     expect(rows[0]).toMatchObject({
+      payer: 'مشتری نمونه',
       method: 'چک',
       status: 'تأییدشده مالی',
       amount: '1,250,000',
@@ -64,6 +70,43 @@ describe('reservation receipts', () => {
       transferAt: 'ثبت نشده',
       registeredBy: 'ثبت نشده',
       bank: 'ثبت نشده',
+    });
+  });
+
+  it('shows the contract payer and totals only Finance-confirmed receipts', () => {
+    const contract = {
+      id: 'contract-1',
+      customerId: 'customer-1',
+      payerCustomerId: 'payer-1',
+      customerNameSnapshot: 'طرف قرارداد',
+      passengersDetail: [
+        {
+          customerId: 'payer-1',
+          displayNameSnapshot: 'پرداخت‌کننده نمونه',
+        },
+      ],
+      balances: [
+        {
+          amount: '1750000',
+          currencyCode: 'IRR',
+          confirmedPaid: '1250000',
+          pendingFinance: '500000',
+          outstanding: '500000',
+        },
+        {
+          amount: '50',
+          currencyCode: 'USD',
+          confirmedPaid: '0',
+          pendingFinance: '0.00',
+          outstanding: '50',
+        },
+      ],
+    } as unknown as SalesContractDetail;
+
+    expect(reservationPayerName(contract)).toBe('پرداخت‌کننده نمونه');
+    expect(reservationReceiptSummary(contract)).toEqual({
+      confirmed: [{ amount: '1,250,000', currency: 'IRR' }],
+      pending: [{ amount: '500,000', currency: 'IRR' }],
     });
   });
 
