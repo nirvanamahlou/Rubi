@@ -10,6 +10,10 @@
 - وضعیت فعلی `READY_FOR_MERGE` است: نصب Frozen، Prisma، lint، typecheck، ۲۶۵۴
   تست و Build شش Task/۴۶ Route پاس شدند. `main` در این عملیات تغییر نمی‌کند.
 
+## WORKBENCH-015 — وسط‌چین تنظیمات
+
+برچسب و آیکن هر چهار اقدام حساب/تنظیمات میزکار وسط‌چین شد؛ تغییر فقط روی grid همان بخش است. Lint/typecheck و build۴۳route موفق. Web3100 source12c7c41/PID16500/manifesthr005-a72efdb4f2700f73؛ حذف subtitle آژانسe03afcf و تغییرات قبلی حفظ شدند. API دست‌نخورده؛ PR183 پیش‌نویس.
+
 ## WORKBENCH-014 — نمای کارت‌های یادداشت
 
 براساس تصاویر552/553، دفتر یادداشت با کارت‌های کرم سه‌ستونه، جست‌وجو، فیلتر پوشه/تاریخ، پوشه جدید و کنترل ویرایش/سنجاق/حذف قابل بازگردانی ساخته شد. چک‌لیست روی کارت تیک و خط‌خوردن دارد. سه کارت اولیه صریحاً «قالب نمونه» هستند؛ اعمال ویرایش فقط پیش‌نویس حافظه صفحه است، نه ذخیره در حساب. هیچ API، Schema، Migration، browser storage یا ارسال داده ایجاد نشد؛ مجوز توسعه persistence همچنان پاسخ نگرفته است. پنجره‌های ویرایش هنگام بسته‌شدن دیگر میزکار را دوباره بارگذاری نمی‌کنند. Typecheck/lint و ۳۷ تست موجود میزکار موفق؛ runtime/QA نهایی پس از handoff ثبت می‌شود.
@@ -2024,5 +2028,9 @@ Runtime confirmed: source1995e160afb1fd59b47832199d524a4d883a341c / hr005-de87fc
 
 ## 2026-09-11 — B2B directory subtitle (PC-B)
 Sourcee03afcf removes requested explanatory paragraph below the directory heading. Scoped lint/typecheck and113 tests passed. Combined runtime buildd59b860 preserves1e295db and native browser history fix. No data/API changes.
-
 WORKBENCH-014 نهایی: build۴۳route و بررسی مرورگر سه کارت، تیک/خط‌خوردن، اعمال ویرایش و حفظ آن پس از بستن فرم موفق بود. Web3100 source1e295db/PID20512/manifesthr005-3938c4fc437ae857؛ تغییر تاریخچه آژانس1995e16 حفظ شد. API4190 بدون تغییر/health200. نمونه آزمایشی با reload بازنشانی شد. PR180 پیش‌نویس، بدون merge.
+
+Runtime d59b860 / hr005-785b78ad01bbc39f / WebPID22512 verified: heading remains and requested subtitle absent in browser DOM.43-route build passed; API unchanged. Draft PR181; Web handed back to workbench owner.
+
+## 2026-09-11 — B2B contract filter alignment (PC-B)
+cc3027d+d1160ed fix flex cascade overriding dossier grid; date, branch and action controls align in6/3/1 responsive columns.113 tests/typecheck passed. Runtimebuildfe0ae53 preserves12c7c41; no API or data change.

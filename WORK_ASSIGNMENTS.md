@@ -17,6 +17,12 @@
   API پس از Merge همین Baseline انجام می‌شود. جزئیات در
   `docs/tasks/UNIFIED-LATEST-0912.md` ثبت شده است.
 
+## B2B-CONTRACT-FILTER-LAYOUT-001 — PC-B — READY_FOR_REVIEW
+
+Reserve corporate-design.css agreement filter layout on codex/pc-b-b2b-contract-filter-layout from2e43e0e. Resolve flex overriding the shared filter grid; maintain date/branch filters and compact aligned actions. No data/API/dependency changes.
+
+Sourcecc3027d+d1160ed: explicit grid specificity and6/3/1 responsive columns;113 tests/typecheck pass. Combined buildfe0ae53 preserves12c7c41. Release source reservation.
+
 ## B2B-REMOVE-SUBTITLE-001 — PC-B — READY_FOR_REVIEW
 
 Reserve Organizations workspace heading copy on codex/pc-b-b2b-remove-subtitle from282227a. Remove requested directory subtitle only; no data/API/dependency changes.
@@ -34,6 +40,10 @@ User clarified browser Back. Extend scope to organizations-workspace.tsx and mod
 Reserve Organizations directory enrichment, dossier role summary and focused connection tests/report on codex/pc-b-b2b-connections-audit. Consume existing B2B/MasterData/IAM public APIs only. Finance producer and shared Sales contracts remain with PC-A; no migration/dependency/central API edits. Preserve latest Web runtime29cfe14 and coordinate integration.
 
 Source9b1c33c includes scoped corporate-profile boundary copy.111 tests, scoped lint and typecheck pass. Audit/handoff: docs/tasks/B2B-CONNECTIONS-AUDIT-001.md. Combined Web build on9d05cd6 preserves latest7bae2a4; source reservations released. Missing Finance/Sales/notification producers remain explicitly incomplete.
+
+## WORKBENCH-015-SETTINGS-CENTER — PC-B — DONE / UI_VERIFIED
+
+- Reserve only account action-grid alignment in workbench-workspace.tsx and own status docs. Center all settings buttons/links, no shared UI/API/dependency change. Base78bda1f; branch codex/pc-b-workbench-settings-center. Coordinate inclusion in next shared Web3100 build.
 
 ## WORKBENCH-014-NOTE-CARDS — PC-B — UI_READY / LOCAL_RUNTIME_3100
 

@@ -55,6 +55,21 @@
   .agreement-toolbar {
     align-items: flex-end;
   }
+  .agreement-toolbar.dossier-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: end;
+    gap: 12px;
+    @media (min-width: 1440px) {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+    @media (max-width: 640px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .agreement-toolbar.dossier-filter-grid > .field {
+    min-width: 0;
+  }
   .agreement-toolbar > .field {
     margin: 0;
     min-width: 180px;
