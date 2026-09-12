@@ -1,8 +1,9 @@
 # Work Assignments
 
-## CUSTOMER-AFFAIRS-REMOVE-TAGLINE — PC-B — IN_PROGRESS
+## CUSTOMER-AFFAIRS-REMOVE-TAGLINE — PC-B — DONE / VERIFIED
 
 - User requests removal of the visible header tagline «همراه مشتری، از اولین درخواست تا آخرین پیگیری». Reserve only the Customer Affairs Rubi workspace, its scoped structural test and own status entry on `codex/pc-b-customer-affairs-remove-tagline`, preserving the title, actions, visual polish, data, API, schema, dependencies and all other modules. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190 stays untouched. No merge.
+- Removed the tagline only and extended the structural regression assertion. Scoped ESLint and formatting passed, the focused workspace suite passed (4/4), and the production Web build/typecheck completed across 46 routes. Authenticated browser QA verified the populated overview without the tagline on Web3100/PID29056 from source `f894409`; API4190/PID12504 and stored data were unchanged. No merge.
 
 ## CUSTOMER-AFFAIRS-VISUAL-POLISH — PC-B — DONE / VERIFIED
 
