@@ -15,6 +15,7 @@
 ## مرزها و وابستگی
 
 - Branch: `codex/pc-b-airline-baggage-rules`
+- Pull Request: #240 به مقصد `develop`.
 - Base/Dependency: HEAD آماده بازبینی PR #236، commit `96b605b7`.
 - بدون Schema/Migration، Seed عملیاتی، Dependency/Lockfile، IAM یا تغییر API/Contract.
 - هیچ فایل متعلق به PC-A یا PRهای هم‌زمان تغییر نکرد.
