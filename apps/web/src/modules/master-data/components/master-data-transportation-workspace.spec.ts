@@ -12,12 +12,11 @@ const source = readFileSync(
 );
 
 describe('transportation workspace', () => {
-  it('implements every mockup catalog tab without a profile section', () => {
+  it('keeps baggage rules inside the airline section without a profile route', () => {
     for (const label of [
       'ایرلاین‌ها',
       'انواع هواپیما',
       'کلاس پروازی',
-      'قواعد بار',
       'قالب Manifest',
       'شرکت‌های ریلی',
       'انواع قطار',
@@ -28,9 +27,16 @@ describe('transportation workspace', () => {
 
     const tabs = source.slice(
       source.indexOf('const tabs'),
-      source.indexOf('const attributeLabels'),
+      source.indexOf('type TransportResource'),
     );
     expect(tabs).not.toContain('پروفایل ایرلاین');
+    expect(tabs).not.toContain("resource: 'baggage-rules'");
+    expect(source).toContain('const airlineViews');
+    expect(source).toContain('بخش‌های داخلی فرم ایرلاین');
+    expect(source).toContain("resource: 'baggage-rules', label: 'قواعد بار'");
+    expect(source).toContain(
+      "resource === 'airlines' || resource === 'baggage-rules'",
+    );
     expect(source).toContain('<MasterDataProfileDialog');
     expect(source).toContain('setProfileOpen(true)');
   });

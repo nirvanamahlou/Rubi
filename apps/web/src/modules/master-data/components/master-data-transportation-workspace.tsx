@@ -90,7 +90,6 @@ const tabs = [
   { resource: 'airlines', label: 'ایرلاین‌ها', icon: Plane },
   { resource: 'aircraft-types', label: 'انواع هواپیما', icon: Plane },
   { resource: 'cabin-classes', label: 'کلاس پروازی', icon: Armchair },
-  { resource: 'baggage-rules', label: 'قواعد بار', icon: Luggage },
   {
     resource: 'manifest-templates',
     label: 'قالب Manifest',
@@ -106,7 +105,16 @@ const tabs = [
   icon: typeof Plane;
 }[];
 
-type TransportResource = (typeof tabs)[number]['resource'];
+type TransportResource = (typeof tabs)[number]['resource'] | 'baggage-rules';
+
+const airlineViews = [
+  { resource: 'airlines', label: 'فهرست ایرلاین‌ها', icon: Plane },
+  { resource: 'baggage-rules', label: 'قواعد بار', icon: Luggage },
+] as const satisfies readonly {
+  resource: Extract<TransportResource, 'airlines' | 'baggage-rules'>;
+  label: string;
+  icon: typeof Plane;
+}[];
 
 const attributeLabels: Record<string, string> = {
   englishName: 'نام انگلیسی',
@@ -213,7 +221,17 @@ export function MasterDataTransportationWorkspace() {
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const definition = getMasterDataDefinition(resource);
-  const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
+  const isAirlineSection =
+    resource === 'airlines' || resource === 'baggage-rules';
+  const pageDefinition = isAirlineSection
+    ? getMasterDataDefinition('airlines')
+    : definition;
+  const currentTab =
+    tabs.find((tab) =>
+      tab.resource === 'airlines'
+        ? isAirlineSection
+        : tab.resource === resource,
+    ) ?? tabs[0];
   const CurrentIcon = currentTab.icon;
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
@@ -651,8 +669,8 @@ export function MasterDataTransportationWorkspace() {
             <ArrowRight className="size-4" /> همه بخش‌ها
           </Link>
         }
-        description={definition.description}
-        title={definition.label}
+        description={pageDefinition.description}
+        title={pageDefinition.label}
       />
       <div className="flex w-full flex-wrap justify-end gap-2">
         <Button
@@ -679,9 +697,13 @@ export function MasterDataTransportationWorkspace() {
         >
           {tabs.map((tab) => {
             const Icon = tab.icon;
+            const isCurrent =
+              tab.resource === 'airlines'
+                ? isAirlineSection
+                : resource === tab.resource;
             return (
               <button
-                aria-current={resource === tab.resource ? 'page' : undefined}
+                aria-current={isCurrent ? 'page' : undefined}
                 className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-primary aria-[current=page]:shadow-sm"
                 key={tab.resource}
                 onClick={() => changeResource(tab.resource)}
@@ -693,6 +715,29 @@ export function MasterDataTransportationWorkspace() {
           })}
         </nav>
       </Card>
+      {isAirlineSection ? (
+        <Card className="overflow-x-auto p-2">
+          <nav
+            aria-label="بخش‌های داخلی فرم ایرلاین"
+            className="flex min-w-max gap-1"
+          >
+            {airlineViews.map((view) => {
+              const Icon = view.icon;
+              return (
+                <button
+                  aria-current={resource === view.resource ? 'page' : undefined}
+                  className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-primary/10 aria-[current=page]:text-primary"
+                  key={view.resource}
+                  onClick={() => changeResource(view.resource)}
+                  type="button"
+                >
+                  <Icon className="size-4" /> {view.label}
+                </button>
+              );
+            })}
+          </nav>
+        </Card>
+      ) : null}
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${definition.label}`} />
       <FilterBar className="grid sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1fr)_12rem_auto]">
         {columnFilterControls}
