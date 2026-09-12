@@ -13,6 +13,17 @@ const componentSource = readFileSync(
   ),
   'utf8',
 );
+const coreSource = readFileSync(
+  join(
+    process.cwd(),
+    'src',
+    'modules',
+    'finance',
+    'components',
+    'finance-core-workspace.tsx',
+  ),
+  'utf8',
+);
 const formSource = readFileSync(
   join(
     process.cwd(),
@@ -31,8 +42,20 @@ const pageSource = readFileSync(
 
 describe('finance workspace component contract', () => {
   it('routes the finance page to the dedicated workspace', () => {
-    expect(pageSource).toContain('FinanceWorkspace');
+    expect(pageSource).toContain('FinanceCoreWorkspace');
     expect(pageSource).not.toContain('ModuleOverview');
+  });
+
+  it('separates accounting from the financial request inbox', () => {
+    expect(coreSource).toContain('۱. حسابداری');
+    expect(coreSource).toContain('۲. مالی / کارتابل درخواست‌ها');
+    expect(coreSource).toContain('درخت کدینگ حساب‌ها');
+    expect(coreSource).toContain('گروه ← کل ← معین ← تفصیلی');
+    expect(coreSource).toContain('حساب بانکی یا صندوق مقصد');
+    expect(coreSource).toContain('حساب بانکی یا صندوق مبدأ');
+    expect(coreSource).toContain('Idempotency Key');
+    expect(coreSource).toContain('هیچ درخواست عملیاتی ثبت نمی‌شود');
+    expect(coreSource).toContain('<FinanceWorkspace />');
   });
 
   it('covers dashboard, filters, internal navigation and all preview states', () => {
