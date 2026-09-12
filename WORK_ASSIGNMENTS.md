@@ -130,6 +130,16 @@
   into `develop` as `1707d980`. All temporary reservations are released and the
   dependency/lockfile remained unassigned.
 
+## WORKBENCH-037 — PC-B — COMPLETE / TESTED
+
+- Remove the date and authorized-branch count block from the Workbench greeting card
+  at the user's explicit request. Reserve `workbench-workspace.tsx` and this status
+  entry only on `codex/pc-b-workbench-remove-greeting-meta`. No API, schema,
+  dependency, shared layout or operational-data change.
+- Removed the complete metadata block and its unused `HeaderToday` import. Web lint,
+  Repository typecheck (9 jobs) and the production Web build (46 routes) pass. The
+  scoped source reservation is released.
+
 ## B2B-CRM-CONNECTIONS-002 — PC-B — READY_FOR_REVIEW / TESTED
 
 - درخواست مالک محصول: ارتباط پرونده ۳۶۰ آژانس با داده‌های واقعی موجود CRM بررسی و اتصال‌های غایب در محدوده مجاز تکمیل شود. شاخه `codex/pc-b-b2b-crm-connections` از `origin/develop@6a4e041` و Worktree مستقل `C:\Users\admin\Rubi-b2b-crm-connections` استفاده می‌شود.

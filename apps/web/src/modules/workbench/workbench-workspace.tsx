@@ -25,7 +25,6 @@ import {
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { HeaderToday } from '@/components/layout/header-today';
 import {
   Alert,
   Badge,
@@ -261,12 +260,6 @@ export function WorkbenchWorkspace() {
                           : 'شرکتی انتخاب نشده است'}
                   </p>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <HeaderToday />
-                <p className="text-xs text-muted-foreground">
-                  {home.user.branches.length.toLocaleString('fa-IR')} شعبه مجاز
-                </p>
               </div>
             </Card>
             <Tabs
