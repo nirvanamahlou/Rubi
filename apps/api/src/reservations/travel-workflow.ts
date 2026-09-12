@@ -40,7 +40,7 @@ export function transitionTravelWorkflow(
     throw new Error('دلیل عملیات را تا ۵۰۰ نویسه وارد کنید.');
   if (
     current.supplierStatus === 'CANCELLED' &&
-    !['NOTE', 'VOUCHER_SETTINGS'].includes(command.action)
+    !['NOTE', 'VOUCHER_SETTINGS', 'REOPEN'].includes(command.action)
   )
     throw new Error('این درخواست بسته شده است و قابل تغییر نیست.');
   if (
@@ -116,6 +116,14 @@ export function transitionTravelWorkflow(
       break;
     case 'CANCEL':
       next.supplierStatus = 'CANCELLED';
+      break;
+    case 'REOPEN':
+      if (current.supplierStatus !== 'CANCELLED')
+        throw new Error('فقط درخواست ابطال‌شده قابل بازگردانی است.');
+      next.supplierStatus = 'NEW';
+      next.supplierReference = '';
+      next.voucherIssued = false;
+      next.insuranceWarningAcknowledged = false;
       break;
     case 'INSURANCE':
       if (

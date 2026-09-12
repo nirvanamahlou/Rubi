@@ -110,6 +110,13 @@ describe('travel workflow', () => {
         ['p'],
       ),
     ).toThrow();
+    const reopened = transition(cancelled, command(cancelled, 'REOPEN'), ['p']);
+    expect(reopened.supplierStatus).toBe('NEW');
+    expect(reopened.version).toBe(cancelled.version + 1);
+    expect(reopened.supplierReference).toBe('');
+    expect(() =>
+      transition(reopened, command(reopened, 'REOPEN'), ['p']),
+    ).toThrow('فقط درخواست ابطال‌شده');
   });
   it('rejects foreign/duplicate guests and accepts manual age category without mutating source', () => {
     const state = initialTravelWorkflow();

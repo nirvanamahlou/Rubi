@@ -182,6 +182,7 @@ export interface TravelWorkflowCommandV1 {
     | 'REQUEST_SUPPLIER'
     | 'CONFIRM_SUPPLIER'
     | 'CANCEL'
+    | 'REOPEN'
     | 'INSURANCE'
     | 'ISSUE_VOUCHER'
     | 'ARRANGEMENT'

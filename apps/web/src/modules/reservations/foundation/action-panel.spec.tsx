@@ -68,6 +68,25 @@ describe('selected contract actions', () => {
     expect(html).toContain('در حال دریافت مشخصات کامل قرارداد');
     expect(html).not.toContain('Test branch');
   });
+  it('opens the complete contract correction workspace from edit', () => {
+    const html = renderToStaticMarkup(
+      <ContractActionContent action="ویرایش" request={request} />,
+    );
+    expect(html).toContain('اصلاح قرارداد');
+    expect(html).toContain('SYNTH-01');
+    for (const section of [
+      'طرف قرارداد',
+      'پرواز',
+      'هتل',
+      'سایر',
+      'مسافران',
+      'سوابق',
+      'ابطال قرارداد',
+      'تأیید و لغو ابطال',
+    ])
+      expect(html).toContain(section);
+    expect(html).not.toContain('ثبت ترتیب و رده سنی');
+  });
   it('loads recorded receipts for the selected Sales contract', () => {
     const html = renderToStaticMarkup(
       <ContractActionContent action="دریافت‌ها" request={request} />,
