@@ -1,5 +1,26 @@
 # Work Assignments
 
+## FINANCE-002A-ACCOUNTING-AND-INBOX — PC-A — IN_PROGRESS
+
+- درخواست مالک محصول در 2026-09-12: تکمیل Phase A حسابداری و Vertical Slice کارتابل
+  دریافت/پرداخت در فضای مستقل `/finance`. Branch مستقل
+  `codex/pc-a-finance-core-accounting` از `origin/develop@4717b13` و Worktree مستقل
+  `C:/Users/niayeshseir-1/Rubi-finance-core-accounting` است؛ `COMPUTER_ID=PC-A`.
+- محدوده رزروشده: `apps/api/src/finance/**`، `apps/web/src/modules/finance/**`، route موجود
+  `/finance`، `packages/contracts/src/finance/**`، تست‌های Finance و سند
+  `docs/tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md`. تغییرات اسناد مرکزی فقط به ورودی
+  افزایشی همین Task محدود است و ورودی هیچ مالک دیگری بازنویسی نمی‌شود.
+- قفل Migration/Central Docs و قراردادهای IAM/Sales/Travel نزد Task فعال رزرواسیون باقی
+  می‌ماند. بنابراین Prisma Schema/Migration/Seed، Permission seed، Root contract export،
+  Dependency/Lockfile، فایل‌های Sales/Reservations/Procurement/HR/Documents و Runtime یا
+  Portهای آن‌ها تغییر نمی‌کند. Finance فقط Reference/Snapshot نسخه‌دار مصرف می‌کند.
+- اجرای مجاز تا آزادشدن قفل: Domain/Application و UI واقعی از نظر validation و state
+  handling، بدون Controller/Persistence یا موفقیت عملیاتی جعلی. Web مالی فقط روی 3200 و
+  API مالی فقط روی 4200 Smoke می‌شود و هیچ listener متعلق به رزرواسیون متوقف نمی‌شود.
+- معیارها، قفل‌ها، قراردادهای producer/consumer و موارد مسدود در
+  `docs/tasks/FINANCE-002A-ACCOUNTING-AND-INBOX.md` ثبت می‌شوند. Push و Draft PR به
+  `develop` مجاز است؛ Merge، Force Push و تغییر مستقیم `main`/`develop` ممنوع است.
+
 ## HR-013-CONNECTIONS — PC-B — READY_FOR_OWNER_APPROVED_MERGE
 
 - User requests HR connections to all main-menu modules. Reserve HR API/Web and HR contracts, HR receiving-permission seed entries, and one additive AppShell connection outlet on `codex/pc-b-hr-module-connections` from `origin/develop@e07c0c6`. Scope, producer/consumer compatibility and acceptance boundaries: `docs/tasks/HR-013-CONNECTIONS.md`.
