@@ -24,6 +24,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import { ErrorState } from '@/components/ui/surfaces';
+import { useSuppressHrConnections } from '@/modules/hr/hr-connections-visibility';
 import {
   customerAffairsApi as api,
   CustomerAffairsApiError,
@@ -120,6 +121,7 @@ type Loaded = {
 };
 
 export function CustomerAffairsRubiWorkspace() {
+  useSuppressHrConnections(true);
   const router = useRouter();
   const params = useSearchParams();
   const requested = params.get('view');

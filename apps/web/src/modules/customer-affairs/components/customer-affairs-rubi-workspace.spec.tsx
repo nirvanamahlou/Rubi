@@ -39,6 +39,14 @@ describe('Rubi Customer Affairs navigation', () => {
     expect(html).not.toContain('سرنخ‌های باز'); // No fabricated counts before the API resolves.
   });
 
+  it('suppresses the supplementary HR requests outlet on Customer Affairs', () => {
+    const source = readFileSync(
+      new URL('./customer-affairs-rubi-workspace.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(source).toContain('useSuppressHrConnections(true)');
+  });
+
   it('retains the legacy ticket URL and support subnavigation', () => {
     route.query = 'tab=tickets';
     const html = renderToStaticMarkup(<CustomerAffairsRubiWorkspace />);

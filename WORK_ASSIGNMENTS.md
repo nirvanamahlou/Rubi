@@ -1,5 +1,9 @@
 # Work Assignments
 
+## CUSTOMER-AFFAIRS-REMOVE-HR-OUTLET — PC-B — IN_PROGRESS
+
+- User requests removal of the supplementary «درخواست‌های منابع انسانی» card from Customer Affairs only. Reserve the Customer Affairs Rubi workspace, its scoped structural test and own status entry on `codex/pc-b-customer-affairs-remove-hr-outlet`; use the existing public HR visibility contract so the HR module and its outlet on all other routes remain unchanged. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190, stored data, schema, permissions and dependencies stay untouched. No merge.
+
 ## CUSTOMER-AFFAIRS-REMOVE-SETTINGS — PC-B — DONE / VERIFIED
 
 - User requests removal of the Customer Affairs settings section. Reserve only the Rubi workspace/component CSS, scoped navigation test and own status entry on `codex/pc-b-customer-affairs-remove-settings`; remove the settings tab, route view, read-only panel and dead local styling while preserving the four remaining sections, visual polish, data, API, schema, permissions, dependencies and global system settings. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190 stays untouched. No merge.
