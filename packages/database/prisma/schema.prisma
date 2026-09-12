@@ -2105,6 +2105,12 @@ model Customer {
   passportNumberFingerprint String?                      @unique @db.Char(64)
   passportNumberMasked      String?                      @db.VarChar(24)
   passportExpiryDate        DateTime?                    @db.Date
+  passportFirstName         String?                      @db.VarChar(120)
+  passportLastName          String?                      @db.VarChar(120)
+  gender                    String?                      @db.Char(1)
+  nationalityCode           String?                      @db.Char(3)
+  passportIssuingCountryCode String?                     @db.Char(3)
+  birthCountryCode          String?                      @db.Char(3)
   isActive                  Boolean                      @default(true)
   isCustomer                Boolean                      @default(true)
   isPassenger               Boolean                      @default(false)

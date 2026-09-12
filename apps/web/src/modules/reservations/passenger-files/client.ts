@@ -6,7 +6,10 @@ export interface PassengerName {
   lastName: string;
   displayName: string;
   ageCategory: 'ADL' | 'CHD' | 'INF' | null;
-  gender: null;
+  gender: 'M' | 'F' | null;
+  passportFirstName: string | null;
+  passportLastName: string | null;
+  nationalityCode: string | null;
   birthDate: string | null;
   birthDateMasked: boolean;
   nationalId: string | null;
@@ -14,7 +17,8 @@ export interface PassengerName {
   passportNumber: string | null;
   passportNumberMasked: boolean;
   passportExpiryDate: string | null;
-  passportIssuePlace: null;
+  passportIssuePlace: string | null;
+  birthCountryCode: string | null;
   version: number;
 }
 export interface PassengersResponse {

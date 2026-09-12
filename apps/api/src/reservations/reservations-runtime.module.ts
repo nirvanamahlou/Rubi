@@ -48,6 +48,10 @@ import { ReservationsPublicService } from './reservations-public.service';
 import { ReservationHotelPurchaseService } from './reservation-hotel-purchase.service';
 import type { ReservationHotelPurchaseInputV1 } from '@rubi/contracts';
 import { ReservationServicePurchaseService } from './reservation-service-purchase.service';
+import {
+  ReservationManifestController,
+  ReservationManifestService,
+} from './reservation-manifest';
 
 @Controller('reservations/requests')
 @UseGuards(AuthGuard)
@@ -288,6 +292,7 @@ export class ReservationRequestsController {
   controllers: [
     ReservationRequestsController,
     ReservationPassengerFilesController,
+    ReservationManifestController,
   ],
   providers: [
     AuthGuard,
@@ -297,6 +302,7 @@ export class ReservationRequestsController {
     ReservationsPublicService,
     ReservationHotelPurchaseService,
     ReservationServicePurchaseService,
+    ReservationManifestService,
   ],
   exports: [
     ReservationsPublicService,

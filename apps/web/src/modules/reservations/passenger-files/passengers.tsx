@@ -106,6 +106,8 @@ export function ReservationPassengers({ id }: { id: string }) {
             <tr>
               <th>نام</th>
               <th>نام خانوادگی</th>
+              <th>نام لاتین پاسپورت</th>
+              <th>نام خانوادگی لاتین پاسپورت</th>
               <th>رده سنی</th>
               <th>جنسیت</th>
               <th>تاریخ تولد</th>
@@ -113,6 +115,8 @@ export function ReservationPassengers({ id }: { id: string }) {
               <th>شماره پاسپورت</th>
               <th>انقضای پاسپورت</th>
               <th>محل صدور پاسپورت</th>
+              <th>ملیت</th>
+              <th>کشور محل تولد</th>
               <th>عملیات</th>
             </tr>
           </thead>
@@ -132,6 +136,8 @@ export function ReservationPassengers({ id }: { id: string }) {
                     form={`passenger-${row.id}`}
                   />
                 </td>
+                <td>{value(row.passportFirstName)}</td>
+                <td>{value(row.passportLastName)}</td>
                 <td>
                   <Input
                     aria-label={`نام خانوادگی مسافر ${i + 1}`}
@@ -154,6 +160,8 @@ export function ReservationPassengers({ id }: { id: string }) {
                 <td>{value(row.passportNumber, row.passportNumberMasked)}</td>
                 <td>{value(row.passportExpiryDate)}</td>
                 <td>{value(row.passportIssuePlace)}</td>
+                <td>{value(row.nationalityCode)}</td>
+                <td>{value(row.birthCountryCode)}</td>
                 <td>
                   <form
                     id={`passenger-${row.id}`}

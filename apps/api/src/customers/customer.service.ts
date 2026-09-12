@@ -179,6 +179,23 @@ function prepareMutation(
     )
       throw new BadRequestException('تاریخ انقضای پاسپورت معتبر نیست.');
   }
+  for (const [field, label] of [
+    ['passportFirstName', 'نام لاتین پاسپورت'],
+    ['passportLastName', 'نام خانوادگی لاتین پاسپورت'],
+  ] as const) {
+    const value = input[field];
+    if (value && !/^[A-Za-z][A-Za-z '-]{0,119}$/.test(value.trim()))
+      throw new BadRequestException(`${label} باید با حروف لاتین ثبت شود.`);
+  }
+  for (const field of [
+    'nationalityCode',
+    'passportIssuingCountryCode',
+    'birthCountryCode',
+  ] as const) {
+    const value = input[field];
+    if (value && !/^[A-Z]{3}$/.test(value.trim().toUpperCase()))
+      throw new BadRequestException('کد کشور باید سه حرف لاتین ISO باشد.');
+  }
   if (!update && roles.has('passenger') && !input.birthDate)
     throw new BadRequestException({
       code: 'CUSTOMER_PASSENGER_BIRTH_DATE_REQUIRED',
@@ -216,6 +233,25 @@ function prepareMutation(
             : null,
         }
       : {}),
+    ...Object.fromEntries(
+      (
+        [
+          'passportFirstName',
+          'passportLastName',
+          'gender',
+          'nationalityCode',
+          'passportIssuingCountryCode',
+          'birthCountryCode',
+        ] as const
+      )
+        .filter((field) => input[field] !== undefined)
+        .map((field) => [
+          field,
+          typeof input[field] === 'string'
+            ? input[field]!.trim().toUpperCase()
+            : null,
+        ]),
+    ),
     isCustomer: roles.has('customer'),
     isPassenger: roles.has('passenger'),
     acquaintanceMethodId: input.acquaintanceMethodId ?? null,

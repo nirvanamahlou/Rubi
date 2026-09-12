@@ -37,6 +37,7 @@ import {
   type TimelineView,
 } from './model';
 import styles from './workspace.module.css';
+import { ManifestExport } from '../components/manifest-export';
 
 const noAccess: ViewAccess = {
   authenticated: false,
@@ -101,7 +102,7 @@ const operationContent: Record<
     note: 'اتصال بیمه سامان آماده نیست. هیچ درخواست یا بیمه‌نامه‌ای ایجاد نشده است.',
   },
   manifests: {
-    title: 'MANIFEST ظرفیت شرکت',
+    title: 'MANIFEST ایران ایرتور · آنتالیا',
     fields: [
       'مسیر',
       'تاریخ حرکت',
@@ -112,7 +113,7 @@ const operationContent: Record<
       'زمان ارسال',
     ],
     action: 'آماده‌سازی MANIFEST',
-    note: 'فقط ظرفیت‌ها و تورهای متعلق به شرکت؛ خروجی نهایی پس از اتصال تولید و آرشیو فایل فعال می‌شود.',
+    note: 'خروجی رسمی اسپارتا برای پروازهای آنتالیای ایران ایرتور؛ اطلاعات هر مسافر از پرونده فروش خوانده می‌شود.',
   },
   costs: {
     title: 'پیشنهاد هزینه خرید',
@@ -718,7 +719,9 @@ export function ReservationOperationsWorkspace({
               <section className={styles.panel}>
                 <div className={styles.panelTitle}>
                   <h2>{operationContent[section].title}</h2>
-                  <span className={styles.badge}>در انتظار اتصال</span>
+                  {section !== 'manifests' && (
+                    <span className={styles.badge}>در انتظار اتصال</span>
+                  )}
                 </div>
                 <p>{operationContent[section].note}</p>
                 {visibleOperations.map((operation) => (
@@ -737,35 +740,48 @@ export function ReservationOperationsWorkspace({
                     </dl>
                   </article>
                 ))}
-                <dl className={styles.details}>
-                  {operationContent[section].fields.map((label) => (
-                    <div key={label}>
-                      <dt>{label}</dt>
-                      <dd>—</dd>
-                    </div>
-                  ))}
-                </dl>
-                <div className={styles.actions}>
-                  <button type="button" disabled>
-                    {operationContent[section].action}
-                  </button>
-                  {section === 'tickets' && (
-                    <>
-                      <label>
-                        دلیل توقف
-                        <input placeholder="دلیل توقف بلیط" disabled />
-                      </label>
-                      <button type="button" disabled>
-                        توقف صدور
-                      </button>
-                    </>
-                  )}
-                  {['tickets', 'vouchers', 'insurance'].includes(section) && (
+                {section === 'manifests' ? (
+                  <ManifestExport
+                    {...(selected
+                      ? {
+                          requestId: selected.id,
+                          contractNumber: selected.contractNumber,
+                        }
+                      : {})}
+                  />
+                ) : (
+                  <dl className={styles.details}>
+                    {operationContent[section].fields.map((label) => (
+                      <div key={label}>
+                        <dt>{label}</dt>
+                        <dd>—</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+                {section !== 'manifests' && (
+                  <div className={styles.actions}>
                     <button type="button" disabled>
-                      تحویل مدارک · نیازمند تأیید مالی
+                      {operationContent[section].action}
                     </button>
-                  )}
-                </div>
+                    {section === 'tickets' && (
+                      <>
+                        <label>
+                          دلیل توقف
+                          <input placeholder="دلیل توقف بلیط" disabled />
+                        </label>
+                        <button type="button" disabled>
+                          توقف صدور
+                        </button>
+                      </>
+                    )}
+                    {['tickets', 'vouchers', 'insurance'].includes(section) && (
+                      <button type="button" disabled>
+                        تحویل مدارک · نیازمند تأیید مالی
+                      </button>
+                    )}
+                  </div>
+                )}
               </section>
             )}
           {section === 'timeline' && (

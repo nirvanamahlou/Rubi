@@ -130,6 +130,10 @@ describe('Reservations passenger and document consumers', () => {
       passportNumberMasked: true,
       passportExpiryDate: '2031-02-03',
       passportIssuePlace: null,
+      passportFirstName: null,
+      passportLastName: null,
+      nationalityCode: null,
+      birthCountryCode: null,
       version: 4,
     });
     expect(JSON.stringify(r)).not.toContain('not-returned');

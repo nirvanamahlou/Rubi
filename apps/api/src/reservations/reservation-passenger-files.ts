@@ -85,7 +85,10 @@ function nameView(
         : ageCategory === 'CHD' || ageCategory === 'INF'
           ? ageCategory
           : null,
-    gender: null,
+    passportFirstName: customer.passportFirstName ?? null,
+    passportLastName: customer.passportLastName ?? null,
+    gender: customer.gender ?? null,
+    nationalityCode: customer.nationalityCode ?? null,
     birthDate: sensitive ? customer.birthDate : null,
     birthDateMasked:
       customer.birthDateMasked || Boolean(!sensitive && customer.birthDate),
@@ -98,7 +101,8 @@ function nameView(
       passportNumber && (!sensitive || !customer.passportNumber),
     ),
     passportExpiryDate: customer.passportExpiryDate ?? null,
-    passportIssuePlace: null,
+    passportIssuePlace: customer.passportIssuingCountryCode ?? null,
+    birthCountryCode: customer.birthCountryCode ?? null,
     version: customer.version,
   };
 }

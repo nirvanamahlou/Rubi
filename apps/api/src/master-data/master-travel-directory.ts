@@ -76,6 +76,17 @@ export class MasterTravelDirectory {
     return { id: broker.id, name: broker.name };
   }
 
+  async cityReference(cityId: string) {
+    const { data } = await this.master.detail('cities', cityId);
+    if (data.status !== 'active')
+      throw new BadRequestException('شهر مقصد فعال نیست.');
+    return {
+      id: data.id,
+      name: data.name,
+      englishName: String(data.attributes.englishName ?? ''),
+    };
+  }
+
   async assertTourReferences(input: {
     originId: string;
     destinationId: string;

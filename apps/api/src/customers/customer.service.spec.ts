@@ -225,6 +225,38 @@ describe('CustomerService', () => {
       ),
     ).rejects.toThrow('انقضای پاسپورت');
   });
+  it('normalizes airline identity and preserves it when omitted later', async () => {
+    const repository = {
+      update: vi.fn().mockResolvedValue(row),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    await service.update(
+      row.id,
+      {
+        ...mutation,
+        version: 1,
+        passportFirstName: 'Ali',
+        passportLastName: 'Example',
+        gender: 'M',
+        nationalityCode: 'irn',
+        passportIssuingCountryCode: 'irn',
+        birthCountryCode: 'irn',
+      },
+      actor,
+    );
+    expect(vi.mocked(repository.update).mock.calls[0]?.[2]).toMatchObject({
+      passportFirstName: 'ALI',
+      passportLastName: 'EXAMPLE',
+      gender: 'M',
+      nationalityCode: 'IRN',
+      passportIssuingCountryCode: 'IRN',
+      birthCountryCode: 'IRN',
+    });
+    await service.update(row.id, { ...mutation, version: 1 }, actor);
+    expect(vi.mocked(repository.update).mock.calls[1]?.[2]).not.toHaveProperty(
+      'nationalityCode',
+    );
+  });
   it('preserves omitted birthday and national ID during unrelated legacy edits', async () => {
     const repository = {
       update: vi.fn().mockResolvedValue(row),
