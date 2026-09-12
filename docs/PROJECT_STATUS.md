@@ -19,7 +19,8 @@ Migration از صفر روی DB ایزوله با همه ۵۶ migration موفق
 Prettier فایل‌های Task، scope/secret/PII scan و `git diff --check` پاس شدند. Prettier کل
 Repository به‌علت ۱۰۹۵ بدهی baseline خارج از Scope پاس نیست. Smoke واقعی API و
 QA احرازهویت‌شده Desktop/Mobile روی `localhost:3100` نیز پاس شدند. جزئیات در
-[CUSTOMER-AFFAIRS-002](tasks/CUSTOMER-AFFAIRS-002.md) است.
+[CUSTOMER-AFFAIRS-002](tasks/CUSTOMER-AFFAIRS-002.md) است. Draft PR #221 آماده Review و
+Migration/Contract/Central Docs lockها آزاد شدند.
 
 ## B2B-FINANCE-EXPORT-LAYOUT-001 — خروجی‌های فشرده مالی
 
