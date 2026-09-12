@@ -1,5 +1,12 @@
 # Work Assignments
 
+## B2B-BACKEND-ONLY-CONNECTIONS-001 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک محصول: «ارتباطات CRM» نباید تب یا سکشن مستقل در پرونده سازمان/آژانس باشد؛ ارتباط‌ها باید در Backend برقرار بمانند و فقط در بخش‌های طبیعی مصرف‌کننده نمایش داده شوند.
+- محدوده رزروشده: حذف تب و پنل مستقل از پرونده سازمان، حذف کامپوننت بلااستفاده، تست‌های هدفمند Organizations و مستندات Task روی شاخه `codex/pc-b-b2b-backend-only-connections` از `origin/develop@40d8f1f4`.
+- قرارداد Backend بدون تغییر می‌ماند: Controller/Service مسیر CRM connections، مدل و client وب، مجوز شعبه و مصرف KPI/Finance حفظ می‌شوند. این واحد Migration، Schema، API contract، Dependency/Lockfile، IAM، داده یا Runtime مشترک را تغییر نمی‌دهد و خودکار Merge نمی‌شود.
+- تب/پنل مستقل حذف شد و رزرو فایل‌های اجرایی آزاد است. ۱۳۰ تست Organizations، ۸ تست API، lint و typecheck وب و build تولیدی ۴۶ مسیر موفق‌اند؛ جست‌وجوی منبع نیز حفظ مسیر Backend و حذف کامل ورودی UI مستقل را تایید کرد.
+
 ## HR-014-BACKEND-ONLY — PC-B — MERGE_AUTHORIZED
 
 - User explicitly removes the standalone HR connections panel and wants integrations behind the existing forms. Reserve the central AppShell outlet removal, HR record referral link and now-unreachable referral UI/client/tests on `codex/pc-b-hr-backend-only-0912` from `origin/develop@6a4e0410`. Backend services, contracts, persisted records, permissions and the form directory/document/currency integrations stay intact. No migration, dependency or runtime takeover. Existing visibility context is retained for consumer compatibility. Push a review PR to develop; no automatic merge under the updated instructions.

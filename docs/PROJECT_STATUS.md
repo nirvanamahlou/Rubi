@@ -1,5 +1,10 @@
 # وضعیت پروژه
 
+## B2B-BACKEND-ONLY-CONNECTIONS-001 — حذف نمایش مستقل ارتباطات CRM
+
+- تب و پنل مستقل «ارتباطات CRM» از پرونده سازمان/آژانس حذف شد. ارتباط واقعی Backend، قرارداد و client آن حفظ شده و همان داده‌ها همچنان در KPIهای پرونده و نمای مالی مصرف می‌شوند.
+- بدون Migration، تغییر Schema/API/Permission/Dependency یا دست‌کاری داده. ۱۳۰ تست Organizations، ۸ تست API، lint و typecheck وب و build تولیدی ۴۶ مسیر موفق‌اند. شاخه `codex/pc-b-b2b-backend-only-connections` برای Review به `develop` تحویل می‌شود؛ جزئیات در `docs/tasks/B2B-BACKEND-ONLY-CONNECTIONS-001.md` ثبت شده است.
+
 ## HR-014 — حذف پنل مستقل ارتباطات از رابط کاربری
 
 - نتیجه: lint و TypeScript وب، ۲۶۰ تست موجود و build تولیدی ۴۶ مسیر موفق‌اند. مرج PR #226 با دستور صریح جدید کاربر مجاز شد؛ تداخل افزوده‌های مستندات با حفظ هر دو واحد کار رفع شد. بدون فعال‌سازی روی اجرای مشترک ۳۱۰۰.
