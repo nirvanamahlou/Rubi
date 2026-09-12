@@ -1,10 +1,10 @@
 # Work Assignments
 
-## WORKBENCH-035 — PC-B — SOURCE_COMPLETE
+## WORKBENCH-035 — PC-B — UI_VERIFIED
 
 - Add two editable Finance messenger templates, `خرید` and `پیگیری صورتحساب`, and one editable Reservations template, `استعلام از کارگزار`. Reserve only `apps/web/src/modules/workbench/message-templates.ts` and scoped status/task documentation on `codex/pc-b-workbench-template-additions` from current `origin/develop`.
 - Reuse the existing Workbench composer and local attachment control. No Finance, Procurement, Reservations, Messaging, API, schema, dependency, payment, purchase, booking, upload or message-delivery mutation.
-- Completed: all three templates populate the existing editable composer with operational placeholders and retain its local attachment selector. All 44 Workbench tests, Web lint and TypeScript, and the 46-route production build passed. Source reservation released; runtime/browser verification follows on the combined Workbench build.
+- Completed: all three templates populate the existing editable composer with operational placeholders and retain its local attachment selector. All 44 Workbench tests, Web lint and TypeScript, and the 46-route production build passed. Combined Web3100 browser QA confirmed both Finance buttons, the Reservations inquiry button and insertion of its complete editable text beside the attachment control. Source/runtime reservations released.
 
 ## B2B-ORGANIZATION-PERMANENT-DELETE-001 — PC-B — UI_VERIFIED
 

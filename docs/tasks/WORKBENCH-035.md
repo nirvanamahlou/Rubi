@@ -8,4 +8,4 @@ This is a Workbench presentation change. It does not create a purchase, payment,
 
 ## Validation
 
-All 44 Workbench tests passed. Web lint and TypeScript passed after building the workspace Contracts package, and the production Web build generated all 46 routes. Authenticated browser inspection is performed on the combined Workbench runtime so the earlier unmerged feedback activation remains available on port 3100.
+All 44 Workbench tests passed. Web lint and TypeScript passed after building the workspace Contracts package, and the production Web build generated all 46 routes. Authenticated browser inspection on the combined Web3100 runtime confirmed both new Finance buttons and the Reservations inquiry button. Selecting `استعلام از کارگزار` inserted its complete 486-character editable text into the composer while the existing attachment control remained available. The earlier feedback activation also remains present on port 3100.
