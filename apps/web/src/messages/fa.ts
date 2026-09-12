@@ -97,6 +97,11 @@ export const navigationMessages = [
     description: 'بررسی ظرفیت، صدور خدمات، واچر، بیمه و منیفست',
   },
   {
+    title: 'مدیریت گروهی نرخ‌های هتل‌ها',
+    href: '/reservations/hotel-rates',
+    description: 'ثبت گروهی قیمت خرید هتل در بازه اقامت',
+  },
+  {
     title: 'مدیریت و تعریف بلیط‌ها',
     href: '/ticket-management',
     description: 'تعریف محصول بلیط، برنامه حرکت، نرخ و ظرفیت',

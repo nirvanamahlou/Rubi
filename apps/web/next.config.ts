@@ -3,6 +3,12 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  outputFileTracingIncludes: {
+    '/reservations/requests/*/pdf': [
+      './src/modules/reservations/components/reservation-form-sheet.module.css',
+      './public/brand/*.png',
+    ],
+  },
   async headers() {
     return [
       {

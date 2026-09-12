@@ -141,6 +141,12 @@ export interface CustomerDetail extends CustomerSummary {
   nationalId?: string | null;
   passportNumber?: string | null;
   passportExpiryDate?: string | null;
+  passportFirstName: string | null;
+  passportLastName: string | null;
+  gender: 'M' | 'F' | null;
+  nationalityCode: string | null;
+  passportIssuingCountryCode: string | null;
+  birthCountryCode: string | null;
   acquaintanceMethodId: string | null;
   contacts: readonly CustomerContact[];
   addresses: readonly CustomerAddress[];
@@ -234,6 +240,12 @@ export interface CustomerMutationRequest {
   nationalId?: string | null;
   passportNumber?: string | null;
   passportExpiryDate?: string | null;
+  passportFirstName?: string | null;
+  passportLastName?: string | null;
+  gender?: 'M' | 'F' | null;
+  nationalityCode?: string | null;
+  passportIssuingCountryCode?: string | null;
+  birthCountryCode?: string | null;
   roles: CustomerRole[];
   acquaintanceMethodId?: string | null;
   version?: number;

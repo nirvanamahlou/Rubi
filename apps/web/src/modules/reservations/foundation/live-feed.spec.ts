@@ -45,7 +45,72 @@ function intake(id = 'one', receivedAt = '2026-09-08T09:00:00Z') {
 const envelope = (data = [intake()]) => ({ version: 1, data });
 const row = (id = 'one', time?: string) =>
   decodeIntake(envelope([intake(id, time)]), session)[0]!;
+it('decodes actual queue labels, meal reference and arrangement notes without defaults', () => {
+  const input = intake();
+  const result = decodeIntake(
+    {
+      version: 1,
+      data: [
+        {
+          ...input,
+          sellerName: 'Seller',
+          contractPartyName: 'Agency',
+          arrangement: {
+            roomCount: 1,
+            singleRoomCount: 0,
+            doubleRoomCount: 1,
+            extraBedCount: 0,
+            updatedAt: input.receivedAt,
+            reason: 'TWIN BED',
+          },
+          snapshot: {
+            ...input.snapshot,
+            hotelSelection: {
+              hotelNameSnapshot: 'Hotel',
+              mealServiceId: 'meal',
+              checkInDate: '2026-09-10',
+            },
+          },
+        },
+      ],
+    },
+    session,
+  )[0]!;
+  expect(result).toMatchObject({
+    salesCounter: 'Seller',
+    customerName: 'Agency',
+    mealServiceId: 'meal',
+    hotelNotes: 'TWIN BED',
+    serviceTitles: ['Test hotel'],
+  });
+});
 describe('reservation feed boundary', () => {
+  it('marks hotel confirmation only once a voucher is issued', () => {
+    const input = intake();
+    const project = (voucherIssued: boolean) =>
+      decodeIntake(
+        {
+          version: 1,
+          data: [
+            {
+              ...input,
+              workflow: { supplierStatus: 'CONFIRMED', voucherIssued },
+            },
+          ],
+        },
+        session,
+      )[0]!;
+    expect(project(false)).toMatchObject({
+      hotelRequested: true,
+      hotelConfirmed: false,
+      status: 'SUPPLIER_CONFIRMED',
+    });
+    expect(project(true)).toMatchObject({
+      hotelRequested: true,
+      hotelConfirmed: true,
+      status: 'VOUCHER_ISSUED',
+    });
+  });
   it('keeps real values without inventing priority, deadline or customer name', () => {
     expect(row()).toMatchObject({
       status: 'NEW',
@@ -187,4 +252,96 @@ describe('date and state filters', () => {
     expect(reservationDay('2026-09-08T09:00:00')).toBeNull();
     expect(reservationDay('2026-09-08')).toBe('2026-09-08');
   });
+});
+
+it('loads following API pages for filtered export without truncating at 100', async () => {
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () =>
+        envelope(Array.from({ length: 100 }, (_, i) => intake(`page1-${i}`))),
+    })
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => envelope([intake('page2')]),
+    });
+  const rows = await loadIntake(
+    'http://example.test/api',
+    session,
+    new AbortController().signal,
+    fetcher,
+  );
+  expect(rows).toHaveLength(101);
+  expect(fetcher.mock.calls[1]?.[0]).toBe(
+    'http://example.test/api/reservations/requests?page=2',
+  );
+});
+it('projects the latest persisted arrangement over the commercial room snapshot', () => {
+  const source = intake();
+  const rows = decodeIntake(
+    envelope([
+      {
+        ...source,
+        snapshot: {
+          ...source.snapshot,
+          hotelSelection: {
+            hotelNameSnapshot: 'Demo',
+            checkInDate: '2026-10-01',
+            checkOutDate: '2026-10-03',
+            roomCount: 1,
+            singleRoomCount: 1,
+            doubleRoomCount: 0,
+            extraBedCount: 0,
+          },
+        },
+        arrangement: {
+          roomCount: 2,
+          singleRoomCount: 0,
+          doubleRoomCount: 2,
+          extraBedCount: 1,
+          updatedAt: '2026-09-09T10:00:00Z',
+        },
+      } as never,
+    ]),
+    session,
+  );
+  expect(rows[0]).toMatchObject({
+    roomCount: 2,
+    singleRooms: 0,
+    doubleRooms: 2,
+    extraBeds: 1,
+    correctedAt: '2026-09-09T10:00:00Z',
+  });
+});
+it('marks notes from either the sales snapshot or reservation revisions', () => {
+  const input = intake();
+  const project = (record: unknown) =>
+    decodeIntake({ version: 1, data: [record] }, session)[0]!.hasNotes;
+  expect(project(input)).toBe(false);
+  expect(
+    project({
+      ...input,
+      snapshot: {
+        ...input.snapshot,
+        serviceSelections: [
+          {
+            kind: 'HOTEL',
+            titleSnapshot: 'Hotel',
+            metadata: { reservationNote: 'Quiet room' },
+          },
+        ],
+      },
+    }),
+  ).toBe(true);
+  expect(
+    project({
+      ...input,
+      workflow: {
+        supplierStatus: 'NEW',
+        voucherIssued: false,
+        reservationNotes: ['Follow up'],
+      },
+    }),
+  ).toBe(true);
 });

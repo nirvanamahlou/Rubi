@@ -14,15 +14,43 @@ export type EntryField =
   | 'birthDate'
   | 'passportNumber'
   | 'passportExpiryDate'
+  | 'passportFirstName'
+  | 'passportLastName'
+  | 'gender'
+  | 'nationalityCode'
+  | 'passportIssuingCountryCode'
+  | 'birthCountryCode'
   | 'phone'
   | 'email';
 export interface CustomerEntryRow {
   key: string;
   label: string;
   role: ReactNode;
-  values: Record<Exclude<EntryField, 'passportExpiryDate'>, string> & {
+  values: Record<
+    Exclude<
+      EntryField,
+      | 'passportExpiryDate'
+      | 'passportFirstName'
+      | 'passportLastName'
+      | 'gender'
+      | 'nationalityCode'
+      | 'passportIssuingCountryCode'
+      | 'birthCountryCode'
+    >,
+    string
+  > & {
     passportExpiryDate?: string;
-  };
+  } & Partial<
+      Record<
+        | 'passportFirstName'
+        | 'passportLastName'
+        | 'gender'
+        | 'nationalityCode'
+        | 'passportIssuingCountryCode'
+        | 'birthCountryCode',
+        string
+      >
+    >;
   readOnly?: boolean;
   editableFields?: readonly EntryField[];
   actions?: ReactNode;
@@ -36,6 +64,12 @@ const columns = [
   ['birthDate', 'تاریخ تولد مسافر *', 'birth-date'],
   ['passportNumber', 'شماره پاسپورت', 'passport-number'],
   ['passportExpiryDate', 'انقضای پاسپورت', 'passport-expiry'],
+  ['passportFirstName', 'نام لاتین پاسپورت *', 'passport-first-name'],
+  ['passportLastName', 'نام خانوادگی لاتین *', 'passport-last-name'],
+  ['gender', 'جنسیت M/F *', 'gender'],
+  ['nationalityCode', 'ملیت ISO3 *', 'nationality'],
+  ['passportIssuingCountryCode', 'کشور صادرکننده ISO3 *', 'passport-country'],
+  ['birthCountryCode', 'کشور محل تولد ISO3 *', 'birth-country'],
   ['phone', 'تلفن', 'phone'],
   ['email', 'ایمیل', 'email'],
 ] as const;
@@ -133,6 +167,10 @@ export function CustomerEntrySheet({
                             'passportNumber',
                             'phone',
                             'email',
+                            'gender',
+                            'nationalityCode',
+                            'passportIssuingCountryCode',
+                            'birthCountryCode',
                           ].includes(field)
                             ? 'ltr'
                             : 'rtl'
@@ -152,7 +190,15 @@ export function CustomerEntrySheet({
                             ? 10
                             : field === 'passportNumber'
                               ? 24
-                              : undefined
+                              : field === 'gender'
+                                ? 1
+                                : [
+                                      'nationalityCode',
+                                      'passportIssuingCountryCode',
+                                      'birthCountryCode',
+                                    ].includes(field)
+                                  ? 3
+                                  : undefined
                         }
                         minLength={field === 'nationalId' ? 10 : undefined}
                         onChange={(event) =>
@@ -160,7 +206,16 @@ export function CustomerEntrySheet({
                             field,
                             field === 'passportNumber'
                               ? event.target.value.toUpperCase()
-                              : event.target.value,
+                              : [
+                                    'passportFirstName',
+                                    'passportLastName',
+                                    'gender',
+                                    'nationalityCode',
+                                    'passportIssuingCountryCode',
+                                    'birthCountryCode',
+                                  ].includes(field)
+                                ? event.target.value.toUpperCase()
+                                : event.target.value,
                           )
                         }
                         pattern={
@@ -168,9 +223,20 @@ export function CustomerEntrySheet({
                             ? '[0-9۰-۹٠-٩]{10}'
                             : field === 'passportNumber'
                               ? '[A-Za-z0-9-]{4,24}'
-                              : field === 'phone'
-                                ? '\\+?[0-9]{10,15}'
-                                : undefined
+                              : field === 'gender'
+                                ? '[MF]'
+                                : [
+                                      'nationalityCode',
+                                      'passportIssuingCountryCode',
+                                      'birthCountryCode',
+                                    ].includes(field)
+                                  ? '[A-Z]{3}'
+                                  : field === 'passportFirstName' ||
+                                      field === 'passportLastName'
+                                    ? "[A-Za-z][A-Za-z '\\-]*"
+                                    : field === 'phone'
+                                      ? '\\+?[0-9]{10,15}'
+                                      : undefined
                         }
                         required={[
                           'firstName',
@@ -184,7 +250,7 @@ export function CustomerEntrySheet({
                               ? 'tel'
                               : 'text'
                         }
-                        value={row.values[field]}
+                        value={row.values[field] ?? ''}
                       />
                     )}
                   </td>

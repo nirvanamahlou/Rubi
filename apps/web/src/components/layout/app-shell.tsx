@@ -256,8 +256,11 @@ function SearchDialog() {
         >
           <Search aria-hidden="true" className="size-4" />
           <span className="truncate">{faMessages.common.search}</span>
-          <kbd className="ms-auto hidden rounded-md border border-border bg-surface px-1.5 py-0.5 text-[10px] lg:inline">
-            Ctrl K
+          <kbd
+            dir="ltr"
+            className="ms-auto hidden shrink-0 items-center whitespace-nowrap rounded-md border border-input bg-surface px-2 py-0.5 text-[11px] font-semibold leading-5 text-foreground sm:inline-flex"
+          >
+            Ctrl + K
           </kbd>
         </button>
       </DialogTrigger>

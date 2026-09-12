@@ -282,19 +282,19 @@
   background: var(--tone-edge);
 }
 .workspace [data-tone='pink'] {
-  --tone-bg: #fce7f3;
-  --tone-edge: #be185d;
+  --tone-bg: #ffc0c0;
+  --tone-edge: #ffc0c0;
   --tone-text: #831843;
 }
 .workspace [data-tone='lightGray'] {
-  --tone-bg: #f1f2f4;
+  --tone-bg: #dedee2;
   --tone-edge: #9ca3af;
   --tone-text: #374151;
 }
 .workspace [data-tone='darkGray'] {
-  --tone-bg: #cbd0d8;
-  --tone-edge: #4b5563;
-  --tone-text: #1f2937;
+  --tone-bg: #62626b;
+  --tone-edge: #45454d;
+  --tone-text: #ffffff;
 }
 .workspace [data-tone='red'] {
   --tone-bg: #fee2e2;
@@ -401,19 +401,19 @@
 }
 
 :global(.dark) .workspace [data-tone='pink'] {
-  --tone-bg: #422334;
-  --tone-edge: #f28bbc;
+  --tone-bg: #ffc0c0;
+  --tone-edge: #ffc0c0;
   --tone-text: #ffd5e9;
 }
 :global(.dark) .workspace [data-tone='lightGray'] {
-  --tone-bg: #39393f;
-  --tone-edge: #b4b4bd;
-  --tone-text: #f4f4f5;
+  --tone-bg: #585861;
+  --tone-edge: #a1a1aa;
+  --tone-text: #ffffff;
 }
 :global(.dark) .workspace [data-tone='darkGray'] {
-  --tone-bg: #252528;
-  --tone-edge: #898993;
-  --tone-text: #dedee3;
+  --tone-bg: #1d1d21;
+  --tone-edge: #d4d4d8;
+  --tone-text: #fafafa;
 }
 :global(.dark) .workspace [data-tone='red'] {
   --tone-bg: #482426;
@@ -432,4 +432,142 @@
 }
 :global(.dark) .newRequests p {
   color: #ffd5e9;
+}
+
+.workspace button[role='combobox'] {
+  min-width: 0;
+  border-color: var(--input);
+  font-size: 12px;
+  text-align: start;
+}
+.workspace button[role='combobox'][data-state='open'] {
+  border-color: var(--ring);
+}
+
+/* Stretch the existing keyboard-accessible selection button across its card. */
+.requests li {
+  position: relative;
+}
+.requests li button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.requests li:focus-within {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* New arrivals highlight only the contract identity column in either theme. */
+.requests li[data-tone='pink'] {
+  background: var(--surface);
+  color: var(--foreground);
+  border-inline-start-color: var(--border);
+}
+.requests li[data-tone='pink'] > button {
+  background: #ffc0c0;
+  color: #3f1515;
+  border-radius: 8px;
+  padding: 12px;
+  align-self: stretch;
+}
+
+/* Compact queue rows retain the full-card selection target. */
+.requests li[data-tone] {
+  padding: 6px 10px;
+  margin: 5px 0;
+  gap: 8px;
+}
+.requests li > button {
+  gap: 3px;
+  padding: 5px 8px;
+  min-height: 44px;
+}
+.requests li[data-tone='pink'] > button {
+  padding: 5px 8px;
+}
+
+.tableScroll {
+  overflow: auto;
+  max-height: 65vh;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-top: 12px;
+}
+.requestTable {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  min-width: 1800px;
+  font-size: 12px;
+}
+.requestTable th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
+  color: var(--foreground);
+  padding: 8px 6px;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+.requestTable td {
+  padding: 4px 6px;
+  height: 36px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
+  white-space: nowrap;
+}
+.requestTable tbody tr {
+  background: var(--tone-bg);
+  color: var(--tone-text);
+  cursor: pointer;
+}
+.requestTable tr[data-tone='pink'] {
+  background: var(--surface);
+  color: var(--foreground);
+}
+.requestTable tr[data-tone='pink'] td:first-child {
+  background: #ffc0c0;
+  color: #3f1515;
+}
+.requestTable td:first-child button {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  color: inherit;
+  font-weight: 700;
+}
+.requestTable tr[data-selected='true'] td {
+  box-shadow:
+    inset 0 2px var(--primary),
+    inset 0 -2px var(--primary);
+}
+.requestTable tr:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+.requestTable td:nth-child(3) {
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+.exportBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+}
+.requestTable td:nth-child(n + 15):nth-child(-n + 19) {
+  max-width: 230px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.exportBar small {
+  color: var(--muted-foreground);
 }

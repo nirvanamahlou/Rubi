@@ -1,4 +1,9 @@
 import {
+  addInsuranceExtra,
+  insuranceExtraRials,
+  passengerOverSixty,
+} from '@rubi/contracts';
+import {
   servicePriceComponents,
   SALES_ACCOMMODATION_LABELS,
   salesAccommodationValid,
@@ -80,6 +85,7 @@ export const salesSteps = [
 ] as const;
 
 export interface SalesFormState {
+  insuranceExtraToman?: Record<string, string>;
   tour?: TourDepartureV1 | undefined;
   insurancePlan?: SalesInsuranceSelection | undefined;
   contractFlights?: Partial<Record<SalesTicketDirection, ContractFlightDraft>>;
@@ -146,6 +152,7 @@ export interface SalesFormState {
   priceComponents: SalesPriceComponentInput[];
   payments: SalesPaymentInput[];
   pricingNotes: string;
+  reservationNote?: string;
   passengerPrices?: Record<string, SalesMoney[]>;
   passengerAccommodations?: Record<string, SalesAccommodationKind>;
 }
@@ -731,6 +738,35 @@ export function salesPayload(
         service.pricing = state.servicePricing[service.clientKey] ?? [];
       }
     }
+  const extras = state.serviceKinds.includes('INSURANCE')
+    ? state.passengers.filter(
+        (p) =>
+          passengerOverSixty(p.birthDate, salesTravelDate(state)) &&
+          BigInt(state.insuranceExtraToman?.[p.customerId] || '0') > 0n,
+      )
+    : [];
+  for (const person of extras) {
+    const toman = state.insuranceExtraToman![person.customerId]!;
+    const amount = insuranceExtraRials(toman);
+    services.push({
+      clientKey: `insurance-extra-${person.customerId}`,
+      kind: 'OTHER',
+      titleSnapshot: `اضافه بیمه بالای ۶۰ سال · ${person.displayName}`,
+      metadata: {
+        insuranceAgeSurcharge: true,
+        passengerId: person.customerId,
+        extraToman: toman,
+      },
+      pricing: [
+        {
+          version: 1,
+          currencyCode: 'IRR',
+          daySale: { basis: 'TOTAL', amount },
+          agreed: { basis: 'TOTAL', amount },
+        },
+      ],
+    });
+  }
   const ticketSelections = state.serviceKinds.includes('FLIGHT')
     ? [
         ...(salesDirections(state, 'FLIGHT').includes('OUTBOUND') &&
@@ -800,7 +836,17 @@ export function salesPayload(
     departureDate: salesTravelDate(state),
     returnNotBefore:
       state.tripType === 'ROUND_TRIP' ? salesTravelDate(state) : null,
-    services,
+    services: services.map((service, index) =>
+      index === 0 && state.reservationNote?.trim()
+        ? {
+            ...service,
+            metadata: {
+              ...service.metadata,
+              reservationNote: state.reservationNote.trim(),
+            },
+          }
+        : service,
+    ),
     passengers: state.passengers.map((item) => ({
       customerId: item.customerId,
       displayNameSnapshot: item.displayName,
@@ -810,14 +856,22 @@ export function salesPayload(
         ? { accommodationKind: state.passengerAccommodations[item.customerId] }
         : {}),
       ...(state.passengerPrices
-        ? { agreedPrices: state.passengerPrices[item.customerId] ?? [] }
+        ? {
+            agreedPrices: extras.some((p) => p.customerId === item.customerId)
+              ? addInsuranceExtra(
+                  state.passengerPrices[item.customerId] ?? [],
+                  state.insuranceExtraToman![item.customerId]!,
+                )
+              : (state.passengerPrices[item.customerId] ?? []),
+          }
         : {}),
       birthDate: item.birthDate,
       serviceClientKeys: services
-        .filter(
-          ({ clientKey }) =>
-            clientKey !== 'hotel' ||
-            salesHotelGuestIds(state).includes(item.customerId),
+        .filter(({ clientKey, metadata }) =>
+          metadata?.insuranceAgeSurcharge === true
+            ? metadata.passengerId === item.customerId
+            : clientKey !== 'hotel' ||
+              salesHotelGuestIds(state).includes(item.customerId),
         )
         .map(({ clientKey }) => clientKey),
     })),

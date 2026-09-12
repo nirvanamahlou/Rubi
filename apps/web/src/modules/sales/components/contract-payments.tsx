@@ -11,7 +11,14 @@ import type {
 import { Button } from '@/components/ui/button';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
 import { FormField, Input } from '@/components/ui/form-controls';
-import { Alert, Card } from '@/components/ui/surfaces';
+import { Alert } from '@/components/ui/surfaces';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from '@/components/ui/overlays';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { salesApi } from '../api/client';
 import { loadPaymentCurrencies } from '../api/payment-currencies';
@@ -83,7 +90,8 @@ export function ContractPayments({
   const [busy, setBusy] = useState(false);
   const [referenceSearch, setReferenceSearch] = useState('');
   const [receiptPaymentId, setReceiptPaymentId] = useState('');
-  const receiptPanel = useRef<HTMLElement>(null);
+  const [adding, setAdding] = useState(false);
+  const [savedPaymentId, setSavedPaymentId] = useState('');
   const attempt = useRef({ fingerprint: '', key: '' });
   useEffect(() => {
     let active = true;
@@ -148,7 +156,7 @@ export function ContractPayments({
   }, [id]);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!contract) return;
+    if (!contract || busy || savedPaymentId) return;
     setBusy(true);
     setError('');
     try {
@@ -176,12 +184,7 @@ export function ContractPayments({
       const added = response.data.payments.find(
         (item) => !previousIds.has(item.id),
       );
-      if (added) setReceiptPaymentId(added.id);
-      setPayment({ ...empty, currencyCode: defaultSalesCurrency(currencies) });
-      receiptPanel.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
+      if (added) setSavedPaymentId(added.id);
       onSaved();
     } catch (reason) {
       setError(
@@ -207,268 +210,318 @@ export function ContractPayments({
       },
     });
   return (
-    <Card className="grid gap-4 p-5">
-      <div className="flex items-center justify-between">
-        <h2 className="font-bold">
-          پرداخت‌های قرارداد {contract?.contractNumber}
-        </h2>
-        <Button variant="ghost" onClick={onClose}>
-          بستن
-        </Button>
-      </div>
-      {error ? <Alert tone="error" title={error} /> : null}
-      {contract?.balances.map((balance) => (
-        <p key={balance.currencyCode}>
-          مانده {balance.currencyCode}: {balance.outstanding} · پرداخت تأییدشده:{' '}
-          {balance.confirmedPaid}
-        </p>
-      ))}
-      <form
-        className="flex flex-wrap items-end gap-2"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (referenceSearch.trim()) onSearchContracts(referenceSearch.trim());
-        }}
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !busy) onClose();
+      }}
+    >
+      <DialogContent
+        dir="rtl"
+        className="grid max-h-[85dvh] gap-4 overflow-y-auto sm:max-w-3xl"
       >
-        <div className="min-w-48 flex-1">
-          <FormField label="جست‌وجوی شماره پیگیری در همه قراردادها">
-            <Input
-              value={referenceSearch}
-              maxLength={160}
-              onChange={(event) => setReferenceSearch(event.target.value)}
-            />
-          </FormField>
-        </div>
-        <Button
-          type="submit"
-          variant="outline"
-          disabled={!referenceSearch.trim()}
+        <DialogTitle className="pe-10">
+          پرداخت‌ها و اقساط قرارداد {contract?.contractNumber}
+        </DialogTitle>
+        <DialogDescription>
+          سوابق پرداخت، سررسید اقساط و رسیدهای همین قرارداد
+        </DialogDescription>
+        {error ? <Alert tone="error" title={error} /> : null}
+        {contract?.balances.map((balance) => (
+          <p key={balance.currencyCode}>
+            مانده {balance.currencyCode}: {balance.outstanding} · پرداخت
+            تأییدشده: {balance.confirmedPaid}
+          </p>
+        ))}
+        <form
+          className="flex flex-wrap items-end gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (referenceSearch.trim())
+              onSearchContracts(referenceSearch.trim());
+          }}
         >
-          پیدا کردن قرارداد
-        </Button>
-        <p className="w-full text-xs text-muted-foreground">
-          جست‌وجو بین همهٔ قراردادهای مجاز شما انجام می‌شود، نه فقط این قرارداد؛
-          نتیجه در فهرست اصلی نمایش داده می‌شود.
-        </p>
-      </form>
-      <section
-        ref={receiptPanel}
-        aria-label="مدارک پرداخت قرارداد"
-        className="space-y-3 rounded-xl border border-primary/25 bg-primary/5 p-4"
-      >
-        <h3 className="font-bold">آپلود رسید و مدارک پرداخت قرارداد</h3>
-        <p className="text-sm text-muted-foreground">
-          پرداخت مربوط به رسید را انتخاب کنید؛ فایل به همان پرداخت این قرارداد
-          پیوست می‌شود.
-        </p>
-        {contract?.payments.length ? (
-          <>
-            <SalesThemedSelect
-              label="پرداخت مربوط به مدرک"
-              value={receiptPaymentId || contract.payments[0]!.id}
-              onValueChange={setReceiptPaymentId}
-              options={contract.payments.map((item, index) => ({
-                value: item.id,
-                label: `پرداخت ${index + 1} · ${item.amount} ${item.currencyCode} · پیگیری: ${item.paymentReference || 'ثبت نشده'}`,
-              }))}
-            />
-            <PaymentDocuments
-              key={receiptPaymentId || contract.payments[0]!.id}
-              contract={contract}
-              paymentId={receiptPaymentId || contract.payments[0]!.id}
-              expanded
-            />
-          </>
-        ) : (
-          <p role="status" className="text-sm">
-            ابتدا یک پرداخت در فرم پایین ثبت کنید؛ سپس همین‌جا رسید PDF یا تصویر
-            آن را آپلود کنید.
-          </p>
-        )}
-      </section>
-      {contract?.payments.map((item) => (
-        <div key={item.id} className="rounded-xl border p-3">
-          <strong>
-            {item.amount} {item.currencyCode}
-          </strong>{' '}
-          ·{' '}
-          {
-            {
-              FINANCE_CONFIRMED: 'تأییدشده مالی',
-              FINANCE_REJECTED: 'ردشده توسط مالی',
-              SCHEDULED: 'برنامه‌ریزی‌شده',
-              PENDING_FINANCE_CONFIRMATION: 'در انتظار تأیید مالی',
-            }[item.status]
-          }
-          <p>
-            شماره پیگیری: <bdi>{item.paymentReference || 'ثبت نشده'}</bdi>
-          </p>
-          <p>
-            سررسید: {new Date(item.dueAt).toLocaleDateString('fa-IR')}
-            {item.check ? ` · تاریخ چک: ${item.check.dueDate}` : ''}
-          </p>
+          <div className="min-w-48 flex-1">
+            <FormField label="جست‌وجوی شماره پیگیری در همه قراردادها">
+              <Input
+                value={referenceSearch}
+                maxLength={160}
+                onChange={(event) => setReferenceSearch(event.target.value)}
+              />
+            </FormField>
+          </div>
           <Button
-            type="button"
+            type="submit"
             variant="outline"
-            size="sm"
-            className="mt-2"
-            onClick={() => {
-              setReceiptPaymentId(item.id);
-              receiptPanel.current?.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-              });
-            }}
+            disabled={!referenceSearch.trim()}
           >
-            آپلود رسید / مشاهده مدارک
+            پیدا کردن قرارداد
           </Button>
-        </div>
-      ))}
-      <p className="text-sm text-muted-foreground">
-        افزودن ردیف پرداخت به‌تنهایی مانده را کم نمی‌کند؛ تأیید مالی لازم است.
-      </p>
-      <form
-        className="grid gap-4 md:grid-cols-2"
-        onSubmit={(event) => void submit(event)}
-      >
-        <FormField label="مبلغ" required>
-          <Input
-            required
-            value={payment.amount}
-            onChange={(event) =>
-              setPayment({ ...payment, amount: event.target.value })
-            }
-          />
-        </FormField>
-        <div>
-          {currencyLoading ? (
-            <p role="status" className="text-sm text-muted-foreground">
-              در حال دریافت فهرست ارزها…
-            </p>
-          ) : (
-            <ContractPaymentCurrencySelect
-              currencies={currencies}
-              value={payment.currencyCode}
-              onChange={(currencyCode) =>
-                setPayment({ ...payment, currencyCode })
-              }
-            />
-          )}
-          {!currencyLoading &&
-          (currencyError || !salesCurrencyOptions(currencies).length) ? (
-            <div className="mt-2 space-y-2">
-              {currencyError ? (
-                <p role="alert" className="text-sm text-destructive">
-                  {currencyError}
-                </p>
-              ) : null}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setCurrencyLoading(true);
-                  setCurrencyError('');
-                  setCurrencies([]);
-                  setCurrencyRetry((value) => value + 1);
-                }}
-              >
-                دریافت دوبارهٔ ارزها
-              </Button>
-            </div>
-          ) : null}
-        </div>
-        <FormField label="سررسید پرداخت" required>
-          <DatePicker
-            value={payment.dueAt}
-            onChange={(dueAt) => setPayment({ ...payment, dueAt })}
-          />
-        </FormField>
-        <FormField label="شماره پیگیری پرداخت (اختیاری)">
-          <Input
-            dir="ltr"
-            maxLength={160}
-            value={payment.paymentReference ?? ''}
-            onChange={(event) =>
-              setPayment({ ...payment, paymentReference: event.target.value })
-            }
-          />
-        </FormField>
-        <p className="text-xs text-muted-foreground md:col-span-2">
-          پس از افزودن پرداخت، بخش «مدارک پرداخت قرارداد» برای بارگذاری رسید
-          آماده است. شماره پیگیری را در جست‌وجوی داشبورد فروش هم می‌توانید پیدا
-          کنید؛ این جست‌وجو استعلام بانکی نیست.
-        </p>
-        <FormField label="روش پرداخت">
-          <SalesThemedSelect
-            label="روش پرداخت"
-            value={payment.method}
-            onValueChange={(method) =>
-              setPayment({
-                ...payment,
-                check: null,
-                method: method as SalesPaymentMethod,
-              })
-            }
-            options={[
-              { value: 'BANK_TRANSFER', label: 'حواله بانکی' },
-              { value: 'CASH', label: 'نقد' },
-              { value: 'POS', label: 'کارت‌خوان' },
-              { value: 'ONLINE_GATEWAY', label: 'درگاه' },
-              { value: 'CHECK', label: 'چک' },
-            ]}
-          />
-        </FormField>
-        {payment.method === 'CHECK' ? (
-          <>
-            <FormField label="بانک" required>
-              <SalesThemedSelect
-                label="بانک"
-                required
-                value={payment.check?.bankId ?? ''}
-                onValueChange={(bankId) => patchCheck('bankId', bankId)}
-                options={[
-                  { value: '', label: 'انتخاب بانک' },
-                  ...banks.map((bank) => ({
-                    value: bank.id,
-                    label: bank.name,
-                  })),
-                ]}
-              />
-            </FormField>
-            <FormField label="شناسه چک" required>
-              <Input
-                required
-                value={payment.check?.secureIdentifier ?? ''}
-                onChange={(event) =>
-                  patchCheck('secureIdentifier', event.target.value)
-                }
-              />
-            </FormField>
-            <FormField label="صاحب چک" required>
-              <Input
-                required
-                value={payment.check?.ownerName ?? ''}
-                onChange={(event) =>
-                  patchCheck('ownerName', event.target.value)
-                }
-              />
-            </FormField>
-            <FormField label="تاریخ چک" required>
-              <DatePicker
-                value={payment.check?.dueDate ?? ''}
-                onChange={(value) => patchCheck('dueDate', value)}
-              />
-            </FormField>
-          </>
+          <p className="w-full text-xs text-muted-foreground">
+            جست‌وجو بین همهٔ قراردادهای مجاز شما انجام می‌شود، نه فقط این
+            قرارداد؛ نتیجه در فهرست اصلی نمایش داده می‌شود.
+          </p>
+        </form>
+        {!contract && !error ? (
+          <p role="status">در حال دریافت پرداخت‌ها…</p>
         ) : null}
-        <Button
-          type="submit"
-          loading={busy}
-          disabled={!contract || !validCurrency}
+        {contract && !contract.payments.length ? (
+          <p>هنوز پرداختی برای این قرارداد ثبت نشده است.</p>
+        ) : null}
+        {contract?.payments.map((item) => (
+          <div key={item.id} className="rounded-xl border p-3">
+            <strong>
+              {item.amount} {item.currencyCode}
+            </strong>{' '}
+            ·{' '}
+            {
+              {
+                FINANCE_CONFIRMED: 'تأییدشده مالی',
+                FINANCE_REJECTED: 'ردشده توسط مالی',
+                SCHEDULED: 'برنامه‌ریزی‌شده',
+                PENDING_FINANCE_CONFIRMATION: 'در انتظار تأیید مالی',
+              }[item.status]
+            }
+            <p>
+              شماره پیگیری: <bdi>{item.paymentReference || 'ثبت نشده'}</bdi>
+            </p>
+            <p>
+              سررسید: {new Date(item.dueAt).toLocaleDateString('fa-IR')}
+              {item.check ? ` · تاریخ چک: ${item.check.dueDate}` : ''}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={() => {
+                setReceiptPaymentId(item.id);
+              }}
+            >
+              آپلود رسید / مشاهده مدارک
+            </Button>
+            {receiptPaymentId === item.id && contract ? (
+              <PaymentDocuments
+                key={item.id}
+                contract={contract}
+                paymentId={item.id}
+                expanded
+              />
+            ) : null}
+          </div>
+        ))}
+        <p className="text-sm text-muted-foreground">
+          افزودن ردیف پرداخت به‌تنهایی مانده را کم نمی‌کند؛ تأیید مالی لازم است.
+        </p>
+        <Dialog
+          open={adding}
+          onOpenChange={(open) => {
+            if (busy) return;
+            setAdding(open);
+            if (open) {
+              setSavedPaymentId('');
+              setPayment({
+                ...empty,
+                currencyCode: defaultSalesCurrency(currencies),
+              });
+              attempt.current = { fingerprint: '', key: '' };
+              setError('');
+            }
+          }}
         >
-          افزودن پرداخت
-        </Button>
-      </form>
-    </Card>
+          <DialogTrigger asChild>
+            <Button disabled={!contract}>افزودن پرداخت</Button>
+          </DialogTrigger>
+          <DialogContent
+            dir="rtl"
+            className="grid max-h-[85dvh] gap-4 overflow-y-auto sm:max-w-2xl"
+          >
+            <DialogTitle className="pe-10">
+              افزودن پرداخت · {contract?.contractNumber}
+            </DialogTitle>
+            <DialogDescription>
+              اطلاعات پرداخت را ثبت کنید و رسید آن را همین‌جا پیوست کنید.
+            </DialogDescription>
+            {error ? <Alert tone="error" title={error} /> : null}
+            {savedPaymentId ? (
+              <p role="status" className="rounded-xl bg-primary/10 p-3">
+                پرداخت ثبت شد. اکنون می‌توانید رسید را در زیر بارگذاری کنید.
+              </p>
+            ) : null}
+            <form
+              className="grid gap-4 md:grid-cols-2"
+              onSubmit={(event) => void submit(event)}
+            >
+              <fieldset
+                disabled={busy || !!savedPaymentId}
+                className="contents"
+              >
+                <FormField label="مبلغ" required>
+                  <Input
+                    required
+                    value={payment.amount}
+                    onChange={(event) =>
+                      setPayment({ ...payment, amount: event.target.value })
+                    }
+                  />
+                </FormField>
+                <div>
+                  {currencyLoading ? (
+                    <p role="status" className="text-sm text-muted-foreground">
+                      در حال دریافت فهرست ارزها…
+                    </p>
+                  ) : (
+                    <ContractPaymentCurrencySelect
+                      currencies={currencies}
+                      value={payment.currencyCode}
+                      onChange={(currencyCode) =>
+                        setPayment({ ...payment, currencyCode })
+                      }
+                    />
+                  )}
+                  {!currencyLoading &&
+                  (currencyError ||
+                    !salesCurrencyOptions(currencies).length) ? (
+                    <div className="mt-2 space-y-2">
+                      {currencyError ? (
+                        <p role="alert" className="text-sm text-destructive">
+                          {currencyError}
+                        </p>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setCurrencyLoading(true);
+                          setCurrencyError('');
+                          setCurrencies([]);
+                          setCurrencyRetry((value) => value + 1);
+                        }}
+                      >
+                        دریافت دوبارهٔ ارزها
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+                <FormField label="سررسید پرداخت" required>
+                  <DatePicker
+                    value={payment.dueAt}
+                    onChange={(dueAt) => setPayment({ ...payment, dueAt })}
+                  />
+                </FormField>
+                <FormField label="روش پرداخت">
+                  <SalesThemedSelect
+                    label="روش پرداخت"
+                    value={payment.method}
+                    onValueChange={(method) =>
+                      setPayment({
+                        ...payment,
+                        check: null,
+                        method: method as SalesPaymentMethod,
+                      })
+                    }
+                    options={[
+                      { value: 'BANK_TRANSFER', label: 'حواله بانکی' },
+                      { value: 'CASH', label: 'نقد' },
+                      { value: 'POS', label: 'کارت‌خوان' },
+                      { value: 'ONLINE_GATEWAY', label: 'درگاه' },
+                      { value: 'CHECK', label: 'چک' },
+                    ]}
+                  />
+                </FormField>
+                {payment.method === 'CHECK' ? (
+                  <>
+                    <FormField label="بانک" required>
+                      <SalesThemedSelect
+                        label="بانک"
+                        required
+                        value={payment.check?.bankId ?? ''}
+                        onValueChange={(bankId) => patchCheck('bankId', bankId)}
+                        options={[
+                          { value: '', label: 'انتخاب بانک' },
+                          ...banks.map((bank) => ({
+                            value: bank.id,
+                            label: bank.name,
+                          })),
+                        ]}
+                      />
+                    </FormField>
+                    <FormField label="شناسه چک" required>
+                      <Input
+                        required
+                        value={payment.check?.secureIdentifier ?? ''}
+                        onChange={(event) =>
+                          patchCheck('secureIdentifier', event.target.value)
+                        }
+                      />
+                    </FormField>
+                    <FormField label="صاحب چک" required>
+                      <Input
+                        required
+                        value={payment.check?.ownerName ?? ''}
+                        onChange={(event) =>
+                          patchCheck('ownerName', event.target.value)
+                        }
+                      />
+                    </FormField>
+                    <FormField label="تاریخ چک" required>
+                      <DatePicker
+                        value={payment.check?.dueDate ?? ''}
+                        onChange={(value) => patchCheck('dueDate', value)}
+                      />
+                    </FormField>
+                  </>
+                ) : null}
+                <FormField label="شماره پیگیری پرداخت (اختیاری)">
+                  <Input
+                    dir="ltr"
+                    maxLength={160}
+                    value={payment.paymentReference ?? ''}
+                    onChange={(event) =>
+                      setPayment({
+                        ...payment,
+                        paymentReference: event.target.value,
+                      })
+                    }
+                  />
+                </FormField>
+              </fieldset>
+              <div className="md:col-span-2">
+                {savedPaymentId && contract ? (
+                  <PaymentDocuments
+                    key={savedPaymentId}
+                    contract={contract}
+                    paymentId={savedPaymentId}
+                    expanded
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    پس از ثبت پرداخت، بارگذاری تصویر یا PDF رسید زیر شماره
+                    پیگیری فعال می‌شود.
+                  </p>
+                )}
+              </div>
+              {!savedPaymentId ? (
+                <Button
+                  type="submit"
+                  loading={busy}
+                  disabled={!contract || !validCurrency}
+                >
+                  ثبت پرداخت و ادامه برای رسید
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAdding(false)}
+                >
+                  بازگشت به سوابق پرداخت
+                </Button>
+              )}
+            </form>
+          </DialogContent>
+        </Dialog>
+      </DialogContent>
+    </Dialog>
   );
 }

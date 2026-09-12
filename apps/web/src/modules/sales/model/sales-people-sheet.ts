@@ -44,6 +44,12 @@ export const emptyPeopleValues = (): PeopleValues => ({
   birthDate: '',
   passportNumber: '',
   passportExpiryDate: '',
+  passportFirstName: '',
+  passportLastName: '',
+  gender: '',
+  nationalityCode: '',
+  passportIssuingCountryCode: '',
+  birthCountryCode: '',
   phone: '',
   email: '',
   acquaintanceMethodId: '',
@@ -123,6 +129,12 @@ export function selectedPeopleRow(person: CustomerDetail): PeopleRow {
     nationalId: person.nationalId ?? person.maskedNationalId ?? '',
     passportNumber: person.passportNumber ?? person.maskedPassportNumber ?? '',
     passportExpiryDate: person.passportExpiryDate ?? '',
+    passportFirstName: person.passportFirstName ?? '',
+    passportLastName: person.passportLastName ?? '',
+    gender: person.gender ?? '',
+    nationalityCode: person.nationalityCode ?? '',
+    passportIssuingCountryCode: person.passportIssuingCountryCode ?? '',
+    birthCountryCode: person.birthCountryCode ?? '',
     phone: contact('phone'),
     email: contact('email'),
     acquaintanceMethodId: person.acquaintanceMethodId ?? '',
@@ -291,6 +303,18 @@ export function peopleCreateInput(
     ...(v.passportExpiryDate
       ? { passportExpiryDate: v.passportExpiryDate }
       : {}),
+    ...(passenger && v.passportFirstName.trim()
+      ? {
+          passportFirstName: v.passportFirstName.trim().toUpperCase(),
+          passportLastName: v.passportLastName.trim().toUpperCase(),
+          gender: v.gender as 'M' | 'F',
+          nationalityCode: v.nationalityCode.trim().toUpperCase(),
+          passportIssuingCountryCode: v.passportIssuingCountryCode
+            .trim()
+            .toUpperCase(),
+          birthCountryCode: v.birthCountryCode.trim().toUpperCase(),
+        }
+      : {}),
   };
 }
 export function validateSalesPeopleDraft(
@@ -301,6 +325,11 @@ export function validateSalesPeopleDraft(
   if (!keys.length) throw new Error('تعداد مسافران را در مرحله اول مشخص کنید.');
   if (draft.mode === 'organization' && !draft.organization)
     throw new Error('مشتری حقوقی / آژانس را انتخاب کنید.');
+  const international = Boolean(
+    state.originCountryId &&
+    state.destinationCountryId &&
+    state.originCountryId !== state.destinationCountryId,
+  );
   const ids = new Set<string>(),
     nationalIds = new Set<string>();
   for (const key of [
@@ -315,6 +344,32 @@ export function validateSalesPeopleDraft(
         `${label}: نتیجه ثبت قبلی نیازمند بررسی است؛ پرونده موجود را انتخاب کنید.`,
       );
     validatePassport(row);
+    if (key !== 'primary' && international) {
+      const v = row.values;
+      if (
+        !/^[A-Za-z][A-Za-z '-]*$/.test(v.passportFirstName.trim()) ||
+        !/^[A-Za-z][A-Za-z '-]*$/.test(v.passportLastName.trim())
+      )
+        throw new Error(
+          `${label}: نام و نام خانوادگی لاتین پاسپورت الزامی است.`,
+        );
+      if (!['M', 'F'].includes(v.gender))
+        throw new Error(`${label}: جنسیت را با M یا F ثبت کنید.`);
+      if (
+        [
+          v.nationalityCode,
+          v.passportIssuingCountryCode,
+          v.birthCountryCode,
+        ].some((code) => !/^[A-Z]{3}$/.test(code.trim().toUpperCase()))
+      )
+        throw new Error(
+          `${label}: ملیت، کشور صادرکننده و کشور محل تولد را با کد سه‌حرفی ISO ثبت کنید.`,
+        );
+      if (!v.passportNumber.trim() || !v.passportExpiryDate)
+        throw new Error(
+          `${label}: شماره و انقضای پاسپورت برای سفر خارجی الزامی است.`,
+        );
+    }
     if (row.person) {
       validateExistingPerson(row);
       if (ids.has(row.person.id))
@@ -454,9 +509,20 @@ export async function saveSalesPeopleDraft(
       const baseline = existingPeopleBaseline(row);
       const identityChanged =
         profile &&
-        (['firstName', 'lastName', 'nationalId', 'birthDate'] as const).some(
-          (field) => row.values[field] !== baseline[field],
-        );
+        (
+          [
+            'firstName',
+            'lastName',
+            'nationalId',
+            'birthDate',
+            'passportFirstName',
+            'passportLastName',
+            'gender',
+            'nationalityCode',
+            'passportIssuingCountryCode',
+            'birthCountryCode',
+          ] as const
+        ).some((field) => row.values[field] !== baseline[field]);
       const passportChanged =
         profile &&
         (row.values.passportExpiryDate !== (profile.passportExpiryDate ?? '') ||
@@ -507,6 +573,13 @@ export async function saveSalesPeopleDraft(
             ...(row.values.birthDate
               ? { birthDate: row.values.birthDate }
               : {}),
+            passportFirstName: row.values.passportFirstName || null,
+            passportLastName: row.values.passportLastName || null,
+            gender: (row.values.gender || null) as 'M' | 'F' | null,
+            nationalityCode: row.values.nationalityCode || null,
+            passportIssuingCountryCode:
+              row.values.passportIssuingCountryCode || null,
+            birthCountryCode: row.values.birthCountryCode || null,
             ...(passportChanged
               ? { passportExpiryDate: row.values.passportExpiryDate || null }
               : {}),

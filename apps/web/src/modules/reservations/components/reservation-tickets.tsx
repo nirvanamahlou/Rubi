@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { createPortal, flushSync } from 'react-dom';
-import type { ReservationIntakeV1 } from '@rubi/contracts';
+import { useTravelLogo } from './travel-document';
+import type { ReservationIntakeV1, TravelBrandingV1 } from '@rubi/contracts';
 import { salesContractFlights } from '@rubi/contracts';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,14 +14,19 @@ import {
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { FlightTicketSheet } from '@/modules/sales/public/tickets';
 import { reservationTickets } from '../model/reservation-tickets';
+import { getPublicApiBaseUrl } from '@/lib/environment';
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
 export function ReservationTickets({
   request,
+  branding = null,
   onClose,
 }: {
   request: ReservationIntakeV1;
+  branding?: TravelBrandingV1 | null;
   onClose: () => void;
 }) {
+  const { logo, error: logoError } = useTravelLogo(branding);
   const tickets = reservationTickets(request.snapshot);
   const [selected, setSelected] = useState(tickets[0]?.passengerId ?? '');
   const [names, setNames] = useState<Record<string, string>>({});
@@ -28,6 +34,7 @@ export function ReservationTickets({
   const [warning, setWarning] = useState('');
   const [printAll, setPrintAll] = useState(false);
   const [printing, setPrinting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const ticket = tickets.find((item) => item.passengerId === selected);
   useEffect(() => {
     let active = true;
@@ -65,6 +72,10 @@ export function ReservationTickets({
     };
   }, [request]);
   async function print(all: boolean) {
+    if (branding && (!logo || logoError)) {
+      setWarning(logoError || 'در حال دریافت لوگو');
+      return;
+    }
     flushSync(() => {
       setPrintAll(all);
       setPrinting(true);
@@ -82,6 +93,45 @@ export function ReservationTickets({
       setWarning('لوگو بارگذاری نشد؛ دوباره چاپ را بزنید.');
     } finally {
       setPrinting(false);
+    }
+  }
+  async function download(all: boolean) {
+    const passengerId = all ? '' : ticket?.passengerId;
+    if (downloading || (!all && !passengerId)) return;
+    setDownloading(true);
+    setWarning('');
+    try {
+      const path = `/reservations/requests/${encodeURIComponent(request.id)}/tickets/pdf${passengerId ? `?passengerId=${encodeURIComponent(passengerId)}` : ''}`;
+      const send = () =>
+        fetch(path, { credentials: 'include', cache: 'no-store' });
+      let response = await send();
+      const base = getPublicApiBaseUrl();
+      if (
+        response.status === 401 &&
+        base &&
+        (await refreshAuthenticatedSession(base))
+      )
+        response = await send();
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.message || 'دریافت PDF بلیط انجام نشد.');
+      }
+      if (!response.headers.get('content-type')?.includes('application/pdf'))
+        throw new Error('پاسخ سرور فایل PDF نیست؛ دوباره وارد حساب شوید.');
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `tickets-${request.snapshot.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_')}-${all ? 'all' : 'passenger'}.pdf`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (error) {
+      setWarning(
+        error instanceof Error ? error.message : 'دریافت PDF بلیط انجام نشد.',
+      );
+    } finally {
+      setDownloading(false);
     }
   }
   const name = (id: string) => names[id] || '—';
@@ -128,22 +178,35 @@ export function ReservationTickets({
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button
+                  disabled={!ready || downloading || !ticket}
+                  onClick={() => void download(false)}
+                >
+                  {downloading ? 'در حال ساخت PDF…' : 'دانلود PDF این مسافر'}
+                </Button>
+                <Button
+                  disabled={!ready || downloading}
+                  onClick={() => void download(true)}
+                >
+                  دانلود PDF همهٔ مسافران
+                </Button>
+                <Button
+                  variant="outline"
                   disabled={!ready || printing || !ticket}
                   onClick={() => void print(false)}
                 >
-                  چاپ / ذخیره PDF این مسافر
+                  چاپ این مسافر
                 </Button>
                 <Button
                   variant="outline"
                   disabled={!ready || printing}
                   onClick={() => void print(true)}
                 >
-                  چاپ / ذخیره PDF همهٔ مسافران
+                  چاپ همهٔ مسافران
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                برای فایل PDF، در پنجرهٔ چاپ «Save as PDF» را انتخاب و سرصفحه و
-                پاصفحهٔ مرورگر را خاموش کنید. هر مسافر در برگهٔ جدا چاپ می‌شود.
+                دانلود PDF فایل را مستقیم ذخیره می‌کند. در چاپ گروهی هر مسافر در
+                برگهٔ جدا قرار می‌گیرد.
               </p>
               {warning ? (
                 <p role="status" className="text-sm text-amber-700">
@@ -152,7 +215,15 @@ export function ReservationTickets({
               ) : null}
               <div className="min-h-0 overflow-auto rounded-xl bg-slate-100 p-3">
                 {ticket ? (
-                  <FlightTicketSheet data={ticket} cityName={name} />
+                  <FlightTicketSheet
+                    data={{
+                      ...ticket,
+                      ...(branding
+                        ? { branding: { name: branding.name, logo } }
+                        : {}),
+                    }}
+                    cityName={name}
+                  />
                 ) : null}
               </div>
             </>
@@ -173,7 +244,15 @@ export function ReservationTickets({
           </style>
           {(printAll ? tickets : ticket ? [ticket] : []).map((item) => (
             <div key={item.passengerId} data-reservation-ticket-page>
-              <FlightTicketSheet data={item} cityName={name} />
+              <FlightTicketSheet
+                data={{
+                  ...item,
+                  ...(branding
+                    ? { branding: { name: branding.name, logo } }
+                    : {}),
+                }}
+                cityName={name}
+              />
             </div>
           ))}
         </div>,

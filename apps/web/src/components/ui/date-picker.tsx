@@ -34,6 +34,7 @@ function formatCalendarNumber(value: number, system: CalendarSystem): string {
 }
 
 export interface DatePickerProps {
+  defaultCalendarSystem?: CalendarSystem;
   gregorianEnglish?: boolean;
   id?: string;
   name?: string;
@@ -53,6 +54,7 @@ export interface DatePickerProps {
 export function DatePicker({
   className,
   gregorianEnglish = false,
+  defaultCalendarSystem = 'persian',
   defaultValue = '',
   disabled,
   id,
@@ -67,8 +69,9 @@ export function DatePicker({
 }: DatePickerProps) {
   const [internalValue, setInternalValue] = React.useState(defaultValue);
   const currentValue = value ?? internalValue;
-  const [calendarSystem, setCalendarSystem] =
-    React.useState<CalendarSystem>('persian');
+  const [calendarSystem, setCalendarSystem] = React.useState<CalendarSystem>(
+    defaultCalendarSystem,
+  );
   const english = gregorianEnglish && calendarSystem === 'gregorian';
   const t = (fa: string, en: string) => (english ? en : fa);
   const [calendarView, setCalendarView] = React.useState<CalendarView>('days');

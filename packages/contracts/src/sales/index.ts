@@ -280,6 +280,8 @@ export interface SalesContractDetail extends SalesContractSummary {
   payments: readonly (SalesPaymentInput & {
     id: string;
     status: SalesPaymentStatus;
+    createdByUserId?: string;
+    createdByName?: string | null;
     createdAt: string;
     financeConfirmedAt: string | null;
   })[];
@@ -388,3 +390,5 @@ export const salesEndpoints = {
     `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}/status-history`,
   dashboard: `${SALES_API_PREFIX}/dashboard`,
 } as const;
+
+export * from './insurance-extra';

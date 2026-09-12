@@ -1,4 +1,5 @@
 'use client';
+import { moneyDecimal, moneyUnits, passengerOverSixty } from '@rubi/contracts';
 import { PassengerCountField } from './passenger-count-field';
 import { ContractOutputButton } from './contract-output';
 
@@ -31,7 +32,7 @@ import { ContractFlightEditor } from './contract-flight-editor';
 import { SearchableReference } from './searchable-reference';
 import { SalesInsurancePicker } from './sales-insurance-picker';
 import { SalesTourPicker } from './sales-tour-picker';
-import { FlightTicketPreview } from './flight-ticket-preview';
+
 import { SalesPeopleSheet } from './sales-people-sheet';
 import type { SalesPeopleDraft } from '../model/sales-people-sheet';
 import {
@@ -573,7 +574,10 @@ export function SalesContractForm() {
         )}
         {state.serviceKinds.includes('FLIGHT') ? (
           <div className="mt-5">
-            <FlightTicketPreview state={state} cities={references.cities} />
+            <p className="text-sm text-muted-foreground">
+              بلیط مسافر پس از ثبت قرارداد در رزرواسیون آماده است؛ دسترسی فروش
+              پس از تأیید تحویل مدارک توسط مالی باز می‌شود.
+            </p>
           </div>
         ) : null}
       </Card>
@@ -1376,6 +1380,47 @@ export function SalesContractForm() {
                 </div>
               </fieldset>
             ) : null}
+            {state.passengers
+              .filter((p) =>
+                passengerOverSixty(p.birthDate, salesTravelDate(state)),
+              )
+              .map((person) => (
+                <section
+                  key={person.customerId}
+                  className="my-3 rounded-lg border border-amber-500 p-3"
+                >
+                  <p role="status">
+                    {person.displayName}: سن مسافر در شروع سفر بالای ۶۰ سال است؛
+                    هزینه بیمه ممکن است بیشتر باشد.
+                  </p>
+                  {state.serviceKinds.includes('INSURANCE') ? (
+                    <FormField label="هزینه اضافه بیمه همین مسافر (تومان)">
+                      <Input
+                        inputMode="numeric"
+                        value={
+                          state.insuranceExtraToman?.[person.customerId] ?? ''
+                        }
+                        onChange={(event) => {
+                          if (/^\d{0,15}$/.test(event.target.value))
+                            patchState({
+                              insuranceExtraToman: {
+                                ...state.insuranceExtraToman,
+                                [person.customerId]: event.target.value,
+                              },
+                            });
+                        }}
+                      />
+                      <p className="text-xs">
+                        این مبلغ یک بار به جمع مسافر و قرارداد اضافه می‌شود.
+                      </p>
+                    </FormField>
+                  ) : (
+                    <p className="text-sm">
+                      در صورت انتخاب بیمه، فیلد هزینه اضافه فعال می‌شود.
+                    </p>
+                  )}
+                </section>
+              ))}
             <p className="text-xs text-muted-foreground">
               حذف مسافر فقط از همین قرارداد است؛ پرونده او در مشتریان باقی
               می‌ماند.
@@ -1434,6 +1479,7 @@ export function SalesContractForm() {
               state={state}
               onChange={(passengerPrices) => patchState({ passengerPrices })}
             />
+            <InsuranceExtraSummary state={state} />
             <SalesPaymentPlan
               payments={state.payments}
               currencies={references.currencies}
@@ -1454,7 +1500,10 @@ export function SalesContractForm() {
         {step === 4 ? (
           <div className="grid gap-5">
             {state.serviceKinds.includes('FLIGHT') ? (
-              <FlightTicketPreview state={state} cities={references.cities} />
+              <p className="text-sm text-muted-foreground">
+                بلیط مسافر پس از ثبت قرارداد در رزرواسیون آماده است؛ دسترسی فروش
+                پس از تأیید تحویل مدارک توسط مالی باز می‌شود.
+              </p>
             ) : null}
             <h2 className="text-xl font-black">بازبینی و ثبت</h2>
             <div className="grid gap-3 md:grid-cols-2">
@@ -1512,6 +1561,7 @@ export function SalesContractForm() {
                 </p>
               </Card>
             </div>
+            <InsuranceExtraSummary state={state} />
             <SalesPricingSummary
               services={pricingServices}
               nights={pricingNights}
@@ -1527,6 +1577,23 @@ export function SalesContractForm() {
           </div>
         ) : null}
       </Card>
+      {step === salesSteps.length - 1 && (
+        <FormField label="یادداشت برای رزرواسیون (اختیاری)">
+          <Textarea
+            maxLength={500}
+            value={state.reservationNote ?? ''}
+            onChange={(event) =>
+              setState((current) => ({
+                ...current,
+                reservationNote: event.target.value,
+              }))
+            }
+          />
+          <p className="text-sm text-muted-foreground">
+            همراه قرارداد برای تیم رزرواسیون ارسال می‌شود.
+          </p>
+        </FormField>
+      )}
       <div className="sticky bottom-3 z-20 flex items-center justify-between rounded-xl border border-border bg-surface/95 p-3 shadow-sm backdrop-blur">
         <Button
           type="button"
@@ -1579,5 +1646,40 @@ export function SalesContractForm() {
         Secret، CVV و تصویر چک در این فرم پذیرفته نمی‌شود.
       </p>
     </form>
+  );
+}
+
+function InsuranceExtraSummary({ state }: { state: SalesFormState }) {
+  let payload: ReturnType<typeof salesPayload>;
+  try {
+    payload = salesPayload(state);
+  } catch {
+    return null;
+  }
+  const extras = payload.services.filter(
+    (service) => service.metadata?.insuranceAgeSurcharge === true,
+  );
+  if (!extras.length) return null;
+  const totals = new Map<string, bigint>();
+  for (const part of payload.priceComponents)
+    totals.set(
+      part.currencyCode,
+      (totals.get(part.currencyCode) ?? 0n) +
+        moneyUnits(part.amount) * (part.type === 'DISCOUNT' ? -1n : 1n),
+    );
+  return (
+    <section className="rounded-lg border border-border p-4">
+      <h3 className="font-bold">اضافه بیمه و جمع نهایی</h3>
+      {extras.map((service) => (
+        <p key={service.clientKey}>
+          {service.titleSnapshot}: {String(service.metadata?.extraToman)} تومان
+        </p>
+      ))}
+      {[...totals].map(([code, amount]) => (
+        <p key={code}>
+          جمع نهایی قرارداد: {moneyDecimal(amount)} {code}
+        </p>
+      ))}
+    </section>
   );
 }

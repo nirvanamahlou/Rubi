@@ -106,6 +106,7 @@ function paymentInput(row: SalesContractRow['payments'][number]) {
 
 export function presentSalesContract(
   row: SalesContractRow,
+  paymentCreatorNames: ReadonlyMap<string, string> = new Map(),
 ): SalesContractDetail {
   const priceComponents = row.priceComponents.map((item) => ({
     type: item.type,
@@ -117,6 +118,8 @@ export function presentSalesContract(
     ...paymentInput(item),
     id: item.id,
     status: item.status,
+    createdByUserId: item.createdByUserId,
+    createdByName: paymentCreatorNames.get(item.createdByUserId) ?? null,
     createdAt: item.createdAt.toISOString(),
     financeConfirmedAt: date(item.financeConfirmedAt),
   }));
@@ -440,11 +443,20 @@ export class SalesService {
         message: 'قرارداد یافت نشد.',
       });
     this.assertRead(row, actor);
-    const detail = presentSalesContract(row);
+    const mayReadPayments = has(actor, 'sales.payments.read');
+    const creators = mayReadPayments
+      ? await this.repository.findUserDisplayNames(
+          row.payments.map(({ createdByUserId }) => createdByUserId),
+        )
+      : [];
+    const detail = presentSalesContract(
+      row,
+      new Map(
+        creators.map(({ id: userId, displayName }) => [userId, displayName]),
+      ),
+    );
     return {
-      data: has(actor, 'sales.payments.read')
-        ? detail
-        : { ...detail, payments: [] },
+      data: mayReadPayments ? detail : { ...detail, payments: [] },
     };
   }
 
@@ -786,7 +798,7 @@ export class SalesService {
         message: 'مجوز داشبورد فروش وجود ندارد.',
       });
     const rows = await this.repository.dashboardRows(scope);
-    const details = rows.map(presentSalesContract);
+    const details = rows.map((row) => presentSalesContract(row));
     const today = new Date().toISOString().slice(0, 10);
     const balances = details.flatMap((item) => item.balances);
     const currencyCodes = [

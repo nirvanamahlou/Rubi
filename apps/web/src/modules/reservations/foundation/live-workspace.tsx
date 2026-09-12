@@ -33,7 +33,7 @@ export function LiveReservationQueue() {
     newCount: 0,
     now: '1970-01-01T00:00:00.000Z',
   });
-  const [reload, setReload] = useState(0);
+
   useEffect(() => {
     let disposed = false;
     let running = false;
@@ -110,29 +110,18 @@ export function LiveReservationQueue() {
       if (document.visibilityState === 'visible') void update();
     };
     document.addEventListener('visibilitychange', resume);
+    window.addEventListener('reservation-workflow-changed', resume);
     void update();
     return () => {
       disposed = true;
       controller.abort();
       if (timer) clearTimeout(timer);
       document.removeEventListener('visibilitychange', resume);
+      window.removeEventListener('reservation-workflow-changed', resume);
     };
-  }, [reload]);
+  }, []);
   return (
     <>
-      <div
-        dir="rtl"
-        className="mb-3 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground"
-      >
-        <p>آخرین ۱۰۰ درخواست · بررسی خودکار هر ۳۰ ثانیه هنگام باز بودن صفحه</p>
-        <button
-          type="button"
-          className="rounded-lg border px-3 py-2"
-          onClick={() => setReload((value) => value + 1)}
-        >
-          به‌روزرسانی
-        </button>
-      </div>
       <ReservationOperationsWorkspace
         state={view.state}
         rows={view.rows}
@@ -146,8 +135,8 @@ export function LiveReservationQueue() {
       />
       <p dir="rtl" className="mt-3 text-xs leading-6 text-muted-foreground">
         اعلان درخواست جدید داخل همین صفحه نمایش داده می‌شود. ارسال دائمی به
-        زنگوله پس از اتصال سرویس اعلان فعال می‌شود. وضعیت کارگزار و ابطال تا
-        دریافت از سامانه عملیاتی نمایش داده نمی‌شود.
+        زنگوله پس از اتصال سرویس اعلان فعال می‌شود. وضعیت کارگزار، ابطال و صدور
+        از آخرین ثبت عملیاتی خوانده می‌شود.
       </p>
     </>
   );
