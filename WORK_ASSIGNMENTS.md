@@ -1,5 +1,11 @@
 # Work Assignments
 
+## CUSTOMER-AFFAIRS-DATE-FILTER — PC-B — VERIFIED / RUNTIME CUTOVER
+
+- API 84 tests and Web 46 tests passed, scoped lint and build TypeScript checks passed. Boundary/branch/pagination and shared-calendar render tests included. Runtime handoff recorded in task doc; no migration or data mutation.
+
+- Reserve CA API list DTO/service/date validation tests, CA Web list filter/client/tests, own docs. Add optional v1 createdFrom/createdBefore UTC instants (inclusive/exclusive) to both list routes; producer/consumer PC-B, omitted means unfiltered, no schema/dependency changes. UI Gregorian date values from shared Persian/grid DatePicker convert browser-local day boundaries to UTC, including the entire end day. Scope lists including handoffs/followups/queues, not aggregate dashboards/reports. Branch `codex/pc-b-customer-affairs-date-filter`; preserve all data and other modules. Existing frontend/backend planning targets unchanged. Rebuild and activate the verified combined runtime after checks.
+
 ## CUSTOMER-AFFAIRS-REQUEST-LABELS — PC-B — CODE VERIFIED / ACTIVATION PENDING
 
 - Removed lead terminology in CA forms, report/metric/tab labels and `apps/web/src/messages/fa.ts` navigation title/description; navigation expectation updated. 56 focused tests, scoped lint and 46-route build/typecheck passed. No stored records removed or workflow changed. Reservation released; existing runtime not restarted.

@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { createdDateFilter } from './customer-affairs-date-filter';
 import {
   BadRequestException,
   ConflictException,
@@ -264,6 +265,7 @@ export class CustomerAffairsService {
     const pageSize = query.pageSize ?? 25;
     const now = new Date();
     const where: Prisma.CustomerAffairsLeadWhereInput = {
+      ...createdDateFilter(query),
       branchId: { in: branchIds },
       ...(query.stage ? { stage: query.stage } : {}),
       ...(query.priority ? { priority: query.priority } : {}),
@@ -841,6 +843,7 @@ export class CustomerAffairsService {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 25;
     const where: Prisma.CustomerAffairsTicketWhereInput = {
+      ...createdDateFilter(query),
       branchId: { in: branchIds },
       ...(query.sourceSite
         ? { siteOrigin: { site: { code: query.sourceSite } } }

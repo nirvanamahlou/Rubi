@@ -1,6 +1,7 @@
 'use client';
 
 import { AffairsSelect } from './affairs-select';
+import { CreatedDateFilter } from './created-date-filter';
 import type {
   CustomerAffairsDashboard,
   CustomerAffairsLeadView,
@@ -149,6 +150,8 @@ export function CustomerAffairsRubiWorkspace() {
   const search = params.get('search') || '';
   const filter = params.get('filter') || 'ALL';
   const sourceSite = params.get('sourceSite') || 'ALL';
+  const createdFrom = params.get('createdFrom') || '';
+  const createdTo = params.get('createdTo') || '';
   const page = Math.max(
     1,
     Math.min(100000, Math.floor(Number(params.get('page')) || 1)),
@@ -201,6 +204,8 @@ export function CustomerAffairsRubiWorkspace() {
         result.report = (await api.report()).data;
       else if (family === 'leads') {
         const rows = await api.leads(search, {
+          createdFrom,
+          createdTo,
           page,
           pageSize: 12,
           stage:
@@ -213,6 +218,8 @@ export function CustomerAffairsRubiWorkspace() {
         result.total = rows.meta.total;
       } else if (family === 'tickets') {
         const rows = await api.tickets(search, filter, {
+          createdFrom,
+          createdTo,
           page,
           pageSize: 12,
           overdueOnly: view === 'queues',
@@ -247,7 +254,19 @@ export function CustomerAffairsRubiWorkspace() {
     return () => {
       current = false;
     };
-  }, [view, family, id, tab, search, filter, sourceSite, page, revision]);
+  }, [
+    view,
+    family,
+    id,
+    tab,
+    search,
+    filter,
+    sourceSite,
+    createdFrom,
+    createdTo,
+    page,
+    revision,
+  ]);
   const reloadDetail = async () => {
     setRevision((x) => x + 1);
   };
@@ -603,6 +622,22 @@ export function CustomerAffairsRubiWorkspace() {
                       </AffairsSelect>
                     )}
                   </div>
+                  <CreatedDateFilter
+                    key={`${createdFrom}:${createdTo}`}
+                    from={createdFrom}
+                    to={createdTo}
+                    onApply={(from, to) => {
+                      const next = new URLSearchParams(params.toString());
+                      if (from) next.set('createdFrom', from);
+                      else next.delete('createdFrom');
+                      if (to) next.set('createdTo', to);
+                      else next.delete('createdTo');
+                      next.delete('page');
+                      router.replace(`/customer-affairs?${next}`, {
+                        scroll: false,
+                      });
+                    }}
+                  />
                   {view === 'followups' || view === 'queues' ? (
                     <p className={`${s.panelBody} ${s.muted}`}>
                       این نما فقط پرونده‌های معوق را نمایش می‌دهد.

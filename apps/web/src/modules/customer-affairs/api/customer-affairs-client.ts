@@ -49,6 +49,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export interface AffairsListOptions {
+  createdFrom?: string;
+  createdTo?: string;
   sourceSite?: string;
   page?: number;
   pageSize?: number;
@@ -74,6 +76,19 @@ function query(
     page: String(options.page ?? 1),
     pageSize: String(options.pageSize ?? 50),
   });
+  const boundary = (value: string, nextDay = false) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value))
+      throw new Error('تاریخ فیلتر معتبر نیست.');
+    const date = new Date(`${value}T00:00:00`);
+    if (!Number.isFinite(date.getTime()))
+      throw new Error('تاریخ فیلتر معتبر نیست.');
+    if (nextDay) date.setDate(date.getDate() + 1);
+    return date.toISOString();
+  };
+  if (options.createdFrom)
+    params.set('createdFrom', boundary(options.createdFrom));
+  if (options.createdTo)
+    params.set('createdBefore', boundary(options.createdTo, true));
   if (search.trim()) params.set('search', search.trim());
   if (status && status !== 'ALL') params.set('status', status);
   if (options.stage && options.stage !== 'ALL')

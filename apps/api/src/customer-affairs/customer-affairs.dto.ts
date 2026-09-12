@@ -243,6 +243,8 @@ export class SatisfactionDto {
 }
 
 export class ListQueryDto {
+  @IsOptional() @IsISO8601({ strict: true }) createdFrom?: string;
+  @IsOptional() @IsISO8601({ strict: true }) createdBefore?: string;
   @IsOptional() @IsIn(['jahanbastan', 'nystkt']) sourceSite?: string;
   @IsOptional() @IsString() @MaxLength(100) search?: string;
   @IsOptional() @IsString() @MaxLength(48) status?: string;
