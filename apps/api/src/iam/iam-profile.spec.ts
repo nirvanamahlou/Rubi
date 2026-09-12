@@ -40,12 +40,15 @@ describe('IamService personal profile owner boundary', () => {
       operation(transaction),
     );
 
-    const result = await service({ $transaction: run }).updateOwnProfile(actor, {
-      displayName: ' کاربر روبی ',
-      email: 'PERSON@EXAMPLE.COM',
-      phone: '09120000000',
-      photoDocumentId: null,
-    });
+    const result = await service({ $transaction: run }).updateOwnProfile(
+      actor,
+      {
+        displayName: ' کاربر روبی ',
+        email: 'PERSON@EXAMPLE.COM',
+        phone: '09120000000',
+        photoDocumentId: null,
+      },
+    );
 
     expect(run).toHaveBeenCalledOnce();
     expect(transaction.user.update).toHaveBeenCalledWith(
