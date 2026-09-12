@@ -1,5 +1,6 @@
 import {
   Archive,
+  BadgeDollarSign,
   Banknote,
   Building2,
   ChartColumn,
@@ -26,6 +27,7 @@ export const sidebarIcons: Record<NavigationHref, LucideIcon> = {
   '/dashboard': LayoutGrid,
   '/tasks': ClipboardCheck,
   '/sales': FileText,
+  '/pricing-management': BadgeDollarSign,
   '/customers': UsersRound,
   '/customer-affairs': Headphones,
   '/organizations': Building2,
