@@ -17,7 +17,9 @@ describe('NotificationCenter integration contract', () => {
   });
 
   it('supports recipient-scoped read and clear actions through the API', () => {
-    expect(source).toContain('notificationsApi.markRead(notification.id)');
+    expect(source).toMatch(
+      /notificationsApi\s*\.markRead\(notification\.id\)/,
+    );
     expect(source).toContain('notificationsApi.markAllRead()');
     expect(source).toContain('notificationsApi.clearRead()');
   });

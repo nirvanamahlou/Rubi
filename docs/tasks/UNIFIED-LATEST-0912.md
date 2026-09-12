@@ -13,8 +13,8 @@ PC-A و PC-B، بدون از بین‌بردن تغییرات محلی هیچ Wo
 | Header، Login B2 و گروه‌های بسته | `codex/pc-a-header-date-inline-0912@bc40d8b` |
 | حسابداری و کارتابل مالی | `codex/pc-a-finance-core-accounting@f2085c1` |
 | مدیریت قیمت | `codex/pc-a-pricing-management@135260f` |
-| آژانس‌ها و مشتریان سازمانی | `codex/pc-b-b2b-list-action-icons@6a4a312` |
-| میزکار شخصی | `codex/pc-b-workbench-password-change@0441c1e` |
+| آژانس‌ها و مشتریان سازمانی | `codex/pc-b-b2b-connections-audit@5322656` |
+| میزکار شخصی | `codex/pc-b-workbench-message-templates@40fa1d6` |
 | Reporting PC-C | `codex/pc-a-authorize-pc-c-reporting@a9300cc` |
 | تقویم نرخ هتل | `codex/pc-a-hotel-rate-calendar-0912@33a087e` |
 | اطلاعات طرف قرارداد | `codex/pc-a-reservation-party-details-0912@e81148c` |
@@ -42,8 +42,8 @@ PC-A و PC-B، بدون از بین‌بردن تغییرات محلی هیچ Wo
 - نصب Frozen و Prisma generate/format/validate: پاس
 - lint: شش Task پاس
 - typecheck: نه Task پاس
-- تست: Web برابر ۱۲۸۷، API برابر ۱۲۱۴، Database برابر ۷۳، Contracts برابر ۶۷،
-  Config برابر ۲ و Worker برابر ۱؛ در مجموع ۲۶۴۴ تست پاس
+- تست: Web برابر ۱۲۹۷، API برابر ۱۲۱۴، Database برابر ۷۳، Contracts برابر ۶۷،
+  Config برابر ۲ و Worker برابر ۱؛ در مجموع ۲۶۵۴ تست پاس
 - Production Build: شش Task و ۴۶ Route پاس
 - `git diff --check` و کنترل الگوی Secret/PII: پاس
 - Smoke Login و Health و اجرای Web روی پورت 3100 پس از Merge ثبت می‌شود.
