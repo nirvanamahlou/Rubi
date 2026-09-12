@@ -33,7 +33,7 @@ describe('customer affairs workspace contract', () => {
       "state === 'forbidden'",
       'SLA',
       'تعداد مسافر',
-      'ثبت پایدار',
+      'ثبت درخواست',
       'ارسال به فروش',
       'بازگشایی',
     ]) {

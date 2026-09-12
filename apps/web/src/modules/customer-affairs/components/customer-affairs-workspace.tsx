@@ -7,6 +7,7 @@ import type {
   CustomerAffairsLeadView,
   CustomerAffairsTicketInput,
   CustomerAffairsTicketView,
+  CustomerAffairsTimelineInput,
 } from '@rubi/contracts';
 import {
   AlertTriangle,
@@ -46,6 +47,7 @@ import {
   CustomerAffairsApiError,
 } from '../api/customer-affairs-client';
 import { CustomerPicker } from './customer-picker';
+import s from './customer-affairs-rubi.module.css';
 
 type Tab = 'leads' | 'tickets';
 type LoadState = 'loading' | 'ready' | 'empty' | 'error' | 'forbidden';
@@ -62,8 +64,11 @@ export type Detail = (CustomerAffairsLeadView | CustomerAffairsTicketView) & {
   handoffs?: Array<Record<string, unknown>>;
 };
 
-const isoLocal = () =>
-  new Date(Date.now() + 60 * 60_000).toISOString().slice(0, 16);
+const localDateValue = (date: Date) =>
+  new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 16);
+const isoLocal = () => localDateValue(new Date(Date.now() + 60 * 60_000));
 export const stageLabel: Record<string, string> = {
   NEW: 'جدید',
   CONTACTED: 'تماس گرفته شد',
@@ -76,7 +81,7 @@ export const stageLabel: Record<string, string> = {
 };
 export const statusLabel: Record<string, string> = {
   NEW: 'جدید',
-  TRIAGED: 'تریاژ',
+  TRIAGED: 'بررسی اولیه',
   IN_PROGRESS: 'در حال رسیدگی',
   WAITING_CUSTOMER: 'منتظر مشتری',
   WAITING_EXTERNAL: 'منتظر واحد دیگر',
@@ -145,11 +150,24 @@ export function LeadForm({
       contactOccurredAt: new Date().toISOString(),
       travelNeed: String(data.get('travelNeed')),
       destinationReference: String(data.get('destination')) || null,
-      datePrecision: 'UNKNOWN',
+      datePrecision: data.get('travelStart') ? 'EXACT' : 'UNKNOWN',
+      travelStart: data.get('travelStart')
+        ? new Date(String(data.get('travelStart'))).toISOString()
+        : null,
+      travelEnd: data.get('travelEnd')
+        ? new Date(String(data.get('travelEnd'))).toISOString()
+        : null,
+      originReference: String(data.get('origin')) || null,
       passengerCount: passengers,
       passengerComposition: { adults: passengers, children: 0, infants: 0 },
-      requestedServices: [],
-      budget: { unknownReason: 'در تماس اولیه اعلام نشد' },
+      requestedServices: data.getAll('services').map(String),
+      budget: data.get('budgetAmount')
+        ? {
+            maximum: String(data.get('budgetAmount')),
+            currencyCode: String(data.get('currency')),
+            basis: 'TOTAL',
+          }
+        : { unknownReason: 'در تماس اولیه اعلام نشد' },
       specialPreferences: null,
       customerId: customer?.id ?? null,
       priority: String(
@@ -172,10 +190,9 @@ export function LeadForm({
   }
   return (
     <Card className="p-5">
-      <h2 className="text-lg font-black">ثبت درخواست یا سرنخ</h2>
+      <h2 className="text-lg font-black">درخواست سفر جدید</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        اطلاعات نامعلوم را خالی بگذارید؛ درخواست با مالک صف و اقدام بعدی پایدار
-        می‌شود.
+        نیاز مشتری را ثبت کنید و برای ادامهٔ پیگیری موعد تعیین کنید.
       </p>
       <form className="mt-5 grid gap-4 lg:grid-cols-2" onSubmit={submit}>
         <FormField label="عنوان">
@@ -211,7 +228,7 @@ export function LeadForm({
               type="number"
               min={1}
               max={100}
-              defaultValue={1}
+              placeholder="تعداد اعلام‌شده توسط مشتری"
               required
             />
           </FormField>
@@ -229,11 +246,54 @@ export function LeadForm({
           </select>
         </FormField>
         <FormField label="صف مسئول">
-          <Input
+          <select
+            className={s.select}
             name="queueCode"
             defaultValue="customer-affairs-front-office"
             required
-          />
+          >
+            <option value="customer-affairs-front-office">
+              پذیرش امور مشتریان
+            </option>
+          </select>
+        </FormField>
+        <FormField label="مبدأ (اختیاری)">
+          <Input name="origin" />
+        </FormField>
+        <FormField label="شروع سفر (اختیاری)">
+          <DatePicker name="travelStart" />
+        </FormField>
+        <FormField label="پایان سفر (اختیاری)">
+          <DatePicker name="travelEnd" />
+        </FormField>
+        <fieldset className="lg:col-span-2 rounded-xl border border-border p-4">
+          <legend className="px-2 text-sm font-bold">خدمات موردنیاز</legend>
+          <div className="flex flex-wrap gap-5">
+            {[
+              ['FLIGHT', 'پرواز'],
+              ['HOTEL', 'هتل'],
+              ['TOUR', 'تور'],
+              ['INSURANCE', 'بیمه'],
+              ['TRANSFER', 'ترانسفر'],
+              ['VISA', 'ویزا'],
+            ].map(([value, label]) => (
+              <label key={value} className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="services" value={value} />
+                {label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <FormField label="سقف بودجه کل سفر (اختیاری)">
+          <Input name="budgetAmount" type="number" min="0.01" step="0.01" />
+        </FormField>
+        <FormField label="ارز بودجه">
+          <select className={s.select} name="currency">
+            <option value="IRR">ریال</option>
+            <option value="USD">دلار آمریکا</option>
+            <option value="EUR">یورو</option>
+            <option value="AED">درهم امارات</option>
+          </select>
         </FormField>
         <FormField label="اقدام بعدی">
           <Input
@@ -260,7 +320,7 @@ export function LeadForm({
         ) : null}
         <div className="flex gap-2 lg:col-span-2">
           <Button disabled={busy} type="submit">
-            {busy ? 'در حال ثبت…' : 'ثبت پایدار'}
+            {busy ? 'در حال ثبت…' : 'ثبت درخواست'}
           </Button>
           <Button onClick={onCancel} type="button" variant="outline">
             انصراف
@@ -349,7 +409,27 @@ export function TicketForm({
         </FormField>
         <div className="grid gap-4">
           <FormField label="دسته">
-            <Input name="category" defaultValue="QUESTION" required />
+            <select
+              className={s.select}
+              name="category"
+              defaultValue="QUESTION"
+              required
+            >
+              {[
+                ['QUESTION', 'سؤال و راهنمایی'],
+                ['COMPLAINT', 'شکایت از خدمت'],
+                ['CHANGE', 'تغییر تاریخ یا خدمت'],
+                ['CANCELLATION', 'درخواست کنسلی'],
+                ['REFUND', 'پیگیری استرداد'],
+                ['DOCUMENT', 'پیگیری مدارک'],
+                ['PAYMENT', 'مشکل پرداخت'],
+                ['OTHER', 'سایر'],
+              ].map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
           </FormField>
           <FormField label="اولویت">
             <select
@@ -408,7 +488,7 @@ export function TicketForm({
         ) : null}
         <div className="flex gap-2 lg:col-span-2">
           <Button disabled={busy} type="submit">
-            {busy ? 'در حال ثبت…' : 'ثبت پایدار'}
+            {busy ? 'در حال ثبت…' : 'ثبت تیکت'}
           </Button>
           <Button onClick={onCancel} type="button" variant="outline">
             انصراف
@@ -435,16 +515,28 @@ export function DetailPanel({
   const [notice, setNotice] = useState('');
   const [referralOpen, setReferralOpen] = useState(false);
   const [surveyUrl, setSurveyUrl] = useState('');
+  const [assessmentOpen, setAssessmentOpen] = useState(false);
+  const [followupOpen, setFollowupOpen] = useState(false);
+  const [activityType, setActivityType] =
+    useState<CustomerAffairsTimelineInput['type']>('NOTE');
+  const [pendingAction, setPendingAction] = useState<
+    'resolve' | 'close' | 'reopen' | 'escalate' | null
+  >(null);
+  const [operationError, setOperationError] = useState(false);
   const stage = 'stage' in detail ? detail.stage : detail.status;
   async function run(operation: () => Promise<unknown>, success: string) {
     setBusy(true);
     setNotice('');
+    setOperationError(false);
     try {
       await operation();
       setNotice(success);
       await onReload();
+      return true;
     } catch (cause) {
+      setOperationError(true);
       setNotice(cause instanceof Error ? cause.message : 'عملیات انجام نشد.');
+      return false;
     } finally {
       setBusy(false);
     }
@@ -452,27 +544,27 @@ export function DetailPanel({
   async function timeline(event: FormEvent) {
     event.preventDefault();
     if (!message.trim()) return;
-    await run(
+    const success = await run(
       () =>
         tab === 'leads'
           ? customerAffairsApi.addLeadTimeline(detail.id, {
-              type: 'NOTE',
+              type: activityType,
               summary: message,
               customerVisible: false,
             })
           : customerAffairsApi.addTicketTimeline(detail.id, {
-              type: 'NOTE',
+              type: activityType,
               summary: message,
               customerVisible: false,
             }),
-      'یادداشت داخلی ثبت شد.',
+      'ارتباط در سابقه پرونده ثبت شد.',
     );
-    setMessage('');
+    if (success) setMessage('');
   }
   async function refer(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    await run(
+    const success = await run(
       () =>
         customerAffairsApi.refer(detail.id, {
           destinationModule: String(data.get('destinationModule')),
@@ -483,7 +575,7 @@ export function DetailPanel({
         }),
       'ارجاع در کارتابل مقصد ثبت شد.',
     );
-    setReferralOpen(false);
+    if (success) setReferralOpen(false);
   }
   async function createSurveyInvitation() {
     setBusy(true);
@@ -509,7 +601,7 @@ export function DetailPanel({
       <Button onClick={onBack} variant="ghost">
         <ArrowLeft className="size-4" /> بازگشت به فهرست
       </Button>
-      <Card className="p-5">
+      <Card className={s.detail}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs text-muted-foreground">
@@ -527,7 +619,7 @@ export function DetailPanel({
         <p className="mt-4 whitespace-pre-wrap text-sm leading-7">
           {'travelNeed' in detail ? detail.travelNeed : detail.description}
         </p>
-        <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+        <dl className={s.recordMeta}>
           <div>
             <dt className="text-muted-foreground">اقدام بعدی</dt>
             <dd className="font-semibold">{detail.nextAction}</dd>
@@ -537,14 +629,64 @@ export function DetailPanel({
             <dd>{new Date(detail.nextActionAt).toLocaleString('fa-IR')}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">نسخه</dt>
-            <dd>{detail.version.toLocaleString('fa-IR')}</dd>
-          </div>
-          <div>
             <dt className="text-muted-foreground">مشتری</dt>
             <dd>{detail.customerId ? 'متصل' : 'نامشخص'}</dd>
           </div>
         </dl>
+        <Button
+          variant="outline"
+          onClick={() => setFollowupOpen((value) => !value)}
+        >
+          تنظیم پیگیری بعدی
+        </Button>
+        {followupOpen && (
+          <form
+            className={s.workflowForm}
+            onSubmit={async (event) => {
+              event.preventDefault();
+              const data = new FormData(event.currentTarget);
+              const success = await run(
+                () =>
+                  customerAffairsApi.updateFollowup(
+                    detail,
+                    String(data.get('nextAction')),
+                    new Date(String(data.get('nextActionAt'))).toISOString(),
+                  ),
+                'پیگیری بعدی ذخیره شد.',
+              );
+              if (success) setFollowupOpen(false);
+            }}
+          >
+            <FormField label="اقدام بعدی">
+              <Input
+                name="nextAction"
+                required
+                minLength={3}
+                defaultValue={detail.nextAction}
+              />
+            </FormField>
+            <FormField label="موعد پیگیری">
+              <DatePicker
+                name="nextActionAt"
+                includeTime
+                required
+                defaultValue={localDateValue(new Date(detail.nextActionAt))}
+              />
+            </FormField>
+            <div className={s.actions}>
+              <Button disabled={busy} type="submit">
+                ذخیره پیگیری
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setFollowupOpen(false)}
+              >
+                انصراف
+              </Button>
+            </div>
+          </form>
+        )}
         {tab === 'leads' ? (
           <div className="mt-5 flex flex-wrap gap-2">
             <Button
@@ -566,190 +708,235 @@ export function DetailPanel({
               disabled={
                 busy || !['NEW', 'CONTACTED', 'QUALIFYING'].includes(stage)
               }
-              onClick={() =>
-                run(
-                  () => customerAffairsApi.qualify(detail.id, detail.version),
-                  'ارزیابی ثبت شد.',
-                )
-              }
+              onClick={() => setAssessmentOpen((value) => !value)}
               variant="outline"
             >
-              <CheckCircle2 className="size-4" /> ارزیابی تکمیل
+              <CheckCircle2 className="size-4" /> ارزیابی آمادگی فروش
             </Button>
           </div>
         ) : (
           <div className="mt-5 flex flex-wrap gap-2">
-            <Button
-              disabled={busy || stage !== 'NEW'}
-              onClick={() =>
-                run(
-                  () =>
-                    customerAffairsApi.transitionTicket(
-                      detail.id,
-                      'TRIAGED',
-                      detail.version,
-                      'بررسی اولیه و تعیین مسیر رسیدگی',
-                    ),
-                  'تیکت تریاژ شد.',
-                )
-              }
-              variant="outline"
-            >
-              تریاژ
-            </Button>
-            <Button
-              disabled={
-                busy ||
-                ![
-                  'TRIAGED',
-                  'REOPENED',
-                  'WAITING_CUSTOMER',
-                  'WAITING_EXTERNAL',
-                ].includes(stage)
-              }
-              onClick={() =>
-                run(
-                  () =>
-                    customerAffairsApi.transitionTicket(
-                      detail.id,
-                      'IN_PROGRESS',
-                      detail.version,
-                      'رسیدگی توسط کارشناس آغاز شد',
-                    ),
-                  'رسیدگی آغاز شد.',
-                )
-              }
-              variant="outline"
-            >
-              شروع رسیدگی
-            </Button>
-            <Button
-              disabled={busy || stage !== 'IN_PROGRESS'}
-              onClick={() =>
-                run(
-                  () =>
-                    customerAffairsApi.transitionTicket(
-                      detail.id,
-                      'WAITING_CUSTOMER',
-                      detail.version,
-                      'در انتظار پاسخ مشتری',
-                    ),
-                  'وضعیت انتظار مشتری ثبت شد.',
-                )
-              }
-              variant="outline"
-            >
-              انتظار مشتری
-            </Button>
-            <Button
-              disabled={busy || stage !== 'IN_PROGRESS'}
-              onClick={() =>
-                run(
-                  () =>
-                    customerAffairsApi.transitionTicket(
-                      detail.id,
-                      'WAITING_EXTERNAL',
-                      detail.version,
-                      'در انتظار اقدام واحد ارجاع‌شده',
-                    ),
-                  'وضعیت انتظار واحد ثبت شد.',
-                )
-              }
-              variant="outline"
-            >
-              انتظار واحد
-            </Button>
-            <Button
-              disabled={
-                busy ||
-                ![
-                  'IN_PROGRESS',
-                  'WAITING_CUSTOMER',
-                  'WAITING_EXTERNAL',
-                  'REOPENED',
-                ].includes(stage)
-              }
-              onClick={() =>
-                run(
-                  () =>
-                    customerAffairsApi.action(detail.id, 'resolve', {
-                      expectedVersion: detail.version,
-                      reason: 'رسیدگی تکمیل شد',
-                      resolutionOutcome: 'درخواست مشتری انجام شد',
-                    }),
-                  'تیکت حل شد.',
-                )
-              }
-            >
-              حل تیکت
-            </Button>
-            <Button
-              disabled={busy || stage !== 'RESOLVED'}
-              onClick={() =>
-                run(
-                  () =>
-                    customerAffairsApi.action(detail.id, 'close', {
-                      expectedVersion: detail.version,
-                      reason: 'تأیید پایان رسیدگی',
-                      resolutionOutcome: 'رسیدگی تکمیل شد',
-                      closeReason: 'پایان فرایند پاسخ‌گویی',
-                    }),
-                  'تیکت بسته شد.',
-                )
-              }
-              variant="outline"
-            >
-              بستن
-            </Button>
-            <Button
-              disabled={
-                busy || !['RESOLVED', 'CLOSED', 'CANCELLED'].includes(stage)
-              }
-              onClick={() =>
-                run(
-                  () =>
-                    customerAffairsApi.action(detail.id, 'reopen', {
-                      expectedVersion: detail.version,
-                      reason: 'مشتری حل نشدن موضوع را اعلام کرد',
-                    }),
-                  'تیکت بازگشایی شد.',
-                )
-              }
-              variant="outline"
-            >
-              بازگشایی
-            </Button>
-            <Button
-              disabled={busy}
-              onClick={() =>
-                run(
-                  () =>
-                    customerAffairsApi.action(detail.id, 'escalate', {
-                      expectedVersion: detail.version,
-                      reason: 'نیازمند رسیدگی سطح بالاتر',
-                    }),
-                  'تصعید ثبت شد.',
-                )
-              }
-              variant="outline"
-            >
-              <AlertTriangle className="size-4" /> تصعید
-            </Button>
-            <Button
-              disabled={busy}
-              onClick={() => setReferralOpen((value) => !value)}
-              variant="outline"
-            >
-              ارجاع داخلی
-            </Button>
-            <Button
-              disabled={busy || !['RESOLVED', 'CLOSED'].includes(stage)}
-              onClick={createSurveyInvitation}
-              variant="outline"
-            >
-              دعوت رضایت‌سنجی
-            </Button>
+            {(
+              [
+                { status: 'TRIAGED', label: 'بررسی اولیه', from: ['NEW'] },
+                {
+                  status: 'IN_PROGRESS',
+                  label: 'شروع رسیدگی',
+                  from: [
+                    'TRIAGED',
+                    'REOPENED',
+                    'WAITING_CUSTOMER',
+                    'WAITING_EXTERNAL',
+                  ],
+                },
+                {
+                  status: 'WAITING_CUSTOMER',
+                  label: 'انتظار پاسخ مشتری',
+                  from: ['IN_PROGRESS'],
+                },
+                {
+                  status: 'WAITING_EXTERNAL',
+                  label: 'انتظار واحد تخصصی',
+                  from: ['IN_PROGRESS'],
+                },
+              ] as const
+            )
+              .filter((item) =>
+                (item.from as readonly string[]).includes(stage),
+              )
+              .map((item) => (
+                <Button
+                  key={item.status}
+                  disabled={busy}
+                  variant="outline"
+                  onClick={() =>
+                    run(
+                      () =>
+                        customerAffairsApi.transitionTicket(
+                          detail.id,
+                          item.status,
+                          detail.version,
+                          item.label,
+                        ),
+                      'وضعیت رسیدگی به‌روز شد.',
+                    )
+                  }
+                >
+                  {item.label}
+                </Button>
+              ))}
+            {[
+              'IN_PROGRESS',
+              'WAITING_CUSTOMER',
+              'WAITING_EXTERNAL',
+              'REOPENED',
+            ].includes(stage) && (
+              <Button
+                disabled={busy}
+                onClick={() => setPendingAction('resolve')}
+              >
+                ثبت نتیجه و حل تیکت
+              </Button>
+            )}
+            {stage === 'RESOLVED' && (
+              <Button disabled={busy} onClick={() => setPendingAction('close')}>
+                بستن پرونده
+              </Button>
+            )}
+            {['RESOLVED', 'CLOSED', 'CANCELLED'].includes(stage) && (
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => setPendingAction('reopen')}
+              >
+                بازگشایی پرونده
+              </Button>
+            )}
+            {!['RESOLVED', 'CLOSED', 'CANCELLED'].includes(stage) && (
+              <>
+                <Button
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => setReferralOpen((value) => !value)}
+                >
+                  ارجاع داخلی
+                </Button>
+                <Button
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={() => setPendingAction('escalate')}
+                >
+                  <AlertTriangle className="size-4" />
+                  ارجاع به سرپرست
+                </Button>
+              </>
+            )}
+            {['RESOLVED', 'CLOSED'].includes(stage) && (
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={createSurveyInvitation}
+              >
+                دعوت رضایت‌سنجی
+              </Button>
+            )}
           </div>
+        )}
+        {assessmentOpen && tab === 'leads' && (
+          <form
+            className={s.workflowForm}
+            onSubmit={async (event) => {
+              event.preventDefault();
+              const data = new FormData(event.currentTarget);
+              const success = await run(
+                () =>
+                  customerAffairsApi.qualify(detail.id, detail.version, {
+                    travelNeedConfirmed: data.has('travelNeedConfirmed'),
+                    destinationKnown: data.has('destinationKnown'),
+                    timingKnown: data.has('timingKnown'),
+                    budgetDiscussed: data.has('budgetDiscussed'),
+                    decisionMakerReachable: data.has('decisionMakerReachable'),
+                    contactable: data.has('contactable'),
+                  }),
+                'نتیجه ارزیابی ثبت شد.',
+              );
+              if (success) setAssessmentOpen(false);
+            }}
+          >
+            <h3>آمادگی تحویل به فروش</h3>
+            <p className={s.muted}>
+              فقط مواردی را تأیید کنید که در گفتگو با مشتری بررسی شده‌اند.
+            </p>
+            {[
+              ['travelNeedConfirmed', 'نیاز سفر مشخص و تأیید شده است'],
+              ['destinationKnown', 'مقصد یا گزینه‌های پذیرفتنی مشخص است'],
+              ['timingKnown', 'زمان سفر یا انعطاف آن مشخص است'],
+              ['budgetDiscussed', 'درباره بودجه گفتگو شده است'],
+              ['decisionMakerReachable', 'با تصمیم‌گیرنده ارتباط داریم'],
+              ['contactable', 'راه تماس مشتری معتبر است'],
+            ].map(([key, label]) => (
+              <label key={key}>
+                <input type="checkbox" name={key} />
+                {label}
+              </label>
+            ))}
+            <div className={s.actions}>
+              <Button disabled={busy} type="submit">
+                ثبت ارزیابی
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAssessmentOpen(false)}
+              >
+                انصراف
+              </Button>
+            </div>
+          </form>
+        )}
+        {pendingAction && (
+          <form
+            className={s.workflowForm}
+            onSubmit={async (event) => {
+              event.preventDefault();
+              const data = new FormData(event.currentTarget);
+              const reason = String(data.get('reason'));
+              const success = await run(
+                () =>
+                  customerAffairsApi.action(detail.id, pendingAction, {
+                    expectedVersion: detail.version,
+                    reason,
+                    resolutionOutcome: String(data.get('result') || ''),
+                    ...(pendingAction === 'close'
+                      ? { closeReason: reason }
+                      : {}),
+                  }),
+                'نتیجه رسیدگی ثبت شد.',
+              );
+              if (success) setPendingAction(null);
+            }}
+          >
+            <h3>
+              {
+                {
+                  resolve: 'ثبت حل تیکت',
+                  close: 'بستن پرونده',
+                  reopen: 'بازگشایی پرونده',
+                  escalate: 'ارجاع به سرپرست',
+                }[pendingAction]
+              }
+            </h3>
+            <FormField label="دلیل اقدام">
+              <Textarea name="reason" required minLength={3} maxLength={500} />
+            </FormField>
+            {(pendingAction === 'resolve' || pendingAction === 'close') && (
+              <FormField label="نتیجه رسیدگی و نحوه اطلاع‌رسانی به مشتری">
+                <Textarea
+                  name="result"
+                  required
+                  minLength={3}
+                  maxLength={1000}
+                  defaultValue={
+                    'resolutionOutcome' in detail
+                      ? detail.resolutionOutcome || ''
+                      : ''
+                  }
+                />
+              </FormField>
+            )}
+            <div className={s.actions}>
+              <Button disabled={busy} type="submit">
+                ثبت نتیجه
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPendingAction(null)}
+              >
+                انصراف
+              </Button>
+            </div>
+          </form>
         )}
         {surveyUrl ? (
           <div className="mt-4 rounded-xl border border-border bg-muted/30 p-4">
@@ -771,7 +958,7 @@ export function DetailPanel({
             className="mt-4"
             title="نتیجه عملیات"
             description={notice}
-            tone={notice.includes('نشد') ? 'error' : 'info'}
+            tone={operationError ? 'error' : 'info'}
           />
         ) : null}
         {tab === 'tickets' && referralOpen ? (
@@ -780,14 +967,20 @@ export function DetailPanel({
             onSubmit={refer}
           >
             <FormField label="ماژول مقصد">
-              <Input
-                name="destinationModule"
-                required
-                placeholder="reservations"
-              />
+              <select name="destinationModule" required className={s.select}>
+                <option value="reservations">رزرواسیون و عملیات سفر</option>
+                <option value="sales">فروش و قراردادها</option>
+                <option value="finance">مالی</option>
+                <option value="customers">مشتریان و مسافران</option>
+                <option value="documents">اسناد</option>
+              </select>
             </FormField>
             <FormField label="واحد مقصد">
-              <Input name="destinationUnit" required placeholder="operations" />
+              <Input
+                name="destinationUnit"
+                required
+                placeholder="نام واحد مسئول رسیدگی"
+              />
             </FormField>
             <FormField label="عنوان کار">
               <Input name="title" required minLength={3} />
@@ -806,25 +999,76 @@ export function DetailPanel({
               </FormField>
             </div>
             <Button className="sm:col-span-2" disabled={busy} type="submit">
-              ثبت ارجاع پایدار
+              ثبت ارجاع
             </Button>
           </form>
         ) : null}
       </Card>
-      <Card className="p-5">
-        <h3 className="font-black">Timeline</h3>
+      {detail.handoffs?.length || detail.referrals?.length ? (
+        <Card className={s.detail}>
+          <h3>{tab === 'leads' ? 'وضعیت تحویل به فروش' : 'ارجاع‌های مرتبط'}</h3>
+          {(tab === 'leads' ? detail.handoffs : detail.referrals)?.map(
+            (item, index) => (
+              <div
+                className="mt-3 rounded-xl border border-border p-4"
+                key={String(item.id || index)}
+              >
+                <p className="font-semibold">
+                  {String(item.title || 'تحویل به فروش')} ·{' '}
+                  {(
+                    {
+                      WAITING_SALES: 'منتظر پذیرش فروش',
+                      ACCEPTED: 'پذیرفته شده',
+                      RETURNED: 'برگشت برای تکمیل',
+                      REJECTED: 'رد شده',
+                      OPEN: 'باز',
+                      IN_PROGRESS: 'در حال رسیدگی',
+                      DONE: 'انجام شده',
+                    } as Record<string, string>
+                  )[String(item.status)] || String(item.status || '')}
+                </p>
+                <p className={s.muted}>
+                  {String(
+                    item.responseReason ||
+                      item.responseSummary ||
+                      'هنوز پاسخی ثبت نشده است.',
+                  )}
+                </p>
+              </div>
+            ),
+          )}
+        </Card>
+      ) : null}
+      <Card className={s.detail}>
+        <h3 className="font-black">سابقه ارتباط و رسیدگی</h3>
         <form
           className="mt-3 flex flex-col gap-2 sm:flex-row"
           onSubmit={timeline}
         >
+          <select
+            className={s.select}
+            style={{ maxWidth: 180 }}
+            aria-label="نوع ارتباط"
+            value={activityType}
+            onChange={(event) =>
+              setActivityType(
+                event.target.value as CustomerAffairsTimelineInput['type'],
+              )
+            }
+          >
+            <option value="NOTE">یادداشت داخلی</option>
+            <option value="CALL">ثبت تماس</option>
+            <option value="MEETING">ثبت جلسه</option>
+            <option value="CUSTOMER_REPLY">پاسخ دریافتی مشتری</option>
+          </select>
           <Input
             aria-label="یادداشت داخلی"
             value={message}
             onChange={(event) => setMessage(event.target.value)}
-            placeholder="یادداشت داخلی (برای مشتری ارسال نمی‌شود)"
+            placeholder="خلاصه ارتباط و نتیجه آن (ثبت داخلی)"
           />
           <Button disabled={busy || !message.trim()} type="submit">
-            ثبت یادداشت
+            ثبت ارتباط
           </Button>
         </form>
         <ol className="mt-5 space-y-3">
@@ -835,7 +1079,21 @@ export function DetailPanel({
                 key={item.id ?? `${item.type}-${index}`}
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge>{item.type}</Badge>
+                  <Badge>
+                    {(
+                      {
+                        NOTE: 'یادداشت داخلی',
+                        CALL: 'تماس',
+                        MEETING: 'جلسه',
+                        MESSAGE: 'پیام',
+                        CUSTOMER_REPLY: 'پاسخ مشتری',
+                        ASSIGNMENT: 'تعیین مسئول',
+                        STATUS_CHANGE: 'تغییر وضعیت',
+                        ESCALATION: 'ارجاع به سرپرست',
+                        REFERRAL: 'ارجاع داخلی',
+                      } as Record<string, string>
+                    )[item.type] || item.type}
+                  </Badge>
                   {item.customerVisible ? (
                     <span className="text-xs text-emerald-700">
                       قابل مشاهده برای مشتری

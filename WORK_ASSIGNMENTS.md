@@ -1,5 +1,10 @@
 # Work Assignments
 
+## CUSTOMER-AFFAIRS-WORKFLOW-REDESIGN — PC-B — DONE / VERIFIED
+
+- User authorizes logical restructuring and frontend redesign. Base is the live combined source `87239f4` to preserve unmerged Customer Affairs and shared Web3100 functionality; branch `codex/pc-b-customer-affairs-workflow-redesign`. Reserve Customer Affairs Web components/styles/client and focused tests plus this entry and own status/task documentation. Four primary sections; contextual filters, actionable overview, explicit qualification/communication/result forms using existing APIs. No schema, shared contract or dependency changes. Verify build and authenticated Web3100; API4190 retained. No merge.
+- Completed the four-section interface, overdue worklist, contextual filters, explicit qualification, editable followups and stage-specific support actions. Scoped ESLint, 29 focused tests and production build/typecheck (46 routes) passed; authenticated desktop/mobile QA verified existing records and no horizontal overflow at 390px. Web3100 restarted; API4190/data unchanged. Implementation reservation released; see task document for integration boundaries. No merge.
+
 ## CUSTOMER-AFFAIRS-REMOVE-HR-OUTLET — PC-B — DONE / VERIFIED
 
 - User requests removal of the supplementary «درخواست‌های منابع انسانی» card from Customer Affairs only. Reserve the Customer Affairs Rubi workspace, its scoped structural test and own status entry on `codex/pc-b-customer-affairs-remove-hr-outlet`; use the existing public HR visibility contract so the HR module and its outlet on all other routes remain unchanged. Rebuild/restart owned Web3100 only and verify in the authenticated browser; API4190, stored data, schema, permissions and dependencies stay untouched. No merge.

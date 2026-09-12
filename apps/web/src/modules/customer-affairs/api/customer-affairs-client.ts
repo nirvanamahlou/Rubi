@@ -84,6 +84,70 @@ function query(
 }
 
 export const customerAffairsApi = {
+  updateFollowup: (
+    record: CustomerAffairsLeadView | CustomerAffairsTicketView,
+    nextAction: string,
+    nextActionAt: string,
+  ) => {
+    const lead = 'stage' in record;
+    const keys = lead
+      ? [
+          'title',
+          'sourceReference',
+          'inboundChannel',
+          'contactOccurredAt',
+          'travelNeed',
+          'originReference',
+          'destinationReference',
+          'travelStart',
+          'travelEnd',
+          'datePrecision',
+          'dateFlexibility',
+          'passengerCount',
+          'passengerComposition',
+          'requestedServices',
+          'budget',
+          'specialPreferences',
+          'contactFingerprint',
+          'customerId',
+          'priority',
+          'assigneeUserId',
+          'queueCode',
+        ]
+      : [
+          'subject',
+          'description',
+          'channel',
+          'contactOccurredAt',
+          'category',
+          'serviceType',
+          'impact',
+          'urgency',
+          'priority',
+          'customerId',
+          'customerOwnerUserId',
+          'executionOwnerUserId',
+          'executionUnit',
+          'references',
+        ];
+    const input = Object.fromEntries(
+      keys
+        .filter((key) => key in record)
+        .map((key) => [
+          key,
+          (record as unknown as Record<string, unknown>)[key],
+        ]),
+    );
+    return request(`/${lead ? 'leads' : 'tickets'}/${record.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        ...input,
+        nextAction,
+        nextActionAt,
+        expectedVersion: record.version,
+      }),
+    });
+  },
   dashboard: () => request<{ data: CustomerAffairsDashboard }>('/dashboard'),
   report: () => request<{ data: AffairsReport }>('/reports/summary'),
   leads: (search = '', options: AffairsListOptions = {}) =>
@@ -110,16 +174,22 @@ export const customerAffairsApi = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
-  qualify: (id: string, version: number) =>
+  qualify: (
+    id: string,
+    version: number,
+    assessment: {
+      travelNeedConfirmed: boolean;
+      destinationKnown: boolean;
+      timingKnown: boolean;
+      budgetDiscussed: boolean;
+      decisionMakerReachable: boolean;
+      contactable: boolean;
+    },
+  ) =>
     request(`/leads/${id}/qualification`, {
       method: 'POST',
       body: JSON.stringify({
-        travelNeedConfirmed: true,
-        destinationKnown: true,
-        timingKnown: true,
-        budgetDiscussed: true,
-        decisionMakerReachable: true,
-        contactable: true,
+        ...assessment,
         expectedVersion: version,
       }),
     }),

@@ -52,8 +52,8 @@ type View =
   | 'reports';
 const sections = [
   { view: 'overview', title: 'نمای کلی', icon: Home },
-  { view: 'leads', title: 'پیش از فروش', icon: Users },
-  { view: 'tickets', title: 'پشتیبانی', icon: Inbox },
+  { view: 'leads', title: 'درخواست‌ها و سرنخ‌ها', icon: Users },
+  { view: 'tickets', title: 'تیکت‌های پشتیبانی', icon: Inbox },
   { view: 'reports', title: 'گزارش‌ها', icon: BarChart3 },
 ] as const;
 const hubs = [
@@ -66,14 +66,14 @@ const hubs = [
   },
   {
     view: 'followups',
-    title: 'پیگیری‌ها و ارتباطات',
+    title: 'پیگیری معوق',
     text: 'تماس، نتیجه، اقدام بعدی و پیگیری‌های معوق',
     icon: Clock3,
     color: 'amber',
   },
   {
     view: 'handoffs',
-    title: 'تحویل‌های فروش',
+    title: 'منتظر پذیرش فروش',
     text: 'ارزیابی، ارسال بسته و پیگیری نتیجه فروش',
     icon: Send,
     color: 'teal',
@@ -87,7 +87,7 @@ const hubs = [
   },
   {
     view: 'queues',
-    title: 'صف‌ها و مهلت رسیدگی',
+    title: 'تیکت‌های معوق',
     text: 'پیگیری موارد معوق، ارجاع داخلی و تشدید',
     icon: ShieldCheck,
     color: 'red',
@@ -136,9 +136,11 @@ export function CustomerAffairsRubiWorkspace() {
   ) as View;
   const family = ['leads', 'followups', 'handoffs'].includes(view)
     ? 'leads'
-    : ['tickets', 'queues', 'satisfaction'].includes(view)
+    : ['tickets', 'queues'].includes(view)
       ? 'tickets'
-      : view;
+      : view === 'satisfaction'
+        ? 'reports'
+        : view;
   const ticketId = params.get('ticket');
   const leadId = params.get('lead');
   const id = ticketId || leadId;
@@ -156,6 +158,7 @@ export function CustomerAffairsRubiWorkspace() {
     tickets: [],
     total: 0,
   });
+  const [attention, setAttention] = useState<CustomerAffairsLeadView[]>([]);
   const [state, setState] = useState<
     'loading' | 'ready' | 'error' | 'forbidden'
   >('loading');
@@ -182,11 +185,13 @@ export function CustomerAffairsRubiWorkspace() {
           await (tab === 'tickets' ? api.ticket(id) : api.lead(id))
         ).data as Detail;
       else if (view === 'overview') {
-        const [dashboard, leads, tickets] = await Promise.all([
+        const [dashboard, leads, tickets, overdue] = await Promise.all([
           api.dashboard(),
           api.leads('', { stage: 'HANDOFF_PROPOSED', pageSize: 5 }),
           api.tickets('', 'ALL', { pageSize: 5 }),
+          api.leads('', { overdueOnly: true, pageSize: 5 }),
         ]);
+        if (current) setAttention(overdue.data);
         result.dashboard = dashboard.data;
         result.leads = leads.data;
         result.tickets = tickets.data;
@@ -255,7 +260,7 @@ export function CustomerAffairsRubiWorkspace() {
     <div className={s.workspace} dir="rtl">
       <header className={s.header}>
         <div>
-          <span className={s.eyebrow}>CUSTOMER AFFAIRS</span>
+          <span className={s.eyebrow}>ارتباط با مشتری</span>
           <h1>امور مشتریان</h1>
         </div>
         <div className={s.actions}>
@@ -265,7 +270,7 @@ export function CustomerAffairsRubiWorkspace() {
           </Button>
           <Button onClick={() => setForm('leads')}>
             <Plus size={16} />
-            درخواست مشتری جدید
+            ثبت درخواست سفر
           </Button>
         </div>
       </header>
@@ -302,7 +307,7 @@ export function CustomerAffairsRubiWorkspace() {
                 .filter((x) =>
                   (family === 'leads'
                     ? ['leads', 'followups', 'handoffs']
-                    : ['tickets', 'queues', 'satisfaction']
+                    : ['tickets', 'queues']
                   ).includes(x.view),
                 )
                 .map((x) => (
@@ -311,7 +316,9 @@ export function CustomerAffairsRubiWorkspace() {
                     aria-pressed={view === x.view}
                     onClick={() => navigate(x.view)}
                   >
-                    {x.title}
+                    {x.view === 'leads' || x.view === 'tickets'
+                      ? 'همه پرونده‌ها'
+                      : x.title}
                   </button>
                 ))}
             </nav>
@@ -339,6 +346,7 @@ export function CustomerAffairsRubiWorkspace() {
             />
           ) : loaded.detail && id ? (
             <DetailPanel
+              key={id}
               detail={loaded.detail}
               tab={tab}
               onBack={() => navigate(tab)}
@@ -372,8 +380,8 @@ export function CustomerAffairsRubiWorkspace() {
                         color: 'purple',
                       },
                       {
-                        label: 'نقض مهلت رسیدگی',
-                        value: loaded.dashboard?.tickets.breached,
+                        label: 'تیکت‌های معوق',
+                        value: loaded.dashboard?.tickets.overdue,
                         view: 'queues',
                         icon: ShieldCheck,
                         color: 'red',
@@ -398,30 +406,54 @@ export function CustomerAffairsRubiWorkspace() {
                       </button>
                     ))}
                   </div>
-                  <div className={s.hub}>
-                    {hubs.map(
-                      ({ view: v, title: t, text, icon: Icon, color }) => (
-                        <button
-                          key={v}
-                          className={s.hubCard}
-                          style={accent(color)}
-                          onClick={() => navigate(v)}
-                        >
-                          <span className={s.hubTitle}>
-                            <span className={s.icon}>
-                              <Icon />
-                            </span>
-                            {t}
+                  <section className={s.attention}>
+                    <div className={s.panelHead}>
+                      <div>
+                        <h2>
+                          <Clock3 aria-hidden="true" />
+                          نیازمند پیگیری
+                        </h2>
+                        <p className={s.muted}>
+                          درخواست‌هایی که موعد اقدام بعدی آن‌ها گذشته است
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => navigate('followups')}
+                      >
+                        مشاهده همه پیگیری‌ها <ArrowLeft size={16} />
+                      </Button>
+                    </div>
+                    {attention.length ? (
+                      attention.map((row) => (
+                        <div className={s.listItem} key={row.id}>
+                          <span className={s.icon} style={accent('amber')}>
+                            <Clock3 aria-hidden="true" />
                           </span>
-                          <p>{text}</p>
-                          <footer>
-                            ورود به بخش
-                            <ArrowLeft size={16} />
-                          </footer>
-                        </button>
-                      ),
+                          <div className={s.grow}>
+                            <button
+                              className={s.titleButton}
+                              onClick={() => navigate('leads', row.id)}
+                            >
+                              {row.title}
+                            </button>
+                            <p className={s.muted}>{row.nextAction}</p>
+                          </div>
+                          <time className={s.due}>
+                            {date(row.nextActionAt)}
+                          </time>
+                          <Button
+                            variant="ghost"
+                            onClick={() => navigate('leads', row.id)}
+                          >
+                            پیگیری <ArrowLeft size={15} />
+                          </Button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className={s.empty}>پیگیری عقب‌افتاده‌ای ندارید.</p>
                     )}
-                  </div>
+                  </section>
                   <div className={s.columns}>
                     {(['tickets', 'leads'] as const).map((kind) => (
                       <section className={s.panel} key={kind}>
@@ -477,9 +509,9 @@ export function CustomerAffairsRubiWorkspace() {
                     <div className={s.flow}>
                       {[
                         'ارزیابی شرایط',
-                        'ارسال بسته نسخه‌دار',
+                        'ارسال درخواست',
                         'پذیرش فروش',
-                        'ثبت نتیجه مقصد',
+                        'ادامه در فروش',
                       ].map((x, i) => (
                         <span key={x}>
                           <b>{number(i + 1)}</b>

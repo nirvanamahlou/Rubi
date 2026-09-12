@@ -1,4 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type {
+  CustomerAffairsLeadView,
+  CustomerAffairsTicketView,
+} from '@rubi/contracts';
 
 import {
   customerAffairsApi,
@@ -13,6 +17,74 @@ afterEach(() => {
 });
 
 describe('customer affairs operational API client', () => {
+  it.each(['leads', 'tickets'] as const)(
+    'updates %s followup with concurrency protection and without writing read-only state',
+    async (kind) => {
+      process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4190/api/v1';
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue({ ok: true, json: async () => ({ data: {} }) });
+      vi.stubGlobal('fetch', fetchMock);
+      const record = {
+        id: 'record',
+        version: 7,
+        customerId: 'customer',
+        nextAction: 'old',
+        nextActionAt: '2026-09-12T10:00:00Z',
+        ...(kind === 'leads'
+          ? { stage: 'NEW', title: 'Need', queueCode: 'front-office' }
+          : {
+              status: 'IN_PROGRESS',
+              subject: 'Question',
+              customerOwnerUserId: 'owner',
+            }),
+        trackingNumber: 'read-only',
+        timeline: [{ summary: 'private' }],
+      } as unknown as CustomerAffairsLeadView | CustomerAffairsTicketView;
+      await customerAffairsApi.updateFollowup(
+        record,
+        'Follow up tomorrow',
+        '2026-09-14T10:00:00Z',
+      );
+      expect(fetchMock.mock.calls[0]![0]).toContain(`/${kind}/record`);
+      const payload = JSON.parse(fetchMock.mock.calls[0]![1].body);
+      expect(payload).toMatchObject({
+        customerId: 'customer',
+        expectedVersion: 7,
+        nextAction: 'Follow up tomorrow',
+        nextActionAt: '2026-09-14T10:00:00Z',
+      });
+      for (const key of [
+        'stage',
+        'status',
+        'trackingNumber',
+        'timeline',
+        'id',
+        'version',
+      ])
+        expect(payload).not.toHaveProperty(key);
+    },
+  );
+  it('preserves unchecked qualification criteria instead of approving them', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4190/api/v1';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ data: {} }) });
+    vi.stubGlobal('fetch', fetchMock);
+    const assessment = {
+      travelNeedConfirmed: true,
+      destinationKnown: false,
+      timingKnown: false,
+      budgetDiscussed: false,
+      decisionMakerReachable: true,
+      contactable: true,
+    };
+    await customerAffairsApi.qualify('lead', 3, assessment);
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({
+      ...assessment,
+      expectedVersion: 3,
+    });
+  });
   it('sends server pagination and filters without losing search or credentials', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4190/api/v1';
     const fetchMock = vi

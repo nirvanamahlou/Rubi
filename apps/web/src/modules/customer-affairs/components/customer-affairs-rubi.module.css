@@ -45,7 +45,7 @@
 }
 .tabs {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 9px;
   margin-bottom: 22px;
 }
@@ -62,11 +62,11 @@
   );
   color: var(--muted-foreground);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 83px;
+  min-height: 58px;
   padding: 12px 5px;
   font-size: 13px;
   font-weight: 700;
@@ -337,6 +337,86 @@
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
   gap: 19px;
+}
+.attention {
+  margin-bottom: 22px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ca-amber) 28%, var(--border));
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--ca-amber) 6%, transparent);
+}
+.attention .panelHead {
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--ca-amber) 10%, var(--surface)),
+    var(--surface)
+  );
+}
+.attention .panelHead h2 svg {
+  color: var(--ca-amber);
+}
+.due {
+  font-size: 12px;
+  color: var(--ca-amber);
+}
+.detail {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--primary) 5%, transparent);
+}
+.detail h3 {
+  font-size: 16px;
+  font-weight: 800;
+}
+.workflowForm {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--primary) 3%, var(--surface));
+}
+.workflowForm label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+.workflowForm input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+.select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--input);
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: var(--surface);
+  color: var(--foreground);
+}
+.recordMeta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-block: 20px;
+  padding: 16px;
+  background: var(--muted);
+  border-radius: 12px;
+}
+.recordMeta dt {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.recordMeta dd {
+  font-size: 14px;
+  overflow-wrap: anywhere;
 }
 .panel {
   min-width: 0;
@@ -660,11 +740,20 @@
     min-height: 165px;
   }
   .tabs {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 7px;
   }
   .tab {
-    min-height: 70px;
+    min-height: 58px;
+  }
+  .attention .listItem {
+    flex-wrap: wrap;
+  }
+  .recordMeta {
+    grid-template-columns: 1fr;
+  }
+  .detail {
+    padding: 16px;
   }
   .metric {
     padding: 12px;
