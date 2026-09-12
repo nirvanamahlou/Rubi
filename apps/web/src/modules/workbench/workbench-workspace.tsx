@@ -27,6 +27,10 @@ import {
   Badge,
   Button,
   Card,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
   EmptyState,
   PageHeader,
   Skeleton,
@@ -55,6 +59,8 @@ import { MessageComposer } from './message-composer';
 import { PasswordChange } from './password-change';
 import { allowedWorkbenchDestinations } from './connections';
 import { WorkbenchHrNotifications } from './workbench-hr-notifications';
+import { NewRequestDialog } from './new-request-dialog';
+import { messageUnits } from './message-templates';
 
 const tabIcons = [
   Home,
@@ -78,6 +84,9 @@ export function WorkbenchWorkspace() {
   const [pendingRead, setPendingRead] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
   const [noteOpen, setNoteOpen] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [messageOpen, setMessageOpen] = useState(false);
+  const [messageUnit, setMessageUnit] = useState('finance');
   const [passwordOpen, setPasswordOpen] = useState(false);
   const generation = useRef(0);
   const invalidate = useCallback(() => {
@@ -105,9 +114,12 @@ export function WorkbenchWorkspace() {
   }, []);
   useEffect(() => {
     const timer =
-      noteOpen || passwordOpen ? undefined : setTimeout(() => void load(), 0);
+      noteOpen || passwordOpen || requestOpen || messageOpen
+        ? undefined
+        : setTimeout(() => void load(), 0);
     const refresh = () => {
-      if (!noteOpen && !passwordOpen) void load();
+      if (!noteOpen && !passwordOpen && !requestOpen && !messageOpen)
+        void load();
     };
     window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
     return () => {
@@ -115,7 +127,7 @@ export function WorkbenchWorkspace() {
       invalidate();
       window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
     };
-  }, [load, invalidate, noteOpen, passwordOpen]);
+  }, [load, invalidate, noteOpen, passwordOpen, requestOpen, messageOpen]);
   function selectTab(value: string) {
     const query = new URLSearchParams(params.toString());
     query.set('tab', normalizeWorkbenchTab(value));
@@ -142,6 +154,24 @@ export function WorkbenchWorkspace() {
         description="کارهای روزانه، فایل‌ها و ارتباط شما با بخش‌های روبی."
         actions={
           <div className="flex flex-wrap gap-2">
+            <Button
+              disabled={!home || loading}
+              onClick={() => setRequestOpen(true)}
+            >
+              <ClipboardList className="size-4" aria-hidden="true" />
+              درخواست جدید
+            </Button>
+            <Button
+              variant="outline"
+              disabled={!home || loading}
+              onClick={() => {
+                selectTab('messages');
+                setMessageOpen(true);
+              }}
+            >
+              <MessageSquare className="size-4" aria-hidden="true" />
+              پیام جدید
+            </Button>
             <Button
               disabled={!home || loading}
               onClick={() => setNoteOpen(true)}
@@ -233,7 +263,7 @@ export function WorkbenchWorkspace() {
                     <TabsTrigger
                       key={id}
                       value={id}
-                      className="min-h-16 whitespace-normal flex flex-col gap-2 px-2 py-3"
+                      className="min-h-24 whitespace-normal flex flex-col items-center justify-center gap-3 px-2 py-4 text-center text-base font-semibold [&>span]:w-full [&>span]:text-center"
                     >
                       <Icon className="size-5" aria-hidden="true" />
                       <span>{label}</span>
@@ -252,6 +282,7 @@ export function WorkbenchWorkspace() {
                     }
                     detail="اعلان‌های ارسال‌شده برای شما"
                     icon={Bell}
+                    tone="amber"
                   />
                   <Metric
                     title="فایل‌های من"
@@ -266,6 +297,7 @@ export function WorkbenchWorkspace() {
                         : 'اسناد متعلق به حساب شما'
                     }
                     icon={FileText}
+                    tone="blue"
                     onClick={() => selectTab('files')}
                   />
                   <Metric
@@ -273,12 +305,14 @@ export function WorkbenchWorkspace() {
                     value={null}
                     detail="این قابلیت هنوز فعال نشده است"
                     icon={ClipboardList}
+                    tone="green"
                   />
                   <Metric
                     title="گفت‌وگوهای داخلی"
                     value={null}
                     detail="این قابلیت هنوز فعال نشده است"
                     icon={MessageSquare}
+                    tone="violet"
                   />
                 </div>
                 <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
@@ -401,7 +435,10 @@ export function WorkbenchWorkspace() {
                 </div>
               </TabsContent>
               <TabsContent value="messages">
-                <MessageComposer key={home.user.id} />
+                <MessageComposer
+                  key={`${home.user.id}-${messageUnit}`}
+                  initialUnit={messageUnit}
+                />
               </TabsContent>
               <TabsContent value="stars">
                 <WorkbenchFavorites key={home.user.id} user={home.user} />
@@ -438,72 +475,119 @@ export function WorkbenchWorkspace() {
                 </Card>
               </TabsContent>
               <TabsContent value="account">
-                <Card className="p-5 space-y-5">
-                  <div className="flex items-center gap-3">
-                    <UserRound
-                      className="text-primary size-6"
-                      aria-hidden="true"
-                    />
-                    <h2 className="font-bold">{home.user.displayName}</h2>
+                <Card className="overflow-hidden lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+                  <div className="space-y-6 bg-primary/5 p-6 lg:p-8">
+                    <div className="flex items-center gap-3 border-b border-border pb-5">
+                      <UserRound
+                        className="text-primary size-6"
+                        aria-hidden="true"
+                      />
+                      <div>
+                        <h2 className="text-xl font-bold">
+                          {home.user.displayName}
+                        </h2>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          اطلاعات حساب من
+                        </p>
+                      </div>
+                    </div>
+                    <dl className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <dt className="text-xs text-muted-foreground">
+                          نام کاربری
+                        </dt>
+                        <dd className="mt-1 font-medium">
+                          {home.user.username}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">ایمیل</dt>
+                        <dd className="mt-1 break-all">
+                          {home.user.email || 'ثبت نشده'}
+                        </dd>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <dt className="text-xs text-muted-foreground">
+                          شعب مجاز
+                        </dt>
+                        <dd className="mt-2 flex flex-wrap gap-2">
+                          {home.user.branches.map((branch) => (
+                            <Badge key={branch.id}>{branch.name}</Badge>
+                          ))}
+                        </dd>
+                      </div>
+                    </dl>
                   </div>
-                  <dl className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-5 p-6 lg:p-8">
                     <div>
-                      <dt className="text-xs text-muted-foreground">
-                        نام کاربری
-                      </dt>
-                      <dd className="mt-1 font-medium">{home.user.username}</dd>
+                      <h2 className="text-lg font-bold">تنظیمات و امنیت</h2>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        پروفایل، ترجیحات و دسترسی‌های حساب خود را مدیریت کنید.
+                      </p>
                     </div>
-                    <div>
-                      <dt className="text-xs text-muted-foreground">ایمیل</dt>
-                      <dd className="mt-1 break-all">
-                        {home.user.email || 'ثبت نشده'}
-                      </dd>
+                    <div className="grid gap-3 sm:grid-cols-2 [&>button]:min-h-16 [&>a]:min-h-16 [&>a]:justify-start">
+                      <PasswordChange
+                        open={passwordOpen}
+                        onOpenChange={setPasswordOpen}
+                        userId={home.user.id}
+                        username={home.user.username}
+                      />
+                      <Button asChild variant="outline">
+                        <Link href="/profile">
+                          <UserRound className="size-4" aria-hidden="true" />
+                          پروفایل من
+                        </Link>
+                      </Button>
+                      <Button asChild variant="outline">
+                        <Link href="/profile?tab=security">
+                          <ShieldCheck className="size-4" aria-hidden="true" />
+                          امنیت و نشست‌ها
+                        </Link>
+                      </Button>
+                      <Button asChild variant="outline">
+                        <Link href="/profile?tab=preferences">
+                          <Settings2 className="size-4" aria-hidden="true" />
+                          تنظیمات شخصی
+                        </Link>
+                      </Button>
                     </div>
-                    <div className="sm:col-span-2">
-                      <dt className="text-xs text-muted-foreground">
-                        شعب مجاز
-                      </dt>
-                      <dd className="mt-2 flex flex-wrap gap-2">
-                        {home.user.branches.map((branch) => (
-                          <Badge key={branch.id}>{branch.name}</Badge>
-                        ))}
-                      </dd>
-                    </div>
-                  </dl>
-                  <div className="flex flex-wrap gap-3">
-                    <PasswordChange
-                      open={passwordOpen}
-                      onOpenChange={setPasswordOpen}
-                      userId={home.user.id}
-                      username={home.user.username}
-                    />
-                    <Button asChild variant="outline">
-                      <Link href="/profile">
-                        <UserRound className="size-4" aria-hidden="true" />
-                        پروفایل من
-                      </Link>
-                    </Button>
-                    <Button asChild variant="outline">
-                      <Link href="/profile?tab=security">
-                        <ShieldCheck className="size-4" aria-hidden="true" />
-                        امنیت و نشست‌ها
-                      </Link>
-                    </Button>
-                    <Button asChild variant="outline">
-                      <Link href="/profile?tab=preferences">
-                        <Settings2 className="size-4" aria-hidden="true" />
-                        تنظیمات شخصی
-                      </Link>
-                    </Button>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    حالت روشن و تیره از سربرگ اصلی روبی تغییر می‌کند.
-                  </p>
                 </Card>
               </TabsContent>
             </Tabs>
           </>
         )
+      )}
+      {home && (
+        <Dialog open={messageOpen} onOpenChange={setMessageOpen}>
+          <DialogContent dir="rtl" className="max-w-xl">
+            <DialogTitle>پیام جدید</DialogTitle>
+            <DialogDescription>
+              واحد مخاطب را از فهرست پیام‌رسان انتخاب کنید و با قالب آماده یا
+              متن دلخواه شروع کنید. ارسال واقعی هنوز در دسترس نیست.
+            </DialogDescription>
+            <label className="mt-4 block space-y-2 text-sm font-semibold">
+              واحد مخاطب
+              <select
+                className="w-full rounded-xl border border-border bg-surface p-3"
+                value={messageUnit}
+                onChange={(event) => setMessageUnit(event.target.value)}
+              >
+                {messageUnits.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Button className="mt-4" onClick={() => setMessageOpen(false)}>
+              نوشتن پیام
+            </Button>
+          </DialogContent>
+        </Dialog>
+      )}
+      {home && (
+        <NewRequestDialog open={requestOpen} onOpenChange={setRequestOpen} />
       )}
       {home && (
         <NoteEditor
@@ -522,13 +606,24 @@ function Metric({
   detail,
   icon: Icon,
   onClick,
+  tone,
 }: {
   title: string;
   value: number | null;
   detail: string;
   icon: typeof Bell;
   onClick?: () => void;
+  tone: 'amber' | 'blue' | 'green' | 'violet';
 }) {
+  const tones = {
+    amber:
+      'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40',
+    blue: 'border-sky-200 bg-sky-50 dark:border-sky-800 dark:bg-sky-950/40',
+    green:
+      'border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/40',
+    violet:
+      'border-violet-200 bg-violet-50 dark:border-violet-800 dark:bg-violet-950/40',
+  };
   const content = (
     <>
       <span className="flex items-center justify-between gap-2 text-sm font-medium">
@@ -542,7 +637,7 @@ function Metric({
     </>
   );
   return (
-    <Card>
+    <Card className={tones[tone]}>
       {onClick ? (
         <button
           type="button"

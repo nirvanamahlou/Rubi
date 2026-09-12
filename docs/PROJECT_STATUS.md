@@ -2007,3 +2007,9 @@ Reservations general details now gives the contract party a distinct highlighted
 ## 2026-09-11 — B2B connection audit (PC-B)
 Source9b1c33c connects directory account manager and active-contract count to existing public APIs with branch/role authorization, pagination, partial failure and cancellation. Corporate dossier summary now uses its actual role.111 tests, lint and typecheck passed. Detailed implemented versus missing connections and owner handoffs: docs/tasks/B2B-CONNECTIONS-AUDIT-001.md. No financial producer, Sales pricing integration or external sync is claimed. Combined Web build9d05cd6 preserves7bae2a4; API unchanged.
 Runtime QA complete: Web3100 source9d05cd62d57c8d5b888cd9ff8aa77580a76ddea5 / hr005-b155b1d5a8c561d8 / PID20144, combined43-route production build passed. Authenticated browser shows Nirvana/fixture managers onHQ, changes to unassigned onAcademia,0 approved-active contracts for draft-only records; corporate-only dossier summary loads withCORPORATE_CUSTOMER and no agency-only calls. No writes performed during QA; API untouched. Draft PR176.
+
+WORKBENCH-012: build تولیدی و بررسی مرورگر با حساب واقعی موفق؛ انتخاب واحد، درج قالب و حفظ متن قبلی تأیید و متن آزمایشی پاک شد. Web3100 source7bae2a4 / PID26140؛ API بدون تغییر. Draft PR175؛ بدون merge.
+
+## WORKBENCH-013 — بازچینی و پیش‌نویس‌ها
+
+تنظیمات دو بخشی، تب‌های بزرگ و وسط‌چین، KPI رنگی، حذف shortcut اسناد داخل میزکار، نمای دو ستونی پیام‌ها، فرم اولیه درخواست و چک‌لیست تیک‌زدنی یادداشت اجرا شد. ذخیره/ارسال واقعی به‌دلیل قفل Migration و نبود سرویس همچنان مسدود است؛ چند یادداشت واقعی ایجاد نشد. ۳۷ تست، lint/typecheck/build موفق؛ مرورگر تنظیمات و انتخاب قالب/تیک/خط‌خوردن را تأیید کرد. Web3100 source8492a36/PID22916؛ API بدون تغییر و health200. مرجع: tasks/WORKBENCH-013-INTERACTIONS.md.
