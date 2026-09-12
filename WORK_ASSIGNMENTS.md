@@ -1,8 +1,9 @@
 # Work Assignments
 
-## CUSTOMER-AFFAIRS-VISUAL-POLISH — PC-B — IN_PROGRESS
+## CUSTOMER-AFFAIRS-VISUAL-POLISH — PC-B — DONE / VERIFIED
 
 - User requests richer visual treatment for the existing Customer Affairs overview. Reserve the module CSS and own status entry on `codex/pc-b-customer-affairs-visual-polish`; preserve content, behavior, data, API, schema, dependencies and all other modules. Use existing Rubi/theme tokens with accessible contrast, responsive states and reduced-motion support; verify with scoped checks, production build and authenticated browser QA on Web3100. No merge.
+- Completed with Rubi-blue/teal and status-color gradients, accent rails, stronger selected-tab treatment, layered cards, subtle hover depth, richer panels and reduced-motion fallbacks. Scoped workspace tests passed (4/4), CSS formatting and diff checks passed, and the Web production build/typecheck completed across 46 routes. Authenticated desktop browser QA verified the populated overview on Web3100/PID15612 from source `a7a8ab7`; API4190/PID12504 and stored data were unchanged. No merge.
 
 ## CUSTOMER-AFFAIRS-REMOVE-INTRO — PC-B — DONE / VERIFIED
 
