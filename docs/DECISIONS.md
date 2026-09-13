@@ -1,5 +1,38 @@
 # تصمیم‌های معماری
 
+## PROCUREMENT-001 — مالکیت منشأ تجاری و کنترل‌های نسخه — 2026-09-13
+
+درخواست صریح مالک محصول در PROCUREMENT-001 ابهام عبارت‌های قدیمی درباره مالکیت
+Payable را حل می‌کند: Procurement مالک فاکتور تجاری و منشأ نسخه‌دار آن است؛ Finance
+تنها مالک بدهی، پرداخت، مانده و دفتر حسابداری است. قرارداد
+`procurement.finance-source.v1` پیشنهاد مصرف‌کننده است و تا پذیرش قرارداد توسط
+PC-A وضعیت `NOT_CONNECTED` دارد. ثبت Outbox یا ارجاع محلی هرگز معادل پذیرش مالی
+یا پرداخت نیست. خرید عمومی به رزرو سفر وابسته نیست؛ ارجاع تخصصی بدون قرارداد
+نسخه‌دار Reservations متوقف می‌ماند و خرید سفر تاریخی دوباره بدهی نمی‌سازد.
+
+سیاست تجاری مصوب در مبنای این شاخه موجود نیست. Draft ناقص مجاز است؛ Submit با
+`POLICY_NOT_CONFIGURED` بسته می‌ماند. هیچ سقف، تعداد استعلام، نقش تجاری یا تأییدکننده
+پیش‌فرض ساخته نمی‌شود. Snapshot تأیید سفارش به نسخه درخواست، نسخه سفارش،
+تأمین‌کننده، ارز و مبلغ متصل است. تغییر درخواست، تأییدهای معلق قبلی را کنار می‌گذارد؛
+اصلاح تعهد دوباره تأیید می‌خواهد. سیاست و تصمیم تاریخی بازنویسی نمی‌شوند.
+
+رسید اصلی immutable است؛ اصلاح مقدار در رکورد جبرانی signed و مرجوعی در رکورد
+جداگانه ثبت می‌شود. پذیرش تجمعی نمی‌تواند پایین‌تر از مقدار فاکتور تطبیق‌شده شود
+مگر از مسیر اصلاح تجاری/مالی مصوب که فعلاً متصل نیست. پذیرش با تعدیل قیمت و
+پیش‌پرداخت بدون Policy مصوب متوقف‌اند. مرجوعی هیچ رکورد پرداخت را حذف نمی‌کند.
+
+اعلان داخلی از Public Service ماژول Notifications و در تراکنش تجاری ایجاد می‌شود.
+رویداد وظیفه در Outbox نگه داشته می‌شود؛ اتصال Tasks تا قرارداد مصرف‌کننده مصوب
+`TASKS_NOT_CONNECTED` است. پیام یا اعلان جایگزین Decision پرونده نیست.
+
+خروجی بزرگ از صف پایدار `ProcurementExportJob` با lease، بازیابی پس از وقفه و
+بازبینی نشست و مجوز جاری عبور می‌کند. فایل با مرجع همان Job در Documents ساخته
+و نسخه آن ثبت می‌شود. دانلود و اسکن در مالکیت Documents می‌ماند. PDF به شرکت
+مشخص و Branding Snapshot نیاز دارد؛ زمینه `ALL` مجاز نیست. مرورگر headless فقط
+از مسیر پیکربندی اپراتور اجرا می‌شود و نبود آن `PDF_RENDERER_UNAVAILABLE` است.
+تولید فایل به معنی ارسال خارجی نیست. ارزهای متفاوت در گزارش جمع نمی‌شوند.
+
+
 ## B2B-DOSSIER-REPORTS-001 — 2026-09-09
 
 The dossier Reports/Audit UI consumes normalized metadata from B2B audit events and public Master Organization/Documents owner projections. It does not read another module's tables, change the central Reporting module or create financial events. Existing branch and source/domain permissions apply to every page. Snapshots stay server-side; the projection exposes changed field labels, action, actor and time, never private contact values, notes, document contents or credential fields. Export contains the same authorized filtered projection. Per-source keyset pages share a fixed upper timestamp, including a deterministic cross-source tie key; Tehran calendar-day filters include both day boundaries.
