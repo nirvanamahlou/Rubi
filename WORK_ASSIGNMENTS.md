@@ -1,4 +1,11 @@
 # Work Assignments
+## WORKBENCH-038-PUBLISH — PC-B — MERGE_AUTHORIZED
+
+- User explicitly authorizes pushing and merging all changes from this Workbench task.
+- Reserve only integration of PR #259 and its ancestor #239 into current develop; preserve the independently merged HR destination removal. Resolve additive status documentation conflicts and run final CI on the updated head before merge.
+- No new migration, dependency, runtime replacement or unrelated open PR is included. Runtime integration branch remains pushed separately.
+
+
 
 ## WORKBENCH-038 — PC-B — COMPLETE / TESTED
 
@@ -18,6 +25,13 @@
   18 targeted API tests and 49 Workbench Web tests pass, with scoped ESLint,
   API/Web TypeScript and both production builds (46 Web routes). No migration or
   operational data/runtime change. Implementation reservations are released.
+
+## WORKBENCH-037-REMOVE-HR-DESTINATION-CARD — PC-B — READY_FOR_REVIEW
+
+- درخواست صریح مالک محصول در 2026-09-13: پوسته پایین «درخواست‌های منابع انسانی» از صفحه میزکار حذف شود، اما Backend، مسیر `/hr`، مجوزها و اعلان‌های منابع انسانی باقی بمانند. `COMPUTER_ID=PC-B`.
+- Branch مستقل `codex/pc-b-workbench-remove-hr-link` از `origin/develop@dd177cfd`؛ محدوده فقط مقصدهای نمایشی Workbench، تست همان قرارداد و اسناد وضعیت این Task است.
+- هیچ API، Backend، Schema/Migration/Seed، Shared Contract، Permission، داده، Dependency/Lockfile یا منوی اصلی تغییر نمی‌کند.
+- نتیجه: کارت و لینک پایین «درخواست‌های منابع انسانی» از خانه میزکار حذف شد؛ منطق خواندن اعلان HR و کنترل مجوز آن بدون تغییر باقی ماند. چهار تست هدفمند Workbench، lint فایل‌های متاثر، Web typecheck و Production Build با ۴۶ Route موفق‌اند.
 
 ## APP-SHELL-HEADER-UTILITY-LEFT-001 — PC-A — READY_FOR_REVIEW
 
