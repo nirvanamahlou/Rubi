@@ -53,3 +53,5 @@ HR null-date ordering adjustment also passed its 14-test API rerun and typecheck
 Activation needs both the new API and Web build. Shared 3100/4190 processes and
 operational data are unchanged. WORKBENCH-037's greeting cleanup and restored unit
 directory remain included.
+
+Publication follow-up: user explicitly authorized merge to develop. Synced with develop@060fc35c, preserving PR258's HR destination-card removal; conflicts affected additive status documentation only. All 50 Workbench Web tests pass on the combined source. Final CI gates are required before PR259 merge; local runtime activation remains separate.

@@ -1,11 +1,10 @@
 # Work Assignments
+
 ## WORKBENCH-038-PUBLISH — PC-B — MERGE_AUTHORIZED
 
 - User explicitly authorizes pushing and merging all changes from this Workbench task.
 - Reserve only integration of PR #259 and its ancestor #239 into current develop; preserve the independently merged HR destination removal. Resolve additive status documentation conflicts and run final CI on the updated head before merge.
 - No new migration, dependency, runtime replacement or unrelated open PR is included. Runtime integration branch remains pushed separately.
-
-
 
 ## WORKBENCH-038 — PC-B — COMPLETE / TESTED
 
