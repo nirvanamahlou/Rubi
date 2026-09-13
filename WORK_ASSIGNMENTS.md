@@ -1,6 +1,6 @@
 # Work Assignments
 
-## FINANCE-004-ACCOUNTING-SECONDARY-NAV — PC-A — IN_PROGRESS
+## FINANCE-004-ACCOUNTING-SECONDARY-NAV — PC-A — READY_FOR_REVIEW / TESTED
 
 - درخواست مالک محصول در 2026-09-13: افزودن منوی داخلی جمع‌شونده برای صفحه «حسابداری»
   با چهار گروه «دفتر کل»، «دریافت و پرداخت»، «ارتباط با سامانه مودیان مالیاتی» و
@@ -14,6 +14,10 @@
 - زیرگروه دفتر کل: اطلاعات پایه، حساب‌ها، اسناد، عملیات پایان سال و گزارش‌ها. زیرگروه
   دریافت و پرداخت: گزارش پرداخت و دریافت. دو گروه مالیاتی تا اعلام زیرگروه‌های بعدی فقط
   ورودی سطح اول دارند. Push و Draft PR به develop مجاز؛ Merge/Force Push ممنوع.
+- پیاده‌سازی تکمیل شد: منوی داخلی مستقل و جمع‌شونده، مسیرهای پایدار، وضعیت انتخاب‌شده و
+  Empty Stateهای بدون داده اضافه شدند. ۲۰ تست Finance/Navigation، Prettier، ESLint،
+  TypeScript و build تولیدی ۴۶ مسیر موفق‌اند؛ QA مرورگر نیز ساختار و ناوبری را تأیید کرد.
+  هیچ API، Schema/Migration، Permission، داده عملیاتی یا Dependency تغییر نکرد.
 
 ## HR-014-BACKEND-ONLY — PC-B — MERGE_AUTHORIZED
 
