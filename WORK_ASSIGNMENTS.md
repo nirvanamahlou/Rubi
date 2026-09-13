@@ -1,5 +1,25 @@
 # Work Assignments
 
+## FINANCE-003-INBOX-REDESIGN-INTEGRATION — PC-A — IN_PROGRESS
+
+- درخواست مالک محصول در 2026-09-13: بازطراحی حرفه‌ای `/finance/requests` و ورود درخواست‌های
+  واقعی بخش‌های دیگر به کارتابل مالی. Branch مستقل
+  `codex/pc-a-finance-inbox-redesign-integration` از `origin/develop@d65d8acc`؛
+  `COMPUTER_ID=PC-A`.
+- محدوده رزروشده: `apps/web/src/modules/finance/**` و route/test مالی،
+  `apps/api/src/finance/**`، projection عمومی و فقط‌خواندنی پرداخت‌های منتظر تأیید در
+  `apps/api/src/sales/{sales.service,sales.repository,sales.controller}.ts` و تست‌های آن،
+  قراردادهای افزایشی Finance/Sales، ثبت `FinanceModule` در AppModule، و permission seed
+  حداقلی `finance.read` و `hr.connections.finance.receive` برای نقش مالی. PC-A مالک هر دو
+  ماژول Sales و Finance است؛ فایل HR تغییر نمی‌کند و فقط سرویس عمومی export‌شده مصرف می‌شود.
+- اتصال فعلی فقط درخواست‌های واقعاً persisted فروش و ارجاع‌های persisted منابع انسانی را
+  از public serviceهای مالک و با branch/permission scope تجمیع می‌کند. Reservations و
+  Purchases تا انتشار producer استاندارد `finance.payment-request.v1` در UI صریحاً
+  «متصل نیست» می‌مانند؛ داده Preview جای درخواست واقعی نمایش داده نمی‌شود.
+- بدون Schema/Migration/Dependency، بدون ثبت/تأیید مالی عملیاتی، بدون Query مستقیم جدول
+  ماژول دیگر از Finance و بدون تغییر runtime مشترک 3100/4190. Web/API این Task فقط روی
+  3200/4200 بررسی می‌شوند. Push و PR به develop مجاز؛ Merge/Force Push ممنوع.
+
 ## HR-014-BACKEND-ONLY — PC-B — MERGE_AUTHORIZED
 
 - User explicitly removes the standalone HR connections panel and wants integrations behind the existing forms. Reserve the central AppShell outlet removal, HR record referral link and now-unreachable referral UI/client/tests on `codex/pc-b-hr-backend-only-0912` from `origin/develop@6a4e0410`. Backend services, contracts, persisted records, permissions and the form directory/document/currency integrations stay intact. No migration, dependency or runtime takeover. Existing visibility context is retained for consumer compatibility. Push a review PR to develop; no automatic merge under the updated instructions.
